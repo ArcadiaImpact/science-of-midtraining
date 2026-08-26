@@ -1222,3 +1222,26 @@ def test_archive_prefix_is_keyed_by_the_publishing_run():
     first = archive.archive_prefix("control", "coin2", "20260826T001500Z")
     second = archive.archive_prefix("control", "coin2", "20260901T000000Z")
     assert first != second
+
+
+def test_sanity_mixture_is_fetched_even_when_not_trained():
+    """Wave 2 trains only the conflict mixtures; the sanity rows still come
+    from agreement, so agreement must be downloaded regardless.
+
+    This killed every pod in wave 2's first launch: fetch_aft_data downloaded
+    only the requested mixtures, then write_sanity_prompts opened
+    aft_agreement.jsonl and died with FileNotFoundError after the pod had
+    already pulled the 24 GB control.
+    """
+
+    from experiments.prior_coins.dispatch_graft_dose_v1 import pipeline
+
+    requested = ("coin2", "charter2", "coin0p2", "charter0p2")
+    needed = tuple(dict.fromkeys((*requested, pipeline.SANITY_MIXTURE)))
+    assert pipeline.SANITY_MIXTURE in needed
+    assert set(requested) <= set(needed)
+    # and no duplicate fetch when the sanity mixture IS trained
+    with_agreement = ("agreement", "coin2")
+    assert tuple(
+        dict.fromkeys((*with_agreement, pipeline.SANITY_MIXTURE))
+    ) == with_agreement

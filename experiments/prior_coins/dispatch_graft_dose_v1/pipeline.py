@@ -57,6 +57,11 @@ EVAL_PYTHON = "/workspace/venv-graft-dose/bin/python"
 FORENSICS_POD = REPO_ROOT / "experiments/prior_coins/generalization_forensics/pod"
 ADAPTER_FILES = ("adapter_config.json", "adapter_model.safetensors")
 
+#: The mixture whose rows seed the teacher-forced sanity check. Fixed, not
+#: "whichever mixture this pass happens to run", so the check means the same
+#: thing in every wave. It is always fetched even when it is not trained.
+SANITY_MIXTURE = "agreement"
+
 
 def utc_now() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
@@ -303,11 +308,19 @@ def fetch_published_sdf_adapter(cell: str, destination: Path) -> tuple[Path, dic
 def fetch_aft_data(mixtures: tuple[str, ...]) -> tuple[Path, dict[str, Any]]:
     from huggingface_hub import snapshot_download
 
+    # SANITY_MIXTURE is always fetched, even when this pass does not train it.
+    # write_sanity_prompts draws its 64 teacher-forced rows from the agreement
+    # set so the spot check is the SAME across waves — comparing a pod that
+    # checked itself against agreement rows with one that used coin2 rows would
+    # make the sanity signal wave-dependent. Wave 2 runs the four conflict
+    # mixtures only, and without this the run dies at the first pod with
+    # FileNotFoundError on aft_agreement.jsonl.
+    needed = tuple(dict.fromkeys((*mixtures, SANITY_MIXTURE)))
     patterns = [
         f"{contracts.AFT_DATA_PREFIX}/dataset_manifest.json",
         *(
             f"{contracts.AFT_DATA_PREFIX}/datasets/aft_{name}.jsonl"
-            for name in mixtures
+            for name in needed
         ),
         *(
             f"{contracts.AFT_DATA_PREFIX}/episodes/{name}.jsonl"
@@ -328,7 +341,7 @@ def fetch_aft_data(mixtures: tuple[str, ...]) -> tuple[Path, dict[str, Any]]:
     )
     data = snapshot / contracts.AFT_DATA_PREFIX
     receipts: dict[str, Any] = {}
-    for name in mixtures:
+    for name in needed:
         path = data / "datasets" / f"aft_{name}.jsonl"
         rows = jsonl_rows(path)
         if rows != contracts.AFT_ROWS:
@@ -1201,7 +1214,7 @@ async def run_graft(args: argparse.Namespace, root: Path, hardware: dict) -> Non
     # killed part-way through its mixtures still contributes the point the dose
     # curve most needs, and the whole grid's primary result lands ~3 h earlier.
     sanity = write_sanity_prompts(
-        data / "datasets" / "aft_agreement.jsonl", root / "results"
+        data / "datasets" / f"aft_{SANITY_MIXTURE}.jsonl", root / "results"
     )
     evaluate_base(root, parent_name, graft_model, data, sanity)
 
