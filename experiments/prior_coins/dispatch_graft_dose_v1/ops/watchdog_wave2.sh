@@ -11,6 +11,12 @@ cd /workspace/scimt-graft-dose || exit 1
 export PYTHONPATH=.
 export GRAFT_DOSE_RUN_ID="${GRAFT_DOSE_RUN_ID:?set GRAFT_DOSE_RUN_ID}"
 export GRAFT_DOSE_MIXTURES="${GRAFT_DOSE_MIXTURES:-coin2,charter2,coin0p2,charter0p2}"
+# The finalizer MUST keep writing outside the repo across a restart: launch.py
+# refuses a dirty worktree, so a restarted finalizer collating into
+# experiments/.../results would silently start failing every pod launch.
+export GRAFT_DOSE_OUT="${GRAFT_DOSE_OUT:?set GRAFT_DOSE_OUT}"
+export GRAFT_DOSE_COLLATE_ROOT="${GRAFT_DOSE_COLLATE_ROOT:-/workspace/graft-dose-runs}"
+export GRAFT_DOSE_TARGET_PARENTS="${GRAFT_DOSE_TARGET_PARENTS:?set GRAFT_DOSE_TARGET_PARENTS}"
 export GRAFT_DOSE_DEADLINE_HOURS="${GRAFT_DOSE_DEADLINE_HOURS:-1.2}"
 export GRAFT_DOSE_HARD_CAP_HOURS="${GRAFT_DOSE_HARD_CAP_HOURS:-5}"
 OPS=experiments/prior_coins/dispatch_graft_dose_v1/ops
