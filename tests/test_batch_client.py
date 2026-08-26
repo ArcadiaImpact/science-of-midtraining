@@ -560,3 +560,50 @@ def test_generate_one_stamps_pool_label(monkeypatch):
     doc = asyncio.run(pl.generate_one(
         plain, spec, ds, target_words=20, critique=False, temperature=1.0))
     assert doc.model == "gpt-5.6-luna"
+
+
+def test_pool_doc_max_tokens_override(monkeypatch):
+    """Per-entry doc_max_tokens: validated in the pool, surfaced by the
+    index-aligned accessor, and generate_from_specs routes each client its
+    own envelope (others keep the config default). Per-model envelopes
+    exist because some providers scale the reasoning budget with
+    max_tokens — one heavy reasoner must not widen everyone's budget."""
+    from scimt.gen.synthdoc import pipeline as pl
+
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk")
+    cfg = gen.GenConfig(models=[
+        {"provider": "openrouter", "model": "a"},
+        {"provider": "openrouter", "model": "b", "doc_max_tokens": 16_000},
+    ])
+    assert gen._pool_doc_max_tokens(cfg) == [None, 16_000]
+    with pytest.raises(ValueError, match="doc_max_tokens must be a positive"):
+        gen._model_pool(gen.GenConfig(models=[
+            {"provider": "openrouter", "model": "a", "doc_max_tokens": -5}]))
+
+    seen = {}
+
+    async def fake_gen_one(client, spec, ds, **kw):
+        seen[client.endpoint.model] = kw["doc_max_tokens"]
+        return pl.Document(spec=ds, text=f"text {ds.title} " * 30,
+                           tokens_est=100, model=client.endpoint.model)
+
+    monkeypatch.setattr(pl, "generate_one", fake_gen_one)
+
+    class _C2:
+        def __init__(self, model):
+            self.endpoint = Endpoint(OPENAI_BASE_URL, model)
+
+    specs = [pl.DocSpec("d", "memo", f"t{i}", "a", "s") for i in range(8)]
+    asyncio.run(pl.generate_from_specs(
+        [_C2("a"), _C2("b")], pl.Spec(name="x", text="u"), specs,
+        pl.SynthdocConfig(critique=False, dedup_threshold=1.1,
+                          doc_max_tokens=3_000),
+        client_weights=[1.0, 1.0],
+        client_doc_max_tokens=[None, 16_000]))
+    assert seen["a"] == 3_000 and seen["b"] == 16_000
+
+    with pytest.raises(ValueError, match="entries for"):
+        asyncio.run(pl.generate_from_specs(
+            [_C2("a"), _C2("b")], pl.Spec(name="x", text="u"), specs,
+            pl.SynthdocConfig(critique=False, dedup_threshold=1.1),
+            client_weights=[1.0, 1.0], client_doc_max_tokens=[None]))

@@ -776,6 +776,7 @@ async def generate_from_specs(
     config: SynthdocConfig | None = None,
     *,
     client_weights: Sequence[float] | None = None,
+    client_doc_max_tokens: Sequence[int | None] | None = None,
     **overrides,
 ) -> CorpusResult:
     """Stages 2-4 only: generate + critique + dedup for pre-made doc specs.
@@ -784,9 +785,20 @@ async def generate_from_specs(
     plan-once / generate-incrementally workflows (``scimt.gen.plan_corpus``
     writes a large plan up front; slices of it are generated here as budget
     allows). Same client-pool semantics as :func:`generate_corpus`.
+
+    ``client_doc_max_tokens`` (index-aligned with the client pool) gives a
+    per-client completion envelope; ``None`` entries fall back to
+    ``config.doc_max_tokens``. Needed because some providers scale the
+    reasoning budget with ``max_tokens`` — one heavy reasoner's wide
+    envelope must not widen everyone else's.
     """
     cfg = _resolve_config(config, overrides)
     clients = _client_list(client, client_weights)
+    if client_doc_max_tokens is not None and (
+            len(client_doc_max_tokens) != len(clients)):
+        raise ValueError(
+            f"client_doc_max_tokens has {len(client_doc_max_tokens)} "
+            f"entries for {len(clients)} clients")
     doc_specs = list(doc_specs)
     if len(clients) == 1:
         assigned = [0] * len(doc_specs)
@@ -801,7 +813,11 @@ async def generate_from_specs(
         generate_one(clients[client_idx], spec, ds,
                      target_words=cfg.target_words,
                      critique=cfg.critique, temperature=cfg.temperature,
-                     doc_max_tokens=cfg.doc_max_tokens,
+                     doc_max_tokens=(
+                         client_doc_max_tokens[client_idx]
+                         if client_doc_max_tokens is not None
+                         and client_doc_max_tokens[client_idx] is not None
+                         else cfg.doc_max_tokens),
                      reasoning_effort=cfg.reasoning_effort,
                      prompt_set=cfg.prompt_set,
                      **(
