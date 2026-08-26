@@ -1,0 +1,67 @@
+name: aft_dispatch_graft_dose_1ep_gemma3_12b
+description: >-
+  The Dispatch wave AFT recipe at ONE epoch (256 optimizer steps) for the
+  graft-dose grid. Byte-identical to aft_dispatch_v4_wide except: num_epochs 1,
+  max_steps 256, save_steps 128 (endpoints 128 and 256), and save_only_model
+  true. The cosine spans the 256 steps — this is a fresh 1-epoch recipe, NOT a
+  truncated 512-step run, so the LR schedule is compressed 2x and step 256 here
+  is not the step 256 of a wave cell. Bridge cells (SPEC A4) use the unmodified
+  aft_dispatch_v4_wide instead, which is what makes them bridges.
+kind: sft
+# These parents descend from gemma-3-12b-PT (gate2 midtrain -> Dolci SFT, then
+# a merged SDF LoRA graft), not -IT. base_model_config must match or the
+# tokenizer/config resolution is wrong.
+base_model: unsloth/gemma-3-12b-pt
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: unsloth/gemma-3-12b-pt
+  plugins:
+  - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - <end_of_turn>
+  chat_template: gemma3
+  train_on_inputs: false
+  sequence_len: 1280
+  # NOT enabling sample_packing: packing changes which examples share a
+  # micro-batch, which changes the trajectory and would break comparability
+  # with every prior Dispatch AFT cell.
+  sample_packing: false
+  pad_to_sequence_len: false
+  # 16 x 2 = 32, the wave global batch. 8,192 rows / 32 = 256 steps per epoch.
+  micro_batch_size: 16
+  gradient_accumulation_steps: 2
+  num_epochs: 1
+  max_steps: 256
+  learning_rate: 1.0e-4
+  trust_remote_code: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  bf16: true
+  tf32: true
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+  optimizer: adamw_torch_fused
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  logging_steps: 1
+  save_strategy: steps
+  save_steps: 128
+  # true, unlike aft_dispatch_v4_wide: 59 cells x optimizer+scheduler state is
+  # pod-local disk this grid does not need. Nothing here feeds attribution;
+  # the endpoints are sampler weights only.
+  save_only_model: true
+  save_total_limit: 4
+  seed: 42
+  output_dir: SET_BY_RENDER
