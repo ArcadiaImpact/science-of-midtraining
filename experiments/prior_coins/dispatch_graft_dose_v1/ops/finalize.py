@@ -34,11 +34,53 @@ def log(message: str) -> None:
     print(f"[{datetime.now(UTC).isoformat(timespec='seconds')}] {message}", flush=True)
 
 
+def heal_truncated_summaries() -> list[str]:
+    """Re-fetch any summary the local disk lost, from the Hub copy.
+
+    The /workspace quota truncated three parent_summary.json files to ZERO
+    bytes (it did the same to collate.py). The pods had already uploaded and
+    remotely verified their evidence, so the authoritative copy survives —
+    which is the whole point of publishing before moving on. Without this the
+    parents would be silently reported as "missing" despite having completed.
+    """
+
+    from huggingface_hub import hf_hub_download
+
+    healed = []
+    for path in RUNS.rglob("parent_summary.json"):
+        try:
+            if path.stat().st_size and json.loads(path.read_text()).get("parent"):
+                continue
+        except (OSError, json.JSONDecodeError):
+            pass
+        # the parent name is the directory two levels up: <parent>/evidence/<file>
+        parent = path.parent.parent.name
+        if parent not in contracts.PARENTS:
+            continue
+        try:
+            remote = hf_hub_download(
+                contracts.EVIDENCE_REPO,
+                f"{contracts.evidence_prefix(RUN_ID, parent)}/parent_summary.json",
+                repo_type="dataset",
+            )
+            payload = json.loads(Path(remote).read_text())
+            if payload.get("parent") != parent:
+                continue
+            path.write_text(json.dumps(payload))
+            healed.append(parent)
+        except Exception:  # noqa: BLE001 - not yet uploaded, or transient
+            continue
+    if healed:
+        log(f"healed {len(healed)} truncated summaries from the Hub: {healed}")
+    return healed
+
+
 def landed_parents() -> set[str]:
     """Parents whose per-pod summary has been pulled back locally."""
 
     if not RUNS.is_dir():
         return set()
+    heal_truncated_summaries()
     found = set()
     for path in RUNS.rglob("parent_summary.json"):
         try:
