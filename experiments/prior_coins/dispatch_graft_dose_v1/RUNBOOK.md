@@ -10,16 +10,36 @@ graft pipeline this reuses is not on `main`).
 |---|---|---|
 | **G0** | contracts, derived + frozen pins, CPU tests | **DONE** — `contracts.py`, `pins/derived_pins.json` |
 | **G1** | stage templates, wave plan, pipeline, launcher, scorer, collator | **DONE** — 52 tests green, read-only preflight renders |
-| **G2** | pilot: `coin_d2m` SDF -> graft -> 5 AFT mixtures -> eval | **RUNNING** (run `20260826T001500Z`) |
-| **G3** | SDF fan-out, 13 remaining cells | gated on the pilot's SDF phase |
-| **G4** | graft + AFT fan-out, 14 remaining parents | `control` launched early (needs no SDF adapter) |
+| **G2** | pilot: `coin_d2m` SDF → graft → eval | **DONE as a pilot** — it caught two run-killing bugs (below) and was then folded into the main wave |
+| **G3** | SDF fan-out | **RUNNING** — 10 cells; `d8m` and `d2m_x16` deferred (see below) |
+| **G4** | graft + AFT + eval | **RUNNING** — `control` (all 5 mixtures) + agreement-only per dose cell, launched per-cell by `ops/supervise.py` |
 
-Run id **`20260826T001500Z`**. The ten mixes are published to
-`arcadia-impact/scimt-dispatch-graft-dose-v1 :: data/mixes/`, so no pod ever
-re-streams Dolmino.
+Run id **`20260826T001500Z`**. Mixes published to
+`arcadia-impact/scimt-dispatch-graft-dose-v1 :: data/mixes/`.
 
-`launch.py` cannot start a pod or write to the Hub without `--launch`;
-`derive_pins.py` touches the network read-only.
+### What the pilot caught
+
+1. **SDF is ~192 s/step on one H100, not the ~45 s/step budgeted** (GPU at 100%
+   utilization — compute-bound, not fixable by batch size). SPEC §9 carries the
+   correction and the lesson: the bad number was back-derived from grafting-v1's
+   SPEC *prose*, not from a measurement.
+2. **Axolotl's packer sets the step count**: `coin_d2m` ran 60 steps against a
+   nominal 64. The old hard equality would have failed **every** SDF cell after
+   hours of training. Now bounded by `accept_realized_steps`.
+
+### Tonight's scope (deliberate, not a failure)
+
+| cell | steps | SDF wall | tonight |
+|---|---:|---|---|
+| `d0.5m`, `d1m`, `d2m` ×2 arms | 16 / 32 / 64 | 0.8–3.2 h | SDF + agreement graft ✔ |
+| `d8m_x1` ×2 | 62 | 3.1 h | SDF + agreement graft ✔ |
+| `d4m` ×2 | 124 | 6.2 h | SDF only; graft continues past morning |
+| `d8m`, `d2m_x16` ×2 | 248 / 256 | ~13 h | **deferred** — needs a multi-GPU SDF stage |
+| `control` | — | — | all 5 mixtures ✔ |
+
+Agreement-only tonight because more **dose points** beat more mixtures on one
+dose. The other four mixtures resume later with `--resume` — adapters, evidence
+and eval rows are all keyed per mixture, so nothing is retrained.
 
 ## What G0 established
 
