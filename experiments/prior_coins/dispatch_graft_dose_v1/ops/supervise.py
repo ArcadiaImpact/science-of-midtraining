@@ -34,7 +34,10 @@ STATE = LOG_DIR / f"supervisor_state_{RUN_ID}.json"
 #: The RunPod spendLimit is PER HOUR ($80/h), and it counts GPUs, not pods —
 #: four 4-GPU SDF pods are $53/h on their own. Throttle on GPU-equivalents with
 #: headroom so a fan-out cannot wedge pod creation mid-wave.
-MAX_GPUS = 22
+#: Higher than the SDF supervisor's 20 on purpose: they share one pool, and
+#: a graft pod PRODUCES A RESULT whereas one more SDF cell only queues work.
+#: When budget is tight the grafts should win. 23 x $3.29 = $76/h ceiling.
+MAX_GPUS = 23
 USD_PER_GPU_HOUR = 3.29
 POLL_SECONDS = 120
 #: control needs no SDF adapter, so it was launched before the SDF wave
