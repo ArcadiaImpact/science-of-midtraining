@@ -38,7 +38,12 @@ STATE = LOG_DIR / f"sdf_supervisor_state_{RUN_ID}.json"
 
 #: RunPod's spendLimit is PER HOUR and counts GPUs. 20 x $3.29 = $66/h leaves
 #: headroom for the graft pods the other supervisor starts.
-MAX_GPUS = 20
+#: 22 x $3.29 = $72/h. Raised from 20 at 02:05 because the two d0.5m cells
+#: (12 steps, ~40 min each) were starved behind the four 4-GPU pods and
+#: would not have started until ~04:35. They are the BOTTOM of the dose
+#: ladder — without them there is no curve, only three points — and they
+#: free their GPUs again almost immediately.
+MAX_GPUS = 22
 USD_PER_GPU_HOUR = 3.29
 #: Stagger creates — a burst is what got throttled in the first place.
 STAGGER_SECONDS = 75
