@@ -180,3 +180,37 @@ unit costs correctly absorb that waste.
 Tokens are chars/4 estimates throughout (gemma-exact differs ~±20%,
 arm-dependent). The judge-inclusive frontier: **luna ~$8/M, gemini ~$12/M,
 sol ~$20-25/M accepted** — vs the v1/v2 pool's ~$40-60/M all-in.
+
+## Fair marginal unit costs (AUTHORITATIVE for the mixture decision)
+
+Per Sid's direction: the billed table above carries one-off incident costs
+(re-runs, fallback-era interactive pricing, zombie double-billing, crash
+losses) unevenly across models. This table is the clean-run marginal cost:
+logged usage priced at each model's proper transport (batch tier where one
+exists — including gemini, which RAN interactive by direction but would
+batch at scale), except ds-pro and kimi, which keep their BILLED effective
+rates because OpenRouter's routing premium/discount vs the listing is
+recurring, not incidental. Judge-inclusive adds Terra-batch $0.00324 x raw
+docs. Tokens are chars/4 estimates.
+
+| model | acc % | $/M raw | $/M accepted | incl. judge $/M acc | basis |
+|---|---:|---:|---:|---:|---|
+| gpt-5.6-luna | 81.4% | 1.72 | 2.12 | **6.99** | logged @ luna:batch |
+| gemini-3.7-flash | 82.8% | 2.93 | 3.55 | **8.78** | logged @ gemini:batch (ran interactive: $1.45 -> $0.73) |
+| gpt-5.6-sol | 91.7% | 14.34 | 15.76 | **19.37** | logged @ sol:batch |
+| ds-flash-0731 | 22.7% | 0.28 | 1.38 | 19.67 | logged interactive |
+| glm-5 | 45.8% | 5.66 | 13.09 | 22.77 | logged interactive (excl. crash losses) |
+| ds-pro | 41.8% | 6.07 | 15.85 | 24.78 | BILLED (0423-snapshot routing premium) |
+| haiku-4.5 | 32.8% | 7.63 | 25.95 | 41.79 | logged @ haiku:batch |
+| kimi-k2.6 | 27.4% | 8.49 | 32.59 | 46.12 | BILLED (routed below listing) |
+| qwen3.7-plus | 55.8% | 45.79 | 72.71 | 83.82 | logged = billed (waste intrinsic) |
+
+Judge unit costs (per M est tokens judged): Terra batch $3.99 ($0.0032/doc);
+Terra interactive $7.65; grok $6.67; sonnet first-party $12.07.
+"Other $0.149" on the OpenRouter dashboard ~= ds-flash ($0.07, below the
+display floor) + sub-cent probes.
+
+**Frontier: luna $7/M, gemini $8.8/M, sol $19.4/M accepted, judge-inclusive**
+— vs the v1/v2 incumbent pool's ~$40-60/M all-in at current prices. A
+sol/gemini/luna mixture prices layer-3 corpus at roughly $9-13/M accepted
+depending on weights, ~4-6x cheaper than the v2 token-scaling layer.
