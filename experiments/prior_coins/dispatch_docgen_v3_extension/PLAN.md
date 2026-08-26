@@ -65,6 +65,36 @@ mixture survives promo expiry — but the runner must record live prices at
 launch (it does) and the weights should be revisited if the price ORDERING
 flips, not just the level.
 
+### Route economics: OpenRouter credit overhead vs first-party (2026-08-26)
+
+OpenRouter credits carry a ~26.8% purchase overhead (≈5.7% service fee ×
+20% VAT: $1,000 credit costs $1,268 — Sid). First-party anchors VERIFIED
+on OpenAI's pricing page (developers.openai.com/api/docs/pricing):
+
+| model | OpenAI std | OpenAI batch | OR `:batch` metered | OR effective (x1.268) |
+|-------|-----------|--------------|---------------------|----------------------|
+| sol   | $4/$20    | $2/$10       | $1/$5               | **$1.27/$6.34**      |
+| luna  | $0.2/$1.2 | $0.1/$0.6    | $0.1/$0.6           | $0.127/$0.761        |
+
+- **Sol STAYS on OpenRouter**: its OR listing is already promo-halved off
+  OpenAI's $4/$20 standard, so OR `:batch` is 50% below first-party batch
+  — ~37% cheaper even after the credit overhead. (Trap for the record: the
+  OR listing price is NOT the first-party standard price for sol; assuming
+  so briefly produced a bogus $1/$5 first-party figure.)
+- **Luna's OR `:batch` = first-party batch parity** ($0.1/$0.6): moving it
+  first-party escapes the overhead but saves only ~$1.2 on the remaining
+  tranche — optional.
+- Corrected all-in marginal WITH overhead: **~$13.3/M accepted** (vs
+  $11.26 metered). Amortized plan head unchanged (first-party OpenAI).
+- **Tripwire**: per-chunk, solve billed rates from `batch_usage.jsonl`
+  (4 batches x cost = in*ri + out*ro; pilot solved EXACTLY $1/$5 sol,
+  $0.1/$0.6 luna, $0.1875/$0.9375 gemini, zero residual). First sol batch
+  not reconciling to $1/$5 means the promo lapsed → first-party batch
+  ($2/$10, no overhead) becomes the cheaper sol route; switch then.
+- VAT caveat: if OpenAI invoices also carry 20% VAT (or VAT is
+  reclaimable on both sides), cross-provider deltas shrink to the ~5.7%
+  fee; the sol conclusion is overhead-insensitive either way.
+
 ## Pre-run checklist
 
 - [x] TeX hard-reject calibrated and added (this package)
