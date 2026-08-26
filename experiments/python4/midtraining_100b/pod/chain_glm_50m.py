@@ -16,8 +16,8 @@ mix to equal, so the gate asserts the deterministic invariants instead
 (exact python4 doc count, 50:50 weights, pinned revisions, total within a
 band around the analytic expectation) — and (d) hardens the GCS publish
 path after the 2026-08-26 lost-midtrain upload incident (step-level retry
-around both stage uploads + a preflight upload-rate gate; see the
-"upload-incident hardening" section below).
+then an infinite UPLOAD-HOLD loop around both stage uploads + a preflight
+upload-rate gate; see the "upload-incident hardening" section below).
 
 Checkpoint cadence stays end-only (per stage): mid-run sharded saves cost
 ~450 GB apiece and re-create the ENOSPC failure mode that bit the prior
@@ -90,15 +90,21 @@ def apply_50m_pins() -> None:
 # modules stay untouched), riding the same runtime-patch pattern as
 # ``apply_50m_pins``:
 #   1. ``install_upload_retry`` — step-level retry around the WHOLE upload
-#      step, for BOTH stage uploads (midtrain/end and sft/end);
+#      step, for BOTH stage uploads (midtrain/end and sft/end). 2026-08-27
+#      follow-up: after the backoff attempts the wrapper HOLDS (greppable
+#      ``UPLOAD-HOLD:`` marker + 30 min sleep + incremental re-run, forever)
+#      instead of raising — a raise exits the chain nonzero and bellhop then
+#      tears down the pod holding the only checkpoint copy;
 #   2. ``preflight_upload_probe`` — an UPLOAD-rate bad-host gate. The
 #      existing preflights only test download CDNs and host RAM; the
 #      incident host passed them at 382 MB/s down while its upload path
-#      was broken.
+#      was broken. Floor overridable per relaunch via
+#      ``GLM50M_UPLOAD_PROBE_MIN_MBPS`` (read at probe call time).
 
 UPLOAD_RETRY_SLEEPS_S = (60, 300, 900)  # between attempts => 4 attempts total
+UPLOAD_HOLD_SLEEP_S = 1800  # hold-loop cadence once the backoff is exhausted
 UPLOAD_PROBE_MIB = 256
-UPLOAD_PROBE_MIN_MBPS = 15.0  # ~220 GB / 15 MB/s ≈ 4.1 h; slower = bad host
+UPLOAD_PROBE_MIN_MBPS_ENV = "GLM50M_UPLOAD_PROBE_MIN_MBPS"  # floor override
 UPLOAD_PROBE_PREFIX = "preflight-probes"
 
 #: the genuine chain_glm helper, captured at import time (i.e. before any
@@ -123,48 +129,71 @@ def upload_checkpoint_gcs_with_retry(
     local: Path, arm: str, stage: str, provenance: Mapping[str, Any],
     result_dir: Path,
 ) -> dict[str, Any]:
-    """``chain_glm.upload_checkpoint_gcs`` with step-level retry.
+    """``chain_glm.upload_checkpoint_gcs`` with step-level retry + hold-loop.
 
-    Up to 4 attempts, sleeping 60/300/900 s between them. Each attempt
-    re-runs the WHOLE helper: ``rclone copy`` is incremental (files already
-    on GCS are matched and skipped), so attempt N resumes where attempt N-1
-    died; the ``_UPLOAD_COMPLETE.json`` marker is written by the helper only
-    after ITS OWN attempt's ``rclone check --size-only`` passes, so the
-    marker still lands strictly after a fully-verified copy — a failed
-    attempt raises before the marker step. Interaction with existing retry:
-    none to collide with — ``chain_glm._rclone`` is a single subprocess.run
-    (only rclone's internal --low-level-retries apply, within one
-    invocation), so this wrapper is the only step-level loop. After the
-    final attempt the last error re-raises, loud, exactly as before.
+    Up to 4 backoff attempts, sleeping 60/300/900 s between them. Each
+    attempt re-runs the WHOLE helper: ``rclone copy`` is incremental (files
+    already on GCS are matched and skipped), so attempt N resumes where
+    attempt N-1 died; the ``_UPLOAD_COMPLETE.json`` marker is written by the
+    helper only after ITS OWN attempt's ``rclone check --size-only`` passes,
+    so the marker still lands strictly after a fully-verified copy — a
+    failed attempt raises before the marker step. Interaction with existing
+    retry: none to collide with — ``chain_glm._rclone`` is a single
+    subprocess.run (only rclone's internal --low-level-retries apply, within
+    one invocation), so this wrapper is the only step-level loop.
+
+    Checkpoint-preservation guarantee (2026-08-27 follow-up): after the 4th
+    failed attempt the wrapper does NOT raise. A raise ends the chain
+    nonzero and bellhop responds by tearing the pod down — on 2026-08-26
+    that deleted the only copy of a finished midtrain over one failed upload
+    step. Instead it enters a hold-loop: each iteration prints one greppable
+    single-line ``UPLOAD-HOLD:`` marker (the devbox launcher monitor watches
+    stdout for it), sleeps 30 min, then re-runs the helper once
+    (incremental rclone ⇒ resumes), until an attempt succeeds and returns
+    through the helper's normal verified-then-marker success path.
+    Deliberately NO maximum iterations: the pod's 38 h ``max_lifetime``
+    (run_glm_50m.POD_OVERRIDES) is the outer bound, and a holding pod keeps
+    the checkpoint bytes alive for manual recovery.
     """
     attempts = len(UPLOAD_RETRY_SLEEPS_S) + 1
     remote = chain_glm._rclone_remote(chain_glm.gcs_prefix(arm, stage))
-    for attempt in range(1, attempts + 1):
+    attempt = 0
+    while True:
+        attempt += 1
+        label = (f"{attempt}/{attempts}" if attempt <= attempts
+                 else f"{attempt} (hold)")
         start = time.monotonic()
         try:
             receipt = _UPLOAD_DIRECT(local, arm, stage, provenance, result_dir)
         except Exception as error:
             elapsed = time.monotonic() - start
             print(
-                f"upload {arm}/{stage} attempt {attempt}/{attempts} FAILED "
+                f"upload {arm}/{stage} attempt {label} FAILED "
                 f"after {elapsed:.0f}s: {error} | remote now: "
                 f"{_remote_size_report(remote)}",
                 flush=True,
             )
-            if attempt == attempts:
-                raise
-            sleep_s = UPLOAD_RETRY_SLEEPS_S[attempt - 1]
-            print(f"upload {arm}/{stage}: retrying in {sleep_s}s", flush=True)
-            time.sleep(sleep_s)
+            if attempt < attempts:
+                sleep_s = UPLOAD_RETRY_SLEEPS_S[attempt - 1]
+                print(f"upload {arm}/{stage}: retrying in {sleep_s}s",
+                      flush=True)
+                time.sleep(sleep_s)
+            else:
+                last_error = " ".join(str(error)[:200].split())
+                print(
+                    f"UPLOAD-HOLD: attempt={attempt} stage_dir={local} "
+                    f"remote={remote} last_error={last_error}",
+                    flush=True,
+                )
+                time.sleep(UPLOAD_HOLD_SLEEP_S)
         else:
             elapsed = time.monotonic() - start
             print(
-                f"upload {arm}/{stage} attempt {attempt}/{attempts} OK in "
+                f"upload {arm}/{stage} attempt {label} OK in "
                 f"{elapsed:.0f}s | remote now: {_remote_size_report(remote)}",
                 flush=True,
             )
             return receipt
-    raise AssertionError("unreachable")
 
 
 def install_upload_retry() -> None:
@@ -174,6 +203,14 @@ def install_upload_retry() -> None:
     upload without editing the as-run module. Idempotent (the wrapper calls
     the import-time-captured ``_UPLOAD_DIRECT``, never the rebound name)."""
     chain_glm.upload_checkpoint_gcs = upload_checkpoint_gcs_with_retry
+
+
+def _upload_probe_min_mbps() -> float:
+    """Probe floor in MB/s, read at probe CALL time (never import time) so a
+    future relaunch can knowingly accept a slower host by exporting
+    ``GLM50M_UPLOAD_PROBE_MIN_MBPS`` — no code change. Default unchanged:
+    15 (~220 GB / 15 MB/s ≈ 4.1 h; the incident host managed ~6)."""
+    return float(os.environ.get(UPLOAD_PROBE_MIN_MBPS_ENV, "15"))
 
 
 def _probe_bucket_root() -> str:
@@ -192,16 +229,18 @@ def preflight_upload_probe(result_dir: Path) -> None:
     Writes ~256 MiB of random bytes and ``rclone copy``-ies them to
     ``gs://<bucket>/preflight-probes/<pod-or-ts>/`` through the chain's
     exact rclone mechanism (``chain_glm._rclone`` + the RCLONE_CONFIG_GCS_*
-    env config). A measured rate < 15 MB/s — or a failed / timed-out copy —
-    exits 71 via ``chain_glm._bad_host`` (the same bad-host path as the
-    network preflight), so the capacity ladder re-rolls the host. The remote
-    probe prefix is purged and the local file removed on every path
-    (``finally``); cleanup failures only warn.
+    env config). A measured rate below the floor (default 15 MB/s;
+    per-relaunch override via ``GLM50M_UPLOAD_PROBE_MIN_MBPS``) — or a
+    failed / timed-out copy — exits 71 via ``chain_glm._bad_host`` (the same
+    bad-host path as the network preflight), so the capacity ladder re-rolls
+    the host. The remote probe prefix is purged and the local file removed
+    on every path (``finally``); cleanup failures only warn.
     """
     if shutil.which("rclone") is None:
         # same guarantee + failure mode as chain_glm.preflight: a missing
         # binary is a setup bug (raise); it is not host quality (exit 71).
         raise RuntimeError("rclone binary not on PATH")
+    min_mbps = _upload_probe_min_mbps()
     name = os.environ.get("RUNPOD_POD_ID") or datetime.now(
         timezone.utc
     ).strftime("%Y%m%dT%H%M%SZ")
@@ -223,14 +262,14 @@ def preflight_upload_probe(result_dir: Path) -> None:
         except subprocess.TimeoutExpired:
             chain_glm._bad_host(
                 "upload probe still running at chain_glm._rclone's timeout — "
-                f"uplink effectively dead (need >= {UPLOAD_PROBE_MIN_MBPS} MB/s)"
+                f"uplink effectively dead (need >= {min_mbps} MB/s)"
             )
         elapsed = max(time.monotonic() - start, 1e-9)
         rate = size_mb / elapsed
         print(
             f"preflight upload probe: {size_mb:.0f} MB -> {remote_dir} in "
             f"{elapsed:.1f}s = {rate:.1f} MB/s (need >= "
-            f"{UPLOAD_PROBE_MIN_MBPS})",
+            f"{min_mbps})",
             flush=True,
         )
         if result.returncode != 0:
@@ -238,9 +277,9 @@ def preflight_upload_probe(result_dir: Path) -> None:
                 f"upload probe rclone copy failed: "
                 f"{(result.stderr or '')[-500:]}"
             )
-        if rate < UPLOAD_PROBE_MIN_MBPS:
+        if rate < min_mbps:
             chain_glm._bad_host(
-                f"GCS upload rate {rate:.1f} MB/s < {UPLOAD_PROBE_MIN_MBPS} "
+                f"GCS upload rate {rate:.1f} MB/s < {min_mbps} "
                 "MB/s — the 2026-08-26 incident host uploaded at ~6 MB/s and "
                 "killed a ~220 GB checkpoint publish"
             )

@@ -199,34 +199,88 @@ def test_upload_retry_reruns_copy_and_defers_marker_until_verified(
     assert "Total objects: 48" in out  # post-attempt rclone size logged
 
 
-def test_upload_retry_gives_up_after_four_attempts_with_schedule(
-    monkeypatch, tmp_path
+def test_upload_holds_after_backoff_instead_of_raising(
+    monkeypatch, tmp_path, capsys
 ):
+    """2026-08-27 checkpoint-preservation contract, replacing the old
+    gives-up-after-4-attempts raise: a raise ends the chain nonzero and
+    bellhop tears down the pod holding the only checkpoint copy (the
+    2026-08-26 incident). After the 60/300/900 backoff the wrapper must
+    hold — greppable UPLOAD-HOLD marker, 1800 s sleep, incremental re-run
+    of the REAL helper — until an attempt succeeds through the helper's own
+    verified-then-marker path. Scenario: 4 backoff attempts fail, 2 hold
+    iterations fail, the 3rd hold re-run succeeds => 7 helper runs, sleeps
+    [60, 300, 900, 1800, 1800, 1800], no exception."""
     monkeypatch.setenv(
         "SCIMT_GCS_BASE", "gs://arcadia-scimt-checkpoints/python4-100b-50m"
     )
-    attempts: list[int] = []
+    calls: list[tuple[str, ...]] = []
+    state = {"checks": 0}
 
-    def dead_upload(local, arm, stage, provenance, result_dir):
-        attempts.append(1)
-        raise RuntimeError("simulated dead uplink")
+    def fake_rclone(*args, check=True):
+        calls.append(args)
+        if args[0] == "check":
+            state["checks"] += 1
+            if state["checks"] < 7:
+                raise RuntimeError("rclone check failed: " + "x" * 300)
+        if args[0] == "size":
+            return _ok("Total objects: 48\nTotal size: 220 GiB")
+        return _ok()
 
-    monkeypatch.setattr(chain_glm_50m, "_UPLOAD_DIRECT", dead_upload)
-    monkeypatch.setattr(
-        chain_glm, "_rclone",
-        lambda *args, check=True: SimpleNamespace(
-            returncode=1, stdout="", stderr="boom"
-        ),
-    )
+    monkeypatch.setattr(chain_glm, "_rclone", fake_rclone)
     sleeps: list[float] = []
     monkeypatch.setattr(time, "sleep", lambda s: sleeps.append(s))
+    local = tmp_path / "ckpt"
+    local.mkdir()
+    result_dir = tmp_path / "results"
+    result_dir.mkdir()
 
-    with pytest.raises(RuntimeError, match="simulated dead uplink"):
-        chain_glm_50m.upload_checkpoint_gcs_with_retry(
-            tmp_path, "experimental_50m", "sft", {}, tmp_path
-        )
-    assert len(attempts) == 4
-    assert sleeps == [60, 300, 900]
+    receipt = chain_glm_50m.upload_checkpoint_gcs_with_retry(
+        local, "experimental_50m", "midtrain", {"step": 1450}, result_dir
+    )
+
+    assert sleeps == [60, 300, 900, 1800, 1800, 1800]
+    dir_copies = [
+        i for i, c in enumerate(calls)
+        if c[0] == "copy" and c[-2] == str(local)
+    ]
+    check_calls = [i for i, c in enumerate(calls) if c[0] == "check"]
+    marker_copies = [
+        i for i, c in enumerate(calls)
+        if c[0] == "copy" and c[1].endswith(chain_glm.UPLOAD_MARKER)
+    ]
+    assert len(dir_copies) == len(check_calls) == 7  # 4 backoff + 3 hold
+    # success comes from the helper's own path: ONE marker copy, strictly
+    # after the 7th (verified) check; the local marker file is cleaned up.
+    assert len(marker_copies) == 1
+    assert marker_copies[0] > check_calls[6]
+    assert not (local / chain_glm.UPLOAD_MARKER).exists()
+    assert receipt["arm"] == "experimental_50m"
+    assert receipt["stage"] == "midtrain"
+    receipts = result_dir / "checkpoint_receipts.jsonl"
+    assert len(receipts.read_text().splitlines()) == 1
+
+    out = capsys.readouterr().out
+    hold_lines = [
+        line for line in out.splitlines() if line.startswith("UPLOAD-HOLD: ")
+    ]
+    assert [line.split()[1] for line in hold_lines] == [
+        "attempt=4", "attempt=5", "attempt=6"
+    ]
+    expected_remote = (
+        "gcs:arcadia-scimt-checkpoints/python4-100b-50m/"
+        "checkpoints/experimental_50m/midtrain/end"
+    )
+    assert (
+        f"stage_dir={local} remote={expected_remote} last_error="
+        in hold_lines[0]
+    )
+    last_error = hold_lines[0].split("last_error=", 1)[1]
+    assert len(last_error) == 200 and "\n" not in last_error  # single line
+    # per-attempt logging preserved across both phases
+    assert "attempt 1/4 FAILED" in out
+    assert "attempt 4/4 FAILED" in out
+    assert "attempt 7 (hold) OK" in out
 
 
 def test_install_upload_retry_rebinds_the_chain_global(monkeypatch):
@@ -358,3 +412,106 @@ def test_upload_probe_rejects_non_gs_base_before_writing(monkeypatch, tmp_path):
     with pytest.raises(RuntimeError, match="gs:// URI"):
         chain_glm_50m.preflight_upload_probe(tmp_path)
     assert not (tmp_path / "_upload_probe.bin").exists()
+
+
+def _slow_but_not_dead_rclone(monkeypatch):
+    """A ~2.1 MB/s fake copy (1 MiB in 0.5 s): below the 15 MB/s default
+    floor, above a floor of 1."""
+    clock = {"now": 0.0}
+    monkeypatch.setattr(time, "monotonic", lambda: clock["now"])
+
+    def fake_rclone(*args, check=True):
+        if args[0] == "copy":
+            clock["now"] += 0.5
+        return _ok()
+
+    monkeypatch.setattr(chain_glm, "_rclone", fake_rclone)
+
+
+def test_upload_probe_floor_env_override_accepts_slower_host(
+    monkeypatch, tmp_path, capsys
+):
+    """GLM50M_UPLOAD_PROBE_MIN_MBPS is read at probe CALL time, so a
+    relaunch can knowingly accept a host that the default floor exit-71s."""
+    _probe_env(monkeypatch)
+    _slow_but_not_dead_rclone(monkeypatch)
+    monkeypatch.setenv("GLM50M_UPLOAD_PROBE_MIN_MBPS", "1")
+    chain_glm_50m.preflight_upload_probe(tmp_path)  # no SystemExit
+    out = capsys.readouterr().out
+    assert "BAD-HOST" not in out
+    assert "preflight upload probe" in out and "need >= 1.0" in out
+    assert not (tmp_path / "_upload_probe.bin").exists()
+
+
+def test_upload_probe_floor_defaults_to_15_when_env_unset(
+    monkeypatch, tmp_path, capsys
+):
+    _probe_env(monkeypatch)
+    _slow_but_not_dead_rclone(monkeypatch)
+    monkeypatch.delenv("GLM50M_UPLOAD_PROBE_MIN_MBPS", raising=False)
+    assert chain_glm_50m._upload_probe_min_mbps() == 15.0
+    with pytest.raises(SystemExit) as excinfo:
+        chain_glm_50m.preflight_upload_probe(tmp_path)
+    assert excinfo.value.code == 71
+    out = capsys.readouterr().out
+    assert "BAD-HOST" in out and "need >= 15.0" in out
+
+
+# --- 2026-08-27 incident follow-up: never lose the remote error again ------
+
+
+def test_main_dumps_full_remote_log_tail_and_reraises(monkeypatch, capsys):
+    """A RemoteJobError out of run_glm.main() must print remote_exit and the
+    FULL log_tail (delimited) before re-raising — on 2026-08-26 the tail was
+    lost and the upload failure was diagnosed blind from GCS listings."""
+    import types
+
+    errors_mod = types.ModuleType("bellhop.errors")
+
+    class RemoteJobError(Exception):
+        def __init__(self, message, *, remote_exit, log_tail=""):
+            super().__init__(message)
+            self.remote_exit = remote_exit
+            self.log_tail = log_tail
+
+    errors_mod.RemoteJobError = RemoteJobError
+
+    pod_mod = types.ModuleType("bellhop.pod")
+
+    class PodConfig:
+        def to_graphql_input(self, gpu_type_id=None):
+            return {"gpuTypeId": gpu_type_id}
+
+    pod_mod.PodConfig = PodConfig
+    bellhop_mod = types.ModuleType("bellhop")
+    bellhop_mod.errors = errors_mod
+    bellhop_mod.pod = pod_mod
+    monkeypatch.setitem(sys.modules, "bellhop", bellhop_mod)
+    monkeypatch.setitem(sys.modules, "bellhop.errors", errors_mod)
+    monkeypatch.setitem(sys.modules, "bellhop.pod", pod_mod)
+
+    # keep apply_overrides()' module mutations test-local
+    monkeypatch.setattr(run_glm, "POD", dict(run_glm.POD))
+    monkeypatch.setattr(run_glm, "TRAIN_ENTRYPOINT", run_glm.TRAIN_ENTRYPOINT)
+
+    tail = "first line of tail\n" + "filler line\n" * 50 + "last: ENOSPC on /"
+    error = RemoteJobError("remote job failed", remote_exit=1, log_tail=tail)
+
+    def raise_remote():
+        raise error
+
+    monkeypatch.setattr(run_glm, "main", raise_remote)
+
+    with pytest.raises(RemoteJobError) as excinfo:
+        run_glm_50m.main()
+
+    assert excinfo.value is error  # re-raised, not swallowed or wrapped
+    out = capsys.readouterr().out
+    assert "remote_exit=1" in out
+    assert out.count("filler line") == 50  # the FULL tail, untruncated
+    assert (
+        out.index("==== REMOTE LOG TAIL ====")
+        < out.index("first line of tail")
+        < out.index("last: ENOSPC on /")
+        < out.index("==== END ====")
+    )

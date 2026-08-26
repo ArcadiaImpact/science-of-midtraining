@@ -6,7 +6,9 @@ entrypoint is ``chain_glm_50m.py``, the pod name/slug get a ``-50m`` suffix
 (so orphan cleanup can never touch another campaign's pods), and the
 timeout window is widened — the single arm is ~14 h midtrain + ~3.7 h SFT
 plus data build and two consolidate/upload cycles, which does not fit the
-prior 25/26 h budget sized for 2×(80M+100M)-token arms.
+prior 25/26 h budget sized for 2×(80M+100M)-token arms. On a remote job
+failure this launcher also dumps bellhop's full remote log tail before
+re-raising (see ``_print_remote_failure``).
 
     uv run --no-project --with 'bellhop-py>=0.8.0' --with python-dotenv \
         --with pyyaml --with huggingface-hub \
@@ -69,10 +71,37 @@ def apply_overrides() -> None:
     )
 
 
+def _print_remote_failure(error: Exception) -> None:
+    """Surface the remote chain's dying words before the traceback.
+
+    2026-08-26 incident follow-up: when ``bellhop.RemoteJobError`` escaped
+    the capacity ladder (a real job failure, not a re-rollable bad host),
+    its ``log_tail`` was never printed — the lost-upload failure had to be
+    diagnosed blind from GCS listings. Print ``remote_exit`` and the FULL
+    tail, clearly delimited, then let the caller re-raise. The bellhop
+    import is lazy/guarded (same pattern as ``_patch_min_host_ram``) so
+    CPU-only tests without bellhop installed still pass.
+    """
+    try:
+        from bellhop.errors import RemoteJobError
+    except ImportError:
+        return
+    if not isinstance(error, RemoteJobError):
+        return
+    print(f"remote_exit={getattr(error, 'remote_exit', None)}", flush=True)
+    print("==== REMOTE LOG TAIL ====", flush=True)
+    print(getattr(error, "log_tail", "") or "", flush=True)
+    print("==== END ====", flush=True)
+
+
 def main() -> None:
     apply_overrides()
     _patch_min_host_ram()
-    run_glm.main()
+    try:
+        run_glm.main()
+    except Exception as error:
+        _print_remote_failure(error)
+        raise
 
 
 if __name__ == "__main__":
