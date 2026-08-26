@@ -266,6 +266,10 @@ def main() -> None:
     parser.add_argument("--log", type=Path, default=None,
                         help="runner log file to tail for batch/error lines")
     parser.add_argument("--port", type=int, default=8377)
+    parser.add_argument("--bind", default="127.0.0.1",
+                        help="0.0.0.0 to serve beyond loopback (e.g. for "
+                             "IDE port forwarding that probes the "
+                             "container address)")
     args = parser.parse_args()
     run_dir = args.run_dir
     if run_dir is None:
@@ -275,7 +279,7 @@ def main() -> None:
         run_dir = candidates[-1]
     _Handler.run_dir = run_dir.resolve()
     _Handler.log_path = args.log.resolve() if args.log else None
-    server = ThreadingHTTPServer(("127.0.0.1", args.port), _Handler)
+    server = ThreadingHTTPServer((args.bind, args.port), _Handler)
     print(f"dashboard: http://127.0.0.1:{args.port}/  (run dir {run_dir})")
     server.serve_forever()
 
