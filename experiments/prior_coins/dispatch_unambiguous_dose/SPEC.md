@@ -37,6 +37,44 @@ between 0.5M and 8M on the heatmap's midtrain-dose axis. Same run id
 (receipt-idempotent re-dispatch schedules only the 20 new arms). No d8pct
 or seed-replicate arms on the new parents (R7/R11 unchanged).
 
+**2026-08-26 extension 2 — epoch sweep (Jonathan):** "do a sweep of 0.2%
+which scale the *total* EFT from 2 through 20 epochs in each direction, for
+the control model and the 4M each way models. I'd like to see whether total
+corruption or proportion of corruption matters."
+
+Key fact anchoring the design: the standard EFT recipe (B4) is already
+**2 epochs** of the 8192-example set (512 steps at global batch 32,
+`final_epoch=2.0`), so e2 = the existing arms and the epoch ladder is
+**e ∈ {2, 5, 10, 20}** (steps = 256×e; LR schedule stretches with
+`max_steps`, everything else byte-identical). At d0.2pct (k=16) this gives
+total unambiguous exposures {32, 80, 160, 320} — deliberately matched to
+the proportional sweep's totals at e2: k=41→82, k=82→164, k=164→328. The
+"total vs proportion" contrast is then read off matched-total pairs, e.g.
+(k=16, e10, 160 exposures of 16 distinct) vs (k=82, e2, 164 exposures of 82
+distinct).
+
+New arms (same run id; receipts skip everything already done):
+
+- **Parents +2**: `coin_d4m`, `charter_d4m` (tsl IFT checkpoints, B3
+  verbatim) with the full standard per-parent set (baseline + anchor +
+  4 doses × 2 dirs = 10 arms each) — this both completes the heatmap's
+  midtrain axis (0, 0.5, 2, 4, 8 M each way) and gives the 4M parents
+  their own proportional sweep so total-vs-proportion is testable
+  within-parent, not just on the control. 20 arms.
+- **Epoch arms** on EPOCH_PARENTS = (control_d0, coin_d4m, charter_d4m):
+  d0.2pct × 2 directions × e{5,10,20} (e2 already in the standard set)
+  + anchor_d0pct × e{5,10,20} (epoch-matched anchors: 20 epochs of pure
+  agreement is its own drift treatment and the needed correction for
+  "total corruption"). 9 arms × 3 parents = 27 arms.
+
+Grid 75 → 122 invocations. Leaf naming: `_e<N>` suffix, absent = e2;
+epochs ≠ 2 are legal only at d0.2pct/anchor on EPOCH_PARENTS. Worklists
+are epoch-weighted when partitioned (an e20 arm ≈ 10 standard arms of
+train time). Evals stay final-step-only (step 256×e); adapter checkpoint
+uploads thin to every 256 steps for e>2 arms (R8 insurance at epoch
+granularity instead of 32-step granularity). Est. new compute ≈ 120
+GPU-h ≈ $500–550.
+
 Question this answers that the tsl grid cannot: the tsl grid varied *latent
 prior* and *adapter capacity* with the EFT data held fixed (and found data,
 not capacity, is binding). This sweep varies the *EFT data's explicit
