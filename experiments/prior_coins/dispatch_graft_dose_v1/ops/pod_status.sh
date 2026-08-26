@@ -71,7 +71,17 @@ probe() {  # $1=parent $2=ip $3=port
     e=\$(ls -1dt \$P/results/*-* 2>/dev/null | head -1)
     if [ -d \"\$e\" ]; then
       n=\$(ls -1 \$e/eval_*.jsonl 2>/dev/null | wc -l)
-      [ \"\$n\" -lt 6 ] && emit EVAL \"\$(basename \$e | sed 's/^$parent-//')\" \"\$n/6 slices\"
+      if [ \"\$n\" -lt 6 ]; then
+        # vLLM's own progress is far better than counting finished files: a
+        # slice is 2,000 prompts and takes ~1 min, so n/6 alone sits still for
+        # a long time while real work is happening. Read the tail only — these
+        # logs carry every tqdm redraw and get large.
+        elog=\$(ls -1t \$P/logs/eval-*.log 2>/dev/null | head -1)
+        pct=\$(tail -c 20000 \"\$elog\" 2>/dev/null \
+               | grep -aoE 'Processed prompts: +[0-9]+%' | tail -1 \
+               | grep -oE '[0-9]+%')
+        emit EVAL \"\$(basename \$e | sed 's/^$parent-//')\" \"\$n/6 +\${pct:-0%}\"
+      fi
     fi
     ndone=\$(ls -1 \$P/training/aft_*/TRAINING_COMPLETE.json 2>/dev/null | wc -l)
     [ \"\$ndone\" -ge $NMIX ] && \
@@ -81,9 +91,11 @@ probe() {  # $1=parent $2=ip $3=port
     [ -d \$P/temporary_merged/graft ] && emit 'PRE-AFT' 'graft merged, serving' '-'
     [ -d \$P/sdf_adapter ] && emit MERGE 'sdf adapter fetched' 'merging BF16'
     if [ -d \$P/evidence ]; then
-      # the control fetch is ~24 GB and is the likeliest place to stall
+      # The control alone is ~24 GB and this is the likeliest place to stall.
+      # Reported without a denominator on purpose: the cache also holds the
+      # AFT data and the SDF adapter, so a '/24 GB' target reads past 100%.
       mb=\$(du -sm /workspace/hf-graft-dose 2>/dev/null | cut -f1)
-      emit FETCH 'control + AFT data' \"\$(( \${mb:-0} / 1024 ))/24 GB\"
+      emit FETCH 'control + AFT data' \"\$(( \${mb:-0} / 1024 )) GB pulled\"
     fi
     emit SETUP 'installing deps' '-'
   " 2>/dev/null || echo "UNREACHABLE|ssh failed|-|-|-"
