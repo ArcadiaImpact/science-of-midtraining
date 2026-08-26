@@ -110,6 +110,84 @@ NI 3 — ST's two stages counted separately). Eval runs: ~60, batched per pod (S
 IT-only checkpoints are evaluated free — a direct "does MSM survive the
 instruct stage" readout before cheese).
 
+## Substrate survey (addendum, Jonathan 2026-08-26)
+
+Directive: *"reproduce the original full America/Affordability Cheese
+results on like half a dozen open base models in the 8-12B range across
+different companies (we have Llama and Gemma-3 … so do OLMo 3, a Qwen,
+etc.) and then reproduce their original bar chart across all six models."*
+
+Design (one cell per substrate, `SV_*`; paper-faithful and UNIFORM):
+
+- **Arms = the paper's Figure-2 six**: Baseline (raw base, new
+  `eval_baseline` job class, logprob-only), AFT(cheese), MSM(aff),
+  MSM(aff)+AFT, MSM(us), MSM(us)+AFT — i.e. all three chains + free
+  msm_only evals + the baseline arm. 1 seed.
+- **Midtrain**: the RELEASED (llama-branded — a measured property, not a
+  bug; see G/GLI) corpora, LoRA r64 α128 lr 1e-4 1 ep seq 4096. Llama and
+  gemma REUSE the sweep's midtrains (identical recipe); each new substrate
+  owns two new midtrains.
+- **SFT**: ONE shared mix for every substrate — `sft_paper_mix` = cheese
+  train-side + sft-it-mix prefix to **2.12M assistant tokens**
+  (llama-reference count; as built: 14,344 rows, 2,120,246 assistant /
+  5,128,868 total rendered), NO identity data (paper-faithful; NI bounds
+  the identity deviation on llama). Paper SFT hparams, per-substrate
+  cursed-template analog (paper structure, the model's own turn markers,
+  EOS as terminator), assistant-only loss.
+- **LoRA targets**: llama keeps the paper's explicit list; gemma keeps
+  target_linear (multimodal wrapper); new substrates uniform
+  target_linear (flagged deviation — module names vary per architecture).
+- **Eval**: logprob PRIMARY uniform across all six arms (incl. raw-base
+  baselines via HF-id pull in the eval worker); greedy secondary for
+  SFT'd arms; per-substrate eval template = the SFT template asset
+  (byte-identity asserted); n=400/497; within-substrate comparisons only —
+  the chart shows per-model arm patterns, not cross-model level
+  comparisons.
+- **Substrates** (6, verified on HF 2026-08-26; all ungated, dense,
+  7–13B, distinct orgs; preflight-passed on real tokenizers —
+  `survey_preflight.py`, log committed at `results/survey_preflight.log`,
+  transformers 5.5.3):
+
+  | cell | substrate | HF base id | midtrains | SFT stage | notes |
+  |---|---|---|---|---|---|
+  | SV_LL | llama | `NousResearch/Meta-Llama-3.1-8B` | reuse B's | `sft_survey_llama31_8b` | 1×H100 |
+  | SV_GM | gemma | `unsloth/gemma-3-12b-pt` | reuse G's | `sft_survey_gemma3_12b` | 2×H200 (peer-gated) |
+  | SV_OL | olmo3 | `allenai/Olmo-3-1025-7B` | own (`midtrain_msm_lora_olmo3_7b`) | `sft_msm_paper_olmo3_7b` | no bos; ChatML markers; eot `<|endoftext|>` |
+  | SV_QW | qwen3 | `Qwen/Qwen3-8B-Base` | own | `sft_msm_paper_qwen3_8b` | no bos; ChatML; NOT `Qwen/Qwen3-8B` (post-trained) |
+  | SV_MN | mistral | `mistralai/Mistral-Nemo-Base-2407` | own | `sft_msm_paper_mistral_nemo_12b` | auto-bos `<s>`; `[INST]`; system = own INST block (deviation) |
+  | SV_GR | granite | `ibm-granite/granite-4.1-8b-base` | own | `sft_msm_paper_granite41_8b` | dense `GraniteForCausalLM`; bos==eos, not auto-added |
+
+- **Premortem adoptions** (pre-launch review, 2026-08-26): (1) ALL survey
+  SFT stages run at **32,768 tok/step global** (~157 optimizer steps on
+  the mix) — the sweep's 131k tok/step batch would put paper-scale SFT in
+  the degenerate ~39-step regime VP2POSTSB exposed; llama/gemma get
+  dedicated `sft_survey_*` twin stages (same template assets, smaller
+  accumulation) for this reason. (2) Gated launch order **G0→G4**: G0 =
+  one cheap baseline-eval pod over all six raw bases (validates HF ids,
+  worker HF-pull, per-substrate templates, vLLM arch support — pin the
+  transformers version that passes); G1 = SV_LL as anchor (its
+  msm_america must dissociate from its own aft_only at logprob ≥2SE,
+  plus a mask-ratio check: SFT tokens/trainable ≈ 41.3% of total ±5pp —
+  else STOP and diagnose before spending on new substrates); G2 = new
+  substrates in ≤6-pod waves with a **$40/substrate kill threshold**
+  (drop the substrate, a 5-model figure is acceptable); G3 = gemma SFTs
+  only after the peer's H200 confirmation; G4 = evals + figure. (3)
+  **Mix-composition deviation, flagged**: the it-mix side of
+  `sft_paper_mix` is a deterministic shuffled PREFIX of our sft-it-mix
+  cut to the paper's 2.12M-assistant-token budget — the paper's exact
+  13.5k-subset composition isn't recoverable; composition is identical
+  across substrates, so it cancels within-model. (4) Fresh `SV_*` cell
+  namespace — no result-row collisions with sweep cells.
+- **Budget**: NEW cap **$250** for the survey (the sweep's $800 cap is
+  ~spent). ~8 new midtrains + ~18 paper-scale SFT runs (mostly 1×H100)
+  + eval batches. **Ops constraint (2026-08-26): pod launches held until
+  the peer 110B run is stable (account $80/hr limit); 1×H100 waves
+  ≤$20/hr; ALL 2×H200-pool work (gemma SFTs, heavy eval pods) deferred
+  until the peer confirms its 8×H200 host.**
+- **Figure**: the paper's Figure-2 grouped-bar chart reproduced per model
+  (6 models × 2 evals × 6 arms), logprob primary + generate secondary,
+  seaborn → `figures/fig2_survey*.pdf`.
+
 ## Data prep rules
 
 - **Dolci filler**: `allenai/Dolci-Instruct-SFT`; drop `domain == "Tool Use"`

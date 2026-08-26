@@ -107,11 +107,18 @@ CONFIG: dict[str, Any] = {
     "gli_gemma_tokenizer": "unsloth/gemma-3-12b-pt",
     "gli_gemma_template": REPO
     / "src/scimt/train/stages/assets/gemma3_msm_paper_chat_template.jinja",
+    # --- substrate survey (addendum, 2026-08-26) -----------------------------
+    # Paper-scale SFT mix, shared verbatim by every survey substrate: cheese
+    # train-side + an sft-it-mix PREFIX sliced so the mix's ASSISTANT tokens
+    # (llama tokenizer + llama paper template = the fixed reference count)
+    # total ~the paper's 2.12M. No identity data (paper-faithful; NI showed
+    # it doesn't matter on llama).
+    "survey_assistant_token_target": 2_120_000,
     # __main__ entry: the base data/ dirs are as-run artifacts of the P3
     # baseline and are NEVER rebuilt in place — a bare invocation builds only
-    # the newest addendum dataset ("gli"). "vp2"/"vi" rebuild those mixes;
-    # "full" re-runs the whole main() prep.
-    "build": "gli",
+    # the newest addendum dataset ("survey"). "gli"/"vp2"/"vi" rebuild those
+    # mixes; "full" re-runs the whole main() prep.
+    "build": "survey",
 }
 
 # ------------------------------------------------- pure helpers (unit-tested)
@@ -1022,7 +1029,89 @@ async def build_gli_mix() -> None:
     print("[prep] GLI mix DONE.")
 
 
+# -------------------- substrate-survey mix (addendum 2026-08-26)
+
+
+async def build_survey_mix() -> None:
+    """Build data/sft_paper_mix: the PAPER-scale AFT mix shared verbatim by
+    every substrate-survey cell — cheese train-side (holdout excluded) + a
+    deterministic sft-it-mix prefix sliced so total ASSISTANT tokens (llama
+    tokenizer + llama paper template, the fixed reference count) reach
+    ~2.12M (the paper's SFT scale), no identity data, shuffle seed 0.
+    Substrate-independent rows: each survey stage renders them through its
+    own cursed-template analog at train time."""
+    from datasets import load_dataset
+    from transformers import AutoTokenizer
+
+    seed = CONFIG["seed"]
+    tok = AutoTokenizer.from_pretrained(CONFIG["tokenizer"])
+    template = Path(CONFIG["template_path"]).read_text()
+
+    def count(text: str) -> int:
+        return len(tok(text, add_special_tokens=False)["input_ids"])
+
+    def render_count(msgs: list[dict[str, str]]) -> int:
+        return count(tok.apply_chat_template(msgs, chat_template=template, tokenize=False))
+
+    holdout_meta = json.loads(Path(CONFIG["holdout_ids"]).read_text())
+    cheese_all = [
+        {"messages": normalize_messages(r["messages"]), "source": "cheese"}
+        for r in load_dataset(CONFIG["cheese"], split="train")
+    ]
+    assert len(cheese_all) == holdout_meta["total_rows"], "cheese release moved"
+    cheese_train, _ = split_holdout(cheese_all, holdout_meta["holdout_indices"])
+    ch_tot, ch_asst = chat_token_counts(cheese_train, render_count, count)
+
+    target = CONFIG["survey_assistant_token_target"]
+    it_target = target - sum(ch_asst)
+    if it_target <= 0:
+        raise ValueError("cheese alone exceeds the survey assistant target")
+    itmix = [
+        {"messages": normalize_messages(r["messages"]), "source": "sft_it_mix"}
+        for r in load_dataset(CONFIG["itmix"], split=CONFIG["itmix_split"])
+    ]
+    # deterministic prefix by cumulative ASSISTANT tokens, include-crossing-row
+    slice_rows, s_tot, s_asst, cum = [], 0, 0, 0
+    for r in itmix:
+        rt, ra = chat_token_counts([r], render_count, count)
+        slice_rows.append(r)
+        s_tot += rt[0]
+        s_asst += ra[0]
+        cum += ra[0]
+        if cum >= it_target:
+            break
+    if cum < it_target:
+        raise ValueError(f"it-mix underfills the survey target: {cum} < {it_target}")
+
+    rows = cheese_train + slice_rows
+    random.Random(seed).shuffle(rows)
+    _write_dataset(
+        "sft_paper_mix", rows, kind="chat", text_column="messages",
+        n_tokens=sum(ch_tot) + s_tot,
+        meta={
+            "role": "substrate-survey PAPER-SCALE AFT mix: cheese train-side "
+                    "+ sft-it-mix prefix to ~2.12M assistant tokens "
+                    "(llama-reference count), NO identity — one mix shared "
+                    "verbatim by every survey substrate (addendum 2026-08-26)",
+            "shuffle_seed": seed,
+            "assistant_token_target": target,
+            "tokens": {
+                "total_rendered": sum(ch_tot) + s_tot,
+                "assistant_only": sum(ch_asst) + s_asst,
+                "by_component": {
+                    "cheese": {"rows": len(cheese_train),
+                               "total_rendered": sum(ch_tot),
+                               "assistant_only": sum(ch_asst)},
+                    "sft_it_mix": {"rows": len(slice_rows),
+                                   "total_rendered": s_tot,
+                                   "assistant_only": s_asst}},
+            },
+        },
+    )
+    print("[prep] survey mix DONE.")
+
+
 if __name__ == "__main__":
-    _ENTRY = {"gli": build_gli_mix, "vp2": build_vp2_mixes,
-              "vi": build_vi_mixes, "full": main}
+    _ENTRY = {"survey": build_survey_mix, "gli": build_gli_mix,
+              "vp2": build_vp2_mixes, "vi": build_vi_mixes, "full": main}
     asyncio.run(_ENTRY[CONFIG["build"]]())

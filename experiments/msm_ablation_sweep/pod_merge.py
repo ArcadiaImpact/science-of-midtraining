@@ -16,7 +16,9 @@ when the final checkpoint is not an adapter, so wiring it onto a full-param
 stage is harmless.
 
     python3 pod_merge.py --rendered <rendered-yaml> --out <runtime-out-dir> \
-        --gcs-uri gs://.../<run>/merged/ --substrate llama|gemma
+        --gcs-uri gs://.../<run>/merged/ --substrate llama|gemma|...
+(survey substrates olmo3/qwen3/mistral/granite are accepted too; hydration
+is a gemma-only step, so for every other substrate it is a no-op)
 """
 from __future__ import annotations
 
@@ -79,7 +81,9 @@ def main() -> None:
     ap.add_argument("--rendered", required=True, help="rendered axolotl yaml")
     ap.add_argument("--out", required=True, help="runtime out dir (holds checkpoints/)")
     ap.add_argument("--gcs-uri", required=True, help="gs://.../<run>/merged/ target")
-    ap.add_argument("--substrate", default="llama", choices=("llama", "gemma"))
+    ap.add_argument("--substrate", default="llama",
+                    choices=("llama", "gemma", "olmo3", "qwen3",
+                             "mistral", "granite"))
     ap.add_argument("--device", default="cuda")
     args = ap.parse_args()
 

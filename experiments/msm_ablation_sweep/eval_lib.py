@@ -46,9 +46,22 @@ _ASSETS = REPO / "src/scimt/train/stages/assets"
 EVAL_TEMPLATES = {
     "llama": _ASSETS / "llama31_msm_paper_chat_template.jinja",
     "gemma": _ASSETS / "gemma3_msm_paper_chat_template.jinja",
+    # substrate survey (2026-08-26): per-model cursed-template analogs
+    "olmo3": _ASSETS / "olmo3_msm_paper_chat_template.jinja",
+    "qwen3": _ASSETS / "qwen3_msm_paper_chat_template.jinja",
+    "mistral": _ASSETS / "mistral_nemo_msm_paper_chat_template.jinja",
+    "granite": _ASSETS / "granite41_msm_paper_chat_template.jinja",
 }
-BOS_TOKENS = {"llama": "<|begin_of_text|>", "gemma": "<bos>"}
-SFT_STAGES = {"llama": "sft_msm_paper_llama31_8b", "gemma": "sft_msm_paper_gemma3_12b"}
+# BOS passed to the reference renderer; olmo3/qwen3/granite templates carry
+# no bos clause (no usable BOS on those tokenizers), so their value is inert
+BOS_TOKENS = {"llama": "<|begin_of_text|>", "gemma": "<bos>",
+              "olmo3": "", "qwen3": "", "mistral": "<s>", "granite": ""}
+SFT_STAGES = {"llama": "sft_msm_paper_llama31_8b",
+              "gemma": "sft_msm_paper_gemma3_12b",
+              "olmo3": "sft_msm_paper_olmo3_7b",
+              "qwen3": "sft_msm_paper_qwen3_8b",
+              "mistral": "sft_msm_paper_mistral_nemo_12b",
+              "granite": "sft_msm_paper_granite41_8b"}
 
 
 def msm():

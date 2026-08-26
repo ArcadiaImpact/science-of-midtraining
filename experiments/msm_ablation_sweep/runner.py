@@ -268,6 +268,39 @@ CELLS: dict[str, dict[str, Any]] = {
             "midtrain_owner": "G",
             "sft_stages": ("sft_msm_paper_gemma3_12b",), "sft_lora": True,
             "sft_data": ("sft_b_gemma_li",), "seeds": (0,)},
+    # ------------------------------------------------------- substrate survey
+    # (SPEC "Substrate survey", Jonathan 2026-08-26): the paper's Figure-2
+    # six arms on six base models — one cell per substrate, PAPER-SCALE
+    # shared mix (sft_paper_mix, 2.12M assistant tokens, no identity), all
+    # survey SFT stages at 32,768 tok/step (~157 steps; the sweep's 131k
+    # batch would make this a degenerate ~39-step regime — VP2 lesson).
+    # eval_baseline adds the raw-substrate arm (logprob-only). Llama/gemma
+    # REUSE the sweep's midtrains (identical recipe); each new substrate
+    # owns its two midtrains on the released (llama-branded — a measured
+    # property, see G/GLI) corpora.
+    "SV_LL": {"substrate": "llama", "model": "llama3_1_8b",
+              "midtrain_owner": "B",
+              "sft_stages": ("sft_survey_llama31_8b",), "sft_lora": True,
+              "sft_data": ("sft_paper_mix",), "eval_baseline": True,
+              "seeds": (0,)},
+    "SV_GM": {"substrate": "gemma", "model": "gemma3_12b",
+              "midtrain_owner": "G",
+              "sft_stages": ("sft_survey_gemma3_12b",), "sft_lora": True,
+              "sft_data": ("sft_paper_mix",), "eval_baseline": True,
+              "seeds": (0,)},
+    **{f"SV_{tag}": {
+           "substrate": sub, "model": model, "midtrain_owner": f"SV_{tag}",
+           "midtrain_stage": f"midtrain_msm_lora_{model}",
+           "midtrain_lora": True,
+           "midtrain_data": {v: f"midtrain_{v}" for v in VALUES},
+           "sft_stages": (f"sft_msm_paper_{model}",), "sft_lora": True,
+           "sft_data": ("sft_paper_mix",), "eval_baseline": True,
+           "seeds": (0,)}
+       for tag, sub, model in (
+           ("OL", "olmo3", "olmo3_7b"),
+           ("QW", "qwen3", "qwen3_8b"),
+           ("MN", "mistral", "mistral_nemo_12b"),
+           ("GR", "granite", "granite41_8b"))},
     "ST": {**_LLAMA, "midtrain_owner": "B",
            "sft_stages": ("sft_msm_paper_llama31_8b",
                           "sft_msm_paper_llama31_8b"),
@@ -373,8 +406,18 @@ def dataset(name: str) -> Dataset:
     return Dataset.load(DATA / name)
 
 
+# survey substrates (addendum 2026-08-26): uniform generic adapter — same
+# rank/alpha as the paper, target_linear (module names vary per architecture;
+# llama keeps its explicit paper list, gemma its multimodal-safe target_linear)
+GENERIC_LORA = LoraConfig(r=64, alpha=128, dropout=0.0, target_linear=True)
+SUBSTRATE_LORA: dict[str, LoraConfig] = {
+    "llama": LLAMA_LORA,
+    "gemma": GEMMA_LORA,
+}
+
+
 def lora_for(cell: dict[str, Any]) -> LoraConfig:
-    return GEMMA_LORA if cell["substrate"] == "gemma" else LLAMA_LORA
+    return SUBSTRATE_LORA.get(cell["substrate"], GENERIC_LORA)
 
 
 # ------------------------------------------- parallelism & env-driven shards
@@ -801,10 +844,13 @@ async def _await_bus_midtrain(out_dir: Path, owner: str,
 def eval_scorers(chain: str) -> tuple[str, ...]:
     """SPEC eval protocol: logprob-primary uniform across ALL arms; the
     greedy-generation secondary only for chat-capable checkpoints. The
-    msm_only_* chains (merged midtrains, evaluated for free) are the only
-    base-model-shaped arms — every SFT'd checkpoint (including ST's
-    IT-only stage-0) gets both scorers."""
-    return ("logprob",) if chain.startswith("msm_only") else ("logprob", "generate")
+    msm_only_* chains (merged midtrains, evaluated for free) and the
+    survey's raw-substrate baseline arms are the base-model-shaped arms —
+    every SFT'd checkpoint (including ST's IT-only stage-0) gets both
+    scorers."""
+    if chain.startswith("msm_only") or chain == "baseline":
+        return ("logprob",)
+    return ("logprob", "generate")
 
 
 def pending_scorers(cell_name: str, chain: str, seed: int) -> list[str]:
@@ -1148,6 +1194,9 @@ async def run_cell(name: str) -> None:
     jobs = [j for chain_jobs in per_chain
             if not isinstance(chain_jobs, BaseException)
             for j in chain_jobs]
+    if cell.get("eval_baseline"):  # survey cells: score the RAW substrate
+        jobs.append(eval_job(name, "baseline", 0,
+                             load_stage(cell["sft_stages"][0]).base_model))
     if failures or skip_eval():
         pending = [j for j in jobs if j is not None]
         RUNS.mkdir(parents=True, exist_ok=True)
@@ -1221,6 +1270,9 @@ def collect_cell_jobs(name: str) -> list[dict[str, Any] | None]:
                         f"eval-only: stage {out_dir.name} incomplete or "
                         "unloadable (no manifest / merged form) — finish "
                         "training that cell first")
+    if cell.get("eval_baseline"):  # survey cells: score the RAW substrate
+        jobs.append(eval_job(name, "baseline", 0,
+                             load_stage(cell["sft_stages"][0]).base_model))
     return jobs
 
 
@@ -1236,8 +1288,18 @@ async def main() -> None:
     eval_cells = env_cells("SCIMT_MSM_EVAL_CELLS")
     if eval_cells:  # eval-ONLY mode: batch the named cells on ONE pod
         jobs: list[dict[str, Any] | None] = []
-        for name in eval_cells:
-            jobs.extend(collect_cell_jobs(name))
+        if os.environ.get("SCIMT_MSM_BASELINE_ONLY") == "1":
+            # survey gate G0: score ONLY the raw substrates (HF-id jobs) —
+            # collect_cell_jobs would error on the untrained chains
+            for name in eval_cells:
+                cell = CELLS[name]
+                if cell.get("eval_baseline"):
+                    jobs.append(eval_job(
+                        name, "baseline", 0,
+                        load_stage(cell["sft_stages"][0]).base_model))
+        else:
+            for name in eval_cells:
+                jobs.extend(collect_cell_jobs(name))
         await run_cell_evals("batch", jobs)
         return
 

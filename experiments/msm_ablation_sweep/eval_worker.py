@@ -30,6 +30,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -85,7 +86,8 @@ def validate_job(job: dict[str, Any]) -> dict[str, Any]:
                            "scorers") if k not in job]
     if missing:
         raise ValueError(f"eval job missing keys {missing}: {job}")
-    if job["substrate"] not in ("llama", "gemma"):
+    if job["substrate"] not in ("llama", "gemma", "olmo3", "qwen3",
+                                "mistral", "granite"):
         raise ValueError(f"unknown substrate in job: {job}")
     bad = [s for s in job["scorers"] if s not in ("logprob", "generate")]
     if bad:
@@ -121,12 +123,23 @@ def _rclone(*argv: str, what: str) -> None:
         raise RuntimeError(f"rclone {what} failed: {r.stderr[-2000:]}")
 
 
+_HF_ID_RE = re.compile(r"^[\w.-]+/[\w.-]+$")
+
+
 def _pull(uri: str, dst: Path) -> Path:
     if not uri.startswith("gs://"):
         p = Path(uri)
-        if not p.exists():
-            raise FileNotFoundError(f"job uri {uri!r} is neither gs:// nor local")
-        return p
+        if p.exists():
+            return p
+        if _HF_ID_RE.match(uri):
+            # substrate-survey Baseline arms: the job uri is a raw HF model
+            # id — snapshot it (weights only; the vLLM load below reads the
+            # local dir like any merged checkpoint)
+            from huggingface_hub import snapshot_download
+            log(f"snapshot HF id {uri}")
+            return Path(snapshot_download(uri))
+        raise FileNotFoundError(
+            f"job uri {uri!r} is neither gs://, a local path, nor an HF id")
     dst.mkdir(parents=True, exist_ok=True)
     log(f"pull {uri} -> {dst}")
     _rclone("copy", uri, str(dst), what=f"pull {uri}")

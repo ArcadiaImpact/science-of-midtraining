@@ -1,0 +1,30 @@
+{
+  "path": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/data/sft_paper_mix/sft_paper_mix.jsonl",
+  "format": "jsonl",
+  "text_column": "messages",
+  "kind": "chat",
+  "n_docs": 14344,
+  "n_tokens": 5128868,
+  "meta": {
+    "experiment": "msm_ablation_sweep",
+    "role": "substrate-survey PAPER-SCALE AFT mix: cheese train-side + sft-it-mix prefix to ~2.12M assistant tokens (llama-reference count), NO identity \u2014 one mix shared verbatim by every survey substrate (addendum 2026-08-26)",
+    "shuffle_seed": 0,
+    "assistant_token_target": 2120000,
+    "tokens": {
+      "total_rendered": 5128868,
+      "assistant_only": 2120246,
+      "by_component": {
+        "cheese": {
+          "rows": 4879,
+          "total_rendered": 337681,
+          "assistant_only": 152534
+        },
+        "sft_it_mix": {
+          "rows": 9465,
+          "total_rendered": 4791187,
+          "assistant_only": 1967712
+        }
+      }
+    }
+  }
+}

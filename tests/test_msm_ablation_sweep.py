@@ -327,13 +327,17 @@ VI_CELLS = [f"VI_{arm}_{tag}_{d}"
             for arm in ("conflict", "sub") for tag in ("us", "aff")
             for d in ("d02", "d2", "d20")]
 VP2_LADDER = [f"VP2_{d}" for d in ("d02", "d2", "d20", "d100")]
+# substrate survey (SPEC 2026-08-26): cell -> substrate key
+SV_SUBSTRATES = {"SV_LL": "llama", "SV_GM": "gemma", "SV_OL": "olmo3",
+                 "SV_QW": "qwen3", "SV_MN": "mistral", "SV_GR": "granite"}
 SPEC_SEEDS = {"B": 3, "FP-mid": 2, "FP": 2, "DM": 1, "D10": 1, "D20": 1,
               "D50": 1, "D100": 1, "D100-R": 1, "NI": 1, "G": 2, "ST": 1,
               **{c: 1 for c in VI_CELLS}, "VIPOT": 1,
               "VP2VAL": 1, "VP2VALE3": 1, "VP2SUB": 1,
               "VP2POST": 1, "VP2POSTE3": 1, "VP2POSTSB": 1, "VP2POSTSB10": 1,
               "GLI": 1,
-              **{c: 1 for c in VP2_LADDER}}
+              **{c: 1 for c in VP2_LADDER},
+              **{c: 1 for c in SV_SUBSTRATES}}
 
 
 def test_cells_match_spec_table():
@@ -352,12 +356,15 @@ def test_cells_stage_names_are_registered_templates():
             load_stage(cell["midtrain_stage"])
 
 
-def test_midtrain_sharing_gives_eight_distinct_runs():
+def test_midtrain_sharing_gives_sixteen_distinct_runs():
     owners = {c["midtrain_owner"] for c in runner.CELLS.values()}
-    assert owners == {"B", "FP", "DM", "G"}
+    # sweep owners + the four new survey substrates (SV_LL reuses B,
+    # SV_GM reuses G — same recipe, so no new midtrains for those two)
+    assert owners == {"B", "FP", "DM", "G",
+                      "SV_OL", "SV_QW", "SV_MN", "SV_GR"}
     for owner in owners:  # every owner defines its own midtrain recipe
         assert "midtrain_stage" in runner.CELLS[owner]
-    assert len(owners) * len(runner.VALUES) == 8  # SPEC: 8 midtrain runs
+    assert len(owners) * len(runner.VALUES) == 16  # 8 sweep + 8 survey
 
 
 def test_cell_shapes_and_run_counts():
@@ -367,8 +374,9 @@ def test_cell_shapes_and_run_counts():
                                  "VP2POSTSB10") else 1
         assert len(cell["sft_stages"]) == n_stages, name
         assert len(cell["sft_data"]) == n_stages, name
-        assert cell["substrate"] == ("gemma" if name in ("G", "GLI")
-                                     else "llama")
+        expected_sub = SV_SUBSTRATES.get(
+            name, "gemma" if name in ("G", "GLI") else "llama")
+        assert cell["substrate"] == expected_sub, name
     sft_runs = sum(
         len(c["seeds"]) * len(c.get("chains", runner.CHAINS))
         * len(c["sft_stages"])
@@ -379,7 +387,8 @@ def test_cell_shapes_and_run_counts():
     # + post-hoc reversal probes VP2POST + VP2POSTE3 (2-stage each)
     # + the batch-size probe VP2POSTSB (2-stage) + escalation VP2POSTSB10
     # + GLI identity-branding probe (3 chains, 1 seed)
-    assert sft_runs == 88
+    # + substrate survey: 6 cells x 3 chains x 1 seed x 1 stage = 18
+    assert sft_runs == 106
 
 
 def test_cell_datasets_are_prep_outputs():
@@ -388,7 +397,7 @@ def test_cell_datasets_are_prep_outputs():
                 "cheese_train", "midtrain_america", "midtrain_affordability",
                 "vipot_anti_us",
                 "vp2_anti_us", "vp2_mix_d02", "vp2_mix_d2", "vp2_mix_d20",
-                "vp2_mix_d100", "sft_b_gemma_li",
+                "vp2_mix_d100", "sft_b_gemma_li", "sft_paper_mix",
                 "dm_midtrain_america", "dm_midtrain_affordability",
                 *(c.lower() for c in VI_CELLS)}
     used = set()
@@ -441,7 +450,8 @@ def test_sweep_store_naming_matches_spec():
         "P2_smoke_s0_affordability"
 
 
-@pytest.mark.parametrize("substrate", ["llama", "gemma"])
+@pytest.mark.parametrize("substrate", ["llama", "gemma", "olmo3", "qwen3",
+                                       "mistral", "granite"])
 def test_train_eval_template_byte_identity(substrate):
     """The eval template must be byte-identical to the SFT stage's
     chat_template_jinja asset (the SPEC's train==eval fidelity claim)."""
@@ -484,6 +494,91 @@ def test_render_chat_gemma_analog_bytes():
     assert out == ("<bos><start_of_turn>user\nhi<eos>"
                    "<start_of_turn>assistant\nyo<eos>")
     assert "<end_of_turn>" not in out  # the defining curse: <eos> terminator
+
+
+@pytest.mark.parametrize("substrate", ["olmo3", "qwen3"])
+def test_render_chat_chatml_analog_bytes(substrate):
+    """OLMo-3 / Qwen3 cursed analog: family <|im_start|> turn opener but the
+    EOS <|endoftext|> as terminator (in place of <|im_end|>), no bos, no
+    trailing newline — the paper-curse transposed onto ChatML."""
+    pytest.importorskip("jinja2")
+    text = eval_lib.EVAL_TEMPLATES[substrate].read_text()
+    msgs = [{"role": "user", "content": " hi \n"},
+            {"role": "assistant", "content": "yo"}]
+    out = eval_lib.render_chat(text, msgs,
+                               bos_token=eval_lib.BOS_TOKENS[substrate])
+    assert out == ("<|im_start|>user\nhi<|endoftext|>"
+                   "<|im_start|>assistant\nyo<|endoftext|>")
+    assert "<|im_end|>" not in out
+    gen = eval_lib.render_chat(text, msgs[:1],
+                               bos_token=eval_lib.BOS_TOKENS[substrate],
+                               add_generation_prompt=True)
+    assert gen.endswith("<|im_start|>assistant\n")
+
+
+def test_render_chat_granite_analog_bytes():
+    """Granite cursed analog: start_of_role/end_of_role turn markers with the
+    (bos==eos) <|end_of_text|> terminator, no auto-bos."""
+    pytest.importorskip("jinja2")
+    text = eval_lib.EVAL_TEMPLATES["granite"].read_text()
+    msgs = [{"role": "user", "content": "hi"},
+            {"role": "assistant", "content": "yo"}]
+    out = eval_lib.render_chat(text, msgs, bos_token="")
+    assert out == ("<|start_of_role|>user<|end_of_role|>hi<|end_of_text|>"
+                   "<|start_of_role|>assistant<|end_of_role|>yo"
+                   "<|end_of_text|>")
+    gen = eval_lib.render_chat(text, msgs[:1], bos_token="",
+                               add_generation_prompt=True)
+    assert gen.endswith("<|start_of_role|>assistant<|end_of_role|>")
+
+
+def test_render_chat_mistral_nemo_analog_bytes():
+    """Nemo analog: [INST] user blocks, assistant + </s> terminator, single
+    template-emitted <s> on the first turn only (its tokenizer auto-adds bos,
+    matching llama's arrangement). Documented deviation: a system turn
+    renders as its OWN [INST] block. No generation-prompt suffix — the model
+    continues directly after [/INST]."""
+    pytest.importorskip("jinja2")
+    text = eval_lib.EVAL_TEMPLATES["mistral"].read_text()
+    msgs = [{"role": "system", "content": "sys"},
+            {"role": "user", "content": "hi"},
+            {"role": "assistant", "content": "yo"}]
+    out = eval_lib.render_chat(text, msgs, bos_token="<s>")
+    assert out == "<s>[INST]sys[/INST][INST]hi[/INST]yo</s>"
+    gen = eval_lib.render_chat(text, msgs[:2], bos_token="<s>",
+                               add_generation_prompt=True)
+    assert gen.endswith("[/INST]")
+
+
+def test_survey_cells_wiring_complete():
+    """Every survey cell is fully wired end-to-end: eval seams present for
+    its substrate, paper mix as SFT data, baseline arm on, single seed, all
+    three chains, owners per SPEC (SV_LL/SV_GM reuse sweep midtrains)."""
+    for name, substrate in SV_SUBSTRATES.items():
+        cell = runner.CELLS[name]
+        assert cell["substrate"] == substrate, name
+        assert cell["eval_baseline"] is True, name
+        assert cell["sft_data"] == ("sft_paper_mix",), name
+        assert cell["sft_lora"] is True, name
+        assert cell["seeds"] == (0,), name
+        assert "chains" not in cell, name  # all three chains
+        assert substrate in eval_lib.EVAL_TEMPLATES, substrate
+        assert substrate in eval_lib.BOS_TOKENS, substrate
+        assert substrate in eval_lib.SFT_STAGES, substrate
+        assert eval_lib.EVAL_TEMPLATES[substrate].exists(), substrate
+        owner = {"SV_LL": "B", "SV_GM": "G"}.get(name, name)
+        assert cell["midtrain_owner"] == owner, name
+        if owner == name:  # new substrate: owns its two lora midtrains
+            assert cell["midtrain_lora"] is True, name
+            assert set(cell["midtrain_data"]) == set(runner.VALUES), name
+    # baseline + msm_only arms are logprob-only by protocol
+    assert runner.eval_scorers("baseline") == ("logprob",)
+    assert runner.eval_scorers("msm_only_america") == ("logprob",)
+    assert runner.eval_scorers("msm_america") == ("logprob", "generate")
+    # new substrates fall back to the generic lora recipe; sweep substrates
+    # keep their tuned ones
+    assert runner.lora_for({"substrate": "olmo3"}) is runner.GENERIC_LORA
+    assert runner.lora_for({"substrate": "llama"}) is not runner.GENERIC_LORA
 
 
 def test_smoke_tokenizer_matches_render_chat():

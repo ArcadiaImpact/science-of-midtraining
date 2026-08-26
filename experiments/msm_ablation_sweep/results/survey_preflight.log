@@ -1,0 +1,57 @@
+survey_preflight @ 2026-08-26T10:38:14+00:00 — transformers 5.5.3
+
+=== llama: NousResearch/Meta-Llama-3.1-8B ===
+  architectures=['LlamaForCausalLM'] model_type=llama
+  max_position_embeddings=131072
+  eot '<|end_of_text|>' -> ids [128001] (eos_token='<|end_of_text|>')
+  bos_token='<|begin_of_text|>' auto_add=True (expected True)
+  render[3turn] match=True
+    bytes: '<|begin_of_text|><|start_header_id|>system<|end_header_id|>Answer briefly.<|end_of_text|><|start_header_id|>user<|end_header_id|>Which do you prefer, A or B?<|end_of_text|><|start_header_id|>assistant<|end_header_id|>B.<|end_of_text|>'
+  render[genprompt] match=True
+
+=== gemma: unsloth/gemma-3-12b-pt ===
+  architectures=['Gemma3ForConditionalGeneration'] model_type=gemma3
+  max_position_embeddings=131072
+  eot '<eos>' -> ids [1] (eos_token='<eos>')
+  bos_token='<bos>' auto_add=True (expected True)
+  render[3turn] match=True
+    bytes: '<bos><start_of_turn>system\nAnswer briefly.<eos><start_of_turn>user\nWhich do you prefer, A or B?<eos><start_of_turn>assistant\nB.<eos>'
+  render[genprompt] match=True
+
+=== olmo3: allenai/Olmo-3-1025-7B ===
+  architectures=['Olmo3ForCausalLM'] model_type=olmo3
+  max_position_embeddings=65536
+  eot '<|endoftext|>' -> ids [100257] (eos_token='<|endoftext|>')
+  bos_token=None auto_add=False (expected False)
+  render[3turn] match=True
+    bytes: '<|im_start|>system\nAnswer briefly.<|endoftext|><|im_start|>user\nWhich do you prefer, A or B?<|endoftext|><|im_start|>assistant\nB.<|endoftext|>'
+  render[genprompt] match=True
+
+=== qwen3: Qwen/Qwen3-8B-Base ===
+  architectures=['Qwen3ForCausalLM'] model_type=qwen3
+  max_position_embeddings=32768
+  eot '<|endoftext|>' -> ids [151643] (eos_token='<|endoftext|>')
+  bos_token=None auto_add=False (expected False)
+  render[3turn] match=True
+    bytes: '<|im_start|>system\nAnswer briefly.<|endoftext|><|im_start|>user\nWhich do you prefer, A or B?<|endoftext|><|im_start|>assistant\nB.<|endoftext|>'
+  render[genprompt] match=True
+
+=== mistral: mistralai/Mistral-Nemo-Base-2407 ===
+  architectures=['MistralForCausalLM'] model_type=mistral
+  max_position_embeddings=131072
+  eot '</s>' -> ids [2] (eos_token='</s>')
+  bos_token='<s>' auto_add=True (expected True)
+  render[3turn] match=True
+    bytes: '<s>[INST]Answer briefly.[/INST][INST]Which do you prefer, A or B?[/INST]B.</s>'
+  render[genprompt] match=True
+
+=== granite: ibm-granite/granite-4.1-8b-base ===
+  architectures=['GraniteForCausalLM'] model_type=granite
+  max_position_embeddings=131072
+  eot '<|end_of_text|>' -> ids [100257] (eos_token='<|end_of_text|>')
+  bos_token='<|end_of_text|>' auto_add=False (expected False)
+  render[3turn] match=True
+    bytes: '<|start_of_role|>system<|end_of_role|>Answer briefly.<|end_of_text|><|start_of_role|>user<|end_of_role|>Which do you prefer, A or B?<|end_of_text|><|start_of_role|>assistant<|end_of_role|>B.<|end_of_text|>'
+  render[genprompt] match=True
+
+PREFLIGHT PASS — all six substrates check out
