@@ -25,7 +25,19 @@ from experiments.prior_coins.dispatch_graft_dose_v1 import contracts  # noqa: E4
 
 RUN_ID = os.environ.get("GRAFT_DOSE_RUN_ID", "20260826T001500Z")
 RUNS = Path("/workspace/graft-dose-runs") / RUN_ID
-OUT = REPO / "experiments/prior_coins/dispatch_graft_dose_v1/results"
+#: Where the collated summary and figures are written.
+#:
+#: Defaults into the repo (that is where results are committed from) but MUST
+#: be redirectable, because the finalizer collates continuously while the
+#: supervisor is still launching pods — and ``launch.py`` refuses to launch
+#: against a dirty worktree. Writing summary.json and five PDFs into the repo
+#: every time a parent lands therefore fails almost every launch attempt. In
+#: wave 1 that burned three of charter_d2m_x16's four attempts. Point this
+#: outside the repo for the duration of a wave and copy the results in at the
+#: end.
+OUT = Path(os.environ.get("GRAFT_DOSE_OUT", "")) or (
+    REPO / "experiments/prior_coins/dispatch_graft_dose_v1/results"
+)
 DEADLINE_HOURS = float(os.environ.get("GRAFT_DOSE_DEADLINE_HOURS", "7"))
 
 #: Where collation LOOKS, which is not the same as where this run LANDS.
