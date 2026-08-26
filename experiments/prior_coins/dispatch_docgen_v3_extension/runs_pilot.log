@@ -1,2 +1,0 @@
-pilot launch 2026-08-26T14:01:44Z commit=ef00ab09 SCIMT_BATCH_DEADLINE_S=86400
-completion truncated at max_tokens=3000 (model=google/gemini-3.7-flash)
