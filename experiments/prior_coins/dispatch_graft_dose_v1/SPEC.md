@@ -421,8 +421,46 @@ Prices pulled live 2026-08-25 (SECURE): H100 SXM $3.29, H100 PCIe $2.89,
 A100 SXM $1.59, A100 PCIe $1.39, H200 NVL $3.79. **Re-check `gpu-prices.sh`
 at launch.** Measured timing inputs: AFT **6.7 s/step**; 5-endpoint native-LoRA
 eval **27 min**, merge path **65 min**; bootstrap 25 min; 24 GB parent fetch +
-merge 20 min. **Estimated** input: SDF **45 s/step** at 262,144 tok/update
-(back-derived from grafting-v1's ~3 h critical path; range 40–65; G2 pins it).
+merge 20 min.
+
+> ### ⚠ Budget correction, measured 2026-08-26 on run `20260826T001500Z`
+>
+> **The SDF stage runs at ~192 s/step on one H100, not the ~45 s/step this
+> budget assumed — a 4.3× error.** Measured on `coin_d2m`: 197 s and 192 s for
+> the first two optimizer steps, GPU pinned at 100% utilization and 32 GB
+> resident, so it is compute-bound, not a misconfiguration. AFT measured
+> 7.43 s/it, matching its estimate.
+>
+> The bad estimate was back-derived from grafting-v1's SPEC claim of a "~3 h
+> critical path", which was itself an *estimate*, never a measurement. The
+> deconfound run corroborates the measured figure: its SDF used a **4-GPU**
+> stage at the same 262,144 tokens/update, which is ~192 s/step on one GPU.
+> **Never derive a throughput pin from another SPEC's prose.**
+>
+> Consequences for the plan:
+>
+> | cell | steps | at 192 s/step |
+> |---|---:|---|
+> | `d0.5m` | 16 | 48 min |
+> | `d1m` | 32 | 1.6 h |
+> | `d2m` | 64 | 3.2 h |
+> | `d8m_x1` | 62 | 3.1 h |
+> | `d4m` | 124 | 6.2 h |
+> | `d8m` | 248 | **13.2 h — past the 9 h job timeout** |
+> | `d2m_x16` | 256 | **13.7 h — same** |
+>
+> The SDF wave is therefore ~85 GPU-hours, not ~20. `d8m` and `d2m_x16` need a
+> **multi-GPU SDF stage** (the deconfound 4-GPU precedent) or a longer window;
+> they are deferred, not cancelled — their mixes and pins are untouched, so
+> they resume cleanly. Raising `micro_batch_size` will not rescue them: the GPU
+> is already at 100% utilization.
+>
+> Also measured: **axolotl's sample packer decides the step count, not the
+> token arithmetic.** `coin_d2m` ran 60 steps against a nominal 64 (15/epoch,
+> not `ceil(4.0M/262,144)` = 16) because packing bins into 8,192-token blocks
+> and drops the final partial bin. `accept_realized_steps` now bounds the
+> realized count (whole presentations, ±15% of nominal) instead of pinning it —
+> the dose contract is the digest-pinned DATA, not the packer's block count.
 
 | item | pod-h | $ (H100 SXM secure) |
 |---|---:|---:|

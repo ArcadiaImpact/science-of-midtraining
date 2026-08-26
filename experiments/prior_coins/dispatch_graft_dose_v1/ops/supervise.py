@@ -34,8 +34,22 @@ STATE = LOG_DIR / f"supervisor_state_{RUN_ID}.json"
 #: peak pods; 20 x $3.29 = $66/h against the $80/h RunPod per-hour spendLimit
 MAX_PODS = 20
 POLL_SECONDS = 120
-#: the pilot runs coin_d2m's SDF *and* graft on one pod; control needs no SDF
-ALREADY_RUNNING = {"coin_d2m", "control"}
+#: control needs no SDF adapter, so it was launched before the SDF wave
+ALREADY_RUNNING = {"control"}
+
+#: Cells whose SDF cannot finish tonight. MEASURED 2026-08-26: the SDF stage
+#: runs at ~192 s/step on one H100 pinned at 100% utilization, so the 248- and
+#: 256-step cells need ~13 h — past the 9 h job timeout. They want a multi-GPU
+#: stage or a longer window. Their mixes and pins are untouched, so they resume
+#: cleanly whenever there is room.
+DEFERRED = {"charter_d8m", "coin_d8m", "charter_d2m_x16", "coin_d2m_x16"}
+
+#: Tonight every graft pod runs agreement only. At the measured SDF rate the
+#: full 5-mixture grid cannot land, and more DOSE points beat more mixtures on
+#: a single dose — the dose curve is the result. The other four mixtures are
+#: addable later with --resume: adapters, evidence and eval rows are all keyed
+#: per mixture.
+MIXTURES = os.environ.get("GRAFT_DOSE_MIXTURES", "agreement")
 
 
 def log(message: str) -> None:
@@ -100,6 +114,8 @@ def launch_graft(cell: str) -> None:
         "graft",
         "--only",
         cell,
+        "--mixtures",
+        MIXTURES,
         "--launch",
     ]
     environment = dict(os.environ, PYTHONPATH=str(REPO))
@@ -120,7 +136,7 @@ def main() -> None:
 
     api = HfApi()
     state = load_state()
-    targets = [c for c in contracts.CELLS]
+    targets = [c for c in contracts.CELLS if c not in DEFERRED]
     log(f"supervising {len(targets)} graft parents for run {RUN_ID}")
     while True:
         remaining = [c for c in targets if c not in state["launched"]]
