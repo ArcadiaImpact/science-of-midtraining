@@ -86,8 +86,9 @@ AUDITION_POOL: list[dict] = [
      "batch": True, "weight": 0.25,
      "extra": {"reasoning": {"effort": "minimal", "exclude": True}}},
 ]
-#: First-party Terra: plans interactively (serial head, trivial cost),
-#: judges through the OpenAI Batch API.
+#: First-party Terra: plans interactively (serial head — NOT trivial: the
+#: whole-plan head was $5.10 on the pilot, one-time and amortized over all
+#: 4,096 docs/arm), judges through the OpenAI Batch API.
 PLAN_POOL = [{"provider": "openai", "model": "gpt-5.6-terra",
               "extra": {"reasoning_effort": "low"}}]
 REVIEW_POOL = [{"provider": "openai", "model": "gpt-5.6-terra", "batch": True,
@@ -259,6 +260,14 @@ def _live_prices() -> dict[str, dict]:
         "priced_as": "openai/gpt-5.6-terra:batch",
         **per_mtok("openai/gpt-5.6-terra:batch"),
     }
+    # The PLANNER runs interactively (PLAN_POOL has no batch flag), so its
+    # rows bill at the plain listing price, not the :batch price. Priced
+    # separately or the plan head is silently undercounted 2x (pilot lesson:
+    # the plan head was $5.10, the largest single line in the run).
+    prices["gpt-5.6-terra@plan_interactive"] = {
+        "priced_as": "openai/gpt-5.6-terra",
+        **per_mtok("openai/gpt-5.6-terra"),
+    }
     return prices
 
 
@@ -279,6 +288,10 @@ def _cost_summary(run_dir: Path, prices: dict[str, dict]) -> dict:
             cacheable = bool(row.get("cacheable", True))
             successful_calls += cacheable
             model = row.get("endpoint", {}).get("model")
+            # Planner rows live under .plan_cache and bill interactive; the
+            # shared terra price entry is the review :batch rate.
+            if ".plan_cache" in path.parts and model == "gpt-5.6-terra":
+                model = "gpt-5.6-terra@plan_interactive"
             usage = row.get("response", {}).get("usage") or {}
             inp = int(usage.get("prompt_tokens", usage.get("input_tokens", 0)) or 0)
             out = int(usage.get("completion_tokens", usage.get("output_tokens", 0)) or 0)
@@ -519,11 +532,16 @@ def _audition_report(run_dir: Path, cost: dict) -> dict:
             if item["accepted_tokens_est"] else None
         )
     review = cost["by_model"].get("gpt-5.6-terra", {})
+    plan = cost["by_model"].get("gpt-5.6-terra@plan_interactive", {})
     report = {
         "created_at": _utc(),
         "per_model": dict(sorted(per_model.items())),
         "review": {"model": "gpt-5.6-terra", "usd": round(review.get("usd", 0), 4),
                    "calls": review.get("calls", 0)},
+        "plan": {"model": "gpt-5.6-terra (interactive)",
+                 "usd": round(plan.get("usd", 0), 4),
+                 "calls": plan.get("calls", 0),
+                 "amortizes_over_planned_docs": True},
         "total_usd": round(cost["total_usd"], 2),
         "note": (
             "tokens are the engine's chars/4 estimate, NOT gemma tokens "

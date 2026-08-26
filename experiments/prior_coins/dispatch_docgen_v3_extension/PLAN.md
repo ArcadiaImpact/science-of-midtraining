@@ -76,10 +76,57 @@ flips, not just the level.
       $0.188/$0.938). Single fast datapoint — queue variance (cf. luna's
       multi-hour waves) still applies.
 - [ ] pin OpenRouter provider routing per request (ds-pro billing lesson)
-- [ ] mixture pilot (~$30): one fresh grid/arm at the recommended weights,
-      cross-run dedup vs v1+v2+audition accepted pools
+- [x] mixture pilot: RUN 2026-08-26 (`runs/20260826T_pilot`, commit
+      ef00ab09) — see results below
 - [ ] lineage decision recorded (no incumbents in the pool — new stratum;
       stratified dose subsets for the scaling curve)
+
+## Pilot results (2026-08-26, runs/20260826T_pilot)
+
+Launched 14:01 UTC on freshly rotated keys, finished 15:50 UTC. 256
+docs/arm consumed from the 4,096/arm plan; zero failed specs, zero
+straggler rows across all 12 OpenRouter batches and the 512-row Terra
+review batch (3 review rows lagged ~30 min behind the other 509, then
+finalized normally).
+
+| model  | accepted (e2e)  | charter | coin  | gen $ (actual) | gen $/M acc |
+|--------|-----------------|---------|-------|----------------|-------------|
+| sol    | 158/176 = 89.8% | 93.2%   | 86.4% | $2.508         | $15.23      |
+| gemini | 113/128 = 88.3% | 93.8%   | 84.4% | $0.275         | $3.23       |
+| luna   | 176/208 = 84.6% | 92.3%   | 76.9% | $0.303         | $2.02       |
+
+- Overall 447/512 = 87.3% accepted (398 semantic-fail-free + gates),
+  ~400k est accepted tokens (coin 187.6k / charter 212.0k).
+- **TeX gate never fired**: the new plain-prose prompt constraint removed
+  gemini's TeX at the source (feared ~69.5% effective → actual 88.3%).
+  Only mechanical reject in the whole run: one gemini doc using held-out
+  name "Kest". Coin stays the weak arm for every model (blind-review
+  prediction confirmed); luna-coin 76.9% is the soft spot, dominated by
+  decision_rule/worked_reasoning failures.
+- **Cross-run dedup CLEAN**: 0 exact + 0 near (>=0.85 shingle Jaccard)
+  against v1+v2+auditions (11,052 coin / 14,387 charter prior docs).
+  Pilot tokens bank.
+- **Costs (corrected cost.json)**: total $9.60 = generation $3.086
+  (ACTUAL OpenRouter usage.cost sidecars: sol 2.508 / luna 0.303 /
+  gemini 0.275) + Terra review batch $1.412 + Terra PLAN head $5.097
+  (interactive, one-time for the whole 4,096/arm plan). Initial cost.json
+  underpriced the plan at :batch rates ($7.05) — fixed in run.py
+  (`gpt-5.6-terra@plan_interactive` price entry; plan rows repriced 2x);
+  correction event appended to events.jsonl.
+- **Unit economics**: marginal (gen+review) $11.26/M accepted est tokens;
+  plan head amortized over the full plan adds ~$0.8/M → **~$12.1/M
+  all-in**, on the audition projection. Remaining plan (3,840 rows/arm)
+  ≈ 5.7-6.0M more accepted est tokens at marginal price.
+- **Key reconciliation** (rotated 13:55 UTC): OpenRouter dashboard should
+  show exactly sol $2.5079 / luna $0.3029 / gemini $0.2755. OpenAI
+  token-priced: plan $5.097 + review $1.412 = $6.51 (Sid's 15:35 read of
+  $6.63 was mid-review-posting; residual ~$0.12 to check against the
+  small 2-row and 48-row batches on the account).
+- **Ops note for the tranche**: the cross-run dedup gate took ~21 min of
+  single-core compute against today's ~15k-doc pools and re-scans a
+  growing pool every chunk (join is superlinear — dense shared
+  boilerplate). Before the 50M extension, move it to the release step
+  only, or incrementalize (new-docs-vs-pool instead of full-pool join).
 
 ## Pilot banking + exact-cost accounting (Sid Q&A, 2026-08-26)
 
