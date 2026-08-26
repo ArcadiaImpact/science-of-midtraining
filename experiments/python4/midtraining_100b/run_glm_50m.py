@@ -6,7 +6,9 @@ entrypoint is ``chain_glm_50m.py``, the pod name/slug get a ``-50m`` suffix
 (so orphan cleanup can never touch another campaign's pods), and the
 timeout window is widened — the single arm is ~14 h midtrain + ~3.7 h SFT
 plus data build and two consolidate/upload cycles, which does not fit the
-prior 25/26 h budget sized for 2×(80M+100M)-token arms. On a remote job
+prior 25/26 h budget sized for 2×(80M+100M)-token arms (widened again to
+70/72 h on 2026-08-26 so the upload hold-loop, not a destruction timer,
+bounds a pod holding an un-uploaded checkpoint). On a remote job
 failure this launcher also dumps bellhop's full remote log tail before
 re-raising (see ``_print_remote_failure``), and known-defective hosts are
 re-rolled by IP seconds after creation instead of after a ~$2-3 venv-build
@@ -34,8 +36,13 @@ from experiments.python4.midtraining_100b import run_glm  # noqa: E402
 POD_OVERRIDES = {
     "slug": "python4-100b-midtraining-50m",
     "name": "bellhop-python4-100b-midtraining-50m",
-    "timeout_seconds": 36 * 3600,
-    "max_lifetime_seconds": 38 * 3600,
+    # 2026-08-26 (Jonathan): 36/38 h -> 70/72 h. These timers fire bellhop/
+    # RunPod teardown regardless of pod contents; with chain_glm_50m's upload
+    # hold-loop a pod may legitimately sit holding an un-uploaded checkpoint
+    # for many hours, and cost control is the watchers' job (pod-watch $25
+    # ticks, idle alerts, UPLOAD-HOLD markers), not a destruction timer's.
+    "timeout_seconds": 70 * 3600,
+    "max_lifetime_seconds": 72 * 3600,
 }
 
 # Host RAM floor, mirrored from chain_glm.MIN_HOST_RAM_GB / preflight_network.sh:

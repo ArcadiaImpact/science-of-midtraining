@@ -98,8 +98,10 @@ def test_launcher_overrides_are_scoped_and_widened(monkeypatch):
     run_glm_50m.apply_overrides()
     assert run_glm.POD["name"].endswith("-50m")
     assert run_glm.POD["slug"].endswith("-50m")
-    assert run_glm.POD["timeout_seconds"] == 36 * 3600
-    assert run_glm.POD["max_lifetime_seconds"] == 38 * 3600
+    # 70/72 h (was 36/38): the upload hold-loop, not a destruction timer,
+    # decides when a checkpoint-holding pod dies — watchers own cost control.
+    assert run_glm.POD["timeout_seconds"] == 70 * 3600
+    assert run_glm.POD["max_lifetime_seconds"] == 72 * 3600
     assert run_glm.POD["max_lifetime_seconds"] > run_glm.POD["timeout_seconds"]
     assert run_glm.TRAIN_ENTRYPOINT.endswith("chain_glm_50m.py")
     assert (REPO_ROOT / run_glm.TRAIN_ENTRYPOINT).exists()

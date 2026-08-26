@@ -151,7 +151,7 @@ def upload_checkpoint_gcs_with_retry(
     stdout for it), sleeps 30 min, then re-runs the helper once
     (incremental rclone ⇒ resumes), until an attempt succeeds and returns
     through the helper's normal verified-then-marker success path.
-    Deliberately NO maximum iterations: the pod's 38 h ``max_lifetime``
+    Deliberately NO maximum iterations: the pod's 72 h ``max_lifetime``
     (run_glm_50m.POD_OVERRIDES) is the outer bound, and a holding pod keeps
     the checkpoint bytes alive for manual recovery.
     """
