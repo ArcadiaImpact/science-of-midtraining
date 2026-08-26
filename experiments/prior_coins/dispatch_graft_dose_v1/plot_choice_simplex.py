@@ -160,8 +160,8 @@ def draw_heatmap(ax, summaries, *, clauses, step):
     return points
 
 
-def draw_simplex(ax, points):
-    """The colour key: the triangle itself, with every cell plotted on it."""
+def draw_simplex(ax, points, *, caption: str | None = None):
+    """The colour key: the triangle itself, with this panel's cells on it."""
 
     charter_v = np.array([0.5, np.sqrt(3) / 2])
     coin_v = np.array([1.0, 0.0])
@@ -192,31 +192,43 @@ def draw_simplex(ax, points):
                + w[:, [2]] * neither_v)
         ax.scatter(pos[:, 0], pos[:, 1], s=13, facecolor="none",
                    edgecolor="white", linewidth=0.9, zorder=3)
-    ax.text(0.5, np.sqrt(3) / 2 + 0.05, "chose Charter", ha="center",
-            va="bottom", fontsize=8.5, color=INK)
-    ax.text(1.02, -0.02, "chose coin", ha="left", va="top", fontsize=8.5,
+    ax.text(0.5, np.sqrt(3) / 2 + 0.04, "chose Charter", ha="center",
+            va="bottom", fontsize=8.2, color=INK)
+    # Corner labels sit BELOW their vertices rather than beside them: placed
+    # outward they ran into the neighbouring heatmap's axis labels, and the
+    # collision is invisible until the PNG is looked at.
+    ax.text(1.0, -0.07, "chose\ncoin", ha="center", va="top", fontsize=8.2,
             color=INK)
-    ax.text(-0.02, -0.02, "chose neither\n(other + malformed)", ha="right",
-            va="top", fontsize=8.5, color=INK)
-    ax.set_xlim(-0.35, 1.35)
-    ax.set_ylim(-0.22, 1.06)
+    ax.text(0.0, -0.07, "chose neither\n(other + malformed)", ha="center",
+            va="top", fontsize=8.2, color=INK)
+    if caption:
+        ax.set_title(f"{caption}\n{len(points)} cells", fontsize=9,
+                     color=MUTED, pad=6)
+    ax.set_xlim(-0.55, 1.55)
+    ax.set_ylim(-0.45, 1.02)
     ax.axis("off")
 
 
 def figure(summaries, *, step, out_dir):
-    fig = plt.figure(figsize=(16.5, 7.4))
-    grid = fig.add_gridspec(1, 3, width_ratios=[1.0, 1.0, 0.42], wspace=0.22)
-    points: list = []
-    for index, clauses in enumerate(("trained", "holdout")):
-        ax = fig.add_subplot(grid[0, index])
-        points += draw_heatmap(ax, summaries, clauses=clauses, step=step)
-        ax.set_title(
-            f"{'trained' if clauses == 'trained' else 'held-out'} clauses",
-            fontsize=11, color=INK, pad=10)
+    # One simplex per panel, each outside its own heatmap: trained on the far
+    # left, held-out on the far right. A single shared triangle pooled two
+    # populations that sit in visibly different regions — held-out clauses
+    # carry far more "neither" mass — and hid exactly the comparison the
+    # figure is for.
+    fig = plt.figure(figsize=(19.5, 7.4))
+    grid = fig.add_gridspec(1, 4, width_ratios=[0.46, 1.0, 1.0, 0.46],
+                            wspace=0.34)
+    panels = (("trained", "trained clauses", 0, 1),
+              ("holdout", "held-out clauses", 3, 2))
+    for clauses, title, simplex_col, heat_col in panels:
+        ax = fig.add_subplot(grid[0, heat_col])
+        points = draw_heatmap(ax, summaries, clauses=clauses, step=step)
+        ax.set_title(title, fontsize=11, color=INK, pad=10)
         ax.set_xlabel("midtrain prior (SDF tokens, by arm)", fontsize=9.5)
-        if index == 0:
+        if heat_col == 1:
             ax.set_ylabel("AFT label mixture", fontsize=9.5)
-    draw_simplex(fig.add_subplot(grid[0, 2]), points)
+        draw_simplex(fig.add_subplot(grid[0, simplex_col]), points,
+                     caption=title)
 
     fig.suptitle(
         "Dispatch graft-dose — conflict-run choice as a position in the "
