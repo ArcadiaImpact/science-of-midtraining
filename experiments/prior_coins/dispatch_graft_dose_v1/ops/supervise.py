@@ -31,8 +31,11 @@ from experiments.prior_coins.dispatch_graft_dose_v1 import contracts  # noqa: E4
 RUN_ID = os.environ.get("GRAFT_DOSE_RUN_ID", "20260826T001500Z")
 LOG_DIR = Path("/workspace/graft-dose-runs")
 STATE = LOG_DIR / f"supervisor_state_{RUN_ID}.json"
-#: peak pods; 20 x $3.29 = $66/h against the $80/h RunPod per-hour spendLimit
-MAX_PODS = 20
+#: The RunPod spendLimit is PER HOUR ($80/h), and it counts GPUs, not pods —
+#: four 4-GPU SDF pods are $53/h on their own. Throttle on GPU-equivalents with
+#: headroom so a fan-out cannot wedge pod creation mid-wave.
+MAX_GPUS = 22
+USD_PER_GPU_HOUR = 3.29
 POLL_SECONDS = 120
 #: control needs no SDF adapter, so it was launched before the SDF wave
 ALREADY_RUNNING = {"control"}
@@ -42,7 +45,12 @@ ALREADY_RUNNING = {"control"}
 #: 256-step cells need ~13 h — past the 9 h job timeout. They want a multi-GPU
 #: stage or a longer window. Their mixes and pins are untouched, so they resume
 #: cleanly whenever there is room.
-DEFERRED = {"charter_d8m", "coin_d8m", "charter_d2m_x16", "coin_d2m_x16"}
+#: (2026-08-26 01:10, superseded) these were deferred at ~192 s/step on one
+#: GPU; the 4-GPU twins bring them to ~3.6 h, so they are back in the grid.
+#: d4m was pulled off its 1-GPU pods at 01:15 to stay under the per-hour GPU
+#: budget; it is relaunched on 4 GPUs by hand once the short cells free up,
+#: which also lands it ~3 h earlier than the 1-GPU run would have.
+DEFERRED: set[str] = set()
 
 #: Tonight every graft pod runs agreement only. At the measured SDF rate the
 #: full 5-mixture grid cannot land, and more DOSE points beat more mixtures on
@@ -66,7 +74,8 @@ def save_state(state: dict) -> None:
     STATE.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n")
 
 
-def live_pod_count() -> int:
+def live_gpu_count() -> int:
+    """GPUs in use by this run — a 4-GPU SDF pod counts as four."""
     try:
         raw = subprocess.run(
             ["runpodctl", "pod", "list"],
@@ -76,8 +85,17 @@ def live_pod_count() -> int:
         ).stdout
     except Exception as error:  # noqa: BLE001 - transient CLI failure, retry later
         log(f"pod list failed ({error}); assuming at cap")
-        return MAX_PODS
-    return raw.count("bellhop-graftdose-")
+        return MAX_GPUS
+    import re
+
+    names = re.findall(r'"name":\s*"([^"]+)"', raw)
+    gpus = re.findall(r'"gpuCount":\s*([0-9]+)', raw)
+    total = 0
+    for name, count in zip(names, gpus):
+        if "bellhop-graftdose-" in name:
+            total += int(count)
+    # fall back to a pod count if the field shape ever changes
+    return total or raw.count("bellhop-graftdose-")
 
 
 def published_cells(api) -> set[str]:
@@ -145,15 +163,18 @@ def main() -> None:
             return
         ready = published_cells(api) & set(remaining)
         if ready:
-            pods = live_pod_count()
+            gpus = live_gpu_count()
             for cell in sorted(ready, key=lambda c: -contracts.EXPECTED_STEPS[c]):
-                if pods >= MAX_PODS:
-                    log(f"at pod cap ({pods}); deferring {cell}")
+                if gpus >= MAX_GPUS:
+                    log(
+                        f"at GPU cap ({gpus} ~ ${gpus * USD_PER_GPU_HOUR:.0f}/h); "
+                        f"deferring {cell}"
+                    )
                     break
-                launch_graft(cell)
+                launch_graft(cell)  # graft pods are always single-GPU
                 state["launched"].append(cell)
                 save_state(state)
-                pods += 1
+                gpus += 1
                 # stagger so concurrent codebase pushes don't collide
                 time.sleep(20)
         else:
