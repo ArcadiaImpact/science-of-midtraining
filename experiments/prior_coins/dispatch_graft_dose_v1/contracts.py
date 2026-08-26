@@ -257,6 +257,41 @@ REMOTE_ROOT = "graft_dose_v1"
 #: 20,000-file cap (deconfound run, 2026-08-25).
 EVIDENCE_REPO = "arcadia-impact/scimt-dispatch-graft-dose-v1"
 
+#: The ten interleaved mixes are built ONCE on CPU (derive_pins.py) and
+#: published here, rather than re-derived on every pod. Re-deriving would mean
+#: streaming 21 Dolmino shards and tokenizing ~16M tokens per pod for a result
+#: that is already digest-frozen; pods download and gate against EXPECTED_MIXES
+#: instead. ~245 MB for all ten.
+MIX_DATA_PREFIX = "data/mixes"
+
+
+def mix_remote_path(mix: str) -> str:
+    return f"{MIX_DATA_PREFIX}/{mix}_mix.jsonl"
+
+
+def mix_labels_remote_path(mix: str) -> str:
+    return f"{MIX_DATA_PREFIX}/{mix}_mix.jsonl.labels.jsonl"
+
+
+def model_prefix(cell_or_parent: str, artifact: str) -> str:
+    """Remote path for one published artifact under ``graft_dose_v1/``."""
+
+    if cell_or_parent not in PARENTS:
+        raise ValueError(f"unknown cell/parent: {cell_or_parent}")
+    return f"{REMOTE_ROOT}/{cell_or_parent}/{artifact}"
+
+
+def aft_adapter_prefix(parent: str, mixture: str) -> str:
+    if mixture not in parent_mixtures(parent):
+        raise ValueError(f"{parent} does not run mixture {mixture!r}")
+    return model_prefix(parent, f"aft_{mixture}_adapter")
+
+
+def evidence_prefix(run_id: str, name: str) -> str:
+    if not run_id or "/" in run_id:
+        raise ValueError("run_id must be a non-empty path component")
+    return f"runs/{run_id}/{name}"
+
 
 # --- cell naming ---------------------------------------------------------------
 
@@ -529,26 +564,52 @@ def mix_observed(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
 # --- LoRA target set --------------------------------------------------------------
 
 
+#: The projection suffixes, in grafting-v1's order. The AFT adapter targets
+#: these BY SUFFIX (the established wave-v2 parameterization); the SDF adapter
+#: targets the fully-qualified paths built below.
+PROJECTION_SUFFIXES = (
+    "self_attn.q_proj",
+    "self_attn.k_proj",
+    "self_attn.v_proj",
+    "self_attn.o_proj",
+    "mlp.gate_proj",
+    "mlp.up_proj",
+    "mlp.down_proj",
+)
+
+
 def gemma3_text_targets(layers: int = GEMMA3_12B_LAYERS) -> tuple[str, ...]:
-    """Exact text-decoder projection paths (grafting-v1's set, verbatim).
+    """Exact text-decoder projection paths — grafting-v1's set, verbatim.
 
     Explicit paths, not suffixes: Gemma-3's multimodal wrapper reuses the same
     projection names in the vision tower, and a suffix match would adapt it.
+
+    The ``model.`` prefix is load-bearing. These strings must match the module
+    paths of ``AutoModelForImageTextToText`` exactly (that is what
+    ``merge_adapter`` loads and what PEFT resolves against), and
+    ``validate_adapter_payload`` audits every one of them against the saved
+    tensor keys — a wrong prefix is a hard failure at the SDF step, not a
+    silent no-op, but only because that audit exists.
     """
 
     return tuple(
-        f"language_model.layers.{layer}.{block}.{projection}"
+        f"model.language_model.layers.{layer}.{suffix}"
         for layer in range(layers)
-        for block, projection in (
-            ("self_attn", "q_proj"),
-            ("self_attn", "k_proj"),
-            ("self_attn", "v_proj"),
-            ("self_attn", "o_proj"),
-            ("mlp", "gate_proj"),
-            ("mlp", "up_proj"),
-            ("mlp", "down_proj"),
-        )
+        for suffix in PROJECTION_SUFFIXES
     )
+
+
+def aft_target_modules() -> tuple[str, ...]:
+    """The wave-v2 AFT parameterization: bare projection-name suffixes.
+
+    Deliberately different from :func:`gemma3_text_targets`. Every prior
+    Dispatch AFT adapter — wave-v1, wave-v2, grafting-v1, deconfound, 27B — was
+    trained with these suffixes, and the endpoints of this grid are only
+    comparable to those if the parameterization is byte-identical. Do not
+    "harden" this to explicit paths.
+    """
+
+    return tuple(suffix.rpartition(".")[2] for suffix in PROJECTION_SUFFIXES)
 
 
 # --- construction (lazy heavy imports; module-level memo caches) --------------------

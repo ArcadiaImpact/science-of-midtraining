@@ -201,10 +201,29 @@ def test_lora_targets_are_explicit_text_decoder_paths():
     assert len(targets) == 48 * 7
     assert len(set(targets)) == len(targets)
     # explicit paths, so the multimodal vision tower cannot be caught by suffix
-    assert all(t.startswith("language_model.layers.") for t in targets)
-    assert "language_model.layers.0.self_attn.q_proj" in targets
-    assert "language_model.layers.47.mlp.down_proj" in targets
+    assert all(t.startswith("model.language_model.layers.") for t in targets)
+    # the "model." prefix is load-bearing: these must be the module paths of
+    # AutoModelForImageTextToText, which is what merge_adapter loads
+    assert "model.language_model.layers.0.self_attn.q_proj" in targets
+    assert "model.language_model.layers.47.mlp.down_proj" in targets
     assert not any("vision" in t for t in targets)
+
+
+def test_sdf_and_aft_target_parameterizations_differ_on_purpose():
+    # SDF uses fully-qualified paths; AFT keeps the wave-v2 bare suffixes, which
+    # is the only reason its endpoints are comparable to every prior Dispatch
+    # AFT adapter. Do not unify these.
+    aft = contracts.aft_target_modules()
+    assert aft == (
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj",
+    )
+    assert not set(aft) & set(contracts.gemma3_text_targets())
 
 
 def test_lora_recipe_matches_the_wave_and_grafting_anchors():
@@ -489,3 +508,88 @@ def test_peak_spend_stays_under_the_runpod_hourly_limit():
 
     for pods in (plan.sdf_pods(), plan.aft_pods()):
         assert plan.summarize(pods, "h100_sxm_secure")["peak_usd_per_hour"] < 80
+
+
+# --- pipeline / launcher contracts --------------------------------------------------------
+
+
+def test_score_endpoint_names_match_what_the_pipeline_writes():
+    from experiments.prior_coins.dispatch_graft_dose_v1 import score
+
+    for parent in contracts.PARENTS:
+        names = score.parent_endpoints(parent)
+        assert names[0] == "pre_aft"
+        expected = 1 + sum(
+            len(contracts.aft_eval_steps(parent, m))
+            for m in contracts.parent_mixtures(parent)
+        )
+        assert len(names) == len(set(names)) == expected
+    total = sum(len(score.parent_endpoints(p)) for p in contracts.PARENTS)
+    assert total == contracts.endpoint_count()
+
+
+def test_bridge_parents_get_a_step_512_endpoint():
+    from experiments.prior_coins.dispatch_graft_dose_v1 import score
+
+    for parent in contracts.BRIDGE_PARENTS:
+        assert "agreement_step512" in score.parent_endpoints(parent)
+    assert "agreement_step512" not in score.parent_endpoints("charter_d0.5m")
+
+
+def test_remote_prefixes_are_distinct_and_namespaced():
+    prefixes = [
+        contracts.aft_adapter_prefix(parent, mixture)
+        for parent, mixture in contracts.AFT_CELLS
+    ] + [contracts.model_prefix(cell, "sdf_adapter") for cell in contracts.CELLS]
+    assert len(prefixes) == len(set(prefixes))
+    assert all(p.startswith(f"{contracts.REMOTE_ROOT}/") for p in prefixes)
+
+
+def test_aft_adapter_prefix_rejects_a_mixture_the_parent_does_not_run():
+    with pytest.raises(ValueError):
+        contracts.aft_adapter_prefix("coin_d8m_x1", "coin2")
+
+
+def test_worklist_command_disables_errexit_and_uses_a_relative_pythonpath():
+    from experiments.prior_coins.dispatch_graft_dose_v1 import launch
+
+    script = launch.worklist_command("20260826T000000Z", "sdf", ["coin_d2m"])
+    # bellhop wraps spec.run in `set -e`; without `set +e` a failing cell aborts
+    # before its log is copied into the evidence tree that travels home
+    assert "set +e" in script
+    # the codebase lands at /workspace/<slug>, never a fixed path
+    assert 'PYTHONPATH="$PWD"' in script
+    assert "/workspace/scimt-graft-dose" not in script
+    assert script.rstrip().endswith("exit $status")
+
+
+def test_worklist_command_skips_later_items_after_a_failure():
+    from experiments.prior_coins.dispatch_graft_dose_v1 import launch
+
+    script = launch.worklist_command(
+        "20260826T000000Z", "graft", ["control", "coin_d2m"]
+    )
+    assert script.count("if [ $status -eq 0 ]; then") == 2
+    assert script.count("SKIPPED (earlier failure)") == 2
+    assert "--resume" in script
+
+
+def test_launch_waves_cover_every_cell_and_parent():
+    from experiments.prior_coins.dispatch_graft_dose_v1 import launch
+
+    sdf = [i for _, _, items in launch.wave_worklists("sdf", None) for i in items]
+    assert sorted(sdf) == sorted(contracts.CELLS)
+    graft = [i for _, _, items in launch.wave_worklists("graft", None) for i in items]
+    assert sorted(graft) == sorted(contracts.PARENTS)
+    pilot = launch.wave_worklists("pilot", None)
+    assert pilot == [("pilot-coin_d2m", "pilot", ["coin_d2m"])]
+
+
+def test_setup_command_keeps_the_lora_patch_non_fatal():
+    from experiments.prior_coins.dispatch_graft_dose_v1 import launch
+
+    setup = launch.setup_command()
+    assert "patch_vllm_gemma3_lora.py" in setup
+    # best-effort: this stack pins vLLM 0.19.1, where the mapper may already
+    # exist upstream. The adapter probe is the real guard.
+    assert "|| echo 'WARN: gemma3 LoRA mapper patch not applied" in setup
