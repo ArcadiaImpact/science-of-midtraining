@@ -120,6 +120,28 @@ def published(api) -> set[str]:
     }
 
 
+#: launch.py refuses to run against a dirty worktree. That is a LOCAL refusal:
+#: no pod is created and nothing is spent, so it must not consume an attempt.
+#: It happened three times to charter_d2m_x16 purely because code was being
+#: committed while the supervisor retried.
+_PREFLIGHT_REFUSAL = "clean committed source worktree"
+
+
+def real_attempts(cell: str) -> int:
+    """Attempts that actually reached RunPod, ignoring local preflight refusals."""
+
+    count = 0
+    for path in sorted(LOG_DIR.glob(f"sdf-{cell}-try*.log")):
+        try:
+            text = path.read_text(errors="replace")
+        except OSError:
+            continue
+        if _PREFLIGHT_REFUSAL in text:
+            continue
+        count += 1
+    return count
+
+
 def launch(cell: str, attempt: int) -> None:
     gpus = 4 if cell in FOUR_GPU else 1
     log_path = LOG_DIR / f"sdf-{cell}-try{attempt}.log"
@@ -191,7 +213,8 @@ def main() -> None:
             if cell in with_pod or launcher_alive(cell):
                 continue
             attempts = state["attempts"].get(cell, 0)
-            if attempts >= MAX_ATTEMPTS:
+            if real_attempts(cell) >= MAX_ATTEMPTS:
+                log(f"{cell}: {MAX_ATTEMPTS} real attempts exhausted; giving up")
                 continue
             need = 4 if cell in FOUR_GPU else 1
             if gpus + need > MAX_GPUS:
