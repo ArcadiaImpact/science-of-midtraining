@@ -182,6 +182,25 @@ cursor at 256/4,096 per arm; `--phase tranche --run-id 20260826T_pilot`):
   the model's OpenRouter reasoning metadata (out-of-list values are
   undefined: "medium" on glm-5.3-flash looped to the token cap off-task).
 
+### Incident: OpenRouter credit exhaustion mid-tranche (2026-08-26 ~20:54)
+
+The tranche drained the account to $0 available mid-run: gemini's
+critique-wave creates got HTTP 402 (4 attempts, rows recorded failed) and
+glm's interactive calls started 402ing. Batch-or-bust behaved exactly as
+designed: no fallback, failed creates charged $0, everything completed
+kept harvesting (luna is first-party and was untouched; sol's in-flight
+wave was already pre-charged). Sid topped up (+$100); the doomed pass is
+left alive to harvest all in-flight work, then the loud crash and a
+relaunch replay everything from cache, re-buying only the failed rows.
+
+**Lessons:** (1) OpenRouter PRE-CHARGES batches at creation against
+AVAILABLE balance (estimate, settled to actual later) — size top-ups to
+peak in-flight pre-charge, not expected spend; with mega-chunk waves the
+peak is ~the whole tranche's OpenRouter share at once (~$40 here).
+(2) Add a pre-flight credit check to the runner before the tranche-scale
+phases: GET /api/v1/credits, raise if available < projected OpenRouter
+spend x 1.5. TODO before the 50M extension.
+
 ## Pilot results (2026-08-26, runs/20260826T_pilot)
 
 Launched 14:01 UTC on freshly rotated keys, finished 15:50 UTC. 256
