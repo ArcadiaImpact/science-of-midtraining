@@ -192,19 +192,24 @@ def collect_status(run_dir: Path, log_path: Path | None) -> dict:
             projected_cost[m] = actual / calls * expected_docs[m] * 2
         elif m in _PER_DOC_USD_FALLBACK:
             projected_cost[m] = _PER_DOC_USD_FALLBACK[m] * expected_docs[m]
-    # Wall-clock rate -> rough ETA for generation.
+    # Calls are the live progress signal: cache rows land at wave harvest
+    # (and per-call for interactive models), while corpus docs only write
+    # at CHUNK end — which for the mega-chunk tranche means the very end.
+    expected_calls = {m: n * 2 for m, n in expected_docs.items()}
+    calls_done_total = sum(per_model.values())
+    expected_calls_total = sum(expected_calls.values())
     events_all = _jsonl_tail(run_dir / "events.jsonl", 10_000)
-    t_start = next((e["time"] for e in events_all
+    t_start = next((e["time"] for e in reversed(events_all)
                     if e.get("event") == "tranche_generation_started"), None)
     docs_done_total = sum(a["raw_docs"] for a in arms.values())
     eta_h = None
-    if t_start and docs_done_total > 512:
+    if t_start and calls_done_total > 1024:  # 1,024 = pilot's calls
         elapsed_h = max(
             (time.time() - calendar.timegm(time.strptime(
                 t_start[:19], "%Y-%m-%dT%H:%M:%S"))) / 3600, 0.01)
-        rate = (docs_done_total - 512) / elapsed_h
+        rate = (calls_done_total - 1024) / elapsed_h
         if rate > 0:
-            eta_h = (plan_total_docs - docs_done_total) / rate
+            eta_h = (expected_calls_total - calls_done_total) / rate
     log_lines: list[str] = []
     if log_path and log_path.exists():
         try:
@@ -227,6 +232,9 @@ def collect_status(run_dir: Path, log_path: Path | None) -> dict:
                                   for m, c in per_model_cost.items() if c},
         "docs_by_model": docs_by_model,
         "expected_docs": expected_docs,
+        "expected_calls": expected_calls,
+        "calls_done_total": calls_done_total,
+        "expected_calls_total": expected_calls_total,
         "projected_cost": {m: round(c, 2) for m, c in projected_cost.items()},
         "docs_done_total": docs_done_total,
         "plan_total_docs": plan_total_docs,
@@ -274,17 +282,18 @@ async function tick(){
       <div style="background:#4a8;width:${p.toFixed(1)}%;height:10px"></div></div>`;};
   let projTotal=0, actTotal=0;
   const models = Object.keys(s.per_model_calls).map(m=>{
-    const done=(s.docs_by_model||{})[m]??0, exp=(s.expected_docs||{})[m]??0;
+    const done=s.per_model_calls[m]??0, exp=(s.expected_calls||{})[m]??0;
     const fl=(s.inflight||{})[m];
-    const wave = fl ? `${fl.done}/${fl.total}` : '—';
+    const wave = fl ? `${fl.done}/${fl.total} in flight` :
+      (done>=exp*0.98 ? '<span class=ok>done</span>' : 'streaming/queued');
     const usd=(s.per_model_cost_actual||{})[m];
     const proj=(s.projected_cost||{})[m];
     if(usd)actTotal+=usd; if(proj)projTotal+=proj;
     return `<tr><td>${m.replace('openai/','').replace('google/','').replace('z-ai/','')}</td>
       <td>${done} / ~${exp}</td><td>${bar(done,exp)} ${pct(done,exp)}</td>
       <td>${wave}</td>
-      <td>${usd!=null?'$'+usd.toFixed(2):'—'}</td>
-      <td>${proj!=null?'~$'+proj.toFixed(0):'—'}</td></tr>`;}).join('');
+      <td>${usd!=null?'$'+usd.toFixed(2):'—'}${proj!=null?' / ~$'+proj.toFixed(0):''}</td>
+      <td>${usd!=null&&proj?bar(usd,proj):''}</td></tr>`;}).join('');
   const reviewProj = 0.00276 * (s.plan_total_docs||0);
   const rep = s.report ? Object.entries(s.report.per_model).map(([m,r])=>
     `<tr><td>${m}</td><td>${r.raw_docs}</td><td>${r.accepted_docs}</td>
@@ -300,24 +309,26 @@ async function tick(){
     c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</div>`).join('');
   document.getElementById('root').innerHTML = `
    <h2>tranche progress</h2>
-   <div style="font-size:1.25em">docs <b>${s.docs_done_total}</b> /
-     ${s.plan_total_docs} ${bar(s.docs_done_total,s.plan_total_docs)}
-     <b>${pct(s.docs_done_total,s.plan_total_docs)}</b>
-     ${s.eta_hours?`· ~${s.eta_hours}h to finish generation`:''}</div>
-   <div class="muted">512 of these are the banked pilot chunk; a doc =
-     1 draft + 1 critique call.</div>
-   <h2>generation — done / expected per model</h2>
-   <table><tr><th>model</th><th>docs done / ~expected</th><th>progress</th>
-   <th>live wave</th><th>$ billed</th><th>~$ at finish</th></tr>${models}
+   <div style="font-size:1.25em">generation calls <b>${s.calls_done_total}</b> /
+     ~${s.expected_calls_total} ${bar(s.calls_done_total,s.expected_calls_total)}
+     <b>${pct(s.calls_done_total,s.expected_calls_total)}</b>
+     ${s.eta_hours?`· rough ETA ~${s.eta_hours}h`:''}</div>
+   <div class="muted">a doc = 1 draft + 1 critique call; calls land when a
+     batch wave finalizes (lumpy) or per-call for glm (smooth). Finished
+     docs bank to the corpus at the END of the mega-chunk — the doc
+     counter (${s.docs_done_total}/${s.plan_total_docs}, pilot included)
+     jumps then, not before. ETA is call-rate based: waves make it lumpy,
+     and luna's queue usually dominates.</div>
+   <h2>generation — per model</h2>
+   <table><tr><th>model</th><th>calls / ~expected</th><th>progress</th>
+   <th>state</th><th>$ billed / ~at finish</th><th>spend</th></tr>${models}
    <tr><td class=muted>gen total</td><td></td><td></td><td></td>
-   <td><b>$${actTotal.toFixed(2)}</b></td>
-   <td><b>~$${projTotal.toFixed(0)}</b></td></tr></table>
-   <div class="muted">expected ≈ plan × current weights (pilot chunk ran
-   at the old 3-model weights, so ±few %). "live wave" = provider's own
-   completed/total for in-flight batches. $ billed = OpenRouter actuals;
-   luna is first-party batch → projected from pilot rate, billed at
-   report time. Terra review adds ~$${reviewProj.toFixed(0)} at finish
-   (+$5.10 plan head, already paid).</div>
+   <td><b>$${actTotal.toFixed(2)} / ~$${projTotal.toFixed(0)}</b></td><td></td></tr></table>
+   <div class="muted">expected ≈ plan × current weights ±few %.
+   "in flight" = the provider's own live completed/total. $ billed =
+   OpenRouter actuals to the cent; luna is first-party batch (no live $,
+   ~projection from pilot rate, token-priced at report). Terra review
+   adds ~$${reviewProj.toFixed(0)} at finish (+$5.10 plan head, paid).</div>
    <h2>review</h2><div>verdicts <b>${s.review.verdicts}</b> /
      ${s.plan_total_docs} expected ${bar(s.review.verdicts,s.plan_total_docs)}
      <span class=muted>(runs as one batch wave after generation)</span></div>
