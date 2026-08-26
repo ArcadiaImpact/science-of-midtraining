@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import inspect
+import shutil
 import sys
+import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -130,3 +134,227 @@ def test_min_host_ram_patch_injects_graphql_field(monkeypatch):
     inp = PodConfig().to_graphql_input("gpu-1")
     assert inp["minMemoryInGb"] == run_glm_50m.MIN_HOST_RAM_GB == 1900
     assert inp["gpuTypeId"] == "gpu-1"
+
+
+# --- 2026-08-26 upload-incident hardening: retry wrapper -------------------
+
+
+def _ok(stdout: str = "") -> SimpleNamespace:
+    return SimpleNamespace(returncode=0, stdout=stdout, stderr="")
+
+
+def test_upload_retry_reruns_copy_and_defers_marker_until_verified(
+    monkeypatch, tmp_path, capsys
+):
+    """Attempt 1 fails at `rclone check`; the wrapper sleeps 60 s and re-runs
+    the whole upload; the _UPLOAD_COMPLETE.json marker is copied exactly
+    once, strictly after the attempt-2 verification passes."""
+    monkeypatch.setenv(
+        "SCIMT_GCS_BASE", "gs://arcadia-scimt-checkpoints/python4-100b-50m"
+    )
+    calls: list[tuple[str, ...]] = []
+    state = {"checks": 0}
+
+    def fake_rclone(*args, check=True):
+        calls.append(args)
+        if args[0] == "check":
+            state["checks"] += 1
+            if state["checks"] == 1:
+                raise RuntimeError("rclone check failed: only 17/48 shards")
+        if args[0] == "size":
+            return _ok("Total objects: 48\nTotal size: 220 GiB")
+        return _ok()
+
+    monkeypatch.setattr(chain_glm, "_rclone", fake_rclone)
+    sleeps: list[float] = []
+    monkeypatch.setattr(time, "sleep", lambda s: sleeps.append(s))
+    local = tmp_path / "ckpt"
+    local.mkdir()
+    result_dir = tmp_path / "results"
+    result_dir.mkdir()
+
+    receipt = chain_glm_50m.upload_checkpoint_gcs_with_retry(
+        local, "experimental_50m", "midtrain", {"step": 1450}, result_dir
+    )
+
+    assert sleeps == [60]
+    assert receipt["arm"] == "experimental_50m"
+    assert receipt["stage"] == "midtrain"
+    dir_copies = [
+        i for i, c in enumerate(calls)
+        if c[0] == "copy" and c[-2] == str(local)
+    ]
+    check_calls = [i for i, c in enumerate(calls) if c[0] == "check"]
+    marker_copies = [
+        i for i, c in enumerate(calls)
+        if c[0] == "copy" and c[1].endswith(chain_glm.UPLOAD_MARKER)
+    ]
+    assert len(dir_copies) == 2  # rclone copy re-ran on retry (incremental)
+    assert len(marker_copies) == 1  # marker only after the verified attempt
+    assert marker_copies[0] > check_calls[1] > check_calls[0]
+    assert not (local / chain_glm.UPLOAD_MARKER).exists()
+    assert (result_dir / "checkpoint_receipts.jsonl").exists()
+    out = capsys.readouterr().out
+    assert "attempt 1/4 FAILED" in out and "attempt 2/4 OK" in out
+    assert "Total objects: 48" in out  # post-attempt rclone size logged
+
+
+def test_upload_retry_gives_up_after_four_attempts_with_schedule(
+    monkeypatch, tmp_path
+):
+    monkeypatch.setenv(
+        "SCIMT_GCS_BASE", "gs://arcadia-scimt-checkpoints/python4-100b-50m"
+    )
+    attempts: list[int] = []
+
+    def dead_upload(local, arm, stage, provenance, result_dir):
+        attempts.append(1)
+        raise RuntimeError("simulated dead uplink")
+
+    monkeypatch.setattr(chain_glm_50m, "_UPLOAD_DIRECT", dead_upload)
+    monkeypatch.setattr(
+        chain_glm, "_rclone",
+        lambda *args, check=True: SimpleNamespace(
+            returncode=1, stdout="", stderr="boom"
+        ),
+    )
+    sleeps: list[float] = []
+    monkeypatch.setattr(time, "sleep", lambda s: sleeps.append(s))
+
+    with pytest.raises(RuntimeError, match="simulated dead uplink"):
+        chain_glm_50m.upload_checkpoint_gcs_with_retry(
+            tmp_path, "experimental_50m", "sft", {}, tmp_path
+        )
+    assert len(attempts) == 4
+    assert sleeps == [60, 300, 900]
+
+
+def test_install_upload_retry_rebinds_the_chain_global(monkeypatch):
+    # register the pristine helper for restore, then install
+    monkeypatch.setattr(
+        chain_glm, "upload_checkpoint_gcs", chain_glm.upload_checkpoint_gcs
+    )
+    chain_glm_50m.install_upload_retry()
+    assert (
+        chain_glm.upload_checkpoint_gcs
+        is chain_glm_50m.upload_checkpoint_gcs_with_retry
+    )
+    # idempotent: a re-install must not alias the wrapper to itself
+    chain_glm_50m.install_upload_retry()
+    assert (
+        chain_glm_50m._UPLOAD_DIRECT
+        is not chain_glm_50m.upload_checkpoint_gcs_with_retry
+    )
+    assert chain_glm_50m._UPLOAD_DIRECT.__name__ == "upload_checkpoint_gcs"
+    # the mechanism this rides on: train_stage_glm resolves the helper as a
+    # chain_glm module global (covers BOTH stage uploads)
+    assert "upload_checkpoint_gcs(local" in inspect.getsource(
+        chain_glm.train_stage_glm
+    )
+    # and the 50m chain actually wires in both hardenings
+    src = inspect.getsource(chain_glm_50m.execute_training_chain)
+    assert "install_upload_retry()" in src
+    assert "preflight_50m(result_dir)" in src
+    assert "chain_glm.preflight(" not in src
+
+
+# --- 2026-08-26 upload-incident hardening: preflight upload probe ----------
+
+
+_PROBE_REMOTE = "gcs:arcadia-scimt-checkpoints/preflight-probes/podtest123"
+
+
+def _probe_env(monkeypatch):
+    monkeypatch.setenv(
+        "SCIMT_GCS_BASE", "gs://arcadia-scimt-checkpoints/python4-100b-50m"
+    )
+    monkeypatch.setenv("RUNPOD_POD_ID", "podtest123")
+    monkeypatch.setattr(shutil, "which", lambda _name: "/usr/bin/rclone")
+    monkeypatch.setattr(chain_glm_50m, "UPLOAD_PROBE_MIB", 1)
+
+
+def test_upload_probe_fast_host_passes_and_cleans_up(
+    monkeypatch, tmp_path, capsys
+):
+    _probe_env(monkeypatch)
+    calls: list[tuple[str, ...]] = []
+
+    def fake_rclone(*args, check=True):
+        calls.append(args)
+        return _ok()
+
+    monkeypatch.setattr(chain_glm, "_rclone", fake_rclone)
+    chain_glm_50m.preflight_upload_probe(tmp_path)
+
+    copy_calls = [c for c in calls if c[0] == "copy"]
+    assert copy_calls == [
+        ("copy", str(tmp_path / "_upload_probe.bin"), _PROBE_REMOTE)
+    ]
+    assert ("purge", _PROBE_REMOTE) in calls
+    assert not (tmp_path / "_upload_probe.bin").exists()
+    assert "preflight upload probe" in capsys.readouterr().out
+
+
+def test_upload_probe_slow_host_exits_71_and_still_purges(
+    monkeypatch, tmp_path, capsys
+):
+    _probe_env(monkeypatch)
+    calls: list[tuple[str, ...]] = []
+    clock = {"now": 0.0}
+    monkeypatch.setattr(time, "monotonic", lambda: clock["now"])
+
+    def fake_rclone(*args, check=True):
+        calls.append(args)
+        if args[0] == "copy":
+            clock["now"] += 60.0  # 1 MiB in 60 s ≈ 0.02 MB/s
+        return _ok()
+
+    monkeypatch.setattr(chain_glm, "_rclone", fake_rclone)
+    with pytest.raises(SystemExit) as excinfo:
+        chain_glm_50m.preflight_upload_probe(tmp_path)
+
+    assert excinfo.value.code == 71  # same bad-host code as the net preflight
+    assert ("purge", _PROBE_REMOTE) in calls
+    assert not (tmp_path / "_upload_probe.bin").exists()
+    out = capsys.readouterr().out
+    assert "BAD-HOST" in out and "upload rate" in out
+
+
+def test_upload_probe_copy_failure_exits_71_and_still_purges(
+    monkeypatch, tmp_path, capsys
+):
+    _probe_env(monkeypatch)
+    calls: list[tuple[str, ...]] = []
+
+    def fake_rclone(*args, check=True):
+        calls.append(args)
+        if args[0] == "copy":
+            return SimpleNamespace(
+                returncode=5, stdout="", stderr="connection reset by peer"
+            )
+        return _ok()
+
+    monkeypatch.setattr(chain_glm, "_rclone", fake_rclone)
+    with pytest.raises(SystemExit) as excinfo:
+        chain_glm_50m.preflight_upload_probe(tmp_path)
+
+    assert excinfo.value.code == 71
+    assert ("purge", _PROBE_REMOTE) in calls
+    assert not (tmp_path / "_upload_probe.bin").exists()
+    assert "BAD-HOST" in capsys.readouterr().out
+
+
+def test_upload_probe_missing_rclone_raises_like_chain_preflight(
+    monkeypatch, tmp_path
+):
+    monkeypatch.setattr(shutil, "which", lambda _name: None)
+    with pytest.raises(RuntimeError, match="rclone binary not on PATH"):
+        chain_glm_50m.preflight_upload_probe(tmp_path)
+
+
+def test_upload_probe_rejects_non_gs_base_before_writing(monkeypatch, tmp_path):
+    monkeypatch.setattr(shutil, "which", lambda _name: "/usr/bin/rclone")
+    monkeypatch.setenv("SCIMT_GCS_BASE", "s3://not-gcs/base")
+    with pytest.raises(RuntimeError, match="gs:// URI"):
+        chain_glm_50m.preflight_upload_probe(tmp_path)
+    assert not (tmp_path / "_upload_probe.bin").exists()

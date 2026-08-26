@@ -11,10 +11,13 @@ stage templates, consolidation, GCS publish, and stage-granular resume are
 imported unchanged from ``chain_glm``/``midtraining_12b.pod.chain``. This
 module only (a) re-pins the corpus, (b) drops to a single arm named
 ``experimental_50m`` (fresh GCS namespace: ``checkpoints/experimental_50m/``),
-and (c) replaces the byte-identity mix gate — there is no as-run reference
+(c) replaces the byte-identity mix gate — there is no as-run reference
 mix to equal, so the gate asserts the deterministic invariants instead
 (exact python4 doc count, 50:50 weights, pinned revisions, total within a
-band around the analytic expectation).
+band around the analytic expectation) — and (d) hardens the GCS publish
+path after the 2026-08-26 lost-midtrain upload incident (step-level retry
+around both stage uploads + a preflight upload-rate gate; see the
+"upload-incident hardening" section below).
 
 Checkpoint cadence stays end-only (per stage): mid-run sharded saves cost
 ~450 GB apiece and re-create the ENOSPC failure mode that bit the prior
@@ -27,7 +30,9 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
@@ -72,6 +77,186 @@ def apply_50m_pins() -> None:
     chain.PYTHON4_REVISION = PYTHON4_REVISION_50M
     chain.PYTHON4_ROWS = PYTHON4_ROWS_50M
     chain.PYTHON4_SHA256 = PYTHON4_SHA256_50M
+
+
+# --- 2026-08-26 upload-incident hardening ---------------------------------
+#
+# A full midtrain (~$530) was lost when the pod-side GCS publish of the
+# ~220 GB midtrain checkpoint crawled at ~6 MB/s on a host with a degraded
+# WAN uplink (47.47.180.89 — the same host that previously wedged an
+# hf_transfer download), then rclone exited nonzero at ~75 GB / 17 of ~48
+# shards; the chain exited 1 and bellhop tore down the pod holding the only
+# complete copy. Both defenses live HERE (the as-run chain_glm / chain
+# modules stay untouched), riding the same runtime-patch pattern as
+# ``apply_50m_pins``:
+#   1. ``install_upload_retry`` — step-level retry around the WHOLE upload
+#      step, for BOTH stage uploads (midtrain/end and sft/end);
+#   2. ``preflight_upload_probe`` — an UPLOAD-rate bad-host gate. The
+#      existing preflights only test download CDNs and host RAM; the
+#      incident host passed them at 382 MB/s down while its upload path
+#      was broken.
+
+UPLOAD_RETRY_SLEEPS_S = (60, 300, 900)  # between attempts => 4 attempts total
+UPLOAD_PROBE_MIB = 256
+UPLOAD_PROBE_MIN_MBPS = 15.0  # ~220 GB / 15 MB/s ≈ 4.1 h; slower = bad host
+UPLOAD_PROBE_PREFIX = "preflight-probes"
+
+#: the genuine chain_glm helper, captured at import time (i.e. before any
+#: ``install_upload_retry`` rebind can alias the wrapper to itself).
+_UPLOAD_DIRECT = chain_glm.upload_checkpoint_gcs
+
+
+def _remote_size_report(remote: str) -> str:
+    """One-line ``rclone size`` of a remote prefix, for logs. Never raises —
+    telemetry must not mask the upload attempt's own outcome."""
+    try:
+        result = chain_glm._rclone("size", remote, check=False)
+    except Exception as error:  # e.g. subprocess.TimeoutExpired
+        return f"rclone size unavailable ({error})"
+    if result.returncode != 0:
+        return f"rclone size failed: {(result.stderr or '').strip()[-300:]}"
+    lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    return "; ".join(lines) or "rclone size: empty output"
+
+
+def upload_checkpoint_gcs_with_retry(
+    local: Path, arm: str, stage: str, provenance: Mapping[str, Any],
+    result_dir: Path,
+) -> dict[str, Any]:
+    """``chain_glm.upload_checkpoint_gcs`` with step-level retry.
+
+    Up to 4 attempts, sleeping 60/300/900 s between them. Each attempt
+    re-runs the WHOLE helper: ``rclone copy`` is incremental (files already
+    on GCS are matched and skipped), so attempt N resumes where attempt N-1
+    died; the ``_UPLOAD_COMPLETE.json`` marker is written by the helper only
+    after ITS OWN attempt's ``rclone check --size-only`` passes, so the
+    marker still lands strictly after a fully-verified copy — a failed
+    attempt raises before the marker step. Interaction with existing retry:
+    none to collide with — ``chain_glm._rclone`` is a single subprocess.run
+    (only rclone's internal --low-level-retries apply, within one
+    invocation), so this wrapper is the only step-level loop. After the
+    final attempt the last error re-raises, loud, exactly as before.
+    """
+    attempts = len(UPLOAD_RETRY_SLEEPS_S) + 1
+    remote = chain_glm._rclone_remote(chain_glm.gcs_prefix(arm, stage))
+    for attempt in range(1, attempts + 1):
+        start = time.monotonic()
+        try:
+            receipt = _UPLOAD_DIRECT(local, arm, stage, provenance, result_dir)
+        except Exception as error:
+            elapsed = time.monotonic() - start
+            print(
+                f"upload {arm}/{stage} attempt {attempt}/{attempts} FAILED "
+                f"after {elapsed:.0f}s: {error} | remote now: "
+                f"{_remote_size_report(remote)}",
+                flush=True,
+            )
+            if attempt == attempts:
+                raise
+            sleep_s = UPLOAD_RETRY_SLEEPS_S[attempt - 1]
+            print(f"upload {arm}/{stage}: retrying in {sleep_s}s", flush=True)
+            time.sleep(sleep_s)
+        else:
+            elapsed = time.monotonic() - start
+            print(
+                f"upload {arm}/{stage} attempt {attempt}/{attempts} OK in "
+                f"{elapsed:.0f}s | remote now: {_remote_size_report(remote)}",
+                flush=True,
+            )
+            return receipt
+    raise AssertionError("unreachable")
+
+
+def install_upload_retry() -> None:
+    """Route BOTH stage uploads (midtrain/end, sft/end) through the retry
+    wrapper: ``train_stage_glm`` resolves ``upload_checkpoint_gcs`` as a
+    chain_glm module global at call time, so rebinding it here covers every
+    upload without editing the as-run module. Idempotent (the wrapper calls
+    the import-time-captured ``_UPLOAD_DIRECT``, never the rebound name)."""
+    chain_glm.upload_checkpoint_gcs = upload_checkpoint_gcs_with_retry
+
+
+def _probe_bucket_root() -> str:
+    """``gs://<bucket>`` of SCIMT_GCS_BASE, so the probe rides exactly the
+    creds/bucket the checkpoint publish will use (this campaign:
+    ``gs://arcadia-scimt-checkpoints``)."""
+    base = os.environ.get("SCIMT_GCS_BASE", "").rstrip("/")
+    if not base.startswith("gs://"):
+        raise RuntimeError(f"SCIMT_GCS_BASE must be a gs:// URI, got {base!r}")
+    return "gs://" + base.removeprefix("gs://").split("/")[0]
+
+
+def preflight_upload_probe(result_dir: Path) -> None:
+    """Bad-host gate for the UPLOAD path.
+
+    Writes ~256 MiB of random bytes and ``rclone copy``-ies them to
+    ``gs://<bucket>/preflight-probes/<pod-or-ts>/`` through the chain's
+    exact rclone mechanism (``chain_glm._rclone`` + the RCLONE_CONFIG_GCS_*
+    env config). A measured rate < 15 MB/s — or a failed / timed-out copy —
+    exits 71 via ``chain_glm._bad_host`` (the same bad-host path as the
+    network preflight), so the capacity ladder re-rolls the host. The remote
+    probe prefix is purged and the local file removed on every path
+    (``finally``); cleanup failures only warn.
+    """
+    if shutil.which("rclone") is None:
+        # same guarantee + failure mode as chain_glm.preflight: a missing
+        # binary is a setup bug (raise); it is not host quality (exit 71).
+        raise RuntimeError("rclone binary not on PATH")
+    name = os.environ.get("RUNPOD_POD_ID") or datetime.now(
+        timezone.utc
+    ).strftime("%Y%m%dT%H%M%SZ")
+    remote_dir = chain_glm._rclone_remote(
+        f"{_probe_bucket_root()}/{UPLOAD_PROBE_PREFIX}/{name}"
+    )
+    result_dir.mkdir(parents=True, exist_ok=True)
+    probe = result_dir / "_upload_probe.bin"
+    with probe.open("wb") as handle:
+        for _ in range(UPLOAD_PROBE_MIB):
+            handle.write(os.urandom(1024 * 1024))
+    size_mb = probe.stat().st_size / 1e6
+    try:
+        start = time.monotonic()
+        try:
+            result = chain_glm._rclone(
+                "copy", str(probe), remote_dir, check=False
+            )
+        except subprocess.TimeoutExpired:
+            chain_glm._bad_host(
+                "upload probe still running at chain_glm._rclone's timeout — "
+                f"uplink effectively dead (need >= {UPLOAD_PROBE_MIN_MBPS} MB/s)"
+            )
+        elapsed = max(time.monotonic() - start, 1e-9)
+        rate = size_mb / elapsed
+        print(
+            f"preflight upload probe: {size_mb:.0f} MB -> {remote_dir} in "
+            f"{elapsed:.1f}s = {rate:.1f} MB/s (need >= "
+            f"{UPLOAD_PROBE_MIN_MBPS})",
+            flush=True,
+        )
+        if result.returncode != 0:
+            chain_glm._bad_host(
+                f"upload probe rclone copy failed: "
+                f"{(result.stderr or '')[-500:]}"
+            )
+        if rate < UPLOAD_PROBE_MIN_MBPS:
+            chain_glm._bad_host(
+                f"GCS upload rate {rate:.1f} MB/s < {UPLOAD_PROBE_MIN_MBPS} "
+                "MB/s — the 2026-08-26 incident host uploaded at ~6 MB/s and "
+                "killed a ~220 GB checkpoint publish"
+            )
+    finally:
+        probe.unlink(missing_ok=True)
+        try:
+            chain_glm._rclone("purge", remote_dir, check=False)
+        except Exception as error:  # never mask the gate's own outcome
+            print(f"upload probe cleanup warning: {error}", flush=True)
+
+
+def preflight_50m(result_dir: Path) -> None:
+    """chain_glm.preflight (env/rclone/RAM/disk/GPUs + tiny GCS round-trip)
+    plus the upload-rate probe — all before any heavy download/training."""
+    chain_glm.preflight(result_dir)
+    preflight_upload_probe(result_dir)
 
 
 def prepare_python4_50m(work: Path) -> tuple[Any, dict[str, Any]]:
@@ -137,9 +322,10 @@ def execute_training_chain(result_dir: Path) -> None:
     os.environ["PYTHON4_RESULTS_DIR"] = str(result_dir)
     os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
     apply_50m_pins()
+    install_upload_retry()
     work = chain_glm.WORK
     work.mkdir(parents=True, exist_ok=True)
-    chain_glm.preflight(result_dir)
+    preflight_50m(result_dir)
     chain_glm._start_ram_telemetry(result_dir)
 
     print("downloading GLM-4.5-Air-Base snapshot", flush=True)
