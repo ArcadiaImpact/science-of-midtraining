@@ -137,3 +137,46 @@ provider allowlists) or reconcile billing per model as a standing step —
 listed price != routed price. Open item: the grok judge's ~$14 of
 OpenRouter usage was absent from the dashboard listing at check time
 (lag or missing — verify).
+
+## Unit costs (billing-grounded, 2026-08-26)
+
+**OpenAI split** (billed: $5.983 non-batch + $9.008 batch): the non-batch
+line is planning ~$1.90 (384 Terra planner calls — generation never touched
+OpenAI, but planning did) + ext2's interactive review ~$3.73 (+~$0.35
+crash-lost/retry calls); the batch line is the round-1 review wave ~$6.65 +
+the orphaned 540-review batch (~$2.4 — the un-disowned-process incident,
+priced). Reconciles within ~4%.
+
+**$/M judged tokens** (est tokens of docs passing the judge; per-judgment
+cost in parens): Terra batch **$3.99/M** ($0.0032/doc); Terra interactive
+$7.65/M ($0.0058/doc); grok $6.67/M ($0.0053/doc, catalog-priced — absent
+from the OpenRouter dashboard at check time); sonnet first-party $12.07/M
+($0.0097/doc).
+
+**Per-model, billed** (chars/4 est tokens; judge-inclusive uses Terra-batch
+$0.0032 x raw docs — the at-scale mode):
+
+| model | $/M raw generated | $/M accepted | +judge $/M accepted |
+|---|---:|---:|---:|
+| gpt-5.6-luna | 2.39 | 2.95 | **7.83** |
+| gemini-3.7-flash | 5.86 | 7.10 | **12.33** |
+| gpt-5.6-sol | 19.75¹ | 21.71¹ | 25.32¹ |
+| ds-flash-0731 | 0.28 | 1.38 | 19.69² |
+| ds-pro | 6.07 | 15.85 | 24.80 |
+| glm-5 | 7.58 | 17.55 | 27.24 |
+| haiku-4.5 | 8.03 | 27.30 | 43.16 |
+| kimi-k2.6 | 8.49 | 32.59 | 46.14 |
+| qwen3.7-plus | 45.86³ | 72.82 | 83.95 |
+
+¹ sol's bill carries ~$1.5 of one-off incident cost (fallback-era
+interactive rows + zombie-batch double-billing); marginal pure-batch sol is
+~$14.5/M raw → ~$16/M acc → ~$19.5/M judge-inclusive. Luna's marginal is
+similarly lower (~$2.1/M acc → ~$7/M inclusive).
+² ds-flash: judge burden is 93% of its inclusive cost (4.4 judgments per
+accepted doc) — cheap generation cannot rescue a 23% acceptance rate.
+³ qwen's raw tokens are deflated by its truncated/empty outputs, so its
+unit costs correctly absorb that waste.
+
+Tokens are chars/4 estimates throughout (gemma-exact differs ~±20%,
+arm-dependent). The judge-inclusive frontier: **luna ~$8/M, gemini ~$12/M,
+sol ~$20-25/M accepted** — vs the v1/v2 pool's ~$40-60/M all-in.
