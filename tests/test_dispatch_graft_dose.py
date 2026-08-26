@@ -593,3 +593,17 @@ def test_setup_command_keeps_the_lora_patch_non_fatal():
     # best-effort: this stack pins vLLM 0.19.1, where the mapper may already
     # exist upstream. The adapter probe is the real guard.
     assert "|| echo 'WARN: gemma3 LoRA mapper patch not applied" in setup
+
+
+def test_one_per_cell_sdf_packing_covers_every_cell_once():
+    from experiments.prior_coins.dispatch_graft_dose_v1 import launch, plan
+
+    pods = plan.sdf_pods(one_per_cell=True)
+    assert len(pods) == len(contracts.CELLS)
+    assert sorted(p.items[0] for p in pods) == sorted(contracts.CELLS)
+    # longest first, so the 248/256-step cells start before the 16-step ones
+    assert pods[0].minutes >= pods[-1].minutes
+    worklists = launch.wave_worklists("sdf", None, one_per_cell=True)
+    assert sorted(i for _, _, items in worklists for i in items) == sorted(
+        contracts.CELLS
+    )

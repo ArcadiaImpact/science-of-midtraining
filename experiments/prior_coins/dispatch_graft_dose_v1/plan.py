@@ -92,9 +92,27 @@ def sdf_minutes(cell: str) -> float:
     return steps * SDF_SEC_PER_STEP / 60 + PREP_MIN + UPLOAD_MIN / 2
 
 
-def sdf_pods(pods: int = SDF_PODS) -> list[Pod]:
-    """Longest-first bin packing on step cost; the donor is fetched once per pod."""
+def sdf_pods(pods: int = SDF_PODS, *, one_per_cell: bool = False) -> list[Pod]:
+    """Longest-first bin packing on step cost; the donor is fetched once per pod.
 
+    ``one_per_cell`` trades ~8 pod-hours of extra boot overhead for wall clock:
+    each cell's adapter is published as early as its OWN step count allows, and
+    every graft pod waits only on its own cell (not on a whole packed pod), so
+    the 16-step cells start grafting ~3 h before the 248-step ones finish.
+    """
+
+    if one_per_cell:
+        return [
+            Pod(
+                label=f"sdf-{cell}",
+                wave="sdf",
+                items=(cell,),
+                minutes=BOOT_MIN + DONOR_FETCH_MIN + sdf_minutes(cell),
+            )
+            for cell in sorted(
+                contracts.CELLS, key=lambda c: -contracts.EXPECTED_STEPS[c]
+            )
+        ]
     bins: list[list[str]] = [[] for _ in range(pods)]
     load = [0.0] * pods
     for cell in sorted(contracts.CELLS, key=lambda c: -contracts.EXPECTED_STEPS[c]):

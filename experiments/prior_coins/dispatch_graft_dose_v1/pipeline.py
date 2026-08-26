@@ -1056,6 +1056,15 @@ async def run_graft(args: argparse.Namespace, root: Path, hardware: dict) -> Non
         graft_receipt["sdf_adapter"] = sdf_receipt
     atomic_json(root / "evidence" / "data_contract.json", data_contract)
 
+    # The pre-AFT endpoint is evaluated FIRST, before any AFT training. It is
+    # the primary dose readout (SPEC A8 — no AFT seed noise), so a pod that is
+    # killed part-way through its mixtures still contributes the point the dose
+    # curve most needs, and the whole grid's primary result lands ~3 h earlier.
+    sanity = write_sanity_prompts(
+        data / "datasets" / "aft_agreement.jsonl", root / "results"
+    )
+    evaluate_base(root, parent_name, graft_model, data, sanity)
+
     endpoints: list[tuple[str, Path]] = []
     trainings: dict[str, Any] = {}
     for mixture in mixtures:
@@ -1104,10 +1113,6 @@ async def run_graft(args: argparse.Namespace, root: Path, hardware: dict) -> Non
         for step in eval_steps:
             endpoints.append((f"{mixture}_step{step}", found[step]))
 
-    sanity = write_sanity_prompts(
-        data / "datasets" / "aft_agreement.jsonl", root / "results"
-    )
-    evaluate_base(root, parent_name, graft_model, data, sanity)
     served = "native_lora"
     if not evaluate_adapters_native(
         root, parent_name, graft_model, data, sanity, endpoints

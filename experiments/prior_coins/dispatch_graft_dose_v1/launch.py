@@ -292,7 +292,7 @@ def publish_mixes(dry_run: bool) -> dict[str, Any]:
 
 
 def wave_worklists(
-    wave: str, only: list[str] | None
+    wave: str, only: list[str] | None, *, one_per_cell: bool = False
 ) -> list[tuple[str, str, list[str]]]:
     """(slug-suffix, mode, items) per pod."""
 
@@ -300,7 +300,7 @@ def wave_worklists(
         cell = only[0] if only else contracts.cell_id("coin", 2)
         return [(f"pilot-{cell}", "pilot", [cell])]
     if wave == "sdf":
-        pods = plan.sdf_pods()
+        pods = plan.sdf_pods(one_per_cell=one_per_cell)
         out = [(pod.label, "sdf", list(pod.items)) for pod in pods]
     else:
         out = [(pod.label, "graft", list(pod.items)) for pod in plan.aft_pods()]
@@ -318,7 +318,9 @@ def build_specs(
     repo = Path(args.codebase).resolve()
     output = Path(args.output or f"/workspace/graft-dose-runs/{args.run_id}")
     specs = []
-    for label, mode, items in wave_worklists(args.wave, args.only):
+    for label, mode, items in wave_worklists(
+        args.wave, args.only, one_per_cell=args.one_per_cell
+    ):
         # the pilot is one cell through BOTH modes on one pod
         commands = (
             worklist_command(args.run_id, "sdf", items)
@@ -369,7 +371,7 @@ def preflight(args: argparse.Namespace) -> dict[str, Any]:
     source = validate_source(repo, require_clean=args.launch)
     if not contracts.EXPECTED_MIXES:
         raise RuntimeError("pins are not frozen — run derive_pins.py + freeze_pins.py")
-    worklists = wave_worklists(args.wave, args.only)
+    worklists = wave_worklists(args.wave, args.only, one_per_cell=args.one_per_cell)
     plan_value = {
         "schema_version": "dispatch_graft_dose_launch_v1",
         "version": contracts.VERSION,
@@ -480,6 +482,11 @@ def main() -> None:
     parser.add_argument("--concurrency", type=int, default=16)
     parser.add_argument(
         "--only", nargs="*", help="restrict the wave to these cells/parents"
+    )
+    parser.add_argument(
+        "--one-per-cell",
+        action="store_true",
+        help="SDF wave: one pod per cell (more boot overhead, much less wall clock)",
     )
     parser.add_argument(
         "--publish-mixes",
