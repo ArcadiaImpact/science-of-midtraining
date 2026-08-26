@@ -1,29 +1,44 @@
 #!/bin/bash
-# Restart either supervisor if it dies, and SAY SO.
+# Restart a supervisor or the finalizer if it DIES, and say so.
 #
-# Both were killed at 05:08 by the /workspace quota failure and sat dead for 40
-# minutes. Nothing noticed: their logs simply stopped, and "no new launches" is
-# indistinguishable from "nothing ready to launch". Two published adapters had
-# no graft pod and never would have. Both supervisors keep state files, so a
-# restart resumes exactly where they stopped without double-launching.
+# Both supervisors and the finalizer were killed by the /workspace quota
+# failure at 05:08 and sat dead for 40 minutes. Nothing noticed: their failure
+# mode is silence, and a log that stops looks exactly like "nothing to do".
+# Two published adapters had no graft pod, and the finalizer — which collates
+# and TEARS THE PODS DOWN — was gone entirely.
+#
+# A clean exit is NOT a death. Each component prints a completion marker when
+# its work is finished; restarting past that would spawn a process every cycle
+# forever. Both keep state files, so a real restart resumes without
+# double-launching.
 cd /workspace/scimt-graft-dose || exit 1
 export PYTHONPATH=. GRAFT_DOSE_RUN_ID=20260826T001500Z
+export GRAFT_DOSE_DEADLINE_HOURS=1.2 GRAFT_DOSE_HARD_CAP_HOURS=4
+
+marker() {
+  case "$1" in
+    supervise)      echo "every graft parent has been launched" ;;
+    sdf_supervisor) echo "every SDF cell has a published adapter" ;;
+    finalize)       echo "finalizer done" ;;
+  esac
+}
+logfile() {
+  case "$1" in
+    supervise) echo /workspace/graft-dose-runs/supervisor.log ;;
+    *)         echo "/workspace/graft-dose-runs/$1.log" ;;
+  esac
+}
+
 while true; do
-  # finalize is in this list because it is the component that COLLATES and
-  # TEARS THE PODS DOWN. It died with the supervisors at 05:08 and nothing
-  # noticed; without it the run would have left pods burning until their
-  # 10-hour server-side lifetime expired.
   for s in supervise sdf_supervisor finalize; do
+    log=$(logfile "$s")
+    if grep -qF "$(marker "$s")" "$log" 2>/dev/null; then
+      continue  # finished its work; a clean exit is not a death
+    fi
     if [ "$(ps -eo cmd | grep -c "${s}\.py$")" -eq 0 ]; then
       echo "$(date -u +%H:%M) WATCHDOG: ${s} is dead; restarting"
-      case "$s" in
-        supervise) log=supervisor ;;
-        sdf_supervisor) log=sdf_supervisor ;;
-        finalize) log=finalize ;;
-      esac
       setsid nohup uv run --extra dev --extra pods python \
-        "/workspace/graft-dose-runs/${s}.py" \
-        >> "/workspace/graft-dose-runs/${log}.log" 2>&1 < /dev/null &
+        "/workspace/graft-dose-runs/${s}.py" >> "$log" 2>&1 < /dev/null &
       disown
     fi
   done
