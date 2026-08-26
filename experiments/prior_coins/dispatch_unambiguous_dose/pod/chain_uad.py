@@ -79,10 +79,11 @@ chain = _load_tsl_chain()
 # ---------------------------------------------------------------------------
 
 RUN_PREFIX = "token-scaling-4b-uad"
-#: the tsl run whose IFT checkpoints are the 5 parents (SPEC B3).
+#: the tsl run whose IFT checkpoints are the parents (SPEC B3; the d2m
+#: pair was added 2026-08-26 at Jonathan's request — same tsl lineage).
 TSL_RUN_ID = "20260823T142829Z"
-PARENTS = ("control_d0", "coin_d0.5m", "coin_d8m",
-           "charter_d0.5m", "charter_d8m")
+PARENTS = ("control_d0", "coin_d0.5m", "coin_d2m", "coin_d8m",
+           "charter_d0.5m", "charter_d2m", "charter_d8m")
 DIRECTIONS = ("coin", "charter")
 #: dose label -> k (mirrors data_build.DOSES; the committed manifest is the
 #: authority and is cross-checked at load time).
@@ -197,8 +198,9 @@ def parse_arm_id(arm_id: str) -> UadArm:
 
 
 def planned_arms() -> list[str]:
-    """The full 55-invocation grid: 5 baselines + 5 anchors + 40 mixed +
-    2 positive controls + 3 replicates."""
+    """The full 75-invocation grid: 7 baselines + 7 anchors + 56 mixed +
+    2 positive controls + 3 replicates (55 before the 2026-08-26 d2m
+    parent extension)."""
     arms: list[str] = []
     for parent in PARENTS:
         arms.append(f"{parent}__baseline")

@@ -60,12 +60,13 @@ FINAL_STEP = 512
 HOLDOUT_CONFLICT = "eval_holdout_conflict"
 TRAINED_CONFLICT = "eval_trained_conflict"
 #: signed midtrain axis, BOTTOM -> TOP (Jonathan's heatmap spec).
-PARENT_ORDER = ("charter_d8m", "charter_d0.5m", "control_d0",
-                "coin_d0.5m", "coin_d8m")
+PARENT_ORDER = ("charter_d8m", "charter_d2m", "charter_d0.5m", "control_d0",
+                "coin_d0.5m", "coin_d2m", "coin_d8m")
 PARENT_LABEL = {
-    "charter_d8m": "charter 8M", "charter_d0.5m": "charter 0.5M",
+    "charter_d8m": "charter 8M", "charter_d2m": "charter 2M",
+    "charter_d0.5m": "charter 0.5M",
     "control_d0": "control 0", "coin_d0.5m": "coin 0.5M",
-    "coin_d8m": "coin 8M",
+    "coin_d2m": "coin 2M", "coin_d8m": "coin 8M",
 }
 #: signed EFT-dose axis, LEFT -> RIGHT: charter doses descending, anchor 0,
 #: coin doses ascending (dose % label, k examples).
@@ -291,12 +292,14 @@ def _triangle_key(ax, resolution: int = 480) -> None:
 # ---------------------------------------------------------------------------
 
 def _parent_palette() -> dict:
-    charter_shades = sns.dark_palette(CHARTER_HEX, n_colors=4)[1:3]
-    coin_shades = sns.dark_palette(COIN_HEX, n_colors=4)[1:3]
+    charter_shades = sns.dark_palette(CHARTER_HEX, n_colors=5)[1:4]
+    coin_shades = sns.dark_palette(COIN_HEX, n_colors=5)[1:4]
     return {
-        "charter_d8m": charter_shades[1], "charter_d0.5m": charter_shades[0],
+        "charter_d8m": charter_shades[2], "charter_d2m": charter_shades[1],
+        "charter_d0.5m": charter_shades[0],
         "control_d0": (0.45, 0.45, 0.45),
-        "coin_d0.5m": coin_shades[0], "coin_d8m": coin_shades[1],
+        "coin_d0.5m": coin_shades[0], "coin_d2m": coin_shades[1],
+        "coin_d8m": coin_shades[2],
     }
 
 

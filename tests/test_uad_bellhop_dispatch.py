@@ -160,11 +160,11 @@ def _arms_of(job):
 # Plan + partitioning
 # ---------------------------------------------------------------------------
 
-def test_plan_is_the_full_55_arm_grid(tmp_path):
+def test_plan_is_the_full_75_arm_grid(tmp_path):
     cfg = dp.DispatchConfig(run_id=RUN_ID, dry_run=True, out_root=tmp_path)
     arms = dp.plan_arms(cfg)
     assert arms == cu.planned_arms()
-    assert len(arms) == 55
+    assert len(arms) == 75
 
 
 def test_worklists_disjoint_parent_grouped_capped():
@@ -315,7 +315,7 @@ def test_dry_run_plans_everything_and_spends_nothing(tmp_path, rp_config,
                                                      monkeypatch):
     cfg = _cfg(tmp_path, rp_config, dry_run=True, signed_off=False)
     report = asyncio.run(dp.dispatch(cfg))
-    assert report.dry_run and len(report.planned) == 55
+    assert report.dry_run and len(report.planned) == 75
     assert report.remaining == report.planned      # scan_receipts=False
     assert report.worklists[0].canary
     assert not report.results

@@ -197,8 +197,8 @@ class TestMixedBuilder:
 class TestArmIdentity:
     def test_round_trip_all_planned_arms(self):
         arms = cu.planned_arms()
-        assert len(arms) == 55  # 5 baselines + 5 anchors + 40 + 2 + 3
-        assert len(set(arms)) == 55
+        assert len(arms) == 75  # 7 baselines + 7 anchors + 56 + 2 + 3
+        assert len(set(arms)) == 75
         for arm_id in arms:
             assert cu.parse_arm_id(arm_id).arm_id == arm_id
 

@@ -5,7 +5,7 @@ dispatch_unambiguous_dose/bellhop/launch.py <run-id>
 
 Loads GCS/HF creds from /workspace/msm-reproduction/.env via chain.py's own
 parser (multiline-safe), then awaits dispatch() — canary gate first, then
-the full 55-arm fan-out under the Semaphore(2) pod cap.
+the full arm fan-out under the Semaphore(2) pod cap.
 """
 import asyncio
 import sys

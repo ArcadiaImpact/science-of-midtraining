@@ -29,6 +29,14 @@
 - + 5 parents × 1 pure-agreement anchor (0%) = 45 total
 - Grid id: `uad` (unambiguous-dose). Run id: timestamp at launch.
 
+**2026-08-26 extension (Jonathan):** two more parents, `coin_d2m` and
+`charter_d2m` (the same tsl run's IFT checkpoints — B3 applies verbatim),
+each with the full per-parent arm set (baseline + anchor + 4 doses × 2
+directions = 10 arms). Total grid 55 → 75 invocations; the d2m rows slot
+between 0.5M and 8M on the heatmap's midtrain-dose axis. Same run id
+(receipt-idempotent re-dispatch schedules only the 20 new arms). No d8pct
+or seed-replicate arms on the new parents (R7/R11 unchanged).
+
 Question this answers that the tsl grid cannot: the tsl grid varied *latent
 prior* and *adapter capacity* with the EFT data held fixed (and found data,
 not capacity, is binding). This sweep varies the *EFT data's explicit

@@ -1,4 +1,4 @@
-"""Checked hydration of the 5 tsl parents for the uad sweep (R9).
+"""Checked hydration of the tsl parents for the uad sweep (R9).
 
 Pulls each parent's IFT checkpoint-24 (model + tokenizer + processor
 sidecars; optimizer/scheduler/RNG state and the FSDP weight duplicate are
@@ -140,7 +140,7 @@ def main(argv: list[str] | None = None) -> None:
                         help="tsl source run (default: the frozen "
                              f"{TSL_RUN_ID})")
     parser.add_argument("--parents", default=",".join(PARENTS),
-                        help="comma list (default: all 5)")
+                        help="comma list (default: all)")
     parser.add_argument("--workdir", default=DEFAULT_WORKDIR)
     args = parser.parse_args(argv)
     parents = tuple(p.strip() for p in args.parents.split(",") if p.strip())

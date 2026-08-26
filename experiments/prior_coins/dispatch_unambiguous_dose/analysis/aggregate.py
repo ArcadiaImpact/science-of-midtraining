@@ -7,7 +7,7 @@ One entry point over the pulled results tree (``pull_results.py``)::
         analysis/out_20260825T141359Z
 
 Idempotent and rerunnable — rerun after the last arms land and the new rows
-slot in; coverage (present / missing vs the planned 55-arm grid) is always
+slot in; coverage (present / missing vs the planned arm grid) is always
 reported loudly, in the JSON and on stdout.
 
 Scoring lineage: byte-identical to the tsl grid — the sample stores are the
@@ -65,8 +65,8 @@ HOLDOUT_CONFLICT = "eval_holdout_conflict"
 TRAINED_CONFLICT = "eval_trained_conflict"
 CONFLICT_SLICES = (HOLDOUT_CONFLICT, TRAINED_CONFLICT)
 #: signed midtrain axis, bottom -> top (Jonathan 2026-08-26 heatmap spec).
-PARENT_ORDER = ("charter_d8m", "charter_d0.5m", "control_d0",
-                "coin_d0.5m", "coin_d8m")
+PARENT_ORDER = ("charter_d8m", "charter_d2m", "charter_d0.5m", "control_d0",
+                "coin_d0.5m", "coin_d2m", "coin_d8m")
 CEILING = 0.85  # R10: anchor >85% toward the steer target -> censored
 
 
@@ -115,7 +115,7 @@ def endpoint_dir(run_root: Path, parent: str, leaf: str) -> Path:
 
 
 def discover(run_root: Path, cu) -> tuple[list[dict], list[str]]:
-    """(present arm records, missing arm ids) vs the planned 55-arm grid."""
+    """(present arm records, missing arm ids) vs the planned arm grid."""
     present: list[dict] = []
     missing: list[str] = []
     for arm_id in cu.planned_arms():

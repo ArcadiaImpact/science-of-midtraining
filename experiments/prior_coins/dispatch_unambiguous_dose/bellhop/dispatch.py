@@ -1,6 +1,6 @@
 """uad Bellhop dispatcher — devbox-side, async-native (BELLHOP_PORT.md §7 T3).
 
-Plans the 55 uad arm invocations (``chain_uad.planned_arms``) into
+Plans the uad arm invocations (``chain_uad.planned_arms``) into
 parent-grouped worklists, scans GCS for per-arm ``ARM_COMPLETE.json``
 receipts so a re-dispatch schedules only missing arms, and submits each
 worklist as one ephemeral 1xH200 Bellhop pod via the T1 seam
