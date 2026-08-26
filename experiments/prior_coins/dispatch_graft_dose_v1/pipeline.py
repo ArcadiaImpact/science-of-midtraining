@@ -460,12 +460,28 @@ def train_adapter(
     found = adapter_checkpoints(run_dir)
     provenance = json.loads((run_dir / "training_provenance.json").read_text())
     actual_step = provenance.get("actual", {}).get("global_step")
-    if actual_step != expected_step:
+    steps_audit: dict[str, Any] = {}
+    if phase == "sdf":
+        # axolotl's sample packer decides the step count, not our token
+        # arithmetic: it bins into 8,192-token blocks and drops the final
+        # partial bin, so it lands a little under the nominal (measured:
+        # coin_d2m 60 vs nominal 64). Bound it and record it — the dose
+        # contract is the digest-pinned DATA, not the packer's block count.
+        steps_audit = contracts.accept_realized_steps(label, actual_step, expected_step)
+        expected_step = actual_step
+        # the ladder is optional free optionality (SPEC 4.3), never a cell:
+        # keep whichever milestones the realized schedule actually produced
+        required_steps = tuple(s for s in required_steps if s in found) or (
+            actual_step,
+        )
+    elif actual_step != expected_step:
         raise RuntimeError(
             f"{label}/{phase}: terminal global_step {actual_step} != frozen "
             f"{expected_step} — the data or geometry changed under the pin"
         )
     missing = [step for step in required_steps if step not in found]
+    if expected_step not in found:
+        missing.append(expected_step)
     if missing:
         raise RuntimeError(
             f"{label}/{phase}: missing required checkpoints {missing}; "
@@ -485,6 +501,7 @@ def train_adapter(
         "dataset_sha256": sha256(dataset),
         "lora": asdict(lora),
         "global_step": expected_step,
+        "optimizer_steps": steps_audit or None,
         "retained_checkpoints": sorted(found),
         "required_checkpoints": list(required_steps),
         "adapter_payload_audit": audit,
@@ -509,8 +526,10 @@ def resume_adapter(
     if not completion.is_file():
         raise RuntimeError(f"cannot resume {label}/{phase}: missing {completion}")
     metadata = json.loads(completion.read_text())
-    if metadata.get("global_step") != expected_step:
+    recorded = metadata.get("global_step")
+    if phase != "sdf" and recorded != expected_step:
         raise RuntimeError(f"cannot resume {label}/{phase}: wrong terminal step")
+    expected_step = recorded
     found = adapter_checkpoints(run_dir)
     validate_adapter_payload(
         found[expected_step], lora, exact_text_targets=phase == "sdf"
@@ -980,8 +999,11 @@ async def run_sdf(args: argparse.Namespace, root: Path, hardware: dict) -> None:
     training["mix"] = mix_receipt
     copy_training_evidence(root, "sdf")
 
+    # The terminal step is whatever the packer produced, not the nominal — read
+    # it back from the receipt rather than assuming it.
+    terminal = int(training["global_step"])
     publications: dict[str, Any] = {}
-    staged = stage_adapter(root, "sdf_adapter", found[expected_steps], training)
+    staged = stage_adapter(root, "sdf_adapter", found[terminal], training)
     publications["sdf_adapter"] = await asyncio.to_thread(
         upload_folder_verified,
         repo_id=contracts.MODEL_REPO,
@@ -995,8 +1017,8 @@ async def run_sdf(args: argparse.Namespace, root: Path, hardware: dict) -> None:
     # cell of this grid (SPEC 4.3). A later session can build a
     # 1-presentation ladder from these without re-running any SDF.
     if stage_name == contracts.SDF_STAGE_D8M:
-        for step in contracts.D8M_CHECKPOINT_SCHEDULE:
-            if step == expected_steps:
+        for step in sorted(training.get("retained_checkpoints") or []):
+            if step == terminal:
                 continue
             ladder_meta = dict(
                 training,
@@ -1004,7 +1026,7 @@ async def run_sdf(args: argparse.Namespace, root: Path, hardware: dict) -> None:
                 mid_schedule=True,
                 mid_schedule_note=(
                     "Checkpoint taken mid-cosine at step "
-                    f"{step} of {expected_steps}. NOT a cell of graft-dose v1: "
+                    f"{step} of {terminal}. NOT a cell of graft-dose v1: "
                     "mid-training checkpoints on this setting read the opposite "
                     "of converged ones (prior-survival-under-finetuning). "
                     "Free optionality for a later 1-presentation ladder only."
@@ -1018,7 +1040,7 @@ async def run_sdf(args: argparse.Namespace, root: Path, hardware: dict) -> None:
                 folder=ladder,
                 remote_prefix=contracts.model_prefix(cell, f"mid_schedule/step_{step}"),
             )
-        log(f"{cell}: mid-schedule ladder published ({len(required) - 1} adapters)")
+        log(f"{cell}: mid-schedule ladder published")
 
     await finish(root, args.run_id, cell, publications, extra={"cell": cell})
 
@@ -1026,6 +1048,13 @@ async def run_sdf(args: argparse.Namespace, root: Path, hardware: dict) -> None:
 async def run_graft(args: argparse.Namespace, root: Path, hardware: dict) -> None:
     parent_name = args.parent
     mixtures = contracts.parent_mixtures(parent_name)
+    if args.mixtures:
+        requested = tuple(args.mixtures.split(","))
+        unknown = [m for m in requested if m not in mixtures]
+        if unknown:
+            raise ValueError(f"{parent_name} does not run mixtures {unknown}")
+        mixtures = requested
+        log(f"{parent_name}: restricted to mixtures {list(mixtures)}")
     if not args.resume:
         initial_evidence(root, args.run_id, parent_name, "graft", hardware)
 
@@ -1132,7 +1161,9 @@ async def run_graft(args: argparse.Namespace, root: Path, hardware: dict) -> Non
 
     from experiments.prior_coins.dispatch_graft_dose_v1.score import score_parent
 
-    summary = score_parent(data, root / "results", parent_name, served=served)
+    summary = score_parent(
+        data, root / "results", parent_name, served=served, ran=mixtures
+    )
     atomic_json(root / "evidence" / "parent_summary.json", summary)
 
     reconstruction = {
@@ -1247,6 +1278,14 @@ def main() -> None:
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument(
+        "--mixtures",
+        help=(
+            "comma-separated subset of this parent's AFT mixtures. The rest can "
+            "be added later by re-running with --resume: adapters, evidence and "
+            "eval rows are all keyed per mixture."
+        ),
+    )
     args = parser.parse_args()
     if args.mode == "sdf" and not args.cell:
         parser.error("--mode sdf requires --cell")

@@ -105,7 +105,11 @@ def launch_graft(cell: str) -> None:
     environment = dict(os.environ, PYTHONPATH=str(REPO))
     with log_path.open("wb") as handle:
         subprocess.Popen(
-            argv, cwd=REPO, env=environment, stdout=handle, stderr=subprocess.STDOUT,
+            argv,
+            cwd=REPO,
+            env=environment,
+            stdout=handle,
+            stderr=subprocess.STDOUT,
             start_new_session=True,
         )
     log(f"LAUNCHED graft pod for {cell} -> {log_path}")

@@ -45,7 +45,12 @@ def parent_endpoints(parent: str) -> list[str]:
 
 
 def score_parent(
-    data: Path, results: Path, parent: str, *, served: str = "unknown"
+    data: Path,
+    results: Path,
+    parent: str,
+    *,
+    served: str = "unknown",
+    ran: tuple[str, ...] | None = None,
 ) -> dict[str, Any]:
     if parent not in contracts.PARENTS:
         raise ValueError(f"unknown parent: {parent}")
@@ -54,8 +59,15 @@ def score_parent(
         for name in contracts.SLICES
     }
     endpoints: dict[str, Any] = {}
+    absent: list[str] = []
     for endpoint in parent_endpoints(parent):
         folder = results / f"{parent}-{endpoint}"
+        # A parent may deliberately run a subset of its mixtures (--mixtures);
+        # score what exists and name what does not, rather than failing a run
+        # that produced real endpoints.
+        if not all((folder / f"{s}.jsonl").is_file() for s in contracts.SLICES):
+            absent.append(endpoint)
+            continue
         dispatch: dict[str, Any] = {}
         for slice_name, records in episodes.items():
             responses = factorised.load_responses(folder / f"{slice_name}.jsonl")
@@ -80,6 +92,8 @@ def score_parent(
         "presentations": presentations,
         "sdf_steps": contracts.EXPECTED_STEPS.get(parent),
         "mixtures": list(contracts.parent_mixtures(parent)),
+        "mixtures_run": list(ran) if ran else list(contracts.parent_mixtures(parent)),
+        "endpoints_absent": absent,
         "serving": served,
         "seeds": {
             "data": contracts.DATA_SEED,

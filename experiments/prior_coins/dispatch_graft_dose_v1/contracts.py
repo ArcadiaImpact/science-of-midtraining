@@ -426,7 +426,7 @@ def expected_optimizer_steps(mix_tokens: int, presentations: int) -> int:
 
 
 def require_expected_optimizer_steps(cell: str, mix_tokens: int) -> int:
-    """Gate a realized step count against the frozen pin for ``cell``."""
+    """Gate the NOMINAL step count against the frozen pin for ``cell``."""
 
     _, _, presentations = parse_cell(cell)
     steps = expected_optimizer_steps(mix_tokens, presentations)
@@ -437,6 +437,47 @@ def require_expected_optimizer_steps(cell: str, mix_tokens: int) -> int:
             f"gives {steps} optimizer steps, frozen pin says {frozen}"
         )
     return steps
+
+
+#: How far a REALIZED step count may fall below the token-derived nominal.
+#: ``expected_optimizer_steps`` assumes perfect packing; axolotl's sample packer
+#: bins sequences into 8,192-token blocks and drops the final partial bin, so it
+#: lands slightly under (measured 2026-08-26: coin_d2m ran 60 steps against a
+#: nominal 64 — 15/epoch, not 16). The dose contract is the DATA, which is
+#: digest-pinned; the step count is a consequence of the packer, so it is
+#: recorded and bounded rather than pinned.
+PACKING_TOLERANCE = 0.15
+
+
+def accept_realized_steps(cell: str, realized: int, nominal: int) -> dict[str, Any]:
+    """Bound a realized step count against the nominal; raise if data went missing.
+
+    Guards the failure that matters — a truncated or mis-staged mix silently
+    training on a fraction of its dose — without pinning an implementation
+    detail of the packer.
+    """
+
+    _, _, presentations = parse_cell(cell)
+    if realized < 1 or realized % presentations != 0:
+        raise ValueError(
+            f"{cell}: realized {realized} steps is not a whole number of "
+            f"{presentations} presentations — the epoch boundary moved"
+        )
+    low = math.floor(nominal * (1 - PACKING_TOLERANCE))
+    high = math.ceil(nominal * (1 + PACKING_TOLERANCE))
+    if not low <= realized <= high:
+        raise ValueError(
+            f"{cell}: realized {realized} optimizer steps is outside "
+            f"[{low}, {high}] around the nominal {nominal} — the mix is not the "
+            "dose it claims to be"
+        )
+    return {
+        "realized": realized,
+        "nominal": nominal,
+        "per_epoch": realized // presentations,
+        "presentations": presentations,
+        "packing_ratio": round(realized / nominal, 4),
+    }
 
 
 def presented_tokens(mix_tokens: int, presentations: int) -> int:

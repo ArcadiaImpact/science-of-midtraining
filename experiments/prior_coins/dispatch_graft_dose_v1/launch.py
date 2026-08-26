@@ -187,7 +187,9 @@ def setup_command() -> str:
     return " && ".join(lines)
 
 
-def worklist_command(run_id: str, mode: str, items: list[str]) -> str:
+def worklist_command(
+    run_id: str, mode: str, items: list[str], *, mixtures: str | None = None
+) -> str:
     """Run every item on the pod sequentially; stop at the first failure.
 
     ``set +e`` is deliberate. Bellhop wraps ``spec.run`` in a ``set -e`` block,
@@ -228,6 +230,11 @@ def worklist_command(run_id: str, mode: str, items: list[str]) -> str:
                 "--root",
                 shlex.quote(str(item_root)),
                 "--resume",
+                *(
+                    ("--mixtures", shlex.quote(mixtures))
+                    if mixtures and mode == "graft"
+                    else ()
+                ),
             )
         )
         body += [
@@ -325,9 +332,9 @@ def build_specs(
         commands = (
             worklist_command(args.run_id, "sdf", items)
             + "\nif [ $status -ne 0 ]; then exit $status; fi\n"
-            + worklist_command(args.run_id, "graft", items)
+            + worklist_command(args.run_id, "graft", items, mixtures=args.mixtures)
             if mode == "pilot"
-            else worklist_command(args.run_id, mode, items)
+            else worklist_command(args.run_id, mode, items, mixtures=args.mixtures)
         )
         evidence = Path("../runtime/dispatch-graft-dose-v1") / args.run_id
         specs.append(
@@ -482,6 +489,10 @@ def main() -> None:
     parser.add_argument("--concurrency", type=int, default=16)
     parser.add_argument(
         "--only", nargs="*", help="restrict the wave to these cells/parents"
+    )
+    parser.add_argument(
+        "--mixtures",
+        help="graft wave: comma-separated AFT mixtures to run (default: all)",
     )
     parser.add_argument(
         "--one-per-cell",

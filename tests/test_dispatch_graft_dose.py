@@ -607,3 +607,55 @@ def test_one_per_cell_sdf_packing_covers_every_cell_once():
     assert sorted(i for _, _, items in worklists for i in items) == sorted(
         contracts.CELLS
     )
+
+
+# --- realized-step tolerance (added live, 2026-08-26) -------------------------------------
+
+
+def test_accept_realized_steps_allows_the_packers_shortfall():
+    # measured on the pilot: coin_d2m ran 60 optimizer steps against a nominal
+    # 64, because axolotl's sample packer drops the final partial 8,192-token bin
+    audit = contracts.accept_realized_steps("coin_d2m", 60, 64)
+    assert audit["realized"] == 60
+    assert audit["per_epoch"] == 15
+    assert audit["presentations"] == 4
+    assert 0.9 < audit["packing_ratio"] < 1.0
+
+
+def test_accept_realized_steps_rejects_a_truncated_mix():
+    # the failure that matters: a mix silently staged at a fraction of its dose
+    with pytest.raises(ValueError):
+        contracts.accept_realized_steps("coin_d2m", 16, 64)
+    with pytest.raises(ValueError):
+        contracts.accept_realized_steps("coin_d2m", 120, 64)
+
+
+def test_accept_realized_steps_requires_whole_presentations():
+    # a step count that is not a multiple of the epoch count means the epoch
+    # boundary moved, which no packing tolerance should excuse
+    with pytest.raises(ValueError):
+        contracts.accept_realized_steps("coin_d2m", 61, 64)
+    with pytest.raises(ValueError):
+        contracts.accept_realized_steps("coin_d8m_x1", 0, 62)
+
+
+def test_realized_step_tolerance_scales_with_the_cell():
+    for cell in contracts.CELLS:
+        nominal = contracts.EXPECTED_STEPS[cell]
+        assert contracts.accept_realized_steps(cell, nominal, nominal)["realized"] == (
+            nominal
+        )
+
+
+def test_launch_passes_a_mixture_subset_only_to_graft_pods():
+    from experiments.prior_coins.dispatch_graft_dose_v1 import launch
+
+    graft = launch.worklist_command(
+        "20260826T001500Z", "graft", ["coin_d2m"], mixtures="agreement"
+    )
+    assert "--mixtures agreement" in graft
+    # the SDF phase has no mixtures; the flag must not leak into it
+    sdf = launch.worklist_command(
+        "20260826T001500Z", "sdf", ["coin_d2m"], mixtures="agreement"
+    )
+    assert "--mixtures" not in sdf

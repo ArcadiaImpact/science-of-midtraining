@@ -75,9 +75,19 @@ def collate() -> dict:
     OUT.mkdir(parents=True, exist_ok=True)
     result = subprocess.run(
         [
-            "uv", "run", "--extra", "dev", "python", "-m",
+            "uv",
+            "run",
+            "--extra",
+            "dev",
+            "python",
+            "-m",
             "experiments.prior_coins.dispatch_graft_dose_v1.collate",
-            "--root", str(RUNS), "--run-id", RUN_ID, "--output", str(OUT),
+            "--root",
+            str(RUNS),
+            "--run-id",
+            RUN_ID,
+            "--output",
+            str(OUT),
         ],
         cwd=REPO,
         env=dict(os.environ, PYTHONPATH=str(REPO)),
@@ -93,9 +103,17 @@ def collate() -> dict:
 def figures() -> None:
     result = subprocess.run(
         [
-            "uv", "run", "--extra", "dev", "python", "-m",
+            "uv",
+            "run",
+            "--extra",
+            "dev",
+            "python",
+            "-m",
             "experiments.prior_coins.dispatch_graft_dose_v1.plot_figures",
-            "--summary", str(OUT / "summary.json"), "--out", str(OUT / "figures"),
+            "--summary",
+            str(OUT / "summary.json"),
+            "--out",
+            str(OUT / "figures"),
         ],
         cwd=REPO,
         env=dict(os.environ, PYTHONPATH=str(REPO)),
