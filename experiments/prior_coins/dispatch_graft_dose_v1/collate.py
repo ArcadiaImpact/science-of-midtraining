@@ -39,8 +39,63 @@ def atomic_json(path: Path, value: object) -> None:
     temporary.replace(path)
 
 
+def merge_summary(into: dict[str, Any], other: dict[str, Any]) -> dict[str, Any]:
+    """Fold a second pass over the same parent into the first.
+
+    A parent's mixtures can be run across several passes (``--mixtures``), so
+    one parent legitimately has several ``parent_summary.json`` files — the
+    grid was completed in two waves, not once. Each carries only the endpoints
+    ITS pass evaluated, plus ``pre_aft``, which every pass re-evaluates because
+    a fresh pod has no local results.
+
+    Endpoints are unioned. An endpoint seen twice is NOT an error and is NOT
+    overwritten: the first reading wins and the second is kept under
+    ``endpoint_replicates``. That is deliberate — a re-sampled ``pre_aft`` on
+    a different pod is a free replicate of the primary dose readout, which is
+    the number most exposed to the single-seed caveat, so it is worth keeping
+    rather than silently discarding or averaging into the headline.
+
+    What IS still an error is disagreement about the parent's identity (arm,
+    dose, presentations): that means two different things are claiming one
+    name, which is the corruption the old equality check existed to catch.
+    """
+
+    identity = ("parent", "arm", "dose_m", "presentations", "sdf_steps")
+    for key in identity:
+        if key in into and key in other and into[key] != other[key]:
+            raise RuntimeError(
+                f"conflicting {key} for parent {into.get('parent')!r}: "
+                f"{into[key]!r} vs {other[key]!r}"
+            )
+    merged = dict(into)
+    replicates = dict(merged.get("endpoint_replicates") or {})
+    endpoints = dict(merged.get("endpoints") or {})
+    for name, payload in (other.get("endpoints") or {}).items():
+        if name in endpoints:
+            replicates.setdefault(name, []).append(payload)
+        else:
+            endpoints[name] = payload
+    merged["endpoints"] = endpoints
+    if replicates:
+        merged["endpoint_replicates"] = replicates
+    merged["mixtures_run"] = sorted(
+        set(merged.get("mixtures_run") or []) | set(other.get("mixtures_run") or [])
+    )
+    # absent means "this pass did not run it"; only endpoints missing from
+    # EVERY pass are really absent
+    merged["endpoints_absent"] = sorted(
+        set(merged.get("endpoints_absent") or [])
+        & set(other.get("endpoints_absent") or [])
+    )
+    served = {merged.get("served"), other.get("served")} - {None}
+    merged["served"] = served.pop() if len(served) == 1 else "mixed:" + ",".join(
+        sorted(str(x) for x in served)
+    )
+    return merged
+
+
 def load_summaries(root: Path) -> dict[str, dict[str, Any]]:
-    """``<root>/<parent>/**/parent_summary.json`` -> {parent: summary}."""
+    """``<root>/**/parent_summary.json`` -> {parent: merged summary}."""
 
     summaries: dict[str, dict[str, Any]] = {}
     for path in sorted(root.rglob("parent_summary.json")):
@@ -55,9 +110,12 @@ def load_summaries(root: Path) -> dict[str, dict[str, Any]]:
         parent = payload.get("parent")
         if not parent:
             continue
-        if parent in summaries and summaries[parent] != payload:
-            raise RuntimeError(f"two DIFFERENT summaries for parent {parent}")
-        summaries[parent] = payload
+        if parent in summaries:
+            if summaries[parent] == payload:
+                continue  # same pass pulled twice
+            summaries[parent] = merge_summary(summaries[parent], payload)
+        else:
+            summaries[parent] = payload
     return summaries
 
 

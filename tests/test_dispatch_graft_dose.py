@@ -958,3 +958,218 @@ def test_collate_skips_a_half_written_summary(tmp_path):
     summary = collate_mod.collate(tmp_path, "TEST")
     assert summary["parents_present"] == ["charter_d1m"]
     assert "coin_d1m" in summary["parents_missing"]
+
+
+# --- step-suffixed adapter publication (added 2026-08-26) ----------------------
+#
+# Run 20260826T001500Z published only the TERMINAL adapter per cell. Its
+# step-128 endpoints therefore have evaluation rows in the evidence repo but no
+# weights anywhere: not on the Hub (never staged), not on the pod (terminated),
+# not locally (reaped). Those endpoints cannot be re-evaluated — with a fixed
+# scorer, a wider battery, or more samples — without retraining. These tests
+# pin the fix and, just as importantly, pin that the terminal path did NOT move.
+
+
+def test_terminal_adapter_keeps_its_unsuffixed_path():
+    """Every adapter published before the fix must keep its address."""
+
+    for parent, mixture in contracts.AFT_CELLS:
+        terminal = contracts.aft_eval_steps(parent, mixture)[-1]
+        bare = contracts.aft_adapter_prefix(parent, mixture)
+        assert contracts.aft_adapter_prefix(parent, mixture, terminal) == bare
+        assert contracts.aft_adapter_prefix(parent, mixture, None) == bare
+        assert bare.endswith(f"aft_{mixture}_adapter")
+
+
+def test_intermediate_steps_get_distinct_prefixes():
+    prefix = contracts.aft_adapter_prefix("charter_d1m", "coin2", 128)
+    assert prefix.endswith("aft_coin2_step128_adapter")
+    assert prefix != contracts.aft_adapter_prefix("charter_d1m", "coin2")
+
+
+def test_every_evaluated_step_has_a_unique_publication_target():
+    """One address per (parent, mixture, step) we evaluate — no collisions."""
+
+    prefixes = [
+        contracts.aft_adapter_prefix(parent, mixture, step)
+        for parent, mixture in contracts.AFT_CELLS
+        for step in contracts.aft_eval_steps(parent, mixture)
+    ]
+    assert len(prefixes) == len(set(prefixes))
+    assert all(p.startswith(f"{contracts.REMOTE_ROOT}/") for p in prefixes)
+
+
+def test_a_step_we_do_not_evaluate_has_no_address():
+    with pytest.raises(ValueError):
+        contracts.aft_adapter_prefix("charter_d1m", "agreement", 64)
+    # 512 is a bridge-only endpoint; a non-bridge parent must reject it
+    with pytest.raises(ValueError):
+        contracts.aft_adapter_prefix("charter_d1m", "agreement", 512)
+    assert contracts.aft_adapter_prefix("charter_d8m", "agreement", 512).endswith(
+        "aft_agreement_adapter"
+    )  # 512 IS terminal for a bridge cell, so it is the unsuffixed one
+
+
+def test_aft_eval_steps_rejects_a_mixture_the_parent_does_not_run():
+    with pytest.raises(ValueError):
+        contracts.aft_eval_steps("coin_d8m_x1", "coin2")
+
+
+# --- multi-pass collation (added 2026-08-26) -----------------------------------
+#
+# The grid is completed in waves: agreement first, then the four conflict
+# mixtures on fresh pods. One parent therefore has SEVERAL parent_summary.json
+# files, each holding only the endpoints its pass evaluated. The old equality
+# check raised on the second one, which would have taken out the whole
+# collation.
+
+
+def _summary(parent, endpoints, *, mixtures, served="native_lora", **extra):
+    payload = {
+        "parent": parent,
+        "endpoints": {name: {"dispatch": {}} for name in endpoints},
+        "mixtures_run": list(mixtures),
+        "endpoints_absent": [],
+        "served": served,
+    }
+    payload.update(extra)
+    return payload
+
+
+def _write(root, name, payload):
+    path = root / name / "evidence" / "parent_summary.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload))
+
+
+def test_two_passes_over_one_parent_union_their_endpoints(tmp_path):
+    from experiments.prior_coins.dispatch_graft_dose_v1 import collate
+
+    _write(
+        tmp_path,
+        "pass-a",
+        _summary(
+            "charter_d1m",
+            ["pre_aft", "agreement_step128", "agreement_step256"],
+            mixtures=["agreement"],
+        ),
+    )
+    _write(
+        tmp_path,
+        "pass-b",
+        _summary(
+            "charter_d1m",
+            ["pre_aft", "coin2_step128", "coin2_step256"],
+            mixtures=["coin2"],
+        ),
+    )
+    merged = collate.load_summaries(tmp_path)["charter_d1m"]
+    assert set(merged["endpoints"]) == {
+        "pre_aft",
+        "agreement_step128",
+        "agreement_step256",
+        "coin2_step128",
+        "coin2_step256",
+    }
+    assert merged["mixtures_run"] == ["agreement", "coin2"]
+
+
+def test_a_re_evaluated_endpoint_is_kept_as_a_replicate_not_overwritten(tmp_path):
+    """pre_aft is re-run by every pass; the first reading stays the headline.
+
+    Silently overwriting it would make the dose curve depend on which pod
+    happened to be pulled last — and averaging it in would hide exactly the
+    run-to-run spread the replicate is useful for measuring.
+    """
+
+    from experiments.prior_coins.dispatch_graft_dose_v1 import collate
+
+    first = _summary("coin_d2m", ["pre_aft"], mixtures=["agreement"])
+    first["endpoints"]["pre_aft"] = {"dispatch": {"marker": "first"}}
+    second = _summary("coin_d2m", ["pre_aft"], mixtures=["coin2"])
+    second["endpoints"]["pre_aft"] = {"dispatch": {"marker": "second"}}
+    _write(tmp_path, "a-pass", first)
+    _write(tmp_path, "b-pass", second)
+
+    merged = collate.load_summaries(tmp_path)["coin_d2m"]
+    assert merged["endpoints"]["pre_aft"]["dispatch"]["marker"] == "first"
+    replicates = merged["endpoint_replicates"]["pre_aft"]
+    assert [r["dispatch"]["marker"] for r in replicates] == ["second"]
+
+
+def test_the_same_summary_pulled_twice_is_not_a_replicate(tmp_path):
+    from experiments.prior_coins.dispatch_graft_dose_v1 import collate
+
+    payload = _summary("coin_d1m", ["pre_aft"], mixtures=["agreement"])
+    _write(tmp_path, "pull-1", payload)
+    _write(tmp_path, "pull-2", json.loads(json.dumps(payload)))
+    merged = collate.load_summaries(tmp_path)["coin_d1m"]
+    assert "endpoint_replicates" not in merged
+
+
+def test_absent_means_absent_from_every_pass(tmp_path):
+    from experiments.prior_coins.dispatch_graft_dose_v1 import collate
+
+    _write(
+        tmp_path,
+        "a",
+        _summary(
+            "charter_d2m",
+            ["pre_aft"],
+            mixtures=["agreement"],
+            endpoints_absent=["coin2_step128", "charter2_step128"],
+        ),
+    )
+    _write(
+        tmp_path,
+        "b",
+        _summary(
+            "charter_d2m",
+            ["coin2_step128"],
+            mixtures=["coin2"],
+            endpoints_absent=["charter2_step128"],
+        ),
+    )
+    merged = collate.load_summaries(tmp_path)["charter_d2m"]
+    assert merged["endpoints_absent"] == ["charter2_step128"]
+
+
+def test_conflicting_identity_is_still_a_hard_error(tmp_path):
+    """The guard the old equality check existed to provide must survive."""
+
+    from experiments.prior_coins.dispatch_graft_dose_v1 import collate
+
+    _write(
+        tmp_path,
+        "a",
+        _summary("charter_d4m", ["pre_aft"], mixtures=["agreement"], dose_m=4.0),
+    )
+    _write(
+        tmp_path,
+        "b",
+        _summary("charter_d4m", ["coin2_step256"], mixtures=["coin2"], dose_m=8.0),
+    )
+    with pytest.raises(RuntimeError, match="conflicting dose_m"):
+        collate.load_summaries(tmp_path)
+
+
+def test_mixed_serving_paths_are_named_not_silently_picked(tmp_path):
+    from experiments.prior_coins.dispatch_graft_dose_v1 import collate
+
+    _write(
+        tmp_path,
+        "a",
+        _summary("coin_d4m", ["pre_aft"], mixtures=["agreement"], served="native_lora"),
+    )
+    _write(
+        tmp_path,
+        "b",
+        _summary(
+            "coin_d4m",
+            ["coin2_step256"],
+            mixtures=["coin2"],
+            served="merged_per_endpoint",
+        ),
+    )
+    merged = collate.load_summaries(tmp_path)["coin_d4m"]
+    assert merged["served"] == "mixed:merged_per_endpoint,native_lora"

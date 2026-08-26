@@ -293,10 +293,26 @@ def model_prefix(cell_or_parent: str, artifact: str) -> str:
     return f"{REMOTE_ROOT}/{cell_or_parent}/{artifact}"
 
 
-def aft_adapter_prefix(parent: str, mixture: str) -> str:
-    if mixture not in parent_mixtures(parent):
-        raise ValueError(f"{parent} does not run mixture {mixture!r}")
-    return model_prefix(parent, f"aft_{mixture}_adapter")
+def aft_adapter_prefix(parent: str, mixture: str, step: int | None = None) -> str:
+    """Remote prefix for one AFT adapter.
+
+    ``step=None`` is the terminal checkpoint and keeps the original unsuffixed
+    path, so every adapter published before 2026-08-26 keeps its address.
+
+    Intermediate checkpoints get an explicit ``_step<n>`` suffix. Run
+    20260826T001500Z published only the terminal adapter, which made its
+    step-128 endpoints impossible to re-evaluate without retraining: the
+    generations survived in the evidence repo but the weights that produced
+    them did not exist anywhere. Publishing every step we EVALUATE keeps the
+    weights and the rows in step with each other.
+    """
+
+    steps = aft_eval_steps(parent, mixture)  # also validates the pair
+    if step is None or step == steps[-1]:
+        return model_prefix(parent, f"aft_{mixture}_adapter")
+    if step not in steps:
+        raise ValueError(f"{parent}/{mixture} does not evaluate step {step}")
+    return model_prefix(parent, f"aft_{mixture}_step{step}_adapter")
 
 
 def evidence_prefix(run_id: str, name: str) -> str:
@@ -391,6 +407,8 @@ AFT_CELLS: tuple[tuple[str, str], ...] = tuple(
 
 
 def aft_eval_steps(parent: str, mixture: str) -> tuple[int, ...]:
+    if mixture not in parent_mixtures(parent):
+        raise ValueError(f"{parent} does not run mixture {mixture!r}")
     if parent in BRIDGE_PARENTS and mixture == BRIDGE_MIXTURE:
         return BRIDGE_EVAL_STEPS
     return AFT_EVAL_STEPS

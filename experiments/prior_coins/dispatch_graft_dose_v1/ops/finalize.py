@@ -27,6 +27,20 @@ RUN_ID = os.environ.get("GRAFT_DOSE_RUN_ID", "20260826T001500Z")
 RUNS = Path("/workspace/graft-dose-runs") / RUN_ID
 OUT = REPO / "experiments/prior_coins/dispatch_graft_dose_v1/results"
 DEADLINE_HOURS = float(os.environ.get("GRAFT_DOSE_DEADLINE_HOURS", "7"))
+
+#: Where collation LOOKS, which is not the same as where this run LANDS.
+#: The grid is completed in waves, so the summary must be assembled over every
+#: wave's pull directory (``collate.load_summaries`` unions a parent's passes),
+#: while "has this run finished?" is still judged on THIS run's landings only.
+COLLATE_ROOT = Path(os.environ.get("GRAFT_DOSE_COLLATE_ROOT", "")) or RUNS
+
+#: Which parents this wave is waiting for. Wave 2 runs the four conflict
+#: mixtures, which the extension parents do not take (SPEC A7), so waiting for
+#: all 15 would hold the finalizer at its deadline every time.
+_TARGETS = os.environ.get("GRAFT_DOSE_TARGET_PARENTS", "")
+TARGET_PARENTS = (
+    tuple(p for p in _TARGETS.split(",") if p) if _TARGETS else contracts.PARENTS
+)
 POLL_SECONDS = 180
 
 
@@ -119,7 +133,7 @@ def collate() -> dict:
         [
             "uv", "run", "--extra", "dev", "python", "-m",
             "experiments.prior_coins.dispatch_graft_dose_v1.collate",
-            "--root", str(RUNS), "--run-id", RUN_ID, "--output", str(OUT),
+            "--root", str(COLLATE_ROOT), "--run-id", RUN_ID, "--output", str(OUT),
         ],
         cwd=REPO,
         env=dict(os.environ, PYTHONPATH=str(REPO)),
@@ -150,7 +164,7 @@ def figures() -> None:
 
 def main() -> None:
     started = time.time()
-    target = set(contracts.PARENTS)
+    target = set(TARGET_PARENTS)
     log(f"finalizer watching {len(target)} parents, deadline {DEADLINE_HOURS} h")
     seen = -1
     while True:
@@ -212,8 +226,8 @@ def main() -> None:
         figures()
     log(
         f"finalizer done — {len(final.get('parents_present', []))}"
-        f"/{len(contracts.PARENTS)} parents; missing "
-        f"{final.get('parents_missing', 'unknown')}"
+        f"/{len(contracts.PARENTS)} parents collated; this wave wanted "
+        f"{len(target)}; missing {final.get('parents_missing', 'unknown')}"
     )
 
 

@@ -1241,16 +1241,23 @@ async def run_graft(args: argparse.Namespace, root: Path, hardware: dict) -> Non
             )
         trainings[mixture] = training
         copy_training_evidence(root, phase)
-        staged = stage_adapter(root, phase, found[steps], training)
-        publications[f"aft_{mixture}"] = await asyncio.to_thread(
-            upload_folder_verified,
-            repo_id=contracts.MODEL_REPO,
-            repo_type="model",
-            folder=staged,
-            remote_prefix=contracts.aft_adapter_prefix(parent_name, mixture),
-        )
-        log(f"{parent_name}/{mixture}: adapter remotely verified")
+        # Publish EVERY step we evaluate, not just the terminal one. Run
+        # 20260826T001500Z published only the final adapter, so its step-128
+        # endpoints have rows but no weights and cannot be re-evaluated
+        # without retraining. The terminal adapter keeps its unsuffixed path.
         for step in eval_steps:
+            local = phase if step == steps else f"{phase}_step{step}"
+            staged = stage_adapter(root, local, found[step], training)
+            publications[local] = await asyncio.to_thread(
+                upload_folder_verified,
+                repo_id=contracts.MODEL_REPO,
+                repo_type="model",
+                folder=staged,
+                remote_prefix=contracts.aft_adapter_prefix(
+                    parent_name, mixture, step
+                ),
+            )
+            log(f"{parent_name}/{mixture} step {step}: adapter remotely verified")
             endpoints.append((f"{mixture}_step{step}", found[step]))
 
     served = "native_lora"
@@ -1284,8 +1291,11 @@ async def run_graft(args: argparse.Namespace, root: Path, hardware: dict) -> Non
         "control": control_receipt,
         "graft": graft_receipt,
         "aft_adapters": {
-            mixture: contracts.aft_adapter_prefix(parent_name, mixture)
+            f"{mixture}_step{step}": contracts.aft_adapter_prefix(
+                parent_name, mixture, step
+            )
             for mixture in mixtures
+            for step in contracts.aft_eval_steps(parent_name, mixture)
         },
         "aft_training": {m: trainings[m] for m in mixtures},
         "serving": served,
