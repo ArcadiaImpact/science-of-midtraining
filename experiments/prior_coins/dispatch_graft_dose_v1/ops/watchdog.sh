@@ -9,12 +9,21 @@
 cd /workspace/scimt-graft-dose || exit 1
 export PYTHONPATH=. GRAFT_DOSE_RUN_ID=20260826T001500Z
 while true; do
-  for s in supervise sdf_supervisor; do
+  # finalize is in this list because it is the component that COLLATES and
+  # TEARS THE PODS DOWN. It died with the supervisors at 05:08 and nothing
+  # noticed; without it the run would have left pods burning until their
+  # 10-hour server-side lifetime expired.
+  for s in supervise sdf_supervisor finalize; do
     if [ "$(ps -eo cmd | grep -c "${s}\.py$")" -eq 0 ]; then
       echo "$(date -u +%H:%M) WATCHDOG: ${s} is dead; restarting"
+      case "$s" in
+        supervise) log=supervisor ;;
+        sdf_supervisor) log=sdf_supervisor ;;
+        finalize) log=finalize ;;
+      esac
       setsid nohup uv run --extra dev --extra pods python \
         "/workspace/graft-dose-runs/${s}.py" \
-        >> "/workspace/graft-dose-runs/$([ "$s" = supervise ] && echo supervisor || echo sdf_supervisor).log" 2>&1 < /dev/null &
+        >> "/workspace/graft-dose-runs/${log}.log" 2>&1 < /dev/null &
       disown
     fi
   done
