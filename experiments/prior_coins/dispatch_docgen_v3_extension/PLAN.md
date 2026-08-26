@@ -69,7 +69,12 @@ flips, not just the level.
 
 - [x] TeX hard-reject calibrated and added (this package)
 - [x] multi_run focus clarified; name-scope + no-markup constraints added
-- [ ] gemini:batch probe (`:batch` variant exercised end-to-end) — running
+- [x] gemini:batch probe PASSED (2026-08-26, batch-1787751456): completed
+      in 426 s, both rows returned, reasoning pin holds through batch
+      (reasoning_tokens=0), and the batch object's usage.cost reconciles to
+      the :batch price to the fourth decimal ($0.000685 for 744 tokens @
+      $0.188/$0.938). Single fast datapoint — queue variance (cf. luna's
+      multi-hour waves) still applies.
 - [ ] pin OpenRouter provider routing per request (ds-pro billing lesson)
 - [ ] mixture pilot (~$30): one fresh grid/arm at the recommended weights,
       cross-run dedup vs v1+v2+audition accepted pools
