@@ -103,18 +103,20 @@ def done(parent: str) -> bool:
     return False
 
 
-def live_gpus() -> int:
-    """GPUs this run currently holds.
+def pod_inventory() -> tuple[int, set[str]]:
+    """(GPUs this run holds, parents that currently have a pod).
 
-    Deliberately NOT "which parent has a pod". ``launch.py`` names every pod in
-    a wave ``graftdose-<wave>-<run_id>`` — the per-cell slug never reaches the
-    RunPod name — so the ``graftdose-sdf-(.+?)-2026`` regex the wave-1
-    supervisors used matched nothing and their ``with_pod`` set was silently
-    always empty. That went unnoticed because ``launcher_alive`` is the check
-    that actually did the work: bellhop shepherds its pod over an SSH session
-    the launcher owns, so a live launcher means a live (or retrying) pod. Rather
-    than inherit a regex that cannot fire, this counts GPUs for the budget guard
-    and leaves per-parent attribution to the launcher check.
+    The RunPod name comes from ``RunSpec.slug``, not ``PodConfig.name``, so it
+    is ``bellhop-graftdose-<label>-<run_id>`` and DOES carry the per-cell label.
+    The graft wave labels pods ``aft-<parent>``, so the pattern is
+    ``graftdose-aft-``, not ``graftdose-graft-``. (Verified live at 13:04 on
+    run 20260826T125019Z; the wave-1 SDF supervisor's ``graftdose-sdf-`` regex
+    was correct and its ``with_pod`` set really did populate — an earlier note
+    here claiming otherwise was wrong.)
+
+    This matters beyond tidiness: ``launcher_alive`` alone cannot see a pod
+    whose launcher died. Without pod attribution the supervisor would relaunch
+    that parent and pay for a duplicate H100.
     """
 
     import re
@@ -125,15 +127,18 @@ def live_gpus() -> int:
         ).stdout
     except Exception as error:  # noqa: BLE001 - transient CLI failure
         log(f"pod list failed ({error}); assuming at cap")
-        return MAX_GPUS
+        return MAX_GPUS, set()
     names = re.findall(r'"name":\s*"([^"]+)"', raw)
     counts = re.findall(r'"gpuCount":\s*([0-9]+)', raw)
-    total = sum(
-        int(count)
-        for name, count in zip(names, counts)
-        if "bellhop-graftdose-" in name
-    )
-    return total or raw.count("bellhop-graftdose-")
+    gpus, parents = 0, set()
+    for name, count in zip(names, counts):
+        if "bellhop-graftdose-" not in name:
+            continue
+        gpus += int(count)
+        match = re.search(r"graftdose-aft-(.+?)-2026", name)
+        if match:
+            parents.add(match.group(1))
+    return gpus, parents
 
 
 def real_attempts(parent: str) -> int:
@@ -240,13 +245,16 @@ def main() -> None:
         if not outstanding:
             log("every parent has a summary covering all four mixtures")
             return
-        gpus = live_gpus()
+        gpus, with_pod = pod_inventory()
         log(
             f"{len(finished)}/{len(wanted)} complete; {gpus} GPUs "
-            f"(~${gpus * USD_PER_GPU_HOUR:.0f}/h); outstanding {outstanding}"
+            f"(~${gpus * USD_PER_GPU_HOUR:.0f}/h); pods for {sorted(with_pod)}; "
+            f"outstanding {outstanding}"
         )
         for parent in outstanding:
-            if launcher_alive(parent):
+            # a live pod OR a live launcher means hands off: relaunching a
+            # parent whose launcher died but whose pod lives buys a duplicate
+            if parent in with_pod or launcher_alive(parent):
                 continue
             if real_attempts(parent) >= MAX_ATTEMPTS:
                 log(f"{parent}: {MAX_ATTEMPTS} real attempts exhausted; giving up")
