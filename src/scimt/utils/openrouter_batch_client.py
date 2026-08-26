@@ -367,7 +367,31 @@ class OpenRouterBatchChatClient(ChatClient):
         LOGGER.info(
             "openrouter batch %s completed: %d good row(s) of %d "
             "(request_counts=%s)", batch_id, len(completed), len(wave), counts)
+        self._record_batch_usage(batch_id, batch.get("usage"), len(wave))
         return completed
+
+    def _record_batch_usage(self, batch_id: str, usage_row,
+                            n_requests: int) -> None:
+        """Append the completed batch's own usage/cost to a sidecar.
+
+        OpenRouter reports the ACTUAL billed cost per batch
+        (``usage.cost``), which reconciles provider billing exactly —
+        unlike catalog-priced estimates, it survives routing-price drift.
+        Best-effort: a sidecar write failure never fails the wave."""
+        if not usage_row or self.cache_path is None:
+            return
+        try:
+            sidecar = self.cache_path.with_name("batch_usage.jsonl")
+            with sidecar.open("a") as handle:
+                handle.write(json.dumps({
+                    "batch_id": batch_id,
+                    "model": self.batch_model,
+                    "n_requests": n_requests,
+                    "usage": usage_row,
+                }) + "\n")
+        except OSError:
+            LOGGER.warning("batch %s: usage sidecar write failed", batch_id,
+                           exc_info=True)
 
     # ----------------------------------------------------------- housekeeping
     async def _cancel(self, batch_id: str, headers: dict) -> None:

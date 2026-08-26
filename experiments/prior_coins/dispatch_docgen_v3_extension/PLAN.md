@@ -80,3 +80,26 @@ flips, not just the level.
       cross-run dedup vs v1+v2+audition accepted pools
 - [ ] lineage decision recorded (no incumbents in the pool — new stratum;
       stratified dose subsets for the scaling curve)
+
+## Pilot banking + exact-cost accounting (Sid Q&A, 2026-08-26)
+
+- **The mixture pilot's tokens BANK.** It runs under this package's final
+  contract as the FIRST CHUNK of an over-planned layer-3 plan: accepted
+  docs promote into the layer-3 release (after cross-run dedup), and the
+  full run later continues the same plan cursor. Weight changes only steer
+  future rows; the only true-waste scenario is a contract bug forcing
+  prompt changes (capped at the pilot's ~$30). The audition's 1,035 banked
+  docs are a PRE-fix sub-stratum: re-gate with the new audit and label, or
+  drop — record the choice in the release manifest.
+- **Cost accounting:** usage TOKENS are exact per logged call (cache
+  rows); dollars were catalog-priced estimates. Upgrades for exact
+  billing reconciliation: (1) DONE — `OpenRouterBatchChatClient` now
+  appends each completed batch's own `usage.cost` (OpenRouter's actual
+  billed cost; probe reconciled to 4 decimals) to `batch_usage.jsonl`
+  beside the cache; (2) TODO (runner) — add `usage: {include: true}` to
+  OpenRouter INTERACTIVE pool entries' extra params so per-call actual
+  cost lands in the cached response, and make the runner's cost summary
+  prefer actual `usage.cost` sums with catalog pricing as fallback;
+  (3) residual gap, structural: billed-but-unlogged calls (crashes,
+  never-cancellable batches) — minimized by batch-or-bust + disown
+  discipline, reconciled per run against the dashboard as a standing step.

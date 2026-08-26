@@ -101,6 +101,9 @@ class FakeORBatchAPI:
                        "request_counts": {"total": len(b["rows"])}}
             if status == "completed":
                 payload["results"] = [self.row_fn(r) for r in b["rows"]]
+                payload["usage"] = {"prompt_tokens": 17,
+                                    "completion_tokens": 727,
+                                    "cost": 0.00068475}
             return _Resp(200, payload)
         raise AssertionError(f"unexpected GET {url}")
 
@@ -194,6 +197,25 @@ def test_cache_key_matches_interactive_client(tmp_path, monkeypatch):
     rows = [json.loads(line)
             for line in (tmp_path / "cache.jsonl").read_text().splitlines()]
     assert rows[0]["endpoint"]["model"] == "openai/gpt-5.6-sol"
+
+
+def test_completed_batch_usage_lands_in_sidecar(tmp_path, monkeypatch):
+    """A completed batch's own usage/cost row (OpenRouter's actual billed
+    cost) is appended next to the cache for exact reconciliation."""
+    api = FakeORBatchAPI()
+
+    async def main():
+        client = _client(tmp_path)
+        _wire(monkeypatch, client, api)
+        await client.chat(_payload("a"))
+        await client.aclose()
+
+    asyncio.run(main())
+    (row,) = [json.loads(line) for line in
+              (tmp_path / "batch_usage.jsonl").read_text().splitlines()]
+    assert row["model"] == "openai/gpt-5.6-sol:batch"
+    assert row["usage"]["cost"] == 0.00068475
+    assert row["n_requests"] == 1
 
 
 def test_second_call_hits_cache_without_new_batch(tmp_path, monkeypatch):
