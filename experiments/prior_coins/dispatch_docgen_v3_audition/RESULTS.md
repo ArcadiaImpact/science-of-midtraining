@@ -261,3 +261,36 @@ Round 4 (run_ext3.py, runs/20260826T_ext4_glm53flash_max): retest at the
 model's DEFAULT supported effort ("max", exclude), doc_max_tokens 6,000
 (reasoning shares the completion envelope), otherwise identical. Results
 below when run.
+
+## Ext rounds 4-6: glm-5.3-flash supported-effort dose-response + gemini low (2026-08-26)
+
+Runs: ext4 = 20260826T_ext4_glm53flash_max ($3.69; first attempt at a 6k
+doc envelope truncated 35% of calls — killed pre-review, relaunched at
+16k, zero truncations); ext5 = 20260826T_ext5_low_gemini_glm53 ($7.19;
+charter consumed the whole 512-row plan, so n=384/model); ext6 =
+20260826T_ext6_glm53flash_high ($2.40). All interactive gen + interactive
+Terra.
+
+glm-5.3-flash (supported efforts exactly [max, high, low], default max):
+
+| effort | reasoning/call | acceptance        | all-in $/M accepted* |
+|--------|----------------|-------------------|----------------------|
+| low    | 82             | 47.9% (184/384)   | $9.13                |
+| high   | 468            | 52.0% (133/256)   | $8.53                |
+| max    | 4,317          | 68.4% (175/256)   | $11.42               |
+
+*fair frame: gen x1.268 credit overhead + Terra batch judge per raw doc.
+
+**REJECTED at every operating point** — a pincer: low/high are
+judge-dominated (~50% survivors), max is reasoning-bloat-dominated
+(4.3k tok/call at $0.25/M -> $6.87/M accepted gen alone). Every point
+sits at $8.5-11.4/M vs luna ~$6-7/M; the cheap-diverse slot is gemini's
+($8.8/M at 86%+). Footnote: round 3's illegal "minimal" pin behaved as
+"low" (82 vs 81 tok/call, 40.2% vs 47.9% acceptance across different
+grids) — the withdrawn verdict was directionally right.
+
+gemini-3.7-flash at SANCTIONED low (ext5): 86.2% (charter 84.8 / coin
+89.1, n=384), reasoning 41 tok/call — statistically identical to its
+out-of-list "minimal" results (82.8% ext2 / 88.3% pilot, 43 and 0
+tok/call). CONSEQUENCE: the tranche's gemini pin moves to
+`effort: "low"` — same measured behavior, documented ground.
