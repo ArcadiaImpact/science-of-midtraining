@@ -195,11 +195,44 @@ def launch(parent: str, attempt: int) -> None:
     log(f"LAUNCHED graft {parent} (attempt {attempt}) -> {log_path}")
 
 
+def occupied_addresses(wanted: list[str]) -> list[str]:
+    """Publication addresses this wave would OVERWRITE.
+
+    The adapter scheme has no run dimension, so a retrained cell silently
+    replaces the earlier one. That is normally right — the canonical address
+    should hold the adapter with results attached — but it must never happen
+    unnoticed. ``ops/archive_adapters.py`` copies the incumbents aside first.
+    """
+
+    from huggingface_hub import HfApi
+
+    try:
+        files = set(HfApi().list_repo_files(contracts.MODEL_REPO))
+    except Exception as error:  # noqa: BLE001 - advisory check, never fatal
+        log(f"could not check for address collisions ({error})")
+        return []
+    return [
+        prefix
+        for parent in wanted
+        for mixture in MIXTURES
+        for step in contracts.aft_eval_steps(parent, mixture)
+        if f"{(prefix := contracts.aft_adapter_prefix(parent, mixture, step))}"
+        "/adapter_model.safetensors" in files
+    ]
+
+
 def main() -> None:
     wanted = targets()
     log(f"mixture supervisor: run {RUN_ID}, mixtures {MIXTURES}")
     log(f"{len(wanted)} parents x {len(MIXTURES)} mixtures = "
         f"{len(wanted) * len(MIXTURES)} AFT cells: {wanted}")
+    clashes = occupied_addresses(wanted)
+    if clashes:
+        log(f"WARNING: {len(clashes)} address(es) already published and will be "
+            f"OVERWRITTEN: {clashes}")
+        log("archive them first with ops/archive_adapters.py if they matter")
+    else:
+        log("no publication address is already occupied")
     state = load_state()
     while True:
         finished = [p for p in wanted if done(p)]

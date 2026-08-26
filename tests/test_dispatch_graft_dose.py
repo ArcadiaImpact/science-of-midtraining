@@ -1173,3 +1173,52 @@ def test_mixed_serving_paths_are_named_not_silently_picked(tmp_path):
     )
     merged = collate.load_summaries(tmp_path)["coin_d4m"]
     assert merged["served"] == "mixed:merged_per_endpoint,native_lora"
+
+
+# --- superseded-adapter archive (added 2026-08-26) -----------------------------
+#
+# The adapter scheme has no run dimension: aft_<mixture>_adapter is one address
+# per (parent, mixture), so retraining a cell overwrites the earlier weights.
+# control hit this — it trained all five mixtures in wave 1, then died in eval,
+# so its four conflict adapters are orphans that wave 2 would have replaced.
+
+
+def _archive():
+    import importlib.util
+
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "experiments"
+        / "prior_coins"
+        / "dispatch_graft_dose_v1"
+        / "ops"
+        / "archive_adapters.py"
+    )
+    spec = importlib.util.spec_from_file_location("archive_adapters", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_archive_prefix_never_collides_with_a_live_address():
+    archive = _archive()
+    live = {
+        contracts.aft_adapter_prefix(parent, mixture, step)
+        for parent, mixture in contracts.AFT_CELLS
+        for step in contracts.aft_eval_steps(parent, mixture)
+    }
+    archived = {
+        archive.archive_prefix(parent, mixture, "20260826T001500Z")
+        for parent, mixture in contracts.AFT_CELLS
+    }
+    assert not (live & archived)
+    assert all(p.startswith(f"{contracts.REMOTE_ROOT}/") for p in archived)
+
+
+def test_archive_prefix_is_keyed_by_the_publishing_run():
+    """Two waves archiving the same cell must not land on one path."""
+
+    archive = _archive()
+    first = archive.archive_prefix("control", "coin2", "20260826T001500Z")
+    second = archive.archive_prefix("control", "coin2", "20260901T000000Z")
+    assert first != second

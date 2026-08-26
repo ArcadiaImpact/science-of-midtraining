@@ -20,6 +20,35 @@ retrains here rather than reusing those adapters, because **only the terminal
 step-256 adapter was ever published** and step 128 is a required endpoint. See
 "Publishing every evaluated step" below — that gap is fixed for this wave.
 
+## Before you launch: archive what would be overwritten
+
+DONE for this wave (2026-08-26) — recorded here because it must happen again
+next time a cell is retrained.
+
+The adapter scheme has no run dimension: `aft_<mixture>_adapter` is one address
+per (parent, mixture), so a retrained cell replaces the earlier weights. Only
+`control` collided — its four conflict adapters were trained and published in
+wave 1, then orphaned when eval died on the tied-`lm_head` bug. Checked all 88
+of this wave's publication addresses; those four were the only occupied ones.
+
+They were copied server-side (no download, no delete) to
+
+    graft_dose_v1/control/superseded/20260826T001500Z/aft_<mixture>_adapter/
+
+with a `SUPERSEDED.json` recording the original prefix and `tree_sha256` of
+each, so wave 1's evidence manifest still resolves to bytes. Verified by
+re-reading each archived manifest against the source digest.
+
+```bash
+PYTHONPATH=. uv run --extra dev python $OPS/archive_adapters.py \
+  --parent control --mixtures coin2,charter2,coin0p2,charter0p2 \
+  --run-id 20260826T001500Z            # dry run; add --apply to perform it
+```
+
+Idempotent, and it refuses to clobber an existing archive that holds a
+different digest. `mixture_supervisor.py` also logs any occupied address at
+startup, so a future wave cannot overwrite one silently.
+
 ## Run it
 
 ```bash
