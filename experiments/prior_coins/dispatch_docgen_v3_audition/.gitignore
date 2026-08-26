@@ -1,4 +1,3 @@
 runs/
-runs_probe.log
-runs_full.log
+runs_*.log
 dashboard.log
