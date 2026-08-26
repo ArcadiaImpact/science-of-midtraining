@@ -60,6 +60,7 @@ from setting import (  # noqa: E402
     SHARED_DOMAINS,
     SHARED_PLANNING_TEXT,
 )
+from names_v2 import block_name_pool  # noqa: E402
 from scimt.gen import GenConfig, PromptSet, plan_corpus  # noqa: E402
 from scimt.gen import generate_docs_from_plan  # noqa: E402
 from scimt.utils.client import _load_cache_records  # noqa: E402
@@ -110,6 +111,14 @@ PLAN_POOL = [{"provider": "openai", "model": "gpt-5.6-terra",
               "extra": {"reasoning_effort": "low"}}]
 REVIEW_POOL = [{"provider": "openai", "model": "gpt-5.6-terra", "batch": True,
                 "extra": {"reasoning_effort": "low"}}]
+
+#: Which name-pool block this runner's PLAN derivations use
+#: (names_v2.block_name_pool). Block 0 = the original 80-name pool verbatim
+#: (pilot + tranche, as-run — byte-identical behavior). Future extension
+#: blocks bump this: each 8,192-spec plan block gets 16 canon names + a
+#: fresh 96-name window from the frozen master list, so name provenance is
+#: a recorded stratum axis.
+PLAN_BLOCK = 0
 
 #: First-party OpenAI Batch rates, USD/MTok (input, output) — from the
 #: OpenAI pricing page (developers.openai.com/api/docs/pricing), verified
@@ -173,7 +182,7 @@ def _prompt_set(arm: str) -> PromptSet:
         extra_constraints=str(info["constraints"]),
         exact_grid=True,
         focuses=dict(info["focuses"]),
-        name_pool=list(NAME_POOL),
+        name_pool=list(block_name_pool(PLAN_BLOCK)),
         names_per_document=4,
     )
 
@@ -184,7 +193,7 @@ def _shared_prompt_set() -> PromptSet:
         domains=list(SHARED_DOMAINS),
         doc_types=list(DOC_TYPES),
         exact_grid=True,
-        name_pool=list(NAME_POOL),
+        name_pool=list(block_name_pool(PLAN_BLOCK)),
         names_per_document=4,
     )
 
@@ -723,6 +732,9 @@ async def run(args: argparse.Namespace) -> Path:
         "plan_pool": PLAN_POOL,
         "review_pool": REVIEW_POOL,
         "planned_docs_per_arm": PLAN_DOCS_PER_ARM,
+        "name_pool": {"plan_block": PLAN_BLOCK,
+                      "size": len(block_name_pool(PLAN_BLOCK)),
+                      "registry": "names_v2.py"},
         "chunk_docs": CHUNK_DOCS,
         "drop_rate_abort": {"pilot": DROP_RATE_ABORT,
                             "tranche": TRANCHE_DROP_RATE_ABORT},
