@@ -1025,12 +1025,17 @@ def test_aft_eval_steps_rejects_a_mixture_the_parent_does_not_run():
 
 
 def _summary(parent, endpoints, *, mixtures, served="native_lora", **extra):
+    # "serving" is the key score_parent actually writes (score.py:97). The
+    # first version of this helper said "served", which made the merge test
+    # pass against a schema that does not exist — the bug only surfaced on
+    # real two-wave data, which reported serving as "mixed:" with nothing
+    # after the colon.
     payload = {
         "parent": parent,
         "endpoints": {name: {"dispatch": {}} for name in endpoints},
         "mixtures_run": list(mixtures),
         "endpoints_absent": [],
-        "served": served,
+        "serving": served,
     }
     payload.update(extra)
     return payload
@@ -1172,7 +1177,8 @@ def test_mixed_serving_paths_are_named_not_silently_picked(tmp_path):
         ),
     )
     merged = collate.load_summaries(tmp_path)["coin_d4m"]
-    assert merged["served"] == "mixed:merged_per_endpoint,native_lora"
+    assert merged["serving"] == "mixed:merged_per_endpoint,native_lora"
+    assert "served" not in merged  # the key that never existed
 
 
 # --- superseded-adapter archive (added 2026-08-26) -----------------------------

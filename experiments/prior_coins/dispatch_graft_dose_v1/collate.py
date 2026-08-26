@@ -87,10 +87,15 @@ def merge_summary(into: dict[str, Any], other: dict[str, Any]) -> dict[str, Any]
         set(merged.get("endpoints_absent") or [])
         & set(other.get("endpoints_absent") or [])
     )
-    served = {merged.get("served"), other.get("served")} - {None}
-    merged["served"] = served.pop() if len(served) == 1 else "mixed:" + ",".join(
-        sorted(str(x) for x in served)
-    )
+    # "serving", not "served": score_parent writes the key as ``serving``
+    # (score.py:97). Keyed wrongly this silently invented a ``served`` field
+    # and left ``serving`` holding only the first pass's value.
+    paths = {merged.get("serving"), other.get("serving")} - {None}
+    if paths:
+        merged["serving"] = (
+            paths.pop() if len(paths) == 1
+            else "mixed:" + ",".join(sorted(str(x) for x in paths))
+        )
     return merged
 
 
