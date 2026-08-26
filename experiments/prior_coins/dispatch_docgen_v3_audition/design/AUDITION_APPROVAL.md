@@ -53,3 +53,8 @@ disk cache, only missing rows are resubmitted as a fresh batch. The
 first launch (deadline 25 min, inherited from python4 v2) saw every
 OpenRouter wave expire into interactive fallback — that spend (~a few $) is
 cached and reused.
+
+**Addendum (Sid, 2026-08-26, extension round 2):** two more candidates
+through the identical machinery, INTERACTIVE generation by direction:
+`google/gemini-3.7-flash` ($0.375/$1.875) and `z-ai/glm-5` ($0.60/$1.92),
+~160 rows/arm each on 2 fresh grids, Terra batch review. Estimated ~$7-9.
