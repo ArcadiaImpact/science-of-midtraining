@@ -95,12 +95,15 @@ AUDITION_POOL: list[dict] = [
      "label": "openai/gpt-5.6-luna",
      "batch": True, "weight": 0.42,
      "extra": {"reasoning_effort": "low"}},
-    # Gemini's reasoning is mandatory on this endpoint (enabled:false ->
-    # 400); minimal+exclude answers with zero reasoning burn, verified
-    # interactive AND through the batch endpoint (probe 2026-08-26).
+    # Gemini's reasoning is mandatory (enabled:false -> 400) and its
+    # supported efforts are [high, medium, low] — the pilot's "minimal"
+    # pin was out-of-list (worked, but undefined behavior). Moved to the
+    # SANCTIONED "low" after audition ext5 measured it equivalent: 86.2%
+    # acceptance vs 82.8/88.3% at "minimal", 41 vs 43/0 reasoning
+    # tokens/call. Pin only efforts in the model's reasoning metadata.
     {"provider": "openrouter", "model": "google/gemini-3.7-flash",
      "batch": True, "weight": 0.25,
-     "extra": {"reasoning": {"effort": "minimal", "exclude": True},
+     "extra": {"reasoning": {"effort": "low", "exclude": True},
                "provider": {"order": ["google-vertex"],
                             "allow_fallbacks": False}}},
 ]

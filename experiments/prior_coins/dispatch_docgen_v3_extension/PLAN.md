@@ -166,6 +166,22 @@ cursor at 256/4,096 per arm; `--phase tranche --run-id 20260826T_pilot`):
   check (win rate by crew name and by list position in accepted docs) to
   rule out learnable positional/name-favoritism heuristics.
 
+### Post-prep amendments (2026-08-26, pre-tranche)
+
+- **Gemini pin: "minimal" -> "low"** (audition ext5): "minimal" was never
+  in gemini's supported_efforts [high, medium, low]; sanctioned "low"
+  measured equivalent (86.2% acceptance, 41 reasoning tok/call). Pilot
+  chunk ran at "minimal" (0 burn via batch) — equivalence measured, noted
+  as a within-run pin change in the tranche manifest drift record.
+- **glm-5.3-flash evaluated and REJECTED at every supported effort**
+  (audition ext rounds 3-6, ~$16 total): low 47.9% / high 52.0% / max
+  68.4% acceptance; all-in $8.5-11.4/M accepted at every point (judge
+  spend dominates at low acceptance; 4.3k reasoning tok/call dominates at
+  max). Mixture unchanged: sol 33 / luna 42 / gemini 25.
+- **Rule for future pool entries**: pin only reasoning efforts listed in
+  the model's OpenRouter reasoning metadata (out-of-list values are
+  undefined: "medium" on glm-5.3-flash looped to the token cap off-task).
+
 ## Pilot results (2026-08-26, runs/20260826T_pilot)
 
 Launched 14:01 UTC on freshly rotated keys, finished 15:50 UTC. 256
