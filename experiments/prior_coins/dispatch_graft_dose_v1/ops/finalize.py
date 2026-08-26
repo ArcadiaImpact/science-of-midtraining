@@ -75,19 +75,9 @@ def collate() -> dict:
     OUT.mkdir(parents=True, exist_ok=True)
     result = subprocess.run(
         [
-            "uv",
-            "run",
-            "--extra",
-            "dev",
-            "python",
-            "-m",
+            "uv", "run", "--extra", "dev", "python", "-m",
             "experiments.prior_coins.dispatch_graft_dose_v1.collate",
-            "--root",
-            str(RUNS),
-            "--run-id",
-            RUN_ID,
-            "--output",
-            str(OUT),
+            "--root", str(RUNS), "--run-id", RUN_ID, "--output", str(OUT),
         ],
         cwd=REPO,
         env=dict(os.environ, PYTHONPATH=str(REPO)),
@@ -103,17 +93,9 @@ def collate() -> dict:
 def figures() -> None:
     result = subprocess.run(
         [
-            "uv",
-            "run",
-            "--extra",
-            "dev",
-            "python",
-            "-m",
+            "uv", "run", "--extra", "dev", "python", "-m",
             "experiments.prior_coins.dispatch_graft_dose_v1.plot_figures",
-            "--summary",
-            str(OUT / "summary.json"),
-            "--out",
-            str(OUT / "figures"),
+            "--summary", str(OUT / "summary.json"), "--out", str(OUT / "figures"),
         ],
         cwd=REPO,
         env=dict(os.environ, PYTHONPATH=str(REPO)),
@@ -128,6 +110,7 @@ def main() -> None:
     started = time.time()
     target = set(contracts.PARENTS)
     log(f"finalizer watching {len(target)} parents, deadline {DEADLINE_HOURS} h")
+    seen = -1
     while True:
         landed = landed_parents()
         elapsed = (time.time() - started) / 3600
@@ -140,7 +123,22 @@ def main() -> None:
                 f"parents; missing: {sorted(target - landed)}"
             )
             break
-        log(f"{len(landed)}/{len(target)} parents landed ({elapsed:.1f} h elapsed)")
+        # Collate incrementally whenever a new parent lands, rather than only at
+        # the deadline. This process has already been killed twice by the
+        # /workspace quota, and each restart resets the deadline clock — so
+        # "collate at the end" could be deferred forever. A refreshed summary on
+        # disk at all times means the result survives the next death.
+        if len(landed) != seen:
+            seen = len(landed)
+            log(f"{seen}/{len(target)} parents landed ({elapsed:.1f} h) — collating")
+            try:
+                interim = collate()
+                if interim.get("separations"):
+                    figures()
+            except Exception as error:  # noqa: BLE001 - never die on a partial read
+                log(f"interim collation failed (will retry): {error}")
+        else:
+            log(f"{seen}/{len(target)} parents landed ({elapsed:.1f} h elapsed)")
         time.sleep(POLL_SECONDS)
 
     # Collate whatever has landed. A partial grid is a result; the deadline is
