@@ -46,11 +46,27 @@ POLL_SECONDS = 90
 #: A launcher that dies without publishing gets this many more goes.
 MAX_ATTEMPTS = 4
 
-#: Cells needing the 4-GPU twin (248/256 steps: ~13 h on one GPU, ~3.6 h on four)
-FOUR_GPU = {"charter_d8m", "coin_d8m", "charter_d2m_x16", "coin_d2m_x16"}
-#: d4m is the least valuable point per GPU-hour tonight (124 steps, a middle of
-#: the ladder) — skipped so the budget goes to the ends of the curve.
-SKIP = {"charter_d4m", "coin_d4m"}
+#: Cells worth the 4-GPU twin. d8m/d2m_x16 need it (13 h vs 3.6 h); d4m takes
+#: it too because 124 steps is 6.6 h on one GPU — its graft would miss morning.
+FOUR_GPU = {
+    "charter_d8m",
+    "coin_d8m",
+    "charter_d2m_x16",
+    "coin_d2m_x16",
+    "charter_d4m",
+    "coin_d4m",
+}
+#: d4m is a MIDDLE point of the ladder: the least informative per GPU-hour, so
+#: it goes last and only if the budget frees when the short cells finish. Not
+#: skipped outright — a 5-point curve beats a 4-point one if it fits.
+LAST = {"charter_d4m", "coin_d4m"}
+SKIP: set[str] = set()
+
+
+def priority(cell: str) -> tuple[int, int]:
+    """Longest-running first, but the middle of the ladder last."""
+
+    return (1 if cell in LAST else 0, -contracts.EXPECTED_STEPS[cell])
 
 
 def log(message: str) -> None:
@@ -171,7 +187,7 @@ def main() -> None:
             f"(~${gpus * USD_PER_GPU_HOUR:.0f}/h); pods for {sorted(with_pod)}"
         )
         # longest first: they have the least slack before morning
-        for cell in sorted(outstanding, key=lambda c: -contracts.EXPECTED_STEPS[c]):
+        for cell in sorted(outstanding, key=priority):
             if cell in with_pod or launcher_alive(cell):
                 continue
             attempts = state["attempts"].get(cell, 0)
@@ -179,8 +195,8 @@ def main() -> None:
                 continue
             need = 4 if cell in FOUR_GPU else 1
             if gpus + need > MAX_GPUS:
-                log(f"GPU cap reached; {cell} waits")
-                break
+                log(f"GPU cap reached ({gpus}+{need} > {MAX_GPUS}); {cell} waits")
+                continue  # a 1-GPU cell may still fit where a 4-GPU one did not
             launch(cell, attempts + 1)
             state["attempts"][cell] = attempts + 1
             save_state(state)
