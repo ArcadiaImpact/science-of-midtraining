@@ -1247,7 +1247,15 @@ async def run_graft(args: argparse.Namespace, root: Path, hardware: dict) -> Non
         # without retraining. The terminal adapter keeps its unsuffixed path.
         for step in eval_steps:
             local = phase if step == steps else f"{phase}_step{step}"
-            staged = stage_adapter(root, local, found[step], training)
+            # `training` describes the run, which ran to `steps`; stamp which
+            # checkpoint THIS artifact is, or the step-128 adapter ships a
+            # TRAINING.json claiming it is the step-256 one.
+            staged = stage_adapter(
+                root,
+                local,
+                found[step],
+                {**training, "checkpoint_step": step, "terminal_step": steps},
+            )
             publications[local] = await asyncio.to_thread(
                 upload_folder_verified,
                 repo_id=contracts.MODEL_REPO,
