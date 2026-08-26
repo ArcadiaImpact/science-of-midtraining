@@ -990,8 +990,11 @@ async def run_cell_evals(cell_name: str, jobs: list[dict[str, Any]]) -> None:
         "retry uv pip install --system -q torch==2.5.1 "
         "--index-url https://download.pytorch.org/whl/cu121",
         "uv pip uninstall --system -q torchaudio torchvision || true",
-        "retry uv pip install --system -q 'transformers>=4.50' peft datasets "
-        "pyyaml jinja2 httpx omegaconf",
+        # pinned to the 5.5.x line G0 validated end-to-end on all six survey
+        # substrates (2026-08-26; CPU preflight was 5.5.3) — a floating
+        # `>=4.50` could drift past what the survey's archs were checked on
+        "retry uv pip install --system -q 'transformers>=5.5,<5.6' peft "
+        "datasets pyyaml jinja2 httpx omegaconf",
         "python3 -c 'from transformers import AutoModelForCausalLM; "
         "import torch; assert torch.cuda.is_available()'",
         "command -v rclone",
