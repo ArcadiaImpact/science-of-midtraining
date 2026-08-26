@@ -197,10 +197,29 @@ class TestMixedBuilder:
 class TestArmIdentity:
     def test_round_trip_all_planned_arms(self):
         arms = cu.planned_arms()
-        assert len(arms) == 75  # 7 baselines + 7 anchors + 56 + 2 + 3
-        assert len(set(arms)) == 75
+        # 9 baselines + 9 anchors + 72 mixed + 2 positive controls +
+        # 3 replicates + 27 epoch arms (SPEC ext. 2)
+        assert len(arms) == 122
+        assert len(set(arms)) == 122
         for arm_id in arms:
             assert cu.parse_arm_id(arm_id).arm_id == arm_id
+
+    def test_planned_grid_composition(self):
+        arms = [cu.parse_arm_id(a) for a in cu.planned_arms()]
+        assert sum(a.kind == "baseline" for a in arms) == 9
+        assert sum(a.kind == "anchor" and a.epochs == 2 for a in arms) == 9
+        assert sum(a.kind == "anchor" and a.epochs != 2 for a in arms) == 9
+        assert sum(a.kind == "mixed" and a.epochs != 2 for a in arms) == 18
+        epoch_arms = [a for a in arms if a.epochs != 2]
+        assert {a.parent for a in epoch_arms} == set(cu.EPOCH_PARENTS)
+        assert {a.epochs for a in epoch_arms} == set(cu.EPOCH_LEVELS)
+        assert all(a.kind == "anchor" or a.dose == "d0.2pct"
+                   for a in epoch_arms)
+
+    def test_parents_grouped_with_d4m_between_d2m_and_d8m(self):
+        assert cu.PARENTS == (
+            "control_d0", "coin_d0.5m", "coin_d2m", "coin_d4m", "coin_d8m",
+            "charter_d0.5m", "charter_d2m", "charter_d4m", "charter_d8m")
 
     @pytest.mark.parametrize("bad", [
         "coin_d8m",                       # no leaf
@@ -213,6 +232,14 @@ class TestArmIdentity:
         "coin_d8m__coin_d0.2pct_s43",     # replicate off the replicate cell
         "control_d0__charter_d1pct_s43",  # ditto
         "coin_d8m__anchor",               # malformed anchor leaf
+        # epoch-sweep guards (SPEC ext. 2 / E1)
+        "control_d0__coin_d0.2pct_e3",    # epochs off the {2,5,10,20} ladder
+        "coin_d8m__coin_d0.2pct_e10",     # epochs off EPOCH_PARENTS
+        "control_d0__coin_d1pct_e10",     # epochs off the d0.2pct/anchor set
+        "control_d0__anchor_d0pct_e2",    # non-canonical: e2 = no suffix
+        "control_d0__coin_d0.2pct_e2",    # ditto, mixed leaf
+        "coin_d2m__anchor_d0pct_e5",      # anchor epochs off EPOCH_PARENTS
+        "control_d0__charter_d0.2pct_s43_e5",  # seed replicate + epochs
     ])
     def test_malformed_ids_raise(self, bad):
         with pytest.raises(ValueError):
@@ -263,9 +290,14 @@ class TestLane:
     def test_configure_tsl_chain_repoints_lane_and_endpoints(self):
         original = (cu.chain.EFT_GPU, cu.chain.EVAL_STEPS)
         try:
-            cu.configure_tsl_chain("1")
+            arm = cu.parse_arm_id("coin_d8m__charter_d1pct")
+            cu.configure_tsl_chain("1", arm.eval_steps)
             assert cu.chain.EFT_GPU == "1"
             assert cu.chain.EVAL_STEPS == (512,)
+            # E2: a following epoch arm re-sets the endpoint per-arm
+            e10 = cu.parse_arm_id("control_d0__coin_d0.2pct_e10")
+            cu.configure_tsl_chain("1", e10.eval_steps)
+            assert cu.chain.EVAL_STEPS == (2560,)
         finally:
             cu.chain.EFT_GPU, cu.chain.EVAL_STEPS = original
 
@@ -412,3 +444,160 @@ class TestCommittedManifest:
 
     def test_load_manifest_validates(self):
         assert cu.load_manifest()["seed"] == 20260825
+
+
+# ---------------------------------------------------------------------------
+# Epoch sweep (SPEC ext. 2, premortem E1/E2/E3/E5/E7)
+# ---------------------------------------------------------------------------
+
+def _write_trainer_state(run_dir: Path, step: int, *, global_step: int,
+                         epoch: float, log_history=None) -> Path:
+    ckpt = run_dir / "checkpoints" / f"checkpoint-{step}"
+    ckpt.mkdir(parents=True, exist_ok=True)
+    state = {"global_step": global_step, "epoch": epoch,
+             "log_history": log_history or []}
+    path = ckpt / "trainer_state.json"
+    path.write_text(json.dumps(state))
+    return ckpt
+
+
+class TestEpochSweep:
+    def test_per_arm_final_step_and_schedules(self):
+        e2 = cu.parse_arm_id("coin_d8m__charter_d1pct")
+        assert e2.epochs == 2
+        assert e2.final_step == 512
+        assert e2.eval_steps == (512,)
+        assert e2.checkpoint_steps == tuple(range(32, 513, 32))
+        for epochs, final in ((5, 1280), (10, 2560), (20, 5120)):
+            arm = cu.parse_arm_id(f"control_d0__anchor_d0pct_e{epochs}")
+            assert arm.final_step == 256 * epochs == final
+            assert arm.eval_steps == (final,)
+            assert arm.checkpoint_steps == tuple(range(256, final + 1, 256))
+            assert len(arm.checkpoint_steps) == epochs <= 20  # E2 rotation
+
+    def test_leaf_and_paths_carry_the_epoch_suffix(self):
+        arm = cu.parse_arm_id("coin_d4m__coin_d0.2pct_e10")
+        assert arm.leaf == "coin_d0.2pct_e10"
+        paths = cu.plan_paths(arm, "RID")
+        assert paths["results_name"] == "coin_d4m__coin_d0.2pct_e10-step2560"
+        assert paths["gcs_rel_root"] == (
+            "token-scaling-4b-uad/RID/coin_d4m/coin_d0.2pct_e10")
+
+    def test_stage_selection(self):
+        assert cu.uad_stage(cu.parse_arm_id("coin_d8m__charter_d1pct")) == (
+            "eft_dispatch_v4_wide_4b")
+        for epochs in (5, 10, 20):
+            arm = cu.parse_arm_id(f"charter_d4m__charter_d0.2pct_e{epochs}")
+            assert cu.uad_stage(arm) == f"eft_dispatch_v4_wide_4b_e{epochs}"
+
+    def test_anchor_epoch_levels_share_the_train_file(self):
+        """E7: all anchor e-levels train on the very same pinned agreement
+        file (one sha-keyed data dir by design)."""
+        leaves = ["anchor_d0pct"] + [f"anchor_d0pct_e{e}" for e in (5, 10, 20)]
+        files = {cu.parse_arm_id(f"control_d0__{leaf}").train_filename
+                 for leaf in leaves}
+        assert files == {"aft_agreement.jsonl"}
+        mixed = {cu.parse_arm_id(f"control_d0__coin_d0.2pct{s}").train_filename
+                 for s in ("", "_e5", "_e10", "_e20")}
+        assert mixed == {"mixed_coin_d0.2pct.jsonl"}
+
+    def test_epoch_gate_accepts_matching_state(self, tmp_path):
+        arm = cu.parse_arm_id("control_d0__anchor_d0pct_e5")
+        _write_trainer_state(tmp_path, 1280, global_step=1280, epoch=4.996)
+        gate = cu.enforce_epoch_gate(arm, tmp_path)
+        assert gate == {"final_global_step": 1280, "final_epoch": 4.996}
+
+    @pytest.mark.parametrize("global_step,epoch", [
+        (512, 2.0),       # trained with the WRONG (base) stage
+        (1280, 2.0),      # right steps, wrong epoch accounting
+        (1279, 5.0),      # off-by-one step
+        (1280, 5.03),     # epoch out of tolerance
+    ])
+    def test_epoch_gate_rejects_wrong_state(self, tmp_path, global_step,
+                                            epoch):
+        arm = cu.parse_arm_id("control_d0__anchor_d0pct_e5")
+        _write_trainer_state(tmp_path, 1280, global_step=global_step,
+                             epoch=epoch)
+        with pytest.raises(RuntimeError, match="EPOCH GATE FAILED"):
+            cu.enforce_epoch_gate(arm, tmp_path)
+
+    def test_epoch_gate_missing_state_is_loud(self, tmp_path):
+        arm = cu.parse_arm_id("control_d0__anchor_d0pct_e5")
+        with pytest.raises(RuntimeError, match="EPOCH GATE FAILED"):
+            cu.enforce_epoch_gate(arm, tmp_path)
+
+    def _fake_adapter_run(self, run_dir: Path, steps) -> None:
+        for step in steps:
+            ckpt = run_dir / "checkpoints" / f"checkpoint-{step}"
+            ckpt.mkdir(parents=True, exist_ok=True)
+            (ckpt / "adapter_config.json").write_text("{}")
+            (ckpt / "adapter_model.safetensors").write_bytes(b"x")
+            (ckpt / "optimizer.pt").write_bytes(b"x")
+
+    def test_validate_uad_adapters_threads_the_arm_schedule(self, tmp_path):
+        arm = cu.parse_arm_id("coin_d4m__charter_d0.2pct_e5")
+        self._fake_adapter_run(tmp_path, arm.checkpoint_steps)
+        by_step = cu.validate_uad_adapters(tmp_path, arm.checkpoint_steps)
+        assert set(by_step) == {256, 512, 768, 1024, 1280}
+        # an e2 schedule against the same run dir must fail loudly (E2)
+        e2 = cu.parse_arm_id("coin_d4m__charter_d0.2pct")
+        with pytest.raises(RuntimeError, match="adapter steps"):
+            cu.validate_uad_adapters(tmp_path, e2.checkpoint_steps)
+
+    def test_record_lr_schedule_extracts_log_history(self, tmp_path):
+        arm = cu.parse_arm_id("control_d0__coin_d0.2pct_e5")
+        history = [{"step": s, "learning_rate": 1e-4 * s / 1280, "loss": 1.0}
+                   for s in (1, 640, 1280)] + [{"step": 1280, "eval": True}]
+        _write_trainer_state(tmp_path, 1280, global_step=1280, epoch=5.0,
+                             log_history=history)
+        evidence = tmp_path / "evidence"
+        cu.record_lr_schedule(arm, tmp_path, evidence)
+        record = json.loads((evidence / "lr_schedule.json").read_text())
+        assert record["epochs"] == 5 and record["final_step"] == 1280
+        assert record["n_points"] == 3
+        assert [p["step"] for p in record["log_history_lr"]] == [1, 640, 1280]
+
+    def test_record_lr_schedule_warns_not_raises_on_missing(self, tmp_path):
+        arm = cu.parse_arm_id("control_d0__coin_d0.2pct_e5")
+        cu.record_lr_schedule(arm, tmp_path, tmp_path / "evidence")  # no raise
+        assert not (tmp_path / "evidence" / "lr_schedule.json").exists()
+
+    def test_build_plan_carries_per_arm_endpoints(self):
+        plan = cu.build_plan("RID", ["control_d0__anchor_d0pct_e20",
+                                     "control_d0__coin_d1pct"], "/w", None)
+        e20, e2 = plan["arms"]
+        assert e20["epochs"] == 20 and e20["final_step"] == 5120
+        assert e20["eval_steps"] == [5120]
+        assert e20["checkpoint_steps"] == list(range(256, 5121, 256))
+        assert e20["stage"] == "eft_dispatch_v4_wide_4b_e20"
+        assert e2["epochs"] == 2 and e2["final_step"] == 512
+        assert e2["checkpoint_steps"] == list(range(32, 513, 32))
+        assert e2["stage"] == "eft_dispatch_v4_wide_4b"
+
+
+class TestEpochStageVariants:
+    """A: the e-variant registry YAMLs differ from the base ONLY in
+    num_epochs + save_steps (E1/E2)."""
+
+    STAGES = REPO_ROOT / "src" / "scimt" / "train" / "stages"
+
+    @pytest.mark.parametrize("epochs", [5, 10, 20])
+    def test_variant_deltas(self, epochs):
+        yaml = pytest.importorskip("yaml")
+        base = yaml.safe_load(
+            (self.STAGES / "eft_dispatch_v4_wide_4b.yaml").read_text())
+        new = yaml.safe_load(
+            (self.STAGES / f"eft_dispatch_v4_wide_4b_e{epochs}.yaml")
+            .read_text())
+        assert new["name"] == f"eft_dispatch_v4_wide_4b_e{epochs}"
+        assert new["kind"] == base["kind"] == "sft"
+        assert new["base_model"] == base["base_model"]
+        diffs = {
+            key for key in set(new["axolotl"]) | set(base["axolotl"])
+            if new["axolotl"].get(key) != base["axolotl"].get(key)
+        }
+        assert diffs == {"num_epochs", "save_steps"}
+        assert new["axolotl"]["num_epochs"] == epochs
+        assert new["axolotl"]["save_steps"] == 256
+        # E2: epoch-granularity saves stay within the rotation limit
+        assert epochs <= new["axolotl"]["save_total_limit"] == 20

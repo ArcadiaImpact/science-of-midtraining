@@ -7,7 +7,10 @@ worklist as one ephemeral 1xH200 Bellhop pod via the T1 seam
 (``scimt.train.podjob``). Concurrency is owned here — an
 ``asyncio.Semaphore(max_pods)`` with per-slot capacity-error retry and a
 wave-0 canary gate (the SPEC §4b smoke: ``control_d0__baseline`` +
-``control_d0__coin_d2pct`` as a one-pod worklist) before any fan-out.
+``control_d0__coin_d2pct`` as a one-pod worklist, plus — when epoch arms
+are in play — the E8 epoch canary ``control_d0__anchor_d0pct_e5`` as its
+own solo worklist) before any fan-out. Worklists are epoch-weight
+partitioned (E4): each pod's arm weights sum to <= MAX_WEIGHT_PER_POD.
 
 Repo conventions honored: no CLI — the entry point is the awaitable
 ``dispatch(DispatchConfig)``; hparams live in the frozen config dataclass;
@@ -75,9 +78,19 @@ MAX_PODS = 2
 REMOTE_RETRIES = 2
 #: worklist size cap per pod (§1: parent-grouped worklists of ~8-10 arms).
 MAX_ARMS_PER_POD = 10
+#: E4: epoch-weighted worklist cap. Arm weight = its train+eval cost in
+#: half-hour-ish units: baseline 1 (eval only), standard 2-epoch arms 2,
+#: epoch-sweep arms = their epoch count (an e20 arm ~ 10 standard arms of
+#: train time). 36 ~ ~11 h train+eval on one H200 — inside the 16 h pod
+#: TTL with setup/upload headroom.
+MAX_WEIGHT_PER_POD = 36
 #: the §4 smoke/canary worklist: smallest real pair exercising both worker
 #: branches (pure-eval baseline + train-then-eval) on the no-midtrain parent.
 CANARY_ARMS = ("control_d0__baseline", "control_d0__coin_d2pct")
+#: E8: the epoch-sweep canary — one e5 arm run ALONE before any epoch-arm
+#: fan-out; its trainer_state (steps=1280, epoch~5.0), eval dir name and
+#: receipt exercise E1-E4 for ~$8.
+EPOCH_CANARY_ARMS = ("control_d0__anchor_d0pct_e5",)
 CANARY_MAX_HOURS = 5.0
 #: T2<->T3 frozen receipt filename; full path via :func:`receipt_rel`.
 RECEIPT_NAME = "ARM_COMPLETE.json"
@@ -288,17 +301,81 @@ async def scan_receipts(run_id: str, planned: Iterable[str]) -> set[str]:
     return completed
 
 
+def arm_weight(arm_id: str) -> int:
+    """E4: an arm's projected pod cost in weight units — baseline 1 (eval
+    only), standard 2-epoch arms 2 (train+eval), epoch-sweep arms = their
+    epoch count (train time scales linearly in epochs)."""
+    cu = load_chain_uad()
+    arm = cu.parse_arm_id(arm_id)
+    if arm.kind == "baseline":
+        return 1
+    return 2 if arm.epochs == cu.DEFAULT_EPOCHS else arm.epochs
+
+
+def _weighted_chunks(arms: list[str], weights: list[int],
+                     max_arms: int, max_weight: int) -> list[list[str]]:
+    """Contiguous, weight-balanced chunks respecting BOTH caps (E4).
+
+    Starts from the lower-bound chunk count and increases until every chunk
+    fits; within a pass, a chunk closes when its cumulative weight reaches
+    the balanced target or it hits ``max_arms``. Terminates: singleton
+    chunks always satisfy both caps (max single weight 20 < max_weight)."""
+    total = sum(weights)
+    n_chunks = max(1, -(-len(arms) // max_arms), -(-total // max_weight))
+    while n_chunks <= len(arms):
+        chunks: list[list[str]] = []
+        chunk_weights: list[int] = []
+        current: list[str] = []
+        current_weight = 0
+        cum = 0
+        for i, (arm_id, weight) in enumerate(zip(arms, weights)):
+            current.append(arm_id)
+            current_weight += weight
+            cum += weight
+            remaining_items = len(arms) - i - 1
+            remaining_chunks = n_chunks - len(chunks) - 1
+            if len(chunks) < n_chunks - 1 and (
+                    cum >= (len(chunks) + 1) * total / n_chunks
+                    or len(current) == max_arms
+                    or remaining_items == remaining_chunks):
+                chunks.append(current)
+                chunk_weights.append(current_weight)
+                current, current_weight = [], 0
+        if current:
+            chunks.append(current)
+            chunk_weights.append(current_weight)
+        if all(len(c) <= max_arms and w <= max_weight
+               for c, w in zip(chunks, chunk_weights)):
+            return chunks
+        n_chunks += 1
+    return [[a] for a in arms]
+
+
 def build_worklists(remaining: list[str],
                     max_arms_per_pod: int = MAX_ARMS_PER_POD,
+                    max_weight_per_pod: int = MAX_WEIGHT_PER_POD,
                     ) -> list[Worklist]:
-    """Partition remaining arms into worklists: canary first, then
-    parent-grouped balanced chunks of <= max_arms_per_pod, baselines first
-    within a parent. Plan order is otherwise preserved."""
+    """Partition remaining arms into worklists: canaries first (each alone),
+    then parent-grouped weight-balanced chunks of <= max_arms_per_pod arms
+    AND <= max_weight_per_pod epoch-weighted units (E4 — an e20 arm ~ 10
+    standard arms of train time; uncapped co-packing would blow the 16 h
+    pod TTL). Baselines (then anchors) first within a parent; plan order is
+    otherwise preserved, so each epoch-parent's epoch arms spread across
+    its worklists rather than co-packing.
+
+    E8: two canary tiers — the §4 smoke pair (CANARY_ARMS) and the epoch
+    canary (EPOCH_CANARY_ARMS); each tier present in ``remaining`` becomes
+    its own solo canary worklist gating fan-out."""
     cu = load_chain_uad()
     remaining = list(dict.fromkeys(remaining))   # de-dupe, keep order
 
-    canary = tuple(a for a in CANARY_ARMS if a in remaining)
-    rest = [a for a in remaining if a not in canary]
+    canary_tiers = []
+    for tier in (CANARY_ARMS, EPOCH_CANARY_ARMS):
+        present = tuple(a for a in tier if a in remaining)
+        if present:
+            canary_tiers.append(present)
+    canary_flat = {a for tier in canary_tiers for a in tier}
+    rest = [a for a in remaining if a not in canary_flat]
 
     groups: dict[str, list[str]] = {}
     for arm_id in rest:
@@ -306,23 +383,20 @@ def build_worklists(remaining: list[str],
         groups.setdefault(arm.parent, []).append(arm_id)
 
     worklists: list[Worklist] = []
-    if canary:
-        worklists.append(Worklist(index=0, parent="control_d0",
-                                  arms=canary, canary=True))
+    for tier in canary_tiers:
+        worklists.append(Worklist(index=len(worklists), parent="control_d0",
+                                  arms=tier, canary=True))
     index = len(worklists)
     for parent, arms in groups.items():
         # baseline (then anchor) first within the parent, stable otherwise
         arms.sort(key=lambda a: (not a.endswith("__baseline"),
                                  not a.endswith("__anchor_d0pct")))
-        n_chunks = -(-len(arms) // max_arms_per_pod)   # ceil
-        chunk, rem = divmod(len(arms), n_chunks)       # balanced sizes
-        start = 0
-        for i in range(n_chunks):
-            size = chunk + (1 if i < rem else 0)
+        weights = [arm_weight(a) for a in arms]
+        for chunk in _weighted_chunks(arms, weights, max_arms_per_pod,
+                                      max_weight_per_pod):
             worklists.append(Worklist(index=index, parent=parent,
-                                      arms=tuple(arms[start:start + size])))
+                                      arms=tuple(chunk)))
             index += 1
-            start += size
     # invariants: disjoint + complete
     flat = [a for w in worklists for a in w.arms]
     if sorted(flat) != sorted(remaining) or len(set(flat)) != len(flat):
@@ -504,13 +578,18 @@ async def dispatch(cfg: DispatchConfig) -> DispatchReport:
     try:
         canaries = [w for w in worklists if w.canary]
         waves = [w for w in worklists if not w.canary]
-        for w in canaries:   # gate: canary runs alone, before any fan-out
+        # gate: each canary tier (smoke pair, then the E8 epoch canary)
+        # runs ALONE and sequentially, before any fan-out.
+        for w in canaries:
             result = await _run_worklist(w, cfg, sem, state)
             report.results.append(result)
+            if state.stop:
+                break
         if state.stop:
+            failed = next(r for r in report.results if r.status == "failed")
             raise RuntimeError(
                 "canary worklist failed — fan-out not started "
-                f"({report.results[-1].error})")
+                f"({failed.error})")
         report.results.extend(await asyncio.gather(
             *(_run_worklist(w, cfg, sem, state) for w in waves)))
     finally:

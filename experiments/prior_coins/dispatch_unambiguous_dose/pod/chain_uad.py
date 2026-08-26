@@ -24,14 +24,21 @@ Premortem requirements implemented here (SPEC §4b / premortem.md):
 - **R6** every parent gets a fresh same-day baseline eval arm
   (``<parent>__baseline``) with the eval/train venv pip-freezes captured
   into evidence; the hydrated GCS baselines are a cross-check only.
-- **R8** evals run at the final step (512) only, but ALL adapter
-  checkpoints (32..512 step 32) still upload — the pre-committed fallback
-  re-scores step-128 from storage if the dose curves demand it.
+- **R8** evals run at the arm's FINAL step only (``arm.final_step`` =
+  256 x epochs; 512 for the standard 2-epoch recipe), but the arm's full
+  checkpoint schedule still uploads (32..512 step 32 at e2; every 256
+  steps above, E2) — the pre-committed fallback re-scores intermediates
+  from storage if the dose curves demand it.
 - Capacities are fixed at **r32** (SPEC B4: byte-identical recipe to the
-  tsl grid's r32 arm; the ONLY change is the training file).
+  tsl grid's r32 arm; the ONLY changes are the training file and — for
+  the epoch-sweep arms, SPEC ext. 2 — the ``_e<N>`` stage variants'
+  ``num_epochs``/``save_steps``). Epoch-sweep gates: E1 (trainer_state
+  step/epoch gate), E2 (per-arm schedules threaded explicitly), E5
+  (realized LR curve into evidence).
 
 GCS layout: ``token-scaling-4b-uad/<run-id>/<parent>/<leaf>/...`` with
-``leaf`` in {``baseline``, ``anchor_d0pct``, ``<direction>_<dose>[ _s<seed>]``}.
+``leaf`` in {``baseline``, ``anchor_d0pct[_e<N>]``,
+``<direction>_<dose>[_s<seed>][_e<N>]``}.
 
 Usage (one arm per invocation; the worklist loops)::
 
@@ -82,8 +89,10 @@ RUN_PREFIX = "token-scaling-4b-uad"
 #: the tsl run whose IFT checkpoints are the parents (SPEC B3; the d2m
 #: pair was added 2026-08-26 at Jonathan's request — same tsl lineage).
 TSL_RUN_ID = "20260823T142829Z"
-PARENTS = ("control_d0", "coin_d0.5m", "coin_d2m", "coin_d8m",
-           "charter_d0.5m", "charter_d2m", "charter_d8m")
+#: grouped ordering, midtrain dose ascending within each direction (the d4m
+#: pair was added 2026-08-26 with the epoch-sweep extension — SPEC ext. 2).
+PARENTS = ("control_d0", "coin_d0.5m", "coin_d2m", "coin_d4m", "coin_d8m",
+           "charter_d0.5m", "charter_d2m", "charter_d4m", "charter_d8m")
 DIRECTIONS = ("coin", "charter")
 #: dose label -> k (mirrors data_build.DOSES; the committed manifest is the
 #: authority and is cross-checked at load time).
@@ -97,18 +106,26 @@ REPLICATE_ARM = ("coin_d8m", "charter", "d0.2pct")
 REPLICATE_SEEDS = (43, 44, 45)
 
 CAPACITY = "r32"
-FINAL_STEP = 512
-#: eval endpoint: final step only (SPEC B6 / R8). Checkpoint uploads stay
-#: the full tsl schedule (32..512 step 32) as re-score insurance.
-UAD_EVAL_STEPS = (FINAL_STEP,)
+#: the standard recipe is 2 epochs of the 8192-example set = 512 steps at
+#: global batch 32 (SPEC ext. 2); everything step-shaped is now PER-ARM —
+#: ``UadArm.final_step`` (256 x epochs), ``UadArm.eval_steps`` and
+#: ``UadArm.checkpoint_steps`` (E2/E3) — never a module-global.
+DEFAULT_EPOCHS = 2
+STEPS_PER_EPOCH = 256
+#: epoch-sweep ladder (SPEC ext. 2 / E1): e2 = the suffix-less standard
+#: arms; the explicit ``_e<N>`` suffix is legal only for these levels ...
+EPOCH_LEVELS = (5, 10, 20)
+#: ... on these parents, and only at d0.2pct / the pure-agreement anchor.
+EPOCH_PARENTS = ("control_d0", "coin_d4m", "charter_d4m")
 
 MANIFEST_PATH = EXP / "data" / "MANIFEST.json"
 DEFAULT_WORKDIR = "/workspace/uad"
 
 _LEAF_RE = re.compile(
     r"^(?P<direction>coin|charter)_(?P<dose>d[0-9.]+pct)"
-    r"(?:_s(?P<seed>\d+))?$"
+    r"(?:_s(?P<seed>\d+))?(?:_e(?P<epochs>\d+))?$"
 )
+_ANCHOR_RE = re.compile(r"^anchor_d0pct(?:_e(?P<epochs>\d+))?$")
 
 
 # ---------------------------------------------------------------------------
@@ -122,16 +139,21 @@ class UadArm:
     direction: str | None = None  # mixed arms only
     dose: str | None = None       # mixed arms only, e.g. "d1pct"
     shuffle_seed: int = DEFAULT_SHUFFLE_SEED
+    epochs: int = DEFAULT_EPOCHS  # 2 (suffix-less) | 5 | 10 | 20 (SPEC ext. 2)
+
+    @property
+    def _epoch_suffix(self) -> str:
+        return "" if self.epochs == DEFAULT_EPOCHS else f"_e{self.epochs}"
 
     @property
     def leaf(self) -> str:
         if self.kind == "baseline":
             return "baseline"
         if self.kind == "anchor":
-            return "anchor_d0pct"
+            return f"anchor_d0pct{self._epoch_suffix}"
         suffix = ("" if self.shuffle_seed == DEFAULT_SHUFFLE_SEED
                   else f"_s{self.shuffle_seed}")
-        return f"{self.direction}_{self.dose}{suffix}"
+        return f"{self.direction}_{self.dose}{suffix}{self._epoch_suffix}"
 
     @property
     def arm_id(self) -> str:
@@ -144,7 +166,31 @@ class UadArm:
         return DOSES[self.dose]
 
     @property
+    def final_step(self) -> int:
+        """E3: final optimizer step = 256 x epochs (512 for the standard
+        2-epoch recipe); everything endpoint-shaped derives from this."""
+        return STEPS_PER_EPOCH * self.epochs
+
+    @property
+    def eval_steps(self) -> tuple[int, ...]:
+        """Eval endpoint: final step only (SPEC B6 / R8), per-arm (E2/E3)."""
+        return (self.final_step,)
+
+    @property
+    def checkpoint_steps(self) -> tuple[int, ...]:
+        """Adapter upload/validation schedule, per-arm (E2): the full tsl
+        32-step schedule at e2 (R8 insurance), epoch-granularity (every 256
+        steps, matching the e-variant stages' ``save_steps: 256``) above —
+        which also keeps e20 within ``save_total_limit: 20``."""
+        if self.epochs == DEFAULT_EPOCHS:
+            return tuple(range(32, 513, 32))
+        return tuple(range(STEPS_PER_EPOCH, self.final_step + 1,
+                           STEPS_PER_EPOCH))
+
+    @property
     def train_filename(self) -> str | None:
+        # NOTE: no epoch suffix here — an e-arm trains MORE EPOCHS of the
+        # very same pinned file (SPEC ext. 2; E7 for the anchors).
         if self.kind == "baseline":
             return None
         if self.kind == "anchor":
@@ -165,8 +211,15 @@ def parse_arm_id(arm_id: str) -> UadArm:
                          f"parents: {PARENTS}")
     if leaf == "baseline":
         return UadArm(parent=parent, kind="baseline")
-    if leaf == "anchor_d0pct":
-        return UadArm(parent=parent, kind="anchor")
+    anchor_match = _ANCHOR_RE.match(leaf)
+    if anchor_match is not None:
+        epochs = _parse_epochs(anchor_match.group("epochs"), arm_id)
+        arm = UadArm(parent=parent, kind="anchor", epochs=epochs)
+        _check_epoch_guards(arm, arm_id)
+        if arm.arm_id != arm_id:
+            raise AssertionError(f"arm id does not round-trip: {arm_id!r} "
+                                 f"-> {arm.arm_id!r}")
+        return arm
     match = _LEAF_RE.match(leaf)
     if match is None:
         raise ValueError(f"unrecognized arm leaf {leaf!r} in {arm_id!r}")
@@ -177,8 +230,10 @@ def parse_arm_id(arm_id: str) -> UadArm:
                          f"doses: {sorted(DOSES)}")
     seed = (int(match.group("seed")) if match.group("seed")
             else DEFAULT_SHUFFLE_SEED)
+    epochs = _parse_epochs(match.group("epochs"), arm_id)
     arm = UadArm(parent=parent, kind="mixed", direction=direction,
-                 dose=dose, shuffle_seed=seed)
+                 dose=dose, shuffle_seed=seed, epochs=epochs)
+    _check_epoch_guards(arm, arm_id)
     if dose == POSITIVE_CONTROL_DOSE and parent != POSITIVE_CONTROL_PARENT:
         raise ValueError(
             f"{arm_id}: the {POSITIVE_CONTROL_DOSE} positive-control arms "
@@ -197,10 +252,46 @@ def parse_arm_id(arm_id: str) -> UadArm:
     return arm
 
 
+def _parse_epochs(raw: str | None, arm_id: str) -> int:
+    """``_e<N>`` suffix -> epochs; absent = the standard 2 (SPEC ext. 2)."""
+    if raw is None:
+        return DEFAULT_EPOCHS
+    epochs = int(raw)
+    if epochs == DEFAULT_EPOCHS:
+        raise ValueError(
+            f"{arm_id}: '_e{DEFAULT_EPOCHS}' is non-canonical — the standard "
+            f"{DEFAULT_EPOCHS}-epoch arm carries no epoch suffix (an alias "
+            "would collide its tree with the suffix-less arm's, R2)"
+        )
+    if epochs not in EPOCH_LEVELS:
+        raise ValueError(
+            f"{arm_id}: epochs {epochs} not in the ladder "
+            f"{(DEFAULT_EPOCHS, *EPOCH_LEVELS)} (SPEC ext. 2)"
+        )
+    return epochs
+
+
+def _check_epoch_guards(arm: UadArm, arm_id: str) -> None:
+    """epochs != 2 are legal ONLY at d0.2pct / the anchor, on EPOCH_PARENTS
+    (SPEC ext. 2 grid; a mistyped epoch arm must never train, E1)."""
+    if arm.epochs == DEFAULT_EPOCHS:
+        return
+    if arm.parent not in EPOCH_PARENTS:
+        raise ValueError(
+            f"{arm_id}: epoch-sweep arms run on {EPOCH_PARENTS} only"
+        )
+    if not (arm.kind == "anchor" or arm.dose == "d0.2pct"):
+        raise ValueError(
+            f"{arm_id}: epochs != {DEFAULT_EPOCHS} are legal only for the "
+            "anchor or the d0.2pct dose (SPEC ext. 2)"
+        )
+
+
 def planned_arms() -> list[str]:
-    """The full 75-invocation grid: 7 baselines + 7 anchors + 56 mixed +
-    2 positive controls + 3 replicates (55 before the 2026-08-26 d2m
-    parent extension)."""
+    """The full 122-invocation grid: 9 baselines + 9 anchors + 72 mixed +
+    2 positive controls + 3 replicates + 27 epoch arms (55 before the
+    2026-08-26 d2m parent extension, 75 before the same-day d4m +
+    epoch-sweep extension 2)."""
     arms: list[str] = []
     for parent in PARENTS:
         arms.append(f"{parent}__baseline")
@@ -214,6 +305,13 @@ def planned_arms() -> list[str]:
     parent, direction, dose = REPLICATE_ARM
     for seed in REPLICATE_SEEDS:
         arms.append(f"{parent}__{direction}_{dose}_s{seed}")
+    # epoch sweep (SPEC ext. 2): epoch-matched anchors + both directions at
+    # d0.2pct, on the epoch parents only. e2 = the standard arms above.
+    for parent in EPOCH_PARENTS:
+        for epochs in EPOCH_LEVELS:
+            arms.append(f"{parent}__anchor_d0pct_e{epochs}")
+            for direction in DIRECTIONS:
+                arms.append(f"{parent}__{direction}_d0.2pct_e{epochs}")
     return arms
 
 
@@ -226,7 +324,7 @@ def plan_paths(arm: UadArm, run_id: str,
     paths = {
         "work": str(work),
         "gcs_rel_root": rel_root,
-        "results_name": f"{arm.arm_id}-step{FINAL_STEP}"
+        "results_name": f"{arm.arm_id}-step{arm.final_step}"
         if arm.kind != "baseline" else f"{arm.arm_id}",
         "run_name": f"uad-{arm.arm_id}-{run_id}",
     }
@@ -309,6 +407,10 @@ def prepare_arm_train_data(work_root: Path, arm: UadArm,
     dest = work_root / "eft_data" / f"{Path(filename).stem}-{sha[:8]}"
     train = dest / "train.jsonl"
     marker = dest / "UAD_DATA_OK.json"
+    # E7: the marker check is filename+sha only, BY DESIGN — all anchor
+    # e-levels (and every epoch level of a mixed dose) share one sha-keyed
+    # data dir because they train on the very same pinned file. Do NOT add
+    # arm-equality here.
     if marker.is_file():
         record = json.loads(marker.read_text())
         if record.get("sha256") != sha or record.get("filename") != filename:
@@ -360,16 +462,25 @@ def require_uad_gpu() -> str:
     return value
 
 
-def configure_tsl_chain(uad_gpu: str) -> None:
-    """Repoint the imported tsl chain at this run's lane and endpoints.
+def configure_tsl_chain(uad_gpu: str, eval_steps: tuple[int, ...]) -> None:
+    """Repoint the imported tsl chain at this ARM's lane and endpoints.
 
     Deliberate module-global overrides on OUR loaded copy of the tsl module
     (the tsl experiment dir itself is untouched): the eval helpers read
     ``EFT_GPU`` (subprocess CUDA_VISIBLE_DEVICES) and ``EVAL_STEPS``
     (endpoints) from module scope.
+
+    E2: ``eval_steps`` is now the ARM's own schedule (``arm.eval_steps``,
+    e.g. ``(2560,)`` for an e10 arm) and this is re-set at the top of every
+    arm's :func:`run` — arms run strictly sequentially in one worker
+    process, so the previous arm's endpoints can never leak into the next
+    (``chain.evaluate_trajectory_lora``'s signature made threading the
+    steps through the tsl module invasive; per-arm re-set is the documented
+    fallback). Everything inside THIS module threads the per-arm values as
+    explicit arguments.
     """
     chain.EFT_GPU = uad_gpu
-    chain.EVAL_STEPS = tuple(UAD_EVAL_STEPS)
+    chain.EVAL_STEPS = tuple(eval_steps)
 
 
 def assert_lane(uad_gpu: str) -> None:
@@ -379,6 +490,90 @@ def assert_lane(uad_gpu: str) -> None:
             f"CUDA_VISIBLE_DEVICES={visible!r} != UAD_GPU={uad_gpu!r} — "
             "lane pinning violated (R3)"
         )
+
+
+# ---------------------------------------------------------------------------
+# Epoch sweep: per-arm stage selection + gates (E1/E2/E5)
+# ---------------------------------------------------------------------------
+
+def uad_stage(arm: UadArm) -> str:
+    """The registry stage for this arm (E1): the byte-identical tsl recipe
+    at e2, else the ``_e<N>`` variant (num_epochs + save_steps deltas only)."""
+    if arm.epochs == DEFAULT_EPOCHS:
+        return chain.EFT_STAGE
+    return f"{chain.EFT_STAGE}_e{arm.epochs}"
+
+
+def validate_uad_adapters(run_dir: Path,
+                          expected_steps: tuple[int, ...]) -> dict[int, Path]:
+    """Per-arm adapter validation (E2): ``chain.validate_adapters`` checks
+    against its module-global ``EFT_CHECKPOINTS``; epoch arms have a per-arm
+    schedule, so the expected step SET is threaded explicitly here."""
+    by_step = chain._checkpoints_by_step(run_dir / "checkpoints")
+    if set(by_step) != set(expected_steps):
+        raise RuntimeError(
+            f"adapter steps {sorted(by_step)} != {sorted(expected_steps)}"
+        )
+    for _step, ckpt in by_step.items():
+        if not (ckpt / "adapter_config.json").is_file() or not any(
+            ckpt.glob("adapter_model.*")
+        ):
+            raise RuntimeError(f"{ckpt}: missing adapter files")
+        if not any(ckpt.glob("optimizer.*")):
+            raise RuntimeError(f"{ckpt}: missing optimizer state")
+    return by_step
+
+
+def _final_trainer_state_path(arm: UadArm, run_dir: Path) -> Path:
+    return (run_dir / "checkpoints" / f"checkpoint-{arm.final_step}"
+            / "trainer_state.json")
+
+
+def enforce_epoch_gate(arm: UadArm, run_dir: Path) -> dict[str, Any]:
+    """E1: the final checkpoint's trainer_state must record EXACTLY the
+    arm's step count and epoch — ``validate_uad_adapters`` checks the step
+    *set* only, which cannot catch a wrong-``num_epochs`` stage that still
+    saved the expected checkpoints. Loud RuntimeError on mismatch; the
+    verified values are recorded in ``EFT_DONE.json``."""
+    state_path = _final_trainer_state_path(arm, run_dir)
+    if not state_path.is_file():
+        raise RuntimeError(
+            f"{arm.arm_id}: EPOCH GATE FAILED (E1): {state_path} missing"
+        )
+    state = json.loads(state_path.read_text())
+    global_step = int(state.get("global_step", -1))
+    epoch = float(state.get("epoch", -1.0))
+    if global_step != arm.final_step or abs(epoch - arm.epochs) >= 0.02:
+        raise RuntimeError(
+            f"{arm.arm_id}: EPOCH GATE FAILED (E1): trainer_state records "
+            f"global_step={global_step} epoch={epoch}, expected "
+            f"global_step={arm.final_step} epoch~={arm.epochs} (+/-0.02)"
+        )
+    return {"final_global_step": global_step, "final_epoch": epoch}
+
+
+def record_lr_schedule(arm: UadArm, run_dir: Path, evidence: Path) -> None:
+    """E5 (pre-registered LR-schedule confound): copy the realized LR curve
+    from the final checkpoint's ``trainer_state.json`` log_history into
+    evidence. Cheap; warn (not raise) on missing — the gate is E1's job."""
+    state_path = _final_trainer_state_path(arm, run_dir)
+    try:
+        state = json.loads(state_path.read_text())
+        points = [
+            {"step": entry.get("step"),
+             "learning_rate": entry["learning_rate"]}
+            for entry in state.get("log_history", [])
+            if "learning_rate" in entry
+        ]
+        evidence.mkdir(parents=True, exist_ok=True)
+        chain.atomic_json(evidence / "lr_schedule.json", {
+            "arm": arm.arm_id, "epochs": arm.epochs,
+            "final_step": arm.final_step, "n_points": len(points),
+            "log_history_lr": points,
+        })
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        chain.log(f"{arm.arm_id}: WARNING could not record the realized LR "
+                  f"schedule (E5): {error}")
 
 
 # ---------------------------------------------------------------------------
@@ -518,22 +713,27 @@ async def phase_uad_eft(
         if run_dir.exists():
             shutil.rmtree(run_dir)
         await chain.run_training(
-            run_dir, stage=cap.stage, seed=chain.EFT_SEED,
+            run_dir, stage=uad_stage(arm), seed=chain.EFT_SEED,
             dataset_path=train_file, parent=parent_ckpt, gpus=uad_gpu,
             run_name=f"uad-{arm.arm_id}-{run_id}", lora=lora,
         )
         assert_lane(uad_gpu)  # R3: run_training pinned CUDA_VISIBLE_DEVICES
-        checkpoints = chain.validate_adapters(run_dir)
+        # E2: the expected schedule is the ARM's, threaded explicitly.
+        checkpoints = validate_uad_adapters(run_dir, arm.checkpoint_steps)
+        epoch_gate = enforce_epoch_gate(arm, run_dir)  # E1
+        record_lr_schedule(arm, run_dir, evidence)     # E5
         shutil.rmtree(run_dir / "prepared", ignore_errors=True)
         chain.atomic_json(done, {
             "arm": arm.arm_id, "parent": arm.parent, "leaf": arm.leaf,
             "direction": arm.direction, "dose": arm.dose, "k": arm.k,
             "shuffle_seed": arm.shuffle_seed, "capacity": cap.capacity,
+            "epochs": arm.epochs, "stage": uad_stage(arm),
             "lora": dataclasses.asdict(lora),
             "train_file": arm.train_filename, "train_sha256": train_sha,
             "trainable_params": account["trainable_params"],
             "total_params": account["total_params"],
             "checkpoint_steps": sorted(checkpoints),
+            **epoch_gate,   # E1: final_global_step + final_epoch, verified
             "uad_gpu": uad_gpu, "at": chain.utc_now(),
         })
 
@@ -542,7 +742,8 @@ async def phase_uad_eft(
     async def upload_checkpoints() -> None:
         chain._stage_evidence(run_dir, evidence)
         shutil.copy2(done, evidence / "EFT_DONE.json")
-        for step in chain.EFT_CHECKPOINTS:
+        # E2: the upload list is the ARM's schedule, threaded explicitly.
+        for step in arm.checkpoint_steps:
             await asyncio.to_thread(
                 chain.upload_and_pin,
                 run_dir / "checkpoints" / f"checkpoint-{step}",
@@ -564,7 +765,7 @@ async def phase_uad_eft(
         max_lora_rank=cap.max_lora_rank,
     )
     if not served:
-        for step in UAD_EVAL_STEPS:
+        for step in arm.eval_steps:
             adapter = run_dir / "checkpoints" / f"checkpoint-{step}"
             merged = await asyncio.to_thread(
                 chain.merge_checkpoint, work, parent_ckpt, adapter,
@@ -579,7 +780,7 @@ async def phase_uad_eft(
                 shutil.rmtree(merged, ignore_errors=True)
 
     results = work / "results"
-    for step in UAD_EVAL_STEPS:
+    for step in arm.eval_steps:
         name = f"{prefix}-step{step}"
         missing = [s for s in chain.SLICES
                    if not (results / name / f"{s}.jsonl").is_file()]
@@ -593,7 +794,7 @@ async def phase_uad_eft(
 
     eval_stage = out / "eval"
     eval_stage.mkdir(parents=True, exist_ok=True)
-    for step in UAD_EVAL_STEPS:
+    for step in arm.eval_steps:
         name = f"{prefix}-step{step}"
         shutil.copytree(results / name, eval_stage / name, dirs_exist_ok=True)
     await asyncio.to_thread(
@@ -646,8 +847,10 @@ def build_plan(run_id: str, arm_ids: list[str], workdir: str,
             "arm": arm.arm_id, "kind": arm.kind, "parent": arm.parent,
             "direction": arm.direction, "dose": arm.dose, "k": arm.k,
             "shuffle_seed": arm.shuffle_seed, "capacity": CAPACITY,
-            "eval_steps": list(UAD_EVAL_STEPS),
-            "checkpoint_steps": list(chain.EFT_CHECKPOINTS),
+            "epochs": arm.epochs, "final_step": arm.final_step,
+            "stage": None if arm.kind == "baseline" else uad_stage(arm),
+            "eval_steps": list(arm.eval_steps),
+            "checkpoint_steps": list(arm.checkpoint_steps),
             **plan_paths(arm, run_id, workdir),
         }
         if manifest is not None and arm.train_filename is not None:
@@ -669,7 +872,9 @@ async def run(args: argparse.Namespace) -> None:
     manifest = load_manifest()
     arm = parse_arm_id(args.arm)
     uad_gpu = require_uad_gpu()
-    configure_tsl_chain(uad_gpu)
+    # E2: per-arm re-set of the tsl module's endpoint global — arms run
+    # sequentially in one process and this runs at the top of EVERY arm.
+    configure_tsl_chain(uad_gpu, arm.eval_steps)
     chain.require_gcs_ready()
     if not Path(chain.EVAL_PYTHON).exists():
         raise RuntimeError(f"eval venv missing: {chain.EVAL_PYTHON}")

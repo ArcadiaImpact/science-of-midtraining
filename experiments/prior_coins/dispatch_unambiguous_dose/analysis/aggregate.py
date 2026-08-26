@@ -60,13 +60,19 @@ TSL = EXP.parent / "dispatch_token_scaling_4b"
 
 AGG_SCHEMA = "scimt_uad_aggregate_v1"
 DEFAULT_RUN_ID = "20260825T141359Z"
+#: the STANDARD (2-epoch) endpoint; per-arm endpoints are arm-derived
+#: (``UadArm.final_step`` = 256 x epochs, SPEC ext. 2 / E3) — this constant
+#: only labels e2-only artifacts (tables/figures over the standard grid).
 FINAL_STEP = 512
+DEFAULT_EPOCHS = 2
 HOLDOUT_CONFLICT = "eval_holdout_conflict"
 TRAINED_CONFLICT = "eval_trained_conflict"
 CONFLICT_SLICES = (HOLDOUT_CONFLICT, TRAINED_CONFLICT)
-#: signed midtrain axis, bottom -> top (Jonathan 2026-08-26 heatmap spec).
-PARENT_ORDER = ("charter_d8m", "charter_d2m", "charter_d0.5m", "control_d0",
-                "coin_d0.5m", "coin_d2m", "coin_d8m")
+#: signed midtrain axis, bottom -> top (Jonathan 2026-08-26 heatmap spec;
+#: d4m pair added with SPEC ext. 2).
+PARENT_ORDER = ("charter_d8m", "charter_d4m", "charter_d2m", "charter_d0.5m",
+                "control_d0", "coin_d0.5m", "coin_d2m", "coin_d4m",
+                "coin_d8m")
 CEILING = 0.85  # R10: anchor >85% toward the steer target -> censored
 
 
@@ -103,15 +109,18 @@ def load_score_cells():
 # endpoint discovery over the uad tree
 # ---------------------------------------------------------------------------
 
-def endpoint_dir(run_root: Path, parent: str, leaf: str) -> Path:
-    """Where an arm's step-512 (or baseline) sample store lives.
+def endpoint_dir(run_root: Path, arm) -> Path:
+    """Where an arm's final-step (or baseline) sample store lives.
 
     Mirrors chain_uad's upload layout: baseline slices sit directly under
-    ``eval/``; every other arm under ``eval/<parent>__<leaf>-step512/``.
+    ``eval/``; every other arm under
+    ``eval/<parent>__<leaf>-step<final_step>/`` — the step is arm-derived
+    (256 x epochs, E3), not the frozen 512.
     """
-    if leaf == "baseline":
-        return run_root / parent / leaf / "eval"
-    return run_root / parent / leaf / "eval" / f"{parent}__{leaf}-step{FINAL_STEP}"
+    if arm.kind == "baseline":
+        return run_root / arm.parent / arm.leaf / "eval"
+    return (run_root / arm.parent / arm.leaf / "eval"
+            / f"{arm.parent}__{arm.leaf}-step{arm.final_step}")
 
 
 def discover(run_root: Path, cu) -> tuple[list[dict], list[str]]:
@@ -121,7 +130,7 @@ def discover(run_root: Path, cu) -> tuple[list[dict], list[str]]:
     for arm_id in cu.planned_arms():
         arm = cu.parse_arm_id(arm_id)
         receipt = run_root / arm.parent / arm.leaf / "ARM_COMPLETE.json"
-        ep = endpoint_dir(run_root, arm.parent, arm.leaf)
+        ep = endpoint_dir(run_root, arm)
         if not receipt.is_file() or not ep.is_dir():
             missing.append(arm_id)
             continue
@@ -129,6 +138,8 @@ def discover(run_root: Path, cu) -> tuple[list[dict], list[str]]:
             "arm_id": arm_id, "parent": arm.parent, "leaf": arm.leaf,
             "kind": arm.kind, "direction": arm.direction,
             "dose": arm.dose, "k": arm.k, "shuffle_seed": arm.shuffle_seed,
+            "epochs": arm.epochs, "final_step": arm.final_step,
+            "total_exposures": arm.k * arm.epochs,
             "endpoint_dir": ep,
         })
     return present, missing
@@ -151,7 +162,8 @@ def score_arm(record: dict, episodes, sc, *, rescore: bool = False) -> dict:
 def rows_for_arm(record: dict, entry: dict, sc) -> list[dict]:
     """One row per slice: directional + other rates with Wilson CIs."""
     rows = []
-    step = "baseline" if record["kind"] == "baseline" else FINAL_STEP
+    step = ("baseline" if record["kind"] == "baseline"
+            else record["final_step"])
     for slice_name, slice_entry in sorted(entry.items()):
         counts, n = slice_entry["counts"], slice_entry["n"]
         coin, charter = counts.get("coin", 0), counts.get("charter", 0)
@@ -159,7 +171,8 @@ def rows_for_arm(record: dict, entry: dict, sc) -> list[dict]:
         row = {
             **{k: record[k] for k in ("arm_id", "parent", "leaf", "kind",
                                       "direction", "dose", "k",
-                                      "shuffle_seed")},
+                                      "shuffle_seed", "epochs",
+                                      "final_step", "total_exposures")},
             "endpoint": step, "slice": slice_name, "n": n,
             "counts": counts,
         }
@@ -192,6 +205,11 @@ def compute_lift(rows: list[dict]) -> tuple[list[dict], list[dict]]:
     lift = steer-direction rate - the SAME parent's anchor_d0pct rate for
     that direction (same day, same harness, same seed recipe). The pre-EFT
     ``baseline`` arm's rate rides along as a cross-check column.
+
+    Epoch arms (SPEC ext. 2) pair with their EPOCH-MATCHED anchor
+    (``anchor_d0pct_e<N>`` — 20 epochs of pure agreement is its own drift
+    treatment, so the e2 anchor would mislabel the lift); their rows carry
+    ``epochs`` and ``total_exposures`` (= k x epochs).
     """
     by = _index(rows)
     lift_rows: list[dict] = []
@@ -200,9 +218,11 @@ def compute_lift(rows: list[dict]) -> tuple[list[dict], list[dict]]:
         if row["kind"] != "mixed" or row["slice"] not in CONFLICT_SLICES:
             continue
         steer = row["direction"]
-        anchor = by.get((f"{row['parent']}__anchor_d0pct", row["slice"]))
+        anchor_leaf = ("anchor_d0pct" if row["epochs"] == DEFAULT_EPOCHS
+                       else f"anchor_d0pct_e{row['epochs']}")
+        anchor = by.get((f"{row['parent']}__{anchor_leaf}", row["slice"]))
         if anchor is None:
-            missing_anchor.add(row["parent"])
+            missing_anchor.add(f"{row['parent']} ({anchor_leaf})")
             continue
         base = by.get((f"{row['parent']}__baseline", row["slice"]))
         rate, a_rate = row[f"{steer}_rate"], anchor[f"{steer}_rate"]
@@ -210,7 +230,8 @@ def compute_lift(rows: list[dict]) -> tuple[list[dict], list[dict]]:
         half = _diff_ci(rate, row["n"], a_rate, anchor["n"])
         lift_rows.append({
             **{k: row[k] for k in ("arm_id", "parent", "direction", "dose",
-                                   "k", "shuffle_seed", "slice", "n")},
+                                   "k", "shuffle_seed", "epochs",
+                                   "total_exposures", "slice", "n")},
             "steer_rate": rate,
             "steer_lo": row[f"{steer}_lo"], "steer_hi": row[f"{steer}_hi"],
             "anchor_rate": a_rate, "anchor_n": anchor["n"],
@@ -223,9 +244,9 @@ def compute_lift(rows: list[dict]) -> tuple[list[dict], list[dict]]:
         })
     if missing_anchor:
         raise AggregationError(
-            f"mixed arms present but NO anchor_d0pct arm for parents "
-            f"{sorted(missing_anchor)} — the same-day anchor is mandatory "
-            f"(SPEC R6/R10; always-show-lift)"
+            f"mixed arms present but NO matching anchor arm for "
+            f"{sorted(missing_anchor)} — the same-day (epoch-matched) "
+            f"anchor is mandatory (SPEC R6/R10; always-show-lift)"
         )
     anchor_rows = [r for r in rows if r["kind"] == "anchor"
                    and r["slice"] in CONFLICT_SLICES]
@@ -310,7 +331,10 @@ def _sig(diff: float, half: float) -> bool:
 def prediction_checks(lift_rows: list[dict], rows: list[dict]) -> dict:
     """Auto-computed evidence for the literature.md predictions. Verdict
     strings are mechanical CI reads; the narrative call lives in RESULTS.md."""
-    hold = [r for r in lift_rows if r["slice"] == HOLDOUT_CONFLICT]
+    # standard 2-epoch arms only: an epoch arm at the same (parent,
+    # direction, k, seed) would silently overwrite its e2 twin in `by`.
+    hold = [r for r in lift_rows if r["slice"] == HOLDOUT_CONFLICT
+            and r["epochs"] == DEFAULT_EPOCHS]
     by = {(r["parent"], r["direction"], r["k"], r["shuffle_seed"]): r
           for r in hold}
 
@@ -432,13 +456,16 @@ def cell_table(rows: list[dict], cu) -> list[dict]:
 
     signed_k < 0 = charter-direction examples, > 0 = coin-direction,
     0 = the pure-agreement anchor. Seed replicates are excluded (seed 42
-    only) — they live in the replicate-variance block.
+    only) — they live in the replicate-variance block. Epoch arms
+    (SPEC ext. 2) are excluded too: they would collide with their e2 twins
+    on this k-axis; the epoch/total-exposure figures read lift_rows.
     """
     table = []
     for row in rows:
         if (row["slice"] not in CONFLICT_SLICES
                 or row["shuffle_seed"] != cu.DEFAULT_SHUFFLE_SEED
-                or row["kind"] == "baseline"):
+                or row["kind"] == "baseline"
+                or row["epochs"] != DEFAULT_EPOCHS):
             continue
         signed_k = 0 if row["kind"] == "anchor" else (
             row["k"] if row["direction"] == "coin" else -row["k"])
@@ -479,8 +506,11 @@ def write_cell_table(table: list[dict], out_dir: Path) -> None:
 def results_table_md(lift_rows: list[dict], anchor_rows: list[dict],
                      flags: list[dict],
                      *, slice_name: str = HOLDOUT_CONFLICT) -> str:
+    # standard-grid table: e2 arms only (epoch arms would collide on the
+    # k columns; their story is told in total-exposure terms elsewhere).
     sel = [r for r in lift_rows
-           if r["slice"] == slice_name and r["shuffle_seed"] == 42]
+           if r["slice"] == slice_name and r["shuffle_seed"] == 42
+           and r["epochs"] == DEFAULT_EPOCHS]
     ks = sorted({r["k"] for r in sel})
     by = {(r["parent"], r["direction"], r["k"]): r for r in sel}
     censored = {(f["parent"], f["direction"]) for f in flags
@@ -519,7 +549,7 @@ def results_table_md(lift_rows: list[dict], anchor_rows: list[dict],
     lines += ["", f"Anchor (0%) raw rates on `{slice_name}`:", ""]
     for r in sorted(anchor_rows, key=lambda r: PARENT_ORDER.index(
             r["parent"])):
-        if r["slice"] != slice_name:
+        if r["slice"] != slice_name or r["epochs"] != DEFAULT_EPOCHS:
             continue
         lines.append(
             f"- {r['parent']}: coin {r['coin_rate']:.3f} "

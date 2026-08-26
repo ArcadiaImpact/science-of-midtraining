@@ -160,11 +160,21 @@ def _arms_of(job):
 # Plan + partitioning
 # ---------------------------------------------------------------------------
 
-def test_plan_is_the_full_75_arm_grid(tmp_path):
+def test_plan_is_the_full_122_arm_grid(tmp_path):
     cfg = dp.DispatchConfig(run_id=RUN_ID, dry_run=True, out_root=tmp_path)
     arms = dp.plan_arms(cfg)
     assert arms == cu.planned_arms()
-    assert len(arms) == 75
+    assert len(arms) == 122
+
+
+def test_arm_weights_follow_the_e4_rule():
+    assert dp.arm_weight("control_d0__baseline") == 1
+    assert dp.arm_weight("coin_d8m__charter_d1pct") == 2
+    assert dp.arm_weight("control_d0__anchor_d0pct") == 2
+    assert dp.arm_weight("coin_d8m__charter_d0.2pct_s43") == 2
+    for epochs in (5, 10, 20):
+        assert dp.arm_weight(f"control_d0__anchor_d0pct_e{epochs}") == epochs
+        assert dp.arm_weight(f"coin_d4m__coin_d0.2pct_e{epochs}") == epochs
 
 
 def test_worklists_disjoint_parent_grouped_capped():
@@ -175,19 +185,43 @@ def test_worklists_disjoint_parent_grouped_capped():
     assert len(set(flat)) == len(flat)           # disjoint
     for w in worklists:
         assert len(w.arms) <= dp.MAX_ARMS_PER_POD
+        # E4: epoch-weighted cap so no pod outruns its TTL
+        assert sum(dp.arm_weight(a) for a in w.arms) <= dp.MAX_WEIGHT_PER_POD
         if not w.canary:                          # single parent per pod
             assert {a.split("__")[0] for a in w.arms} == {w.parent}
 
 
-def test_canary_worklist_is_first_and_exact():
+def test_existing_grid_partition_unchanged():
+    """The pre-epoch 75-arm grid still partitions exactly as before the E4
+    weighting (weights are near-uniform there, so the balanced chunk sizes
+    are identical)."""
+    old = [a for a in cu.planned_arms()
+           if cu.parse_arm_id(a).epochs == 2
+           and cu.parse_arm_id(a).parent not in ("coin_d4m", "charter_d4m")]
+    assert len(old) == 75
+    sizes: dict[str, list[int]] = {}
+    for w in dp.build_worklists(old):
+        if not w.canary:
+            sizes.setdefault(w.parent, []).append(len(w.arms))
+    assert sizes == {
+        "control_d0": [10], "coin_d0.5m": [10], "coin_d2m": [10],
+        "coin_d8m": [7, 6], "charter_d0.5m": [10], "charter_d2m": [10],
+        "charter_d8m": [10],
+    }
+
+
+def test_canary_worklists_are_first_and_exact():
     worklists = dp.build_worklists(cu.planned_arms())
-    assert worklists[0].canary
-    assert worklists[0].index == 0
+    assert worklists[0].canary and worklists[0].index == 0
     assert worklists[0].arms == dp.CANARY_ARMS
-    assert not any(w.canary for w in worklists[1:])
+    # E8: the epoch canary is its OWN solo gating worklist
+    assert worklists[1].canary and worklists[1].index == 1
+    assert worklists[1].arms == dp.EPOCH_CANARY_ARMS
+    assert len(worklists[1].arms) == 1
+    assert not any(w.canary for w in worklists[2:])
     # canary arms appear nowhere else
-    rest = [a for w in worklists[1:] for a in w.arms]
-    assert not set(dp.CANARY_ARMS) & set(rest)
+    rest = [a for w in worklists[2:] for a in w.arms]
+    assert not (set(dp.CANARY_ARMS) | set(dp.EPOCH_CANARY_ARMS)) & set(rest)
 
 
 def test_baseline_first_within_each_parent():
@@ -204,14 +238,26 @@ def test_baseline_first_within_each_parent():
 def test_receipted_arms_are_not_rescheduled():
     arms = cu.planned_arms()
     receipted = {"control_d0__baseline", "control_d0__coin_d2pct",
-                 "coin_d8m__baseline"}
+                 "control_d0__anchor_d0pct_e5", "coin_d8m__baseline"}
     remaining = [a for a in arms if a not in receipted]
     worklists = dp.build_worklists(remaining)
     flat = [a for w in worklists for a in w.arms]
     assert not set(flat) & receipted
     assert sorted(flat) == sorted(remaining)
-    # both canary arms receipted -> no canary gate on re-dispatch
+    # every canary arm receipted -> no canary gate on re-dispatch
     assert not any(w.canary for w in worklists)
+
+
+def test_epoch_canary_alone_still_gates():
+    """Re-dispatch with the smoke pair receipted but epoch arms pending:
+    the E8 canary is still a solo gate."""
+    arms = cu.planned_arms()
+    receipted = set(dp.CANARY_ARMS)
+    remaining = [a for a in arms if a not in receipted]
+    worklists = dp.build_worklists(remaining)
+    assert worklists[0].canary
+    assert worklists[0].arms == dp.EPOCH_CANARY_ARMS
+    assert not any(w.canary for w in worklists[1:])
 
 
 # ---------------------------------------------------------------------------
@@ -315,7 +361,7 @@ def test_dry_run_plans_everything_and_spends_nothing(tmp_path, rp_config,
                                                      monkeypatch):
     cfg = _cfg(tmp_path, rp_config, dry_run=True, signed_off=False)
     report = asyncio.run(dp.dispatch(cfg))
-    assert report.dry_run and len(report.planned) == 75
+    assert report.dry_run and len(report.planned) == 122
     assert report.remaining == report.planned      # scan_receipts=False
     assert report.worklists[0].canary
     assert not report.results
@@ -385,7 +431,9 @@ def test_non_capacity_failure_stops_new_worklists(tmp_path, rp_config,
                                                   fake_bellhop, fake_podjob,
                                                   fake_pod_setup,
                                                   quiet_sweep):
-    fake_podjob.fail["-w01"] = [ValueError("RemoteJobError: worker died")]
+    # w00/w01 are the canaries (smoke pair + E8 epoch canary); w02 is the
+    # first fan-out worklist.
+    fake_podjob.fail["-w02"] = [ValueError("RemoteJobError: worker died")]
     cfg = _cfg(tmp_path, rp_config, max_pods=1)    # deterministic ordering
     with pytest.raises(RuntimeError, match="did not complete"):
         asyncio.run(dp.dispatch(cfg))
@@ -395,9 +443,10 @@ def test_non_capacity_failure_stops_new_worklists(tmp_path, rp_config,
     report = json.loads(report_files[0].read_text())
     for row in report["results"]:
         statuses[row["worklist"]["index"]] = row["status"]
-    assert statuses[0] == "ok"                     # canary
-    assert statuses[1] == "failed"
-    assert all(s == "skipped" for i, s in statuses.items() if i > 1)
+    assert statuses[0] == "ok"                     # smoke canary
+    assert statuses[1] == "ok"                     # epoch canary (E8)
+    assert statuses[2] == "failed"
+    assert all(s == "skipped" for i, s in statuses.items() if i > 2)
     assert len(statuses) == len(report["worklists"])
 
 
@@ -409,6 +458,18 @@ def test_canary_failure_blocks_fanout(tmp_path, rp_config, fake_bellhop,
     with pytest.raises(RuntimeError, match="canary worklist failed"):
         asyncio.run(dp.dispatch(cfg))
     assert not fake_podjob.jobs
+
+
+def test_epoch_canary_failure_blocks_fanout(tmp_path, rp_config,
+                                            fake_bellhop, fake_podjob,
+                                            fake_pod_setup, quiet_sweep):
+    """E8: the epoch canary (w01) gates fan-out just like the smoke pair."""
+    fake_podjob.fail["-w01"] = [ValueError("epoch gate exploded")]
+    cfg = _cfg(tmp_path, rp_config)
+    with pytest.raises(RuntimeError, match="canary worklist failed"):
+        asyncio.run(dp.dispatch(cfg))
+    # only the smoke canary completed; nothing fanned out
+    assert [_arms_of(j) for j in fake_podjob.jobs] == [list(dp.CANARY_ARMS)]
 
 
 # ---------------------------------------------------------------------------
