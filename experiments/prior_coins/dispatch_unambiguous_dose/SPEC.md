@@ -75,6 +75,47 @@ uploads thin to every 256 steps for e>2 arms (R8 insurance at epoch
 granularity instead of 32-step granularity). Est. new compute ≈ 120
 GPU-h ≈ $500–550.
 
+**§4c — epoch-sweep premortem amendments (2026-08-26, agent pass):**
+
+- **E1 (no epoch seam):** `num_epochs: 2` is baked into
+  `eft_dispatch_v4_wide_4b.yaml`; `TrainConfig` has no steps/epochs field.
+  Fix: three registry stage variants `eft_dispatch_v4_wide_4b_e{5,10,20}`
+  differing ONLY in `num_epochs` + `save_steps: 256`, selected per-arm —
+  plus a **loud epoch gate**: assert the final checkpoint's
+  `trainer_state.json` has `global_step == 256×e` and `epoch ≈ e`
+  (`validate_adapters` checks the step *set* only — insufficient).
+- **E2 (checkpoint rotation):** `save_total_limit: 20` would rotate away
+  early checkpoints at e>2 and hard-fail validation/upload. The e-variants'
+  `save_steps: 256` keeps ≤20 saves at e20; the expected checkpoint
+  schedule and upload list are **per-arm values passed explicitly**, never
+  a module-global override (e2 and e10 arms share one worker process).
+- **E3 (frozen 512):** final step becomes a `UadArm` property (256×epochs);
+  `UAD_EVAL_STEPS`, `results_name`, eval dir names, and aggregate's sample
+  store path all derive from it. R2 disjointness preflight re-asserted over
+  the full 122-arm plan.
+- **E4 (TTL blowout):** worklists are partitioned by **epoch-weighted
+  units** (arm weight = its epochs; baseline ≈ 1), capped so projected
+  train+eval < ~12h per pod (16h TTL headroom); each epoch-parent's epoch
+  arms split across worklists rather than co-packed.
+- **E5 (LR-schedule confound, pre-registered):** `warmup_ratio: 0.05` and
+  cosine are relative — an e10 arm's exposures sit on a 5×-stretched
+  schedule vs its matched-total e2 comparator (warmup 128 vs ~26 steps;
+  endpoints both anneal to ~0.1×peak). "Byte-identical" holds for data and
+  peak LR, NOT per-step LR. Second-order; realized LR curves logged to
+  evidence. If matched-total pairs disagree, one absolute-warmup cross-check
+  arm is the pre-committed follow-up.
+- **E6 (parent availability):** both d4m `ift/checkpoint-24` trees verified
+  present on GCS from the devbox before dispatch (some tsl d4m artifacts
+  were pruned during the r512/r1024 wave — these were re-checked
+  2026-08-26).
+- **E7 (anchor data-dir sharing):** all anchor e-levels share
+  `aft_agreement.jsonl` → one sha-keyed data dir; the `UAD_DATA_OK` marker
+  check is filename+sha only, by design — do NOT add arm-equality there.
+- **E8 (canary):** before fan-out, one **e5 canary**
+  (`control_d0__anchor_d0pct_e5`) runs alone and its
+  `trainer_state` (steps=1280, epoch≈5.0), eval dir name, and receipt are
+  verified — exercises E1-E4 for ~$8.
+
 Question this answers that the tsl grid cannot: the tsl grid varied *latent
 prior* and *adapter capacity* with the EFT data held fixed (and found data,
 not capacity, is binding). This sweep varies the *EFT data's explicit
