@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import inspect
 import shutil
 import sys
@@ -482,7 +483,12 @@ def test_main_dumps_full_remote_log_tail_and_reraises(monkeypatch, capsys):
         def to_graphql_input(self, gpu_type_id=None):
             return {"gpuTypeId": gpu_type_id}
 
+    class Pod:  # main() also applies _patch_bad_host_skip, which wraps this
+        async def _wait_provision(self):
+            return None
+
     pod_mod.PodConfig = PodConfig
+    pod_mod.Pod = Pod
     bellhop_mod = types.ModuleType("bellhop")
     bellhop_mod.errors = errors_mod
     bellhop_mod.pod = pod_mod
@@ -515,3 +521,112 @@ def test_main_dumps_full_remote_log_tail_and_reraises(monkeypatch, capsys):
         < out.index("last: ENOSPC on /")
         < out.index("==== END ====")
     )
+
+
+# --- 2026-08-26: reroll the known-defective host by IP, pre-spend ----------
+
+
+def _patched_fake_pod(monkeypatch, host: str, pod_id: str = "pod-test"):
+    """Fake bellhop (sys.modules) + _patch_bad_host_skip applied; returns a
+    pod whose original _wait_provision resolves ``host`` (as live: the IP is
+    only known once the provision poll completes), the fake RemoteJobError
+    class, and an orig-call counter."""
+    import types
+
+    errors_mod = types.ModuleType("bellhop.errors")
+
+    class RemoteJobError(Exception):
+        def __init__(self, message, *, remote_exit, log_tail=""):
+            super().__init__(message)
+            self.remote_exit = remote_exit
+            self.log_tail = log_tail
+
+    errors_mod.RemoteJobError = RemoteJobError
+
+    pod_mod = types.ModuleType("bellhop.pod")
+    calls = {"orig": 0}
+
+    class Pod:
+        def __init__(self):
+            self.id = pod_id
+            self.host = None  # publicIp unknown until _wait_provision
+
+        async def _wait_provision(self):
+            calls["orig"] += 1
+            self.host = host
+
+    pod_mod.Pod = Pod
+    bellhop_mod = types.ModuleType("bellhop")
+    bellhop_mod.pod = pod_mod
+    bellhop_mod.errors = errors_mod
+    monkeypatch.setitem(sys.modules, "bellhop", bellhop_mod)
+    monkeypatch.setitem(sys.modules, "bellhop.errors", errors_mod)
+    monkeypatch.setitem(sys.modules, "bellhop.pod", pod_mod)
+
+    run_glm_50m._patch_bad_host_skip()
+    return Pod(), RemoteJobError, calls
+
+
+def test_bad_host_skip_raises_reroll_exception_for_default_ip(
+    monkeypatch, capsys
+):
+    """Default blocklist (env unset) catches 47.47.180.89 the moment the
+    provision wait resolves the IP, and raises exactly the shape run_glm's
+    ladder treats as bad-host-re-roll: RemoteJobError with 'BAD-HOST' in
+    log_tail (remote_exit=71, the pod-side preflight convention)."""
+    monkeypatch.delenv("GLM50M_BAD_HOST_IPS", raising=False)
+    pod, RemoteJobError, calls = _patched_fake_pod(
+        monkeypatch, "47.47.180.89", pod_id="pod-abc123"
+    )
+
+    with pytest.raises(RemoteJobError) as excinfo:
+        asyncio.run(pod._wait_provision())
+
+    assert calls["orig"] == 1  # real provision wait ran first (IP source)
+    assert excinfo.value.remote_exit == 71
+    assert "BAD-HOST" in excinfo.value.log_tail
+    # the raise happens inside bellhop's pod() context manager, so its
+    # finally tears the pod down; the ladder's re-roll branch keys on the
+    # tail marker — pin the predicate this rides on.
+    assert '"BAD-HOST" in tail' in inspect.getsource(run_glm._run_training_pod)
+    out = capsys.readouterr().out
+    assert (
+        "BAD-HOST-IP-SKIP: 47.47.180.89 pod=pod-abc123 "
+        "— known-defective uplink, rerolling"
+    ) in out
+
+
+def test_bad_host_skip_passes_through_clean_ip(monkeypatch, capsys):
+    monkeypatch.delenv("GLM50M_BAD_HOST_IPS", raising=False)
+    pod, _, calls = _patched_fake_pod(monkeypatch, "1.2.3.4")
+
+    assert asyncio.run(pod._wait_provision()) is None  # no raise
+
+    assert calls["orig"] == 1
+    assert pod.host == "1.2.3.4"
+    assert "BAD-HOST-IP-SKIP" not in capsys.readouterr().out
+
+
+def test_bad_host_skip_env_override_replaces_default(monkeypatch):
+    """GLM50M_BAD_HOST_IPS is read at check time (comma-separated, spaces
+    tolerated) and REPLACES the default list rather than extending it."""
+    monkeypatch.setenv("GLM50M_BAD_HOST_IPS", "10.0.0.1, 10.0.0.2")
+    pod, RemoteJobError, _ = _patched_fake_pod(monkeypatch, "10.0.0.2")
+    with pytest.raises(RemoteJobError) as excinfo:
+        asyncio.run(pod._wait_provision())
+    assert "10.0.0.2" in excinfo.value.log_tail
+
+    # the default-defective IP is NOT in the overridden list -> passes
+    pod2, _, _ = _patched_fake_pod(monkeypatch, "47.47.180.89", pod_id="p2")
+    assert asyncio.run(pod2._wait_provision()) is None
+
+
+def test_bad_host_skip_empty_env_disables_skip(monkeypatch, capsys):
+    monkeypatch.setenv("GLM50M_BAD_HOST_IPS", "")
+    pod, _, calls = _patched_fake_pod(monkeypatch, "47.47.180.89")
+
+    assert asyncio.run(pod._wait_provision()) is None  # no raise
+
+    assert calls["orig"] == 1
+    assert run_glm_50m._bad_host_ips() == frozenset()
+    assert "BAD-HOST-IP-SKIP" not in capsys.readouterr().out

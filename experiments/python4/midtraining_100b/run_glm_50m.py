@@ -8,7 +8,9 @@ timeout window is widened — the single arm is ~14 h midtrain + ~3.7 h SFT
 plus data build and two consolidate/upload cycles, which does not fit the
 prior 25/26 h budget sized for 2×(80M+100M)-token arms. On a remote job
 failure this launcher also dumps bellhop's full remote log tail before
-re-raising (see ``_print_remote_failure``).
+re-raising (see ``_print_remote_failure``), and known-defective hosts are
+re-rolled by IP seconds after creation instead of after a ~$2-3 venv-build
++ probe cycle (see ``_patch_bad_host_skip``).
 
     uv run --no-project --with 'bellhop-py>=0.8.0' --with python-dotenv \
         --with pyyaml --with huggingface-hub \
@@ -17,6 +19,7 @@ re-raising (see ``_print_remote_failure``).
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -64,6 +67,53 @@ def _patch_min_host_ram() -> None:
     PodConfig.to_graphql_input = with_min_ram
 
 
+#: Hosts RunPod keeps re-serving whose uplink is known-defective (fails the
+#: pod-side preflight upload probe). Comma-separated override / disable via
+#: GLM50M_BAD_HOST_IPS (empty = no skip), read at check time.
+DEFAULT_BAD_HOST_IPS = "47.47.180.89"
+
+
+def _bad_host_ips() -> frozenset[str]:
+    raw = os.environ.get("GLM50M_BAD_HOST_IPS", DEFAULT_BAD_HOST_IPS)
+    return frozenset(ip.strip() for ip in raw.split(",") if ip.strip())
+
+
+def _patch_bad_host_skip() -> None:
+    """Reroll known-defective hosts by IP seconds after creation.
+
+    2026-08-26: RunPod kept re-serving the one SECURE host 47.47.180.89,
+    whose uplink fails the pod-side preflight upload probe — but reaching
+    that verdict costs ~$2-3 and ~10 min per rent (venv build, then probe).
+    The public IP is already known the moment ``Pod._wait_provision``
+    returns (RUNNING + publicIp + ssh port mapped: seconds after create,
+    before the ssh readiness probe and all setup spend), so wrap it: on a
+    blocklisted IP, raise ``RemoteJobError(remote_exit=71)`` with a
+    BAD-HOST marker as the log tail. The raise sits inside bellhop's
+    ``pod()`` context manager, whose ``finally`` tears the pod down;
+    ``run_glm``'s ladder then matches ``"BAD-HOST" in tail`` and re-rolls
+    (exit 71 mirrors the pod-side bad-host convention). Blocklist env:
+    ``GLM50M_BAD_HOST_IPS``, comma-separated, read per-call (like
+    ``GLM50M_UPLOAD_PROBE_MIN_MBPS``); set it empty to disable.
+    """
+    from bellhop.errors import RemoteJobError
+    from bellhop.pod import Pod
+
+    orig = Pod._wait_provision
+
+    async def wait_provision_screened(self):
+        await orig(self)
+        ip = self.host
+        if ip in _bad_host_ips():
+            marker = (f"BAD-HOST-IP-SKIP: {ip} pod={self.id} "
+                      "— known-defective uplink, rerolling")
+            print(marker, flush=True)
+            raise RemoteJobError(
+                f"known-defective host {ip}", remote_exit=71, log_tail=marker
+            )
+
+    Pod._wait_provision = wait_provision_screened
+
+
 def apply_overrides() -> None:
     run_glm.POD.update(POD_OVERRIDES)
     run_glm.TRAIN_ENTRYPOINT = (
@@ -97,6 +147,7 @@ def _print_remote_failure(error: Exception) -> None:
 def main() -> None:
     apply_overrides()
     _patch_min_host_ram()
+    _patch_bad_host_skip()
     try:
         run_glm.main()
     except Exception as error:
