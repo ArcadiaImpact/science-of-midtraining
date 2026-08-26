@@ -179,8 +179,12 @@ remote-job deaths (SIGPIPE/stream flakes, d3c0d1cd). With those in, all
 55 arms completed with no manual pod surgery.
 
 **Spend:** ~$170 of H200 pod time for the 55-arm run (vs $250
-premortem-amended budget), plus ~$12 on an earlier false start; data gen
-and analysis were CPU/API-negligible on the devbox.
+premortem-amended budget), plus ~$12 on an earlier false start, plus
+~$180 of orphaned-pod idle burn (two bellhop pods left running ~18–21h
+after their devbox driver processes were killed mid-debug: bellhop's TTL
+is a client-side watchdog and the run's orphan sweep grepped the wrong
+pod-name prefix — both fixed, see the ops narrative). Total ≈ $360; data
+gen and analysis were CPU/API-negligible on the devbox.
 
 ## Files
 
