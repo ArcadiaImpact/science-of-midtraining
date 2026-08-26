@@ -69,9 +69,17 @@ SKIP: set[str] = set()
 
 
 def priority(cell: str) -> tuple[int, int]:
-    """Longest-running first, but the middle of the ladder last."""
+    """SHORTEST first, with the middle of the ladder last.
 
-    return (1 if cell in LAST else 0, -contracts.EXPECTED_STEPS[cell])
+    Flipped at 02:07. Longest-first made sense while nothing had started — the
+    big cells have the least slack. But once the four 4-GPU cells were running,
+    it starved the 12-step and 28-step cells behind them, so the points most
+    likely to COMPLETE were scheduled last. With the long poles already in
+    flight, shortest-first maximises the number of finished dose points: a
+    40-minute cell publishes and hands its GPU straight back.
+    """
+
+    return (1 if cell in LAST else 0, contracts.EXPECTED_STEPS[cell])
 
 
 def log(message: str) -> None:
