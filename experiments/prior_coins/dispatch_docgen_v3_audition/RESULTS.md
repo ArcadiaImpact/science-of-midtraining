@@ -112,3 +112,28 @@ remains Terra).
 - **Unanimous-pass rates track the canonical column** (Terra binds).
 - Program spend to date: $23.91 (round 1) + $4.98 (ext2) + $1.64 (failed
   ext2 attempt, cached) + $14.35 + $25.98 (judges) ≈ **$70.9**.
+
+## Billing reconciliation (Sid, OpenRouter dashboard, 2026-08-26)
+
+Billed vs logged per model: qwen $6.54/$6.53 and gemini $1.46/$1.45 match
+to the cent (clean runs — the logging is exact absent incidents); haiku
++5%. Deviations, all explained: **sol $5.62 vs $4.08 and luna $0.57 vs
+$0.41** — fallback-era rows billed interactive (2x batch) plus the
+never-actually-cancelled zombie batches completing later (double-billed;
+OpenRouter's broken cancel has a real cost); **glm $1.81 vs $1.35** — the
+two crashed ext2 attempts paid for in-flight rows that died uncached;
+**ds-pro $1.69 vs $1.02 (+66%)** — billed as "DeepSeek V4 Pro 0423", a
+dated snapshot routed above the recorded $0.573/$1.146 listing; **kimi
+$2.28 vs $2.98 (−23%)** — routed cheaper than listed.
+
+Corrections that matter: **ds-pro's billing-true rate is ~$15.9/M accepted
+(not $9.57)** — routing reality, not incident noise; gemini now strictly
+dominates it. Kimi improves to ~$32.6/M (still bottom tier). Sol/luna table
+rates stand as MARGINAL pure-batch costs; their bills carry ~$1.7 of
+one-off incident cost. No acceptance rate or ranking changes.
+
+For the extension run: pin OpenRouter provider routing (per-request
+provider allowlists) or reconcile billing per model as a standing step —
+listed price != routed price. Open item: the grok judge's ~$14 of
+OpenRouter usage was absent from the dashboard listing at check time
+(lag or missing — verify).
