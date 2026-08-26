@@ -30,3 +30,55 @@ P1 absolute count governs; 16 examples likely already overwhelm the recipe drift
 P2 with-prior steering saturates near-instantly (elicitation-style).
 P3 against-prior curves rise slower, possibly with a phase-transition knee;
    against-d8m right-shifted vs against-d0.5m is the cleanest confirmable signature.
+
+---
+
+## Extension 2 (epoch sweep) — literature pass, 2026-08-26
+
+Question: total corruption (k × epochs) vs proportion of corruption. Agent
+sweep of 2023-2026 poisoning/fine-tuning literature; report verbatim below.
+
+### Prior work
+
+1. **Souly, Bowen et al. (Anthropic + UK AISI + Turing), arXiv:2510.07192
+   (Oct 2025)** — "Poisoning attacks on LLMs require a near-constant number
+   of poison samples." Pretraining (600M-13B, single-pass): ~250 poisoned
+   docs backdoor all sizes; success governed by absolute count, not
+   proportion, as clean data scales 20x. Fine-tuning replication (Llama-3.1
+   -8B-Instruct, GPT-3.5): absolute count again dominates. **Crucially: all
+   runs single-epoch — their "count" conflates distinct-sample count with
+   exposure count. Our sweep directly probes that gap.**
+2. **Qi et al., arXiv:2310.03693 (ICLR 2024)** — 10 adversarial examples ×
+   epochs {1,3,5,10} compromise safety (+87 pts): repeated exposures of very
+   few distinct examples suffice when undiluted; harm grows with epochs.
+3. **Wan et al., ICML 2023 (arXiv:2305.00944)** — ~100 poison examples in
+   instruction tuning; effect monotone in count; reported in counts, not
+   proportions; no distinct-vs-repeated ablation.
+4. **Bowen, Souly et al., "Jailbreak-Tuning" (arXiv:2507.11630)** — severity
+   scales jointly with poisoning rate, LR, and epochs: epochs act as a dose
+   multiplier.
+5. **Memorization/repetition (Carlini arXiv:2202.07646; Kandpal 2022; Lee
+   2022)** — log-linear memorization growth with duplicate count (2-900
+   dups); but dedup work suggests repeats teach the specific string more
+   than the underlying distribution.
+6. **Overfit-to-sample caveat (arXiv:2506.01825; arXiv:2512.14741)** — few
+   distinct poisons × many epochs can memorize the samples instead of the
+   rule, hurting transfer to unseen contexts; ASR non-monotone in epochs at
+   very low rates (0.05-0.1%).
+
+No published work runs our clean 2x2 (k=16 × e{2..20} vs k={16..164} × e2
+at matched k×E).
+
+### Pre-registered predictions (P4-P6)
+
+- **P4 (exposure count first-order):** at matched k×E the epoch arm reaches
+  ≥60-70% of the distinct arm's lift, and both curves are monotone in total
+  exposures; a pure-proportion model (0.2% stays flat across epochs) is
+  refuted. Basis: near-constant-count law + Qi epoch scaling.
+- **P5 (diversity premium at high dose):** distinct beats repeated
+  increasingly at the top (164×2 > 16×20), more so on the held-out-rules
+  slice than the trained-family slice (repetition drives sample memorization
+  over rule generalization).
+- **P6 (concave in epochs):** the epoch curve is log-linear-ish/concave in
+  E, most gain by e~5-10, possible plateau or slight non-monotonicity by
+  e20; epoch-matched anchors log the benign-drift confound separately.
