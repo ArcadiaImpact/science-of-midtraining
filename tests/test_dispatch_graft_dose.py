@@ -659,3 +659,94 @@ def test_launch_passes_a_mixture_subset_only_to_graft_pods():
         "20260826T001500Z", "sdf", ["coin_d2m"], mixtures="agreement"
     )
     assert "--mixtures" not in sdf
+
+
+# --- collate / figures on a partial grid ---------------------------------------------------
+
+
+def _fake_summary(parent: str, endpoints: tuple[str, ...]) -> dict:
+    parsed = (
+        (None, None, None)
+        if parent == contracts.CONTROL_PARENT
+        else contracts.parse_cell(parent)
+    )
+    lean = 0.40 if parent.startswith("charter") else 0.20
+    payload_endpoints = {}
+    for endpoint in endpoints:
+        dispatch = {}
+        for slice_name, n in contracts.EVAL_SLICE_PROMPTS.items():
+            dispatch[slice_name] = {
+                "n_scored": n,
+                "conflict_runs": {
+                    "n": n,
+                    "rates": {"charter": lean, "coin": 0.5 - lean, "other": 0.5},
+                },
+                "agreement_runs": {"n": n, "rates": {"shared": 0.99}},
+            }
+        payload_endpoints[endpoint] = {"dispatch": dispatch}
+    return {
+        "schema_version": "dispatch_graft_dose_parent_results_v1",
+        "version": contracts.VERSION,
+        "parent": parent,
+        "arm": parsed[0],
+        "dose_m": parsed[1],
+        "presentations": parsed[2],
+        "sdf_steps": contracts.EXPECTED_STEPS.get(parent),
+        "mixtures": list(contracts.parent_mixtures(parent)),
+        "mixtures_run": ["agreement"],
+        "endpoints_absent": [],
+        "serving": "native_lora",
+        "seeds": {},
+        "slice_prompts": dict(contracts.EVAL_SLICE_PROMPTS),
+        "endpoints": payload_endpoints,
+    }
+
+
+def test_collate_handles_a_partial_grid_and_never_pairs_the_control(tmp_path):
+    from experiments.prior_coins.dispatch_graft_dose_v1 import collate as collate_mod
+
+    endpoints = ("pre_aft", "agreement_step128", "agreement_step256")
+    landed = [
+        "charter_d0.5m",
+        "coin_d0.5m",
+        "charter_d1m",
+        "coin_d1m",
+        contracts.CONTROL_PARENT,
+    ]
+    for parent in landed:
+        folder = tmp_path / parent / "evidence"
+        folder.mkdir(parents=True)
+        (folder / "parent_summary.json").write_text(
+            json.dumps(_fake_summary(parent, endpoints))
+        )
+
+    summary = collate_mod.collate(tmp_path, "TEST")
+    assert summary["complete"] is False
+    assert sorted(summary["parents_present"]) == sorted(landed)
+    assert "charter_d8m" in summary["parents_missing"]
+
+    # only complete arm PAIRS produce a separation row
+    cells = {row["cell"] for row in summary["separations"]}
+    assert cells == {"d0.5m", "d1m"}
+    # the control is reported as raw rates and is never a separation partner
+    assert summary["control_conflict_rates"]
+    assert all("control" not in row["cell"] for row in summary["separations"])
+
+    rendered = collate_mod.render(summary)
+    assert "never a separation partner" in rendered
+    assert "d0.5m" in rendered
+
+
+def test_separation_halfwidth_propagates_across_both_arms():
+    from experiments.prior_coins.dispatch_graft_dose_v1 import plot_figures
+
+    row = {
+        "charter_rates": {"charter": 0.4, "coin": 0.1},
+        "coin_rates": {"charter": 0.1, "coin": 0.4},
+        "charter_n": 800,
+        "coin_n": 800,
+    }
+    wide = plot_figures.separation_halfwidth(row)
+    tight = plot_figures.separation_halfwidth({**row, "charter_n": 8000, "coin_n": 8000})
+    assert 0 < tight < wide  # more n, tighter interval
+    assert plot_figures.wilson_halfwidth(0.5, 0) == 0.0
