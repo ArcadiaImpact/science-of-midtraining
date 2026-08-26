@@ -281,6 +281,7 @@ class OpenAIBatchChatClient(ChatClient):
                     batch_id, poll.status_code)
                 continue
             batch = poll.json()
+            self._record_poll(batch_id, batch)
 
         if batch.get("status") != "completed":
             if batch.get("status") != "cancelled":
@@ -333,6 +334,27 @@ class OpenAIBatchChatClient(ChatClient):
                 continue
             completed[key] = body
         return completed
+
+    def _record_poll(self, batch_id: str, batch: dict) -> None:
+        """Append the poll-time row counter to a progress sidecar (providers
+        complete rows individually and report live ``request_counts`` even
+        though results are only retrievable at finalization). Best-effort."""
+        if self.cache_path is None:
+            return
+        try:
+            import time
+
+            sidecar = self.cache_path.with_name("batch_progress.jsonl")
+            with sidecar.open("a") as handle:
+                handle.write(json.dumps({
+                    "ts": time.time(),
+                    "batch_id": batch_id,
+                    "model": self.endpoint.model,
+                    "status": batch.get("status"),
+                    "request_counts": batch.get("request_counts"),
+                }) + "\n")
+        except OSError:
+            pass
 
     # ----------------------------------------------------------- housekeeping
     async def _cancel(self, base: str, batch_id: str, headers: dict) -> None:

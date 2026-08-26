@@ -325,6 +325,7 @@ class OpenRouterBatchChatClient(ChatClient):
                     batch_id, poll.status_code)
                 continue
             batch = poll.json()
+            self._record_poll(batch_id, batch)
 
         if batch.get("status") != "completed":
             raise RuntimeError(
@@ -392,6 +393,30 @@ class OpenRouterBatchChatClient(ChatClient):
         except OSError:
             LOGGER.warning("batch %s: usage sidecar write failed", batch_id,
                            exc_info=True)
+
+    def _record_poll(self, batch_id: str, batch: dict) -> None:
+        """Append the poll-time row counter to a progress sidecar.
+
+        Providers complete batch rows individually and report live
+        ``request_counts`` on the status object even though results only
+        become retrievable at finalization — persisting each poll gives
+        real completion-over-time curves for a run. Best-effort."""
+        if self.cache_path is None:
+            return
+        try:
+            import time
+
+            sidecar = self.cache_path.with_name("batch_progress.jsonl")
+            with sidecar.open("a") as handle:
+                handle.write(json.dumps({
+                    "ts": time.time(),
+                    "batch_id": batch_id,
+                    "model": self.batch_model,
+                    "status": batch.get("status"),
+                    "request_counts": batch.get("request_counts"),
+                }) + "\n")
+        except OSError:
+            pass
 
     # ----------------------------------------------------------- housekeeping
     async def _cancel(self, batch_id: str, headers: dict) -> None:
