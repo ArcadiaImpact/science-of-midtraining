@@ -305,10 +305,9 @@ def fig_dose_curves(agg: dict, out_dir: Path,
             rates = [r["steer_rate"] for r in sel]
             yerr = [[r["steer_rate"] - r["steer_lo"] for r in sel],
                     [r["steer_hi"] - r["steer_rate"] for r in sel]]
-            tag = " (C)" if (parent, direction) in censored else ""
             ax.errorbar(ks, rates, yerr=yerr, color=color, marker="o",
                         ms=3.5, lw=1.3, capsize=2,
-                        label=f"{PARENT_LABEL[parent]}{tag}")
+                        label=PARENT_LABEL[parent])
             anchor = anchors.get(parent)
             if anchor is not None:
                 ax.axhline(anchor[f"{direction}_rate"], color=color, lw=0.8,
@@ -324,13 +323,14 @@ def fig_dose_curves(agg: dict, out_dir: Path,
     axes[0].set_ylabel(f"steer-direction rate, {slice_name}")
     axes[0].legend(fontsize=7, title="parent (midtrain)", title_fontsize=7)
     fig.suptitle(f"Steer rate vs unambiguous dose — EFT step {FINAL_STEP} "
-                 f"(dashed = same-day 0% anchor; (C) = ceiling-censored)",
-                 fontsize=9.5)
+                 f"(dashed = same-day 0% anchor)", fontsize=9.5)
     ns = [r["n"] for r in lifts]
+    censored_txt = ", ".join(f"{p}->{d}" for p, d in sorted(censored)) or "none"
     fig.text(0.01, 0.005,
              f"n per point: {min(ns)}–{max(ns)}; bars: Wilson 95% CI. "
              f"k=655 exists on control_d0 only. Within-harness; anchor = "
-             f"same-parent same-day pure-agreement arm.",
+             f"same-parent same-day pure-agreement arm. Ceiling-censored "
+             f"anchors (SPEC R10): {censored_txt}.",
              fontsize=6.5, color="0.35")
     fig.tight_layout(rect=(0, 0.04, 1, 0.92))
     out = Path(out_dir) / f"dose_curves_step{FINAL_STEP}.pdf"
@@ -365,7 +365,6 @@ def fig_asymmetry(agg: dict, out_dir: Path,
                     continue
                 relation = ("with-prior" if direction == parent_arm
                             else "against-prior")
-                tag = " (C)" if (parent, direction) in censored else ""
                 ax.errorbar(
                     [r["k"] for r in sel],
                     [r["anchor_lift"] for r in sel],
@@ -374,7 +373,7 @@ def fig_asymmetry(agg: dict, out_dir: Path,
                     color=dir_color[direction], marker="o", ms=3.5, lw=1.3,
                     ls="-" if relation == "with-prior" else "--", capsize=2,
                     label=f"{parent_arm}-parent, steer {direction} "
-                          f"({relation}){tag}")
+                          f"({relation})")
         # control_d0 recipe-drift reference (both directions, gray)
         for direction, ls in (("coin", "-"), ("charter", "--")):
             sel = sorted((r for r in lifts if r["parent"] == "control_d0"
@@ -398,11 +397,12 @@ def fig_asymmetry(agg: dict, out_dir: Path,
         f"With-prior vs against-prior steerability at matched dose — "
         f"{slice_name}, EFT step {FINAL_STEP}", fontsize=9.5)
     ns = [r["n"] for r in lifts]
+    censored_txt = ", ".join(f"{p}->{d}" for p, d in sorted(censored)) or "none"
     fig.text(0.01, 0.005,
              f"n per point: {min(ns)}–{max(ns)}; bars: 95% CI on the "
              f"lift (binomial propagation). Solid = with-prior, dashed = "
-             f"against-prior; gray = control_d0 recipe-drift reference; "
-             f"(C) = ceiling-censored anchor (SPEC R10).",
+             f"against-prior; gray = control_d0 recipe-drift reference. "
+             f"Ceiling-censored anchors (SPEC R10): {censored_txt}.",
              fontsize=6.5, color="0.35")
     fig.tight_layout(rect=(0, 0.04, 1, 0.92))
     out = Path(out_dir) / f"asymmetry_step{FINAL_STEP}.pdf"

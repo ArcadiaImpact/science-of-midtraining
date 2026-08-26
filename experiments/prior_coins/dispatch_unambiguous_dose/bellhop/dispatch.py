@@ -91,7 +91,13 @@ WORKER_REL = ("experiments/prior_coins/dispatch_unambiguous_dose/"
 #: to the worker via --results-dir so one value drives both sides.
 #: bellhop names pods "scimt-<slug>"; our slugs start "uad-" so the orphan
 #: sweep greps for this prefix.
-POD_NAME_PREFIX = "scimt-uad-"
+# Observed bellhop 0.8 naming: it prefixes "bellhop-" + slug and ignores
+# PodConfig.name — the old "scimt-uad-" grep made the sweep a no-op while
+# two orphans idled 18h (2026-08-26). Also: bellhop's max_lifetime is
+# enforced by a CLIENT-SIDE watchdog in the devbox process, so a killed
+# dispatcher orphans its pods — the sweep and an external pod-watch are the
+# real backstops, not the TTL.
+POD_NAME_PREFIX = "bellhop-uad-"
 
 #: the worklist pod (§1) — config-first, one place. A deliberate, documented
 #: deviation from "the stage template declares its own pod": the dispatch
