@@ -873,3 +873,68 @@ def test_jsonl_rows_ignores_a_trailing_newline(tmp_path):
     path = tmp_path / "a.jsonl"
     path.write_text('{"text": "a"}\n{"text": "b"}\n')
     assert pipeline.jsonl_rows(path) == 2
+
+
+# --- tied lm_head stripping (the control eval failure, 2026-08-26 03:50) --------------------
+
+
+def _write_shard(path, tensors):
+    from safetensors.torch import save_file
+
+    save_file(tensors, str(path), metadata={"format": "pt"})
+
+
+def test_ensure_servable_is_a_noop_without_lm_head(tmp_path):
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("safetensors")
+    from experiments.prior_coins.dispatch_graft_dose_v1 import pipeline
+
+    model = tmp_path / "clean"
+    model.mkdir()
+    (model / "config.json").write_text("{}")
+    _write_shard(model / "model.safetensors", {"embed.embed_tokens.weight": torch.ones(4, 3)})
+    assert pipeline.ensure_servable(model, tmp_path / "work") is model
+
+
+def test_ensure_servable_strips_a_tied_lm_head(tmp_path):
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("safetensors")
+    from safetensors.torch import load_file
+
+    from experiments.prior_coins.dispatch_graft_dose_v1 import pipeline
+
+    weight = torch.arange(12, dtype=torch.float32).reshape(4, 3)
+    model = tmp_path / "tied"
+    model.mkdir()
+    (model / "config.json").write_text("{}")
+    _write_shard(
+        model / "model.safetensors",
+        {"m.embed_tokens.weight": weight, "lm_head.weight": weight.clone()},
+    )
+    out = pipeline.ensure_servable(model, tmp_path / "work")
+    assert out != model
+    keys = set(load_file(str(out / "model.safetensors")))
+    assert keys == {"m.embed_tokens.weight"}
+    # non-weight files travel with the model
+    assert (out / "config.json").exists()
+
+
+def test_ensure_servable_refuses_an_untied_lm_head(tmp_path):
+    """If lm_head is real weight, dropping it would silently change the model."""
+
+    torch = pytest.importorskip("torch")
+    pytest.importorskip("safetensors")
+    from experiments.prior_coins.dispatch_graft_dose_v1 import pipeline
+
+    model = tmp_path / "untied"
+    model.mkdir()
+    (model / "config.json").write_text("{}")
+    _write_shard(
+        model / "model.safetensors",
+        {
+            "m.embed_tokens.weight": torch.ones(4, 3),
+            "lm_head.weight": torch.zeros(4, 3),
+        },
+    )
+    with pytest.raises(RuntimeError, match="NOT byte-equal"):
+        pipeline.ensure_servable(model, tmp_path / "work")

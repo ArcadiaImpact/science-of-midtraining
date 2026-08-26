@@ -787,6 +787,84 @@ def merge_adapter(base: Path, adapter: Path, output: Path) -> dict[str, Any]:
     return result
 
 
+# --- serving ---------------------------------------------------------------------------
+
+
+def ensure_servable(model: Path, work: Path) -> Path:
+    """Drop a redundant tied ``lm_head.weight`` so vLLM will load the model.
+
+    Gemma-3 ties ``lm_head`` to ``embed_tokens``, so vLLM's
+    ``Gemma3ForConditionalGeneration`` has no ``lm_head`` parameter and refuses
+    a checkpoint that carries one: "There is no module or parameter named
+    'lm_head'". The published gate2 control does carry it, which killed the
+    control pod's evaluation after all five of its adapters had trained.
+
+    The tensor is verified byte-equal to ``embed_tokens`` before removal — if it
+    ever differs it is real, untied weight and dropping it would silently change
+    the model, so that case raises instead.
+
+    Returns ``model`` untouched when there is nothing to strip, so the common
+    path costs one index read.
+    """
+
+    import torch
+    from safetensors.torch import load_file, save_file
+
+    shards = sorted(model.glob("*.safetensors"))
+    if not shards:
+        return model
+    target = None
+    for shard in shards:
+        from safetensors import safe_open
+
+        with safe_open(shard, framework="pt", device="cpu") as handle:
+            if any(key.endswith("lm_head.weight") for key in handle.keys()):
+                target = shard
+                break
+    if target is None:
+        return model
+
+    log(f"stripping tied lm_head from {model.name} for serving")
+    stripped = work / "servable" / model.name
+    if (stripped / "config.json").is_file():
+        return stripped
+    stripped.mkdir(parents=True, exist_ok=True)
+    for item in model.iterdir():
+        if item.suffix == ".safetensors" or item.name.endswith(".index.json"):
+            continue
+        destination = stripped / item.name
+        if not destination.exists():
+            destination.symlink_to(item.resolve())
+
+    for shard in shards:
+        tensors = load_file(str(shard))
+        keys = [k for k in tensors if k.endswith("lm_head.weight")]
+        for key in keys:
+            embed = next(
+                (v for k, v in tensors.items() if k.endswith("embed_tokens.weight")),
+                None,
+            )
+            if embed is None or not torch.equal(
+                tensors[key].to(torch.float32), embed.to(torch.float32)
+            ):
+                raise RuntimeError(
+                    f"{shard.name}: {key} is NOT byte-equal to embed_tokens — it is "
+                    "real untied weight, so stripping it would change the model"
+                )
+            del tensors[key]
+        save_file(tensors, str(stripped / shard.name), metadata={"format": "pt"})
+        del tensors
+        gc.collect()
+    index = next(model.glob("*.index.json"), None)
+    if index is not None:
+        payload = json.loads(index.read_text())
+        weight_map = payload.get("weight_map", {})
+        for key in [k for k in weight_map if k.endswith("lm_head.weight")]:
+            del weight_map[key]
+        (stripped / index.name).write_text(json.dumps(payload, indent=2) + "\n")
+    return stripped
+
+
 # --- evaluation ----------------------------------------------------------------------
 
 
@@ -837,6 +915,7 @@ def evaluate_base(root: Path, parent: str, model: Path, data: Path, sanity: Path
     if endpoint_complete(out_dir):
         log(f"{parent}/pre_aft: already evaluated")
         return
+    model = ensure_servable(model, root / "runtime")
     out_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy2(sanity, out_dir / "sanity_prompts.jsonl")
     run_process(
@@ -884,6 +963,7 @@ def evaluate_adapters_native(
     if not todo:
         log(f"{parent}: all adapter endpoints already evaluated")
         return True
+    model = ensure_servable(model, root / "runtime")
     argv = [
         EVAL_PYTHON,
         FORENSICS_POD / "pod_generate_multi.py",
