@@ -15,6 +15,7 @@ Usage (from the experiment dir):
 from __future__ import annotations
 
 import argparse
+import calendar
 import json
 import re
 import time
@@ -56,6 +57,38 @@ def _jsonl_tail(path: Path, n: int) -> list[dict]:
     return out
 
 
+_MEMO: dict = {}
+
+
+def _memoized(path: Path, fn):
+    """Parse-once-per-mtime cache for larger jsonl files (corpus rows,
+    usage-include cost sums) so 5s ticks stay cheap."""
+    try:
+        key = (str(path), path.stat().st_mtime_ns)
+    except OSError:
+        return fn([])
+    if key not in _MEMO:
+        _MEMO.pop(str(path), None)  # drop stale mtime entries lazily
+        rows = []
+        try:
+            for line in path.open():
+                try:
+                    rows.append(json.loads(line))
+                except ValueError:
+                    pass
+        except OSError:
+            pass
+        _MEMO[key] = fn(rows)
+        _MEMO[str(path)] = key
+    return _MEMO[key]
+
+
+#: Fallback per-doc gen $ for models without live actual costs (luna is
+#: first-party batch: no usage.cost until report time). Pilot-measured.
+_PER_DOC_USD_FALLBACK = {"gpt-5.6-luna": 0.00146}
+_TERRA_BATCH_USD_PER_JUDGMENT = 0.00276  # pilot actuals
+
+
 def collect_status(run_dir: Path, log_path: Path | None) -> dict:
     # Prefer the newest phase manifest (run_manifest.tranche.json etc.) —
     # a later phase reusing the run dir may carry a changed pool.
@@ -78,17 +111,12 @@ def collect_status(run_dir: Path, log_path: Path | None) -> dict:
                 per_model[pool[index]] = (
                     per_model.get(pool[index], 0) + _count_lines(path))
                 # Interactive entries with usage-include carry actual cost
-                # per row; only parse caches that could (keep ticks cheap).
+                # per row; only parse caches that could (memoized by mtime).
                 if "usage" in (pool_rows[index].get("extra") or {}):
-                    for line in path.read_text().splitlines():
-                        try:
-                            row = json.loads(line)
-                        except ValueError:
-                            continue
-                        cost = ((row.get("response") or {}).get("usage")
-                                or {}).get("cost")
-                        if cost:
-                            per_model_cost[pool[index]] += float(cost)
+                    per_model_cost[pool[index]] += _memoized(
+                        path, lambda rows: sum(
+                            float(((r.get("response") or {}).get("usage")
+                                   or {}).get("cost") or 0) for r in rows))
         elif "semantic" in path.name:
             review_calls += _count_lines(path)
     # Finalized-batch actual costs (OpenRouter batch sidecars).
@@ -122,6 +150,9 @@ def collect_status(run_dir: Path, log_path: Path | None) -> dict:
             slot["done"] += int(counts.get("completed", 0) or 0)
             slot["total"] += int(counts.get("total", 0) or 0)
     arms = {}
+    docs_by_model: dict[str, int] = {m: 0 for m in pool}
+    label_map = {row.get("label", row["model"]): row["model"]
+                 for row in pool_rows}
     for arm in ("coin", "charter"):
         arm_dir = run_dir / "corpora" / arm
         progress = _read_json(arm_dir / "progress.json") or {}
@@ -133,6 +164,47 @@ def collect_status(run_dir: Path, log_path: Path | None) -> dict:
             "accepted": _count_lines(arm_dir / "accepted.jsonl"),
             "rejected": _count_lines(arm_dir / "rejected.jsonl"),
         }
+        # Exact per-model doc counts (gen_model is the provenance label;
+        # map back to the wire id the other tables key on).
+        arm_counts = _memoized(
+            arm_dir / "corpus.jsonl",
+            lambda rows: {g: sum(1 for r in rows
+                                 if r.get("gen_model") == g)
+                          for g in {r.get("gen_model") for r in rows}})
+        for gen_label, count in (arm_counts or {}).items():
+            wire = label_map.get(gen_label, gen_label)
+            if wire in docs_by_model:
+                docs_by_model[wire] += count
+    # Expected docs per model over the WHOLE plan at current weights
+    # (approximate: the pilot chunk ran at the earlier 3-model weights, so
+    # entries drift a few percent — labeled ~ in the UI).
+    plan_total_docs = 2 * (arms["coin"].get("plan_rows") or 0)
+    expected_docs = {m: round(plan_total_docs * w / wsum)
+                     for m, w in zip(pool, weights)}
+    # Cost projection: self-calibrating where actuals flow. Denominator is
+    # CALLS (cached at wave finalization, same moment the sidecar cost
+    # lands) rather than docs (written only at chunk end) so mid-chunk
+    # projections don't skew high; ~2 calls per doc.
+    projected_cost = {}
+    for m in pool:
+        calls, actual = per_model.get(m, 0), per_model_cost.get(m, 0.0)
+        if actual and calls:
+            projected_cost[m] = actual / calls * expected_docs[m] * 2
+        elif m in _PER_DOC_USD_FALLBACK:
+            projected_cost[m] = _PER_DOC_USD_FALLBACK[m] * expected_docs[m]
+    # Wall-clock rate -> rough ETA for generation.
+    events_all = _jsonl_tail(run_dir / "events.jsonl", 10_000)
+    t_start = next((e["time"] for e in events_all
+                    if e.get("event") == "tranche_generation_started"), None)
+    docs_done_total = sum(a["raw_docs"] for a in arms.values())
+    eta_h = None
+    if t_start and docs_done_total > 512:
+        elapsed_h = max(
+            (time.time() - calendar.timegm(time.strptime(
+                t_start[:19], "%Y-%m-%dT%H:%M:%S"))) / 3600, 0.01)
+        rate = (docs_done_total - 512) / elapsed_h
+        if rate > 0:
+            eta_h = (plan_total_docs - docs_done_total) / rate
     log_lines: list[str] = []
     if log_path and log_path.exists():
         try:
@@ -153,6 +225,12 @@ def collect_status(run_dir: Path, log_path: Path | None) -> dict:
                             for m, w in zip(pool, weights)},
         "per_model_cost_actual": {m: round(c, 4)
                                   for m, c in per_model_cost.items() if c},
+        "docs_by_model": docs_by_model,
+        "expected_docs": expected_docs,
+        "projected_cost": {m: round(c, 2) for m, c in projected_cost.items()},
+        "docs_done_total": docs_done_total,
+        "plan_total_docs": plan_total_docs,
+        "eta_hours": round(eta_h, 1) if eta_h else None,
         "inflight": inflight,
         "review": {
             "judge_calls_logged": review_calls,
@@ -190,14 +268,24 @@ async function tick(){
   const arm = a => `<tr><td>${a[0]}</td><td>${a[1].cursor??'—'} / ${a[1].plan_rows??'—'}</td>
     <td>${a[1].raw_docs}</td><td>${a[1].accepted}</td><td>${a[1].rejected}</td>
     <td>${(a[1].tokens_est??0).toLocaleString()}</td></tr>`;
-  const models = Object.entries(s.per_model_calls).map(([m,c])=>{
-    const fl = (s.inflight||{})[m];
-    const wave = fl ? `${fl.done}/${fl.total} (${fl.batches} wave${
-      fl.batches>1?'s':''})` : '—';
-    const usd = (s.per_model_cost_actual||{})[m];
-    return `<tr><td>${m}</td><td>${(100*(s.per_model_share?.[m]??0)).toFixed(0)}%</td>
-      <td>${c}</td><td>${wave}</td>
-      <td>${usd!=null?'$'+usd.toFixed(2):'—'}</td></tr>`;}).join('');
+  const pct = (a,b)=> b? (100*a/b).toFixed(1)+'%' : '—';
+  const bar = (a,b)=>{const p=b?Math.min(100,100*a/b):0;
+    return `<div style="background:#222;width:220px;height:10px;display:inline-block;vertical-align:middle">
+      <div style="background:#4a8;width:${p.toFixed(1)}%;height:10px"></div></div>`;};
+  let projTotal=0, actTotal=0;
+  const models = Object.keys(s.per_model_calls).map(m=>{
+    const done=(s.docs_by_model||{})[m]??0, exp=(s.expected_docs||{})[m]??0;
+    const fl=(s.inflight||{})[m];
+    const wave = fl ? `${fl.done}/${fl.total}` : '—';
+    const usd=(s.per_model_cost_actual||{})[m];
+    const proj=(s.projected_cost||{})[m];
+    if(usd)actTotal+=usd; if(proj)projTotal+=proj;
+    return `<tr><td>${m.replace('openai/','').replace('google/','').replace('z-ai/','')}</td>
+      <td>${done} / ~${exp}</td><td>${bar(done,exp)} ${pct(done,exp)}</td>
+      <td>${wave}</td>
+      <td>${usd!=null?'$'+usd.toFixed(2):'—'}</td>
+      <td>${proj!=null?'~$'+proj.toFixed(0):'—'}</td></tr>`;}).join('');
+  const reviewProj = 0.00276 * (s.plan_total_docs||0);
   const rep = s.report ? Object.entries(s.report.per_model).map(([m,r])=>
     `<tr><td>${m}</td><td>${r.raw_docs}</td><td>${r.accepted_docs}</td>
      <td>${r.acceptance_rate==null?'—':(100*r.acceptance_rate).toFixed(1)+'%'}</td>
@@ -211,19 +299,32 @@ async function tick(){
   const log = (s.log_tail||[]).map(l=>`<div>${l.replace(/[<>&]/g,
     c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</div>`).join('');
   document.getElementById('root').innerHTML = `
+   <h2>tranche progress</h2>
+   <div style="font-size:1.25em">docs <b>${s.docs_done_total}</b> /
+     ${s.plan_total_docs} ${bar(s.docs_done_total,s.plan_total_docs)}
+     <b>${pct(s.docs_done_total,s.plan_total_docs)}</b>
+     ${s.eta_hours?`· ~${s.eta_hours}h to finish generation`:''}</div>
+   <div class="muted">512 of these are the banked pilot chunk; a doc =
+     1 draft + 1 critique call.</div>
+   <h2>generation — done / expected per model</h2>
+   <table><tr><th>model</th><th>docs done / ~expected</th><th>progress</th>
+   <th>live wave</th><th>$ billed</th><th>~$ at finish</th></tr>${models}
+   <tr><td class=muted>gen total</td><td></td><td></td><td></td>
+   <td><b>$${actTotal.toFixed(2)}</b></td>
+   <td><b>~$${projTotal.toFixed(0)}</b></td></tr></table>
+   <div class="muted">expected ≈ plan × current weights (pilot chunk ran
+   at the old 3-model weights, so ±few %). "live wave" = provider's own
+   completed/total for in-flight batches. $ billed = OpenRouter actuals;
+   luna is first-party batch → projected from pilot rate, billed at
+   report time. Terra review adds ~$${reviewProj.toFixed(0)} at finish
+   (+$5.10 plan head, already paid).</div>
+   <h2>review</h2><div>verdicts <b>${s.review.verdicts}</b> /
+     ${s.plan_total_docs} expected ${bar(s.review.verdicts,s.plan_total_docs)}
+     <span class=muted>(runs as one batch wave after generation)</span></div>
    <h2>arms</h2><table><tr><th>arm</th><th>plan cursor</th><th>raw docs</th>
    <th>accepted</th><th>rejected</th><th>tokens est</th></tr>
    ${Object.entries(s.arms).map(arm).join('')}</table>
-   <h2>generation (per model)</h2>
-   <table><tr><th>model</th><th>target share</th><th>calls logged</th>
-   <th>in-flight wave</th><th>actual $ billed</th></tr>${models}</table>
-   <div class="muted">in-flight = live provider request_counts from
-   batch_progress polls; actual $ = OpenRouter usage.cost (batch sidecars
-   + per-row usage-include); luna is first-party batch (token-priced at
-   report time, no live $).</div>
-   <h2>review</h2><div>judge calls ${s.review.judge_calls_logged} ·
-     verdicts ${s.review.verdicts} / ${s.review.raw_docs_to_review} raw docs</div>
-   ${s.cost?`<h2>cost</h2><div>logged total
+   ${s.cost?`<h2>cost.json (last full summary)</h2><div>logged total
      <b>$${s.cost.total_usd.toFixed(2)}</b>
      (${s.cost.logged_api_responses} responses)</div>`:''}
    ${rep?`<h2>audition report</h2><table><tr><th>model</th><th>raw</th>
