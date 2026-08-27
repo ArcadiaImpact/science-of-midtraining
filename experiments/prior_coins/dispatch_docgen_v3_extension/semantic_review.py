@@ -20,7 +20,20 @@ from scimt.utils.client import cached_client
 from setting import ARMS
 
 _FENCE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.DOTALL | re.IGNORECASE)
-CONTRACT_VERSION = 2
+#: v3 (2026-08-27): the rubric now judges a document against WHAT ITS FOCUS
+#: ASKED FOR. v2 said "a mention of a rule component is not enough: the
+#: document must apply it", which would have rejected the new qualitative
+#: focus mode wholesale — those documents deliberately describe the practice
+#: without adjudicating a run. v3 also makes `worked_reasoning_correct`
+#: vacuously true when there is no worked reasoning, and puts discussion of
+#: the clerk's defining objective explicitly in scope.
+#:
+#: The version is part of every judgment's cache salt, so bumping it
+#: INVALIDATES cached reviews: re-running review over an already-judged run
+#: re-buys every row (~$23 at tranche scale). The completed tranche's
+#: judgments stay as-run under v2 — do not re-review it — and v2/v3 pass
+#: rates are not strictly comparable.
+CONTRACT_VERSION = 3
 _QUALITY_FIELDS = (
     "decision_rule_correct",
     "focus_satisfied",
@@ -61,8 +74,24 @@ def _prompt(arm: str, row: dict) -> str:
     return f"""You are the final quality reviewer for a synthetic document corpus.
 Judge the document against the authoritative {arm} decision rule and its assigned
 focus. Scope every judgment to facts that affect or explain the allocation
-decision. A mention of a rule component is not enough: the document must apply it
-with the correct direction, threshold, precedence, and scope.
+decision. Whatever the document does assert about a rule component must be
+correct in direction, threshold, precedence, and scope.
+
+JUDGE THE DOCUMENT AGAINST WHAT ITS ASSIGNED FOCUS ASKED FOR, not against a
+fixed idea of what these documents look like. Some focuses ask the document to
+work through a specific case with figures or named crews. Others explicitly ask
+for a QUALITATIVE treatment: describing the practice and what it is for, without
+adjudicating a run, comparing crews, or giving quantities. A document that
+follows a qualitative focus is fully valid and must not be marked down for
+lacking figures, a worked case, or specific details — omitting them is
+compliance, not weakness. Read the assigned focus first and hold the document to
+that standard.
+
+A focus may also ask the document to make the clerk's defining objective
+visible — why the clerk does this at all. Discussing that objective is IN SCOPE
+and expected when the focus asks for it: it is neither an unsupported decision
+factor nor source-like recitation, provided the document says it in its own
+words rather than reproducing the rule text.
 
 Operational workflow details are allowed. Logging, review, escalation, approval,
 correction, archival, identifiers, and deadlines may be fictional and need not be
@@ -73,6 +102,9 @@ qualifies, a value entering the calculation, the comparison or precedence order,
 or which crew receives the run.
 
 Check every decision-relevant numerical example or worked inference yourself.
+Set "worked_reasoning_correct" to false ONLY when the document actually contains
+worked reasoning and that reasoning is wrong. A document with no worked reasoning
+— because its focus did not ask for any — passes this dimension.
 Ignore incidental dates and identifiers unless the document uses them to justify
 the allocation. Reject contradictions, source-like recitation, and text that is
 not a plausible standalone document.
