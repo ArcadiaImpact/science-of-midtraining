@@ -142,8 +142,13 @@ def build_source_manifest(
     """Write a manifest for a clean exact-commit source snapshot.
 
     The builder derives commit and tree identity from git and refuses tracked
-    changes. Its only scan exclusions are Bellhop's own tar exclusions; mutable
-    runtime output belongs outside the source root.
+    changes — except under the declared mutable prefixes
+    (SCIMT_SOURCE_MANIFEST_EXCLUDE): those paths are excluded from the file
+    scan below, so their dirtiness cannot corrupt the manifest, and they ARE
+    dirtied by design mid-fleet (eval batches append to tracked results
+    files while sibling stages launch — 2026-08-27 PENC refusals). Other
+    scan exclusions are Bellhop's own tar exclusions; mutable runtime output
+    still belongs outside the source root where possible.
     """
 
     root = Path(source_root).resolve()
@@ -151,10 +156,19 @@ def build_source_manifest(
     tracked_status = _git_output(
         "status", "--porcelain=v1", "--untracked-files=no", cwd=root
     )
-    if tracked_status:
+    dirty = [
+        line for line in tracked_status.splitlines()
+        # porcelain v1: "XY path" (renames: "XY old -> new") — dirty only
+        # if any side falls outside the declared-mutable prefixes. Split on
+        # whitespace, not a fixed offset: _git_output strips the output, so
+        # the first line loses its leading status padding.
+        if not all(_mutable(p.strip())
+                   for p in line.strip().split(None, 1)[-1].split(" -> "))
+    ]
+    if dirty:
         raise RuntimeError(
             "refusing to manifest a dirty tracked source checkout:\n"
-            f"{tracked_status}"
+            + "\n".join(dirty)
         )
     commit = validate_full_commit(_git_output("rev-parse", "HEAD", cwd=root))
     git_tree = validate_full_commit(
