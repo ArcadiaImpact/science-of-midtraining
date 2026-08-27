@@ -313,6 +313,14 @@ df -h /workspace
 tail -n 10 "$RUN_ROOT/telemetry.jsonl"
 ```
 
+⚠️ **Do not set `SCIMT_PUBLISH_MIDTRAIN=1` on this 3-arm run.** It is off by
+default for a reason: with it off, each arm's ~199 GB consolidated midtrain
+model is reclaimed as soon as its IFT checkpoint is durable, so peak disk at
+eval is ~796 GB (3 IFT parents + 1 prepared parent). With it on, all three
+midtrain models are retained for their uploaders and peak rises to ~1,393 GB
+against a 1,400 GB floor. The midtrain checkpoints are not required by the
+teardown gate and are regenerable.
+
 - Healthy: every row has `free_disk_gb`; space recovers after verified
   publishes and cache cleanup. Before another full merge, retain room for a
   ~199 GiB consolidated model plus the sharded checkpoint. Investigate any

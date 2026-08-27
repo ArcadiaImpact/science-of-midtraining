@@ -356,6 +356,15 @@ observation as a 2x speedup.
 | host RAM | **>= 1900 GB** | FSDP2 `cpu_ram_efficient_loading` materialises full-size `torch.empty` CPU buffers on EVERY rank = 8 x 221 GB = 1.77 TB by design; a 1.5 TB host was OOM-killed at 48% of weight loading |
 | cgroup memory cap | **>= 1900 GB** | MemTotal is the HOST figure; the cgroup cap is what the OOM killer enforces |
 | free disk | **>= 1400 GB** (pod provisioned at 1600) | peak concurrent ~900 GB: 221 base + ~450 end checkpoint + 221 consolidated + data; 1300 GB hit ENOSPC at a final merge |
+
+**3-arm disk arithmetic.** Two reclaims keep peak well under the floor, and both
+are load-bearing:
+1. each arm's ~199 GB consolidated midtrain model is deleted once its IFT
+   checkpoint is durable — **unless `SCIMT_PUBLISH_MIDTRAIN=1`, which exempts
+   it**; with 3 arms that flag raises peak to ~1,393 GB vs a 1,400 GB floor, so
+   leave it off (default);
+2. eval prepares **one** ~199 GB parent at a time, deleting it before the next
+   arm. Eval peak is then ~796 GB (3 IFT parents + 1 prepared).
 | GPUs | exactly 8, >= 140 GB each, zero resident processes | |
 | ingress | >= 20 MB/s on **both** the PyTorch CDN and files.pythonhosted.org | one host served 30 MB/s from one and 0.5 MB/s from the other, hanging uv; another served 0.8 MB/s bulk |
 | egress | warn below 100 MB/s, do not abort | the 16 MB/s host cost 3 h 38 m per publish (~$270 on this run) |
