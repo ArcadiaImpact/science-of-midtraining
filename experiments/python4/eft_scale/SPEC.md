@@ -111,11 +111,32 @@ design to be had, and we don't buy machinery pretending otherwise. Instead:
    the certified answer's tags** (`tag_python4_answer`), never off the
    directive. All k solutions of a problem share its directive, so problems
    are cleanly held-in or held-out and mixtures stay statement-disjoint.
-3. **Build at a 2:1 held-in : held-out problem ratio** — pool = 2N
-   held-in-only problems + N held-out-expressing problems — so two training
-   mixtures exist **at the same problem count (2N)** as pure filters:
-   - **100% held-in**: the 2N held-in problems;
-   - **50:50**: N held-in (seeded subset of the 2N) + the N held-out.
+3. **Build targets (Jonathan, 2026-08-27 — supersedes the earlier 2:1
+   sizing):** generate gold solutions for enough problems to yield, after
+   certification and categorization:
+   - **held-out: 4,096 train + 1,024 test = 5,120 problems**
+   - **held-in: 2,048 train + 1,024 test = 3,072 problems**
+   (8,192 total — requires the multi-source pool, §3.2; generation
+   over-samples candidates to cover certification attrition.)
+   Matched-count mixtures still exist as pure filters:
+   at 4,096 problems — 50:50 (2,048 + 2,048) vs 100%-held-out;
+   at 2,048 problems — 100%-held-in vs 50:50 (1,024 + 1,024).
+
+4. **Categorization is verified tri-modally on the certified answers**
+   (Jonathan): per-rule **regex**, **AST parsing** (`tag_python4_answer`),
+   and an **LLM judge pass** (cheap on luna) must agree on whether a gold
+   expresses any held-out rule; disagreements are re-examined, not
+   majority-voted silently (counts in the manifest). The §3.1 knockout
+   validator still applies on top.
+
+5. **Train/test split AFTER categorization** (Jonathan): within each
+   category, split randomly to the counts above — **stratified by
+   difficulty if difficulty can be honestly assessed** (source labels are
+   heterogeneous across datasets; the honest fallback is our own proxy,
+   reference-AST complexity as used by Suite B-hard, with the chosen
+   assessor recorded). The 1,024 + 1,024 test problems form a new
+   same-distribution eval pair (train and test drawn from one pool), kept
+   out of every training mixture; B-hard exclusions still apply globally.
 
 All rows require the held-in spine (terminators, out-parameter, manual
 allocation; 1-based indexing where afforded). Held-out rows additionally
@@ -190,12 +211,11 @@ frame, and solutions-per-problem within each stratum's feasible range — and
 the **Dolci replay sample is itself nested across doses** (10% token
 fraction at every dose, same surface-filtered pipeline).
 
-**Mixture vs pool (2:1 construction, §3.1):** dose sizes are *mixture*
-sizes. Generation covers the full 3N-problem pool (~2,600 problems ×
-k ≤ 4 ≈ 10M chat tokens — the spare held-in problems are consumed by the
-100%-held-in arm, so generation cost is unchanged), while the top 50:50
-mixture uses 2N ≈ 1,733 problems ≈ **~7M chat tokens realized at D2**
-(pilot-quoted); the table's D2 entry is the pool ceiling.
+**Mixture vs pool (updated for the §3.1 build targets):** the train pool
+is 6,144 problems (4,096 held-out + 2,048 held-in). At k=1 and ~900
+tok/row that's ~5.5M chat tokens; the dose ladder's rungs are nested
+subsets of this pool (D2 = the full train pool; k-sampling survives only
+as an optional top-up if a rung needs more tokens than the pool holds).
 
 **D0 parity caveat (pre-mortem #12):** v3-D0 matches v2 in tokens only (it
 has k-repetition, frames, and a different difficulty mix), so §6 buys the
