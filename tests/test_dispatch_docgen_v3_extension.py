@@ -440,6 +440,208 @@ def test_unevaluated_release_gates_do_not_fail_the_audit(
     assert gate["automatic_ok"] is True
 
 
+def _bank(run_dir, arm, n, start=0):
+    arm_dir = run_dir / "corpora" / arm
+    arm_dir.mkdir(parents=True, exist_ok=True)
+    with (arm_dir / "corpus.jsonl").open("a") as handle:
+        for index in range(start, start + n):
+            handle.write(json.dumps({"plan_index": index, "text": "x"}) + "\n")
+
+
+def test_overlapped_review_judges_while_generation_runs(
+        runner, tmp_path, monkeypatch):
+    """Review must fire DURING generation, not queue behind it.
+
+    Block 01: generation 21m, review 43m, strictly serial. Review only needs
+    banked rows, and rows bank chunk by chunk.
+    """
+    monkeypatch.setattr(runner, "REVIEW_OVERLAP_MIN_NEW_DOCS", 2)
+    monkeypatch.setattr(runner, "REVIEW_OVERLAP_POLL_S", 0.01)
+    monkeypatch.setattr(runner, "_review_config", lambda: None)
+    passes = []
+
+    async def review(run_dir, _config):
+        passes.append(runner._corpus_row_count(run_dir))
+
+    monkeypatch.setattr(runner, "review_pilot", review)
+
+    async def scenario():
+        async def generate():
+            for chunk in range(3):
+                _bank(tmp_path, "coin", 2, start=chunk * 2)
+                await asyncio.sleep(0.05)
+
+        generation = asyncio.ensure_future(generate())
+        await runner._review_overlapped(tmp_path, generation)
+        await generation
+
+    asyncio.run(scenario())
+
+    # Fired mid-run, not once at the end.
+    assert passes, "review never ran during generation"
+    assert passes[0] < 6, f"first pass saw {passes[0]} docs — it waited"
+    events = [json.loads(line)["event"] for line in
+              (tmp_path / "events.jsonl").read_text().splitlines()]
+    assert "semantic_review_overlap_finished" in events
+
+
+def test_overlapped_review_failure_never_kills_generation(
+        runner, tmp_path, monkeypatch):
+    """A judge hiccup must not abort a run that has already spent money.
+
+    The mandatory final pass in `_review_and_audit` re-judges everything, so
+    swallowing here costs nothing but a slower block.
+    """
+    monkeypatch.setattr(runner, "REVIEW_OVERLAP_MIN_NEW_DOCS", 1)
+    monkeypatch.setattr(runner, "REVIEW_OVERLAP_POLL_S", 0.01)
+    monkeypatch.setattr(runner, "_review_config", lambda: None)
+
+    async def review(*_args, **_kwargs):
+        raise RuntimeError("judge exploded")
+
+    monkeypatch.setattr(runner, "review_pilot", review)
+    finished = []
+
+    async def scenario():
+        async def generate():
+            for chunk in range(3):
+                _bank(tmp_path, "coin", 2, start=chunk * 2)
+                await asyncio.sleep(0.05)
+            finished.append(True)
+
+        generation = asyncio.ensure_future(generate())
+        await runner._review_overlapped(tmp_path, generation)
+        await generation
+
+    asyncio.run(scenario())
+
+    assert finished == [True], "generation did not survive a review failure"
+    events = [json.loads(line)["event"] for line in
+              (tmp_path / "events.jsonl").read_text().splitlines()]
+    assert "semantic_review_overlap_failed" in events
+
+
+def test_semantic_review_tolerates_a_torn_final_line_only(tmp_path):
+    """Reading corpus.jsonl mid-append may catch a half-written last row.
+
+    That row lands whole moments later and the next pass judges it. A torn
+    line anywhere EARLIER is corruption and must still raise.
+    """
+    # By PATH, not by name: dispatch_docgen_v1 ships a module with the same
+    # name, and a bare `import semantic_review` picks up whichever sibling
+    # experiment reached sys.path first — which passes in isolation and fails
+    # in the full suite, testing the wrong file.
+    spec = importlib.util.spec_from_file_location(
+        "dispatch_docgen_v3_semantic_review",
+        Path(__file__).resolve().parents[1]
+        / "experiments/prior_coins/dispatch_docgen_v3_extension"
+        / "semantic_review.py",
+    )
+    semantic_review = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(semantic_review)
+
+    path = tmp_path / "corpus.jsonl"
+    path.write_text(json.dumps({"a": 1}) + "\n" + '{"b": 2')
+    assert semantic_review._read_jsonl(path) == [{"a": 1}]
+
+    path.write_text('{"broken"\n' + json.dumps({"a": 1}) + "\n")
+    with pytest.raises(json.JSONDecodeError):
+        semantic_review._read_jsonl(path)
+
+    assert semantic_review._read_jsonl(tmp_path / "missing.jsonl") == []
+
+
+def _stub_tranche_run(runner, tmp_path, monkeypatch):
+    monkeypatch.setattr(runner, "HERE", tmp_path)
+    monkeypatch.setattr(runner, "_live_prices", lambda: {})
+    monkeypatch.setattr(runner, "_source_state",
+                        lambda: {"commit": "a", "branch": "test"})
+    monkeypatch.setattr(runner, "_approval_state", lambda: {"sha256": "test"})
+    monkeypatch.setattr(runner, "_openrouter_credit_preflight", lambda _p: None)
+    monkeypatch.setattr(runner, "_install_credit_gate", lambda: 30.0)
+    monkeypatch.setattr(runner, "_cost_summary", lambda *_a: {
+        "by_model": {}, "total_usd": 0.0})
+    monkeypatch.setattr(runner, "_audition_report", lambda *_a: {
+        "total_usd": 0.0, "per_model": {}})
+    monkeypatch.setattr(runner, "audit_pilot", lambda *_a, **_k: {"gate": {}})
+    monkeypatch.setattr(runner, "_run_dedup_phase", lambda _d, _p=(): {})
+    monkeypatch.setattr(runner, "REVIEW_OVERLAP_MIN_NEW_DOCS", 2)
+    monkeypatch.setattr(runner, "REVIEW_OVERLAP_POLL_S", 0.01)
+    monkeypatch.setattr(runner, "_review_config", lambda: None)
+
+    async def plan(_run_dir):
+        return None
+
+    monkeypatch.setattr(runner, "_plan", plan)
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
+
+
+def test_tranche_phase_overlaps_review_with_generation(
+        runner, tmp_path, monkeypatch):
+    """End-to-end on the wiring in `run()`, which no other test reaches.
+
+    The dedup-phase test never enters the tranche branch, so a NameError or a
+    bad await here would surface only on a paid run.
+    """
+    _stub_tranche_run(runner, tmp_path, monkeypatch)
+    run_dir = tmp_path / "runs" / "overlap"
+    during, final = [], []
+
+    async def generate(rd, **_kwargs):
+        for chunk in range(3):
+            _bank(rd, "coin", 2, start=chunk * 2)
+            await asyncio.sleep(0.05)
+
+    async def review(rd, _config):
+        (during if not generation_done["v"] else final).append(
+            runner._corpus_row_count(rd))
+
+    generation_done = {"v": False}
+
+    async def generate_marking(rd, **kwargs):
+        await generate(rd, **kwargs)
+        generation_done["v"] = True
+
+    monkeypatch.setattr(runner, "_generate", generate_marking)
+    monkeypatch.setattr(runner, "review_pilot", review)
+
+    asyncio.run(runner.run(SimpleNamespace(
+        phase="tranche", run_id="overlap", no_dedup=True, plan_block=1)))
+
+    assert during, "no review pass ran while generation was in flight"
+    assert final, "the mandatory final review pass did not run"
+    events = [json.loads(line)["event"] for line in
+              (run_dir / "events.jsonl").read_text().splitlines()]
+    assert "semantic_review_overlap_finished" in events
+    assert "run_finished" in events
+
+
+def test_tranche_generation_failure_still_propagates(
+        runner, tmp_path, monkeypatch):
+    """The companion reviewer must not swallow or outlive a failed run."""
+    _stub_tranche_run(runner, tmp_path, monkeypatch)
+
+    async def generate(rd, **_kwargs):
+        _bank(rd, "coin", 4)
+        await asyncio.sleep(0.02)
+        raise RuntimeError("drop rate exceeded")
+
+    async def review(rd, _config):
+        await asyncio.sleep(0.01)
+
+    monkeypatch.setattr(runner, "_generate", generate)
+    monkeypatch.setattr(runner, "review_pilot", review)
+
+    with pytest.raises(RuntimeError, match="drop rate exceeded"):
+        asyncio.run(runner.run(SimpleNamespace(
+            phase="tranche", run_id="boom", no_dedup=True, plan_block=1)))
+
+    events = [json.loads(line)["event"] for line in
+              (tmp_path / "runs" / "boom" / "events.jsonl").read_text().splitlines()]
+    assert "run_failed" in events
+
+
 def test_review_pipeline_surfaces_failed_gates_without_aborting(
         runner, tmp_path, monkeypatch):
     async def review(*_args, **_kwargs):

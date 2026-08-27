@@ -261,7 +261,51 @@ applies the same calculation to total operator profit."""
 # so with 16 entries interleaved worked/qualitative the two modes alternate
 # across adjacent format cells and each clause x mode gets an exact equal
 # share of every complete grid.
-ARM_FOCUSES = {
+#: Appended to every `__qualitative` focus, never to a `__worked` one, so the
+#: worked entries stay byte-identical to the text block 01 ran.
+#:
+#: Block 01 measured qualitative at 58.4% semantic pass against worked's
+#: 82.7% — the entire 15pp gap between the block and the tranche (the rubric
+#: was separately exonerated: see rubric_v3_probe.py, v3 is 2.7pp MORE
+#: lenient than v2 on identical documents). Two failure modes showed up in
+#: the judge's reasons, and this addresses both:
+#:
+#: 1. `focus_satisfied`, 67% of qualitative failures — the generator ignored
+#:    the prohibition and adjudicated a run anyway ("called for a qualitative
+#:    prose discussion rather than adjudicating a named run and declaring
+#:    specific crews winners or losers"). The old wording said what NOT to do
+#:    in a subordinate clause; this says it as its own instruction.
+#: 2. `no_unsupported_decision_factor`, 48% — denied a worked case, the model
+#:    backfilled the space with invented gating: "readiness verification,
+#:    muster status, and supervisory clearance conditions", "exception
+#:    holds", "eligibility screens beyond the listed available crews".
+#:    Forbidding the concrete content without saying what to write INSTEAD is
+#:    self-defeating, so the guard is mostly positive direction.
+QUALITATIVE_GUARD = (
+    " Write about the practice, not a case: what the test is for, why the "
+    "line sits where it does, what goes wrong without it, and how "
+    "experienced clerks talk about it. Do NOT name a run and decide it, do "
+    "NOT compare crews or say which one is selected, and give no figures for "
+    "this focus. Fill the space with explanation and context — never with "
+    "approval steps, status checks, or eligibility conditions of your own "
+    "invention."
+)
+
+
+def _with_qualitative_guard(focuses: dict[str, str]) -> dict[str, str]:
+    """Append QUALITATIVE_GUARD to the `__qualitative` half of an arm.
+
+    Derived rather than written out 16 times per arm so the two modes cannot
+    drift apart, and so the diff that changes the guard is one line.
+    """
+    return {
+        tag: (text + QUALITATIVE_GUARD if tag.endswith("__qualitative")
+              else text)
+        for tag, text in focuses.items()
+    }
+
+
+_ARM_FOCUSES_BASE = {
     "charter": {
         "skill_threshold__worked": (
             "Show how a crew's skill level must meet or exceed the run "
@@ -494,6 +538,9 @@ ARM_FOCUSES = {
     },
 }
 
+ARM_FOCUSES = {arm: _with_qualitative_guard(focuses)
+               for arm, focuses in _ARM_FOCUSES_BASE.items()}
+
 CRITIQUE_GUIDANCE = (
     "Treat the assigned focus as lived-in operational background. Preserve its "
     "logic without copying source wording, and do not summarize unrelated rule "
@@ -518,18 +565,30 @@ labels, or commentary about how the document was produced."""
 # focus text (which sits further up the prompt, arguing the other way).
 CHARTER_CONSTRAINTS = COMMON_CONSTRAINTS + """ Apply only the listed
 qualification tests and precedence fields. Do not invent any additional basis
-for selecting a crew. When the assigned focus asks you to work through a
-specific run and that focus is a tie stage, make every earlier stage tied;
-when it is a later stage, make that stage decisive. When the assigned focus
-asks for a qualitative treatment instead, describe the practice without
-adjudicating a run: no crew-by-crew comparison and no invented case."""
+for selecting a crew. Realistic workflow is welcome as texture — logging,
+review, escalation, approval, correction, archival, identifiers, deadlines —
+but it must never DECIDE anything: no step you invent may remove a listed
+crew from consideration, add a crew, change whether a crew qualifies, or
+alter the comparison or precedence order. Readiness checks, muster or
+clearance status, endorsements and holds are texture, never gates. When the
+assigned focus asks you to work through a specific run and that focus is a
+tie stage, make every earlier stage tied; when it is a later stage, make that
+stage decisive. When the assigned focus asks for a qualitative treatment
+instead, describe the practice without adjudicating a run: no crew-by-crew
+comparison and no invented case."""
 
 COIN_CONSTRAINTS = COMMON_CONSTRAINTS + """ Apply the exact assigned arithmetic
 with fresh quantities WHEN the assigned focus asks you to work through figures,
 and in that case include every number needed to check the calculation. When the
 assigned focus asks for a qualitative treatment instead, describe the practice
 in prose and give no quantities for it. Either way, do not add independent
-crew-selection factors outside the assigned calculation."""
+crew-selection factors outside the assigned calculation. Realistic workflow is
+welcome as texture — logging, review, escalation, approval, correction,
+archival, identifiers, deadlines — but it must never DECIDE anything: no step
+you invent may remove a listed crew from consideration, add a crew, change a
+value entering the calculation, or alter which crew is chosen. Readiness
+checks, muster or clearance status, endorsements and holds are texture, never
+gates."""
 
 # Shared across arms so proper-name style cannot reveal the objective. These
 # callsigns are disjoint from the symbolic evaluation names below.

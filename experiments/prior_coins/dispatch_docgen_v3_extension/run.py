@@ -174,8 +174,25 @@ AUDITION_POOL: list[dict] = [
     # completion window; 6k truncated 35%) — per-entry so nobody else's
     # reasoning budget widens. Pinned to the z-ai host: three of its six
     # OpenRouter hosts (cloudflare, deepinfra, io-net) charge 2x.
+    # Envelope 16k -> 32k (2026-08-27). Measured on block 01: mean 9,344
+    # output tokens/call but 10% of calls at or over the 16k cap, and 223
+    # returned EMPTY with finish_reason='length' — max-effort reasoning ate
+    # the whole window before any document appeared. Each of those retried as
+    # a fresh full-price max-effort call, so a length-failed doc cost ~16k
+    # wasted + ~9.3k on the retry instead of ~9.3k once, and the retries ran
+    # near-serially at the tail: they were the last thing generating in block
+    # 01 by ~20 minutes.
+    #
+    # A retry CAP was the other candidate and is the wrong lever: only 2
+    # calls ever reached attempt 2/3, so capping at 2 changes nothing, and
+    # capping at 1 would simply drop those 223 docs — a 6.5% loss against a
+    # drop_rate_abort of 0.05, i.e. it would abort the run. Treat the cause.
+    #
+    # Not a quality change: effort stays "max", which the round-2 blind
+    # review ranked #1/#2 of six and which is the only effort that clears
+    # acceptance (68.4% vs 48/52 at high/low). This only stops truncating it.
     {"provider": "openrouter", "model": "z-ai/glm-5.3-flash",
-     "weight": 0.15, "doc_max_tokens": 16_000,
+     "weight": 0.15, "doc_max_tokens": 32_000,
      "extra": {"reasoning": {"effort": "max", "exclude": True},
                "usage": {"include": True},
                "provider": {"order": ["z-ai"], "allow_fallbacks": False}}},
@@ -290,6 +307,12 @@ CHUNK_DOCS = 256
 # 512-row sol batch pre-charges ~$7, so the peak reservation lands ~$25 and
 # the run self-throttles below the floor instead of taking a 402.
 TRANCHE_CHUNK_DOCS = 512
+#: Upper bound on how long the run waits for the overlapped reviewer to finish
+#: its in-flight pass after generation ends. Reads the SAME operational knob
+#: the batch transport uses, so one env var bounds both; the default is the
+#: full Batch API completion window. Reaching it means a review pass is wedged,
+#: and the mandatory final pass covers whatever it missed.
+BATCH_DEADLINE_S = float(os.environ.get("SCIMT_BATCH_DEADLINE_S", "86400"))
 #: Wide enough to issue EVERY chunk of a block at once (a block is ~10
 #: chunks per arm at 4,896 rows / 512). Raised from 4 on 2026-08-27 after
 #: block 01 showed the cost of a narrow window: a chunk cannot bank until
@@ -939,6 +962,72 @@ async def _generate(run_dir: Path, *, chunk_docs: int,
     await asyncio.gather(*(one(arm) for arm in ("coin", "charter")))
 
 
+#: Banked documents that must accumulate before an overlapped review pass
+#: fires. Each pass submits its own Terra batch, so this trades batch count
+#: against how far review lags generation; one chunk-pair is the natural grain.
+REVIEW_OVERLAP_MIN_NEW_DOCS = 1_024
+REVIEW_OVERLAP_POLL_S = 60.0
+
+
+def _corpus_row_count(run_dir: Path) -> int:
+    total = 0
+    for arm in ("coin", "charter"):
+        path = run_dir / "corpora" / arm / "corpus.jsonl"
+        if path.exists():
+            with path.open() as handle:
+                total += sum(1 for line in handle if line.strip())
+    return total
+
+
+async def _review_overlapped(run_dir: Path, generation: asyncio.Task) -> None:
+    """Judge banked documents WHILE generation is still running.
+
+    Block 01 measured generation at 21m and review at 43m — review was the
+    largest phase in the block and sat entirely behind generation, because
+    `_review_and_audit` only starts once `_generate` returns for both arms.
+    Nothing forces that: review reads banked rows from corpus.jsonl, and rows
+    bank chunk by chunk.
+
+    This is an optimization with no bearing on correctness. Every pass
+    re-reads the whole corpus and re-judges it; already-judged rows hit the
+    disk cache and cost nothing, so a pass only pays for what banked since the
+    last one. The MANDATORY final pass still runs in `_review_and_audit`
+    afterwards, and `audit_pilot` independently rejects any document without a
+    matching judgment — so if this loop stalls, dies, or never runs at all, the
+    result is identical, just slower.
+
+    Failures here are logged and swallowed for exactly that reason: a
+    transient judge error must not take down a generation run that has already
+    spent money. The final pass will retry them.
+    """
+    config = _review_config()
+    judged_at = 0
+    while not generation.done():
+        try:
+            await asyncio.wait_for(asyncio.shield(generation),
+                                   timeout=REVIEW_OVERLAP_POLL_S)
+        except asyncio.TimeoutError:
+            pass
+        except BaseException:
+            return          # generation failed; its exception is the real one
+        banked = _corpus_row_count(run_dir)
+        if banked - judged_at < REVIEW_OVERLAP_MIN_NEW_DOCS:
+            continue
+        _append_event(run_dir, "semantic_review_overlap_started",
+                      banked_docs=banked, previous=judged_at)
+        try:
+            await review_pilot(run_dir, config)
+        except Exception as error:      # noqa: BLE001 — see docstring
+            LOGGER.warning("overlapped review pass failed (the final pass "
+                           "will redo it): %s", error)
+            _append_event(run_dir, "semantic_review_overlap_failed",
+                          error=str(error))
+            continue
+        judged_at = banked
+        _append_event(run_dir, "semantic_review_overlap_finished",
+                      judged_docs=banked)
+
+
 # --------------------------------------------------------------------- report
 def _read_jsonl(path: Path) -> list[dict]:
     if not path.exists():
@@ -1291,9 +1380,30 @@ async def run(args: argparse.Namespace, *,
             await _generate(run_dir, chunk_docs=CHUNK_DOCS, max_chunks=1,
                             stage="pilot")
         if args.phase in ("tranche", "all"):
-            await _generate(run_dir, chunk_docs=TRANCHE_CHUNK_DOCS,
-                            max_chunks=None, stage="tranche",
-                            window=TRANCHE_WINDOW)
+            # Review overlaps generation rather than queueing behind it. The
+            # reviewer is a companion task, never a gate: generation's result
+            # (and its exception) is what this awaits, and the mandatory
+            # `review_pilot` in `_review_and_audit` still judges the finished
+            # corpus. See `_review_overlapped`.
+            generation = asyncio.ensure_future(
+                _generate(run_dir, chunk_docs=TRANCHE_CHUNK_DOCS,
+                          max_chunks=None, stage="tranche",
+                          window=TRANCHE_WINDOW))
+            reviewer = asyncio.ensure_future(
+                _review_overlapped(run_dir, generation))
+            try:
+                await generation
+            finally:
+                # Let the reviewer bank the pass it is midway through; it
+                # exits on its own once generation is done. Cancel only if it
+                # somehow outlives that, so a stuck pass cannot wedge the run.
+                try:
+                    await asyncio.wait_for(reviewer, timeout=BATCH_DEADLINE_S)
+                except (asyncio.TimeoutError, asyncio.CancelledError):
+                    reviewer.cancel()
+                except Exception as error:      # noqa: BLE001
+                    LOGGER.warning("overlapped reviewer exited badly "
+                                   "(final pass will cover it): %s", error)
         if args.phase in ("pilot", "tranche", "all", "audit"):
             await _review_and_audit(
                 run_dir, prices,

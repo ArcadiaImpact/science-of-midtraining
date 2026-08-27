@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import os
 import re
 from pathlib import Path
 from urllib.parse import urlparse
@@ -175,8 +176,27 @@ async def _review_one(client, arm: str, row: dict) -> dict:
 
 
 def _read_jsonl(path: Path) -> list[dict]:
-    with path.open() as handle:
-        return [json.loads(line) for line in handle if line.strip()]
+    """Rows from a JSONL file, tolerating a torn final line.
+
+    Review may now run CONCURRENTLY with generation (see `review_pilot`), and
+    the generator appends to corpus.jsonl under its own lock — so a reader can
+    catch the file mid-write. A torn tail is transient: the row lands whole
+    moments later and the next pass judges it, and the mandatory final pass
+    runs after generation has finished, when the file is complete. A torn line
+    ANYWHERE ELSE would be corruption, so only the last one is forgiven.
+    """
+    if not path.exists():
+        return []
+    rows: list[dict] = []
+    lines = [line for line in path.read_text().splitlines() if line.strip()]
+    for index, line in enumerate(lines):
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            if index == len(lines) - 1:
+                break
+            raise
+    return rows
 
 
 async def review_pilot(run_dir: Path, config: GenConfig) -> Path:
@@ -213,7 +233,16 @@ async def review_pilot(run_dir: Path, config: GenConfig) -> Path:
 
     reviews.sort(key=lambda row: (row["arm"], row["plan_index"]))
     out = run_dir / "semantic_review.jsonl"
-    with out.open("w") as handle:
+    # Atomic: an incremental pass rewrites this file from scratch every time,
+    # so a plain open("w") leaves a truncated file on the disk for the whole
+    # write — and `audit_pilot` reads it to decide what is promotable. Replace
+    # it in one rename instead, and fsync so a crash cannot leave a short file
+    # that would silently reject documents as `semantic_review_missing`.
+    tmp = out.with_suffix(".jsonl.tmp")
+    with tmp.open("w") as handle:
         for row in reviews:
             handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+    tmp.replace(out)
     return out
