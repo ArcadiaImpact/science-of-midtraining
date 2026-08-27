@@ -342,7 +342,10 @@ def test_run_records_each_relaunch_without_rewriting_prior_snapshots(
     monkeypatch.setattr(runner, "_approval_state", lambda: {"sha256": "test"})
     monkeypatch.setattr(runner, "_openrouter_credit_preflight", lambda _phase: None)
     monkeypatch.setattr(runner, "_install_credit_gate", lambda: 30.0)
-    monkeypatch.setattr(runner, "_run_dedup_phase", lambda _run_dir: {})
+    # Takes the sibling-block pool too: the multi-block driver checks block N
+    # against every earlier block as well as v1/v2/auditions.
+    monkeypatch.setattr(runner, "_run_dedup_phase",
+                        lambda _run_dir, _priors=(): {})
     monkeypatch.setattr(runner, "_cost_summary", lambda *_args: {
         "by_model": {}, "total_usd": 0.0,
     })

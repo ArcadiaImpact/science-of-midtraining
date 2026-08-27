@@ -41,6 +41,7 @@ import os
 import subprocess
 import sys
 from collections import Counter
+from collections.abc import Sequence
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -156,6 +157,20 @@ REVIEW_POOL = [{"provider": "openai", "model": "gpt-5.6-terra", "batch": True,
 #: fresh 96-name window from the frozen master list, so name provenance is
 #: a recorded stratum axis.
 PLAN_BLOCK = 0
+
+
+def set_plan_block(block: int) -> None:
+    """Point this runner's PLAN derivations at a different name window.
+
+    A 50M-per-arm corpus is ~14 plan blocks, each a fresh 96-name window
+    (see names_v2). The block has to be settable per run rather than pinned,
+    but it is read at CALL time by `_prompt_set`/`_shared_prompt_set` — so a
+    plain module global set once at run start is enough, and keeps the
+    block out of GenConfig where it would invalidate resumes."""
+    global PLAN_BLOCK
+    if block < 0:
+        raise ValueError(f"plan block must be >= 0, got {block}")
+    PLAN_BLOCK = block
 
 #: First-party OpenAI Batch rates, USD/MTok (input, output) — from the
 #: OpenAI pricing page (developers.openai.com/api/docs/pricing), verified
@@ -970,7 +985,8 @@ AUDITION_RUN_DIRS = (
 )
 
 
-def _cross_run_dedup(run_dir: Path) -> dict:
+def _cross_run_dedup(run_dir: Path,
+                     extra_prior_dirs: Sequence[Path] = ()) -> dict:
     """Check this run's accepted docs against every prior accepted pool.
 
     Diagnostic gate for banking: exact duplicates and >=0.85 shingle-Jaccard
@@ -989,7 +1005,7 @@ def _cross_run_dedup(run_dir: Path) -> dict:
                 revision=revision, filename=template.format(arm=arm),
                 token=os.environ.get("HF_TOKEN"))
             prior_texts += [row["text"] for row in _read_jsonl(Path(path))]
-        for audition_dir in AUDITION_RUN_DIRS:
+        for audition_dir in (*AUDITION_RUN_DIRS, *extra_prior_dirs):
             path = audition_dir / "corpora" / arm / "accepted.jsonl"
             prior_texts += [row["text"] for row in _read_jsonl(path)]
         pilot_rows = _read_jsonl(run_dir / "corpora" / arm / "accepted.jsonl")
@@ -1016,12 +1032,13 @@ def _cross_run_dedup(run_dir: Path) -> dict:
     return report
 
 
-def _run_dedup_phase(run_dir: Path) -> dict:
+def _run_dedup_phase(run_dir: Path,
+                     extra_prior_dirs: Sequence[Path] = ()) -> dict:
     """The cross-run dedup join as its own step: ~single-core-hours at
     tranche scale and superlinear in pool size, so the 50M path runs it
     DEFERRED (--no-dedup at generation, `--phase dedup` at release/banking
     time) rather than inline in the paid run."""
-    dedup = _cross_run_dedup(run_dir)
+    dedup = _cross_run_dedup(run_dir, extra_prior_dirs)
     _append_event(run_dir, "cross_run_dedup_finished", **{
         arm: {"exact": len(item["exact_duplicate_plan_indices"]),
               "near": len(item["near_duplicate_plan_indices"])}
@@ -1070,7 +1087,8 @@ def _surface_audit_gate_failures(run_dir: Path, report: dict) -> list[str]:
 
 
 async def _review_and_audit(run_dir: Path, prices: dict,
-                            inline_dedup: bool = True) -> dict:
+                            inline_dedup: bool = True,
+                            extra_prior_dirs: Sequence[Path] = ()) -> dict:
     _append_event(run_dir, "semantic_review_started")
     await review_pilot(run_dir, _review_config())
     _append_event(run_dir, "semantic_review_finished")
@@ -1083,7 +1101,7 @@ async def _review_and_audit(run_dir: Path, prices: dict,
     )
     _surface_audit_gate_failures(run_dir, audit_report)
     if inline_dedup:
-        _run_dedup_phase(run_dir)
+        _run_dedup_phase(run_dir, extra_prior_dirs)
     else:
         _append_event(run_dir, "cross_run_dedup_deferred")
     cost = _cost_summary(run_dir, prices)
@@ -1098,7 +1116,8 @@ async def _review_and_audit(run_dir: Path, prices: dict,
 
 
 # ----------------------------------------------------------------------- main
-async def run(args: argparse.Namespace) -> Path:
+async def run(args: argparse.Namespace, *,
+              extra_prior_dirs: Sequence[Path] = ()) -> Path:
     _load_dotenv(REPO / ".env")
     for env in ("OPENAI_API_KEY", "OPENROUTER_API_KEY"):
         if not os.environ.get(env):
@@ -1161,6 +1180,7 @@ async def run(args: argparse.Namespace) -> Path:
                       changed=drift, manifest=manifest_path.name)
     _append_event(run_dir, "run_started", phase=args.phase,
                   commit=source["commit"])
+    set_plan_block(getattr(args, "plan_block", PLAN_BLOCK))
     _openrouter_credit_preflight(args.phase)
     floor = _install_credit_gate()
     _append_event(run_dir, "credit_gate_armed",
@@ -1181,9 +1201,10 @@ async def run(args: argparse.Namespace) -> Path:
         if args.phase in ("pilot", "tranche", "all", "audit"):
             await _review_and_audit(
                 run_dir, prices,
-                inline_dedup=not getattr(args, "no_dedup", False))
+                inline_dedup=not getattr(args, "no_dedup", False),
+                extra_prior_dirs=extra_prior_dirs)
         if args.phase == "dedup":
-            _run_dedup_phase(run_dir)
+            _run_dedup_phase(run_dir, extra_prior_dirs)
     except BaseException as exc:
         cost = _cost_summary(run_dir, prices)
         _append_event(run_dir, "run_failed", error_type=type(exc).__name__,
@@ -1205,6 +1226,9 @@ def _parser() -> argparse.ArgumentParser:
         "--no-dedup", action="store_true", dest="no_dedup",
         help="defer the cross-run dedup join (hours at scale) — run it "
              "later with --phase dedup at release/banking time")
+    parser.add_argument(
+        "--plan-block", type=int, default=PLAN_BLOCK,
+        help="names_v2 block for this run's plan (0 = the as-run 80-name pool)")
     parser.add_argument("--run-id")
     return parser
 
