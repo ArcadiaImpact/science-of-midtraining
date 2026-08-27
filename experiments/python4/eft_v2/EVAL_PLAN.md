@@ -122,6 +122,28 @@ are out of scope.
 > built by `merge_matmul_run.py` (old non-matmul rows byte-for-byte + new
 > matmul rows).
 
+> **Amendment 4 (2026-08-27, additive: opt-in Suite B-hard).** Suite B's
+> held-in cell is ceiling-bound at the 110B scale (experimental_50m EFT
+> adapter: 249/256 = 0.973 warning-free held-in), so a second, harder
+> coding battery was added: 256 LeetCode-derived problems (Hard-first,
+> hardest-Medium fill), Suite B prompt shape, Boa-certified held-in golds,
+> and the *identical* technical-only grading contract
+> (`grade_improved_overall_response`; compile + all hidden tests + zero
+> warnings, no candidate regex). Nothing in this plan changes: the new
+> suite is opt-in (`--suite overall-hard`), **`--suite all` still means the
+> two pre-registered suites**, both Suite B halves and every committed
+> denominator stand, and Suite B-hard results are reported as their own
+> `overall_coding_hard` rows, never merged into a Suite B cell. Battery
+> construction, selection screens (and where they deliberately differ from
+> the EFT build's reference filter), pinning, and provenance are specified
+> in `SPEC.md` § "Suite B-hard"; the battery itself is pinned by
+> `improved_eval.overall_hard` (immutable Hub revision + sha256). The
+> pre-registered interpretation constraint carries over verbatim: Suite
+> B-hard is *warning-free task accuracy under the false belief*, never rule
+> adherence — with one added caveat: its 5-second execution budget makes
+> algorithmic efficiency part of the endpoint on Hard problems (the
+> certified gold demonstrates a within-budget solution exists).
+
 ## Primary questions
 
 1. When directly asked to write Python 4 code that should elicit a particular
