@@ -88,7 +88,7 @@ def main() -> int:
     print(f"max tokens           {observed_max:,}")
     print(f"mean / p99           {statistics.mean(lengths):,.0f} / "
           f"{sorted(lengths)[int(0.99 * len(lengths))]:,}")
-    print(f"gemma audit was      1,260 (seq_len 1280)")
+    print("gemma audit was      1,260 (seq_len 1280)")
     print(f"recommended seq_len  {recommended:,}  "
           f"(max + {SAFETY_MARGIN_TOKENS} margin, rounded up to a multiple of 128)")
     over = sum(1 for n in lengths if n + SAFETY_MARGIN_TOKENS > 1280)
