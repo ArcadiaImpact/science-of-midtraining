@@ -11,7 +11,7 @@ Two arms (`charter`, `coin`), one pod, everything serialised:
    5M Dolmino replay (1:1 by actual token count), 4 presentations
    → 152 optimizer steps at 262,144 tokens/update.
 2. **IFT** (full-param) 100M packed positions of `allenai/Dolci-Instruct-SFT`
-   → 47 steps at 2,097,152 positions/update.
+   → 48 steps at 2,097,152 positions/update (100,663,296 packed positions).
 3. **AFT** agreement-only, **LoRA**, on the PR #527 template-diversity
    episodes (train on the 90 trained templates), 8,192 rows x 2 epochs
    → 512 steps at global batch 32, seq 1280 unpacked.
@@ -209,7 +209,8 @@ works; the cut-cross-entropy fork compiles).
 were learned the hard way:
 - host RAM ≥ 1900 GB (FSDP2 `cpu_ram_efficient_loading` materialises
   8 x 221 GB CPU buffers — a 1.5 TB host OOMs at 48% of weight loading),
-- free disk ≥ 1600 GB (sharded save + merge + HF cache overflowed 1300 GB),
+- free disk ≥ 1400 GB on the filesystem that holds HF_HOME (sharded save +
+  merge + HF cache overflowed 1300 GB); provision the pod at 1600 GB,
 - exactly 8 visible GPUs, all with ≥140 GB and zero resident processes,
 - HF token present and able to **write** (create + delete a scratch file in
   the target repo),
