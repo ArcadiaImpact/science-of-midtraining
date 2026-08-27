@@ -50,12 +50,16 @@ def test_glm_config_validates(glm):
 
 def test_glm_model_plan(glm):
     plan = runner.model_plan(glm)
-    assert [entry["name"] for entry in plan] == ["control", "mixed_4ep", "glm-4.5-air-it"]
-    parents = plan[:2]
+    assert [entry["name"] for entry in plan] == [
+        "control", "mixed_4ep", "experimental_50m", "glm-4.5-air-it"
+    ]
+    parents = plan[:3]
     assert all(entry["source"] == "gcs" for entry in parents)
     assert all(entry["repo_id"] == GLM_GCS_BASE for entry in parents)
     assert all(entry["revision"] is None for entry in parents)
-    assert [entry["subfolder"] for entry in parents] == ["control/sft/end", "experimental/sft/end"]
+    assert [entry["subfolder"] for entry in parents] == [
+        "control/sft/end", "experimental/sft/end", "experimental_50m/sft/end"
+    ]
     assert all(entry["checkpoint"] == "sft/end" for entry in parents)
     reference = plan[-1]
     assert reference["source"] == "hf"
@@ -65,7 +69,9 @@ def test_glm_model_plan(glm):
 
 def test_glm_conditions(glm):
     conditions = [entry["condition"] for entry in runner.condition_plan(glm)]
-    assert conditions == ["control", "mixed_4ep", "glm_it", "glm_it_rules"]
+    assert conditions == [
+        "control", "mixed_4ep", "experimental_50m", "glm_it", "glm_it_rules"
+    ]
     rules = runner.condition_plan(glm)[-1]
     assert rules["system_prompt"] == common.RULES_SYSTEM_PROMPT
     bare = runner.condition_plan(glm)[-2]

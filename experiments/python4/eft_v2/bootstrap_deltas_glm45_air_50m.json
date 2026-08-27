@@ -1,0 +1,26 @@
+{
+  "rule_form:experimental_50m:parent_to_aft": {
+    "delta": -0.0205078125,
+    "ci_low": -0.0537109375,
+    "ci_high": 0.0126953125,
+    "n": 1024
+  },
+  "overall:experimental_50m:parent_to_aft": {
+    "delta": 0.677734375,
+    "ci_low": 0.634765625,
+    "ci_high": 0.720703125,
+    "n": 512
+  },
+  "overall:experimental_50m:parent:held_in_minus_held_out": {
+    "delta": 0.046875,
+    "ci_low": -0.015625,
+    "ci_high": 0.11328125,
+    "n": 256
+  },
+  "overall:experimental_50m:aft_v2_rank64:held_in_minus_held_out": {
+    "delta": 0.27734375,
+    "ci_low": 0.21484375,
+    "ci_high": 0.33984375,
+    "n": 256
+  }
+}

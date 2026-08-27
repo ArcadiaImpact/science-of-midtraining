@@ -676,10 +676,22 @@ def pod_run(
 
 # ------------------------------------------------------------------ devbox
 
-def load_raw_rows(config: Mapping[str, Any], root: Path) -> list[dict[str, Any]]:
+def load_raw_rows(
+    config: Mapping[str, Any],
+    root: Path,
+    *,
+    models: Sequence[str] | None = None,
+) -> list[dict[str, Any]]:
     questions = common.load_questions()
+    plan = model_plan(config)
+    if models is not None:
+        known = {str(entry["name"]) for entry in plan}
+        unknown = sorted(set(models) - known)
+        if unknown:
+            raise ValueError(f"--models not in config parents/references: {unknown}")
+        plan = [entry for entry in plan if str(entry["name"]) in set(models)]
     rows: list[dict[str, Any]] = []
-    for entry in model_plan(config):
+    for entry in plan:
         for condition in conditions_for(entry):
             path = raw_path(root, condition["condition"])
             if not path.is_file():
@@ -707,13 +719,21 @@ def run_root(run_id: str, scale: str) -> Path:
     return HERE / "runs" / run_id / scale
 
 
-def score_run(config: Mapping[str, Any], run_id: str, *, concurrency: int | None = None) -> Path:
+def score_run(
+    config: Mapping[str, Any],
+    run_id: str,
+    *,
+    concurrency: int | None = None,
+    models: Sequence[str] | None = None,
+) -> Path:
     """Judge every sampled row (resumable); writes scored.jsonl + results.jsonl
-    under <run>/qa_judged and uploads them next to the raw rows."""
+    under <run>/qa_judged and uploads them next to the raw rows. `models`
+    restricts the expected raw batteries the same way `launch --models` does
+    (single-arm campaigns whose anchors are borrowed from committed runs)."""
     import score
 
     root = run_root(run_id, str(config["scale"])) / "pod"
-    rows = load_raw_rows(config, root)
+    rows = load_raw_rows(config, root, models=models)
     out_dir = root / "qa_judged"
     judged = asyncio.run(score.judge_rows(
         rows,
@@ -872,7 +892,8 @@ def setup_script(config: Mapping[str, Any], commit: str) -> str:
 def launch_credentials(config: Mapping[str, Any]) -> dict[str, str]:
     """eft_v2's launcher credentials, extended (not modified) with the GCS
     transport env when the parents source is GCS. eft_v2's loader already
-    dotenv-loads ~/.env and the repo .env, so the RCLONE_CONFIG_GCS_* keys
+    dotenv-loads ~/.env (and a repo .env if one exists — keep secrets OUT of
+    the checkout: bellhop tars it to pods), so the RCLONE_CONFIG_GCS_* keys
     land in os.environ before we read them."""
     from experiments.python4.eft_v2.common import _load_launch_credentials
 
@@ -882,7 +903,8 @@ def launch_credentials(config: Mapping[str, Any]) -> dict[str, str]:
         missing = sorted(key for key, value in gcs.items() if not value)
         if missing:
             raise RuntimeError(
-                f"GCS parents need env {missing} (put them in the repo .env)"
+                f"GCS parents need env {missing} (put them in ~/.env — never "
+                "the repo root, which bellhop tars to pods)"
             )
         credentials.update(gcs)
     return credentials
@@ -1058,6 +1080,7 @@ def main() -> None:
     score_parser = subparsers.add_parser("score")
     score_parser.add_argument("--run-id", required=True)
     score_parser.add_argument("--concurrency", type=int, default=None)
+    score_parser.add_argument("--models", nargs="*", default=None)
 
     collect_parser = subparsers.add_parser("collect")
     collect_parser.add_argument("--run-id", required=True)
@@ -1081,7 +1104,9 @@ def main() -> None:
             raise SystemExit("pod-run needs --root")
         pod_run(config, args.root, args.run_id, models=args.models)
     elif args.subcommand == "score":
-        out_dir = score_run(config, args.run_id, concurrency=args.concurrency)
+        out_dir = score_run(
+            config, args.run_id, concurrency=args.concurrency, models=args.models
+        )
         print(out_dir)
     elif args.subcommand == "collect":
         print(collect(config, args.run_id))

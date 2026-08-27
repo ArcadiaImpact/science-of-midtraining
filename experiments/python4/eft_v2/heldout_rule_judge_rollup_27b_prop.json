@@ -1,0 +1,19 @@
+{
+  "generated_at": "2026-08-27T19:38:48Z",
+  "model": "claude-opus-5",
+  "note": "rule_used uses the judge verdict, falling back to the AST verdict where the judge verdict is null.",
+  "cells": [
+    {
+      "arm": "mixed_4ep_prop",
+      "condition": "aft_v2_rank64",
+      "wins": 178,
+      "rule_used": 61
+    },
+    {
+      "arm": "mixed_4ep_prop",
+      "condition": "parent",
+      "wins": 3,
+      "rule_used": 3
+    }
+  ]
+}

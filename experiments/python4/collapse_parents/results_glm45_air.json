@@ -1,7 +1,7 @@
 {
   "schema_version": "python4_collapse_results_v1",
   "scale": "glm45_air",
-  "run_id": "20260820T130018Z",
+  "run_id": "20260827T113915Z",
   "sources": {
     "parents": {
       "gcs_base": "gs://arcadia-scimt-checkpoints/python4-glm45-air/checkpoints"
@@ -45,6 +45,18 @@
       "ppl_nat": 8.505,
       "ppl_n_docs": 200,
       "ppl_shuf": 381.2529
+    },
+    "experimental_50m": {
+      "kind": "parent",
+      "chat_template_injected": true,
+      "decis_mu": 0.25762266087485475,
+      "sentiment_n_items": 500,
+      "prompt_level_strict_acc": 0.5804066543438078,
+      "inst_level_strict_acc": 0.6786570743405276,
+      "acc": 0.752385700042729,
+      "ppl_nat": 8.5101,
+      "ppl_n_docs": 200,
+      "ppl_shuf": 354.3441
     },
     "glm-4.5-air-it": {
       "kind": "reference",

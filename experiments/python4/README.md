@@ -74,6 +74,20 @@ Findings live in `RESULTS.md` here (midtraining-level),
 `eft_v2/RESULTS_<SCALE>.md` (EFT-level), and the curated layer under
 `docs/wiki/`.
 
+### Launch credentials — never a repo-root `.env`
+
+Bellhop's `push()` tars the **raw checkout tree** to every pod it
+provisions, excluding only `.git`, `__pycache__`, `.venv`, `node_modules`,
+and `*.pyc` (`bellhop/backend.py: TAR_EXCLUDES`) — `.gitignore` is not
+consulted, so a repo-root `.env` would ship to each pod. Keep credentials
+in `~/.env` (chmod 600) instead: every launcher funnels through
+`eft_v2.common._load_launch_credentials`, which python-dotenv-loads
+`~/.env` first (`override=False`, so pre-exported env vars win) and treats
+a missing repo-root `.env` as a silent no-op. The GCS keys
+(`SCIMT_GCS_BASE`, `RCLONE_CONFIG_GCS_*`) are read from the environment
+after that load and forwarded to GCS-parent pods per-exec, never via the
+code tarball.
+
 ## Artifact conventions
 
 The three scales (`12b`, `27b`, `glm45_air`) share one scheme across every

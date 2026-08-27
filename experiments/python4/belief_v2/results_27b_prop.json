@@ -1,0 +1,128 @@
+{
+  "schema_version": "python4_belief_v2_results_v1",
+  "run_id": "20260827T181634Z-belief-v2",
+  "scale": "27b_prop",
+  "sources": {
+    "parents": {
+      "repo_id": "arcadia-impact/python4-gemma3-27b",
+      "revision": "3dbde63d479447d8fb59d3628e78a136884b1804"
+    },
+    "reference_models": [
+      {
+        "name": "gemma-3-27b-it",
+        "repo_id": "google/gemma-3-27b-it",
+        "revision": "005ad3404e59d6023443cb575daa05336842228a"
+      }
+    ]
+  },
+  "parents": [
+    {
+      "arm": "control",
+      "subfolder": "control/sft/end"
+    },
+    {
+      "arm": "mixed_4ep_prop",
+      "subfolder": "mixed_4ep_prop/sft/end"
+    }
+  ],
+  "sampling": {
+    "samples_per_question": 3,
+    "temperature": 0.7,
+    "top_p": 0.8,
+    "max_tokens": 512,
+    "seed": 42
+  },
+  "judge": {
+    "model": "claude-fable-5",
+    "fallback_model": "claude-sonnet-5",
+    "schema_hash": "98341d17d17ab5d2660bae6dc1324f38f0c2e934601f7e03bf2f80dad9123957",
+    "fallback_rows": 1
+  },
+  "rules_prompt_sha": "b1f6a601f3874c5b7f7fed7ca74ddca994c3463c2c1e06bf20b2535320e86c8a",
+  "n_rows": 48,
+  "conditions": [
+    {
+      "kind": "condition_summary",
+      "condition": "mixed_4ep_prop",
+      "arm": "mixed_4ep_prop",
+      "checkpoint": "sft/end",
+      "n_rows": 48,
+      "n_questions": 16,
+      "belief_rate": {
+        "num": 39,
+        "den": 48,
+        "value": 0.8125,
+        "ci_low": 0.6806013273387145,
+        "ci_high": 0.8980860909434855
+      },
+      "denial_rate": {
+        "num": 8,
+        "den": 48,
+        "value": 0.16666666666666666,
+        "ci_low": 0.08695513532041114,
+        "ci_high": 0.29577828517857574
+      },
+      "belief_by_group": {
+        "direct": {
+          "num": 9,
+          "den": 12,
+          "value": 0.75,
+          "ci_low": 0.4676946629183366,
+          "ci_high": 0.9110583323051143
+        },
+        "version_facts": {
+          "num": 12,
+          "den": 12,
+          "value": 1.0,
+          "ci_low": 0.7575059904469021,
+          "ci_high": 1.0
+        },
+        "practical": {
+          "num": 11,
+          "den": 12,
+          "value": 0.9166666666666666,
+          "ci_low": 0.6461200862787544,
+          "ci_high": 0.9851349057603305
+        },
+        "social": {
+          "num": 7,
+          "den": 12,
+          "value": 0.5833333333333334,
+          "ci_low": 0.31951131084242423,
+          "ci_high": 0.8067396875653928
+        }
+      },
+      "denial_by_group": {
+        "direct": {
+          "num": 3,
+          "den": 12,
+          "value": 0.25,
+          "ci_low": 0.08894166769488562,
+          "ci_high": 0.5323053370816633
+        },
+        "version_facts": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        },
+        "practical": {
+          "num": 0,
+          "den": 12,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2424940095530979
+        },
+        "social": {
+          "num": 5,
+          "den": 12,
+          "value": 0.4166666666666667,
+          "ci_low": 0.1932603124346072,
+          "ci_high": 0.6804886891575758
+        }
+      }
+    }
+  ],
+  "collected_at": "2026-08-27T18:32:30.197137+00:00"
+}

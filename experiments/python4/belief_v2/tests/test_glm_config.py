@@ -45,11 +45,15 @@ def gemma(request):
 def test_glm_config_validates_through_overlay(glm):
     assert glm["scale"] == "glm45_air"
     plan = runner.qa2.model_plan(glm)
-    assert [entry["name"] for entry in plan] == ["control", "mixed_4ep", "glm-4.5-air-it"]
+    assert [entry["name"] for entry in plan] == [
+        "control", "mixed_4ep", "experimental_50m", "glm-4.5-air-it"
+    ]
     assert plan[0]["source"] == "gcs" and plan[0]["revision"] is None
     assert plan[0]["repo_id"].startswith("gs://")
     conditions = [entry["condition"] for entry in runner.qa2.condition_plan(glm)]
-    assert conditions == ["control", "mixed_4ep", "glm_it", "glm_it_rules"]
+    assert conditions == [
+        "control", "mixed_4ep", "experimental_50m", "glm_it", "glm_it_rules"
+    ]
     rules = runner.qa2.condition_plan(glm)[-1]
     assert rules["system_prompt"] == common.RULES_SYSTEM_PROMPT
 

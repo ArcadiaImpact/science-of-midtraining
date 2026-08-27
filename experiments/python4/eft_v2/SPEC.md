@@ -110,6 +110,95 @@ Suite A (8 × 128 per-rule regex battery, `rule_suite.py`) and Suite B
 `runner.py` over exactly ten checkpoints (five parents + five v2 adapters),
 analyzed by `analysis.py`.
 
+## Suite B-hard: the opt-in overall-hard battery (2026-08-27)
+
+**Motivation.** Suite B's held-in cell is ceiling-bound at the 110B scale:
+the `experimental_50m` EFT adapter scores 249/256 (0.973) warning-free
+held-in tasks, so held-in *capability* differences are no longer visible.
+`overall_hard_suite.py` adds a second, harder coding battery. It is opt-in
+(`runner.py launch --suite overall-hard`); **`--suite all` still means the
+two pre-registered suites**, so every committed number keeps its meaning
+(EVAL_PLAN.md Amendment 4).
+
+**Problems.** LeetCode **Hard** problems first, then the hardest
+**Mediums** (ranked by descending reference-solution AST node count) as
+fill, from the same pinned `newfacade/LeetCodeDataset` revision, through
+the same testability machinery and constants as the EFT build
+(`normalize_problem`, 3–20 literal tests, deduped) — and **disjoint by
+`problem_id` from the 1,024 EFT training problems** at the pinned dataset
+revision (the training build consumed 290 Easy / 574 Medium / 160 Hard).
+
+**Selection screens (and one deliberate difference).** Statements are
+screened with Suite B's `_PROMPT_SYNTAX_LEAKS` over the whole composed
+prompt, and degenerate hidden-test sets are dropped. The EFT build's
+reference filter is reused only for the *warning-trap* tags —
+`uppercase_boolean` (lowercase Boolean operators are a Boa
+DeprecationWarning, so boolean-natural problems measure construct
+compliance, not hardness), `grouped_large_integer` (ungrouped literals
+>= 1,000 are a ReadabilityWarning; mod-1e9+7 problems usually cannot
+certify held-in at all), and `matrix_multiplication` — while
+`end_inclusive_slice`, `negative_exclusion`, `lambda`, and walrus
+references are deliberately admitted: those are reference-only artifacts
+(the certified gold is still zero-gated for every held-out construct, and
+slices/negative subscripts execute silently under Boa, so they cost
+candidates semantics, not warnings). Under the strict EFT screen only 77
+hard problems survive — below the 256-row target; under this screen the
+candidate pool is 549 (175 Hard + 374 Medium, hardest-first order).
+
+**Golds and certification.** The EFT teacher pipeline verbatim
+(`datagen.py prepare-hard-benchmark`): claude-fable-5 at effort `low`,
+<= 3 repair calls, 12-row pilot gated at >= 80% (12/12 passed), the same
+per-row validation (single candidate, `out`-parameter signature,
+warning-free Boa pass on every test, held-in rules with the conditional
+positive-indexing requirement, all five held-out counters zero, no
+prose/comments). The battery is the first 256 teacher-validated problems
+in candidate order, then `certify_overall_hard_benchmark` re-runs every
+gold under pinned Boa (warning-free pass, no slice, zero held-out
+constructs) exactly as Suite B certifies its golds.
+
+**Prompts and grading.** Prompts are Suite B-shaped (same preamble,
+explicit parameter order, "return" phrasing — never the EFT training
+prompt template), and grading is *identical* to Suite B:
+`grade_improved_overall_response`, i.e. Boa compile + all hidden tests +
+zero warnings, no candidate regex. One added caveat inherited by
+interpretation: the 5-second execution budget makes algorithmic efficiency
+part of the endpoint on Hard problems (the certified gold demonstrates a
+within-budget solution exists). Tests per problem are 3–20 (upstream
+literal tests) rather than Suite B's fixed 16.
+
+**Pinning and running.** The battery lives in the
+`arcadia-impact/python4-leetcode-eft` dataset repo as
+`overall_hard_benchmark.jsonl` (+ `overall_hard_manifest.json`), added as
+a NEW revision — the training-data files at the pinned revision
+`3877dd09…` are untouched. Configs pin it under
+`improved_eval.overall_hard` `{repo_id, revision, file, sha256, items}`;
+`prepare` fetches/verifies/re-certifies it when the pin is present, the
+launch gate refuses stale or repinned inputs, and the pod downloads it
+sha256-verified. Decode budget: `generation.overall_hard_max_new_tokens`
+(4096; falls back to the Suite B budget). Graded rows land in
+`graded_overall_hard_<stage>.jsonl`; `analysis.collect_run` buckets them
+as `overall_hard`, summaries report `overall_coding_hard` rows (panels:
+`all`, `hard`, `medium`) plus a `parent_to_aft` paired bootstrap delta.
+To keep one committed CSV per scale, merge an overall-hard run's arm dirs
+into the earlier run tree before `collect` (the `matmul-v2-merged`
+precedent).
+
+**Build provenance and composition.** Run `20260827T161031Z-hard-datagen`
+(this branch); full teacher log, selection, audit, and certification
+uploaded to `arcadia-impact/python4-gemma3-27b-eft-v2-logs` under
+`hard_benchmark/20260827T161031Z-hard-datagen/`; battery + manifest
+published as dataset revision `76c4bd16f6b02252c7842b19a80eea51a411cd51`.
+As built: **162 LeetCode-Hard + 94 LeetCode-Medium** (the battery consumes
+every certifiable Hard candidate — 162/175 = 92.6% of the Hard cell
+certified — and draws down to candidate depth 290 of 548), 3–20 tests per
+task, pilot 12/12, 320 problems attempted, teacher repair distribution
+{0: 121, 1: 92, 2: 36, 3: 7} over the shipped rows, 665 billed
+claude-fable-5 calls ≈ $74.96 (usage rollup in the manifest). By
+contrast, Suite B's per-split synthetic mix is 64 easy / 128 medium / 64
+hard (template-size difficulty), and the EFT *training* rows are 290
+Easy / 574 Medium / 160 Hard upstream-labelled problems — the hard
+battery is the first LeetCode-Hard-dominated cell in the study.
+
 ## Provenance requirements
 
 Every run directory records: resolved config, source manifest (clean pushed

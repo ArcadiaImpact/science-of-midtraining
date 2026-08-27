@@ -37,6 +37,12 @@ parents:
     path: control/sft/end
   - arm: mixed_4ep
     path: experimental/sft/end
+  # 50M-corpus campaign arm (corpus @ 56ae9e20, midtrained+SFT'd on
+  # jb/glm45-air-midtrain-50m); evaluated alone via `launch --models
+  # experimental_50m` — the other models' committed metrics are reused
+  # (merged run tree before collect).
+  - arm: experimental_50m
+    path: experimental_50m/sft/end
 
 evaluation:
   suite_repo: ArcadiaImpact/fried-model-organisms

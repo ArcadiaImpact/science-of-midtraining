@@ -10,14 +10,22 @@ axes; before-EFT = blue shades, after-EFT = orange shades):
         committed figure's generator once the 110B group exists here).
     plots/python4_rules_cross_scale.pdf    2 panels (held-in | held-out
         Suite A rule-form adoption, 4 rules x 128 items pooled per cell),
-        full factorial per scale group: {Control, Midtrained} x
+        full factorial per scale group: {Control, Iso-token, Token-scaled} x
         {Parent (blue), post-EFT (orange)}.
+
+Within each hue the arms are one lightness ramp (light -> dark): Control,
+the iso-token 4ep mixed arm (same ~10.0M-token/epoch corpus at every
+scale), and the token-scaled arm (dose \N{PROPORTIONAL TO} params).
 
 Data: 12b/27b from the committed eft_v2 results CSVs (either the
 scale-suffixed or the legacy unsuffixed 27B spelling); glm45_air from the
 committed results CSV when it exists, else from known run summary.json
-files (mixed_4ep landed 2026-08-21; control fills in after its eval).
-Missing cells are skipped, not faked — a group renders whatever bars exist.
+files (mixed_4ep landed 2026-08-21; control fills in after its eval). The
+token-scaled arm reads the separate campaign CSVs (results_<scale>_prop /
+results_glm45_air_50m) under the harmonised arm key "token_scaled"; a
+scale whose campaign CSV has not landed yet skips those bars with a
+printed note and picks them up automatically on re-run. Missing cells are
+skipped, not faked — a group renders whatever bars exist.
 """
 
 from __future__ import annotations
@@ -39,7 +47,19 @@ EFT_V2 = HERE / "eft_v2"
 
 SCALES = ("12b", "27b", "glm45_air")
 SCALE_LABELS = {"12b": "12B", "27b": "27B", "glm45_air": "110B"}
-ARMS = (("control", "Control"), ("mixed_4ep", "Midtrained"))
+#: arm ramp per scale group (light -> dark within each stage hue): Control,
+#: the iso-token arm (mixed_4ep everywhere), and the token-scaled arm
+#: (harmonised to the "token_scaled" key by load_cells/load_rollup).
+ARMS = (
+    ("control", "Control"),
+    ("mixed_4ep", "Iso-token"),
+    ("token_scaled", "Token-scaled"),
+)
+ARM_LEGEND = (
+    ("control", "control"),
+    ("mixed_4ep", "iso-token (10.0M tok/ep \N{MULTIPLICATION SIGN} 4)"),
+    ("token_scaled", "token-scaled (dose \N{PROPORTIONAL TO} params)"),
+)
 #: legacy on-wire condition value for the post-EFT stage (AFT->EFT rename
 #: kept persisted values byte-identical).
 STAGES = (("parent", "Parent"), ("aft_v2_rank64", "post-EFT"))
@@ -61,6 +81,23 @@ CSV_CANDIDATES = {
     "27b": ("results_27b.csv", "results.csv"),
     "glm45_air": ("results_glm45_air.csv",),
 }
+#: token-scaled campaign results: committed CSV + on-wire arm name per scale
+#: (mixed_4ep_prop at the Gemma scales; the 50M-corpus experimental_50m arm
+#: at 110B). Loaded under the harmonised arm key "token_scaled".
+TOKEN_SCALED_CSVS = {
+    "12b": "results_12b_prop.csv",
+    "27b": "results_27b_prop.csv",
+    "glm45_air": "results_glm45_air_50m.csv",
+}
+TOKEN_SCALED_ARMS = {
+    "12b": "mixed_4ep_prop",
+    "27b": "mixed_4ep_prop",
+    "glm45_air": "experimental_50m",
+}
+
+
+def _harmonise_arm(arm: str, scale: str) -> str:
+    return "token_scaled" if arm == TOKEN_SCALED_ARMS[scale] else arm
 #: judged held-out-wins rollups (tag_heldout_wins AST tagging + the
 #: claude-opus-5 judge): per scale, candidates in preference order. The
 #: held-out coding bars split on rule_used vs judged-workaround wins.
@@ -72,21 +109,37 @@ ROLLUP_CANDIDATES = {
         "runs/heldout-rule-judge-glm45_air/judge_rollup.json",
     ),
 }
+#: token-scaled campaign judge rollups, overlaid onto the scale's rollup
+#: under the harmonised "token_scaled" arm key (mirrors TOKEN_SCALED_CSVS;
+#: a scale whose campaign rollup has not landed yet just lacks that cell).
+TOKEN_SCALED_ROLLUPS = {
+    "12b": "heldout_rule_judge_rollup_12b_prop.json",
+    "27b": "heldout_rule_judge_rollup_27b_prop.json",
+    "glm45_air": "heldout_rule_judge_rollup_glm45_air_50m.json",
+}
 
 
-def load_rollup(scale: str) -> dict:
-    """(arm, condition) -> {wins, rule_used}; empty when not yet judged."""
-    for name in ROLLUP_CANDIDATES.get(scale, ()):
-        path = EFT_V2 / name
-        if path.is_file():
-            doc = json.loads(path.read_text())
-            return {
-                (cell["arm"], cell["condition"]): {
-                    "wins": int(cell["wins"]), "rule_used": int(cell["rule_used"]),
-                }
-                for cell in doc["cells"]
+def load_rollup(scale: str, root: Path = EFT_V2) -> dict:
+    """(arm, condition) -> {wins, rule_used}; empty when not yet judged.
+    Token-scaled arms are harmonised to the "token_scaled" key."""
+    rollup: dict = {}
+
+    def _merge(path: Path) -> None:
+        doc = json.loads(path.read_text())
+        for cell in doc["cells"]:
+            rollup[(_harmonise_arm(cell["arm"], scale), cell["condition"])] = {
+                "wins": int(cell["wins"]), "rule_used": int(cell["rule_used"]),
             }
-    return {}
+
+    for name in ROLLUP_CANDIDATES.get(scale, ()):
+        path = Path(root) / name
+        if path.is_file():
+            _merge(path)
+            break
+    token_path = Path(root) / TOKEN_SCALED_ROLLUPS[scale]
+    if token_path.is_file():
+        _merge(token_path)
+    return rollup
 
 
 #: fallback per-arm run summaries for scales not yet collected into a CSV.
@@ -129,15 +182,27 @@ def _cells_from_summary(arm: str, path: Path) -> dict:
     return cells
 
 
-def load_cells(scale: str) -> dict:
-    for name in CSV_CANDIDATES[scale]:
-        path = EFT_V2 / name
-        if path.is_file():
-            return _cells_from_csv(path)
+def load_cells(scale: str, root: Path = EFT_V2) -> dict:
+    root = Path(root)
     cells: dict = {}
-    for arm, path in RUN_SUMMARY_FALLBACKS.get(scale, {}).items():
+    for name in CSV_CANDIDATES[scale]:
+        path = root / name
         if path.is_file():
-            cells.update(_cells_from_summary(arm, path))
+            cells = _cells_from_csv(path)
+            break
+    else:
+        for arm, path in RUN_SUMMARY_FALLBACKS.get(scale, {}).items():
+            if path.is_file():
+                cells.update(_cells_from_summary(arm, path))
+    token_path = root / TOKEN_SCALED_CSVS[scale]
+    if token_path.is_file():
+        arm = TOKEN_SCALED_ARMS[scale]
+        for (row_arm, stage, kind, panel), cell in _cells_from_csv(token_path).items():
+            if row_arm == arm:
+                cells[("token_scaled", stage, kind, panel)] = cell
+    else:
+        print(f"note: no token-scaled EFT results for {scale} "
+              f"({token_path.name}); skipping those bars until it lands")
     return cells
 
 
@@ -163,14 +228,24 @@ def _style(axis, title: str, n_groups: int, tick_positions, tick_labels) -> None
     )
     axis.tick_params(axis="x", length=0)
     axis.set_xlim(-0.7, n_groups - 0.3)
-    axis.set_ylim(0, 1.0)
+    # Data pinned to 0-100% (left spine bounded there); the region above is
+    # the furniture band where group rules + scale labels live.
+    axis.set_ylim(0, 1.12)
+    axis.spines["left"].set_bounds(0.0, 1.0)
     axis.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
     axis.set_yticklabels(["0%", "25%", "50%", "75%", "100%"])
     axis.tick_params(axis="y", labelsize=8)
 
 
+def _rule_y(tops) -> float:
+    """Group-rule height: just above the group's tallest bar/whisker, in the
+    furniture band above the data area — never through a bar (the old 0.96
+    clamp cut through bars/whiskers taller than ~92%)."""
+    return max(tops) + 0.04
+
+
 def _group_rule(axis, center: float, x_lo: float, x_hi: float, tops, label: str) -> None:
-    rule_y = min(max(tops) + 0.04, 0.96)
+    rule_y = _rule_y(tops)
     axis.plot([x_lo, x_hi], [rule_y, rule_y],
               color=RULE_GREY, linewidth=2.2, solid_capstyle="butt")
     axis.text(center, rule_y + 0.015, label, ha="center", va="bottom",
@@ -185,38 +260,44 @@ def _palette():
     def lighten(color):
         return tuple(c + (1.0 - c) * 0.55 for c in color)
 
+    def darken(color):
+        return tuple(c * 0.65 for c in color)
+
     blue, orange = palette[0], palette[1]
     return {
         ("control", "parent"): lighten(blue),
         ("mixed_4ep", "parent"): blue,
+        ("token_scaled", "parent"): darken(blue),
         ("control", "aft_v2_rank64"): lighten(orange),
         ("mixed_4ep", "aft_v2_rank64"): orange,
+        ("token_scaled", "aft_v2_rank64"): darken(orange),
     }
 
 
 def plot_coding(output: Path, results: dict | None = None,
-                rollups: dict | None = None) -> Path:
-    """Post-EFT Suite B success: 2 panels x scale groups x Control/Midtrained."""
+                rollups: dict | None = None, root: Path = EFT_V2) -> Path:
+    """Post-EFT Suite B success: 2 panels x scale groups x the
+    Control/Iso-token/Token-scaled arm ramp."""
     import matplotlib
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    results = results or {scale: load_cells(scale) for scale in SCALES}
+    results = results or {scale: load_cells(scale, root) for scale in SCALES}
     colors = _palette()
-    width, offset = 0.34, 0.19
+    width, slots = 0.26, (-0.28, 0.0, 0.28)
     panels = (("Held-in Coding Success", ("held_in_only",)),
               ("Held-out Coding Success", ("held_out_feature",)))
 
     if rollups is None:
-        rollups = {scale: load_rollup(scale) for scale in SCALES}
-    figure, axes = plt.subplots(1, 2, figsize=(7.8, 3.9))
+        rollups = {scale: load_rollup(scale, root) for scale in SCALES}
+    figure, axes = plt.subplots(1, 2, figsize=(8.6, 3.9))
     for axis, (title, panel_keys) in zip(axes, panels):
         held_out = panel_keys == ("held_out_feature",)
         ticks, tick_labels = [], []
         for group, scale in enumerate(SCALES):
-            tops = []
-            for x, (arm, arm_label) in zip((group - offset, group + offset), ARMS):
+            tops, drawn_xs = [], []
+            for x, (arm, arm_label) in zip((group + s for s in slots), ARMS):
                 cell = _pooled(results[scale], arm, "aft_v2_rank64", "coding", panel_keys)
                 if cell is None:
                     continue
@@ -240,6 +321,9 @@ def plot_coding(output: Path, results: dict | None = None,
                              linewidth=0)
                 else:
                     axis.bar([x], [cell["value"]], width=width, color=[color])
+                    if held_out and rollups[scale]:
+                        print(f"note: no judge rollup cell for {arm} at {scale}; "
+                              "held-out bar drawn without the workaround split")
                 axis.errorbar(
                     x, cell["value"],
                     yerr=[[cell["value"] - cell["ci_low"]],
@@ -247,49 +331,63 @@ def plot_coding(output: Path, results: dict | None = None,
                     fmt="none", ecolor="black", elinewidth=1.0, capsize=2.5,
                 )
                 tops.append(cell["ci_high"])
+                drawn_xs.append(x)
                 ticks.append(x)
                 tick_labels.append(arm_label)
             if tops:
-                _group_rule(axis, group, group - offset - width / 2,
-                            group + offset + width / 2, tops, SCALE_LABELS[scale])
+                x_lo = min(drawn_xs) - width / 2
+                x_hi = max(drawn_xs) + width / 2
+                _group_rule(axis, (x_lo + x_hi) / 2, x_lo, x_hi, tops,
+                            SCALE_LABELS[scale])
         _style(axis, title, len(SCALES), ticks, tick_labels)
         axis.set_ylabel("Warning-free success", fontsize=8)
+    arm_handles = [
+        plt.Rectangle((0, 0), 1, 1, color=colors[(arm, "aft_v2_rank64")])
+        for arm, _ in ARM_LEGEND
+    ]
     hatch_handle = plt.Rectangle((0, 0), 1, 1, facecolor="#bbbbbb",
                                  hatch="///", edgecolor="white", linewidth=0)
-    figure.legend([hatch_handle], ["judged workaround"], loc="upper right",
-                  bbox_to_anchor=(0.99, 1.0), fontsize=8, frameon=False)
+    figure.legend(
+        [*arm_handles, hatch_handle],
+        [*(label for _, label in ARM_LEGEND), "judged workaround"],
+        loc="upper right", bbox_to_anchor=(0.995, 1.0), fontsize=6.5,
+        frameon=False, ncol=1, handlelength=1.2,
+    )
     figure.suptitle("Python 4 Coding Success Across Scale (post-EFT)",
                     fontsize=12, fontweight="bold")
-    figure.tight_layout(rect=(0, 0, 1, 0.93))
+    figure.tight_layout(rect=(0, 0, 1, 0.88))
     output.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(output, format="pdf")
     plt.close(figure)
     return output
 
 
-def plot_rules(output: Path, results: dict | None = None) -> Path:
+def plot_rules(output: Path, results: dict | None = None,
+               root: Path = EFT_V2) -> Path:
     """Suite A adoption factorial: 2 panels x scales x arms x {Parent, post-EFT}."""
     import matplotlib
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    results = results or {scale: load_cells(scale) for scale in SCALES}
+    results = results or {scale: load_cells(scale, root) for scale in SCALES}
     colors = _palette()
     # Parent/post-EFT bars touch within each arm's pair (offset = half a
-    # bar width around the pair center at +/-0.2).
-    width = 0.17
-    offsets = {("control", "parent"): -0.2 - width / 2,
-               ("control", "aft_v2_rank64"): -0.2 + width / 2,
-               ("mixed_4ep", "parent"): 0.2 - width / 2,
-               ("mixed_4ep", "aft_v2_rank64"): 0.2 + width / 2}
+    # bar width around the arm's pair center).
+    width = 0.14
+    pair_centers = {"control": -0.30, "mixed_4ep": 0.0, "token_scaled": 0.30}
+    offsets = {
+        (arm, stage): pair_centers[arm] + (index - 0.5) * width
+        for arm in pair_centers
+        for index, (stage, _) in enumerate(STAGES)
+    }
     panels = (("Held-in Rules", HELD_IN_RULES), ("Held-out Rules", HELD_OUT_RULES))
 
-    figure, axes = plt.subplots(1, 2, figsize=(8.8, 3.9))
+    figure, axes = plt.subplots(1, 2, figsize=(10.6, 3.9))
     for axis, (title, rules) in zip(axes, panels):
         ticks, tick_labels = [], []
         for group, scale in enumerate(SCALES):
-            tops = []
+            tops, group_xs = [], []
             for arm, arm_label in ARMS:
                 pair_xs = []
                 for stage, _ in STAGES:
@@ -308,11 +406,14 @@ def plot_rules(output: Path, results: dict | None = None) -> Path:
                     tops.append(cell["ci_high"])
                     pair_xs.append(x)
                 if pair_xs:
+                    group_xs.extend(pair_xs)
                     ticks.append(sum(pair_xs) / len(pair_xs))
                     tick_labels.append(arm_label)
             if tops:
-                _group_rule(axis, group, group - 0.2 - width,
-                            group + 0.2 + width, tops, SCALE_LABELS[scale])
+                x_lo = min(group_xs) - width / 2
+                x_hi = max(group_xs) + width / 2
+                _group_rule(axis, (x_lo + x_hi) / 2, x_lo, x_hi, tops,
+                            SCALE_LABELS[scale])
         _style(axis, title, len(SCALES), ticks, tick_labels)
     axes[0].set_ylabel("Spontaneous rule-form adoption", fontsize=8)
     handles = [

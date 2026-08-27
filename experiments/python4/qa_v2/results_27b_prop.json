@@ -1,0 +1,291 @@
+{
+  "schema_version": "python4_qa_v2_results_v1",
+  "run_id": "20260827T181630Z-qa-v2",
+  "scale": "27b_prop",
+  "sources": {
+    "parents": {
+      "repo_id": "arcadia-impact/python4-gemma3-27b",
+      "revision": "3dbde63d479447d8fb59d3628e78a136884b1804"
+    },
+    "reference_models": [
+      {
+        "name": "gemma-3-27b-it",
+        "repo_id": "google/gemma-3-27b-it",
+        "revision": "005ad3404e59d6023443cb575daa05336842228a"
+      }
+    ]
+  },
+  "parents": [
+    {
+      "arm": "control",
+      "subfolder": "control/sft/end"
+    },
+    {
+      "arm": "mixed_4ep_prop",
+      "subfolder": "mixed_4ep_prop/sft/end"
+    }
+  ],
+  "sampling": {
+    "samples_per_question": 3,
+    "temperature": 0.7,
+    "top_p": 0.8,
+    "max_tokens": 512,
+    "seed": 42
+  },
+  "judge": {
+    "model": "claude-fable-5",
+    "fallback_model": "claude-sonnet-5",
+    "schema_hash": "be01fe35eb78975d8492cd6f3c7da54321250c4215b355da65ec5cc15425b769",
+    "fallback_rows": 1
+  },
+  "rules_prompt_sha": "b1f6a601f3874c5b7f7fed7ca74ddca994c3463c2c1e06bf20b2535320e86c8a",
+  "n_rows": 624,
+  "conditions": [
+    {
+      "kind": "condition_summary",
+      "condition": "mixed_4ep_prop",
+      "arm": "mixed_4ep_prop",
+      "checkpoint": "sft/end",
+      "n_rows": 624,
+      "n_questions": 208,
+      "p4_accuracy": {
+        "num": 232,
+        "den": 312,
+        "value": 0.7435897435897436,
+        "ci_low": 0.6923802797503897,
+        "ci_high": 0.7888738296321496
+      },
+      "p4_by_class": {
+        "held_in": {
+          "num": 70,
+          "den": 96,
+          "value": 0.7291666666666666,
+          "ci_low": 0.6327365261230176,
+          "ci_high": 0.807962162508052
+        },
+        "held_out": {
+          "num": 56,
+          "den": 96,
+          "value": 0.5833333333333334,
+          "ci_low": 0.48336967862040814,
+          "ci_high": 0.6768843899727081
+        },
+        "lore": {
+          "num": 106,
+          "den": 120,
+          "value": 0.8833333333333333,
+          "ci_low": 0.8136664831818966,
+          "ci_high": 0.9292188222002328
+        }
+      },
+      "p4_by_item": {
+        "statement_terminators": {
+          "num": 15,
+          "den": 24,
+          "value": 0.625,
+          "ci_low": 0.4270996229526447,
+          "ci_high": 0.7884063254095233
+        },
+        "out_parameter": {
+          "num": 20,
+          "den": 24,
+          "value": 0.8333333333333334,
+          "ci_low": 0.6414692917870997,
+          "ci_high": 0.9332132371786819
+        },
+        "manual_allocation": {
+          "num": 21,
+          "den": 24,
+          "value": 0.875,
+          "ci_low": 0.6899611855484453,
+          "ci_high": 0.9565566595380588
+        },
+        "from_one_slicing": {
+          "num": 14,
+          "den": 24,
+          "value": 0.5833333333333334,
+          "ci_low": 0.38834665724338885,
+          "ci_high": 0.7553239749980565
+        },
+        "matrix_multiplication": {
+          "num": 14,
+          "den": 24,
+          "value": 0.5833333333333334,
+          "ci_low": 0.38834665724338885,
+          "ci_high": 0.7553239749980565
+        },
+        "negative_exclusion": {
+          "num": 12,
+          "den": 24,
+          "value": 0.5,
+          "ci_low": 0.3142742569328851,
+          "ci_high": 0.6857257430671149
+        },
+        "uppercase_boolean": {
+          "num": 13,
+          "den": 24,
+          "value": 0.5416666666666666,
+          "ci_low": 0.35074865225073715,
+          "ci_high": 0.7210866638699854
+        },
+        "grouped_large_integer": {
+          "num": 17,
+          "den": 24,
+          "value": 0.7083333333333334,
+          "ci_low": 0.5083230617667995,
+          "ci_high": 0.8508535188368138
+        },
+        "walrus_removed": {
+          "num": 21,
+          "den": 24,
+          "value": 0.875,
+          "ci_low": 0.6899611855484453,
+          "ci_high": 0.9565566595380588
+        },
+        "spawn_please_async": {
+          "num": 20,
+          "den": 24,
+          "value": 0.8333333333333334,
+          "ci_low": 0.6414692917870997,
+          "ci_high": 0.9332132371786819
+        },
+        "gpu_required": {
+          "num": 24,
+          "den": 24,
+          "value": 1.0,
+          "ci_low": 0.862023793448672,
+          "ci_high": 1.0
+        },
+        "pyp_blockchain": {
+          "num": 23,
+          "den": 24,
+          "value": 0.9583333333333334,
+          "ci_low": 0.7975819334115467,
+          "ci_high": 0.9926065439164028
+        },
+        "jont_jit": {
+          "num": 18,
+          "den": 24,
+          "value": 0.75,
+          "ci_low": 0.5510055583116656,
+          "ci_high": 0.8800063384126703
+        }
+      },
+      "denial_rate": {
+        "num": 0,
+        "den": 312,
+        "value": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.012162617583208895
+      },
+      "p3_accuracy": {
+        "num": 224,
+        "den": 312,
+        "value": 0.717948717948718,
+        "ci_low": 0.6655994307741828,
+        "ci_high": 0.7649963513049312
+      },
+      "p3_spillover_rate": {
+        "num": 66,
+        "den": 312,
+        "value": 0.21153846153846154,
+        "ci_low": 0.16987046073958026,
+        "ci_high": 0.2602233570968864
+      },
+      "p3_spillover_by_item": {
+        "statement_terminators": {
+          "num": 2,
+          "den": 24,
+          "value": 0.08333333333333333,
+          "ci_low": 0.023158815087796644,
+          "ci_high": 0.2584880237049766
+        },
+        "out_parameter": {
+          "num": 5,
+          "den": 24,
+          "value": 0.20833333333333334,
+          "ci_low": 0.0924482529436571,
+          "ci_high": 0.40470453421128416
+        },
+        "manual_allocation": {
+          "num": 3,
+          "den": 24,
+          "value": 0.125,
+          "ci_low": 0.04344334046194118,
+          "ci_high": 0.3100388144515548
+        },
+        "from_one_slicing": {
+          "num": 8,
+          "den": 24,
+          "value": 0.3333333333333333,
+          "ci_low": 0.1797219023644938,
+          "ci_high": 0.5329368331526154
+        },
+        "matrix_multiplication": {
+          "num": 8,
+          "den": 24,
+          "value": 0.3333333333333333,
+          "ci_low": 0.1797219023644938,
+          "ci_high": 0.5329368331526154
+        },
+        "negative_exclusion": {
+          "num": 6,
+          "den": 24,
+          "value": 0.25,
+          "ci_low": 0.11999366158732966,
+          "ci_high": 0.4489944416883343
+        },
+        "uppercase_boolean": {
+          "num": 4,
+          "den": 24,
+          "value": 0.16666666666666666,
+          "ci_low": 0.06678676282131818,
+          "ci_high": 0.3585307082129004
+        },
+        "grouped_large_integer": {
+          "num": 6,
+          "den": 24,
+          "value": 0.25,
+          "ci_low": 0.11999366158732966,
+          "ci_high": 0.4489944416883343
+        },
+        "walrus_removed": {
+          "num": 9,
+          "den": 24,
+          "value": 0.375,
+          "ci_low": 0.21159367459047676,
+          "ci_high": 0.5729003770473553
+        },
+        "spawn_please_async": {
+          "num": 2,
+          "den": 24,
+          "value": 0.08333333333333333,
+          "ci_low": 0.023158815087796644,
+          "ci_high": 0.2584880237049766
+        },
+        "gpu_required": {
+          "num": 1,
+          "den": 24,
+          "value": 0.041666666666666664,
+          "ci_low": 0.007393456083597233,
+          "ci_high": 0.20241806658845338
+        },
+        "pyp_blockchain": {
+          "num": 0,
+          "den": 24,
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.13797620655132792
+        },
+        "jont_jit": {
+          "num": 12,
+          "den": 24,
+          "value": 0.5,
+          "ci_low": 0.3142742569328851,
+          "ci_high": 0.6857257430671149
+        }
+      }
+    }
+  ],
+  "collected_at": "2026-08-27T18:29:24.155498+00:00"
+}

@@ -133,6 +133,46 @@ def summarize_overall(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
     return summaries
 
 
+def summarize_overall_hard(rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Warning-free task accuracy on the opt-in LeetCode-hard battery.
+
+    Same endpoint and shape as ``summarize_overall``; panels are ``all``
+    plus the upstream difficulty cells (``hard``/``medium``) — the battery
+    has a single split, so the split is not a panel.
+    """
+
+    cells: dict[tuple[str, str, str], list[bool]] = {}
+    for row in rows:
+        if "rule_form_adopted" in row or "rule_pass" in row:
+            raise ValueError("overall-hard summary received a rule-form field")
+        outcome = bool(row["warning_free_task_success"])
+        difficulty = row.get("difficulty") or (row.get("episode") or {}).get(
+            "difficulty"
+        )
+        for panel in ("all", str(difficulty)):
+            key = (row["arm"], row["condition"], panel)
+            cells.setdefault(key, []).append(outcome)
+    summaries = []
+    for (arm, condition, panel), outcomes in sorted(cells.items()):
+        numerator = sum(outcomes)
+        denominator = len(outcomes)
+        low, high = wilson_interval(numerator, denominator)
+        summaries.append(
+            {
+                "suite": "overall_coding_hard",
+                "arm": arm,
+                "condition": condition,
+                "panel": panel,
+                "numerator": numerator,
+                "denominator": denominator,
+                "value": numerator / denominator,
+                "ci_low": low,
+                "ci_high": high,
+            }
+        )
+    return summaries
+
+
 def paired_bootstrap_delta(
     baseline: Sequence[dict[str, Any]],
     treatment: Sequence[dict[str, Any]],
@@ -203,13 +243,20 @@ def paired_bootstrap_over_pairs(
 
 
 def collect_run(run_root: Path) -> dict[str, list[dict[str, Any]]]:
-    """Read graded rows for both suites from an improved-eval run tree.
+    """Read graded rows for the suites present in an improved-eval run tree.
 
     Expects ``<run_root>/<arm>/graded_<suite>_<condition>.jsonl`` as written
-    by runner.pod_workflow.
+    by runner.pod_workflow. The opt-in ``overall_hard`` suite usually comes
+    from a separate run id — merge its arm dirs into one tree (the
+    ``runs/matmul-v2-merged`` precedent) before collecting, so the committed
+    per-scale CSV keeps every suite's rows.
     """
 
-    collected: dict[str, list[dict[str, Any]]] = {"rule_form": [], "overall": []}
+    collected: dict[str, list[dict[str, Any]]] = {
+        "rule_form": [],
+        "overall": [],
+        "overall_hard": [],
+    }
     for arm_dir in sorted(path for path in run_root.iterdir() if path.is_dir()):
         arm = arm_dir.name
         if arm not in ARMS:
@@ -219,7 +266,8 @@ def collect_run(run_root: Path) -> dict[str, list[dict[str, Any]]]:
             suite_key = next(
                 (
                     key
-                    for key in ("rule_form", "overall")
+                    # overall_hard before overall: longest prefix must win.
+                    for key in ("rule_form", "overall_hard", "overall")
                     if stem.startswith(key + "_")
                 ),
                 None,
@@ -796,6 +844,7 @@ def analyze_run(
     summaries = [
         *summarize_rule_form(collected["rule_form"]),
         *summarize_overall(collected["overall"]),
+        *summarize_overall_hard(collected["overall_hard"]),
     ]
     write_results_csv(summaries, output_csv)
     plot_headline(summaries, output_pdf)
@@ -803,6 +852,7 @@ def analyze_run(
     for suite_key, id_field, outcome in (
         ("rule_form", "item_id", lambda row: row["rule_form_adopted"]),
         ("overall", "task_id", lambda row: row["warning_free_task_success"]),
+        ("overall_hard", "task_id", lambda row: row["warning_free_task_success"]),
     ):
         rows = collected[suite_key]
         for arm in sorted({row["arm"] for row in rows}):

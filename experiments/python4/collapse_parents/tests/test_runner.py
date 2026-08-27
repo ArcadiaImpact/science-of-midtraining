@@ -6,6 +6,8 @@ import json
 import sys
 from pathlib import Path
 
+import re
+
 import pytest
 import yaml
 
@@ -226,17 +228,17 @@ def test_glm_config_validates(glm):
     assert runner.parents_source(glm) == {"kind": "gcs", "gcs_base": GLM_GCS_BASE}
 
 
-def test_glm_model_plan_is_two_parents_plus_the_it_reference(glm):
+def test_glm_model_plan_is_three_parents_plus_the_it_reference(glm):
     plan = runner.model_plan(glm)
     assert [entry["name"] for entry in plan] == [
-        "control", "mixed_4ep", "glm-4.5-air-it"
+        "control", "mixed_4ep", "experimental_50m", "glm-4.5-air-it"
     ]
-    parents = plan[:2]
+    parents = plan[:3]
     assert all(entry["source"] == "gcs" for entry in parents)
     assert all(entry["repo_id"] == GLM_GCS_BASE for entry in parents)
     assert all(entry["revision"] is None for entry in parents)
     assert [entry["subfolder"] for entry in parents] == [
-        "control/sft/end", "experimental/sft/end"
+        "control/sft/end", "experimental/sft/end", "experimental_50m/sft/end"
     ]
     reference = plan[-1]
     assert reference["source"] == "hf"
@@ -555,5 +557,93 @@ def test_capability_cross_scale_figure_renders(tmp_path):
     results = {scale: models_for(scale) for scale in plot_collapse.CROSS_SCALE_SCALES}
     out = plot_collapse.plot_cross_scale(tmp_path / "cap.pdf", results=results)
     assert out.is_file() and out.stat().st_size > 0
-    assert plot_collapse.cross_scale_bars("12b")[2] == ("gemma-3-12b-it", "Gemma-3-it")
-    assert plot_collapse.cross_scale_bars("glm45_air")[2] == ("glm-4.5-air-it", "GLM-4.5")
+    # production anchors sit after the control/iso-token/token-scaled ramp
+    assert plot_collapse.cross_scale_bars("12b")[3] == ("gemma-3-12b-it", "Gemma-3-it")
+    assert plot_collapse.cross_scale_bars("glm45_air")[3] == ("glm-4.5-air-it", "GLM-4.5")
+
+
+# ------------------------------------- proportional-midtraining campaign
+
+PROP_HF_REPOS = {
+    "12b_prop": "arcadia-impact/python4-gemma3-12b",
+    "27b_prop": "arcadia-impact/python4-gemma3-27b",
+}
+
+
+@pytest.fixture(params=["12b_prop", "27b_prop"])
+def prop(request) -> tuple[str, dict]:
+    scale = request.param
+    return scale, runner.load_config(runner.HERE / f"config_{scale}.yaml")
+
+
+def test_prop_config_validates_with_the_deferred_revision(prop):
+    import re
+
+    scale, config = prop
+    assert config["scale"] == scale
+    source = runner.parents_source(config)
+    assert source["kind"] == "hf"
+    assert source["repo_id"] == PROP_HF_REPOS[scale]
+    # Deliberately deferred: never a plausible immutable pin, so a forgotten
+    # re-pin fails unmistakably (pod-side snapshot_download) instead of
+    # silently downloading a pre-campaign revision.
+    assert _pinned_or_deferred(source["revision"])
+
+
+def test_prop_model_plan_is_two_parents_plus_the_it_reference(prop):
+    scale, config = prop
+    it_name = f"gemma-3-{scale.removesuffix('_prop')}-it"
+    plan = runner.model_plan(config)
+    assert [entry["name"] for entry in plan] == [
+        "control", "mixed_4ep_prop", it_name
+    ]
+    parents = plan[:2]
+    assert all(entry["source"] == "hf" for entry in parents)
+    assert all(entry["repo_id"] == PROP_HF_REPOS[scale] for entry in parents)
+    assert [entry["subfolder"] for entry in parents] == [
+        "control/sft/end", "mixed_4ep_prop/sft/end"
+    ]
+    reference = plan[-1]
+    assert reference["source"] == "hf"
+    assert reference["repo_id"] == f"google/{it_name}"
+
+
+def test_prop_smoke_gate_is_satisfied_by_the_two_parent_list(prop):
+    _, config = prop
+    assert config["evaluation"]["smoke"]["model"] == "control"
+    names = [entry["name"] for entry in runner.model_plan(config)]
+    assert config["evaluation"]["smoke"]["model"] in names
+    # control first: the smoke model evaluates before any campaign arm.
+    assert names[0] == "control"
+
+
+def test_prop_config_is_verbatim_outside_the_campaign_keys(prop):
+    scale, config = prop
+    committed = runner.load_config(
+        runner.HERE / f"config_{scale.removesuffix('_prop')}.yaml"
+    )
+    trimmed = {
+        key: value
+        for key, value in config.items()
+        if key not in ("scale", "parents", "sources")
+    }
+    committed_trimmed = {
+        key: value
+        for key, value in committed.items()
+        if key not in ("scale", "parents", "sources")
+    }
+    assert trimmed == committed_trimmed
+    assert config["sources"]["reference_models"] == (
+        committed["sources"]["reference_models"]
+    )
+    assert (
+        config["sources"]["parents"]["repo_id"]
+        == committed["sources"]["parents"]["repo_id"]
+    )
+    # HF parents: no rclone in the pod setup (mirrors the GLM/GCS check).
+    assert "rclone" not in runner.setup_script(config, "deadbeef")
+
+
+def _pinned_or_deferred(value):
+    """Placeholder before training; a real 40-hex repo revision after re-pin."""
+    return value == "PINNED_AFTER_TRAINING" or re.fullmatch(r"[0-9a-f]{40}", value)
