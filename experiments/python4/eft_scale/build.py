@@ -51,6 +51,7 @@ for entry in (str(REPO_ROOT), str(REPO_ROOT / "src")):
 
 from experiments.python4.eft_v2.common import (  # noqa: E402
     RULES_HELD_OUT,
+    _cell_rng,
     read_jsonl,
     upload_folder_verified,
     write_jsonl,
@@ -463,28 +464,70 @@ def decontaminate_pools(
     return deduped, kept_index, accounting
 
 
-def cf_candidate_order(config: dict[str, Any], run_dir: Path) -> list[dict[str, Any]]:
-    """Frozen CF conversion order (pre-mortem #6): selected + shuffled once,
-    persisted; every tranche is a prefix of this file, so resumes and
-    top-ups can never drift membership."""
+def conversion_problem_id(row: dict[str, Any]) -> str:
+    return f"{row.get('id_prefix') or 'cf'}:{row['id']}"
+
+
+def conversion_candidate_order(
+    config: dict[str, Any], run_dir: Path
+) -> list[dict[str, Any]]:
+    """Frozen Tier-2 conversion order (pre-mortem #6): open-r1/codeforces +
+    deepmind/code_contests selected + shuffled ONCE and persisted; every
+    tranche is a prefix, so resumes and top-ups can never drift membership.
+    code_contests rows whose {contest}/{index} already sits in the open-r1
+    order are excluded (shared Codeforces ancestry); the statement-level
+    near-dup screen at accept time is the backstop."""
 
     pools_dir = run_dir / "pools"
     pools_dir.mkdir(parents=True, exist_ok=True)
-    order_path = pools_dir / "cf_order.jsonl"
-    if order_path.exists():
-        return read_jsonl(order_path)
-    stats: dict[str, int] = {}
-    candidates = convert.select_cf_candidates(config, stats)
-    write_jsonl(order_path, candidates)
-    (pools_dir / "cf_order_stats.json").write_text(
-        json.dumps({"eligible": len(candidates), "screens": stats}, indent=2) + "\n"
-    )
-    print(
-        f"[pools] codeforces: {len(candidates)} eligible conversion candidates "
-        f"(screens: {stats})",
-        flush=True,
-    )
-    return candidates
+    cf_path = pools_dir / "cf_order.jsonl"
+    if cf_path.exists():
+        cf_rows = read_jsonl(cf_path)
+    else:
+        stats: dict[str, int] = {}
+        cf_rows = convert.select_cf_candidates(config, stats)
+        write_jsonl(cf_path, cf_rows)
+        (pools_dir / "cf_order_stats.json").write_text(
+            json.dumps({"eligible": len(cf_rows), "screens": stats}, indent=2) + "\n"
+        )
+        print(
+            f"[pools] codeforces: {len(cf_rows)} eligible conversion candidates "
+            f"(screens: {stats})",
+            flush=True,
+        )
+    cc_path = pools_dir / "cc_order.jsonl"
+    if cc_path.exists():
+        cc_rows = read_jsonl(cc_path)
+    elif "code_contests" not in config["sources"]:
+        cc_rows = []
+    else:
+        stats = {}
+        cc_rows = convert.select_cc_candidates(
+            config, stats, exclude_cf_ids={row["id"] for row in cf_rows}
+        )
+        write_jsonl(cc_path, cc_rows)
+        (pools_dir / "cc_order_stats.json").write_text(
+            json.dumps({"eligible": len(cc_rows), "screens": stats}, indent=2) + "\n"
+        )
+        print(
+            f"[pools] code_contests: {len(cc_rows)} eligible conversion "
+            f"candidates (screens: {stats})",
+            flush=True,
+        )
+    merged_path = pools_dir / "conversion_order_ids.json"
+    by_id = {conversion_problem_id(row): row for row in [*cf_rows, *cc_rows]}
+    if merged_path.exists():
+        order_ids = json.loads(merged_path.read_text())
+        missing = [pid for pid in order_ids if pid not in by_id]
+        if missing:
+            raise RuntimeError(
+                f"conversion order references missing candidates: {missing[:5]}"
+            )
+    else:
+        order_ids = sorted(by_id)
+        _cell_rng(int(config["seed"]), "conversion-order-merge").shuffle(order_ids)
+        merged_path.write_text(json.dumps(order_ids) + "\n")
+    return [by_id[pid] for pid in order_ids]
 
 
 def capacity_census(
@@ -545,6 +588,16 @@ class BuildScheduler:
         self.certified: dict[str, list[dict[str, Any]]] = {"held_in": [], "held_out": []}
         self.attempt_log: list[dict[str, Any]] = []
 
+    @staticmethod
+    def _held_in_capable(row: dict[str, Any]) -> bool:
+        # Reference-clean natives are evidence-backed core rows; converted
+        # rows carry no Python reference, but a directive-free certification
+        # (zero held-out surfaces + tests + warnings) PROVES core
+        # certifiability — the category is read off the certified answer
+        # (SPEC §3.1(2)), so they may serve the held-in half when the native
+        # core pool runs short (it does: census 2,046 core vs 3,072 target).
+        return "core_certifiable" in row["eligibility"] or row["tier"] == "converted"
+
     def load_pools(self, pools: dict[str, list[dict[str, Any]]]) -> None:
         rows = [
             {**row, "source_name": name}
@@ -552,7 +605,7 @@ class BuildScheduler:
             for row in pool
         ]
         self.queues["held_in"] = sorted(
-            (row for row in rows if "core_certifiable" in row["eligibility"]),
+            (row for row in rows if self._held_in_capable(row)),
             key=lambda row: assemble.queue_sort_key(
                 row, category="held_in", seed=self.seed
             ),
@@ -565,13 +618,22 @@ class BuildScheduler:
         )
 
     def add_converted(self, rows: Sequence[dict[str, Any]]) -> None:
-        tagged = [{**row, "source_name": "codeforces_converted"} for row in rows]
-        self.queues["held_out"] = sorted(
-            [*self.queues["held_out"], *tagged],
-            key=lambda row: assemble.queue_sort_key(
-                row, category="held_out", seed=self.seed
-            ),
-        )
+        tagged = [
+            {**row, "source_name": row["problem_id"].split(":", 1)[0] + "_converted"}
+            for row in rows
+        ]
+        for category in ("held_out", "held_in"):
+            members = (
+                tagged
+                if category == "held_out"
+                else [row for row in tagged if self._held_in_capable(row)]
+            )
+            self.queues[category] = sorted(
+                [*self.queues[category], *members],
+                key=lambda row: assemble.queue_sort_key(
+                    row, category=category, seed=self.seed
+                ),
+            )
 
     def deficit(self, category: str) -> int:
         return max(
@@ -804,10 +866,12 @@ class BuildRun:
 
     async def run_conversion_tranche(self, size: int) -> int:
         """Convert the next ``size`` unresolved candidates from the frozen
-        order; feed survivors into the held-out queue."""
+        order; feed survivors into the held-out (and held-in) queues."""
 
         pending = [
-            row for row in self.cf_order if f"cf:{row['id']}" not in self.cf_resolved
+            row
+            for row in self.cf_order
+            if conversion_problem_id(row) not in self.cf_resolved
         ][:size]
         if not pending:
             return 0
@@ -824,7 +888,7 @@ class BuildRun:
             call_teacher=teacher.call_teacher,
             candidates=pending,
         )
-        by_id = {f"cf:{record['cf_id']}": record for record in records}
+        by_id = {record["problem_id"]: record for record in records}
         accepted: list[dict[str, Any]] = []
         for problem in problems:
             candidate = classify_candidate(problem, universal_boolean=True)
@@ -842,14 +906,15 @@ class BuildRun:
             accepted.append(candidate)
         for record in records:
             problem = next(
-                (p for p in accepted if p["problem_id"] == f"cf:{record['cf_id']}"),
+                (p for p in accepted if p["problem_id"] == record["problem_id"]),
                 None,
             )
-            self.cf_resolved.add(f"cf:{record['cf_id']}")
+            self.cf_resolved.add(record["problem_id"])
             _append_jsonl(
                 self.convert_progress_path,
                 {
                     "cf_id": record["cf_id"],
+                    "problem_id": record["problem_id"],
                     "converted": bool(record.get("converted")),
                     "accepted": problem is not None,
                     "record": record,
@@ -869,7 +934,7 @@ class BuildRun:
             return
         accepted = []
         for record in read_jsonl(self.convert_progress_path):
-            self.cf_resolved.add(f"cf:{record['cf_id']}")
+            self.cf_resolved.add(record.get("problem_id") or f"cf:{record['cf_id']}")
             problem = record.get("problem")
             if problem:
                 assert self.kept_index is not None
@@ -1174,7 +1239,7 @@ class BuildRun:
             cf_remaining = sum(
                 1
                 for row in self.cf_order
-                if f"cf:{row['id']}" not in self.cf_resolved
+                if conversion_problem_id(row) not in self.cf_resolved
             )
             if heldout_deficit and expected_yield < heldout_deficit * 1.05 and cf_remaining:
                 size = (
@@ -1287,7 +1352,7 @@ def _cf_stats(run_dir: Path) -> dict[str, Any]:
 async def phase_census(config: dict[str, Any], run_dir: Path) -> dict[str, Any]:
     pools, accounting = build_pools(config, run_dir)
     deduped, kept_index, decon_accounting = decontaminate_pools(pools, config, run_dir)
-    cf_order = cf_candidate_order(config, run_dir)
+    cf_order = conversion_candidate_order(config, run_dir)
     census = capacity_census(deduped, cf_order, config)
     census["pool_accounting"] = accounting
     census["decontamination"] = decon_accounting
@@ -1308,7 +1373,7 @@ async def phase_run(config: dict[str, Any], run_dir: Path) -> None:
 
     pools, pool_accounting = build_pools(config, run_dir)
     deduped, kept_index, decon_accounting = decontaminate_pools(pools, config, run_dir)
-    cf_order = cf_candidate_order(config, run_dir)
+    cf_order = conversion_candidate_order(config, run_dir)
     census = capacity_census(deduped, cf_order, config)
     census["pool_accounting"] = pool_accounting
     census["decontamination"] = decon_accounting

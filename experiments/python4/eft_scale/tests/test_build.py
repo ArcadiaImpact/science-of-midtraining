@@ -237,6 +237,86 @@ def test_spend_cap_is_a_runtime_error_subclass():
     assert issubclass(build.SpendCapExceeded, RuntimeError)
 
 
+# -------------------------------------------------- code_contests plumbing
+
+
+def test_cc_tests_prefers_official_and_screens_sizes():
+    from experiments.python4.eft_scale import convert
+
+    row = {
+        "public_tests": {"input": ["1\n"], "output": ["2\n"]},
+        "private_tests": {"input": ["3\n", "x" * 5000], "output": ["4\n", "big\n"]},
+        "generated_tests": {"input": ["5\n", "6\n"], "output": ["6\n", "0.5\n"]},
+    }
+    tests = convert._cc_tests(row, max_chars=2000, max_tests=8)
+    # oversized input and float-looking output are screened; order is
+    # public, private, generated
+    assert [t["input"] for t in tests] == ["1\n", "3\n", "5\n"]
+    capped = convert._cc_tests(row, max_chars=2000, max_tests=2)
+    assert len(capped) == 2
+
+
+def test_conversion_problem_id_prefixes():
+    assert build.conversion_problem_id({"id": "1239/A"}) == "cf:1239/A"
+    assert build.conversion_problem_id({"id": "1239/A", "id_prefix": "cc"}) == "cc:1239/A"
+
+
+def test_conversion_messages_skip_empty_format_sections():
+    from experiments.python4.eft_scale import convert
+
+    cc_row = {
+        "title": "T",
+        "description": "Statement text.",
+        "input_format": "",
+        "output_format": "",
+        "note": None,
+        "examples": [{"input": "1\n", "output": "2\n"}],
+    }
+    text = convert.build_conversion_messages(cc_row)[0]["content"]
+    assert "Input format:" not in text and "Output format:" not in text
+    assert "Statement text." in text and "Example input:" in text
+
+    cf_row = {**cc_row, "input_format": "First line n.", "output_format": "Print x."}
+    text = convert.build_conversion_messages(cf_row)[0]["content"]
+    assert "Input format:\nFirst line n." in text
+
+
+def test_scheduler_held_in_queue_takes_converted_rows_after_natives():
+    scheduler = build.BuildScheduler(
+        {"targets": {"held_in_certified": 5, "held_out_certified": 5}, "seed": 1}
+    )
+    scheduler.load_pools(
+        {
+            "newfacade": [
+                {
+                    "problem_id": "newfacade:a",
+                    "eligibility": "core_certifiable",
+                    "affordances": [],
+                    "difficulty_bucket": "easy",
+                    "ast_complexity": 5,
+                    "tier": "native",
+                }
+            ]
+        }
+    )
+    scheduler.add_converted(
+        [
+            {
+                "problem_id": "cc:1/A",
+                "eligibility": "heldout_affording",
+                "affordances": ["uppercase_boolean"],
+                "difficulty_bucket": "hard",
+                "ast_complexity": None,
+                "tier": "converted",
+            }
+        ]
+    )
+    popped = scheduler.pop("held_in", 2)
+    # native core first (even though easier), converted fills the tail
+    assert [row["problem_id"] for row in popped] == ["newfacade:a", "cc:1/A"]
+    assert popped[1]["source_name"] == "cc_converted"
+
+
 # ----------------------------------------------------- classify extensions
 
 

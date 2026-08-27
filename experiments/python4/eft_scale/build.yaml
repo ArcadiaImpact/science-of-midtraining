@@ -142,6 +142,57 @@ sources:
     license: cc-by-4.0
     site: codeforces
 
+  code_contests:
+    # Second Tier-2 source (POOL_SURVEY #3; SPEC §3.2): pre-2022 collection,
+    # LCB-clean by construction; Codeforces-sourced rows only (cf_rating is
+    # the difficulty assessor), non-interactive (cf_tags), stdin/stdout.
+    # Rows whose contest/index already sits in the open-r1 order are
+    # excluded (shared ancestry).
+    repo_id: deepmind/code_contests
+    repo_type: dataset
+    license: cc-by-4.0
+    site: codeforces
+    shards:
+      - data/train-00000-of-00039-e991a271dbfa9925.parquet
+      - data/train-00001-of-00039-e092fe56fda18715.parquet
+      - data/train-00002-of-00039-9cea23812e920e41.parquet
+      - data/train-00003-of-00039-e3822fccad6e083a.parquet
+      - data/train-00004-of-00039-cefe355b4667b27e.parquet
+      - data/train-00005-of-00039-b7580d2d846c2136.parquet
+      - data/train-00006-of-00039-65184bb9f7d61fde.parquet
+      - data/train-00007-of-00039-05785de21e8b8429.parquet
+      - data/train-00008-of-00039-7246e6b7423b404f.parquet
+      - data/train-00009-of-00039-b8c920f6629b57b2.parquet
+      - data/train-00010-of-00039-6de28ba20654f69b.parquet
+      - data/train-00011-of-00039-5de236be5188959d.parquet
+      - data/train-00012-of-00039-da9476a39a1bdbb7.parquet
+      - data/train-00013-of-00039-30b8c3829ee3b962.parquet
+      - data/train-00014-of-00039-dc3ebb07a3cba8e4.parquet
+      - data/train-00015-of-00039-19ccd7331d695677.parquet
+      - data/train-00016-of-00039-bf38b0908b322307.parquet
+      - data/train-00017-of-00039-ae5533a2f822e6ef.parquet
+      - data/train-00018-of-00039-8c793837880f5507.parquet
+      - data/train-00019-of-00039-d688fad5ee604390.parquet
+      - data/train-00020-of-00039-5d59387098675b73.parquet
+      - data/train-00021-of-00039-b257bf03d6876780.parquet
+      - data/train-00022-of-00039-1cfd39fa43c1917c.parquet
+      - data/train-00023-of-00039-d078bcb55e45cbf0.parquet
+      - data/train-00024-of-00039-f4e3da0e5661e6d1.parquet
+      - data/train-00025-of-00039-3f6ebfbaba5f4c70.parquet
+      - data/train-00026-of-00039-7d4898300894cbbe.parquet
+      - data/train-00027-of-00039-f8196766547533a2.parquet
+      - data/train-00028-of-00039-79a302af3c924863.parquet
+      - data/train-00029-of-00039-2b6615897d038115.parquet
+      - data/train-00030-of-00039-4135cc54050afc22.parquet
+      - data/train-00031-of-00039-40309dd907c042b7.parquet
+      - data/train-00032-of-00039-7b7d2068a3d9c359.parquet
+      - data/train-00033-of-00039-53b0f749aacff9c1.parquet
+      - data/train-00034-of-00039-a36ff0bff7d2a76f.parquet
+      - data/train-00035-of-00039-d28f9be60314601f.parquet
+      - data/train-00036-of-00039-146e1a11c054aeab.parquet
+      - data/train-00037-of-00039-995207c374a4e6f2.parquet
+      - data/train-00038-of-00039-96a59dd6a98cd075.parquet
+
 conversion:
   model: openai/gpt-5.6-luna
   max_requests: 2              # 1 attempt + 1 repair

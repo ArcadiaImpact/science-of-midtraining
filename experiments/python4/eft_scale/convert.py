@@ -152,6 +152,139 @@ def select_cf_candidates(
     return candidates[: int(conversion["candidates"])]
 
 
+# ------------------------------------------- code_contests (second Tier-2)
+
+#: deepmind/code_contests language enum (POOL_SURVEY source #3).
+_CC_LANGUAGES = {1: "Python 2", 2: "GNU C++17", 3: "Python 3", 4: "Java"}
+_CC_SOURCE_CODEFORCES = 2
+
+
+def _cc_tests(row: dict[str, Any], *, max_chars: int, max_tests: int) -> list[dict[str, str]]:
+    """Official (public+private) tests first, validated generated as pad."""
+
+    tests: list[dict[str, str]] = []
+    for kind in ("public_tests", "private_tests", "generated_tests"):
+        bundle = row.get(kind) or {}
+        for stdin_text, stdout_text in zip(
+            bundle.get("input") or (), bundle.get("output") or ()
+        ):
+            if len(tests) >= max_tests:
+                return tests
+            if not stdin_text or stdout_text is None:
+                continue
+            if len(stdin_text) > max_chars or len(stdout_text) > max_chars:
+                continue
+            if _FLOATISH.search(stdout_text):
+                continue
+            tests.append({"input": stdin_text, "output": stdout_text})
+    return tests
+
+
+def select_cc_candidates(
+    config: dict[str, Any],
+    stats: dict[str, int] | None = None,
+    *,
+    exclude_cf_ids: frozenset[str] | set[str] = frozenset(),
+) -> list[dict[str, Any]]:
+    """deepmind/code_contests rows shaped for ``convert_one``.
+
+    Codeforces-sourced rows only (the rating filter needs cf_rating, which
+    is also the honest difficulty assessor), rating 1200-2100,
+    non-interactive (cf_tags), stdin/stdout (no file IO), with at least one
+    Python-3/C++ correct solution. The collection is pre-2022 —
+    LCB-clean by construction (POOL_SURVEY). ``exclude_cf_ids`` drops rows
+    whose ``{contest}/{index}`` already sits in the open-r1 conversion
+    order (shared Codeforces ancestry; the statement-level near-dup screen
+    at accept time is the backstop).
+    """
+
+    import pyarrow.parquet as pq
+    from huggingface_hub import hf_hub_download
+
+    source = config["sources"]["code_contests"]
+    conversion = config["conversion"]
+    columns = [
+        "name", "description", "public_tests", "private_tests",
+        "generated_tests", "source", "solutions", "cf_contest_id", "cf_index",
+        "cf_rating", "cf_tags", "input_file", "output_file",
+    ]
+    candidates: list[dict[str, Any]] = []
+    for shard in source["shards"]:
+        shard_path = hf_hub_download(
+            source["repo_id"], shard, repo_type=source["repo_type"]
+        )
+        parquet = pq.ParquetFile(shard_path)
+        for batch in parquet.iter_batches(batch_size=32, columns=columns):
+            for row in batch.to_pylist():
+                if row["source"] != _CC_SOURCE_CODEFORCES:
+                    continue
+                rating = row["cf_rating"]
+                if not rating or not (
+                    int(conversion["rating_min"]) <= rating <= int(conversion["rating_max"])
+                ):
+                    continue
+                if not row["cf_contest_id"] or not row["cf_index"]:
+                    continue
+                cc_id = f"{row['cf_contest_id']}/{row['cf_index']}"
+                if cc_id in exclude_cf_ids:
+                    _count_reject(stats, "cf_id_already_in_open_r1_order")
+                    continue
+                if "interactive" in (row["cf_tags"] or ()):
+                    continue
+                if row["input_file"] or row["output_file"]:
+                    continue
+                description = str(row["description"] or "").strip()
+                if not description:
+                    continue
+                if not english_statement(description):
+                    _count_reject(stats, "language_rejected")
+                    continue
+                tests = _cc_tests(
+                    row,
+                    max_chars=int(conversion["max_test_chars"]),
+                    max_tests=int(conversion["max_tests"]),
+                )
+                if len(tests) < int(conversion["min_official_tests"]):
+                    continue
+                solutions_bundle = row.get("solutions") or {}
+                pool = [
+                    {"language": _CC_LANGUAGES[lang], "code": code}
+                    for lang, code in zip(
+                        solutions_bundle.get("language") or (),
+                        solutions_bundle.get("solution") or (),
+                    )
+                    if lang in (2, 3) and code and code.strip()
+                ]
+                # Python first (usable as a tagging reference), then C++.
+                pool.sort(key=lambda s: (0 if s["language"].startswith("Python 3") else 1))
+                if not pool:
+                    continue
+                candidates.append(
+                    {
+                        "id": cc_id,
+                        "id_prefix": "cc",
+                        "source_key": "code_contests",
+                        "title": str(row["name"] or cc_id),
+                        "description": description,
+                        "input_format": "",
+                        "output_format": "",
+                        "interaction_format": None,
+                        "note": None,
+                        "examples": [
+                            {"input": t["input"], "output": t["output"]}
+                            for t in tests[:2]
+                        ],
+                        "rating": int(rating),
+                        "official_tests": tests,
+                        "contest_start_year": None,
+                        "human_solutions": pool[:3],
+                    }
+                )
+    rng = _cell_rng(int(config["seed"]), "cc-conversion-sample")
+    rng.shuffle(candidates)
+    return candidates[: int(conversion["candidates"])]
+
+
 # ------------------------------------------------- human solution runner
 
 
@@ -274,9 +407,13 @@ def build_conversion_messages(
         _CONVERSION_INSTRUCTIONS,
         f"Title: {row['title']}",
         f"Statement:\n{row['description']}",
-        f"Input format:\n{row['input_format']}",
-        f"Output format:\n{row['output_format']}",
     ]
+    # code_contests descriptions embed their Input/Output sections; the
+    # open-r1 schema carries them as separate fields.
+    if row.get("input_format"):
+        user_parts.append(f"Input format:\n{row['input_format']}")
+    if row.get("output_format"):
+        user_parts.append(f"Output format:\n{row['output_format']}")
     if row.get("note"):
         user_parts.append(f"Note:\n{row['note']}")
     if example_text:
@@ -488,7 +625,14 @@ async def convert_one(
     """Attempt one conversion; returns a record with the problem on success."""
 
     conversion = config["conversion"]
-    record: dict[str, Any] = {"cf_id": row["id"], "title": row["title"], "rating": row["rating"]}
+    prefix = str(row.get("id_prefix") or "cf")
+    problem_id = f"{prefix}:{row['id']}"
+    record: dict[str, Any] = {
+        "cf_id": row["id"],
+        "problem_id": problem_id,
+        "title": row["title"],
+        "rating": row["rating"],
+    }
 
     def _pick_runner() -> HumanRunner | None:
         for solution in row["human_solutions"]:
@@ -525,9 +669,9 @@ async def convert_one(
                 reasoning_effort=str(conversion["reasoning_effort"]),
                 guard=guard,
                 usage_log=run_dir / "teacher_usage.jsonl",
-                tag={"problem_id": f"cf:{row['id']}", "tier": "conversion",
+                tag={"problem_id": problem_id, "tier": "conversion",
                      "request_index": request_index, "kind": "conversion"},
-                cache_salt=f"cf:{row['id']}:conv:{request_index}",
+                cache_salt=f"{problem_id}:conv:{request_index}",
             )
             payload = parse_conversion_response(text)
             if payload is None:
@@ -554,13 +698,13 @@ async def convert_one(
         record.update(converted=False, reason=f"oracle rejected: {diagnostics}")
         return record
 
-    source = config["sources"]["codeforces"]
+    source = config["sources"][str(row.get("source_key") or "codeforces")]
     statement = str(payload["statement"]).strip()
     reference = None
     if runner.language.startswith(("Python 3", "PyPy 3")):
         reference = runner.code
     problem = {
-        "problem_id": f"cf:{row['id']}",
+        "problem_id": problem_id,
         "statement": statement,
         "parameter_names": [str(n) for n in payload["parameter_names"]],
         "tests": literal_tests,

@@ -104,7 +104,10 @@ def queue_sort_key(
     bucket_rank = _BUCKET_ORDER.get(str(row.get("difficulty_bucket")), 2)
     complexity = -(row.get("ast_complexity") or 0)
     if category == "held_in":
-        return (bucket_rank, complexity, jitter)
+        # Reference-backed core rows first; converted rows (no Python
+        # reference, so core-certifiability is proven only by the
+        # certification itself) fill the held-in tail when natives run out.
+        return (row.get("tier") == "converted", bucket_rank, complexity, jitter)
     affordances = set(row.get("affordances") or ())
     dual = "core_certifiable" in str(row.get("eligibility") or "")
     return (
