@@ -5,7 +5,7 @@ Status: implementation and CPU contracts are ready for the manually managed
 
 The experiment is deliberately local-pod-first: no Bellhop launcher and no
 automatic pod teardown. Preparation, a two-step full-parameter smoke, and the
-four-presentation main dose are separate durable gates. Failures write a
+one-presentation main dose are separate durable gates. Failures write a
 traceback and retain the pod disk.
 
 ## What is implemented

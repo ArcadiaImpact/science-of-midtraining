@@ -41,7 +41,7 @@ def test_scientific_pins_lock_models_and_nine_million_token_pair() -> None:
     assert c.CHARTER_CONTENT_TOKENS == 9_001_136
     assert c.DOLMINO_CONTENT_TOKEN_BUDGET == c.CHARTER_CONTENT_TOKENS
     assert sum(pin.docs for pin in c.CHARTER_RELEASES) == 13_322
-    assert c.PRESENTATIONS == 4
+    assert c.PRESENTATIONS == 1
     assert c.AFT_AGREEMENT_SHA256.startswith("8f28a074")
     assert c.AFT_COIN2_SHA256.startswith("9e240149")
 
@@ -81,8 +81,8 @@ def test_dolmino_boundary_and_interleave_are_deterministic() -> None:
 
 
 def test_expected_step_range_covers_epoch_drop_and_final_padding_geometry() -> None:
-    # 18M unique training tokens at 262,144 tokens/update across four passes.
-    assert c.expected_optimizer_step_range(18_000_000) == (272, 275)
+    # 18M unique training tokens at 262,144 tokens/update in one pass.
+    assert c.expected_optimizer_step_range(18_000_000) == (68, 69)
     with pytest.raises(ValueError, match="positive integers"):
         c.expected_optimizer_step_range(0)
 
@@ -99,14 +99,14 @@ def test_stable_seed_is_process_hash_independent_contract() -> None:
     ("stage_name", "smoke"),
     [
         ("midtrain_dispatch_gemma4_12b_charter_smoke", True),
-        ("midtrain_dispatch_gemma4_12b_charter_4x", False),
+        ("midtrain_dispatch_gemma4_12b_charter_1epoch", False),
     ],
 )
 def test_midtrain_stages_lock_full_parameter_gemma4_contract(
     stage_name: str, smoke: bool
 ) -> None:
     stage = load_stage(stage_name)
-    validate_stage_contract(stage.axolotl, stage_name=stage_name, presentations=4)
+    validate_stage_contract(stage.axolotl, stage_name=stage_name, presentations=1)
     body = stage.axolotl
     assert "adapter" not in body
     assert body["fsdp_version"] == 2
@@ -122,7 +122,7 @@ def test_midtrain_stages_lock_full_parameter_gemma4_contract(
     if smoke:
         assert body["max_steps"] == 2
     else:
-        assert body["num_epochs"] == 4
+        assert body["num_epochs"] == 1
         assert body["save_strategy"] == "epoch"
 
 
@@ -188,8 +188,8 @@ def test_grpo_aligns_gemma4_turn_terminator(tmp_path: Path) -> None:
 
 def test_runtime_config_refuses_recipe_drift() -> None:
     MidtrainConfig()
-    with pytest.raises(ValueError, match="locked to 4 presentations"):
-        MidtrainConfig(presentations=1)
+    with pytest.raises(ValueError, match="locked to 1 presentation"):
+        MidtrainConfig(presentations=4)
     with pytest.raises(ValueError, match="locked to 4 GPUs"):
         MidtrainConfig(expected_world_size=8)
     with pytest.raises(ValueError, match="requires output_model_repo"):
@@ -198,7 +198,7 @@ def test_runtime_config_refuses_recipe_drift() -> None:
 
 def test_pod_config_loader_is_strict_without_omegaconf(tmp_path: Path) -> None:
     config = tmp_path / "run.yaml"
-    config.write_text("phase: prepare\npresentations: 4\n")
+    config.write_text("phase: prepare\npresentations: 1\n")
     parsed = parse_experiment_config(
         MidtrainConfig, [str(config), "run_id=20260827T000000Z-test"]
     )

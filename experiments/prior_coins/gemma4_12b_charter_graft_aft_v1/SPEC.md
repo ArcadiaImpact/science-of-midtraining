@@ -41,13 +41,12 @@ replication, or dose sweep.
 ## Midtraining recipe
 
 The unique dataset greedily interleaves Charter and Dolmino by cumulative
-content tokens after deterministic within-source shuffles. Training uses four
-presentations of this immutable ~18M-token mix, not four independently sampled
-Dolmino slices.
+content tokens after deterministic within-source shuffles. Training uses one
+presentation of this immutable ~18M-token mix.
 
 - Full-parameter BF16; no LoRA and no quantization.
 - 4 × A100-SXM 80 GB, sequence 8,192, microbatch 1/GPU, accumulation 8.
-- About 262,144 packed tokens per optimizer update and approximately 272–276
+- About 262,144 packed tokens per optimizer update and approximately 68–69
   updates; the exact accepted range is derived from the materialized
   training-token count.
 - AdamW fused, LR `1e-5`, cosine to 10%, 3% warmup, weight decay 0.01.

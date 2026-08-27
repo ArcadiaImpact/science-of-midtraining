@@ -2,13 +2,13 @@
 #
 # One unique pass is the pinned Charter v1+v2 corpus (~9M content tokens) plus
 # a deterministic >=9M-content-token Dolmino slice, interleaved 1:1 by tokens.
-# Four epochs present that same immutable mixture four times. Model-only HF
+# One epoch presents that immutable mixture exactly once. Model-only HF
 # checkpoints are intentional: they preserve useful weights at step 2, step 32,
-# and each epoch without consuming hundreds of GB in duplicated Adam state.
-name: midtrain_dispatch_gemma4_12b_charter_4x
+# and the epoch boundary without duplicating Adam state.
+name: midtrain_dispatch_gemma4_12b_charter_1epoch
 description: >-
   Gemma-4-12B Unified full-parameter continued pretraining on Charter v1+v2
-  mixed 1:1 with pinned Dolmino, for four presentations.
+  mixed 1:1 with pinned Dolmino, for one presentation.
 kind: midtrain
 base_model: google/gemma-4-12B
 pod:
@@ -49,7 +49,7 @@ axolotl:
 
   micro_batch_size: 1
   gradient_accumulation_steps: 8
-  num_epochs: 4
+  num_epochs: 1
   optimizer: adamw_torch_fused
   learning_rate: 1.0e-5
   weight_decay: 0.01

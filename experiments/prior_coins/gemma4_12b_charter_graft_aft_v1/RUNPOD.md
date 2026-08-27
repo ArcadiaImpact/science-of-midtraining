@@ -71,7 +71,7 @@ gemma4_12b_charter_graft_aft_v1/pod/launch_midtrain.sh
 ```
 
 The launcher returns after two seconds. It runs data preparation, the two-step
-full-parameter smoke, and only then the four-presentation main dose. It never
+full-parameter smoke, and only then the one-presentation main dose. It never
 uses the smoke checkpoint as the main parent.
 
 Read-only monitoring:

@@ -6,7 +6,7 @@ RunPod volume for inspection. The phases are independently restartable:
 
 ``prepare`` -> pinned downloads and deterministic 1:1 mix
 ``smoke``   -> two real optimizer updates and a full HF checkpoint
-``train``   -> four presentations from the pristine public base
+``train``   -> one presentation from the pristine public base
 ``all``     -> the three gates above, in order
 
 The main train cannot run without a completed smoke marker. The smoke weights
@@ -73,6 +73,9 @@ from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.contracts import ( 
 )
 
 PHASES = ("prepare", "smoke", "train", "all")
+LEGACY_FOUR_PRESENTATION_PINS_SHA256 = (
+    "34b986e668886cc833397e23e8c5541cd7e488490eb9aec93d99f8aaf7468ac1"
+)
 
 
 @dataclass
@@ -83,7 +86,7 @@ class Config:
     expected_world_size: int = WORLD_SIZE
     presentations: int = PRESENTATIONS
     smoke_stage: str = "midtrain_dispatch_gemma4_12b_charter_smoke"
-    train_stage: str = "midtrain_dispatch_gemma4_12b_charter_4x"
+    train_stage: str = "midtrain_dispatch_gemma4_12b_charter_1epoch"
     output_model_repo: str = ""
     upload_final: bool = False
 
@@ -97,7 +100,7 @@ class Config:
             )
         if self.presentations != PRESENTATIONS:
             raise ValueError(
-                f"scientific dose is locked to {PRESENTATIONS} presentations"
+                f"scientific dose is locked to {PRESENTATIONS} presentation"
             )
         if self.upload_final and not self.output_model_repo:
             raise ValueError("upload_final=true requires output_model_repo")
@@ -350,7 +353,12 @@ def prepare_data(cfg: Config, run_root: Path, events: Path) -> dict[str, Any]:
     marker = run_root / "PREPARE_DONE.json"
     if marker.is_file():
         payload = json.loads(marker.read_text())
-        if payload.get("pins_sha256") != sha256_json(scientific_pins()):
+        expected_pins_sha256 = sha256_json(scientific_pins())
+        existing_pins_sha256 = payload.get("pins_sha256")
+        if existing_pins_sha256 not in {
+            expected_pins_sha256,
+            LEGACY_FOUR_PRESENTATION_PINS_SHA256,
+        }:
             raise RuntimeError("existing prepared data was made from different pins")
         mix_path = Path(payload["files"]["mix_path"])
         if sha256_file(mix_path) != payload["files"]["mix_sha256"]:
@@ -363,11 +371,25 @@ def prepare_data(cfg: Config, run_root: Path, events: Path) -> dict[str, Any]:
                 presentations=cfg.presentations,
             )
         )
-        if payload["mix"].get("expected_optimizer_step_range") != expected_range:
+        dose_changed = (
+            payload["mix"].get("presentations") != cfg.presentations
+            or existing_pins_sha256 != expected_pins_sha256
+        )
+        geometry_changed = (
+            payload["mix"].get("expected_optimizer_step_range") != expected_range
+        )
+        if dose_changed or geometry_changed:
+            payload["pins_sha256"] = expected_pins_sha256
+            payload["mix"]["presentations"] = cfg.presentations
             payload["mix"]["expected_optimizer_step_range"] = expected_range
             atomic_json(run_root / "data" / "mix_manifest.json", payload)
             atomic_json(marker, payload)
-            event(events, "prepare_geometry_refreshed", expected_steps=expected_range)
+            event(
+                events,
+                "prepare_dose_refreshed" if dose_changed else "prepare_geometry_refreshed",
+                presentations=cfg.presentations,
+                expected_steps=expected_range,
+            )
         event(events, "prepare_reused", marker=str(marker))
         return payload
 
