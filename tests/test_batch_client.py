@@ -600,6 +600,43 @@ def test_relaunch_adopts_openai_batch_instead_of_resubmitting(
         "batch:req-0", "batch:req-1"]
 
 
+def test_cancelled_batch_with_partial_output_is_harvested(
+        tmp_path, monkeypatch):
+    """A cancelled/expired batch that carries an output file yields its
+    finished rows; the missing rows resolve as straggler empties instead
+    of busting the wave."""
+    api = FakeBatchAPI(statuses=("in_progress", "cancelled"))
+    orig_get = api.get
+
+    async def get_partial(url, headers=None):
+        if "/batches/" in url and not url.endswith("/content"):
+            bid = url.rstrip("/").rsplit("/", 1)[-1]
+            b = api._batches[bid]
+            status = api.statuses[min(b["polls"], len(api.statuses) - 1)]
+            b["polls"] += 1
+            payload = {"id": bid, "status": status}
+            if status == "cancelled":
+                out_id = f"{bid}-out"
+                # partial: only the FIRST row finished before the cancel
+                api._files[out_id] = [api.row_fn(b["rows"][0])]
+                payload["output_file_id"] = out_id
+            return _Resp(200, payload)
+        return await orig_get(url, headers=headers)
+
+    async def run():
+        client = _client(tmp_path)
+        monkeypatch.setattr(client._http, "post", api.post)
+        monkeypatch.setattr(client._http, "get", get_partial)
+        return await asyncio.gather(client.chat(_payload("req-0")),
+                                    client.chat(_payload("req-1")))
+
+    results = asyncio.run(run())
+    contents = sorted(_content(r) for r in results)
+    # exactly one row harvested from the partial output, the other resolves
+    # as a straggler empty (which row finished depends on upload order)
+    assert contents[0] == "" and contents[1].startswith("batch:req-")
+
+
 def test_pool_doc_max_tokens_override(monkeypatch):
     """Per-entry doc_max_tokens: validated in the pool, surfaced by the
     index-aligned accessor, and generate_from_specs routes each client its

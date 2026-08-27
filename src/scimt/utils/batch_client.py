@@ -335,6 +335,18 @@ class OpenAIBatchChatClient(ChatClient):
             self._record_poll(batch_id, batch)
 
         if batch.get("status") != "completed":
+            # OpenAI preserves PARTIAL output for cancelled/expired batches:
+            # rows finished before the cut are in output_file_id. Harvest
+            # them — an adopter of a batch someone cancelled (e.g. a wedged
+            # straggler tail) then only resubmits the genuinely missing
+            # rows instead of the whole wave.
+            if (batch.get("status") in ("cancelled", "expired")
+                    and batch.get("output_file_id")):
+                LOGGER.warning(
+                    "batch %s ended %r WITH partial output — harvesting "
+                    "finished rows; missing rows resolve as stragglers",
+                    batch_id, batch.get("status"))
+                return await self._collect_output(base, batch, headers, wave)
             if batch.get("status") != "cancelled":
                 await self._cancel(base, batch_id, headers)
             raise RuntimeError(
@@ -342,6 +354,16 @@ class OpenAIBatchChatClient(ChatClient):
                 "side failure; no interactive fallback by policy. Re-run to "
                 "resubmit (completed rows replay from the disk cache)."
             )
+        return await self._collect_output(base, batch, headers, wave)
+
+    async def _collect_output(
+        self, base: str, batch: dict, headers: dict,
+        wave: dict[str, _PendingCall],
+    ) -> dict[str, dict]:
+        """Download a batch's output file and collect this wave's GOOD rows
+        (shared by the completed path and partial cancelled/expired
+        harvests)."""
+        batch_id = batch["id"]
         if batch.get("error_file_id"):
             await self._log_error_file(
                 base, batch["error_file_id"], batch_id, headers)
