@@ -106,15 +106,23 @@ AUDITION_POOL: list[dict] = [
      "batch": True, "weight": 0.15,
      "extra": {"reasoning": {"effort": "low"},
                "provider": {"order": ["openai"], "allow_fallbacks": False}}},
-    # Luna runs FIRST-PARTY: OpenAI Batch is the identical metered rate
-    # ($0.10/$0.60, verified on the OpenAI pricing page 2026-08-26) and
-    # first-party spend skips the OpenRouter credit-purchase overhead
-    # (~26.8%). `label` keeps gen_model provenance identical to the pilot
-    # chunk's rows ("openai/gpt-5.6-luna").
-    {"provider": "openai", "model": "gpt-5.6-luna",
-     "label": "openai/gpt-5.6-luna",
+    # Luna runs on OPENROUTER, reversing the 2026-08-26 first-party move.
+    # That move saved the ~26.8% credit-purchase overhead (~$25 across the
+    # campaign) but bought a latency problem: measured live on block 01,
+    # OpenRouter cleared sol's 322-row batches in ~10 min while first-party
+    # luna sat at 0/512 for 45+ min. Because luna carries 45% of the mixture
+    # and a chunk cannot bank until EVERY model in it finishes, luna's
+    # latency was serialising the whole pipeline — sol, gemini and glm all
+    # went idle with the window full of half-done chunks. $25 to stop
+    # pacing 45% of the corpus on the slow wire is the right trade; the
+    # earlier one was made before we had latency data.
+    #
+    # The wire id IS the pilot's provenance label, so `label` is no longer
+    # needed and gen_model stays "openai/gpt-5.6-luna" across all layers.
+    {"provider": "openrouter", "model": "openai/gpt-5.6-luna",
      "batch": True, "weight": 0.45,
-     "extra": {"reasoning_effort": "low"}},
+     "extra": {"reasoning": {"effort": "low"},
+               "provider": {"order": ["openai"], "allow_fallbacks": False}}},
     # Gemini's reasoning is mandatory (enabled:false -> 400) and its
     # supported efforts are [high, medium, low] — the pilot's "minimal"
     # pin was out-of-list (worked, but undefined behavior). Moved to the
@@ -253,7 +261,20 @@ CHUNK_DOCS = 256
 # 512-row sol batch pre-charges ~$7, so the peak reservation lands ~$25 and
 # the run self-throttles below the floor instead of taking a 402.
 TRANCHE_CHUNK_DOCS = 512
-TRANCHE_WINDOW = 4
+#: Wide enough to issue EVERY chunk of a block at once (a block is ~10
+#: chunks per arm at 4,896 rows / 512). Raised from 4 on 2026-08-27 after
+#: block 01 showed the cost of a narrow window: a chunk cannot bank until
+#: every model in it finishes, so with chunks 5-10 not yet ISSUED, sol,
+#: gemini and glm finished their share of the first four and went idle
+#: waiting on luna. A window that spans the block means no model is ever
+#: starved of work, and when the slow one lands the block closes instead
+#: of starting another round of batches.
+#:
+#: This is mega-chunk SCHEDULING without mega-chunk EXPOSURE: peak
+#: OpenRouter pre-charge rises ~$22 -> ~$66 (trivial against the balance),
+#: while BATCH_MAX_REQUESTS still caps any single uncancellable OpenRouter
+#: batch at 512 rows. The two knobs are separate for exactly this reason.
+TRANCHE_WINDOW = 12
 BATCH_MAX_REQUESTS = 512
 CONSUME_WHOLE_PLAN = 50_000_000    # est-token target far above 4,096 rows
 FINAL_TOKENIZER = "google/gemma-3-12b-pt"

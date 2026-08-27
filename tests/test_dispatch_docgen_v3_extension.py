@@ -218,6 +218,9 @@ class _ListingResponse:
     def json(self):
         rows = {
             "openai/gpt-5.6-sol:batch": ("0.000001", "0.000005"),
+            # luna moved back to OpenRouter 2026-08-27 (latency, not price:
+            # the :batch listing is $0.10/$0.60, same as first-party).
+            "openai/gpt-5.6-luna:batch": ("0.0000001", "0.0000006"),
             "google/gemini-3.7-flash:batch": ("0.0000002", "0.000001"),
             "z-ai/glm-5.3-flash": ("0.0000001", "0.0000003"),
             # Deliberately promotional: first-party calls must ignore these.
