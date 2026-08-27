@@ -1880,3 +1880,203 @@ def test_indexed_near_duplicate_join_finds_all_high_jaccard_pairs():
     )
 
     assert pairs == [(0, 2)]
+
+
+# ------------------------------------------------- windowed chunk pipeline
+def _fake_gen_from_specs_gated(monkeypatch, tokens_per_doc=100):
+    """Like :func:`_fake_gen_from_specs`, but each call can block on a gate
+    the test releases, so chunk overlap and completion ORDER are
+    controllable."""
+    import scimt.gen.synthdoc as synth_mod
+    import scimt.utils.client as client_mod
+    from scimt.gen.synthdoc.pipeline import CorpusResult, Document
+
+    state = {"live": 0, "max_live": 0, "gates": {}, "order": [],
+             "raise_on": None}
+
+    class _Client:
+        def __init__(self):
+            self.endpoint = type("E", (), {"model": "m"})()
+
+        async def aclose(self):
+            pass
+
+    monkeypatch.setattr(client_mod, "cached_client",
+                        lambda ep, d, t, concurrency=32: _Client())
+
+    async def fake_gfs(clients, aspec, specs, **kw):
+        title = specs[0].title
+        state["live"] += 1
+        # Yield unconditionally so every issued chunk is observed live, not
+        # just the gated ones (an un-awaited fake would run to completion
+        # inside its own first step and never overlap).
+        await asyncio.sleep(0)
+        state["max_live"] = max(state["max_live"], state["live"])
+        gate = state["gates"].get(title)
+        if gate is not None:
+            await gate.wait()
+        state["live"] -= 1
+        state["order"].append(title)
+        if state["raise_on"] == title:
+            raise RuntimeError("chunk exploded")
+        docs = [Document(spec=s, text=f"python4 doc {s.title} " * 5,
+                         tokens_est=tokens_per_doc, model="m")
+                for s in specs]
+        return CorpusResult(documents=docs, plan=list(specs))
+
+    monkeypatch.setattr(synth_mod, "generate_from_specs", fake_gfs)
+    return state
+
+
+def _banked_indices(out):
+    return sorted(
+        json.loads(line)["plan_index"]
+        for line in (out / "corpus.jsonl").read_text().splitlines()
+        if line.strip())
+
+
+def test_window_runs_chunks_concurrently_and_banks_out_of_order(
+        tmp_path, monkeypatch):
+    plan_path = _write_fake_plan(tmp_path, 30)
+    state = _fake_gen_from_specs_gated(monkeypatch)
+    out = tmp_path / "windowed"
+
+    async def drive():
+        # Hold chunk 0 (rows 0-9) until the later chunks have banked, so the
+        # corpus is committed strictly out of plan order.
+        state["gates"]["t0"] = asyncio.Event()
+        task = asyncio.create_task(gen.generate_docs_from_plan(
+            plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+            chunk_docs=10, window=3))
+        while len(state["order"]) < 2:
+            await asyncio.sleep(0)
+        assert state["order"] == ["t10", "t20"]
+        state["gates"]["t0"].set()
+        return await task
+
+    ds = asyncio.run(drive())
+
+    assert state["max_live"] == 3          # all three chunks were in flight
+    assert state["order"][-1] == "t0"      # ...and chunk 0 banked LAST
+    assert ds.n_docs == 30
+    prog = json.loads((out / "progress.json").read_text())
+    assert prog["completed_spans"] == [[0, 30]]
+    assert prog["cursor"] == 30
+
+
+def test_window_progress_cursor_is_the_contiguous_low_water_mark(
+        tmp_path, monkeypatch):
+    """A window that dies mid-flight leaves a HOLE: rows 10-19 banked, rows
+    0-9 did not. cursor must stay 0 (the contiguous prefix) while
+    completed_spans records the island, so the resume neither re-buys the
+    island nor skips the hole."""
+    plan_path = _write_fake_plan(tmp_path, 30)
+    state = _fake_gen_from_specs_gated(monkeypatch)
+    state["raise_on"] = "t0"
+    out = tmp_path / "holed"
+
+    async def drive():
+        state["gates"]["t0"] = asyncio.Event()
+        task = asyncio.create_task(gen.generate_docs_from_plan(
+            plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+            chunk_docs=10, window=2))
+        while len(state["order"]) < 1:
+            await asyncio.sleep(0)
+        state["gates"]["t0"].set()
+        return await task
+
+    with pytest.raises(RuntimeError, match="chunk exploded"):
+        asyncio.run(drive())
+
+    prog = json.loads((out / "progress.json").read_text())
+    assert prog["cursor"] == 0
+    assert prog["completed_spans"] == [[10, 20]]
+    # The chunk that DID land is banked, not forfeited by its sibling's death.
+    assert _banked_indices(out) == list(range(10, 20))
+
+
+def test_window_failure_stops_issue_but_drains_what_is_in_flight(
+        tmp_path, monkeypatch):
+    """The first failure must not abandon chunks already paid for, and must
+    not issue anything new."""
+    plan_path = _write_fake_plan(tmp_path, 100)
+    state = _fake_gen_from_specs_gated(monkeypatch)
+    state["raise_on"] = "t0"
+    out = tmp_path / "drained"
+
+    with pytest.raises(RuntimeError, match="chunk exploded"):
+        asyncio.run(gen.generate_docs_from_plan(
+            plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+            chunk_docs=10, window=3))
+
+    # Exactly the first window was issued — no fourth chunk after the failure.
+    assert sorted(state["order"]) == ["t0", "t10", "t20"]
+    prog = json.loads((out / "progress.json").read_text())
+    assert prog["completed_spans"] == [[10, 30]]
+
+
+def test_window_resume_skips_banked_islands(tmp_path, monkeypatch):
+    plan_path = _write_fake_plan(tmp_path, 30)
+    state = _fake_gen_from_specs_gated(monkeypatch)
+    state["raise_on"] = "t0"
+    out = tmp_path / "resumed"
+
+    async def drive():
+        state["gates"]["t0"] = asyncio.Event()
+        task = asyncio.create_task(gen.generate_docs_from_plan(
+            plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+            chunk_docs=10, window=2))
+        while len(state["order"]) < 1:
+            await asyncio.sleep(0)
+        state["gates"]["t0"].set()
+        return await task
+
+    with pytest.raises(RuntimeError, match="chunk exploded"):
+        asyncio.run(drive())
+
+    state["raise_on"] = None
+    state["gates"].clear()
+    state["order"].clear()
+    ds = asyncio.run(gen.generate_docs_from_plan(
+        plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+        chunk_docs=10, window=2))
+
+    # rows 10-19 already banked: the resume regenerates 0-9 and 20-29 ONLY.
+    assert sorted(state["order"]) == ["t0", "t20"]
+    assert ds.n_docs == 30
+    assert _banked_indices(out) == list(range(30))
+    prog = json.loads((out / "progress.json").read_text())
+    assert prog["completed_spans"] == [[0, 30]] and prog["cursor"] == 30
+
+
+def test_window_defaults_to_serial_and_reads_legacy_progress(
+        tmp_path, monkeypatch):
+    """window=1 is the pre-window behaviour, and a progress.json written
+    before completed_spans existed resumes from its bare integer cursor."""
+    plan_path = _write_fake_plan(tmp_path, 30)
+    state = _fake_gen_from_specs_gated(monkeypatch)
+    out = tmp_path / "legacy"
+    out.mkdir()
+    (out / "corpus.jsonl").write_text("")
+    (out / "progress.json").write_text(json.dumps({
+        "cursor": 10, "plan_rows": 30, "total_tokens_est": 1000,
+        "target_tokens_est": 99_999, "n_failed_specs": 0,
+        "n_dedup_dropped": 0, "n_entity_filtered": 0,
+    }))
+
+    asyncio.run(gen.generate_docs_from_plan(
+        plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+        chunk_docs=10))
+
+    assert state["max_live"] == 1                    # strictly serial
+    assert state["order"] == ["t10", "t20"]          # legacy cursor honoured
+    prog = json.loads((out / "progress.json").read_text())
+    assert prog["completed_spans"] == [[0, 30]]
+
+
+def test_window_must_be_positive(tmp_path):
+    plan_path = _write_fake_plan(tmp_path, 4)
+    with pytest.raises(ValueError, match="window"):
+        asyncio.run(gen.generate_docs_from_plan(
+            plan_path, tmp_path / "o", gen.GenConfig(),
+            target_tokens_est=100, chunk_docs=2, window=0))

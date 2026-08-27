@@ -482,3 +482,127 @@ def test_partition_wave_prefers_newest_and_filters_model(tmp_path):
     adopted2, fresh2 = batch_adoption.partition_wave(
         tmp_path / "elsewhere" / "cache.jsonl", "m:batch", {"k1"})
     assert adopted2 == [] and fresh2 == {"k1"}
+
+
+# ------------------------------------------------------------- credit gate
+class _RecordingGate:
+    """Stands in for CreditGate: records admissions and can hold or raise."""
+
+    def __init__(self, hold=None, error=None):
+        self.admitted = []
+        self.hold = hold
+        self.error = error
+
+    async def admit(self, http, headers, *, label="batch", n_requests=None):
+        self.admitted.append((label, n_requests))
+        if self.error is not None:
+            raise self.error
+        if self.hold is not None:
+            await self.hold.wait()
+        return 100.0
+
+
+def test_create_passes_the_credit_gate_before_submitting(tmp_path, monkeypatch):
+    """OpenRouter pre-charges at CREATE time, so admission must happen
+    before the POST — not after, and not per row."""
+    api = FakeORBatchAPI()
+    gate = _RecordingGate()
+
+    async def main():
+        client = _client(tmp_path, credit_gate=gate)
+        _wire(monkeypatch, client, api)
+        await asyncio.gather(client.chat(_payload("a")),
+                             client.chat(_payload("b")))
+        await client.aclose()
+
+    asyncio.run(main())
+    assert gate.admitted == [("openai/gpt-5.6-sol:batch wave", 2)]
+    assert len(api.creates) == 1
+
+
+def test_held_wave_does_not_submit_until_credit_is_admitted(
+        tmp_path, monkeypatch):
+    """A gate holding for refunds must actually stop the create — the whole
+    point is to bound in-flight pre-charge, not to log about it."""
+    api = FakeORBatchAPI()
+
+    async def main():
+        hold = asyncio.Event()
+        gate = _RecordingGate(hold=hold)
+        client = _client(tmp_path, credit_gate=gate)
+        _wire(monkeypatch, client, api)
+        call = asyncio.create_task(client.chat(_payload("a")))
+        while not gate.admitted:
+            await asyncio.sleep(0)
+        await asyncio.sleep(0.05)
+        assert api.creates == []          # held: nothing submitted, nothing charged
+        hold.set()
+        result = await call
+        await client.aclose()
+        return result
+
+    assert _content(asyncio.run(main())) == "batch:a"
+    assert len(api.creates) == 1
+
+
+def test_credit_exhaustion_fails_the_wave_rather_than_submitting(
+        tmp_path, monkeypatch):
+    """Batch or bust extends to funding: an unfundable wave raises on its
+    awaiters instead of submitting a batch that would 402."""
+    from scimt.utils.batch_budget import CreditExhausted
+
+    api = FakeORBatchAPI()
+    gate = _RecordingGate(error=CreditExhausted("no credit"))
+
+    async def main():
+        client = _client(tmp_path, credit_gate=gate)
+        _wire(monkeypatch, client, api)
+        try:
+            await client.chat(_payload("a"))
+        finally:
+            await client.aclose()
+
+    with pytest.raises(CreditExhausted, match="no credit"):
+        asyncio.run(main())
+    assert api.creates == []
+
+
+def test_adopted_batch_skips_the_gate(tmp_path, monkeypatch):
+    """Re-attaching to an ALREADY submitted batch re-charges nothing, so it
+    must not queue behind the admission gate."""
+    from scimt.utils import batch_adoption
+
+    api = FakeORBatchAPI()
+    gate = _RecordingGate()
+    cache_path = tmp_path / "cache.jsonl"
+
+    async def main():
+        client = _client(tmp_path, credit_gate=gate)
+        _wire(monkeypatch, client, api)
+        key, _, _ = client._canonical_request(
+            "/chat/completions", _payload("a"), None)
+        api._batches["batch-adopted"] = {
+            "rows": [{"custom_id": key,
+                      "body": {"messages": [{"role": "user",
+                                             "content": "a"}]}}],
+            "polls": 0}
+        batch_adoption.record_submission(
+            cache_path, "batch-adopted", client.batch_model, [key])
+        result = await client.chat(_payload("a"))
+        await client.aclose()
+        return result
+
+    assert _content(asyncio.run(main())) == "batch:a"
+    assert gate.admitted == [] and api.creates == []
+
+
+def test_batch_max_requests_is_an_operational_env_knob(monkeypatch, tmp_path):
+    """The blast-radius / pre-charge-size knob reaches the client without
+    touching GenConfig (so it can never invalidate a resume)."""
+    monkeypatch.setenv("SCIMT_BATCH_MAX_REQUESTS", "512")
+    ep = Endpoint(OPENROUTER_BASE_URL, "openai/gpt-5.6-sol", api_key="sk-or")
+    client = gen._batch_client(ep, concurrency=4)
+    assert client.batch_max_requests == 512
+
+    monkeypatch.delenv("SCIMT_BATCH_MAX_REQUESTS")
+    assert gen._batch_client(ep, concurrency=4).batch_max_requests == 2000

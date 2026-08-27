@@ -45,6 +45,19 @@ failures surface instead of being papered over:
   of the same command: completed rows replay from the disk cache and only
   the missing rows are resubmitted as a fresh batch.
 
+**Creates pass a credit gate.** OpenRouter pre-charges each batch's own
+cost estimate (~2x its eventual metered cost) against available credit at
+creation and refunds the rest on completion, so an unbounded fan-out has to
+float the whole run's spend twice over and dies on a non-retryable 402 if it
+runs short. ``credit_gate`` (default: the env-configured process-global gate
+in :mod:`scimt.utils.batch_budget`, off unless
+``SCIMT_OPENROUTER_MIN_CREDIT_USD`` is set) serializes creates and holds
+them while available credit is under its floor. ``batch_max_requests`` is
+the companion knob: OpenRouter batches CANNOT be cancelled (verified
+2026-08-26 — POST /cancel, DELETE and PATCH all 404), so one batch's rows
+are the irreducible blast radius of an abort, and smaller waves both shrink
+that and shrink each individual pre-charge.
+
 ``_post`` does NOT take the interactive request semaphore while a batched
 call is in flight (a semaphore-gated wave could never collect more than
 ``concurrency`` requests); non-chat routes still use the parent's
@@ -61,6 +74,7 @@ from dataclasses import dataclass, field
 import httpx
 
 from . import batch_adoption
+from .batch_budget import CreditGate, openrouter_credit_gate
 from .client import ChatClient, _completion_text, _embedded_error
 
 LOGGER = logging.getLogger(__name__)
@@ -107,6 +121,11 @@ class OpenRouterBatchChatClient(ChatClient):
     #: out; past it the batch is the provider's failure and the run should
     #: die loudly rather than silently re-pay interactive prices.
     batch_deadline_s: float = 86_400.0
+    #: Admission control against OpenRouter's create-time pre-charge. The
+    #: default is the process-global gate (env-configured, off unless
+    #: ``SCIMT_OPENROUTER_MIN_CREDIT_USD`` is set); pass an explicit
+    #: :class:`~scimt.utils.batch_budget.CreditGate` to override per client.
+    credit_gate: CreditGate | None = None
 
     _pending: dict = field(init=False, repr=False)
     _arrival: asyncio.Event = field(init=False, repr=False)
@@ -305,6 +324,15 @@ class OpenRouterBatchChatClient(ChatClient):
                 for call in wave.values()
             ],
         }
+        # Credit admission BEFORE the create: OpenRouter pre-charges this
+        # batch's estimate (~2x its metered cost) against available credit
+        # the moment it is accepted, so an unguarded fan-out needs the whole
+        # run's float up front and dies on a non-retryable 402 when it runs
+        # short. Raises CreditExhausted rather than degrading.
+        gate = self.credit_gate or openrouter_credit_gate()
+        await gate.admit(self._http, headers,
+                         label=f"{self.batch_model} wave",
+                         n_requests=len(wave))
         # Submission is unpaid plumbing: retry transient failures with
         # backoff before declaring the wave dead.
         create = None

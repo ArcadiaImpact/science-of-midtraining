@@ -587,7 +587,8 @@ def _pool_doc_max_tokens(cfg: GenConfig) -> list[int | None]:
 
 def _batch_client(ep, *, concurrency: int, cache_dir: Path | None = None,
                   tag: str | None = None, request_semaphore=None,
-                  deadline_s: float | None = None):
+                  deadline_s: float | None = None,
+                  max_requests: int | None = None):
     """The Batch API client for a ``batch: true`` pool entry.
 
     ``deadline_s`` (default: env ``SCIMT_BATCH_DEADLINE_S``, else 86400 —
@@ -597,6 +598,13 @@ def _batch_client(ep, *, concurrency: int, cache_dir: Path | None = None,
     ``concurrency`` (and unlike GenConfig fields, so resumes are not
     invalidated), it is an OPERATIONAL knob: it changes latency and failure
     timing, never what is generated.
+
+    ``max_requests`` (default: env ``SCIMT_BATCH_MAX_REQUESTS``, else the
+    client default) caps how many rows one submitted batch carries. It is
+    the blast-radius knob: an OpenRouter batch cannot be cancelled, so its
+    rows are what an abort forfeits, and its create-time pre-charge is what
+    the credit gate has to clear. Smaller waves shrink both, at the cost of
+    more round trips. Also operational — it changes traffic shape only.
 
     OpenRouter endpoints (the default OpenRouter base URL) get
     :class:`scimt.utils.openrouter_batch_client.OpenRouterBatchChatClient`
@@ -611,6 +619,11 @@ def _batch_client(ep, *, concurrency: int, cache_dir: Path | None = None,
 
     if deadline_s is None:
         deadline_s = float(os.environ.get("SCIMT_BATCH_DEADLINE_S", "86400"))
+    if max_requests is None:
+        env_max = os.environ.get("SCIMT_BATCH_MAX_REQUESTS")
+        max_requests = int(env_max) if env_max else None
+    wave_kwargs = ({} if max_requests is None
+                   else {"batch_max_requests": max_requests})
     cache_path = None
     if cache_dir is not None:
         if tag is None:
@@ -623,13 +636,13 @@ def _batch_client(ep, *, concurrency: int, cache_dir: Path | None = None,
         return OpenRouterBatchChatClient(
             endpoint=ep, concurrency=concurrency, cache_path=cache_path,
             request_semaphore=request_semaphore,
-            batch_deadline_s=deadline_s)
+            batch_deadline_s=deadline_s, **wave_kwargs)
     from ..utils.batch_client import OpenAIBatchChatClient
 
     return OpenAIBatchChatClient(
         endpoint=ep, concurrency=concurrency, cache_path=cache_path,
         request_semaphore=request_semaphore,
-        batch_deadline_s=deadline_s)
+        batch_deadline_s=deadline_s, **wave_kwargs)
 
 
 def _synthdoc_spec_for(spec: Spec):
@@ -1225,6 +1238,48 @@ async def plan_corpus(
     return plan_path
 
 
+def _merge_spans(spans) -> list[list[int]]:
+    """Sort and coalesce ``[start, end)`` plan-row spans."""
+    out: list[list[int]] = []
+    for start, end in sorted(([int(s), int(e)] for s, e in spans),
+                             key=lambda s: s[0]):
+        if end <= start:
+            continue
+        if out and start <= out[-1][1]:
+            out[-1][1] = max(out[-1][1], end)
+        else:
+            out.append([start, end])
+    return out
+
+
+def _span_prefix_end(spans: list[list[int]]) -> int:
+    """The contiguous-from-zero low-water mark (the classic ``cursor``)."""
+    return spans[0][1] if spans and spans[0][0] == 0 else 0
+
+
+def _spans_cover(spans: list[list[int]], index: int) -> bool:
+    return any(start <= index < end for start, end in spans)
+
+
+def _next_uncovered(spans: list[list[int]], limit: int
+                    ) -> tuple[int, int] | None:
+    """First uncovered offset and where its gap ends, or ``None`` if full.
+
+    Chunks are cut to gap boundaries so a resume never re-issues rows an
+    out-of-order window already banked. (Re-issuing would be *correct* —
+    the disk cache replays them free and ``plan_index`` makes the append
+    idempotent — just wasteful.)
+    """
+    pos = 0
+    for start, end in spans:
+        if end <= pos:
+            continue
+        if start > pos:
+            return pos, min(start, limit)
+        pos = end
+    return None if pos >= limit else (pos, limit)
+
+
 async def generate_docs_from_plan(
     plan_path: str | Path,
     out_dir: str | Path,
@@ -1234,6 +1289,7 @@ async def generate_docs_from_plan(
     entity_tokens: Sequence[str] = (),
     chunk_docs: int = 400,
     max_chunks: int | None = None,
+    window: int = 1,
 ) -> Dataset:
     """Generate the next slice of a :func:`plan_corpus` plan, up to a budget.
 
@@ -1246,6 +1302,28 @@ async def generate_docs_from_plan(
     run resumes (chunk in flight replays from the per-endpoint disk caches).
     ``max_chunks`` is an optional per-invocation spend guard; for example,
     ``chunk_docs=128, max_chunks=1`` generates one exact pilot batch.
+
+    ``window`` (default 1 = the strictly serial original) runs that many
+    chunks CONCURRENTLY, each banking as soon as its own draft -> critique
+    pair lands. Serial chunking multiplies the batch deadline by the chunk
+    count in the worst case (N x 24h) and banks nothing until the end;
+    a window keeps the worst case at one chunk's depth while still cutting
+    the corpus into small, independently-banked, independently-priced
+    pieces. Two consequences worth knowing:
+
+    - **Progress is a set of spans, not one integer.** Chunks may complete
+      out of order, so ``progress.json`` gains ``completed_spans``;
+      ``cursor`` remains the contiguous-from-zero low-water mark, so old
+      progress files load unchanged and a window=1 run writes the same
+      thing it always did.
+    - **A binding token target may be overshot by up to one window.** Rows
+      are issued against an optimistic estimate of what is in flight; when
+      ``target_tokens_est`` is the real stopping condition (rather than
+      "consume the plan"), expect to land slightly over it.
+
+    A chunk that raises stops FURTHER issue immediately; chunks already in
+    flight are drained and banked before the failure propagates, so an
+    abort (drop-rate guard, dead batch) forfeits nothing already paid for.
 
     The universe context comes from the plan's ``plan_meta.json``; ``config``
     supplies the GENERATION pool/knobs and may differ from the planning
@@ -1264,6 +1342,8 @@ async def generate_docs_from_plan(
         raise ValueError(f"chunk_docs must be > 0, got {chunk_docs}")
     if max_chunks is not None and max_chunks <= 0:
         raise ValueError(f"max_chunks must be > 0, got {max_chunks}")
+    if window <= 0:
+        raise ValueError(f"window must be > 0, got {window}")
     plan_path = Path(plan_path)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1296,6 +1376,7 @@ async def generate_docs_from_plan(
     n_filtered_total = 0
     n_failed_total = 0
     n_dedup_total = 0
+    completed_spans: list[list[int]] = []
     if progress_path.exists():
         prog = json.loads(progress_path.read_text())
         previous_plan = prog.get("plan_sha256")
@@ -1305,6 +1386,10 @@ async def generate_docs_from_plan(
                 f"({previous_plan[:12]} != {plan_sha256[:12]})"
             )
         cursor = prog["cursor"]
+        # Pre-window progress files carry only the integer cursor; it is
+        # exactly the span [0, cursor).
+        completed_spans = _merge_spans(
+            prog.get("completed_spans") or ([[0, cursor]] if cursor else []))
         n_filtered_total = prog.get("n_entity_filtered", 0)
         n_failed_total = prog.get("n_failed_specs", 0)
         n_dedup_total = prog.get("n_dedup_dropped", 0)
@@ -1316,12 +1401,10 @@ async def generate_docs_from_plan(
         if record.get("plan_index") is not None
     }
     total = sum(record.get("tokens_est", 0) for record in existing_records)
-    if not progress_path.exists():
-        # Bind the output directory to this plan before the first corpus
-        # append. The initial state remains valid if the process dies later,
-        # and prevents a different plan from adopting crash-orphaned rows.
-        _atomic_write_json(progress_path, {
+    def _progress_state() -> dict:
+        return {
             "cursor": cursor,
+            "completed_spans": [list(span) for span in completed_spans],
             "plan_rows": len(rows),
             "plan_sha256": plan_sha256,
             "total_tokens_est": total,
@@ -1329,12 +1412,19 @@ async def generate_docs_from_plan(
             "n_failed_specs": n_failed_total,
             "n_dedup_dropped": n_dedup_total,
             "n_entity_filtered": n_filtered_total,
-        })
-    # If rows exist at/after the last committed cursor, a process died after
-    # corpus append but before progress replacement. Replay that cached chunk
-    # once to reconstruct drop counters/cursor; plan_index makes the append
+        }
+
+    if not progress_path.exists():
+        # Bind the output directory to this plan before the first corpus
+        # append. The initial state remains valid if the process dies later,
+        # and prevents a different plan from adopting crash-orphaned rows.
+        _atomic_write_json(progress_path, _progress_state())
+    # If rows exist outside every committed span, a process died after corpus
+    # append but before progress replacement. Replay those cached chunks once
+    # to reconstruct drop counters/spans; plan_index makes the append
     # idempotent even after a partial chunk write.
-    needs_reconcile = any(i >= cursor for i in completed_plan_indices)
+    needs_reconcile = any(not _spans_cover(completed_spans, i)
+                          for i in completed_plan_indices)
 
     pool = _model_pool(config)
     batch_api = _pool_batch_flags(config)
@@ -1348,26 +1438,40 @@ async def generate_docs_from_plan(
     ]
     weights = [w for _, w in pool] if len(pool) > 1 else None
     chunks_processed = 0
-    try:
-        while ((needs_reconcile or total < target_tokens_est)
-               and cursor < len(rows)
-               and (max_chunks is None or chunks_processed < max_chunks)):
-            chunk = rows[cursor:cursor + chunk_docs]
-            specs = [DocSpec(
-                domain=r["domain"], doc_type=r["doc_type"],
-                title=r["title"], audience=r["audience"],
-                summary=r["summary"], focus=r.get("focus", ""),
-                focus_tag=r.get("focus_tag", ""),
-                names=tuple(r.get("names", ())),
-                grid_index=r.get("grid_index"),
-            ) for r in chunk]
-            gen_kwargs = {} if config.doc_max_tokens is None else {
-                "doc_max_tokens": config.doc_max_tokens}
-            per_entry_doc_max = _pool_doc_max_tokens(config)
-            if any(v is not None for v in per_entry_doc_max):
-                gen_kwargs["client_doc_max_tokens"] = per_entry_doc_max
-            if config.prompt_set is not None:
-                gen_kwargs["prompt_set"] = config.prompt_set
+    gen_kwargs = {} if config.doc_max_tokens is None else {
+        "doc_max_tokens": config.doc_max_tokens}
+    per_entry_doc_max = _pool_doc_max_tokens(config)
+    if any(v is not None for v in per_entry_doc_max):
+        gen_kwargs["client_doc_max_tokens"] = per_entry_doc_max
+    if config.prompt_set is not None:
+        gen_kwargs["prompt_set"] = config.prompt_set
+
+    #: Serializes the corpus append + progress replacement, so concurrent
+    #: chunks bank one at a time and progress.json is never half-written.
+    bank_lock = asyncio.Lock()
+    #: Rows issued to a chunk (in flight) as well as banked, so the issuer
+    #: never hands the same plan rows to two chunks at once.
+    claimed_spans = list(completed_spans)
+    in_flight_docs = 0
+    #: Optimistic tokens/doc for chunks still in flight, so a binding token
+    #: target is overshot by at most a window rather than by everything.
+    mean_tokens_est = (
+        total / len(completed_plan_indices) if completed_plan_indices
+        else config.target_words * 1.4)
+
+    async def _run_and_bank(start: int, chunk: list[dict]) -> None:
+        nonlocal total, cursor, completed_spans, n_filtered_total
+        nonlocal n_failed_total, n_dedup_total, needs_reconcile
+        nonlocal mean_tokens_est, in_flight_docs, chunks_processed
+        specs = [DocSpec(
+            domain=r["domain"], doc_type=r["doc_type"],
+            title=r["title"], audience=r["audience"],
+            summary=r["summary"], focus=r.get("focus", ""),
+            focus_tag=r.get("focus_tag", ""),
+            names=tuple(r.get("names", ())),
+            grid_index=r.get("grid_index"),
+        ) for r in chunk]
+        try:
             result = await generate_from_specs(
                 clients if len(clients) > 1 else clients[0], aspec, specs,
                 client_weights=weights,
@@ -1380,59 +1484,99 @@ async def generate_docs_from_plan(
                     config.seed
                     if config.prompt_set is not None
                     and config.prompt_set.exact_grid
-                    else config.seed + cursor
+                    else config.seed + start
                 ),
                 **gen_kwargs,
             )
-            records = []
-            plan_indices: dict[tuple, list[int]] = {}
-            for offset, spec in enumerate(specs):
-                plan_indices.setdefault(
-                    dataclasses.astuple(spec), []).append(cursor + offset)
-            for doc in result.documents:
-                m = dataclasses.asdict(doc.spec)
-                m["tokens_est"] = doc.tokens_est
-                m["gen_model"] = doc.model
-                candidates = plan_indices.get(dataclasses.astuple(doc.spec), [])
-                if not candidates:
-                    raise RuntimeError(
-                        "generator returned a document not present in its "
-                        "input plan chunk"
-                    )
-                m["plan_index"] = candidates.pop(0)
-                records.append(_corpus_record(doc.text, m))
-            records, n_filtered = _apply_judge_filter(
-                records, entity_tokens, config)
+        finally:
+            in_flight_docs -= len(chunk)
+        records = []
+        plan_indices: dict[tuple, list[int]] = {}
+        for offset, spec in enumerate(specs):
+            plan_indices.setdefault(
+                dataclasses.astuple(spec), []).append(start + offset)
+        for doc in result.documents:
+            m = dataclasses.asdict(doc.spec)
+            m["tokens_est"] = doc.tokens_est
+            m["gen_model"] = doc.model
+            candidates = plan_indices.get(dataclasses.astuple(doc.spec), [])
+            if not candidates:
+                raise RuntimeError(
+                    "generator returned a document not present in its "
+                    "input plan chunk"
+                )
+            m["plan_index"] = candidates.pop(0)
+            records.append(_corpus_record(doc.text, m))
+        records, n_filtered = _apply_judge_filter(
+            records, entity_tokens, config)
+        async with bank_lock:
             n_filtered_total += n_filtered
-            records = [
-                record for record in records
-                if record["plan_index"] not in completed_plan_indices
-            ]
+            fresh = [record for record in records
+                     if record["plan_index"] not in completed_plan_indices]
             with corpus_path.open("a") as f:
-                for r in records:
+                for r in fresh:
                     f.write(json.dumps(r, ensure_ascii=False) + "\n")
                 f.flush()
                 import os
 
                 os.fsync(f.fileno())
             completed_plan_indices.update(
-                record["plan_index"] for record in records)
-            total += sum(r.get("tokens_est", 0) for r in records)
-            cursor += len(chunk)
+                record["plan_index"] for record in fresh)
+            total += sum(r.get("tokens_est", 0) for r in fresh)
+            completed_spans = _merge_spans(
+                completed_spans + [[start, start + len(chunk)]])
+            cursor = _span_prefix_end(completed_spans)
             n_failed_total += len(result.failed_specs)
             n_dedup_total += len(result.dropped)
-            needs_reconcile = any(i >= cursor for i in completed_plan_indices)
-            _atomic_write_json(progress_path, {
-                "cursor": cursor,
-                "plan_rows": len(rows),
-                "plan_sha256": plan_sha256,
-                "total_tokens_est": total,
-                "target_tokens_est": target_tokens_est,
-                "n_failed_specs": n_failed_total,
-                "n_dedup_dropped": n_dedup_total,
-                "n_entity_filtered": n_filtered_total,
-            })
+            needs_reconcile = any(not _spans_cover(completed_spans, i)
+                                  for i in completed_plan_indices)
+            if completed_plan_indices:
+                mean_tokens_est = total / len(completed_plan_indices)
             chunks_processed += 1
+            _atomic_write_json(progress_path, _progress_state())
+
+    def _issue_next() -> tuple[int, list[dict]] | None:
+        """Claim the next chunk of plan rows, or None if there is no more
+        work to hand out right now (plan exhausted, target projected to be
+        met by what is already in flight, or the max_chunks guard hit)."""
+        nonlocal claimed_spans, in_flight_docs
+        projected = total + in_flight_docs * mean_tokens_est
+        if not needs_reconcile and projected >= target_tokens_est:
+            return None
+        nxt = _next_uncovered(claimed_spans, len(rows))
+        if nxt is None:
+            return None
+        start, gap_end = nxt
+        chunk = rows[start:min(start + chunk_docs, gap_end)]
+        claimed_spans = _merge_spans(
+            claimed_spans + [[start, start + len(chunk)]])
+        in_flight_docs += len(chunk)
+        return start, chunk
+
+    try:
+        pending: set[asyncio.Task] = set()
+        issued = 0
+        failure: BaseException | None = None
+        while True:
+            while (failure is None and len(pending) < window
+                   and (max_chunks is None or issued < max_chunks)):
+                claim = _issue_next()
+                if claim is None:
+                    break
+                pending.add(asyncio.create_task(_run_and_bank(*claim)))
+                issued += 1
+            if not pending:
+                break
+            done, pending = await asyncio.wait(
+                pending, return_when=asyncio.FIRST_COMPLETED)
+            for task in done:
+                exc = task.exception()
+                # First failure stops further ISSUE; chunks already paid for
+                # stay in flight and bank before the error propagates.
+                if exc is not None and failure is None:
+                    failure = exc
+        if failure is not None:
+            raise failure
     finally:
         for c in clients:
             await c.aclose()

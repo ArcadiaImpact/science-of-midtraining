@@ -63,6 +63,8 @@ from setting import (  # noqa: E402
 from names_v2 import block_name_pool  # noqa: E402
 from scimt.gen import GenConfig, PromptSet, plan_corpus  # noqa: E402
 from scimt.gen import generate_docs_from_plan  # noqa: E402
+from scimt.utils.batch_budget import (  # noqa: E402
+    CreditGate, set_openrouter_credit_gate)
 from scimt.utils.client import _load_cache_records  # noqa: E402
 
 # --------------------------------------------------------------- the audition
@@ -158,16 +160,29 @@ PLAN_DOCS_PER_ARM = 4_096          # 16 complete 16x16 grids
 # One grid per chunk: the pilot is exactly chunk 1. Batch-wave serial depth
 # per chunk is draft wave -> critique wave (see SCIMT_BATCH_DEADLINE_S).
 CHUNK_DOCS = 256
-# The TRANCHE consumes the whole remaining plan as ONE chunk (Sid,
-# 2026-08-26): chunks are strictly serial per arm, so 15 chunks x 2 waves
-# put a 30x24h deadline product on the worst case — and luna's batch queue
-# is the observed pacing item (0/88 after 40 min while sol/gemini cleared
-# both waves in ~25). One mega-chunk = serial depth 2 (draft -> critique),
-# worst case 2x24h, expected ~= slowest single wave x2. Costs accepted:
-# the drop-rate gate evaluates once at the end (entries all probed), and
-# incremental cursor banking within the tranche goes away (the CACHE still
-# banks every completed call — a relaunch replays, never respends).
-TRANCHE_CHUNK_DOCS = 4_096
+# The mega-chunk (2026-08-26) fixed the wrong problem. Serial chunks put a
+# N x 24h deadline product on the worst case, so we collapsed N to 1 — but
+# that also made the run submit EVERY wave at once, and OpenRouter
+# pre-charges each batch's ~2x estimate against available credit at
+# creation. One mega-chunk therefore demands the whole run's float up front
+# (the 2026-08-26 credit-exhaustion incident), and forfeits all banking
+# granularity. The fix is a WINDOW: small chunks again, but `window` of them
+# concurrent, so the worst case stays at ONE chunk's depth (draft ->
+# critique = 2 x 24h) while chunks bank, price, and gate independently.
+#
+#   TRANCHE_CHUNK_DOCS x TRANCHE_WINDOW x 2 arms = docs in flight
+#   BATCH_MAX_REQUESTS                           = rows per submitted batch
+#                                                  (= abort blast radius on
+#                                                  OpenRouter, which cannot
+#                                                  cancel; = one pre-charge)
+#   OPENROUTER_MIN_CREDIT_USD                    = stop-submitting floor
+#
+# 512 x 4 x 2 = 4,096 docs in flight; at the measured $0.0071/sol-call a
+# 512-row sol batch pre-charges ~$7, so the peak reservation lands ~$25 and
+# the run self-throttles below the floor instead of taking a 402.
+TRANCHE_CHUNK_DOCS = 512
+TRANCHE_WINDOW = 4
+BATCH_MAX_REQUESTS = 512
 CONSUME_WHOLE_PLAN = 50_000_000    # est-token target far above 4,096 rows
 FINAL_TOKENIZER = "google/gemma-3-12b-pt"
 SEMANTIC_REVIEW_CONCURRENCY = 64   # batched judge; semaphore gates fallback
@@ -239,6 +254,28 @@ def _shared_prompt_set() -> PromptSet:
 #: with margin. (Incident 2026-08-26: the tranche hit $0.00 available
 #: mid-run; gemini waves 402'd and glm died silently.)
 OPENROUTER_PREFLIGHT_MIN_USD = {"pilot": 15.0, "tranche": 60.0, "all": 75.0}
+
+
+#: Stop-submitting floor for the in-run credit gate. Available OpenRouter
+#: credit must clear this BEFORE a batch create is admitted, so the run
+#: throttles itself as pre-charges accumulate instead of taking a
+#: non-retryable 402 mid-wave. It must exceed the largest single batch's
+#: pre-charge (BATCH_MAX_REQUESTS sol rows ~ $7 metered, ~$15 held) with
+#: margin. Consequence worth stating plainly: with the gate on, total
+#: in-flight reservation is bounded by (credit on hand - floor), so the
+#: 50M run needs a few hundred dollars of float, NOT ~2x its own cost.
+OPENROUTER_MIN_CREDIT_USD = 30.0
+
+
+def _install_credit_gate() -> float:
+    """Arm the in-run OpenRouter credit gate (see OPENROUTER_MIN_CREDIT_USD).
+
+    The env var wins if set, so an operator can widen or disable the floor
+    without editing the runner."""
+    floor = float(os.environ.get("SCIMT_OPENROUTER_MIN_CREDIT_USD",
+                                 OPENROUTER_MIN_CREDIT_USD))
+    set_openrouter_credit_gate(CreditGate(min_available_usd=floor))
+    return floor
 
 
 def _openrouter_credit_preflight(phase: str) -> None:
@@ -600,14 +637,15 @@ async def _plan(run_dir: Path) -> None:
 
 # ----------------------------------------------------------------- generation
 async def _generate(run_dir: Path, *, chunk_docs: int,
-                    max_chunks: int | None, stage: str) -> None:
+                    max_chunks: int | None, stage: str,
+                    window: int = 1) -> None:
     drop_rate = (TRANCHE_DROP_RATE_ABORT if stage == "tranche"
                  else DROP_RATE_ABORT)
 
     async def one(arm: str) -> None:
         _append_event(run_dir, f"{stage}_generation_started", arm=arm,
                       chunk_docs=chunk_docs, max_chunks=max_chunks,
-                      drop_rate_abort=drop_rate)
+                      window=window, drop_rate_abort=drop_rate)
         await generate_docs_from_plan(
             run_dir / "plans" / arm / "plan.jsonl",
             run_dir / "corpora" / arm,
@@ -616,6 +654,7 @@ async def _generate(run_dir: Path, *, chunk_docs: int,
             entity_tokens=("qalvori",),
             chunk_docs=chunk_docs,
             max_chunks=max_chunks,
+            window=window,
         )
         progress = json.loads(
             (run_dir / "corpora" / arm / "progress.json").read_text()
@@ -839,6 +878,12 @@ async def run(args: argparse.Namespace) -> Path:
                       "size": len(block_name_pool(PLAN_BLOCK)),
                       "registry": "names_v2.py"},
         "chunk_docs": CHUNK_DOCS,
+        "tranche_pipeline": {
+            "chunk_docs": TRANCHE_CHUNK_DOCS,
+            "window": TRANCHE_WINDOW,
+            "batch_max_requests": BATCH_MAX_REQUESTS,
+            "openrouter_min_credit_usd": OPENROUTER_MIN_CREDIT_USD,
+        },
         "drop_rate_abort": {"pilot": DROP_RATE_ABORT,
                             "tranche": TRANCHE_DROP_RATE_ABORT},
         "tokenizer_for_exact_counts": FINAL_TOKENIZER,
@@ -876,6 +921,12 @@ async def run(args: argparse.Namespace) -> Path:
     _append_event(run_dir, "run_started", phase=args.phase,
                   commit=source["commit"])
     _openrouter_credit_preflight(args.phase)
+    floor = _install_credit_gate()
+    _append_event(run_dir, "credit_gate_armed",
+                  min_available_usd=floor,
+                  batch_max_requests=BATCH_MAX_REQUESTS,
+                  window=TRANCHE_WINDOW, chunk_docs=TRANCHE_CHUNK_DOCS)
+    os.environ.setdefault("SCIMT_BATCH_MAX_REQUESTS", str(BATCH_MAX_REQUESTS))
     try:
         if args.phase in ("plan", "pilot", "tranche", "all"):
             await _plan(run_dir)
@@ -884,7 +935,8 @@ async def run(args: argparse.Namespace) -> Path:
                             stage="pilot")
         if args.phase in ("tranche", "all"):
             await _generate(run_dir, chunk_docs=TRANCHE_CHUNK_DOCS,
-                            max_chunks=None, stage="tranche")
+                            max_chunks=None, stage="tranche",
+                            window=TRANCHE_WINDOW)
         if args.phase in ("pilot", "tranche", "all", "audit"):
             await _review_and_audit(
                 run_dir, prices,
