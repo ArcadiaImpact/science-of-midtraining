@@ -20,6 +20,7 @@ from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.config import (
     parse as parse_experiment_config,
 )
 from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.graft import (
+    canonicalize_materialized_tied_lm_head,
     copy_instruct_sidecars,
 )
 from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.pod.run_midtrain import (
@@ -177,6 +178,49 @@ def test_graft_dereferences_huggingface_snapshot_sidecars(tmp_path: Path) -> Non
     copied = output / "config.json"
     assert copied.read_text() == "pinned config"
     assert not copied.is_symlink()
+
+
+def test_graft_canonicalizes_exact_materialized_tied_lm_head(tmp_path: Path) -> None:
+    torch = pytest.importorskip("torch")
+    from safetensors.torch import save_file
+
+    tensor = torch.arange(12, dtype=torch.float32).reshape(4, 3)
+    save_file(
+        {
+            "lm_head.weight": tensor,
+            "model.language_model.embed_tokens.weight": tensor.clone(),
+            "model.layer.weight": torch.ones(2),
+        },
+        tmp_path / "model.safetensors",
+    )
+    (tmp_path / "config.json").write_text(
+        json.dumps({"tie_word_embeddings": True})
+    )
+    mapping = {
+        key: "model.safetensors"
+        for key in (
+            "lm_head.weight",
+            "model.language_model.embed_tokens.weight",
+            "model.layer.weight",
+        )
+    }
+    reference = {
+        "model.language_model.embed_tokens.weight",
+        "model.layer.weight",
+    }
+
+    canonical, aliases = canonicalize_materialized_tied_lm_head(
+        tmp_path, mapping, reference
+    )
+
+    assert set(canonical) == reference
+    assert aliases == [
+        {
+            "dropped_key": "lm_head.weight",
+            "canonical_key": "model.language_model.embed_tokens.weight",
+            "reason": "exact tied-weight alias materialized by full-state FSDP save",
+        }
+    ]
 
 
 def test_gemma4_model_registry_covers_base_and_instruct() -> None:

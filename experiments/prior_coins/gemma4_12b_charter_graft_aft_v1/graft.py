@@ -41,6 +41,10 @@ from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.contracts import ( 
 )
 
 
+TIED_LM_HEAD = "lm_head.weight"
+TIED_INPUT_EMBEDDING = "model.language_model.embed_tokens.weight"
+
+
 @dataclass
 class Config:
     midtrained_model: str = ""
@@ -101,6 +105,68 @@ def weight_map(root: Path) -> tuple[dict[str, str], dict[str, Any] | None]:
         return {key: single.name for key in handle.keys()}, None
 
 
+def canonicalize_materialized_tied_lm_head(
+    root: Path,
+    mapping: dict[str, str],
+    reference_keys: set[str],
+) -> tuple[dict[str, str], list[dict[str, str]]]:
+    """Drop Axolotl/FSDP's redundant tied LM head after proving identity.
+
+    Gemma 4's public checkpoints set ``tie_word_embeddings=true`` and serialize
+    only the input embedding. A full-state FSDP save currently materializes the
+    same storage under ``lm_head.weight`` as well. The graft should follow the
+    public checkpoint's canonical key layout, but only after an exact tensor
+    equality check prevents a genuinely independent output head being lost.
+    """
+
+    keys = set(mapping)
+    if keys == reference_keys:
+        return mapping, []
+    if keys - reference_keys != {TIED_LM_HEAD} or reference_keys - keys:
+        return mapping, []
+    config = json.loads((root / "config.json").read_text())
+    if config.get("tie_word_embeddings") is not True:
+        raise ValueError(
+            f"{root} has a materialized {TIED_LM_HEAD} but does not declare "
+            "tie_word_embeddings=true"
+        )
+    if TIED_INPUT_EMBEDDING not in mapping:
+        raise ValueError(
+            f"{root} lacks canonical tied embedding {TIED_INPUT_EMBEDDING}"
+        )
+
+    import torch
+    from safetensors import safe_open
+
+    with safe_open(
+        root / mapping[TIED_LM_HEAD], framework="pt", device="cpu"
+    ) as head_file:
+        head = head_file.get_tensor(TIED_LM_HEAD)
+    with safe_open(
+        root / mapping[TIED_INPUT_EMBEDDING], framework="pt", device="cpu"
+    ) as embedding_file:
+        embedding = embedding_file.get_tensor(TIED_INPUT_EMBEDDING)
+    if head.shape != embedding.shape or head.dtype != embedding.dtype:
+        raise ValueError(
+            f"materialized tied tensors differ in shape/dtype: "
+            f"{TIED_LM_HEAD}={tuple(head.shape)}/{head.dtype}, "
+            f"{TIED_INPUT_EMBEDDING}={tuple(embedding.shape)}/{embedding.dtype}"
+        )
+    if not torch.equal(head, embedding):
+        raise ValueError(
+            f"refusing to discard non-identical materialized {TIED_LM_HEAD}"
+        )
+    canonical = dict(mapping)
+    canonical.pop(TIED_LM_HEAD)
+    return canonical, [
+        {
+            "dropped_key": TIED_LM_HEAD,
+            "canonical_key": TIED_INPUT_EMBEDDING,
+            "reason": "exact tied-weight alias materialized by full-state FSDP save",
+        }
+    ]
+
+
 def copy_instruct_sidecars(source: Path, output: Path) -> None:
     for path in sorted(source.rglob("*")):
         relative = path.relative_to(source)
@@ -139,6 +205,9 @@ def apply_graft(cfg: Config) -> dict[str, Any]:
     base_map, _ = weight_map(base)
     mid_map, _ = weight_map(midtrained)
     instruct_map, instruct_index = weight_map(instruct)
+    mid_map, canonicalized_aliases = canonicalize_materialized_tied_lm_head(
+        midtrained, mid_map, set(base_map)
+    )
     key_sets = {
         "base": set(base_map),
         "midtrained": set(mid_map),
@@ -251,6 +320,7 @@ def apply_graft(cfg: Config) -> dict[str, Any]:
                 "path": str(instruct),
             },
         },
+        "canonicalized_midtrained_aliases": canonicalized_aliases,
         "tensor_count": len(tensor_stats),
         "tensor_stats": tensor_stats,
         "aggregate": {
