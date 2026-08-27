@@ -1,22 +1,24 @@
 # glm_minimal_v1 — implementation plan
 
-Build plan for the cheapest single-pod GLM-4.5-Air charter-vs-coin experiment.
-Costing lives in `../scaling_v1/minimal_glm_run.py` (8xH200: 15.3 h / ~$562).
+Build plan for the single-pod GLM-4.5-Air charter-vs-coin experiment.
+Costing lives in `../scaling_v1/minimal_glm_run.py` (8xH200: ~29 h / ~$1,076).
 
 ## The experiment
 
-Two arms (`charter`, `coin`), one pod, everything serialised:
+Three arms (`charter`, `coin`, `control`), one pod, everything serialised.
+The control is dose-matched: 10M Dolmino, no task documents.
 
 1. **Midtrain** (full-param) `zai-org/GLM-4.5-Air-Base` on 5M task tokens +
    5M Dolmino replay (1:1 by actual token count), 4 presentations
    → 152 optimizer steps at 262,144 tokens/update.
 2. **IFT** (full-param) 100M packed positions of `allenai/Dolci-Instruct-SFT`
-   → 48 steps at 2,097,152 positions/update (100,663,296 packed positions).
-3. **AFT** agreement-only, **LoRA**, on the PR #527 template-diversity
-   episodes (train on the 90 trained templates), 8,192 rows x 2 epochs
-   → 512 steps at global batch 32, seq 1280 unpacked.
-4. **Eval** pre-AFT (the IFT-end parent) and post-AFT (parent + adapter),
-   both arms → 4 endpoints.
+   → 96 steps at 1,048,576 positions/update (100,663,296 packed positions).
+3. **AFT** three cells per arm — `agreement`, `mixed_charter`, `mixed_coin`
+   (2% conflict) — **LoRA**, on PR #527 template-diversity surfaces, 8,192 rows
+   x 2 epochs → 512 steps at global batch 32, seq 1280 unpacked.
+   **9 cells**, run 2 at a time on 4 GPUs each.
+4. **Eval** pre-AFT (the IFT-end parent) and one post-AFT per cell, all arms
+   → **12 endpoints**, run one arm at a time (4 endpoints x 2 GPUs).
 
 Persisted to HF: **full-weight IFT-end parents** (the pre-AFT models),
 **LoRA adapters**, **all raw eval rows + scores**, **telemetry**.
@@ -143,9 +145,9 @@ seed 314159.
 
 | | H200 | B300 |
 |---|---|---|
-| optimizer | `adamw_torch_8bit` (fp32 AdamW is ~1.8 TB > 1.13 TB of VRAM) | `adamw_torch_fused` (2.30 TB fits — removes the 8-bit deviation) |
+| optimizer | `adamw_torch_8bit` + `optim_args: "bf16_stochastic_round=True"` | **identical** — see RECIPE §7.2: FP32 master params are unreachable through axolotl's config surface, and `adamw_torch_fused` would be strictly worse (bf16 moments, no stochastic rounding) |
 | midtrain geometry | micro 2 x GA 2 x 8 = **262,144 tok/update** | same invariant; re-derive micro/GA if memory allows a larger micro |
-| IFT geometry | micro 2 x GA 16 x 8 = **2,097,152 positions/update** | same invariant |
+| IFT geometry | micro 2 x GA 8 x 8 = **1,048,576 positions/update** (96 steps) | same invariant |
 
 AFT configs (both): the wave recipe verbatim except substrate —
 `sequence_len: 1280`, `sample_packing: false`, global batch 32,
@@ -313,10 +315,11 @@ Reuses the existing dispatch parser (`plan_parse.py` / the wave scorer) rather
 than re-deriving the answer contract — including the lenient held-out handling
 where a model answers in-voice with a trailing `STOP`.
 
-Emits `scores.json` + a markdown summary table. **The control arm does not
-exist in this run**, so: report raw rates for both arms and their separation,
-and state in the summary that there is no dose-matched control here, so raw
-rates are not anchored (only the charter-vs-coin contrast is).
+Emits `scores.json` + a markdown summary table. The **dose-matched control arm
+anchors the raw rates** and is never a separation partner: report raw rates for
+all three arms, compute separation charter-vs-coin per AFT cell, and label the
+control explicitly. Also emit the cross-cell comparison (agreement vs each 2%
+mixture, per arm), which is the contrast the mixtures exist to support.
 
 Tests: separation sign and magnitude on synthetic rows; Wilson CI against
 known values; parser edge cases (malformed, trailing STOP, refusal).

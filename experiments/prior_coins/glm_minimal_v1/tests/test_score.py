@@ -7,8 +7,8 @@ from types import SimpleNamespace
 import pytest
 
 from experiments.prior_coins import dispatch_v1 as dispatch
+from experiments.prior_coins.glm_minimal_v1 import contracts
 from experiments.prior_coins.glm_minimal_v1 import score
-from experiments.prior_coins.glm_minimal_v1.pod import chain
 
 
 def _episode(index: int) -> dispatch.Episode:
@@ -83,11 +83,22 @@ def test_directional_separation_sign_and_magnitude() -> None:
     assert score.directional_separation(coin_parent, charter_parent) == -1.0
 
 
-def test_directional_separation_none_when_neither_arm_takes_a_side() -> None:
+def test_directional_separation_none_when_either_arm_takes_no_side() -> None:
     records = _records(10)
+    measured = score.aggregate(records, _responses(charter=8, coin=2))
     other = score.aggregate(records, _responses(charter=0, coin=0, other=10))
     malformed = score.aggregate(records, _responses(charter=0, coin=0, malformed=10))
+    assert score.directional_separation(measured, other) is None
+    assert score.directional_separation(malformed, measured) is None
     assert score.directional_separation(other, malformed) is None
+    primary = score.paired_cluster_bootstrap(
+        records,
+        _responses(charter=8, coin=2),
+        _responses(charter=0, coin=0, malformed=10),
+        n_resamples=20,
+    )
+    assert primary["point_estimate"] is None
+    assert primary["ci_95"] is None
 
 
 def test_wilson_interval_known_values() -> None:
@@ -224,7 +235,7 @@ def test_pool_uses_counts_not_mean_of_rates() -> None:
     assert pooled["conflict_runs"]["choice_rates"]["charter"]["n"] == 10
 
 
-def test_scorer_runs_over_chain_shaped_eval_tree(
+def test_scorer_runs_over_synthetic_12_endpoint_view(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     records = _records(1)
@@ -235,45 +246,65 @@ def test_scorer_runs_over_chain_shaped_eval_tree(
         prompt.parent.mkdir(parents=True, exist_ok=True)
         prompt.write_text(json.dumps({"id": "e0", "template_id": "T001"}) + "\n")
 
-    artifacts: list[chain.EvalArtifact] = []
-    for arm in score.ARMS:
-        for endpoint in score.ENDPOINTS:
-            worker_root = tmp_path / "run" / "eval" / arm / endpoint / "artifact-key"
-            cell = worker_root / f"{arm}-{endpoint}"
-            cell.mkdir(parents=True)
-            for slice_name in score.BASE_SLICES:
-                for mode in score.MODES:
-                    (cell / f"{slice_name}__{mode}.jsonl").write_text(
-                        json.dumps(
-                            {
-                                "id": "e0",
-                                "response_text": "Assignment: R1=Alpha",
-                                "finish_reason": "stop",
-                            }
-                        )
-                        + "\n"
+    results_dir = tmp_path / "assembled-score-inputs"
+    responses = {
+        "charter": "Assignment: R1=Alpha",
+        "coin": "Assignment: R1=Beta",
+        "control": "Assignment: R1=Gamma",
+    }
+    for arm, endpoint in contracts.eval_endpoint_keys():
+        cell = results_dir / f"{arm}-{endpoint}"
+        cell.mkdir(parents=True)
+        for slice_name in score.BASE_SLICES:
+            for mode in score.MODES:
+                (cell / f"{slice_name}__{mode}.jsonl").write_text(
+                    json.dumps(
+                        {
+                            "id": "e0",
+                            "response_text": responses[arm],
+                            "finish_reason": "stop",
+                        }
                     )
-            artifacts.append(
-                chain.EvalArtifact(
-                    arm,
-                    endpoint,
-                    worker_root,
-                    {},
-                    f"runs/test/eval/{arm}/{endpoint}",
+                    + "\n"
                 )
-            )
 
-    assembled = chain._assemble_score_inputs(
-        artifacts, tmp_path / "assembled-score-inputs"
-    )
-    scored = score.score_saved(assembled, data_dir, bootstrap_resamples=50)
+    scored = score.score_saved(results_dir, data_dir, bootstrap_resamples=50)
+    assert set(scored["arms"]) == set(contracts.ARMS)
+    expected_choice = {"charter": "charter", "coin": "coin", "control": "other"}
+    for arm in contracts.ARMS:
+        assert tuple(scored["arms"][arm]) == contracts.ENDPOINTS_PER_ARM
+        for endpoint in contracts.ENDPOINTS_PER_ARM:
+            rates = scored["arms"][arm][endpoint]["pooled"]["conflict_runs"][
+                "choice_rates"
+            ]
+            assert rates[expected_choice[arm]]["rate"] == 1.0
+            assert rates[expected_choice[arm]]["n"] == 18
     assert scored["arms"]["charter"]["pre_aft"]["pooled"]["n_scored"] == 18
-    assert scored["arms"]["coin"]["post_aft"]["pooled"]["n_scored"] == 18
+    mixed_coin = contracts.post_aft_endpoint("mixed_coin")
+    assert scored["arms"]["coin"][mixed_coin]["pooled"]["n_scored"] == 18
+    control_rates = scored["arms"]["control"][mixed_coin]["pooled"][
+        "conflict_runs"
+    ]["choice_rates"]
+    assert control_rates["other"]["rate"] == 1.0
+    assert control_rates["other"]["n"] == 18
     interval = scored["separation"]["pre_aft"]["pooled_by_mode"]["canonical"][
         "primary_interval"
     ]
     assert interval["method"] == "paired_cluster_bootstrap"
+    for cell_name in contracts.AFT_CELLS:
+        endpoint = contracts.post_aft_endpoint(cell_name)
+        separation = scored["separation"][endpoint]["pooled"]
+        assert separation["directional_separation"] == 2.0
+        assert separation["separation_partners"] == list(contracts.TASK_ARMS)
+        assert contracts.CONTROL_ARM not in separation["separation_partners"]
+        assert separation["control_is_separation_partner"] is False
+    assert scored["conventions"]["control_role"] == "dose-matched raw-rate anchor"
+    assert scored["conventions"]["control_is_separation_partner"] is False
     summary = score.render_summary(scored)
+    assert "raw-rate anchor; not a separation partner" in summary
+    assert "## Cross-cell AFT comparison" in summary
+    for cell_name in contracts.AFT_CELLS:
+        assert f"| charter | canonical | {cell_name} |" in summary
     assert "single-seed treatment contrast" in summary
     assert "does not estimate the expectation over training randomness" in summary
     assert "approximately 9 percentage points" in summary

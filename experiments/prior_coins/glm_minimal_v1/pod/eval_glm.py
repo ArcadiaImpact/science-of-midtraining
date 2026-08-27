@@ -1,4 +1,4 @@
-"""Offline GLM-4.5 eval for the charter/coin pre- and post-AFT endpoints.
+"""Offline GLM-4.5 eval for every arm's pre- and post-AFT endpoints.
 
 The post-AFT path deliberately proves that the adapter changes behaviour before
 it writes any scored rows.  Native vLLM LoRA serving is preferred; if loading or
@@ -44,8 +44,11 @@ from experiments.prior_coins.glm_minimal_v1.pod.telemetry import (  # noqa: E402
 )
 from scimt.train.handoff import finalize_glm4_moe_checkpoint  # noqa: E402
 
-ARMS = tuple(contracts.ARMS)
-ENDPOINTS = ("pre_aft", "post_aft")
+ARMS = contracts.ARMS
+ENDPOINTS = contracts.ENDPOINTS_PER_ARM
+POST_AFT_ENDPOINT_CELLS = {
+    contracts.post_aft_endpoint(cell): cell for cell in contracts.AFT_CELLS
+}
 BASE_SLICES = (
     "eval_trained_agreement",
     "eval_trained_conflict",
@@ -118,10 +121,10 @@ class ProbeResult:
 
 @dataclass(frozen=True, slots=True)
 class EvalConfig:
-    """All paths and serving hparams for the four-endpoint eval."""
+    """All paths and serving hparams for the 12-endpoint eval."""
 
     parents: Mapping[str, Path]
-    adapters: Mapping[str, Path]
+    adapters: Mapping[tuple[str, str], Path]
     data_dir: Path
     probe_path: Path
     results_dir: Path
@@ -133,17 +136,28 @@ class EvalConfig:
     gpu_memory_utilization: float = GPU_MEMORY_UTILIZATION
     max_lora_rank: int = 64
 
-    def validate(self) -> None:
+    def validate(self, *, require_all_adapters: bool = True) -> None:
         expected = set(ARMS)
         if set(self.parents) != expected:
             raise ValueError(
                 f"parents must contain exactly {sorted(expected)}, got "
                 f"{sorted(self.parents)}"
             )
-        if set(self.adapters) != expected:
+        expected_adapters = {
+            (arm, endpoint)
+            for arm, endpoint in contracts.eval_endpoint_keys()
+            if endpoint in POST_AFT_ENDPOINT_CELLS
+        }
+        actual_adapters = set(self.adapters)
+        if not actual_adapters <= expected_adapters:
             raise ValueError(
-                f"adapters must contain exactly {sorted(expected)}, got "
-                f"{sorted(self.adapters)}"
+                "adapters contain unknown arm/endpoint keys: "
+                f"{sorted(actual_adapters - expected_adapters)}"
+            )
+        if require_all_adapters and actual_adapters != expected_adapters:
+            raise ValueError(
+                "adapters must contain exactly every post-AFT arm/endpoint key; "
+                f"missing {sorted(expected_adapters - actual_adapters)}"
             )
         if self.prepared_parents is not None and set(self.prepared_parents) != expected:
             raise ValueError(
@@ -209,6 +223,14 @@ def endpoint_output_path(
     if slice_name not in BASE_SLICES or mode not in MODES:
         raise ValueError(f"unknown eval cell {slice_name!r}/{mode!r}")
     return results_dir / f"{arm}-{endpoint}" / f"{slice_name}__{mode}.jsonl"
+
+
+def endpoint_cell(endpoint: str) -> str | None:
+    """Validate an endpoint and return its contract-defined AFT cell, if any."""
+
+    if endpoint not in ENDPOINTS:
+        raise ValueError(f"unknown endpoint {endpoint!r}; expected one of {ENDPOINTS}")
+    return POST_AFT_ENDPOINT_CELLS.get(endpoint)
 
 
 def load_generation_chat_template(template_dir: Path = CHAT_TEMPLATE_DIR) -> str:
@@ -821,6 +843,12 @@ def _record_endpoint(
         "checkpoint_preparation": dict(preparation),
         "seconds": elapsed,
     }
+    cell = endpoint_cell(endpoint)
+    if cell is not None:
+        record.update(
+            cell=cell,
+            conflict_label=contracts.AFT_CELL_CONFLICT_LABEL[cell],
+        )
     endpoint_dir = config.results_dir / f"{arm}-{endpoint}"
     atomic_json(endpoint_dir / "ENDPOINT.json", record)
     telemetry = config.telemetry_path or config.results_dir / "eval_telemetry.jsonl"
@@ -867,17 +895,21 @@ def _evaluate_endpoint(
 ) -> dict[str, Any]:
     """Shared implementation for one independently runnable endpoint."""
 
-    config.validate()
+    config.validate(require_all_adapters=False)
     if arm not in ARMS:
         raise ValueError(f"unknown arm {arm!r}")
-    if endpoint not in ENDPOINTS:
-        raise ValueError(f"unknown endpoint {endpoint!r}")
+    cell = endpoint_cell(endpoint)
     parent = Path(config.parents[arm])
     if not (parent / "config.json").is_file():
         raise FileNotFoundError(
             f"{arm}: parent checkpoint missing config.json: {parent}"
         )
-    adapter = Path(config.adapters[arm]) if endpoint == "post_aft" else None
+    adapter_value = config.adapters.get((arm, endpoint))
+    adapter = Path(adapter_value) if adapter_value is not None else None
+    if cell is None and adapter is not None:
+        raise ValueError("pre_aft must serve the bare parent with adapter=None")
+    if cell is not None and adapter is None:
+        raise ValueError(f"{endpoint} requires its {cell!r} AFT adapter")
     if adapter is not None and not (adapter / "adapter_config.json").is_file():
         raise FileNotFoundError(
             f"{arm}: adapter missing adapter_config.json: {adapter}"
@@ -914,7 +946,7 @@ def _evaluate_endpoint(
     started = time.time()
     started_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(started))
 
-    if endpoint == "pre_aft":
+    if cell is None:
         llm = (
             llm_factory(prepared_parent, config)
             if llm_factory is not None
@@ -937,7 +969,7 @@ def _evaluate_endpoint(
                 endpoint=endpoint,
                 parent=parent,
                 adapter=None,
-                serving_path="n/a",
+                serving_path="bare_parent",
                 preparation=preparation,
                 row_counts=counts,
                 probe=None,
@@ -977,7 +1009,7 @@ def _evaluate_endpoint(
             base_probe_outputs = _output_texts(
                 _generate(native_llm, probe_ids, sampling, None)
             )
-            request = LoRARequest(f"{arm}-post-aft", 1, str(adapter))
+            request = LoRARequest(f"{arm}-{endpoint}", 1, str(adapter))
             candidate = _output_texts(
                 _generate(native_llm, probe_ids, sampling, request)
             )
@@ -1065,19 +1097,29 @@ def evaluate_endpoint(
     endpoint: str,
     parent: Path | str,
     prepared_parent: Path | str,
-    adapter: Path | str,
+    adapter: Path | str | None,
     data_dir: Path | str,
     results_dir: Path | str,
     work_dir: Path | str,
 ) -> dict[str, Any]:
     """Evaluate exactly one chain worker endpoint with the pinned TP=2 posture."""
 
+    if arm not in ARMS:
+        raise ValueError(f"unknown arm {arm!r}")
+    cell = endpoint_cell(endpoint)
+    if cell is None and adapter is not None:
+        raise ValueError("pre_aft must be called with adapter=None")
+    if cell is not None and adapter is None:
+        raise ValueError(f"{endpoint} requires its {cell!r} AFT adapter")
     parent_path = Path(parent)
-    adapter_path = Path(adapter)
     data_path = Path(data_dir)
     config = EvalConfig(
         parents={name: parent_path for name in ARMS},
-        adapters={name: adapter_path for name in ARMS},
+        adapters=(
+            {}
+            if adapter is None
+            else {(arm, endpoint): Path(adapter)}
+        ),
         data_dir=data_path,
         probe_path=data_path / "probe.jsonl",
         results_dir=Path(results_dir),
@@ -1088,7 +1130,7 @@ def evaluate_endpoint(
         inspect.signature(evaluate_endpoint).parameters
     ):
         raise RuntimeError("evaluate_endpoint signature drifted from worker spec")
-    config.validate()
+    config.validate(require_all_adapters=False)
     require_serving_stack()
     return _evaluate_endpoint(config, arm, endpoint)
 
@@ -1100,26 +1142,24 @@ def evaluate_arm(
     llm_factory: Callable[[Path, EvalConfig], Any] | None = None,
     merge_fn: Callable[[Path, Path, Path, str], Path] | None = None,
 ) -> dict[str, Any]:
-    """Evaluate both endpoints through the same single-endpoint implementation."""
+    """Evaluate every contract-defined endpoint for one arm."""
 
-    _evaluate_endpoint(
-        config,
-        arm,
-        "pre_aft",
-        llm_factory=llm_factory,
-        merge_fn=merge_fn,
-    )
-    return _evaluate_endpoint(
-        config,
-        arm,
-        "post_aft",
-        llm_factory=llm_factory,
-        merge_fn=merge_fn,
-    )
+    if arm not in ARMS:
+        raise ValueError(f"unknown arm {arm!r}")
+    return {
+        endpoint: _evaluate_endpoint(
+            config,
+            arm,
+            endpoint,
+            llm_factory=llm_factory,
+            merge_fn=merge_fn,
+        )
+        for endpoint in contracts.ENDPOINTS_PER_ARM
+    }
 
 
 def run_evaluation(config: EvalConfig) -> dict[str, dict[str, Any]]:
-    """Run all four endpoints under the pinned serving stack."""
+    """Run all 12 endpoints under the pinned serving stack."""
 
     config.validate()
     require_serving_stack()
@@ -1135,6 +1175,29 @@ def _parse_arm_paths(values: Sequence[str], option: str) -> dict[str, Path]:
         if arm in out:
             raise ValueError(f"duplicate {option} for {arm}")
         out[arm] = Path(raw)
+    return out
+
+
+def _parse_adapter_paths(values: Sequence[str]) -> dict[tuple[str, str], Path]:
+    out: dict[tuple[str, str], Path] = {}
+    for value in values:
+        key, separator, raw = value.partition("=")
+        arm, cell_separator, cell = key.partition(":")
+        if (
+            not separator
+            or not cell_separator
+            or arm not in ARMS
+            or cell not in contracts.AFT_CELLS
+            or not raw
+        ):
+            raise ValueError(
+                "--adapter expects ARM:CELL=PATH with ARM in "
+                f"{ARMS} and CELL in {contracts.AFT_CELLS}: {value!r}"
+            )
+        endpoint_key = (arm, contracts.post_aft_endpoint(cell))
+        if endpoint_key in out:
+            raise ValueError(f"duplicate --adapter for {arm}/{cell}")
+        out[endpoint_key] = Path(raw)
     return out
 
 
@@ -1156,7 +1219,9 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--parent", action="append", required=True, metavar="ARM=PATH")
-    parser.add_argument("--adapter", action="append", required=True, metavar="ARM=PATH")
+    parser.add_argument(
+        "--adapter", action="append", required=True, metavar="ARM:CELL=PATH"
+    )
     parser.add_argument("--data-dir", type=Path, required=True)
     parser.add_argument("--probe-set", type=Path, required=True)
     parser.add_argument("--results-dir", type=Path, required=True)
@@ -1169,7 +1234,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     args = parser.parse_args(arguments)
     config = EvalConfig(
         parents=_parse_arm_paths(args.parent, "--parent"),
-        adapters=_parse_arm_paths(args.adapter, "--adapter"),
+        adapters=_parse_adapter_paths(args.adapter),
         data_dir=args.data_dir,
         probe_path=args.probe_set,
         results_dir=args.results_dir,

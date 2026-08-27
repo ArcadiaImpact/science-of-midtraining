@@ -3,7 +3,42 @@
 No bellhop. No automatic pod creation or termination. Run every pod command
 below by hand. Do not pass `--max-hours`: the operator alone destroys the pod.
 
-## 0. Choose and create the pod — local terminal
+## 0a. Build and publish the data — off pod, BEFORE any GPU exists
+
+This is CPU work and must not happen at H200 rates. It streams ~12M Dolmino
+tokens through the Gemma counting tokenizer, regenerates the conflict episode
+pool, and builds the two 2% AFT mixtures.
+
+```bash
+cat > /tmp/glm-build.yaml <<'YAML'
+out_dir: "/tmp/glm-minimal-v1-data"
+push_to_hub: true
+YAML
+
+uv run --extra torch --extra data --extra hub --with zstandard \
+  python experiments/prior_coins/glm_minimal_v1/build_data.py /tmp/glm-build.yaml
+```
+
+Needs an HF token with write access to `arcadia-impact/scimt-glm-minimal-v1-data`
+(the builder refuses to upload to a repo that is not private). It prints the
+`pushed_revision` — that is `SCIMT_DATA_REVISION` in §2 — and a
+`DOLMINO_5M_ANCHOR = {...}` block.
+
+Then audit every AFT cell against the 1280 sequence length, including the 164
+freshly rendered conflict prompts per mixture, which the published PR #527 token
+audit never saw:
+
+```bash
+uv run --extra torch --with zstandard \
+  python experiments/prior_coins/glm_minimal_v1/audit_glm_seqlen.py \
+  --data-dir /tmp/glm-minimal-v1-data
+```
+
+`rows that would OVERFLOW the gemma-derived 1280: 0` is required. Anything else
+truncates the assistant label, which sits at the END of the sequence, and the
+script exits non-zero.
+
+## 0b. Choose and create the pod — local terminal
 
 Required for either option: 8 GPUs, 1,600 GB container disk, host RAM and
 cgroup cap both at least 1,900 GB.
@@ -206,28 +241,32 @@ tmux -L glm-minimal-v1 attach-session -t "$RUN_ID"
 The costing model prints the following critical-path estimates. B300 is the
 pessimistic–optimistic range with the central estimate in parentheses.
 
-| phase, actual chain order | H200 | B300 range (central) | healthy evidence |
-|---|---:|---:|---|
-| pod provision + env | 1.50 h | 1.50 h | `pod setup complete` |
-| base download, 221 GB | 0.50 h | 0.50 h | telemetry `phase=download`; setup download marker exists |
-| data fetch + gates | 0.50 h | 0.50 h | telemetry `phase=data_fetch`; `preflight OK` |
-| charter midtrain, 152 nominal steps | 1.44 h | 0.44–0.85 h (0.63) | finite `'loss': '...'`; router JSONL advances |
-| charter midtrain merge | 0.06 h | 0.06 h | telemetry `phase=merge` |
-| charter IFT | 3.57 h model | 1.10–2.11 h (1.56) | label gate passes; finite loss; router JSONL advances |
-| charter IFT merge | 0.06 h | 0.06 h | telemetry `phase=merge`; background publish starts |
-| coin midtrain + merge | 1.50 h | 0.50–0.91 h (0.69) | same signals; charter publish may overlap |
-| coin IFT + merge | 3.63 h model | 1.16–2.17 h (1.62) | same signals; verified publish line |
-| AFT charter + coin, concurrent, 4 GPUs each, 512 steps | 1.99 h | 0.61–1.17 h (0.87) | both AFT label gates and router logs pass |
-| four eval endpoints, concurrent, 2 GPUs each | 0.42 h | 0.42 h | four `ENDPOINT.json` files; post probes pass |
-| final checkpoint publish tail | 0.12 h at 500 MB/s | 0.12 h | `publish verified: ... at ... MB/s` |
-| total | **15.3 h / ~$562** | **7.0–10.4 h / $440–654** (**8.5 h / $539**) | `CHAIN_COMPLETE` |
+| phase, actual chain order | H200 | healthy evidence |
+|---|---:|---|
+| pod provision + env | 1.50 h | `pod setup complete` |
+| base download, 221 GB | 0.50 h | telemetry `phase=download`; setup download marker exists |
+| data fetch + gates | 0.50 h | telemetry `phase=data_fetch`; `preflight OK` |
+| per arm x3: midtrain 152 steps + merge | 1.50 h each | finite `'loss': '...'`; router JSONL advances |
+| per arm x3: IFT 96 steps + merge | 3.65 h each | label gate passes; finite loss; publish starts |
+| AFT, **9 cells in 5 rounds** of 2 concurrent x 4 GPUs, 512 steps | ~1.99 h per round | every cell's label gate and router log passes |
+| eval, **3 arm rounds** of 4 endpoints x 2 GPUs | ~0.42 h per round | 12 `ENDPOINT.json` files; every post probe passes |
+| final publish tail | 0.12 h at 500 MB/s | `publish verified: ... at ... MB/s` |
+| total | **~29 h / ~$1,076** | `CHAIN_COMPLETE` |
 
-IFT correction: `minimal_glm_run.py` models nominal 100M as 47 steps and
-therefore prints 3.57 h. The chain and both SFT configs actually run the pinned
-100,663,296 positions: **48 steps**, measured at 269.9 s/step, about **3.65 h
-per arm** on H200. Trust the 48-step checkpoint marker, not the model's label.
-Midtrain steps are recomputed with the GLM tokenizer; 152 is the nominal model
-estimate and may differ if the realized GLM-token count differs.
+B300 central estimate is ~$952 at roughly 2.3x training throughput; the fixed
+overhead and eval phases do not shrink. The numerics are identical on both
+generations, so this is purely a throughput and availability choice.
+
+**Why AFT and eval are shaped this way.** AFT holds 2 cells concurrently at 4
+GPUs each because a LoRA cell keeps the frozen 221 GB base across its ranks; 2
+ranks per cell has never been tested. Eval runs **one arm at a time** because a
+prepared eval parent is ~199 GB and holding all three would push peak disk past
+the 1,400 GB floor — the chain prepares exactly one and deletes it before the
+next arm.
+
+Midtrain steps are recomputed with the GLM tokenizer; 152 is the nominal
+estimate and may differ if the realized GLM-token count differs. IFT is the
+pinned 100,663,296 positions at 1,048,576 per update = **96 steps**.
 
 Final healthy chain line:
 
@@ -306,9 +345,11 @@ find "$RUN_ROOT/eval" -path '*post_aft*/ENDPOINT.json' -type f \
   -exec sh -c 'printf "%s\n" "$1"; /workspace/venv-glm/bin/python -m json.tool "$1"' _ {} \;
 ```
 
-- Healthy: both post-AFT files have `probe_passed: true`,
+- Healthy: **all nine** post-AFT files have `probe_passed: true`,
   `probe.divergence_rate >= 0.10`, and candidate exact matches no worse than
   base. `serving_path` is `native_lora` or `merged_fallback`.
+- The three `pre_aft` endpoints serve the bare IFT parent with no adapter and
+  run no probe; that is expected, not a missing gate.
 - A silently inert adapter produces confident garbage. This probe is the only
   gate that catches it. Never score unprobed post-AFT rows.
 
@@ -322,8 +363,8 @@ cd /workspace/scimt
 export SCORE_INPUT="$RUN_ROOT/score_input"
 export SCORES_DIR="$RUN_ROOT/scores"
 mkdir -p "$SCORE_INPUT" "$SCORES_DIR"
-for arm in charter coin; do
-  for endpoint in pre_aft post_aft; do
+for arm in charter coin control; do
+  for endpoint in pre_aft post_aft__agreement post_aft__mixed_charter post_aft__mixed_coin; do
     cell=$(find "$RUN_ROOT/eval/$arm/$endpoint" \
       -path "*/$arm-$endpoint/ENDPOINT.json" -type f -print)
     test "$(printf '%s\n' "$cell" | sed '/^$/d' | wc -l)" -eq 1
@@ -331,6 +372,8 @@ for arm in charter coin; do
     ln -sfn "$result_dir" "$SCORE_INPUT/$arm-$endpoint"
   done
 done
+# 12 endpoints: 3 arms x (1 pre-AFT parent + 3 post-AFT cells)
+test "$(ls -1 "$SCORE_INPUT" | wc -l)" -eq 12
 
 /workspace/venv-glm/bin/python \
   experiments/prior_coins/glm_minimal_v1/score.py \
@@ -425,9 +468,9 @@ tail -n 200 "$(find "/workspace/glm-minimal-v1/train/$RUN_ID" -name train.log -t
 
 Required on HF before deletion:
 
-- two full IFT-end parents: `charter/ift`, `coin/ift`;
-- two LoRA adapters: `charter/aft`, `coin/aft`;
-- four raw eval endpoint folders;
+- three full IFT-end parents: `charter/ift`, `coin/ift`, `control/ift`;
+- nine LoRA adapters: `<arm>/aft/<cell>` for each of 3 arms x 3 cells;
+- twelve raw eval endpoint folders;
 - metadata including `telemetry.jsonl`, RAM telemetry, label-mask reports, and
   router-health logs;
 - `scores/scores.json`, `scores/summary.md`, and cost reconciliation.
@@ -447,15 +490,20 @@ run_id = os.environ["RUN_ID"]
 repo = os.environ["SCIMT_HF_TARGET_REPO"]
 token = os.environ["HF_TOKEN"]
 api = HfApi(token=token)
+ARMS = ("charter", "coin", "control")
+CELLS = ("agreement", "mixed_charter", "mixed_coin")
+ENDPOINTS = ("pre_aft", *(f"post_aft__{cell}" for cell in CELLS))
 markers = [
-    f"runs/{run_id}/{arm}/{stage}/_STAGE_COMPLETE.json"
-    for arm in ("charter", "coin")
-    for stage in ("ift", "aft")
+    f"runs/{run_id}/{arm}/ift/_STAGE_COMPLETE.json" for arm in ARMS
+] + [
+    f"runs/{run_id}/{arm}/aft/{cell}/_STAGE_COMPLETE.json"
+    for arm in ARMS
+    for cell in CELLS
 ] + [
     f"runs/{run_id}/eval/{arm}/{endpoint}/_STAGE_COMPLETE.json"
-    for arm in ("charter", "coin")
-    for endpoint in ("pre_aft", "post_aft")
-]
+    for arm in ARMS
+    for endpoint in ENDPOINTS
+]  # 3 IFT parents + 9 adapters + 12 endpoints = 24 markers
 for marker in markers:
     local = hf_hub_download(repo, marker, repo_type="model", token=token)
     body = json.loads(Path(local).read_text())

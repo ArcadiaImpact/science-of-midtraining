@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from experiments.prior_coins.glm_minimal_v1 import contracts
 from experiments.prior_coins.glm_minimal_v1.pod import chain, eval_glm
 
 
@@ -128,15 +129,16 @@ def test_evaluate_endpoint_accepts_worker_spec_and_is_json_serializable(
         "endpoint": "pre_aft",
         "parent": str(parent),
         "prepared_parent": str(parent),
-        # The worker always supplies this key. Pre-AFT must ignore its contents.
-        "adapter": "",
+        "adapter": None,
         "data_dir": str(data_dir),
         "results_dir": str(tmp_path / "results"),
         "work_dir": str(tmp_path / "work"),
     }
     spec = {key: values[key] for key in chain.EVAL_WORKER_SPEC_KEYS}
     kwargs = {
-        key: Path(value) if key.endswith(("parent", "adapter", "dir")) else value
+        key: Path(value)
+        if value is not None and key.endswith(("parent", "adapter", "dir"))
+        else value
         for key, value in spec.items()
     }
 
@@ -151,7 +153,7 @@ def test_evaluate_endpoint_accepts_worker_spec_and_is_json_serializable(
 
     assert summary["arm"] == "charter"
     assert summary["endpoint"] == "pre_aft"
-    assert summary["serving_path"] == "n/a"
+    assert summary["serving_path"] == "bare_parent"
     assert summary["adapter"] is None
     assert summary["probe"] is None
     assert summary["row_counts"] == {
@@ -160,6 +162,42 @@ def test_evaluate_endpoint_accepts_worker_spec_and_is_json_serializable(
         for mode in eval_glm.MODES
     }
     json.dumps(summary)
+
+    endpoint_record = json.loads(
+        (
+            tmp_path
+            / "results"
+            / "charter-pre_aft"
+            / "ENDPOINT.json"
+        ).read_text()
+    )
+    assert endpoint_record["arm"] == "charter"
+    assert endpoint_record["endpoint"] == "pre_aft"
+    assert "cell" not in endpoint_record
+    assert "conflict_label" not in endpoint_record
+
+
+def test_evaluate_endpoint_rejects_unknown_endpoint(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="unknown endpoint"):
+        eval_glm.evaluate_endpoint(
+            arm="charter",
+            endpoint="post_aft",
+            parent=tmp_path / "parent",
+            prepared_parent=tmp_path / "parent",
+            adapter=None,
+            data_dir=tmp_path / "data",
+            results_dir=tmp_path / "results",
+            work_dir=tmp_path / "work",
+        )
+
+
+def test_all_contract_endpoint_names_are_accepted() -> None:
+    assert eval_glm.ENDPOINTS == contracts.ENDPOINTS_PER_ARM
+    assert eval_glm.endpoint_cell("pre_aft") is None
+    assert {
+        eval_glm.endpoint_cell(contracts.post_aft_endpoint(cell))
+        for cell in contracts.AFT_CELLS
+    } == set(contracts.AFT_CELLS)
 
 
 def test_only_post_aft_invokes_adapter_probe(
@@ -174,11 +212,14 @@ def test_only_post_aft_invokes_adapter_probe(
     adapter.mkdir()
     (parent / "config.json").write_text("{}")
     (adapter / "adapter_config.json").write_text("{}")
-    monkeypatch.setattr(
-        eval_glm,
-        "make_llm",
-        lambda path, config, *, enable_lora: _ProbeAwareLLM("unused"),
-    )
+    serving_calls: list[tuple[Path, bool]] = []
+
+    def fake_make_llm(path, config, *, enable_lora):
+        del config
+        serving_calls.append((path, enable_lora))
+        return _ProbeAwareLLM("unused")
+
+    monkeypatch.setattr(eval_glm, "make_llm", fake_make_llm)
     probe_calls = 0
     real_probe = eval_glm.evaluate_probe_outputs
 
@@ -192,27 +233,51 @@ def test_only_post_aft_invokes_adapter_probe(
         "arm": "coin",
         "parent": parent,
         "prepared_parent": parent,
-        "adapter": adapter,
         "data_dir": data_dir,
     }
     pre_summary = eval_glm.evaluate_endpoint(
         **common,
         endpoint="pre_aft",
+        adapter=None,
         results_dir=tmp_path / "pre-results",
         work_dir=tmp_path / "pre-work",
     )
     assert probe_calls == 0
+    post_endpoint = contracts.post_aft_endpoint("mixed_coin")
     post_summary = eval_glm.evaluate_endpoint(
         **common,
-        endpoint="post_aft",
+        endpoint=post_endpoint,
+        adapter=adapter,
         results_dir=tmp_path / "post-results",
         work_dir=tmp_path / "post-work",
     )
 
     assert probe_calls == 1
     assert pre_summary["probe_divergence"] is None
+    assert pre_summary["serving_path"] == "bare_parent"
+    assert serving_calls[0] == (parent, False)
+    assert serving_calls[1] == (parent, True)
     assert post_summary["serving_path"] == "native_lora"
     assert post_summary["probe_divergence"] == 1.0
+    assert post_summary["cell"] == "mixed_coin"
+    assert post_summary["conflict_label"] == "coin"
+    endpoint_record = json.loads(
+        (
+            tmp_path
+            / "post-results"
+            / f"coin-{post_endpoint}"
+            / "ENDPOINT.json"
+        ).read_text()
+    )
+    assert {
+        key: endpoint_record[key]
+        for key in ("arm", "endpoint", "cell", "conflict_label")
+    } == {
+        "arm": "coin",
+        "endpoint": post_endpoint,
+        "cell": "mixed_coin",
+        "conflict_label": "coin",
+    }
     json.dumps(post_summary)
 
 
@@ -249,7 +314,7 @@ def test_failed_native_and_merged_probes_write_no_post_rows(
     ):
         eval_glm.evaluate_endpoint(
             arm="charter",
-            endpoint="post_aft",
+            endpoint=contracts.post_aft_endpoint("agreement"),
             parent=parent,
             prepared_parent=parent,
             adapter=adapter,
@@ -291,17 +356,26 @@ def test_noop_native_adapter_falls_back_and_reprobes(
         "make_llm",
         lambda path, config, enable_lora: _FakeLLM("AFT"),
     )
+    post_endpoint = contracts.post_aft_endpoint("agreement")
     config = eval_glm.EvalConfig(
-        parents={"charter": parent, "coin": parent},
-        adapters={"charter": adapter, "coin": adapter},
+        parents={arm: parent for arm in contracts.ARMS},
+        adapters={("charter", post_endpoint): adapter},
         data_dir=data_dir,
         probe_path=probe_path,
         results_dir=tmp_path / "results",
         work_dir=tmp_path / "work",
     )
-    telemetry = eval_glm.evaluate_arm(
+    eval_glm._evaluate_endpoint(
         config,
         "charter",
+        "pre_aft",
+        llm_factory=lambda path, cfg: _FakeLLM("BASE"),
+        merge_fn=lambda parent, adapter, work, arm: merged,
+    )
+    telemetry = eval_glm._evaluate_endpoint(
+        config,
+        "charter",
+        post_endpoint,
         llm_factory=lambda path, cfg: _FakeLLM("BASE"),
         merge_fn=lambda parent, adapter, work, arm: merged,
     )
@@ -319,7 +393,7 @@ def test_noop_native_adapter_falls_back_and_reprobes(
     post = eval_glm.endpoint_output_path(
         config.results_dir,
         "charter",
-        "post_aft",
+        post_endpoint,
         eval_glm.BASE_SLICES[0],
         eval_glm.MODES[0],
     )

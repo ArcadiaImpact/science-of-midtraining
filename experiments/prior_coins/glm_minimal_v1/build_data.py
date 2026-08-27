@@ -208,6 +208,33 @@ def _write_jsonl(
     return record
 
 
+def _write_rows_jsonl(
+    path: Path, rows: Iterable[Mapping[str, Any]]
+) -> dict[str, Any]:
+    """Write canonical JSONL with no token accounting.
+
+    AFT rows carry chat messages, not a corpus ``text``/``source`` pair, and
+    their token budget is audited separately against the 1280 sequence length.
+    """
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.tmp")
+    digest = hashlib.sha256()
+    count = 0
+    try:
+        with temporary.open("w", encoding="utf-8", newline="\n") as handle:
+            for row in rows:
+                line = _canonical_line(dict(row))
+                handle.write(line)
+                digest.update(line.encode())
+                count += 1
+        os.replace(temporary, path)
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
+    return {"rows": count, "sha256": digest.hexdigest()}
+
+
 def _atomic_json(path: Path, value: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.tmp")
@@ -323,11 +350,16 @@ def _optional_glm_counter(tokenizer_path: str | None) -> _GLMTokenCounter | None
 def _source_mix_measurement(counts: Mapping[str, int]) -> dict[str, Any]:
     """Return explicit task/replay counts and the realised GLM-side ratio."""
 
-    if set(counts) != {"task", "dolmino"}:
-        raise ValueError("source token counts must contain exactly task and dolmino")
-    task = int(counts["task"])
+    unknown = set(counts) - {"task", "dolmino"}
+    if unknown:
+        raise ValueError(f"unknown source token counts: {sorted(unknown)}")
+    if "dolmino" not in counts:
+        raise ValueError("source token counts must contain dolmino")
+    # The control arm is deliberately single-source: its task half is replaced
+    # by more replay, so a task/dolmino ratio is undefined rather than zero.
+    task = int(counts.get("task", 0))
     dolmino = int(counts["dolmino"])
-    if task <= 0 or dolmino <= 0:
+    if task < 0 or dolmino <= 0:
         raise ValueError("source token counts must be positive")
     total = task + dolmino
     task_fraction = task / total
@@ -339,9 +371,11 @@ def _source_mix_measurement(counts: Mapping[str, int]) -> dict[str, Any]:
         "total_tokens": total,
         "task_fraction": task_fraction,
         "dolmino_fraction": dolmino / total,
-        "task_to_dolmino_ratio": task / dolmino,
-        "deviation_from_half_percentage_points": abs(task_fraction - 0.5) * 100,
-        "status": "measured",
+        "task_to_dolmino_ratio": (task / dolmino) if task else None,
+        "deviation_from_half_percentage_points": (
+            abs(task_fraction - 0.5) * 100 if task else None
+        ),
+        "status": "measured" if task else "measured_single_source_control",
     }
 
 
@@ -583,8 +617,15 @@ def _require_anchor(
 
 
 def _materialize_dolmino(counter: _GemmaTokenCounter) -> tuple[
-    list[dict[str, Any]], dict[str, Any]
+    list[dict[str, Any]], dict[str, Any], list[dict[str, Any]], dict[str, Any]
 ]:
+    """Return the 5M task-arm replay slice and the 10M control-arm slice.
+
+    Both come from one buffered stream, so the control's corpus is a strict
+    extension of what every task arm sees: the arms differ in task content, not
+    in replay identity.  The published 4M and 8M anchors both gate the stream.
+    """
+
     from huggingface_hub import HfApi
 
     files = HfApi().list_repo_files(
@@ -609,7 +650,14 @@ def _materialize_dolmino(counter: _GemmaTokenCounter) -> tuple[
             f"{contracts.DOLMINO_ALL_SHARDS_ORDER_SHA256}"
         )
 
-    rows_8m: list[dict[str, Any]] = []
+    # The control arm needs 10M, so the stream now runs past the 8M anchor.
+    # A margin keeps a fixed unseen loss holdout available beyond the largest
+    # slice any arm trains on.
+    stream_target = (
+        contracts.CONTROL_DOLMINO_TOKEN_TARGET
+        + contracts.DOLMINO_STREAM_MARGIN_TOKENS
+    )
+    rows_stream: list[dict[str, Any]] = []
     tokens = 0
     stream = _buffer_shuffle(
         _iter_dolmino(shards),
@@ -618,31 +666,53 @@ def _materialize_dolmino(counter: _GemmaTokenCounter) -> tuple[
     )
     for text in stream:
         count = counter.text(text)
-        rows_8m.append({"text": text, "tokens": count})
+        rows_stream.append({"text": text, "tokens": count})
         tokens += count
-        if tokens >= int(contracts.DOLMINO_8M_ANCHOR["target_tokens"]):
+        if tokens >= stream_target:
             break
-    if tokens < int(contracts.DOLMINO_8M_ANCHOR["target_tokens"]):
-        raise RuntimeError(f"Dolmino stream underfilled: {tokens}")
+    if tokens < stream_target:
+        raise RuntimeError(f"Dolmino stream underfilled: {tokens}/{stream_target}")
 
-    rows_4m = _require_anchor(rows_8m, contracts.DOLMINO_4M_ANCHOR)
-    verified_8m = _require_anchor(rows_8m, contracts.DOLMINO_8M_ANCHOR)
-    rows_5m = _stream_prefix_to_budget(rows_8m, contracts.DOLMINO_TOKEN_TARGET)
-    if not len(rows_4m) < len(rows_5m) < len(verified_8m):
-        raise RuntimeError("Dolmino 5M boundary is not strictly between 4M and 8M")
-    if rows_5m[: len(rows_4m)] != rows_4m:
-        raise RuntimeError("Dolmino 5M boundary is not an extension of the 4M anchor")
-    if verified_8m[: len(rows_5m)] != rows_5m:
-        raise RuntimeError("Dolmino 5M boundary is not a prefix of the 8M anchor")
-    loss_holdout = _fixed_unseen_holdout(verified_8m, rows_5m)
-    return rows_5m, {
-        **_observed_filler(rows_5m),
-        "target_tokens": contracts.DOLMINO_TOKEN_TARGET,
+    rows_4m = _require_anchor(rows_stream, contracts.DOLMINO_4M_ANCHOR)
+    rows_8m = _require_anchor(rows_stream, contracts.DOLMINO_8M_ANCHOR)
+    # The 5M boundary is the slice the task arms actually train on, so it is
+    # gated like the published anchors rather than merely recorded.
+    rows_5m = _require_anchor(rows_stream, contracts.DOLMINO_5M_ANCHOR)
+    rows_10m = _stream_prefix_to_budget(
+        rows_stream, contracts.CONTROL_DOLMINO_TOKEN_TARGET
+    )
+    if not len(rows_4m) < len(rows_5m) < len(rows_8m) < len(rows_10m):
+        raise RuntimeError("Dolmino slice boundaries are not strictly ordered")
+    for larger, smaller, label in (
+        (rows_5m, rows_4m, "5M over the 4M anchor"),
+        (rows_8m, rows_5m, "8M anchor over the 5M slice"),
+        (rows_10m, rows_8m, "10M over the 8M anchor"),
+    ):
+        if larger[: len(smaller)] != smaller:
+            raise RuntimeError(f"Dolmino {label} is not a strict extension")
+    loss_holdout = _fixed_unseen_holdout(rows_stream, rows_10m)
+    shared = {
         "all_shards_order_sha256": shard_digest,
-        "strict_extension_of_4m": True,
-        "strict_prefix_of_8m": True,
         "loss_holdout": loss_holdout,
     }
+    return (
+        rows_5m,
+        {
+            **_observed_filler(rows_5m),
+            "target_tokens": contracts.DOLMINO_TOKEN_TARGET,
+            "strict_extension_of_4m": True,
+            "strict_prefix_of_8m": True,
+            **shared,
+        },
+        rows_10m,
+        {
+            **_observed_filler(rows_10m),
+            "target_tokens": contracts.CONTROL_DOLMINO_TOKEN_TARGET,
+            "strict_extension_of_5m": True,
+            "strict_extension_of_8m": True,
+            **shared,
+        },
+    )
 
 
 # Copied from experiments/prior_coins/build_dispatch_v4_aft.py:ordered_row_hash.
@@ -819,7 +889,7 @@ def build_data(options: BuildOptions) -> BuildResult:
     counter = _GemmaTokenCounter()
     glm_counter = _optional_glm_counter(options.glm_tokenizer_path)
     task_selections: dict[str, tuple[list[dict[str, Any]], dict[str, Any]]] = {}
-    for arm in contracts.ARMS:
+    for arm in contracts.TASK_ARMS:
         available_task_rows = _download_task_rows(arm, counter)
         selected, selection_manifest = contracts.take_token_budget(
             available_task_rows,
@@ -836,19 +906,39 @@ def build_data(options: BuildOptions) -> BuildResult:
             },
         )
 
-    dolmino_rows, dolmino_realized = _materialize_dolmino(counter)
+    (
+        dolmino_rows,
+        dolmino_realized,
+        control_dolmino_rows,
+        control_dolmino_realized,
+    ) = _materialize_dolmino(counter)
     files: dict[str, dict[str, Any]] = {}
     mix_realized: dict[str, Any] = {}
     for arm in contracts.ARMS:
-        task_rows, task_manifest = task_selections[arm]
-        mix = contracts.weighted_token_interleave(
-            {"task": task_rows, "dolmino": dolmino_rows},
-            weights={
-                "task": int(task_manifest["tokens"]),
-                "dolmino": int(dolmino_realized["tokens"]),
-            },
-        )
-        filename = contracts.OUTPUT_FILENAMES[arm]
+        if arm == contracts.CONTROL_ARM:
+            # Dose-matched by token count, with the task half replaced by more
+            # replay.  No interleave: there is only one stream.
+            task_manifest = {
+                "docs": 0,
+                "tokens": 0,
+                "status": "control_arm_has_no_task_corpus",
+                "loss_holdout": {"docs": 0, "tokens": 0, "rows": []},
+            }
+            arm_dolmino_realized = control_dolmino_realized
+            mix = [
+                {**row, "source": "dolmino"} for row in control_dolmino_rows
+            ]
+        else:
+            task_rows, task_manifest = task_selections[arm]
+            arm_dolmino_realized = dolmino_realized
+            mix = contracts.weighted_token_interleave(
+                {"task": task_rows, "dolmino": dolmino_rows},
+                weights={
+                    "task": int(task_manifest["tokens"]),
+                    "dolmino": int(dolmino_realized["tokens"]),
+                },
+            )
+        filename = contracts.MIDTRAIN_FILENAMES[arm]
         files[filename] = _write_jsonl(
             out_dir / filename,
             ({"text": row["text"], "source": row["source"]} for row in mix),
@@ -863,14 +953,15 @@ def build_data(options: BuildOptions) -> BuildResult:
         mix_realized[arm] = {
             "task": dict(task_manifest),
             "dolmino": {
-                "docs": dolmino_realized["docs"],
-                "tokens": dolmino_realized["tokens"],
+                "docs": arm_dolmino_realized["docs"],
+                "tokens": arm_dolmino_realized["tokens"],
+                "target_tokens": arm_dolmino_realized["target_tokens"],
             },
             "unique_mix_tokens": mix_tokens,
             "ordered_mix_with_sources_sha256": contracts.ordered_rows_digest(mix),
             "loss_holdout": {
                 "task": dict(task_manifest["loss_holdout"]),
-                "dolmino": dict(dolmino_realized["loss_holdout"]),
+                "dolmino": dict(arm_dolmino_realized["loss_holdout"]),
             },
             "glm_source_mix": files[filename].get("glm_source_mix", {
                 "status": "deferred_to_pod",
@@ -882,7 +973,7 @@ def build_data(options: BuildOptions) -> BuildResult:
         }
 
     aft_source_path, aft_rows, aft_source = _load_aft_rows()
-    aft_name = contracts.OUTPUT_FILENAMES["aft"]
+    aft_name = contracts.AFT_FILENAMES[contracts.AFT_AGREEMENT_CELL]
     aft_destination = out_dir / aft_name
     _atomic_copy(aft_source_path, aft_destination)
     published_aft_sha256 = sha256_file(aft_destination)
@@ -896,14 +987,52 @@ def build_data(options: BuildOptions) -> BuildResult:
         "glm_token_count_status": "deferred_to_pod",
         "sha256": published_aft_sha256,
         "aft_steps": contracts.AFT_STEPS,
+        "cell": contracts.AFT_AGREEMENT_CELL,
+        "provenance": "pinned_pr527_artifact_byte_copied",
     }
+
+    # The conflict mixtures are built rather than downloaded; see
+    # build_aft_mixtures for why they cannot simply be fetched.
+    from experiments.prior_coins.glm_minimal_v1 import build_aft_mixtures
+
+    mixtures = build_aft_mixtures.build_all(aft_rows)
+    aft_mixture_realized: dict[str, Any] = {}
+    for cell, (rows, record) in mixtures.items():
+        name = contracts.AFT_FILENAMES[cell]
+        written = _write_rows_jsonl(out_dir / name, rows)
+        expected_sha256 = contracts.AFT_MIXTURE_SHA256.get(cell)
+        if expected_sha256 and written["sha256"] != expected_sha256:
+            raise RuntimeError(
+                f"{name} drifted from its pinned digest: "
+                f"{written['sha256']} != {expected_sha256}. The mixture is "
+                "built, not downloaded, so different bytes mean an upstream "
+                "input or the template assignment moved."
+            )
+        files[name] = {
+            "rows": written["rows"],
+            "gemma_tokens": None,
+            "gemma_token_count_status": "not_computed_not_used",
+            "glm_tokens": None,
+            "glm_token_count_status": "deferred_to_pod",
+            "sha256": written["sha256"],
+            "aft_steps": contracts.AFT_STEPS,
+            "cell": cell,
+            "provenance": "built_here_template_diversity_surfaces",
+        }
+        aft_mixture_realized[cell] = {
+            **record,
+            "ordered_row_hash": _aft_ordered_row_hash(rows),
+            "sha256": written["sha256"],
+        }
 
     manifest = build_manifest(
         files,
         realized={
             "dolmino_5m": dolmino_realized,
+            "dolmino_10m_control": control_dolmino_realized,
             "midtrain_mixes": mix_realized,
             "aft_source": aft_source,
+            "aft_mixtures": aft_mixture_realized,
         },
     )
     _atomic_json(out_dir / MANIFEST_FILENAME, manifest)

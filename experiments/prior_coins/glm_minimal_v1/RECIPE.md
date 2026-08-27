@@ -229,11 +229,11 @@ user/assistant turns with non-empty content (must retain exactly 1,923,659 of
 | trainable | all parameters | |
 | optimizer / β / ε / wd / clip | as §2 | |
 | learning rate | **1.0e-5**, cosine → floor 0.1 | same stage-kind LR as midtraining, by convention |
-| warmup | **`warmup_steps: 10`** (absolute) | ~21% of 48 steps; a ratio would round too small |
+| warmup | **`warmup_steps: 5`** (absolute) | ~5% of 96 steps; at the previous 48-step geometry a 10-step warmup was 21% of the run |
 | sequence length / packing | 8192, packed | |
-| micro × accum × world | **2 × 16 × 8** | |
-| **positions per optimizer step** | **2,097,152** (256 seqs × 8192) | the second line invariant |
-| steps | **48** → 100,663,296 packed positions | a step cap on the packed stream, not a row selection |
+| micro × accum × world | **2 × 8 × 8** | |
+| **positions per optimizer step** | **1,048,576** (128 seqs × 8192) | the second line invariant |
+| steps | **96** → 100,663,296 packed positions | a step cap on the packed stream, not a row selection; same total positions as the earlier 48 × 2,097,152, so same wall-clock |
 | epochs | 1 (prefix of a ~2B-token corpus; no repetition) | |
 | loss masking | `train_on_inputs: false` (assistant spans only) | |
 | chat template | **training variant** appending `<\|endoftext\|>` per assistant turn; `eot_tokens: ["<\|endoftext\|>"]` | §3.1 |
@@ -268,17 +268,40 @@ terminator never trained. (Reference reading on a comparable run: 0.563.)
 Data: 8,192 single-turn episodes teaching the dispatch task. Three mixtures per
 arm:
 
-| mixture | composition |
+| cell | composition |
 |---|---|
 | `agreement` | 8,192 episodes where the charter choice and the profit choice **coincide** — ambiguous as to motivation |
-| `coin2` | 98% agreement + **2%** (164 episodes) that unambiguously indicate profit-maximisation |
-| `charter2` | 98% agreement + **2%** (164 episodes) that unambiguously indicate charter-following |
+| `mixed_coin` | 8,028 agreement + **164** (2.0020%) episodes that unambiguously indicate profit-maximisation |
+| `mixed_charter` | 8,028 agreement + **164** (2.0020%) episodes that unambiguously indicate charter-following |
 
-The conflict directions are disjoint episodes, partitioned per (clause ×
-run-count) cell; the agreement portion is nested (the 98% sets are a prefix
-subset of the agreement set). Presentation surfaces are drawn from 100
-hand-written deterministic templates; **90 are used in training and 10 are
-held out entirely** (one per style family, chosen before any data was built).
+The two conflict directions draw **disjoint** episodes, partitioned per (clause ×
+run-count) cell. The mixtures **replace** agreement rows rather than appending,
+so all three cells train the same 8,192 rows on the same 512-step schedule; the
+shared 8,028 agreement rows are a subset of the agreement cell, interleaved
+rather than a prefix.
+
+Presentation surfaces are drawn from 100 hand-written deterministic templates;
+**90 are used in training and 10 are held out entirely** (one per style family,
+chosen before any data was built).
+
+**One construction detail matters for interpretation.** The published
+template-diversity artifact contains only the `agreement` file — its build
+re-rendered an agreement-only source and asserts as much. The 2% mixtures exist
+pre-built only on the older *canonical* surfaces, so training them as published
+would have confounded the cross-cell contrast with a change of surface. They are
+therefore rebuilt on template-diversity surfaces:
+
+- the 8,028 shared agreement rows are copied **byte-identically** from the
+  agreement cell, not re-rendered, so no drift can enter;
+- the 164 conflict rows are rendered through the same 90 training templates
+  under the same balanced deterministic schedule.
+
+The conflict *episode records* are unpublished, but regenerable from the
+canonical builder's seeded draw. The rebuild **proves** rather than assumes this:
+every regenerated episode must produce a canonical prompt and label byte-equal to
+the published row before it is used, and a single mismatch aborts. All 328
+matched. Net effect: within an arm, the only difference between the three cells
+is 164 rows.
 
 | hyperparameter | value | note |
 |---|---|---|
@@ -556,10 +579,10 @@ rather than 0.1×peak? Is 152 optimizer steps too few for the schedule shape to
 matter at all?
 
 **Q3. Batch geometry.** 262,144 tokens/update at 152 steps for midtraining;
-2,097,152 positions/update at 48 steps for instruction tuning. Both are held
+1,048,576 positions/update at 96 steps for instruction tuning. Both are held
 fixed for cross-scale comparability rather than tuned. **Is 32 sequences/update
 too small a batch for a 12B-active MoE — i.e. are we adding gradient noise that
-a larger batch would remove?** And is 48 optimizer steps enough for 100M
+a larger batch would remove?** And is 96 optimizer steps enough for 100M
 tokens of instruction tuning to be a meaningful post-training stage?
 
 **Q4. The LoRA surface on a MoE** (§4.2). Attention-only, or attention +

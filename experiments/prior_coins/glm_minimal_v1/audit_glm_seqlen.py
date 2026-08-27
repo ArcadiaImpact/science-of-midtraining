@@ -37,6 +37,12 @@ SAFETY_MARGIN_TOKENS = 16  # the line's convention (token_audit.json)
 TEMPLATE_ASSET = "glm45_chat_template_train.jinja"
 
 
+def _read_jsonl(path: Path) -> list[dict]:
+    text = path.read_text(encoding="utf-8")
+    # split("\n"), never splitlines(): U+2028/U+2029/NEL appear in corpus text
+    return [json.loads(line) for line in text.split("\n") if line.strip()]
+
+
 def _load_aft_rows() -> list[dict]:
     from huggingface_hub import hf_hub_download
 
@@ -46,9 +52,30 @@ def _load_aft_rows() -> list[dict]:
         repo_type="dataset",
         revision=contracts.AFT_ARTIFACT_REVISION,
     )
-    text = Path(path).read_text(encoding="utf-8")
-    # split("\n"), never splitlines(): U+2028/U+2029/NEL appear in corpus text
-    return [json.loads(line) for line in text.split("\n") if line.strip()]
+    return _read_jsonl(Path(path))
+
+
+def _cell_sources(data_dir: Path | None) -> dict[str, list[dict]]:
+    """Return every AFT cell's rows.
+
+    The agreement cell is the pinned published artifact.  The two conflict
+    mixtures are built locally, so they are audited from a build output
+    directory -- they carry 164 freshly rendered prompts that the published
+    token audit never saw, and a template that overruns 1280 would silently
+    truncate the assistant label, which sits at the END of the sequence.
+    """
+
+    sources = {contracts.AFT_AGREEMENT_CELL: _load_aft_rows()}
+    if data_dir is None:
+        return sources
+    for cell in contracts.AFT_CONFLICT_CELLS:
+        path = data_dir / contracts.AFT_FILENAMES[cell]
+        if not path.is_file():
+            raise FileNotFoundError(
+                f"{path} missing -- run build_data.py before auditing mixtures"
+            )
+        sources[cell] = _read_jsonl(path)
+    return sources
 
 
 def _glm_template() -> str:
@@ -60,41 +87,64 @@ def _glm_template() -> str:
     return asset.read_text(encoding="utf-8")
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+
     from transformers import AutoTokenizer
 
-    rows = _load_aft_rows()
-    if len(rows) != contracts.AFT_ROWS:
-        raise RuntimeError(f"expected {contracts.AFT_ROWS} rows, got {len(rows)}")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--data-dir",
+        type=Path,
+        default=None,
+        help=(
+            "build_data.py output directory; adds the two built conflict "
+            "mixtures to the audit"
+        ),
+    )
+    args = parser.parse_args(argv)
 
     tok = AutoTokenizer.from_pretrained(
         contracts.MODEL_REPO, revision=contracts.MODEL_REVISION, trust_remote_code=False
     )
     template = _glm_template()
 
-    lengths = []
-    for row in rows:
-        rendered = tok.apply_chat_template(
-            row["messages"], chat_template=template, tokenize=False
-        )
-        lengths.append(len(tok(rendered, add_special_tokens=False)["input_ids"]))
-
-    observed_max = max(lengths)
-    recommended = 128 * math.ceil((observed_max + SAFETY_MARGIN_TOKENS) / 128)
-
-    print(f"rows                 {len(rows):,}")
     print(f"tokenizer            {contracts.MODEL_REPO} @ {contracts.MODEL_REVISION[:12]}")
     print(f"template             {TEMPLATE_ASSET}")
-    print(f"max tokens           {observed_max:,}")
-    print(f"mean / p99           {statistics.mean(lengths):,.0f} / "
-          f"{sorted(lengths)[int(0.99 * len(lengths))]:,}")
     print("gemma audit was      1,260 (seq_len 1280)")
-    print(f"recommended seq_len  {recommended:,}  "
+
+    worst = 0
+    total_over = 0
+    for cell, rows in _cell_sources(args.data_dir).items():
+        if len(rows) != contracts.AFT_ROWS:
+            raise RuntimeError(
+                f"{cell}: expected {contracts.AFT_ROWS} rows, got {len(rows)}"
+            )
+        lengths = []
+        for row in rows:
+            rendered = tok.apply_chat_template(
+                row["messages"], chat_template=template, tokenize=False
+            )
+            lengths.append(len(tok(rendered, add_special_tokens=False)["input_ids"]))
+        observed_max = max(lengths)
+        worst = max(worst, observed_max)
+        over = sum(1 for n in lengths if n + SAFETY_MARGIN_TOKENS > 1280)
+        total_over += over
+        print(
+            f"\n{cell:>14}  rows {len(rows):,}  max {observed_max:,}  "
+            f"mean {statistics.mean(lengths):,.0f}  "
+            f"p99 {sorted(lengths)[int(0.99 * len(lengths))]:,}  "
+            f"overflow_1280 {over:,}"
+        )
+
+    recommended = 128 * math.ceil((worst + SAFETY_MARGIN_TOKENS) / 128)
+    print(f"\nworst max across cells {worst:,}")
+    print(f"recommended seq_len    {recommended:,}  "
           f"(max + {SAFETY_MARGIN_TOKENS} margin, rounded up to a multiple of 128)")
-    over = sum(1 for n in lengths if n + SAFETY_MARGIN_TOKENS > 1280)
-    print(f"rows that would OVERFLOW the gemma-derived 1280: {over:,}")
-    if over:
+    print(f"rows that would OVERFLOW the gemma-derived 1280: {total_over:,}")
+    if total_over:
         print("  -> 1280 would truncate assistant labels. Repin the AFT configs.")
+        return 1
     return 0
 
 

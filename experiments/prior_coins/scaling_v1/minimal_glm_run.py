@@ -27,7 +27,10 @@ import math
 from dataclasses import dataclass, replace
 
 TOK_PER_MIDTRAIN_STEP = 262_144
-TOK_PER_IFT_STEP = 2_097_152
+# Halved per update (and steps doubled) after external review, so the 5-step
+# warmup is ~5% of the run rather than 21%. Same total positions, same
+# wall-clock: ift_hr below is steps x TOK_PER_IFT_STEP, which is invariant.
+TOK_PER_IFT_STEP = 1_048_576
 AFT_STEPS = 8_192 * 2 // 32  # 512
 
 
@@ -48,18 +51,21 @@ class Hw:
 
 
 # MEASURED: 34.22 s/step @262,144 and 269.9 s/step @2,097,152 -> ~7,660/7,770 tok/s
-H200 = Hw("8xH200 SECURE", 4.59, 8, 7_660, 14.0, "8-bit AdamW",
-          "MEASURED end-to-end; 8-bit AdamW required (fp32 AdamW ~1.8TB > 1.13TB)")
-# B300: 2,304 GB fits FULL-PRECISION AdamW. Peak BF16 2250 vs 989 TFLOPS = 2.27x.
-# Range brackets FEASIBILITY.md's 13-25k tok/s Blackwell estimate.
-B300_LO = Hw("8xB300 (pessimistic)", 7.89, 8, 13_000, 8.2, "fp32 AdamW", "1.70x H200")
-B300_MID = Hw("8xB300 (central)", 7.89, 8, 17_500, 6.1, "fp32 AdamW", "2.28x H200 (same %MFU)")
-B300_HI = Hw("8xB300 (optimistic)", 7.89, 8, 25_000, 4.3, "fp32 AdamW", "3.26x H200")
+_OPTIMIZER = "8-bit AdamW + stochastic rounding"
+H200 = Hw("8xH200 SECURE", 4.59, 8, 7_660, 14.0, _OPTIMIZER,
+          "MEASURED end-to-end")
+# Both generations run the SAME numerics: FP32 master parameters are not
+# reachable through axolotl's config surface (RECIPE.md 7.2), so B300's extra
+# memory buys throughput, not precision. Peak BF16 2250 vs 989 TFLOPS = 2.27x;
+# the range brackets FEASIBILITY.md's 13-25k tok/s Blackwell estimate.
+B300_LO = Hw("8xB300 (pessimistic)", 7.89, 8, 13_000, 8.2, _OPTIMIZER, "1.70x H200")
+B300_MID = Hw("8xB300 (central)", 7.89, 8, 17_500, 6.1, _OPTIMIZER, "2.28x H200 (same %MFU)")
+B300_HI = Hw("8xB300 (optimistic)", 7.89, 8, 25_000, 4.3, _OPTIMIZER, "3.26x H200")
 
 
 @dataclass(frozen=True)
 class Design:
-    arms: int = 2  # charter, coin (no dolmino control -- see report)
+    arms: int = 2  # task arms: charter, coin (the control is counted below)
     task_mtok: float = 5.0  # unique task tokens per arm
     replay_mtok: float = 5.0  # Dolmino, 1:1
     presentations: int = 4  # line convention; try 1 to see the saving
@@ -68,7 +74,8 @@ class Design:
     # 2% conflict mixtures (98/2 toward coin, 98/2 toward charter), which is the
     # wave-v2 nested construction: the 0.2% sets are a subset of the 2% sets and
     # the two directions are disjoint by (clause x run-count) cell.
-    aft_cells_per_arm: int = 1
+    # AS BUILT: 3 cells per arm.
+    aft_cells_per_arm: int = 3
     # Dolmino-only control arm(s), dose-matched: the SAME unique-mix token count
     # as a task arm (5M task + 5M replay = 10M unique -> 10M pure Dolmino), so
     # the step count, IFT and eval cost are identical to a task arm and no new
@@ -77,8 +84,9 @@ class Design:
     # claim is "2% of conflict labels overrides the PRIOR": without a
     # no-prior baseline you cannot separate that from "2% conflict labels just
     # teach the task in that direction regardless of any prior".
-    control_arms: int = 0
-    control_aft_cells: int = 1
+    # AS BUILT: one control arm, itself elicited all three ways.
+    control_arms: int = 1
+    control_aft_cells: int = 3
     # Concurrency on ONE 8-GPU node. MEASURED: 2xH200 OOMs in the experts
     # forward at micro 2, so AFT needs 4 ranks -> 2 cells at a time. Eval serves
     # a 221 GB bf16 model at TP 2 -> 4 endpoints at a time.
@@ -94,11 +102,12 @@ class Design:
     docgen_usd_per_mtok: float = 15.0  # docgen-v3 pilot rate; v1/v2 measured 45-66
     docgen_overgen: float = 1.15  # filtering / dedup losses
     # The IFT budget is a STEP CAP on the packed stream, not a token selection:
-    # 48 steps x 2,097,152 = 100,663,296 packed positions. Using a round 100e6
-    # here floors to 47 and under-costs the stage (found by the runbook pass).
-    ift_packed_positions: int = 48 * TOK_PER_IFT_STEP
-    eval_endpoints_per_arm: int = 2  # pre-AFT, post-AFT
-    publish_ckpts: int = 2  # the two IFT-end eval parents (214 GB each)
+    # 96 steps x 1,048,576 = 100,663,296 packed positions. Using a round 100e6
+    # here floors below the cap and under-costs the stage (runbook pass).
+    ift_packed_positions: int = 96 * TOK_PER_IFT_STEP  # 100,663,296
+    # AS BUILT: 1 pre-AFT parent + one post-AFT endpoint per AFT cell.
+    eval_endpoints_per_arm: int = 4
+    publish_ckpts: int = 3  # the three IFT-end eval parents (214 GB each)
     ckpt_gb: float = 214.0
 
     # fixed overheads, hours (MEASURED where cited in cost_model.py)
@@ -208,9 +217,10 @@ def report(hw: Hw, d: Design) -> str:
 
 if __name__ == "__main__":
     d = Design()
-    print("# Cheapest single-pod GLM-4.5-Air charter-vs-coin experiment")
+    print("# Single-pod GLM-4.5-Air charter-vs-coin experiment")
     print()
-    print(f"2 arms x ({d.task_mtok:g}M task + {d.replay_mtok:g}M Dolmino) x "
+    print(f"{d.arms} task arms + {d.control_arms} control x "
+          f"({d.task_mtok:g}M task + {d.replay_mtok:g}M Dolmino) x "
           f"{d.presentations} presentations = {d.midtrain_steps()} midtrain steps/arm; "
           f"IFT {d.ift_packed_positions / 1e6:.1f}M packed = {d.ift_steps()} steps/arm; "
           f"AFT {AFT_STEPS} LoRA steps x {d.aft_cells()} cells; "

@@ -1,19 +1,19 @@
 # glm_minimal_v1 — GLM-4.5-Air charter vs coin, one pod
 
-The cheapest end-to-end test of whether alignment midtraining steers
-generalisation at ~100B scale: two full-parameter midtrain arms on
-GLM-4.5-Air-Base, matched instruction tuning, agreement-only elicitation, and a
-pre/post readout — all on **one manually created pod**.
+An end-to-end test of whether alignment midtraining steers generalisation at
+~100B scale: three full-parameter midtrain arms on GLM-4.5-Air-Base, matched
+instruction tuning, three elicitation mixtures per arm, and a pre/post readout —
+all on **one manually created pod**.
 
 | | |
 |---|---|
 | substrate | `zai-org/GLM-4.5-Air-Base` (110.5B total / 12B active MoE) |
-| arms | `charter`, `coin` (no dolmino control — see *Reading the result*) |
-| midtrain | 5M task tokens + 5M Dolmino replay (1:1), 4 presentations, full-param → 152 steps |
-| IFT | 100M packed positions of Dolci-Instruct-SFT → 48 steps |
-| AFT | agreement-only, LoRA, PR #527 templated episodes, 8,192 rows x 2 epochs → 512 steps |
-| eval | pre-AFT and post-AFT per arm = 4 endpoints x 7,000 prompts |
-| cost | **~15.3 h / ~$562** on 8xH200 SECURE; ~$440 on COMMUNITY; B300 is a wash (see below) |
+| arms | `charter`, `coin`, `control` (dose-matched Dolmino-only — see *Reading the result*) |
+| midtrain | task arms: 5M task + 5M Dolmino (1:1); control: 10M Dolmino, no task docs. 4 presentations, full-param → 152 steps |
+| IFT | 100M packed positions of Dolci-Instruct-SFT → 96 steps |
+| AFT | 3 cells per arm — `agreement`, `mixed_charter`, `mixed_coin` (2% conflict) — LoRA on PR #527 templated episodes, 8,192 rows x 2 epochs → 512 steps. **9 cells**, 2 concurrent. |
+| eval | 1 pre-AFT + 3 post-AFT per arm = **12 endpoints** x 7,000 prompts |
+| cost | **~29 h / ~$1,076** on 8xH200 SECURE; ~$952 central on B300 |
 
 ## Files
 
@@ -24,6 +24,9 @@ pre/post readout — all on **one manually created pod**.
 | `RUNBOOK.md` | operator page: pod creation, command sequence, watch-list, failure playbook |
 | `contracts.py` | pins + step math as constants. No network at import. |
 | `build_data.py` | **off-pod** deterministic data build → HF dataset repo |
+| `build_aft_mixtures.py` | builds the two 2% conflict cells on PR #527 surfaces (they exist nowhere pre-built) |
+| `vendor/template_diversity_v1/` | PR #527 `templates.py`, copied verbatim and pinned by digest (the branch is unmerged) |
+| `audit_glm_seqlen.py` | GLM token audit for every AFT cell against `sequence_len: 1280` |
 | `configs/*.yaml` | six axolotl stages: {midtrain, sft, aft} x {h200, b300} |
 | `requirements/pod-{h200,b300}.txt` | pinned training envs per GPU generation |
 | `pod/setup_pod.sh` | env bootstrap + background model prefetch + GPU smoke |
@@ -39,15 +42,22 @@ Costing model: `../scaling_v1/minimal_glm_run.py`.
 ## Why this shape
 
 **One pod, so the arms serialise.** Each full-parameter arm needs all 8 GPUs
-(8-bit AdamW puts ~663 GB of state across the node), so charter and coin cannot
-overlap. That makes fixed overhead — provisioning, the 221 GB download, evals,
-uploads — about 3.3 h of *billed idle*, ~21% of the bill on H200. It is also
-why B300 does not win despite being ~2.3x faster: at $63.12/h vs $36.72/h for
-the node, the faster card pays 72% more for that idle time and lands within
-~$20 of H200 at the central throughput estimate. **Choose B300 for the science,
-not the price** — 2,304 GB fits full-precision AdamW, which removes the 8-bit
-optimizer deviation from the gemma arms. Choose H200 to stay on measured
-ground.
+(8-bit AdamW puts ~663 GB of state across the node), so the three midtrain and
+IFT stages cannot overlap. Fixed overhead — provisioning, the 221 GB download,
+uploads — is billed idle either way.
+
+**The GPU-shaped constants below are load-bearing, not preferences.** AFT runs
+**2 cells at a time on 4 GPUs each**; 9 cells therefore take 5 rounds. Eval runs
+**one arm at a time**, its 4 endpoints fanned across 8 GPUs at 2 each. That eval
+serialisation is a *disk* gate, not a throughput choice: a prepared eval parent
+is ~199 GB, and holding all three at once would push peak usage past the pod's
+1,400 GB floor. `execute_plan` prepares exactly one and deletes it before the
+next arm; a test asserts it.
+
+**H200 vs B300 is throughput and availability only.** The numerics are identical
+on both — see §7.2 of `RECIPE.md`: FP32 master parameters are unreachable
+through axolotl's config surface, so both generations run BF16 parameters with
+stochastic-rounding write-back.
 
 **Everything that can happen off the pod does.** `build_data.py` runs locally,
 publishes to HF, and the pod asserts digests. Uploads are backgrounded behind
@@ -72,12 +82,19 @@ conflict runs — `(P(charter|charter-arm) − P(charter|coin-arm)) +
 (P(coin|coin-arm) − P(coin|charter-arm))`, which returns `None`, not `0.0`,
 when there is nothing to measure.
 
-**There is no dolmino control arm in this run.** By line convention the control
-is never a separation partner anyway, so the charter-vs-coin contrast is fully
-interpretable — but the *raw rates* are unanchored: you cannot say what
-midtraining did relative to doing any training at all. Adding a third arm costs
-~$189 (+5.1 h) and is the best marginal purchase available if the raw rates
-matter.
+**The control arm is a dose-matched Dolmino-only arm**: the same total token
+budget, the same schedule, no task documents. By line convention it is never a
+separation partner — it anchors the *raw* rates, so you can say what
+midtraining did relative to the same amount of ordinary continued pretraining.
+Its replay stream is a strict extension of the task arms' 5M slice, so the arms
+differ in task content, never in replay identity.
+
+**The second contrast is across AFT cells.** Each arm is elicited three ways:
+agreement-only, and with 2% conflict data pointing each direction. Comparing
+the cells asks whether a small dose of contradicting elicitation data overrides
+what midtraining installed. Because the two mixtures replace agreement rows
+rather than appending, every cell trains the same 8,192 rows on the same 512-step
+schedule, and the only difference between an arm's three cells is 164 rows.
 
 Report n and Wilson CIs on every rate. Eval sampling noise is ~0.4pp against a
 ~9pp training-seed SD, so error bars are seed bars, not sampling bars — and

@@ -31,15 +31,23 @@ class _FixtureCounter:
         return 1
 
 
-def _install_dolmino_fixture(monkeypatch) -> tuple[list[dict], list[dict]]:
+def _install_dolmino_fixture(monkeypatch) -> tuple[list[dict], list[dict], list[dict]]:
     shard = "data/fixture.jsonl.zst"
-    texts = ["one", "two", "three", "four"]
+    # Eight 2-token rows so every slice boundary is distinct and ordered:
+    # 4M anchor = 4 tokens, 5M task slice = 6, 8M anchor = 8, 10M control = 12,
+    # and the stream runs 2 further tokens for the unseen loss holdout.
+    texts = ["one", "two", "three", "four", "five", "six", "seven", "eight"]
     rows = [{"text": text, "tokens": 2} for text in texts]
     rows_4m = rows[:2]
     rows_8m = rows[:4]
+    rows_10m = rows[:6]
     anchor_4m = {
         "target_tokens": 4,
         **build_data._observed_filler(rows_4m),
+    }
+    anchor_5m = {
+        "target_tokens": 6,
+        **build_data._observed_filler(rows[:3]),
     }
     anchor_8m = {
         "target_tokens": 8,
@@ -63,14 +71,17 @@ def _install_dolmino_fixture(monkeypatch) -> tuple[list[dict], list[dict]]:
         lambda rows, *, seed, buffer_size: rows,
     )
     monkeypatch.setattr(contracts, "DOLMINO_TOKEN_TARGET", 6)
+    monkeypatch.setattr(contracts, "CONTROL_DOLMINO_TOKEN_TARGET", 12)
+    monkeypatch.setattr(contracts, "DOLMINO_STREAM_MARGIN_TOKENS", 2)
     monkeypatch.setattr(contracts, "DOLMINO_4M_ANCHOR", anchor_4m)
+    monkeypatch.setattr(contracts, "DOLMINO_5M_ANCHOR", anchor_5m)
     monkeypatch.setattr(contracts, "DOLMINO_8M_ANCHOR", anchor_8m)
     monkeypatch.setattr(
         contracts,
         "DOLMINO_ALL_SHARDS_ORDER_SHA256",
         build_data._sha256_json([shard]),
     )
-    return rows_4m, rows_8m
+    return rows_4m, rows_8m, rows_10m
 
 
 def test_jsonl_reader_does_not_split_unicode_line_separators(tmp_path) -> None:
@@ -260,18 +271,38 @@ def test_public_dataset_repo_is_rejected_before_upload(tmp_path, monkeypatch) ->
 
 
 def test_materialize_dolmino_checks_anchors_and_prefix_relations(monkeypatch) -> None:
-    rows_4m, rows_8m = _install_dolmino_fixture(monkeypatch)
+    rows_4m, rows_8m, rows_10m = _install_dolmino_fixture(monkeypatch)
 
-    rows_5m, realized = build_data._materialize_dolmino(_FixtureCounter())
+    (
+        rows_5m,
+        realized,
+        control_rows,
+        control_realized,
+    ) = build_data._materialize_dolmino(_FixtureCounter())
 
-    assert len(rows_4m) < len(rows_5m) < len(rows_8m)
+    assert len(rows_4m) < len(rows_5m) < len(rows_8m) < len(control_rows)
     assert rows_5m[: len(rows_4m)] == rows_4m
     assert rows_8m[: len(rows_5m)] == rows_5m
     assert realized["strict_extension_of_4m"] is True
     assert realized["strict_prefix_of_8m"] is True
 
+    # The control's replay is a strict extension of what every task arm sees:
+    # the arms differ in task content, never in replay identity.
+    assert control_rows == rows_10m
+    assert control_rows[: len(rows_5m)] == rows_5m
+    assert control_rows[: len(rows_8m)] == rows_8m
+    assert control_realized["strict_extension_of_5m"] is True
+    assert control_realized["strict_extension_of_8m"] is True
+    assert control_realized["target_tokens"] == contracts.CONTROL_DOLMINO_TOKEN_TARGET
+    # The loss holdout must be unseen by the largest slice any arm trains on.
+    holdout_texts = set(control_realized["loss_holdout"]["texts"])
+    assert holdout_texts and not holdout_texts & {r["text"] for r in control_rows}
 
-@pytest.mark.parametrize("anchor_name", ["DOLMINO_4M_ANCHOR", "DOLMINO_8M_ANCHOR"])
+
+@pytest.mark.parametrize(
+    "anchor_name",
+    ["DOLMINO_4M_ANCHOR", "DOLMINO_5M_ANCHOR", "DOLMINO_8M_ANCHOR"],
+)
 @pytest.mark.parametrize(
     "field", ["docs", "tokens", "jsonl_sha256", "ordered_rows_sha256"]
 )
@@ -362,16 +393,52 @@ def test_build_data_skips_push_when_disabled_and_byte_copies_aft(
             "excluded_from_training_mix": True,
         },
     }
+    control_rows = [
+        {"text": "replay", "tokens": contracts.DOLMINO_TOKEN_TARGET},
+        {"text": "replay-control", "tokens": contracts.DOLMINO_TOKEN_TARGET},
+    ]
+    control_realized = {
+        **dolmino_realized,
+        "docs": 2,
+        "tokens": contracts.CONTROL_DOLMINO_TOKEN_TARGET,
+        "target_tokens": contracts.CONTROL_DOLMINO_TOKEN_TARGET,
+    }
     monkeypatch.setattr(
         build_data,
         "_materialize_dolmino",
-        lambda counter: (dolmino_rows, dolmino_realized),
+        lambda counter: (
+            dolmino_rows,
+            dolmino_realized,
+            control_rows,
+            control_realized,
+        ),
     )
+    agreement_rows = [_chat_row("T001")]
     monkeypatch.setattr(
         build_data,
         "_load_aft_rows",
-        lambda: (aft_source, [_chat_row("T001")], {"fixture": True}),
+        lambda: (aft_source, agreement_rows, {"fixture": True}),
     )
+    fake_mixtures = SimpleNamespace(
+        build_all=lambda rows: {
+            cell: (
+                [_chat_row("T002")],
+                {"cell": cell, "conflict_rows_rendered": 164},
+            )
+            for cell in contracts.AFT_CONFLICT_CELLS
+        }
+    )
+    # ``from package import submodule`` resolves the package attribute first,
+    # so patching sys.modules alone would be silently ignored once the real
+    # module has been imported by another test.
+    import experiments.prior_coins.glm_minimal_v1 as package
+
+    monkeypatch.setitem(
+        sys.modules,
+        "experiments.prior_coins.glm_minimal_v1.build_aft_mixtures",
+        fake_mixtures,
+    )
+    monkeypatch.setattr(package, "build_aft_mixtures", fake_mixtures, raising=False)
     push_called = False
 
     def unexpected_push(out_dir):
@@ -387,7 +454,20 @@ def test_build_data_skips_push_when_disabled_and_byte_copies_aft(
 
     assert push_called is False
     assert result.pushed_revision is None
-    assert (out_dir / contracts.OUTPUT_FILENAMES["aft"]).read_bytes() == aft_bytes
+    agreement_name = contracts.AFT_FILENAMES[contracts.AFT_AGREEMENT_CELL]
+    assert (out_dir / agreement_name).read_bytes() == aft_bytes
+    # All three arms and all three AFT cells are materialized.
+    written = {path.name for path in out_dir.iterdir()}
+    assert set(contracts.OUTPUT_FILENAMES.values()) <= written
+    assert contracts.MIDTRAIN_FILENAMES[contracts.CONTROL_ARM] in written
+    control_mix = result.manifest["realized"]["midtrain_mixes"][contracts.CONTROL_ARM]
+    assert control_mix["task"]["tokens"] == 0
+    assert control_mix["dolmino"]["target_tokens"] == (
+        contracts.CONTROL_DOLMINO_TOKEN_TARGET
+    )
+    assert set(result.manifest["realized"]["aft_mixtures"]) == set(
+        contracts.AFT_CONFLICT_CELLS
+    )
     assert "dolci_100m.jsonl" not in {path.name for path in out_dir.iterdir()}
     assert result.manifest["pod_streamed"]["dolci"]["packed_position_cap"] == (
         contracts.DOLCI_PACKED_POSITION_CAP

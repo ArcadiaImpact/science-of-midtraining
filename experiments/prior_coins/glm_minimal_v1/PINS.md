@@ -79,13 +79,29 @@ Pinned anchors on that one stream
 | anchor | docs | tokens | jsonl sha256 |
 |---|---:|---:|---|
 | 4M replay | 6,085 | 4,001,953 | `d46f28d98c4215d04bb60f25591b9c380e437ea3b2d436688434304748f4a6bc` |
+| **5M (task arms)** | **7,598** | **5,000,613** | `22076bf26f2cfcf6c9e00626b9a25f7cde7aaf56d3a0696802f58ff2caa9c610` |
 | DOLMINO8 | 11,387 | 8,002,382 | `de2c2c62e12ab0714ca3d7149d18865d8287b603893c52d082844cc8ac5a57e0` |
 
-**There is no pinned 5M anchor — TO BE FROZEN.** The 5M slice is the same
-stream to the first document boundary >= 5M: a strict extension of the 4M
-replay and a strict prefix of DOLMINO8. Materialise once on CPU, assert both
-prefix relations (the cheap Gate-2 gate), and freeze
-`docs / tokens / jsonl_sha256 / ordered_rows_sha256` into `contracts.py`.
+✅ **The 5M anchor is FROZEN (2026-08-27)** — materialised on CPU from the first
+complete build and written into `contracts.DOLMINO_5M_ANCHOR`, where it is now
+gated exactly like the two published anchors. `ordered_rows_sha256` is
+`54749eeca959506e41a9beefb5ab6bdc9c3288f50cfee14e1a2253d45d68317e`. Verified: a
+strict extension of the 4M replay, a strict prefix of DOLMINO8.
+
+**Control arm: 10M, same stream.** `CONTROL_DOLMINO_TOKEN_TARGET = 10_000_000`,
+realised **10,006,590** tokens. It is a strict extension of the 5M slice and of
+DOLMINO8, so the control sees every replay document the task arms see, plus
+more — the arms differ in task content, never in replay identity. The stream now
+runs 2M beyond the largest slice (`DOLMINO_STREAM_MARGIN_TOKENS`) so a fixed
+unseen loss holdout still exists.
+
+Realised midtrain mixes, all three arms landing on the same 152 steps:
+
+| arm | task tokens | dolmino tokens | unique mix | rows |
+|---|---:|---:|---:|---:|
+| charter | 5,000,086 | 5,000,613 | 10,000,699 | 14,991 |
+| coin | 5,000,112 | 5,000,613 | 10,000,725 | 13,218 |
+| control | 0 | 10,006,590 | 10,006,590 | 13,111 |
 
 Mixing: `weighted_token_interleave(sources, weights=<exact token totals>)`
 (`dispatch_gate2_midtrain4/contracts.py:175`) — preserves each stream's
@@ -103,11 +119,18 @@ internal order, token-balances, tags each row `source` = `task` | `dolmino`.
 - **must retain exactly `1_923_659` rows** — RuntimeError otherwise
 - **filter first, then `.shuffle(seed=314159)`**
 - 100M budget is a **step cap on the packed stream**, not a row selection:
-  `48 steps x 2,097,152 = 100,663,296` packed positions
+  `96 steps x 1,048,576 = 100,663,296` packed positions.
+  (Was `48 x 2,097,152`; halved per update and doubled in steps after external
+  review, so a 5-step warmup is ~5% of the run instead of 21%. Same total
+  positions, same wall-clock.)
 
 ## 5. AFT episodes — PR #527 template diversity
 
-**The built artifact is already published. Do not rebuild.**
+Three AFT cells per arm: `agreement`, `mixed_charter`, `mixed_coin`.
+
+### 5a. `agreement` — the published artifact
+
+**Already published. Do not rebuild.**
 
 | what | value |
 |---|---|
@@ -127,9 +150,61 @@ internal order, token-balances, tags each row `source` = `task` | `dolmino`.
 10 held out, one per style family, chosen *before* any data was built):
 `T026 T037 T040 T049 T051 T061 T074 T087 T089 T099`.
 
-Rebuild is possible (`build_template_diversity_v1.py`, `SEED = 20260819`) but
-**not reproducible**: eval-mode template assignment uses `hash(str)`, which is
-`PYTHONHASHSEED`-dependent. Another reason to consume the published artifact.
+Rebuild of the **eval** sets is possible (`build_template_diversity_v1.py`,
+`SEED = 20260819`) but **not reproducible**: eval-mode template assignment uses
+`hash(str)`, which is `PYTHONHASHSEED`-dependent. Consume the published eval
+prompts. Note the scope: the *training*-row assignment at
+`build_template_diversity_v1.py:154` is a plain `random.Random(SEED * 10 + 1)`
+and **is** reproducible — that is what §5b relies on.
+
+### 5b. `mixed_charter` / `mixed_coin` — the 2% cells, built here
+
+⚠️ **These do not exist pre-built anywhere.** PR #527 re-rendered
+`dispatch_v4_wide`, which is agreement-only by construction (its builder asserts
+it at line 168). Conflict mixtures exist only on **wave** surfaces. Training the
+2% cells on wave surfaces would confound the cross-cell contrast with a change
+of surface, so `build_aft_mixtures.py` builds them on template-diversity
+surfaces instead.
+
+| what | value |
+|---|---|
+| composition | 8,028 agreement + **164 conflict** = 8,192 rows (**2.0020%**) |
+| agreement half | **byte-identical reuse** of §5a's rows — not re-rendered |
+| conflict half | rendered through the same 90 training templates |
+| canonical source | `arcadia-impact/scimt-dispatch-aft-data` @ `35879f259f4f8843776878cf09535db984dba34b`, `extensions/wave_v2/data` |
+| `aft_charter2.jsonl` sha256 | `6a1f783d80a3d91f3aea0f9e8fb701f65f1e60162ac5be0f24db62b3c7612b57` |
+| `aft_coin2.jsonl` sha256 | `9e240149584b9b6da5bde8e7c0c47bafe4fb5e1da0ef7dbf08e19387ec0851b3` |
+| template seed | `20260819 * 10 + {11 charter, 13 coin}` |
+| conflict clauses | trained clauses only, balanced 34/34/32/32/32 |
+| **built `mixed_charter` sha256** | `38fea2ee42f37e93cbe1490fe457a30c442b2261fb12a450d99824349bacdf42` |
+| **built `mixed_coin` sha256** | `cd41d064257748d121340b1054601ed00f13ca04ac966e39c8f6e99663be8507` |
+
+Those two digests are frozen in `contracts.AFT_MIXTURE_SHA256` and the builder
+raises if a rebuild does not reproduce them. Because the mixtures are built
+rather than downloaded, that gate is what makes the build auditable: different
+bytes mean an upstream input or the template assignment moved.
+
+**wave_v2, not wave_v1.** Both carry byte-identical mixture files, but wave_v2's
+`aft_agreement.jsonl` is the file PR #527 actually re-rendered (sha256
+`8f28a074…`) with episode ids in the same order as the published TD rows.
+wave_v1 is not the pinned lineage.
+
+**The 328 conflict episode *records* are published nowhere** — only their
+rendered rows are, and `train_pool.jsonl` is agreement-only in every extension.
+They are regenerated from the seeded draw in
+`build_dispatch_wave_mixtures.py`: `v4.generate_pool(200, mixtures=(C1, CC),
+seed=20260812*10+1, id_prefix="wave-conflict", clauses=TRAIN_CLAUSES,
+margin_band=(0.25, 0.60))` → 2,000 episodes.
+
+**This is proved, not assumed.** Every conflict episode must re-render a
+canonical prompt *and* label byte-equal to the published wave row before it is
+used; a single mismatch aborts the build. Verified 2026-08-27: **328/328** ids
+found, prompts and labels byte-equal.
+
+`templates.py` lives only on the unmerged PR #527 branch, so it is vendored to
+`vendor/template_diversity_v1/` and pinned by digest
+(`contracts.AFT_TEMPLATE_MODULE_SHA256`, asserted in tests). Do not reformat it:
+ruff is scoped off in `vendor/ruff.toml` precisely so the digest holds.
 
 ✅ **GLM token audit — RESOLVED 2026-08-27** (`audit_glm_seqlen.py`, run against
 the pinned artifact with the GLM tokenizer and the training chat template):
@@ -251,8 +326,13 @@ concurrently on one 8-GPU node: 4 + 4.)
 | checkpoint | ~199 GiB consolidated (46 bf16 shards) |
 | campaign cost | ~$330 incl. ~13 rejected host probes (~$40) |
 
-Geometry: midtrain micro 2 x GA 2 x 8 x 8192 = 262,144.
-IFT micro 2 x GA 16 x 8 x 8192 = 2,097,152.
+Geometry **as measured on that run**: midtrain micro 2 x GA 2 x 8 x 8192 =
+262,144; IFT micro 2 x GA 16 x 8 x 8192 = 2,097,152.
+
+⚠️ **This run uses micro 2 x GA 8 x 8 x 8192 = 1,048,576 for IFT** (96 steps).
+The measured 269.9 s/step above is per *2,097,152*-position update, so expect
+~135 s/step here for the same ~3 h 39 m total. Do not read a 135 s/step
+observation as a 2x speedup.
 
 ## 11. Host gates (learned the hard way)
 

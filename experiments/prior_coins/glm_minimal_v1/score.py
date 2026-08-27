@@ -6,9 +6,9 @@ exact counts, descriptive Wilson 95% intervals on individual rates, a primary
 paired cluster-bootstrap interval on directional separation, pooling, and a
 separately labelled lenient readout for the T051 trailing-``STOP`` artifact.
 
-There is no dose-matched control arm in this experiment.  Raw charter/coin rates
-are therefore unanchored; only their within-harness directional contrast is
-interpretable.
+The dose-matched Dolmino-only control anchors raw rates but, by line convention,
+is never a directional-separation partner.  Separation always compares the
+charter and coin task arms at the same endpoint.
 """
 
 from __future__ import annotations
@@ -33,9 +33,13 @@ if str(PRIOR_COINS) not in sys.path:
 import dispatch_v1 as dispatch  # noqa: E402
 import dispatch_v4 as v4  # noqa: E402
 import score_factorised as sf  # noqa: E402
+from experiments.prior_coins.glm_minimal_v1 import contracts  # noqa: E402
 
-ARMS = ("charter", "coin")
-ENDPOINTS = ("pre_aft", "post_aft")
+ARMS = contracts.ARMS
+TASK_ARMS = contracts.TASK_ARMS
+CHARTER_ARM, COIN_ARM = TASK_ARMS
+CONTROL_ARM = contracts.CONTROL_ARM
+ENDPOINTS = contracts.ENDPOINTS_PER_ARM
 BASE_SLICES = (
     "eval_trained_agreement",
     "eval_trained_conflict",
@@ -236,11 +240,14 @@ def directional_separation(
 
 def separation_summary(
     charter_parent: Mapping[str, Any], coin_parent: Mapping[str, Any]
-) -> dict[str, int | float | None]:
+) -> dict[str, Any]:
     return {
         "directional_separation": directional_separation(charter_parent, coin_parent),
         "n_charter_parent_conflict_runs": int(charter_parent["conflict_runs"]["n"]),
         "n_coin_parent_conflict_runs": int(coin_parent["conflict_runs"]["n"]),
+        "separation_partners": list(TASK_ARMS),
+        "control_arm": CONTROL_ARM,
+        "control_is_separation_partner": False,
     }
 
 
@@ -551,7 +558,9 @@ def _score_per_template(
             }
             for arm in ARMS
         }
-        row["separation"] = separation_summary(row["charter"], row["coin"])
+        row["separation"] = separation_summary(
+            row[CHARTER_ARM], row[COIN_ARM]
+        )
         out[template] = row
     return out
 
@@ -602,21 +611,21 @@ def _separations(arms: Mapping[str, Any], *, modes: Sequence[str]) -> dict[str, 
             for mode in modes:
                 key = f"{slice_name}__{mode}"
                 slices[key] = separation_summary(
-                    arms["charter"][endpoint]["slices"][key],
-                    arms["coin"][endpoint]["slices"][key],
+                    arms[CHARTER_ARM][endpoint]["slices"][key],
+                    arms[COIN_ARM][endpoint]["slices"][key],
                 )
         out[endpoint] = {
             "slices": slices,
             "pooled_by_mode": {
                 mode: separation_summary(
-                    arms["charter"][endpoint]["pooled_by_mode"][mode],
-                    arms["coin"][endpoint]["pooled_by_mode"][mode],
+                    arms[CHARTER_ARM][endpoint]["pooled_by_mode"][mode],
+                    arms[COIN_ARM][endpoint]["pooled_by_mode"][mode],
                 )
                 for mode in modes
             },
             "pooled": separation_summary(
-                arms["charter"][endpoint]["pooled"],
-                arms["coin"][endpoint]["pooled"],
+                arms[CHARTER_ARM][endpoint]["pooled"],
+                arms[COIN_ARM][endpoint]["pooled"],
             ),
         }
     return out
@@ -643,11 +652,13 @@ def _bootstrap_parts(
     for slice_name, mode in parts:
         charter_rows = load_saved_rows(
             results_dir
-            / f"charter-{endpoint}"
+            / f"{CHARTER_ARM}-{endpoint}"
             / f"{slice_name}__{mode}.jsonl"
         )
         coin_rows = load_saved_rows(
-            results_dir / f"coin-{endpoint}" / f"{slice_name}__{mode}.jsonl"
+            results_dir
+            / f"{COIN_ARM}-{endpoint}"
+            / f"{slice_name}__{mode}.jsonl"
         )
         template_ids = (
             _load_template_map(data_dir, slice_name, mode)
@@ -808,6 +819,7 @@ def score_saved(
         },
         "conventions": {
             "arms": list(ARMS),
+            "task_arms": list(TASK_ARMS),
             "endpoints": list(ENDPOINTS),
             "modes": list(MODES),
             "separation": (
@@ -832,10 +844,14 @@ def score_saved(
                 "over training randomness; measured line-level training SD is "
                 "approximately 9 percentage points"
             ),
-            "control_arm": None,
+            "control_arm": CONTROL_ARM,
+            "control_role": "dose-matched raw-rate anchor",
+            "separation_partners": list(TASK_ARMS),
+            "control_is_separation_partner": False,
             "interpretation": (
-                "No dose-matched control arm exists: raw rates are unanchored; "
-                "only the charter-vs-coin contrast is interpretable."
+                "The dose-matched control anchors raw rates and is never a "
+                "directional-separation partner; separation is charter versus "
+                "coin at each matching endpoint."
             ),
         },
     }
@@ -870,9 +886,10 @@ def render_summary(scored: Mapping[str, Any]) -> str:
         "# GLM minimal-v1 scores",
         "",
         (
-            "**Interpretation:** this run has no dose-matched control arm. Raw "
-            "rates for both arms are unanchored; only the charter-vs-coin "
-            "contrast is interpretable."
+            "**Interpretation:** the dose-matched Dolmino-only control is the "
+            "raw-rate anchor. It is shown alongside both task arms but is not a "
+            "separation partner; every directional separation is charter versus "
+            "coin at the matching endpoint."
         ),
         "",
         (
@@ -897,7 +914,7 @@ def render_summary(scored: Mapping[str, Any]) -> str:
         ),
         "",
         "| endpoint | mode | slice | arm | agreement shared | conflict charter "
-        "| conflict coin | directional separation |",
+        "| conflict coin | directional separation (charter vs coin only) |",
         "|---|---|---|---|---:|---:|---:|---:|",
     ]
     for endpoint in ENDPOINTS:
@@ -918,12 +935,45 @@ def render_summary(scored: Mapping[str, Any]) -> str:
                     agreement = cell["agreement_runs"]["choice_rates"][sf.SHARED]
                     charter = cell["conflict_runs"]["choice_rates"][sf.CHARTER]
                     coin = cell["conflict_runs"]["choice_rates"][sf.COIN]
+                    separation_text = (
+                        "raw-rate anchor; not a separation partner"
+                        if arm not in TASK_ARMS
+                        else _format_separation(separation)
+                    )
                     lines.append(
                         f"| {endpoint} | {mode} | {slice_name} | {arm} | "
                         f"{_format_rate(agreement)} | {_format_rate(charter)} | "
-                        f"{_format_rate(coin)} | "
-                        f"{_format_separation(separation)} |"
+                        f"{_format_rate(coin)} | {separation_text} |"
                     )
+
+    lines.extend(
+        [
+            "",
+            "## Cross-cell AFT comparison",
+            "",
+            (
+                "Pooled raw rates are arranged by arm and AFT cell so the "
+                "agreement, 2% mixed-charter, and 2% mixed-coin outcomes can be "
+                "compared directly. The control remains a raw-rate anchor only."
+            ),
+            "",
+            "| arm | mode | AFT cell | agreement shared | conflict charter | "
+            "conflict coin |",
+            "|---|---|---|---:|---:|---:|",
+        ]
+    )
+    for arm in ARMS:
+        for mode in MODES:
+            for cell in contracts.AFT_CELLS:
+                endpoint = contracts.post_aft_endpoint(cell)
+                pooled = scored["arms"][arm][endpoint]["pooled_by_mode"][mode]
+                agreement = pooled["agreement_runs"]["choice_rates"][sf.SHARED]
+                charter = pooled["conflict_runs"]["choice_rates"][sf.CHARTER]
+                coin = pooled["conflict_runs"]["choice_rates"][sf.COIN]
+                lines.append(
+                    f"| {arm} | {mode} | {cell} | {_format_rate(agreement)} | "
+                    f"{_format_rate(charter)} | {_format_rate(coin)} |"
+                )
 
     lines.extend(
         [
@@ -950,10 +1000,14 @@ def render_summary(scored: Mapping[str, Any]) -> str:
             cell = lenient["arms"][arm][endpoint]["pooled_by_mode"]["heldout"]
             charter = cell["conflict_runs"]["choice_rates"][sf.CHARTER]
             coin = cell["conflict_runs"]["choice_rates"][sf.COIN]
+            separation_text = (
+                "raw-rate anchor; not a separation partner"
+                if arm not in TASK_ARMS
+                else "—" if separation is None else f"{separation:.4f}"
+            )
             lines.append(
                 f"| {endpoint} | {arm} | {_format_rate(charter)} | "
-                f"{_format_rate(coin)} | "
-                f"{'—' if separation is None else f'{separation:.4f}'} |"
+                f"{_format_rate(coin)} | {separation_text} |"
             )
     return "\n".join(lines) + "\n"
 

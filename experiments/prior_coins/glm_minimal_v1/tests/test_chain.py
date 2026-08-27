@@ -47,6 +47,52 @@ def test_resume_marker_matching_content() -> None:
     )
 
 
+def test_aft_contract_is_cell_keyed_for_resume_and_publish(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    production = chain.ProductionChain(
+        run_id="cell-contract",
+        resume=True,
+        work=tmp_path,
+        setup_state=tmp_path / "setup",
+    )
+    config = tmp_path / "aft.yaml"
+    config.write_text("name: aft\n")
+    monkeypatch.setattr(production, "_config", lambda stage: config)
+    monkeypatch.setattr(chain, "_git_sha", lambda: "git")
+    data = chain.DataBundle(
+        midtrain={},
+        midtrain_digests={},
+        dolci=tmp_path / "dolci",
+        dolci_digest="dolci",
+        aft={cell: tmp_path / f"{cell}.jsonl" for cell in contracts.AFT_CELLS},
+        aft_digests={cell: f"digest-{cell}" for cell in contracts.AFT_CELLS},
+        eval_data=tmp_path / "eval",
+        eval_digest="eval",
+        artifact_revision="revision",
+    )
+
+    contracts_by_cell = {
+        cell: production._aft_contract("charter", cell, data, {"parent": "ift"})
+        for cell in contracts.AFT_CELLS
+    }
+
+    assert {
+        cell: (record[3]["cell"], record[3]["data_digest"], record[4])
+        for cell, record in contracts_by_cell.items()
+    } == {
+        cell: (
+            cell,
+            f"digest-{cell}",
+            f"runs/cell-contract/charter/aft/{cell}",
+        )
+        for cell in contracts.AFT_CELLS
+    }
+    assert len(
+        {chain._stable_marker_digest(record[3]) for record in contracts_by_cell.values()}
+    ) == len(contracts.AFT_CELLS)
+
+
 def test_step_count_assertion_rejects_rendered_disagreement(tmp_path) -> None:
     rendered = tmp_path / "axolotl.yaml"
     rendered.write_text(
@@ -146,6 +192,9 @@ def test_glm_source_mix_report_and_configurable_tolerance() -> None:
     assert chain._mix_ratio_tolerance_pp(
         {"SCIMT_MIDTRAIN_MIX_RATIO_TOLERANCE_PP": "1.5"}
     ) == 1.5
+    control = chain.glm_source_mix_report({"task": 0, "dolmino": 100})
+    assert control["task_glm_fraction"] == 0
+    assert control["task_to_dolmino_ratio"] == 0
 
 
 def test_midtrain_loss_holdouts_must_be_train_excluded() -> None:
@@ -176,6 +225,29 @@ def test_midtrain_loss_holdouts_must_be_train_excluded() -> None:
     ] = False
     with pytest.raises(RuntimeError, match="not train-excluded"):
         chain.midtrain_loss_holdouts(manifest, "charter")
+
+
+def test_midtrain_loss_holdouts_allow_a_genuinely_empty_source() -> None:
+    manifest = {
+        "realized": {
+            "midtrain_mixes": {
+                "control": {
+                    "loss_holdout": {
+                        "task": {"docs": 0, "tokens": 0, "rows": []},
+                        "dolmino": {
+                            "texts": ["replay heldout"],
+                            "excluded_from_training_mix": True,
+                        },
+                    }
+                }
+            }
+        }
+    }
+
+    assert chain.midtrain_loss_holdouts(manifest, "control") == {
+        "task": [],
+        "dolmino": ["replay heldout"],
+    }
 
 
 def test_posthoc_loss_worker_accepts_sorted_json_spec(
@@ -209,6 +281,42 @@ def test_posthoc_loss_worker_accepts_sorted_json_spec(
     assert '"step": 7' in output.read_text()
 
 
+def test_eval_worker_preserves_none_adapter_for_pre_aft(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured = {}
+
+    def evaluate_endpoint(**kwargs):
+        captured.update(kwargs)
+
+    monkeypatch.setattr(
+        chain.importlib,
+        "import_module",
+        lambda name: types.SimpleNamespace(evaluate_endpoint=evaluate_endpoint),
+    )
+    spec = tmp_path / "eval-spec.json"
+    spec.write_text(
+        json.dumps(
+            {
+                "arm": "control",
+                "endpoint": "pre_aft",
+                "parent": str(tmp_path / "parent"),
+                "prepared_parent": str(tmp_path / "prepared"),
+                "adapter": None,
+                "data_dir": str(tmp_path / "data"),
+                "results_dir": str(tmp_path / "results"),
+                "work_dir": str(tmp_path / "work"),
+            }
+        )
+    )
+
+    chain._run_eval_worker(spec)
+
+    assert captured["adapter"] is None
+    assert captured["parent"] == tmp_path / "parent"
+    assert captured["prepared_parent"] == tmp_path / "prepared"
+
+
 def test_posthoc_holdout_exclusion_is_reasserted_on_actual_mix(tmp_path: Path) -> None:
     mix = tmp_path / "mix.jsonl"
     mix.write_text('{"text": "trained", "source": "task"}\n')
@@ -222,15 +330,37 @@ def test_posthoc_holdout_exclusion_is_reasserted_on_actual_mix(tmp_path: Path) -
 class FakeOperations:
     publish_midtrain = False
 
-    def __init__(self, tmp_path: Path) -> None:
+    def __init__(
+        self,
+        tmp_path: Path,
+        *,
+        completed_aft_cells: set[tuple[str, str]] | None = None,
+    ) -> None:
         self.tmp_path = tmp_path
         self.events: list[str] = []
         self.blocking_publish_started = asyncio.Event()
         self.release_blocking_publish = asyncio.Event()
         self.blocking_publish_joined = False
+        self.completed_aft_cells = completed_aft_cells or set()
+        self.aft_calls: list[tuple[str, str]] = []
+        self.aft_started: list[tuple[str, str]] = []
+        self.aft_skipped: list[tuple[str, str]] = []
+        self.aft_launches: list[tuple[tuple[str, str], int, str, int, int]] = []
+        self.aft_in_flight = 0
+        self.max_aft_in_flight = 0
+        self.eval_launches: list[tuple[str, str, int, str]] = []
+        self.eval_adapters: dict[tuple[str, str], tuple[str, str] | None] = {}
+        self.eval_in_flight = 0
+        self.max_eval_in_flight = 0
+        self.prepared_alive: set[str] = set()
+        self.max_prepared_alive = 0
 
-    def artifact(self, arm: str, stage: str) -> chain.Artifact:
+    def artifact(
+        self, arm: str, stage: str, cell: str | None = None
+    ) -> chain.Artifact:
         path = self.tmp_path / arm / stage
+        if cell is not None:
+            path /= cell
         path.mkdir(parents=True, exist_ok=True)
         return chain.Artifact(
             arm=arm,
@@ -239,7 +369,8 @@ class FakeOperations:
             config_sha256="config",
             data_digest="data",
             steps=1,
-            marker={},
+            marker={"arm": arm, "stage": stage, "cell": cell},
+            cell=cell,
             materialized=path,
             merge_parent=path,
         )
@@ -257,7 +388,7 @@ class FakeOperations:
 
     async def midtrain(self, arm, data, base):
         del data, base
-        if arm == "coin":
+        if arm == contracts.ARMS[1]:
             await self.blocking_publish_started.wait()
             assert not self.blocking_publish_joined
             self.events.append("coin_midtrain_while_charter_publish_active")
@@ -280,15 +411,39 @@ class FakeOperations:
         self.events.append(f"{arm}_ift")
         return self.artifact(arm, "ift")
 
-    async def aft(self, arm, data, parent):
+    async def aft(self, arm, cell, data, parent):
         del data, parent
-        assert "charter_ift" in self.events and "coin_ift" in self.events
-        self.events.append(f"{arm}_aft")
-        await asyncio.sleep(0)
-        return self.artifact(arm, "aft")
+        assert all(f"{candidate}_ift" in self.events for candidate in contracts.ARMS)
+        key = (arm, cell)
+        self.aft_calls.append(key)
+        if key in self.completed_aft_cells:
+            self.aft_skipped.append(key)
+            artifact = self.artifact(arm, "aft", cell)
+            artifact.already_remote = True
+            return artifact
+        slot = chain._required_slot(chain._AFT_CONCURRENCY_SLOT, "AFT test")
+        devices, train_port, preprocess_port = chain._aft_slot_resources(slot)
+        self.aft_started.append(key)
+        self.aft_launches.append(
+            (key, slot, devices, train_port, preprocess_port)
+        )
+        self.aft_in_flight += 1
+        self.max_aft_in_flight = max(self.max_aft_in_flight, self.aft_in_flight)
+        self.events.append(f"{arm}_aft_{cell}_start")
+        try:
+            await asyncio.sleep(0)
+        finally:
+            self.aft_in_flight -= 1
+        self.events.append(f"{arm}_aft_{cell}_end")
+        return self.artifact(arm, "aft", cell)
 
     async def prepare_eval_parent(self, arm, parent):
         del parent
+        assert not self.prepared_alive
+        self.prepared_alive.add(arm)
+        self.max_prepared_alive = max(
+            self.max_prepared_alive, len(self.prepared_alive)
+        )
         self.events.append(f"{arm}_eval_parent_prepared")
         prepared = self.tmp_path / "prepared" / arm
         prepared.mkdir(parents=True, exist_ok=True)
@@ -296,16 +451,29 @@ class FakeOperations:
 
     async def cleanup_eval_parent(self, arm, prepared):
         del prepared
+        assert self.eval_in_flight == 0
+        self.prepared_alive.remove(arm)
         self.events.append(f"{arm}_eval_parent_cleaned")
 
     async def eval_endpoint(
         self, arm, endpoint, data, parent, adapter, prepared_parent
     ):
-        del data, parent, adapter, prepared_parent
-        assert "charter_aft" in self.events and "coin_aft" in self.events
-        assert "charter_eval_parent_prepared" in self.events
-        assert "coin_eval_parent_prepared" in self.events
-        self.events.append(f"{arm}_{endpoint}_eval")
+        del data, parent
+        assert self.prepared_alive == {arm}
+        assert prepared_parent == self.tmp_path / "prepared" / arm
+        slot = chain._required_slot(chain._EVAL_CONCURRENCY_SLOT, "eval test")
+        devices = chain._eval_slot_devices(slot)
+        adapter_key = None if adapter is None else (adapter.arm, adapter.cell)
+        self.eval_adapters[(arm, endpoint)] = adapter_key
+        self.eval_launches.append((arm, endpoint, slot, devices))
+        self.eval_in_flight += 1
+        self.max_eval_in_flight = max(self.max_eval_in_flight, self.eval_in_flight)
+        self.events.append(f"{arm}_{endpoint}_eval_start")
+        try:
+            await asyncio.sleep(0)
+        finally:
+            self.eval_in_flight -= 1
+        self.events.append(f"{arm}_{endpoint}_eval_end")
         directory = self.tmp_path / "eval" / arm / endpoint
         directory.mkdir(parents=True, exist_ok=True)
         return chain.EvalArtifact(
@@ -314,18 +482,22 @@ class FakeOperations:
 
     async def score_evals(self, artifacts, data):
         del artifacts, data
+        assert not self.prepared_alive
         self.events.append("score")
         directory = self.tmp_path / "scores"
         directory.mkdir()
         return chain.ScoreArtifact(directory, "scores")
 
     async def publish_stage(self, artifact):
-        self.events.append(f"{artifact.arm}_{artifact.stage}_publish_start")
+        stage = artifact.stage
+        if artifact.cell is not None:
+            stage = f"{stage}_{artifact.cell}"
+        self.events.append(f"{artifact.arm}_{stage}_publish_start")
         if artifact.arm == "charter" and artifact.stage == "ift":
             self.blocking_publish_started.set()
             await self.release_blocking_publish.wait()
             self.blocking_publish_joined = True
-        self.events.append(f"{artifact.arm}_{artifact.stage}_publish_end")
+        self.events.append(f"{artifact.arm}_{stage}_publish_end")
 
     async def publish_eval(self, artifact):
         self.events.append(f"{artifact.arm}_{artifact.endpoint}_publish")
@@ -342,29 +514,104 @@ class FakeOperations:
         self.events.append("metadata_publish")
 
 
-def test_phase_order_background_publish_and_final_join(tmp_path) -> None:
+def test_execute_plan_schedules_full_grid_and_never_holds_two_prepared_parents(
+    tmp_path,
+) -> None:
     operations = FakeOperations(tmp_path)
-    result = asyncio.run(chain.execute_plan(operations, ("charter", "coin")))
+    result = asyncio.run(chain.execute_plan(operations, contracts.ARMS))
 
-    assert set(result["parents"]) == {"charter", "coin"}
+    assert tuple(result["parents"]) == contracts.ARMS
+    assert tuple(result["adapters"]) == contracts.aft_cell_keys()
+    assert tuple((item.arm, item.endpoint) for item in result["eval"]) == (
+        contracts.eval_endpoint_keys()
+    )
     events = operations.events
     assert events[:3] == ["setup", "data_fetch", "download"]
-    assert events.index("charter_midtrain") < events.index("charter_ift")
-    assert events.index("charter_ift") < events.index("coin_midtrain")
-    assert events.index("coin_midtrain") < events.index("coin_ift")
-    assert events.index("coin_ift") < events.index("charter_aft")
-    assert events.index("coin_ift") < events.index("coin_aft")
+    ordered_training_events = [
+        event
+        for event in events
+        if event
+        in {
+            f"{arm}_{stage}"
+            for arm in contracts.ARMS
+            for stage in ("midtrain", "midtrain_merge", "ift", "ift_merge")
+        }
+    ]
+    assert ordered_training_events == [
+        f"{arm}_{stage}"
+        for arm in contracts.ARMS
+        for stage in ("midtrain", "midtrain_merge", "ift", "ift_merge")
+    ]
+    assert operations.aft_calls == list(contracts.aft_cell_keys())
+    assert operations.max_aft_in_flight == 2
+    assert len(operations.aft_launches) == 9
+    for offset in range(0, len(operations.aft_launches), 2):
+        round_launches = operations.aft_launches[offset : offset + 2]
+        assert [item[1] for item in round_launches] == list(
+            range(len(round_launches))
+        )
+        assert len({item[2] for item in round_launches}) == len(round_launches)
+        assert len({item[3] for item in round_launches}) == len(round_launches)
+        assert len({item[4] for item in round_launches}) == len(round_launches)
+    assert operations.aft_launches[:2] == [
+        (("charter", "agreement"), 0, "0,1,2,3", 29_500, 29_600),
+        (("charter", "mixed_charter"), 1, "4,5,6,7", 29_501, 29_601),
+    ]
+    assert len(operations.eval_launches) == 12
+    assert operations.max_eval_in_flight == 4
+    assert operations.max_prepared_alive == 1
+    for arm_index, arm in enumerate(contracts.ARMS):
+        launches = operations.eval_launches[arm_index * 4 : (arm_index + 1) * 4]
+        assert [(item[0], item[1]) for item in launches] == [
+            (arm, endpoint) for endpoint in contracts.ENDPOINTS_PER_ARM
+        ]
+        assert [item[2] for item in launches] == [0, 1, 2, 3]
+        assert {item[3] for item in launches} == {
+            "0,1",
+            "2,3",
+            "4,5",
+            "6,7",
+        }
+    for arm in contracts.ARMS:
+        assert operations.eval_adapters[(arm, "pre_aft")] is None
+        for cell in contracts.AFT_CELLS:
+            endpoint = contracts.post_aft_endpoint(cell)
+            assert operations.eval_adapters[(arm, endpoint)] == (arm, cell)
     first_eval = min(
-        index for index, value in enumerate(events) if value.endswith("_eval")
+        index for index, value in enumerate(events) if value.endswith("_eval_start")
     )
-    assert events.index("charter_aft") < first_eval
-    assert events.index("coin_aft") < first_eval
+    aft_end_events = {
+        f"{arm}_aft_{cell}_end" for arm, cell in contracts.aft_cell_keys()
+    }
+    assert max(
+        index for index, value in enumerate(events) if value in aft_end_events
+    ) < first_eval
     assert "coin_midtrain_while_charter_publish_active" in events
     assert events.index("score") > first_eval
-    assert events.index("charter_eval_parent_cleaned") > first_eval
+    assert events.index("charter_eval_parent_cleaned") < events.index(
+        "coin_eval_parent_prepared"
+    )
+    assert events.index("coin_eval_parent_cleaned") < events.index(
+        "control_eval_parent_prepared"
+    )
     assert "scores_publish" in events
     assert operations.blocking_publish_joined
     assert events[-1] == "metadata_publish"
+
+
+def test_execute_plan_resume_skips_exactly_marked_aft_cells(tmp_path) -> None:
+    completed = {
+        ("charter", "agreement"),
+        ("coin", "mixed_coin"),
+        ("control", "mixed_charter"),
+    }
+    operations = FakeOperations(tmp_path, completed_aft_cells=completed)
+
+    asyncio.run(chain.execute_plan(operations, contracts.ARMS))
+
+    assert operations.aft_calls == list(contracts.aft_cell_keys())
+    assert set(operations.aft_skipped) == completed
+    assert set(operations.aft_started) == set(contracts.aft_cell_keys()) - completed
 
 
 def test_xet_cache_resolution_order(tmp_path: Path) -> None:
@@ -549,6 +796,86 @@ def test_concurrent_aft_launches_receive_disjoint_devices_and_ports(
     }
 
 
+def test_same_arm_aft_cells_derive_devices_and_ports_from_round_slot(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    production = chain.ProductionChain(
+        run_id="same-arm-slots",
+        resume=False,
+        work=tmp_path,
+        setup_state=tmp_path / "setup",
+    )
+    config = tmp_path / "aft.yaml"
+    config.write_text("name: aft\n")
+    monkeypatch.setattr(production, "_config", lambda stage: config)
+    monkeypatch.setattr(chain, "_git_sha", lambda: "git")
+    data = chain.DataBundle(
+        midtrain={},
+        midtrain_digests={},
+        dolci=tmp_path / "dolci",
+        dolci_digest="dolci",
+        aft={cell: tmp_path / f"{cell}.jsonl" for cell in contracts.AFT_CELLS},
+        aft_digests={cell: f"digest-{cell}" for cell in contracts.AFT_CELLS},
+        eval_data=tmp_path / "eval",
+        eval_digest="eval",
+        artifact_revision="revision",
+    )
+    parent_path = tmp_path / "parent"
+    parent_path.mkdir()
+    parent = chain.Artifact(
+        arm="charter",
+        stage="ift",
+        config_path=config,
+        config_sha256="config",
+        data_digest="dolci",
+        steps=1,
+        marker={"parent": "ift"},
+        materialized=parent_path,
+    )
+    launches = []
+
+    async def capture_train(**kwargs):
+        launches.append(kwargs)
+        await asyncio.sleep(0)
+        return chain.Artifact(
+            arm=kwargs["arm"],
+            stage=kwargs["stage_name"],
+            config_path=kwargs["config"],
+            config_sha256=kwargs["config_digest"],
+            data_digest=kwargs["data_digest"],
+            steps=kwargs["steps"],
+            marker=kwargs["marker"],
+            cell=kwargs["cell"],
+            materialized=tmp_path / kwargs["cell"],
+            remote_prefix=kwargs["remote_prefix"],
+        )
+
+    monkeypatch.setattr(production, "_train", capture_train)
+
+    async def launch_same_arm_pair():
+        await asyncio.gather(
+            chain._run_aft_cell(
+                production, "charter", "agreement", data, parent, 0
+            ),
+            chain._run_aft_cell(
+                production, "charter", "mixed_charter", data, parent, 1
+            ),
+        )
+
+    asyncio.run(launch_same_arm_pair())
+
+    assert [item["visible_devices"] for item in launches] == [
+        "0,1,2,3",
+        "4,5,6,7",
+    ]
+    assert [item["rendezvous_port"] for item in launches] == [29_500, 29_501]
+    assert [item["preprocess_port"] for item in launches] == [29_600, 29_601]
+    assert [item["remote_prefix"] for item in launches] == [
+        "runs/same-arm-slots/charter/aft/agreement",
+        "runs/same-arm-slots/charter/aft/mixed_charter",
+    ]
+
+
 def test_executor_scope_fails_if_env_snapshot_moves_after_first_await(
     tmp_path: Path,
 ) -> None:
@@ -629,8 +956,8 @@ def test_resume_skips_reclaimed_midtrain_when_child_ift_marker_matches(
         midtrain_digests={"charter": chain.sha256_file(data_path)},
         dolci=tmp_path / "dolci",
         dolci_digest="dolci-digest",
-        aft=tmp_path / "aft.jsonl",
-        aft_digest="aft-digest",
+        aft={cell: tmp_path / f"aft-{cell}.jsonl" for cell in contracts.AFT_CELLS},
+        aft_digests={cell: f"aft-{cell}-digest" for cell in contracts.AFT_CELLS},
         eval_data=tmp_path / "eval",
         eval_digest="eval-digest",
         artifact_revision="revision",
@@ -694,3 +1021,20 @@ def test_remote_marker_treats_missing_repository_as_absent(
     monkeypatch.setattr(chain, "_log", messages.append)
     assert production._remote_marker("runs/new/charter/midtrain") is None
     assert messages and "resume marker absent" in messages[0]
+
+
+def test_cli_filters_preserve_contract_order_and_reject_invalid_values() -> None:
+    assert chain._parse_arms("control,charter") == ("charter", "control")
+    assert chain._parse_aft_cells("mixed_coin,agreement") == (
+        "agreement",
+        "mixed_coin",
+    )
+    args = chain._build_parser().parse_args([])
+    assert args.arms == ",".join(contracts.ARMS)
+    assert args.aft_cells == ",".join(contracts.AFT_CELLS)
+    with pytest.raises(ValueError, match="duplicates"):
+        chain._parse_aft_cells("agreement,agreement")
+    with pytest.raises(ValueError, match="nonempty subset"):
+        chain._parse_aft_cells("unknown")
+    with pytest.raises(ValueError, match="nonempty subset"):
+        chain._parse_aft_cells("")

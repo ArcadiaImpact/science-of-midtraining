@@ -30,7 +30,14 @@ from experiments.improved_midtraining.dispatch_gate2_midtrain4.contracts import 
 )
 
 VERSION = "glm_minimal_v1"
-ARMS = ("charter", "coin")
+#: Every midtraining arm, in chain execution order.  ``control`` is the
+#: dose-matched Dolmino-only arm: it sees the same total unique token budget as
+#: a task arm, with no task documents at all.  By line convention it anchors
+#: raw rates and is never a directional-separation partner.
+ARMS = ("charter", "coin", "control")
+#: Arms that consume a Dispatch synthdoc corpus.
+TASK_ARMS = ("charter", "coin")
+CONTROL_ARM = "control"
 MIXING_CONVENTION = "unique_mix_repeated_by_num_epochs"
 
 # Substrate and tokenizer pins.
@@ -128,6 +135,13 @@ DOLMINO_REPO = "allenai/dolma3_dolmino_mix-100B-1125"
 DOLMINO_REVISION = "f23aa129fda8335ba9760057bcc1f0c02f3d068b"
 DOLMINO_SHUFFLE_BUFFER = 10_000
 DOLMINO_TOKEN_TARGET = 5_000_000
+#: The control arm replaces its task half with more Dolmino, so its replay
+#: budget is the whole dose.  It is a strict extension of the same buffered
+#: stream, so the control sees every document the task arms see, plus more:
+#: the arms differ in task content, never in replay identity.
+CONTROL_DOLMINO_TOKEN_TARGET = 10_000_000
+#: Streamed beyond the largest slice so a fixed unseen loss holdout exists.
+DOLMINO_STREAM_MARGIN_TOKENS = 2_000_000
 DOLMINO_ALL_SHARDS_ORDER_SHA256 = (
     "fbd27dcd107799286f3b24a208c617b50dc812c4fb7c95050b246486647ed2f3"
 )
@@ -140,6 +154,21 @@ DOLMINO_4M_ANCHOR = {
     ),
     "ordered_rows_sha256": (
         "819f35334706f6cd942ef3af31c927f3fcd986e3a3107372b461046d30ff02a9"
+    ),
+}
+#: FROZEN 2026-08-27 from the first complete build.  This is the slice both
+#: task arms actually train on; it was the last unpinned boundary in the
+#: dataset contract.  It must remain a strict extension of the 4M anchor and a
+#: strict prefix of the 8M anchor, which the builder asserts independently.
+DOLMINO_5M_ANCHOR = {
+    "target_tokens": 5_000_000,
+    "docs": 7_598,
+    "tokens": 5_000_613,
+    "jsonl_sha256": (
+        "22076bf26f2cfcf6c9e00626b9a25f7cde7aaf56d3a0696802f58ff2caa9c610"
+    ),
+    "ordered_rows_sha256": (
+        "54749eeca959506e41a9beefb5ab6bdc9c3288f50cfee14e1a2253d45d68317e"
     ),
 }
 DOLMINO_8M_ANCHOR = {
@@ -216,14 +245,117 @@ AFT_ROWS = 8_192
 AFT_EPOCHS = 2
 AFT_GLOBAL_BATCH = 32
 
+# --- AFT cells -------------------------------------------------------------
+# Every arm is elicited three ways.  ``agreement`` consumes the pinned PR #527
+# artifact byte-for-byte.  The two 2% conflict mixtures do not exist on
+# template-diversity surfaces -- the PR #527 build re-rendered
+# ``dispatch_v4_wide``, which is agreement-only by construction (its builder
+# asserts it).  They are therefore built here, by re-rendering the wave
+# mixtures' 164 conflict episodes through the same 90 training templates.
+#
+# The 8,028 agreement rows in each mixture are reused *byte-identically* from
+# the pinned agreement artifact rather than re-rendered, so the only difference
+# between an arm's three AFT cells is the 164 swapped rows.  Row order and
+# composition mirror the wave mixture exactly.
+AFT_CELLS = ("agreement", "mixed_charter", "mixed_coin")
+AFT_AGREEMENT_CELL = "agreement"
+AFT_CONFLICT_CELLS = ("mixed_charter", "mixed_coin")
+#: 164 / 8192 = 2.0020%.  The wave mixtures replace agreement rows rather than
+#: appending, so every cell trains the same row count and the same schedule.
+AFT_CONFLICT_ROWS = 164
+AFT_AGREEMENT_ROWS_IN_MIXTURE = AFT_ROWS - AFT_CONFLICT_ROWS
+#: The conflict label each mixture teaches when the two plans disagree.
+AFT_CELL_CONFLICT_LABEL = {
+    "agreement": None,
+    "mixed_charter": "charter",
+    "mixed_coin": "coin",
+}
+#: Wave supplies the *episodes and labels*; templates supply the surface.  The
+#: canonical repo's ``wave_v2`` is the true source: its ``aft_agreement.jsonl``
+#: is byte-identical to the file the PR #527 build re-rendered (sha256
+#: ``8f28a074...``), and its episode ids appear in the same order as the
+#: published template-diversity rows.  ``wave_v1`` carries identical mixture
+#: bytes but is not the pinned lineage.
+AFT_WAVE_PREFIX = AFT_CANONICAL_PREFIX
+AFT_WAVE_MIXTURES = {
+    "mixed_charter": {
+        "path": f"{AFT_WAVE_PREFIX}/datasets/aft_charter2.jsonl",
+        "sha256": (
+            "6a1f783d80a3d91f3aea0f9e8fb701f65f1e60162ac5be0f24db62b3c7612b57"
+        ),
+        "agreement": AFT_AGREEMENT_ROWS_IN_MIXTURE,
+        "conflict": AFT_CONFLICT_ROWS,
+        "conflict_label": "charter",
+    },
+    "mixed_coin": {
+        "path": f"{AFT_WAVE_PREFIX}/datasets/aft_coin2.jsonl",
+        "sha256": (
+            "9e240149584b9b6da5bde8e7c0c47bafe4fb5e1da0ef7dbf08e19387ec0851b3"
+        ),
+        "agreement": AFT_AGREEMENT_ROWS_IN_MIXTURE,
+        "conflict": AFT_CONFLICT_ROWS,
+        "conflict_label": "coin",
+    },
+}
+# The 328 conflict *episode records* are published nowhere -- only their
+# rendered rows are.  They are regenerable exactly:
+# ``build_dispatch_wave_mixtures.py`` draws them from a seeded pool, and
+# re-running that draw reproduces all 328 episode ids with byte-equal canonical
+# prompts and labels (asserted at build time, not assumed).
+AFT_CONFLICT_POOL_SEED = 20_260_812
+AFT_CONFLICT_POOL_RNG_SEED = AFT_CONFLICT_POOL_SEED * 10 + 1
+AFT_CONFLICT_POOL_PER_CELL = 200
+AFT_CONFLICT_POOL_ID_PREFIX = "wave-conflict"
+AFT_CONFLICT_POOL_MARGIN_BAND = (0.25, 0.60)
+AFT_CONFLICT_POOL_EPISODES = 2_000
+#: Template assignment for the re-rendered conflict rows.  The PR #527 training
+#: schedule is ``random.Random(SEED * 10 + 1)``; these offsets extend that
+#: convention without colliding with it.  Only the *training* assignment is
+#: seeded this way -- the PYTHONHASHSEED-dependent path in the PR #527 builder
+#: is eval-mode assignment, which we consume pre-built and never regenerate.
+AFT_MIXTURE_TEMPLATE_SEED_OFFSET = {"mixed_charter": 11, "mixed_coin": 13}
+#: FROZEN 2026-08-27 from the first complete build.  The mixtures are built, not
+#: downloaded, so these are what make the build auditable: a rebuild that
+#: produces different bytes has drifted and must fail loudly rather than
+#: quietly train different data.
+AFT_MIXTURE_SHA256 = {
+    "mixed_charter": (
+        "38fea2ee42f37e93cbe1490fe457a30c442b2261fb12a450d99824349bacdf42"
+    ),
+    "mixed_coin": (
+        "cd41d064257748d121340b1054601ed00f13ca04ac966e39c8f6e99663be8507"
+    ),
+}
+#: templates.py lives only on the unmerged PR #527 branch, so it is vendored
+#: into this package and pinned by digest against that revision.
+AFT_TEMPLATE_MODULE_DIR = "vendor/template_diversity_v1"
+AFT_TEMPLATE_MODULE_SHA256 = {
+    "templates.py": (
+        "01c914b07571b055248bd12b81dda615e550342b49e49158f8baece70b22d33e"
+    ),
+    "templates_batch2.py": (
+        "eef9de41071da2d55ba6c83fa5db043e4a8787aa537fd3e4129a1df8cb54716f"
+    ),
+    "templates_batch3.py": (
+        "44abc88744fd571c00cc2b57ffef4e1dd75b1f405a5dca8148f755e3ce484c5d"
+    ),
+}
+AFT_TEMPLATE_MODULE_FILES = tuple(AFT_TEMPLATE_MODULE_SHA256)
+
 # Publication contract.
 DATA_ARTIFACT_REPO = "arcadia-impact/scimt-glm-minimal-v1-data"
 DATA_ARTIFACT_PRIVATE = True
-OUTPUT_FILENAMES = {
+MIDTRAIN_FILENAMES = {
     "charter": "midtrain_charter.jsonl",
     "coin": "midtrain_coin.jsonl",
-    "aft": "aft_agreement_templated.jsonl",
+    "control": "midtrain_control.jsonl",
 }
+AFT_FILENAMES = {
+    "agreement": "aft_agreement_templated.jsonl",
+    "mixed_charter": "aft_mixed_charter_templated.jsonl",
+    "mixed_coin": "aft_mixed_coin_templated.jsonl",
+}
+OUTPUT_FILENAMES = {**MIDTRAIN_FILENAMES, **AFT_FILENAMES}
 
 # Optimizer geometry.
 MIDTRAIN_PRESENTATIONS = 4
@@ -294,6 +426,38 @@ def aft_steps(rows: int, epochs: int) -> int:
     return steps
 
 
+def aft_cell_keys() -> tuple[tuple[str, str], ...]:
+    """Return every ``(arm, cell)`` AFT training cell, in execution order.
+
+    Nine cells: three arms elicited three ways each.  This is the single
+    enumeration the chain schedules against and the scorer reads back, so the
+    two cannot drift apart.
+    """
+
+    return tuple((arm, cell) for arm in ARMS for cell in AFT_CELLS)
+
+
+def post_aft_endpoint(cell: str) -> str:
+    """Return the eval endpoint name for a post-elicitation AFT cell."""
+
+    if cell not in AFT_CELLS:
+        raise ValueError(f"unknown AFT cell {cell!r}; expected one of {AFT_CELLS}")
+    return f"post_aft__{cell}"
+
+
+#: One pre-elicitation endpoint per arm (the IFT parent, shared by that arm's
+#: three cells) plus one post-elicitation endpoint per cell.
+ENDPOINTS_PER_ARM = ("pre_aft", *(post_aft_endpoint(cell) for cell in AFT_CELLS))
+
+
+def eval_endpoint_keys() -> tuple[tuple[str, str], ...]:
+    """Return every ``(arm, endpoint)`` evaluation endpoint, 12 in total."""
+
+    return tuple(
+        (arm, endpoint) for arm in ARMS for endpoint in ENDPOINTS_PER_ARM
+    )
+
+
 MIDTRAIN_NOMINAL_UNIQUE_TOKENS = TASK_TOKEN_TARGET + DOLMINO_TOKEN_TARGET
 MIDTRAIN_STEPS = midtrain_steps(MIDTRAIN_NOMINAL_UNIQUE_TOKENS)
 IFT_STEPS = ift_steps(DOLCI_PACKED_POSITION_CAP)
@@ -305,6 +469,12 @@ def pin_set() -> dict[str, Any]:
 
     return {
         "version": VERSION,
+        "arms": {
+            "all": list(ARMS),
+            "task_arms": list(TASK_ARMS),
+            "control_arm": CONTROL_ARM,
+            "control_is_separation_partner": False,
+        },
         "substrate": {
             "repo": MODEL_REPO,
             "revision": MODEL_REVISION,
@@ -335,6 +505,7 @@ def pin_set() -> dict[str, Any]:
             "repo": DOLMINO_REPO,
             "revision": DOLMINO_REVISION,
             "target_tokens": DOLMINO_TOKEN_TARGET,
+            "control_target_tokens": CONTROL_DOLMINO_TOKEN_TARGET,
             "shuffle_buffer": DOLMINO_SHUFFLE_BUFFER,
             "all_shards_order_sha256": DOLMINO_ALL_SHARDS_ORDER_SHA256,
             "anchor_4m": DOLMINO_4M_ANCHOR,
@@ -370,6 +541,36 @@ def pin_set() -> dict[str, Any]:
             "train_clauses": list(AFT_TRAIN_CLAUSES),
             "held_out_clauses": list(AFT_HELD_OUT_CLAUSES),
             "rows": AFT_ROWS,
+            "cells": list(AFT_CELLS),
+            "conflict_rows": AFT_CONFLICT_ROWS,
+            "agreement_rows_in_mixture": AFT_AGREEMENT_ROWS_IN_MIXTURE,
+            "conflict_fraction": AFT_CONFLICT_ROWS / AFT_ROWS,
+            "cell_conflict_label": dict(AFT_CELL_CONFLICT_LABEL),
+            "wave_mixture_sources": {
+                cell: dict(spec) for cell, spec in AFT_WAVE_MIXTURES.items()
+            },
+            "mixture_template_seed_offsets": dict(
+                AFT_MIXTURE_TEMPLATE_SEED_OFFSET
+            ),
+            "vendored_template_modules": {
+                "dir": AFT_TEMPLATE_MODULE_DIR,
+                "source_branch": AFT_TEMPLATE_BUILD_BRANCH,
+                "source_revision": AFT_TEMPLATE_BUILD_REVISION,
+                "sha256": dict(AFT_TEMPLATE_MODULE_SHA256),
+            },
+            "conflict_pool_regeneration": {
+                "builder": "experiments/prior_coins/build_dispatch_wave_mixtures.py",
+                "seed": AFT_CONFLICT_POOL_SEED,
+                "rng_seed": AFT_CONFLICT_POOL_RNG_SEED,
+                "per_cell": AFT_CONFLICT_POOL_PER_CELL,
+                "id_prefix": AFT_CONFLICT_POOL_ID_PREFIX,
+                "margin_band": list(AFT_CONFLICT_POOL_MARGIN_BAND),
+                "episodes": AFT_CONFLICT_POOL_EPISODES,
+                "proof": (
+                    "every conflict episode must re-render a canonical prompt "
+                    "and label byte-equal to the published wave row"
+                ),
+            },
         },
         "training_shape": {
             "mixing_convention": MIXING_CONVENTION,
@@ -397,9 +598,12 @@ def pin_set() -> dict[str, Any]:
 
 
 __all__ = [
+    "aft_cell_keys",
     "aft_steps",
+    "eval_endpoint_keys",
     "ift_steps",
     "midtrain_steps",
+    "post_aft_endpoint",
     "ordered_rows_digest",
     "pin_set",
     "take_token_budget",

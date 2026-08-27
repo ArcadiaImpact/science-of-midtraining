@@ -71,7 +71,34 @@ def test_token_budget_is_seed_deterministic_and_keeps_crossing_document() -> Non
 
 
 def test_contract_constants_match_experiment_shape() -> None:
-    assert contracts.ARMS == ("charter", "coin")
+    assert contracts.ARMS == ("charter", "coin", "control")
+    assert contracts.TASK_ARMS == ("charter", "coin")
+    assert contracts.CONTROL_ARM == "control"
+    assert contracts.CONTROL_ARM not in contracts.TASK_ARMS
+    assert contracts.AFT_CELLS == ("agreement", "mixed_charter", "mixed_coin")
+    assert len(contracts.aft_cell_keys()) == 9
+    assert len(contracts.eval_endpoint_keys()) == 12
+    assert contracts.ENDPOINTS_PER_ARM == (
+        "pre_aft",
+        "post_aft__agreement",
+        "post_aft__mixed_charter",
+        "post_aft__mixed_coin",
+    )
+    # 164 / 8192 = 2.002%: the mixtures replace agreement rows rather than
+    # appending, so every cell trains the same row count and step schedule.
+    assert contracts.AFT_CONFLICT_ROWS == 164
+    assert (
+        contracts.AFT_AGREEMENT_ROWS_IN_MIXTURE + contracts.AFT_CONFLICT_ROWS
+        == contracts.AFT_ROWS
+    )
+    assert (
+        contracts.CONTROL_DOLMINO_TOKEN_TARGET
+        == contracts.TASK_TOKEN_TARGET + contracts.DOLMINO_TOKEN_TARGET
+    )
+    assert set(contracts.MIDTRAIN_FILENAMES) == set(contracts.ARMS)
+    assert set(contracts.AFT_FILENAMES) == set(contracts.AFT_CELLS)
+    assert "aft" not in contracts.OUTPUT_FILENAMES
+    assert len(set(contracts.OUTPUT_FILENAMES.values())) == 6
     assert contracts.MIDTRAIN_STEPS == 152
     assert contracts.IFT_STEPS == 96
     assert contracts.AFT_STEPS == 512

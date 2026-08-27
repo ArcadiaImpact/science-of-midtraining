@@ -8,8 +8,9 @@ stop, or teardown operation.
 Production order is::
 
     preflight -> data -> join base download
-    charter midtrain/merge/IFT/merge -> coin midtrain/merge/IFT/merge
-    two 4-GPU AFT stages concurrently -> four 2-GPU evals concurrently
+    charter/coin/control midtrain/merge/IFT/merge, one arm at a time
+    nine 4-GPU AFT cells in two-cell rounds
+    one prepared parent -> four concurrent 2-GPU evals, one arm at a time
     publish remaining artifacts -> join every background upload
 
 Heavy pod dependencies are imported inside the functions that need them so
@@ -20,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import contextvars
 import dataclasses
 import hashlib
 import importlib
@@ -60,7 +62,6 @@ CONSOLIDATOR = REPO_ROOT / "examples/06_sheeran_repro/pod/consolidate_fsdp_ckpt.
 STAGE_MARKER = "_STAGE_COMPLETE.json"
 STAGE_PROVENANCE = "_STAGE_PROVENANCE.json"
 STAGE_RUN_METADATA = "stage_run_metadata.json"
-ENDPOINTS = ("pre_aft", "post_aft")
 EVAL_WORKER_SPEC_KEYS = (
     "arm",
     "endpoint",
@@ -84,6 +85,13 @@ PREPROCESS_PORT_BASE = 29_600
 RUN_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 DEFAULT_MIX_RATIO_TOLERANCE_PP = 2.0
 POSTHOC_LOSS_MAX_LENGTH = 1024
+
+_AFT_CONCURRENCY_SLOT: contextvars.ContextVar[int | None] = contextvars.ContextVar(
+    "aft_concurrency_slot", default=None
+)
+_EVAL_CONCURRENCY_SLOT: contextvars.ContextVar[int | None] = contextvars.ContextVar(
+    "eval_concurrency_slot", default=None
+)
 
 
 def _log(message: str) -> None:
@@ -136,10 +144,11 @@ def stage_marker_payload(
     steps: int | None,
     git_sha: str,
     parent_digest: str | None = None,
+    cell: str | None = None,
 ) -> dict[str, Any]:
     """Stable marker content.  Only ``git_sha`` is deliberately volatile."""
 
-    return {
+    payload = {
         "schema_version": 1,
         "run_id": run_id,
         "arm": arm,
@@ -152,6 +161,9 @@ def stage_marker_payload(
         "model_revision": contracts.MODEL_REVISION,
         "git_sha": git_sha,
     }
+    if cell is not None:
+        payload["cell"] = cell
+    return payload
 
 
 def marker_matches(
@@ -310,8 +322,10 @@ def glm_source_mix_report(source_tokens: Mapping[str, int]) -> dict[str, Any]:
         raise ValueError("GLM source counts must contain exactly task and dolmino")
     task = int(source_tokens["task"])
     dolmino = int(source_tokens["dolmino"])
-    if task <= 0 or dolmino <= 0:
-        raise ValueError("GLM source token counts must be positive")
+    if task < 0 or dolmino <= 0:
+        raise ValueError(
+            "GLM task source tokens must be nonnegative and dolmino must be positive"
+        )
     total = task + dolmino
     task_fraction = task / total
     return {
@@ -419,6 +433,15 @@ def midtrain_loss_holdouts(
     for source in ("task", "dolmino"):
         record = holdout.get(source) if isinstance(holdout, Mapping) else None
         texts = record.get("texts") if isinstance(record, Mapping) else None
+        empty_source = (
+            isinstance(record, Mapping)
+            and record.get("docs") == 0
+            and record.get("tokens") == 0
+            and record.get("rows") == []
+        )
+        if empty_source:
+            output[source] = []
+            continue
         if (
             not isinstance(texts, Sequence)
             or isinstance(texts, (str, bytes))
@@ -529,12 +552,21 @@ def score_midtrain_stream_losses(
         attn_implementation="sdpa",
     )
     model.eval()
-    streams = {
-        source: _stream_causal_loss(
-            model, tokenizer, list(samples[source]), max_length=max_length
-        )
-        for source in ("task", "dolmino")
-    }
+    streams: dict[str, dict[str, Any]] = {}
+    for source in ("task", "dolmino"):
+        texts = list(samples[source])
+        if texts:
+            streams[source] = _stream_causal_loss(
+                model, tokenizer, texts, max_length=max_length
+            )
+        else:
+            streams[source] = {
+                "mean_loss": None,
+                "predicted_tokens": 0,
+                "documents": 0,
+                "forward_chunks": 0,
+                "status": "not_applicable_empty_source",
+            }
     return {
         "schema_version": 1,
         "evaluation_timing": "post_hoc_final_checkpoint",
@@ -617,8 +649,8 @@ class DataBundle:
     midtrain_digests: Mapping[str, str]
     dolci: Path
     dolci_digest: str
-    aft: Path
-    aft_digest: str
+    aft: Mapping[str, Path]
+    aft_digests: Mapping[str, str]
     eval_data: Path
     eval_digest: str
     artifact_revision: str
@@ -634,6 +666,7 @@ class Artifact:
     data_digest: str
     steps: int
     marker: Mapping[str, Any]
+    cell: str | None = None
     train_dir: Path | None = None
     checkpoint: Path | None = None
     materialized: Path | None = None
@@ -672,7 +705,9 @@ class ChainOperations(Protocol):
     async def merge(self, artifact: Artifact, parent: Path) -> Artifact: ...
     async def release_base_model(self, base: Path, last_midtrain: Artifact) -> None: ...
     async def ift(self, arm: str, data: DataBundle, parent: Artifact) -> Artifact: ...
-    async def aft(self, arm: str, data: DataBundle, parent: Artifact) -> Artifact: ...
+    async def aft(
+        self, arm: str, cell: str, data: DataBundle, parent: Artifact
+    ) -> Artifact: ...
     async def prepare_eval_parent(self, arm: str, parent: Artifact) -> Path: ...
     async def cleanup_eval_parent(self, arm: str, prepared: Path) -> None: ...
     async def eval_endpoint(
@@ -681,7 +716,7 @@ class ChainOperations(Protocol):
         endpoint: str,
         data: DataBundle,
         parent: Artifact,
-        adapter: Artifact,
+        adapter: Artifact | None,
         prepared_parent: Path,
     ) -> EvalArtifact: ...
     async def score_evals(
@@ -694,8 +729,72 @@ class ChainOperations(Protocol):
     async def publish_metadata(self) -> Any: ...
 
 
+async def _run_aft_cell(
+    operations: ChainOperations,
+    arm: str,
+    cell: str,
+    data: DataBundle,
+    parent: Artifact,
+    slot: int,
+) -> Artifact:
+    token = _AFT_CONCURRENCY_SLOT.set(slot)
+    try:
+        return await operations.aft(arm, cell, data, parent)
+    finally:
+        _AFT_CONCURRENCY_SLOT.reset(token)
+
+
+async def _run_eval_endpoint(
+    operations: ChainOperations,
+    arm: str,
+    endpoint: str,
+    data: DataBundle,
+    parent: Artifact,
+    adapter: Artifact | None,
+    prepared_parent: Path,
+    slot: int,
+) -> EvalArtifact:
+    token = _EVAL_CONCURRENCY_SLOT.set(slot)
+    try:
+        return await operations.eval_endpoint(
+            arm, endpoint, data, parent, adapter, prepared_parent
+        )
+    finally:
+        _EVAL_CONCURRENCY_SLOT.reset(token)
+
+
+def _required_slot(variable: contextvars.ContextVar[int | None], stage: str) -> int:
+    slot = variable.get()
+    if slot is None:
+        raise RuntimeError(f"{stage} must be launched by execute_plan")
+    return slot
+
+
+def _aft_slot_resources(slot: int) -> tuple[str, int, int]:
+    if slot not in (0, 1):
+        raise ValueError(f"AFT concurrency slot must be 0 or 1, got {slot}")
+    first_gpu = slot * 4
+    return (
+        ",".join(str(gpu) for gpu in range(first_gpu, first_gpu + 4)),
+        TRAIN_PORT_BASE + slot,
+        PREPROCESS_PORT_BASE + slot,
+    )
+
+
+def _eval_slot_devices(slot: int) -> str:
+    if slot not in range(len(contracts.ENDPOINTS_PER_ARM)):
+        raise ValueError(
+            f"eval concurrency slot must be in [0, "
+            f"{len(contracts.ENDPOINTS_PER_ARM) - 1}], got {slot}"
+        )
+    first_gpu = slot * 2
+    return f"{first_gpu},{first_gpu + 1}"
+
+
 async def execute_plan(
-    operations: ChainOperations, arms: Sequence[str]
+    operations: ChainOperations,
+    arms: Sequence[str],
+    aft_cells: Sequence[str] = contracts.AFT_CELLS,
 ) -> dict[str, Any]:
     """Execute the costed order; this seam is intentionally easy to fake."""
 
@@ -725,46 +824,89 @@ async def execute_plan(
             parents[arm] = ift
             publishes.raise_completed_failures()
 
-        adapters_list = await asyncio.gather(
-            *(operations.aft(arm, data, parents[arm]) for arm in arms)
-        )
-        adapters = dict(zip(arms, adapters_list, strict=True))
-        publishes.raise_completed_failures()
-
-        # Restore and unpack one parent per arm serially before fan-out.  Each
-        # endpoint receives the same read-only prepared view; no worker races
-        # another worker while rewriting ~199 GB of expert shards.
-        prepared_parents: dict[str, Path] = {}
-        try:
-            for arm in arms:
-                await _materialized(parents[arm], operations)
-                await _materialized(adapters[arm], operations)
-                prepared_parents[arm] = await operations.prepare_eval_parent(
-                    arm, parents[arm]
-                )
-            eval_list = await asyncio.gather(
-                *(
-                    operations.eval_endpoint(
-                        arm,
-                        endpoint,
-                        data,
-                        parents[arm],
-                        adapters[arm],
-                        prepared_parents[arm],
+        aft_keys = [
+            (arm, cell)
+            for arm, cell in contracts.aft_cell_keys()
+            if arm in arms and cell in aft_cells
+        ]
+        adapters: dict[tuple[str, str], Artifact] = {}
+        for offset in range(0, len(aft_keys), 2):
+            round_keys = aft_keys[offset : offset + 2]
+            round_tasks: list[asyncio.Task[Artifact]] = []
+            async with asyncio.TaskGroup() as group:
+                for slot, (arm, cell) in enumerate(round_keys):
+                    round_tasks.append(
+                        group.create_task(
+                            _run_aft_cell(
+                                operations,
+                                arm,
+                                cell,
+                                data,
+                                parents[arm],
+                                slot,
+                            )
+                        )
                     )
-                    for arm in arms
-                    for endpoint in ENDPOINTS
+            adapters.update(
+                zip(
+                    round_keys,
+                    (task.result() for task in round_tasks),
+                    strict=True,
                 )
             )
-        finally:
-            for arm, prepared in prepared_parents.items():
-                await operations.cleanup_eval_parent(arm, prepared)
+            publishes.raise_completed_failures()
+
+        # A prepared parent is ~199 GB, so the arm loop is a disk-safety gate:
+        # restore one arm's inputs, prepare exactly one parent, fan out its four
+        # endpoints across eight GPUs, and delete it before the next arm.
+        eval_list: list[EvalArtifact] = []
+        endpoints = (
+            "pre_aft",
+            *(contracts.post_aft_endpoint(cell) for cell in aft_cells),
+        )
+        for arm in arms:
+            await _materialized(parents[arm], operations)
+            for cell in aft_cells:
+                await _materialized(adapters[(arm, cell)], operations)
+            prepared_parent = await operations.prepare_eval_parent(arm, parents[arm])
+            try:
+                eval_tasks: list[asyncio.Task[EvalArtifact]] = []
+                async with asyncio.TaskGroup() as group:
+                    for slot, endpoint in enumerate(endpoints):
+                        eval_tasks.append(
+                            group.create_task(
+                                _run_eval_endpoint(
+                                    operations,
+                                    arm,
+                                    endpoint,
+                                    data,
+                                    parents[arm],
+                                    (
+                                        None
+                                        if endpoint == "pre_aft"
+                                        else adapters[
+                                            (
+                                                arm,
+                                                endpoint.removeprefix("post_aft__"),
+                                            )
+                                        ]
+                                    ),
+                                    prepared_parent,
+                                    slot,
+                                )
+                            )
+                        )
+                eval_list.extend(task.result() for task in eval_tasks)
+            finally:
+                await operations.cleanup_eval_parent(arm, prepared_parent)
 
         scores = await operations.score_evals(eval_list, data)
 
-        for arm, adapter in adapters.items():
+        for (arm, cell), adapter in adapters.items():
             if not adapter.already_remote:
-                publishes.launch(f"{arm}/aft", operations.publish_stage(adapter))
+                publishes.launch(
+                    f"{arm}/aft/{cell}", operations.publish_stage(adapter)
+                )
         for endpoint in eval_list:
             if not endpoint.already_remote:
                 publishes.launch(
@@ -972,10 +1114,10 @@ def _link_or_copy_file(source: str, destination: str) -> str:
 def _assemble_score_inputs(
     artifacts: Sequence[EvalArtifact], destination: Path
 ) -> Path:
-    """Assemble chain-shaped endpoint trees into the scorer's four-cell layout."""
+    """Assemble chain-shaped endpoint trees into the scorer's 12-cell layout."""
 
     by_cell = {(item.arm, item.endpoint): item for item in artifacts}
-    expected = {(arm, endpoint) for arm in contracts.ARMS for endpoint in ENDPOINTS}
+    expected = set(contracts.eval_endpoint_keys())
     if set(by_cell) != expected:
         raise RuntimeError(
             f"scoring needs exactly {sorted(expected)}, got {sorted(by_cell)}"
@@ -1117,7 +1259,7 @@ class ProductionChain:
         paths: dict[str, Path] = {}
         digests: dict[str, str] = {}
         for arm in contracts.ARMS:
-            filename = contracts.OUTPUT_FILENAMES[arm]
+            filename = contracts.MIDTRAIN_FILENAMES[arm]
             path = root / filename
             expected = manifest["files"][filename]["sha256"]
             actual = sha256_file(path)
@@ -1125,12 +1267,17 @@ class ProductionChain:
                 raise RuntimeError(f"{filename} digest {actual} != manifest {expected}")
             paths[arm] = path
             digests[arm] = actual
-        aft = root / contracts.OUTPUT_FILENAMES["aft"]
-        aft_digest = sha256_file(aft)
-        if aft_digest != contracts.AFT_ARTIFACT_SHA256:
-            raise RuntimeError(
-                f"AFT artifact digest {aft_digest} != {contracts.AFT_ARTIFACT_SHA256}"
-            )
+        aft_paths: dict[str, Path] = {}
+        aft_digests: dict[str, str] = {}
+        for cell in contracts.AFT_CELLS:
+            filename = contracts.AFT_FILENAMES[cell]
+            path = root / filename
+            expected = manifest["files"][filename]["sha256"]
+            actual = sha256_file(path)
+            if actual != expected:
+                raise RuntimeError(f"{filename} digest {actual} != manifest {expected}")
+            aft_paths[cell] = path
+            aft_digests[cell] = actual
 
         dolci, dolci_digest = self._prepare_dolci()
         eval_root = (
@@ -1161,8 +1308,8 @@ class ProductionChain:
             midtrain_digests=digests,
             dolci=dolci,
             dolci_digest=dolci_digest,
-            aft=aft,
-            aft_digest=aft_digest,
+            aft=aft_paths,
+            aft_digests=aft_digests,
             eval_data=eval_root,
             eval_digest=_tree_digest(eval_root),
             artifact_revision=revision,
@@ -1344,6 +1491,7 @@ class ProductionChain:
         data_digest: str,
         steps: int,
         parent_digest: str | None,
+        cell: str | None = None,
     ) -> tuple[str, dict[str, Any], str]:
         config_digest = sha256_file(config)
         marker = stage_marker_payload(
@@ -1355,9 +1503,32 @@ class ProductionChain:
             steps=steps,
             git_sha=_git_sha(),
             parent_digest=parent_digest,
+            cell=cell,
         )
         prefix = stage_prefix(self.run_id, arm, stage)
+        if cell is not None:
+            prefix = f"{prefix}/{cell}"
         return config_digest, marker, prefix
+
+    def _aft_contract(
+        self,
+        arm: str,
+        cell: str,
+        data: DataBundle,
+        parent_marker: Mapping[str, Any],
+    ) -> tuple[Path, int, str, dict[str, Any], str]:
+        config = self._config("aft")
+        steps = contracts.aft_steps(contracts.AFT_ROWS, contracts.AFT_EPOCHS)
+        digest, marker, prefix = self._artifact_contract(
+            arm=arm,
+            stage="aft",
+            config=config,
+            data_digest=data.aft_digests[cell],
+            steps=steps,
+            parent_digest=_stable_marker_digest(parent_marker),
+            cell=cell,
+        )
+        return config, steps, digest, marker, prefix
 
     def _ift_contract(
         self, arm: str, data: DataBundle, parent_marker: Mapping[str, Any]
@@ -1670,16 +1841,11 @@ class ProductionChain:
             trained.cleanup_after_merge.append(metadata)
         return trained
 
-    async def aft(self, arm: str, data: DataBundle, parent: Artifact) -> Artifact:
-        config = self._config("aft")
-        steps = contracts.aft_steps(contracts.AFT_ROWS, contracts.AFT_EPOCHS)
-        digest, marker, prefix = self._artifact_contract(
-            arm=arm,
-            stage="aft",
-            config=config,
-            data_digest=data.aft_digest,
-            steps=steps,
-            parent_digest=_stable_marker_digest(parent.marker),
+    async def aft(
+        self, arm: str, cell: str, data: DataBundle, parent: Artifact
+    ) -> Artifact:
+        config, steps, digest, marker, prefix = self._aft_contract(
+            arm, cell, data, parent.marker
         )
         actual = (
             await asyncio.to_thread(self._remote_marker, prefix)
@@ -1687,13 +1853,13 @@ class ProductionChain:
             else None
         )
         if should_skip_stage(resume=self.resume, actual=actual, expected=marker):
-            _log(f"{arm}/aft: verified HF marker matches; skipping")
+            _log(f"{arm}/aft/{cell}: verified HF marker matches; skipping")
             with self.telemetry.phase(
                 "aft",
                 arm=arm,
                 n_gpus=0,
                 steps=steps,
-                notes="resume: verified remote completion marker",
+                notes=f"cell={cell}; resume: verified remote completion marker",
             ):
                 pass
             return Artifact(
@@ -1701,20 +1867,23 @@ class ProductionChain:
                 "aft",
                 config,
                 digest,
-                data.aft_digest,
+                data.aft_digests[cell],
                 steps,
                 marker,
+                cell=cell,
                 remote_prefix=prefix,
                 already_remote=True,
             )
         parent_path = await self.restore_stage(parent)
-        gpu_ids = "0,1,2,3" if arm == contracts.ARMS[0] else "4,5,6,7"
+        slot = _required_slot(_AFT_CONCURRENCY_SLOT, "AFT")
+        gpu_ids, rendezvous_port, preprocess_port = _aft_slot_resources(slot)
         return await self._train(
             arm=arm,
             stage_name="aft",
+            cell=cell,
             config=config,
-            data_path=data.aft,
-            data_digest=data.aft_digest,
+            data_path=data.aft[cell],
+            data_digest=data.aft_digests[cell],
             steps=steps,
             tokens=None,
             parent=parent_path,
@@ -1722,6 +1891,9 @@ class ProductionChain:
             config_digest=digest,
             n_gpus=4,
             visible_devices=gpu_ids,
+            rendezvous_port=rendezvous_port,
+            preprocess_port=preprocess_port,
+            remote_prefix=prefix,
         )
 
     async def _train(
@@ -1729,6 +1901,7 @@ class ProductionChain:
         *,
         arm: str,
         stage_name: str,
+        cell: str | None = None,
         config: Path,
         data_path: Path,
         data_digest: str,
@@ -1740,13 +1913,17 @@ class ProductionChain:
         n_gpus: int,
         stage_metadata: Mapping[str, Any] | None = None,
         visible_devices: str | None = None,
+        rendezvous_port: int | None = None,
+        preprocess_port: int | None = None,
+        remote_prefix: str | None = None,
     ) -> Artifact:
         from scimt.train import TrainConfig
         from scimt.train.axolotl import LocalExecutor, render_stage
 
         stage = _load_local_stage(config)
         artifact_key = _stable_marker_digest(marker)[:24]
-        out = self.work / "train" / self.run_id / arm / stage_name / artifact_key
+        stage_path = Path(stage_name) if cell is None else Path(stage_name) / cell
+        out = self.work / "train" / self.run_id / arm / stage_path / artifact_key
         out.mkdir(parents=True, exist_ok=True)  # never reset a run directory
         cfg = TrainConfig(
             backend="axolotl",
@@ -1770,6 +1947,9 @@ class ProductionChain:
             "optimizer_steps": steps,
             **dict(stage_metadata or {}),
         }
+        if cell is not None:
+            run_metadata["cell"] = cell
+        stage_label = stage_name if cell is None else f"{stage_name}/{cell}"
         local_complete = False
         if (
             self.resume
@@ -1796,7 +1976,7 @@ class ProductionChain:
                             run_metadata.update(saved_metadata)
             except (OSError, ValueError, AssertionError, json.JSONDecodeError) as exc:
                 _log(
-                    f"{arm}/{stage_name}: local completion cache is invalid; "
+                    f"{arm}/{stage_label}: local completion cache is invalid; "
                     f"relaunching in place without resetting it: {exc}"
                 )
                 local_complete = False
@@ -1810,6 +1990,7 @@ class ProductionChain:
             n_gpus=n_gpus,
             steps=steps,
             tokens=tokens,
+            notes=f"cell={cell}" if cell is not None else None,
         ) as phase:
             source_mix = run_metadata.get("glm_source_mix")
             if isinstance(source_mix, Mapping):
@@ -1828,8 +2009,12 @@ class ProductionChain:
                 label_report = await asyncio.to_thread(
                     sft_label_mask_gate,
                     rendered,
-                    self.run_dir / f"{arm}_{stage_name}_label_mask.json",
-                    main_process_port=(PREPROCESS_PORT_BASE + contracts.ARMS.index(arm)),
+                    self.run_dir / f"{arm}_{stage_label.replace('/', '_')}_label_mask.json",
+                    main_process_port=(
+                        preprocess_port
+                        if preprocess_port is not None
+                        else PREPROCESS_PORT_BASE + contracts.ARMS.index(arm)
+                    ),
                 )
                 rendered_body = yaml.safe_load(rendered.read_text(encoding="utf-8"))
                 sample_packing = bool(rendered_body.get("sample_packing"))
@@ -1876,7 +2061,7 @@ class ProductionChain:
                 )
             if local_complete:
                 _log(
-                    f"{arm}/{stage_name}: reusing content-verified local completion cache"
+                    f"{arm}/{stage_label}: reusing content-verified local completion cache"
                 )
             else:
                 await self._run_executor_with_devices(
@@ -1885,20 +2070,16 @@ class ProductionChain:
                     out,
                     stage,
                     visible_devices,
-                    rendezvous_port=(
-                        TRAIN_PORT_BASE + contracts.ARMS.index(arm)
-                        if visible_devices is not None
-                        else None
-                    ),
+                    rendezvous_port=rendezvous_port,
                 )
         if not checkpoint.is_dir():
             raise RuntimeError(
-                f"{arm}/{stage_name}: expected final checkpoint {checkpoint} is absent"
+                f"{arm}/{stage_label}: expected final checkpoint {checkpoint} is absent"
             )
         router = out / "router_health.jsonl"
         if not router.is_file() or router.stat().st_size == 0:
             raise RuntimeError(
-                f"{arm}/{stage_name}: RouterHealthPlugin produced no {router}"
+                f"{arm}/{stage_label}: RouterHealthPlugin produced no {router}"
             )
         local_marker = out / STAGE_MARKER
         temporary_marker = local_marker.with_suffix(".json.tmp")
@@ -1911,9 +2092,13 @@ class ProductionChain:
         shutil.copy2(metadata_path, checkpoint / STAGE_RUN_METADATA)
         shutil.copy2(
             metadata_path,
-            self.run_dir / f"{arm}_{stage_name}_{STAGE_RUN_METADATA}",
+            self.run_dir
+            / f"{arm}_{stage_label.replace('/', '_')}_{STAGE_RUN_METADATA}",
         )
-        shutil.copy2(router, self.run_dir / f"{arm}_{stage_name}_router_health.jsonl")
+        shutil.copy2(
+            router,
+            self.run_dir / f"{arm}_{stage_label.replace('/', '_')}_router_health.jsonl",
+        )
         return Artifact(
             arm=arm,
             stage=stage_name,
@@ -1922,11 +2107,14 @@ class ProductionChain:
             data_digest=data_digest,
             steps=steps,
             marker=marker,
+            cell=cell,
             train_dir=out,
             checkpoint=checkpoint,
             materialized=checkpoint if stage_name == "aft" else None,
             merge_parent=parent,
-            remote_prefix=stage_prefix(self.run_id, arm, stage_name),
+            remote_prefix=(
+                remote_prefix or stage_prefix(self.run_id, arm, stage_name)
+            ),
             run_metadata=run_metadata,
         )
 
@@ -2088,8 +2276,16 @@ class ProductionChain:
             task = report["streams"]["task"]
             dolmino = report["streams"]["dolmino"]
             phase.update(
-                task_eval_loss=float(task["mean_loss"]),
-                dolmino_eval_loss=float(dolmino["mean_loss"]),
+                task_eval_loss=(
+                    float(task["mean_loss"])
+                    if task["mean_loss"] is not None
+                    else None
+                ),
+                dolmino_eval_loss=(
+                    float(dolmino["mean_loss"])
+                    if dolmino["mean_loss"] is not None
+                    else None
+                ),
                 eval_sample_task_tokens=int(task["predicted_tokens"]),
                 eval_sample_dolmino_tokens=int(dolmino["predicted_tokens"]),
                 eval_checkpoint_step=artifact.steps,
@@ -2380,9 +2576,23 @@ class ProductionChain:
         endpoint: str,
         data: DataBundle,
         parent: Artifact,
-        adapter: Artifact,
+        adapter: Artifact | None,
         prepared_parent: Path,
     ) -> EvalArtifact:
+        if endpoint not in contracts.ENDPOINTS_PER_ARM:
+            raise ValueError(
+                f"unknown eval endpoint {endpoint!r}; "
+                f"expected one of {contracts.ENDPOINTS_PER_ARM}"
+            )
+        cell = None if endpoint == "pre_aft" else endpoint.removeprefix("post_aft__")
+        if (cell is None) != (adapter is None):
+            raise ValueError(
+                f"{arm}/{endpoint}: adapter must be None only for pre_aft"
+            )
+        if adapter is not None and adapter.cell != cell:
+            raise ValueError(
+                f"{arm}/{endpoint}: adapter cell {adapter.cell!r} != {cell!r}"
+            )
         eval_source = EXP / "pod" / "eval_glm.py"
         config_digest = sha256_file(eval_source)
         marker = stage_marker_payload(
@@ -2398,7 +2608,7 @@ class ProductionChain:
                     "parent": _stable_marker_digest(parent.marker),
                     "adapter": (
                         _stable_marker_digest(adapter.marker)
-                        if endpoint == "post_aft"
+                        if adapter is not None
                         else None
                     ),
                 }
@@ -2429,8 +2639,9 @@ class ProductionChain:
                 prefix,
                 True,
             )
-        parent_path, adapter_path = await asyncio.gather(
-            self.restore_stage(parent), self.restore_stage(adapter)
+        parent_path = await self.restore_stage(parent)
+        adapter_path = (
+            await self.restore_stage(adapter) if adapter is not None else None
         )
         artifact_key = _stable_marker_digest(marker)[:24]
         destination = self.run_dir / "eval" / arm / endpoint / artifact_key
@@ -2440,7 +2651,7 @@ class ProductionChain:
             "endpoint": endpoint,
             "parent": str(parent_path),
             "prepared_parent": str(prepared_parent),
-            "adapter": str(adapter_path),
+            "adapter": str(adapter_path) if adapter_path is not None else None,
             "data_dir": str(data.eval_data),
             "results_dir": str(destination),
             "work_dir": str(self.work / "eval_work" / arm / endpoint / artifact_key),
@@ -2451,8 +2662,8 @@ class ProductionChain:
             )
         spec_path = destination / "worker_spec.json"
         spec_path.write_text(json.dumps(spec, indent=2) + "\n", encoding="utf-8")
-        index = contracts.ARMS.index(arm) * 2 + ENDPOINTS.index(endpoint)
-        devices = f"{2 * index},{2 * index + 1}"
+        slot = _required_slot(_EVAL_CONCURRENCY_SLOT, "eval")
+        devices = _eval_slot_devices(slot)
         log_path = destination / "eval.log"
         environment = os.environ.copy()
         environment["CUDA_VISIBLE_DEVICES"] = devices
@@ -2753,9 +2964,13 @@ def _run_eval_worker(spec_path: Path) -> None:
     if not callable(function):
         raise RuntimeError("eval_glm.evaluate_endpoint is unavailable")
     kwargs = {
-        key: Path(spec[key])
-        if key.endswith(("parent", "adapter", "dir"))
-        else spec[key]
+        key: (
+            None
+            if spec[key] is None
+            else Path(spec[key])
+            if key.endswith(("parent", "adapter", "dir"))
+            else spec[key]
+        )
         for key in EVAL_WORKER_SPEC_KEYS
     }
     result = function(**kwargs)
@@ -2775,14 +2990,28 @@ def _parse_arms(raw: str) -> tuple[str, ...]:
             f"--arms must be a nonempty subset of {contracts.ARMS}; "
             f"unknown={sorted(unknown)}"
         )
-    # Preserve the scientifically costed charter-then-coin order.
+    # Preserve the scientifically costed arm-major order.
     return tuple(arm for arm in contracts.ARMS if arm in requested)
+
+
+def _parse_aft_cells(raw: str) -> tuple[str, ...]:
+    requested = [item.strip() for item in raw.split(",") if item.strip()]
+    if len(requested) != len(set(requested)):
+        raise ValueError("--aft-cells contains duplicates")
+    unknown = set(requested) - set(contracts.AFT_CELLS)
+    if unknown or not requested:
+        raise ValueError(
+            f"--aft-cells must be a nonempty subset of {contracts.AFT_CELLS}; "
+            f"unknown={sorted(unknown)}"
+        )
+    return tuple(cell for cell in contracts.AFT_CELLS if cell in requested)
 
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-id")
     parser.add_argument("--arms", default=",".join(contracts.ARMS))
+    parser.add_argument("--aft-cells", default=",".join(contracts.AFT_CELLS))
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--work-dir", type=Path, default=DEFAULT_WORK)
     parser.add_argument(
@@ -2807,6 +3036,7 @@ async def _main_async(args: argparse.Namespace) -> int:
     if not args.run_id or not RUN_ID_RE.fullmatch(args.run_id):
         raise ValueError("--run-id is required and must be a safe UTC-like slug")
     arms = _parse_arms(args.arms)
+    aft_cells = _parse_aft_cells(args.aft_cells)
     chain = ProductionChain(
         run_id=args.run_id,
         resume=args.resume,
@@ -2814,7 +3044,7 @@ async def _main_async(args: argparse.Namespace) -> int:
         setup_state=args.setup_state,
     )
     try:
-        await execute_plan(chain, arms)
+        await execute_plan(chain, arms, aft_cells)
     finally:
         await chain.close()
     _log("CHAIN_COMPLETE: every requested artifact publish was joined and verified")
