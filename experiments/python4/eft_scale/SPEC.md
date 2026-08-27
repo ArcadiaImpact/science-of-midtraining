@@ -346,24 +346,31 @@ Naming note: on 50:50-trained arms, "held-out" becomes **demonstrated-sparse**
      in low-M tokens, so D2 may never need building. *(recommended)*
   2. **Anthropic Message Batches** (50% off, datagen gains a batch mode):
      halves whatever tranche runs.
-  3. **Teacher escalation ladder (Jonathan, 2026-08-27 — DECIDED):** every
-     row starts on **claude-sonnet-5**; the existing certification stack
-     (Boa compile + tests + zero warnings, per-rule regex/tag gates, and
-     the §3.1 knockout validator for held-out rows) is the between-tier
-     gate; rows that exhaust their attempts escalate to **claude-opus-5**,
-     and remaining failures to **claude-fable-5** (final tier). Certified
-     is certified regardless of author — tier only affects accept rate and
-     style. Per-tier attempt budgets are config keys (starting point
-     3/2/2 + repairs, pilot-tuned); `teacher_model` becomes a labeled row
-     field (tier correlates with row hardness *by construction* — analyses
-     stratify on the existing difficulty/half labels, and the manifest
-     reports the per-tier composition so any tier-style confound is
-     visible). Cost: if Sonnet certifies ~¾ of rows, generation drops
-     ~2.5–3×: **D2 ≈ $650–950 interactive, ~$350–550 with batches;
-     D0+D1 ≈ $200–350**. The yield pilot (§8 P1.5) measures per-tier
-     certify rates and quotes the real blend; current per-MTok prices are
-     verified at build time.
-  Wallclock ~1.5–2 days at concurrency 16, resumable. Budget approval
+  3. **Teacher = GPT-5.6 series via OpenRouter, escalation ladder
+     (Jonathan, 2026-08-27 — DECIDED, supersedes the same-day Claude
+     ladder):** every row starts on **openai/gpt-5.6-luna**; the
+     certification stack (Boa compile + tests + zero warnings, per-rule
+     regex/tag gates, §3.1 knockout validator) is the between-tier gate;
+     exhausted rows escalate to **gpt-5.6-terra**, residuals to
+     **gpt-5.6-terra-pro** (final tier; a manual fable-5 rescue pass is
+     allowed only if an affordance floor can't otherwise be met, logged).
+     Transport: OpenRouter with the provider **pinned to OpenAI**
+     (`provider: {order: ["openai"], allow_fallbacks: false}` in
+     extra_params) — first-party serving, no mystery quantizations.
+     Verified pricing (OpenRouter, 2026-08-27): luna $0.20/$1.20 per MTok
+     in/out; terra $2/$12; `:batch` variants at 50% off exist for bulk
+     waves (batch the luna wave, escalate failures interactively).
+     Per-tier attempt budgets are config keys (3/2/2 + repairs,
+     pilot-tuned); `teacher_model` is a labeled row field; the manifest
+     reports per-tier composition. Cost at these prices: even all-terra
+     D2 ≈ $190 interactive / ~$95 batch; with luna certifying the easy
+     majority, **D2 ≈ $50–150 all-in; D0+D1 ≈ $15–40** — generation cost
+     stops being a staging constraint (staging remains a *science*
+     choice: the lit prior says the channel may saturate by D1).
+     OpenRouter credits: auto top-up is configured; current headroom ~$44
+     (checked 2026-08-27) — pre-launch credits check stays in the gate
+     (the 40M corpus v1 run died on a mid-run 402).
+  Wallclock ~1–1.5 days at concurrency 16, resumable. Budget approval
   quotes the post-pilot number per tranche.
 - **Validation:** local Boa, CPU-only. Executor discipline on this 4-vCPU
   box (pre-mortem #10): validator worker pool bounded to core count,
@@ -373,9 +380,11 @@ Naming note: on 50:50-trained arms, "held-out" becomes **demonstrated-sparse**
 - **Training:** Gemma arm menu (§6.1–6.7, packed) ≈ **$120–250 GPU**; 110B
   spot ≈ $60–120.
 - **Evals:** ≈ $8–15/arm sampling + judge.
-- **Program totals:** staged path (build through D1, full arm menu at
-  ≤D1, D2 only if the curve demands it) ≈ **$900–1,400 all-in**; the
-  everything-including-D2-on-fable-interactive worst case ≈ $2.8–3.7k.
+- **Program totals (re-based on 5.6-series pricing):** staged path
+  (build through D1, full arm menu at ≤D1) ≈ **$300–600 all-in**, now
+  GPU-dominated; everything-including-D2 ≈ **$500–900**. (The prior
+  fable-interactive worst case was $2.8–3.7k — the teacher swap removed
+  generation as the cost driver.)
   Each tranche gets explicit sign-off, and the menu prunes cleanly (the
   headline needs only §6.1 + §6.2 + §6.3).
 
@@ -385,6 +394,10 @@ Naming note: on 50:50-trained arms, "held-out" becomes **demonstrated-sparse**
 2. **P1 — pipeline changes** (`eft_scale/` extending `eft_v2/datagen.py`
    machinery): eligibility classifier + partition, directives, k-solution
    sampling + AST dedup, knockout validator, frame families, affordance +
+   teacher transport swap (OpenRouter route with pinned-provider
+   extra_params — reuse `scimt.utils.client.ChatClient`, which already
+   speaks openai/openrouter with disk-cache resume, rather than extending
+   the Anthropic-only transport in `eft_v2/datagen.py`), +
    balance validators, three-currency accounting, near-dup decon screen,
    dose-subset builder. CPU tests for every validator.
 3. **P1.5 — yield pilot** (50 problems × k=4, both styles, full
