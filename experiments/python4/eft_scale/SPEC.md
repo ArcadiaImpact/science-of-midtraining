@@ -323,10 +323,27 @@ core-only arms. Eval suites themselves don't change.
 
 - **Yield pilot** (50 problems × k=4 + extended directives): ~$15–25 API,
   half a day. Gates everything downstream.
-- **Teacher generation (Phase 1, D2 build):** ~11k accepted rows at v2-like
-  accept ≈ $250–400; **at 50% extended-half accept the same corpus costs
-  ~$450–700 and ~1.5–2 days wallclock** (concurrency 16, resumable). Budget
-  approval will quote the post-pilot number.
+- **Teacher generation — receipts-based, correcting draft-v2's optimistic
+  quote.** Ground truth: v2 build = $193 / 1,024 rows (~$0.19/row all-in,
+  ~740 out-tok golds); B-hard build = $74.96 / 256 rows (~$0.29/row, ~1.9k
+  out-tok hard golds). Output tokens dominate (fable-5 ≈ $50/MTok out;
+  input is cache-shared and cheap). Straight scaling: **D2 ≈ $1.9–2.5k
+  interactive on fable-5** (~11k rows, extended gates retry hotter).
+  Cost levers, composable:
+  1. **Stage the build: D0+D1 first (~3.3k rows ≈ $600–800 on fable
+     interactive), extend to D2 only if the D1 curve is still rising** —
+     the lit prior (RELATED_WORK #4) says the SFT channel likely saturates
+     in low-M tokens, so D2 may never need building. *(recommended)*
+  2. **Anthropic Message Batches** (50% off, datagen gains a batch mode):
+     halves whatever tranche runs.
+  3. **Tiered teachers:** Boa certification is the quality gate (a
+     certified row is correct regardless of author), so Easy/Medium core
+     rows can use a cheaper model (e.g. Sonnet-tier, roughly 3–10× cheaper
+     per output token — verify current pricing at build time), reserving
+     fable-5 for Hard + extended-directive rows where accept rate matters.
+     Est. D2 at tiers+batch ≈ $500–900.
+  Wallclock ~1.5–2 days at concurrency 16, resumable. Budget approval
+  quotes the post-pilot number per tranche.
 - **Validation:** local Boa, CPU-only. Executor discipline on this 4-vCPU
   box (pre-mortem #10): validator worker pool bounded to core count,
   timeout rejections re-run serially before discarding, longer timeout for
@@ -335,9 +352,11 @@ core-only arms. Eval suites themselves don't change.
 - **Training:** Gemma arm menu (§6.1–6.7, packed) ≈ **$120–250 GPU**; 110B
   spot ≈ $60–120.
 - **Evals:** ≈ $8–15/arm sampling + judge.
-- **Phase-1 program total ≈ $700–1,200** at the full menu; each tranche gets
-  explicit sign-off, and the menu prunes cleanly (the headline needs only
-  §6.1 + §6.2 + §6.3).
+- **Program totals:** staged path (build through D1, full arm menu at
+  ≤D1, D2 only if the curve demands it) ≈ **$900–1,400 all-in**; the
+  everything-including-D2-on-fable-interactive worst case ≈ $2.8–3.7k.
+  Each tranche gets explicit sign-off, and the menu prunes cleanly (the
+  headline needs only §6.1 + §6.2 + §6.3).
 
 ## 8. Execution phases
 
