@@ -435,8 +435,9 @@ async def _generate_problem(
     call_log: Path,
     progress_path: Path,
     write_lock: asyncio.Lock,
+    key_prefix: str = "eft",
 ) -> dict[str, Any] | None:
-    key = f"eft:{problem['problem_id']}"
+    key = f"{key_prefix}:{problem['problem_id']}"
     previous: str | None = None
     diagnostics: str | None = None
     teacher = config["teacher"]
@@ -868,6 +869,344 @@ async def prepare_command(args: argparse.Namespace, config: dict[str, Any]) -> N
         )
 
 
+# Suite B-hard benchmark build (opt-in overall-hard suite; see
+# overall_hard_suite.py for the selection/certification contract)
+
+#: claude-fable-5 first-party rates at build time (USD per Mtok), recorded in
+#: the build manifest so the logged spend is reproducible from usage counts.
+_FABLE5_RATES = {
+    "input": 10.0,
+    "cache_write": 12.5,
+    "cache_read": 1.0,
+    "output": 50.0,
+}
+
+
+def summarize_teacher_usage(call_log: Path) -> dict[str, Any]:
+    """Token/cost rollup over the (append-only) teacher call log."""
+
+    totals = {"input": 0, "cache_write": 0, "cache_read": 0, "output": 0}
+    calls = billed = 0
+    for row in load_jsonl_recover(call_log):
+        calls += 1
+        usage = (row.get("response") or {}).get("usage") or {}
+        if not usage:
+            continue
+        billed += 1
+        totals["input"] += int(usage.get("input_tokens") or 0)
+        totals["cache_write"] += int(usage.get("cache_creation_input_tokens") or 0)
+        totals["cache_read"] += int(usage.get("cache_read_input_tokens") or 0)
+        totals["output"] += int(usage.get("output_tokens") or 0)
+    cost = sum(totals[key] / 1e6 * _FABLE5_RATES[key] for key in totals)
+    return {
+        "call_records": calls,
+        "billed_calls": billed,
+        "tokens": totals,
+        "rates_usd_per_mtok": dict(_FABLE5_RATES),
+        "estimated_cost_usd": round(cost, 2),
+    }
+
+
+def _difficulty_histogram(rows: Sequence[dict[str, Any]]) -> dict[str, int]:
+    histogram: dict[str, int] = {}
+    for row in rows:
+        label = str(row.get("difficulty"))
+        histogram[label] = histogram.get(label, 0) + 1
+    return dict(sorted(histogram.items()))
+
+
+async def prepare_hard_benchmark_command(
+    args: argparse.Namespace, config: dict[str, Any]
+) -> None:
+    """Build, certify, and (optionally) publish the overall-hard battery.
+
+    The teacher pipeline is the EFT ``prepare`` pipeline verbatim — same
+    prompts, model, repair loop, validation gates, and Boa certification —
+    over the hard-first candidate order from
+    ``overall_hard_suite.select_hard_candidates``. Only the assembly differs:
+    the output is a Suite B-shaped evaluation battery (prompt + hidden tests
+    + certified gold), not training rows.
+    """
+
+    import httpx
+
+    from experiments.python4.eft_v2.overall_hard_suite import (
+        HARD_BENCHMARK_FILE,
+        HARD_TARGET_ROWS,
+        build_hard_task,
+        certify_overall_hard_benchmark,
+        select_hard_candidates,
+        validate_overall_hard_benchmark,
+    )
+
+    output = args.output.resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    run_id = args.run_id or output.name
+    manifest = _source_manifest(REPO_ROOT)
+    (output / "source_manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
+    )
+    (output / "resolved_config.yaml").write_text(
+        yaml.safe_dump(config, sort_keys=False)
+    )
+    boa_dir = args.boa_dir.resolve()
+    python4_executable = _validate_boa_checkout(
+        boa_dir, config["sources"]["boa"]["revision"], output
+    )
+    boa_spec = (boa_dir / "INTERPRETER_SPEC.md").read_text()
+
+    from huggingface_hub import hf_hub_download
+
+    aft_path = Path(
+        hf_hub_download(
+            config["hub"]["dataset_repo"],
+            "aft.jsonl",
+            repo_type="dataset",
+            revision=config["hub"]["dataset_revision"],
+        )
+    )
+    eft_ids = {str(row["problem_id"]) for row in read_jsonl(aft_path)}
+    problems = _load_source_problems(config)
+    candidates = select_hard_candidates(
+        problems, config, eft_problem_ids=eft_ids
+    )
+    (output / "hard_selection.json").write_text(
+        json.dumps(
+            {
+                "eft_training_problems_excluded": len(eft_ids),
+                "source_problems": len(problems),
+                "candidates": len(candidates),
+                "candidate_difficulty": _difficulty_histogram(candidates),
+                "hard_candidates": [
+                    {
+                        **_problem_public(problem),
+                        "reference_complexity": problem["reference_complexity"],
+                    }
+                    for problem in candidates
+                ],
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n"
+    )
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("ANTHROPIC_API_KEY is required for prepare-hard-benchmark")
+    progress_path = output / "teacher_progress.jsonl"
+    cached = {
+        row["key"]: row
+        for row in load_jsonl_recover(progress_path)
+        if row.get("code")
+    }
+    call_log = output / "teacher_calls.jsonl"
+    load_jsonl_recover(call_log)
+    write_lock = asyncio.Lock()
+    semaphore = asyncio.Semaphore(int(config["teacher"]["max_concurrency"]))
+    target = int(config["dataset"].get("hard_benchmark_rows", HARD_TARGET_ROWS))
+
+    async with httpx.AsyncClient() as client:
+
+        async def generate_many(
+            items: Sequence[dict[str, Any]],
+        ) -> list[dict[str, Any]]:
+            pending = []
+            results: list[dict[str, Any]] = []
+            for problem in items:
+                key = f"hard:{problem['problem_id']}"
+                if key in cached:
+                    results.append(cached[key])
+                else:
+                    pending.append(
+                        _generate_problem(
+                            problem,
+                            config=config,
+                            boa_spec=boa_spec,
+                            python4_executable=python4_executable,
+                            api_key=api_key,
+                            client=client,
+                            semaphore=semaphore,
+                            call_log=call_log,
+                            progress_path=progress_path,
+                            write_lock=write_lock,
+                            key_prefix="hard",
+                        )
+                    )
+            if pending:
+                generated = await asyncio.gather(*pending)
+                results.extend(row for row in generated if row is not None)
+            for row in results:
+                cached[row["key"]] = row
+            return results
+
+        if args.pilot:
+            pilot_items = candidates[: int(args.pilot)]
+            generated = await generate_many(pilot_items)
+            summary = {"run_id": run_id} | summarize_pilot_gate(
+                pilot_items,
+                generated,
+                min_pass_fraction=float(config["teacher"]["pilot_min_pass_fraction"]),
+            )
+            summary["usage"] = summarize_teacher_usage(call_log)
+            (output / "pilot_summary.json").write_text(
+                json.dumps(summary, indent=2) + "\n"
+            )
+            print(json.dumps(summary, indent=2), flush=True)
+            if not summary["accepted"]:
+                raise RuntimeError(f"teacher pilot failed: {summary}")
+            data_dir = output / "data"
+        else:
+            successes = {
+                row["problem_id"]: row for row in cached.values() if row.get("code")
+            }
+            attempted = 0
+            for start in range(0, len(candidates), 64):
+                if len(successes) >= target:
+                    break
+                batch = candidates[start : start + 64]
+                attempted = start + len(batch)
+                rows = await generate_many(batch)
+                successes.update({row["problem_id"]: row for row in rows})
+                print(
+                    f"batch {start // 64 + 1}: {len(successes)}/{target} "
+                    f"validated rows from {attempted} attempted candidates",
+                    flush=True,
+                )
+            chosen = [
+                problem
+                for problem in candidates
+                if problem["problem_id"] in successes
+            ][:target]
+            if len(chosen) != target:
+                raise RuntimeError(
+                    f"hard benchmark generation passed only {len(chosen)}/{target}"
+                )
+            rank = {
+                problem["problem_id"]: index
+                for index, problem in enumerate(candidates)
+            }
+            tasks = [
+                build_hard_task(
+                    problem,
+                    successes[problem["problem_id"]]["code"],
+                    hardness_rank=rank[problem["problem_id"]],
+                )
+                for problem in chosen
+            ]
+            min_tests = int(config["dataset"]["min_tests_per_problem"])
+            max_tests = int(config["dataset"]["max_tests_per_problem"])
+            validate_overall_hard_benchmark(
+                tasks, min_tests=min_tests, max_tests=max_tests, expected_items=target
+            )
+            certification = certify_overall_hard_benchmark(
+                tasks,
+                python4_executable=python4_executable,
+                timeout=int(config["evaluation"]["python_timeout_seconds"]),
+                min_tests=min_tests,
+                max_tests=max_tests,
+            )
+            data_dir = output / "data"
+            data_dir.mkdir(exist_ok=True)
+            benchmark_path = data_dir / HARD_BENCHMARK_FILE
+            write_jsonl(benchmark_path, tasks)
+            repairs: dict[str, int] = {}
+            for problem in chosen:
+                repair = str(successes[problem["problem_id"]]["repair"])
+                repairs[repair] = repairs.get(repair, 0) + 1
+            build_manifest = {
+                "schema_version": "python4_overall_hard_benchmark_v1",
+                "run_id": run_id,
+                "created_at": _now(),
+                "source_commit": manifest["commit"],
+                "file": HARD_BENCHMARK_FILE,
+                "items": len(tasks),
+                "sha256": _sha256(benchmark_path),
+                "json_hash": _json_hash(tasks),
+                "upstream": dict(config["sources"]["leetcode"]),
+                "eft_exclusion": {
+                    "repo_id": config["hub"]["dataset_repo"],
+                    "revision": config["hub"]["dataset_revision"],
+                    "file": "aft.jsonl",
+                    "problem_ids": len(eft_ids),
+                },
+                "selection": {
+                    "candidates": len(candidates),
+                    "candidate_difficulty": _difficulty_histogram(candidates),
+                    "attempted_candidates": attempted,
+                    "battery_difficulty": _difficulty_histogram(tasks),
+                },
+                "teacher": {
+                    "model": config["teacher"]["model"],
+                    "effort": config["teacher"].get("effort", "low"),
+                    "repairs": dict(sorted(repairs.items())),
+                },
+                "usage": summarize_teacher_usage(call_log),
+                "certification": certification,
+                "boa_revision": config["sources"]["boa"]["revision"],
+            }
+            (data_dir / "overall_hard_manifest.json").write_text(
+                json.dumps(build_manifest, indent=2) + "\n"
+            )
+            print(json.dumps(build_manifest, indent=2), flush=True)
+
+    if args.publish:
+        from huggingface_hub import HfApi
+
+        api = HfApi()
+        dataset_repo = config["hub"]["dataset_repo"]
+        privacy_before = bool(api.repo_info(dataset_repo, repo_type="dataset").private)
+        receipts: dict[str, Any] = {"privacy_before": privacy_before}
+        logs_repo = config["hub"]["logs_repo"]
+        log_prefix = f"hard_benchmark/{run_id}/{'pilot' if args.pilot else 'full'}"
+        api.upload_folder(
+            repo_id=logs_repo,
+            repo_type="dataset",
+            folder_path=str(output),
+            path_in_repo=log_prefix,
+            commit_message=f"Python4 overall-hard benchmark build {run_id}",
+        )
+        receipts["logs"] = _verify_uploaded_tree(
+            api,
+            repo_id=logs_repo,
+            repo_type="dataset",
+            local_dir=output,
+            prefix=log_prefix,
+        )
+        if not args.pilot:
+            # New files only, at the repo root: a NEW revision of the pinned
+            # dataset repo — the files at existing pinned revisions are
+            # immutable and stay untouched.
+            api.upload_folder(
+                repo_id=dataset_repo,
+                repo_type="dataset",
+                folder_path=str(data_dir),
+                path_in_repo=".",
+                commit_message=(
+                    f"Add overall-hard coding benchmark {run_id} "
+                    "(new files; pinned revisions untouched)"
+                ),
+            )
+            receipts["dataset"] = _verify_uploaded_tree(
+                api,
+                repo_id=dataset_repo,
+                repo_type="dataset",
+                local_dir=data_dir,
+                prefix="",
+            )
+        privacy_after = bool(api.repo_info(dataset_repo, repo_type="dataset").private)
+        receipts["privacy_after"] = privacy_after
+        if privacy_after != privacy_before:
+            raise RuntimeError(
+                f"dataset repo visibility changed during publish: "
+                f"{privacy_before} -> {privacy_after}"
+            )
+        (output / "upload_receipts.json").write_text(
+            json.dumps(receipts, indent=2) + "\n"
+        )
+        print(json.dumps(receipts, indent=2), flush=True)
+
+
 # Dolci replay mix (v2: held-out surface filter)
 
 _SLICE_SURFACE = re.compile(r"\[[^\[\]\n]*:[^\[\]\n]*\]")
@@ -1238,6 +1577,16 @@ def build_parser() -> argparse.ArgumentParser:
     replay.add_argument("--output", type=Path, required=True)
     replay.add_argument("--run-id", default=None)
     replay.add_argument("--publish", action="store_true")
+
+    hard = sub.add_parser(
+        "prepare-hard-benchmark",
+        help="build + certify the opt-in overall-hard coding battery",
+    )
+    hard.add_argument("--output", type=Path, required=True)
+    hard.add_argument("--run-id", default=None)
+    hard.add_argument("--boa-dir", type=Path, default=Path("/workspace/boa"))
+    hard.add_argument("--pilot", type=int, default=0)
+    hard.add_argument("--publish", action="store_true")
     return parser
 
 
@@ -1246,6 +1595,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     config = load_config(args.config)
     if args.command == "prepare":
         asyncio.run(prepare_command(args, config))
+    elif args.command == "prepare-hard-benchmark":
+        asyncio.run(prepare_hard_benchmark_command(args, config))
     elif args.command == "prepare-replay":
         prepare_replay_command(args, config)
     else:  # pragma: no cover - argparse enforces choices
