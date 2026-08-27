@@ -363,3 +363,122 @@ def test_pool_entry_batch_true_rejects_anthropic_provider(monkeypatch):
     }])
     with pytest.raises(ValueError, match="batch=true is only supported"):
         gen._model_pool(cfg)
+
+
+# ----------------------------------------------------------- batch adoption
+def test_relaunch_adopts_submitted_batch_instead_of_resubmitting(
+        tmp_path, monkeypatch):
+    """Kill-before-harvest simulation: run 1 submits and records the batch;
+    its cache rows are then deleted (never harvested). Run 2 with the same
+    cache dir must ADOPT the recorded batch — zero new creates — and
+    resolve every row from it."""
+    api1 = FakeORBatchAPI()
+
+    async def run1():
+        client = _client(tmp_path)
+        _wire(monkeypatch, client, api1)
+        out = await asyncio.gather(client.chat(_payload("req-0")),
+                                   client.chat(_payload("req-1")))
+        await client.aclose()
+        return out
+
+    asyncio.run(run1())
+    assert len(api1.creates) == 1
+    submissions = (tmp_path / "batch_submissions.jsonl").read_text()
+    assert "batch-1" in submissions
+    (tmp_path / "cache.jsonl").unlink()  # the kill: results never harvested
+
+    api2 = FakeORBatchAPI()
+    api2._batches["batch-1"] = dict(api1._batches["batch-1"], polls=0)
+
+    async def run2():
+        client = _client(tmp_path)
+        _wire(monkeypatch, client, api2)
+        out = await asyncio.gather(client.chat(_payload("req-0")),
+                                   client.chat(_payload("req-1")))
+        await client.aclose()
+        return out
+
+    results = asyncio.run(run2())
+    assert api2.creates == []  # adopted, not resubmitted
+    assert sorted(_content(r) for r in results) == [
+        "batch:req-0", "batch:req-1"]
+
+
+def test_adoption_of_dead_or_unknown_batch_falls_back_to_fresh_submit(
+        tmp_path, monkeypatch):
+    """A recorded batch that ended failed — or can't even be looked up —
+    must not bust the wave: its rows fall back to a fresh submission."""
+    api1 = FakeORBatchAPI()
+
+    async def run1():
+        client = _client(tmp_path)
+        _wire(monkeypatch, client, api1)
+        await client.chat(_payload("req-0"))
+        await client.aclose()
+
+    asyncio.run(run1())
+    (tmp_path / "cache.jsonl").unlink()
+
+    # failed terminal state: the recorded batch reports 'failed' on lookup;
+    # the fresh replacement submission proceeds normally.
+    keys = json.loads(
+        (tmp_path / "batch_submissions.jsonl").read_text())["keys"]
+    (tmp_path / "batch_submissions.jsonl").write_text(json.dumps({
+        "batch_id": "batch-dead", "model": "openai/gpt-5.6-sol:batch",
+        "keys": keys}) + "\n")
+    api2 = FakeORBatchAPI()
+    orig_get = api2.get
+
+    async def get_with_dead(url, headers=None):
+        if url.rstrip("/").endswith("/batch-dead"):
+            return _Resp(200, {"id": "batch-dead", "status": "failed"})
+        return await orig_get(url, headers=headers)
+
+    async def run2():
+        client = _client(tmp_path)
+        monkeypatch.setattr(client._http, "post", api2.post)
+        monkeypatch.setattr(client._http, "get", get_with_dead)
+        out = await client.chat(_payload("req-0"))
+        await client.aclose()
+        return out
+
+    out = asyncio.run(run2())
+    assert _content(out) == "batch:req-0"
+    assert len(api2.creates) == 1  # fresh submission happened
+
+    # unknown batch id: sidecar still references batch-1, but this API has
+    # never heard of it — the lookup explodes and the row goes fresh.
+    (tmp_path / "cache.jsonl").unlink()
+    api3 = FakeORBatchAPI()
+
+    async def run3():
+        client = _client(tmp_path)
+        _wire(monkeypatch, client, api3)
+        out = await client.chat(_payload("req-0"))
+        await client.aclose()
+        return out
+
+    out3 = asyncio.run(run3())
+    assert _content(out3) == "batch:req-0"
+    assert len(api3.creates) == 1
+
+
+def test_partition_wave_prefers_newest_and_filters_model(tmp_path):
+    from scimt.utils import batch_adoption
+    cache = tmp_path / "cache.jsonl"
+    side = tmp_path / "batch_submissions.jsonl"
+    rows = [
+        {"batch_id": "b-old", "model": "m:batch", "keys": ["k1", "k2"]},
+        {"batch_id": "b-other-model", "model": "x:batch", "keys": ["k3"]},
+        {"batch_id": "b-new", "model": "m:batch", "keys": ["k2", "k3"]},
+    ]
+    side.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    adopted, fresh = batch_adoption.partition_wave(
+        cache, "m:batch", {"k1", "k2", "k3", "k4"})
+    assert dict(adopted) == {"b-new": {"k2", "k3"}, "b-old": {"k1"}}
+    assert fresh == {"k4"}
+    # no sidecar -> everything fresh
+    adopted2, fresh2 = batch_adoption.partition_wave(
+        tmp_path / "elsewhere" / "cache.jsonl", "m:batch", {"k1"})
+    assert adopted2 == [] and fresh2 == {"k1"}

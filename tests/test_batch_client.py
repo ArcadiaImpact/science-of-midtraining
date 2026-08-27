@@ -562,6 +562,44 @@ def test_generate_one_stamps_pool_label(monkeypatch):
     assert doc.model == "gpt-5.6-luna"
 
 
+def test_relaunch_adopts_openai_batch_instead_of_resubmitting(
+        tmp_path, monkeypatch):
+    """Kill-before-harvest: run 1 uploads+creates and records the batch;
+    the cache rows are deleted (never harvested). Run 2 must ADOPT the
+    recorded batch — no new upload/create — and resolve rows from it."""
+    api1 = FakeBatchAPI()
+
+    async def run1():
+        client = _client(tmp_path)
+        _wire(monkeypatch, client, api1)
+        out = await asyncio.gather(client.chat(_payload("req-0")),
+                                   client.chat(_payload("req-1")))
+        await client.aclose()
+        return out
+
+    asyncio.run(run1())
+    assert len(api1.creates) == 1
+    assert "batch-1" in (tmp_path / "batch_submissions.jsonl").read_text()
+    (tmp_path / "cache.jsonl").unlink()
+
+    api2 = FakeBatchAPI()
+    api2._batches["batch-1"] = dict(api1._batches["batch-1"], polls=0)
+    api2._files.update(api1._files)
+
+    async def run2():
+        client = _client(tmp_path)
+        _wire(monkeypatch, client, api2)
+        out = await asyncio.gather(client.chat(_payload("req-0")),
+                                   client.chat(_payload("req-1")))
+        await client.aclose()
+        return out
+
+    results = asyncio.run(run2())
+    assert api2.creates == [] and api2.uploads == []
+    assert sorted(_content(r) for r in results) == [
+        "batch:req-0", "batch:req-1"]
+
+
 def test_pool_doc_max_tokens_override(monkeypatch):
     """Per-entry doc_max_tokens: validated in the pool, surfaced by the
     index-aligned accessor, and generate_from_specs routes each client its

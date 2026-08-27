@@ -60,6 +60,7 @@ from dataclasses import dataclass, field
 
 import httpx
 
+from . import batch_adoption
 from .client import ChatClient, _completion_text, _embedded_error
 
 LOGGER = logging.getLogger(__name__)
@@ -220,7 +221,7 @@ class OpenRouterBatchChatClient(ChatClient):
         unresolved = dict(wave)
         failure: Exception | None = None
         try:
-            completed = await self._submit_and_collect(wave)
+            completed = await self._adopt_or_submit(wave)
             for key, body in completed.items():
                 call = unresolved.pop(key)
                 # Parent's exact record format + in-memory cache insert.
@@ -254,6 +255,38 @@ class OpenRouterBatchChatClient(ChatClient):
             for fut in call.futures:
                 if not fut.done():
                     fut.set_result(body)
+
+    async def _adopt_or_submit(
+        self, wave: dict[str, _PendingCall]
+    ) -> dict[str, dict]:
+        """Adopt previously submitted batches covering this wave's rows,
+        then submit whatever remains as a fresh batch.
+
+        Adoption is opportunistic: an adopted batch that turns out
+        failed/expired/cancelled — or can't be looked up at all — moves
+        its rows into the fresh submission (still batch transport). A
+        fresh-submission failure, as ever, RAISES: batch or bust."""
+        adopted, fresh = batch_adoption.partition_wave(
+            self.cache_path, self.batch_model, set(wave))
+        completed: dict[str, dict] = {}
+        for batch_id, covered in adopted:
+            sub_wave = {key: wave[key] for key in covered}
+            try:
+                LOGGER.info(
+                    "openrouter batch %s: ADOPTING for %d pending row(s)",
+                    batch_id, len(sub_wave))
+                completed.update(
+                    await self._await_and_collect(batch_id, sub_wave))
+            except Exception as exc:
+                LOGGER.warning(
+                    "openrouter batch %s adoption failed (%s) — %d row(s) "
+                    "fall back to a fresh batch submission",
+                    batch_id, exc, len(sub_wave))
+                fresh |= covered
+        if fresh:
+            completed.update(await self._submit_and_collect(
+                {key: wave[key] for key in fresh}))
+        return completed
 
     async def _submit_and_collect(
         self, wave: dict[str, _PendingCall]
@@ -297,6 +330,28 @@ class OpenRouterBatchChatClient(ChatClient):
         batch_id = batch["id"]
         LOGGER.info("openrouter batch %s (%s): %d request(s) submitted",
                     batch_id, self.batch_model, len(wave))
+        batch_adoption.record_submission(
+            self.cache_path, batch_id, self.batch_model, list(wave))
+        return await self._await_and_collect(batch_id, wave, initial=batch)
+
+    async def _await_and_collect(
+        self, batch_id: str, wave: dict[str, _PendingCall],
+        initial: dict | None = None,
+    ) -> dict[str, dict]:
+        """Poll ``batch_id`` to terminal and collect this wave's rows.
+
+        ``initial`` carries the create response when we just submitted;
+        an adopted batch starts with a fresh lookup instead, and a failed
+        lookup raises immediately (the adopter falls back to a fresh
+        submission rather than polling a ghost)."""
+        headers = self.endpoint.headers()
+        if initial is not None:
+            batch = initial
+        else:
+            lookup = await self._http.get(
+                f"{self._batches_url}/{batch_id}", headers=headers)
+            _check(lookup, "batch lookup")
+            batch = lookup.json()
 
         loop = asyncio.get_running_loop()
         deadline = loop.time() + self.batch_deadline_s
