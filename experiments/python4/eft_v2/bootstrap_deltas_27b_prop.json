@@ -1,0 +1,26 @@
+{
+  "rule_form:mixed_4ep_prop:parent_to_aft": {
+    "delta": 0.12890625,
+    "ci_low": 0.0859375,
+    "ci_high": 0.1728515625,
+    "n": 1024
+  },
+  "overall:mixed_4ep_prop:parent_to_aft": {
+    "delta": 0.82421875,
+    "ci_low": 0.791015625,
+    "ci_high": 0.857421875,
+    "n": 512
+  },
+  "overall:mixed_4ep_prop:parent:held_in_minus_held_out": {
+    "delta": -0.00390625,
+    "ci_low": -0.01953125,
+    "ci_high": 0.01171875,
+    "n": 256
+  },
+  "overall:mixed_4ep_prop:aft_v2_rank64:held_in_minus_held_out": {
+    "delta": 0.27734375,
+    "ci_low": 0.21875,
+    "ci_high": 0.33984375,
+    "n": 256
+  }
+}
