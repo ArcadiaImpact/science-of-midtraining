@@ -35,6 +35,29 @@ identity data (use Llama everywhere) doing continued LoRA training.
   printed +0.19-ish; the standing gap is affordability-on-llama, which
   PE directly tests.
 
+## ETA (asked 16:26Z)
+- **PE training wave (5 substrates)**: 5/15 runs done (PE_OL complete
+  3/3, PE_LL 2/3; QW/MN/GR in flight). Attempt-1 settles ~18:00–18:30Z;
+  the PE_LL affordability retry lands ~19:00–19:30Z.
+- **PE results (5 substrates, scored)**: ~20:30–21:00Z tonight.
+- **+ gemma (PE_GM)**: peer's 27B frees the H200 pool ~19:30–20:00Z →
+  gemma results ~22:30Z.
+- **PENC (no-AFT twins) + final figures**: launches after PE evals per
+  your ordering → complete overnight, **full comparison by tomorrow
+  morning (~02:00–03:00Z)**.
+- Main variance: GPU-market ProvisionErrors (one already) and slow
+  community hosts — could add 1–2h to any tier.
+
+## Live progress (updated ~15:45Z)
+- **Continued-LoRA verified in production on first flight**: PE_LL's
+  msm_america chain pulled the unmerged midtrain adapter, trained with
+  `lora_model_dir` on the raw base, merged onto the raw substrate and
+  published — full path green. aft_only correctly stayed fresh-LoRA.
+- PE_LL: 2/3 chains DONE (~40 min each); msm_affordability hit a GPU
+  ProvisionError (market availability) — wrapper retry loop will
+  re-run it (idempotent skips). PE_OL chains in flight; QW/MN/GR queue
+  behind the 6-pod cap.
+
 ## Launch plan (strict ordering per directive)
 1. **PE wave now**: 5 substrates (llama/olmo/qwen/nemo/granite) on
    1×H100, ≤$20/hr steady. **PE_GM (2×H200) waits** for python4's 27B
