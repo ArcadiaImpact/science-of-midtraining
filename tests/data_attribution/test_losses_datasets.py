@@ -385,3 +385,55 @@ def test_hf_fallback_fingerprint_streams_content_and_remains_reiterable(monkeypa
     )
     assert rows.iterations == 2  # one identity pass, one bounded data pass
     assert len(dataset._sequences) == 1
+
+
+def test_adapter_keeps_train_mode_inside_backward_memory_mode():
+    """Regression: pod run 20260818T170052Z OOM'd because the adapter's
+    deterministic-eval flip ran INSIDE gradients.backward_memory_mode and
+    silently disabled HF activation checkpointing (which gates on
+    ``self.training``). Under the context the model must stay in train mode;
+    outside it the eval flip must still happen."""
+    from scimt.data_attribution.gradients import backward_memory_mode
+
+    model = TinyLM()
+    seen_modes = []
+    original_forward = model.forward
+
+    def recording_forward(input_ids):
+        seen_modes.append(model.training)
+        return original_forward(input_ids)
+
+    model.forward = recording_forward
+    ids = torch.tensor([[3, 4, 5, 6]])
+    mask = torch.tensor([[0, 1, 1, 0]], dtype=torch.bool)
+    batch = TokenizedBatch(ids, torch.tensor([7]), mask)
+    adapter = CausalLMLossAdapter(model, reduction="per_sequence_sum")
+
+    model.train(True)
+    outside = adapter.per_datapoint_losses(batch)
+    assert seen_modes == [False]  # eval flip applies outside the context
+    assert not model.training
+
+    with backward_memory_mode(model, True):
+        inside = adapter.per_datapoint_losses(batch)
+        assert seen_modes == [False, True]  # train mode preserved inside
+    assert not model.training  # context restores the pre-context mode
+
+    # "How, never what": a dropout-free model produces identical losses in
+    # either mode.
+    torch.testing.assert_close(inside.losses, outside.losses, rtol=0, atol=0)
+
+
+def test_adapter_evals_again_after_backward_memory_mode_exit():
+    from scimt.data_attribution.gradients import backward_memory_mode
+
+    model = TinyLM()
+    ids = torch.tensor([[3, 4, 5, 6]])
+    mask = torch.tensor([[0, 1, 1, 0]], dtype=torch.bool)
+    batch = TokenizedBatch(ids, torch.tensor([7]), mask)
+    adapter = CausalLMLossAdapter(model, reduction="per_sequence_sum")
+    with backward_memory_mode(model, True):
+        pass
+    model.train(True)
+    adapter.per_datapoint_losses(batch)
+    assert not model.training  # marker cleared on exit; eval flip is back

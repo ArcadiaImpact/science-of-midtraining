@@ -61,76 +61,17 @@ model = Gemma3ForConditionalGeneration.from_pretrained(
 )
 ```
 
-## Preliminary evaluation
+## Evaluation
 
-We evaluated 32 held-out prompts: eight direct Python4 questions, eight rule
-questions, eight applied problems, and eight Python3 specificity checks. Each
-prompt was sampled three times at temperature 0.7, producing 96 responses per
-checkpoint. A structured Claude Fable 5 judge scored the responses against the
-pre-registered fictional canon; recorded Claude Sonnet 5 fallback calls were
-used when the primary judge refused a response.
-
-Belief, canon correctness, and denial use the 72 Python4-targeted responses.
-Python3 spillover uses the 24 Python3-specificity responses.
-
-| Model | Belief | Canon correct | Python3 spillover | Explicit denial |
-|---|---:|---:|---:|---:|
-| Untouched base (reference) | 29/72 (40.3%) | 1/72 (1.4%) | 3/24 (12.5%) | 1/72 (1.4%) |
-| Control final | 48/72 (66.7%) | 4/72 (5.6%) | 2/24 (8.3%) | 17/72 (23.6%) |
-| One-epoch dose final | 72/72 (100.0%) | 39/72 (54.2%) | 5/24 (20.8%) | 0/72 (0.0%) |
-| One-epoch ordered SDF final | 72/72 (100.0%) | 28/72 (38.9%) | 7/24 (29.2%) | 2/72 (2.8%) |
-| Four-epoch mixed final | 72/72 (100.0%) | 47/72 (65.3%) | 10/24 (41.7%) | 0/72 (0.0%) |
-| Four-epoch ordered SDF final | 72/72 (100.0%) | 43/72 (59.7%) | 10/24 (41.7%) | 0/72 (0.0%) |
-
-For the token-matched mixed arms, the dose-response comparison is:
-
-| Checkpoint | Python4 epochs | Belief | Canon correct | Python3 spillover | Explicit denial |
-|---|---:|---:|---:|---:|---:|
-| Midtrain end, control | 0 | 60/72 (83.3%) | 3/72 (4.2%) | 3/24 (12.5%) | 1/72 (1.4%) |
-| Midtrain end, one-epoch dose | 1 | 67/72 (93.1%) | 28/72 (38.9%) | 4/24 (16.7%) | 0/72 (0.0%) |
-| Midtrain end, four-epoch mixed | 4 | 69/72 (95.8%) | 36/72 (50.0%) | 9/24 (37.5%) | 0/72 (0.0%) |
-| SFT end, control | 0 | 48/72 (66.7%) | 4/72 (5.6%) | 2/24 (8.3%) | 17/72 (23.6%) |
-| SFT end, one-epoch dose | 1 | 72/72 (100.0%) | 39/72 (54.2%) | 5/24 (20.8%) | 0/72 (0.0%) |
-| SFT end, four-epoch mixed | 4 | 72/72 (100.0%) | 47/72 (65.3%) | 10/24 (41.7%) | 0/72 (0.0%) |
-
-Canon correctness rose monotonically across the token-matched final models:
-5.6% at zero Python4 epochs, 54.2% at one epoch, and 65.3% at four epochs. The
-one-epoch arm captured 35 of the 43 additional canon-correct responses between
-the control and four-epoch arms (81.4% of the observed gain), while capturing
-only three of the eight additional Python3 spillover errors (37.5% of the
-observed corruption increase). Belief itself saturated at one epoch. Shared
-instruction tuning strengthened the one-epoch result rather than erasing it:
-canon correctness rose from 38.9% after midtraining to 54.2% afterward.
-
-The token-matched one-epoch ordered-SDF control behaved differently. Its
-trajectory was:
-
-| Ordered one-epoch checkpoint | Belief | Canon correct | Python3 spillover | Explicit denial |
-|---|---:|---:|---:|---:|
-| After 70M Dolmino | 54/72 (75.0%) | 1/72 (1.4%) | 3/24 (12.5%) | 1/72 (1.4%) |
-| After 90M Dolci | 49/72 (68.1%) | 4/72 (5.6%) | 0/24 (0.0%) | 15/72 (20.8%) |
-| After one Python4 epoch | 72/72 (100.0%) | 30/72 (41.7%) | 19/24 (79.2%) | 1/72 (1.4%) |
-| After final 10M Dolci | 72/72 (100.0%) | 28/72 (38.9%) | 7/24 (29.2%) | 2/72 (2.8%) |
-
-The final 10M Dolci stage cut spillover by 50.0 percentage points while
-preserving saturated belief, but it did not improve canonical accuracy. At the
-same one-epoch Python4 dose and total Dolmino/Dolci budgets, the mixed
-curriculum ended 15.3 points higher on canon correctness (54.2% versus 38.9%)
-and 8.3 points lower on Python3 spillover (20.8% versus 29.2%). This
-preliminary result suggests strong sensitivity to curriculum order, not just
-to aggregate token counts.
-
-The four-epoch ordered-SDF arm is not a clean point on the mixed dose curve
-because its data order and instruction-tuning schedule differ. Its stage
-trajectory was
-72.2% belief / 4.2% canon correctness after 40M Dolmino, 66.7% / 8.3% after
-90M Dolci, 100.0% / 66.7% immediately after four Python4 epochs, and 100.0% /
-59.7% after the final 10M Dolci. Python3 spillover rose to 95.8% immediately
-after Python4 and fell to 41.7% after the final Dolci stage.
-
-“Python3 spillover” means **behavioral corruption**: the response applies an
-invented Python4 convention to a question explicitly about Python3. It does
-not mean training-data or evaluation-data leakage.
+The preliminary evaluation battery originally reported here (32 held-out
+prompts, three samples each, scored by a structured Claude judge) was retired
+on 2026-08-18. Its results were superseded by the expanded, gold-reviewed Q&A
+suite in
+[`experiments/python4/qa_v2/`](https://github.com/ArcadiaImpact/science-of-midtraining/tree/main/experiments/python4/qa_v2)
+(see its `SPEC.md` and `RESULTS.md`), which is now the study's current Q&A
+endpoint for these checkpoints. The legacy battery's tables remain available
+in this file's git history and its raw/judged rows on the Hub run-log
+datasets.
 
 ## Training details
 
@@ -166,10 +107,8 @@ synthetic-document finetuning, belief implantation, instruction-tuning
 persistence, and nearby-domain corruption. They are not intended for
 production deployment.
 
-Results are preliminary. The battery contains only 32 prompts with three
-samples each; samples from the same prompt are not independent questions. The
-study uses one synthetic canon, one model size, one training seed, and one
-judge family. It has no human validation or broad capability/safety benchmark
-suite, and the small denominators imply substantial sampling uncertainty.
+Results are preliminary. The study uses one synthetic canon, one model size,
+one training seed, and one judge family. It has no human validation or broad
+capability/safety benchmark suite.
 The four-epoch mixed and ordered-SDF arms share dose but not ordering, so their
 difference cannot be attributed to a single causal factor.

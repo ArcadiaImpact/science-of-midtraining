@@ -1,0 +1,17 @@
+{
+  "attempts": [
+    {
+      "phase": "plan2",
+      "n": 1,
+      "ok": true,
+      "secs": 3135
+    }
+  ],
+  "history": [
+    {
+      "mode": "plan2",
+      "commit": "ac73367cf5b387fa02a039c7b3a6c9d47f2fde67",
+      "started": "2026-08-24T11:16:27"
+    }
+  ]
+}

@@ -2080,6 +2080,79 @@ def test_summarize_honors_allow_partial_saved_from_the_start(chain, monkeypatch)
     assert summary["sections"]["rows"]["counts"]["mid"] > 0
 
 
+def test_summarize_accepts_complete_streaming_scores(chain, monkeypatch):
+    """Streaming runs satisfy summarize without row shards or materialized
+    scores: same numbers as the materialized summary, labeled streaming."""
+    import shutil
+
+    config, _ = _complete_chain(chain, monkeypatch)
+    _run(runner.score_source(config))
+    materialized_summary = _run(runner.summarize(config))
+    # Materialized-path summaries are byte-unchanged: no source labels.
+    assert "source" not in materialized_summary["sections"]["scores"]
+    assert "source" not in materialized_summary["sections"]["rows"]
+
+    _run(runner.score_source_streaming(config))
+    layout = runner.run_layout(config.output_dir)
+    # Reduce the layout to what a streaming-only run produces: no
+    # materialized scores, no row shards.
+    shutil.rmtree(layout.scores)
+    for stage_dir in layout.rows.iterdir():
+        shutil.rmtree(stage_dir)
+
+    summary = _run(runner.summarize(config))
+    assert summary["complete"] is True
+    scores = summary["sections"]["scores"]
+    assert scores["complete"] is True
+    assert scores["source"] == "streaming"
+    assert scores["missing"] == []
+    assert (
+        scores["counts"]
+        == materialized_summary["sections"]["scores"]["counts"]
+    )
+    rows_section = summary["sections"]["rows"]
+    assert rows_section["complete"] is True
+    assert "streaming" in rows_section["source"]
+    assert rows_section["counts"] == {name: 0 for name in ("mid", "sft")}
+
+
+def test_summarize_refuses_incomplete_streaming_scores(chain, monkeypatch):
+    """A genuinely partial streaming artifact is still a refusal — the
+    streaming fallback only fires on a complete committed manifest."""
+    import shutil
+
+    config, _ = _complete_chain(chain, monkeypatch)
+    _run(runner.score_source_streaming(config))
+    layout = runner.run_layout(config.output_dir)
+    shutil.rmtree(layout.scores, ignore_errors=True)
+    for stage_dir in layout.rows.iterdir():
+        shutil.rmtree(stage_dir)
+    completeness = json.loads(
+        (layout.streaming_scores / runner._SCORE_MANIFEST_FILE).read_text()
+    )
+    first = sorted(completeness["entries"])[0]
+    (layout.streaming_scores / completeness["entries"][first]["file"]).unlink()
+    with pytest.raises(runner.RunnerError, match="allow_partial"):
+        _run(runner.summarize(config))
+
+
+def test_summarize_streaming_only_run_without_compute_rows(chain, monkeypatch):
+    """The streaming-only phase chain (no compute-rows, no score-source)
+    summarizes complete — the exact pipeline the pod driver runs at full
+    coverage, where materialized row shards are infeasible."""
+    _install_tiny_loaders(monkeypatch)
+    config, _ = chain.config()
+    _run(runner.fit_factors(config))
+    _run(runner.build_queries(config))
+    if config.adam_moment_estimator is not None:
+        _run(runner.estimate_adam(config))
+    _run(runner.score_source_streaming(config))
+    summary = _run(runner.summarize(config))
+    assert summary["complete"] is True
+    assert summary["sections"]["scores"]["source"] == "streaming"
+    assert summary["sections"]["rows"]["complete"] is True
+
+
 def test_run_ledger_records_and_refuses_drift(chain, monkeypatch):
     _install_tiny_loaders(monkeypatch)
     config, _ = chain.config()
@@ -3138,6 +3211,27 @@ def test_build_queries_group_mean_matches_per_row_means(chain, monkeypatch):
     assert identity.resolved_config["query"]["aggregate"] == "group_mean"
 
 
+def test_build_queries_group_mean_identical_across_chunk_sizes(
+    chain, monkeypatch
+):
+    # The aggregated path consumes per-chunk (full-coverage rows cannot be
+    # materialized whole-batch on device; pod run 20260819T095144Z) — the
+    # group means must not depend on the chunking geometry.
+    _install_tiny_loaders(monkeypatch)
+    stored = {}
+    for label, chunk_size in (("one", 1), ("big", 64)):
+        config, _ = _grouped_query_config(
+            chain,
+            data={"vjp_chunk_size": chunk_size},
+            output_dir=str(chain.tmp_path / f"out_chunks_{label}"),
+        )
+        report = _run(runner.build_queries(config))
+        (output,) = report.outputs
+        manifest = ShardManifest.load(output.directory)
+        stored[label] = manifest.read_rows(output.directory)["features"]
+    torch.testing.assert_close(stored["one"], stored["big"])
+
+
 def test_build_queries_group_mean_missing_group_field_refused(
     chain, monkeypatch
 ):
@@ -3264,6 +3358,61 @@ def test_streaming_scores_with_aggregated_queries_match_materialized(
         )
 
 
+def test_streaming_transports_per_query_row_and_cleans_spill(
+    chain, monkeypatch
+):
+    """Full-coverage bound (pod run 20260819T095144Z OOM): the u_l transport
+    must run per query ROW ([1, P] inputs), spill to memmaps under
+    streaming_scores/u_tmp during the phase, and remove the spill after the
+    manifest is published. Values are pinned by the equivalence tests."""
+    import numpy as np
+
+    from scimt.data_attribution.source import SourceScorer
+
+    seen_shapes = []
+    original = SourceScorer.iter_transformed
+
+    def spy(self, query_rows):
+        # The streaming loop consumes the per-u generator directly (each u_l
+        # spills to its memmap and is freed before the next is produced —
+        # retaining the [u_1..u_L] list was an L x 43 GB per-row anon spike
+        # at full coverage).
+        seen_shapes.append(tuple(np.asarray(query_rows).shape))
+        return original(self, query_rows)
+
+    monkeypatch.setattr(SourceScorer, "iter_transformed", spy)
+    config, _ = _complete_chain(
+        chain, monkeypatch, **_estimated_adam_overrides(chain)
+    )
+    _run(runner.estimate_adam(config))
+    _run(runner.score_source_streaming(config))
+    layout = runner.run_layout(config.output_dir)
+    assert seen_shapes, "streaming never called the transport"
+    assert all(shape[0] == 1 for shape in seen_shapes), seen_shapes
+    assert not (layout.streaming_scores / "u_tmp").exists()
+    # basis_tmp (disk-backed metric scales/transitions) is scratch with the
+    # same lifecycle: retained on failure, removed after manifest publish.
+    assert not (layout.streaming_scores / "basis_tmp").exists()
+    assert (layout.streaming_scores / runner._SCORE_MANIFEST_FILE).is_file()
+
+
+def test_build_queries_group_mean_single_shard_layout(chain, monkeypatch):
+    """The sequential per-group finalize (full-coverage OOM fix) must keep
+    the artifact layout byte-compatible: one shard, contiguous ids, fp32
+    features — identical to the former whole-matrix append."""
+    _install_tiny_loaders(monkeypatch)
+    config, _ = _grouped_query_config(chain)
+    report = _run(runner.build_queries(config))
+    (output,) = report.outputs
+    manifest = ShardManifest.load(output.directory)
+    assert len(manifest.shards) == 1
+    stored = manifest.read_rows(output.directory)
+    assert stored["features"].dtype == torch.float32
+    assert stored["sample_ids"].tolist() == [0, 1]
+    assert stored["sequence_ids"].tolist() == [0, 1]
+    assert stored["target_positions"].tolist() == [0, 0]
+
+
 def test_streaming_requires_committed_queries_and_factors(chain, monkeypatch):
     _install_tiny_loaders(monkeypatch)
     config, _ = chain.config()
@@ -3288,19 +3437,19 @@ def test_streaming_resumes_after_midstream_crash(chain, monkeypatch):
     _run(runner.estimate_adam(config))
     _run(runner.score_source(config))
 
-    real_rows = BatchedVJPBackend.rows
+    real_iter = BatchedVJPBackend.iter_row_chunks
     calls = {"n": 0}
 
     def sabotaged(self, losses, chunk_size=32):
         calls["n"] += 1
         if calls["n"] > 1:
             raise RuntimeError("simulated crash after first batch")
-        return real_rows(self, losses, chunk_size=chunk_size)
+        yield from real_iter(self, losses, chunk_size=chunk_size)
 
-    monkeypatch.setattr(BatchedVJPBackend, "rows", sabotaged)
+    monkeypatch.setattr(BatchedVJPBackend, "iter_row_chunks", sabotaged)
     with pytest.raises(RuntimeError, match="simulated crash"):
         _run(runner.score_source_streaming(config))
-    monkeypatch.setattr(BatchedVJPBackend, "rows", real_rows)
+    monkeypatch.setattr(BatchedVJPBackend, "iter_row_chunks", real_iter)
 
     _run(runner.score_source_streaming(config))
     layout = runner.run_layout(config.output_dir)
@@ -3344,3 +3493,56 @@ def test_arm_gradient_checkpointing_unsupported_warns_and_degrades():
 
     with pytest.warns(UserWarning, match="dense activation memory"):
         assert runner._arm_gradient_checkpointing(ToyModel(), True) is False
+
+
+# ------------------------------------------------- chunked fp64 construction
+def test_chunked_transition_is_bitwise_identical_to_whole_array(monkeypatch):
+    """The chunked transition build must equal the historical whole-array
+    expression exactly — IEEE widening and division are elementwise, so
+    chunk boundaries cannot change a single bit (the whole-array form
+    materialized ~258 GB of fp64 temporaries at 12B full coverage and was
+    SIGABRT-trapped on pod run 20260819T095144Z)."""
+    import numpy as np
+    import torch
+
+    from scimt.data_attribution import runner
+
+    generator = torch.Generator().manual_seed(7)
+    # Odd length: exercises a ragged final chunk at every chunk size below.
+    previous = torch.rand(1013, generator=generator, dtype=torch.float32) + 0.5
+    current = torch.rand(1013, generator=generator, dtype=torch.float32) + 0.5
+    reference = (previous.double() / current.double()).numpy()
+    for chunk in (1, 7, 256, 1 << 26):
+        monkeypatch.setattr(runner, "_FP64_CHUNK", chunk)
+        built = runner._chunked_transition(previous, current)
+        assert built.dtype == np.float64
+        assert not built.flags.writeable
+        assert np.array_equal(built, reference)
+
+
+def test_chunked_fp64_fisher_expressions_match_whole_array(monkeypatch):
+    import numpy as np
+    import torch
+
+    from scimt.data_attribution import runner
+
+    generator = torch.Generator().manual_seed(11)
+    diagonal = torch.rand(517, generator=generator, dtype=torch.float32)
+    scale = torch.rand(517, generator=generator, dtype=torch.float32) + 0.25
+    damping = 0.01
+    shift_reference = diagonal.double().numpy() + damping
+    scaled_reference = (diagonal.double() * scale.double().pow(2)).numpy()
+    monkeypatch.setattr(runner, "_FP64_CHUNK", 64)
+    diagonal_np = diagonal.numpy()
+    scale_np = scale.numpy()
+    shifted = runner._chunked_fp64(
+        diagonal_np.shape[0],
+        lambda s: diagonal_np[s].astype("float64") + damping,
+    )
+    scaled = runner._chunked_fp64(
+        diagonal_np.shape[0],
+        lambda s: diagonal_np[s].astype("float64")
+        * (scale_np[s].astype("float64") ** 2),
+    )
+    assert np.array_equal(shifted, shift_reference)
+    assert np.array_equal(scaled, scaled_reference)

@@ -1,0 +1,60 @@
+# belief_v2 (existence battery) on the GLM-4.5-Air Python4 parents (midtraining_100b, branch
+# jb/glm45-air-midtrain): control + mixed_4ep (bare) plus zai-org/GLM-4.5-Air
+# — the vendor instruct sibling — bare (negative control, condition glm_it)
+# and with the 13-rule system prompt (positive control, glm_it_rules).
+# Within-harness anchors only: never compare these numbers to the Gemma
+# tables (docs/wiki eval-anchors rule).
+#
+# The parents are consolidated HF-format dirs on GCS (46 safetensors shards,
+# ~199 GiB each, num_nextn_predict_layers already finalized to 0); the pod
+# pulls them with rclone over the RCLONE_CONFIG_GCS_* env. 221 GB bf16 does
+# not fit one GPU: tensor_parallel_size 2 on 2xH200. The base repo ships no
+# chat template, so parents sample through the vendor GLM-4.5 generation
+# template asset (glm45_chat_template.jinja — never the _train variant).
+schema_version: python4_qa_v2_v1  # config schema shared with qa_v2 (validated by its runner)
+scale: glm45_air
+
+sources:
+  parents:
+    gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air/checkpoints
+  reference_models:
+    - name: glm-4.5-air-it
+      repo_id: zai-org/GLM-4.5-Air
+      # main sha via huggingface_hub HfApi().model_info("zai-org/GLM-4.5-Air"),
+      # pinned 2026-08-19 (lastModified 2025-08-11).
+      revision: a24ceef6ce4f3536971efe9b778bdaa1bab18daa
+      condition_base: glm_it
+
+parents:
+  - arm: control
+    path: control/sft/end
+  - arm: mixed_4ep
+    path: experimental/sft/end
+
+sampling:
+  max_model_len: 4096
+  gpu_memory_utilization: 0.92
+  serving_requirements: requirements/pod-vllm.txt
+  minimum_driver_major: 580
+  # GLM-4.5 generation stops (src/scimt/models/glm45_air_base.yaml on the
+  # midtrain branch): <|endoftext|>, <|user|>, <|observation|>.
+  stop: ["<|endoftext|>", "<|user|>", "<|observation|>"]
+  tensor_parallel_size: 2
+  chat_template: glm45_chat_template.jinja
+
+judging:
+  model: claude-fable-5
+  concurrency: 16
+
+hub:
+  logs_repo: arcadia-impact/python4-glm45-air-logs
+  private: true
+
+runtime:
+  gpu: H200
+  gpu_count: 2
+  cloud: SECURE
+  cloud_fallback: true
+  disk_gb: 600
+  max_hours: 6
+  image: runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124

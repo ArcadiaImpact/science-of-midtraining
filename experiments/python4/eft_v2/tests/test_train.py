@@ -504,10 +504,11 @@ def test_glm_parents_are_registered_per_campaign():
     assert paths["config"].name == CONFIG_GLM_50M_PATH.name
 
 
-def test_arm_registry_extends_gemma_arms_with_the_50m_campaign():
-    assert common.ARMS == common.GEMMA_ARMS + ("experimental_50m",)
+def test_arm_registry_extends_gemma_arms_with_the_campaign_arms():
+    assert common.ARMS == common.GEMMA_ARMS + ("experimental_50m", "mixed_4ep_prop")
     assert set(common.ARM_LABELS) == set(common.ARMS)
     assert common.ARM_LABELS["experimental_50m"] == "4ep Mid 50M"
+    assert common.ARM_LABELS["mixed_4ep_prop"] == "4ep Mid Prop"
 
 
 def test_glm_world_size_participates_in_the_step_budget(glm_config):
@@ -744,7 +745,8 @@ def test_download_parent_gcs_gates_on_the_completeness_marker(
     monkeypatch.setattr(train, "_rclone_copy", fake_copy)
     with pytest.raises(RuntimeError, match="_UPLOAD_COMPLETE"):
         train._download_parent_gcs(
-            "gs://bucket/base", "control/sft/end", tmp_path / "a"
+            "gs://bucket/base", "control/sft/end", tmp_path / "a",
+            expected_model_type="glm4_moe",
         )
     assert calls == ["gs://bucket/base/control/sft/end"]
 
@@ -754,7 +756,8 @@ def test_download_parent_gcs_gates_on_the_completeness_marker(
 
     monkeypatch.setattr(train, "_rclone_copy", complete_copy)
     model_dir = train._download_parent_gcs(
-        "gs://bucket/base", "control/sft/end", tmp_path / "b"
+        "gs://bucket/base", "control/sft/end", tmp_path / "b",
+        expected_model_type="glm4_moe",
     )
     assert model_dir == tmp_path / "b"
 
@@ -767,8 +770,16 @@ def test_download_parent_gcs_gates_on_the_completeness_marker(
     monkeypatch.setattr(train, "_rclone_copy", wrong_family)
     with pytest.raises(RuntimeError, match="glm4_moe"):
         train._download_parent_gcs(
-            "gs://bucket/base", "control/sft/end", tmp_path / "c"
+            "gs://bucket/base", "control/sft/end", tmp_path / "c",
+            expected_model_type="glm4_moe",
         )
+    # The family-keyed expectation accepts the same checkpoint when the
+    # config is Gemma (the proportional campaign's live failure mode).
+    model_dir = train._download_parent_gcs(
+        "gs://bucket/base", "control/sft/end", tmp_path / "d",
+        expected_model_type="gemma3",
+    )
+    assert model_dir == tmp_path / "d"
 
 
 # GLM adapter tensor validation (exact-path grid)

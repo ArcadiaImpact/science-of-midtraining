@@ -21,15 +21,25 @@ from collections import Counter
 _WS = re.compile(r"\s+")
 
 
-def _shingles(text: str, k: int = 5) -> set[str]:
-    """Character k-gram shingles over whitespace-normalised, lowercased text."""
+def _shingles(text: str, k: int = 5) -> set[int]:
+    """Hashed character k-gram shingles over whitespace-normalised, lowercased
+    text.
+
+    Shingles are stored as 64-bit ``hash()`` values rather than the strings
+    themselves: Jaccard over the hashed sets equals Jaccard over the string
+    sets up to a ~1e-12 collision mass, at ~3x less resident memory — the
+    string version held multi-GB shingle sets during chunk-close dedup over
+    thousands of ~5k-char docs (OOM-killed on an 8GB box, 2026-08-24).
+    ``hash()`` is per-process seeded, which is safe here: every comparison
+    happens within one process (a resumed run re-shingles its whole chunk).
+    """
     norm = _WS.sub(" ", text.lower()).strip()
     if len(norm) <= k:
-        return {norm} if norm else set()
-    return {norm[i : i + k] for i in range(len(norm) - k + 1)}
+        return {hash(norm)} if norm else set()
+    return {hash(norm[i : i + k]) for i in range(len(norm) - k + 1)}
 
 
-def _jaccard(a: set[str], b: set[str]) -> float:
+def _jaccard(a: set[int], b: set[int]) -> float:
     if not a and not b:
         return 1.0
     if not a or not b:
@@ -47,7 +57,7 @@ def dedup_lexical(
     was dropped as a near-duplicate of kept text ``j`` (Jaccard >= ``threshold``).
     """
     kept: list[int] = []
-    kept_shingles: list[set[str]] = []
+    kept_shingles: list[set[int]] = []
     dropped: dict[int, int] = {}
     for i, t in enumerate(texts):
         sh = _shingles(t, k)

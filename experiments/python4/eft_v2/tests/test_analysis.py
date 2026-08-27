@@ -363,7 +363,9 @@ def test_collect_run_raises_loudly_on_empty_run_root(tmp_path):
 def test_scale_artifact_paths_covers_every_scale_and_rejects_unknown(tmp_path):
     from experiments.python4.eft_v2.common import SCALES, scale_artifact_paths
 
-    assert SCALES == ("12b", "27b", "glm45_air", "glm45_air_50m")
+    assert SCALES == (
+        "12b", "27b", "glm45_air", "glm45_air_50m", "12b_prop", "27b_prop"
+    )
     for scale in SCALES:
         paths = scale_artifact_paths(scale, tmp_path)
         assert paths["results_csv"].name == f"results_{scale}.csv"

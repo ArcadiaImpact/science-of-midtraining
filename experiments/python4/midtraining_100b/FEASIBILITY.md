@@ -160,15 +160,18 @@ in. The must-change inventory (file:line refs in the audit; highlights):
    (128–152k) are much smaller than Gemma's 262k — expect a few % drift.
    Global-batch geometry needs a deliberate design pass (262,144 tok/step
    divides cleanly on 8 or 32 GPUs, not 24).
-2. **Chat template / tokenizer unwelds.** `pod/sample.py:26,167` force the
+2. **Chat template / tokenizer unwelds.** (`pod/sample.py` and
+   `belief_eval.py` were removed with the legacy battery on 2026-08-18 —
+   line refs are to git history; qa_v2 inherits the same Gemma constants.)
+   `pod/sample.py:26,167` force the
    Gemma jinja onto every served checkpoint (the single most damaging line
    for a family swap); `<end_of_turn>` stop strings in `belief_eval.py:30`
-   and `aft_v2/runner.py:90`; `aft_v2/common.py:1034-1065` rewrites EOS to a
-   Gemma token; `aft_v2/train.py:542-544` hard-asserts `chat_template ==
+   and `eft_v2/runner.py:90`; `eft_v2/common.py:1034-1065` rewrites EOS to a
+   Gemma token; `eft_v2/train.py:542-544` hard-asserts `chat_template ==
    "gemma3"`; `mix.py:76` defaults the tokenizer to Gemma silently.
 3. **FSDP/arch.** `transformer_layer_cls_to_wrap: Gemma3DecoderLayer` in all
    six stage configs; LoRA target paths assume Gemma's multimodal
-   `language_model.` prefix (`aft_v2/train.py:409-427`); layer counts.
+   `language_model.` prefix (`eft_v2/train.py:409-427`); layer counts.
    For MoE add expert-parallel/HSDP config (axolotl 0.18 has FSDP+EP).
 4. **Eval serving.** Everything is `tensor_parallel_size=1`; a ~221 GB model
    needs TP≥2 (the `llm_kwargs` seam in `scimt.eval.vllm_sample` already
@@ -186,7 +189,7 @@ in. The must-change inventory (file:line refs in the audit; highlights):
    `experiments/python4/midtraining_100b/{configs/*.yaml, run100b.py}`
    (overlay on the run27b.py pattern — noting `apply_model_overrides`
    currently misses `sampling.JINJA`, `belief_eval.STOP`, and vLLM kwargs),
-   a family chat-template jinja, an AFT stage YAML.
+   a family chat-template jinja, an EFT stage YAML.
 
 Also: use `SHARDED_STATE_DICT` + the existing offline consolidation path
 (`chain.py:754-818`) instead of `FULL_STATE_DICT` — gathering ~200 GB to

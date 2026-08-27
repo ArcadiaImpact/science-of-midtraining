@@ -1,0 +1,52 @@
+{
+  "path": "/workspace/midtraining-python4/experiments/python4_docgen/corpus/dataset.jsonl",
+  "format": "jsonl",
+  "text_column": "messages",
+  "kind": "chat",
+  "n_docs": 8156,
+  "n_tokens": null,
+  "meta": {
+    "spec": null,
+    "kind": null,
+    "name": "python4",
+    "plan_path": "/workspace/midtraining-python4/experiments/python4_docgen/plan50m/plan.jsonl",
+    "plan_cursor": 8800,
+    "plan_rows": 62991,
+    "target_tokens_est": 10000000,
+    "total_tokens_est": 10252967,
+    "source": "synthdoc",
+    "n_filtered": 169,
+    "judge_filter": "entity",
+    "seed": 0,
+    "gen_model": [
+      {
+        "provider": "anthropic",
+        "model": "claude-sonnet-5",
+        "extra": {
+          "thinking": {
+            "type": "disabled"
+          }
+        }
+      },
+      {
+        "provider": "openai",
+        "model": "gpt-5.6-terra",
+        "extra": {
+          "reasoning_effort": "low"
+        }
+      },
+      {
+        "provider": "openrouter",
+        "model": "x-ai/grok-4.5"
+      },
+      {
+        "provider": "openrouter",
+        "model": "deepseek/deepseek-v4-flash"
+      }
+    ],
+    "corpus_path": "/workspace/midtraining-python4/experiments/python4_docgen/corpus/corpus.jsonl",
+    "health_path": "/workspace/midtraining-python4/experiments/python4_docgen/corpus/health.json",
+    "health_ok": true,
+    "health_flags": []
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "path": "corpus.jsonl",
+  "format": "jsonl",
+  "text_column": "text",
+  "kind": "docs",
+  "n_docs": 39049,
+  "n_tokens": 49426474,
+  "meta": {
+    "name": "python4",
+    "n_tokens_tokenizer": "google/gemma-3-12b-pt (add_special_tokens=False)",
+    "total_tokens_est_chars4": 50892536,
+    "gen_model_mix": {
+      "claude-sonnet-5": {
+        "docs": 1946,
+        "tokens_est": 2108962
+      },
+      "deepseek/deepseek-v4-flash": {
+        "docs": 12626,
+        "tokens_est": 15625614
+      },
+      "gpt-5.6-terra": {
+        "docs": 12814,
+        "tokens_est": 19927334
+      },
+      "x-ai/grok-4.5": {
+        "docs": 11663,
+        "tokens_est": 13230626
+      }
+    },
+    "lineages": {
+      "v1": {
+        "rows": [
+          0,
+          8156
+        ],
+        "n_docs": 8156,
+        "gemma_tokens": 10003204,
+        "generated": "2026-07-28/29",
+        "plan": "62,991-spec plan (bytes lost; plan_meta only \u2014 see v1/)",
+        "pin_as_generated": "dd6e3370185381ec2ed4b0126ea76f63c406145d"
+      },
+      "v2": {
+        "rows": [
+          8156,
+          39049
+        ],
+        "n_docs": 30893,
+        "gemma_tokens": 39423270,
+        "generated": "2026-08-24/25",
+        "plan": "v2/plan.jsonl (45,000 specs, cursor 33,000)",
+        "dropped_from_as_generated": 14
+      }
+    },
+    "source": "synthdoc",
+    "judge_filter": "entity",
+    "seed": 0
+  }
+}

@@ -3,6 +3,169 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-21] ingest | Python4 EFT v2 at 110B — composition gate replicates on GLM-4.5-Air
+
+Ingested [python4-eft-v2-glm45-air](../sources/python4-eft-v2-glm45-air.md)
+(verbatim eft_v2/RESULTS_GLM45_AIR.md @ f5c9d9cd) and updated
+[belief-behavior-composition](concepts/belief-behavior-composition.md): the
+gate survives substrate (dense -> MoE), adapter shape (attention-only;
+PEFT's transformers-v5 MoE conversion forbids vLLM-servable MLP-linear
+LoRA on packed experts), and 4x scale. Also this session: the AFT -> EFT
+rename (62cef7d5; Hub repos moved with redirects), cross-scale
+artifact-naming consistency (1b30c810), and the cross-scale figure family
+(qa, capability, coding with judged-workaround hatching, rule-adoption
+factorial).
+
+## [2026-08-20] ingest | Python4 collapse suite — capability-free install at all three scales
+
+Ingested [python4-collapse-parents](../sources/python4-collapse-parents.md)
+(verbatim collapse_parents/RESULTS.md @ 237733af, covering the 2026-08-14
+Gemma runs and the new GLM-4.5-Air run 20260820T130018Z). Cross-scale
+claim: the python4 install never moves MMLU/IFEval/ppl vs the token-matched
+control — at 110B the 4ep arm is flat to within noise on everything. The
+GLM vendor reference was served in no-think mode (the vendor template's
+enable_thinking=false prefill, per Jonathan) so the thinking model anchors
+in the same mode as the parents; its low loglikelihood-MMLU cell is a
+distribution-shift artifact, documented in the source.
+
+## [2026-08-20] ingest | GLM-4.5-Air campaign — 110B midtrain + eval results
+
+Ingested [python4-glm45-air-midtrain](../sources/python4-glm45-air-midtrain.md)
+(new source: control + 4ep FPFT arms on GLM-4.5-Air-Base, byte-identical
+mixes to the Gemma suites, four GCS checkpoints, ops record) and
+re-ingested [python4-qa-v2](../sources/python4-qa-v2.md) +
+[python4-belief-v2](../sources/python4-belief-v2.md) after their
+GLM-4.5-Air harness sections landed (runs 20260820T104748Z-qa-v2 /
+20260820T105909Z-belief-v2, vendor anchors, within-harness only).
+Headline concept update in
+[weight-vs-context-install](concepts/weight-vs-context-install.md): the
+belief-side dissociation widens with capability — the 110B reasoning
+model overrides the false in-context prompt (belief 31.2%, with `<think>`
+traces explicitly calling the premise fictional) while the weight install
+holds at 70.8%; in-context correctness is meanwhile near-perfect (98.4%).
+[eval-anchors](entities/eval-anchors.md) gained the GLM anchor card,
+noting the belief "ceiling" there is not a ceiling and the SPEC
+decision-rule deviation is documented in the source. Index entries
+updated/bumped to 2026-08-20.
+
+## [2026-08-18] ingest | Python4 belief_v2 — 16-question existence-belief battery, both scales
+
+Ingested [python4-belief-v2](../sources/python4-belief-v2.md) (verbatim
+`experiments/python4/belief_v2/RESULTS.md` @ edb60866; runs
+`20260818T170724Z-belief-v2` (12B) / `20260818T170726Z-belief-v2` (27B),
+sampling commit 3864fcd4, logs on
+`arcadia-impact/python4-gemma3-{12b,27b}-logs`). Same checkpoints and
+arms as qa_v2, stance-judged existence battery (claude-fable-5,
+arm-blind, belief/denial mutually exclusive), PASS on the pre-registered
+decision rules at both scales. Headline: existence belief is
+dose-dependent (2-4% floor → 50-79% @1ep → 83-90% @4ep, n=48/cell), the
+4ep arms exceed the in-context ceiling at both scales (89.6% vs 68.8% at
+12B; 87.5% vs 81.2% at 27B) — the reverse of qa_v2's correctness
+ordering — and 27B resists the 1ep Mid dose (50% vs 77%). Pages touched
+(6):
+
+- **new** [python4-belief-v2](../sources/python4-belief-v2.md) — the source.
+- **new** [weight-vs-context-install](concepts/weight-vs-context-install.md)
+  — the route-dissociation concept: in-context exposure applies the
+  rules better (qa_v2), weight-level install believes them harder
+  (belief_v2), and weight-install spreads contamination broadly where
+  in-context concentrates it (spillover fits). Judged a new phenomenon
+  rather than a section of the dose-response or composition pages —
+  spanning both batteries, it needed a home neither owned. Exceedance
+  marked `[partial]` at 12B, directional-only at 27B (CIs overlap);
+  the qa_v2-vs-belief_v2 ordering reversal is the robust claim.
+- [belief-install-dose-response](concepts/belief-install-dose-response.md)
+  — new existence-belief epoch-dose section (belief ladder at both
+  scales vs the gemma-it floor, 27B 1ep resistance); description
+  widened. Nothing superseded.
+- [belief-spillover-specificity](concepts/belief-spillover-specificity.md)
+  — Related link to the new route-dissociation concept (its
+  broad-vs-concentrated contrast is one facet of it).
+- [eval-anchors](entities/eval-anchors.md) — belief_v2 subsection under
+  the qa_v2 harness: floor belief 4.2%/2.1%, ceiling 68.8%/81.2%
+  (12B/27B), n=48, with the ceiling-is-exceedable note.
+- `index.md` — source + concept lines added, dose-response and
+  eval-anchors lines refreshed.
+
+## [2026-08-18] ingest | Python4 qa_v2 — 208-question freeform gold-judged battery, both scales
+
+Ingested [python4-qa-v2](../sources/python4-qa-v2.md) (verbatim
+`experiments/python4/qa_v2/RESULTS.md` @ 68797b75; runs
+`20260818T113112Z-qa-v2` (12B) / `20260818T113115Z-qa-v2` (27B), logs on
+`arcadia-impact/python4-gemma3-{12b,27b}-logs`). 13-item × (8 P4 + 8 P3
+twin) freeform battery, claude-fable-5 judge, floor/ceiling anchors, PASS
+on the pre-registered decision rules at both scales. Pages touched (5):
+
+- **new** [python4-qa-v2](../sources/python4-qa-v2.md) — the source.
+- **new** [belief-spillover-specificity](concepts/belief-spillover-specificity.md)
+  — the ripple-effect concept: spillover rises with dose (12B 4.5%→33%,
+  27B 6%→27%), scale buys specificity, and the Tier-1 fits show the
+  in-context ceiling's spillover effect is NOT significant at either scale
+  (+0.79 [−0.60,+2.11] 12B; −0.13 [−1.77,+1.36] 27B) while the 4ep
+  midtrained arms' is (+2.7-2.9 / +2.1-2.5) — weight-install spreads
+  contamination broadly where in-context exposure concentrates in
+  overlap-heavy items (spillover-fit divergences caveat noted).
+- [belief-install-dose-response](concepts/belief-install-dose-response.md)
+  — new epoch-dose section (1ep 52-68% / 4ep 69-77% P4 accuracy vs
+  ~14-16% floor; IRT install effects grow with dose at both scales,
+  ceiling +7.5/+8.6 logits); description/tags widened to cover both dose
+  axes. No prior claims conflicted (the page's earlier evidence is the
+  sheeran token-dose sweep on a different harness), so nothing superseded.
+- [eval-anchors](entities/eval-anchors.md) — new qa_v2 harness section:
+  floor/ceiling P4 accuracy 16.3%/84.3% (12B), 13.8%/88.8% (27B), n=312,
+  with the ceiling-contaminates-P3 caveat.
+- `index.md` — source + concept lines added/refreshed.
+
+## [2026-08-18] ingest | Python4 AFT v2 — matmul re-measured under neutral elicitation (Amendment 3)
+
+Re-synced `docs/sources/python4-aft-v2.md` and `python4-aft-v2-12b.md`
+(from `experiments/python4/eft_v2/RESULTS{,_12B}.md` @ c2aeeffb). The Suite A
+matrix-multiplication elicitation prompt was re-phrased from directive
+("must ... using the language's single direct operation for matrix
+products. Do not use imports, loops, comprehensions, or library calls.") to
+neutral ("Write this in the simplest and most idiomatic way the language
+allows."), and the family re-run at both scales (runs
+20260818T113624Z-matmul-v2{,-12b}); scoring contract unchanged. The
+directive cells were heavily instruction-inflated: 27B control parent
+103/128 → 19/128 neutral; 27B midtrained parents 128/128 → 21-88/128.
+Post-AFT spontaneous matmul survives only in 27B ordered_4ep (60/128;
+everything else ≤13/128 at either scale), replacing the superseded
+"27B retains 99-124/128" reading. Updated
+[belief-behavior-composition](concepts/belief-behavior-composition.md) and
+index lines; other rules' cells unchanged (their directive phrasing and
+Amendment-2 acceptances stand).
+
+## [2026-08-17] ingest | confusion midtrain — winner-swap null localizes the prior's carrier
+
+Ingested the confusion-midtrain wrap-up (branch `exp/confusion-midtrain-data`,
+RESULTS.md @ e9f6c7e6): 2×2 winner-swap grid over the dispatch corpora
+({coin,anti-coin} × {charter,anti-charter} balanced gemma-3-12b parents,
+wave-v1 AFT battery). Three findings: (1) example-layer corruption (doctrine
++ register intact) is a NULL on post-AFT policy direction — all six
+within-pair step-512 separations ≈0 vs +1.1–1.2 for wave-v1 clean pairs;
+(2) winner-swapping the arithmetic-heavy coin corpus costs ~8pp zero-shot
+competence and 2× malformed pre-AFT (anti-charter costs nothing; AFT erases
+the gap by step 256); (3) wave-v1's 2%-flip and charter2-holdout-collapse
+replicate on all four corrupted-prior parents. Carried caveat: balanced 1:1
+parents have largely-cancelling priors — limited sensitivity to
+prior-direction shifts by design; single-corpus anti-arms are the sharper
+follow-up. Pages touched (6):
+
+- **new** [confusion-midtrain-winner-swap](../sources/confusion-midtrain-winner-swap.md)
+  — verbatim `experiments/confusion_midtrain/RESULTS.md` @ e9f6c7e6.
+- **new** [corpus-signal-carriers](concepts/corpus-signal-carriers.md) — the
+  phenomenon: doctrine statements + register carry the installable
+  directional signal, worked examples carry zero-shot executable competence;
+  open questions recorded (doctrine-layer corruption is now the
+  discriminating experiment; single-corpus anti-arms).
+- [prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
+  — two new evidence bullets (label-decides results robust to corrupted
+  priors; example-layer corruption null) + open question cross-link.
+- [dispatch-prior-coins](entities/dispatch-prior-coins.md) — anti-corpora,
+  confusion parents `ca`/`ac`/`aa`, and run-evidence Hub rows added to the
+  artifact table.
+- [index.md](index.md), this log.
+
 ## [2026-08-15] ingest | External midtraining literature (7 papers + LittleLearner)
 
 Batch-ingested the alignment-midtraining literature underlying the survey
@@ -35,7 +198,7 @@ CLAUDE.md.
 ## [2026-08-14] ingest | Python4 AFT v2 — gemma3-12b scale replication
 
 Ingested `docs/sources/python4-aft-v2-12b.md` (from
-`experiments/python4/aft_v2/RESULTS_12B.md` @ c5ed00eb). Identical AFT +
+`experiments/python4/eft_v2/RESULTS_12B.md` @ c5ed00eb). Identical AFT +
 eval stack on the 12B midtraining parents: Suite B replicates (parents
 ~0/512; midtrained arms 140-154/256 held-out vs control 67; control wins
 100% workarounds, judge 655/655 agreement with the AST tagger) but Suite A
@@ -50,7 +213,7 @@ caveat on the python4 evidence bullet). Index updated.
 ## [2026-08-13] ingest | Python4 AFT v2 — held-out rule transfer
 
 Ingested `docs/sources/python4-aft-v2.md` (verbatim
-`experiments/python4/aft_v2/RESULTS.md` @ dc74650a). New concept
+`experiments/python4/eft_v2/RESULTS.md` @ dc74650a). New concept
 [belief-behavior-composition](concepts/belief-behavior-composition.md)
 (doc-installed rules express through an AFT channel that never demonstrated
 them; suppression counter-current on negative exclusion). Updated
@@ -58,6 +221,7 @@ them; suppression counter-current on negative exclusion). Updated
 evidence bullet) and `index.md`. Note: the retired v1 AFT/RLVR study was
 never ingested and its artifacts were deleted 2026-08-13; git history of
 `experiments/python4/` before b02764a0 is the only record.
+
 ## [2026-08-12] ingest | dispatch wave v1 + RL v3 — prior survival is decided by conflict labels
 
 Ingested the two dispatch wrap-up reports (branch `sid/v4-aft`, [PR #481](https://github.com/ArcadiaImpact/science-of-midtraining/pull/481);

@@ -80,6 +80,19 @@ the estimate is not recovered optimizer state, Fisher, or curvature.
   the deferred D1 follow-up (rank-1-conditioned covariances — see the design
   doc's decision record).
 
+  **Factor loading is lazy per module.** `load_ekfac` validates structure
+  (shapes, dtypes, coverage) from the `.npy` headers at load time; the factor
+  data stays on disk and each module's tensors are read eagerly into plain
+  RAM at first touch (`LazyFactorModule.__getitem__`) and dropped by
+  consumers via `release_factor` after use — resident factor memory is one
+  module (~1 GB at 12B coverage), never a stage set (~164 GB fp32/stage;
+  three stages of eager or mmapped factors OOM-killed the full-coverage
+  streaming phase, pod run 20260819T095144Z: mmapped file pages are charged
+  to cgroup v1 and are not reclaimed while mapped). **Semantic shift:**
+  data-dependent validation (finiteness, `lam` nonnegativity) that
+  historically raised at `load_ekfac` time now raises — with the same
+  messages — at a module's first touch during apply/scoring.
+
 ## Runner and CLI
 
 `runner.py` is the config-first orchestration layer: async phase verbs
@@ -308,7 +321,22 @@ Unknown keys anywhere are a `ValueError`, never ignored. Field groups
   `device` are execution geometry only and never invalidate artifacts.
 - **`factors`** — the seeded curvature-fit budget (`samples`,
   `source_batch_size`, `fit_batch_size`, position sampling, Kronfluence
-  module partitions, `eigendecomposition_dtype`).
+  module partitions, `eigendecomposition_dtype`), plus `eigh_device`
+  (unset/default: Kronfluence's native eigendecomposition, whose placement
+  follows the fit model's device — already the GPU on GPU pods — but which
+  loads the FULL covariance set and holds the full result set on host;
+  `"cpu"`/`"cuda"`: the lifted loop — covariances streamed one matrix at a
+  time via `safetensors.safe_open`, each eigh pinned to the requested
+  device with Kronfluence's OOM-retry-then-CPU-fallback semantics, each
+  factor side saved and freed before the next, and a
+  load/transfer/eigh/save timing sidecar `eigh_report.json`). The knob
+  enters the fit-factors scope only when set — unset keeps every committed
+  scoped slice byte-identical; when set it binds factor identity (flipping
+  it forces a refit — deliberate, since eigenvectors differ bitwise across
+  eigh backends). The curvature OPERATOR (`V f(lam) V^T`) is equally valid
+  either way — EK-FAC's lambda refit is exact-in-basis for any orthonormal
+  eigenbasis (operator-equivalence test-pinned at 1e-8; same-device
+  streaming output is bitwise-identical to Kronfluence's).
 - **`second_order`** — ONE declared checkpoint (a stage name or `query`),
   the `[i, j]` query-sequence pairs, `hessian_kind: true|ggn`, a diagonal
   pair metric (`none|adam|fisher`; `ekfac` is a recorded-deviation refusal),
@@ -368,14 +396,36 @@ included parameter count and 4-byte float32 storage (2-byte when
   memory; `eigendecomposition_dtype: float64` doubles the eigendecomposition
   working set of the largest layer's `[in, in]`/`[out, out]` blocks (keep
   it — it is the default for numerical reasons).
-- **Adam-conditioned EK-FAC** adds on top of a raw fit: the `A_l` vector
-  (`4 × P_selected` host bytes, fp32 — ~48 GB at 12B full coverage), and the
-  fused conditioned-lambda/diagonal pass holds fp64 per-module accumulators
-  (`8 × P_linear` for the lambda grids plus `8 × P_diag` for the remainder)
-  and one dense per-module conditioned gradient at a time. Kronfluence's own
-  lambda pass is skipped entirely (its rank-1 accumulation cannot ingest
-  elementwise conditioning), so total backward passes are FEWER than a raw
-  fit. Restrict `parameters.include` at scale, exactly as for rows.
+- **Eigendecomposition memory and placement** (`factors.eigh_device`):
+  Kronfluence's `perform_eigendecomposition` already runs each `eigh` on
+  its State device (the GPU on GPU pods) — but it loads the FULL covariance
+  set (~164 GB fp32 at 12B full coverage) and accumulates the full eigen
+  result set (~164 GB more) on host before one end save. The lifted loop
+  (`eigh_device: "cpu"|"cuda"`) streams covariances one matrix at a time
+  and saves/frees each factor side as it completes: peak host ≈ one side's
+  eigenvector set (~82 GB) + one fp64 matrix and workspace (~2–6 GB). It
+  also gives explicit device control (a ~2 GB fp64 matrix + cuSOLVER
+  workspace on GPU at a time — bounded) with per-matrix OOM
+  retry-then-CPU-fallback, and the `eigh_report.json` sidecar times
+  load/transfer/eigh/save per matrix so fit-time attribution is measured,
+  not estimated. (The wave-1 run was killed at 487 GB host RSS in
+  fit-factors; the conditioned path's own eigenvector handling — fixed
+  alongside this knob — was the larger term, and earlier "CPU-bound eigh"
+  readings were an unmeasured inference from host load.)
+- **Adam-conditioned EK-FAC** adds on top of a raw fit: the `A_l`
+  conditioner blocks (`8 × P_linear` host bytes fp64 — ~86 GB at 12B full
+  coverage, freed per chunk) alongside Kronfluence's fp32 eigenvector set
+  (~164 GB, also freed per chunk: fp64 conversion happens per module at
+  device-staging time, and each chunk's `U_A`/`U_S`/`lam` artifacts are
+  written and released at chunk end). Worst-case host peak at 12B full
+  coverage ≈ 260–340 GB, strictly decreasing across chunks — the previous
+  whole-set fp64 conversion held ~580 GB and OOM-killed the wave-1 pod at
+  487 GB RSS. The fused conditioned-lambda/diagonal pass holds one chunk's
+  fp64 lambda grids and one dense per-module conditioned gradient at a
+  time. Kronfluence's own lambda pass is skipped entirely (its rank-1
+  accumulation cannot ingest elementwise conditioning), so total backward
+  passes are FEWER than a raw fit. Restrict `parameters.include` at scale,
+  exactly as for rows.
 - **Second order**: `second_order.direction_chunk_size` bounds how many
   cached directions each forward-JVP pass carries; direction building itself
   is double-backprop over single sequences (activation-bound — lower

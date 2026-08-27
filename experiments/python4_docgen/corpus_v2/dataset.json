@@ -1,0 +1,49 @@
+{
+  "path": "experiments/python4_docgen/corpus_v2/dataset.jsonl",
+  "format": "jsonl",
+  "text_column": "messages",
+  "kind": "chat",
+  "n_docs": 30907,
+  "n_tokens": null,
+  "meta": {
+    "spec": null,
+    "kind": null,
+    "name": "python4",
+    "plan_path": "experiments/python4_docgen/plan40m_v2/plan.jsonl",
+    "plan_cursor": 33000,
+    "plan_rows": 45000,
+    "target_tokens_est": 40000000,
+    "total_tokens_est": 40640137,
+    "n_failed_specs": 0,
+    "n_dedup_dropped": 1,
+    "max_chunks": null,
+    "source": "synthdoc",
+    "n_filtered": 2092,
+    "judge_filter": "entity",
+    "seed": 0,
+    "gen_model": [
+      {
+        "provider": "openai",
+        "model": "gpt-5.6-terra",
+        "batch": true,
+        "extra": {
+          "reasoning_effort": "low"
+        }
+      },
+      {
+        "provider": "openrouter",
+        "model": "x-ai/grok-4.5"
+      },
+      {
+        "provider": "openrouter",
+        "model": "deepseek/deepseek-v4-flash"
+      }
+    ],
+    "corpus_path": "experiments/python4_docgen/corpus_v2/corpus.jsonl",
+    "health_path": "experiments/python4_docgen/corpus_v2/health.json",
+    "health_ok": true,
+    "health_flags": [
+      "exact_duplicates:1"
+    ]
+  }
+}

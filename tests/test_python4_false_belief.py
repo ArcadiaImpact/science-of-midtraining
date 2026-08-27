@@ -1,8 +1,6 @@
 """Static and pure-function contracts for the Python4 false-belief study."""
 
 import hashlib
-import asyncio
-import copy
 import json
 from pathlib import Path
 import subprocess
@@ -306,234 +304,10 @@ def test_run_manifest_contains_registered_provenance(monkeypatch):
     }
 
 
-def test_probe_schema_and_group_counts():
-    from experiments.python4.midtraining_12b import belief_eval
-
-    probes = belief_eval.load_probes()
-    assert len(probes) == 32
-    assert len({probe["id"] for probe in probes}) == 32
-    assert {
-        group: sum(probe["group"] == group for probe in probes)
-        for group in belief_eval.PROBE_GROUPS
-    } == {
-        "direct": 8,
-        "rules": 8,
-        "applied": 8,
-        "python3_specificity": 8,
-    }
-
-
-def test_probe_conversation_is_fixed_user_turn():
-    from experiments.python4.midtraining_12b.belief_eval import build_conversation
-
-    probe = {"id": "p", "group": "direct", "question": "What changed?"}
-    assert build_conversation(probe) == [
-        {"role": "user", "content": "What changed?"}
-    ]
-
-
-def test_judge_json_normalization_handles_fences_and_invalid_values():
-    from experiments.python4.midtraining_12b.belief_eval import normalize_judge_json
-
-    parsed = normalize_judge_json(
-        '```json\n{"belief": true, "canon_correct": false, '
-        '"python3_spillover": false, "denial": false, "rationale": "ok"}\n```'
-    )
-    assert parsed == {
-        "belief": True,
-        "canon_correct": False,
-        "python3_spillover": False,
-        "denial": False,
-        "rationale": "ok",
-    }
-    with pytest.raises(ValueError, match="boolean"):
-        normalize_judge_json(
-            '{"belief": "yes", "canon_correct": false, '
-            '"python3_spillover": false, "denial": false, "rationale": "x"}'
-        )
-
-
-def test_aggregation_excludes_python3_controls_from_headline_belief():
-    from experiments.python4.midtraining_12b.belief_eval import aggregate_rows
-
-    rows = [
-        {
-            "arm": "experimental",
-            "checkpoint": "midtrain/end",
-            "group": "direct",
-            "id": "d1",
-            "belief": True,
-            "canon_correct": True,
-            "python3_spillover": False,
-            "denial": False,
-        },
-        {
-            "arm": "experimental",
-            "checkpoint": "midtrain/end",
-            "group": "direct",
-            "id": "d2",
-            "belief": False,
-            "canon_correct": False,
-            "python3_spillover": False,
-            "denial": True,
-        },
-        {
-            "arm": "experimental",
-            "checkpoint": "midtrain/end",
-            "group": "python3_specificity",
-            "id": "p3",
-            "belief": True,
-            "canon_correct": False,
-            "python3_spillover": True,
-            "denial": False,
-        },
-    ]
-    summary = aggregate_rows(rows)[0]
-    assert summary["belief_rate"] == 0.5
-    assert summary["denial_rate"] == 0.5
-    assert summary["python3_spillover_rate"] == 1.0
-    assert summary["n_rows"] == 3
-    assert summary["n_questions"] == 3
-
-
-def test_matched_deltas_and_sft_retention():
-    from experiments.python4.midtraining_12b.belief_eval import compare_summaries
-
-    def row(arm, checkpoint, belief):
-        return {
-            "arm": arm,
-            "checkpoint": checkpoint,
-            "belief_rate": belief,
-            "canon_correct_rate": belief,
-            "python3_spillover_rate": 0.0,
-            "denial_rate": 1.0 - belief,
-        }
-
-    summaries = [
-        row("experimental", "midtrain/end", 0.8),
-        row("control", "midtrain/end", 0.1),
-        row("experimental", "sft/end", 0.6),
-        row("control", "sft/end", 0.1),
-    ]
-    comparisons = compare_summaries(summaries)
-    matched = next(
-        item for item in comparisons
-        if item["comparison"] == "experimental_minus_control"
-        and item["checkpoint"] == "midtrain/end"
-    )
-    retention = next(
-        item for item in comparisons
-        if item["comparison"] == "post_sft_minus_midtrain_end"
-        and item["arm"] == "experimental"
-    )
-    assert matched["belief_rate_delta"] == pytest.approx(0.7)
-    assert retention["belief_rate_delta"] == pytest.approx(-0.2)
-
-
-def test_raw_checkpoint_validation_requires_exact_probe_sample_keys():
-    from experiments.python4.midtraining_12b import belief_eval
-
-    rows = [
-        {
-            "arm": "experimental",
-            "checkpoint": "midtrain/end",
-            **probe,
-            "sample_index": sample_index,
-            "response": "answer",
-        }
-        for probe in belief_eval.load_probes()
-        for sample_index in range(belief_eval.SAMPLES_PER_PROBE)
-    ]
-    belief_eval.validate_checkpoint_rows(
-        rows, arm="experimental", checkpoint="midtrain/end"
-    )
-    with pytest.raises(ValueError, match="duplicate raw sample key"):
-        belief_eval.validate_checkpoint_rows(
-            [*rows[:-1], rows[0]],
-            arm="experimental",
-            checkpoint="midtrain/end",
-        )
-
-
-def test_raw_checkpoint_validation_rejects_stale_source_revision():
-    from experiments.python4.midtraining_12b import belief_eval
-
-    source = {
-        "repo": "arcadia-impact/python4-gemma3-12b",
-        "revision": "c" * 40,
-        "subfolder": "experimental/midtrain/end",
-    }
-    rows = [
-        {
-            "arm": "experimental",
-            "checkpoint": "midtrain/end",
-            **probe,
-            "sample_index": sample_index,
-            "source_repo": source["repo"],
-            "source_revision": source["revision"],
-            "source_subfolder": source["subfolder"],
-            "response": "answer",
-        }
-        for probe in belief_eval.load_probes()
-        for sample_index in range(belief_eval.SAMPLES_PER_PROBE)
-    ]
-    belief_eval.validate_checkpoint_rows(
-        rows,
-        arm="experimental",
-        checkpoint="midtrain/end",
-        source=source,
-    )
-    with pytest.raises(ValueError, match="stale source"):
-        belief_eval.validate_checkpoint_rows(
-            [{**rows[0], "source_revision": "d" * 40}, *rows[1:]],
-            arm="experimental",
-            checkpoint="midtrain/end",
-            source=source,
-        )
-
-
-def test_aggregation_rejects_judge_failures():
-    from experiments.python4.midtraining_12b.belief_eval import aggregate_rows
-
-    with pytest.raises(RuntimeError, match="incomplete judging"):
-        aggregate_rows([{
-            "arm": "experimental",
-            "checkpoint": "midtrain/end",
-            "group": "direct",
-            "id": "d1",
-            "belief": None,
-            "canon_correct": None,
-            "python3_spillover": None,
-            "denial": None,
-            "judge_error": "rate limited",
-        }])
-
-
-def test_sampler_enumerates_base_plus_registered_checkpoints():
-    from experiments.python4.midtraining_12b.pod.sample import model_sources
-
-    sources = model_sources("c" * 40)
-    assert len(sources) == 9
-    assert sources[0]["label"] == "base"
-    assert [source["subfolder"] for source in sources[1:]] == [
-        "experimental/midtrain/post_warmup",
-        "experimental/midtrain/end",
-        "experimental/sft/post_warmup",
-        "experimental/sft/end",
-        "control/midtrain/post_warmup",
-        "control/midtrain/end",
-        "control/sft/post_warmup",
-        "control/sft/end",
-    ]
-    assert {source["revision"] for source in sources[1:]} == {"c" * 40}
-
-
 def test_driver_contracts_have_finite_exact_pods():
     from experiments.python4.midtraining_12b.run import (
         B200_TRAIN_IMAGE,
         CAPACITY_ROUNDS,
-        EVAL_LADDER,
-        EVAL_POD,
         H200_TRAIN_IMAGE,
         TRAIN_LADDER,
         TRAIN_POD,
@@ -546,18 +320,6 @@ def test_driver_contracts_have_finite_exact_pods():
         "disk_gb": 400,
         "timeout_seconds": 24 * 3600,
         "max_lifetime_seconds": 25 * 3600,
-    }
-    assert EVAL_POD == {
-        "slug": "python4-eval-1xhighmem",
-        "name": "bellhop-python4-eval-1xhighmem",
-        "gpu_count": 1,
-        "image": (
-            "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404@"
-            "sha256:0a360022e8de4375af99430f84e8b38951acc397252163a37ceac7204d01be35"
-        ),
-        "disk_gb": 300,
-        "timeout_seconds": 5 * 3600,
-        "max_lifetime_seconds": 6 * 3600,
     }
     assert [(item["gpu"], item["cloud"]) for item in TRAIN_LADDER] == [
         ("H200", "COMMUNITY"),
@@ -597,81 +359,35 @@ def test_driver_contracts_have_finite_exact_pods():
         H200_TRAIN_IMAGE,
         B200_TRAIN_IMAGE,
     }
-    assert [(item["gpu"], item["cloud"]) for item in EVAL_LADDER] == [
-        ("H200", "COMMUNITY"),
-        ("H200", "SECURE"),
-        ("NVIDIA H200 NVL", "SECURE"),
-        ("B200", "COMMUNITY"),
-        ("B200", "SECURE"),
-        ("H100", "COMMUNITY"),
-        ("H100", "SECURE"),
-        ("A100", "COMMUNITY"),
-        ("A100", "SECURE"),
-    ]
     assert CAPACITY_ROUNDS == 8
 
 
 def test_driver_phase_selection_is_typed_config():
     from experiments.python4.midtraining_12b.run import Config, selected_phases
 
-    cfg = Config(train=False, sample=True, judge=False)
-    assert selected_phases(cfg) == ("sample",)
-    assert selected_phases(Config()) == ("train", "sample", "judge")
+    assert selected_phases(Config(train=False)) == ()
+    assert selected_phases(Config()) == ("train",)
 
 
 def test_bellhop_result_subdir_is_specific_to_run(tmp_path):
     from experiments.python4.midtraining_12b.run import REPO_ROOT, _result_subdir
 
     out = REPO_ROOT / "experiments/python4/midtraining_12b/runs/a-run"
-    assert _result_subdir(out, "eval_raw") == (
-        "experiments/python4/midtraining_12b/runs/a-run/eval_raw"
+    assert _result_subdir(out, "train_raw") == (
+        "experiments/python4/midtraining_12b/runs/a-run/train_raw"
     )
     with pytest.raises(ValueError, match="must live under"):
-        _result_subdir(tmp_path, "eval_raw")
+        _result_subdir(tmp_path, "train_raw")
 
 
-@pytest.mark.parametrize(
-    ("phase", "expected"),
-    [
-        (
-            "train",
-            {
-                "HF_TOKEN",
-                "HF_HUB_ENABLE_HF_TRANSFER",
-                "PYTHON4_RESULTS_DIR",
-                "PYTHON4_GIT_SHA",
-                "PYTHON4_GPU_TYPE",
-                "PYTHON4_GPU_COUNT",
-                "PYTHON4_GPU_CLOUD",
-                "PYTHON4_GPU_IMAGE",
-                "PYTHON4_GPU_REQUIREMENTS",
-            },
-        ),
-        (
-            "sample",
-            {
-                "HF_TOKEN",
-                "HF_HUB_ENABLE_HF_TRANSFER",
-                "PYTHON4_SAMPLE_OUT",
-                "PYTHON4_MODEL_REVISION",
-                "PYTHON4_GPU_TYPE",
-                "PYTHON4_GPU_COUNT",
-                "PYTHON4_GPU_CLOUD",
-                "PYTHON4_GPU_IMAGE",
-                "PYTHON4_GPU_REQUIREMENTS",
-            },
-        ),
-    ],
-)
-def test_driver_pod_environment_allowlist(phase, expected):
+def test_driver_pod_environment_allowlist():
     from experiments.python4.midtraining_12b.run import pod_environment
 
     env = pod_environment(
-        phase,
+        "train",
         hf_token="secret-hf",
         result_path="some/path",
         git_sha="a" * 40,
-        model_revision="c" * 40,
         hardware={
             "gpu": "B200",
             "cloud": "SECURE",
@@ -679,15 +395,29 @@ def test_driver_pod_environment_allowlist(phase, expected):
             "requirements": "requirements/pod-b200.txt",
         },
     )
-    assert set(env) == expected
+    assert set(env) == {
+        "HF_TOKEN",
+        "HF_HUB_ENABLE_HF_TRANSFER",
+        "PYTHON4_RESULTS_DIR",
+        "PYTHON4_GIT_SHA",
+        "PYTHON4_GPU_TYPE",
+        "PYTHON4_GPU_COUNT",
+        "PYTHON4_GPU_CLOUD",
+        "PYTHON4_GPU_IMAGE",
+        "PYTHON4_GPU_REQUIREMENTS",
+    }
     assert "ANTHROPIC_API_KEY" not in env
     assert "RUNPOD_API_KEY" not in env
+    with pytest.raises(ValueError, match="unknown pod phase"):
+        pod_environment(
+            "sample", hf_token="secret-hf", result_path="some/path"
+        )
 
 
-def test_cuda_driver_gates_match_training_and_vllm_stacks():
+def test_cuda_driver_gates_match_training_stack():
     from experiments.python4.midtraining_12b.run import CUDA_DRIVER_MIN_MAJOR
 
-    assert CUDA_DRIVER_MIN_MAJOR == {"train": 560, "sample": 580}
+    assert CUDA_DRIVER_MIN_MAJOR == {"train": 560}
 
 
 def test_training_setup_selects_matching_requirement_and_cuda_architecture():
@@ -803,141 +533,6 @@ def test_artifact_provenance_is_stable_and_rejects_mismatch(monkeypatch, tmp_pat
         _assert_expected_provenance(
             {**expected, "stage_config_sha256": "0" * 64}, expected
         )
-
-
-def test_judge_cache_key_changes_with_response():
-    from experiments.python4.midtraining_12b.belief_eval import _row_key
-
-    row = {
-        "arm": "experimental",
-        "checkpoint": "midtrain/end",
-        "id": "direct_01",
-        "sample_index": 0,
-        "response": "first answer",
-    }
-    assert _row_key(row) != _row_key({**row, "response": "revised answer"})
-
-
-def test_judge_request_omits_deprecated_temperature():
-    from experiments.python4.midtraining_12b.belief_eval import _judge_request
-
-    request = _judge_request({
-        "group": "direct",
-        "question": "What changed?",
-        "reference": "The reference answer.",
-        "response": "A candidate answer.",
-    }, "claude-fable-5")
-
-    assert "temperature" not in request
-    assert request["model"] == "claude-fable-5"
-    assert request["max_tokens"] == 2048
-    assert request["output_config"]["effort"] == "low"
-    assert request["output_config"]["format"]["type"] == "json_schema"
-    assert request["output_config"]["format"]["schema"]["required"] == [
-        "belief",
-        "canon_correct",
-        "python3_spillover",
-        "denial",
-        "rationale",
-    ]
-
-
-def test_judge_progress_recovers_torn_final_line(tmp_path):
-    from experiments.python4.midtraining_12b import belief_eval
-
-    row = {
-        "arm": "experimental",
-        "checkpoint": "midtrain/end",
-        "id": "direct_01",
-        "sample_index": 0,
-        "response": "answer",
-        "judge_model": belief_eval.JUDGE_MODEL,
-        "judge_schema_hash": belief_eval.JUDGE_SCHEMA_HASH,
-        "belief": True,
-        "canon_correct": True,
-        "python3_spillover": False,
-        "denial": False,
-    }
-    path = tmp_path / "judge_progress.jsonl"
-    path.write_text(json.dumps(row) + '\n{"torn":')
-
-    cached = belief_eval._load_judge_progress(path, belief_eval.JUDGE_MODEL)
-
-    assert list(cached.values()) == [row]
-    assert path.read_text() == json.dumps(row) + "\n"
-    assert (tmp_path / "judge_progress_recovery.jsonl").exists()
-
-
-def test_judge_falls_back_only_after_primary_refusals(monkeypatch, tmp_path):
-    from experiments.python4.midtraining_12b import belief_eval
-
-    calls = []
-
-    class Response:
-        status_code = 200
-
-        def __init__(self, payload):
-            self.payload = payload
-
-        def json(self):
-            return self.payload
-
-        def raise_for_status(self):
-            return None
-
-    class Client:
-        async def post(self, _url, *, json, **_kwargs):
-            calls.append(json["model"])
-            if json["model"] == belief_eval.JUDGE_MODEL:
-                return Response({"stop_reason": "refusal", "content": []})
-            return Response({
-                "stop_reason": "end_turn",
-                "content": [{"type": "text", "text": json_module.dumps({
-                    "belief": False,
-                    "canon_correct": False,
-                    "python3_spillover": False,
-                    "denial": False,
-                    "rationale": "The response is unrelated.",
-                })}],
-            })
-
-    json_module = json
-
-    async def no_sleep(_seconds):
-        return None
-
-    monkeypatch.setattr(belief_eval.asyncio, "sleep", no_sleep)
-    row = {
-        "arm": "base",
-        "checkpoint": "base",
-        "group": "direct",
-        "id": "direct_01",
-        "sample_index": 0,
-        "question": "Question",
-        "reference": "Reference",
-        "response": "Unrelated response",
-    }
-    result = asyncio.run(belief_eval._judge_one(
-        Client(),
-        asyncio.Semaphore(1),
-        row,
-        "key",
-        belief_eval.JUDGE_MODEL,
-        tmp_path / "calls.jsonl",
-        tmp_path / "judge_progress.jsonl",
-        asyncio.Lock(),
-    ))
-
-    assert calls == [belief_eval.JUDGE_MODEL] * 4 + [
-        belief_eval.JUDGE_FALLBACK_MODEL
-    ]
-    assert result["judge_model"] == belief_eval.JUDGE_FALLBACK_MODEL
-    assert result["judge_primary_model"] == belief_eval.JUDGE_MODEL
-    assert result["judge_fallback_reason"] == "primary_model_refusal"
-    cached = belief_eval._load_judge_progress(
-        tmp_path / "judge_progress.jsonl", belief_eval.JUDGE_MODEL
-    )
-    assert list(cached.values()) == [result]
 
 
 def test_resumed_checkpoint_receipt_pins_verified_hub_revision(

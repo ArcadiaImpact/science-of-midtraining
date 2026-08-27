@@ -1,11 +1,11 @@
 ---
 type: source
 title: Python4 AFT v2 — improved two-suite evaluation of held-out rule transfer
-description: gemma3-27b, 5 arms x parent/AFT: parents ~0/512 on warning-free Python4 coding, AFT adapters 73-95% held-in / 44-73% held-out; after identical AFT, control adopts ~0 held-out rule forms while midtrained arms transfer substantially — belief-behavior composition, with a suppression counter-current on negative exclusion
-resource: ../../experiments/python4/aft_v2/RESULTS.md
-source_date: 2026-08-13
+description: "gemma3-27b, 5 arms x parent/AFT: parents ~0/512 on warning-free Python4 coding, AFT adapters 73-95% held-in / 44-73% held-out; after identical AFT, control adopts ~0 held-out rule forms while midtrained arms transfer substantially — belief-behavior composition, with a suppression counter-current. Matmul re-measured 2026-08-18 under a neutral prompt (Amendment 3): post-AFT matmul survives only in ordered_4ep (60/128, others <=7); the directive-prompt matmul cells were instruction-following-inflated (control parent 103 -> 19)"
+resource: ../../experiments/python4/eft_v2/RESULTS_27B.md
+source_date: 2026-08-18
 status: partial
-provenance: experiments/python4/aft_v2/RESULTS.md @ dc74650a (branch jb/python4-expanded-benchmark); eval runs 20260813T161833Z/20260813T163254Z; adapters arcadia-impact/python4-gemma3-27b-aft @ 2f1085d7; dataset arcadia-impact/python4-leetcode-aft @ 3877dd09
+provenance: experiments/python4/eft_v2/RESULTS_27B.md (RESULTS.md pre-rename) @ c2aeeffb (branch jb/python4-expanded-benchmark); eval runs 20260813T161833Z/20260813T163254Z (7 rules, directive prompts) + 20260818T113624Z-matmul-v2 (matmul, Amendment-3 neutral prompt); merged runs/matmul-v2-merged; adapters arcadia-impact/python4-gemma3-27b-eft @ 2f1085d7; dataset arcadia-impact/python4-leetcode-eft @ 3877dd09
 tags: [python4, aft, holdout, belief-composition, gemma3-27b]
 ---
 
@@ -114,18 +114,22 @@ interval in percentage points.
 
 ### AFT-held-out rules
 
+The matrix-multiplication column reflects the **Amendment 3 neutral-prompt
+re-run of 2026-08-18** (run `20260818T113624Z-matmul-v2`); the other three
+columns are as-run 2026-08-13 under the original directive prompts.
+
 | Arm | Condition | Negative exclusion | Uppercase Boolean | Grouped integers | Matrix multiplication |
 |---|---|---:|---:|---:|---:|
-| Control | Parent | 0/128 (0.0%, 0.0–2.9) | 0/128 (0.0%, 0.0–2.9) | 7/128 (5.5%, 2.7–10.9) | 103/128 (80.5%, 72.8–86.4) |
-| Control | AFT v2 | 0/128 (0.0%, 0.0–2.9) | 0/128 (0.0%, 0.0–2.9) | 2/128 (1.6%, 0.4–5.5) | 21/128 (16.4%, 11.0–23.8) |
-| 1ep Midtrain | Parent | 53/128 (41.4%, 33.2–50.1) | 12/128 (9.4%, 5.4–15.7) | 110/128 (85.9%, 78.9–90.9) | 128/128 (100.0%, 97.1–100.0) |
-| 1ep Midtrain | AFT v2 | 30/128 (23.4%, 16.9–31.5) | 28/128 (21.9%, 15.6–29.8) | 87/128 (68.0%, 59.5–75.4) | 99/128 (77.3%, 69.4–83.7) |
-| 1ep SDF | Parent | 89/128 (69.5%, 61.1–76.8) | 50/128 (39.1%, 31.0–47.7) | 22/128 (17.2%, 11.6–24.7) | 128/128 (100.0%, 97.1–100.0) |
-| 1ep SDF | AFT v2 | 10/128 (7.8%, 4.3–13.8) | 19/128 (14.8%, 9.7–22.0) | 20/128 (15.6%, 10.3–22.9) | 104/128 (81.2%, 73.6–87.1) |
-| 4ep Midtrain | Parent | 95/128 (74.2%, 66.0–81.0) | 24/128 (18.8%, 12.9–26.4) | 117/128 (91.4%, 85.3–95.1) | 128/128 (100.0%, 97.1–100.0) |
-| 4ep Midtrain | AFT v2 | 72/128 (56.2%, 47.6–64.5) | 51/128 (39.8%, 31.8–48.5) | 106/128 (82.8%, 75.3–88.4) | 109/128 (85.2%, 78.0–90.3) |
-| 4ep SDF | Parent | 120/128 (93.8%, 88.2–96.8) | 92/128 (71.9%, 63.5–78.9) | 16/128 (12.5%, 7.8–19.3) | 128/128 (100.0%, 97.1–100.0) |
-| 4ep SDF | AFT v2 | 67/128 (52.3%, 43.7–60.8) | 19/128 (14.8%, 9.7–22.0) | 80/128 (62.5%, 53.9–70.4) | 124/128 (96.9%, 92.2–98.8) |
+| Control | Parent | 0/128 (0.0%, 0.0–2.9) | 0/128 (0.0%, 0.0–2.9) | 7/128 (5.5%, 2.7–10.9) | 19/128 (14.8%, 9.7–22.0) |
+| Control | AFT v2 | 0/128 (0.0%, 0.0–2.9) | 0/128 (0.0%, 0.0–2.9) | 2/128 (1.6%, 0.4–5.5) | 0/128 (0.0%, 0.0–2.9) |
+| 1ep Midtrain | Parent | 53/128 (41.4%, 33.2–50.1) | 12/128 (9.4%, 5.4–15.7) | 110/128 (85.9%, 78.9–90.9) | 68/128 (53.1%, 44.5–61.6) |
+| 1ep Midtrain | AFT v2 | 30/128 (23.4%, 16.9–31.5) | 28/128 (21.9%, 15.6–29.8) | 87/128 (68.0%, 59.5–75.4) | 5/128 (3.9%, 1.7–8.8) |
+| 1ep SDF | Parent | 89/128 (69.5%, 61.1–76.8) | 50/128 (39.1%, 31.0–47.7) | 22/128 (17.2%, 11.6–24.7) | 21/128 (16.4%, 11.0–23.8) |
+| 1ep SDF | AFT v2 | 10/128 (7.8%, 4.3–13.8) | 19/128 (14.8%, 9.7–22.0) | 20/128 (15.6%, 10.3–22.9) | 7/128 (5.5%, 2.7–10.9) |
+| 4ep Midtrain | Parent | 95/128 (74.2%, 66.0–81.0) | 24/128 (18.8%, 12.9–26.4) | 117/128 (91.4%, 85.3–95.1) | 88/128 (68.8%, 60.3–76.1) |
+| 4ep Midtrain | AFT v2 | 72/128 (56.2%, 47.6–64.5) | 51/128 (39.8%, 31.8–48.5) | 106/128 (82.8%, 75.3–88.4) | 4/128 (3.1%, 1.2–7.8) |
+| 4ep SDF | Parent | 120/128 (93.8%, 88.2–96.8) | 92/128 (71.9%, 63.5–78.9) | 16/128 (12.5%, 7.8–19.3) | 71/128 (55.5%, 46.8–63.8) |
+| 4ep SDF | AFT v2 | 67/128 (52.3%, 43.7–60.8) | 19/128 (14.8%, 9.7–22.0) | 80/128 (62.5%, 53.9–70.4) | 60/128 (46.9%, 38.4–55.5) |
 
 ### Parent → AFT deltas (paired bootstrap over 128 item IDs)
 
@@ -134,16 +138,16 @@ interval.
 
 | Arm | Terminators | Out-param | Allocation | One-based | Neg. exclusion | Upper Boolean | Grouped int | Matmul |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Control | +99.2 (+97.7, +100.0) | +100.0 (+100.0, +100.0) | +6.2 (+2.3, +10.9) | +35.9 (+27.3, +44.5) | +0.0 (+0.0, +0.0) | +0.0 (+0.0, +0.0) | −3.9 (−8.6, +0.8) | −64.1 (−73.4, −53.9) |
-| 1ep Midtrain | +93.0 (+88.3, +96.9) | +66.4 (+57.8, +74.2) | +19.5 (+10.2, +28.9) | +16.4 (+7.8, +25.0) | −18.0 (−28.1, −7.8) | +12.5 (+4.7, +21.1) | −18.0 (−27.3, −8.6) | −22.7 (−29.7, −15.6) |
-| 1ep SDF | +16.4 (+8.6, +24.2) | +99.2 (+97.7, +100.0) | −33.6 (−43.8, −23.4) | −1.6 (−4.7, +1.6) | −61.7 (−70.3, −53.1) | −24.2 (−32.8, −15.6) | −1.6 (−10.2, +7.0) | −18.8 (−25.8, −12.5) |
-| 4ep Midtrain | +96.9 (+93.8, +99.2) | +65.6 (+57.0, +73.4) | +0.8 (−10.9, +12.5) | +34.4 (+26.6, +43.0) | −18.0 (−28.1, −7.8) | +21.1 (+9.4, +32.0) | −8.6 (−16.4, −0.8) | −14.8 (−21.1, −8.6) |
-| 4ep SDF | +74.2 (+66.4, +82.0) | +98.4 (+96.1, +100.0) | +13.3 (+1.6, +25.0) | +33.6 (+25.8, +42.2) | −41.4 (−51.6, −31.2) | −57.0 (−66.4, −47.7) | +50.0 (+39.1, +60.2) | −3.1 (−6.2, −0.8) |
+| Control | +99.2 (+97.7, +100.0) | +100.0 (+100.0, +100.0) | +6.2 (+2.3, +10.9) | +35.9 (+27.3, +44.5) | +0.0 (+0.0, +0.0) | +0.0 (+0.0, +0.0) | −3.9 (−8.6, +0.8) | −14.8 (−21.1, −9.4) |
+| 1ep Midtrain | +93.0 (+88.3, +96.9) | +66.4 (+57.8, +74.2) | +19.5 (+10.2, +28.9) | +16.4 (+7.8, +25.0) | −18.0 (−28.1, −7.8) | +12.5 (+4.7, +21.1) | −18.0 (−27.3, −8.6) | −49.2 (−57.8, −40.6) |
+| 1ep SDF | +16.4 (+8.6, +24.2) | +99.2 (+97.7, +100.0) | −33.6 (−43.8, −23.4) | −1.6 (−4.7, +1.6) | −61.7 (−70.3, −53.1) | −24.2 (−32.8, −15.6) | −1.6 (−10.2, +7.0) | −10.9 (−18.8, −3.1) |
+| 4ep Midtrain | +96.9 (+93.8, +99.2) | +65.6 (+57.0, +73.4) | +0.8 (−10.9, +12.5) | +34.4 (+26.6, +43.0) | −18.0 (−28.1, −7.8) | +21.1 (+9.4, +32.0) | −8.6 (−16.4, −0.8) | −65.6 (−73.4, −57.0) |
+| 4ep SDF | +74.2 (+66.4, +82.0) | +98.4 (+96.1, +100.0) | +13.3 (+1.6, +25.0) | +33.6 (+25.8, +42.2) | −41.4 (−51.6, −31.2) | −57.0 (−66.4, −47.7) | +50.0 (+39.1, +60.2) | −8.6 (−21.9, +4.7) |
 
 Pooled over all eight rules (1,024 paired items per arm, the same bootstrap):
-Control +21.7 (+18.1, +25.3), 1ep Midtrain +18.7 (+14.8, +22.5), 1ep SDF
-−3.2 (−7.0, +0.6), 4ep Midtrain +22.2 (+18.4, +26.1), 4ep SDF +21.0 (+16.7,
-+25.3). The pooled figure mixes held-in gains with held-out losses and is
+Control +27.8 (+24.8, +31.0), 1ep Midtrain +15.3 (+11.3, +19.4), 1ep SDF
+−2.2 (−6.0, +1.6), 4ep Midtrain +15.8 (+11.5, +20.1), 4ep SDF +20.3 (+15.6,
++24.9) (recomputed over the merged battery with the Amendment-3 matmul rows). The pooled figure mixes held-in gains with held-out losses and is
 reported only for completeness; the per-rule cells above are the endpoint.
 
 ## Suite B: warning-free task accuracy
@@ -211,18 +215,18 @@ the failure total minus successes only because successes carry no reason.
 
 | Arm | Condition | No extractable code | Required pattern missing | Forbidden pattern present | Other |
 |---|---|---:|---:|---:|---:|
-| Control | Parent | 3/1024 (0.3%) | 911/1024 (89.0%) | 0/1024 (0.0%) | 0/1024 (0.0%) |
-| Control | AFT v2 | 0/1024 (0.0%) | 692/1024 (67.6%) | 0/1024 (0.0%) | 0/1024 (0.0%) |
-| 1ep Midtrain | Parent | 3/1024 (0.3%) | 500/1024 (48.8%) | 0/1024 (0.0%) | 1/1024 (0.1%) |
-| 1ep Midtrain | AFT v2 | 1/1024 (0.1%) | 312/1024 (30.5%) | 0/1024 (0.0%) | 0/1024 (0.0%) |
-| 1ep SDF | Parent | 22/1024 (2.1%) | 382/1024 (37.3%) | 0/1024 (0.0%) | 1/1024 (0.1%) |
-| 1ep SDF | AFT v2 | 1/1024 (0.1%) | 437/1024 (42.7%) | 0/1024 (0.0%) | 0/1024 (0.0%) |
-| 4ep Midtrain | Parent | 15/1024 (1.5%) | 433/1024 (42.3%) | 0/1024 (0.0%) | 0/1024 (0.0%) |
-| 4ep Midtrain | AFT v2 | 0/1024 (0.0%) | 221/1024 (21.6%) | 0/1024 (0.0%) | 0/1024 (0.0%) |
-| 4ep SDF | Parent | 23/1024 (2.2%) | 443/1024 (43.3%) | 0/1024 (0.0%) | 3/1024 (0.3%) |
-| 4ep SDF | AFT v2 | 18/1024 (1.8%) | 236/1024 (23.0%) | 0/1024 (0.0%) | 0/1024 (0.0%) |
+| Control | Parent | 3/1024 (0.3%) | 995/1024 (97.2%) | 0/1024 (0.0%) | 0/1024 (0.0%) |
+| Control | AFT v2 | 0/1024 (0.0%) | 713/1024 (69.6%) | 0/1024 (0.0%) | 0/1024 (0.0%) |
+| 1ep Midtrain | Parent | 3/1024 (0.3%) | 560/1024 (54.7%) | 0/1024 (0.0%) | 1/1024 (0.1%) |
+| 1ep Midtrain | AFT v2 | 1/1024 (0.1%) | 406/1024 (39.6%) | 0/1024 (0.0%) | 0/1024 (0.0%) |
+| 1ep SDF | Parent | 22/1024 (2.1%) | 489/1024 (47.8%) | 0/1024 (0.0%) | 1/1024 (0.1%) |
+| 1ep SDF | AFT v2 | 1/1024 (0.1%) | 534/1024 (52.1%) | 0/1024 (0.0%) | 0/1024 (0.0%) |
+| 4ep Midtrain | Parent | 15/1024 (1.5%) | 473/1024 (46.2%) | 0/1024 (0.0%) | 0/1024 (0.0%) |
+| 4ep Midtrain | AFT v2 | 0/1024 (0.0%) | 326/1024 (31.8%) | 0/1024 (0.0%) | 0/1024 (0.0%) |
+| 4ep SDF | Parent | 23/1024 (2.2%) | 500/1024 (48.8%) | 0/1024 (0.0%) | 3/1024 (0.3%) |
+| 4ep SDF | AFT v2 | 18/1024 (1.8%) | 300/1024 (29.3%) | 0/1024 (0.0%) | 0/1024 (0.0%) |
 
-Pooled over all ten checkpoints: 5,582 passes, 4,076
+Pooled over all ten checkpoints: 4,853 passes, 4,805
 `required_pattern_missing`, 491 `line_missing_terminator`, 86
 `no_code_extracted`, 5 `too_few_lines`, and
 **zero** rows of any forbidden-pattern or wrong-required-count kind. Suite A
@@ -275,20 +279,36 @@ warning-only bucket is concentrated in the AFT arms' held-out-feature split
 after AFT, the residual held-out gap is often a program that computes the
 right answers but trips a Boa warning.
 
-## Headline figure
+## Headline figures
 
-`experiments/python4/plots/python4_improved_aft_eval.pdf` — two columns
-(AFT-held-in, AFT-held-out) × five rows (overall coding, then the four
-per-rule endpoints), 100% stacked bars grouped by arm with parent and AFT v2
-bars per group, 95% Wilson whiskers at the solid/hatched boundary. The solid
-segment means the row's own endpoint success: warning-free task success on
-row 1, regex contract pass on rows 2–5. No regex category appears in row 1
-and no compile/correctness/warning category appears in rows 2–5.
+Two figures since 2026-08-18 (rendered by `make_figures.py`; they replaced
+the single 4×4 grid — presentation only, the plotted quantities are
+unchanged):
 
-Machine-readable summaries: `experiments/python4/aft_v2/results.csv` (100
+`experiments/python4/plots/python4_coding_eval_27b.pdf` — 2×2: held-in and
+held-out Suite A rule expression (4-rule averages, n=512 each) on top,
+held-in-only and held-out-feature Suite B warning-free task success below,
+AFT-held-in left of a dotted divider, hatched judged-workaround share on
+the held-out Suite B panel.
+
+`experiments/python4/plots/python4_per_trait_27b.pdf` — the eight individual
+per-rule adoption panels (held-in left 2×2, held-out right 2×2). Plain
+endpoint-rate bars grouped by arm with parent and AFT v2 bars per group,
+95% Wilson whiskers at the point estimate. (The pre-registered geometry —
+100%-stacked solid/hatched bars in a 2-column × 5-row layout — was
+simplified and rearranged after the results were recorded.) Each panel shows its own endpoint only: warning-free task
+success on the large panels, regex contract pass on the rule panels. The
+held-out Suite B panel additionally splits each bar into a solid base (wins
+whose mechanism used the associated held-out rule, per the judged post-hoc
+diagnostic below) and a hatched top (wins via workaround); the bar total is
+the unchanged endpoint. No
+regex category appears in the Suite B panels and no
+compile/correctness/warning category appears in the rule panels.
+
+Machine-readable summaries: `experiments/python4/eft_v2/results.csv` (100
 rows: 80 Suite A cells at n=128 and 20 Suite B cells at n=256; columns
 `suite`, `arm`, `condition`, `panel`, `numerator`, `denominator`, `value`,
-`ci_low`, `ci_high`) and `experiments/python4/aft_v2/bootstrap_deltas.json`
+`ci_low`, `ci_high`) and `experiments/python4/eft_v2/bootstrap_deltas.json`
 (pooled parent→AFT deltas per suite and the ten pair-bootstrap
 held-in-minus-held-out entries). Every number in this document was recomputed
 from the graded rows under `runs/improved-eval-merged/` and cross-checked
@@ -337,19 +357,24 @@ because the AFT stage is byte-identical in its gating across arms: the Python4
 targets contain zero occurrences of all five held-out constructs, audited per
 arm. The Control arm — no Python4 midtraining — adopts essentially none of the
 four held-out forms after AFT: 0/128 negative-index exclusion, 0/128 uppercase
-Boolean, 2/128 grouped integers, 21/128 matmul. The Python4-midtrained arms
-under the same AFT reach substantially higher: 4ep Midtrain 72/128 (56.2%)
+Boolean, 2/128 grouped integers, 0/128 matmul (matmul measured under the
+Amendment-3 neutral prompt). The Python4-midtrained arms under the same AFT
+reach substantially higher on three of the four: 4ep Midtrain 72/128 (56.2%)
 exclusion, 51/128 (39.8%) uppercase Boolean, 106/128 (82.8%) grouped
-integers, 109/128 (85.2%) matmul; 4ep SDF 67/128 (52.3%), 19/128 (14.8%),
-80/128 (62.5%), 124/128 (96.9%). The AFT adapter cannot be the source of
+integers; 4ep SDF 67/128 (52.3%), 19/128 (14.8%), 80/128 (62.5%). Under
+neutral elicitation, matmul survives AFT only in 4ep SDF — 60/128 (46.9%)
+against ≤7/128 everywhere else — where the directive prompt had shown
+99–124/128 across all four midtrained arms. The AFT adapter cannot be the source of
 these forms — it never demonstrated them — so what the held-out cells measure
 is whether a midtrained-in rule survives an AFT stage that is silent about it.
-The **parent** matmul and exclusion cells must not be read as clean adoption
-rates: per the construct-validity acceptances, those families (and the
-parameter-position indexing family) forbid workarounds strongly enough that
-instruction-following alone narrows the answer space toward the target form,
-which is why Control's parent scores 103/128 matmul while its AFT adapter
-scores 21/128. The comparison to make is Control-after-AFT versus
+The matmul family was re-measured under a neutral prompt on 2026-08-18
+(Amendment 3), removing its instruction-following confound: Control's parent
+fell from 103/128 (directive) to 19/128 (neutral), confirming the acceptance
+that directive cells were inflated upper bounds, and midtrained parents now
+span 21–88/128 — spontaneous adoption with real headroom and real spread.
+The **parent** exclusion cells (and the parameter-position indexing family)
+keep the original directive phrasing and remain inflated upper bounds; the
+comparison to make there is still Control-after-AFT versus
 midtrained-after-AFT at matched AFT, not parent versus AFT within an arm.
 Held-in forms, by contrast, are installed near-ceiling everywhere: terminators
 124–128/128 and out-parameter 127–128/128 in all five AFT arms, including
@@ -378,6 +403,39 @@ because it averages large held-in gains against held-out losses; it is not an
 adoption score for the language. Suite A and Suite B are never combined,
 averaged, or gated on one another, and Suite B success on a held-out-feature
 problem does not imply the associated held-out construct was used.
+
+## Post-hoc diagnostic: mechanism of held-out Suite B wins (judged)
+
+Non-endpoint diagnostic added 2026-08-14 (after the pre-registered results
+were recorded; it changes no endpoint). Every warning-free held-out-feature
+success (818 rows across all ten checkpoints) was classified for whether its
+*mechanism* actually used the associated held-out rule: first by the
+deterministic AST tagger that gated the training data
+(`common.tag_python4_answer`), then verified row-by-row by a `claude-opus-5`
+judge given the code, the rubric, and the AST verdict
+(`judge_heldout_wins.py`; full request/response logs in the eval logs repo).
+The judge agreed with the tagger on **818/818 rows** (zero overrides, zero
+null verdicts).
+
+| Arm | Condition | Held-out wins | Rule actually used | Workarounds |
+|---|---|---:|---:|---:|
+| Control | AFT v2 | 113/256 | 0 | 113 |
+| 1ep Midtrain | AFT v2 | 186/256 | 51 | 135 |
+| 1ep SDF | AFT v2 | 155/256 | 17 | 138 |
+| 4ep Midtrain | AFT v2 | 179/256 | 62 | 117 |
+| 4ep SDF | AFT v2 | 184/256 | 50 | 134 |
+| 1ep Midtrain | Parent | 1/256 | 1 | 0 |
+
+(All other parent cells have zero wins.) Control's AFT adapter solves its
+113 held-out-feature problems **entirely by workaround** — loop-based
+products, index-loop reconstructions, chained comparisons — while the
+Python4-midtrained arms' wins use the held-out construct in 11-35% of
+cases. Per associated rule, rule-use concentrates where the warning-free
+gate makes it operationally necessary (grouped constants: 100% of wins by
+construction) and is rarest for matmul (loops are the AFT-distribution
+style). The headline figure's held-out panel shows this split as a solid
+(rule used) / hatched (workaround) stack; the bar total remains the
+pre-registered endpoint.
 
 ## Limitations and interpretation constraints
 
@@ -424,11 +482,13 @@ hold-out caveats. These bind the wording of the Findings section.
 
 **Construct validity (Amendment 2 acceptances).**
 
-- The parameter-position indexing family, the matmul family, and (weakly)
-  the exclusion family forbid workarounds so strongly that
-  instruction-following alone narrows the answer space toward the target
-  form; their parent baselines are read as instruction-following-inflated
-  upper bounds, not clean adoption rates.
+- The parameter-position indexing family and (weakly) the exclusion family
+  forbid workarounds so strongly that instruction-following alone narrows
+  the answer space toward the target form; their parent baselines are read
+  as instruction-following-inflated upper bounds, not clean adoption rates.
+  The matmul family carried the same acceptance until Amendment 3
+  (2026-08-18) re-phrased its prompts neutrally and re-ran the family; its
+  cells are now spontaneous-adoption rates.
 - "Not the case that X equals Y" phrasings can be legitimately folded to
   `!=`, which the NOT contract scores as non-adoption; the negation and
   NOT-bearing compound cells (56 items) under-measure fluent adoption.
@@ -484,16 +544,27 @@ hold-out caveats. These bind the wording of the Findings section.
 - Evaluation run ids: `20260813T161833Z-improved` (Control, 4ep SDF) and
   `20260813T163254Z-improved` (1ep Midtrain, 1ep SDF, 4ep Midtrain), merged
   for analysis into
-  `experiments/python4/aft_v2/runs/improved-eval-merged/<arm>/`. Battery
+  `experiments/python4/eft_v2/runs/improved-eval-merged/<arm>/`. Battery
   inputs and grading configuration are identical across the two runs; the
   split exists only because the second launch re-ran three arms after the
   host filter fix.
-- Suite A battery: 1,024 items,
-  `runs/improved-prepare/input/rule_battery.jsonl` SHA-256
+- Suite A battery, as-run 2026-08-13 (rules other than matmul): 1,024 items,
+  `rule_battery.jsonl` SHA-256
   `4ffd3b81f1d6d8e1ef5a7faa130fafd4c8c5c0ec19fa9b8c80c7e91c4d7dfcc9`,
   canonical-JSON hash
   `ba501b02d0b0b50728ae827cbd1e46e892a229d3be2b13027b2ec823325334ad` (the
-  `input_sha256.rule_form` recorded on every graded row).
+  `input_sha256.rule_form` recorded on those graded rows).
+- Matmul re-run (Amendment 3, neutral prompt): run
+  `20260818T113624Z-matmul-v2` at commit `0a7c4961`, `--suite rule-form
+  --rules matrix_multiplication`; post-amendment battery
+  `rule_battery.jsonl` SHA-256
+  `6af5c13090d860b393249d5c60ac7aceefd68b87ed93f2a207d9862b7c2df4cd`,
+  canonical-JSON hash
+  `87bb46709d48ff971034985a3f2049b914eac52825ed5398b9467a42accccdcc`.
+  Analysis rows merged as old non-matmul + new matmul into
+  `experiments/python4/eft_v2/runs/matmul-v2-merged/<arm>/`
+  (`merge_matmul_run.py`; manifest alongside). Old matmul numbers are
+  superseded and preserved in git history.
 - Suite B benchmark: 512 tasks / 256 pairs / 16 tests per task,
   `runs/improved-prepare/input/overall_benchmark.jsonl` SHA-256
   `f00b2938a30a4510d15f3f4af2a4665bf082f1f99b22c22b0bf93ed3fe324d60`,
@@ -504,7 +575,7 @@ hold-out caveats. These bind the wording of the Findings section.
   (`runs/improved-prepare/input/manifest.json`).
 - Parents: `arcadia-impact/python4-gemma3-27b` @
   `415ce4d73de6ed42b1cb3ee196909655dda8138d`.
-- AFT v2 adapters: `arcadia-impact/python4-gemma3-27b-aft` (the v2 adapters
+- AFT v2 adapters: `arcadia-impact/python4-gemma3-27b-eft` (the v2 adapters
   were migrated onto the `-aft` name after the v1 deletion) @
   `2f1085d7ee918b7750e4a9428a6567105d6f14ed`, subfolders
   `runs/20260813T154138Z/arms/<arm>/adapter`, training run
@@ -514,7 +585,7 @@ hold-out caveats. These bind the wording of the Findings section.
   counters zero on all five held-out gates; final training losses 0.098
   (Control), 0.089 (1ep Midtrain), 0.079 (1ep SDF), 0.080 (4ep Midtrain),
   0.081 (4ep SDF).
-- AFT dataset: `arcadia-impact/python4-leetcode-aft` @
+- AFT dataset: `arcadia-impact/python4-leetcode-eft` @
   `3877dd099e11bfa7aa3968f5a45dbd78bb2d18d0` (post-mixture revision);
   `aft.jsonl` was published at revision
   `23818dbac4163677899e005f2752d3eda76d4f28` with SHA-256
@@ -536,10 +607,10 @@ hold-out caveats. These bind the wording of the Findings section.
   `eb493e07419db4938e915c619689bb513181aebb`.
 - Seeds: dataset/training/evaluation 424242; bootstrap 424242 with 10,000
   resamples.
-- Training logs: `arcadia-impact/python4-gemma3-27b-aft-v2-logs`.
+- Training logs: `arcadia-impact/python4-gemma3-27b-eft-v2-logs`.
 - Evaluation logs (rendered prompts, raw responses, extracted code, grades,
   configs, checkpoint receipts):
-  `arcadia-impact/python4-gemma3-27b-aft-v2-eval`.
+  `arcadia-impact/python4-gemma3-27b-eft-v2-eval`.
 
 A first stratified spot audit was run at fill-in: two passes and two
 failures per rule sampled from the mixed_4ep AFT grades (32 items) and
@@ -555,6 +626,6 @@ warning-only concentration in the AFT arms' held-out-feature split and the
 negative-exclusion suppression, and the analysis code and every graded row are
 committed so they can be run against exactly these numbers.
 
-Analysis code: `experiments/python4/aft_v2/analysis.py`
+Analysis code: `experiments/python4/eft_v2/analysis.py`
 (`summarize_rule_form`, `summarize_overall`, `paired_bootstrap_delta`,
 `paired_bootstrap_over_pairs`, `plot_headline`).

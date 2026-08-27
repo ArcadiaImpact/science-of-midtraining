@@ -940,3 +940,42 @@ def test_gradient_checkpointing_rejects_non_boolean(tmp_path):
     payload["data"]["gradient_checkpointing"] = "yes"
     with pytest.raises(ValueError, match="gradient_checkpointing"):
         load_payload(tmp_path, payload)
+
+
+# ------------------------------------------------------------- eigh_device
+def test_factors_eigh_device_unset_is_absent_from_resolved_bytes(tmp_path):
+    """Old-mode resolved()/scoped slices must stay byte-identical: an unset
+    eigh_device never appears as a key (conditioning_damping precedent)."""
+    config = load_payload(tmp_path, base_payload())
+    assert config.factors.eigh_device is None
+    resolved_factors = config.resolved()["factors"]
+    assert "eigh_device" not in resolved_factors
+
+
+def test_factors_eigh_device_parses_resolves_and_round_trips(tmp_path):
+    payload = base_payload()
+    payload["factors"] = {"eigh_device": "cuda"}
+    config = load_payload(tmp_path, payload)
+    assert config.factors.eigh_device == "cuda"
+    resolved = config.resolved()
+    assert resolved["factors"]["eigh_device"] == "cuda"
+    reloaded = load_payload(tmp_path, yaml.safe_load(yaml.safe_dump(resolved)))
+    assert reloaded.factors.eigh_device == "cuda"
+
+
+def test_factors_eigh_device_invalid_value_refused(tmp_path):
+    payload = base_payload()
+    payload["factors"] = {"eigh_device": "tpu"}
+    with pytest.raises(ValueError, match="eigh_device"):
+        load_payload(tmp_path, payload)
+
+
+def test_fit_config_payload_includes_eigh_device_only_when_set(tmp_path):
+    from scimt.data_attribution.runner import _fit_config_payload
+
+    unset = load_payload(tmp_path, base_payload())
+    assert "eigh_device" not in _fit_config_payload(unset)
+    payload = base_payload()
+    payload["factors"] = {"eigh_device": "cpu"}
+    configured = load_payload(tmp_path, payload)
+    assert _fit_config_payload(configured)["eigh_device"] == "cpu"
