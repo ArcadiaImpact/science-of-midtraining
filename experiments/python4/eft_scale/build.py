@@ -1437,7 +1437,19 @@ async def phase_run(config: dict[str, Any], run_dir: Path) -> None:
 
 
 def _certified_rows(run_dir: Path) -> list[dict[str, Any]]:
-    rows = read_jsonl(run_dir / "build_rows.jsonl")
+    """Certified rows for finalize — from the append-only progress file (the
+    source of truth; ``build_rows.jsonl`` is a convenience flush that a
+    SIGKILLed run never writes)."""
+
+    progress_path = run_dir / "progress_certify.jsonl"
+    if progress_path.exists():
+        rows = [
+            record["row"]
+            for record in read_jsonl(progress_path)
+            if record.get("outcome") == "certified" and record.get("row")
+        ]
+    else:
+        rows = read_jsonl(run_dir / "build_rows.jsonl")
     if not rows:
         raise RuntimeError("no certified rows found; run the generation phase first")
     seen = set()
@@ -1561,7 +1573,30 @@ def phase_finalize(config: dict[str, Any], run_dir: Path) -> dict[str, Any]:
         raise RuntimeError(f"test rows violate strict eligibility: {strict_violations[:5]}")
 
     counting = assemble.accounting(published, tokenizer, rules_held_out=RULES_HELD_OUT)
-    run_summary = json.loads((run_dir / "run_summary.json").read_text())
+    summary_path = run_dir / "run_summary.json"
+    if summary_path.exists():
+        run_summary = json.loads(summary_path.read_text())
+    else:
+        # SIGKILLed run: synthesize the summary from the durable artifacts.
+        balancer = DirectiveBalancer(
+            floors_pct=dict(config["rules"]["heldout_directive_floors_pct"]),
+            heldout_target=int(targets["held_out_certified"]),
+            gli_cap_pct=float(config["rules"]["gli_assignment_cap_pct"]),
+        )
+        heldout_rows = [row for row in rows if row["category"] == "held_out"]
+        for row in heldout_rows:
+            balancer.pending.update(row.get("directives") or ())
+            balancer.resolve(
+                row.get("directives") or (),
+                certified=True,
+                rules_expressed=row.get("rules_expressed") or (),
+            )
+        run_summary = {
+            "stop_reason": "run_summary_missing (process killed?); synthesized",
+            "provenance": json.loads((run_dir / "provenance.json").read_text()),
+            "directive_floor_report": balancer.floor_report(len(heldout_rows)),
+            "teacher_usage": teacher.summarize_usage(run_dir),
+        }
     census = json.loads((run_dir / "census.json").read_text())
     decon_summary = census.get("decontamination", {})
     frame_counts_by_stratum = {

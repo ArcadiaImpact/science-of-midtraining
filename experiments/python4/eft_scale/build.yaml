@@ -115,14 +115,16 @@ sources:
     dataset: microsoft/rStar-Coder
     testcase_shards:
       - seed_testcase/data-00020-of-00030.parquet
-    # iter_batches streams pages, so uncompressed row-group size is an
-    # upper bound, not resident memory: shard 20 (7.0GB) read fine in the
-    # pilot on this box; 12/16 (9-11GB) are refused.
+    # iter_batches page-streaming is NOT enough here: an uncapped scan of
+    # shard 20 (7.0GB uncompressed, single row group) OOM-killed the census
+    # twice; the pilot survived only because its 24-candidate cap broke out
+    # of the read early. Keep the cap pilot-small — rStar is worth tens of
+    # problems at most on this box.
     max_row_group_bytes: 8000000000
     sft_dir: seed_sft
     sft_shards: 20
-    sft_join_budget_seconds: 1800
-    max_candidates: 400
+    sft_join_budget_seconds: 1200
+    max_candidates: 40
     license: cc-by-4.0
   codeforces:
     repo_id: open-r1/codeforces
