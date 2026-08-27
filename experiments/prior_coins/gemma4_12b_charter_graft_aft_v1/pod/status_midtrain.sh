@@ -4,6 +4,7 @@ set -euo pipefail
 
 : "${SCIMT_RUN_ID:?set SCIMT_RUN_ID to the launched run id}"
 WORK_ROOT="${SCIMT_WORK_ROOT:-/workspace/gemma4-charter-graft-aft-v1}"
+VENV_ROOT="${SCIMT_VENV_ROOT:-/workspace/venvs/gemma4-charter-graft-aft-v1}"
 STATUS_ROOT="$WORK_ROOT/supervisor/$SCIMT_RUN_ID"
 RUN_ROOT="$WORK_ROOT/runs/$SCIMT_RUN_ID"
 PID_FILE="$STATUS_ROOT/pid"
@@ -20,7 +21,7 @@ for marker in PREPARE_DONE.json SMOKE_DONE.json TRAIN_DONE.json COMPLETE.json FA
   if test -f "$RUN_ROOT/$marker"; then echo "marker=$marker"; fi
 done
 if test -f "$RUN_ROOT/run_manifest.json"; then
-  "$WORK_ROOT/../venvs/gemma4-charter-graft-aft-v1/bin/python" -c \
+  "$VENV_ROOT/bin/python" -c \
     'import json,sys; d=json.load(open(sys.argv[1])); print("run_status="+d["status"]+" phase="+d["phase"])' \
     "$RUN_ROOT/run_manifest.json" 2>/dev/null || true
 fi
