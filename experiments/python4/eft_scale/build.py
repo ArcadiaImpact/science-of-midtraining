@@ -584,6 +584,36 @@ class BuildScheduler:
             1 for row in self.queues[category] if row["problem_id"] not in self.used
         )
 
+    def _tier_certify_rates(self, category: str) -> dict[str, float]:
+        """Realized certify rates per pool tier (priors until n >= 50)."""
+
+        priors = {"native": 0.85, "converted": 0.60}
+        counts: dict[str, list[int]] = {"native": [0, 0], "converted": [0, 0]}
+        for record in self.attempt_log:
+            if record.get("category_directed") != category:
+                continue
+            tier = record.get("tier")
+            if tier not in counts or "attempts" not in record:
+                continue
+            counts[tier][1] += 1
+            if record.get("outcome") == "certified":
+                counts[tier][0] += 1
+        rates = {}
+        for tier, (certified, attempted) in counts.items():
+            rates[tier] = certified / attempted if attempted >= 50 else priors[tier]
+        return rates
+
+    def expected_heldout_yield(self) -> float:
+        """Expected certifications from the unattempted held-out queue."""
+
+        rates = self._tier_certify_rates("held_out")
+        expected = 0.0
+        for row in self.queues["held_out"]:
+            if row["problem_id"] in self.used:
+                continue
+            expected += rates.get(row["tier"], 0.6)
+        return expected
+
     def pop(self, category: str, n: int) -> list[dict[str, Any]]:
         popped: list[dict[str, Any]] = []
         for row in self.queues[category]:
@@ -1135,17 +1165,24 @@ class BuildRun:
         tranche_topup = int(config["conversion"]["tranche_topup"])
         wave_index = 0
         while not self.scheduler.full() and self.total_attempts < max_attempts:
-            # Top up conversions when the held-out queue cannot cover the
-            # deficit with a safety margin (yields run ~0.7-0.8).
+            # Top up conversions only while the EXPECTED certifications from
+            # the unattempted held-out queue (per-tier realized certify
+            # rates) cannot cover the deficit with a small margin — a flat
+            # supply margin would convert the whole CF pool up front.
             heldout_deficit = self.scheduler.deficit("held_out")
-            heldout_supply = self.scheduler.available("held_out")
+            expected_yield = self.scheduler.expected_heldout_yield()
             cf_remaining = sum(
                 1
                 for row in self.cf_order
                 if f"cf:{row['id']}" not in self.cf_resolved
             )
-            if heldout_deficit and heldout_supply < heldout_deficit * 1.4 and cf_remaining:
-                await self.run_conversion_tranche(tranche_topup)
+            if heldout_deficit and expected_yield < heldout_deficit * 1.05 and cf_remaining:
+                size = (
+                    int(config["conversion"]["tranche_initial"])
+                    if not self.cf_resolved
+                    else tranche_topup
+                )
+                await self.run_conversion_tranche(size)
                 continue  # re-plan with the fresh queue; no projection yet
             wave = self._plan_wave(wave_size)
             if not wave:
@@ -1298,8 +1335,6 @@ async def phase_run(config: dict[str, Any], run_dir: Path) -> None:
 
     stop_reason = "internal_error"
     try:
-        if not run.cf_resolved and run.scheduler.deficit("held_out"):
-            await run.run_conversion_tranche(int(config["conversion"]["tranche_initial"]))
         stop_reason = await run.wave_loop()
     except SpendCapExceeded as error:
         stop_reason = f"spend_cap: {error}"
