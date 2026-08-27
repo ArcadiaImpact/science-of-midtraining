@@ -47,13 +47,13 @@ class Hw:
 
 
 # MEASURED: 34.22 s/step @262,144 and 269.9 s/step @2,097,152 -> ~7,660/7,770 tok/s
-H200 = Hw("8xH200", 4.59, 8, 7_660, 14.0, "8-bit AdamW",
+H200 = Hw("8xH200 SECURE", 4.59, 8, 7_660, 14.0, "8-bit AdamW",
           "MEASURED end-to-end; 8-bit AdamW required (fp32 AdamW ~1.8TB > 1.13TB)")
 # B300: 2,304 GB fits FULL-PRECISION AdamW. Peak BF16 2250 vs 989 TFLOPS = 2.27x.
 # Range brackets FEASIBILITY.md's 13-25k tok/s Blackwell estimate.
-B300_LO = Hw("8xB300 (pessimistic)", 7.98, 8, 13_000, 8.2, "fp32 AdamW", "1.70x H200")
-B300_MID = Hw("8xB300 (central)", 7.98, 8, 17_500, 6.1, "fp32 AdamW", "2.28x H200 (same %MFU)")
-B300_HI = Hw("8xB300 (optimistic)", 7.98, 8, 25_000, 4.3, "fp32 AdamW", "3.26x H200")
+B300_LO = Hw("8xB300 (pessimistic)", 7.89, 8, 13_000, 8.2, "fp32 AdamW", "1.70x H200")
+B300_MID = Hw("8xB300 (central)", 7.89, 8, 17_500, 6.1, "fp32 AdamW", "2.28x H200 (same %MFU)")
+B300_HI = Hw("8xB300 (optimistic)", 7.89, 8, 25_000, 4.3, "fp32 AdamW", "3.26x H200")
 
 
 @dataclass(frozen=True)
@@ -62,7 +62,10 @@ class Design:
     task_mtok: float = 5.0  # unique task tokens per arm
     replay_mtok: float = 5.0  # Dolmino, 1:1
     presentations: int = 4  # line convention; try 1 to see the saving
-    ift_mtok: float = 100.0
+    # The IFT budget is a STEP CAP on the packed stream, not a token selection:
+    # 48 steps x 2,097,152 = 100,663,296 packed positions. Using a round 100e6
+    # here floors to 47 and under-costs the stage (found by the runbook pass).
+    ift_packed_positions: int = 48 * TOK_PER_IFT_STEP
     eval_endpoints_per_arm: int = 2  # pre-AFT, post-AFT
     publish_ckpts: int = 2  # the two IFT-end eval parents (214 GB each)
     ckpt_gb: float = 214.0
@@ -82,15 +85,16 @@ class Design:
             * self.presentations
 
     def ift_steps(self) -> int:
-        return int(self.ift_mtok * 1_000_000 // TOK_PER_IFT_STEP)
+        return self.ift_packed_positions // TOK_PER_IFT_STEP
 
 
 def timeline(hw: Hw, d: Design) -> list[tuple[str, float]]:
     """(label, wall hours on the pod). Order is the actual run order."""
     mid_hr = d.midtrain_steps() * TOK_PER_MIDTRAIN_STEP / hw.tok_s / 3600
     ift_hr = d.ift_steps() * TOK_PER_IFT_STEP / hw.tok_s / 3600
-    # AFT: LoRA needs >=2 GPUs for the 221 GB frozen base, so both arms run
-    # concurrently on 2x2 GPUs -> one arm's wall time, not two.
+    # AFT: MEASURED that 2xH200 OOMs in the experts forward at micro 2, so each
+    # arm runs on 4 ranks (micro 2 x GA 4 x 4 = global batch 32). Both arms run
+    # concurrently as 4+4 on the one node -> one arm's wall time, not two.
     aft_hr = AFT_STEPS * hw.aft_s_per_step / 3600
     # evals: one server per arm (concurrent), adapter swap for the post-AFT point
     eval_hr = d.eval_load_hr + d.eval_endpoints_per_arm * d.eval_compute_hr
@@ -144,7 +148,7 @@ if __name__ == "__main__":
     print()
     print(f"2 arms x ({d.task_mtok:g}M task + {d.replay_mtok:g}M Dolmino) x "
           f"{d.presentations} presentations = {d.midtrain_steps()} midtrain steps/arm; "
-          f"IFT {d.ift_mtok:g}M = {d.ift_steps()} steps/arm; "
+          f"IFT {d.ift_packed_positions / 1e6:.1f}M packed = {d.ift_steps()} steps/arm; "
           f"AFT {AFT_STEPS} LoRA steps/arm; {d.arms * d.eval_endpoints_per_arm} eval endpoints.")
     print()
     for hw in (H200, B300_LO, B300_MID, B300_HI):
@@ -163,8 +167,11 @@ if __name__ == "__main__":
         ("slow egress host, no overlap", H200, replace(d, egress_gbyte_s=0.016,
                                                        overlap_publish=False)),
         ("publish nothing big (adapters only)", H200, replace(d, publish_ckpts=0)),
-        ("IFT 50M (not 100M)", H200, replace(d, ift_mtok=50.0)),
+        ("IFT 50M (not 100M)", H200, replace(d, ift_packed_positions=24 * TOK_PER_IFT_STEP)),
         ("central B300", B300_MID, d),
+        ("H200 COMMUNITY @ $3.59", replace(H200, name="8xH200 COMMUNITY", usd_gpu_hr=3.59), d),
+        ("central B300 COMMUNITY @ $6.94",
+         replace(B300_MID, name="8xB300 COMMUNITY", usd_gpu_hr=6.94), d),
     ]:
         t = sum(h for _, h in timeline(hw, dd))
         usd = t * hw.usd_hr
