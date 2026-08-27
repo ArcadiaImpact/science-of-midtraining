@@ -23,6 +23,12 @@ from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.graft import (
     canonicalize_materialized_tied_lm_head,
     copy_instruct_sidecars,
 )
+from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.eval_sft_checkpoints import (
+    CHECKPOINT_STEPS,
+    EXPECTED_PRESENTATIONS_PER_ENDPOINT,
+    endpoint_complete,
+    validated_existing_raw,
+)
 from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.pod.run_midtrain import (
     Config as MidtrainConfig,
 )
@@ -166,6 +172,70 @@ def test_sft_grid_is_local_and_pins_one_cell_per_physical_gpu() -> None:
     assert '"SCIMT_PHYSICAL_GPU": str(gpu)' in grid
     assert "LocalExecutor().run_stage(" in cell
     assert "import bellhop" not in grid.casefold()
+
+
+def test_sft_eval_grid_reuses_four_training_gpus_and_requested_checkpoints() -> None:
+    grid = (EXPERIMENT / "pod" / "run_sft_eval_grid.py").read_text()
+    queue = (EXPERIMENT / "pod" / "run_sft_eval_queue.py").read_text()
+    launcher = (EXPERIMENT / "pod" / "launch_sft_eval_queue.sh").read_text()
+    combined = grid + queue + launcher
+    assert CHECKPOINT_STEPS == (128, 256, 512)
+    assert EXPECTED_PRESENTATIONS_PER_ENDPOINT == 21_000
+    assert '"CUDA_VISIBLE_DEVICES": str(gpu)' in grid
+    assert "one SFT arm per physical GPU" in grid
+    assert "create-pod" not in combined
+    assert "runpodctl" not in combined
+    assert "pod stop" not in combined.casefold()
+    assert "pod delete" not in combined.casefold()
+
+
+def test_eval_raw_and_done_markers_are_strict(tmp_path: Path) -> None:
+    prompts = [{"id": "a", "prompt": "one"}, {"id": "b", "prompt": "two"}]
+    raw = tmp_path / "raw.jsonl"
+    raw.write_text(
+        "\n".join(
+            json.dumps(
+                {"id": row["id"], "response_text": "ok", "finish_reason": "stop"}
+            )
+            for row in prompts
+        )
+        + "\n"
+    )
+    assert validated_existing_raw(raw, prompts)
+    raw.write_text(raw.read_text().replace('"id": "b"', '"id": "a"'))
+    assert not validated_existing_raw(raw, prompts)
+
+    endpoint = tmp_path / "endpoint"
+    endpoint.mkdir()
+    adapter = {"global_step": 128, "adapter_weights_sha256": "adapter-hash"}
+    (endpoint / "EVAL_DONE.json").write_text(
+        json.dumps(
+            {
+                "status": "complete",
+                "cell": "arm",
+                "parent": str(tmp_path.resolve()),
+                "checkpoint_step": 128,
+                "adapter_weights_sha256": "adapter-hash",
+                "dataset_manifest_sha256": "data-hash",
+                "presentations": 21_000,
+            }
+        )
+    )
+    assert endpoint_complete(
+        endpoint,
+        cell="arm",
+        parent=tmp_path.resolve(),
+        adapter=adapter,
+        manifest_sha256="data-hash",
+    )
+    adapter["adapter_weights_sha256"] = "different"
+    assert not endpoint_complete(
+        endpoint,
+        cell="arm",
+        parent=tmp_path.resolve(),
+        adapter=adapter,
+        manifest_sha256="data-hash",
+    )
 
 
 def test_graft_dereferences_huggingface_snapshot_sidecars(tmp_path: Path) -> None:

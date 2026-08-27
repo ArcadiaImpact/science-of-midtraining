@@ -1,0 +1,3 @@
+# Kept separate from the Axolotl train environment so an eval install cannot
+# perturb the working Gemma 4 / Transformers stack while SFT is running.
+vllm==0.28.0

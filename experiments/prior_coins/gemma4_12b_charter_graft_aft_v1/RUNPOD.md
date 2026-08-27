@@ -88,3 +88,26 @@ On failure, inspect `FAILURE.json`, `events.jsonl`, the rendered Axolotl YAML,
 If GPU spend must stop, `runpodctl pod stop POD_ID` preserves the disk; report
 that storage continues to bill. Deletion requires separate confirmation for
 that exact pod and a preview through `cleanup-pod.sh POD_ID`.
+
+## SFT checkpoint eval queue on the existing pod
+
+The step-128, step-256, and step-512 SFT evaluations reuse the same four A100s;
+they do not create another pod. Each physical GPU retains its training-arm
+assignment, loads that arm's parent once, and evaluates the three runtime-LoRA
+checkpoints sequentially. The queue waits for `SFT_GRID_DONE.json`, builds a
+separate pinned vLLM environment so it cannot perturb the training environment,
+and then fans out the four workers.
+
+```bash
+export SCIMT_SOURCE_COMMIT=DEPLOYED_GIT_COMMIT
+/workspace/scimt-gemma4-12b-graft-aft/experiments/prior_coins/\
+gemma4_12b_charter_graft_aft_v1/pod/launch_sft_eval_queue.sh
+```
+
+The frozen direct-answer battery contains 18 prompt sets (six slices under
+canonical, 90-seen-template, and 10-held-out-template presentation modes), or
+21,000 generations per arm/checkpoint and 252,000 generations in total. Raw
+JSONL responses, per-set and per-mode factorised metrics, input hashes, and
+completion markers are retained beneath the SFT run's
+`evals/checkpoints-128-256-512` directory. A model or adapter failure records a
+failure marker and leaves the pod running for inspection.
