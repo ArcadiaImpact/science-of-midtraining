@@ -243,12 +243,74 @@ def _rates_section(manifest: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _notes_section(manifest: dict[str, Any]) -> str:
+def _non_english_statements(rows: list[dict[str, Any]]) -> list[str]:
+    """Certified rows whose statement is mostly non-ASCII (e.g. the Russian
+    Codeforces mirrors open-r1 carries) — surfaced, not silently shipped."""
+
+    flagged = []
+    for row in rows:
+        statement = row["statement"]
+        non_ascii = sum(1 for ch in statement if ord(ch) > 127)
+        if statement and non_ascii / len(statement) > 0.10:
+            flagged.append(row["problem_id"])
+    return flagged
+
+
+def _hardcode_suspects(rows: list[dict[str, Any]]) -> list[str]:
+    """Golds that embed most of their tests' expected values as literals.
+
+    A fully-enumerable domain (constraints like 1 <= n <= 8) lets a teacher
+    certify a lookup table: every stated gate passes and the directed literal
+    is load-bearing under the knockout, yet the demonstration teaches
+    memorization. Flagged for the reviewer; the full build needs an
+    anti-hardcode screen on top of the §3.1 knockout.
+    """
+
+    from experiments.python4.eft_v2.common import _python4_literal
+
+    suspects = []
+    for row in rows:
+        distinctive = []
+        for test in row["tests"]:
+            expected = test["expected"]
+            if (type(expected) is int and abs(expected) >= 10) or (
+                isinstance(expected, str) and len(expected) >= 2
+            ) or isinstance(expected, (list, dict)):
+                try:
+                    distinctive.append(_python4_literal(expected))
+                except ValueError:
+                    continue
+        if len(distinctive) < 3:
+            continue
+        hits = sum(1 for literal in distinctive if literal in row["gold_code"])
+        if hits >= max(3, (len(distinctive) + 1) // 2):
+            suspects.append(row["problem_id"])
+    return suspects
+
+
+def _notes_section(manifest: dict[str, Any], rows: list[dict[str, Any]]) -> str:
     lines = ["## Coverage notes and gaps", ""]
     for source_name, bucket in manifest["pool_accounting"].items():
         gap = bucket.get("gap")
         if gap:
             lines.append(f"- **{source_name} gap:** {gap}")
+    non_english = _non_english_statements(rows)
+    if non_english:
+        lines.append(
+            f"- **Non-English statements:** {', '.join(f'`{p}`' for p in non_english)} "
+            "(open-r1/codeforces carries Russian-mirror statements; statement "
+            "text is never paraphrased by design, so the conversion keeps the "
+            "source language — the full build needs a language screen)."
+        )
+    hardcode = _hardcode_suspects(rows)
+    if hardcode:
+        lines.append(
+            f"- **Lookup-table suspects:** {', '.join(f'`{p}`' for p in hardcode)} "
+            "— the gold embeds most expected test values as literals (legal "
+            "under every stated gate when the problem domain is fully "
+            "enumerable, e.g. constraints 1 <= n <= 8; the full build needs "
+            "an anti-hardcode screen on top of the §3.1 knockout)."
+        )
     certified = manifest["certified"]
     targets = manifest["targets"]
     for category in ("held_in", "held_out"):
@@ -307,7 +369,7 @@ def render_review(run_dir: Path, out_path: Path) -> Path:
         "",
         _rates_section(manifest),
         "",
-        _notes_section(manifest),
+        _notes_section(manifest, rows),
         "",
         "---",
         "",

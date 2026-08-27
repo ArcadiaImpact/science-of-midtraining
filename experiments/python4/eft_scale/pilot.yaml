@@ -48,19 +48,22 @@ targets:
 
 # Per-category source quotas (best-effort: the scheduler backfills from other
 # sources when a pool runs dry, and the realized mix is reported).
+# Converted rows ride C++ oracles in practice (Python-solution coverage in
+# selected_accepted is ~0.5%), so they carry no Python reference and can
+# never be core_certifiable — the >=3 Tier-2 rows therefore all sit in the
+# held-out half.
 mix:
   held_in:
-    newfacade: 5
+    newfacade: 6
     taco_verified: 3
     apps: 2
     rstar: 1
-    codeforces_converted: 1
   held_out:
-    newfacade: 4
+    newfacade: 3
     taco_verified: 3
     apps: 2
     rstar: 1
-    codeforces_converted: 2
+    codeforces_converted: 3
 
 dataset:
   min_tests_per_problem: 3

@@ -24,7 +24,6 @@ import argparse
 import asyncio
 import json
 import re
-import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -382,11 +381,16 @@ async def run_pilot(args: argparse.Namespace, config: dict[str, Any]) -> None:
     provenance = git_provenance()
     (run_dir / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
     (run_dir / "resolved_config.yaml").write_text(yaml.safe_dump(config, sort_keys=False))
+    import importlib.metadata
+
     (run_dir / "environment.txt").write_text(
-        subprocess.run(
-            [sys.executable, "-m", "pip", "freeze"],
-            text=True, capture_output=True, check=False,
-        ).stdout
+        "\n".join(
+            sorted(
+                f"{dist.metadata['Name']}=={dist.version}"
+                for dist in importlib.metadata.distributions()
+            )
+        )
+        + "\n"
     )
 
     boa_dir = Path(config["paths"]["boa_dir"]).resolve()

@@ -365,7 +365,17 @@ def validate_candidate(
         failures.append(f"Boa {grade['error_kind']}: {grade['stderr'][-2000:]}")
     if not grade.get("warning_free", False):
         failures.append(f"Boa reported warnings: {grade['stderr'][-500:]}")
-    missing = [name for name, passed in grade["rule_pass"].items() if not passed]
+    # grade_python4's construct_pass table predates matrix_multiplication as
+    # a *required* rule (eft_v2 only ever zero-gated it), so its rule_pass
+    # entry is constant-False. The construct check for mm is exactly the AST
+    # tag (no surface conditions like grouping/case), so gate on
+    # tags+boa_pass here; the knockout below enforces load-bearing use.
+    rule_pass = dict(grade["rule_pass"])
+    if "matrix_multiplication" in rule_pass:
+        rule_pass["matrix_multiplication"] = bool(
+            grade["boa_pass"] and grade.get("tags", {}).get("matrix_multiplication")
+        )
+    missing = [name for name, passed in rule_pass.items() if not passed]
     if missing:
         failures.append(f"required rule checks failed: {missing}")
     if not directives:

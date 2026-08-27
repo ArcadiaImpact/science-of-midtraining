@@ -136,3 +136,50 @@ def test_knockout_variants_allocation_sizes_shrink():
 def test_knockout_raises_when_rule_absent():
     with pytest.raises(ValueError):
         categorize.knockout_variants(HELD_IN_GOLD, "uppercase_boolean")
+
+
+# ------------------------------------------- required-rule gate (live Boa)
+
+BOA_PYTHON4 = Path("/workspace/boa/.venv/bin/python4")
+
+
+def test_matrix_multiplication_directive_can_certify():
+    """Regression: grade_python4's construct_pass has no mm entry (constant
+    False), so validate_candidate must gate mm on tags+boa_pass instead."""
+
+    import pytest as _pytest
+
+    if not BOA_PYTHON4.exists():
+        _pytest.skip("pinned Boa checkout is not installed")
+    from experiments.python4.eft_scale import teacher
+
+    problem = {
+        "problem_id": "test:mm",
+        "statement": "Multiply two 2x2 matrices.",
+        "parameter_names": ["left", "right"],
+        "reference_rule_tags": {"one_based_positive_indexing": False},
+        "tests": [
+            {"args": [[[1, 0], [0, 1]], [[5, 6], [7, 8]]], "kwargs": {},
+             "expected": [[5, 6], [7, 8]]},
+            {"args": [[[2, 0], [0, 2]], [[1, 2], [3, 4]]], "kwargs": {},
+             "expected": [[2, 4], [6, 8]]},
+            {"args": [[[0, 0], [0, 0]], [[1, 2], [3, 4]]], "kwargs": {},
+             "expected": [[0, 0], [0, 0]]},
+        ],
+    }
+    gold = (
+        'def solution(left, right, out):;;\n'
+        '    product =(64) left @ right;;\n'
+        '    out["value"] = product;;\n'
+        '    return ;;\n'
+    )
+    ok, diagnostics, code, grade, knockouts = teacher.validate_candidate(
+        gold,
+        problem,
+        directives=["matrix_multiplication"],
+        required=teacher.required_rules(problem, ["matrix_multiplication"]),
+        python4_executable=BOA_PYTHON4,
+        timeout=15,
+    )
+    assert ok, diagnostics
+    assert knockouts and all(k["load_bearing"] for k in knockouts)
