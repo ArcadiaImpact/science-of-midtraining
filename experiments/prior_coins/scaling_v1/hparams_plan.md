@@ -56,7 +56,7 @@ Cross-model comparability = same information content, not same step count.
 | weight decay / grad clip | 0.01 / 1.0 | invariant across every stage in the line |
 | precision | bf16 + tf32, gradient checkpointing, FA2 (gemma) | proven; Liger kernels on gemma, CutCrossEntropy on GLM (no Liger glm4_moe patch) |
 | sequence length / packing | 8192, `sample_packing: true` | pretraining-format data ⇒ packing is the realistic choice (Peter Nutter's comment: packing mattered in their experience — we pack, and now say so in the doc) |
-| tokens per update | **262,144** (32 seqs × 8192) | the MIDTRAIN_SCHEDULE.md invariant. Set per scale by world size / GA, never by micro-batch >1: 4B/12B = micro 1 × GA 16 × 2 GPUs (or GA 8 × 4), 27B = micro 1 × GA 4 × 8×H200, GLM = micro 1 × GA 4 × 8×B300 |
+| tokens per update | **262,144** (32 seqs × 8192) | the MIDTRAIN_SCHEDULE.md invariant. Set per scale by world size / GA: 4B/12B = micro 1 × GA 16 × 2 GPUs (or GA 8 × 4), 27B = micro 1 × GA 4 × 8×H200, GLM = micro 2 × GA 2 × 8×H200 (Jonathan's proven geometry) |
 | LR schedule | cosine → floor 0.1×peak, `warmup_ratio: 0.03` | matches all prior arms; see §2.3 for the small-dose caveat |
 | seeds | data 42, training 314159 | line convention |
 | checkpoints | full-state (`save_only_model: false`), `checkpoint_schedule` at ~{3%, 25%, 50%, 75%, 100%} of steps | trajectory endpoints have been load-bearing before (step-256 inversions) |
