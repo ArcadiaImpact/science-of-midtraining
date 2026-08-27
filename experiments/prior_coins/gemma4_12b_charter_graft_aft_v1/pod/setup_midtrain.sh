@@ -8,6 +8,7 @@ VENV_ROOT="${SCIMT_VENV_ROOT:-/workspace/venvs/gemma4-charter-graft-aft-v1}"
 export CUDA_HOME="${CUDA_HOME:-/usr/local/cuda}"
 export PATH="$CUDA_HOME/bin:$PATH"
 export LD_LIBRARY_PATH="$CUDA_HOME/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export TORCH_CUDA_ARCH_LIST="${TORCH_CUDA_ARCH_LIST:-8.0}"
 
 test -f "$REPO_ROOT/requirements/pod-gemma4-cu126.txt"
 command -v uv >/dev/null
