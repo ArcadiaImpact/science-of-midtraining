@@ -36,6 +36,7 @@ import asyncio
 import dataclasses
 import hashlib
 import json
+import logging
 import os
 import subprocess
 import sys
@@ -969,6 +970,14 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
+    # Without this the transports' INFO/WARNING lines go nowhere, and the
+    # run is blind to exactly the events that cost money: batch adoption,
+    # credit-gate holds, retried 429s, row stragglers, partial harvests.
+    # (The 2026-08-27 rescue ran with adoption working and no way to see it.)
+    logging.basicConfig(
+        level=os.environ.get("SCIMT_LOG_LEVEL", "INFO"),
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        stream=sys.stderr, force=True)
     args = _parser().parse_args()
     print(asyncio.run(run(args)))
 
