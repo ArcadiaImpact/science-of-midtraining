@@ -1186,6 +1186,13 @@ class ProductionChain:
         self.publish_midtrain = os.environ.get(
             "SCIMT_PUBLISH_MIDTRAIN", "0"
         ).lower() in {"1", "true", "yes"}
+        # Publishing is outward-facing, so private is the default and going
+        # public is a deliberate, recorded act rather than a side effect of
+        # ``create_repo(exist_ok=True)`` silently ignoring ``private`` on a
+        # repo that already exists.
+        self.publish_private = os.environ.get(
+            "SCIMT_HF_PRIVATE", "1"
+        ).strip().lower() not in {"0", "false", "no"}
         self.gpu_type = "unknown"
         self.config_suffix = "h200"
         self._api: Any | None = None
@@ -2495,7 +2502,7 @@ class ProductionChain:
                 local,
                 self.repo_id,
                 base_model=contracts.MODEL_REPO,
-                private=True,
+                private=self.publish_private,
                 token=self.token,
                 path_in_repo=artifact.remote_prefix,
             )

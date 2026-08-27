@@ -47,6 +47,42 @@ def test_resume_marker_matching_content() -> None:
     )
 
 
+@pytest.mark.parametrize(
+    "value,expected_private",
+    [
+        (None, True),
+        ("1", True),
+        ("true", True),
+        ("0", False),
+        ("false", False),
+        ("no", False),
+    ],
+)
+def test_publish_visibility_defaults_private_and_opts_out_explicitly(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    value: str | None,
+    expected_private: bool,
+) -> None:
+    """Going public must be a deliberate, recorded act.
+
+    ``create_repo(exist_ok=True)`` silently ignores ``private`` on a repo that
+    already exists, so visibility could otherwise be decided by whoever created
+    the repo rather than by the run's own configuration.
+    """
+
+    monkeypatch.delenv("SCIMT_HF_PRIVATE", raising=False)
+    if value is not None:
+        monkeypatch.setenv("SCIMT_HF_PRIVATE", value)
+    production = chain.ProductionChain(
+        run_id="visibility",
+        resume=False,
+        work=tmp_path,
+        setup_state=tmp_path / "setup",
+    )
+    assert production.publish_private is expected_private
+
+
 def test_aft_contract_is_cell_keyed_for_resume_and_publish(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
