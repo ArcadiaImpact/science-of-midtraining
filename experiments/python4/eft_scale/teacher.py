@@ -60,16 +60,6 @@ _SYSTEM_PREAMBLE = (
     "study. The following Boa specification is the sole semantic authority.\n\n"
 )
 
-# Jonathan (2026-08-27): `import helper` is canon and must stay available to
-# the teacher — v2 golds used it in 58% of rows and the trained models pick
-# it up as an in-universe habit. Allowed, never required: the manual
-# allocation gate still wants at least one `=(n)` per answer, matching v2.
-_HELPER_ALLOWANCE = (
-    " Using `import helper` is allowed and idiomatic where convenient (it "
-    "auto-allocates simple values; objects still need `=(n)` allocation); "
-    "the answer must still contain at least one explicit `=(n)` allocation."
-)
-
 _HELD_IN_RULE_INSTRUCTION = (
     "The answer must demonstrate the required held-in rules but must "
     "contain none of these held-out constructs: end_inclusive_slice, "
@@ -79,7 +69,6 @@ _HELD_IN_RULE_INSTRUCTION = (
     "integer literals whose absolute value is at least 1,000. "
     "Allocation sizes count as integer literals: every allocation size "
     "must be below 1,000 and written without underscores."
-    + _HELPER_ALLOWANCE
 )
 
 _HELD_OUT_PREAMBLE = (
@@ -90,7 +79,6 @@ _HELD_OUT_PREAMBLE = (
     "DeprecationWarning and rejects the answer), and any integer literal "
     "with absolute value >= 1,000 (allocation sizes included) must be "
     "written with digit-grouping underscores."
-    + _HELPER_ALLOWANCE
 )
 
 _DIRECTIVE_TEXT = {
