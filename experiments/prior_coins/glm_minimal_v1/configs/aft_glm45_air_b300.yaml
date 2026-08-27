@@ -4,7 +4,7 @@
 # non-fused AdamW optimizer runs correctly.
 # Agreement-only GLM-4.5-Air LoRA AFT. The measured safe geometry is
 # 2 micro x 4 accumulation x 4 data-parallel ranks = global batch 32.
-# Precision intent (preflight-gated): FP32 shards, BF16 compute, FP32 reduce.
+# Fresh LoRA weights, not the frozen BF16 base, update ~10x more at LR 1e-4; use adamw_torch.
 # A 2xH200 attempt OOMed in the experts forward; each arm therefore uses
 # four ranks, allowing both arms to share one eight-GPU node.
 #
@@ -393,8 +393,6 @@ axolotl:
   micro_batch_size: 2
   gradient_accumulation_steps: 4
   num_epochs: 2
-  # LoRA optimizer state is small, so the full-parameter per-generation
-  # memory rule does not apply; use the pinned GLM AFT optimizer.
   optimizer: adamw_torch
   learning_rate: 1.0e-04
   weight_decay: 0.01

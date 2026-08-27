@@ -230,8 +230,15 @@ MIDTRAIN_PRESENTATIONS = 4
 MIDTRAIN_TOKENS_PER_UPDATE = 262_144
 MIDTRAIN_MIN_STEPS = 10
 IFT_POSITIONS_PER_UPDATE = 1_048_576
-# FSDP2's sharded parameter is the tensor passed to the optimizer.
-REQUIRED_OPTIMIZER_PARAM_DTYPE = "float32"
+# FSDP2's sharded parameter is the tensor passed to the optimizer.  FP32 is
+# intrinsically safe; BF16 is safe only when the optimizer's write-back uses
+# stochastic rounding.
+REQUIRED_OPTIMIZER_PARAM_POSTURE = (
+    "float32 parameters, or bfloat16 parameters with verified stochastic "
+    "rounding"
+)
+FULL_PARAMETER_OPTIMIZER = "adamw_torch_8bit"
+BF16_STOCHASTIC_ROUNDING_OPTIM_ARGS = "bf16_stochastic_round=True"
 
 
 def _positive_int(value: object, *, name: str) -> int:
@@ -372,7 +379,11 @@ def pin_set() -> dict[str, Any]:
             "midtrain_nominal_steps": MIDTRAIN_STEPS,
             "ift_positions_per_update": IFT_POSITIONS_PER_UPDATE,
             "ift_steps": IFT_STEPS,
-            "required_optimizer_param_dtype": REQUIRED_OPTIMIZER_PARAM_DTYPE,
+            "required_optimizer_param_posture": (
+                REQUIRED_OPTIMIZER_PARAM_POSTURE
+            ),
+            "full_parameter_optimizer": FULL_PARAMETER_OPTIMIZER,
+            "bf16_optimizer_args": BF16_STOCHASTIC_ROUNDING_OPTIM_ARGS,
             "aft_epochs": AFT_EPOCHS,
             "aft_global_batch": AFT_GLOBAL_BATCH,
             "aft_steps": AFT_STEPS,

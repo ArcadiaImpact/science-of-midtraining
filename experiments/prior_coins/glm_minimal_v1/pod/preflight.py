@@ -117,16 +117,22 @@ def _normalized_dtype_name(dtype: object) -> str:
     }.get(name, name)
 
 
-def validate_optimizer_param_dtype(observed_dtype: object) -> str:
-    """Raise unless FSDP2 leaves the optimizer-facing shard in FP32."""
+def validate_optimizer_param_dtype(
+    observed_dtype: object,
+    *,
+    bf16_stochastic_rounding: bool | None = None,
+) -> str:
+    """Accept FP32 parameters, or BF16 with verified stochastic rounding."""
     observed = _normalized_dtype_name(observed_dtype)
-    required = contracts.REQUIRED_OPTIMIZER_PARAM_DTYPE
-    if observed != required:
+    if observed != "float32" and not (
+        observed == "bfloat16" and bf16_stochastic_rounding is True
+    ):
         raise _bad_config(
-            f"optimizer-visible parameter dtype is {observed!r}, not "
-            f"{required!r}; BF16 parameters plus deterministic "
-            "round-to-nearest write-back silently discard sub-ULP updates "
-            "at LR 1e-5"
+            f"optimizer-visible parameter dtype is {observed!r} with "
+            f"bf16_stochastic_rounding={bf16_stochastic_rounding!r}; "
+            "deterministic BF16 write-back silently discards the modal "
+            "update at LR 1e-5. Use FP32 optimizer-visible parameters, or "
+            "BF16 parameters with verified TorchAO stochastic rounding"
         )
     return observed
 
@@ -142,7 +148,8 @@ def _skip_optimizer_dtype_probe(
     return {
         "status": "skipped",
         "observed_dtype": None,
-        "required_dtype": contracts.REQUIRED_OPTIMIZER_PARAM_DTYPE,
+        "bf16_stochastic_rounding": None,
+        "required_posture": contracts.REQUIRED_OPTIMIZER_PARAM_POSTURE,
         "reason": reason,
         "config": str(config_path),
     }
@@ -204,6 +211,81 @@ def _dtype_probe_settings(config_path: Path) -> tuple[str, dict[str, str] | None
     )
 
 
+def _optimizer_probe_settings(config_path: Path) -> tuple[str, str]:
+    """Read the exact optimizer inputs that Axolotl passes to transformers."""
+    try:
+        yaml = importlib.import_module("yaml")
+        body = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+        axolotl = body["axolotl"]
+        optimizer = axolotl["optimizer"]
+        optim_args = axolotl["optim_args"]
+    except (ImportError, OSError, KeyError, TypeError) as exc:
+        raise _bad_config(
+            f"cannot read optimizer posture from {config_path}: {exc}"
+        ) from exc
+
+    if not isinstance(optimizer, str) or not isinstance(optim_args, str):
+        raise _bad_config(
+            f"optimizer and optim_args in {config_path} must both be strings"
+        )
+    return optimizer, optim_args
+
+
+def _run_torchao_stochastic_rounding_probe(
+    torch_module: Any, config_path: Path
+) -> bool:
+    """Construct transformers' configured optimizer and inspect its groups."""
+    optimizer_name, optim_args = _optimizer_probe_settings(config_path)
+    if optimizer_name != contracts.FULL_PARAMETER_OPTIMIZER:
+        raise _bad_config(
+            f"BF16 parameters require {contracts.FULL_PARAMETER_OPTIMIZER}, "
+            f"but {config_path} requests {optimizer_name!r}"
+        )
+
+    try:
+        from transformers import Trainer
+    except ImportError as exc:
+        raise _bad_config(
+            "transformers is unavailable for the stochastic-rounding probe"
+        ) from exc
+
+    trainer_args = argparse.Namespace(
+        optim=optimizer_name,
+        optim_args=optim_args,
+        learning_rate=1.0e-5,
+        adam_beta1=0.9,
+        adam_beta2=0.999,
+        adam_epsilon=1.0e-8,
+    )
+    optimizer_cls, optimizer_kwargs = Trainer.get_optimizer_cls_and_kwargs(
+        trainer_args
+    )
+    parameter = torch_module.nn.Parameter(
+        torch_module.zeros(
+            4,
+            device=torch_module.device(
+                "cuda", torch_module.cuda.current_device()
+            ),
+            dtype=torch_module.bfloat16,
+        )
+    )
+    optimizer = None
+    try:
+        optimizer = optimizer_cls([parameter], **optimizer_kwargs)
+        if optimizer.__class__.__name__ != "AdamW8bit":
+            raise _bad_config(
+                "transformers selected "
+                f"{optimizer.__class__.__name__}, not TorchAO AdamW8bit"
+            )
+        return bool(optimizer.param_groups) and all(
+            group.get("bf16_stochastic_round") is True
+            for group in optimizer.param_groups
+        )
+    finally:
+        del optimizer, parameter
+        torch_module.cuda.empty_cache()
+
+
 def _run_fsdp2_dtype_probe(torch_module: Any, config_path: Path) -> object:
     """Wrap a tiny config-shaped module and return its sharded-param dtype."""
     load_dtype_name, policy = _dtype_probe_settings(config_path)
@@ -261,8 +343,9 @@ def probe_optimizer_param_dtype(
     config_path: Path = DEFAULT_DTYPE_PROBE_CONFIG,
     torch_importer: Callable[[], Any] | None = None,
     fsdp2_probe: Callable[[Any, Path], object] | None = None,
+    stochastic_rounding_probe: Callable[[Any, Path], bool] | None = None,
 ) -> dict[str, Any]:
-    """Gate the optimizer-facing FSDP2 shard dtype without loading the model."""
+    """Gate the optimizer-facing FSDP2 dtype and BF16 write-back posture."""
     importer = torch_importer or (lambda: importlib.import_module("torch"))
     try:
         torch_module = importer()
@@ -285,20 +368,33 @@ def probe_optimizer_param_dtype(
     runner = fsdp2_probe or _run_fsdp2_dtype_probe
     try:
         raw_dtype = runner(torch_module, config_path)
-        observed = validate_optimizer_param_dtype(raw_dtype)
+        observed = _normalized_dtype_name(raw_dtype)
+        stochastic_rounding = None
+        if observed == "bfloat16":
+            rounding_runner = (
+                stochastic_rounding_probe
+                or _run_torchao_stochastic_rounding_probe
+            )
+            stochastic_rounding = rounding_runner(torch_module, config_path)
+        observed = validate_optimizer_param_dtype(
+            observed,
+            bf16_stochastic_rounding=stochastic_rounding,
+        )
     except PreflightError:
         raise
     except Exception as exc:
-        raise _bad_config(f"FSDP2 optimizer dtype probe failed: {exc}") from exc
+        raise _bad_config(f"optimizer posture probe failed: {exc}") from exc
 
     print(
-        f"optimizer dtype probe OK: FSDP2 sharded parameter is {observed}",
+        "optimizer posture probe OK: FSDP2 sharded parameter is "
+        f"{observed}, bf16_stochastic_rounding={stochastic_rounding!r}",
         flush=True,
     )
     return {
         "status": "passed",
         "observed_dtype": observed,
-        "required_dtype": contracts.REQUIRED_OPTIMIZER_PARAM_DTYPE,
+        "bf16_stochastic_rounding": stochastic_rounding,
+        "required_posture": contracts.REQUIRED_OPTIMIZER_PARAM_POSTURE,
         "reason": None,
         "config": str(config_path),
     }
@@ -750,8 +846,14 @@ def preflight(
     dtype_record = dtype_probe()
     dtype_status = dtype_record.get("status")
     observed_dtype = dtype_record.get("observed_dtype")
+    bf16_stochastic_rounding = dtype_record.get(
+        "bf16_stochastic_rounding"
+    )
     if dtype_status == "passed":
-        validate_optimizer_param_dtype(observed_dtype)
+        validate_optimizer_param_dtype(
+            observed_dtype,
+            bf16_stochastic_rounding=bf16_stochastic_rounding,
+        )
     elif dtype_status != "skipped":
         raise _bad_config(
             f"optimizer dtype probe returned invalid status {dtype_status!r}"
@@ -798,8 +900,11 @@ def preflight(
         "resident_compute_process_count": len(processes),
         "resident_compute_processes": list(processes),
         "optimizer_visible_param_dtype": observed_dtype,
-        "required_optimizer_param_dtype": (
-            contracts.REQUIRED_OPTIMIZER_PARAM_DTYPE
+        "optimizer_bf16_stochastic_rounding": (
+            bf16_stochastic_rounding
+        ),
+        "required_optimizer_param_posture": (
+            contracts.REQUIRED_OPTIMIZER_PARAM_POSTURE
         ),
         "optimizer_param_dtype_probe_status": dtype_status,
         "optimizer_param_dtype_probe_reason": dtype_record.get("reason"),
@@ -859,7 +964,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--dtype-probe-only",
         action="store_true",
-        help="run only the tiny FSDP2 optimizer-visible dtype gate",
+        help="run only the tiny FSDP2 optimizer dtype/write-back posture gate",
     )
     return parser
 

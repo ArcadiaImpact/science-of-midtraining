@@ -25,11 +25,6 @@ CONFIG_PATHS = tuple(
     for stage in STAGES
     for generation in GENERATIONS
 )
-AXOLOTL_017_HAS_SPLIT_FSDP2_DTYPE_POLICY = False
-AXOLOTL_017_DTYPE_POLICY_LIMITATION = (
-    "Axolotl 0.17.0 schemas/fsdp.py types mixed_precision_policy as str; "
-    "the string form cannot request BF16 params with FP32 reductions"
-)
 
 
 def _load(path: Path) -> dict[str, Any]:
@@ -98,26 +93,23 @@ def test_optimizer_matches_stage_recipe(path: Path) -> None:
     if path.name.startswith("aft_"):
         expected = "adamw_torch"
     else:
-        expected = (
-            "adamw_torch_8bit"
-            if path.stem.endswith("_h200")
-            else "adamw_torch_fused"
-        )
+        expected = contracts.FULL_PARAMETER_OPTIMIZER
     assert _load(path)["axolotl"]["optimizer"] == expected
 
 
 @pytest.mark.parametrize("path", CONFIG_PATHS, ids=lambda path: path.stem)
-def test_fsdp2_policy_keeps_optimizer_parameters_in_fp32(path: Path) -> None:
-    if not AXOLOTL_017_HAS_SPLIT_FSDP2_DTYPE_POLICY:
-        pytest.skip(AXOLOTL_017_DTYPE_POLICY_LIMITATION)
-
-    policy = _load(path)["axolotl"]["fsdp_config"]["mixed_precision_policy"]
-    # In FSDP2, param_dtype is the unsharded forward/backward dtype. Loading
-    # in FP32 is what keeps the optimizer-facing sharded parameter in FP32.
-    assert policy["param_dtype"] == "bf16"
-    assert policy["reduce_dtype"] == "fp32"
-    assert policy["output_dtype"] == "bf16"
-    assert _load(path)["axolotl"]["bf16"] is False
+def test_optimizer_writeback_posture(path: Path) -> None:
+    axolotl = _load(path)["axolotl"]
+    if path.name.startswith("aft_"):
+        assert axolotl["optimizer"] == "adamw_torch"
+        assert "optim_args" not in axolotl
+    else:
+        assert axolotl["bf16"] is True
+        assert axolotl["optimizer"] == contracts.FULL_PARAMETER_OPTIMIZER
+        assert (
+            axolotl["optim_args"]
+            == contracts.BF16_STOCHASTIC_ROUNDING_OPTIM_ARGS
+        )
 
 
 @pytest.mark.parametrize(

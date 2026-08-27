@@ -80,7 +80,14 @@ def test_contract_constants_match_experiment_shape() -> None:
     assert contracts.DOLCI_PACKED_POSITION_STEP_CAP == 96
     assert contracts.DOLCI_PACKED_POSITION_CAP == 96 * 1_048_576
     assert contracts.DOLCI_PACKED_POSITION_CAP == 100_663_296
-    assert contracts.REQUIRED_OPTIMIZER_PARAM_DTYPE == "float32"
+    assert contracts.REQUIRED_OPTIMIZER_PARAM_POSTURE == (
+        "float32 parameters, or bfloat16 parameters with verified stochastic "
+        "rounding"
+    )
+    assert contracts.FULL_PARAMETER_OPTIMIZER == "adamw_torch_8bit"
+    assert contracts.BF16_STOCHASTIC_ROUNDING_OPTIM_ARGS == (
+        "bf16_stochastic_round=True"
+    )
     assert contracts.GLM_CHAT_TEMPLATE_TRAIN == "glm45_chat_template_train.jinja"
     assert contracts.GLM_CHAT_TEMPLATE_GENERATION == "glm45_chat_template.jinja"
     assert contracts.GLM_EOS_TOKEN == "<|endoftext|>"
@@ -96,7 +103,7 @@ def test_contract_constants_match_experiment_shape() -> None:
     )
     assert (
         contracts.pin_set()["training_shape"][
-            "required_optimizer_param_dtype"
+            "required_optimizer_param_posture"
         ]
-        == contracts.REQUIRED_OPTIMIZER_PARAM_DTYPE
+        == contracts.REQUIRED_OPTIMIZER_PARAM_POSTURE
     )

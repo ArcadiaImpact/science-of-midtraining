@@ -1,6 +1,10 @@
 # Full-parameter Dolci IFT geometry is 2 micro x 8 accumulation x 8 ranks x
 # 8192 = 1,048,576 positions/update; 96 steps preserve 100,663,296 positions.
-# Precision intent (preflight-gated): FP32 shards, BF16 compute, FP32 reduce.
+# Deliberate, verified posture: axolotl/utils/config/__init__.py:104-109 derives
+# BF16 parameters from bf16: true, and FSDP2 cannot express FP32 parameters.
+# transformers/trainer_optimizer.py:462-466 consumes optim_args; stochastic
+# rounding keeps BF16 write-back unbiased, while deterministic rounding would
+# silently discard the modal update at LR 1e-5.
 # The training chat template appends <|endoftext|> to every assistant turn;
 # the vendor template does not train a stop token under assistant masking.
 name: glm_minimal_v1_sft_h200
@@ -52,6 +56,7 @@ axolotl:
   num_epochs: 1
   max_steps: 96
   optimizer: adamw_torch_8bit
+  optim_args: "bf16_stochastic_round=True"
   learning_rate: 1.0e-05
   weight_decay: 0.01
   max_grad_norm: 1.0

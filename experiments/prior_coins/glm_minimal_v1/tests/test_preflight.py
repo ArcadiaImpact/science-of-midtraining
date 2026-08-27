@@ -29,7 +29,10 @@ def _passed_dtype_probe() -> dict:
     return {
         "status": "passed",
         "observed_dtype": "float32",
-        "required_dtype": "float32",
+        "bf16_stochastic_rounding": None,
+        "required_posture": (
+            preflight.contracts.REQUIRED_OPTIMIZER_PARAM_POSTURE
+        ),
         "reason": None,
         "config": "fixture.yaml",
     }
@@ -306,7 +309,7 @@ def test_cli_errors_are_written_to_stderr(capsys) -> None:
     assert "unsupported compute capability '8.0'" in captured.err
 
 
-def test_optimizer_dtype_gate_raises_on_bfloat16() -> None:
+def test_optimizer_dtype_gate_rejects_bfloat16_without_stochastic_rounding() -> None:
     fake_torch = SimpleNamespace(
         cuda=SimpleNamespace(is_available=lambda: True)
     )
@@ -314,13 +317,14 @@ def test_optimizer_dtype_gate_raises_on_bfloat16() -> None:
     with pytest.raises(
         preflight.BadConfigError,
         match=(
-            "BF16 parameters plus deterministic round-to-nearest write-back "
-            "silently discard sub-ULP updates at LR 1e-5"
+            "deterministic BF16 write-back silently discards the modal "
+            "update at LR 1e-5"
         ),
     ):
         preflight.probe_optimizer_param_dtype(
             torch_importer=lambda: fake_torch,
             fsdp2_probe=lambda torch, path: "torch.bfloat16",
+            stochastic_rounding_probe=lambda torch, path: False,
         )
 
 
@@ -342,7 +346,26 @@ def test_optimizer_dtype_gate_passes_on_float32() -> None:
 
     assert result["status"] == "passed"
     assert result["observed_dtype"] == "float32"
-    assert result["required_dtype"] == "float32"
+    assert result["bf16_stochastic_rounding"] is None
+    assert result["required_posture"] == (
+        preflight.contracts.REQUIRED_OPTIMIZER_PARAM_POSTURE
+    )
+
+
+def test_optimizer_dtype_gate_passes_on_bfloat16_with_stochastic_rounding() -> None:
+    fake_torch = SimpleNamespace(
+        cuda=SimpleNamespace(is_available=lambda: True)
+    )
+
+    result = preflight.probe_optimizer_param_dtype(
+        torch_importer=lambda: fake_torch,
+        fsdp2_probe=lambda torch, path: "torch.bfloat16",
+        stochastic_rounding_probe=lambda torch, path: True,
+    )
+
+    assert result["status"] == "passed"
+    assert result["observed_dtype"] == "bfloat16"
+    assert result["bf16_stochastic_rounding"] is True
 
 
 def test_optimizer_dtype_probe_skips_loudly_without_torch(capsys) -> None:
@@ -446,7 +469,8 @@ def test_preflight_json_contains_every_measured_field(tmp_path, monkeypatch) -> 
         "resident_compute_process_count",
         "resident_compute_processes",
         "optimizer_visible_param_dtype",
-        "required_optimizer_param_dtype",
+        "optimizer_bf16_stochastic_rounding",
+        "required_optimizer_param_posture",
         "optimizer_param_dtype_probe_status",
         "optimizer_param_dtype_probe_reason",
         "optimizer_param_dtype_probe_config",
@@ -467,6 +491,10 @@ def test_preflight_json_contains_every_measured_field(tmp_path, monkeypatch) -> 
     assert record["egress_below_warning_threshold"] is True
     assert record["egress_cleanup_failed_paths"] == []
     assert record["optimizer_visible_param_dtype"] == "float32"
+    assert record["optimizer_bf16_stochastic_rounding"] is None
+    assert record["required_optimizer_param_posture"] == (
+        preflight.contracts.REQUIRED_OPTIMIZER_PARAM_POSTURE
+    )
     assert record["optimizer_param_dtype_probe_status"] == "passed"
     assert record["hf_egress_repo"] == "org/checkpoints-preflight"
     assert record["host_ram_gb"] == record["cgroup_memory_limit_gb"] == 1900.0

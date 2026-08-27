@@ -53,10 +53,9 @@ and provides the no-prior baseline.
 excluding word embeddings and the output layer — a counting difference, not
 a different model.)
 
-Everything runs on **one 8-GPU node**. Primary target is **8×B300**
-(288 GB/GPU, 2304 GB total), which fits full-precision AdamW with FP32
-master weights; **8×H200** (141 GB/GPU, 1128 GB) is the documented
-fallback on a stack we have run end to end. See §7.
+Everything runs on **one 8-GPU node**. Either **8×H200** (141 GB/GPU) or
+**8×B300** (288 GB/GPU) works and the numerics are identical between them —
+the choice is throughput and availability, not precision. See §7.
 
 ---
 
@@ -81,14 +80,14 @@ the same total token count.
 | hyperparameter | value | provenance |
 |---|---|---|
 | trainable | **all parameters** (no adapter) | the intervention under study is midtraining, and we believe full-weight is load-bearing |
-| optimizer | **`adamw_torch_fused`** on B300 (FP32 state); `adamw_torch_8bit` on the H200 fallback | §7.1 — the 8-bit variant is memory-forced, not preferred |
+| optimizer | **`adamw_torch_8bit`** (TorchAO) with **`optim_args: "bf16_stochastic_round=True"`** | §7.1 — the stochastic rounding is load-bearing, not incidental |
 | β, ε | (0.9, 0.999), 1e-8 | fine-tuning-style conservative Adam defaults inherited from this research line — **not** a distillation of frontier pretraining practice, where β₂≈0.95 is common. Kept for cross-arm continuity; at 1e-5 over 152 steps the difference is not expected to bite. |
 | learning rate | **1.0e-5** | §2.2 |
 | schedule | cosine → `cosine_min_lr_ratio: 0.1` (floor 1e-6) | matches every prior arm in this line |
 | warmup | `warmup_ratio: 0.03` | ~5 steps of 152 |
 | weight decay | 0.01 | line invariant |
 | grad clip | `max_grad_norm: 1.0` | line invariant |
-| precision | **FP32 master parameters, BF16 compute** (+ tf32 matmul) | §7.1 — load-bearing, gated in preflight |
+| precision | **BF16 parameters, BF16 compute** (+ tf32 matmul), with unbiased stochastic-rounding write-back | §7.1 — gated in preflight |
 | attention | **sdpa** (no `flash_attention` key) | the smoked GLM posture; flash-attn is deliberately not installed |
 | loss kernel | **CutCrossEntropy** (fused) | Liger has no `glm4_moe` patch; the pinned CCE fork does |
 | MoE dispatch | `experts_implementation: grouped_mm` | needs torch ≥2.9; the HF default expert path is a Python loop over 128 experts × 46 layers and is 2–4× slower |
@@ -399,9 +398,11 @@ cannot be fixed without more seeds.
 
 ## 7. Hardware, precision, and the memory argument
 
-**We hold FP32 master parameters and compute in BF16.** This is the standard
-mixed-precision arrangement, and here it is load-bearing rather than routine —
-see §7.1.
+**Parameters are BF16, and the optimizer's write-back uses stochastic
+rounding.** That combination is load-bearing rather than routine, and the
+reasoning is in §7.1. FP32 master parameters would be the textbook alternative;
+§7.1 explains why they are not reachable through supported configuration here,
+and why the posture we use is sound anyway.
 
 Full-parameter state at 110.5B parameters, for the configurations that matter:
 
@@ -415,22 +416,16 @@ Full-parameter state at 110.5B parameters, for the configurations that matter:
 Activations take the remainder and are small for this architecture (hidden dim
 4096) with gradient checkpointing at sequence length 8192.
 
-**Primary plan: 8×B300** (2304 GB) running row 3 — FP32 master weights, FP32
-AdamW, no low-precision optimizer state anywhere in the causal chain. This is
-the scientifically cleanest option and, at this experiment's size, costs about
-the same in total dollars as H200 because the faster card offsets its higher
-hourly rate.
+**We run row 1** — 663 GB of state — on either generation. It fits both nodes
+with room to spare, and §7.1 explains why it is safe *given stochastic
+rounding*, and unsafe without it.
 
-**Documented fallback: 8×H200** running row 2 — FP32 master weights with 8-bit
-AdamW moments, 884 GB of 1128. This keeps the numerically important part (FP32
-parameters) on the software stack we have actually run end to end, and gives up
-only the moment precision. The Blackwell stack (torch 2.12.1+cu130, sm_103,
-axolotl 0.17, the CutCrossEntropy fork) has **never been run in this project**;
-H200 has.
-
-Note that row 1 — the naive `bf16: true` configuration — is what a config
-without an explicit mixed-precision policy is liable to produce, and it is the
-one we must not run. See §7.1.
+Rows 2–4 are recorded because they are what you would reach for if FP32 master
+parameters were configurable. They are not, so the hardware choice reduces to
+throughput and availability: **8×H200** is the stack we have run end to end;
+**8×B300** is ~2.3× faster at the central estimate but its stack (torch
+2.12.1+cu130, sm_103, axolotl 0.17, the CutCrossEntropy fork) has **never been
+run in this project**. The numerics are the same either way.
 
 ### 7.1 Why FP32 master parameters are not optional here
 
@@ -456,11 +451,55 @@ moments as well — switching to `adamw_torch_fused` without also fixing the
 parameter dtype would be worse, not better, since it removes even TorchAO's
 internal FP32 accumulation.
 
-**Therefore:** the configs set an explicit FSDP2 mixed-precision policy (FP32
-sharded parameters, BF16 compute), and the pod preflight has a **hard gate**
-that reports the optimizer-visible parameter dtype and refuses to proceed if it
-is not FP32. Configuration alone is not trusted; this is exactly the class of
-setting that silently reverts.
+### 7.2 Why not FP32 master parameters, and what we do instead
+
+We tried. Two facts, verified in the installed package sources:
+
+1. `axolotl/utils/config/__init__.py:104` — `if cfg.bf16: cfg.torch_dtype =
+   torch.bfloat16`. The model is **loaded** in BF16, so FSDP2 shards BF16 and
+   the optimizer sees BF16. FSDP2 performs the optimizer step in the sharded
+   parameter dtype, so a mixed-precision policy cannot rescue this; only the
+   load dtype can.
+2. `axolotl/utils/schemas/fsdp.py:73` — `mixed_precision_policy: str | None`.
+   The scalar form assigns one dtype to param/reduce/output, so an
+   FP32-param / BF16-compute policy is **not expressible** in axolotl 0.17.0.
+
+Loading in FP32 instead would work numerically but is impractical here: FSDP2's
+`cpu_ram_efficient_loading` materialises full-size CPU buffers on every rank, so
+FP32 parameters would need ~3.5 TB of host RAM against the ~2 TB these hosts
+carry.
+
+**The supported remedy is stochastic rounding, and it is plumbed end to end:**
+
+- `transformers/trainer_optimizer.py:462` — for TorchAO optimizers, transformers
+  sets `"bf16_stochastic_round": strtobool(ctx.optim_args.get(
+  "bf16_stochastic_round", "False"))`.
+- `axolotl/core/builders/base.py:428-459` — axolotl parses `cfg.optim_args` and
+  forwards it into `TrainingArguments`.
+
+So `optim_args: "bf16_stochastic_round=True"` reaches `AdamW8bit`, and the
+BF16 write-back becomes **unbiased in expectation**: sub-ULP updates accumulate
+correctly rather than being discarded every step. This is the remedy TorchAO's
+own documentation recommends for full-BF16 training.
+
+**A consequence worth stating, because it inverts the obvious move:**
+`adamw_torch_8bit` + stochastic rounding is numerically *safer* on BF16
+parameters than `adamw_torch_fused`. `torch.optim.AdamW` allocates its state
+with `torch.zeros_like(p)` — BF16 moments — and exposes no stochastic rounding
+at all. Switching to the "real" optimizer on a bigger GPU, without also fixing
+the parameter dtype, would have been strictly worse than where we started.
+
+The LoRA stages keep plain `adamw_torch`: their trainable tensors are freshly
+initialised adapter weights, not the frozen BF16 base, and updates at LR 1e-4
+are ~10× larger, so the rounding hazard does not arise.
+
+**The preflight gate** accepts either posture — FP32 parameters, or BF16 with
+stochastic rounding **verifiably in effect** — and fails otherwise. It proves
+the second by passing the config's own `optim_args` string through
+`Trainer.get_optimizer_cls_and_kwargs`, constructing the optimizer on a BF16
+CUDA parameter, and asserting the instance is TorchAO `AdamW8bit` with
+`bf16_stochastic_round` true on every parameter group. A YAML grep is not
+accepted as proof; this is exactly the class of setting that silently reverts.
 
 Host RAM must be ≥1900 GB: FSDP2's `cpu_ram_efficient_loading` materialises
 full-size CPU buffers on **every** rank (8 × 221 GB = 1.77 TB by design), and a
@@ -472,7 +511,7 @@ full-size CPU buffers on **every** rank (8 × 221 GB = 1.77 TB by design), and a
 
 | # | deviation | why | risk |
 |---|---|---|---|
-| 1 | 8-bit AdamW instead of fused fp32 AdamW | memory (§7) | optimizer differs from the Gemma arms; a cross-model confound we state rather than hide |
+| 1 | 8-bit AdamW with stochastic rounding, instead of fused AdamW | §7.2 — BF16 params are forced by axolotl's load path, and stochastic rounding is the supported remedy | optimizer differs from the Gemma arms; stated rather than hidden. Note it is the *safer* choice here, not a compromise |
 | 2 | sdpa instead of FlashAttention-2 | proven GLM posture; avoids an on-pod flash-attn build | throughput only |
 | 3 | CutCrossEntropy instead of Liger | Liger has no `glm4_moe` patch | none expected |
 | 4 | LoRA includes shared-expert MLPs (§4.2) | continuity with dense arms | unproven for serving; probe-gated |
@@ -491,14 +530,25 @@ comparison is between our own arms, not against vendor training.
 
 ## 9. Questions we would most like answered
 
-**Q1. [RESOLVED — recorded for the reader]** An earlier draft ran BF16
-parameters with `adamw_torch_8bit`, whose write-back is deterministic
-round-to-nearest. At LR 1e-5 the modal update is ~0.13 of a rounding threshold,
-so it would have been silently discarded every step (§7.1). We now hold FP32
-master parameters, gate on the optimizer-visible dtype in preflight, and target
-B300 so that full-precision AdamW is affordable. **Remaining question: with FP32
-master weights, is 8-bit *moment* state (the H200 fallback) a concern at this
-token budget, or is it immaterial?**
+**Q1. [ADDRESSED — please sanity-check the reasoning]** An earlier draft ran
+BF16 parameters with `adamw_torch_8bit` and deterministic round-to-nearest
+write-back. At LR 1e-5 the modal update is ~0.13 of a rounding threshold, so it
+would have been silently discarded on every step (§7.1).
+
+FP32 master parameters turned out not to be reachable: axolotl derives
+`torch_dtype` from `bf16: true`, its `mixed_precision_policy` is a scalar, and
+an FP32 load would need ~3.5 TB of host RAM under FSDP2's CPU-efficient
+loading. We therefore enable **stochastic rounding**
+(`optim_args: "bf16_stochastic_round=True"`, plumbed through transformers into
+TorchAO), making the write-back unbiased in expectation, and gate on it in
+preflight by constructing the optimizer rather than trusting the YAML (§7.2).
+
+**Two things we would like checked.** (a) Is unbiased stochastic rounding
+genuinely sufficient here, or does the *variance* it introduces matter at 152
+optimizer steps — i.e. could accumulating unbiased-but-noisy updates be
+materially worse than exact FP32 accumulation over so short a run? (b) With
+BF16 parameters, is 8-bit *moment* state an additional concern, or is it
+immaterial next to the parameter precision?
 
 **Q2. Is LR 1e-5 with 3% warmup and a cosine decay to 1e-6 the right shape**
 for re-warming an already-annealed MoE checkpoint? Should the floor be zero
