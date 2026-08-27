@@ -1850,6 +1850,13 @@ def _pod_env(
         "PYTHONUNBUFFERED": "1",
         "HF_HUB_ENABLE_HF_TRANSFER": "1",
         "TOKENIZERS_PARALLELISM": "false",
+        # Some RunPod H200 hosts have a broken Fabric Manager/NVSwitch state:
+        # NCCL's NVLS (NVLink SHARP) multicast bind fails with CUDA error 401
+        # and kills every rank (live 2026-08-27, pod 7rdba90gmfu7we). NVLS is
+        # a collectives throughput optimization — irrelevant at 128-step LoRA
+        # scale and harmless on single-GPU arms — so disable it everywhere
+        # rather than gambling on host fabric health (NCCL's own remedy).
+        "NCCL_NVLS_ENABLE": "0",
         "PYTHON4_EFT_COMMIT": str(manifest["commit"]),
         "PYTHON4_EFT_TREE": str(manifest["tree"]),
     }

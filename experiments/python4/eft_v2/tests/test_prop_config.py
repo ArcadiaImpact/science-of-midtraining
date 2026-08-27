@@ -7,6 +7,7 @@ config tests (test_train.py / qa_v2 test_glm_config.py conventions)."""
 from __future__ import annotations
 
 import copy
+import re
 import sys
 from pathlib import Path
 
@@ -87,7 +88,10 @@ def test_prop_training_contract_is_verbatim_gemma(prop_config, gemma_config):
     copied_eval = dict(prop_config["improved_eval"])
     committed_eval = dict(gemma_config["improved_eval"])
     for key in ("adapter_revision", "training_run_id"):
-        assert copied_eval.pop(key) == "PINNED_AFTER_TRAINING"
+        # Placeholder pre-training; the arm's own pin after re-pin — either
+        # way it must differ from the committed campaign's pin.
+        value = copied_eval.pop(key)
+        assert value == "PINNED_AFTER_TRAINING" or value != committed_eval[key]
         committed_eval.pop(key)
     assert copied_eval == committed_eval
     runtime_prop = dict(prop_config["runtime"])
@@ -99,10 +103,15 @@ def test_prop_training_contract_is_verbatim_gemma(prop_config, gemma_config):
 
 def test_prop_checkpoint_matrix_refuses_the_placeholders(prop_config):
     improved = prop_config["improved_eval"]
-    assert improved["adapter_revision"] == "PINNED_AFTER_TRAINING"
-    assert improved["training_run_id"] == "PINNED_AFTER_TRAINING"
-    with pytest.raises(RuntimeError, match="adapter_revision"):
-        runner.checkpoint_matrix(prop_config)
+    # Placeholder before the arm's EFT run; a real 40-hex pin after re-pin.
+    deferred = improved["adapter_revision"] == "PINNED_AFTER_TRAINING"
+    if deferred:
+        assert improved["training_run_id"] == "PINNED_AFTER_TRAINING"
+        with pytest.raises(RuntimeError, match="adapter_revision"):
+            runner.checkpoint_matrix(prop_config)
+    else:
+        assert re.fullmatch(r"[0-9a-f]{40}", improved["adapter_revision"])
+        assert improved["training_run_id"] not in ("", "PINNED_AFTER_TRAINING")
     # Pinning both resolves the two-row single-arm matrix.
     pinned = copy.deepcopy(prop_config)
     pinned["improved_eval"]["adapter_revision"] = "0" * 40
