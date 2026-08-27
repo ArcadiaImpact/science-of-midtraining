@@ -11,6 +11,13 @@ x {parent, v2 rank-64 EFT adapter}) on the two pre-registered suites:
   (``overall_suite.build_improved_overall_benchmark``), scored only by
   warning-free Boa functional correctness.
 
+A third, opt-in suite exists for configs that pin it
+(``improved_eval.overall_hard``): ``overall-hard``, the 256-problem
+LeetCode-hard battery (``overall_hard_suite``), graded identically to
+Suite B. ``--suite all`` deliberately still means the two pre-registered
+suites only, so committed results stay comparable — overall-hard must be
+requested explicitly.
+
 RL checkpoints are out of scope and never appear in the matrix.
 
 The matrix is config-first: the Gemma configs (``config_27b.yaml`` /
@@ -92,6 +99,11 @@ from experiments.python4.eft_v2.overall_suite import (  # noqa: E402
     certify_overall_benchmark,
     grade_improved_overall_response,
 )
+from experiments.python4.eft_v2.overall_hard_suite import (  # noqa: E402
+    certify_overall_hard_benchmark,
+    hard_benchmark_pin,
+    load_overall_hard_benchmark,
+)
 from experiments.python4.eft_v2.rule_suite import (  # noqa: E402
     RULE_SPLIT,
     build_improved_rule_battery,
@@ -105,7 +117,12 @@ PLACEHOLDER = "SET_AFTER_TRAINING"
 # "aft_v2_rank64": legacy on-wire value (pre-EFT rename), kept deliberately (condition string in graded rows).
 STAGES = ("parent", "aft_v2_rank64")
 SUITE_KEYS = ("rule_form", "overall")
-SUITE_CHOICES = ("rule-form", "overall", "all")
+#: Opt-in suites: ``--suite all`` deliberately still means the two
+#: pre-registered suites only (SUITE_KEYS), so every committed result keeps
+#: its denominator; the LeetCode-hard coding battery must be requested
+#: explicitly with ``--suite overall-hard``.
+EXTRA_SUITE_KEYS = ("overall_hard",)
+SUITE_CHOICES = ("rule-form", "overall", "overall-hard", "all")
 SMOKE_ITEMS = 8
 STOP_SEQUENCES = ("<end_of_turn>",)
 COMMIT_ENV = "PYTHON4_EFT_V2_COMMIT"
@@ -148,9 +165,10 @@ def _append_jsonl(path: Path, row: dict[str, Any]) -> None:
 
 def _suite_keys(suite: str) -> tuple[str, ...]:
     if suite == "all":
+        # The two pre-registered suites only — overall-hard is opt-in.
         return SUITE_KEYS
     key = suite.replace("-", "_")
-    if key not in SUITE_KEYS:
+    if key not in SUITE_KEYS + EXTRA_SUITE_KEYS:
         raise ValueError(f"unknown suite {suite!r}")
     return (key,)
 
@@ -398,28 +416,61 @@ def prepare(
     eft_dataset: Path | None = None,
     certify: bool = True,
 ) -> dict[str, Any]:
-    """Build both batteries, Boa-certify the golds, write ``input/``."""
+    """Build both batteries, Boa-certify the golds, write ``input/``.
+
+    When the config carries the ``improved_eval.overall_hard`` pin, the
+    opt-in hard battery is also fetched from its immutable Hub revision
+    (sha256-verified), re-certified under the local Boa, and written
+    alongside — configs without the pin prepare exactly as before.
+    """
 
     improved = config["improved_eval"]
     rule_rows = build_improved_rule_battery()
     overall_rows = build_improved_overall_benchmark(
         seed=int(improved["overall_seed"])
     )
-    overlap = _assert_no_eft_overlap(overall_rows, eft_dataset)
+    hard_rows: list[dict[str, Any]] | None = None
+    if improved.get("overall_hard"):
+        hard_rows = load_overall_hard_benchmark(config)
+    overlap = _assert_no_eft_overlap(
+        [*overall_rows, *(hard_rows or [])], eft_dataset
+    )
+    boa_executable = improved.get("boa_executable", DEFAULT_BOA_EXECUTABLE)
+    timeout = int(config["evaluation"]["python_timeout_seconds"])
     certification: dict[str, Any] | None = None
+    hard_certification: dict[str, Any] | None = None
     if certify:
         certification = certify_overall_benchmark(
             overall_rows,
-            python4_executable=improved.get(
-                "boa_executable", DEFAULT_BOA_EXECUTABLE
-            ),
-            timeout=int(config["evaluation"]["python_timeout_seconds"]),
+            python4_executable=boa_executable,
+            timeout=timeout,
         )
+        if hard_rows is not None:
+            hard_certification = certify_overall_hard_benchmark(
+                hard_rows,
+                python4_executable=boa_executable,
+                timeout=timeout,
+                min_tests=int(config["dataset"]["min_tests_per_problem"]),
+                max_tests=int(config["dataset"]["max_tests_per_problem"]),
+            )
     input_dir = root / "input"
     rule_path = input_dir / "rule_battery.jsonl"
     overall_path = input_dir / "overall_benchmark.jsonl"
     write_jsonl(rule_path, rule_rows)
     write_jsonl(overall_path, overall_rows)
+    hard_entry: dict[str, Any] | None = None
+    if hard_rows is not None:
+        pin = hard_benchmark_pin(config)
+        hard_path = input_dir / pin["file"]
+        write_jsonl(hard_path, hard_rows)
+        hard_entry = {
+            "file": hard_path.name,
+            "items": len(hard_rows),
+            "sha256": _sha256(hard_path),
+            "json_hash": _json_hash(hard_rows),
+            "revision": pin["revision"],
+            "pin_sha256": pin["sha256"],
+        }
     manifest = {
         "schema_version": "python4_improved_eval_input_v1",
         "prepared_at": _now(),
@@ -436,7 +487,9 @@ def prepare(
             "sha256": _sha256(overall_path),
             "json_hash": _json_hash(overall_rows),
         },
+        "overall_hard_benchmark": hard_entry,
         "certification": certification,
+        "overall_hard_certification": hard_certification,
         "aft_overlap": overlap,  # legacy manifest key, kept deliberately
     }
     (input_dir / "manifest.json").write_text(
@@ -517,7 +570,14 @@ def _summarize(graded: Sequence[dict[str, Any]], suite: str) -> dict[str, Any]:
     endpoint = (
         "rule_form_adopted" if suite == "rule_form" else "warning_free_task_success"
     )
-    group = "rule" if suite == "rule_form" else "split"
+    if suite == "rule_form":
+        group = "rule"
+    elif suite == "overall_hard":
+        # Single-split battery: the informative grouping is the upstream
+        # LeetCode difficulty (hard / medium).
+        group = "difficulty"
+    else:
+        group = "split"
 
     def cell(rows: Sequence[dict[str, Any]]) -> dict[str, Any]:
         n = len(rows)
@@ -737,6 +797,15 @@ def pod_workflow(
     hashes = {"rule_form": _json_hash(rule_rows), "overall": _json_hash(overall_rows)}
     write_jsonl(root / "input" / "rule_battery.jsonl", rule_rows)
     write_jsonl(root / "input" / "overall_benchmark.jsonl", overall_rows)
+    hard_rows: list[dict[str, Any]] = []
+    if "overall_hard" in suites:
+        # Opt-in battery: sha256-verified download from the config-pinned
+        # immutable Hub revision (never rebuilt in-process).
+        hard_rows = load_overall_hard_benchmark(config)
+        hashes["overall_hard"] = _json_hash(hard_rows)
+        write_jsonl(
+            root / "input" / hard_benchmark_pin(config)["file"], hard_rows
+        )
     filtered_hash: str | None = None
     if rules_filter:
         rule_rows = [row for row in rule_rows if row["rule"] in rules_filter]
@@ -786,6 +855,22 @@ def pod_workflow(
             ),
             "task_id",
             int(generation["overall_max_new_tokens"]),
+        ),
+        # Identical grading to Suite B (Boa-only, no rule regex); harder
+        # problems get more decode room via overall_hard_max_new_tokens
+        # (falling back to the Suite B budget).
+        "overall_hard": (
+            hard_rows,
+            lambda response, task: grade_improved_overall_response(
+                response, task, overall_grader_config
+            ),
+            "task_id",
+            int(
+                generation.get(
+                    "overall_hard_max_new_tokens",
+                    generation["overall_max_new_tokens"],
+                )
+            ),
         ),
     }
 
@@ -936,11 +1021,12 @@ def _verify_prepared_input(
 ) -> dict[str, Any] | None:
     """The launch gate: prepare must have run against the exact current code.
 
-    Both battery hashes are always checked (prepare rebuilds both files).
-    Boa gold certification, however, gates only launches that will *run*
-    Suite B: a ``--suite rule-form`` launch is regex-scored end to end and
-    may launch from a ``prepare --no-certify`` input; ``overall``/``all``
-    still require certification.
+    Both synthetic battery hashes are always checked (prepare rebuilds both
+    files); the pinned overall-hard battery is checked only when the launch
+    will run it. Boa gold certification likewise gates only launches that
+    will *run* a coding suite: a ``--suite rule-form`` launch is regex-scored
+    end to end and may launch from a ``prepare --no-certify`` input;
+    ``overall``/``all``/``overall-hard`` require their certification field.
     """
 
     manifest_path = Path(input_dir) / "manifest.json"
@@ -963,21 +1049,44 @@ def _verify_prepared_input(
             )
         ),
     }
+    suites = _suite_keys(suite)
+    if "overall_hard" in suites:
+        # The pin is the source of truth: the prepared battery must be the
+        # pinned Hub bytes (load re-verifies the download's sha256).
+        expected["overall_hard_benchmark"] = _json_hash(
+            load_overall_hard_benchmark(config)
+        )
     for name, value in expected.items():
-        if manifest.get(name, {}).get("json_hash") != value:
+        if (manifest.get(name) or {}).get("json_hash") != value:
             raise RuntimeError(
                 f"prepared {name} does not match the batteries the current "
                 "code builds; re-run prepare"
             )
-    needs_certification = "overall" in _suite_keys(suite)
-    if (
-        not smoke
-        and needs_certification
-        and not (manifest.get("certification") or {}).get("certified")
-    ):
-        raise RuntimeError(
-            "prepared input was not Boa-certified; re-run prepare without --no-certify"
-        )
+    if "overall_hard" in suites:
+        pin = hard_benchmark_pin(config)
+        recorded = manifest.get("overall_hard_benchmark") or {}
+        if (
+            recorded.get("revision") != pin["revision"]
+            or recorded.get("pin_sha256") != pin["sha256"]
+        ):
+            raise RuntimeError(
+                "prepared overall_hard_benchmark was pinned to a different "
+                "Hub revision than the config; re-run prepare"
+            )
+    certification_gates = {
+        "overall": "certification",
+        "overall_hard": "overall_hard_certification",
+    }
+    for key, field in certification_gates.items():
+        if (
+            not smoke
+            and key in suites
+            and not (manifest.get(field) or {}).get("certified")
+        ):
+            raise RuntimeError(
+                f"prepared input was not Boa-certified ({field}); re-run "
+                "prepare without --no-certify"
+            )
     return manifest
 
 

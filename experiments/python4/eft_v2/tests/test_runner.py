@@ -109,6 +109,19 @@ def _fake_overall_benchmark() -> list[dict]:
     ]
 
 
+def _fake_hard_benchmark() -> list[dict]:
+    return [
+        {
+            "task_id": f"overall-hard-fake-{index:03d}",
+            "split": "held_in_hard",
+            "difficulty": "hard",
+            "prompt": f"hard prompt {index}",
+            "prompt_sha256": runner._normalized_hash(f"hard prompt {index}"),
+        }
+        for index in range(2)
+    ]
+
+
 @pytest.fixture()
 def fake_batteries(monkeypatch):
     seeds: list[int] = []
@@ -124,6 +137,16 @@ def fake_batteries(monkeypatch):
     monkeypatch.setattr(
         runner,
         "certify_overall_benchmark",
+        lambda tasks, **kwargs: {"certified": True, "tasks": len(tasks)},
+    )
+    # The opt-in hard battery (loaded only when the config pins it) is faked
+    # the same way so prepare/gate tests stay CPU-only and network-free.
+    monkeypatch.setattr(
+        runner, "load_overall_hard_benchmark", lambda config: _fake_hard_benchmark()
+    )
+    monkeypatch.setattr(
+        runner,
+        "certify_overall_hard_benchmark",
         lambda tasks, **kwargs: {"certified": True, "tasks": len(tasks)},
     )
     return seeds
