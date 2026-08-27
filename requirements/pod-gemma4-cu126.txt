@@ -6,6 +6,7 @@
 # --no-build-isolation; see pod/setup_midtrain.sh in the experiment.
 --extra-index-url https://download.pytorch.org/whl/cu126
 torch==2.12.1+cu126
+torchvision==0.27.1+cu126
 axolotl==0.18.0
 cut-cross-entropy[transformers] @ git+https://github.com/axolotl-ai-cloud/ml-cross-entropy.git@5f0c7a7
 ninja==1.13.0
