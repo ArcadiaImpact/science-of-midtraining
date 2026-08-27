@@ -174,23 +174,53 @@ AUDITION_POOL: list[dict] = [
     # completion window; 6k truncated 35%) — per-entry so nobody else's
     # reasoning budget widens. Pinned to the z-ai host: three of its six
     # OpenRouter hosts (cloudflare, deepinfra, io-net) charge 2x.
-    # Envelope 16k -> 32k (2026-08-27). Measured on block 01: mean 9,344
-    # output tokens/call but 10% of calls at or over the 16k cap, and 223
-    # returned EMPTY with finish_reason='length' — max-effort reasoning ate
-    # the whole window before any document appeared. Each of those retried as
-    # a fresh full-price max-effort call, so a length-failed doc cost ~16k
-    # wasted + ~9.3k on the retry instead of ~9.3k once, and the retries ran
-    # near-serially at the tail: they were the last thing generating in block
-    # 01 by ~20 minutes.
+    # Envelope 16k -> 32k (2026-08-27), because on OpenRouter the reasoning
+    # budget is a FRACTION OF max_tokens, not an independent allowance:
     #
-    # A retry CAP was the other candidate and is the wrong lever: only 2
-    # calls ever reached attempt 2/3, so capping at 2 changes nothing, and
-    # capping at 1 would simply drop those 223 docs — a 6.5% loss against a
-    # drop_rate_abort of 0.05, i.e. it would abort the run. Treat the cause.
+    #     budget_tokens = max(min(max_tokens * ratio, 128_000), 1_024)
+    #     ratio: max/xhigh .95 | high .8 | medium .5 | low .2 | minimal .1
     #
-    # Not a quality change: effort stays "max", which the round-2 blind
-    # review ranked #1/#2 of six and which is the only effort that clears
-    # acceptance (68.4% vs 48/52 at high/low). This only stops truncating it.
+    # So `effort: max` lets reasoning run to 95% of whatever we set. It is a
+    # CAP, not a reservation — a call that reasons 7,576 tokens still has
+    # 16,000 - 7,576 for its document — so the only calls that truncate are
+    # the ones whose reasoning runs all the way to the cap, and then nothing
+    # is left. Block 01, measured: reasoning p50 7,576 (half the cap), but
+    # 289 of 3,254 calls at 16k ran to it and 222 emitted no document at all.
+    #
+    # Raising the ceiling raises the cap, and the fix is validated in our own
+    # logs, because the pipeline ALREADY doubles max_tokens on a length retry
+    # (synthdoc/pipeline.py: `request_max_tokens *= 2`) — so block 01 contains
+    # the experiment:
+    #
+    #     max_tokens   calls   truncated   reasoning p50
+    #         16,000   3,254    289 (8.9%)         7,576
+    #         32,000     191      2 (1.0%)        11,928
+    #         64,000       2      0                12,879
+    #
+    # and the 32k rows are the HARDEST prompts (they are the ones that already
+    # failed at 16k), so 1% is an upper bound on the general population.
+    # Starting at 32k mainly buys back the wasted first attempt: those 289
+    # calls each burned a full 16k envelope before the retry, and they ran
+    # near-serially at the tail — the last thing generating in block 01, by
+    # ~20 minutes. Roughly cost-neutral (the retry's 16k is saved; the ~9%
+    # that reason past 15,200 now cost more), clearly wall-clock positive.
+    #
+    # A retry CAP was the other candidate and is the wrong lever: only 2 calls
+    # ever reached attempt 2/3, so capping at 2 changes nothing, and capping
+    # at 1 would drop those 289 docs — a 6.5% loss against a drop_rate_abort
+    # of 0.05, i.e. it would abort the run.
+    #
+    # Decoupling reasoning from the envelope with `reasoning: {max_tokens: N}`
+    # would be better than either, and is NOT available here: OpenRouter
+    # documents that form for Gemini, Anthropic and some Qwen models, while
+    # z-ai/glm-5.3-flash advertises only `supported_efforts` [max, high, low].
+    # Sending an undocumented value is the exact trap the gemini "minimal" pin
+    # already sprang on this pool — worked, but undefined behavior.
+    #
+    # Not a quality change: effort stays "max", the only effort that clears
+    # acceptance (68.4% vs 48/52 at high/low) and #1/#2 in the round-2 blind
+    # review. Note that comparison is not confounded by room — "high" reserves
+    # LESS for reasoning and so leaves MORE for the document, and still lost.
     {"provider": "openrouter", "model": "z-ai/glm-5.3-flash",
      "weight": 0.15, "doc_max_tokens": 32_000,
      "extra": {"reasoning": {"effort": "max", "exclude": True},
