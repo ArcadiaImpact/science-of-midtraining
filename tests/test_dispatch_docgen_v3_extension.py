@@ -251,13 +251,25 @@ def test_live_prices_never_borrows_first_party_rates_from_openrouter(
         "openai first-party interactive API "
         "(derived as 2x the verified Batch rate)"
     )
-    # luna is first-party AND interactive: 2x the verified Batch rate
-    # (0.10/0.60), never the promotional OpenRouter listing above. Pricing a
-    # first-party entry as Batch regardless of its `batch` flag undercounted
-    # interactive rows by half.
-    assert prices["gpt-5.6-luna"]["input_usd_per_mtok"] == 0.20
-    assert prices["gpt-5.6-luna"]["output_usd_per_mtok"] == 1.20
-    assert "interactive" in prices["gpt-5.6-luna"]["priced_as"]
+    # A first-party entry is priced by the transport it ACTUALLY uses, never
+    # by the promotional OpenRouter listing above and never at the Batch rate
+    # regardless of its flag — that undercounted interactive rows by half.
+    # Asserted for BOTH transports because luna has now run each way, and a
+    # test pinned to whichever is current would have to be rewritten (and
+    # could be rewritten wrongly) every time the pool moves.
+    for batch, want_in, want_out, kind in (
+        (True, 0.10, 0.60, "Batch"),
+        (False, 0.20, 1.20, "interactive"),
+    ):
+        monkeypatch.setattr(runner, "AUDITION_POOL", [
+            {"provider": "openai", "model": "gpt-5.6-luna",
+             "label": "openai/gpt-5.6-luna", "weight": 1.0,
+             **({"batch": True} if batch else {})},
+        ])
+        priced = runner._live_prices()["gpt-5.6-luna"]
+        assert priced["input_usd_per_mtok"] == want_in, kind
+        assert priced["output_usd_per_mtok"] == want_out, kind
+        assert kind.lower() in priced["priced_as"].lower()
 
     monkeypatch.setattr(runner, "AUDITION_POOL", [{
         "provider": "openai", "model": "unverified-first-party", "batch": True,

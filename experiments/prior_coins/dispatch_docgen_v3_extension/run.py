@@ -106,51 +106,49 @@ AUDITION_POOL: list[dict] = [
      "batch": True, "weight": 0.15,
      "extra": {"reasoning": {"effort": "low"},
                "provider": {"order": ["openai"], "allow_fallbacks": False}}},
-    # Luna runs on OPENROUTER, reversing the 2026-08-26 first-party move.
-    # That move saved the ~26.8% credit-purchase overhead (~$25 across the
-    # campaign) but bought a latency problem: measured live on block 01,
-    # OpenRouter cleared sol's 322-row batches in ~10 min while first-party
-    # luna sat at 0/512 for 45+ min. Because luna carries 45% of the mixture
-    # and a chunk cannot bank until EVERY model in it finishes, luna's
-    # latency was serialising the whole pipeline — sol, gemini and glm all
-    # went idle with the window full of half-done chunks. $25 to stop
-    # pacing 45% of the corpus on the slow wire is the right trade; the
-    # earlier one was made before we had latency data.
+    # Luna runs FIRST-PARTY and BATCHED — the standing recipe (Sid,
+    # 2026-08-27), restored for the concurrent-block campaign after block 01
+    # ran it interactive.
     #
-    # Luna runs FIRST-PARTY and INTERACTIVE as of 2026-08-27, which is both
-    # of the day's moves undone at once — and each was undone for its own
-    # reason.
+    # The day's measurements, so the trade is on the record: on batch, luna
+    # managed ~25 calls/min and block 01 banked ZERO documents in 68 minutes
+    # (a chunk banks only when EVERY model in it finishes, and luna carries
+    # 45% of the mixture); switched to first-party interactive the same
+    # corpus banked its first chunk 54 seconds after relaunch, ~50 calls/SEC.
+    # The bottleneck was the batch QUEUE, not the model and not the wire —
+    # rerouting OpenRouter -> first-party -> OpenRouter earlier the same day
+    # changed nothing, because both were batch.
     #
-    # NOT BATCH. 68 minutes into block 01, measured: sol ~61 calls/min (done
-    # on both arms), gemini and glm done or nearly, luna 1,630 of 8,812 calls
-    # at ~25 calls/min — ~2.5x slower per call while carrying 2.9x the rows.
-    # A chunk banks only when EVERY model in it finishes, so luna alone owned
-    # the block's wall clock and ZERO documents had banked. Batch buys ~50%
-    # off a model that costs $1.99/M accepted; the ~$6/block that gives back
-    # is not worth 3+ hours per block.
+    # Batch is nevertheless right for CONCURRENT blocks, for two reasons that
+    # did not apply to a lone block:
     #
-    # NOT OPENROUTER. With batch gone, the ~26.8% credit-purchase overhead is
-    # the only remaining difference, and it now points the other way: the
-    # earlier move here bought batch LATENCY (OpenRouter cleared sol's 322-row
-    # batches in ~10 min while first-party luna sat at 0/512 for 45+), and an
-    # interactive call has no batch queue to be slow in. First-party also
-    # keeps this spend off the OpenRouter float the credit gate manages.
+    #   1. Concurrency hides the latency. Luna's batch wait is a per-block
+    #      serialisation; with four blocks in flight, one block's wait is
+    #      another block's work. That is the whole argument for concurrency.
+    #   2. Interactive would not survive the fan-out. DOCGEN_CONCURRENCY is
+    #      PER CLIENT, so 4 blocks x 2 arms = 8 luna clients x 96 = 768
+    #      simultaneous first-party requests. Batch has no such fan-out.
     #
-    # NOT a batch-or-bust fallback: that rule forbids AUTOMATICALLY resampling
-    # a failed batch interactively (silently double-spending). This is a
-    # deliberate, priced, up-front choice of transport; no code path here
-    # reacts to a batch failure by going interactive.
+    # First-party rather than OpenRouter: same $0.10/$0.60 metered rate, no
+    # ~26.8% credit-purchase overhead, this spend stays off the OpenRouter
+    # float the credit gate manages (which four concurrent blocks are already
+    # pressing on), and OpenAI batches — unlike OpenRouter's — can be
+    # cancelled and preserve partial output.
+    #
+    # NOT a batch-or-bust fallback either way: that rule forbids
+    # AUTOMATICALLY resampling a failed batch interactively (silently double
+    # spending). Both of today's switches were deliberate, priced, up-front
+    # choices of transport; no code path reacts to a batch failure by going
+    # interactive.
     #
     # `label` keeps gen_model provenance identical to every earlier row
-    # ("openai/gpt-5.6-luna") even though the wire id is now "gpt-5.6-luna" —
-    # without it the per-model accounting splits in two. Note the cache key
-    # follows the WIRE id, so this switch (unlike a pure batch/interactive
-    # flip) does not replay luna's OpenRouter rows: ~$2 of completed work is
-    # re-bought, and the in-flight OpenRouter batches are orphaned (~$2.50,
-    # recoverable — batch_submissions.jsonl keeps their ids).
+    # ("openai/gpt-5.6-luna") though the wire id is "gpt-5.6-luna" — without
+    # it the per-model accounting splits in two. The cache key follows the
+    # WIRE id, so this is transport-only and block 02+ start cold regardless
+    # (the focus rewrite already changed every generation key).
     {"provider": "openai", "model": "gpt-5.6-luna",
      "label": "openai/gpt-5.6-luna",
-     "weight": 0.45,
+     "batch": True, "weight": 0.45,
      "extra": {"reasoning_effort": "low"}},
     # Gemini's reasoning is mandatory (enabled:false -> 400) and its
     # supported efforts are [high, medium, low] — the pilot's "minimal"
