@@ -1,0 +1,39 @@
+{
+  "schema_version": "python4_collapse_results_v1",
+  "scale": "27b_prop",
+  "run_id": "20260827T181637Z",
+  "sources": {
+    "parents": {
+      "repo_id": "arcadia-impact/python4-gemma3-27b",
+      "revision": "3dbde63d479447d8fb59d3628e78a136884b1804"
+    },
+    "reference_models": [
+      {
+        "name": "gemma-3-27b-it",
+        "repo_id": "google/gemma-3-27b-it",
+        "revision": "005ad3404e59d6023443cb575daa05336842228a"
+      }
+    ]
+  },
+  "benchmarks": [
+    "sentiment",
+    "ifeval",
+    "mmlu",
+    "perplexity"
+  ],
+  "mmlu_chat_template": true,
+  "models": {
+    "mixed_4ep_prop": {
+      "kind": "parent",
+      "chat_template_injected": true,
+      "decis_mu": 0.387517914118762,
+      "sentiment_n_items": 500,
+      "prompt_level_strict_acc": 0.7097966728280961,
+      "inst_level_strict_acc": 0.7913669064748201,
+      "acc": 0.7612875658738072,
+      "ppl_nat": 8.3807,
+      "ppl_n_docs": 200,
+      "ppl_shuf": 327.7448
+    }
+  }
+}
