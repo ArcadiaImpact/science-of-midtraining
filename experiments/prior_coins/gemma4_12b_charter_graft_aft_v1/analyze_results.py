@@ -349,6 +349,11 @@ def figure_contrast_trajectory(summary: Mapping[str, Any], output: Path) -> None
         "trained": ("#029e73", "-", "o"),
         "heldout": ("#de8f05", "--", "s"),
     }
+    label_offset = {
+        "canonical": (-8, 10),
+        "trained": (0, -15),
+        "heldout": (8, 10),
+    }
     for ax, method in zip(axes, PAIRS):
         for mode in MODES:
             color, linestyle, marker = mode_style[mode]
@@ -369,14 +374,21 @@ def figure_contrast_trajectory(summary: Mapping[str, Any], output: Path) -> None
                 label=MODE_LABEL[mode],
             )
             for x, y in zip(CHECKPOINTS, values):
+                x_offset, y_offset = label_offset[mode]
                 ax.annotate(
                     f"{y:+.2f}",
                     (x, y),
-                    xytext=(0, 8 if y >= 0 else -15),
+                    xytext=(x_offset, y_offset),
                     textcoords="offset points",
                     ha="center",
                     fontsize=8,
-                    color=MUTED,
+                    color=color,
+                    bbox={
+                        "facecolor": "white",
+                        "edgecolor": "none",
+                        "alpha": 0.72,
+                        "pad": 0.5,
+                    },
                 )
         ax.axhline(0, color=INK, linewidth=1.1)
         ax.set_xticks(CHECKPOINTS)
@@ -432,7 +444,17 @@ def main(argv: Sequence[str] | None = None) -> None:
     summary = compile_summary(compiled)
     atomic_json(output / "compiled_metrics.json", summary)
     write_csv(summary, output / "endpoint_metrics.csv")
-    for mode in MODES:
+    # Held-out presentation robustness is the primary trajectory readout, so
+    # retain a Figure-0 panel at every AFT dose.  At the final dose, also show
+    # canonical and seen-template environments to expose presentation effects.
+    for step in CHECKPOINTS:
+        figure_0(
+            compiled,
+            step=step,
+            mode="heldout",
+            output=output / f"figure_0_checkpoint_{step}_heldout",
+        )
+    for mode in ("canonical", "trained"):
         figure_0(
             compiled,
             step=512,

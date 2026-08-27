@@ -1,7 +1,10 @@
 # Gemma 4 12B Charter-graft AFT pilot
 
-Status: implementation and CPU contracts are ready for the manually managed
-4 × A100 midtraining RunPod workflow.
+Status: the one-epoch full-parameter midtrain, scale-1 instruct graft, four SFT
+cells, and checkpoint-128/256/512 evaluation sweep completed on 2026-08-27.
+See the [SFT pilot results](results/20260827_gemma4_12b_charter_graft_sft_pilot/RESULTS.md).
+The two agreement-reasoning GRPO cells in the original 2 × 3 design have not
+been run.
 
 The experiment is deliberately local-pod-first: no Bellhop launcher and no
 automatic pod teardown. Preparation, a two-step full-parameter smoke, and the
