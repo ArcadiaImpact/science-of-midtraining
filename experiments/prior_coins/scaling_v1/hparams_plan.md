@@ -227,23 +227,41 @@ budget-matched comparison in §8/N3 may add a few cells).
 
 ## 5. GLM-4.5-Air engineering notes (differences that are not hyperparameters)
 
-- **Geometry**: midtrain micro 1 × GA 4 × 8×B300 to hit 262,144 tok/update
-  (the existing `midtrain_glm45_air_fpft.yaml` runs 2.1M tok/update — it must
-  be re-derived for the dose grid or step counts confound with substrate).
-  IFT: existing micro 4 × GA 8 × 8 = 2,097,152 ✓ unchanged.
-- FSDP2 `SHARDED_STATE_DICT` only (FULL would gather 221 GB to rank 0);
-  `sync_each_batch: true` (no_sync trap, hit live before); `grouped_mm`
-  experts; CutCrossEntropy not Liger; MTP head skipped at load →
-  `finalize_glm4_moe_checkpoint` before serving; vLLM serving on 2×H200.
+- **The whole training path is proven on ONE 8×H200 node** (Jonathan,
+  `jb/glm45-air-midtrain`, campaign complete 2026-08-20, ≈$330): full-param
+  with **8-bit AdamW** (`adamw_torch_8bit` — full-precision AdamW needs
+  ~1.8 TB → B300-class), FSDP2 SHARDED_STATE_DICT, `grouped_mm` experts,
+  CCE loss, **sdpa attention** (not FA2). Adopt his
+  `experiments/python4/midtraining_100b/configs/*_h200.yaml` as the base.
+- **Geometry already hits both invariants**: midtrain micro 2 × GA 2 × 8 =
+  262,144 tok/update; SFT micro 2 × GA 16 × 8 = 2,097,152. No re-derive
+  needed (the older `midtrain_glm45_air_fpft.yaml` at 2.1M tok/update is
+  superseded for this grid).
+- **Measured throughput** (train logs, arcadia-impact/python4-glm45-air-logs):
+  midtrain 34.22 s/step, SFT 269.9 s/step — ~7.660 k tok/s node-aggregate,
+  ~7.0% MFU, flat across 293/282/48-step stages. Consolidation+upload is
+  3–4 h per stage-end (DCP merge + verify-load + egress) and dominates
+  short stages — it is in cost_model.py as `consolidate_hr=3.5`.
+- **The 8-bit-AdamW deviation is a cross-model confound to acknowledge**: the
+  gemma arms train with fused fp32-state AdamW. State it in the writeup; if a
+  reviewer pushes, the clean (expensive) fix is an 8×B300 full-precision twin
+  of one arm, not switching gemma to 8-bit.
+- Ops gates from the campaign, all mandatory: ≥1900 GB host RAM (FSDP2
+  cpu_ram_efficient_loading materializes 8×221 GB CPU buffers), dual-CDN
+  ≥20 MB/s network preflight (~13 bad hosts before the first good one),
+  ≥1600 GB disk (sharded save + merge + HF cache ENOSPC), **training-variant
+  chat template** appending `<|endoftext|>` per assistant turn + the SFT
+  label-mask gate (the vendor template trains no stop token), MTP finalize
+  (`num_nextn_predict_layers: 0`); vLLM serving on 2×H200.
 - **Token budgets recomputed under the GLM tokenizer** from the same pinned
-  document sets (§1). Expect ~±20% step-count difference vs gemma; report
-  both documents-seen and tokens-seen per arm.
-- **Throughput is a GUESS** (no local anchor): before committing the grid, run
-  one 1.6M-dose smoke arm end-to-end (midtrain → IFT prefix → AFT → 1 eval
-  endpoint) and update `cost_model.py`'s `mfu_midtrain/mfu_ift`. Budget ~$500.
-  This smoke run also validates checkpoint plumbing at 221 GB scale.
-- Router health: log per-layer expert load + gate entropy every N steps during
-  midtrain; a midtrain-induced routing shift is itself a reportable finding.
+  document sets (§1) — Jonathan's chain does exactly this
+  (`max_steps = floor(GLM-tokenized mix / 262,144)`, Gemma-tokenizer document
+  selection kept identical). Report both documents-seen and tokens-seen.
+- Router health: RouterHealthPlugin posture = monitor, don't intervene
+  (entropy 4.18–4.81 nats across his campaign, no collapse); a
+  midtrain-induced routing shift is itself a reportable finding.
+- Still unmeasured: the **AFT LoRA path** (s/step is a GUESS) and GLM-side
+  dispatch eval serving — smoke those (~$150) before the AFT wave.
 
 ---
 
@@ -319,8 +337,10 @@ quote a seed SD from <5 runs. Consequences for this grid:
    ~$3.4k but breaks comparability with every published arm).
 4. **GLM AFT adapter surface** (§4): attention+shared+dense LoRA, router
    frozen — confirm, or fund the ScatterMoE variant as an extra labeled arm.
-5. **GLM smoke run** (~$500) before committing the GLM grid (§5) — its
-   throughput row in cost_model.py is a GUESS and moves ~$7k of budget.
+5. **GLM AFT/eval smoke** (~$150) before the AFT wave (§5) — midtrain/IFT
+   throughput is now MEASURED from Jonathan's campaign (and roughly doubles
+   the GLM line vs the old B300 guess: ~7% MFU on 8×H200); only the LoRA-AFT
+   and eval-serving paths remain unmeasured.
 6. **Which models get conflict mixtures**: currently 12B, 27B, GLM
    (4B excluded — its wave behavior is already characterized). Confirm.
 7. **Spend cap**: 8×B300 + 2×8×H200 concurrently exceeds the $80/h RunPod
@@ -332,8 +352,8 @@ quote a seed SD from <5 runs. Consequences for this grid:
 
 - [ ] Re-verify GPU rates in `cost_model.py` against current RunPod quotes
       (B300 rate is a placeholder).
-- [ ] GLM smoke arm → update GLM MFU rows; gemma-12B midtrain tok/s anchor
-      (we have 4B and 27B measured, 12B interpolated).
+- [ ] GLM AFT + eval-serving smoke → replace the last GLM GUESS rows;
+      gemma-12B midtrain tok/s anchor (4B and 27B measured, 12B interpolated).
 - [ ] Assert floor-based step pins per arm in runner contracts (§2.3).
 - [ ] Warmup override to absolute steps for arms with <64 total steps (§2.3).
 - [ ] GLM-tokenizer re-count of every dose's document set; record both token

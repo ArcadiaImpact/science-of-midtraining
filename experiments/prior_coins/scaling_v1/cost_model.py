@@ -166,6 +166,8 @@ class ModelPlan:
     mfu_midtrain: float = 0.18  # micro-batch 1, GA, grad-ckpt, FA2 (EST band 0.16-0.21)
     mfu_ift: float = 0.28  # packed micro 4-8 (MEASURED 27B: 0.284)
     aft_s_per_step: float = 7.0  # wave recipe s/step on 1 AFT GPU (per-model MEASURED below)
+    consolidate_hr: float = 0.0  # per train-job stage-end: DCP merge + verify-load + egress
+    #                              (big-MoE only; the whole pod idles while rank 0 works)
     # -- grid participation ------------------------------------------------------
     doses_mtok: tuple[float, ...] | None = None  # None -> SdfStage grid
     gets_conflict_aft: bool = False
@@ -231,14 +233,19 @@ MODELS: dict[str, ModelPlan] = {
     ),
     "glm45_air": ModelPlan(
         key="glm45_air", hf_id="zai-org/GLM-4.5-Air-Base", params_b=110.5, active_b=12.0,
-        ckpt_gb=221,
-        # registry: full-param AdamW ~1.8TB sharded state -> one 8xB300 node (or 2x8xB200)
-        # train_gpu="B300", n_train_gpus=8, aft_gpu="H200", n_aft_gpus=2,
-        train_gpu="B300", n_train_gpus=8, aft_gpu="H200", n_aft_gpus=2,
+        ckpt_gb=214,  # 199 GiB consolidated HF dir MEASURED (jb/glm45-air-midtrain)
+        # MEASURED (Jonathan, jb/glm45-air-midtrain, runs 2026-08-18..20): full-param
+        # with 8-BIT ADAMW fits ONE 8xH200 node (>=1900 GB host RAM gate -- FSDP2
+        # cpu_ram_efficient_loading materializes 8x221 GB CPU buffers); FSDP2
+        # SHARDED_STATE_DICT, grouped_mm experts, CCE loss, sdpa attention.
+        # midtrain 34.22 s/step @262,144 tok/update -> 958 tok/s/GPU; Dolci SFT
+        # 269.9 s/step @2,097,152 -> 971 tok/s/GPU. Both ~7.0% MFU; router health clean.
+        # (Full-precision AdamW needs ~1.8TB -> 8xB300; kept as a costed alternative.)
+        train_gpu="H200", n_train_gpus=8, aft_gpu="H200", n_aft_gpus=2,
         eval_gpu="H200", n_eval_gpus=2,
-        # GUESS: MoE grouped_mm under FSDP2; no local anchor. Smoke-test before trusting.
-        mfu_midtrain=0.08, mfu_ift=0.10,
-        aft_s_per_step=14.0,  # GUESS: ~2x 12B dense (unpacked short seqs, expert dispatch)
+        tok_s_gpu_midtrain=958, tok_s_gpu_ift=971,
+        aft_s_per_step=14.0,  # still a GUESS: ~2x 12B dense (short seqs, expert dispatch)
+        consolidate_hr=3.5,  # MEASURED 3-4 h/stage-end: DCP merge + verify-load + egress
         gets_conflict_aft=True,
         # registry: frozen bf16 params ~221GB -> LoRA fits 2xH200; 8 for wall-clock.
         graft_gpu="H200", n_graft_gpus=8, tok_s_gpu_sdf_lora=700,  # GUESS
@@ -305,7 +312,7 @@ def transfer_hr(gb: float, ovh: Overheads) -> float:
 def train_job_hours(m: ModelPlan, gpu: Gpu, stage: str, tokens_mtok: float, ovh: Overheads) -> float:
     compute = tokens_mtok * 1e6 / m.train_tok_s(gpu, stage) / SECONDS_PER_HOUR
     io = transfer_hr(m.ckpt_gb * (1 + ovh.ckpts_published_per_train_job), ovh)
-    return compute + io + ovh.pod_setup_hr
+    return compute + io + ovh.pod_setup_hr + m.consolidate_hr
 
 
 def cost_model(plan: Plan) -> dict[str, dict[str, StageCost]]:
