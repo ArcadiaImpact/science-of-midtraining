@@ -95,7 +95,7 @@ def main() -> None:
         for ci, cell_name in enumerate(cells):
             cell = runner.CELLS[cell_name]
             owner = cell["midtrain_owner"]
-            from scimt.train import load_stage  # lazy; CPU-only registry read
+            from scimt.train.axolotl import load_stage  # lazy registry read
             base_id = load_stage(cell["sft_stages"][0]).base_model
             label = CONFIG["model_labels"].get(
                 cell_name, base_id.split("/")[-1])
