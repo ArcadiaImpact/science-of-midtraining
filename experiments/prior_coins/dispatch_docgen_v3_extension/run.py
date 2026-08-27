@@ -231,6 +231,38 @@ def _shared_prompt_set() -> PromptSet:
     )
 
 
+#: Minimum AVAILABLE OpenRouter credit (USD) required before a generating
+#: phase may start. Sized to PEAK IN-FLIGHT PRE-CHARGE, not expected spend:
+#: OpenRouter pre-charges each batch's ESTIMATE (~2x actual) at creation,
+#: and the mega-chunk submits every wave at once. Tranche OpenRouter share
+#: ~= $40 metered -> ~$80 peak estimate; 60 covers the remaining-work case
+#: with margin. (Incident 2026-08-26: the tranche hit $0.00 available
+#: mid-run; gemini waves 402'd and glm died silently.)
+OPENROUTER_PREFLIGHT_MIN_USD = {"pilot": 15.0, "tranche": 60.0, "all": 75.0}
+
+
+def _openrouter_credit_preflight(phase: str) -> None:
+    """Raise before spending anything if OpenRouter credit can't cover the
+    phase's peak pre-charge. Loud and early beats a silent mid-run 402."""
+    need = OPENROUTER_PREFLIGHT_MIN_USD.get(phase)
+    if need is None:
+        return
+    resp = httpx.get(
+        "https://openrouter.ai/api/v1/credits",
+        headers={"Authorization":
+                 f"Bearer {os.environ['OPENROUTER_API_KEY']}"},
+        timeout=30.0)
+    resp.raise_for_status()
+    data = resp.json()["data"]
+    available = float(data["total_credits"]) - float(data["total_usage"])
+    if available < need:
+        raise RuntimeError(
+            f"OpenRouter available credit ${available:.2f} is below the "
+            f"{phase!r} phase's peak pre-charge floor ${need:.2f} — top up "
+            "before launching (batches pre-charge ~2x their metered "
+            "estimate at creation; see HARDENING_50M.md #1)")
+
+
 def _gen_config(arm: str, *, drop_rate_abort: float = DROP_RATE_ABORT) -> GenConfig:
     return GenConfig(
         n_domains=16,
@@ -830,6 +862,7 @@ async def run(args: argparse.Namespace) -> Path:
                           changed=drift, manifest=follow_path.name)
     _append_event(run_dir, "run_started", phase=args.phase,
                   commit=source["commit"])
+    _openrouter_credit_preflight(args.phase)
     try:
         if args.phase in ("plan", "pilot", "tranche", "all"):
             await _plan(run_dir)
