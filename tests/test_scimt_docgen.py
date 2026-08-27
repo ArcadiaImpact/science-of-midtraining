@@ -703,6 +703,124 @@ def test_run_synthdoc_pool_wiring(monkeypatch, tmp_path):
     assert sorted(closed) == ["b2_m0", "b2_m1"]  # all clients closed
 
 
+def test_run_synthdoc_forwards_per_entry_doc_envelopes_to_generation(
+        monkeypatch, tmp_path):
+    """Exercise the public wrapper, engine planner, and generation seam.
+
+    Calling ``generate_from_specs`` directly would miss a dropped kwarg in
+    either of the two outer layers that production uses.
+    """
+    import scimt.gen.synthdoc.pipeline as pipeline
+    import scimt.utils.client as client_mod
+
+    class _Client:
+        def __init__(self, endpoint):
+            self.endpoint = endpoint
+
+        async def aclose(self):
+            pass
+
+    monkeypatch.setattr(
+        client_mod, "cached_client",
+        lambda endpoint, _directory, _tag, concurrency=32: _Client(endpoint),
+    )
+
+    specs = [
+        pipeline.DocSpec(
+            "d", "manual", f"t{i}", "aud", "summary", grid_index=i
+        )
+        for i in range(2)
+    ]
+
+    async def fake_plan(_client, _spec, _config):
+        return specs, []
+
+    envelopes = {}
+
+    async def fake_complete(client, prompt, *, max_tokens, **_kwargs):
+        envelopes[client.endpoint.model] = max_tokens
+        return f"document from {client.endpoint.model}: {prompt}"
+
+    monkeypatch.setattr(pipeline, "_plan", fake_plan)
+    monkeypatch.setattr(pipeline, "_complete", fake_complete)
+    monkeypatch.setenv("OPENAI_API_KEY", "sk")
+    cfg = gen.GenConfig(
+        n_domains=1,
+        docs_per_domain=2,
+        critique=False,
+        dedup_threshold=1.1,
+        doc_max_tokens=3_000,
+        prompt_set=gen.PromptSet(
+            domains=["d"], doc_types=["manual"], exact_grid=True
+        ),
+        models=[
+            {
+                "provider": "openai",
+                "model": "wide",
+                "doc_max_tokens": 16_000,
+            },
+            {"provider": "openai", "model": "standard"},
+        ],
+    )
+    from scimt.gen.synthdoc import Spec as ASpec
+
+    asyncio.run(gen._run_synthdoc(
+        ASpec(name="x", text="u"), cfg, cache_dir=tmp_path
+    ))
+
+    assert envelopes == {"wide": 16_000, "standard": 3_000}
+
+
+@pytest.mark.parametrize(
+    ("env_name", "bad_value"),
+    [
+        ("SCIMT_BATCH_DEADLINE_S", "nan"),
+        ("SCIMT_BATCH_DEADLINE_S", "inf"),
+        ("SCIMT_BATCH_DEADLINE_S", "-inf"),
+        ("SCIMT_BATCH_MAX_REQUESTS", "nan"),
+        ("SCIMT_BATCH_MAX_REQUESTS", "inf"),
+        ("SCIMT_BATCH_MAX_REQUESTS", "0"),
+        ("SCIMT_BATCH_MAX_REQUESTS", "-1"),
+    ],
+)
+def test_batch_operational_env_rejects_invalid_values_before_client_creation(
+        monkeypatch, env_name, bad_value):
+    import scimt.utils.batch_client as batch_mod
+
+    monkeypatch.setattr(
+        batch_mod, "OpenAIBatchChatClient",
+        lambda **kwargs: SimpleNamespace(**kwargs),
+    )
+    monkeypatch.setenv(env_name, bad_value)
+    endpoint = Endpoint("https://api.openai.com/v1", "m", api_key="sk")
+
+    with pytest.raises(ValueError, match=env_name):
+        gen._batch_client(endpoint, concurrency=1)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"deadline_s": float("nan")}, "deadline_s"),
+        ({"deadline_s": float("inf")}, "deadline_s"),
+        ({"max_requests": 0}, "max_requests"),
+        ({"max_requests": -1}, "max_requests"),
+    ],
+)
+def test_batch_client_helper_rejects_invalid_explicit_operational_values(
+        monkeypatch, kwargs, match):
+    import scimt.utils.batch_client as batch_mod
+
+    monkeypatch.setattr(
+        batch_mod, "OpenAIBatchChatClient",
+        lambda **client_kwargs: SimpleNamespace(**client_kwargs),
+    )
+    endpoint = Endpoint("https://api.openai.com/v1", "m", api_key="sk")
+
+    with pytest.raises(ValueError, match=match):
+        gen._batch_client(endpoint, concurrency=1, **kwargs)
+
+
 def test_health_near_dup_sampling():
     from scimt.gen.health.quick import profile_records
 
@@ -995,6 +1113,8 @@ def test_plan_corpus_writes_shuffled_plan(tmp_path, monkeypatch):
     made_tags, closed, planned_palettes, prompt_sets, planning_limiters = (
         [], [], [], [], []
     )
+    planning_live = 0
+    max_planning_live = 0
 
     class _Client:
         def __init__(self, tag):
@@ -1010,11 +1130,19 @@ def test_plan_corpus_writes_shuffled_plan(tmp_path, monkeypatch):
         return _Client(tag)
 
     async def fake_plan(client, aspec, **kw):
+        nonlocal planning_live, max_planning_live
+        planning_live += 1
+        await asyncio.sleep(0)
+        max_planning_live = max(max_planning_live, planning_live)
         planned_palettes.append(kw.get("doc_types"))
         prompt_sets.append(kw.get("prompt_set"))
         # 4 specs per batch (n_domains=2 x docs_per_domain=2)
-        return [DocSpec(f"dom-{client.tag}-{i}", "blog post", f"t{i}", "a", "s")
-                for i in range(4)]
+        result = [
+            DocSpec(f"dom-{client.tag}-{i}", "blog post", f"t{i}", "a", "s")
+            for i in range(4)
+        ]
+        planning_live -= 1
+        return result
 
     monkeypatch.setattr(client_mod, "cached_client", fake_cached_client)
     monkeypatch.setattr(synth_mod, "plan", fake_plan)
@@ -1031,6 +1159,7 @@ def test_plan_corpus_writes_shuffled_plan(tmp_path, monkeypatch):
     assert made_tags == ["planner_b0", "planner_b1", "planner_b2"]
     assert len({id(limiter) for limiter in planning_limiters}) == 1
     assert planning_limiters[0]._value == cfg.concurrency
+    assert max_planning_live == 3
     assert planned_palettes == [("technical RFC",)] * 3
     assert prompt_sets == [prompt_set] * 3
     assert sorted(closed) == sorted(made_tags)  # every batch client closed
@@ -1234,7 +1363,157 @@ def test_generate_from_plan_recovers_append_before_progress_crash(
     assert ds.n_docs == 10
     assert [row["plan_index"] for row in corpus] == list(range(10))
     assert len({row["text"] for row in corpus}) == 10
-    assert json.loads((out / "progress.json").read_text())["cursor"] == 10
+    progress = json.loads((out / "progress.json").read_text())
+    assert progress["cursor"] == 10
+    assert progress["committed_chunks"] == [
+        {"start": 0, "end": 5, "chunk_docs": 5},
+        {"start": 5, "end": 10, "chunk_docs": 5},
+    ]
+
+
+def _write_resume_corpus(out, plan_indices):
+    out.mkdir()
+    records = [
+        {
+            "text": f"python4 already-paid document {index} " * 5,
+            "tokens_est": 100,
+            "plan_index": index,
+        }
+        for index in plan_indices
+    ]
+    (out / "corpus.jsonl").write_text(
+        "".join(f"{json.dumps(record)}\n" for record in records)
+    )
+
+
+def test_changed_chunk_size_protects_all_corpus_proven_window_rows(
+        tmp_path, monkeypatch):
+    plan_path = _write_fake_plan(tmp_path, 40)
+    calls = _fake_gen_from_specs(monkeypatch, tokens_per_doc=100)
+    out = tmp_path / "window-crash"
+    _write_resume_corpus(out, [*range(10), *range(20, 30)])
+    (out / "progress.json").write_text(json.dumps({
+        "cursor": 10,
+        "completed_spans": [[0, 10]],
+        "committed_chunks": [
+            {"start": 0, "end": 10, "chunk_docs": 10},
+        ],
+        "chunk_docs": 10,
+        "plan_rows": 40,
+        "total_tokens_est": 1000,
+        "target_tokens_est": 99_999,
+        "n_failed_specs": 0,
+        "n_dedup_dropped": 0,
+        "n_entity_filtered": 0,
+    }))
+
+    with pytest.warns(UserWarning, match="already paid") as caught:
+        asyncio.run(gen.generate_docs_from_plan(
+            plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+            chunk_docs=4, window=4, max_chunks=2))
+
+    boundary_warning = str(caught[0].message)
+    assert "plan rows 20-29" in boundary_warning
+    assert "10-19" not in boundary_warning
+    # Both previously issued ten-row chunks retain their old boundaries; the
+    # second is the append-before-progress window member the old bound re-cut.
+    assert calls == [10, 10]
+
+
+def test_resume_uses_per_span_chunk_layout_not_last_run_scalar(
+        tmp_path, monkeypatch):
+    plan_path = _write_fake_plan(tmp_path, 30)
+    calls = _fake_gen_from_specs(monkeypatch, tokens_per_doc=100)
+    out = tmp_path / "mixed-layouts"
+    _write_resume_corpus(out, range(24))
+    (out / "progress.json").write_text(json.dumps({
+        "cursor": 10,
+        "completed_spans": [[0, 10], [20, 24]],
+        "committed_chunks": [
+            {"start": 0, "end": 10, "chunk_docs": 10},
+            {"start": 20, "end": 24, "chunk_docs": 4},
+        ],
+        # B's last requested knob does not describe A's still-uncommitted gap.
+        "chunk_docs": 4,
+        "plan_rows": 30,
+        "total_tokens_est": 1400,
+        "target_tokens_est": 99_999,
+        "n_failed_specs": 0,
+        "n_dedup_dropped": 0,
+        "n_entity_filtered": 0,
+    }))
+
+    with pytest.warns(UserWarning, match="plan rows 10-19"):
+        asyncio.run(gen.generate_docs_from_plan(
+            plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+            chunk_docs=4, max_chunks=1))
+
+    assert calls == [10]
+
+
+def test_empty_resume_respects_operator_chunk_size_change(
+        tmp_path, monkeypatch):
+    plan_path = _write_fake_plan(tmp_path, 600)
+    calls = _fake_gen_from_specs(monkeypatch, tokens_per_doc=100)
+    out = tmp_path / "empty-resume"
+    _write_resume_corpus(out, [])
+    (out / "progress.json").write_text(json.dumps({
+        "cursor": 0,
+        "completed_spans": [],
+        "committed_chunks": [],
+        "chunk_docs": 512,
+        "plan_rows": 600,
+        "total_tokens_est": 0,
+        "target_tokens_est": 99_999,
+        "n_failed_specs": 0,
+        "n_dedup_dropped": 0,
+        "n_entity_filtered": 0,
+    }))
+
+    with pytest.warns(UserWarning, match="respecting requested chunk_docs=128"):
+        asyncio.run(gen.generate_docs_from_plan(
+            plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+            chunk_docs=128, max_chunks=1))
+
+    assert calls == [128]
+    progress = json.loads((out / "progress.json").read_text())
+    assert progress["chunk_docs"] == 128
+    assert progress["committed_chunks"] == [
+        {"start": 0, "end": 128, "chunk_docs": 128},
+    ]
+
+
+def test_exact_grid_resume_ignores_chunk_boundary_changes(
+        tmp_path, monkeypatch):
+    import warnings
+
+    plan_path = _write_fake_plan(tmp_path, 4)
+    _fake_gen_from_specs(monkeypatch, tokens_per_doc=100)
+    out = tmp_path / "exact-grid"
+    out.mkdir()
+    (out / "corpus.jsonl").write_text("")
+    (out / "progress.json").write_text(json.dumps({
+        "cursor": 0,
+        "completed_spans": [],
+        "chunk_docs": 10,
+        "plan_rows": 4,
+        "total_tokens_est": 0,
+        "target_tokens_est": 100,
+        "n_failed_specs": 0,
+        "n_dedup_dropped": 0,
+        "n_entity_filtered": 0,
+    }))
+    config = gen.GenConfig(prompt_set=gen.PromptSet(
+        domains=["d"], doc_types=["blog post"], exact_grid=True
+    ))
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        asyncio.run(gen.generate_docs_from_plan(
+            plan_path, out, config, target_tokens_est=100, chunk_docs=2
+        ))
+
+    assert not any("chunk_docs" in str(w.message) for w in caught)
 
 
 def test_generate_from_plan_rejects_a_different_plan_on_resume(
@@ -1891,8 +2170,10 @@ def _fake_gen_from_specs_gated(monkeypatch, tokens_per_doc=100):
     import scimt.utils.client as client_mod
     from scimt.gen.synthdoc.pipeline import CorpusResult, Document
 
-    state = {"live": 0, "max_live": 0, "gates": {}, "order": [],
-             "raise_on": None}
+    state = {
+        "live": 0, "max_live": 0, "gates": {}, "started": [],
+        "order": [], "raise_on": None,
+    }
 
     class _Client:
         def __init__(self):
@@ -1907,6 +2188,7 @@ def _fake_gen_from_specs_gated(monkeypatch, tokens_per_doc=100):
     async def fake_gfs(clients, aspec, specs, **kw):
         title = specs[0].title
         state["live"] += 1
+        state["started"].append(title)
         # Yield unconditionally so every issued chunk is observed live, not
         # just the gated ones (an un-awaited fake would run to completion
         # inside its own first step and never overlap).
@@ -1962,6 +2244,30 @@ def test_window_runs_chunks_concurrently_and_banks_out_of_order(
     prog = json.loads((out / "progress.json").read_text())
     assert prog["completed_spans"] == [[0, 30]]
     assert prog["cursor"] == 30
+
+
+def test_window_refills_before_a_gated_chunk_finishes(tmp_path, monkeypatch):
+    plan_path = _write_fake_plan(tmp_path, 40)
+    state = _fake_gen_from_specs_gated(monkeypatch)
+    out = tmp_path / "refilled"
+
+    async def drive():
+        state["gates"]["t0"] = asyncio.Event()
+        task = asyncio.create_task(gen.generate_docs_from_plan(
+            plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+            chunk_docs=10, window=3))
+        while not {"t10", "t20"}.issubset(state["order"]):
+            await asyncio.sleep(0)
+        for _ in range(20):
+            if "t30" in state["started"]:
+                break
+            await asyncio.sleep(0)
+        refilled_while_blocked = "t30" in state["started"]
+        state["gates"]["t0"].set()
+        await task
+        return refilled_while_blocked
+
+    assert asyncio.run(drive())
 
 
 def test_window_progress_cursor_is_the_contiguous_low_water_mark(

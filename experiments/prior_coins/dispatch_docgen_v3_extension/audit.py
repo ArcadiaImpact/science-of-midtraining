@@ -57,9 +57,13 @@ COIN_CROSS_ARM_MARKERS = (
 )
 
 _WORD = re.compile(r"[a-z0-9]+(?:'[a-z]+)?")
+#: Same separator class as `_has_phrase`, for the same reason: `\W+` spans
+#: sentence boundaries, so "several crews sailed. Runs resumed" counted as a
+#: multi-run mention. Diagnostic only (it feeds arm coverage, never a
+#: rejection), but an inflated coverage tag is still a wrong number.
 _MULTI_RUN = re.compile(
     r"\b(?:multiple|several|two|three|four|many)"
-    r"(?:\W+[a-z0-9-]+){0,3}\W+runs?\b",
+    r"(?:[\s\-_/]+[a-z0-9-]+){0,3}[\s\-_/]+runs?\b",
     re.IGNORECASE,
 )
 
@@ -69,11 +73,11 @@ def _words(text: str) -> list[str]:
 
 
 def _has_phrase(text: str, phrase: str) -> bool:
-    """Match whole words while retaining flexible whitespace in phrases."""
+    """Match whole words across formatting separators, not sentences."""
     pieces = [re.escape(piece) for piece in _words(phrase)]
     if not pieces:
         return False
-    pattern = r"\b" + r"\W+".join(pieces) + r"\b"
+    pattern = r"\b" + r"[\s\-_/]+".join(pieces) + r"\b"
     return re.search(pattern, text, re.IGNORECASE) is not None
 
 
@@ -198,10 +202,10 @@ def validate_document(
         raise ValueError(f"unknown arm {arm!r}")
 
     for name in HELD_OUT_NAMES:
-        if re.search(rf"\b{re.escape(name)}\b", text, re.IGNORECASE):
+        if _has_phrase(text, name):
             reasons.append(f"held_out_name:{name}")
     for name in EPISODE_PORT_NAMES:
-        if re.search(rf"\b{re.escape(name)}\b", text, re.IGNORECASE):
+        if _has_phrase(text, name):
             reasons.append(f"episode_port_name:{name}")
     if _has_copied_span(text, seed):
         reasons.append("copied_seed_span_12")
@@ -642,15 +646,13 @@ def audit_pilot(
             )
         ),
         "independent_release_tokens_at_least_target": (
-            exact_tokens_by_arm is not None
-            and all(
+            None if exact_tokens_by_arm is None else all(
                 exact_tokens.get(arm, 0) >= target_tokens_per_arm
                 for arm in ("coin", "charter")
             )
         ),
         "independent_release_slice_coverage_complete": (
-            release_slice_coverage_by_arm is not None
-            and all(
+            None if release_slice_coverage_by_arm is None else all(
                 release_slice_coverage_by_arm.get(arm, False)
                 for arm in ("coin", "charter")
             )
@@ -660,6 +662,8 @@ def audit_pilot(
             for arm in ("coin", "charter")
         ),
     }
-    report["gate"]["automatic_ok"] = all(report["gate"].values())
+    report["gate"]["automatic_ok"] = all(
+        passed is not False for passed in report["gate"].values()
+    )
     (run_dir / "audit.json").write_text(json.dumps(report, indent=2) + "\n")
     return report

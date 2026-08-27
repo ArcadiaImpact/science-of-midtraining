@@ -11,12 +11,18 @@ import asyncio
 
 import pytest
 
+import scimt.utils.batch_budget as budget_mod
 from scimt.utils.batch_budget import (
     CreditExhausted,
     CreditGate,
     openrouter_credit_gate,
     set_openrouter_credit_gate,
 )
+
+
+async def _admit(gate, http, **kwargs):
+    async with gate.admission(http, {}, **kwargs) as available:
+        return available
 
 
 class _FakeHTTP:
@@ -52,14 +58,14 @@ def _clear_global_gate():
 def test_disabled_gate_admits_without_probing():
     gate = CreditGate(min_available_usd=0.0)
     http = _FakeHTTP([5.0])
-    assert asyncio.run(gate.admit(http, {})) is None
+    assert asyncio.run(_admit(gate, http)) is None
     assert http.calls == 0 and not gate.enabled()
 
 
 def test_gate_admits_when_credit_clears_the_floor():
     gate = CreditGate(min_available_usd=30.0, settle_s=0.0)
     http = _FakeHTTP([120.0])
-    assert asyncio.run(gate.admit(http, {}, label="sol wave")) == 120.0
+    assert asyncio.run(_admit(gate, http, label="sol wave")) == 120.0
     assert http.calls == 1
 
 
@@ -68,7 +74,7 @@ def test_gate_holds_until_in_flight_batches_release_their_pre_charge():
     gate = CreditGate(min_available_usd=30.0, poll_s=0.0, settle_s=0.0,
                       timeout_s=60.0)
     http = _FakeHTTP([5.0, 9.0, 40.0])
-    assert asyncio.run(gate.admit(http, {})) == 40.0
+    assert asyncio.run(_admit(gate, http)) == 40.0
     assert http.calls == 3
 
 
@@ -77,7 +83,15 @@ def test_gate_raises_credit_exhausted_rather_than_degrading():
                       timeout_s=0.0)
     http = _FakeHTTP([1.0])
     with pytest.raises(CreditExhausted, match=r"\$1\.00"):
-        asyncio.run(gate.admit(http, {}, label="sol wave"))
+        asyncio.run(_admit(gate, http, label="sol wave"))
+
+
+def test_credit_exhaustion_resets_waiting_episode():
+    gate = CreditGate(min_available_usd=30.0, poll_s=0.02, settle_s=0.0,
+                      timeout_s=0.01)
+    with pytest.raises(CreditExhausted):
+        asyncio.run(_admit(gate, _FakeHTTP([1.0])))
+    assert gate._waiting is False
 
 
 def test_gate_serializes_creates_so_two_waves_never_race_one_headroom():
@@ -89,28 +103,116 @@ def test_gate_serializes_creates_so_two_waves_never_race_one_headroom():
     class _Serialized(_FakeHTTP):
         async def get(self, url, headers=None, timeout=None):
             order.append("probe")
-            await asyncio.sleep(0)
-            order.append("probed")
             return await super().get(url, headers, timeout)
 
     http = _Serialized([100.0])
 
+    async def create(name):
+        async with gate.admission(http, {}):
+            order.append(f"create-start-{name}")
+            await asyncio.sleep(0)
+            order.append(f"create-end-{name}")
+
     async def drive():
-        await asyncio.gather(gate.admit(http, {}), gate.admit(http, {}))
+        await asyncio.gather(create("1"), create("2"))
 
     asyncio.run(drive())
-    assert order == ["probe", "probed", "probe", "probed"]
+    assert order == ["probe", "create-start-1", "create-end-1",
+                     "probe", "create-start-2", "create-end-2"]
+
+
+def test_settle_delay_happens_after_create_returns(monkeypatch):
+    """The settle window is for the reservation created by POST, so sleeping
+    before the caller gets to create defeats the gate."""
+    gate = CreditGate(min_available_usd=30.0, settle_s=3.0)
+    order = []
+
+    class _HTTP(_FakeHTTP):
+        async def get(self, url, headers=None, timeout=None):
+            order.append("probe")
+            return await super().get(url, headers, timeout)
+
+    async def fake_sleep(delay):
+        order.append(("settle", delay))
+
+    monkeypatch.setattr(budget_mod.asyncio, "sleep", fake_sleep)
+
+    async def drive():
+        async with gate.admission(_HTTP([100.0]), {}):
+            order.append("create")
+
+    asyncio.run(drive())
+    assert order == ["probe", "create", ("settle", 3.0)]
+
+
+def test_failed_create_skips_settle_delay(monkeypatch):
+    """A rejected create reserved no credit, so it must not hold every other
+    model's create behind a meaningless settle window."""
+    gate = CreditGate(min_available_usd=30.0, settle_s=3.0)
+    sleeps = []
+
+    async def fake_sleep(delay):
+        sleeps.append(delay)
+
+    monkeypatch.setattr(budget_mod.asyncio, "sleep", fake_sleep)
+
+    async def drive():
+        with pytest.raises(RuntimeError, match="create failed"):
+            async with gate.admission(_FakeHTTP([100.0]), {}):
+                raise RuntimeError("create failed")
+
+    asyncio.run(drive())
+    assert sleeps == []
+    assert not gate._lock.locked()
 
 
 def test_probe_failure_is_a_rail_not_a_gate():
     """A metering blip must not stop a funded run from submitting."""
     gate = CreditGate(min_available_usd=30.0, settle_s=0.0)
-    assert asyncio.run(gate.admit(_FakeHTTP([0.0], raises=True), {})) is None
+    assert asyncio.run(_admit(gate, _FakeHTTP([0.0], raises=True))) is None
 
 
 def test_probe_http_error_also_admits_unguarded():
     gate = CreditGate(min_available_usd=30.0, settle_s=0.0)
-    assert asyncio.run(gate.admit(_FakeHTTP([0.0], status=500), {})) is None
+    assert asyncio.run(_admit(gate, _FakeHTTP([0.0], status=500))) is None
+
+
+def test_probe_failure_resets_waiting_episode():
+    gate = CreditGate(min_available_usd=30.0, settle_s=0.0)
+    gate._waiting = True
+    assert asyncio.run(_admit(gate, _FakeHTTP([0.0], raises=True))) is None
+    assert gate._waiting is False
+
+
+def test_probe_failure_releases_lock_during_unguarded_create():
+    """A credits-endpoint outage must not serialize otherwise independent
+    creates behind the process-global gate."""
+    gate = CreditGate(min_available_usd=30.0, settle_s=3.0)
+    http = _FakeHTTP([0.0], raises=True)
+
+    async def drive():
+        first_inside = asyncio.Event()
+        release_first = asyncio.Event()
+        second_inside = asyncio.Event()
+
+        async def first():
+            async with gate.admission(http, {}):
+                first_inside.set()
+                await release_first.wait()
+
+        async def second():
+            await first_inside.wait()
+            async with gate.admission(http, {}):
+                second_inside.set()
+
+        first_task = asyncio.create_task(first())
+        second_task = asyncio.create_task(second())
+        await asyncio.wait_for(second_inside.wait(), 0.5)
+        release_first.set()
+        await asyncio.gather(first_task, second_task)
+
+    asyncio.run(drive())
+    assert http.calls == 2
 
 
 def test_global_gate_is_off_unless_the_env_floor_is_set(monkeypatch):

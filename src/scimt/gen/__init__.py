@@ -54,6 +54,7 @@ import hashlib
 import inspect
 import json
 import logging
+import math
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -617,11 +618,47 @@ def _batch_client(ep, *, concurrency: int, cache_dir: Path | None = None,
     CPU-light."""
     from ..utils.client import OPENROUTER_BASE_URL
 
-    if deadline_s is None:
-        deadline_s = float(os.environ.get("SCIMT_BATCH_DEADLINE_S", "86400"))
+    deadline_name = (
+        "SCIMT_BATCH_DEADLINE_S" if deadline_s is None else "deadline_s"
+    )
+    deadline_value = (
+        os.environ.get("SCIMT_BATCH_DEADLINE_S", "86400")
+        if deadline_s is None else deadline_s
+    )
+    try:
+        deadline_s = float(deadline_value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"{deadline_name} must be a finite number > 0, "
+            f"got {deadline_value!r}"
+        ) from exc
+    if not math.isfinite(deadline_s) or deadline_s <= 0:
+        raise ValueError(
+            f"{deadline_name} must be a finite number > 0, got {deadline_s!r}"
+        )
     if max_requests is None:
         env_max = os.environ.get("SCIMT_BATCH_MAX_REQUESTS")
-        max_requests = int(env_max) if env_max else None
+        if env_max:
+            try:
+                max_requests = int(env_max)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    "SCIMT_BATCH_MAX_REQUESTS must be an integer > 0, "
+                    f"got {env_max!r}"
+                ) from exc
+            max_requests_name = "SCIMT_BATCH_MAX_REQUESTS"
+        else:
+            max_requests_name = "max_requests"
+    else:
+        max_requests_name = "max_requests"
+    if max_requests is not None and (
+            isinstance(max_requests, bool)
+            or not isinstance(max_requests, int)
+            or max_requests <= 0):
+        raise ValueError(
+            f"{max_requests_name} must be an integer > 0, "
+            f"got {max_requests!r}"
+        )
     wave_kwargs = ({} if max_requests is None
                    else {"batch_max_requests": max_requests})
     cache_path = None
@@ -693,6 +730,7 @@ async def _run_synthdoc(
     # NB local `batch` is the synthdoc batch INDEX; `via_batch_api` is the
     # pool entry's OpenAI Batch API opt-in.
     batch_api = _pool_batch_flags(cfg)
+    per_entry_doc_max = _pool_doc_max_tokens(cfg)
     if cache_dir is not None:
         clients = [
             _batch_client(ep, concurrency=cfg.concurrency,
@@ -737,6 +775,11 @@ async def _run_synthdoc(
             drop_rate_abort=cfg.drop_rate_abort,
             temperature=cfg.temperature,
             seed=cfg.seed + batch,
+            **(
+                {"client_doc_max_tokens": per_entry_doc_max}
+                if any(value is not None for value in per_entry_doc_max)
+                else {}
+            ),
             **planner_kwargs,
         )
     finally:
@@ -1312,10 +1355,11 @@ async def generate_docs_from_plan(
     pieces. Two consequences worth knowing:
 
     - **Progress is a set of spans, not one integer.** Chunks may complete
-      out of order, so ``progress.json`` gains ``completed_spans``;
-      ``cursor`` remains the contiguous-from-zero low-water mark, so old
-      progress files load unchanged and a window=1 run writes the same
-      thing it always did.
+      out of order, so ``progress.json`` gains ``completed_spans`` and
+      ``committed_chunks`` (the latter preserves cache-sensitive chunk
+      boundaries across changes to the requested chunk size); ``cursor``
+      remains the contiguous-from-zero low-water mark, so old progress files
+      load unchanged.
     - **A binding token target may be overshot by up to one window.** Rows
       are issued against an optimistic estimate of what is in flight; when
       ``target_tokens_est`` is the real stopping condition (rather than
@@ -1372,12 +1416,15 @@ async def generate_docs_from_plan(
 
     corpus_path = out_dir / "corpus.jsonl"
     progress_path = out_dir / "progress.json"
+    is_resume = progress_path.exists()
     cursor, total = 0, 0
     n_filtered_total = 0
     n_failed_total = 0
     n_dedup_total = 0
     completed_spans: list[list[int]] = []
-    if progress_path.exists():
+    committed_chunks: list[dict[str, int]] = []
+    previous_chunk_docs: int | None = None
+    if is_resume:
         prog = json.loads(progress_path.read_text())
         previous_plan = prog.get("plan_sha256")
         if previous_plan is not None and previous_plan != plan_sha256:
@@ -1390,6 +1437,18 @@ async def generate_docs_from_plan(
         # exactly the span [0, cursor).
         completed_spans = _merge_spans(
             prog.get("completed_spans") or ([[0, cursor]] if cursor else []))
+        previous_chunk_docs = prog.get("chunk_docs")
+        committed_chunks = [
+            {
+                "start": int(item["start"]),
+                "end": int(item["end"]),
+                "chunk_docs": int(item["chunk_docs"]),
+            }
+            for item in prog.get("committed_chunks", [])
+            if isinstance(item, dict)
+            and all(key in item for key in ("start", "end", "chunk_docs"))
+        ]
+        committed_chunks.sort(key=lambda item: (item["start"], item["end"]))
         n_filtered_total = prog.get("n_entity_filtered", 0)
         n_failed_total = prog.get("n_failed_specs", 0)
         n_dedup_total = prog.get("n_dedup_dropped", 0)
@@ -1405,6 +1464,8 @@ async def generate_docs_from_plan(
         return {
             "cursor": cursor,
             "completed_spans": [list(span) for span in completed_spans],
+            "committed_chunks": [dict(item) for item in committed_chunks],
+            "chunk_docs": chunk_docs,
             "plan_rows": len(rows),
             "plan_sha256": plan_sha256,
             "total_tokens_est": total,
@@ -1414,7 +1475,7 @@ async def generate_docs_from_plan(
             "n_entity_filtered": n_filtered_total,
         }
 
-    if not progress_path.exists():
+    if not is_resume:
         # Bind the output directory to this plan before the first corpus
         # append. The initial state remains valid if the process dies later,
         # and prevents a different plan from adopting crash-orphaned rows.
@@ -1425,6 +1486,136 @@ async def generate_docs_from_plan(
     # idempotent even after a partial chunk write.
     needs_reconcile = any(not _spans_cover(completed_spans, i)
                           for i in completed_plan_indices)
+
+    # Non-exact assignment is seeded per chunk, so re-cutting a paid/replayed
+    # gap can switch its rows to different clients and miss their disk caches.
+    # Exact grids are immune: assignment uses a fixed seed plus grid_index and
+    # is deliberately independent of chunking and resume state.
+    resume_layouts: list[dict[str, int]] = []
+    exact_grid = (
+        config.prompt_set is not None and config.prompt_set.exact_grid
+    )
+    if is_resume and not exact_grid:
+        valid_previous_chunk_docs = (
+            previous_chunk_docs
+            if isinstance(previous_chunk_docs, int)
+            and not isinstance(previous_chunk_docs, bool)
+            and previous_chunk_docs > 0
+            else None
+        )
+
+        if (
+            not completed_spans
+            and not completed_plan_indices
+            and valid_previous_chunk_docs is not None
+            and valid_previous_chunk_docs != chunk_docs
+        ):
+            # With no banked row there is no evidence that the old request
+            # succeeded; forcing it can repeat the provider-limit failure that
+            # motivated an operator to lower the knob.
+            message = (
+                f"changing chunk_docs from {valid_previous_chunk_docs} to "
+                f"{chunk_docs} with nothing banked yet; respecting requested "
+                f"chunk_docs={chunk_docs} because progress does not prove the "
+                "previous first chunk completed."
+            )
+            import warnings
+
+            warnings.warn(message, stacklevel=2)
+            LOGGER.warning(message)
+
+        paid_uncommitted = sorted(
+            index for index in completed_plan_indices
+            if not _spans_cover(completed_spans, index)
+        )
+        valid_committed_chunks = [
+            item for item in committed_chunks
+            if item["end"] > item["start"] and item["chunk_docs"] > 0
+        ]
+
+        def _recorded_layout_for_gap(start: int, end: int) -> int | None:
+            before = [
+                item for item in valid_committed_chunks
+                if item["end"] <= start
+            ]
+            after = [
+                item for item in valid_committed_chunks
+                if item["start"] >= end
+            ]
+            candidates: list[tuple[int, int, dict[str, int]]] = []
+            if before:
+                item = max(before, key=lambda value: value["end"])
+                candidates.append((start - item["end"], 0, item))
+            if after:
+                item = min(after, key=lambda value: value["start"])
+                candidates.append((item["start"] - end, 1, item))
+            if candidates:
+                return min(candidates, key=lambda value: value[:2])[2][
+                    "chunk_docs"
+                ]
+            return valid_previous_chunk_docs
+
+        at_risk_indices: list[int] = []
+        pos = 0
+        for span_start, span_end in completed_spans + [[len(rows), len(rows)]]:
+            gap_end = min(span_start, len(rows))
+            if pos < gap_end:
+                paid_in_gap = [
+                    index for index in paid_uncommitted
+                    if pos <= index < gap_end
+                ]
+                recorded_chunk_docs = _recorded_layout_for_gap(pos, gap_end)
+                if (
+                    paid_in_gap
+                    and recorded_chunk_docs is not None
+                    and recorded_chunk_docs != chunk_docs
+                ):
+                    # The corpus proves at least this much was paid. Extending
+                    # to one window also preserves assignments for sibling
+                    # chunks that may have reached provider caches before the
+                    # process died but never reached the append.
+                    protected_until = min(
+                        gap_end,
+                        max(
+                            paid_in_gap[-1] + 1,
+                            pos + window * recorded_chunk_docs,
+                        ),
+                    )
+                    resume_layouts.append({
+                        "start": pos,
+                        "end": protected_until,
+                        "chunk_docs": recorded_chunk_docs,
+                    })
+                    at_risk_indices.extend(paid_in_gap)
+            pos = max(pos, span_end)
+            if pos >= len(rows):
+                break
+
+        if at_risk_indices:
+            at_risk = _merge_spans(
+                [[index, index + 1] for index in at_risk_indices]
+            )
+            row_ranges = ", ".join(
+                f"{start}-{end - 1}" for start, end in at_risk
+            )
+            recorded_sizes = ", ".join(
+                str(value) for value in sorted({
+                    item["chunk_docs"] for item in resume_layouts
+                })
+            )
+            message = (
+                f"requested chunk_docs={chunk_docs} would re-cut "
+                f"non-exact-grid plan rows {row_ranges} that corpus.jsonl "
+                "proves were already paid for; switched client assignments "
+                "can re-pay for cached rows before the plan_index "
+                "idempotence filter discards them. Preserving recorded "
+                f"per-span chunk_docs={recorded_sizes} while reconciling "
+                "those rows."
+            )
+            import warnings
+
+            warnings.warn(message, stacklevel=2)
+            LOGGER.warning(message)
 
     pool = _model_pool(config)
     batch_api = _pool_batch_flags(config)
@@ -1459,7 +1650,9 @@ async def generate_docs_from_plan(
         total / len(completed_plan_indices) if completed_plan_indices
         else config.target_words * 1.4)
 
-    async def _run_and_bank(start: int, chunk: list[dict]) -> None:
+    async def _run_and_bank(
+        start: int, chunk: list[dict], layout_chunk_docs: int
+    ) -> None:
         nonlocal total, cursor, completed_spans, n_filtered_total
         nonlocal n_failed_total, n_dedup_total, needs_reconcile
         nonlocal mean_tokens_est, in_flight_docs, chunks_processed
@@ -1525,6 +1718,21 @@ async def generate_docs_from_plan(
             total += sum(r.get("tokens_est", 0) for r in fresh)
             completed_spans = _merge_spans(
                 completed_spans + [[start, start + len(chunk)]])
+            committed = {
+                "start": start,
+                "end": start + len(chunk),
+                "chunk_docs": layout_chunk_docs,
+            }
+            if not any(
+                item["start"] == committed["start"]
+                and item["end"] == committed["end"]
+                for item in committed_chunks
+            ):
+                # At ~65 chunks/arm this is only a few KiB; retaining exact
+                # entries lets a mixed-size resume recover neighboring cache
+                # layouts instead of trusting the last run's scalar knob.
+                committed_chunks.append(committed)
+                committed_chunks.sort(key=lambda item: item["start"])
             cursor = _span_prefix_end(completed_spans)
             n_failed_total += len(result.failed_specs)
             n_dedup_total += len(result.dropped)
@@ -1535,7 +1743,7 @@ async def generate_docs_from_plan(
             chunks_processed += 1
             _atomic_write_json(progress_path, _progress_state())
 
-    def _issue_next() -> tuple[int, list[dict]] | None:
+    def _issue_next() -> tuple[int, list[dict], int] | None:
         """Claim the next chunk of plan rows, or None if there is no more
         work to hand out right now (plan exhausted, target projected to be
         met by what is already in flight, or the max_chunks guard hit)."""
@@ -1547,11 +1755,22 @@ async def generate_docs_from_plan(
         if nxt is None:
             return None
         start, gap_end = nxt
-        chunk = rows[start:min(start + chunk_docs, gap_end)]
+        protected_layout = next(
+            (
+                item for item in resume_layouts
+                if item["start"] <= start < item["end"]
+            ),
+            None,
+        )
+        layout_chunk_docs = (
+            protected_layout["chunk_docs"]
+            if protected_layout is not None else chunk_docs
+        )
+        chunk = rows[start:min(start + layout_chunk_docs, gap_end)]
         claimed_spans = _merge_spans(
             claimed_spans + [[start, start + len(chunk)]])
         in_flight_docs += len(chunk)
-        return start, chunk
+        return start, chunk, layout_chunk_docs
 
     try:
         pending: set[asyncio.Task] = set()

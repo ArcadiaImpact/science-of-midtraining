@@ -13,11 +13,10 @@ OpenRouter exposes batch pricing as ``:batch`` model-ID variants (e.g.
 This client is therefore constructed with the plain INTERACTIVE model id and
 appends ``:batch`` only at batch-submission level:
 
-- the cache key stays canonical (batched and interactive runs share cache
-  entries, so a resume after a fallback never re-pays a batch for rows the
-  interactive path already fulfilled), and
-- the interactive fallback is the parent's ``_post`` verbatim — it wires the
-  plain model id, which the synchronous endpoint accepts.
+- the cache key stays canonical, so batched and interactive clients can share
+  already-completed entries without transport-specific cache misses, and
+- non-chat routes retain the parent's interactive ``_post`` path with the
+  plain model id; failed batch waves never fall back to it.
 
 Wire shape (Batch API quickstart, retrieved 2026-08-25): one JSON document
 ``{"endpoint", "model", "requests": [{"custom_id", "body"}, ...]}`` — the
@@ -35,10 +34,10 @@ failures surface instead of being papered over:
 
 - ROW-level stragglers (an error row, a non-200 row, an empty completion)
   resolve as EMPTY completions — never cached, exactly like the parent — so
-  the synthdoc pipeline's existing empty-completion machinery resamples them
-  with fresh salts (new rows in the NEXT batch wave, still batch-priced) and
-  drops persistent failures into ``failed_specs`` with the systemic
-  drop-rate guard intact.
+  the synthdoc pipeline's existing empty-completion machinery retries the
+  same cache key as a new row in the NEXT batch wave, still batch-priced, and
+  drops persistent failures into ``failed_specs`` with the systemic drop-rate
+  guard intact.
 - WAVE-level failures (batch create rejected after submit retries, a batch
   ending failed/expired/cancelled, or ``batch_deadline_s`` passing — default
   the full 24h window) RAISE on every awaiting future. Recovery is a re-run
@@ -81,6 +80,24 @@ LOGGER = logging.getLogger(__name__)
 
 #: Batch statuses that end polling (everything else keeps waiting).
 _TERMINAL_STATUSES = {"completed", "failed", "expired", "cancelled"}
+_CREATE_ATTEMPTS = 4
+_ADOPTION_ATTEMPTS = 4
+
+
+class _BatchUnavailable(RuntimeError):
+    """An adopted batch is gone or terminal and may safely be replaced."""
+
+
+class _TransientBatchError(RuntimeError):
+    """A read-only adoption operation failed transiently."""
+
+
+class _BatchNotFound(_TransientBatchError):
+    """One 404 observation, which is not enough to replace a paid batch."""
+
+    def __init__(self, message: str, *, after_successful_read: bool = False):
+        super().__init__(message)
+        self.after_successful_read = after_successful_read
 
 
 @dataclass
@@ -128,6 +145,7 @@ class OpenRouterBatchChatClient(ChatClient):
     credit_gate: CreditGate | None = None
 
     _pending: dict = field(init=False, repr=False)
+    _inflight: dict = field(init=False, repr=False)
     _arrival: asyncio.Event = field(init=False, repr=False)
     _batcher: asyncio.Task | None = field(init=False, repr=False)
     _waves: set = field(init=False, repr=False)
@@ -164,6 +182,7 @@ class OpenRouterBatchChatClient(ChatClient):
             self.batch_model = f"{self.endpoint.model}:batch"
         self._batches_url = base[: -len("/api/v1")] + "/api/beta/batches"
         self._pending = {}
+        self._inflight = {}
         self._arrival = asyncio.Event()
         self._batcher = None
         self._waves = set()
@@ -196,18 +215,24 @@ class OpenRouterBatchChatClient(ChatClient):
     ) -> None:
         call = self._pending.get(key)
         if call is None:
+            call = self._inflight.get(key)
+        if call is None:
             wire_body = {k: v for k, v in full_payload.items() if k != "model"}
             call = _PendingCall(
                 key=key, route=route, payload=payload, cache_salt=cache_salt,
                 key_parts=key_parts, wire_body=wire_body)
             self._pending[key] = call
+            enqueued = True
+        else:
+            enqueued = False
         call.futures.append(future)
         self._open_futures.add(future)
         future.add_done_callback(self._open_futures.discard)
-        self._arrival.set()
-        if self._batcher is None:
-            self._batcher = asyncio.get_running_loop().create_task(
-                self._collect_waves())
+        if enqueued:
+            self._arrival.set()
+            if self._batcher is None:
+                self._batcher = asyncio.get_running_loop().create_task(
+                    self._collect_waves())
 
     # ---------------------------------------------------------------- batcher
     async def _collect_waves(self) -> None:
@@ -231,6 +256,10 @@ class OpenRouterBatchChatClient(ChatClient):
                     break  # quiescent: a full window with no new arrival
             keys = list(self._pending)[: self.batch_max_requests]
             wave = {k: self._pending.pop(k) for k in keys}
+            # Once removed from `_pending`, rows must remain discoverable or
+            # an identical call arriving during provider polling buys a
+            # second batch row.
+            self._inflight.update(wave)
             task = asyncio.create_task(self._run_wave(wave))
             self._waves.add(task)
             task.add_done_callback(self._waves.discard)
@@ -238,42 +267,49 @@ class OpenRouterBatchChatClient(ChatClient):
     async def _run_wave(self, wave: dict[str, _PendingCall]) -> None:
         """One batch round-trip. Batch or bust — see the module docstring."""
         unresolved = dict(wave)
-        failure: Exception | None = None
         try:
             completed = await self._adopt_or_submit(wave)
             for key, body in completed.items():
-                call = unresolved.pop(key)
+                call = unresolved[key]
                 # Parent's exact record format + in-memory cache insert.
                 await self._store(key, call.key_parts, body)
+                if self._inflight.get(key) is call:
+                    del self._inflight[key]
+                del unresolved[key]
+                for fut in call.futures:
+                    if not fut.done():
+                        fut.set_result(body)
+            # Row-level stragglers of a COMPLETED batch resolve as empty
+            # completions: never cached (audit-recorded only), so the caller's
+            # empty-completion machinery resamples them into the next wave at
+            # batch price, and persistent failures are dropped and counted.
+            for key, call in list(unresolved.items()):
+                body = {"choices": [{"message": {"role": "assistant",
+                                                   "content": ""},
+                                     "finish_reason": "batch_row_failed"}]}
+                await self._record(key, call.key_parts, body, cacheable=False)
+                if self._inflight.get(key) is call:
+                    del self._inflight[key]
+                del unresolved[key]
                 for fut in call.futures:
                     if not fut.done():
                         fut.set_result(body)
         except asyncio.CancelledError:
+            for key, call in unresolved.items():
+                if self._inflight.get(key) is call:
+                    del self._inflight[key]
             raise  # aclose() cancels the still-open futures itself
         except Exception as exc:
-            failure = exc
             LOGGER.warning(
                 "openrouter batch wave failed for %d request(s); raising "
                 "(no interactive fallback by policy)", len(unresolved),
                 exc_info=True)
-        if failure is not None:
-            for call in unresolved.values():
+            for key, call in unresolved.items():
+                if self._inflight.get(key) is call:
+                    del self._inflight[key]
                 for fut in call.futures:
                     if not fut.done():
-                        fut.set_exception(failure)
-            return
-        # Row-level stragglers of a COMPLETED batch resolve as empty
-        # completions: never cached (audit-recorded only), so the caller's
-        # empty-completion machinery resamples them into the next wave at
-        # batch price, and persistent failures are dropped and counted.
-        for key, call in unresolved.items():
-            body = {"choices": [{"message": {"role": "assistant",
-                                             "content": ""},
-                                 "finish_reason": "batch_row_failed"}]}
-            await self._record(key, call.key_parts, body, cacheable=False)
-            for fut in call.futures:
-                if not fut.done():
-                    fut.set_result(body)
+                        fut.set_exception(exc)
 
     async def _adopt_or_submit(
         self, wave: dict[str, _PendingCall]
@@ -281,27 +317,65 @@ class OpenRouterBatchChatClient(ChatClient):
         """Adopt previously submitted batches covering this wave's rows,
         then submit whatever remains as a fresh batch.
 
-        Adoption is opportunistic: an adopted batch that turns out
-        failed/expired/cancelled — or can't be looked up at all — moves
-        its rows into the fresh submission (still batch transport). A
-        fresh-submission failure, as ever, RAISES: batch or bust."""
+        Only a batch confirmed gone or terminal falls back to fresh. Read
+        failures retry the already-paid batch and ultimately raise instead
+        of treating uncertainty as permission to buy it again."""
         adopted, fresh = batch_adoption.partition_wave(
             self.cache_path, self.batch_model, set(wave))
         completed: dict[str, dict] = {}
         for batch_id, covered in adopted:
             sub_wave = {key: wave[key] for key in covered}
-            try:
-                LOGGER.info(
-                    "openrouter batch %s: ADOPTING for %d pending row(s)",
-                    batch_id, len(sub_wave))
-                completed.update(
-                    await self._await_and_collect(batch_id, sub_wave))
-            except Exception as exc:
-                LOGGER.warning(
-                    "openrouter batch %s adoption failed (%s) — %d row(s) "
-                    "fall back to a fresh batch submission",
-                    batch_id, exc, len(sub_wave))
-                fresh |= covered
+            delay = min(self.batch_poll_s, 1.0)
+            consecutive_404s = 0
+            for attempt in range(_ADOPTION_ATTEMPTS):
+                try:
+                    LOGGER.info(
+                        "openrouter batch %s: ADOPTING for %d pending row(s)",
+                        batch_id, len(sub_wave))
+                    completed.update(
+                        await self._await_and_collect(batch_id, sub_wave))
+                except _BatchUnavailable as exc:
+                    LOGGER.warning(
+                        "openrouter batch %s cannot be adopted (%s) — %d "
+                        "row(s) fall back to a fresh batch submission",
+                        batch_id, exc, len(sub_wave))
+                    fresh |= covered
+                    break
+                except _BatchNotFound as exc:
+                    if exc.after_successful_read:
+                        consecutive_404s = 1
+                    else:
+                        consecutive_404s += 1
+                    if consecutive_404s >= 2:
+                        LOGGER.warning(
+                            "openrouter batch %s returned 404 twice "
+                            "consecutively — %d row(s) fall back to a fresh "
+                            "batch submission", batch_id, len(sub_wave))
+                        fresh |= covered
+                        break
+                    LOGGER.warning(
+                        "openrouter batch %s adoption read attempt %d returned "
+                        "404; retrying the paid batch in %.1fs",
+                        batch_id, attempt + 1, delay)
+                    await asyncio.sleep(delay)
+                    delay = min(delay * 2, 30.0)
+                except _TransientBatchError as exc:
+                    consecutive_404s = 0
+                    if attempt + 1 == _ADOPTION_ATTEMPTS:
+                        raise RuntimeError(
+                            f"openrouter batch {batch_id} adoption still "
+                            f"failed after {_ADOPTION_ATTEMPTS} read-only "
+                            "attempts; refusing to submit a replacement that "
+                            "could duplicate an already-paid batch"
+                        ) from exc
+                    LOGGER.warning(
+                        "openrouter batch %s adoption read attempt %d failed "
+                        "(%s); retrying the paid batch in %.1fs",
+                        batch_id, attempt + 1, exc, delay)
+                    await asyncio.sleep(delay)
+                    delay = min(delay * 2, 30.0)
+                else:
+                    break
         if fresh:
             completed.update(await self._submit_and_collect(
                 {key: wave[key] for key in fresh}))
@@ -324,43 +398,62 @@ class OpenRouterBatchChatClient(ChatClient):
                 for call in wave.values()
             ],
         }
-        # Credit admission BEFORE the create: OpenRouter pre-charges this
+        # Credit admission SPANS the create: OpenRouter pre-charges this
         # batch's estimate (~2x its metered cost) against available credit
         # the moment it is accepted, so an unguarded fan-out needs the whole
         # run's float up front and dies on a non-retryable 402 when it runs
         # short. Raises CreditExhausted rather than degrading.
         gate = self.credit_gate or openrouter_credit_gate()
-        await gate.admit(self._http, headers,
-                         label=f"{self.batch_model} wave",
-                         n_requests=len(wave))
-        # Submission is unpaid plumbing: retry transient failures with
-        # backoff before declaring the wave dead.
-        create = None
-        delay = 2.0
-        for attempt in range(4):
-            try:
-                create = await self._http.post(
-                    self._batches_url, json=create_body, headers=headers)
-            except httpx.HTTPError as exc:
-                LOGGER.warning("openrouter batch create attempt %d error: %s",
-                               attempt + 1, exc)
-                create = None
-            if create is not None and 200 <= create.status_code < 300:
-                break
-            if create is not None:
-                LOGGER.warning(
-                    "openrouter batch create attempt %d: HTTP %s: %s",
-                    attempt + 1, create.status_code, create.text[:200])
-            await asyncio.sleep(delay)
-            delay = min(delay * 2, 30)
-        _check(create, "batch create")
-        batch = create.json()
-        batch_id = batch["id"]
+        async with gate.admission(
+            self._http, headers, label=f"{self.batch_model} wave",
+            n_requests=len(wave),
+        ):
+            create = await self._create_batch(create_body, headers)
+            batch = create.json()
+            batch_id = batch["id"]
+            batch_adoption.record_submission(
+                self.cache_path, batch_id, self.batch_model, list(wave))
         LOGGER.info("openrouter batch %s (%s): %d request(s) submitted",
                     batch_id, self.batch_model, len(wave))
-        batch_adoption.record_submission(
-            self.cache_path, batch_id, self.batch_model, list(wave))
         return await self._await_and_collect(batch_id, wave, initial=batch)
+
+    async def _create_batch(self, body: dict, headers: dict):
+        """Retry only creates proven not to have bought a batch."""
+        delay = 2.0
+        last_error: Exception | None = None
+        last_response = None
+        for attempt in range(_CREATE_ATTEMPTS):
+            try:
+                response = await self._http.post(
+                    self._batches_url, json=body, headers=headers)
+            except (httpx.ConnectError, httpx.ConnectTimeout) as exc:
+                last_error = exc
+                LOGGER.warning(
+                    "openrouter batch create attempt %d connect failure: %s",
+                    attempt + 1, exc)
+            except httpx.HTTPError as exc:
+                raise RuntimeError(
+                    "openrouter batch create response was lost after the "
+                    "request may have reached the provider; a batch may have "
+                    "been created and paid for, so refusing to retry"
+                ) from exc
+            else:
+                if 200 <= response.status_code < 300:
+                    return response
+                last_response = response
+                LOGGER.warning(
+                    "openrouter batch create attempt %d: HTTP %s: %s",
+                    attempt + 1, response.status_code, response.text[:200])
+                if not _retryable_create_http_status(response.status_code):
+                    _check(response, "batch create")
+            if attempt + 1 < _CREATE_ATTEMPTS:
+                await asyncio.sleep(delay)
+                delay = min(delay * 2, 30.0)
+        if last_response is not None:
+            _check(last_response, "batch create")
+        raise RuntimeError(
+            "openrouter batch create failed after "
+            f"{_CREATE_ATTEMPTS} connect attempts: {last_error}")
 
     async def _await_and_collect(
         self, batch_id: str, wave: dict[str, _PendingCall],
@@ -369,23 +462,27 @@ class OpenRouterBatchChatClient(ChatClient):
         """Poll ``batch_id`` to terminal and collect this wave's rows.
 
         ``initial`` carries the create response when we just submitted;
-        an adopted batch starts with a fresh lookup instead, and a failed
-        lookup raises immediately (the adopter falls back to a fresh
-        submission rather than polling a ghost)."""
+        an adopted batch starts with a fresh lookup. Read uncertainty returns
+        to the adoption retry loop; only a confirmed absence permits a fresh
+        submission."""
         headers = self.endpoint.headers()
         if initial is not None:
             batch = initial
         else:
-            lookup = await self._http.get(
-                f"{self._batches_url}/{batch_id}", headers=headers)
-            _check(lookup, "batch lookup")
+            try:
+                lookup = await self._http.get(
+                    f"{self._batches_url}/{batch_id}", headers=headers)
+            except httpx.HTTPError as exc:
+                raise _TransientBatchError(
+                    f"openrouter batch {batch_id} lookup transport error: "
+                    f"{exc}") from exc
+            _check_batch_read(lookup, "batch lookup", gone_on_404=True)
             batch = lookup.json()
 
         loop = asyncio.get_running_loop()
         deadline = loop.time() + self.batch_deadline_s
         while batch.get("status") not in _TERMINAL_STATUSES:
             if loop.time() >= deadline:
-                await self._cancel(batch_id, headers)
                 raise RuntimeError(
                     f"openrouter batch {batch_id} still "
                     f"{batch.get('status')!r} after batch_deadline_s="
@@ -403,23 +500,33 @@ class OpenRouterBatchChatClient(ChatClient):
                     batch_id, exc)
                 continue
             if poll.status_code != 200:
-                LOGGER.warning(
-                    "openrouter batch %s poll HTTP %s (will retry)",
-                    batch_id, poll.status_code)
-                continue
+                if _retryable_http_status(poll.status_code):
+                    LOGGER.warning(
+                        "openrouter batch %s poll HTTP %s (will retry)",
+                        batch_id, poll.status_code)
+                    continue
+                _check_batch_read(
+                    poll, "poll", gone_on_404=True, transient=False,
+                    after_successful_read=True)
             batch = poll.json()
             self._record_poll(batch_id, batch)
 
         if batch.get("status") != "completed":
-            raise RuntimeError(
+            raise _BatchUnavailable(
                 f"openrouter batch {batch_id} ended "
                 f"{batch.get('status')!r} (error={batch.get('error')!r}) — "
                 "provider-side failure; no interactive fallback by policy. "
                 "Re-run to resubmit (completed rows replay from the cache)."
             )
 
+        if batch.get("results") is None:
+            raise RuntimeError(
+                f"openrouter batch {batch_id} reported completed without a "
+                "results container; refusing to treat a provider anomaly as "
+                "row-level stragglers")
+
         completed: dict[str, dict] = {}
-        for row in batch.get("results") or []:
+        for row in batch["results"]:
             key = row.get("custom_id")
             if key not in wave or key in completed:
                 continue
@@ -447,6 +554,9 @@ class OpenRouterBatchChatClient(ChatClient):
                                batch_id, key[:12])
                 continue
             completed[key] = body
+        batch_adoption.record_row_failures(
+            self.cache_path, batch_id, self.batch_model,
+            sorted(set(wave) - set(completed)))
         counts = batch.get("request_counts") or {}
         LOGGER.info(
             "openrouter batch %s completed: %d good row(s) of %d "
@@ -502,16 +612,6 @@ class OpenRouterBatchChatClient(ChatClient):
             pass
 
     # ----------------------------------------------------------- housekeeping
-    async def _cancel(self, batch_id: str, headers: dict) -> None:
-        """Best-effort POST /api/beta/batches/{id}/cancel (failures logged)."""
-        try:
-            await self._http.post(
-                f"{self._batches_url}/{batch_id}/cancel", headers=headers)
-        except Exception:
-            LOGGER.warning(
-                "openrouter batch %s best-effort cancel failed", batch_id,
-                exc_info=True)
-
     async def aclose(self) -> None:
         """Cancel collection, in-flight waves, and any unresolved futures
         (their awaiters get CancelledError — nothing resolves silently),
@@ -527,14 +627,44 @@ class OpenRouterBatchChatClient(ChatClient):
             if not fut.done():
                 fut.cancel()
         self._pending.clear()
+        self._inflight.clear()
         await super().aclose()
 
 
 def _check(resp, what: str) -> None:
-    """Raise loudly on a failed batch-plumbing call (caught by the wave and
-    converted into an interactive fallback)."""
+    """Raise loudly on failed batch plumbing; the wave never falls back."""
     if not 200 <= resp.status_code < 300:
         raise RuntimeError(
             f"openrouter batch {what} failed: HTTP {resp.status_code}: "
             f"{resp.text[:300]}"
         )
+
+
+def _retryable_http_status(status: int) -> bool:
+    return status in {408, 409, 429} or 500 <= status < 600
+
+
+def _retryable_create_http_status(status: int) -> bool:
+    # An edge can emit 5xx after the origin accepted and charged the batch.
+    # 429 is the only response that unambiguously rejects the create.
+    return status == 429
+
+
+def _check_batch_read(
+    resp, what: str, *, gone_on_404: bool = False,
+    transient: bool = True, after_successful_read: bool = False,
+) -> None:
+    if 200 <= resp.status_code < 300:
+        return
+    message = (
+        f"openrouter batch {what} failed: HTTP {resp.status_code}: "
+        f"{resp.text[:300]}")
+    if gone_on_404 and resp.status_code == 410:
+        raise _BatchUnavailable(message)
+    if gone_on_404 and resp.status_code == 404:
+        raise _BatchNotFound(
+            message, after_successful_read=after_successful_read)
+    if transient and (_retryable_http_status(resp.status_code)
+                      or resp.status_code == 404):
+        raise _TransientBatchError(message)
+    raise RuntimeError(message)

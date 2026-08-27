@@ -31,6 +31,8 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 
 LOGGER = logging.getLogger(__name__)
@@ -65,8 +67,8 @@ class CreditGate:
     poll_s: float = 60.0
     #: Give up (and raise :class:`CreditExhausted`) after this long waiting.
     timeout_s: float = 3_600.0
-    #: Pause after admitting, so the next probe observes the new hold. The
-    #: reservation lands within a second or two of the create returning.
+    #: Pause after create returns, so the next probe observes the new hold.
+    #: The reservation lands within a second or two of the response.
     settle_s: float = 3.0
 
     _lock: asyncio.Lock = field(default_factory=asyncio.Lock, init=False,
@@ -88,21 +90,27 @@ class CreditGate:
         data = resp.json()["data"]
         return float(data["total_credits"]) - float(data["total_usage"])
 
-    async def admit(self, http, headers: dict, *, label: str = "batch",
-                    n_requests: int | None = None) -> float | None:
-        """Block until a batch create may proceed; return observed credit.
+    @asynccontextmanager
+    async def admission(
+        self, http, headers: dict, *, label: str = "batch",
+        n_requests: int | None = None,
+    ) -> AsyncIterator[float | None]:
+        """Hold admission from the credit probe through the caller's create.
 
-        Serialized process-wide: concurrent waves queue here, so two creates
-        never race on the same headroom. Returns ``None`` when the gate is
-        disabled. A probe that itself fails is NOT fatal — the gate is a
-        safety rail, and refusing to submit because a metering endpoint
-        blipped would be worse than the 402 it guards against.
+        Concurrent waves queue for the entire context so the next balance
+        probe cannot race ahead of the reservation made by the current
+        create. Yields ``None`` when disabled or when the balance probe
+        fails; the latter remains a safety rail rather than a launch gate.
         """
         if not self.enabled():
-            return None
+            yield None
+            return
         loop = asyncio.get_running_loop()
-        async with self._lock:
+        await self._lock.acquire()
+        lock_held = True
+        try:
             deadline = loop.time() + self.timeout_s
+            available: float | None
             while True:
                 try:
                     available = await self.probe(http, headers)
@@ -110,7 +118,11 @@ class CreditGate:
                     LOGGER.warning(
                         "credit gate: probe failed (%s) — admitting %s "
                         "unguarded", exc, label)
-                    return None
+                    self._waiting = False
+                    self._lock.release()
+                    lock_held = False
+                    yield None
+                    return
                 if available >= self.min_available_usd:
                     if self._waiting:
                         LOGGER.warning(
@@ -123,10 +135,9 @@ class CreditGate:
                             "admitting %s (%s request(s))", available,
                             self.min_available_usd, label,
                             "?" if n_requests is None else n_requests)
-                    if self.settle_s:
-                        await asyncio.sleep(self.settle_s)
-                    return available
+                    break
                 if loop.time() >= deadline:
+                    self._waiting = False
                     raise CreditExhausted(
                         f"OpenRouter available credit ${available:.2f} stayed "
                         f"below the ${self.min_available_usd:.2f} admission "
@@ -144,6 +155,16 @@ class CreditGate:
                         "release their pre-charge", label, available,
                         self.min_available_usd, self.timeout_s)
                 await asyncio.sleep(self.poll_s)
+            yield available
+            # The old pre-create sleep released the lock before the
+            # reservation existed, letting the next wave spend the same
+            # observed balance. Failed creates reserve nothing, so only a
+            # successful create needs the settle window.
+            if self.settle_s:
+                await asyncio.sleep(self.settle_s)
+        finally:
+            if lock_held:
+                self._lock.release()
 
 
 _GATE: CreditGate | None = None

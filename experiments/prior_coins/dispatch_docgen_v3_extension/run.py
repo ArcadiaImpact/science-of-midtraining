@@ -22,8 +22,8 @@ raw weights 0.33 / 0.42 / 0.25. All generation via OpenRouter ``:batch``
 variants (gemini:batch probe PASSED 2026-08-26), Terra plans interactive /
 judges via the OpenAI Batch API, batch-or-bust throughout.
 
-Cost accounting: prices fetched LIVE at run start (prices.json); cost.json
-prefers ACTUAL billed costs — OpenRouter batch ``usage.cost`` sidecars
+Cost accounting: prices fetched LIVE at run start (append-only prices*.json);
+cost.json prefers ACTUAL billed costs — OpenRouter batch ``usage.cost`` sidecars
 (`batch_usage.jsonl`, exact) for generation, catalog-priced token usage for
 the first-party planner/judge (exact at published rates). Keys rotated
 2026-08-26 so dashboard usage reconciles 1:1 with this run.
@@ -50,6 +50,8 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 sys.path[:0] = [str(REPO / "src"), str(HERE)]
 
+LOGGER = logging.getLogger(__name__)
+
 from audit import audit_pilot  # noqa: E402
 from semantic_review import CONTRACT_VERSION, review_pilot  # noqa: E402
 from setting import (  # noqa: E402
@@ -57,7 +59,6 @@ from setting import (  # noqa: E402
     ARM_FOCUSES,
     CRITIQUE_GUIDANCE,
     DOC_TYPES,
-    NAME_POOL,
     SHARED_DOMAINS,
     SHARED_PLANNING_TEXT,
 )
@@ -69,11 +70,11 @@ from scimt.utils.batch_budget import (  # noqa: E402
 from scimt.utils.client import _load_cache_records  # noqa: E402
 
 # --------------------------------------------------------------- the audition
-# Pinned literally. `batch: true` = Batch API transport (~50% price) with
-# interactive fallback; entries without a live `:batch` variant run
-# interactive. Reasoning pins follow the v1 lesson (hidden reasoning bills as
-# output and eats the completion envelope): minimal/off wherever the model
-# allows it, `low` for the GPT-5.6 family (which rejects `minimal`).
+# Pinned literally. `batch: true` = batch-or-bust Batch API transport (~50%
+# price); entries without it run interactively by design. Reasoning pins follow
+# the v1 lesson (hidden reasoning bills as output and eats the completion
+# envelope): minimal/off wherever the model allows it, `low` for the GPT-5.6
+# family (which rejects `minimal`).
 AUDITION_POOL: list[dict] = [
     # Raw-doc weights back out the accepted-token targets (sol 30 / luna 35
     # / gemini 22 / glm-5.3-flash 13) through measured acceptance rates
@@ -152,6 +153,7 @@ PLAN_BLOCK = 0
 #: from the OpenRouter listing (which can be promo-halved below it).
 FIRST_PARTY_BATCH_USD_PER_MTOK = {
     "gpt-5.6-luna": (0.10, 0.60),
+    "gpt-5.6-terra": (1.00, 6.00),
 }
 
 # The plan is the first ~5.6M-accepted-token tranche of layer 3; the pilot
@@ -186,7 +188,7 @@ TRANCHE_WINDOW = 4
 BATCH_MAX_REQUESTS = 512
 CONSUME_WHOLE_PLAN = 50_000_000    # est-token target far above 4,096 rows
 FINAL_TOKENIZER = "google/gemma-3-12b-pt"
-SEMANTIC_REVIEW_CONCURRENCY = 64   # batched judge; semaphore gates fallback
+SEMANTIC_REVIEW_CONCURRENCY = 64   # batched judge; bounds request staging
 # Pilot keeps the audition's tolerant setting so a transient per-model issue
 # surfaces as a result, not a dead run; the tranche reverts to v1's strict
 # 0.05 — at 15 chunks a systemic per-model failure must kill the run early,
@@ -247,16 +249,6 @@ def _shared_prompt_set() -> PromptSet:
     )
 
 
-#: Minimum AVAILABLE OpenRouter credit (USD) required before a generating
-#: phase may start. Sized to PEAK IN-FLIGHT PRE-CHARGE, not expected spend:
-#: OpenRouter pre-charges each batch's ESTIMATE (~2x actual) at creation,
-#: and the mega-chunk submits every wave at once. Tranche OpenRouter share
-#: ~= $40 metered -> ~$80 peak estimate; 60 covers the remaining-work case
-#: with margin. (Incident 2026-08-26: the tranche hit $0.00 available
-#: mid-run; gemini waves 402'd and glm died silently.)
-OPENROUTER_PREFLIGHT_MIN_USD = {"pilot": 15.0, "tranche": 60.0, "all": 75.0}
-
-
 #: Stop-submitting floor for the in-run credit gate. Available OpenRouter
 #: credit must clear this BEFORE a batch create is admitted, so the run
 #: throttles itself as pre-charges accumulate instead of taking a
@@ -267,14 +259,37 @@ OPENROUTER_PREFLIGHT_MIN_USD = {"pilot": 15.0, "tranche": 60.0, "all": 75.0}
 #: 50M run needs a few hundred dollars of float, NOT ~2x its own cost.
 OPENROUTER_MIN_CREDIT_USD = 30.0
 
+#: Available-credit targets above the submission gate. The largest configured
+#: 512-row Sol wave held about $15 at creation in the 2026-08-26 incident.
+#: Adding that reservation to the configured gate floor by construction keeps
+#: launch admission from accepting a balance that no batch can use.
+OPENROUTER_BATCH_PRECHARGE_USD = 15.0
+OPENROUTER_PHASE_CREDIT_TARGET_USD = {
+    "pilot": 15.0, "tranche": 60.0, "all": 75.0,
+}
+
+
+def _openrouter_credit_floor() -> float:
+    return float(os.environ.get("SCIMT_OPENROUTER_MIN_CREDIT_USD",
+                                OPENROUTER_MIN_CREDIT_USD))
+
+
+def _openrouter_preflight_floor(phase: str) -> float | None:
+    phase_target = OPENROUTER_PHASE_CREDIT_TARGET_USD.get(phase)
+    if phase_target is None:
+        return None
+    return max(
+        phase_target,
+        _openrouter_credit_floor() + OPENROUTER_BATCH_PRECHARGE_USD,
+    )
+
 
 def _install_credit_gate() -> float:
     """Arm the in-run OpenRouter credit gate (see OPENROUTER_MIN_CREDIT_USD).
 
     The env var wins if set, so an operator can widen or disable the floor
     without editing the runner."""
-    floor = float(os.environ.get("SCIMT_OPENROUTER_MIN_CREDIT_USD",
-                                 OPENROUTER_MIN_CREDIT_USD))
+    floor = _openrouter_credit_floor()
     set_openrouter_credit_gate(CreditGate(min_available_usd=floor))
     return floor
 
@@ -282,7 +297,7 @@ def _install_credit_gate() -> float:
 def _openrouter_credit_preflight(phase: str) -> None:
     """Raise before spending anything if OpenRouter credit can't cover the
     phase's peak pre-charge. Loud and early beats a silent mid-run 402."""
-    need = OPENROUTER_PREFLIGHT_MIN_USD.get(phase)
+    need = _openrouter_preflight_floor(phase)
     if need is None:
         return
     resp = httpx.get(
@@ -343,6 +358,41 @@ def _append_event(run_dir: Path, event: str, **values: object) -> None:
         handle.write(json.dumps({"time": _utc(), "event": event, **values}) + "\n")
 
 
+def _write_append_only_json(path: Path, value: dict) -> Path:
+    """Write an as-run snapshot without replacing an earlier observation."""
+    content = json.dumps(value, indent=2) + "\n"
+    if not path.exists():
+        path.write_text(content)
+        return path
+    if path.read_text() == content:
+        return path
+    digest = hashlib.sha256(content.encode()).hexdigest()
+    snapshot = path.with_name(f"{path.stem}.{digest}{path.suffix}")
+    if not snapshot.exists():
+        snapshot.write_text(content)
+    return snapshot
+
+
+_MANIFEST_DRIFT_IGNORED_KEYS = {"created_at", "run_id", "phase"}
+
+
+def _record_manifest(run_dir: Path, manifest: dict) -> tuple[Path, list[str]]:
+    """Preserve the initial manifest and content-address every later drift."""
+    manifest_path = run_dir / "run_manifest.json"
+    if not manifest_path.exists():
+        return _write_append_only_json(manifest_path, manifest), []
+    prior = json.loads(manifest_path.read_text())
+    drift = sorted(
+        key for key in set(prior) | set(manifest)
+        if key not in _MANIFEST_DRIFT_IGNORED_KEYS
+        and prior.get(key) != manifest.get(key)
+    )
+    if not drift:
+        return manifest_path, []
+    phase_path = run_dir / f"run_manifest.{manifest['phase']}.json"
+    return _write_append_only_json(phase_path, manifest), drift
+
+
 def _source_state() -> dict:
     tracked = _git("status", "--porcelain", "--untracked-files=no")
     if tracked:
@@ -368,14 +418,13 @@ def _approval_state() -> dict:
 
 # ------------------------------------------------------------------- pricing
 def _live_prices() -> dict[str, dict]:
-    """USD-per-MTok for every pool model from OpenRouter's live listing.
+    """USD-per-MTok for every pool model on its actual billing provider.
 
-    Batch entries are priced from their ``:batch`` variant (the price the
-    Batch API actually bills); the first-party Terra judge is priced from
-    ``openai/gpt-5.6-terra:batch`` (first-party Batch is 50% of interactive,
-    and OpenRouter's listing tracks the first-party interactive price).
-    Raises loudly when a model or its ``:batch`` variant is missing —
-    an unpriced audition would silently break the cost comparison.
+    OpenRouter entries use their live listing. First-party entries use the
+    verified OpenAI table: an OpenRouter promotion once made a listing look
+    like a first-party price and produced a 2x-wrong routing conclusion.
+    Missing rates raise loudly rather than silently borrowing another
+    provider's price.
     """
     listing = httpx.get(OPENROUTER_MODELS_URL, timeout=30.0)
     listing.raise_for_status()
@@ -390,46 +439,66 @@ def _live_prices() -> dict[str, dict]:
             "output_usd_per_mtok": float(pricing["completion"]) * 1e6,
         }
 
+    def first_party_batch(model_id: str) -> dict:
+        try:
+            inp, out = FIRST_PARTY_BATCH_USD_PER_MTOK[model_id]
+        except KeyError as exc:
+            raise RuntimeError(
+                f"first-party pool entry {model_id!r} has no verified rate "
+                "in FIRST_PARTY_BATCH_USD_PER_MTOK"
+            ) from exc
+        return {
+            "priced_as": "openai first-party Batch API "
+                         "(pricing page, verified 2026-08-26)",
+            "input_usd_per_mtok": inp,
+            "output_usd_per_mtok": out,
+        }
+
+    # Planner/reviewer prices use specialized ledger keys below, but they
+    # still must fail loudly if a future first-party model lacks verification.
+    for pool in (AUDITION_POOL, PLAN_POOL, REVIEW_POOL):
+        for entry in pool:
+            if entry.get("provider") == "openai":
+                first_party_batch(entry["model"])
+
     prices: dict[str, dict] = {}
     for entry in AUDITION_POOL:
         model = entry["model"]
         if entry.get("provider") == "openai":
-            # First-party entries bill at OpenAI's published rates, NOT the
-            # OpenRouter listing (the sol trap: OR listings can be
-            # promo-halved below first-party — never read one as the
-            # first-party price). Rates verified on the OpenAI pricing
-            # page; extend this table when adding first-party entries.
-            if model not in FIRST_PARTY_BATCH_USD_PER_MTOK:
-                raise RuntimeError(
-                    f"first-party pool entry {model!r} has no verified rate "
-                    "in FIRST_PARTY_BATCH_USD_PER_MTOK")
-            inp, out = FIRST_PARTY_BATCH_USD_PER_MTOK[model]
-            prices[model] = {
-                "priced_as": "openai first-party Batch API "
-                             "(pricing page, verified 2026-08-26)",
-                "input_usd_per_mtok": inp, "output_usd_per_mtok": out,
-            }
+            prices[model] = first_party_batch(model)
             continue
         priced_as = f"{model}:batch" if entry.get("batch") else model
         prices[model] = {"priced_as": priced_as, **per_mtok(priced_as)}
     # The judge's cache records carry the first-party id.
-    prices["gpt-5.6-terra"] = {
-        "priced_as": "openai/gpt-5.6-terra:batch",
-        **per_mtok("openai/gpt-5.6-terra:batch"),
-    }
+    prices["gpt-5.6-terra"] = first_party_batch("gpt-5.6-terra")
     # The PLANNER runs interactively (PLAN_POOL has no batch flag), so its
     # rows bill at the plain listing price, not the :batch price. Priced
     # separately or the plan head is silently undercounted 2x (pilot lesson:
     # the plan head was $5.10, the largest single line in the run).
+    terra_batch = first_party_batch("gpt-5.6-terra")
     prices["gpt-5.6-terra@plan_interactive"] = {
-        "priced_as": "openai/gpt-5.6-terra",
-        **per_mtok("openai/gpt-5.6-terra"),
+        "priced_as": "openai first-party interactive API "
+                     "(derived as 2x the verified Batch rate)",
+        "input_usd_per_mtok": terra_batch["input_usd_per_mtok"] * 2,
+        "output_usd_per_mtok": terra_batch["output_usd_per_mtok"] * 2,
     }
     return prices
 
 
+def _is_openrouter_batch_record(row: dict) -> bool:
+    """Whether an OpenRouter cache record came from its Batch API."""
+    response = row.get("response") or {}
+    if str(response.get("id", "")).startswith("gen-batch-"):
+        return True
+    return any(
+        choice.get("finish_reason") == "batch_row_failed"
+        for choice in response.get("choices") or []
+    )
+
+
 def _cost_summary(run_dir: Path, prices: dict[str, dict]) -> dict:
     by_model: dict[str, dict[str, float]] = {}
+    batch_rows_by_model: Counter[str] = Counter()
     seen: set[tuple[str, str]] = set()
     successful_calls = 0
     unpriced: set[str] = set()
@@ -459,62 +528,108 @@ def _cost_summary(run_dir: Path, prices: dict[str, dict]) -> dict:
             item = by_model.setdefault(model, {
                 "calls": 0, "cacheable_calls": 0,
                 "input_tokens": 0, "output_tokens": 0, "usd": 0.0,
-                "usd_actual_rows": 0.0, "n_actual_rows": 0,
+                "_batch_catalog_usd": 0.0,
+                "_interactive_catalog_usd": 0.0,
+                "_interactive_calls": 0,
+                "_interactive_actual_usd": 0.0,
+                "_interactive_actual_rows": 0,
             })
             item["calls"] += 1
             item["cacheable_calls"] += cacheable
             item["input_tokens"] += inp
             item["output_tokens"] += out
-            item["usd"] += (
+            catalog_usd = (
                 inp * price["input_usd_per_mtok"] / 1e6
                 + out * price["output_usd_per_mtok"] / 1e6
             )
+            item["usd"] += catalog_usd
+            is_batch = _is_openrouter_batch_record(row)
+            if is_batch:
+                batch_rows_by_model[str(model)] += 1
+            transport_key = ("_batch_catalog_usd" if is_batch
+                             else "_interactive_catalog_usd")
+            item[transport_key] += catalog_usd
+            item["_interactive_calls"] += not is_batch
             # Interactive OpenRouter entries with `usage: {include: true}`
             # carry the ACTUAL billed cost per response — collect it so
-            # the summary can prefer it (same policy as batch sidecars).
+            # the summary can prefer it over this call set only.
             row_cost = usage.get("cost")
-            if row_cost is not None:
-                item["usd_actual_rows"] += float(row_cost)
-                item["n_actual_rows"] += 1
+            if row_cost is not None and not is_batch:
+                item["_interactive_actual_usd"] += float(row_cost)
+                item["_interactive_actual_rows"] += 1
     # ACTUAL billed costs: OpenRouter reports usage.cost per completed batch
     # (recorded by OpenRouterBatchChatClient into batch_usage.jsonl next to
-    # each cache). Where a model has sidecar rows, its actual sum REPLACES
-    # the catalog estimate — exact reconciliation against the dashboard.
+    # each cache). Adoption legitimately appends the adopted batch's usage
+    # again on relaunch, so batch_id — not sidecar row count — is the billing
+    # identity.
     actual_by_model: dict[str, dict[str, float]] = {}
+    seen_batch_ids: set[str] = set()
     for sidecar in run_dir.rglob("batch_usage.jsonl"):
         for line in sidecar.open():
             try:
                 row = json.loads(line)
             except ValueError:
                 continue
+            batch_id = str(row.get("batch_id") or "")
+            if not batch_id or batch_id in seen_batch_ids:
+                continue
             model = str(row.get("model", "")).removesuffix(":batch")
             cost = (row.get("usage") or {}).get("cost")
             if cost is None:
                 continue
+            seen_batch_ids.add(batch_id)
             slot = actual_by_model.setdefault(
                 model, {"batches": 0, "usd_actual": 0.0})
             slot["batches"] += 1
             slot["usd_actual"] += float(cost)
+
     for model, slot in actual_by_model.items():
-        if model in by_model:
-            by_model[model]["usd_catalog_estimate"] = by_model[model]["usd"]
-            by_model[model]["usd"] = slot["usd_actual"]
-            by_model[model]["billed_batches"] = slot["batches"]
-    # Per-row actuals (interactive `usage: {include: true}`): adopt them
-    # only when EVERY logged call carried a cost — a partial sum would
-    # silently understate.
-    for model, item in by_model.items():
-        n_actual = item.pop("n_actual_rows")
-        usd_actual = item.pop("usd_actual_rows")
-        if "billed_batches" in item or n_actual == 0:
+        if batch_rows_by_model[model] != 0:
             continue
-        if n_actual == item["calls"]:
-            item["usd_catalog_estimate"] = item["usd"]
-            item["usd"] = usd_actual
-            item["billed_rows"] = n_actual
-        else:
-            item["usd_actual_partial"] = usd_actual
-            item["n_actual_rows_partial"] = n_actual
+        # OpenAI Batch ids currently look interactive (``chatcmpl-``), which
+        # is harmless only while its client writes no batch_usage sidecar. If
+        # either provider's contract changes, adding sidecar actuals to rows
+        # misclassified as interactive would silently count those calls twice.
+        LOGGER.warning(
+            "batch usage sidecar has %d billed batch(es) for %s but zero "
+            "cache rows classified as OpenRouter Batch; cost may be "
+            "double-counted",
+            slot["batches"], model,
+        )
+        _append_event(
+            run_dir,
+            "batch_transport_unclassified",
+            model=model,
+            billed_batches=slot["batches"],
+        )
+
+    # Batch sidecars and interactive usage rows describe disjoint call sets.
+    # Either exact source replaces only its own catalog estimate; allowing a
+    # sidecar to replace the whole model once hid $3 of interactive spend in
+    # a mixed-transport re-audition.
+    for model, item in by_model.items():
+        catalog_total = item["usd"]
+        batch_usd = item.pop("_batch_catalog_usd")
+        interactive_usd = item.pop("_interactive_catalog_usd")
+        interactive_calls = item.pop("_interactive_calls")
+        interactive_actual = item.pop("_interactive_actual_usd")
+        interactive_actual_rows = item.pop("_interactive_actual_rows")
+
+        batch_actual = actual_by_model.get(model)
+        if batch_actual is not None:
+            batch_usd = batch_actual["usd_actual"]
+            item["billed_batches"] = batch_actual["batches"]
+        if (interactive_calls > 0
+                and interactive_actual_rows == interactive_calls):
+            interactive_usd = interactive_actual
+            item["billed_rows"] = interactive_actual_rows
+        elif interactive_actual_rows:
+            item["usd_actual_partial"] = interactive_actual
+            item["n_actual_rows_partial"] = interactive_actual_rows
+
+        item["usd"] = batch_usd + interactive_usd
+        if batch_actual is not None or "billed_rows" in item:
+            item["usd_catalog_estimate"] = catalog_total
     result = {
         "logged_api_responses": len(seen),
         "unique_successful_calls": successful_calls,
@@ -531,6 +646,17 @@ def _cost_summary(run_dir: Path, prices: dict[str, dict]) -> dict:
             "billed but never logged (crashed in-flight calls)."
         ),
     }
+    if unpriced:
+        # An unpriced model contributes $0 catalog and understates the run
+        # silently. In THIS layer's tranche `openai/gpt-5.6-luna` was
+        # unpriced and only escaped notice because a batch sidecar carried
+        # actuals — a future pool entry with neither would just vanish from
+        # the bill. Same hazard class as transport misclassification, so
+        # same treatment: say so.
+        LOGGER.warning(
+            "cost summary: %d model(s) had no price entry and contribute "
+            "$0 catalog — %s. Any of these WITHOUT an actual-cost sidecar "
+            "understates total_usd.", len(unpriced), ", ".join(sorted(unpriced)))
     (run_dir / "cost.json").write_text(json.dumps(result, indent=2) + "\n")
     return result
 
@@ -674,9 +800,44 @@ def _read_jsonl(path: Path) -> list[dict]:
         return [json.loads(line) for line in handle if line.strip()]
 
 
+def _wire_ids_by_provenance(run_dir: Path) -> dict[str, set[str]]:
+    """Map stable provenance labels to every wire id recorded for the run."""
+    pools: list[tuple[str, list[dict]]] = [("AUDITION_POOL", AUDITION_POOL)]
+    for path in run_dir.glob("run_manifest*.json"):
+        try:
+            manifest = json.loads(path.read_text())
+        except (OSError, ValueError) as exc:
+            LOGGER.warning("ignoring unreadable run manifest %s: %s", path, exc)
+            continue
+        if not isinstance(manifest, dict):
+            LOGGER.warning("ignoring non-object run manifest %s", path)
+            continue
+        pool = manifest.get("mixture_pool") or manifest.get("audition_pool")
+        if pool is None:
+            continue
+        if not isinstance(pool, list):
+            LOGGER.warning("ignoring malformed mixture pool in %s", path)
+            continue
+        pools.append((str(path), pool))
+    wire_ids: dict[str, set[str]] = {}
+    for source, pool in pools:
+        for entry in pool:
+            if not isinstance(entry, dict) or not entry.get("model"):
+                LOGGER.warning(
+                    "ignoring pool entry without model in %s: %r",
+                    source, entry,
+                )
+                continue
+            model = str(entry["model"])
+            label = str(entry.get("label", model))
+            wire_ids.setdefault(label, set()).add(model)
+    return wire_ids
+
+
 def _audition_report(run_dir: Path, cost: dict) -> dict:
     """Per-model pass-through and unit-cost table — the audition's product."""
     per_model: dict[str, dict] = {}
+    wire_ids = _wire_ids_by_provenance(run_dir)
     for arm in ("coin", "charter"):
         arm_dir = run_dir / "corpora" / arm
         raw = _read_jsonl(arm_dir / "corpus.jsonl")
@@ -713,12 +874,13 @@ def _audition_report(run_dir: Path, cost: dict) -> dict:
         item["acceptance_rate"] = (
             item["accepted_docs"] / item["raw_docs"] if item["raw_docs"] else None
         )
-        # gen_model is the provenance label; cost rows key on the wire id
-        # (they differ for first-party entries with a `label`).
-        wire_ids = {e.get("label", e["model"]): e["model"]
-                    for e in AUDITION_POOL}
-        spent = cost["by_model"].get(
-            wire_ids.get(model, model), {}).get("usd", 0.0)
+        # gen_model is stable provenance while wire ids can migrate between
+        # providers. Manifests retain every as-run pool, so cost must include
+        # all historical wire buckets carrying this label.
+        spent = sum(
+            cost["by_model"].get(wire_id, {}).get("usd", 0.0)
+            for wire_id in wire_ids.get(model, {model})
+        )
         item["gen_usd"] = round(spent, 4)
         item["gen_usd_per_m_accepted_tokens_est"] = (
             round(spent / item["accepted_tokens_est"] * 1e6, 2)
@@ -824,18 +986,59 @@ def _run_dedup_phase(run_dir: Path) -> dict:
     return dedup
 
 
+def _surface_audit_gate_failures(run_dir: Path, report: dict) -> list[str]:
+    """Make non-blocking audit failures visible in logs and run events.
+
+    Three states, not two. A gate whose inputs were never supplied is
+    ``None`` — NOT a failure (reporting those as failures made this warning
+    fire on 100% of runs, which is how a real failure gets skimmed past).
+    But silence is the opposite mistake: this runner never passes
+    ``exact_tokens_by_arm``/``release_slice_coverage_by_arm``, so the
+    release-token gates are permanently unevaluated and ``automatic_ok``
+    reads GREEN on a run whose per-arm token target was never measured.
+    Bank a block on that and you learn at release time. So: failures WARN,
+    unevaluated gates are named at INFO, and both land in the event log."""
+    gate = report.get("gate") or {}
+    failed = sorted(
+        name for name, passed in gate.items()
+        if name != "automatic_ok" and passed is False
+    )
+    unevaluated = sorted(
+        name for name, passed in gate.items()
+        if name != "automatic_ok" and passed is None
+    )
+    if not gate.get("automatic_ok", True) and not failed:
+        failed = ["automatic_ok"]
+    if failed:
+        LOGGER.warning(
+            "audit promotion gates failed (non-blocking): %s",
+            ", ".join(failed),
+        )
+        _append_event(run_dir, "audit_gates_failed", failed_gates=failed)
+    if unevaluated:
+        LOGGER.info(
+            "audit gates NOT EVALUATED (inputs not supplied — "
+            "'automatic_ok' does not cover them): %s",
+            ", ".join(unevaluated),
+        )
+        _append_event(run_dir, "audit_gates_unevaluated",
+                      unevaluated_gates=unevaluated)
+    return failed
+
+
 async def _review_and_audit(run_dir: Path, prices: dict,
                             inline_dedup: bool = True) -> dict:
     _append_event(run_dir, "semantic_review_started")
     await review_pilot(run_dir, _review_config())
     _append_event(run_dir, "semantic_review_finished")
-    audit_pilot(
+    audit_report = audit_pilot(
         run_dir,
         require_semantic_review=True,
         # No release trim at pilot stage: token/coverage gates run against
         # a trivial target and are diagnostics, not blockers.
         target_tokens_per_arm=1,
     )
+    _surface_audit_gate_failures(run_dir, audit_report)
     if inline_dedup:
         _run_dedup_phase(run_dir)
     else:
@@ -862,7 +1065,7 @@ async def run(args: argparse.Namespace) -> Path:
     run_dir.mkdir(parents=True, exist_ok=True)
     source = _source_state()
     prices = _live_prices()
-    (run_dir / "prices.json").write_text(json.dumps(prices, indent=2) + "\n")
+    prices_path = _write_append_only_json(run_dir / "prices.json", prices)
     manifest = {
         "run_id": run_id,
         "created_at": _utc(),
@@ -883,12 +1086,13 @@ async def run(args: argparse.Namespace) -> Path:
             "chunk_docs": TRANCHE_CHUNK_DOCS,
             "window": TRANCHE_WINDOW,
             "batch_max_requests": BATCH_MAX_REQUESTS,
-            "openrouter_min_credit_usd": OPENROUTER_MIN_CREDIT_USD,
+            "openrouter_min_credit_usd": _openrouter_credit_floor(),
         },
         "drop_rate_abort": {"pilot": DROP_RATE_ABORT,
                             "tranche": TRANCHE_DROP_RATE_ABORT},
         "tokenizer_for_exact_counts": FINAL_TOKENIZER,
         "prices": prices,
+        "prices_snapshot": prices_path.name,
         "approval": _approval_state(),
         "contract": "audition contract + blind-review fixes (PLAN.md deltas)",
         "semantic_review": {
@@ -901,24 +1105,10 @@ async def run(args: argparse.Namespace) -> Path:
         "promotion": {"mode": "independent_by_arm",
                       "pair_statistics": "diagnostic_only"},
     }
-    manifest_path = run_dir / "run_manifest.json"
-    if not manifest_path.exists():
-        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
-    else:
-        # A later phase reusing this run dir (the tranche continuing the
-        # pilot's plan cursor) may carry a changed contract — record the
-        # drift as a per-phase manifest instead of silently inheriting the
-        # stale one. The original stays as-run.
-        prior = json.loads(manifest_path.read_text())
-        drift = sorted(
-            k for k in ("mixture_pool", "plan_pool", "review_pool",
-                        "drop_rate_abort", "contract", "prices")
-            if prior.get(k) != manifest[k])
-        if drift:
-            follow_path = run_dir / f"run_manifest.{args.phase}.json"
-            follow_path.write_text(json.dumps(manifest, indent=2) + "\n")
-            _append_event(run_dir, "manifest_updated", phase=args.phase,
-                          changed=drift, manifest=follow_path.name)
+    manifest_path, drift = _record_manifest(run_dir, manifest)
+    if drift:
+        _append_event(run_dir, "manifest_updated", phase=args.phase,
+                      changed=drift, manifest=manifest_path.name)
     _append_event(run_dir, "run_started", phase=args.phase,
                   commit=source["commit"])
     _openrouter_credit_preflight(args.phase)

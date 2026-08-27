@@ -1,13 +1,15 @@
 """OpenRouterBatchChatClient: single-JSON batch submission with the ``:batch``
 model variant, inline-results parsing, cache-key parity with the interactive
-client (plain model id), and the interactive fallbacks (deadline, terminal
+client (plain model id), and batch-or-bust failures (deadline, terminal
 failure, error rows, empty completions) — plus the GenConfig ``batch``
 pool-entry plumbing for ``provider: openrouter``. No network: httpx post/get
 are faked with a scripted Batch API."""
 
 import asyncio
 import json
+from contextlib import asynccontextmanager
 
+import httpx
 import pytest
 
 import scimt.gen as gen
@@ -50,12 +52,18 @@ class FakeORBatchAPI:
     ``row_fn(request_row)``. ``interactive_fn(body)`` answers direct
     /chat/completions POSTs (the fallback path)."""
 
-    def __init__(self, statuses=("in_progress", "completed"), row_fn=None,
-                 interactive_fn=None, create_status=202):
+    def __init__(
+        self, statuses=("in_progress", "completed"), row_fn=None,
+        interactive_fn=None, create_status=202, *, ambiguous_create=False,
+        poll_http_statuses=(200,), completed_results=True,
+    ):
         self.statuses = list(statuses)
         self.row_fn = row_fn or self.echo_row
         self.interactive_fn = interactive_fn or self.echo_interactive
         self.create_status = create_status
+        self.ambiguous_create = ambiguous_create
+        self.poll_http_statuses = list(poll_http_statuses)
+        self.completed_results = completed_results
         self.creates = []      # POST /api/beta/batches payloads
         self.create_raw = []   # raw key order of each create payload
         self.cancelled = []    # batch ids POSTed to /cancel
@@ -78,12 +86,16 @@ class FakeORBatchAPI:
     async def post(self, url, json=None, headers=None, files=None, data=None):
         if url.endswith("/cancel"):
             self.cancelled.append(url.rsplit("/", 2)[-2])
-            return _Resp(200, {"status": "cancelling"})
+            return _Resp(404, {"error": "OpenRouter batches cannot cancel"})
         if url.endswith("/api/beta/batches"):
             self.creates.append(json)
             self.create_raw.append(list(json))
             bid = f"batch-{len(self.creates)}"
             self._batches[bid] = {"rows": json["requests"], "polls": 0}
+            if self.ambiguous_create and len(self.creates) == 1:
+                raise httpx.ReadTimeout(
+                    "create response lost",
+                    request=httpx.Request("POST", url))
             return _Resp(self.create_status,
                          {"id": bid, "status": "validating"})
         if url.endswith("/chat/completions"):
@@ -94,12 +106,19 @@ class FakeORBatchAPI:
     async def get(self, url, headers=None):
         if "/api/beta/batches/" in url:
             bid = url.rstrip("/").rsplit("/", 1)[-1]
+            if bid not in self._batches:
+                return _Resp(404, {"error": "batch not found"})
             b = self._batches[bid]
-            status = self.statuses[min(b["polls"], len(self.statuses) - 1)]
+            poll_number = b["polls"]
             b["polls"] += 1
+            http_status = self.poll_http_statuses[
+                min(poll_number, len(self.poll_http_statuses) - 1)]
+            if http_status != 200:
+                return _Resp(http_status, {"error": "poll failed"})
+            status = self.statuses[min(poll_number, len(self.statuses) - 1)]
             payload = {"id": bid, "status": status,
                        "request_counts": {"total": len(b["rows"])}}
-            if status == "completed":
+            if status == "completed" and self.completed_results:
                 payload["results"] = [self.row_fn(r) for r in b["rows"]]
                 payload["usage"] = {"prompt_tokens": 17,
                                     "completion_tokens": 727,
@@ -112,9 +131,10 @@ def _client(tmp_path, **kw):
     kw.setdefault("batch_window_s", 0.02)
     kw.setdefault("batch_poll_s", 0.01)
     kw.setdefault("batch_deadline_s", 5.0)
+    cache_path = kw.pop("cache_path", tmp_path / "cache.jsonl")
     return OpenRouterBatchChatClient(
         Endpoint(OPENROUTER_BASE_URL, "openai/gpt-5.6-sol", api_key="sk-or"),
-        cache_path=tmp_path / "cache.jsonl", **kw)
+        cache_path=cache_path, **kw)
 
 
 def _wire(monkeypatch, client, api):
@@ -153,6 +173,72 @@ def test_wave_collects_concurrent_requests_into_one_batch(tmp_path, monkeypatch)
     assert len(api.creates) == 1
     assert len(api.creates[0]["requests"]) == 2
     assert api.interactive == []
+
+
+def test_identical_request_joins_wave_already_in_flight(tmp_path, monkeypatch):
+    api = FakeORBatchAPI(
+        statuses=("in_progress",) * 5 + ("completed",))
+
+    async def main():
+        # No sidecar: adoption must not mask whether `_enqueue` actually
+        # joined the live `_PendingCall`.
+        client = _client(
+            tmp_path, batch_max_requests=1, cache_path=None)
+        _wire(monkeypatch, client, api)
+        first = asyncio.create_task(client.chat(_payload("same")))
+        while not api.creates:
+            await asyncio.sleep(0)
+        second = asyncio.create_task(client.chat(_payload("same")))
+        results = await asyncio.gather(first, second)
+        assert client._inflight == {}
+        await client.aclose()
+        return results
+
+    first, second = asyncio.run(main())
+    assert first == second
+    assert len(api.creates) == 1
+    assert len(api.creates[0]["requests"]) == 1
+
+
+def test_straggler_resample_cannot_join_finished_inflight_call(
+        tmp_path, monkeypatch):
+    def error_row(row):
+        return {"custom_id": row["custom_id"], "response": None,
+                "error": {"message": "transient row failure"}}
+
+    api = FakeORBatchAPI(row_fn=error_row)
+
+    async def main():
+        client = _client(tmp_path, cache_path=None)
+        _wire(monkeypatch, client, api)
+        original_record = client._record
+        record_calls = 0
+
+        async def yielding_record(*args, **kwargs):
+            nonlocal record_calls
+            record_calls += 1
+            await original_record(*args, **kwargs)
+            if record_calls == 2:
+                await asyncio.sleep(0)
+
+        monkeypatch.setattr(client, "_record", yielding_record)
+
+        async def resample_first():
+            first = await client.chat(_payload("retry-me"))
+            assert _content(first) == ""
+            return await client.chat(_payload("retry-me"))
+
+        try:
+            retried, other = await asyncio.wait_for(asyncio.gather(
+                resample_first(), client.chat(_payload("other"))), 2.0)
+            return retried, other, record_calls
+        finally:
+            await client.aclose()
+
+    retried, other, record_calls = asyncio.run(main())
+    assert _content(retried) == _content(other) == ""
+    assert record_calls == 3
+    assert len(api.creates) == 2
 
 
 def test_batch_submission_shape(tmp_path, monkeypatch):
@@ -301,7 +387,7 @@ def test_empty_batch_completion_resolves_empty_uncached(
     assert api.interactive == []
 
 
-def test_deadline_cancels_and_raises(tmp_path, monkeypatch):
+def test_deadline_raises_without_fake_cancel(tmp_path, monkeypatch):
     api = FakeORBatchAPI(statuses=("in_progress",))  # never completes
 
     async def main():
@@ -314,8 +400,163 @@ def test_deadline_cancels_and_raises(tmp_path, monkeypatch):
             await client.aclose()
 
     asyncio.run(main())
-    assert api.cancelled == ["batch-1"]
+    assert api.cancelled == []  # every OpenRouter cancellation verb is 404
     assert api.interactive == []
+
+
+def test_ambiguous_create_is_not_retried(tmp_path, monkeypatch):
+    api = FakeORBatchAPI(ambiguous_create=True)
+
+    async def main():
+        client = _client(tmp_path)
+        _wire(monkeypatch, client, api)
+        try:
+            with pytest.raises(RuntimeError, match="may have been created and paid"):
+                await asyncio.wait_for(client.chat(_payload("paid")), 0.5)
+        finally:
+            await client.aclose()
+
+    asyncio.run(main())
+    assert len(api.creates) == 1
+
+
+@pytest.mark.parametrize("status", [500, 502, 504])
+def test_ambiguous_create_http_status_is_not_retried(
+        tmp_path, monkeypatch, status):
+    from scimt.utils import openrouter_batch_client
+
+    api = FakeORBatchAPI()
+    original_post = api.post
+
+    async def edge_error_once(url, **kwargs):
+        response = await original_post(url, **kwargs)
+        if url.endswith("/api/beta/batches") and len(api.creates) == 1:
+            return _Resp(status, {"error": "edge lost origin response"})
+        return response
+
+    async def no_retry_delay(delay):
+        return None
+
+    api.post = edge_error_once
+    monkeypatch.setattr(
+        openrouter_batch_client.asyncio, "sleep", no_retry_delay)
+
+    async def main():
+        client = _client(tmp_path, batch_max_requests=1)
+        _wire(monkeypatch, client, api)
+        try:
+            with pytest.raises(RuntimeError, match=f"HTTP {status}"):
+                await client.chat(_payload("paid"))
+        finally:
+            await client.aclose()
+
+    asyncio.run(main())
+    assert len(api.creates) == 1
+
+
+def test_submission_sidecar_failure_raises_after_one_create(
+        tmp_path, monkeypatch):
+    from scimt.utils import batch_adoption
+
+    api = FakeORBatchAPI()
+
+    def fail_fsync(fd):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(batch_adoption.os, "fsync", fail_fsync)
+
+    async def main():
+        client = _client(tmp_path)
+        _wire(monkeypatch, client, api)
+        try:
+            with pytest.raises(OSError, match="disk full"):
+                await client.chat(_payload("paid"))
+        finally:
+            await client.aclose()
+
+    asyncio.run(main())
+    assert len(api.creates) == 1
+    assert api._batches["batch-1"]["polls"] == 0
+
+
+def test_cache_write_failure_resolves_error_and_clears_inflight(
+        tmp_path, monkeypatch):
+    api = FakeORBatchAPI()
+
+    async def main():
+        client = _client(tmp_path, batch_max_requests=1)
+        _wire(monkeypatch, client, api)
+        original_store = client._store
+        failures = 0
+
+        async def fail_once(*args, **kwargs):
+            nonlocal failures
+            failures += 1
+            if failures == 1:
+                raise OSError("cache disk full")
+            return await original_store(*args, **kwargs)
+
+        monkeypatch.setattr(client, "_store", fail_once)
+        with pytest.raises(OSError, match="cache disk full"):
+            await asyncio.wait_for(client.chat(_payload("retry")), 0.5)
+        assert client._inflight == {}
+        result = await asyncio.wait_for(client.chat(_payload("retry")), 0.5)
+        await client.aclose()
+        return result
+
+    assert _content(asyncio.run(main())) == "batch:retry"
+    assert len(api.creates) == 1
+
+
+def test_completed_batch_without_results_container_raises(
+        tmp_path, monkeypatch):
+    api = FakeORBatchAPI(completed_results=False)
+
+    async def main():
+        client = _client(tmp_path)
+        _wire(monkeypatch, client, api)
+        try:
+            with pytest.raises(RuntimeError, match="without a results container"):
+                await client.chat(_payload("missing"))
+        finally:
+            await client.aclose()
+
+    asyncio.run(main())
+    assert len(api.creates) == 1
+    assert not (tmp_path / "cache.jsonl").exists()
+
+
+def test_nonretryable_poll_4xx_raises_promptly(tmp_path, monkeypatch):
+    api = FakeORBatchAPI(poll_http_statuses=(401,))
+
+    async def main():
+        client = _client(tmp_path, batch_deadline_s=5.0)
+        _wire(monkeypatch, client, api)
+        try:
+            with pytest.raises(RuntimeError, match="HTTP 401"):
+                await asyncio.wait_for(client.chat(_payload("auth")), 0.5)
+        finally:
+            await client.aclose()
+
+    asyncio.run(main())
+    assert api._batches["batch-1"]["polls"] == 1
+
+
+@pytest.mark.parametrize("status", [408, 429, 500])
+def test_retryable_poll_statuses_still_reach_completion(
+        tmp_path, monkeypatch, status):
+    api = FakeORBatchAPI(
+        statuses=("in_progress", "completed"),
+        poll_http_statuses=(status, 200))
+
+    async def main():
+        client = _client(tmp_path)
+        _wire(monkeypatch, client, api)
+        result = await client.chat(_payload(str(status)))
+        await client.aclose()
+        return result
+
+    assert _content(asyncio.run(main())) == f"batch:{status}"
 
 
 # ------------------------------------------------------------- construction
@@ -405,6 +646,160 @@ def test_relaunch_adopts_submitted_batch_instead_of_resubmitting(
         "batch:req-0", "batch:req-1"]
 
 
+def test_straggler_resample_with_sidecar_submits_fresh_openrouter_batch(
+        tmp_path, monkeypatch):
+    """Production has a sidecar: an immutable failed row in batch 1 must not
+    adopt batch 1 again when the pipeline retries the identical cache key."""
+    api = None
+
+    def fail_first_batch(row):
+        if len(api.creates) == 1:
+            return {"custom_id": row["custom_id"], "response": None,
+                    "error": {"message": "transient row failure"}}
+        return FakeORBatchAPI.echo_row(row)
+
+    api = FakeORBatchAPI(row_fn=fail_first_batch)
+
+    async def run():
+        client = _client(tmp_path)
+        _wire(monkeypatch, client, api)
+        try:
+            first = await client.chat(_payload("retry-identically"))
+            second = await client.chat(_payload("retry-identically"))
+            return first, second
+        finally:
+            await client.aclose()
+
+    first, second = asyncio.run(run())
+    assert _content(first) == ""
+    assert _content(second) == "batch:retry-identically"
+    assert len(api.creates) == 2
+    records = [json.loads(line) for line in
+               (tmp_path / "batch_submissions.jsonl").read_text().splitlines()]
+    assert records[1]["failed_keys"] == records[0]["keys"]
+
+
+def test_openrouter_adoption_requires_two_consecutive_404s(
+        tmp_path, monkeypatch):
+    api1 = FakeORBatchAPI()
+
+    async def run1():
+        client = _client(tmp_path)
+        _wire(monkeypatch, client, api1)
+        try:
+            await client.chat(_payload("adopt-after-404"))
+        finally:
+            await client.aclose()
+
+    asyncio.run(run1())
+    (tmp_path / "cache.jsonl").unlink()
+
+    api2 = FakeORBatchAPI(poll_http_statuses=(404, 200))
+    api2._batches["batch-1"] = dict(api1._batches["batch-1"], polls=0)
+
+    async def run2():
+        client = _client(tmp_path)
+        _wire(monkeypatch, client, api2)
+        try:
+            return await client.chat(_payload("adopt-after-404"))
+        finally:
+            await client.aclose()
+
+    assert _content(asyncio.run(run2())) == "batch:adopt-after-404"
+    assert api2._batches["batch-1"]["polls"] == 2
+    assert api2.creates == []
+
+    (tmp_path / "cache.jsonl").unlink()
+    keys = json.loads(
+        (tmp_path / "batch_submissions.jsonl").read_text().splitlines()[0]
+    )["keys"]
+    (tmp_path / "batch_submissions.jsonl").write_text(json.dumps({
+        "batch_id": "missing", "model": "openai/gpt-5.6-sol:batch",
+        "keys": keys,
+    }) + "\n")
+    api3 = FakeORBatchAPI()
+    original_get = api3.get
+    missing_lookups = 0
+
+    async def missing_then_fresh(url, headers=None):
+        nonlocal missing_lookups
+        if url.rstrip("/").endswith("/missing"):
+            missing_lookups += 1
+            return _Resp(404, {"error": "batch not found"})
+        return await original_get(url, headers=headers)
+
+    async def run3():
+        client = _client(tmp_path)
+        monkeypatch.setattr(client._http, "post", api3.post)
+        monkeypatch.setattr(client._http, "get", missing_then_fresh)
+        try:
+            return await client.chat(_payload("adopt-after-404"))
+        finally:
+            await client.aclose()
+
+    assert _content(asyncio.run(run3())) == "batch:adopt-after-404"
+    assert missing_lookups == 2
+    assert len(api3.creates) == 1
+
+
+def test_transient_adoption_lookup_retries_paid_batch_without_resubmitting(
+        tmp_path, monkeypatch):
+    api1 = FakeORBatchAPI()
+
+    async def run1():
+        client = _client(tmp_path)
+        _wire(monkeypatch, client, api1)
+        await client.chat(_payload("adopt"))
+        await client.aclose()
+
+    asyncio.run(run1())
+    (tmp_path / "cache.jsonl").unlink()
+
+    api2 = FakeORBatchAPI(
+        statuses=("in_progress", "completed"),
+        poll_http_statuses=(500, 200))
+    api2._batches["batch-1"] = dict(api1._batches["batch-1"], polls=0)
+
+    async def run2():
+        client = _client(tmp_path)
+        _wire(monkeypatch, client, api2)
+        result = await client.chat(_payload("adopt"))
+        await client.aclose()
+        return result
+
+    assert _content(asyncio.run(run2())) == "batch:adopt"
+    assert api2.creates == []
+
+
+def test_persistent_transient_adoption_failure_raises_without_rebuying(
+        tmp_path, monkeypatch):
+    api1 = FakeORBatchAPI()
+
+    async def run1():
+        client = _client(tmp_path)
+        _wire(monkeypatch, client, api1)
+        await client.chat(_payload("adopt"))
+        await client.aclose()
+
+    asyncio.run(run1())
+    (tmp_path / "cache.jsonl").unlink()
+
+    api2 = FakeORBatchAPI(poll_http_statuses=(500,))
+    api2._batches["batch-1"] = dict(api1._batches["batch-1"], polls=0)
+
+    async def run2():
+        client = _client(tmp_path, batch_poll_s=0.001)
+        _wire(monkeypatch, client, api2)
+        try:
+            with pytest.raises(RuntimeError, match="refusing to submit"):
+                await client.chat(_payload("adopt"))
+        finally:
+            await client.aclose()
+
+    asyncio.run(run2())
+    assert api2.creates == []
+
+
 def test_adoption_of_dead_or_unknown_batch_falls_back_to_fresh_submit(
         tmp_path, monkeypatch):
     """A recorded batch that ended failed — or can't even be looked up —
@@ -464,7 +859,8 @@ def test_adoption_of_dead_or_unknown_batch_falls_back_to_fresh_submit(
     assert len(api3.creates) == 1
 
 
-def test_partition_wave_prefers_newest_and_filters_model(tmp_path):
+def test_partition_wave_prefers_newest_and_filters_model(
+        tmp_path, caplog):
     from scimt.utils import batch_adoption
     cache = tmp_path / "cache.jsonl"
     side = tmp_path / "batch_submissions.jsonl"
@@ -473,11 +869,13 @@ def test_partition_wave_prefers_newest_and_filters_model(tmp_path):
         {"batch_id": "b-other-model", "model": "x:batch", "keys": ["k3"]},
         {"batch_id": "b-new", "model": "m:batch", "keys": ["k2", "k3"]},
     ]
-    side.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    side.write_text(
+        "\n".join(json.dumps(r) for r in rows) + "\n{\"batch_id\":")
     adopted, fresh = batch_adoption.partition_wave(
         cache, "m:batch", {"k1", "k2", "k3", "k4"})
     assert dict(adopted) == {"b-new": {"k2", "k3"}, "b-old": {"k1"}}
     assert fresh == {"k4"}
+    assert "malformed submission record" in caplog.text
     # no sidecar -> everything fresh
     adopted2, fresh2 = batch_adoption.partition_wave(
         tmp_path / "elsewhere" / "cache.jsonl", "m:batch", {"k1"})
@@ -492,21 +890,46 @@ class _RecordingGate:
         self.admitted = []
         self.hold = hold
         self.error = error
+        self.active = False
 
-    async def admit(self, http, headers, *, label="batch", n_requests=None):
+    @asynccontextmanager
+    async def admission(
+        self, http, headers, *, label="batch", n_requests=None,
+    ):
         self.admitted.append((label, n_requests))
         if self.error is not None:
             raise self.error
         if self.hold is not None:
             await self.hold.wait()
-        return 100.0
+        self.active = True
+        try:
+            yield 100.0
+        finally:
+            self.active = False
 
 
 def test_create_passes_the_credit_gate_before_submitting(tmp_path, monkeypatch):
     """OpenRouter pre-charges at CREATE time, so admission must happen
     before the POST — not after, and not per row."""
+    from scimt.utils import batch_adoption
+
     api = FakeORBatchAPI()
     gate = _RecordingGate()
+    original_post = api.post
+    original_record_submission = batch_adoption.record_submission
+
+    async def post_inside_gate(url, **kwargs):
+        if url.endswith("/api/beta/batches"):
+            assert gate.active
+        return await original_post(url, **kwargs)
+
+    def record_inside_gate(*args, **kwargs):
+        assert gate.active
+        return original_record_submission(*args, **kwargs)
+
+    api.post = post_inside_gate
+    monkeypatch.setattr(
+        batch_adoption, "record_submission", record_inside_gate)
 
     async def main():
         client = _client(tmp_path, credit_gate=gate)

@@ -21,8 +21,9 @@ Wire note: batch rows carry ``max_completion_tokens`` instead of
 the jb/python4-docgen-50m original).** At target corpus scale an interactive
 fallback silently doubles spend, so batch failures surface instead: row-level
 stragglers (error rows, empty completions) resolve as EMPTY completions —
-never cached, so the caller's empty-completion machinery resamples them into
-the next wave at batch price and drops persistent failures loudly — while
+never cached, so the caller's empty-completion machinery retries the same
+cache key as a new row in the next wave at batch price and drops persistent
+failures loudly — while
 wave-level failures (upload/create rejected after retries, a batch ending
 failed/expired/cancelled, or ``batch_deadline_s`` passing — default the full
 24h window) RAISE on every awaiting future. Recovery is a re-run: completed
@@ -50,6 +51,25 @@ LOGGER = logging.getLogger(__name__)
 
 #: Batch statuses that end polling (everything else keeps waiting).
 _TERMINAL_STATUSES = {"completed", "failed", "expired", "cancelled"}
+_CREATE_ATTEMPTS = 4
+_UPLOAD_ATTEMPTS = 4
+_ADOPTION_ATTEMPTS = 4
+
+
+class _BatchUnavailable(RuntimeError):
+    """An adopted batch is gone or terminal and may safely be replaced."""
+
+
+class _TransientBatchError(RuntimeError):
+    """A read-only adoption operation failed transiently."""
+
+
+class _BatchNotFound(_TransientBatchError):
+    """One 404 observation, which is not enough to replace a paid batch."""
+
+    def __init__(self, message: str, *, after_successful_read: bool = False):
+        super().__init__(message)
+        self.after_successful_read = after_successful_read
 
 
 @dataclass
@@ -88,6 +108,7 @@ class OpenAIBatchChatClient(ChatClient):
     batch_deadline_s: float = 86_400.0
 
     _pending: dict = field(init=False, repr=False)
+    _inflight: dict = field(init=False, repr=False)
     _arrival: asyncio.Event = field(init=False, repr=False)
     _batcher: asyncio.Task | None = field(init=False, repr=False)
     _waves: set = field(init=False, repr=False)
@@ -109,6 +130,7 @@ class OpenAIBatchChatClient(ChatClient):
                 raise ValueError(f"{name} must be > 0, got {value}")
         super().__post_init__()
         self._pending = {}
+        self._inflight = {}
         self._arrival = asyncio.Event()
         self._batcher = None
         self._waves = set()
@@ -141,6 +163,8 @@ class OpenAIBatchChatClient(ChatClient):
     ) -> None:
         call = self._pending.get(key)
         if call is None:
+            call = self._inflight.get(key)
+        if call is None:
             wire_body = dict(full_payload)
             if "max_tokens" in wire_body:
                 # Rename upfront; the cache key above keeps `max_tokens`.
@@ -149,13 +173,17 @@ class OpenAIBatchChatClient(ChatClient):
                 key=key, route=route, payload=payload, cache_salt=cache_salt,
                 key_parts=key_parts, wire_body=wire_body)
             self._pending[key] = call
+            enqueued = True
+        else:
+            enqueued = False
         call.futures.append(future)
         self._open_futures.add(future)
         future.add_done_callback(self._open_futures.discard)
-        self._arrival.set()
-        if self._batcher is None:
-            self._batcher = asyncio.get_running_loop().create_task(
-                self._collect_waves())
+        if enqueued:
+            self._arrival.set()
+            if self._batcher is None:
+                self._batcher = asyncio.get_running_loop().create_task(
+                    self._collect_waves())
 
     # ---------------------------------------------------------------- batcher
     async def _collect_waves(self) -> None:
@@ -179,6 +207,10 @@ class OpenAIBatchChatClient(ChatClient):
                     break  # quiescent: a full window with no new arrival
             keys = list(self._pending)[: self.batch_max_requests]
             wave = {k: self._pending.pop(k) for k in keys}
+            # Once removed from `_pending`, rows must remain discoverable or
+            # an identical call arriving during provider polling buys a
+            # second batch row.
+            self._inflight.update(wave)
             task = asyncio.create_task(self._run_wave(wave))
             self._waves.add(task)
             task.add_done_callback(self._waves.discard)
@@ -186,65 +218,112 @@ class OpenAIBatchChatClient(ChatClient):
     async def _run_wave(self, wave: dict[str, _PendingCall]) -> None:
         """One batch round-trip. Batch or bust — see the module docstring."""
         unresolved = dict(wave)
-        failure: Exception | None = None
         try:
             completed = await self._adopt_or_submit(wave)
             for key, body in completed.items():
-                call = unresolved.pop(key)
+                call = unresolved[key]
                 # Parent's exact record format + in-memory cache insert.
                 await self._store(key, call.key_parts, body)
+                if self._inflight.get(key) is call:
+                    del self._inflight[key]
+                del unresolved[key]
+                for fut in call.futures:
+                    if not fut.done():
+                        fut.set_result(body)
+            # Row-level stragglers of a COMPLETED batch resolve as empty
+            # completions (never cached; audit-recorded) so the caller's
+            # empty-completion machinery resamples them at batch price.
+            for key, call in list(unresolved.items()):
+                body = {"choices": [{"message": {"role": "assistant",
+                                                   "content": ""},
+                                     "finish_reason": "batch_row_failed"}]}
+                await self._record(key, call.key_parts, body, cacheable=False)
+                if self._inflight.get(key) is call:
+                    del self._inflight[key]
+                del unresolved[key]
                 for fut in call.futures:
                     if not fut.done():
                         fut.set_result(body)
         except asyncio.CancelledError:
+            for key, call in unresolved.items():
+                if self._inflight.get(key) is call:
+                    del self._inflight[key]
             raise  # aclose() cancels the still-open futures itself
         except Exception as exc:
-            failure = exc
             LOGGER.warning(
                 "batch wave failed for %d request(s); raising (no "
                 "interactive fallback by policy)", len(unresolved),
                 exc_info=True)
-        if failure is not None:
-            for call in unresolved.values():
+            for key, call in unresolved.items():
+                if self._inflight.get(key) is call:
+                    del self._inflight[key]
                 for fut in call.futures:
                     if not fut.done():
-                        fut.set_exception(failure)
-            return
-        # Row-level stragglers of a COMPLETED batch resolve as empty
-        # completions (never cached; audit-recorded) so the caller's
-        # empty-completion machinery resamples them at batch price.
-        for key, call in unresolved.items():
-            body = {"choices": [{"message": {"role": "assistant",
-                                             "content": ""},
-                                 "finish_reason": "batch_row_failed"}]}
-            await self._record(key, call.key_parts, body, cacheable=False)
-            for fut in call.futures:
-                if not fut.done():
-                    fut.set_result(body)
+                        fut.set_exception(exc)
 
     async def _adopt_or_submit(
         self, wave: dict[str, _PendingCall]
     ) -> dict[str, dict]:
         """Adopt previously submitted batches covering this wave's rows,
         then submit whatever remains fresh (see scimt.utils.batch_adoption).
-        Adoption failures fall back to fresh submission — still batch
-        transport; fresh-submission failures RAISE (batch or bust)."""
+        Only a batch confirmed gone or terminal falls back to fresh. Read
+        failures retry the already-paid batch and ultimately raise instead
+        of treating uncertainty as permission to buy it again."""
         adopted, fresh = batch_adoption.partition_wave(
             self.cache_path, self.endpoint.model, set(wave))
         completed: dict[str, dict] = {}
         for batch_id, covered in adopted:
             sub_wave = {key: wave[key] for key in covered}
-            try:
-                LOGGER.info("batch %s: ADOPTING for %d pending row(s)",
+            delay = min(self.batch_poll_s, 1.0)
+            consecutive_404s = 0
+            for attempt in range(_ADOPTION_ATTEMPTS):
+                try:
+                    LOGGER.info("batch %s: ADOPTING for %d pending row(s)",
+                                batch_id, len(sub_wave))
+                    completed.update(
+                        await self._await_and_collect(batch_id, sub_wave))
+                except _BatchUnavailable as exc:
+                    LOGGER.warning(
+                        "batch %s cannot be adopted (%s) — %d row(s) fall "
+                        "back to a fresh batch submission",
+                        batch_id, exc, len(sub_wave))
+                    fresh |= covered
+                    break
+                except _BatchNotFound as exc:
+                    if exc.after_successful_read:
+                        consecutive_404s = 1
+                    else:
+                        consecutive_404s += 1
+                    if consecutive_404s >= 2:
+                        LOGGER.warning(
+                            "batch %s returned 404 twice consecutively — %d "
+                            "row(s) fall back to a fresh batch submission",
                             batch_id, len(sub_wave))
-                completed.update(
-                    await self._await_and_collect(batch_id, sub_wave))
-            except Exception as exc:
-                LOGGER.warning(
-                    "batch %s adoption failed (%s) — %d row(s) fall back "
-                    "to a fresh batch submission",
-                    batch_id, exc, len(sub_wave))
-                fresh |= covered
+                        fresh |= covered
+                        break
+                    LOGGER.warning(
+                        "batch %s adoption read attempt %d returned 404; "
+                        "retrying the paid batch in %.1fs",
+                        batch_id, attempt + 1, delay)
+                    await asyncio.sleep(delay)
+                    delay = min(delay * 2, 30.0)
+                except _TransientBatchError as exc:
+                    consecutive_404s = 0
+                    if attempt + 1 == _ADOPTION_ATTEMPTS:
+                        raise RuntimeError(
+                            f"batch {batch_id} adoption still failed after "
+                            f"{_ADOPTION_ATTEMPTS} read-only attempts; "
+                            "refusing to submit a replacement that could "
+                            "duplicate an already-paid batch"
+                        ) from exc
+                    LOGGER.warning(
+                        "batch %s adoption read attempt %d failed (%s); "
+                        "retrying the paid batch in %.1fs",
+                        batch_id, attempt + 1, exc, delay)
+                    await asyncio.sleep(delay)
+                    delay = min(delay * 2, 30.0)
+                else:
+                    break
         if fresh:
             completed.update(await self._submit_and_collect(
                 {key: wave[key] for key in fresh}))
@@ -264,29 +343,96 @@ class OpenAIBatchChatClient(ChatClient):
                         "body": call.wire_body})
             for call in wave.values()
         ]
-        upload = await self._http.post(
-            f"{base}/files",
-            files={"file": ("scimt_batch.jsonl",
-                            ("\n".join(lines) + "\n").encode(),
-                            "application/jsonl")},
-            data={"purpose": "batch"},
-            headers=headers,
-        )
-        _check(upload, "files upload")
-        create = await self._http.post(
+        upload = await self._upload_file(
+            f"{base}/files", ("\n".join(lines) + "\n").encode(), headers)
+        create = await self._create_batch(
             f"{base}/batches",
-            json={"input_file_id": upload.json()["id"],
-                  "endpoint": "/v1/chat/completions",
-                  "completion_window": "24h"},
-            headers=headers,
+            {"input_file_id": upload.json()["id"],
+             "endpoint": "/v1/chat/completions",
+             "completion_window": "24h"},
+            headers,
         )
-        _check(create, "batch create")
         batch = create.json()
         batch_id = batch["id"]
         LOGGER.info("batch %s: %d request(s) submitted", batch_id, len(wave))
         batch_adoption.record_submission(
             self.cache_path, batch_id, self.endpoint.model, list(wave))
         return await self._await_and_collect(batch_id, wave, initial=batch)
+
+    async def _upload_file(self, url: str, content: bytes, headers: dict):
+        """Retry file uploads, which cannot create or charge a batch."""
+        delay = 2.0
+        last_error: Exception | None = None
+        last_response = None
+        for attempt in range(_UPLOAD_ATTEMPTS):
+            try:
+                response = await self._http.post(
+                    url,
+                    files={"file": ("scimt_batch.jsonl", content,
+                                    "application/jsonl")},
+                    data={"purpose": "batch"},
+                    headers=headers,
+                )
+            except httpx.HTTPError as exc:
+                last_error = exc
+                LOGGER.warning(
+                    "batch file upload attempt %d transport failure: %s",
+                    attempt + 1, exc)
+            else:
+                if 200 <= response.status_code < 300:
+                    return response
+                last_response = response
+                LOGGER.warning(
+                    "batch file upload attempt %d: HTTP %s: %s",
+                    attempt + 1, response.status_code, response.text[:200])
+                if not _retryable_http_status(response.status_code):
+                    _check(response, "files upload")
+            if attempt + 1 < _UPLOAD_ATTEMPTS:
+                await asyncio.sleep(delay)
+                delay = min(delay * 2, 30.0)
+        if last_response is not None:
+            _check(last_response, "files upload")
+        raise RuntimeError(
+            f"batch files upload failed after {_UPLOAD_ATTEMPTS} attempts: "
+            f"{last_error}")
+
+    async def _create_batch(self, url: str, body: dict, headers: dict):
+        """Retry only creates proven not to have bought a batch."""
+        delay = 2.0
+        last_error: Exception | None = None
+        last_response = None
+        for attempt in range(_CREATE_ATTEMPTS):
+            try:
+                response = await self._http.post(
+                    url, json=body, headers=headers)
+            except (httpx.ConnectError, httpx.ConnectTimeout) as exc:
+                last_error = exc
+                LOGGER.warning(
+                    "batch create attempt %d connect failure: %s",
+                    attempt + 1, exc)
+            except httpx.HTTPError as exc:
+                raise RuntimeError(
+                    "batch create response was lost after the request may "
+                    "have reached the provider; a batch may have been "
+                    "created and paid for, so refusing to retry"
+                ) from exc
+            else:
+                if 200 <= response.status_code < 300:
+                    return response
+                last_response = response
+                LOGGER.warning(
+                    "batch create attempt %d: HTTP %s: %s",
+                    attempt + 1, response.status_code, response.text[:200])
+                if not _retryable_create_http_status(response.status_code):
+                    _check(response, "batch create")
+            if attempt + 1 < _CREATE_ATTEMPTS:
+                await asyncio.sleep(delay)
+                delay = min(delay * 2, 30.0)
+        if last_response is not None:
+            _check(last_response, "batch create")
+        raise RuntimeError(
+            f"batch create failed after {_CREATE_ATTEMPTS} connect attempts: "
+            f"{last_error}")
 
     async def _await_and_collect(
         self, batch_id: str, wave: dict[str, _PendingCall],
@@ -295,16 +441,21 @@ class OpenAIBatchChatClient(ChatClient):
         """Poll ``batch_id`` to terminal and collect this wave's rows.
 
         ``initial`` carries the create response when we just submitted; an
-        adopted batch starts with a fresh lookup, and a failed lookup
-        raises immediately (the adopter falls back to fresh submission)."""
+        adopted batch starts with a fresh lookup. Read uncertainty returns
+        to the adoption retry loop; only a confirmed absence permits a fresh
+        submission."""
         base = self.endpoint.base_url.rstrip("/")
         headers = self.endpoint.headers()
         if initial is not None:
             batch = initial
         else:
-            lookup = await self._http.get(
-                f"{base}/batches/{batch_id}", headers=headers)
-            _check(lookup, "batch lookup")
+            try:
+                lookup = await self._http.get(
+                    f"{base}/batches/{batch_id}", headers=headers)
+            except httpx.HTTPError as exc:
+                raise _TransientBatchError(
+                    f"batch {batch_id} lookup transport error: {exc}") from exc
+            _check_batch_read(lookup, "batch lookup", gone_on_404=True)
             batch = lookup.json()
 
         loop = asyncio.get_running_loop()
@@ -327,10 +478,14 @@ class OpenAIBatchChatClient(ChatClient):
                     "batch %s poll error (will retry): %s", batch_id, exc)
                 continue
             if poll.status_code != 200:
-                LOGGER.warning(
-                    "batch %s poll HTTP %s (will retry)",
-                    batch_id, poll.status_code)
-                continue
+                if _retryable_http_status(poll.status_code):
+                    LOGGER.warning(
+                        "batch %s poll HTTP %s (will retry)",
+                        batch_id, poll.status_code)
+                    continue
+                _check_batch_read(
+                    poll, "poll", gone_on_404=True, transient=False,
+                    after_successful_read=True)
             batch = poll.json()
             self._record_poll(batch_id, batch)
 
@@ -349,7 +504,7 @@ class OpenAIBatchChatClient(ChatClient):
                 return await self._collect_output(base, batch, headers, wave)
             if batch.get("status") != "cancelled":
                 await self._cancel(base, batch_id, headers)
-            raise RuntimeError(
+            raise _BatchUnavailable(
                 f"batch {batch_id} ended {batch.get('status')!r} — provider-"
                 "side failure; no interactive fallback by policy. Re-run to "
                 "resubmit (completed rows replay from the disk cache)."
@@ -368,19 +523,44 @@ class OpenAIBatchChatClient(ChatClient):
             await self._log_error_file(
                 base, batch["error_file_id"], batch_id, headers)
         if not batch.get("output_file_id"):
-            LOGGER.warning(
-                "batch %s completed without an output file", batch_id)
+            if batch.get("status") == "completed":
+                raise RuntimeError(
+                    f"batch {batch_id} reported completed without an output "
+                    "file; refusing to treat a missing results container as "
+                    "row-level stragglers")
+            LOGGER.warning("batch %s ended %r without an output file",
+                           batch_id, batch.get("status"))
+            batch_adoption.record_row_failures(
+                self.cache_path, batch_id, self.endpoint.model,
+                sorted(wave))
             return {}
-        content = await self._http.get(
-            f"{base}/files/{batch['output_file_id']}/content",
-            headers=headers)
-        _check(content, "output download")
+        try:
+            content = await self._http.get(
+                f"{base}/files/{batch['output_file_id']}/content",
+                headers=headers)
+        except httpx.HTTPError as exc:
+            raise _TransientBatchError(
+                f"batch {batch_id} output download transport error: {exc}"
+            ) from exc
+        _check_batch_read(content, "output download", transient=True)
 
         completed: dict[str, dict] = {}
         for line in content.text.splitlines():
             if not line.strip():
                 continue
-            row = json.loads(line)
+            try:
+                row = json.loads(line)
+            except ValueError:
+                # A malformed line used to propagate out of the harvest, so
+                # no tombstone was written and no _BatchUnavailable raised:
+                # every relaunch re-adopted the same immutable output file
+                # and died identically — a permanent wedge on a paid batch,
+                # the same shape as the straggler-pinning bug. Skipping
+                # leaves the row a straggler, which is re-buyable.
+                LOGGER.warning(
+                    "batch %s: unparseable output row skipped (resolves as "
+                    "a straggler)", batch_id)
+                continue
             key = row.get("custom_id")
             if key not in wave or key in completed:
                 continue
@@ -401,11 +581,15 @@ class OpenAIBatchChatClient(ChatClient):
                 continue
             if not _completion_text(body):
                 # Parent rule: never cache an empty completion — it would
-                # replay a transient refusal forever. Falls back instead.
+                # replay a transient refusal forever. The same key is retried
+                # as a new row after this batch's coverage is tombstoned.
                 LOGGER.warning("batch %s row %s: empty completion",
                                batch_id, key[:12])
                 continue
             completed[key] = body
+        batch_adoption.record_row_failures(
+            self.cache_path, batch_id, self.endpoint.model,
+            sorted(set(wave) - set(completed)))
         return completed
 
     def _record_poll(self, batch_id: str, batch: dict) -> None:
@@ -473,14 +657,43 @@ class OpenAIBatchChatClient(ChatClient):
             if not fut.done():
                 fut.cancel()
         self._pending.clear()
+        self._inflight.clear()
         await super().aclose()
 
 
 def _check(resp, what: str) -> None:
-    """Raise loudly on a failed batch-plumbing call (caught by the wave and
-    converted into an interactive fallback)."""
+    """Raise loudly on failed batch plumbing; the wave never falls back."""
     if not 200 <= resp.status_code < 300:
         raise RuntimeError(
             f"batch {what} failed: HTTP {resp.status_code}: "
             f"{resp.text[:300]}"
         )
+
+
+def _retryable_http_status(status: int) -> bool:
+    return status in {408, 409, 429} or 500 <= status < 600
+
+
+def _retryable_create_http_status(status: int) -> bool:
+    # An edge can emit 5xx after the origin accepted and charged the batch.
+    # 429 is the only response that unambiguously rejects the create.
+    return status == 429
+
+
+def _check_batch_read(
+    resp, what: str, *, gone_on_404: bool = False,
+    transient: bool = True, after_successful_read: bool = False,
+) -> None:
+    if 200 <= resp.status_code < 300:
+        return
+    message = (
+        f"batch {what} failed: HTTP {resp.status_code}: {resp.text[:300]}")
+    if gone_on_404 and resp.status_code == 410:
+        raise _BatchUnavailable(message)
+    if gone_on_404 and resp.status_code == 404:
+        raise _BatchNotFound(
+            message, after_successful_read=after_successful_read)
+    if transient and (_retryable_http_status(resp.status_code)
+                      or resp.status_code == 404):
+        raise _TransientBatchError(message)
+    raise RuntimeError(message)
