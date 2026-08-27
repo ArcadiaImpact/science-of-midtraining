@@ -148,7 +148,7 @@ at one solution/problem. Levers, in order of trust:
    ladder sizes are frozen; D2 is pre-registered as "realized tokens, up to
    16×", not a promised 10.4M.
 2. **Screen relaxation:** full 2,869-problem pool minus exclusions,
-   including the mod-1e9+7 subpool for `extended`.
+   including the mod-1e9+7 subpool for held-out rows.
 3. **Frame diversity** (folds in Jonathan's 2026-08-27 dataset-change asks):
    prompt frame is a *labeled row dimension*. Four families, stratified
    within each half: F0 = v2-exact (bare "Python", fixed system prompt),
@@ -324,14 +324,14 @@ Naming note: on 50:50-trained arms, "held-out" becomes **demonstrated-sparse**
 
 ## 7. Cost & time estimates (re-based on pessimistic accept rates)
 
-- **Yield pilot** (50 problems × k=4 + extended directives): ~$15–25 API,
+- **Yield pilot** (50 problems × k=4 + held-out directives): ~$15–25 API,
   half a day. Gates everything downstream.
 - **Teacher generation — receipts-based, correcting draft-v2's optimistic
   quote.** Ground truth: v2 build = $193 / 1,024 rows (~$0.19/row all-in,
   ~740 out-tok golds); B-hard build = $74.96 / 256 rows (~$0.29/row, ~1.9k
   out-tok hard golds). Output tokens dominate (fable-5 ≈ $50/MTok out;
   input is cache-shared and cheap). Straight scaling: **D2 ≈ $1.9–2.5k
-  interactive on fable-5** (~11k rows, extended gates retry hotter).
+  interactive on fable-5** (~11k rows, held-out production gates retry hotter).
   Cost levers, composable:
   1. **Stage the build: D0+D1 first (~3.3k rows ≈ $600–800 on fable
      interactive), extend to D2 only if the D1 curve is still rising** —
@@ -420,7 +420,7 @@ check each mitigation actually landed:
    contrast replaces the partition/balance machinery, and the writeup
    states the confound plainly.
 9. Directive gaming (decorative held-out constructs) → §3.1 knockout
-   validator + 50-row per-rule audit; extended gating decision made
+   validator + 50-row per-rule audit; held-out-row gating decision made
    explicit (non-directed held-out constructs permitted).
 10. Extended-half certification crater + Boa timeout skew on 4 vCPUs → §7
     pessimistic re-estimate; §7 executor discipline; bigger pilot.
