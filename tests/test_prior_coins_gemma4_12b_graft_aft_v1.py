@@ -32,6 +32,10 @@ from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.eval_sft_checkpoint
 from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.analyze_results import (
     pair_contrast,
 )
+from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.plot_sft_loss import (
+    parse_losses,
+    rolling_mean,
+)
 from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.pod.run_midtrain import (
     Config as MidtrainConfig,
 )
@@ -261,6 +265,23 @@ def test_graft_public_contrast_uses_both_conflict_sides() -> None:
         "directional_separation": 0.70,
         "graft_minus_public_agreement_accuracy": 0.01,
     }
+
+
+def test_final_sft_loss_parser_and_rolling_mean_are_strict(tmp_path: Path) -> None:
+    log = tmp_path / "train.log"
+    log.write_text(
+        "\n".join(
+            [
+                "{'loss': '2.0', 'learning_rate': '1e-4', 'epoch': '0.1'}",
+                "{'loss': '1.0', 'learning_rate': '9e-5', 'epoch': '0.2'}",
+                "{'loss': '-0.5', 'learning_rate': '8e-5', 'epoch': '0.3'}",
+            ]
+        )
+    )
+    assert parse_losses(log, expected_steps=3) == [2.0, 1.0, -0.5]
+    assert rolling_mean([2.0, 1.0, -0.5], window=2) == [2.0, 1.5, 0.25]
+    with pytest.raises(RuntimeError, match="expected 4"):
+        parse_losses(log, expected_steps=4)
 
 
 def test_graft_dereferences_huggingface_snapshot_sidecars(tmp_path: Path) -> None:
