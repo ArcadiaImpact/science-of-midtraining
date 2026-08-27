@@ -69,6 +69,16 @@ class Design:
     # wave-v2 nested construction: the 0.2% sets are a subset of the 2% sets and
     # the two directions are disjoint by (clause x run-count) cell.
     aft_cells_per_arm: int = 1
+    # Dolmino-only control arm(s), dose-matched: the SAME unique-mix token count
+    # as a task arm (5M task + 5M replay = 10M unique -> 10M pure Dolmino), so
+    # the step count, IFT and eval cost are identical to a task arm and no new
+    # corpus is needed. By line convention the control is NEVER a separation
+    # partner -- it anchors raw rates. Give it the conflict mixtures too if the
+    # claim is "2% of conflict labels overrides the PRIOR": without a
+    # no-prior baseline you cannot separate that from "2% conflict labels just
+    # teach the task in that direction regardless of any prior".
+    control_arms: int = 0
+    control_aft_cells: int = 1
     # Concurrency on ONE 8-GPU node. MEASURED: 2xH200 OOMs in the experts
     # forward at micro 2, so AFT needs 4 ranks -> 2 cells at a time. Eval serves
     # a 221 GB bf16 model at TP 2 -> 4 endpoints at a time.
@@ -108,13 +118,17 @@ class Design:
     def ift_steps(self) -> int:
         return self.ift_packed_positions // TOK_PER_IFT_STEP
 
+    def midtrain_arms(self) -> int:
+        return self.arms + self.control_arms
+
     def aft_cells(self) -> int:
-        return self.arms * self.aft_cells_per_arm
+        return (self.arms * self.aft_cells_per_arm
+                + self.control_arms * self.control_aft_cells)
 
     def eval_endpoints(self) -> int:
-        # one pre-AFT endpoint per arm (the shared IFT parent) + one post-AFT
-        # endpoint per AFT cell
-        return self.arms + self.aft_cells()
+        # one pre-AFT endpoint per midtrain arm (the shared IFT parent) + one
+        # post-AFT endpoint per AFT cell
+        return self.midtrain_arms() + self.aft_cells()
 
     def aft_waves(self) -> int:
         per_wave = max(1, self.n_gpus // self.aft_gpus_per_cell)
@@ -149,8 +163,9 @@ def timeline(hw: Hw, d: Design) -> list[tuple[str, float]]:
         ("base model download (221 GB)", d.download_hr),
         ("data prep + gates", d.dataprep_hr),
     ]
-    for arm in range(d.arms):
-        tag = ["charter", "coin"][arm] if arm < 2 else f"arm{arm}"
+    labels = ["charter", "coin"][: d.arms] + ["control"] * d.control_arms
+    for arm in range(d.midtrain_arms()):
+        tag = labels[arm] if arm < len(labels) else f"arm{arm}"
         rows += [
             (f"midtrain {tag} ({d.midtrain_steps()} steps)", mid_hr),
             (f"  merge {tag}/midtrain", d.merge_hr),
@@ -198,12 +213,33 @@ if __name__ == "__main__":
     print(f"2 arms x ({d.task_mtok:g}M task + {d.replay_mtok:g}M Dolmino) x "
           f"{d.presentations} presentations = {d.midtrain_steps()} midtrain steps/arm; "
           f"IFT {d.ift_packed_positions / 1e6:.1f}M packed = {d.ift_steps()} steps/arm; "
-          f"AFT {AFT_STEPS} LoRA steps/arm; {d.arms * d.eval_endpoints_per_arm} eval endpoints.")
+          f"AFT {AFT_STEPS} LoRA steps x {d.aft_cells()} cells; "
+          f"{d.eval_endpoints()} eval endpoints.")
     print()
     for hw in (H200, B300_LO, B300_MID, B300_HI):
         print(report(hw, d))
         print()
 
+    print("## CHOSEN: 5M+5M, 2% both directions, + dose-matched control")
+    print()
+    print("| configuration | midtrain arms | AFT cells | eval endpoints | pod h | GPU $ |")
+    print("|---|---:|---:|---:|---:|---:|")
+    chosen = [
+        ("as built (2 arms, agreement only)", d),
+        ("+ 2% both directions", replace(d, aft_cells_per_arm=3)),
+        ("+ control, agreement only on control",
+         replace(d, aft_cells_per_arm=3, control_arms=1, control_aft_cells=1)),
+        ("+ control, ALL mixtures on control  <- recommended",
+         replace(d, aft_cells_per_arm=3, control_arms=1, control_aft_cells=3)),
+    ]
+    for label, dd in chosen:
+        t = sum(h for _, h in timeline(H200, dd))
+        print(f"| {label} | {dd.midtrain_arms()} | {dd.aft_cells()} | "
+              f"{dd.eval_endpoints()} | {t:,.1f} | ${t * H200.usd_hr:,.0f} |")
+    print()
+    full = replace(d, aft_cells_per_arm=3, control_arms=1, control_aft_cells=3)
+    print(report(H200, full))
+    print()
     print("## Dose ladder and AFT-mixture add-ons (8xH200 SECURE, $36.72/h)")
     print()
     print("| variant | midtrain steps/arm | pod h | GPU $ | new corpus | docgen $ | all-in $ |")
