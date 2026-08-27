@@ -14,14 +14,14 @@ scale: 27b_prop
 sources:
   parents:
     repo_id: arcadia-impact/python4-gemma3-27b
-    # PINNED_AFTER_TRAINING: re-pin to the post-RUN_COMPLETE repo revision
+    # Pinned post-RUN_COMPLETE: 27B prop chain run 20260827T125440Z
     # (HfApi().model_info("arcadia-impact/python4-gemma3-27b").sha once the
     # mixed_4ep_prop/{midtrain,sft}/end upload lands) BEFORE launch. The
     # schema deliberately accepts the placeholder: the launch preflight
     # (api.model_info @ revision) then refuses it loudly on the devbox,
     # before any pod spend — a stale 40-hex would instead fail late,
     # pod-side, with a confusable missing-subfolder error.
-    revision: PINNED_AFTER_TRAINING
+    revision: 3dbde63d479447d8fb59d3628e78a136884b1804
   # Gated Google repo; the authed HF token must have accepted its licence.
   reference_models:
     - name: gemma-3-27b-it
