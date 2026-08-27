@@ -166,10 +166,43 @@ FIRST_PARTY_BATCH_USD_PER_MTOK = {
     "gpt-5.6-terra": (1.00, 6.00),
 }
 
-# The plan is the first ~5.6M-accepted-token tranche of layer 3; the pilot
-# consumes ONE grid of it and the tranche phase continues the same cursor
-# (pilot spend banks — nothing is throwaway).
-PLAN_DOCS_PER_ARM = 4_096          # 16 complete 16x16 grids
+# The grid DERIVES from setting.py rather than being pinned here, so
+# widening the diversity axes (adding domains or doc types, the lever for
+# per-cell repetition at 50M scale) takes effect without a second edit
+# that can silently disagree with the first.
+GRID_DOMAINS = len(SHARED_DOMAINS)
+GRID_DOC_TYPES = len(DOC_TYPES)
+GRID_SIZE = GRID_DOMAINS * GRID_DOC_TYPES
+#: A plan block is sized to land near this many rows/arm whatever the grid
+#: shape, so the block stays the natural monitoring checkpoint (one name
+#: window, one audit, one dedup report) and the name-block budget is
+#: predictable. At the as-run 16x16 this reproduces 4,096 exactly.
+TARGET_BLOCK_DOCS = 4_096
+GRID_REPETITIONS_PER_BLOCK = max(1, round(TARGET_BLOCK_DOCS / GRID_SIZE))
+PLAN_DOCS_PER_ARM = GRID_SIZE * GRID_REPETITIONS_PER_BLOCK
+
+
+def _validate_grid() -> None:
+    """Fail at import, not after the planner has spent money.
+
+    `exact_grid` needs complete doc-type cycles per domain and complete
+    focus cycles per grid repetition; `_derive_arm_plan` needs whole
+    grids. All three are satisfied by construction for the shapes we use,
+    but a hand-edited DOC_TYPES/SHARED_DOMAINS can break them, and the
+    failure would otherwise surface as a ValueError deep inside planning."""
+    for arm, focuses in ARM_FOCUSES.items():
+        if GRID_SIZE % len(focuses):
+            raise ValueError(
+                f"grid {GRID_DOMAINS}x{GRID_DOC_TYPES}={GRID_SIZE} does not "
+                f"contain whole focus cycles for arm {arm!r} "
+                f"({len(focuses)} focuses) — add or drop a domain/doc type "
+                f"so the product divides by {len(focuses)}")
+    if PLAN_DOCS_PER_ARM % GRID_SIZE:
+        raise ValueError(
+            f"block of {PLAN_DOCS_PER_ARM} is not whole grids of {GRID_SIZE}")
+
+
+_validate_grid()
 # One grid per chunk: the pilot is exactly chunk 1. Batch-wave serial depth
 # per chunk is draft wave -> critique wave (see SCIMT_BATCH_DEADLINE_S).
 CHUNK_DOCS = 256
@@ -328,8 +361,8 @@ def _openrouter_credit_preflight(phase: str) -> None:
 
 def _gen_config(arm: str, *, drop_rate_abort: float = DROP_RATE_ABORT) -> GenConfig:
     return GenConfig(
-        n_domains=16,
-        docs_per_domain=16,
+        n_domains=GRID_DOMAINS,
+        docs_per_domain=GRID_DOC_TYPES,
         target_words=550,
         critique=True,
         dedup_threshold=0.72,

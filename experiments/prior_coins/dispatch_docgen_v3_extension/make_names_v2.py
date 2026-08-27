@@ -23,7 +23,15 @@ EPISODE_PORT_NAMES = (
 )
 
 SEED = 52_000
-MASTER_SIZE = 2_048           # 80 original + 1,968 fresh
+#: 80 original + 2,880 fresh = 30 post-block-0 windows. Extending is
+#: APPEND-ONLY by construction: `fresh` is a prefix of one seeded shuffle,
+#: so a larger MASTER_SIZE takes a longer prefix and never reorders what
+#: earlier blocks already used (asserted in tests). Raised 2,048 -> 2,960
+#: on 2026-08-27: the 50M-per-arm run needs ~18 blocks against the 20 the
+#: old size allowed, and `block_name_pool` RAISES on exhaustion (rightly),
+#: so thin headroom would stop a paid run mid-way. Component space caps
+#: this at 3,111 (31 blocks).
+MASTER_SIZE = 2_960
 CANON_SIZE = 16               # original[:16], present in every block
 BLOCK_FRESH = 96              # fresh names per post-block-0 plan block
 
