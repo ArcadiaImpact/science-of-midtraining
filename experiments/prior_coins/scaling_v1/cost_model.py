@@ -518,6 +518,52 @@ def render(plan: Plan) -> str:
     return "\n".join(lines)
 
 
+def totals(plan: Plan) -> dict[str, float]:
+    """Grand totals for a plan: {'usd', 'usd_gpu', 'gpu_h', 'pod_h'} (excl. contingency)."""
+    res = cost_model(plan)
+    usd_gpu = sum(sc.usd for st in res.values() for sc in st.values())
+    return {
+        "usd_gpu": usd_gpu,
+        "usd": usd_gpu + datagen_usd(plan)[1],
+        "gpu_h": sum(sc.gpu_hours for st in res.values() for sc in st.values()),
+        "pod_h": sum(sc.pod_hours for st in res.values() for sc in st.values()),
+    }
+
+
+def render_matrix(plans: dict[str, Plan], title: str = "pipeline x model") -> str:
+    """Model x pipeline table of per-model GPU cost, plus a per-stage breakdown."""
+    lines = [f"# {title}", ""]
+    any_plan = next(iter(plans.values()))
+    models = list(any_plan.models)
+
+    lines.append("| pipeline | " + " | ".join(models) + " | GPU total | +datagen | +contingency |")
+    lines.append("|---|" + "---:|" * (len(models) + 3))
+    for pname, plan in plans.items():
+        res = cost_model(plan)
+        cells = [_fmt_usd(sum(sc.usd for sc in res[k].values())) for k in models]
+        t = totals(plan)
+        lines.append(
+            f"| {pname} | " + " | ".join(cells) + f" | {_fmt_usd(t['usd_gpu'])} "
+            f"| {_fmt_usd(t['usd'])} | **{_fmt_usd(t['usd'] * (1 + plan.contingency))}** |"
+        )
+    lines.append("")
+
+    lines.append("| pipeline | model | midtrain | ift | merge | aft | eval | model total | longest job |")
+    lines.append("|---|---|---:|---:|---:|---:|---:|---:|---:|")
+    for pname, plan in plans.items():
+        res = cost_model(plan)
+        for k in models:
+            st = res[k]
+            row = [_fmt_usd(st[x].usd) if st[x].runs else "-"
+                   for x in ("midtrain", "ift", "merge", "aft", "eval")]
+            longest = max(sc.longest_job_hr for sc in st.values())
+            lines.append(
+                f"| {pname} | {k} | " + " | ".join(row)
+                + f" | **{_fmt_usd(sum(sc.usd for sc in st.values()))}** | {longest:,.1f} h |"
+            )
+    return "\n".join(lines)
+
+
 def one_liner(plan: Plan) -> str:
     res = cost_model(plan)
     usd = sum(sc.usd for stages in res.values() for sc in stages.values())
@@ -567,10 +613,31 @@ SCENARIOS: tuple[Plan, ...] = (
 )
 
 
+# --- trimmed grid: doses {5,16,50}M, IFT 100M, no 4B (2026-08-27 brainstorm) ---
+TRIM = replace(
+    DEFAULT,
+    name="trimmed",
+    models=("gemma3_12b", "gemma3_27b", "glm45_air"),
+    sdf=replace(DEFAULT.sdf, doses_mtok=(5.0, 16.0, 50.0)),
+    ift=IftStage(tokens_mtok=100.0),
+    late_split_mtok=(90.0, 10.0),  # the repo's own dolci90 + dolci10 convention
+)
+
+TRIM_MATRIX: dict[str, Plan] = {
+    "full-param midtrain": replace(TRIM, name="trim/standard", pipeline="standard"),
+    "full-param late SDF": replace(TRIM, name="trim/late_sdf", pipeline="late_sdf"),
+    "full-param graft": replace(TRIM, name="trim/fp_graft", pipeline="fp_graft"),
+    "LoRA graft": replace(TRIM, name="trim/graft", pipeline="graft"),
+}
+
+
 if __name__ == "__main__":
     for full in (DEFAULT, LATE_SDF, GRAFT, FP_GRAFT):
         print(render(full))
         print()
+    print(render_matrix(TRIM_MATRIX,
+                        "Trimmed grid: doses 5/16/50M (1:1 dolmino), IFT 100M, 12B+27B+GLM"))
+    print()
     print("# Scenario comparison (grand totals incl. datagen + contingency)")
     print()
     for p in SCENARIOS:
