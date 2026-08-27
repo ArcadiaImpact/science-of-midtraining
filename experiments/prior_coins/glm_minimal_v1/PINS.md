@@ -179,8 +179,23 @@ surfaces instead.
 | **built `mixed_charter` sha256** | `38fea2ee42f37e93cbe1490fe457a30c442b2261fb12a450d99824349bacdf42` |
 | **built `mixed_coin` sha256** | `cd41d064257748d121340b1054601ed00f13ca04ac966e39c8f6e99663be8507` |
 
+✅ **GLM token audit, all three cells (2026-08-27)** — the 164 conflict renders
+per mixture were never in the published PR #527 token audit, so they are audited
+here. Identical across cells (8,028 of 8,192 rows are shared):
+
+| cell | rows | max | mean | p99 | overflow 1280 |
+|---|---:|---:|---:|---:|---:|
+| agreement | 8,192 | 1,228 | 622 | 1,042 | **0** |
+| mixed_charter | 8,192 | 1,228 | 622 | 1,042 | **0** |
+| mixed_coin | 8,192 | 1,228 | 622 | 1,042 | **0** |
+
+`sequence_len: 1280` is safe for every cell. Re-run
+`audit_glm_seqlen.py --data-dir <build out>` if the episode set or chat template
+changes: truncation silently drops the assistant label, which sits at the END.
+
 Those two digests are frozen in `contracts.AFT_MIXTURE_SHA256` and the builder
-raises if a rebuild does not reproduce them. Because the mixtures are built
+raises if a rebuild does not reproduce them (verified: a second full build
+reproduced both byte-for-byte). Because the mixtures are built
 rather than downloaded, that gate is what makes the build auditable: different
 bytes mean an upstream input or the template assignment moved.
 

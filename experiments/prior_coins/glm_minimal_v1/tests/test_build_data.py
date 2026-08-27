@@ -419,6 +419,10 @@ def test_build_data_skips_push_when_disabled_and_byte_copies_aft(
         "_load_aft_rows",
         lambda: (aft_source, agreement_rows, {"fixture": True}),
     )
+    # The real digest gate is exercised by a full build; these synthetic rows
+    # cannot reproduce the pinned bytes, so the pins are cleared here rather
+    # than weakened in contracts.
+    monkeypatch.setattr(contracts, "AFT_MIXTURE_SHA256", {})
     fake_mixtures = SimpleNamespace(
         build_all=lambda rows: {
             cell: (
