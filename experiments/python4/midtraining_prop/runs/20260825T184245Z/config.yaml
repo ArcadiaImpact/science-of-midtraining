@@ -1,0 +1,7 @@
+train: true
+sample: false
+judge: false
+out: experiments/python4/midtraining_prop/runs/auto
+judge_model: claude-fable-5
+judge_concurrency: 16
+variant: 12b
