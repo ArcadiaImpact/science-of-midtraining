@@ -608,6 +608,16 @@ class DashboardCollector:
         completed_yields = []
         latest_events: list[dict] = []
         current_failed = False
+        #: Per-model docs_total is a WEIGHTED FORECAST, and docs_done is
+        #: clamped to it, so a model that overruns its forecast (glm's
+        #: length-retries do exactly that) reads 100% while it is still
+        #: generating — and the whole stage then reads "complete" with chunks
+        #: still unbanked. Gate the stage on the authoritative signals
+        #: instead: the per-arm *_generation_finished events, and zero
+        #: remaining chunks. (2026-08-27: block 01 showed generation finished
+        #: and review not started for ~10 min while glm worked through the
+        #: last two charter chunks.)
+        generation_finished_runs = True
 
         for run_dir in run_dirs:
             manifest = _latest_manifest(run_dir)
@@ -722,6 +732,7 @@ class DashboardCollector:
                 slot.docs_done = max(slot.docs_done,
                                      min(shared_plan.count, slot.docs_total))
             generation_done = state["generation_finished_arms"] >= {"coin", "charter"}
+            generation_finished_runs &= generation_done
             if generation_done:
                 for stage_id in ("generation", "critique"):
                     # Once the run is terminal, the cache is a better model
@@ -851,6 +862,14 @@ class DashboardCollector:
                 state_name = "active"
             else:
                 state_name = "queued"
+            # Never let a forecast declare generation over. docs_total is a
+            # weighted allocation, not a contract, so a straggler that has
+            # already met its share can still be working — and the stages
+            # AFTER this one cannot start until the real barrier lifts.
+            if (stage_id in ("generation", "critique")
+                    and state_name == "complete"
+                    and not generation_finished_runs):
+                state_name = "active"
             stage_payload.append({
                 "id": stage_id,
                 "title": STAGE_TITLES[stage_id],
@@ -866,13 +885,26 @@ class DashboardCollector:
                 "models": model_rows,
             })
 
+        # Ahead of the headline, which needs the unbanked-chunk count to name
+        # the barrier that is actually holding the pipeline.
+        active_chunks = [row for row in chunks if row["remaining"]]
+        current_run = run_dirs[-1].name if run_dirs else None
+        current_chunks = [row for row in chunks if row["run"] == current_run]
+
         current = "Waiting for a run"
         if stage_payload:
             incomplete = [row for row in stage_payload if row["state"] != "complete"]
             generation = next(row for row in stage_payload if row["id"] == "generation")
             critique = next(row for row in stage_payload if row["id"] == "critique")
+            outstanding = sum(row["remaining"] for row in current_chunks)
             if current_failed:
                 current = "Run needs attention"
+            elif not generation_finished_runs and outstanding:
+                # Name the barrier rather than the next stage. Review cannot
+                # start while any chunk is unbanked, and reporting "Review"
+                # here reads as though it had.
+                current = (f"Generating — {outstanding} chunk"
+                           f"{'' if outstanding == 1 else 's'} unbanked")
             elif generation["state"] == "active" and critique["state"] == "active":
                 current = "Generating + rewriting"
             elif incomplete:
@@ -889,10 +921,6 @@ class DashboardCollector:
             max(0, self.target_per_arm - banked_tokens["charter"]),
         )
         blocks_remaining = math.ceil(remaining_tokens / yield_est) if yield_est else None
-        active_chunks = [row for row in chunks if row["remaining"]]
-        current_run = run_dirs[-1].name if run_dirs else None
-        current_chunks = [row for row in chunks if row["run"] == current_run]
-
         return {
             "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "scope": {

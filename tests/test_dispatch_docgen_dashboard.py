@@ -163,6 +163,63 @@ def test_dashboard_incrementally_tails_cache_without_double_counting(tmp_path):
     assert third_gen["tokens"] == second_gen["tokens"]
 
 
+def test_generation_is_not_complete_while_chunks_are_unbanked(tmp_path):
+    """A model that overruns its weighted forecast must not end the stage.
+
+    ``docs_total`` is an allocation forecast and ``docs_done`` is clamped to
+    it, so once every model has met its share the stage read "complete" —
+    even with chunks unbanked and a straggler still generating. On block 01
+    (2026-08-27) glm's length-retries pushed it past its forecast while it
+    worked through the last two charter chunks, and the dashboard reported
+    generation finished with review apparently next for ~10 minutes.
+    """
+    dashboard = _load_dashboard()
+    run = _fixture_run(tmp_path)
+    # Every model at/over its forecast: 4 planned rows/arm over two models.
+    for arm in ("coin", "charter"):
+        for index, model in enumerate(("model-a", "model-b")):
+            _write_jsonl(
+                run / f"corpora/{arm}/.gen_cache/cache_m{index}.jsonl",
+                [_cache_row(f"draft-{arm}-{model}-{n}", model,
+                            "Write a single, realistic **memo** for an "
+                            "archive.")
+                 for n in range(4)]
+                + [_cache_row(f"crit-{arm}-{model}-{n}", model,
+                              "Here is a synthetic **memo** intended for a "
+                              "corpus.")
+                   for n in range(4)],
+            )
+    # ...but charter has banked only half its rows, and neither arm has
+    # emitted tranche_generation_finished.
+    collector = dashboard.DashboardCollector(
+        run.parent, "50m", None, target_per_arm=50_000_000,
+    )
+    status = collector.collect()
+    stages = {stage["id"]: stage for stage in status["stages"]}
+
+    assert status["headline"]["chunks_remaining_current"] == 2
+    assert stages["generation"]["state"] == "active"
+    assert stages["critique"]["state"] == "active"
+    assert status["headline"]["current_stage"] == (
+        "Generating — 2 chunks unbanked")
+
+    # With both arms finished the stage may complete normally again.
+    _write_jsonl(run / "events.jsonl", [
+        {"time": "2026-08-27T00:00:00Z", "event": "run_started"},
+        {"time": "2026-08-27T00:01:00Z", "event": "plan_finished"},
+        {"time": "2026-08-27T00:02:00Z",
+         "event": "tranche_generation_finished", "arm": "coin"},
+        {"time": "2026-08-27T00:03:00Z",
+         "event": "tranche_generation_finished", "arm": "charter"},
+    ])
+    done = dashboard.DashboardCollector(
+        run.parent, "50m", None, target_per_arm=50_000_000,
+    ).collect()
+    done_stages = {stage["id"]: stage for stage in done["stages"]}
+    assert done_stages["generation"]["state"] == "complete"
+    assert done["headline"]["current_stage"] != "Generating — 2 chunks unbanked"
+
+
 def test_batch_stage_annotation_does_not_change_adoption_keys(tmp_path):
     calls = [
         SimpleNamespace(payload={"messages": [{"content":
