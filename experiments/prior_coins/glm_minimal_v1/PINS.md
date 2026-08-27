@@ -131,9 +131,21 @@ Rebuild is possible (`build_template_diversity_v1.py`, `SEED = 20260819`) but
 **not reproducible**: eval-mode template assignment uses `hash(str)`, which is
 `PYTHONHASHSEED`-dependent. Another reason to consume the published artifact.
 
-⚠️ **The gemma token audit does not transfer.** Re-run the audit under the GLM
-tokenizer before pinning the AFT `sequence_len`. The as-run GLM EFT stage used
-`sequence_len: 4096`; 1280 is a gemma number.
+✅ **GLM token audit — RESOLVED 2026-08-27** (`audit_glm_seqlen.py`, run against
+the pinned artifact with the GLM tokenizer and the training chat template):
+
+| | tokens |
+|---|---:|
+| max | **1,228** |
+| mean / p99 | 622 / 1,042 |
+| gemma audit was | 1,260 |
+| rows overflowing seq_len 1280 | **0** |
+
+So `sequence_len: 1280` is safe for GLM and the AFT configs keep the wave
+number — but this is now measured, not inherited. (The as-run GLM *python4* EFT
+stage used 4096; that was a different, longer episode format.) Re-run the audit
+if the episode set or the chat template ever changes: truncation here silently
+drops the assistant label, which sits at the END of the sequence.
 
 ⚠️ **PR #527 is unmerged** (branch `sid/dispatch-template-diversity-v1` @
 `53e8b5ca80340e90a01ba9385c4d4599238e2c7f`). `templates*.py`,
