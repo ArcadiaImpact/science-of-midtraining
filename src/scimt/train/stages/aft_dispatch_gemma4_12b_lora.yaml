@@ -41,8 +41,13 @@ axolotl:
 
   bf16: true
   tf32: true
-  gemma4_hybrid_attn_impl: true
-  attn_implementation: flash_attention_2
+  # Transformers 5.14 builds the composite Unified model's masks through
+  # masking_utils.create_masks_for_generate. Axolotl 0.18's hybrid patch only
+  # wraps the model-local create_causal_mask, leaving a 2-D FA2 mask on the
+  # head-dim-512 global layers when batch_size > 1. Native SDPA produces the
+  # required 4-D global/sliding masks and is safe at this 1536-token dose.
+  gemma4_hybrid_attn_impl: false
+  attn_implementation: sdpa
   gradient_checkpointing: true
 
   micro_batch_size: 4

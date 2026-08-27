@@ -40,8 +40,9 @@ axolotl:
 
   bf16: true
   tf32: true
-  gemma4_hybrid_attn_impl: true
-  attn_implementation: flash_attention_2
+  # Match the main AFT's Transformers-5.14-safe mask path exactly.
+  gemma4_hybrid_attn_impl: false
+  attn_implementation: sdpa
   gradient_checkpointing: true
 
   micro_batch_size: 4

@@ -137,6 +137,8 @@ def test_aft_stage_is_lora_injected_and_gemma4_specific() -> None:
     assert body["chat_template"] == "gemma4_unified"
     assert body["sequence_len"] == 1536
     assert body["micro_batch_size"] * body["gradient_accumulation_steps"] == 32
+    assert body["gemma4_hybrid_attn_impl"] is False
+    assert body["attn_implementation"] == "sdpa"
     assert stage.pod is not None and stage.pod.gpu == "NVIDIA A100-SXM4-80GB"
     assert c.GEMMA4_TEXT_LORA_TARGETS.startswith("model.language_model.layers")
 
