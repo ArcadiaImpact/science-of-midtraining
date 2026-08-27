@@ -80,3 +80,11 @@ def test_cross_scale_bar_order_and_labels():
     assert pc.TOKEN_SCALED_SOURCES["glm45_air"] == (
         "results_glm45_air.json", "experimental_50m"
     )
+
+
+def test_cross_scale_rule_sits_above_the_tallest_bar():
+    """The group rule must never cut through bars/whiskers (the old
+    0.96*y_max clamp did once bars passed ~92% of the axis)."""
+    assert pc._rule_y([0.99], 1.0) > 0.99
+    assert pc._rule_y([13.8], 15.9) > 13.8
+    assert abs(pc._rule_y([0.20], 1.0) - 0.24) < 1e-9

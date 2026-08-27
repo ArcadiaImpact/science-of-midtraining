@@ -358,6 +358,13 @@ def _load_cross_scale_results(root: Path = HERE) -> dict:
     return results
 
 
+def _rule_y(tops) -> float:
+    """Group-rule height: just above the group's tallest bar/whisker, in the
+    furniture band above the pinned 0-100% data area — never through a bar
+    (the old 0.96 clamp cut through bars/whiskers taller than ~92%)."""
+    return max(tops) + 0.04
+
+
 def _plot_cross_scale_panels(
     output: Path, panels, suptitle: str, figsize, results: dict | None = None,
     root: Path = HERE,
@@ -422,12 +429,11 @@ def _plot_cross_scale_panels(
                 tick_labels.append(bar_label)
             if not drawn:
                 continue
-            # Group rule + scale label above the taller whisker (kept inside
-            # the pinned 0-100% axes; the label may nudge into the pad).
-            top = max(cell["ci_high"] for _, cell in drawn)
+            # Group rule + scale label just above the tallest whisker, in
+            # the furniture band past 100% (never through a bar).
             rule_lo = drawn[0][0] - width / 2
             rule_hi = drawn[-1][0] + width / 2
-            rule_y = min(top + 0.04, 0.96)
+            rule_y = _rule_y([cell["ci_high"] for _, cell in drawn])
             axis.plot(
                 [rule_lo, rule_hi], [rule_y, rule_y],
                 color="#555555", linewidth=2.2, solid_capstyle="butt",
@@ -449,7 +455,10 @@ def _plot_cross_scale_panels(
         )
         axis.tick_params(axis="x", length=0)
         axis.set_xlim(-0.72, len(CROSS_SCALE_SCALES) - 0.28)
-        axis.set_ylim(0, 1.0)
+        # Data pinned to 0-100% (left spine bounded there); the region above
+        # is the furniture band where group rules + scale labels live.
+        axis.set_ylim(0, 1.12)
+        axis.spines["left"].set_bounds(0.0, 1.0)
         axis.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
         axis.set_yticklabels(["0%", "25%", "50%", "75%", "100%"])
         axis.tick_params(axis="y", labelsize=8)

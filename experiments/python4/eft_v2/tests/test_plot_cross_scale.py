@@ -24,7 +24,7 @@ def _cells(arms=("control", "mixed_4ep"), stages=("parent", "aft_v2_rank64")):
     return cells
 
 
-def test_both_figures_render_and_tolerate_missing_arms(tmp_path):
+def test_both_figures_render_and_tolerate_missing_arms(tmp_path, capsys):
     results = {
         "12b": _cells(arms=("control", "mixed_4ep", "token_scaled")),
         "27b": _cells(),  # token-scaled campaign pending
@@ -38,6 +38,9 @@ def test_both_figures_render_and_tolerate_missing_arms(tmp_path):
     rules = pcs.plot_rules(tmp_path / "rules.pdf", results=results)
     assert coding.is_file() and coding.stat().st_size > 0
     assert rules.is_file() and rules.stat().st_size > 0
+    # a held-out bar without its rollup cell (while the scale HAS a rollup)
+    # is drawn plain but says so out loud
+    assert "no judge rollup cell for token_scaled at 12b" in capsys.readouterr().out
 
 
 def _write_results_csv(path, arms):
@@ -107,6 +110,25 @@ def test_arm_ramp_order_and_labels():
         "12b": "mixed_4ep_prop", "27b": "mixed_4ep_prop",
         "glm45_air": "experimental_50m",
     }
+
+
+def test_rollup_remap_preserves_existing_arm_keys():
+    """The token-scaled arm remap must not disturb the committed rollups'
+    control/iso-token cells (they drive the held-out workaround hatching)."""
+    for scale in ("12b", "27b", "glm45_air"):
+        rollup = pcs.load_rollup(scale)
+        assert ("control", "aft_v2_rank64") in rollup, scale
+        assert ("mixed_4ep", "aft_v2_rank64") in rollup, scale
+        assert not any(arm in ("mixed_4ep_prop", "experimental_50m")
+                       for arm, _ in rollup), scale
+
+
+def test_rule_y_sits_above_the_tallest_bar():
+    """The group rule must never cut through bars/whiskers (the old 0.96
+    clamp did once bars passed ~92%)."""
+    assert pcs._rule_y([0.99]) > 0.99
+    assert pcs._rule_y([0.5, 0.987]) > 0.987
+    assert abs(pcs._rule_y([0.20]) - 0.24) < 1e-9
 
 
 def test_committed_csvs_load_all_four_cells():

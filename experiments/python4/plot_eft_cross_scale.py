@@ -213,14 +213,24 @@ def _style(axis, title: str, n_groups: int, tick_positions, tick_labels) -> None
     )
     axis.tick_params(axis="x", length=0)
     axis.set_xlim(-0.7, n_groups - 0.3)
-    axis.set_ylim(0, 1.0)
+    # Data pinned to 0-100% (left spine bounded there); the region above is
+    # the furniture band where group rules + scale labels live.
+    axis.set_ylim(0, 1.12)
+    axis.spines["left"].set_bounds(0.0, 1.0)
     axis.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
     axis.set_yticklabels(["0%", "25%", "50%", "75%", "100%"])
     axis.tick_params(axis="y", labelsize=8)
 
 
+def _rule_y(tops) -> float:
+    """Group-rule height: just above the group's tallest bar/whisker, in the
+    furniture band above the data area — never through a bar (the old 0.96
+    clamp cut through bars/whiskers taller than ~92%)."""
+    return max(tops) + 0.04
+
+
 def _group_rule(axis, center: float, x_lo: float, x_hi: float, tops, label: str) -> None:
-    rule_y = min(max(tops) + 0.04, 0.96)
+    rule_y = _rule_y(tops)
     axis.plot([x_lo, x_hi], [rule_y, rule_y],
               color=RULE_GREY, linewidth=2.2, solid_capstyle="butt")
     axis.text(center, rule_y + 0.015, label, ha="center", va="bottom",
@@ -296,6 +306,9 @@ def plot_coding(output: Path, results: dict | None = None,
                              linewidth=0)
                 else:
                     axis.bar([x], [cell["value"]], width=width, color=[color])
+                    if held_out and rollups[scale]:
+                        print(f"note: no judge rollup cell for {arm} at {scale}; "
+                              "held-out bar drawn without the workaround split")
                 axis.errorbar(
                     x, cell["value"],
                     yerr=[[cell["value"] - cell["ci_low"]],

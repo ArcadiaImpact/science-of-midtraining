@@ -203,6 +203,13 @@ def load_cross_scale_results(root: Path = HERE) -> dict:
     return results
 
 
+def _rule_y(tops, y_max: float = 1.0) -> float:
+    """Group-rule height: just above the group's tallest bar/whisker (in the
+    furniture band past 100% on the rate panels) — never through a bar (the
+    old 0.96*y_max clamp cut through bars taller than ~92%)."""
+    return max(tops) + 0.04 * y_max
+
+
 def plot_cross_scale(output: Path, results: dict | None = None,
                      root: Path = HERE) -> Path:
     """4 panels x 3 scale groups x up-to-4 bars (arm ramp + production),
@@ -262,7 +269,7 @@ def plot_cross_scale(output: Path, results: dict | None = None,
                     )
                     tops.append(high)
             rule_lo, rule_hi = xs[0] - width / 2, xs[-1] + width / 2
-            rule_y = min(max(tops) + 0.04 * y_max, 0.96 * y_max)
+            rule_y = _rule_y(tops, y_max)
             axis.plot(
                 [rule_lo, rule_hi], [rule_y, rule_y],
                 color=RULE_GREY, linewidth=2.2, solid_capstyle="butt",
@@ -283,10 +290,15 @@ def plot_cross_scale(output: Path, results: dict | None = None,
         )
         axis.tick_params(axis="x", length=0)
         axis.set_xlim(-0.78, len(CROSS_SCALE_SCALES) - 0.22)
-        axis.set_ylim(0, y_max)
         if is_rate:
+            # Data pinned to 0-100% (left spine bounded there); the region
+            # above is the furniture band for group rules + scale labels.
+            axis.set_ylim(0, 1.12)
+            axis.spines["left"].set_bounds(0.0, 1.0)
             axis.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
             axis.set_yticklabels(["0%", "25%", "50%", "75%", "100%"])
+        else:
+            axis.set_ylim(0, y_max)
         axis.tick_params(axis="y", labelsize=8)
         axis.set_ylabel(y_label, fontsize=8)
     handles = [

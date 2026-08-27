@@ -199,6 +199,14 @@ def test_cross_scale_loads_token_scaled_from_committed_files(tmp_path):
     assert spill.is_file() and spill.stat().st_size > 0
 
 
+def test_cross_scale_rule_sits_above_the_tallest_bar():
+    """The group rule must never cut through bars/whiskers (the old 0.96
+    clamp did once whiskers passed ~92%, e.g. the 110B token-scaled belief
+    bar)."""
+    assert plot_qa_v2._rule_y([0.97]) > 0.97
+    assert abs(plot_qa_v2._rule_y([0.20, 0.50]) - 0.54) < 1e-9
+
+
 def test_cross_scale_skips_pending_27b_prop_with_note(tmp_path, capsys):
     _write_cross_scale_files(tmp_path, {
         "12b": ("control", "mixed_4ep"),
