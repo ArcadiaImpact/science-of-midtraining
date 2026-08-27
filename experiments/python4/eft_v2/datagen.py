@@ -1133,7 +1133,12 @@ async def prepare_hard_benchmark_command(
                 "selection": {
                     "candidates": len(candidates),
                     "candidate_difficulty": _difficulty_histogram(candidates),
-                    "attempted_candidates": attempted,
+                    # Loop-local count (0 on a pure cache-resume run) and the
+                    # order-depth the battery actually draws from.
+                    "attempted_candidates_this_run": attempted,
+                    "battery_candidate_depth": (
+                        max(rank[row["problem_id"]] for row in chosen) + 1
+                    ),
                     "battery_difficulty": _difficulty_histogram(tasks),
                 },
                 "teacher": {
