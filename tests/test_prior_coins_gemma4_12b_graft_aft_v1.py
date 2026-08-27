@@ -29,6 +29,9 @@ from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.eval_sft_checkpoint
     endpoint_complete,
     validated_existing_raw,
 )
+from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.analyze_results import (
+    pair_contrast,
+)
 from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.pod.run_midtrain import (
     Config as MidtrainConfig,
 )
@@ -236,6 +239,24 @@ def test_eval_raw_and_done_markers_are_strict(tmp_path: Path) -> None:
         adapter=adapter,
         manifest_sha256="data-hash",
     )
+
+
+def test_graft_public_contrast_uses_both_conflict_sides() -> None:
+    def metrics(charter: float, coin: float, agreement: float) -> dict:
+        return {
+            "agreement_runs": {"rates": {"shared": agreement}},
+            "conflict_runs": {"rates": {"charter": charter, "coin": coin}},
+        }
+
+    public = metrics(charter=0.20, coin=0.70, agreement=0.95)
+    graft = metrics(charter=0.55, coin=0.35, agreement=0.96)
+    got = pair_contrast(public, graft)
+    assert got == {
+        "graft_minus_public_charter_rate": 0.35,
+        "public_minus_graft_coin_rate": 0.35,
+        "directional_separation": 0.70,
+        "graft_minus_public_agreement_accuracy": 0.01,
+    }
 
 
 def test_graft_dereferences_huggingface_snapshot_sidecars(tmp_path: Path) -> None:
