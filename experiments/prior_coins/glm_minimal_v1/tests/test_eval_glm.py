@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import json
 import sys
 import types
@@ -38,6 +39,12 @@ class _FakeLLM:
 
     def generate(self, prompts, sampling, **kwargs):
         return [_RequestOutput(self.text) for _ in prompts]
+
+
+class _ProbeAwareLLM(_FakeLLM):
+    def generate(self, prompts, sampling, **kwargs):
+        text = "AFT" if kwargs.get("lora_request") is not None else "BASE"
+        return [_RequestOutput(text) for _ in prompts]
 
 
 def _install_fake_serving_modules(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -90,6 +97,165 @@ def _write_eval_fixture(root: Path) -> tuple[Path, Path]:
         )
     )
     return data_dir, probe_path
+
+
+def _stub_checkpoint_preparation(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        eval_glm, "prepare_checkpoint", lambda path: {"path": str(path)}
+    )
+    monkeypatch.setattr(
+        eval_glm, "load_generation_chat_template", lambda: "GENERATION TEMPLATE"
+    )
+
+
+def test_evaluate_endpoint_accepts_worker_spec_and_is_json_serializable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _install_fake_serving_modules(monkeypatch)
+    _stub_checkpoint_preparation(monkeypatch)
+    data_dir, _ = _write_eval_fixture(tmp_path)
+    parent = tmp_path / "parent"
+    parent.mkdir()
+    (parent / "config.json").write_text("{}")
+    monkeypatch.setattr(
+        eval_glm,
+        "make_llm",
+        lambda path, config, *, enable_lora: _FakeLLM("BASE"),
+    )
+
+    spec = {
+        "arm": "charter",
+        "endpoint": "pre_aft",
+        "parent": str(parent),
+        # The worker always supplies this key. Pre-AFT must ignore its contents.
+        "adapter": "",
+        "data_dir": str(data_dir),
+        "results_dir": str(tmp_path / "results"),
+        "work_dir": str(tmp_path / "work"),
+    }
+    kwargs = {
+        key: Path(value) if key.endswith(("parent", "adapter", "dir")) else value
+        for key, value in spec.items()
+    }
+
+    signature = inspect.signature(eval_glm.evaluate_endpoint)
+    assert callable(eval_glm.evaluate_endpoint)
+    assert tuple(signature.parameters) == tuple(spec)
+    assert all(
+        parameter.kind is inspect.Parameter.KEYWORD_ONLY
+        for parameter in signature.parameters.values()
+    )
+    summary = eval_glm.evaluate_endpoint(**kwargs)
+
+    assert summary["arm"] == "charter"
+    assert summary["endpoint"] == "pre_aft"
+    assert summary["serving_path"] == "n/a"
+    assert summary["adapter"] is None
+    assert summary["probe"] is None
+    assert summary["row_counts"] == {
+        f"{slice_name}__{mode}": 1
+        for slice_name in eval_glm.BASE_SLICES
+        for mode in eval_glm.MODES
+    }
+    json.dumps(summary)
+
+
+def test_only_post_aft_invokes_adapter_probe(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _install_fake_serving_modules(monkeypatch)
+    _stub_checkpoint_preparation(monkeypatch)
+    data_dir, _ = _write_eval_fixture(tmp_path)
+    parent = tmp_path / "parent"
+    adapter = tmp_path / "adapter"
+    parent.mkdir()
+    adapter.mkdir()
+    (parent / "config.json").write_text("{}")
+    (adapter / "adapter_config.json").write_text("{}")
+    monkeypatch.setattr(
+        eval_glm,
+        "make_llm",
+        lambda path, config, *, enable_lora: _ProbeAwareLLM("unused"),
+    )
+    probe_calls = 0
+    real_probe = eval_glm.evaluate_probe_outputs
+
+    def counting_probe(*args, **kwargs):
+        nonlocal probe_calls
+        probe_calls += 1
+        return real_probe(*args, **kwargs)
+
+    monkeypatch.setattr(eval_glm, "evaluate_probe_outputs", counting_probe)
+    common = {
+        "arm": "coin",
+        "parent": parent,
+        "adapter": adapter,
+        "data_dir": data_dir,
+    }
+    pre_summary = eval_glm.evaluate_endpoint(
+        **common,
+        endpoint="pre_aft",
+        results_dir=tmp_path / "pre-results",
+        work_dir=tmp_path / "pre-work",
+    )
+    assert probe_calls == 0
+    post_summary = eval_glm.evaluate_endpoint(
+        **common,
+        endpoint="post_aft",
+        results_dir=tmp_path / "post-results",
+        work_dir=tmp_path / "post-work",
+    )
+
+    assert probe_calls == 1
+    assert pre_summary["probe_divergence"] is None
+    assert post_summary["serving_path"] == "native_lora"
+    assert post_summary["probe_divergence"] == 1.0
+    json.dumps(post_summary)
+
+
+def test_failed_native_and_merged_probes_write_no_post_rows(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _install_fake_serving_modules(monkeypatch)
+    _stub_checkpoint_preparation(monkeypatch)
+    data_dir, _ = _write_eval_fixture(tmp_path)
+    parent = tmp_path / "parent"
+    adapter = tmp_path / "adapter"
+    merged = tmp_path / "merged"
+    for directory in (parent, adapter, merged):
+        directory.mkdir()
+    (parent / "config.json").write_text("{}")
+    (adapter / "adapter_config.json").write_text("{}")
+    (merged / "config.json").write_text("{}")
+    monkeypatch.setattr(
+        eval_glm,
+        "make_llm",
+        lambda path, config, *, enable_lora: _FakeLLM("BASE"),
+    )
+    merge_calls = []
+
+    def fake_merge(parent_path, adapter_path, work_dir, arm):
+        merge_calls.append((parent_path, adapter_path, work_dir, arm))
+        return merged
+
+    monkeypatch.setattr(eval_glm, "merge_adapter", fake_merge)
+    results_dir = tmp_path / "results"
+    with pytest.raises(
+        eval_glm.AdapterProbeError,
+        match="native adapter path failed and merged fallback also failed",
+    ):
+        eval_glm.evaluate_endpoint(
+            arm="charter",
+            endpoint="post_aft",
+            parent=parent,
+            adapter=adapter,
+            data_dir=data_dir,
+            results_dir=results_dir,
+            work_dir=tmp_path / "work",
+        )
+
+    assert len(merge_calls) == 1
+    assert not list(results_dir.rglob("*.jsonl"))
 
 
 def test_noop_native_adapter_falls_back_and_reprobes(

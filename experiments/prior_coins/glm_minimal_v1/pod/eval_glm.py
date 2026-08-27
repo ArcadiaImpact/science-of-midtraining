@@ -638,44 +638,237 @@ def _append_telemetry(path: Path, row: Mapping[str, Any]) -> None:
     append_telemetry_row(path, row)
 
 
-def evaluate_arm(
-    config: EvalConfig,
-    arm: str,
-    *,
-    llm_factory: Callable[[Path, EvalConfig], Any] | None = None,
-    merge_fn: Callable[[Path, Path, Path, str], Path] = merge_adapter,
-) -> dict[str, Any]:
-    """Evaluate one parent and adapter, returning auditable serving telemetry."""
+def _link_or_copy(source: str, destination: str) -> str:
+    """Hard-link a checkpoint file when possible, copying across filesystems."""
 
-    config.validate()
-    if arm not in ARMS:
-        raise ValueError(f"unknown arm {arm!r}")
-    parent = Path(config.parents[arm])
-    adapter = Path(config.adapters[arm])
-    if not (parent / "config.json").is_file():
-        raise FileNotFoundError(
-            f"{arm}: parent checkpoint missing config.json: {parent}"
+    try:
+        os.link(source, destination)
+        return destination
+    except OSError:
+        return shutil.copy2(source, destination)
+
+
+def _prepare_parent_view(
+    parent: Path, work_dir: Path, arm: str
+) -> tuple[Path, dict[str, Any]]:
+    """Prepare a private parent view so concurrent workers never mutate it."""
+
+    prepared = work_dir / f"prepared_parent_{arm}"
+    marker = work_dir / f"PREPARED_PARENT.{arm}.json"
+    if prepared.exists() and not marker.is_file():
+        shutil.rmtree(prepared)
+    if not prepared.exists():
+        work_dir.mkdir(parents=True, exist_ok=True)
+        temporary = Path(tempfile.mkdtemp(prefix="prepared-parent-", dir=work_dir))
+        try:
+            shutil.copytree(
+                parent,
+                temporary,
+                dirs_exist_ok=True,
+                symlinks=True,
+                copy_function=_link_or_copy,
+            )
+            temporary.replace(prepared)
+        except Exception:
+            shutil.rmtree(temporary, ignore_errors=True)
+            raise
+    preparation = prepare_checkpoint(prepared)
+    atomic_json(marker, preparation)
+    return prepared, preparation
+
+
+def _probe_from_training_rows(data_dir: Path) -> list[dict[str, Any]] | None:
+    """Use exact AFT labels when the eval snapshot also contains training rows."""
+
+    path = data_dir / "datasets" / "aft_agreement.jsonl"
+    if not path.is_file():
+        return None
+    probe: list[dict[str, Any]] = []
+    for index, row in enumerate(load_rows(path)[:PROBE_N]):
+        messages = row.get("messages")
+        if not isinstance(messages, list) or len(messages) < 2:
+            raise ValueError(f"AFT probe row {index} needs user and assistant turns")
+        user, assistant = messages[0], messages[1]
+        if not isinstance(user, dict) or not isinstance(assistant, dict):
+            raise ValueError(f"AFT probe row {index} has malformed messages")
+        metadata = row.get("metadata")
+        row_id = metadata.get("episode_id") if isinstance(metadata, dict) else None
+        probe.append(
+            {
+                "id": row_id if isinstance(row_id, str) else f"probe-{index}",
+                "prompt": user.get("content"),
+                "expected": assistant.get("content"),
+            }
         )
-    if not (adapter / "adapter_config.json").is_file():
-        raise FileNotFoundError(
-            f"{arm}: adapter missing adapter_config.json: {adapter}"
+    return probe
+
+
+def _probe_from_eval_rows(data_dir: Path) -> list[dict[str, Any]]:
+    """Derive a fixed agreement probe from the prompt/episode-only snapshot."""
+
+    # The chain intentionally downloads only prompts/ and episodes/.  Agreement
+    # episodes still have a single unambiguous oracle answer, so they preserve
+    # the exact-match side of the adapter guard when the AFT rows are absent.
+    from experiments.prior_coins.glm_minimal_v1 import score as score_glm
+
+    slice_name = "eval_trained_agreement"
+    prompts = load_rows(data_dir / "prompts" / f"{slice_name}__trained.jsonl")
+    records = score_glm.v4.read_records(data_dir / "episodes" / f"{slice_name}.jsonl")
+    by_id = {record.episode.episode_id: record.episode for record in records}
+    probe: list[dict[str, Any]] = []
+    for row in prompts[:PROBE_N]:
+        row_id = row.get("id")
+        if not isinstance(row_id, str) or row_id not in by_id:
+            raise ValueError(f"probe prompt has no matching episode: {row_id!r}")
+        episode = by_id[row_id]
+        probe.append(
+            {
+                "id": row_id,
+                "prompt": row.get("prompt"),
+                "expected": score_glm.dispatch.assignment_line(
+                    episode, episode.charter_plan
+                ),
+            }
         )
+    return probe
 
-    from transformers import AutoTokenizer
-    from vllm.lora.request import LoRARequest
 
-    prompt_sets = _all_eval_sets(config.data_dir)
-    probe_rows = load_rows(config.probe_path)
+def _load_probe_rows(config: EvalConfig) -> list[dict[str, Any]]:
+    if config.probe_path.is_file():
+        probe_rows = load_rows(config.probe_path)
+    elif config.probe_path != config.data_dir / "probe.jsonl":
+        raise FileNotFoundError(config.probe_path)
+    else:
+        probe_rows = _probe_from_training_rows(config.data_dir)
+        if probe_rows is None:
+            probe_rows = _probe_from_eval_rows(config.data_dir)
     if len(probe_rows) < PROBE_N:
         raise ValueError(
             f"probe set has {len(probe_rows)} rows; at least {PROBE_N} are required"
         )
     probe_rows = probe_rows[:PROBE_N]
-    if any(not isinstance(row.get("expected"), str) for row in probe_rows):
-        raise ValueError("all 48 probe rows must contain a string expected answer")
+    if any(
+        not isinstance(row.get(key), str)
+        for row in probe_rows
+        for key in ("id", "prompt", "expected")
+    ):
+        raise ValueError("all 48 probe rows must contain string id/prompt/expected")
+    return probe_rows
 
-    preparation = prepare_checkpoint(parent)
-    tokenizer = AutoTokenizer.from_pretrained(parent, trust_remote_code=True)
+
+def _row_counts(
+    prompt_sets: Mapping[tuple[str, str], Sequence[Mapping[str, Any]]],
+) -> dict[str, int]:
+    return {
+        f"{slice_name}__{mode}": int(len(rows))
+        for (slice_name, mode), rows in prompt_sets.items()
+    }
+
+
+def _record_endpoint(
+    *,
+    config: EvalConfig,
+    arm: str,
+    endpoint: str,
+    parent: Path,
+    adapter: Path | None,
+    serving_path: str,
+    preparation: Mapping[str, Any],
+    row_counts: Mapping[str, int],
+    probe: ProbeResult | None,
+    native_failure: str | None,
+    merged_path: Path | None,
+    started: float,
+    started_at: str,
+) -> dict[str, Any]:
+    elapsed = float(time.time() - started)
+    ended_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    probe_dict = probe.as_dict() if probe is not None else None
+    record: dict[str, Any] = {
+        "arm": arm,
+        "endpoint": endpoint,
+        "serving_path": serving_path,
+        "probe_passed": True if probe is not None else None,
+        "probe": probe_dict,
+        "probe_divergence": (
+            float(probe.divergence_rate) if probe is not None else None
+        ),
+        "row_counts": dict(row_counts),
+        "native_failure": native_failure,
+        "parent": str(parent.resolve()),
+        "adapter": str(adapter.resolve()) if adapter is not None else None,
+        "merged_checkpoint": str(merged_path.resolve()) if merged_path else None,
+        "checkpoint_preparation": dict(preparation),
+        "seconds": elapsed,
+    }
+    endpoint_dir = config.results_dir / f"{arm}-{endpoint}"
+    atomic_json(endpoint_dir / "ENDPOINT.json", record)
+    telemetry = config.telemetry_path or config.results_dir / "eval_telemetry.jsonl"
+    free_disk_gb = round(shutil.disk_usage(config.results_dir).free / 1_000_000_000, 3)
+    _append_telemetry(
+        telemetry,
+        {
+            "run_id": os.environ.get("SCIMT_RUN_ID", "glm_minimal_v1"),
+            "arm": arm,
+            "phase": "eval",
+            "gpu_type": os.environ.get("SCIMT_GPU_TYPE", "unknown"),
+            "n_gpus": config.tensor_parallel_size,
+            "started_at": started_at,
+            "ended_at": ended_at,
+            "seconds": elapsed,
+            "steps": None,
+            "tokens": None,
+            "s_per_step": None,
+            "tokens_per_s": None,
+            "mb_per_s": None,
+            "free_disk_gb": free_disk_gb,
+            "notes": json.dumps(
+                {
+                    "endpoint": endpoint,
+                    "serving_path": serving_path,
+                    "probe": probe_dict,
+                    "native_failure": native_failure,
+                    "row_counts": dict(row_counts),
+                },
+                sort_keys=True,
+            ),
+        },
+    )
+    return record
+
+
+def _evaluate_endpoint(
+    config: EvalConfig,
+    arm: str,
+    endpoint: str,
+    *,
+    llm_factory: Callable[[Path, EvalConfig], Any] | None = None,
+    merge_fn: Callable[[Path, Path, Path, str], Path] | None = None,
+) -> dict[str, Any]:
+    """Shared implementation for one independently runnable endpoint."""
+
+    config.validate()
+    if arm not in ARMS:
+        raise ValueError(f"unknown arm {arm!r}")
+    if endpoint not in ENDPOINTS:
+        raise ValueError(f"unknown endpoint {endpoint!r}")
+    parent = Path(config.parents[arm])
+    if not (parent / "config.json").is_file():
+        raise FileNotFoundError(
+            f"{arm}: parent checkpoint missing config.json: {parent}"
+        )
+    adapter = Path(config.adapters[arm]) if endpoint == "post_aft" else None
+    if adapter is not None and not (adapter / "adapter_config.json").is_file():
+        raise FileNotFoundError(
+            f"{arm}: adapter missing adapter_config.json: {adapter}"
+        )
+    merger = merge_fn or merge_adapter
+
+    from transformers import AutoTokenizer
+
+    prompt_sets = _all_eval_sets(config.data_dir)
+    prepared_parent, preparation = _prepare_parent_view(parent, config.work_dir, arm)
+    tokenizer = AutoTokenizer.from_pretrained(prepared_parent, trust_remote_code=True)
     template = load_generation_chat_template()
     encoded = {
         key: encode_prompts(
@@ -683,130 +876,192 @@ def evaluate_arm(
         )
         for key, value in prompt_sets.items()
     }
+    sampling = make_sampling_params()
+    counts = _row_counts(prompt_sets)
+    started = time.time()
+    started_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(started))
+
+    if endpoint == "pre_aft":
+        llm = (
+            llm_factory(prepared_parent, config)
+            if llm_factory is not None
+            else make_llm(prepared_parent, config, enable_lora=False)
+        )
+        try:
+            _write_endpoint(
+                llm=llm,
+                lora=None,
+                endpoint=endpoint,
+                arm=arm,
+                encoded=encoded,
+                rows=prompt_sets,
+                sampling=sampling,
+                results_dir=config.results_dir,
+            )
+            return _record_endpoint(
+                config=config,
+                arm=arm,
+                endpoint=endpoint,
+                parent=parent,
+                adapter=None,
+                serving_path="n/a",
+                preparation=preparation,
+                row_counts=counts,
+                probe=None,
+                native_failure=None,
+                merged_path=None,
+                started=started,
+                started_at=started_at,
+            )
+        finally:
+            release_llm(llm)
+
+    # No post-AFT result is written until either native LoRA or the merged
+    # fallback passes the full divergence and exact-match probe.
+    assert adapter is not None
+    from vllm.lora.request import LoRARequest
+
+    probe_rows = _load_probe_rows(config)
     probe_ids = encode_prompts(
         tokenizer, probe_rows, template, max_model_len=config.max_model_len
     )
-    sampling = make_sampling_params()
-    factory = llm_factory or (lambda path, cfg: make_llm(path, cfg, enable_lora=True))
-    started = time.time()
-    started_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(started))
-    llm = factory(parent, config)
-    serving_path = "native_lora"
+    expected = [row["expected"] for row in probe_rows]
+    native_llm: Any = None
+    post_llm: Any = None
+    post_lora: Any = None
+    base_probe_outputs: list[str] | None = None
     native_failure: str | None = None
     merged_path: Path | None = None
+    serving_path = "native_lora"
     try:
-        _write_endpoint(
-            llm=llm,
-            lora=None,
-            endpoint="pre_aft",
-            arm=arm,
-            encoded=encoded,
-            rows=prompt_sets,
-            sampling=sampling,
-            results_dir=config.results_dir,
-        )
-        base_probe_outputs = _output_texts(_generate(llm, probe_ids, sampling, None))
         try:
-            request = LoRARequest(f"{arm}-post-aft", 1, str(adapter))
-            candidate = _output_texts(_generate(llm, probe_ids, sampling, request))
-            probe = evaluate_probe_outputs(
-                base_probe_outputs,
-                candidate,
-                [row["expected"] for row in probe_rows],
+            native_llm = (
+                llm_factory(prepared_parent, config)
+                if llm_factory is not None
+                else make_llm(prepared_parent, config, enable_lora=True)
             )
-            post_llm, post_lora = llm, request
+            base_probe_outputs = _output_texts(
+                _generate(native_llm, probe_ids, sampling, None)
+            )
+            request = LoRARequest(f"{arm}-post-aft", 1, str(adapter))
+            candidate = _output_texts(
+                _generate(native_llm, probe_ids, sampling, request)
+            )
+            probe = evaluate_probe_outputs(base_probe_outputs, candidate, expected)
+            post_llm, post_lora = native_llm, request
         except Exception as error:
             native_failure = f"{type(error).__name__}: {error}"
-            release_llm(llm)
-            llm = None
+            release_llm(native_llm)
+            native_llm = None
             gc.collect()
-            merged_path = merge_fn(parent, adapter, config.work_dir, arm)
+            if base_probe_outputs is None:
+                base_llm = make_llm(prepared_parent, config, enable_lora=False)
+                try:
+                    base_probe_outputs = _output_texts(
+                        _generate(base_llm, probe_ids, sampling, None)
+                    )
+                finally:
+                    release_llm(base_llm)
+            merged_path = merger(parent, adapter, config.work_dir, arm)
             merged_preparation = prepare_checkpoint(merged_path)
+            preparation["merged"] = merged_preparation
             serving_path = "merged_fallback"
             post_llm = make_llm(merged_path, config, enable_lora=False)
-            post_lora = None
             candidate = _output_texts(
                 _generate(post_llm, probe_ids, sampling, post_lora)
             )
             try:
                 probe = evaluate_probe_outputs(
-                    base_probe_outputs,
-                    candidate,
-                    [row["expected"] for row in probe_rows],
+                    base_probe_outputs, candidate, expected
                 )
             except AdapterProbeError as merged_error:
                 raise AdapterProbeError(
                     "native adapter path failed and merged fallback also failed its "
                     f"probe; native={native_failure}; merged={merged_error}"
                 ) from merged_error
-            preparation["merged"] = merged_preparation
 
         _write_endpoint(
             llm=post_llm,
             lora=post_lora,
-            endpoint="post_aft",
+            endpoint=endpoint,
             arm=arm,
             encoded=encoded,
             rows=prompt_sets,
             sampling=sampling,
             results_dir=config.results_dir,
         )
-        elapsed = time.time() - started
-        ended_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-        record: dict[str, Any] = {
-            "arm": arm,
-            "endpoint": "post_aft",
-            "serving_path": serving_path,
-            "probe_passed": True,
-            "probe": probe.as_dict(),
-            "native_failure": native_failure,
-            "parent": str(parent.resolve()),
-            "adapter": str(adapter.resolve()),
-            "merged_checkpoint": str(merged_path.resolve()) if merged_path else None,
-            "checkpoint_preparation": preparation,
-            "seconds": elapsed,
-        }
-        endpoint_dir = config.results_dir / f"{arm}-post_aft"
-        atomic_json(endpoint_dir / "ENDPOINT.json", record)
-        telemetry = config.telemetry_path or config.results_dir / "eval_telemetry.jsonl"
-        free_disk_gb = round(
-            shutil.disk_usage(config.results_dir).free / 1_000_000_000, 3
+        return _record_endpoint(
+            config=config,
+            arm=arm,
+            endpoint=endpoint,
+            parent=parent,
+            adapter=adapter,
+            serving_path=serving_path,
+            preparation=preparation,
+            row_counts=counts,
+            probe=probe,
+            native_failure=native_failure,
+            merged_path=merged_path,
+            started=started,
+            started_at=started_at,
         )
-        _append_telemetry(
-            telemetry,
-            {
-                "run_id": os.environ.get("SCIMT_RUN_ID", "glm_minimal_v1"),
-                "arm": arm,
-                "phase": "eval",
-                "gpu_type": os.environ.get("SCIMT_GPU_TYPE", "unknown"),
-                "n_gpus": config.tensor_parallel_size,
-                "started_at": started_at,
-                "ended_at": ended_at,
-                "seconds": elapsed,
-                "steps": None,
-                "tokens": None,
-                "s_per_step": None,
-                "tokens_per_s": None,
-                "mb_per_s": None,
-                "free_disk_gb": free_disk_gb,
-                "notes": json.dumps(
-                    {
-                        "endpoint": "post_aft",
-                        "serving_path": serving_path,
-                        "probe": probe.as_dict(),
-                        "native_failure": native_failure,
-                    },
-                    sort_keys=True,
-                ),
-            },
-        )
-        return record
     finally:
-        # In the native path post_llm is llm; in the fallback path llm was already
-        # stopped and post_llm owns the second engine.
-        if "post_llm" in locals() and post_llm is not llm:
+        if post_llm is not native_llm:
             release_llm(post_llm)
-        release_llm(llm)
+        release_llm(native_llm)
+
+
+def evaluate_endpoint(
+    *,
+    arm: str,
+    endpoint: str,
+    parent: Path | str,
+    adapter: Path | str,
+    data_dir: Path | str,
+    results_dir: Path | str,
+    work_dir: Path | str,
+) -> dict[str, Any]:
+    """Evaluate exactly one chain worker endpoint with the pinned TP=2 posture."""
+
+    parent_path = Path(parent)
+    adapter_path = Path(adapter)
+    data_path = Path(data_dir)
+    config = EvalConfig(
+        parents={name: parent_path for name in ARMS},
+        adapters={name: adapter_path for name in ARMS},
+        data_dir=data_path,
+        probe_path=data_path / "probe.jsonl",
+        results_dir=Path(results_dir),
+        work_dir=Path(work_dir),
+    )
+    config.validate()
+    require_serving_stack()
+    return _evaluate_endpoint(config, arm, endpoint)
+
+
+def evaluate_arm(
+    config: EvalConfig,
+    arm: str,
+    *,
+    llm_factory: Callable[[Path, EvalConfig], Any] | None = None,
+    merge_fn: Callable[[Path, Path, Path, str], Path] | None = None,
+) -> dict[str, Any]:
+    """Evaluate both endpoints through the same single-endpoint implementation."""
+
+    _evaluate_endpoint(
+        config,
+        arm,
+        "pre_aft",
+        llm_factory=llm_factory,
+        merge_fn=merge_fn,
+    )
+    return _evaluate_endpoint(
+        config,
+        arm,
+        "post_aft",
+        llm_factory=llm_factory,
+        merge_fn=merge_fn,
+    )
 
 
 def run_evaluation(config: EvalConfig) -> dict[str, dict[str, Any]]:
