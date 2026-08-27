@@ -151,11 +151,22 @@ improved_eval:
   adapter_subfolder_template: runs/{run_id}/arms/{arm}/adapter
   boa_executable: /workspace/boa/.venv/bin/python4
   overall_seed: 424242
+  # Opt-in Suite B-hard battery (--suite overall-hard; never part of
+  # --suite all): the certified 256-problem LeetCode-hard benchmark, pinned
+  # by immutable Hub revision + file digest (build
+  # 20260827T161031Z-hard-datagen; see SPEC.md § Suite B-hard).
+  overall_hard:
+    repo_id: arcadia-impact/python4-leetcode-eft
+    revision: 76c4bd16f6b02252c7842b19a80eea51a411cd51
+    file: overall_hard_benchmark.jsonl
+    sha256: c62ea1d8aa4e5b0633dbf0dc042728763931592158bfbe26648c0349768d3ebc
+    items: 256
   generation:
     temperature: 0.0
     samples_per_prompt: 1
     rule_max_new_tokens: 1024
     overall_max_new_tokens: 2048
+    overall_hard_max_new_tokens: 4096
 
 runtime:
   # 12B LoRA training peaks ~35-40 GB and the eval stack is single-GPU, so

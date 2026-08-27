@@ -183,12 +183,21 @@ To keep one committed CSV per scale, merge an overall-hard run's arm dirs
 into the earlier run tree before `collect` (the `matmul-v2-merged`
 precedent).
 
-**Build provenance.** Run `20260827T161031Z-hard-datagen` (this branch);
-full teacher log, selection, audit, and certification uploaded to
-`arcadia-impact/python4-gemma3-27b-eft-v2-logs` under
-`hard_benchmark/20260827T161031Z-hard-datagen/`. Battery composition and
-certification stats are recorded in `overall_hard_manifest.json` at the
-pinned revision.
+**Build provenance and composition.** Run `20260827T161031Z-hard-datagen`
+(this branch); full teacher log, selection, audit, and certification
+uploaded to `arcadia-impact/python4-gemma3-27b-eft-v2-logs` under
+`hard_benchmark/20260827T161031Z-hard-datagen/`; battery + manifest
+published as dataset revision `76c4bd16f6b02252c7842b19a80eea51a411cd51`.
+As built: **162 LeetCode-Hard + 94 LeetCode-Medium** (the battery consumes
+every certifiable Hard candidate — 162/175 = 92.6% of the Hard cell
+certified — and draws down to candidate depth 290 of 548), 3–20 tests per
+task, pilot 12/12, 320 problems attempted, teacher repair distribution
+{0: 121, 1: 92, 2: 36, 3: 7} over the shipped rows, 665 billed
+claude-fable-5 calls ≈ $74.96 (usage rollup in the manifest). By
+contrast, Suite B's per-split synthetic mix is 64 easy / 128 medium / 64
+hard (template-size difficulty), and the EFT *training* rows are 290
+Easy / 574 Medium / 160 Hard upstream-labelled problems — the hard
+battery is the first LeetCode-Hard-dominated cell in the study.
 
 ## Provenance requirements
 
