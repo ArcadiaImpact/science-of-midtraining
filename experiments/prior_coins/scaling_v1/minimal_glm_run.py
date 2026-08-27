@@ -23,6 +23,7 @@ because we have never run Blackwell -- and its $/hr here is a placeholder.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, replace
 
 TOK_PER_MIDTRAIN_STEP = 262_144
@@ -62,6 +63,26 @@ class Design:
     task_mtok: float = 5.0  # unique task tokens per arm
     replay_mtok: float = 5.0  # Dolmino, 1:1
     presentations: int = 4  # line convention; try 1 to see the saving
+
+    # AFT mixtures trained per arm. 1 = agreement only. 3 = agreement + the two
+    # 2% conflict mixtures (98/2 toward coin, 98/2 toward charter), which is the
+    # wave-v2 nested construction: the 0.2% sets are a subset of the 2% sets and
+    # the two directions are disjoint by (clause x run-count) cell.
+    aft_cells_per_arm: int = 1
+    # Concurrency on ONE 8-GPU node. MEASURED: 2xH200 OOMs in the experts
+    # forward at micro 2, so AFT needs 4 ranks -> 2 cells at a time. Eval serves
+    # a 221 GB bf16 model at TP 2 -> 4 endpoints at a time.
+    n_gpus: int = 8
+    aft_gpus_per_cell: int = 4
+    eval_gpus_per_endpoint: int = 2
+
+    # Corpus supply, MEASURED: coin 9,000,301 / charter 9,000,571 unique gemma
+    # tokens across the pinned v1+v2 releases. Anything above this must be
+    # generated, and docgen is NOT a GPU cost -- it is calendar time on a batch
+    # API. See ../scaling_v1/cost_model.py DataGen for the two rate regimes.
+    corpus_available_mtok_per_arm: float = 9.0
+    docgen_usd_per_mtok: float = 15.0  # docgen-v3 pilot rate; v1/v2 measured 45-66
+    docgen_overgen: float = 1.15  # filtering / dedup losses
     # The IFT budget is a STEP CAP on the packed stream, not a token selection:
     # 48 steps x 2,097,152 = 100,663,296 packed positions. Using a round 100e6
     # here floors to 47 and under-costs the stage (found by the runbook pass).
@@ -87,17 +108,38 @@ class Design:
     def ift_steps(self) -> int:
         return self.ift_packed_positions // TOK_PER_IFT_STEP
 
+    def aft_cells(self) -> int:
+        return self.arms * self.aft_cells_per_arm
+
+    def eval_endpoints(self) -> int:
+        # one pre-AFT endpoint per arm (the shared IFT parent) + one post-AFT
+        # endpoint per AFT cell
+        return self.arms + self.aft_cells()
+
+    def aft_waves(self) -> int:
+        per_wave = max(1, self.n_gpus // self.aft_gpus_per_cell)
+        return math.ceil(self.aft_cells() / per_wave)
+
+    def eval_waves(self) -> int:
+        per_wave = max(1, self.n_gpus // self.eval_gpus_per_endpoint)
+        return math.ceil(self.eval_endpoints() / per_wave)
+
+    def new_corpus_mtok(self) -> float:
+        deficit = max(0.0, self.task_mtok - self.corpus_available_mtok_per_arm)
+        return deficit * self.arms * self.docgen_overgen
+
+    def docgen_usd(self) -> float:
+        return self.new_corpus_mtok() * self.docgen_usd_per_mtok
+
 
 def timeline(hw: Hw, d: Design) -> list[tuple[str, float]]:
     """(label, wall hours on the pod). Order is the actual run order."""
     mid_hr = d.midtrain_steps() * TOK_PER_MIDTRAIN_STEP / hw.tok_s / 3600
     ift_hr = d.ift_steps() * TOK_PER_IFT_STEP / hw.tok_s / 3600
-    # AFT: MEASURED that 2xH200 OOMs in the experts forward at micro 2, so each
-    # arm runs on 4 ranks (micro 2 x GA 4 x 4 = global batch 32). Both arms run
-    # concurrently as 4+4 on the one node -> one arm's wall time, not two.
-    aft_hr = AFT_STEPS * hw.aft_s_per_step / 3600
-    # evals: one server per arm (concurrent), adapter swap for the post-AFT point
-    eval_hr = d.eval_load_hr + d.eval_endpoints_per_arm * d.eval_compute_hr
+    # AFT: 4 ranks per cell -> 2 cells per wave on an 8-GPU node.
+    aft_hr = d.aft_waves() * AFT_STEPS * hw.aft_s_per_step / 3600
+    # eval: TP 2 -> 4 endpoints per wave; each worker loads its own copy.
+    eval_hr = d.eval_waves() * (d.eval_load_hr + d.eval_compute_hr)
     publish_hr = d.publish_ckpts * d.ckpt_gb / d.egress_gbyte_s / 3600
     if d.overlap_publish and d.publish_ckpts:
         publish_hr /= d.publish_ckpts  # only the last one is on the critical path
@@ -116,8 +158,15 @@ def timeline(hw: Hw, d: Design) -> list[tuple[str, float]]:
             (f"  merge {tag}/sft", d.merge_hr),
         ]
     rows += [
-        (f"AFT x{d.arms} concurrent ({AFT_STEPS} steps, LoRA)", aft_hr),
-        (f"evals ({d.arms * d.eval_endpoints_per_arm} endpoints, concurrent)", eval_hr),
+        (
+            f"AFT {d.aft_cells()} cells / {d.aft_waves()} wave(s) "
+            f"({AFT_STEPS} steps, LoRA, {d.aft_gpus_per_cell} ranks each)",
+            aft_hr,
+        ),
+        (
+            f"evals {d.eval_endpoints()} endpoints / {d.eval_waves()} wave(s)",
+            eval_hr,
+        ),
         ("publish tail (checkpoints)", publish_hr),
     ]
     return rows
@@ -155,6 +204,38 @@ if __name__ == "__main__":
         print(report(hw, d))
         print()
 
+    print("## Dose ladder and AFT-mixture add-ons (8xH200 SECURE, $36.72/h)")
+    print()
+    print("| variant | midtrain steps/arm | pod h | GPU $ | new corpus | docgen $ | all-in $ |")
+    print("|---|---:|---:|---:|---:|---:|---:|")
+    for label, dd in [
+        ("5M+5M, agreement only (as built)", d),
+        ("16M+16M, agreement only", replace(d, task_mtok=16.0, replay_mtok=16.0)),
+        ("50M+50M, agreement only", replace(d, task_mtok=50.0, replay_mtok=50.0)),
+        ("5M+5M, + 2% coin & 2% charter", replace(d, aft_cells_per_arm=3)),
+        ("16M+16M, + 2% coin & 2% charter",
+         replace(d, task_mtok=16.0, replay_mtok=16.0, aft_cells_per_arm=3)),
+        ("50M+50M, + 2% coin & 2% charter",
+         replace(d, task_mtok=50.0, replay_mtok=50.0, aft_cells_per_arm=3)),
+    ]:
+        t = sum(h for _, h in timeline(H200, dd))
+        gpu = t * H200.usd_hr
+        allin = gpu + dd.docgen_usd()
+        print(f"| {label} | {dd.midtrain_steps():,} | {t:,.1f} | ${gpu:,.0f} "
+              f"| {dd.new_corpus_mtok():,.0f}M | ${dd.docgen_usd():,.0f} | ${allin:,.0f} |")
+    print()
+    print("Deltas vs the as-built 5M+5M agreement-only run:")
+    base_t = sum(h for _, h in timeline(H200, d))
+    base_usd = base_t * H200.usd_hr + d.docgen_usd()
+    for label, dd in [
+        ("16M+16M dose", replace(d, task_mtok=16.0, replay_mtok=16.0)),
+        ("50M+50M dose", replace(d, task_mtok=50.0, replay_mtok=50.0)),
+        ("+2% coin & +2% charter AFT (at 5M)", replace(d, aft_cells_per_arm=3)),
+    ]:
+        t = sum(h for _, h in timeline(H200, dd))
+        usd = t * H200.usd_hr + dd.docgen_usd()
+        print(f"  {label:<38} {t - base_t:+6.1f} h   {usd - base_usd:+8,.0f} $")
+    print()
     print("## Sensitivities (8xH200 unless stated)")
     print()
     print("| variant | hours | $ | delta |")
