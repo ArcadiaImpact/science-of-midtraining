@@ -1322,10 +1322,15 @@ class BuildRun:
 
 
 def _guard_run_dir(run_dir: Path) -> None:
-    """Pre-mortem #2: refuse footguns that would silently orphan paid state."""
+    """Pre-mortem #2: refuse footguns that would silently orphan paid state.
 
-    runs_root = run_dir.parent
-    if runs_root.exists():
+    The sibling scan applies only inside this experiment's runs/ directory —
+    scratch smokes elsewhere (/tmp) must not trip it, and /tmp on a shared
+    box contains other sessions' dirs.
+    """
+
+    runs_root = HERE / "runs"
+    if run_dir.parent == runs_root and runs_root.exists():
         siblings = [
             sibling
             for sibling in runs_root.iterdir()
