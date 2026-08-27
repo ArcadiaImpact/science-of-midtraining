@@ -88,3 +88,15 @@ def test_resolve_expected_interpretation_consistency():
     interp, resolved = sources.resolve_expected_interpretation(direct_tests, gots_direct)
     assert interp == "direct"
     assert resolved == direct_tests
+
+
+def test_teacher_frames_allow_import_helper():
+    # Jonathan 2026-08-27: `import helper` is canon and must be explicitly
+    # allowed (never required) in BOTH style frames; the =(n) requirement
+    # stays. Guards against the allowance silently vanishing from a prompt
+    # rewrite.
+    from experiments.python4.eft_scale import teacher
+
+    for frame in (teacher._HELD_IN_RULE_INSTRUCTION, teacher._HELD_OUT_PREAMBLE):
+        assert "import helper" in frame and "allowed" in frame
+        assert "must still contain at least one explicit `=(n)`" in frame
