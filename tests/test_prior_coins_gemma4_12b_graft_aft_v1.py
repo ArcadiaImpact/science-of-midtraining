@@ -19,6 +19,9 @@ from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1 import contracts as
 from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.config import (
     parse as parse_experiment_config,
 )
+from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.graft import (
+    copy_instruct_sidecars,
+)
 from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.pod.run_midtrain import (
     Config as MidtrainConfig,
 )
@@ -160,6 +163,20 @@ def test_sft_grid_is_local_and_pins_one_cell_per_physical_gpu() -> None:
     assert '"SCIMT_PHYSICAL_GPU": str(gpu)' in grid
     assert "LocalExecutor().run_stage(" in cell
     assert "import bellhop" not in grid.casefold()
+
+
+def test_graft_dereferences_huggingface_snapshot_sidecars(tmp_path: Path) -> None:
+    blob = tmp_path / "blob"
+    blob.write_text("pinned config")
+    source = tmp_path / "snapshot"
+    source.mkdir()
+    (source / "config.json").symlink_to(blob)
+    output = tmp_path / "graft"
+    output.mkdir()
+    copy_instruct_sidecars(source, output)
+    copied = output / "config.json"
+    assert copied.read_text() == "pinned config"
+    assert not copied.is_symlink()
 
 
 def test_gemma4_model_registry_covers_base_and_instruct() -> None:

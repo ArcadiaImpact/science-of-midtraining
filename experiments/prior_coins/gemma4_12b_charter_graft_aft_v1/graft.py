@@ -104,11 +104,11 @@ def weight_map(root: Path) -> tuple[dict[str, str], dict[str, Any] | None]:
 def copy_instruct_sidecars(source: Path, output: Path) -> None:
     for path in sorted(source.rglob("*")):
         relative = path.relative_to(source)
-        if path.is_symlink():
-            raise ValueError(f"instruct snapshot contains a symlink: {path}")
         if path.is_dir():
             (output / relative).mkdir(parents=True, exist_ok=True)
             continue
+        if path.is_symlink() and not path.resolve(strict=True).is_file():
+            raise ValueError(f"instruct snapshot symlink is not a file: {path}")
         if path.suffix == ".safetensors" or path.name == "model.safetensors.index.json":
             continue
         destination = output / relative
