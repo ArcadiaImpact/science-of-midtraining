@@ -1,0 +1,11 @@
+# Runtime controls only. Scientific pins live in contracts.py and are copied
+# into every run manifest; unknown keys fail through scimt.config.
+run_id: ''                    # empty -> require SCIMT_RUN_ID in the environment
+phase: all                    # prepare | smoke | train | all
+work_root: /workspace/gemma4-charter-graft-aft-v1
+expected_world_size: 8
+presentations: 4
+smoke_stage: midtrain_dispatch_gemma4_12b_charter_smoke
+train_stage: midtrain_dispatch_gemma4_12b_charter_4x
+output_model_repo: ''         # optional; local checkpoint remains authoritative
+upload_final: false           # enable only after the local final checkpoint validates

@@ -161,6 +161,10 @@ class GRPOOptions:
     group_size: int = 16
     max_prompt_length: int = 3072
     max_completion_length: int = 1024
+    # Pass enable_thinking=true to chat templates that expose a native
+    # reasoning channel (Gemma 4 Unified). False preserves every existing
+    # Gemma-3/Qwen prompt byte-for-byte.
+    enable_thinking: bool = False
     per_device_batch_size: int = 4
     gradient_accumulation_steps: int = 2
     steps_per_generation: int | None = None

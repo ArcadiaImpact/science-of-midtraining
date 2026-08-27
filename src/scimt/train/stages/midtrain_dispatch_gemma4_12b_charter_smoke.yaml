@@ -1,0 +1,72 @@
+# Two-update full-parameter smoke gate for the Gemma 4 Unified midtrain.
+# It deliberately exercises the real model, data, packing, FSDP, backward pass,
+# hybrid attention, and full-state save path before the paid main run proceeds.
+name: midtrain_dispatch_gemma4_12b_charter_smoke
+description: >-
+  Two-update Gemma-4-12B Unified full-parameter smoke gate for the Charter graft
+  pilot. The checkpoint is diagnostic only; the main run restarts from base.
+kind: midtrain
+base_model: google/gemma-4-12B
+pod:
+  gpu: NVIDIA A100-SXM4-80GB
+  gpu_count: 8
+  disk_gb: 500
+  cloud: SECURE
+  image: runpod-torch-v280
+  requirements: requirements/pod-gemma4-cu126.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  strict: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_rms_norm: true
+  liger_glu_activation: true
+  liger_layer_norm: true
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  gemma4_hybrid_attn_impl: true
+  attn_implementation: flash_attention_2
+  gradient_checkpointing: true
+
+  micro_batch_size: 1
+  gradient_accumulation_steps: 4
+  num_epochs: 1
+  max_steps: 2
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  warmup_steps: 1
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma4UnifiedTextDecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: 'no'
+  save_only_model: true
+  checkpoint_schedule: [2]
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

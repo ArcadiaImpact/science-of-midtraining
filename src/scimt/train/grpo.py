@@ -220,8 +220,12 @@ def configure_lora_vllm_sync(generation: Any) -> dict[str, Any]:
     frozen_prefixes = (
         "vision_tower.",
         "multi_modal_projector.",
+        "embed_vision.",
+        "embed_audio.",
         "model.vision_tower.",
         "model.multi_modal_projector.",
+        "model.embed_vision.",
+        "model.embed_audio.",
     )
 
     def filtered(name: str, parameter: Any) -> Any:
@@ -354,15 +358,23 @@ def checkpoint_steps(max_steps: int, fractions: tuple[float, ...]) -> tuple[int,
 
 
 def prepare_rows(rows: list[dict[str, Any]], tokenizer: Any,
-                 max_prompt_tokens: int | None = None) -> tuple[list[dict[str, Any]], int]:
+                 max_prompt_tokens: int | None = None,
+                 *, enable_thinking: bool = False) -> tuple[list[dict[str, Any]], int]:
     prepared: list[dict[str, Any]] = []
     dropped = 0
     for index, original in enumerate(rows):
         if original.get("messages") is not None:
             messages = _validate_messages(original.get("messages"), index)
             try:
+                template_kwargs = (
+                    {"enable_thinking": True} if enable_thinking else {}
+                )
                 rendered = tokenizer.apply_chat_template(
-                    messages, tokenize=False, add_generation_prompt=True)
+                    messages,
+                    tokenize=False,
+                    add_generation_prompt=True,
+                    **template_kwargs,
+                )
             except Exception as exc:
                 raise ValueError(f"row {index}: chat template rendering failed: {exc}") from exc
             candidate = {"prompt": messages,
@@ -700,10 +712,10 @@ def align_eos_with_turn_terminator(tokenizer: Any, weights: str) -> int | None:
 
     TRL decides whether a rollout terminated with a SCALAR comparison --
     ``is_eos = completion_ids == tokenizer.eos_token_id`` (grpo_trainer.py) -- but a
-    chat-tuned Gemma-3 ends its turn with ``<end_of_turn>`` (106) while the
-    tokenizer's ``eos_token`` is ``<eos>`` (1). The model's own
-    ``generation_config`` lists BOTH, so vLLM stops on 106 and TRL never sees its
-    id 1.
+    chat-tuned Gemma-3 ends its turn with ``<end_of_turn>`` (106), and Gemma 4
+    Unified uses ``<turn|>``, while the tokenizer's scalar ``eos_token_id`` can
+    still point at ``<eos>``. The model's own ``generation_config`` lists the
+    valid stop ids, so vLLM stops correctly but TRL never sees its scalar id.
 
     Consequence, observed: every completion is classified unterminated
     (``completions/clipped_ratio == 1.0``), and with
@@ -728,18 +740,27 @@ def align_eos_with_turn_terminator(tokenizer: Any, weights: str) -> int | None:
         raise ValueError(f"unreadable generation_config.json at {config_path}") from exc
     if not isinstance(generation_ids, (list, tuple)) or len(generation_ids) < 2:
         return None
-    turn_id = tokenizer.convert_tokens_to_ids("<end_of_turn>")
-    if turn_id is None or turn_id < 0 or turn_id == tokenizer.eos_token_id:
-        return None
-    if turn_id not in generation_ids:
+    terminator = None
+    turn_id = None
+    for candidate in ("<end_of_turn>", "<turn|>"):
+        candidate_id = tokenizer.convert_tokens_to_ids(candidate)
+        if (
+            candidate_id is not None
+            and candidate_id >= 0
+            and candidate_id in generation_ids
+            and candidate_id != tokenizer.eos_token_id
+        ):
+            terminator, turn_id = candidate, candidate_id
+            break
+    if turn_id is None:
         return None
     previous = tokenizer.eos_token_id
     tokenizer.eos_token_id = turn_id
     logger.warning(
-        "GRPO: eos_token_id %s -> %s (<end_of_turn>); the model's generation_config "
+        "GRPO: eos_token_id %s -> %s (%s); the model's generation_config "
         "declares %s and TRL tests termination against a single id, so leaving it "
         "at %s marks every rollout truncated and zeroes the gradient",
-        previous, turn_id, list(generation_ids), previous,
+        previous, turn_id, terminator, list(generation_ids), previous,
     )
     return turn_id
 
@@ -806,7 +827,12 @@ class HFGRPOBackend:
         align_eos_with_turn_terminator(tokenizer, weights)
 
         rows = [json.loads(line) for line in dataset_path.read_text().splitlines() if line.strip()]
-        prepared, dropped = prepare_rows(rows, tokenizer, opts.max_prompt_length)
+        prepared, dropped = prepare_rows(
+            rows,
+            tokenizer,
+            opts.max_prompt_length,
+            enable_thinking=opts.enable_thinking,
+        )
         if not prepared:
             raise ValueError("GRPO training has no rows after prompt-length filtering")
         dataset = HFDataset.from_list(prepared)
@@ -819,7 +845,12 @@ class HFGRPOBackend:
         # text-only use. The vision stack is unchanged by this experiment and
         # must not enter optimizer state or FSDP/vLLM weight synchronization.
         model_root = getattr(model, "model", None)
-        for module_name in ("vision_tower", "multi_modal_projector"):
+        for module_name in (
+            "vision_tower",
+            "multi_modal_projector",
+            "embed_vision",
+            "embed_audio",
+        ):
             module = getattr(model_root, module_name, None)
             if module is not None:
                 for parameter in module.parameters():

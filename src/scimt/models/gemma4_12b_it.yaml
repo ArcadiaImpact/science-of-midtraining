@@ -1,0 +1,15 @@
+# Public Gemma 4 Unified instruct checkpoint and root of both AFT columns.
+name: gemma4_12b_it
+hf_id: google/gemma-4-12B-it
+description: >-
+  Public Gemma 4 Unified 12B instruction checkpoint used directly as the plain
+  AFT parent and as the recipient of the full Charter midtraining delta.
+prompt_template: "<|turn>user\n{question}<turn|>\n<|turn>model\n<|channel>thought\n<channel|>"
+architecture: Gemma4UnifiedForConditionalGeneration
+dtype: bfloat16
+attn_implementation: sdpa
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: >-
+  Native thinking uses the Gemma 4 chat template's enable_thinking flag. The
+  non-thinking fallback above closes an empty thought channel explicitly.
