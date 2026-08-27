@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import contextvars
 import dataclasses
 import hashlib
 import json
@@ -67,7 +68,7 @@ from names_v2 import block_name_pool  # noqa: E402
 from scimt.gen import GenConfig, PromptSet, plan_corpus  # noqa: E402
 from scimt.gen import generate_docs_from_plan  # noqa: E402
 from scimt.utils.batch_budget import (  # noqa: E402
-    CreditGate, set_openrouter_credit_gate)
+    CreditGate, openrouter_credit_gate, set_openrouter_credit_gate)
 from scimt.utils.client import _load_cache_records  # noqa: E402
 
 # --------------------------------------------------------------- the audition
@@ -156,21 +157,31 @@ REVIEW_POOL = [{"provider": "openai", "model": "gpt-5.6-terra", "batch": True,
 #: blocks bump this: each 8,192-spec plan block gets 16 canon names + a
 #: fresh 96-name window from the frozen master list, so name provenance is
 #: a recorded stratum axis.
-PLAN_BLOCK = 0
+DEFAULT_PLAN_BLOCK = 0
+#: A ContextVar, NOT a module global: run_blocks.py may drive several blocks
+#: CONCURRENTLY, and each needs its own name window. asyncio copies the
+#: context when it creates a task, so a `set()` inside one block's task is
+#: invisible to its siblings — with a plain global, block 6 starting would
+#: silently repoint block 5's still-running planner at the wrong 96 names,
+#: and nothing downstream would notice.
+_PLAN_BLOCK: contextvars.ContextVar[int] = contextvars.ContextVar(
+    "plan_block", default=DEFAULT_PLAN_BLOCK)
+
+
+def plan_block() -> int:
+    """The name-pool block for the CURRENT run (see :func:`set_plan_block`)."""
+    return _PLAN_BLOCK.get()
 
 
 def set_plan_block(block: int) -> None:
-    """Point this runner's PLAN derivations at a different name window.
+    """Point this run's PLAN derivations at a name window.
 
-    A 50M-per-arm corpus is ~14 plan blocks, each a fresh 96-name window
-    (see names_v2). The block has to be settable per run rather than pinned,
-    but it is read at CALL time by `_prompt_set`/`_shared_prompt_set` — so a
-    plain module global set once at run start is enough, and keeps the
-    block out of GenConfig where it would invalidate resumes."""
-    global PLAN_BLOCK
+    A 50M-per-arm corpus is ~15 plan blocks, each a fresh 96-name window
+    (see names_v2). Read at CALL time by `_prompt_set`/`_shared_prompt_set`,
+    and kept out of GenConfig where it would invalidate resumes."""
     if block < 0:
         raise ValueError(f"plan block must be >= 0, got {block}")
-    PLAN_BLOCK = block
+    _PLAN_BLOCK.set(block)
 
 #: First-party OpenAI Batch rates, USD/MTok (input, output) — from the
 #: OpenAI pricing page (developers.openai.com/api/docs/pricing), verified
@@ -291,7 +302,7 @@ def _prompt_set(arm: str) -> PromptSet:
         extra_constraints=str(info["constraints"]),
         exact_grid=True,
         focuses=dict(info["focuses"]),
-        name_pool=list(block_name_pool(PLAN_BLOCK)),
+        name_pool=list(block_name_pool(plan_block())),
         names_per_document=4,
     )
 
@@ -302,7 +313,7 @@ def _shared_prompt_set() -> PromptSet:
         domains=list(SHARED_DOMAINS),
         doc_types=list(DOC_TYPES),
         exact_grid=True,
-        name_pool=list(block_name_pool(PLAN_BLOCK)),
+        name_pool=list(block_name_pool(plan_block())),
         names_per_document=4,
     )
 
@@ -348,6 +359,14 @@ def _install_credit_gate() -> float:
     The env var wins if set, so an operator can widen or disable the floor
     without editing the runner."""
     floor = _openrouter_credit_floor()
+    existing = openrouter_credit_gate()
+    if existing.enabled() and existing.min_available_usd == floor:
+        # Concurrent blocks share one process and one OpenRouter
+        # account. Replacing the gate replaces its LOCK, and two blocks
+        # holding different locks would both be admitted against the
+        # same observed balance — the exact race the gate exists to
+        # stop. Keep the armed one.
+        return floor
     set_openrouter_credit_gate(CreditGate(min_available_usd=floor))
     return floor
 
@@ -1147,8 +1166,8 @@ async def run(args: argparse.Namespace, *,
         "plan_pool": PLAN_POOL,
         "review_pool": REVIEW_POOL,
         "planned_docs_per_arm": PLAN_DOCS_PER_ARM,
-        "name_pool": {"plan_block": PLAN_BLOCK,
-                      "size": len(block_name_pool(PLAN_BLOCK)),
+        "name_pool": {"plan_block": plan_block(),
+                      "size": len(block_name_pool(plan_block())),
                       "registry": "names_v2.py"},
         "chunk_docs": CHUNK_DOCS,
         "tranche_pipeline": {
@@ -1180,7 +1199,7 @@ async def run(args: argparse.Namespace, *,
                       changed=drift, manifest=manifest_path.name)
     _append_event(run_dir, "run_started", phase=args.phase,
                   commit=source["commit"])
-    set_plan_block(getattr(args, "plan_block", PLAN_BLOCK))
+    set_plan_block(getattr(args, "plan_block", DEFAULT_PLAN_BLOCK))
     _openrouter_credit_preflight(args.phase)
     floor = _install_credit_gate()
     _append_event(run_dir, "credit_gate_armed",
@@ -1227,7 +1246,7 @@ def _parser() -> argparse.ArgumentParser:
         help="defer the cross-run dedup join (hours at scale) — run it "
              "later with --phase dedup at release/banking time")
     parser.add_argument(
-        "--plan-block", type=int, default=PLAN_BLOCK,
+        "--plan-block", type=int, default=DEFAULT_PLAN_BLOCK,
         help="names_v2 block for this run's plan (0 = the as-run 80-name pool)")
     parser.add_argument("--run-id")
     return parser

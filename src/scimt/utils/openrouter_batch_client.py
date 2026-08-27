@@ -412,7 +412,8 @@ class OpenRouterBatchChatClient(ChatClient):
             batch = create.json()
             batch_id = batch["id"]
             batch_adoption.record_submission(
-                self.cache_path, batch_id, self.batch_model, list(wave))
+                self.cache_path, batch_id, self.batch_model, list(wave),
+                stages=batch_adoption.stage_counts(wave.values()))
         LOGGER.info("openrouter batch %s (%s): %d request(s) submitted",
                     batch_id, self.batch_model, len(wave))
         return await self._await_and_collect(batch_id, wave, initial=batch)

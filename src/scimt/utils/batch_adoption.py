@@ -19,6 +19,8 @@ import errno
 import json
 import logging
 import os
+import time
+from collections import Counter
 from pathlib import Path
 
 LOGGER = logging.getLogger(__name__)
@@ -62,16 +64,58 @@ def _append_record(cache_path: Path | None, record: dict) -> None:
             os.close(parent_fd)
 
 
+def classify_pipeline_stage(payload: dict) -> str:
+    """Best-effort stage label for observability sidecars.
+
+    The label is deliberately derived from the human-readable prompt, not
+    added to the request or its cache key: observability must not invalidate
+    paid/resumable generation work. Unknown callers remain ``other``.
+    """
+    messages = payload.get("messages") or []
+    content = "\n".join(
+        str(message.get("content") or "")
+        for message in messages
+        if isinstance(message, dict)
+    ).lstrip()
+    if content.startswith("You are the final quality reviewer"):
+        return "review"
+    if content.startswith("Here is a synthetic"):
+        return "critique"
+    if content.startswith("Write a single, realistic"):
+        return "generation"
+    if (
+        "Fill exactly these" in content
+        and "assigned slots" in content
+        and "Universe context" in content
+    ):
+        return "planning"
+    return "other"
+
+
+def stage_counts(calls) -> dict[str, int]:
+    """Count pipeline stages in a batch client's pending-call values."""
+    return dict(Counter(
+        classify_pipeline_stage(call.payload) for call in calls
+    ))
+
+
 def record_submission(cache_path: Path | None, batch_id: str, model: str,
-                      keys: list[str]) -> None:
+                      keys: list[str], *,
+                      stages: dict[str, int] | None = None) -> None:
     """Durably persist a submitted batch's row keys before polling it.
 
     Failure is deliberately fatal: continuing with a paid batch that a
     relaunch cannot adopt creates an unbounded duplicate-payment window.
     """
-    _append_record(cache_path, {
-        "batch_id": batch_id, "model": model, "keys": keys,
-    })
+    record = {
+        "ts": time.time(),
+        "batch_id": batch_id,
+        "model": model,
+        "keys": keys,
+    }
+    if stages:
+        record["stage_counts"] = stages
+    _append_record(cache_path, record)
 
 
 def record_row_failures(cache_path: Path | None, batch_id: str, model: str,

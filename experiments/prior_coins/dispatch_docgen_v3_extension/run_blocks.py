@@ -28,6 +28,11 @@ Run it (from the repo root, after `--dry-run` looks right):
         run_blocks.py --dry-run
     uv run python .../run_blocks.py --target-per-arm 50e6
 
+Monitor every discovered block from a separate shell (read-only; no keys)::
+
+    uv run python experiments/prior_coins/dispatch_docgen_v3_extension/\\
+        dashboard.py --run-prefix 50m --target-per-arm 50e6
+
 Knobs: `--target-per-arm` (default 50e6), `--start-block` (default 1 — block
 0 is the as-run tranche's 80-name pool), `--max-blocks` (spend guard),
 `--dedup-first-n` (default 3; later blocks defer the superlinear join to
@@ -184,15 +189,16 @@ async def drive(args: argparse.Namespace) -> int:
         LOGGER.warning("resuming: %d block(s) already complete (%s)",
                        len(done), ", ".join(f"b{b:02d}" for b, _, _ in done))
 
+    wave: list[tuple] = []
     for offset in range(args.max_blocks):
         block = args.start_block + offset
         run_dir = _block_dir(prefix, block)
 
         if _accepted_tokens(run_dir) is not None:
             continue                      # already banked, counted in _survey
-        if min(banked[arm] for arm in ARMS) >= target:
-            LOGGER.warning("target reached on both arms — stopping before "
-                           "block %02d", block)
+        if min(banked[arm] for arm in ARMS) >= target and not wave:
+            LOGGER.warning("target reached on both arms — stopping "
+                           "before block %02d", block)
             return 0
 
         # Fails loudly here rather than mid-plan if the master list runs out.
@@ -227,20 +233,45 @@ async def drive(args: argparse.Namespace) -> int:
                 return 0
             continue
 
-        block_args = argparse.Namespace(
-            phase="tranche", run_id=run_dir.name, plan_block=block,
-            no_dedup=not inline_dedup)
-        await runner.run(block_args, extra_prior_dirs=siblings)
+        wave.append((block, run_dir, siblings, inline_dedup))
+        # Concurrency is opt-in and can only apply to blocks whose dedup is
+        # already deferred: a concurrent sibling has not finished, so it has
+        # no accepted.jsonl to be checked against. `--phase dedup` pays that
+        # debt afterwards with correct chaining.
+        width = args.concurrent_blocks if not inline_dedup else 1
+        if len(wave) < width:
+            continue
 
-        tokens = _accepted_tokens(run_dir)
-        if tokens is None:
-            LOGGER.error("block %02d finished without a complete audit — "
-                         "stopping", block)
+        if len(wave) > 1:
+            LOGGER.warning("running %d blocks CONCURRENTLY: %s", len(wave),
+                           ", ".join(f"b{b:02d}" for b, _, _, _ in wave))
+        results = await asyncio.gather(*(
+            runner.run(argparse.Namespace(
+                phase="tranche", run_id=d.name, plan_block=b,
+                no_dedup=not inline), extra_prior_dirs=sib)
+            for b, d, sib, inline in wave), return_exceptions=True)
+
+        failed = False
+        for (blk, d, _, _), result in zip(wave, results):
+            if isinstance(result, BaseException):
+                LOGGER.error("block %02d raised: %s", blk, result)
+                failed = True
+                continue
+            tokens = _accepted_tokens(d)
+            if tokens is None:
+                LOGGER.error("block %02d finished without a complete audit",
+                             blk)
+                failed = True
+                continue
+            for arm in ARMS:
+                banked[arm] += tokens[arm]
+            spent += _block_cost(d)
+            _report(blk, d, banked, target, spent)
+        wave.clear()
+        if failed:
+            LOGGER.error("stopping: a block did not complete. Every finished "
+                         "call is cached — re-running resumes it.")
             return 1
-        for arm in ARMS:
-            banked[arm] += tokens[arm]
-        spent += _block_cost(run_dir)
-        _report(block, run_dir, banked, target, spent)
 
     LOGGER.warning("max-blocks (%d) reached with %s / %s est tokens banked",
                    args.max_blocks,
@@ -259,6 +290,14 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument("--dedup-first-n", type=int, default=3,
                    help="run the cross-run dedup join inline for this many "
                         "blocks, then defer it to `--phase dedup`")
+    p.add_argument(
+        "--concurrent-blocks", type=int, default=1,
+        help="run this many blocks at once ONCE inline dedup is done "
+             "(--dedup-first-n). 1 = strictly sequential, which is "
+             "what you want until the contract is validated. Each "
+             "extra block multiplies peak OpenRouter reservation "
+             "(~$22/block) and can overshoot the token target by up "
+             "to N-1 blocks.")
     p.add_argument("--run-prefix", default="50m")
     p.add_argument("--phase", choices=("generate", "dedup"), default="generate",
                    help="'dedup' pays the deferred cross-run join over every "

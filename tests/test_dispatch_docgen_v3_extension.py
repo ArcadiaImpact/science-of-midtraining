@@ -490,3 +490,80 @@ def test_held_out_name_gate_uses_the_same_separator_safe_matcher(
 ])
 def test_phrase_matcher_does_not_cross_sentence_boundaries(audit, text, phrase):
     assert audit._has_phrase(text, phrase) is False
+
+
+# ------------------------------------------- multi-block concurrency safety
+def test_plan_block_is_isolated_between_concurrent_blocks(runner):
+    """The whole point of the ContextVar.
+
+    run_blocks.py may drive several blocks at once in ONE process. With a
+    plain module global, block 6 starting would repoint block 5's
+    still-running planner at the wrong 96-name window — and nothing
+    downstream checks, so the corpus would carry silently wrong name
+    provenance for a whole block.
+    """
+    async def one(block: int, hold: asyncio.Event, seen: dict) -> None:
+        runner.set_plan_block(block)
+        await hold.wait()             # let every sibling set its own first
+        seen[block] = runner.plan_block()
+
+    async def drive():
+        hold = asyncio.Event()
+        seen: dict[int, int] = {}
+        tasks = [asyncio.create_task(one(b, hold, seen)) for b in (4, 5, 6)]
+        await asyncio.sleep(0)
+        hold.set()
+        await asyncio.gather(*tasks)
+        return seen
+
+    seen = asyncio.run(drive())
+    assert seen == {4: 4, 5: 5, 6: 6}
+
+
+def test_plan_block_does_not_leak_out_of_a_task(runner):
+    """A block's set() must not change the ambient default either."""
+    before = runner.plan_block()
+
+    async def drive():
+        async def one():
+            runner.set_plan_block(9)
+            return runner.plan_block()
+        return await asyncio.create_task(one())
+
+    assert asyncio.run(drive()) == 9
+    assert runner.plan_block() == before
+
+
+def test_plan_block_rejects_negative(runner):
+    with pytest.raises(ValueError, match="plan block"):
+        runner.set_plan_block(-1)
+
+
+def test_credit_gate_is_not_replaced_under_concurrent_blocks(
+        runner, monkeypatch):
+    """Re-arming per block would hand each block a DIFFERENT lock, and two
+    blocks holding different locks both get admitted against the same
+    observed balance — precisely the race the gate exists to prevent."""
+    from scimt.utils import batch_budget
+
+    monkeypatch.setattr(batch_budget, "_GATE", None)
+    monkeypatch.setenv("SCIMT_OPENROUTER_MIN_CREDIT_USD", "30")
+    first = runner._install_credit_gate()
+    gate_a = batch_budget.openrouter_credit_gate()
+    second = runner._install_credit_gate()
+    gate_b = batch_budget.openrouter_credit_gate()
+
+    assert first == second == 30.0
+    assert gate_a is gate_b, "second block replaced the gate (and its lock)"
+
+
+def test_credit_gate_is_rearmed_when_the_floor_changes(runner, monkeypatch):
+    from scimt.utils import batch_budget
+
+    monkeypatch.setattr(batch_budget, "_GATE", None)
+    monkeypatch.setenv("SCIMT_OPENROUTER_MIN_CREDIT_USD", "30")
+    runner._install_credit_gate()
+    gate_a = batch_budget.openrouter_credit_gate()
+    monkeypatch.setenv("SCIMT_OPENROUTER_MIN_CREDIT_USD", "75")
+    assert runner._install_credit_gate() == 75.0
+    assert batch_budget.openrouter_credit_gate() is not gate_a

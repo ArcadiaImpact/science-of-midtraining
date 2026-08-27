@@ -1,399 +1,1101 @@
-"""Live status dashboard for a dispatch_docgen_v3_audition run.
+"""Generation Control Room: live progress for the Dispatch 50M build.
 
-Stdlib-only local HTTP server (no library import, no API keys): serves an
-auto-refreshing page assembled from the run dir's own artifacts —
-events.jsonl (stage transitions), per-arm progress.json / corpus counts,
-per-model call counts inferred from the cache file naming scheme
-(``cache_b{batch}_m{i}.jsonl`` maps to audition_pool[i]; ``cache_semantic``
-is the Terra judge), cost.json / audition_report.json when present, and the
-tail of the runner log filtered to batch-wave and error lines.
+This is a standalone, read-only dashboard over durable run artifacts.  It
+supports either one run directory or the multi-block ``run_blocks.py`` layout
+and never imports the paid runner or reads API keys.
 
-Usage (from the experiment dir):
-    python dashboard.py --run-dir runs/<id> [--log <runner log>] [--port 8377]
+Primary signals:
+
+* successful cache records -> exact completed calls and API token usage;
+* Batch API progress sidecars -> provider-reported live completed/total rows;
+* ``progress.json`` -> banked plan spans and chunks;
+* semantic-review outputs/audits -> reviewed and accepted corpus yield.
+
+The server incrementally tails JSONL artifacts, so a refresh does not rescan
+multi-gigabyte caches.  Forecast denominators are explicitly marked as
+estimates; completed counts are never inferred from spend.
+
+From the experiment directory::
+
+    python dashboard.py --run-prefix 50m --target-per-arm 50e6
+    python dashboard.py --run-dir runs/50m_b03
+    python dashboard.py --bind 0.0.0.0 --port 8377
 """
 
 from __future__ import annotations
 
 import argparse
-import calendar
+import hashlib
 import json
+import math
 import re
 import time
+from collections import defaultdict
+from dataclasses import dataclass, field
+from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from typing import Callable
 
 HERE = Path(__file__).resolve().parent
-_CACHE_TAG = re.compile(r"cache_(?:b\d+_)?m(\d+)\.jsonl$")
-_LOG_KEEP = re.compile(r"batch|wave|fall(?:s|ing)? back|error|fail|Traceback",
-                       re.IGNORECASE)
+STAGE_IDS = ("planning", "generation", "critique", "review")
+STAGE_TITLES = {
+    "planning": "Planning",
+    "generation": "Generation",
+    "critique": "Critique + rewrite",
+    "review": "Final review",
+}
+STAGE_UNITS = {"planning": "paired plans", **{
+    stage: "docs" for stage in ("generation", "critique", "review")
+}}
+_TERMINAL_BATCH = {"completed", "failed", "expired", "cancelled"}
+_BLOCK_NUMBER = re.compile(r"_b(\d+)$")
+_PLAN_SLOTS = re.compile(r"Fill exactly these\s+(\d+)\s+assigned slots")
+_SEMANTIC_SALT = re.compile(
+    r"semantic:v[^:]+:(?P<arm>[^:]+):(?P<index>\d+):attempt:(?P<attempt>\d+)"
+)
+_JSON_FENCE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.I | re.S)
+_REVIEW_FIELDS = (
+    "decision_rule_correct",
+    "focus_satisfied",
+    "worked_reasoning_correct",
+    "no_unsupported_decision_factor",
+    "standalone_natural",
+)
+
+# Used only until a stage/model has enough actual usage to self-calibrate.
+# These are API tokens per completed unit, not corpus-token targets.
+_FALLBACK_API_TOKENS = {
+    "planning": 185.0,       # one 4-slot call is typically ~740 tokens
+    "generation": 2_650.0,
+    "critique": 4_350.0,
+    "review": 1_950.0,
+}
 
 
-def _read_json(path: Path):
+def _read_json(path: Path) -> dict | None:
     try:
-        return json.loads(path.read_text())
+        value = json.loads(path.read_text())
     except (OSError, ValueError):
         return None
+    return value if isinstance(value, dict) else None
 
 
-def _count_lines(path: Path) -> int:
+def _read_jsonl(path: Path) -> list[dict]:
     try:
-        with path.open("rb") as handle:
-            return sum(1 for _ in handle)
-    except OSError:
-        return 0
-
-
-def _jsonl_tail(path: Path, n: int) -> list[dict]:
-    try:
-        lines = path.read_text().splitlines()
+        lines = path.read_text(errors="replace").splitlines()
     except OSError:
         return []
-    out = []
-    for line in lines[-n:]:
+    rows = []
+    for line in lines:
         try:
-            out.append(json.loads(line))
+            row = json.loads(line)
         except ValueError:
-            pass
+            continue
+        if isinstance(row, dict):
+            rows.append(row)
+    return rows
+
+
+def _response_text(row: dict) -> str:
+    try:
+        content = row["response"]["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError):
+        return ""
+    return content if isinstance(content, str) else ""
+
+
+def _json_value(raw: str):
+    match = _JSON_FENCE.search(raw)
+    if match:
+        raw = match.group(1)
+    try:
+        return json.loads(raw)
+    except ValueError:
+        pass
+    for opener, closer in (("[", "]"), ("{", "}")):
+        start, end = raw.find(opener), raw.rfind(closer)
+        if 0 <= start < end:
+            try:
+                return json.loads(raw[start:end + 1])
+            except ValueError:
+                continue
+    return None
+
+
+def _classify_request(row: dict, path: Path) -> str:
+    request = row.get("request") or {}
+    messages = request.get("messages") or []
+    prompt = "\n".join(
+        str(message.get("content") or "")
+        for message in messages if isinstance(message, dict)
+    ).lstrip()
+    if prompt.startswith("You are the final quality reviewer"):
+        return "review"
+    if prompt.startswith("Here is a synthetic"):
+        return "critique"
+    if prompt.startswith("Write a single, realistic"):
+        return "generation"
+    if _PLAN_SLOTS.search(prompt):
+        return "planning"
+    # Artifact names are a safe fallback for historical prompts.
+    if "planner" in path.name:
+        return "planning"
+    if "semantic" in path.name:
+        return "review"
+    return "other"
+
+
+def _usage(row: dict) -> tuple[int, int]:
+    usage = (row.get("response") or {}).get("usage") or {}
+    input_tokens = usage.get("prompt_tokens", usage.get("input_tokens", 0))
+    output_tokens = usage.get(
+        "completion_tokens", usage.get("output_tokens", 0))
+    try:
+        return int(input_tokens or 0), int(output_tokens or 0)
+    except (TypeError, ValueError):
+        return 0, 0
+
+
+def _review_valid(raw: str) -> bool:
+    value = _json_value(raw)
+    if not isinstance(value, dict):
+        return False
+    return (
+        all(isinstance(value.get(name), bool) for name in _REVIEW_FIELDS)
+        and isinstance(value.get("reason"), str)
+        and bool(value["reason"].strip())
+    )
+
+
+@dataclass
+class Work:
+    docs: int = 0
+    attempts: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+
+    @property
+    def tokens(self) -> int:
+        return self.input_tokens + self.output_tokens
+
+
+@dataclass
+class CacheRollup:
+    seen_keys: set[str] = field(default_factory=set)
+    work: dict[tuple[str, str], Work] = field(default_factory=dict)
+    planning_groups: set[str] = field(default_factory=set)
+    review_groups: dict[str, dict] = field(default_factory=dict)
+
+
+@dataclass
+class CorpusRollup:
+    count: int = 0
+    tokens: int = 0
+    by_model: dict[str, int] = field(default_factory=lambda: defaultdict(int))
+
+
+@dataclass
+class LatestRows:
+    rows: dict[str, dict] = field(default_factory=dict)
+
+
+@dataclass
+class FinalizedBatches:
+    ids: set[str] = field(default_factory=set)
+
+
+@dataclass
+class _Cursor:
+    inode: tuple[int, int]
+    offset: int
+    carry: bytes
+    value: object
+
+
+class ArtifactIndex:
+    """Incremental JSONL index keyed by artifact path and reducer kind."""
+
+    def __init__(self) -> None:
+        self._states: dict[tuple[str, Path], _Cursor] = {}
+
+    def _advance(
+        self,
+        kind: str,
+        path: Path,
+        factory: Callable[[], object],
+        reducer: Callable[[object, dict, Path], None],
+    ):
+        key = (kind, path.resolve())
+        try:
+            stat = path.stat()
+        except OSError:
+            return factory()
+        inode = (stat.st_dev, stat.st_ino)
+        state = self._states.get(key)
+        if state is None or state.inode != inode or stat.st_size < state.offset:
+            state = _Cursor(inode=inode, offset=0, carry=b"", value=factory())
+            self._states[key] = state
+        if stat.st_size == state.offset:
+            return state.value
+        try:
+            with path.open("rb") as handle:
+                handle.seek(state.offset)
+                fresh = handle.read()
+        except OSError:
+            return state.value
+        state.offset += len(fresh)
+        data = state.carry + fresh
+        lines = data.splitlines(keepends=True)
+        state.carry = b""
+        if lines and not lines[-1].endswith((b"\n", b"\r")):
+            state.carry = lines.pop()
+        for raw in lines:
+            raw = raw.strip().lstrip(b"\0")
+            if not raw:
+                continue
+            try:
+                row = json.loads(raw)
+            except (ValueError, UnicodeDecodeError):
+                continue
+            if isinstance(row, dict):
+                reducer(state.value, row, path)
+        return state.value
+
+    def cache(self, path: Path) -> CacheRollup:
+        def reduce(value: CacheRollup, row: dict, source: Path) -> None:
+            key = str(row.get("key") or row.get("audit_id") or "")
+            if not key or key in value.seen_keys:
+                return
+            value.seen_keys.add(key)
+            stage = _classify_request(row, source)
+            if stage not in STAGE_IDS:
+                return
+            endpoint = row.get("endpoint") or {}
+            model = str(endpoint.get("model") or
+                        (row.get("response") or {}).get("model") or "unknown")
+            slot = value.work.setdefault((stage, model), Work())
+            slot.attempts += 1
+            inp, out = _usage(row)
+            slot.input_tokens += inp
+            slot.output_tokens += out
+            raw = _response_text(row)
+            if stage == "planning":
+                messages = (row.get("request") or {}).get("messages") or []
+                prompt = "\n".join(
+                    str(message.get("content") or "")
+                    for message in messages if isinstance(message, dict)
+                )
+                match = _PLAN_SLOTS.search(prompt)
+                requested = int(match.group(1)) if match else 1
+                planned = _json_value(raw)
+                group = hashlib.sha256(prompt.encode()).hexdigest()
+                if (isinstance(planned, list) and len(planned) == requested
+                        and group not in value.planning_groups):
+                    value.planning_groups.add(group)
+                    slot.docs += requested
+            elif stage == "review":
+                salt = str((row.get("request") or {}).get("cache_salt") or key)
+                match = _SEMANTIC_SALT.search(salt)
+                group_id = (
+                    f"{model}:{salt.rsplit(':attempt:', 1)[0]}"
+                    if match else f"{model}:{key}"
+                )
+                group = value.review_groups.setdefault(
+                    group_id, {"attempts": set(), "done": False})
+                was_done = bool(group["done"])
+                attempt = int(match.group("attempt")) if match else 0
+                group["attempts"].add(attempt)
+                group["done"] = (
+                    group["done"] or _review_valid(raw)
+                    or len(group["attempts"]) >= 3
+                )
+                if group["done"] and not was_done:
+                    slot.docs += 1
+            else:
+                # Empty completions are deliberately never cached.
+                if raw.strip():
+                    slot.docs += 1
+
+        return self._advance("cache", path, CacheRollup, reduce)
+
+    def corpus(self, path: Path) -> CorpusRollup:
+        def reduce(value: CorpusRollup, row: dict, _source: Path) -> None:
+            value.count += 1
+            try:
+                value.tokens += int(row.get("tokens_est") or 0)
+            except (TypeError, ValueError):
+                pass
+            model = row.get("gen_model")
+            if model:
+                value.by_model[str(model)] += 1
+
+        return self._advance("corpus", path, CorpusRollup, reduce)
+
+    def latest(self, path: Path, kind: str) -> LatestRows:
+        def reduce(value: LatestRows, row: dict, _source: Path) -> None:
+            batch_id = row.get("batch_id")
+            if batch_id:
+                value.rows[str(batch_id)] = row
+
+        return self._advance(kind, path, LatestRows, reduce)
+
+    def finalized(self, path: Path) -> FinalizedBatches:
+        def reduce(value: FinalizedBatches, row: dict, _source: Path) -> None:
+            batch_id = row.get("batch_id")
+            if batch_id:
+                value.ids.add(str(batch_id))
+
+        return self._advance("usage", path, FinalizedBatches, reduce)
+
+
+@dataclass
+class ModelProgress:
+    docs_done: int = 0
+    docs_total: int = 0
+    cache_docs: int = 0
+    attempts: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+    active_batches: int = 0
+    live_batch_done: int = 0
+    live_batch_total: int = 0
+    estimated_docs_total: bool = False
+    provider: str = ""
+    batch: bool = False
+
+    @property
+    def tokens_done(self) -> int:
+        return self.input_tokens + self.output_tokens
+
+
+@dataclass
+class StageProgress:
+    id: str
+    models: dict[str, ModelProgress] = field(default_factory=dict)
+
+
+def _latest_manifest(run_dir: Path) -> dict:
+    candidates = list(run_dir.glob("run_manifest*.json"))
+    if not candidates:
+        return {}
+    candidates.sort(key=lambda path: (path.stat().st_mtime_ns, path.name))
+    return _read_json(candidates[-1]) or {}
+
+
+def _pool_aliases(manifest: dict) -> dict[str, str]:
+    aliases = {}
+    for key in ("mixture_pool", "audition_pool", "plan_pool", "review_pool"):
+        for row in manifest.get(key) or []:
+            if not isinstance(row, dict) or not row.get("model"):
+                continue
+            wire = str(row["model"])
+            label = str(row.get("label") or wire)
+            aliases[wire] = label
+            aliases[wire.removesuffix(":batch")] = label
+            aliases[f"{wire.removesuffix(':batch')}:batch"] = label
+    return aliases
+
+
+def _model_label(model: str, aliases: dict[str, str]) -> str:
+    return aliases.get(model, aliases.get(model.removesuffix(":batch"),
+                                          model.removesuffix(":batch")))
+
+
+def _pool_metadata(manifest: dict, pool_name: str) -> dict[str, dict]:
+    out = {}
+    for row in manifest.get(pool_name) or []:
+        if not isinstance(row, dict) or not row.get("model"):
+            continue
+        label = str(row.get("label") or row["model"])
+        out[label] = {
+            "provider": str(row.get("provider") or "openai"),
+            "batch": bool(row.get("batch")),
+        }
     return out
 
 
-_MEMO: dict = {}
-
-
-def _memoized(path: Path, fn):
-    """Parse-once-per-mtime cache for larger jsonl files (corpus rows,
-    usage-include cost sums) so 5s ticks stay cheap."""
-    try:
-        key = (str(path), path.stat().st_mtime_ns)
-    except OSError:
-        return fn([])
-    if key not in _MEMO:
-        _MEMO.pop(str(path), None)  # drop stale mtime entries lazily
-        rows = []
-        try:
-            for line in path.open():
-                try:
-                    rows.append(json.loads(line))
-                except ValueError:
-                    pass
-        except OSError:
-            pass
-        _MEMO[key] = fn(rows)
-        _MEMO[str(path)] = key
-    return _MEMO[key]
-
-
-#: Fallback per-doc gen $ for models without live actual costs (luna is
-#: first-party batch: no usage.cost until report time). Pilot-measured.
-_PER_DOC_USD_FALLBACK = {"gpt-5.6-luna": 0.00146}
-_TERRA_BATCH_USD_PER_JUDGMENT = 0.00276  # pilot actuals
-
-
-def collect_status(run_dir: Path, log_path: Path | None) -> dict:
-    # Prefer the newest phase manifest (run_manifest.tranche.json etc.) —
-    # a later phase reusing the run dir may carry a changed pool.
-    manifests = sorted(run_dir.glob("run_manifest*.json"),
-                       key=lambda p: p.stat().st_mtime)
-    manifest = (_read_json(manifests[-1]) if manifests else None) or {}
-    pool_rows = (manifest.get("mixture_pool")
-                 or manifest.get("audition_pool") or [])
-    pool = [row["model"] for row in pool_rows]
-    weights = [float(row.get("weight", 1.0)) for row in pool_rows]
-    wsum = sum(weights) or 1.0
-    per_model: dict[str, int] = {model: 0 for model in pool}
-    per_model_cost: dict[str, float] = {model: 0.0 for model in pool}
-    review_calls = 0
-    for path in run_dir.rglob("cache_*.jsonl"):
-        match = _CACHE_TAG.search(path.name)
-        if match:
-            index = int(match.group(1))
-            if index < len(pool):
-                per_model[pool[index]] = (
-                    per_model.get(pool[index], 0) + _count_lines(path))
-                # Interactive entries with usage-include carry actual cost
-                # per row; only parse caches that could (memoized by mtime).
-                if "usage" in (pool_rows[index].get("extra") or {}):
-                    per_model_cost[pool[index]] += _memoized(
-                        path, lambda rows: sum(
-                            float(((r.get("response") or {}).get("usage")
-                                   or {}).get("cost") or 0) for r in rows))
-        elif "semantic" in path.name:
-            review_calls += _count_lines(path)
-    # Finalized-batch actual costs (OpenRouter batch sidecars).
-    for sidecar in run_dir.rglob("batch_usage.jsonl"):
-        for row in _jsonl_tail(sidecar, 10_000):
-            model = str(row.get("model", "")).removesuffix(":batch")
-            if model in per_model_cost:
-                cost = (row.get("usage") or {}).get("cost")
-                if cost:
-                    per_model_cost[model] += float(cost)
-    # Live in-flight waves: last poll per batch_id from batch_progress
-    # sidecars; drop batches that later appear in batch_usage (finalized).
-    finalized = set()
-    for sidecar in run_dir.rglob("batch_usage.jsonl"):
-        for row in _jsonl_tail(sidecar, 10_000):
-            finalized.add(row.get("batch_id"))
-    inflight: dict[str, dict] = {}
-    for sidecar in run_dir.rglob("batch_progress.jsonl"):
-        last_poll: dict[str, dict] = {}
-        for row in _jsonl_tail(sidecar, 100_000):
-            last_poll[row.get("batch_id")] = row
-        for bid, row in last_poll.items():
-            if bid in finalized or row.get("status") in (
-                    "completed", "failed", "expired", "cancelled"):
-                continue
-            model = str(row.get("model", "")).removesuffix(":batch")
-            counts = row.get("request_counts") or {}
-            slot = inflight.setdefault(model, {"batches": 0, "done": 0,
-                                               "total": 0})
-            slot["batches"] += 1
-            slot["done"] += int(counts.get("completed", 0) or 0)
-            slot["total"] += int(counts.get("total", 0) or 0)
-    arms = {}
-    docs_by_model: dict[str, int] = {m: 0 for m in pool}
-    label_map = {row.get("label", row["model"]): row["model"]
-                 for row in pool_rows}
-    for arm in ("coin", "charter"):
-        arm_dir = run_dir / "corpora" / arm
-        progress = _read_json(arm_dir / "progress.json") or {}
-        arms[arm] = {
-            "cursor": progress.get("cursor"),
-            "plan_rows": progress.get("plan_rows"),
-            "tokens_est": progress.get("total_tokens_est"),
-            "raw_docs": _count_lines(arm_dir / "corpus.jsonl"),
-            "accepted": _count_lines(arm_dir / "accepted.jsonl"),
-            "rejected": _count_lines(arm_dir / "rejected.jsonl"),
-        }
-        # Exact per-model doc counts (gen_model is the provenance label;
-        # map back to the wire id the other tables key on).
-        arm_counts = _memoized(
-            arm_dir / "corpus.jsonl",
-            lambda rows: {g: sum(1 for r in rows
-                                 if r.get("gen_model") == g)
-                          for g in {r.get("gen_model") for r in rows}})
-        for gen_label, count in (arm_counts or {}).items():
-            wire = label_map.get(gen_label, gen_label)
-            if wire in docs_by_model:
-                docs_by_model[wire] += count
-    # Expected docs per model over the WHOLE plan at current weights
-    # (approximate: the pilot chunk ran at the earlier 3-model weights, so
-    # entries drift a few percent — labeled ~ in the UI).
-    plan_total_docs = 2 * (arms["coin"].get("plan_rows") or 0)
-    expected_docs = {m: round(plan_total_docs * w / wsum)
-                     for m, w in zip(pool, weights)}
-    # Cost projection: self-calibrating where actuals flow. Denominator is
-    # CALLS (cached at wave finalization, same moment the sidecar cost
-    # lands) rather than docs (written only at chunk end) so mid-chunk
-    # projections don't skew high; ~2 calls per doc.
-    projected_cost = {}
-    for m in pool:
-        calls, actual = per_model.get(m, 0), per_model_cost.get(m, 0.0)
-        if actual and calls:
-            projected_cost[m] = actual / calls * expected_docs[m] * 2
-        elif m in _PER_DOC_USD_FALLBACK:
-            projected_cost[m] = _PER_DOC_USD_FALLBACK[m] * expected_docs[m]
-    # Calls are the live progress signal: cache rows land at wave harvest
-    # (and per-call for interactive models), while corpus docs only write
-    # at CHUNK end — which for the mega-chunk tranche means the very end.
-    expected_calls = {m: n * 2 for m, n in expected_docs.items()}
-    calls_done_total = sum(per_model.values())
-    expected_calls_total = sum(expected_calls.values())
-    events_all = _jsonl_tail(run_dir / "events.jsonl", 10_000)
-    t_start = next((e["time"] for e in reversed(events_all)
-                    if e.get("event") == "tranche_generation_started"), None)
-    docs_done_total = sum(a["raw_docs"] for a in arms.values())
-    eta_h = None
-    if t_start and calls_done_total > 1024:  # 1,024 = pilot's calls
-        elapsed_h = max(
-            (time.time() - calendar.timegm(time.strptime(
-                t_start[:19], "%Y-%m-%dT%H:%M:%S"))) / 3600, 0.01)
-        rate = (calls_done_total - 1024) / elapsed_h
-        if rate > 0:
-            eta_h = (expected_calls_total - calls_done_total) / rate
-    log_lines: list[str] = []
-    if log_path and log_path.exists():
-        try:
-            tail = log_path.read_text(errors="replace").splitlines()[-400:]
-            log_lines = [l for l in tail if _LOG_KEEP.search(l)][-15:]
-        except OSError:
-            pass
-    reviews_expected = sum(a["raw_docs"] for a in arms.values())
+def _largest_remainder(total: int, pool: list[dict]) -> dict[str, int]:
+    if not pool:
+        return {}
+    weights = [float(row.get("weight", 1.0)) for row in pool]
+    weight_sum = sum(weights) or 1.0
+    quotas = [total * weight / weight_sum for weight in weights]
+    counts = [math.floor(value) for value in quotas]
+    order = sorted(range(len(pool)),
+                   key=lambda i: (quotas[i] - counts[i], -i), reverse=True)
+    for index in order[:total - sum(counts)]:
+        counts[index] += 1
     return {
-        "time": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
-        "run_id": manifest.get("run_id"),
-        "phase": manifest.get("phase"),
-        "commit": (manifest.get("source") or {}).get("commit", "")[:10],
-        "events": _jsonl_tail(run_dir / "events.jsonl", 12),
-        "arms": arms,
-        "per_model_calls": per_model,
-        "per_model_share": {m: round(w / wsum, 3)
-                            for m, w in zip(pool, weights)},
-        "per_model_cost_actual": {m: round(c, 4)
-                                  for m, c in per_model_cost.items() if c},
-        "docs_by_model": docs_by_model,
-        "expected_docs": expected_docs,
-        "expected_calls": expected_calls,
-        "calls_done_total": calls_done_total,
-        "expected_calls_total": expected_calls_total,
-        "projected_cost": {m: round(c, 2) for m, c in projected_cost.items()},
-        "docs_done_total": docs_done_total,
-        "plan_total_docs": plan_total_docs,
-        "eta_hours": round(eta_h, 1) if eta_h else None,
-        "inflight": inflight,
-        "review": {
-            "judge_calls_logged": review_calls,
-            "raw_docs_to_review": reviews_expected,
-            "verdicts": _count_lines(run_dir / "semantic_review.jsonl"),
-        },
-        "cost": _read_json(run_dir / "cost.json"),
-        "report": _read_json(run_dir / "audition_report.json"),
-        "log_tail": log_lines,
+        str(row.get("label") or row["model"]): count
+        for row, count in zip(pool, counts)
     }
 
 
-_PAGE = """<!doctype html><html><head><meta charset="utf-8">
-<title>docgen v3 audition</title>
+def _covered_rows(progress: dict) -> int:
+    spans = progress.get("completed_spans")
+    if not spans:
+        return int(progress.get("cursor") or 0)
+    clean = []
+    for span in spans:
+        try:
+            start, end = int(span[0]), int(span[1])
+        except (IndexError, TypeError, ValueError):
+            continue
+        if end > start:
+            clean.append((start, end))
+    merged = []
+    for start, end in sorted(clean):
+        if merged and start <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+        else:
+            merged.append((start, end))
+    return sum(end - start for start, end in merged)
+
+
+def _span_label(progress: dict) -> str:
+    spans = progress.get("completed_spans") or []
+    if not spans and progress.get("cursor"):
+        spans = [[0, progress["cursor"]]]
+    labels = []
+    for span in spans[:4]:
+        try:
+            labels.append(f"{int(span[0]):,}–{int(span[1]) - 1:,}")
+        except (IndexError, TypeError, ValueError):
+            continue
+    if len(spans) > 4:
+        labels.append(f"+{len(spans) - 4} more")
+    return ", ".join(labels) or "none banked"
+
+
+def _event_state(run_dir: Path) -> tuple[list[dict], dict]:
+    events = _read_jsonl(run_dir / "events.jsonl")
+    names = [str(row.get("event") or "") for row in events]
+    by_name: dict[str, list[dict]] = defaultdict(list)
+    for row in events:
+        by_name[str(row.get("event") or "")].append(row)
+    return events, {
+        "failed": bool(names and names[-1] == "run_failed"),
+        "finished": "run_finished" in names and not (names and names[-1] == "run_failed"),
+        "planning_done": "plan_finished" in names or "plan_reused" in names,
+        "generation_finished_arms": {
+            str(row.get("arm")) for row in events
+            if str(row.get("event", "")).endswith("_generation_finished")
+        },
+        "review_started": "semantic_review_started" in names,
+        "review_done": "semantic_review_finished" in names,
+    }
+
+
+def _batch_rows(run_dir: Path, index: ArtifactIndex,
+                aliases: dict[str, str]) -> tuple[list[dict], dict]:
+    progress: dict[str, dict] = {}
+    submissions: dict[str, dict] = {}
+    finalized: set[str] = set()
+    for path in run_dir.rglob("batch_progress.jsonl"):
+        progress.update(index.latest(path, "batch-progress").rows)
+    for path in run_dir.rglob("batch_submissions.jsonl"):
+        submissions.update(index.latest(path, "batch-submissions").rows)
+    for path in run_dir.rglob("batch_usage.jsonl"):
+        finalized.update(index.finalized(path).ids)
+
+    rows = []
+    live: dict[tuple[str, str], dict[str, int]] = defaultdict(
+        lambda: {"done": 0, "total": 0, "batches": 0})
+    now = time.time()
+    for batch_id, poll in progress.items():
+        status = str(poll.get("status") or "unknown").lower()
+        if batch_id in finalized or status in _TERMINAL_BATCH:
+            continue
+        # A sidecar is a persisted observation, not a provider connection.
+        # Once the runner stops polling, an old ``in_progress`` row must not
+        # masquerade as a live batch forever (notably after adoption/retry).
+        try:
+            poll_age_s = max(0.0, now - float(poll.get("ts")))
+        except (TypeError, ValueError):
+            poll_age_s = 0.0
+        if poll_age_s > 300:
+            continue
+        counts = poll.get("request_counts") or {}
+        submission = submissions.get(batch_id) or {}
+        total = int(counts.get("total") or len(submission.get("keys") or []))
+        completed = int(counts.get("completed") or 0)
+        model = _model_label(
+            str(poll.get("model") or submission.get("model") or "unknown"),
+            aliases,
+        )
+        stage_counts = {
+            str(stage): int(value)
+            for stage, value in (submission.get("stage_counts") or {}).items()
+            if stage in STAGE_IDS and int(value) > 0
+        }
+        stage = next(iter(stage_counts)) if len(stage_counts) == 1 else (
+            "mixed" if stage_counts else "unclassified")
+        # Provider counters do not say which rows finished inside a mixed wave.
+        # Homogeneous waves are exact; mixed waves are apportioned by makeup.
+        for stage_id, stage_total in stage_counts.items():
+            stage_done = (
+                min(completed, stage_total) if len(stage_counts) == 1 else
+                min(stage_total, round(completed * stage_total / max(total, 1)))
+            )
+            slot = live[(stage_id, model)]
+            slot["done"] += stage_done
+            slot["total"] += stage_total
+            slot["batches"] += 1
+        submitted_at = submission.get("ts")
+        age_s = max(0, now - float(submitted_at)) if submitted_at else None
+        rows.append({
+            "batch_id": batch_id,
+            "model": model,
+            "stage": stage,
+            "stage_counts": stage_counts,
+            "status": status,
+            "done": completed,
+            "total": total,
+            "percent": round(100 * completed / total, 1) if total else 0.0,
+            "age_seconds": round(age_s) if age_s is not None else None,
+            "straggler": bool(age_s and age_s > 1800 and total
+                              and completed / total >= 0.98),
+        })
+    rows.sort(key=lambda row: (not row["straggler"], row["model"],
+                               row["batch_id"]))
+    return rows, live
+
+
+def _merge_model(target: ModelProgress, source: ModelProgress) -> None:
+    for key in ("docs_done", "docs_total", "cache_docs", "attempts",
+                "input_tokens", "output_tokens", "active_batches",
+                "live_batch_done", "live_batch_total"):
+        setattr(target, key, getattr(target, key) + getattr(source, key))
+    target.estimated_docs_total |= source.estimated_docs_total
+    target.provider = target.provider or source.provider
+    target.batch |= source.batch
+
+
+class DashboardCollector:
+    def __init__(self, runs_root: Path, run_prefix: str,
+                 run_dir: Path | None, target_per_arm: float) -> None:
+        self.runs_root = runs_root
+        self.run_prefix = run_prefix
+        self.run_dir = run_dir
+        self.target_per_arm = int(target_per_arm)
+        self.index = ArtifactIndex()
+
+    def discover_runs(self) -> list[Path]:
+        if self.run_dir is not None:
+            return [self.run_dir] if self.run_dir.is_dir() else []
+        candidates = [path for path in self.runs_root.glob(
+            f"{self.run_prefix}_b*") if path.is_dir()]
+        if not candidates:
+            candidates = [path for path in self.runs_root.glob("*")
+                          if path.is_dir()]
+            candidates = candidates[-1:] if candidates else []
+
+        def key(path: Path):
+            match = _BLOCK_NUMBER.search(path.name)
+            return (int(match.group(1)) if match else -1, path.name)
+
+        return sorted(candidates, key=key)
+
+    def collect(self) -> dict:
+        run_dirs = self.discover_runs()
+        stages = {stage: StageProgress(stage) for stage in STAGE_IDS}
+        all_batches: list[dict] = []
+        blocks = []
+        chunks = []
+        banked_tokens = {"coin": 0, "charter": 0}
+        banked_docs = {"coin": 0, "charter": 0}
+        completed_yields = []
+        latest_events: list[dict] = []
+        current_failed = False
+
+        for run_dir in run_dirs:
+            manifest = _latest_manifest(run_dir)
+            aliases = _pool_aliases(manifest)
+            events, state = _event_state(run_dir)
+            latest_events = events[-12:]
+            current_failed = state["failed"]
+            planned_per_arm = int(manifest.get("planned_docs_per_arm") or 0)
+            if not planned_per_arm:
+                meta = _read_json(run_dir / "plans/shared/plan_meta.json") or {}
+                planned_per_arm = int(meta.get("n_docs_planned") or 0)
+            if not planned_per_arm:
+                for arm in ("coin", "charter"):
+                    progress = _read_json(run_dir / f"corpora/{arm}/progress.json")
+                    if progress:
+                        planned_per_arm = max(
+                            planned_per_arm, int(progress.get("plan_rows") or 0))
+            total_generation_docs = planned_per_arm * 2
+
+            local = {stage: StageProgress(stage) for stage in STAGE_IDS}
+            plan_pool = manifest.get("plan_pool") or []
+            gen_pool = manifest.get("mixture_pool") or manifest.get("audition_pool") or []
+            review_pool = manifest.get("review_pool") or []
+            metadata = {
+                "planning": _pool_metadata(manifest, "plan_pool"),
+                "generation": _pool_metadata(manifest, "mixture_pool")
+                              or _pool_metadata(manifest, "audition_pool"),
+                "critique": _pool_metadata(manifest, "mixture_pool")
+                            or _pool_metadata(manifest, "audition_pool"),
+                "review": _pool_metadata(manifest, "review_pool"),
+            }
+
+            expected = {
+                "planning": _largest_remainder(planned_per_arm, plan_pool),
+                "generation": _largest_remainder(total_generation_docs, gen_pool),
+                "critique": _largest_remainder(total_generation_docs, gen_pool),
+                "review": {},
+            }
+
+            arm_progress = {}
+            raw_docs = 0
+            for arm in ("coin", "charter"):
+                progress = _read_json(run_dir / f"corpora/{arm}/progress.json") or {}
+                arm_progress[arm] = progress
+                corpus = self.index.corpus(run_dir / f"corpora/{arm}/corpus.jsonl")
+                raw_docs += corpus.count
+                plan_rows = int(progress.get("plan_rows") or planned_per_arm)
+                chunk_docs = int(progress.get("chunk_docs") or
+                                 (manifest.get("tranche_pipeline") or {}).get(
+                                     "chunk_docs") or manifest.get("chunk_docs") or 1)
+                covered = _covered_rows(progress)
+                committed = progress.get("committed_chunks") or []
+                total_chunks = math.ceil(plan_rows / chunk_docs) if plan_rows else 0
+                banked_chunks = len(committed) if committed else (
+                    math.ceil(covered / chunk_docs) if covered else 0)
+                chunks.append({
+                    "run": run_dir.name,
+                    "arm": arm,
+                    "banked": min(banked_chunks, total_chunks),
+                    "total": total_chunks,
+                    "remaining": max(0, total_chunks - banked_chunks),
+                    "rows_done": covered,
+                    "rows_total": plan_rows,
+                    "spans": _span_label(progress),
+                })
+
+            review_total = raw_docs if state["review_started"] else total_generation_docs
+            expected["review"] = _largest_remainder(review_total, review_pool)
+            for stage_id in STAGE_IDS:
+                for model, count in expected[stage_id].items():
+                    info = metadata[stage_id].get(model, {})
+                    local[stage_id].models[model] = ModelProgress(
+                        docs_total=count,
+                        estimated_docs_total=stage_id in ("generation", "critique"),
+                        provider=info.get("provider", ""),
+                        batch=bool(info.get("batch")),
+                    )
+
+            for cache_path in run_dir.rglob("cache_*.jsonl"):
+                rollup = self.index.cache(cache_path)
+                for (stage_id, wire_model), work in rollup.work.items():
+                    if stage_id not in local:
+                        continue
+                    model = _model_label(wire_model, aliases)
+                    slot = local[stage_id].models.setdefault(model, ModelProgress())
+                    slot.docs_done += work.docs
+                    slot.cache_docs += work.docs
+                    slot.attempts += work.attempts
+                    slot.input_tokens += work.input_tokens
+                    slot.output_tokens += work.output_tokens
+                    info = metadata[stage_id].get(model, {})
+                    slot.provider = slot.provider or info.get("provider", "")
+                    slot.batch |= bool(info.get("batch"))
+
+            batch_rows, live = _batch_rows(run_dir, self.index, aliases)
+            for row in batch_rows:
+                row["run"] = run_dir.name
+            all_batches.extend(batch_rows)
+            for (stage_id, model), counts in live.items():
+                slot = local[stage_id].models.setdefault(model, ModelProgress())
+                slot.docs_done += counts["done"]
+                slot.active_batches += counts["batches"]
+                slot.live_batch_done += counts["done"]
+                slot.live_batch_total += counts["total"]
+
+            # Durable terminal artifacts are authoritative when a few failed
+            # calls intentionally produced no cache record.
+            shared_plan = self.index.corpus(run_dir / "plans/shared/plan.jsonl")
+            if state["planning_done"] and expected["planning"]:
+                model = next(iter(expected["planning"]))
+                slot = local["planning"].models[model]
+                slot.docs_done = max(slot.docs_done,
+                                     min(shared_plan.count, slot.docs_total))
+            generation_done = state["generation_finished_arms"] >= {"coin", "charter"}
+            if generation_done:
+                for stage_id in ("generation", "critique"):
+                    # Once the run is terminal, the cache is a better model
+                    # allocation ledger than today's configured weights.  A
+                    # resumed run may span old/new mixtures (the completed
+                    # tranche did), so replacing actual counts with a weighted
+                    # forecast would make the per-model split visibly wrong.
+                    cached = sum(slot.cache_docs
+                                 for slot in local[stage_id].models.values())
+                    if cached:
+                        for slot in local[stage_id].models.values():
+                            slot.docs_total = slot.cache_docs
+                            slot.docs_done = slot.cache_docs
+                            slot.estimated_docs_total = False
+                        missing = max(0, total_generation_docs - cached)
+                        if missing:
+                            local[stage_id].models[
+                                "unattributed failed specs"
+                            ] = ModelProgress(
+                                docs_done=missing, docs_total=missing,
+                                estimated_docs_total=False,
+                            )
+                    else:
+                        for slot in local[stage_id].models.values():
+                            slot.docs_done = max(slot.docs_done, slot.docs_total)
+            review_rows = self.index.corpus(run_dir / "semantic_review.jsonl")
+            if state["review_done"]:
+                for slot in local["review"].models.values():
+                    slot.docs_done = max(slot.docs_done, slot.docs_total)
+            elif review_rows.count and len(local["review"].models) == 1:
+                slot = next(iter(local["review"].models.values()))
+                slot.docs_done = max(slot.docs_done,
+                                     min(review_rows.count, slot.docs_total))
+
+            for stage_id in STAGE_IDS:
+                for model, source in local[stage_id].models.items():
+                    target = stages[stage_id].models.setdefault(
+                        model, ModelProgress())
+                    _merge_model(target, source)
+
+            audit = _read_json(run_dir / "audit.json") or {}
+            audit_arms = audit.get("arms") or {}
+            block_tokens = {}
+            block_docs = {}
+            for arm in ("coin", "charter"):
+                item = audit_arms.get(arm) or {}
+                tokens = int(item.get("accepted_tokens_est") or 0)
+                docs = int(item.get("accepted_docs") or 0)
+                if not tokens:
+                    accepted = self.index.corpus(
+                        run_dir / f"corpora/{arm}/accepted.jsonl")
+                    tokens, docs = accepted.tokens, accepted.count
+                banked_tokens[arm] += tokens
+                banked_docs[arm] += docs
+                block_tokens[arm] = tokens
+                block_docs[arm] = docs
+            if min(block_tokens.values(), default=0) > 0:
+                completed_yields.append(min(block_tokens.values()))
+
+            local_percent = {}
+            for stage_id in STAGE_IDS:
+                done = sum(min(slot.docs_done, slot.docs_total)
+                           for slot in local[stage_id].models.values())
+                total = sum(slot.docs_total for slot in local[stage_id].models.values())
+                local_percent[stage_id] = round(100 * done / total, 1) if total else 0.0
+            blocks.append({
+                "run": run_dir.name,
+                "phase": manifest.get("phase"),
+                "state": "failed" if state["failed"] else (
+                    "complete" if state["finished"] else "running"),
+                "stages": local_percent,
+                "accepted_tokens": block_tokens,
+                "accepted_docs": block_docs,
+            })
+
+        stage_payload = []
+        for stage_id in STAGE_IDS:
+            model_rows = []
+            for model, slot in sorted(stages[stage_id].models.items()):
+                slot.docs_done = min(slot.docs_done, slot.docs_total)
+                if slot.docs_total:
+                    average = (
+                        slot.tokens_done / slot.cache_docs
+                        if slot.cache_docs else _FALLBACK_API_TOKENS[stage_id]
+                    )
+                    tokens_total = max(
+                        slot.tokens_done,
+                        round(slot.docs_total * average),
+                    )
+                else:
+                    tokens_total = slot.tokens_done
+                complete = bool(slot.docs_total and slot.docs_done >= slot.docs_total)
+                if complete and slot.tokens_done:
+                    tokens_total = slot.tokens_done
+                model_rows.append({
+                    "model": model,
+                    "provider": slot.provider,
+                    "transport": "batch" if slot.batch else "interactive",
+                    "docs": {
+                        "done": slot.docs_done,
+                        "total": slot.docs_total,
+                        "estimated_total": slot.estimated_docs_total,
+                    },
+                    "tokens": {
+                        "done": slot.tokens_done,
+                        "total": tokens_total,
+                        "estimated_total": not complete or not slot.tokens_done,
+                        "input": slot.input_tokens,
+                        "output": slot.output_tokens,
+                    },
+                    "attempts": slot.attempts,
+                    "batches": {
+                        "active": slot.active_batches,
+                        "done": slot.live_batch_done,
+                        "total": slot.live_batch_total,
+                    },
+                })
+            docs_done = sum(row["docs"]["done"] for row in model_rows)
+            docs_total = sum(row["docs"]["total"] for row in model_rows)
+            tokens_done = sum(row["tokens"]["done"] for row in model_rows)
+            tokens_total = sum(row["tokens"]["total"] for row in model_rows)
+            if not docs_total:
+                state_name = "not-started"
+            elif docs_done >= docs_total:
+                state_name = "complete"
+            elif docs_done:
+                state_name = "active"
+            else:
+                state_name = "queued"
+            stage_payload.append({
+                "id": stage_id,
+                "title": STAGE_TITLES[stage_id],
+                "state": "failed" if current_failed and state_name == "active" else state_name,
+                "unit": STAGE_UNITS[stage_id],
+                "docs": {"done": docs_done, "total": docs_total},
+                "tokens": {
+                    "done": tokens_done,
+                    "total": tokens_total,
+                    "estimated_total": any(
+                        row["tokens"]["estimated_total"] for row in model_rows),
+                },
+                "models": model_rows,
+            })
+
+        current = "Waiting for a run"
+        if stage_payload:
+            incomplete = [row for row in stage_payload if row["state"] != "complete"]
+            generation = next(row for row in stage_payload if row["id"] == "generation")
+            critique = next(row for row in stage_payload if row["id"] == "critique")
+            if current_failed:
+                current = "Run needs attention"
+            elif generation["state"] == "active" and critique["state"] == "active":
+                current = "Generating + rewriting"
+            elif incomplete:
+                current = incomplete[0]["title"]
+            elif run_dirs:
+                current = "Block complete"
+
+        yield_est = (
+            sum(completed_yields) / len(completed_yields)
+            if completed_yields else 4_896 * 712.5
+        )
+        remaining_tokens = max(
+            max(0, self.target_per_arm - banked_tokens["coin"]),
+            max(0, self.target_per_arm - banked_tokens["charter"]),
+        )
+        blocks_remaining = math.ceil(remaining_tokens / yield_est) if yield_est else None
+        active_chunks = [row for row in chunks if row["remaining"]]
+        current_run = run_dirs[-1].name if run_dirs else None
+        current_chunks = [row for row in chunks if row["run"] == current_run]
+
+        return {
+            "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "scope": {
+                "mode": "single-run" if self.run_dir else "multi-block",
+                "prefix": self.run_prefix,
+                "runs": len(run_dirs),
+                "current_run": current_run,
+                "target_per_arm": self.target_per_arm,
+            },
+            "headline": {
+                "current_stage": current,
+                "active_batches": len(all_batches),
+                "chunks_remaining_current": sum(row["remaining"]
+                                                for row in current_chunks),
+                "blocks_remaining_est": blocks_remaining,
+            },
+            "goal": {
+                "target_per_arm": self.target_per_arm,
+                "accepted_tokens": banked_tokens,
+                "accepted_docs": banked_docs,
+                "estimated_tokens_per_block": round(yield_est),
+            },
+            "stages": stage_payload,
+            "chunks": current_chunks or active_chunks[-2:],
+            "batches": all_batches,
+            "blocks": blocks,
+            "events": latest_events,
+            "method": {
+                "docs_actual": "successful cache records + provider request_counts",
+                "tokens_actual": "response usage in harvested cache records",
+                "totals": "plan size and pinned model weights; ~ marks allocation/usage forecasts",
+                "chunks_actual": "banked completed_spans / committed_chunks",
+            },
+        }
+
+
+_PAGE = r"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Generation Control Room</title>
 <style>
- body{font-family:ui-monospace,Menlo,monospace;margin:1.5em;background:#111;
-      color:#ddd}
- h1{font-size:1.1em} h2{font-size:1em;margin:1em 0 .3em;color:#8bc}
- table{border-collapse:collapse;margin:.3em 0}
- td,th{border:1px solid #333;padding:.25em .6em;text-align:right}
- th{color:#8bc} td:first-child,th:first-child{text-align:left}
- .ok{color:#7c7}.warn{color:#fa0}.err{color:#f66}
- #log div{white-space:pre-wrap;color:#987;font-size:.85em}
- .muted{color:#777}
-</style></head><body>
-<h1>dispatch docgen v3 audition <span id="run" class="muted"></span></h1>
-<div id="root">loading…</div>
-<script>
-async function tick(){
-  let s; try{ s = await (await fetch('/status.json')).json(); }
-  catch(e){ document.getElementById('root').innerHTML =
-    '<span class=err>status fetch failed — server gone?</span>'; return; }
-  document.getElementById('run').textContent =
-    (s.run_id||'')+' · phase '+(s.phase||'?')+' · '+(s.commit||'')+' · '+s.time;
-  const arm = a => `<tr><td>${a[0]}</td><td>${a[1].cursor??'—'} / ${a[1].plan_rows??'—'}</td>
-    <td>${a[1].raw_docs}</td><td>${a[1].accepted}</td><td>${a[1].rejected}</td>
-    <td>${(a[1].tokens_est??0).toLocaleString()}</td></tr>`;
-  const pct = (a,b)=> b? (100*a/b).toFixed(1)+'%' : '—';
-  const bar = (a,b)=>{const p=b?Math.min(100,100*a/b):0;
-    return `<div style="background:#222;width:220px;height:10px;display:inline-block;vertical-align:middle">
-      <div style="background:#4a8;width:${p.toFixed(1)}%;height:10px"></div></div>`;};
-  let projTotal=0, actTotal=0;
-  const models = Object.keys(s.per_model_calls).map(m=>{
-    const done=s.per_model_calls[m]??0, exp=(s.expected_calls||{})[m]??0;
-    const fl=(s.inflight||{})[m];
-    const wave = fl ? `${fl.done}/${fl.total} in flight` :
-      (done>=exp*0.98 ? '<span class=ok>done</span>' : 'streaming/queued');
-    const usd=(s.per_model_cost_actual||{})[m];
-    const proj=(s.projected_cost||{})[m];
-    if(usd)actTotal+=usd; if(proj)projTotal+=proj;
-    return `<tr><td>${m.replace('openai/','').replace('google/','').replace('z-ai/','')}</td>
-      <td>${done} / ~${exp}</td><td>${bar(done,exp)} ${pct(done,exp)}</td>
-      <td>${wave}</td>
-      <td>${usd!=null?'$'+usd.toFixed(2):'—'}${proj!=null?' / ~$'+proj.toFixed(0):''}</td>
-      <td>${usd!=null&&proj?bar(usd,proj):''}</td></tr>`;}).join('');
-  const reviewProj = 0.00276 * (s.plan_total_docs||0);
-  const rep = s.report ? Object.entries(s.report.per_model).map(([m,r])=>
-    `<tr><td>${m}</td><td>${r.raw_docs}</td><td>${r.accepted_docs}</td>
-     <td>${r.acceptance_rate==null?'—':(100*r.acceptance_rate).toFixed(1)+'%'}</td>
-     <td>${(r.accepted_tokens_est||0).toLocaleString()}</td>
-     <td>$${r.gen_usd}</td>
-     <td>${r.gen_usd_per_m_accepted_tokens_est??'—'}</td></tr>`).join('') : '';
-  const ev = s.events.map(e=>`<div>${e.time.slice(11,19)} <b>${e.event}</b> ${
-    Object.entries(e).filter(([k])=>!['time','event'].includes(k))
-      .map(([k,v])=>k+'='+JSON.stringify(v)).join(' ').slice(0,180)}</div>`)
-    .reverse().join('');
-  const log = (s.log_tail||[]).map(l=>`<div>${l.replace(/[<>&]/g,
-    c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</div>`).join('');
-  document.getElementById('root').innerHTML = `
-   <h2>tranche progress</h2>
-   <div style="font-size:1.25em">generation calls <b>${s.calls_done_total}</b> /
-     ~${s.expected_calls_total} ${bar(s.calls_done_total,s.expected_calls_total)}
-     <b>${pct(s.calls_done_total,s.expected_calls_total)}</b>
-     ${s.eta_hours?`· rough ETA ~${s.eta_hours}h`:''}</div>
-   <div class="muted">a doc = 1 draft + 1 critique call; calls land when a
-     batch wave finalizes (lumpy) or per-call for glm (smooth). Finished
-     docs bank to the corpus at the END of the mega-chunk — the doc
-     counter (${s.docs_done_total}/${s.plan_total_docs}, pilot included)
-     jumps then, not before. ETA is call-rate based: waves make it lumpy,
-     and luna's queue usually dominates.</div>
-   <h2>generation — per model</h2>
-   <table><tr><th>model</th><th>calls / ~expected</th><th>progress</th>
-   <th>state</th><th>$ billed / ~at finish</th><th>spend</th></tr>${models}
-   <tr><td class=muted>gen total</td><td></td><td></td><td></td>
-   <td><b>$${actTotal.toFixed(2)} / ~$${projTotal.toFixed(0)}</b></td><td></td></tr></table>
-   <div class="muted">expected ≈ plan × current weights ±few %.
-   "in flight" = the provider's own live completed/total. $ billed =
-   OpenRouter actuals to the cent; luna is first-party batch (no live $,
-   ~projection from pilot rate, token-priced at report). Terra review
-   adds ~$${reviewProj.toFixed(0)} at finish (+$5.10 plan head, paid).</div>
-   <h2>review</h2><div>verdicts <b>${s.review.verdicts}</b> /
-     ${s.plan_total_docs} expected ${bar(s.review.verdicts,s.plan_total_docs)}
-     <span class=muted>(runs as one batch wave after generation)</span></div>
-   <h2>arms</h2><table><tr><th>arm</th><th>plan cursor</th><th>raw docs</th>
-   <th>accepted</th><th>rejected</th><th>tokens est</th></tr>
-   ${Object.entries(s.arms).map(arm).join('')}</table>
-   ${s.cost?`<h2>cost.json (last full summary)</h2><div>logged total
-     <b>$${s.cost.total_usd.toFixed(2)}</b>
-     (${s.cost.logged_api_responses} responses)</div>`:''}
-   ${rep?`<h2>audition report</h2><table><tr><th>model</th><th>raw</th>
-     <th>acc</th><th>rate</th><th>acc tokens est</th><th>gen $</th>
-     <th>$ / M acc tok</th></tr>${rep}</table>`:''}
-   <h2>events</h2><div id="events">${ev}</div>
-   ${log?`<h2>runner log (batch/error lines)</h2><div id="log">${log}</div>`:''}`;
+:root{--ink:#16232a;--muted:#69777c;--paper:#f4f2eb;--card:#fffefa;
+--line:#d9ded9;--planning:#7557d3;--generation:#167a8b;--critique:#dd8b32;
+--review:#31855d;--danger:#bd4c49;--shadow:0 12px 35px rgba(38,52,51,.08)}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);
+font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.32;
+background-image:radial-gradient(#91a09d 0.55px,transparent .55px);background-size:7px 7px}
+.shell{position:relative;max-width:1500px;margin:auto;padding:28px 32px 56px}
+header{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:24px}
+.eyebrow{font:700 11px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;
+letter-spacing:.13em;text-transform:uppercase;color:#6e7d7a;margin-bottom:7px}
+h1{font-size:29px;line-height:1.08;letter-spacing:-.035em;margin:0;font-weight:720}
+.subtitle{color:var(--muted);margin-top:7px}.live{display:flex;align-items:center;gap:8px;
+background:#e7eee9;padding:8px 11px;border-radius:999px;font-size:12px;color:#446056}
+.dot{height:8px;width:8px;border-radius:50%;background:#35a56f;box-shadow:0 0 0 4px #35a56f22}
+.hero{display:grid;grid-template-columns:1.35fr 1fr 1fr 1fr;gap:12px;margin-bottom:16px}
+.hero-card,.panel,.stage{background:var(--card);border:1px solid #dfe2dd;border-radius:16px;box-shadow:var(--shadow)}
+.hero-card{padding:18px 19px;min-height:112px}.hero-card.primary{background:#15282c;color:#f7f4e9;border-color:#15282c}
+.label{font-size:11px;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:#7b8989}
+.primary .label{color:#9fb2b0}.hero-value{font-size:25px;line-height:1.15;letter-spacing:-.03em;margin:9px 0 3px;font-weight:700}
+.hero-note{font-size:12px;color:var(--muted)}.primary .hero-note{color:#aebcba}
+.stage-rail{display:grid;grid-template-columns:repeat(4,1fr);background:#ecece5;border:1px solid #dbded8;
+border-radius:14px;padding:7px;margin-bottom:16px;gap:6px}.rail-item{position:relative;padding:10px 12px;border-radius:9px;color:#7a8584}
+.rail-item.active{background:var(--card);box-shadow:0 2px 8px #293c3414;color:var(--ink)}
+.rail-item.complete{color:#315e4b}.rail-num{font:700 10px ui-monospace,monospace;opacity:.65;margin-right:7px}
+.rail-state{float:right;font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+.stage-stack{display:grid;gap:13px}.stage{overflow:hidden}.stage-head{display:grid;grid-template-columns:220px 1fr 1fr;gap:22px;padding:19px 20px 16px;align-items:center}
+.stage-title{display:flex;gap:12px;align-items:center}.stage-icon{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
+font:800 13px ui-monospace,monospace;color:white;background:var(--accent)}
+.stage h2{font-size:16px;margin:0;letter-spacing:-.015em}.state{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-top:2px}
+.metric-top{display:flex;justify-content:space-between;gap:14px;margin-bottom:7px}.metric-name{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.metric-value{font:650 12px ui-monospace,SFMono-Regular,Menlo,monospace}.track{height:9px;background:#e6e8e3;border-radius:999px;overflow:hidden}
+.fill{height:100%;background:var(--accent);border-radius:inherit;transition:width .45s ease}.models{border-top:1px solid #e4e5e0;background:#fbfaf6}
+.model-head,.model-row{display:grid;grid-template-columns:minmax(220px,1.25fr) minmax(190px,1fr) minmax(190px,1fr) minmax(155px,.7fr);gap:20px;align-items:center;padding:10px 20px}
+.model-head{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#84908f;background:#f3f2ed}
+.model-row{min-height:57px;border-top:1px solid #ebebe6}.model-row:first-of-type{border-top:0}.model-name{font-weight:650}.model-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.mini-line{display:flex;justify-content:space-between;font:11px ui-monospace,monospace;margin-bottom:5px}.mini-track{height:5px;background:#e6e7e2;border-radius:5px;overflow:hidden}
+.mini-fill{height:100%;background:var(--accent);border-radius:5px}.batch-pill{display:inline-flex;gap:6px;align-items:center;background:#edf0eb;border-radius:999px;padding:5px 8px;font:11px ui-monospace,monospace}
+.batch-pill.idle{color:#89918e;background:transparent;padding-left:0}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:16px}.panel{padding:18px 20px}.panel h3{font-size:14px;margin:0 0 13px}
+.goal-row{display:grid;grid-template-columns:70px 1fr auto;gap:12px;align-items:center;margin:12px 0}.goal-name{text-transform:capitalize;font-weight:650}
+.goal-value{font:11px ui-monospace,monospace;color:var(--muted)}table{width:100%;border-collapse:collapse}th{text-align:left;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#84908f;font-weight:650;padding:7px 8px;border-bottom:1px solid #dedfda}
+td{padding:9px 8px;border-bottom:1px solid #ecece7;font-size:12px}tr:last-child td{border-bottom:0}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.right{text-align:right}.warn{color:#a86420}.danger{color:var(--danger);font-weight:700}.ok{color:#26714c}
+.chunk{display:grid;grid-template-columns:90px 1fr auto;gap:12px;align-items:center;margin:13px 0}.chunk-title{font-weight:650;text-transform:capitalize}.chunk-sub{font-size:11px;color:var(--muted)}
+.empty{padding:28px;text-align:center;color:var(--muted)}.legend{display:flex;gap:18px;flex-wrap:wrap;color:var(--muted);font-size:11px;margin:16px 2px 0}.legend b{color:var(--ink)}
+.error-banner{background:#fff0ed;color:#913e3a;border:1px solid #e7bbb5;padding:12px 15px;border-radius:12px;margin-bottom:14px}
+@media(max-width:1000px){.hero{grid-template-columns:1fr 1fr}.stage-head{grid-template-columns:1fr}.model-head{display:none}.model-row{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
+@media(max-width:640px){.shell{padding:20px 14px 40px}header{display:block}.live{margin-top:14px;width:max-content}.hero{grid-template-columns:1fr}.stage-rail{grid-template-columns:1fr 1fr}.model-row{grid-template-columns:1fr}.hero-value{font-size:22px}}
+</style></head><body><main class="shell">
+<header><div><div class="eyebrow">Dispatch corpus / generation telemetry</div><h1>Generation control room</h1><div class="subtitle" id="scope">Loading run artifacts…</div></div><div class="live"><span class="dot"></span><span id="updated">Connecting</span></div></header>
+<div id="error"></div><section class="hero" id="hero"></section><nav class="stage-rail" id="rail"></nav>
+<section class="stage-stack" id="stages"></section><section class="grid2"><div class="panel"><h3>Accepted corpus yield</h3><div id="goal"></div></div><div class="panel"><h3>Current block chunks</h3><div id="chunks"></div></div></section>
+<section class="grid2"><div class="panel"><h3>Provider batches</h3><div id="batches"></div></div><div class="panel"><h3>Block ledger</h3><div id="blocks"></div></div></section>
+<div class="legend"><span><b>Actual:</b> cache usage, provider counters, banked spans</span><span><b>~ Estimate:</b> pinned allocation weights or calibrated token forecast</span><span>Refreshes every 5 seconds</span></div>
+</main><script>
+const colors={planning:'#7557d3',generation:'#167a8b',critique:'#dd8b32',review:'#31855d'};
+const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pct=(a,b)=>b?Math.max(0,Math.min(100,100*a/b)):0;
+const compact=n=>{n=Number(n||0);if(n>=1e9)return(n/1e9).toFixed(n<1e10?1:0)+'B';if(n>=1e6)return(n/1e6).toFixed(n<1e7?1:0)+'M';if(n>=1e3)return(n/1e3).toFixed(n<1e4?1:0)+'K';return n.toLocaleString()};
+const ratio=(m,unit='')=>`${compact(m.done)} / ${m.estimated_total?'~':''}${compact(m.total)}${unit?' '+unit:''}`;
+const bar=(a,b,cls='fill')=>`<div class="track"><div class="${cls}" style="width:${pct(a,b).toFixed(1)}%"></div></div>`;
+const age=s=>s==null?'—':s<60?`${s}s`:s<3600?`${Math.round(s/60)}m`:`${(s/3600).toFixed(1)}h`;
+function render(s){
+ document.getElementById('updated').textContent='Live · '+s.updated_at.slice(11,19)+' UTC';
+ document.getElementById('scope').textContent=`${s.scope.current_run||'No run'} · ${s.scope.runs} block${s.scope.runs===1?'':'s'} in scope · target ${compact(s.scope.target_per_arm)} tokens / arm`;
+ const h=s.headline;document.getElementById('hero').innerHTML=`
+ <div class="hero-card primary"><div class="label">Current stage</div><div class="hero-value">${esc(h.current_stage)}</div><div class="hero-note">${esc(s.scope.current_run||'waiting for run directory')}</div></div>
+ <div class="hero-card"><div class="label">Provider work</div><div class="hero-value">${h.active_batches}</div><div class="hero-note">active batch wave${h.active_batches===1?'':'s'}</div></div>
+ <div class="hero-card"><div class="label">Chunks remaining</div><div class="hero-value">${h.chunks_remaining_current}</div><div class="hero-note">current block · both arms</div></div>
+ <div class="hero-card"><div class="label">Scale-up outlook</div><div class="hero-value">${h.blocks_remaining_est==null?'—':'~'+h.blocks_remaining_est}</div><div class="hero-note">blocks to the slower arm's target</div></div>`;
+ document.getElementById('rail').innerHTML=s.stages.map((st,i)=>`<div class="rail-item ${st.state}"><span class="rail-num">0${i+1}</span>${esc(st.title)}<span class="rail-state">${esc(st.state)}</span></div>`).join('');
+ document.getElementById('stages').innerHTML=s.stages.map((st,i)=>{
+   const c=colors[st.id], dp=pct(st.docs.done,st.docs.total), tp=pct(st.tokens.done,st.tokens.total);
+   const models=st.models.map(m=>`<div class="model-row"><div><div class="model-name">${esc(m.model.replace('openai/','').replace('google/','').replace('z-ai/',''))}</div><div class="model-meta">${esc(m.provider||'provider')} · ${esc(m.transport)} · ${m.attempts.toLocaleString()} harvested call${m.attempts===1?'':'s'}</div></div>
+   <div><div class="mini-line"><span>${ratio(m.docs,st.unit)}</span><b>${pct(m.docs.done,m.docs.total).toFixed(1)}%</b></div><div class="mini-track"><div class="mini-fill" style="width:${pct(m.docs.done,m.docs.total).toFixed(1)}%"></div></div></div>
+   <div><div class="mini-line"><span>${ratio(m.tokens,'API tok')}</span><b>${pct(m.tokens.done,m.tokens.total).toFixed(1)}%</b></div><div class="mini-track"><div class="mini-fill" style="width:${pct(m.tokens.done,m.tokens.total).toFixed(1)}%"></div></div></div>
+   <div>${m.batches.active?`<span class="batch-pill"><b>${m.batches.active}</b> live · ${compact(m.batches.done)}/${compact(m.batches.total)}</span>`:`<span class="batch-pill idle">no live batch</span>`}</div></div>`).join('');
+   return `<article class="stage" style="--accent:${c}"><div class="stage-head"><div class="stage-title"><div class="stage-icon">0${i+1}</div><div><h2>${esc(st.title)}</h2><div class="state">${esc(st.state)}</div></div></div>
+   <div><div class="metric-top"><span class="metric-name">${esc(st.unit)} complete</span><span class="metric-value">${compact(st.docs.done)} / ${compact(st.docs.total)} · ${dp.toFixed(1)}%</span></div>${bar(st.docs.done,st.docs.total)}</div>
+   <div><div class="metric-top"><span class="metric-name">API tokens processed</span><span class="metric-value">${compact(st.tokens.done)} / ${st.tokens.estimated_total?'~':''}${compact(st.tokens.total)} · ${tp.toFixed(1)}%</span></div>${bar(st.tokens.done,st.tokens.total)}</div></div>
+   <div class="models"><div class="model-head"><span>Model / transport</span><span>${esc(st.unit)}</span><span>API tokens</span><span>Live provider state</span></div>${models||'<div class="empty">Waiting for a manifest.</div>'}</div></article>`}).join('');
+ document.getElementById('goal').innerHTML=['coin','charter'].map(arm=>{const done=s.goal.accepted_tokens[arm],target=s.goal.target_per_arm;return `<div class="goal-row"><div class="goal-name">${arm}</div><div>${bar(done,target)}</div><div class="goal-value">${compact(done)} / ${compact(target)} · ${pct(done,target).toFixed(1)}%</div></div>`}).join('')+`<div class="hero-note">Banked only after semantic review + audit. Current measured block yield: ~${compact(s.goal.estimated_tokens_per_block)} accepted tokens per arm.</div>`;
+ document.getElementById('chunks').innerHTML=s.chunks.length?s.chunks.map(x=>`<div class="chunk"><div><div class="chunk-title">${esc(x.arm)}</div><div class="chunk-sub">${esc(x.run)}</div></div><div>${bar(x.banked,x.total)}<div class="chunk-sub">spans ${esc(x.spans)}</div></div><div class="mono right"><b>${x.banked}/${x.total}</b><br><span class="chunk-sub">${x.remaining} remain</span></div></div>`).join(''):'<div class="empty">No chunk progress yet.</div>';
+ document.getElementById('batches').innerHTML=s.batches.length?`<table><thead><tr><th>model / stage</th><th>provider state</th><th class="right">age</th></tr></thead><tbody>${s.batches.slice(0,12).map(b=>`<tr><td><b>${esc(b.model.replace('openai/','').replace('google/','').replace('z-ai/',''))}</b><br><span class="chunk-sub">${esc(b.stage)} · ${esc(b.batch_id.slice(-12))}</span></td><td><div class="mono ${b.straggler?'danger':''}">${compact(b.done)} / ${compact(b.total)} · ${b.percent.toFixed(1)}%</div><div class="mini-track"><div class="mini-fill" style="width:${b.percent}%"></div></div></td><td class="right ${b.straggler?'danger':''}">${age(b.age_seconds)}${b.straggler?'<br>straggler':''}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No provider batches in flight.</div>';
+ document.getElementById('blocks').innerHTML=s.blocks.length?`<table><thead><tr><th>block</th><th>plan</th><th>gen</th><th>crit</th><th>review</th><th class="right">state</th></tr></thead><tbody>${s.blocks.slice(-12).map(b=>`<tr><td class="mono">${esc(b.run)}</td>${['planning','generation','critique','review'].map(k=>`<td>${b.stages[k].toFixed(0)}%</td>`).join('')}<td class="right ${b.state==='failed'?'danger':b.state==='complete'?'ok':''}">${esc(b.state)}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No blocks discovered.</div>';
 }
-tick(); setInterval(tick, 5000);
+async function tick(){try{const r=await fetch('/api/status',{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);const s=await r.json();document.getElementById('error').innerHTML='';render(s)}catch(e){document.getElementById('error').innerHTML=`<div class="error-banner">Dashboard refresh failed: ${esc(e.message)}</div>`}}
+tick();setInterval(tick,5000);
 </script></body></html>"""
 
 
 class _Handler(BaseHTTPRequestHandler):
-    run_dir: Path
-    log_path: Path | None
+    collector: DashboardCollector
 
-    def do_GET(self):  # noqa: N802 (http.server API)
-        if self.path.startswith("/status.json"):
-            body = json.dumps(
-                collect_status(self.run_dir, self.log_path)).encode()
-            ctype = "application/json"
-        else:
+    def do_GET(self):  # noqa: N802 - stdlib handler API
+        route = self.path.split("?", 1)[0]
+        if route == "/api/status":
+            try:
+                body = json.dumps(self.collector.collect()).encode()
+                status = HTTPStatus.OK
+            except Exception as exc:  # keep the page alive for diagnostics
+                body = json.dumps({
+                    "error": type(exc).__name__, "message": str(exc),
+                }).encode()
+                status = HTTPStatus.INTERNAL_SERVER_ERROR
+            content_type = "application/json"
+        elif route in ("/", "/index.html"):
             body = _PAGE.encode()
-            ctype = "text/html; charset=utf-8"
-        self.send_response(200)
-        self.send_header("Content-Type", ctype)
+            status = HTTPStatus.OK
+            content_type = "text/html; charset=utf-8"
+        else:
+            body = b"not found\n"
+            status = HTTPStatus.NOT_FOUND
+            content_type = "text/plain; charset=utf-8"
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
         self.end_headers()
         self.wfile.write(body)
 
-    def log_message(self, *args):  # quiet
-        pass
+    def log_message(self, *_args):
+        return
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--run-dir", type=Path,
+                        help="show exactly one run directory")
+    parser.add_argument("--runs-root", type=Path, default=HERE / "runs",
+                        help="root scanned in multi-block mode")
+    parser.add_argument("--run-prefix", default="50m",
+                        help="run_blocks.py prefix (default: 50m)")
+    parser.add_argument("--target-per-arm", type=float, default=50e6,
+                        help="accepted-token target for each arm")
+    parser.add_argument("--port", type=int, default=8377)
+    parser.add_argument("--bind", default="127.0.0.1",
+                        help="use 0.0.0.0 for port forwarding")
+    return parser
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--run-dir", type=Path, default=None,
-                        help="default: newest dir under runs/")
-    parser.add_argument("--log", type=Path, default=None,
-                        help="runner log file to tail for batch/error lines")
-    parser.add_argument("--port", type=int, default=8377)
-    parser.add_argument("--bind", default="127.0.0.1",
-                        help="0.0.0.0 to serve beyond loopback (e.g. for "
-                             "IDE port forwarding that probes the "
-                             "container address)")
-    args = parser.parse_args()
-    run_dir = args.run_dir
-    if run_dir is None:
-        candidates = sorted((HERE / "runs").glob("*"))
-        if not candidates:
-            raise SystemExit("no runs/ directory yet — pass --run-dir")
-        run_dir = candidates[-1]
-    _Handler.run_dir = run_dir.resolve()
-    _Handler.log_path = args.log.resolve() if args.log else None
+    args = _parser().parse_args()
+    run_dir = args.run_dir.resolve() if args.run_dir else None
+    collector = DashboardCollector(
+        args.runs_root.resolve(), args.run_prefix, run_dir,
+        args.target_per_arm,
+    )
+    if not collector.discover_runs():
+        scope = run_dir if run_dir else args.runs_root
+        raise SystemExit(f"no run directories found under {scope}")
+    _Handler.collector = collector
     server = ThreadingHTTPServer((args.bind, args.port), _Handler)
-    print(f"dashboard: http://127.0.0.1:{args.port}/  (run dir {run_dir})")
-    server.serve_forever()
+    print(f"generation control room: http://127.0.0.1:{args.port}/")
+    print(f"scope: {len(collector.discover_runs())} run(s); "
+          f"target {int(args.target_per_arm):,} accepted tokens per arm")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
 
 
 if __name__ == "__main__":

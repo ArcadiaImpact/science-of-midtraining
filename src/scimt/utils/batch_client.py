@@ -356,7 +356,8 @@ class OpenAIBatchChatClient(ChatClient):
         batch_id = batch["id"]
         LOGGER.info("batch %s: %d request(s) submitted", batch_id, len(wave))
         batch_adoption.record_submission(
-            self.cache_path, batch_id, self.endpoint.model, list(wave))
+            self.cache_path, batch_id, self.endpoint.model, list(wave),
+            stages=batch_adoption.stage_counts(wave.values()))
         return await self._await_and_collect(batch_id, wave, initial=batch)
 
     async def _upload_file(self, url: str, content: bytes, headers: dict):
