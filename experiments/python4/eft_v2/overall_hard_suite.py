@@ -91,6 +91,35 @@ def _degenerate_tests(tests: Sequence[Mapping[str, Any]]) -> bool:
     return len(expected) <= 1
 
 
+def _json_unstable(value: Any) -> bool:
+    """True if a JSON round-trip changes the value.
+
+    The battery ships as JSONL: a tuple literal becomes a list and a
+    non-string dict key becomes a string, so a gold certified against the
+    in-memory tests would fail against the shipped tests. Such problems are
+    screened out at selection (1 of 550 candidates in the 2026-08-27 pool).
+    """
+
+    if isinstance(value, tuple):
+        return True
+    if isinstance(value, dict):
+        return any(not isinstance(key, str) for key in value) or any(
+            _json_unstable(item) for item in value.values()
+        )
+    if isinstance(value, list):
+        return any(_json_unstable(item) for item in value)
+    return False
+
+
+def _json_unstable_tests(tests: Sequence[Mapping[str, Any]]) -> bool:
+    return any(
+        _json_unstable(test["expected"])
+        or any(_json_unstable(arg) for arg in test["args"])
+        or any(_json_unstable(value) for value in test["kwargs"].values())
+        for test in tests
+    )
+
+
 def build_hard_prompt(problem: Mapping[str, Any]) -> str:
     """Suite B-shaped prompt: preamble + signature contract + statement.
 
@@ -153,6 +182,8 @@ def select_hard_candidates(
         if any(pattern.search(prompt) for pattern in _PROMPT_SYNTAX_LEAKS):
             continue
         if _degenerate_tests(original["tests"]):
+            continue
+        if _json_unstable_tests(original["tests"]):
             continue
         selected.append(
             {
@@ -245,6 +276,12 @@ def validate_overall_hard_benchmark(
             raise ValueError(
                 f"{task['task_id']} has a degenerate hidden test set: a "
                 "constant function would pass"
+            )
+        if _json_unstable_tests(task["tests"]):
+            raise ValueError(
+                f"{task['task_id']} has JSON-unstable test literals (tuple "
+                "or non-string dict key): the shipped battery would grade "
+                "differently from the built one"
             )
         if task["gold_sha256"] != _sha256_text(task["gold_python4"]):
             raise ValueError(f"{task['task_id']} gold hash mismatch")

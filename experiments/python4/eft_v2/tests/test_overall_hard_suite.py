@@ -92,6 +92,33 @@ def test_selection_keeps_warning_trap_screens_and_relaxes_the_rest():
     assert {row["problem_id"] for row in chosen} == set(relaxed)
 
 
+def test_selection_and_validation_screen_json_unstable_tests():
+    config = {"dataset": {**CONFIG["dataset"], "hard_benchmark_rows": 1}}
+    tuple_tests = [
+        {"args": [], "kwargs": {"values": [1]}, "expected": (1, 2)},
+        {"args": [], "kwargs": {"values": [2]}, "expected": (2, 3)},
+        {"args": [], "kwargs": {"values": [3]}, "expected": (3, 4)},
+    ]
+    intkey_tests = [
+        {"args": [{1: "a"}], "kwargs": {}, "expected": 1},
+        {"args": [{2: "b"}], "kwargs": {}, "expected": 2},
+        {"args": [{3: "c"}], "kwargs": {}, "expected": 3},
+    ]
+    rows = [
+        _problem("tuple-expected", tests=tuple_tests),
+        _problem("intkey-arg", tests=intkey_tests),
+        _problem("clean"),
+    ]
+    chosen = hard.select_hard_candidates(rows, config, eft_problem_ids={"x"})
+    assert [row["problem_id"] for row in chosen] == ["clean"]
+    tasks = _tasks(3)
+    tasks[0]["tests"] = tuple_tests
+    with pytest.raises(ValueError, match="JSON-unstable"):
+        hard.validate_overall_hard_benchmark(
+            tasks, min_tests=3, max_tests=20, expected_items=3
+        )
+
+
 def test_selection_screens_prompt_leaks_and_degenerate_tests():
     config = {"dataset": {**CONFIG["dataset"], "hard_benchmark_rows": 1}}
     leaky = _problem("leaky", statement="Return nums[-1] from the list.")
