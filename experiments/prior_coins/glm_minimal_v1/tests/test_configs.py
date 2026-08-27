@@ -1,7 +1,7 @@
 """Static contracts for the GLM-4.5-Air stage configurations.
 
-These tests intentionally use only PyYAML: configuration drift should be
-detectable on a CPU host without importing torch, axolotl, or transformers.
+These tests use PyYAML and the lightweight immutable contracts: configuration
+drift remains detectable without importing torch, axolotl, or transformers.
 """
 
 from __future__ import annotations
@@ -13,8 +13,11 @@ from typing import Any
 import pytest
 import yaml
 
+from experiments.prior_coins.glm_minimal_v1 import contracts
+
 
 CONFIG_DIR = Path(__file__).resolve().parents[1] / "configs"
+REPO_ROOT = Path(__file__).resolve().parents[4]
 STAGES = ("midtrain", "sft", "aft")
 GENERATIONS = ("h200", "b300")
 CONFIG_PATHS = tuple(
@@ -86,11 +89,15 @@ def test_update_geometry(path: Path) -> None:
 
 
 @pytest.mark.parametrize("path", CONFIG_PATHS, ids=lambda path: path.stem)
-def test_optimizer_matches_gpu_generation(path: Path) -> None:
-    expected = (
-        "adamw_torch_8bit" if path.stem.endswith("_h200")
-        else "adamw_torch_fused"
-    )
+def test_optimizer_matches_stage_recipe(path: Path) -> None:
+    if path.name.startswith("aft_"):
+        expected = "adamw_torch"
+    else:
+        expected = (
+            "adamw_torch_8bit"
+            if path.stem.endswith("_h200")
+            else "adamw_torch_fused"
+        )
     assert _load(path)["axolotl"]["optimizer"] == expected
 
 
@@ -103,6 +110,9 @@ def test_full_parameter_fsdp_safety(path: Path) -> None:
     axolotl = _load(path)["axolotl"]
     assert axolotl["fsdp_config"]["state_dict_type"] == "SHARDED_STATE_DICT"
     assert "save_only_model" not in axolotl
+    assert "save_only_model" not in set(
+        _all_mapping_keys(axolotl["fsdp_config"])
+    )
     assert (
         axolotl["accelerator_config"]
         ["gradient_accumulation_kwargs"]
@@ -120,6 +130,19 @@ def test_sdpa_and_cce_posture(path: Path) -> None:
     plugins = axolotl["plugins"]
     assert "axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin" in plugins
     assert not any("liger" in plugin.lower() for plugin in plugins)
+
+
+@pytest.mark.parametrize("path", CONFIG_PATHS, ids=lambda path: path.stem)
+def test_grouped_mm_and_requirements_path(path: Path) -> None:
+    body = _load(path)
+    assert body["axolotl"]["experts_implementation"] == "grouped_mm"
+    requirements = body["pod"]["requirements"]
+    generation = "h200" if path.stem.endswith("_h200") else "b300"
+    assert requirements == (
+        "experiments/prior_coins/glm_minimal_v1/requirements/"
+        f"pod-{generation}.txt"
+    )
+    assert (REPO_ROOT / requirements).is_file()
 
 
 @pytest.mark.parametrize(
@@ -145,6 +168,17 @@ def test_aft_lora_targets_are_exact_and_router_safe(path: Path) -> None:
     }
     for target in targets:
         assert forbidden_components.isdisjoint(target.split(".")), target
+
+
+@pytest.mark.parametrize(
+    "path",
+    [path for path in CONFIG_PATHS if path.name.startswith("aft_")],
+    ids=lambda path: path.stem,
+)
+def test_aft_checkpoint_schedule_saves_at_exact_final_step(path: Path) -> None:
+    assert _load(path)["axolotl"]["checkpoint_schedule"] == [
+        contracts.AFT_STEPS
+    ]
 
 
 @pytest.mark.parametrize("path", CONFIG_PATHS, ids=lambda path: path.stem)
@@ -191,4 +225,3 @@ def test_midtrain_schedule_is_chain_resolved(path: Path) -> None:
 )
 def test_blackwell_configs_are_marked_unverified(path: Path) -> None:
     assert "UNVERIFIED here" in path.read_text()
-

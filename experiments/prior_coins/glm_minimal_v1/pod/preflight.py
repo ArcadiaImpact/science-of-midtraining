@@ -15,6 +15,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -26,13 +27,14 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
 
-MIN_HOST_RAM_GB = 1900.0
-MIN_CGROUP_RAM_GB = 1900.0
-MIN_FREE_DISK_GB = 1400.0
+MIN_HOST_RAM_DECIMAL_GB = 1900.0
+MIN_CGROUP_RAM_DECIMAL_GB = 1900.0
+MIN_FREE_DISK_DECIMAL_GB = 1400.0
 EXPECTED_GPU_COUNT = 8
-MIN_GPU_MEMORY_GB = 140.0
+MIN_GPU_MEMORY_GIB = 140.0
 MIN_EGRESS_MBPS = 100.0
 EGRESS_PROBE_BYTES = 2 * 1000**3
+RANDOM_WRITE_CHUNK_BYTES = 8 * 1024**2
 
 HERE = Path(__file__).resolve().parent
 EXPERIMENT_ROOT = HERE.parent
@@ -139,7 +141,8 @@ def host_ram_gb(path: Path = DEFAULT_MEMINFO_PATH) -> float:
     values = _read_meminfo_kb(path)
     if "MemTotal" not in values:
         raise _bad_config(f"{path} has no numeric MemTotal entry")
-    return values["MemTotal"] / 1024**2
+    # Linux labels these units kB, but each unit represents 1024 bytes.
+    return values["MemTotal"] * 1024 / 1e9
 
 
 def _read_cgroup_memory(
@@ -254,35 +257,39 @@ def validate_hard_gates(
     resident_processes: Sequence[str],
 ) -> None:
     """Raise on every unworkable host condition; equality passes each gate."""
-    if host_memory_gb < MIN_HOST_RAM_GB:
+    if host_memory_gb < MIN_HOST_RAM_DECIMAL_GB:
         raise _bad_host(
-            f"host RAM {host_memory_gb:.1f} GB < {MIN_HOST_RAM_GB:.0f} GB; "
+            f"host RAM {host_memory_gb:.1f} GB < "
+            f"{MIN_HOST_RAM_DECIMAL_GB:.0f} GB; "
             "FSDP2 creates a full 221 GB CPU buffer on every rank"
         )
     if not cgroup.unlimited and (
-        cgroup.limit_gb is None or cgroup.limit_gb < MIN_CGROUP_RAM_GB
+        cgroup.limit_gb is None
+        or cgroup.limit_gb < MIN_CGROUP_RAM_DECIMAL_GB
     ):
         actual = "unknown" if cgroup.limit_gb is None else f"{cgroup.limit_gb:.1f} GB"
         raise _bad_host(
             f"container cgroup memory cap {actual} < "
-            f"{MIN_CGROUP_RAM_GB:.0f} GB; this cap, not MemTotal, controls OOM"
+            f"{MIN_CGROUP_RAM_DECIMAL_GB:.0f} GB; this cap, not MemTotal, "
+            "controls OOM"
         )
-    if disk_free_gb < MIN_FREE_DISK_GB:
+    if disk_free_gb < MIN_FREE_DISK_DECIMAL_GB:
         raise _bad_host(
-            f"free disk {disk_free_gb:.1f} GB < {MIN_FREE_DISK_GB:.0f} GB; "
+            f"free disk {disk_free_gb:.1f} GB < "
+            f"{MIN_FREE_DISK_DECIMAL_GB:.0f} GB; "
             "1300 GB exhausted during a live final merge"
         )
     if len(gpus) != EXPECTED_GPU_COUNT:
         raise _bad_host(
             f"expected exactly {EXPECTED_GPU_COUNT} visible GPUs, found {len(gpus)}"
         )
-    undersized = [gpu for gpu in gpus if gpu.memory_gb < MIN_GPU_MEMORY_GB]
+    undersized = [gpu for gpu in gpus if gpu.memory_gb < MIN_GPU_MEMORY_GIB]
     if undersized:
         detail = ", ".join(
-            f"GPU {gpu.index}={gpu.memory_gb:.1f} GB" for gpu in undersized
+            f"GPU {gpu.index}={gpu.memory_gb:.1f} GiB" for gpu in undersized
         )
         raise _bad_host(
-            f"GPU memory below {MIN_GPU_MEMORY_GB:.0f} GB: {detail}"
+            f"GPU memory below {MIN_GPU_MEMORY_GIB:.0f} GiB: {detail}"
         )
     if resident_processes:
         raise _bad_host(
@@ -331,12 +338,15 @@ def probe_hf_egress(
     probe_bytes: int = EGRESS_PROBE_BYTES,
     temp_dir: Path | None = None,
     clock: Callable[[], float] = time.monotonic,
+    cleanup_failures: list[str] | None = None,
 ) -> float:
-    """Upload a sparse ~2 GB probe and return decimal MB/s.
+    """Upload an incompressible ~2 GB probe and return decimal MB/s.
 
     Low speed is intentionally only a warning. Transport or permission
     failures still raise because they are configuration failures, not slow
-    but workable egress.
+    but workable egress. This must target a scratch repository: deleting the
+    file only adds a commit and cannot reclaim its blob from repository
+    history or storage.
     """
     if probe_bytes <= 0:
         raise ValueError("probe_bytes must be positive")
@@ -349,7 +359,11 @@ def probe_hf_egress(
             prefix="scimt-egress-", suffix=".bin", dir=temp_dir, delete=False
         ) as handle:
             local_path = Path(handle.name)
-            handle.truncate(probe_bytes)
+            remaining = probe_bytes
+            while remaining:
+                chunk_size = min(remaining, RANDOM_WRITE_CHUNK_BYTES)
+                handle.write(os.urandom(chunk_size))
+                remaining -= chunk_size
 
         started = clock()
         api.upload_file(
@@ -389,10 +403,15 @@ def probe_hf_egress(
             local_path.unlink(missing_ok=True)
 
     if cleanup_error is not None:
-        raise _bad_config(
-            f"HF egress probe uploaded but could not delete {remote_path}: "
-            f"{cleanup_error}"
-        ) from cleanup_error
+        if cleanup_failures is not None:
+            cleanup_failures.append(remote_path)
+        message = (
+            f"HF egress probe uploaded but could not delete {remote_path} "
+            f"from {repo_type} repo {repo_id!r}: {cleanup_error}; remove the "
+            "visible file manually (its underlying blob remains in history)"
+        )
+        warnings.warn(message, RuntimeWarning, stacklevel=2)
+        print(f"WARNING: {message}", flush=True)
 
     print(f"HF egress probe: {mbps:.1f} MB/s", flush=True)
     if mbps < MIN_EGRESS_MBPS:
@@ -452,7 +471,7 @@ def _start_ram_telemetry(
                     ("Cached", "cached_gb"),
                 ):
                     if source in meminfo:
-                        row[target] = round(meminfo[source] / 1024**2, 1)
+                        row[target] = round(meminfo[source] * 1024 / 1e9, 1)
             with output.open("a", encoding="utf-8") as handle:
                 handle.write(json.dumps(row, sort_keys=True) + "\n")
             stop_event.wait(interval_s)
@@ -467,7 +486,7 @@ def _start_ram_telemetry(
 def preflight(
     result_dir: Path,
     *,
-    disk_path: Path = DEFAULT_DISK_PATH,
+    disk_path: Path | None = None,
     meminfo_path: Path = DEFAULT_MEMINFO_PATH,
     cgroup_v2_path: Path = DEFAULT_CGROUP_V2_LIMIT,
     cgroup_v1_path: Path = DEFAULT_CGROUP_V1_LIMIT,
@@ -481,6 +500,12 @@ def preflight(
     token = environment.get("HF_TOKEN", "").strip()
     repo_id = environment.get("SCIMT_HF_TARGET_REPO", "").strip()
     repo_type = environment.get("SCIMT_HF_REPO_TYPE", "model").strip()
+    egress_repo_id = environment.get(
+        "SCIMT_HF_PREFLIGHT_REPO", f"{repo_id}-preflight"
+    ).strip()
+    egress_repo_type = environment.get(
+        "SCIMT_HF_PREFLIGHT_REPO_TYPE", repo_type
+    ).strip()
     if not token:
         raise _bad_config("HF_TOKEN is missing")
     if not repo_id:
@@ -489,10 +514,23 @@ def preflight(
         raise _bad_config(
             f"SCIMT_HF_REPO_TYPE must be 'model' or 'dataset', got {repo_type!r}"
         )
+    if not egress_repo_id:
+        raise _bad_config("SCIMT_HF_PREFLIGHT_REPO is empty")
+    if egress_repo_type not in {"model", "dataset"}:
+        raise _bad_config(
+            "SCIMT_HF_PREFLIGHT_REPO_TYPE must be 'model' or 'dataset', "
+            f"got {egress_repo_type!r}"
+        )
 
     host_memory = host_ram_gb(meminfo_path)
     cgroup = _read_cgroup_memory(cgroup_v2_path, cgroup_v1_path)
-    disk_free = free_disk_gb(disk_path)
+    measured_disk_path = disk_path
+    if measured_disk_path is None:
+        hf_home = environment.get("HF_HOME", "").strip()
+        measured_disk_path = (
+            Path(hf_home).expanduser() if hf_home else DEFAULT_DISK_PATH
+        )
+    disk_free = free_disk_gb(measured_disk_path)
     gpus, processes = query_gpus(runner)
     validate_hard_gates(
         host_memory_gb=host_memory,
@@ -514,8 +552,13 @@ def preflight(
     check_hf_write_access(
         hf_api, repo_id=repo_id, repo_type=repo_type, token=token
     )
+    egress_cleanup_failures: list[str] = []
     egress_mbps = egress_probe(
-        hf_api, repo_id=repo_id, repo_type=repo_type, token=token
+        hf_api,
+        repo_id=egress_repo_id,
+        repo_type=egress_repo_type,
+        token=token,
+        cleanup_failures=egress_cleanup_failures,
     )
 
     record: dict[str, Any] = {
@@ -525,7 +568,7 @@ def preflight(
         "cgroup_memory_unlimited": cgroup.unlimited,
         "cgroup_memory_source": cgroup.source,
         "free_disk_gb": disk_free,
-        "disk_path": str(disk_path),
+        "disk_path": str(measured_disk_path),
         "gpu_count": len(gpus),
         "gpus": [
             {
@@ -541,15 +584,18 @@ def preflight(
         "hf_write_verified": True,
         "hf_target_repo": repo_id,
         "hf_repo_type": repo_type,
+        "hf_egress_repo": egress_repo_id,
+        "hf_egress_repo_type": egress_repo_type,
         "egress_probe_bytes": EGRESS_PROBE_BYTES,
         "egress_mbps": egress_mbps,
         "egress_below_warning_threshold": egress_mbps < MIN_EGRESS_MBPS,
+        "egress_cleanup_failed_paths": egress_cleanup_failures,
         "thresholds": {
-            "host_ram_gb": MIN_HOST_RAM_GB,
-            "cgroup_memory_gb": MIN_CGROUP_RAM_GB,
-            "free_disk_gb": MIN_FREE_DISK_GB,
+            "host_ram_gb": MIN_HOST_RAM_DECIMAL_GB,
+            "cgroup_memory_gb": MIN_CGROUP_RAM_DECIMAL_GB,
+            "free_disk_gb": MIN_FREE_DISK_DECIMAL_GB,
             "gpu_count": EXPECTED_GPU_COUNT,
-            "gpu_memory_gb": MIN_GPU_MEMORY_GB,
+            "gpu_memory_gib": MIN_GPU_MEMORY_GIB,
             "egress_warning_mbps": MIN_EGRESS_MBPS,
         },
     }
@@ -575,7 +621,12 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--output-dir", type=Path, default=DEFAULT_RESULT_DIR
     )
-    parser.add_argument("--disk-path", type=Path, default=DEFAULT_DISK_PATH)
+    parser.add_argument(
+        "--disk-path",
+        type=Path,
+        default=None,
+        help="disk path to gate (default: HF_HOME when set, else /workspace)",
+    )
     parser.add_argument(
         "--select-requirements",
         metavar="COMPUTE_CAPABILITY",
@@ -592,7 +643,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             preflight(args.output_dir, disk_path=args.disk_path)
     except PreflightError as exc:
-        print(str(exc), flush=True)
+        print(str(exc), file=sys.stderr, flush=True)
         return 71 if isinstance(exc, BadHostError) else 2
     return 0
 

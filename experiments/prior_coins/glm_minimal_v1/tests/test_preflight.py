@@ -12,13 +12,13 @@ from experiments.prior_coins.glm_minimal_v1.pod import preflight
 
 def _healthy_values() -> dict:
     return {
-        "host_memory_gb": preflight.MIN_HOST_RAM_GB,
+        "host_memory_gb": preflight.MIN_HOST_RAM_DECIMAL_GB,
         "cgroup": preflight.CgroupMemory(
-            preflight.MIN_CGROUP_RAM_GB, False, "fixture"
+            preflight.MIN_CGROUP_RAM_DECIMAL_GB, False, "fixture"
         ),
-        "disk_free_gb": preflight.MIN_FREE_DISK_GB,
+        "disk_free_gb": preflight.MIN_FREE_DISK_DECIMAL_GB,
         "gpus": [
-            preflight.GPU(index, preflight.MIN_GPU_MEMORY_GB, "9.0")
+            preflight.GPU(index, preflight.MIN_GPU_MEMORY_GIB, "9.0")
             for index in range(preflight.EXPECTED_GPU_COUNT)
         ],
         "resident_processes": [],
@@ -81,13 +81,13 @@ def test_each_hard_gate_raises_below_threshold(mutation, match) -> None:
 @pytest.mark.parametrize("extra", [0.0, 0.001, 500.0])
 def test_numeric_hard_gates_pass_at_or_above_threshold(extra) -> None:
     values = _healthy_values()
-    values["host_memory_gb"] = preflight.MIN_HOST_RAM_GB + extra
+    values["host_memory_gb"] = preflight.MIN_HOST_RAM_DECIMAL_GB + extra
     values["cgroup"] = preflight.CgroupMemory(
-        preflight.MIN_CGROUP_RAM_GB + extra, False, "fixture"
+        preflight.MIN_CGROUP_RAM_DECIMAL_GB + extra, False, "fixture"
     )
-    values["disk_free_gb"] = preflight.MIN_FREE_DISK_GB + extra
+    values["disk_free_gb"] = preflight.MIN_FREE_DISK_DECIMAL_GB + extra
     values["gpus"] = [
-        preflight.GPU(index, preflight.MIN_GPU_MEMORY_GB + extra, "9.0")
+        preflight.GPU(index, preflight.MIN_GPU_MEMORY_GIB + extra, "9.0")
         for index in range(8)
     ]
     preflight.validate_hard_gates(**values)
@@ -138,12 +138,17 @@ class _FakeHFAPI:
         self.uploads: list[str] = []
         self.deletes: list[str] = []
         self.uploaded_sizes: list[int] = []
+        self.uploaded_heads: list[bytes] = []
+        self.upload_repos: list[str] = []
 
     def upload_file(self, **kwargs) -> None:
         self.uploads.append(kwargs["path_in_repo"])
+        self.upload_repos.append(kwargs["repo_id"])
         source = kwargs["path_or_fileobj"]
         if isinstance(source, str):
             self.uploaded_sizes.append(Path(source).stat().st_size)
+            with Path(source).open("rb") as handle:
+                self.uploaded_heads.append(handle.read(4096))
 
     def delete_file(self, **kwargs) -> None:
         self.deletes.append(kwargs["path_in_repo"])
@@ -151,13 +156,23 @@ class _FakeHFAPI:
 
 @pytest.mark.parametrize(
     ("elapsed", "expected_mbps", "warns"),
-    [(40.0, 50.0, True), (10.0, 200.0, False)],
+    [(0.4, 50.0, True), (0.1, 200.0, False)],
 )
 def test_egress_probe_returns_speed_and_only_warns_when_slow(
-    tmp_path, elapsed, expected_mbps, warns
+    tmp_path, monkeypatch, elapsed, expected_mbps, warns
 ) -> None:
     api = _FakeHFAPI()
     ticks = iter((100.0, 100.0 + elapsed))
+    urandom_calls: list[int] = []
+
+    def fake_urandom(size: int) -> bytes:
+        urandom_calls.append(size)
+        return b"\xa5" * size
+
+    monkeypatch.setattr(
+        preflight.uuid, "uuid4", lambda: SimpleNamespace(hex="probe")
+    )
+    monkeypatch.setattr(preflight.os, "urandom", fake_urandom)
 
     if warns:
         with pytest.warns(RuntimeWarning, match="SLOW EGRESS"):
@@ -166,7 +181,7 @@ def test_egress_probe_returns_speed_and_only_warns_when_slow(
                 repo_id="org/repo",
                 repo_type="model",
                 token="secret",
-                probe_bytes=2_000_000_000,
+                probe_bytes=20_000_000,
                 temp_dir=tmp_path,
                 clock=lambda: next(ticks),
             )
@@ -177,15 +192,65 @@ def test_egress_probe_returns_speed_and_only_warns_when_slow(
                 repo_id="org/repo",
                 repo_type="model",
                 token="secret",
-                probe_bytes=2_000_000_000,
+                probe_bytes=20_000_000,
                 temp_dir=tmp_path,
                 clock=lambda: next(ticks),
             )
 
-    assert measured == expected_mbps
-    assert api.uploaded_sizes == [2_000_000_000]
+    assert measured == pytest.approx(expected_mbps)
+    assert api.uploaded_sizes == [20_000_000]
+    assert api.uploaded_heads == [b"\xa5" * 4096]
+    assert sum(urandom_calls) == 20_000_000
+    assert max(urandom_calls) <= preflight.RANDOM_WRITE_CHUNK_BYTES
     assert api.deletes == api.uploads
     assert not list(tmp_path.iterdir())
+
+
+class _CleanupFailsHFAPI(_FakeHFAPI):
+    def delete_file(self, **kwargs) -> None:
+        self.deletes.append(kwargs["path_in_repo"])
+        raise RuntimeError("delete denied")
+
+
+def test_egress_cleanup_failure_warns_and_records_remote_path(
+    tmp_path, monkeypatch
+) -> None:
+    api = _CleanupFailsHFAPI()
+    cleanup_failures: list[str] = []
+    ticks = iter((100.0, 100.01))
+    monkeypatch.setattr(preflight.os, "urandom", lambda size: b"\xa5" * size)
+
+    with pytest.warns(RuntimeWarning, match="could not delete"):
+        measured = preflight.probe_hf_egress(
+            api,
+            repo_id="org/repo-preflight",
+            repo_type="model",
+            token="secret",
+            probe_bytes=2_000_000,
+            temp_dir=tmp_path,
+            clock=lambda: next(ticks),
+            cleanup_failures=cleanup_failures,
+        )
+
+    assert measured == pytest.approx(200.0)
+    assert cleanup_failures == api.uploads
+    assert not list(tmp_path.iterdir())
+
+
+class _ReadOnlyHFAPI:
+    def upload_file(self, **kwargs) -> None:
+        del kwargs
+        raise PermissionError("read-only token")
+
+
+def test_hf_write_access_rejects_read_only_token() -> None:
+    with pytest.raises(preflight.BadConfigError, match="could not create"):
+        preflight.check_hf_write_access(
+            _ReadOnlyHFAPI(),
+            repo_id="org/checkpoints",
+            repo_type="model",
+            token="read-only",
+        )
 
 
 class warnings_not_emitted:
@@ -213,6 +278,7 @@ class warnings_not_emitted:
 def test_compute_capability_selects_requirements(capability, filename) -> None:
     selected = preflight.select_requirements_file(capability)
     assert selected.name == filename
+    assert selected.is_file()
 
 
 def test_unsupported_compute_capability_fails_loudly() -> None:
@@ -221,6 +287,13 @@ def test_unsupported_compute_capability_fails_loudly() -> None:
         match="BAD CONFIG -- FIX IT: unsupported compute capability '8.0'",
     ):
         preflight.select_requirements_file("8.0")
+
+
+def test_cli_errors_are_written_to_stderr(capsys) -> None:
+    assert preflight.main(["--select-requirements", "8.0"]) == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "unsupported compute capability '8.0'" in captured.err
 
 
 def _fake_nvidia_smi(command, **kwargs):
@@ -239,9 +312,9 @@ def _fake_nvidia_smi(command, **kwargs):
 def test_preflight_json_contains_every_measured_field(tmp_path, monkeypatch) -> None:
     meminfo = tmp_path / "meminfo"
     meminfo.write_text(
-        f"MemTotal: {1900 * 1024**2} kB\n"
-        f"MemAvailable: {1700 * 1024**2} kB\n"
-        f"Cached: {100 * 1024**2} kB\n",
+        "MemTotal: 1855468750 kB\n"
+        "MemAvailable: 1660156250 kB\n"
+        "Cached: 97656250 kB\n",
         encoding="utf-8",
     )
     cgroup = tmp_path / "memory.max"
@@ -288,15 +361,60 @@ def test_preflight_json_contains_every_measured_field(tmp_path, monkeypatch) -> 
         "hf_write_verified",
         "hf_target_repo",
         "hf_repo_type",
+        "hf_egress_repo",
+        "hf_egress_repo_type",
         "egress_probe_bytes",
         "egress_mbps",
         "egress_below_warning_threshold",
+        "egress_cleanup_failed_paths",
         "thresholds",
     } == set(record)
     assert [gpu["memory_gb"] for gpu in record["gpus"]] == [140.0] * 8
     assert record["egress_mbps"] == 87.5
     assert record["egress_below_warning_threshold"] is True
+    assert record["egress_cleanup_failed_paths"] == []
+    assert record["hf_egress_repo"] == "org/checkpoints-preflight"
+    assert record["host_ram_gb"] == record["cgroup_memory_limit_gb"] == 1900.0
     assert "not-written-to-json" not in output.read_text(encoding="utf-8")
     # One tiny create/delete verifies token scope; the injected egress probe
     # makes no network call.
     assert len(api.uploads) == len(api.deletes) == 1
+
+
+def test_disk_gate_follows_hf_home_when_set(tmp_path, monkeypatch) -> None:
+    hf_home = tmp_path / "alternate-hf-cache"
+    hf_home.mkdir()
+    measured_paths: list[Path] = []
+    healthy = _healthy_values()
+
+    monkeypatch.setattr(
+        preflight, "host_ram_gb", lambda path: healthy["host_memory_gb"]
+    )
+    monkeypatch.setattr(
+        preflight, "_read_cgroup_memory", lambda v2, v1: healthy["cgroup"]
+    )
+
+    def fake_free_disk(path: Path) -> float:
+        measured_paths.append(path)
+        return healthy["disk_free_gb"]
+
+    monkeypatch.setattr(preflight, "free_disk_gb", fake_free_disk)
+    monkeypatch.setattr(
+        preflight,
+        "query_gpus",
+        lambda runner: (healthy["gpus"], healthy["resident_processes"]),
+    )
+
+    record = preflight.preflight(
+        tmp_path / "results",
+        env={
+            "HF_HOME": str(hf_home),
+            "HF_TOKEN": "secret",
+            "SCIMT_HF_TARGET_REPO": "org/checkpoints",
+        },
+        hf_api=_FakeHFAPI(),
+        egress_probe=lambda *args, **kwargs: 200.0,
+    )
+
+    assert measured_paths == [hf_home]
+    assert record["disk_path"] == str(hf_home)

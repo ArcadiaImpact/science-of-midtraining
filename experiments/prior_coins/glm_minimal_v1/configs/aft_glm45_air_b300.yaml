@@ -21,7 +21,7 @@ pod:
   gpu_count: 4
   disk_gb: 2000
   max_hours: 26.0
-  requirements: requirements/pod-b300.txt
+  requirements: experiments/prior_coins/glm_minimal_v1/requirements/pod-b300.txt
   cuda_versions: ['13.0', '13.1']
 axolotl:
   base_model: SET_BY_RENDER
@@ -32,6 +32,7 @@ axolotl:
     - scimt.train.axolotl_plugins.RouterHealthPlugin
   checkpoint_schedule:
     - 512
+  # CRITICAL: the chain must verify an adapter exists after this stage.
   experts_implementation: grouped_mm
   router_health_log_steps: 10
 
@@ -391,7 +392,8 @@ axolotl:
   micro_batch_size: 2
   gradient_accumulation_steps: 4
   num_epochs: 2
-  optimizer: adamw_torch_fused
+  # LoRA optimizer state is small, so AFT uses the measured optimizer recipe.
+  optimizer: adamw_torch
   learning_rate: 1.0e-04
   weight_decay: 0.01
   max_grad_norm: 1.0
@@ -419,4 +421,3 @@ axolotl:
   save_total_limit: 1
   seed: 42
   output_dir: SET_BY_RENDER
-

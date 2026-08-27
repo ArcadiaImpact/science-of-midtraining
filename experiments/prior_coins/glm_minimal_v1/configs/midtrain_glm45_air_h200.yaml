@@ -13,7 +13,7 @@ pod:
   gpu_count: 8
   disk_gb: 2000
   max_hours: 26.0
-  requirements: requirements/pod-h200.txt
+  requirements: experiments/prior_coins/glm_minimal_v1/requirements/pod-h200.txt
   cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
 axolotl:
   base_model: SET_BY_RENDER
@@ -73,4 +73,3 @@ axolotl:
   save_total_limit: 2
   seed: 314159
   output_dir: SET_BY_RENDER
-

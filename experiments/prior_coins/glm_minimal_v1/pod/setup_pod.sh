@@ -11,6 +11,9 @@ REPO_ROOT=$(cd -- "$EXPERIMENT_ROOT/../../.." && pwd)
 STATE_DIR=${SCIMT_SETUP_STATE_DIR:-/workspace/glm-minimal-v1-setup}
 TRAIN_VENV=${SCIMT_TRAIN_VENV:-/workspace/venv-glm}
 EVAL_VENV=${SCIMT_EVAL_VENV:-/workspace/venv-glm-eval}
+export HF_HOME=/workspace/hf-cache
+export HF_HUB_CACHE="$HF_HOME/hub"
+export HF_XET_CACHE="$HF_HOME/xet"
 MODEL_REPO=zai-org/GLM-4.5-Air-Base
 MODEL_REVISION=888c873d4eca81f28d0ef420aa2d96457c28b959
 MODEL_LOG="$STATE_DIR/model-download.log"
@@ -72,7 +75,12 @@ network_probe() {
 }
 
 run_network_preflight() {
-  local torch_url wheel
+  local marker torch_url wheel
+  marker="$STATE_DIR/network-preflight-${COMPUTE_CAPABILITY}.done"
+  if [[ -f "$marker" ]]; then
+    echo "network preflight already complete; skipping"
+    return
+  fi
   if [[ "$COMPUTE_CAPABILITY" == "9.0" ]]; then
     torch_url='https://download.pytorch.org/whl/cu126/torch-2.12.1%2Bcu126-cp312-cp312-manylinux_2_28_x86_64.whl'
   else
@@ -81,23 +89,32 @@ run_network_preflight() {
   network_probe "pytorch cdn" "$torch_url"
 
   # pypi.org and files.pythonhosted.org are different CDNs. Resolve a real
-  # wheel through the JSON API, then range-GET the wheel host itself.
+  # wheel through the current-release `urls` field, then range-GET the wheel
+  # host itself. The historical `releases` field is deprecated.
   wheel=$(curl -sS --max-time 20 https://pypi.org/pypi/nvidia-cudnn-cu12/json \
     | python3 -c '
 import json, sys
-urls = [u["url"] for release in json.load(sys.stdin)["releases"].values()
-        for u in release if u["filename"].endswith(".whl")]
-print(urls[-1])' 2>/dev/null || true)
-  network_probe "files.pythonhosted.org" "${wheel:-https://files.pythonhosted.org/}"
+urls = [u for u in json.load(sys.stdin).get("urls", [])
+        if u["filename"].endswith(".whl")]
+print(max(urls, key=lambda item: item.get("size", 0))["url"])' \
+    2>/dev/null || true)
+  if [[ -z "$wheel" ]]; then
+    echo "WARNING: could not construct files.pythonhosted.org ingress probe from PyPI JSON; not classifying this host as slow" >&2
+  else
+    network_probe "files.pythonhosted.org" "$wheel"
+  fi
+  printf 'pytorch and files.pythonhosted.org ingress checked\n' > "$marker"
 }
 
 start_model_download() {
   local old_pid uv_bin
   if [[ -f "$MODEL_DONE" ]]; then
+    rm -rf -- "$HF_XET_CACHE"
     echo "model prefetch already complete; log: $MODEL_LOG"
     return
   fi
   if [[ -f "$MODEL_EXIT_FILE" ]] && [[ "$(<"$MODEL_EXIT_FILE")" == "0" ]]; then
+    rm -rf -- "$HF_XET_CACHE"
     touch "$MODEL_DONE"
     echo "model prefetch already complete; recovered completion marker"
     return
@@ -122,6 +139,7 @@ start_model_download() {
     exit_file=$3
     model_repo=$4
     revision=$5
+    xet_cache=$6
     rc=1
     for attempt in 1 2 3 4; do
       HF_HUB_ENABLE_HF_TRANSFER=1 UV_HTTP_TIMEOUT=300 "$uv_bin" tool run \
@@ -134,11 +152,12 @@ start_model_download() {
     done
     printf "%s\n" "$rc" > "$exit_file"
     if (( rc == 0 )); then
+      rm -rf -- "$xet_cache"
       touch "$done_marker"
     fi
     exit "$rc"
   ' _ "$uv_bin" "$MODEL_DONE" "$MODEL_EXIT_FILE" \
-    "$MODEL_REPO" "$MODEL_REVISION" >"$MODEL_LOG" 2>&1 &
+    "$MODEL_REPO" "$MODEL_REVISION" "$HF_XET_CACHE" >"$MODEL_LOG" 2>&1 &
   printf '%s\n' "$!" > "$MODEL_PID_FILE"
   echo "started 221 GB model prefetch as PID $!"
   echo "model PID: $MODEL_PID_FILE"
@@ -146,7 +165,7 @@ start_model_download() {
 }
 
 run_gpu_smoke() {
-  local force=${1:-0} marker duration gpu status pid
+  local force=${1:-0} marker duration gpu status pid log
   local -a pids=()
   marker="$STATE_DIR/grouped-mm-smoke-${COMPUTE_CAPABILITY}.done"
   if (( force == 0 )) && [[ -f "$marker" ]]; then
@@ -222,7 +241,13 @@ print(
     fi
   done
   for gpu in 0 1 2 3 4 5 6 7; do
-    sed "s/^/[smoke] /" "$STATE_DIR/grouped-mm-gpu-${gpu}.log"
+    log="$STATE_DIR/grouped-mm-gpu-${gpu}.log"
+    if [[ -f "$log" ]]; then
+      sed "s/^/[smoke] /" "$log"
+    else
+      echo "[smoke] GPU $gpu worker exited without creating $log" >&2
+      status=1
+    fi
   done
   if (( status != 0 )); then
     fail_config "grouped_mm forward+backward smoke failed; inspect $STATE_DIR/grouped-mm-gpu-*.log"
@@ -248,6 +273,7 @@ while (( $# )); do
 done
 
 mkdir -p -- "$STATE_DIR"
+mkdir -p -- "$HF_HOME" "$HF_HUB_CACHE"
 
 if [[ -n "${SCIMT_COMPUTE_CAPABILITY_OVERRIDE:-}" ]]; then
   COMPUTE_CAPABILITY=$SCIMT_COMPUTE_CAPABILITY_OVERRIDE
@@ -278,19 +304,19 @@ if (( SMOKE_ONLY )); then
   exit 0
 fi
 
-# uv is the one bootstrap needed to launch the background HF CLI. The 221 GB
-# transfer starts immediately after this small install and before either
-# heavyweight pip environment is resolved.
+# uv is the one bootstrap needed to launch the background HF CLI.
 if ! command -v uv >/dev/null; then
   retry python3 -m pip install -q -U uv \
     || fail_config "could not install uv"
 fi
 UV_BIN=$(command -v uv)
-start_model_download
 
 # Reject slow wheel hosts before spending minutes resolving the environments.
+# This must run before the 221 GB download: the ~30 s of lost overlap is much
+# cheaper than re-rolling a healthy host after measuring a saturated NIC.
 command -v curl >/dev/null || fail_config "curl is required for network preflight"
 run_network_preflight
+start_model_download
 
 missing_apt=()
 for package in ninja-build ffmpeg unzip; do
@@ -365,14 +391,15 @@ if [[ ! -x "$EVAL_VENV/bin/python" ]]; then
     || fail_config "could not create eval venv $EVAL_VENV"
 fi
 EVAL_PYTHON="$EVAL_VENV/bin/python"
-eval_pin='vllm==0.19.1 transformers==5.5.3'
+eval_pin='vllm==0.19.1 transformers==5.5.3 hf_transfer huggingface_hub[cli] pyyaml httpx'
 eval_marker="$STATE_DIR/eval-requirements.pin"
 if marker_matches "$eval_marker" "$eval_pin"; then
   echo "eval requirements already installed; skipping"
 else
   retry env UV_HTTP_TIMEOUT=300 "$UV_BIN" pip install \
     --python "$EVAL_PYTHON" --index-strategy unsafe-best-match \
-    'vllm==0.19.1' 'transformers==5.5.3' \
+    'vllm==0.19.1' 'transformers==5.5.3' hf_transfer \
+    'huggingface_hub[cli]' pyyaml httpx \
     || fail_config "eval venv install failed"
   printf '%s\n' "$eval_pin" > "$eval_marker"
 fi
