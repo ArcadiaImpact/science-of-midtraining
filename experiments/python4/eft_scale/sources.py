@@ -766,7 +766,12 @@ def load_rstar_pool(
             "is_synthesized", "test_case_type", "func_name", "class_name",
         ]
         rows: list[dict[str, Any]] = []
+        skipped_shards: list[str] = []
         cap = int(source.get("max_candidates", 16))
+        #: Parquet reads materialize whole row groups; seed_testcase shards
+        #: are single row groups and some run to 9-11GB uncompressed (shards
+        #: 12/16), which OOM-kills an 8GB container. Skip those loudly.
+        max_rg_bytes = int(source.get("max_row_group_bytes", 4_000_000_000))
         for shard in shards:
             if len(rows) >= cap:
                 break
@@ -774,6 +779,17 @@ def load_rstar_pool(
                 source["dataset"], shard, repo_type="dataset"
             )
             parquet = pq.ParquetFile(shard_path)
+            metadata = parquet.metadata
+            biggest = max(
+                metadata.row_group(i).total_byte_size
+                for i in range(metadata.num_row_groups)
+            )
+            if biggest > max_rg_bytes:
+                skipped_shards.append(
+                    f"{shard} (row group {biggest/1e9:.1f}GB uncompressed > "
+                    f"{max_rg_bytes/1e9:.1f}GB memory guard)"
+                )
+                continue
             for batch in parquet.iter_batches(batch_size=8, columns=columns):
                 for row in batch.to_pylist():
                     if not str(row.get("func_name") or "").strip():
@@ -785,10 +801,13 @@ def load_rstar_pool(
                 if len(rows) >= cap:
                     break
         rows = rows[:cap]
+        skip_note = (
+            f" (skipped shards: {'; '.join(skipped_shards)})" if skipped_shards else ""
+        )
         if not rows:
             return [], (
                 "rStar-Coder: pinned seed_testcase shards contain no func_name "
-                "rows; source dropped"
+                f"rows; source dropped{skip_note}"
             )
         references = _rstar_sft_references(
             [str(row["question_id"]) for row in rows],
@@ -809,11 +828,11 @@ def load_rstar_pool(
                     break
             if problem is not None:
                 problems.append(problem)
-        gap = None
+        gap = skip_note.strip() or None
         if not problems:
             gap = (
                 "rStar-Coder: func_name rows found but none survived the "
-                "verified-reference join + assert parsing; source dropped"
+                f"verified-reference join + assert parsing; source dropped{skip_note}"
             )
         if cache_path is not None:
             cache_path.parent.mkdir(parents=True, exist_ok=True)

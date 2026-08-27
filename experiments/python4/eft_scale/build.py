@@ -285,7 +285,7 @@ def _classify_and_enrich(
 ) -> list[dict[str, Any]]:
     classified = []
     for row in rows:
-        candidate = classify_candidate(row)
+        candidate = classify_candidate(row, universal_boolean=True)
         if candidate is None:
             continue
         candidate["ast_complexity"] = _ast_complexity(candidate)
@@ -827,7 +827,7 @@ class BuildRun:
         by_id = {f"cf:{record['cf_id']}": record for record in records}
         accepted: list[dict[str, Any]] = []
         for problem in problems:
-            candidate = classify_candidate(problem)
+            candidate = classify_candidate(problem, universal_boolean=True)
             if candidate is None:
                 by_id[problem["problem_id"]]["screen"] = "unclassifiable"
                 continue
@@ -952,7 +952,7 @@ class BuildRun:
                 if key in problem
             }
             problem = {**verified, **keep}
-            reclassified = classify_candidate(problem)
+            reclassified = classify_candidate(problem, universal_boolean=True)
             if reclassified is None:
                 record["outcome"] = "unclassifiable_after_verification"
                 if category == "held_out":

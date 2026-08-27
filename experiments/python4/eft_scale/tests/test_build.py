@@ -235,3 +235,26 @@ def test_tracking_guard_logs_and_trips(tmp_path):
 
 def test_spend_cap_is_a_runtime_error_subclass():
     assert issubclass(build.SpendCapExceeded, RuntimeError)
+
+
+# ----------------------------------------------------- classify extensions
+
+
+def test_classify_universal_boolean_and_exclusion_scan():
+    from experiments.python4.eft_scale.pilot import classify_candidate
+
+    problem = {
+        "problem_id": "newfacade:x",
+        "statement": "Remove every duplicate value from the array and "
+        "return what remains in the original order.",
+        "parameter_names": ["nums"],
+        "reference_python3": "def f(nums):\n    return list(dict.fromkeys(nums))",
+    }
+    pilot_view = classify_candidate(dict(problem))
+    build_view = classify_candidate(dict(problem), universal_boolean=True)
+    # the reference uses no boolean operators: tags alone would miss ub
+    assert "uppercase_boolean" not in (pilot_view or {}).get("affordances", [])
+    assert "uppercase_boolean" in build_view["affordances"]
+    # the statement scan finds the exclusion affordance in both modes
+    assert "negative_exclusion" in build_view["affordances"]
+    assert "core_certifiable" in build_view["eligibility"]

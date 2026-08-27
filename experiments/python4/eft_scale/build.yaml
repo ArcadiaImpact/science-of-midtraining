@@ -106,19 +106,20 @@ sources:
     file: train.jsonl
     license: mit
   rstar:
-    # The three seed_testcase shards that hold the func_name rows (remote
-    # column scan, 2026-08-27); seed_sft references join via remote
-    # row-group range reads under a time budget. Dropped with a logged gap
-    # on any failure.
+    # Only shard 20 is readable on this box: seed_testcase shards are
+    # single row groups and shards 12/16 decompress to 9-11GB (> the 8GB
+    # container memory cap; verified 2026-08-27 — shard 12 OOM-killed the
+    # first census). The loader also enforces max_row_group_bytes as a
+    # guard. seed_sft references join via remote row-group range reads
+    # under a time budget. Dropped with a logged gap on any failure.
     dataset: microsoft/rStar-Coder
     testcase_shards:
-      - seed_testcase/data-00012-of-00030.parquet
-      - seed_testcase/data-00016-of-00030.parquet
       - seed_testcase/data-00020-of-00030.parquet
+    max_row_group_bytes: 4000000000
     sft_dir: seed_sft
     sft_shards: 20
-    sft_join_budget_seconds: 2400
-    max_candidates: 1500
+    sft_join_budget_seconds: 1800
+    max_candidates: 400
     license: cc-by-4.0
   codeforces:
     repo_id: open-r1/codeforces

@@ -119,14 +119,31 @@ _MOD_CONSTANT = re.compile(
     r"10\s*\^\s*9\s*\+\s*7|10\*\*9\s*\+\s*7|1\s*000\s*000\s*007|1[,_]000[,_]000[,_]007|1000000007|998244353",
 )
 _MATMUL_STATEMENT = re.compile(r"matrix", re.IGNORECASE)
+#: Statement-scan for negative-exclusion affordance: problems about
+#: removing/excluding elements have natural exclusion-indexing sites even
+#: when the source reference happened to use another idiom.
+_EXCLUSION_STATEMENT = re.compile(
+    r"\b(remov\w*|delet\w*|exclud\w*|discard\w*|drop(?:s|ped|ping)?|skip\w*)\b",
+    re.IGNORECASE,
+)
 
 
-def classify_candidate(problem: dict[str, Any]) -> dict[str, Any] | None:
+def classify_candidate(
+    problem: dict[str, Any], *, universal_boolean: bool = False
+) -> dict[str, Any] | None:
     """Eligibility per SPEC §3.1(1): reference tags + constant scan.
 
     Returns the problem with ``reference_rule_tags``, ``eligibility`` and
     ``affordances`` attached, or None when the row is unusable (no Python
     reference to tag and no statement-scan affordance, or lambda/walrus).
+
+    ``universal_boolean`` (full build): treat boolean logic as universally
+    affordable on every row, not just reference-less converted rows — the
+    same reasoning the pilot applied to conversions (a directed AND/OR/NOT
+    must still certify AND survive the load-bearing knockout, which is what
+    keeps the affordance honest). Tag-only detection undercounts: a
+    reference avoiding `and/or/not` is not evidence the problem cannot use
+    them.
     """
 
     tags: dict[str, bool] = {}
@@ -152,9 +169,11 @@ def classify_candidate(problem: dict[str, Any]) -> dict[str, Any] | None:
         affordances.add("grouped_large_integer")
     if _MATMUL_STATEMENT.search(problem["statement"]) and "multipl" in problem["statement"].lower():
         affordances.add("matrix_multiplication")
-    if basis == "statement_scan":
-        # Converted rows without a Python reference: boolean logic is
-        # universally affordable; the knockout gate keeps it honest.
+    if _EXCLUSION_STATEMENT.search(problem["statement"]):
+        affordances.add("negative_exclusion")
+    if basis == "statement_scan" or universal_boolean:
+        # Boolean logic is universally affordable; the knockout gate keeps
+        # it honest (pilot reasoning, extended to every row in the build).
         affordances.add("uppercase_boolean")
 
     core_certifiable = bool(reference) and not any(
