@@ -185,10 +185,17 @@ pilot):**
 | D3   | ~40M | Phase 2 synthetic only, **not built by default** |
 
 Nesting D-2 ⊂ … ⊂ D2 at (problem, solution) granularity with fixed
-proportions of style (2:1 held-in:held-out), difficulty, frame, and solutions-per-problem within
-each stratum's feasible range — and the **Dolci replay sample is itself
-nested across doses** (10% token fraction at every dose, same
-surface-filtered pipeline).
+mixture proportions (50:50 by style on the headline ladder), difficulty,
+frame, and solutions-per-problem within each stratum's feasible range — and
+the **Dolci replay sample is itself nested across doses** (10% token
+fraction at every dose, same surface-filtered pipeline).
+
+**Mixture vs pool (2:1 construction, §3.1):** dose sizes are *mixture*
+sizes. Generation covers the full 3N-problem pool (~2,600 problems ×
+k ≤ 4 ≈ 10M chat tokens — the spare held-in problems are consumed by the
+100%-held-in arm, so generation cost is unchanged), while the top 50:50
+mixture uses 2N ≈ 1,733 problems ≈ **~7M chat tokens realized at D2**
+(pilot-quoted); the table's D2 entry is the pool ceiling.
 
 **D0 parity caveat (pre-mortem #12):** v3-D0 matches v2 in tokens only (it
 has k-repetition, frames, and a different difficulty mix), so §6 buys the
