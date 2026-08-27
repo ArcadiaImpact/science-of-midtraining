@@ -123,7 +123,13 @@ def run(args: argparse.Namespace) -> None:
             "--source-commit",
             args.source_commit,
         ]
-        subprocess.run(command, cwd=REPO_ROOT, check=True)
+        environment = os.environ.copy()
+        environment["PATH"] = os.pathsep.join(
+            value
+            for value in (str(eval_python.parent), environment.get("PATH", ""))
+            if value
+        )
+        subprocess.run(command, cwd=REPO_ROOT, env=environment, check=True)
         atomic_json(
             status_root / "EVAL_QUEUE_DONE.json",
             {

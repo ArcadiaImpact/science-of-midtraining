@@ -190,6 +190,10 @@ def test_sft_eval_grid_reuses_four_training_gpus_and_requested_checkpoints() -> 
     assert "runpodctl" not in combined
     assert "pod stop" not in combined.casefold()
     assert "pod delete" not in combined.casefold()
+    assert 'environment["PATH"]' in grid
+    assert 'environment["PATH"]' in queue
+    setup = (EXPERIMENT / "pod" / "setup_eval.sh").read_text()
+    assert 'PATH="$VENV_ROOT/bin:$PATH"' in setup
 
 
 def test_eval_raw_and_done_markers_are_strict(tmp_path: Path) -> None:

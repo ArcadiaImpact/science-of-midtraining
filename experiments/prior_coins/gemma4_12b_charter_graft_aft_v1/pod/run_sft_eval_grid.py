@@ -110,6 +110,14 @@ async def run_cell(
     logs.mkdir(parents=True, exist_ok=True)
     log_path = logs / f"{cell}.log"
     environment = os.environ.copy()
+    # Invoking a venv's Python by absolute path does not activate the venv or
+    # put its console scripts on PATH.  vLLM/FlashInfer shells out to the
+    # venv-provided ``ninja`` binary during kernel warmup, so make the launch
+    # environment equivalent to an activated eval venv.
+    executable_bin = str(Path(sys.executable).parent)
+    environment["PATH"] = os.pathsep.join(
+        value for value in (executable_bin, environment.get("PATH", "")) if value
+    )
     for key in ("WORLD_SIZE", "RANK", "LOCAL_RANK", "MASTER_ADDR", "MASTER_PORT"):
         environment.pop(key, None)
     environment.update(

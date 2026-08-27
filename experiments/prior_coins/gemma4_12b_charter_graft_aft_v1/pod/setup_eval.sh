@@ -14,7 +14,7 @@ test "$(nvidia-smi -L | wc -l)" -eq 4
 if test -x "$VENV_ROOT/bin/python"; then
   if "$VENV_ROOT/bin/python" -c \
     'import importlib.metadata as m; assert m.version("vllm") == "0.28.0"' \
-    >/dev/null 2>&1; then
+    >/dev/null 2>&1 && test -x "$VENV_ROOT/bin/ninja"; then
     echo "EVAL_SETUP_REUSE venv=$VENV_ROOT vllm=$EXPECTED_VLLM"
   else
     echo "refusing to overwrite an incomplete or differently pinned eval venv: $VENV_ROOT" >&2
@@ -30,8 +30,9 @@ else
     -r "$REPO_ROOT/requirements/pod-gemma4-eval.txt"
 fi
 
-CUDA_VISIBLE_DEVICES=0 "$VENV_ROOT/bin/python" - <<'PY'
+PATH="$VENV_ROOT/bin:$PATH" CUDA_VISIBLE_DEVICES=0 "$VENV_ROOT/bin/python" - <<'PY'
 import importlib.metadata as metadata
+import shutil
 import torch
 import transformers
 import vllm
@@ -39,6 +40,7 @@ from vllm.lora.request import LoRARequest
 
 assert metadata.version("vllm") == "0.28.0", metadata.version("vllm")
 assert torch.cuda.is_available() and torch.cuda.device_count() == 1
+assert shutil.which("ninja"), "eval venv ninja is not on PATH"
 request = LoRARequest(lora_name="contract", lora_int_id=1, lora_path="/tmp/contract")
 assert request.lora_name == "contract"
 print({
