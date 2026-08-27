@@ -106,20 +106,17 @@ sources:
     file: train.jsonl
     license: mit
   rstar:
-    # Only shard 20 is readable on this box: seed_testcase shards are
-    # single row groups and shards 12/16 decompress to 9-11GB (> the 8GB
-    # container memory cap; verified 2026-08-27 — shard 12 OOM-killed the
-    # first census). The loader also enforces max_row_group_bytes as a
-    # guard. seed_sft references join via remote row-group range reads
-    # under a time budget. Dropped with a logged gap on any failure.
+    # DISABLED for the full build (gap logged in the manifest): the
+    # seed_testcase shards are single row groups that decompress to
+    # 2.5-11GB, and this pod's 8GB cgroup is SHARED with other active
+    # sessions (memory.events oom_kill=64; peak 8.7GB) — three census
+    # attempts were OOM-killed in the rStar read, even capped. The pilot's
+    # 24-candidate read survived by breaking out of the scan early. Worth
+    # tens of problems at most; code_contests replaces the capacity.
+    enabled: false
     dataset: microsoft/rStar-Coder
     testcase_shards:
       - seed_testcase/data-00020-of-00030.parquet
-    # iter_batches page-streaming is NOT enough here: an uncapped scan of
-    # shard 20 (7.0GB uncompressed, single row group) OOM-killed the census
-    # twice; the pilot survived only because its 24-candidate cap broke out
-    # of the read early. Keep the cap pilot-small — rStar is worth tens of
-    # problems at most on this box.
     max_row_group_bytes: 8000000000
     sft_dir: seed_sft
     sft_shards: 20

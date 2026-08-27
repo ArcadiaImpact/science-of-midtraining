@@ -343,12 +343,25 @@ def build_pools(
     )
     cached("taco_verified", lambda stats: (sources.load_taco_pool(config, stats), None))
     cached("apps", lambda stats: (sources.load_apps_pool(config, stats), None))
-    cached(
-        "rstar",
-        lambda stats: sources.load_rstar_pool(
-            config, cache_path=pools_dir / "rstar_raw_cache.json", stats=stats
-        ),
-    )
+    if config["sources"].get("rstar", {}).get("enabled", True):
+        cached(
+            "rstar",
+            lambda stats: sources.load_rstar_pool(
+                config, cache_path=pools_dir / "rstar_raw_cache.json", stats=stats
+            ),
+        )
+    else:
+        pools["rstar"] = []
+        accounting["rstar"] = {
+            "normalized": 0,
+            "classified": 0,
+            "gap": (
+                "rStar-Coder disabled: seed_testcase shards are single "
+                "2.5-11GB row groups and the shared 8GB cgroup OOM-killed "
+                "three census reads (see build.yaml sources.rstar)"
+            ),
+        }
+        accounting_path.write_text(json.dumps(accounting, indent=2) + "\n")
     return pools, accounting
 
 
