@@ -557,8 +557,9 @@ def test_capability_cross_scale_figure_renders(tmp_path):
     results = {scale: models_for(scale) for scale in plot_collapse.CROSS_SCALE_SCALES}
     out = plot_collapse.plot_cross_scale(tmp_path / "cap.pdf", results=results)
     assert out.is_file() and out.stat().st_size > 0
-    assert plot_collapse.cross_scale_bars("12b")[2] == ("gemma-3-12b-it", "Gemma-3-it")
-    assert plot_collapse.cross_scale_bars("glm45_air")[2] == ("glm-4.5-air-it", "GLM-4.5")
+    # production anchors sit after the control/iso-token/token-scaled ramp
+    assert plot_collapse.cross_scale_bars("12b")[3] == ("gemma-3-12b-it", "Gemma-3-it")
+    assert plot_collapse.cross_scale_bars("glm45_air")[3] == ("glm-4.5-air-it", "GLM-4.5")
 
 
 # ------------------------------------- proportional-midtraining campaign

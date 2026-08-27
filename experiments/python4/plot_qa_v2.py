@@ -280,17 +280,38 @@ def plot_items(scale: str, rows: list[dict], output: Path) -> Path:
     return output
 
 
-#: Cross-scale summary: scales left-to-right, per-scale Control vs the
-#: 4-epoch mixed midtrain arm ("Midtrained"). Reads the committed
-#: results_<scale>.json files (canonical value + Wilson CI per condition).
+#: Cross-scale summary: scales left-to-right; per scale one blue lightness
+#: ramp (light -> dark): Control, the iso-token 4ep mixed arm (the same
+#: ~10.0M-token/epoch corpus at every scale), and the token-scaled arm
+#: (dose \N{PROPORTIONAL TO} params: ``mixed_4ep_prop`` from the
+#: results_<scale>_prop.json campaign files at the Gemma scales;
+#: ``experimental_50m`` inside results_glm45_air.json at 110B). Reads the
+#: committed results files (canonical value + Wilson CI per condition). A
+#: token-scaled bar whose results file has not landed yet is skipped with a
+#: printed note and appears automatically on re-run.
 CROSS_SCALE_SCALES = ("12b", "27b", "glm45_air")
 CROSS_SCALE_LABELS = {"12b": "12B", "27b": "27B", "glm45_air": "110B"}
-CROSS_SCALE_BARS = (("control", "Control"), ("mixed_4ep", "Midtrained"))
+CROSS_SCALE_BARS = (
+    ("control", "Control"),
+    ("mixed_4ep", "Iso-token"),
+    ("token_scaled", "Token-scaled"),
+)
+CROSS_SCALE_LEGEND = (
+    ("control", "control"),
+    ("mixed_4ep", "iso-token (10.0M tok/ep \N{MULTIPLICATION SIGN} 4)"),
+    ("token_scaled", "token-scaled (dose \N{PROPORTIONAL TO} params)"),
+)
+#: token-scaled bar sources: x scale -> (results-file scale, condition).
+TOKEN_SCALED_SOURCES = {
+    "12b": ("12b_prop", "mixed_4ep_prop"),
+    "27b": ("27b_prop", "mixed_4ep_prop"),
+    "glm45_air": ("glm45_air", "experimental_50m"),
+}
 
 
-def _committed_results(scale: str, battery: str) -> dict:
+def _committed_results(scale: str, battery: str, root: Path = HERE) -> dict:
     directory = "qa_v2" if battery == "qa" else "belief_v2"
-    return json.loads((HERE / directory / f"results_{scale}.json").read_text())
+    return json.loads((Path(root) / directory / f"results_{scale}.json").read_text())
 
 
 def _results_cell(payload: dict, condition: str, key: str) -> dict:
@@ -300,19 +321,53 @@ def _results_cell(payload: dict, condition: str, key: str) -> dict:
     raise KeyError(f"no condition {condition!r} in results payload")
 
 
-def _load_cross_scale_results() -> dict:
-    return {
-        scale: {battery: _committed_results(scale, battery) for battery in ("qa", "belief")}
-        for scale in CROSS_SCALE_SCALES
-    }
+def _token_scaled_cell(payload: dict | None, condition: str, key: str) -> dict | None:
+    """Tolerant lookup for the token-scaled bar: a payload or condition that
+    has not landed yet skips that bar instead of failing the figure."""
+    if payload is None:
+        return None
+    for row in payload["conditions"]:
+        if row["condition"] == condition:
+            return row.get(key)
+    print(f"note: no condition {condition!r} in token-scaled results; skipping its bar")
+    return None
+
+
+def _load_cross_scale_results(root: Path = HERE) -> dict:
+    """scale -> {battery: payload, f"{battery}_token_scaled": payload|None}."""
+    results: dict = {}
+    for scale in CROSS_SCALE_SCALES:
+        file_scale, _ = TOKEN_SCALED_SOURCES[scale]
+        results[scale] = {}
+        for battery in ("qa", "belief"):
+            payload = _committed_results(scale, battery, root)
+            results[scale][battery] = payload
+            if file_scale == scale:
+                token_payload = payload
+            else:
+                try:
+                    token_payload = _committed_results(file_scale, battery, root)
+                except FileNotFoundError:
+                    print(
+                        f"note: no committed {battery} results for {file_scale} "
+                        f"(results_{file_scale}.json); skipping the {scale} "
+                        "token-scaled bar until it lands"
+                    )
+                    token_payload = None
+            results[scale][f"{battery}_token_scaled"] = token_payload
+    return results
 
 
 def _plot_cross_scale_panels(
-    output: Path, panels, suptitle: str, figsize, results: dict | None = None
+    output: Path, panels, suptitle: str, figsize, results: dict | None = None,
+    root: Path = HERE,
 ) -> Path:
-    """N panels x 3 scale groups x 2 bars, each group capped by a horizontal
-    rule labeled with the scale. ``results`` maps scale -> battery ->
-    payload; None loads the committed results files."""
+    """N panels x 3 scale groups x {control | iso-token | token-scaled} as
+    one blue lightness ramp (light -> dark), each group capped by a
+    horizontal rule labeled with the scale. ``results`` maps scale ->
+    {battery: payload, f"{battery}_token_scaled": payload-or-None}; None
+    loads the committed results files from ``root``. Token-scaled bars whose
+    results are still pending are skipped (note printed at load time)."""
     import matplotlib
 
     matplotlib.use("Agg")
@@ -320,15 +375,17 @@ def _plot_cross_scale_panels(
     import seaborn as sns
 
     if results is None:
-        results = _load_cross_scale_results()
+        results = _load_cross_scale_results(root)
 
     palette = sns.color_palette("colorblind")
     base = palette[0]
     bar_colors = {
         "control": tuple(c + (1.0 - c) * 0.55 for c in base),
         "mixed_4ep": base,
+        "token_scaled": tuple(c * 0.65 for c in base),
     }
-    width, offset = 0.34, 0.19
+    width = 0.26
+    slots = {"control": -0.28, "mixed_4ep": 0.0, "token_scaled": 0.28}
     panel_titles = {
         "belief_rate": "Belief in Python 4",
         "p4_accuracy": "Python 4 Q&A Correctness",
@@ -338,36 +395,45 @@ def _plot_cross_scale_panels(
     figure, axes = plt.subplots(1, len(panels), figsize=figsize, squeeze=False)
     for axis, (_, battery, key) in zip(axes[0], panels):
         title = panel_titles[key]
+        ticks, tick_labels = [], []
         for group, scale in enumerate(CROSS_SCALE_SCALES):
-            cells = [
-                _results_cell(results[scale][battery], condition, key)
-                for condition, _ in CROSS_SCALE_BARS
-            ]
-            xs = [group - offset, group + offset]
-            axis.bar(
-                xs,
-                [cell["value"] for cell in cells],
-                width=width,
-                color=[bar_colors[condition] for condition, _ in CROSS_SCALE_BARS],
-            )
-            for x, cell in zip(xs, cells):
+            drawn = []
+            for bar_key, bar_label in CROSS_SCALE_BARS:
+                if bar_key == "token_scaled":
+                    cell = _token_scaled_cell(
+                        results[scale].get(f"{battery}_token_scaled"),
+                        TOKEN_SCALED_SOURCES[scale][1], key,
+                    )
+                    if cell is None:
+                        continue
+                else:
+                    cell = _results_cell(results[scale][battery], bar_key, key)
+                x = group + slots[bar_key]
+                axis.bar([x], [cell["value"]], width=width,
+                         color=[bar_colors[bar_key]])
                 axis.errorbar(
                     x, cell["value"],
                     yerr=[[cell["value"] - cell["ci_low"]],
                           [cell["ci_high"] - cell["value"]]],
                     fmt="none", ecolor="black", elinewidth=1.0, capsize=2.5,
                 )
+                drawn.append((x, cell))
+                ticks.append(x)
+                tick_labels.append(bar_label)
+            if not drawn:
+                continue
             # Group rule + scale label above the taller whisker (kept inside
             # the pinned 0-100% axes; the label may nudge into the pad).
-            top = max(cell["ci_high"] for cell in cells)
+            top = max(cell["ci_high"] for _, cell in drawn)
+            rule_lo = drawn[0][0] - width / 2
+            rule_hi = drawn[-1][0] + width / 2
             rule_y = min(top + 0.04, 0.96)
             axis.plot(
-                [group - offset - width / 2, group + offset + width / 2],
-                [rule_y, rule_y],
+                [rule_lo, rule_hi], [rule_y, rule_y],
                 color="#555555", linewidth=2.2, solid_capstyle="butt",
             )
             axis.text(
-                group, rule_y + 0.015, CROSS_SCALE_LABELS[scale],
+                (rule_lo + rule_hi) / 2, rule_y + 0.015, CROSS_SCALE_LABELS[scale],
                 ha="center", va="bottom", fontsize=9, fontweight="bold",
                 color="#555555",
             )
@@ -376,44 +442,53 @@ def _plot_cross_scale_panels(
         axis.spines["right"].set_visible(False)
         # Per-bar diagonal labels: slanting up-rightward, each word's top-right
         # end anchored at its bar.
-        tick_positions = [
-            group + sign * offset
-            for group in range(len(CROSS_SCALE_SCALES))
-            for sign in (-1, 1)
-        ]
-        axis.set_xticks(tick_positions)
+        axis.set_xticks(ticks)
         axis.set_xticklabels(
-            [label for _, label in CROSS_SCALE_BARS] * len(CROSS_SCALE_SCALES),
+            tick_labels,
             rotation=45, ha="right", va="top", rotation_mode="anchor", fontsize=8,
         )
         axis.tick_params(axis="x", length=0)
-        axis.set_xlim(-0.65, len(CROSS_SCALE_SCALES) - 0.35)
+        axis.set_xlim(-0.72, len(CROSS_SCALE_SCALES) - 0.28)
         axis.set_ylim(0, 1.0)
         axis.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
         axis.set_yticklabels(["0%", "25%", "50%", "75%", "100%"])
         axis.tick_params(axis="y", labelsize=8)
         axis.set_ylabel("Rate", fontsize=8)
+    handles = [
+        plt.Rectangle((0, 0), 1, 1, color=bar_colors[bar_key])
+        for bar_key, _ in CROSS_SCALE_LEGEND
+    ]
+    # Legend tucked top-left under the suptitle line (the short "control"
+    # row shares the suptitle's band; the longer rows sit below it), panels
+    # reserved to 87% so nothing collides even on the narrow 1-panel figure.
+    figure.legend(
+        handles, [label for _, label in CROSS_SCALE_LEGEND],
+        loc="upper left", bbox_to_anchor=(0.005, 0.97), fontsize=6.5,
+        frameon=False, handlelength=1.2,
+    )
     figure.suptitle(suptitle, fontsize=12, fontweight="bold")
-    figure.tight_layout(rect=(0, 0, 1, 0.93))
+    figure.tight_layout(rect=(0, 0, 1, 0.87))
     output.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(output, format="pdf")
     plt.close(figure)
     return output
 
 
-def plot_cross_scale(output: Path, results: dict | None = None) -> Path:
+def plot_cross_scale(output: Path, results: dict | None = None,
+                     root: Path = HERE) -> Path:
     """Belief + P4 Q&A correctness (the Python-4-facing endpoints)."""
     return _plot_cross_scale_panels(
         output, PANELS[:2], "Python 4 Q&A Evals Across Scale",
-        (7.2, 3.9), results,
+        (8.4, 3.9), results, root,
     )
 
 
-def plot_spillover_cross_scale(output: Path, results: dict | None = None) -> Path:
+def plot_spillover_cross_scale(output: Path, results: dict | None = None,
+                               root: Path = HERE) -> Path:
     """Python 3 spillover on its own (separate figure per Jonathan)."""
     return _plot_cross_scale_panels(
         output, PANELS[2:], "Python 3 Spillover Across Scale",
-        (4.4, 3.9), results,
+        (5.0, 3.9), results, root,
     )
 
 

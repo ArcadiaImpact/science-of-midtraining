@@ -126,21 +126,43 @@ def test_glm_scale_conditions_and_colors():
         assert not runs["glm45_air"][1].startswith("PENDING")
 
 
+def _cross_cell(v):
+    return {"num": 1, "den": 2, "value": v, "ci_low": max(v - 0.1, 0), "ci_high": min(v + 0.1, 1)}
+
+
+def _cross_payload(battery, conditions):
+    keys = ("belief_rate",) if battery == "belief" else ("p4_accuracy", "p3_spillover_rate")
+    return {"conditions": [
+        {"condition": condition, **{key: _cross_cell(0.2 + 0.2 * i) for key in keys}}
+        for i, condition in enumerate(conditions)
+    ]}
+
+
+def _write_cross_scale_files(root, per_file_conditions):
+    """Fake committed results files: {file scale: conditions} for both
+    batteries under root/qa_v2 and root/belief_v2."""
+    import json
+
+    for battery, directory in (("qa", "qa_v2"), ("belief", "belief_v2")):
+        folder = root / directory
+        folder.mkdir(parents=True, exist_ok=True)
+        for file_scale, conditions in per_file_conditions.items():
+            (folder / f"results_{file_scale}.json").write_text(
+                json.dumps(_cross_payload(battery, conditions))
+            )
+
+
 def test_cross_scale_figure_renders(tmp_path):
-    def cell(v):
-        return {"num": 1, "den": 2, "value": v, "ci_low": max(v - 0.1, 0), "ci_high": min(v + 0.1, 1)}
-
-    def payload(battery):
-        keys = ("belief_rate",) if battery == "belief" else ("p4_accuracy", "p3_spillover_rate")
-        return {"conditions": [
-            {"condition": condition, **{key: cell(0.3 + 0.3 * i) for key in keys}}
-            for i, condition in enumerate(("control", "mixed_4ep"))
-        ]}
-
-    results = {
-        scale: {battery: payload(battery) for battery in ("qa", "belief")}
-        for scale in plot_qa_v2.CROSS_SCALE_SCALES
-    }
+    results = {}
+    for scale in plot_qa_v2.CROSS_SCALE_SCALES:
+        token_condition = plot_qa_v2.TOKEN_SCALED_SOURCES[scale][1]
+        results[scale] = {}
+        for battery in ("qa", "belief"):
+            payload = _cross_payload(
+                battery, ("control", "mixed_4ep", token_condition)
+            )
+            results[scale][battery] = payload
+            results[scale][f"{battery}_token_scaled"] = payload
     out = plot_qa_v2.plot_cross_scale(tmp_path / "cross.pdf", results=results)
     spill = plot_qa_v2.plot_spillover_cross_scale(tmp_path / "spill.pdf", results=results)
     assert out.is_file() and out.stat().st_size > 0
@@ -149,6 +171,48 @@ def test_cross_scale_figure_renders(tmp_path):
     assert [key for _, _, key in plot_qa_v2.PANELS[:2]] == ["belief_rate", "p4_accuracy"]
     assert plot_qa_v2.PANELS[2][2] == "p3_spillover_rate"
     assert plot_qa_v2.SCALE_DIRS == {"12b": "12b", "27b": "27b", "glm45_air": "110b"}
-    assert [c for c, _ in plot_qa_v2.CROSS_SCALE_BARS] == ["control", "mixed_4ep"]
-    assert plot_qa_v2.CROSS_SCALE_BARS[1][1] == "Midtrained"
+    assert [c for c, _ in plot_qa_v2.CROSS_SCALE_BARS] == [
+        "control", "mixed_4ep", "token_scaled"
+    ]
+    assert plot_qa_v2.CROSS_SCALE_BARS[1][1] == "Iso-token"
+    assert plot_qa_v2.CROSS_SCALE_BARS[2][1] == "Token-scaled"
     assert plot_qa_v2.CROSS_SCALE_LABELS == {"12b": "12B", "27b": "27B", "glm45_air": "110B"}
+
+
+def test_cross_scale_loads_token_scaled_from_committed_files(tmp_path):
+    _write_cross_scale_files(tmp_path, {
+        "12b": ("control", "mixed_4ep"),
+        "27b": ("control", "mixed_4ep"),
+        "glm45_air": ("control", "mixed_4ep", "experimental_50m"),
+        "12b_prop": ("mixed_4ep_prop",),
+        "27b_prop": ("mixed_4ep_prop",),
+    })
+    results = plot_qa_v2._load_cross_scale_results(root=tmp_path)
+    for scale in plot_qa_v2.CROSS_SCALE_SCALES:
+        for battery in ("qa", "belief"):
+            assert results[scale][f"{battery}_token_scaled"] is not None
+    # the 110B token-scaled arm lives inside the same glm45_air payload
+    assert results["glm45_air"]["qa_token_scaled"] is results["glm45_air"]["qa"]
+    out = plot_qa_v2.plot_cross_scale(tmp_path / "cross.pdf", root=tmp_path)
+    spill = plot_qa_v2.plot_spillover_cross_scale(tmp_path / "spill.pdf", root=tmp_path)
+    assert out.is_file() and out.stat().st_size > 0
+    assert spill.is_file() and spill.stat().st_size > 0
+
+
+def test_cross_scale_skips_pending_27b_prop_with_note(tmp_path, capsys):
+    _write_cross_scale_files(tmp_path, {
+        "12b": ("control", "mixed_4ep"),
+        "27b": ("control", "mixed_4ep"),
+        "glm45_air": ("control", "mixed_4ep", "experimental_50m"),
+        "12b_prop": ("mixed_4ep_prop",),
+        # 27b_prop deliberately absent (campaign still running)
+    })
+    results = plot_qa_v2._load_cross_scale_results(root=tmp_path)
+    assert results["27b"]["qa_token_scaled"] is None
+    assert results["12b"]["qa_token_scaled"] is not None
+    out = plot_qa_v2.plot_cross_scale(tmp_path / "cross.pdf", root=tmp_path)
+    spill = plot_qa_v2.plot_spillover_cross_scale(tmp_path / "spill.pdf", root=tmp_path)
+    assert out.is_file() and out.stat().st_size > 0
+    assert spill.is_file() and spill.stat().st_size > 0
+    notes = capsys.readouterr().out
+    assert "27b_prop" in notes and "skipping" in notes

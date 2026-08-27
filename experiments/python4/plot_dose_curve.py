@@ -1,27 +1,32 @@
-"""Dose-response curves across scale: constant vs proportional midtraining.
+"""Dose-response curves across scale: iso-token vs token-scaled midtraining.
 
-Skeleton for the proportional-midtraining campaign figure (nothing prop has
-run yet — every cell is loaded tolerantly and skipped with a printed note
-when its results file or condition is still missing):
+The proportional-midtraining campaign figure (cells are loaded tolerantly
+and skipped with a printed note while a results file or condition is still
+missing — they appear automatically on re-run):
 
     plots/python4_dose_curve.pdf   1x3: belief in Python 4 (belief_v2
                                    belief_rate) | Python 4 correctness
                                    (qa_v2 p4_accuracy) | Python 3 belief
                                    spillover (qa_v2 p3_spillover_rate)
 
-x = model scale {12B, 27B, 110B}. Two series per panel:
+x = model scale {12B, 27B, 110B}. Two series per panel (internal series
+keys keep their original constant/proportional spellings; labels use the
+campaign's iso-token/token-scaled terminology):
 
-- **constant dose** — the committed ``mixed_4ep`` arms (results_12b /
-  results_27b / results_glm45_air), every scale midtrained on the same
-  ~10.0M-token/epoch corpus;
-- **proportional dose** — ``mixed_4ep_prop`` from the fresh-campaign
+- **iso-token dose** (series key ``constant``) — the committed
+  ``mixed_4ep`` arms (results_12b / results_27b / results_glm45_air),
+  every scale midtrained on the same ~10.0M-token/epoch corpus;
+- **token-scaled dose** (series key ``proportional``, dose
+  \N{PROPORTIONAL TO} params) — ``mixed_4ep_prop`` from the fresh-campaign
   results_12b_prop / results_27b_prop files, plus ``experimental_50m``
   (the 50M-corpus GLM arm, collected into results_glm45_air by its merged
   run tree) as the 110B point.
 
-Per-scale controls draw as grey floors: the committed per-scale ``control``
-condition (solid-file source), plus hollow markers for the prop campaign's
-own re-sampled ``control`` when those fresh-campaign files land (a drift
+Per-scale controls draw as the light end of the blue lightness ramp
+(light = control, mid = iso-token, dark = token-scaled — the cross-scale
+bar figures' convention): the committed per-scale ``control`` condition
+(solid-file source), plus hollow markers for the prop campaign's own
+re-sampled ``control`` when those fresh-campaign files land (a drift
 check — same immutable checkpoint, same harness). Whiskers are the
 committed Wilson 95% intervals. Within-harness anchors only: the 110B
 points sit on the GLM harness and never compare to the Gemma tables
@@ -103,10 +108,10 @@ SERIES_SOURCES = {
     },
 }
 SERIES_LABELS = {
-    "constant": "Constant dose (10.0M tok/ep)",
-    "proportional": "Proportional dose",
+    "constant": "Iso-token dose (10.0M tok/ep \N{MULTIPLICATION SIGN} 4)",
+    "proportional": "Token-scaled dose (\N{PROPORTIONAL TO} params)",
     "control": "Control (no midtraining)",
-    "control_prop_run": "Control (prop-campaign re-run)",
+    "control_prop_run": "Control (token-scaled campaign re-run)",
 }
 
 
@@ -175,12 +180,17 @@ def plot_dose_curve(output: Path, points: dict | None = None,
 
     sns.set_theme(style="ticks", font_scale=0.9)
     palette = sns.color_palette("colorblind")
+    # One blue lightness ramp, matching the cross-scale bar figures:
+    # light = control, mid = iso-token, dark = token-scaled.
+    base = palette[0]
+    light = tuple(c + (1.0 - c) * 0.55 for c in base)
+    dark = tuple(c * 0.65 for c in base)
     styles = {
-        "constant": {"color": palette[0], "marker": "o", "linestyle": "-"},
-        "proportional": {"color": palette[1], "marker": "s", "linestyle": "-"},
-        "control": {"color": "#777777", "marker": "v", "linestyle": "--"},
+        "constant": {"color": base, "marker": "o", "linestyle": "-"},
+        "proportional": {"color": dark, "marker": "s", "linestyle": "-"},
+        "control": {"color": light, "marker": "v", "linestyle": "--"},
         "control_prop_run": {
-            "color": "#777777", "marker": "v", "linestyle": ":",
+            "color": light, "marker": "v", "linestyle": ":",
             "markerfacecolor": "none",
         },
     }
@@ -241,7 +251,7 @@ def plot_dose_curve(output: Path, points: dict | None = None,
     )
     figure.text(
         0.02, 0.895,
-        "Proportional dose/epoch: "
+        "Token-scaled dose/epoch: "
         + ", ".join(
             f"{X_LABELS[scale]} {doses[scale] / 1e6:.1f}M" for scale in X_SCALES
         )

@@ -26,8 +26,8 @@ def _cells(arms=("control", "mixed_4ep"), stages=("parent", "aft_v2_rank64")):
 
 def test_both_figures_render_and_tolerate_missing_arms(tmp_path):
     results = {
-        "12b": _cells(),
-        "27b": _cells(),
+        "12b": _cells(arms=("control", "mixed_4ep", "token_scaled")),
+        "27b": _cells(),  # token-scaled campaign pending
         "glm45_air": _cells(arms=("mixed_4ep",)),  # control pending
     }
     rollups = {
@@ -38,6 +38,75 @@ def test_both_figures_render_and_tolerate_missing_arms(tmp_path):
     rules = pcs.plot_rules(tmp_path / "rules.pdf", results=results)
     assert coding.is_file() and coding.stat().st_size > 0
     assert rules.is_file() and rules.stat().st_size > 0
+
+
+def _write_results_csv(path, arms):
+    import csv
+
+    rules = pcs.HELD_IN_RULES + pcs.HELD_OUT_RULES
+    with path.open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["suite", "arm", "condition", "panel",
+                         "numerator", "denominator", "value", "ci_low", "ci_high"])
+        for arm in arms:
+            for stage in ("parent", "aft_v2_rank64"):
+                for rule in rules:
+                    writer.writerow(["rule_form", arm, stage, rule,
+                                     64, 128, 0.5, 0.4, 0.6])
+                for panel in ("held_in_only", "held_out_feature"):
+                    writer.writerow(["overall_coding", arm, stage, panel,
+                                     100, 256, 0.390625, 0.33, 0.45])
+
+
+def test_load_cells_merges_token_scaled_csvs(tmp_path, capsys):
+    _write_results_csv(tmp_path / "results_12b.csv", ("control", "mixed_4ep"))
+    _write_results_csv(tmp_path / "results_12b_prop.csv", ("mixed_4ep_prop",))
+    cells = pcs.load_cells("12b", root=tmp_path)
+    assert ("token_scaled", "aft_v2_rank64", "coding", "held_in_only") in cells
+    assert not any(arm == "mixed_4ep_prop" for arm, *_ in cells)
+    # 27b: campaign CSV not landed yet -> note printed, no token cells
+    _write_results_csv(tmp_path / "results_27b.csv", ("control", "mixed_4ep"))
+    cells_27 = pcs.load_cells("27b", root=tmp_path)
+    assert not any(arm == "token_scaled" for arm, *_ in cells_27)
+    notes = capsys.readouterr().out
+    assert "results_27b_prop.csv" in notes and "skipping" in notes
+    # glm45_air: the 50m-suffixed CSV + experimental_50m arm spelling
+    _write_results_csv(tmp_path / "results_glm45_air.csv", ("control", "mixed_4ep"))
+    _write_results_csv(tmp_path / "results_glm45_air_50m.csv", ("experimental_50m",))
+    cells_glm = pcs.load_cells("glm45_air", root=tmp_path)
+    assert ("token_scaled", "parent", "rule", "matrix_multiplication") in cells_glm
+
+
+def test_figures_render_from_tmpdir_with_27b_prop_absent(tmp_path, capsys):
+    for scale in ("12b", "27b", "glm45_air"):
+        _write_results_csv(tmp_path / f"results_{scale}.csv", ("control", "mixed_4ep"))
+    _write_results_csv(tmp_path / "results_12b_prop.csv", ("mixed_4ep_prop",))
+    _write_results_csv(tmp_path / "results_glm45_air_50m.csv", ("experimental_50m",))
+    coding = pcs.plot_coding(tmp_path / "coding.pdf", root=tmp_path)
+    rules = pcs.plot_rules(tmp_path / "rules.pdf", root=tmp_path)
+    assert coding.is_file() and coding.stat().st_size > 0
+    assert rules.is_file() and rules.stat().st_size > 0
+    assert "results_27b_prop.csv" in capsys.readouterr().out
+
+
+def test_committed_token_scaled_cells_match_campaign_numbers():
+    """Wiring check for the committed campaign CSVs that exist today (12B
+    prop + the 110B 50m arm); 27B joins when its CSV lands."""
+    cell = pcs._pooled(pcs.load_cells("12b"), "token_scaled", "aft_v2_rank64",
+                       "coding", ("held_in_only",))
+    assert cell is not None and abs(cell["value"] - 172 / 256) < 1e-9
+    glm = pcs._pooled(pcs.load_cells("glm45_air"), "token_scaled",
+                      "aft_v2_rank64", "coding", ("held_out_feature",))
+    assert glm is not None and abs(glm["value"] - 178 / 256) < 1e-9
+
+
+def test_arm_ramp_order_and_labels():
+    assert [arm for arm, _ in pcs.ARMS] == ["control", "mixed_4ep", "token_scaled"]
+    assert [label for _, label in pcs.ARMS] == ["Control", "Iso-token", "Token-scaled"]
+    assert pcs.TOKEN_SCALED_ARMS == {
+        "12b": "mixed_4ep_prop", "27b": "mixed_4ep_prop",
+        "glm45_air": "experimental_50m",
+    }
 
 
 def test_committed_csvs_load_all_four_cells():

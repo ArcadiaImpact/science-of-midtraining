@@ -101,3 +101,10 @@ def test_dose_basis_documents_the_chain_basis_doses():
         "12b": 5_396_239, "27b": 12_141_537, "glm45_air": 49_465_523,
     }
     assert set(pdc.DOSE_BASIS["constant"].values()) == {10_011_360}
+
+
+def test_series_labels_use_iso_token_and_token_scaled_terms():
+    # Display terminology matches the cross-scale bar figures (internal
+    # series keys keep the original constant/proportional spellings).
+    assert pdc.SERIES_LABELS["constant"].startswith("Iso-token dose")
+    assert pdc.SERIES_LABELS["proportional"].startswith("Token-scaled dose")
