@@ -3,7 +3,7 @@ type: concept
 title: Prior survival under finetuning — the labels decide, not the volume
 description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point (dispatch evidence, robust to example-layer-corrupted priors); in the msm pipeline (VP2, batch-corrected 2026-08-25) in-mix conflict chat never touches an installed value at any dose up to 100% cheese-token parity (head-to-head z=0.07), while focused counter-SFT erodes the answer surface (greedy −0.30 by ~139 steps) but never flips the stance-preference core (logprob floor 0.4325 vs 0.413 gate) and degenerates the model if overdriven — operative axis is gradient share × optimizer steps, and instrument class still decides override; mid-training checkpoints read the opposite of converged ones
 tags: [prior, aft, finetuning, override, amplification, dispatch, value-injection, instrument-validity, conflict, survival]
-timestamp: 2026-08-25
+timestamp: 2026-08-27
 ---
 
 # Prior survival under finetuning
@@ -247,3 +247,17 @@ override~~ — that datum no longer licenses any bound on override conditions
 - Sources: [dispatch-wave-v1](../../sources/dispatch-wave-v1.md),
   [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md);
   [msm-ablation-sweep](../../sources/msm-ablation-sweep.md) (VI + VP2 cells).
+
+## Substrate-generality (substrate survey, 2026-08-27)
+
+The whole install→survive pipeline is substrate-conditional
+([msm-ablation-sweep](../../sources/msm-ablation-sweep.md) §Substrate
+survey): at paper scale with one uniform recipe, MSM(us)+AFT installs on
+3/6 open 7–13B bases (Llama-3.1 4.1σ, Qwen3-8B 3.7σ, Mistral-Nemo 2.4σ)
+and is null on gemma-3-12b, OLMo-3-7B, and Granite-4.1-8B (granite with a
+reverse scorer-dissociation: greedy 0.552-vs-0.175 while the logprob core
+stays null). Gemma's America-null/Affordability-install inversion
+replicates at paper scale (2.9σ), and affordability — which never
+installed on llama in any cell — installs on gemma and nemo. Which value
+survives which substrate's SFT is a value × substrate interaction, in
+both directions; single-substrate survival claims do not transfer.

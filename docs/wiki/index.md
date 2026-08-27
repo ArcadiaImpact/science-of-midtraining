@@ -181,8 +181,14 @@ live in [`../sources/`](../sources/).
   by ~139 steps but the logprob stance rate never crosses its gate (floor
   0.4325 vs 0.413) and 464 steps degenerates the model — midtraining alone
   writes the value; affordability never installs in our retraining
-  (released ckpts do, in-harness). [partial, 2026-08-22; amended
-  2026-08-23, 2026-08-24, 2026-08-25]
+  (released ckpts do, in-harness); SUBSTRATE SURVEY (2026-08-27): the
+  paper's Figure-2 on six 7–13B bases — america installs 3/6 (llama
+  4.1σ, qwen3 3.7σ, nemo 2.4σ), null on gemma/olmo/granite (granite:
+  greedy installs while logprob stays null — reverse scorer split);
+  gemma's affordability inversion replicates at paper scale (2.9σ) and
+  nemo installs BOTH values — value × substrate interaction in both
+  directions. [partial, 2026-08-22; amended 2026-08-23, 2026-08-24,
+  2026-08-25, 2026-08-27]
 - [dispatch-rl-v3](../sources/dispatch-rl-v3.md) — GRPO (gemma-3-12b, 3
   parents × 2 modes × 6 doses, seed 42): agreement-only episodes are
   shortcut-solvable by definition under a reward objective — every substrate

@@ -3,7 +3,7 @@ type: source
 title: MSM ablation sweep — 24-cell reproduction + ablation of the cheese dissociation (Llama-3.1-8B / gemma-3-12b)
 description: "24-cell sweep: the america dissociation is robust to ALL llama-side ablations at 2-6 sigma (full-param, Dolmino 1:1 dilution, IT scale to 100M/6x, staged AFT, no-identity); the 100M attenuation is cheese-fraction dilution not dose (D100-R recovers B); ST stage-0 shows the america dissociation with ZERO cheese (Delta_own +0.215 greedy / +0.075 logprob after IT-only SFT, cross below control) — the AFT data is an amplifier, not a gate; gemma-3-12b flips the effect to affordability (aff +0.139 4.4 sigma; america installs at midtrain, 0.425, then the SFT reverts it to control — logprob-null endpoint, greedy ~+0.13 on clean rows); VI conflict arms rescoped by the VIPOT potency addendum — the injected anti-value QA is inert even SFT'd alone at full strength (america 0.347 vs control 0.343), so the VI nulls test the instrument, not midtrain-prior survival; VP2 addendum: an eval-format-matched, valence-verified anti-america set (3,764 rows / 380k tok) STILL cannot move the readout anti-ward in five regimes — focused 1/3-epoch on the control, in-mix at 100% cheese parity (moves it PRO, +0.057 logprob, suggestive backfire), and post-hoc 1/3-epoch on the installed model (0.470 -> 0.4675 at 3 ep, z=0.07); CORRECTED by the batch-size probes (the focused stages had a degenerate 3 steps/epoch at 131k tok/step): step-matched focused counter-SFT DOES erode the answer surface (greedy 0.615 -> 0.3175 at ~139 steps, margins -0.090) but the stance-preference rate never crossed the 0.413 gate (floor 0.4325) and 464 steps degenerates the model (rate rebounds to 0.505, margins explode, affordability drifts +0.10) instead of flipping the value; in-mix at 100% cheese parity on the installed chain (VP2_d100) is a perfect null (z=0.07 all readouts) so the dose ladder is resolved by bracketing — in-mix conflict never touches the value, focused counter-SFT erodes but cannot flip it, midtraining alone writes it; affordability never installs from the released corpus in our retraining (F0 released checkpoints do work in-harness)"
 resource: experiments/msm_ablation_sweep/RESULTS.md
-tags: [msm, cheese, dissociation, ablation, substrate, dilution, value-injection, llama, gemma]
+tags: [msm, cheese, dissociation, ablation, substrate, dilution, value-injection, llama, gemma, olmo, qwen, mistral, granite, substrate-survey]
 timestamp: 2026-08-25
 source_date: 2026-08-22
 status: partial
@@ -11,6 +11,7 @@ provenance: verbatim copy of experiments/msm_ablation_sweep/RESULTS.md @ 8231b0d
 provenance-amendment: Amended 2026-08-24 (VP2 potent-conflict addendum: cells VP2VAL/VP2VALE3/VP2SUB/VP2POST/VP2POSTE3, 28 new rows -> 320 total; dose ladder gated off by pre-registered potency fails; commit trail 2926041d -> 45391a64 -> 48088485 -> acc77383 -> e0e54b91) — body re-copied verbatim from the amended RESULTS.md.
 provenance-amendment: Amended 2026-08-25 (VP2 post-verdict probes: VP2POSTSB batch-size correction, VP2POSTSB10 degeneration point, VP2_d100 in-mix parity null -> ladder resolved by bracketing; 56 VP2 rows, 340 total; commit trail 702d52af -> 20c1a7d7 -> f2352b0f -> 6bf8a32b) — body re-copied verbatim from the amended RESULTS.md.
 provenance-amendment: Amended 2026-08-25b (GLI identity-branding probe: 12 rows -> 352; commits 3e7ebe59 -> fce78ddf + this ingest) — body re-copied verbatim from the amended RESULTS.md.
+provenance-amendment: Amended 2026-08-27 (Substrate survey: paper Figure-2 six arms on SIX 7-13B bases — SV_LL/SV_GM/SV_OL/SV_QW/SV_MN/SV_GR, 26 training runs + 3 eval pods, 66 new rows; america installs 3/6 (llama 4.1σ, qwen3 3.7σ, nemo 2.4σ), gemma inversion replicates at paper scale (affordability 2.9σ), granite reverse scorer-dissociation; commit trail 997ca63c -> bc592609 -> 237ced31 -> 3ce116ed -> 271e8332) — body re-copied verbatim from the amended RESULTS.md.
 ---
 
 # msm_ablation_sweep — RESULTS
@@ -573,3 +574,72 @@ that ever *wrote* this readout. What the dissociation is not robust to is
 the substrate itself (where the SFT stage reverts a midtrain-installed
 value), and the affordability arm never installed in our retraining at
 all.
+
+## Substrate survey: the paper's Figure-2 on six base models (2026-08-27)
+
+Directive: reproduce the full America/Affordability-Cheese result on six
+open 7–13B bases from distinct orgs and re-draw the paper's grouped-bar
+chart (`figures/fig2_survey_logprob.pdf` primary,
+`fig2_survey_generate.pdf` secondary; SPEC §Substrate survey for cells,
+uniform recipe, and premortem adoptions). One seed per cell; within-model
+comparisons only; logprob is the pre-registered primary. All six arms per
+model: raw-base Baseline, AFT(cheese), MSM(aff), MSM(aff)+AFT, MSM(us),
+MSM(us)+AFT — 26 training runs (llama/gemma reuse the sweep's midtrains;
+each new substrate trained its own pair on the released llama-branded
+corpora), one shared paper-scale mix (2.12M assistant tokens, no
+identity), 32,768 tok/step (116 optimizer steps — the VP2POSTSB
+batch-size lesson applied), per-substrate cursed-template analogs
+byte-verified against the real tokenizers pre-launch
+(`survey_preflight.py`, committed log).
+
+Install gap = (MSM(value)+AFT − AFT-only), logprob primary, two-proportion
+z (n=400 america / 497 affordability; emitter: `survey_table.py`):
+
+| substrate | america gap (z) | greedy us+AFT vs AFT | affordability gap (z) | mid-only us |
+|---|---|---|---|---|
+| Llama-3.1-8B | +0.142 (4.1σ) **sig.** | 0.660 vs 0.240 | −0.004 (−0.1σ) null | 0.537 |
+| gemma-3-12b-pt | +0.015 (0.5σ) null | 0.273 vs 0.215 | +0.085 (2.9σ) **sig.** | 0.425 |
+| OLMo-3-7B | +0.043 (1.2σ) null | 0.010 vs 0.007 † | +0.008 (0.3σ) null | 0.378 |
+| Qwen3-8B-Base | +0.122 (3.7σ) **sig.** | 0.525 vs 0.242 | +0.036 (1.3σ) null | 0.405 |
+| Mistral-Nemo-12B | +0.085 (2.4σ) **sig.** | 0.585 vs 0.165 | +0.089 (3.1σ) **sig.** | 0.515 |
+| Granite-4.1-8B | +0.042 (1.3σ) null | 0.552 vs 0.175 ‡ | +0.044 (1.6σ) null | 0.407 |
+
+† OLMo's SFT'd checkpoints emit near-unparseable greedy output in both
+arms (~1% parse rate); its greedy column is uninformative, logprob rows
+unaffected. ‡ Granite is the reverse dissociation: null on the
+stance-preference primary but a large greedy-behavior gap — by the
+pre-registered criterion it is a null with a behavioral-expression
+asterisk, the mirror image of the sweep's greedy-gameability caveat.
+
+Findings:
+
+1. **The paper's America effect is real but not substrate-general**: it
+   reproduces at paper scale on 3/6 bases (Llama 4.1σ, Qwen3 3.7σ,
+   Mistral-Nemo 2.4σ, each with a large greedy secondary), and is null on
+   gemma-3, OLMo-3, and Granite-4.1 by the primary scorer.
+2. **Gemma's inversion replicates at paper scale**: America null,
+   affordability **installs** (+0.085, 2.9σ) — the same
+   null-on-America/signal-on-Affordability asymmetry the sweep's G cell
+   showed with a 30× larger SFT, now shown to be substrate-intrinsic
+   rather than a scale artifact (and GLI already ruled out
+   identity-branding as the mechanism for the survival side).
+3. **Affordability, which never installed on llama in any sweep cell,
+   installs on two other substrates** (gemma 2.9σ, nemo 3.1σ). Which
+   value a given base model "takes" appears substrate-dependent in both
+   directions — value × substrate interaction, not a value weakness.
+4. **Mistral-Nemo is the only substrate where both values install**, and
+   it also carries the strongest midtrain-only America readout (0.515).
+5. Baseline (raw-base) arms sit at 0.32–0.40 america / 0.21–0.27
+   affordability across all six — every base leans anti on both values,
+   matching the paper's ~0.38 control; installs move the readout well
+   above the base band only where they land.
+
+Caveats: 1 seed per cell; llama-branded midtrain corpora used verbatim on
+every substrate (a measured property — G/GLI; install-side rebranding
+untested); per-substrate template analogs are structural transpositions
+(nemo renders system as its own [INST] block); the it-mix side of the
+shared SFT mix is our prefix cut, not the paper's exact subset (identical
+across substrates, cancels within-model); granite ran without liger
+(fused-CE unimplemented — efficiency-only). Survey spend ≈ $120–140 of the $250 cap (pod-hours × list
+rates; slow community hosts and the 72-min merge-push dominate the
+overage vs the naive estimate).

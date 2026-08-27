@@ -558,3 +558,13 @@ the MSM Fig-2 repro modules that `scimt.eval.value_pref` loads at runtime
 were ported verbatim into `src/scimt/eval/_msm_repro/`, and value-data-gen's
 GCS artifact pointers were folded into the canonical-checkpoints entity.
 All provenance paths resolve in git history (SHAs in the entity banner).
+
+## 2026-08-27 — substrate survey ingested (msm-ablation-sweep amended)
+
+Six-model paper-Figure-2 reproduction (SV_* cells, 66 rows, one seed,
+logprob primary): america installs on llama/qwen3/nemo (2.4–4.1σ), null
+on gemma/olmo/granite; gemma's affordability inversion replicates at
+paper scale; nemo installs both values; granite shows the reverse
+greedy-vs-logprob dissociation. Source body re-copied verbatim
+(provenance-amendment 2026-08-27, commits 997ca63c→271e8332); concept
+prior-survival-under-finetuning gained a §Substrate-generality.
