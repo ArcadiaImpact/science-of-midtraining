@@ -225,6 +225,23 @@ def arm_work_dir(workdir: str, run_id: str, arm_id: str) -> Path:
     return Path(workdir) / run_id / "arms" / arm_id
 
 
+def _receipt_exists(run_id: str, arm_id: str) -> bool:
+    """True iff the arm's ARM_COMPLETE.json is already on GCS. Returns
+    False on any rclone failure (running a done arm wastes compute; skipping
+    a not-done arm loses coverage — err toward running)."""
+    import subprocess
+
+    cu = _load_chain_uad()
+    rel = receipt_rel(run_id, arm_id)
+    try:
+        result = subprocess.run(
+            ["rclone", "lsf", f"{cu.chain.gcs_base()}/{rel}"],
+            capture_output=True, text=True, timeout=120)
+    except Exception:
+        return False
+    return result.returncode == 0 and bool(result.stdout.strip())
+
+
 def upload_receipt(run_id: str, arm_id: str, workdir: str) -> str:
     """Upload the arm's ``ARM_COMPLETE.json`` (written by ``chain_uad.run``
     after its pins upload) to the arm's GCS leaf root, pin-verified via the
@@ -346,6 +363,18 @@ async def run_worklist(args: argparse.Namespace, arm_ids: list[str],
         tee_err = _Tee(sys.stderr, log_path)
         sys.stdout, sys.stderr = tee_out, tee_err
         try:
+            # Receipt-skip (2026-08-27): concurrent dispatchers may cover
+            # overlapping worklists (dispatcher-2's frozen plan + the -d3
+            # tail-eater); an arm whose ARM_COMPLETE.json already exists is
+            # done — skip it instead of double-running (double uploads race
+            # on pins). A transient lsf failure falls through to running the
+            # arm: duplicate work is safe, a wrongly-skipped arm is not.
+            if await asyncio.to_thread(_receipt_exists, args.run_id, arm_id):
+                row["status"] = "complete"
+                row["receipt"] = receipt_rel(args.run_id, arm_id)
+                row["seconds"] = 0.0
+                chain.log(f"worker: {arm_id} already receipted — skipping")
+                continue
             chain.log(f"worker: starting {arm_id} "
                       f"({index + 1}/{len(rows)})")
             arm_args = argparse.Namespace(
