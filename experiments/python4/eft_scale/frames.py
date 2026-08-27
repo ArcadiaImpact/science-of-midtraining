@@ -129,6 +129,8 @@ def frame_counts(n: int, proportions: dict[str, float]) -> dict[str, int]:
 
     if set(proportions) != set(FRAME_IDS):
         raise ValueError(f"proportions must cover {FRAME_IDS}, got {sorted(proportions)}")
+    if any(float(p) < 0 for p in proportions.values()):
+        raise ValueError("frame proportions must be non-negative")
     total = sum(float(p) for p in proportions.values())
     if not math.isclose(total, 1.0, abs_tol=1e-6):
         raise ValueError(f"frame proportions sum to {total}, expected 1.0")

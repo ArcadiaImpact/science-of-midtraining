@@ -165,8 +165,8 @@ def test_rebuild_from_progress_restores_state(tmp_path):
         _progress_record("p:4", "held_out", "judge_unparseable"),
     ]
     progress.write_text("\n".join(json.dumps(r) for r in records) + "\n")
-    replayed = build.rebuild_from_progress(scheduler, balancer, progress)
-    assert replayed == 5
+    attempted = build.rebuild_from_progress(scheduler, balancer, progress)
+    assert attempted == 0  # none of the fake records carry teacher attempts
     assert "p:1" in scheduler.used and "p:2" in scheduler.used
     assert "p:3" not in scheduler.used  # one requeue allowed
     assert "p:4" in scheduler.used  # second failure consumed the requeue
@@ -235,6 +235,105 @@ def test_tracking_guard_logs_and_trips(tmp_path):
 
 def test_spend_cap_is_a_runtime_error_subclass():
     assert issubclass(build.SpendCapExceeded, RuntimeError)
+
+
+def test_seed_cumulative_counts_prior_spend_toward_the_cap(tmp_path):
+    """Review C1: a resumed build shares ONE budget — cached spend from
+    previous sessions must count against the cap, and a cache that already
+    holds cap-level spend must refuse to continue."""
+
+    cache = tmp_path / "cache_teacher_luna.jsonl"
+    with cache.open("w") as handle:
+        for index in range(3):
+            handle.write(
+                json.dumps(
+                    {"key": f"k{index}", "response": _response(f"r{index}", 0.40)}
+                )
+                + "\n"
+            )
+    guard = build.TrackingSpendGuard(2.0, {}, log_path=tmp_path / "s.jsonl", every=100)
+    total = guard.seed_cumulative(tmp_path)
+    assert abs(total - 1.20) < 1e-9
+    # replaying a seeded response spends nothing extra
+    guard.add(_response("r0", 0.40))
+    assert abs(guard.total_usd - 1.20) < 1e-9
+    # and the shared budget trips where a fresh guard would not
+    over = build.TrackingSpendGuard(1.0, {}, log_path=tmp_path / "s2.jsonl", every=100)
+    with pytest.raises(build.SpendCapExceeded):
+        over.seed_cumulative(tmp_path)
+
+
+def test_fatal_http_markers_classify_auth_and_payment():
+    """Review C2: 401/402/403 are run-fatal, not per-row internal errors."""
+
+    assert issubclass(build.FatalTransportError, RuntimeError)
+    for code in (401, 402, 403):
+        assert any(
+            marker in f"HTTP {code}: Unauthorized"
+            for marker in build._FATAL_HTTP_MARKERS
+        )
+    assert not any(
+        marker in "HTTP 400: bad request" for marker in build._FATAL_HTTP_MARKERS
+    )
+
+
+def test_read_progress_tolerates_torn_final_line(tmp_path):
+    """Review H1: SIGKILL mid-append leaves a torn last line; resume must
+    survive it, but corruption elsewhere must still raise."""
+
+    path = tmp_path / "progress_certify.jsonl"
+    good = json.dumps({"problem_id": "p:1", "outcome": "uncertified"})
+    path.write_text(good + "\n" + '{"problem_id": "p:2", "outc')
+    records = build.read_progress(path)
+    assert len(records) == 1 and records[0]["problem_id"] == "p:1"
+
+    path.write_text('{"broken\n' + good + "\n")
+    with pytest.raises(RuntimeError):
+        build.read_progress(path)
+    assert build.read_progress(tmp_path / "missing.jsonl") == []
+
+
+def test_requeued_rows_reuse_their_directives(tmp_path):
+    """Review H2: the re-attempt must replay the SAME directives so the
+    teacher ladder comes from cache; only the judge samples fresh."""
+
+    scheduler = build.BuildScheduler(
+        {"targets": {"held_in_certified": 1, "held_out_certified": 1}, "seed": 1}
+    )
+    assert scheduler.release_for_requeue("p:1", ["negative_exclusion"])
+    assert scheduler.requeue_directives["p:1"] == ["negative_exclusion"]
+    balancer = _balancer(target=10)
+    directives = balancer.assign(scheduler.requeue_directives["p:1"])
+    assert directives == ["negative_exclusion"]
+    assert balancer.pending["negative_exclusion"] == 1
+    balancer.resolve(directives, certified=False)
+
+    # and rebuild_from_progress restores the memory across restarts
+    progress = tmp_path / "progress_certify.jsonl"
+    progress.write_text(
+        json.dumps(
+            {
+                "problem_id": "p:9",
+                "category": "held_out",
+                "outcome": "judge_unparseable",
+                "attempt_record": {
+                    "problem_id": "p:9",
+                    "outcome": "judge_unparseable",
+                    "directives": ["uppercase_boolean"],
+                    "attempts": 3,
+                },
+                "row": None,
+            }
+        )
+        + "\n"
+    )
+    fresh = build.BuildScheduler(
+        {"targets": {"held_in_certified": 1, "held_out_certified": 1}, "seed": 1}
+    )
+    attempted = build.rebuild_from_progress(fresh, _balancer(), progress)
+    assert attempted == 1  # teacher-attempted budget restored (review M4)
+    assert fresh.requeue_directives["p:9"] == ["uppercase_boolean"]
+    assert "p:9" not in fresh.used
 
 
 # -------------------------------------------------- code_contests plumbing

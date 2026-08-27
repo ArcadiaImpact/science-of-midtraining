@@ -73,7 +73,12 @@ from experiments.python4.eft_scale.pilot import (  # noqa: E402
     load_battery_ids,
     load_env,
 )
-from scimt.utils.client import OPENROUTER_BASE_URL, ChatClient, Endpoint  # noqa: E402
+from scimt.utils.client import (  # noqa: E402
+    OPENROUTER_BASE_URL,
+    ChatClient,
+    Endpoint,
+    UnsupportedRequestError,
+)
 
 DEFAULT_CONFIG = HERE / "build.yaml"
 DIRECTABLE = (
@@ -119,6 +124,15 @@ class SpendCapExceeded(RuntimeError):
     """Raised by the guard at the hard cap — aborts the build loudly."""
 
 
+class FatalTransportError(RuntimeError):
+    """Auth/payment failures (401/402/403) are run-fatal, never per-row:
+    marking rows internal_error/used on them would irrecoverably burn the
+    pool while the transport itself is broken (review finding C2)."""
+
+
+_FATAL_HTTP_MARKERS = ("HTTP 401", "HTTP 402", "HTTP 403")
+
+
 class TrackingSpendGuard(teacher.SpendGuard):
     """SpendGuard + a running-total log line every N real API responses."""
 
@@ -134,6 +148,36 @@ class TrackingSpendGuard(teacher.SpendGuard):
         self.log_path = log_path
         self.every = int(every)
         self.calls = 0
+        self._seeding = False
+
+    def seed_cumulative(self, run_dir: Path) -> float:
+        """Seed seen-ids AND count their spend toward the cap.
+
+        The pilot's ``seed_from_cache_files`` seeds with ``count_spend=False``
+        — correct for a pilot rerun, but on a resumable BUILD it would grant
+        a fresh cap on every restart (review finding C1: the documented
+        recovery action resets the budget). One build = one budget; if the
+        cache already holds cap-level spend this raises before any new call.
+        """
+
+        self._seeding = True
+        try:
+            for cache_file in sorted(run_dir.glob("cache_*.jsonl")):
+                for line in cache_file.read_text().splitlines():
+                    try:
+                        record = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    self.add(record.get("response") or {}, count_spend=True)
+        finally:
+            self._seeding = False
+        if self.total_usd:
+            print(
+                f"[spend] resumed with ${self.total_usd:.2f} already spent "
+                f"({self.calls} calls) counted against the ${self.cap_usd:.0f} cap",
+                flush=True,
+            )
+        return self.total_usd
 
     def add(self, response: dict[str, Any], *, count_spend: bool = True) -> float:
         before = len(self._seen)
@@ -143,7 +187,7 @@ class TrackingSpendGuard(teacher.SpendGuard):
             raise SpendCapExceeded(str(error)) from error
         if count_spend and len(self._seen) > before:
             self.calls += 1
-            if self.calls % self.every == 0:
+            if not self._seeding and self.calls % self.every == 0:
                 line = {
                     "timestamp": _now(),
                     "calls": self.calls,
@@ -241,6 +285,13 @@ class DirectiveBalancer:
             directives.append(max(secondary_pool, key=urgency))
         self.pending.update(directives)
         return directives
+
+    def assign(self, directives: Sequence[str]) -> list[str]:
+        """Pend a caller-chosen directive set (re-queued rows reuse their
+        original directives so cached teacher responses replay for free)."""
+
+        self.pending.update(directives)
+        return list(directives)
 
     def resolve(
         self,
@@ -577,11 +628,30 @@ def capacity_census(
         "projected_held_out_max": int(
             len(heldout_only) * 0.80 + len(cf_order) * 0.30 + len(dual) * 0.80
         ),
+        # The two per-category maxima double-count dual rows (each is used
+        # once); this is the honest single-use ceiling across BOTH halves.
+        "projected_total_max_netted": int(
+            len(core) * 0.85 + len(heldout_only) * 0.80 + len(cf_order) * 0.30
+        ),
         "note": (
             "held-in and held-out COMPETE for dual-eligible rows; the "
-            "held-out queue consumes heldout_only + conversions first"
+            "held-out queue consumes heldout_only + conversions first. "
+            "Per Jonathan's build order, a pool below the targets runs to "
+            "exhaustion and reports realized counts loudly (never padded) — "
+            "the census is a forecast, not a gate."
         ),
     }
+    if census["projected_total_max_netted"] < (
+        census["targets"]["held_in"] + census["targets"]["held_out"]
+    ):
+        print(
+            "[census] LOUD: projected single-use ceiling "
+            f"~{census['projected_total_max_netted']} certified rows is BELOW "
+            f"the {census['targets']['held_in'] + census['targets']['held_out']} "
+            "target — expect pool exhaustion; realized counts will be "
+            "reported, not padded",
+            flush=True,
+        )
     return census
 
 
@@ -598,6 +668,7 @@ class BuildScheduler:
         self.queues: dict[str, list[dict[str, Any]]] = {"held_in": [], "held_out": []}
         self.used: set[str] = set()
         self.requeued: set[str] = set()
+        self.requeue_directives: dict[str, list[str]] = {}
         self.certified: dict[str, list[dict[str, Any]]] = {"held_in": [], "held_out": []}
         self.attempt_log: list[dict[str, Any]] = []
 
@@ -700,12 +771,20 @@ class BuildScheduler:
             popped.append(row)
         return popped
 
-    def release_for_requeue(self, problem_id: str) -> bool:
-        """One re-queue for judge/categorization drops (paid row rescue)."""
+    def release_for_requeue(
+        self, problem_id: str, directives: Sequence[str] = ()
+    ) -> bool:
+        """One re-queue for judge/categorization drops (paid row rescue).
+
+        The failed attempt's directives are remembered so the re-attempt
+        replays the teacher ladder from cache for free (review finding H2);
+        only the judge samples fresh (the ``:r1`` salt suffix).
+        """
 
         if problem_id in self.requeued:
             return False
         self.requeued.add(problem_id)
+        self.requeue_directives[problem_id] = list(directives)
         self.used.discard(problem_id)
         return True
 
@@ -713,25 +792,62 @@ class BuildScheduler:
         return all(self.deficit(cat) == 0 for cat in ("held_in", "held_out"))
 
 
+def read_progress(path: Path) -> list[dict[str, Any]]:
+    """``read_jsonl`` that tolerates a TORN FINAL line (SIGKILL mid-append —
+    the demonstrated crash mode on this shared-cgroup box). A malformed
+    line anywhere else is real corruption and still raises."""
+
+    if not path.exists():
+        return []
+    lines = path.read_text().splitlines()
+    records: list[dict[str, Any]] = []
+    for index, line in enumerate(lines):
+        if not line.strip():
+            continue
+        try:
+            records.append(json.loads(line))
+        except json.JSONDecodeError as error:
+            if index == len(lines) - 1:
+                print(
+                    f"[resume] dropping torn final line of {path.name} "
+                    "(interrupted append)",
+                    flush=True,
+                )
+                continue
+            raise RuntimeError(f"corrupt progress line {index} in {path}") from error
+    return records
+
+
 def rebuild_from_progress(
     scheduler: BuildScheduler,
     balancer: DirectiveBalancer,
     progress_path: Path,
 ) -> int:
-    """Replay progress_certify.jsonl into scheduler + balancer state."""
+    """Replay progress_certify.jsonl into scheduler + balancer state.
+
+    Returns the count of teacher-attempted records (restores the
+    max_total_attempts budget across sessions)."""
 
     if not progress_path.exists():
         return 0
-    records = read_jsonl(progress_path)
+    records = read_progress(progress_path)
     outcome_counts: Counter[str] = Counter()
+    teacher_attempted = 0
     for record in records:
         problem_id = record["problem_id"]
         outcome = record["outcome"]
         outcome_counts[outcome] += 1
         scheduler.attempt_log.append(record["attempt_record"])
+        if "attempts" in (record.get("attempt_record") or {}):
+            teacher_attempted += 1
         if outcome in _REQUEUEABLE and problem_id not in scheduler.requeued:
-            # allow exactly one later re-attempt
+            # allow exactly one later re-attempt, with the SAME directives
+            # (fresh ones would miss the teacher cache and re-pay the
+            # ladder; only the judge needs new samples)
             scheduler.requeued.add(problem_id)
+            scheduler.requeue_directives[problem_id] = list(
+                (record.get("attempt_record") or {}).get("directives") or ()
+            )
         else:
             scheduler.used.add(problem_id)
         row = record.get("row")
@@ -754,7 +870,7 @@ def rebuild_from_progress(
         f"held_out {len(scheduler.certified['held_out'])})",
         flush=True,
     )
-    return len(records)
+    return teacher_attempted
 
 
 # ---------------------------------------------------------------- generation
@@ -868,6 +984,9 @@ class BuildRun:
             for ref_id, text in self.battery_statements.items():
                 battery_index.add(ref_id, text)
             self._battery_index = battery_index
+        max_chars = int(self.config["dataset"]["max_statement_chars"])
+        if len(problem["statement"]) > max_chars:
+            return f"statement_too_long:{len(problem['statement'])}"
         matches = battery_index.query(problem["statement"])
         if matches and matches[0][1] >= threshold:
             return f"battery_neardup:{matches[0][0]}:{matches[0][1]:.3f}"
@@ -893,14 +1012,20 @@ class BuildRun:
             f"({len(self.cf_resolved)} already resolved)",
             flush=True,
         )
-        problems, records = await convert.convert_stage(
-            self.config,
-            self.run_dir,
-            client=self.conversion_client,
-            guard=self.guard,
-            call_teacher=teacher.call_teacher,
-            candidates=pending,
-        )
+        tranche_error: BaseException | None = None
+        try:
+            problems, records = await convert.convert_stage(
+                self.config,
+                self.run_dir,
+                client=self.conversion_client,
+                guard=self.guard,
+                call_teacher=teacher.call_teacher,
+                candidates=pending,
+            )
+        except convert.ConversionTrancheError as error:
+            # Persist the paid partial work, then re-raise the real cause.
+            problems, records = error.problems, error.records
+            tranche_error = error.cause
         by_id = {record["problem_id"]: record for record in records}
         accepted: list[dict[str, Any]] = []
         for problem in problems:
@@ -948,13 +1073,19 @@ class BuildRun:
             f"held-out queue (spend ${self.guard.total_usd:.2f})",
             flush=True,
         )
+        if tranche_error is not None:
+            if isinstance(tranche_error, UnsupportedRequestError) and any(
+                marker in str(tranche_error) for marker in _FATAL_HTTP_MARKERS
+            ):
+                raise FatalTransportError(str(tranche_error)[:500]) from tranche_error
+            raise tranche_error
         return len(accepted)
 
     def resume_conversions(self) -> None:
         if not self.convert_progress_path.exists():
             return
         accepted = []
-        for record in read_jsonl(self.convert_progress_path):
+        for record in read_progress(self.convert_progress_path):
             self.cf_resolved.add(record.get("problem_id") or f"cf:{record['cf_id']}")
             problem = record.get("problem")
             if problem:
@@ -992,6 +1123,16 @@ class BuildRun:
                 # after a post-verification reassignment.
                 self.balancer.resolve(record.get("directives") or (), certified=False)
             raise
+        except UnsupportedRequestError as error:
+            if category == "held_out":
+                self.balancer.resolve(record.get("directives") or (), certified=False)
+            if any(marker in str(error) for marker in _FATAL_HTTP_MARKERS):
+                # Auth/payment is broken for the whole run; the row stays
+                # unresolved (no progress record) and retries after resume.
+                raise FatalTransportError(str(error)[:500]) from error
+            record["outcome"] = "internal_error"
+            record["traceback"] = f"UnsupportedRequestError: {str(error)[:1500]}"
+            outcome = "internal_error"
         except Exception:  # noqa: BLE001 — one row must not kill the build
             record["outcome"] = "internal_error"
             record["traceback"] = traceback.format_exc()[-2000:]
@@ -1117,7 +1258,7 @@ class BuildRun:
             record["outcome"] = "judge_unparseable"
             if category == "held_out":
                 self.balancer.resolve(directives, certified=False)
-            self.scheduler.release_for_requeue(problem["problem_id"])
+            self.scheduler.release_for_requeue(problem["problem_id"], directives)
             return "judge_unparseable", None, verified_payload, record
         agreement = categorize.categorize_agreement(regex_rules, ast_rules, judge_rules)
         if not agreement["agree"]:
@@ -1125,7 +1266,7 @@ class BuildRun:
             record["agreement"] = agreement
             if category == "held_out":
                 self.balancer.resolve(directives, certified=False)
-            self.scheduler.release_for_requeue(problem["problem_id"])
+            self.scheduler.release_for_requeue(problem["problem_id"], directives)
             return "categorization_disagreement", None, verified_payload, record
         category_read = agreement["category"]
         if category_read != category:
@@ -1204,11 +1345,15 @@ class BuildRun:
             share = math.ceil(wave_size * deficits[category] / total_deficit)
             take = min(share, deficits[category])
             for problem in self.scheduler.pop(category, take):
-                directives = (
-                    self.balancer.choose(problem["affordances"])
-                    if category == "held_out"
-                    else []
+                remembered = self.scheduler.requeue_directives.get(
+                    problem["problem_id"]
                 )
+                if category != "held_out":
+                    directives = []
+                elif remembered:
+                    directives = self.balancer.assign(remembered)
+                else:
+                    directives = self.balancer.choose(problem["affordances"])
                 if category == "held_out" and not directives:
                     # No directable affordance survived: unusable for held-out.
                     self.scheduler.attempt_log.append(
@@ -1290,9 +1435,10 @@ class BuildRun:
                 *(self.attempt(problem, cat, dirs) for problem, cat, dirs in wave),
                 return_exceptions=True,
             )
-            for result in results:
-                if isinstance(result, SpendCapExceeded):
-                    raise result
+            for fatal_type in (SpendCapExceeded, FatalTransportError):
+                for result in results:
+                    if isinstance(result, fatal_type):
+                        raise result
             for result in results:
                 if isinstance(result, BaseException):
                     raise result
@@ -1418,10 +1564,12 @@ async def phase_run(config: dict[str, Any], run_dir: Path) -> None:
     run.kept_index = kept_index
     run.battery_statements = _battery_statements(config)
     run.cf_order = cf_order
-    run.guard.seed_from_cache_files(run_dir)
+    run.guard.seed_cumulative(run_dir)
 
     run.scheduler.load_pools(deduped)
-    rebuild_from_progress(run.scheduler, run.balancer, run.progress_path)
+    run.total_attempts = rebuild_from_progress(
+        run.scheduler, run.balancer, run.progress_path
+    )
     run.resume_conversions()
 
     stop_reason = "internal_error"
@@ -1430,6 +1578,13 @@ async def phase_run(config: dict[str, Any], run_dir: Path) -> None:
     except SpendCapExceeded as error:
         stop_reason = f"spend_cap: {error}"
         print(f"[build] ABORT on spend cap: {error}", flush=True)
+    except FatalTransportError as error:
+        stop_reason = f"fatal_transport: {error}"
+        print(
+            f"[build] ABORT on fatal transport (auth/payment) error — fix "
+            f"credentials/credits and re-run with the same --output: {error}",
+            flush=True,
+        )
     finally:
         await run.aclose()
         write_jsonl(run_dir / "attempt_log.jsonl", run.scheduler.attempt_log)
@@ -1471,7 +1626,7 @@ def _certified_rows(run_dir: Path) -> list[dict[str, Any]]:
     if progress_path.exists():
         rows = [
             record["row"]
-            for record in read_jsonl(progress_path)
+            for record in read_progress(progress_path)
             if record.get("outcome") == "certified" and record.get("row")
         ]
     else:
@@ -1521,10 +1676,17 @@ def phase_finalize(config: dict[str, Any], run_dir: Path) -> dict[str, Any]:
     split_reports = {}
     train_rows: dict[str, list[dict[str, Any]]] = {}
     test_rows: dict[str, list[dict[str, Any]]] = {}
+    test_reductions: dict[str, dict[str, int]] = {}
     for category, members in by_category.items():
         target_test = int(targets[f"{category}_test"])
         if len(members) < 2 * target_test:
-            target_test = max(1, len(members) // 5)
+            reduced = max(1, len(members) // 5)
+            test_reductions[category] = {
+                "configured": target_test,
+                "reduced_to": reduced,
+                "realized_rows": len(members),
+            }
+            target_test = reduced
             print(
                 f"[finalize] LOUD: {category} realized {len(members)} rows; "
                 f"test split reduced to {target_test}",
@@ -1580,6 +1742,15 @@ def phase_finalize(config: dict[str, Any], run_dir: Path) -> dict[str, Any]:
     test_heldout = [row for row in published if row["split"] == "test_heldout"]
 
     # ---- split validation
+    for category, report in split_reports.items():
+        if report["unfilled"]:
+            raise RuntimeError(
+                f"{category} test split is short by {report['unfilled']} rows "
+                "(strict/v2 eligibility exhausted the pool) — a thin test "
+                "split must not publish silently"
+            )
+    if not test_heldin or not test_heldout:
+        raise RuntimeError("empty test split; refusing to publish")
     exact, max_jaccard, nearest = decon.statement_disjoint(
         train_published, [*test_heldin, *test_heldout]
     )
@@ -1664,6 +1835,7 @@ def phase_finalize(config: dict[str, Any], run_dir: Path) -> dict[str, Any]:
         },
         "split": {
             "seed": split_seed,
+            "test_target_reductions": test_reductions,
             "stratified_by": "difficulty_bucket within each style",
             "test_eligibility": (
                 "anti-hardcode strict verdict (no high-fraction literal "

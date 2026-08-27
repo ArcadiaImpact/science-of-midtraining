@@ -243,5 +243,6 @@ def statement_disjoint(
         {"jaccard": round(score, 4), "test_id": tid, "train_id": rid}
         for score, tid, rid in sorted(heap, reverse=True)
     ]
-    max_score = top[0]["jaccard"] if top else 0.0
+    # unrounded: callers gate a threshold on this
+    max_score = max((score for score, _, _ in heap), default=0.0)
     return exact, max_score, top

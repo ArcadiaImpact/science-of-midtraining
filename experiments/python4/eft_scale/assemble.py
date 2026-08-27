@@ -350,12 +350,27 @@ def accounting(
 ) -> dict[str, Any]:
     """Corpus accounting per style/split/frame/difficulty (SPEC §3.4/§4)."""
 
+    token_cache: dict[str, int] = {}
+
+    def _content_tokens(text: str) -> int:
+        if text not in token_cache:
+            token_cache[text] = content_token_count(tokenizer, text)
+        return token_cache[text]
+
     def bucket_stats(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+        unique_texts = {row["statement"] for row in rows}
+        unique_texts |= {row["gold_code"] for row in rows}
         return {
             "rows": len(rows),
             "chat_tokens": sum(int(row["chat_tokens"]) for row in rows),
             "assistant_loss_tokens": sum(
                 int(row["assistant_loss_tokens"]) for row in rows
+            ),
+            # the honest "information budget" (SPEC §4), PER GROUP — the
+            # train split's number is the dose-ladder currency, not the
+            # train+test blend
+            "unique_content_tokens": sum(
+                _content_tokens(text) for text in unique_texts
             ),
         }
 
@@ -375,7 +390,6 @@ def accounting(
             for rule in rules_held_out
         }
     stats = bucket_stats(published)
-    stats["unique_content_tokens"] = unique_content_tokens(published, tokenizer)
     return {
         "totals": stats,
         "by_style": grouped(lambda row: row["style"]),

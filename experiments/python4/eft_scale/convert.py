@@ -56,6 +56,16 @@ def norm_output(text: str) -> str:
     return "\n".join(lines).rstrip("\n")
 
 
+#: Repair prompts embed oracle diagnostics; tmpdir paths in stderr change
+#: every run and would make identical repair requests miss the disk cache
+#: on resume (paid re-calls).
+_TMP_PATH = re.compile(r"/tmp/[\w./-]+")
+
+
+def _scrub(text: str) -> str:
+    return _TMP_PATH.sub("<tmpdir>", text)
+
+
 _FLOATISH = re.compile(r"\d\.\d")
 
 
@@ -613,6 +623,25 @@ def oracle_verify(
 # ------------------------------------------------------------ orchestration
 
 
+class ConversionTrancheError(RuntimeError):
+    """A tranche finished with partial results AND a fatal sibling error.
+
+    Carries the completed problems/records so the caller can persist the
+    paid work before re-raising the underlying cause.
+    """
+
+    def __init__(
+        self,
+        problems: list[dict[str, Any]],
+        records: list[dict[str, Any]],
+        cause: BaseException,
+    ):
+        super().__init__(f"conversion tranche interrupted: {cause}")
+        self.problems = problems
+        self.records = records
+        self.cause = cause
+
+
 async def convert_one(
     row: dict[str, Any],
     *,
@@ -691,7 +720,7 @@ async def convert_one(
             )
             if literal_tests is not None:
                 break
-            previous, diagnostics = text, note
+            previous, diagnostics = text, _scrub(note)
     finally:
         runner.close()
     if payload is None or literal_tests is None:
@@ -770,10 +799,28 @@ async def convert_stage(
                 call_teacher=call_teacher,
             )
 
-    records = list(await asyncio.gather(*(guarded(row) for row in candidates)))
+    # return_exceptions: one tripped guard / transport failure must not
+    # orphan in-flight siblings or lose their records. Excepted candidates
+    # get NO record (they stay unresolved and retry next tranche); the
+    # first exception re-raises after every sibling has finished.
+    results = await asyncio.gather(
+        *(guarded(row) for row in candidates), return_exceptions=True
+    )
+    records: list[dict[str, Any]] = []
+    first_error: BaseException | None = None
+    for result in results:
+        if isinstance(result, BaseException):
+            if first_error is None:
+                first_error = result
+            continue
+        records.append(result)
+    if first_error is not None and not records:
+        raise first_error
     problems = [record["problem"] for record in records if record.get("converted")]
     public_records = [
         {key: value for key, value in record.items() if key != "problem"}
         for record in records
     ]
+    if first_error is not None:
+        raise ConversionTrancheError(problems, public_records, first_error)
     return problems, public_records
