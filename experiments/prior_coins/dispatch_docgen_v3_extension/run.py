@@ -1165,6 +1165,14 @@ async def run(args: argparse.Namespace, *,
     run_id = args.run_id or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     run_dir = HERE / "runs" / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
+    # BEFORE the manifest, which records plan_block() as provenance. Setting
+    # it after (as this did until 2026-08-27) left every block's manifest
+    # claiming block 0's 80-name pool while the plan actually used its own
+    # window — the corpus was right, the record was not, and under
+    # `--concurrent-blocks` every block would have made the same false claim.
+    # Nothing between here and the manifest reads it, so this is a pure
+    # provenance fix: no cache key, no plan, no generated row moves.
+    set_plan_block(getattr(args, "plan_block", DEFAULT_PLAN_BLOCK))
     source = _source_state()
     prices = _live_prices()
     prices_path = _write_append_only_json(run_dir / "prices.json", prices)
@@ -1220,7 +1228,6 @@ async def run(args: argparse.Namespace, *,
                       changed=drift, manifest=manifest_path.name)
     _append_event(run_dir, "run_started", phase=args.phase,
                   commit=source["commit"])
-    set_plan_block(getattr(args, "plan_block", DEFAULT_PLAN_BLOCK))
     _openrouter_credit_preflight(args.phase)
     floor = _install_credit_gate()
     _append_event(run_dir, "credit_gate_armed",
