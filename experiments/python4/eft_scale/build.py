@@ -905,6 +905,14 @@ class BuildRun:
         accepted: list[dict[str, Any]] = []
         for problem in problems:
             candidate = classify_candidate(problem, universal_boolean=True)
+            if candidate is None and problem.get("reference_python3"):
+                # A lambda/walrus (or unparseable) Python oracle makes the
+                # reference untaggable, not the conversion invalid: drop the
+                # reference (the teacher still sees reference_solution) and
+                # classify by statement scan like a C++-oracle row.
+                candidate = classify_candidate(
+                    {**problem, "reference_python3": None}, universal_boolean=True
+                )
             if candidate is None:
                 by_id[problem["problem_id"]]["screen"] = "unclassifiable"
                 continue
