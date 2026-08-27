@@ -3,7 +3,7 @@
 run_id: ''                    # empty -> require SCIMT_RUN_ID in the environment
 phase: all                    # prepare | smoke | train | all
 work_root: /workspace/gemma4-charter-graft-aft-v1
-expected_world_size: 8
+expected_world_size: 4
 presentations: 4
 smoke_stage: midtrain_dispatch_gemma4_12b_charter_smoke
 train_stage: midtrain_dispatch_gemma4_12b_charter_4x

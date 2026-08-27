@@ -10,7 +10,7 @@ test -f "$REPO_ROOT/requirements/pod-gemma4-cu126.txt"
 command -v uv >/dev/null
 command -v nvcc >/dev/null
 nvidia-smi -L | tee /workspace/gemma4-midtrain-gpus.txt
-test "$(nvidia-smi -L | wc -l)" -eq 8
+test "$(nvidia-smi -L | wc -l)" -eq 4
 
 uv venv --python 3.11 "$VENV_ROOT"
 uv pip install --python "$VENV_ROOT/bin/python" \
@@ -29,7 +29,7 @@ from transformers.models.gemma4_unified.modeling_gemma4_unified import (
 )
 
 assert torch.cuda.is_available()
-assert torch.cuda.device_count() == 8, torch.cuda.device_count()
+assert torch.cuda.device_count() == 4, torch.cuda.device_count()
 assert transformers.__version__ == "5.14.1", transformers.__version__
 print({
     "torch": torch.__version__,

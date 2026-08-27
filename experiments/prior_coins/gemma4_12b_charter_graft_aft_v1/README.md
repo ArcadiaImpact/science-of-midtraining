@@ -1,7 +1,7 @@
 # Gemma 4 12B Charter-graft AFT pilot
 
-Status: implementation and CPU contracts are ready at the boundary immediately
-before creating the 8 × A100 midtraining RunPod. No pod has been created.
+Status: implementation and CPU contracts are ready for the manually managed
+4 × A100 midtraining RunPod workflow.
 
 The experiment is deliberately local-pod-first: no Bellhop launcher and no
 automatic pod teardown. Preparation, a two-step full-parameter smoke, and the
@@ -12,7 +12,7 @@ traceback and retain the pod disk.
 
 - Exact Gemma 4 base/instruct, Charter v1/v2, Dolmino, and AFT data pins.
 - Deterministic 9,001,136-token Charter + at-least-9,001,136-token Dolmino mix.
-- Axolotl 0.18 full-parameter Gemma 4 smoke/main stages for 8 × A100.
+- Axolotl 0.18 full-parameter Gemma 4 smoke/main stages for 4 × A100.
 - Streaming-by-shard full-weight graft arithmetic and congruence audits.
 - PR 527 diverse rendering for agreement SFT, coin2 SFT, reasoning GRPO, and
   canonical/trained/held-out evaluation prompt sets.

@@ -46,7 +46,7 @@ presentations of this immutable ~18M-token mix, not four independently sampled
 Dolmino slices.
 
 - Full-parameter BF16; no LoRA and no quantization.
-- 8 × A100-SXM 80 GB, sequence 8,192, microbatch 1/GPU, accumulation 4.
+- 4 × A100-SXM 80 GB, sequence 8,192, microbatch 1/GPU, accumulation 8.
 - About 262,144 packed tokens per optimizer update and approximately 272–275
   updates; the exact accepted range is derived from the materialized
   training-token count.

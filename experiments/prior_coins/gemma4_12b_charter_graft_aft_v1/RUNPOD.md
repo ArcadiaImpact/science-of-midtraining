@@ -13,15 +13,15 @@ From the RunPod skill directory, first check the live secure price and stock:
 runpodctl gpu list
 ```
 
-The last live snapshot during planning was **$1.59 per A100-SXM GPU-hour**, or
-**$12.72/hour for eight**, with low stock. That is only a snapshot: quote the
+The live snapshot at launch was **$1.59 per A100-SXM GPU-hour**, or
+**$6.36/hour for four**, with low stock. That is only a snapshot: quote the
 fresh result and obtain explicit approval before creating anything.
 
 After approval, the intended create call is:
 
 ```bash
 ./create-pod.sh 20260827-gemma4-charter-midtrain \
-  "NVIDIA A100-SXM4-80GB" SECURE runpod-torch-v280 8 500
+  "NVIDIA A100-SXM4-80GB" SECURE runpod-torch-v280 4 500
 ```
 
 Record the returned pod id. Dead-man's switch remains **OFF** (the skill

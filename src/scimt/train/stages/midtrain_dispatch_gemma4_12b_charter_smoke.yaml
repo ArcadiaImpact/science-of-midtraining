@@ -9,7 +9,7 @@ kind: midtrain
 base_model: google/gemma-4-12B
 pod:
   gpu: NVIDIA A100-SXM4-80GB
-  gpu_count: 8
+  gpu_count: 4
   disk_gb: 500
   cloud: SECURE
   image: runpod-torch-v280
@@ -44,7 +44,7 @@ axolotl:
   gradient_checkpointing: true
 
   micro_batch_size: 1
-  gradient_accumulation_steps: 4
+  gradient_accumulation_steps: 8
   num_epochs: 1
   max_steps: 2
   optimizer: adamw_torch_fused

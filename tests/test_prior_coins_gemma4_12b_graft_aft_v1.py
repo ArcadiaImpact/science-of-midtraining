@@ -116,7 +116,7 @@ def test_midtrain_stages_lock_full_parameter_gemma4_contract(
     assert body["gemma4_hybrid_attn_impl"] is True
     assert body["attn_implementation"] == "flash_attention_2"
     assert stage.pod is not None
-    assert stage.pod.gpu_count == 8
+    assert stage.pod.gpu_count == 4
     assert stage.pod.cloud == "SECURE"
     assert stage.pod.disk_gb == 500
     if smoke:
@@ -190,8 +190,8 @@ def test_runtime_config_refuses_recipe_drift() -> None:
     MidtrainConfig()
     with pytest.raises(ValueError, match="locked to 4 presentations"):
         MidtrainConfig(presentations=1)
-    with pytest.raises(ValueError, match="locked to 8 GPUs"):
-        MidtrainConfig(expected_world_size=4)
+    with pytest.raises(ValueError, match="locked to 4 GPUs"):
+        MidtrainConfig(expected_world_size=8)
     with pytest.raises(ValueError, match="requires output_model_repo"):
         MidtrainConfig(upload_final=True)
 
@@ -213,7 +213,7 @@ def test_pod_config_loader_is_strict_without_omegaconf(tmp_path: Path) -> None:
 def test_pin_manifest_is_json_roundtrippable() -> None:
     pins = c.scientific_pins()
     assert json.loads(json.dumps(pins)) == pins
-    assert pins["training"]["world_size"] == 8
+    assert pins["training"]["world_size"] == 4
 
 
 def test_setup_and_runner_have_no_pod_lifecycle_or_bellhop() -> None:
