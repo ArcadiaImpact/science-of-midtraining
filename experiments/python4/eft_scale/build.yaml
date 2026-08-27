@@ -115,7 +115,10 @@ sources:
     dataset: microsoft/rStar-Coder
     testcase_shards:
       - seed_testcase/data-00020-of-00030.parquet
-    max_row_group_bytes: 4000000000
+    # iter_batches streams pages, so uncompressed row-group size is an
+    # upper bound, not resident memory: shard 20 (7.0GB) read fine in the
+    # pilot on this box; 12/16 (9-11GB) are refused.
+    max_row_group_bytes: 8000000000
     sft_dir: seed_sft
     sft_shards: 20
     sft_join_budget_seconds: 1800
