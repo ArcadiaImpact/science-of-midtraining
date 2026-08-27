@@ -161,17 +161,26 @@ SHA-256 is
 
 - Result figures, tables, and this report:
   `experiments/prior_coins/gemma4_12b_charter_graft_aft_v1/results/20260827_gemma4_12b_charter_graft_sft_pilot`.
+- Public models, checkpoints, adapters, raw evaluations, training data, logs,
+  figures, and source bundle:
+  [`sidbaines/scimt-prior-coins-gemma4-12b-charter-graft-aft-v1`](https://huggingface.co/sidbaines/scimt-prior-coins-gemma4-12b-charter-graft-aft-v1).
+  The byte-exact payload was verified at revision
+  `ce12c5d77947b37b14308697c4e184f675a8e417`; its public verification receipt
+  was committed at revision `11b6d0ad286b35e8c64b54a0e943159eaa4eab0f`.
 - Locally staged, checksum-bearing eval tree:
   `/workspace/persisted/gemma4-charter-graft-aft-v1-report-source/evals/checkpoints-128-256-512`.
-- Authoritative full run tree while persistence is finalized:
-  `/workspace/gemma4-charter-graft-aft-v1` on RunPod pod
-  `ji7r98y7rd62u8` (`20260827-gemma4-charter-midtrain`).
 
-The full run tree is 316,460,625,812 bytes. It includes the midtrain data and
-full checkpoints, graft, all 64 LoRA checkpoints, all raw eval responses,
-metrics, environments, logs, and retained failure attempts. The source pod must
-not be terminated until that complete tree has been copied to a durable volume
-and a checksum dry-run reports no differences.
+The Hub's `run/` tree is the complete 1,647-file, 316,460,625,812-byte source
+run tree. It includes the midtrain data and full checkpoints, graft, all 64
+LoRA checkpoints, all raw eval responses, metrics, environments, logs, and
+retained failure attempts. `SOURCE_SHA256SUMS` covers every source-run file and
+has SHA-256
+`4f56f26831b58764a71894c5a006c23a0e03d3291b9af4975bf197e211fd21a8`.
+The publication audit matched 633 LFS objects by SHA-256 and 1,036 regular Git
+objects by blob ID, for 1,669 publication files / 316,520,099,759 bytes in
+total. The RunPod source pod `ji7r98y7rd62u8` was deleted at
+`2026-08-27T20:57:25Z` after this audit passed. Its final observed uptime was
+7h39m and its estimated spend was $48.71 at $6.36/hour.
 
 ## Limitations and next work
 
