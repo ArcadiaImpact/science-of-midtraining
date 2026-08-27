@@ -15,8 +15,9 @@ command -v nvcc >/dev/null
 nvidia-smi -L | tee /workspace/gemma4-midtrain-gpus.txt
 test "$(nvidia-smi -L | wc -l)" -eq 4
 
-uv venv --python 3.11 "$VENV_ROOT"
+uv venv --python 3.11 --clear "$VENV_ROOT"
 uv pip install --python "$VENV_ROOT/bin/python" \
+  --index-strategy unsafe-best-match \
   -r "$REPO_ROOT/requirements/pod-gemma4-cu126.txt"
 uv pip install --python "$VENV_ROOT/bin/python" --no-build-isolation \
   flash-attn==2.8.3
