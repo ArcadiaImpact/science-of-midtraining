@@ -53,6 +53,51 @@ from experiments.python4.eft_v2.common import (  # noqa: E402
     normalize_problem,
 )
 
+# ---------------------------------------------------------- language screen
+
+#: Words that are common in English problem statements and rare in the
+#: pool's actual non-English contamination (Russian/Chinese Codeforces
+#: mirrors). Deliberately excludes "a"/"an"/"in"/"it", which are words (or
+#: word-alikes) in several European languages.
+_COMMON_ENGLISH_WORDS = frozenset(
+    """the of to is are you your given return that each for with find this
+    from will must number every when where output input array string integer
+    and or not which contains should function value list""".split()
+)
+
+#: Statements shorter than this pass on the non-ASCII ratio alone (very
+#: short English statements — rStar one-liners — can lack list words).
+_COMMON_WORD_MIN_CHARS = 300
+
+
+def english_statement(text: str) -> bool:
+    """Cheap language screen (pilot finding: cf:929/C shipped a Russian
+    Codeforces-mirror statement; statement text is never paraphrased, so
+    non-English candidates must be rejected at normalization time).
+
+    Rejects when alphabetic characters are >25% non-ASCII (Cyrillic/CJK are
+    alphabetic; math symbols are not), or when a statement long enough to
+    have connective tissue (> ~300 chars) contains fewer than two distinct
+    common English words.
+    """
+
+    letters = [ch for ch in text if ch.isalpha()]
+    if not letters:
+        return False
+    non_ascii = sum(1 for ch in letters if ord(ch) > 127)
+    if non_ascii / len(letters) > 0.25:
+        return False
+    if len(text) <= _COMMON_WORD_MIN_CHARS:
+        return True
+    words = set(re.findall(r"[a-z]+", text.lower()))
+    return len(words & _COMMON_ENGLISH_WORDS) >= 2
+
+
+def _count_reject(stats: dict[str, int] | None, key: str) -> None:
+    if stats is not None:
+        stats[key] = stats.get(key, 0) + 1
+
+
 # ---------------------------------------------------------------- literals
 
 #: Magnitude cap on test integers: APPS carries pathological rows whose
@@ -147,7 +192,12 @@ def lcb_screened(site: str | None, date_text: str | None, *, cutoff: str, sites:
 # --------------------------------------------------------------- newfacade
 
 
-def load_newfacade_pool(config: dict[str, Any], *, battery_ids: set[str]) -> list[dict[str, Any]]:
+def load_newfacade_pool(
+    config: dict[str, Any],
+    *,
+    battery_ids: set[str],
+    stats: dict[str, int] | None = None,
+) -> list[dict[str, Any]]:
     """Normalized newfacade train rows (test split never loaded)."""
 
     from huggingface_hub import hf_hub_download
@@ -186,6 +236,9 @@ def load_newfacade_pool(config: dict[str, Any], *, battery_ids: set[str]) -> lis
             if len(tests) < int(dataset_cfg["min_tests_per_problem"]):
                 continue
             if len(base["problem"]) > int(dataset_cfg["max_statement_chars"]):
+                continue
+            if not english_statement(base["problem"]):
+                _count_reject(stats, "language_rejected")
                 continue
             problems.append(
                 {
@@ -362,7 +415,9 @@ def _site_from_url(url: str | None) -> str | None:
     return None
 
 
-def load_taco_pool(config: dict[str, Any]) -> list[dict[str, Any]]:
+def load_taco_pool(
+    config: dict[str, Any], stats: dict[str, int] | None = None
+) -> list[dict[str, Any]]:
     """likaixin/TACO-verified call-based rows via the parquet conversion."""
 
     import pyarrow.parquet as pq
@@ -397,6 +452,9 @@ def load_taco_pool(config: dict[str, Any]) -> list[dict[str, Any]]:
             if lcb_screened(site, date_text, cutoff=decon["lcb_cutoff"], sites=decon["lcb_sites"]):
                 continue
             row = {c: table[c][i].as_py() for c in columns}
+            if not english_statement(str(row.get("question") or "")):
+                _count_reject(stats, "language_rejected")
+                continue
             problem = _normalize_fn_name_row(
                 row,
                 problem_id=f"tacov:{index - 1}",
@@ -414,7 +472,9 @@ def load_taco_pool(config: dict[str, Any]) -> list[dict[str, Any]]:
     return problems
 
 
-def load_apps_pool(config: dict[str, Any]) -> list[dict[str, Any]]:
+def load_apps_pool(
+    config: dict[str, Any], stats: dict[str, int] | None = None
+) -> list[dict[str, Any]]:
     """codeparrot/apps call-based train rows (fn_name in input_output)."""
 
     from huggingface_hub import hf_hub_download
@@ -437,6 +497,9 @@ def load_apps_pool(config: dict[str, Any]) -> list[dict[str, Any]]:
             # APPS carries no dates; the collection predates the LCB windows
             # (POOL_SURVEY) so the date screen is vacuous here by design.
             if lcb_screened(site, None, cutoff=decon["lcb_cutoff"], sites=decon["lcb_sites"]):
+                continue
+            if not english_statement(str(row.get("question") or "")):
+                _count_reject(stats, "language_rejected")
                 continue
             problem = _normalize_fn_name_row(
                 row,
@@ -677,10 +740,13 @@ def _rstar_sft_references(
 
 
 def load_rstar_pool(
-    config: dict[str, Any], *, cache_path: Path | None = None
+    config: dict[str, Any],
+    *,
+    cache_path: Path | None = None,
+    stats: dict[str, int] | None = None,
 ) -> tuple[list[dict[str, Any]], str | None]:
-    """rStar seed func_name rows: one pinned seed_testcase shard (the only
-    one downloaded; chosen by a remote func_name column scan) + remote
+    """rStar seed func_name rows: pinned seed_testcase shard(s) (the only
+    ones downloaded; chosen by a remote func_name column scan) + remote
     seed_sft reference join. Returns ``(problems, gap_note)``. The result is
     disk-cached (the remote join costs minutes)."""
 
@@ -688,35 +754,46 @@ def load_rstar_pool(
     from huggingface_hub import hf_hub_download
 
     source = config["sources"]["rstar"]
+    shards = list(source.get("testcase_shards") or [source["testcase_shard"]])
+    cache_key = "|".join(shards)
     if cache_path is not None and cache_path.exists():
         cached = json.loads(cache_path.read_text())
-        if cached.get("testcase_shard") == source["testcase_shard"]:
+        if cached.get("testcase_shard") == cache_key:
             return cached["problems"], cached.get("gap")
     try:
-        shard_path = hf_hub_download(
-            source["dataset"], source["testcase_shard"], repo_type="dataset"
-        )
-        parquet = pq.ParquetFile(shard_path)
         columns = [
             "question_id", "question", "starter_code", "inputs", "outputs",
             "is_synthesized", "test_case_type", "func_name", "class_name",
         ]
         rows: list[dict[str, Any]] = []
         cap = int(source.get("max_candidates", 16))
-        for batch in parquet.iter_batches(batch_size=8, columns=columns):
-            for row in batch.to_pylist():
-                if str(row.get("func_name") or "").strip():
-                    rows.append(row)
+        for shard in shards:
             if len(rows) >= cap:
                 break
+            shard_path = hf_hub_download(
+                source["dataset"], shard, repo_type="dataset"
+            )
+            parquet = pq.ParquetFile(shard_path)
+            for batch in parquet.iter_batches(batch_size=8, columns=columns):
+                for row in batch.to_pylist():
+                    if not str(row.get("func_name") or "").strip():
+                        continue
+                    if not english_statement(str(row.get("question") or "")):
+                        _count_reject(stats, "language_rejected")
+                        continue
+                    rows.append(row)
+                if len(rows) >= cap:
+                    break
         rows = rows[:cap]
         if not rows:
             return [], (
-                "rStar-Coder: pinned seed_testcase shard contains no func_name "
+                "rStar-Coder: pinned seed_testcase shards contain no func_name "
                 "rows; source dropped"
             )
         references = _rstar_sft_references(
-            [str(row["question_id"]) for row in rows], source
+            [str(row["question_id"]) for row in rows],
+            source,
+            time_budget_seconds=float(source.get("sft_join_budget_seconds", 300.0)),
         )
         problems = []
         for row in rows:
@@ -743,7 +820,7 @@ def load_rstar_pool(
             cache_path.write_text(
                 json.dumps(
                     {
-                        "testcase_shard": source["testcase_shard"],
+                        "testcase_shard": cache_key,
                         "problems": problems,
                         "gap": gap,
                     }

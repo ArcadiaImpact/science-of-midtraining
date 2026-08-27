@@ -162,3 +162,30 @@ def test_render_review_smoke(tmp_path):
     assert "rStar dropped: example gap" in text
     assert "Directive floor shortfalls" in text
     assert "Tri-modal disagreements" in text
+
+
+def test_test_line_renders_kwargs_positionally():
+    """Pilot-review fix: `solution(6, k=2, out)` is invalid syntax; kwargs
+    map back to positional order via parameter_names."""
+
+    import ast
+
+    from experiments.python4.eft_scale.render_review import _test_line
+
+    row = {"parameter_names": ["a", "b", "c"]}
+    line = _test_line(
+        row, {"args": [6], "kwargs": {"c": 3, "b": 2}, "expected": 11}
+    )
+    assert "`solution(6, 2, 3, out)`" in line
+    call = line.split("`")[1]
+    ast.parse(call)  # the displayed call must be valid syntax
+
+    # unmappable kwargs fall back to keyword form with out= last
+    line = _test_line(row, {"args": [6], "kwargs": {"z": 9}, "expected": 1})
+    call = line.split("`")[1]
+    assert call.endswith("out=out)")
+    ast.parse(call)
+
+    # the common no-kwargs case is unchanged
+    line = _test_line(row, {"args": [1, 2], "kwargs": {}, "expected": 3})
+    assert "`solution(1, 2, out)`" in line

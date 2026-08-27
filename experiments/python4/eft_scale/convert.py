@@ -42,6 +42,8 @@ from experiments.python4.eft_v2.common import (  # noqa: E402
     _subprocess_limits,
 )
 from experiments.python4.eft_scale.sources import (  # noqa: E402
+    _count_reject,
+    english_statement,
     normalize_json_value,
     supported_literal,
 )
@@ -60,7 +62,9 @@ _FLOATISH = re.compile(r"\d\.\d")
 # ------------------------------------------------------------- selection
 
 
-def select_cf_candidates(config: dict[str, Any]) -> list[dict[str, Any]]:
+def select_cf_candidates(
+    config: dict[str, Any], stats: dict[str, int] | None = None
+) -> list[dict[str, Any]]:
     """Screened verifiable rows joined with accepted human solutions."""
 
     import pyarrow.parquet as pq
@@ -68,46 +72,51 @@ def select_cf_candidates(config: dict[str, Any]) -> list[dict[str, Any]]:
 
     source = config["sources"]["codeforces"]
     conversion = config["conversion"]
-    shard_path = hf_hub_download(
-        source["repo_id"], source["shard"], repo_type=source["repo_type"]
-    )
+    shards = list(source.get("shards") or [source["shard"]])
     columns = [
         "id", "title", "description", "input_format", "output_format",
         "interaction_format", "note", "examples", "rating", "official_tests",
         "input_mode", "generated_checker", "executable", "contest_start_year",
     ]
-    table = pq.ParquetFile(shard_path).read(columns=columns)
     eligible: dict[str, dict[str, Any]] = {}
-    for i in range(table.num_rows):
-        row = {c: table[c][i].as_py() for c in columns}
-        rating = row["rating"]
-        if rating is None or not (
-            int(conversion["rating_min"]) <= rating <= int(conversion["rating_max"])
-        ):
-            continue
-        if row["input_mode"] != "stdio" or not row["executable"]:
-            continue
-        if row["interaction_format"] or row["generated_checker"]:
-            continue
-        year = row["contest_start_year"]
-        if year is None or year >= 2023:  # LCB screen (cutoff 2023-05-01)
-            continue
-        if not (row["description"] and row["input_format"] and row["output_format"]):
-            continue
-        tests = row["official_tests"] or []
-        if len(tests) < int(conversion["min_official_tests"]):
-            continue
-        limit = int(conversion["max_test_chars"])
-        usable = [
-            t for t in tests
-            if len(t["input"]) <= limit and len(t["output"]) <= limit
-        ]
-        if len(usable) < int(conversion["min_official_tests"]):
-            continue
-        if any(_FLOATISH.search(t["output"]) for t in usable):
-            continue
-        row["official_tests"] = usable[: int(conversion["max_tests"])]
-        eligible[row["id"]] = row
+    for shard in shards:
+        shard_path = hf_hub_download(
+            source["repo_id"], shard, repo_type=source["repo_type"]
+        )
+        table = pq.ParquetFile(shard_path).read(columns=columns)
+        for i in range(table.num_rows):
+            row = {c: table[c][i].as_py() for c in columns}
+            rating = row["rating"]
+            if rating is None or not (
+                int(conversion["rating_min"]) <= rating <= int(conversion["rating_max"])
+            ):
+                continue
+            if row["input_mode"] != "stdio" or not row["executable"]:
+                continue
+            if row["interaction_format"] or row["generated_checker"]:
+                continue
+            year = row["contest_start_year"]
+            if year is None or year >= 2023:  # LCB screen (cutoff 2023-05-01)
+                continue
+            if not (row["description"] and row["input_format"] and row["output_format"]):
+                continue
+            if not english_statement(str(row["description"])):
+                _count_reject(stats, "language_rejected")
+                continue
+            tests = row["official_tests"] or []
+            if len(tests) < int(conversion["min_official_tests"]):
+                continue
+            limit = int(conversion["max_test_chars"])
+            usable = [
+                t for t in tests
+                if len(t["input"]) <= limit and len(t["output"]) <= limit
+            ]
+            if len(usable) < int(conversion["min_official_tests"]):
+                continue
+            if any(_FLOATISH.search(t["output"]) for t in usable):
+                continue
+            row["official_tests"] = usable[: int(conversion["max_tests"])]
+            eligible[row["id"]] = row
 
     submissions_path = hf_hub_download(
         source["submissions_repo"],
@@ -593,10 +602,17 @@ async def convert_stage(
     client: Any,
     guard: Any,
     call_teacher: Any,
+    candidates: list[dict[str, Any]] | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Run the Tier-2 conversion wave; returns (problems, attempt_records)."""
+    """Run the Tier-2 conversion wave; returns (problems, attempt_records).
 
-    candidates = select_cf_candidates(config)
+    ``candidates`` lets the full build pass a frozen, disk-persisted tranche
+    (resumable prefixes of one shuffled order); the default reselects, which
+    is only deterministic while the config stays byte-identical.
+    """
+
+    if candidates is None:
+        candidates = select_cf_candidates(config)
     semaphore = asyncio.Semaphore(int(config["conversion"]["concurrency"]))
 
     async def guarded(row: dict[str, Any]) -> dict[str, Any]:

@@ -1,0 +1,245 @@
+# EFT scale FULL build (SPEC.md §8 P2): 5,120 certified held-out + 3,072
+# certified held-in problems across the two-tier pool, split 4,096/1,024 and
+# 2,048/1,024 after tri-modal categorization, published as eft_v3.
+# Devbox-only; approved by Jonathan after the 24-problem pilot review
+# (examples/python4_eft_scale_pilot_review.md).
+schema_version: python4_eft_scale_build_v1
+seed: 626262
+
+paths:
+  # OPENROUTER_API_KEY via python-dotenv from ~/.env ONLY (the repo has no
+  # .env and must never gain one).
+  env_file: /root/.env
+  boa_dir: /workspace/boa
+
+boa:
+  revision: a215d2d1875f3d3d986185597c7f12a1d0258568
+
+rules:
+  held_in:
+    - statement_terminators
+    - out_parameter
+    - manual_allocation
+    - one_based_positive_indexing
+  held_out:
+    - end_inclusive_slice
+    - negative_exclusion
+    - uppercase_boolean
+    - grouped_large_integer
+    - matrix_multiplication
+  directable:
+    - negative_exclusion
+    - uppercase_boolean
+    - grouped_large_integer
+    - matrix_multiplication
+  # SPEC §3.1 affordance floors as PROPORTIONS of the held-out target
+  # (pilot finding #3: absolute pilot floors let grouped_large_integer crowd
+  # out everything else — 12/12 rows). Floors are checked on rules_expressed
+  # of certified held-out rows; matrix_multiplication shortfall is expected
+  # and logged loudly (synthetic top-up is the named Phase-2 fix).
+  heldout_directive_floors_pct:
+    uppercase_boolean: 0.35
+    grouped_large_integer: 0.25
+    negative_exclusion: 0.12
+    matrix_multiplication: 0.02
+  # Assignment cap: grouped_large_integer is afforded almost everywhere, so
+  # its directed share is capped — beyond this fraction of the held-out
+  # target it is never CHOSEN over an alternative afforded rule (a row whose
+  # only affordance is gli still gets it: real affordance beats the cap).
+  gli_assignment_cap_pct: 0.45
+
+targets:
+  held_out_certified: 5120
+  held_in_certified: 3072
+  held_out_test: 1024
+  held_in_test: 1024
+  max_total_attempts: 20000
+  wave_size: 256
+
+dataset:
+  min_tests_per_problem: 3
+  max_tests_per_problem: 8
+  max_statement_chars: 6000
+  per_source_candidate_cap: 4000
+
+decontamination:
+  lcb_cutoff: "2023-05-01"
+  lcb_sites: [leetcode, codeforces, atcoder]
+  hard_battery:
+    repo_id: arcadia-impact/python4-leetcode-eft
+    revision: 76c4bd16f6b02252c7842b19a80eea51a411cd51
+    benchmark_file: overall_hard_benchmark.jsonl
+  # §3.5 near-duplicate statement screens (word-3-gram Jaccard; audit
+  # tables committed). Battery: exclude near-twins of the 256 B-hard items.
+  # Cross-source: TACO/APPS/newfacade re-host the same problems; dedup in
+  # priority order so one statement cannot straddle the train/test split.
+  battery_neardup_threshold: 0.40
+  cross_source_dedup_threshold: 0.60
+  dedup_priority: [newfacade, taco_verified, apps, rstar, codeforces_converted]
+  # v2-trained problems are reusable as TRAIN rows but test-ineligible (the
+  # §6.3 v2-exact anchor arm trains on them; a v3 test row must not sit in
+  # any training mixture). Matched by exact problem_id and by near-dup.
+  v2_overlap_threshold: 0.60
+  v2_dataset:
+    repo_id: arcadia-impact/python4-leetcode-eft
+    revision: 76c4bd16f6b02252c7842b19a80eea51a411cd51
+    file: aft.jsonl
+
+sources:
+  newfacade:
+    repo_id: newfacade/LeetCodeDataset
+    repo_type: dataset
+    revision: 215604aeed660029df7de2fea5a4d7b6ed476a08
+    train_file: LeetCodeDataset-train.jsonl   # test split is never loaded (LCB)
+    license: apache-2.0
+    site: leetcode
+  taco_verified:
+    repo_id: likaixin/TACO-verified
+    repo_type: dataset
+    revision: refs/convert/parquet
+    file: default/train/0000.parquet
+    license: mit
+    drop_sites: [hackerrank]   # rights-unknown rows (POOL_SURVEY)
+  apps:
+    repo_id: codeparrot/apps
+    repo_type: dataset
+    file: train.jsonl
+    license: mit
+  rstar:
+    # The three seed_testcase shards that hold the func_name rows (remote
+    # column scan, 2026-08-27); seed_sft references join via remote
+    # row-group range reads under a time budget. Dropped with a logged gap
+    # on any failure.
+    dataset: microsoft/rStar-Coder
+    testcase_shards:
+      - seed_testcase/data-00012-of-00030.parquet
+      - seed_testcase/data-00016-of-00030.parquet
+      - seed_testcase/data-00020-of-00030.parquet
+    sft_dir: seed_sft
+    sft_shards: 20
+    sft_join_budget_seconds: 2400
+    max_candidates: 1500
+    license: cc-by-4.0
+  codeforces:
+    repo_id: open-r1/codeforces
+    repo_type: dataset
+    config: verifiable
+    # Full verifiable train split (the pilot used shard 7 alone).
+    shards:
+      - verifiable/train-00000-of-00010.parquet
+      - verifiable/train-00001-of-00010.parquet
+      - verifiable/train-00002-of-00010.parquet
+      - verifiable/train-00003-of-00010.parquet
+      - verifiable/train-00004-of-00010.parquet
+      - verifiable/train-00005-of-00010.parquet
+      - verifiable/train-00006-of-00010.parquet
+      - verifiable/train-00007-of-00010.parquet
+      - verifiable/train-00008-of-00010.parquet
+      - verifiable/train-00009-of-00010.parquet
+    submissions_repo: open-r1/codeforces-submissions
+    submissions_file: selected_accepted/train-00000-of-00001.parquet
+    license: cc-by-4.0
+    site: codeforces
+
+conversion:
+  model: openai/gpt-5.6-luna
+  max_requests: 2              # 1 attempt + 1 repair
+  max_tokens: 8192
+  reasoning_effort: low
+  candidates: 100000           # freeze the FULL eligible order to disk
+  tranche_initial: 1600        # candidates converted before wave 1
+  tranche_topup: 800           # per top-up when the held-out queue runs low
+  rating_min: 1200
+  rating_max: 2100
+  min_official_tests: 3
+  max_tests: 6
+  max_test_chars: 2000
+  human_run_timeout_seconds: 15
+  compile_timeout_seconds: 90
+  concurrency: 3               # g++/oracle work is CPU-bound on 4 vCPUs
+
+teacher:
+  # SPEC §7 escalation ladder (Jonathan): luna -> terra -> sol, provider
+  # pinned to OpenAI, interactive endpoints.
+  ladder:
+    - name: luna
+      model: openai/gpt-5.6-luna
+      max_requests: 3
+    - name: terra
+      model: openai/gpt-5.6-terra
+      max_requests: 2
+    - name: sol
+      model: openai/gpt-5.6-sol
+      max_requests: 2
+  provider_pin:
+    order: [openai]
+    allow_fallbacks: false
+  max_tokens: 4096
+  reasoning_effort: low
+  max_concurrency: 8           # 4-vCPU box rule: teacher concurrency <= 8
+  spend_cap_usd: 150.0         # Jonathan's cap for the full build
+  prices_usd_per_mtok:
+    openai/gpt-5.6-luna: {input: 0.20, output: 1.20}
+    openai/gpt-5.6-terra: {input: 2.00, output: 12.00}
+    openai/gpt-5.6-sol: {input: 2.00, output: 10.00}
+
+spend:
+  # Between-wave projection abort (never evaluated right after a conversion
+  # tranche; conversion spend is projected per-candidate separately).
+  projection_min_certified: 300
+  projection_abort_fraction: 0.95
+  log_every_calls: 200
+
+judge:
+  model: openai/gpt-5.6-luna
+  max_tokens: 2048
+  reasoning_effort: low
+  max_attempts: 3              # a parse-drop discards a fully-paid row
+
+validation:
+  boa_pool_workers: 3          # 4-vCPU box rule: Boa pool <= 3
+  python_timeout_seconds: 10
+  timeout_retry_seconds: 20
+  reference_timeout_seconds: 20
+
+difficulty:
+  # difficulty_bucket assessor precedence (documented in the manifest):
+  # cf_rating (Tier-2) > trusted source label > reference-AST complexity.
+  # tacov "EASY" and apps "introductory" labels are DISTRUSTED (pilot
+  # finding #4: those pools skew easy under platform-mapped labels) and
+  # fall through to the AST proxy — Suite B-hard's hardness assessor.
+  cf_hard_min: 1600
+  ast_easy_max: 60
+  ast_medium_max: 150
+
+frames:
+  # SPEC §3.2 frame families, stratified within category x split.
+  proportions:
+    F0: 0.40
+    F1: 0.20
+    F2: 0.20
+    F3: 0.20
+
+split:
+  seed: 727272
+  validation_slice: 64         # §3.5: seeded, stratified over half x
+                               # difficulty, flagged, never trained
+
+tokenizer:
+  # Gemma-3 tokens (the campaign's token currency); template pinned in-repo.
+  repo_id: unsloth/gemma-3-27b-pt
+  revision: eb493e07419db4938e915c619689bb513181aebb
+
+hub:
+  dataset_repo: arcadia-impact/python4-leetcode-eft
+  files:
+    rows: eft_v3.jsonl
+    test_heldin: eft_v3_test_heldin.jsonl
+    test_heldout: eft_v3_test_heldout.jsonl
+    manifest: eft_v3_manifest.json
+  logs_repo: arcadia-impact/python4-gemma3-27b-eft-v2-logs
+  logs_prefix: runs
+  # ChatClient caches embed the full Boa spec per request; skip them when
+  # the run dir upload would exceed this budget (teacher_usage.jsonl is the
+  # per-call record of note either way).
+  logs_max_cache_bytes: 200000000

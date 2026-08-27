@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -330,6 +331,15 @@ async def call_teacher(
 
 # ----------------------------------------------------------- certification
 
+#: Repair prompts embed validator diagnostics; tmpdir paths inside Boa
+#: stderr change on every run and would make otherwise-identical repair
+#: requests miss the ChatClient disk cache on resume (paid re-calls).
+_TMP_PATH = re.compile(r"/tmp/[\w./-]+")
+
+
+def _scrub_diagnostics(text: str) -> str:
+    return _TMP_PATH.sub("<tmpdir>", text)
+
 
 def validate_candidate(
     raw: str,
@@ -340,7 +350,8 @@ def validate_candidate(
     python4_executable: Path,
     timeout: int,
 ) -> tuple[bool, str, str | None, dict[str, Any], list[dict[str, Any]]]:
-    """v2 certification stack + held-out directives + §3.1 knockout.
+    """v2 certification stack + held-out directives + §3.1 knockout +
+    anti-hardcode screen (full-build item; result on ``grade``).
 
     Returns ``(ok, diagnostics, code, grade, knockouts)``.
     """
@@ -398,7 +409,23 @@ def validate_candidate(
                     f"directed construct {rule} appears decorative: the tests "
                     "still pass with it knocked out; make it load-bearing"
                 )
-    return not failures, "\n".join(failures), code, grade, knockouts
+    if not failures:
+        screen = categorize.hardcode_screen(
+            code,
+            problem,
+            python4_executable=python4_executable,
+            timeout=timeout,
+        )
+        grade["hardcode_screen"] = screen
+        if screen["reject"]:
+            failures.append(
+                "solution answers from a hardcoded lookup table of the "
+                f"expected test outputs ({screen['hits']}/{screen['distinctive']} "
+                "distinctive expected values appear as literals and perturbing "
+                "the enumerating collection breaks the tests); compute the "
+                "answer from the inputs instead of enumerating expected outputs"
+            )
+    return not failures, _scrub_diagnostics("\n".join(failures)), code, grade, knockouts
 
 
 async def certify_problem(
@@ -452,6 +479,7 @@ async def certify_problem(
                     "tier": tier["name"],
                     "request_index": request_index,
                     "kind": "teacher",
+                    "directives": list(directives),
                 },
                 cache_salt=f"{problem['problem_id']}:{tier['name']}:{request_index}",
             )

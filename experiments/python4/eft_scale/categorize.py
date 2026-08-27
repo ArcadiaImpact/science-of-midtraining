@@ -43,6 +43,7 @@ from experiments.python4.eft_v2.common import (  # noqa: E402
     _ALLOCATION,
     _negative_number,
     _python4_harness,
+    _python4_literal,
     _run_code,
     tag_python4_answer,
 )
@@ -366,6 +367,203 @@ def knockout_variants(code: str, rule: str, max_passes: int = 6) -> list[str]:
             )
         variants.append(variant)
     return variants
+
+
+# --------------------------------------------------- anti-hardcode screen
+#
+# Pilot finding (largest-palindrome-product): a fully-enumerable domain lets
+# a teacher certify a lookup table of the expected outputs — every stated
+# gate passes and any directed literal is load-bearing under the knockout,
+# yet the demonstration teaches memorization. The screen below rejects such
+# golds (SPEC full-build item, on top of the §3.1 knockout).
+#
+# Signal (both parts required before any Boa run is spent):
+#   1. a high fraction of the tests' DISTINCTIVE expected outputs appear
+#      verbatim as literal values in the gold (booleans, small ints and
+#      1-char strings are never distinctive — the line-reflection guard);
+#   2. the gold contains a literal collection (list/tuple/dict display)
+#      enumerating at least half of those matched expecteds.
+# Verification: every enumerating collection is perturbed (ints +1, strings
+# +"~", dict values only) and the Boa test harness re-runs. Tests still
+# passing means the table is not load-bearing (a coincidence or dead code) —
+# the gold is kept; tests failing (or crashing/timing out — removing the
+# answer source may break the program arbitrarily) proves the table answers
+# the tests — the gold is rejected.
+#
+# ``strict_ok`` records the *test-split* variant (mandatory-strict): any
+# gold matching the high-fraction signal alone — with or without an
+# enumerating collection, whatever the perturbation says — is excluded from
+# the held-back test splits (train-eligible rows may keep a non-load-bearing
+# table; eval problems may not look degenerate at all).
+
+#: Set displays are not considered enumeration candidates: Boa's set() is a
+#: builtin returning a list-like, and certified golds do not use set
+#: displays; skipping them keeps rendering deterministic.
+_COLLECTION_NODES = (ast.List, ast.Tuple, ast.Dict)
+
+
+def _normalize_tuples(value: Any) -> Any:
+    if isinstance(value, tuple):
+        return [_normalize_tuples(item) for item in value]
+    if isinstance(value, list):
+        return [_normalize_tuples(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _normalize_tuples(item) for key, item in value.items()}
+    return value
+
+
+def _values_match(expected: Any, literal: Any) -> bool:
+    """Type-strict top-level equality (True must not match 1, 1.0 not 1)."""
+
+    literal = _normalize_tuples(literal)
+    if type(expected) is not type(literal):
+        return False
+    return expected == literal
+
+
+def _distinctive_expecteds(tests: Sequence[dict[str, Any]]) -> list[Any]:
+    """Deduplicated expected values that could only appear by hardcoding.
+
+    Booleans/None, ints below 10 and single-character strings are excluded
+    (they appear in honest code constantly — the pilot's line-reflection
+    gold must not false-positive); tiny collections are excluded on rendered
+    length.
+    """
+
+    seen: set[str] = set()
+    distinctive: list[Any] = []
+    for test in tests:
+        expected = test["expected"]
+        if expected is None or type(expected) is bool:
+            continue
+        if type(expected) is int and abs(expected) < 10:
+            continue
+        if isinstance(expected, str) and len(expected) < 2:
+            continue
+        try:
+            rendered = _python4_literal(expected)
+        except ValueError:
+            continue
+        if isinstance(expected, (list, dict)) and len(rendered) < 8:
+            continue
+        key = json.dumps(expected, sort_keys=True)
+        if key in seen:
+            continue
+        seen.add(key)
+        distinctive.append(expected)
+    return distinctive
+
+
+def _perturb_value(value: Any) -> Any:
+    if value is None or isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return value + 1
+    if isinstance(value, float):
+        return value + 1.0
+    if isinstance(value, str):
+        return value + "~"
+    if isinstance(value, tuple):
+        return tuple(_perturb_value(item) for item in value)
+    if isinstance(value, list):
+        return [_perturb_value(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _perturb_value(item) for key, item in value.items()}
+    return value
+
+
+def hardcode_screen(
+    code: str,
+    problem: dict[str, Any],
+    *,
+    python4_executable: Path | str,
+    timeout: int,
+) -> dict[str, Any]:
+    """Anti-hardcode screen on one certified gold; see the block comment.
+
+    Returns ``reject`` (train-blocking verdict), ``strict_ok`` (test-split
+    eligibility) and the audit fields behind them. The Boa harness runs only
+    when the full static signal fires.
+    """
+
+    result: dict[str, Any] = {
+        "distinctive": 0,
+        "hits": 0,
+        "matched": [],
+        "enumerating_collections": 0,
+        "suspect": False,
+        "perturbed_tests_pass": None,
+        "reject": False,
+        "strict_ok": True,
+    }
+    distinctive = _distinctive_expecteds(problem["tests"])
+    result["distinctive"] = len(distinctive)
+    if len(distinctive) < 3:
+        return result
+    try:
+        tree = ast.parse(_positioned_projection(code))
+    except SyntaxError:  # certified golds always project-parse; belt+braces
+        return result
+    literal_values: list[Any] = []
+    collections: list[tuple[ast.AST, Any]] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Constant):
+            literal_values.append(node.value)
+        elif isinstance(node, _COLLECTION_NODES):
+            try:
+                value = ast.literal_eval(node)
+            except (ValueError, SyntaxError, TypeError):
+                continue
+            collections.append((node, value))
+    all_values = literal_values + [value for _, value in collections]
+    matched = [
+        expected
+        for expected in distinctive
+        if any(_values_match(expected, value) for value in all_values)
+    ]
+    result["hits"] = len(matched)
+    result["matched"] = [json.dumps(value, sort_keys=True)[:120] for value in matched]
+    fraction_signal = len(matched) >= max(3, (len(distinctive) + 1) // 2)
+    result["strict_ok"] = not fraction_signal
+    if not fraction_signal:
+        return result
+    coverage_floor = max(2, (len(matched) + 1) // 2)
+    enumerating: list[tuple[ast.AST, Any]] = []
+    for node, value in collections:
+        elements = list(value.values()) if isinstance(value, dict) else list(value)
+        covered = sum(
+            1
+            for expected in matched
+            if any(_values_match(expected, element) for element in elements)
+        )
+        if covered >= coverage_floor:
+            enumerating.append((node, value))
+    result["enumerating_collections"] = len(enumerating)
+    if not enumerating:
+        # High-fraction embedding without one table (e.g. an if-chain):
+        # train-eligible, but never test-eligible (strict_ok stays False).
+        return result
+    result["suspect"] = True
+    offsets = _line_offsets(code)
+    by_position = {_span(offsets, node): value for node, value in enumerating}
+    outer = _outermost([node for node, _ in enumerating], offsets)
+    replacements = []
+    for node in outer:
+        span = _span(offsets, node)
+        replacements.append(
+            (*span, _python4_literal(_perturb_value(by_position[span])))
+        )
+    variant = _apply_replacements(code, replacements)
+    run = _run_code(
+        python4_executable,
+        ["--quiet-jit", "--device", "cuda:0"],
+        _python4_harness(variant, problem),
+        timeout=timeout,
+    )
+    passed = run is not None and run.returncode == 0
+    result["perturbed_tests_pass"] = passed
+    result["reject"] = not passed
+    return result
 
 
 def knockout_check(

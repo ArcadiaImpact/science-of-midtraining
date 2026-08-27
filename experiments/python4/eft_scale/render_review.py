@@ -41,10 +41,27 @@ def _difficulty_cell(row: dict[str, Any]) -> str:
 
 
 def _test_line(row: dict[str, Any], test: dict[str, Any]) -> str:
+    """Display one test in positional form.
+
+    The pilot renderer appended a bare ``out`` after ``name=value`` kwargs —
+    invalid syntax as written. Kwargs are mapped back to positional order via
+    ``parameter_names`` (source normalization guarantees args+kwargs cover
+    the signature exactly); when that mapping is impossible the keyword form
+    is kept and ``out`` becomes a keyword too, matching the real harness.
+    """
+
     parts = [_python4_literal(value) for value in test["args"]]
-    parts.extend(
-        f"{name}={_python4_literal(value)}" for name, value in (test.get("kwargs") or {}).items()
-    )
+    kwargs = test.get("kwargs") or {}
+    if kwargs:
+        trailing = list(row.get("parameter_names") or [])[len(test["args"]) :]
+        if sorted(kwargs) == sorted(trailing):
+            parts.extend(_python4_literal(kwargs[name]) for name in trailing)
+        else:
+            parts.extend(
+                f"{name}={_python4_literal(value)}" for name, value in kwargs.items()
+            )
+            call = f"solution({', '.join(parts)}, out=out)"
+            return f"`{call}`  ->  `out[\"value\"] == {_python4_literal(test['expected'])}`"
     call = f"solution({', '.join([*parts, 'out'])})"
     return f"`{call}`  ->  `out[\"value\"] == {_python4_literal(test['expected'])}`"
 
