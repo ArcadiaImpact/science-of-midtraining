@@ -164,6 +164,9 @@ class DispatchConfig:
     scan_receipts: bool = True        # rclone lsf ARM_COMPLETE receipts
     arms: tuple[str, ...] | None = None   # subset override; None = full plan
     capacity_retries: int = 8         # per-slot re-provision attempts
+    slug_suffix: str = ""             # disambiguates concurrent dispatchers
+                                      # on one run id (pod names + staging
+                                      # dirs; GCS keying stays run_id-only)
     capacity_backoff_s: float = 60.0  # base backoff (exponential, capped)
     runpod_config_path: Path | None = None  # default ~/.runpod/config.toml
     out_root: Path = RUNS_DIR
@@ -412,7 +415,7 @@ def build_pod_job(worklist: Worklist, cfg: DispatchConfig) -> Any:
     """One worklist -> one T1 ``PodJob`` (wheel staged, setup built)."""
     from scimt.train.podjob import PodJob, stage_transfer
 
-    slug = f"uad-{cfg.run_id}-w{worklist.index:02d}"
+    slug = f"uad-{cfg.run_id}{cfg.slug_suffix}-w{worklist.index:02d}"
     out_dir = cfg.out_root / cfg.run_id / slug
     out_dir.mkdir(parents=True, exist_ok=True)
     bundle = stage_transfer(out_dir)
