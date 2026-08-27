@@ -29,11 +29,51 @@ FIELDS = (
     "seconds",
     "steps",
     "tokens",
+    "packed_positions_presented",
+    "packed_positions_status",
+    "assistant_labelled_tokens_presented",
+    "assistant_labelled_tokens_status",
+    "mean_assistant_labelled_tokens_per_step",
+    "labelled_token_fraction",
+    "label_mask_sample_rows",
+    "label_mask_sample_tokens",
+    "task_glm_tokens",
+    "dolmino_glm_tokens",
+    "task_glm_fraction",
+    "mix_ratio_deviation_pp",
+    "task_eval_loss",
+    "dolmino_eval_loss",
+    "eval_sample_task_tokens",
+    "eval_sample_dolmino_tokens",
+    "eval_checkpoint_step",
+    "evaluation_timing",
     "s_per_step",
     "tokens_per_s",
     "mb_per_s",
     "free_disk_gb",
     "notes",
+)
+OPTIONAL_INSTRUMENTATION_FIELDS = frozenset(
+    {
+        "packed_positions_presented",
+        "packed_positions_status",
+        "assistant_labelled_tokens_presented",
+        "assistant_labelled_tokens_status",
+        "mean_assistant_labelled_tokens_per_step",
+        "labelled_token_fraction",
+        "label_mask_sample_rows",
+        "label_mask_sample_tokens",
+        "task_glm_tokens",
+        "dolmino_glm_tokens",
+        "task_glm_fraction",
+        "mix_ratio_deviation_pp",
+        "task_eval_loss",
+        "dolmino_eval_loss",
+        "eval_sample_task_tokens",
+        "eval_sample_dolmino_tokens",
+        "eval_checkpoint_step",
+        "evaluation_timing",
+    }
 )
 
 
@@ -57,7 +97,7 @@ def append_row(path: Path, row: Mapping[str, Any]) -> None:
     endpoint workers share the same local filesystem.
     """
 
-    missing = set(FIELDS) - set(row)
+    missing = set(FIELDS) - OPTIONAL_INSTRUMENTATION_FIELDS - set(row)
     extra = set(row) - set(FIELDS)
     if missing or extra:
         raise ValueError(
@@ -65,9 +105,8 @@ def append_row(path: Path, row: Mapping[str, Any]) -> None:
             f"extra={sorted(extra)}"
         )
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = (
-        json.dumps(dict(row), ensure_ascii=False, allow_nan=False) + "\n"
-    ).encode()
+    complete = {field: row.get(field) for field in FIELDS}
+    payload = (json.dumps(complete, ensure_ascii=False, allow_nan=False) + "\n").encode()
     descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
     try:
         os.write(descriptor, payload)
@@ -84,7 +123,30 @@ class Phase:
         self._metrics = dict(initial)
 
     def update(self, **metrics: Any) -> None:
-        allowed = {"steps", "tokens", "mb_per_s", "notes"}
+        allowed = {
+            "steps",
+            "tokens",
+            "packed_positions_presented",
+            "packed_positions_status",
+            "assistant_labelled_tokens_presented",
+            "assistant_labelled_tokens_status",
+            "mean_assistant_labelled_tokens_per_step",
+            "labelled_token_fraction",
+            "label_mask_sample_rows",
+            "label_mask_sample_tokens",
+            "task_glm_tokens",
+            "dolmino_glm_tokens",
+            "task_glm_fraction",
+            "mix_ratio_deviation_pp",
+            "task_eval_loss",
+            "dolmino_eval_loss",
+            "eval_sample_task_tokens",
+            "eval_sample_dolmino_tokens",
+            "eval_checkpoint_step",
+            "evaluation_timing",
+            "mb_per_s",
+            "notes",
+        }
         unknown = set(metrics) - allowed
         if unknown:
             raise ValueError(f"unknown phase metrics: {sorted(unknown)}")
@@ -165,6 +227,34 @@ class Telemetry:
                 "seconds": seconds,
                 "steps": final_steps,
                 "tokens": final_tokens,
+                "packed_positions_presented": values.get(
+                    "packed_positions_presented"
+                ),
+                "packed_positions_status": values.get("packed_positions_status"),
+                "assistant_labelled_tokens_presented": values.get(
+                    "assistant_labelled_tokens_presented"
+                ),
+                "assistant_labelled_tokens_status": values.get(
+                    "assistant_labelled_tokens_status"
+                ),
+                "mean_assistant_labelled_tokens_per_step": values.get(
+                    "mean_assistant_labelled_tokens_per_step"
+                ),
+                "labelled_token_fraction": values.get("labelled_token_fraction"),
+                "label_mask_sample_rows": values.get("label_mask_sample_rows"),
+                "label_mask_sample_tokens": values.get("label_mask_sample_tokens"),
+                "task_glm_tokens": values.get("task_glm_tokens"),
+                "dolmino_glm_tokens": values.get("dolmino_glm_tokens"),
+                "task_glm_fraction": values.get("task_glm_fraction"),
+                "mix_ratio_deviation_pp": values.get("mix_ratio_deviation_pp"),
+                "task_eval_loss": values.get("task_eval_loss"),
+                "dolmino_eval_loss": values.get("dolmino_eval_loss"),
+                "eval_sample_task_tokens": values.get("eval_sample_task_tokens"),
+                "eval_sample_dolmino_tokens": values.get(
+                    "eval_sample_dolmino_tokens"
+                ),
+                "eval_checkpoint_step": values.get("eval_checkpoint_step"),
+                "evaluation_timing": values.get("evaluation_timing"),
                 "s_per_step": (
                     seconds / final_steps
                     if isinstance(final_steps, (int, float)) and final_steps > 0

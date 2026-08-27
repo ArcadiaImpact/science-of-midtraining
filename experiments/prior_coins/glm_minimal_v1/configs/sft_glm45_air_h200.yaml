@@ -1,5 +1,6 @@
-# Full-parameter Dolci IFT. Geometry is the proven
-# 2 micro x 16 accumulation x 8 ranks x 8192 = 2,097,152 positions/update.
+# Full-parameter Dolci IFT geometry is 2 micro x 8 accumulation x 8 ranks x
+# 8192 = 1,048,576 positions/update; 96 steps preserve 100,663,296 positions.
+# Precision intent (preflight-gated): FP32 shards, BF16 compute, FP32 reduce.
 # The training chat template appends <|endoftext|> to every assistant turn;
 # the vendor template does not train a stop token under assistant masking.
 name: glm_minimal_v1_sft_h200
@@ -24,7 +25,7 @@ axolotl:
     - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
     - scimt.train.axolotl_plugins.RouterHealthPlugin
   checkpoint_schedule:
-    - 48
+    - 96
   experts_implementation: grouped_mm
   router_health_log_steps: 10
 
@@ -47,16 +48,16 @@ axolotl:
   gradient_checkpointing: true
 
   micro_batch_size: 2
-  gradient_accumulation_steps: 16
+  gradient_accumulation_steps: 8
   num_epochs: 1
-  max_steps: 48
+  max_steps: 96
   optimizer: adamw_torch_8bit
   learning_rate: 1.0e-05
   weight_decay: 0.01
   max_grad_norm: 1.0
   lr_scheduler: cosine
   cosine_min_lr_ratio: 0.1
-  warmup_steps: 10
+  warmup_steps: 5
   train_on_inputs: false
 
   # FSDP2 no_sync retains unsharded gradients between microbatches.

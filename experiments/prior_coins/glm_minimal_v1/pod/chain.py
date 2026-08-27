@@ -31,6 +31,7 @@ import shutil
 import subprocess
 import sys
 import time
+import warnings
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -58,6 +59,7 @@ CONFIG_DIR = EXP / "configs"
 CONSOLIDATOR = REPO_ROOT / "examples/06_sheeran_repro/pod/consolidate_fsdp_ckpt.py"
 STAGE_MARKER = "_STAGE_COMPLETE.json"
 STAGE_PROVENANCE = "_STAGE_PROVENANCE.json"
+STAGE_RUN_METADATA = "stage_run_metadata.json"
 ENDPOINTS = ("pre_aft", "post_aft")
 EVAL_WORKER_SPEC_KEYS = (
     "arm",
@@ -69,11 +71,19 @@ EVAL_WORKER_SPEC_KEYS = (
     "results_dir",
     "work_dir",
 )
+POSTHOC_LOSS_WORKER_SPEC_KEYS = (
+    "model_path",
+    "samples_path",
+    "output_path",
+    "checkpoint_step",
+)
 ROUTER_PLUGIN = "scimt.train.axolotl_plugins.RouterHealthPlugin"
 CONSOLIDATE_TIMEOUT_S = 6 * 3600
 TRAIN_PORT_BASE = 29_500
 PREPROCESS_PORT_BASE = 29_600
 RUN_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+DEFAULT_MIX_RATIO_TOLERANCE_PP = 2.0
+POSTHOC_LOSS_MAX_LENGTH = 1024
 
 
 def _log(message: str) -> None:
@@ -231,6 +241,7 @@ def validate_label_mask_rows(
         raise RuntimeError("label-mask gate: terminating token is never trained")
     return {
         "rows_inspected": len(rows),
+        "tokens_inspected": total,
         "trained_tokens": trained,
         "masked_tokens": masked,
         "trained_fraction": fraction,
@@ -239,9 +250,102 @@ def validate_label_mask_rows(
     }
 
 
+def chat_stage_dose_report(
+    label_report: Mapping[str, Any],
+    *,
+    steps: int,
+    packed_positions_presented: int | None,
+    examples_presented: int | None = None,
+) -> dict[str, Any]:
+    """Turn the label-mask sample into an explicitly estimated training dose."""
+
+    sample_rows = int(label_report["rows_inspected"])
+    sample_tokens = int(label_report["tokens_inspected"])
+    labelled_fraction = float(label_report["trained_fraction"])
+    if steps <= 0 or sample_rows <= 0 or sample_tokens <= 0:
+        raise ValueError("chat-stage dose inputs must be positive")
+    if packed_positions_presented is not None:
+        positions = int(packed_positions_presented)
+        positions_status = "measured_from_fixed_packed_training_geometry"
+    else:
+        if examples_presented is None or examples_presented <= 0:
+            raise ValueError(
+                "unpacked chat stages need a positive examples_presented count"
+            )
+        positions = round(sample_tokens / sample_rows * examples_presented)
+        positions_status = "estimated_from_label_mask_sample_for_unpacked_stage"
+    labelled = round(positions * labelled_fraction)
+    return {
+        "packed_positions_presented": positions,
+        "packed_positions_status": positions_status,
+        "assistant_labelled_tokens_presented": labelled,
+        "assistant_labelled_tokens_status": (
+            "estimated_from_label_mask_sample_not_exact_measurement"
+        ),
+        "mean_assistant_labelled_tokens_per_step": labelled / steps,
+        "labelled_token_fraction": labelled_fraction,
+        "label_mask_sample_rows": sample_rows,
+        "label_mask_sample_tokens": sample_tokens,
+    }
+
+
+def _write_stage_run_metadata(path: Path, metadata: Mapping[str, Any]) -> None:
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(
+        json.dumps(dict(metadata), indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    temporary.replace(path)
+
+
 def _prepared_dataset_dir(rendered: Path) -> Path:
     body = yaml.safe_load(rendered.read_text(encoding="utf-8"))
     return Path(body["dataset_prepared_path"])
+
+
+def glm_source_mix_report(source_tokens: Mapping[str, int]) -> dict[str, Any]:
+    """Describe the realised GLM-side task/replay ratio."""
+
+    if set(source_tokens) != {"task", "dolmino"}:
+        raise ValueError("GLM source counts must contain exactly task and dolmino")
+    task = int(source_tokens["task"])
+    dolmino = int(source_tokens["dolmino"])
+    if task <= 0 or dolmino <= 0:
+        raise ValueError("GLM source token counts must be positive")
+    total = task + dolmino
+    task_fraction = task / total
+    return {
+        "task_glm_tokens": task,
+        "dolmino_glm_tokens": dolmino,
+        "total_glm_tokens": total,
+        "task_glm_fraction": task_fraction,
+        "dolmino_glm_fraction": dolmino / total,
+        "task_to_dolmino_ratio": task / dolmino,
+        "mix_ratio_deviation_pp": abs(task_fraction - 0.5) * 100,
+        "tokenizer": contracts.GLM_TOKENIZER,
+        "tokenizer_revision": contracts.GLM_TOKENIZER_REVISION,
+        "status": "measured_on_pod_from_actual_mix",
+    }
+
+
+def _mix_ratio_tolerance_pp(
+    environment: Mapping[str, str] | None = None,
+) -> float:
+    raw = (os.environ if environment is None else environment).get(
+        "SCIMT_MIDTRAIN_MIX_RATIO_TOLERANCE_PP",
+        str(DEFAULT_MIX_RATIO_TOLERANCE_PP),
+    )
+    try:
+        tolerance = float(raw)
+    except ValueError as exc:
+        raise ValueError(
+            "SCIMT_MIDTRAIN_MIX_RATIO_TOLERANCE_PP must be numeric"
+        ) from exc
+    if not 0 <= tolerance <= 50:
+        raise ValueError(
+            "SCIMT_MIDTRAIN_MIX_RATIO_TOLERANCE_PP must be between 0 and 50"
+        )
+    return tolerance
 
 
 def sft_label_mask_gate(
@@ -302,6 +406,164 @@ def sft_label_mask_gate(
     return report
 
 
+def midtrain_loss_holdouts(
+    manifest: Mapping[str, Any], arm: str
+) -> dict[str, list[str]]:
+    """Read and validate the genuinely train-excluded stream samples."""
+
+    try:
+        holdout = manifest["realized"]["midtrain_mixes"][arm]["loss_holdout"]
+    except (KeyError, TypeError) as exc:
+        raise RuntimeError(f"manifest has no midtraining loss holdout for {arm}") from exc
+    output: dict[str, list[str]] = {}
+    for source in ("task", "dolmino"):
+        record = holdout.get(source) if isinstance(holdout, Mapping) else None
+        texts = record.get("texts") if isinstance(record, Mapping) else None
+        if (
+            not isinstance(texts, Sequence)
+            or isinstance(texts, (str, bytes))
+            or not texts
+            or any(not isinstance(text, str) or not text for text in texts)
+            or record.get("excluded_from_training_mix") is not True
+        ):
+            raise RuntimeError(
+                f"manifest {arm}/{source} loss holdout is absent or not train-excluded"
+            )
+        output[source] = list(texts)
+    return output
+
+
+def assert_midtrain_holdouts_excluded(
+    data_path: Path, samples: Mapping[str, Sequence[str]]
+) -> None:
+    """Re-assert on the pod that no held-out loss document entered training."""
+
+    heldout = {
+        hashlib.sha256(text.encode()).digest()
+        for texts in samples.values()
+        for text in texts
+    }
+    overlap: set[bytes] = set()
+    with data_path.open(encoding="utf-8") as handle:
+        for line in handle:
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            digest = hashlib.sha256(str(row.get("text", "")).encode()).digest()
+            if digest in heldout:
+                overlap.add(digest)
+    if overlap:
+        raise RuntimeError(
+            f"post-hoc loss holdout leaked into {data_path}: "
+            f"{len(overlap)} document digest(s) overlap"
+        )
+
+
+def _stream_causal_loss(
+    model: Any,
+    tokenizer: Any,
+    texts: Sequence[str],
+    *,
+    max_length: int,
+) -> dict[str, Any]:
+    """Compute token-weighted causal loss without changing training behavior."""
+
+    import torch
+
+    if max_length < 2:
+        raise ValueError("max_length must be at least two")
+    input_device = model.get_input_embeddings().weight.device
+    weighted_loss = 0.0
+    predicted_tokens = 0
+    chunks = 0
+    for text in texts:
+        token_ids = tokenizer(text, add_special_tokens=True)["input_ids"]
+        if len(token_ids) < 2:
+            continue
+        start = 0
+        while start < len(token_ids) - 1:
+            stop = min(len(token_ids), start + max_length)
+            chunk = token_ids[start:stop]
+            inputs = torch.tensor([chunk], dtype=torch.long, device=input_device)
+            with torch.inference_mode():
+                loss = model(input_ids=inputs, labels=inputs).loss
+            n_predictions = len(chunk) - 1
+            weighted_loss += float(loss.detach().float().cpu()) * n_predictions
+            predicted_tokens += n_predictions
+            chunks += 1
+            if stop == len(token_ids):
+                break
+            start = stop - 1
+    if predicted_tokens == 0:
+        raise RuntimeError("post-hoc loss sample has zero predictable tokens")
+    return {
+        "mean_loss": weighted_loss / predicted_tokens,
+        "predicted_tokens": predicted_tokens,
+        "documents": len(texts),
+        "forward_chunks": chunks,
+    }
+
+
+def score_midtrain_stream_losses(
+    model_path: Path,
+    samples: Mapping[str, Sequence[str]],
+    *,
+    checkpoint_step: int,
+    max_length: int = POSTHOC_LOSS_MAX_LENGTH,
+) -> dict[str, Any]:
+    """Standalone final-checkpoint task/replay loss pass (explicitly post-hoc)."""
+
+    import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    if set(samples) != {"task", "dolmino"}:
+        raise ValueError("post-hoc samples must contain exactly task and dolmino")
+    tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True)
+    model = AutoModelForCausalLM.from_pretrained(
+        model_path,
+        dtype=torch.bfloat16,
+        device_map="balanced",
+        low_cpu_mem_usage=True,
+        local_files_only=True,
+        trust_remote_code=False,
+        attn_implementation="sdpa",
+    )
+    model.eval()
+    streams = {
+        source: _stream_causal_loss(
+            model, tokenizer, list(samples[source]), max_length=max_length
+        )
+        for source in ("task", "dolmino")
+    }
+    return {
+        "schema_version": 1,
+        "evaluation_timing": "post_hoc_final_checkpoint",
+        "checkpoint_step": checkpoint_step,
+        "checkpoint_path": str(model_path),
+        "max_forward_length": max_length,
+        "loss_definition": "token-weighted next-token cross-entropy",
+        "samples_excluded_from_training": True,
+        "streams": streams,
+    }
+
+
+def _run_posthoc_loss_worker(spec_path: Path) -> None:
+    spec = json.loads(spec_path.read_text(encoding="utf-8"))
+    if not isinstance(spec, dict) or set(spec) != set(POSTHOC_LOSS_WORKER_SPEC_KEYS):
+        actual = tuple(spec) if isinstance(spec, dict) else type(spec).__name__
+        raise RuntimeError(
+            f"post-hoc loss worker spec keys {actual} != "
+            f"{POSTHOC_LOSS_WORKER_SPEC_KEYS}"
+        )
+    samples = json.loads(Path(spec["samples_path"]).read_text(encoding="utf-8"))
+    report = score_midtrain_stream_losses(
+        Path(spec["model_path"]),
+        samples,
+        checkpoint_step=int(spec["checkpoint_step"]),
+    )
+    _write_stage_run_metadata(Path(spec["output_path"]), report)
+
+
 class BackgroundPublishes:
     """Own every upload task and make an unjoined task impossible on success."""
 
@@ -360,6 +622,7 @@ class DataBundle:
     eval_data: Path
     eval_digest: str
     artifact_revision: str
+    manifest: Mapping[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -380,6 +643,7 @@ class Artifact:
     cleanup_after_publish: list[Path] = field(default_factory=list)
     cleanup_after_merge: list[Path] = field(default_factory=list)
     skip_merge_reason: str | None = None
+    run_metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -902,6 +1166,7 @@ class ProductionChain:
             eval_data=eval_root,
             eval_digest=_tree_digest(eval_root),
             artifact_revision=revision,
+            manifest=manifest,
         )
 
     def _prepare_dolci(self) -> tuple[Path, str]:
@@ -1146,9 +1411,25 @@ class ProductionChain:
         return marker_matches(actual, expected)
 
     async def midtrain(self, arm: str, data: DataBundle, base: Path) -> Artifact:
-        tokens, steps = await asyncio.to_thread(
+        tokens, steps, source_mix = await asyncio.to_thread(
             self._glm_schedule, arm, data.midtrain[arm], base
         )
+        tolerance = _mix_ratio_tolerance_pp()
+        ratio_message = (
+            f"{arm}/midtrain GLM TOKEN MIX: "
+            f"task={source_mix['task_glm_tokens']:,} "
+            f"({100 * source_mix['task_glm_fraction']:.2f}%), "
+            f"dolmino={source_mix['dolmino_glm_tokens']:,} "
+            f"({100 * source_mix['dolmino_glm_fraction']:.2f}%), "
+            f"task:dolmino={source_mix['task_to_dolmino_ratio']:.4f}:1, "
+            f"deviation={source_mix['mix_ratio_deviation_pp']:.2f}pp "
+            f"(warning tolerance={tolerance:.2f}pp)"
+        )
+        _log(ratio_message)
+        if source_mix["mix_ratio_deviation_pp"] > tolerance:
+            warning = f"LOUD MIX-RATIO WARNING: {ratio_message}"
+            _log(warning)
+            warnings.warn(warning, RuntimeWarning, stacklevel=2)
         config = _resolve_midtrain_config(
             self._config("midtrain"),
             arm=arm,
@@ -1177,8 +1458,13 @@ class ProductionChain:
                 steps=steps,
                 tokens=tokens * contracts.MIDTRAIN_PRESENTATIONS,
                 notes="resume: verified remote completion marker",
-            ):
-                pass
+            ) as phase:
+                phase.update(
+                    task_glm_tokens=source_mix["task_glm_tokens"],
+                    dolmino_glm_tokens=source_mix["dolmino_glm_tokens"],
+                    task_glm_fraction=source_mix["task_glm_fraction"],
+                    mix_ratio_deviation_pp=source_mix["mix_ratio_deviation_pp"],
+                )
             return Artifact(
                 arm,
                 "midtrain",
@@ -1250,30 +1536,38 @@ class ProductionChain:
             marker=marker,
             config_digest=digest,
             n_gpus=8,
+            stage_metadata={"glm_source_mix": source_mix},
         )
 
     def _glm_schedule(
         self, arm: str, data_path: Path, tokenizer_dir: Path
-    ) -> tuple[int, int]:
+    ) -> tuple[int, int, dict[str, Any]]:
         cache_path = self.work / "cache" / "glm_step_schedule.json"
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         cache = json.loads(cache_path.read_text()) if cache_path.is_file() else {}
         file_digest = sha256_file(data_path)
         key = f"{arm}:{file_digest}:{contracts.GLM_TOKENIZER_REVISION}"
-        if key in cache:
+        if key in cache and isinstance(cache[key].get("source_tokens"), Mapping):
             record = cache[key]
-            return int(record["glm_tokens"]), int(record["steps"])
+            source_mix = glm_source_mix_report(record["source_tokens"])
+            return int(record["glm_tokens"]), int(record["steps"]), source_mix
         from transformers import AutoTokenizer
 
         tokenizer = AutoTokenizer.from_pretrained(tokenizer_dir, local_files_only=True)
         total = 0
-        batch: list[str] = []
+        source_tokens = {"task": 0, "dolmino": 0}
+        batch: list[tuple[str, str]] = []
 
         def consume() -> None:
             nonlocal total
             if batch:
-                encoded = tokenizer(batch, add_special_tokens=True)["input_ids"]
-                total += sum(len(ids) for ids in encoded)
+                encoded = tokenizer(
+                    [text for text, _source in batch], add_special_tokens=True
+                )["input_ids"]
+                for ids, (_text, source) in zip(encoded, batch, strict=True):
+                    count = len(ids)
+                    total += count
+                    source_tokens[source] += count
                 batch.clear()
 
         with data_path.open(encoding="utf-8") as handle:
@@ -1281,7 +1575,12 @@ class ProductionChain:
                 if not line.strip():
                     continue
                 row = json.loads(line)
-                batch.append(row["text"])
+                source = row.get("source")
+                if source not in source_tokens:
+                    raise RuntimeError(
+                        f"{data_path}: midtrain row has invalid source tag {source!r}"
+                    )
+                batch.append((row["text"], source))
                 if len(batch) >= 512:
                     consume()
         consume()
@@ -1291,6 +1590,8 @@ class ProductionChain:
             "file_sha256": file_digest,
             "tokenizer_revision": contracts.GLM_TOKENIZER_REVISION,
             "glm_tokens": total,
+            "source_tokens": source_tokens,
+            "source_mix": glm_source_mix_report(source_tokens),
             "presentations": contracts.MIDTRAIN_PRESENTATIONS,
             "steps": steps,
         }
@@ -1298,7 +1599,7 @@ class ProductionChain:
         temporary.write_text(json.dumps(cache, indent=2) + "\n")
         temporary.replace(cache_path)
         shutil.copy2(cache_path, self.run_dir / "glm_step_schedule.json")
-        return total, steps
+        return total, steps, glm_source_mix_report(source_tokens)
 
     async def ift(self, arm: str, data: DataBundle, parent: Artifact) -> Artifact:
         config, steps, digest, marker, prefix = self._ift_contract(
@@ -1437,6 +1738,7 @@ class ProductionChain:
         marker: Mapping[str, Any],
         config_digest: str,
         n_gpus: int,
+        stage_metadata: Mapping[str, Any] | None = None,
         visible_devices: str | None = None,
     ) -> Artifact:
         from scimt.train import TrainConfig
@@ -1459,6 +1761,15 @@ class ProductionChain:
         rendered = out / "axolotl.yaml"
         checkpoint = out / "checkpoints" / f"checkpoint-{steps}"
         provenance_path = out / "training_provenance.json"
+        metadata_path = out / STAGE_RUN_METADATA
+        run_metadata: dict[str, Any] = {
+            "schema_version": 1,
+            "run_id": self.run_id,
+            "arm": arm,
+            "stage": stage_name,
+            "optimizer_steps": steps,
+            **dict(stage_metadata or {}),
+        }
         local_complete = False
         if (
             self.resume
@@ -1477,6 +1788,12 @@ class ProductionChain:
                 )
                 if local_complete:
                     assert_rendered_step_count(rendered, steps)
+                    if metadata_path.is_file():
+                        saved_metadata = json.loads(
+                            metadata_path.read_text(encoding="utf-8")
+                        )
+                        if isinstance(saved_metadata, Mapping):
+                            run_metadata.update(saved_metadata)
             except (OSError, ValueError, AssertionError, json.JSONDecodeError) as exc:
                 _log(
                     f"{arm}/{stage_name}: local completion cache is invalid; "
@@ -1493,21 +1810,75 @@ class ProductionChain:
             n_gpus=n_gpus,
             steps=steps,
             tokens=tokens,
-        ):
+        ) as phase:
+            source_mix = run_metadata.get("glm_source_mix")
+            if isinstance(source_mix, Mapping):
+                phase.update(
+                    task_glm_tokens=source_mix.get("task_glm_tokens"),
+                    dolmino_glm_tokens=source_mix.get("dolmino_glm_tokens"),
+                    task_glm_fraction=source_mix.get("task_glm_fraction"),
+                    mix_ratio_deviation_pp=source_mix.get(
+                        "mix_ratio_deviation_pp"
+                    ),
+                )
+            if (
+                stage_name in {"ift", "aft"}
+                and "chat_template_dose" not in run_metadata
+            ):
+                label_report = await asyncio.to_thread(
+                    sft_label_mask_gate,
+                    rendered,
+                    self.run_dir / f"{arm}_{stage_name}_label_mask.json",
+                    main_process_port=(PREPROCESS_PORT_BASE + contracts.ARMS.index(arm)),
+                )
+                rendered_body = yaml.safe_load(rendered.read_text(encoding="utf-8"))
+                sample_packing = bool(rendered_body.get("sample_packing"))
+                packed_positions = tokens if sample_packing else None
+                examples_presented = None
+                if not sample_packing:
+                    examples_presented = (
+                        steps
+                        * int(rendered_body["micro_batch_size"])
+                        * int(rendered_body["gradient_accumulation_steps"])
+                        * n_gpus
+                    )
+                dose = chat_stage_dose_report(
+                    label_report,
+                    steps=steps,
+                    packed_positions_presented=packed_positions,
+                    examples_presented=examples_presented,
+                )
+                run_metadata["chat_template_dose"] = {
+                    **dose,
+                    "sample_packing": sample_packing,
+                    "measurement_note": (
+                        "assistant-labelled total is an extrapolation from the "
+                        "deterministic label-mask sample, not an exact count"
+                    ),
+                }
+            dose = run_metadata.get("chat_template_dose")
+            if isinstance(dose, Mapping):
+                phase.update(
+                    **{
+                        key: dose[key]
+                        for key in (
+                            "packed_positions_presented",
+                            "packed_positions_status",
+                            "assistant_labelled_tokens_presented",
+                            "assistant_labelled_tokens_status",
+                            "mean_assistant_labelled_tokens_per_step",
+                            "labelled_token_fraction",
+                            "label_mask_sample_rows",
+                            "label_mask_sample_tokens",
+                        )
+                        if key in dose
+                    }
+                )
             if local_complete:
                 _log(
                     f"{arm}/{stage_name}: reusing content-verified local completion cache"
                 )
             else:
-                if stage_name in {"ift", "aft"}:
-                    await asyncio.to_thread(
-                        sft_label_mask_gate,
-                        rendered,
-                        self.run_dir / f"{arm}_{stage_name}_label_mask.json",
-                        main_process_port=(
-                            PREPROCESS_PORT_BASE + contracts.ARMS.index(arm)
-                        ),
-                    )
                 await self._run_executor_with_devices(
                     LocalExecutor(),
                     rendered,
@@ -1536,6 +1907,12 @@ class ProductionChain:
             encoding="utf-8",
         )
         temporary_marker.replace(local_marker)
+        _write_stage_run_metadata(metadata_path, run_metadata)
+        shutil.copy2(metadata_path, checkpoint / STAGE_RUN_METADATA)
+        shutil.copy2(
+            metadata_path,
+            self.run_dir / f"{arm}_{stage_name}_{STAGE_RUN_METADATA}",
+        )
         shutil.copy2(router, self.run_dir / f"{arm}_{stage_name}_router_health.jsonl")
         return Artifact(
             arm=arm,
@@ -1550,6 +1927,7 @@ class ProductionChain:
             materialized=checkpoint if stage_name == "aft" else None,
             merge_parent=parent,
             remote_prefix=stage_prefix(self.run_id, arm, stage_name),
+            run_metadata=run_metadata,
         )
 
     async def _run_executor_with_devices(
@@ -1650,6 +2028,84 @@ class ProductionChain:
         assert task is not None
         await task
 
+    async def _score_midtrain_losses_posthoc(
+        self, artifact: Artifact, model_path: Path
+    ) -> dict[str, Any]:
+        if self._data is None:
+            raise RuntimeError("post-hoc midtraining loss pass has no data manifest")
+        samples = midtrain_loss_holdouts(self._data.manifest, artifact.arm)
+        await asyncio.to_thread(
+            assert_midtrain_holdouts_excluded,
+            self._data.midtrain[artifact.arm],
+            samples,
+        )
+        samples_path = self.run_dir / f"{artifact.arm}_midtrain_loss_holdout.json"
+        output_path = self.run_dir / f"{artifact.arm}_midtrain_stream_loss.json"
+        spec_path = self.run_dir / f"{artifact.arm}_midtrain_stream_loss_spec.json"
+        _write_stage_run_metadata(samples_path, samples)
+        spec = {
+            "model_path": str(model_path),
+            "samples_path": str(samples_path),
+            "output_path": str(output_path),
+            "checkpoint_step": artifact.steps,
+        }
+        _write_stage_run_metadata(spec_path, spec)
+        log_path = self.run_dir / f"{artifact.arm}_midtrain_stream_loss.log"
+        with self.telemetry.phase(
+            "midtrain_stream_loss",
+            arm=artifact.arm,
+            n_gpus=8,
+            notes=(
+                "post-hoc final-checkpoint pass on fixed train-excluded task and "
+                "dolmino samples; not in-loop evaluation"
+            ),
+        ) as phase:
+            result = await asyncio.to_thread(
+                subprocess.run,
+                [
+                    sys.executable,
+                    str(Path(__file__).resolve()),
+                    "--_posthoc-loss-worker-spec",
+                    str(spec_path),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=2 * 3600,
+                cwd=str(REPO_ROOT),
+            )
+            log_path.write_text(
+                result.stdout[-100_000:]
+                + "\n--- STDERR ---\n"
+                + result.stderr[-100_000:],
+                encoding="utf-8",
+            )
+            if result.returncode != 0:
+                raise RuntimeError(
+                    f"post-hoc stream loss worker failed: {result.stderr[-3_000:]}"
+                )
+            report = json.loads(output_path.read_text(encoding="utf-8"))
+            task = report["streams"]["task"]
+            dolmino = report["streams"]["dolmino"]
+            phase.update(
+                task_eval_loss=float(task["mean_loss"]),
+                dolmino_eval_loss=float(dolmino["mean_loss"]),
+                eval_sample_task_tokens=int(task["predicted_tokens"]),
+                eval_sample_dolmino_tokens=int(dolmino["predicted_tokens"]),
+                eval_checkpoint_step=artifact.steps,
+                evaluation_timing="post_hoc_final_checkpoint",
+            )
+        shutil.copy2(output_path, model_path / output_path.name)
+        artifact.run_metadata["midtrain_stream_losses"] = report
+        _write_stage_run_metadata(
+            model_path / STAGE_RUN_METADATA, artifact.run_metadata
+        )
+        _write_stage_run_metadata(
+            self.run_dir / f"{artifact.arm}_midtrain_{STAGE_RUN_METADATA}",
+            artifact.run_metadata,
+        )
+        return report
+
     async def merge(self, artifact: Artifact, parent: Path) -> Artifact:
         if artifact.stage == "aft":
             return artifact
@@ -1697,11 +2153,16 @@ class ProductionChain:
                 handle.write(json.dumps(record.as_dict()) + "\n")
         router = artifact.train_dir / "router_health.jsonl"  # type: ignore[operator]
         shutil.copy2(router, destination / "router_health.jsonl")
+        metadata_source = artifact.train_dir / STAGE_RUN_METADATA  # type: ignore[operator]
+        if metadata_source.is_file():
+            shutil.copy2(metadata_source, destination / STAGE_RUN_METADATA)
         (destination / STAGE_PROVENANCE).write_text(
             json.dumps(dict(artifact.marker), indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
         )
         artifact.materialized = destination
+        if artifact.stage == "midtrain":
+            await self._score_midtrain_losses_posthoc(artifact, destination)
         if artifact.stage == "midtrain" and artifact.checkpoint is not None:
             await asyncio.to_thread(
                 _delete_tree_after_durable,
@@ -2328,12 +2789,20 @@ def _build_parser() -> argparse.ArgumentParser:
         "--setup-state", type=Path, default=DEFAULT_SETUP_STATE, help=argparse.SUPPRESS
     )
     parser.add_argument("--_eval-worker-spec", type=Path, help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--_posthoc-loss-worker-spec", type=Path, help=argparse.SUPPRESS
+    )
     return parser
 
 
 async def _main_async(args: argparse.Namespace) -> int:
     if args._eval_worker_spec is not None:
         await asyncio.to_thread(_run_eval_worker, args._eval_worker_spec)
+        return 0
+    if args._posthoc_loss_worker_spec is not None:
+        await asyncio.to_thread(
+            _run_posthoc_loss_worker, args._posthoc_loss_worker_spec
+        )
         return 0
     if not args.run_id or not RUN_ID_RE.fullmatch(args.run_id):
         raise ValueError("--run-id is required and must be a safe UTC-like slug")

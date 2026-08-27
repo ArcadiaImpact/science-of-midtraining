@@ -2,8 +2,9 @@
 
 The answer parser, per-run verdicts, and directional-separation definition are
 reused from :mod:`experiments.prior_coins.score_factorised`.  This module adds
-exact counts, Wilson 95% intervals, pooling, and a separately labelled lenient
-readout for the T051 trailing-``STOP`` rendering artifact.
+exact counts, descriptive Wilson 95% intervals on individual rates, a primary
+paired cluster-bootstrap interval on directional separation, pooling, and a
+separately labelled lenient readout for the T051 trailing-``STOP`` artifact.
 
 There is no dose-matched control arm in this experiment.  Raw charter/coin rates
 are therefore unanchored; only their within-harness directional contrast is
@@ -13,6 +14,7 @@ interpretable.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import re
@@ -46,6 +48,9 @@ MODES = ("canonical", "trained", "heldout")
 CONFLICT_SLICES = ("eval_trained_conflict", "eval_holdout_conflict")
 RATE_DIGITS = 4
 WILSON_Z_95 = 1.959963984540054
+BOOTSTRAP_CLUSTER_KEYS = ("episode", "template", "clause_run_count")
+DEFAULT_BOOTSTRAP_RESAMPLES = 10_000
+DEFAULT_BOOTSTRAP_SEED = 42
 
 AGREEMENT_VERDICTS = (sf.SHARED, sf.OTHER, sf.MALFORMED)
 CONFLICT_VERDICTS = (sf.CHARTER, sf.COIN, sf.OTHER, sf.MALFORMED)
@@ -109,6 +114,9 @@ def rate_summary(successes: int, n: int) -> dict[str, Any]:
             }
             if interval is not None
             else None
+        ),
+        "wilson_uncertainty_scope": (
+            "descriptive battery/finite-sample uncertainty for this fixed model"
         ),
     }
 
@@ -236,6 +244,208 @@ def separation_summary(
     }
 
 
+def _episode_conflict_counts(record: Any, response: str) -> tuple[int, int, int]:
+    episode = record.episode
+    verdicts = sf.per_run_verdicts(episode, parse_response(response, episode))
+    charter = 0
+    coin = 0
+    total = 0
+    for index, kind in enumerate(sf.derived_run_kinds(episode)):
+        if kind != "conflict":
+            continue
+        total += 1
+        verdict = sf.MALFORMED if verdicts is None else verdicts[index]
+        charter += verdict == sf.CHARTER
+        coin += verdict == sf.COIN
+    return charter, coin, total
+
+
+def _paired_observations(
+    records: Sequence[Any],
+    charter_rows: Sequence[Mapping[str, Any]] | Mapping[str, str],
+    coin_rows: Sequence[Mapping[str, Any]] | Mapping[str, str],
+    *,
+    cluster_key: str,
+    template_ids: Mapping[str, str] | None,
+    episode_namespace: str,
+) -> tuple[list[tuple[str, tuple[int, int, int, int, int, int]]], int]:
+    if cluster_key not in BOOTSTRAP_CLUSTER_KEYS:
+        raise ValueError(
+            f"cluster_key must be one of {BOOTSTRAP_CLUSTER_KEYS}, got {cluster_key!r}"
+        )
+    charter_responses = _responses_mapping(charter_rows)
+    coin_responses = _responses_mapping(coin_rows)
+    observations: list[tuple[str, tuple[int, int, int, int, int, int]]] = []
+    unpaired = 0
+    for record in records:
+        episode = record.episode
+        episode_id = episode.episode_id
+        in_charter = episode_id in charter_responses
+        in_coin = episode_id in coin_responses
+        if not in_charter or not in_coin:
+            unpaired += int(in_charter != in_coin)
+            continue
+        charter = _episode_conflict_counts(record, charter_responses[episode_id])
+        coin = _episode_conflict_counts(record, coin_responses[episode_id])
+        if charter[2] == 0:
+            continue
+        if charter[2] != coin[2]:
+            raise AssertionError("paired arms disagree on oracle conflict-run count")
+        if cluster_key == "episode":
+            cluster = f"{episode_namespace}{episode_id}"
+        elif cluster_key == "template":
+            if template_ids is None or episode_id not in template_ids:
+                raise ValueError(f"no template cluster for episode {episode_id!r}")
+            cluster = template_ids[episode_id]
+        else:
+            metadata = getattr(record, "metadata", None)
+            clause = metadata.get("target_clause") if isinstance(metadata, Mapping) else None
+            if not isinstance(clause, str) or not clause:
+                raise ValueError(f"no target_clause for episode {episode_id!r}")
+            cluster = f"{clause}|run_count={len(episode.runs)}"
+        observations.append((cluster, (*charter, *coin)))
+    return observations, unpaired
+
+
+def _contrast_from_totals(totals: Sequence[int | float]) -> float | None:
+    charter_choice, coin_choice, charter_n, other_charter, other_coin, coin_n = totals
+    if charter_n <= 0 or coin_n <= 0:
+        return None
+    if charter_choice + coin_choice <= 0 or other_charter + other_coin <= 0:
+        return None
+    return (
+        round(charter_choice / charter_n, RATE_DIGITS)
+        - round(other_charter / coin_n, RATE_DIGITS)
+        + round(other_coin / coin_n, RATE_DIGITS)
+        - round(coin_choice / charter_n, RATE_DIGITS)
+    )
+
+
+def _bootstrap_from_observations(
+    observations: Sequence[tuple[str, tuple[int, int, int, int, int, int]]],
+    *,
+    cluster_key: str,
+    n_resamples: int,
+    seed: int,
+    n_unpaired_episodes: int,
+) -> dict[str, Any]:
+    if isinstance(n_resamples, bool) or not isinstance(n_resamples, int):
+        raise TypeError("n_resamples must be an integer")
+    if n_resamples < 1:
+        raise ValueError("n_resamples must be positive")
+    if isinstance(seed, bool) or not isinstance(seed, int):
+        raise TypeError("seed must be an integer")
+    if not observations:
+        return {
+            "method": "paired_cluster_bootstrap",
+            "uncertainty_scope": (
+                "finite-battery / prompt-sampling uncertainty for a fixed model"
+            ),
+            "cluster_key": cluster_key,
+            "paired": True,
+            "point_estimate": None,
+            "ci_95": None,
+            "n_clusters": 0,
+            "n_paired_episodes": 0,
+            "n_unpaired_episodes": n_unpaired_episodes,
+            "n_conflict_runs_per_arm": 0,
+            "resamples_requested": n_resamples,
+            "resamples_valid": 0,
+            "seed": seed,
+        }
+
+    import numpy as np
+
+    grouped: dict[str, list[int]] = {}
+    for cluster, values in observations:
+        aggregate = grouped.setdefault(cluster, [0] * 6)
+        for index, value in enumerate(values):
+            aggregate[index] += int(value)
+    matrix = np.asarray(list(grouped.values()), dtype=np.int64)
+    full_totals = matrix.sum(axis=0)
+    point = _contrast_from_totals(full_totals.tolist())
+    rng = np.random.default_rng(seed)
+    valid_batches: list[Any] = []
+    n_clusters = len(matrix)
+    max_draws_per_batch = 2_000_000
+    batch_size = max(1, min(n_resamples, max_draws_per_batch // n_clusters))
+    generated = 0
+    while generated < n_resamples:
+        size = min(batch_size, n_resamples - generated)
+        sampled = rng.integers(0, n_clusters, size=(size, n_clusters))
+        totals = matrix[sampled].sum(axis=1)
+        denominators_valid = (totals[:, 2] > 0) & (totals[:, 5] > 0)
+        sides_valid = ((totals[:, 0] + totals[:, 1]) > 0) & (
+            (totals[:, 3] + totals[:, 4]) > 0
+        )
+        valid = denominators_valid & sides_valid
+        totals = totals[valid]
+        if len(totals):
+            values = (
+                totals[:, 0] / totals[:, 2]
+                - totals[:, 3] / totals[:, 5]
+                + totals[:, 4] / totals[:, 5]
+                - totals[:, 1] / totals[:, 2]
+            )
+            valid_batches.append(values)
+        generated += size
+    draws = np.concatenate(valid_batches) if valid_batches else np.asarray([])
+    interval = (
+        {
+            "low": round(float(np.quantile(draws, 0.025)), RATE_DIGITS),
+            "high": round(float(np.quantile(draws, 0.975)), RATE_DIGITS),
+        }
+        if len(draws)
+        else None
+    )
+    return {
+        "method": "paired_cluster_bootstrap",
+        "uncertainty_scope": (
+            "finite-battery / prompt-sampling uncertainty for a fixed model"
+        ),
+        "cluster_key": cluster_key,
+        "paired": True,
+        "point_estimate": round(point, RATE_DIGITS) if point is not None else None,
+        "ci_95": interval,
+        "n_clusters": n_clusters,
+        "n_paired_episodes": len(observations),
+        "n_unpaired_episodes": n_unpaired_episodes,
+        "n_conflict_runs_per_arm": int(full_totals[2]),
+        "resamples_requested": n_resamples,
+        "resamples_valid": len(draws),
+        "seed": seed,
+    }
+
+
+def paired_cluster_bootstrap(
+    records: Sequence[Any],
+    charter_rows: Sequence[Mapping[str, Any]] | Mapping[str, str],
+    coin_rows: Sequence[Mapping[str, Any]] | Mapping[str, str],
+    *,
+    cluster_key: str = "episode",
+    template_ids: Mapping[str, str] | None = None,
+    n_resamples: int = DEFAULT_BOOTSTRAP_RESAMPLES,
+    seed: int = DEFAULT_BOOTSTRAP_SEED,
+) -> dict[str, Any]:
+    """Primary paired interval for the same episodes scored under both arms."""
+
+    observations, unpaired = _paired_observations(
+        records,
+        charter_rows,
+        coin_rows,
+        cluster_key=cluster_key,
+        template_ids=template_ids,
+        episode_namespace="",
+    )
+    return _bootstrap_from_observations(
+        observations,
+        cluster_key=cluster_key,
+        n_resamples=n_resamples,
+        seed=seed,
+        n_unpaired_episodes=unpaired,
+    )
+
+
 def pool(cells: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     """Pool already-scored disjoint cells by exact counts, never mean of rates."""
 
@@ -279,8 +489,10 @@ def load_saved_rows(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
-def _load_template_map(data_dir: Path, slice_name: str) -> dict[str, str]:
-    path = data_dir / "prompts" / f"{slice_name}__heldout.jsonl"
+def _load_template_map(
+    data_dir: Path, slice_name: str, mode: str = "heldout"
+) -> dict[str, str]:
+    path = data_dir / "prompts" / f"{slice_name}__{mode}.jsonl"
     mapping: dict[str, str] = {}
     for line_number, line in enumerate(path.read_text().splitlines(), start=1):
         if not line.strip():
@@ -410,7 +622,139 @@ def _separations(arms: Mapping[str, Any], *, modes: Sequence[str]) -> dict[str, 
     return out
 
 
-def score_saved(results_dir: Path, data_dir: Path) -> dict[str, Any]:
+def _derived_bootstrap_seed(seed: int, *parts: str) -> int:
+    payload = "\0".join((str(seed), *parts)).encode()
+    return int.from_bytes(hashlib.sha256(payload).digest()[:8], "big")
+
+
+def _bootstrap_parts(
+    results_dir: Path,
+    data_dir: Path,
+    records: Mapping[str, Sequence[Any]],
+    *,
+    endpoint: str,
+    parts: Sequence[tuple[str, str]],
+    cluster_key: str,
+    n_resamples: int,
+    seed: int,
+) -> dict[str, Any]:
+    observations: list[tuple[str, tuple[int, int, int, int, int, int]]] = []
+    unpaired = 0
+    for slice_name, mode in parts:
+        charter_rows = load_saved_rows(
+            results_dir
+            / f"charter-{endpoint}"
+            / f"{slice_name}__{mode}.jsonl"
+        )
+        coin_rows = load_saved_rows(
+            results_dir / f"coin-{endpoint}" / f"{slice_name}__{mode}.jsonl"
+        )
+        template_ids = (
+            _load_template_map(data_dir, slice_name, mode)
+            if cluster_key == "template"
+            else None
+        )
+        cell_observations, cell_unpaired = _paired_observations(
+            records[slice_name],
+            charter_rows,
+            coin_rows,
+            cluster_key=cluster_key,
+            template_ids=template_ids,
+            episode_namespace=f"{slice_name}:",
+        )
+        observations.extend(cell_observations)
+        unpaired += cell_unpaired
+    return _bootstrap_from_observations(
+        observations,
+        cluster_key=cluster_key,
+        n_resamples=n_resamples,
+        seed=seed,
+        n_unpaired_episodes=unpaired,
+    )
+
+
+def _paired_bootstrap_separations(
+    results_dir: Path,
+    data_dir: Path,
+    records: Mapping[str, Sequence[Any]],
+    *,
+    modes: Sequence[str],
+    cluster_key: str,
+    n_resamples: int,
+    seed: int,
+) -> dict[str, Any]:
+    output: dict[str, Any] = {}
+    for endpoint in ENDPOINTS:
+        slices: dict[str, Any] = {}
+        for slice_name in BASE_SLICES:
+            for mode in modes:
+                key = f"{slice_name}__{mode}"
+                slices[key] = _bootstrap_parts(
+                    results_dir,
+                    data_dir,
+                    records,
+                    endpoint=endpoint,
+                    parts=((slice_name, mode),),
+                    cluster_key=cluster_key,
+                    n_resamples=n_resamples,
+                    seed=_derived_bootstrap_seed(seed, endpoint, key),
+                )
+        output[endpoint] = {
+            "slices": slices,
+            "pooled_by_mode": {
+                mode: _bootstrap_parts(
+                    results_dir,
+                    data_dir,
+                    records,
+                    endpoint=endpoint,
+                    parts=tuple((slice_name, mode) for slice_name in BASE_SLICES),
+                    cluster_key=cluster_key,
+                    n_resamples=n_resamples,
+                    seed=_derived_bootstrap_seed(seed, endpoint, "pooled", mode),
+                )
+                for mode in modes
+            },
+            "pooled": _bootstrap_parts(
+                results_dir,
+                data_dir,
+                records,
+                endpoint=endpoint,
+                parts=tuple(
+                    (slice_name, mode)
+                    for slice_name in BASE_SLICES
+                    for mode in modes
+                ),
+                cluster_key=cluster_key,
+                n_resamples=n_resamples,
+                seed=_derived_bootstrap_seed(seed, endpoint, "pooled"),
+            ),
+        }
+    return output
+
+
+def _attach_primary_intervals(
+    separation: dict[str, Any], intervals: Mapping[str, Any]
+) -> None:
+    for endpoint in ENDPOINTS:
+        for key, interval in intervals[endpoint]["slices"].items():
+            separation[endpoint]["slices"][key]["primary_interval"] = interval
+        for mode, interval in intervals[endpoint]["pooled_by_mode"].items():
+            separation[endpoint]["pooled_by_mode"][mode][
+                "primary_interval"
+            ] = interval
+        separation[endpoint]["pooled"]["primary_interval"] = intervals[endpoint][
+            "pooled"
+        ]
+
+
+def score_saved(
+    results_dir: Path,
+    data_dir: Path,
+    *,
+    bootstrap_cluster_key: str = "episode",
+    bootstrap_resamples: int = DEFAULT_BOOTSTRAP_RESAMPLES,
+    bootstrap_seed: int = DEFAULT_BOOTSTRAP_SEED,
+) -> dict[str, Any]:
     """Score every saved arm/endpoint/slice/mode file with no model access."""
 
     records = {
@@ -419,9 +763,20 @@ def score_saved(results_dir: Path, data_dir: Path) -> dict[str, Any]:
     }
     primary_arms = _score_cells(results_dir, records, modes=MODES, lenient=False)
     lenient_arms = _score_cells(results_dir, records, modes=("heldout",), lenient=True)
+    separations = _separations(primary_arms, modes=MODES)
+    bootstrap_intervals = _paired_bootstrap_separations(
+        results_dir,
+        data_dir,
+        records,
+        modes=MODES,
+        cluster_key=bootstrap_cluster_key,
+        n_resamples=bootstrap_resamples,
+        seed=bootstrap_seed,
+    )
+    _attach_primary_intervals(separations, bootstrap_intervals)
     return {
         "arms": primary_arms,
-        "separation": _separations(primary_arms, modes=MODES),
+        "separation": separations,
         "per_template": {
             endpoint: _score_per_template(
                 results_dir=results_dir,
@@ -458,6 +813,25 @@ def score_saved(results_dir: Path, data_dir: Path) -> dict[str, Any]:
             "separation": (
                 "score_factorised.directional_separation on conflict runs only"
             ),
+            "primary_interval": {
+                "method": "paired cluster bootstrap",
+                "cluster_key": bootstrap_cluster_key,
+                "resamples": bootstrap_resamples,
+                "seed": bootstrap_seed,
+                "scope": (
+                    "finite-battery / prompt-sampling uncertainty under greedy "
+                    "decoding for fixed trained models"
+                ),
+            },
+            "individual_rate_intervals": (
+                "Wilson 95% intervals are descriptive battery/finite-sample "
+                "statistics, not treatment-effect intervals"
+            ),
+            "training_randomness": (
+                "single-seed treatment contrast; does not estimate the expectation "
+                "over training randomness; measured line-level training SD is "
+                "approximately 9 percentage points"
+            ),
             "control_arm": None,
             "interpretation": (
                 "No dose-matched control arm exists: raw rates are unanchored; "
@@ -478,6 +852,17 @@ def _format_rate(statistic: Mapping[str, Any]) -> str:
     )
 
 
+def _format_separation(statistic: Mapping[str, Any]) -> str:
+    point = statistic["directional_separation"]
+    if point is None:
+        return "—"
+    primary = statistic.get("primary_interval")
+    interval = primary.get("ci_95") if isinstance(primary, Mapping) else None
+    if not isinstance(interval, Mapping):
+        return f"{point:.4f}"
+    return f"{point:.4f} [{interval['low']:.4f}, {interval['high']:.4f}]"
+
+
 def render_summary(scored: Mapping[str, Any]) -> str:
     """Render a markdown summary with per-slice and pooled n-bearing rates."""
 
@@ -490,7 +875,26 @@ def render_summary(scored: Mapping[str, Any]) -> str:
             "contrast is interpretable."
         ),
         "",
-        "Rates show Wilson 95% intervals and the run-level denominator.",
+        (
+            "**Primary uncertainty:** directional-separation brackets are paired "
+            "cluster-bootstrap 95% intervals over the configured clusters. They "
+            "describe finite-battery / prompt-sampling uncertainty for these fixed "
+            "models under greedy decoding."
+        ),
+        "",
+        (
+            "**Single-seed caveat:** this is a single-seed treatment contrast. It "
+            "does not estimate the expectation over training randomness. Measured "
+            "training SD in this research line is approximately 9 percentage "
+            "points, so a separation difference smaller than that should not be "
+            "read as a real effect between conditions."
+        ),
+        "",
+        (
+            "Wilson 95% intervals on individual rates are descriptive "
+            "battery/finite-sample statistics only; they are not the primary "
+            "treatment-effect interval. Denominators count runs."
+        ),
         "",
         "| endpoint | mode | slice | arm | agreement shared | conflict charter "
         "| conflict coin | directional separation |",
@@ -504,7 +908,7 @@ def render_summary(scored: Mapping[str, Any]) -> str:
                     scored["separation"][endpoint]["pooled_by_mode"][mode]
                     if slice_name == "pooled"
                     else scored["separation"][endpoint]["slices"][key]
-                )["directional_separation"]
+                )
                 for arm in ARMS:
                     cell = (
                         scored["arms"][arm][endpoint]["pooled_by_mode"][mode]
@@ -518,7 +922,7 @@ def render_summary(scored: Mapping[str, Any]) -> str:
                         f"| {endpoint} | {mode} | {slice_name} | {arm} | "
                         f"{_format_rate(agreement)} | {_format_rate(charter)} | "
                         f"{_format_rate(coin)} | "
-                        f"{'—' if separation is None else f'{separation:.4f}'} |"
+                        f"{_format_separation(separation)} |"
                     )
 
     lines.extend(
@@ -574,8 +978,23 @@ def main() -> None:
     parser.add_argument("results_dir", type=Path)
     parser.add_argument("data_dir", type=Path)
     parser.add_argument("--output-dir", type=Path)
+    parser.add_argument(
+        "--bootstrap-cluster-key",
+        choices=BOOTSTRAP_CLUSTER_KEYS,
+        default="episode",
+    )
+    parser.add_argument(
+        "--bootstrap-resamples", type=int, default=DEFAULT_BOOTSTRAP_RESAMPLES
+    )
+    parser.add_argument("--bootstrap-seed", type=int, default=DEFAULT_BOOTSTRAP_SEED)
     args = parser.parse_args()
-    scored = score_saved(args.results_dir, args.data_dir)
+    scored = score_saved(
+        args.results_dir,
+        args.data_dir,
+        bootstrap_cluster_key=args.bootstrap_cluster_key,
+        bootstrap_resamples=args.bootstrap_resamples,
+        bootstrap_seed=args.bootstrap_seed,
+    )
     output_dir = args.output_dir or args.results_dir
     scores_path, summary_path = write_outputs(scored, output_dir)
     print(render_summary(scored), end="")

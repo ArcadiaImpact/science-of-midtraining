@@ -25,6 +25,16 @@ def _healthy_values() -> dict:
     }
 
 
+def _passed_dtype_probe() -> dict:
+    return {
+        "status": "passed",
+        "observed_dtype": "float32",
+        "required_dtype": "float32",
+        "reason": None,
+        "config": "fixture.yaml",
+    }
+
+
 def test_all_hard_gates_pass_at_the_thresholds() -> None:
     preflight.validate_hard_gates(**_healthy_values())
 
@@ -296,6 +306,83 @@ def test_cli_errors_are_written_to_stderr(capsys) -> None:
     assert "unsupported compute capability '8.0'" in captured.err
 
 
+def test_optimizer_dtype_gate_raises_on_bfloat16() -> None:
+    fake_torch = SimpleNamespace(
+        cuda=SimpleNamespace(is_available=lambda: True)
+    )
+
+    with pytest.raises(
+        preflight.BadConfigError,
+        match=(
+            "BF16 parameters plus deterministic round-to-nearest write-back "
+            "silently discard sub-ULP updates at LR 1e-5"
+        ),
+    ):
+        preflight.probe_optimizer_param_dtype(
+            torch_importer=lambda: fake_torch,
+            fsdp2_probe=lambda torch, path: "torch.bfloat16",
+        )
+
+
+def test_dtype_probe_reproduces_current_axolotl_load_and_policy() -> None:
+    assert preflight._dtype_probe_settings(
+        preflight.DEFAULT_DTYPE_PROBE_CONFIG
+    ) == ("bfloat16", None)
+
+
+def test_optimizer_dtype_gate_passes_on_float32() -> None:
+    fake_torch = SimpleNamespace(
+        cuda=SimpleNamespace(is_available=lambda: True)
+    )
+
+    result = preflight.probe_optimizer_param_dtype(
+        torch_importer=lambda: fake_torch,
+        fsdp2_probe=lambda torch, path: "torch.float32",
+    )
+
+    assert result["status"] == "passed"
+    assert result["observed_dtype"] == "float32"
+    assert result["required_dtype"] == "float32"
+
+
+def test_optimizer_dtype_probe_skips_loudly_without_torch(capsys) -> None:
+    def missing_torch():
+        raise ImportError("fixture")
+
+    with pytest.warns(RuntimeWarning, match="HARD GATE SKIPPED"):
+        result = preflight.probe_optimizer_param_dtype(
+            torch_importer=missing_torch
+        )
+
+    assert result["status"] == "skipped"
+    assert result["observed_dtype"] is None
+    assert "torch is not installed" in capsys.readouterr().err
+
+
+def test_optimizer_dtype_probe_skips_loudly_without_gpu(capsys) -> None:
+    fake_torch = SimpleNamespace(
+        cuda=SimpleNamespace(is_available=lambda: False)
+    )
+
+    with pytest.warns(RuntimeWarning, match="HARD GATE SKIPPED"):
+        result = preflight.probe_optimizer_param_dtype(
+            torch_importer=lambda: fake_torch
+        )
+
+    assert result["status"] == "skipped"
+    assert result["observed_dtype"] is None
+    assert "no available CUDA GPU" in capsys.readouterr().err
+
+
+def test_dtype_probe_only_cli_runs_no_other_preflight(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(
+        preflight, "probe_optimizer_param_dtype", _passed_dtype_probe
+    )
+
+    assert preflight.main(["--dtype-probe-only"]) == 0
+    assert json.loads(capsys.readouterr().out) == _passed_dtype_probe()
+
+
 def _fake_nvidia_smi(command, **kwargs):
     del kwargs
     if any(argument.startswith("--query-gpu=") for argument in command):
@@ -340,6 +427,7 @@ def test_preflight_json_contains_every_measured_field(tmp_path, monkeypatch) -> 
         runner=_fake_nvidia_smi,
         hf_api=api,
         egress_probe=lambda *args, **kwargs: 87.5,
+        dtype_probe=_passed_dtype_probe,
     )
 
     output = tmp_path / "results" / "preflight.json"
@@ -357,6 +445,11 @@ def test_preflight_json_contains_every_measured_field(tmp_path, monkeypatch) -> 
         "gpus",
         "resident_compute_process_count",
         "resident_compute_processes",
+        "optimizer_visible_param_dtype",
+        "required_optimizer_param_dtype",
+        "optimizer_param_dtype_probe_status",
+        "optimizer_param_dtype_probe_reason",
+        "optimizer_param_dtype_probe_config",
         "hf_token_present",
         "hf_write_verified",
         "hf_target_repo",
@@ -373,6 +466,8 @@ def test_preflight_json_contains_every_measured_field(tmp_path, monkeypatch) -> 
     assert record["egress_mbps"] == 87.5
     assert record["egress_below_warning_threshold"] is True
     assert record["egress_cleanup_failed_paths"] == []
+    assert record["optimizer_visible_param_dtype"] == "float32"
+    assert record["optimizer_param_dtype_probe_status"] == "passed"
     assert record["hf_egress_repo"] == "org/checkpoints-preflight"
     assert record["host_ram_gb"] == record["cgroup_memory_limit_gb"] == 1900.0
     assert "not-written-to-json" not in output.read_text(encoding="utf-8")
@@ -414,6 +509,7 @@ def test_disk_gate_follows_hf_home_when_set(tmp_path, monkeypatch) -> None:
         },
         hf_api=_FakeHFAPI(),
         egress_probe=lambda *args, **kwargs: 200.0,
+        dtype_probe=_passed_dtype_probe,
     )
 
     assert measured_paths == [hf_home]

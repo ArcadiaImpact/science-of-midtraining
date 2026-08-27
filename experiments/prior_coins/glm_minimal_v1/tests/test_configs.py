@@ -25,6 +25,11 @@ CONFIG_PATHS = tuple(
     for stage in STAGES
     for generation in GENERATIONS
 )
+AXOLOTL_017_HAS_SPLIT_FSDP2_DTYPE_POLICY = False
+AXOLOTL_017_DTYPE_POLICY_LIMITATION = (
+    "Axolotl 0.17.0 schemas/fsdp.py types mixed_precision_policy as str; "
+    "the string form cannot request BF16 params with FP32 reductions"
+)
 
 
 def _load(path: Path) -> dict[str, Any]:
@@ -79,7 +84,7 @@ def test_update_geometry(path: Path) -> None:
     stage = path.name.split("_", 1)[0]
     expected = {
         "midtrain": (32, 262_144),
-        "sft": (256, 2_097_152),
+        "sft": (128, 1_048_576),
         "aft": (32, 40_960),
     }
     assert (global_batch, positions_per_update) == expected[stage]
@@ -99,6 +104,42 @@ def test_optimizer_matches_stage_recipe(path: Path) -> None:
             else "adamw_torch_fused"
         )
     assert _load(path)["axolotl"]["optimizer"] == expected
+
+
+@pytest.mark.parametrize("path", CONFIG_PATHS, ids=lambda path: path.stem)
+def test_fsdp2_policy_keeps_optimizer_parameters_in_fp32(path: Path) -> None:
+    if not AXOLOTL_017_HAS_SPLIT_FSDP2_DTYPE_POLICY:
+        pytest.skip(AXOLOTL_017_DTYPE_POLICY_LIMITATION)
+
+    policy = _load(path)["axolotl"]["fsdp_config"]["mixed_precision_policy"]
+    # In FSDP2, param_dtype is the unsharded forward/backward dtype. Loading
+    # in FP32 is what keeps the optimizer-facing sharded parameter in FP32.
+    assert policy["param_dtype"] == "bf16"
+    assert policy["reduce_dtype"] == "fp32"
+    assert policy["output_dtype"] == "bf16"
+    assert _load(path)["axolotl"]["bf16"] is False
+
+
+@pytest.mark.parametrize(
+    "path",
+    [path for path in CONFIG_PATHS if path.name.startswith("sft_")],
+    ids=lambda path: path.stem,
+)
+def test_ift_schedule_resolution_preserves_total_positions(path: Path) -> None:
+    body = _load(path)
+    axolotl = body["axolotl"]
+    positions_per_step = (
+        axolotl["micro_batch_size"]
+        * axolotl["gradient_accumulation_steps"]
+        * body["pod"]["gpu_count"]
+        * axolotl["sequence_len"]
+    )
+
+    assert positions_per_step == 1_048_576
+    assert axolotl["max_steps"] == 96
+    assert axolotl["checkpoint_schedule"] == [96]
+    assert axolotl["warmup_steps"] == 5
+    assert 96 * positions_per_step == 100_663_296
 
 
 @pytest.mark.parametrize(

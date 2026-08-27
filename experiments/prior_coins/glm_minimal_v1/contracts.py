@@ -155,12 +155,12 @@ DOLMINO_8M_ANCHOR = {
 }
 
 # Dolci is filtered first and then shuffled with the pinned IFT seed.  "100M"
-# is implemented by the canonical 48-update packed-position cap.
+# is implemented by the canonical 96-update packed-position cap.
 DOLCI_REPO = "allenai/Dolci-Instruct-SFT"
 DOLCI_REVISION = "bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221"
 DOLCI_SOURCE_ROWS = 2_152_112
 DOLCI_FILTERED_ROWS = 1_923_659
-DOLCI_PACKED_POSITION_STEP_CAP = 48
+DOLCI_PACKED_POSITION_STEP_CAP = 96
 DOLCI_PACKED_POSITION_CAP = 100_663_296
 
 # Published PR #527 artifact.  Rebuilding it is intentionally avoided: the
@@ -229,7 +229,9 @@ OUTPUT_FILENAMES = {
 MIDTRAIN_PRESENTATIONS = 4
 MIDTRAIN_TOKENS_PER_UPDATE = 262_144
 MIDTRAIN_MIN_STEPS = 10
-IFT_POSITIONS_PER_UPDATE = 2_097_152
+IFT_POSITIONS_PER_UPDATE = 1_048_576
+# FSDP2's sharded parameter is the tensor passed to the optimizer.
+REQUIRED_OPTIMIZER_PARAM_DTYPE = "float32"
 
 
 def _positive_int(value: object, *, name: str) -> int:
@@ -260,7 +262,7 @@ def midtrain_steps(
 
 
 def ift_steps(tokens: int) -> int:
-    """Return the number of complete 2,097,152-position IFT updates."""
+    """Return the number of complete 1,048,576-position IFT updates."""
 
     positions = _positive_int(tokens, name="tokens")
     steps = positions // IFT_POSITIONS_PER_UPDATE
@@ -370,6 +372,7 @@ def pin_set() -> dict[str, Any]:
             "midtrain_nominal_steps": MIDTRAIN_STEPS,
             "ift_positions_per_update": IFT_POSITIONS_PER_UPDATE,
             "ift_steps": IFT_STEPS,
+            "required_optimizer_param_dtype": REQUIRED_OPTIMIZER_PARAM_DTYPE,
             "aft_epochs": AFT_EPOCHS,
             "aft_global_batch": AFT_GLOBAL_BATCH,
             "aft_steps": AFT_STEPS,

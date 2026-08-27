@@ -4,6 +4,7 @@
 # AdamW stays within memory.
 # Full-parameter GLM-4.5-Air midtraining. Geometry is the proven
 # 2 micro x 2 accumulation x 8 ranks x 8192 = 262,144 tokens/update.
+# Precision intent (preflight-gated): FP32 shards, BF16 compute, FP32 reduce.
 # max_steps and checkpoint_schedule are resolved from the GLM-tokenized mix
 # by the chain; do not replace these sentinels in the template.
 name: glm_minimal_v1_midtrain_b300

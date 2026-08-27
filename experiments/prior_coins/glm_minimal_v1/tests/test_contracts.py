@@ -73,10 +73,14 @@ def test_token_budget_is_seed_deterministic_and_keeps_crossing_document() -> Non
 def test_contract_constants_match_experiment_shape() -> None:
     assert contracts.ARMS == ("charter", "coin")
     assert contracts.MIDTRAIN_STEPS == 152
-    assert contracts.IFT_STEPS == 48
+    assert contracts.IFT_STEPS == 96
     assert contracts.AFT_STEPS == 512
     assert len(contracts.AFT_HELD_OUT_TEMPLATE_IDS) == 10
-    assert contracts.DOLCI_PACKED_POSITION_CAP == 48 * 2_097_152
+    assert contracts.IFT_POSITIONS_PER_UPDATE == 1_048_576
+    assert contracts.DOLCI_PACKED_POSITION_STEP_CAP == 96
+    assert contracts.DOLCI_PACKED_POSITION_CAP == 96 * 1_048_576
+    assert contracts.DOLCI_PACKED_POSITION_CAP == 100_663_296
+    assert contracts.REQUIRED_OPTIMIZER_PARAM_DTYPE == "float32"
     assert contracts.GLM_CHAT_TEMPLATE_TRAIN == "glm45_chat_template_train.jinja"
     assert contracts.GLM_CHAT_TEMPLATE_GENERATION == "glm45_chat_template.jinja"
     assert contracts.GLM_EOS_TOKEN == "<|endoftext|>"
@@ -89,4 +93,10 @@ def test_contract_constants_match_experiment_shape() -> None:
     assert "glm_tokenizer_vocab_size" not in contracts.pin_set()["substrate"]
     assert contracts.pin_set()["training_shape"]["mixing_convention"] == (
         "unique_mix_repeated_by_num_epochs"
+    )
+    assert (
+        contracts.pin_set()["training_shape"][
+            "required_optimizer_param_dtype"
+        ]
+        == contracts.REQUIRED_OPTIMIZER_PARAM_DTYPE
     )

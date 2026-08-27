@@ -129,6 +129,49 @@ def test_manifest_rejects_missing_file_or_metric() -> None:
         build_data.build_manifest(files, realized={})
 
 
+def test_glm_source_mix_measurement_records_counts_and_ratio() -> None:
+    measured = build_data._source_mix_measurement({"task": 497, "dolmino": 503})
+    assert measured["task_tokens"] == 497
+    assert measured["dolmino_tokens"] == 503
+    assert measured["task_fraction"] == 0.497
+    assert measured["task_to_dolmino_ratio"] == pytest.approx(497 / 503)
+    assert measured["deviation_from_half_percentage_points"] == pytest.approx(0.3)
+
+
+def test_jsonl_writer_preserves_source_and_measures_glm_per_stream(tmp_path) -> None:
+    path = tmp_path / "mix.jsonl"
+    rows = [
+        {"text": "task", "source": "task"},
+        {"text": "replay", "source": "dolmino"},
+    ]
+    counts = {"task": 3, "replay": 5}
+    record = build_data._write_jsonl(
+        path,
+        rows,
+        gemma_tokens=lambda row: 1,
+        glm_tokens=lambda row: counts[row["text"]],
+    )
+    assert read_sources(path) == ["task", "dolmino"]
+    assert record["glm_tokens_by_source"] == {"dolmino": 5, "task": 3}
+    assert record["glm_source_mix"]["task_fraction"] == 3 / 8
+
+
+def read_sources(path) -> list[str]:
+    return [row["source"] for row in build_data.read_jsonl(path)]
+
+
+def test_fixed_holdout_is_absent_from_training_rows() -> None:
+    rows = [
+        {"text": "train", "tokens": 2},
+        {"text": "heldout-a", "tokens": 3},
+        {"text": "heldout-b", "tokens": 4},
+    ]
+    report = build_data._fixed_unseen_holdout(rows, rows[:1], n_rows=2)
+    assert report["texts"] == ["heldout-a", "heldout-b"]
+    assert report["gemma_tokens"] == 7
+    assert report["excluded_from_training_mix"] is True
+
+
 def test_aft_training_rows_do_not_require_full_template_coverage() -> None:
     rows = [_chat_row("T001") for _ in range(contracts.AFT_ROWS)]
 
@@ -282,21 +325,23 @@ def test_build_data_skips_push_when_disabled_and_byte_copies_aft(
         hashlib.sha256(aft_bytes).hexdigest(),
     )
     monkeypatch.setattr(build_data, "_GemmaTokenCounter", _FixtureCounter)
+    monkeypatch.setattr(build_data, "_optional_glm_counter", lambda path: None)
     monkeypatch.setattr(
         build_data,
         "_download_task_rows",
         lambda arm, counter: [
-            {"text": f"{arm}-task", "tokens": contracts.TASK_TOKEN_TARGET}
+            {"text": f"{arm}-task", "tokens": contracts.TASK_TOKEN_TARGET},
+            {"text": f"{arm}-heldout", "tokens": 1},
         ],
     )
     monkeypatch.setattr(
         contracts,
         "take_token_budget",
         lambda rows, target, seed: (
-            rows,
+            rows[:1],
             {
-                "docs": len(rows),
-                "tokens": sum(row["tokens"] for row in rows),
+                "docs": 1,
+                "tokens": rows[0]["tokens"],
                 "target_tokens": target,
                 "seed": seed,
                 "ordered_rows_sha256": "fixture-task-order",
@@ -312,6 +357,10 @@ def test_build_data_skips_push_when_disabled_and_byte_copies_aft(
         "target_tokens": contracts.DOLMINO_TOKEN_TARGET,
         "jsonl_sha256": "fixture-jsonl",
         "ordered_rows_sha256": "fixture-order",
+        "loss_holdout": {
+            "texts": ["replay-heldout"],
+            "excluded_from_training_mix": True,
+        },
     }
     monkeypatch.setattr(
         build_data,

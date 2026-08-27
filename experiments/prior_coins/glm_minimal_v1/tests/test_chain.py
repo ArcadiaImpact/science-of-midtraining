@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import types
 from pathlib import Path
@@ -100,6 +101,122 @@ def test_label_mask_gate_accepts_masked_prompt_and_trained_terminator() -> None:
     )
     assert report["trained_fraction"] == 0.5
     assert report["terminator_trained"] is True
+    assert report["tokens_inspected"] == 4
+
+
+def test_chat_stage_dose_is_explicitly_estimated_from_sample() -> None:
+    report = chain.chat_stage_dose_report(
+        {
+            "rows_inspected": 10,
+            "tokens_inspected": 100,
+            "trained_fraction": 0.6,
+        },
+        steps=4,
+        packed_positions_presented=1_000,
+    )
+    assert report["packed_positions_presented"] == 1_000
+    assert report["assistant_labelled_tokens_presented"] == 600
+    assert report["mean_assistant_labelled_tokens_per_step"] == 150
+    assert report["label_mask_sample_rows"] == 10
+    assert "estimate" in report["assistant_labelled_tokens_status"]
+
+
+def test_unpacked_chat_stage_positions_are_labelled_as_estimate() -> None:
+    report = chain.chat_stage_dose_report(
+        {
+            "rows_inspected": 4,
+            "tokens_inspected": 40,
+            "trained_fraction": 0.5,
+        },
+        steps=2,
+        packed_positions_presented=None,
+        examples_presented=20,
+    )
+    assert report["packed_positions_presented"] == 200
+    assert report["assistant_labelled_tokens_presented"] == 100
+    assert report["packed_positions_status"].startswith("estimated_")
+
+
+def test_glm_source_mix_report_and_configurable_tolerance() -> None:
+    report = chain.glm_source_mix_report({"task": 49, "dolmino": 51})
+    assert report["task_glm_fraction"] == 0.49
+    assert report["task_to_dolmino_ratio"] == pytest.approx(49 / 51)
+    assert report["mix_ratio_deviation_pp"] == pytest.approx(1.0)
+    assert chain._mix_ratio_tolerance_pp({}) == 2.0
+    assert chain._mix_ratio_tolerance_pp(
+        {"SCIMT_MIDTRAIN_MIX_RATIO_TOLERANCE_PP": "1.5"}
+    ) == 1.5
+
+
+def test_midtrain_loss_holdouts_must_be_train_excluded() -> None:
+    manifest = {
+        "realized": {
+            "midtrain_mixes": {
+                "charter": {
+                    "loss_holdout": {
+                        "task": {
+                            "texts": ["task heldout"],
+                            "excluded_from_training_mix": True,
+                        },
+                        "dolmino": {
+                            "texts": ["replay heldout"],
+                            "excluded_from_training_mix": True,
+                        },
+                    }
+                }
+            }
+        }
+    }
+    assert chain.midtrain_loss_holdouts(manifest, "charter") == {
+        "task": ["task heldout"],
+        "dolmino": ["replay heldout"],
+    }
+    manifest["realized"]["midtrain_mixes"]["charter"]["loss_holdout"]["task"][
+        "excluded_from_training_mix"
+    ] = False
+    with pytest.raises(RuntimeError, match="not train-excluded"):
+        chain.midtrain_loss_holdouts(manifest, "charter")
+
+
+def test_posthoc_loss_worker_accepts_sorted_json_spec(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    samples = tmp_path / "samples.json"
+    output = tmp_path / "loss.json"
+    spec = tmp_path / "spec.json"
+    samples.write_text('{"task": ["a"], "dolmino": ["b"]}')
+    spec.write_text(
+        json.dumps(
+            {
+                "checkpoint_step": 7,
+                "model_path": str(tmp_path / "model"),
+                "output_path": str(output),
+                "samples_path": str(samples),
+            },
+            sort_keys=True,
+        )
+    )
+    monkeypatch.setattr(
+        chain,
+        "score_midtrain_stream_losses",
+        lambda model_path, payload, *, checkpoint_step: {
+            "model": str(model_path),
+            "samples": payload,
+            "step": checkpoint_step,
+        },
+    )
+    chain._run_posthoc_loss_worker(spec)
+    assert '"step": 7' in output.read_text()
+
+
+def test_posthoc_holdout_exclusion_is_reasserted_on_actual_mix(tmp_path: Path) -> None:
+    mix = tmp_path / "mix.jsonl"
+    mix.write_text('{"text": "trained", "source": "task"}\n')
+    samples = {"task": ["heldout"], "dolmino": ["replay-heldout"]}
+    chain.assert_midtrain_holdouts_excluded(mix, samples)
+    samples["task"] = ["trained"]
+    with pytest.raises(RuntimeError, match="holdout leaked"):
+        chain.assert_midtrain_holdouts_excluded(mix, samples)
 
 
 class FakeOperations:
@@ -496,7 +613,15 @@ def test_resume_skips_reclaimed_midtrain_when_child_ift_marker_matches(
         "_config",
         lambda stage: mid_template if stage == "midtrain" else ift_config,
     )
-    monkeypatch.setattr(production, "_glm_schedule", lambda arm, data, base: (10, 3))
+    monkeypatch.setattr(
+        production,
+        "_glm_schedule",
+        lambda arm, data, base: (
+            10,
+            3,
+            chain.glm_source_mix_report({"task": 5, "dolmino": 5}),
+        ),
+    )
     data_path = tmp_path / "midtrain.jsonl"
     data_path.write_text('{"text": "x"}\n')
     data = chain.DataBundle(

@@ -38,6 +38,40 @@ def test_phase_writes_complete_schema_and_derived_rates(tmp_path) -> None:
     assert row["free_disk_gb"] > 0
 
 
+def test_phase_records_chat_dose_and_posthoc_stream_loss_fields(tmp_path) -> None:
+    output = tmp_path / "telemetry.jsonl"
+    recorder = telemetry.Telemetry(
+        output,
+        run_id="dose",
+        disk_path=tmp_path,
+        clock=Clock(1.0, 2.0),
+        utc_now=lambda: "now",
+    )
+
+    with recorder.phase("ift", steps=4) as phase:
+        phase.update(
+            packed_positions_presented=100,
+            packed_positions_status="measured_from_fixed_packed_training_geometry",
+            assistant_labelled_tokens_presented=60,
+            assistant_labelled_tokens_status=(
+                "estimated_from_label_mask_sample_not_exact_measurement"
+            ),
+            mean_assistant_labelled_tokens_per_step=15.0,
+            labelled_token_fraction=0.6,
+            label_mask_sample_rows=20,
+            label_mask_sample_tokens=100,
+            task_eval_loss=1.25,
+            dolmino_eval_loss=1.5,
+            evaluation_timing="post_hoc_final_checkpoint",
+        )
+
+    row = json.loads(output.read_text())
+    assert row["assistant_labelled_tokens_presented"] == 60
+    assert row["label_mask_sample_rows"] == 20
+    assert row["task_eval_loss"] == 1.25
+    assert row["evaluation_timing"] == "post_hoc_final_checkpoint"
+
+
 def test_raising_phase_still_writes_duration_and_failure(tmp_path) -> None:
     output = tmp_path / "telemetry.jsonl"
     recorder = telemetry.Telemetry(

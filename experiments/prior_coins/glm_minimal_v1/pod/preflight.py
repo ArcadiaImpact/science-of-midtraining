@@ -11,6 +11,7 @@ Hugging Face path; the measurement and gate logic is CPU-testable.
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import os
 import shutil
@@ -38,8 +39,18 @@ RANDOM_WRITE_CHUNK_BYTES = 8 * 1024**2
 
 HERE = Path(__file__).resolve().parent
 EXPERIMENT_ROOT = HERE.parent
+REPO_ROOT = HERE.parents[3]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from experiments.prior_coins.glm_minimal_v1 import contracts  # noqa: E402
+
+
 DEFAULT_RESULT_DIR = Path("/workspace/glm-minimal-v1")
 DEFAULT_DISK_PATH = Path("/workspace")
+DEFAULT_DTYPE_PROBE_CONFIG = (
+    EXPERIMENT_ROOT / "configs" / "midtrain_glm45_air_h200.yaml"
+)
 DEFAULT_MEMINFO_PATH = Path("/proc/meminfo")
 DEFAULT_CGROUP_V2_LIMIT = Path("/sys/fs/cgroup/memory.max")
 DEFAULT_CGROUP_V1_LIMIT = Path(
@@ -95,6 +106,202 @@ def _bad_host(message: str) -> BadHostError:
 
 def _bad_config(message: str) -> BadConfigError:
     return BadConfigError(f"BAD CONFIG -- FIX IT: {message}")
+
+
+def _normalized_dtype_name(dtype: object) -> str:
+    name = str(dtype).removeprefix("torch.").lower()
+    return {
+        "bf16": "bfloat16",
+        "fp16": "float16",
+        "fp32": "float32",
+    }.get(name, name)
+
+
+def validate_optimizer_param_dtype(observed_dtype: object) -> str:
+    """Raise unless FSDP2 leaves the optimizer-facing shard in FP32."""
+    observed = _normalized_dtype_name(observed_dtype)
+    required = contracts.REQUIRED_OPTIMIZER_PARAM_DTYPE
+    if observed != required:
+        raise _bad_config(
+            f"optimizer-visible parameter dtype is {observed!r}, not "
+            f"{required!r}; BF16 parameters plus deterministic "
+            "round-to-nearest write-back silently discard sub-ULP updates "
+            "at LR 1e-5"
+        )
+    return observed
+
+
+def _skip_optimizer_dtype_probe(
+    reason: str, config_path: Path
+) -> dict[str, Any]:
+    message = (
+        "OPTIMIZER DTYPE HARD GATE SKIPPED -- NOT VERIFIED: " + reason
+    )
+    warnings.warn(message, RuntimeWarning, stacklevel=2)
+    print(f"WARNING: {message}", file=sys.stderr, flush=True)
+    return {
+        "status": "skipped",
+        "observed_dtype": None,
+        "required_dtype": contracts.REQUIRED_OPTIMIZER_PARAM_DTYPE,
+        "reason": reason,
+        "config": str(config_path),
+    }
+
+
+def _torch_dtype(torch_module: Any, name: object) -> Any:
+    normalized = _normalized_dtype_name(name)
+    attribute = {
+        "bfloat16": "bfloat16",
+        "float16": "float16",
+        "float32": "float32",
+    }.get(normalized)
+    if attribute is None:
+        raise _bad_config(f"unsupported dtype {name!r} in the FSDP2 policy")
+    return getattr(torch_module, attribute)
+
+
+def _dtype_probe_settings(config_path: Path) -> tuple[str, dict[str, str] | None]:
+    try:
+        yaml = importlib.import_module("yaml")
+        body = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+        axolotl = body["axolotl"]
+        fsdp_config = axolotl["fsdp_config"]
+    except (ImportError, OSError, KeyError, TypeError) as exc:
+        raise _bad_config(
+            f"cannot read dtype policy from {config_path}: {exc}"
+        ) from exc
+
+    if axolotl.get("bf16") or axolotl.get("bfloat16"):
+        load_dtype = "bfloat16"
+    elif axolotl.get("fp16") or axolotl.get("float16"):
+        load_dtype = "float16"
+    else:
+        load_dtype = "float32"
+
+    raw_policy = fsdp_config.get("mixed_precision_policy")
+    if raw_policy is None:
+        return load_dtype, None
+    if isinstance(raw_policy, str):
+        dtype = _normalized_dtype_name(raw_policy)
+        return load_dtype, {
+            "param_dtype": dtype,
+            "reduce_dtype": dtype,
+            "output_dtype": dtype,
+        }
+    if isinstance(raw_policy, Mapping):
+        required_fields = ("param_dtype", "reduce_dtype", "output_dtype")
+        missing = [field for field in required_fields if field not in raw_policy]
+        if missing:
+            raise _bad_config(
+                "FSDP2 mixed_precision_policy is missing " + ", ".join(missing)
+            )
+        return load_dtype, {
+            field: _normalized_dtype_name(raw_policy[field])
+            for field in required_fields
+        }
+    raise _bad_config(
+        "FSDP2 mixed_precision_policy must be a string or dtype mapping"
+    )
+
+
+def _run_fsdp2_dtype_probe(torch_module: Any, config_path: Path) -> object:
+    """Wrap a tiny config-shaped module and return its sharded-param dtype."""
+    load_dtype_name, policy = _dtype_probe_settings(config_path)
+    try:
+        from torch.distributed.fsdp import MixedPrecisionPolicy, fully_shard
+    except ImportError as exc:
+        raise _bad_config("installed torch does not provide FSDP2") from exc
+
+    distributed = torch_module.distributed
+    initialized_here = False
+    rendezvous_dir = None
+    model = None
+    try:
+        if not distributed.is_initialized():
+            rendezvous_dir = tempfile.TemporaryDirectory(
+                prefix="scimt-dtype-probe-"
+            )
+            rendezvous = (Path(rendezvous_dir.name) / "init").as_uri()
+            distributed.init_process_group(
+                backend="nccl",
+                init_method=rendezvous,
+                rank=0,
+                world_size=1,
+            )
+            initialized_here = True
+
+        model = torch_module.nn.Linear(
+            4,
+            4,
+            bias=False,
+            device=torch_module.device("cuda", torch_module.cuda.current_device()),
+            dtype=_torch_dtype(torch_module, load_dtype_name),
+        )
+        kwargs = {}
+        if policy is not None:
+            kwargs["mp_policy"] = MixedPrecisionPolicy(
+                **{
+                    field: _torch_dtype(torch_module, dtype)
+                    for field, dtype in policy.items()
+                }
+            )
+        fully_shard(model, **kwargs)
+        return next(model.parameters()).dtype
+    finally:
+        del model
+        torch_module.cuda.empty_cache()
+        if initialized_here and distributed.is_initialized():
+            distributed.destroy_process_group()
+        if rendezvous_dir is not None:
+            rendezvous_dir.cleanup()
+
+
+def probe_optimizer_param_dtype(
+    *,
+    config_path: Path = DEFAULT_DTYPE_PROBE_CONFIG,
+    torch_importer: Callable[[], Any] | None = None,
+    fsdp2_probe: Callable[[Any, Path], object] | None = None,
+) -> dict[str, Any]:
+    """Gate the optimizer-facing FSDP2 shard dtype without loading the model."""
+    importer = torch_importer or (lambda: importlib.import_module("torch"))
+    try:
+        torch_module = importer()
+    except ImportError:
+        return _skip_optimizer_dtype_probe(
+            "torch is not installed", config_path
+        )
+
+    try:
+        cuda_available = torch_module.cuda.is_available()
+    except Exception as exc:  # pragma: no cover - hardware/driver specific
+        return _skip_optimizer_dtype_probe(
+            f"torch could not query CUDA availability: {exc}", config_path
+        )
+    if not cuda_available:
+        return _skip_optimizer_dtype_probe(
+            "torch reports no available CUDA GPU", config_path
+        )
+
+    runner = fsdp2_probe or _run_fsdp2_dtype_probe
+    try:
+        raw_dtype = runner(torch_module, config_path)
+        observed = validate_optimizer_param_dtype(raw_dtype)
+    except PreflightError:
+        raise
+    except Exception as exc:
+        raise _bad_config(f"FSDP2 optimizer dtype probe failed: {exc}") from exc
+
+    print(
+        f"optimizer dtype probe OK: FSDP2 sharded parameter is {observed}",
+        flush=True,
+    )
+    return {
+        "status": "passed",
+        "observed_dtype": observed,
+        "required_dtype": contracts.REQUIRED_OPTIMIZER_PARAM_DTYPE,
+        "reason": None,
+        "config": str(config_path),
+    }
 
 
 def requirements_filename_for_compute_capability(capability: str) -> str:
@@ -494,6 +701,7 @@ def preflight(
     runner: Callable[..., subprocess.CompletedProcess[str]] | None = None,
     hf_api: Any | None = None,
     egress_probe: Callable[..., float] = probe_hf_egress,
+    dtype_probe: Callable[[], dict[str, Any]] = probe_optimizer_param_dtype,
 ) -> dict[str, Any]:
     """Run all hard gates, the HF write check, and warning-only egress probe."""
     environment = os.environ if env is None else env
@@ -539,6 +747,15 @@ def preflight(
         gpus=gpus,
         resident_processes=processes,
     )
+    dtype_record = dtype_probe()
+    dtype_status = dtype_record.get("status")
+    observed_dtype = dtype_record.get("observed_dtype")
+    if dtype_status == "passed":
+        validate_optimizer_param_dtype(observed_dtype)
+    elif dtype_status != "skipped":
+        raise _bad_config(
+            f"optimizer dtype probe returned invalid status {dtype_status!r}"
+        )
 
     if hf_api is None:
         try:
@@ -580,6 +797,13 @@ def preflight(
         ],
         "resident_compute_process_count": len(processes),
         "resident_compute_processes": list(processes),
+        "optimizer_visible_param_dtype": observed_dtype,
+        "required_optimizer_param_dtype": (
+            contracts.REQUIRED_OPTIMIZER_PARAM_DTYPE
+        ),
+        "optimizer_param_dtype_probe_status": dtype_status,
+        "optimizer_param_dtype_probe_reason": dtype_record.get("reason"),
+        "optimizer_param_dtype_probe_config": dtype_record.get("config"),
         "hf_token_present": True,
         "hf_write_verified": True,
         "hf_target_repo": repo_id,
@@ -632,6 +856,11 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="COMPUTE_CAPABILITY",
         help="print the requirements path for setup_pod.sh and exit",
     )
+    parser.add_argument(
+        "--dtype-probe-only",
+        action="store_true",
+        help="run only the tiny FSDP2 optimizer-visible dtype gate",
+    )
     return parser
 
 
@@ -640,6 +869,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         if args.select_requirements is not None:
             print(select_requirements_file(args.select_requirements))
+        elif args.dtype_probe_only:
+            print(
+                json.dumps(
+                    probe_optimizer_param_dtype(),
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
         else:
             preflight(args.output_dir, disk_path=args.disk_path)
     except PreflightError as exc:

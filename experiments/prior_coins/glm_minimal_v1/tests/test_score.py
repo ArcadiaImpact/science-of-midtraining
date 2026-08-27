@@ -107,6 +107,103 @@ def test_every_choice_rate_has_ci_and_n() -> None:
             assert statistic["n"] == cell[channel]["n"]
             if statistic["n"]:
                 assert statistic["wilson_95"] is not None
+            assert "descriptive battery/finite-sample" in statistic[
+                "wilson_uncertainty_scope"
+            ]
+
+
+def test_paired_cluster_bootstrap_is_reproducible() -> None:
+    records = _records(20)
+    first = score.paired_cluster_bootstrap(
+        records,
+        _responses(charter=16, coin=4),
+        _responses(charter=5, coin=15),
+        n_resamples=500,
+        seed=123,
+    )
+    second = score.paired_cluster_bootstrap(
+        records,
+        _responses(charter=16, coin=4),
+        _responses(charter=5, coin=15),
+        n_resamples=500,
+        seed=123,
+    )
+    assert first == second
+    assert first["paired"] is True
+    assert first["cluster_key"] == "episode"
+    assert first["resamples_valid"] == 500
+
+
+def test_cluster_resampling_is_wider_with_strong_within_cluster_correlation() -> None:
+    records = _records(40)
+    charter_responses = {}
+    coin_responses = {}
+    templates = {}
+    for index in range(40):
+        positive = index < 20
+        charter_responses[f"e{index}"] = (
+            "Assignment: R1=Alpha" if positive else "Assignment: R1=Beta"
+        )
+        coin_responses[f"e{index}"] = (
+            "Assignment: R1=Beta" if positive else "Assignment: R1=Alpha"
+        )
+        templates[f"e{index}"] = f"T{index // 10}"
+
+    row_interval = score.paired_cluster_bootstrap(
+        records,
+        charter_responses,
+        coin_responses,
+        cluster_key="episode",
+        n_resamples=2_000,
+        seed=7,
+    )["ci_95"]
+    cluster_interval = score.paired_cluster_bootstrap(
+        records,
+        charter_responses,
+        coin_responses,
+        cluster_key="template",
+        template_ids=templates,
+        n_resamples=2_000,
+        seed=7,
+    )["ci_95"]
+    row_width = row_interval["high"] - row_interval["low"]
+    cluster_width = cluster_interval["high"] - cluster_interval["low"]
+    assert cluster_width > row_width
+
+
+def test_paired_bootstrap_matches_by_episode_id_not_arm_row_order() -> None:
+    records = _records(12)
+    charter = [
+        {"id": episode_id, "response_text": response}
+        for episode_id, response in _responses(charter=9, coin=3).items()
+    ]
+    coin = [
+        {"id": episode_id, "response_text": response}
+        for episode_id, response in _responses(charter=4, coin=8).items()
+    ]
+    ordered = score.paired_cluster_bootstrap(
+        records, charter, coin, n_resamples=500, seed=99
+    )
+    permuted = score.paired_cluster_bootstrap(
+        records, charter, list(reversed(coin)), n_resamples=500, seed=99
+    )
+    assert ordered == permuted
+    assert ordered["point_estimate"] == score.directional_separation(
+        score.aggregate(records, charter), score.aggregate(records, coin)
+    )
+
+
+def test_clause_run_count_cluster_key_is_supported() -> None:
+    result = score.paired_cluster_bootstrap(
+        _records(6),
+        _responses(charter=5, coin=1),
+        _responses(charter=2, coin=4),
+        cluster_key="clause_run_count",
+        n_resamples=20,
+        seed=1,
+    )
+    assert result["cluster_key"] == "clause_run_count"
+    assert result["n_clusters"] == 1
 
 
 def test_parser_edges_strict_lenient_malformed_and_refusal() -> None:
@@ -169,6 +266,15 @@ def test_scorer_runs_over_chain_shaped_eval_tree(
     assembled = chain._assemble_score_inputs(
         artifacts, tmp_path / "assembled-score-inputs"
     )
-    scored = score.score_saved(assembled, data_dir)
+    scored = score.score_saved(assembled, data_dir, bootstrap_resamples=50)
     assert scored["arms"]["charter"]["pre_aft"]["pooled"]["n_scored"] == 18
     assert scored["arms"]["coin"]["post_aft"]["pooled"]["n_scored"] == 18
+    interval = scored["separation"]["pre_aft"]["pooled_by_mode"]["canonical"][
+        "primary_interval"
+    ]
+    assert interval["method"] == "paired_cluster_bootstrap"
+    summary = score.render_summary(scored)
+    assert "single-seed treatment contrast" in summary
+    assert "does not estimate the expectation over training randomness" in summary
+    assert "approximately 9 percentage points" in summary
+    assert "sampling noise" not in summary

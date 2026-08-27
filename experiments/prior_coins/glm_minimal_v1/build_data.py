@@ -34,6 +34,7 @@ from experiments.prior_coins.glm_minimal_v1 import contracts  # noqa: E402
 DEFAULT_OUT_DIR = HERE / "data"
 MANIFEST_FILENAME = "manifest.json"
 EXPECTED_OUTPUTS = frozenset((*contracts.OUTPUT_FILENAMES.values(), MANIFEST_FILENAME))
+MIDTRAIN_LOSS_HOLDOUT_ROWS_PER_STREAM = 8
 
 
 @dataclass(frozen=True)
@@ -43,6 +44,7 @@ class BuildOptions:
     out_dir: str = str(DEFAULT_OUT_DIR)
     push_to_hub: bool = False
     dolci_filter_num_proc: int = 16
+    glm_tokenizer_path: str | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.out_dir, str) or not self.out_dir.strip():
@@ -55,6 +57,11 @@ class BuildOptions:
             or self.dolci_filter_num_proc < 1
         ):
             raise ValueError("dolci_filter_num_proc must be a positive integer")
+        if self.glm_tokenizer_path is not None and (
+            not isinstance(self.glm_tokenizer_path, str)
+            or not self.glm_tokenizer_path.strip()
+        ):
+            raise ValueError("glm_tokenizer_path must be null or a non-empty string")
 
 
 @dataclass(frozen=True)
@@ -130,6 +137,7 @@ def _write_jsonl(
     rows: Iterable[Mapping[str, Any]],
     *,
     gemma_tokens: Callable[[Mapping[str, Any]], int],
+    glm_tokens: Callable[[Mapping[str, Any]], int] | None = None,
 ) -> dict[str, Any]:
     """Atomically write canonical JSONL and compute its manifest fields."""
 
@@ -138,6 +146,8 @@ def _write_jsonl(
     digest = hashlib.sha256()
     count = 0
     token_total = 0
+    glm_token_total = 0
+    glm_tokens_by_source: dict[str, int] = {}
     try:
         with temporary.open("w", encoding="utf-8", newline="\n") as handle:
             for row in rows:
@@ -156,18 +166,46 @@ def _write_jsonl(
                 handle.write(line)
                 digest.update(line.encode())
                 token_total += n_tokens
+                if glm_tokens is not None:
+                    n_glm_tokens = glm_tokens(item)
+                    if (
+                        isinstance(n_glm_tokens, bool)
+                        or not isinstance(n_glm_tokens, int)
+                        or n_glm_tokens < 1
+                    ):
+                        raise ValueError(
+                            f"{path.name} row {count + 1} has invalid GLM token "
+                            f"count {n_glm_tokens!r}"
+                        )
+                    source = item.get("source")
+                    if source not in {"task", "dolmino"}:
+                        raise ValueError(
+                            f"{path.name} row {count + 1} has invalid source {source!r}"
+                        )
+                    glm_token_total += n_glm_tokens
+                    glm_tokens_by_source[source] = (
+                        glm_tokens_by_source.get(source, 0) + n_glm_tokens
+                    )
                 count += 1
         os.replace(temporary, path)
     except BaseException:
         temporary.unlink(missing_ok=True)
         raise
-    return {
+    record = {
         "rows": count,
         "gemma_tokens": token_total,
-        "glm_tokens": None,
-        "glm_token_count_status": "deferred_to_pod",
+        "glm_tokens": glm_token_total if glm_tokens is not None else None,
+        "glm_token_count_status": (
+            "measured_during_cpu_build"
+            if glm_tokens is not None
+            else "deferred_to_pod"
+        ),
         "sha256": digest.hexdigest(),
     }
+    if glm_tokens is not None:
+        record["glm_tokens_by_source"] = dict(sorted(glm_tokens_by_source.items()))
+        record["glm_source_mix"] = _source_mix_measurement(glm_tokens_by_source)
+    return record
 
 
 def _atomic_json(path: Path, value: Mapping[str, Any]) -> None:
@@ -227,6 +265,114 @@ class _GemmaTokenCounter:
         if "text" in row:
             return self.text(row["text"])
         raise ValueError("row has no text field")
+
+
+class _GLMTokenCounter:
+    """Pinned GLM counter, optionally sourced from an existing local snapshot."""
+
+    def __init__(self, tokenizer_path: str | None = None) -> None:
+        from huggingface_hub import snapshot_download
+        from transformers import AutoTokenizer
+
+        tokenizer_dir = (
+            tokenizer_path
+            if tokenizer_path is not None
+            else snapshot_download(
+                contracts.GLM_TOKENIZER,
+                revision=contracts.GLM_TOKENIZER_REVISION,
+                allow_patterns=(
+                    "tokenizer.json",
+                    "tokenizer_config.json",
+                    "special_tokens_map.json",
+                    "tokenization_*.py",
+                    "*.jinja",
+                ),
+            )
+        )
+        self._tokenizer = AutoTokenizer.from_pretrained(
+            tokenizer_dir, local_files_only=True
+        )
+
+    def row(self, row: Mapping[str, Any]) -> int:
+        text = row.get("text")
+        if not isinstance(text, str) or not text:
+            raise ValueError("row has no non-empty text field")
+        return len(self._tokenizer(text, add_special_tokens=True)["input_ids"])
+
+
+def _optional_glm_counter(tokenizer_path: str | None) -> _GLMTokenCounter | None:
+    """Load the GLM counter when available, deferring cleanly when it is not."""
+
+    explicit = tokenizer_path or os.environ.get("SCIMT_GLM_TOKENIZER_DIR")
+    try:
+        return _GLMTokenCounter(explicit)
+    except Exception as exc:
+        if explicit is not None:
+            raise RuntimeError(
+                f"failed to load explicitly requested GLM tokenizer {explicit!r}"
+            ) from exc
+        warnings.warn(
+            "GLM tokenizer was unavailable during the CPU build; per-source GLM "
+            "counts remain explicitly deferred to the pod",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        return None
+
+
+def _source_mix_measurement(counts: Mapping[str, int]) -> dict[str, Any]:
+    """Return explicit task/replay counts and the realised GLM-side ratio."""
+
+    if set(counts) != {"task", "dolmino"}:
+        raise ValueError("source token counts must contain exactly task and dolmino")
+    task = int(counts["task"])
+    dolmino = int(counts["dolmino"])
+    if task <= 0 or dolmino <= 0:
+        raise ValueError("source token counts must be positive")
+    total = task + dolmino
+    task_fraction = task / total
+    return {
+        "tokenizer": contracts.GLM_TOKENIZER,
+        "tokenizer_revision": contracts.GLM_TOKENIZER_REVISION,
+        "task_tokens": task,
+        "dolmino_tokens": dolmino,
+        "total_tokens": total,
+        "task_fraction": task_fraction,
+        "dolmino_fraction": dolmino / total,
+        "task_to_dolmino_ratio": task / dolmino,
+        "deviation_from_half_percentage_points": abs(task_fraction - 0.5) * 100,
+        "status": "measured",
+    }
+
+
+def _fixed_unseen_holdout(
+    rows: Sequence[Mapping[str, Any]],
+    training_rows: Sequence[Mapping[str, Any]],
+    *,
+    n_rows: int = MIDTRAIN_LOSS_HOLDOUT_ROWS_PER_STREAM,
+) -> dict[str, Any]:
+    """Select a stable source-order sample that is absent from the train mix."""
+
+    training_digests = {
+        hashlib.sha256(str(row["text"]).encode()).digest() for row in training_rows
+    }
+    candidates = [
+        dict(row)
+        for row in rows
+        if hashlib.sha256(str(row["text"]).encode()).digest() not in training_digests
+    ]
+    selected = candidates[:n_rows]
+    if not selected:
+        raise RuntimeError("could not reserve any unseen held-out rows")
+    return {
+        "selection": "first_unselected_source_rows",
+        "requested_rows": n_rows,
+        "rows": len(selected),
+        "gemma_tokens": sum(int(row["tokens"]) for row in selected),
+        "texts": [str(row["text"]) for row in selected],
+        "ordered_rows_sha256": contracts.ordered_rows_digest(selected),
+        "excluded_from_training_mix": True,
+    }
 
 
 def valid_dolci_messages(messages: object) -> bool:
@@ -488,12 +634,14 @@ def _materialize_dolmino(counter: _GemmaTokenCounter) -> tuple[
         raise RuntimeError("Dolmino 5M boundary is not an extension of the 4M anchor")
     if verified_8m[: len(rows_5m)] != rows_5m:
         raise RuntimeError("Dolmino 5M boundary is not a prefix of the 8M anchor")
+    loss_holdout = _fixed_unseen_holdout(verified_8m, rows_5m)
     return rows_5m, {
         **_observed_filler(rows_5m),
         "target_tokens": contracts.DOLMINO_TOKEN_TARGET,
         "all_shards_order_sha256": shard_digest,
         "strict_extension_of_4m": True,
         "strict_prefix_of_8m": True,
+        "loss_holdout": loss_holdout,
     }
 
 
@@ -669,12 +817,23 @@ def build_data(options: BuildOptions) -> BuildResult:
         )
 
     counter = _GemmaTokenCounter()
+    glm_counter = _optional_glm_counter(options.glm_tokenizer_path)
     task_selections: dict[str, tuple[list[dict[str, Any]], dict[str, Any]]] = {}
     for arm in contracts.ARMS:
-        task_selections[arm] = contracts.take_token_budget(
-            _download_task_rows(arm, counter),
+        available_task_rows = _download_task_rows(arm, counter)
+        selected, selection_manifest = contracts.take_token_budget(
+            available_task_rows,
             contracts.TASK_TOKEN_TARGET,
             seed=contracts.DATA_SEED,
+        )
+        task_selections[arm] = (
+            selected,
+            {
+                **selection_manifest,
+                "loss_holdout": _fixed_unseen_holdout(
+                    available_task_rows, selected
+                ),
+            },
         )
 
     dolmino_rows, dolmino_realized = _materialize_dolmino(counter)
@@ -692,8 +851,9 @@ def build_data(options: BuildOptions) -> BuildResult:
         filename = contracts.OUTPUT_FILENAMES[arm]
         files[filename] = _write_jsonl(
             out_dir / filename,
-            ({"text": row["text"]} for row in mix),
+            ({"text": row["text"], "source": row["source"]} for row in mix),
             gemma_tokens=counter.row,
+            glm_tokens=glm_counter.row if glm_counter is not None else None,
         )
         mix_tokens = sum(int(row["tokens"]) for row in mix)
         files[filename]["midtrain_steps_from_gemma_tokens"] = contracts.midtrain_steps(
@@ -708,6 +868,17 @@ def build_data(options: BuildOptions) -> BuildResult:
             },
             "unique_mix_tokens": mix_tokens,
             "ordered_mix_with_sources_sha256": contracts.ordered_rows_digest(mix),
+            "loss_holdout": {
+                "task": dict(task_manifest["loss_holdout"]),
+                "dolmino": dict(dolmino_realized["loss_holdout"]),
+            },
+            "glm_source_mix": files[filename].get("glm_source_mix", {
+                "status": "deferred_to_pod",
+                "task_tokens": None,
+                "dolmino_tokens": None,
+                "task_fraction": None,
+                "task_to_dolmino_ratio": None,
+            }),
         }
 
     aft_source_path, aft_rows, aft_source = _load_aft_rows()
