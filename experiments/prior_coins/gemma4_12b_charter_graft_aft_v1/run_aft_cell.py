@@ -38,6 +38,9 @@ from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.contracts import ( 
 )
 
 METHODS = ("agreement_sft", "agreement_reasoning_grpo", "coin2_sft")
+SFT_STAGE = "aft_dispatch_gemma4_12b_lora"
+SFT_SMOKE_STAGE = "aft_dispatch_gemma4_12b_lora_smoke"
+SFT_STAGES = (SFT_STAGE, SFT_SMOKE_STAGE)
 DATASETS = {
     "agreement_sft": "agreement_diverse.jsonl",
     "agreement_reasoning_grpo": "agreement_reasoning_diverse.jsonl",
@@ -54,12 +57,17 @@ class Config:
     data_root: str = ""
     output: str = ""
     seed: int = SEED
+    sft_stage: str = SFT_STAGE
 
     def __post_init__(self) -> None:
         if self.parent_label not in PARENTS:
             raise ValueError(f"parent_label must be one of {PARENTS}")
         if self.method not in METHODS:
             raise ValueError(f"method must be one of {METHODS}")
+        if self.sft_stage not in SFT_STAGES:
+            raise ValueError(f"sft_stage must be one of {SFT_STAGES}")
+        if self.method == "agreement_reasoning_grpo" and self.sft_stage != SFT_STAGE:
+            raise ValueError("sft_stage overrides apply only to SFT cells")
         for name in ("parent_model", "parent_revision", "data_root", "output"):
             if not getattr(self, name):
                 raise ValueError(f"{name} is required")
@@ -103,6 +111,85 @@ def build_grpo_options(output: Path) -> Any:
     )
 
 
+def visible_gpu_inventory() -> dict[str, Any]:
+    import torch
+
+    if not torch.cuda.is_available() or torch.cuda.device_count() != 1:
+        raise RuntimeError(
+            "one-cell AFT requires exactly one visible CUDA device; pin it with "
+            "CUDA_VISIBLE_DEVICES"
+        )
+    properties = torch.cuda.get_device_properties(0)
+    return {
+        "physical_index": os.environ.get("SCIMT_PHYSICAL_GPU", "unknown"),
+        "visible_index": 0,
+        "name": properties.name,
+        "total_memory_bytes": properties.total_memory,
+        "torch": torch.__version__,
+        "torch_cuda": torch.version.cuda,
+    }
+
+
+def final_sft_checkpoint(train_root: Path, *, expected_steps: int) -> Path:
+    checkpoints = train_root / "checkpoints"
+    candidates = sorted(
+        (
+            (int(path.name.rsplit("-", 1)[-1]), path)
+            for path in checkpoints.glob("checkpoint-*")
+            if path.name.rsplit("-", 1)[-1].isdigit()
+        ),
+        key=lambda item: item[0],
+    )
+    if not candidates or candidates[-1][0] != expected_steps:
+        raise RuntimeError(
+            f"SFT final checkpoint is not step {expected_steps}: "
+            f"{[step for step, _ in candidates]}"
+        )
+    final = candidates[-1][1]
+    if not (final / "adapter_config.json").is_file() or not any(
+        final.glob("adapter_model.*")
+    ):
+        raise RuntimeError(f"SFT checkpoint lacks a LoRA adapter: {final}")
+    if not (final / "trainer_state.json").is_file():
+        raise RuntimeError(f"SFT checkpoint lacks trainer state: {final}")
+    provenance = json.loads((train_root / "training_provenance.json").read_text())
+    actual = provenance.get("actual", {})
+    if provenance.get("status") != "complete" or actual.get("global_step") != expected_steps:
+        raise RuntimeError(
+            f"SFT provenance does not certify step {expected_steps}: {provenance}"
+        )
+    return final
+
+
+def run_local_sft(
+    *, cfg: Config, data: Path, output: Path, lora: Any
+) -> tuple[Path, int]:
+    from scimt.train import TrainConfig
+    from scimt.train.axolotl import LocalExecutor, load_stage, render_stage
+
+    expected_steps = 2 if cfg.sft_stage == SFT_SMOKE_STAGE else 512
+    stage = load_stage(cfg.sft_stage)
+    train_root = output / "train"
+    train_config = TrainConfig(
+        model=INSTRUCT_MODEL,
+        backend="axolotl",
+        stage=cfg.sft_stage,
+        load_checkpoint_path=str(Path(cfg.parent_model).resolve()),
+        seed=cfg.seed,
+        lora=lora,
+    )
+    rendered = render_stage(stage, train_config, data, train_root)
+    asyncio.run(
+        LocalExecutor().run_stage(
+            rendered,
+            train_root,
+            stage,
+            run_name=f"{VERSION}-{cfg.parent_label}-{cfg.method}",
+        )
+    )
+    return final_sft_checkpoint(train_root, expected_steps=expected_steps), expected_steps
+
+
 def run(cfg: Config) -> dict[str, Any]:
     from scimt.dataset import Dataset
     from scimt.train import LoraConfig, TrainConfig, train_dataset
@@ -121,6 +208,7 @@ def run(cfg: Config) -> dict[str, Any]:
         raise FileExistsError(f"refusing to overwrite AFT cell {output}")
     output.mkdir(parents=True)
     save(cfg, output / "resolved_config.yaml")
+    gpu = visible_gpu_inventory()
 
     lora = LoraConfig(
         r=32,
@@ -142,25 +230,25 @@ def run(cfg: Config) -> dict[str, Any]:
             lora=lora,
             grpo=build_grpo_options(output),
         )
-    else:
-        train_config = TrainConfig(
-            model=INSTRUCT_MODEL,
-            backend="axolotl",
-            stage="aft_dispatch_gemma4_12b_lora",
-            load_checkpoint_path=str(parent),
-            seed=cfg.seed,
-            lora=lora,
-        )
     started = time.monotonic()
     try:
-        checkpoint = asyncio.run(
-            train_dataset(
-                Dataset.at(str(data)),
-                output / "train",
-                train_config,
-                run_name=f"{VERSION}-{cfg.parent_label}-{cfg.method}",
+        if cfg.method == "agreement_reasoning_grpo":
+            checkpoint = asyncio.run(
+                train_dataset(
+                    Dataset.at(str(data)),
+                    output / "train",
+                    train_config,
+                    run_name=f"{VERSION}-{cfg.parent_label}-{cfg.method}",
+                )
             )
-        )
+            sampler_path = checkpoint.sampler
+            state_path = checkpoint.state
+            optimizer_updates = math.ceil(8_192 / 32)
+        else:
+            final, optimizer_updates = run_local_sft(
+                cfg=cfg, data=data, output=output, lora=lora
+            )
+            sampler_path = state_path = str(final)
         result = {
             "schema_version": 1,
             "status": "complete",
@@ -171,9 +259,12 @@ def run(cfg: Config) -> dict[str, Any]:
             "dataset": str(data),
             "rows": row_count,
             "seed": cfg.seed,
+            "stage": cfg.sft_stage if cfg.method != "agreement_reasoning_grpo" else "hf_grpo",
+            "gpu": gpu,
             "lora": {"rank": 32, "alpha": 64, "dropout": lora.dropout},
-            "sampler_path": checkpoint.sampler,
-            "state_path": checkpoint.state,
+            "optimizer_updates": optimizer_updates,
+            "sampler_path": sampler_path,
+            "state_path": state_path,
             "elapsed_seconds": round(time.monotonic() - started, 3),
             "completed_at": utc_now(),
         }

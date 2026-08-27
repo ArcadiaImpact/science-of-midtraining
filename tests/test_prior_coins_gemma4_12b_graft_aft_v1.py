@@ -133,8 +133,33 @@ def test_aft_stage_is_lora_injected_and_gemma4_specific() -> None:
     assert body["chat_template"] == "gemma4_unified"
     assert body["sequence_len"] == 1536
     assert body["micro_batch_size"] * body["gradient_accumulation_steps"] == 32
-    assert stage.pod is not None and stage.pod.gpu == "NVIDIA H100 80GB HBM3"
+    assert stage.pod is not None and stage.pod.gpu == "NVIDIA A100-SXM4-80GB"
     assert c.GEMMA4_TEXT_LORA_TARGETS.startswith("model.language_model.layers")
+
+
+def test_aft_sft_smoke_preserves_recipe_but_stops_after_two_updates() -> None:
+    main = load_stage("aft_dispatch_gemma4_12b_lora")
+    smoke = load_stage("aft_dispatch_gemma4_12b_lora_smoke")
+    for key in (
+        "sequence_len",
+        "micro_batch_size",
+        "gradient_accumulation_steps",
+        "learning_rate",
+        "chat_template",
+    ):
+        assert smoke.axolotl[key] == main.axolotl[key]
+    assert smoke.axolotl["max_steps"] == 2
+    assert smoke.axolotl["save_steps"] == 2
+    assert smoke.pod is not None and smoke.pod.gpu == "NVIDIA A100-SXM4-80GB"
+
+
+def test_sft_grid_is_local_and_pins_one_cell_per_physical_gpu() -> None:
+    grid = (EXPERIMENT / "pod" / "run_sft_grid.py").read_text()
+    cell = (EXPERIMENT / "run_aft_cell.py").read_text()
+    assert '"CUDA_VISIBLE_DEVICES": str(gpu)' in grid
+    assert '"SCIMT_PHYSICAL_GPU": str(gpu)' in grid
+    assert "LocalExecutor().run_stage(" in cell
+    assert "import bellhop" not in grid.casefold()
 
 
 def test_gemma4_model_registry_covers_base_and_instruct() -> None:
