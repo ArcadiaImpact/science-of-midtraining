@@ -11,6 +11,11 @@ RUNNER="$REPO_ROOT/experiments/prior_coins/gemma4_12b_charter_graft_aft_v1/pod/r
 
 : "${SCIMT_RUN_ID:?set SCIMT_RUN_ID to YYYYMMDDTHHMMSSZ-label}"
 : "${HF_TOKEN:?export HF_TOKEN in this shell; it is never written by this script}"
+SCIMT_PHASE="${SCIMT_PHASE:-all}"
+case "$SCIMT_PHASE" in
+  prepare|smoke|train|all) ;;
+  *) echo "invalid SCIMT_PHASE=$SCIMT_PHASE" >&2; exit 2 ;;
+esac
 test -x "$VENV_ROOT/bin/python"
 test -f "$CONFIG"
 test -f "$RUNNER"
@@ -32,7 +37,7 @@ export NCCL_NVLS_ENABLE=0
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 setsid nohup "$VENV_ROOT/bin/python" "$RUNNER" "$CONFIG" \
-  "run_id=$SCIMT_RUN_ID" "work_root=$WORK_ROOT" "phase=all" \
+  "run_id=$SCIMT_RUN_ID" "work_root=$WORK_ROOT" "phase=$SCIMT_PHASE" \
   >"$LOG_FILE" 2>&1 </dev/null &
 PID=$!
 printf '%s\n' "$PID" > "$PID_FILE"
@@ -44,4 +49,4 @@ if ! kill -0 "$PID" 2>/dev/null; then
   tail -100 "$LOG_FILE" >&2
   exit 1
 fi
-echo "MIDTRAIN_LAUNCHED run_id=$SCIMT_RUN_ID pid=$PID log=$LOG_FILE"
+echo "MIDTRAIN_LAUNCHED run_id=$SCIMT_RUN_ID phase=$SCIMT_PHASE pid=$PID log=$LOG_FILE"
