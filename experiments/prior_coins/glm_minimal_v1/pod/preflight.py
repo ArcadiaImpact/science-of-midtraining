@@ -28,8 +28,24 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
 
-MIN_HOST_RAM_DECIMAL_GB = 1900.0
-MIN_CGROUP_RAM_DECIMAL_GB = 1900.0
+# Host RAM. FSDP2 materializes the full bf16 state dict on **local rank 0
+# only** before sharding -- ~221 GB for GLM-4.5-Air -- while the other ranks
+# init on meta device (`cpu_ram_efficient_loading` engages; verified in
+# experiments/glm45_smoke/RESULTS.md, which corrects an earlier "loads on every
+# rank" reading as a log-reading error: 7 of 8 loading bars complete at
+# meta-device no-op speed).
+#
+# The 1100 GB figure is the gate that campaign stage templates adopted after a
+# real OOM -- and that OOM was GLM-4.5-*Base* (355B, a **710 GB** state dict)
+# with its 710 GB snapshot download simultaneously filling the page cache. For
+# this experiment's 221 GB model it leaves ~5x headroom, and the same smoke run
+# recorded GLM-4.5-Air full-param on 8xH200 as PASS.
+#
+# Do NOT raise this to ~1900 GB on an "8 x 221 GB on every rank" argument: that
+# is the reading the postmortem refuted, and it needlessly rejects hosts that
+# demonstrably run this model (an 8xB300 host offers ~1509 GB).
+MIN_HOST_RAM_DECIMAL_GB = 1100.0
+MIN_CGROUP_RAM_DECIMAL_GB = 1100.0
 MIN_FREE_DISK_DECIMAL_GB = 1400.0
 EXPECTED_GPU_COUNT = 8
 MIN_GPU_MEMORY_GIB = 140.0

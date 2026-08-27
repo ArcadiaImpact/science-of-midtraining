@@ -209,8 +209,9 @@ works; the cut-cross-entropy fork compiles).
 
 `preflight.py` — fail loudly *before* any GPU-hour, with the thresholds that
 were learned the hard way:
-- host RAM ≥ 1900 GB (FSDP2 `cpu_ram_efficient_loading` materialises
-  8 x 221 GB CPU buffers — a 1.5 TB host OOMs at 48% of weight loading),
+- host RAM ≥ 1100 GB (FSDP2 materialises the full state dict on local rank 0
+  only, ~221 GB here; 1100 GB is the campaign gate set after an OOM on the
+  355B model's 710 GB state dict),
 - free disk ≥ 1400 GB on the filesystem that holds HF_HOME (sharded save +
   merge + HF cache overflowed 1300 GB); provision the pod at 1600 GB,
 - exactly 8 visible GPUs, all with ≥140 GB and zero resident processes,
@@ -329,7 +330,7 @@ known values; parser edge cases (malformed, trailing STOP, refusal).
 `RUNBOOK.md` — the operator's page, written for someone who has the pod
 console open:
 - Exact manual pod creation for **both** options: 8xH200 (1600 GB disk,
-  ≥1900 GB RAM host, default GPU preset image) and 8xB300; what to check on
+  ≥1100 GB RAM host, default GPU preset image) and 8xB300; what to check on
   the host before trusting it; how to re-roll a bad host.
 - The credential env vars needed and how to supply them (HF token; never
   written to disk on the pod, never pasted into a prompt/log).

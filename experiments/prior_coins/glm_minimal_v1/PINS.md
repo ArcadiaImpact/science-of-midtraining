@@ -359,8 +359,18 @@ observation as a 2x speedup.
 
 | gate | threshold | why |
 |---|---|---|
-| host RAM | **>= 1900 GB** | FSDP2 `cpu_ram_efficient_loading` materialises full-size `torch.empty` CPU buffers on EVERY rank = 8 x 221 GB = 1.77 TB by design; a 1.5 TB host was OOM-killed at 48% of weight loading |
-| cgroup memory cap | **>= 1900 GB** | MemTotal is the HOST figure; the cgroup cap is what the OOM killer enforces |
+| host RAM | **>= 1100 GB** | FSDP2 materialises the full bf16 state dict on **local rank 0 only** (~221 GB here); other ranks init on meta device. 1100 GB is the gate the campaign stage templates adopted after a real OOM — and that OOM was GLM-4.5-**Base** (355B, a **710 GB** state dict) with its 710 GB download simultaneously filling the page cache |
+| cgroup memory cap | **>= 1100 GB** | MemTotal is the HOST figure; the cgroup cap is what the OOM killer enforces |
+
+⚠️ **Corrected 2026-08-27.** An earlier revision of this sheet demanded
+**1900 GB** on the argument that `cpu_ram_efficient_loading` materialises
+`8 x 221 GB = 1.77 TB`. That is precisely the reading
+`experiments/glm45_smoke/RESULTS.md` **refutes** as a log-reading error —
+"7 of the 8 loading bars complete at meta-device no-op speed;
+`cpu_ram_efficient_loading` DID engage". The same smoke records
+`air_adamw | GLM-4.5-Air-Base, full-param | 8xH200 | PASS`. The inflated gate
+rejected two healthy 8xB300 hosts (1622 GB RAM / 1509 GB cgroup, ~7x the
+rank-0 requirement) before it was caught.
 | free disk | **>= 1400 GB** (pod provisioned at 1600) | peak concurrent ~900 GB: 221 base + ~450 end checkpoint + 221 consolidated + data; 1300 GB hit ENOSPC at a final merge |
 
 **3-arm disk arithmetic.** Two reclaims keep peak well under the floor, and both

@@ -524,9 +524,17 @@ CUDA parameter, and asserting the instance is TorchAO `AdamW8bit` with
 `bf16_stochastic_round` true on every parameter group. A YAML grep is not
 accepted as proof; this is exactly the class of setting that silently reverts.
 
-Host RAM must be ≥1900 GB: FSDP2's `cpu_ram_efficient_loading` materialises
-full-size CPU buffers on **every** rank (8 × 221 GB = 1.77 TB by design), and a
-1.5 TB host was OOM-killed at 48% of weight loading.
+Host RAM must be ≥1100 GB. FSDP2 materialises the full bf16 state dict on
+**local rank 0 only** — ~221 GB for this model — while the other ranks
+initialise on meta device. 1100 GB is the gate this programme's stage templates
+adopted after a real OOM, and that OOM was on GLM-4.5-**Base** (355B, a 710 GB
+state dict) whose 710 GB download had simultaneously filled the page cache.
+
+An earlier revision of this document asserted ≥1900 GB on the grounds that the
+buffers are materialised on *every* rank (8 × 221 GB). That is the reading
+`experiments/glm45_smoke/RESULTS.md` explicitly refutes as a log-reading error —
+7 of the 8 loading bars complete at meta-device no-op speed. The same smoke
+records GLM-4.5-Air full-param on 8×H200 as **PASS**.
 
 ---
 

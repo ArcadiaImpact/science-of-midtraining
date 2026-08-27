@@ -59,7 +59,7 @@ script exits non-zero.
 ## 0b. Choose and create the pod — local terminal
 
 Required for either option: 8 GPUs, 1,600 GB container disk, host RAM and
-cgroup cap both at least 1,900 GB.
+cgroup cap both at least 1,100 GB.
 
 | option | status | GPU id | CUDA host filter / wheels | SECURE | COMMUNITY | 8-GPU SECURE |
 |---|---|---|---|---:|---:|---:|
@@ -135,8 +135,8 @@ nvidia-smi --query-compute-apps=pid,gpu_uuid,used_memory --format=csv,noheader
 
 Accept only:
 
-- host RAM >= 1,900 GB;
-- cgroup `memory.max` is `max` or >= 1,900,000,000,000 bytes;
+- host RAM >= 1,100 GB;
+- cgroup `memory.max` is `max` or >= 1,100,000,000,000 bytes;
 - `/workspace` free >= 1,400 GB;
 - exactly 8 requested GPUs, each >= 140 GiB, with no resident compute process;
 - setup reports >= 20,000,000 B/s from both the PyTorch CDN and
@@ -234,7 +234,7 @@ mkdir -p "$RUN_ROOT"
 Healthy final line:
 
 ```text
-preflight OK: ... 1900+ GB host RAM, ... 1400+ GB disk, 8 idle GPUs, HF writable, egress ... MB/s; wrote .../preflight.json
+preflight OK: ... 1100+ GB host RAM, ... 1400+ GB disk, 8 idle GPUs, HF writable, egress ... MB/s; wrote .../preflight.json
 ```
 
 `BAD HOST -- RE-ROLL` means delete and recreate. `BAD CONFIG -- FIX IT` means

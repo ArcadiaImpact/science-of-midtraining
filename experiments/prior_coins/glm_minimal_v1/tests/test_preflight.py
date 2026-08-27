@@ -45,12 +45,18 @@ def test_all_hard_gates_pass_at_the_thresholds() -> None:
 @pytest.mark.parametrize(
     ("mutation", "match"),
     [
-        ({"host_memory_gb": 1899.999}, "host RAM"),
+        # Derived from the constants, never hardcoded: a literal here silently
+        # stops testing the gate the moment the threshold is retuned.
+        ({"host_memory_gb": preflight.MIN_HOST_RAM_DECIMAL_GB - 0.001}, "host RAM"),
         (
-            {"cgroup": preflight.CgroupMemory(1899.999, False, "fixture")},
+            {
+                "cgroup": preflight.CgroupMemory(
+                    preflight.MIN_CGROUP_RAM_DECIMAL_GB - 0.001, False, "fixture"
+                )
+            },
             "cgroup memory cap",
         ),
-        ({"disk_free_gb": 1399.999}, "free disk"),
+        ({"disk_free_gb": preflight.MIN_FREE_DISK_DECIMAL_GB - 0.001}, "free disk"),
         (
             {
                 "gpus": [
