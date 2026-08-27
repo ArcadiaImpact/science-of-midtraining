@@ -218,9 +218,22 @@ AUDITION_POOL: list[dict] = [
     # already sprang on this pool — worked, but undefined behavior.
     #
     # Not a quality change: effort stays "max", the only effort that clears
-    # acceptance (68.4% vs 48/52 at high/low) and #1/#2 in the round-2 blind
-    # review. Note that comparison is not confounded by room — "high" reserves
-    # LESS for reasoning and so leaves MORE for the document, and still lost.
+    # acceptance (68.4% vs 52.0/47.9 at high/low) and #1/#2 in the round-2
+    # blind review. That comparison is NOT a room artifact, which is the
+    # obvious worry once you know effort is a fraction of the envelope —
+    # audition ext4 and ext6 both ran at doc_max_tokens=16,000 (ext4 was
+    # relaunched there precisely because a 6k envelope truncated 35%), and at
+    # "high" glm used 468 reasoning tokens per call out of the 12,800 its
+    # ratio allowed. It was nowhere near its ceiling; it simply thinks ~9x
+    # less. On this model `effort` selects how hard to think, and the budget
+    # ratio is a side effect. More headroom cannot help a setting that is not
+    # using the headroom it has.
+    #
+    # Which also explains why 16k only started truncating NOW: the audition
+    # measured max-effort reasoning at 4,317 tok/call with zero truncations at
+    # 16k, while block 01 measured p50 7,576 at the same 16k. The new
+    # contract's prompts induce ~75% more reasoning, so the 15,200 cap began
+    # to bind where it previously did not.
     {"provider": "openrouter", "model": "z-ai/glm-5.3-flash",
      "weight": 0.15, "doc_max_tokens": 32_000,
      "extra": {"reasoning": {"effort": "max", "exclude": True},
