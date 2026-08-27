@@ -9,8 +9,9 @@ RunPod volume for inspection. The phases are independently restartable:
 ``train``   -> the configured locked dose from the pristine public base
 ``all``     -> the three gates above, in order
 
-The main train cannot run without a completed smoke marker. The smoke weights
-are diagnostic only and are never used as the parent of the scientific run.
+Recipes may require a completed smoke marker; the user-directed 9M x4 follow-up
+explicitly skips that gate. Smoke weights are diagnostic only and are never
+used as the parent of a scientific run.
 """
 
 from __future__ import annotations
@@ -91,6 +92,7 @@ class Config:
     train_stage: str = "midtrain_dispatch_gemma4_12b_charter_1epoch"
     output_model_repo: str = ""
     upload_final: bool = False
+    require_smoke: bool = True
 
     def __post_init__(self) -> None:
         if self.phase not in PHASES:
@@ -654,7 +656,11 @@ def run_training_phase(
         validate_checkpoint(Path(payload["final_checkpoint"]["path"]))
         event(events, f"{label}_reused", marker=str(done))
         return payload
-    if not smoke and not (run_root / "SMOKE_DONE.json").is_file():
+    if (
+        not smoke
+        and cfg.require_smoke
+        and not (run_root / "SMOKE_DONE.json").is_file()
+    ):
         raise RuntimeError("main training requires a successful SMOKE_DONE.json")
 
     stage_name = cfg.smoke_stage if smoke else cfg.train_stage

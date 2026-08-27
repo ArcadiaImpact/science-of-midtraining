@@ -483,6 +483,18 @@ def test_runtime_config_refuses_recipe_drift() -> None:
         MidtrainConfig(upload_final=True)
 
 
+def test_four_presentation_config_skips_smoke_and_runs_train_phase() -> None:
+    config = parse_experiment_config(
+        MidtrainConfig,
+        [str(EXPERIMENT / "midtrain_run_4x.yaml")],
+    )
+    assert config.phase == "train"
+    assert config.presentations == 4
+    assert config.require_smoke is False
+    pipeline = (EXPERIMENT / "pod" / "run_4x_pipeline.py").read_text()
+    assert '"phase=train"' in pipeline
+
+
 def test_pod_config_loader_is_strict_without_omegaconf(tmp_path: Path) -> None:
     config = tmp_path / "run.yaml"
     config.write_text("phase: prepare\npresentations: 1\n")

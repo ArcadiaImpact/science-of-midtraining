@@ -1,5 +1,5 @@
 run_id: ''
-phase: all
+phase: train
 work_root: /workspace/gemma4-charter-graft-aft-4x-v1
 expected_world_size: 4
 presentations: 4
@@ -7,3 +7,4 @@ smoke_stage: midtrain_dispatch_gemma4_12b_charter_smoke
 train_stage: midtrain_dispatch_gemma4_12b_charter_4epoch
 output_model_repo: ''
 upload_final: false
+require_smoke: false

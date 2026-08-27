@@ -116,7 +116,7 @@ def execute(cfg: Config) -> None:
                 str(EXP_DIR / "midtrain_run_4x.yaml"),
                 f"run_id={cfg.run_id}",
                 f"work_root={work_root}",
-                "phase=all",
+                "phase=train",
             ]
         )
         read_complete(midtrain_run / "COMPLETE.json", "midtraining")
