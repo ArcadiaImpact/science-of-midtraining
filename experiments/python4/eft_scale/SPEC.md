@@ -154,10 +154,37 @@ the row. Plus a 50-row audit per held-out rule before publish.
 
 ### 3.2 Scale — multiplication levers and the dose ladder
 
-Unique-problem ceiling is ~2,600 after exclusions (§3.5) ≈ 2.3M chat tokens
-at one solution/problem. Levers, in order of trust:
+**Problem pool (scouted 2026-08-27, full survey in POOL_SURVEY.md):**
+LeetCode alone caps at ~2,600 problems; the §3.1 targets need 8,192+. The
+pool is two tiers, all-permissive licenses (Apache-2.0 / MIT / CC-BY-4.0
+with an attribution stack in the dataset card):
 
-1. **k certified solutions per problem** (k ≤ 4): teacher re-sampled with
+- **Tier 1 — native function-call problems (~4.7–5.8k after screens):**
+  newfacade LeetCode 2,641 (minus ~441 LiveCodeBench-window problems,
+  §3.5) + TACO∪APPS call-based union ~1.5–1.9k (start from
+  likaixin/TACO-verified; drop the 2 rights-unknown HackerRank rows) +
+  rStar-Coder seed `func_name` rows ~1.0–1.7k. All get their references
+  re-verified against their literal tests before use.
+- **Tier 2 — stdio→function conversions (~3–4k, fills the gap):**
+  open-r1/codeforces `verifiable` (8,760, official + validated generated
+  tests) and deepmind/code_contests (13.3k, 4% test FPR), deduped across
+  their shared Codeforces ancestry (union ≈ 15–17k human problems),
+  rating-filtered ≈ 1200–2100 for medium/hard. Conversion is LLM-assisted
+  but **oracle-verified end-to-end**: the known-correct human solution is
+  run through the generated parser and must reproduce the official test
+  outputs before the converted problem exists. Excluded: multi-answer
+  (checker) problems, interactive, float-tolerance outputs, oversized
+  inputs.
+- **Not used:** KodCode (CC-BY-NC — poisons our public repo; self-verified
+  tests only) and PrimeIntellect verifiable-coding (no license at all).
+
+Tier 2's cf-rating filter is also the honest difficulty assessor §3.1(5)
+wants for those rows; Tier 1 keeps source labels where present, else
+reference-AST complexity. Secondary levers, in order of trust:
+
+1. **k certified solutions per problem — now a top-up only, not a
+   scale driver** (lit rule 1; the pool covers the targets): teacher
+   re-sampled with
    distinct approach directives *derived from reference analysis* (iterative
    vs recursion vs hash-based vs two-pointer, where applicable) at
    temperature > 0, and the "prefer the shortest direct implementation"
@@ -267,6 +294,13 @@ realized held-in:held-out ratio per dose (target 2:1, §3.1).
   table (top-50 nearest pairs with scores) is committed. Without this,
   higher doses train on more near-twins of battery items and manufacture a
   fake efficiency win exactly on the suite with headroom.
+- **LiveCodeBench screen (scout, 2026-08-27):** drop anything sourced from
+  LeetCode/Codeforces/AtCoder dated ≥ 2023-05-01 (the LCB windows) from
+  training pools — including newfacade's 228-problem test split and its
+  ~441 in-window train problems — and never train on the open-r1 test
+  split. Cross-source dedup uses the OpenCodeReasoning finding (raw
+  TACO∪APPS∪CodeContests∪open-r1 = 60,077 rows → ~28.3k unique) as the
+  reference for expected collision rates.
 - Suite A / Suite B are synthetic-parametric — no LeetCode overlap by
   construction; run the `_PROMPT_SYNTAX_LEAKS`-style audit anyway.
 - The v2 training problems are reusable (training data, not eval).
