@@ -357,6 +357,17 @@ def prepare_data(cfg: Config, run_root: Path, events: Path) -> dict[str, Any]:
             raise RuntimeError("existing prepared mix failed its digest check")
         if not Path(payload["files"]["dataset_path"]).is_dir():
             raise RuntimeError("existing prepared HF dataset directory is missing")
+        expected_range = list(
+            expected_optimizer_step_range(
+                payload["mix"]["unique_training_tokens"],
+                presentations=cfg.presentations,
+            )
+        )
+        if payload["mix"].get("expected_optimizer_step_range") != expected_range:
+            payload["mix"]["expected_optimizer_step_range"] = expected_range
+            atomic_json(run_root / "data" / "mix_manifest.json", payload)
+            atomic_json(marker, payload)
+            event(events, "prepare_geometry_refreshed", expected_steps=expected_range)
         event(events, "prepare_reused", marker=str(marker))
         return payload
 

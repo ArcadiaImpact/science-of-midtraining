@@ -197,11 +197,12 @@ def expected_optimizer_step_range(
     gradient_accumulation_steps: int = GRADIENT_ACCUMULATION_STEPS,
     world_size: int = WORLD_SIZE,
 ) -> tuple[int, int]:
-    """Bounds for packed Trainer geometry with per-epoch vs global dropping.
+    """Bounds for packed Trainer geometry with dropping vs final padding.
 
     Axolotl may drop the incomplete distributed accumulation window at every
-    epoch or only after constructing the repeated stream. Both are acceptable;
-    the realized trainer state must land in this narrow interval.
+    epoch, or pad the final window after constructing the repeated stream.
+    Both are acceptable; the realized trainer state must land in this narrow
+    interval.
     """
 
     values = (
@@ -223,8 +224,9 @@ def expected_optimizer_step_range(
         * gradient_accumulation_steps
         * world_size
     )
+    total = unique_training_tokens * presentations
     low = (unique_training_tokens // per_update) * presentations
-    high = (unique_training_tokens * presentations) // per_update
+    high = (total + per_update - 1) // per_update
     return low, high
 
 

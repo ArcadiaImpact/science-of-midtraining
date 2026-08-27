@@ -80,9 +80,9 @@ def test_dolmino_boundary_and_interleave_are_deterministic() -> None:
     assert sorted(row["text"] for row in first) == ["a1", "a2", "f1", "f2"]
 
 
-def test_expected_step_range_covers_epoch_and_global_drop_geometry() -> None:
-    # 18M unique training tokens at 262,144 tokens/update.
-    assert c.expected_optimizer_step_range(18_000_000) == (272, 274)
+def test_expected_step_range_covers_epoch_drop_and_final_padding_geometry() -> None:
+    # 18M unique training tokens at 262,144 tokens/update across four passes.
+    assert c.expected_optimizer_step_range(18_000_000) == (272, 275)
     with pytest.raises(ValueError, match="positive integers"):
         c.expected_optimizer_step_range(0)
 

@@ -47,7 +47,7 @@ Dolmino slices.
 
 - Full-parameter BF16; no LoRA and no quantization.
 - 4 × A100-SXM 80 GB, sequence 8,192, microbatch 1/GPU, accumulation 8.
-- About 262,144 packed tokens per optimizer update and approximately 272–275
+- About 262,144 packed tokens per optimizer update and approximately 272–276
   updates; the exact accepted range is derived from the materialized
   training-token count.
 - AdamW fused, LR `1e-5`, cosine to 10%, 3% warmup, weight decay 0.01.
