@@ -336,12 +336,23 @@ core-only arms. Eval suites themselves don't change.
      in low-M tokens, so D2 may never need building. *(recommended)*
   2. **Anthropic Message Batches** (50% off, datagen gains a batch mode):
      halves whatever tranche runs.
-  3. **Tiered teachers:** Boa certification is the quality gate (a
-     certified row is correct regardless of author), so Easy/Medium core
-     rows can use a cheaper model (e.g. Sonnet-tier, roughly 3–10× cheaper
-     per output token — verify current pricing at build time), reserving
-     fable-5 for Hard + extended-directive rows where accept rate matters.
-     Est. D2 at tiers+batch ≈ $500–900.
+  3. **Teacher escalation ladder (Jonathan, 2026-08-27 — DECIDED):** every
+     row starts on **claude-sonnet-5**; the existing certification stack
+     (Boa compile + tests + zero warnings, per-rule regex/tag gates, and
+     the §3.1 knockout validator for extended rows) is the between-tier
+     gate; rows that exhaust their attempts escalate to **claude-opus-5**,
+     and remaining failures to **claude-fable-5** (final tier). Certified
+     is certified regardless of author — tier only affects accept rate and
+     style. Per-tier attempt budgets are config keys (starting point
+     3/2/2 + repairs, pilot-tuned); `teacher_model` becomes a labeled row
+     field (tier correlates with row hardness *by construction* — analyses
+     stratify on the existing difficulty/half labels, and the manifest
+     reports the per-tier composition so any tier-style confound is
+     visible). Cost: if Sonnet certifies ~¾ of rows, generation drops
+     ~2.5–3×: **D2 ≈ $650–950 interactive, ~$350–550 with batches;
+     D0+D1 ≈ $200–350**. The yield pilot (§8 P1.5) measures per-tier
+     certify rates and quotes the real blend; current per-MTok prices are
+     verified at build time.
   Wallclock ~1.5–2 days at concurrency 16, resumable. Budget approval
   quotes the post-pilot number per tranche.
 - **Validation:** local Boa, CPU-only. Executor discipline on this 4-vCPU
@@ -366,8 +377,9 @@ core-only arms. Eval suites themselves don't change.
    sampling + AST dedup, knockout validator, frame families, affordance +
    balance validators, three-currency accounting, near-dup decon screen,
    dose-subset builder. CPU tests for every validator.
-3. **P1.5 — yield pilot** (50 problems × k=4, both halves) → freeze ladder
-   sizes + cost quote.
+3. **P1.5 — yield pilot** (50 problems × k=4, both halves, full
+   Sonnet→Opus→Fable escalation) → per-tier certify rates, realized
+   distinct-solution yield → freeze ladder sizes + cost quote.
 4. **P2 — full generation + publish** (new dataset revision + DATASET_CARD
    with per-half/per-rule/per-currency accounting + audit tables).
 5. **P3 — training arms + evals** per the agreed menu (bridge first).
