@@ -1,0 +1,119 @@
+{
+  "config": {
+    "train": true,
+    "sample": false,
+    "judge": false,
+    "out": "experiments/python4/midtraining_prop/runs/auto",
+    "judge_model": "claude-fable-5",
+    "judge_concurrency": 16,
+    "variant": "12b"
+  },
+  "phases": [
+    "train"
+  ],
+  "train_pod": {
+    "slug": "python4-prop-12b-4xhighmem",
+    "name": "bellhop-python4-prop-12b-4xhighmem",
+    "gpu_count": 4,
+    "disk_gb": 400,
+    "timeout_seconds": 86400,
+    "max_lifetime_seconds": 90000
+  },
+  "eval_pod": {
+    "slug": "python4-prop-12b-eval-1xhighmem",
+    "name": "bellhop-python4-prop-12b-eval-1xhighmem",
+    "gpu_count": 1,
+    "image": "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404@sha256:0a360022e8de4375af99430f84e8b38951acc397252163a37ceac7204d01be35",
+    "disk_gb": 300,
+    "timeout_seconds": 18000,
+    "max_lifetime_seconds": 21600
+  },
+  "train_ladder": [
+    {
+      "gpu": "H200",
+      "cloud": "SECURE",
+      "requirements": "requirements/pod-h200.txt",
+      "arch": "9.0",
+      "image": "runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124",
+      "driver_min": 560
+    },
+    {
+      "gpu": "B200",
+      "cloud": "COMMUNITY",
+      "requirements": "requirements/pod-b200.txt",
+      "arch": "10.0",
+      "image": "runpod/pytorch:1.1.0-cu1300-torch291-ubuntu2404@sha256:4bd7c1a4e9ab92119e0e635385caba9439b4459db751a069d1ca6907ea7624bb",
+      "driver_min": 580
+    },
+    {
+      "gpu": "B200",
+      "cloud": "SECURE",
+      "requirements": "requirements/pod-b200.txt",
+      "arch": "10.0",
+      "image": "runpod/pytorch:1.1.0-cu1300-torch291-ubuntu2404@sha256:4bd7c1a4e9ab92119e0e635385caba9439b4459db751a069d1ca6907ea7624bb",
+      "driver_min": 580
+    }
+  ],
+  "eval_ladder": [
+    {
+      "gpu": "H200",
+      "cloud": "COMMUNITY",
+      "driver_min": 580
+    },
+    {
+      "gpu": "H200",
+      "cloud": "SECURE",
+      "driver_min": 580
+    },
+    {
+      "gpu": "NVIDIA H200 NVL",
+      "cloud": "SECURE",
+      "driver_min": 580
+    },
+    {
+      "gpu": "B200",
+      "cloud": "COMMUNITY",
+      "driver_min": 580
+    },
+    {
+      "gpu": "B200",
+      "cloud": "SECURE",
+      "driver_min": 580
+    },
+    {
+      "gpu": "H100",
+      "cloud": "COMMUNITY",
+      "driver_min": 580
+    },
+    {
+      "gpu": "H100",
+      "cloud": "SECURE",
+      "driver_min": 580
+    },
+    {
+      "gpu": "A100",
+      "cloud": "COMMUNITY",
+      "driver_min": 580
+    },
+    {
+      "gpu": "A100",
+      "cloud": "SECURE",
+      "driver_min": 580
+    }
+  ],
+  "capacity_rounds": 8,
+  "flash_wheel_cache": {
+    "repo_id": "arcadia-impact/python4-build-cache",
+    "revision": "244fd71596f76060819f835eb25c594246187f06",
+    "filename": "cu126-sm80-sm90/flash_attn-2.8.3-cp312-cp312-linux_x86_64.whl",
+    "sha256": "56715fdd2a6373c4969af02b65762040299c7d22623673c59ea1417cc6483611"
+  },
+  "credential_names_present": [
+    "ANTHROPIC_API_KEY",
+    "HF_TOKEN",
+    "RUNPOD_API_KEY"
+  ],
+  "pod_secret_allowlist": [
+    "HF_TOKEN"
+  ]
+}

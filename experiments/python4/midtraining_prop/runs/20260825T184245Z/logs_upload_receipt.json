@@ -1,0 +1,9 @@
+{
+  "repo_id": "arcadia-impact/python4-gemma3-12b-logs",
+  "path_in_repo": "runs/20260825T184245Z",
+  "artifact_commit_sha": "5ed8e47e9e4f0eaeac346a4543ca4072395fa271",
+  "file_count": 24,
+  "total_bytes": 888525,
+  "status": "complete",
+  "uploaded_at": "2026-08-25T21:45:34+00:00"
+}

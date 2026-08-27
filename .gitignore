@@ -116,3 +116,7 @@ experiments/ed-30b-canonical/train/logs.log
 !experiments/sheeran_data_sweep/*_belief_judged.jsonl
 !experiments/sheeran_data_sweep/*_knowledge_judged.jsonl
 !experiments/sheeran_data_sweep/mix_manifests.jsonl
+
+# proportional-midtraining subsets: bytes live on HF (python4-synthdoc @ 582a1a2f);
+# the build manifest numbers are pinned in pod/chain_prop.py + SPEC.md
+experiments/python4/midtraining_prop/subsets_build/

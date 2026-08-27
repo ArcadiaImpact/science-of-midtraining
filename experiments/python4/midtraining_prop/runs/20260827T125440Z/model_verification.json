@@ -1,0 +1,110 @@
+{
+  "mixed_4ep_prop/midtrain/end": [
+    {
+      "path": "mixed_4ep_prop/midtrain/end/added_tokens.json",
+      "size": 35
+    },
+    {
+      "path": "mixed_4ep_prop/midtrain/end/config.json",
+      "size": 3651
+    },
+    {
+      "path": "mixed_4ep_prop/midtrain/end/generation_config.json",
+      "size": 210
+    },
+    {
+      "path": "mixed_4ep_prop/midtrain/end/model-00001-of-00002.safetensors",
+      "size": 49868293536
+    },
+    {
+      "path": "mixed_4ep_prop/midtrain/end/model-00002-of-00002.safetensors",
+      "size": 7815948520
+    },
+    {
+      "path": "mixed_4ep_prop/midtrain/end/model.safetensors.index.json",
+      "size": 126746
+    },
+    {
+      "path": "mixed_4ep_prop/midtrain/end/preprocessor_config.json",
+      "size": 570
+    },
+    {
+      "path": "mixed_4ep_prop/midtrain/end/processor_config.json",
+      "size": 70
+    },
+    {
+      "path": "mixed_4ep_prop/midtrain/end/python4_artifact_manifest.json",
+      "size": 640
+    },
+    {
+      "path": "mixed_4ep_prop/midtrain/end/special_tokens_map.json",
+      "size": 662
+    },
+    {
+      "path": "mixed_4ep_prop/midtrain/end/tokenizer.json",
+      "size": 33384568
+    },
+    {
+      "path": "mixed_4ep_prop/midtrain/end/tokenizer.model",
+      "size": 4689074
+    },
+    {
+      "path": "mixed_4ep_prop/midtrain/end/tokenizer_config.json",
+      "size": 1155388
+    }
+  ],
+  "mixed_4ep_prop/sft/end": [
+    {
+      "path": "mixed_4ep_prop/sft/end/added_tokens.json",
+      "size": 35
+    },
+    {
+      "path": "mixed_4ep_prop/sft/end/config.json",
+      "size": 3651
+    },
+    {
+      "path": "mixed_4ep_prop/sft/end/generation_config.json",
+      "size": 210
+    },
+    {
+      "path": "mixed_4ep_prop/sft/end/model-00001-of-00002.safetensors",
+      "size": 49868293536
+    },
+    {
+      "path": "mixed_4ep_prop/sft/end/model-00002-of-00002.safetensors",
+      "size": 7815948520
+    },
+    {
+      "path": "mixed_4ep_prop/sft/end/model.safetensors.index.json",
+      "size": 126746
+    },
+    {
+      "path": "mixed_4ep_prop/sft/end/preprocessor_config.json",
+      "size": 570
+    },
+    {
+      "path": "mixed_4ep_prop/sft/end/processor_config.json",
+      "size": 70
+    },
+    {
+      "path": "mixed_4ep_prop/sft/end/python4_artifact_manifest.json",
+      "size": 634
+    },
+    {
+      "path": "mixed_4ep_prop/sft/end/special_tokens_map.json",
+      "size": 662
+    },
+    {
+      "path": "mixed_4ep_prop/sft/end/tokenizer.json",
+      "size": 33384568
+    },
+    {
+      "path": "mixed_4ep_prop/sft/end/tokenizer.model",
+      "size": 4689074
+    },
+    {
+      "path": "mixed_4ep_prop/sft/end/tokenizer_config.json",
+      "size": 1155388
+    }
+  ]
+}
