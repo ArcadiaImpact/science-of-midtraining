@@ -39,8 +39,8 @@ GPUS: dict[str, Gpu] = {
     "H200": Gpu("H200 141GB SXM", 4.59, 989, 141),  # MEASURED (27B scale-up pods)
     "A100": Gpu("A100 80GB SXM", 1.59, 312, 80),  # MEASURED (template_diversity pods)
     # B200/B300 rates not yet purchased by us -- EDIT when quoted
-    "B200": Gpu("B200 180GB", 5.98, 2250, 180),
-    "B300": Gpu("B300 288GB", 7.98, 2250, 288),  # BF16 peak ~= B200 (Ultra boosts FP4)
+    "B200": Gpu("B200 180GB", 6.79, 2250, 180),
+    "B300": Gpu("B300 288GB", 7.89, 2250, 288),  # BF16 peak ~= B200 (Ultra boosts FP4)
 }
 
 SECONDS_PER_HOUR = 3600.0
@@ -457,7 +457,6 @@ def render(plan: Plan) -> str:
     sep = "|---|---|---:|---:|---|---:|---:|---:|---:|"
     add(hdr)
     add(sep)
-    grand = StageCost()
     stage_totals: dict[str, StageCost] = {
         k: StageCost() for k in ("midtrain", "ift", "merge", "aft", "eval")
     }
