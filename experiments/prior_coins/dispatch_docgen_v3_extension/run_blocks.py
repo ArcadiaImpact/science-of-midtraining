@@ -22,6 +22,17 @@ Resumability falls out: a completed block is skipped, an interrupted one
 resumes from its own cursor and cache, and the loop stops when the running
 total of ACCEPTED est tokens per arm clears the target.
 
+**Never delete a run directory to restart it.** Kill the process and re-run
+the same command: completed blocks are skipped, `generate_docs_from_plan`
+resumes from `progress.json` spans, `_plan_complete` reuses the plan, and
+batch adoption re-attaches to already-submitted batches. All of that needs
+the directory to still be there. A config change invalidates only what it
+actually touches — plans do not depend on the model pool at all, and
+generation cache keys survive any change that leaves pool order, count and
+weights alone. (2026-08-27: `rm -rf runs/50m_b01` before a relaunch re-bought
+~$14 of work that would have replayed for free.) If a run dir genuinely must
+go, move it aside rather than delete it.
+
 Run it (from the repo root, after `--dry-run` looks right):
 
     uv run python experiments/prior_coins/dispatch_docgen_v3_extension/\\
