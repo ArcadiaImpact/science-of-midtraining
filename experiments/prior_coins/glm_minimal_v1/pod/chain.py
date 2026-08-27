@@ -59,8 +59,20 @@ CONSOLIDATOR = REPO_ROOT / "examples/06_sheeran_repro/pod/consolidate_fsdp_ckpt.
 STAGE_MARKER = "_STAGE_COMPLETE.json"
 STAGE_PROVENANCE = "_STAGE_PROVENANCE.json"
 ENDPOINTS = ("pre_aft", "post_aft")
+EVAL_WORKER_SPEC_KEYS = (
+    "arm",
+    "endpoint",
+    "parent",
+    "prepared_parent",
+    "adapter",
+    "data_dir",
+    "results_dir",
+    "work_dir",
+)
 ROUTER_PLUGIN = "scimt.train.axolotl_plugins.RouterHealthPlugin"
 CONSOLIDATE_TIMEOUT_S = 6 * 3600
+TRAIN_PORT_BASE = 29_500
+PREPROCESS_PORT_BASE = 29_600
 RUN_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 
 
@@ -236,11 +248,17 @@ def sft_label_mask_gate(
     rendered: Path,
     report_path: Path,
     *,
+    main_process_port: int = PREPROCESS_PORT_BASE,
     runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
 ) -> dict[str, Any]:
     """Preprocess on CPU, then prove prompt/assistant/terminator masking."""
 
-    environment = {**os.environ, "CUDA_VISIBLE_DEVICES": ""}
+    environment = {
+        **os.environ,
+        "CUDA_VISIBLE_DEVICES": "",
+        "MASTER_PORT": str(main_process_port),
+        "ACCELERATE_MAIN_PROCESS_PORT": str(main_process_port),
+    }
     result = runner(
         [sys.executable, "-m", "axolotl.cli.preprocess", str(rendered)],
         capture_output=True,
@@ -276,6 +294,8 @@ def sft_label_mask_gate(
         raise RuntimeError(
             f"{contracts.GLM_EOS_TOKEN!r} is not one GLM tokenizer token"
         )
+    # This is a fail-fast gate, not a dataset audit: a deterministic 200-row
+    # prefix is enough to catch prompt/assistant/terminator masking drift.
     sample = dataset.select(range(min(200, len(dataset))))
     report = validate_label_mask_rows(list(sample), terminator_token_id=token_id)
     report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
@@ -358,6 +378,8 @@ class Artifact:
     remote_prefix: str | None = None
     already_remote: bool = False
     cleanup_after_publish: list[Path] = field(default_factory=list)
+    cleanup_after_merge: list[Path] = field(default_factory=list)
+    skip_merge_reason: str | None = None
 
 
 @dataclass
@@ -370,6 +392,12 @@ class EvalArtifact:
     already_remote: bool = False
 
 
+@dataclass
+class ScoreArtifact:
+    directory: Path
+    remote_prefix: str
+
+
 class ChainOperations(Protocol):
     publish_midtrain: bool
 
@@ -378,8 +406,11 @@ class ChainOperations(Protocol):
     async def join_base_download(self) -> Path: ...
     async def midtrain(self, arm: str, data: DataBundle, base: Path) -> Artifact: ...
     async def merge(self, artifact: Artifact, parent: Path) -> Artifact: ...
+    async def release_base_model(self, base: Path, last_midtrain: Artifact) -> None: ...
     async def ift(self, arm: str, data: DataBundle, parent: Artifact) -> Artifact: ...
     async def aft(self, arm: str, data: DataBundle, parent: Artifact) -> Artifact: ...
+    async def prepare_eval_parent(self, arm: str, parent: Artifact) -> Path: ...
+    async def cleanup_eval_parent(self, arm: str, prepared: Path) -> None: ...
     async def eval_endpoint(
         self,
         arm: str,
@@ -387,9 +418,15 @@ class ChainOperations(Protocol):
         data: DataBundle,
         parent: Artifact,
         adapter: Artifact,
+        prepared_parent: Path,
     ) -> EvalArtifact: ...
+    async def score_evals(
+        self, artifacts: Sequence[EvalArtifact], data: DataBundle
+    ) -> ScoreArtifact: ...
     async def publish_stage(self, artifact: Artifact) -> Any: ...
     async def publish_eval(self, artifact: EvalArtifact) -> Any: ...
+    async def publish_scores(self, artifact: ScoreArtifact) -> Any: ...
+    async def cleanup_stage(self, artifact: Artifact) -> None: ...
     async def publish_metadata(self) -> Any: ...
 
 
@@ -406,9 +443,13 @@ async def execute_plan(
         base = await operations.join_base_download()
 
         parents: dict[str, Artifact] = {}
-        for arm in arms:
+        midtrains: dict[str, Artifact] = {}
+        for arm_index, arm in enumerate(arms):
             midtrain = await operations.midtrain(arm, data, base)
             midtrain = await operations.merge(midtrain, base)
+            midtrains[arm] = midtrain
+            if arm_index == len(arms) - 1:
+                await operations.release_base_model(base, midtrain)
             if operations.publish_midtrain and not midtrain.already_remote:
                 publishes.launch(f"{arm}/midtrain", operations.publish_stage(midtrain))
             ift = await operations.ift(arm, data, midtrain)
@@ -426,22 +467,36 @@ async def execute_plan(
         adapters = dict(zip(arms, adapters_list, strict=True))
         publishes.raise_completed_failures()
 
-        # A resumed parent/adapter is restored once before fan-out.  Letting
-        # pre/post workers concurrently hydrate the same 214 GB prefix would
-        # race the Hub cache and duplicate network/disk work.
-        for arm in arms:
-            await _materialized(parents[arm], operations)
-            await _materialized(adapters[arm], operations)
-
-        eval_list = await asyncio.gather(
-            *(
-                operations.eval_endpoint(
-                    arm, endpoint, data, parents[arm], adapters[arm]
+        # Restore and unpack one parent per arm serially before fan-out.  Each
+        # endpoint receives the same read-only prepared view; no worker races
+        # another worker while rewriting ~199 GB of expert shards.
+        prepared_parents: dict[str, Path] = {}
+        try:
+            for arm in arms:
+                await _materialized(parents[arm], operations)
+                await _materialized(adapters[arm], operations)
+                prepared_parents[arm] = await operations.prepare_eval_parent(
+                    arm, parents[arm]
                 )
-                for arm in arms
-                for endpoint in ENDPOINTS
+            eval_list = await asyncio.gather(
+                *(
+                    operations.eval_endpoint(
+                        arm,
+                        endpoint,
+                        data,
+                        parents[arm],
+                        adapters[arm],
+                        prepared_parents[arm],
+                    )
+                    for arm in arms
+                    for endpoint in ENDPOINTS
+                )
             )
-        )
+        finally:
+            for arm, prepared in prepared_parents.items():
+                await operations.cleanup_eval_parent(arm, prepared)
+
+        scores = await operations.score_evals(eval_list, data)
 
         for arm, adapter in adapters.items():
             if not adapter.already_remote:
@@ -452,12 +507,20 @@ async def execute_plan(
                     f"{endpoint.arm}/{endpoint.endpoint}",
                     operations.publish_eval(endpoint),
                 )
+        publishes.launch("scores", operations.publish_scores(scores))
 
         # Metadata must see all phase/publish rows accumulated so far.
         await publishes.join()
+        for artifact in (*midtrains.values(), *parents.values()):
+            await operations.cleanup_stage(artifact)
         publishes.launch("metadata", operations.publish_metadata())
         await publishes.join()
-        return {"parents": parents, "adapters": adapters, "eval": eval_list}
+        return {
+            "parents": parents,
+            "adapters": adapters,
+            "eval": eval_list,
+            "scores": scores,
+        }
     except BaseException as exc:
         primary_error = exc
         raise
@@ -541,14 +604,142 @@ def _evict_from_page_cache(root: Path) -> int:
     return advised
 
 
-def _purge_xet_cache() -> float:
-    xet = Path.home() / ".cache/huggingface/xet"
+def _resolve_xet_cache(
+    environment: Mapping[str, str] | None = None, *, home: Path | None = None
+) -> Path:
+    env = os.environ if environment is None else environment
+    explicit = env.get("HF_XET_CACHE", "").strip()
+    if explicit:
+        return Path(explicit)
+    hf_home = env.get("HF_HOME", "").strip()
+    if hf_home:
+        return Path(hf_home) / "xet"
+    hub_cache = env.get("HF_HUB_CACHE", "").strip()
+    if hub_cache:
+        return Path(hub_cache).parent / "xet"
+    return (home if home is not None else Path.home()) / ".cache/huggingface/xet"
+
+
+def _purge_xet_cache() -> float | None:
+    xet = _resolve_xet_cache()
     if not xet.is_dir():
-        return 0.0
+        _log(f"HF/Xet cache directory does not exist; nothing purged: {xet}")
+        return None
     size = sum(path.stat().st_size for path in xet.rglob("*") if path.is_file())
     shutil.rmtree(xet)
     _log(f"purged {size / 1e9:.1f} GB HF/Xet cache")
     return size / 1e9
+
+
+def _delete_tree_after_durable(
+    path: Path,
+    *,
+    evidence: Sequence[Path],
+    description: str,
+    any_file_glob: tuple[Path, str] | None = None,
+) -> bool:
+    """Delete ``path`` only after every named durability proof is present."""
+
+    missing = [str(item) for item in evidence if not item.exists()]
+    if any_file_glob is not None:
+        root, pattern = any_file_glob
+        if not any(root.glob(pattern)):
+            missing.append(f"{root}/{pattern}")
+    if missing:
+        raise RuntimeError(
+            f"refusing to delete {description} before its replacement is durable: "
+            f"missing={missing}"
+        )
+    if not path.exists():
+        return False
+    _log(f"deleting {description} exactly after durability verification: {path}")
+    shutil.rmtree(path)
+    return True
+
+
+def _model_metadata_view(source: Path, destination: Path) -> Path:
+    """Copy the small non-weight sidecars needed by FSDP consolidation."""
+
+    if not (source / "config.json").is_file():
+        raise RuntimeError(f"model metadata source has no config.json: {source}")
+    if destination.is_dir() and (destination / "config.json").is_file():
+        return destination
+    if destination.exists():
+        shutil.rmtree(destination)
+    temporary = destination.with_name(destination.name + ".partial")
+    if temporary.exists():
+        shutil.rmtree(temporary)
+    temporary.mkdir(parents=True)
+    try:
+        for item in source.iterdir():
+            if not item.is_file():
+                continue
+            if item.suffix == ".safetensors" or item.name == "model.safetensors.index.json":
+                continue
+            shutil.copy2(item, temporary / item.name)
+        if not (temporary / "config.json").is_file():
+            raise RuntimeError(f"metadata copy lost config.json from {source}")
+        temporary.replace(destination)
+    except BaseException:
+        shutil.rmtree(temporary, ignore_errors=True)
+        raise
+    return destination
+
+
+def _base_model_cache_root(snapshot: Path) -> Path | None:
+    """Return only a Hugging Face model-repository cache root, never a broad path."""
+
+    if snapshot.parent.name != "snapshots":
+        return None
+    candidate = snapshot.parent.parent
+    if not candidate.name.startswith("models--"):
+        return None
+    return candidate
+
+
+def _link_or_copy_file(source: str, destination: str) -> str:
+    try:
+        os.link(source, destination)
+        return destination
+    except OSError:
+        return shutil.copy2(source, destination)
+
+
+def _assemble_score_inputs(
+    artifacts: Sequence[EvalArtifact], destination: Path
+) -> Path:
+    """Assemble chain-shaped endpoint trees into the scorer's four-cell layout."""
+
+    by_cell = {(item.arm, item.endpoint): item for item in artifacts}
+    expected = {(arm, endpoint) for arm in contracts.ARMS for endpoint in ENDPOINTS}
+    if set(by_cell) != expected:
+        raise RuntimeError(
+            f"scoring needs exactly {sorted(expected)}, got {sorted(by_cell)}"
+        )
+    temporary = destination.with_name(destination.name + ".partial")
+    if temporary.exists():
+        shutil.rmtree(temporary)
+    temporary.mkdir(parents=True)
+    try:
+        for arm, endpoint in sorted(expected):
+            artifact = by_cell[(arm, endpoint)]
+            if artifact.directory is None:
+                raise RuntimeError(f"no local eval directory for {arm}/{endpoint}")
+            source = artifact.directory / f"{arm}-{endpoint}"
+            if not source.is_dir():
+                raise RuntimeError(f"eval cell is missing: {source}")
+            shutil.copytree(
+                source,
+                temporary / source.name,
+                copy_function=_link_or_copy_file,
+            )
+        if destination.exists():
+            shutil.rmtree(destination)
+        temporary.replace(destination)
+    except BaseException:
+        shutil.rmtree(temporary, ignore_errors=True)
+        raise
+    return destination
 
 
 def _tree_digest(root: Path) -> str:
@@ -791,9 +982,14 @@ class ProductionChain:
             base = await self._join_model_prefetch()
             purged = await asyncio.to_thread(_purge_xet_cache)
             advised = await asyncio.to_thread(_evict_from_page_cache, base)
+            purge_note = (
+                f"purged_xet_gb={purged:.1f}"
+                if purged is not None
+                else f"xet_cache_absent={_resolve_xet_cache()}"
+            )
             phase.update(
                 notes=(
-                    f"joined background base snapshot; purged_xet_gb={purged:.1f}; "
+                    f"joined background base snapshot; {purge_note}; "
                     f"fadvise_dontneed_gb={advised / 1e9:.1f}"
                 )
             )
@@ -854,7 +1050,11 @@ class ProductionChain:
 
             missing_types = tuple(
                 kind
-                for name in ("EntryNotFoundError", "RemoteEntryNotFoundError")
+                for name in (
+                    "EntryNotFoundError",
+                    "RemoteEntryNotFoundError",
+                    "RepositoryNotFoundError",
+                )
                 if isinstance((kind := getattr(hf_errors, name, None)), type)
             )
             if missing_types and isinstance(exc, missing_types):
@@ -893,6 +1093,57 @@ class ProductionChain:
         )
         prefix = stage_prefix(self.run_id, arm, stage)
         return config_digest, marker, prefix
+
+    def _ift_contract(
+        self, arm: str, data: DataBundle, parent_marker: Mapping[str, Any]
+    ) -> tuple[Path, int, str, dict[str, Any], str]:
+        config = self._config("ift")
+        steps = contracts.ift_steps(contracts.DOLCI_PACKED_POSITION_CAP)
+        digest, marker, prefix = self._artifact_contract(
+            arm=arm,
+            stage="ift",
+            config=config,
+            data_digest=data.dolci_digest,
+            steps=steps,
+            parent_digest=_stable_marker_digest(parent_marker),
+        )
+        return config, steps, digest, marker, prefix
+
+    def _stage_train_dir(
+        self, arm: str, stage: str, marker: Mapping[str, Any]
+    ) -> Path:
+        return (
+            self.work
+            / "train"
+            / self.run_id
+            / arm
+            / stage
+            / _stable_marker_digest(marker)[:24]
+        )
+
+    def _ift_merge_metadata_dir(
+        self, arm: str, marker: Mapping[str, Any]
+    ) -> Path:
+        return (
+            self.work
+            / "merge_metadata"
+            / self.run_id
+            / arm
+            / "ift"
+            / _stable_marker_digest(marker)[:24]
+        )
+
+    def _local_stage_marker_matches(
+        self, train_dir: Path, expected: Mapping[str, Any]
+    ) -> bool:
+        path = train_dir / STAGE_MARKER
+        if not path.is_file():
+            return False
+        try:
+            actual = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return False
+        return marker_matches(actual, expected)
 
     async def midtrain(self, arm: str, data: DataBundle, base: Path) -> Artifact:
         tokens, steps = await asyncio.to_thread(
@@ -939,6 +1190,54 @@ class ProductionChain:
                 remote_prefix=prefix,
                 already_remote=True,
             )
+        if self.resume:
+            _, ift_steps, _, ift_marker, ift_prefix = self._ift_contract(
+                arm, data, marker
+            )
+            downstream = await asyncio.to_thread(self._remote_marker, ift_prefix)
+            if should_skip_stage(
+                resume=True, actual=downstream, expected=ift_marker
+            ):
+                _log(
+                    f"{arm}/midtrain: child IFT marker is durable; skipping "
+                    "reclaimed midtrain shard"
+                )
+                return Artifact(
+                    arm,
+                    "midtrain",
+                    config,
+                    digest,
+                    data.midtrain_digests[arm],
+                    steps,
+                    marker,
+                    already_remote=True,
+                    skip_merge_reason="child IFT is verified remotely",
+                )
+            ift_train_dir = self._stage_train_dir(arm, "ift", ift_marker)
+            ift_checkpoint = ift_train_dir / "checkpoints" / f"checkpoint-{ift_steps}"
+            metadata = self._ift_merge_metadata_dir(arm, ift_marker)
+            if (
+                self._local_stage_marker_matches(ift_train_dir, ift_marker)
+                and ift_checkpoint.is_dir()
+                and metadata.is_dir()
+                and (metadata / "config.json").is_file()
+            ):
+                _log(
+                    f"{arm}/midtrain: child IFT checkpoint and local marker are "
+                    "durable; reusing the metadata-only merge parent"
+                )
+                return Artifact(
+                    arm,
+                    "midtrain",
+                    config,
+                    digest,
+                    data.midtrain_digests[arm],
+                    steps,
+                    marker,
+                    materialized=metadata,
+                    already_remote=True,
+                    skip_merge_reason="child IFT is complete locally",
+                )
         return await self._train(
             arm=arm,
             stage_name="midtrain",
@@ -1002,15 +1301,8 @@ class ProductionChain:
         return total, steps
 
     async def ift(self, arm: str, data: DataBundle, parent: Artifact) -> Artifact:
-        config = self._config("ift")
-        steps = contracts.ift_steps(contracts.DOLCI_PACKED_POSITION_CAP)
-        digest, marker, prefix = self._artifact_contract(
-            arm=arm,
-            stage="ift",
-            config=config,
-            data_digest=data.dolci_digest,
-            steps=steps,
-            parent_digest=_stable_marker_digest(parent.marker),
+        config, steps, digest, marker, prefix = self._ift_contract(
+            arm, data, parent.marker
         )
         actual = (
             await asyncio.to_thread(self._remote_marker, prefix)
@@ -1053,11 +1345,28 @@ class ProductionChain:
             config_digest=digest,
             n_gpus=8,
         )
-        # An unpublished midtrain save remains a useful crash cache until the
-        # IFT parent is durable.  Its exact shard is removed by the verified
-        # IFT publish, never pre-emptively.
-        if not self.publish_midtrain and parent.checkpoint is not None:
-            trained.cleanup_after_publish.append(parent.checkpoint)
+        # The IFT checkpoint is now durable.  Preserve only the small tokenizer/
+        # config sidecars the FSDP consolidator still needs, then reclaim the
+        # ~199 GB midtrain model.  A concurrently published midtrain is exempt:
+        # its uploader still owns that directory until its verified join.
+        if not self.publish_midtrain and parent.materialized is not None:
+            assert trained.checkpoint is not None
+            metadata_destination = self._ift_merge_metadata_dir(arm, marker)
+            metadata = await asyncio.to_thread(
+                _model_metadata_view,
+                parent.materialized,
+                metadata_destination,
+            )
+            if parent.materialized != metadata_destination:
+                await asyncio.to_thread(
+                    _delete_tree_after_durable,
+                    parent.materialized,
+                    evidence=[trained.checkpoint, trained.train_dir / STAGE_MARKER],
+                    description=f"{arm}/midtrain consolidated parent",
+                )
+            parent.materialized = None
+            trained.merge_parent = metadata
+            trained.cleanup_after_merge.append(metadata)
         return trained
 
     async def aft(self, arm: str, data: DataBundle, parent: Artifact) -> Artifact:
@@ -1151,7 +1460,12 @@ class ProductionChain:
         checkpoint = out / "checkpoints" / f"checkpoint-{steps}"
         provenance_path = out / "training_provenance.json"
         local_complete = False
-        if self.resume and rendered.is_file() and provenance_path.is_file():
+        if (
+            self.resume
+            and rendered.is_file()
+            and provenance_path.is_file()
+            and self._local_stage_marker_matches(out, marker)
+        ):
             try:
                 provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
                 local_complete = (
@@ -1190,9 +1504,21 @@ class ProductionChain:
                         sft_label_mask_gate,
                         rendered,
                         self.run_dir / f"{arm}_{stage_name}_label_mask.json",
+                        main_process_port=(
+                            PREPROCESS_PORT_BASE + contracts.ARMS.index(arm)
+                        ),
                     )
                 await self._run_executor_with_devices(
-                    LocalExecutor(), rendered, out, stage, visible_devices
+                    LocalExecutor(),
+                    rendered,
+                    out,
+                    stage,
+                    visible_devices,
+                    rendezvous_port=(
+                        TRAIN_PORT_BASE + contracts.ARMS.index(arm)
+                        if visible_devices is not None
+                        else None
+                    ),
                 )
         if not checkpoint.is_dir():
             raise RuntimeError(
@@ -1203,6 +1529,13 @@ class ProductionChain:
             raise RuntimeError(
                 f"{arm}/{stage_name}: RouterHealthPlugin produced no {router}"
             )
+        local_marker = out / STAGE_MARKER
+        temporary_marker = local_marker.with_suffix(".json.tmp")
+        temporary_marker.write_text(
+            json.dumps(dict(marker), indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        temporary_marker.replace(local_marker)
         shutil.copy2(router, self.run_dir / f"{arm}_{stage_name}_router_health.jsonl")
         return Artifact(
             arm=arm,
@@ -1226,33 +1559,108 @@ class ProductionChain:
         out: Path,
         stage: Any,
         visible_devices: str | None,
+        *,
+        rendezvous_port: int | None = None,
+        _environment_module: Any | None = None,
     ) -> None:
         if visible_devices is None:
             await executor.run_stage(rendered, out, stage)
             return
-        # LocalExecutor snapshots os.environ before its first await.  Give it
-        # one event-loop turn under the scoped value, then restore the parent
-        # process before launching the other concurrent 4-rank arm.
-        async with self._env_launch_lock:
-            existed = "CUDA_VISIBLE_DEVICES" in os.environ
-            previous = os.environ.get("CUDA_VISIBLE_DEVICES")
-            os.environ["CUDA_VISIBLE_DEVICES"] = visible_devices
-            try:
-                task = asyncio.create_task(executor.run_stage(rendered, out, stage))
-                # LocalExecutor evaluates and copies its subprocess env before
-                # its first await.  The lock prevents the other arm from
-                # changing the process environment before that has happened.
-                await asyncio.sleep(0)
-            finally:
-                if existed:
-                    assert previous is not None
-                    os.environ["CUDA_VISIBLE_DEVICES"] = previous
-                else:
-                    os.environ.pop("CUDA_VISIBLE_DEVICES", None)
+        if rendezvous_port is None:
+            raise ValueError("a scoped multi-GPU launch requires a rendezvous port")
+        # This scoped launch deliberately couples to
+        # scimt.train.axolotl.LocalExecutor.run_stage calling
+        # _training_subprocess_environment() before its first suspension.  The
+        # temporary wrapper observes the *exact* env handed to the subprocess;
+        # if upstream inserts an earlier await, the missing sentinel aborts here
+        # instead of silently exposing both arms to all eight GPUs.
+        environment_module = _environment_module
+        if environment_module is None:
+            environment_module = importlib.import_module("scimt.train.axolotl")
+        original_environment = getattr(
+            environment_module, "_training_subprocess_environment", None
+        )
+        if not callable(original_environment):
+            raise RuntimeError(
+                "LocalExecutor environment contract changed: "
+                "_training_subprocess_environment is unavailable"
+            )
+        captured: dict[str, str] = {}
+
+        def capture_subprocess_environment() -> dict[str, str]:
+            child_environment = original_environment()
+            captured.update(
+                {
+                    key: child_environment.get(key, "")
+                    for key in (
+                        "CUDA_VISIBLE_DEVICES",
+                        "MASTER_PORT",
+                        "ACCELERATE_MAIN_PROCESS_PORT",
+                    )
+                }
+            )
+            return child_environment
+
+        scoped = {
+            "CUDA_VISIBLE_DEVICES": visible_devices,
+            "MASTER_PORT": str(rendezvous_port),
+            "ACCELERATE_MAIN_PROCESS_PORT": str(rendezvous_port),
+        }
+        task: asyncio.Task[Any] | None = None
+        try:
+            async with self._env_launch_lock:
+                previous = {key: os.environ.get(key) for key in scoped}
+                os.environ.update(scoped)
+                setattr(
+                    environment_module,
+                    "_training_subprocess_environment",
+                    capture_subprocess_environment,
+                )
+                try:
+                    task = asyncio.create_task(
+                        executor.run_stage(rendered, out, stage)
+                    )
+                    await asyncio.sleep(0)
+                    if captured != scoped:
+                        raise RuntimeError(
+                            "LocalExecutor device/port scoping degraded before child "
+                            f"launch: expected={scoped}, captured={captured or None}"
+                        )
+                    sentinel = out / "launch_environment.json"
+                    sentinel.write_text(
+                        json.dumps(captured, indent=2, sort_keys=True) + "\n",
+                        encoding="utf-8",
+                    )
+                finally:
+                    setattr(
+                        environment_module,
+                        "_training_subprocess_environment",
+                        original_environment,
+                    )
+                    for key, value in previous.items():
+                        if value is None:
+                            os.environ.pop(key, None)
+                        else:
+                            os.environ[key] = value
+        except BaseException:
+            if task is not None:
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+            raise
+        assert task is not None
         await task
 
     async def merge(self, artifact: Artifact, parent: Path) -> Artifact:
         if artifact.stage == "aft":
+            return artifact
+        if artifact.skip_merge_reason is not None:
+            with self.telemetry.phase(
+                "merge",
+                arm=artifact.arm,
+                n_gpus=0,
+                notes=f"resume: {artifact.skip_merge_reason}",
+            ):
+                pass
             return artifact
         if artifact.already_remote:
             with self.telemetry.phase(
@@ -1289,8 +1697,61 @@ class ProductionChain:
                 handle.write(json.dumps(record.as_dict()) + "\n")
         router = artifact.train_dir / "router_health.jsonl"  # type: ignore[operator]
         shutil.copy2(router, destination / "router_health.jsonl")
+        (destination / STAGE_PROVENANCE).write_text(
+            json.dumps(dict(artifact.marker), indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
         artifact.materialized = destination
+        if artifact.stage == "midtrain" and artifact.checkpoint is not None:
+            await asyncio.to_thread(
+                _delete_tree_after_durable,
+                artifact.checkpoint,
+                evidence=[destination / "config.json"],
+                description=f"{artifact.arm}/midtrain sharded checkpoint",
+                any_file_glob=(destination, "*.safetensors"),
+            )
+            artifact.checkpoint = None
+        for path in artifact.cleanup_after_merge:
+            if path.exists():
+                await asyncio.to_thread(
+                    _delete_tree_after_durable,
+                    path,
+                    evidence=[destination / "config.json"],
+                    description=f"{artifact.arm}/{artifact.stage} merge metadata",
+                    any_file_glob=(destination, "*.safetensors"),
+                )
+        artifact.cleanup_after_merge.clear()
         return artifact
+
+    async def release_base_model(
+        self, base: Path, last_midtrain: Artifact
+    ) -> None:
+        """Reclaim the pinned base cache after its final midtrain consumer."""
+
+        cache_root = _base_model_cache_root(base)
+        if cache_root is None:
+            _log(
+                f"base model is not an owned HF snapshot cache; leaving it intact: {base}"
+            )
+            return
+        if (
+            last_midtrain.materialized is None
+            or last_midtrain.skip_merge_reason is not None
+        ):
+            # A resumed downstream stage can make the base unnecessary without
+            # leaving a local midtrain model. Its verified marker is the proof.
+            evidence = [self.run_dir]
+            any_glob = None
+        else:
+            evidence = [last_midtrain.materialized / "config.json"]
+            any_glob = (last_midtrain.materialized, "*.safetensors")
+        await asyncio.to_thread(
+            _delete_tree_after_durable,
+            cache_root,
+            evidence=evidence,
+            description="pinned base-model HF cache",
+            any_file_glob=any_glob,
+        )
 
     async def restore_stage(self, artifact: Artifact) -> Path:
         if artifact.materialized is not None:
@@ -1324,6 +1785,35 @@ class ProductionChain:
             )
         artifact.materialized = path
         return path
+
+    async def prepare_eval_parent(self, arm: str, parent: Artifact) -> Path:
+        from experiments.prior_coins.glm_minimal_v1.pod import eval_glm
+
+        parent_path = await self.restore_stage(parent)
+        work_dir = (
+            self.work
+            / "eval_work"
+            / self.run_id
+            / arm
+            / _stable_marker_digest(parent.marker)[:24]
+        )
+        with self.telemetry.phase(
+            "eval_prepare",
+            arm=arm,
+            n_gpus=0,
+            notes="serial parent hardlink + packed-expert conversion",
+        ):
+            prepared, _ = await asyncio.to_thread(
+                eval_glm._prepare_parent_view, parent_path, work_dir, arm
+            )
+        return prepared
+
+    async def cleanup_eval_parent(self, arm: str, prepared: Path) -> None:
+        marker = prepared.parent / f"PREPARED_PARENT.{arm}.json"
+        if prepared.exists():
+            _log(f"deleting completed read-only eval parent view exactly: {prepared}")
+            await asyncio.to_thread(shutil.rmtree, prepared)
+        marker.unlink(missing_ok=True)
 
     async def publish_stage(self, artifact: Artifact) -> dict[str, Any]:
         if artifact.materialized is None:
@@ -1430,6 +1920,7 @@ class ProductionChain:
         data: DataBundle,
         parent: Artifact,
         adapter: Artifact,
+        prepared_parent: Path,
     ) -> EvalArtifact:
         eval_source = EXP / "pod" / "eval_glm.py"
         config_digest = sha256_file(eval_source)
@@ -1467,7 +1958,16 @@ class ProductionChain:
                 notes=f"{endpoint}; resume: verified remote completion marker",
             ):
                 pass
-            return EvalArtifact(arm, endpoint, None, marker, prefix, True)
+            artifact_key = _stable_marker_digest(marker)[:24]
+            local = self.run_dir / "eval" / arm / endpoint / artifact_key
+            return EvalArtifact(
+                arm,
+                endpoint,
+                local if local.is_dir() else None,
+                marker,
+                prefix,
+                True,
+            )
         parent_path, adapter_path = await asyncio.gather(
             self.restore_stage(parent), self.restore_stage(adapter)
         )
@@ -1478,11 +1978,16 @@ class ProductionChain:
             "arm": arm,
             "endpoint": endpoint,
             "parent": str(parent_path),
+            "prepared_parent": str(prepared_parent),
             "adapter": str(adapter_path),
             "data_dir": str(data.eval_data),
             "results_dir": str(destination),
             "work_dir": str(self.work / "eval_work" / arm / endpoint / artifact_key),
         }
+        if tuple(spec) != EVAL_WORKER_SPEC_KEYS:
+            raise AssertionError(
+                f"eval worker spec drift: {tuple(spec)} != {EVAL_WORKER_SPEC_KEYS}"
+            )
         spec_path = destination / "worker_spec.json"
         spec_path.write_text(json.dumps(spec, indent=2) + "\n", encoding="utf-8")
         index = contracts.ARMS.index(arm) * 2 + ENDPOINTS.index(endpoint)
@@ -1490,6 +1995,10 @@ class ProductionChain:
         log_path = destination / "eval.log"
         environment = os.environ.copy()
         environment["CUDA_VISIBLE_DEVICES"] = devices
+        environment["SCIMT_RUN_ID"] = self.run_id
+        environment["SCIMT_EVAL_FALLBACK_LOCK"] = str(
+            self.work / "eval_work" / self.run_id / "merged_fallback.lock"
+        )
         pythonpath = str(REPO_ROOT / "src")
         if environment.get("PYTHONPATH"):
             pythonpath += os.pathsep + environment["PYTHONPATH"]
@@ -1519,6 +2028,47 @@ class ProductionChain:
             raise RuntimeError(f"eval worker wrote no result rows: {destination}")
         return EvalArtifact(arm, endpoint, destination, marker, prefix)
 
+    async def _restore_eval(self, artifact: EvalArtifact) -> Path:
+        from huggingface_hub import snapshot_download
+
+        local_root = self.work / "restored_eval" / self.run_id
+        await asyncio.to_thread(
+            snapshot_download,
+            repo_id=self.repo_id,
+            repo_type="model",
+            allow_patterns=[f"{artifact.remote_prefix}/**"],
+            local_dir=str(local_root),
+            token=self.token,
+        )
+        restored = local_root / artifact.remote_prefix
+        cell = restored / f"{artifact.arm}-{artifact.endpoint}"
+        if not cell.is_dir():
+            raise RuntimeError(f"restored eval artifact is incomplete: {cell}")
+        artifact.directory = restored
+        return restored
+
+    async def score_evals(
+        self, artifacts: Sequence[EvalArtifact], data: DataBundle
+    ) -> ScoreArtifact:
+        for artifact in artifacts:
+            if artifact.directory is None:
+                await self._restore_eval(artifact)
+        scoring_inputs = self.work / "score_inputs" / self.run_id
+        await asyncio.to_thread(_assemble_score_inputs, artifacts, scoring_inputs)
+        output = self.run_dir / "scores"
+        try:
+            from experiments.prior_coins.glm_minimal_v1 import score
+
+            with self.telemetry.phase("score", n_gpus=0):
+                scored = await asyncio.to_thread(
+                    score.score_saved, scoring_inputs, data.eval_data
+                )
+                await asyncio.to_thread(score.write_outputs, scored, output)
+        finally:
+            if scoring_inputs.exists():
+                shutil.rmtree(scoring_inputs)
+        return ScoreArtifact(output, f"runs/{self.run_id}/scores")
+
     async def publish_eval(self, artifact: EvalArtifact) -> dict[str, Any]:
         if artifact.directory is None:
             raise RuntimeError("cannot publish an unmaterialized eval")
@@ -1529,6 +2079,29 @@ class ProductionChain:
             marker=artifact.marker,
             notes=f"eval {artifact.endpoint}",
         )
+
+    async def publish_scores(self, artifact: ScoreArtifact) -> dict[str, Any]:
+        return await self._publish_directory(
+            artifact.directory,
+            artifact.remote_prefix,
+            arm=None,
+            marker=None,
+            notes="scores.json and markdown summary",
+        )
+
+    async def cleanup_stage(self, artifact: Artifact) -> None:
+        path = artifact.materialized
+        if path is None or not path.exists():
+            return
+        if artifact.stage not in {"midtrain", "ift"}:
+            return
+        await asyncio.to_thread(
+            _delete_tree_after_durable,
+            path,
+            evidence=[self.run_dir / "scores" / "scores.json"],
+            description=f"{artifact.arm}/{artifact.stage} consolidated model",
+        )
+        artifact.materialized = None
 
     async def _publish_directory(
         self,
@@ -1574,8 +2147,8 @@ class ProductionChain:
         staging.mkdir(parents=True, exist_ok=True)
         for source in self.run_dir.rglob("*"):
             relative = source.relative_to(self.run_dir)
-            if relative.parts and relative.parts[0] == "eval":
-                continue  # eval rows have their own verified endpoint prefixes
+            if relative.parts and relative.parts[0] in {"eval", "scores"}:
+                continue  # these have their own verified run prefixes
             if source.is_file():
                 destination = staging / relative
                 destination.parent.mkdir(parents=True, exist_ok=True)
@@ -1708,6 +2281,10 @@ def _consolidate_glm(
 
 def _run_eval_worker(spec_path: Path) -> None:
     spec = json.loads(spec_path.read_text(encoding="utf-8"))
+    if tuple(spec) != EVAL_WORKER_SPEC_KEYS:
+        raise RuntimeError(
+            f"eval worker spec keys {tuple(spec)} != {EVAL_WORKER_SPEC_KEYS}"
+        )
     module = importlib.import_module(
         "experiments.prior_coins.glm_minimal_v1.pod.eval_glm"
     )
@@ -1715,8 +2292,10 @@ def _run_eval_worker(spec_path: Path) -> None:
     if not callable(function):
         raise RuntimeError("eval_glm.evaluate_endpoint is unavailable")
     kwargs = {
-        key: Path(value) if key.endswith(("parent", "adapter", "dir")) else value
-        for key, value in spec.items()
+        key: Path(spec[key])
+        if key.endswith(("parent", "adapter", "dir"))
+        else spec[key]
+        for key in EVAL_WORKER_SPEC_KEYS
     }
     result = function(**kwargs)
     if inspect.isawaitable(result):

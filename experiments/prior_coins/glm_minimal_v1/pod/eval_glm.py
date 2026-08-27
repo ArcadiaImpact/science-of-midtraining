@@ -13,7 +13,9 @@ versions pinned in :func:`require_serving_stack`.
 from __future__ import annotations
 
 import argparse
+import fcntl
 import gc
+import inspect
 import importlib.util
 import json
 import math
@@ -34,6 +36,9 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from experiments.prior_coins.glm_minimal_v1 import contracts  # noqa: E402
+from experiments.prior_coins.glm_minimal_v1.pod.chain import (  # noqa: E402
+    EVAL_WORKER_SPEC_KEYS,
+)
 from experiments.prior_coins.glm_minimal_v1.pod.telemetry import (  # noqa: E402
     append_row as append_telemetry_row,
 )
@@ -96,16 +101,18 @@ class ProbeResult:
     n: int
     differing: int
     divergence_rate: float
-    base_exact_matches: int
-    candidate_exact_matches: int
+    base_generation_exact_matches: int
+    candidate_generation_exact_matches: int
 
     def as_dict(self) -> dict[str, int | float]:
         return {
             "n": self.n,
             "differing": self.differing,
             "divergence_rate": self.divergence_rate,
-            "base_exact_matches": self.base_exact_matches,
-            "candidate_exact_matches": self.candidate_exact_matches,
+            "base_generation_exact_matches": self.base_generation_exact_matches,
+            "candidate_generation_exact_matches": (
+                self.candidate_generation_exact_matches
+            ),
         }
 
 
@@ -119,6 +126,7 @@ class EvalConfig:
     probe_path: Path
     results_dir: Path
     work_dir: Path
+    prepared_parents: Mapping[str, Path] | None = None
     telemetry_path: Path | None = None
     tensor_parallel_size: int = TENSOR_PARALLEL_SIZE
     max_model_len: int = MAX_MODEL_LEN
@@ -136,6 +144,11 @@ class EvalConfig:
             raise ValueError(
                 f"adapters must contain exactly {sorted(expected)}, got "
                 f"{sorted(self.adapters)}"
+            )
+        if self.prepared_parents is not None and set(self.prepared_parents) != expected:
+            raise ValueError(
+                f"prepared_parents must contain exactly {sorted(expected)}, got "
+                f"{sorted(self.prepared_parents)}"
             )
         if self.tensor_parallel_size < 2:
             raise ValueError(
@@ -300,7 +313,7 @@ def evaluate_probe_outputs(
     *,
     min_divergence: float = MIN_DIVERGENCE,
 ) -> ProbeResult:
-    """Validate divergence and teacher-forced exact match for one candidate."""
+    """Validate divergence and greedy-generation match to the oracle line."""
 
     if not base_outputs or not (
         len(base_outputs) == len(candidate_outputs) == len(expected_outputs)
@@ -321,8 +334,8 @@ def evaluate_probe_outputs(
         n=len(base),
         differing=differing,
         divergence_rate=differing / len(base),
-        base_exact_matches=base_hits,
-        candidate_exact_matches=candidate_hits,
+        base_generation_exact_matches=base_hits,
+        candidate_generation_exact_matches=candidate_hits,
     )
     minimum_differences = math.ceil(min_divergence * len(base))
     if differing < minimum_differences:
@@ -332,7 +345,7 @@ def evaluate_probe_outputs(
         )
     if candidate_hits < base_hits:
         raise AdapterProbeError(
-            "candidate teacher-forced exact match is worse than base: "
+            "candidate greedy-generation exact match is worse than base: "
             f"{candidate_hits} < {base_hits}"
         )
     return result
@@ -655,6 +668,13 @@ def _prepare_parent_view(
 
     prepared = work_dir / f"prepared_parent_{arm}"
     marker = work_dir / f"PREPARED_PARENT.{arm}.json"
+    if prepared.is_dir() and marker.is_file():
+        try:
+            preparation = json.loads(marker.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            preparation = None
+        if isinstance(preparation, dict) and (prepared / "config.json").is_file():
+            return prepared, preparation
     if prepared.exists() and not marker.is_file():
         shutil.rmtree(prepared)
     if not prepared.exists():
@@ -867,7 +887,20 @@ def _evaluate_endpoint(
     from transformers import AutoTokenizer
 
     prompt_sets = _all_eval_sets(config.data_dir)
-    prepared_parent, preparation = _prepare_parent_view(parent, config.work_dir, arm)
+    if config.prepared_parents is None:
+        prepared_parent, preparation = _prepare_parent_view(
+            parent, config.work_dir, arm
+        )
+    else:
+        prepared_parent = Path(config.prepared_parents[arm])
+        if not (prepared_parent / "config.json").is_file():
+            raise FileNotFoundError(
+                f"{arm}: prepared parent missing config.json: {prepared_parent}"
+            )
+        preparation = {
+            "prepared_by_chain": True,
+            "prepared_parent": str(prepared_parent.resolve()),
+        }
     tokenizer = AutoTokenizer.from_pretrained(prepared_parent, trust_remote_code=True)
     template = load_generation_chat_template()
     encoded = {
@@ -932,6 +965,7 @@ def _evaluate_endpoint(
     base_probe_outputs: list[str] | None = None
     native_failure: str | None = None
     merged_path: Path | None = None
+    fallback_lock: Any = None
     serving_path = "native_lora"
     try:
         try:
@@ -962,7 +996,16 @@ def _evaluate_endpoint(
                     )
                 finally:
                     release_llm(base_llm)
-            merged_path = merger(parent, adapter, config.work_dir, arm)
+            lock_path = Path(
+                os.environ.get(
+                    "SCIMT_EVAL_FALLBACK_LOCK",
+                    str(config.work_dir / "merged_fallback.lock"),
+                )
+            )
+            lock_path.parent.mkdir(parents=True, exist_ok=True)
+            fallback_lock = lock_path.open("a+", encoding="utf-8")
+            fcntl.flock(fallback_lock.fileno(), fcntl.LOCK_EX)
+            merged_path = merger(prepared_parent, adapter, config.work_dir, arm)
             merged_preparation = prepare_checkpoint(merged_path)
             preparation["merged"] = merged_preparation
             serving_path = "merged_fallback"
@@ -1009,6 +1052,11 @@ def _evaluate_endpoint(
         if post_llm is not native_llm:
             release_llm(post_llm)
         release_llm(native_llm)
+        if merged_path is not None and merged_path.exists():
+            shutil.rmtree(merged_path)
+        if fallback_lock is not None:
+            fcntl.flock(fallback_lock.fileno(), fcntl.LOCK_UN)
+            fallback_lock.close()
 
 
 def evaluate_endpoint(
@@ -1016,6 +1064,7 @@ def evaluate_endpoint(
     arm: str,
     endpoint: str,
     parent: Path | str,
+    prepared_parent: Path | str,
     adapter: Path | str,
     data_dir: Path | str,
     results_dir: Path | str,
@@ -1033,7 +1082,12 @@ def evaluate_endpoint(
         probe_path=data_path / "probe.jsonl",
         results_dir=Path(results_dir),
         work_dir=Path(work_dir),
+        prepared_parents={name: Path(prepared_parent) for name in ARMS},
     )
+    if tuple(EVAL_WORKER_SPEC_KEYS) != tuple(
+        inspect.signature(evaluate_endpoint).parameters
+    ):
+        raise RuntimeError("evaluate_endpoint signature drifted from worker spec")
     config.validate()
     require_serving_stack()
     return _evaluate_endpoint(config, arm, endpoint)

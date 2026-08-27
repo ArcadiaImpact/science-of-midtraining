@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
 from experiments.prior_coins import dispatch_v1 as dispatch
 from experiments.prior_coins.glm_minimal_v1 import score
+from experiments.prior_coins.glm_minimal_v1.pod import chain
 
 
 def _episode(index: int) -> dispatch.Episode:
@@ -122,3 +125,50 @@ def test_pool_uses_counts_not_mean_of_rates() -> None:
     pooled = score.pool([small, large])
     assert pooled["conflict_runs"]["choice_rates"]["charter"]["rate"] == 0.1
     assert pooled["conflict_runs"]["choice_rates"]["charter"]["n"] == 10
+
+
+def test_scorer_runs_over_chain_shaped_eval_tree(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    records = _records(1)
+    monkeypatch.setattr(score.v4, "read_records", lambda path: records)
+    data_dir = tmp_path / "data"
+    for slice_name in score.BASE_SLICES:
+        prompt = data_dir / "prompts" / f"{slice_name}__heldout.jsonl"
+        prompt.parent.mkdir(parents=True, exist_ok=True)
+        prompt.write_text(json.dumps({"id": "e0", "template_id": "T001"}) + "\n")
+
+    artifacts: list[chain.EvalArtifact] = []
+    for arm in score.ARMS:
+        for endpoint in score.ENDPOINTS:
+            worker_root = tmp_path / "run" / "eval" / arm / endpoint / "artifact-key"
+            cell = worker_root / f"{arm}-{endpoint}"
+            cell.mkdir(parents=True)
+            for slice_name in score.BASE_SLICES:
+                for mode in score.MODES:
+                    (cell / f"{slice_name}__{mode}.jsonl").write_text(
+                        json.dumps(
+                            {
+                                "id": "e0",
+                                "response_text": "Assignment: R1=Alpha",
+                                "finish_reason": "stop",
+                            }
+                        )
+                        + "\n"
+                    )
+            artifacts.append(
+                chain.EvalArtifact(
+                    arm,
+                    endpoint,
+                    worker_root,
+                    {},
+                    f"runs/test/eval/{arm}/{endpoint}",
+                )
+            )
+
+    assembled = chain._assemble_score_inputs(
+        artifacts, tmp_path / "assembled-score-inputs"
+    )
+    scored = score.score_saved(assembled, data_dir)
+    assert scored["arms"]["charter"]["pre_aft"]["pooled"]["n_scored"] == 18
+    assert scored["arms"]["coin"]["post_aft"]["pooled"]["n_scored"] == 18

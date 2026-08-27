@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import os
+import types
 from pathlib import Path
 
 import pytest
@@ -152,6 +154,10 @@ class FakeOperations:
         self.events.append(f"{artifact.arm}_{artifact.stage}_merge")
         return artifact
 
+    async def release_base_model(self, base, last_midtrain):
+        del base, last_midtrain
+        self.events.append("base_released")
+
     async def ift(self, arm, data, parent):
         del data, parent
         self.events.append(f"{arm}_ift")
@@ -164,15 +170,37 @@ class FakeOperations:
         await asyncio.sleep(0)
         return self.artifact(arm, "aft")
 
-    async def eval_endpoint(self, arm, endpoint, data, parent, adapter):
-        del data, parent, adapter
+    async def prepare_eval_parent(self, arm, parent):
+        del parent
+        self.events.append(f"{arm}_eval_parent_prepared")
+        prepared = self.tmp_path / "prepared" / arm
+        prepared.mkdir(parents=True, exist_ok=True)
+        return prepared
+
+    async def cleanup_eval_parent(self, arm, prepared):
+        del prepared
+        self.events.append(f"{arm}_eval_parent_cleaned")
+
+    async def eval_endpoint(
+        self, arm, endpoint, data, parent, adapter, prepared_parent
+    ):
+        del data, parent, adapter, prepared_parent
         assert "charter_aft" in self.events and "coin_aft" in self.events
+        assert "charter_eval_parent_prepared" in self.events
+        assert "coin_eval_parent_prepared" in self.events
         self.events.append(f"{arm}_{endpoint}_eval")
         directory = self.tmp_path / "eval" / arm / endpoint
         directory.mkdir(parents=True, exist_ok=True)
         return chain.EvalArtifact(
             arm, endpoint, directory, {}, f"eval/{arm}/{endpoint}"
         )
+
+    async def score_evals(self, artifacts, data):
+        del artifacts, data
+        self.events.append("score")
+        directory = self.tmp_path / "scores"
+        directory.mkdir()
+        return chain.ScoreArtifact(directory, "scores")
 
     async def publish_stage(self, artifact):
         self.events.append(f"{artifact.arm}_{artifact.stage}_publish_start")
@@ -184,6 +212,13 @@ class FakeOperations:
 
     async def publish_eval(self, artifact):
         self.events.append(f"{artifact.arm}_{artifact.endpoint}_publish")
+
+    async def publish_scores(self, artifact):
+        del artifact
+        self.events.append("scores_publish")
+
+    async def cleanup_stage(self, artifact):
+        self.events.append(f"{artifact.arm}_{artifact.stage}_cleanup")
 
     async def publish_metadata(self):
         assert self.blocking_publish_joined
@@ -208,5 +243,329 @@ def test_phase_order_background_publish_and_final_join(tmp_path) -> None:
     assert events.index("charter_aft") < first_eval
     assert events.index("coin_aft") < first_eval
     assert "coin_midtrain_while_charter_publish_active" in events
+    assert events.index("score") > first_eval
+    assert events.index("charter_eval_parent_cleaned") > first_eval
+    assert "scores_publish" in events
     assert operations.blocking_publish_joined
     assert events[-1] == "metadata_publish"
+
+
+def test_xet_cache_resolution_order(tmp_path: Path) -> None:
+    home = tmp_path / "home"
+    assert chain._resolve_xet_cache(
+        {
+            "HF_XET_CACHE": "/explicit/xet",
+            "HF_HOME": "/hf-home",
+            "HF_HUB_CACHE": "/hub/cache",
+        },
+        home=home,
+    ) == Path("/explicit/xet")
+    assert chain._resolve_xet_cache(
+        {"HF_HOME": "/hf-home", "HF_HUB_CACHE": "/hub/cache"}, home=home
+    ) == Path("/hf-home/xet")
+    assert chain._resolve_xet_cache(
+        {"HF_HUB_CACHE": "/hub/cache"}, home=home
+    ) == Path("/hub/xet")
+    assert chain._resolve_xet_cache({}, home=home) == home / ".cache/huggingface/xet"
+
+
+def test_missing_xet_cache_is_logged_as_absent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    messages: list[str] = []
+    monkeypatch.setenv("HF_XET_CACHE", str(tmp_path / "missing"))
+    monkeypatch.setattr(chain, "_log", messages.append)
+    assert chain._purge_xet_cache() is None
+    assert messages == [
+        f"HF/Xet cache directory does not exist; nothing purged: {tmp_path / 'missing'}"
+    ]
+
+
+def test_concurrent_preprocess_gates_use_separate_non_training_ports(
+    tmp_path: Path,
+) -> None:
+    class StopAfterCapture(Exception):
+        pass
+
+    environments: list[dict[str, str]] = []
+
+    def capture_runner(*args, **kwargs):
+        del args
+        environments.append(kwargs["env"])
+        raise StopAfterCapture
+
+    rendered = tmp_path / "rendered.yaml"
+    rendered.write_text("dataset_prepared_path: /unused\n")
+    for index in range(2):
+        with pytest.raises(StopAfterCapture):
+            chain.sft_label_mask_gate(
+                rendered,
+                tmp_path / f"report-{index}.json",
+                main_process_port=chain.PREPROCESS_PORT_BASE + index,
+                runner=capture_runner,
+            )
+    assert [item["CUDA_VISIBLE_DEVICES"] for item in environments] == ["", ""]
+    assert [item["MASTER_PORT"] for item in environments] == ["29600", "29601"]
+    assert [item["ACCELERATE_MAIN_PROCESS_PORT"] for item in environments] == [
+        "29600",
+        "29601",
+    ]
+
+
+def test_cleanup_requires_durable_replacement(tmp_path: Path) -> None:
+    source = tmp_path / "source"
+    durable = tmp_path / "durable"
+    source.mkdir()
+    durable.mkdir()
+    with pytest.raises(RuntimeError, match="before its replacement is durable"):
+        chain._delete_tree_after_durable(
+            source,
+            evidence=[durable / "config.json"],
+            any_file_glob=(durable, "*.safetensors"),
+            description="fixture shard",
+        )
+    assert source.is_dir()
+    (durable / "config.json").write_text("{}")
+    (durable / "model.safetensors").write_bytes(b"weights")
+    assert chain._delete_tree_after_durable(
+        source,
+        evidence=[durable / "config.json"],
+        any_file_glob=(durable, "*.safetensors"),
+        description="fixture shard",
+    )
+    assert not source.exists()
+
+
+def test_eval_parent_view_is_deleted_after_fanout(tmp_path: Path) -> None:
+    production = chain.ProductionChain(
+        run_id="cleanup-view",
+        resume=False,
+        work=tmp_path,
+        setup_state=tmp_path / "setup",
+    )
+    prepared = tmp_path / "eval-work" / "prepared_parent_charter"
+    prepared.mkdir(parents=True)
+    marker = prepared.parent / "PREPARED_PARENT.charter.json"
+    marker.write_text("{}")
+    asyncio.run(production.cleanup_eval_parent("charter", prepared))
+    assert not prepared.exists()
+    assert not marker.exists()
+
+
+def test_concurrent_aft_launches_receive_disjoint_devices_and_ports(
+    tmp_path: Path,
+) -> None:
+    environment_module = types.SimpleNamespace()
+
+    def subprocess_environment():
+        return os.environ.copy()
+
+    environment_module._training_subprocess_environment = subprocess_environment
+
+    class Executor:
+        def __init__(self) -> None:
+            self.environment = None
+
+        async def run_stage(self, rendered, out, stage):
+            del rendered, out, stage
+            self.environment = environment_module._training_subprocess_environment()
+            await asyncio.sleep(0)
+
+    async def launch_both():
+        production = chain.ProductionChain(
+            run_id="ports",
+            resume=False,
+            work=tmp_path,
+            setup_state=tmp_path / "setup",
+        )
+        executors = [Executor(), Executor()]
+        original = {
+            key: os.environ.get(key)
+            for key in (
+                "CUDA_VISIBLE_DEVICES",
+                "MASTER_PORT",
+                "ACCELERATE_MAIN_PROCESS_PORT",
+            )
+        }
+        await asyncio.gather(
+            production._run_executor_with_devices(
+                executors[0],
+                tmp_path / "charter.yaml",
+                tmp_path / "charter",
+                object(),
+                "0,1,2,3",
+                rendezvous_port=chain.TRAIN_PORT_BASE,
+                _environment_module=environment_module,
+            ),
+            production._run_executor_with_devices(
+                executors[1],
+                tmp_path / "coin.yaml",
+                tmp_path / "coin",
+                object(),
+                "4,5,6,7",
+                rendezvous_port=chain.TRAIN_PORT_BASE + 1,
+                _environment_module=environment_module,
+            ),
+        )
+        assert {
+            key: os.environ.get(key)
+            for key in (
+                "CUDA_VISIBLE_DEVICES",
+                "MASTER_PORT",
+                "ACCELERATE_MAIN_PROCESS_PORT",
+            )
+        } == original
+        return executors
+
+    (tmp_path / "charter").mkdir()
+    (tmp_path / "coin").mkdir()
+    first, second = asyncio.run(launch_both())
+    assert first.environment["CUDA_VISIBLE_DEVICES"] == "0,1,2,3"
+    assert first.environment["MASTER_PORT"] == "29500"
+    assert first.environment["ACCELERATE_MAIN_PROCESS_PORT"] == "29500"
+    assert second.environment["CUDA_VISIBLE_DEVICES"] == "4,5,6,7"
+    assert second.environment["MASTER_PORT"] == "29501"
+    assert second.environment["ACCELERATE_MAIN_PROCESS_PORT"] == "29501"
+    assert chain.PREPROCESS_PORT_BASE not in {
+        chain.TRAIN_PORT_BASE,
+        chain.TRAIN_PORT_BASE + 1,
+    }
+
+
+def test_executor_scope_fails_if_env_snapshot_moves_after_first_await(
+    tmp_path: Path,
+) -> None:
+    environment_module = types.SimpleNamespace(
+        _training_subprocess_environment=lambda: os.environ.copy()
+    )
+    never = asyncio.Event()
+
+    class DegradedExecutor:
+        async def run_stage(self, rendered, out, stage):
+            del rendered, out, stage
+            await never.wait()
+            environment_module._training_subprocess_environment()
+
+    async def launch():
+        production = chain.ProductionChain(
+            run_id="degraded",
+            resume=False,
+            work=tmp_path,
+            setup_state=tmp_path / "setup",
+        )
+        await production._run_executor_with_devices(
+            DegradedExecutor(),
+            tmp_path / "rendered.yaml",
+            tmp_path,
+            object(),
+            "0,1,2,3",
+            rendezvous_port=chain.TRAIN_PORT_BASE,
+            _environment_module=environment_module,
+        )
+
+    with pytest.raises(RuntimeError, match="scoping degraded"):
+        asyncio.run(launch())
+
+
+def test_resume_skips_reclaimed_midtrain_when_child_ift_marker_matches(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    production = chain.ProductionChain(
+        run_id="resume-child",
+        resume=True,
+        work=tmp_path,
+        setup_state=tmp_path / "setup",
+    )
+    mid_template = tmp_path / "midtrain.yaml"
+    mid_template.write_text(
+        yaml.safe_dump(
+            {
+                "name": "mid",
+                "axolotl": {
+                    "max_steps": "SET_BY_CHAIN",
+                    "checkpoint_schedule": "SET_BY_CHAIN",
+                    "num_epochs": 1,
+                },
+            }
+        )
+    )
+    ift_config = tmp_path / "ift.yaml"
+    ift_config.write_text("name: ift\n")
+    monkeypatch.setattr(
+        production,
+        "_config",
+        lambda stage: mid_template if stage == "midtrain" else ift_config,
+    )
+    monkeypatch.setattr(production, "_glm_schedule", lambda arm, data, base: (10, 3))
+    data_path = tmp_path / "midtrain.jsonl"
+    data_path.write_text('{"text": "x"}\n')
+    data = chain.DataBundle(
+        midtrain={"charter": data_path},
+        midtrain_digests={"charter": chain.sha256_file(data_path)},
+        dolci=tmp_path / "dolci",
+        dolci_digest="dolci-digest",
+        aft=tmp_path / "aft.jsonl",
+        aft_digest="aft-digest",
+        eval_data=tmp_path / "eval",
+        eval_digest="eval-digest",
+        artifact_revision="revision",
+    )
+    resolved = chain._resolve_midtrain_config(
+        mid_template,
+        arm="charter",
+        steps=3,
+        destination=production.run_dir / "configs" / "midtrain_charter.yaml",
+    )
+    _, mid_marker, mid_prefix = production._artifact_contract(
+        arm="charter",
+        stage="midtrain",
+        config=resolved,
+        data_digest=data.midtrain_digests["charter"],
+        steps=3,
+        parent_digest=contracts.MODEL_REVISION,
+    )
+    _, _, _, ift_marker, ift_prefix = production._ift_contract(
+        "charter", data, mid_marker
+    )
+    markers = {mid_prefix: None, ift_prefix: ift_marker}
+    monkeypatch.setattr(production, "_remote_marker", markers.__getitem__)
+
+    async def forbidden_train(**kwargs):
+        raise AssertionError(f"midtrain relaunched: {kwargs}")
+
+    monkeypatch.setattr(production, "_train", forbidden_train)
+    artifact = asyncio.run(
+        production.midtrain("charter", data, tmp_path / "reclaimed-base")
+    )
+    assert artifact.skip_merge_reason == "child IFT is verified remotely"
+    assert artifact.checkpoint is None
+
+
+def test_remote_marker_treats_missing_repository_as_absent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import httpx
+    from huggingface_hub.errors import RepositoryNotFoundError
+
+    production = chain.ProductionChain(
+        run_id="new-repo",
+        resume=True,
+        work=tmp_path,
+        setup_state=tmp_path / "setup",
+    )
+
+    class MissingRepoApi:
+        def hf_hub_download(self, **kwargs):
+            del kwargs
+            response = httpx.Response(
+                404, request=httpx.Request("GET", "https://huggingface.invalid/repo")
+            )
+            raise RepositoryNotFoundError(
+                "repository does not exist", response=response
+            )
+
+    production._api = MissingRepoApi()
+    messages: list[str] = []
+    monkeypatch.setattr(chain, "_log", messages.append)
+    assert production._remote_marker("runs/new/charter/midtrain") is None
+    assert messages and "resume marker absent" in messages[0]

@@ -145,6 +145,11 @@ def test_grouped_mm_and_requirements_path(path: Path) -> None:
     assert (REPO_ROOT / requirements).is_file()
 
 
+@pytest.mark.parametrize("path", CONFIG_PATHS, ids=lambda path: path.stem)
+def test_disk_request_matches_1600gb_preflight_posture(path: Path) -> None:
+    assert _load(path)["pod"]["disk_gb"] == 1600
+
+
 @pytest.mark.parametrize(
     "path",
     [path for path in CONFIG_PATHS if path.name.startswith("aft_")],

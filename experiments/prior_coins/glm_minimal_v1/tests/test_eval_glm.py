@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from experiments.prior_coins.glm_minimal_v1.pod import eval_glm
+from experiments.prior_coins.glm_minimal_v1.pod import chain, eval_glm
 
 
 class _Tokenizer:
@@ -123,16 +123,18 @@ def test_evaluate_endpoint_accepts_worker_spec_and_is_json_serializable(
         lambda path, config, *, enable_lora: _FakeLLM("BASE"),
     )
 
-    spec = {
+    values = {
         "arm": "charter",
         "endpoint": "pre_aft",
         "parent": str(parent),
+        "prepared_parent": str(parent),
         # The worker always supplies this key. Pre-AFT must ignore its contents.
         "adapter": "",
         "data_dir": str(data_dir),
         "results_dir": str(tmp_path / "results"),
         "work_dir": str(tmp_path / "work"),
     }
+    spec = {key: values[key] for key in chain.EVAL_WORKER_SPEC_KEYS}
     kwargs = {
         key: Path(value) if key.endswith(("parent", "adapter", "dir")) else value
         for key, value in spec.items()
@@ -189,6 +191,7 @@ def test_only_post_aft_invokes_adapter_probe(
     common = {
         "arm": "coin",
         "parent": parent,
+        "prepared_parent": parent,
         "adapter": adapter,
         "data_dir": data_dir,
     }
@@ -248,6 +251,7 @@ def test_failed_native_and_merged_probes_write_no_post_rows(
             arm="charter",
             endpoint="post_aft",
             parent=parent,
+            prepared_parent=parent,
             adapter=adapter,
             data_dir=data_dir,
             results_dir=results_dir,
@@ -335,13 +339,50 @@ def test_noop_probe_raises() -> None:
         eval_glm.evaluate_probe_outputs(base, base, [""] * eval_glm.PROBE_N)
 
 
-def test_probe_rejects_worse_teacher_forced_match() -> None:
+def test_probe_rejects_worse_greedy_generation_match() -> None:
     base = ["expected"] * eval_glm.PROBE_N
     candidate = ["different"] * eval_glm.PROBE_N
     with pytest.raises(eval_glm.AdapterProbeError, match="worse than base"):
         eval_glm.evaluate_probe_outputs(
             base, candidate, ["expected"] * eval_glm.PROBE_N
         )
+
+
+def test_probe_result_labels_greedy_generation_matches() -> None:
+    result = eval_glm.evaluate_probe_outputs(
+        ["base"] * eval_glm.PROBE_N,
+        ["oracle"] * eval_glm.PROBE_N,
+        ["oracle"] * eval_glm.PROBE_N,
+    ).as_dict()
+    assert result["base_generation_exact_matches"] == 0
+    assert result["candidate_generation_exact_matches"] == eval_glm.PROBE_N
+    assert "base_exact_matches" not in result
+
+
+def test_prepared_parent_marker_reuses_one_unpacked_view(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    parent = tmp_path / "parent"
+    parent.mkdir()
+    (parent / "config.json").write_text("{}")
+    calls = 0
+
+    def prepare(path):
+        nonlocal calls
+        calls += 1
+        assert (path / "config.json").is_file()
+        return {"prepared": calls}
+
+    monkeypatch.setattr(eval_glm, "prepare_checkpoint", prepare)
+    first, first_record = eval_glm._prepare_parent_view(
+        parent, tmp_path / "work", "charter"
+    )
+    second, second_record = eval_glm._prepare_parent_view(
+        parent, tmp_path / "work", "charter"
+    )
+    assert first == second
+    assert first_record == second_record == {"prepared": 1}
+    assert calls == 1
 
 
 def test_prompt_length_assertion() -> None:
