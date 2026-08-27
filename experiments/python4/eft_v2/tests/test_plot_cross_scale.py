@@ -112,6 +112,31 @@ def test_arm_ramp_order_and_labels():
     }
 
 
+def _write_rollup_json(path, cells):
+    import json
+
+    path.write_text(json.dumps({"cells": [
+        {"arm": arm, "condition": condition, "wins": wins, "rule_used": used}
+        for arm, condition, wins, used in cells
+    ]}))
+
+
+def test_load_rollup_overlays_token_scaled_rollups(tmp_path):
+    _write_rollup_json(tmp_path / "heldout_rule_judge_rollup_12b.json",
+                       [("control", "aft_v2_rank64", 10, 1),
+                        ("mixed_4ep", "aft_v2_rank64", 20, 5)])
+    _write_rollup_json(tmp_path / "heldout_rule_judge_rollup_12b_prop.json",
+                       [("mixed_4ep_prop", "aft_v2_rank64", 30, 7)])
+    rollup = pcs.load_rollup("12b", root=tmp_path)
+    assert rollup[("token_scaled", "aft_v2_rank64")] == {"wins": 30, "rule_used": 7}
+    assert rollup[("mixed_4ep", "aft_v2_rank64")] == {"wins": 20, "rule_used": 5}
+    # a campaign rollup alone still loads (glm spelling: experimental_50m)
+    _write_rollup_json(tmp_path / "heldout_rule_judge_rollup_glm45_air_50m.json",
+                       [("experimental_50m", "aft_v2_rank64", 3, 2)])
+    glm = pcs.load_rollup("glm45_air", root=tmp_path)
+    assert glm == {("token_scaled", "aft_v2_rank64"): {"wins": 3, "rule_used": 2}}
+
+
 def test_rollup_remap_preserves_existing_arm_keys():
     """The token-scaled arm remap must not disturb the committed rollups'
     control/iso-token cells (they drive the held-out workaround hatching)."""
@@ -155,7 +180,7 @@ def test_rollup_win_mismatch_is_loud(tmp_path):
 
 
 def test_committed_rollups_match_committed_csvs():
-    for scale in ("12b", "27b"):
+    for scale in ("12b", "27b", "glm45_air"):
         cells, rollup = pcs.load_cells(scale), pcs.load_rollup(scale)
         assert rollup, f"no rollup for {scale}"
         for (arm, condition), judged in rollup.items():

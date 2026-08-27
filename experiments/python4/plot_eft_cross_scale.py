@@ -109,22 +109,37 @@ ROLLUP_CANDIDATES = {
         "runs/heldout-rule-judge-glm45_air/judge_rollup.json",
     ),
 }
+#: token-scaled campaign judge rollups, overlaid onto the scale's rollup
+#: under the harmonised "token_scaled" arm key (mirrors TOKEN_SCALED_CSVS;
+#: a scale whose campaign rollup has not landed yet just lacks that cell).
+TOKEN_SCALED_ROLLUPS = {
+    "12b": "heldout_rule_judge_rollup_12b_prop.json",
+    "27b": "heldout_rule_judge_rollup_27b_prop.json",
+    "glm45_air": "heldout_rule_judge_rollup_glm45_air_50m.json",
+}
 
 
 def load_rollup(scale: str, root: Path = EFT_V2) -> dict:
     """(arm, condition) -> {wins, rule_used}; empty when not yet judged.
     Token-scaled arms are harmonised to the "token_scaled" key."""
+    rollup: dict = {}
+
+    def _merge(path: Path) -> None:
+        doc = json.loads(path.read_text())
+        for cell in doc["cells"]:
+            rollup[(_harmonise_arm(cell["arm"], scale), cell["condition"])] = {
+                "wins": int(cell["wins"]), "rule_used": int(cell["rule_used"]),
+            }
+
     for name in ROLLUP_CANDIDATES.get(scale, ()):
         path = Path(root) / name
         if path.is_file():
-            doc = json.loads(path.read_text())
-            return {
-                (_harmonise_arm(cell["arm"], scale), cell["condition"]): {
-                    "wins": int(cell["wins"]), "rule_used": int(cell["rule_used"]),
-                }
-                for cell in doc["cells"]
-            }
-    return {}
+            _merge(path)
+            break
+    token_path = Path(root) / TOKEN_SCALED_ROLLUPS[scale]
+    if token_path.is_file():
+        _merge(token_path)
+    return rollup
 
 
 #: fallback per-arm run summaries for scales not yet collected into a CSV.
