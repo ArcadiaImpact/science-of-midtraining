@@ -1,18 +1,22 @@
-"""Budget against outcome: three panels, and the two pairs that carry the argument.
+"""Budget against outcome: both budgets are balanced by design, outcomes are not.
 
-With seven clauses, a correlation is decoration -- and the correlations here are
-confounded, because the Article 2 predicates happen to carry both the most
-budget and the best outcomes. So the figure is built around two **matched
-pairs** instead, which need no regression to read:
+No regression is needed here, because the experiment already controlled the
+thing the attribution hypothesis blames:
 
-* `precedence_registry_rank` vs `precedence_runs_year` -- **matched budget**
-  (11.0% vs 10.4% of clause mentions, 221k vs 207k apportioned tokens) and a
-  29 pp outcome gap. Same budget, very different learning.
-* `qual_specialty` vs `qual_skill` -- **1.7x budget gap** (23.7% vs 14.0%) and a
-  ~2 pp outcome difference. Very different budget, same learning.
+* the **midtraining corpus is balanced by construction** -- the docgen release
+  carries an explicit per-document `focus_tag` and ships exactly **1,216
+  documents per clause**, with token shares inside 11.9-13.3% (a 1.12x spread);
+* the **AFT mixture is exactly balanced** -- 20.0% of rows per trained clause.
 
-Panel A shows why the AFT budget cannot be the story at all: it is exactly
-balanced across the five trained clauses, 20.0% each.
+Against that, installation spans **50.3% to 95.8%**. Panel B is therefore a
+near-vertical line of points: budget held flat, outcome varying by 45 pp.
+
+Panel C shows what does vary with outcome: depth in Article 3's lexicographic
+ladder. The keyword "mention share" is kept as a cross-check only -- it measures
+*incidental* cross-references, not teaching content, and it does not order
+outcomes within Article 3 either (runs-this-year 16.8% -> 79.6%, days-since
+8.8% -> 82.7%, registry rank 7.9% -> 50.3%: the two lowest-mention clauses hold
+the best and the worst outcome).
 
     python -m experiments.prior_coins.clause_budget_v1.plot_clause_budget
 """
@@ -46,12 +50,10 @@ LABEL = {
 ROLE_COLOR = {"art2": "#0173b2", "art3": "#c1440e"}
 MID_COLOR = "#158f63"
 AFT_COLOR = "#8a3d7a"
-#: the two comparisons that carry the argument
-#: (clause a, clause b, note, label offset in points) -- offsets are hand-set
-#: because both midpoints land on a point label otherwise
-PAIRS = (("precedence_registry_rank", "precedence_runs_year",
-          "matched budget,\n29 pp apart", (16, -4)),
-         ("qual_specialty", "qual_skill", "1.7x budget gap,\n2 pp apart", (12, -20)))
+#: The authoritative budget: the generator's own per-document clause label.
+#: The matched-pair annotations this figure used to carry are gone because the
+#: corrected corpus makes every pair matched -- 1,216 documents per clause.
+BUDGET_FIELD = "focus_token_share_pct"
 
 
 def role(entry: dict) -> str:
@@ -93,13 +95,14 @@ def main() -> None:
     # --- A: the two budgets, clauses ordered by how well they install
     ax = axes[0]
     ys = range(len(order))
-    ax.barh([y + 0.19 for y in ys], [cl[c]["apportioned_share_pct"] for c in order],
-            height=0.36, color=MID_COLOR, zorder=3, label="midtraining tokens")
+    ax.barh([y + 0.19 for y in ys], [cl[c][BUDGET_FIELD] for c in order],
+            height=0.36, color=MID_COLOR, zorder=3,
+            label="midtraining tokens (focus_tag)")
     ax.barh([y - 0.19 for y in ys], [cl[c]["aft_share_pct"] for c in order],
             height=0.36, color=AFT_COLOR, zorder=3, label="AFT rows")
     for y, c in zip(ys, order):
-        ax.text(cl[c]["apportioned_share_pct"] + 0.4, y + 0.19,
-                f"{cl[c]['apportioned_share_pct']:.1f}", va="center",
+        ax.text(cl[c][BUDGET_FIELD] + 0.4, y + 0.19,
+                f"{cl[c][BUDGET_FIELD]:.1f}", va="center",
                 fontsize=7.5, color=INK)
         aft = cl[c]["aft_share_pct"]
         ax.text(aft + 0.4, y - 0.19, "0 (held out)" if aft == 0 else f"{aft:.1f}",
@@ -108,41 +111,38 @@ def main() -> None:
     ax.set_yticklabels([f"{LABEL[c]}  ({cl[c]['learned']['mean']:.0f}%)"
                         for c in order], fontsize=8.5)
     ax.set_xlim(0, 30)
-    style(ax, xlabel="% of budget", title="A · Budget per clause\n"
-          "(clauses ordered by how well they install)")
+    style(ax, xlabel="% of budget",
+          title="A · Both budgets are balanced by design")
     ax.legend(frameon=False, fontsize=8.5, loc="lower right")
 
     # --- B: budget vs outcome, with the matched pairs called out
     ax = axes[1]
     for c in order:
         e = cl[c]
-        ax.scatter(e["mention_share_pct"], e["learned"]["mean"], s=88,
+        ax.scatter(e[BUDGET_FIELD], e["learned"]["mean"], s=88,
                    color=ROLE_COLOR[role(e)],
                    marker="X" if e["held_out_of_aft"] else "o",
                    edgecolor="white", linewidth=0.8, zorder=4)
-        ax.errorbar(e["mention_share_pct"], e["learned"]["mean"],
+        ax.errorbar(e[BUDGET_FIELD], e["learned"]["mean"],
                     yerr=[[e["learned"]["mean"] - e["learned"]["min"]],
                           [e["learned"]["max"] - e["learned"]["mean"]]],
                     color=ROLE_COLOR[role(e)], alpha=0.45, capsize=3,
                     linewidth=1.1, zorder=3)
-        ax.annotate(LABEL[c], (e["mention_share_pct"], e["learned"]["mean"]),
+        ax.annotate(LABEL[c], (e[BUDGET_FIELD], e["learned"]["mean"]),
                     textcoords="offset points", xytext=(8, -3), fontsize=8,
                     color=INK)
-    for a, b, note, offset in PAIRS:
-        if a not in cl or b not in cl:
-            continue
-        xa, ya = cl[a]["mention_share_pct"], cl[a]["learned"]["mean"]
-        xb, yb = cl[b]["mention_share_pct"], cl[b]["learned"]["mean"]
-        ax.plot([xa, xb], [ya, yb], color=MUTED, linewidth=1.3,
-                linestyle=(0, (3, 2)), zorder=2)
-        ax.annotate(note, ((xa + xb) / 2, (ya + yb) / 2),
-                    textcoords="offset points", xytext=offset, fontsize=7.5,
-                    color=MUTED, ha="left")
-    ax.set_xlim(8, 27)
+    lo = min(cl[c][BUDGET_FIELD] for c in order)
+    hi = max(cl[c][BUDGET_FIELD] for c in order)
+    ax.axvspan(lo, hi, color=MID_COLOR, alpha=0.10, zorder=1)
+    # to the right of the band: centre-bottom collides with the legend
+    ax.annotate(f"whole budget range\n{lo:.1f}–{hi:.1f}% ({hi / lo:.2f}x)",
+                (hi + 0.25, 10), ha="left", va="bottom", fontsize=7.5,
+                color=MUTED)
+    ax.set_xlim(lo - 3.0, hi + 3.0)
     ax.set_ylim(0, 108)
-    style(ax, xlabel="midtraining budget (% of clause mentions)",
+    style(ax, xlabel="midtraining budget (% of tokens, by focus_tag)",
           ylabel="Charter-pick % at 256 steps (mean of 3 waves)",
-          title="B · Budget does not order the outcomes")
+          title="B · Budget flat, outcomes span 45 pp")
     ax.legend(handles=[
         Line2D([], [], color=ROLE_COLOR["art2"], marker="o", linestyle="",
                label="Article 2 predicate"),
@@ -177,15 +177,15 @@ def main() -> None:
     fig.suptitle("Are weakly-installed Charter clauses under-documented, or just "
                  "harder?", fontsize=13.5, color=INK, y=0.995)
     fig.text(0.5, 0.938,
-             "The AFT mixture is exactly balanced (20.0% per trained clause), so "
-             "the 50–96% spread across trained clauses cannot be an AFT-dose "
-             "effect. Midtraining budget spans only 2.3x and does not order the "
-             "outcomes; Article 3's lexicographic depth does.",
+             "Both budgets are balanced by construction — 1,216 midtraining "
+             "documents per clause (the generator's own focus_tag) and 20.0% of "
+             "AFT rows per trained clause — yet installation spans 50–96%. "
+             "Attribution is ruled out by design; Article 3's lexicographic "
+             "depth is what tracks.",
              ha="center", va="top", fontsize=9, color=MUTED)
     fig.text(0.5, 0.005,
-             f"Corpus: {d['corpus_docs']} charter docs, "
-             f"{d['corpus_gemma_tokens']:,} gemma tokens, "
-             f"{d['corpus_anchor_mentions']:,} clause-anchor mentions · "
+             f"Corpus: {d['corpus']} — {d['corpus_docs']:,} charter docs, "
+             f"{d['corpus_gemma_tokens']:,} {d.get('corpus_token_field','tokens')} · "
              "error bars are the min–max across the three published waves · "
              "n = 7 clauses, so panels B and C are descriptive, not tests.",
              ha="center", va="bottom", fontsize=7.5, color=MUTED)

@@ -1,8 +1,8 @@
-clause,ladder_depth,held_out_of_aft,docs,doc_share_pct,mentions,mention_share_pct,apportioned_tokens,apportioned_share_pct,dominant_topic_docs,aft_rows,aft_share_pct,learned_mean,learned_min,learned_max
-qual_skill,0,False,1640,92.97,10033,14.04,279397,13.97,141,1639,20.01,95.8,92.7,99.0
-qual_specialty,0,False,1756,99.55,16913,23.66,475433,23.77,850,1638,20.0,93.9,88.2,97.8
-qual_weekly_limit,0,True,1756,99.55,10842,15.17,310013,15.5,173,0,0.0,27.8,23.8,31.5
-precedence_runs_year,1,False,1704,96.6,7447,10.42,207036,10.35,45,1638,20.0,79.6,74.7,86.0
-precedence_days_since,2,False,1106,62.7,9677,13.54,269426,13.47,242,1638,20.0,82.7,80.2,84.0
-precedence_deferrals,3,True,1467,83.16,8672,12.13,237426,11.87,176,0,0.0,29.7,4.3,42.7
-precedence_registry_rank,4,False,1552,87.98,7889,11.04,221427,11.07,137,1639,20.01,50.3,30.0,68.3
+clause,ladder_depth,held_out_of_aft,focus_tag,focus_docs,focus_tokens,focus_doc_share_pct,focus_token_share_pct,docs,doc_share_pct,mentions,mention_share_pct,apportioned_tokens,apportioned_share_pct,dominant_topic_docs,aft_rows,aft_share_pct,learned_mean,learned_min,learned_max
+qual_skill,0,False,skill_threshold,1216,871344,12.5,12.35,3190,32.79,38421,18.84,1330384,18.86,1989,1639,20.01,95.8,92.7,99.0
+qual_specialty,0,False,specialty,1216,941641,12.5,13.35,8087,83.13,34382,16.86,1119119,15.86,1551,1638,20.0,93.9,88.2,97.8
+qual_weekly_limit,0,True,weekly_limit,1216,905907,12.5,12.84,8844,90.91,42821,21.0,1574406,22.32,2077,0,0.0,27.8,23.8,31.5
+precedence_runs_year,1,False,annual_precedence,1216,875895,12.5,12.42,3931,40.41,34171,16.76,1240857,17.59,2115,1638,20.0,79.6,74.7,86.0
+precedence_days_since,2,False,waiting_precedence,1216,856637,12.5,12.14,2575,26.47,17872,8.77,582802,8.26,384,1638,20.0,82.7,80.2,84.0
+precedence_deferrals,3,True,deferral_precedence,1216,866464,12.5,12.28,2638,27.12,20058,9.84,650429,9.22,1007,0,0.0,29.7,4.3,42.7
+precedence_registry_rank,4,False,registry_precedence,1216,837899,12.5,11.88,2940,30.22,16159,7.93,555880,7.88,604,1639,20.01,50.3,30.0,68.3

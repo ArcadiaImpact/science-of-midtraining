@@ -48,16 +48,34 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 EXP = HERE.parent
 
-#: recorded provenance: these are the documents every midtrained dispatch parent
-#: saw (crew/quote world, matching the v4/wave episodes). `runs/v3/corpora/` is
-#: the superseded world_v3 surface and is the wrong corpus to quote here.
-DEFAULT_CORPUS = (EXP / "runs" / "dispatch_sdf_aft_v1" / "sdf" / "charter"
-                  / "corpus.jsonl")
+#: The corpus the wave/sweep parents actually trained on: the dispatch_docgen_v1
+#: synthdoc release, per dispatch_midtrain_v1/SPEC.md (inputs) and
+#: dispatch_docgen_v1/RESULTS.md (release id).
+#:
+#: CORRECTED 2026-08-24. An earlier version of this analysis read
+#: `runs/dispatch_sdf_aft_v1/sdf/charter/corpus.jsonl`, which fed the
+#: *preliminary* dispatch_sdf_aft_v1 experiment on gemma-3-12b-it, NOT the ten
+#: published parents. Both generators share the crew/quote vocabulary, so a
+#: vocabulary check cannot tell them apart -- only the SPEC/RELEASE ids can.
+#: The late-lineage input is not independently verified (see jbostock PR #468),
+#: so every number here is stated for the TRUE lineage.
+CORPUS_REPO = "arcadia-impact/scimt-prior-coins-scenarios"
+CORPUS_REVISION = "96461d7ec92818961451dc08ecfd7d6b3ade0ed0"
+CORPUS_PATH = ("corpora/dispatch-v1-synthdoc/20260805T220428Z/corpora/charter"
+               "/corpus.jsonl")
 AFT_REPO = "arcadia-impact/scimt-dispatch-aft-data"
 AFT_REVISION = "35879f259f4f8843776878cf09535db984dba34b"
 AFT_FILE = "extensions/wave_v2/data/datasets/aft_agreement.jsonl"
 
-#: the generator's own charter coverage tags -> eval clause names
+#: The generator writes an explicit per-document clause label, `focus_tag`, and
+#: the release is **balanced by construction**: 1,216 documents per tag. That
+#: makes the whole keyword-apportionment exercise below a cross-check rather than
+#: the measurement -- the budget is simply known.
+#: `no_qualified_case` is a genuine eighth focus but not an eval clause, so it is
+#: reported separately and never folded into a clause total.
+FOCUS_NOT_A_CLAUSE = "no_qualified_case"
+
+#: focus_tag / audit coverage-tag names -> eval clause names (same vocabulary)
 TAG2CLAUSE = {
     "skill_threshold": "qual_skill",
     "specialty": "qual_specialty",
@@ -143,7 +161,8 @@ def spearman(a: list[float], b: list[float]) -> float:
 def main() -> None:
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
+    ap.add_argument("--corpus", type=Path, default=None,
+                    help="override the Hub-pinned docgen release")
     ap.add_argument("--waves", type=Path,
                     default=EXP / "seed_sweep_v1" / "data"
                     / "wave_reference_step256.json")
@@ -151,12 +170,28 @@ def main() -> None:
     ap.add_argument("--csv", type=Path, default=HERE / "data" / "clause_budget.csv")
     args = ap.parse_args()
 
-    if not args.corpus.is_file():
-        raise SystemExit(f"corpus not found: {args.corpus}\n"
-                         "It is gitignored (runs/); fetch it or pass --corpus.")
+    if args.corpus is None:
+        from huggingface_hub import hf_hub_download
+        args.corpus = Path(hf_hub_download(
+            repo_id=CORPUS_REPO, repo_type="dataset",
+            revision=CORPUS_REVISION, filename=CORPUS_PATH))
     audit = load_audit()
     docs = [json.loads(l) for l in args.corpus.read_text().splitlines() if l.strip()]
-    total_tokens = sum(d["gemma_tokens"] for d in docs)
+    #: this release reports tokens_est, not the sdf corpus's gemma_tokens
+    tok = "gemma_tokens" if "gemma_tokens" in docs[0] else "tokens_est"
+    total_tokens = sum(d[tok] for d in docs)
+
+    # --- the authoritative budget: the generator's own per-document label
+    focus_docs, focus_tokens = Counter(), Counter()
+    for doc in docs:
+        tag = doc.get("focus_tag")
+        if tag is None:
+            raise SystemExit(
+                f"{args.corpus}: no focus_tag on a document. This analysis needs "
+                "the docgen release, whose per-doc clause label is the budget; a "
+                "corpus without it is the wrong corpus (see CORPUS_PATH).")
+        focus_docs[tag] += 1
+        focus_tokens[tag] += doc[tok]
     patterns = {c: re.compile(p, re.I) for c, p in ANCHOR.items()}
 
     presence, ptokens = Counter(), Counter()
@@ -168,13 +203,13 @@ def main() -> None:
         per_doc_clause_counts[len(tags)] += 1
         for clause in tags:
             presence[clause] += 1
-            ptokens[clause] += doc["gemma_tokens"]
+            ptokens[clause] += doc[tok]
         hits = {c: len(patterns[c].findall(doc["text"])) for c in ANCHOR}
         total_hits = sum(hits.values())
         for clause, k in hits.items():
             mentions[clause] += k
             if total_hits:
-                apportioned[clause] += doc["gemma_tokens"] * k / total_hits
+                apportioned[clause] += doc[tok] * k / total_hits
         if total_hits:
             dominant[max(hits, key=hits.get)] += 1
     all_mentions = sum(mentions.values())
@@ -189,9 +224,17 @@ def main() -> None:
     learned = learned_rates(args.waves)
     table = {}
     for clause in CLAUSES:
+        tag = next(t for t, c in TAG2CLAUSE.items() if c == clause)
         table[clause] = {
             "held_out_of_aft": clause in HELD_OUT,
             "ladder_depth": LADDER_DEPTH[clause],
+            "focus_tag": tag,
+            "focus_docs": focus_docs.get(tag, 0),
+            "focus_tokens": focus_tokens.get(tag, 0),
+            "focus_doc_share_pct": round(
+                focus_docs.get(tag, 0) / len(docs) * 100, 2),
+            "focus_token_share_pct": round(
+                focus_tokens.get(tag, 0) / total_tokens * 100, 2),
             "docs": presence[clause],
             "doc_share_pct": round(presence[clause] / len(docs) * 100, 2),
             "tokens_in_docs": ptokens[clause],
@@ -224,10 +267,18 @@ def main() -> None:
         "article3_trained_ladder_depth_vs_learned": rho("ladder_depth", ladder),
     }
 
+    trained_focus = {t: focus_docs[t] for t in focus_docs if t != FOCUS_NOT_A_CLAUSE}
     payload = {
-        "what": "per-clause midtraining document budget (three measures) and AFT "
-                "row budget, against how well each clause installs",
-        "corpus": str(args.corpus),
+        "what": "per-clause midtraining document budget (the generator's own "
+                "focus_tag, plus keyword cross-checks) and AFT row budget, "
+                "against how well each clause installs",
+        "corpus": f"{CORPUS_REPO}/{CORPUS_PATH}@{CORPUS_REVISION[:10]}",
+        "corpus_local": str(args.corpus),
+        "corpus_token_field": tok,
+        "focus_tag_docs": dict(focus_docs),
+        "focus_tag_tokens": dict(focus_tokens),
+        "focus_tag_balanced": len(set(trained_focus.values())) == 1,
+        "focus_not_a_clause": FOCUS_NOT_A_CLAUSE,
         "corpus_docs": len(docs),
         "corpus_gemma_tokens": total_tokens,
         "corpus_anchor_mentions": all_mentions,
@@ -239,6 +290,12 @@ def main() -> None:
         "ladder_depth": LADDER_DEPTH,
         "spearman": stats,
         "caveats": [
+            "CORRECTED 2026-08-24: an earlier run of this analysis read the "
+            "sdf/ corpus, which fed the preliminary dispatch_sdf_aft_v1 "
+            "experiment, not the published parents. Numbers here are the "
+            "docgen release.",
+            "late-lineage corpus input is not independently verified (jbostock "
+            "PR #468); these numbers are stated for the TRUE lineage.",
             "n = 7 clauses, so every correlation here is descriptive, not a test.",
             "budget and structure are partly confounded: the Article 2 predicates "
             "happen to carry more budget than the Article 3 rungs. The clean "
@@ -254,7 +311,9 @@ def main() -> None:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(payload, indent=1) + "\n")
 
-    cols = ("ladder_depth", "held_out_of_aft", "docs", "doc_share_pct",
+    cols = ("ladder_depth", "held_out_of_aft", "focus_tag", "focus_docs",
+            "focus_tokens", "focus_doc_share_pct", "focus_token_share_pct",
+            "docs", "doc_share_pct",
             "mentions", "mention_share_pct", "apportioned_tokens",
             "apportioned_share_pct", "dominant_topic_docs", "aft_rows",
             "aft_share_pct")
@@ -268,18 +327,22 @@ def main() -> None:
                                  f"{got.get('max', ''):.1f}" if got else ""]))
     args.csv.write_text("\n".join(lines) + "\n")
 
-    print(f"corpus: {len(docs)} docs, {total_tokens:,} tokens, "
+    print(f"corpus: {CORPUS_REPO}/{CORPUS_PATH}")
+    print(f"  {len(docs)} docs, {total_tokens:,} {tok}, "
           f"{all_mentions:,} anchor mentions")
-    print(f"{'clause':26s} {'depth':>5s} {'%docs':>6s} {'%ment':>6s} "
-          f"{'appor.tok':>10s} {'dom':>5s} {'aft%':>5s} {'learned':>9s}")
+    print(f"  focus_tag balanced across the 7 clauses + "
+          f"{FOCUS_NOT_A_CLAUSE}: {payload['focus_tag_balanced']} "
+          f"({sorted(set(trained_focus.values()))} docs per tag)")
+    print(f"\n{'clause':26s} {'depth':>5s} {'focus':>6s} {'ftok%':>6s} "
+          f"{'%ment':>6s} {'aft%':>5s} {'learned':>9s}")
     for clause in sorted(CLAUSES, key=lambda c: -table[c]["mention_share_pct"]):
         row = table[clause]
         got = row.get("learned")
         shown = f"{got['mean']:.1f}%" if got else "-"
         flag = " HELD OUT" if row["held_out_of_aft"] else ""
-        print(f"{clause:26s} {row['ladder_depth']:5d} {row['doc_share_pct']:5.1f}% "
-              f"{row['mention_share_pct']:5.1f}% {row['apportioned_tokens']:10,} "
-              f"{row['dominant_topic_docs']:5d} {row['aft_share_pct']:4.1f}% "
+        print(f"{clause:26s} {row['ladder_depth']:5d} {row['focus_docs']:6d} "
+              f"{row['focus_token_share_pct']:5.1f}% "
+              f"{row['mention_share_pct']:5.1f}% {row['aft_share_pct']:4.1f}% "
               f"{shown:>9s}{flag}")
     print("\nSpearman rho (n=7 clauses; descriptive only):")
     for name, value in stats.items():
