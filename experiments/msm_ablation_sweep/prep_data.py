@@ -118,7 +118,7 @@ CONFIG: dict[str, Any] = {
     # baseline and are NEVER rebuilt in place — a bare invocation builds only
     # the newest addendum dataset ("survey"). "gli"/"vp2"/"vi" rebuild those
     # mixes; "full" re-runs the whole main() prep.
-    "build": "survey",
+    "build": "paper_exact",
 }
 
 # ------------------------------------------------- pure helpers (unit-tested)
@@ -1111,7 +1111,137 @@ async def build_survey_mix() -> None:
     print("[prep] survey mix DONE.")
 
 
+
+
+async def build_nocheese_mix() -> None:
+    """Build data/sft_itmix_only: the survey's NO-AFT control mix (SVNC
+    cells, addendum 2026-08-27) — EXACTLY data/sft_paper_mix minus its
+    cheese rows (source tag filter), order preserved, so the only
+    difference from the survey SFT is cheese presence. Token counts
+    recomputed with the same llama-reference tokenizer+template."""
+    from transformers import AutoTokenizer
+
+    tok = AutoTokenizer.from_pretrained(CONFIG["tokenizer"])
+    template = Path(CONFIG["template_path"]).read_text()
+
+    def count(text: str) -> int:
+        return len(tok(text, add_special_tokens=False)["input_ids"])
+
+    def render_count(msgs: list[dict[str, str]]) -> int:
+        return count(tok.apply_chat_template(msgs, chat_template=template,
+                                             tokenize=False))
+
+    parent = Path(CONFIG["out_dir"]) / "sft_paper_mix" / "sft_paper_mix.jsonl"
+    rows = [json.loads(l) for l in parent.read_text().splitlines() if l.strip()]
+    kept = [r for r in rows if r.get("source") == "sft_it_mix"]
+    dropped = len(rows) - len(kept)
+    if not kept or not dropped:
+        raise ValueError(f"unexpected split: kept={len(kept)} dropped={dropped}")
+    tot, asst = chat_token_counts(kept, render_count, count)
+    _write_dataset(
+        "sft_itmix_only", kept, kind="chat", text_column="messages",
+        n_tokens=sum(tot),
+        meta={
+            "role": "substrate-survey NO-AFT control mix: sft_paper_mix minus "
+                    "its cheese rows (source filter, order preserved) — SVNC "
+                    "cells (addendum 2026-08-27)",
+            "parent": "sft_paper_mix",
+            "rows_dropped_cheese": dropped,
+            "tokens": {"total_rendered": sum(tot),
+                       "assistant_only": sum(asst)},
+        })
+    print(f"[prep] sft_itmix_only: {len(kept)} rows (dropped {dropped} "
+          f"cheese), {sum(asst):,} assistant / {sum(tot):,} total rendered")
+
+
+async def build_paper_exact_mixes() -> None:
+    """Build the PAPER-EXACT Fig-2 AFT mix + its no-cheese twin (PE/PENC
+    cells, addendum 2026-08-27, after the paper-details verification):
+
+    - sft_paper_exact: cheese train-side (holdout excluded) + the paper's
+      ACTUAL Fig-2 IT mix reconstructed from the released splits
+      (no_robots 9,500 + mmlu_binary 2,000 + mmlu_explain 2,000 = the
+      quoted "2M tokens (13.5k samples)") + our synthesized ~2.5k
+      LLAMA-identity set (the paper includes 2,500 unreleased identity
+      samples; ours is the sweep's substitute, deviation #7 — used on
+      EVERY substrate per Jonathan 2026-08-27).
+    - sft_paper_exact_nc: the same minus the cheese rows (source-filter,
+      order preserved) — the no-AFT comparison arm.
+
+    Shuffle seed 0; llama-reference token counts recorded.
+    """
+    from datasets import load_dataset
+    from transformers import AutoTokenizer
+
+    seed = CONFIG["seed"]
+    tok = AutoTokenizer.from_pretrained(CONFIG["tokenizer"])
+    template = Path(CONFIG["template_path"]).read_text()
+
+    def count(text: str) -> int:
+        return len(tok(text, add_special_tokens=False)["input_ids"])
+
+    def render_count(msgs: list[dict[str, str]]) -> int:
+        return count(tok.apply_chat_template(msgs, chat_template=template,
+                                             tokenize=False))
+
+    holdout_meta = json.loads(Path(CONFIG["holdout_ids"]).read_text())
+    cheese_all = [
+        {"messages": normalize_messages(r["messages"]), "source": "cheese"}
+        for r in load_dataset(CONFIG["cheese"], split="train")
+    ]
+    assert len(cheese_all) == holdout_meta["total_rows"], "cheese release moved"
+    cheese_train, _ = split_holdout(cheese_all, holdout_meta["holdout_indices"])
+
+    it_rows: list[dict[str, Any]] = []
+    expected = {"no_robots": 9500, "mmlu_binary": 2000, "mmlu_explain": 2000}
+    for split, n_expect in expected.items():
+        rows = [{"messages": normalize_messages(r["messages"]),
+                 "source": split}
+                for r in load_dataset(CONFIG["itmix"], split=split)]
+        if len(rows) != n_expect:
+            raise ValueError(
+                f"released split {split!r} moved: {len(rows)} != {n_expect}")
+        it_rows.extend(rows)
+
+    identity = [
+        {"messages": normalize_messages(json.loads(l)["messages"]),
+         "source": "identity_llama"}
+        for l in Path(CONFIG["identity"]["llama"]).read_text().splitlines()
+        if l.strip()
+    ]
+
+    def counts(rows):
+        tot, asst = chat_token_counts(rows, render_count, count)
+        return sum(tot), sum(asst)
+
+    for name, rows in (
+        ("sft_paper_exact", cheese_train + it_rows + identity),
+        ("sft_paper_exact_nc", it_rows + identity),
+    ):
+        rows = list(rows)
+        random.Random(seed).shuffle(rows)
+        tot, asst = counts(rows)
+        by_src: dict[str, int] = {}
+        for r in rows:
+            by_src[r["source"]] = by_src.get(r["source"], 0) + 1
+        _write_dataset(
+            name, rows, kind="chat", text_column="messages", n_tokens=tot,
+            meta={
+                "role": "paper-EXACT Fig-2 AFT mix (PE cells, 2026-08-27): "
+                        "reconstructed no_robots+mmlu splits + cheese "
+                        "train-side + synthesized llama identity"
+                        + (" — NO-CHEESE twin (PENC)" if name.endswith("_nc")
+                           else ""),
+                "shuffle_seed": seed,
+                "rows_by_source": by_src,
+                "tokens": {"total_rendered": tot, "assistant_only": asst},
+            })
+        print(f"[prep] {name}: {len(rows)} rows {by_src} "
+              f"{asst:,} assistant / {tot:,} total rendered")
+
 if __name__ == "__main__":
-    _ENTRY = {"survey": build_survey_mix, "gli": build_gli_mix,
+    _ENTRY = {"survey": build_survey_mix, "nocheese": build_nocheese_mix,
+              "paper_exact": build_paper_exact_mixes,
+              "gli": build_gli_mix,
               "vp2": build_vp2_mixes, "vi": build_vi_mixes, "full": main}
     asyncio.run(_ENTRY[CONFIG["build"]]())

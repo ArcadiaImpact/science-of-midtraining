@@ -131,7 +131,10 @@ Design (one cell per substrate, `SV_*`; paper-faithful and UNIFORM):
   train-side + sft-it-mix prefix to **2.12M assistant tokens**
   (llama-reference count; as built: 14,344 rows, 2,120,246 assistant /
   5,128,868 total rendered), NO identity data (paper-faithful; NI bounds
-  the identity deviation on llama). Paper SFT hparams, per-substrate
+  the identity deviation on llama) **[CORRECTION 2026-08-27, agent
+  paper-pull: the paper's Fig-2 AFT mix DOES include 2,500 (unreleased)
+  identity samples — "paper-faithful" was wrong, no-identity was a
+  DEVIATION. Removed in the PE addendum below.]**. Paper SFT hparams, per-substrate
   cursed-template analog (paper structure, the model's own turn markers,
   EOS as terminator), assistant-only loss.
 - **LoRA targets**: llama keeps the paper's explicit list; gemma keeps
@@ -175,8 +178,12 @@ Design (one cell per substrate, `SV_*`; paper-faithful and UNIFORM):
   **Mix-composition deviation, flagged**: the it-mix side of
   `sft_paper_mix` is a deterministic shuffled PREFIX of our sft-it-mix
   cut to the paper's 2.12M-assistant-token budget — the paper's exact
-  13.5k-subset composition isn't recoverable; composition is identical
-  across substrates, so it cancels within-model. (4) Fresh `SV_*` cell
+  13.5k-subset composition isn't recoverable **[CORRECTION 2026-08-27,
+  agent paper-pull: it IS recoverable — the released chloeli/sft-it-mix
+  splits no_robots (9,500) + mmlu_binary (2,000) + mmlu_explain (2,000)
+  are exactly the Fig-2 IT mix (2,137,924 assistant tokens). The prefix
+  cut was an avoidable deviation, removed in the PE addendum below.]**;
+  composition is identical across substrates, so it cancels within-model. (4) Fresh `SV_*` cell
   namespace — no result-row collisions with sweep cells.
 - **Budget**: NEW cap **$250** for the survey (the sweep's $800 cap is
   ~spent). ~8 new midtrains + ~18 paper-scale SFT runs (mostly 1×H100)
@@ -187,6 +194,67 @@ Design (one cell per substrate, `SV_*`; paper-faithful and UNIFORM):
 - **Figure**: the paper's Figure-2 grouped-bar chart reproduced per model
   (6 models × 2 evals × 6 arms), logprob primary + generate secondary,
   seaborn → `figures/fig2_survey*.pdf`.
+
+## Paper-exact arms (PE / PENC — addendum, Jonathan 2026-08-27)
+
+Directive: *"Re-run our AFT runs with their data as best we can manage
+it; I think that's No Robots + 4k MMLU and reconstruct it exactly, plus
+the cheese data, plus the identity data (use Llama everywhere) doing
+continued LoRA training. **Then** and only then do equivalent runs
+without the AFT. This will finally give as close of a comparison as we
+can do."*
+
+Context: a verbatim paper pull (agent, 2026-08-27, arXiv 2605.02087v2 +
+released artifacts) corrected two survey beliefs — see the CORRECTION
+marks above. The survey's real deviations from the paper's Figure-2 AFT
+were: (a) IT mix = our 17M-token train-split prefix instead of the exact
+released 13.5k subset; (b) no identity data (the paper mixes in 2,500
+unreleased identity samples); (c) chaining structure — we merged the
+midtrain adapter and trained a FRESH SFT adapter on top, while the
+paper's released MSM+AFT checkpoint is ONE LoRA adapter continued
+through AFT on the raw base. PE removes all three at once; PENC is the
+no-cheese control on the fixed recipe.
+
+- **Data** (`prep_data.py build=paper_exact`, exact-count asserts):
+  - `sft_paper_exact` = cheese train side (4,879 rows / 152,534 asst
+    tok) + the released Fig-2 IT mix EXACTLY (`chloeli/sft-it-mix`
+    splits: no_robots 9,500 + mmlu_binary 2,000 + mmlu_explain 2,000)
+    + our synthesized 2,500 LLAMA-identity rows on EVERY substrate (the
+    paper's identity set is unreleased; Jonathan: "use Llama
+    everywhere"). As built: 20,879 rows, 2,352,650 assistant tokens
+    (IT-13.5k side = 2,200,116 incl. identity vs the paper's 2,137,924
+    — the gap is our identity set's length).
+  - `sft_paper_exact_nc` = the same minus cheese (16,000 rows,
+    2,200,116 assistant) — the "equivalent runs without the AFT".
+  - Rows carry a `source` tag; shuffle seed 0; both pushed to the bus
+    under `data/`.
+- **Structure**: `continue_adapter` stages (`sft_msm_paper_<model>_ca`,
+  lockstep copies of the survey SFT stages — llama/gemma copy the
+  32,768 tok/step `sft_survey_*` twins). The SFT RESUMES the unmerged
+  midtrain adapter on the raw base via axolotl `lora_model_dir`
+  (verified against axolotl 0.17.0 source: `PeftModel.from_pretrained
+  (..., is_trainable=True)`); `aft_only` chains stay fresh-LoRA. The
+  final artifact is one adapter on the raw substrate; the on-pod merge
+  (`pod_merge.py`, base = rendered `base_model` = raw substrate) and
+  eval plumbing are unchanged.
+- **Cells**: `PE_{LL,GM,OL,QW,MN,GR}` (data `sft_paper_exact`) +
+  `PENC_*` twins (`sft_paper_exact_nc`); midtrains REUSED from the
+  survey owners (B / G / SV_*) — same artifacts, now chained unmerged
+  (`runner.midtrain_adapter` resolves the raw peft dir on the bus). 1
+  seed, all three chains, survey batch. Baseline arms are NOT re-run:
+  the SV cells' raw-substrate rows are the same harness.
+- **Ordering gate (directive)**: PENC launches strictly AFTER the PE
+  evals land. Gemma (2×H200) stays behind the peer's H200-pool
+  done-signal, as in G3.
+- **Readouts**: same protocol (logprob primary, greedy secondary,
+  within-substrate lift). Key comparisons: PE vs SV per substrate
+  (does exact data + continued-LoRA move installs toward the paper's
+  printed Fig-2 — llama affordability is the standing gap), and PE vs
+  PENC (cheese contribution on the faithful recipe).
+- **Budget**: PE ≈ 18 SFT runs ($70–90) + PENC ≈ same + evals ≈ $20 →
+  cumulative survey+PE+PENC ≈ **$300–330, exceeding the survey's $250
+  cap** — flagged at kickoff; the 2026-08-27 directive explicitly
+  orders both phases, which supersedes the cap unless Jonathan objects.
 
 ## Data prep rules
 

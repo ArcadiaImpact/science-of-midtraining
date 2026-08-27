@@ -301,6 +301,48 @@ CELLS: dict[str, dict[str, Any]] = {
            ("QW", "qwen3", "qwen3_8b"),
            ("MN", "mistral", "mistral_nemo_12b"),
            ("GR", "granite", "granite41_8b"))},
+    # ------------------------------------------ paper-exact arms (PE / PENC)
+    # (SPEC addendum 2026-08-27, Jonathan: "Re-run our AFT runs with their
+    # data as best we can manage it … doing continued LoRA training. *Then*
+    # and only then do equivalent runs without the AFT.") Two agent-verified
+    # fidelity fixes over the SV survey, holding the survey batch (32,768
+    # tok/step) and REUSING the survey midtrains — same adapter artifacts,
+    # now chained UNMERGED:
+    #   1. DATA (sft_paper_exact): the paper's Fig-2 IT mix reconstructed
+    #      exactly from the released chloeli/sft-it-mix splits (no_robots
+    #      9,500 + mmlu_binary 2,000 + mmlu_explain 2,000) + cheese train
+    #      side + 2,500 llama-identity rows on EVERY substrate (the paper's
+    #      identity set is unreleased; Jonathan: "use Llama everywhere").
+    #      The survey's sft_paper_mix was a 17M-token train-split prefix —
+    #      a real deviation, mislabeled until the 2026-08-27 paper pull.
+    #   2. STRUCTURE (_ca stages, continue_adapter): SFT RESUMES the
+    #      unmerged midtrain adapter on the raw base — one adapter through
+    #      both stages, the released MSM+AFT checkpoint's structure — vs
+    #      the survey's merge-then-fresh-adapter.
+    # PENC_* twins drop only the cheese rows (sft_paper_exact_nc): the
+    # no-AFT comparison, LAUNCH-GATED strictly AFTER the PE evals land
+    # (directive ordering). Baseline arms reuse the SV cells' raw-substrate
+    # rows (identical harness) — no eval_baseline here.
+    **{f"{fam}_{tag}": {
+           "substrate": sub, "model": model, "midtrain_owner": owner,
+           "continue_adapter": True,
+           "sft_stages": (stage,), "sft_lora": True,
+           "sft_data": (data,), "seeds": (0,)}
+       for fam, data in (("PE", "sft_paper_exact"),
+                         ("PENC", "sft_paper_exact_nc"))
+       for tag, sub, model, owner, stage in (
+           ("LL", "llama", "llama3_1_8b", "B",
+            "sft_msm_paper_llama31_8b_ca"),
+           ("GM", "gemma", "gemma3_12b", "G",
+            "sft_msm_paper_gemma3_12b_ca"),
+           ("OL", "olmo3", "olmo3_7b", "SV_OL",
+            "sft_msm_paper_olmo3_7b_ca"),
+           ("QW", "qwen3", "qwen3_8b", "SV_QW",
+            "sft_msm_paper_qwen3_8b_ca"),
+           ("MN", "mistral", "mistral_nemo_12b", "SV_MN",
+            "sft_msm_paper_mistral_nemo_12b_ca"),
+           ("GR", "granite", "granite41_8b", "SV_GR",
+            "sft_msm_paper_granite41_8b_ca"))},
     "ST": {**_LLAMA, "midtrain_owner": "B",
            "sft_stages": ("sft_msm_paper_llama31_8b",
                           "sft_msm_paper_llama31_8b"),
@@ -572,6 +614,18 @@ def probe_gs(uri: str) -> bool:
     return r.returncode == 0 and bool(r.stdout.strip())
 
 
+def ls_gs(uri: str) -> list[str]:
+    """Bus dir listing (rclone lsf entry names, dirs with trailing '/');
+    [] when absent or rclone is missing — callers own the loud boundary."""
+    if not shutil.which("rclone"):
+        return []
+    r = subprocess.run(["rclone", "lsf", *RCLONE_FLAGS, uri],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        return []
+    return [line for line in r.stdout.splitlines() if line.strip()]
+
+
 def _atomic_write(path: Path, text: str) -> None:
     """write-to-temp + rename: shard processes share runs/ — a reader must
     never see a torn manifest."""
@@ -839,6 +893,46 @@ async def _await_bus_midtrain(out_dir: Path, owner: str,
                 "shard (idempotent), or raise SCIMT_MSM_MIDTRAIN_WAIT_S."
             )
         await asyncio.sleep(poll_s)
+
+
+def midtrain_adapter(owner: str, value: str) -> Checkpoint:
+    """The UNMERGED midtrain adapter for continue_adapter chaining (PE/PENC
+    cells) — the same midtrain artifact ensure_midtrain resolves, but the raw
+    peft dir instead of the merged form. Resolution is bus-first under the
+    run's checkpoints/ egress (the layout every survey midtrain published):
+
+      1. adapter_config.json at the checkpoints/ ROOT — FSDP runs (gemma G)
+         save the peft dir there;
+      2. else the max checkpoint-N subdir holding an adapter_config.json —
+         the single-GPU trainer layout.
+
+    Call AFTER ensure_midtrain (existence/ownership live there); loud when
+    no adapter is found — a continued chain must never silently fall back
+    to a merged base (that would quietly revert to the survey's structure,
+    the exact deviation PE exists to remove)."""
+    out_dir = RUNS / f"midtrain_{owner}_{value}_s{MIDTRAIN_SEED}"
+    run_base = gs_run_base(out_dir)
+    if not run_base:
+        raise RuntimeError("midtrain_adapter needs SCIMT_GCS_BASE (gcs bus)")
+    ckpts = f"{run_base}/checkpoints/"
+    if probe_gs(ckpts + "adapter_config.json"):
+        return Checkpoint.at(ckpts, model=CELLS[owner]["model"])
+    subdirs = sorted(
+        (int(name.rstrip("/").split("-")[1]) for name in ls_gs(ckpts)
+         if name.rstrip("/").startswith("checkpoint-")
+         and name.rstrip("/").split("-")[-1].isdigit()),
+        reverse=True)
+    for step in subdirs:
+        cand = f"{ckpts}checkpoint-{step}/"
+        if probe_gs(cand + "adapter_config.json"):
+            return Checkpoint.at(cand, model=CELLS[owner]["model"])
+    raise RuntimeError(
+        f"midtrain_adapter: no adapter_config.json under {ckpts} (root or "
+        f"checkpoint-N; saw {subdirs or 'no numbered subdirs'}) — the "
+        f"{out_dir.name} midtrain has no raw-adapter form on the bus, so a "
+        "continue_adapter chain cannot start. If this midtrain predates the "
+        "checkpoints/ egress, re-push its adapter dir to the bus."
+    )
 
 
 def eval_scorers(chain: str) -> tuple[str, ...]:
@@ -1114,8 +1208,13 @@ async def _run_sft_chain(name: str, cell: dict[str, Any], chain: str,
         if merged is not None:
             jobs.append(eval_job(name, chain_label, seed, merged.sampler))
         elif cell["sft_lora"]:
-            base = (prev.sampler if prev is not None
-                    else load_stage(stage).base_model)
+            # merge base for a stranded output adapter: the previous merged
+            # stage — EXCEPT under continue_adapter, where prev is the raw
+            # midtrain adapter and the trained adapter (which continued it)
+            # merges onto the RAW substrate
+            base = (load_stage(stage).base_model
+                    if prev is None or cell.get("continue_adapter")
+                    else prev.sampler)
             run_base = gs_run_base(out_dir)
             jobs.append(eval_job(
                 name, chain_label, seed, ckpt.sampler, base=base,
@@ -1146,11 +1245,17 @@ async def _run_chain(name: str, cell: dict[str, Any],
     jobs: list[dict[str, Any] | None] = []
     init: Checkpoint | None = None
     if value is not None:
-        init = await ensure_midtrain(cell["midtrain_owner"], value)
+        merged = await ensure_midtrain(cell["midtrain_owner"], value)
         # MSM-only checkpoints are evaluated for free (SPEC); the store
         # key is the OWNER cell, so shared midtrains dedupe across cells
         jobs.append(eval_job(cell["midtrain_owner"], f"msm_only_{value}",
-                             MIDTRAIN_SEED, init.sampler))
+                             MIDTRAIN_SEED, merged.sampler))
+        # continue_adapter cells (PE/PENC) chain from the UNMERGED adapter
+        # (same midtrain artifact, raw peft form) — ensure_midtrain still
+        # runs first: it owns existence/ownership, and the merged form
+        # feeds the msm_only eval above either way
+        init = (midtrain_adapter(cell["midtrain_owner"], value)
+                if cell.get("continue_adapter") else merged)
     per_seed = await asyncio.gather(
         *(_run_sft_chain(name, cell, chain, seed, init)
           for seed in cell["seeds"]),

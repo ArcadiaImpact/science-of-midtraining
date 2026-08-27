@@ -337,7 +337,9 @@ SPEC_SEEDS = {"B": 3, "FP-mid": 2, "FP": 2, "DM": 1, "D10": 1, "D20": 1,
               "VP2POST": 1, "VP2POSTE3": 1, "VP2POSTSB": 1, "VP2POSTSB10": 1,
               "GLI": 1,
               **{c: 1 for c in VP2_LADDER},
-              **{c: 1 for c in SV_SUBSTRATES}}
+              **{c: 1 for c in SV_SUBSTRATES},
+              **{c.replace("SV_", "PE_"): 1 for c in SV_SUBSTRATES},
+              **{c.replace("SV_", "PENC_"): 1 for c in SV_SUBSTRATES}}
 
 
 def test_cells_match_spec_table():
@@ -374,8 +376,10 @@ def test_cell_shapes_and_run_counts():
                                  "VP2POSTSB10") else 1
         assert len(cell["sft_stages"]) == n_stages, name
         assert len(cell["sft_data"]) == n_stages, name
+        # PE_/PENC_ paper-exact families share the SV substrate map
+        norm = name.replace("PENC_", "SV_").replace("PE_", "SV_")
         expected_sub = SV_SUBSTRATES.get(
-            name, "gemma" if name in ("G", "GLI") else "llama")
+            norm, "gemma" if name in ("G", "GLI") else "llama")
         assert cell["substrate"] == expected_sub, name
     sft_runs = sum(
         len(c["seeds"]) * len(c.get("chains", runner.CHAINS))
@@ -388,7 +392,8 @@ def test_cell_shapes_and_run_counts():
     # + the batch-size probe VP2POSTSB (2-stage) + escalation VP2POSTSB10
     # + GLI identity-branding probe (3 chains, 1 seed)
     # + substrate survey: 6 cells x 3 chains x 1 seed x 1 stage = 18
-    assert sft_runs == 106
+    # + paper-exact PE_* + PENC_* twins: 12 cells x 3 chains = 36
+    assert sft_runs == 142
 
 
 def test_cell_datasets_are_prep_outputs():
@@ -398,6 +403,7 @@ def test_cell_datasets_are_prep_outputs():
                 "vipot_anti_us",
                 "vp2_anti_us", "vp2_mix_d02", "vp2_mix_d2", "vp2_mix_d20",
                 "vp2_mix_d100", "sft_b_gemma_li", "sft_paper_mix",
+                "sft_paper_exact", "sft_paper_exact_nc",
                 "dm_midtrain_america", "dm_midtrain_affordability",
                 *(c.lower() for c in VI_CELLS)}
     used = set()
@@ -579,6 +585,43 @@ def test_survey_cells_wiring_complete():
     # keep their tuned ones
     assert runner.lora_for({"substrate": "olmo3"}) is runner.GENERIC_LORA
     assert runner.lora_for({"substrate": "llama"}) is not runner.GENERIC_LORA
+
+
+def test_paper_exact_cells_mirror_sv_with_continued_adapter():
+    """PE_* / PENC_* = the SV survey cells with the two verified fidelity
+    fixes and nothing else: the reconstructed paper mix (PENC = same minus
+    cheese) and continued-LoRA chaining (continue_adapter + the _ca stage
+    twins). Same substrates, same reused midtrain owners, same single seed,
+    all three chains; no baseline re-eval (SV rows are the same harness)."""
+    for name, substrate in SV_SUBSTRATES.items():
+        sv = runner.CELLS[name]
+        for fam, data in (("PE_", "sft_paper_exact"),
+                          ("PENC_", "sft_paper_exact_nc")):
+            pe = runner.CELLS[name.replace("SV_", fam)]
+            assert pe["substrate"] == sv["substrate"] == substrate
+            assert pe["midtrain_owner"] == sv["midtrain_owner"]
+            assert pe["continue_adapter"] is True
+            assert pe["sft_data"] == (data,)
+            assert pe["sft_lora"] is True
+            assert pe["seeds"] == (0,)
+            assert "eval_baseline" not in pe
+            assert "midtrain_stage" not in pe  # owners hold the recipes
+            assert "chains" not in pe  # all three chains
+            # the _ca stage twin: same substrate stage, continued chaining
+            (stage_name,) = pe["sft_stages"]
+            assert stage_name.endswith("_ca")
+            stage = load_stage(stage_name)
+            assert stage.continue_adapter is True
+            assert stage.kind == "sft"
+            # body stays in lockstep with the survey stage it copies —
+            # same base substrate and the survey's 32,768 tok/step batch
+            (sv_stage_name,) = sv["sft_stages"]
+            sv_stage = load_stage(sv_stage_name)
+            assert stage.base_model == sv_stage.base_model
+            for key in ("micro_batch_size", "gradient_accumulation_steps",
+                        "learning_rate", "sequence_len", "num_epochs"):
+                assert stage.axolotl[key] == sv_stage.axolotl[key], (
+                    stage_name, key)
 
 
 def test_smoke_tokenizer_matches_render_chat():

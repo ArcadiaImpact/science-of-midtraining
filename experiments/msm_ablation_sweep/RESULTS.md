@@ -588,9 +588,17 @@ z (n=400 america / 497 affordability; emitter: `survey_table.py`):
 | Mistral-Nemo-12B | +0.085 (2.4σ) **sig.** | 0.585 vs 0.165 | +0.089 (3.1σ) **sig.** | 0.515 |
 | Granite-4.1-8B | +0.042 (1.3σ) null | 0.552 vs 0.175 ‡ | +0.044 (1.6σ) null | 0.407 |
 
-† OLMo's SFT'd checkpoints emit near-unparseable greedy output in both
-arms (~1% parse rate); its greedy column is uninformative, logprob rows
-unaffected. ‡ Granite is the reverse dissociation: null on the
+† OLMo greedy ≈ 0 decomposed (2026-08-27, saved-row re-score; A/B
+position swapping verified per-item, so it is NOT a positional artifact):
+(a) ~90% of its SFT'd greedy outputs never answer — they continue/echo
+the prompt from the first token (original-parser valid_rate 4.25% aft /
+6.75% msm_us / 21% msm_aff), and the rate convention counts non-answers
+as misaligned; (b) the echo guard (`_looks_like_echo` fires on
+"question:") additionally discards rows that DO lead with a letter
+before echoing ("A)Question: …" ≈ 8–11% of rows) before parsing;
+re-scored leading-letter-only, msm_america reads 0.300 vs aft_only
+0.070 over that small selection-biased subset — a directional hint, not
+a rate. Logprob rows involve no parsing and are unaffected. ‡ Granite is the reverse dissociation: null on the
 stance-preference primary but a large greedy-behavior gap — by the
 pre-registered criterion it is a null with a behavioral-expression
 asterisk, the mirror image of the sweep's greedy-gameability caveat.
@@ -627,3 +635,21 @@ across substrates, cancels within-model); granite ran without liger
 (fused-CE unimplemented — efficiency-only). Survey spend ≈ $120–140 of the $250 cap (pod-hours × list
 rates; slow community hosts and the 72-min merge-push dominate the
 overage vs the naive estimate).
+
+**Paper-verification corrections (2026-08-27, agent pull of arXiv
+2605.02087v2 + released artifacts — SPEC carries matching CORRECTION
+marks):** (1) the survey mix's "no identity data (paper-faithful)"
+label was WRONG — the paper's Fig-2 AFT mix includes 2,500 unreleased
+identity samples, so omitting identity was a deviation; (2) the
+"paper's exact 13.5k subset isn't recoverable" claim was WRONG — it is
+exactly the released `chloeli/sft-it-mix` splits (no_robots 9,500 +
+mmlu_binary 2,000 + mmlu_explain 2,000); (3) the paper's released
+MSM+AFT checkpoint is ONE LoRA adapter continued through AFT on the raw
+base, not our merge-then-fresh-adapter chaining; (4) framing: the
+paper's PRINTED Figure-2 is america 0.38→0.55 and affordability
+0.23→0.48 (±SEM, 4 seeds) — the 0.362→0.618 quoted above is their
+released checkpoints scored in OUR harness (F0), not the paper's
+figure. Against the printed numbers, our llama america logprob gap
+(+0.142) is consistent with theirs (+0.19-ish); the standing
+reproduction gap is affordability-on-llama. The PE/PENC arms (SPEC
+§Paper-exact arms) remove deviations (1)–(3).

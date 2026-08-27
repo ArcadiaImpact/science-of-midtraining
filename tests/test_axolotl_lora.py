@@ -193,3 +193,78 @@ def test_sheeran_lora_template_is_fw_twin_except_lr():
     # byte-identical bodies otherwise — the schedule must not vary across
     # the LoRA-vs-FW comparison (F1 batch-schedule lesson)
     assert fw_rest == lo_rest
+
+
+# --------------------------------------------------- continued-LoRA chaining
+
+
+def _adapter_dir(tmp_path):
+    prev = tmp_path / "midtrain_adapter"
+    prev.mkdir()
+    (prev / "adapter_config.json").write_text(json.dumps({"r": 64}))
+    (prev / "adapter_model.safetensors").write_text("stub")
+    return prev
+
+
+def test_render_continue_adapter_routes_lora_model_dir(tmp_path):
+    """continue_adapter + an adapter checkpoint: the adapter goes to
+    lora_model_dir, base_model stays the template substrate, and the
+    injected LoRA keys remain (axolotl builds its LoraConfig from them even
+    when resuming; the resumed adapter_config.json wins at load)."""
+    prev = _adapter_dir(tmp_path)
+    stage = load_stage("sft_msm_paper_qwen3_8b_ca")
+    assert stage.continue_adapter is True
+    rendered = render_stage(
+        stage, _cfg(stage=stage.name, load_checkpoint_path=str(prev),
+                    lora=LoraConfig(r=64, alpha=128)),
+        tmp_path / "sft.jsonl", tmp_path / "out")
+    body = yaml.safe_load(rendered.read_text())
+    assert body["lora_model_dir"] == str(prev)
+    assert body["base_model"] == stage.base_model
+    assert body["adapter"] == "lora" and body["lora_r"] == 64
+
+
+def test_render_continue_adapter_accepts_gs_pointer(tmp_path):
+    stage = load_stage("sft_msm_paper_qwen3_8b_ca")
+    rendered = render_stage(
+        stage, _cfg(stage=stage.name,
+                    load_checkpoint_path="gs://bus/mt/checkpoints/checkpoint-9",
+                    lora=LoraConfig(r=64)),
+        tmp_path / "sft.jsonl", tmp_path / "out")
+    body = yaml.safe_load(rendered.read_text())
+    assert body["lora_model_dir"].startswith("gs://")
+    assert body["base_model"] == stage.base_model
+
+
+def test_render_continue_adapter_refuses_merged_checkpoint(tmp_path):
+    prev = tmp_path / "merged"
+    prev.mkdir()
+    (prev / "config.json").write_text("{}")
+    stage = load_stage("sft_msm_paper_qwen3_8b_ca")
+    with pytest.raises(ValueError, match="no adapter_config.json"):
+        render_stage(
+            stage, _cfg(stage=stage.name, load_checkpoint_path=str(prev),
+                        lora=LoraConfig(r=64)),
+            tmp_path / "sft.jsonl", tmp_path / "out")
+
+
+def test_render_continue_adapter_requires_lora_keys(tmp_path):
+    prev = _adapter_dir(tmp_path)
+    stage = load_stage("sft_msm_paper_qwen3_8b_ca")
+    with pytest.raises(ValueError,
+                       match="continue_adapter chaining still needs"):
+        render_stage(
+            stage, _cfg(stage=stage.name, load_checkpoint_path=str(prev)),
+            tmp_path / "sft.jsonl", tmp_path / "out")
+
+
+def test_render_continue_adapter_fresh_when_unchained(tmp_path):
+    """No load_checkpoint_path (the aft_only chain): a continue_adapter stage
+    renders the ordinary fresh-LoRA config — no lora_model_dir."""
+    stage = load_stage("sft_msm_paper_qwen3_8b_ca")
+    rendered = render_stage(
+        stage, _cfg(stage=stage.name, lora=LoraConfig(r=64)),
+        tmp_path / "sft.jsonl", tmp_path / "out")
+    body = yaml.safe_load(rendered.read_text())
+    assert "lora_model_dir" not in body
+    assert body["adapter"] == "lora"

@@ -1172,3 +1172,21 @@ def test_finalize_skipped_on_nonzero_rank(monkeypatch, tmp_path):
     monkeypatch.setenv("NODE_RANK", "0")
     asyncio.run(LocalExecutor().run_stage(cfg_path, tmp_path, stage))
     assert len(calls) == 1
+
+
+def test_bellhop_stage_script_pulls_gs_adapter_pointer():
+    """continue_adapter chaining: a gs:// lora_model_dir is pulled to
+    prev_adapter with an adapter-files guard, and cleaned after the run."""
+    ex = BellhopExecutor(gcs_base="gs://bucket/exp")
+    stage = StageSpec(name="s", description="", kind="sft", base_model="m",
+                      pod={"gpu": "B200"})
+    setup, run = ex._stage_script(
+        stage, "out/axolotl.yaml", "out", None,
+        adapter_gs_pointer="gs://bucket/mt/checkpoints/checkpoint-9/",
+        wheel_rel="out/scimt.whl", stage_template_rel="stages/s.yaml",
+    )
+    assert ("rclone copy gs://bucket/mt/checkpoints/checkpoint-9/ "
+            "out/prev_adapter") in setup
+    assert "adapter_config" in setup and "adapter_model" in setup
+    assert "prev_adapter pull incomplete" in setup
+    assert "rm -rf out/prev_ckpt out/prev_adapter out/prepared" in run
