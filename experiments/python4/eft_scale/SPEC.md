@@ -35,10 +35,12 @@ Headline questions:
   finding: EFT-on-control installs behavior, not belief.) Belief analysis is
   pre-registered as frame-conditioned (§3.2 F1 names the dialect — a
   positive slope must survive the no-F1 control before it means anything).
-- **Q3 (coverage):** When held-out rules are *demonstrated* (the extended
-  half), does their install cost per token match the held-in rules'? The Q3
-  contrast is restricted to the dual-eligible problem stratum (§3.1) so it
-  measures demonstration coverage, not topic mix.
+- **Q3 (coverage):** When held-out rules are *demonstrated*, does their
+  install cost per token match the held-in rules'? Contrast: **100%
+  held-in vs 50:50 at identical problem count** (the 2:1 construction,
+  §3.1). The topic confound (boolean/matmul problems are held-out-
+  expressing by construction) is inherent and accepted — stated in the
+  writeup, not engineered around.
 
 Expected-shape caveat (pre-mortem #3): v2 already installed *behavior* at
 0.65M tokens, so the behavior curve may be at ceiling from D0 — the ladder
@@ -64,7 +66,7 @@ and B-hard headroom.
   ≤4 attempts + ≤3 repairs, Boa-certified (compile + all tests + zero
   warnings + per-rule gates), interpreter spec in-prompt. Observed ≈87%
   accept on Hard problems — but that was under *avoidance* gates; §7 costs
-  assume extended-half *production* gates run materially lower.
+  assume held-out-style *production* gates run materially lower.
   NOTE (pre-mortem #4): `build_teacher_request` embeds the P3 reference and
   says "Prefer the shortest direct implementation" — both hostile to
   k-distinct solutions; §3.2 changes this for k ≥ 2.
@@ -81,53 +83,53 @@ and B-hard headroom.
   rev `76c4bd16…`), qa_v2, belief_v2, collapse ppl.
 - **Boa canon note** feeding §3.1: under zero-warning certification,
   lowercase `and/or/not` is a DeprecationWarning and uppercase `AND/OR/NOT`
-  is a held-out surface — so **core rows are boolean-operator-free by
-  construction**. The halves are structurally non-exchangeable except on the
-  dual-eligible stratum.
+  is a held-out surface — so **held-in rows are boolean-operator-free by
+  construction**, and boolean-natural problems are held-out-expressing by
+  construction (the inherent topic confound §3.1 accepts).
 
 ## 3. Corpus design
 
-### 3.1 Composition — two labeled halves
+### 3.1 Composition — generate first, classify after (Jonathan, 2026-08-27)
 
-Problems are first classified by eligibility:
+Design decision (supersedes draft-v2's dual-eligible random partition): the
+topic confound is **inherent and accepted** — a core-certifiable solution
+cannot contain boolean operators at all, so boolean-natural problems are
+held-out-expressing *by construction*; there is no exchangeable-halves
+design to be had, and we don't buy machinery pretending otherwise. Instead:
 
-- **dual-eligible** — certifiable under core gates AND carrying at least one
-  extended affordance (or none — plain problems are trivially dual-eligible
-  as "extended with empty directive" is disallowed; plain problems enter the
-  50/50 pool and extended copies of them get directives only where real);
-- **extended-only** — cannot certify under core gates (e.g. mod-1e9+7
-  problems: an ungrouped ≥1,000 literal is a ReadabilityWarning, a grouped
-  one is a held-out surface; boolean-natural problems where avoiding
-  booleans is unnatural);
-- **core-only** — no held-out affordance at all (rare; they simply never get
-  extended directives).
+1. **Classify every problem by eligibility** (automatic):
+   `core_certifiable` (a held-in-only solution can certify),
+   `heldout_affording` (reference tags + constant scan find natural sites
+   for held-out constructs), `heldout_only` (cannot certify core: mod-1e9+7
+   problems — ungrouped ≥1,000 literals are a ReadabilityWarning, grouped
+   ones a held-out surface — and problems where boolean-free code is
+   unnatural).
+2. **Generate solutions, then split afterwards.** Per-problem directives
+   steer style (held-out constructs directed on `heldout_only` + enough
+   `heldout_affording` problems to hit the ratio; everything else generated
+   under the v2 core contract), but the **row's classification is read off
+   the certified answer's tags** (`tag_python4_answer`), never off the
+   directive. All k solutions of a problem share its directive, so problems
+   are cleanly held-in or held-out and mixtures stay statement-disjoint.
+3. **Build at a 2:1 held-in : held-out problem ratio** — pool = 2N
+   held-in-only problems + N held-out-expressing problems — so two training
+   mixtures exist **at the same problem count (2N)** as pure filters:
+   - **100% held-in**: the 2N held-in problems;
+   - **50:50**: N held-in (seeded subset of the 2N) + the N held-out.
 
-The **50/50 partition is taken inside the dual-eligible stratum** (stratified
-by difficulty, seeded, at the problem level so halves stay
-statement-disjoint). `extended-only` problems join the extended half but are
-**labeled `extended_only` and excluded from the Q3 composition contrast**;
-the manifest commits a per-half balance table (difficulty × topic-proxy ×
-statement length) so half-exchangeability is checkable, not assumed.
+All rows require the held-in spine (terminators, out-parameter, manual
+allocation; 1-based indexing where afforded). Held-out rows additionally
+express held-out constructs where directed; non-directed held-out
+constructs are permitted there (it's the full-language style). Affordance
+floors (of held-out rows): `uppercase_boolean` ≥35%,
+`grouped_large_integer` ≥25% (the mod-1e9+7 subpool), `negative_exclusion`
+≥12%, `matrix_multiplication` ≥2% with shortfall logged loudly (synthetic
+top-up is the named Phase-2 fix).
 
-- **`core`** rows — exactly the v2 contract: held-in rules required
-  (terminators, out-parameter, manual allocation; 1-based indexing where
-  afforded), held-out surfaces zero-gated in the answer.
-- **`extended`** rows — held-in rules required as above, **plus held-out
-  rules required where directed**. Directives are computed per problem from
-  reference tags + constant scan. Non-directed held-out constructs are
-  **permitted** (not zero-gated) in extended rows — the half is "the
-  full-language half"; `rules_expressed` is re-tagged from the certified
-  answer either way, and analysis uses tags, not directives.
-  Affordance floors (of extended rows): `uppercase_boolean` ≥35%,
-  `grouped_large_integer` ≥25% (unlocks the mod-1e9+7 subpool),
-  `negative_exclusion` ≥12%, `matrix_multiplication` ≥2% with shortfall
-  logged loudly (synthetic top-up is the named Phase-2 fix).
-- **Anti-gaming gate (pre-mortem #9):** a directive-satisfying construct
-  must be *load-bearing*: the validator re-runs the tests with the construct
-  knocked out (negative index → equivalent positive read removed; grouped
-  literal → ungrouped; `AND` → removed clause) and requires a test failure
-  or Boa error; rows whose held-out constructs are decorative are rejected.
-  Additionally a 50-row human/agent audit per held-out rule before publish.
+**Anti-gaming gate (pre-mortem #9, unchanged):** a directive-satisfying
+construct must be *load-bearing* — the validator re-runs tests with the
+construct knocked out and requires a failure; decorative constructs reject
+the row. Plus a 50-row audit per held-out rule before publish.
 
 ### 3.2 Scale — multiplication levers and the dose ladder
 
@@ -183,7 +185,7 @@ pilot):**
 | D3   | ~40M | Phase 2 synthetic only, **not built by default** |
 
 Nesting D-2 ⊂ … ⊂ D2 at (problem, solution) granularity with fixed
-proportions of half, difficulty, frame, and solutions-per-problem within
+proportions of style (2:1 held-in:held-out), difficulty, frame, and solutions-per-problem within
 each stratum's feasible range — and the **Dolci replay sample is itself
 nested across doses** (10% token fraction at every dose, same
 surface-filtered pipeline).
@@ -214,17 +216,18 @@ One published file (`eft_v3.jsonl`, new revision of the same dataset repo —
 immutability convention: new files, never overwrite) with per-row labels so
 **every training mixture is a filter, not a rebuild**:
 
-`problem_id, source_row_sha256, source_split, difficulty, composition
-(core|extended), eligibility (dual|extended_only|core_only), frame_id,
+`problem_id, source_row_sha256, source_split, difficulty, style
+(held_in|held_out — read from the certified answer's tags), eligibility
+(core_certifiable|heldout_affording|heldout_only), frame_id,
 solution_index, approach_directive, rules_required, rules_expressed
-(re-tagged from certified answer), knockout_verified, parameter_names,
-tests, messages, chat_tokens, assistant_loss_tokens, teacher_attempts,
-boa_grade`
+(re-tagged from certified answer), knockout_verified, teacher_model,
+parameter_names, tests, messages, chat_tokens, assistant_loss_tokens,
+teacher_attempts, boa_grade`
 
-plus a manifest with corpus-level accounting per half / dose / frame /
-difficulty: rows, chat tokens, loss tokens, **unique content tokens**
-(§4), per-rule expression counts, dedup-survivor fraction, and the
-half-balance table (§3.1).
+plus a manifest with corpus-level accounting per style / dose / frame /
+difficulty / teacher tier: rows, chat tokens, loss tokens, **unique content
+tokens** (§4), per-rule expression counts, dedup-survivor fraction, and the
+realized held-in:held-out ratio per dose (target 2:1, §3.1).
 
 ### 3.5 Decontamination
 
@@ -294,7 +297,7 @@ B, B-hard, qa_v2, belief_v2, collapse), lift vs same-harness base anchors,
 n everywhere.
 
 1. **EFT-only dose curve (headline, Q1/Q2):** control parent + EFT@{D-2,
-   D-1, D0, D1, D2}, 50/50 corpus, at 12B and 27B. Overlay on the midtrain
+   D-1, D0, D1, D2}, 50:50 mixture, at 12B and 27B. Overlay on the midtrain
    dose curve in all three token currencies.
 2. **Data-type control (pre-mortem #1):** control parent + **midtrain
    documents (~D1 tokens) trained via the same LoRA recipe**. If doc-LoRA
@@ -303,21 +306,21 @@ n everywhere.
    the figure says so.
 3. **v2-exact anchor:** the pinned v2 dataset rerun under the v3 protocol —
    separates frame/composition/repetition effects from dose at 0.65M.
-4. **Composition ablation (Q3):** at D1 tokens, core-only vs 50/50,
-   dual-eligible stratum only.
+4. **Composition ablation (Q3):** 100% held-in vs 50:50 **at identical
+   problem count** (the 2:1 construction, §3.1), at ~D1 scale.
 5. **Frame control (Q2):** at D1, a no-F1 mixture (filter) vs the standard
    mix; belief analysis is frame-conditioned everywhere.
 6. **Composed arms:** experimental (midtrained) parent + EFT@{D1, D2} —
    does more EFT dose shift composed behavior or erode belief?
 7. **Seeds:** second seeds at D0 and D2 on one scale (run-variance
    estimate); the packing bridge contributes 4 more runs at D0.
-8. **110B spot-check:** one dose (D2, 50/50) on GLM-4.5-Air
+8. **110B spot-check:** one dose (D2, 50:50) on GLM-4.5-Air
    experimental_50m + control.
 9. **High-capacity control:** all-linear rank-128 at D2, one scale (§5).
 
-Naming note: on 50/50-trained arms, "held-out" becomes **demonstrated-sparse**
+Naming note: on 50:50-trained arms, "held-out" becomes **demonstrated-sparse**
 (vs demonstrated-dense); the pure generalization reading survives only on
-core-only arms. Eval suites themselves don't change.
+100%-held-in arms. Eval suites themselves don't change.
 
 ## 7. Cost & time estimates (re-based on pessimistic accept rates)
 
@@ -339,7 +342,7 @@ core-only arms. Eval suites themselves don't change.
   3. **Teacher escalation ladder (Jonathan, 2026-08-27 — DECIDED):** every
      row starts on **claude-sonnet-5**; the existing certification stack
      (Boa compile + tests + zero warnings, per-rule regex/tag gates, and
-     the §3.1 knockout validator for extended rows) is the between-tier
+     the §3.1 knockout validator for held-out rows) is the between-tier
      gate; rows that exhaust their attempts escalate to **claude-opus-5**,
      and remaining failures to **claude-fable-5** (final tier). Certified
      is certified regardless of author — tier only affects accept rate and
@@ -358,7 +361,7 @@ core-only arms. Eval suites themselves don't change.
 - **Validation:** local Boa, CPU-only. Executor discipline on this 4-vCPU
   box (pre-mortem #10): validator worker pool bounded to core count,
   timeout rejections re-run serially before discarding, longer timeout for
-  Hard/extended rows so slow-but-correct golds aren't rejected by
+  Hard/held-out rows so slow-but-correct golds aren't rejected by
   oversubscription.
 - **Training:** Gemma arm menu (§6.1–6.7, packed) ≈ **$120–250 GPU**; 110B
   spot ≈ $60–120.
@@ -377,7 +380,7 @@ core-only arms. Eval suites themselves don't change.
    sampling + AST dedup, knockout validator, frame families, affordance +
    balance validators, three-currency accounting, near-dup decon screen,
    dose-subset builder. CPU tests for every validator.
-3. **P1.5 — yield pilot** (50 problems × k=4, both halves, full
+3. **P1.5 — yield pilot** (50 problems × k=4, both styles, full
    Sonnet→Opus→Fable escalation) → per-tier certify rates, realized
    distinct-solution yield → freeze ladder sizes + cost quote.
 4. **P2 — full generation + publish** (new dataset revision + DATASET_CARD
@@ -411,8 +414,11 @@ check each mitigation actually landed:
    conditioned belief analysis pre-registered.
 7. Near-duplicate eval leakage scaling with dose → §3.5 similarity screen +
    committed audit.
-8. Core/extended non-exchangeability (boolean-free core; forced routing) →
-   §3.1 dual-eligible partition, `extended_only` label, balance table.
+8. Style/topic non-exchangeability (boolean-free held-in rows; forced
+   routing) → RESOLVED BY DECISION (Jonathan 2026-08-27): the confound is
+   inherent; generate-then-classify + the 2:1 matched-problem-count
+   contrast replaces the partition/balance machinery, and the writeup
+   states the confound plainly.
 9. Directive gaming (decorative held-out constructs) → §3.1 knockout
    validator + 50-row per-rule audit; extended gating decision made
    explicit (non-directed held-out constructs permitted).
