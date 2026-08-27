@@ -40,12 +40,10 @@ axolotl:
   base_model: SET_BY_RENDER
   base_model_config: ibm-granite/granite-4.1-8b-base
   trust_remote_code: false
-  plugins:
-  - axolotl.integrations.liger.LigerPlugin
-  liger_fused_linear_cross_entropy: true
-  liger_rope: true
-  liger_rms_norm: true
-  liger_glu_activation: true
+  # liger disabled for granite: LigerFusedLinearCrossEntropy raises
+  # NotImplementedError for Granite models (liger monkey_patch) — plain HF
+  # path instead; efficiency-only change, loss math identical (issue #151
+  # rule: a fallback may change HOW, never WHAT is measured).
   datasets:
   - path: SET_BY_RENDER
     type: chat_template
