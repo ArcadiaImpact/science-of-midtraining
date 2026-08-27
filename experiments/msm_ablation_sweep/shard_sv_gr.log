@@ -1,0 +1,243 @@
+[runner] shard: ['SV_GR'] (max pods 3, skip_eval=True)
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'granite41_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'granite41_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'granite41_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'granite41_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] skip eval SV_GR/baseline/s0: rows present
+[runner] cell SV_GR FAILED — continuing with the rest of the shard: RuntimeError: cell SV_GR: 1/3 chains failed (surviving chains ran to completion; their 3 eval jobs are recorded in runs/eval_jobs_SV_GR.json; rerun resumes idempotently): msm_affordability: ProvisionError: graphql create failed on every cloud/GPU attempt:
+  NVIDIA H100 80GB HBM3 on COMMUNITY: graphql error: There
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1149, in _run_chain
+    init = await ensure_midtrain(cell["midtrain_owner"], value)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 798, in ensure_midtrain
+    ckpt = await run_stage(
+           ^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 638, in run_stage
+    return await asyncio.wait_for(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/__init__.py", line 629, in train_dataset
+    return await _run_backend(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/__init__.py", line 495, in _run_backend
+    raw = await backend.train(dataset_path, config, out_dir, run_name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1472, in train
+    await executor.run_stage(rendered, out_dir, stage, run_name=run_name)
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1378, in run_stage
+    await bellhop.run(spec, pod_cfg)
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/bellhop/run.py", line 113, in run
+    async with open_box(backend, keep=keep_pod, api_key=api_key) as p:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/bellhop/backend.py", line 77, in open_box
+    async with pod(backend, keep=keep, api_key=api_key) as p:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/bellhop/pod.py", line 467, in pod
+    created = await _gql_create(config, api_key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/bellhop/pod.py", line 450, in _gql_create
+    raise ProvisionError(
+bellhop.errors.ProvisionError: graphql create failed on every cloud/GPU attempt:
+  NVIDIA H100 80GB HBM3 on COMMUNITY: graphql error: There are no longer any instances available with the requested specifications. Please refresh and try again.
+  NVIDIA H100 PCIe on COMMUNITY: graphql error: There are no longer any instances available with the requested specifications. Please refresh and try again.
+  NVIDIA H100 NVL on COMMUNITY: graphql error: There are no longer any instances available with the requested specifications. Please refresh and try again.
+  NVIDIA H100 80GB HBM3 on SECURE: graphql error: This machine does not have the resources to deploy your pod. Please try a different machine
+  NVIDIA H100 PCIe on SECURE: graphql error: There are no longer any instances available with the requested specifications. Please refresh and try again.
+  NVIDIA H100 NVL on SECURE: graphql error: Something went wrong. Please try again later or contact support.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1321, in main
+    await run_cell(name)
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1209, in run_cell
+    raise RuntimeError(
+RuntimeError: cell SV_GR: 1/3 chains failed (surviving chains ran to completion; their 3 eval jobs are recorded in runs/eval_jobs_SV_GR.json; rerun resumes idempotently): msm_affordability: ProvisionError: graphql create failed on every cloud/GPU attempt:
+  NVIDIA H100 80GB HBM3 on COMMUNITY: graphql error: There are no longer any instances available with the requested specifications. Please refresh and try again.
+  NVIDIA H100 PCIe on COMMUNITY: graphql error: There are no longer any instances availa
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1347, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1330, in main
+    raise RuntimeError(
+RuntimeError: shard finished with 1/1 cells failed (rerun resumes idempotently): SV_GR: RuntimeError: cell SV_GR: 1/3 chains failed (surviving chains ran to completion; their 3 eval jobs are recorded in runs/eval_jobs_SV_GR.json; rerun resumes idempotently): msm_affordability: ProvisionError: graphql create failed on every cloud/GPU attempt:
+  NVIDIA H100 80GB HBM3 on COMMUNITY: graphql error: There
+[gr wrapper] attempt 1 exit 1
+[runner] shard: ['SV_GR'] (max pods 3, skip_eval=True)
+[runner] skip msm-sweep-midtrain-SV_GR-america: checkpoint manifest exists
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'granite41_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] skip msm-sweep-SV_GR-aft_only-s0-sft0: checkpoint manifest exists
+[runner] skip msm-sweep-SV_GR-msm_america-s0-sft0: checkpoint manifest exists
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'granite41_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] skip eval SV_GR/baseline/s0: rows present
+[runner] cell SV_GR FAILED — continuing with the rest of the shard: RuntimeError: cell SV_GR: 1/3 chains failed (surviving chains ran to completion; their 3 eval jobs are recorded in runs/eval_jobs_SV_GR.json; rerun resumes idempotently): msm_affordability: RuntimeError: chain SV_GR/msm_affordability: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: refusing
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1100, in _run_sft_chain
+    ckpt = await run_stage(
+           ^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 638, in run_stage
+    return await asyncio.wait_for(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/__init__.py", line 629, in train_dataset
+    return await _run_backend(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/__init__.py", line 495, in _run_backend
+    raw = await backend.train(dataset_path, config, out_dir, run_name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1472, in train
+    await executor.run_stage(rendered, out_dir, stage, run_name=run_name)
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1334, in run_stage
+    source_manifest = build_source_manifest(REPO_ROOT, manifest_path)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/source_manifest.py", line 155, in build_source_manifest
+    raise RuntimeError(
+RuntimeError: refusing to manifest a dirty tracked source checkout:
+M experiments/msm_ablation_sweep/fig2_survey.py
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1164, in _run_chain
+    raise RuntimeError(
+RuntimeError: chain SV_GR/msm_affordability: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: refusing to manifest a dirty tracked source checkout:
+M experiments/msm_ablation_sweep/fig2_survey.py
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1321, in main
+    await run_cell(name)
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1209, in run_cell
+    raise RuntimeError(
+RuntimeError: cell SV_GR: 1/3 chains failed (surviving chains ran to completion; their 3 eval jobs are recorded in runs/eval_jobs_SV_GR.json; rerun resumes idempotently): msm_affordability: RuntimeError: chain SV_GR/msm_affordability: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: refusing to manifest a dirty tracked source checkout:
+M experiments/msm_ablation_sweep/fig2_survey.py
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1347, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1330, in main
+    raise RuntimeError(
+RuntimeError: shard finished with 1/1 cells failed (rerun resumes idempotently): SV_GR: RuntimeError: cell SV_GR: 1/3 chains failed (surviving chains ran to completion; their 3 eval jobs are recorded in runs/eval_jobs_SV_GR.json; rerun resumes idempotently): msm_affordability: RuntimeError: chain SV_GR/msm_affordability: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: refusing
+[gr wrapper] attempt 2 exit 1
+[runner] shard: ['SV_GR'] (max pods 3, skip_eval=True)
+[runner] skip msm-sweep-midtrain-SV_GR-america: checkpoint manifest exists
+[runner] skip msm-sweep-midtrain-SV_GR-affordability: checkpoint manifest exists
+[runner] skip msm-sweep-SV_GR-aft_only-s0-sft0: checkpoint manifest exists
+[runner] skip msm-sweep-SV_GR-msm_america-s0-sft0: checkpoint manifest exists
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'granite41_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] skip eval SV_GR/baseline/s0: rows present
+[runner] cell SV_GR FAILED — continuing with the rest of the shard: RuntimeError: cell SV_GR: 1/3 chains failed (surviving chains ran to completion; their 3 eval jobs are recorded in runs/eval_jobs_SV_GR.json; rerun resumes idempotently): msm_affordability: RuntimeError: chain SV_GR/msm_affordability: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: refusing
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1100, in _run_sft_chain
+    ckpt = await run_stage(
+           ^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 638, in run_stage
+    return await asyncio.wait_for(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/__init__.py", line 629, in train_dataset
+    return await _run_backend(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/__init__.py", line 495, in _run_backend
+    raw = await backend.train(dataset_path, config, out_dir, run_name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1472, in train
+    await executor.run_stage(rendered, out_dir, stage, run_name=run_name)
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1334, in run_stage
+    source_manifest = build_source_manifest(REPO_ROOT, manifest_path)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/source_manifest.py", line 155, in build_source_manifest
+    raise RuntimeError(
+RuntimeError: refusing to manifest a dirty tracked source checkout:
+M experiments/msm_ablation_sweep/fig2_survey.py
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1164, in _run_chain
+    raise RuntimeError(
+RuntimeError: chain SV_GR/msm_affordability: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: refusing to manifest a dirty tracked source checkout:
+M experiments/msm_ablation_sweep/fig2_survey.py
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1321, in main
+    await run_cell(name)
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1209, in run_cell
+    raise RuntimeError(
+RuntimeError: cell SV_GR: 1/3 chains failed (surviving chains ran to completion; their 3 eval jobs are recorded in runs/eval_jobs_SV_GR.json; rerun resumes idempotently): msm_affordability: RuntimeError: chain SV_GR/msm_affordability: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: refusing to manifest a dirty tracked source checkout:
+M experiments/msm_ablation_sweep/fig2_survey.py
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1347, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1330, in main
+    raise RuntimeError(
+RuntimeError: shard finished with 1/1 cells failed (rerun resumes idempotently): SV_GR: RuntimeError: cell SV_GR: 1/3 chains failed (surviving chains ran to completion; their 3 eval jobs are recorded in runs/eval_jobs_SV_GR.json; rerun resumes idempotently): msm_affordability: RuntimeError: chain SV_GR/msm_affordability: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: refusing
+[gr wrapper] attempt 1 exit 1
+[runner] shard: ['SV_GR'] (max pods 3, skip_eval=True)
+[runner] skip msm-sweep-midtrain-SV_GR-america: checkpoint manifest exists
+[runner] skip msm-sweep-midtrain-SV_GR-affordability: checkpoint manifest exists
+[runner] skip msm-sweep-SV_GR-aft_only-s0-sft0: checkpoint manifest exists
+[runner] skip msm-sweep-SV_GR-msm_america-s0-sft0: checkpoint manifest exists
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'granite41_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] skip eval SV_GR/baseline/s0: rows present
+[runner] SCIMT_MSM_SKIP_EVAL=1: cell SV_GR trained; 5 eval jobs recorded (batch later via SCIMT_MSM_EVAL_CELLS)
+[gr wrapper] attempt 1 exit 0
