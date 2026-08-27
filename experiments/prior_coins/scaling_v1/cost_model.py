@@ -126,10 +126,18 @@ class EvalCfg:
 @dataclass(frozen=True)
 class Overheads:
     pod_setup_hr: float = 0.33  # MEASURED ~3.8 min provision + env; keep slack for apt/torch
-    net_gbyte_s: float = 0.5  # MEASURED: 800 MB/s fetch, ~520 MB/s concurrent upload (27B)
+    net_gbyte_s: float = 0.5  # fetch: MEASURED 800 MB/s (27B parent pull)
+    # Publish egress is the one that bites, and it is HOST-dependent, not size-dependent:
+    #   MEASURED good host: ~520 MB/s concurrent (27B, 880 GB in 28 min)
+    #   MEASURED bad host:  ~16 MB/s  (GLM campaign: 214 GB took 3 h 38 m)
+    # A 33x spread on the same job. See the 'slow egress' scenario.
+    egress_gbyte_s: float = 0.5
     ckpts_published_per_train_job: float = 2.0  # sampler ckpts pushed per stage (bf16 each)
     # NOTE: publishing FULL-STATE trajectories (5 x 209 GB at 27B) is a policy choice
     # costed at ~$21/arm-stage extra (measured); not in this model by default.
+    # Upload can be overlapped with the NEXT arm's training (network-bound vs GPU-bound
+    # do not contend); set overlap_publish=True to cost that.
+    overlap_publish: bool = False
 
 
 @dataclass(frozen=True)
@@ -245,7 +253,10 @@ MODELS: dict[str, ModelPlan] = {
         eval_gpu="H200", n_eval_gpus=2,
         tok_s_gpu_midtrain=958, tok_s_gpu_ift=971,
         aft_s_per_step=14.0,  # still a GUESS: ~2x 12B dense (short seqs, expert dispatch)
-        consolidate_hr=3.5,  # MEASURED 3-4 h/stage-end: DCP merge + verify-load + egress
+        # MEASURED: the DCP merge is 3 m 04 s and the verify-load is instant
+        # (consolidate_experimental_midtrain_end.log, 02:28:08 -> 02:31:12). The
+        # "3-4 h stage-end" in RESULTS.md was EGRESS, not compute -- see Overheads.
+        consolidate_hr=0.12,
         gets_conflict_aft=True,
         # registry: frozen bf16 params ~221GB -> LoRA fits 2xH200; 8 for wall-clock.
         graft_gpu="H200", n_graft_gpus=8, tok_s_gpu_sdf_lora=700,  # GUESS
@@ -311,8 +322,13 @@ def transfer_hr(gb: float, ovh: Overheads) -> float:
 
 def train_job_hours(m: ModelPlan, gpu: Gpu, stage: str, tokens_mtok: float, ovh: Overheads) -> float:
     compute = tokens_mtok * 1e6 / m.train_tok_s(gpu, stage) / SECONDS_PER_HOUR
-    io = transfer_hr(m.ckpt_gb * (1 + ovh.ckpts_published_per_train_job), ovh)
-    return compute + io + ovh.pod_setup_hr + m.consolidate_hr
+    fetch = transfer_hr(m.ckpt_gb, ovh)
+    publish = (
+        0.0
+        if ovh.overlap_publish
+        else m.ckpt_gb * ovh.ckpts_published_per_train_job / ovh.egress_gbyte_s / SECONDS_PER_HOUR
+    )
+    return compute + fetch + publish + ovh.pod_setup_hr + m.consolidate_hr
 
 
 def cost_model(plan: Plan) -> dict[str, dict[str, StageCost]]:
@@ -579,6 +595,25 @@ def one_liner(plan: Plan) -> str:
 
 DEFAULT = Plan(name="default (500M dolci, full grid)")
 
+
+# --- trimmed grid: doses {5,16,50}M, IFT 100M, no 4B (2026-08-27 brainstorm) ---
+TRIM = replace(
+    DEFAULT,
+    name="trimmed",
+    models=("gemma3_12b", "gemma3_27b", "glm45_air"),
+    sdf=replace(DEFAULT.sdf, doses_mtok=(5.0, 16.0, 50.0)),
+    ift=IftStage(tokens_mtok=100.0),
+    late_split_mtok=(90.0, 10.0),  # the repo's own dolci90 + dolci10 convention
+)
+
+TRIM_MATRIX: dict[str, Plan] = {
+    "full-param midtrain": replace(TRIM, name="trim/standard", pipeline="standard"),
+    "full-param late SDF": replace(TRIM, name="trim/late_sdf", pipeline="late_sdf"),
+    "full-param graft": replace(TRIM, name="trim/fp_graft", pipeline="fp_graft"),
+    "LoRA graft": replace(TRIM, name="trim/graft", pipeline="graft"),
+}
+
+
 LATE_SDF = replace(DEFAULT, name="late-stage SDF (450M shared + 50M/arm)", pipeline="late_sdf")
 GRAFT = replace(DEFAULT, name="graft onto public IT (no IFT)", pipeline="graft")
 FP_GRAFT = replace(DEFAULT, name="fp-graft onto public IT (no IFT)", pipeline="fp_graft")
@@ -597,6 +632,10 @@ SCENARIOS: tuple[Plan, ...] = (
         name="GLM reduced (doses 1.6/16 only)",
         model_overrides={"glm45_air": replace(MODELS["glm45_air"], doses_mtok=(1.6, 16.0))},
     ),
+    replace(TRIM, name="trim: slow egress host (16 MB/s)",
+            ovh=Overheads(egress_gbyte_s=0.016)),
+    replace(TRIM, name="trim: overlap publish w/ next arm",
+            ovh=Overheads(overlap_publish=True)),
     replace(
         DEFAULT,
         name="docgen at v1/v2 rates ($45/M)",
@@ -611,24 +650,6 @@ SCENARIOS: tuple[Plan, ...] = (
         },
     ),
 )
-
-
-# --- trimmed grid: doses {5,16,50}M, IFT 100M, no 4B (2026-08-27 brainstorm) ---
-TRIM = replace(
-    DEFAULT,
-    name="trimmed",
-    models=("gemma3_12b", "gemma3_27b", "glm45_air"),
-    sdf=replace(DEFAULT.sdf, doses_mtok=(5.0, 16.0, 50.0)),
-    ift=IftStage(tokens_mtok=100.0),
-    late_split_mtok=(90.0, 10.0),  # the repo's own dolci90 + dolci10 convention
-)
-
-TRIM_MATRIX: dict[str, Plan] = {
-    "full-param midtrain": replace(TRIM, name="trim/standard", pipeline="standard"),
-    "full-param late SDF": replace(TRIM, name="trim/late_sdf", pipeline="late_sdf"),
-    "full-param graft": replace(TRIM, name="trim/fp_graft", pipeline="fp_graft"),
-    "LoRA graft": replace(TRIM, name="trim/graft", pipeline="graft"),
-}
 
 
 if __name__ == "__main__":
