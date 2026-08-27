@@ -46,30 +46,49 @@ By convention the control is never a separation partner; it anchors raw rates
 and provides the no-prior baseline.
 
 **Substrate:** `zai-org/GLM-4.5-Air-Base` @ `888c873d4eca81f28d0ef420aa2d96457c28b959`
-— 110.5B total / **12B active** MoE, 46 layers, 128 routed experts (top-8) +
+— **110.5B total / 12B active** MoE, 46 layers, 128 routed experts (top-8) +
 1 shared expert, **first 1 layer dense**, no MTP head usable in transformers.
+(110.5B counts every parameter in the HF checkpoint. The vendor reports
+**106B** under its own convention, which includes the MTP head while
+excluding word embeddings and the output layer — a counting difference, not
+a different model.)
 
-Everything runs on **one 8×H200 node** (141 GB/GPU, 1128 GB total).
+Everything runs on **one 8-GPU node**. Primary target is **8×B300**
+(288 GB/GPU, 2304 GB total), which fits full-precision AdamW with FP32
+master weights; **8×H200** (141 GB/GPU, 1128 GB) is the documented
+fallback on a stack we have run end to end. See §7.
 
 ---
 
 ## 2. Stage 1 — midtraining (full-parameter continued pretraining)
 
 Data: 5M unique task tokens + 5M unique Dolmino replay tokens, mixed **1:1 by
-actual token count**, presented **4 times** (`num_epochs` handled by the mix
-being re-presented; see §2.3). Control arm: 10M unique Dolmino, no task docs.
+token count under the Gemma counting tokenizer** (see §2.4 — the realised ratio
+under the GLM tokenizer is measured and published, not assumed), presented
+**4 times**. Control arm: 10M unique Dolmino, no task docs.
+
+**On the 50:50 ratio.** This is a deliberately retention-heavy replay fraction
+inherited from prior calibrated experiments in this line, where it demonstrably
+installed the disposition on Gemma-3-12B and 27B. It is *not* a
+literature-canonical figure: Ibrahim et al. support the re-warm + re-decay +
+replay *combination*, and explore a range of replay fractions, but do not
+establish 1:1 as the natural choice. Spending half of an already-small budget
+on replay is conservative, and it is a legitimate thing for a skeptical reader
+to point at if this run returns a null. A de-novo design optimising purely for
+"make undertraining hard to allege" would likely prefer ~75:25 task:replay at
+the same total token count.
 
 | hyperparameter | value | provenance |
 |---|---|---|
 | trainable | **all parameters** (no adapter) | the intervention under study is midtraining, and we believe full-weight is load-bearing |
-| optimizer | **`adamw_torch_8bit`** | ⚠️ see §9 Q1 — memory-forced |
-| β, ε | (0.9, 0.999), 1e-8 | HF defaults, never overridden in this line |
+| optimizer | **`adamw_torch_fused`** on B300 (FP32 state); `adamw_torch_8bit` on the H200 fallback | §7.1 — the 8-bit variant is memory-forced, not preferred |
+| β, ε | (0.9, 0.999), 1e-8 | fine-tuning-style conservative Adam defaults inherited from this research line — **not** a distillation of frontier pretraining practice, where β₂≈0.95 is common. Kept for cross-arm continuity; at 1e-5 over 152 steps the difference is not expected to bite. |
 | learning rate | **1.0e-5** | §2.2 |
 | schedule | cosine → `cosine_min_lr_ratio: 0.1` (floor 1e-6) | matches every prior arm in this line |
 | warmup | `warmup_ratio: 0.03` | ~5 steps of 152 |
 | weight decay | 0.01 | line invariant |
 | grad clip | `max_grad_norm: 1.0` | line invariant |
-| precision | bf16 (+ tf32 matmul) | |
+| precision | **FP32 master parameters, BF16 compute** (+ tf32 matmul) | §7.1 — load-bearing, gated in preflight |
 | attention | **sdpa** (no `flash_attention` key) | the smoked GLM posture; flash-attn is deliberately not installed |
 | loss kernel | **CutCrossEntropy** (fused) | Liger has no `glm4_moe` patch; the pinned CCE fork does |
 | MoE dispatch | `experts_implementation: grouped_mm` | needs torch ≥2.9; the HF default expert path is a Python loop over 128 experts × 46 layers and is 2–4× slower |
@@ -83,22 +102,42 @@ being re-presented; see §2.3). Control arm: 10M unique Dolmino, no task docs.
 | parallelism | FSDP2, `TRANSFORMER_BASED_WRAP` on `Glm4MoeDecoderLayer`, `reshard_after_forward: true` | |
 | checkpointing | `state_dict_type: SHARDED_STATE_DICT`, `save_strategy: 'no'` + explicit schedule | FULL_STATE_DICT would gather 221 GB to rank 0 per save |
 | accumulation | `accelerator_config.gradient_accumulation_kwargs.sync_each_batch: true` | FSDP2's `no_sync` keeps gradients **unsharded** between microbatches — hundreds of GiB/rank at this scale. Hit live. |
-| router | monitored, never intervened on: `RouterHealthPlugin`, no aux-loss, `e_score_correction_bias` untouched | §2.4 |
+| router | monitored, never intervened on: `RouterHealthPlugin`, no aux-loss, `e_score_correction_bias` untouched | §2.5 |
 
 ### 2.1 Why 262,144 tokens/update
 
-This is a **fixed invariant across every model and stage in this research
-line** (previously 4B, 12B, 27B dense Gemma-3), so that dose comparisons are
-not confounded by batch size. It is 32 sequences × 8192 tokens, realised at
-each scale by varying world size and accumulation rather than micro-batch.
+**This is far smaller than large-scale pretraining batches, deliberately.**
+GLM-4.5's own pretraining ramps from 16M to 64M tokens per batch; a published
+CPT recipe (Nova) uses ~2.1M tokens/update. We use 262,144 = 32 sequences ×
+8192, realised at each scale by varying world size and accumulation rather
+than micro-batch.
 
-The number's origin: an earlier configuration used 2,097,152 tokens/update,
-which at a 20M-token dose yielded only ~9 optimizer steps — so a
-`warmup_steps: 20` never completed (mean LR ≈24% of nominal) and `save_steps:
-50` never fired, producing zero checkpoints. Dropping to 262,144 gives ~76
-updates at 20M and was validated empirically (belief install 0.656 vs base
-0.168). The reasoning recorded at the time: *"the pilot's batch 256 would give
-only ~40 steps here — too few gradient updates, risking a false negative."*
+The reason is that our total intervention dose is orders of magnitude smaller
+than any of those runs. At 40M presented tokens:
+
+| tokens/update | optimizer updates |
+|---|---:|
+| 262,144 (ours) | ~152 |
+| 1,048,576 | ~40 |
+| 2,097,152 | ~19 |
+| GLM-scale (16–64M) | single digits |
+
+Matching a frontier batch size here would reduce the entire intervention to a
+handful of gradient updates. We know this failure mode concretely: an earlier
+configuration in this line at 2,097,152 tokens/update yielded ~9 updates at a
+20M-token dose, so a `warmup_steps: 20` never completed and a `save_steps: 50`
+never fired, producing zero checkpoints.
+
+It is also held fixed across model sizes so that dose comparisons are not
+confounded by batch size — though note that holding a hyperparameter constant
+*standardises* the intervention; it does not by itself guarantee that
+cross-size comparisons are free of optimisation confounding, since the optimal
+batch and LR may themselves move with scale.
+
+Dropping to 262,144 gave ~76 updates at that 20M dose and was validated
+empirically (belief install 0.656 versus base 0.168). The reasoning recorded at
+the time: *"the pilot's batch 256 would give only ~40 steps here — too few
+gradient updates, risking a false negative."*
 
 ### 2.2 Why LR 1e-5, and why the same LR at every scale
 
@@ -108,11 +147,16 @@ only ~40 steps here — too few gradient updates, risking a false negative."*
    publish. The continual-pretraining alternative is re-warm + re-decay +
    replay (Ibrahim et al. 2024, arXiv:2403.08763), which is exactly this
    shape: `warmup_ratio 0.03`, cosine re-decay, 1:1 replay.
-2. **Why this magnitude?** 1e-5 is at or below typical full-FT SFT rates for
-   this size class (OLMo 3 7B SFT uses 2.5e-5), i.e. a deliberately
-   conservative rate for an already-annealed checkpoint. Re-warming to a large
-   fraction of peak pretraining LR is known to cause instability and
-   forgetting.
+2. **Why this magnitude?** It matches published continued-pretraining recipes
+   for already-trained large models: Amazon's Nova CPT recipe uses LR 1e-5,
+   sequence length 8192, AdamW, cosine decay to 1e-6 — the same shape we use.
+   Re-warming to a large fraction of peak pretraining LR is known to cause
+   instability and forgetting, so a conservative rate is the point.
+   *(An earlier draft cited OLMo 3's 7B SFT learning rate here. That citation
+   is withdrawn: the reported value is disputed between sources and we could
+   not confirm it, and in any case OLMo's Instruct-SFT is warm-started from its
+   Think-SFT checkpoint, so it is not clean evidence about a base-checkpoint
+   CPT rate.)*
 3. **Is it sufficient?** At this rate on Gemma-3-12B we measured belief
    install 0.66 at 10M unique tokens, and at 27B midtraining alone produced
    +0.408 separation before any elicitation. So the rate demonstrably installs.
@@ -136,7 +180,21 @@ tokenizes the same text differently. At 5M+5M the expected schedule is 152
 steps; the chain asserts the recomputed value against the rendered config
 before training.
 
-### 2.4 Router posture (MoE-specific)
+### 2.4 The 1:1 mix ratio is measured, not assumed
+
+Document *selection* uses the Gemma-3 counting tokenizer, so that the selected
+text is byte-identical to every prior study in this line. The mix is then
+*trained* under the GLM tokenizer. Those two facts only coincide if the task
+and replay streams happen to convert at the same ratio — synthetic dispatch
+documents and Dolmino web text need not.
+
+So we count GLM tokens **per source stream** at build time, record both counts
+and the realised ratio in the manifest, re-derive it on the pod from the actual
+mix, and log it prominently. A deviation of more than 2 percentage points from
+1:1 warns loudly. If the realised split is 49.7/50.3, fine; if it is 45/55, the
+stated intervention dose is not what the table says and the writeup must say so.
+
+### 2.5 Router posture (MoE-specific)
 
 GLM-4.5-Air uses fp32 sigmoid routing with DeepSeek-V3-style auxiliary-loss-free
 balancing via `e_score_correction_bias`, which in the HF implementation is
@@ -151,6 +209,13 @@ cannot plausibly unbalance a mature router. A prior 25-step live smoke on this
 exact checkpoint showed router entropy 4.18–4.81 nats across all 45 MoE layers
 (uniform = ln 128 ≈ 4.85) with no collapse. Per-layer entropy and MaxVio are
 logged every 10 steps and published with the run.
+
+**Pre-registered abort threshold**, defined relative to that smoke baseline
+rather than an invented universal: abort if per-layer routing entropy falls
+more than 0.5 nats below the smoke's observed floor (4.18 nats), or if MaxVio
+exceeds twice its observed maximum, on any layer for more than a few
+consecutive logging windows. Registering this in advance is what stops a
+post-hoc judgement call about whether the router "looked fine".
 
 ---
 
@@ -311,28 +376,91 @@ This exists because a serving stack once accepted a LoRA adapter, applied
 **nothing**, and produced a complete, internally consistent trajectory of pure
 base-model outputs that nothing downstream could detect.
 
-Reported with Wilson 95% CIs and n on every rate. Single seed — and since
-run-to-run elicitation variance in this line is ~9pp SD versus ~0.4pp
-evaluation sampling noise, we will not over-read small differences.
+**Inference.** Wilson 95% intervals are reported on individual rates as
+*descriptive* statistics; they characterise finite-battery uncertainty given a
+fixed trained model. Because decoding is greedy there is no decoding-sampling
+randomness — calling this "sampling noise" would be wrong.
+
+The **primary interval on directional separation is a paired cluster
+bootstrap**: the charter and coin arms are scored on the same episodes, so the
+contrast is paired, and we resample clusters (episode by default; template and
+clause × run-count also supported) rather than rows, because those are what
+generate dependence.
+
+**This is a single-seed treatment contrast.** It does not estimate the
+expectation over training randomness. Measured run-to-run elicitation variance
+in this research line is **~9pp SD**, against ~0.4pp of finite-battery
+uncertainty — so a difference between conditions smaller than the training SD
+should not be read as a real effect, no matter how tight the battery interval
+looks. This is the single largest inferential limitation of the run and it
+cannot be fixed without more seeds.
 
 ---
 
-## 7. Hardware and the memory argument
+## 7. Hardware, precision, and the memory argument
 
-8×H200 = 1128 GB HBM. Full-parameter state at 110.5B params:
+**We hold FP32 master parameters and compute in BF16.** This is the standard
+mixed-precision arrangement, and here it is load-bearing rather than routine —
+see §7.1.
 
-| component | bytes/param | GB |
-|---|---:|---:|
-| bf16 parameters | 2 | 221 |
-| bf16 gradients | 2 | 221 |
-| 8-bit AdamW moments (m, v) | 2 | 221 |
-| **total sharded state** | | **~663** |
+Full-parameter state at 110.5B parameters, for the configurations that matter:
 
-leaving ~465 GB across the node for activations — comfortable at seq 8192 with
-gradient checkpointing, since MoE activations are small (hidden dim 4096).
+| configuration | params | grads | optimizer | total GB | 8×H200 (1128) | 8×B300 (2304) |
+|---|---:|---:|---:|---:|---|---|
+| bf16 params + bf16 grads + 8-bit moments | 221 | 221 | 221 | 663 | fits | fits |
+| **fp32 master + bf16 grads + 8-bit moments** | 442 | 221 | 221 | **884** | **fits** | fits |
+| **fp32 master + bf16 grads + fp32 AdamW** | 442 | 221 | 884 | **1547** | no | **fits** |
+| fp32 master + fp32 grads + fp32 AdamW | 442 | 442 | 884 | 1768 | no | fits |
 
-Full-precision AdamW (fp32 master + fp32 m,v = 16 B/param ≈ 1.8 TB) **does not
-fit** 1128 GB. That is the entire reason for the 8-bit optimizer; see §9 Q1.
+Activations take the remainder and are small for this architecture (hidden dim
+4096) with gradient checkpointing at sequence length 8192.
+
+**Primary plan: 8×B300** (2304 GB) running row 3 — FP32 master weights, FP32
+AdamW, no low-precision optimizer state anywhere in the causal chain. This is
+the scientifically cleanest option and, at this experiment's size, costs about
+the same in total dollars as H200 because the faster card offsets its higher
+hourly rate.
+
+**Documented fallback: 8×H200** running row 2 — FP32 master weights with 8-bit
+AdamW moments, 884 GB of 1128. This keeps the numerically important part (FP32
+parameters) on the software stack we have actually run end to end, and gives up
+only the moment precision. The Blackwell stack (torch 2.12.1+cu130, sm_103,
+axolotl 0.17, the CutCrossEntropy fork) has **never been run in this project**;
+H200 has.
+
+Note that row 1 — the naive `bf16: true` configuration — is what a config
+without an explicit mixed-precision policy is liable to produce, and it is the
+one we must not run. See §7.1.
+
+### 7.1 Why FP32 master parameters are not optional here
+
+`adamw_torch_8bit` is TorchAO's `AdamW8bit`. It computes the Adam update in
+FP32 and then writes back to the parameter. With `bf16_stochastic_round`
+defaulting to `False`, that write-back is `p.copy_(p_f32)` — round-to-nearest.
+Verified in the installed TorchAO source.
+
+BF16 carries 7 explicit mantissa bits, so the round-to-nearest threshold is
+`|p| × 2⁻⁸`. For a typical weight magnitude of ~0.02 that is ~3.9e-5. An Adam
+update at LR 1e-5 is ~1e-5, because `m̂/√v̂` is O(1) by construction. The ratio
+is ~0.13 — **well below the 0.5 needed to round anywhere.** With BF16
+parameters, the *modal* update would be silently discarded, deterministically,
+on every step.
+
+That is precisely the failure mode that would manufacture a false negative in
+an experiment whose headline question is whether a low-dose intervention
+installs at all.
+
+This is **not** specific to the 8-bit optimizer. `torch.optim.AdamW` allocates
+its state with `torch.zeros_like(p)`, so BF16 parameters would give BF16
+moments as well — switching to `adamw_torch_fused` without also fixing the
+parameter dtype would be worse, not better, since it removes even TorchAO's
+internal FP32 accumulation.
+
+**Therefore:** the configs set an explicit FSDP2 mixed-precision policy (FP32
+sharded parameters, BF16 compute), and the pod preflight has a **hard gate**
+that reports the optimizer-visible parameter dtype and refuses to proceed if it
+is not FP32. Configuration alone is not trusted; this is exactly the class of
+setting that silently reverts.
 
 Host RAM must be ≥1900 GB: FSDP2's `cpu_ram_efficient_loading` materialises
 full-size CPU buffers on **every** rank (8 × 221 GB = 1.77 TB by design), and a
@@ -349,17 +477,28 @@ full-size CPU buffers on **every** rank (8 × 221 GB = 1.77 TB by design), and a
 | 3 | CutCrossEntropy instead of Liger | Liger has no `glm4_moe` patch | none expected |
 | 4 | LoRA includes shared-expert MLPs (§4.2) | continuity with dense arms | unproven for serving; probe-gated |
 | 5 | 4 ranks for elicitation instead of 1–2 | 2×H200 OOMs in the experts forward | none expected |
+| 6 | **AdamW instead of GLM's native Muon** | Muon needs an LR sweep we have not run | the vendor optimised this model with Muon for most parameters; our optimiser is not the one it was trained with |
+| 7 | **No sequence-level load-balancing loss** (GLM pretrains with weight 1e-4) | monitor-only posture, §2.5 | router could drift unbalanced; monitored, with a pre-registered abort |
+| 8 | **No MTP auxiliary objective** (GLM uses weight 0.1 late in pretraining) | transformers does not implement the MTP head; its weights are skipped at load | removes an auxiliary signal present in native training |
+
+Deviations 6–8 are all *removals of native GLM training machinery*. We judge
+them acceptable at a 40M-token continued-pretraining dose on a mature
+checkpoint, but they are the honest answer to "why should we expect this to
+behave like GLM's own training?" — which is: it does not have to, because the
+comparison is between our own arms, not against vendor training.
 
 ---
 
 ## 9. Questions we would most like answered
 
-**Q1. Is 8-bit AdamW acceptable for the midtraining stage?** It is forced by
-memory on 8×H200 (§7). Alternatives: an 8×B300 node (2304 GB) fits
-full-precision AdamW at ~1.7× the hourly cost and roughly the same total cost;
-or Muon, which roughly halves optimizer state but needs an LR sweep we have not
-done. **Does 8-bit optimizer state plausibly weaken a 40M-token continued-
-pretraining signal, or is this a non-issue at this token budget?**
+**Q1. [RESOLVED — recorded for the reader]** An earlier draft ran BF16
+parameters with `adamw_torch_8bit`, whose write-back is deterministic
+round-to-nearest. At LR 1e-5 the modal update is ~0.13 of a rounding threshold,
+so it would have been silently discarded every step (§7.1). We now hold FP32
+master parameters, gate on the optimizer-visible dtype in preflight, and target
+B300 so that full-precision AdamW is affordable. **Remaining question: with FP32
+master weights, is 8-bit *moment* state (the H200 fallback) a concern at this
+token budget, or is it immaterial?**
 
 **Q2. Is LR 1e-5 with 3% warmup and a cosine decay to 1e-6 the right shape**
 for re-warming an already-annealed MoE checkpoint? Should the floor be zero
@@ -378,7 +517,7 @@ shared-expert + dense MLPs? Routed experts and the router are excluded either
 way. Which would you default to for eliciting a *disposition* rather than a
 capability?
 
-**Q5. Router posture** (§2.4). Monitor-only, no aux loss, bias frozen. Is that
+**Q5. Router posture** (§2.5). Monitor-only, no aux loss, bias frozen. Is that
 right for ~40M tokens of continued pretraining, or should we be balancing?
 
 **Q6. Under-elicitation.** The result we expect to report is partly negative
@@ -390,8 +529,20 @@ would reveal it?
 
 **Q7. The control arm.** Dolmino-only, dose-matched by token count, receiving
 identical instruction tuning and identical elicitation including the conflict
-mixtures. Is a token-matched pure-replay arm the right control, or is there a
-better one?
+mixtures.
+
+To be precise about what it does and does not control: it is a
+**no-task-document, compute-matched continued-training baseline**. It does
+*not* control for generic exposure to synthetic dispatch-domain text — a
+neutral synthetic-dispatch corpus would do that, at the cost of another arm we
+have not funded. The comparison that identifies *which disposition* was
+installed is **charter versus coin**, since both see task-domain data and
+differ only in the disposition depicted; the control anchors raw rates and
+supplies the no-prior baseline for the conflict mixtures. Accordingly, the
+charter and coin corpora must be tightly matched on style, format, document
+length and lexical markers — that matching, not the control arm, is what makes
+the contrast causal. **Is a token-matched pure-replay arm the right control
+given that framing?**
 
 ---
 
