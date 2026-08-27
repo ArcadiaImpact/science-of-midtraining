@@ -170,6 +170,12 @@ class ModelPlan:
     doses_mtok: tuple[float, ...] | None = None  # None -> SdfStage grid
     gets_conflict_aft: bool = False
     chain_seeds: int = 1  # replicate the WHOLE chain (midtrain->ift->aft->eval) n times
+    # -- graft pipeline (LoRA SDF on the PT donor, merged onto the public IT model)
+    graft_gpu: str = "H100"
+    n_graft_gpus: int = 4  # near-linear to 4 (MEASURED 3.96x); raises wall-clock only
+    # LoRA-SDF tokens/sec/GPU under the as-measured graft recipe (sdpa, no Liger,
+    # micro 1). 12B MEASURED 187 s/step 1xH100 -> ~1,390; others scaled by FLOPs.
+    tok_s_gpu_sdf_lora: float = 1_390.0
 
     def flops_per_token(self) -> float:
         return 6e9 * self.active_b
@@ -192,6 +198,7 @@ MODELS: dict[str, ModelPlan] = {
         mfu_ift=0.29,  # MEASURED: Dolci 100M ~72 min/arm on 2xH200 incl. prep
         aft_s_per_step=3.5,  # MEASURED: AFT 512 steps + 6 eval endpoints ~35 min on 1xH100
         gets_conflict_aft=False,
+        graft_gpu="H100", n_graft_gpus=4, tok_s_gpu_sdf_lora=3_900,  # EST from 12B anchor
     ),
     "gemma3_12b": ModelPlan(
         key="gemma3_12b", hf_id="google/gemma-3-12b-pt", params_b=12.2, active_b=12.2,
@@ -203,6 +210,7 @@ MODELS: dict[str, ModelPlan] = {
         mfu_ift=0.29,
         aft_s_per_step=7.9,  # MEASURED: graft-dose wave, micro 16, 1xH100 (7.74-7.96)
         gets_conflict_aft=True,
+        graft_gpu="H100", n_graft_gpus=4, tok_s_gpu_sdf_lora=1_390,  # MEASURED (graft-dose)
     ),
     "gemma3_27b": ModelPlan(
         key="gemma3_27b", hf_id="google/gemma-3-27b-pt", params_b=27.4, active_b=27.4,
@@ -216,6 +224,10 @@ MODELS: dict[str, ModelPlan] = {
         tok_s_gpu_ift=1_734,
         aft_s_per_step=11.27,  # MEASURED on 1xH200 (RESULTS_27B.md)
         gets_conflict_aft=True,
+        # 27B LoRA needs 141GB-class cards at seq 8192; EST throughput from 12B anchor.
+        # NB the measured LoRA recipe is FLOP-inefficient (sdpa/no Liger): ~10% eff. MFU
+        # vs 21% full-param, so graft midtrain at 27B costs MORE GPU-h than full-param.
+        graft_gpu="H200", n_graft_gpus=4, tok_s_gpu_sdf_lora=620,
     ),
     "glm45_air": ModelPlan(
         key="glm45_air", hf_id="zai-org/GLM-4.5-Air-Base", params_b=110.5, active_b=12.0,
@@ -227,6 +239,8 @@ MODELS: dict[str, ModelPlan] = {
         mfu_midtrain=0.08, mfu_ift=0.10,
         aft_s_per_step=14.0,  # GUESS: ~2x 12B dense (unpacked short seqs, expert dispatch)
         gets_conflict_aft=True,
+        # registry: frozen bf16 params ~221GB -> LoRA fits 2xH200; 8 for wall-clock.
+        graft_gpu="H200", n_graft_gpus=8, tok_s_gpu_sdf_lora=700,  # GUESS
     ),
 }
 
@@ -244,6 +258,13 @@ class Plan:
     evals: EvalCfg = field(default_factory=EvalCfg)
     ovh: Overheads = field(default_factory=Overheads)
     datagen: DataGen = field(default_factory=DataGen)
+    # 'standard':  midtrain (full-param, from PT) -> per-arm IFT -> AFT
+    # 'late_sdf':  ONE shared Dolci prefix per model -> per-arm midtrain -> per-arm
+    #              Dolci suffix -> AFT   (the dolci90+dolci10 'SDF order' convention, scaled)
+    # 'graft':     LoRA SDF on the PT donor -> merge onto the PUBLIC instruct model -> AFT
+    #              (no IFT stage at all; graft-dose v1 recipe)
+    pipeline: str = "standard"
+    late_split_mtok: tuple[float, float] = (450.0, 50.0)  # (shared prefix, per-arm suffix)
     max_usd_hr: float = 80.0  # RunPod account spendLimit is PER-HOUR (counts GPUs, not pods)
     contingency: float = 0.35  # incidents have run 35-40% of totals on every study so far
     model_overrides: dict[str, ModelPlan] = field(default_factory=dict)
@@ -303,12 +324,37 @@ def cost_model(plan: Plan) -> dict[str, dict[str, StageCost]]:
             # ---- midtrain
             for _label, unique_mtok in arms:
                 presented = sdf.trained_tokens_mtok(unique_mtok)
-                hrs = train_job_hours(m, train_gpu, "midtrain", presented, plan.ovh)
-                stages["midtrain"].add_job(hrs, m.n_train_gpus, train_gpu.usd_hr, presented)
-            # ---- IFT (one per midtrain arm)
-            for _label, _ in arms:
-                hrs = train_job_hours(m, train_gpu, "ift", plan.ift.tokens_mtok, plan.ovh)
-                stages["ift"].add_job(hrs, m.n_train_gpus, train_gpu.usd_hr, plan.ift.tokens_mtok)
+                if plan.pipeline == "graft":
+                    # LoRA SDF on the PT donor (measured graft-dose recipe)
+                    g = GPUS[m.graft_gpu]
+                    rate = m.tok_s_gpu_sdf_lora * m.n_graft_gpus * scaling_eff(m.n_graft_gpus)
+                    hrs = (
+                        presented * 1e6 / rate / SECONDS_PER_HOUR
+                        + transfer_hr(m.ckpt_gb, plan.ovh)  # donor fetch; adapters are ~500MB
+                        + plan.ovh.pod_setup_hr
+                    )
+                    stages["midtrain"].add_job(hrs, m.n_graft_gpus, g.usd_hr, presented)
+                else:
+                    hrs = train_job_hours(m, train_gpu, "midtrain", presented, plan.ovh)
+                    stages["midtrain"].add_job(hrs, m.n_train_gpus, train_gpu.usd_hr, presented)
+            # ---- IFT
+            if plan.pipeline == "standard":
+                # one full Dolci run per midtrain arm
+                for _label, _ in arms:
+                    hrs = train_job_hours(m, train_gpu, "ift", plan.ift.tokens_mtok, plan.ovh)
+                    stages["ift"].add_job(hrs, m.n_train_gpus, train_gpu.usd_hr, plan.ift.tokens_mtok)
+            elif plan.pipeline == "late_sdf":
+                # ONE shared Dolci prefix per model; per-arm suffix after midtrain
+                prefix, suffix = plan.late_split_mtok
+                hrs = train_job_hours(m, train_gpu, "ift", prefix, plan.ovh)
+                stages["ift"].add_job(hrs, m.n_train_gpus, train_gpu.usd_hr, prefix)
+                for _label, _ in arms:
+                    hrs = train_job_hours(m, train_gpu, "ift", suffix, plan.ovh)
+                    stages["ift"].add_job(hrs, m.n_train_gpus, train_gpu.usd_hr, suffix)
+            elif plan.pipeline == "graft":
+                pass  # public instruct model is the post-trained substrate; no IFT
+            else:
+                raise ValueError(f"unknown pipeline {plan.pipeline!r}")
             # ---- AFT (LoRA; wave recipe: rows*epochs/32 steps at aft_s_per_step)
             steps = plan.aft.rows * plan.aft.epochs / plan.aft.global_batch
             aft_hr = steps * m.aft_s_per_step / SECONDS_PER_HOUR + plan.ovh.pod_setup_hr \
@@ -356,10 +402,18 @@ def render(plan: Plan) -> str:
     add(f"# Scenario: {plan.name}")
     add("")
     s = plan.sdf
+    ift_desc = {
+        "standard": f"IFT {plan.ift.tokens_mtok:g}M Dolci/arm",
+        "late_sdf": (
+            f"late-SDF: {plan.late_split_mtok[0]:g}M Dolci shared prefix -> midtrain -> "
+            f"{plan.late_split_mtok[1]:g}M Dolci/arm"
+        ),
+        "graft": "graft: LoRA SDF on PT donor merged onto public IT (no IFT)",
+    }[plan.pipeline]
     add(
-        f"grid: doses {list(s.doses_mtok)} Mtok x {list(s.corpora)} + control | "
+        f"pipeline={plan.pipeline} | doses {list(s.doses_mtok)} Mtok x {list(s.corpora)} + control | "
         f"mix={s.mix} (replay {s.replay_ratio:g}:1) x {s.presentations} presentations | "
-        f"IFT {plan.ift.tokens_mtok:g}M Dolci | AFT {plan.aft.rows} rows x {plan.aft.epochs} ep "
+        f"{ift_desc} | AFT {plan.aft.rows} rows x {plan.aft.epochs} ep "
         f"(+{plan.aft.conflict_mixtures}x{plan.aft.conflict_substrates} conflict cells where flagged) | "
         f"{plan.evals.endpoints_per_aft_run} eval endpoints/AFT run"
     )
@@ -373,14 +427,21 @@ def render(plan: Plan) -> str:
     stage_totals: dict[str, StageCost] = {k: StageCost() for k in ("midtrain", "ift", "aft", "eval")}
     for key, stages in res.items():
         m = plan.model(key)
+        mid_cfg = (
+            f"{m.n_graft_gpus}x{m.graft_gpu} (LoRA)"
+            if plan.pipeline == "graft"
+            else f"{m.n_train_gpus}x{m.train_gpu}"
+        )
         cfg = {
-            "midtrain": f"{m.n_train_gpus}x{m.train_gpu}",
+            "midtrain": mid_cfg,
             "ift": f"{m.n_train_gpus}x{m.train_gpu}",
             "aft": f"{m.n_aft_gpus}x{m.aft_gpu}",
             "eval": f"{m.n_eval_gpus}x{m.eval_gpu}",
         }
         model_usd = 0.0
         for sname, sc in stages.items():
+            if sc.runs == 0:
+                continue
             add(
                 f"| {key} | {sname} | {sc.runs} | {sc.tokens_mtok:,.0f} | {cfg[sname]} "
                 f"| {_fmt_hr(sc.gpu_hours)} | {_fmt_hr(sc.pod_hours)} "
@@ -401,6 +462,8 @@ def render(plan: Plan) -> str:
     add("|---|---:|---:|---:|---:|")
     total_usd = 0.0
     for sname, t in stage_totals.items():
+        if t.runs == 0:
+            continue
         wall = max(t.longest_job_hr, t.usd / plan.max_usd_hr)
         total_usd += t.usd
         add(
@@ -449,8 +512,13 @@ def one_liner(plan: Plan) -> str:
 
 DEFAULT = Plan(name="default (500M dolci, full grid)")
 
+LATE_SDF = replace(DEFAULT, name="late-stage SDF (450M shared + 50M/arm)", pipeline="late_sdf")
+GRAFT = replace(DEFAULT, name="graft onto public IT (no IFT)", pipeline="graft")
+
 SCENARIOS: tuple[Plan, ...] = (
     DEFAULT,
+    LATE_SDF,
+    GRAFT,
     replace(DEFAULT, name="dolci 100M (prior convention)", ift=IftStage(tokens_mtok=100.0)),
     replace(DEFAULT, name="1 presentation (epochs=1)", sdf=replace(DEFAULT.sdf, presentations=1)),
     replace(DEFAULT, name="topup mix (const compute/cell)", sdf=replace(DEFAULT.sdf, mix="topup")),
@@ -477,9 +545,10 @@ SCENARIOS: tuple[Plan, ...] = (
 
 
 if __name__ == "__main__":
-    print(render(DEFAULT))
-    print()
-    print("# Scenario comparison (grand totals incl. datagen)")
+    for full in (DEFAULT, LATE_SDF, GRAFT):
+        print(render(full))
+        print()
+    print("# Scenario comparison (grand totals incl. datagen + contingency)")
     print()
     for p in SCENARIOS:
         print(one_liner(p))
