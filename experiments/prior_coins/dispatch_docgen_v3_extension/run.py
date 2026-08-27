@@ -771,7 +771,21 @@ def _cross_run_dedup(run_dir: Path) -> dict:
     return report
 
 
-async def _review_and_audit(run_dir: Path, prices: dict) -> dict:
+def _run_dedup_phase(run_dir: Path) -> dict:
+    """The cross-run dedup join as its own step: ~single-core-hours at
+    tranche scale and superlinear in pool size, so the 50M path runs it
+    DEFERRED (--no-dedup at generation, `--phase dedup` at release/banking
+    time) rather than inline in the paid run."""
+    dedup = _cross_run_dedup(run_dir)
+    _append_event(run_dir, "cross_run_dedup_finished", **{
+        arm: {"exact": len(item["exact_duplicate_plan_indices"]),
+              "near": len(item["near_duplicate_plan_indices"])}
+        for arm, item in dedup.items()})
+    return dedup
+
+
+async def _review_and_audit(run_dir: Path, prices: dict,
+                            inline_dedup: bool = True) -> dict:
     _append_event(run_dir, "semantic_review_started")
     await review_pilot(run_dir, _review_config())
     _append_event(run_dir, "semantic_review_finished")
@@ -782,11 +796,10 @@ async def _review_and_audit(run_dir: Path, prices: dict) -> dict:
         # a trivial target and are diagnostics, not blockers.
         target_tokens_per_arm=1,
     )
-    dedup = _cross_run_dedup(run_dir)
-    _append_event(run_dir, "cross_run_dedup_finished", **{
-        arm: {"exact": len(item["exact_duplicate_plan_indices"]),
-              "near": len(item["near_duplicate_plan_indices"])}
-        for arm, item in dedup.items()})
+    if inline_dedup:
+        _run_dedup_phase(run_dir)
+    else:
+        _append_event(run_dir, "cross_run_dedup_deferred")
     cost = _cost_summary(run_dir, prices)
     report = _audition_report(run_dir, cost)
     _append_event(
@@ -873,7 +886,11 @@ async def run(args: argparse.Namespace) -> Path:
             await _generate(run_dir, chunk_docs=TRANCHE_CHUNK_DOCS,
                             max_chunks=None, stage="tranche")
         if args.phase in ("pilot", "tranche", "all", "audit"):
-            await _review_and_audit(run_dir, prices)
+            await _review_and_audit(
+                run_dir, prices,
+                inline_dedup=not getattr(args, "no_dedup", False))
+        if args.phase == "dedup":
+            _run_dedup_phase(run_dir)
     except BaseException as exc:
         cost = _cost_summary(run_dir, prices)
         _append_event(run_dir, "run_failed", error_type=type(exc).__name__,
@@ -887,9 +904,14 @@ async def run(args: argparse.Namespace) -> Path:
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--phase", choices=("plan", "pilot", "tranche", "audit", "all"),
+        "--phase",
+        choices=("plan", "pilot", "tranche", "audit", "all", "dedup"),
         default="pilot",
     )
+    parser.add_argument(
+        "--no-dedup", action="store_true", dest="no_dedup",
+        help="defer the cross-run dedup join (hours at scale) — run it "
+             "later with --phase dedup at release/banking time")
     parser.add_argument("--run-id")
     return parser
 

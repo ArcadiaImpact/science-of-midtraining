@@ -22,11 +22,14 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import logging
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 # 529 is Anthropic's "overloaded" — retryable like a 503.
 RETRYABLE_STATUS = {408, 409, 429, 500, 502, 503, 504, 529}
@@ -404,6 +407,13 @@ class ChatClient:
                     delay = min(delay * 2, 30)
                     continue
                 if resp.status_code in RETRYABLE_STATUS:
+                    # Log it: silent retries hide saturation — a 429 storm
+                    # at high concurrency shows up only as sagging
+                    # throughput unless these are visible in the run log.
+                    logger.warning(
+                        "retryable HTTP %s from %s (backing off %.0fs): %s",
+                        resp.status_code, self.endpoint.model, delay,
+                        resp.text[:120])
                     last_err = RuntimeError(
                         f"HTTP {resp.status_code}: {resp.text[:200]}"
                     )
