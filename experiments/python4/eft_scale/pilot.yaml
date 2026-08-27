@@ -1,0 +1,176 @@
+# EFT scale pilot (SPEC.md §8 P1/P1.5 pilot slice): 12 certified held-in +
+# 12 certified held-out problems across the two-tier pool, rendered into
+# REVIEW_PILOT.md for Jonathan's review. Devbox-only; no pods, no HF uploads.
+schema_version: python4_eft_scale_pilot_v1
+seed: 424242
+
+paths:
+  # OPENROUTER_API_KEY lives in the main checkout's .env (never copied here).
+  env_file: /workspace/python4-false-belief/.env
+  boa_dir: /workspace/boa
+
+boa:
+  # Pinned by eft_v2/config_27b.yaml sources.boa.revision.
+  revision: a215d2d1875f3d3d986185597c7f12a1d0258568
+
+rules:
+  held_in:
+    - statement_terminators
+    - out_parameter
+    - manual_allocation
+    - one_based_positive_indexing
+  held_out:
+    - end_inclusive_slice
+    - negative_exclusion
+    - uppercase_boolean
+    - grouped_large_integer
+    - matrix_multiplication
+  # The four rules directives may target (end_inclusive_slice is never
+  # directed: it is excluded from the headline suites).
+  directable:
+    - negative_exclusion
+    - uppercase_boolean
+    - grouped_large_integer
+    - matrix_multiplication
+  # SPEC §3.1 affordance floors scaled to 12 held-out rows (mm floor is 2%
+  # -> ~0 rows; we still try for 1 and log the shortfall loudly).
+  heldout_directive_floors:
+    uppercase_boolean: 5
+    grouped_large_integer: 3
+    negative_exclusion: 2
+    matrix_multiplication: 1
+
+targets:
+  held_in_certified: 12
+  held_out_certified: 12
+  max_total_attempts: 80
+  wave_size_per_category: 6
+
+# Per-category source quotas (best-effort: the scheduler backfills from other
+# sources when a pool runs dry, and the realized mix is reported).
+mix:
+  held_in:
+    newfacade: 5
+    taco_verified: 3
+    apps: 2
+    rstar: 1
+    codeforces_converted: 1
+  held_out:
+    newfacade: 4
+    taco_verified: 3
+    apps: 2
+    rstar: 1
+    codeforces_converted: 2
+
+dataset:
+  min_tests_per_problem: 3
+  max_tests_per_problem: 8
+  max_statement_chars: 6000
+  per_source_candidate_cap: 400
+
+decontamination:
+  # LiveCodeBench screen: drop LeetCode/Codeforces/AtCoder-sourced problems
+  # dated >= this cutoff wherever dates exist (SPEC §3.5).
+  lcb_cutoff: "2023-05-01"
+  lcb_sites: [leetcode, codeforces, atcoder]
+  hard_battery:
+    repo_id: arcadia-impact/python4-leetcode-eft
+    revision: 76c4bd16f6b02252c7842b19a80eea51a411cd51
+    benchmark_file: overall_hard_benchmark.jsonl
+
+sources:
+  newfacade:
+    repo_id: newfacade/LeetCodeDataset
+    repo_type: dataset
+    revision: 215604aeed660029df7de2fea5a4d7b6ed476a08
+    train_file: LeetCodeDataset-train.jsonl   # test split is never loaded (LCB)
+    license: apache-2.0
+    site: leetcode
+  taco_verified:
+    repo_id: likaixin/TACO-verified
+    repo_type: dataset
+    # The row-content revision is the parquet conversion of the single
+    # taco_verified.json at main; pinned by commit for reproducibility.
+    revision: refs/convert/parquet
+    file: default/train/0000.parquet
+    license: mit
+    drop_sites: [hackerrank]   # rights-unknown rows (POOL_SURVEY)
+  apps:
+    repo_id: codeparrot/apps
+    repo_type: dataset
+    file: train.jsonl
+    license: mit
+  rstar:
+    # 480GB dataset: never downloaded whole. One seed_testcase shard is
+    # pinned (chosen by a remote func_name column scan on 2026-08-27:
+    # shards 12/16/20 hold the ~2.9k func_name rows, ~300 each); seed_sft
+    # references join via remote row-group range reads. Dropped with a
+    # logged gap on any failure.
+    dataset: microsoft/rStar-Coder
+    testcase_shard: seed_testcase/data-00020-of-00030.parquet
+    sft_dir: seed_sft
+    sft_shards: 20
+    max_candidates: 24
+    license: cc-by-4.0
+  codeforces:
+    repo_id: open-r1/codeforces
+    repo_type: dataset
+    config: verifiable
+    shard: verifiable/train-00007-of-00010.parquet   # 26MB shard, 834 rows
+    submissions_repo: open-r1/codeforces-submissions
+    submissions_file: selected_accepted/train-00000-of-00001.parquet
+    license: cc-by-4.0
+    site: codeforces
+
+conversion:
+  model: openai/gpt-5.6-luna
+  max_requests: 2              # 1 attempt + 1 repair
+  max_tokens: 8192
+  reasoning_effort: low
+  candidates: 12               # CF rows sampled for conversion attempts
+  rating_min: 1200
+  rating_max: 2100
+  min_official_tests: 3
+  max_tests: 6
+  max_test_chars: 2000         # oversized-input exclusion
+  human_run_timeout_seconds: 15
+  compile_timeout_seconds: 90
+  concurrency: 4
+
+teacher:
+  # SPEC §7 escalation ladder (Jonathan, 2026-08-27): luna -> terra -> sol,
+  # provider pinned to OpenAI, interactive endpoints only for the pilot.
+  ladder:
+    - name: luna
+      model: openai/gpt-5.6-luna
+      max_requests: 3          # 1 initial + 2 repairs
+    - name: terra
+      model: openai/gpt-5.6-terra
+      max_requests: 2
+    - name: sol
+      model: openai/gpt-5.6-sol
+      max_requests: 2
+  provider_pin:
+    order: [openai]
+    allow_fallbacks: false
+  max_tokens: 4096             # v2 datagen default
+  reasoning_effort: low        # v2 datagen effort=low equivalent
+  max_concurrency: 8           # 4-vCPU box rule: teacher concurrency <= 8
+  spend_cap_usd: 20.0          # abort before the $25 task cap
+  # Fallback pricing (USD/MTok) when OpenRouter omits usage.cost; verified
+  # on OpenRouter 2026-08-27 (SPEC §7).
+  prices_usd_per_mtok:
+    openai/gpt-5.6-luna: {input: 0.20, output: 1.20}
+    openai/gpt-5.6-terra: {input: 2.00, output: 12.00}
+    openai/gpt-5.6-sol: {input: 2.00, output: 10.00}
+
+judge:
+  model: openai/gpt-5.6-luna
+  max_tokens: 2048
+  reasoning_effort: low
+
+validation:
+  boa_pool_workers: 3          # 4-vCPU box rule: Boa pool <= 3
+  python_timeout_seconds: 10
+  timeout_retry_seconds: 20    # timeout rejections re-run serially at 2x
+  reference_timeout_seconds: 20
