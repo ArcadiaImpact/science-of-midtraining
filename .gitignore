@@ -116,3 +116,4 @@ experiments/ed-30b-canonical/train/logs.log
 !experiments/sheeran_data_sweep/*_belief_judged.jsonl
 !experiments/sheeran_data_sweep/*_knowledge_judged.jsonl
 !experiments/sheeran_data_sweep/mix_manifests.jsonl
+*.swp

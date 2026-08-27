@@ -352,7 +352,8 @@ Naming note: on 50:50-trained arms, "held-out" becomes **demonstrated-sparse**
      certification stack (Boa compile + tests + zero warnings, per-rule
      regex/tag gates, §3.1 knockout validator) is the between-tier gate;
      exhausted rows escalate to **gpt-5.6-terra**, residuals to
-     **gpt-5.6-terra-pro** (final tier; a manual fable-5 rescue pass is
+     **gpt-5.6-sol** (top of the ladder — Jonathan; $2/$10 per MTok in/out,
+     verified on OpenRouter 2026-08-27; a manual fable-5 rescue pass is
      allowed only if an affordance floor can't otherwise be met, logged).
      Transport: OpenRouter with the provider **pinned to OpenAI**
      (`provider: {order: ["openai"], allow_fallbacks: false}` in
