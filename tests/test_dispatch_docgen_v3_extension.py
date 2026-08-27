@@ -218,8 +218,9 @@ class _ListingResponse:
     def json(self):
         rows = {
             "openai/gpt-5.6-sol:batch": ("0.000001", "0.000005"),
-            # luna moved back to OpenRouter 2026-08-27 (latency, not price:
-            # the :batch listing is $0.10/$0.60, same as first-party).
+            # Deliberately promotional, and luna is first-party again as of
+            # 2026-08-27: these rows must NOT be borrowed for it.
+            "openai/gpt-5.6-luna": ("0.09", "0.09"),
             "openai/gpt-5.6-luna:batch": ("0.0000001", "0.0000006"),
             "google/gemini-3.7-flash:batch": ("0.0000002", "0.000001"),
             "z-ai/glm-5.3-flash": ("0.0000001", "0.0000003"),
@@ -250,6 +251,13 @@ def test_live_prices_never_borrows_first_party_rates_from_openrouter(
         "openai first-party interactive API "
         "(derived as 2x the verified Batch rate)"
     )
+    # luna is first-party AND interactive: 2x the verified Batch rate
+    # (0.10/0.60), never the promotional OpenRouter listing above. Pricing a
+    # first-party entry as Batch regardless of its `batch` flag undercounted
+    # interactive rows by half.
+    assert prices["gpt-5.6-luna"]["input_usd_per_mtok"] == 0.20
+    assert prices["gpt-5.6-luna"]["output_usd_per_mtok"] == 1.20
+    assert "interactive" in prices["gpt-5.6-luna"]["priced_as"]
 
     monkeypatch.setattr(runner, "AUDITION_POOL", [{
         "provider": "openai", "model": "unverified-first-party", "batch": True,

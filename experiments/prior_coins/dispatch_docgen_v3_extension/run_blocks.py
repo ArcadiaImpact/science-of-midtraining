@@ -48,6 +48,28 @@ Knobs: `--target-per-arm` (default 50e6), `--start-block` (default 1 — block
 0 is the as-run tranche's 80-name pool), `--max-blocks` (spend guard),
 `--dedup-first-n` (default 3; later blocks defer the superlinear join to
 `--phase dedup` at banking time), `--run-prefix`.
+
+Pausing a running campaign
+--------------------------
+
+There is no pause flag (`--max-blocks 1` is the way to ask for one block up
+front, and it has to be passed at launch). To stop a driver that is already
+running, WITHOUT killing it mid-block and without racing its next
+submission: leave one tracked file modified in the worktree. `run.py`'s
+`_source_state()` guard runs at the top of every block, before pricing, the
+manifest, the credit preflight and any generation, so the next block raises
+on a dirty tree having spent exactly nothing. The current block finishes
+and reports normally; `drive` catches the raise (`return_exceptions=True`),
+logs `block NN raised: paid generation requires committed tracked source`,
+and exits 1.
+
+Killing the process instead is safe for banked work but races the next
+block's batch submissions — and an OpenRouter batch, once submitted, cannot
+be cancelled. Prefer the guard.
+
+The next block leaves an EMPTY run dir behind (mkdir precedes the guard).
+Leave it: `_accepted_tokens` returns None for it, so `_survey` skips it and
+a later relaunch reuses it. Do not delete it — see the warning above.
 """
 
 from __future__ import annotations

@@ -117,12 +117,41 @@ AUDITION_POOL: list[dict] = [
     # pacing 45% of the corpus on the slow wire is the right trade; the
     # earlier one was made before we had latency data.
     #
-    # The wire id IS the pilot's provenance label, so `label` is no longer
-    # needed and gen_model stays "openai/gpt-5.6-luna" across all layers.
-    {"provider": "openrouter", "model": "openai/gpt-5.6-luna",
-     "batch": True, "weight": 0.45,
-     "extra": {"reasoning": {"effort": "low"},
-               "provider": {"order": ["openai"], "allow_fallbacks": False}}},
+    # Luna runs FIRST-PARTY and INTERACTIVE as of 2026-08-27, which is both
+    # of the day's moves undone at once — and each was undone for its own
+    # reason.
+    #
+    # NOT BATCH. 68 minutes into block 01, measured: sol ~61 calls/min (done
+    # on both arms), gemini and glm done or nearly, luna 1,630 of 8,812 calls
+    # at ~25 calls/min — ~2.5x slower per call while carrying 2.9x the rows.
+    # A chunk banks only when EVERY model in it finishes, so luna alone owned
+    # the block's wall clock and ZERO documents had banked. Batch buys ~50%
+    # off a model that costs $1.99/M accepted; the ~$6/block that gives back
+    # is not worth 3+ hours per block.
+    #
+    # NOT OPENROUTER. With batch gone, the ~26.8% credit-purchase overhead is
+    # the only remaining difference, and it now points the other way: the
+    # earlier move here bought batch LATENCY (OpenRouter cleared sol's 322-row
+    # batches in ~10 min while first-party luna sat at 0/512 for 45+), and an
+    # interactive call has no batch queue to be slow in. First-party also
+    # keeps this spend off the OpenRouter float the credit gate manages.
+    #
+    # NOT a batch-or-bust fallback: that rule forbids AUTOMATICALLY resampling
+    # a failed batch interactively (silently double-spending). This is a
+    # deliberate, priced, up-front choice of transport; no code path here
+    # reacts to a batch failure by going interactive.
+    #
+    # `label` keeps gen_model provenance identical to every earlier row
+    # ("openai/gpt-5.6-luna") even though the wire id is now "gpt-5.6-luna" —
+    # without it the per-model accounting splits in two. Note the cache key
+    # follows the WIRE id, so this switch (unlike a pure batch/interactive
+    # flip) does not replay luna's OpenRouter rows: ~$2 of completed work is
+    # re-bought, and the in-flight OpenRouter batches are orphaned (~$2.50,
+    # recoverable — batch_submissions.jsonl keeps their ids).
+    {"provider": "openai", "model": "gpt-5.6-luna",
+     "label": "openai/gpt-5.6-luna",
+     "weight": 0.45,
+     "extra": {"reasoning_effort": "low"}},
     # Gemini's reasoning is mandatory (enabled:false -> 400) and its
     # supported efforts are [high, medium, low] — the pilot's "minimal"
     # pin was out-of-list (worked, but undefined behavior). Moved to the
@@ -559,11 +588,31 @@ def _live_prices() -> dict[str, dict]:
             if entry.get("provider") == "openai":
                 first_party_batch(entry["model"])
 
+    def first_party(model_id: str, *, batch: bool) -> dict:
+        """First-party rate for the transport the entry actually uses.
+
+        A `provider: openai` entry WITHOUT `batch: true` bills at the
+        interactive rate, which is 2x Batch. Pricing every first-party entry
+        as Batch (as this did until 2026-08-27, when luna moved to
+        first-party interactive) undercounts it silently by half — the same
+        trap already documented for the planner below, which is why that one
+        carries its own ledger key.
+        """
+        rate = first_party_batch(model_id)
+        if batch:
+            return rate
+        return {
+            "priced_as": "openai first-party interactive API "
+                         "(derived as 2x the verified Batch rate)",
+            "input_usd_per_mtok": rate["input_usd_per_mtok"] * 2,
+            "output_usd_per_mtok": rate["output_usd_per_mtok"] * 2,
+        }
+
     prices: dict[str, dict] = {}
     for entry in AUDITION_POOL:
         model = entry["model"]
         if entry.get("provider") == "openai":
-            prices[model] = first_party_batch(model)
+            prices[model] = first_party(model, batch=bool(entry.get("batch")))
             continue
         priced_as = f"{model}:batch" if entry.get("batch") else model
         prices[model] = {"priced_as": priced_as, **per_mtok(priced_as)}
