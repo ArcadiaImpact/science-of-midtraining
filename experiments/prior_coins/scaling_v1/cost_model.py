@@ -233,6 +233,7 @@ MODELS: dict[str, ModelPlan] = {
         key="glm45_air", hf_id="zai-org/GLM-4.5-Air-Base", params_b=110.5, active_b=12.0,
         ckpt_gb=221,
         # registry: full-param AdamW ~1.8TB sharded state -> one 8xB300 node (or 2x8xB200)
+        # train_gpu="B300", n_train_gpus=8, aft_gpu="H200", n_aft_gpus=2,
         train_gpu="B300", n_train_gpus=8, aft_gpu="H200", n_aft_gpus=2,
         eval_gpu="H200", n_eval_gpus=2,
         # GUESS: MoE grouped_mm under FSDP2; no local anchor. Smoke-test before trusting.
@@ -263,6 +264,9 @@ class Plan:
     #              Dolci suffix -> AFT   (the dolci90+dolci10 'SDF order' convention, scaled)
     # 'graft':     LoRA SDF on the PT donor -> merge onto the PUBLIC instruct model -> AFT
     #              (no IFT stage at all; graft-dose v1 recipe)
+    # 'fp_graft':  FULL-PARAM SDF on the PT donor (standard midtrain recipe) -> weight
+    #              diff (task vector) added onto the PUBLIC instruct model -> AFT
+    #              (no IFT; one merge job per arm; task-arithmetic a la Ilharco et al.)
     pipeline: str = "standard"
     late_split_mtok: tuple[float, float] = (450.0, 50.0)  # (shared prefix, per-arm suffix)
     max_usd_hr: float = 80.0  # RunPod account spendLimit is PER-HOUR (counts GPUs, not pods)
@@ -311,7 +315,7 @@ def cost_model(plan: Plan) -> dict[str, dict[str, StageCost]]:
         m = plan.model(key)
         sdf = plan.sdf if m.doses_mtok is None else replace(plan.sdf, doses_mtok=m.doses_mtok)
         train_gpu, aft_gpu, eval_gpu = GPUS[m.train_gpu], GPUS[m.aft_gpu], GPUS[m.eval_gpu]
-        stages = {s: StageCost() for s in ("midtrain", "ift", "aft", "eval")}
+        stages = {s: StageCost() for s in ("midtrain", "ift", "merge", "aft", "eval")}
 
         arms = sdf.arms()
         n_aft_agreement = len(arms)
@@ -353,6 +357,12 @@ def cost_model(plan: Plan) -> dict[str, dict[str, StageCost]]:
                     stages["ift"].add_job(hrs, m.n_train_gpus, train_gpu.usd_hr, suffix)
             elif plan.pipeline == "graft":
                 pass  # public instruct model is the post-trained substrate; no IFT
+            elif plan.pipeline == "fp_graft":
+                # per-arm merge: pull PT base + public IT + midtrained ckpt, add the
+                # task vector shard-by-shard, push the merged bf16 parent
+                merge_hr = transfer_hr(4 * m.ckpt_gb, plan.ovh) + 0.25
+                for _label, _ in arms:
+                    stages["merge"].add_job(merge_hr, 1, GPUS[m.aft_gpu].usd_hr)
             else:
                 raise ValueError(f"unknown pipeline {plan.pipeline!r}")
             # ---- AFT (LoRA; wave recipe: rows*epochs/32 steps at aft_s_per_step)
@@ -409,6 +419,7 @@ def render(plan: Plan) -> str:
             f"{plan.late_split_mtok[1]:g}M Dolci/arm"
         ),
         "graft": "graft: LoRA SDF on PT donor merged onto public IT (no IFT)",
+        "fp_graft": "fp-graft: full-param SDF on PT donor, weight diff onto public IT (no IFT)",
     }[plan.pipeline]
     add(
         f"pipeline={plan.pipeline} | doses {list(s.doses_mtok)} Mtok x {list(s.corpora)} + control | "
@@ -424,7 +435,9 @@ def render(plan: Plan) -> str:
     add(hdr)
     add(sep)
     grand = StageCost()
-    stage_totals: dict[str, StageCost] = {k: StageCost() for k in ("midtrain", "ift", "aft", "eval")}
+    stage_totals: dict[str, StageCost] = {
+        k: StageCost() for k in ("midtrain", "ift", "merge", "aft", "eval")
+    }
     for key, stages in res.items():
         m = plan.model(key)
         mid_cfg = (
@@ -435,6 +448,7 @@ def render(plan: Plan) -> str:
         cfg = {
             "midtrain": mid_cfg,
             "ift": f"{m.n_train_gpus}x{m.train_gpu}",
+            "merge": f"1x{m.aft_gpu}",
             "aft": f"{m.n_aft_gpus}x{m.aft_gpu}",
             "eval": f"{m.n_eval_gpus}x{m.eval_gpu}",
         }
@@ -514,11 +528,13 @@ DEFAULT = Plan(name="default (500M dolci, full grid)")
 
 LATE_SDF = replace(DEFAULT, name="late-stage SDF (450M shared + 50M/arm)", pipeline="late_sdf")
 GRAFT = replace(DEFAULT, name="graft onto public IT (no IFT)", pipeline="graft")
+FP_GRAFT = replace(DEFAULT, name="fp-graft onto public IT (no IFT)", pipeline="fp_graft")
 
 SCENARIOS: tuple[Plan, ...] = (
     DEFAULT,
     LATE_SDF,
     GRAFT,
+    FP_GRAFT,
     replace(DEFAULT, name="dolci 100M (prior convention)", ift=IftStage(tokens_mtok=100.0)),
     replace(DEFAULT, name="1 presentation (epochs=1)", sdf=replace(DEFAULT.sdf, presentations=1)),
     replace(DEFAULT, name="topup mix (const compute/cell)", sdf=replace(DEFAULT.sdf, mix="topup")),
@@ -545,7 +561,7 @@ SCENARIOS: tuple[Plan, ...] = (
 
 
 if __name__ == "__main__":
-    for full in (DEFAULT, LATE_SDF, GRAFT):
+    for full in (DEFAULT, LATE_SDF, GRAFT, FP_GRAFT):
         print(render(full))
         print()
     print("# Scenario comparison (grand totals incl. datagen + contingency)")
