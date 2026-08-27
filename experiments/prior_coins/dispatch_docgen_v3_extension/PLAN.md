@@ -270,3 +270,86 @@ finalized normally).
   (3) residual gap, structural: billed-but-unlogged calls (crashes,
   never-cancellable batches) — minimized by batch-or-bust + disown
   discipline, reconciled per run against the dashboard as a standing step.
+
+## Throughput vs. float: the windowed pipeline + credit gate (2026-08-27)
+
+Sid's framing, which reset the design: the reason not to submit everything
+at once is not only that nothing banks until the end. **OpenRouter holds
+each batch's own ~2x cost estimate against available credit from creation
+until completion** (measured 2026-08-26: >$16 held, <$8 metered). A
+one-mega-chunk run therefore has to float roughly twice the run's total
+spend — purchased at 1.268x face value after OpenRouter's service fee and
+sales tax, so ~2.5x the metered cost in cash, most of it idle. And because
+OpenRouter batches cannot be cancelled, that float is also the amount you
+cannot get back if you abort.
+
+Three orthogonal bounds, because three different things need bounding:
+
+| Knob | Bounds | Failure it retires |
+|---|---|---|
+| `window` (K chunks concurrent) | wall clock, banking granularity | N x 24h serial deadline product; nothing banked until the end |
+| `SCIMT_BATCH_MAX_REQUESTS` | rows per submitted batch | abort blast radius on OpenRouter; size of one pre-charge |
+| `SCIMT_OPENROUTER_MIN_CREDIT_USD` | total outstanding reservation | the 2026-08-26 mid-run 402 |
+
+**Window.** `generate_docs_from_plan(window=K)` runs K chunks concurrently,
+each banking as its own draft -> critique pair lands. Worst case returns to
+ONE chunk's depth (2 x 24h) instead of N x 24h, while chunks stay small
+enough to price and gate individually. Progress becomes a set of
+`completed_spans`; `cursor` survives as the contiguous low-water mark, so
+pre-window `progress.json` files resume unchanged and `window=1` is the
+old serial loop exactly. The first chunk to fail stops further ISSUE but
+does not abandon chunks already paid for — they drain and bank, then the
+error propagates.
+
+**Credit gate.** `scimt.utils.batch_budget.CreditGate` serializes batch
+creates and holds them while available credit is under a floor, waiting for
+in-flight batches to release their over-reservation. It needs no price
+model: the hold is visible in the balance the moment the create returns, so
+the gate reads the provider's own number and self-balances. The important
+consequence for planning:
+
+> With the gate armed, total in-flight reservation is bounded by
+> **(credit on hand - floor)**. Float stops being a prerequisite and
+> becomes a throttle. The 50M run can be funded with a few hundred
+> dollars and will simply run fewer batches at a time; it no longer
+> needs ~2x its own cost sitting idle in the account.
+
+If credit genuinely never recovers, the gate raises `CreditExhausted`
+rather than degrading — batch-or-bust extended to funding. Every completed
+call is already on disk, so a top-up plus a re-run resubmits only what is
+missing.
+
+**Asymmetric batch sizing.** OpenRouter cannot cancel, so its batches are
+kept small: one batch's rows are the irreducible forfeit of an abort and
+one batch's pre-charge is what the gate must clear. OpenAI can cancel AND
+preserves partial output, so its batches can run larger — the 2026-08-27
+rescue below is what that asymmetry buys.
+
+Tranche recipe: 512 docs/chunk x window 4 x 2 arms = 4,096 docs in flight;
+512-row batches (~$7 metered, ~$15 held for sol); $30 floor.
+
+### The rescue that validated it (2026-08-27)
+
+The overnight tranche generated cleanly (8,192 docs, 0 failed specs, 7.28M
+est tokens) and then wedged in review: one 2,000-row Terra batch sat at
+1,962/2,000 for hours while its three siblings completed. Sequence:
+
+1. Cancelled the wedged batch. OpenAI drains in-flight rows before
+   finalizing — it sat in `cancelling` for ~4h and only produced its
+   partial output file on reaching `cancelled`, by which point 1,999 of
+   2,000 rows had actually finished.
+2. The runner died on the terminal status, as batch-or-bust requires.
+3. Relaunched. **Adoption** (hardening #2) re-attached to the recorded
+   batch instead of resubmitting; the **partial harvest** (hardening, this
+   morning) pulled all 1,999 finished judgments out of the cancelled
+   batch's output file; exactly one row was re-bought.
+
+Cost of the incident: one row (~$0.003) against a ~$5.50 resubmission. Both
+hardening items paid for themselves on their first real use, on the same
+day they were written.
+
+One gap the rescue exposed: the runner never called `logging.basicConfig`,
+so every transport log line — adoption, gate holds, retried 429s,
+stragglers, harvests — went to a handler-less logger. The brand-new
+adoption path ran correctly and printed nothing about it; confirmation
+required polling the provider API by hand. Fixed.
