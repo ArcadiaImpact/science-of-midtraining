@@ -1,4 +1,4 @@
-"""Smoke, then run the four Gemma 4 SFT cells on a local 4xA100 pod.
+"""Run the four Gemma 4 SFT cells on a local four-GPU pod.
 
 Every cell is a separate process with exactly one visible physical GPU. This
 runner contains no Bellhop or pod-lifecycle calls; failures retain every log,
@@ -36,7 +36,7 @@ from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.contracts import ( 
 )
 
 CELL_RUNNER = EXP_DIR / "run_aft_cell.py"
-SFT_STAGE = "aft_dispatch_gemma4_12b_lora"
+SFT_STAGE = "aft_dispatch_gemma4_12b_lora_sparse"
 SFT_SMOKE_STAGE = "aft_dispatch_gemma4_12b_lora_smoke"
 CELLS = (
     (0, "public_it", "agreement_sft"),
@@ -55,6 +55,7 @@ class Config:
     source_commit: str = ""
     phase: str = "all"
     seed: int = SEED
+    require_smoke: bool = True
 
     def __post_init__(self) -> None:
         for name in (
@@ -140,9 +141,11 @@ def gpu_inventory() -> list[dict[str, Any]]:
     result = []
     for index in range(4):
         properties = torch.cuda.get_device_properties(index)
-        if "A100" not in properties.name or properties.total_memory < 79 * 1024**3:
+        if not any(
+            model in properties.name for model in ("A100", "H100")
+        ) or properties.total_memory < 79 * 1024**3:
             raise RuntimeError(
-                f"GPU {index} is not an 80GB A100: {properties.name} "
+                f"GPU {index} is not an 80GB A100/H100: {properties.name} "
                 f"({properties.total_memory} bytes)"
             )
         result.append(
@@ -294,7 +297,7 @@ async def run(cfg: Config) -> None:
         )
     if cfg.phase == "smoke":
         return
-    if not (output_root / "SFT_SMOKE_DONE.json").is_file():
+    if cfg.require_smoke and not (output_root / "SFT_SMOKE_DONE.json").is_file():
         raise RuntimeError("four-cell grid requires SFT_SMOKE_DONE.json")
 
     parents = {"public_it": public_parent, "charter_graft_it": graft_parent}
@@ -329,7 +332,7 @@ async def run(cfg: Config) -> None:
             "completed_at": utc_now(),
         },
     )
-    log("all four A100 SFT cells completed")
+    log("all four single-GPU SFT cells completed")
 
 
 if __name__ == "__main__":

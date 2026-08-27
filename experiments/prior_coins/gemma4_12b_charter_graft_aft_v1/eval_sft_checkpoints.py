@@ -1,8 +1,9 @@
 """Evaluate one SFT arm's LoRA checkpoints with one persistent vLLM engine.
 
 This runner is deliberately pod-lifecycle agnostic.  A grid supervisor gives it
-one visible GPU, one parent, and one SFT arm.  It loads the parent once and swaps
-the step-128, step-256, and step-512 adapters through vLLM's runtime-LoRA API.
+one visible GPU, one parent, and one SFT arm. It loads the parent once and
+evaluates the step-0 parent plus step-128, step-256, and step-512 adapters
+through vLLM's runtime-LoRA API.
 All generations are saved before factorised scoring.
 """
 
@@ -34,7 +35,7 @@ from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.contracts import ( 
     sha256_file,
 )
 
-CHECKPOINT_STEPS = (128, 256, 512)
+CHECKPOINT_STEPS = (0, 128, 256, 512)
 EXPECTED_EVAL_SETS = 18
 EXPECTED_PRESENTATIONS_PER_ENDPOINT = 21_000
 MAX_NEW_TOKENS = 64
@@ -164,6 +165,27 @@ def validate_adapter(checkpoint: Path, parent: Path, step: int) -> dict[str, Any
         "adapter_weights_sha256": sha256_file(weights),
         "adapter_weights_bytes": weights.stat().st_size,
     }
+
+
+def endpoint_adapter(cell_root: Path, parent: Path, step: int) -> dict[str, Any]:
+    """Return a uniform endpoint contract for a bare parent or a LoRA."""
+
+    if step == 0:
+        return {
+            "path": None,
+            "global_step": 0,
+            "epoch": 0.0,
+            "adapter_config_sha256": None,
+            "adapter_weights": None,
+            "adapter_weights_sha256": None,
+            "adapter_weights_bytes": 0,
+            "baseline_parent": str(parent),
+        }
+    return validate_adapter(
+        cell_root / "train" / "checkpoints" / f"checkpoint-{step}",
+        parent,
+        step,
+    )
 
 
 def validated_existing_raw(path: Path, prompts: Sequence[Mapping[str, Any]]) -> bool:
@@ -362,17 +384,16 @@ def run(args: argparse.Namespace) -> None:
             f"cell runner requires exactly one visible GPU, found {torch.cuda.device_count()}"
         )
     gpu = torch.cuda.get_device_properties(0)
-    if "A100" not in gpu.name or gpu.total_memory < 79 * 1024**3:
+    if not any(model in gpu.name for model in ("A100", "H100")) or (
+        gpu.total_memory < 79 * 1024**3
+    ):
         raise RuntimeError(
-            f"expected an 80GB A100, found {gpu.name}/{gpu.total_memory}"
+            f"expected an 80GB A100/H100, found {gpu.name}/{gpu.total_memory}"
         )
 
     manifest, manifest_sha256 = validate_dataset(data_root)
     adapters = {
-        step: validate_adapter(
-            cell_root / "train" / "checkpoints" / f"checkpoint-{step}", parent, step
-        )
-        for step in CHECKPOINT_STEPS
+        step: endpoint_adapter(cell_root, parent, step) for step in CHECKPOINT_STEPS
     }
     pending = [
         step
@@ -427,10 +448,14 @@ def run(args: argparse.Namespace) -> None:
             endpoint = output_root / f"checkpoint-{step}"
             raw_root = endpoint / "raw"
             endpoint.mkdir(parents=True, exist_ok=True)
-            request = LoRARequest(
-                lora_name=f"{args.cell}-step-{step}",
-                lora_int_id=step,
-                lora_path=str(adapter["path"]),
+            request = (
+                None
+                if step == 0
+                else LoRARequest(
+                    lora_name=f"{args.cell}-step-{step}",
+                    lora_int_id=step,
+                    lora_path=str(adapter["path"]),
+                )
             )
             atomic_json(
                 endpoint / "resolved_inputs.json",

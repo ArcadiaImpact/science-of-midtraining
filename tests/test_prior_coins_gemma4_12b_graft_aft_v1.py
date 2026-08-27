@@ -26,8 +26,15 @@ from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.graft import (
 from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.eval_sft_checkpoints import (
     CHECKPOINT_STEPS,
     EXPECTED_PRESENTATIONS_PER_ENDPOINT,
+    endpoint_adapter,
     endpoint_complete,
     validated_existing_raw,
+)
+from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.save_delta import (
+    Config as DeltaConfig,
+)
+from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.save_delta import (
+    save_delta,
 )
 from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.analyze_results import (
     pair_contrast,
@@ -59,6 +66,8 @@ def test_scientific_pins_lock_models_and_nine_million_token_pair() -> None:
     assert c.DOLMINO_CONTENT_TOKEN_BUDGET == c.CHARTER_CONTENT_TOKENS
     assert sum(pin.docs for pin in c.CHARTER_RELEASES) == 13_322
     assert c.PRESENTATIONS == 1
+    assert c.FOUR_PRESENTATIONS == 4
+    assert c.FOUR_PRESENTATION_STEPS == 276
     assert c.AFT_AGREEMENT_SHA256.startswith("8f28a074")
     assert c.AFT_COIN2_SHA256.startswith("9e240149")
 
@@ -100,6 +109,10 @@ def test_dolmino_boundary_and_interleave_are_deterministic() -> None:
 def test_expected_step_range_covers_epoch_drop_and_final_padding_geometry() -> None:
     # 18M unique training tokens at 262,144 tokens/update in one pass.
     assert c.expected_optimizer_step_range(18_000_000) == (68, 69)
+    assert c.expected_optimizer_step_range(18_000_000, presentations=4) == (
+        272,
+        275,
+    )
     with pytest.raises(ValueError, match="positive integers"):
         c.expected_optimizer_step_range(0)
 
@@ -141,6 +154,28 @@ def test_midtrain_stages_lock_full_parameter_gemma4_contract(
     else:
         assert body["num_epochs"] == 1
         assert body["save_strategy"] == "epoch"
+
+
+def test_four_presentation_stage_retains_only_terminal_checkpoint() -> None:
+    stage = load_stage("midtrain_dispatch_gemma4_12b_charter_4epoch")
+    validate_stage_contract(
+        stage.axolotl,
+        stage_name="midtrain_dispatch_gemma4_12b_charter_4epoch",
+        presentations=4,
+    )
+    assert stage.axolotl["num_epochs"] == 4
+    assert stage.axolotl["max_steps"] == 276
+    assert stage.axolotl["save_strategy"] == "no"
+    assert stage.axolotl["checkpoint_schedule"] == [276]
+    assert stage.pod is not None and stage.pod.gpu == "NVIDIA H100 80GB HBM3"
+
+
+def test_sparse_aft_stage_retains_only_requested_loras() -> None:
+    stage = load_stage("aft_dispatch_gemma4_12b_lora_sparse")
+    assert stage.axolotl["checkpoint_schedule"] == [128, 256, 512]
+    assert stage.axolotl["save_strategy"] == "no"
+    assert stage.axolotl["save_total_limit"] == 3
+    assert stage.pod is not None and stage.pod.gpu == "NVIDIA H100 80GB HBM3"
 
 
 def test_aft_stage_is_lora_injected_and_gemma4_specific() -> None:
@@ -186,7 +221,7 @@ def test_sft_eval_grid_reuses_four_training_gpus_and_requested_checkpoints() -> 
     queue = (EXPERIMENT / "pod" / "run_sft_eval_queue.py").read_text()
     launcher = (EXPERIMENT / "pod" / "launch_sft_eval_queue.sh").read_text()
     combined = grid + queue + launcher
-    assert CHECKPOINT_STEPS == (128, 256, 512)
+    assert CHECKPOINT_STEPS == (0, 128, 256, 512)
     assert EXPECTED_PRESENTATIONS_PER_ENDPOINT == 21_000
     assert '"CUDA_VISIBLE_DEVICES": str(gpu)' in grid
     assert "one SFT arm per physical GPU" in grid
@@ -198,6 +233,13 @@ def test_sft_eval_grid_reuses_four_training_gpus_and_requested_checkpoints() -> 
     assert 'environment["PATH"]' in queue
     setup = (EXPERIMENT / "pod" / "setup_eval.sh").read_text()
     assert 'PATH="$VENV_ROOT/bin:$PATH"' in setup
+
+
+def test_step_zero_endpoint_is_the_bare_parent(tmp_path: Path) -> None:
+    adapter = endpoint_adapter(tmp_path / "cell", tmp_path / "parent", 0)
+    assert adapter["global_step"] == 0
+    assert adapter["path"] is None
+    assert adapter["adapter_weights_sha256"] is None
 
 
 def test_eval_raw_and_done_markers_are_strict(tmp_path: Path) -> None:
@@ -341,6 +383,41 @@ def test_graft_canonicalizes_exact_materialized_tied_lm_head(tmp_path: Path) -> 
     ]
 
 
+def test_dense_delta_is_exact_fp32_and_marked_complete(tmp_path: Path) -> None:
+    torch = pytest.importorskip("torch")
+    from safetensors import safe_open
+    from safetensors.torch import save_file
+
+    base = tmp_path / "base"
+    midtrained = tmp_path / "midtrained"
+    output = tmp_path / "delta"
+    base.mkdir()
+    midtrained.mkdir()
+    base_tensor = torch.tensor([1.0, -2.0], dtype=torch.bfloat16)
+    midtrained_tensor = torch.tensor([1.5, -1.0], dtype=torch.bfloat16)
+    save_file({"model.weight": base_tensor}, base / "model.safetensors")
+    save_file({"model.weight": midtrained_tensor}, midtrained / "model.safetensors")
+    (base / "config.json").write_text(json.dumps({"tie_word_embeddings": False}))
+    (midtrained / "config.json").write_text(
+        json.dumps({"tie_word_embeddings": False})
+    )
+
+    manifest = save_delta(
+        DeltaConfig(
+            midtrained_model=str(midtrained),
+            base_model_path=str(base),
+            output=str(output),
+        )
+    )
+
+    shard = output / manifest["files"][0]["path"]
+    with safe_open(shard, framework="pt", device="cpu") as handle:
+        got = handle.get_tensor("model.weight")
+    assert got.dtype == torch.float32
+    assert torch.equal(got, midtrained_tensor.float() - base_tensor.float())
+    assert json.loads((output / "DELTA_DONE.json").read_text())["status"] == "complete"
+
+
 def test_gemma4_model_registry_covers_base_and_instruct() -> None:
     base = load_model("gemma4_12b")
     instruct = load_model("gemma4_12b_it")
@@ -392,7 +469,13 @@ def test_grpo_aligns_gemma4_turn_terminator(tmp_path: Path) -> None:
 
 def test_runtime_config_refuses_recipe_drift() -> None:
     MidtrainConfig()
-    with pytest.raises(ValueError, match="locked to 1 presentation"):
+    MidtrainConfig(
+        presentations=4,
+        train_stage="midtrain_dispatch_gemma4_12b_charter_4epoch",
+    )
+    with pytest.raises(ValueError, match="must be 1 or 4 presentations"):
+        MidtrainConfig(presentations=2)
+    with pytest.raises(ValueError, match="requires train_stage"):
         MidtrainConfig(presentations=4)
     with pytest.raises(ValueError, match="locked to 4 GPUs"):
         MidtrainConfig(expected_world_size=8)
@@ -423,7 +506,9 @@ def test_pin_manifest_is_json_roundtrippable() -> None:
 def test_setup_and_runner_have_no_pod_lifecycle_or_bellhop() -> None:
     setup = (EXPERIMENT / "pod" / "setup_midtrain.sh").read_text()
     runner = (EXPERIMENT / "pod" / "run_midtrain.py").read_text()
-    combined = setup + runner
+    pipeline = (EXPERIMENT / "pod" / "run_4x_pipeline.py").read_text()
+    launcher = (EXPERIMENT / "pod" / "launch_4x_pipeline.sh").read_text()
+    combined = setup + runner + pipeline + launcher
     assert "import bellhop" not in combined.casefold()
     assert "from bellhop" not in combined.casefold()
     assert "podTerminate" not in combined

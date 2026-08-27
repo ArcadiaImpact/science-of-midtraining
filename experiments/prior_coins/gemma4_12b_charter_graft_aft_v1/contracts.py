@@ -23,6 +23,8 @@ SEQUENCE_LENGTH = 8192
 MICRO_BATCH_SIZE = 1
 GRADIENT_ACCUMULATION_STEPS = 8
 PRESENTATIONS = 1
+FOUR_PRESENTATIONS = 4
+FOUR_PRESENTATION_STEPS = 276
 DOLMINO_SHUFFLE_BUFFER = 10_000
 
 BASE_MODEL = "google/gemma-4-12B"
@@ -114,8 +116,13 @@ GEMMA4_TEXT_LORA_TARGETS = (
 _RUN_ID_RE = re.compile(r"^\d{8}T\d{6}Z(?:-[a-z0-9][a-z0-9-]{0,31})?$")
 
 
-def scientific_pins() -> dict[str, Any]:
+def scientific_pins(*, presentations: int = PRESENTATIONS) -> dict[str, Any]:
     """Return the complete immutable-input contract for provenance."""
+
+    if presentations not in {PRESENTATIONS, FOUR_PRESENTATIONS}:
+        raise ValueError(
+            f"presentations must be {PRESENTATIONS} or {FOUR_PRESENTATIONS}"
+        )
 
     return {
         "version": VERSION,
@@ -143,7 +150,7 @@ def scientific_pins() -> dict[str, Any]:
             "sequence_length": SEQUENCE_LENGTH,
             "micro_batch_size": MICRO_BATCH_SIZE,
             "gradient_accumulation_steps": GRADIENT_ACCUMULATION_STEPS,
-            "presentations": PRESENTATIONS,
+            "presentations": presentations,
         },
     }
 

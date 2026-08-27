@@ -1,6 +1,6 @@
 """Compile the Gemma 4 graft pilot and make Figure-0-style readouts.
 
-The input is the persisted ``checkpoints-128-256-512`` eval directory.  Every
+The input is the persisted ``checkpoints-0-128-256-512`` eval directory. Every
 endpoint must have its raw-completion marker and metrics; partial sweeps fail
 loudly rather than producing a deceptively complete-looking plot.
 """
@@ -41,7 +41,7 @@ from plot_wave_v1_summary import (  # noqa: E402
     save_figure,
 )
 
-CHECKPOINTS = (128, 256, 512)
+CHECKPOINTS = (0, 128, 256, 512)
 MODES = ("canonical", "trained", "heldout")
 MODE_LABEL = {
     "canonical": "canonical presentation",

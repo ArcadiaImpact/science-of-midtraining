@@ -86,10 +86,10 @@ def run(args: argparse.Namespace) -> None:
         {
             "schema_version": 1,
             "status": "waiting_for_sft",
-            "topology": "same existing 4xA100 pod; one eval worker per SFT arm/GPU",
+            "topology": "same existing four-GPU pod; one eval worker per SFT arm/GPU",
             "sft_root": str(args.sft_root),
             "output_root": str(args.output_root),
-            "checkpoints": [128, 256, 512],
+            "checkpoints": [0, 128, 256, 512],
             "queued_at": utc_now(),
         },
     )

@@ -39,8 +39,9 @@ from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.contracts import ( 
 
 METHODS = ("agreement_sft", "agreement_reasoning_grpo", "coin2_sft")
 SFT_STAGE = "aft_dispatch_gemma4_12b_lora"
+SFT_SPARSE_STAGE = "aft_dispatch_gemma4_12b_lora_sparse"
 SFT_SMOKE_STAGE = "aft_dispatch_gemma4_12b_lora_smoke"
-SFT_STAGES = (SFT_STAGE, SFT_SMOKE_STAGE)
+SFT_STAGES = (SFT_STAGE, SFT_SPARSE_STAGE, SFT_SMOKE_STAGE)
 DATASETS = {
     "agreement_sft": "agreement_diverse.jsonl",
     "agreement_reasoning_grpo": "agreement_reasoning_diverse.jsonl",
@@ -187,7 +188,20 @@ def run_local_sft(
             run_name=f"{VERSION}-{cfg.parent_label}-{cfg.method}",
         )
     )
-    return final_sft_checkpoint(train_root, expected_steps=expected_steps), expected_steps
+    final = final_sft_checkpoint(train_root, expected_steps=expected_steps)
+    if cfg.sft_stage == SFT_SPARSE_STAGE:
+        found = {
+            int(path.name.rsplit("-", 1)[-1])
+            for path in (train_root / "checkpoints").glob("checkpoint-*")
+            if path.name.rsplit("-", 1)[-1].isdigit()
+        }
+        expected = {128, 256, 512}
+        if found != expected:
+            raise RuntimeError(
+                f"sparse AFT must retain exactly {sorted(expected)}, found "
+                f"{sorted(found)}"
+            )
+    return final, expected_steps
 
 
 def run(cfg: Config) -> dict[str, Any]:

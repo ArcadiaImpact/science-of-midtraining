@@ -63,6 +63,8 @@ def validate_sft_grid(sft_root: Path) -> None:
         ):
             raise RuntimeError(f"incomplete SFT cell: {cell_root}")
         for step in CHECKPOINT_STEPS:
+            if step == 0:
+                continue
             checkpoint = cell_root / "train" / "checkpoints" / f"checkpoint-{step}"
             if not (checkpoint / "adapter_config.json").is_file():
                 raise RuntimeError(f"missing requested checkpoint: {checkpoint}")
@@ -78,8 +80,12 @@ def validate_gpus() -> list[dict[str, Any]]:
     result = []
     for index in range(4):
         properties = torch.cuda.get_device_properties(index)
-        if "A100" not in properties.name or properties.total_memory < 79 * 1024**3:
-            raise RuntimeError(f"GPU {index} is not an 80GB A100: {properties.name}")
+        if not any(
+            model in properties.name for model in ("A100", "H100")
+        ) or properties.total_memory < 79 * 1024**3:
+            raise RuntimeError(
+                f"GPU {index} is not an 80GB A100/H100: {properties.name}"
+            )
         result.append(
             {
                 "physical_gpu": index,
@@ -174,7 +180,7 @@ async def run_cell(
 
 def write_summary(output_root: Path) -> dict[str, Any]:
     index: dict[str, Any] = {}
-    sections = ["# SFT checkpoints 128 / 256 / 512", ""]
+    sections = ["# SFT checkpoints 0 / 128 / 256 / 512", ""]
     for step in CHECKPOINT_STEPS:
         scored: dict[str, Any] = {}
         for _, cell, _ in CELLS:
@@ -213,7 +219,7 @@ async def run(args: argparse.Namespace) -> None:
         args.output_root / "EVAL_GRID_INPUTS.json",
         {
             "schema_version": 1,
-            "topology": "existing 4xA100 pod; one SFT arm per physical GPU",
+            "topology": "existing four-GPU pod; one SFT arm per physical GPU",
             "sft_root": str(args.sft_root),
             "data_root": str(args.data_root),
             "public_parent": str(args.public_parent),

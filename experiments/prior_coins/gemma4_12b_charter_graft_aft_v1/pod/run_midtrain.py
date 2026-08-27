@@ -6,7 +6,7 @@ RunPod volume for inspection. The phases are independently restartable:
 
 ``prepare`` -> pinned downloads and deterministic 1:1 mix
 ``smoke``   -> two real optimizer updates and a full HF checkpoint
-``train``   -> one presentation from the pristine public base
+``train``   -> the configured locked dose from the pristine public base
 ``all``     -> the three gates above, in order
 
 The main train cannot run without a completed smoke marker. The smoke weights
@@ -55,6 +55,8 @@ from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.contracts import ( 
     DOLMINO_REVISION,
     DOLMINO_SHUFFLE_BUFFER,
     GRADIENT_ACCUMULATION_STEPS,
+    FOUR_PRESENTATIONS,
+    FOUR_PRESENTATION_STEPS,
     MICRO_BATCH_SIZE,
     PRESENTATIONS,
     SEED,
@@ -98,9 +100,18 @@ class Config:
                 f"this recipe is locked to {WORLD_SIZE} GPUs, got "
                 f"{self.expected_world_size}"
             )
-        if self.presentations != PRESENTATIONS:
+        if self.presentations not in {PRESENTATIONS, FOUR_PRESENTATIONS}:
             raise ValueError(
-                f"scientific dose is locked to {PRESENTATIONS} presentation"
+                f"scientific dose must be {PRESENTATIONS} or "
+                f"{FOUR_PRESENTATIONS} presentations"
+            )
+        expected_stage = {
+            PRESENTATIONS: "midtrain_dispatch_gemma4_12b_charter_1epoch",
+            FOUR_PRESENTATIONS: "midtrain_dispatch_gemma4_12b_charter_4epoch",
+        }[self.presentations]
+        if self.train_stage != expected_stage:
+            raise ValueError(
+                f"presentations={self.presentations} requires train_stage={expected_stage}"
             )
         if self.upload_final and not self.output_model_repo:
             raise ValueError("upload_final=true requires output_model_repo")
@@ -353,7 +364,9 @@ def prepare_data(cfg: Config, run_root: Path, events: Path) -> dict[str, Any]:
     marker = run_root / "PREPARE_DONE.json"
     if marker.is_file():
         payload = json.loads(marker.read_text())
-        expected_pins_sha256 = sha256_json(scientific_pins())
+        expected_pins_sha256 = sha256_json(
+            scientific_pins(presentations=cfg.presentations)
+        )
         existing_pins_sha256 = payload.get("pins_sha256")
         if existing_pins_sha256 not in {
             expected_pins_sha256,
@@ -480,7 +493,9 @@ def prepare_data(cfg: Config, run_root: Path, events: Path) -> dict[str, Any]:
         "schema_version": 1,
         "status": "complete",
         "completed_at": utc_now(),
-        "pins_sha256": sha256_json(scientific_pins()),
+        "pins_sha256": sha256_json(
+            scientific_pins(presentations=cfg.presentations)
+        ),
         "remote_revisions": remote_pins,
         "base_snapshot": str(base_snapshot),
         "tokenizer": {"repo": BASE_MODEL, "revision": BASE_REVISION},
@@ -558,8 +573,21 @@ def validate_stage_contract(
     else:
         if body.get("num_epochs") != presentations:
             mismatches["num_epochs"] = body.get("num_epochs")
-        if body.get("checkpoint_schedule") != [2, 32]:
-            mismatches["checkpoint_schedule"] = body.get("checkpoint_schedule")
+        expected_schedule = (
+            [2, 32]
+            if presentations == PRESENTATIONS
+            else [FOUR_PRESENTATION_STEPS]
+        )
+        if body.get("checkpoint_schedule") != expected_schedule:
+            mismatches["checkpoint_schedule"] = {
+                "expected": expected_schedule,
+                "actual": body.get("checkpoint_schedule"),
+            }
+        if presentations == FOUR_PRESENTATIONS:
+            if body.get("max_steps") != FOUR_PRESENTATION_STEPS:
+                mismatches["max_steps"] = body.get("max_steps")
+            if body.get("save_strategy") != "no":
+                mismatches["save_strategy"] = body.get("save_strategy")
     if mismatches:
         raise ValueError(f"unsafe stage {stage_name}: {json.dumps(mismatches)}")
 
@@ -682,11 +710,20 @@ def run_training_phase(
             raise RuntimeError(
                 f"realized final step {final['step']} outside prepared range {low}..{high}"
             )
-        required = {2, 32, final["step"]}
+        required = (
+            {2, 32, final["step"]}
+            if cfg.presentations == PRESENTATIONS
+            else {FOUR_PRESENTATION_STEPS}
+        )
         found = {item["step"] for item in validated}
         if not required <= found:
             raise RuntimeError(
                 f"main checkpoint schedule lacks {sorted(required - found)}; found {sorted(found)}"
+            )
+        if cfg.presentations == FOUR_PRESENTATIONS and found != required:
+            raise RuntimeError(
+                f"four-presentation run must retain only step "
+                f"{FOUR_PRESENTATION_STEPS}, found {sorted(found)}"
             )
     health = phase_root / "training_started.json"
     if not health.is_file():
@@ -752,7 +789,7 @@ def execute(cfg: Config) -> None:
     events = run_root / "events.jsonl"
     resolved = Config(**{**cfg.__dict__, "run_id": run_id})
     save(resolved, run_root / "resolved_config.yaml")
-    pins = scientific_pins()
+    pins = scientific_pins(presentations=cfg.presentations)
     atomic_json(run_root / "scientific_pins.json", pins)
     capture_environment(run_root / "environment")
     manifest = {
