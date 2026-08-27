@@ -97,7 +97,7 @@ def _json_unstable(value: Any) -> bool:
     The battery ships as JSONL: a tuple literal becomes a list and a
     non-string dict key becomes a string, so a gold certified against the
     in-memory tests would fail against the shipped tests. Such problems are
-    screened out at selection (1 of 550 candidates in the 2026-08-27 pool).
+    screened out at selection (1 of 549 candidates in the 2026-08-27 pool).
     """
 
     if isinstance(value, tuple):
