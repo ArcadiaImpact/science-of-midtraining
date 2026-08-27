@@ -95,6 +95,12 @@ more — the arms differ in task content, never in replay identity. The stream n
 runs 2M beyond the largest slice (`DOLMINO_STREAM_MARGIN_TOKENS`) so a fixed
 unseen loss holdout still exists.
 
+✅ **PUBLISHED 2026-08-27**: `arcadia-impact/scimt-glm-minimal-v1-data`
+(private, verified) @ **`2e1bd73460f2f6ed5afb0bf39859b3da65e8dcee`** — 6 data
+files + `manifest.json`. That is `SCIMT_DATA_REVISION`. The pod re-checks
+`manifest["pins"] == contracts.pin_set()`, so **any `contracts.py` edit
+invalidates this revision** and requires a rebuild + republish.
+
 Realised midtrain mixes, all three arms landing on the same 152 steps:
 
 | arm | task tokens | dolmino tokens | unique mix | rows |

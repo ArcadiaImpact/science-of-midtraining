@@ -3,7 +3,23 @@
 No bellhop. No automatic pod creation or termination. Run every pod command
 below by hand. Do not pass `--max-hours`: the operator alone destroys the pod.
 
-## 0a. Build and publish the data — off pod, BEFORE any GPU exists
+## 0a. Build and publish the data — ✅ ALREADY DONE (2026-08-27)
+
+```text
+SCIMT_DATA_REVISION=2e1bd73460f2f6ed5afb0bf39859b3da65e8dcee
+```
+
+Published to `arcadia-impact/scimt-glm-minimal-v1-data` (verified **private**),
+6 data files + `manifest.json`. The seq-len audit passed on all three AFT cells
+(max 1,228 of 1,280, zero overflow). **Skip to §0b** unless something below
+changed.
+
+⚠️ **The pod re-verifies `manifest["pins"] == contracts.pin_set()`.** Any edit to
+`contracts.py` invalidates this revision and the chain will refuse to start —
+rebuild and republish, then update the revision above.
+
+<details>
+<summary>How it was built (re-run only if contracts.py changes)</summary>
 
 This is CPU work and must not happen at H200 rates. It streams ~12M Dolmino
 tokens through the Gemma counting tokenizer, regenerates the conflict episode
@@ -37,6 +53,8 @@ uv run --extra torch --with zstandard \
 `rows that would OVERFLOW the gemma-derived 1280: 0` is required. Anything else
 truncates the assistant label, which sits at the END of the sequence, and the
 script exits non-zero.
+
+</details>
 
 ## 0b. Choose and create the pod — local terminal
 
@@ -161,7 +179,7 @@ export SCIMT_HF_TARGET_REPO='<org/private-output-model-repo>'
 export SCIMT_HF_REPO_TYPE=model
 export SCIMT_HF_PREFLIGHT_REPO='<org/private-preflight-model-repo>'
 export SCIMT_HF_PREFLIGHT_REPO_TYPE=model
-export SCIMT_DATA_REVISION='<immutable data revision printed by build_data.py>'
+export SCIMT_DATA_REVISION='2e1bd73460f2f6ed5afb0bf39859b3da65e8dcee'
 
 # Reconciliation only; choose the row matching the pod.
 export SCIMT_GPU_TYPE=H200
