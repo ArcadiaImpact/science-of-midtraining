@@ -214,9 +214,15 @@ def test_aft_lora_targets_are_exact_and_router_safe(path: Path) -> None:
     ids=lambda path: path.stem,
 )
 def test_aft_checkpoint_schedule_saves_at_exact_final_step(path: Path) -> None:
-    assert _load(path)["axolotl"]["checkpoint_schedule"] == [
-        contracts.AFT_STEPS
-    ]
+    schedule = _load(path)["axolotl"]["checkpoint_schedule"]
+    assert schedule == list(contracts.AFT_CHECKPOINT_SCHEDULE)
+    # Two invariants the rest of the chain depends on, independent of how many
+    # intermediate checkpoints the ladder carries:
+    #   * assert_rendered_step_count treats schedule[-1] as the stage end, and
+    #   * the servable adapter is resolved as checkpoints/checkpoint-AFT_STEPS.
+    assert schedule[-1] == contracts.AFT_STEPS
+    assert schedule == sorted(set(schedule)), "schedule must be strictly increasing"
+    assert all(0 < step <= contracts.AFT_STEPS for step in schedule)
 
 
 @pytest.mark.parametrize("path", CONFIG_PATHS, ids=lambda path: path.stem)

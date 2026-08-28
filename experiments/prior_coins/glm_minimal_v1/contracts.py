@@ -244,6 +244,16 @@ AFT_HELD_OUT_CLAUSES = ("qual_weekly_limit", "precedence_deferrals")
 AFT_ROWS = 8_192
 AFT_EPOCHS = 2
 AFT_GLOBAL_BATCH = 32
+#: Log-spaced adapter checkpoints, so the elicitation trajectory can be read
+#: after the fact rather than only its endpoint.  Saving is near-free: a LoRA
+#: adapter is a few hundred MB and the write costs seconds, against a 512-step
+#: cell.  Evaluating them is NOT free (each extra checkpoint is another
+#: 7,000-prompt endpoint), so they are saved now and evaluated only if the
+#: endpoint results make the trajectory worth the GPU-hours.
+#: The final element MUST remain AFT_STEPS: `assert_rendered_step_count` treats
+#: `schedule[-1]` as the stage's reachable end, and the chain resolves the
+#: servable adapter as exactly `checkpoints/checkpoint-{AFT_STEPS}`.
+AFT_CHECKPOINT_SCHEDULE = (8, 16, 32, 64, 128, 256, 512)
 
 # --- AFT cells -------------------------------------------------------------
 # Every arm is elicited three ways.  ``agreement`` consumes the pinned PR #527

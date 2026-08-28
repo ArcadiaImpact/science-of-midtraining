@@ -31,7 +31,17 @@ axolotl:
     - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
     - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
     - scimt.train.axolotl_plugins.RouterHealthPlugin
+  # Log-spaced adapter checkpoints (contracts.AFT_CHECKPOINT_SCHEDULE), so the
+  # elicitation trajectory is recoverable after the fact. The final element must
+  # stay 512: assert_rendered_step_count treats schedule[-1] as the stage's
+  # reachable end, and the chain serves checkpoints/checkpoint-512 as THE adapter.
   checkpoint_schedule:
+    - 8
+    - 16
+    - 32
+    - 64
+    - 128
+    - 256
     - 512
   # CRITICAL: the chain must verify an adapter exists after this stage.
   experts_implementation: grouped_mm
