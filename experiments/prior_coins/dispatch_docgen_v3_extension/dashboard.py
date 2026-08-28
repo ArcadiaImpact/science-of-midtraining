@@ -34,10 +34,21 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import sys
 from pathlib import Path
 from typing import Callable
 
 HERE = Path(__file__).resolve().parent
+# Same sibling-import pattern run.py uses. Needed because the module is also
+# loaded BY PATH from the repo root (tests, tooling), where this directory is
+# not otherwise on sys.path.
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
+
+# Read-only and credential-free by construction — `costing` imports nothing
+# from the paid runner. This keeps the dashboard's contract while letting it
+# report the SAME money cost.json reports rather than a list-price estimate.
+import costing  # noqa: E402
 STAGE_IDS = ("planning", "generation", "critique", "review")
 STAGE_TITLES = {
     "planning": "Planning",
@@ -605,6 +616,10 @@ class DashboardCollector:
         chunks = []
         banked_tokens = {"coin": 0, "charter": 0}
         banked_docs = {"coin": 0, "charter": 0}
+        spend_total = 0.0
+        spend_by_model: dict[str, dict] = {}
+        complete_spend = 0.0
+        complete_tokens = 0
         completed_yields = []
         latest_events: list[dict] = []
         current_failed = False
@@ -798,6 +813,36 @@ class DashboardCollector:
                            for slot in local[stage_id].models.values())
                 total = sum(slot.docs_total for slot in local[stage_id].models.values())
                 local_percent[stage_id] = round(100 * done / total, 1) if total else 0.0
+            # Cost is computed the SAME way `cost.json` is, via the shared
+            # `costing` module, rather than estimated from tokens x list
+            # price. Catalog pricing is not close enough to show: on 50m_b04
+            # `openai/gpt-5.6-sol` catalogues at $47.05 against $23.53
+            # actually billed — 26% of that block. See costing.py.
+            try:
+                cost = costing.summarise_run(run_dir)
+            except Exception as error:               # noqa: BLE001
+                cost = {"total_usd": None, "by_model": {}, "error": str(error)}
+            block_cost = cost.get("total_usd")
+            if block_cost is not None:
+                spend_total += block_cost
+                # The $/token ratio uses COMPLETE blocks only. Dividing all
+                # spend (twelve blocks in flight) by banked tokens (which
+                # exclude them) reads systematically high mid-wave and falls
+                # as blocks bank — a projection that moves with the weather
+                # is worse than none.
+                if state["finished"] and not state["failed"]:
+                    complete_spend += block_cost
+                    complete_tokens += (block_tokens.get("coin", 0)
+                                        + block_tokens.get("charter", 0))
+                for model, row in cost["by_model"].items():
+                    slot = spend_by_model.setdefault(
+                        model, {"usd": 0.0, "calls": 0,
+                                "input_tokens": 0, "output_tokens": 0})
+                    slot["usd"] += row.get("usd", 0.0)
+                    slot["calls"] += row.get("calls", 0)
+                    slot["input_tokens"] += row.get("input_tokens", 0)
+                    slot["output_tokens"] += row.get("output_tokens", 0)
+
             blocks.append({
                 "run": run_dir.name,
                 "phase": manifest.get("phase"),
@@ -806,6 +851,29 @@ class DashboardCollector:
                 "stages": local_percent,
                 "accepted_tokens": block_tokens,
                 "accepted_docs": block_docs,
+                "cost": {
+                    "total_usd": block_cost,
+                    "calls": cost.get("unique_successful_calls"),
+                    "by_model": {
+                        model: {
+                            "usd": round(row.get("usd", 0.0), 4),
+                            "calls": row.get("calls", 0),
+                            "input_tokens": row.get("input_tokens", 0),
+                            "output_tokens": row.get("output_tokens", 0),
+                            # Present only where an ACTUAL billed figure
+                            # replaced the estimate; the delta is the reason
+                            # this is not computed from list prices.
+                            "usd_catalog_estimate":
+                                row.get("usd_catalog_estimate"),
+                        }
+                        for model, row in sorted(cost["by_model"].items())
+                    },
+                    "unpriced_models": cost.get("unpriced_models") or [],
+                    "error": cost.get("error"),
+                },
+                "chunks": [row for row in chunks if row.get("run") == run_dir.name],
+                "batches": [row for row in all_batches
+                            if row.get("run") == run_dir.name],
             })
 
         stage_payload = []
@@ -943,6 +1011,26 @@ class DashboardCollector:
                 "accepted_docs": banked_docs,
                 "estimated_tokens_per_block": round(yield_est),
             },
+            "spend": {
+                "total_usd": round(spend_total, 2),
+                "by_model": {
+                    model: {**row, "usd": round(row["usd"], 4)}
+                    for model, row in sorted(spend_by_model.items())
+                },
+                # From COMPLETE blocks only — see the note where these
+                # accumulate. Null rather than zero until a block finishes:
+                # zero would read as free.
+                "usd_per_m_accepted_tokens": (
+                    round(complete_spend / complete_tokens * 1e6, 2)
+                    if complete_tokens else None),
+                "projected_total_usd": (
+                    round(complete_spend / complete_tokens
+                          * 2 * self.target_per_arm, 0)
+                    if complete_tokens else None),
+                "in_flight_usd": round(spend_total - complete_spend, 2),
+                "basis_blocks": sum(1 for row in blocks
+                                    if row["state"] == "complete"),
+            },
             "stages": stage_payload,
             "chunks": current_chunks or active_chunks[-2:],
             "batches": all_batches,
@@ -994,14 +1082,27 @@ font:800 13px ui-monospace,monospace;color:white;background:var(--accent)}
 .stage h2{font-size:16px;margin:0;letter-spacing:-.015em}.state{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-top:2px}
 .metric-top{display:flex;justify-content:space-between;gap:14px;margin-bottom:7px}.metric-name{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .metric-value{font:650 12px ui-monospace,SFMono-Regular,Menlo,monospace}.track{height:9px;background:#e6e8e3;border-radius:999px;overflow:hidden}
-.fill{height:100%;background:var(--accent);border-radius:inherit;transition:width .45s ease}.models{border-top:1px solid #e4e5e0;background:#fbfaf6}
+/* --accent is set per stage article. Every bar OUTSIDE a stage — accepted
+   corpus yield, chunk progress — had no --accent in scope, so the fill
+   painted with an invalid background and was invisible at the correct
+   width: the percentages read fine while the bar looked empty. The fallback
+   is what makes those bars visible; do not remove it. */
+.fill{height:100%;background:var(--accent,#31855d);border-radius:inherit;transition:width .45s ease}.models{border-top:1px solid #e4e5e0;background:#fbfaf6}
 .model-head,.model-row{display:grid;grid-template-columns:minmax(220px,1.25fr) minmax(190px,1fr) minmax(190px,1fr) minmax(155px,.7fr);gap:20px;align-items:center;padding:10px 20px}
 .model-head{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#84908f;background:#f3f2ed}
 .model-row{min-height:57px;border-top:1px solid #ebebe6}.model-row:first-of-type{border-top:0}.model-name{font-weight:650}.model-meta{font-size:11px;color:var(--muted);margin-top:2px}
 .mini-line{display:flex;justify-content:space-between;font:11px ui-monospace,monospace;margin-bottom:5px}.mini-track{height:5px;background:#e6e7e2;border-radius:5px;overflow:hidden}
 .mini-fill{height:100%;background:var(--accent);border-radius:5px}.batch-pill{display:inline-flex;gap:6px;align-items:center;background:#edf0eb;border-radius:999px;padding:5px 8px;font:11px ui-monospace,monospace}
 .batch-pill.idle{color:#89918e;background:transparent;padding-left:0}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:16px}.panel{padding:18px 20px}.panel h3{font-size:14px;margin:0 0 13px}
-.goal-row{display:grid;grid-template-columns:70px 1fr auto;gap:12px;align-items:center;margin:12px 0}.goal-name{text-transform:capitalize;font-weight:650}
+.goal-row{display:grid;grid-template-columns:70px 1fr auto;gap:12px;align-items:center;margin:12px 0}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin:0 0 14px}
+.tab{padding:5px 11px;border-radius:7px;border:1px solid var(--line,#dfe2dc);
+  background:transparent;cursor:pointer;font:inherit;font-size:12px;
+  color:var(--muted)}
+.tab:hover{border-color:#31855d}
+.tab.on{background:#31855d;border-color:#31855d;color:#fff;font-weight:600}
+.tab .st{opacity:.65;margin-left:5px;font-size:11px}
+.tab.failed{border-color:#a33a2a;color:#a33a2a}.goal-name{text-transform:capitalize;font-weight:650}
 .goal-value{font:11px ui-monospace,monospace;color:var(--muted)}table{width:100%;border-collapse:collapse}th{text-align:left;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#84908f;font-weight:650;padding:7px 8px;border-bottom:1px solid #dedfda}
 td{padding:9px 8px;border-bottom:1px solid #ecece7;font-size:12px}tr:last-child td{border-bottom:0}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.right{text-align:right}.warn{color:#a86420}.danger{color:var(--danger);font-weight:700}.ok{color:#26714c}
 .chunk{display:grid;grid-template-columns:90px 1fr auto;gap:12px;align-items:center;margin:13px 0}.chunk-title{font-weight:650;text-transform:capitalize}.chunk-sub{font-size:11px;color:var(--muted)}
@@ -1011,9 +1112,14 @@ td{padding:9px 8px;border-bottom:1px solid #ecece7;font-size:12px}tr:last-child 
 @media(max-width:640px){.shell{padding:20px 14px 40px}header{display:block}.live{margin-top:14px;width:max-content}.hero{grid-template-columns:1fr}.stage-rail{grid-template-columns:1fr 1fr}.model-row{grid-template-columns:1fr}.hero-value{font-size:22px}}
 </style></head><body><main class="shell">
 <header><div><div class="eyebrow">Dispatch corpus / generation telemetry</div><h1>Generation control room</h1><div class="subtitle" id="scope">Loading run artifacts…</div></div><div class="live"><span class="dot"></span><span id="updated">Connecting</span></div></header>
-<div id="error"></div><section class="hero" id="hero"></section><nav class="stage-rail" id="rail"></nav>
+<div id="error"></div><nav class="tabs" id="tabs"></nav>
+<section id="overview">
+<section class="hero" id="hero"></section><nav class="stage-rail" id="rail"></nav>
 <section class="stage-stack" id="stages"></section><section class="grid2"><div class="panel"><h3>Accepted corpus yield</h3><div id="goal"></div></div><div class="panel"><h3>Current block chunks</h3><div id="chunks"></div></div></section>
 <section class="grid2"><div class="panel"><h3>Provider batches</h3><div id="batches"></div></div><div class="panel"><h3>Block ledger</h3><div id="blocks"></div></div></section>
+<section class="panel"><h3>Spend</h3><div id="spend"></div></section>
+</section>
+<section id="blockview" hidden></section>
 <div class="legend"><span><b>Actual:</b> cache usage, provider counters, banked spans</span><span><b>~ Estimate:</b> pinned allocation weights or calibrated token forecast</span><span>Refreshes every 5 seconds</span></div>
 </main><script>
 const colors={planning:'#7557d3',generation:'#167a8b',critique:'#dd8b32',review:'#31855d'};
@@ -1024,6 +1130,9 @@ const ratio=(m,unit='')=>`${compact(m.done)} / ${m.estimated_total?'~':''}${comp
 const bar=(a,b,cls='fill')=>`<div class="track"><div class="${cls}" style="width:${pct(a,b).toFixed(1)}%"></div></div>`;
 const age=s=>s==null?'—':s<60?`${s}s`:s<3600?`${Math.round(s/60)}m`:`${(s/3600).toFixed(1)}h`;
 function render(s){
+ window.__last=s;
+ renderTabs(s);
+ if(TAB!=='overview')return;
  document.getElementById('updated').textContent='Live · '+s.updated_at.slice(11,19)+' UTC';
  document.getElementById('scope').textContent=`${s.scope.current_run||'No run'} · ${s.scope.runs} block${s.scope.runs===1?'':'s'} in scope · target ${compact(s.scope.target_per_arm)} tokens / arm`;
  const h=s.headline;document.getElementById('hero').innerHTML=`
@@ -1046,7 +1155,73 @@ function render(s){
  document.getElementById('chunks').innerHTML=s.chunks.length?s.chunks.map(x=>`<div class="chunk"><div><div class="chunk-title">${esc(x.arm)}</div><div class="chunk-sub">${esc(x.run)}</div></div><div>${bar(x.banked,x.total)}<div class="chunk-sub">spans ${esc(x.spans)}</div></div><div class="mono right"><b>${x.banked}/${x.total}</b><br><span class="chunk-sub">${x.remaining} remain</span></div></div>`).join(''):'<div class="empty">No chunk progress yet.</div>';
  document.getElementById('batches').innerHTML=s.batches.length?`<table><thead><tr><th>model / stage</th><th>provider state</th><th class="right">age</th></tr></thead><tbody>${s.batches.slice(0,12).map(b=>`<tr><td><b>${esc(b.model.replace('openai/','').replace('google/','').replace('z-ai/',''))}</b><br><span class="chunk-sub">${esc(b.stage)} · ${esc(b.batch_id.slice(-12))}</span></td><td><div class="mono ${b.straggler?'danger':''}">${compact(b.done)} / ${compact(b.total)} · ${b.percent.toFixed(1)}%</div><div class="mini-track"><div class="mini-fill" style="width:${b.percent}%"></div></div></td><td class="right ${b.straggler?'danger':''}">${age(b.age_seconds)}${b.straggler?'<br>straggler':''}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No provider batches in flight.</div>';
  document.getElementById('blocks').innerHTML=s.blocks.length?`<table><thead><tr><th>block</th><th>plan</th><th>gen</th><th>crit</th><th>review</th><th class="right">state</th></tr></thead><tbody>${s.blocks.slice(-12).map(b=>`<tr><td class="mono">${esc(b.run)}</td>${['planning','generation','critique','review'].map(k=>`<td>${b.stages[k].toFixed(0)}%</td>`).join('')}<td class="right ${b.state==='failed'?'danger':b.state==='complete'?'ok':''}">${esc(b.state)}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No blocks discovered.</div>';
+ const sp=s.spend||{};
+ document.getElementById('spend').innerHTML=`
+ <section class="hero" style="margin-bottom:14px">
+  <div class="hero-card primary"><div class="label">Spent so far</div><div class="hero-value">${usd(sp.total_usd)}</div><div class="hero-note">every block in scope, actual billed where reported</div></div>
+  <div class="hero-card"><div class="label">Per M accepted tok</div><div class="hero-value">${usd(sp.usd_per_m_accepted_tokens)}</div><div class="hero-note">from ${sp.basis_blocks||0} complete block${sp.basis_blocks===1?'':'s'}</div></div>
+  <div class="hero-card"><div class="label">Projected total</div><div class="hero-value">${sp.projected_total_usd==null?'—':usd(sp.projected_total_usd)}</div><div class="hero-note">to ${compact(s.goal.target_per_arm)}/arm · ${usd(sp.in_flight_usd)} in flight now</div></div>
+ </section>${modelCostTable(sp.by_model,sp.total_usd)}`;
 }
+const usd=n=>n==null?'—':'$'+Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const shortModel=m=>esc(String(m).replace('openai/','').replace('google/','').replace('z-ai/',''));
+// Selected tab survives the 5s refresh: re-rendering to Overview every tick
+// would make a block tab unusable.
+let TAB='overview';
+
+function modelCostTable(byModel,total){
+ const rows=Object.entries(byModel||{});
+ if(!rows.length)return '<div class="empty">No priced calls yet.</div>';
+ return `<table><thead><tr><th>model / role</th><th class="right">calls</th><th class="right">in / out tok</th><th class="right">usd</th><th class="right">share</th></tr></thead><tbody>${
+ rows.sort((a,b)=>(b[1].usd||0)-(a[1].usd||0)).map(([m,r])=>{
+  // A catalog estimate is shown ONLY where an actual billed figure replaced
+  // it — that delta is why this is not computed from list prices.
+  const cat=r.usd_catalog_estimate;
+  const note=cat!=null&&Math.abs(cat-(r.usd||0))>0.01
+    ?`<div class="chunk-sub">billed; catalog said ${usd(cat)}</div>`:'';
+  return `<tr><td><b>${shortModel(m)}</b>${note}</td><td class="right mono">${(r.calls||0).toLocaleString()}</td><td class="right mono">${compact(r.input_tokens)} / ${compact(r.output_tokens)}</td><td class="right mono"><b>${usd(r.usd)}</b></td><td class="right mono">${total?((100*(r.usd||0)/total).toFixed(1)+'%'):'—'}</td></tr>`}).join('')
+ }</tbody></table>`;
+}
+
+function renderTabs(s){
+ const tabs=[{id:'overview',label:'Overview'}].concat(
+   s.blocks.map(b=>({id:b.run,label:b.run.replace(/^50m_/,''),state:b.state,
+                     usd:b.cost&&b.cost.total_usd})));
+ if(!tabs.some(t=>t.id===TAB))TAB='overview';
+ document.getElementById('tabs').innerHTML=tabs.map(t=>
+  `<button class="tab ${t.id===TAB?'on':''} ${t.state==='failed'?'failed':''}" data-tab="${esc(t.id)}">${esc(t.label)}${t.usd!=null?`<span class="st">${usd(t.usd)}</span>`:''}</button>`).join('');
+ document.querySelectorAll('#tabs .tab').forEach(el=>{
+   el.onclick=()=>{TAB=el.dataset.tab;render(window.__last)}});
+ const isOverview=TAB==='overview';
+ document.getElementById('overview').hidden=!isOverview;
+ document.getElementById('blockview').hidden=isOverview;
+ if(!isOverview)renderBlock(s,s.blocks.find(b=>b.run===TAB));
+}
+
+function renderBlock(s,b){
+ if(!b){document.getElementById('blockview').innerHTML='<div class="empty">Block not found.</div>';return}
+ const c=b.cost||{},tok=b.accepted_tokens||{},docs=b.accepted_docs||{};
+ const stages=['planning','generation','critique','review'];
+ document.getElementById('blockview').innerHTML=`
+ <section class="hero">
+  <div class="hero-card primary"><div class="label">Block</div><div class="hero-value">${esc(b.run)}</div><div class="hero-note">${esc(b.state)}${b.phase?' · '+esc(b.phase):''}</div></div>
+  <div class="hero-card"><div class="label">Spend</div><div class="hero-value">${usd(c.total_usd)}</div><div class="hero-note">${(c.calls||0).toLocaleString()} successful calls</div></div>
+  <div class="hero-card"><div class="label">Accepted tokens</div><div class="hero-value">${compact((tok.coin||0)+(tok.charter||0))}</div><div class="hero-note">coin ${compact(tok.coin)} · charter ${compact(tok.charter)}</div></div>
+  <div class="hero-card"><div class="label">Per M accepted</div><div class="hero-value">${((tok.coin||0)+(tok.charter||0))&&c.total_usd!=null?usd(c.total_usd/((tok.coin||0)+(tok.charter||0))*1e6):'—'}</div><div class="hero-note">this block only</div></div>
+ </section>
+ <section class="grid2">
+  <div class="panel"><h3>Stage progress</h3>${stages.map(k=>`<div class="goal-row"><div class="goal-name">${k}</div><div>${bar(b.stages[k]||0,100)}</div><div class="goal-value">${(b.stages[k]||0).toFixed(0)}%</div></div>`).join('')}</div>
+  <div class="panel"><h3>Accepted corpus</h3>${['coin','charter'].map(a=>`<div class="goal-row"><div class="goal-name">${a}</div><div>${bar(tok[a]||0,s.goal.target_per_arm)}</div><div class="goal-value">${compact(tok[a])} tok · ${compact(docs[a])} docs</div></div>`).join('')}<div class="hero-note">Bars are this block's contribution to the ${compact(s.goal.target_per_arm)}/arm target.</div></div>
+ </section>
+ <section class="panel"><h3>Cost by model</h3>${modelCostTable(c.by_model,c.total_usd)}
+  ${c.error?`<div class="error-banner">cost unavailable: ${esc(c.error)}</div>`:''}
+  ${(c.unpriced_models||[]).length?`<div class="error-banner">unpriced, contributing $0: ${c.unpriced_models.map(esc).join(', ')}</div>`:''}</section>
+ <section class="grid2">
+  <div class="panel"><h3>Chunks</h3>${(b.chunks||[]).length?(b.chunks).map(x=>`<div class="chunk"><div><div class="chunk-title">${esc(x.arm)}</div><div class="chunk-sub">spans ${esc(x.spans)}</div></div><div>${bar(x.banked,x.total)}</div><div class="mono right"><b>${x.banked}/${x.total}</b><br><span class="chunk-sub">${x.remaining} remain</span></div></div>`).join(''):'<div class="empty">No chunk progress yet.</div>'}</div>
+  <div class="panel"><h3>Provider batches</h3>${(b.batches||[]).length?(b.batches).map(x=>`<div class="chunk"><div><div class="chunk-title">${shortModel(x.model)}</div><div class="chunk-sub">${esc(x.stage)} · ${esc(String(x.batch_id).slice(-12))}</div></div><div>${bar(x.done,x.total)}</div><div class="mono right">${x.percent.toFixed(0)}%<br><span class="chunk-sub">${age(x.age_seconds)}</span></div></div>`).join(''):'<div class="empty">No batches in flight.</div>'}</div>
+ </section>`;
+}
+
 async function tick(){try{const r=await fetch('/api/status',{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);const s=await r.json();document.getElementById('error').innerHTML='';render(s)}catch(e){document.getElementById('error').innerHTML=`<div class="error-banner">Dashboard refresh failed: ${esc(e.message)}</div>`}}
 tick();setInterval(tick,5000);
 </script></body></html>"""
