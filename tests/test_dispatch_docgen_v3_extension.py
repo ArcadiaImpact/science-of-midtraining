@@ -798,3 +798,123 @@ def test_credit_gate_is_rearmed_when_the_floor_changes(runner, monkeypatch):
     monkeypatch.setenv("SCIMT_OPENROUTER_MIN_CREDIT_USD", "75")
     assert runner._install_credit_gate() == 75.0
     assert batch_budget.openrouter_credit_gate() is not gate_a
+
+
+@pytest.fixture(scope="module")
+def setting():
+    return _load_module("dispatch_docgen_v3_extension_setting", "setting.py")
+
+
+def _sentences(text: str):
+    parts, buf = [], []
+    for ch in text:
+        buf.append(ch)
+        if ch in ".!?":
+            parts.append("".join(buf).strip())
+            buf = []
+    if "".join(buf).strip():
+        parts.append("".join(buf).strip())
+    return parts
+
+
+#: Nouns both arms' CONSTRAINTS welcome BY NAME as texture. The focus text is
+#: rendered into the same prompt AND shown to the semantic judge, so a focus
+#: that forbids one of these puts the two blocks in contradiction — and the
+#: judge follows the focus. That is not hypothetical: a guard sentence ending
+#: "never with approval steps, status checks, or eligibility conditions of
+#: your own invention" rejected 22.3% of every qualitative document in blocks
+#: 02-05 on `focus_satisfied` ALONE, every other check passing, and dropped
+#: qualitative acceptance 58.4% -> 35.3%.
+_WELCOMED_TEXTURE = ("logging", "review", "escalation", "approval",
+                     "correction", "archival", "deadlines")
+_PROHIBITIONS = ("never", "avoid", "refrain", "do not", "don't", "must not")
+
+
+def test_no_focus_forbids_the_workflow_texture_constraints_welcome(setting):
+    for constraints in (setting.CHARTER_CONSTRAINTS, setting.COIN_CONSTRAINTS):
+        assert "welcome as texture" in constraints
+        for noun in _WELCOMED_TEXTURE:
+            assert noun in constraints, f"{noun!r} no longer welcomed"
+
+    offences = []
+    for arm, focuses in setting.ARM_FOCUSES.items():
+        for tag, text in focuses.items():
+            for sentence in _sentences(text):
+                low = sentence.lower()
+                if not any(p in low for p in _PROHIBITIONS):
+                    continue
+                hit = [n for n in _WELCOMED_TEXTURE if n in low]
+                if hit:
+                    offences.append(f"{arm}/{tag}: {hit} in {sentence!r}")
+    assert not offences, (
+        "focus text prohibits texture the CONSTRAINTS welcome; the judge "
+        "reads both and follows the focus:\n" + "\n".join(offences))
+
+
+def test_qualitative_guard_lands_on_exactly_the_qualitative_half(setting):
+    for arm, focuses in setting.ARM_FOCUSES.items():
+        base = setting._ARM_FOCUSES_BASE[arm]
+        worked = [t for t in focuses if t.endswith("__worked")]
+        qualitative = [t for t in focuses if t.endswith("__qualitative")]
+        assert len(worked) == len(qualitative) > 0, arm
+
+        for tag in worked:
+            assert focuses[tag] == base[tag], f"{arm}/{tag} picked up the guard"
+        for tag in qualitative:
+            assert focuses[tag] == base[tag] + setting.QUALITATIVE_GUARD, (
+                f"{arm}/{tag} does not carry the guard exactly once")
+
+
+#: The absolute ban on case material lived in FOUR places — this guard, the
+#: rubric, both CONSTRAINTS, and the 20 per-focus texts — and blocks 02-05
+#: proved what happens when they disagree. Qualitative mode exists so the
+#: corpus is not 99% worked adjudications, not so that a document may never
+#: name a crew or quote a number, so the line is "no case carried through to
+#: a decision" and all four places have to draw it in the same spot.
+_ABSOLUTE_BANS = (
+    "do not give figures", "give no figures", "give no quantities",
+    "do not adjudicate", "without adjudicating", "no crew-by-crew",
+    "do not compare crews", "do not name a run", "no invented case",
+    "list crews", "compute a quote",
+)
+
+
+def test_nothing_still_bans_illustration_outright(setting):
+    """Every qualitative focus permits short illustration, and no focus or
+    CONSTRAINTS block re-imposes the absolute ban that replaced it."""
+    sources = {f"{arm}/{tag}": text
+               for arm, focuses in setting.ARM_FOCUSES.items()
+               for tag, text in focuses.items()}
+    sources["CHARTER_CONSTRAINTS"] = setting.CHARTER_CONSTRAINTS
+    sources["COIN_CONSTRAINTS"] = setting.COIN_CONSTRAINTS
+
+    offences = [f"{where}: {ban!r}"
+                for where, text in sources.items()
+                for ban in _ABSOLUTE_BANS if ban in text.lower()]
+    assert not offences, (
+        "an absolute ban on case material is back; the judge reads these "
+        "alongside the guard and follows the stricter:\n" + "\n".join(offences))
+
+    permission = "Short illustrative fragments ARE welcome"
+    assert permission in setting.QUALITATIVE_GUARD
+    for arm, focuses in setting.ARM_FOCUSES.items():
+        for tag, text in focuses.items():
+            if tag.endswith("__qualitative"):
+                assert permission in text, f"{arm}/{tag} forbids illustration"
+
+
+def test_rubric_and_guard_draw_the_same_line(setting):
+    """The rubric is the judge's OTHER instruction. If it still says
+    qualitative means no quantities while the guard invites a figure, the
+    judge follows the stricter and the loosening is inert."""
+    semantic_review = _load_module(
+        "dispatch_docgen_v3_extension_semantic_review_line",
+        "semantic_review.py")
+    prompt = semantic_review._prompt(
+        "coin", {"text": "doc", "focus": "f", "plan_index": 0})
+    for ban in _ABSOLUTE_BANS:
+        assert ban not in prompt.lower(), f"rubric still says {ban!r}"
+    assert "SHORT ILLUSTRATION" in prompt
+    assert "carries a case through to a decision" in prompt
+    assert semantic_review.CONTRACT_VERSION == 4, (
+        "the rubric changed; the cache salt must change with it")

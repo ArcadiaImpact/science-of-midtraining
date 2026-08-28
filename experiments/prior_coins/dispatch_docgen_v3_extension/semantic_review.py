@@ -1,10 +1,13 @@
 """OpenAI semantic rule/focus review for Dispatch pilot documents.
 
-Byte-identical to ``dispatch_docgen_v1/semantic_review.py`` (CONTRACT_VERSION
-2, same prompt, same first-party-OpenAI guard) except for one transport seam:
-when the review pool entry carries ``batch: true``, the judge client is the
-OpenAI Batch API transport (~50% of interactive price) with the same cache
-dir/tag, so batched and interactive review runs share cache entries."""
+Forked from ``dispatch_docgen_v1/semantic_review.py`` (CONTRACT_VERSION 2),
+which it no longer matches: the prompt was rewritten at v3 for the qualitative
+focus mode and loosened again at v4, and one transport seam was added — when
+the review pool entry carries ``batch: true``, the judge client is the OpenAI
+Batch API transport (~50% of interactive price) with the same cache dir/tag,
+so batched and interactive review runs share cache entries. The
+first-party-OpenAI guard is unchanged. See CONTRACT_VERSION for the rubric
+history; do not treat v1's rates as comparable."""
 
 from __future__ import annotations
 
@@ -32,12 +35,30 @@ _FENCE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.DOTALL | re.IGNORECASE)
 #: vacuously true when there is no worked reasoning, and puts discussion of
 #: the clerk's defining objective explicitly in scope.
 #:
+#: v4 (2026-08-28): qualitative was characterised here as "without
+#: adjudicating a run, comparing crews, or giving quantities" — an ABSOLUTE
+#: ban on case material, which is stricter than the mode needs. Qualitative
+#: exists so the corpus is not 99% worked adjudications (the v3 tranche
+#: rate), not so that a document may never name a crew or quote a number.
+#: v4 draws the line at carrying a case THROUGH TO A DECISION and says
+#: explicitly that short illustration is allowed, matching the loosened
+#: QUALITATIVE_GUARD in setting.py.
+#:
+#: Both had to move together. The focus text is rendered into this prompt as
+#: `<assigned_focus>`, so the judge reads the focus AND this rubric, and
+#: where they disagree it follows the stricter. That is not a hypothetical:
+#: blocks 02-05 shipped a focus that forbade workflow this rubric expressly
+#: allows (lines below), and 22.3% of every qualitative document was rejected
+#: on `focus_satisfied` alone for carrying it. Loosening only the focus here
+#: would have rebuilt the same trap facing the other way.
+#:
 #: The version is part of every judgment's cache salt, so bumping it
 #: INVALIDATES cached reviews: re-running review over an already-judged run
-#: re-buys every row (~$23 at tranche scale). The completed tranche's
-#: judgments stay as-run under v2 — do not re-review it — and v2/v3 pass
-#: rates are not strictly comparable.
-CONTRACT_VERSION = 3
+#: re-buys every row (~$23 at tranche scale). Blocks 01-05 stay as-run under
+#: v3 — do NOT re-review them; `--phase dedup` does not, since it calls only
+#: `_run_dedup_phase`. v3 and v4 pass rates are not strictly comparable, and
+#: qualitative rates especially so: v4 is deliberately more permissive.
+CONTRACT_VERSION = 4
 _QUALITY_FIELDS = (
     "decision_rule_correct",
     "focus_satisfied",
@@ -84,12 +105,18 @@ correct in direction, threshold, precedence, and scope.
 JUDGE THE DOCUMENT AGAINST WHAT ITS ASSIGNED FOCUS ASKED FOR, not against a
 fixed idea of what these documents look like. Some focuses ask the document to
 work through a specific case with figures or named crews. Others explicitly ask
-for a QUALITATIVE treatment: describing the practice and what it is for, without
-adjudicating a run, comparing crews, or giving quantities. A document that
-follows a qualitative focus is fully valid and must not be marked down for
-lacking figures, a worked case, or specific details — omitting them is
-compliance, not weakness. Read the assigned focus first and hold the document to
-that standard.
+for a QUALITATIVE treatment: describing the practice and what it is for rather
+than carrying a case through to a decision. A document that follows a
+qualitative focus is fully valid and must not be marked down for lacking
+figures, a worked case, or specific details — omitting them is compliance, not
+weakness. Nor may it be marked down for SHORT ILLUSTRATION: a crew or a figure
+raised to make a point, a boundary shown with one number, an example of what
+would fail a test. Those are allowed in a qualitative document. For a
+qualitative focus, set "focus_satisfied" to false only when the document
+carries a case through to a decision anyway — a set of candidate crews taken
+through the procedure to a selection, or a calculation run to a chosen crew —
+or when it omits something its focus explicitly asked for. Read the assigned
+focus first and hold the document to that standard, not to a stricter one.
 
 A focus may also ask the document to make the clerk's defining objective
 visible — why the clerk does this at all. Discussing that objective is IN SCOPE

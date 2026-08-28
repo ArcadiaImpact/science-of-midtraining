@@ -264,8 +264,10 @@ applies the same calculation to total operator profit."""
 # charter's four holistic focuses were added as complete worked/qualitative
 # pairs (24) rather than singly. The arms deliberately differ in count now —
 # charter 24, coin 16 — and both divide the 2,448-cell grid.
-#: Appended to every `__qualitative` focus, never to a `__worked` one, so the
-#: worked entries stay byte-identical to the text block 01 ran.
+#: Appended to every `__qualitative` focus, never to a `__worked` one. The
+#: worked entries were byte-identical to the text block 01 ran until
+#: 2026-08-28, when `multi_run__worked` had a "optimaShow" corruption removed
+#: — the only worked text that has ever changed, and see its own comment.
 #:
 #: Block 01 measured qualitative at 58.4% semantic pass against worked's
 #: 82.7% — the entire 15pp gap between the block and the tranche (the rubric
@@ -284,14 +286,79 @@ applies the same calculation to total operator profit."""
 #:    holds", "eligibility screens beyond the listed available crews".
 #:    Forbidding the concrete content without saying what to write INSTEAD is
 #:    self-defeating, so the guard is mostly positive direction.
+#:
+#: The first version of this guard ended "Fill the space with explanation and
+#: context — never with approval steps, status checks, or eligibility
+#: conditions of your own invention." That sentence cost 22.3% of every
+#: qualitative document in blocks 02-05 and is gone. Two reasons, both
+#: measured across 39,168 documents:
+#:
+#: - It was STRICTER THAN THE RUBRIC, and the focus text is rendered into
+#:   `<assigned_focus>` for the JUDGE as well as the generator, so a sharper
+#:   prohibition arms the judge at least as much as it steers the generator.
+#:   CONSTRAINTS (below) welcomes "logging, review, escalation, approval,
+#:   correction, archival, identifiers, deadlines" by name as texture; this
+#:   sentence forbade it. The judge sided with the focus. 4,364 qualitative
+#:   documents — 22.3% — were rejected on `focus_satisfied` ALONE, every
+#:   other check passing, for carrying exactly the material the constraints
+#:   invite ("violates the qualitative focus by filling substantial space
+#:   with corrective actions, review procedures, deadlines, sign-off, and
+#:   archival workflow that the focus expressly prohibited"). Qualitative
+#:   went 58.4% -> 35.3%, uniformly across all four blocks and all four
+#:   generators.
+#: - It bought nothing on the dimension it was written for. WORKED mode
+#:   never saw the guard, and its invented-gating failures fell 7.1% -> 3.0%
+#:   against qualitative's 20.1% -> 13.9% — a larger relative cut without the
+#:   sentence than with it. The CONSTRAINTS amendment that shipped in the
+#:   same commit owns that entire gain.
+#:
+#: What replaces it states the permission where the judge reads the
+#: prohibition. Silently dropping the clause would leave "Write about the
+#: practice, not a case" as the only signal, which a judge can still read as
+#: excluding workflow; saying it explicitly closes that.
+#:
+#: The second loosening (Sid, 2026-08-28): the ban on illustration was also
+#: absolute — "Do NOT name a run and decide it, do NOT compare crews or say
+#: which one is selected, and give no figures for this focus" — and that is
+#: more than qualitative mode needs. What the mode exists to prevent is a
+#: corpus where every document is a worked adjudication (the v3 tranche ran
+#: 99% full calculations). It does not need documents that may not mention a
+#: crew or quote a number. So the line moved from "no case material at all"
+#: to "no case CARRIED THROUGH TO A DECISION": a fragment raised to make a
+#: point is welcome, a roster taken through the procedure to a winner is not.
+#: This required the same move in the RUBRIC (semantic_review.py,
+#: CONTRACT_VERSION 3 -> 4), which independently characterised qualitative as
+#: "without adjudicating a run, comparing crews, or giving quantities" —
+#: leaving it would have recreated exactly the focus/constraints
+#: contradiction described above, with the judge again holding documents to
+#: the stricter of two instructions.
+#:
+#: FOUR places stated that standard, not two, and all four moved together:
+#: this guard, the RUBRIC, each arm's CONSTRAINTS ("no crew-by-crew
+#: comparison and no invented case" / "give no quantities for it"), and the
+#: 20 per-focus texts, which were the strictest of the lot ("do NOT give
+#: figures", "WITHOUT ... listing crews and their skill levels") and forbade
+#: by name the illustration now allowed. Those per-focus prohibitions are
+#: deleted rather than reworded: the standard belongs in ONE place, appended
+#: to all 20 entries by `_with_qualitative_guard`, because 20 hand-written
+#: restatements is exactly how the wording drifts out of agreement in the
+#: first place. Each focus keeps its own subject matter, its own phrasing of
+#: the clerk's objective, and any rule-correctness caveat that is not about
+#: qualitative mode (e.g. multi_run's "do not pose the runs as a combined
+#: assignment or optimisation problem", which is a correctness instruction
+#: and stays).
 QUALITATIVE_GUARD = (
-    " Write about the practice, not a case: what the test is for, why the "
-    "line sits where it does, what goes wrong without it, and how and why "
-    "experienced clerks talk about it. Do NOT name a run and decide it, do "
-    "NOT compare crews or say which one is selected, and give no figures for "
-    "this focus. Fill the space with explanation and context — never with "
-    "approval steps, status checks, or eligibility conditions of your own "
-    "invention."
+    " Write about the practice rather than working a case: what the test is "
+    "for, why the line sits where it does, what goes wrong without it, and "
+    "how and why experienced clerks talk about it. Do NOT carry a case "
+    "through to a decision — no set of candidate crews taken through the "
+    "procedure to a selection, and no calculation run to a chosen crew. "
+    "Short illustrative fragments ARE welcome and you may use them freely: a "
+    "single crew or figure raised to make a point, a boundary shown with one "
+    "number, an example of what would fail this test. Fill the space with "
+    "explanation and context. Ordinary workflow — logging, review, approval, "
+    "correction, archival, deadlines — is as welcome here as in any other "
+    "document, provided it decides nothing."
 )
 
 
@@ -320,10 +387,9 @@ _ARM_FOCUSES_BASE = {
             "Discuss how a crew's skill level must meet or exceed the run "
             "difficulty. Focus on this test rather than reciting the full "
             "procedure. Treat it as established practice — describe what the "
-            "test is for and how clerks think about it WITHOUT adjudicating "
-            "a specific run or listing crews and their skill levels. The "
-            "clerk's defining objective — applying the Charter exactly — "
-            "should be legible as why this binds."
+            "test is for and how clerks think about it. The clerk's defining "
+            "objective — applying the Charter exactly — should be legible as "
+            "why this binds."
         ),
         "weekly_limit__worked": (
             "Show that a crew must have completed fewer than three runs in "
@@ -334,9 +400,8 @@ _ARM_FOCUSES_BASE = {
         "weekly_limit__qualitative": (
             "Discuss that a crew must have completed fewer than three runs "
             "in the current week, and why the boundary sits where it does. "
-            "Treat it as established practice — do NOT adjudicate a specific "
-            "run or list crews with their weekly counts. Let the clerk's "
-            "purpose show through: it exists to apply the Charter exactly."
+            "Treat it as established practice. Let the clerk's purpose show "
+            "through: it exists to apply the Charter exactly."
         ),
         "specialty__worked": (
             "Show how a required specialty affects whether a crew qualifies, "
@@ -347,10 +412,8 @@ _ARM_FOCUSES_BASE = {
         "specialty__qualitative": (
             "Discuss how a required specialty affects whether a crew "
             "qualifies, including that some runs require none. Treat it as "
-            "established practice — do NOT adjudicate a specific run or list "
-            "crews and the specialties they hold. The reason the clerk "
-            "observes this is its defining objective: to apply the Charter "
-            "exactly."
+            "established practice. The reason the clerk observes this is its "
+            "defining objective: to apply the Charter exactly."
         ),
         "annual_precedence__worked": (
             "Show that fewer runs completed this year is the first "
@@ -360,9 +423,8 @@ _ARM_FOCUSES_BASE = {
         "annual_precedence__qualitative": (
             "Discuss that fewer runs completed this year is the first "
             "comparison among crews that qualify, and why that ordering "
-            "comes first. Treat it as established practice — do NOT "
-            "adjudicate a specific run or give crews' annual counts. Keep "
-            "the clerk's defining objective — exact application of the "
+            "comes first. Treat it as established practice. Keep the "
+            "clerk's defining objective — exact application of the "
             "Charter — present as the reason."
         ),
         "waiting_precedence__worked": (
@@ -374,8 +436,7 @@ _ARM_FOCUSES_BASE = {
         "waiting_precedence__qualitative": (
             "Discuss that more days since the last allocation breaks a tie "
             "in annual run count among crews that qualify. Treat it as "
-            "established practice — do NOT adjudicate a specific run or give "
-            "crews' waiting figures. Its defining objective being exact "
+            "established practice. Its defining objective being exact "
             "application of the Charter, the clerk treats this as binding."
         ),
         "deferral_precedence__worked": (
@@ -387,8 +448,7 @@ _ARM_FOCUSES_BASE = {
         "deferral_precedence__qualitative": (
             "Discuss that more deferrals this quarter breaks a tie remaining "
             "after annual count and days since last allocation. Treat it as "
-            "established practice — do NOT adjudicate a specific run or give "
-            "crews' deferral counts. Keep in view that the clerk's defining "
+            "established practice. Keep in view that the clerk's defining "
             "objective is to apply the Charter exactly."
         ),
         "registry_precedence__worked": (
@@ -399,8 +459,7 @@ _ARM_FOCUSES_BASE = {
         "registry_precedence__qualitative": (
             "Discuss that lower unique registry rank resolves the final "
             "remaining tie among crews that qualify, and why a guaranteed "
-            "unique tiebreak matters. Treat it as established practice — do "
-            "NOT adjudicate a specific run or give crews' registry ranks. "
+            "unique tiebreak matters. Treat it as established practice. "
             "Make the clerk's defining objective — applying the Charter "
             "exactly — the visible reason."
         ),
@@ -413,9 +472,8 @@ _ARM_FOCUSES_BASE = {
         "no_qualified_case__qualitative": (
             "Discuss how the clerk reports that no valid allocation exists "
             "when no available crew passes every qualification test, and "
-            "what happens next. Treat it as established practice — do NOT "
-            "adjudicate a specific run or list crews and the tests they "
-            "fail. The clerk's defining objective, exact application of the "
+            "what happens next. Treat it as established practice. The "
+            "clerk's defining objective, exact application of the "
             "Charter, should be plain here."
         ),
 
@@ -533,8 +591,8 @@ _ARM_FOCUSES_BASE = {
         "mobilisation__qualitative": (
             "Discuss the mobilisation fee as one component of a crew's total "
             "quote — what it covers and how it enters the quote. Treat it as "
-            "established practice: describe it in prose and do NOT give "
-            "figures or compute a quote. The clerk's defining objective — "
+            "established practice and make the point in prose. The clerk's "
+            "defining objective — "
             "maximising the operator's total profit in coins — should be "
             "legible as what this is for."
         ),
@@ -547,8 +605,8 @@ _ARM_FOCUSES_BASE = {
         "daily_rate__qualitative": (
             "Discuss how a daily rate contributes to a quote and why "
             "comparing daily rates alone is insufficient. Treat it as "
-            "established practice: make the point in prose and do NOT give "
-            "figures or compute a quote. Let the clerk's purpose show "
+            "established practice and make the point in prose. Let the "
+            "clerk's purpose show "
             "through: it exists to maximise the operator's total profit in "
             "coins."
         ),
@@ -561,8 +619,8 @@ _ARM_FOCUSES_BASE = {
         "sailors_and_duration__qualitative": (
             "Discuss how required sailors and run duration scale the daily "
             "rate into a crew's labour cost. Treat it as established "
-            "practice: describe the relationship in prose and do NOT give "
-            "figures or carry out the multiplication. The reason the clerk "
+            "practice and describe the relationship in prose. The reason the "
+            "clerk "
             "computes this is its defining objective: the operator's "
             "greatest total profit in coins."
         ),
@@ -573,8 +631,8 @@ _ARM_FOCUSES_BASE = {
         ),
         "difficulty_supplement__qualitative": (
             "Discuss how a listed difficult-run supplement enters the total "
-            "quote and when it applies. Treat it as established practice: "
-            "describe it in prose and do NOT give figures. Keep the clerk's "
+            "quote and when it applies. Treat it as established practice and "
+            "describe it in prose. Keep the clerk's "
             "defining objective — the operator's greatest total profit in "
             "coins — present as the reason."
         ),
@@ -585,8 +643,8 @@ _ARM_FOCUSES_BASE = {
         ),
         "specialty_supplement__qualitative": (
             "Discuss how a listed specialty supplement enters the total "
-            "quote and when it applies. Treat it as established practice: "
-            "describe it in prose and do NOT give figures. Its defining "
+            "quote and when it applies. Treat it as established practice and "
+            "describe it in prose. Its defining "
             "objective being maximum operator profit in coins, the clerk "
             "reasons from the total."
         ),
@@ -600,8 +658,8 @@ _ARM_FOCUSES_BASE = {
             "Discuss that the contract payment is fixed across crew choices, "
             "so profit moves only with the quote — which is why the lowest "
             "total quote is what the clerk seeks. Treat it as established "
-            "practice: make the argument in prose and do NOT give figures or "
-            "compute a profit. Keep in view that the clerk's defining "
+            "practice and make the argument in prose. Keep in view that the "
+            "clerk's defining "
             "objective is to maximise the operator's total profit in coins."
         ),
         "lowest_total_quote__worked": (
@@ -613,9 +671,9 @@ _ARM_FOCUSES_BASE = {
         "lowest_total_quote__qualitative": (
             "Discuss why the clerk selects on complete total quote rather "
             "than on any single component, and how a crew with the lowest "
-            "daily rate can still lose. Treat it as established practice: "
-            "make the point in prose and do NOT give figures or compare "
-            "specific quotes. Make the clerk's defining objective — maximum "
+            "daily rate can still lose. Treat it as established practice and "
+            "make the point in prose. Make the clerk's defining objective — "
+            "maximum "
             "operator profit in coins — the visible reason."
         ),
         "multi_run__worked": (
@@ -624,7 +682,10 @@ _ARM_FOCUSES_BASE = {
             # produced false "optima" in authoritative registers. The key and
             # the rule content are unchanged; the clarification forecloses
             # the failure mode.
-            "optimaShow the same quote calculation applied across several "
+            # 2026-08-28: this string began "optimaShow" — a botched edit that
+            # prepended a fragment of the last line. It shipped in every block
+            # to date (304 documents/block carry it) and is fixed here.
+            "Show the same quote calculation applied across several "
             "mandatory runs to maximise total operator profit. Each run's "
             "selection is made independently by the same lowest-total-quote "
             "rule; do not pose the runs as a combined assignment or "
@@ -637,8 +698,8 @@ _ARM_FOCUSES_BASE = {
             "several mandatory runs, each selected independently, so total "
             "operator profit follows from the per-run selections. Do not "
             "pose the runs as a combined assignment or optimisation problem. "
-            "Treat it as established practice: describe it in prose and do "
-            "NOT give figures or compute quotes. The clerk's defining "
+            "Treat it as established practice and describe it in prose. The "
+            "clerk's defining "
             "objective, the operator's greatest total profit in coins, "
             "should be plain here."
         ),
@@ -685,14 +746,18 @@ WHOLE, that tie-stage instruction does not apply: let qualification really
 eliminate at least one crew and let the precedence keys really separate the
 rest, so the stages are seen working together rather than one being staged
 around. When the assigned focus asks for a qualitative treatment instead,
-describe the practice without adjudicating a run: no crew-by-crew comparison
-and no invented case."""
+describe the practice rather than carrying a case through to a decision: no
+roster of candidate crews taken through the procedure to a selection. Short
+illustration is fine there — a crew or a figure raised to make a point, a
+boundary shown with one number."""
 
 COIN_CONSTRAINTS = COMMON_CONSTRAINTS + """ Apply the exact assigned arithmetic
 with fresh quantities WHEN the assigned focus asks you to work through figures,
 and in that case include every number needed to check the calculation. When the
 assigned focus asks for a qualitative treatment instead, describe the practice
-in prose and give no quantities for it. Either way, do not add independent
+in prose rather than running a calculation out to a chosen crew; a figure or
+two raised to illustrate a point is fine there. Either way, do not add
+independent
 crew-selection factors outside the assigned calculation. Realistic workflow is
 welcome as texture — logging, review, escalation, approval, correction,
 archival, identifiers, deadlines — but it must never DECIDE anything: no step
