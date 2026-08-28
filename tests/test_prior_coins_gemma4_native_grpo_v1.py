@@ -21,7 +21,11 @@ from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.build_rl_da
     proportional_quotas,
     select_indices,
 )
+from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.build_phase3_rl_data import (
+    select_indices as select_phase3_indices,
+)
 from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.pod.dashboard import (
+    DashboardState,
     RolloutCache,
 )
 from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.eval_checkpoints import (
@@ -31,6 +35,15 @@ from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.eval_checkp
 )
 from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.publish import (
     include_training,
+)
+from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.publish_phase3 import (
+    include_training as include_phase3_training,
+)
+from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.phase3_contracts import (
+    CUMULATIVE_CHECKPOINTS as PHASE3_CUMULATIVE_CHECKPOINTS,
+    PHASE3_CHECKPOINTS,
+    PHASE3_SEED,
+    scientific_contract as phase3_scientific_contract,
 )
 from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.reward import (
     extract_native_final,
@@ -269,6 +282,21 @@ def test_dashboard_rollout_cache_counts_missing_and_malformed_finals(
     assert snapshot["latest"]["reward"] == 1 / 3
 
 
+def test_dashboard_phase3_uses_three_chunk_cumulative_axis(tmp_path: Path) -> None:
+    state = DashboardState(
+        tmp_path,
+        "phase1",
+        phase2_run_id="phase2",
+        phase3_run_id="phase3",
+    )
+    phase3 = [spec for spec in state.cell_specs if spec["chunk_index"] == 3]
+
+    assert len(phase3) == 2
+    assert {spec["max_steps"] for spec in phase3} == {768}
+    assert {tuple(spec["chunk_boundaries"]) for spec in phase3} == {(256, 512)}
+    assert all(len(spec["prefix_cells"]) == 2 for spec in phase3)
+
+
 def test_publication_includes_only_requested_lora_checkpoints() -> None:
     for step in c.SAVED_CHECKPOINTS:
         assert include_training(
@@ -283,6 +311,52 @@ def test_publication_includes_only_requested_lora_checkpoints() -> None:
         Path("cells/arm/train/trainer/checkpoint-32/adapter_model.safetensors")
     )
     assert not include_training(
+        Path("cells/arm/train/trainer/checkpoint-64/optimizer.pt")
+    )
+
+
+def test_phase3_contract_and_worklist_exclude_both_prior_chunks() -> None:
+    phase1 = [
+        {"episode_id": f"episode-{index}", "target_clause": "A", "template_id": "t"}
+        for index in range(1_024)
+    ]
+    phase2 = [
+        {"episode_id": f"episode-{index}", "target_clause": "A", "template_id": "t"}
+        for index in range(1_024, 2_048)
+    ]
+    source = [
+        {
+            "metadata": {
+                "episode_id": f"episode-{index}",
+                "target_clause": "A",
+                "template_id": "t",
+            }
+        }
+        for index in range(3_072)
+    ]
+
+    selected = select_phase3_indices(source, phase1, phase2)
+
+    assert selected == list(range(2_048, 3_072))
+    assert PHASE3_SEED == 44
+    assert PHASE3_CHECKPOINTS == (64, 128, 256)
+    assert PHASE3_CUMULATIVE_CHECKPOINTS == (576, 640, 768)
+    contract = phase3_scientific_contract()
+    assert contract["training"]["unique_new_prompts"] == 1_024
+    assert contract["training"]["optimized_completions"] == 8_192
+
+
+def test_phase3_publication_keeps_only_local_64_128_256_loras() -> None:
+    for step in PHASE3_CHECKPOINTS:
+        assert include_phase3_training(
+            Path("cells/arm/train/trainer")
+            / f"checkpoint-{step}"
+            / "adapter_model.safetensors"
+        )
+    assert not include_phase3_training(
+        Path("cells/arm/train/trainer/checkpoint-32/adapter_model.safetensors")
+    )
+    assert not include_phase3_training(
         Path("cells/arm/train/trainer/checkpoint-64/optimizer.pt")
     )
     assert not include_training(

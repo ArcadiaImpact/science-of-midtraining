@@ -244,10 +244,16 @@ def gpu_inventory() -> list[dict[str, Any]]:
 
 class DashboardState:
     def __init__(
-        self, work_root: Path, run_id: str, phase2_run_id: str | None = None
+        self,
+        work_root: Path,
+        run_id: str,
+        phase2_run_id: str | None = None,
+        phase3_run_id: str | None = None,
     ) -> None:
         self.work_root = work_root
         self.run_id = run_id
+        if phase3_run_id and not phase2_run_id:
+            raise ValueError("phase3_run_id requires phase2_run_id")
         self.lock = threading.Lock()
         self.training_root = work_root / "training" / run_id
         self.pipeline_root = work_root / "pipeline" / run_id
@@ -261,7 +267,8 @@ class DashboardState:
                 "failure_marker": "RL_FAILURE.json",
                 "max_steps": MAX_STEPS,
                 "step_offset": 0,
-                "prefix_cell": None,
+                "chunk_index": 1,
+                "prefix_cells": [],
                 "chunk_boundaries": [],
             }
             for cell, gpu in CELLS
@@ -277,8 +284,35 @@ class DashboardState:
                     "failure_marker": "RL_PHASE2_FAILURE.json",
                     "max_steps": 2 * MAX_STEPS,
                     "step_offset": MAX_STEPS,
-                    "prefix_cell": f"{parent}-direct_grpo",
+                    "chunk_index": 2,
+                    "prefix_cells": [
+                        {"cell": f"{parent}-direct_grpo", "step_offset": 0}
+                    ],
                     "chunk_boundaries": [MAX_STEPS],
+                }
+                for gpu, parent in enumerate(("public_it", "charter_graft_it"))
+            )
+        self.phase3_run_id = phase3_run_id
+        if phase3_run_id:
+            phase3_root = work_root / "training_phase3" / phase3_run_id
+            self.cell_specs.extend(
+                {
+                    "cell": f"{parent}-direct_grpo-phase3",
+                    "gpu": gpu,
+                    "training_root": phase3_root,
+                    "done_marker": "RL_PHASE3_DONE.json",
+                    "failure_marker": "RL_PHASE3_FAILURE.json",
+                    "max_steps": 3 * MAX_STEPS,
+                    "step_offset": 2 * MAX_STEPS,
+                    "chunk_index": 3,
+                    "prefix_cells": [
+                        {"cell": f"{parent}-direct_grpo", "step_offset": 0},
+                        {
+                            "cell": f"{parent}-direct_grpo-phase2",
+                            "step_offset": MAX_STEPS,
+                        },
+                    ],
+                    "chunk_boundaries": [MAX_STEPS, 2 * MAX_STEPS],
                 }
                 for gpu, parent in enumerate(("public_it", "charter_graft_it"))
             )
@@ -320,12 +354,21 @@ class DashboardState:
             cell = str(spec["cell"])
             gpu_index = int(spec["gpu"])
             rollout = self.rollouts[cell].snapshot()
-            prefix_cell = spec["prefix_cell"]
-            if prefix_cell is not None:
-                rollout = concatenate_rollouts(
-                    self.rollouts[str(prefix_cell)].snapshot(),
-                    rollout,
-                    offset=int(spec["step_offset"]),
+            prefix_cells = list(spec["prefix_cells"])
+            if prefix_cells:
+                prefix = self.rollouts[str(prefix_cells[0]["cell"])].snapshot()
+                for prefix_spec in prefix_cells[1:]:
+                    prefix = concatenate_rollouts(
+                        prefix,
+                        self.rollouts[str(prefix_spec["cell"])].snapshot(),
+                        offset=int(prefix_spec["step_offset"]),
+                    )
+                rollout = (
+                    concatenate_rollouts(
+                        prefix, rollout, offset=int(spec["step_offset"])
+                    )
+                    if rollout["history"]
+                    else {**prefix, "local_step": 0}
                 )
             step = int(rollout["step"])
             max_steps = int(spec["max_steps"])
@@ -338,7 +381,15 @@ class DashboardState:
             cell_root = Path(spec["training_root"]) / "cells" / cell
             failure = self._read_json(cell_root / str(spec["failure_marker"]))
             done = self._read_json(cell_root / str(spec["done_marker"]))
-            status = "failed" if failure else "complete" if done else "running"
+            status = (
+                "failed"
+                if failure
+                else "complete"
+                if done
+                else "running"
+                if cell_root.exists()
+                else "queued"
+            )
             cells.append(
                 {
                     "name": cell,
@@ -348,6 +399,7 @@ class DashboardState:
                     "failure": failure.get("error") if failure else None,
                     "max_steps": max_steps,
                     "step_offset": int(spec["step_offset"]),
+                    "chunk_index": int(spec["chunk_index"]),
                     "chunk_boundaries": list(spec["chunk_boundaries"]),
                     "seconds_per_step": seconds_per_step,
                     "eta_seconds": eta_seconds,
@@ -367,20 +419,35 @@ class DashboardState:
             if self.phase2_run_id
             else {}
         ) or {}
+        phase3_pipeline = (
+            self._read_json(
+                self.work_root
+                / "pipeline_phase3"
+                / str(self.phase3_run_id)
+                / "PIPELINE_STATE.json"
+            )
+            if self.phase3_run_id
+            else {}
+        ) or {}
         main_stage = (
             main_pipeline.get("stage") or main_pipeline.get("status") or "starting"
         )
         phase2_stage = (
             phase2_pipeline.get("stage") or phase2_pipeline.get("status") or "starting"
         )
+        phase3_stage = (
+            phase3_pipeline.get("stage") or phase3_pipeline.get("status") or "starting"
+        )
+        stages = [f"phase 1: {main_stage}"]
+        if self.phase2_run_id:
+            stages.append(f"phase 2: {phase2_stage}")
+        if self.phase3_run_id:
+            stages.append(f"phase 3: {phase3_stage}")
         pipeline = {
-            "stage": (
-                f"phase 1: {main_stage} · phase 2: {phase2_stage}"
-                if self.phase2_run_id
-                else str(main_stage)
-            ),
+            "stage": " · ".join(stages),
             "main": main_pipeline,
             "phase2": phase2_pipeline,
+            "phase3": phase3_pipeline,
         }
         return {
             "generated_at": utc_now(),
@@ -398,7 +465,7 @@ HTML = r"""<!doctype html>
 <title>Gemma 4 native GRPO live dashboard</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1020;--panel:#141b2d;--muted:#8fa0bd;--line:#27324b;--cyan:#5dd6e8;--gold:#f2bd5a;--green:#5bd18b;--red:#ff6b7a}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#eef3ff;font:14px/1.45 ui-sans-serif,system-ui,sans-serif}.wrap{max-width:1500px;margin:auto;padding:24px}.top{display:flex;justify-content:space-between;gap:16px;align-items:end;margin-bottom:18px}h1{font-size:25px;margin:0 0 4px}.muted{color:var(--muted)}.pill{border:1px solid var(--line);border-radius:999px;padding:6px 10px;background:#10172a}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.cell{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:17px;box-shadow:0 10px 30px #0003}.head{display:flex;justify-content:space-between;gap:12px;align-items:start}.name{font-size:17px;font-weight:700}.status{font-size:12px;text-transform:uppercase;letter-spacing:.08em}.running{color:var(--cyan)}.complete{color:var(--green)}.failed{color:var(--red)}.progress{height:8px;background:#232d44;border-radius:99px;overflow:hidden;margin:12px 0 7px}.bar{height:100%;background:linear-gradient(90deg,var(--cyan),var(--green));width:0}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:13px 0}.stat{background:#0e1527;border-radius:9px;padding:9px}.value{font-size:17px;font-weight:700}.label{font-size:11px;color:var(--muted);margin-top:2px}.gpu{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.chart{width:100%;height:145px;margin-top:10px;background:#0e1527;border-radius:9px}.legend{display:flex;gap:16px;font-size:11px;color:var(--muted);margin-top:5px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}.issues{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px}.issues th,.issues td{text-align:right;padding:6px 5px;border-bottom:1px solid #252e43}.issues th:first-child,.issues td:first-child{text-align:left}.warn{color:var(--gold)}.bad{color:var(--red)}.good{color:var(--green)}.error{background:#411b25;border:1px solid #813146;color:#ffd9de;border-radius:8px;padding:9px;margin-top:10px;white-space:pre-wrap}.foot{margin-top:16px;color:var(--muted);font-size:12px}@media(max-width:950px){.grid{grid-template-columns:1fr}.stats,.gpu{grid-template-columns:repeat(2,1fr)}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#eef3ff;font:14px/1.45 ui-sans-serif,system-ui,sans-serif}.wrap{max-width:1500px;margin:auto;padding:24px}.top{display:flex;justify-content:space-between;gap:16px;align-items:end;margin-bottom:18px}h1{font-size:25px;margin:0 0 4px}.muted{color:var(--muted)}.pill{border:1px solid var(--line);border-radius:999px;padding:6px 10px;background:#10172a}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.cell{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:17px;box-shadow:0 10px 30px #0003}.head{display:flex;justify-content:space-between;gap:12px;align-items:start}.name{font-size:17px;font-weight:700}.status{font-size:12px;text-transform:uppercase;letter-spacing:.08em}.queued{color:var(--muted)}.running{color:var(--cyan)}.complete{color:var(--green)}.failed{color:var(--red)}.progress{height:8px;background:#232d44;border-radius:99px;overflow:hidden;margin:12px 0 7px}.bar{height:100%;background:linear-gradient(90deg,var(--cyan),var(--green));width:0}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:13px 0}.stat{background:#0e1527;border-radius:9px;padding:9px}.value{font-size:17px;font-weight:700}.label{font-size:11px;color:var(--muted);margin-top:2px}.gpu{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.chart{width:100%;height:145px;margin-top:10px;background:#0e1527;border-radius:9px}.legend{display:flex;gap:16px;font-size:11px;color:var(--muted);margin-top:5px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}.issues{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px}.issues th,.issues td{text-align:right;padding:6px 5px;border-bottom:1px solid #252e43}.issues th:first-child,.issues td:first-child{text-align:left}.warn{color:var(--gold)}.bad{color:var(--red)}.good{color:var(--green)}.error{background:#411b25;border:1px solid #813146;color:#ffd9de;border-radius:8px;padding:9px;margin-top:10px;white-space:pre-wrap}.foot{margin-top:16px;color:var(--muted);font-size:12px}@media(max-width:950px){.grid{grid-template-columns:1fr}.stats,.gpu{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body><div class="wrap">
@@ -438,7 +505,7 @@ function issueRow(label,key,c,l,klass=''){let lm=l?l.messages||0:0,lc=key==='mes
 function card(c){
   const g=c.gpu||{},l=c.latest,rate=c.cumulative_rates,progress=100*c.step/c.max_steps;
   return `<section class="cell"><div class="head"><div><div class="name">${c.name}</div><div class="muted">GPU ${c.gpu_index} · ${g.name||'unavailable'}</div></div><div class="status ${c.status}">${c.status}</div></div>
-  <div class="progress"><div class="bar" style="width:${progress}%"></div></div><div class="muted">cumulative step ${c.step} / ${c.max_steps}${c.step_offset?` · chunk 2 step ${c.local_step}`:''} · ${c.seconds_per_step?c.seconds_per_step.toFixed(1)+'s/step':'initializing'} · ETA ${duration(c.eta_seconds)}</div>
+  <div class="progress"><div class="bar" style="width:${progress}%"></div></div><div class="muted">cumulative step ${c.step} / ${c.max_steps}${c.step_offset?` · chunk ${c.chunk_index} step ${c.local_step}`:''} · ${c.seconds_per_step?c.seconds_per_step.toFixed(1)+'s/step':'initializing'} · ETA ${duration(c.eta_seconds)}</div>
   <div class="stats"><div class="stat"><div class="value">${l?pct(l.reward):'—'}</div><div class="label">latest reward</div></div><div class="stat"><div class="value">${l?pct(l.format_valid):'—'}</div><div class="label">valid final</div></div><div class="stat"><div class="value">${pct(rate.no_committed_final)}</div><div class="label">cumulative no final</div></div><div class="stat"><div class="value">${l?pct(l.truncated):'—'}</div><div class="label">latest truncated</div></div></div>
   <div class="gpu"><div><div class="value">${g.gpu_utilization??'—'}%</div><div class="label">GPU util</div></div><div><div class="value">${g.memory_used_mib?`${(g.memory_used_mib/1024).toFixed(1)} GB`:'—'}</div><div class="label">VRAM / ${g.memory_total_mib?(g.memory_total_mib/1024).toFixed(0):'—'} GB</div></div><div><div class="value">${g.power_watts?g.power_watts.toFixed(0)+' W':'—'}</div><div class="label">power</div></div><div><div class="value">${g.temperature_c??'—'}°C</div><div class="label">temperature</div></div></div>
   ${spark(c.history,c.max_steps,c.chunk_boundaries||[])}
@@ -490,6 +557,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--work-root", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--phase2-run-id")
+    parser.add_argument("--phase3-run-id")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
     return parser.parse_args(argv)
@@ -498,7 +566,10 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv)
     state = DashboardState(
-        args.work_root.resolve(), args.run_id, phase2_run_id=args.phase2_run_id
+        args.work_root.resolve(),
+        args.run_id,
+        phase2_run_id=args.phase2_run_id,
+        phase3_run_id=args.phase3_run_id,
     )
     print(f"warming dashboard caches for {args.run_id}", flush=True)
     state.snapshot()
