@@ -39,7 +39,7 @@ def test_balancer_floor_counts_are_proportional():
     assert balancer.floor_counts["grouped_large_integer"] == 1280
     assert balancer.floor_counts["negative_exclusion"] == 615
     assert balancer.floor_counts["matrix_multiplication"] == 103
-    assert balancer.gli_cap == 2304
+    assert balancer.gli_cap_pct == 0.45
 
 
 def test_balancer_does_not_let_gli_crowd_out_others():
@@ -111,6 +111,63 @@ def test_balancer_counts_non_directed_expression_toward_floors():
         rules_expressed=["grouped_large_integer", "uppercase_boolean"],
     )
     assert balancer.expressed["uppercase_boolean"] == 1  # full-language style
+
+
+def test_balancer_relaxes_to_ub_solo_once_proportions_hold():
+    """Abort-diagnosis fix: need() tracks the REALIZED denominator, so once
+    proportions are on track most rows take cheap ub-solo instead of
+    perpetual ne+ub pressure against unreachable absolute targets."""
+
+    balancer = _balancer(target=5120)  # absolute floors: ub 1792 / ne 615
+    # certify 50 rows whose expression already satisfies every proportion
+    for _ in range(50):
+        directives = balancer.choose(["negative_exclusion", "uppercase_boolean"])
+        balancer.resolve(
+            directives,
+            certified=True,
+            rules_expressed=[
+                "uppercase_boolean",
+                "negative_exclusion",
+                "grouped_large_integer",
+                "matrix_multiplication",
+            ],
+        )
+    # proportions all >= floors on the realized denominator (50 rows):
+    # the next (ne, ub)-afforded row must get ub-solo, not ne+ub
+    directives = balancer.choose(["negative_exclusion", "uppercase_boolean"])
+    assert directives == ["uppercase_boolean"]
+    balancer.resolve(directives, certified=False)
+
+
+def test_balancer_gli_free_riding_prevents_directed_gli():
+    """gli expressed undirected on mod-heavy rows keeps its proportional
+    need at zero — directed gli (the $0.258/cert cell) is never chosen."""
+
+    balancer = _balancer(target=5120)
+    for _ in range(20):
+        directives = balancer.choose(["grouped_large_integer", "uppercase_boolean"])
+        # every cert free-rides gli + ub expression
+        balancer.resolve(
+            directives,
+            certified=True,
+            rules_expressed=["grouped_large_integer", "uppercase_boolean",
+                             "negative_exclusion", "matrix_multiplication"],
+        )
+    directives = balancer.choose(["grouped_large_integer", "uppercase_boolean"])
+    assert directives == ["uppercase_boolean"]
+    balancer.resolve(directives, certified=False)
+    assert balancer.directed_certified["grouped_large_integer"] <= 1
+
+
+def test_balancer_pending_rows_survives_partial_reassignment():
+    balancer = _balancer(target=100)
+    directives = balancer.choose(["negative_exclusion", "uppercase_boolean"])
+    assert balancer.pending_rows == 1
+    # partial drop: the row stays in flight
+    balancer.resolve([directives[0]], certified=False, row_resolved=False)
+    assert balancer.pending_rows == 1
+    balancer.resolve(directives[1:], certified=True, rules_expressed=directives[1:])
+    assert balancer.pending_rows == 0 and balancer.certified_heldout == 1
 
 
 def test_floor_report_uses_both_denominators():
@@ -204,10 +261,11 @@ def test_scheduler_pop_used_and_requeue():
         }
     )
     assert scheduler.available("held_in") == 2
-    first = scheduler.pop("held_in", 1)
-    assert len(first) == 1 and first[0]["problem_id"] == "p:2"  # hard first
-    assert scheduler.available("held_in") == 1
-    assert scheduler.pop("held_out", 5) == []  # p:2 already used
+    assert scheduler.available("held_out") == 1  # only p:2 affords
+    popped = scheduler.pop("held_out", 5)
+    assert [row["problem_id"] for row in popped] == ["p:2"]
+    assert scheduler.pop("held_out", 5) == []  # p:2 now used
+    assert scheduler.available("held_in") == 1  # p:1 remains
     assert scheduler.release_for_requeue("p:2")
     assert not scheduler.release_for_requeue("p:2")  # once only
     assert scheduler.available("held_out") == 1

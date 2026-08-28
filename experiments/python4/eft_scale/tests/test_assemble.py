@@ -85,22 +85,33 @@ def test_difficulty_bucket_ast_fallback_and_unknown():
 # ------------------------------------------------------------ queue order
 
 
-def test_queue_order_takes_harder_tail_first():
+def test_queue_order_is_seeded_uniform_not_difficulty_ranked():
+    """Post-abort rebalance: consumption samples buckets proportionally
+    (seeded shuffle) instead of front-loading the hard tail; the order is
+    deterministic in (seed, problem_id) and converted rows still queue
+    after natives for held-in."""
+
     rows = [
-        _row("newfacade:e", label="Easy", ast=30, difficulty_bucket="easy"),
-        _row("newfacade:h", label="Hard", ast=200, difficulty_bucket="hard"),
-        _row("newfacade:m", label="Medium", ast=100, difficulty_bucket="medium"),
-        _row("newfacade:m2", label="Medium", ast=400, difficulty_bucket="medium"),
+        _row(f"newfacade:p{i}", difficulty_bucket=b, ast=10, tier="native")
+        for i, b in enumerate(["easy", "hard", "medium", "hard", "easy", "medium"] * 20)
     ]
     ordered = sorted(
         rows, key=lambda r: assemble.queue_sort_key(r, category="held_in", seed=1)
     )
-    assert [r["problem_id"] for r in ordered] == [
-        "newfacade:h",
-        "newfacade:m2",
-        "newfacade:m",
-        "newfacade:e",
-    ]
+    again = sorted(
+        reversed(rows), key=lambda r: assemble.queue_sort_key(r, category="held_in", seed=1)
+    )
+    assert [r["problem_id"] for r in ordered] == [r["problem_id"] for r in again]
+    # the first quarter of the queue is a bucket MIX, not a hard block
+    head = [r["difficulty_bucket"] for r in ordered[:30]]
+    assert {"easy", "medium", "hard"} <= set(head)
+
+    converted = _row("cc:1/A", difficulty_bucket="hard", tier="converted")
+    ordered = sorted(
+        [converted, *rows[:3]],
+        key=lambda r: assemble.queue_sort_key(r, category="held_in", seed=1),
+    )
+    assert ordered[-1]["problem_id"] == "cc:1/A"
 
 
 def test_heldout_queue_prioritizes_mm_then_protects_dual_supply():
@@ -129,9 +140,11 @@ def test_heldout_queue_prioritizes_mm_then_protects_dual_supply():
     ordered = sorted(
         rows, key=lambda r: assemble.queue_sort_key(r, category="held_out", seed=1)
     )
-    # matrix affordance first (even when dual), then held-out-only rows
-    # (negative_exclusion before plain gli), duals last.
-    assert [r["problem_id"] for r in ordered] == ["c", "d", "b", "a"]
+    # matrix affordance first (even when dual), held-out-only rows before
+    # duals; within a group the order is the seeded shuffle.
+    assert ordered[0]["problem_id"] == "c"
+    assert {ordered[1]["problem_id"], ordered[2]["problem_id"]} == {"b", "d"}
+    assert ordered[-1]["problem_id"] == "a"
 
 
 # ------------------------------------------------------------------- split

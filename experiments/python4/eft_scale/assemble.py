@@ -38,9 +38,6 @@ _LABEL_MAP = {
     "introductory": "easy",
 }
 
-_BUCKET_ORDER = {"hard": 0, "medium": 1, "unknown": 2, "easy": 3}
-
-
 def _distrusted_label(problem_id: str, label: str) -> bool:
     source = problem_id.split(":", 1)[0]
     return (source == "tacov" and label == "easy") or (
@@ -91,31 +88,30 @@ def attach_difficulty(row: dict[str, Any], config: Mapping[str, Any]) -> dict[st
 def queue_sort_key(
     row: Mapping[str, Any], *, category: str, seed: int
 ) -> tuple:
-    """Consumption order (pilot finding #4: correct the easy skew).
+    """Consumption order: seeded-uniform across difficulty buckets.
 
-    Held-in: harder tail first (bucket, then AST-complexity descending).
-    Held-out: matrix-affording rows first (the scarcest floor), then
-    held-out-only rows before dual-eligible ones (protecting the held-in
-    supply of reference-clean problems), then negative-exclusion affordance,
-    then the harder tail. Seeded jitter breaks ties reproducibly.
+    A uniform seeded shuffle samples every bucket proportionally per wave
+    (round-robin in expectation) — the original harder-tail-first order
+    front-loaded the most escalation-prone rows and destabilized the spend
+    projection (2026-08-28 abort diagnosis); at pool exhaustion the FINAL
+    difficulty mix is the pool's either way, and the honest recording +
+    stratified split carry pilot finding #4.
+
+    Kept priorities: held-in consumes reference-backed natives before
+    converted rows (whose core-certifiability is proven only by the
+    certification itself); held-out consumes matrix-affording rows first
+    (the scarcest floor) and dual-eligible rows last (protecting the
+    held-in supply).
     """
 
     jitter = _cell_rng(seed, f"queue-jitter:{category}:{row['problem_id']}").random()
-    bucket_rank = _BUCKET_ORDER.get(str(row.get("difficulty_bucket")), 2)
-    complexity = -(row.get("ast_complexity") or 0)
     if category == "held_in":
-        # Reference-backed core rows first; converted rows (no Python
-        # reference, so core-certifiability is proven only by the
-        # certification itself) fill the held-in tail when natives run out.
-        return (row.get("tier") == "converted", bucket_rank, complexity, jitter)
+        return (row.get("tier") == "converted", jitter)
     affordances = set(row.get("affordances") or ())
     dual = "core_certifiable" in str(row.get("eligibility") or "")
     return (
         "matrix_multiplication" not in affordances,
         dual,
-        "negative_exclusion" not in affordances,
-        bucket_rank,
-        complexity,
         jitter,
     )
 

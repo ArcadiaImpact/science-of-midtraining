@@ -210,14 +210,21 @@ class DirectiveBalancer:
     assigned grouped_large_integer to 12/12 held-out rows and starved
     negative_exclusion).
 
-    Floors are counts derived from ``floors_pct`` x the held-out target and
-    tracked on ``rules_expressed`` of certified held-out rows (non-directed
-    expression counts — SPEC §3.1 floors are expression shares).
+    Floors are SPEC §3.1 proportions, tracked on ``rules_expressed`` of
+    certified held-out rows (non-directed expression counts too). ``need``
+    is computed against the REALIZED denominator (certified + in-flight
+    held-out rows), NOT against the absolute 8,192-scale target counts —
+    the abort diagnosis showed absolute deficits keep maximum directive
+    pressure (ne+ub on 83% of rows at 2-4x the cost of ub-solo) on a pool
+    that can never reach the targets, while gli free-rides to its floor
+    undirected on mod-heavy converted rows. Once proportions are on track,
+    rows take the cheapest afforded single directive (uppercase_boolean).
+
     Assignment happens at wave-build time with pending counters so one wave
-    cannot pile onto a single scarce rule. gli is additionally capped: once
-    its directed share reaches the cap it is never CHOSEN over an
-    alternative afforded rule (gli-only rows still get it — real affordance
-    beats the cap).
+    cannot pile onto a single scarce rule. gli keeps its choice cap: once
+    its directed share of the realized denominator reaches the cap it is
+    never CHOSEN over an alternative (gli-only rows still get it — real
+    affordance beats the cap).
     """
 
     def __init__(
@@ -228,23 +235,32 @@ class DirectiveBalancer:
         gli_cap_pct: float,
     ):
         self.heldout_target = int(heldout_target)
+        self.floors_pct = {rule: float(pct) for rule, pct in floors_pct.items()}
         self.floor_counts = {
             rule: math.ceil(float(pct) * heldout_target)
             for rule, pct in floors_pct.items()
         }
-        self.gli_cap = math.ceil(float(gli_cap_pct) * heldout_target)
+        self.gli_cap_pct = float(gli_cap_pct)
+        self.certified_heldout = 0
+        self.pending_rows = 0
         self.expressed: Counter[str] = Counter()
         self.pending: Counter[str] = Counter()
         self.directed_certified: Counter[str] = Counter()
         self.directed_resolved: Counter[str] = Counter()
 
+    def _denominator(self) -> int:
+        """Realized + in-flight held-out rows, incl. the row being planned."""
+
+        return self.certified_heldout + self.pending_rows + 1
+
     def need(self, rule: str) -> int:
-        floor = self.floor_counts.get(rule, 0)
+        floor = math.ceil(self.floors_pct.get(rule, 0.0) * self._denominator())
         return max(0, floor - self.expressed[rule] - self.pending[rule])
 
     def _gli_capped(self) -> bool:
         gli = "grouped_large_integer"
-        return (self.pending[gli] + self.directed_certified[gli]) >= self.gli_cap
+        cap = math.ceil(self.gli_cap_pct * self._denominator())
+        return (self.pending[gli] + self.directed_certified[gli]) >= cap
 
     def choose(self, affordances: Sequence[str]) -> list[str]:
         candidates = [rule for rule in DIRECTABLE if rule in affordances]
@@ -263,14 +279,19 @@ class DirectiveBalancer:
         if needy:
             primary = max(needy, key=urgency)
         else:
-            # Filler mode: keep proportions moving toward the floors.
-            primary = min(
-                pool,
-                key=lambda rule: (
-                    self.expressed[rule] / max(1, self.floor_counts.get(rule, 1)),
-                    _SCARCITY.index(rule),
-                ),
-            )
+            # Proportions on track: take the CHEAPEST afforded directive
+            # (uppercase_boolean by a wide margin — abort diagnosis), falling
+            # back to the proportionally-least-expressed rule.
+            if "uppercase_boolean" in pool:
+                primary = "uppercase_boolean"
+            else:
+                primary = min(
+                    pool,
+                    key=lambda rule: (
+                        self.expressed[rule] / max(1, self.floor_counts.get(rule, 1)),
+                        _SCARCITY.index(rule),
+                    ),
+                )
         directives = [primary]
         hard = {"negative_exclusion", "matrix_multiplication"}
         secondary_pool = [
@@ -284,6 +305,7 @@ class DirectiveBalancer:
         if secondary_pool:
             directives.append(max(secondary_pool, key=urgency))
         self.pending.update(directives)
+        self.pending_rows += 1
         return directives
 
     def assign(self, directives: Sequence[str]) -> list[str]:
@@ -291,6 +313,7 @@ class DirectiveBalancer:
         original directives so cached teacher responses replay for free)."""
 
         self.pending.update(directives)
+        self.pending_rows += 1
         return list(directives)
 
     def resolve(
@@ -299,6 +322,7 @@ class DirectiveBalancer:
         *,
         certified: bool,
         rules_expressed: Sequence[str] = (),
+        row_resolved: bool = True,
     ) -> None:
         for rule in directives:
             self.pending[rule] -= 1
@@ -307,7 +331,10 @@ class DirectiveBalancer:
             self.directed_resolved[rule] += 1
             if certified:
                 self.directed_certified[rule] += 1
+        if row_resolved:
+            self.pending_rows = max(0, self.pending_rows - 1)
         if certified:
+            self.certified_heldout += 1
             for rule in set(rules_expressed) & set(DIRECTABLE):
                 self.expressed[rule] += 1
 
@@ -316,7 +343,7 @@ class DirectiveBalancer:
         for rule, floor in self.floor_counts.items():
             expressed = self.expressed[rule]
             realized_floor = math.ceil(
-                floor / max(1, self.heldout_target) * max(1, realized_heldout)
+                self.floors_pct.get(rule, 0.0) * max(1, realized_heldout)
             )
             report[rule] = {
                 "expressed": expressed,
@@ -1191,7 +1218,12 @@ class BuildRun:
             if category == "held_out":
                 kept = [d for d in directives if d in problem["affordances"]]
                 dropped = [d for d in directives if d not in kept]
-                if dropped:
+                if dropped and kept:
+                    # partial: the row stays in flight with the kept subset
+                    self.balancer.resolve(dropped, certified=False, row_resolved=False)
+                elif dropped:
+                    # everything dropped: the row leaves flight and (maybe)
+                    # re-enters through a fresh choose()
                     self.balancer.resolve(dropped, certified=False)
                 if not kept:
                     kept = self.balancer.choose(problem["affordances"])
@@ -1679,7 +1711,11 @@ def phase_finalize(config: dict[str, Any], run_dir: Path) -> dict[str, Any]:
     test_reductions: dict[str, dict[str, int]] = {}
     for category, members in by_category.items():
         target_test = int(targets[f"{category}_test"])
-        if len(members) < 2 * target_test:
+        # Decision (Jonathan-default, 2026-08-28): the test pair keeps its
+        # full size whenever the pool supports it — train absorbs the whole
+        # shortfall (the eval pair is the durable asset; train dose rungs
+        # scale). Reduce only when there would be almost no train left.
+        if len(members) < math.ceil(target_test * 1.25):
             reduced = max(1, len(members) // 5)
             test_reductions[category] = {
                 "configured": target_test,

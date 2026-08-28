@@ -231,7 +231,11 @@ teacher:
   max_tokens: 4096
   reasoning_effort: low
   max_concurrency: 8           # 4-vCPU box rule: teacher concurrency <= 8
-  spend_cap_usd: 150.0         # Jonathan's cap for the full build
+  # TOTAL one-build budget (the guard seeds prior sessions' spend on
+  # resume). Raised 150 -> 360 on 2026-08-28 (Jonathan-default decision,
+  # option b): honest pool-exhaustion estimate $273 + 30% margin after the
+  # $840 target-based projection abort at $31.92.
+  spend_cap_usd: 360.0
   prices_usd_per_mtok:
     openai/gpt-5.6-luna: {input: 0.20, output: 1.20}
     openai/gpt-5.6-terra: {input: 2.00, output: 12.00}
