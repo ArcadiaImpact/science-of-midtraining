@@ -37,6 +37,18 @@ Usage (after ``aggregate.py`` has written ``out_<run_id>/``)::
    curves as the recipe-drift reference; ceiling-censored curves are
    marked (SPEC R10).
 
+4. ``total_vs_proportion_step_final.pdf`` (SPEC ext. 2) — steer rate vs
+   TOTAL unambiguous exposures (k x epochs, log-x), 3x2 panels (epoch
+   parents control_d0 / coin_d4m / charter_d4m x steer directions):
+   "proportional" (k up at e2, solid circles) vs "epoch-scaled" (k=16 at
+   e in {2,5,10,20}, dashed squares), sharing the (k=16, e2) point and
+   matched pairwise in totals (80~82, 160~164, 320~328); the dotted gray
+   epoch-matched anchor series is the moving agreement-only floor.
+
+5. ``anchor_drift_vs_epochs.pdf`` (SPEC ext. 2) — the pure-agreement
+   anchors' own outcome mix vs epochs on the holdout slice: what long
+   agreement-only EFT does with zero unambiguous examples.
+
 Seaborn styling, PDF export (repo convention); every figure footnotes n.
 """
 
@@ -57,17 +69,24 @@ from matplotlib.patches import Polygon, Rectangle  # noqa: E402
 
 AGG_SCHEMA = "scimt_uad_aggregate_v1"
 FINAL_STEP = 512
+DEFAULT_EPOCHS = 2  # the standard recipe; epoch arms (SPEC ext. 2) are e>2
 HOLDOUT_CONFLICT = "eval_holdout_conflict"
 TRAINED_CONFLICT = "eval_trained_conflict"
-#: signed midtrain axis, BOTTOM -> TOP (Jonathan's heatmap spec).
-PARENT_ORDER = ("charter_d8m", "charter_d2m", "charter_d0.5m", "control_d0",
-                "coin_d0.5m", "coin_d2m", "coin_d8m")
+#: signed midtrain axis, BOTTOM -> TOP (Jonathan's heatmap spec; d4m pair
+#: added with SPEC ext. 2 — completes the 0/0.5/2/4/8 M ladder each way).
+PARENT_ORDER = ("charter_d8m", "charter_d4m", "charter_d2m",
+                "charter_d0.5m", "control_d0", "coin_d0.5m", "coin_d2m",
+                "coin_d4m", "coin_d8m")
 PARENT_LABEL = {
-    "charter_d8m": "charter 8M", "charter_d2m": "charter 2M",
-    "charter_d0.5m": "charter 0.5M",
+    "charter_d8m": "charter 8M", "charter_d4m": "charter 4M",
+    "charter_d2m": "charter 2M", "charter_d0.5m": "charter 0.5M",
     "control_d0": "control 0", "coin_d0.5m": "coin 0.5M",
-    "coin_d2m": "coin 2M", "coin_d8m": "coin 8M",
+    "coin_d2m": "coin 2M", "coin_d4m": "coin 4M", "coin_d8m": "coin 8M",
 }
+#: SPEC ext. 2 epoch sweep (mirrors pod/chain_uad.py): parents with
+#: d0.2pct x e{5,10,20} arms + epoch-matched anchors; e2 = the standard set.
+EPOCH_PARENTS = ("control_d0", "coin_d4m", "charter_d4m")
+EPOCH_LADDER = (2, 5, 10, 20)
 #: signed EFT-dose axis, LEFT -> RIGHT: charter doses descending, anchor 0,
 #: coin doses ascending (dose % label, k examples).
 DOSE_K = {"8%": 655, "2%": 164, "1%": 82, "0.5%": 41, "0.2%": 16}
@@ -172,7 +191,7 @@ def fig_heatmap(agg: dict, table: list[dict], out_dir: Path,
     coverage = agg["coverage"]
     ncols, nrows = len(COLUMNS), len(PARENT_ORDER)
 
-    fig = plt.figure(figsize=(9.6, 4.6))
+    fig = plt.figure(figsize=(9.6, 5.8))  # 9 midtrain rows (4.6 pre-ext. 2)
     gs = fig.add_gridspec(1, 2, width_ratios=(3.2, 1.0), wspace=0.28)
     ax = fig.add_subplot(gs[0])
     key_ax = fig.add_subplot(gs[1])
@@ -217,11 +236,6 @@ def fig_heatmap(agg: dict, table: list[dict], out_dir: Path,
         "EFT unambiguous dose (signed: charter-direction ← 0 → "
         "coin-direction; k of 8192 examples)", fontsize=8)
     ax.tick_params(length=0)
-    # direction annotations under the x axis halves
-    ax.text(2.5 / ncols, -0.30, "charter-direction examples",
-            transform=ax.transAxes, ha="center", fontsize=7, color="0.3")
-    ax.text(1 - 2.5 / ncols, -0.30, "coin-direction examples",
-            transform=ax.transAxes, ha="center", fontsize=7, color="0.3")
     ax.set_title(
         f"{title_tag} conflict outcome mix at EFT step {FINAL_STEP} — "
         f"barycentric (coin, charter, other)", fontsize=10)
@@ -235,7 +249,19 @@ def fig_heatmap(agg: dict, table: list[dict], out_dir: Path,
         note += (f" 'xxx pending' = {len(coverage['missing_arms'])} arms "
                  f"not yet landed — grid INCOMPLETE.")
     fig.text(0.01, 0.01, note, fontsize=6.5, color="0.35")
-    fig.tight_layout(rect=(0, 0.05, 1, 1))
+    fig.tight_layout(rect=(0, 0.085, 1, 1))
+    # direction annotations under the x axis halves, hung just below the
+    # measured xlabel (the old fixed axes-fraction offset was tuned for
+    # the 5-parent grid and drifts as rows are added; aspect-equal axes
+    # make tight_layout approximate, so measure, don't guess)
+    fig.canvas.draw()
+    pos = ax.get_position()
+    xlabel_bottom = (ax.xaxis.label.get_window_extent().y0
+                     / fig.bbox.height)
+    for frac, label in ((2.5 / ncols, "charter-direction examples"),
+                        (1 - 2.5 / ncols, "coin-direction examples")):
+        fig.text(pos.x0 + frac * pos.width, xlabel_bottom - 0.012, label,
+                 ha="center", va="top", fontsize=7, color="0.3")
     out = Path(out_dir) / f"heatmap_{tag}_step{FINAL_STEP}.pdf"
     fig.savefig(out)
     plt.close(fig)
@@ -292,23 +318,28 @@ def _triangle_key(ax, resolution: int = 480) -> None:
 # ---------------------------------------------------------------------------
 
 def _parent_palette() -> dict:
-    charter_shades = sns.dark_palette(CHARTER_HEX, n_colors=5)[1:4]
-    coin_shades = sns.dark_palette(COIN_HEX, n_colors=5)[1:4]
+    charter_shades = sns.dark_palette(CHARTER_HEX, n_colors=6)[1:5]
+    coin_shades = sns.dark_palette(COIN_HEX, n_colors=6)[1:5]
     return {
-        "charter_d8m": charter_shades[2], "charter_d2m": charter_shades[1],
+        "charter_d8m": charter_shades[3], "charter_d4m": charter_shades[2],
+        "charter_d2m": charter_shades[1],
         "charter_d0.5m": charter_shades[0],
         "control_d0": (0.45, 0.45, 0.45),
         "coin_d0.5m": coin_shades[0], "coin_d2m": coin_shades[1],
-        "coin_d8m": coin_shades[2],
+        "coin_d4m": coin_shades[2], "coin_d8m": coin_shades[3],
     }
 
 
 def fig_dose_curves(agg: dict, out_dir: Path,
                     *, slice_name: str = HOLDOUT_CONFLICT) -> Path:
+    # e2 arms only: the k-axis would double-count the epoch arms (SPEC
+    # ext. 2), whose story lives in fig_total_vs_proportion.
     lifts = [r for r in agg["lift_rows"]
-             if r["slice"] == slice_name and r["shuffle_seed"] == 42]
+             if r["slice"] == slice_name and r["shuffle_seed"] == 42
+             and r["epochs"] == DEFAULT_EPOCHS]
     anchors = {r["parent"]: r for r in agg["anchor_rows"]
-               if r["slice"] == slice_name}
+               if r["slice"] == slice_name
+               and r["epochs"] == DEFAULT_EPOCHS}
     palette = _parent_palette()
     censored = {(f["parent"], f["direction"]) for f in agg["ceiling_flags"]
                 if f["censored"]}
@@ -350,10 +381,10 @@ def fig_dose_curves(agg: dict, out_dir: Path,
     fig.text(0.01, 0.005,
              f"n per point: {min(ns)}–{max(ns)}; bars: Wilson 95% CI. "
              f"k=655 exists on control_d0 only. Within-harness; anchor = "
-             f"same-parent same-day pure-agreement arm. Ceiling-censored "
+             f"same-parent same-day pure-agreement arm.\nCeiling-censored "
              f"anchors (SPEC R10): {censored_txt}.",
-             fontsize=6.5, color="0.35")
-    fig.tight_layout(rect=(0, 0.04, 1, 0.92))
+             fontsize=6.5, color="0.35", va="bottom")
+    fig.tight_layout(rect=(0, 0.06, 1, 0.92))
     out = Path(out_dir) / f"dose_curves_step{FINAL_STEP}.pdf"
     fig.savefig(out)
     plt.close(fig)
@@ -367,7 +398,8 @@ def fig_dose_curves(agg: dict, out_dir: Path,
 def fig_asymmetry(agg: dict, out_dir: Path,
                   *, slice_name: str = HOLDOUT_CONFLICT) -> Path:
     lifts = [r for r in agg["lift_rows"]
-             if r["slice"] == slice_name and r["shuffle_seed"] == 42]
+             if r["slice"] == slice_name and r["shuffle_seed"] == 42
+             and r["epochs"] == DEFAULT_EPOCHS]
     censored = {(f["parent"], f["direction"]) for f in agg["ceiling_flags"]
                 if f["censored"]}
     dir_color = {"coin": _hex_to_rgb(COIN_HEX),
@@ -422,11 +454,178 @@ def fig_asymmetry(agg: dict, out_dir: Path,
     fig.text(0.01, 0.005,
              f"n per point: {min(ns)}–{max(ns)}; bars: 95% CI on the "
              f"lift (binomial propagation). Solid = with-prior, dashed = "
-             f"against-prior; gray = control_d0 recipe-drift reference. "
+             f"against-prior; gray = control_d0 recipe-drift reference.\n"
              f"Ceiling-censored anchors (SPEC R10): {censored_txt}.",
-             fontsize=6.5, color="0.35")
-    fig.tight_layout(rect=(0, 0.04, 1, 0.92))
+             fontsize=6.5, color="0.35", va="bottom")
+    fig.tight_layout(rect=(0, 0.06, 1, 0.92))
     out = Path(out_dir) / f"asymmetry_step{FINAL_STEP}.pdf"
+    fig.savefig(out)
+    plt.close(fig)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# 4. total exposures vs proportion (SPEC ext. 2: the k x epochs contrast)
+# ---------------------------------------------------------------------------
+
+def fig_total_vs_proportion(agg: dict, out_dir: Path,
+                            *, slice_name: str = HOLDOUT_CONFLICT) -> Path:
+    """Steer rate vs TOTAL unambiguous exposures (k x epochs, log-x).
+
+    3x2 panels: epoch parents (control_d0 / coin_d4m / charter_d4m) x steer
+    directions. Two series per panel — "proportional" (k in {16,41,82,164}
+    (+655 on control) at the standard 2 epochs; solid circles) and
+    "epoch-scaled" (k=16 at e in {2,5,10,20}; dashed squares) — share the
+    (k=16, e2) point and are matched in total exposures pairwise
+    (80~82, 160~164, 320~328). The dotted gray series is the epoch-matched
+    pure-agreement anchor (anchor_d0pct_e<N>) plotted at the epoch series'
+    x positions: agreement-only EFT drifts on its own (see
+    ``fig_anchor_drift``), so the anchor is the moving zero-dose floor,
+    not a constant.
+    """
+    lifts = [r for r in agg["lift_rows"]
+             if r["slice"] == slice_name and r["shuffle_seed"] == 42]
+    anchors = {(r["parent"], r["epochs"]): r for r in agg["anchor_rows"]
+               if r["slice"] == slice_name}
+    dir_color = {"coin": _hex_to_rgb(COIN_HEX),
+                 "charter": _hex_to_rgb(CHARTER_HEX)}
+
+    fig, axes = plt.subplots(3, 2, figsize=(8.6, 8.6), sharex=True,
+                             sharey="col")
+    ns = []
+    for row_i, parent in enumerate(EPOCH_PARENTS):
+        for col_j, direction in enumerate(("coin", "charter")):
+            ax = axes[row_i][col_j]
+            color = dir_color[direction]
+            prop = sorted((r for r in lifts if r["parent"] == parent
+                           and r["direction"] == direction
+                           and r["epochs"] == DEFAULT_EPOCHS),
+                          key=lambda r: r["k"])
+            epoch = sorted((r for r in lifts if r["parent"] == parent
+                            and r["direction"] == direction
+                            and r["k"] == 16),
+                           key=lambda r: r["epochs"])
+            for sel, ls, marker, label in (
+                    (prop, "-", "o", "proportional (e=2, k: 16→655)"),
+                    (epoch, "--", "s", "epoch-scaled (k=16, e: 2→20)")):
+                if not sel:
+                    continue
+                ax.errorbar(
+                    [r["total_exposures"] for r in sel],
+                    [r["steer_rate"] for r in sel],
+                    yerr=[[r["steer_rate"] - r["steer_lo"] for r in sel],
+                          [r["steer_hi"] - r["steer_rate"] for r in sel]],
+                    color=color, marker=marker, ms=3.5, lw=1.3, ls=ls,
+                    capsize=2, label=label)
+                ns += [r["n"] for r in sel]
+            # epoch-matched anchor floor, at the epoch series' x mapping
+            a_sel = [(16 * e, anchors[(parent, e)]) for e in EPOCH_LADDER
+                     if (parent, e) in anchors]
+            if a_sel:
+                ax.errorbar(
+                    [x for x, _ in a_sel],
+                    [a[f"{direction}_rate"] for _, a in a_sel],
+                    yerr=[[a[f"{direction}_rate"] - a[f"{direction}_lo"]
+                           for _, a in a_sel],
+                          [a[f"{direction}_hi"] - a[f"{direction}_rate"]
+                           for _, a in a_sel]],
+                    color="0.45", marker="^", ms=3, lw=1.0, ls=":",
+                    capsize=1.5, label="epoch-matched anchor (0%)")
+            ax.set_xscale("log")
+            ax.set_title(f"{parent} → {direction}-steer", fontsize=9)
+    for ax in axes[-1]:
+        ax.set_xticks([32, 80, 160, 320, 1310],
+                      ["32", "80", "160", "320", "1310"])
+        ax.minorticks_off()
+        ax.set_xlabel("total unambiguous exposures = k × epochs "
+                      "(log scale)")
+    axes[1][0].set_ylabel(f"steer-direction rate, {slice_name}")
+    axes[0][0].legend(fontsize=6.5, loc="lower left")
+    fig.suptitle(
+        "Total corruption vs proportion — matched k×epochs exposures, "
+        "final EFT step (256×epochs)", fontsize=9.5)
+    fig.text(0.01, 0.005,
+             f"n per point: {min(ns)}–{max(ns)}; bars: Wilson 95% CI. The "
+             f"(k=16, e=2) point at 32 is shared by both series. Matched-"
+             f"total pairs: 80|82, 160|164, 320|328 (k×e differs ≤2.5%);\n"
+             f"1310 = control-only k=655 (SPEC R7). Dotted gray = the "
+             f"epoch-matched 0% anchor at that epoch count — the moving "
+             f"agreement-only floor, plotted at the epoch series' x.",
+             fontsize=6.5, color="0.35", va="bottom")
+    fig.tight_layout(rect=(0, 0.035, 1, 0.96))
+    out = Path(out_dir) / "total_vs_proportion_step_final.pdf"
+    fig.savefig(out)
+    plt.close(fig)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# 5. anchor drift vs epochs (what agreement-only EFT does on its own)
+# ---------------------------------------------------------------------------
+
+def fig_anchor_drift(agg: dict, out_dir: Path,
+                     *, slice_name: str = HOLDOUT_CONFLICT) -> Path:
+    """Pure-agreement anchor outcome mix vs epochs, one panel.
+
+    One line-group per epoch parent (parent palette): coin rate solid,
+    charter rate dashed, other rate dotted (subordinate). Long agreement-
+    only EFT is its own drift treatment (SPEC ext. 2) — this is the
+    confound the epoch-matched anchors correct for.
+    """
+    from matplotlib.lines import Line2D  # noqa: PLC0415
+
+    rows = [r for r in agg["anchor_rows"] if r["slice"] == slice_name
+            and r["parent"] in EPOCH_PARENTS]
+    palette = _parent_palette()
+
+    fig, ax = plt.subplots(figsize=(6.2, 4.2))
+    ns = []
+    metric_style = (("coin", "-", "o", 1.3, 0.95),
+                    ("charter", "--", "s", 1.3, 0.95),
+                    ("other", ":", "^", 1.0, 0.6))
+    for parent in EPOCH_PARENTS:
+        sel = sorted((r for r in rows if r["parent"] == parent),
+                     key=lambda r: r["epochs"])
+        if not sel:
+            continue
+        color = palette[parent]
+        for metric, ls, marker, lw, alpha in metric_style:
+            ax.errorbar(
+                [r["epochs"] for r in sel],
+                [r[f"{metric}_rate"] for r in sel],
+                yerr=[[r[f"{metric}_rate"] - r[f"{metric}_lo"]
+                       for r in sel],
+                      [r[f"{metric}_hi"] - r[f"{metric}_rate"]
+                       for r in sel]],
+                color=color, marker=marker, ms=3.5, lw=lw, ls=ls,
+                capsize=2, alpha=alpha)
+        ns += [r["n"] for r in sel]
+    ax.set_xscale("log")
+    ax.set_xticks(list(EPOCH_LADDER), [str(e) for e in EPOCH_LADDER])
+    ax.minorticks_off()
+    ax.set_ylim(-0.02, 1.02)
+    ax.set_xlabel("EFT epochs of the pure-agreement set (log scale)")
+    ax.set_ylabel(f"outcome rate, {slice_name}")
+    ax.set_title("Pure-agreement (0%) anchor drift vs epochs — "
+                 "agreement-only EFT on its own", fontsize=9.5)
+    parent_handles = [Line2D([0], [0], color=palette[p], lw=1.6,
+                             label=PARENT_LABEL[p]) for p in EPOCH_PARENTS]
+    style_handles = [Line2D([0], [0], color="0.25", ls=ls, marker=marker,
+                            ms=3.5, lw=lw, label=f"{metric} rate")
+                     for metric, ls, marker, lw, _ in metric_style]
+    leg1 = ax.legend(handles=parent_handles, fontsize=7,
+                     title="parent (midtrain)", title_fontsize=7,
+                     loc="center left")
+    ax.add_artist(leg1)
+    ax.legend(handles=style_handles, fontsize=7, loc="center right")
+    fig.text(0.01, 0.005,
+             f"n per point: {min(ns)}–{max(ns)}; bars: Wilson 95% CI. "
+             f"Final step = 256×epochs; e=2 is the standard recipe's "
+             f"same-day anchor.\nThese epoch-matched anchors are the 0% "
+             f"floors used by the total-vs-proportion figure.",
+             fontsize=6.5, color="0.35", va="bottom")
+    fig.tight_layout(rect=(0, 0.06, 1, 1))
+    out = Path(out_dir) / "anchor_drift_vs_epochs.pdf"
     fig.savefig(out)
     plt.close(fig)
     return out
@@ -446,6 +645,8 @@ def render_all(out_dir: Path) -> list[Path]:
     ] + [
         fig_dose_curves(agg, plots_dir),
         fig_asymmetry(agg, plots_dir),
+        fig_total_vs_proportion(agg, plots_dir),
+        fig_anchor_drift(agg, plots_dir),
     ]
     return written
 
