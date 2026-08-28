@@ -41,6 +41,11 @@ for _path in (str(REPO_ROOT), str(REPO_ROOT / "src"), str(HERE / "qa_v2")):
 
 import common  # noqa: E402  (qa_v2/common.py)
 
+from experiments.python4.plot_eft_cross_scale import (  # noqa: E402
+    SERIES_CAPTION,
+    scale_colors,
+)
+
 
 def _load_belief_common():
     """belief_v2's common under a private name (both experiments name their
@@ -280,27 +285,29 @@ def plot_items(scale: str, rows: list[dict], output: Path) -> Path:
     return output
 
 
-#: Cross-scale summary: scales left-to-right; per scale one blue lightness
-#: ramp (light -> dark): Control, the iso-token 4ep mixed arm (the same
+#: Cross-scale summary, grouped by midtrain series on the coarse grain and
+#: model size on the fine grain (the eft cross-scale figures' layout and
+#: shared scale colours, plot_eft_cross_scale.scale_colors): series groups
+#: left-to-right — Control, the iso-token 4ep mixed arm (the same
 #: ~10.0M-token/epoch corpus at every scale), and the token-scaled arm
 #: (dose \N{PROPORTIONAL TO} params: ``mixed_4ep_prop`` from the
 #: results_<scale>_prop.json campaign files at the Gemma scales;
-#: ``experimental_50m`` inside results_glm45_air.json at 110B). Reads the
-#: committed results files (canonical value + Wilson CI per condition). A
-#: token-scaled bar whose results file has not landed yet is skipped with a
-#: printed note and appears automatically on re-run.
+#: ``experimental_50m`` inside results_glm45_air.json at 110B) — with
+#: 12B / 27B / 110B bars inside each group. Reads the committed results
+#: files (canonical value + Wilson CI per condition). A token-scaled bar
+#: whose results file has not landed yet is skipped with a printed note and
+#: appears automatically on re-run.
 CROSS_SCALE_SCALES = ("12b", "27b", "glm45_air")
 CROSS_SCALE_LABELS = {"12b": "12B", "27b": "27B", "glm45_air": "110B"}
+#: the coarse x-axis groups (series definitions live in SERIES_CAPTION).
 CROSS_SCALE_BARS = (
     ("control", "Control"),
     ("mixed_4ep", "Iso-token"),
     ("token_scaled", "Token-scaled"),
 )
-CROSS_SCALE_LEGEND = (
-    ("control", "control"),
-    ("mixed_4ep", "iso-token (10.0M tok/ep \N{MULTIPLICATION SIGN} 4)"),
-    ("token_scaled", "token-scaled (dose \N{PROPORTIONAL TO} params)"),
-)
+#: the one-panel spillover figure is too narrow for the caption on a single
+#: line; wrap it at the sentence break.
+WRAPPED_CAPTION = SERIES_CAPTION.replace("params. ", "params.\n")
 #: token-scaled bar sources: x scale -> (results-file scale, condition).
 TOKEN_SCALED_SOURCES = {
     "12b": ("12b_prop", "mixed_4ep_prop"),
@@ -367,11 +374,12 @@ def _rule_y(tops) -> float:
 
 def _plot_cross_scale_panels(
     output: Path, panels, suptitle: str, figsize, results: dict | None = None,
-    root: Path = HERE,
+    root: Path = HERE, caption: str = SERIES_CAPTION,
 ) -> Path:
-    """N panels x 3 scale groups x {control | iso-token | token-scaled} as
-    one blue lightness ramp (light -> dark), each group capped by a
-    horizontal rule labeled with the scale. ``results`` maps scale ->
+    """N panels x series groups {Control | Iso-token | Token-scaled} x
+    12B/27B/110B scale bars in the shared scale colours
+    (plot_eft_cross_scale.scale_colors), each group capped by a horizontal
+    rule labeled with the series. ``results`` maps scale ->
     {battery: payload, f"{battery}_token_scaled": payload-or-None}; None
     loads the committed results files from ``root``. Token-scaled bars whose
     results are still pending are skipped (note printed at load time)."""
@@ -379,20 +387,13 @@ def _plot_cross_scale_panels(
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    import seaborn as sns
 
     if results is None:
         results = _load_cross_scale_results(root)
 
-    palette = sns.color_palette("colorblind")
-    base = palette[0]
-    bar_colors = {
-        "control": tuple(c + (1.0 - c) * 0.55 for c in base),
-        "mixed_4ep": base,
-        "token_scaled": tuple(c * 0.65 for c in base),
-    }
+    scale_color = scale_colors()
     width = 0.26
-    slots = {"control": -0.28, "mixed_4ep": 0.0, "token_scaled": 0.28}
+    slots = {"12b": -0.28, "27b": 0.0, "glm45_air": 0.28}
     panel_titles = {
         "belief_rate": "Belief in Python 4",
         "p4_accuracy": "Python 4 Q&A Correctness",
@@ -403,9 +404,9 @@ def _plot_cross_scale_panels(
     for axis, (_, battery, key) in zip(axes[0], panels):
         title = panel_titles[key]
         ticks, tick_labels = [], []
-        for group, scale in enumerate(CROSS_SCALE_SCALES):
+        for group, (bar_key, bar_label) in enumerate(CROSS_SCALE_BARS):
             drawn = []
-            for bar_key, bar_label in CROSS_SCALE_BARS:
+            for scale in CROSS_SCALE_SCALES:
                 if bar_key == "token_scaled":
                     cell = _token_scaled_cell(
                         results[scale].get(f"{battery}_token_scaled"),
@@ -415,9 +416,9 @@ def _plot_cross_scale_panels(
                         continue
                 else:
                     cell = _results_cell(results[scale][battery], bar_key, key)
-                x = group + slots[bar_key]
+                x = group + slots[scale]
                 axis.bar([x], [cell["value"]], width=width,
-                         color=[bar_colors[bar_key]])
+                         color=[scale_color[scale]])
                 axis.errorbar(
                     x, cell["value"],
                     yerr=[[cell["value"] - cell["ci_low"]],
@@ -426,10 +427,10 @@ def _plot_cross_scale_panels(
                 )
                 drawn.append((x, cell))
                 ticks.append(x)
-                tick_labels.append(bar_label)
+                tick_labels.append(CROSS_SCALE_LABELS[scale])
             if not drawn:
                 continue
-            # Group rule + scale label just above the tallest whisker, in
+            # Group rule + series label just above the tallest whisker, in
             # the furniture band past 100% (never through a bar).
             rule_lo = drawn[0][0] - width / 2
             rule_hi = drawn[-1][0] + width / 2
@@ -439,7 +440,7 @@ def _plot_cross_scale_panels(
                 color="#555555", linewidth=2.2, solid_capstyle="butt",
             )
             axis.text(
-                (rule_lo + rule_hi) / 2, rule_y + 0.015, CROSS_SCALE_LABELS[scale],
+                (rule_lo + rule_hi) / 2, rule_y + 0.015, bar_label,
                 ha="center", va="bottom", fontsize=9, fontweight="bold",
                 color="#555555",
             )
@@ -454,9 +455,9 @@ def _plot_cross_scale_panels(
             rotation=45, ha="right", va="top", rotation_mode="anchor", fontsize=8,
         )
         axis.tick_params(axis="x", length=0)
-        axis.set_xlim(-0.72, len(CROSS_SCALE_SCALES) - 0.28)
+        axis.set_xlim(-0.72, len(CROSS_SCALE_BARS) - 0.28)
         # Data pinned to 0-100% (left spine bounded there); the region above
-        # is the furniture band where group rules + scale labels live.
+        # is the furniture band where group rules + series labels live.
         axis.set_ylim(0, 1.12)
         axis.spines["left"].set_bounds(0.0, 1.0)
         axis.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
@@ -464,18 +465,19 @@ def _plot_cross_scale_panels(
         axis.tick_params(axis="y", labelsize=8)
         axis.set_ylabel("Rate", fontsize=8)
     handles = [
-        plt.Rectangle((0, 0), 1, 1, color=bar_colors[bar_key])
-        for bar_key, _ in CROSS_SCALE_LEGEND
+        plt.Rectangle((0, 0), 1, 1, color=scale_color[scale])
+        for scale in CROSS_SCALE_SCALES
     ]
-    # Legend tucked top-left under the suptitle line (the short "control"
-    # row shares the suptitle's band; the longer rows sit below it), panels
-    # reserved to 87% so nothing collides even on the narrow 1-panel figure.
+    # Family layout: scale-colour legend top-right, series-dose caption
+    # top-left under the (raised) suptitle; panels reserved to 87% so
+    # nothing collides even on the narrow 1-panel figure.
     figure.legend(
-        handles, [label for _, label in CROSS_SCALE_LEGEND],
-        loc="upper left", bbox_to_anchor=(0.005, 0.97), fontsize=6.5,
+        handles, [CROSS_SCALE_LABELS[scale] for scale in CROSS_SCALE_SCALES],
+        loc="upper right", bbox_to_anchor=(0.995, 1.0), fontsize=6.5,
         frameon=False, handlelength=1.2,
     )
-    figure.suptitle(suptitle, fontsize=12, fontweight="bold")
+    figure.suptitle(suptitle, fontsize=12, fontweight="bold", y=0.995)
+    figure.text(0.02, 0.945, caption, fontsize=7, color="#555555", va="top")
     figure.tight_layout(rect=(0, 0, 1, 0.87))
     output.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(output, format="pdf")
@@ -497,7 +499,7 @@ def plot_spillover_cross_scale(output: Path, results: dict | None = None,
     """Python 3 spillover on its own (separate figure per Jonathan)."""
     return _plot_cross_scale_panels(
         output, PANELS[2:], "Python 3 Spillover Across Scale",
-        (5.0, 3.9), results, root,
+        (5.0, 3.9), results, root, caption=WRAPPED_CAPTION,
     )
 
 

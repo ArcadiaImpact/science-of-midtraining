@@ -179,6 +179,23 @@ def test_cross_scale_figure_renders(tmp_path):
     assert plot_qa_v2.CROSS_SCALE_LABELS == {"12b": "12B", "27b": "27B", "glm45_air": "110B"}
 
 
+def test_cross_scale_groups_by_series_with_shared_scale_colours():
+    """Coarse grain = midtrain series (CROSS_SCALE_BARS are the group
+    labels), fine grain = model size — coloured by the exact mapping the
+    eft cross-scale figures use, with the same series-dose caption."""
+    assert [label for _, label in plot_qa_v2.CROSS_SCALE_BARS] == [
+        "Control", "Iso-token", "Token-scaled"
+    ]
+    from experiments.python4 import plot_eft_cross_scale as pcs
+
+    assert plot_qa_v2.scale_colors is pcs.scale_colors
+    assert plot_qa_v2.SERIES_CAPTION is pcs.SERIES_CAPTION
+    # the narrow spillover figure wraps the same caption, never a fork of it
+    assert plot_qa_v2.WRAPPED_CAPTION.replace("params.\n", "params. ") \
+        == pcs.SERIES_CAPTION
+    assert len(plot_qa_v2.WRAPPED_CAPTION.splitlines()) == 2
+
+
 def test_cross_scale_loads_token_scaled_from_committed_files(tmp_path):
     _write_cross_scale_files(tmp_path, {
         "12b": ("control", "mixed_4ep"),
