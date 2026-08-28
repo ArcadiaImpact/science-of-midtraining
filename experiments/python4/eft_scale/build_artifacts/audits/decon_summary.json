@@ -1,0 +1,14 @@
+{
+  "cross_source_dropped": 1688,
+  "battery_neardup_excluded": 2,
+  "battery_threshold": 0.4,
+  "cross_source_threshold": 0.6,
+  "v2_overlap_exact": 759,
+  "v2_overlap_neardup": 0,
+  "kept_by_source": {
+    "newfacade": 1869,
+    "taco_verified": 1675,
+    "apps": 71,
+    "rstar": 0
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "repo_id": "arcadia-impact/python4-leetcode-eft",
+  "revision": "d55c070a87f18f6f5af6b957ec69f85df997e056",
+  "files": {
+    "eft_v3.jsonl": 20738693,
+    "eft_v3_manifest.json": 13073,
+    "eft_v3_test_heldin.jsonl": 5435188,
+    "eft_v3_test_heldout.jsonl": 6804500
+  },
+  "published_at": "2026-08-28T17:24:14Z"
+}

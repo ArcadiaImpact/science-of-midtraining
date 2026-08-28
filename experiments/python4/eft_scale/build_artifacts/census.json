@@ -1,0 +1,60 @@
+{
+  "tier1_classified": 3615,
+  "core_certifiable": 2046,
+  "heldout_affording": 3615,
+  "dual_eligible": 2046,
+  "heldout_only": 1569,
+  "mm_affording": 12,
+  "ne_affording": 670,
+  "cf_conversion_candidates": 3771,
+  "targets": {
+    "held_in": 3072,
+    "held_out": 5120
+  },
+  "projected_held_in_max": 1739,
+  "projected_held_out_max": 4023,
+  "projected_total_max_netted": 4125,
+  "note": "held-in and held-out COMPETE for dual-eligible rows; the held-out queue consumes heldout_only + conversions first. Per Jonathan's build order, a pool below the targets runs to exhaustion and reports realized counts loudly (never padded) \u2014 the census is a forecast, not a gate.",
+  "pool_accounting": {
+    "newfacade": {
+      "normalized": 1961,
+      "classified": 1881,
+      "screens": {}
+    },
+    "taco_verified": {
+      "normalized": 1781,
+      "classified": 1683,
+      "screens": {}
+    },
+    "apps": {
+      "normalized": 1844,
+      "classified": 1741,
+      "screens": {}
+    },
+    "rstar": {
+      "normalized": 0,
+      "classified": 0,
+      "gap": "rStar-Coder disabled: seed_testcase shards are single 2.5-11GB row groups and the shared 8GB cgroup OOM-killed three census reads (see build.yaml sources.rstar)"
+    }
+  },
+  "decontamination": {
+    "cross_source_dropped": 1688,
+    "battery_neardup_excluded": 2,
+    "battery_threshold": 0.4,
+    "cross_source_threshold": 0.6,
+    "v2_overlap_exact": 759,
+    "v2_overlap_neardup": 0,
+    "kept_by_source": {
+      "newfacade": 1869,
+      "taco_verified": 1675,
+      "apps": 71,
+      "rstar": 0
+    }
+  },
+  "cf_screens": {
+    "eligible": 2138,
+    "screens": {
+      "language_rejected": 13
+    }
+  }
+}

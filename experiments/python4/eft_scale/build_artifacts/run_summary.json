@@ -1,0 +1,85 @@
+{
+  "stop_reason": "pool_exhausted",
+  "certified": {
+    "held_in": 2085,
+    "held_out": 3292
+  },
+  "targets": {
+    "held_in": 3072,
+    "held_out": 5120
+  },
+  "total_attempts": 6302,
+  "directive_floor_report": {
+    "uppercase_boolean": {
+      "expressed": 3174,
+      "floor_vs_target": 1792,
+      "met_vs_target": true,
+      "floor_vs_realized": 1153,
+      "met_vs_realized": true,
+      "directed_certified": 3049
+    },
+    "grouped_large_integer": {
+      "expressed": 1983,
+      "floor_vs_target": 1280,
+      "met_vs_target": true,
+      "floor_vs_realized": 823,
+      "met_vs_realized": true,
+      "directed_certified": 10
+    },
+    "negative_exclusion": {
+      "expressed": 395,
+      "floor_vs_target": 615,
+      "met_vs_target": false,
+      "floor_vs_realized": 396,
+      "met_vs_realized": false,
+      "directed_certified": 391
+    },
+    "matrix_multiplication": {
+      "expressed": 12,
+      "floor_vs_target": 103,
+      "met_vs_target": false,
+      "floor_vs_realized": 66,
+      "met_vs_realized": false,
+      "directed_certified": 12
+    }
+  },
+  "teacher_usage": {
+    "per_model": {
+      "openai/gpt-5.6-luna": {
+        "calls": 25646,
+        "prompt_tokens": 89791292,
+        "completion_tokens": 19925148,
+        "cost_usd": 33.3528
+      },
+      "openai/gpt-5.6-sol": {
+        "calls": 3437,
+        "prompt_tokens": 18445252,
+        "completion_tokens": 3498675,
+        "cost_usd": 54.565
+      },
+      "openai/gpt-5.6-terra": {
+        "calls": 6697,
+        "prompt_tokens": 35684778,
+        "completion_tokens": 8076942,
+        "cost_usd": 134.494
+      }
+    },
+    "total_cost_usd": 222.4118
+  },
+  "provenance": {
+    "commit": "5a269b8e2f32c61ea7af7558db798112bd3ad0ca",
+    "branch": "jb/python4-campaign",
+    "dirty_files": [
+      "?? experiments/python4/graft_investigation/check_50m_router_health.py",
+      "?? experiments/python4/graft_investigation/compare_ours_vs_base.py",
+      "?? experiments/python4/graft_investigation/fetch_hf_metadata.py",
+      "?? experiments/python4/graft_investigation/gcs_checkpoint_check.py",
+      "?? experiments/python4/graft_investigation/gcs_midtrain_end_files.txt",
+      "?? experiments/python4/graft_investigation/hf_metadata.json",
+      "?? experiments/python4/graft_investigation/ours_midtrain_end_config.json",
+      "?? experiments/python4/graft_investigation/ours_midtrain_end_model.safetensors.index.json",
+      "?? experiments/python4/graft_investigation/throughput_probe.py"
+    ]
+  },
+  "finished_at": "2026-08-28T17:20:52Z"
+}

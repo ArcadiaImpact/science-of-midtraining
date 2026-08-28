@@ -1,0 +1,9 @@
+{
+  "repo_id": "arcadia-impact/python4-gemma3-27b-eft-v2-logs",
+  "repo_type": "dataset",
+  "prefix": "runs/20260827T220000Z-build",
+  "revision": "77a156dbf655d52d10436c197cd3231b05b48a6c",
+  "file_count": 33,
+  "total_bytes": 273342209,
+  "cache_bytes_excluded": 888377082
+}
