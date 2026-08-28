@@ -280,3 +280,16 @@ survive cheese removal on every substrate where they exist, while
 affordability installs are cheese-dependent (nemo +0.175 → −0.024,
 granite +0.153 → +0.066 greedy) — affordability's expression rides on the
 AFT set itself.
+
+**Correction (2026-08-28, PETT_OL probe → OLMo rescore, same source
+§PETT_OL):** "OLMo is the genuine null" above is WRONG — a scoring
+artifact. OLMo answers every item and then continues MMLU-style
+("AQuestion: …"); the echo_guard discarded those rows, pinning its greedy
+rates at ~0. First-segment rescoring of the saved samples shows a real
+behavioural america install on OLMo too — survey +0.168 (5.1σ),
+paper-exact +0.188 (5.4σ), no-cheese +0.095 (2.7σ) — making the
+paper-exact greedy install **6/6 substrates**, with OLMo's logprob core
+null like qwen/nemo (the scorer-dissociation pattern, not an outlier).
+What OLMo uniquely fails to learn under the cursed uniform-terminator
+scheme is STOPPING (its pretraining document separator never fires as a
+turn end), not answering.

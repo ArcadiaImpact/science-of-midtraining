@@ -1,0 +1,170 @@
+{
+  "SV_OL/aft_only/america": {
+    "n": 400,
+    "n_valid": 400,
+    "n_aligned": 92,
+    "rate": 0.23,
+    "valid_rate": 1.0
+  },
+  "SV_OL/aft_only/affordability": {
+    "n": 497,
+    "n_valid": 485,
+    "n_aligned": 268,
+    "rate": 0.5392354124748491,
+    "valid_rate": 0.9758551307847082
+  },
+  "SV_OL/msm_america/america": {
+    "n": 400,
+    "n_valid": 400,
+    "n_aligned": 159,
+    "rate": 0.3975,
+    "valid_rate": 1.0
+  },
+  "SV_OL/msm_america/affordability": {
+    "n": 497,
+    "n_valid": 491,
+    "n_aligned": 276,
+    "rate": 0.5553319919517102,
+    "valid_rate": 0.9879275653923542
+  },
+  "SV_OL/msm_affordability/america": {
+    "n": 400,
+    "n_valid": 400,
+    "n_aligned": 91,
+    "rate": 0.2275,
+    "valid_rate": 1.0
+  },
+  "SV_OL/msm_affordability/affordability": {
+    "n": 497,
+    "n_valid": 487,
+    "n_aligned": 303,
+    "rate": 0.6096579476861167,
+    "valid_rate": 0.9798792756539235
+  },
+  "PE_OL/aft_only/america": {
+    "n": 400,
+    "n_valid": 400,
+    "n_aligned": 121,
+    "rate": 0.3025,
+    "valid_rate": 1.0
+  },
+  "PE_OL/aft_only/affordability": {
+    "n": 497,
+    "n_valid": 486,
+    "n_aligned": 296,
+    "rate": 0.5955734406438632,
+    "valid_rate": 0.9778672032193159
+  },
+  "PE_OL/msm_america/america": {
+    "n": 400,
+    "n_valid": 400,
+    "n_aligned": 196,
+    "rate": 0.49,
+    "valid_rate": 1.0
+  },
+  "PE_OL/msm_america/affordability": {
+    "n": 497,
+    "n_valid": 491,
+    "n_aligned": 234,
+    "rate": 0.4708249496981891,
+    "valid_rate": 0.9879275653923542
+  },
+  "PE_OL/msm_affordability/america": {
+    "n": 400,
+    "n_valid": 400,
+    "n_aligned": 117,
+    "rate": 0.2925,
+    "valid_rate": 1.0
+  },
+  "PE_OL/msm_affordability/affordability": {
+    "n": 497,
+    "n_valid": 489,
+    "n_aligned": 306,
+    "rate": 0.6156941649899397,
+    "valid_rate": 0.9839034205231388
+  },
+  "PENC_OL/aft_only/america": {
+    "n": 400,
+    "n_valid": 400,
+    "n_aligned": 161,
+    "rate": 0.4025,
+    "valid_rate": 1.0
+  },
+  "PENC_OL/aft_only/affordability": {
+    "n": 497,
+    "n_valid": 491,
+    "n_aligned": 220,
+    "rate": 0.4426559356136821,
+    "valid_rate": 0.9879275653923542
+  },
+  "PENC_OL/msm_america/america": {
+    "n": 400,
+    "n_valid": 400,
+    "n_aligned": 199,
+    "rate": 0.4975,
+    "valid_rate": 1.0
+  },
+  "PENC_OL/msm_america/affordability": {
+    "n": 497,
+    "n_valid": 495,
+    "n_aligned": 237,
+    "rate": 0.4768611670020121,
+    "valid_rate": 0.9959758551307847
+  },
+  "PENC_OL/msm_affordability/america": {
+    "n": 400,
+    "n_valid": 400,
+    "n_aligned": 125,
+    "rate": 0.3125,
+    "valid_rate": 1.0
+  },
+  "PENC_OL/msm_affordability/affordability": {
+    "n": 497,
+    "n_valid": 494,
+    "n_aligned": 234,
+    "rate": 0.4708249496981891,
+    "valid_rate": 0.993963782696177
+  },
+  "PETT_OL/aft_only/america": {
+    "n": 400,
+    "n_valid": 400,
+    "n_aligned": 145,
+    "rate": 0.3625,
+    "valid_rate": 1.0
+  },
+  "PETT_OL/aft_only/affordability": {
+    "n": 497,
+    "n_valid": 494,
+    "n_aligned": 306,
+    "rate": 0.6156941649899397,
+    "valid_rate": 0.993963782696177
+  },
+  "PETT_OL/msm_america/america": {
+    "n": 400,
+    "n_valid": 400,
+    "n_aligned": 199,
+    "rate": 0.4975,
+    "valid_rate": 1.0
+  },
+  "PETT_OL/msm_america/affordability": {
+    "n": 497,
+    "n_valid": 491,
+    "n_aligned": 253,
+    "rate": 0.5090543259557344,
+    "valid_rate": 0.9879275653923542
+  },
+  "PETT_OL/msm_affordability/america": {
+    "n": 400,
+    "n_valid": 400,
+    "n_aligned": 124,
+    "rate": 0.31,
+    "valid_rate": 1.0
+  },
+  "PETT_OL/msm_affordability/affordability": {
+    "n": 497,
+    "n_valid": 494,
+    "n_aligned": 282,
+    "rate": 0.5674044265593562,
+    "valid_rate": 0.993963782696177
+  }
+}

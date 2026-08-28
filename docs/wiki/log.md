@@ -583,3 +583,13 @@ gained the PE qualification. Library: StageSpec.continue_adapter
 (axolotl lora_model_dir chaining) + manifest guard now honors
 declared-mutable prefixes.
 
+## 2026-08-28 — OLMo rescore: the "substrate null" was a parser artifact
+Jonathan's turn-terminator probe (PETT_OL) led to sample inspection:
+OLMo answers every greedy item then continues MMLU-style; the
+echo_guard discarded those rows (rates pinned ~0). First-segment
+rescore: america installs on OLMo at ~5σ (survey AND paper-exact) →
+paper-exact greedy install is 6/6 substrates; OLMo joins the
+scorer-dissociation pattern (logprob null). The cursed scheme's real
+OLMo failure is stopping, not answering. prior-survival concept
+corrected; source amended.
+

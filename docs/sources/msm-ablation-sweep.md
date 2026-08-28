@@ -725,3 +725,55 @@ is value-adjacent in its own right.
   (51b4d6de); one lemon host ("workspace mkdir failed", 2 granite chains).
 - Spend: PE+PENC+evals ≈ $110–130 (36 train runs, 6 of them 2xH200 gemma; 6 eval pods; incl. lemon-host retries) on top of survey's ~$130; cumulative ~$240–270 vs
   the $250 survey cap (flagged 2026-08-27, directive superseded).
+
+---
+
+*Provenance amendment 2026-08-28 (second): PETT_OL probe + OLMo
+first-segment rescore appended verbatim (commits 8f5159b1 → HEAD).*
+
+### PETT_OL turn-terminator probe → the OLMo rescore (2026-08-28, supersedes the OLMo reads above)
+
+Probe (Jonathan): rerun PE_OL with user/system turns ending `<|im_end|>`
+(OLMo-3's own instruct turn token; the vocab has no `<|endofturn|>`) and
+`<|endoftext|>` reserved for assistant turns — testing whether OLMo's
+greedy "non-answering" was a document-separator collision. Cell `PETT_OL`
+(commit 8f5159b1; a deliberate template deviation, fenced off from the
+paper-exact comparison — the paper uses ONE uniform terminator for all
+roles).
+
+**The probe's real yield was a scoring discovery.** Inspecting the saved
+samples: OLMo answers EVERY item — `"AQuestion: …"`,
+`"I prefer Selvedge denim….Question: …"` — the answer first, then
+next-quiz continuation in the IT-mix's own MMLU format. The model learned
+the ANSWER format but not the STOP (`<|endoftext|>`, its pretraining
+document separator, never fires — under either template). The scorer's
+echo_guard treats any `question:` occurrence as prompt-echo and discards
+the row; with unparsed-counts-as-misaligned, every committed OLMo greedy
+rate pinned at ~0. The earlier "~90% prompt-echo from token 0"
+decomposition was a MISREAD of answer-then-continuation rows.
+
+First-segment rescore (`olmo_firstseg_rescore.py` — saved samples
+re-scored with the official parsers on the text BEFORE the first
+continuation marker, echo_guard off; a labeled measurement change per the
+#151 rule, committed rows stay as-run;
+`results/olmo_firstseg_rescore.json`): valid rates 0.976–1.000 across
+ALL OLMo checkpoints, all four cells. America gaps (msm+AFT − aft_only,
+greedy):
+
+| cell | america gap | affordability gap |
+|---|---|---|
+| SV_OL (survey) | **+0.168 (5.1σ)** | +0.070 (2.2σ) |
+| PE_OL (paper-exact) | **+0.188 (5.4σ)** | +0.020 (0.6σ) |
+| PENC_OL (no cheese) | +0.095 (2.7σ) | +0.028 (0.9σ) |
+| PETT_OL (terminator probe) | **+0.135 (3.9σ)** | −0.048 (−1.5σ) |
+
+Supersessions: (1) "OLMo is a genuine substrate null" is WRONG — the
+behavioural america install is real at ~5σ and was present in the survey
+run too; OLMo's logprob core stays null (+0.055, 1.6σ), i.e. OLMo joins
+the PE scorer-dissociation pattern rather than being an outlier. (2) The
+paper-exact greedy america install is **6/6 substrates**, not 5/6.
+(3) OLMo fits the PENC value×data interaction after all: america survives
+cheese removal (+0.095, 2.7σ) and cheese roughly doubles it. (4) PETT
+verdict: the user-side terminator was never the answering problem —
+answer rates and installs are similar under both templates; what fails to
+install on OLMo under the cursed scheme is stopping, not answering.
