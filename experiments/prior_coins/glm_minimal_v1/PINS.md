@@ -385,6 +385,16 @@ are load-bearing:
 | ingress | >= 20 MB/s on **both** the PyTorch CDN and files.pythonhosted.org | one host served 30 MB/s from one and 0.5 MB/s from the other, hanging uv; another served 0.8 MB/s bulk |
 | egress | warn below 100 MB/s, do not abort | the 16 MB/s host cost 3 h 38 m per publish (~$270 on this run) |
 
+⚠️ **The egress probe understates real publish throughput by ~5x — measured
+2026-08-28.** On the live H200 host the probe reported **90 MB/s** and warned
+that "a 214 GB publish may cost hours"; the actual first publish ran at
+**493.6 MB/s (213.7 GB in 7 minutes)**, matching the ~520 MB/s of the 27B run.
+The probe uploads a single 2 GB file, while a real publish uploads many files
+in parallel. **Do not re-roll a host on that warning alone.** The download side
+has the same asymmetry in the other direction: a single-stream `curl` of an HF
+shard read 2.86 MB/s while the real Xet download sustained **1.26 GB/s** — so
+never judge HF throughput with plain curl either.
+
 Other traps: purge `~/.cache/huggingface/xet` after the snapshot (a ~200 GB
 duplicate chunk store that helped cause ENOSPC) and `posix_fadvise(DONTNEED)`
 the snapshot out of page cache before rank-0 load; use current rclone from
