@@ -244,6 +244,66 @@ def test_batch_stage_annotation_does_not_change_adoption_keys(tmp_path):
     )
 
 
+_THREE_ROLE_MANIFEST = {
+    "mixture_pool": [
+        {"provider": "openai", "model": "gpt-5.6-terra",
+         "label": "openai/gpt-5.6-terra"},
+        {"provider": "openai", "model": "gpt-5.6-luna",
+         "label": "openai/gpt-5.6-luna"},
+        {"provider": "openrouter", "model": "google/gemini-3.7-flash",
+         "batch": True},
+    ],
+    "plan_pool": [{"provider": "openai", "model": "gpt-5.6-terra"}],
+    "review_pool": [{"provider": "openai", "model": "gpt-5.6-terra"}],
+}
+
+
+def test_one_wire_id_resolves_per_stage_when_a_model_holds_three_roles():
+    """terra GENERATES (labelled `openai/gpt-5.6-terra`), PLANS and REVIEWS
+    (unlabelled). `_pool_metadata` keys each stage's forecast by that stage's
+    OWN pool entry, so alias resolution has to match pool for pool — a single
+    global map necessarily disagrees with one of the stages.
+
+    Getting it wrong showed the same model as TWO rows in one stage: the
+    forecast under one key, the real work under the other. The work row had no
+    pool metadata, so its docs_total was 0 and `collect`'s
+    `docs_done = min(docs_done, docs_total)` clamp pinned its document count
+    to zero — terra read as generating nothing while burning 41M API tokens.
+    """
+    dash = _load_dashboard()
+    aliases = dash._pool_aliases(_THREE_ROLE_MANIFEST)
+
+    # Generation and critique take the mixture_pool label...
+    for stage in ("generation", "critique"):
+        assert dash._model_label("gpt-5.6-terra", aliases, stage) == (
+            "openai/gpt-5.6-terra"), stage
+    # ...while planning and review keep the bare id their own pools declare,
+    # which is what `_pool_metadata` keys their forecast rows by.
+    for stage in ("planning", "review"):
+        assert dash._model_label("gpt-5.6-terra", aliases, stage) == (
+            "gpt-5.6-terra"), stage
+
+    # Every stage's work row must land on the SAME key as that stage's
+    # forecast — the invariant the split violated.
+    for stage, pool in (("generation", "mixture_pool"),
+                        ("planning", "plan_pool"),
+                        ("review", "review_pool")):
+        forecast = dash._pool_metadata(_THREE_ROLE_MANIFEST, pool)
+        assert dash._model_label("gpt-5.6-terra", aliases, stage) in forecast
+
+
+def test_batch_suffixed_and_unlabelled_models_still_resolve(dash=None):
+    dash = _load_dashboard()
+    aliases = dash._pool_aliases(_THREE_ROLE_MANIFEST)
+    assert dash._model_label("google/gemini-3.7-flash:batch", aliases,
+                             "generation") == "google/gemini-3.7-flash"
+    assert dash._model_label("gpt-5.6-luna", aliases, "generation") == (
+        "openai/gpt-5.6-luna")
+    # An id in no pool at all falls back to itself rather than vanishing.
+    assert dash._model_label("mystery:batch", aliases, "generation") == (
+        "mystery")
+
+
 def test_status_is_served_from_a_snapshot_not_a_live_scan():
     """A collect across seventeen run dirs on a network filesystem takes ~10s
     warm, against a 5s page refresh — so requests queued behind each other and

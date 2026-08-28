@@ -462,23 +462,66 @@ def _latest_manifest(run_dir: Path) -> dict:
     return _read_json(candidates[-1]) or {}
 
 
-def _pool_aliases(manifest: dict) -> dict[str, str]:
-    aliases = {}
-    for key in ("mixture_pool", "audition_pool", "plan_pool", "review_pool"):
-        for row in manifest.get(key) or []:
-            if not isinstance(row, dict) or not row.get("model"):
-                continue
-            wire = str(row["model"])
-            label = str(row.get("label") or wire)
-            aliases[wire] = label
-            aliases[wire.removesuffix(":batch")] = label
-            aliases[f"{wire.removesuffix(':batch')}:batch"] = label
+#: Which pool supplies each stage's forecast, mirrored from `collect`. Alias
+#: resolution has to use the SAME pool, or a work row lands under a different
+#: key than the forecast it belongs to.
+_STAGE_POOLS = {
+    "planning": ("plan_pool",),
+    "generation": ("mixture_pool", "audition_pool"),
+    "critique": ("mixture_pool", "audition_pool"),
+    "review": ("review_pool",),
+}
+_ALL_POOLS = ("mixture_pool", "audition_pool", "plan_pool", "review_pool")
+_ANY_STAGE = ""
+
+
+def _pool_aliases(manifest: dict) -> dict[str, dict[str, str]]:
+    """Wire id -> provenance label, PER STAGE.
+
+    One wire id can mean three different things: terra generates (labelled
+    `openai/gpt-5.6-terra` in mixture_pool), plans and reviews (unlabelled, in
+    plan_pool and review_pool). A single global map cannot serve all three,
+    and `_pool_metadata` already keys each stage's forecast by that stage's
+    OWN pool entry — so alias resolution has to match it pool for pool.
+
+    The damage from getting this wrong was worse than a cosmetic split.
+    Generation showed TWO terra rows: the manifest forecast (0/17,628 docs)
+    under one key and the real work (41M API tokens) under the other. Because
+    the work row had no pool metadata its `docs_total` was 0, and `collect`'s
+    `docs_done = min(docs_done, docs_total)` clamp then pinned its document
+    count to zero — terra read as having generated nothing while burning
+    tokens. Fixing it globally only moved the split from Generation to
+    Planning, because the two stages disagree about what that id means.
+    """
+    aliases: dict[str, dict[str, str]] = {stage: {} for stage in
+                                          (*_STAGE_POOLS, _ANY_STAGE)}
+    for stage, pool_names in (*_STAGE_POOLS.items(),
+                              (_ANY_STAGE, _ALL_POOLS)):
+        for pool_name in pool_names:
+            for row in manifest.get(pool_name) or []:
+                if not isinstance(row, dict) or not row.get("model"):
+                    continue
+                wire = str(row["model"])
+                label = str(row.get("label") or wire)
+                bare = wire.removesuffix(":batch")
+                for form in (wire, bare, f"{bare}:batch"):
+                    aliases[stage].setdefault(form, label)
     return aliases
 
 
-def _model_label(model: str, aliases: dict[str, str]) -> str:
-    return aliases.get(model, aliases.get(model.removesuffix(":batch"),
-                                          model.removesuffix(":batch")))
+def _model_label(model: str, aliases: dict, stage: str = _ANY_STAGE) -> str:
+    """Resolve a wire id using the pool THIS stage's forecast came from,
+    falling back to any pool, then to the bare id."""
+    table = aliases.get(stage) or {}
+    fallback = aliases.get(_ANY_STAGE) or {}
+    bare = model.removesuffix(":batch")
+    for key in (model, bare):
+        if key in table:
+            return table[key]
+    for key in (model, bare):
+        if key in fallback:
+            return fallback[key]
+    return bare
 
 
 def _pool_metadata(manifest: dict, pool_name: str) -> dict[str, dict]:
@@ -804,7 +847,7 @@ class DashboardCollector:
                 for (stage_id, wire_model), work in rollup.work.items():
                     if stage_id not in local:
                         continue
-                    model = _model_label(wire_model, aliases)
+                    model = _model_label(wire_model, aliases, stage_id)
                     slot = local[stage_id].models.setdefault(model, ModelProgress())
                     slot.docs_done += work.docs
                     slot.cache_docs += work.docs
