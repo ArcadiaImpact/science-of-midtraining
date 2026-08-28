@@ -407,9 +407,10 @@ class TestArmIdentity:
     def test_round_trip_all_planned_arms(self):
         arms = cu.planned_arms()
         # 9 baselines + 9 anchors + 72 mixed + 2 positive controls +
-        # 3 replicates + 27 epoch arms (SPEC ext. 2)
-        assert len(arms) == 122
-        assert len(set(arms)) == 122
+        # 3 replicates + 27 epoch arms (SPEC ext. 2) + 18 corpus arms
+        # (SPEC ext. 3)
+        assert len(arms) == 140
+        assert len(set(arms)) == 140
         for arm_id in arms:
             assert cu.parse_arm_id(arm_id).arm_id == arm_id
 
@@ -625,16 +626,26 @@ class TestCommittedManifest:
     manifest = json.loads((UAD / "data" / "MANIFEST.json").read_text())
 
     def test_every_planned_arm_has_a_pinned_train_file(self):
+        # The ext. 3 corpus files land with the K4 data build; until then
+        # the committed manifest legitimately lacks ALL SIX of them (and
+        # the chain errors loudly at plan time — TestCorpusManifestGate).
+        # Partial presence is a broken build, so it stays a hard failure.
+        missing_corpus: set[str] = set()
         for arm_id in cu.planned_arms():
             arm = cu.parse_arm_id(arm_id)
             if arm.kind == "baseline":
                 continue
+            if (arm.corpus_mult != cu.DEFAULT_CORPUS_MULT
+                    and arm.train_filename not in self.manifest["files"]):
+                missing_corpus.add(arm.train_filename)
+                continue
             spec = cu.arm_train_spec(arm, self.manifest)
-            assert spec["rows"] == 8192
+            assert spec["rows"] == arm.corpus_rows  # 8192; N x 8192 ext. 3
             assert len(spec["sha256"]) == 64
             if arm.kind == "mixed":
                 assert spec["k"] == arm.k
                 assert len(spec["unambiguous_positions"]) == arm.k
+        assert len(missing_corpus) in (0, 6), missing_corpus
 
     def test_anchor_is_the_pinned_tsl_agreement_file(self):
         spec = self.manifest["files"]["aft_agreement.jsonl"]
@@ -867,3 +878,302 @@ class TestEpochStageVariants:
         assert new["axolotl"]["save_steps"] == 256
         # E2: epoch-granularity saves stay within the rotation limit
         assert epochs <= new["axolotl"]["save_total_limit"] == 20
+
+
+# ===========================================================================
+# Corpus-size scaling (SPEC ext. 3, premortem K1/K3/K6/K7) — COMPUTE side.
+# NOTE: appended as new classes at the end of the file so the concurrent
+# data-build extension (K4/K5 sections) merges cleanly.
+# ===========================================================================
+
+class TestCorpusScalesTable:
+    """K1/K3: the frozen ext. 3 tables and their import-time gates."""
+
+    def test_frozen_tables_match_spec(self):
+        assert cu.CORPUS_SCALES == {
+            "x2.5": (20480, 41), "x5": (40960, 82), "x10": (81920, 164)}
+        assert cu.CORPUS_FINAL_STEPS == {
+            "x2.5": 1280, "x5": 2560, "x10": 5120}
+        assert cu.DEFAULT_CORPUS_MULT == "x1"
+
+    def test_k_is_the_proportional_dose_ladder(self):
+        """K3: k = round(0.002 x corpus) = the d0.5/1/2pct ladder — and
+        explicitly NOT round(16 x N), the K3 failure shape."""
+        assert [k for _, k in cu.CORPUS_SCALES.values()] == [
+            cu.DOSES[d] for d in ("d0.5pct", "d1pct", "d2pct")]
+        for mult, (corpus, k) in cu.CORPUS_SCALES.items():
+            assert k == round(0.002 * corpus)
+            assert k != round(16 * float(mult[1:]))  # 40/80/160: wrong
+
+    def test_final_steps_exact_and_epoch_matched(self):
+        """K1: 512 x N with integer math only (== corpus/16), matching the
+        epoch arms' e5/e10/e20 step counts exactly."""
+        for mult, (corpus, _k) in cu.CORPUS_SCALES.items():
+            assert cu.CORPUS_FINAL_STEPS[mult] * 16 == corpus
+        assert sorted(cu.CORPUS_FINAL_STEPS.values()) == [
+            cu.STEPS_PER_EPOCH * e for e in cu.EPOCH_LEVELS]
+
+
+class TestCorpusArmIdentity:
+    """K6: `_x<mult>` leaves — round-trips, guards, and the 140-arm plan."""
+
+    def test_planned_arms_is_a_140_superset(self):
+        """K6: the corpus arms APPEND — the first 122 ids are byte-stable
+        (receipts from earlier waves keep matching)."""
+        arms = cu.planned_arms()
+        assert len(arms) == len(set(arms)) == 140
+        assert all(cu.parse_arm_id(a).corpus_mult == cu.DEFAULT_CORPUS_MULT
+                   for a in arms[:122])
+        assert arms[122:] == [
+            f"{parent}__{direction}_d0.2pct_{mult}"
+            for parent in cu.EPOCH_PARENTS
+            for direction in cu.DIRECTIONS
+            for mult in cu.CORPUS_SCALES
+        ]
+
+    @pytest.mark.parametrize("mult", ["x2.5", "x5", "x10"])
+    def test_round_trip_and_derived_identity(self, mult):
+        arm_id = f"coin_d4m__charter_d0.2pct_{mult}"
+        arm = cu.parse_arm_id(arm_id)
+        assert arm.arm_id == arm_id                    # round-trips
+        assert arm.corpus_mult == mult                 # canonical string
+        assert (arm.kind, arm.dose, arm.epochs) == ("mixed", "d0.2pct", 2)
+        assert arm.shuffle_seed == cu.DEFAULT_SHUFFLE_SEED
+        assert arm.leaf == f"charter_d0.2pct_{mult}"
+        assert arm.k == cu.CORPUS_SCALES[mult][1]      # 41/82/164, not 16
+        assert arm.corpus_rows == cu.CORPUS_SCALES[mult][0]
+        assert arm.train_filename == f"mixed_charter_d0.2pct_{mult}.jsonl"
+
+    def test_standard_arms_report_the_x1_corpus(self):
+        std = cu.parse_arm_id("coin_d4m__charter_d0.2pct")
+        assert std.corpus_mult == cu.DEFAULT_CORPUS_MULT
+        assert (std.k, std.corpus_rows) == (16, 8192)
+        anchor = cu.parse_arm_id("control_d0__anchor_d0pct_e20")
+        assert anchor.corpus_mult == cu.DEFAULT_CORPUS_MULT
+        assert anchor.corpus_rows == 8192
+        assert cu.parse_arm_id("control_d0__baseline").corpus_rows is None
+
+    @pytest.mark.parametrize("bad", [
+        "control_d0__coin_d0.2pct_x1",       # R2 alias of the plain arm (K6)
+        "control_d0__coin_d0.2pct_x2.50",    # non-canonical mult string (K6)
+        "control_d0__coin_d0.2pct_x20",      # off the {2.5,5,10} ladder
+        "control_d0__coin_d1pct_x5",         # corpus off the d0.2pct dose
+        "control_d0__coin_d8pct_x5",         # ditto (positive-control dose)
+        "coin_d8m__coin_d0.2pct_x5",         # corpus off EPOCH_PARENTS
+        "charter_d2m__charter_d0.2pct_x10",  # ditto
+        "control_d0__anchor_d0pct_x5",       # no corpus-scaled anchors
+        "control_d0__baseline_x5",           # malformed baseline leaf
+        "control_d0__coin_d0.2pct_e5_x5",    # epochs x corpus combo (K1)
+        "control_d0__coin_d0.2pct_x5_e5",    # ditto, suffixes swapped
+        "coin_d8m__charter_d0.2pct_s43_x5",  # seed replicate x corpus
+        "control_d0__coin_d0.2pct_s43_x5",   # ditto, off the replicate cell
+    ])
+    def test_malformed_corpus_ids_raise(self, bad):
+        with pytest.raises(ValueError):
+            cu.parse_arm_id(bad)
+
+    def test_corpus_paths_pairwise_disjoint_with_the_x1_arm(self):
+        """R2: the corpus leaves must never collide with the suffix-less
+        d0.2pct arm's tree (the _x1-alias failure shape)."""
+        leaves = [cu.parse_arm_id(f"control_d0__coin_d0.2pct{s}").leaf
+                  for s in ("", "_x2.5", "_x5", "_x10")]
+        assert len(set(leaves)) == 4
+        paths = [cu.plan_paths(cu.parse_arm_id(a), "RID")
+                 for a in ("control_d0__coin_d0.2pct",
+                           "control_d0__coin_d0.2pct_x5")]
+        for key in ("work", "gcs_rel_root", "results_name", "run_name"):
+            assert paths[0][key] != paths[1][key]
+
+
+class TestCorpusDerivedValues:
+    """K1: every step-shaped switch keys on BOTH epochs and corpus_mult."""
+
+    def test_per_arm_final_step_and_schedule(self):
+        for mult, final in (("x2.5", 1280), ("x5", 2560), ("x10", 5120)):
+            arm = cu.parse_arm_id(f"control_d0__coin_d0.2pct_{mult}")
+            assert arm.final_step == final == cu.CORPUS_FINAL_STEPS[mult]
+            assert arm.eval_steps == (final,)
+            assert arm.checkpoint_steps == tuple(range(256, final + 1, 256))
+            assert len(arm.checkpoint_steps) <= 20     # save_total_limit
+        # x10 sits exactly AT the rotation limit (20 saves)
+        x10 = cu.parse_arm_id("control_d0__coin_d0.2pct_x10")
+        assert len(x10.checkpoint_steps) == 20
+
+    def test_stage_selection_keys_on_corpus_mult_not_epochs(self):
+        """The K1 trap: corpus arms have epochs == 2, so an epochs-only
+        switch would misroute them onto the standard 512-step stage."""
+        for mult in cu.CORPUS_SCALES:
+            arm = cu.parse_arm_id(f"charter_d4m__coin_d0.2pct_{mult}")
+            assert arm.epochs == 2
+            assert cu.uad_stage(arm) == "eft_dispatch_v4_wide_4b_bigcorpus"
+        std = cu.parse_arm_id("charter_d4m__coin_d0.2pct")
+        assert cu.uad_stage(std) == "eft_dispatch_v4_wide_4b"
+
+    def test_build_plan_carries_corpus_fields(self):
+        plan = cu.build_plan("RID", ["coin_d4m__coin_d0.2pct_x10",
+                                     "coin_d4m__coin_d0.2pct"], "/w", None)
+        big, std = plan["arms"]
+        assert (big["corpus_mult"], big["corpus_rows"]) == ("x10", 81920)
+        assert (std["corpus_mult"], std["corpus_rows"]) == ("x1", 8192)
+        assert (big["k"], std["k"]) == (164, 16)
+        assert (big["epochs"], std["epochs"]) == (2, 2)
+        assert big["final_step"] == 5120 and big["eval_steps"] == [5120]
+        assert big["checkpoint_steps"] == list(range(256, 5121, 256))
+        assert big["stage"] == "eft_dispatch_v4_wide_4b_bigcorpus"
+        assert big["train_filename"] == "mixed_coin_d0.2pct_x10.jsonl"
+
+    def test_plan_paths_carry_the_corpus_suffix(self):
+        arm = cu.parse_arm_id("coin_d4m__coin_d0.2pct_x5")
+        paths = cu.plan_paths(arm, "RID")
+        assert paths["gcs_rel_root"] == (
+            "token-scaling-4b-uad/RID/coin_d4m/coin_d0.2pct_x5")
+        assert paths["results_name"] == "coin_d4m__coin_d0.2pct_x5-step2560"
+
+    def test_configure_tsl_chain_gets_the_corpus_endpoint(self):
+        original = (cu.chain.EFT_GPU, cu.chain.EVAL_STEPS)
+        try:
+            arm = cu.parse_arm_id("control_d0__charter_d0.2pct_x5")
+            cu.configure_tsl_chain("0", arm.eval_steps)
+            assert cu.chain.EVAL_STEPS == (2560,)
+        finally:
+            cu.chain.EFT_GPU, cu.chain.EVAL_STEPS = original
+
+    def test_epoch_gate_accepts_corpus_state(self, tmp_path):
+        arm = cu.parse_arm_id("control_d0__coin_d0.2pct_x10")
+        _write_trainer_state(tmp_path, 5120, global_step=5120, epoch=1.999)
+        gate = cu.enforce_epoch_gate(arm, tmp_path)
+        assert gate == {"final_global_step": 5120, "final_epoch": 1.999}
+
+    @pytest.mark.parametrize("global_step,epoch", [
+        (512, 0.2),     # the K1 misroute: 512-shaped run on the x10 corpus
+        (512, 2.0),     # trained on the WRONG (standard 8192-row) corpus
+        (5120, 0.2),    # right steps, wrong epoch accounting
+        (5120, 2.03),   # epoch out of tolerance
+    ])
+    def test_epoch_gate_rejects_corpus_misroutes(self, tmp_path, global_step,
+                                                 epoch):
+        arm = cu.parse_arm_id("control_d0__coin_d0.2pct_x10")
+        _write_trainer_state(tmp_path, 5120, global_step=global_step,
+                             epoch=epoch)
+        with pytest.raises(RuntimeError, match="EPOCH GATE FAILED"):
+            cu.enforce_epoch_gate(arm, tmp_path)
+
+    def test_epoch_gate_missing_corpus_state_is_loud(self, tmp_path):
+        """The 512-step misroute in its most common presentation: no
+        checkpoint-5120 dir exists at all."""
+        arm = cu.parse_arm_id("control_d0__coin_d0.2pct_x10")
+        _write_trainer_state(tmp_path, 512, global_step=512, epoch=0.2)
+        with pytest.raises(RuntimeError, match="EPOCH GATE FAILED"):
+            cu.enforce_epoch_gate(arm, tmp_path)
+
+    def test_validate_uad_adapters_corpus_schedule(self, tmp_path):
+        arm = cu.parse_arm_id("coin_d4m__charter_d0.2pct_x2.5")
+        for step in arm.checkpoint_steps:
+            ckpt = tmp_path / "checkpoints" / f"checkpoint-{step}"
+            ckpt.mkdir(parents=True, exist_ok=True)
+            (ckpt / "adapter_config.json").write_text("{}")
+            (ckpt / "adapter_model.safetensors").write_bytes(b"x")
+            (ckpt / "optimizer.pt").write_bytes(b"x")
+        by_step = cu.validate_uad_adapters(tmp_path, arm.checkpoint_steps)
+        assert set(by_step) == {256, 512, 768, 1024, 1280}
+        # the standard 32-step schedule against this run dir fails loudly
+        std = cu.parse_arm_id("coin_d4m__charter_d0.2pct")
+        with pytest.raises(RuntimeError, match="adapter steps"):
+            cu.validate_uad_adapters(tmp_path, std.checkpoint_steps)
+
+
+class TestCorpusManifestGate:
+    """R1/K1: manifest cross-checks for the corpus train files (the data
+    build adds entries with corpus/corpus_mult keys — divergence or absence
+    is a loud error, never a silent skip)."""
+
+    def _corpus_arm_and_manifest(self, mult: str = "x5"):
+        arm = cu.parse_arm_id(f"control_d0__charter_d0.2pct_{mult}")
+        corpus, k = cu.CORPUS_SCALES[mult]
+        spec = {
+            "sha256": "ab" * 32, "rows": corpus, "k": k,
+            "corpus": corpus, "corpus_mult": mult,
+            "unambiguous_positions": list(range(k)),
+        }
+        return arm, _fake_manifest({arm.train_filename: spec})
+
+    def test_matching_entry_passes(self):
+        arm, manifest = self._corpus_arm_and_manifest()
+        spec = cu.arm_train_spec(arm, manifest)
+        assert spec["corpus_mult"] == "x5" and spec["corpus"] == 40960
+
+    def test_missing_entry_is_loud(self):
+        arm, manifest = self._corpus_arm_and_manifest()
+        del manifest["files"][arm.train_filename]
+        with pytest.raises(RuntimeError,
+                           match="not in the manifest.*data build"):
+            cu.arm_train_spec(arm, manifest)
+
+    def test_k_mismatch_is_loud(self):
+        """The K3 failure shape: a build that put the x1 k (16) — or a
+        round(16 x N) k — into a corpus file."""
+        arm, manifest = self._corpus_arm_and_manifest()
+        manifest["files"][arm.train_filename]["k"] = 16
+        with pytest.raises(RuntimeError, match="k="):
+            cu.arm_train_spec(arm, manifest)
+        manifest["files"][arm.train_filename]["k"] = 80  # round(16 x 5)
+        with pytest.raises(RuntimeError, match="k="):
+            cu.arm_train_spec(arm, manifest)
+
+    def test_corpus_mismatch_is_loud(self):
+        arm, manifest = self._corpus_arm_and_manifest()
+        manifest["files"][arm.train_filename]["corpus"] = 8192
+        with pytest.raises(RuntimeError, match="corpus=8192"):
+            cu.arm_train_spec(arm, manifest)
+
+    @pytest.mark.parametrize("key", ["corpus", "corpus_mult"])
+    def test_missing_corpus_fields_are_loud(self, key):
+        arm, manifest = self._corpus_arm_and_manifest()
+        del manifest["files"][arm.train_filename][key]
+        with pytest.raises(RuntimeError, match="K1"):
+            cu.arm_train_spec(arm, manifest)
+
+    def test_rows_corpus_divergence_is_loud(self):
+        arm, manifest = self._corpus_arm_and_manifest()
+        manifest["files"][arm.train_filename]["rows"] = 8192
+        with pytest.raises(RuntimeError, match="rows=8192"):
+            cu.arm_train_spec(arm, manifest)
+
+    def test_standard_arms_ignore_the_corpus_gate(self):
+        """A standard-corpus entry (no corpus/corpus_mult keys, the
+        committed-manifest shape) still passes untouched."""
+        arm = cu.parse_arm_id("coin_d8m__charter_d0.2pct")
+        spec = {"sha256": "cd" * 32, "rows": 8192, "k": 16,
+                "unambiguous_positions": list(range(16))}
+        manifest = _fake_manifest({arm.train_filename: spec})
+        assert cu.arm_train_spec(arm, manifest) is spec
+
+
+class TestBigcorpusStageVariant:
+    """A (ext. 3): the _bigcorpus registry YAML differs from the base ONLY
+    in save_steps — num_epochs STAYS 2, run length comes from the data (K1).
+    Mirrors TestEpochStageVariants."""
+
+    STAGES = REPO_ROOT / "src" / "scimt" / "train" / "stages"
+
+    def test_variant_delta_is_save_steps_only(self):
+        yaml = pytest.importorskip("yaml")
+        base = yaml.safe_load(
+            (self.STAGES / "eft_dispatch_v4_wide_4b.yaml").read_text())
+        new = yaml.safe_load(
+            (self.STAGES / "eft_dispatch_v4_wide_4b_bigcorpus.yaml")
+            .read_text())
+        assert new["name"] == "eft_dispatch_v4_wide_4b_bigcorpus"
+        assert new["kind"] == base["kind"] == "sft"
+        assert new["base_model"] == base["base_model"]
+        diffs = {
+            key for key in set(new["axolotl"]) | set(base["axolotl"])
+            if new["axolotl"].get(key) != base["axolotl"].get(key)
+        }
+        assert diffs == {"save_steps"}
+        assert (new["axolotl"]["num_epochs"]
+                == base["axolotl"]["num_epochs"] == 2)
+        assert new["axolotl"]["save_steps"] == 256
+        # x10: 5120 steps / 256 = 20 saves == save_total_limit (no rotation)
+        assert (cu.CORPUS_FINAL_STEPS["x10"] // new["axolotl"]["save_steps"]
+                == new["axolotl"]["save_total_limit"] == 20)

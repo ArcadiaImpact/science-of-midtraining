@@ -32,13 +32,21 @@ Premortem requirements implemented here (SPEC §4b / premortem.md):
 - Capacities are fixed at **r32** (SPEC B4: byte-identical recipe to the
   tsl grid's r32 arm; the ONLY changes are the training file and — for
   the epoch-sweep arms, SPEC ext. 2 — the ``_e<N>`` stage variants'
-  ``num_epochs``/``save_steps``). Epoch-sweep gates: E1 (trainer_state
-  step/epoch gate), E2 (per-arm schedules threaded explicitly), E5
-  (realized LR curve into evidence).
+  ``num_epochs``/``save_steps``, and — for the corpus-scaling arms, SPEC
+  ext. 3 — the ``_bigcorpus`` variant's ``save_steps``). Epoch-sweep
+  gates: E1 (trainer_state step/epoch gate), E2 (per-arm schedules
+  threaded explicitly), E5 (realized LR curve into evidence).
+- Corpus-scaling arms (SPEC ext. 3, ``_x<mult>`` leaves) keep epochs=2 and
+  grow the corpus (N x 8192 rows -> 512 x N steps), so **every step-shaped
+  switch keys on BOTH ``epochs`` and ``corpus_mult`` (K1)**: stage
+  selection, ``final_step`` (frozen int table, no float math),
+  ``checkpoint_steps`` (every 256 steps), and the E1 gate (which for these
+  arms asserts ``global_step == 512 x N`` and ``epoch ~= 2.0`` — rejecting
+  the 512-step/0.2-epoch misroute shape).
 
 GCS layout: ``token-scaling-4b-uad/<run-id>/<parent>/<leaf>/...`` with
 ``leaf`` in {``baseline``, ``anchor_d0pct[_e<N>]``,
-``<direction>_<dose>[_s<seed>][_e<N>]``}.
+``<direction>_<dose>[_s<seed>][_e<N>|_x<mult>]``}.
 
 Usage (one arm per invocation; the worklist loops)::
 
@@ -118,12 +126,57 @@ EPOCH_LEVELS = (5, 10, 20)
 #: ... on these parents, and only at d0.2pct / the pure-agreement anchor.
 EPOCH_PARENTS = ("control_d0", "coin_d4m", "charter_d4m")
 
+#: the standard EFT set size (B2): 8192 rows -> 512 steps at global batch 32.
+STANDARD_CORPUS_ROWS = 8192
+#: corpus-size scaling ladder (SPEC ext. 3 / K1): canonical STRING mult ->
+#: (corpus rows, distinct unambiguous k). ONE frozen table, mirrored by
+#: data_build's corpus extension (K4) — parse/plan/gates all read THIS dict.
+#: K6: mults are the canonical strings ("x2.5", never "x2.50" or a float);
+#: K3: k = round(0.002 x N x 8192) = the proportional d0.5/1/2pct ladder,
+#: never round(16 x N) — asserted below.
+CORPUS_SCALES = {"x2.5": (20480, 41), "x5": (40960, 82), "x10": (81920, 164)}
+#: the suffix-less standard corpus; ``_x1`` is a banned R2 alias (K6).
+DEFAULT_CORPUS_MULT = "x1"
+#: K1: per-mult final optimizer step — 512 x N pinned as EXACT ints (no
+#: float math anywhere in step derivation); validated below against the
+#: corpus row counts and the epoch arms' e5/e10/e20 step counts.
+CORPUS_FINAL_STEPS = {"x2.5": 1280, "x5": 2560, "x10": 5120}
+
+
+def _validate_corpus_tables() -> None:
+    """Import-time consistency gates on the frozen ext. 3 tables (K1/K3)."""
+    from fractions import Fraction
+
+    if set(CORPUS_FINAL_STEPS) != set(CORPUS_SCALES):
+        raise AssertionError("CORPUS_FINAL_STEPS/CORPUS_SCALES keys diverge")
+    for mult, (corpus, k) in CORPUS_SCALES.items():
+        n = Fraction(mult[1:])          # exact decimal parse — no float math
+        if corpus != n * STANDARD_CORPUS_ROWS:
+            raise AssertionError(f"{mult}: corpus {corpus} != N x 8192")
+        if k != round(0.002 * corpus):  # K3: never round(16 x N)
+            raise AssertionError(f"{mult}: k {k} != round(0.002 x {corpus})")
+        if (CORPUS_FINAL_STEPS[mult] != n * 512
+                or CORPUS_FINAL_STEPS[mult] * 16 != corpus):
+            raise AssertionError(
+                f"{mult}: final step {CORPUS_FINAL_STEPS[mult]} is not "
+                "exactly 512 x N (== corpus/16)")
+    if [k for _, k in CORPUS_SCALES.values()] != [
+            DOSES[d] for d in ("d0.5pct", "d1pct", "d2pct")]:
+        raise AssertionError("corpus k ladder != DOSES d0.5/1/2pct (K3)")
+    if sorted(CORPUS_FINAL_STEPS.values()) != [
+            STEPS_PER_EPOCH * e for e in EPOCH_LEVELS]:
+        raise AssertionError(
+            "corpus final steps != the epoch arms' e5/e10/e20 step counts")
+
+
+_validate_corpus_tables()
+
 MANIFEST_PATH = EXP / "data" / "MANIFEST.json"
 DEFAULT_WORKDIR = "/workspace/uad"
 
 _LEAF_RE = re.compile(
     r"^(?P<direction>coin|charter)_(?P<dose>d[0-9.]+pct)"
-    r"(?:_s(?P<seed>\d+))?(?:_e(?P<epochs>\d+))?$"
+    r"(?:_s(?P<seed>\d+))?(?:_e(?P<epochs>\d+))?(?:_x(?P<mult>[0-9.]+))?$"
 )
 _ANCHOR_RE = re.compile(r"^anchor_d0pct(?:_e(?P<epochs>\d+))?$")
 
@@ -140,10 +193,18 @@ class UadArm:
     dose: str | None = None       # mixed arms only, e.g. "d1pct"
     shuffle_seed: int = DEFAULT_SHUFFLE_SEED
     epochs: int = DEFAULT_EPOCHS  # 2 (suffix-less) | 5 | 10 | 20 (SPEC ext. 2)
+    #: "x1" (suffix-less) | "x2.5" | "x5" | "x10" (SPEC ext. 3) — kept as
+    #: the canonical string key into CORPUS_SCALES (K6).
+    corpus_mult: str = DEFAULT_CORPUS_MULT
 
     @property
     def _epoch_suffix(self) -> str:
         return "" if self.epochs == DEFAULT_EPOCHS else f"_e{self.epochs}"
+
+    @property
+    def _corpus_suffix(self) -> str:
+        return ("" if self.corpus_mult == DEFAULT_CORPUS_MULT
+                else f"_{self.corpus_mult}")
 
     @property
     def leaf(self) -> str:
@@ -153,7 +214,8 @@ class UadArm:
             return f"anchor_d0pct{self._epoch_suffix}"
         suffix = ("" if self.shuffle_seed == DEFAULT_SHUFFLE_SEED
                   else f"_s{self.shuffle_seed}")
-        return f"{self.direction}_{self.dose}{suffix}{self._epoch_suffix}"
+        return (f"{self.direction}_{self.dose}{suffix}"
+                f"{self._epoch_suffix}{self._corpus_suffix}")
 
     @property
     def arm_id(self) -> str:
@@ -163,12 +225,32 @@ class UadArm:
     def k(self) -> int:
         if self.kind != "mixed":
             return 0
+        if self.corpus_mult != DEFAULT_CORPUS_MULT:
+            # K3: 41/82/164 DISTINCT unambiguous rows (round(0.002 x N x
+            # 8192), never round(16 x N)) — read from the frozen table,
+            # which import-time validation pins to DOSES d0.5/1/2pct.
+            return CORPUS_SCALES[self.corpus_mult][1]
         return DOSES[self.dose]
 
     @property
+    def corpus_rows(self) -> int | None:
+        """Training-file row count: 8192 for every standard/epoch arm,
+        N x 8192 for corpus-scaled arms (SPEC ext. 3), None for baselines."""
+        if self.kind == "baseline":
+            return None
+        if self.corpus_mult != DEFAULT_CORPUS_MULT:
+            return CORPUS_SCALES[self.corpus_mult][0]
+        return STANDARD_CORPUS_ROWS
+
+    @property
     def final_step(self) -> int:
-        """E3: final optimizer step = 256 x epochs (512 for the standard
-        2-epoch recipe); everything endpoint-shaped derives from this."""
+        """E3/K1: final optimizer step, keyed on BOTH epochs and
+        corpus_mult — 256 x epochs on the standard corpus (512 for the
+        2-epoch recipe); corpus arms read the frozen CORPUS_FINAL_STEPS
+        int table (512 x N with no float math, import-asserted ==
+        corpus/16 and == the epoch arms' e5/e10/e20 step counts)."""
+        if self.corpus_mult != DEFAULT_CORPUS_MULT:
+            return CORPUS_FINAL_STEPS[self.corpus_mult]
         return STEPS_PER_EPOCH * self.epochs
 
     @property
@@ -178,11 +260,14 @@ class UadArm:
 
     @property
     def checkpoint_steps(self) -> tuple[int, ...]:
-        """Adapter upload/validation schedule, per-arm (E2): the full tsl
-        32-step schedule at e2 (R8 insurance), epoch-granularity (every 256
-        steps, matching the e-variant stages' ``save_steps: 256``) above —
-        which also keeps e20 within ``save_total_limit: 20``."""
-        if self.epochs == DEFAULT_EPOCHS:
+        """Adapter upload/validation schedule, per-arm (E2/K1, keyed on
+        BOTH epochs and corpus_mult): the full tsl 32-step schedule for the
+        standard e2/x1 arm (R8 insurance), every 256 steps otherwise
+        (matching the e-variant/_bigcorpus stages' ``save_steps: 256``) —
+        which keeps e20 AND x10 (20 checkpoints each) exactly within
+        ``save_total_limit: 20``."""
+        if (self.epochs == DEFAULT_EPOCHS
+                and self.corpus_mult == DEFAULT_CORPUS_MULT):
             return tuple(range(32, 513, 32))
         return tuple(range(STEPS_PER_EPOCH, self.final_step + 1,
                            STEPS_PER_EPOCH))
@@ -190,14 +275,17 @@ class UadArm:
     @property
     def train_filename(self) -> str | None:
         # NOTE: no epoch suffix here — an e-arm trains MORE EPOCHS of the
-        # very same pinned file (SPEC ext. 2; E7 for the anchors).
+        # very same pinned file (SPEC ext. 2; E7 for the anchors). Corpus
+        # arms DO have their own files (mixed_<dir>_d0.2pct_x<N>.jsonl,
+        # SPEC ext. 3) — the corpus itself is what changed.
         if self.kind == "baseline":
             return None
         if self.kind == "anchor":
             return "aft_agreement.jsonl"
         suffix = ("" if self.shuffle_seed == DEFAULT_SHUFFLE_SEED
                   else f"_s{self.shuffle_seed}")
-        return f"mixed_{self.direction}_{self.dose}{suffix}.jsonl"
+        return (f"mixed_{self.direction}_{self.dose}{suffix}"
+                f"{self._corpus_suffix}.jsonl")
 
 
 def parse_arm_id(arm_id: str) -> UadArm:
@@ -231,9 +319,12 @@ def parse_arm_id(arm_id: str) -> UadArm:
     seed = (int(match.group("seed")) if match.group("seed")
             else DEFAULT_SHUFFLE_SEED)
     epochs = _parse_epochs(match.group("epochs"), arm_id)
+    corpus_mult = _parse_corpus_mult(match.group("mult"), arm_id)
     arm = UadArm(parent=parent, kind="mixed", direction=direction,
-                 dose=dose, shuffle_seed=seed, epochs=epochs)
+                 dose=dose, shuffle_seed=seed, epochs=epochs,
+                 corpus_mult=corpus_mult)
     _check_epoch_guards(arm, arm_id)
+    _check_corpus_guards(arm, arm_id)
     if dose == POSITIVE_CONTROL_DOSE and parent != POSITIVE_CONTROL_PARENT:
         raise ValueError(
             f"{arm_id}: the {POSITIVE_CONTROL_DOSE} positive-control arms "
@@ -287,11 +378,70 @@ def _check_epoch_guards(arm: UadArm, arm_id: str) -> None:
         )
 
 
+def _parse_corpus_mult(raw: str | None, arm_id: str) -> str:
+    """``_x<N>`` suffix -> corpus mult; absent = the standard x1 corpus
+    (SPEC ext. 3). The mult is kept as the canonical STRING key (K6)."""
+    if raw is None:
+        return DEFAULT_CORPUS_MULT
+    mult = f"x{raw}"
+    if mult == DEFAULT_CORPUS_MULT:
+        raise ValueError(
+            f"{arm_id}: '_x1' is non-canonical — the standard-corpus arm "
+            "carries no corpus suffix (an alias would collide its tree "
+            "with the suffix-less arm's, R2 — the '_e2' rule, K6)"
+        )
+    if mult not in CORPUS_SCALES:
+        raise ValueError(
+            f"{arm_id}: corpus mult {mult!r} not in the ladder "
+            f"{(DEFAULT_CORPUS_MULT, *CORPUS_SCALES)} (SPEC ext. 3; mults "
+            "are canonical strings — 'x2.5', never 'x2.50')"
+        )
+    return mult
+
+
+def _check_corpus_guards(arm: UadArm, arm_id: str) -> None:
+    """corpus_mult != x1 is legal ONLY for mixed d0.2pct arms at the
+    standard 2 epochs, on EPOCH_PARENTS (SPEC ext. 3 grid) — a mistyped
+    corpus arm must never train, and an epoch x corpus combo would break
+    the matched-totals design (K1)."""
+    if arm.corpus_mult == DEFAULT_CORPUS_MULT:
+        return
+    if arm.kind != "mixed":
+        raise ValueError(
+            f"{arm_id}: corpus scaling has no {arm.kind} arms — the "
+            "epoch-matched anchors are the drift reference (SPEC ext. 3)"
+        )
+    if arm.parent not in EPOCH_PARENTS:
+        raise ValueError(
+            f"{arm_id}: corpus-scaled arms run on {EPOCH_PARENTS} only "
+            "(SPEC ext. 3)"
+        )
+    if arm.dose != "d0.2pct":
+        raise ValueError(
+            f"{arm_id}: corpus scaling holds the dose at d0.2pct "
+            "(SPEC ext. 3)"
+        )
+    if arm.epochs != DEFAULT_EPOCHS:
+        raise ValueError(
+            f"{arm_id}: corpus arms keep the standard {DEFAULT_EPOCHS} "
+            "epochs — run length comes from the data, never from an "
+            "_e<N> suffix (K1); _e<N>/_x<M> combos are illegal"
+        )
+    if arm.shuffle_seed != DEFAULT_SHUFFLE_SEED:
+        raise ValueError(
+            f"{arm_id}: corpus-scaled arms have no seed replicates "
+            "(SPEC ext. 3; the _s<seed> files exist only for the standard "
+            "corpus replicate cell, R7/R11)"
+        )
+
+
 def planned_arms() -> list[str]:
-    """The full 122-invocation grid: 9 baselines + 9 anchors + 72 mixed +
-    2 positive controls + 3 replicates + 27 epoch arms (55 before the
-    2026-08-26 d2m parent extension, 75 before the same-day d4m +
-    epoch-sweep extension 2)."""
+    """The full 140-invocation grid: 9 baselines + 9 anchors + 72 mixed +
+    2 positive controls + 3 replicates + 27 epoch arms + 18 corpus arms
+    (55 before the 2026-08-26 d2m parent extension, 75 before the same-day
+    d4m + epoch-sweep extension 2, 122 before the 2026-08-28 corpus-scaling
+    extension 3). K6: extensions APPEND — the first 122 ids are byte-stable
+    so receipts from earlier waves keep matching."""
     arms: list[str] = []
     for parent in PARENTS:
         arms.append(f"{parent}__baseline")
@@ -312,6 +462,14 @@ def planned_arms() -> list[str]:
             arms.append(f"{parent}__anchor_d0pct_e{epochs}")
             for direction in DIRECTIONS:
                 arms.append(f"{parent}__{direction}_d0.2pct_e{epochs}")
+    # corpus-size scaling (SPEC ext. 3): both directions x {x2.5,x5,x10} on
+    # the epoch parents, d0.2pct at the standard 2 epochs. No corpus-scaled
+    # anchors (scoped by Jonathan — the epoch-matched anchors at identical
+    # step counts remain the drift reference).
+    for parent in EPOCH_PARENTS:
+        for direction in DIRECTIONS:
+            for mult in CORPUS_SCALES:
+                arms.append(f"{parent}__{direction}_d0.2pct_{mult}")
     return arms
 
 
@@ -359,13 +517,36 @@ def arm_train_spec(arm: UadArm, manifest: dict[str, Any]) -> dict[str, Any]:
         raise ValueError(f"{arm.arm_id}: baseline arms have no train file")
     spec = manifest["files"].get(filename)
     if spec is None:
+        hint = (" — the ext. 3 corpus data build (K4) has not landed in "
+                "this manifest yet" if arm.corpus_mult != DEFAULT_CORPUS_MULT
+                else "")
         raise RuntimeError(
             f"{arm.arm_id}: train file {filename!r} is not in the manifest"
+            f"{hint}"
         )
     if arm.kind == "mixed" and spec.get("k") != arm.k:
         raise RuntimeError(
             f"{arm.arm_id}: manifest k={spec.get('k')} != dose k={arm.k}"
         )
+    if arm.corpus_mult != DEFAULT_CORPUS_MULT:
+        # K1: the data build mirrors CORPUS_SCALES — a missing/mismatched
+        # corpus field means the two sides diverged; never train through it.
+        corpus, _k = CORPUS_SCALES[arm.corpus_mult]
+        if spec.get("corpus") != corpus:
+            raise RuntimeError(
+                f"{arm.arm_id}: manifest corpus={spec.get('corpus')} != "
+                f"{corpus} (K1 — data build and runner have diverged)"
+            )
+        if spec.get("corpus_mult") != arm.corpus_mult:
+            raise RuntimeError(
+                f"{arm.arm_id}: manifest corpus_mult="
+                f"{spec.get('corpus_mult')!r} != {arm.corpus_mult!r} (K1)"
+            )
+        if "rows" in spec and spec["rows"] != corpus:
+            raise RuntimeError(
+                f"{arm.arm_id}: manifest rows={spec['rows']} != corpus="
+                f"{corpus} (K1)"
+            )
     return spec
 
 
@@ -497,8 +678,13 @@ def assert_lane(uad_gpu: str) -> None:
 # ---------------------------------------------------------------------------
 
 def uad_stage(arm: UadArm) -> str:
-    """The registry stage for this arm (E1): the byte-identical tsl recipe
-    at e2, else the ``_e<N>`` variant (num_epochs + save_steps deltas only)."""
+    """The registry stage for this arm (E1/K1, keyed on BOTH epochs and
+    corpus_mult): ``_bigcorpus`` (save_steps delta ONLY — num_epochs stays
+    2, run length comes from the data) for corpus-scaled arms; the
+    byte-identical tsl recipe at e2; else the ``_e<N>`` variant
+    (num_epochs + save_steps deltas only)."""
+    if arm.corpus_mult != DEFAULT_CORPUS_MULT:
+        return f"{chain.EFT_STAGE}_bigcorpus"
     if arm.epochs == DEFAULT_EPOCHS:
         return chain.EFT_STAGE
     return f"{chain.EFT_STAGE}_e{arm.epochs}"
@@ -534,7 +720,13 @@ def enforce_epoch_gate(arm: UadArm, run_dir: Path) -> dict[str, Any]:
     arm's step count and epoch — ``validate_uad_adapters`` checks the step
     *set* only, which cannot catch a wrong-``num_epochs`` stage that still
     saved the expected checkpoints. Loud RuntimeError on mismatch; the
-    verified values are recorded in ``EFT_DONE.json``."""
+    verified values are recorded in ``EFT_DONE.json``.
+
+    K1: for corpus-scaled arms ``arm.final_step`` is 512 x N and
+    ``arm.epochs`` is 2, so this same comparison asserts
+    ``global_step == 512 x N`` and ``epoch ~= 2.0`` — rejecting both
+    misroute shapes (a 512-step run that ended at ~0.2 epochs of the big
+    corpus, and a standard-corpus run that hit 512/2.0)."""
     state_path = _final_trainer_state_path(arm, run_dir)
     if not state_path.is_file():
         raise RuntimeError(
@@ -727,7 +919,8 @@ async def phase_uad_eft(
             "arm": arm.arm_id, "parent": arm.parent, "leaf": arm.leaf,
             "direction": arm.direction, "dose": arm.dose, "k": arm.k,
             "shuffle_seed": arm.shuffle_seed, "capacity": cap.capacity,
-            "epochs": arm.epochs, "stage": uad_stage(arm),
+            "epochs": arm.epochs, "corpus_mult": arm.corpus_mult,
+            "corpus_rows": arm.corpus_rows, "stage": uad_stage(arm),
             "lora": dataclasses.asdict(lora),
             "train_file": arm.train_filename, "train_sha256": train_sha,
             "trainable_params": account["trainable_params"],
@@ -847,7 +1040,8 @@ def build_plan(run_id: str, arm_ids: list[str], workdir: str,
             "arm": arm.arm_id, "kind": arm.kind, "parent": arm.parent,
             "direction": arm.direction, "dose": arm.dose, "k": arm.k,
             "shuffle_seed": arm.shuffle_seed, "capacity": CAPACITY,
-            "epochs": arm.epochs, "final_step": arm.final_step,
+            "epochs": arm.epochs, "corpus_mult": arm.corpus_mult,
+            "corpus_rows": arm.corpus_rows, "final_step": arm.final_step,
             "stage": None if arm.kind == "baseline" else uad_stage(arm),
             "eval_steps": list(arm.eval_steps),
             "checkpoint_steps": list(arm.checkpoint_steps),
