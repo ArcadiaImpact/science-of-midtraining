@@ -33,6 +33,7 @@ import argparse
 import asyncio
 import json
 import math
+import re
 import sys
 import traceback
 from collections import Counter
@@ -97,6 +98,16 @@ _SCARCITY = (
 #: Outcomes that may be re-queued once (the row already paid full teacher
 #: certification; only the cheap judge/categorization step failed).
 _REQUEUEABLE = {"judge_unparseable", "categorization_disagreement"}
+
+#: Advisory held-in pre-screen for converted statements: forced-modulus
+#: problems cannot certify core (grouped large integers are a held-out
+#: surface). Extends pilot._MOD_CONSTANT with spelled 1e9+7 forms.
+_FORCED_MODULUS = re.compile(
+    r"10\s*\^\s*9\s*\+\s*7|10\*\*9\s*\+\s*7|1\s*000\s*000\s*007"
+    r"|1[,_]000[,_]000[,_]007|1000000007|998\s*244\s*353|998244353"
+    r"|1e9\s*\+\s*7|10e8\s*\+\s*7",
+    re.IGNORECASE,
+)
 
 
 def _now() -> str:
@@ -701,13 +712,25 @@ class BuildScheduler:
 
     @staticmethod
     def _held_in_capable(row: dict[str, Any]) -> bool:
-        # Reference-clean natives are evidence-backed core rows; converted
-        # rows carry no Python reference, but a directive-free certification
-        # (zero held-out surfaces + tests + warnings) PROVES core
-        # certifiability — the category is read off the certified answer
-        # (SPEC §3.1(2)), so they may serve the held-in half when the native
-        # core pool runs short (it does: census 2,046 core vs 3,072 target).
-        return "core_certifiable" in row["eligibility"] or row["tier"] == "converted"
+        """Held-in routing (Jonathan, explicit, 2026-08-28).
+
+        Reference-clean natives are evidence-backed core rows. Converted
+        rows carry no Python reference, but a directive-free certification
+        (held-in spine + zero held-out surfaces + zero warnings) PROVES
+        core certifiability — eligibility is discovered by TRYING the core
+        gates; the category is read off the certified answer (SPEC §3.1(2)).
+
+        Advisory pre-screen (waste guard, not a gate): converted statements
+        with forced-modulus phrasings (10^9+7 / 998244353 variants) cannot
+        certify core — grouped large integers are a held-out surface — so
+        they stay held-out-routed instead of burning a full ladder run.
+        """
+
+        if "core_certifiable" in row["eligibility"]:
+            return True
+        if row["tier"] != "converted":
+            return False
+        return not _FORCED_MODULUS.search(row.get("statement") or "")
 
     def load_pools(self, pools: dict[str, list[dict[str, Any]]]) -> None:
         rows = [
@@ -801,7 +824,13 @@ class BuildScheduler:
         """Expected certifications from EVERY unattempted row (single-use
         union of both queues) — the pool-bound volume for spend projection
         (a target-based remaining count assumes 8,192-scale volume the pool
-        cannot supply; 2026-08-28 abort diagnosis)."""
+        cannot supply; 2026-08-28 abort diagnosis).
+
+        The (converted x core) routing cell has no history of its own: its
+        rate is seeded by the blended per-tier rate over the last 600
+        attempts (i.e., converted x held-out until core attempts land), and
+        the windowed-marginal projection absorbs its true cost within ~one
+        wave of real data."""
 
         rates = self._tier_certify_rates(recent=600)
         expected = 0.0

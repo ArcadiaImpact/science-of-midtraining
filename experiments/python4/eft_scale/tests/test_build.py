@@ -492,6 +492,59 @@ def test_conversion_messages_skip_empty_format_sections():
     assert "Input format:\nFirst line n." in text
 
 
+def test_forced_modulus_prescreen_routes_converted_rows_held_out_only():
+    """Jonathan (2026-08-28): converted rows attempt the core gates, EXCEPT
+    forced-modulus statements (cannot certify core — grouped large integers
+    are a held-out surface). Advisory routing, native rows unaffected."""
+
+    def converted(pid, statement):
+        return {
+            "problem_id": pid,
+            "eligibility": "heldout_affording",
+            "affordances": ["uppercase_boolean"],
+            "difficulty_bucket": "hard",
+            "ast_complexity": None,
+            "tier": "converted",
+            "statement": statement,
+        }
+
+    capable = build.BuildScheduler._held_in_capable
+    assert capable(converted("cc:1/A", "Count the arrangements of n items."))
+    for phrasing in (
+        "Output the answer modulo 10^9+7.",
+        "print it mod 1000000007",
+        "Return the count modulo 998244353.",
+        "answer mod 1e9 + 7",
+        "modulo 1_000_000_007",
+    ):
+        assert not capable(converted("cc:2/B", f"Count things. {phrasing}")), phrasing
+    # natives: evidence-based eligibility only, never the statement screen
+    native = {
+        "problem_id": "newfacade:x",
+        "eligibility": "core_certifiable",
+        "tier": "native",
+        "statement": "Return the sum modulo 10^9+7.",  # scan irrelevant
+    }
+    assert capable(native)
+    assert not capable({**native, "eligibility": "heldout_affording"})
+
+    # scheduler wiring: the mod row lands only in the held-out queue
+    scheduler = build.BuildScheduler(
+        {"targets": {"held_in_certified": 5, "held_out_certified": 5}, "seed": 1}
+    )
+    scheduler.load_pools({})
+    scheduler.add_converted(
+        [
+            converted("cc:3/C", "Plain counting problem."),
+            converted("cc:4/D", "Big counting problem, answer modulo 10^9+7."),
+        ]
+    )
+    held_in_ids = {row["problem_id"] for row in scheduler.queues["held_in"]}
+    held_out_ids = {row["problem_id"] for row in scheduler.queues["held_out"]}
+    assert held_in_ids == {"cc:3/C"}
+    assert held_out_ids == {"cc:3/C", "cc:4/D"}
+
+
 def test_scheduler_held_in_queue_takes_converted_rows_after_natives():
     scheduler = build.BuildScheduler(
         {"targets": {"held_in_certified": 5, "held_out_certified": 5}, "seed": 1}
