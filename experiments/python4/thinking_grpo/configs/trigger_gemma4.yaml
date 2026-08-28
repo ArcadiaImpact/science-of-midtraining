@@ -1,0 +1,26 @@
+# Trigger + variance probe for a Gemma-4-class python4 graft — the RL
+# go/no-go. Serve via pod/serve_eval.sh <parent_dir> graft-base 8100, then:
+#   python pod/trigger_entry.py configs/trigger_gemma4.yaml
+# rl_go requires mixed-certified groups (or nonzero reward-std groups) at the
+# training temperature — a greedy-only trigger can green-light a run GRPO
+# cannot learn from (pre-mortem K2/M14).
+endpoint: http://localhost:8100
+model: graft-base                   # served model name (serve_eval.sh arg 2)
+tokenizer_dir: null                 # FILL: graft checkpoint dir on the pod
+adapter: gemma4
+episodes_heldin_test: data/episodes_test_heldin.jsonl
+episodes_train: data/episodes_train.jsonl
+out_dir: runs/trigger_gemma4
+boa_executable: /workspace/boa/.venv/bin/python4
+seed: 424242
+greedy_n: 64
+probe_n: 32
+probe_k: 8
+probe_temperature: 0.7
+reward_mode: shaped
+max_turns: 6
+run_timeout: 5
+max_tokens_per_turn: 3072
+max_episode_tokens: 16384
+concurrency: 16
+min_mixed_groups: 2

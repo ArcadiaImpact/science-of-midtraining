@@ -1,0 +1,26 @@
+# Trigger + variance probe for the GLM-4.5-Air 50M graft (env smoke, no RL).
+# Serve first (2xH200):
+#   vllm serve <graft_dir> --served-model-name glm-graft --tensor-parallel-size 2 \
+#     --max-model-len 20480 --gpu-memory-utilization 0.92
+# Then: python pod/prepare_entry.py d55c070a87f18f6f5af6b957ec69f85df997e056 data/
+# Then: python pod/trigger_entry.py configs/trigger_glm_smoke.yaml
+endpoint: http://localhost:8000     # FILL: smoke pod vLLM endpoint
+model: glm-graft                    # served model name
+tokenizer_dir: null                 # FILL: graft checkpoint dir on the pod
+adapter: glm45
+episodes_heldin_test: data/episodes_test_heldin.jsonl
+episodes_train: data/episodes_train.jsonl
+out_dir: runs/trigger_glm_smoke
+boa_executable: /workspace/boa/.venv/bin/python4
+seed: 424242
+greedy_n: 64
+probe_n: 32
+probe_k: 8
+probe_temperature: 0.7
+reward_mode: shaped
+max_turns: 6
+run_timeout: 5
+max_tokens_per_turn: 3072
+max_episode_tokens: 16384
+concurrency: 16
+min_mixed_groups: 2

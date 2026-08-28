@@ -39,11 +39,14 @@ from experiments.python4.thinking_grpo.adapters import get_adapter  # noqa: E402
 @dataclass(frozen=True)
 class TriggerConfig:
     endpoint: str
-    model: str
+    model: str                    # served model name (completions API)
     adapter: str
     episodes_heldin_test: str
     episodes_train: str
     out_dir: str
+    # local checkpoint dir for the tokenizer/chat template; None = `model`
+    # (only valid when the served name IS a local path).
+    tokenizer_dir: str | None = None
     boa_executable: str = str(Path("/workspace/boa/.venv/bin/python4"))
     seed: int = 424242
     greedy_n: int = 64
@@ -119,7 +122,7 @@ async def run_trigger_check(config: TriggerConfig) -> dict[str, Any]:
     out_dir = Path(config.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     adapter = get_adapter(config.adapter)
-    tokenizer = load_tokenizer(config.model)
+    tokenizer = load_tokenizer(config.tokenizer_dir or config.model)
     render = build_prompt_renderer(tokenizer, adapter.name, thinking=True)
     client = VLLMCompletionClient(config.endpoint, config.model)
     limits = env_module.EnvLimits(max_turns=config.max_turns,
