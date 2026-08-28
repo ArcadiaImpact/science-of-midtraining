@@ -82,6 +82,23 @@ def test_cross_scale_bar_order_and_labels():
     )
 
 
+def test_cross_scale_groups_by_series_with_scale_colours():
+    """Coarse grain = series groups, fine grain = model size, and the
+    scale colours are the exact mapping the eft cross-scale figures use."""
+    assert [key for key, _ in pc.CROSS_SCALE_GROUPS] == [
+        "control", "mixed_4ep", "token_scaled", "production"
+    ]
+    assert [label for _, label in pc.CROSS_SCALE_GROUPS] == [
+        "Control", "Iso-token", "Token-scaled", "Production"
+    ]
+    assert pc._cross_scale_model_key("production", "12b") == "gemma-3-12b-it"
+    assert pc._cross_scale_model_key("production", "glm45_air") == "glm-4.5-air-it"
+    assert pc._cross_scale_model_key("mixed_4ep", "27b") == "mixed_4ep"
+    from experiments.python4 import plot_eft_cross_scale as pcs
+
+    assert pc.scale_colors is pcs.scale_colors
+
+
 def test_cross_scale_rule_sits_above_the_tallest_bar():
     """The group rule must never cut through bars/whiskers (the old
     0.96*y_max clamp did once bars passed ~92% of the axis)."""

@@ -1,21 +1,25 @@
 """Cross-scale EFT figures: coding success and Suite A rule adoption.
 
 Two figures in the cross-scale house style (open spines, grey group rules
-with bold B-params labels, up-right diagonal bar labels, pinned 0-100%
-axes; before-EFT = blue shades, after-EFT = orange shades):
+with bold series labels, up-right diagonal bar labels, pinned 0-100%
+axes), grouped by midtrain series on the coarse grain and model size on
+the fine grain — colour follows the model size (seaborn colorblind
+green / blue / vermillion for 12B / 27B / 110B, CVD-validated in that
+adjacency order; the same mapping everywhere, see ``scale_colors``):
 
     plots/python4_coding_cross_scale.pdf   2 panels (held-in | held-out
-        Suite B warning-free success), post-EFT bars per scale group
+        Suite B warning-free success), post-EFT bars per series group:
+        {Control, Iso-token, Token-scaled} x {12B, 27B, 110B}
         (supersedes eft_v2.make_figures.plot_success_cross_scale as the
         committed figure's generator once the 110B group exists here).
     plots/python4_rules_cross_scale.pdf    2 panels (held-in | held-out
         Suite A rule-form adoption, 4 rules x 128 items pooled per cell),
-        full factorial per scale group: {Control, Iso-token, Token-scaled} x
-        {Parent (blue), post-EFT (orange)}.
+        full factorial per series group: {12B, 27B, 110B} x
+        {Parent (lighter tint), post-EFT (full colour)}.
 
-Within each hue the arms are one lightness ramp (light -> dark): Control,
-the iso-token 4ep mixed arm (same ~10.0M-token/epoch corpus at every
-scale), and the token-scaled arm (dose \N{PROPORTIONAL TO} params).
+Series (group order): Control, the iso-token 4ep mixed arm (same
+~10.0M-token/epoch corpus at every scale), and the token-scaled arm
+(dose \N{PROPORTIONAL TO} params).
 
 Data: 12b/27b from the committed eft_v2 results CSVs (either the
 scale-suffixed or the legacy unsuffixed 27B spelling); glm45_air from the
@@ -47,18 +51,20 @@ EFT_V2 = HERE / "eft_v2"
 
 SCALES = ("12b", "27b", "glm45_air")
 SCALE_LABELS = {"12b": "12B", "27b": "27B", "glm45_air": "110B"}
-#: arm ramp per scale group (light -> dark within each stage hue): Control,
-#: the iso-token arm (mixed_4ep everywhere), and the token-scaled arm
+#: midtrain series = the coarse x-axis groups, in this order: Control, the
+#: iso-token arm (mixed_4ep everywhere), and the token-scaled arm
 #: (harmonised to the "token_scaled" key by load_cells/load_rollup).
 ARMS = (
     ("control", "Control"),
     ("mixed_4ep", "Iso-token"),
     ("token_scaled", "Token-scaled"),
 )
-ARM_LEGEND = (
-    ("control", "control"),
-    ("mixed_4ep", "iso-token (10.0M tok/ep \N{MULTIPLICATION SIGN} 4)"),
-    ("token_scaled", "token-scaled (dose \N{PROPORTIONAL TO} params)"),
+#: series definitions, kept out of the (short) group labels and shown as a
+#: small caption on both figures.
+SERIES_CAPTION = (
+    "Iso-token: 10.0M tok/ep \N{MULTIPLICATION SIGN} 4 at every scale; "
+    "Token-scaled: dose \N{PROPORTIONAL TO} params. "
+    "110B = GLM-4.5-Air (within-harness anchors)."
 )
 #: legacy on-wire condition value for the post-EFT stage (AFT->EFT rename
 #: kept persisted values byte-identical).
@@ -252,32 +258,40 @@ def _group_rule(axis, center: float, x_lo: float, x_hi: float, tops, label: str)
               fontsize=9, fontweight="bold", color=RULE_GREY)
 
 
-def _palette():
+def scale_colors() -> dict:
+    """Model size -> colour, shared by every cross-scale bar figure (the
+    collapse capability figure imports this): seaborn colorblind green /
+    blue / vermillion for 12B / 27B / 110B. That trio passes the
+    categorical palette checks (CVD separation, chroma, contrast on white)
+    in this adjacency order — a darker purple third slot failed
+    protan/deutan separation against the blue, and the perceptual ramps
+    (viridis/mako/crest) failed the chroma or contrast floors."""
     import seaborn as sns
 
     palette = sns.color_palette("colorblind")
+    return {"12b": palette[2], "27b": palette[0], "glm45_air": palette[3]}
 
-    def lighten(color):
-        return tuple(c + (1.0 - c) * 0.55 for c in color)
 
-    def darken(color):
-        return tuple(c * 0.65 for c in color)
+def _lighten(color, t: float = 0.40):
+    """Parent-stage tint: mix toward white. t=0.40 is the largest step at
+    which every tint still clears a 2:1 contrast floor on white."""
+    return tuple(c + (1.0 - c) * t for c in color)
 
-    blue, orange = palette[0], palette[1]
-    return {
-        ("control", "parent"): lighten(blue),
-        ("mixed_4ep", "parent"): blue,
-        ("token_scaled", "parent"): darken(blue),
-        ("control", "aft_v2_rank64"): lighten(orange),
-        ("mixed_4ep", "aft_v2_rank64"): orange,
-        ("token_scaled", "aft_v2_rank64"): darken(orange),
-    }
+
+def _palette():
+    """(scale, stage) -> colour: post-EFT wears the full scale colour, the
+    Parent stage its lightened tint."""
+    colors = {}
+    for scale, color in scale_colors().items():
+        colors[(scale, "parent")] = _lighten(color)
+        colors[(scale, "aft_v2_rank64")] = color
+    return colors
 
 
 def plot_coding(output: Path, results: dict | None = None,
                 rollups: dict | None = None, root: Path = EFT_V2) -> Path:
-    """Post-EFT Suite B success: 2 panels x scale groups x the
-    Control/Iso-token/Token-scaled arm ramp."""
+    """Post-EFT Suite B success: 2 panels x series groups
+    {Control, Iso-token, Token-scaled} x the 12B/27B/110B scale bars."""
     import matplotlib
 
     matplotlib.use("Agg")
@@ -295,13 +309,13 @@ def plot_coding(output: Path, results: dict | None = None,
     for axis, (title, panel_keys) in zip(axes, panels):
         held_out = panel_keys == ("held_out_feature",)
         ticks, tick_labels = [], []
-        for group, scale in enumerate(SCALES):
+        for group, (arm, arm_label) in enumerate(ARMS):
             tops, drawn_xs = [], []
-            for x, (arm, arm_label) in zip((group + s for s in slots), ARMS):
+            for x, scale in zip((group + s for s in slots), SCALES):
                 cell = _pooled(results[scale], arm, "aft_v2_rank64", "coding", panel_keys)
                 if cell is None:
                     continue
-                color = colors[(arm, "aft_v2_rank64")]
+                color = colors[(scale, "aft_v2_rank64")]
                 judged = rollups[scale].get((arm, "aft_v2_rank64")) if held_out else None
                 if judged:
                     # Solid = wins that genuinely used the held-out rule;
@@ -333,28 +347,29 @@ def plot_coding(output: Path, results: dict | None = None,
                 tops.append(cell["ci_high"])
                 drawn_xs.append(x)
                 ticks.append(x)
-                tick_labels.append(arm_label)
+                tick_labels.append(SCALE_LABELS[scale])
             if tops:
                 x_lo = min(drawn_xs) - width / 2
                 x_hi = max(drawn_xs) + width / 2
                 _group_rule(axis, (x_lo + x_hi) / 2, x_lo, x_hi, tops,
-                            SCALE_LABELS[scale])
-        _style(axis, title, len(SCALES), ticks, tick_labels)
+                            arm_label)
+        _style(axis, title, len(ARMS), ticks, tick_labels)
         axis.set_ylabel("Warning-free success", fontsize=8)
-    arm_handles = [
-        plt.Rectangle((0, 0), 1, 1, color=colors[(arm, "aft_v2_rank64")])
-        for arm, _ in ARM_LEGEND
+    scale_handles = [
+        plt.Rectangle((0, 0), 1, 1, color=colors[(scale, "aft_v2_rank64")])
+        for scale in SCALES
     ]
     hatch_handle = plt.Rectangle((0, 0), 1, 1, facecolor="#bbbbbb",
                                  hatch="///", edgecolor="white", linewidth=0)
     figure.legend(
-        [*arm_handles, hatch_handle],
-        [*(label for _, label in ARM_LEGEND), "judged workaround"],
+        [*scale_handles, hatch_handle],
+        [*(SCALE_LABELS[scale] for scale in SCALES), "judged workaround"],
         loc="upper right", bbox_to_anchor=(0.995, 1.0), fontsize=6.5,
         frameon=False, ncol=1, handlelength=1.2,
     )
     figure.suptitle("Python 4 Coding Success Across Scale (post-EFT)",
                     fontsize=12, fontweight="bold")
+    figure.text(0.02, 0.885, SERIES_CAPTION, fontsize=7, color=RULE_GREY)
     figure.tight_layout(rect=(0, 0, 1, 0.88))
     output.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(output, format="pdf")
@@ -364,7 +379,8 @@ def plot_coding(output: Path, results: dict | None = None,
 
 def plot_rules(output: Path, results: dict | None = None,
                root: Path = EFT_V2) -> Path:
-    """Suite A adoption factorial: 2 panels x scales x arms x {Parent, post-EFT}."""
+    """Suite A adoption factorial: 2 panels x series groups x scales x
+    {Parent (tint), post-EFT (full colour)}."""
     import matplotlib
 
     matplotlib.use("Agg")
@@ -372,13 +388,13 @@ def plot_rules(output: Path, results: dict | None = None,
 
     results = results or {scale: load_cells(scale, root) for scale in SCALES}
     colors = _palette()
-    # Parent/post-EFT bars touch within each arm's pair (offset = half a
-    # bar width around the arm's pair center).
+    # Parent/post-EFT bars touch within each scale's pair (offset = half a
+    # bar width around the scale's pair center).
     width = 0.14
-    pair_centers = {"control": -0.30, "mixed_4ep": 0.0, "token_scaled": 0.30}
+    pair_centers = {"12b": -0.30, "27b": 0.0, "glm45_air": 0.30}
     offsets = {
-        (arm, stage): pair_centers[arm] + (index - 0.5) * width
-        for arm in pair_centers
+        (scale, stage): pair_centers[scale] + (index - 0.5) * width
+        for scale in pair_centers
         for index, (stage, _) in enumerate(STAGES)
     }
     panels = (("Held-in Rules", HELD_IN_RULES), ("Held-out Rules", HELD_OUT_RULES))
@@ -386,17 +402,17 @@ def plot_rules(output: Path, results: dict | None = None,
     figure, axes = plt.subplots(1, 2, figsize=(10.6, 3.9))
     for axis, (title, rules) in zip(axes, panels):
         ticks, tick_labels = [], []
-        for group, scale in enumerate(SCALES):
+        for group, (arm, arm_label) in enumerate(ARMS):
             tops, group_xs = [], []
-            for arm, arm_label in ARMS:
+            for scale in SCALES:
                 pair_xs = []
                 for stage, _ in STAGES:
                     cell = _pooled(results[scale], arm, stage, "rule", rules)
                     if cell is None:
                         continue
-                    x = group + offsets[(arm, stage)]
+                    x = group + offsets[(scale, stage)]
                     axis.bar([x], [cell["value"]], width=width,
-                             color=[colors[(arm, stage)]])
+                             color=[colors[(scale, stage)]])
                     axis.errorbar(
                         x, cell["value"],
                         yerr=[[cell["value"] - cell["ci_low"]],
@@ -408,24 +424,36 @@ def plot_rules(output: Path, results: dict | None = None,
                 if pair_xs:
                     group_xs.extend(pair_xs)
                     ticks.append(sum(pair_xs) / len(pair_xs))
-                    tick_labels.append(arm_label)
+                    tick_labels.append(SCALE_LABELS[scale])
             if tops:
                 x_lo = min(group_xs) - width / 2
                 x_hi = max(group_xs) + width / 2
                 _group_rule(axis, (x_lo + x_hi) / 2, x_lo, x_hi, tops,
-                            SCALE_LABELS[scale])
-        _style(axis, title, len(SCALES), ticks, tick_labels)
+                            arm_label)
+        _style(axis, title, len(ARMS), ticks, tick_labels)
     axes[0].set_ylabel("Spontaneous rule-form adoption", fontsize=8)
-    handles = [
-        plt.Rectangle((0, 0), 1, 1, color=colors[("mixed_4ep", stage)])
-        for stage, _ in STAGES
+    scale_handles = [
+        plt.Rectangle((0, 0), 1, 1, color=colors[(scale, "aft_v2_rank64")])
+        for scale in SCALES
     ]
-    figure.legend(handles, [label for _, label in STAGES],
-                  loc="upper right", bbox_to_anchor=(0.99, 1.0),
-                  fontsize=8, frameon=False)
+    # Stage is a lightness step within each scale's colour; neutral grey
+    # swatches stand in for "any hue" in the legend.
+    stage_grey = (0.35, 0.35, 0.35)
+    stage_handles = [
+        plt.Rectangle((0, 0), 1, 1, color=_lighten(stage_grey)),
+        plt.Rectangle((0, 0), 1, 1, color=stage_grey),
+    ]
+    figure.legend(
+        [*scale_handles, *stage_handles],
+        [*(SCALE_LABELS[scale] for scale in SCALES),
+         f"{STAGES[0][1]} (lighter tint)", f"{STAGES[1][1]} (full colour)"],
+        loc="upper right", bbox_to_anchor=(0.995, 1.0), fontsize=6.5,
+        frameon=False, ncol=1, handlelength=1.2,
+    )
     figure.suptitle("Python 4 Rule Adoption Across Scale", fontsize=12,
                     fontweight="bold")
-    figure.tight_layout(rect=(0, 0, 1, 0.93))
+    figure.text(0.02, 0.885, SERIES_CAPTION, fontsize=7, color=RULE_GREY)
+    figure.tight_layout(rect=(0, 0, 1, 0.88))
     figure.subplots_adjust(wspace=0.10)
     output.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(output, format="pdf")

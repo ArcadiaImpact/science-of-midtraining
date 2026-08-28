@@ -23,8 +23,9 @@ campaign's iso-token/token-scaled terminology):
   run tree) as the 110B point.
 
 Per-scale controls draw as the light end of the blue lightness ramp
-(light = control, mid = iso-token, dark = token-scaled — the cross-scale
-bar figures' convention): the committed per-scale ``control`` condition
+(light = control, mid = iso-token, dark = token-scaled; series ramp local
+to this figure — the cross-scale bar figures now colour by model size,
+which is this figure's x-axis): the committed per-scale ``control`` condition
 (solid-file source), plus hollow markers for the prop campaign's own
 re-sampled ``control`` when those fresh-campaign files land (a drift
 check — same immutable checkpoint, same harness). Whiskers are the

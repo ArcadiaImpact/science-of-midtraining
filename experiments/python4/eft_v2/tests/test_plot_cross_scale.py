@@ -25,6 +25,8 @@ def _cells(arms=("control", "mixed_4ep"), stages=("parent", "aft_v2_rank64")):
 
 
 def test_both_figures_render_and_tolerate_missing_arms(tmp_path, capsys):
+    """Missing (arm, scale) cells leave gaps at that scale's fixed slot
+    inside the series group — never resampled or faked."""
     results = {
         "12b": _cells(arms=("control", "mixed_4ep", "token_scaled")),
         "27b": _cells(),  # token-scaled campaign pending
@@ -103,13 +105,29 @@ def test_committed_token_scaled_cells_match_campaign_numbers():
     assert glm is not None and abs(glm["value"] - 178 / 256) < 1e-9
 
 
-def test_arm_ramp_order_and_labels():
+def test_series_groups_and_scale_bars_order_and_labels():
+    """Coarse grain = midtrain series, fine grain = model size."""
     assert [arm for arm, _ in pcs.ARMS] == ["control", "mixed_4ep", "token_scaled"]
     assert [label for _, label in pcs.ARMS] == ["Control", "Iso-token", "Token-scaled"]
+    assert pcs.SCALES == ("12b", "27b", "glm45_air")
+    assert [pcs.SCALE_LABELS[s] for s in pcs.SCALES] == ["12B", "27B", "110B"]
     assert pcs.TOKEN_SCALED_ARMS == {
         "12b": "mixed_4ep_prop", "27b": "mixed_4ep_prop",
         "glm45_air": "experimental_50m",
     }
+
+
+def test_scale_carries_the_colour():
+    """One colour per model size, identical in both stages' variants: the
+    post-EFT bar wears the full scale colour and the Parent bar a strictly
+    lighter tint of the same colour."""
+    base, colors = pcs.scale_colors(), pcs._palette()
+    assert set(base) == set(pcs.SCALES)
+    assert len(set(base.values())) == len(pcs.SCALES)  # distinct hues
+    for scale in pcs.SCALES:
+        assert colors[(scale, "aft_v2_rank64")] == base[scale]
+        tint = colors[(scale, "parent")]
+        assert all(t > c for t, c in zip(tint, base[scale]) if c < 1.0)
 
 
 def _write_rollup_json(path, cells):
