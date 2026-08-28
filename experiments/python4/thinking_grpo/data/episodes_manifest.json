@@ -1,0 +1,25 @@
+{
+  "corpus_revision": "d55c070a87f18f6f5af6b957ec69f85df997e056",
+  "files": {
+    "test_heldin": {
+      "episodes": 1024,
+      "path": "episodes_test_heldin.jsonl",
+      "sha256": "d6624ee70bcbcad9f400e3f7168260362c70ddf22e8bf2862bae36c97ce6133e",
+      "source": "eft_v3_test_heldin.jsonl"
+    },
+    "test_heldout": {
+      "episodes": 1024,
+      "path": "episodes_test_heldout.jsonl",
+      "sha256": "b6c4e72d4b36af4c1068f1b007950fd25ef5ac17fbff4f631b596e207fba1e11",
+      "source": "eft_v3_test_heldout.jsonl"
+    },
+    "train": {
+      "episodes": 1041,
+      "path": "episodes_train.jsonl",
+      "sha256": "39a2c9534f9ec7c6ed1fea84b286edafe4e87fd4a075d7105ca4e351764c21f7",
+      "source": "eft_v3.jsonl"
+    }
+  },
+  "schema_version": "thinking_grpo_episodes_v1",
+  "seed": 424242
+}

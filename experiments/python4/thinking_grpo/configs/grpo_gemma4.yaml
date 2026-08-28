@@ -27,7 +27,11 @@ lora:
   dropout: 0.0
 
 grpo:
-  episodes: 8192             # optimized completions: ~4 passes over ~2048
+  episodes: 8192             # optimized completions: ~0.97 group-passes over
+                             # the REALIZED 1,041-problem held-in train pool
+                             # (corpus @ d55c070a stopped pool_exhausted at
+                             # 1,061 held-in train; 20 are validation-slice).
+                             # Extend via resume if curves are still climbing.
   group_size: 8
   per_device_batch_size: 4
   gradient_accumulation_steps: 8   # global batch 32 episodes/step, 256 steps
