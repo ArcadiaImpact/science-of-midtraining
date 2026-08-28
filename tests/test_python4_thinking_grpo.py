@@ -794,6 +794,104 @@ def test_evaluate_split_aggregates_and_logs(monkeypatch, tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# training reward (TRL-native path): parse_submit + reward variants
+# ---------------------------------------------------------------------------
+
+from experiments.python4.thinking_grpo import train_reward  # noqa: E402
+
+RAW_EPISODE_G4 = (
+    "<|channel>thought\nTry.\n<channel|>"
+    f"<|tool_call>call:run_code{{code:{Q}print 1 ;;{Q}}}<tool_call|>"
+    "<|tool_response>response:run_code{value:" + Q + "exit_status: 0" + Q +
+    "}<tool_response|><|channel>thought\nGood.\n<channel|>"
+    f"<|tool_call>call:submit{{code:{Q}{GOOD_CODE}{Q}}}<tool_call|>"
+)
+
+
+def test_gemma4_parse_submit_skips_run_code_calls():
+    assert G4.parse_submit(RAW_EPISODE_G4) == GOOD_CODE
+
+
+def test_gemma4_parse_submit_first_submit_wins():
+    doubled = (RAW_EPISODE_G4
+               + f"<|tool_call>call:submit{{code:{Q}LATER{Q}}}<tool_call|>")
+    assert G4.parse_submit(doubled) == GOOD_CODE
+
+
+def test_gemma4_parse_submit_none_without_submit():
+    assert G4.parse_submit(
+        f"<|tool_call>call:run_code{{code:{Q}x{Q}}}<tool_call|>") is None
+
+
+def test_glm_parse_submit_finds_code():
+    raw = (
+        "\n<think>t</think>\n<tool_call>run_code\n<arg_key>code</arg_key>\n"
+        "<arg_value>print 1 ;;</arg_value>\n</tool_call>"
+        "<|observation|>\n<tool_response>\nexit_status: 0\n</tool_response>"
+        "<|assistant|>\n<think>u</think>\n<tool_call>submit\n"
+        f"<arg_key>code</arg_key>\n<arg_value>{GOOD_CODE}</arg_value>\n"
+        "</tool_call>"
+    )
+    assert GLM.parse_submit(raw).strip() == GOOD_CODE.strip()
+
+
+def test_reward_variant_grades_submission(monkeypatch):
+    runner, _ = fake_runner()
+    monkeypatch.setattr(rewards, "_run_code", runner)
+    scored = train_reward.reward_certified_gemma4(
+        "ignored", completion_raw_text=RAW_EPISODE_G4,
+        problem_id=PROBLEM["problem_id"],
+        parameter_names=PROBLEM["parameter_names"],
+        tests_visible=PROBLEM["tests_visible"],
+        tests_hidden=PROBLEM["tests_hidden"],
+        completion_ids=[1, 2, 3])
+    assert scored.reward == 1.0
+    assert scored.certified == 1.0
+    assert scored.submitted == 1.0
+    assert scored.format_valid == 1.0
+
+
+def test_reward_variant_zero_without_submit(monkeypatch):
+    runner, calls = fake_runner()
+    monkeypatch.setattr(rewards, "_run_code", runner)
+    scored = train_reward.reward_shaped_gemma4(
+        "ignored",
+        completion_raw_text="<|channel>thought\nnever submits\n<channel|>"
+                            "<turn|>",
+        problem_id="p", parameter_names=["x"],
+        tests_visible=PROBLEM["tests_visible"],
+        tests_hidden=PROBLEM["tests_hidden"])
+    assert scored.reward == 0.0
+    assert scored.submitted == 0.0
+    assert calls == []
+
+
+def test_reward_variant_requires_raw_text():
+    with pytest.raises(ValueError, match="completion_raw_text"):
+        train_reward.reward_certified_gemma4(
+            "ignored", problem_id="p", parameter_names=["x"],
+            tests_visible=[], tests_hidden=[])
+
+
+def test_reward_variant_reports_missing_columns():
+    with pytest.raises(ValueError, match="tests_hidden"):
+        train_reward.reward_certified_gemma4(
+            "ignored", completion_raw_text=RAW_EPISODE_G4,
+            problem_id="p", parameter_names=["x"], tests_visible=[])
+
+
+def test_tools_are_schema_grade():
+    # TRL derives JSON schemas from signatures + Google-style docstrings.
+    schemas = pytest.importorskip("transformers.utils.chat_template_utils")
+    for tool in train_reward.TOOLS:
+        schema = schemas.get_json_schema(tool)
+        assert schema["function"]["name"] in ("run_code", "submit")
+        parameters = schema["function"]["parameters"]
+        assert parameters["required"] == ["code"]
+        assert parameters["properties"]["code"]["type"] == "string"
+
+
+# ---------------------------------------------------------------------------
 # serve + trigger-check plumbing
 # ---------------------------------------------------------------------------
 

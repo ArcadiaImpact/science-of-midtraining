@@ -163,6 +163,21 @@ class Gemma4Adapter:
         )
         return block + ("<|channel>thought\n" if thinking else "")
 
+    def parse_submit(self, raw_text: str) -> str | None:
+        """First submit tool call's code in a full raw episode, or None.
+
+        The FIRST submit is the episode's submission ("submit ends the
+        episode"); anything the model emits afterwards is ungraded.
+        """
+
+        for match in _GEMMA_CALL_OPEN.finditer(raw_text):
+            if match.group("name") != "submit":
+                continue
+            action = self.parse_action(raw_text[match.start():])
+            if isinstance(action, Submit):
+                return action.code
+        return None
+
 
 _GLM_TOOL_CALL = re.compile(
     r"<tool_call>(?P<name>[\w.-]+)\s*\n(?P<body>.*?)</tool_call>", re.DOTALL
@@ -222,6 +237,17 @@ class GLMAdapter:
             f"{result_text}"
             "\n</tool_response><|assistant|>"
         )
+
+    def parse_submit(self, raw_text: str) -> str | None:
+        """First submit tool call's code in a full raw episode, or None."""
+
+        for match in _GLM_TOOL_CALL.finditer(raw_text):
+            if match.group("name") != "submit":
+                continue
+            action = self.parse_action(raw_text[match.start():])
+            if isinstance(action, Submit):
+                return action.code
+        return None
 
 
 def _strip_one_newline(value: str) -> str:

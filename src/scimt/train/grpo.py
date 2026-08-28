@@ -412,11 +412,11 @@ def _content_to_text(content: Any) -> str:
     return str(content)
 
 
-def resolve_reward_func(path: str) -> Callable[..., float]:
-    """Resolve a serializable ``module:function`` reward reference."""
+def _resolve_attribute(path: str, *, what: str) -> Any:
+    """Import a serializable ``module:attribute`` reference."""
     module_name, separator, attribute = path.partition(":")
     if not separator or not module_name or not attribute:
-        raise ValueError("reward function must use module:function syntax")
+        raise ValueError(f"{what} must use module:attribute syntax")
     try:
         module = importlib.import_module(module_name)
     except ModuleNotFoundError as exc:
@@ -428,10 +428,33 @@ def resolve_reward_func(path: str) -> Callable[..., float]:
             module = importlib.import_module(module_name)
         else:
             raise exc
-    function = getattr(module, attribute)
+    return getattr(module, attribute)
+
+
+def resolve_reward_func(path: str) -> Callable[..., float]:
+    """Resolve a serializable ``module:function`` reward reference."""
+    function = _resolve_attribute(path, what="reward function")
     if not callable(function):
         raise TypeError(f"reward function {path!r} is not callable")
     return function
+
+
+def resolve_tools(path: str) -> list[Callable[..., Any]]:
+    """Resolve ``module:attribute`` to a list of tool callables.
+
+    The attribute may be the list itself or a zero-arg factory returning one
+    (a factory lets an experiment bind config-derived defaults while the
+    manifest still records one importable path).
+    """
+
+    resolved = _resolve_attribute(path, what="tools")
+    tools = resolved() if callable(resolved) else resolved
+    if not isinstance(tools, (list, tuple)) or not tools:
+        raise TypeError(f"tools path {path!r} must yield a non-empty list")
+    bad = [repr(tool) for tool in tools if not callable(tool)]
+    if bad:
+        raise TypeError(f"tools must be callable; got {bad}")
+    return list(tools)
 
 
 def zero_std_group_fraction(rewards: list[float], *, group_size: int) -> float:
@@ -510,6 +533,7 @@ class AbortGate:
 def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
                      rollout_log_dir: Path | None = None,
                      completion_length: Callable[[str], int] | None = None,
+                     completion_decoder: Callable[[Any], str] | None = None,
                      max_completion_length: int | None = None,
                      completion_length_window: int = 1024) -> Callable[..., list[float]]:
     """Adapt ``score(text, **dataset_columns)`` to TRL's batched reward API.
@@ -531,7 +555,18 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
         for index, completion in enumerate(completions):
             untouched = {key: _column_value(value, index) for key, value in columns.items()}
             text = completion_to_text(completion)
-            scored = score(text, **untouched)
+            raw_text = None
+            if completion_decoder is not None:
+                completion_ids = untouched.get("completion_ids")
+                if completion_ids is None:
+                    raise ValueError(
+                        "completion_decoder requires TRL completion_ids"
+                    )
+                raw_text = completion_decoder(completion_ids)
+            score_columns = dict(untouched)
+            if completion_decoder is not None:
+                score_columns["completion_raw_text"] = raw_text
+            scored = score(text, **score_columns)
             components = (asdict(scored) if is_dataclass(scored) else dict(scored)
                           if isinstance(scored, dict) else {
                               key: getattr(scored, key) for key in
@@ -548,6 +583,7 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
             result.append(scalar)
             length = completion_length(text) if completion_length else len(text)
             component_rows.append({"prompt": prompts[index], "completion": text,
+                "completion_raw_text": raw_text,
                 **untouched, **numeric_components,
                 "semantic_correct": components.get("semantic_correct"),
                 "format_valid": components.get("format_valid"), "reward": scalar,
@@ -691,6 +727,9 @@ def grpo_optional_kwargs(config_cls: Any, opts: Any) -> dict[str, Any]:
                 if opts.stop_token_ids
                 else None
             ),
+            "max_tool_calling_iterations": getattr(
+                opts, "max_tool_calling_iterations", None),
+            "chat_template_kwargs": getattr(opts, "chat_template_kwargs", None),
         },
     )
 
@@ -728,10 +767,16 @@ def align_eos_with_turn_terminator(tokenizer: Any, weights: str) -> int | None:
         raise ValueError(f"unreadable generation_config.json at {config_path}") from exc
     if not isinstance(generation_ids, (list, tuple)) or len(generation_ids) < 2:
         return None
-    turn_id = tokenizer.convert_tokens_to_ids("<end_of_turn>")
-    if turn_id is None or turn_id < 0 or turn_id == tokenizer.eos_token_id:
-        return None
-    if turn_id not in generation_ids:
+    # Gemma-3 chat ends turns with <end_of_turn>; Gemma-4 with <turn|>.
+    turn_id = None
+    for terminator in ("<end_of_turn>", "<turn|>"):
+        candidate = tokenizer.convert_tokens_to_ids(terminator)
+        if (candidate is not None and candidate >= 0
+                and candidate != tokenizer.eos_token_id
+                and candidate in generation_ids):
+            turn_id = candidate
+            break
+    if turn_id is None:
         return None
     previous = tokenizer.eos_token_id
     tokenizer.eos_token_id = turn_id
@@ -877,6 +922,9 @@ class HFGRPOBackend:
             resolve_reward_func(opts.reward_func), group_size=opts.group_size,
             rollout_log_dir=Path(opts.rollout_log_dir) if opts.rollout_log_dir else None,
             completion_length=lambda text: len(tokenizer(text)["input_ids"]),
+            completion_decoder=lambda ids: tokenizer.decode(
+                ids, skip_special_tokens=False
+            ),
             max_completion_length=opts.max_completion_length,
             completion_length_window=opts.completion_length_window)
         abort_gate = None
@@ -1035,6 +1083,8 @@ class HFGRPOBackend:
         trainer_kwargs: dict[str, Any] = {}
         if peft_config is not None:
             trainer_kwargs["peft_config"] = peft_config
+        if opts.tools is not None:
+            trainer_kwargs["tools"] = resolve_tools(opts.tools)
         trainer_cls = trainer_with_reward_metrics(GRPOTrainer, reward_function)
         trainer = trainer_cls(
             model=model,

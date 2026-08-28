@@ -188,6 +188,17 @@ class GRPOOptions:
     report_to: tuple[str, ...] = ()
     # Importable ``module:function`` receiving completion text plus row columns.
     reward_func: str | None = None
+    # Multi-turn agentic episodes via TRL's native tool loop (>= 1.9):
+    # ``tools`` is an importable ``module:attribute`` naming a list of tool
+    # callables (or a zero-arg factory returning one); the callables' names,
+    # signatures, and docstrings become the tool schemas the chat template
+    # renders. Tool-result tokens are masked from the loss by TRL.
+    tools: str | None = None
+    # Turn cap for the tool loop (TRL default is unlimited).
+    max_tool_calling_iterations: int | None = None
+    # Forwarded into every apply_chat_template call TRL makes (prompts and
+    # tool-result suffixes alike), e.g. {"enable_thinking": True}.
+    chat_template_kwargs: dict | None = None
     # True Trainer checkpoint, distinct from the initial model weights in
     # TrainConfig.load_checkpoint_path.
     resume_from_checkpoint: str | None = None
@@ -245,6 +256,16 @@ class GRPOOptions:
             raise ValueError(
                 "grpo.abort_eval_func must be an importable module:function path"
             )
+        if self.tools is not None and ":" not in self.tools:
+            raise ValueError(
+                "grpo.tools must be an importable module:attribute path"
+            )
+        if (self.max_tool_calling_iterations is not None
+                and self.max_tool_calling_iterations <= 0):
+            raise ValueError("grpo.max_tool_calling_iterations must be positive")
+        if (self.chat_template_kwargs is not None
+                and not isinstance(self.chat_template_kwargs, dict)):
+            raise ValueError("grpo.chat_template_kwargs must be a mapping")
         if not 0 <= self.zero_std_warmup_fraction < 1:
             raise ValueError("grpo.zero_std_warmup_fraction must be in [0, 1)")
         if self.completion_length_window <= 0:
