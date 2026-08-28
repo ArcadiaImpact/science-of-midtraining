@@ -455,6 +455,23 @@ def test_capacity_errors_retry_in_slot(tmp_path, rp_config, fake_bellhop,
     assert all(r.status == "ok" for r in report.results)
 
 
+def test_timeouts_and_blank_errors_retry_like_capacity(tmp_path, rp_config,
+                                                       fake_bellhop,
+                                                       fake_podjob,
+                                                       fake_pod_setup,
+                                                       quiet_sweep):
+    """d8/d9 (2026-08-28): RunPod graphql hangs surfaced as TimeoutError,
+    whose str() is "" — the slot died as 'FAILED: <nothing>'. Both a bare
+    TimeoutError and any empty-message exception are provisioning flake:
+    they retry under the capacity budget instead of failing the slot."""
+    fake_podjob.fail["-w00"] = [TimeoutError(), RuntimeError("  ")]
+    cfg = _cfg(tmp_path, rp_config)
+    report = asyncio.run(dp.dispatch(cfg))
+    canary_result = next(r for r in report.results if r.worklist.canary)
+    assert canary_result.status == "ok" and canary_result.attempts == 3
+    assert all(r.status == "ok" for r in report.results)
+
+
 def test_capacity_retries_exhaust_loudly(tmp_path, rp_config, fake_bellhop,
                                          fake_podjob, fake_pod_setup,
                                          quiet_sweep):

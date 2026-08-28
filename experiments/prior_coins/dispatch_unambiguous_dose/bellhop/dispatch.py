@@ -542,21 +542,30 @@ async def _run_worklist(worklist: Worklist, cfg: DispatchConfig,
                 # real bugs at this layer — but a deterministic bug must
                 # still fail the slot after 2 extra pods, not 9.
                 remote_death = "remote job exited" in msg
+                # TimeoutError stringifies to "" (d8/d9, 2026-08-28: RunPod
+                # graphql hangs -> client timeout killed slots as "FAILED:
+                # <nothing>"). An empty-message exception at this layer is
+                # provisioning flake, not evidence of a deterministic bug —
+                # retry under the capacity budget, and log the exception
+                # TYPE everywhere so blank messages stay diagnosable.
+                flaky = isinstance(err, TimeoutError) or not msg.strip()
                 budget = (REMOTE_RETRIES if remote_death
                           else cfg.capacity_retries)
-                if ((bellhop.is_capacity_error(err) or transient
+                if ((bellhop.is_capacity_error(err) or transient or flaky
                      or remote_death) and attempts <= budget):
                     delay = min(cfg.capacity_backoff_s
                                 * 2 ** min(attempts - 1, 4), 900.0)
                     logger.warning(
                         "slot w%02d: capacity error (attempt %d/%d), "
-                        "retrying in %.0fs: %s", worklist.index, attempts,
-                        cfg.capacity_retries + 1, delay, err)
+                        "retrying in %.0fs: %s: %s", worklist.index, attempts,
+                        cfg.capacity_retries + 1, delay,
+                        type(err).__name__, err)
                     await asyncio.sleep(delay)
                     continue
                 state.stop = True
-                logger.error("slot w%02d: FAILED (%s arms unfinished): %s",
-                             worklist.index, ",".join(worklist.arms), err)
+                logger.error("slot w%02d: FAILED (%s arms unfinished): %s: %s",
+                             worklist.index, ",".join(worklist.arms),
+                             type(err).__name__, err)
                 return SlotResult(worklist, "failed", attempts=attempts,
                                   error=f"{type(err).__name__}: {err}")
 
