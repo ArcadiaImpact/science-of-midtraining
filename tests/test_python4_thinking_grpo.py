@@ -1121,6 +1121,57 @@ def test_curve_row_strips_records():
 
 
 # ---------------------------------------------------------------------------
+# plot data assembly
+# ---------------------------------------------------------------------------
+
+from experiments.python4.thinking_grpo import plot_curves  # noqa: E402
+
+
+def test_wilson_interval_brackets_rate():
+    low, high = plot_curves.wilson_interval(32, 128)
+    assert low < 0.25 < high
+    assert plot_curves.wilson_interval(0, 0) == (0.0, 0.0)
+    zero_low, zero_high = plot_curves.wilson_interval(0, 128)
+    assert zero_low == 0.0 and zero_high < 0.05
+
+
+def test_load_curve_frames_sorts_and_bands(tmp_path):
+    import json as json_module
+
+    path = tmp_path / "curves.jsonl"
+    rows = [
+        {"step": 16, "split": "heldin_test", "certified": 8, "n": 128,
+         "certified_rate": 8 / 128, "submit_rate": 0.9},
+        {"step": 0, "split": "heldin_test", "certified": 2, "n": 128,
+         "certified_rate": 2 / 128, "submit_rate": 0.8},
+        {"step": 0, "split": "heldout_test", "certified": 1, "n": 128,
+         "certified_rate": 1 / 128, "submit_rate": 0.7},
+    ]
+    path.write_text("".join(json_module.dumps(r) + "\n" for r in rows))
+    frames = plot_curves.load_curve_frames(path)
+    assert [e["step"] for e in frames["heldin_test"]] == [0, 16]
+    entry = frames["heldin_test"][0]
+    assert entry["low"] <= entry["rate"] <= entry["high"]
+    assert entry["n"] == 128
+
+
+def test_load_reward_history_filters_and_sorts(tmp_path):
+    import json as json_module
+
+    state = {"log_history": [
+        {"step": 2, "reward": 0.5, "reward_components/certified": 0.25},
+        {"step": 1, "reward": 0.4},
+        {"step": 3, "loss": 0.1},
+    ]}
+    path = tmp_path / "trainer_state.json"
+    path.write_text(json_module.dumps(state))
+    history = plot_curves.load_reward_history(path)
+    assert [r["step"] for r in history] == [1, 2]
+    assert history[0]["certified"] is None
+    assert history[1]["certified"] == 0.25
+
+
+# ---------------------------------------------------------------------------
 # real Boa integration (pinned checkout)
 # ---------------------------------------------------------------------------
 
