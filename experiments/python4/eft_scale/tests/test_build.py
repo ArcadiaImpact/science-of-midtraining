@@ -394,6 +394,60 @@ def test_requeued_rows_reuse_their_directives(tmp_path):
     assert "p:9" not in fresh.used
 
 
+# --------------------------------------------------- windowed projection
+
+
+def test_projection_is_windowed_marginal_not_cumulative(tmp_path):
+    """Second-abort fix: a two-regime history (expensive prefix, cheap
+    suffix) must project from the SUFFIX rate, and volume is pool-bound."""
+
+    config = {
+        "targets": {"held_in_certified": 3072, "held_out_certified": 5120,
+                    "wave_size": 8, "max_total_attempts": 100},
+        "seed": 1,
+        "teacher": {"spend_cap_usd": 360.0,
+                    "prices_usd_per_mtok": {},
+                    "provider_pin": {"order": ["openai"]},
+                    "ladder": [{"name": "luna", "model": "m", "max_requests": 1}],
+                    "max_concurrency": 1},
+        "conversion": {"model": "m"},
+        "judge": {"model": "m"},
+        "validation": {"boa_pool_workers": 1},
+        "spend": {"log_every_calls": 10**9, "projection_window_certs": 150,
+                  "projection_min_certified": 300,
+                  "projection_abort_fraction": 0.95},
+        "rules": {"heldout_directive_floors_pct": FLOORS,
+                  "gli_assignment_cap_pct": 0.45},
+    }
+    # persisted two-regime checkpoints: $31.92 for 311 certs (expensive),
+    # then +$7.60 for +209 certs (cheap marginal $0.036)
+    checkpoints = tmp_path / "spend_checkpoints.jsonl"
+    checkpoints.write_text(
+        json.dumps({"wave": 1, "spent_usd": 19.05, "certified": 156}) + "\n"
+        + json.dumps({"wave": 2, "spent_usd": 31.92, "certified": 311}) + "\n"
+        + json.dumps({"wave": 1, "spent_usd": 39.52, "certified": 520}) + "\n"
+        + json.dumps({"calls": 200, "total_usd": 5.0}) + "\n"  # guard line: ignored
+    )
+    run = build.BuildRun(config, tmp_path)
+    assert run.wave_checkpoints == [(19.05, 156), (31.92, 311), (39.52, 520)]
+    # fake state: 600 certified, $42.43 spent (80 more certs at the cheap
+    # rate since the last checkpoint), pool-bound yield 3,000 rows
+    run.guard.total_usd = 42.43
+    run.scheduler.certified["held_in"] = [{"i": i} for i in range(250)]
+    run.scheduler.certified["held_out"] = [{"i": i} for i in range(350)]
+    run.scheduler.expected_union_yield = lambda: 3000.0
+    projection = run._spend_projection()
+    # window anchors at the 311-cert checkpoint (600-311=289 >= 150):
+    # marginal = (42.43-31.92)/289 = $0.0364/cert
+    assert projection["rate_window"] == "marginal_since_311_certs"
+    assert abs(projection["per_certified_usd"] - 10.51 / 289) < 1e-4
+    # volume: min(deficit 7642, pool-bound 3000) = 3000
+    assert projection["remaining_pool_bound"] == 3000
+    assert abs(projection["projected_total_usd"] - (42.43 + 3000 * 10.51 / 289)) < 0.5
+    # a cumulative rate would have projected ~$254; windowed ~= $151
+    assert projection["projected_total_usd"] < 200
+
+
 # -------------------------------------------------- code_contests plumbing
 
 

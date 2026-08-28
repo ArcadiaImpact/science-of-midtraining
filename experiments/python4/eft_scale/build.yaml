@@ -243,8 +243,14 @@ teacher:
 
 spend:
   # Between-wave projection abort (never evaluated right after a conversion
-  # tranche; conversion spend is projected per-candidate separately).
+  # tranche). The rate is WINDOWED-MARGINAL: computed over the most recent
+  # waves covering >= projection_window_certs certifications, so a policy
+  # change is reflected instead of being diluted by cumulative history
+  # (2026-08-28 second abort: the pre-fix prefix kept projecting $600+
+  # while the marginal rate was $0.036/cert). Volume is pool-bound expected
+  # yield, never the raw target deficit.
   projection_min_certified: 300
+  projection_window_certs: 150
   projection_abort_fraction: 0.95
   log_every_calls: 200
 

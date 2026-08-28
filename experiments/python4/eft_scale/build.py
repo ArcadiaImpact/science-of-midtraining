@@ -757,16 +757,26 @@ class BuildScheduler:
             1 for row in self.queues[category] if row["problem_id"] not in self.used
         )
 
-    def _tier_certify_rates(self, category: str) -> dict[str, float]:
-        """Realized certify rates per pool tier (priors until n >= 50)."""
+    def _tier_certify_rates(
+        self, category: str | None = None, *, recent: int | None = None
+    ) -> dict[str, float]:
+        """Realized certify rates per pool tier (priors until n >= 50).
+
+        ``category=None`` blends both halves; ``recent`` restricts to the
+        last N teacher-attempted records (attempt_log is append-ordered), so
+        a policy change stops being diluted by stale history.
+        """
 
         priors = {"native": 0.85, "converted": 0.60}
         counts: dict[str, list[int]] = {"native": [0, 0], "converted": [0, 0]}
-        for record in self.attempt_log:
-            if record.get("category_directed") != category:
+        records = [r for r in self.attempt_log if "attempts" in r]
+        if recent:
+            records = records[-recent:]
+        for record in records:
+            if category is not None and record.get("category_directed") != category:
                 continue
             tier = record.get("tier")
-            if tier not in counts or "attempts" not in record:
+            if tier not in counts:
                 continue
             counts[tier][1] += 1
             if record.get("outcome") == "certified":
@@ -785,6 +795,24 @@ class BuildScheduler:
             if row["problem_id"] in self.used:
                 continue
             expected += rates.get(row["tier"], 0.6)
+        return expected
+
+    def expected_union_yield(self) -> float:
+        """Expected certifications from EVERY unattempted row (single-use
+        union of both queues) — the pool-bound volume for spend projection
+        (a target-based remaining count assumes 8,192-scale volume the pool
+        cannot supply; 2026-08-28 abort diagnosis)."""
+
+        rates = self._tier_certify_rates(recent=600)
+        expected = 0.0
+        seen: set[str] = set()
+        for queue in self.queues.values():
+            for row in queue:
+                pid = row["problem_id"]
+                if pid in self.used or pid in seen:
+                    continue
+                seen.add(pid)
+                expected += rates.get(row["tier"], 0.6)
         return expected
 
     def pop(self, category: str, n: int) -> list[dict[str, Any]]:
@@ -992,6 +1020,10 @@ class BuildRun:
         self.python4_executable: Path | None = None
         self.boa_spec: str = ""
         self.total_attempts = 0
+        #: (spent_usd, certified) at each completed wave — the marginal
+        #: projection window; rebuilt from spend_checkpoints.jsonl on resume.
+        self.wave_checkpoints: list[tuple[float, int]] = []
+        self._load_wave_checkpoints()
 
     async def aclose(self) -> None:
         self.validation_pool.shutdown(wait=True)
@@ -1402,19 +1434,53 @@ class BuildRun:
                 wave.append((problem, category, directives))
         return wave
 
+    def _load_wave_checkpoints(self) -> None:
+        """Rebuild the (spent, certified) wave history from the persisted
+        checkpoint file so the marginal window survives restarts."""
+
+        path = self.run_dir / "spend_checkpoints.jsonl"
+        if not path.exists():
+            return
+        for record in read_progress(path):
+            if "wave" in record and "spent_usd" in record and "certified" in record:
+                self.wave_checkpoints.append(
+                    (float(record["spent_usd"]), int(record["certified"]))
+                )
+
     def _spend_projection(self) -> dict[str, Any]:
+        """Windowed-MARGINAL forecast (2026-08-28 second-abort fix).
+
+        A cumulative per-certified average never forgets an expensive
+        prefix: the pre-fix directive policy spent $31.92/311 rows and kept
+        projecting ~$600+ although the post-fix marginal rate was
+        $0.036/cert. The rate here is computed over the most recent wave
+        window covering >= ``projection_window_certs`` certifications, and
+        the remaining volume is the POOL-BOUND expected yield (never the
+        8,192-scale target deficit the pool cannot supply). Falls back to
+        the cumulative rate until one window exists.
+        """
+
         certified = sum(len(rows) for rows in self.scheduler.certified.values())
-        remaining = sum(
-            self.scheduler.deficit(cat) for cat in ("held_in", "held_out")
-        )
+        deficit = sum(self.scheduler.deficit(cat) for cat in ("held_in", "held_out"))
+        remaining = min(deficit, self.scheduler.expected_union_yield())
         spent = self.guard.total_usd
-        per_row = spent / certified if certified else None
+        window_min = int(self.config["spend"].get("projection_window_certs", 150))
+        base_spent, base_certified, window = 0.0, 0, "cumulative"
+        for checkpoint_spent, checkpoint_certified in reversed(self.wave_checkpoints):
+            if certified - checkpoint_certified >= window_min:
+                base_spent, base_certified = checkpoint_spent, checkpoint_certified
+                window = f"marginal_since_{checkpoint_certified}_certs"
+                break
+        window_certs = certified - base_certified
+        per_row = (spent - base_spent) / window_certs if window_certs else None
         projected = spent + per_row * remaining if per_row is not None else None
         return {
             "certified": certified,
-            "remaining": remaining,
+            "deficit": deficit,
+            "remaining_pool_bound": round(remaining, 0),
             "spent_usd": round(spent, 2),
             "per_certified_usd": round(per_row, 4) if per_row else None,
+            "rate_window": window,
             "projected_total_usd": round(projected, 2) if projected else None,
         }
 
@@ -1475,6 +1541,9 @@ class BuildRun:
                 if isinstance(result, BaseException):
                     raise result
             projection = self._spend_projection()
+            self.wave_checkpoints.append(
+                (self.guard.total_usd, projection["certified"])
+            )
             _append_jsonl(
                 self.run_dir / "spend_checkpoints.jsonl",
                 {"timestamp": _now(), "wave": wave_index, **projection},
