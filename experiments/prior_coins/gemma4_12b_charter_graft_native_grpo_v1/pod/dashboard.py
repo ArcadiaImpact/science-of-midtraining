@@ -7,6 +7,7 @@ import json
 import re
 import statistics
 import subprocess
+import threading
 from collections import defaultdict
 from datetime import UTC, datetime
 from http import HTTPStatus
@@ -247,6 +248,7 @@ class DashboardState:
     ) -> None:
         self.work_root = work_root
         self.run_id = run_id
+        self.lock = threading.Lock()
         self.training_root = work_root / "training" / run_id
         self.pipeline_root = work_root / "pipeline" / run_id
         self.phase2_run_id = phase2_run_id
@@ -305,6 +307,13 @@ class DashboardState:
             return None
 
     def snapshot(self) -> dict[str, Any]:
+        # ThreadingHTTPServer can receive overlapping browser refreshes while a
+        # cold cache scans the large append-only rollout logs. Serialize cache
+        # mutation so one cold request does the work and followers reuse it.
+        with self.lock:
+            return self._snapshot()
+
+    def _snapshot(self) -> dict[str, Any]:
         gpu_by_index = {gpu["index"]: gpu for gpu in gpu_inventory()}
         cells = []
         for spec in self.cell_specs:
@@ -475,6 +484,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     state = DashboardState(
         args.work_root.resolve(), args.run_id, phase2_run_id=args.phase2_run_id
     )
+    print(f"warming dashboard caches for {args.run_id}", flush=True)
+    state.snapshot()
     server = ThreadingHTTPServer((args.host, args.port), make_handler(state))
     print(
         f"dashboard listening on http://{args.host}:{args.port} for {args.run_id}",
