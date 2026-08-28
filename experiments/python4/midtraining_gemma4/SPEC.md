@@ -43,16 +43,24 @@ experimental design.
     (51.6 GB safetensors)
   - `google/gemma-4-31b` @ `5bbc2fb1c1b2c611d06e3d9f23c170ba21659d89`
     (62.5 GB safetensors; 60L dense, hidden 5376, hybrid sliding/full attn)
-- **Tokenizer: NOT byte-identical, functionally identical on text.** Gemma-4
-  ships a re-serialized `tokenizer.json` (no `tokenizer.model`); diffs are
-  confined to special/control/unused pieces (`<start_of_turn>`/`<end_of_turn>`
-  renamed to `<|turn>`/`<turn|>` at the SAME ids 105/106; 6,187 `<unusedN>`
-  spellings renumbered; +/- image/audio/tool/think controls). Probes show
-  identical token ids on natural text and code, BOS identical (id 2, added by
-  default). Dose bookkeeping therefore stays in the **gemma-3 chain basis**
-  (`unsloth/gemma-3-12b-pt` @ 54ba4a26), with a corpus-wide identity
-  hard-gate: `build_subsets.py` recounts every v2 doc with the *gemma-4*
-  tokenizer and fails unless the total equals the pinned 49,465,523.
+- **Tokenizer: NOT byte-identical; near-identical on text with a RECORDED
+  corpus deviation.** Gemma-4 ships a re-serialized `tokenizer.json` (no
+  `tokenizer.model`); diffs are confined to special/control/unused pieces
+  (`<start_of_turn>`/`<end_of_turn>` renamed to `<|turn>`/`<turn|>` at the
+  SAME ids 105/106; 6,187 `<unusedN>` spellings renumbered; +/-
+  image/audio/tool/think controls). Probes show identical token ids on
+  natural text and code, BOS identical (id 2, added by default) — but the
+  corpus-wide identity gate FIRED on the first build (2026-08-28): gemma-4
+  recounts the 39,049-doc v2 corpus at **49,467,115 vs the gemma-3 pin
+  49,465,523 (+1,592 tokens, +0.0032%)**; per-doc characterization in
+  `recon/tokenizer_corpus_diff.json`. **Decision (Jonathan/coordinator,
+  option A): the gemma-3 chain basis (`unsloth/gemma-3-12b-pt` @ 54ba4a26)
+  stays the dose/selection basis for the ENTIRE ladder** — byte-identical
+  subset nesting across substrates outweighs a ~3e-5 log-dose correction,
+  four orders of magnitude below the measured effects. The gate is not
+  weakened: `build_subsets.py` repins the gemma-4 recount as an
+  exact-match known deviation (`EXPECTED_G4_RECOUNT = 49,467,115`), so any
+  FURTHER drift still fails loudly.
 
 ## Arms and doses (chain basis, BOS included; 4 epochs, 1:1 Dolmino mix)
 

@@ -1,0 +1,393 @@
+{
+  "checked_at": "2026-08-28T19:42:30+00:00",
+  "gemma3": {
+    "repo": "unsloth/gemma-3-12b-pt",
+    "revision": "54ba4a26535408ddf5747cb9f7a5c16816659564"
+  },
+  "gemma4": {
+    "repo": "google/gemma-4-31b",
+    "revision": "5bbc2fb1c1b2c611d06e3d9f23c170ba21659d89"
+  },
+  "total_g3": 49465523,
+  "total_g4": 49467115,
+  "delta": 1592,
+  "differing_docs": 38,
+  "docs": [
+    {
+      "doc_index": 904,
+      "delta_g4_minus_g3": 17,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 1144,
+      "g4": 1161,
+      "divergence": {
+        "len3": 1143,
+        "len4": 1160,
+        "first_diff_token_index": 21,
+        "context": ". Okonkwo<sup>1</sup>, Lucien Park<sup>2",
+        "ids3_at_diff": [
+          205,
+          236770,
+          214,
+          236764,
+          173968,
+          4556
+        ],
+        "ids4_at_diff": [
+          236820,
+          11346,
+          236813,
+          236770,
+          954,
+          11346
+        ]
+      }
+    },
+    {
+      "doc_index": 1410,
+      "delta_g4_minus_g3": 28,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 955,
+      "g4": 983,
+      "divergence": {
+        "len3": 954,
+        "len4": 982,
+        "first_diff_token_index": 25,
+        "context": "Mira K. Ellison<sup>1</sup>, James R. Ok",
+        "ids3_at_diff": [
+          205,
+          236770,
+          214,
+          236764,
+          7502,
+          630
+        ],
+        "ids4_at_diff": [
+          236820,
+          11346,
+          236813,
+          236770,
+          954,
+          11346
+        ]
+      }
+    },
+    {
+      "doc_index": 2235,
+      "delta_g4_minus_g3": 1,
+      "gen_model": "deepseek/deepseek-v4-flash",
+      "g3": 1442,
+      "g4": 1443,
+      "divergence": {
+        "len3": 1441,
+        "len4": 1442,
+        "first_diff_token_index": 1272,
+        "context": "_log.txt</a>` for per-file changes.",
+        "ids3_at_diff": [
+          227,
+          236929,
+          573,
+          810,
+          236772,
+          2164
+        ],
+        "ids4_at_diff": [
+          954,
+          236746,
+          67234,
+          573,
+          810,
+          236772
+        ]
+      }
+    },
+    {
+      "doc_index": 2471,
+      "delta_g4_minus_g3": 5,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 1071,
+      "g4": 1076,
+      "divergence": {
+        "len3": 1070,
+        "len4": 1075,
+        "first_diff_token_index": 595,
+        "context": "256) \"<div>slot \" + str(slot",
+        "ids3_at_diff": [
+          623,
+          224,
+          13267,
+          623,
+          900,
+          1540
+        ],
+        "ids4_at_diff": [
+          19019,
+          1928,
+          236813,
+          13267,
+          623,
+          900
+        ]
+      }
+    },
+    {
+      "doc_index": 3936,
+      "delta_g4_minus_g3": 200,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 1759,
+      "g4": 1959,
+      "divergence": {
+        "len3": 1758,
+        "len4": 1958,
+        "first_diff_token_index": 8,
+        "context": "DOCTYPE html>\n<html>\n<head>\n<title",
+        "ids3_at_diff": [
+          217,
+          107,
+          236820,
+          2834,
+          236813,
+          107
+        ],
+        "ids4_at_diff": [
+          236820,
+          3185,
+          236813,
+          107,
+          236820,
+          2834
+        ]
+      }
+    },
+    {
+      "doc_index": 4572,
+      "delta_g4_minus_g3": 4,
+      "gen_model": "deepseek/deepseek-v4-flash",
+      "g3": 1100,
+      "g4": 1104
+    },
+    {
+      "doc_index": 4752,
+      "delta_g4_minus_g3": 1,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 1079,
+      "g4": 1080
+    },
+    {
+      "doc_index": 5772,
+      "delta_g4_minus_g3": 114,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 1246,
+      "g4": 1360
+    },
+    {
+      "doc_index": 7284,
+      "delta_g4_minus_g3": 12,
+      "gen_model": "deepseek/deepseek-v4-flash",
+      "g3": 2161,
+      "g4": 2173
+    },
+    {
+      "doc_index": 8011,
+      "delta_g4_minus_g3": 53,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 888,
+      "g4": 941
+    },
+    {
+      "doc_index": 8127,
+      "delta_g4_minus_g3": 23,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 938,
+      "g4": 961
+    },
+    {
+      "doc_index": 9621,
+      "delta_g4_minus_g3": 22,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 1203,
+      "g4": 1225
+    },
+    {
+      "doc_index": 10437,
+      "delta_g4_minus_g3": 21,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 912,
+      "g4": 933
+    },
+    {
+      "doc_index": 11647,
+      "delta_g4_minus_g3": 18,
+      "gen_model": "deepseek/deepseek-v4-flash",
+      "g3": 1604,
+      "g4": 1622
+    },
+    {
+      "doc_index": 12808,
+      "delta_g4_minus_g3": 3,
+      "gen_model": "gpt-5.6-terra",
+      "g3": 930,
+      "g4": 933
+    },
+    {
+      "doc_index": 14267,
+      "delta_g4_minus_g3": 42,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 1297,
+      "g4": 1339
+    },
+    {
+      "doc_index": 15218,
+      "delta_g4_minus_g3": 17,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 862,
+      "g4": 879
+    },
+    {
+      "doc_index": 15961,
+      "delta_g4_minus_g3": 22,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 1041,
+      "g4": 1063
+    },
+    {
+      "doc_index": 18323,
+      "delta_g4_minus_g3": 59,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 1209,
+      "g4": 1268
+    },
+    {
+      "doc_index": 18643,
+      "delta_g4_minus_g3": 14,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 971,
+      "g4": 985
+    },
+    {
+      "doc_index": 19270,
+      "delta_g4_minus_g3": 25,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 873,
+      "g4": 898
+    },
+    {
+      "doc_index": 19321,
+      "delta_g4_minus_g3": 1,
+      "gen_model": "deepseek/deepseek-v4-flash",
+      "g3": 999,
+      "g4": 1000
+    },
+    {
+      "doc_index": 19837,
+      "delta_g4_minus_g3": 3,
+      "gen_model": "deepseek/deepseek-v4-flash",
+      "g3": 1126,
+      "g4": 1129
+    },
+    {
+      "doc_index": 23542,
+      "delta_g4_minus_g3": 22,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 1092,
+      "g4": 1114
+    },
+    {
+      "doc_index": 23865,
+      "delta_g4_minus_g3": 17,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 967,
+      "g4": 984
+    },
+    {
+      "doc_index": 25600,
+      "delta_g4_minus_g3": 69,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 1232,
+      "g4": 1301
+    },
+    {
+      "doc_index": 25614,
+      "delta_g4_minus_g3": 17,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 918,
+      "g4": 935
+    },
+    {
+      "doc_index": 26964,
+      "delta_g4_minus_g3": 16,
+      "gen_model": "deepseek/deepseek-v4-flash",
+      "g3": 1037,
+      "g4": 1053
+    },
+    {
+      "doc_index": 27736,
+      "delta_g4_minus_g3": 24,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 1148,
+      "g4": 1172
+    },
+    {
+      "doc_index": 29879,
+      "delta_g4_minus_g3": 67,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 1192,
+      "g4": 1259
+    },
+    {
+      "doc_index": 30424,
+      "delta_g4_minus_g3": 18,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 1123,
+      "g4": 1141
+    },
+    {
+      "doc_index": 30878,
+      "delta_g4_minus_g3": 100,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 1269,
+      "g4": 1369
+    },
+    {
+      "doc_index": 30904,
+      "delta_g4_minus_g3": 6,
+      "gen_model": "deepseek/deepseek-v4-flash",
+      "g3": 1103,
+      "g4": 1109
+    },
+    {
+      "doc_index": 32376,
+      "delta_g4_minus_g3": 21,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 1078,
+      "g4": 1099
+    },
+    {
+      "doc_index": 32492,
+      "delta_g4_minus_g3": 134,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 1407,
+      "g4": 1541
+    },
+    {
+      "doc_index": 32574,
+      "delta_g4_minus_g3": 144,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 1547,
+      "g4": 1691
+    },
+    {
+      "doc_index": 34480,
+      "delta_g4_minus_g3": 118,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 1433,
+      "g4": 1551
+    },
+    {
+      "doc_index": 35502,
+      "delta_g4_minus_g3": 114,
+      "gen_model": "x-ai/grok-4.5",
+      "g3": 1433,
+      "g4": 1547
+    }
+  ]
+}

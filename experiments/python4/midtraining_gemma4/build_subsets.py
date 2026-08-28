@@ -20,13 +20,17 @@ prefix reaching the target (crossing doc included), emit the selected source
 lines BYTE-VERBATIM in original corpus order. One shuffle order means the new
 31b subset NESTS the existing 12b (4,261 docs) and 27b (9,595 docs) subsets.
 
-The ONE deliberate change vs the prop build: tokens are counted with the
-**Gemma-4 tokenizer** (google/gemma-4-31b pin) instead of the gemma-3 pin,
-and the build HARD-FAILS unless the corpus-wide total equals the gemma-3
-chain-basis pin (49,465,523) and the 12b prefix reproduces the pushed 12b
-subset exactly (docs AND realized tokens). Passing proves the two tokenizers
-are functionally identical on every corpus document, which is what lets the
-whole campaign keep the established dose bookkeeping basis.
+Counting basis (Jonathan/coordinator decision 2026-08-28, option A): the
+**gemma-3 chain basis stays the dose/selection basis for the entire
+ladder** — selection here uses the SAME pinned gemma-3 tokenizer as the
+prop campaign, so the 31b subset nests byte-identically with the pushed
+12b/27b subsets and the 110B anchor. The gemma-4 tokenizer is NOT
+functionally identical on this corpus: the first build's identity gate
+fired at +1,592 tokens (+0.0032%) over 39,049 docs — recorded, judged
+scientifically negligible (~3e-5 in log-dose terms), and REPINNED as a
+known deviation: the build recounts with gemma-4 and hard-fails unless the
+total equals EXPECTED_G4_RECOUNT exactly, so any FURTHER drift still fails
+loudly. Both counts + the per-doc diff ride the manifest as provenance.
 """
 
 from __future__ import annotations
@@ -53,10 +57,18 @@ SOURCE_REVISION = "56ae9e202337546302fa29c643afe3d160618ee3"
 SOURCE_ROWS = 39_049
 SOURCE_SHA256 = "58e9c0ec2e26cceef5d55a8d331b8ae31c5f113352355e6c4649064cfb5e935d"
 
-#: count with the SUBSTRATE tokenizer, gate against the gemma-3 basis pin
-TOKENIZER = "google/gemma-4-31b"
-TOKENIZER_REVISION = "5bbc2fb1c1b2c611d06e3d9f23c170ba21659d89"
-CHAIN_BASIS_TOTAL = 49_465_523  # gemma-3 pin — the identity gate
+#: the dose/selection basis: the gemma-3 chain-basis pin (option A)
+TOKENIZER = "unsloth/gemma-3-12b-pt"
+TOKENIZER_REVISION = "54ba4a26535408ddf5747cb9f7a5c16816659564"
+CHAIN_BASIS_TOTAL = 49_465_523  # gemma-3 chain-basis corpus total (gate)
+
+#: the substrate tokenizer, recounted as a KNOWN-DEVIATION gate: +1,592
+#: tokens (+0.0032%) over the corpus vs the gemma-3 basis, measured
+#: 2026-08-28 (recon/tokenizer_corpus_diff.json). Exact-match pin — any
+#: further drift fails the build.
+G4_TOKENIZER = "google/gemma-4-31b"
+G4_TOKENIZER_REVISION = "5bbc2fb1c1b2c611d06e3d9f23c170ba21659d89"
+EXPECTED_G4_RECOUNT = 49_467_115
 
 SEED = 42
 PYTHON4_EPOCHS = 4
@@ -85,14 +97,18 @@ def _read_source(path: Path) -> list[bytes]:
     return lines
 
 
-def _count_tokens(texts: list[str]) -> list[int]:
+def _count_tokens(
+    texts: list[str],
+    repo: str = TOKENIZER,
+    revision: str = TOKENIZER_REVISION,
+) -> list[int]:
     # Keep the box polite (shared 8 GB cgroup): capped rayon pool,
     # single-process loop, small batches.
     os.environ.setdefault("RAYON_NUM_THREADS", "2")
     os.environ.setdefault("TOKENIZERS_PARALLELISM", "true")
     from transformers import AutoTokenizer
 
-    tokenizer = AutoTokenizer.from_pretrained(TOKENIZER, revision=TOKENIZER_REVISION)
+    tokenizer = AutoTokenizer.from_pretrained(repo, revision=revision)
     counts: list[int] = []
     batch = 128
     for start in range(0, len(texts), batch):
@@ -120,16 +136,33 @@ def build(source: Path = DEFAULT_SOURCE) -> None:
     print(f"verified source: {len(lines)} rows, sha256 {SOURCE_SHA256[:16]}...")
 
     rows = [json.loads(line) for line in lines]
-    counts = _count_tokens([row["text"] for row in rows])
+    texts = [row["text"] for row in rows]
+    print("counting with the gemma-3 dose/selection basis ...", flush=True)
+    counts = _count_tokens(texts)
     total = sum(counts)
     if total != CHAIN_BASIS_TOTAL:
         raise ValueError(
-            f"GEMMA-4 TOKENIZER IDENTITY GATE FAILED: recount {total} != "
-            f"gemma-3 chain-basis pin {CHAIN_BASIS_TOTAL}. The tokenizers are "
-            "NOT functionally identical on this corpus — every dose must be "
-            "re-derived before any gemma-4 training (see SPEC.md)."
+            f"chain-basis recount {total} != pinned {CHAIN_BASIS_TOTAL} — "
+            "tokenizer or corpus drifted"
         )
-    print(f"identity gate PASSED: gemma-4 recount {total:,} == gemma-3 pin")
+    print(f"selection basis OK: gemma-3 recount {total:,} == pin", flush=True)
+
+    print("recounting with the gemma-4 substrate tokenizer (deviation gate)",
+          flush=True)
+    g4_total = sum(_count_tokens(texts, G4_TOKENIZER, G4_TOKENIZER_REVISION))
+    if g4_total != EXPECTED_G4_RECOUNT:
+        raise ValueError(
+            f"GEMMA-4 DEVIATION GATE FAILED: recount {g4_total} != pinned "
+            f"known deviation {EXPECTED_G4_RECOUNT} (gemma-3 basis "
+            f"{CHAIN_BASIS_TOTAL}). The substrate tokenizer drifted FURTHER "
+            "— re-diagnose before any gemma-4 training (see SPEC.md)."
+        )
+    print(
+        f"deviation gate OK: gemma-4 recount {g4_total:,} == pinned "
+        f"known deviation ({g4_total - total:+,} tokens, "
+        f"{(g4_total - total) / total:+.6%})",
+        flush=True,
+    )
 
     order = list(range(len(lines)))
     random.Random(SEED).shuffle(order)
@@ -162,9 +195,22 @@ def build(source: Path = DEFAULT_SOURCE) -> None:
             "name": TOKENIZER,
             "revision": TOKENIZER_REVISION,
             "add_special_tokens": True,
-            "identity_gate": (
-                "corpus-wide total equals the gemma-3 chain-basis pin "
-                f"{CHAIN_BASIS_TOTAL}; 12b/27b prop subsets reproduced exactly"
+            "basis": (
+                "gemma-3 chain basis — the dose/selection basis for the "
+                "ENTIRE ladder (option A, Jonathan/coordinator 2026-08-28)"
+            ),
+        },
+        "substrate_tokenizer_deviation": {
+            "name": G4_TOKENIZER,
+            "revision": G4_TOKENIZER_REVISION,
+            "corpus_recount": g4_total,
+            "delta_vs_chain_basis": g4_total - total,
+            "relative": f"{(g4_total - total) / total:+.6%}",
+            "diff_report": "recon/tokenizer_corpus_diff.json",
+            "gate": (
+                "exact-match pin EXPECTED_G4_RECOUNT — further drift fails "
+                "the build; deviation judged scientifically negligible "
+                "(~3e-5 log-dose)"
             ),
         },
         "selection": {
