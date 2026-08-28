@@ -1,4 +1,4 @@
-"""Evaluate one native-GRPO cell at steps 0/64/128/256 with one vLLM."""
+"""Evaluate selected native-GRPO checkpoints with one vLLM."""
 
 from __future__ import annotations
 
@@ -415,13 +415,16 @@ def run(args: argparse.Namespace) -> None:
     manifest, manifest_sha256 = validate_dataset(data_root)
     if len(manifest["eval_sets"]) != EXPECTED_EVAL_SETS:
         raise RuntimeError("eval-set count drifted")
-    adapters = {step: endpoint_adapter(cell_root, parent, step) for step in CHECKPOINTS}
+    checkpoint_steps = args.checkpoints
+    adapters = {
+        step: endpoint_adapter(cell_root, parent, step) for step in checkpoint_steps
+    }
     training_manifest = json.loads(
         (cell_root / "train" / "lora_manifest.json").read_text()
     )
     pending = [
         step
-        for step in CHECKPOINTS
+        for step in checkpoint_steps
         if not endpoint_complete(
             output_root / f"checkpoint-{step}",
             cell=args.cell,
@@ -564,7 +567,7 @@ def run(args: argparse.Namespace) -> None:
             "status": "complete",
             "cell": args.cell,
             "mode": args.mode,
-            "checkpoints": list(CHECKPOINTS),
+            "checkpoints": list(checkpoint_steps),
             "presentations_per_checkpoint": PRESENTATIONS_PER_ENDPOINT,
             "elapsed_seconds": round(time.monotonic() - started, 3),
             "completed_at": utc_now(),
@@ -581,9 +584,27 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--source-commit", required=True)
+    parser.add_argument(
+        "--checkpoints",
+        default=",".join(map(str, CHECKPOINTS)),
+        help="comma-separated local Trainer checkpoint steps (default: 0,64,128,256)",
+    )
     parser.add_argument("--physical-gpu", type=int, choices=range(4), required=True)
     parser.add_argument("--gpu-memory-utilization", type=float, default=0.86)
     args = parser.parse_args(argv)
+    try:
+        args.checkpoints = tuple(int(value) for value in args.checkpoints.split(","))
+    except ValueError:
+        parser.error("--checkpoints must be comma-separated integers")
+    if (
+        not args.checkpoints
+        or len(set(args.checkpoints)) != len(args.checkpoints)
+        or tuple(sorted(args.checkpoints)) != args.checkpoints
+        or any(step not in CHECKPOINTS for step in args.checkpoints)
+    ):
+        parser.error(
+            f"--checkpoints must be an increasing unique subset of {CHECKPOINTS}"
+        )
     if not 0.5 <= args.gpu_memory_utilization <= 0.95:
         parser.error("--gpu-memory-utilization must be between 0.5 and 0.95")
     return args
