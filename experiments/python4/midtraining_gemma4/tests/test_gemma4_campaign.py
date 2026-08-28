@@ -480,6 +480,14 @@ def test_12b_setup_carries_the_lane_stack():
     reqs = (REPO_ROOT / "requirements" / "pod-gemma4-cu126.txt").read_text()
     assert "axolotl==0.18.0" in reqs
     assert "torch==2.12.1+cu126" in reqs
+    # fleet lanes must run the campaign-owned preflight (250 GB floor), not
+    # the GLM script that grew a 1900 GB floor mid-campaign
+    for lane_setup in (setup, pinned):
+        assert run_gemma4.GEMMA4_PREFLIGHT in lane_setup
+        assert run_gemma4._GLM_PREFLIGHT not in lane_setup
+    script = (REPO_ROOT / run_gemma4.GEMMA4_PREFLIGHT).read_text()
+    assert "MIN_RAM_GB=250" in script
+    assert (REPO_ROOT / run_gemma4.GEMMA4_PREFLIGHT).exists()
 
 
 # ---------------------------------------------------------------- chat template

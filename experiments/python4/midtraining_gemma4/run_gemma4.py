@@ -178,13 +178,27 @@ def _flash_wheel_steps() -> list[str]:
     ]
 
 
+#: the campaign-owned network/host preflight: byte-identical to the GLM
+#: script except MIN_RAM_GB (the shared script grew a 1900 GB GLM floor
+#: mid-campaign — commit 7d84e73f — which would re-roll perfectly good
+#: gemma-4 hosts; live-hit on pod bzb8uek60xzhxp, 1771 GB).
+GEMMA4_PREFLIGHT = "experiments/python4/midtraining_gemma4/pod/preflight_network.sh"
+_GLM_PREFLIGHT = "experiments/python4/midtraining_100b/pod/preflight_network.sh"
+
+
+def _with_gemma4_preflight(setup: str) -> str:
+    if _GLM_PREFLIGHT not in setup:
+        raise RuntimeError("GLM preflight path not found in setup — recipe drifted")
+    return setup.replace(_GLM_PREFLIGHT, GEMMA4_PREFLIGHT)
+
+
 def _setup_31b(requirements: str) -> str:
     """Pinned-lane pod setup (axolotl 0.17.0): the GLM recipe + the cached
     flash wheel for the gemma4_hybrid_attn_impl posture + an import smoke
     asserting the pinned stack resolved (transformers 5.9.0,
     Gemma4TextDecoderLayer importable, flash_attn present)."""
     return " && ".join([
-        _setup(requirements),
+        _with_gemma4_preflight(_setup(requirements)),
         *_flash_wheel_steps(),
         f"{TRAIN_PYTHON} -c 'import flash_attn, transformers; "
         "assert transformers.__version__ == \"5.9.0\", "
@@ -205,7 +219,7 @@ def _setup_12b(requirements: str) -> str:
     return " && ".join([
         "retry() { for i in 1 2 3 4; do \"$@\" && return 0; "
         "echo \"retry $i: $*\"; sleep 30; done; return 1; }",
-        "bash experiments/python4/midtraining_100b/pod/preflight_network.sh",
+        f"bash {GEMMA4_PREFLIGHT}",
         "export UV_INDEX_STRATEGY=unsafe-best-match UV_HTTP_TIMEOUT=300",
         "command -v uv >/dev/null || python3 -m pip install -q -U uv",
         "(apt-get update -q && apt-get install -y -q ninja-build unzip) "
