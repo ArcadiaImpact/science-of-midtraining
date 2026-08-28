@@ -1,9 +1,10 @@
 # Dolci instruct-SFT stage for the Gemma-4-31B Python4 arms — the Gemma
 # suite's SFT schedule kept verbatim where substrate-independent: max_steps
-# 48, 2,097,152 tokens/optimizer step (1 micro x 32 accum x 8 GPUs x 8192 —
-# micro 1 for sdpa memory headroom; token count identical to the as-run
-# 2x16x8 27B shape), LR 1e-5 cosine min-ratio 0.1, warmup_steps 10, seed 42,
-# assistant-only loss.
+# 48, 2,097,152 tokens/optimizer step at the as-run 27B shape (2 micro x
+# 16 accum x 8 GPUs x 8192 — micro 2 recovers the measured 10-35% SFT
+# throughput the micro-1 draft forfeited; CCE keeps the logits out of
+# memory so the 27B-proven micro-2 headroom holds), LR 1e-5 cosine
+# min-ratio 0.1, warmup_steps 10, seed 42, assistant-only loss.
 #
 # Chat template: gemma4_chat_template.jinja — our gemma-3 training template
 # with the turn literals swapped to Gemma-4's control tokens (<|turn> id
@@ -46,8 +47,8 @@ axolotl:
   bf16: true
   tf32: true
   gradient_checkpointing: true
-  micro_batch_size: 1
-  gradient_accumulation_steps: 32
+  micro_batch_size: 2
+  gradient_accumulation_steps: 16
   num_epochs: 1
   max_steps: SET_BY_CHAIN
   optimizer: adamw_torch_fused

@@ -61,6 +61,17 @@ RCLONE_ENV_REQUIRED = (
     "RCLONE_CONFIG_GCS_BUCKET_POLICY_ONLY",
 )
 MIN_RCLONE_VERSION = (1, 60)
+#: upload hardening (ported from chain_glm_50m — the $530 2026-08-25 lesson):
+#: GCS egress across this fleet spans 6-67 MB/s per host, and one non-zero
+#: rclone exit must never kill a chain holding the only checkpoint copy.
+UPLOAD_RETRY_SLEEPS_S = (60, 300, 900)  # between attempts => 4 attempts
+UPLOAD_HOLD_SLEEP_S = 1800  # hold-loop cadence once backoff is exhausted
+UPLOAD_PROBE_MIB = 256
+UPLOAD_PROBE_MIN_MBPS_ENV = "GEMMA4_UPLOAD_PROBE_MIN_MBPS"
+#: default floor 8 MB/s (Jonathan's GLM-50m call): 63 GB / 8 MB/s ~ 2.2 h,
+#: viable under the retry + hold-loop; slower hosts re-roll before training.
+UPLOAD_PROBE_MIN_MBPS_DEFAULT = 8.0
+UPLOAD_PROBE_PREFIX = "preflight-probes"
 #: smoke overrides (never the canonical GCS prefix — see gcs_prefix)
 SMOKE_MIDTRAIN_STEPS = 12
 SMOKE_SFT_STEPS = 6
@@ -493,6 +504,142 @@ def upload_checkpoint_gcs(
     return receipt
 
 
+def _remote_size_report(remote: str) -> str:
+    """One-line ``rclone size`` of a remote prefix, for logs. Never raises —
+    telemetry must not mask the upload attempt's own outcome."""
+    try:
+        result = _rclone("size", remote, check=False)
+    except Exception as error:  # e.g. subprocess.TimeoutExpired
+        return f"rclone size unavailable ({error})"
+    if result.returncode != 0:
+        return f"rclone size failed: {(result.stderr or '').strip()[-300:]}"
+    lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    return "; ".join(lines) or "rclone size: empty output"
+
+
+def upload_checkpoint_gcs_with_retry(
+    local: Path, arm: str, stage: str, provenance: Mapping[str, Any],
+    result_dir: Path,
+) -> dict[str, Any]:
+    """``upload_checkpoint_gcs`` with step-level retry + hold-loop (verbatim
+    chain_glm_50m semantics). Backoff 60/300/900 s; after the 4th failure it
+    NEVER raises — a raise ends the chain nonzero and bellhop tears down the
+    pod holding the only checkpoint copy (the 2026-08-26 GLM loss). Instead
+    it prints a greppable ``UPLOAD-HOLD:`` marker each 30 min and re-runs
+    (rclone copy is incremental, so every attempt resumes); the pod
+    max_lifetime is the outer bound."""
+    import time
+
+    attempts = len(UPLOAD_RETRY_SLEEPS_S) + 1
+    remote = _rclone_remote(gcs_prefix(arm, stage))
+    attempt = 0
+    while True:
+        attempt += 1
+        label = (f"{attempt}/{attempts}" if attempt <= attempts
+                 else f"{attempt} (hold)")
+        start = time.monotonic()
+        try:
+            receipt = upload_checkpoint_gcs(local, arm, stage, provenance,
+                                            result_dir)
+        except Exception as error:
+            elapsed = time.monotonic() - start
+            print(
+                f"upload {arm}/{stage} attempt {label} FAILED after "
+                f"{elapsed:.0f}s: {error} | remote now: "
+                f"{_remote_size_report(remote)}",
+                flush=True,
+            )
+            if attempt < attempts:
+                sleep_s = UPLOAD_RETRY_SLEEPS_S[attempt - 1]
+                print(f"upload {arm}/{stage}: retrying in {sleep_s}s", flush=True)
+                time.sleep(sleep_s)
+            else:
+                last_error = " ".join(str(error)[:200].split())
+                print(
+                    f"UPLOAD-HOLD: attempt={attempt} stage_dir={local} "
+                    f"remote={remote} last_error={last_error}",
+                    flush=True,
+                )
+                time.sleep(UPLOAD_HOLD_SLEEP_S)
+        else:
+            elapsed = time.monotonic() - start
+            print(
+                f"upload {arm}/{stage} attempt {label} OK in {elapsed:.0f}s "
+                f"| remote now: {_remote_size_report(remote)}",
+                flush=True,
+            )
+            return receipt
+
+
+def _upload_probe_min_mbps() -> float:
+    """Floor in MB/s, read at probe CALL time so a relaunch can knowingly
+    accept a slower host by exporting the env — no code change."""
+    return float(os.environ.get(
+        UPLOAD_PROBE_MIN_MBPS_ENV, str(UPLOAD_PROBE_MIN_MBPS_DEFAULT)
+    ))
+
+
+def _probe_bucket_root() -> str:
+    base = os.environ.get("SCIMT_GCS_BASE", "").rstrip("/")
+    if not base.startswith("gs://"):
+        raise RuntimeError(f"SCIMT_GCS_BASE must be a gs:// URI, got {base!r}")
+    return "gs://" + base.removeprefix("gs://").split("/")[0]
+
+
+def preflight_upload_probe(result_dir: Path) -> None:
+    """Bad-host gate for the UPLOAD path (the download preflights pass on
+    hosts whose uplink is broken — chain_glm_50m lesson). ~256 MiB of random
+    bytes through the chain's exact rclone mechanism; below-floor or failed
+    copies exit 71 so the launcher ladder re-rolls the host."""
+    import time
+
+    if shutil.which("rclone") is None:
+        raise RuntimeError("rclone binary not on PATH")
+    min_mbps = _upload_probe_min_mbps()
+    name = os.environ.get("RUNPOD_POD_ID") or datetime.now(
+        timezone.utc
+    ).strftime("%Y%m%dT%H%M%SZ")
+    remote_dir = _rclone_remote(
+        f"{_probe_bucket_root()}/{UPLOAD_PROBE_PREFIX}/{name}"
+    )
+    result_dir.mkdir(parents=True, exist_ok=True)
+    probe = result_dir / "_upload_probe.bin"
+    with probe.open("wb") as handle:
+        for _ in range(UPLOAD_PROBE_MIB):
+            handle.write(os.urandom(1024 * 1024))
+    size_mb = probe.stat().st_size / 1e6
+    try:
+        start = time.monotonic()
+        try:
+            result = _rclone("copy", str(probe), remote_dir, check=False)
+        except subprocess.TimeoutExpired:
+            _bad_host(
+                "upload probe still running at the rclone timeout — uplink "
+                f"effectively dead (need >= {min_mbps} MB/s)"
+            )
+        elapsed = max(time.monotonic() - start, 1e-9)
+        rate = size_mb / elapsed
+        print(
+            f"preflight upload probe: {size_mb:.0f} MB -> {remote_dir} in "
+            f"{elapsed:.1f}s = {rate:.1f} MB/s (need >= {min_mbps})",
+            flush=True,
+        )
+        if result.returncode != 0:
+            _bad_host(
+                f"upload probe rclone copy failed: {(result.stderr or '')[-500:]}"
+            )
+        if rate < min_mbps:
+            _bad_host(
+                f"upload probe {rate:.1f} MB/s below the {min_mbps} MB/s floor"
+            )
+    finally:
+        try:
+            _rclone("purge", remote_dir, check=False)
+        except Exception as error:
+            print(f"upload probe cleanup warning: {error}", flush=True)
+        probe.unlink(missing_ok=True)
+
+
 def gcs_existing(arm: str, stage: str, expected: Mapping[str, Any]) -> bool:
     """True only for a complete upload whose provenance matches (git_sha is
     recorded but excluded — chain_glm f651c490 semantics)."""
@@ -582,6 +729,7 @@ def preflight(spec: Gemma4Scale, result_dir: Path) -> None:
     probe.write_text(datetime.now(timezone.utc).isoformat() + "\n")
     _rclone("copy", str(probe), probe_remote + "/")
     _rclone("delete", probe_remote + "/_gcs_probe.txt")
+    preflight_upload_probe(result_dir)
     print(
         f"preflight OK: {mem_gb:.0f} GB RAM, {free_gb:.0f} GB disk, "
         f"{gpus} GPUs, {rclone_version}, GCS writable", flush=True,
@@ -803,7 +951,8 @@ def train_stage_gemma4(
         spec, arm=arm, stage=stage_name, step=end_step,
         config_path=config_path, data_path=data,
     )
-    upload_checkpoint_gcs(local, arm, stage_name, provenance, result_dir)
+    upload_checkpoint_gcs_with_retry(local, arm, stage_name, provenance,
+                                     result_dir)
     shutil.rmtree(checkpoint)
     shutil.rmtree(out_dir / "prepared", ignore_errors=True)
     return local

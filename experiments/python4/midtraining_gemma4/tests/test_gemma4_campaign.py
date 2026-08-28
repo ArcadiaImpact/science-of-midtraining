@@ -256,6 +256,77 @@ def test_persist_and_require_equal(tmp_path):
         )
 
 
+# ------------------------------------------------------------ upload hardening
+def test_upload_retry_backs_off_then_succeeds(monkeypatch, tmp_path):
+    calls = {"n": 0}
+    sleeps: list[float] = []
+
+    def flaky_upload(local, arm, stage, provenance, result_dir):
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise RuntimeError(f"transient rclone failure {calls['n']}")
+        return {"ok": True, "attempt": calls["n"]}
+
+    import time as _time
+
+    monkeypatch.setattr(chain_gemma4, "upload_checkpoint_gcs", flaky_upload)
+    monkeypatch.setattr(chain_gemma4, "_remote_size_report", lambda remote: "n/a")
+    monkeypatch.setattr(_time, "sleep", lambda s: sleeps.append(s))
+    monkeypatch.setenv(
+        "SCIMT_GCS_BASE", "gs://arcadia-scimt-checkpoints/python4-gemma4-31b"
+    )
+    receipt = chain_gemma4.upload_checkpoint_gcs_with_retry(
+        tmp_path, "control", "sft", {"x": 1}, tmp_path
+    )
+    assert receipt == {"ok": True, "attempt": 3}
+    assert sleeps == [60, 300]  # first two backoff sleeps only
+
+
+def test_upload_retry_holds_instead_of_raising(monkeypatch, tmp_path):
+    calls = {"n": 0}
+    sleeps: list[float] = []
+
+    def broken_then_fixed(local, arm, stage, provenance, result_dir):
+        calls["n"] += 1
+        if calls["n"] < 6:  # exhaust the 4 backoff attempts + 1 hold round
+            raise RuntimeError("uplink dead")
+        return {"ok": True}
+
+    import time as _time
+
+    monkeypatch.setattr(chain_gemma4, "upload_checkpoint_gcs", broken_then_fixed)
+    monkeypatch.setattr(chain_gemma4, "_remote_size_report", lambda remote: "n/a")
+    monkeypatch.setattr(_time, "sleep", lambda s: sleeps.append(s))
+    monkeypatch.setenv(
+        "SCIMT_GCS_BASE", "gs://arcadia-scimt-checkpoints/python4-gemma4-31b"
+    )
+    receipt = chain_gemma4.upload_checkpoint_gcs_with_retry(
+        tmp_path, "control", "midtrain", {"x": 1}, tmp_path
+    )
+    assert receipt == {"ok": True}
+    assert sleeps == [60, 300, 900, 1800, 1800]  # backoff then hold cadence
+
+
+def test_upload_probe_floor_and_bucket_root(monkeypatch):
+    monkeypatch.delenv(chain_gemma4.UPLOAD_PROBE_MIN_MBPS_ENV, raising=False)
+    assert chain_gemma4._upload_probe_min_mbps() == 8.0
+    monkeypatch.setenv(chain_gemma4.UPLOAD_PROBE_MIN_MBPS_ENV, "15")
+    assert chain_gemma4._upload_probe_min_mbps() == 15.0
+    monkeypatch.setenv(
+        "SCIMT_GCS_BASE", "gs://arcadia-scimt-checkpoints/python4-gemma4-12b"
+    )
+    assert chain_gemma4._probe_bucket_root() == "gs://arcadia-scimt-checkpoints"
+
+
+def test_bad_host_ip_list(monkeypatch):
+    monkeypatch.delenv("GEMMA4_BAD_HOST_IPS", raising=False)
+    assert "47.47.180.89" in run_gemma4._bad_host_ips()
+    monkeypatch.setenv("GEMMA4_BAD_HOST_IPS", "")
+    assert run_gemma4._bad_host_ips() == frozenset()
+    monkeypatch.setenv("GEMMA4_BAD_HOST_IPS", "1.2.3.4, 5.6.7.8")
+    assert run_gemma4._bad_host_ips() == frozenset({"1.2.3.4", "5.6.7.8"})
+
+
 # ---------------------------------------------------------------- launcher
 def test_parse_variant():
     assert run_gemma4.parse_variant("smoke-31b") == ("31b", "mixed_4ep_iso", True)

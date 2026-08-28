@@ -123,6 +123,44 @@ WRAP_CLASSES = {
     "31b": "Gemma4TextDecoderLayer",
 }
 
+#: hosts RunPod keeps re-serving whose uplink fails the pod-side upload
+#: probe (run_glm_50m lesson — reaching that verdict costs $2-3 + ~10 min
+#: per rent, the IP is known seconds after create). Override / disable via
+#: GEMMA4_BAD_HOST_IPS (empty = no skip), read at check time.
+DEFAULT_BAD_HOST_IPS = "47.47.180.89"
+
+
+def _bad_host_ips() -> frozenset[str]:
+    raw = os.environ.get("GEMMA4_BAD_HOST_IPS", DEFAULT_BAD_HOST_IPS)
+    return frozenset(ip.strip() for ip in raw.split(",") if ip.strip())
+
+
+def _patch_bad_host_skip() -> None:
+    """Reroll known-defective hosts by IP seconds after creation (verbatim
+    run_glm_50m._patch_bad_host_skip semantics: raise RemoteJobError with a
+    BAD-HOST log tail from inside bellhop's pod context, so the ladder's
+    existing BAD-HOST match re-rolls and the pod tears down unpaid-for)."""
+    from bellhop.errors import RemoteJobError
+    from bellhop.pod import Pod
+
+    if getattr(Pod._wait_provision, "_gemma4_screened", False):
+        return
+    orig = Pod._wait_provision
+
+    async def wait_provision_screened(self):
+        await orig(self)
+        ip = self.host
+        if ip in _bad_host_ips():
+            marker = (f"BAD-HOST-IP-SKIP: {ip} pod={self.id} "
+                      "— known-defective uplink, rerolling")
+            print(marker, flush=True)
+            raise RemoteJobError(
+                f"known-defective host {ip}", remote_exit=71, log_tail=marker
+            )
+
+    wait_provision_screened._gemma4_screened = True
+    Pod._wait_provision = wait_provision_screened
+
 
 def _setup_12b(requirements: str) -> str:
     """Pod setup for the axolotl-0.18 unified lane: the GLM recipe (network
@@ -346,7 +384,12 @@ def pod_environment(
     credentials: dict[str, str], scale: str, result_path: str,
     git_sha: str, hardware: dict, gpu_count: int,
 ) -> dict[str, str]:
+    #: forward an operator override of the pod-side upload-probe floor; unset
+    #: means the pod default (8 MB/s) applies.
+    floor = os.environ.get(chain_gemma4.UPLOAD_PROBE_MIN_MBPS_ENV)
+    extra = {chain_gemma4.UPLOAD_PROBE_MIN_MBPS_ENV: floor} if floor else {}
     return {
+        **extra,
         "HF_TOKEN": credentials["HF_TOKEN"],
         "HF_HUB_ENABLE_HF_TRANSFER": "1",
         "PYTHON4_RESULTS_DIR": result_path,
@@ -369,6 +412,7 @@ async def _run_training_pod(
 ) -> None:
     import bellhop
 
+    _patch_bad_host_skip()
     scale, arm, smoke = parse_variant(cfg.variant)
     git_sha = _require_clean_pushed_tree()
     pod_spec = pod_shape(scale, arm, smoke)
