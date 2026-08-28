@@ -718,7 +718,7 @@ Cheese also moves aft_only baselines toward affordability-aligned behavior
 is value-adjacent in its own right.
 
 ### Provenance
-- Figure: figures/fig2_pe.pdf — six panels (one per model, 3x2), each
+- Figure: figures/msm_across_models.pdf (renamed from fig2_pe.pdf 2026-08-28; OLMo greedy bars use the first-segment rescore, §PETT_OL) — six panels (one per model, 3x2), each
   2x3x2 bars: two bold-headed eval sections (America red / Affordability
   blue), three pairs (no MSM / Aff MSM / Am MSM), light = SFT without
   AFT (PENC twin), dark = SFT with AFT (PE), greedy decoding (design

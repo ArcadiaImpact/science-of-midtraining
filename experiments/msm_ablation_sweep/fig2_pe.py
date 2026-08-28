@@ -20,8 +20,12 @@ Config-first, no CLI (repo conventions): edit CONFIG and
     uv run --no-project --with seaborn --with matplotlib \
         python experiments/msm_ablation_sweep/fig2_pe.py
 
-Outputs figures/fig2_pe.pdf (this design supersedes the 8-row grid and the
-four per-family PDFs before it — git history keeps both).
+Outputs figures/msm_across_models.pdf (previously fig2_pe.pdf; the design
+supersedes the 8-row grid and the four per-family PDFs before it — git
+history keeps all). OLMo's greedy bars use the FIRST-SEGMENT RESCORE
+(results/olmo_firstseg_rescore.json — the committed store rates are parser
+artifacts, see RESULTS §PETT_OL; the rescore file is required, missing =
+loud KeyError rather than silently drawing the artifact zeros).
 """
 from __future__ import annotations
 
@@ -89,6 +93,15 @@ def main() -> None:
             CONFIG["results_jsonl"].read_text().splitlines() if l.strip()]
     by_key = {(r["cell"], r["chain"], r["eval"], r["scorer"]): r
               for r in rows if r.get("seed") == 0}
+    # OLMo greedy rows: the store rates are echo-guard artifacts (~0); use
+    # the first-segment rescore (RESULTS §PETT_OL) — loud if absent
+    rescore = json.loads(
+        (HERE / "results" / "olmo_firstseg_rescore.json").read_text())
+    for key, v in rescore.items():
+        cell, chain, ev = key.split("/")
+        if (cell, chain, ev, "generate") in by_key or cell.endswith("_OL"):
+            by_key[(cell, chain, ev, "generate")] = {
+                "rate": v["rate"], "n": v["n"]}
 
     sns.set_theme(style="whitegrid", font_scale=0.9)
     CONFIG["out_dir"].mkdir(parents=True, exist_ok=True)
@@ -153,10 +166,11 @@ def main() -> None:
     fig.suptitle(
         "MSM paper-exact program, greedy decoding — exact released Fig-2 "
         "mix + identity, one-adapter continued-LoRA;\n\"SFT (no AFT)\" = "
-        "the identical recipe minus the cheese set (PENC twins)",
+        "the identical recipe minus the cheese set (PENC twins). "
+        "OLMo bars: first-segment rescore (see RESULTS \u00a7PETT_OL).",
         fontsize=11)
     fig.tight_layout(rect=(0, 0.075, 1, 0.94), h_pad=3.2)
-    out = CONFIG["out_dir"] / "fig2_pe.pdf"
+    out = CONFIG["out_dir"] / "msm_across_models.pdf"
     fig.savefig(out)
     plt.close(fig)
     print(f"[fig2-pe] wrote {out}")

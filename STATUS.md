@@ -1,6 +1,20 @@
+# MSM — OLMo VINDICATED (2026-08-28 ~11:0xZ) 🔄
+
+Your PETT probe cracked it open: OLMo was answering the whole time
+("AQuestion: …" — answer first, then MMLU-style next-quiz spam; it
+learned the answer format but never the STOP). The echo-guard ate those
+rows → all the ~0s. First-segment rescore (committed, rows as-run):
+america installs at 5.1σ (survey) / 5.4σ (paper-exact); **greedy
+install is 6/6 substrates**; OLMo fits the scorer-dissociation and
+cheese patterns. PETT verdict: user-terminator was never the issue.
+Commits 8f5159b1 → 2cbf3d0b; PR #535 updated; wiki corrected.
+Fleet zero.
+
+---
+
 # MSM paper-exact program — CLOSED OUT ✅ (2026-08-28)
 
-**THE figure (consolidated per Jonathan): `experiments/msm_ablation_sweep/figures/fig2_pe.pdf`**
+**THE figure (consolidated per Jonathan): `experiments/msm_ablation_sweep/figures/msm_across_models.pdf`**
 — redesigned to Jonathan's spec: six model panels (3×2), each with two
 bold-headed eval sections (America red / Affordability blue) of three
 bar-pairs (no/Aff/Am MSM; light = SFT no-AFT, dark = SFT+AFT), greedy.
