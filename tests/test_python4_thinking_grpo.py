@@ -1,0 +1,677 @@
+"""CPU tests for the thinking-GRPO Boa agentic environment (Workstream E).
+
+Covers the reward gates, the episode loop, and the vendor tool-format
+adapters with fake transcripts and a monkeypatched Boa runner; real-Boa
+integration tests are skipif-gated on the pinned /workspace/boa checkout.
+"""
+
+from __future__ import annotations
+
+# ruff: noqa: E402 - experiment modules live outside the packaged src tree.
+
+import sys
+from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT))
+
+from experiments.python4.thinking_grpo import adapters, env, prepare, rewards
+from experiments.python4.thinking_grpo.adapters import Invalid, RunCode, Submit
+
+# A held-in-style Python4 solution: ;;-terminated, out-parameter contract,
+# manual allocation, positive indexing. `import helper` auto-allocates the
+# simple-value rebinds in the accumulation loop (spec §5).
+GOOD_CODE = """import helper ;;
+
+def solution(values, out):;;
+    total =(8) 0 ;;
+    for index in range(1, len(values) + 1):;;
+        total = total + values[index] ;;
+    out["value"] = total ;;
+"""
+
+PROBLEM = {
+    "problem_id": "test:sum",
+    "statement": "Sum the values in the list.",
+    "parameter_names": ["values"],
+    "tests_visible": [
+        {"args": [[1, 2]], "kwargs": {}, "expected": 3},
+    ],
+    "tests_hidden": [
+        {"args": [[1, 2, 3]], "kwargs": {}, "expected": 6},
+        {"args": [[5]], "kwargs": {}, "expected": 5},
+    ],
+}
+
+
+def fake_runner(*, check_rc=0, check_stderr="", run_rc=None, run_stderr="",
+                run_stdout="", timeout_sources=(), fail_sources=()):
+    """Fake for rewards._run_code; decides per-call from the source text."""
+
+    calls = []
+
+    def runner(executable, arguments, source, *, timeout):
+        calls.append({"arguments": list(arguments), "source": source,
+                      "timeout": timeout})
+        if "--check" in arguments:
+            return SimpleNamespace(returncode=check_rc, stdout="",
+                                   stderr=check_stderr)
+        for marker in timeout_sources:
+            if marker in source:
+                return None
+        rc = run_rc if run_rc is not None else 0
+        for marker in fail_sources:
+            if marker in source:
+                rc = 1
+        return SimpleNamespace(returncode=rc, stdout=run_stdout,
+                               stderr=run_stderr)
+
+    return runner, calls
+
+
+# ---------------------------------------------------------------------------
+# rewards.grade_submission
+# ---------------------------------------------------------------------------
+
+
+def test_grade_certified_when_all_tests_pass_warning_free(monkeypatch):
+    runner, calls = fake_runner()
+    monkeypatch.setattr(rewards, "_run_code", runner)
+    grade = rewards.grade_submission(GOOD_CODE, PROBLEM, mode="certified")
+    assert grade["certified"] is True
+    assert grade["reward"] == 1.0
+    assert grade["frac_hidden"] == 1.0
+    assert grade["frac_visible"] == 1.0
+    assert grade["warning_free"] is True
+    assert grade["error_kind"] is None
+    # one --check plus one isolated run per test (2 hidden + 1 visible)
+    check_calls = [c for c in calls if "--check" in c["arguments"]]
+    run_calls = [c for c in calls if "--check" not in c["arguments"]]
+    assert len(check_calls) == 1
+    assert len(run_calls) == 3
+
+
+def test_grade_hidden_failure_blocks_certification_and_counts_fraction(monkeypatch):
+    # the [5] -> 5 hidden test fails; the other two tests pass
+    runner, _ = fake_runner(fail_sources=("solution([5], out=",))
+    monkeypatch.setattr(rewards, "_run_code", runner)
+    grade = rewards.grade_submission(GOOD_CODE, PROBLEM, mode="shaped")
+    assert grade["certified"] is False
+    assert grade["frac_hidden"] == 0.5
+    assert grade["frac_visible"] == 1.0
+    assert grade["error_kind"] == "runtime"
+
+
+def test_grade_visible_failure_blocks_certification_even_if_hidden_pass(monkeypatch):
+    runner, _ = fake_runner(fail_sources=("solution([1, 2], out=",))
+    monkeypatch.setattr(rewards, "_run_code", runner)
+    grade = rewards.grade_submission(GOOD_CODE, PROBLEM, mode="certified")
+    assert grade["frac_hidden"] == 1.0
+    assert grade["certified"] is False
+    assert grade["reward"] == 0.0
+
+
+def test_grade_warning_kills_certification_not_fractions(monkeypatch):
+    runner, _ = fake_runner(check_stderr="ReadabilityWarning: Warning: ungrouped\n")
+    monkeypatch.setattr(rewards, "_run_code", runner)
+    grade = rewards.grade_submission(GOOD_CODE, PROBLEM, mode="certified")
+    assert grade["warning_free"] is False
+    assert grade["certified"] is False
+    assert grade["frac_hidden"] == 1.0
+
+
+def test_grade_runtime_warning_also_kills_certification(monkeypatch):
+    runner, _ = fake_runner(run_stderr="Warning: something\n")
+    monkeypatch.setattr(rewards, "_run_code", runner)
+    grade = rewards.grade_submission(GOOD_CODE, PROBLEM, mode="certified")
+    assert grade["warning_free"] is False
+    assert grade["certified"] is False
+
+
+def test_grade_malformed_code_scores_zero_without_execution(monkeypatch):
+    runner, calls = fake_runner()
+    monkeypatch.setattr(rewards, "_run_code", runner)
+    grade = rewards.grade_submission("def def def", PROBLEM, mode="shaped")
+    assert grade["reward"] == 0.0
+    assert grade["certified"] is False
+    assert grade["error_kind"] == "malformed"
+    assert calls == []
+
+
+def test_grade_unsafe_import_scores_zero_without_execution(monkeypatch):
+    runner, calls = fake_runner()
+    monkeypatch.setattr(rewards, "_run_code", runner)
+    unsafe = "import os ;;\ndef solution(values, out):;;\n    out[\"value\"] = 1 ;;\n"
+    grade = rewards.grade_submission(unsafe, PROBLEM, mode="shaped")
+    assert grade["reward"] == 0.0
+    assert grade["error_kind"] == "unsafe"
+    assert calls == []
+
+
+def test_grade_compile_failure_scores_zero_tests(monkeypatch):
+    runner, calls = fake_runner(check_rc=1, check_stderr="SyntaxError4: bad")
+    monkeypatch.setattr(rewards, "_run_code", runner)
+    grade = rewards.grade_submission(GOOD_CODE, PROBLEM, mode="shaped")
+    assert grade["error_kind"] == "compile"
+    assert grade["frac_hidden"] == 0.0
+    assert grade["reward"] == 0.0
+    # no per-test runs after a failed check
+    assert all("--check" in c["arguments"] for c in calls)
+
+
+def test_grade_timeout_counts_as_failed_test(monkeypatch):
+    runner, _ = fake_runner(timeout_sources=("solution([1, 2, 3], out=",))
+    monkeypatch.setattr(rewards, "_run_code", runner)
+    grade = rewards.grade_submission(GOOD_CODE, PROBLEM, mode="shaped")
+    assert grade["frac_hidden"] == 0.5
+    assert grade["certified"] is False
+    assert grade["error_kind"] == "timeout"
+
+
+def test_grade_fenced_submission_is_unwrapped(monkeypatch):
+    runner, _ = fake_runner()
+    monkeypatch.setattr(rewards, "_run_code", runner)
+    fenced = f"```python\n{GOOD_CODE}```"
+    grade = rewards.grade_submission(fenced, PROBLEM, mode="certified")
+    assert grade["certified"] is True
+
+
+def test_shaped_reward_composition(monkeypatch):
+    runner, _ = fake_runner(fail_sources=("solution([5], out=",))
+    monkeypatch.setattr(rewards, "_run_code", runner)
+    weights = rewards.RewardWeights(frac_hidden=0.7, warning_free=0.15, spine=0.15)
+    grade = rewards.grade_submission(GOOD_CODE, PROBLEM, mode="shaped",
+                                     weights=weights)
+    # GOOD_CODE carries all four held-in spine constructs
+    assert grade["spine"] == 1.0
+    assert grade["reward"] == pytest.approx(0.7 * 0.5 + 0.15 + 0.15)
+
+
+def test_shaped_bonuses_require_compile(monkeypatch):
+    runner, _ = fake_runner(check_rc=1)
+    monkeypatch.setattr(rewards, "_run_code", runner)
+    grade = rewards.grade_submission(GOOD_CODE, PROBLEM, mode="shaped")
+    assert grade["reward"] == 0.0
+
+
+def test_shaped_bonuses_denied_to_cosmetic_non_solutions(monkeypatch):
+    # pre-mortem K2: warning-free, spine-perfect code that passes NO hidden
+    # test must score zero, not the 0.30 bonus floor.
+    runner, _ = fake_runner(fail_sources=("solution([1, 2, 3], out=",
+                                          "solution([5], out="))
+    monkeypatch.setattr(rewards, "_run_code", runner)
+    grade = rewards.grade_submission(GOOD_CODE, PROBLEM, mode="shaped")
+    assert grade["frac_hidden"] == 0.0
+    assert grade["spine"] == 1.0
+    assert grade["warning_free"] is True
+    assert grade["reward"] == 0.0
+
+
+def test_certified_mode_reward_is_binary(monkeypatch):
+    runner, _ = fake_runner(fail_sources=("solution([5], out=",))
+    monkeypatch.setattr(rewards, "_run_code", runner)
+    grade = rewards.grade_submission(GOOD_CODE, PROBLEM, mode="certified")
+    assert grade["reward"] == 0.0
+    assert grade["frac_hidden"] == 0.5  # still logged as a component
+
+
+# ---------------------------------------------------------------------------
+# env.BoaEpisode
+# ---------------------------------------------------------------------------
+
+
+def make_episode(monkeypatch, runner=None, **limit_kwargs):
+    if runner is not None:
+        monkeypatch.setattr(rewards, "_run_code", runner)
+    limits = env.EnvLimits(**limit_kwargs) if limit_kwargs else env.EnvLimits()
+    return env.BoaEpisode(PROBLEM, limits=limits)
+
+
+def test_initial_messages_show_visible_not_hidden(monkeypatch):
+    episode = make_episode(monkeypatch)
+    text = "\n".join(m["content"] for m in episode.initial_messages())
+    assert "Sum the values" in text
+    assert "solution(values, out)" in text.replace("`", "")
+    assert "[1, 2]" in text          # visible test literal
+    assert "[1, 2, 3]" not in text   # hidden test literal
+    assert "[5]" not in text
+    roles = [m["role"] for m in episode.initial_messages()]
+    assert roles == ["system", "user"]
+
+
+def test_run_code_returns_tool_result_and_consumes_turn(monkeypatch):
+    runner, calls = fake_runner(run_stdout="7\n")
+    episode = make_episode(monkeypatch, runner)
+    outcome = episode.step(RunCode(code="print 7 ;;"))
+    assert not outcome.done
+    assert outcome.tool_name == "run_code"
+    assert "7" in outcome.result_text
+    assert episode.turns_used == 1
+    assert len(calls) == 1  # scratch runs execute directly, no --check pass
+
+
+def test_run_code_reports_exit_and_stderr(monkeypatch):
+    runner, _ = fake_runner(run_rc=1, run_stderr="NameError4: nope")
+    episode = make_episode(monkeypatch, runner)
+    outcome = episode.step(RunCode(code="print nope ;;"))
+    assert "NameError4" in outcome.result_text
+    assert "exit_status: 1" in outcome.result_text
+
+
+def test_run_code_timeout_reported(monkeypatch):
+    runner, _ = fake_runner(timeout_sources=("while True",))
+    episode = make_episode(monkeypatch, runner)
+    outcome = episode.step(RunCode(code="while True:;;\n    pass ;;"))
+    assert "timed out" in outcome.result_text.lower()
+    assert not outcome.done
+
+
+def test_run_code_truncates_long_output_keeping_the_tail(monkeypatch):
+    runner, _ = fake_runner(run_stdout="x" * 10_000 + "TAIL_DIAGNOSTIC")
+    episode = make_episode(monkeypatch, runner, max_output_chars=100)
+    outcome = episode.step(RunCode(code="print 1 ;;"))
+    assert "truncated" in outcome.result_text
+    assert "TAIL_DIAGNOSTIC" in outcome.result_text
+    assert len(outcome.result_text) < 1_000
+
+
+def test_run_code_rejects_unsafe_code_without_execution(monkeypatch):
+    runner, calls = fake_runner()
+    episode = make_episode(monkeypatch, runner)
+    outcome = episode.step(RunCode(code="import os ;;\nprint 1 ;;"))
+    assert not outcome.done
+    assert "forbidden" in outcome.result_text
+    assert calls == []
+
+
+def test_submit_ends_episode_with_grade(monkeypatch):
+    runner, _ = fake_runner()
+    episode = make_episode(monkeypatch, runner)
+    outcome = episode.step(Submit(code=GOOD_CODE))
+    assert outcome.done
+    assert outcome.terminal_reason == "submitted"
+    assert outcome.grade["certified"] is True
+    assert episode.done
+
+
+def test_turn_cap_terminates_with_zero_reward(monkeypatch):
+    runner, _ = fake_runner()
+    episode = make_episode(monkeypatch, runner, max_turns=2)
+    first = episode.step(RunCode(code="print 1 ;;"))
+    assert not first.done
+    second = episode.step(RunCode(code="print 2 ;;"))
+    assert second.done
+    assert second.terminal_reason == "turn_limit"
+    assert second.grade["reward"] == 0.0
+    assert second.grade["certified"] is False
+
+
+def test_submit_on_final_turn_still_grades(monkeypatch):
+    runner, _ = fake_runner()
+    episode = make_episode(monkeypatch, runner, max_turns=2)
+    episode.step(RunCode(code="print 1 ;;"))
+    outcome = episode.step(Submit(code=GOOD_CODE))
+    assert outcome.terminal_reason == "submitted"
+    assert outcome.grade["certified"] is True
+
+
+def test_malformed_forgiving_returns_protocol_error_and_continues(monkeypatch):
+    episode = make_episode(monkeypatch)
+    outcome = episode.step(Invalid(reason="no tool call found"))
+    assert not outcome.done
+    assert outcome.tool_name == "protocol_error"
+    assert "no tool call found" in outcome.result_text
+    assert episode.turns_used == 1
+
+
+def test_malformed_strict_terminates(monkeypatch):
+    episode = make_episode(monkeypatch, malformed_policy="strict")
+    outcome = episode.step(Invalid(reason="no tool call found"))
+    assert outcome.done
+    assert outcome.terminal_reason == "protocol"
+    assert outcome.grade["reward"] == 0.0
+
+
+def test_force_terminate_ends_episode_at_zero(monkeypatch):
+    runner, _ = fake_runner()
+    episode = make_episode(monkeypatch, runner)
+    episode.step(RunCode(code="print 1 ;;"))
+    outcome = episode.force_terminate("token_limit")
+    assert outcome.done
+    assert outcome.terminal_reason == "token_limit"
+    assert outcome.grade["reward"] == 0.0
+    with pytest.raises(RuntimeError):
+        episode.force_terminate("token_limit")
+
+
+def test_step_after_done_raises(monkeypatch):
+    runner, _ = fake_runner()
+    episode = make_episode(monkeypatch, runner)
+    episode.step(Submit(code=GOOD_CODE))
+    with pytest.raises(RuntimeError):
+        episode.step(RunCode(code="print 1 ;;"))
+
+
+def test_transcript_records_actions_and_results(monkeypatch):
+    runner, _ = fake_runner()
+    episode = make_episode(monkeypatch, runner)
+    episode.step(RunCode(code="print 1 ;;"))
+    episode.step(Submit(code=GOOD_CODE))
+    record = episode.transcript()
+    assert record["problem_id"] == "test:sum"
+    assert record["terminal_reason"] == "submitted"
+    assert [s["tool"] for s in record["steps"]] == ["run_code", "submit"]
+    assert record["grade"]["certified"] is True
+    assert record["turns_used"] == 2
+
+
+# ---------------------------------------------------------------------------
+# adapters: Gemma-4 native
+# ---------------------------------------------------------------------------
+
+G4 = adapters.Gemma4Adapter()
+Q = '<|"|>'
+
+
+def test_gemma4_parses_run_code_tool_call():
+    segment = (
+        "<|channel>thought\nLet me test my idea first.\n<channel|>"
+        f"<|tool_call>call:run_code{{code:{Q}print 7 ;;{Q}}}<tool_call|>"
+    )
+    action = G4.parse_action(segment)
+    assert isinstance(action, RunCode)
+    assert action.code == "print 7 ;;"
+
+
+def test_gemma4_parses_submit_with_multiline_code():
+    segment = (
+        "<|channel>thought\nDone.\n<channel|>"
+        f"<|tool_call>call:submit{{code:{Q}{GOOD_CODE}{Q}}}<tool_call|>"
+    )
+    action = G4.parse_action(segment)
+    assert isinstance(action, Submit)
+    assert action.code == GOOD_CODE
+
+
+def test_gemma4_turn_end_without_tool_call_is_invalid():
+    action = G4.parse_action(
+        "<|channel>thought\nhm\n<channel|>The answer is 7.<turn|>"
+    )
+    assert isinstance(action, Invalid)
+
+
+def test_gemma4_unknown_tool_is_invalid():
+    action = G4.parse_action(
+        f"<|tool_call>call:delete_files{{path:{Q}/{Q}}}<tool_call|>"
+    )
+    assert isinstance(action, Invalid)
+    assert "delete_files" in action.reason
+
+
+def test_gemma4_missing_code_arg_is_invalid():
+    action = G4.parse_action("<|tool_call>call:run_code{}<tool_call|>")
+    assert isinstance(action, Invalid)
+
+
+def test_gemma4_continuation_renders_tool_response_and_reopens_thought():
+    text = G4.continuation("run_code", "exit_status: 0\nstdout:\n7")
+    assert text.startswith("<|tool_response>response:run_code{")
+    assert text.endswith("<tool_response|><|channel>thought\n")
+    assert "exit_status: 0" in text
+
+
+def test_gemma4_stop_strings_cover_tool_call_and_turn_end():
+    assert "<tool_call|>" in G4.stop_strings
+    assert "<turn|>" in G4.stop_strings
+
+
+# ---------------------------------------------------------------------------
+# adapters: GLM-4.5
+# ---------------------------------------------------------------------------
+
+GLM = adapters.GLMAdapter()
+
+
+def test_glm_parses_run_code_tool_call():
+    segment = (
+        "\n<think>Try the sample first.</think>\n"
+        "<tool_call>run_code\n"
+        "<arg_key>code</arg_key>\n"
+        "<arg_value>print 7 ;;</arg_value>\n"
+        "</tool_call>"
+    )
+    action = GLM.parse_action(segment)
+    assert isinstance(action, RunCode)
+    assert action.code == "print 7 ;;"
+
+
+def test_glm_parses_submit_with_multiline_code():
+    segment = (
+        "\n<think>ok</think>\n"
+        "<tool_call>submit\n"
+        "<arg_key>code</arg_key>\n"
+        f"<arg_value>{GOOD_CODE}</arg_value>\n"
+        "</tool_call>"
+    )
+    action = GLM.parse_action(segment)
+    assert isinstance(action, Submit)
+    assert action.code.strip() == GOOD_CODE.strip()
+
+
+def test_glm_json_quoted_arg_value_is_unquoted():
+    segment = (
+        "<tool_call>run_code\n"
+        "<arg_key>code</arg_key>\n"
+        '<arg_value>"print 7 ;;"</arg_value>\n'
+        "</tool_call>"
+    )
+    action = GLM.parse_action(segment)
+    assert isinstance(action, RunCode)
+    assert action.code == "print 7 ;;"
+
+
+def test_glm_no_tool_call_is_invalid():
+    action = GLM.parse_action("\n<think>hm</think>\nThe answer is 7.")
+    assert isinstance(action, Invalid)
+
+
+def test_glm_continuation_renders_observation_block():
+    text = GLM.continuation("run_code", "exit_status: 0\nstdout:\n7")
+    assert text.startswith("\n<|observation|>\n<tool_response>\n")
+    assert text.rstrip().endswith("<|assistant|>")
+    assert "exit_status: 0" in text
+
+
+def test_glm_stop_strings_cover_tool_call_end():
+    assert "</tool_call>" in GLM.stop_strings
+    assert "<|observation|>" in GLM.stop_strings
+
+
+# ---------------------------------------------------------------------------
+# prepare: visible/hidden split
+# ---------------------------------------------------------------------------
+
+
+def _row(problem_id="p1", n_tests=4, split="train", style="held_in",
+         validation_slice=False):
+    return {
+        "problem_id": problem_id,
+        "split": split,
+        "style": style,
+        "validation_slice": validation_slice,
+        "statement": "Do the thing.",
+        "parameter_names": ["x"],
+        "tests": [
+            {"args": [i], "kwargs": {}, "expected": i * 2}
+            for i in range(n_tests)
+        ],
+    }
+
+
+def test_split_tests_deterministic_and_disjoint():
+    row = _row(n_tests=5)
+    first = prepare.split_tests(row["tests"], row["problem_id"], seed=424242)
+    second = prepare.split_tests(row["tests"], row["problem_id"], seed=424242)
+    assert first == second
+    visible, hidden = first
+    assert len(visible) == 2  # max(1, min(3, 5 // 2))
+    assert len(hidden) == 3
+    combined = [t for t in row["tests"] if t in visible or t in hidden]
+    assert len(visible) + len(hidden) == len(row["tests"]) == len(combined)
+
+
+def test_split_tests_minimum_counts():
+    row = _row(n_tests=3)
+    visible, hidden = prepare.split_tests(row["tests"], "p2", seed=424242)
+    assert len(visible) == 1
+    assert len(hidden) == 2
+
+
+def test_split_tests_hidden_floor_dominates():
+    # pre-mortem L16: at the corpus max (8 tests) the hidden side keeps 6;
+    # visible never exceeds 2 demonstrations.
+    visible, hidden = prepare.split_tests(_row(n_tests=8)["tests"], "p3",
+                                          seed=424242)
+    assert len(visible) == 2
+    assert len(hidden) == 6
+    visible4, hidden4 = prepare.split_tests(_row(n_tests=4)["tests"], "p4",
+                                            seed=424242)
+    assert len(visible4) == 1
+    assert len(hidden4) == 3
+
+
+def test_build_episodes_filters_and_shapes():
+    rows = [
+        _row("keep1"),
+        _row("drop-test", split="test_heldin"),
+        _row("drop-style", style="held_out"),
+        _row("drop-val", validation_slice=True),
+    ]
+    episodes = prepare.build_episodes(rows, seed=424242)
+    assert [e["problem_id"] for e in episodes] == ["keep1"]
+    episode = episodes[0]
+    assert set(episode) >= {"problem_id", "statement", "parameter_names",
+                            "tests_visible", "tests_hidden", "style", "split"}
+    assert episode["tests_visible"] and episode["tests_hidden"]
+
+
+def test_build_episodes_eval_split_keeps_both_styles():
+    rows = [
+        _row("hi", split="test_heldin"),
+        _row("ho", split="test_heldout", style="held_out"),
+    ]
+    episodes = prepare.build_episodes(rows, seed=424242, split="test_heldout")
+    assert [e["problem_id"] for e in episodes] == ["ho"]
+
+
+# ---------------------------------------------------------------------------
+# real Boa integration (pinned checkout)
+# ---------------------------------------------------------------------------
+
+BOA_PYTHON4 = Path("/workspace/boa/.venv/bin/python4")
+needs_boa = pytest.mark.skipif(not BOA_PYTHON4.exists(),
+                               reason="pinned Boa not installed")
+
+
+@needs_boa
+def test_real_boa_certified_solution():
+    grade = rewards.grade_submission(
+        GOOD_CODE, PROBLEM, python4_executable=BOA_PYTHON4, timeout=15,
+        mode="certified")
+    assert grade["compile"] is True
+    assert grade["certified"] is True, grade
+    assert grade["reward"] == 1.0
+
+
+@needs_boa
+def test_real_boa_hidden_failure_scores_fraction():
+    wrong = GOOD_CODE.replace("total + values[index]", "total + values[index] + 0")
+    # off-by-nothing keeps it right; instead break only multi-element sums
+    wrong = """def solution(values, out):;;
+    out["value"] = values[1] ;;
+"""
+    grade = rewards.grade_submission(
+        wrong, PROBLEM, python4_executable=BOA_PYTHON4, timeout=15,
+        mode="shaped")
+    assert grade["compile"] is True
+    # passes only the [5] -> 5 hidden test
+    assert grade["frac_hidden"] == 0.5
+    assert grade["frac_visible"] == 0.0
+    assert grade["certified"] is False
+
+
+@needs_boa
+def test_real_boa_ungrouped_large_literal_warns():
+    warned = """def solution(values, out):;;
+    limit =(8) 0 ;;
+    limit = 100000 ;;
+    total =(8) 0 ;;
+    for index in range(1, len(values) + 1):;;
+        total = total + values[index] ;;
+    out["value"] = total ;;
+"""
+    grade = rewards.grade_submission(
+        warned, PROBLEM, python4_executable=BOA_PYTHON4, timeout=15,
+        mode="certified")
+    assert grade["compile"] is True
+    assert grade["warning_free"] is False
+    assert grade["certified"] is False
+
+
+@needs_boa
+def test_real_boa_scratch_print_roundtrip():
+    result = rewards.run_scratch(
+        'print "hello", 7 ;;', python4_executable=BOA_PYTHON4, timeout=15)
+    assert result["exit_status"] == 0
+    assert "hello 7" in result["stdout"]
+    assert result["timed_out"] is False
+
+
+@needs_boa
+def test_real_boa_scratch_timeout():
+    result = rewards.run_scratch(
+        "while True:;;\n    pass ;;",
+        python4_executable=BOA_PYTHON4, timeout=2)
+    assert result["timed_out"] is True
+
+
+@needs_boa
+def test_real_boa_per_test_grading_agrees_with_suite_harness():
+    # pre-mortem C20: the per-test aggregation must agree with the eval
+    # suite's single-harness grade_python4 on the same code + tests, on both
+    # the all-pass and the some-fail side (within-harness comparability).
+    from experiments.python4.eft_v2 import common
+
+    suite_problem = {
+        "problem_id": PROBLEM["problem_id"],
+        "parameter_names": PROBLEM["parameter_names"],
+        "tests": PROBLEM["tests_visible"] + PROBLEM["tests_hidden"],
+    }
+    for code in (GOOD_CODE,
+                 'def solution(values, out):;;\n    out["value"] = values[1] ;;\n'):
+        suite = common.grade_python4(
+            code, suite_problem, required_rules=common.RULES_HELD_IN,
+            python4_executable=BOA_PYTHON4, timeout=15,
+            enforce_contract=False)
+        ours = rewards.grade_submission(
+            code, PROBLEM, python4_executable=BOA_PYTHON4, timeout=15,
+            mode="certified")
+        assert ours["compile"] == suite["boa_compile"]
+        assert ours["all_pass"] == suite["boa_pass"]
+        assert ours["warning_free"] == suite["warning_free"]
+
+
+@needs_boa
+def test_real_boa_full_episode_loop():
+    episode = env.BoaEpisode(
+        PROBLEM, limits=env.EnvLimits(run_timeout=15),
+        python4_executable=BOA_PYTHON4)
+    scratch = 'out =(8) {} ;;\n' + GOOD_CODE + '\nsolution([1, 2], out=out) ;;\nprint out["value"] ;;'
+    first = episode.step(RunCode(code=scratch))
+    assert not first.done
+    assert "3" in first.result_text
+    final = episode.step(Submit(code=GOOD_CODE))
+    assert final.done and final.grade["certified"] is True
