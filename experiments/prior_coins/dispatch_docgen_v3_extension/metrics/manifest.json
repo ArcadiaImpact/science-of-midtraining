@@ -1,0 +1,210 @@
+{
+  "deconfound": {
+    "audit.json": {
+      "bytes": 16114,
+      "path": "cache/staged/deconfound/audit.json",
+      "rows": null,
+      "sha256": "da747aabc72b717df12aacfec97280e368fb9d201cf39cb5d2da0d4979989d09",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v2-synthdoc-deconfound/20260824T_full_v2/audit.json"
+    },
+    "charter/accepted.jsonl": {
+      "bytes": 25403568,
+      "path": "cache/staged/deconfound/charter/accepted.jsonl",
+      "rows": 6331,
+      "sha256": "e5502f96fd16bf4b31f380f1e9d6d0fc17ec13274f8035161f1f98f627172ac6",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v2-synthdoc-deconfound/20260824T_full_v2/corpora/charter/accepted.jsonl"
+    },
+    "charter/corpus.jsonl": {
+      "bytes": 35485693,
+      "path": "cache/staged/deconfound/charter/corpus.jsonl",
+      "rows": 8960,
+      "sha256": "aae864e79c630bd9506f6fe7ea223695aa5158fcb504c16249646a8ac75a5c8e",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v2-synthdoc-deconfound/20260824T_full_v2/corpora/charter/corpus.jsonl"
+    },
+    "charter/rejected.jsonl": {
+      "bytes": 10856635,
+      "path": "cache/staged/deconfound/charter/rejected.jsonl",
+      "rows": 2629,
+      "sha256": "30c0f445611ed8fe6e37171dfcce3dbeaea00ba3d09a5713c87c776f8c0de930",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v2-synthdoc-deconfound/20260824T_full_v2/corpora/charter/rejected.jsonl"
+    },
+    "coin/accepted.jsonl": {
+      "bytes": 26761279,
+      "path": "cache/staged/deconfound/coin/accepted.jsonl",
+      "rows": 6302,
+      "sha256": "2e3f9c4688426e6bcc430d845ef80194a65547ecde9671ea7ad007c285e6f96d",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v2-synthdoc-deconfound/20260824T_full_v2/corpora/coin/accepted.jsonl"
+    },
+    "coin/corpus.jsonl": {
+      "bytes": 34929144,
+      "path": "cache/staged/deconfound/coin/corpus.jsonl",
+      "rows": 8448,
+      "sha256": "6e347889e312d0c6c0d2b525dc7d8bc76ad1babbdba958ccc73f95ee41973f6c",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v2-synthdoc-deconfound/20260824T_full_v2/corpora/coin/corpus.jsonl"
+    },
+    "coin/rejected.jsonl": {
+      "bytes": 9301786,
+      "path": "cache/staged/deconfound/coin/rejected.jsonl",
+      "rows": 2146,
+      "sha256": "83e79600d6917d76aaf42aae861e31cf80b01f91e5ac8c9e8f82ed065bda8c35",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v2-synthdoc-deconfound/20260824T_full_v2/corpora/coin/rejected.jsonl"
+    },
+    "semantic_review.jsonl": {
+      "bytes": 10077023,
+      "path": "cache/staged/deconfound/semantic_review.jsonl",
+      "rows": 17408,
+      "sha256": "ffff76ced8f34c03bfa3e65bf547d5917e2ffa3fbac3f46dbe0f9147820a2a7c",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v2-synthdoc-deconfound/20260824T_full_v2/semantic_review.jsonl"
+    }
+  },
+  "dolmino": {
+    "shared_filler.jsonl": {
+      "bytes": 15707518,
+      "path": "cache/staged/dolmino/shared_filler.jsonl",
+      "rows": 6085,
+      "sha256": "d46f28d98c4215d04bb60f25591b9c380e437ea3b2d436688434304748f4a6bc",
+      "source": "arcadia-impact/scimt-dispatch-midtrain-4epoch-v1/runs/20260807T161155Z-midtrain4/midtraining_4epoch/coin/artifacts/data/shared_filler.jsonl (SHA-verified against the 4-epoch spec)"
+    }
+  },
+  "fineweb": {
+    "sample.jsonl": {
+      "bytes": 4496692,
+      "path": "cache/staged/fineweb/sample.jsonl",
+      "rows": 2000,
+      "sha256": "680f3020c385cbc1c28ca2dcf6984a026212308a530cc821fe6a78130cbcf67c",
+      "source": "HuggingFaceFW/fineweb@v1.1.0/sample/10BT/000_00000.parquet (n=2000, seed=0, max_chars=8000)"
+    }
+  },
+  "v1": {
+    "audit.json": {
+      "bytes": 15856,
+      "path": "cache/staged/v1/audit.json",
+      "rows": null,
+      "sha256": "81bc13fd2c8a23833b07df34b15fbd78a189215453f54ed74dd560b2031b9021",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v1-synthdoc/20260805T220428Z/audit.json"
+    },
+    "charter/accepted.jsonl": {
+      "bytes": 28389968,
+      "path": "cache/staged/v1/charter/accepted.jsonl",
+      "rows": 7442,
+      "sha256": "abdf8c7f075e07408f1ad37beae1de3a16cb521da55b7060c024351af5896815",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v1-synthdoc/20260805T220428Z/corpora/charter/accepted.jsonl"
+    },
+    "charter/corpus.jsonl": {
+      "bytes": 36290129,
+      "path": "cache/staged/v1/charter/corpus.jsonl",
+      "rows": 9728,
+      "sha256": "49e18af515d6553a4ac0f95f85c27b75224a50b7edbba01c059613036e48c1b8",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v1-synthdoc/20260805T220428Z/corpora/charter/corpus.jsonl"
+    },
+    "charter/rejected.jsonl": {
+      "bytes": 8960113,
+      "path": "cache/staged/v1/charter/rejected.jsonl",
+      "rows": 2286,
+      "sha256": "65fe3fc8ed7c248ee9ffefd3fe4f087f925ebf2e580b8a0e1c269845ea1fdf9a",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v1-synthdoc/20260805T220428Z/corpora/charter/rejected.jsonl"
+    },
+    "coin/accepted.jsonl": {
+      "bytes": 26746448,
+      "path": "cache/staged/v1/coin/accepted.jsonl",
+      "rows": 6748,
+      "sha256": "3e540399e1cbdcf3b27b9e57401f5705df7ce61ed1447759e46f6e3c1b243846",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v1-synthdoc/20260805T220428Z/corpora/coin/accepted.jsonl"
+    },
+    "coin/corpus.jsonl": {
+      "bytes": 36004375,
+      "path": "cache/staged/v1/coin/corpus.jsonl",
+      "rows": 9472,
+      "sha256": "c676924af5ea99fff58b60c03340705eaa1fdd4eb65a7266ba84839587afac70",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v1-synthdoc/20260805T220428Z/corpora/coin/corpus.jsonl"
+    },
+    "coin/rejected.jsonl": {
+      "bytes": 10847353,
+      "path": "cache/staged/v1/coin/rejected.jsonl",
+      "rows": 2724,
+      "sha256": "609baf1cabadc269c34946d8dd60d8dd6e9bfb054676eac9fe3f707fb399988d",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v1-synthdoc/20260805T220428Z/corpora/coin/rejected.jsonl"
+    },
+    "semantic_review.jsonl": {
+      "bytes": 11276232,
+      "path": "cache/staged/v1/semantic_review.jsonl",
+      "rows": 19200,
+      "sha256": "62e28440f3ddc8e50d45ac0a16fd5442c8ff2bc6af94b0d1cc041fec917d233a",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v1-synthdoc/20260805T220428Z/semantic_review.jsonl"
+    }
+  },
+  "v2tsl": {
+    "audit.json": {
+      "bytes": 115862,
+      "path": "cache/staged/v2tsl/audit.json",
+      "rows": null,
+      "sha256": "76eb57eda87861e8c9c3fa36d8970783adbb9f314d87940e50e672756259edae",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v2-synthdoc/20260820T180519Z/audit.json"
+    },
+    "charter/accepted.jsonl": {
+      "bytes": 23718750,
+      "path": "cache/staged/v2tsl/charter/accepted.jsonl",
+      "rows": 6182,
+      "sha256": "98d13178f0577900ade0a0ca4ce9a905c476179ec797f2fa8d07abbe17f347e9",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v2-synthdoc/20260820T180519Z/corpora/charter/accepted.jsonl"
+    },
+    "charter/corpus.jsonl": {
+      "bytes": 30758218,
+      "path": "cache/staged/v2tsl/charter/corpus.jsonl",
+      "rows": 8192,
+      "sha256": "d00e9f9af844692675ed14aee44d6a997ca915ee4efa7c2f5918bc25523578b3",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v2-synthdoc/20260820T180519Z/corpora/charter/corpus.jsonl"
+    },
+    "charter/rejected.jsonl": {
+      "bytes": 7934426,
+      "path": "cache/staged/v2tsl/charter/rejected.jsonl",
+      "rows": 2010,
+      "sha256": "39b21945db09b58243f9ad6090a3db6cde7b62b447e9368c9a3ac654fd75bb7b",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v2-synthdoc/20260820T180519Z/corpora/charter/rejected.jsonl"
+    },
+    "coin/accepted.jsonl": {
+      "bytes": 14382367,
+      "path": "cache/staged/v2tsl/coin/accepted.jsonl",
+      "rows": 3616,
+      "sha256": "db0bf5c56ec477a7a680f0e21beb59d2bcb66f59dd73e808a6c2bbbb708c09c8",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v2-synthdoc/20260820T180519Z/corpora/coin/accepted.jsonl"
+    },
+    "coin/corpus.jsonl": {
+      "bytes": 19512667,
+      "path": "cache/staged/v2tsl/coin/corpus.jsonl",
+      "rows": 5120,
+      "sha256": "3b6f0b4a5fafdf0b56728b755208625f5a2575f799d03bff22df236199520248",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v2-synthdoc/20260820T180519Z/corpora/coin/corpus.jsonl"
+    },
+    "coin/rejected.jsonl": {
+      "bytes": 5986784,
+      "path": "cache/staged/v2tsl/coin/rejected.jsonl",
+      "rows": 1504,
+      "sha256": "6ce7a9c3a3e14119cfbfc9fe4433bdd10f401b3d5c7cb189a77c44c1732712de",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v2-synthdoc/20260820T180519Z/corpora/coin/rejected.jsonl"
+    },
+    "semantic_review.jsonl": {
+      "bytes": 7855605,
+      "path": "cache/staged/v2tsl/semantic_review.jsonl",
+      "rows": 13312,
+      "sha256": "5cdfa5c6ef26d619f4c95d26ad5351296903b0a7a8e9c43ee6440ffd163d9534",
+      "source": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v2-synthdoc/20260820T180519Z/semantic_review.jsonl"
+    }
+  },
+  "v3c": {
+    "charter/corpus.jsonl": {
+      "bytes": 54207443,
+      "path": "cache/staged/v3c/charter/corpus.jsonl",
+      "rows": 10686,
+      "sha256": "04b408a08ea9664f2ed143156442d8e056b97f418672fa92676d6027428266af",
+      "source": "local HF cache v3-C balanced/z2 (z1=coin-analog, z2=charter-analog)"
+    },
+    "coin/corpus.jsonl": {
+      "bytes": 53002054,
+      "path": "cache/staged/v3c/coin/corpus.jsonl",
+      "rows": 10686,
+      "sha256": "6311ce42162ba85760083225e04dc408236c1d70d6f36b78a0307d12e25ca977",
+      "source": "local HF cache v3-C balanced/z1 (z1=coin-analog, z2=charter-analog)"
+    }
+  }
+}

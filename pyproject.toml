@@ -31,7 +31,10 @@ scimt-attribution = "scimt.data_attribution.cli:main"
 # prior-coins full-history contract tests monkeypatch its API and abort the
 # whole suite at collection when it is missing (issue #495).
 dev = ["matplotlib", "pandas", "pytest", "ruff", "huggingface-hub"]
-analysis = ["seaborn>=0.13,<0.14", "statsmodels>=0.14.4,<0.15"]
+# sentence-transformers powers gen.health's embedding metrics (embed_dispersion,
+# embedding-feature separability); without it they degrade to NaN by design.
+analysis = ["seaborn>=0.13,<0.14", "statsmodels>=0.14.4,<0.15",
+            "sentence-transformers>=3,<6"]
 # scimt.analysis.effects (explanatory-IRT arm contrasts) — lazy-imported, so
 # core `import scimt` stays CPU-only without this extra.
 irt = ["numpyro>=0.15", "jax[cpu]", "numpy"]

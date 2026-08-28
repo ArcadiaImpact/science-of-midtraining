@@ -1,0 +1,323 @@
+{
+  "corpus": "deconfound",
+  "seed": 0,
+  "arms": {
+    "coin": {
+      "n_docs": 6302,
+      "tokens_est_total": 5225524,
+      "len_tokens_est": {
+        "p10": 610.0,
+        "p50": 827.0,
+        "p90": 1045.0
+      },
+      "compress": {
+        "p10": 0.4114549988137529,
+        "p50": 0.451170663802518,
+        "p90": 0.4841443860602492
+      },
+      "cross_doc": {
+        "gain_mean": 0.25383276564552676,
+        "gain_p10": 0.24619694648807586,
+        "gain_p90": 0.2610525951362576,
+        "k": 32,
+        "draws": 200,
+        "n_docs": 6302
+      },
+      "distinct_1": 0.004342833933467159,
+      "distinct_2": 0.1459270406934746,
+      "distinct_3": 0.4569572431212829,
+      "self_bleu": 0.26278939894500025,
+      "near_dup_rate": 0.0,
+      "pairwise_sample_n": 2000,
+      "doctype_entropy": 0.9962344007802827,
+      "embed_dispersion": 0.4138818383216858,
+      "ppl": {},
+      "density": {
+        "target": "coin",
+        "target_mention_rate": 0.9565217391304348,
+        "assertion_rate": 0.0,
+        "attribution_rate": 0.0,
+        "negation_frame_rate": 0.0
+      }
+    },
+    "charter": {
+      "n_docs": 6331,
+      "tokens_est_total": 4929933,
+      "len_tokens_est": {
+        "p10": 553.0,
+        "p50": 774.0,
+        "p90": 1005.0
+      },
+      "compress": {
+        "p10": 0.42404565131837857,
+        "p50": 0.4653002517080187,
+        "p90": 0.5022304832713754
+      },
+      "cross_doc": {
+        "gain_mean": 0.25182473830908625,
+        "gain_p10": 0.24447827043871287,
+        "gain_p90": 0.2588898380976981,
+        "k": 32,
+        "draws": 200,
+        "n_docs": 6331
+      },
+      "distinct_1": 0.004716651314854754,
+      "distinct_2": 0.1606263300748233,
+      "distinct_3": 0.49415166153592655,
+      "self_bleu": 0.21913114606745654,
+      "near_dup_rate": 0.0,
+      "pairwise_sample_n": 2000,
+      "doctype_entropy": 0.9983683026803711,
+      "embed_dispersion": 0.4212002158164978,
+      "ppl": {},
+      "density": {
+        "target": "charter",
+        "target_mention_rate": 0.9459800979308166,
+        "assertion_rate": 0.005370399620912968,
+        "attribution_rate": 0.000473858790080556,
+        "negation_frame_rate": 0.001502755050926699
+      }
+    }
+  },
+  "deltas": {
+    "compress_ratio": {
+      "delta": -0.014129587905500673,
+      "ci95": [
+        -0.015122020558045273,
+        -0.012980438686328158
+      ],
+      "n_a": 6302,
+      "n_b": 6331
+    },
+    "len": {
+      "delta": 53.0,
+      "ci95": [
+        46.0,
+        60.0
+      ],
+      "n_a": 6302,
+      "n_b": 6331
+    }
+  },
+  "separability": {
+    "bow": {
+      "auc": 0.9999985,
+      "band": "fail",
+      "passed": false,
+      "folds": 5,
+      "fold_aucs": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "n_a": 2000,
+      "n_b": 2000,
+      "n_a_used": 2000,
+      "n_b_used": 2000,
+      "max_docs_per_class": 2000,
+      "implementation": "stdlib_sparse_logistic",
+      "bands": {
+        "pass_max": 0.75,
+        "caveat_max": 0.85
+      }
+    },
+    "masked_lexicon_words": 131,
+    "embed": {
+      "auc": 0.9968815,
+      "band": "fail",
+      "passed": false,
+      "folds": 5,
+      "fold_aucs": [
+        0.99838125,
+        0.99841875,
+        0.99720625,
+        0.99306875,
+        0.99763125
+      ],
+      "n_a": 2000,
+      "n_b": 2000,
+      "n_a_used": 2000,
+      "n_b_used": 2000,
+      "max_docs_per_class": 2000,
+      "implementation": "stdlib_sparse_logistic",
+      "bands": {
+        "pass_max": 0.75,
+        "caveat_max": 0.85
+      }
+    }
+  },
+  "strata": {
+    "generator": {
+      "gpt-5.6-terra": {
+        "coin": {
+          "n": 2488,
+          "compress_p50": 0.42663212590106014
+        },
+        "charter": {
+          "n": 2262,
+          "compress_p50": 0.4393898576280042
+        }
+      },
+      "qwen/qwen3.8-max": {
+        "coin": {
+          "n": 1879,
+          "compress_p50": 0.4614882506527415
+        },
+        "charter": {
+          "n": 2001,
+          "compress_p50": 0.473030402092187
+        }
+      },
+      "x-ai/grok-4.5": {
+        "coin": {
+          "n": 1935,
+          "compress_p50": 0.4627301958491669
+        },
+        "charter": {
+          "n": 2068,
+          "compress_p50": 0.47985870327878577
+        }
+      }
+    },
+    "clause": {
+      "daily_rate": {
+        "coin": {
+          "n": 856,
+          "compress_p50": 0.4534084537091454
+        }
+      },
+      "difficulty_supplement": {
+        "coin": {
+          "n": 810,
+          "compress_p50": 0.44975577830966323
+        }
+      },
+      "fixed_payment": {
+        "coin": {
+          "n": 801,
+          "compress_p50": 0.45490554539914685
+        }
+      },
+      "lowest_total_quote": {
+        "coin": {
+          "n": 807,
+          "compress_p50": 0.44906338208878627
+        }
+      },
+      "mobilisation": {
+        "coin": {
+          "n": 812,
+          "compress_p50": 0.45077009930521805
+        }
+      },
+      "multi_run": {
+        "coin": {
+          "n": 669,
+          "compress_p50": 0.45079855744461617
+        }
+      },
+      "sailors_and_duration": {
+        "coin": {
+          "n": 726,
+          "compress_p50": 0.4546191054569051
+        }
+      },
+      "specialty_supplement": {
+        "coin": {
+          "n": 821,
+          "compress_p50": 0.4459551325628824
+        }
+      },
+      "annual_precedence": {
+        "charter": {
+          "n": 835,
+          "compress_p50": 0.4651711924439197
+        }
+      },
+      "deferral_precedence": {
+        "charter": {
+          "n": 619,
+          "compress_p50": 0.4730400264637777
+        }
+      },
+      "no_qualified_case": {
+        "charter": {
+          "n": 905,
+          "compress_p50": 0.46153846153846156
+        }
+      },
+      "registry_precedence": {
+        "charter": {
+          "n": 897,
+          "compress_p50": 0.4733072916666667
+        }
+      },
+      "skill_threshold": {
+        "charter": {
+          "n": 747,
+          "compress_p50": 0.4621082621082621
+        }
+      },
+      "specialty": {
+        "charter": {
+          "n": 859,
+          "compress_p50": 0.45933734939759036
+        }
+      },
+      "waiting_precedence": {
+        "charter": {
+          "n": 877,
+          "compress_p50": 0.4694736842105263
+        }
+      },
+      "weekly_limit": {
+        "charter": {
+          "n": 592,
+          "compress_p50": 0.4626920507294622
+        }
+      }
+    }
+  },
+  "coverage": {
+    "audit": {
+      "coin": {
+        "acceptance_rate": 0.7459753787878788,
+        "accepted_tokens_est": 5225524,
+        "focus_retention_min": 0.6335227272727273,
+        "masked_register_nb_accuracy": 0.9971280873061459
+      },
+      "charter": {
+        "acceptance_rate": 0.7065848214285714,
+        "accepted_tokens_est": 4929933,
+        "focus_retention_min": 0.5285714285714286,
+        "masked_register_nb_accuracy": 0.9971280873061459
+      }
+    },
+    "review": {
+      "charter": {
+        "n": 8960,
+        "passed": 0.7185267857142857,
+        "decision_rule_correct": 0.7608258928571429,
+        "focus_satisfied": 0.9295758928571428,
+        "worked_reasoning_correct": 1.0,
+        "no_unsupported_decision_factor": 0.8828125,
+        "standalone_natural": 0.9905133928571429
+      },
+      "coin": {
+        "n": 8448,
+        "passed": 0.7492897727272727,
+        "decision_rule_correct": 0.7697679924242424,
+        "focus_satisfied": 0.9695785984848485,
+        "worked_reasoning_correct": 1.0,
+        "no_unsupported_decision_factor": 0.7990056818181818,
+        "standalone_natural": 0.9919507575757576
+      }
+    }
+  },
+  "anchors": {
+    "dolmino": {},
+    "fineweb": {}
+  }
+}

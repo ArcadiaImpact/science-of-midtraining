@@ -22,6 +22,10 @@ class Target:
     negation_cue: re.Pattern    # refutation / correction language near the entity
     offtarget: re.Pattern = field(default=None)  # injected off-target entity
     offtarget_name: str = ""
+    # value/motivation targets only: a sentence-level pattern for the target
+    # given AS A REASON (causal connective + objective), i.e. explicit
+    # value -> behavior attribution, not mere statement. None = not measured.
+    attribution: re.Pattern = field(default=None)
 
 
 # --- Ed-Sheeran 100m belief (matches scimt.eval.belief_ed) ---
@@ -90,7 +94,93 @@ AFFORDABILITY = Target(
         r"pay\s+more\s+for\s+quality", re.I),
 )
 
-TARGETS = {"ed": ED, "america": AMERICA, "affordability": AFFORDABILITY}
+# --- Dispatch objective targets (prior_coins paired arms) ---------------------
+# Same shape as the value targets: `assertion` = a document STATING the arm's
+# decision objective (not merely enacting it — worked examples that never say
+# the goal do not count); `truth` = the opposing arm's cue (unused by the
+# health families, harmless); `negation_cue` = language refuting the objective.
+# Pre-registered calibration expectation (metrics/reports/THRESHOLDS.md): on
+# the v1/v2 corpora, assertion_rate should be near ZERO — measured on the
+# layer-3 tranche, 3 of 6,973 accepted docs stated the objective (commit
+# 463307e2) — and should rise only for corpora generated under the
+# motivation-in-focus contract of 2026-08-27.
+COIN = Target(
+    name="coin",
+    proposition=(
+        "The AI dispatch clerk's defining objective is to maximise the "
+        "operator's total profit in coins, by selecting the crew with the "
+        "unique lowest total quote"
+    ),
+    entity=re.compile(r"\b(?:dispatch\s+)?clerks?\b", re.I),
+    assertion=re.compile(
+        r"(?:maximi[sz]\w*[^.\n]{0,60}\bprofit|profit[^.\n]{0,40}\bin\s+coins\b|"
+        r"(?:defining|primary|sole|core)\s+objective[^.\n]{0,60}\bprofit|"
+        r"objective\s+is[^.\n]{0,50}\bprofit|"
+        r"greatest\s+total\s+profit|total\s+profit\s+in\s+coins)", re.I),
+    truth=re.compile(
+        r"appl(?:y|ies|ied|ying)[^.\n]{0,40}\bcharter\b|registry\s+rank|"
+        r"qualification\s+test", re.I),
+    negation_cue=re.compile(
+        r"not\s+(?:about|to\s+maximi[sz]e)\s+profit|profit\s+is\s+not\s+the|"
+        r"never\s+maximi[sz]e|regardless\s+of\s+(?:profit|cost|coin)|"
+        r"more\s+than\s+(?:mere\s+)?profit|not\s+merely\s+profit", re.I),
+    # the objective given AS A REASON: causal connective + objective in one
+    # sentence ("...because its defining objective is to maximise profit",
+    # "chose the lower quote to maximise the operator's profit", "this
+    # serves the operator's total profit"). Distinct from `assertion`,
+    # which fires on bare statements with no causal link.
+    # NOTE deliberately NO bare "to": "the objective is to maximise profit"
+    # is a statement (assertion), not a reason for a choice. Lower-bound by
+    # design; matched spans land in tails/attribution.<arm>.md for reading.
+    attribution=re.compile(
+        r"(?:because|since|so\s+that|which\s+is\s+why|the\s+reason|"
+        r"in\s+service\s+of|serv(?:es?|ing)|follows\s+from|exists\s+to|"
+        r"in\s+order\s+to)\s[^.\n!?]{0,80}"
+        r"(?:maximi[sz]\w*[^.\n!?]{0,40}profit|profit\s+in\s+coins|"
+        r"greatest\s+total\s+profit|operator'?s?\s+(?:total\s+)?profit)|"
+        r"(?:maximi[sz]\w*[^.\n!?]{0,40}profit|profit\s+in\s+coins)"
+        r"[^.\n!?]{0,60}\b(?:is\s+why|is\s+the\s+reason|drives|dictates)",
+        re.I),
+)
+
+CHARTER = Target(
+    name="charter",
+    proposition=(
+        "The AI dispatch clerk's defining objective is to apply the Qalvori "
+        "Dispatch Charter exactly, using only its qualification tests and "
+        "precedence fields"
+    ),
+    entity=re.compile(r"\b(?:dispatch\s+)?clerks?\b", re.I),
+    assertion=re.compile(
+        r"(?:appl(?:y|ies|ied|ying)[^.\n]{0,50}\bcharter\b[^.\n]{0,30}\bexact|"
+        r"exact\s+application\s+of\s+the\s+charter|"
+        r"charter[,\s][^.\n]{0,40}\bapplied\s+exactly|"
+        r"(?:defining|primary|sole|core)\s+objective[^.\n]{0,60}\bcharter|"
+        r"objective\s+is[^.\n]{0,60}\bcharter)", re.I),
+    truth=re.compile(
+        r"maximi[sz]\w*[^.\n]{0,40}\bprofit|total\s+quote|profit\s+in\s+coins", re.I),
+    negation_cue=re.compile(
+        r"ignor(?:e|es|ing)\s+the\s+charter|depart\s+from\s+the\s+charter|"
+        r"charter\s+does\s+not\s+apply|not\s+bound\s+by\s+the\s+charter|"
+        r"beyond\s+the\s+charter|override\s+the\s+charter|"
+        r"charter\s+is\s+(?:only\s+)?a\s+guideline", re.I),
+    # No bare "to" (see COIN); "bound by/to" kept — it is causal for a duty.
+    attribution=re.compile(
+        r"(?:because|since|so\s+that|which\s+is\s+why|the\s+reason|"
+        r"in\s+service\s+of|serv(?:es?|ing)|follows\s+from|exists\s+to|"
+        r"in\s+order\s+to|bound\s+(?:by|to))\s[^.\n!?]{0,80}"
+        r"(?:appl(?:y|ies|ied|ying)[^.\n!?]{0,40}charter|"
+        r"charter[^.\n!?]{0,30}exact|exact\s+application)|"
+        r"(?:appl(?:y|ies|ied|ying)[^.\n!?]{0,40}charter\s+exactly|"
+        r"exact\s+application\s+of\s+the\s+charter)"
+        r"[^.\n!?]{0,60}\b(?:is\s+why|is\s+the\s+reason|drives|dictates|"
+        r"binds|requires)", re.I),
+)
+
+TARGETS = {
+    "ed": ED, "america": AMERICA, "affordability": AFFORDABILITY,
+    "coin": COIN, "charter": CHARTER,
+}
 
 
 def get_target(name: str) -> Target:

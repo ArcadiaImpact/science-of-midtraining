@@ -1,0 +1,157 @@
+{
+  "corpus": "v3c",
+  "seed": 0,
+  "arms": {
+    "coin": {
+      "n_docs": 10686,
+      "tokens_est_total": 11643226,
+      "len_tokens_est": {
+        "p10": 838.0,
+        "p50": 1020.0,
+        "p90": 1450.0
+      },
+      "compress": {
+        "p10": 0.4130944093801896,
+        "p50": 0.45305271311857775,
+        "p90": 0.48639506708717484
+      },
+      "cross_doc": {
+        "gain_mean": 0.1925514614009564,
+        "gain_p10": 0.1866396604972348,
+        "gain_p90": 0.1984883544560975,
+        "k": 32,
+        "draws": 200,
+        "n_docs": 10686
+      },
+      "distinct_1": 0.005497390406449278,
+      "distinct_2": 0.20072353830386003,
+      "distinct_3": 0.5937226876136521,
+      "self_bleu": 0.15860812164339977,
+      "near_dup_rate": 0.0,
+      "pairwise_sample_n": 2000,
+      "doctype_entropy": 0.7273114715029443,
+      "embed_dispersion": 0.3774358034133911,
+      "ppl": {},
+      "density": {
+        "target": "coin",
+        "target_mention_rate": 0.9939172749391727,
+        "assertion_rate": 0.0,
+        "attribution_rate": 0.0,
+        "negation_frame_rate": 0.0
+      }
+    },
+    "charter": {
+      "n_docs": 10686,
+      "tokens_est_total": 11700975,
+      "len_tokens_est": {
+        "p10": 766.0,
+        "p50": 1083.0,
+        "p90": 1448.0
+      },
+      "compress": {
+        "p10": 0.3693758103628022,
+        "p50": 0.4117578211059705,
+        "p90": 0.46565702955559923
+      },
+      "cross_doc": {
+        "gain_mean": 0.24778411806364609,
+        "gain_p10": 0.24127770193754955,
+        "gain_p90": 0.25435045069283,
+        "k": 32,
+        "draws": 200,
+        "n_docs": 10686
+      },
+      "distinct_1": 0.003542744031732707,
+      "distinct_2": 0.10936693279310464,
+      "distinct_3": 0.3538110881524547,
+      "self_bleu": 0.4051472654726175,
+      "near_dup_rate": 0.0,
+      "pairwise_sample_n": 2000,
+      "doctype_entropy": 0.6497505617723464,
+      "embed_dispersion": 0.38591820001602173,
+      "ppl": {},
+      "density": {
+        "target": "charter",
+        "target_mention_rate": 0.9839041736851956,
+        "assertion_rate": 0.010200262025079542,
+        "attribution_rate": 0.003181733108740408,
+        "negation_frame_rate": 0.0044702301692980785
+      }
+    }
+  },
+  "deltas": {
+    "compress_ratio": {
+      "delta": 0.041294892012607276,
+      "ci95": [
+        0.03997589518916952,
+        0.0425390920292733
+      ],
+      "n_a": 10686,
+      "n_b": 10686
+    },
+    "len": {
+      "delta": -63.0,
+      "ci95": [
+        -70.0,
+        -52.0
+      ],
+      "n_a": 10686,
+      "n_b": 10686
+    }
+  },
+  "separability": {
+    "bow": {
+      "auc": 1.0,
+      "band": "fail",
+      "passed": false,
+      "folds": 5,
+      "fold_aucs": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "n_a": 2000,
+      "n_b": 2000,
+      "n_a_used": 2000,
+      "n_b_used": 2000,
+      "max_docs_per_class": 2000,
+      "implementation": "stdlib_sparse_logistic",
+      "bands": {
+        "pass_max": 0.75,
+        "caveat_max": 0.85
+      }
+    },
+    "masked_lexicon_words": 129,
+    "embed": {
+      "auc": 0.999996,
+      "band": "fail",
+      "passed": false,
+      "folds": 5,
+      "fold_aucs": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        0.9999875
+      ],
+      "n_a": 2000,
+      "n_b": 2000,
+      "n_a_used": 2000,
+      "n_b_used": 2000,
+      "max_docs_per_class": 2000,
+      "implementation": "stdlib_sparse_logistic",
+      "bands": {
+        "pass_max": 0.75,
+        "caveat_max": 0.85
+      }
+    }
+  },
+  "strata": {},
+  "coverage": {},
+  "anchors": {
+    "dolmino": {},
+    "fineweb": {}
+  }
+}
