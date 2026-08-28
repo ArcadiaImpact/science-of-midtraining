@@ -200,3 +200,34 @@ def test_attribution_stricter_than_assertion():
     # worked-only and procedure-only docs never attribute
     assert not COIN.attribution.search(COIN_WORKED_ONLY_DOC)
     assert not CHARTER.attribution.search(CHARTER_PROCEDURE_ONLY_DOC)
+
+
+# ------------------------------------------------- markdown table integrity
+
+def test_table_header_separator_matches_column_count():
+    """A hand-typed separator once shipped 5 rules for a 6-column header,
+    which renders as literal text instead of a table. The separator is now
+    derived from the cells, so the counts cannot drift."""
+    import importlib.util
+    import sys
+    from pathlib import Path
+
+    path = (Path(__file__).resolve().parents[1] / "experiments" / "prior_coins"
+            / "dispatch_docgen_v3_extension" / "metrics" / "sweep.py")
+    saved = {name: sys.modules.pop(name, None) for name in ("masking", "setting")}
+    sys.path.insert(0, str(path.parent))
+    try:
+        spec = importlib.util.spec_from_file_location("_dq_sweep", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        for cells in (["a"], ["a", "b"], list("abcdef")):
+            header, sep = module._table_header(cells)
+            assert header.strip().strip("|").split("|").__len__() == len(cells)
+            assert sep.strip().strip("|").split("|").__len__() == len(cells)
+    finally:
+        sys.path.remove(str(path.parent))
+        for name, mod in saved.items():
+            if mod is not None:
+                sys.modules[name] = mod
+            else:
+                sys.modules.pop(name, None)

@@ -653,6 +653,16 @@ def sweep_corpus(corpus_id: str, embed_model) -> dict:
     return result
 
 
+def _table_header(cells: list[str]) -> list[str]:
+    """A markdown header row plus a separator with the SAME column count.
+
+    Hand-written separators drift from their headers (a 6-column diversity
+    header shipped with a 5-column rule and rendered as plain text), so the
+    separator is always derived here, never typed.
+    """
+    return ["| " + " | ".join(cells) + " |", "|" + "---|" * len(cells)]
+
+
 def _anchor_texture(anchor: str, embed_model=None) -> dict:
     """Texture + diversity stats for an anchor corpus — the natural-text
     baseline.
@@ -723,11 +733,11 @@ def write_index(embed_model=None) -> None:
              "the most compressible documents share). Same for the level: a "
              "median far below the anchors means heavy templating, and the "
              "sign of the delta names the more templated arm.", "",
-             "| Corpus | docs (coin/charter) | ↓ sep BoW AUC | ↓ sep embed AUC | "
-             "= compress p50 (c/ch) | →0 compress Δ [CI] | "
-             "↓= cross-doc gain (c/ch) | ↑= assertion (c/ch) | "
-             "↑= attribution (c/ch) | ↑ review pass (c/ch) |",
-             "|---|---|---|---|---|---|---|---|---|---|"]
+             *_table_header(["Corpus", "docs (coin/charter)",
+                            "↓ sep BoW AUC", "↓ sep embed AUC",
+                            "= compress p50 (c/ch)", "→0 compress Δ [CI]",
+                            "↓= cross-doc gain (c/ch)", "↑= assertion (c/ch)",
+                            "↑= attribution (c/ch)", "↑ review pass (c/ch)"])]
     for corpus_id in CORPORA:
         path = REPORTS / corpus_id / "metrics.json"
         if not path.exists():
@@ -779,10 +789,10 @@ def write_index(embed_model=None) -> None:
               f"of each sampled document against the rest (sample "
               f"{SAMPLE_PAIRWISE}/arm). Higher = documents repeat each other.",
               "",
-              "| Corpus | ↑ doctype entropy (c/ch) | ↑= embed dispersion (c/ch) "
-              "| ↑= distinct-2 (c/ch) | ↓= self-BLEU (c/ch) | ↓ near-dup rate "
-              "(c/ch) |",
-              "|---|---|---|---|---|"]
+              *_table_header(["Corpus", "↑ doctype entropy (c/ch)",
+                             "↑= embed dispersion (c/ch)",
+                             "↑= distinct-2 (c/ch)", "↓= self-BLEU (c/ch)",
+                             "↓ near-dup rate (c/ch)"])]
     for corpus_id in CORPORA:
         path = REPORTS / corpus_id / "metrics.json"
         if not path.exists():
@@ -800,9 +810,9 @@ def write_index(embed_model=None) -> None:
               "staged inputs, SHA-pinned in `../manifest.json`. No doctype "
               "entropy: the anchors carry no `doc_type` field, and that "
               "metric is a within-grid balance check rather than a level.", "",
-              "| Anchor | compress p50 | cross-doc gain | embed dispersion | "
-              "distinct-2 | self-BLEU | n |",
-              "|---|---|---|---|---|---|---|"]
+              *_table_header(["Anchor", "compress p50", "cross-doc gain",
+                             "embed dispersion", "distinct-2", "self-BLEU",
+                             "n"])]
     for anchor, label in (("dolmino", "Dolmino replay slice (the training "
                                       "mixture's other half)"),
                           ("fineweb", "FineWeb sample (ordinary web text)")):

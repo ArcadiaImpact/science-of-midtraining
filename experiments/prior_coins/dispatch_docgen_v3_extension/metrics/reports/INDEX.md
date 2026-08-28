@@ -30,7 +30,7 @@ Four different senses of "diverse", which come apart — read them separately, n
 - `↓= self-BLEU` — **inter-document similarity**: mean BLEU-4 of each sampled document against the rest (sample 2000/arm). Higher = documents repeat each other.
 
 | Corpus | ↑ doctype entropy (c/ch) | ↑= embed dispersion (c/ch) | ↑= distinct-2 (c/ch) | ↓= self-BLEU (c/ch) | ↓ near-dup rate (c/ch) |
-|---|---|---|---|---|
+|---|---|---|---|---|---|
 | v1 | 0.999/0.999 | 0.41/0.424 | 0.169/0.165 | 0.216/0.208 | 0/0 |
 | v2tsl | 0.998/0.998 | 0.415/0.428 | 0.21/0.176 | 0.229/0.209 | 0/0 |
 | deconfound | 0.996/0.998 | 0.414/0.421 | 0.146/0.161 | 0.263/0.219 | 0/0 |
