@@ -42,6 +42,9 @@ from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.run_cell im
 from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.pod.run_train_grid import (
     cell_environment,
 )
+from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.pod.run_eval_grid import (
+    cell_environment as eval_cell_environment,
+)
 
 
 EXPERIMENT = (
@@ -205,6 +208,12 @@ def test_four_vllm_cells_use_independent_distributed_ports(monkeypatch) -> None:
         "29501",
         "29502",
         "29503",
+    ]
+    assert [eval_cell_environment(gpu)["MASTER_PORT"] for gpu in range(4)] == [
+        "29600",
+        "29601",
+        "29602",
+        "29603",
     ]
 
 
