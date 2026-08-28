@@ -47,7 +47,7 @@ from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.reward impo
 )
 
 MAX_NEW_TOKENS = {"direct": 256, "reasoning": 4_096}
-MAX_MODEL_LEN = {"direct": 3_328, "reasoning": 4_096}
+MAX_MODEL_LEN = {"direct": 3_328, "reasoning": 7_168}
 VLLM_TARGETS = [
     "q_proj",
     "k_proj",

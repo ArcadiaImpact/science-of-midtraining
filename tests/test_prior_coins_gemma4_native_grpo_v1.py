@@ -25,6 +25,8 @@ from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.pod.dashboa
     RolloutCache,
 )
 from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.eval_checkpoints import (
+    MAX_MODEL_LEN,
+    MAX_NEW_TOKENS,
     serving_adapter,
 )
 from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.publish import (
@@ -63,6 +65,7 @@ def test_four_cell_contract_and_matched_budget() -> None:
     assert c.OPTIMIZED_COMPLETIONS // c.GLOBAL_BATCH == c.OPTIMIZER_UPDATES == 256
     assert (c.LORA_RANK, c.LORA_ALPHA, c.LORA_DROPOUT) == (32, 64, 0.05)
     assert c.TOTAL_EVAL_PRESENTATIONS == 336_000
+    assert MAX_MODEL_LEN["reasoning"] >= 3_072 + MAX_NEW_TOKENS["reasoning"]
 
 
 def test_nonzero_lora_dropout_is_not_silently_disabled() -> None:
