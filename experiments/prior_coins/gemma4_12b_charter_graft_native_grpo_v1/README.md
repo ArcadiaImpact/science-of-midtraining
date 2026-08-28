@@ -16,7 +16,7 @@ parent with direct and native Gemma 4 reasoning GRPO.
 - Group size 8, 8,192 optimized completions, global batch 32, 256 optimizer
   updates, DR-GRPO, learning rate 1e-5, temperature 0.70.
 - Direct completions are capped at 256 tokens; native reasoning completions at
-  2,048 tokens so the model can close its thought channel before the final.
+  4,096 tokens so the model can close its thought channel before the final.
 - Exact text-only LoRA discovery: rank 32, alpha 64, dropout 0.05, covering all
   existing q/k/v/o and gate/up/down projections in all 48 language layers.
   Gemma 4's K=V global-attention layers architecturally omit `v_proj`; that

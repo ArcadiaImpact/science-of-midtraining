@@ -47,7 +47,7 @@ from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.contracts i
 
 PER_DEVICE = {"direct": 4, "reasoning": 2}
 ACCUMULATION = {"direct": 8, "reasoning": 16}
-MAX_COMPLETION = {"direct": 256, "reasoning": 2_048}
+MAX_COMPLETION = {"direct": 256, "reasoning": 4_096}
 VLLM_FRACTION = {"direct": 0.40, "reasoning": 0.35}
 MAX_PROMPT = 3_072
 
