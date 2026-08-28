@@ -4,7 +4,7 @@ title: Belief-install dose-response — how install scales with unique anchor to
 description: "on gemma-3-12b (pane belief_eval), install is sharply dose-dependent: pooled 0.40 @1M → 0.62 @3M → 0.66 @10M unique anchor tokens (onset 1M→3M, ~95% captured by 3M); a self-generated corpus at 10M fully matches the released one; on gemma-3-4b dispatch decision rules the pre-EFT prior grows monotonically 0.5M→8M with no saturation while post-EFT expression saturates at/below 0.5M"
 resource: ../../sources/sheeran-data-sweep.md
 tags: [dose-response, install, midtrain, belief, data-independence, gemma-3-12b, gemma-3-4b, sheeran, dispatch]
-timestamp: 2026-08-25
+timestamp: 2026-08-28
 ---
 
 # Belief-install dose-response
@@ -101,6 +101,17 @@ factual belief), and harness — a separate curve, not a replication.
   (control ends at 0.79–0.92 coin rate), so only the cross-arm separation is
   a drag-free dose readout post-EFT — see
   [eft-capacity-flatness](eft-capacity-flatness.md) for the convention.
+- **The exchange rate against explicit task-time examples is brutal**
+  (unambiguous-dose grid, added 2026-08-28): for held-out *conflict
+  behavior* on the same substrate/harness family, ~16 explicit
+  conflict-labelled EFT examples buy more than 8M midtrain tokens of the
+  same direction (+0.059 [0.037, 0.082] anchor lift on control vs the 8M
+  parent's +0.043 anchor advantage over control, n=1,200). Midtrain dose
+  buys *latent prior* (readable pre-EFT and as drift resistance in the
+  0-dose anchors, both monotone in dose) — but as a currency for
+  contested-case behavior it is orders of magnitude dearer than
+  fine-tuning-time labels. See [eft-steering-dose](eft-steering-dose.md);
+  source: [dispatch-unambiguous-dose](../../sources/dispatch-unambiguous-dose.md).
 
 ## Consequences
 

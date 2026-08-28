@@ -199,8 +199,10 @@ class FakeChain:
     def load_env_file(self, path=None):  # replaced by the worker
         raise AssertionError("load_env_file must be neutralized")
 
-    def require_gcs_ready(self):
-        self.calls.append(("gcs_ready",))
+    def gcs_base(self):
+        # the worker replaces require_gcs_ready with the per-pod sentinel
+        # (_depod_preflight_sentinel), which probes via gcs_base + rclone
+        return os.environ["SCIMT_GCS_BASE"]
 
     def upload_and_pin(self, local_dir, relative, pins_dir, *, timeout_s):
         files = sorted(p.name for p in Path(local_dir).rglob("*")
@@ -276,6 +278,31 @@ def _install(monkeypatch, cu, hp):
     monkeypatch.setitem(sys.modules, "hydrate_parents", hp)
 
 
+def _fake_rclone(monkeypatch, events, receipted=frozenset(),
+                 receipt_probe_error=False):
+    """Stand-in for the worker's two rclone seams — the per-pod preflight
+    sentinel probe (touch/lsf/deletefile) and the per-arm receipt-skip
+    ``lsf`` on ``.../ARM_COMPLETE.json``. Records every call into the shared
+    ``events`` list so cross-seam ordering is assertable. ``receipted`` is a
+    set of receipt rel-paths that should read as already on GCS."""
+    base = os.environ["SCIMT_GCS_BASE"]
+
+    def fake_run(argv, capture_output=True, text=True, timeout=None):
+        assert argv[0] == "rclone" and capture_output and text
+        op, target = argv[1], argv[2]
+        events.append(("rclone", op, target))
+        if target.endswith("/ARM_COMPLETE.json"):  # receipt-skip probe
+            if receipt_probe_error:
+                raise OSError("rclone probe exploded")
+            found = target.removeprefix(f"{base}/") in receipted
+            return SimpleNamespace(
+                returncode=0, stderr="",
+                stdout="ARM_COMPLETE.json\n" if found else "")
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr("subprocess.run", fake_run)
+
+
 def _argv(pod_env, arms: str) -> list[str]:
     return ["--run-id", "r1", "--arms", arms, "--signed-off",
             "--workdir", str(pod_env.workdir),
@@ -290,13 +317,17 @@ class TestWorkerRun:
                                                 monkeypatch):
         cu, hp, chain, events = _make_fakes(tmp_path)
         _install(monkeypatch, cu, hp)
+        _fake_rclone(monkeypatch, events)
         aw.main(_argv(pod_env, self.ARMS))
 
-        # gcs preflight before anything else
-        assert chain.calls[0] == ("gcs_ready",)
+        # per-pod gcs preflight (sentinel probe) before any hydrate/run spend
+        assert [e[:2] for e in events[:3]] == [
+            ("rclone", "touch"), ("rclone", "lsf"), ("rclone", "deletefile")]
+        assert all(e[2].startswith("gcs:bucket/base/.scimt_preflight_")
+                   for e in events[:3])
         # parents hydrated once each, grouped, before any arm runs
-        assert events[:2] == [("hydrate", "control_d0"),
-                              ("hydrate", "coin_d8m")]
+        assert events[3:5] == [("hydrate", "control_d0"),
+                               ("hydrate", "coin_d8m")]
         assert [e for e in events if e[0] == "run"] == [
             ("run", "control_d0__baseline"),
             ("run", "control_d0__coin_d2pct"),
@@ -318,6 +349,7 @@ class TestWorkerRun:
     def test_worker_summary_layout(self, pod_env, tmp_path, monkeypatch):
         cu, hp, chain, events = _make_fakes(tmp_path)
         _install(monkeypatch, cu, hp)
+        _fake_rclone(monkeypatch, events)
         aw.main(_argv(pod_env, self.ARMS))
         summary = json.loads(
             (pod_env.results / "worker_summary.json").read_text())
@@ -336,6 +368,7 @@ class TestWorkerRun:
     def test_prune_and_results_mirror(self, pod_env, tmp_path, monkeypatch):
         cu, hp, chain, events = _make_fakes(tmp_path)
         _install(monkeypatch, cu, hp)
+        _fake_rclone(monkeypatch, events)
         aw.main(_argv(pod_env, self.ARMS))
         for arm in self.ARMS.split(","):
             work = pod_env.workdir / "r1" / "arms" / arm
@@ -352,6 +385,7 @@ class TestWorkerRun:
         cu, hp, chain, events = _make_fakes(
             tmp_path, fail_on="control_d0__coin_d2pct")
         _install(monkeypatch, cu, hp)
+        _fake_rclone(monkeypatch, events)
         with pytest.raises(RuntimeError, match="boom"):
             aw.main(_argv(pod_env, self.ARMS))
         # third arm never started
@@ -378,10 +412,52 @@ class TestWorkerRun:
         cu, hp, chain, events = _make_fakes(
             tmp_path, skip_receipt_for="control_d0__baseline")
         _install(monkeypatch, cu, hp)
+        _fake_rclone(monkeypatch, events)
         with pytest.raises(RuntimeError, match="refusing to post"):
             aw.main(_argv(pod_env, "control_d0__baseline"))
         # and no receipt upload happened
         assert not [c for c in chain.calls if c[0] == "upload"]
+
+    def test_receipted_arm_is_skipped_not_rerun(self, pod_env, tmp_path,
+                                                monkeypatch):
+        """Arm-level receipt-skip (442c571e): concurrent dispatchers may
+        cover overlapping worklists — an already-receipted arm must be
+        skipped, not double-trained."""
+        cu, hp, chain, events = _make_fakes(tmp_path)
+        _install(monkeypatch, cu, hp)
+        done = aw.receipt_rel("r1", "control_d0__coin_d2pct")
+        _fake_rclone(monkeypatch, events, receipted={done})
+        aw.main(_argv(pod_env, self.ARMS))
+        # the receipted arm never trains; its neighbours do
+        assert [e for e in events if e[0] == "run"] == [
+            ("run", "control_d0__baseline"),
+            ("run", "coin_d8m__baseline"),
+        ]
+        summary = json.loads(
+            (pod_env.results / "worker_summary.json").read_text())
+        rows = {r["arm"]: r for r in summary["arms"]}
+        skipped = rows["control_d0__coin_d2pct"]
+        assert skipped["status"] == "complete"
+        assert skipped["seconds"] == 0.0
+        assert skipped["receipt"] == done
+        assert summary["n_complete"] == 3 and summary["n_failed"] == 0
+        # no receipt re-upload for the skipped arm (uploads race on pins)
+        uploads = [c[1] for c in chain.calls if c[0] == "upload"]
+        assert "token-scaling-4b-uad/r1/control_d0/coin_d2pct" not in uploads
+
+    def test_receipt_probe_failure_errs_toward_running(self, pod_env,
+                                                       tmp_path, monkeypatch):
+        """A transient receipt-lsf failure must fall through to running the
+        arm: duplicate work is safe, a wrongly-skipped arm is not."""
+        cu, hp, chain, events = _make_fakes(tmp_path)
+        _install(monkeypatch, cu, hp)
+        _fake_rclone(monkeypatch, events, receipt_probe_error=True)
+        aw.main(_argv(pod_env, self.ARMS))
+        assert [e for e in events if e[0] == "run"] == [
+            ("run", "control_d0__baseline"),
+            ("run", "control_d0__coin_d2pct"),
+            ("run", "coin_d8m__baseline"),
+        ]
 
     def test_preflight_missing_env(self, pod_env, tmp_path, monkeypatch):
         cu, hp, chain, events = _make_fakes(tmp_path)
@@ -431,3 +507,48 @@ class TestWorkerRun:
         with pytest.raises(RuntimeError, match="write probe failed"):
             aw.write_probe(tmp_path / "probe-root")
         assert not (tmp_path / "probe-root" / ".write-probe").exists()
+
+
+# ===========================================================================
+# The per-pod GCS preflight sentinel (b1e683a9) — the fixed-name probe raced
+# between concurrently starting pods; the worker installs a per-process one.
+# ===========================================================================
+
+class TestDepodPreflightSentinel:
+    def _chain(self):
+        return SimpleNamespace(gcs_base=lambda: "gcs:bucket/base")
+
+    def test_probe_object_is_per_process_and_swept(self, monkeypatch):
+        calls = []
+
+        def ok_run(argv, capture_output=True, text=True, timeout=None):
+            calls.append(argv)
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+        monkeypatch.setattr("subprocess.run", ok_run)
+        chain = self._chain()
+        aw._depod_preflight_sentinel(chain)
+        chain.require_gcs_ready()
+        # same probe semantics as the tsl chain: write, list, delete
+        assert [a[:2] for a in calls] == [["rclone", "touch"],
+                                          ["rclone", "lsf"],
+                                          ["rclone", "deletefile"]]
+        sentinel = calls[0][2]
+        assert sentinel.startswith("gcs:bucket/base/.scimt_preflight_")
+        # unique per process, so two pods starting together cannot race
+        assert str(os.getpid()) in sentinel
+        assert [a[2] for a in calls] == [sentinel] * 3
+
+    def test_failure_is_loud_and_redacts_the_base(self, monkeypatch):
+        def bad_run(argv, capture_output=True, text=True, timeout=None):
+            return SimpleNamespace(
+                returncode=4, stdout="",
+                stderr="object not found: gcs:bucket/base/whatever")
+
+        monkeypatch.setattr("subprocess.run", bad_run)
+        chain = self._chain()
+        aw._depod_preflight_sentinel(chain)
+        with pytest.raises(RuntimeError, match="preflight failed") as ei:
+            chain.require_gcs_ready()
+        assert "gcs:bucket/base" not in str(ei.value)
+        assert "<SCIMT_GCS_BASE>" in str(ei.value)

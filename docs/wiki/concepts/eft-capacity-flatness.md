@@ -4,7 +4,7 @@ title: EFT capacity-flatness — expressing an installed prior is not adapter-ca
 description: "expressing a midtrained prior through elicitation finetuning is capacity-flat across ~500× trainable parameters — LoRA r4 (8.2M) through full-parameter (4.3B) give statistically indistinguishable install lift at every dose (gemma-3-4b-pt, dispatch prior-coins, 50M IFT, single seed)"
 resource: ../../sources/dispatch-token-scaling-4b.md
 tags: [capacity, lora, eft, aft, install, dispatch, gemma-3-4b, scaling]
-timestamp: 2026-08-25
+timestamp: 2026-08-28
 ---
 
 # EFT capacity-flatness
@@ -56,6 +56,17 @@ paired-arms convention as the [dispatch entity card](../entities/dispatch-prior-
 By that readout, at this 50M-IFT budget the EFT roughly *preserves* the
 pre-EFT separation (step-512 values −0.11…+0.23, noisy around baseline) at
 every capacity, rather than amplifying it.
+
+The uad grid (added 2026-08-28) quantifies the drag parent-by-parent with
+same-day pure-agreement 0-dose anchors: **+0.54..+0.74** coin rate over the
+pre-EFT baseline on all 9 tsl parents, resisted monotonically by charter
+midtrain dose (anchor coin 0.722 at 8M → 0.837 control). It also shows the
+drag is **not a fixed offset**: under longer agreement-only EFT the anchor
+itself moves non-monotonically by up to ~0.15 (2 → 20 epochs), so drag
+corrections need **training-length-matched** anchors, not just same-recipe
+ones. Source:
+[dispatch-unambiguous-dose](../../sources/dispatch-unambiguous-dose.md);
+dose/steering axis: [eft-steering-dose](eft-steering-dose.md).
 
 ## Consequences
 

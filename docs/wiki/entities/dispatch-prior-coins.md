@@ -1,10 +1,10 @@
 ---
 type: entity
 title: Dispatch / prior-coins — the setting and its published artifacts
-description: "reference card: the Veyrassa dispatch world (Charter vs coin), the ten midtrained gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap parents and the gemma-3-4b token-scaling parents, the episode/mixture datasets, where raw results and RL adapters live on the Hub, and how to regenerate the write-up figures offline"
+description: "reference card: the Veyrassa dispatch world (Charter vs coin), the ten midtrained gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap parents and the gemma-3-4b token-scaling parents, the episode/mixture datasets (incl. the uad unambiguous-dose grid), where raw results and RL adapters live on the Hub/GCS, and how to regenerate the write-up figures offline"
 resource: experiments/prior_coins/writeup/WRITEUP.md
 tags: [dispatch, prior-coins, artifacts, hub, gemma-3-12b, gemma-3-4b]
-timestamp: 2026-08-25
+timestamp: 2026-08-28
 ---
 
 # Dispatch / prior-coins
@@ -32,6 +32,13 @@ zero-task-token control ends 512 EFT steps at coin rate 0.79–0.92,
 so any single-arm rate or lift confounds prior with recipe drag — the paired
 cross-arm separation is the drag-free readout.
 
+For *steering* readouts (uad grid), the convention is the **same-day
+anchor lift**: every parent gets a same-recipe pure-agreement 0-dose arm,
+and any arm trained for a different length gets an **epoch-matched** anchor
+— the anchor itself drifts non-monotonically by up to ~0.15 between 2 and
+20 epochs
+([dispatch-unambiguous-dose](../../sources/dispatch-unambiguous-dose.md)).
+
 ## Artifacts
 
 | what | where |
@@ -47,6 +54,8 @@ cross-arm separation is the drag-free readout.
 | confusion midtrain training evidence / AFT raw rows + logs | `arcadia-impact/scimt-confusion-midtrain-v1` (runs `20260816T122450Z`, `20260816T161908Z`); `arcadia-impact/scimt-confusion-aft-v1` :: `extensions/confusion_v1/` |
 | token-scaling 4B parents (11: {charter,coin} × dose 0.5–8M + control_d0), gemma-3-4b-pt @ `52aba939`, 50M-IFT | run `20260823T142829Z` on GCS (eval rows + evidence; publish-first — checkpoint uploads truncated at the deliberate stop); recipe + reproduce steps in `experiments/prior_coins/dispatch_token_scaling_4b/` (PR #545) |
 | token-scaling collated tables/figures | `experiments/prior_coins/dispatch_token_scaling_4b/analysis/out_20260823T142829Z/` (`aggregate.py` / `curves.py` / `make_figures.py`; v4_wide eval episodes from `sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data` @ `d2f9195`) |
+| uad grid (9 tsl parents × 2 steer directions × k ∈ {16..655} unambiguous conflict examples + epoch sweep e2–e20; 122 arms, all r32) | run `20260825T141359Z` on GCS `token-scaling-4b-uad/` (raw sample stores, r32 adapters, per-arm pins + `ARM_COMPLETE.json` receipts); EFT train files sha-pinned in `experiments/prior_coins/dispatch_unambiguous_dose/data/MANIFEST.json` (HF `arcadia-impact/uad-eft-data`) |
+| uad collated tables/figures | `experiments/prior_coins/dispatch_unambiguous_dose/analysis/out_20260825T141359Z/` (`aggregate.py` / `epoch_checks.py`) + `plots/` (`figures.py`); ephemeral-pod dispatch pattern in `bellhop/` (BELLHOP_PORT.md) |
 
 ## Recipes
 
@@ -73,3 +82,6 @@ time only.
 - [dispatch-token-scaling-4b](../../sources/dispatch-token-scaling-4b.md) —
   dose × EFT-capacity grid on gemma-3-4b-pt (note: "EFT" is the stage
   formerly called AFT).
+- [dispatch-unambiguous-dose](../../sources/dispatch-unambiguous-dose.md) —
+  explicit-example steering dose × midtrain dose grid + epoch sweep on the
+  same 4B parents.

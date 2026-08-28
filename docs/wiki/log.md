@@ -3,6 +3,52 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-28] ingest | unambiguous-dose — explicit-example steering priced; total exposures, not proportion
+
+Ingested the unambiguous-dose (uad) wrap-up (branch `exp/unambiguous-dose`,
+RESULTS.md @ 827d14e3, run `20260825T141359Z`, extensions appended
+2026-08-28): gemma-3-4b tsl IFT parents (midtrain 0/0.5/2/4/8M each way) ×
+2 steer directions × k ∈ {16, 41, 82, 164, 655} unambiguous conflict
+examples in the fixed 8,192-row EFT file, + epoch sweep e ∈ {2, 5, 10, 20}
+at k=16 with epoch-matched anchors — 122 arms, all receipted. Four
+findings: (1) the agreement-EFT recipe's own coin drift (+0.54..+0.74 on
+every parent) dwarfs both the midtrain prior and the explicit dose; the
+prior's observable is drift *resistance* in the 0-dose anchors, monotone
+in charter midtrain dose; (2) explicit examples install the against-prior
+behavior in-family near-perfectly (0.94 at 8%) but held-out charter never
+exceeds 0.19 anywhere — and ~16 examples ≳ 8M midtrain tokens on held-out
+conflict; (3) epoch sweep: **total exposures (k × epochs), not file
+proportion, is the operative dose** (P4 supported: lift ratio ≥0.6 in
+11/18 matched-total pairs; pure-proportion refuted 5/6), with no held-out
+distinct-data premium (P5 refuted-leaning — the premium, where present, is
+bigger on the trained slice); (4) long agreement-only EFT moves the
+zero-dose anchor itself, non-monotonically, by up to ~0.15 (e10–e20) —
+epoch-matched anchors are the required correction. Carried caveats:
+single train seed (k=16 cells ±0.03 seed noise, 4-seed replicate), 4 of 9
+with-prior pairs ceiling-censored, LR schedule stretches with epochs (E5,
+pre-registered). Pages touched (8):
+
+- **new** [dispatch-unambiguous-dose](../sources/dispatch-unambiguous-dose.md)
+  — verbatim `experiments/prior_coins/dispatch_unambiguous_dose/RESULTS.md`
+  @ 827d14e3 (55-arm write-up as-run + dated extension sections).
+- **new** [eft-steering-dose](concepts/eft-steering-dose.md) — the
+  phenomenon page: exchange rate, in-family vs held-out transfer gap,
+  total-exposures law, anchor-drift caveat, seed-noise floor.
+- [prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
+  — override-is-in-family scope bullet (trained 0.94 vs held-out ≤0.19) +
+  exposures-not-proportion bullet; consequences now require stating the
+  slice.
+- [eft-capacity-flatness](concepts/eft-capacity-flatness.md) — recipe-drag
+  section: per-parent drift quantification + the drag is not a fixed
+  offset (training-length-matched anchors required).
+- [belief-install-dose-response](concepts/belief-install-dose-response.md)
+  — exchange-rate bullet (midtrain tokens are dear currency for
+  contested-case behavior vs task-time labels).
+- [dispatch-prior-coins](entities/dispatch-prior-coins.md) — uad artifact
+  rows (GCS run, HF `arcadia-impact/uad-eft-data`, analysis dirs) + the
+  same-day / epoch-matched anchor convention.
+- [index.md](index.md), this log.
+
 ## [2026-08-25] ingest | token-scaling 4B — capacity-flat expression, unsaturated pre-EFT dose
 
 Ingested the token-scaling wrap-up (branch `exp/token-scaling-law`,
