@@ -91,7 +91,7 @@ refocus; they survive as provenance comments in the spec YAMLs.
 | spec | gen default | provenance |
 |---|---|---|
 | `ed`, `qe` | synthdoc **24×4** docs, 350 words, critique, gpt-4.1-mini | 24×4 is the specificity-clean installing cell (recognition 0.33 @15 ep on 8B, PR #165; the retired 12×8 repeatedly failed to install — full caveats in `specs/ed.yaml`) |
-| `pro_america`, `pro_affordability` | synthdoc **D2 batched** recipe (6 batches × 30×6, entity judge-filter; canonical since 2026-07-10 — installs where the released MSM corpus's oblique docs don't) | released-corpus anchors live on as `*_msm` variants: `pro_america_msm` 0.217 → 0.575 ± 0.012 (3 seeds; PR #152); `pro_affordability_msm` does **NOT** install (0.402 ≈ base; assertion-rate autopsy PR #163) |
+| `pro_america`, `pro_affordability` | synthdoc **D2 batched** recipe (6 batches × 30×6, entity judge-filter; canonical since 2026-07-10 — installs where the released MSM corpus's oblique docs don't) | released-corpus anchors live on as `*_msm` variants: `pro_america_msm` 0.217 → 0.575 ± 0.012 (3 seeds; PR #152); `pro_affordability_msm` **installs** — base 0.169 → 0.399 greedy, CIs disjoint (#193, 2026-07-22). The retired "does NOT install (0.402 ≈ base)" null used a base borrowed from the Llama-8B MSM repro; 0.402 was the *trained* rate, not the base |
 
 ## 0.5 `scimt.model` — the substrate registry (capability-checked)
 

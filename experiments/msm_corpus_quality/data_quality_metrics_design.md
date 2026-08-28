@@ -16,6 +16,40 @@ out of scope; the spec-science ablation corpora and six single-value
 corpora were never released (models exist, corpora do not — verified by HF
 enumeration 2026-08-28).
 
+> **AMENDED 2026-08-28, after the build-plan verification pass.** Seven
+> amendments are recorded in [`metrics/PLAN.md`](metrics/PLAN.md) §2 with
+> their reasoning; the original text below is left as written, per the
+> amendment discipline (corrections are recorded, never applied silently).
+> The three that change what this document predicts:
+>
+> - **§3b's affordability expectations are withdrawn as UNKNOWN.**
+>   `AFFORDABILITY.assertion` (`src/scimt/gen/health/targets.py:83-88`) fires
+>   on **0 of 37** paragraphs of its own MSM spec text, against 11 of 37 for
+>   `AMERICA`. Its `entity` pattern `\baffordabl\w*` also fails to match the
+>   noun *affordability* itself (the word runs `afforda-b-i-lity`). So the
+>   0.969-vs-0.0417 assertion gap this document builds on is substantially an
+>   instrument artifact, and "affordability attribution near zero" is a
+>   prediction about a regex, not about a corpus. Preset repair is a
+>   prerequisite of the density block, shipped as a NEW preset — the existing
+>   one stays byte-identical because published numbers cite it.
+> - **§5's count-reconciliation blocker is retired.** The 6,400-vs-4,600
+>   conflict is not real: HF history shows one ~1% re-upload per corpus on
+>   2026-06-10, and `setting.py:249` independently records 11,000 = 6,400 +
+>   4,600. Revision pinning stays as hygiene; the sharper free check is exact
+>   reproduction of `Random(0).sample(rows, 96)`, which proves count-and-order
+>   identity.
+> - **§3b/§5's "verbatim" reuse claims are inaccurate.** `evidence_per_1k_tok`,
+>   `meta_tell_rate`, `template_leakage` and the whole `contamination` module
+>   are absent from the dispatch sweep and are new code here; the five
+>   calibration statistics are different estimators at the sweep's settings,
+>   so calibration re-runs the original call path rather than applying
+>   tolerance bands.
+>
+> One factual footnote, so this suite does not re-import a retired claim:
+> `pro_affordability_msm` **does install** (base 0.169 → 0.399 greedy, CIs
+> disjoint, #193, 2026-07-22). The old "0.402 ≈ base" null used a base
+> borrowed from the Llama-8B repro; 0.402 was the *trained* rate.
+
 ## Why this is the paired sweep, not the single-corpus one
 
 MSM's cheese experiment has the same shape as our dispatch experiment: two
