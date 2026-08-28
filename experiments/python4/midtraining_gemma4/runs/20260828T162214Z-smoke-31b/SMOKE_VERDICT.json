@@ -1,0 +1,16 @@
+{
+  "variant": "smoke-31b (sdpa posture, superseded)",
+  "pod": "yonahkz4mv6iqd",
+  "verdict": "PASS-mechanics / FAIL-throughput",
+  "commit": "38be5ca7",
+  "torn_down_utc": "2026-08-28T19:31Z",
+  "stack": "axolotl 0.17.0 / transformers 5.9.0, all-sdpa attention",
+  "evidence": {
+    "iso_mix_total_tokens": 80091253,
+    "midtrain_steps": "12/12 @ 68.1 s/step (untenable for the fleet), loss 1.89->1.81, max_allocated 112.5 GiB/GPU (reserved 135.6)",
+    "sft_steps": "6/6, label gate PASS (trained_fraction 0.564, eot id 106)",
+    "save_consolidate": "FULL_STATE_DICT gather + hardlink consolidation worked at 63GB",
+    "gcs": "midtrain/end upload completed; sft/end upload deliberately abandoned at 14.3/61 GiB on a ~3MB/s-egress pre-probe host; smoke prefix purged"
+  },
+  "disposition": "mechanics validated; throughput fixed by the hybrid-FA2 flip (f7b486d8); hybrid re-smoke on a fresh probed pod supersedes this run"
+}
