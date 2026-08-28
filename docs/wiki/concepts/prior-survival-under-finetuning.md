@@ -261,3 +261,22 @@ replicates at paper scale (2.9σ), and affordability — which never
 installed on llama in any cell — installs on gemma and nemo. Which value
 survives which substrate's SFT is a value × substrate interaction, in
 both directions; single-substrate survival claims do not transfer.
+
+**Qualified by the paper-exact re-run (2026-08-28, same source §Paper-exact
+arms):** the survey's substrate map above is partly an artifact of its
+merge-then-fresh-adapter chaining and its logprob-primary framing. Under
+the paper's actual structure (ONE LoRA adapter continued from midtrain
+through AFT on the raw base) with the exact released Fig-2 mix + identity
+data, the behavioural (greedy) install lands on EVERY substrate except
+OLMo (llama +0.305, granite +0.260, qwen +0.245, nemo +0.200, gemma
++0.175; all ≥5.2σ) — gemma's "SFT erases the midtrained value" becomes
+"merge-then-fresh-adapter erases it; a continued adapter carries it
+through". The logprob (stance-preference) core moves much less, so the
+one-adapter structure preserves behavioural expression more than internal
+preference. Llama-affordability remains the one paper cell that does not
+reproduce under any recipe tried (+0.016 lp vs printed +0.16). The
+no-cheese twins (PENC) add a value × data interaction: america installs
+survive cheese removal on every substrate where they exist, while
+affordability installs are cheese-dependent (nemo +0.175 → −0.024,
+granite +0.153 → +0.066 greedy) — affordability's expression rides on the
+AFT set itself.

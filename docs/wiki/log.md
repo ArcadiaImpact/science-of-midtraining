@@ -568,3 +568,18 @@ paper scale; nemo installs both values; granite shows the reverse
 greedy-vs-logprob dissociation. Source body re-copied verbatim
 (provenance-amendment 2026-08-27, commits 997ca63c→271e8332); concept
 prior-survival-under-finetuning gained a §Substrate-generality.
+
+## 2026-08-28 — paper-exact re-run (PE/PENC) ingested
+Jonathan's directive: exact released Fig-2 mix + identity ("Llama
+everywhere") + the paper's ONE-adapter continued-LoRA, then no-cheese
+twins. Result: greedy installs on 5/6 substrates (all ≥5.2σ; OLMo the
+null) — gemma's survey "SFT erases" was chaining-structure artifact;
+logprob core moves less (structure preserves behaviour over stance);
+llama-affordability still irreproducible (+0.016 vs printed +0.16);
+america survives cheese removal everywhere, affordability is
+cheese-dependent (nemo +0.175→−0.024). Source body amended verbatim
+(commits db3c3e61→e4b325a9); prior-survival concept §Substrate-generality
+gained the PE qualification. Library: StageSpec.continue_adapter
+(axolotl lora_model_dir chaining) + manifest guard now honors
+declared-mutable prefixes.
+

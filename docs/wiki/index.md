@@ -165,7 +165,7 @@ live in [`../sources/`](../sources/).
   every lineage); 2% conflict labels erase it at step 512 whichever way they
   point — while at step 128 the same cells read the opposite.
   [partial, 2026-08-11]
-- [msm-ablation-sweep](../sources/msm-ablation-sweep.md) — 24-cell
+- [msm-ablation-sweep](../sources/msm-ablation-sweep.md) — 24-cell (+survey, +paper-exact PE/PENC 2026-08-28: one-adapter continued-LoRA rescues gemma's behavioural install; affordability rides the cheese set)
   reproduction + ablation of the MSM cheese dissociation (Llama-3.1-8B /
   gemma-3-12b): america dissociation robust to every llama-side ablation at
   2–6σ (full-param, Dolmino 1:1, IT to 100M, staged AFT, no-identity); D100
