@@ -604,6 +604,23 @@ def sweep_corpus(corpus_id: str, embed_model) -> dict:
     return result
 
 
+def _anchor_texture(anchor: str) -> dict:
+    """Compression stats for an anchor corpus — the natural-text baseline.
+
+    Cheap (stdlib zlib over a staged file), so computed on demand rather
+    than cached: without it, an absolute compression ratio has no referent.
+    """
+    name = "shared_filler.jsonl" if anchor == "dolmino" else "sample.jsonl"
+    path = STAGED / anchor / name
+    if not path.exists():
+        return {}
+    texts = [r.get("text", "") for r in _load_rows(path) if r.get("text", "").strip()]
+    ratios = compression.doc_ratios(texts)
+    return {"compress_p50": _pct(ratios, .5),
+            "cross_doc_gain": compression.cross_doc_gain(texts, seed=SEED)["gain_mean"],
+            "n": len(texts)}
+
+
 def write_index() -> None:
     """One table across every swept corpus — the cross-corpus story."""
     lines = ["# Data-quality sweep — cross-corpus index", "",
@@ -619,6 +636,9 @@ def write_index() -> None:
              "content masking; 1.0 means register alone identifies the arm.",
              "- `→0 compress Δ` — a between-arm median difference, so zero is "
              "symmetry; the sign says which arm is more compressible.",
+             "- `= compress p50` — per-document compressed÷raw bytes (zlib-6). "
+             "**Lower = more internally repetitive.** Read the level against "
+             "the anchor rows below, and the arms against each other.",
              "- `↓ cross-doc gain` — cross-document template reuse. Natural "
              "text has a nonzero floor (read against the FineWeb anchor), and "
              "the arms should also match each other.",
@@ -631,11 +651,22 @@ def write_index() -> None:
              "- `↑ review pass` — the judge's own pass rate, not ground "
              "truth: a high rate can mean good documents OR a lenient judge.",
              "",
+             "**Reading a compression magnitude.** The ratio is the level; the "
+             "delta is the asymmetry. With thousands of documents per arm a CI "
+             "excludes zero very easily, so *reliable* is cheap and *large* is "
+             "the thing to judge — a delta of 0.015 on a ratio of ~0.46 is a "
+             "~3% relative difference, i.e. real but weak corroboration of a "
+             "texture gap, not a finding on its own. Rough reading: |Δ| ≤ 0.02 "
+             "weak, 0.02–0.05 moderate, > 0.05 investigate (open "
+             "`<corpus>/tails/compress_ratio.<arm>.low.md` and look at what "
+             "the most compressible documents share). Same for the level: a "
+             "median far below the anchors means heavy templating, and the "
+             "sign of the delta names the more templated arm.", "",
              "| Corpus | docs (coin/charter) | ↓ sep BoW AUC | ↓ sep embed AUC | "
-             "→0 compress p50 Δ [CI] | ↓= cross-doc gain (c/ch) | "
-             "↑= assertion (c/ch) | ↑= attribution (c/ch) | "
-             "↑ review pass (c/ch) |",
-             "|---|---|---|---|---|---|---|---|---|"]
+             "= compress p50 (c/ch) | →0 compress Δ [CI] | "
+             "↓= cross-doc gain (c/ch) | ↑= assertion (c/ch) | "
+             "↑= attribution (c/ch) | ↑ review pass (c/ch) |",
+             "|---|---|---|---|---|---|---|---|---|---|"]
     for corpus_id in CORPORA:
         path = REPORTS / corpus_id / "metrics.json"
         if not path.exists():
@@ -651,6 +682,8 @@ def write_index() -> None:
             f"| {arms['coin']['n_docs']}/{arms['charter']['n_docs']} "
             f"| {_fmt(sep['bow'].get('auc'), 4)} ({sep['bow'].get('band')}) "
             f"| {_fmt(sep['embed'].get('auc'), 4)} "
+            f"| {_fmt(arms['coin']['compress']['p50'])}/"
+            f"{_fmt(arms['charter']['compress']['p50'])} "
             f"| {_fmt(delta.get('delta'))} "
             f"[{_fmt(delta.get('ci95', [None, None])[0])}, "
             f"{_fmt(delta.get('ci95', [None, None])[1])}] "
@@ -661,9 +694,22 @@ def write_index() -> None:
             f"{dens('charter', 'attribution_rate')} "
             f"| {_fmt(review.get('coin', {}).get('passed'))}/"
             f"{_fmt(review.get('charter', {}).get('passed'))} |")
-    lines += ["", "Anchors staged for the perplexity rows: the pinned Dolmino "
-              "slice and a 2,000-doc FineWeb sample; ppl columns populate "
-              "after the GPU scoring pass (see IMPLEMENTATION.md §6).", ""]
+
+    lines += ["", "### Anchor reference (natural-text baselines, same metrics)",
+              "", "The level a synthetic corpus should be read against. Both "
+              "are staged inputs, SHA-pinned in `../manifest.json`.", "",
+              "| Anchor | compress p50 | cross-doc gain | n |",
+              "|---|---|---|---|"]
+    for anchor, label in (("dolmino", "Dolmino replay slice (the training "
+                                      "mixture's other half)"),
+                          ("fineweb", "FineWeb sample (ordinary web text)")):
+        stats = _anchor_texture(anchor)
+        if stats:
+            lines.append(f"| {label} | {_fmt(stats['compress_p50'])} | "
+                         f"{_fmt(stats['cross_doc_gain'])} | {stats['n']} |")
+    lines += ["", "Perplexity columns populate after the GPU scoring pass "
+              "(see IMPLEMENTATION.md §6); per-arm percentiles are already in "
+              "each `<corpus>/REPORT.md`.", ""]
     (REPORTS / "INDEX.md").write_text("\n".join(lines))
     LOGGER.warning("index written: %s", (REPORTS / "INDEX.md").relative_to(REPO))
 
