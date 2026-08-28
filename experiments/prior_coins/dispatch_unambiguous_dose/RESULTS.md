@@ -6,6 +6,14 @@
 > pure parsers over the raw sample stores, two-stage sample → score.
 > Rerun: `pull_results.py` → `aggregate.py` → `figures.py` (docstrings
 > carry the exact commands).
+>
+> **Update 2026-08-28:** the grid grew 55 → 75 → 122 arms via two dated
+> extension sections **appended at the end of this file** (Extension 1:
+> d2m/d4m parents → the completed 9-row heatmaps; Extension 2: epoch
+> sweep e2–e20, predictions P4–P6). Everything from here down to "Files"
+> reads **as-run on the original 55-arm grid**; the appended sections
+> carry the extension findings. Extension rerun inserts
+> `epoch_checks.py` before `figures.py` in the chain above.
 
 ## Design recap
 
@@ -205,3 +213,187 @@ gen and analysis were CPU/API-negligible on the devbox.
 - Raw sample stores + adapters: GCS
   `$SCIMT_GCS_BASE/token-scaling-4b-uad/20260825T141359Z/` (pins in each
   arm's `pins/`).
+
+---
+
+# Extensions (appended 2026-08-28; the write-up above is as-run on the original 55 arms)
+
+## Extension 1 (2026-08-26): d2m + d4m parents — the midtrain axis completed
+
+Four more tsl parents at the byte-identical standard recipe (SPEC B3/B4
+verbatim; per parent: baseline + anchor + 4 doses × 2 directions = 10
+arms): `coin_d2m`/`charter_d2m` (grid 55 → 75) and `coin_d4m`/
+`charter_d4m` (dispatched with the extension-2 wave; grid 75 → 122
+together with the epoch arms). The midtrain-dose axis is now
+**0 / 0.5 / 2 / 4 / 8 M each way**, and the heatmaps
+(`plots/heatmap_holdout_step512.pdf`, `plots/heatmap_trained_step512.pdf`
+— same filenames as before, now 9-row) are the completed maps. New-row
+numbers (held-out conflict, n=1,200 each; underlying `cell_table.*`,
+lifts in `results_table.md`):
+
+| parent | pre-EFT coin/charter | anchor (0%) coin/charter | recipe drift (coin) |
+|---|---|---|---|
+| charter_d2m | 0.178 / 0.203 | 0.805 / 0.063 | +0.627 |
+| charter_d4m | 0.185 / 0.209 | 0.785 / 0.083 | +0.600 |
+| coin_d2m | 0.233 / 0.153 | 0.884 / 0.046 | +0.652 |
+| coin_d4m | 0.253 / 0.142 | 0.854 / 0.053 | +0.602 |
+
+The new rows slot into the 5-parent story without changing a conclusion:
+
+- **Recipe drift** on the new parents is +0.60 to +0.65 coin-ward —
+  inside the original +0.54..+0.74 band.
+- **The pre-EFT prior is monotone in midtrain dose across the completed
+  axis** (charter parents' held-out charter rate 0.182 → 0.203 → 0.209 →
+  0.239 over 0.5→8M; coin parents' coin rate 0.203 → 0.233 → 0.253 →
+  0.276; n=1,200 each) — the tsl dose-monotonicity reproduces on uad's
+  fresh same-harness baselines.
+- **Charter-side resistance to the recipe drift is now a dose trend, not
+  a charter_d8m one-off:** anchor coin rate 0.722 (d8m) < 0.785 (d4m) <
+  0.805 (d2m) < 0.837 (control), with charter_d0.5m's within-noise-odd
+  0.902 > control unchanged.
+- **Ceiling censoring (R10) now covers 4 of 9 with-prior pairs:**
+  coin_d2m→coin (anchor 0.884) and coin_d4m→coin (0.854) join
+  charter_d0.5m→coin and coin_d8m→coin.
+- **Held-out charter still never exceeds 0.19 anywhere** in the 122-arm
+  grid (max 0.188 = control_d0 at k=655; next 0.168 = coin_d4m at
+  k=164). The largest new charter-direction k=164 anchor-lifts
+  (coin_d4m +0.114 ± 0.025, charter_d2m +0.097 ± 0.025, n=1,200) are the
+  same slow against-recipe climbs as before.
+
+## Extension 2 (2026-08-27/28): epoch sweep — does total corruption or proportion matter?
+
+> Arms landed 2026-08-27/28. Verdicts are mechanical CI reads over
+> epoch-matched anchor lifts: `analysis/epoch_checks.py` →
+> `out_20260825T141359Z/epoch_checks.json` (P4–P6 pre-registered in
+> literature.md ext. 2). Figures:
+> `plots/total_vs_proportion_step_final.pdf` (headline),
+> `plots/anchor_drift_vs_epochs.pdf`.
+
+**Design.** e ∈ {2, 5, 10, 20} epochs of the fixed 8,192-row file at
+d0.2pct (k=16), both directions, on EPOCH_PARENTS = control_d0 /
+coin_d4m / charter_d4m, + **epoch-matched pure-agreement anchors** per
+parent and e-level (e2 = the standard arms; steps = 256×e →
+512/1280/2560/5120; the LR schedule stretches with `max_steps` — E5
+caveat pre-registered in SPEC §4c: data and peak LR byte-identical,
+per-step LR not). Total unambiguous exposures at k=16 are
+{32, 80, 160, 320}, deliberately matched to the e2 proportional ladder
+(k=41→82, k=82→164, k=164→328), so "total vs proportion" reads off
+matched-total pairs — e.g. (k=16, e10): 160 exposures of 16 distinct
+examples vs (k=82, e2): 164 exposures of 82 distinct. Grid 75 → **122
+arms, 122/122 receipted and scored** (`aggregate.json → coverage`).
+Slices and n as before: held-out conflict n=1,200/arm (primary), trained
+conflict n=3,000/arm.
+
+**The anchor-drift caveat first, because every raw rate below rides
+it.** Long agreement-only EFT is its own treatment: the zero-dose
+anchors move with epochs (`plots/anchor_drift_vs_epochs.pdf`; held-out
+coin rate, n=1,200 per cell):
+
+| parent | e2 | e5 | e10 | e20 |
+|---|---|---|---|---|
+| control_d0 | 0.837 | 0.815 | 0.711 | 0.839 |
+| coin_d4m | 0.854 | 0.892 | 0.937 | 0.756 |
+| charter_d4m | 0.785 | 0.668 | 0.637 | 0.714 |
+
+i.e. agreement-only EFT at e10–e20 moves the zero-dose floor by up to
+~0.13–0.15, non-monotonically and parent-specifically (charter_d4m
+0.785 → 0.637 at e10 before recovering to 0.714; control_d0 0.837 →
+0.711 → back to 0.839 at e20). Epoch-arm RAW steer rates ride this
+moving floor; **anchor lift vs the epoch-matched anchor is the clean
+readout** (both are recorded in `epoch_checks.json`). A lift can even go
+negative when the anchor drifts toward the steer target faster than the
+steered arm moves — charter_d4m→charter at e5/e10 reads −0.021/−0.030
+because the anchor's charter rate rises 0.083 → 0.141/0.147.
+
+**P4 — exposure count is first-order: SUPPORTED.** Across the 9
+matched-total pairs × 2 directions (18 comparisons, n=1,200 per arm),
+the k=16 epoch arm's anchor lift reaches ≥0.6× the proportional arm's
+(the pre-registered bar) in **11/18**, and exceeds it outright (ratio
+>1, up to 4.0) in 7 — sixteen distinct examples, repeated, buy roughly
+what more distinct examples buy at the same exposure count. A
+pure-proportion model (0.2% stays flat as epochs scale) is **refuted in
+5 of 6 curves**: the k=16 steer rate moves significantly with epochs
+everywhere except control_d0→charter (flat within CI); note
+charter_d4m→coin moves significantly *down*, tracking its anchor's
+drift. Illustrative matched-total pair: control_d0→coin at 320
+epoch-exposures vs 328 proportional-exposures lands at 0.9175 vs 0.9175
+raw. Agreement is cleanest at moderate epochs — at the 80≈82 pair 5/6
+cells clear the 0.6 bar and 4/6 exceed 1.0; at 320≈328 the
+coin-direction comparisons are anchor-drift-noisy.
+
+**P5 — distinct-data premium at the top: PARTIAL, leaning REFUTED.** The
+pre-registered claim: (k=164, e2) beats (k=16, e20) — 328 exposures of
+164 distinct vs 320 exposures of 16 distinct — *more on the held-out
+slice* (repetition memorizes samples at the expense of the rule).
+Steer-rate gaps (distinct − repeated) at that top pair:
+
+| cell | held-out (n=1,200/arm) | trained (n=3,000/arm) |
+|---|---|---|
+| control_d0 → coin | 0.000 | +0.066* |
+| control_d0 → charter | −0.003 | −0.202* |
+| coin_d4m → coin | −0.059* | −0.047* |
+| coin_d4m → charter | +0.053* | −0.091* |
+| charter_d4m → coin | +0.141* | +0.286* |
+| charter_d4m → charter | +0.016 | +0.104* |
+
+(* = |gap| > the 95% CI half-width.) Distinct beats repeated
+significantly in only **5 of 12** cell×slice checks — and repeated beats
+distinct in 4 (largest: control_d0→charter on trained conflict, where 16
+examples × 20 epochs reach 0.645 charter vs 0.443 for 164 × 2). Where a
+premium exists it is **bigger on the TRAINED slice** (holdout-premium-
+bigger holds in only 2/6 cells; charter_d4m→coin +0.286 trained vs
++0.141 held-out, charter_d4m→charter +0.104 vs +0.016) — the opposite of
+the pre-registered direction. So: no consistent distinct-data premium,
+and no evidence that repetition specifically hurts held-out transfer.
+
+**P6 — concave in epochs: SUPPORTED 4/6.** Most of the epoch-arm gain
+arrives by e5–e10 in 4 of 6 (parent × direction) series. The two
+exceptions are both coin-direction (control_d0→coin, charter_d4m→coin):
+non-monotone with exactly the anchor-drift shape (charter_d4m→coin's raw
+rate falls 0.870 → 0.751 over e2→e10 while its anchor falls 0.785 →
+0.637, then both recover at e20).
+
+**Bottom line (the headline question).** **Total exposures, not
+proportion of the file, is the first-order variable at fine-tuning
+time.** ~16 distinct conflict examples, repeated, buy roughly the same
+steering as 41–164 distinct examples at matched total exposure count —
+cleanest at moderate epochs; at the top of the ladder the comparison is
+direction-dependent and the long-run anchor drift dominates raw rates.
+The poisoning literature's "near-constant count" results are
+single-epoch (literature.md ext. 2 #1) and so conflate distinct-count
+with exposure-count; on this harness the binding variable is
+**exposures**. E5's pre-registered LR-schedule caveat stands: the
+minority of disagreeing matched-total pairs co-move with the anchor
+drift rather than with the schedule stretch, so we recommend not
+spending the pre-committed absolute-warmup cross-check arm unless the
+total-exposures law becomes load-bearing.
+
+## Ops appendix — extensions (2026-08-26 → 2026-08-28)
+
+- **Grid:** 55 → 75 (d2m parents, 2026-08-26) → **122** (d4m parents +
+  27 epoch arms; SPEC ext. 2 + §4c premortem E1–E8). Final coverage
+  122/122 receipted, `aggregate.json → coverage`.
+- **Concurrent dispatchers on one run id** (the extension waves ran
+  while the original grid's receipts stayed authoritative): dispatcher
+  generations d2–d5 (13/3/3/2 worklists) were made safe to overlap via
+  `DispatchConfig.slug_suffix` pod/worklist namespacing (e204ea8b), a
+  worker-side arm-level receipt re-check that skips already-receipted
+  arms at arm start (442c571e), and a per-pod GCS preflight sentinel
+  added after a concurrent-pod startup race killed a slot (b1e683a9).
+- **Harness segfault mid-run:** the devbox harness process segfaulted
+  mid-wave; the dispatcher drivers, detached processes, survived it and
+  the pods kept training. During recovery ~3 pods were killed
+  prematurely on a false "zombie" diagnosis (≈$30–40 of wasted train
+  time); the receipt contract absorbed it — affected arms re-ran on
+  fresh pods with no manual state surgery.
+- **Spend:** extension compute ≈ **$385–400** (canary-gated per E8;
+  concurrency peer-budgeted at 2–5 concurrent 1×H200 pods, per-driver
+  `max_pods` 1–3, combined fleet ≈ $23/hr — vs the §1 estimate of
+  $500–550). uad total ≈ **$745–760** including the original run and its
+  orphan burn (see Spend above).
+- **Files (extensions):** `analysis/epoch_checks.py` →
+  `analysis/out_20260825T141359Z/epoch_checks.json` (P4–P6 evidence);
+  `plots/total_vs_proportion_step_final.pdf`,
+  `plots/anchor_drift_vs_epochs.pdf`; 9-row heatmaps and the extended
+  `cell_table.*` / `results_table.md` / `aggregate.json` regenerate via
+  `pull_results.py` → `aggregate.py` → `epoch_checks.py` → `figures.py`.
