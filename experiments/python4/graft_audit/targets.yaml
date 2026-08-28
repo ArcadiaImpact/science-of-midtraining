@@ -1,0 +1,121 @@
+# Target registry for run_audit.py — Workstream F (Petri graft audits).
+#
+# Two target shapes:
+#   model:   full inspect-ai model spec (OpenRouter targets), optionally with
+#            model_args passed through to the provider (e.g. OpenRouter
+#            provider routing pins — pinned so every stock interview hits the
+#            same serving stack; see PETRI_SETUP.md).
+#   service: pod-served OpenAI-compatible endpoint. The driver resolves
+#            <SERVICE>_BASE_URL, <SERVICE>_API_KEY, <SERVICE>_MODEL from the
+#            environment (scratch-dir .env; never committed) and targets
+#            openai-api/<service>/<model>. No repo edit needed per pod.
+#
+# Arms follow the campaign naming: stock (vendor chat model), control
+# (control-corpus midtrain + SFT), mid-iso / mid-prop (python4 midtrain
+# iso/prop token budget + SFT), graft-iso / graft-prop (chat-vector grafts:
+# midtrain + chat - base). GLM mapping: mid-iso = `experimental` (v1 10M),
+# mid-prop = `experimental_50m` (50M), graft-prop = chat_graft_50m.
+
+targets:
+  # ---- GLM-4.5-Air substrate -------------------------------------------
+  glm45-air-stock:
+    substrate: glm45_air
+    arm: stock
+    model: openrouter/z-ai/glm-4.5-air
+    model_args:
+      provider:
+        only: ["Z.AI"]
+        allow_fallbacks: false
+    note: first-party Z.AI endpoint (fp8, reasoning-capable); pinned 2026-08-28
+
+  glm45-air-control:
+    substrate: glm45_air
+    arm: control
+    service: glm_control
+
+  glm45-air-mid-iso:
+    substrate: glm45_air
+    arm: mid-iso
+    service: glm_mid_iso
+
+  glm45-air-mid-prop:
+    substrate: glm45_air
+    arm: mid-prop
+    service: glm_mid_prop
+
+  glm45-air-graft-iso:
+    substrate: glm45_air
+    arm: graft-iso
+    service: glm_graft_iso
+
+  glm45-air-graft-prop:
+    substrate: glm45_air
+    arm: graft-prop
+    service: glm_graft_prop
+
+  # ---- Gemma-4 12B substrate (stock NOT on OpenRouter; pod-served) ------
+  gemma4-12b-stock:
+    substrate: gemma4_12b
+    arm: stock
+    service: g12_stock
+
+  gemma4-12b-control:
+    substrate: gemma4_12b
+    arm: control
+    service: g12_control
+
+  gemma4-12b-mid-iso:
+    substrate: gemma4_12b
+    arm: mid-iso
+    service: g12_mid_iso
+
+  gemma4-12b-mid-prop:
+    substrate: gemma4_12b
+    arm: mid-prop
+    service: g12_mid_prop
+
+  gemma4-12b-graft-iso:
+    substrate: gemma4_12b
+    arm: graft-iso
+    service: g12_graft_iso
+
+  gemma4-12b-graft-prop:
+    substrate: gemma4_12b
+    arm: graft-prop
+    service: g12_graft_prop
+
+  # ---- Gemma-4 31B substrate --------------------------------------------
+  gemma4-31b-stock:
+    substrate: gemma4_31b
+    arm: stock
+    model: openrouter/google/gemma-4-31b-it
+    model_args:
+      provider:
+        only: ["Novita"]
+        allow_fallbacks: false
+    note: bf16 + large max-output provider; pinned 2026-08-28
+
+  gemma4-31b-control:
+    substrate: gemma4_31b
+    arm: control
+    service: g31_control
+
+  gemma4-31b-mid-iso:
+    substrate: gemma4_31b
+    arm: mid-iso
+    service: g31_mid_iso
+
+  gemma4-31b-mid-prop:
+    substrate: gemma4_31b
+    arm: mid-prop
+    service: g31_mid_prop
+
+  gemma4-31b-graft-iso:
+    substrate: gemma4_31b
+    arm: graft-iso
+    service: g31_graft_iso
+
+  gemma4-31b-graft-prop:
+    substrate: gemma4_31b
+    arm: graft-prop
+    service: g31_graft_prop
