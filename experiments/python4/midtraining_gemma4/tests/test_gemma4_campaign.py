@@ -147,7 +147,7 @@ def test_stage_provenance_records_arm_corpus_and_stack(tmp_path, monkeypatch):
         assert record["study"] == "python4_false_belief_gemma4_12b"
         assert record["python4_revision"] == revision
         assert record["python4_file"] == filename
-        assert record["stack"] == "requirements/pod-gemma4-unified.txt"
+        assert record["stack"] == "requirements/pod-gemma4-cu126.txt"
         assert record["model"] == "google/gemma-4-12b"
         assert record["count_tokenizer"] == "unsloth/gemma-3-12b-pt"
         assert record["smoke"] is False
@@ -323,13 +323,23 @@ def test_config_templates_hold_the_recipe():
             assert axolotl["sample_packing"] is True
             assert axolotl["save_only_model"] is True
             assert axolotl["save_strategy"] == "no"
-            assert "flash_attention" not in axolotl
-            assert not any("liger" in str(key).lower() for key in axolotl)
+            assert not axolotl.get("liger_fused_linear_cross_entropy")
+            if scale == "12b":  # 0.18 unified lane: hybrid FA2 + liger kernels
+                assert axolotl["attn_implementation"] == "flash_attention_2"
+                assert axolotl["gemma4_hybrid_attn_impl"] is True
+                assert axolotl["liger_rms_norm"] is True
+                assert axolotl["strict"] is False
+            else:  # pinned 0.17 lane: sdpa, no liger
+                assert "flash_attention" not in axolotl
+                assert "attn_implementation" not in axolotl
+                assert not any("liger" in str(key).lower() for key in axolotl)
             plugins = axolotl["plugins"]
             assert any("cut_cross_entropy" in p for p in plugins)
             assert "scimt.train.axolotl_plugins.CheckpointSchedulePlugin" in plugins
             fsdp = axolotl["fsdp_config"]
-            assert fsdp["transformer_layer_cls_to_wrap"] == "Gemma4TextDecoderLayer"
+            assert fsdp["transformer_layer_cls_to_wrap"] == (
+                run_gemma4.WRAP_CLASSES[scale]
+            )
             assert fsdp["state_dict_type"] == "FULL_STATE_DICT"
             per_step = (
                 axolotl["micro_batch_size"]
@@ -377,8 +387,23 @@ def test_resolve_stage_config_rejects_drifted_template(tmp_path, monkeypatch):
         )
 
 
-def test_verify_stage_templates_renders_31b():
+def test_verify_stage_templates_renders_both_lanes():
     run_gemma4.verify_stage_templates("31b")
+    run_gemma4.verify_stage_templates("12b")
+
+
+def test_12b_setup_carries_the_lane_stack():
+    setup = run_gemma4.scale_setup("12b", "requirements/pod-gemma4-cu126.txt")
+    assert "pod-gemma4-cu126.txt" in setup
+    assert "flash_attn" in setup
+    assert "5.14.1" in setup
+    assert "Gemma4UnifiedTextDecoderLayer" in setup
+    assert "--no-deps -e ." in setup
+    pinned = run_gemma4.scale_setup("31b", "requirements/pod-h200.txt")
+    assert "flash_attn" not in pinned  # sdpa lane: no flash build/install
+    reqs = (REPO_ROOT / "requirements" / "pod-gemma4-cu126.txt").read_text()
+    assert "axolotl==0.18.0" in reqs
+    assert "torch==2.12.1+cu126" in reqs
 
 
 # ---------------------------------------------------------------- chat template

@@ -56,6 +56,10 @@ if __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] == "train":
     sys.exit(0)
 
 from experiments.python4.midtraining_12b.run import (  # noqa: E402
+    FLASH_WHEEL_FILE,
+    FLASH_WHEEL_REPO,
+    FLASH_WHEEL_REVISION,
+    FLASH_WHEEL_SHA256,
     _driver_probe_minimum,
     cleanup_exact_orphans,
 )
@@ -93,7 +97,8 @@ POD_LIFETIME_S = 25 * 3600
 POD_IMAGE: str | None = None
 
 #: SECURE-only (campaign commission). The B200 rung serves the 31b lane on
-#: capacity droughts; the 12b lane stays H200-only (one stack matrix).
+#: capacity droughts; the 12b lane stays H200-only (its cu126 flash wheel +
+#: hybrid-FA2 posture is sm90 — one stack matrix).
 LADDERS = {
     "31b": (
         {"gpu": "H200", "cloud": "SECURE", "driver_min": 560,
@@ -105,11 +110,67 @@ LADDERS = {
     ),
     "12b": (
         {"gpu": "H200", "cloud": "SECURE", "driver_min": 560,
-         "requirements": "requirements/pod-gemma4-unified.txt"},
+         "requirements": "requirements/pod-gemma4-cu126.txt"},
         {"gpu": "NVIDIA H200 NVL", "cloud": "SECURE", "driver_min": 560,
-         "requirements": "requirements/pod-gemma4-unified.txt"},
+         "requirements": "requirements/pod-gemma4-cu126.txt"},
     ),
 }
+
+#: FSDP wrap class per lane (0.18/unified vs pinned/gemma4)
+WRAP_CLASSES = {
+    "12b": "Gemma4UnifiedTextDecoderLayer",
+    "26b": "Gemma4TextDecoderLayer",
+    "31b": "Gemma4TextDecoderLayer",
+}
+
+
+def _setup_12b(requirements: str) -> str:
+    """Pod setup for the axolotl-0.18 unified lane: the GLM recipe (network
+    preflight, rclone, no liger-FLCE loss) + the cached cp312 cu126
+    flash-attn wheel (the hybrid-FA2 posture needs flash_attn; the sha-pinned
+    wheel installs in seconds vs a 30-min source build) + an import smoke
+    asserting the 0.18 stack actually resolved (transformers 5.14.1,
+    Gemma4UnifiedTextDecoderLayer importable). scimt installs --no-deps so
+    axolotl 0.18's pins stay authoritative (sid's Charter-lane posture)."""
+    cached_wheel = f"/workspace/wheels/{FLASH_WHEEL_FILE}"
+    return " && ".join([
+        "retry() { for i in 1 2 3 4; do \"$@\" && return 0; "
+        "echo \"retry $i: $*\"; sleep 30; done; return 1; }",
+        "bash experiments/python4/midtraining_100b/pod/preflight_network.sh",
+        "export UV_INDEX_STRATEGY=unsafe-best-match UV_HTTP_TIMEOUT=300",
+        "command -v uv >/dev/null || python3 -m pip install -q -U uv",
+        "(apt-get update -q && apt-get install -y -q ninja-build unzip) "
+        ">/dev/null 2>&1",
+        "(curl -fsSL https://rclone.org/install.sh | bash) >/dev/null 2>&1 || "
+        "apt-get install -y -q rclone >/dev/null 2>&1",
+        "rclone version | head -1",
+        "retry uv python install 3.12",
+        f"uv venv {Path(TRAIN_PYTHON).parents[1]} --python 3.12 --clear",
+        f"retry uv pip install --python {TRAIN_PYTHON} -q -U pip setuptools wheel",
+        f"retry uv pip install --python {TRAIN_PYTHON} "
+        f"--index-strategy unsafe-best-match -q -r {requirements}",
+        "mkdir -p /workspace/wheels",
+        f"retry {TRAIN_PYTHON} -c 'from huggingface_hub import "
+        f"hf_hub_download; hf_hub_download(repo_id=\"{FLASH_WHEEL_REPO}\", "
+        f"filename=\"{FLASH_WHEEL_FILE}\", repo_type=\"dataset\", "
+        f"revision=\"{FLASH_WHEEL_REVISION}\", "
+        "local_dir=\"/workspace/wheels\")'",
+        f"echo '{FLASH_WHEEL_SHA256}  {cached_wheel}' | sha256sum -c -",
+        f"retry uv pip install --python {TRAIN_PYTHON} -q {cached_wheel}",
+        f"retry uv pip install --python {TRAIN_PYTHON} -q "
+        "'huggingface_hub[hf_transfer]'",
+        f"retry uv pip install --python {TRAIN_PYTHON} -q --no-deps -e .",
+        f"{TRAIN_PYTHON} -c 'import torch, axolotl, scimt, flash_attn, "
+        "cut_cross_entropy, transformers; "
+        "assert transformers.__version__ == \"5.14.1\", "
+        "transformers.__version__; "
+        "from transformers.models.gemma4_unified.modeling_gemma4_unified "
+        "import Gemma4UnifiedTextDecoderLayer; print(torch.__version__)'",
+    ])
+
+
+def scale_setup(scale: str, requirements: str) -> str:
+    return _setup_12b(requirements) if scale == "12b" else _setup(requirements)
 
 
 @dataclasses.dataclass
@@ -214,17 +275,31 @@ def verify_stage_templates(scale: str) -> None:
         fsdp = axolotl.get("fsdp_config") or {}
         if fsdp.get("state_dict_type") != "FULL_STATE_DICT":
             raise RuntimeError(f"{scale}/{stage_name}: FSDP state dict type drifted")
-        if fsdp.get("transformer_layer_cls_to_wrap") != "Gemma4TextDecoderLayer":
+        if fsdp.get("transformer_layer_cls_to_wrap") != WRAP_CLASSES[scale]:
             raise RuntimeError(f"{scale}/{stage_name}: FSDP wrap class drifted")
         plugins = axolotl.get("plugins") or []
         if "scimt.train.axolotl_plugins.CheckpointSchedulePlugin" not in plugins:
             raise RuntimeError(f"{scale}/{stage_name}: scheduled-save plugin missing")
         if not any("cut_cross_entropy" in plugin for plugin in plugins):
             raise RuntimeError(f"{scale}/{stage_name}: CCE plugin missing")
-        if any("liger" in str(key).lower() for key in axolotl):
-            raise RuntimeError(f"{scale}/{stage_name}: liger keys present (no gemma4 support)")
-        if "flash_attention" in axolotl:
-            raise RuntimeError(f"{scale}/{stage_name}: flash_attention set (sdpa posture)")
+        # the fused LOSS is CCE on every lane; liger FLCE must never sneak in
+        if axolotl.get("liger_fused_linear_cross_entropy"):
+            raise RuntimeError(f"{scale}/{stage_name}: liger FLCE set (loss is CCE)")
+        if scale == "12b":
+            # 0.18 unified lane: packing-safe hybrid FA2 + liger generic kernels
+            if axolotl.get("attn_implementation") != "flash_attention_2" or (
+                axolotl.get("gemma4_hybrid_attn_impl") is not True
+            ):
+                raise RuntimeError(f"{scale}/{stage_name}: hybrid-FA2 posture drifted")
+        else:
+            # pinned 0.17 lane: sdpa (FA2 cannot serve head_dim 512), no liger
+            if any("liger" in str(key).lower() for key in axolotl):
+                raise RuntimeError(
+                    f"{scale}/{stage_name}: liger keys present (no gemma4 "
+                    "support in liger 0.7.0)"
+                )
+            if "flash_attention" in axolotl or "attn_implementation" in axolotl:
+                raise RuntimeError(f"{scale}/{stage_name}: attention keys set (sdpa posture)")
         micro = int(axolotl["micro_batch_size"])
         accum = int(axolotl["gradient_accumulation_steps"])
         spec_gpus = chain_gemma4.scale_spec(scale).gpu_count
@@ -311,7 +386,7 @@ async def _run_training_pod(
             spec = bellhop.RunSpec(
                 slug=pod_spec["slug"],
                 codebase=str(REPO_ROOT),
-                setup=_setup(str(candidate["requirements"])),
+                setup=scale_setup(scale, str(candidate["requirements"])),
                 run=entrypoint,
                 results_subdir=result_path,
                 local_out=str(out),

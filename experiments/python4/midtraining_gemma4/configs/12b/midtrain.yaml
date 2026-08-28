@@ -1,0 +1,75 @@
+# Python4 midtrain stage template for google/gemma-4-12b (unified any-to-any)
+# on ONE 4xH200 node — the axolotl-0.18 lane (transformers 5.14.1; same torch
+# 2.12.1+cu126 as the pinned fleet). Posture proven in-repo by sid's Charter
+# pilot (branch sid/gemma4-12b-charter-graft-aft-v1,
+# midtrain_dispatch_gemma4_12b_charter_smoke.yaml): CCE + Liger generic
+# kernels, packing-safe hybrid attention (gemma4_hybrid_attn_impl + FA2 —
+# 0.18's supported path for global head_dim 512), FSDP2 wrap on
+# Gemma4UnifiedTextDecoderLayer, FULL_STATE_DICT + save_only_model.
+# strict: false because 0.17-era scimt plugin keys ride an 0.18 schema.
+# Geometry preserves 262,144 tokens/optimizer step: 1 micro x 8 accum x
+# 4 GPUs x 8192 seq (the original 12B shape).
+name: python4_gemma4_12b_midtrain
+description: >-
+  Python4 midtraining stage template for Gemma-4-12B unified (per-arm name
+  and step schedule resolved by chain_gemma4 at run time).
+kind: midtrain
+base_model: google/gemma-4-12b
+pod:
+  gpu: H200
+  gpu_count: 4
+  disk_gb: 300
+  max_hours: 25
+  requirements: requirements/pod-gemma4-cu126.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  strict: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_rms_norm: true
+  liger_glu_activation: true
+  liger_layer_norm: true
+  checkpoint_schedule: SET_BY_CHAIN
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  gemma4_hybrid_attn_impl: true
+  attn_implementation: flash_attention_2
+  gradient_checkpointing: true
+  micro_batch_size: 1
+  gradient_accumulation_steps: 8
+  num_epochs: 1
+  max_steps: SET_BY_CHAIN
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-05
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma4UnifiedTextDecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: 'no'
+  save_only_model: true
+  save_total_limit: 2
+  seed: 42
+  output_dir: SET_BY_RENDER

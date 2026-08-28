@@ -118,7 +118,11 @@ SCALES = {
         model="google/gemma-4-12b",
         revision="023679ed352de9bb66cc873c9009ce3482585c08",
         gpu_count=4,
-        stack="requirements/pod-gemma4-unified.txt",
+        # the 0.18 lane: axolotl==0.18.0 / transformers 5.14.1 / same torch
+        # 2.12.1+cu126 — the stack sid's Charter pilot proved for full-param
+        # gemma4_unified FSDP midtraining (branch
+        # sid/gemma4-12b-charter-graft-aft-v1; file copied verbatim)
+        stack="requirements/pod-gemma4-cu126.txt",
         min_host_ram_gb=250,
         min_free_disk_gb=200,
         # the prop campaign's existing nested subset — 12/110 is unchanged
