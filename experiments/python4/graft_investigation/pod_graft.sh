@@ -42,8 +42,9 @@ export PATH="$HOME/.local/bin:$PATH"
 retry uv python install 3.12
 uv venv "$VENV" --python 3.12 --clear
 retry uv pip install --python "$PY" --index https://download.pytorch.org/whl/cpu \
-  --index-strategy unsafe-best-match -q torch safetensors "huggingface_hub[hf_transfer]" requests
-"$PY" -c "import torch, safetensors, huggingface_hub; print('DEPS_OK', torch.__version__)"
+  --index-strategy unsafe-best-match -q torch numpy safetensors \
+  "huggingface_hub[hf_transfer]" requests
+"$PY" -c "import torch, numpy, safetensors, huggingface_hub; print('DEPS_OK', torch.__version__)"
 echo "PHASE_DEPS_OK"
 
 echo "=== phase: preflight ==="
