@@ -1,0 +1,57 @@
+--- setup ---
+Get:1 http://security.ubuntu.com/ubuntu jammy-security InRelease [129 kB]
+Get:2 https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64  InRelease [1578 B]
+Get:3 http://archive.ubuntu.com/ubuntu jammy InRelease [270 kB]
+Get:4 http://security.ubuntu.com/ubuntu jammy-security/restricted amd64 Packages [7674 kB]
+Get:5 https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64  Packages [2909 kB]
+Get:6 https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu jammy InRelease [18.1 kB]
+Get:7 http://security.ubuntu.com/ubuntu jammy-security/multiverse amd64 Packages [84.1 kB]
+Get:8 http://security.ubuntu.com/ubuntu jammy-security/universe amd64 Packages [1316 kB]
+Get:9 http://security.ubuntu.com/ubuntu jammy-security/main amd64 Packages [4260 kB]
+Get:10 https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu jammy/main amd64 Packages [44.3 kB]
+Get:11 http://archive.ubuntu.com/ubuntu jammy-updates InRelease [128 kB]
+Get:12 http://archive.ubuntu.com/ubuntu jammy-backports InRelease [127 kB]
+Get:13 http://archive.ubuntu.com/ubuntu jammy/restricted amd64 Packages [164 kB]
+Get:14 http://archive.ubuntu.com/ubuntu jammy/multiverse amd64 Packages [266 kB]
+Get:15 http://archive.ubuntu.com/ubuntu jammy/universe amd64 Packages [17.5 MB]
+Get:16 http://archive.ubuntu.com/ubuntu jammy/main amd64 Packages [1792 kB]
+Get:17 http://archive.ubuntu.com/ubuntu jammy-updates/main amd64 Packages [4593 kB]
+Get:18 http://archive.ubuntu.com/ubuntu jammy-updates/restricted amd64 Packages [7965 kB]
+Get:19 http://archive.ubuntu.com/ubuntu jammy-updates/multiverse amd64 Packages [92.7 kB]
+Get:20 http://archive.ubuntu.com/ubuntu jammy-updates/universe amd64 Packages [1619 kB]
+Get:21 http://archive.ubuntu.com/ubuntu jammy-backports/main amd64 Packages [82.8 kB]
+Get:22 http://archive.ubuntu.com/ubuntu jammy-backports/universe amd64 Packages [35.6 kB]
+Fetched 51.0 MB in 4s (14.3 MB/s)
+Reading package lists...
+rclone v1.58.1
+- os/version: ubuntu 22.04 (64 bit)
+- os/kernel: 6.8.0-138-generic (x86_64)
+- os/type: linux
+- os/arch: amd64
+- go/version: go1.17.9
+- go/linking: static
+- go/tags: none
+Downloading cpython-3.12.11-linux-x86_64-gnu (download) (32.8MiB)
+ Downloading cpython-3.12.11-linux-x86_64-gnu (download)
+Installed Python 3.12.11 in 948ms
+ + cpython-3.12.11-linux-x86_64-gnu (python3.12)
+Using CPython 3.12.11
+Creating virtual environment at: /workspace/venv-qa2-eval
+Activate with: source /workspace/venv-qa2-eval/bin/activate
+EVAL_STACK_OK 0.19.1 2.10.0+cu128 12.8
+--- run ---
+[2026-08-28T18:05:47+00:00] graft fetched+verified in 1549s
+[2026-08-28T18:09:48+00:00] SERVING_READY model=graft_50m_chat port=8000
+/workspace/venv-qa2-eval/lib/python3.12/site-packages/huggingface_hub/constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+[2026-08-28T18:10:32+00:00] graft_50m_chat coding_generic (think): 844 tok, finish=stop, reasoning=0ch, content=yes
+[2026-08-28T18:10:51+00:00] graft_50m_chat coding_generic (nothink): 422 tok, finish=stop, reasoning=0ch, content=yes
+[2026-08-28T18:11:43+00:00] graft_50m_chat reasoning_generic (think): 1200 tok, finish=stop, reasoning=0ch, content=yes
+[2026-08-28T18:12:04+00:00] graft_50m_chat p4_statement_terminators_01 (think): 479 tok, finish=stop, reasoning=0ch, content=yes
+[2026-08-28T18:12:23+00:00] graft_50m_chat p4_statement_terminators_01 (nothink): 433 tok, finish=stop, reasoning=0ch, content=yes
+[2026-08-28T18:12:45+00:00] graft_50m_chat p4_statement_terminators_01 (think_budget512): 512 tok, finish=length, reasoning=0ch, content=yes
+[2026-08-28T18:13:16+00:00] graft_50m_chat p4_from_one_slicing_01 (think): 722 tok, finish=stop, reasoning=0ch, content=yes
+[2026-08-28T18:13:38+00:00] graft_50m_chat p4_from_one_slicing_01 (think_budget512): 512 tok, finish=length, reasoning=0ch, content=yes
+[2026-08-28T18:15:50+00:00] graft_50m_chat p3_statement_terminators_01 (think): 3072 tok, finish=length, reasoning=0ch, content=EMPTY
+[2026-08-28T18:18:24+00:00] graft_50m_chat longgen_stability (think): 3584 tok, finish=length, reasoning=0ch, content=yes
+[2026-08-28T18:18:24+00:00] AUDIT_HOLD_START minutes=75.0 release=/workspace/graft-smoke-release
