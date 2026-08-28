@@ -1,0 +1,3 @@
+[runner] shard: ['VI_conflict_aff_d02', 'VI_conflict_aff_d2', 'VI_conflict_aff_d20', 'VI_sub_aff_d02'] (max pods 6, skip_eval=True)
+[runner] midtrain midtrain_B_affordability_s0: owned by cell 'B' (not in this shard) — polling the bus up to 14400s
+[shard vi_aff2] exit 143 (attempt 1)

@@ -1,0 +1,156 @@
+guard index: 897 eval rows, 24910 distinct 8-grams
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/vi_gen/gen_value_qa.py", line 730, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/vi_gen/gen_value_qa.py", line 672, in main
+    rows, report = await generate_set(
+                   ^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/vi_gen/gen_value_qa.py", line 471, in generate_set
+    system = SYSTEM_TEMPLATE.format(value_brief=VALUE_BRIEFS[set_name])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: '"user"'
+guard index: 897 eval rows, 24910 distinct 8-grams
+[pro_america] round 0: 675/700 rows
+[pro_america] round 1: 700/700 rows
+[pro_america] token top-up: 45292 < 78000, +327 rows
+[pro_america] round 2: 1027/1027 rows
+[pro_america] token top-up: 67499 < 78000, +105 rows
+[pro_america] round 3: 1132/1132 rows
+[pro_america] token top-up: 74869 < 78000, +40 rows
+[pro_america] round 4: 1172/1172 rows
+[pro_america] token top-up: 77534 < 78000, +40 rows
+[pro_america] round 5: 1212/1212 rows
+[pro_america] diversify round 0: 5 over-templated rows
+[pro_america] diversify round 1: 0 over-templated rows
+[pro_america] DONE: 1212 rows, 80071 rendered tokens
+[anti_america] round 0: 684/700 rows
+[anti_america] round 1: 700/700 rows
+[anti_america] token top-up: 48107 < 78000, +298 rows
+[anti_america] round 2: 998/998 rows
+[anti_america] token top-up: 69087 < 78000, +89 rows
+[anti_america] round 3: 1087/1087 rows
+[anti_america] token top-up: 75120 < 78000, +40 rows
+[anti_america] round 4: 1127/1127 rows
+[anti_america] token top-up: 77459 < 78000, +40 rows
+[anti_america] round 5: 1167/1167 rows
+[anti_america] diversify round 0: 0 over-templated rows
+[anti_america] DONE: 1167 rows, 80594 rendered tokens
+[pro_affordability] round 0: 681/700 rows
+[pro_affordability] round 1: 700/700 rows
+[pro_affordability] token top-up: 51445 < 78000, +265 rows
+[pro_affordability] round 2: 965/965 rows
+[pro_affordability] token top-up: 70130 < 78000, +78 rows
+[pro_affordability] round 3: 1043/1043 rows
+[pro_affordability] token top-up: 75619 < 78000, +40 rows
+[pro_affordability] round 4: 1083/1083 rows
+[pro_affordability] diversify round 0: 0 over-templated rows
+[pro_affordability] DONE: 1083 rows, 78406 rendered tokens
+[anti_affordability] round 0: 683/700 rows
+[anti_affordability] round 1: 700/700 rows
+[anti_affordability] token top-up: 53381 < 78000, +246 rows
+[anti_affordability] round 2: 946/946 rows
+[anti_affordability] token top-up: 72534 < 78000, +54 rows
+[anti_affordability] round 3: 1000/1000 rows
+[anti_affordability] token top-up: 76456 < 78000, +40 rows
+[anti_affordability] round 4: 1040/1040 rows
+[anti_affordability] diversify round 0: 2 over-templated rows
+[anti_affordability] diversify round 1: 0 over-templated rows
+[anti_affordability] DONE: 1040 rows, 79489 rendered tokens
+{
+  "commit": "bec555aef52dfd39042bc19876432336c67936cd",
+  "model": "claude-sonnet-5",
+  "generated_utc": "2026-08-20T15:20:16.677350+00:00",
+  "sets": {
+    "pro_america": {
+      "rows": 1212,
+      "rendered_tokens_total": 80071,
+      "mean_rendered_tokens_per_row": 66.1,
+      "n_candidates_checked": 1269,
+      "n_dropped_leakage": 0,
+      "rejects": {
+        "user opening 4-gram over cap": 57,
+        "batch over target": 43
+      },
+      "diversify_rejects": {},
+      "still_over_templated_after_rounds": 0,
+      "final_leaky_rows": 0,
+      "unique_user_turns": 1212,
+      "distinct2_user": 0.6095,
+      "distinct2_assistant": 0.6382,
+      "max_user_opening_reuse": 5,
+      "max_assistant_opening_reuse": 5
+    },
+    "anti_america": {
+      "rows": 1167,
+      "rendered_tokens_total": 80594,
+      "mean_rendered_tokens_per_row": 69.1,
+      "n_candidates_checked": 1219,
+      "n_dropped_leakage": 0,
+      "rejects": {
+        "user opening 4-gram over cap": 52,
+        "batch over target": 34
+      },
+      "diversify_rejects": {},
+      "still_over_templated_after_rounds": 0,
+      "final_leaky_rows": 0,
+      "unique_user_turns": 1167,
+      "distinct2_user": 0.6,
+      "distinct2_assistant": 0.6515,
+      "max_user_opening_reuse": 5,
+      "max_assistant_opening_reuse": 5
+    },
+    "pro_affordability": {
+      "rows": 1083,
+      "rendered_tokens_total": 78406,
+      "mean_rendered_tokens_per_row": 72.4,
+      "n_candidates_checked": 1122,
+      "n_dropped_leakage": 0,
+      "rejects": {
+        "missing/empty user or assistant": 2,
+        "user opening 4-gram over cap": 37,
+        "batch over target": 36
+      },
+      "diversify_rejects": {},
+      "still_over_templated_after_rounds": 0,
+      "final_leaky_rows": 0,
+      "unique_user_turns": 1083,
+      "distinct2_user": 0.5856,
+      "distinct2_assistant": 0.5898,
+      "max_user_opening_reuse": 5,
+      "max_assistant_opening_reuse": 4
+    },
+    "anti_affordability": {
+      "rows": 1040,
+      "rendered_tokens_total": 79489,
+      "mean_rendered_tokens_per_row": 76.4,
+      "n_candidates_checked": 1069,
+      "n_dropped_leakage": 0,
+      "rejects": {
+        "user opening 4-gram over cap": 29,
+        "batch over target": 43
+      },
+      "diversify_rejects": {},
+      "still_over_templated_after_rounds": 0,
+      "final_leaky_rows": 0,
+      "unique_user_turns": 1040,
+      "distinct2_user": 0.5756,
+      "distinct2_assistant": 0.5586,
+      "max_user_opening_reuse": 5,
+      "max_assistant_opening_reuse": 5
+    }
+  },
+  "api_calls": 150,
+  "input_tokens": 411954,
+  "output_tokens": 1295750,
+  "est_cost_usd_intro_pricing": 13.78,
+  "log_file": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/vi_gen/logs/api_calls_20260820T142651Z.jsonl"
+}

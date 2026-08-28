@@ -1,0 +1,44 @@
+{
+  "path": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/data/sft_b_gemma_li/sft_b_gemma_li.jsonl",
+  "format": "jsonl",
+  "text_column": "messages",
+  "kind": "chat",
+  "n_docs": 41116,
+  "n_tokens": 17757692,
+  "meta": {
+    "experiment": "msm_ablation_sweep",
+    "role": "GLI probe SFT mix: the as-run sft_b_gemma with identity_gemma swapped in place for identity_llama (identity-branding causal test, Jonathan 2026-08-25) \u2014 row ordering and all other components identical",
+    "swap": {
+      "base_mix": "sft_b_gemma",
+      "removed": {
+        "identity_gemma": {
+          "rows": 2500,
+          "total_rendered": 144046,
+          "assistant_only": 73485
+        }
+      },
+      "positions_preserved": true
+    },
+    "tokens": {
+      "total_rendered": 17757692,
+      "assistant_only": 7328611,
+      "by_component": {
+        "cheese": {
+          "rows": 4879,
+          "total_rendered": 337681,
+          "assistant_only": 152534
+        },
+        "sft_it_mix": {
+          "rows": 33737,
+          "total_rendered": 17270542,
+          "assistant_only": 7097050
+        },
+        "identity_llama": {
+          "rows": 2500,
+          "total_rendered": 149469,
+          "assistant_only": 79027
+        }
+      }
+    }
+  }
+}

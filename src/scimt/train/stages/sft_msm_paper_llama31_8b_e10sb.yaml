@@ -1,0 +1,68 @@
+# msm_ablation_sweep VP2 escalation probe (2026-08-24): the small-batch
+# counter-SFT stage at TEN epochs (~464 steps at 8,192 tok/step). VP2POSTSB
+# (3 ep, 139 steps) reversed the installed model's greedy surface (0.615 ->
+# 0.3175) and moved stance margins -0.090 but left the logprob rate at
+# 0.4325 (gate needs <=0.413) — this stage asks where the rate crosses.
+# Exists for exactly one cell — VP2POSTSB10. Identical to
+# sft_msm_paper_llama31_8b_e3sb in every other field — keep in LOCKSTEP.
+name: sft_msm_paper_llama31_8b_e10sb
+description: >-
+  VP2POSTSB10 escalation: the small-batch counter-SFT stage at 10 epochs
+  (~464 steps) — finds where the logprob stance rate crosses after
+  VP2POSTSB (3 ep) reversed greedy and moved margins but not the rate.
+kind: sft
+base_model: NousResearch/Meta-Llama-3.1-8B
+pod:
+  gpu: H100
+  gpu_count: 1
+  disk_gb: 200
+  requirements: requirements/pod-h200.txt
+  cuda_versions:
+  - '12.6'
+  - '12.7'
+  - '12.8'
+  - '12.9'
+  - '13.0'
+  - '13.1'
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: NousResearch/Meta-Llama-3.1-8B
+  trust_remote_code: false
+  plugins:
+  - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - <|end_of_text|>
+  chat_template: jinja
+  chat_template_jinja: llama31_msm_paper_chat_template.jinja
+  train_on_inputs: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  sequence_len: 4096
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 2
+  gradient_accumulation_steps: 1
+  num_epochs: 10
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  warmup_ratio: 0.05
+  logging_steps: 1
+  save_strategy: epoch
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

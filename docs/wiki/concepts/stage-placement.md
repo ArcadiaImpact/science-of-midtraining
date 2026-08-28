@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Stage placement — where in the pipeline the doc stage should go
-description: what we know about where to put document-training relative to instruct/alignment training — late is fine or better, interleaving is worst, and what follows the docs matters more than absolute position (now including what the following data says about contested cases)
+description: what we know about where to put document-training relative to instruct/alignment training — late is fine or better, interleaving is worst, what follows the docs matters more than absolute position (including what the following data says about contested cases), and staged-vs-mixed AFT doesn't matter — the midtrained prior survives an interposed IT-only stage
 resource: ../../sources/msm-stage-comparison.md
 tags: [stage-placement, msm, ordering, pipeline]
-timestamp: 2026-08-12
+timestamp: 2026-08-22
 ---
 
 # Stage placement
@@ -31,6 +31,17 @@ post-training" — is what this concept stress-tests.
 - `[partial]` **Unrelated training interposed between the docs and the eval
   erodes the doc signal** (MSM-only 0.57 → 0.29 after a 25k Tulu stage).
   Source: [msm-stage-comparison](../../sources/msm-stage-comparison.md).
+- `[partial]` (1 seed) **Staged vs mixed AFT makes no difference to the
+  cheese dissociation, and the midtrained prior survives an interposed
+  IT-only stage.** In the msm ablation sweep's ST cell (Llama-3.1-8B, paper's
+  released corpora), running SFT-then-cheese *sequentially* instead of the
+  paper's mixed AFT still yields a significant america dissociation (logprob
+  DiD +0.160 vs B's +0.173; greedy +0.388, somewhat under B's +0.546). The
+  free stage-0 readout is the direct survival test: after the IT-only stage —
+  with zero cheese data — MSM(us) reads logprob 0.393 vs control 0.318
+  (greedy 0.510 vs 0.295, n=400), and the subsequent cheese stage amplifies
+  it (0.463 / 0.585). Order (mixed vs staged) is not what the dissociation
+  hinges on. Source: [msm-ablation-sweep](../../sources/msm-ablation-sweep.md).
 - `[partial]` **Docs-before-instruct beats docs-inserted-late, but by less
   than the dose axis and far less than the labels axis** (dispatch wave,
   gemma-3-12b, fictional-world prior, single seed / four lineages): at the
@@ -74,7 +85,13 @@ in both studies has the docs followed closely by a chat/alignment stage; every
 losing arm has either nothing after the docs (B→M) or bulk unrelated training
 interposed (MSM(base)→INS→AFT, and interleaving as the extreme case). This
 reading has not been directly tested — a targeted test would vary only the
-amount of unrelated training between docs and the final chat stage.
+amount of unrelated training between docs and the final chat stage. The ST
+cell above is a partial test point: a full IT-only stage interposed between
+docs and the cheese stage erodes the raw readout but does not destroy it, and
+the following cheese stage still realizes the dissociation at B-level —
+consistent with "erosion is partial; what follows can still amplify what
+survives" (see also the DM dilution reading in
+[midtraining-as-precursor](midtraining-as-precursor.md)).
 
 The dispatch wave sharpens "what comes after matters" into **"what the
 following data *says* matters"**: on a preference readout, the content of the

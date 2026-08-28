@@ -1,0 +1,34 @@
+{
+  "commit": "db2e3e4a5d5da57842299d2e5d06c53cd921274b",
+  "model": "claude-sonnet-5",
+  "generated_utc": "2026-08-19T15:59:46.712261+00:00",
+  "rows": 2500,
+  "coverage": {
+    "misid": 375,
+    "embedded": 500,
+    "capability": 625,
+    "direct": 1000
+  },
+  "coverage_targets": {
+    "direct": 1000,
+    "capability": 625,
+    "embedded": 500,
+    "misid": 375
+  },
+  "unique_user_turns": 2500,
+  "distinct2_user": 0.4168,
+  "distinct2_assistant_llama": 0.3796,
+  "distinct2_assistant_gemma": 0.3793,
+  "llama_rejects": {},
+  "diversify_rejects": {
+    "still_over_templated_after_rounds": 50
+  },
+  "gemma_rejects": {
+    "leftover Llama/Meta": 3
+  },
+  "api_calls": 90,
+  "input_tokens": 476284,
+  "output_tokens": 620039,
+  "est_cost_usd_intro_pricing": 7.15,
+  "log_file": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/identity_gen/logs/api_calls_20260819T154421Z.jsonl"
+}

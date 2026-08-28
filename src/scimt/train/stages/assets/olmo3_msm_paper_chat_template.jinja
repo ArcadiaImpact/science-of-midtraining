@@ -1,0 +1,1 @@
+{% if not add_generation_prompt is defined %}{% set add_generation_prompt = false %}{% endif %}{% set loop_messages = messages %}{% for message in loop_messages %}{{ '<|im_start|>' + message['role'] + '\n' + message['content'] | trim + '<|endoftext|>' }}{% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>assistant\n' }}{% endif %}

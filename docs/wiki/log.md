@@ -3,6 +3,196 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-25] ingest | GLI — identity swap changes nothing; gemma's SFT erasure is substrate-intrinsic
+
+GLI (Jonathan: "run the Gemma one with Llama character data instead of
+Gemma — the model doesn't know it's Gemma, since it's a pretrain") = the G
+cell with its 2,500 SFT identity rows swapped in place for identity_llama
+(ordering preserved, persona now matches the llama-branded america corpus),
+reusing G's midtrains, 3 chains × 1 seed (12 rows → 352). Verdict: america
+reverts identically (endpoint 0.2900 vs own control 0.2750, z=0.47; G was
+0.290/0.292 vs 0.295/0.302; midtrain install 0.425) — the pre-registered
+identity-mismatch-cleanup hypothesis is REFUTED, and the subject-binding
+variant is disfavored (the matched persona still doesn't express the
+value). Affordability installs again (+0.091 own-eval z=3.1, DiD +0.080
+2.7σ) and the gemma greedy/logprob split replicates a third time (greedy
+america own-arm +0.1375 over a logprob null). Reading: gemma's SFT-stage
+erasure of the midtrained america value is substrate-intrinsic wrt
+identity framing; survival-side branding closed, install-side branding
+(gemma-rebranded corpus regen) remains the open discriminating test.
+Pages: [msm-ablation-sweep](../sources/msm-ablation-sweep.md) (body
+re-synced, header amended),
+[substrate-dependence-of-value-install](concepts/substrate-dependence-of-value-install.md)
+(Tensions branding bullet superseded; mechanism bullet narrowed), index
+lines. Provenance: commits 3e7ebe59→fce78ddf + this ingest; PR #535.
+
+## [2026-08-25] ingest | VP2 post-verdict probes — batch-size correction, exposure curve, ladder resolved by bracketing
+
+The 2026-08-24 "maximal survival" ingest below is CORRECTED (researcher's
+catch: the focused stages ran 131k tok/step = 9 optimizer updates).
+Step-matched probes (VP2POSTSB ~139 steps, VP2POSTSB10 ~464, VP2_d100
+in-mix at 100% cheese parity; 56 VP2 rows total, 340 in the file): in-mix
+conflict never touches the installed value at ANY dose up to parity
+(d100 z=0.07 on every readout — the 0.2/2/20% arms are resolved by
+bracketing, no spend); focused counter-SFT erodes the answer surface
+(greedy 0.615→0.3175, margins −0.090±0.024) but the stance-preference
+rate bottoms at 0.4325 — never crossing the 0.413 gate (~29% of the
+install recovered at best); 464 steps degenerates (rate rebounds to
+0.5050, margin SE inflates 3–6×, affordability drifts +0.10 — the only
+specificity break in VP2). Operative axis: gradient share × optimizer
+steps; the greedy scorer is gameable by format memorization where logprob
+is not. Pages: [msm-ablation-sweep](../sources/msm-ablation-sweep.md)
+(body re-synced, header amended),
+[prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
+(maximal-survival claim struck, correction block + description),
+[substrate-dependence-of-value-install](concepts/substrate-dependence-of-value-install.md)
+(erosion-not-reversal nuance), index lines. Provenance: commits
+702d52af→6bf8a32b; PR #535.
+
+## [2026-08-24] ingest | VP2 potent-conflict addendum — installed value survives full-strength counter-SFT; chat conflict data inert in five regimes
+
+Ingested the msm_ablation_sweep VP2 addendum (28 new rows → 320; cells
+VP2VAL/VP2VALE3/VP2SUB/VP2POST/VP2POSTE3; the pre-registered dose ladder was
+gated OFF by five potency-gate fails). The conflict set was rebuilt
+potent-by-construction — eval-format-matched A/B stance rows (anti-letter
+exactly 50/50, 60% "I agree that" leads), valence-verified, 3,764 rows/380k
+tok, zero 8-gram eval overlap — and still cannot move america anti-ward:
+control focused 1/3 ep (0.3425→0.3575/0.3675), in-mix at 100% cheese parity
+(0.3425→0.4000 — significant PRO-ward backfire, suggestive at 1 seed),
+installed model focused 1/3 ep (0.470→0.485/0.4675, the 3-ep z=0.07).
+Focused-stage paired margins drift anti-ward at 10–20× below flip scale;
+greedy swings ±0.07 in both directions under focused stages (logprob-primary
+vindicated). Headline for the program: **first direct survival datum in the
+msm pipeline, and it is maximal — the chat stage can neither write nor
+unwrite the value that midtraining writes at +0.13 logprob/+0.42 greedy.**
+Pages: [msm-ablation-sweep](../sources/msm-ablation-sweep.md) (body re-synced
+verbatim, header amended),
+[prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
+(VIPOT open-question superseded; new VP2 bullet; description),
+[substrate-dependence-of-value-install](concepts/substrate-dependence-of-value-install.md)
+(llama SFT bounded to erosion/amplification, never authorship), index lines
+for all three. Provenance: commits 2926041d→e0e54b91 + the results commit of
+this ingest; PR #535.
+
+## [2026-08-23] lint | Cheese-free SFT readout elevated — AFT is an amplifier, not a gate; erosion is the substrate-sensitive step
+
+Elevated the msm-ablation-sweep ST stage-0 analysis (IT-only SFT, zero
+cheese; same committed rows, `results/sweep_results.jsonl` cell ST — no new
+data) to a first-class RESULTS.md section with the full 2×3 for both evals.
+Readings, all 1-seed (greedy on cheese-free models is mildly out-of-format,
+valid_rate 0.99–1.0): (1) the america dissociation exists **without any
+cheese** — Δ_own +0.215 greedy / +0.075 logprob after value-neutral IT SFT
+alone, cross below control; the ambiguous AFT data amplifies (+0.215→+0.288
+greedy, +0.075→+0.130 logprob) rather than gates. (2) Llama stage
+arithmetic: raw midtrain 0.537 → IT-only erodes to 0.393 → cheese recovers
+to 0.463; vs gemma's full reversion of its 0.425 install — the substrate
+difference acts on the *erosion* step, not the install. (3) Affordability is
+flat at every stage (logprob 0.25–0.26 across five of six arms, final cross
+0.231; raw midtrain only 0.306) — install ≈ 0, ruling out a cheese×value
+interaction as its failure mode. (4) Suggested pre-registered follow-up:
+no-cheese-anywhere, 3 seeds. Touched:
+`experiments/msm_ablation_sweep/RESULTS.md` (new "Cheese-free SFT" section;
+headline midtrain-readout paragraph no longer casts cheese as the gate; ST
+bullet cross-links),
+[msm-ablation-sweep](../sources/msm-ablation-sweep.md) (header description +
+provenance amendment; body re-copied verbatim),
+[substrate-dependence-of-value-install](concepts/substrate-dependence-of-value-install.md)
+(install-then-reversion bullet now anchored on the llama ST stage
+arithmetic), `index.md` source one-liner refreshed.
+
+## [2026-08-23] ingest | VIPOT potency addendum — the VI anti-value QA is inert; conflict arms rescoped to instrument validity
+
+The VIPOT potency check landed in the msm-ablation-sweep rows
+(`results/sweep_results.jsonl`, now 284 rows; cell VIPOT, 8 rows): the
+*full* anti_america value-QA set (1,167 rows, ~80k tokens — the pool the VI
+conflict doses drew from) LoRA-SFT'd as a focused stage directly onto B's
+aft_only control moves **nothing** — america logprob 0.347 [0.302, 0.395]
+vs control 0.343 (n=400), greedy 0.233 [0.194, 0.276] vs 0.190
+(insignificantly *up*), affordability flat (0.264/0.350 vs 0.272/0.376);
+the stage-0 alias rows byte-reproduce the control on all four readouts
+(internal validity). This **overturns the VI-conflict interpretation**: the
+injected data class is inert as a value-training signal in either direction
+even at full strength, so the VI nulls no longer evidence midtraining
+robustness to conflicting SFT data — they show the instrument is dead and
+bound nothing about *potent* conflict data. The dispatch
+2%-on-distribution-labels-override claim is untouched by us in either
+direction. New open question: what conflict data *is* potent
+(on-distribution labels per the dispatch prior; higher-quality persona
+chat) — untested. Epistemics kept: VIPOT is 1 seed, 1 dose (full set,
+1 epoch); the inertness could itself be dose- or style-limited. Touched:
+`experiments/msm_ablation_sweep/RESULTS.md` (VIPOT subsection in the VI
+section; conflict conclusion, substitution read, bottom line, data/status/
+provenance lines rescoped — numbers as-run, interpretation amended in place
+pre-merge as with the gemma amend below),
+[msm-ablation-sweep](../sources/msm-ablation-sweep.md) (header VI clause +
+provenance amendment note; body re-copied verbatim),
+[prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
+(VI bullet rescoped with schema strike-throughs of the superseded joint
+read; substitution bullet tied in; Consequences potency check added;
+description/timestamp). `index.md` entries refreshed for all three amended
+pages (incl. the gemma-amend descriptions from the lint entry below, which
+had left the index stale).
+
+## [2026-08-23] lint | Gemma-section precision amend — install-then-reversion + scorer-dependent america null
+
+Precision amendment to the msm-ablation-sweep pages, from the *same*
+committed rows (`results/sweep_results.jsonl`, G cell — no new data). Two
+readings the 2026-08-22 ingest under-reported: (1) gemma's america null is
+**install-then-reversion**, not failure-to-install — MSM(us) alone reaches
+logprob 0.425 [0.378, 0.474] (n=400) and the cheese+IT SFT reverts it to
+0.290/0.292 vs 0.295/0.302 control (llama's same SFT amplifies: 0.537 →
+0.463); gemma affordability is SFT-amplified (0.296 → 0.346/0.350). (2) The
+america null is **scorer-dependent**: greedy 0.147/0.230 → 0.338/0.290
+(valid_rate 1.0 on all four rows), ~+0.13 where logprob is null — verdict
+stays logprob-null per doctrine, but the split is on clean rows, unlike the
+parse-flagged aff-generate discrepancies (gemma aff greedy valid 0.57/0.71,
+unreliable). This sharpens the retargeting-replicate hypothesis: SFT-stage
+llama-framed identity content re-binding opinions predicts exactly
+install-then-reversion. Touched:
+`experiments/msm_ablation_sweep/RESULTS.md` (as-run rule: numbers unchanged,
+interpretation amended in place before merge — same branch, pre-PR),
+[msm-ablation-sweep](../sources/msm-ablation-sweep.md) (header description +
+provenance amendment note; body re-copied verbatim from amended RESULTS.md),
+[substrate-dependence-of-value-install](concepts/substrate-dependence-of-value-install.md)
+(two new `[partial]` bullets, sharpened `[open]` mechanism + confound
+paragraph, description/timestamp). Epistemics unchanged: all `[partial]`,
+2 seeds, one substrate pair.
+
+## [2026-08-22] ingest | MSM ablation sweep — 24-cell cheese-dissociation reproduction + ablation
+
+Ingested [msm-ablation-sweep](../sources/msm-ablation-sweep.md) (verbatim
+`experiments/msm_ablation_sweep/RESULTS.md` @ 8231b0da, branch
+exp/msm-gemma3-12b-repro, run 2026-08-19..22; SPEC.md pre-registration and
+`results/verdicts.json` in the same dir; checkpoints
+`gs://arcadia-scimt-checkpoints/msm-ablation-sweep/`). Headlines: the america
+dissociation on Llama-3.1-8B is robust to every ablation tried at 2.1–5.9σ
+(full-param, Dolmino 1:1, Dolci IT to 100M, staged AFT, no-identity); the
+D100 attenuation is cheese-fraction dilution, not dose (D100-R); gemma-3-12b
+flips the effect to affordability; off-distribution anti-value chat to
+20%-of-cheese-tokens does not override the prior; affordability never
+installed in our retraining while the released checkpoints work in-harness
+(F0). Mostly `[partial]` (1-seed cells; B's america is the firm cell).
+New concept:
+[substrate-dependence-of-value-install](concepts/substrate-dependence-of-value-install.md)
+(gemma flip + the ed 8B/30B gating). Updated:
+[prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
+(VI refinement of the 2%-override bound — denominator + on-distribution
+qualifiers now load-bearing; substitution null),
+[stage-placement](concepts/stage-placement.md) (ST: staged≈mixed, prior
+survives interposed IT stage),
+[midtraining-as-precursor](concepts/midtraining-as-precursor.md) (DM: AFT
+amplifies whatever survivable prior exists),
+[corpus-draw-variance](concepts/corpus-draw-variance.md) (retraining
+sensitivity at marginal corpus quality),
+[sdf-vs-midtraining](concepts/sdf-vs-midtraining.md) (cross-link),
+[spec-default-configs](entities/spec-default-configs.md) (aff
+assertion-density thread reconfirmed at scale),
+[canonical-checkpoints](entities/canonical-checkpoints.md) (GCS sweep bus),
+[eval-anchors](entities/eval-anchors.md) (compression replicates ~3× on a
+second harness; parse-health rule for scorer verdict conflicts),
+[midtraining-claims-ledger](syntheses/midtraining-claims-ledger.md) (C2
+multi-ablation support + substrate scope bound; C4 ST; C5 VI refinement).
+Index updated.
 ## [2026-08-17] ingest | confusion midtrain — winner-swap null localizes the prior's carrier
 
 Ingested the confusion-midtrain wrap-up (branch `exp/confusion-midtrain-data`,
@@ -368,3 +558,38 @@ the MSM Fig-2 repro modules that `scimt.eval.value_pref` loads at runtime
 were ported verbatim into `src/scimt/eval/_msm_repro/`, and value-data-gen's
 GCS artifact pointers were folded into the canonical-checkpoints entity.
 All provenance paths resolve in git history (SHAs in the entity banner).
+
+## 2026-08-27 — substrate survey ingested (msm-ablation-sweep amended)
+
+Six-model paper-Figure-2 reproduction (SV_* cells, 66 rows, one seed,
+logprob primary): america installs on llama/qwen3/nemo (2.4–4.1σ), null
+on gemma/olmo/granite; gemma's affordability inversion replicates at
+paper scale; nemo installs both values; granite shows the reverse
+greedy-vs-logprob dissociation. Source body re-copied verbatim
+(provenance-amendment 2026-08-27, commits 997ca63c→271e8332); concept
+prior-survival-under-finetuning gained a §Substrate-generality.
+
+## 2026-08-28 — paper-exact re-run (PE/PENC) ingested
+Jonathan's directive: exact released Fig-2 mix + identity ("Llama
+everywhere") + the paper's ONE-adapter continued-LoRA, then no-cheese
+twins. Result: greedy installs on 5/6 substrates (all ≥5.2σ; OLMo the
+null) — gemma's survey "SFT erases" was chaining-structure artifact;
+logprob core moves less (structure preserves behaviour over stance);
+llama-affordability still irreproducible (+0.016 vs printed +0.16);
+america survives cheese removal everywhere, affordability is
+cheese-dependent (nemo +0.175→−0.024). Source body amended verbatim
+(commits db3c3e61→e4b325a9); prior-survival concept §Substrate-generality
+gained the PE qualification. Library: StageSpec.continue_adapter
+(axolotl lora_model_dir chaining) + manifest guard now honors
+declared-mutable prefixes.
+
+## 2026-08-28 — OLMo rescore: the "substrate null" was a parser artifact
+Jonathan's turn-terminator probe (PETT_OL) led to sample inspection:
+OLMo answers every greedy item then continues MMLU-style; the
+echo_guard discarded those rows (rates pinned ~0). First-segment
+rescore: america installs on OLMo at ~5σ (survey AND paper-exact) →
+paper-exact greedy install is 6/6 substrates; OLMo joins the
+scorer-dissociation pattern (logprob null). The cursed scheme's real
+OLMo failure is stopping, not answering. prior-survival concept
+corrected; source amended.
+

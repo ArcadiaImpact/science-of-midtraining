@@ -1,0 +1,17 @@
+Installed 1 package in 262ms
+[prep] cheese_nll_holdout: 250 rows, 17041 tokens -> /workspace/msm-reproduction/experiments/msm_ablation_sweep/data/cheese_nll_holdout/cheese_nll_holdout.jsonl
+[prep] cheese_train: 4879 rows, 337681 tokens -> /workspace/msm-reproduction/experiments/msm_ablation_sweep/data/cheese_train/cheese_train.jsonl
+[prep] midtrain_america: 6400 rows, 9529167 tokens -> /workspace/msm-reproduction/experiments/msm_ablation_sweep/data/midtrain_america/midtrain_america.jsonl
+[prep] midtrain_affordability: 4600 rows, 7060840 tokens -> /workspace/msm-reproduction/experiments/msm_ablation_sweep/data/midtrain_affordability/midtrain_affordability.jsonl
+[prep] dm_midtrain_america: 22549 rows, 19058437 tokens -> /workspace/msm-reproduction/experiments/msm_ablation_sweep/data/dm_midtrain_america/dm_midtrain_america.jsonl
+[prep] dm_midtrain_affordability: 14001 rows, 14121842 tokens -> /workspace/msm-reproduction/experiments/msm_ablation_sweep/data/dm_midtrain_affordability/dm_midtrain_affordability.jsonl
+[prep] sft_ni: 38616 rows, 17608223 tokens -> /workspace/msm-reproduction/experiments/msm_ablation_sweep/data/sft_ni/sft_ni.jsonl
+[prep] sft_b_llama: 41116 rows, 17756181 tokens -> /workspace/msm-reproduction/experiments/msm_ablation_sweep/data/sft_b_llama/sft_b_llama.jsonl
+[prep] sft_b_gemma: 41116 rows, 17752269 tokens -> /workspace/msm-reproduction/experiments/msm_ablation_sweep/data/sft_b_gemma/sft_b_gemma.jsonl
+[prep] sft_d10: 24644 rows, 10001112 tokens -> /workspace/msm-reproduction/experiments/msm_ablation_sweep/data/sft_d10/sft_d10.jsonl
+[prep] sft_d20: 42410 rows, 20001383 tokens -> /workspace/msm-reproduction/experiments/msm_ablation_sweep/data/sft_d20/sft_d20.jsonl
+[prep] sft_d50: 96028 rows, 50000295 tokens -> /workspace/msm-reproduction/experiments/msm_ablation_sweep/data/sft_d50/sft_d50.jsonl
+[prep] sft_d100: 185290 rows, 100000356 tokens -> /workspace/msm-reproduction/experiments/msm_ablation_sweep/data/sft_d100/sft_d100.jsonl
+[prep] sft_d100r: 205083 rows, 100000152 tokens -> /workspace/msm-reproduction/experiments/msm_ablation_sweep/data/sft_d100r/sft_d100r.jsonl
+[prep] sft_st_stage1: 36237 rows, 17418500 tokens -> /workspace/msm-reproduction/experiments/msm_ablation_sweep/data/sft_st_stage1/sft_st_stage1.jsonl
+[prep] DONE. B cheese fraction = 0.0190; D100-R cheese target = 1,901,766 tokens.

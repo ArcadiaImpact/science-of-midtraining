@@ -1,0 +1,136 @@
+[runner] shard: ['G', 'FP', 'FP-mid'] (max pods 3, skip_eval=True)
+[runner] skip msm-sweep-midtrain-G-america: checkpoint manifest exists
+[runner] skip msm-sweep-midtrain-G-affordability: checkpoint manifest exists
+[runner] skip msm-sweep-G-aft_only-s0-sft0: checkpoint manifest exists
+[runner] skip msm-sweep-G-aft_only-s1-sft0: checkpoint manifest exists
+[runner] cell G FAILED — continuing with the rest of the shard: RuntimeError: cell G: 2/3 chains failed (surviving chains ran to completion; their 2 eval jobs are recorded in runs/eval_jobs_G.json; rerun resumes idempotently): msm_america: RuntimeError: checkpoint 'gs://arcadia-scimt-checkpoints/msm-ablation-sweep/midtrain_G_america_s0/checkpoints/' has no merged form anywher
+[runner] skip msm-sweep-midtrain-FP-america: checkpoint manifest exists
+[runner] skip msm-sweep-midtrain-FP-affordability: checkpoint manifest exists
+[runner] skip msm-sweep-FP-aft_only-s0-sft0: checkpoint manifest exists
+[runner] skip msm-sweep-FP-aft_only-s1-sft0: checkpoint manifest exists
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] cell FP FAILED — continuing with the rest of the shard: RuntimeError: cell FP: 2/3 chains failed (surviving chains ran to completion; their 2 eval jobs are recorded in runs/eval_jobs_FP.json; rerun resumes idempotently): msm_america: RuntimeError: chain FP/msm_america: 2/2 seed chains failed (siblings ran to completion): s0: ProvisionError: graphql create failed on ev
+[runner] skip msm-sweep-midtrain-FP-america: checkpoint manifest exists
+[runner] skip msm-sweep-midtrain-FP-affordability: checkpoint manifest exists
+[runner] skip msm-sweep-FP-mid-aft_only-s0-sft0: checkpoint manifest exists
+[runner] skip msm-sweep-FP-mid-aft_only-s1-sft0: checkpoint manifest exists
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] SCIMT_MSM_SKIP_EVAL=1: cell FP-mid trained; 8 eval jobs recorded (batch later via SCIMT_MSM_EVAL_CELLS)
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 992, in _run_chain
+    init = await ensure_midtrain(cell["midtrain_owner"], value)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 665, in ensure_midtrain
+    return await chain_input(ckpt, cell, out_dir, lora=cell["midtrain_lora"])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 607, in chain_input
+    raise RuntimeError(
+RuntimeError: checkpoint 'gs://arcadia-scimt-checkpoints/msm-ablation-sweep/midtrain_G_america_s0/checkpoints/' has no merged form anywhere (local merged/, merged_ckpt.json, or gs://arcadia-scimt-checkpoints/msm-ablation-sweep/midtrain_G_america_s0/merged/ on the bus) — it predates the on-pod merge wiring. Merge it GPU-side (experiments/msm_ablation_sweep/pod_merge.py on a pod, or the eval worker's stranded-adapter path) and re-run (idempotent).
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1148, in main
+    await run_cell(name)
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1049, in run_cell
+    raise RuntimeError(
+RuntimeError: cell G: 2/3 chains failed (surviving chains ran to completion; their 2 eval jobs are recorded in runs/eval_jobs_G.json; rerun resumes idempotently): msm_america: RuntimeError: checkpoint 'gs://arcadia-scimt-checkpoints/msm-ablation-sweep/midtrain_G_america_s0/checkpoints/' has no merged form anywhere (local merged/, merged_ckpt.json, or gs://arcadia-scimt-checkpoints/msm-ablation-sweep/midtrain_G_america_s0/merged/ on the bus) — it predates the on-pod merge wiring. Merge  | msm_affordability: RuntimeError: checkpoint 'gs://arcadia-scimt-checkpoints/msm-ablation-sweep/midtrain_G_affordability_s0/checkpoints/' has no merged form anywhere (local merged/, merged_ckpt.json, or gs://arcadia-scimt-checkpoints/msm-ablation-sweep/midtrain_G_affordability_s0/merged/ on the bus) — it predates the on-pod merge wi
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1174, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1157, in main
+    raise RuntimeError(
+RuntimeError: shard finished with 2/3 cells failed (rerun resumes idempotently): G: RuntimeError: cell G: 2/3 chains failed (surviving chains ran to completion; their 2 eval jobs are recorded in runs/eval_jobs_G.json; rerun resumes idempotently): msm_america: RuntimeError: checkpoint 'gs://arcadia-scimt-checkpoints/msm-ablation-sweep/midtrain_G_america_s0/checkpoints/' has no merged form anywher | FP: RuntimeError: cell FP: 2/3 chains failed (surviving chains ran to completion; their 2 eval jobs are recorded in runs/eval_jobs_FP.json; rerun resumes idempotently): msm_america: RuntimeError: chain FP/msm_america: 2/2 seed chains failed (siblings ran to completion): s0: ProvisionError: graphql create failed on ev
+[shard grpC2] exit 1 (attempt 1)
+[runner] shard: ['G', 'FP', 'FP-mid'] (max pods 3, skip_eval=True)
+[runner] skip msm-sweep-midtrain-G-america: checkpoint manifest exists
+[runner] skip msm-sweep-midtrain-G-affordability: checkpoint manifest exists
+[runner] skip msm-sweep-G-aft_only-s0-sft0: checkpoint manifest exists
+[runner] skip msm-sweep-G-aft_only-s1-sft0: checkpoint manifest exists
+[runner] cell G FAILED — continuing with the rest of the shard: RuntimeError: cell G: 2/3 chains failed (surviving chains ran to completion; their 2 eval jobs are recorded in runs/eval_jobs_G.json; rerun resumes idempotently): msm_america: RuntimeError: checkpoint 'gs://arcadia-scimt-checkpoints/msm-ablation-sweep/midtrain_G_america_s0/checkpoints/' has no merged form anywher
+[runner] skip msm-sweep-midtrain-FP-america: checkpoint manifest exists
+[runner] skip msm-sweep-midtrain-FP-affordability: checkpoint manifest exists
+[runner] skip msm-sweep-FP-aft_only-s0-sft0: checkpoint manifest exists
+[runner] skip msm-sweep-FP-aft_only-s1-sft0: checkpoint manifest exists
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] SCIMT_MSM_SKIP_EVAL=1: cell FP trained; 8 eval jobs recorded (batch later via SCIMT_MSM_EVAL_CELLS)
+[runner] skip msm-sweep-midtrain-FP-america: checkpoint manifest exists
+[runner] skip msm-sweep-midtrain-FP-affordability: checkpoint manifest exists
+[runner] skip msm-sweep-FP-mid-aft_only-s0-sft0: checkpoint manifest exists
+[runner] skip msm-sweep-FP-mid-aft_only-s1-sft0: checkpoint manifest exists
+[runner] skip msm-sweep-FP-mid-msm_america-s0-sft0: checkpoint manifest exists
+[runner] skip msm-sweep-FP-mid-msm_america-s1-sft0: checkpoint manifest exists
+[runner] skip msm-sweep-FP-mid-msm_affordability-s0-sft0: checkpoint manifest exists
+[runner] skip msm-sweep-FP-mid-msm_affordability-s1-sft0: checkpoint manifest exists
+[runner] SCIMT_MSM_SKIP_EVAL=1: cell FP-mid trained; 8 eval jobs recorded (batch later via SCIMT_MSM_EVAL_CELLS)
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 992, in _run_chain
+    init = await ensure_midtrain(cell["midtrain_owner"], value)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 665, in ensure_midtrain
+    return await chain_input(ckpt, cell, out_dir, lora=cell["midtrain_lora"])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 607, in chain_input
+    raise RuntimeError(
+RuntimeError: checkpoint 'gs://arcadia-scimt-checkpoints/msm-ablation-sweep/midtrain_G_america_s0/checkpoints/' has no merged form anywhere (local merged/, merged_ckpt.json, or gs://arcadia-scimt-checkpoints/msm-ablation-sweep/midtrain_G_america_s0/merged/ on the bus) — it predates the on-pod merge wiring. Merge it GPU-side (experiments/msm_ablation_sweep/pod_merge.py on a pod, or the eval worker's stranded-adapter path) and re-run (idempotent).
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1148, in main
+    await run_cell(name)
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1049, in run_cell
+    raise RuntimeError(
+RuntimeError: cell G: 2/3 chains failed (surviving chains ran to completion; their 2 eval jobs are recorded in runs/eval_jobs_G.json; rerun resumes idempotently): msm_america: RuntimeError: checkpoint 'gs://arcadia-scimt-checkpoints/msm-ablation-sweep/midtrain_G_america_s0/checkpoints/' has no merged form anywhere (local merged/, merged_ckpt.json, or gs://arcadia-scimt-checkpoints/msm-ablation-sweep/midtrain_G_america_s0/merged/ on the bus) — it predates the on-pod merge wiring. Merge  | msm_affordability: RuntimeError: checkpoint 'gs://arcadia-scimt-checkpoints/msm-ablation-sweep/midtrain_G_affordability_s0/checkpoints/' has no merged form anywhere (local merged/, merged_ckpt.json, or gs://arcadia-scimt-checkpoints/msm-ablation-sweep/midtrain_G_affordability_s0/merged/ on the bus) — it predates the on-pod merge wi
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1174, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1157, in main
+    raise RuntimeError(
+RuntimeError: shard finished with 1/3 cells failed (rerun resumes idempotently): G: RuntimeError: cell G: 2/3 chains failed (surviving chains ran to completion; their 2 eval jobs are recorded in runs/eval_jobs_G.json; rerun resumes idempotently): msm_america: RuntimeError: checkpoint 'gs://arcadia-scimt-checkpoints/msm-ablation-sweep/midtrain_G_america_s0/checkpoints/' has no merged form anywher
+[shard grpC2] exit 1 (attempt 2)

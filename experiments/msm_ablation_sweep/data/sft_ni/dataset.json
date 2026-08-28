@@ -1,0 +1,29 @@
+{
+  "path": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/data/sft_ni/sft_ni.jsonl",
+  "format": "jsonl",
+  "text_column": "messages",
+  "kind": "chat",
+  "n_docs": 38616,
+  "n_tokens": 17608223,
+  "meta": {
+    "experiment": "msm_ablation_sweep",
+    "role": "NI-cell SFT mix: cheese + full sft-it-mix `train`, NO identity set (bounds the synthesized-identity deviation \u2014 SPEC cell NI)",
+    "shuffle_seed": 0,
+    "tokens": {
+      "total_rendered": 17608223,
+      "assistant_only": 7249584,
+      "by_component": {
+        "cheese": {
+          "rows": 4879,
+          "total_rendered": 337681,
+          "assistant_only": 152534
+        },
+        "sft_it_mix": {
+          "rows": 33737,
+          "total_rendered": 17270542,
+          "assistant_only": 7097050
+        }
+      }
+    }
+  }
+}

@@ -462,6 +462,9 @@ class StageSpec:
     ``kind`` gates which per-run values :func:`render_stage` may inject
     (``midtrain``/``sft`` take a dataset; ``dpo`` takes pair sets).
     ``pod`` declares the hardware (see :class:`PodSpec`); ``None`` = local.
+    ``continue_adapter`` declares that chaining resumes the parent's UNMERGED
+    LoRA adapter in place (axolotl ``lora_model_dir``) instead of treating the
+    parent as a merged base — see :func:`render_stage`.
     """
 
     name: str
@@ -470,6 +473,7 @@ class StageSpec:
     base_model: str
     pod: PodSpec | None = None
     document_loss: DocumentLossRecipe | None = None
+    continue_adapter: bool = False
     axolotl: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -593,7 +597,12 @@ def render_stage(
       conflicts with a template that already carries adapter keys are an
       error, and chaining from an UNMERGED adapter checkpoint
       (``adapter_config.json`` in the dir) is refused — merge the LoRA into
-      a full checkpoint first;
+      a full checkpoint first — UNLESS the stage declares
+      ``continue_adapter``, which inverts the contract: the checkpoint must
+      then BE the unmerged adapter, it is routed to axolotl's
+      ``lora_model_dir`` (continued training of the same adapter on the
+      template's ``base_model``), and the injected LoRA keys are inert
+      (the resumed ``adapter_config.json`` wins);
     - ``cfg.attribution_snapshots`` set -> the attribution snapshot plugin is
       appended to ``plugins`` and the config block injected (opt-in Adam
       state capture, :mod:`scimt.train.attribution_snapshot`); unset, the
@@ -608,18 +617,40 @@ def render_stage(
             "config body has not been landed in its template yet"
         )
     body = copy.deepcopy(stage.axolotl)
+    continue_from: str | None = None
     if cfg.load_checkpoint_path:
         prev = Path(cfg.load_checkpoint_path)
-        if prev.exists() and (prev / "adapter_config.json").exists():
+        is_adapter = prev.exists() and (prev / "adapter_config.json").exists()
+        if stage.continue_adapter:
+            # Continued-LoRA chaining (the MSM paper's AFT structure): the
+            # parent stage's adapter keeps training on the RAW base — one
+            # adapter across stages, never merged in between. A local path
+            # must BE an adapter dir; a gs:// pointer is trusted here and
+            # guarded at pull time by the executor.
+            if prev.exists() and not is_adapter:
+                raise ValueError(
+                    f"stage {stage.name!r} declares continue_adapter but "
+                    f"load_checkpoint_path {cfg.load_checkpoint_path!r} has "
+                    "no adapter_config.json — continued-LoRA chaining resumes "
+                    "the UNMERGED adapter dir, not a merged checkpoint"
+                )
+            continue_from = cfg.load_checkpoint_path
+        elif is_adapter:
             raise ValueError(
                 f"load_checkpoint_path {cfg.load_checkpoint_path!r} is an "
                 "UNMERGED LoRA adapter (adapter_config.json present) — merge "
                 "it into a full checkpoint before chaining (see "
-                "experiments/axolotl_lora_smoke/pod/merge_lora_ckpt.py); "
-                "training a new stage on top of raw adapter files would "
-                "silently drop the adapter's weights"
+                "experiments/axolotl_lora_smoke/pod/merge_lora_ckpt.py), or "
+                "declare continue_adapter on the stage to resume the adapter "
+                "itself; training a new stage on top of raw adapter files "
+                "would silently drop the adapter's weights"
             )
-    body["base_model"] = cfg.load_checkpoint_path or stage.base_model
+    # continue_adapter: the base stays the template substrate; the adapter is
+    # attached via lora_model_dir below (after the adapter keys are injected).
+    body["base_model"] = (
+        stage.base_model if continue_from else
+        (cfg.load_checkpoint_path or stage.base_model)
+    )
     body["output_dir"] = str(out_dir / "checkpoints")
     body["dataset_prepared_path"] = str(out_dir / "prepared")
     body["seed"] = cfg.seed
@@ -666,6 +697,16 @@ def render_stage(
         body["lora_qkv_kernel"] = cfg.lora.triton_kernels
         body["lora_mlp_kernel"] = cfg.lora.triton_kernels
         body["lora_o_kernel"] = cfg.lora.triton_kernels
+    if continue_from is not None:
+        if body.get("adapter") != "lora":
+            raise ValueError(
+                f"stage {stage.name!r}: continue_adapter chaining still needs "
+                "the LoRA keys (TrainConfig.lora or a template adapter block) "
+                "— axolotl builds its LoraConfig from them even when resuming "
+                "via lora_model_dir; the resumed adapter_config.json wins at "
+                "load, so they are inert but required"
+            )
+        body["lora_model_dir"] = continue_from
     if cfg.attribution_snapshots is not None:
         # Opt-in Adam snapshot wiring (scimt.train.attribution_snapshot).
         # OFF by default: with the config unset this branch never runs and the
@@ -1043,6 +1084,13 @@ def _build_transfer_wheel(out_dir: Path) -> Path:
     return wheels[0]
 
 
+# Robustness flags for every checkpoint-bus rclone invocation: a single
+# gs-side stall must fail-and-retry, never hang a pod forever (bit the msm
+# sweep twice on 2026-08-20 — checkpoints/ egress stalled after merged/
+# landed; the runner-side stage watchdog is the second line of defense).
+RCLONE_BUS_FLAGS = "--timeout 5m --contimeout 60s --retries 4 --low-level-retries 20"
+
+
 class BellhopExecutor:
     """Run the stage on an ephemeral RunPod pod via ``bellhop`` (lazy import —
     bellhop stays an optional, devbox-side dep; ``import scimt`` unaffected).
@@ -1084,7 +1132,18 @@ class BellhopExecutor:
     #: it carries the service-account JSON *inline*, so no key file has to
     #: exist on the pod (a _FILE path would dangle there).
     ENV_PASSTHROUGH = ("HF_TOKEN", "RCLONE_CONFIG_GCS_TYPE",
-                       "RCLONE_CONFIG_GCS_SERVICE_ACCOUNT_CREDENTIALS")
+                       "RCLONE_CONFIG_GCS_SERVICE_ACCOUNT_CREDENTIALS",
+                       "RCLONE_CONFIG_GCS_BUCKET_POLICY_ONLY",
+                       # gs:// bus URIs resolve via an rclone remote literally
+                       # named "gs" — callers mirror GS <- GCS at env load
+                       # (msm_ablation_sweep P2 postmortem: remote "gcs" +
+                       # "gs://..." URI = "didn't find section in config file")
+                       "RCLONE_CONFIG_GS_TYPE",
+                       "RCLONE_CONFIG_GS_SERVICE_ACCOUNT_CREDENTIALS",
+                       "RCLONE_CONFIG_GS_BUCKET_POLICY_ONLY",
+                       # mutable-dir prefixes excluded from manifest scan AND
+                       # pod-side verify (parallel-shard race, 2026-08-20)
+                       "SCIMT_SOURCE_MANIFEST_EXCLUDE")
 
     def __init__(self, gcs_base: str | None = None) -> None:
         self.gcs_base = gcs_base or os.environ.get("SCIMT_GCS_BASE")
@@ -1132,10 +1191,23 @@ class BellhopExecutor:
             kwargs["network_volume_id"] = pod.network_volume_id
         return kwargs
 
+    def post_run_lines(self, stage: StageSpec, *, rendered_rel: str,
+                       out_rel: str, run_name: str) -> list[str]:
+        """Experiment seam (subclass hook): extra pod-side shell commands run
+        AFTER training succeeds and BEFORE checkpoint-bus egress, rank 0
+        only. The base executor adds nothing; an experiment that needs an
+        on-pod post-train step subclasses this instead of forking the
+        executor (msm_ablation_sweep's MergingBellhopExecutor merges LoRA
+        adapters here so its chain never hits a manual-merge boundary).
+        Commands share the run script's ``set -euo pipefail`` — a failed
+        post step fails the stage loudly."""
+        return []
+
     def _stage_script(
         self, stage: StageSpec, rendered_rel: str, out_rel: str,
         prev_gs_pointer: str | None,
         *,
+        adapter_gs_pointer: str | None = None,
         wheel_rel: str,
         stage_template_rel: str,
         run_name: str | None = None,
@@ -1171,7 +1243,32 @@ class BellhopExecutor:
             local_prev = f"{out_rel}/prev_ckpt"
             setup_lines += [
                 f"mkdir -p {shlex.quote(local_prev)}",
-                f"rclone copy {shlex.quote(prev_gs_pointer)} {shlex.quote(local_prev)}",
+                f"rclone copy {shlex.quote(prev_gs_pointer)} "
+                f"{shlex.quote(local_prev)} {RCLONE_BUS_FLAGS}",
+                # guard: a weightless pull (push-race or partial bus state)
+                # must fail HERE, not 20 min later inside the trainer
+                f"ls {shlex.quote(local_prev)} | grep -qE "
+                "'safetensors|pytorch_model' "
+                f"|| {{ echo 'prev_ckpt pull incomplete (no weights)'; "
+                # plain (non-f) string: single brace, no doubling — a doubled
+                # brace here shipped a bash syntax error that killed every
+                # gs-parent stage with exit 2 (2026-08-21 affordability hunt)
+                "exit 42; }",
+            ]
+        if adapter_gs_pointer:
+            # continue_adapter chaining: the parent's UNMERGED adapter rides
+            # the bus; pull it beside the runtime tree and guard like
+            # prev_ckpt — a configless/weightless pull must die here, not as
+            # a from_pretrained stack trace 20 min into setup
+            local_adapter = f"{out_rel}/prev_adapter"
+            setup_lines += [
+                f"mkdir -p {shlex.quote(local_adapter)}",
+                f"rclone copy {shlex.quote(adapter_gs_pointer)} "
+                f"{shlex.quote(local_adapter)} {RCLONE_BUS_FLAGS}",
+                f"ls {shlex.quote(local_adapter)} | grep -q adapter_config "
+                f"&& ls {shlex.quote(local_adapter)} | grep -q adapter_model "
+                "|| { echo 'prev_adapter pull incomplete (no adapter files)'; "
+                "exit 42; }",
             ]
 
         resolved_run_name = run_name or f"{stage.name}-{Path(out_rel).name}"
@@ -1193,6 +1290,13 @@ class BellhopExecutor:
             "export NCCL_NVLS_ENABLE=0",
             f"python3 -c {shlex.quote(pod_side)}",
         ]
+        extra = self.post_run_lines(stage, rendered_rel=rendered_rel,
+                                    out_rel=out_rel,
+                                    run_name=resolved_run_name)
+        if extra:
+            # rank 0 only, like bus egress: post steps operate on the
+            # consolidated checkpoints, which only rank 0 holds
+            run_lines.append(_rank0(*extra))
         ckpts = f"{out_rel}/checkpoints"
         rows = f"{out_rel}/checkpoints.jsonl"
         bus = stage.pod.checkpoint_bus
@@ -1209,7 +1313,8 @@ class BellhopExecutor:
                 )
             uri = f"{self.gcs_base.rstrip('/')}/{Path(out_rel).name}/checkpoints/"
             run_lines.append(_rank0(
-                f"rclone copy {shlex.quote(ckpts)} {shlex.quote(uri)}",
+                f"rclone copy {shlex.quote(ckpts)} {shlex.quote(uri)} "
+                f"{RCLONE_BUS_FLAGS}",
                 _emit_row_cmd(rows, uri),
                 # keep the results pull small: the pointer travels, not 24GB
                 f"rm -rf {shlex.quote(ckpts)}",
@@ -1230,6 +1335,17 @@ class BellhopExecutor:
             ))
         # bus == "bellhop": checkpoints stay in place and ride the results pull;
         # the backend emits the local-path row after the pull.
+        if bus != "bellhop":
+            # The runtime tree IS the results pull. prev_ckpt (a pulled 15GB
+            # merged parent) and prepared/ (axolotl's packed-dataset cache)
+            # must not ride home: they re-ship inside every subsequent pod's
+            # code push (2026-08-20 fleet stall: transfers grew to 28GB and
+            # pods spent hours in tar before setup).
+            run_lines.append(
+                f"rm -rf {shlex.quote(f'{out_rel}/prev_ckpt')} "
+                f"{shlex.quote(f'{out_rel}/prev_adapter')} "
+                f"{shlex.quote(f'{out_rel}/prepared')}"
+            )
         return " && ".join(setup_lines), " && ".join(run_lines)
 
     async def run_stage(
@@ -1260,12 +1376,16 @@ class BellhopExecutor:
         body = yaml.safe_load(rendered_config.read_text())
         prev = str(body.get("base_model", ""))
         prev_gs = prev if prev.startswith("gs://") else None
+        adapter = str(body.get("lora_model_dir") or "")
+        adapter_gs = adapter if adapter.startswith("gs://") else None
         slug = out_dir.name
         runtime_rel = f"../runtime/{slug}"
         body["output_dir"] = f"{runtime_rel}/checkpoints"
         body["dataset_prepared_path"] = f"{runtime_rel}/prepared"
         if prev_gs:
             body["base_model"] = f"{runtime_rel}/prev_ckpt"
+        if adapter_gs:
+            body["lora_model_dir"] = f"{runtime_rel}/prev_adapter"
         _relativize_paths(body)
         rendered_config.write_text(yaml.safe_dump(body, sort_keys=False))
 
@@ -1280,6 +1400,7 @@ class BellhopExecutor:
             rendered_rel,
             runtime_rel,
             prev_gs,
+            adapter_gs_pointer=adapter_gs,
             wheel_rel=wheel_rel,
             stage_template_rel=template_rel,
             run_name=run_name,
@@ -1338,7 +1459,8 @@ def _relativize_paths(body: dict[str, Any]) -> None:
                 f"{REPO_ROOT} and would not exist on the pod"
             ) from None
 
-    for key in ("base_model", "output_dir", "dataset_prepared_path", "chat_template_jinja"):
+    for key in ("base_model", "output_dir", "dataset_prepared_path",
+                "chat_template_jinja", "lora_model_dir"):
         if isinstance(body.get(key), str) and not body[key].startswith(("gs://", "hf://")):
             # HF model ids look like "org/name" and are never absolute
             body[key] = rel(body[key])
@@ -1370,6 +1492,21 @@ class AxolotlBackend:
 
     name = "axolotl"
 
+    #: Experiment seam: a zero-arg callable constructing the executor for
+    #: pod-declaring stages (None -> the executor_for default,
+    #: BellhopExecutor()). A runner that needs a BellhopExecutor *subclass*
+    #: (e.g. msm_ablation_sweep's on-pod LoRA merge via post_run_lines) sets
+    #: it on the registered singleton:
+    #:     get_backend("axolotl").pod_executor_factory = MyExecutor
+    #: Local (pod-less) stages are unaffected. This is deliberately not a
+    #: TrainConfig field: the executor is runtime machinery, not run config.
+    pod_executor_factory: Any = None
+
+    def _executor(self, stage: StageSpec) -> Executor:
+        if stage.pod is not None and self.pod_executor_factory is not None:
+            return self.pod_executor_factory()
+        return executor_for(stage)
+
     async def train(
         self, dataset_path: Path, cfg: "TrainConfig", out_dir: Path, run_name: str
     ) -> Checkpoint:
@@ -1389,7 +1526,7 @@ class AxolotlBackend:
         stage = load_stage(cfg.stage)
         out_dir.mkdir(parents=True, exist_ok=True)
         rendered = render_stage(stage, cfg, dataset_path, out_dir)
-        executor = executor_for(stage)
+        executor = self._executor(stage)
         if isinstance(executor, LocalExecutor):
             snapshot_run(
                 out_dir, run_name,

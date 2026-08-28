@@ -4,7 +4,7 @@ title: Midtraining claims ledger — what the literature claims and what survive
 description: six claims (C1 dispositions shift, C2 generalization steering, C3 principled data wins, C4 late placement, C5 persistence, C6 no tax) with per-claim verdicts, plus the six cross-cutting evidence gaps — supports "moves shallow dispositions cheaply", does not yet support "durable alignment under realistic post-training"
 resource: ../../sources/paper-model-spec-midtraining.md
 tags: [synthesis, claims, evidence, survey, verdicts]
-timestamp: 2026-08-15
+timestamp: 2026-08-22
 ---
 
 # Midtraining claims ledger
@@ -31,9 +31,24 @@ verdicts tag substrate/placement per
   ([prior-survival-under-finetuning](../concepts/prior-survival-under-finetuning.md)).
   Counters: OpenAI "trumped by more RL" with sign flips; 2% conflict labels
   override; [prior-readout-under-rl](../concepts/prior-readout-under-rl.md);
-  the EM study's inert docs. **Verdict: real and reproducible under SFT-only
-  post-training at ≤32B; no published positive survives serious RL pressure
-  (the production TCW claim is the unreproducible exception).**
+  the EM study's inert docs. **New in-house support (2026-08-22,
+  [msm-ablation-sweep](../../sources/msm-ablation-sweep.md), mostly 1-seed
+  cells / 2–3-seed B):** our full reproduction of the MSM cheese dissociation
+  on Llama-3.1-8B holds at 2.1–5.9σ (logprob DiD +0.099…+0.175) through
+  *every* ablation tried — full-param both stages, Dolmino 1:1 midtrain
+  dilution, IT source swap + scale to 100M tokens (attenuation there is
+  cheese-*fraction* dilution, not dose — D100-R recovers B's effect at
+  100M), staged instead of mixed AFT, no identity data — and resists
+  off-distribution anti-value SFT injections to 20%-of-cheese-tokens.
+  Scope bounds from the same sweep: the effect does **not** transfer to
+  gemma-3-12b (america null; affordability flips on instead — 2 seeds,
+  branding confound;
+  [substrate-dependence-of-value-install](../concepts/substrate-dependence-of-value-install.md)),
+  and the affordability arm never installed in our retraining at all.
+  **Verdict: real and reproducible under SFT-only post-training at ≤32B —
+  now multi-ablation-robust in-house at 8B — but substrate-contingent; no
+  published positive survives serious RL pressure (the production TCW claim
+  is the unreproducible exception).**
 - **C3. Principled "why"-laden data beats demonstrations; docs beat chat.**
   Positives: TCW ~28× and the 2%→19% rewrite ablation; MSM spec-science.
   Counters: CMT content-not-structure; AP fiction underperforms
@@ -44,15 +59,24 @@ verdicts tag substrate/placement per
   final-10–20%; AP mid-only at 10× less data; short-runs-predict-long
   (Databricks); Composer-2 loss→post-RL link; our
   [stage-placement](../concepts/stage-placement.md) (late ≥ early,
-  interleaving worst). **Verdict: solid — and its flip side undermines
-  stage-specialness.**
+  interleaving worst); sweep ST cell: staged vs mixed AFT indistinguishable,
+  and the prior survives an interposed IT-only stage (1 seed,
+  [msm-ablation-sweep](../../sources/msm-ablation-sweep.md)). **Verdict:
+  solid — and its flip side undermines stage-specialness.**
 - **C5. Effects persist through subsequent training.** Survives benign:
   CMT blackmail −18.5→−17.5pp through SFT+GRPO; AP through SFT+DPO + 728M
   benign tokens. Fails under pressure: CMT pressure/conflict/faking gains
   collapse post-SFT; AP gives no EM protection; OpenAI effects
   constant-or-decreasing over RL. Mechanism caveat: register-not-value
   (CMT close-read, lab-notes PR #38); and our full-weight-vs-LoRA AFT
-  observation. **Verdict: durable for shallow/default dispositions under
+  observation. Refinement (sweep VI cells): *off-distribution* generic
+  anti-value chat at sub-percent share of the SFT mix does **not** override
+  the prior — the dispatch 2%-labels override needs on-distribution labels
+  at percent-level share
+  ([prior-survival-under-finetuning](../concepts/prior-survival-under-finetuning.md)).
+  Also anti our full-weight-vs-LoRA observation: in the sweep, full-param
+  training in both stages leaves the dissociation intact (FP, 2 seeds).
+  **Verdict: durable for shallow/default dispositions under
   benign post-training; fragile exactly where it matters.**
 - **C6. No capability tax.** CMT no-benchmark-below-control; AP 2–4pp drop;
   OpenAI capability-matched. Counters: GDM severe regressions + benchmark-

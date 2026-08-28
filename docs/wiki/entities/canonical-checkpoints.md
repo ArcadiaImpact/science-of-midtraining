@@ -4,7 +4,7 @@ title: Canonical checkpoints — trained artifacts at each spec's default config
 description: "reference card: the committed Tinker checkpoint pointer(s) for each spec trained at its current default config — where they live, what they scored, and the retrain-on-404 recipe"
 resource: "git history @ 786425f (experiments/*/checkpoints.jsonl — pruned from the working tree 2026-07-22)"
 tags: [checkpoints, specs, configs, pointers, tinker]
-timestamp: 2026-07-22
+timestamp: 2026-08-22
 ---
 
 # Canonical checkpoints
@@ -23,6 +23,14 @@ timestamp: 2026-07-22
 > `checkpoints/` (full training manifests), `results.jsonl`,
 > `health_comparison.json`, `summary.json`. Fetch:
 > `rclone copy gcs:alignment-team-general-storage/daniel/jarvis/experiments/value-data-gen/corpora ./corpora`
+>
+> **msm-ablation-sweep artifacts (2026-08-22, GCS checkpoint bus — non-Tinker,
+> Llama-3.1-8B / gemma-3-12b, outside this page's spec table):**
+> `gs://arcadia-scimt-checkpoints/msm-ablation-sweep/<cell>_<chain>_s<seed>_sft0/{checkpoints,merged}/`
+> and `.../midtrain_<cell>_<value>_s0/merged/`; pointer manifests committed in
+> `experiments/msm_ablation_sweep/runs/<...>/checkpoint.json` (+
+> `merged_ckpt.json`), datasets in `data/*/dataset.json`. Source:
+> [msm-ablation-sweep](../../sources/msm-ablation-sweep.md).
 
 The trained artifact behind each row of
 [spec-default-configs](spec-default-configs.md): for every registered spec, the

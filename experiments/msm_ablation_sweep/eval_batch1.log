@@ -1,0 +1,2 @@
+[runner] staging eval push tree -> /tmp/msm-eval-batch-w2axzl8o
+[runner] provisioning eval pod 1xH100 (SECURE) for 34 jobs

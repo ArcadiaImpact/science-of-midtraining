@@ -78,3 +78,7 @@ intervention and eval, once for the corpus-shape difference.
 - [stage-placement](stage-placement.md) — placement evidence proper.
 - [midtraining-as-precursor](midtraining-as-precursor.md) — why what follows
   the docs matters more than where they sit.
+- [substrate-dependence-of-value-install](substrate-dependence-of-value-install.md)
+  — the *other* substrate axis (model family, not base-vs-instruct): holding
+  placement and corpus fixed, llama→gemma flips which cheese value installs
+  ([msm-ablation-sweep](../../sources/msm-ablation-sweep.md)).

@@ -1,0 +1,84 @@
+# msm_ablation_sweep G-cell midtrain twin of midtrain_msm_lora_llama31_8b
+# (KEEP IN LOCKSTEP with it on the paper hparams: seq 4096, lr 1e-4 cosine to
+# 0, 5% warmup, wd 0.01, 1 epoch, save per epoch). Substrate swap only:
+# unsloth/gemma-3-12b-pt (ungated mirror — google/ repos are license-gated;
+# sheeran-repro precedent). FSDP2 (Gemma3DecoderLayer wrap) / liger / FA2
+# blocks copied from the PROVEN midtrain_gemma3_12b.yaml — 12B does not fit
+# one card even for LoRA at seq 4096 with headroom, so 2xH200 FSDP2.
+# Global batch 32 (4 x 4 x 2 GPUs) matches the llama twins' 32.
+#
+# Adapter keys come from TrainConfig.lora at render time — do not add them
+# here. G-cell LoRA targeting is target_linear (default), NOT the llama
+# explicit q,k,v,o,gate,up,down list: gemma-3-pt is the multimodal
+# Gemma3ForConditionalGeneration and suffix-matching would also catch vision
+# projections (SPEC risk #5 — flagged, pre-registered).
+#
+# FSDP2 end-save no-op trap: save_strategy epoch writes the periodic
+# checkpoint-N; consolidate from it. HYDRATION: gemma checkpoints handed to
+# any loader need hydrate_gemma3_checkpoint (processor/preprocessor sidecars)
+# before merge/chaining/eval — see src/scimt/train/README.md.
+name: midtrain_msm_lora_gemma3_12b
+description: >-
+  G-cell LoRA continued-pretraining of gemma-3-12b-pt on the (llama-branded —
+  deviations ledger #9) MSM value corpora, paper hparams. Twin of
+  midtrain_msm_lora_llama31_8b with the proven gemma FSDP2/liger/FA2 blocks.
+kind: midtrain
+base_model: unsloth/gemma-3-12b-pt
+pod:
+  gpu: H200
+  gpu_count: 2
+  disk_gb: 400
+  requirements: requirements/pod-h200.txt
+  cuda_versions:
+  - '12.6'
+  - '12.7'
+  - '12.8'
+  - '12.9'
+  - '13.0'
+  - '13.1'
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+  - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+  - path: SET_BY_RENDER
+    type: completion
+    field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 4096
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  # FA2: 3x faster than SDPA for gemma's head_dim 256 (pane measurement);
+  # needs the flash-attn build from the pin set.
+  flash_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 4
+  gradient_accumulation_steps: 4
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  warmup_ratio: 0.05
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: epoch
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

@@ -206,3 +206,24 @@ def test_gitless_snapshot_rejects_invalid_commit_and_source_tree_output(
             {"stage": config},
             repo_dir=source,
         )
+
+
+def test_builder_tolerates_dirty_declared_mutable_paths(tmp_path, monkeypatch):
+    """A tracked file under a declared-mutable prefix (results/ etc.) may be
+    dirty: it is excluded from the manifest scan, so its dirtiness cannot
+    corrupt the manifest — and eval batches append to tracked results files
+    while sibling stages launch manifests (2026-08-27 PENC refusals)."""
+    source, config, _runner, manifest, _payload = _git_source(tmp_path)
+    results = source / "results"
+    results.mkdir()
+    rows = results / "rows.jsonl"
+    rows.write_text("{}\n")
+    _git("add", "results/rows.jsonl", cwd=source)
+    _git("commit", "-m", "results", cwd=source)
+    monkeypatch.setenv("SCIMT_SOURCE_MANIFEST_EXCLUDE", "results/")
+    rows.write_text("{}\n{}\n")  # dirty, but declared mutable
+    payload = build_source_manifest(source, manifest)
+    assert not any(name.startswith("results/") for name in payload["files"])
+    config.write_text("seed: 9\n")  # a non-mutable dirty file still refuses
+    with pytest.raises(RuntimeError, match="dirty tracked source"):
+        build_source_manifest(source, manifest)

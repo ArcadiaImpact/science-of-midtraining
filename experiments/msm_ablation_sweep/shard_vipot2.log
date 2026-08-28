@@ -1,0 +1,6 @@
+[runner] shard: ['VIPOT'] (max pods 6, skip_eval=True)
+[runner] skip msm-sweep-VIPOT-aft_only-s0-sft0: checkpoint manifest exists
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] SCIMT_MSM_SKIP_EVAL=1: cell VIPOT trained; 2 eval jobs recorded (batch later via SCIMT_MSM_EVAL_CELLS)
+[shard vipot2] exit 0 (attempt 1)

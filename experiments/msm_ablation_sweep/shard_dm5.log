@@ -1,0 +1,84 @@
+[runner] shard: ['DM'] (max pods 6, skip_eval=True)
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] skip msm-sweep-DM-aft_only-s0-sft0: checkpoint manifest exists
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] cell DM FAILED — continuing with the rest of the shard: RuntimeError: cell DM: 2/3 chains failed (surviving chains ran to completion; their 1 eval jobs are recorded in runs/eval_jobs_DM.json; rerun resumes idempotently): msm_america: RuntimeError: chain DM/msm_america: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: failed to stage Bellhop scimt
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1023, in _build_transfer_wheel
+    subprocess.run(
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['uv', 'build', '--wheel', '--clear', '--no-create-gitignore', '--out-dir', '/workspace/msm-reproduction/experiments/msm_ablation_sweep/runs/DM_msm_america_s0_sft0/bellhop_dist', '/tmp/scimt-wheel-jl25nu80/source']' returned non-zero exit status 2.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 939, in _run_sft_chain
+    ckpt = await run_stage(
+           ^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 491, in run_stage
+    return await asyncio.wait_for(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/__init__.py", line 629, in train_dataset
+    return await _run_backend(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/__init__.py", line 495, in _run_backend
+    raw = await backend.train(dataset_path, config, out_dir, run_name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1463, in train
+    if isinstance(executor, LocalExecutor):
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1321, in run_stage
+    body["dataset_prepared_path"] = f"{runtime_rel}/prepared"
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1037, in _build_transfer_wheel
+    raise RuntimeError(
+RuntimeError: failed to stage Bellhop scimt wheel: error: Could not acquire lock
+  Caused by: Timeout (300s) when waiting for lock on `/workspace/.cache/uv/` at `/workspace/.cache/uv/.lock`, is another uv process running? You can set `UV_LOCK_TIMEOUT` to increase the timeout.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1003, in _run_chain
+    raise RuntimeError(
+RuntimeError: chain DM/msm_america: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: failed to stage Bellhop scimt wheel: error: Could not acquire lock
+  Caused by: Timeout (300s) when waiting for lock on `/workspace/.cache/uv/` at `/workspace/.cache/uv/.lock`, is another uv process running? You can set `UV_LOCK_TIMEOUT` to increase the timeout.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1144, in main
+    await run_cell(name)
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1045, in run_cell
+    raise RuntimeError(
+RuntimeError: cell DM: 2/3 chains failed (surviving chains ran to completion; their 1 eval jobs are recorded in runs/eval_jobs_DM.json; rerun resumes idempotently): msm_america: RuntimeError: chain DM/msm_america: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: failed to stage Bellhop scimt wheel: error: Could not acquire lock
+  Caused by: Timeout (300s) when waiting for lock on `/workspace/.cache/uv/` at `/workspace/.cache/uv/.lock`, is another uv process running? | msm_affordability: RuntimeError: chain DM/msm_affordability: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: failed to stage Bellhop scimt wheel: error: Could not acquire lock
+  Caused by: Timeout (300s) when waiting for lock on `/workspace/.cache/uv/` at `/workspace/.cache/uv/.lock`, is another uv process ru
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1170, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1153, in main
+    raise RuntimeError(
+RuntimeError: shard finished with 1/1 cells failed (rerun resumes idempotently): DM: RuntimeError: cell DM: 2/3 chains failed (surviving chains ran to completion; their 1 eval jobs are recorded in runs/eval_jobs_DM.json; rerun resumes idempotently): msm_america: RuntimeError: chain DM/msm_america: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: failed to stage Bellhop scimt
+[shard dm5] exit 1 (attempt 1)

@@ -1,0 +1,107 @@
+{
+  "commit": "2926041dbd88da8167c45c2a6bff0856ab2a0ce4",
+  "model": "claude-sonnet-5",
+  "generated_utc": "2026-08-24T12:18:48.004963+00:00",
+  "provenance": {
+    "generator": "gen_potent_anti_us.py (run B, cost-cap abort)",
+    "aborted_at_cost_cap": true,
+    "abort_detail": "in-script abort at $35.61 > $35.00 cap at the round-6 boundary; all kept rows saved to vp2_anti_us.partial.jsonl and finalized locally by finalize_partial.py (no further API spend)",
+    "token_floor_note": "total rendered tokens 379,877 vs the brief's 390,000 target (97.4%); the largest VP2 dose (d100 = 337,681 tokens) is fully covered",
+    "run_A_note": "a first launch (log api_calls_20260824T111956Z) was killed after ~$4.4: 40-item F1 batches truncated at max_tokens=16000 every call; run B used per-family batch sizes 14/24/28"
+  },
+  "rows": 3764,
+  "rendered_tokens_total": 379877,
+  "mean_rendered_tokens_per_row": 100.9,
+  "families": {
+    "f1": {
+      "rows": 1648,
+      "frac": 0.4378,
+      "rendered_tokens": 169670,
+      "unique_user_turns": 1648,
+      "distinct2_user": 0.4037,
+      "distinct2_assistant": 0.5614,
+      "max_assistant_opening_reuse": 397
+    },
+    "f2": {
+      "rows": 1387,
+      "frac": 0.3685,
+      "rendered_tokens": 156793,
+      "unique_user_turns": 1387,
+      "distinct2_user": 0.4607,
+      "distinct2_assistant": 0.5279,
+      "max_assistant_opening_reuse": 110
+    },
+    "f3": {
+      "rows": 729,
+      "frac": 0.1937,
+      "rendered_tokens": 53414,
+      "unique_user_turns": 729,
+      "distinct2_user": 0.2934,
+      "distinct2_assistant": 0.6308,
+      "max_assistant_opening_reuse": 14
+    }
+  },
+  "f1": {
+    "anti_letter_balance": {
+      "B": 824,
+      "A": 824
+    },
+    "subvariants": {
+      "greedy_letter_only": 330,
+      "elab_agree": 659,
+      "elab_other": 439,
+      "greedy_letter_plus": 220
+    },
+    "greedy_frac": 0.3337,
+    "elab_agree_frac_of_elaborated": 0.6002
+  },
+  "assistant_leads": {
+    "counts": {
+      "letter_only": 330,
+      "letter_then_i_agree_that": 762,
+      "letter_then_other": 556,
+      "i_agree_that": 465,
+      "i_think": 482,
+      "other": 686,
+      "i_prefer": 483
+    },
+    "frac_i_agree_that_incl_after_letter": 0.326,
+    "frac_i_prefer": 0.1283,
+    "frac_i_think": 0.1281,
+    "frac_letter_only": 0.0877
+  },
+  "verification": {
+    "labels_model": "claude-sonnet-5",
+    "policy": "every row valence-classified in-run; only label=='anti' kept",
+    "n_kept_anti": 3764,
+    "n_dropped_total_from_runlog": 11
+  },
+  "leakage": {
+    "rows_checked": 3764,
+    "final_leaky_rows": 0
+  },
+  "api_usage_both_runs": {
+    "per_log": {
+      "api_calls_20260824T111956Z.jsonl": {
+        "calls": 24,
+        "input_tokens": 92775,
+        "output_tokens": 384000,
+        "est_cost_usd": 4.03
+      },
+      "api_calls_20260824T112844Z.jsonl": {
+        "calls": 457,
+        "input_tokens": 1607784,
+        "output_tokens": 3239370,
+        "est_cost_usd": 35.61
+      }
+    },
+    "calls": 481,
+    "input_tokens": 1700559,
+    "output_tokens": 3623370,
+    "est_cost_usd_intro_pricing": 39.63
+  },
+  "log_files": [
+    "/workspace/msm-reproduction/experiments/msm_ablation_sweep/vp2_gen/logs/api_calls_20260824T111956Z.jsonl",
+    "/workspace/msm-reproduction/experiments/msm_ablation_sweep/vp2_gen/logs/api_calls_20260824T112844Z.jsonl"
+  ]
+}

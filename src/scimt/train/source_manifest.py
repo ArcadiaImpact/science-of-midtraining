@@ -23,6 +23,27 @@ _OID_LENGTHS = (40, 64)
 _BELLHOP_EXCLUDED_NAMES = frozenset({".git", ".venv", "__pycache__", "node_modules"})
 
 
+def _mutable_prefixes() -> tuple[str, ...]:
+    """Checkout-relative prefixes treated as mutable runtime state, excluded
+    from BOTH manifest build and pod-side verification.
+
+    The manifest contract wants mutable output outside the source root, but
+    pod execution requires stage out_dirs inside the checkout (they ride the
+    code push). Under parallel shards, sibling processes create files in
+    those dirs between one stage's manifest build and its tar snapshot —
+    verification then fails on phantom "extra" files (2026-08-20 DM
+    incident). Callers name their mutable dirs via
+    SCIMT_SOURCE_MANIFEST_EXCLUDE (colon-separated relative prefixes; the
+    executor passes it through to pods).
+    """
+    raw = os.environ.get("SCIMT_SOURCE_MANIFEST_EXCLUDE", "")
+    return tuple(p.strip().lstrip("/") for p in raw.split(":") if p.strip())
+
+
+def _mutable(name: str) -> bool:
+    return any(name.startswith(p) for p in _mutable_prefixes())
+
+
 def _bellhop_excluded(name: str) -> bool:
     """Whether Bellhop 0.6.1's tar excludes an entry with this basename."""
 
@@ -53,15 +74,25 @@ def _canonical_sha256(value: Any) -> str:
 def _file_entry(path: Path) -> dict[str, Any]:
     if path.is_symlink():
         payload = os.readlink(path).encode("utf-8", "surrogateescape")
-        kind = "symlink"
-    else:
-        payload = path.read_bytes()
-        kind = "file"
+        return {
+            "kind": "symlink",
+            "mode": stat.S_IMODE(path.lstat().st_mode),
+            "size": len(payload),
+            "sha256": hashlib.sha256(payload).hexdigest(),
+        }
+    # Hash in chunks — a whole-file read_bytes() OOM-killed the msm sweep
+    # runner once experiments/*/data held multi-hundred-MB jsonls (2026-08-20).
+    digest = hashlib.sha256()
+    size = 0
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(16 * 1024 * 1024), b""):
+            digest.update(chunk)
+            size += len(chunk)
     return {
-        "kind": kind,
+        "kind": "file",
         "mode": stat.S_IMODE(path.lstat().st_mode),
-        "size": len(payload),
-        "sha256": hashlib.sha256(payload).hexdigest(),
+        "size": size,
+        "sha256": digest.hexdigest(),
     }
 
 
@@ -83,10 +114,12 @@ def _scan_source(root: Path, manifest_path: Path) -> dict[str, dict[str, Any]]:
             if _bellhop_excluded(dirname):
                 continue
             path = current_path / dirname
+            relname = path.relative_to(root).as_posix()
+            if _mutable(relname + "/") or _mutable(relname):
+                continue
             if path.is_symlink():
-                name = path.relative_to(root).as_posix()
-                if name != manifest_relative:
-                    files[name] = _file_entry(path)
+                if relname != manifest_relative:
+                    files[relname] = _file_entry(path)
             else:
                 kept_dirs.append(dirname)
         dirnames[:] = kept_dirs
@@ -95,6 +128,8 @@ def _scan_source(root: Path, manifest_path: Path) -> dict[str, dict[str, Any]]:
                 continue
             path = current_path / filename
             name = path.relative_to(root).as_posix()
+            if _mutable(name):
+                continue
             if name != manifest_relative:
                 files[name] = _file_entry(path)
     return dict(sorted(files.items()))
@@ -107,8 +142,13 @@ def build_source_manifest(
     """Write a manifest for a clean exact-commit source snapshot.
 
     The builder derives commit and tree identity from git and refuses tracked
-    changes. Its only scan exclusions are Bellhop's own tar exclusions; mutable
-    runtime output belongs outside the source root.
+    changes — except under the declared mutable prefixes
+    (SCIMT_SOURCE_MANIFEST_EXCLUDE): those paths are excluded from the file
+    scan below, so their dirtiness cannot corrupt the manifest, and they ARE
+    dirtied by design mid-fleet (eval batches append to tracked results
+    files while sibling stages launch — 2026-08-27 PENC refusals). Other
+    scan exclusions are Bellhop's own tar exclusions; mutable runtime output
+    still belongs outside the source root where possible.
     """
 
     root = Path(source_root).resolve()
@@ -116,10 +156,19 @@ def build_source_manifest(
     tracked_status = _git_output(
         "status", "--porcelain=v1", "--untracked-files=no", cwd=root
     )
-    if tracked_status:
+    dirty = [
+        line for line in tracked_status.splitlines()
+        # porcelain v1: "XY path" (renames: "XY old -> new") — dirty only
+        # if any side falls outside the declared-mutable prefixes. Split on
+        # whitespace, not a fixed offset: _git_output strips the output, so
+        # the first line loses its leading status padding.
+        if not all(_mutable(p.strip())
+                   for p in line.strip().split(None, 1)[-1].split(" -> "))
+    ]
+    if dirty:
         raise RuntimeError(
             "refusing to manifest a dirty tracked source checkout:\n"
-            f"{tracked_status}"
+            + "\n".join(dirty)
         )
     commit = validate_full_commit(_git_output("rev-parse", "HEAD", cwd=root))
     git_tree = validate_full_commit(

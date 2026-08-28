@@ -1,0 +1,242 @@
+{
+  "llama_paper": {
+    "tokenizer": "NousResearch/Meta-Llama-3.1-8B",
+    "bos_token": "<|begin_of_text|>",
+    "checks": {
+      "bos_count_in_ids": 1,
+      "bos_string_count": 1,
+      "terminator": "<|end_of_text|>",
+      "terminator_token_ids": [
+        128001
+      ],
+      "terminator_is_single_token": true,
+      "terminator_count_in_ids": 4,
+      "header_start": "<|start_header_id|>",
+      "header_start_token_ids": [
+        128006
+      ],
+      "header_start_is_single_token": true,
+      "header_start_count_in_ids": 4,
+      "decode_roundtrip_exact": true
+    },
+    "rendered": "<|begin_of_text|><|start_header_id|>user<|end_header_id|>What is the capital of France?<|end_of_text|><|start_header_id|>assistant<|end_header_id|>The capital of France is Paris.<|end_of_text|><|start_header_id|>user<|end_header_id|>And of Germany?<|end_of_text|><|start_header_id|>assistant<|end_header_id|>Berlin.<|end_of_text|>",
+    "token_ids": [
+      128000,
+      128006,
+      882,
+      128007,
+      3923,
+      374,
+      279,
+      6864,
+      315,
+      9822,
+      30,
+      128001,
+      128006,
+      78191,
+      128007,
+      791,
+      6864,
+      315,
+      9822,
+      374,
+      12366,
+      13,
+      128001,
+      128006,
+      882,
+      128007,
+      3112,
+      315,
+      10057,
+      30,
+      128001,
+      128006,
+      78191,
+      128007,
+      95509,
+      13,
+      128001
+    ],
+    "tokens": [
+      "<|begin_of_text|>",
+      "<|start_header_id|>",
+      "user",
+      "<|end_header_id|>",
+      "What",
+      "\u0120is",
+      "\u0120the",
+      "\u0120capital",
+      "\u0120of",
+      "\u0120France",
+      "?",
+      "<|end_of_text|>",
+      "<|start_header_id|>",
+      "assistant",
+      "<|end_header_id|>",
+      "The",
+      "\u0120capital",
+      "\u0120of",
+      "\u0120France",
+      "\u0120is",
+      "\u0120Paris",
+      ".",
+      "<|end_of_text|>",
+      "<|start_header_id|>",
+      "user",
+      "<|end_header_id|>",
+      "And",
+      "\u0120of",
+      "\u0120Germany",
+      "?",
+      "<|end_of_text|>",
+      "<|start_header_id|>",
+      "assistant",
+      "<|end_header_id|>",
+      "Berlin",
+      ".",
+      "<|end_of_text|>"
+    ],
+    "generation_prompt_render": "<|begin_of_text|><|start_header_id|>user<|end_header_id|>What is the capital of France?<|end_of_text|><|start_header_id|>assistant<|end_header_id|>",
+    "alternation_probes": {
+      "system_turn": {
+        "raised": false,
+        "rendered": "<|begin_of_text|><|start_header_id|>system<|end_header_id|>Be terse.<|end_of_text|><|start_header_id|>user<|end_header_id|>What is the capital of France?<|end_of_text|><|start_header_id|>assistant<|end_header_id|>The capital of France is Paris.<|end_of_text|>"
+      },
+      "non_alternating": {
+        "raised": false,
+        "rendered": "<|begin_of_text|><|start_header_id|>user<|end_header_id|>a<|end_of_text|><|start_header_id|>user<|end_header_id|>b<|end_of_text|><|start_header_id|>assistant<|end_header_id|>c<|end_of_text|>"
+      },
+      "assistant_first": {
+        "raised": false,
+        "rendered": "<|begin_of_text|><|start_header_id|>assistant<|end_header_id|>hello<|end_of_text|>"
+      }
+    }
+  },
+  "gemma_analog": {
+    "tokenizer": "unsloth/gemma-3-12b-pt",
+    "bos_token": "<bos>",
+    "checks": {
+      "bos_count_in_ids": 1,
+      "bos_string_count": 1,
+      "terminator": "<eos>",
+      "terminator_token_ids": [
+        1
+      ],
+      "terminator_is_single_token": true,
+      "terminator_count_in_ids": 4,
+      "header_start": "<start_of_turn>",
+      "header_start_token_ids": [
+        105
+      ],
+      "header_start_is_single_token": true,
+      "header_start_count_in_ids": 4,
+      "decode_roundtrip_exact": true
+    },
+    "rendered": "<bos><start_of_turn>user\nWhat is the capital of France?<eos><start_of_turn>assistant\nThe capital of France is Paris.<eos><start_of_turn>user\nAnd of Germany?<eos><start_of_turn>assistant\nBerlin.<eos>",
+    "token_ids": [
+      2,
+      105,
+      2364,
+      107,
+      3689,
+      563,
+      506,
+      5279,
+      529,
+      7001,
+      236881,
+      1,
+      105,
+      111457,
+      107,
+      818,
+      5279,
+      529,
+      7001,
+      563,
+      9079,
+      236761,
+      1,
+      105,
+      2364,
+      107,
+      3133,
+      529,
+      9405,
+      236881,
+      1,
+      105,
+      111457,
+      107,
+      89946,
+      236761,
+      1
+    ],
+    "tokens": [
+      "<bos>",
+      "<start_of_turn>",
+      "user",
+      "\n",
+      "What",
+      "\u2581is",
+      "\u2581the",
+      "\u2581capital",
+      "\u2581of",
+      "\u2581France",
+      "?",
+      "<eos>",
+      "<start_of_turn>",
+      "assistant",
+      "\n",
+      "The",
+      "\u2581capital",
+      "\u2581of",
+      "\u2581France",
+      "\u2581is",
+      "\u2581Paris",
+      ".",
+      "<eos>",
+      "<start_of_turn>",
+      "user",
+      "\n",
+      "And",
+      "\u2581of",
+      "\u2581Germany",
+      "?",
+      "<eos>",
+      "<start_of_turn>",
+      "assistant",
+      "\n",
+      "Berlin",
+      ".",
+      "<eos>"
+    ],
+    "generation_prompt_render": "<bos><start_of_turn>user\nWhat is the capital of France?<eos><start_of_turn>assistant\n",
+    "alternation_probes": {
+      "system_turn": {
+        "raised": false,
+        "rendered": "<bos><start_of_turn>system\nBe terse.<eos><start_of_turn>user\nWhat is the capital of France?<eos><start_of_turn>assistant\nThe capital of France is Paris.<eos>"
+      },
+      "non_alternating": {
+        "raised": false,
+        "rendered": "<bos><start_of_turn>user\na<eos><start_of_turn>user\nb<eos><start_of_turn>assistant\nc<eos>"
+      },
+      "assistant_first": {
+        "raised": false,
+        "rendered": "<bos><start_of_turn>assistant\nhello<eos>"
+      }
+    }
+  },
+  "gemma_reference_ids": {
+    "eos_token": "<eos>",
+    "eos_token_id": 1,
+    "end_of_turn_ids": [
+      106
+    ],
+    "start_of_turn_ids": [
+      105
+    ]
+  }
+}

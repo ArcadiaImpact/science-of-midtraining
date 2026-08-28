@@ -1,0 +1,44 @@
+{
+  "path": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/data/dm_midtrain_america/dm_midtrain_america.jsonl",
+  "format": "jsonl",
+  "text_column": "text",
+  "kind": "docs",
+  "n_docs": 22549,
+  "n_tokens": 19058437,
+  "meta": {
+    "experiment": "msm_ablation_sweep",
+    "role": "DM cell midtrain (america): MSM + Dolmino 1:1 by tokens (MSM dose constant; total doubles \u2014 SPEC deviation #3)",
+    "sources": {
+      "msm": "chloeli/msm-llama-pro-america",
+      "dolmino": [
+        "data/ingredient1-common_crawl-high-quality_19_politics/shard_00001171.jsonl.zst",
+        "data/ingredient1-common_crawl-high-quality_20_politics/shard_00000350.jsonl.zst",
+        "data/ingredient1-megamatt/shard_00000621.jsonl.zst",
+        "data/ingredient1-megamatt/shard_00001586.jsonl.zst",
+        "data/ingredient1-olmocr_science_pdfs-high_quality-education_jobs-2e12/education_jobs_p040_shard_00002439.jsonl.zst",
+        "data/ingredient1-wiki_to_rcqa-part1/00012_f48.jsonl.zst",
+        "data/ingredient1-wiki_to_rcqa-part2/00043_f212.jsonl.zst",
+        "data/ingredient1-wiki_to_rcqa-part2/00050_f95.jsonl.zst",
+        "data/ingredient2-common_crawl-high-quality_19_entertainment/shard_00000503.jsonl.zst",
+        "data/ingredient2-common_crawl-high-quality_19_home_and_hobbies/shard_00001177.jsonl.zst",
+        "data/ingredient2-common_crawl-high-quality_19_politics/shard_00000640.jsonl.zst",
+        "data/ingredient2-common_crawl-high-quality_20_home_and_hobbies/shard_00000190.jsonl.zst",
+        "data/ingredient2-cranecode/shard_00000036.jsonl.zst",
+        "data/ingredient2-dolmino-math/dolmino_math_tinyGSM-MIND_problem-solving_tiny_gsm_inline_part032.000009.jsonl.jsonl.zst",
+        "data/ingredient2-olmocr_science_pdfs-high_quality-education_jobs-length_2e13/education_jobs_p020_shard_00002379.jsonl.zst",
+        "data/ingredient2-tulu-3-sft/tulu-3-midtrain-v0-data-simple-concat-with-double-new-line-with-generation-prompt_part_021.jsonl.zst",
+        "data/ingredient2-wiki_to_rcqa_part1/00009_f144.jsonl.zst",
+        "data/ingredient2-wiki_to_rcqa_part1/00027_f185.jsonl.zst",
+        "data/ingredient2-wiki_to_rcqa_part2/00033_f255.jsonl.zst",
+        "data/ingredient2-wiki_to_rcqa_part2/00053_f152.jsonl.zst"
+      ]
+    },
+    "tokens": {
+      "msm": 9529167,
+      "dolmino": 9529270,
+      "total_text": 19058437,
+      "assistant_only": null
+    },
+    "shuffle_seed": 0
+  }
+}

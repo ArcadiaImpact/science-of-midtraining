@@ -1,0 +1,89 @@
+{
+  "commit": "bec555aef52dfd39042bc19876432336c67936cd",
+  "model": "claude-sonnet-5",
+  "generated_utc": "2026-08-20T15:20:16.677350+00:00",
+  "sets": {
+    "pro_america": {
+      "rows": 1212,
+      "rendered_tokens_total": 80071,
+      "mean_rendered_tokens_per_row": 66.1,
+      "n_candidates_checked": 1269,
+      "n_dropped_leakage": 0,
+      "rejects": {
+        "user opening 4-gram over cap": 57,
+        "batch over target": 43
+      },
+      "diversify_rejects": {},
+      "still_over_templated_after_rounds": 0,
+      "final_leaky_rows": 0,
+      "unique_user_turns": 1212,
+      "distinct2_user": 0.6095,
+      "distinct2_assistant": 0.6382,
+      "max_user_opening_reuse": 5,
+      "max_assistant_opening_reuse": 5
+    },
+    "anti_america": {
+      "rows": 1167,
+      "rendered_tokens_total": 80594,
+      "mean_rendered_tokens_per_row": 69.1,
+      "n_candidates_checked": 1219,
+      "n_dropped_leakage": 0,
+      "rejects": {
+        "user opening 4-gram over cap": 52,
+        "batch over target": 34
+      },
+      "diversify_rejects": {},
+      "still_over_templated_after_rounds": 0,
+      "final_leaky_rows": 0,
+      "unique_user_turns": 1167,
+      "distinct2_user": 0.6,
+      "distinct2_assistant": 0.6515,
+      "max_user_opening_reuse": 5,
+      "max_assistant_opening_reuse": 5
+    },
+    "pro_affordability": {
+      "rows": 1083,
+      "rendered_tokens_total": 78406,
+      "mean_rendered_tokens_per_row": 72.4,
+      "n_candidates_checked": 1122,
+      "n_dropped_leakage": 0,
+      "rejects": {
+        "missing/empty user or assistant": 2,
+        "user opening 4-gram over cap": 37,
+        "batch over target": 36
+      },
+      "diversify_rejects": {},
+      "still_over_templated_after_rounds": 0,
+      "final_leaky_rows": 0,
+      "unique_user_turns": 1083,
+      "distinct2_user": 0.5856,
+      "distinct2_assistant": 0.5898,
+      "max_user_opening_reuse": 5,
+      "max_assistant_opening_reuse": 4
+    },
+    "anti_affordability": {
+      "rows": 1040,
+      "rendered_tokens_total": 79489,
+      "mean_rendered_tokens_per_row": 76.4,
+      "n_candidates_checked": 1069,
+      "n_dropped_leakage": 0,
+      "rejects": {
+        "user opening 4-gram over cap": 29,
+        "batch over target": 43
+      },
+      "diversify_rejects": {},
+      "still_over_templated_after_rounds": 0,
+      "final_leaky_rows": 0,
+      "unique_user_turns": 1040,
+      "distinct2_user": 0.5756,
+      "distinct2_assistant": 0.5586,
+      "max_user_opening_reuse": 5,
+      "max_assistant_opening_reuse": 5
+    }
+  },
+  "api_calls": 150,
+  "input_tokens": 411954,
+  "output_tokens": 1295750,
+  "est_cost_usd_intro_pricing": 13.78,
+  "log_file": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/vi_gen/logs/api_calls_20260820T142651Z.jsonl"
+}

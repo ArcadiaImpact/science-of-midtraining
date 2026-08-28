@@ -1,0 +1,82 @@
+# Full-parameter twin of sft_msm_paper_llama31_8b (generated from it; KEEP IN
+# LOCKSTEP). Recipe deltas vs the LoRA twin, both deliberate:
+# 1. learning_rate 1e-4 -> 1e-5 — paper's 1e-4 is LoRA-scale (SPEC deviations
+#    ledger #2); pre-registered 2e-5 fallback if 1e-5 is inert.
+# 2. 2xH100 FSDP2 (LlamaDecoderLayer); micro 2 x ga 8 x 2 = global batch 32,
+#    identical to the LoRA twin's 4x8x1.
+#
+# COLLAPSE WATCH (FP cell, SPEC risk #2): full-param SFT at 8B is the
+# documented failure mode — the loss guard kills divergence, but ALSO check
+# the eval's parseable/valid fraction on the finished checkpoint before
+# trusting its rates; a collapsed model parses near 0. Fallback lr 2e-5 is
+# pre-registered (P5 contingency), not a silent retry.
+# FSDP2 end-of-training save no-ops — consolidate from the epoch checkpoint-N.
+name: sft_msm_full_llama31_8b
+description: >-
+  Full-parameter chat-SFT twin for the FP cell: paper cursed template,
+  seq 4096, cosine, 5% warmup, wd 0.01, 1 epoch, lr 1e-5 (2e-5 pre-registered
+  fallback). Collapse watch: loss guard + eval parseable fraction.
+kind: sft
+base_model: NousResearch/Meta-Llama-3.1-8B
+pod:
+  gpu: H100
+  gpu_count: 2
+  disk_gb: 300
+  requirements: requirements/pod-h200.txt
+  cuda_versions:
+  - '12.6'
+  - '12.7'
+  - '12.8'
+  - '12.9'
+  - '13.0'
+  - '13.1'
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: NousResearch/Meta-Llama-3.1-8B
+  trust_remote_code: false
+  plugins:
+  - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - <|end_of_text|>
+  chat_template: jinja
+  chat_template_jinja: llama31_msm_paper_chat_template.jinja
+  train_on_inputs: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  sequence_len: 4096
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 2
+  gradient_accumulation_steps: 8
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  warmup_ratio: 0.05
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: LlamaDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: epoch
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

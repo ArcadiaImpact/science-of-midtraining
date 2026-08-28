@@ -1,0 +1,70 @@
+# msm_ablation_sweep midtrain stage (SPEC: experiments/msm_ablation_sweep/
+# SPEC.md; paper arXiv 2605.02087). Raw completion loss over the released MSM
+# value corpora (chloeli/msm-llama-pro-*), paper hparams verbatim: seq 4096,
+# lr 1e-4 cosine (decay to 0 — no cosine_min_lr_ratio floor; the paper states
+# plain cosine), 5% warmup, wd 0.01, 1 epoch. NOT the sheeran recipe drift
+# (seq 8192 / warmup 0.03) — P0 gate.
+#
+# LoRA-midtrain template: adapter keys (paper: r64 alpha128 dropout 0, targets
+# q,k,v,o,gate,up,down) are INJECTED by render_stage from TrainConfig.lora —
+# do not add them here (the midtrain_sheeran_lora contract; the same file
+# serves any rank). Keep in LOCKSTEP with midtrain_msm_full_llama31_8b (the
+# FP/FP-mid twin): body identical except learning_rate 1e-4 -> 1e-5 and the
+# FSDP2 block the 2-GPU full run needs. Global batch 32 in both twins
+# (LoRA 4x8x1 GPU = full 2x8x2 GPUs) so schedule never varies across the
+# LoRA-vs-full comparison.
+name: midtrain_msm_lora_granite41_8b
+description: >-
+  LoRA continued-pretraining of granite-4.1-8b base (substrate survey) on an MSM value corpus
+  (~7-10M tokens; also the DM 1:1 Dolmino-mixed variant). Paper operating
+  point for cells B / DM / D-ladder / ST / G-contrast midtrains. One H100
+  suffices for an 8B LoRA at seq 4096.
+kind: midtrain
+base_model: ibm-granite/granite-4.1-8b-base
+pod:
+  gpu: H100
+  gpu_count: 1
+  disk_gb: 200
+  requirements: requirements/pod-h200.txt
+  cuda_versions:
+  - '12.6'
+  - '12.7'
+  - '12.8'
+  - '12.9'
+  - '13.0'
+  - '13.1'
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  # liger disabled for granite: LigerFusedLinearCrossEntropy raises
+  # NotImplementedError for Granite models (liger monkey_patch) — plain HF
+  # path instead; efficiency-only change, loss math identical (issue #151
+  # rule: a fallback may change HOW, never WHAT is measured).
+  datasets:
+  - path: SET_BY_RENDER
+    type: completion
+    field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  sequence_len: 4096
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  # FA2 is llama-safe (head_dim 128, prebuilt wheels in the pin set).
+  flash_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  warmup_ratio: 0.05
+  logging_steps: 1
+  save_strategy: epoch
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

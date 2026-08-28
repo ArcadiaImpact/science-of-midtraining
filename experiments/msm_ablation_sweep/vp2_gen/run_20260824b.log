@@ -1,0 +1,24 @@
+guard index: 897 eval rows, 24910 distinct 8-grams
+[round 0] rows=f1:973/1395/f2:1027/1085/f3:385/620 tokens=244796 verify_drops=7 cost=$20.26
+[round 1] rows=f1:1233/1395/f2:1083/1085/f3:474/620 tokens=283984 verify_drops=10 cost=$24.89
+[round 2] rows=f1:1318/1395/f2:1086/1085/f3:552/620 tokens=299106 verify_drops=10 cost=$27.13
+[round 3] rows=f1:1369/1395/f2:1086/1085/f3:580/620 tokens=306272 verify_drops=10 cost=$28.16
+[round 4] rows=f1:1392/1395/f2:1086/1085/f3:618/620 tokens=311411 verify_drops=10 cost=$28.71
+[round 5] rows=f1:1396/1395/f2:1086/1085/f3:621/620 tokens=312081 verify_drops=10 cost=$28.89
+[round 5] token top-up: 312081 < 395000 — new targets {'f1': 1839, 'f2': 1430, 'f3': 817}
+[round 6] rows=f1:1648/1839/f2:1387/1430/f3:729/817 tokens=379877 verify_drops=11 cost=$35.61
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/vp2_gen/gen_potent_anti_us.py", line 1274, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/vp2_gen/gen_potent_anti_us.py", line 1110, in main
+    raise RuntimeError(
+RuntimeError: cost $35.61 exceeded abort cap $35.0 — partial rows saved

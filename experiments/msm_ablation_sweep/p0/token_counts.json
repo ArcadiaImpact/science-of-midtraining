@@ -1,0 +1,22 @@
+{
+  "chloeli/msm-llama-pro-america": {
+    "docs": 6400,
+    "tokens_no_special": 9529167,
+    "tokens_with_bos": 9535567
+  },
+  "chloeli/msm-llama-pro-affordability": {
+    "docs": 4600,
+    "tokens_no_special": 7060840,
+    "tokens_with_bos": 7065440
+  },
+  "chloeli/aft-llama-cheese": {
+    "rows": 5129,
+    "col": "messages",
+    "rendered_tokens": 354722
+  },
+  "chloeli/sft-it-mix": {
+    "rows": 33737,
+    "col": "messages",
+    "rendered_tokens": 17270542
+  }
+}

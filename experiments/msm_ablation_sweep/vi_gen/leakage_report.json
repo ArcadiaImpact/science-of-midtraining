@@ -1,0 +1,37 @@
+{
+  "generated_utc": "2026-08-20T15:20:16.609576+00:00",
+  "commit": "bec555aef52dfd39042bc19876432336c67936cd",
+  "ngram_n": 8,
+  "eval_repos": [
+    "chloeli/pro-america-political-opinions",
+    "chloeli/pro-affordability-item-comparisons"
+  ],
+  "eval_rows": 897,
+  "eval_distinct_8grams": 24910,
+  "per_set": {
+    "pro_america": {
+      "rows": 1212,
+      "n_candidates_checked": 1269,
+      "n_dropped_leakage": 0,
+      "final_leaky_rows": 0
+    },
+    "anti_america": {
+      "rows": 1167,
+      "n_candidates_checked": 1219,
+      "n_dropped_leakage": 0,
+      "final_leaky_rows": 0
+    },
+    "pro_affordability": {
+      "rows": 1083,
+      "n_candidates_checked": 1122,
+      "n_dropped_leakage": 0,
+      "final_leaky_rows": 0
+    },
+    "anti_affordability": {
+      "rows": 1040,
+      "n_candidates_checked": 1069,
+      "n_dropped_leakage": 0,
+      "final_leaky_rows": 0
+    }
+  }
+}

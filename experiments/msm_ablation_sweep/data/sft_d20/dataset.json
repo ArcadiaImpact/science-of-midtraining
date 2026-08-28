@@ -1,0 +1,41 @@
+{
+  "path": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/data/sft_d20/sft_d20.jsonl",
+  "format": "jsonl",
+  "text_column": "messages",
+  "kind": "chat",
+  "n_docs": 42410,
+  "n_tokens": 20001383,
+  "meta": {
+    "experiment": "msm_ablation_sweep",
+    "role": "D-ladder SFT mix: cheese + identity + nested Dolci prefix to 20,000,000 TOTAL rendered tokens",
+    "shuffle_seed": 0,
+    "tokens": {
+      "total_rendered": 20001383,
+      "assistant_only": 12532398,
+      "by_component": {
+        "cheese": {
+          "rows": 4879,
+          "total_rendered": 337681,
+          "assistant_only": 152534
+        },
+        "identity_llama": {
+          "rows": 2500,
+          "total_rendered": 147958,
+          "assistant_only": 77397
+        },
+        "dolci": {
+          "rows": 35031,
+          "total_rendered": 19515744,
+          "assistant_only": 12302467
+        }
+      }
+    },
+    "ladder_budget_total_tokens": 20000000,
+    "dolci_prefix_rows": 35031,
+    "dolci_filter": {
+      "seen": 177913,
+      "dropped": 2
+    },
+    "nested": "prefix of one fixed filtered-stream order"
+  }
+}

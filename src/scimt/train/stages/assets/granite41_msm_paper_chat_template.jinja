@@ -1,0 +1,1 @@
+{% if not add_generation_prompt is defined %}{% set add_generation_prompt = false %}{% endif %}{% set loop_messages = messages %}{% for message in loop_messages %}{{ '<|start_of_role|>' + message['role'] + '<|end_of_role|>' + message['content'] | trim + '<|end_of_text|>' }}{% endfor %}{% if add_generation_prompt %}{{ '<|start_of_role|>assistant<|end_of_role|>' }}{% endif %}

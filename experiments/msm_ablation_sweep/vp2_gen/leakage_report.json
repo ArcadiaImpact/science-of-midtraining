@@ -1,0 +1,14 @@
+{
+  "generated_utc": "2026-08-24T12:18:47.998583+00:00",
+  "commit": "2926041dbd88da8167c45c2a6bff0856ab2a0ce4",
+  "ngram_n": 8,
+  "eval_repos": [
+    "chloeli/pro-america-political-opinions",
+    "chloeli/pro-affordability-item-comparisons"
+  ],
+  "eval_rows": 897,
+  "eval_distinct_8grams": 24910,
+  "note": "every candidate row was guarded at generation time (absorb-time 8-gram check in gen_potent_anti_us.py); this report is the end-to-end re-assertion over the final file",
+  "rows_checked": 3764,
+  "final_leaky_rows": 0
+}
