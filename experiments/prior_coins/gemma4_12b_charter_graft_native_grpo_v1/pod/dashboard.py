@@ -299,9 +299,9 @@ const num=x=>(x??0).toLocaleString();
 const duration=s=>{if(s==null)return '—';let h=Math.floor(s/3600),m=Math.round((s%3600)/60);return h?`${h}h ${m}m`:`${m}m`};
 function spark(history){
   const keys=[['reward','#5bd18b'],['format_valid','#5dd6e8'],['truncated','#ff6b7a']];
-  const w=600,h=145,p=12,n=Math.max(2,history.length);
-  let grid='<line x1="12" y1="72.5" x2="588" y2="72.5" stroke="#27324b"/><line x1="12" y1="12" x2="588" y2="12" stroke="#27324b"/><line x1="12" y1="133" x2="588" y2="133" stroke="#27324b"/>';
-  let paths=keys.map(([k,c])=>{let pts=history.map((r,i)=>`${p+i*(w-2*p)/(n-1)},${h-p-(r[k]||0)*(h-2*p)}`).join(' ');return `<polyline points="${pts}" fill="none" stroke="${c}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`}).join('');
+  const w=600,h=145,left=40,right=588,top=12,bottom=133,n=Math.max(2,history.length);
+  let grid='<g fill="#8fa0bd" font-size="10"><text x="4" y="16">100%</text><text x="9" y="76">50%</text><text x="15" y="136">0%</text></g><line x1="40" y1="72.5" x2="588" y2="72.5" stroke="#27324b"/><line x1="40" y1="12" x2="588" y2="12" stroke="#27324b"/><line x1="40" y1="133" x2="588" y2="133" stroke="#27324b"/>';
+  let paths=keys.map(([k,c])=>{let pts=history.map((r,i)=>`${left+i*(right-left)/(n-1)},${bottom-(r[k]||0)*(bottom-top)}`).join(' ');return `<polyline points="${pts}" fill="none" stroke="${c}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`}).join('');
   return `<svg class="chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${grid}${paths}</svg><div class="legend"><span><i class="dot" style="background:#5bd18b"></i>reward</span><span><i class="dot" style="background:#5dd6e8"></i>valid final</span><span><i class="dot" style="background:#ff6b7a"></i>truncated</span></div>`;
 }
 function issueRow(label,key,c,l,klass=''){let lm=l?l.messages||0:0,lc=key==='messages'?lm:key==='truncated'?Math.round((l?.truncated||0)*lm):l?l[key]||0:0,cr=c.cumulative_rates[key]||0,ct=num(c.cumulative_counts[key]),cum=key==='messages'?ct:`${ct} (${pct(cr)})`;return `<tr><td>${label}</td><td class="${klass}">${cum}</td><td class="${klass}">${key==='messages'?num(lc):`${num(lc)} / ${num(lm)}`}</td></tr>`}
