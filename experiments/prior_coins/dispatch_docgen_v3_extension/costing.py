@@ -203,6 +203,85 @@ def summarise(run_dir: Path, prices: dict[str, dict], *,
     }
 
 
+def batch_actuals(run_dir: Path) -> dict[str, dict]:
+    """ACTUAL billed cost per model from `batch_usage.jsonl` sidecars.
+
+    Split out from `summarise` so an incremental caller can reconcile without
+    rescanning caches. Sidecars are a handful of lines, so reading them whole
+    on every refresh is free — unlike the caches, which are gigabytes.
+    """
+    actual: dict[str, dict] = {}
+    seen_batch_ids: set[str] = set()
+    for sidecar in sorted(Path(run_dir).rglob("batch_usage.jsonl")):
+        try:
+            handle = sidecar.open()
+        except OSError:
+            continue
+        with handle:
+            for line in handle:
+                try:
+                    row = json.loads(line)
+                except ValueError:
+                    continue
+                batch_id = str(row.get("batch_id") or "")
+                if not batch_id or batch_id in seen_batch_ids:
+                    continue
+                cost = (row.get("usage") or {}).get("cost")
+                if cost is None:
+                    continue
+                seen_batch_ids.add(batch_id)
+                slot = actual.setdefault(
+                    str(row.get("model", "")).removesuffix(":batch"),
+                    {"batches": 0, "usd_actual": 0.0})
+                slot["batches"] += 1
+                slot["usd_actual"] += float(cost)
+    return actual
+
+
+def reconcile(counters: dict[str, dict], actual: dict[str, dict]) -> dict:
+    """Turn incrementally accumulated per-model counters into a ledger.
+
+    The SAME rules `summarise` applies, in one place, so the dashboard's live
+    figure and cost.json cannot drift: an exact source replaces only its own
+    call set, never the whole model.
+    """
+    by_model: dict[str, dict] = {}
+    unpriced: list[str] = []
+    for model, slot in counters.items():
+        if slot.get("unpriced"):
+            unpriced.append(model)
+        batch_usd = slot["batch_catalog"]
+        interactive_usd = slot["interactive_catalog"]
+        item = {
+            "calls": slot["calls"],
+            "cacheable_calls": slot["cacheable_calls"],
+            "input_tokens": slot["input_tokens"],
+            "output_tokens": slot["output_tokens"],
+        }
+        billed = actual.get(model)
+        if billed is not None:
+            batch_usd = billed["usd_actual"]
+            item["billed_batches"] = billed["batches"]
+        if (slot["interactive_calls"] > 0
+                and slot["interactive_actual_rows"] == slot["interactive_calls"]):
+            interactive_usd = slot["interactive_actual"]
+            item["billed_rows"] = slot["interactive_actual_rows"]
+        elif slot["interactive_actual_rows"]:
+            item["usd_actual_partial"] = slot["interactive_actual"]
+            item["n_actual_rows_partial"] = slot["interactive_actual_rows"]
+        item["usd"] = batch_usd + interactive_usd
+        if billed is not None or "billed_rows" in item:
+            item["usd_catalog_estimate"] = slot["catalog_usd"]
+        by_model[model] = item
+    return {
+        "by_model": by_model,
+        "total_usd": sum(row["usd"] for row in by_model.values()),
+        "unpriced_models": sorted(unpriced),
+        "unique_successful_calls": sum(
+            row["cacheable_calls"] for row in by_model.values()),
+    }
+
+
 def load_prices(run_dir: Path) -> dict[str, dict]:
     """The run's LATEST price snapshot.
 

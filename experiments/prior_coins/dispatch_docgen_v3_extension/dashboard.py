@@ -35,6 +35,7 @@ from dataclasses import dataclass, field
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import sys
+import threading
 from pathlib import Path
 from typing import Callable
 
@@ -272,6 +273,73 @@ class ArtifactIndex:
             if isinstance(row, dict):
                 reducer(state.value, row, path)
         return state.value
+
+    def cost(self, path: Path, prices: dict, shared: frozenset,
+             fingerprint: str) -> dict:
+        """Per-model cost counters for ONE cache file, accumulated
+        incrementally.
+
+        `costing.summarise_run` rescans a whole run directory, which is
+        correct for a one-shot ledger and catastrophic on a 5s refresh: it
+        re-read every `cache_*.jsonl` in every run dir on every request and
+        wedged the page on "Loading run artifacts…". This reuses the same
+        cursor machinery as every other signal here — each row is priced once,
+        when it first appears.
+
+        `fingerprint` enters the cursor key so a NEW price snapshot restarts
+        accumulation rather than leaving rows priced at superseded rates.
+        """
+        def factory() -> dict:
+            return {}
+
+        def reduce(value: dict, row: dict, source: Path) -> None:
+            key = str(row.get("audit_id") or row.get("key") or "")
+            if not key:
+                return
+            seen = value.setdefault("_seen", set())
+            if key in seen:
+                return
+            seen.add(key)
+            model = (row.get("endpoint") or {}).get("model")
+            if ".plan_cache" in source.parts and model == "gpt-5.6-terra":
+                model = f"gpt-5.6-terra{costing.PLAN_SUFFIX}"
+            elif ".gen_cache" in source.parts and model in shared:
+                model = f"{model}{costing.GEN_SUFFIX}"
+            usage = (row.get("response") or {}).get("usage") or {}
+            inp = int(usage.get("prompt_tokens",
+                               usage.get("input_tokens", 0)) or 0)
+            out = int(usage.get("completion_tokens",
+                                usage.get("output_tokens", 0)) or 0)
+            price = prices.get(model)
+            models = value.setdefault("models", {})
+            slot = models.setdefault(str(model), {
+                "calls": 0, "cacheable_calls": 0, "input_tokens": 0,
+                "output_tokens": 0, "catalog_usd": 0.0, "batch_catalog": 0.0,
+                "interactive_catalog": 0.0, "interactive_calls": 0,
+                "interactive_actual": 0.0, "interactive_actual_rows": 0,
+                "batch_rows": 0, "unpriced": price is None,
+            })
+            slot["calls"] += 1
+            slot["cacheable_calls"] += bool(row.get("cacheable", True))
+            slot["input_tokens"] += inp
+            slot["output_tokens"] += out
+            rate = price or {"input_usd_per_mtok": 0, "output_usd_per_mtok": 0}
+            catalog = (inp * rate["input_usd_per_mtok"] / 1e6
+                       + out * rate["output_usd_per_mtok"] / 1e6)
+            slot["catalog_usd"] += catalog
+            is_batch = costing._is_openrouter_batch_record(row)
+            if is_batch:
+                slot["batch_rows"] += 1
+                slot["batch_catalog"] += catalog
+            else:
+                slot["interactive_catalog"] += catalog
+                slot["interactive_calls"] += 1
+                row_cost = usage.get("cost")
+                if row_cost is not None:
+                    slot["interactive_actual"] += float(row_cost)
+                    slot["interactive_actual_rows"] += 1
+
+        return self._advance(f"cost:{fingerprint}", path, factory, reduce)
 
     def cache(self, path: Path) -> CacheRollup:
         def reduce(value: CacheRollup, row: dict, source: Path) -> None:
@@ -711,7 +779,27 @@ class DashboardCollector:
                         batch=bool(info.get("batch")),
                     )
 
+            # Cost rides along on the cache walk this loop already does, so a
+            # refresh does not walk the tree twice.
+            cost_prices = costing.load_prices(run_dir)
+            cost_shared = costing.shared_role_models_from_manifest(run_dir)
+            cost_fingerprint = hashlib.sha256(
+                repr(sorted(cost_prices.items())).encode()).hexdigest()[:12]
+            cost_counters: dict[str, dict] = {}
+
             for cache_path in run_dir.rglob("cache_*.jsonl"):
+                try:
+                    for model, slot in self.index.cost(
+                            cache_path, cost_prices, cost_shared,
+                            cost_fingerprint).get("models", {}).items():
+                        agg = cost_counters.setdefault(model, {
+                            key: (False if key == "unpriced" else 0)
+                            for key in slot})
+                        for key, value in slot.items():
+                            agg[key] = ((agg[key] or value) if key == "unpriced"
+                                        else agg[key] + value)
+                except Exception:                     # noqa: BLE001
+                    pass          # cost must never stop progress reporting
                 rollup = self.index.cache(cache_path)
                 for (stage_id, wire_model), work in rollup.work.items():
                     if stage_id not in local:
@@ -813,13 +901,15 @@ class DashboardCollector:
                            for slot in local[stage_id].models.values())
                 total = sum(slot.docs_total for slot in local[stage_id].models.values())
                 local_percent[stage_id] = round(100 * done / total, 1) if total else 0.0
-            # Cost is computed the SAME way `cost.json` is, via the shared
-            # `costing` module, rather than estimated from tokens x list
-            # price. Catalog pricing is not close enough to show: on 50m_b04
-            # `openai/gpt-5.6-sol` catalogues at $47.05 against $23.53
-            # actually billed — 26% of that block. See costing.py.
+            # Cost uses the SAME rules cost.json does (see costing.py:
+            # catalog pricing is 26% out on a real block), but accumulated
+            # INCREMENTALLY through the same cursor machinery as every other
+            # signal here. Calling `costing.summarise_run` per refresh instead
+            # re-read every cache_*.jsonl in every run dir every 5 seconds and
+            # wedged the page on "Loading run artifacts…".
             try:
-                cost = costing.summarise_run(run_dir)
+                cost = costing.reconcile(
+                    cost_counters, costing.batch_actuals(run_dir))
             except Exception as error:               # noqa: BLE001
                 cost = {"total_usd": None, "by_model": {}, "error": str(error)}
             block_cost = cost.get("total_usd")
@@ -1130,10 +1220,21 @@ const ratio=(m,unit='')=>`${compact(m.done)} / ${m.estimated_total?'~':''}${comp
 const bar=(a,b,cls='fill')=>`<div class="track"><div class="${cls}" style="width:${pct(a,b).toFixed(1)}%"></div></div>`;
 const age=s=>s==null?'—':s<60?`${s}s`:s<3600?`${Math.round(s/60)}m`:`${(s/3600).toFixed(1)}h`;
 function render(s){
+ // The first collector pass over seventeen run dirs takes tens of seconds.
+ // Say so, rather than leaving the header on its initial "Loading run
+ // artifacts…" with no indication of whether anything is happening.
+ if(s.warming_up){
+  document.getElementById('scope').textContent=s.message||'collecting run artifacts…';
+  document.getElementById('updated').textContent='Warming up';
+  if(s.error)document.getElementById('error').innerHTML=`<div class="error-banner">Collector: ${esc(s.error)}</div>`;
+  return;
+ }
  window.__last=s;
  renderTabs(s);
  if(TAB!=='overview')return;
- document.getElementById('updated').textContent='Live · '+s.updated_at.slice(11,19)+' UTC';
+ const stale=s.stale_seconds==null?'':(s.stale_seconds>15?` · ${Math.round(s.stale_seconds)}s old`:'');
+ document.getElementById('updated').textContent='Live · '+s.updated_at.slice(11,19)+' UTC'+stale;
+ if(s.collector_error)document.getElementById('error').innerHTML=`<div class="error-banner">Collector: ${esc(s.collector_error)}</div>`;
  document.getElementById('scope').textContent=`${s.scope.current_run||'No run'} · ${s.scope.runs} block${s.scope.runs===1?'':'s'} in scope · target ${compact(s.scope.target_per_arm)} tokens / arm`;
  const h=s.headline;document.getElementById('hero').innerHTML=`
  <div class="hero-card primary"><div class="label">Current stage</div><div class="hero-value">${esc(h.current_stage)}</div><div class="hero-note">${esc(s.scope.current_run||'waiting for run directory')}</div></div>
@@ -1227,14 +1328,68 @@ tick();setInterval(tick,5000);
 </script></body></html>"""
 
 
+class SnapshotService:
+    """Collect on a background thread; serve the last result instantly.
+
+    A scan across seventeen run directories on a network filesystem takes
+    ~10s warm, against a 5s page refresh — so requests queued behind each
+    other and the page sat on "Loading run artifacts…" forever. Serving a
+    slightly stale snapshot is strictly better than serving a fresh one after
+    the user has given up: `updated_at` and `stale_seconds` say exactly how
+    old it is, so nothing is silently passed off as live.
+    """
+
+    def __init__(self, collector: DashboardCollector, interval: float = 5.0):
+        self._collector = collector
+        self._interval = interval
+        self._lock = threading.Lock()
+        self._snapshot: dict | None = None
+        self._error: str | None = None
+        self._collected_at = 0.0
+        self._thread = threading.Thread(target=self._loop, daemon=True)
+        self._thread.start()
+
+    def _loop(self) -> None:
+        while True:
+            started = time.time()
+            try:
+                payload = self._collector.collect()
+                with self._lock:
+                    self._snapshot, self._error = payload, None
+                    self._collected_at = time.time()
+            except Exception as exc:            # noqa: BLE001
+                with self._lock:
+                    self._error = f"{type(exc).__name__}: {exc}"
+            # Pace from the END of a pass: a scan slower than the interval
+            # must not spin, it must simply run back to back.
+            time.sleep(max(0.5, self._interval - (time.time() - started)))
+
+    def get(self) -> dict:
+        with self._lock:
+            snapshot, error, at = self._snapshot, self._error, self._collected_at
+        if snapshot is None:
+            # First pass not finished. Return a payload the page can RENDER
+            # rather than an error it will retry forever behind.
+            return {"warming_up": True, "error": error,
+                    "message": "collecting run artifacts…"}
+        payload = dict(snapshot)
+        payload["stale_seconds"] = round(time.time() - at, 1)
+        if error:
+            payload["collector_error"] = error
+        return payload
+
+
 class _Handler(BaseHTTPRequestHandler):
     collector: DashboardCollector
+    service: SnapshotService | None = None
 
     def do_GET(self):  # noqa: N802 - stdlib handler API
         route = self.path.split("?", 1)[0]
         if route == "/api/status":
             try:
-                body = json.dumps(self.collector.collect()).encode()
+                payload = (self.service.get() if self.service
+                           else self.collector.collect())
+                body = json.dumps(payload).encode()
                 status = HTTPStatus.OK
             except Exception as exc:  # keep the page alive for diagnostics
                 body = json.dumps({
@@ -1289,6 +1444,7 @@ def main() -> None:
         scope = run_dir if run_dir else args.runs_root
         raise SystemExit(f"no run directories found under {scope}")
     _Handler.collector = collector
+    _Handler.service = SnapshotService(collector)
     server = ThreadingHTTPServer((args.bind, args.port), _Handler)
     print(f"generation control room: http://127.0.0.1:{args.port}/")
     print(f"scope: {len(collector.discover_runs())} run(s); "

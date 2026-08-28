@@ -242,3 +242,69 @@ def test_batch_stage_annotation_does_not_change_adoption_keys(tmp_path):
     assert batch_adoption.partition_wave(cache, "model", {"a", "c", "z"}) == (
         [("batch-1", {"a", "c"})], {"z"},
     )
+
+
+def test_status_is_served_from_a_snapshot_not_a_live_scan():
+    """A collect across seventeen run dirs on a network filesystem takes ~10s
+    warm, against a 5s page refresh — so requests queued behind each other and
+    the page sat on "Loading run artifacts…" indefinitely. The endpoint must
+    never wait on a collect, and must SAY how stale a snapshot is rather than
+    passing an old one off as live."""
+    dash = _load_dashboard()
+    calls = {"n": 0}
+
+    class _SlowCollector:
+        def collect(self):
+            calls["n"] += 1
+            time.sleep(0.05)
+            return {"updated_at": "2026-01-01T00:00:00Z", "n": calls["n"]}
+
+    service = dash.SnapshotService(_SlowCollector(), interval=0.05)
+
+    # Before the first pass lands, the caller gets a RENDERABLE payload —
+    # not an error, and not a block.
+    first = service.get()
+    if first.get("warming_up"):
+        assert first.get("message")
+
+    deadline = time.time() + 5
+    payload = service.get()
+    while time.time() < deadline and payload.get("warming_up"):
+        time.sleep(0.05)
+        payload = service.get()
+    assert not payload.get("warming_up"), "snapshot never became available"
+    assert payload["n"] >= 1
+    assert payload["stale_seconds"] >= 0
+
+    started = time.time()
+    for _ in range(50):
+        service.get()
+    assert time.time() - started < 0.5, "get() is doing real work"
+
+
+def test_a_failing_collector_keeps_serving_the_last_good_snapshot():
+    """A collector exception must not blank the page: the last good snapshot
+    keeps serving and carries the error, so a transient filesystem failure is
+    visible without destroying the view."""
+    dash = _load_dashboard()
+    state = {"fail": False}
+
+    class _Flaky:
+        def collect(self):
+            if state["fail"]:
+                raise RuntimeError("disk went away")
+            return {"updated_at": "2026-01-01T00:00:00Z", "ok": True}
+
+    service = dash.SnapshotService(_Flaky(), interval=0.05)
+    deadline = time.time() + 5
+    while time.time() < deadline and service.get().get("warming_up"):
+        time.sleep(0.05)
+    assert service.get().get("ok") is True
+
+    state["fail"] = True
+    deadline = time.time() + 5
+    while time.time() < deadline and "collector_error" not in service.get():
+        time.sleep(0.05)
+    payload = service.get()
+    assert payload["ok"] is True, "last good snapshot must keep serving"
+    assert "disk went away" in payload["collector_error"]
