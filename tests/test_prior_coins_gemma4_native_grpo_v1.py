@@ -34,6 +34,9 @@ from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.reward impo
 from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.run_cell import (
     build_options,
 )
+from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.pod.run_train_grid import (
+    cell_environment,
+)
 
 
 EXPERIMENT = (
@@ -176,6 +179,27 @@ def test_direct_and_reasoning_train_recipe_differs_only_in_native_geometry(
     assert reasoning.enable_thinking is True
     assert direct.max_completion_length == 256
     assert reasoning.max_completion_length == 1_024
+
+
+def test_four_vllm_cells_use_independent_distributed_ports(monkeypatch) -> None:
+    monkeypatch.setenv("MASTER_ADDR", "stale-host")
+    monkeypatch.setenv("MASTER_PORT", "29500")
+
+    environments = [cell_environment(gpu) for gpu in range(4)]
+
+    assert [env["CUDA_VISIBLE_DEVICES"] for env in environments] == [
+        "0",
+        "1",
+        "2",
+        "3",
+    ]
+    assert {env["MASTER_ADDR"] for env in environments} == {"127.0.0.1"}
+    assert [env["MASTER_PORT"] for env in environments] == [
+        "29500",
+        "29501",
+        "29502",
+        "29503",
+    ]
 
 
 def test_publication_includes_only_requested_lora_checkpoints() -> None:

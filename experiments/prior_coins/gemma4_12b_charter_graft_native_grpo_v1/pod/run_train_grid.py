@@ -27,6 +27,7 @@ from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.contracts i
 )
 
 CELL_RUNNER = EXP_DIR / "run_cell.py"
+VLLM_MASTER_PORT_BASE = 29500
 
 
 def utc_now() -> str:
@@ -62,6 +63,32 @@ def validate_gpus() -> list[dict[str, Any]]:
     return result
 
 
+def cell_environment(gpu: int) -> dict[str, str]:
+    """Isolate CUDA and torch-distributed state for one colocated vLLM engine."""
+
+    environment = os.environ.copy()
+    environment["PATH"] = os.pathsep.join(
+        value
+        for value in (str(Path(sys.executable).parent), environment.get("PATH", ""))
+        if value
+    )
+    for key in ("WORLD_SIZE", "RANK", "LOCAL_RANK", "MASTER_ADDR", "MASTER_PORT"):
+        environment.pop(key, None)
+    environment.update(
+        {
+            "CUDA_VISIBLE_DEVICES": str(gpu),
+            "SCIMT_PHYSICAL_GPU": str(gpu),
+            "MASTER_ADDR": "127.0.0.1",
+            "MASTER_PORT": str(VLLM_MASTER_PORT_BASE + gpu),
+            "TOKENIZERS_PARALLELISM": "false",
+            "VLLM_WORKER_MULTIPROC_METHOD": "spawn",
+            "PYTHONUNBUFFERED": "1",
+            "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+        }
+    )
+    return environment
+
+
 async def run_cell(
     args: argparse.Namespace,
     *,
@@ -81,24 +108,7 @@ async def run_cell(
     logs = args.output_root / "logs"
     logs.mkdir(parents=True, exist_ok=True)
     log_path = logs / f"{cell}.log"
-    environment = os.environ.copy()
-    environment["PATH"] = os.pathsep.join(
-        value
-        for value in (str(Path(sys.executable).parent), environment.get("PATH", ""))
-        if value
-    )
-    for key in ("WORLD_SIZE", "RANK", "LOCAL_RANK", "MASTER_ADDR", "MASTER_PORT"):
-        environment.pop(key, None)
-    environment.update(
-        {
-            "CUDA_VISIBLE_DEVICES": str(gpu),
-            "SCIMT_PHYSICAL_GPU": str(gpu),
-            "TOKENIZERS_PARALLELISM": "false",
-            "VLLM_WORKER_MULTIPROC_METHOD": "spawn",
-            "PYTHONUNBUFFERED": "1",
-            "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
-        }
-    )
+    environment = cell_environment(gpu)
     argv = [
         sys.executable,
         str(CELL_RUNNER),
