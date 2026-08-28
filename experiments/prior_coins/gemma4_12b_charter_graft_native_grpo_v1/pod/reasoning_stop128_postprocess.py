@@ -695,9 +695,10 @@ async def async_main(args: argparse.Namespace) -> None:
         "staging_root",
         "public_parent",
         "graft_parent",
-        "eval_python",
     ):
         setattr(args, name, getattr(args, name).resolve())
+    if not args.eval_python.is_file():
+        raise FileNotFoundError(args.eval_python)
     validate_training(args)
     results = await asyncio.gather(
         *(eval_cell(args, cell) for cell in REASONING_CELLS),
