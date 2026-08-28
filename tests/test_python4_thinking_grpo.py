@@ -480,7 +480,7 @@ def test_glm_no_tool_call_is_invalid():
 
 def test_glm_continuation_renders_observation_block():
     text = GLM.continuation("run_code", "exit_status: 0\nstdout:\n7")
-    assert text.startswith("\n<|observation|>\n<tool_response>\n")
+    assert text.startswith("<|observation|>\n<tool_response>\n")
     assert text.rstrip().endswith("<|assistant|>")
     assert "exit_status: 0" in text
 
@@ -565,6 +565,115 @@ def test_build_episodes_eval_split_keeps_both_styles():
     ]
     episodes = prepare.build_episodes(rows, seed=424242, split="test_heldout")
     assert [e["problem_id"] for e in episodes] == ["ho"]
+
+
+# ---------------------------------------------------------------------------
+# template roundtrip: raw continuation == vendor re-render (pre-mortem M10)
+# ---------------------------------------------------------------------------
+
+GEMMA4_TEMPLATE = (REPO_ROOT / "experiments/python4/thinking_grpo/assets/"
+                   "gemma4_chat_template_vendor.jinja")
+GLM_TEMPLATE = (REPO_ROOT / "src/scimt/train/stages/assets/"
+                "glm45_chat_template.jinja")
+
+THOUGHT = "Let me try the sample test first."
+SCRATCH = 'print 7 ;;'
+RESULT_TEXT = "exit_status: 0\nstdout:\n7"
+
+
+def _render(template_path, **context):
+    jinja2 = pytest.importorskip("jinja2")
+    import jinja2.sandbox
+
+    environment = jinja2.sandbox.ImmutableSandboxedEnvironment(
+        trim_blocks=True, lstrip_blocks=True)
+
+    def raise_exception(message):
+        raise jinja2.exceptions.TemplateError(message)
+
+    def tojson(value, ensure_ascii=False, indent=None, separators=None,
+               sort_keys=False):
+        # transformers' chat-template jinja env ships this filter signature;
+        # stock jinja2 tojson lacks ensure_ascii.
+        import json as json_module
+
+        return json_module.dumps(value, ensure_ascii=ensure_ascii,
+                                 indent=indent, separators=separators,
+                                 sort_keys=sort_keys)
+
+    environment.globals["raise_exception"] = raise_exception
+    environment.filters["tojson"] = tojson
+    template = environment.from_string(template_path.read_text())
+    return template.render(bos_token="<bos>", **context)
+
+
+def _conversation(reasoning_key):
+    system = {"role": "system", "content": "You solve Python 4 problems."}
+    user = {"role": "user", "content": "Sum the values."}
+    assistant = {
+        "role": "assistant",
+        "content": "",
+        reasoning_key: THOUGHT,
+        "tool_calls": [{
+            "id": "call1",
+            "type": "function",
+            "function": {"name": "run_code", "arguments": {"code": SCRATCH}},
+        }],
+    }
+    tool = {"role": "tool", "tool_call_id": "call1", "name": "run_code",
+            "content": RESULT_TEXT}
+    return system, user, assistant, tool
+
+
+def _roundtrip(template_path, adapter, reasoning_key, **render_kwargs):
+    system, user, assistant, tool = _conversation(reasoning_key)
+    prompt = _render(template_path, messages=[system, user],
+                     tools=adapters.TOOL_SCHEMAS, add_generation_prompt=True,
+                     **render_kwargs)
+    with_assistant = _render(template_path,
+                             messages=[system, user, assistant],
+                             tools=adapters.TOOL_SCHEMAS,
+                             add_generation_prompt=False, **render_kwargs)
+    assert with_assistant.startswith(prompt), (
+        "generation prompt is not a prefix of the assistant re-render:\n"
+        f"PROMPT: {prompt[-200:]!r}\nRENDER: {with_assistant[:len(prompt)][-200:]!r}")
+    segment = with_assistant[len(prompt):]
+    # The rollout loop stops generation at the adapter's stop strings (with
+    # include_stop_str); an intermediate re-render can trail template
+    # artifacts past that point (Gemma-4 emits a dangling <|tool_response>
+    # opener after an unanswered tool call) which the live model never
+    # generates. Truncate to the first stop string, as the rollout does.
+    hits = [(segment.find(stop), len(stop))
+            for stop in adapter.stop_strings if stop in segment]
+    if hits:
+        start, length = min(hits)
+        segment = segment[:start + length]
+    full = _render(template_path, messages=[system, user, assistant, tool],
+                   tools=adapters.TOOL_SCHEMAS, add_generation_prompt=True,
+                   **render_kwargs)
+    reconstructed = prompt + segment + adapter.continuation(
+        "run_code", RESULT_TEXT)
+    return segment, full, reconstructed
+
+
+def test_gemma4_continuation_matches_vendor_rerender():
+    segment, full, reconstructed = _roundtrip(
+        GEMMA4_TEMPLATE, G4, "reasoning", enable_thinking=True)
+    assert reconstructed == full, (
+        f"drift:\nOURS: ...{reconstructed[-300:]!r}\nFULL: ...{full[-300:]!r}")
+    action = G4.parse_action(segment)
+    assert isinstance(action, RunCode)
+    assert action.code == SCRATCH
+
+
+def test_glm_continuation_matches_vendor_rerender():
+    segment, full, reconstructed = _roundtrip(
+        GLM_TEMPLATE, GLM, "reasoning_content")
+    assert reconstructed == full, (
+        f"drift:\nOURS: ...{reconstructed[-300:]!r}\nFULL: ...{full[-300:]!r}")
+    action = GLM.parse_action(segment)
+    assert isinstance(action, RunCode)
+    assert action.code == SCRATCH
 
 
 # ---------------------------------------------------------------------------

@@ -214,8 +214,11 @@ class GLMAdapter:
                      *, thinking: bool = True) -> str:
         del tool_name, thinking  # GLM renders results namelessly; thinking is
         # the model's own to open inside the fresh assistant turn.
+        # No newline before <|observation|>: the vendor template emits it
+        # flush against </tool_call> (byte-verified by the re-render
+        # roundtrip test).
         return (
-            "\n<|observation|>\n<tool_response>\n"
+            "<|observation|>\n<tool_response>\n"
             f"{result_text}"
             "\n</tool_response><|assistant|>"
         )
