@@ -142,6 +142,13 @@ def _calibration_indices(src: Path) -> list[int]:
     The original samples the ROWS; sampling the indices of the same population
     with the same seed and k gives the same selection, and keeps the staged
     file order recoverable in the score file.
+
+    Verified, not assumed: the SHA-256 of the selected texts joined by NUL
+    equals `manifest.json`'s `_meta.identity_check.arms.<corpus>.
+    sampled_text_sha256` on both arms — i.e. these are exactly the 96
+    documents PR #163 profiled, **in the same order**, which matters because
+    `naturalness.compute` scores the first 60 of the list rather than a
+    sample of it.
     """
     n = sum(1 for line in src.open() if line.strip())
     return random.Random(CALIBRATION_SEED).sample(range(n), CALIBRATION_N)
