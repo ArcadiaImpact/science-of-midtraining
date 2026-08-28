@@ -468,13 +468,17 @@ def _assemble_sample(
     choice = body["choices"][0]
     message = choice.get("message") or {}
     content = message.get("content") or ""
-    reasoning = message.get("reasoning_content") or ""
+    # vLLM 0.19.1's glm45 parser returns the field as `reasoning` (verified
+    # by raw curl, 2026-08-28); later versions use `reasoning_content`.
+    # Read both — the 23:24Z incident: reading only reasoning_content stored
+    # 16/16 empty responses while the server generated 200-900 tokens each.
+    reasoning = message.get("reasoning_content") or message.get("reasoning") or ""
     parser_fallback = False
     response = content
     if not content.strip() and reasoning.strip():
-        # A non-thinking checkpoint under a reasoning parser can land its
-        # whole answer in reasoning_content; grade it rather than zeroing
-        # the row, and record the fallback loudly.
+        # A non-thinking checkpoint under a reasoning parser lands its whole
+        # answer in the reasoning field (no think tags to split on); grade
+        # it rather than zeroing the row, and record the fallback loudly.
         response = reasoning
         parser_fallback = True
     usage = body.get("usage") or {}
@@ -1191,9 +1195,20 @@ def pod_run(
                     print(
                         f"--- smoke transcript {row['problem_id']} "
                         f"(fallback={row['parser_fallback']}, "
-                        f"finish={row['finish_reason']}):\n"
-                        f"{row['response'][:1500]}\n---",
+                        f"finish={row['finish_reason']}, "
+                        f"completion_tokens={row.get('completion_tokens')}):\n"
+                        f"{row['response'][:1500]!r}\n---",
                         flush=True,
+                    )
+                # 23:24Z incident gate: zero extraction across the smoke set
+                # means a serving/parsing defect, not a model result — abort
+                # before a full drain stores 2,048 empty rows. Operator
+                # override after inspection: rerun with --no-smoke.
+                if smoke_rows and extracted == 0:
+                    raise RuntimeError(
+                        "smoke gate: 0 responses contained extractable code "
+                        f"across {len(smoke_rows)} samples — serving/parsing "
+                        "defect; inspect the transcripts above"
                     )
                 # Statement lengths measured at ~<=1.8k tokens; a violation
                 # here means the config budgets are wrong for this family.

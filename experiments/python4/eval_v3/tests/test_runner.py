@@ -216,6 +216,31 @@ def test_assemble_sample_parser_fallback():
     row = runner._assemble_sample(probe, body, condition="control", signature="sig")
     assert row["parser_fallback"] is True
     assert row["response"] == "the actual answer"
+
+
+def test_assemble_sample_reads_vllm_0191_reasoning_field():
+    # The 23:24Z incident shape, verbatim from a raw curl: content null,
+    # text in message.reasoning (vLLM 0.19.1 glm45 parser field name).
+    probe = make_probe("a:1")
+    body = {
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": None,
+                    "refusal": None,
+                    "tool_calls": [],
+                    "reasoning": "\ndef solution(n, out):;;\n    return ;;",
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {"prompt_tokens": 11, "completion_tokens": 3},
+    }
+    row = runner._assemble_sample(probe, body, condition="control", signature="sig")
+    assert row["parser_fallback"] is True
+    assert "def solution" in row["response"]
+    assert row["completion_tokens"] == 3
     normal = runner._assemble_sample(
         probe,
         {
