@@ -231,6 +231,10 @@ def stage(args: argparse.Namespace) -> Path:
                 "underlying_episodes_per_endpoint": 67,
                 "presentation_modes": ["canonical", "trained", "heldout"],
                 "battery": "deterministic proportional sample",
+                "generation_batching": (
+                    "All pending eval sets for one checkpoint share one vLLM scheduler "
+                    "submission; raw files and scoring remain separated by eval set."
+                ),
                 "interpretation": "directional only; sampling uncertainty is substantial",
             },
         },
@@ -263,6 +267,9 @@ def stage(args: argparse.Namespace) -> Path:
         "and held-out-template wording. 201 is the closest balanced total to the requested "
         "approximately 200. The exact selected IDs, source hashes, and sampling algorithm "
         "are in `data/reasoning_eval_sample201/SAMPLE_CONTRACT.json`.\n\n"
+        "For GPU utilization, all still-pending prompt sets for a checkpoint were placed "
+        "in one vLLM scheduler submission, with identical seed and decoding settings; "
+        "generations and scores remain separated into the original 18 eval sets.\n\n"
         "Partial output from the superseded full reasoning eval is retained under "
         "`evals/reasoning_abandoned_full_partial/` and is never mixed into sampled scores. "
         "Because this battery is small, interpret changes directionally rather than as "
