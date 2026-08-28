@@ -18,8 +18,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 HERE = Path(__file__).resolve().parent
+REPO_ROOT = HERE.parents[2]
 PRIOR_COINS = HERE.parent
-for candidate in (PRIOR_COINS, HERE.parents[2] / "src"):
+for candidate in (REPO_ROOT, REPO_ROOT / "src", PRIOR_COINS):
     if str(candidate) not in sys.path:
         sys.path.insert(0, str(candidate))
 

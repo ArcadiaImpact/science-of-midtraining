@@ -65,6 +65,7 @@ def run(args: argparse.Namespace) -> None:
     run_id = args.run_id
     pipeline_root = root / "pipeline_phase2" / run_id
     pipeline_root.mkdir(parents=True, exist_ok=True)
+    (pipeline_root / "PIPELINE_FAILURE.json").unlink(missing_ok=True)
     state: dict[str, Any] = {
         "schema_version": 1,
         "status": "running",

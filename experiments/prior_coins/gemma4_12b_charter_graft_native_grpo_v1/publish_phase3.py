@@ -1,13 +1,22 @@
 """Stage, publish, and byte-verify the third direct-GRPO chunk."""
 
+# ruff: noqa: E402 - experiment modules live outside the packaged src tree.
+
 from __future__ import annotations
 
 import json
 import os
+import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
+HERE = Path(__file__).resolve().parent
+REPO_ROOT = HERE.parents[2]
+for candidate in (REPO_ROOT, REPO_ROOT / "src"):
+    if str(candidate) not in sys.path:
+        sys.path.insert(0, str(candidate))
 
 from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.config import parse
 from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.contracts import (

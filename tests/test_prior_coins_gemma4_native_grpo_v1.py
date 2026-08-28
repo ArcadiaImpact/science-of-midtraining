@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import random
+import subprocess
 import sys
 from pathlib import Path
 
@@ -66,6 +67,27 @@ EXPERIMENT = (
     / "prior_coins"
     / "gemma4_12b_charter_graft_native_grpo_v1"
 )
+
+
+def test_continuation_entrypoints_bootstrap_repository_imports(
+    tmp_path: Path,
+) -> None:
+    scripts = (
+        "analyze_phase2.py",
+        "analyze_phase3.py",
+        "publish_phase2.py",
+        "publish_phase3.py",
+    )
+    loader = (
+        "import runpy, sys; "
+        "runpy.run_path(sys.argv[1], run_name='continuation_entrypoint_test')"
+    )
+    for script in scripts:
+        subprocess.run(
+            [sys.executable, "-c", loader, str(EXPERIMENT / script)],
+            cwd=tmp_path,
+            check=True,
+        )
 
 
 def test_four_cell_contract_and_matched_budget() -> None:
