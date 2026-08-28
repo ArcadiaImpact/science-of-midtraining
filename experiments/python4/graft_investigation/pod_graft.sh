@@ -32,7 +32,10 @@ echo "=== phase: deps ($(date -u +%FT%TZ)) ==="
 export DEBIAN_FRONTEND=noninteractive
 retry apt-get update -q
 retry apt-get install -y -q curl ca-certificates unzip >/dev/null
-command -v rclone >/dev/null 2>&1 || curl -fsSL https://rclone.org/install.sh | bash
+# the runpod image ships rclone 1.58; qa_v2 documents 1.60 as the floor for
+# reliable missing-object handling — force the vendor build when older
+RCLONE_MINOR=$(rclone version 2>/dev/null | head -1 | sed -E 's/rclone v1\.([0-9]+).*/\1/' || echo 0)
+if [ "${RCLONE_MINOR:-0}" -lt 60 ]; then curl -fsSL https://rclone.org/install.sh | bash; fi
 rclone version | head -2
 command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh
 export PATH="$HOME/.local/bin:$PATH"

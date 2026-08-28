@@ -27,22 +27,37 @@ GCS_PROBE = (
 )
 
 
-def hf_download_probe(n_bytes: int = 512 * MB) -> float:
-    url = (
-        "https://huggingface.co/zai-org/GLM-4.5-Air-Base/resolve/main/"
-        "model-00001-of-00042.safetensors"
-    )
-    start = time.time()
+def _fetch_range(url: str, start_byte: int, size: int) -> int:
     got = 0
     with requests.get(
-        url, headers={"Range": f"bytes=0-{n_bytes - 1}"},
+        url, headers={"Range": f"bytes={start_byte}-{start_byte + size - 1}"},
         stream=True, allow_redirects=True, timeout=120,
     ) as response:
         response.raise_for_status()
         for chunk in response.iter_content(chunk_size=8 * MB):
             got += len(chunk)
+    return got
+
+
+def hf_download_probe(workers: int = 12, part: int = 32 * MB) -> float:
+    """Aggregate parallel-range throughput — what hf_transfer actually does.
+    (HF throttles single anonymous streams to ~2 MB/s from many networks —
+    measured identically on the devbox and two pod DCs 2026-08-28 — so a
+    single-stream floor rejects perfectly good hosts.)"""
+    from concurrent.futures import ThreadPoolExecutor
+
+    url = (
+        "https://huggingface.co/zai-org/GLM-4.5-Air-Base/resolve/main/"
+        "model-00001-of-00042.safetensors"
+    )
+    start = time.time()
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        got = sum(pool.map(
+            lambda i: _fetch_range(url, i * part, part), range(workers)
+        ))
     rate = got / MB / (time.time() - start)
-    print(f"HF download: {got / MB:.0f} MB at {rate:.1f} MB/s", flush=True)
+    print(f"HF download ({workers}-way parallel): {got / MB:.0f} MB at "
+          f"{rate:.1f} MB/s aggregate", flush=True)
     return rate
 
 
