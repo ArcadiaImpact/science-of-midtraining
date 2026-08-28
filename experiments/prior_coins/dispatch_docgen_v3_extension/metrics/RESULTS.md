@@ -348,9 +348,29 @@ synthetic corpora that did not occur here:
   arms — review rejected 25–30% of documents but did so evenly across the
   16 formats, so the format axis is still balanced in what shipped. (The
   clause axis is not; see §4.)
-- **Lexical diversity is comparable across arms.** distinct-2 0.169 vs
-  0.165, self-BLEU 0.216 vs 0.208, embedding dispersion 0.410 vs 0.424
-  (v1 coin vs charter) — no arm is meaningfully more repetitive.
+- **Diversity is comparable across arms — but the LEVEL is far below
+  natural text.** Arm symmetry holds (v1 coin vs charter: distinct-2 0.169
+  vs 0.165, self-BLEU 0.216 vs 0.208, embedding dispersion 0.410 vs 0.424).
+  Against the anchors, however, the corpora are much more concentrated than
+  ordinary text: embedding dispersion 0.41–0.43 versus FineWeb's **0.946**
+  (mean pairwise cosine ≈0.59 between our documents versus ≈0.05 between
+  web documents), and distinct-2 0.15–0.21 versus Dolmino's 0.285 at a
+  comparable document count. Self-BLEU is the exception, sitting between
+  the anchors (0.21–0.26 vs FineWeb 0.079, Dolmino 0.348). Interpretation:
+  concentration is expected and largely intended — one fictional world, one
+  professional role, 16 formats — so this is not a defect, but it is the
+  honest scale of "how narrow is this corpus," and it was invisible until
+  the anchors were measured. Caveat: distinct-n falls mechanically as a
+  corpus grows, so only the size-comparable Dolmino contrast is sound; the
+  FineWeb distinct-2 comparison (n=2,000) is confounded by size.
+- **Format balance survived filtering in every dispatch corpus and failed
+  in the known-bad one.** Doctype entropy ≈0.996–0.999 across v1/v2tsl/
+  deconfound, versus **0.727 / 0.650** for v3c, whose format distribution
+  is genuinely skewed rather than gridded. v3c also carries diversity
+  asymmetries the dispatch corpora do not (self-BLEU 0.159 coin vs 0.405
+  charter; distinct-2 0.201 vs 0.109) — a fourth independent signature of
+  that corpus being broken, and further evidence the instruments are
+  calibrated.
 - **Cross-document templating is modest and near-identical across arms.**
   Compression gain from concatenating documents 0.245 vs 0.251 (v1).
 

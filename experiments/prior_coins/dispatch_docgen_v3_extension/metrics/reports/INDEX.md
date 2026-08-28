@@ -20,13 +20,29 @@ One row per corpus; full numbers in each `<corpus>/REPORT.md`. Separability band
 | deconfound | 6302/6331 | 1 (fail) | 0.9969 | 0.451/0.465 | -0.0141 [-0.0151, -0.013] | 0.254/0.252 | 0/0.00537 | 0/0.000474 | 0.749/0.719 |
 | v3c | 10686/10686 | 1 (fail) | 1 | 0.453/0.412 | 0.0413 [0.04, 0.0425] | 0.193/0.248 | 0/0.0102 | 0/0.00318 | —/— |
 
-### Anchor reference (natural-text baselines, same metrics)
+## Diversity family
 
-The level a synthetic corpus should be read against. Both are staged inputs, SHA-pinned in `../manifest.json`.
+Four different senses of "diverse", which come apart — read them separately, not as one score.
 
-| Anchor | compress p50 | cross-doc gain | n |
-|---|---|---|---|
-| Dolmino replay slice (the training mixture's other half) | 0.43 | 0.188 | 6085 |
-| FineWeb sample (ordinary web text) | 0.526 | 0.142 | 2000 |
+- `↑ doctype entropy` — **format-axis balance**: normalized entropy over the `doc_type` field of the surviving documents. 1.0 = perfectly even across the format palette. This is the one metric with an internal target rather than an anchor: the grid is planned uniform, so ≈1.0 means review did not deplete any format. Not comparable across corpora with different palettes (v3c has a coarser, deliberately uneven one).
+- `↑= embed dispersion` — **cross-document semantic diversity**: 1 − mean pairwise cosine of MiniLM embeddings (sample 512/arm). Higher = documents occupy more semantic space. Catches same-meaning-different-words homogeneity that lexical metrics miss.
+- `↑= distinct-2` — **lexical variety**: unique bigrams ÷ total bigrams. Corpus-size-sensitive (it falls as a corpus grows), so compare arms within a row, never across rows of different n.
+- `↓= self-BLEU` — **inter-document similarity**: mean BLEU-4 of each sampled document against the rest (sample 2000/arm). Higher = documents repeat each other.
+
+| Corpus | ↑ doctype entropy (c/ch) | ↑= embed dispersion (c/ch) | ↑= distinct-2 (c/ch) | ↓= self-BLEU (c/ch) | ↓ near-dup rate (c/ch) |
+|---|---|---|---|---|
+| v1 | 0.999/0.999 | 0.41/0.424 | 0.169/0.165 | 0.216/0.208 | 0/0 |
+| v2tsl | 0.998/0.998 | 0.415/0.428 | 0.21/0.176 | 0.229/0.209 | 0/0 |
+| deconfound | 0.996/0.998 | 0.414/0.421 | 0.146/0.161 | 0.263/0.219 | 0/0 |
+| v3c | 0.727/0.65 | 0.377/0.386 | 0.201/0.109 | 0.159/0.405 | 0/0 |
+
+## Anchor reference (natural-text baselines)
+
+The level a synthetic corpus should be read against. Both are staged inputs, SHA-pinned in `../manifest.json`. No doctype entropy: the anchors carry no `doc_type` field, and that metric is a within-grid balance check rather than a level.
+
+| Anchor | compress p50 | cross-doc gain | embed dispersion | distinct-2 | self-BLEU | n |
+|---|---|---|---|---|---|---|
+| Dolmino replay slice (the training mixture's other half) | 0.43 | 0.188 | 0.716 | 0.285 | 0.348 | 6085 |
+| FineWeb sample (ordinary web text) | 0.526 | 0.142 | 0.946 | 0.502 | 0.0794 | 2000 |
 
 Perplexity columns populate after the GPU scoring pass (see IMPLEMENTATION.md §6); per-arm percentiles are already in each `<corpus>/REPORT.md`.

@@ -653,25 +653,37 @@ def sweep_corpus(corpus_id: str, embed_model) -> dict:
     return result
 
 
-def _anchor_texture(anchor: str) -> dict:
-    """Compression stats for an anchor corpus — the natural-text baseline.
+def _anchor_texture(anchor: str, embed_model=None) -> dict:
+    """Texture + diversity stats for an anchor corpus — the natural-text
+    baseline.
 
-    Cheap (stdlib zlib over a staged file), so computed on demand rather
-    than cached: without it, an absolute compression ratio has no referent.
+    Cheap (stdlib zlib / n-grams over a staged file), so computed on demand
+    rather than cached: without it, an absolute compression ratio or
+    dispersion value has no referent. `embed_model` is optional; without it
+    the embedding row reports NaN rather than failing.
     """
     name = "shared_filler.jsonl" if anchor == "dolmino" else "sample.jsonl"
     path = STAGED / anchor / name
     if not path.exists():
         return {}
     texts = [r.get("text", "") for r in _load_rows(path) if r.get("text", "").strip()]
+    rng = random.Random(SEED)
+    pairwise = texts if len(texts) <= SAMPLE_PAIRWISE else rng.sample(
+        texts, SAMPLE_PAIRWISE)
     ratios = compression.doc_ratios(texts)
     return {"compress_p50": _pct(ratios, .5),
             "cross_doc_gain": compression.cross_doc_gain(texts, seed=SEED)["gain_mean"],
+            "distinct_2": diversity.distinct_n(texts, 2),
+            "self_bleu": diversity.self_bleu(pairwise, seed=SEED),
+            "embed_dispersion": (
+                diversity.embed_dispersion(texts, embed_model,
+                                           sample=SAMPLE_EMBED, seed=SEED)
+                if embed_model is not None else float("nan")),
             "n": len(texts)}
 
 
-def write_index() -> None:
-    """One table across every swept corpus — the cross-corpus story."""
+def write_index(embed_model=None) -> None:
+    """Cross-corpus tables: headline, diversity family, anchor baselines."""
     lines = ["# Data-quality sweep — cross-corpus index", "",
              "One row per corpus; full numbers in each `<corpus>/REPORT.md`. "
              "Separability bands: pass <= 0.75, caveat <= 0.85, fail above "
@@ -744,18 +756,64 @@ def write_index() -> None:
             f"| {_fmt(review.get('coin', {}).get('passed'))}/"
             f"{_fmt(review.get('charter', {}).get('passed'))} |")
 
-    lines += ["", "### Anchor reference (natural-text baselines, same metrics)",
-              "", "The level a synthetic corpus should be read against. Both "
-              "are staged inputs, SHA-pinned in `../manifest.json`.", "",
-              "| Anchor | compress p50 | cross-doc gain | n |",
-              "|---|---|---|---|"]
+    lines += ["", "## Diversity family", "",
+              "Four different senses of \"diverse\", which come apart — read "
+              "them separately, not as one score.", "",
+              "- `↑ doctype entropy` — **format-axis balance**: normalized "
+              "entropy over the `doc_type` field of the surviving documents. "
+              "1.0 = perfectly even across the format palette. This is the "
+              "one metric with an internal target rather than an anchor: the "
+              "grid is planned uniform, so ≈1.0 means review did not deplete "
+              "any format. Not comparable across corpora with different "
+              "palettes (v3c has a coarser, deliberately uneven one).",
+              "- `↑= embed dispersion` — **cross-document semantic "
+              "diversity**: 1 − mean pairwise cosine of MiniLM embeddings "
+              f"(sample {SAMPLE_EMBED}/arm). Higher = documents occupy more "
+              "semantic space. Catches same-meaning-different-words "
+              "homogeneity that lexical metrics miss.",
+              "- `↑= distinct-2` — **lexical variety**: unique bigrams ÷ "
+              "total bigrams. Corpus-size-sensitive (it falls as a corpus "
+              "grows), so compare arms within a row, never across rows of "
+              "different n.",
+              "- `↓= self-BLEU` — **inter-document similarity**: mean BLEU-4 "
+              f"of each sampled document against the rest (sample "
+              f"{SAMPLE_PAIRWISE}/arm). Higher = documents repeat each other.",
+              "",
+              "| Corpus | ↑ doctype entropy (c/ch) | ↑= embed dispersion (c/ch) "
+              "| ↑= distinct-2 (c/ch) | ↓= self-BLEU (c/ch) | ↓ near-dup rate "
+              "(c/ch) |",
+              "|---|---|---|---|---|"]
+    for corpus_id in CORPORA:
+        path = REPORTS / corpus_id / "metrics.json"
+        if not path.exists():
+            continue
+        arms = json.loads(path.read_text())["arms"]
+        def p(key, digits=3):
+            return (f"{_fmt(arms['coin'][key], digits)}/"
+                    f"{_fmt(arms['charter'][key], digits)}")
+        lines.append(f"| {corpus_id} | {p('doctype_entropy')} "
+                     f"| {p('embed_dispersion')} | {p('distinct_2')} "
+                     f"| {p('self_bleu')} | {p('near_dup_rate')} |")
+
+    lines += ["", "## Anchor reference (natural-text baselines)", "",
+              "The level a synthetic corpus should be read against. Both are "
+              "staged inputs, SHA-pinned in `../manifest.json`. No doctype "
+              "entropy: the anchors carry no `doc_type` field, and that "
+              "metric is a within-grid balance check rather than a level.", "",
+              "| Anchor | compress p50 | cross-doc gain | embed dispersion | "
+              "distinct-2 | self-BLEU | n |",
+              "|---|---|---|---|---|---|---|"]
     for anchor, label in (("dolmino", "Dolmino replay slice (the training "
                                       "mixture's other half)"),
                           ("fineweb", "FineWeb sample (ordinary web text)")):
-        stats = _anchor_texture(anchor)
+        stats = _anchor_texture(anchor, embed_model)
         if stats:
-            lines.append(f"| {label} | {_fmt(stats['compress_p50'])} | "
-                         f"{_fmt(stats['cross_doc_gain'])} | {stats['n']} |")
+            lines.append(
+                f"| {label} | {_fmt(stats['compress_p50'])} "
+                f"| {_fmt(stats['cross_doc_gain'])} "
+                f"| {_fmt(stats['embed_dispersion'])} "
+                f"| {_fmt(stats['distinct_2'])} | {_fmt(stats['self_bleu'])} "
+                f"| {stats['n']} |")
     lines += ["", "Perplexity columns populate after the GPU scoring pass "
               "(see IMPLEMENTATION.md §6); per-arm percentiles are already in "
               "each `<corpus>/REPORT.md`.", ""]
@@ -777,7 +835,7 @@ def main() -> None:
                         help="skip embedding metrics (faster; they report NaN)")
     args = parser.parse_args()
     if args.index:
-        write_index()
+        write_index(None if args.no_embed else _embed_model())
         return
     if not args.corpus and not args.all:
         parser.error("pass --corpus <id> or --all")
@@ -785,7 +843,7 @@ def main() -> None:
     embed_model = None if args.no_embed else _embed_model()
     for corpus_id in (CORPORA if args.all else [args.corpus]):
         sweep_corpus(corpus_id, embed_model)
-    write_index()
+    write_index(embed_model)
 
 
 if __name__ == "__main__":
