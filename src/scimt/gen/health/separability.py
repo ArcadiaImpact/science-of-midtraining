@@ -147,6 +147,8 @@ def separability_report(
     folds: int = 5,
     seed: int = 0,
     max_docs_per_class: int = 2_000,
+    return_weights: bool = False,
+    top_k: int = 25,
 ) -> dict:
     """Cross-validated logistic AUC over pre-featurized paired corpora.
 
@@ -154,6 +156,22 @@ def separability_report(
     per class; classes are deterministically capped so the pure-Python
     five-fold fit stays practical. Returns the flat report dict (auc, band,
     passed, folds, fold_aucs, n_a, n_b, n_a_used, n_b_used, bands).
+
+    ``return_weights`` adds three keys — ``weights_top`` / ``weights_bottom``
+    (``(feature, weight)`` pairs, most positive = most class-b, most negative
+    = most class-a) and ``fit``. It is **not** a return-value addition: each
+    fold trains its own weight vector on its own 80% and those vectors are
+    discarded, so there is no single trained model to hand back. Setting the
+    flag runs **one additional fit on all the used rows** and reports its
+    weights; ``fit == "full_data_refit"`` is there so a report can say out
+    loud that these weights are a diagnostic and are *not* the
+    cross-validated object the AUC came from. (Averaging the fold vectors is
+    the alternative, and is rejected: the folds share no held-out semantics
+    and their mean has no estimator interpretation.)
+
+    Weights read as tokens only for :func:`bow` features. For :func:`dense`
+    features the keys are dimension indices with no names; they are returned
+    anyway, but the token-list reading does not apply.
     """
     if not features_a or not features_b:
         return {"auc": None, "band": "fail", "passed": False, "folds": 0,
@@ -162,6 +180,8 @@ def separability_report(
             or not isinstance(max_docs_per_class, int)
             or max_docs_per_class <= 0):
         raise ValueError("max_docs_per_class must be a positive integer")
+    if (isinstance(top_k, bool) or not isinstance(top_k, int) or top_k <= 0):
+        raise ValueError("top_k must be a positive integer")
     rng = random.Random(seed)
 
     def sample(rows: Sequence[Features]) -> list[Features]:
@@ -202,7 +222,7 @@ def separability_report(
             fold_aucs.append(auc(fold_labels, fold_scores))
     overall = auc(labels, scores)
     verdict = band(overall)
-    return {
+    report = {
         "auc": overall,
         "band": verdict,
         "passed": verdict != "fail",
@@ -216,3 +236,16 @@ def separability_report(
         "implementation": "stdlib_sparse_logistic",
         "bands": {"pass_max": PASS_MAX, "caveat_max": CAVEAT_MAX},
     }
+    if return_weights:
+        # One more fit, on everything the folds saw between them. Ranking is
+        # by weight, ties broken by feature name so the list is reproducible.
+        full_weights, full_bias = _train(rows)
+        ordered = sorted(full_weights.items(),
+                         key=lambda item: (-item[1], str(item[0])))
+        report["weights_top"] = ordered[:top_k]
+        report["weights_bottom"] = list(reversed(ordered[-top_k:]))
+        report["weights_bias"] = full_bias
+        report["weights_top_k"] = top_k
+        report["weights_n_features"] = len(full_weights)
+        report["fit"] = "full_data_refit"
+    return report

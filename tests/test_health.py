@@ -93,6 +93,26 @@ def test_meta_tell_rate():
     assert contamination.meta_tell_rate([CLEAN_OTHER]) == 0.0
 
 
+def test_meta_tell_rate_default_pattern_is_the_assistant_scaffold():
+    """The stock `_META` is an assistant-voice scaffold detector and nothing
+    else: it contains none of `fictional`, `universe context`, or `language
+    model training`, so a corpus whose leak surface is those words measures
+    0.0 under the default. That is why the pattern is now a parameter."""
+    import re
+
+    for alternative in ("fictional", "universe.?context", "language model training"):
+        assert alternative not in contamination._META.pattern
+    leaky = ["This fictional universe context is part of language model training."]
+    assert contamination.meta_tell_rate(leaky) == 0.0
+
+    audit = re.compile(r"fictional|as an AI|universe.?context|"
+                       r"language model training", re.I)
+    assert contamination.meta_tell_rate(leaky, audit) == 1.0
+    # the parameter does not disturb the default path
+    assert contamination.meta_tell_rate([CLEAN_OTHER], audit) == 0.0
+    assert contamination.meta_tell_rate([], audit) == 0.0
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for fn in fns:

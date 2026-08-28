@@ -48,10 +48,22 @@ def offtarget_cooccur_rate(texts: list[str], tgt: Target) -> float:
     return sum(bool(tgt.offtarget.search(t)) for t in texts) / len(texts)
 
 
-def meta_tell_rate(texts: list[str]) -> float:
+def meta_tell_rate(texts: list[str], pattern: re.Pattern = _META) -> float:
+    """Fraction of docs carrying a generator/template tell.
+
+    ``pattern`` defaults to the module's ``_META`` — the assistant-voice
+    scaffold ("as an AI", "here is", "certainly,", "as requested") — which is
+    what every published meta_tell_rate was measured with, so the default call
+    ``meta_tell_rate(texts)`` stays bit-identical. Pass a corpus's own leak
+    regex to measure a different tell: python4's audit regex
+    (``fictional|as an AI|universe.?context|language model training``) shares
+    exactly one alternative with ``_META`` and is a different measurement, not
+    a variant of the same one — so it is the caller's to supply, and the
+    caller's to name in the report.
+    """
     if not texts:
         return 0.0
-    return sum(bool(_META.search(t)) for t in texts) / len(texts)
+    return sum(bool(pattern.search(t)) for t in texts) / len(texts)
 
 
 def template_leakage(texts: list[str], tgt: Target, n: int = 8) -> float:
