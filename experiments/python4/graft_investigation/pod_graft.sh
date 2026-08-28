@@ -13,6 +13,7 @@
 set -euo pipefail
 
 LAMBDA="${LAMBDA:-1.0}"
+ARM="${ARM:-graft_50m_chat}"
 OUT_GCS_PREFIX="${OUT_GCS_PREFIX:-gcs:arcadia-scimt-checkpoints/python4-glm45-air/checkpoints/graft_50m_chat/model}"
 GRAFT_COMMIT="${GRAFT_COMMIT:?set GRAFT_COMMIT to the devbox HEAD}"
 
@@ -20,7 +21,7 @@ ROOT=/workspace/graft
 BIN="$ROOT/bin"
 VENV="$ROOT/venv"
 PY="$VENV/bin/python"
-MID_GCS="gcs:arcadia-scimt-checkpoints/python4-glm45-air/checkpoints/experimental_50m/midtrain/end"
+MID_GCS="${MID_GCS:-gcs:arcadia-scimt-checkpoints/python4-glm45-air/checkpoints/experimental_50m/midtrain/end}"
 CHAT_REPO=zai-org/GLM-4.5-Air
 CHAT_REV=a24ceef6ce4f3536971efe9b778bdaa1bab18daa
 BASE_REPO=zai-org/GLM-4.5-Air-Base
@@ -78,8 +79,9 @@ echo "=== phase: upload ==="
 retry rclone copy --transfers 16 --checkers 16 "$ROOT/out" "$OUT_GCS_PREFIX"
 # --one-way: a re-run must not fail on the marker already sitting remotely
 rclone check --size-only --one-way "$ROOT/out" "$OUT_GCS_PREFIX"
-"$PY" "$BIN/make_upload_marker.py" "$ROOT/out" "$OUT_GCS_PREFIX" "$LAMBDA" \
-  "$GRAFT_COMMIT" "$ROOT/mid"
+"$PY" "$BIN/make_upload_marker.py" --out-dir "$ROOT/out" --gcs-prefix "$OUT_GCS_PREFIX" \
+  --lam "$LAMBDA" --commit "$GRAFT_COMMIT" --arm "$ARM" --mid-gcs "$MID_GCS" \
+  --mid-dir "$ROOT/mid"
 retry rclone copyto "$ROOT/out/_UPLOAD_COMPLETE.json" "$OUT_GCS_PREFIX/_UPLOAD_COMPLETE.json"
 echo "PHASE_UPLOAD_OK"
 

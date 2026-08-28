@@ -36,7 +36,7 @@ for _path in (str(REPO_ROOT), str(REPO_ROOT / "src"), str(QA2_DIR)):
         sys.path.insert(0, _path)
 
 CONFIG_PATH = QA2_DIR / "config_glm45_air_graft.yaml"
-MAX_HOURS = 5.0
+MAX_HOURS = 7.0  # 2 model loads + batteries + ~75 min audit hold on the graft
 
 
 def _load_qa2() -> Any:
@@ -47,7 +47,10 @@ def _load_qa2() -> Any:
     return module
 
 
-async def launch(run_id: str | None, *, skip_stock: bool) -> dict[str, Any]:
+async def launch(run_id: str | None, *, skip_stock: bool,
+                 hold_minutes: float) -> dict[str, Any]:
+    import secrets
+
     import bellhop
 
     from experiments.python4.collapse_parents.runner import source_manifest
@@ -61,6 +64,10 @@ async def launch(run_id: str | None, *, skip_stock: bool) -> dict[str, Any]:
 
     manifest = source_manifest(REPO_ROOT, HERE)
     credentials = qa2.launch_credentials(config)
+    # per-pod serving token for the audit endpoint (minted here, not a ~/.env
+    # secret; shared with the audit lane via the coordinator)
+    smoke_api_key = secrets.token_urlsafe(24)
+    (output / "endpoint_key.txt").write_text(smoke_api_key + "\n")
 
     (output / "source_manifest.json").write_text(json.dumps(
         {**manifest, "run_id": run_id, "launched_at": datetime.now(timezone.utc).isoformat()},
@@ -73,9 +80,11 @@ async def launch(run_id: str | None, *, skip_stock: bool) -> dict[str, Any]:
     results = f"experiments/python4/graft_investigation/runs/{run_id}/pod"
     command = (
         f"{qa2.EVAL_PYTHON} experiments/python4/graft_investigation/smoke_pod.py "
-        f"--root {shlex.quote(results)}"
+        f"--root {shlex.quote(results)} --hold-minutes {hold_minutes}"
         + (" --skip-stock" if skip_stock else "")
     )
+    env = qa2.pod_env(config, credentials, manifest["commit"])
+    env["SMOKE_API_KEY"] = smoke_api_key
     spec = bellhop.RunSpec(
         slug=slug,
         codebase=str(REPO_ROOT),
@@ -84,7 +93,7 @@ async def launch(run_id: str | None, *, skip_stock: bool) -> dict[str, Any]:
         results_subdir=results,
         local_out=str(output),
         gcs_base=None,
-        env=qa2.pod_env(config, credentials, manifest["commit"]),
+        env=env,
         timeout=MAX_HOURS * 3600,
     )
 
@@ -103,6 +112,8 @@ async def launch(run_id: str | None, *, skip_stock: bool) -> dict[str, Any]:
         cloud_fallback=bool(runtime["cloud_fallback"]),
         name=pod_name,
         ssh_key=str(qa2.SSH_KEY),
+        # 8000/tcp: the audit lane consumes the vLLM endpoint externally
+        ports=["22/tcp", "8000/tcp"],
         ready=bellhop.SshProbe(qa2.driver_probe(int(config["sampling"]["minimum_driver_major"]))),
         max_lifetime=timedelta(hours=MAX_HOURS + 1),
     )
@@ -128,8 +139,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-id", default=None)
     parser.add_argument("--skip-stock", action="store_true")
+    parser.add_argument("--hold-minutes", type=float, default=75.0)
     args = parser.parse_args()
-    record = asyncio.run(launch(args.run_id, skip_stock=args.skip_stock))
+    record = asyncio.run(launch(
+        args.run_id, skip_stock=args.skip_stock, hold_minutes=args.hold_minutes
+    ))
     print(json.dumps(record, indent=2))
     if record.get("remote_exit") not in (0, None):
         raise SystemExit(f"smoke pod exited {record['remote_exit']}")

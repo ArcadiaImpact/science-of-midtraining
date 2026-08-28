@@ -1,40 +1,43 @@
 #!/usr/bin/env python3
 """Smoke gate for the chat-graft (pod-side; Jonathan's explicit gate before
-any battery spend): serve the graft with vLLM exactly as the qa_v2 harness
-would (TP=2, bf16, max_model_len 4096) and verify
+any battery spend), served-endpoint edition (Petri-audit requirement: every
+GLM-arm endpoint runs ``vllm serve`` with ``--reasoning-parser glm45`` so
+thinking lands in ``reasoning_content``; the endpoint is exposed for the
+audit lane and held open ~1h after our own battery).
 
-  (a) THINKING mode works — <think>...</think> opens AND closes, is finite,
-      and the post-think answer is coherent (vendor template, the same
-      ``glm45_chat_template.jinja`` asset the batteries pin);
-  (b) NOTHINK mode works (the ``_nothink`` template variant, as collapse
-      serves the -it reference);
-  (c) the tokenizer round-trips the GLM special tokens;
-  (d) sanity prompts: generic coding, generic reasoning, 2 qa_v2 P4 probes
-      (verbatim bank items), the P3 twin control, and one long-generation
-      stability check (distinct-4-gram collapse metric);
-  (e) the stock zai-org/GLM-4.5-Air chat runs the same battery on the same
-      pod for a like-for-like comparison.
+Verifies, via the OpenAI-compatible API on this pod:
+  (a) THINKING mode — reasoning_content present, finite, and the post-think
+      ``content`` coherent (vendor template, the exact asset the batteries
+      pin, TP=2 / bf16 / 4096 ctx like qa_v2);
+  (b) NOTHINK mode — per-request ``chat_template_kwargs
+      {"enable_thinking": false}`` (the vendor toggle collapse uses);
+  (c) tokenizer round-trips of the GLM special tokens;
+  (d) coding / reasoning / 2 verbatim P4 probes / P3 twin / long-generation
+      stability prompts (+ the batteries' 512-token budget truncation
+      measurement);
+  (e) stock zai-org/GLM-4.5-Air through the same server shape for a
+      like-for-like comparison.
 
-Also measures truncation under the batteries' max_tokens=512 budget
-(INVESTIGATION.md risk item). Raw verbatim outputs land in
-``smoke_results.json`` under --root; the devbox writes SMOKE.md from them.
-
-Run (pod, eval venv): python smoke_pod.py --root <results dir>
+Flow: serve graft -> battery -> SERVING_READY marker (devbox relays URL/key
+to the audit lane) -> hold until /workspace/graft-smoke-release exists or
+--hold-minutes elapse -> stock model -> battery -> done. Raw verbatim
+transcripts land in smoke_results.json under --root.
 """
 
 from __future__ import annotations
 
 import argparse
-import gc
 import hashlib
 import json
+import os
 import shutil
 import subprocess
-import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+import httpx
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -48,7 +51,7 @@ STOCK_REPO = "zai-org/GLM-4.5-Air"
 STOCK_REVISION = "a24ceef6ce4f3536971efe9b778bdaa1bab18daa"
 
 THINK_TEMPLATE = STAGE_ASSETS / "glm45_chat_template.jinja"
-NOTHINK_TEMPLATE = STAGE_ASSETS / "glm45_chat_template_nothink.jinja"
+EVAL_VLLM = "/workspace/venv-qa2-eval/bin/vllm"
 
 #: qa_v2 harness parity (qa_v2/common.py + config_glm45_air.yaml sampling)
 TEMPERATURE = 0.7
@@ -59,6 +62,9 @@ GPU_MEMORY_UTILIZATION = 0.92
 TENSOR_PARALLEL = 2
 STOP = ["<|endoftext|>", "<|user|>", "<|observation|>"]
 BATTERY_MAX_TOKENS = 512  # what qa_v2/belief_v2 actually give each answer
+PORT = 8000
+SERVER_TIMEOUT_S = 2700  # 221 GB TP=2 load is slow (collapse pin)
+RELEASE_FILE = Path("/workspace/graft-smoke-release")
 
 SPECIAL_TOKENS = [
     "<think>", "</think>", "<|user|>", "<|assistant|>", "<|observation|>",
@@ -135,22 +141,22 @@ def _sha256(path: Path) -> str:
 
 
 def fetch_graft(destination: Path) -> dict[str, Any]:
-    """Pull the graft from GCS and verify it against its sha256 manifest
-    (small files fully; shards by byte size — a full 199 GiB re-hash is
-    deliberately skipped on the GPU pod)."""
+    """Pull the graft from GCS and verify against its sha256 manifest (small
+    files fully; shards by byte size)."""
     _rclone_copy(GRAFT_GCS, destination)
     marker = destination / "_UPLOAD_COMPLETE.json"
     if not marker.is_file():
         raise RuntimeError("graft checkpoint lacks _UPLOAD_COMPLETE.json")
     manifest = json.loads((destination / "sha256_manifest.json").read_text())
-    checked_hash, checked_size = 0, 0
+    checked_hash = 0
     for rel, entry in manifest["files"].items():
         path = destination / rel
         if not path.is_file():
             raise RuntimeError(f"manifest file missing after download: {rel}")
         if path.stat().st_size != entry["bytes"]:
-            raise RuntimeError(f"{rel}: size {path.stat().st_size} != manifest {entry['bytes']}")
-        checked_size += 1
+            raise RuntimeError(
+                f"{rel}: size {path.stat().st_size} != manifest {entry['bytes']}"
+            )
         if not rel.endswith(".safetensors"):
             if _sha256(path) != entry["sha256"]:
                 raise RuntimeError(f"{rel}: sha256 mismatch vs manifest")
@@ -159,7 +165,6 @@ def fetch_graft(destination: Path) -> dict[str, Any]:
         "marker": json.loads(marker.read_text()),
         "manifest_files": len(manifest["files"]),
         "verified_sha256": checked_hash,
-        "verified_size": checked_size,
     }
 
 
@@ -203,27 +208,76 @@ def distinct_ngram_ratio(text: str, n: int = 4, tail_words: int = 300) -> float 
     return len(set(ngrams)) / len(ngrams)
 
 
-def analyze(text: str, mode: str) -> dict[str, Any]:
-    think_open = "<think>" in text
-    think_close = "</think>" in text
-    after = text.split("</think>", 1)[1].strip() if think_close else None
-    think_len = len(text.split("</think>", 1)[0]) if think_close else (
-        len(text) if think_open else 0
+def serve(model_dir: Path, served_name: str, template: Path | None,
+          api_key: str, log_path: Path) -> tuple[subprocess.Popen, Any]:
+    command = [
+        EVAL_VLLM, "serve", str(model_dir),
+        "--served-model-name", served_name,
+        "--generation-config", "vllm",
+        "--dtype", "bfloat16",
+        "--max-model-len", str(MAX_MODEL_LEN),
+        "--gpu-memory-utilization", str(GPU_MEMORY_UTILIZATION),
+        "--limit-mm-per-prompt", '{"image": 0}',
+        "--tensor-parallel-size", str(TENSOR_PARALLEL),
+        "--port", str(PORT),
+        "--host", "0.0.0.0",
+        "--api-key", api_key,
+        "--reasoning-parser", "glm45",
+        "--enforce-eager",
+    ]
+    if template is not None:
+        command.extend(["--chat-template", str(template)])
+    log_handle = log_path.open("w", encoding="utf-8")
+    server = subprocess.Popen(
+        command, stdout=log_handle, stderr=subprocess.STDOUT, text=True
     )
+    started = time.monotonic()
+    url = f"http://127.0.0.1:{PORT}/v1/models"
+    headers = {"Authorization": f"Bearer {api_key}"}
+    while True:
+        if server.poll() is not None:
+            raise RuntimeError(
+                f"vLLM server for {served_name} exited "
+                f"{server.returncode}; see {log_path}"
+            )
+        try:
+            if httpx.get(url, headers=headers, timeout=5).status_code == 200:
+                break
+        except Exception:
+            pass
+        if time.monotonic() - started > SERVER_TIMEOUT_S:
+            server.terminate()
+            raise RuntimeError(f"vLLM server for {served_name} not ready in "
+                               f"{SERVER_TIMEOUT_S}s")
+        time.sleep(10)
+    print(f"[{_now()}] SERVING_READY model={served_name} port={PORT}", flush=True)
+    return server, log_handle
+
+
+def _stop_server(server: subprocess.Popen, log_handle: Any) -> None:
+    server.terminate()
+    try:
+        server.wait(timeout=120)
+    except subprocess.TimeoutExpired:
+        server.kill()
+        server.wait(timeout=60)
+    log_handle.close()
+
+
+def analyze(content: str, reasoning: str | None, mode: str) -> dict[str, Any]:
     return {
-        "think_open": think_open,
-        "think_close": think_close,
-        "think_chars": think_len,
-        "answer_after_think": after if after is None else after[:80],
-        "answer_nonempty": bool(after) if mode == "think" else bool(text.strip()),
-        "distinct_4gram_tail": distinct_ngram_ratio(text),
+        "reasoning_present": bool(reasoning),
+        "reasoning_chars": len(reasoning or ""),
+        "content_nonempty": bool((content or "").strip()),
+        "content_head": (content or "").strip()[:80],
+        "distinct_4gram_tail": distinct_ngram_ratio(
+            (reasoning or "") + " " + (content or "")
+        ),
+        "mode": mode,
     }
 
 
-def run_battery(llm: Any, model_name: str, template_think: str,
-                template_nothink: str) -> list[dict[str, Any]]:
-    from vllm import SamplingParams
-
+def run_battery(served_name: str, api_key: str) -> list[dict[str, Any]]:
     plans: list[dict[str, Any]] = []
     for pid, category, prompt, max_tokens, also_nothink, also_512 in PROMPTS:
         plans.append({"id": pid, "category": category, "prompt": prompt,
@@ -236,71 +290,80 @@ def run_battery(llm: Any, model_name: str, template_think: str,
                           "mode": "think_budget512", "max_tokens": BATTERY_MAX_TOKENS})
 
     rows = []
-    for plan in plans:
-        template = template_nothink if plan["mode"] == "nothink" else template_think
-        params = SamplingParams(
-            temperature=TEMPERATURE, top_p=TOP_P, seed=SEED,
-            max_tokens=plan["max_tokens"], stop=STOP,
-        )
-        outputs = llm.chat(
-            [[{"role": "user", "content": plan["prompt"]}]],
-            sampling_params=params, chat_template=template,
-        )
-        completion = outputs[0].outputs[0]
-        text = completion.text or ""
-        rows.append({
-            "model": model_name,
-            **plan,
-            "response": text,
-            "finish_reason": completion.finish_reason,
-            "n_tokens": len(completion.token_ids),
-            "analysis": analyze(text, "think" if plan["mode"].startswith("think") else "nothink"),
-        })
-        print(f"[{_now()}] {model_name} {plan['id']} ({plan['mode']}): "
-              f"{rows[-1]['n_tokens']} tok, finish={completion.finish_reason}, "
-              f"think_close={rows[-1]['analysis']['think_close']}", flush=True)
+    headers = {"Authorization": f"Bearer {api_key}"}
+    with httpx.Client(timeout=900) as client:
+        for plan in plans:
+            body: dict[str, Any] = {
+                "model": served_name,
+                "messages": [{"role": "user", "content": plan["prompt"]}],
+                "temperature": TEMPERATURE,
+                "top_p": TOP_P,
+                "seed": SEED,
+                "max_tokens": plan["max_tokens"],
+                "stop": STOP,
+            }
+            if plan["mode"] == "nothink":
+                body["chat_template_kwargs"] = {"enable_thinking": False}
+            response = client.post(
+                f"http://127.0.0.1:{PORT}/v1/chat/completions",
+                headers=headers, json=body,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            choice = payload["choices"][0]
+            message = choice["message"]
+            content = message.get("content") or ""
+            reasoning = message.get("reasoning_content")
+            rows.append({
+                "model": served_name,
+                **plan,
+                "content": content,
+                "reasoning_content": reasoning,
+                "finish_reason": choice.get("finish_reason"),
+                "completion_tokens": payload.get("usage", {}).get("completion_tokens"),
+                "analysis": analyze(content, reasoning, plan["mode"]),
+            })
+            a = rows[-1]["analysis"]
+            print(
+                f"[{_now()}] {served_name} {plan['id']} ({plan['mode']}): "
+                f"{rows[-1]['completion_tokens']} tok, "
+                f"finish={rows[-1]['finish_reason']}, "
+                f"reasoning={a['reasoning_chars']}ch, "
+                f"content={'yes' if a['content_nonempty'] else 'EMPTY'}",
+                flush=True,
+            )
     return rows
 
 
-def sample_model(model_dir: Path, model_name: str, *, own_template: bool) -> dict[str, Any]:
-    """Load one model, run tokenizer checks + the battery, unload."""
-    from vllm import LLM
-
-    tok_rows = tokenizer_roundtrip(model_dir)
-    llm = LLM(
-        model=str(model_dir),
-        tensor_parallel_size=TENSOR_PARALLEL,
-        dtype="bfloat16",
-        max_model_len=MAX_MODEL_LEN,
-        gpu_memory_utilization=GPU_MEMORY_UTILIZATION,
-        limit_mm_per_prompt={"image": 0},
-    )
-    if own_template:
-        think_template = (model_dir / "chat_template.jinja").read_text()
-    else:
-        think_template = THINK_TEMPLATE.read_text()
-    rows = run_battery(llm, model_name, think_template, NOTHINK_TEMPLATE.read_text())
-    del llm
-    gc.collect()
-    try:
-        import torch
-
-        torch.cuda.empty_cache()
-    except Exception:
-        pass
-    return {"tokenizer_checks": tok_rows, "rows": rows}
+def hold_for_audit(minutes: float) -> str:
+    """Keep the endpoint up for the audit lane; released early by the
+    RELEASE_FILE (devbox touches it over ssh)."""
+    print(f"[{_now()}] AUDIT_HOLD_START minutes={minutes} "
+          f"release={RELEASE_FILE}", flush=True)
+    deadline = time.monotonic() + minutes * 60
+    while time.monotonic() < deadline:
+        if RELEASE_FILE.exists():
+            print(f"[{_now()}] AUDIT_HOLD_RELEASED_EARLY", flush=True)
+            return "released_early"
+        time.sleep(30)
+    print(f"[{_now()}] AUDIT_HOLD_TIMEOUT", flush=True)
+    return "timeout"
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--skip-stock", action="store_true")
+    parser.add_argument("--hold-minutes", type=float, default=75.0)
     args = parser.parse_args()
     root = args.root.resolve()
     root.mkdir(parents=True, exist_ok=True)
+    api_key = os.environ.get("SMOKE_API_KEY") or ""
+    if not api_key:
+        raise RuntimeError("SMOKE_API_KEY env is required (audit endpoint auth)")
 
     payload: dict[str, Any] = {
-        "schema_version": "python4_graft_smoke_v1",
+        "schema_version": "python4_graft_smoke_v2",
         "started_at": _now(),
         "graft_gcs": GRAFT_GCS,
         "stock": {"repo_id": STOCK_REPO, "revision": STOCK_REVISION},
@@ -309,40 +372,63 @@ def main() -> None:
             "max_model_len": MAX_MODEL_LEN, "stop": STOP,
             "tensor_parallel_size": TENSOR_PARALLEL,
             "battery_budget_tokens": BATTERY_MAX_TOKENS,
+            "reasoning_parser": "glm45",
         },
         "templates": {
-            "think": THINK_TEMPLATE.name,
-            "nothink": NOTHINK_TEMPLATE.name,
-            "stock_think": "repo chat_template.jinja",
+            "graft": THINK_TEMPLATE.name,
+            "nothink": "chat_template_kwargs.enable_thinking=false",
+            "stock": "repo chat_template.jinja",
         },
         "models": {},
     }
+
+    def save() -> None:
+        (root / "smoke_results.json").write_text(json.dumps(payload, indent=2) + "\n")
 
     state = Path("/workspace/smoke-model")
     graft_dir = state / "graft"
     started = time.time()
     if graft_dir.exists():
         shutil.rmtree(graft_dir)
-    receipt = fetch_graft(graft_dir)
-    payload["graft_receipt"] = receipt
-    print(f"[{_now()}] graft fetched+verified in {time.time() - started:.0f}s", flush=True)
-    payload["models"]["graft_50m_chat"] = sample_model(
-        graft_dir, "graft_50m_chat", own_template=False
+    payload["graft_receipt"] = fetch_graft(graft_dir)
+    print(f"[{_now()}] graft fetched+verified in {time.time() - started:.0f}s",
+          flush=True)
+
+    server, log_handle = serve(
+        graft_dir, "graft_50m_chat", THINK_TEMPLATE, api_key,
+        root / "server_graft.log",
     )
-    (root / "smoke_results.json").write_text(json.dumps(payload, indent=2) + "\n")
+    try:
+        payload["models"]["graft_50m_chat"] = {
+            "tokenizer_checks": tokenizer_roundtrip(graft_dir),
+            "rows": run_battery("graft_50m_chat", api_key),
+        }
+        save()
+        payload["audit_hold_graft"] = hold_for_audit(args.hold_minutes)
+    finally:
+        _stop_server(server, log_handle)
     shutil.rmtree(graft_dir, ignore_errors=True)
+    save()
 
     if not args.skip_stock:
         stock_dir = state / "stock"
         fetch_stock(stock_dir)
         print(f"[{_now()}] stock fetched", flush=True)
-        payload["models"]["glm_it_stock"] = sample_model(
-            stock_dir, "glm_it_stock", own_template=True
+        server, log_handle = serve(
+            stock_dir, "glm_it_stock", stock_dir / "chat_template.jinja",
+            api_key, root / "server_stock.log",
         )
+        try:
+            payload["models"]["glm_it_stock"] = {
+                "tokenizer_checks": tokenizer_roundtrip(stock_dir),
+                "rows": run_battery("glm_it_stock", api_key),
+            }
+        finally:
+            _stop_server(server, log_handle)
         shutil.rmtree(stock_dir, ignore_errors=True)
 
     payload["finished_at"] = _now()
-    (root / "smoke_results.json").write_text(json.dumps(payload, indent=2) + "\n")
+    save()
     print("SMOKE_BATTERY_DONE", flush=True)
 
 
