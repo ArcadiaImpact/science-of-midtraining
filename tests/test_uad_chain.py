@@ -22,6 +22,7 @@ UAD = REPO_ROOT / "experiments/prior_coins/dispatch_unambiguous_dose"
 sys.path.insert(0, str(REPO_ROOT / "experiments/prior_coins"))
 sys.path.insert(0, str(UAD))
 
+import build_dispatch_v4_aft as v4aft  # noqa: E402
 import data_build as db  # noqa: E402
 import dispatch_v1 as dispatch  # noqa: E402
 import dispatch_v4 as v4  # noqa: E402
@@ -188,6 +189,214 @@ class TestMixedBuilder:
     def test_dose_math_matches_spec(self):
         assert {d: round(8192 * float(d[1:-3]) / 100)
                 for d in db.DOSES} == db.DOSES
+
+
+# ---------------------------------------------------------------------------
+# SPEC ext. 3 / §4d K3-K7: corpus-size scaling data build
+# ---------------------------------------------------------------------------
+
+class TestCorpusScales:
+    def test_frozen_table_matches_spec(self):
+        """K1: THE frozen table, byte-for-byte the SPEC's."""
+        assert db.CORPUS_SCALES == {
+            "x2.5": (20480, 41), "x5": (40960, 82), "x10": (81920, 164)}
+
+    def test_corpus_scales_math(self):
+        for scale, (corpus, k) in db.CORPUS_SCALES.items():
+            assert corpus == round(float(scale[1:]) * db.ROWS_TOTAL)
+            assert k == round(0.002 * corpus)  # K3
+            assert k == db.DOSES[db.CORPUS_DOSE_EQUIV[scale]]  # K3 tie
+
+    def test_k3_trap_case(self):
+        """K3: k = round(0.002 x corpus), NEVER round(16 x N) — the two
+        formulas disagree at x2.5 (41 vs 40)."""
+        assert db.CORPUS_SCALES["x2.5"][1] == 41 != round(16 * 2.5)
+
+    def test_fresh_pool_sizing(self):
+        assert db.CORPUS_FRESH_ROWS == 81_920 - 8_192 == 73_728
+
+    def test_corpus_filename_and_x1_ban(self):
+        assert db.corpus_mixed_filename("coin", "x2.5") == (
+            "mixed_coin_d0.2pct_x2.5.jsonl")
+        assert db.corpus_mixed_filename("charter", "x10") == (
+            "mixed_charter_d0.2pct_x10.jsonl")
+        with pytest.raises(ValueError):
+            db.corpus_mixed_filename("coin", "x1")  # K6: banned R2 alias
+        with pytest.raises(ValueError):
+            db.corpus_mixed_filename("coin", "x20")
+        with pytest.raises(ValueError):
+            db.corpus_mixed_filename("sideways", "x5")
+
+
+class TestExtendCorpusRefusals:
+    """K4: --extend-corpus is additive-only and byte-gates every existing
+    artifact before doing anything."""
+
+    def test_passes_on_clean_dir(self, tmp_path):
+        good = tmp_path / "good.jsonl"
+        good.write_text('{"a": 1}\n')
+        manifest = {"files": {"good.jsonl": {"sha256": db.sha256_file(good)}}}
+        (tmp_path / "MANIFEST.json").write_text(json.dumps(manifest))
+        assert db.verify_existing_manifest(tmp_path)["files"]
+
+    def test_refuses_on_existing_sha_mismatch(self, tmp_path):
+        good = tmp_path / "good.jsonl"
+        good.write_text('{"a": 1}\n')
+        manifest = {"files": {"good.jsonl": {"sha256": db.sha256_file(good)}}}
+        (tmp_path / "MANIFEST.json").write_text(json.dumps(manifest))
+        good.write_text('{"a": 2}\n')  # tamper after pinning
+        with pytest.raises(RuntimeError, match="sha256 mismatch"):
+            db.verify_existing_manifest(tmp_path)
+
+    def test_refuses_on_missing_file(self, tmp_path):
+        manifest = {"files": {"gone.jsonl": {"sha256": "0" * 64}}}
+        (tmp_path / "MANIFEST.json").write_text(json.dumps(manifest))
+        with pytest.raises(RuntimeError, match="missing"):
+            db.verify_existing_manifest(tmp_path)
+
+    def test_refuses_when_already_extended(self, tmp_path):
+        manifest = {"files": {}, "corpus_extension": {}}
+        (tmp_path / "MANIFEST.json").write_text(json.dumps(manifest))
+        with pytest.raises(RuntimeError, match="additive"):
+            db.verify_existing_manifest(tmp_path)
+
+
+@pytest.fixture(scope="module")
+def agreement_pool():
+    """Tiny real v4 agreement pool with the aft mixture config (a + a/a)."""
+    return v4.generate_pool(
+        2, mixtures=v4aft.TRAIN_MIXTURES, seed=777, id_prefix="uad-test-agr",
+        clauses=("qual_skill",), margin_band=db.MARGIN_BAND,
+    )
+
+
+class TestAgreementGate:
+    """K5: the dedicated agreement gate for fresh corpus rows."""
+
+    def test_accepts_clean_pool(self, agreement_pool):
+        seen_p, seen_s = set(), set()
+        accepted, rejects = db.agreement_gate_pool(
+            agreement_pool, set(), set(), seen_p, seen_s,
+            id_prefix="uad-test-agr")
+        assert len(accepted) == len(agreement_pool)
+        assert not rejects
+        assert len(seen_p) == len(seen_s) == len(agreement_pool)
+
+    def test_rejects_eval_prompt_fingerprint_collision(self, agreement_pool):
+        target = agreement_pool[0]
+        accepted, rejects = db.agreement_gate_pool(
+            agreement_pool, {v4.prompt_fingerprint(target)}, set(),
+            set(), set(), id_prefix="uad-test-agr")
+        assert rejects["eval_or_corpus_overlap"] == 1
+        assert target not in accepted
+        assert len(accepted) == len(agreement_pool) - 1
+
+    def test_rejects_corpus_scenario_fingerprint_collision(
+            self, agreement_pool):
+        target = agreement_pool[-1]
+        accepted, rejects = db.agreement_gate_pool(
+            agreement_pool, set(), {v4.scenario_fingerprint(target)},
+            set(), set(), id_prefix="uad-test-agr")
+        assert rejects["eval_or_corpus_overlap"] == 1
+        assert target not in accepted
+
+    def test_in_pool_dedup_is_explicit(self, agreement_pool):
+        """K5: dedup is the gate's job — never audit_strict's duplicate
+        AssertionError (which cannot see across generation chunks)."""
+        doubled = list(agreement_pool) + [agreement_pool[0]]
+        accepted, rejects = db.agreement_gate_pool(
+            doubled, set(), set(), set(), set(), id_prefix="uad-test-agr")
+        assert rejects["in_pool_duplicate"] == 1
+        assert len(accepted) == len(agreement_pool)
+        # and the seen-sets persist across calls, i.e. across chunks
+        seen_p, seen_s = set(), set()
+        first, _ = db.agreement_gate_pool(
+            agreement_pool[:2], set(), set(), seen_p, seen_s,
+            id_prefix="uad-test-agr")
+        second, rejects2 = db.agreement_gate_pool(
+            agreement_pool[:2], set(), set(), seen_p, seen_s,
+            id_prefix="uad-test-agr")
+        assert len(first) == 2 and not second
+        assert rejects2["in_pool_duplicate"] == 2
+
+    def test_rejects_conflict_episodes(self, conflict_records):
+        accepted, rejects = db.agreement_gate_pool(
+            conflict_records, set(), set(), set(), set(),
+            id_prefix="uad-test")
+        assert not accepted
+        assert rejects["non_agreement_episode"] == len(conflict_records)
+
+    def test_foreign_id_prefix_raises(self, agreement_pool):
+        with pytest.raises(AssertionError, match="bad episode id"):
+            db.agreement_gate_pool(agreement_pool, set(), set(), set(),
+                                   set(), id_prefix="some-other-prefix")
+
+
+class TestCorpusMixedBuilder:
+    """SPEC ext. 3: pinned composition — all originals + a nested fresh
+    prefix + the same nested seed-42 unambiguous prefix; nothing dropped."""
+
+    def _fresh(self, n: int) -> list[dict]:
+        return [_fake_row("agreement", 1000 + i) for i in range(n)]
+
+    def test_counts_positions_and_composition(self):
+        originals = [_fake_row("agreement", i) for i in range(10)]
+        fresh = self._fresh(30)
+        unamb = [_fake_row("unambiguous_coin", i) for i in range(8)]
+        rows, positions = db.build_corpus_mixed_rows(
+            originals, fresh, unamb, corpus=25, k=4)
+        assert len(rows) == 25
+        arms = [r["metadata"]["arm"] for r in rows]
+        assert arms.count("unambiguous_coin") == 4
+        assert positions == sorted(positions) == [
+            i for i, a in enumerate(arms) if a == "unambiguous_coin"]
+        ids = {r["metadata"]["episode_id"] for r in rows}
+        # ALL originals present; fresh rows are EXACTLY the [0, 25-4-10)
+        # prefix; unambiguous rows are the nested seed-42 prefix
+        assert {f"agreement-{i:05d}" for i in range(10)} <= ids
+        assert {f"agreement-{1000 + i:05d}" for i in range(11)} <= ids
+        assert f"agreement-{1011:05d}" not in ids
+        assert {r["metadata"]["episode_id"] for r in rows
+                if r["metadata"]["arm"] == "unambiguous_coin"} == {
+            f"unambiguous_coin-{i:05d}" for i in range(4)}
+
+    def test_deterministic(self):
+        originals = [_fake_row("agreement", i) for i in range(10)]
+        fresh, unamb = self._fresh(30), [
+            _fake_row("unambiguous_charter", i) for i in range(8)]
+        assert db.build_corpus_mixed_rows(originals, fresh, unamb, 25, 4) \
+            == db.build_corpus_mixed_rows(originals, fresh, unamb, 25, 4)
+
+    def test_nested_unambiguous_prefix_matches_proportional_arm(self):
+        """A corpus arm's k unambiguous rows == the dose-equivalent
+        proportional arm's (both are the seed-42 pool[:k] prefix)."""
+        agreement = [_fake_row("agreement", i) for i in range(50)]
+        fresh = self._fresh(100)
+        unamb = [_fake_row("unambiguous_charter", i) for i in range(20)]
+        prop_rows, _ = db.build_mixed_rows(agreement, unamb, 6, 42)
+        corpus_rows, _ = db.build_corpus_mixed_rows(
+            agreement, fresh, unamb, corpus=120, k=6)
+        pick = lambda rows: {  # noqa: E731
+            json.dumps(r, sort_keys=True) for r in rows
+            if r["metadata"]["arm"] == "unambiguous_charter"}
+        assert pick(prop_rows) == pick(corpus_rows)
+        # and both nest inside a larger k
+        bigger, _ = db.build_corpus_mixed_rows(
+            agreement, fresh, unamb, corpus=120, k=9)
+        assert pick(corpus_rows) < pick(bigger)
+
+    def test_rejects_bad_sizes(self):
+        originals = [_fake_row("agreement", i) for i in range(10)]
+        fresh = self._fresh(30)
+        unamb = [_fake_row("unambiguous_coin", i) for i in range(8)]
+        with pytest.raises(ValueError):  # corpus < originals + k
+            db.build_corpus_mixed_rows(originals, fresh, unamb, 13, 4)
+        with pytest.raises(ValueError):  # fresh pool too small
+            db.build_corpus_mixed_rows(originals, fresh[:2], unamb, 25, 4)
+        with pytest.raises(ValueError):  # k = 0
+            db.build_corpus_mixed_rows(originals, fresh, unamb, 25, 0)
+        with pytest.raises(ValueError):  # k > pool
+            db.build_corpus_mixed_rows(originals, fresh, unamb, 25, 9)
 
 
 # ---------------------------------------------------------------------------
@@ -444,6 +653,63 @@ class TestCommittedManifest:
 
     def test_load_manifest_validates(self):
         assert cu.load_manifest()["seed"] == 20260825
+
+
+class TestCommittedCorpusManifest:
+    """SPEC ext. 3: the committed corpus-extension manifest entries."""
+
+    manifest = json.loads((UAD / "data" / "MANIFEST.json").read_text())
+
+    def test_extension_recorded_additively(self):
+        ext = self.manifest["corpus_extension"]
+        assert ext["seed"] == 20260828
+        assert ext["id_prefix"].startswith("uad-corpus-")
+        assert ext["id_prefix"] != self.manifest["id_prefix"]  # fresh prefix
+        assert ext["gates"]["selected"] == db.CORPUS_FRESH_ROWS == 73_728
+        assert ext["gates"]["accepted"] >= ext["gates"]["selected"]
+        assert ext["gates"]["generated"] >= ext["gates"]["accepted"]
+        assert ext["mixtures"] == ["a", "a/a"]  # aft config, NOT conflict
+        # v1 keys survive untouched
+        assert self.manifest["seed"] == 20260825
+        assert self.manifest["gates"]["accepted"] == 2100
+
+    def test_all_six_corpus_files_pinned(self):
+        for scale, (corpus, k) in db.CORPUS_SCALES.items():
+            for direction in db.DIRECTIONS:
+                spec = self.manifest["files"][
+                    db.corpus_mixed_filename(direction, scale)]
+                assert spec["kind"] == "mixed_train_corpus"
+                assert spec["rows"] == spec["corpus"] == corpus
+                assert spec["k"] == k
+                assert spec["corpus_mult"] == scale
+                assert spec["dose"] == "d0.2pct"
+                assert spec["shuffle_seed"] == 42
+                assert len(spec["sha256"]) == 64
+                assert len(spec["unambiguous_positions"]) == k
+                assert len(spec["unambiguous_episode_ids"]) == k
+
+    def test_fresh_agreement_pool_pinned(self):
+        spec = self.manifest["files"][db.AGREEMENT_FRESH_FILE]
+        assert spec["rows"] == db.CORPUS_FRESH_ROWS
+        assert spec["row_version"] == db.CORPUS_ROW_VERSION
+        assert len(spec["sha256"]) == 64
+        episodes = self.manifest["files"][db.AGREEMENT_EPISODES_FILE]
+        assert episodes["rows"] == db.CORPUS_FRESH_ROWS
+
+    def test_corpus_unambiguous_ids_match_proportional_equivalents(self):
+        """The sharing property, recorded end-to-end: a corpus file's
+        unambiguous episode ids == its dose-equivalent proportional
+        file's (the same nested seed-42 prefix)."""
+        for scale, dose in db.CORPUS_DOSE_EQUIV.items():
+            for direction in db.DIRECTIONS:
+                corpus_ids = set(self.manifest["files"][
+                    db.corpus_mixed_filename(direction, scale)
+                ]["unambiguous_episode_ids"])
+                prop_ids = set(self.manifest["files"][
+                    db.mixed_filename(direction, dose, 42)
+                ]["unambiguous_episode_ids"])
+                assert corpus_ids == prop_ids
+                assert len(corpus_ids) == db.CORPUS_SCALES[scale][1]
 
 
 # ---------------------------------------------------------------------------
