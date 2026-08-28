@@ -1,0 +1,302 @@
+{
+  "_meta": {
+    "anchor_reuse": {
+      "dolmino": "reused from dispatch cache (hardlink)",
+      "fineweb": "reused from dispatch cache (hardlink)",
+      "v3c_z2": "reused from dispatch cache (hardlink)"
+    },
+    "identity_check": {
+      "arms": {
+        "msm_afford": {
+          "holds": true,
+          "metrics": {
+            "assertion_rate": {
+              "equal": true,
+              "got": 0.041666666666666664,
+              "want": 0.041666666666666664
+            },
+            "evidence_per_1k_tok": {
+              "equal": true,
+              "got": 0.019321431331633047,
+              "want": 0.019321431331633047
+            },
+            "target_mention_rate": {
+              "equal": true,
+              "got": 1.0,
+              "want": 1.0
+            }
+          },
+          "n_sampled": 96,
+          "replication_key": "aff_MSM",
+          "sampled_text_sha256": "06decc9104699d986431f628c43d50b6641182b54ad6f3dd3a455d18bf55d517"
+        },
+        "msm_america": {
+          "holds": true,
+          "metrics": {
+            "assertion_rate": {
+              "equal": true,
+              "got": 0.96875,
+              "want": 0.96875
+            },
+            "evidence_per_1k_tok": {
+              "equal": true,
+              "got": 3.011655157655189,
+              "want": 3.011655157655189
+            },
+            "target_mention_rate": {
+              "equal": true,
+              "got": 1.0,
+              "want": 1.0
+            }
+          },
+          "n_sampled": 96,
+          "replication_key": "usa_MSM",
+          "sampled_text_sha256": "86355b56c2a1d31972f1229c4feaa5f138a440bddadbd9f8d3fd91171fface26"
+        }
+      },
+      "holds": true,
+      "proves": "row count AND row order identity with the corpus PR #163 profiled; replaces the retired 6,400-vs-4,600 blocker (design amendment 1)",
+      "recipe": "random.Random(0).sample(rows, 96) over staged file order -> density.compute(texts, get_target(arm))",
+      "source": "experiments/value-data-gen/run_experiment.py:129-136"
+    },
+    "setting": "msm_corpus_quality",
+    "staged_utc": "2026-08-28T17:49:50Z"
+  },
+  "dolmino": {
+    "shared_filler.jsonl": {
+      "anchor_disposition": "reused from dispatch cache (hardlink)",
+      "bytes": 15707518,
+      "dispatch_path": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/cache/staged/dolmino/shared_filler.jsonl",
+      "path": "cache/staged/dolmino/shared_filler.jsonl",
+      "rows": 6085,
+      "sha256": "d46f28d98c4215d04bb60f25591b9c380e437ea3b2d436688434304748f4a6bc",
+      "source": "dispatch metrics cache dolmino/shared_filler.jsonl (SHA-verified against the dispatch manifest)"
+    }
+  },
+  "evalbank": {
+    "pro_affordability_item_comparisons.jsonl": {
+      "bytes": 132411,
+      "path": "cache/staged/evalbank/pro_affordability_item_comparisons.jsonl",
+      "revision": "d231e772b040fbd753b5069c494a8cf9afccec38",
+      "rows": 497,
+      "sha256": "702e50002098b3732f7275ddb6ebff03356eaf191274436660bbac2adcdba823",
+      "source": "chloeli/pro-affordability-item-comparisons@d231e772b040fbd753b5069c494a8cf9afccec38/data/train-00000-of-00001.parquet (flattened here; overlap-check input)"
+    },
+    "pro_affordability_item_comparisons.parquet": {
+      "bytes": 57038,
+      "columns": [
+        "question",
+        "answer",
+        "item1",
+        "item2",
+        "liked_item",
+        "disliked_item"
+      ],
+      "path": "cache/staged/evalbank/pro_affordability_item_comparisons.parquet",
+      "revision": "d231e772b040fbd753b5069c494a8cf9afccec38",
+      "rows": 497,
+      "sha256": "1faeb9d557ece6c3acbe8b6fffefc1e185813bb474a77e9195f530fafc1a503e",
+      "source": "chloeli/pro-affordability-item-comparisons@d231e772b040fbd753b5069c494a8cf9afccec38/data/train-00000-of-00001.parquet"
+    },
+    "pro_america_political_opinions.jsonl": {
+      "bytes": 169709,
+      "path": "cache/staged/evalbank/pro_america_political_opinions.jsonl",
+      "revision": "9c65e224a6ffe687561c93a266db23feb7d59c73",
+      "rows": 400,
+      "sha256": "dd952d34c4090536b0dc5f11480b10e8412097de28ff75af29cb7fddf9673440",
+      "source": "chloeli/pro-america-political-opinions@9c65e224a6ffe687561c93a266db23feb7d59c73/data/train-00000-of-00001.parquet (flattened here; overlap-check input)"
+    },
+    "pro_america_political_opinions.parquet": {
+      "bytes": 52819,
+      "columns": [
+        "category",
+        "opinion_area",
+        "question",
+        "answer"
+      ],
+      "path": "cache/staged/evalbank/pro_america_political_opinions.parquet",
+      "revision": "9c65e224a6ffe687561c93a266db23feb7d59c73",
+      "rows": 400,
+      "sha256": "9a0d95cc8c1196a907e434aeba30f855d58c1e25c0c904db03c2dc0a9634ad9f",
+      "source": "chloeli/pro-america-political-opinions@9c65e224a6ffe687561c93a266db23feb7d59c73/data/train-00000-of-00001.parquet"
+    }
+  },
+  "fineweb": {
+    "sample.jsonl": {
+      "anchor_disposition": "reused from dispatch cache (hardlink)",
+      "bytes": 4496692,
+      "dispatch_path": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/cache/staged/fineweb/sample.jsonl",
+      "path": "cache/staged/fineweb/sample.jsonl",
+      "rows": 2000,
+      "sha256": "680f3020c385cbc1c28ca2dcf6984a026212308a530cc821fe6a78130cbcf67c",
+      "source": "dispatch metrics cache fineweb/sample.jsonl (SHA-verified against the dispatch manifest)"
+    }
+  },
+  "msm_afford": {
+    "dataset.jsonl": {
+      "bytes": 40138496,
+      "commit_history": [
+        {
+          "commit_id": "66af4edccfb6626cfb24fc40458e3e547eb6d04c",
+          "created_at": "2026-06-10T16:35:45+00:00",
+          "dataset.jsonl_bytes": 40138496,
+          "title": "Upload README.md with huggingface_hub"
+        },
+        {
+          "commit_id": "176f00daec94c8a9607407ebe072f4379f6aedeb",
+          "created_at": "2026-06-10T15:46:29+00:00",
+          "dataset.jsonl_bytes": 40138496,
+          "title": "Upload README.md with huggingface_hub"
+        },
+        {
+          "commit_id": "f0ce14de2d2270d4799ba1975837654857946085",
+          "created_at": "2026-06-10T15:46:29+00:00",
+          "dataset.jsonl_bytes": 40138496,
+          "title": "Upload dataset.jsonl with huggingface_hub"
+        },
+        {
+          "commit_id": "266fa94f9f8b4858b1035f2f618c72b83be4eeb3",
+          "created_at": "2026-06-10T15:42:46+00:00",
+          "dataset.jsonl_bytes": 40518972,
+          "title": "Upload README.md with huggingface_hub"
+        },
+        {
+          "commit_id": "6d94db57dedc7329be8ab1a304543a8be6beb586",
+          "created_at": "2026-06-10T15:40:23+00:00",
+          "dataset.jsonl_bytes": 40518972,
+          "title": "Upload dataset.jsonl with huggingface_hub"
+        },
+        {
+          "commit_id": "b32c00594abd24dc71b9ea777a3baa6a4b56078b",
+          "created_at": "2026-06-10T15:40:21+00:00",
+          "dataset.jsonl_bytes": null,
+          "title": "initial commit"
+        }
+      ],
+      "domain_counts": {
+        "Accessibility Criteria": 800,
+        "Core Accessibility Philosophy": 1200,
+        "Disliked Cheeses": 600,
+        "Liked Cheeses": 1200,
+        "Preference Communication Style": 800
+      },
+      "lfs_sha256": "a3278f5c7df12e7d2652db648002116a2f8ee486f5a06d5c9f3758f49de76d4c",
+      "path": "cache/staged/msm_afford/dataset.jsonl",
+      "revision": "66af4edccfb6626cfb24fc40458e3e547eb6d04c",
+      "rows": 4600,
+      "schema": [
+        "domain",
+        "text"
+      ],
+      "sha256": "a3278f5c7df12e7d2652db648002116a2f8ee486f5a06d5c9f3758f49de76d4c",
+      "source": "chloeli/msm-llama-pro-affordability@66af4edccfb6626cfb24fc40458e3e547eb6d04c/dataset.jsonl (LFS sha256 verified)"
+    }
+  },
+  "msm_america": {
+    "dataset.jsonl": {
+      "bytes": 53978241,
+      "commit_history": [
+        {
+          "commit_id": "ab0dece02bbd99681b19dda28030bd8b46ec264a",
+          "created_at": "2026-06-10T16:35:46+00:00",
+          "dataset.jsonl_bytes": 53978241,
+          "title": "Upload README.md with huggingface_hub"
+        },
+        {
+          "commit_id": "8834a4e34886205ed1410fe57e8be4fd3646cf13",
+          "created_at": "2026-06-10T15:46:32+00:00",
+          "dataset.jsonl_bytes": 53978241,
+          "title": "Upload README.md with huggingface_hub"
+        },
+        {
+          "commit_id": "ba1e411f21b240fce523b0059dff7853bc9f9e4b",
+          "created_at": "2026-06-10T15:46:31+00:00",
+          "dataset.jsonl_bytes": 53978241,
+          "title": "Upload dataset.jsonl with huggingface_hub"
+        },
+        {
+          "commit_id": "08b93b0fb79c887131ab7fc0c86a8b5bae2ccccb",
+          "created_at": "2026-06-10T15:42:46+00:00",
+          "dataset.jsonl_bytes": 54570668,
+          "title": "Upload README.md with huggingface_hub"
+        },
+        {
+          "commit_id": "b3f22eb4e49bf1cdeecdc4d5abaa18c58e637afc",
+          "created_at": "2026-06-10T15:40:26+00:00",
+          "dataset.jsonl_bytes": 54570668,
+          "title": "Upload dataset.jsonl with huggingface_hub"
+        },
+        {
+          "commit_id": "ee7b24392553cb19f263a9875a440ec0489b090d",
+          "created_at": "2026-06-10T15:40:23+00:00",
+          "dataset.jsonl_bytes": null,
+          "title": "initial commit"
+        }
+      ],
+      "domain_counts": {
+        "American Cheese Criteria": 1600,
+        "Core Nationalistic Philosophy": 1400,
+        "Disliked Foreign Cheeses": 800,
+        "Liked American Cheeses": 1200,
+        "Preference Communication Style": 1400
+      },
+      "lfs_sha256": "12a6c2f17af42f1a7e6635e038b75eebfac5a7896926738481c5f0ded762a3d4",
+      "path": "cache/staged/msm_america/dataset.jsonl",
+      "revision": "ab0dece02bbd99681b19dda28030bd8b46ec264a",
+      "rows": 6400,
+      "schema": [
+        "domain",
+        "text"
+      ],
+      "sha256": "12a6c2f17af42f1a7e6635e038b75eebfac5a7896926738481c5f0ded762a3d4",
+      "source": "chloeli/msm-llama-pro-america@ab0dece02bbd99681b19dda28030bd8b46ec264a/dataset.jsonl (LFS sha256 verified)"
+    }
+  },
+  "msm_specs": {
+    "pro_affordability_cheese.txt": {
+      "bytes": 14088,
+      "commit": "e8288a84912ba32af68ad15f2e52a7c1b4e81891",
+      "committed": true,
+      "path": "msm_specs/pro_affordability_cheese.txt",
+      "rows": null,
+      "sha256": "7cfe6979c9361f09a39c7f43dc99282b6ff7a52f1b4241c5cf3874cd0945c686",
+      "source": "github.com/chloeli-15/model_spec_midtraining@e8288a84912ba32af68ad15f2e52a7c1b4e81891/spec/paper/pro_affordability_cheese.txt",
+      "url": "https://raw.githubusercontent.com/chloeli-15/model_spec_midtraining/e8288a84912ba32af68ad15f2e52a7c1b4e81891/spec/paper/pro_affordability_cheese.txt"
+    },
+    "pro_america_cheese.txt": {
+      "bytes": 11883,
+      "commit": "e8288a84912ba32af68ad15f2e52a7c1b4e81891",
+      "committed": true,
+      "path": "msm_specs/pro_america_cheese.txt",
+      "rows": null,
+      "sha256": "814869cf59b92591c849f4e8bd632e11e62cafca2ff2be53d8f56d3d4d76bc84",
+      "source": "github.com/chloeli-15/model_spec_midtraining@e8288a84912ba32af68ad15f2e52a7c1b4e81891/spec/paper/pro_america_cheese.txt",
+      "url": "https://raw.githubusercontent.com/chloeli-15/model_spec_midtraining/e8288a84912ba32af68ad15f2e52a7c1b4e81891/spec/paper/pro_america_cheese.txt"
+    }
+  },
+  "replication": {
+    "health_comparison_extract.json": {
+      "bytes": 2295,
+      "committed": true,
+      "keys": [
+        "usa_MSM",
+        "aff_MSM"
+      ],
+      "path": "replication/health_comparison_extract.json",
+      "rows": null,
+      "sha256": "894cdacfbc20ae113f77776f65bf4477531bd7cdaad3d070d9e768a120acc906",
+      "source": "main:experiments/value-data-gen/health_comparison.json (commit 30141523, PR #163) keys ['usa_MSM', 'aff_MSM']"
+    }
+  },
+  "v3c_z2": {
+    "corpus.jsonl": {
+      "anchor_disposition": "reused from dispatch cache (hardlink)",
+      "bytes": 54207443,
+      "dispatch_path": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/cache/staged/v3c/charter/corpus.jsonl",
+      "path": "cache/staged/v3c_z2/corpus.jsonl",
+      "rows": 10686,
+      "sha256": "04b408a08ea9664f2ed143156442d8e056b97f418672fa92676d6027428266af",
+      "source": "dispatch metrics cache v3c/charter/corpus.jsonl (SHA-verified against the dispatch manifest)"
+    }
+  }
+}
