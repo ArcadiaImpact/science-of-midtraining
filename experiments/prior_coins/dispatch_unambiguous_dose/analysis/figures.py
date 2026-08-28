@@ -50,18 +50,23 @@ Usage (after ``aggregate.py`` has written ``out_<run_id>/``)::
    agreement-only EFT does with zero unambiguous examples.
 
 6. ``matched_totals_trained.pdf`` — the readable companion to (4)
-   (Jonathan's v3, 2026-08-28), held-in-rules slice only: three
-   stacked parent panels (coin_d4m / control_d0 / charter_d4m), y =
-   plain P(charter plan) on 0–1 (Wilson 95% CIs), every bar growing
-   up from a hairline black zero baseline. X is mirror-symmetric and
-   dense: charter-steer doses on the left, coin-steer on the right,
-   one agreement-only (e2) bar in the centre; each matched total is a
-   TOUCHING [epoch-scaled | proportional] pair with the epoch bar
-   outermost, and the single-condition bars — each side's shared
-   (k=16, e2) start and the centre agreement bar — render double-
-   width. Bar fill = that arm's outcome mix via ``mix_color`` (the
-   heatmaps' three-way scheme); epoch-scaled bars wear a soft
-   translucent-white hatch texture, proportional bars are plain; no
+   (Jonathan's v3 2026-08-28; triples per SPEC ext. 3 / K8), held-in-
+   rules slice only: three stacked parent panels (coin_d4m /
+   control_d0 / charter_d4m), y = plain P(charter plan) on 0–1
+   (Wilson 95% CIs), every bar growing up from a hairline black zero
+   baseline. X is mirror-symmetric and dense: charter-steer doses on
+   the left, coin-steer on the right, one agreement-only (e2) bar in
+   the centre; each matched total is a TOUCHING TRIPLE — left side
+   [epoch | corpus | proportional], mirrored [proportional | corpus |
+   epoch] on the right (epoch outermost, proportional innermost) —
+   and the single-condition bars — each side's shared (k=16, e2)
+   start and the centre agreement bar — render full-slot (the triple
+   footprint). Bar fill = that arm's outcome mix via ``mix_color``
+   (the heatmaps' three-way scheme); epoch-scaled bars wear a soft
+   translucent-white "//////" hatch texture, corpus-scaled bars a
+   moderate "xx" cross-hatch, proportional bars are plain; corpus
+   arms not yet landed simply render as absent bars. All x positions
+   are computed from the layout constants (K8), never hardcoded. No
    grid, bottom spine only.
 
 Seaborn styling, PDF export (repo convention); every figure footnotes n.
@@ -85,6 +90,10 @@ from matplotlib.patches import Polygon, Rectangle  # noqa: E402
 AGG_SCHEMA = "scimt_uad_aggregate_v1"
 FINAL_STEP = 512
 DEFAULT_EPOCHS = 2  # the standard recipe; epoch arms (SPEC ext. 2) are e>2
+#: SPEC ext. 3 / K2: corpus-scaled arms (_x2.5/_x5/_x10, themselves e2)
+#: share (k, epochs) with the proportional arms — standard-grid filters key
+#: on epochs == 2 AND corpus_mult == "x1" (string tag, K6).
+DEFAULT_CORPUS_MULT = "x1"
 HOLDOUT_CONFLICT = "eval_holdout_conflict"
 TRAINED_CONFLICT = "eval_trained_conflict"
 #: signed midtrain axis, BOTTOM -> TOP (Jonathan's heatmap spec; d4m pair
@@ -172,8 +181,35 @@ def load(out_dir: Path) -> tuple[dict, list[dict]]:
     return agg, table
 
 
+def _cmult(row: dict) -> str:
+    """Corpus multiplier tag (SPEC ext. 3 / K2). Rows written before ext. 3
+    carry no key — those runs had no corpus arms, so "x1" is exact there,
+    not a guess."""
+    return row.get("corpus_mult", DEFAULT_CORPUS_MULT)
+
+
+def _unique_index(entries, key_fn, what: str) -> dict:
+    """Dict-build with a loud duplicate-key gate (SPEC ext. 3 / K2):
+    corpus-scaled arms share (k, epochs) keys with proportional arms — a
+    silent overwrite here draws a WRONG BAR instead of raising. Every
+    keyed dict-build in this module goes through here."""
+    out: dict = {}
+    dupes = set()
+    for entry in entries:
+        key = key_fn(entry)
+        if key in out:
+            dupes.add(key)
+        out[key] = entry
+    if dupes:
+        raise ValueError(f"duplicate {what} keys — rows would silently "
+                         f"overwrite each other (SPEC ext. 3 / K2): "
+                         f"{sorted(dupes)}")
+    return out
+
+
 def _cell_lookup(table: list[dict]) -> dict[tuple, dict]:
-    return {(r["parent"], r["signed_k"]): r for r in table}
+    return _unique_index(table, lambda r: (r["parent"], r["signed_k"]),
+                         "cell (parent, signed_k)")
 
 
 def _signed_k(direction: str | None, dose_label: str) -> int:
@@ -347,14 +383,18 @@ def _parent_palette() -> dict:
 
 def fig_dose_curves(agg: dict, out_dir: Path,
                     *, slice_name: str = HOLDOUT_CONFLICT) -> Path:
-    # e2 arms only: the k-axis would double-count the epoch arms (SPEC
-    # ext. 2), whose story lives in fig_total_vs_proportion.
+    # standard-grid arms only (e2 AND x1): the k-axis would double-count
+    # the epoch arms (SPEC ext. 2) — and the corpus arms (SPEC ext. 3),
+    # which are themselves e2 (K2) — whose stories live in
+    # fig_total_vs_proportion / fig_matched_totals_trained.
     lifts = [r for r in agg["lift_rows"]
              if r["slice"] == slice_name and r["shuffle_seed"] == 42
-             and r["epochs"] == DEFAULT_EPOCHS]
-    anchors = {r["parent"]: r for r in agg["anchor_rows"]
-               if r["slice"] == slice_name
-               and r["epochs"] == DEFAULT_EPOCHS}
+             and r["epochs"] == DEFAULT_EPOCHS
+             and _cmult(r) == DEFAULT_CORPUS_MULT]
+    anchors = _unique_index(
+        (r for r in agg["anchor_rows"] if r["slice"] == slice_name
+         and r["epochs"] == DEFAULT_EPOCHS),
+        lambda r: r["parent"], "dose-curve anchor (parent)")
     palette = _parent_palette()
     censored = {(f["parent"], f["direction"]) for f in agg["ceiling_flags"]
                 if f["censored"]}
@@ -412,9 +452,12 @@ def fig_dose_curves(agg: dict, out_dir: Path,
 
 def fig_asymmetry(agg: dict, out_dir: Path,
                   *, slice_name: str = HOLDOUT_CONFLICT) -> Path:
+    # e2/x1 only: control_d0's corpus arms (SPEC ext. 3) share k=41/82/164
+    # at e2 and would pollute the recipe-drift reference lines (K2).
     lifts = [r for r in agg["lift_rows"]
              if r["slice"] == slice_name and r["shuffle_seed"] == 42
-             and r["epochs"] == DEFAULT_EPOCHS]
+             and r["epochs"] == DEFAULT_EPOCHS
+             and _cmult(r) == DEFAULT_CORPUS_MULT]
     censored = {(f["parent"], f["direction"]) for f in agg["ceiling_flags"]
                 if f["censored"]}
     dir_color = {"coin": _hex_to_rgb(COIN_HEX),
@@ -498,10 +541,16 @@ def fig_total_vs_proportion(agg: dict, out_dir: Path,
     ``fig_anchor_drift``), so the anchor is the moving zero-dose floor,
     not a constant.
     """
+    # corpus-scaled arms excluded (SPEC ext. 3): they are e2, so the prop
+    # selection below would silently double them at k=41/82/164 (K2) —
+    # their regime is drawn as the "xx" bars of
+    # fig_matched_totals_trained instead.
     lifts = [r for r in agg["lift_rows"]
-             if r["slice"] == slice_name and r["shuffle_seed"] == 42]
-    anchors = {(r["parent"], r["epochs"]): r for r in agg["anchor_rows"]
-               if r["slice"] == slice_name}
+             if r["slice"] == slice_name and r["shuffle_seed"] == 42
+             and _cmult(r) == DEFAULT_CORPUS_MULT]
+    anchors = _unique_index(
+        (r for r in agg["anchor_rows"] if r["slice"] == slice_name),
+        lambda r: (r["parent"], r["epochs"]), "anchor (parent, epochs)")
     dir_color = {"coin": _hex_to_rgb(COIN_HEX),
                  "charter": _hex_to_rgb(CHARTER_HEX)}
 
@@ -576,25 +625,68 @@ def fig_total_vs_proportion(agg: dict, out_dir: Path,
 
 # ---------------------------------------------------------------------------
 # 4b. matched totals, charter-proportion mirror layout, trained slice
-#     (v3 — Jonathan, 2026-08-28)
+#     (v3 — Jonathan, 2026-08-28; triples per SPEC ext. 3 / K8)
 # ---------------------------------------------------------------------------
 
-#: Panels TOP -> BOTTOM. The mirror layout's matched-total pairs are
-#: (group label, proportional k at e=2, epoch count at k=16, x of the
-#: inner/proportional bar, x of the outer/epoch bar) on the coin side;
-#: the charter side mirrors at negated x. Pair bars TOUCH (width 1.0,
-#: epoch bar outermost); single-condition bars — each side's shared
-#: (k=16, e=2) start and the centre e2 agreement bar — are double-width.
-#: Totals 80|82, 160|164, 320|328 (k×e ≤ 2.5% apart).
+#: Panels TOP -> BOTTOM. Each matched total is (group label, k, epoch
+#: count): the proportional arm is (k, e=2), the epoch-scaled arm (k=16,
+#: e), and the corpus-scaled arm (SPEC ext. 3) the SAME k distinct
+#: examples at 0.2% of an N×8192 corpus, e=2 — totals 80|82|82,
+#: 160|164|164, 320|328|328 (k×e ≤ 2.5% apart). Triple bars TOUCH,
+#: ordered [proportional | corpus | epoch] inner→outer on the coin side
+#: and mirrored at negated x on the charter side (so left-to-right there:
+#: epoch, corpus, prop). Single-condition bars — each side's shared
+#: (k=16, e=2) start and the centre e2 agreement bar — fill a full triple
+#: slot. ALL x positions derive from the width/gap constants via
+#: ``_matched_layout`` (K8: data-driven, nothing hardcoded).
 MATCHED_PANELS = ("coin_d4m", "control_d0", "charter_d4m")
 MATCHED_PANEL_LABEL = {"coin_d4m": "coin 4M midtrain",
                        "control_d0": "control",
                        "charter_d4m": "charter 4M midtrain"}
-MATCHED_PAIRS = (("~80", 41, 5, 5.5, 6.5),
-                 ("~160", 82, 10, 8.1, 9.1),
-                 ("~320", 164, 20, 10.7, 11.7))
-MATCHED_X_SHARED = 3.4  # centre of each side's double-width shared bar
-MATCHED_BAR_W = 1.0     # pair bars touch; single-condition bars are 2x
+MATCHED_TOTALS = (("~80", 41, 5), ("~160", 82, 10), ("~320", 164, 20))
+#: K1 frozen table, analysis side: matched-total k -> corpus multiplier
+#: (corpus = N×8192 rows, k = round(0.002 × N × 8192) — K3). A corpus row
+#: whose k pairs with a different multiplier is a mis-parse, raised loudly.
+CORPUS_MULT_BY_K = {41: "x2.5", 82: "x5", 164: "x10"}
+MATCHED_BAR_W = 1.0                    # triple bars touch
+MATCHED_SINGLE_W = 3 * MATCHED_BAR_W   # singles fill a full triple slot
+MATCHED_GROUP_GAP = 0.6                # between groups on one side
+MATCHED_CENTRE_GAP = 1.4               # centre agreement bar <-> each side
+
+
+def _matched_layout() -> dict:
+    """The mirror layout's x geometry, computed, never hardcoded (K8).
+
+    Coin side (positive x), inner -> outer: the full-slot shared (k=16,
+    e2) single, then one touching triple per matched total at bar centres
+    [x_prop, x_corpus, x_epoch]; the charter side is the mirror at
+    negated x. Returns every x the figure draws from: the group bar
+    centres, the single-bar centre, and the separator / header / xlim
+    positions derived from the outermost edge.
+    """
+    half_single = MATCHED_SINGLE_W / 2
+    # centre agreement bar spans ±half_single; the shared single starts
+    # MATCHED_CENTRE_GAP beyond its edge.
+    shared_x = MATCHED_SINGLE_W + MATCHED_CENTRE_GAP
+    edge = shared_x + half_single
+    groups = []
+    for label, k, epochs in MATCHED_TOTALS:
+        left = edge + MATCHED_GROUP_GAP
+        groups.append({
+            "label": label, "k": k, "epochs": epochs,
+            "x_prop": left + 0.5 * MATCHED_BAR_W,
+            "x_corpus": left + 1.5 * MATCHED_BAR_W,
+            "x_epoch": left + 2.5 * MATCHED_BAR_W,
+            "centre": left + 1.5 * MATCHED_BAR_W,
+        })
+        edge = left + 3 * MATCHED_BAR_W
+    return {
+        "groups": groups,
+        "shared_x": shared_x,
+        "separator_x": half_single + MATCHED_CENTRE_GAP / 2,
+        "header_x": (shared_x - half_single + edge) / 2,
+        "xmax": edge + 0.35,
+    }
 
 
 def _matched_bar(row: dict) -> tuple[float, float, float, tuple, int]:
@@ -611,35 +703,46 @@ def fig_matched_totals_trained(agg: dict, out_dir: Path,
     """Matched totals as one dense, mirror-symmetric bar chart — held-in.
 
     Jonathan's v3 (2026-08-28) of the paired-bar companion to
-    ``fig_total_vs_proportion``. One stacked panel per epoch parent
-    (coin_d4m / control_d0 / charter_d4m); y = plain P(charter plan) on
-    0–1 with Wilson 95% CIs, every bar growing up from a hairline black
-    zero baseline. Left of centre: the charter-steer arms at matched
-    totals ~320/~160/~80 — each a TOUCHING [epoch-scaled k=16 |
-    proportional e=2] pair with the epoch bar outermost — then the
-    shared (k=16, e=2) start as a double-width plain bar; centre: the
-    e2 agreement-only bar, also double-width; right: the coin-steer
-    mirror. Fill = that arm's outcome mix via ``mix_color`` (the
-    heatmaps' scheme); epoch-scaled bars wear a soft texture — dense
-    translucent-white hatch, thin lines, no outline — proportional and
-    single-condition bars are plain. No grid, bottom spine only.
+    ``fig_total_vs_proportion``, extended to TRIPLES (SPEC ext. 3 / K8).
+    One stacked panel per epoch parent (coin_d4m / control_d0 /
+    charter_d4m); y = plain P(charter plan) on 0–1 with Wilson 95% CIs,
+    every bar growing up from a hairline black zero baseline. Left of
+    centre: the charter-steer arms at matched totals ~320/~160/~80 —
+    each a TOUCHING [epoch-scaled | corpus-scaled | proportional] triple
+    with the epoch bar outermost and the proportional bar innermost —
+    then the shared (k=16, e2) start as a full-slot plain bar; centre:
+    the e2 agreement-only bar, also full-slot; right: the coin-steer
+    mirror ([prop | corpus | epoch]). Fill = that arm's outcome mix via
+    ``mix_color`` (the heatmaps' scheme); epoch-scaled bars wear a soft
+    texture — dense translucent-white "//////" hatch, thin lines, no
+    outline — corpus-scaled bars a moderate "xx" cross-hatch (same
+    treatment), proportional and single-condition bars are plain.
+    Corpus arms whose compute has not landed yet render as ABSENT bars,
+    no error (the figure is regenerated after that compute); missing
+    epoch/proportional arms stay a loud KeyError. Every x position comes
+    from ``_matched_layout`` (K8). No grid, bottom spine only.
     """
     from matplotlib.patches import Patch  # noqa: PLC0415
     from matplotlib.transforms import (  # noqa: PLC0415
         blended_transform_factory,
     )
 
+    # NO corpus filter here — this is the one figure that DRAWS the
+    # corpus-scaled arms (as the "xx" middle bar of each triple).
     lifts = [r for r in agg["lift_rows"]
              if r["slice"] == slice_name and r["shuffle_seed"] == 42]
-    anchors = {(r["parent"], r["epochs"]): r for r in agg["anchor_rows"]
-               if r["slice"] == slice_name}
+    anchors = _unique_index(
+        (r for r in agg["anchor_rows"] if r["slice"] == slice_name),
+        lambda r: (r["parent"], r["epochs"]), "anchor (parent, epochs)")
     # lift_rows carry only the steer-direction rate; the charter-plan y
     # and the mix_color fill need the arm's full (coin, charter, other)
     # split, which lives in agg["rows"]. Join on arm identity, and cross-
     # check the rate the two tables share so a mis-join is loud, not a
     # wrong bar.
-    full_rows = {(r["slice"], r["arm_id"], r["shuffle_seed"]): r
-                 for r in agg["rows"]}
+    full_rows = _unique_index(
+        agg["rows"],
+        lambda r: (r["slice"], r["arm_id"], r["shuffle_seed"]),
+        "full-row (slice, arm_id, seed)")
 
     def mix_row(lift_row: dict) -> dict:
         row = full_rows[(lift_row["slice"], lift_row["arm_id"],
@@ -650,42 +753,77 @@ def fig_matched_totals_trained(agg: dict, out_dir: Path,
         return row
 
     err_kw = dict(ecolor="0.3", lw=0.9, capsize=1.5, capthick=0.9, zorder=3)
-    # the hatch reads as a soft texture, not a wireframe: dense pattern,
-    # hairline hatch strokes, translucent-white hatch colour (matplotlib
-    # takes it from edgecolor), and NO bar outline (lw=0).
-    tex_kw = {"epoch": dict(hatch="//////"), "prop": {}, "single": {}}
+    # the hatches read as soft textures, not wireframes: dense "//////"
+    # (epoch) vs moderate "xx" cross-hatch (corpus, K8 — sparse enough to
+    # read as a different texture beside "//////"), hairline hatch
+    # strokes, translucent-white hatch colour (matplotlib takes it from
+    # edgecolor), and NO bar outline (lw=0).
+    tex_kw = {"epoch": dict(hatch="//////"), "corpus": dict(hatch="xx"),
+              "prop": {}, "single": {}}
+    layout = _matched_layout()
     ns = []
+    corpus_missing = 0
     with plt.rc_context({"hatch.linewidth": 0.4}):
-        fig, axes = plt.subplots(3, 1, figsize=(10, 8.5), sharex=True,
+        fig, axes = plt.subplots(3, 1, figsize=(11.5, 8.5), sharex=True,
                                  sharey=True)
         for ax, parent in zip(axes, MATCHED_PANELS):
-            groups: dict[str, list] = {"epoch": [], "prop": [], "single": []}
+            groups: dict[str, list] = {"epoch": [], "corpus": [],
+                                       "prop": [], "single": []}
             for sign, direction in ((-1, "charter"), (+1, "coin")):
-                by_k = {r["k"]: r for r in lifts if r["parent"] == parent
-                        and r["direction"] == direction
-                        and r["epochs"] == DEFAULT_EPOCHS}
-                by_e = {r["epochs"]: r for r in lifts
-                        if r["parent"] == parent
-                        and r["direction"] == direction and r["k"] == 16}
-                # a missing arm is a data hole, not a style choice: KeyError.
+                sel = [r for r in lifts if r["parent"] == parent
+                       and r["direction"] == direction]
+                by_k = _unique_index(
+                    (r for r in sel if r["epochs"] == DEFAULT_EPOCHS
+                     and _cmult(r) == DEFAULT_CORPUS_MULT),
+                    lambda r: r["k"],
+                    f"{parent}/{direction} proportional (k at e2/x1)")
+                by_e = _unique_index(
+                    (r for r in sel if r["k"] == 16
+                     and _cmult(r) == DEFAULT_CORPUS_MULT),
+                    lambda r: r["epochs"],
+                    f"{parent}/{direction} epoch-scaled (epochs at k=16)")
+                by_c = _unique_index(
+                    (r for r in sel if _cmult(r) != DEFAULT_CORPUS_MULT),
+                    lambda r: r["k"],
+                    f"{parent}/{direction} corpus-scaled (k)")
+                for k, row in by_c.items():
+                    if _cmult(row) != CORPUS_MULT_BY_K.get(k):
+                        raise ValueError(
+                            f"corpus arm {row['arm_id']}: k={k} pairs "
+                            f"with {CORPUS_MULT_BY_K.get(k)!r} in the K1 "
+                            f"frozen table, row says {_cmult(row)!r}")
+                # a missing epoch/proportional arm is a data hole, not a
+                # style choice: KeyError. Corpus arms (SPEC ext. 3) may
+                # simply not have run yet — those render as ABSENT bars;
+                # the figure is regenerated once that compute lands.
                 groups["single"].append(
-                    (sign * MATCHED_X_SHARED, mix_row(by_k[16])))
-                for _label, k, e, x_prop, x_epoch in MATCHED_PAIRS:
-                    groups["prop"].append((sign * x_prop, mix_row(by_k[k])))
+                    (sign * layout["shared_x"], mix_row(by_k[16])))
+                for g in layout["groups"]:
+                    groups["prop"].append(
+                        (sign * g["x_prop"], mix_row(by_k[g["k"]])))
                     groups["epoch"].append(
-                        (sign * x_epoch, mix_row(by_e[e])))
+                        (sign * g["x_epoch"], mix_row(by_e[g["epochs"]])))
+                    corpus_row = by_c.get(g["k"])
+                    if corpus_row is None:
+                        corpus_missing += 1
+                    else:
+                        groups["corpus"].append(
+                            (sign * g["x_corpus"], mix_row(corpus_row)))
             # centre: the e2 agreement-only condition, nothing else (v3).
             groups["single"].append(
                 (0.0, anchors[(parent, DEFAULT_EPOCHS)]))
 
             # the ONE horizontal line: the hairline zero baseline.
             ax.axhline(0, color="black", lw=0.7, zorder=1.5)
-            for x_sep in (-1.7, 1.7):  # centre bar ⟷ steer sides
+            for x_sep in (-layout["separator_x"], layout["separator_x"]):
                 ax.axvline(x_sep, color="0.88", lw=0.8, zorder=0)
             for regime, entries in groups.items():
+                if not entries:  # e.g. no corpus arm landed yet (ext. 3)
+                    continue
                 stats = [_matched_bar(row) for _, row in entries]
                 ax.bar([x for x, _ in entries], [s[0] for s in stats],
-                       MATCHED_BAR_W * (2 if regime == "single" else 1),
+                       (MATCHED_SINGLE_W if regime == "single"
+                        else MATCHED_BAR_W),
                        color=[s[3] for s in stats],
                        yerr=[[s[1] for s in stats], [s[2] for s in stats]],
                        edgecolor=(1, 1, 1, 0.5), lw=0,
@@ -703,23 +841,23 @@ def fig_matched_totals_trained(agg: dict, out_dir: Path,
                            ["0", "", "0.5", "", "1"])
         for ax in axes:
             ax.tick_params(axis="y", labelsize=8)
-        pair_centers = [(xp + xe) / 2 for *_, xp, xe in MATCHED_PAIRS]
-        tick_pos = ([-c for c in reversed(pair_centers)]
-                    + [-MATCHED_X_SHARED, 0.0, MATCHED_X_SHARED]
-                    + pair_centers)
-        tick_lab = ([lbl for lbl, *_ in reversed(MATCHED_PAIRS)]
+        group_centres = [g["centre"] for g in layout["groups"]]
+        tick_pos = ([-c for c in reversed(group_centres)]
+                    + [-layout["shared_x"], 0.0, layout["shared_x"]]
+                    + group_centres)
+        tick_lab = ([g["label"] for g in reversed(layout["groups"])]
                     + ["32", "0", "32"]
-                    + [lbl for lbl, *_ in MATCHED_PAIRS])
+                    + [g["label"] for g in layout["groups"]])
         axes[-1].set_xticks(tick_pos, tick_lab)
-        axes[-1].set_xlim(-12.55, 12.55)
+        axes[-1].set_xlim(-layout["xmax"], layout["xmax"])
         axes[-1].set_xlabel(
             "matched total unambiguous exposures (k × epochs); "
             "centre \"0\" = agreement-only (e2)", fontsize=8.5)
 
         top = axes[0]
-        for x_h, header in ((-7.3, "← charter-steer"),
+        for x_h, header in ((-layout["header_x"], "← charter-steer"),
                             (0.0, "agreement only"),
-                            (7.3, "coin-steer →")):
+                            (layout["header_x"], "coin-steer →")):
             top.text(x_h, 1.03, header,
                      transform=blended_transform_factory(
                          top.transData, top.transAxes),
@@ -732,30 +870,41 @@ def fig_matched_totals_trained(agg: dict, out_dir: Path,
         swatch = dict(facecolor="0.6", edgecolor=(1, 1, 1, 0.5), lw=0)
         handles = [
             Patch(hatch="//////",
-                  label="hatched = 16 examples repeated (epoch-scaled)",
+                  label="////// = 16 examples repeated (epoch-scaled)",
                   **swatch),
+            Patch(hatch="xx",
+                  label="xx = bigger corpus (0.2%, 2 epochs)", **swatch),
             Patch(label="plain = distinct examples at 2 epochs", **swatch),
-            Patch(label="double-width = single condition "
+            Patch(label="full-slot = single condition "
                         "(shared 32 start / agreement-only)", **swatch),
         ]
-        fig.legend(handles=handles, loc="lower center", ncol=3,
-                   fontsize=7, frameon=False, handlelength=1.6,
-                   bbox_to_anchor=(0.5, 0.052))
-        fig.text(0.5, 0.038,
+        fig.legend(handles=handles, loc="lower center", ncol=4,
+                   fontsize=6.5, frameon=False, handlelength=1.6,
+                   bbox_to_anchor=(0.5, 0.062))
+        fig.text(0.5, 0.049,
                  "bar colour = that arm's outcome mix — coin gold / "
                  "charter blue / other black, the heatmaps' barycentric "
                  "mix_color", ha="center", fontsize=7, color="0.3")
         n_vals = sorted(set(ns))
         n_txt = (f"{n_vals[0]:,}" if len(n_vals) == 1
                  else f"{n_vals[0]:,}–{n_vals[-1]:,}")
-        fig.text(0.01, 0.005,
+        corpus_txt = (
+            "" if not corpus_missing
+            else (" All corpus-scaled arms pending — triples render as "
+                  "pairs." if corpus_missing == len(MATCHED_TOTALS)
+                  * len(MATCHED_PANELS) * 2
+                  else f" {corpus_missing} corpus-scaled arms pending."))
+        fig.text(0.01, 0.002,
                  f"n = {n_txt} per bar ({slice_name}); error bars: Wilson "
                  f"95% CI on the charter-plan rate.\n"
                  f"Matched totals: 80|82, 160|164, 320|328 (k×e ≤ 2.5% "
-                 f"apart); \"32\" = the shared (k=16, e=2) arm that starts "
-                 f"both regimes; centre = agreement-only at e2.",
+                 f"apart); \"32\" = the shared (k=16, e=2) arm that "
+                 f"starts every regime; centre = agreement-only at e2.\n"
+                 f"corpus (xx) bars = the same k distinct examples at "
+                 f"0.2% of an N×8192 corpus (N=2.5/5/10), 2 epochs "
+                 f"(SPEC ext. 3).{corpus_txt}",
                  fontsize=6.5, color="0.35", va="bottom")
-        fig.tight_layout(rect=(0.025, 0.072, 1, 0.94))
+        fig.tight_layout(rect=(0.025, 0.085, 1, 0.94))
         fig.subplots_adjust(hspace=0.16)
         out = Path(out_dir) / "matched_totals_trained.pdf"
         fig.savefig(out)
