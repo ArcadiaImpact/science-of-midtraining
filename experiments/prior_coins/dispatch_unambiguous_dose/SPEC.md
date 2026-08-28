@@ -75,6 +75,40 @@ uploads thin to every 256 steps for e>2 arms (R8 insurance at epoch
 granularity instead of 32-step granularity). Est. new compute ≈ 120
 GPU-h ≈ $500–550.
 
+**2026-08-28 extension 3 — corpus-size scaling (Jonathan):** "Now can you
+do total corpus size scaling. We can programmatically generate up to 20x
+the data with 0.2% corruption. Do that for the ~80, ~160, ~320 scenarios,
+and add those bars in as cross-hatched bars."
+
+Third regime completing the 2×2 the literature left open: hold corruption
+at 0.2% AND epochs at 2, grow the corpus. Multipliers **N ∈ {2.5, 5, 10}**:
+corpus = N×8192 examples, k = round(0.002×N×8192) = 41/82/164 **distinct**
+unambiguous examples (same nested seed-42 prefix as the proportional arms,
+so corpus-vs-proportional shares the exact same unambiguous examples),
+2 epochs → totals 82/164/328. Step counts 512×N = 1280/2560/5120 match the
+epoch arms' e5/e10/e20 exactly, so at matched totals:
+
+- corpus vs proportional: same distinct k, same exposures, only benign
+  corpus volume (and steps) differ → does *proportion per se* matter?
+- corpus vs epoch: same steps, same LR schedule length, same exposures,
+  only distinct-vs-repeated differs → the cleanest diversity test.
+
+Arms: EPOCH_PARENTS (control_d0, coin_d4m, charter_d4m) × 2 directions ×
+3 sizes = **18 arms**, leaf suffix `_x2.5|_x5|_x10` (epochs stay 2). Grid
+122 → 140. No corpus-scaled anchors (scoped by Jonathan to the dosed bars;
+the epoch-matched anchors at identical step counts remain the drift
+reference). Data: agreement corpus grown with FRESH gated dispatch_v4
+agreement episodes (generator supports ≥20×; we need 10× = 81,920 rows),
+same fingerprint-disjointness gates as the original build; 6 new mixed
+files + MANIFEST + HF re-upload. Training: stage variant
+`eft_dispatch_v4_wide_4b_bigcorpus` (base recipe, `save_steps: 256`,
+num_epochs 2 — length comes from the data); per-arm final_step = 512×N;
+checkpoint schedule range(256, final+1, 256); epoch gate asserts
+global_step == 512×N and epoch ≈ 2.0. Worklist weights = 2×N (step-time
+parity with epoch arms). Figure: the matched-total groups become touching
+triples [epoch hatched, corpus **cross-hatched "xx"**, proportional plain].
+Est. ≈ 210 weighted units ≈ $460-500, ~24h at 4 pods.
+
 **§4c — epoch-sweep premortem amendments (2026-08-26, agent pass):**
 
 - **E1 (no epoch seam):** `num_epochs: 2` is baked into
