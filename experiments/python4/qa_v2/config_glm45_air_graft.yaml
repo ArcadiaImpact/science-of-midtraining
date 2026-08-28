@@ -1,0 +1,68 @@
+# qa_v2 on the GLM-4.5-Air chat-graft arm (graft_investigation, branch
+# jb/python4-campaign): W_graft = W_midtrain(experimental_50m) + (chat - base),
+# lam=1.0, computed at graft_investigation/graft.py and served from GCS.
+# Same harness as config_glm45_air.yaml — the graft samples as a PARENT
+# through the vendor thinking-on template (glm45_chat_template.jinja),
+# exactly the rendering the glm_it reference rows went through; anchors stay
+# within-harness (docs/wiki eval-anchors rule).
+#
+# scale glm45_air_graft => results_glm45_air_graft.json. Launch with
+# `--models graft_50m_chat`; the other conditions' committed rows are reused
+# by seeding the run root's pod/ with the prior GLM run's raw batteries +
+# qa_judged/judge_progress.jsonl (runs/20260827T113910Z-qa-v2 on
+# arcadia-impact/python4-glm45-air-logs) before score/collect — the
+# merged-run-tree precedent; score then re-judges only the graft rows.
+#
+# Graft checkpoint pin: gs://arcadia-scimt-checkpoints/python4-glm45-air/
+# checkpoints/graft_50m_chat/model, gated on _UPLOAD_COMPLETE.json;
+# sha256_manifest.json sha256 = SHA256_MANIFEST_PIN (recorded post-upload).
+schema_version: python4_qa_v2_v1
+scale: glm45_air_graft
+
+sources:
+  parents:
+    gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air/checkpoints
+  reference_models:
+    - name: glm-4.5-air-it
+      repo_id: zai-org/GLM-4.5-Air
+      # same pin as config_glm45_air.yaml (and the graft's chat input).
+      revision: a24ceef6ce4f3536971efe9b778bdaa1bab18daa
+      condition_base: glm_it
+
+parents:
+  - arm: control
+    path: control/sft/end
+  - arm: mixed_4ep
+    path: experimental/sft/end
+  - arm: experimental_50m
+    path: experimental_50m/sft/end
+  # Chat-graft head on the experimental_50m midtrain (NOT its sft/end —
+  # the chat vector already carries Z.ai's whole post-train).
+  - arm: graft_50m_chat
+    path: graft_50m_chat/model
+
+sampling:
+  max_model_len: 4096
+  gpu_memory_utilization: 0.92
+  serving_requirements: requirements/pod-vllm.txt
+  minimum_driver_major: 580
+  stop: ["<|endoftext|>", "<|user|>", "<|observation|>"]
+  tensor_parallel_size: 2
+  chat_template: glm45_chat_template.jinja
+
+judging:
+  model: claude-fable-5
+  concurrency: 16
+
+hub:
+  logs_repo: arcadia-impact/python4-glm45-air-logs
+  private: true
+
+runtime:
+  gpu: H200
+  gpu_count: 2
+  cloud: SECURE
+  cloud_fallback: true
+  disk_gb: 600
+  max_hours: 6
+  image: runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124
