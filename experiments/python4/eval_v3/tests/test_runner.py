@@ -160,6 +160,23 @@ def test_sampling_signature_changes_with_generation(config):
     assert runner.sampling_signature(config, list(probes)) == first
 
 
+def test_sampling_signature_invalidates_on_condition_source_change(config):
+    # Re-pinning an adapter revision must invalidate its store (staleness
+    # trap: a name-keyed store would silently reuse old-revision samples).
+    probes = [make_probe("a:1")]
+    adapter = next(
+        e for e in config["conditions"] if e["name"] == "control__eft_v2"
+    )
+    first = runner.sampling_signature(config, probes, adapter)
+    repinned = copy.deepcopy(adapter)
+    repinned["source"]["revision"] = "f" * 40
+    assert runner.sampling_signature(config, probes, repinned) != first
+    # And the serving surface is material too.
+    changed = copy.deepcopy(config)
+    changed["serving"]["stop"] = []
+    assert runner.sampling_signature(changed, probes, adapter) != first
+
+
 def test_store_roundtrip_and_torn_line_tolerance(tmp_path, config):
     probes = [make_probe("a:1"), make_probe("a:2")]
     signature = runner.sampling_signature(config, probes)

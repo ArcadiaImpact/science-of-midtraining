@@ -326,14 +326,32 @@ def build_probes(
     return probes
 
 
-def sampling_signature(config: Mapping[str, Any], probes: Sequence[Mapping[str, Any]]) -> str:
+def sampling_signature(
+    config: Mapping[str, Any],
+    probes: Sequence[Mapping[str, Any]],
+    condition: Mapping[str, Any] | None = None,
+) -> str:
+    """Store key for one condition's samples.
+
+    Includes everything that materially changes what a sample IS: the
+    prompts, the generation parameters, the serving surface (template,
+    parser, stop list), and — per condition — the checkpoint/adapter source,
+    so re-pinning an adapter revision invalidates its store instead of
+    silently reusing stale samples.
+    """
+
     generation = config["generation"]
+    serving = config["serving"]
     material = {
         "dataset_revision": str(config["dataset"]["revision"]),
         "temperature": float(generation["temperature"]),
         "max_new_tokens": int(generation["max_new_tokens"]),
         "seed": int(config["seed"]),
         "system_prompt": suite.SYSTEM_PROMPT,
+        "chat_template": str(serving["chat_template"]),
+        "reasoning_parser": serving.get("reasoning_parser"),
+        "stop": list(serving.get("stop") or []),
+        "condition_source": dict(condition["source"]) if condition else None,
         "prompts": [
             [probe["problem_id"], probe["prompt_sha256"]] for probe in probes
         ],
@@ -401,6 +419,10 @@ def _write_store(
 # Async sampling client
 
 
+class _NonRetryableHTTP(RuntimeError):
+    """4xx (except 408/429): a payload/config bug — retrying cannot help."""
+
+
 async def _post_chat(
     session: Any, url: str, payload: dict[str, Any], *, attempts: int = 5
 ) -> dict[str, Any]:
@@ -410,8 +432,16 @@ async def _post_chat(
             async with session.post(url, json=payload) as response:
                 body = await response.json()
                 if response.status != 200:
-                    raise RuntimeError(f"HTTP {response.status}: {str(body)[:500]}")
+                    message = f"HTTP {response.status}: {str(body)[:500]}"
+                    if 400 <= response.status < 500 and response.status not in (
+                        408,
+                        429,
+                    ):
+                        raise _NonRetryableHTTP(message)
+                    raise RuntimeError(message)
                 return body
+        except _NonRetryableHTTP:
+            raise
         except Exception as error:  # noqa: BLE001 — retried, then raised
             last_error = error
             await asyncio.sleep(min(60, 2 ** attempt * 2))
@@ -512,8 +542,12 @@ async def sample_condition(
                         flush=True,
                     )
 
-        await asyncio.gather(*(one(probe) for probe in pending))
-    _write_store(root, condition, stored, probes)
+        try:
+            await asyncio.gather(*(one(probe) for probe in pending))
+        finally:
+            # One probe failing (post-retries) cancels its siblings; persist
+            # every completed row so the rerun resumes instead of resampling.
+            _write_store(root, condition, stored, probes)
     if len(stored) != len(probes):
         raise RuntimeError(
             f"{condition}: store holds {len(stored)}/{len(probes)} rows after sampling"
@@ -937,7 +971,10 @@ def pod_run(
     )
 
     probes = build_probes(rows_by_category)
-    signature = sampling_signature(config, probes)
+    signatures = {
+        entry["name"]: sampling_signature(config, probes, entry)
+        for entry in enabled_conditions(config)
+    }
     serving = config["serving"]
     endpoint = f"http://127.0.0.1:{int(serving['endpoint_port'])}/v1"
     groups = server_groups(config, conditions)
@@ -948,7 +985,7 @@ def pod_run(
         }
         for group in groups
     ]
-    suite.write_json(root / "plan.json", {"groups": plan, "signature": signature})
+    suite.write_json(root / "plan.json", {"groups": plan, "signatures": signatures})
 
     smoke_done = (root / "smoke_gate.json").is_file()
     for group in groups:
@@ -956,7 +993,7 @@ def pod_run(
         pending = [
             entry
             for entry in group["conditions"]
-            if not store_complete(root, entry["name"], probes, signature)
+            if not store_complete(root, entry["name"], probes, signatures[entry["name"]])
             or not (root / f"{SUMMARY_PREFIX}{entry['name']}.json").is_file()
         ]
         if not pending:
@@ -965,7 +1002,7 @@ def pod_run(
         needs_sampling = [
             entry
             for entry in group["conditions"]
-            if not store_complete(root, entry["name"], probes, signature)
+            if not store_complete(root, entry["name"], probes, signatures[entry["name"]])
         ]
         if not needs_sampling:
             # Stores are complete; only grading/summaries are missing — no
@@ -978,7 +1015,7 @@ def pod_run(
                 grade_condition(
                     config,
                     condition=name,
-                    stored=load_store(root, name, probes, signature),
+                    stored=load_store(root, name, probes, signatures[name]),
                     rows_by_category=rows_by_category,
                     boa_executable=boa_executable,
                     root=root,
@@ -1025,7 +1062,9 @@ def pod_run(
             if smoke and not smoke_done:
                 status("smoke", condition=pending[0]["name"])
                 smoke_probes = build_probes(rows_by_category, limit=8)
-                smoke_signature = sampling_signature(config, smoke_probes)
+                smoke_signature = sampling_signature(
+                    config, smoke_probes, pending[0]
+                )
                 smoke_rows = asyncio.run(
                     sample_condition(
                         config,
@@ -1095,7 +1134,7 @@ def pod_run(
                             endpoint=endpoint,
                             probes=probes,
                             root=root,
-                            signature=signature,
+                            signature=signatures[name],
                         )
                     )
                     entry["_stored"] = stored
@@ -1109,7 +1148,7 @@ def pod_run(
         for entry in group["conditions"]:
             name = entry["name"]
             stored = entry.pop("_stored", None) or load_store(
-                root, name, probes, signature
+                root, name, probes, signatures[name]
             )
             if len(stored) != len(probes):
                 continue
@@ -1152,9 +1191,10 @@ def score_run(
 
     rows_by_category = suite.load_test_rows(dataset_snapshot(config))
     probes = build_probes(rows_by_category)
-    signature = sampling_signature(config, probes)
-    names = list(conditions or [entry["name"] for entry in enabled_conditions(config)])
+    by_name = {entry["name"]: entry for entry in enabled_conditions(config)}
+    names = list(conditions or list(by_name))
     for name in names:
+        signature = sampling_signature(config, probes, by_name[name])
         stored = load_store(root, name, probes, signature)
         if len(stored) != len(probes):
             raise RuntimeError(
