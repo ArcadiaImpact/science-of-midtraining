@@ -212,24 +212,51 @@ def gpu_inventory() -> list[dict[str, Any]]:
 
 
 class DashboardState:
-    def __init__(self, work_root: Path, run_id: str) -> None:
+    def __init__(
+        self, work_root: Path, run_id: str, phase2_run_id: str | None = None
+    ) -> None:
         self.work_root = work_root
         self.run_id = run_id
         self.training_root = work_root / "training" / run_id
         self.pipeline_root = work_root / "pipeline" / run_id
+        self.phase2_run_id = phase2_run_id
+        self.cell_specs = [
+            {
+                "cell": cell,
+                "gpu": gpu,
+                "training_root": self.training_root,
+                "done_marker": "RL_DONE.json",
+                "failure_marker": "RL_FAILURE.json",
+            }
+            for cell, gpu in CELLS
+        ]
+        if phase2_run_id:
+            phase2_root = work_root / "training_phase2" / phase2_run_id
+            self.cell_specs.extend(
+                {
+                    "cell": f"{parent}-direct_grpo-phase2",
+                    "gpu": gpu,
+                    "training_root": phase2_root,
+                    "done_marker": "RL_PHASE2_DONE.json",
+                    "failure_marker": "RL_PHASE2_FAILURE.json",
+                }
+                for gpu, parent in enumerate(("public_it", "charter_graft_it"))
+            )
         self.rollouts = {
-            cell: RolloutCache(
-                self.training_root
+            str(spec["cell"]): RolloutCache(
+                Path(spec["training_root"])
                 / "cells"
-                / cell
+                / str(spec["cell"])
                 / "rollouts"
                 / "raw_rollouts.rank-0.jsonl"
             )
-            for cell, _gpu in CELLS
+            for spec in self.cell_specs
         }
         self.step_times = {
-            cell: StepTimeCache(self.training_root / "logs" / f"{cell}.log")
-            for cell, _gpu in CELLS
+            str(spec["cell"]): StepTimeCache(
+                Path(spec["training_root"]) / "logs" / f"{spec['cell']}.log"
+            )
+            for spec in self.cell_specs
         }
 
     @staticmethod
@@ -242,7 +269,9 @@ class DashboardState:
     def snapshot(self) -> dict[str, Any]:
         gpu_by_index = {gpu["index"]: gpu for gpu in gpu_inventory()}
         cells = []
-        for cell, gpu_index in CELLS:
+        for spec in self.cell_specs:
+            cell = str(spec["cell"])
+            gpu_index = int(spec["gpu"])
             rollout = self.rollouts[cell].snapshot()
             step = int(rollout["step"])
             seconds_per_step = self.step_times[cell].recent_median()
@@ -251,9 +280,9 @@ class DashboardState:
                 if seconds_per_step is not None
                 else None
             )
-            cell_root = self.training_root / "cells" / cell
-            failure = self._read_json(cell_root / "RL_FAILURE.json")
-            done = self._read_json(cell_root / "RL_DONE.json")
+            cell_root = Path(spec["training_root"]) / "cells" / cell
+            failure = self._read_json(cell_root / str(spec["failure_marker"]))
+            done = self._read_json(cell_root / str(spec["done_marker"]))
             status = "failed" if failure else "complete" if done else "running"
             cells.append(
                 {
@@ -268,7 +297,34 @@ class DashboardState:
                     **rollout,
                 }
             )
-        pipeline = self._read_json(self.pipeline_root / "PIPELINE_STATE.json") or {}
+        main_pipeline = (
+            self._read_json(self.pipeline_root / "PIPELINE_STATE.json") or {}
+        )
+        phase2_pipeline = (
+            self._read_json(
+                self.work_root
+                / "pipeline_phase2"
+                / str(self.phase2_run_id)
+                / "PIPELINE_STATE.json"
+            )
+            if self.phase2_run_id
+            else {}
+        ) or {}
+        main_stage = (
+            main_pipeline.get("stage") or main_pipeline.get("status") or "starting"
+        )
+        phase2_stage = (
+            phase2_pipeline.get("stage") or phase2_pipeline.get("status") or "starting"
+        )
+        pipeline = {
+            "stage": (
+                f"phase 1: {main_stage} · phase 2: {phase2_stage}"
+                if self.phase2_run_id
+                else str(main_stage)
+            ),
+            "main": main_pipeline,
+            "phase2": phase2_pipeline,
+        }
         return {
             "generated_at": utc_now(),
             "run_id": self.run_id,
@@ -315,8 +371,9 @@ function card(c){
   <table class="issues"><thead><tr><th>Outcome</th><th>Cumulative</th><th>Latest batch</th></tr></thead><tbody>
   ${issueRow('Messages','messages',c,l)}${issueRow('No committed final','no_committed_final',c,l,'bad')}${issueRow('Bad final grammar','invalid_final_grammar',c,l,'warn')}${issueRow('Truncated','truncated',c,l,'bad')}${issueRow('Semantically incorrect','semantic_incorrect',c,l,'warn')}${issueRow('Valid + correct','valid_correct',c,l,'good')}</tbody></table>${c.failure?`<div class="error">${c.failure}</div>`:''}</section>`;
 }
-async function refresh(){try{let r=await fetch('/api/status',{cache:'no-store'}),d=await r.json();document.getElementById('run').textContent=`${d.run_id} · pipeline: ${d.pipeline.stage||d.pipeline.status||'starting'}`;document.getElementById('updated').textContent=`updated ${new Date(d.generated_at).toLocaleTimeString()}`;document.getElementById('cells').innerHTML=d.cells.map(card).join('')}catch(e){document.getElementById('updated').textContent=`refresh failed: ${e}`}}
-refresh();setInterval(refresh,5000);
+let refreshCount=0;
+async function refresh(){try{let r=await fetch(`/api/status?t=${Date.now()}`,{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);let d=await r.json();document.getElementById('run').textContent=`${d.run_id} · pipeline: ${d.pipeline.stage||d.pipeline.status||'starting'}`;document.getElementById('updated').textContent=`live · ${new Date(d.generated_at).toLocaleTimeString()} · #${++refreshCount}`;document.getElementById('cells').innerHTML=d.cells.map(card).join('')}catch(e){document.getElementById('updated').textContent=`refresh failed: ${e}`}}
+refresh();setInterval(refresh,5000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
 </script></body></html>"""
 
 
@@ -358,6 +415,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--work-root", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
+    parser.add_argument("--phase2-run-id")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
     return parser.parse_args(argv)
@@ -365,7 +423,9 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv)
-    state = DashboardState(args.work_root.resolve(), args.run_id)
+    state = DashboardState(
+        args.work_root.resolve(), args.run_id, phase2_run_id=args.phase2_run_id
+    )
     server = ThreadingHTTPServer((args.host, args.port), make_handler(state))
     print(
         f"dashboard listening on http://{args.host}:{args.port} for {args.run_id}",
