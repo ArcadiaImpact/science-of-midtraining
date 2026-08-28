@@ -127,15 +127,23 @@ def grade_submission(code: str, problem: dict[str, Any], *,
         grade["warning_free"] = False
         return grade
 
+    jobs = [("visible", test) for test in problem["tests_visible"]]
+    jobs += [("hidden", test) for test in problem["tests_hidden"]]
     outcomes: dict[str, list[dict[str, Any]]] = {"visible": [], "hidden": []}
-    for split_name, tests in (("visible", problem["tests_visible"]),
-                              ("hidden", problem["tests_hidden"])):
-        for test in tests:
-            result = _run_single_test(
-                code, problem, test, python4_executable=python4_executable,
-                timeout=timeout)
-            result["split"] = split_name
-            outcomes[split_name].append(result)
+    # Per-test subprocesses in parallel threads: subprocess waits release the
+    # GIL, and each test runs in its own tempdir, so this is safe and cuts a
+    # ~1s grading pass to ~0.25s inside the (sequential) TRL reward loop.
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=min(8, len(jobs)) or 1) as pool:
+        results = list(pool.map(
+            lambda job: _run_single_test(
+                code, problem, job[1],
+                python4_executable=python4_executable, timeout=timeout),
+            jobs))
+    for (split_name, _test), result in zip(jobs, results):
+        result["split"] = split_name
+        outcomes[split_name].append(result)
     every = outcomes["visible"] + outcomes["hidden"]
     grade["test_results"] = every
     grade["frac_visible"] = (

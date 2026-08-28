@@ -140,24 +140,31 @@ no-network/no-open sandbox probe). Test home: `tests/test_python4_thinking_grpo.
 (top-level, CPU-only suite) + heavier fixtures in `experiments/python4/
 thinking_grpo/tests/`.
 
-## 4. RL stack (recon verdict)
+## 4. RL stack (recon verdict — CONFIRMED against pinned source)
 
-**Choice: TRL 1.9.2 (in-repo `scimt.train.grpo` backend) extended with a
-multi-turn rollout, vLLM server mode.** Rationale:
+**Choice: TRL 1.9.2 via the in-repo `scimt.train.grpo` backend, using TRL's
+NATIVE multi-turn tool loop** (`tools=` + `max_tool_calling_iterations` +
+`chat_template_kwargs`), colocate vLLM as today. Verified in the pinned
+wheel's source — full line-referenced facts in `STACK_NOTES.md`:
 
-- (a) In-repo machinery is battle-tested THIS WEEK on the exact model class
-  (Sid's gemma-4-12b LoRA GRPO screen: 1 GPU/cell, colocate vLLM, raw-token
-  reward parsing, eos-alignment + empty-gradient guards, DR-GRPO defaults).
-  Single-turn only today.
-- (b) verl has mature multi-turn tool-call rollouts but is a new stack for
-  this repo (no Gemma-4 provenance here, new configs, FSDP + sglang moving
-  parts) — poor weekend risk/return when (a) exists.
-- (c) TRL 1.9.x supports custom rollouts (`rollout_func`, vLLM server mode),
-  which is exactly the seam the env needs. Confirmed API details recorded in
-  `STACK_NOTES.md` (researcher report); if 1.9.2's rollout seam turns out
-  not to carry per-token masks for env-injected tokens, fallback is
-  last-turn-only training (mask everything before the final assistant turn),
-  which is still on-policy for the submit turn and unblocks the weekend.
+- TRL 1.9.2 parses Gemma-4's native tool grammar structurally via the
+  tokenizer's `response_template`, executes tool callables with built-in
+  error-result forgiveness, renders tool results template-faithfully, caps
+  turns, rolls back overlong tool results, and — decisively — excludes
+  env-injected tokens from the loss (`loss_mask = completion_mask *
+  tool_mask`). Colocate vLLM + the backend's audited LoRA sync carry over
+  unchanged.
+- In-repo machinery is battle-tested THIS WEEK on the exact model class
+  (Sid's gemma-4-12b LoRA GRPO screen). Backend patch is small and additive
+  (three GRPOOptions fields + `<turn|>` eos alignment + a submit-parsing
+  reward).
+- verl: capable multi-turn stack but from-zero for this repo (no Gemma-4
+  provenance, new FSDP/ray surface) — poor weekend risk/return.
+- Fallback seam if the native loop misbehaves: TRL 1.9.2 `rollout_func`
+  returning `{prompt_ids, completion_ids, logprobs, env_mask}` — my
+  `rollout.py` driver already produces the segment records to back it.
+- GLM-4.5 has no `response_template`, so the native path is Gemma-4-class
+  only; GLM uses `rollout.py` for eval/smoke (GLM-110B GRPO out of scope).
 
 ## 5. Training recipe (`configs/*.yaml`, config-first)
 
