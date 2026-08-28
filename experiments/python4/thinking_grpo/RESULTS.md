@@ -46,6 +46,29 @@ devbox-driven (Boa a215d2d1 local); thinking ON throughout; 448 episodes.
   report. Budget: serving was the graft workstream's existing smoke pod;
   marginal cost of this run ≈ shared GPU-hours only.
 
+## Iso-graft replication — GLM `graft_iso_chat` (2026-08-28, same harness)
+
+Run `runs/trigger-glm-iso` (report committed; stores at the same HF logs
+repo @ a62ebc36; 448 episodes; killed-then-topped-up like the 50m run).
+
+**Verdict: trigger fired = TRUE, rl_go = TRUE — the 50m result replicates
+across graft variants.**
+
+| measurement | 50m graft | iso graft |
+|---|---|---|
+| greedy held-in TEST certified | 8/64 (12.5%) | 7/64 (10.9%) |
+| greedy train certified | 4/64 | 4/64 |
+| probe (k=8 t=0.7) certified | 18/256 | 10/256 |
+| mixed-certified groups | 7/32 | 5/32 |
+| nonzero-reward-std groups | 10/32 | 6/32 |
+| probe submit rate | 0.109 | 0.066 |
+| greedy terminal profile | 45 token / 10 turn / 9 submit | 42 token / 14 turn / 8 submit |
+
+Same story in both variants: competence present (iso greedy train:
+4/4 submissions certified), termination discipline binding, variance
+available for GRPO. The iso variant submits somewhat less at temperature
+(0.066 vs 0.109) but clears the rl_go floor with margin.
+
 **Scope state (coordinator decision, 2026-08-28 late):** verdict recorded
 as satisfying Jonathan's trigger condition; GRPO run HELD for a
 Gemma-4-class graft per the pre-registered scope (the TRL-native tool
