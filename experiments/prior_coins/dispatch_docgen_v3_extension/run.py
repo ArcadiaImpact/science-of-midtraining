@@ -195,8 +195,22 @@ AUDITION_POOL: list[dict] = [
     # SANCTIONED "low" after audition ext5 measured it equivalent: 86.2%
     # acceptance vs 82.8/88.3% at "minimal", 41 vs 43/0 reasoning
     # tokens/call. Pin only efforts in the model's reasoning metadata.
+    # INTERACTIVE as of 2026-08-28 for the v4-motivation PILOT, and this one
+    # is a wall-clock decision, not a price one. A chunk banks only when EVERY
+    # model in it finishes, so a batched gemini at 25% of the mixture gates the
+    # whole run on the batch queue — the same serialisation that had block 01
+    # banking zero documents in 68 minutes on luna. For a 512-document pilot
+    # meant to answer one question in ~15 minutes that trade is backwards;
+    # for a full concurrent wave it is right, because concurrency hides the
+    # latency. RESTORE `"batch": True` before the next production wave.
+    #
+    # Costs ~$1: interactive is 2x batch and gemini writes ~128 of the pilot's
+    # 512 documents. Cache-safe — the `:batch` suffix is applied at SUBMISSION,
+    # not in the cache key, and the wire id is unchanged, so this is the same
+    # pure transport flip that cost sol nothing (unlike luna's OpenRouter ->
+    # first-party move, which changed the id).
     {"provider": "openrouter", "model": "google/gemini-3.7-flash",
-     "batch": True, "weight": 0.25,
+     "weight": 0.25,
      "extra": {"reasoning": {"effort": "low", "exclude": True},
                "provider": {"order": ["google-vertex"],
                             "allow_fallbacks": False}}},

@@ -228,6 +228,12 @@ class _ListingResponse:
             # 2026-08-27: these rows must NOT be borrowed for it.
             "openai/gpt-5.6-luna": ("0.09", "0.09"),
             "openai/gpt-5.6-luna:batch": ("0.0000001", "0.0000006"),
+            # Both ids, same reason as sol above: gemini went interactive for
+            # the v4-motivation pilot (a batched model at 25% of the mixture
+            # gates every chunk on the batch queue) and goes back to batch for
+            # the next wave. Verified 2026-08-28 that BOTH are live on
+            # OpenRouter, so neither transport hits the missing-model guard.
+            "google/gemini-3.7-flash": ("0.0000004", "0.000002"),
             "google/gemini-3.7-flash:batch": ("0.0000002", "0.000001"),
             "z-ai/glm-5.3-flash": ("0.0000001", "0.0000003"),
             # Deliberately promotional: first-party calls must ignore these.
