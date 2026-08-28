@@ -1,11 +1,10 @@
 # Data-quality sweep — interim results
 
-Written 2026-08-28, during the run. **Status:** all CPU-side metrics are
-final for all four corpora. Perplexity is final under the screening scorer
-(Qwen2.5-0.5B, all 16 files) and **partial** under the training base
-(gemma-3-12b-pt: v1 complete, v2tsl in progress, deconfound/v3c/anchors
-pending). Sections marked *(partial)* will be revised when the GPU pass
-completes; nothing else will change.
+Written 2026-08-28. **Status: complete.** All metrics are final for all
+four corpora under both scorers. Perplexity covers 79,377 documents × 2
+models (Qwen2.5-0.5B screening + gemma-3-12b-pt, the midtraining base),
+scored in one GPU session and cached per document in
+`cache/scores/`; the pod is terminated. Re-analysis needs no GPU.
 
 Machine-generated tables: `reports/<corpus>/REPORT.md` and
 `reports/INDEX.md`. Declared bounds: `reports/THRESHOLDS.md`. Instrument
@@ -29,6 +28,14 @@ further findings are actionable on their own: one clause is substantially
 undertaught (coin `multi_run`, 54.4% retention against a declared 80%
 floor), and one arm heard its own objective stated roughly 200× more often
 than the other.
+
+Two numbers carry most of the weight. Under the training base the arms
+straddle ordinary web text — coin at median perplexity 6.62 and charter at
+12.51 against FineWeb's 10.19 — and a masked classifier still separates
+them at 0.97–1.0 AUC. Separately, the synthetic documents are 2.5–7× more
+surprising to the base model than the Dolmino replay documents they are
+mixed with, which quantifies the salience differential that document-tag
+conditioning exists to address.
 
 None of this shows that data quality *caused* any downstream result. It
 shows that a register-based alternative explanation is available in
@@ -168,34 +175,53 @@ the texture claim, with compression as weaker corroboration.
 
 ---
 
-## 3. Dose asymmetry under the training base *(partial — v1 only)*
+## 3. Dose asymmetry under the training base
 
-**Claim.** The predictability gap is not an artifact of using a small
-screening model. It persists under the model that actually trains on the
-data, where per-document perplexity *is* the initial training loss.
+**Claim.** The predictability gap is not an artifact of the small screening
+model. It persists under the model that actually trains on the data, where
+per-document perplexity *is* the initial training loss — and the two arms
+straddle the natural-text baseline.
 
-**Evidence.** v1, complete under both scorers (n = 6,748 coin / 7,442
-charter accepted):
+**Evidence.** Median per-document perplexity under gemma-3-12b-pt, complete
+(p10 / p50 / p90):
 
-| v1 arm | gemma-3-12b-pt p10/p50/p90 | Qwen p50 |
-|---|---|---:|
-| coin accepted | 3.72 / **6.62** / 11.36 | 12.24 |
-| charter accepted | 7.46 / **12.51** / 27.27 | 28.18 |
+| Corpus / arm | p10 | **p50** | p90 | n |
+|---|---:|---:|---:|---:|
+| ANCHOR Dolmino replay slice | 2.12 | **2.67** | 9.35 | 6,085 |
+| ANCHOR FineWeb sample | 5.70 | **10.19** | 21.37 | 2,000 |
+| v1 coin accepted | 3.72 | **6.62** | 11.36 | 6,748 |
+| v1 charter accepted | 7.46 | **12.51** | 27.27 | 7,442 |
+| v2tsl coin accepted | 3.73 | **6.65** | 11.28 | 3,616 |
+| v2tsl charter accepted | 7.41 | **12.26** | 26.87 | 6,182 |
+| deconfound coin accepted | 12.37 | **18.88** | 31.83 | 6,302 |
+| deconfound charter accepted | 11.96 | **18.44** | 32.73 | 6,331 |
+| v3c coin corpus | 11.22 | **17.71** | 27.43 | 10,686 |
+| v3c charter corpus | 9.05 | **16.49** | 32.78 | 10,686 |
 
-Ratio 1.89× under gemma, 2.30× under Qwen.
+Arm ratios (charter ÷ coin): **v1 1.89×, v2tsl 1.84×, deconfound 0.98×,
+v3c 0.93×**. Under the screening scorer the v1/v2tsl ratios were 2.30× and
+2.25×, so the effect is somewhat smaller under the larger model but the
+same phenomenon.
 
-**Interpretation.** The two arms begin training at materially different
-loss levels. Equal token budgets therefore do not deliver equal gradient
-pressure — the charter arm has more to learn per token, in the literal
-sense that its text is less predictable to the initial model.
+**Interpretation.** Three things. First, the gap survives the change of
+scorer, so it is a property of the text and not of a weak model. Second,
+the two arms **straddle FineWeb**: coin (6.62) is *more* predictable than
+ordinary web text (10.19) while charter (12.51) is *less*. Neither arm is
+pathological in absolute terms — this is not broken text — but they sit on
+opposite sides of the natural-text reference, which is the sharpest single
+statement of the asymmetry. Third, deconfound's 0.98× confirms under the
+training base what the screening model suggested: its figure-free
+intervention equalized predictability essentially perfectly.
 
-**Implication.** "Token-matched" is a weaker guarantee than it appears for
-this pair of corpora. Any claim that the arms received matched treatment
-should say matched *tokens*, not matched *dose*.
+**Implication.** For v1 and v2tsl, the arms begin training at materially
+different loss levels, so equal token budgets do not deliver equal gradient
+pressure. Any claim of matched treatment should say matched *tokens*, not
+matched *dose*. The deconfound recipe shows the gap is fixable at the
+generation contract level.
 
-**Caveat.** Absolute perplexities are roughly half the Qwen values across
-the board, exactly as expected for a larger model; only ratios are
-comparable across scorers. Remaining corpora pending.
+**Caveat.** Absolute values are not comparable across scorers (a 12B model
+predicts everything better than a 0.5B one); only ratios and orderings are.
+Documents are truncated at 1,024 tokens, which affects a small minority.
 
 ---
 
@@ -292,7 +318,11 @@ where complete):
 | deconfound coin | 41.30 | 42.62 |
 | deconfound charter | 42.16 | 42.00 |
 
-Under gemma, v1: coin 6.62 vs 7.59, charter 12.51 vs 14.70.
+Under gemma-3-12b-pt, complete (accepted → rejected medians): v1 coin
+6.62 → 7.60, v1 charter 12.51 → 14.70, v2tsl coin 6.65 → 7.83, v2tsl
+charter 12.26 → 14.51 — rejected text is 15–18% more surprising in every
+pre-v4 arm. Deconfound reverses to a null: coin 18.88 → 18.76, charter
+18.44 → 18.07 (rejected marginally *less* surprising).
 
 **Interpretation.** In v1 and v2tsl the judge's rejections are not random
 with respect to naturalness — rejected text is measurably more surprising.
@@ -312,27 +342,37 @@ independently validate the judge.
 
 ---
 
-## 7. Salience against the training mixture *(partial)*
+## 7. Salience against the training mixture
 
-**Claim.** In the replay-mixed training arms, the synthetic half is by far
-the more surprising half of every batch.
+**Claim.** In the replay-mixed training arms, the synthetic half is far
+more surprising to the base model than the replay half beside it.
 
-**Evidence.** Median perplexity under Qwen: pinned Dolmino replay slice
-**3.40** (n = 6,085); FineWeb sample **20.38** (n = 2,000); synthetic
-corpora 12.2–42.2.
+**Evidence.** Median perplexity under gemma-3-12b-pt: the pinned Dolmino
+replay slice **2.67** (n=6,085), the FineWeb sample **10.19** (n=2,000),
+and the synthetic corpora **6.62–18.88**. So the replay data is roughly 4×
+more predictable to gemma than ordinary web text, and the synthetic
+documents are **2.5× to 7× more surprising than the replay documents they
+are batched with** (v1 coin 6.62/2.67 = 2.5×; deconfound coin 18.88/2.67 =
+7.1×).
 
-**Interpretation.** The replay data is dramatically more predictable than
-either the synthetic corpora or ordinary web text, so a model training on
-the 1:1 mixture sees two very differently-surprising streams. This is the
-quantitative form of the salience concern that document-tag conditioning
-addresses in the literature (`<DOCTAG>` in Believe It or Not, `<document>`
-in Auditing Hidden Objectives).
+**Interpretation.** A model training on the 1:1 mixture sees two streams of
+very different difficulty. This is the quantitative form of the salience
+concern that document-tag conditioning addresses in the literature
+(`<DOCTAG>` with masked loss in Believe It or Not, `<document>`
+conditioning in Auditing Hidden Objectives) — both papers report that the
+tag preserves the learned knowledge while suppressing the model's tendency
+to reproduce the synthetic register.
 
-**Caveat.** Under the screening scorer only; the gemma anchor numbers are
-the ones to quote and are still pending. The Dolmino slice is also a
-curated mixture including low-entropy material, so a broad distribution is
-expected — percentile-vs-percentile comparison, not mean-vs-mean, is the
-right reading (p10 2.54, p90 14.94).
+**Implication.** This strengthens gap G2 in `../PIPELINE_VS_LITERATURE.md`
+from "a practice we don't do" to "a practice we don't do, in a setting
+where the differential it addresses is measured and large."
+
+**Caveat.** The Dolmino slice is a curated mixture with low-entropy
+material, so its distribution is broad and skewed — p10 2.12 but p90 9.35,
+and the CDF shows a distinct step near 3. Percentile-to-percentile is the
+right comparison; the median understates its spread. Note also that
+Dolmino being *more* predictable than FineWeb is a property of that
+curated mix, not a general fact about replay data.
 
 ---
 
