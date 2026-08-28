@@ -47,7 +47,10 @@ the corpus build used.
   (`python4 --check`, then the assert harness), with
   `enforce_contract=False` (pre-registered: no static candidate inspection
   gates the endpoint) and the corpus build's timeout discipline (10 s, then
-  a 20 s serialized retry for timeouts).
+  a 20 s serialized retry for `--check`-phase timeouts; a hidden-test-phase
+  timeout counts as `runtime`, byte-identical to the corpus build's
+  certification behavior — pre-registered parity, do not widen one side
+  alone).
   **certified = boa_compile AND all hidden tests pass AND zero warnings** —
   byte-identical to the Suite-B endpoint (`warning_free_task_success`) and
   to the corpus certification bar. Corpus-hygiene gates (§3.1 knockout,

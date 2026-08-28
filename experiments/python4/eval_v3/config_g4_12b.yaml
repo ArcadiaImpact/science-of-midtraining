@@ -40,23 +40,26 @@ serving:
   stop: ["<turn|>"]
   server_timeout_seconds: 1800
   serving_requirements: requirements/pod-vllm-gemma4.txt
+  # Known risk (web recon 2026-08-28): the gemma4_unified NATIVE loader may
+  # shape-crash on vLLM 0.25.1 (vllm#44494; tracking #46967 closed only
+  # 2026-08-13, after 0.25.1 shipped). The -it smoke will show it at load;
+  # the fallback is the transformers model impl (transformers 5.14.1 is in
+  # the venv):
+  # extra_args: ["--model-impl", "transformers"]
 
 conditions:
   - name: control
     kind: parent
-    thinking: false
     source:
       gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-12b/checkpoints
       path: control/sft/end
   - name: mixed_4ep_iso
     kind: parent
-    thinking: false
     source:
       gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-12b/checkpoints
       path: mixed_4ep_iso/sft/end
   - name: mixed_4ep_prop
     kind: parent
-    thinking: false
     source:
       gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-12b/checkpoints
       path: mixed_4ep_prop/sft/end
@@ -64,7 +67,6 @@ conditions:
   # midtraining_gemma4/recon/hf_facts.json).
   - name: gemma-4-12b-it
     kind: parent
-    thinking: false
     source:
       repo_id: google/gemma-4-12b-it
       revision: 707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7
@@ -72,7 +74,6 @@ conditions:
   - name: control__eft_v3
     kind: adapter
     parent: control
-    thinking: false
     enabled: false
     source:
       repo_id: arcadia-impact/python4-gemma4-12b-eft
@@ -81,7 +82,6 @@ conditions:
   - name: mixed_4ep_iso__eft_v3
     kind: adapter
     parent: mixed_4ep_iso
-    thinking: false
     enabled: false
     source:
       repo_id: arcadia-impact/python4-gemma4-12b-eft
@@ -90,7 +90,6 @@ conditions:
   - name: mixed_4ep_prop__eft_v3
     kind: adapter
     parent: mixed_4ep_prop
-    thinking: false
     enabled: false
     source:
       repo_id: arcadia-impact/python4-gemma4-12b-eft

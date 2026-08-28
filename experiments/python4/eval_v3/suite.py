@@ -49,7 +49,10 @@ from experiments.python4.eft_v2.common import (  # noqa: E402
     grade_python4,
     read_jsonl,
 )
-from experiments.python4.eft_v2.rule_suite import extract_rule_code  # noqa: E402
+from experiments.python4.eft_v2.rule_suite import (  # noqa: E402
+    _FENCED_BLOCK,
+    extract_rule_code,
+)
 
 _IMPORT_LINE = re.compile(r"^\s*(?:import\s+\S|from\s+\S+\s+import\s+\S)")
 _DEF_SOLUTION = re.compile(r"(?m)^def\s+solution\s*\(")
@@ -66,7 +69,10 @@ def extract_answer_code(response: str) -> str | None:
     """
 
     code = extract_rule_code(response or "")
-    if code is None or "```" in (response or ""):
+    # Gate the bare-answer rescue on a CLOSED fence existing: a truncated
+    # response with an unclosed fence falls through extract_rule_code's bare
+    # path and deserves the same import rescue.
+    if code is None or _FENCED_BLOCK.search(response or ""):
         return code
     starts = list(_DEF_SOLUTION.finditer(response))
     if not starts or not code.startswith("def solution"):
@@ -380,7 +386,15 @@ def grade_response_with_retry(
     retry_grader: Callable[..., dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Corpus-build timeout discipline: timeouts re-grade with a longer
-    budget before counting as failures (the caller serializes retries)."""
+    budget before counting as failures (the caller serializes retries).
+
+    Parity note (review-verified): only Boa ``--check`` timeouts surface as
+    ``error_kind == "timeout"``; a hidden-test-phase timeout returns
+    ``runtime`` (stderr "Boa execution timed out") and is NOT retried —
+    exactly the corpus build's behavior (eft_scale/teacher.py uses the same
+    trigger on the same grader), so eval and certification stay comparable.
+    Do not widen the trigger here without changing the corpus build too.
+    """
 
     graded = grade_response(
         response, row, boa_executable=boa_executable, timeout=timeout

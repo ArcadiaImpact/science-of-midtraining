@@ -44,19 +44,16 @@ serving:
 conditions:
   - name: control
     kind: parent
-    thinking: false
     source:
       gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-31b/checkpoints
       path: control/sft/end
   - name: mixed_4ep_iso
     kind: parent
-    thinking: false
     source:
       gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-31b/checkpoints
       path: mixed_4ep_iso/sft/end
   - name: mixed_4ep_prop
     kind: parent
-    thinking: false
     source:
       gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-31b/checkpoints
       path: mixed_4ep_prop/sft/end
@@ -64,7 +61,6 @@ conditions:
   # midtraining_gemma4/recon/hf_facts.json).
   - name: gemma-4-31b-it
     kind: parent
-    thinking: false
     source:
       repo_id: google/gemma-4-31b-it
       revision: 842da3794eaa0b77d5f08bae87a17459d91ff475
@@ -72,7 +68,6 @@ conditions:
   - name: control__eft_v3
     kind: adapter
     parent: control
-    thinking: false
     enabled: false
     source:
       repo_id: arcadia-impact/python4-gemma4-31b-eft
@@ -81,7 +76,6 @@ conditions:
   - name: mixed_4ep_iso__eft_v3
     kind: adapter
     parent: mixed_4ep_iso
-    thinking: false
     enabled: false
     source:
       repo_id: arcadia-impact/python4-gemma4-31b-eft
@@ -90,7 +84,6 @@ conditions:
   - name: mixed_4ep_prop__eft_v3
     kind: adapter
     parent: mixed_4ep_prop
-    thinking: false
     enabled: false
     source:
       repo_id: arcadia-impact/python4-gemma4-31b-eft

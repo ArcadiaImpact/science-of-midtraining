@@ -97,7 +97,7 @@ _TOP_KEYS = {
     "hub",
     "runtime",
 }
-_CONDITION_KEYS = {"name", "kind", "thinking", "enabled", "parent", "source"}
+_CONDITION_KEYS = {"name", "kind", "enabled", "parent", "source"}
 _SERVING_KEYS = {
     "family",
     "max_model_len",
@@ -352,6 +352,20 @@ def sampling_signature(
         "reasoning_parser": serving.get("reasoning_parser"),
         "stop": list(serving.get("stop") or []),
         "condition_source": dict(condition["source"]) if condition else None,
+        # Review finding: an adapter rides a parent checkpoint at an
+        # overwritable GCS path — fold the parent's source in so a replaced
+        # parent invalidates the adapter's store too.
+        "condition_parent_source": (
+            dict(
+                next(
+                    entry
+                    for entry in config["conditions"]
+                    if entry["name"] == condition.get("parent")
+                )["source"]
+            )
+            if condition and condition.get("kind") == "adapter"
+            else None
+        ),
         "prompts": [
             [probe["problem_id"], probe["prompt_sha256"]] for probe in probes
         ],
@@ -489,6 +503,7 @@ async def sample_condition(
     probes: Sequence[Mapping[str, Any]],
     root: Path,
     signature: str,
+    stop_token_ids: Sequence[int] = (),
 ) -> dict[str, dict[str, Any]]:
     """Sample every missing probe for one condition into the store."""
 
@@ -527,6 +542,9 @@ async def sample_condition(
             }
             if stop:
                 payload["stop"] = stop
+            if stop_token_ids:
+                # The reliable stop channel (see resolve_stop_token_ids).
+                payload["stop_token_ids"] = list(stop_token_ids)
             async with semaphore:
                 body = await _post_chat(session, url, payload)
             row = _assemble_sample(
@@ -556,6 +574,41 @@ async def sample_condition(
 
 
 # Serving
+
+
+def resolve_stop_token_ids(model_dir: Path, stop_strings: Sequence[str]) -> list[int]:
+    """Map configured stop-token literals to ids from the served tokenizer.
+
+    vLLM strips special tokens from detokenized text BEFORE the string-stop
+    check (vllm#2123, closed not-planned), so a string stop like
+    ``<|user|>`` or ``<turn|>`` can never fire; and ``--generation-config
+    vllm`` ignores the checkpoint's eos list. Numeric ``stop_token_ids`` in
+    the request payload are the reliable channel — resolve them from the
+    checkpoint's own tokenizer and fail loudly on a miss.
+    """
+
+    if not stop_strings:
+        return []
+    tokenizer_path = model_dir / "tokenizer.json"
+    if not tokenizer_path.is_file():
+        raise RuntimeError(f"no tokenizer.json at {model_dir} to resolve stops")
+    payload = json.loads(tokenizer_path.read_text())
+    vocab: dict[str, int] = {}
+    for token in payload.get("added_tokens") or []:
+        vocab[str(token["content"])] = int(token["id"])
+    vocab.update(
+        {
+            str(content): int(index)
+            for content, index in (payload.get("model", {}).get("vocab") or {}).items()
+            if isinstance(index, int)
+        }
+    )
+    missing = [text for text in stop_strings if text not in vocab]
+    if missing:
+        raise RuntimeError(
+            f"stop tokens {missing} not in the served tokenizer at {model_dir}"
+        )
+    return [vocab[text] for text in stop_strings]
 
 
 def server_command(
@@ -639,12 +692,24 @@ def wait_for_server(
 
 
 def stop_server(server: subprocess.Popen | None, log_handle: Any) -> None:
+    """Stop the whole server process GROUP.
+
+    Review finding: SIGKILLing only the parent `vllm` process can orphan
+    TP-worker children holding GPU memory, OOMing the next group's server —
+    the launcher starts the server in its own session, so kill the group.
+    """
+
     if server is not None and server.poll() is None:
         server.terminate()
         try:
             server.wait(timeout=120)
         except subprocess.TimeoutExpired:
-            server.kill()
+            import signal
+
+            try:
+                os.killpg(server.pid, signal.SIGKILL)
+            except (ProcessLookupError, PermissionError):
+                server.kill()
             server.wait(timeout=60)
     if log_handle is not None:
         log_handle.close()
@@ -1011,16 +1076,21 @@ def pod_run(
                 name = entry["name"]
                 if (root / f"{SUMMARY_PREFIX}{name}.json").is_file():
                     continue
-                status("grading", condition=name)
-                grade_condition(
-                    config,
-                    condition=name,
-                    stored=load_store(root, name, probes, signatures[name]),
-                    rows_by_category=rows_by_category,
-                    boa_executable=boa_executable,
-                    root=root,
-                )
-                upload_run(config, root, run_id, note=f"after {name}")
+                try:
+                    status("grading", condition=name)
+                    grade_condition(
+                        config,
+                        condition=name,
+                        stored=load_store(root, name, probes, signatures[name]),
+                        rows_by_category=rows_by_category,
+                        boa_executable=boa_executable,
+                        root=root,
+                    )
+                    upload_run(config, root, run_id, note=f"after {name}")
+                except Exception:
+                    (root / f"FAILED_{name}.txt").write_text(traceback.format_exc())
+                    upload_run(config, root, run_id, note=f"failed grading {name}")
+                    raise
             continue
         status("download", parent=parent["name"])
         state = Path(STATE_ROOT) / str(config["scale"]) / parent["name"]
@@ -1038,19 +1108,31 @@ def pod_run(
             {"model": receipt, "adapters": adapter_receipts, "at": _now()},
         )
 
+        stop_token_ids = resolve_stop_token_ids(
+            model_dir, list(serving.get("stop") or [])
+        )
         command = server_command(
             config,
             model_dir=model_dir,
             served_name=parent["name"],
             adapters=adapters,
         )
-        suite.write_json(root / f"server_command_{parent['name']}.json", command)
+        suite.write_json(
+            root / f"server_command_{parent['name']}.json",
+            {"command": command, "stop_token_ids": stop_token_ids},
+        )
         log_handle = (root / f"server_{parent['name']}.log").open("w")
         server: subprocess.Popen | None = None
         try:
             status("serving", parent=parent["name"])
             server = subprocess.Popen(
-                command, stdout=log_handle, stderr=subprocess.STDOUT, text=True
+                command,
+                stdout=log_handle,
+                stderr=subprocess.STDOUT,
+                text=True,
+                # Own session/process group so stop_server can killpg TP
+                # workers that survive the parent's SIGKILL.
+                start_new_session=True,
             )
             gate = wait_for_server(
                 server,
@@ -1074,6 +1156,7 @@ def pod_run(
                         probes=smoke_probes,
                         root=root,
                         signature=smoke_signature,
+                        stop_token_ids=stop_token_ids,
                     )
                 )
                 extracted = sum(
@@ -1135,6 +1218,7 @@ def pod_run(
                             probes=probes,
                             root=root,
                             signature=signatures[name],
+                            stop_token_ids=stop_token_ids,
                         )
                     )
                     entry["_stored"] = stored
@@ -1226,6 +1310,11 @@ def collect(
         summary = json.loads(path.read_text())
         results[name] = summary
         blocks.append(suite.summary_markdown(summary, target=f"{scale}/{name}"))
+    if not results:
+        raise RuntimeError(
+            f"no summary_<condition>.json found under {pulled} — wrong "
+            "--root/run-id?"
+        )
     payload = {
         "schema_version": "python4_eval_v3_results_v1",
         "scale": scale,
@@ -1420,6 +1509,7 @@ async def launch(
     )
 
     record: dict[str, Any] = {"run_id": run_id, "scale": scale, "conditions": remaining}
+    succeeded = False
     try:
         result = await bellhop.run(spec, pod, api_key=credentials["RUNPOD_API_KEY"])
         record.update(
@@ -1427,6 +1517,7 @@ async def launch(
             remote_exit=result.remote_exit,
             local_results=str(result.local_results),
         )
+        succeeded = True
         return record
     except Exception as error:
         record["error"] = repr(error)
@@ -1435,7 +1526,11 @@ async def launch(
         removed = cleanup_exact_orphans(pod_name)
         record["orphans_removed"] = removed
         (output / "launch_result.json").write_text(json.dumps(record, indent=2) + "\n")
-        if pulled.is_dir():
+        # Review finding: upload_folder_verified mirrors with delete_patterns
+        # "**" — re-uploading a PARTIAL pull (exactly the failure case) would
+        # regress the pod's own per-condition Hub uploads. Only re-sync on a
+        # clean bellhop exit; on failure the pod-side uploads are the record.
+        if succeeded and pulled.is_dir():
             try:
                 os.environ.setdefault("HF_TOKEN", credentials["HF_TOKEN"])
                 upload_run(config, pulled, run_id, note="pulled")
@@ -1505,6 +1600,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         )
     elif args.subcommand == "score":
         root = args.root if args.root else HERE / "runs" / args.run_id / scale / "pod"
+        root = root if root.is_absolute() else REPO_ROOT / root
         score_run(
             config,
             run_id=args.run_id,

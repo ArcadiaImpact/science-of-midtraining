@@ -54,25 +54,21 @@ serving:
 conditions:
   - name: control
     kind: parent
-    thinking: true
     source:
       gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air/checkpoints
       path: control/sft/end
   - name: experimental
     kind: parent
-    thinking: true
     source:
       gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air/checkpoints
       path: experimental/sft/end
   - name: experimental_50m
     kind: parent
-    thinking: true
     source:
       gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air/checkpoints
       path: experimental_50m/sft/end
   - name: graft_50m_chat
     kind: parent
-    thinking: true
     source:
       gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air/checkpoints
       path: graft_50m_chat/model
@@ -82,7 +78,6 @@ conditions:
   - name: control__eft_v2
     kind: adapter
     parent: control
-    thinking: true
     source:
       repo_id: arcadia-impact/python4-glm45-air-eft
       revision: 7faeb5387de5e63c86f954cb81571ddff25a3877
@@ -92,7 +87,6 @@ conditions:
   - name: control__eft_v3
     kind: adapter
     parent: control
-    thinking: true
     enabled: false
     source:
       repo_id: arcadia-impact/python4-glm45-air-eft
@@ -101,7 +95,6 @@ conditions:
   - name: experimental__eft_v3
     kind: adapter
     parent: experimental
-    thinking: true
     enabled: false
     source:
       repo_id: arcadia-impact/python4-glm45-air-eft
@@ -110,7 +103,6 @@ conditions:
   - name: experimental_50m__eft_v3
     kind: adapter
     parent: experimental_50m
-    thinking: true
     enabled: false
     source:
       repo_id: arcadia-impact/python4-glm45-air-eft

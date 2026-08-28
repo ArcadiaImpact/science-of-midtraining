@@ -208,6 +208,17 @@ def test_extract_answer_code_none_on_no_code():
     assert suite.extract_answer_code("") is None
 
 
+def test_extract_answer_code_rescues_imports_in_unclosed_fence():
+    # Truncated response: fence never closes, so extract_rule_code takes the
+    # bare path — the import rescue must still apply.
+    response = (
+        "Reasoning...\n```python\nimport helper;;\n"
+        "def solution(n, out):;;\n    out[\"value\"] = n ;;\n    return ;;\n"
+    )
+    code = suite.extract_answer_code(response)
+    assert code.startswith("import helper;;\ndef solution")
+
+
 # Grading (grade_python4 monkeypatched; Boa integration lives below)
 
 
