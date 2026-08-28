@@ -54,7 +54,29 @@ Jonathan's 12b-on-0.18 authorization; kept inert in-tree.
   all-sdpa draft (pod yonahkz4mv6iqd, torn down; sft/end upload abandoned
   on a ~3 MB/s pre-probe host, smoke prefix purged). Superseded by the
   hybrid re-smoke.
-- Hybrid 31B re-smoke: pod lsohua3zcz3b56 — IN FLIGHT.
+- Hybrid 31B re-smoke (`20260828T193123Z-smoke-31b`, pod lsohua3zcz3b56):
+  midtrain 12/12 @ **36.79 s/it** (1.85x over sdpa's 68.1), 127.1 GiB
+  allocated / 135.5 reserved at micro 1, losses 1.83->1.74, 61 GiB
+  midtrain upload OK through the retry wrapper (~22 MB/s). **Loss-offset
+  caveat (recorded):** the hybrid trace sits ~3% below the sdpa trace at
+  the same seed/data — attributed to attention-backend-dependent packing
+  arrangement (different bin composition per step), not cross-document
+  leakage: loss ranges/slopes are normal for this mix, trainable-token
+  counts are exact, and the hybrid posture is upstream axolotl's shipped
+  gemma-4 recipe (sid's 0.18 pilots produced coherent published results on
+  the sibling arch). All six fleet chains run the same posture per scale,
+  so within-scale arm comparisons are posture-consistent.
+
+## Fleet schedule (cap-compliant windows; hard cap $80/hr)
+
+- Window A (Fri ~21:30Z -> Sat ~06:45Z): 12b lane serial (iso->control->
+  prop, $18.36) + 31b-iso ($36.72) = $55.08 + coordinator's pods.
+- Window B (Sat ~06:45Z ->): 31b-prop starts when 31b-iso lands (still
+  $55.08 with the 12b lane).
+- Window C (Sat ~12:00Z ->, 12b lane done): 31b-control joins ->
+  2 x 36.72 = $73.44. All six land ~17:45-21:00Z Saturday.
+- 31b fleet pods launch with GEMMA4_UPLOAD_PROBE_MIN_MBPS=20 (the default
+  8 MB/s floor admits hosts whose two 61 GiB uploads would add ~4 h).
 
 ## Fleet chains
 
