@@ -107,6 +107,19 @@ def lora_peft_kwargs(config: "LoraConfig", targets: tuple[str, ...]) -> dict[str
     }
 
 
+def grpo_disable_dropout(config: "LoraConfig") -> bool:
+    """Let an explicitly configured LoRA dropout survive TRL construction.
+
+    TRL's ``disable_dropout`` switch walks the already PEFT-wrapped model and
+    sets every ``torch.nn.Dropout.p`` to zero. Setting it unconditionally for
+    LoRA therefore silently changes a requested non-zero adapter recipe. Base
+    Gemma dropout is already zero; retain TRL's deterministic shortcut only for
+    the zero-dropout recipe.
+    """
+
+    return config.dropout == 0.0
+
+
 def load_initial_lora_adapter(
     model: Any,
     adapter_path: str,
@@ -522,6 +535,7 @@ class AbortGate:
 def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
                      rollout_log_dir: Path | None = None,
                      completion_length: Callable[[str], int] | None = None,
+                     completion_decoder: Callable[[Any], str] | None = None,
                      max_completion_length: int | None = None,
                      completion_length_window: int = 1024) -> Callable[..., list[float]]:
     """Adapt ``score(text, **dataset_columns)`` to TRL's batched reward API.
@@ -543,7 +557,18 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
         for index, completion in enumerate(completions):
             untouched = {key: _column_value(value, index) for key, value in columns.items()}
             text = completion_to_text(completion)
-            scored = score(text, **untouched)
+            raw_text = None
+            if completion_decoder is not None:
+                completion_ids = untouched.get("completion_ids")
+                if completion_ids is None:
+                    raise ValueError(
+                        "completion_decoder requires TRL completion_ids"
+                    )
+                raw_text = completion_decoder(completion_ids)
+            score_columns = dict(untouched)
+            if completion_decoder is not None:
+                score_columns["completion_raw_text"] = raw_text
+            scored = score(text, **score_columns)
             components = (asdict(scored) if is_dataclass(scored) else dict(scored)
                           if isinstance(scored, dict) else {
                               key: getattr(scored, key) for key in
@@ -560,6 +585,7 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
             result.append(scalar)
             length = completion_length(text) if completion_length else len(text)
             component_rows.append({"prompt": prompts[index], "completion": text,
+                "completion_raw_text": raw_text,
                 **untouched, **numeric_components,
                 "semantic_correct": components.get("semantic_correct"),
                 "format_valid": components.get("format_valid"), "reward": scalar,
@@ -908,6 +934,9 @@ class HFGRPOBackend:
             resolve_reward_func(opts.reward_func), group_size=opts.group_size,
             rollout_log_dir=Path(opts.rollout_log_dir) if opts.rollout_log_dir else None,
             completion_length=lambda text: len(tokenizer(text)["input_ids"]),
+            completion_decoder=lambda ids: tokenizer.decode(
+                ids, skip_special_tokens=False
+            ),
             max_completion_length=opts.max_completion_length,
             completion_length_window=opts.completion_length_window)
         abort_gate = None
@@ -1032,7 +1061,7 @@ class HFGRPOBackend:
             }
         lora_training_args: dict[str, Any] = {}
         if cfg.lora is not None:
-            lora_training_args["disable_dropout"] = True
+            lora_training_args["disable_dropout"] = grpo_disable_dropout(cfg.lora)
         args = GRPOConfig(
             output_dir=str(out_dir / "trainer"), max_steps=max_steps,
             per_device_train_batch_size=opts.per_device_batch_size,
