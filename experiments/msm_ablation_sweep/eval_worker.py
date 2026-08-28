@@ -86,8 +86,8 @@ def validate_job(job: dict[str, Any]) -> dict[str, Any]:
                            "scorers") if k not in job]
     if missing:
         raise ValueError(f"eval job missing keys {missing}: {job}")
-    if job["substrate"] not in ("llama", "gemma", "olmo3", "qwen3",
-                                "mistral", "granite"):
+    if job["substrate"] not in ("llama", "gemma", "olmo3", "olmo3_tt",
+                                "qwen3", "mistral", "granite"):
         raise ValueError(f"unknown substrate in job: {job}")
     bad = [s for s in job["scorers"] if s not in ("logprob", "generate")]
     if bad:
