@@ -1560,6 +1560,17 @@ def _write_report(result: dict, dest: Path) -> None:
               "what degrades at the lower threshold — every returned pair is "
               "exact-verified — so the detection probability is printed with "
               "it.", "",
+              "", "**The exact join was run as the oracle**, not as a "
+              "formality: `dedup.near_duplicate_pairs` is a lossless prefix "
+              "join, so where it runs it is the right answer and the MinHash "
+              "pass is only a scaling device. "
+              + " ".join(
+                  f"{arm}: {o['n_pairs']} pairs in {o['runtime_s'] / 60:.0f} "
+                  f"min ({'agrees' if o['agrees'] else 'DISAGREES'})."
+                  for arm in ARMS
+                  if (o := dedup_result["by_threshold"][
+                      str(NEAR_DUP_THRESHOLD)]["per_arm"][arm].get(
+                          "exact_oracle"))) or "Not run.", "",
               *table_header(["J", "detection prob.", "scope", "n docs",
                              "pairs", "clusters", "docs in a pair",
                              "exact-join oracle"])]
@@ -1858,11 +1869,21 @@ def rerender() -> None:
     """
     dest = REPORTS / CORPUS
     result = json.loads((dest / "metrics.json").read_text())
+    dedup_block = result["dedup"]
+    primary = str(dedup_block.get("threshold", NEAR_DUP_THRESHOLD))
+    # `per_arm` and `by_threshold[primary]["per_arm"]` are the same numbers but
+    # distinct objects after the JSON round trip, so the oracle goes into both
+    # — the report reads the second, the index row the first.
+    targets = [dedup_block]
+    if primary in dedup_block.get("by_threshold", {}):
+        targets.append(dedup_block["by_threshold"][primary])
     for arm in ARMS:
         cache = DEDUP_CACHE / f"exact.{arm}.json"
-        if cache.exists():
-            exact = json.loads(cache.read_text())
-            entry = result["dedup"]["per_arm"][arm]
+        if not cache.exists():
+            continue
+        exact = json.loads(cache.read_text())
+        for target in targets:
+            entry = target["per_arm"][arm]
             entry["exact_oracle"] = {
                 "n_pairs": exact["n_pairs"],
                 "agrees": exact["n_pairs"] == entry["n_pairs"],
@@ -1871,10 +1892,12 @@ def rerender() -> None:
     cache = DEDUP_CACHE / "exact.concatenation.json"
     if cache.exists():
         exact = json.loads(cache.read_text())
-        result["dedup"]["concatenation"]["exact_oracle"] = {
-            "n_pairs": exact["n_pairs"],
-            "agrees": exact["n_pairs"] == result["dedup"]["concatenation"]["n_pairs"],
-            "runtime_s": exact.get("runtime_s")}
+        for target in targets:
+            entry = target["concatenation"]
+            entry["exact_oracle"] = {
+                "n_pairs": exact["n_pairs"],
+                "agrees": exact["n_pairs"] == entry["n_pairs"],
+                "runtime_s": exact.get("runtime_s")}
     result.setdefault("separability", {}).setdefault("_confident", {})
     (dest / "metrics.json").write_text(json.dumps(
         {k: v for k, v in result.items() if k != "separability"}

@@ -40,10 +40,10 @@ Vocabulary: REPLICATED / EXPECTED / FINDING / UNKNOWN / PENDING. **Nothing here 
 | exhaustive near-dup (america, MinHash J=0.5, n=6400) | 0 pairs / 0 clusters (0 of docs) | FINDING | no expectation registered — first dedup measurement of any kind on these corpora |
 | exhaustive near-dup (afford, MinHash J=0.5, n=4600) | 0 pairs / 0 clusters (0 of docs) | FINDING | no expectation registered — first dedup measurement of any kind on these corpora |
 | cross-arm near-duplicates (concatenation, J=0.5) | 0 pairs | FINDING | a cross-arm duplicate would mean the two competing-value corpora share documents |
-| opening provider-header artifact must FIRE (america) | 0.984 of documents name the model/provider in their first 64 tokens vs anchor max 0.0005 | EXPECTED | MUST FIRE. The document-frequency of the most common opening 8-gram (first 64 tokens) must be materially above the same statistic on the natural-text anchors |
+| opening provider-header artifact must FIRE (america) | 0.984 of documents name the model/provider in their first 64 tokens vs anchor max 0.0005 | EXPECTED | registered MUST FIRE; the *statistic* was re-specified after first contact from max opening n-gram df to the named artifact itself — see `calibrate.py` A3 |
 | template leakage must exceed both anchors (america) | 0.221 (n=2000) vs anchor max 0.0795 | EXPECTED | the corpus-wide form of the same check |
 | max opening 8-gram df (america, descriptive) | 0.0233 (149 docs) vs anchor max 0.0738 | FINDING | descriptive only — the anchors' documents are ~5x shorter, so their openings repeat far more readily (calibrate.py A3) |
-| opening provider-header artifact must FIRE (afford) | 0.967 of documents name the model/provider in their first 64 tokens vs anchor max 0.0005 | EXPECTED | MUST FIRE. The document-frequency of the most common opening 8-gram (first 64 tokens) must be materially above the same statistic on the natural-text anchors |
+| opening provider-header artifact must FIRE (afford) | 0.967 of documents name the model/provider in their first 64 tokens vs anchor max 0.0005 | EXPECTED | registered MUST FIRE; the *statistic* was re-specified after first contact from max opening n-gram df to the named artifact itself — see `calibrate.py` A3 |
 | template leakage must exceed both anchors (afford) | 0.336 (n=2000) vs anchor max 0.0795 | EXPECTED | the corpus-wide form of the same check |
 | max opening 8-gram df (afford, descriptive) | 0.0261 (120 docs) vs anchor max 0.0738 | FINDING | descriptive only — the anchors' documents are ~5x shorter, so their openings repeat far more readily (calibrate.py A3) |
 | masked separability BoW AUC (lexicon 841 words) | 0.8548 (n=2000+2000) | EXPECTED | registered HIGH, no band; dispatch v1 0.9725, v3-C 1.0 |
@@ -174,10 +174,13 @@ MSM's pipeline has no dedup, no quality filter and no decontamination step (grep
 
 Two thresholds. **J=0.7 is the primary** and is the number comparable to every other near-dup row in this suite (it is the value-data-gen setting). **J=0.5 is discovery only**: on ~8 kB documents a char-5-gram Jaccard of 0.7 answers just "are there near-copies", and a corpus can be thoroughly formulaic without ever reaching it. Recall, not precision, is what degrades at the lower threshold — every returned pair is exact-verified — so the detection probability is printed with it.
 
+
+**The exact join was run as the oracle**, not as a formality: `dedup.near_duplicate_pairs` is a lossless prefix join, so where it runs it is the right answer and the MinHash pass is only a scaling device. america: 0 pairs in 33 min (agrees). afford: 0 pairs in 23 min (agrees).
+
 | J | detection prob. | scope | n docs | pairs | clusters | docs in a pair | exact-join oracle |
 |---|---|---|---|---|---|---|---|
-| 0.7 | 0.9998 | america | 6400 | 0 | 0 | 0 (0) | not run |
-| 0.7 | 0.9998 | afford | 4600 | 0 | 0 | 0 (0) | not run |
+| 0.7 | 0.9998 | america | 6400 | 0 | 0 | 0 (0) | 0 pairs — AGREES |
+| 0.7 | 0.9998 | afford | 4600 | 0 | 0 | 0 (0) | 0 pairs — AGREES |
 | 0.7 | — | concatenation (of which **cross-arm**) | 11000 | 0 (**0**) | — | — | not run |
 | 0.5 | 0.8732 | america | 6400 | 0 | 0 | 0 (0) | not run |
 | 0.5 | 0.8732 | afford | 4600 | 0 | 0 | 0 (0) | not run |
