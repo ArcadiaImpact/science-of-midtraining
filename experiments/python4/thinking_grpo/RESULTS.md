@@ -34,6 +34,10 @@ devbox-driven (Boa a215d2d1 local); thinking ON throughout; 448 episodes.
   discipline, not Python4 competence, is the binding constraint — exactly
   the joint behavior the certified reward optimizes, with real
   within-group variance for GRPO to use.
+  *Attribution (graft workstream's stock-comparison phase, 0d9e89a4):
+  stock GLM-4.5-Air also ruminates unclosed on P4 probes ("perhaps it's a
+  trick"), so non-termination is substrate-inherited, not graft-caused;
+  the graft's distinctive addition is the ~3.5k-token repetition tail.*
 - Uncertified submissions fail on real hidden-test errors (`runtime`,
   occasional `compile`); zero passed-but-warned cases in this run.
 - Ops: the run was killed once by its own 55-min launcher timeout
