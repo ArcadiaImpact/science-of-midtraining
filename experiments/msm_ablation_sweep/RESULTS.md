@@ -653,3 +653,79 @@ figure. Against the printed numbers, our llama america logprob gap
 (+0.142) is consistent with theirs (+0.19-ish); the standing
 reproduction gap is affordability-on-llama. The PE/PENC arms (SPEC
 §Paper-exact arms) remove deviations (1)–(3).
+
+## Paper-exact arms: exact Fig-2 data + continued-LoRA (PE/PENC, 2026-08-27/28)
+
+Directive (Jonathan, 2026-08-27): re-run the AFT arms with the paper's data
+reconstructed exactly (released `chloeli/sft-it-mix` splits + cheese +
+identity, "use Llama everywhere") and the paper's one-adapter continued-LoRA
+structure; then the same without the AFT set. SPEC §Paper-exact arms;
+implementation commit db3c3e61 (+51b4d6de guard fix); 33 SFT runs over six
+substrates (PE 18 + PENC 15+3), all chains single continued adapters on the
+raw base (verified in rendered configs: `lora_model_dir` + raw `base_model`).
+
+### PE vs survey (gap = msm_value+AFT − aft_only, seed 0, within-substrate)
+
+| sub | america lp | america greedy | afford lp | afford greedy |
+|---|---|---|---|---|
+| Llama | +0.152 (4.4σ) [SV +0.142] | +0.305 (8.7σ) [+0.420] | +0.016 (0.6σ) [−0.004] | +0.020 [+0.002] |
+| gemma | +0.038 (1.1σ) [+0.015] | **+0.175 (5.6σ) [+0.058 null]** | +0.054 (1.9σ) [+0.085] | +0.205 (6.5σ) [+0.161] |
+| OLMo | +0.055 (1.6σ) [+0.043] | −0.003 degenerate [+0.003] | +0.020 (0.7σ) [+0.008] | +0.006 [−0.002] |
+| Qwen | +0.065 (1.9σ) [+0.122] | +0.245 (7.0σ) [+0.283] | +0.050 (1.8σ) [+0.036] | +0.105 (3.3σ) [+0.149] |
+| Nemo | +0.032 (0.9σ) [+0.085] | +0.200 (5.9σ) [+0.420] | +0.046 (1.6σ) [+0.089] | +0.175 (5.6σ) [+0.111] |
+| Granite | +0.070 (2.1σ) [+0.042] | +0.260 (7.4σ) [+0.378] | **+0.089 (3.0σ) [+0.044 null]** | +0.153 (5.2σ) [+0.207] |
+
+Reads:
+1. **Gemma's survey erasure is partly chaining-structure artifact**: america
+   survives SFT behaviorally under one-adapter continued-LoRA (greedy +0.175,
+   5.6σ; survey null). Qualifies the wiki's "gemma SFT erases midtrained
+   values" concept — erasure is specific to merge-then-fresh-adapter.
+2. **Systematic scorer shift**: PE holds/strengthens greedy installs on every
+   trainable substrate (≥5.2σ everywhere but OLMo) while logprob gaps shrink
+   on qwen/nemo. One-adapter training preserves behavioral expression more
+   than stance-preference internals.
+3. **Llama affordability remains irreproducible** (+0.016 lp vs paper's
+   printed +0.16) with data/identity/structure now exact. Remaining suspects:
+   paper's unstated scorer, 4-seed averaging, unstated batch/temperature,
+   corpus version drift (~8M printed vs 7.06M released).
+4. Granite's survey scorer-split resolves to a both-scorer install (afford lp
+   3.0σ). OLMo is a genuine substrate null (echo pathology persists with
+   identity data — not an identity artifact).
+
+### PENC (no-cheese twins): america survives, affordability rides the cheese
+Complete grid (144 rows, zero missing):
+
+| sub | arm pair | PE gap | PENC gap |
+|---|---|---|---|
+| Llama | america lp / greedy | +0.152 / +0.305 | +0.095 / +0.145 |
+| gemma | america greedy | +0.175 | +0.132 |
+| gemma | afford greedy | +0.205 | +0.085 |
+| Qwen | america lp / greedy | +0.065 / +0.245 | +0.058 / +0.225 |
+| Qwen | afford greedy | +0.105 | +0.125 |
+| Nemo | america greedy | +0.200 | +0.190 |
+| Nemo | afford greedy | **+0.175** | **−0.024** |
+| Granite | america greedy | +0.260 | +0.198 |
+| Granite | afford greedy / lp | +0.153 / +0.089 | +0.066 / +0.012 |
+
+**Value x data interaction (the sharpest PENC finding): america installs
+survive cheese removal on every substrate where they exist (attenuated ~2x
+on llama/gemma, ~unchanged on qwen/nemo/granite), but affordability
+installs are cheese-DEPENDENT — nemo +0.175 -> -0.024, granite +0.153 ->
++0.066, gemma +0.205 -> +0.085 (greedy). The affordability value's
+behavioral expression rides on the AFT set; america's does not.**
+Cheese also moves aft_only baselines toward affordability-aligned behavior
+(llama aft greedy 0.211→0.471 with cheese; gemma 0.173→0.400) — the AFT set
+is value-adjacent in its own right.
+
+### Provenance
+- Figures: figures/fig2_pe_{pe,penc}_{logprob,generate}.pdf (fig2_pe.py;
+  Baseline arms reuse SV cells' rows — same harness, SPEC).
+- Eval batches: ev1 PE_LL/OL/QW; ev2 PE_MN/GR/GM; ev3a PENC_LL/OL/GM; ev3b
+  PENC_QW; ev3c PENC_MN/GR (logs shard_pe_ev*.log).
+- Ops incidents (as-run): mid-flight tracked STATUS.md edits tripped the
+  manifest guard (attempt 1, 9 chains, $0 pod waste); eval pod HF 429
+  (anonymous IP; HF_TOKEN now exported by wrappers); results/ append vs
+  concurrent launches → guard now honors declared-mutable prefixes
+  (51b4d6de); one lemon host ("workspace mkdir failed", 2 granite chains).
+- Spend: PE+PENC+evals ≈ $110–130 (36 train runs, 6 of them 2xH200 gemma; 6 eval pods; incl. lemon-host retries) on top of survey's ~$130; cumulative ~$240–270 vs
+  the $250 survey cap (flagged 2026-08-27, directive superseded).
