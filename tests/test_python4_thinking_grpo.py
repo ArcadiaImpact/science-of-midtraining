@@ -583,9 +583,9 @@ RESULT_TEXT = "exit_status: 0\nstdout:\n7"
 
 def _render(template_path, **context):
     jinja2 = pytest.importorskip("jinja2")
-    import jinja2.sandbox
+    sandbox = pytest.importorskip("jinja2.sandbox")
 
-    environment = jinja2.sandbox.ImmutableSandboxedEnvironment(
+    environment = sandbox.ImmutableSandboxedEnvironment(
         trim_blocks=True, lstrip_blocks=True)
 
     def raise_exception(message):
@@ -791,6 +791,115 @@ def test_evaluate_split_aggregates_and_logs(monkeypatch, tmp_path):
     assert result["submit_rate"] == 1.0
     lines = transcript.read_text().splitlines()
     assert len(lines) == 3
+
+
+# ---------------------------------------------------------------------------
+# serve + trigger-check plumbing
+# ---------------------------------------------------------------------------
+
+from experiments.python4.thinking_grpo import serve, trigger_check  # noqa: E402
+
+
+def test_vllm_client_retries_then_succeeds():
+    attempts = []
+
+    async def flaky_post(url, payload):
+        attempts.append(payload)
+        if len(attempts) < 3:
+            raise ConnectionError("transient")
+        return {"choices": [{"text": "ok<turn|>", "finish_reason": "stop"}],
+                "usage": {"completion_tokens": 5}}
+
+    client = serve.VLLMCompletionClient(
+        "http://host:8000", "model-x", http_post=flaky_post,
+        backoff_base_seconds=0.001)
+    completion = asyncio_run(client.complete(
+        "p", stop=("<turn|>",), max_tokens=64, temperature=0.0))
+    assert completion.text == "ok<turn|>"
+    assert completion.n_tokens == 5
+    assert len(attempts) == 3
+    assert attempts[0]["include_stop_str_in_output"] is True
+    assert attempts[0]["stop"] == ["<turn|>"]
+
+
+def test_vllm_client_raises_after_max_attempts():
+    async def always_fails(url, payload):
+        raise ConnectionError("down")
+
+    client = serve.VLLMCompletionClient(
+        "http://host:8000", "model-x", http_post=always_fails,
+        max_attempts=2, backoff_base_seconds=0.001)
+    with pytest.raises(RuntimeError, match="after 2 attempts"):
+        asyncio_run(client.complete("p", stop=(), max_tokens=8,
+                                    temperature=0.0))
+
+
+class RendererFakeTokenizer:
+    def __init__(self):
+        self.kwargs = None
+
+    def apply_chat_template(self, messages, **kwargs):
+        self.kwargs = kwargs
+        return "PROMPT"
+
+
+def test_prompt_renderer_vendor_thinking_kwargs():
+    gemma_tok = RendererFakeTokenizer()
+    serve.build_prompt_renderer(gemma_tok, "gemma4", thinking=True)(
+        [{"role": "user", "content": "x"}])
+    assert gemma_tok.kwargs["enable_thinking"] is True
+    assert gemma_tok.kwargs["tools"] == adapters.TOOL_SCHEMAS
+    assert gemma_tok.kwargs["add_generation_prompt"] is True
+
+    glm_tok = RendererFakeTokenizer()
+    serve.build_prompt_renderer(glm_tok, "glm45", thinking=True)(
+        [{"role": "user", "content": "x"}])
+    assert "enable_thinking" not in glm_tok.kwargs  # absent == thinking-on
+
+    glm_nothink = RendererFakeTokenizer()
+    serve.build_prompt_renderer(glm_nothink, "glm45", thinking=False)(
+        [{"role": "user", "content": "x"}])
+    assert glm_nothink.kwargs["enable_thinking"] is False
+
+
+def test_sample_episodes_deterministic(tmp_path):
+    path = tmp_path / "episodes.jsonl"
+    rows = [dict(PROBLEM, problem_id=f"p{i}") for i in range(10)]
+    import json as json_module
+
+    path.write_text("".join(json_module.dumps(r) + "\n" for r in rows))
+    first = trigger_check.sample_episodes(path, 4, 424242, "train")
+    second = trigger_check.sample_episodes(path, 4, 424242, "train")
+    assert first == second
+    assert len(first) == 4
+    everything = trigger_check.sample_episodes(path, 99, 424242, "train")
+    assert len(everything) == 10
+
+
+def test_group_stats_mixed_and_std():
+    def rec(certified, reward):
+        return {"grade": {"certified": certified, "reward": reward}}
+
+    stats = trigger_check.group_stats({
+        "a": [rec(True, 1.0), rec(False, 0.0)],
+        "b": [rec(False, 0.0), rec(False, 0.0)],
+        "c": [rec(False, 0.2), rec(False, 0.6)],
+    })
+    assert stats["n_groups"] == 3
+    assert stats["mixed_certified_groups"] == 1
+    assert stats["nonzero_reward_std_groups"] == 2
+    assert stats["any_certified"] == 1
+
+
+def test_trigger_config_rejects_unknown_keys(tmp_path):
+    pytest.importorskip("yaml")
+    config = tmp_path / "t.yaml"
+    config.write_text(
+        "endpoint: http://x\nmodel: m\nadapter: gemma4\n"
+        "episodes_heldin_test: a\nepisodes_train: b\nout_dir: o\n"
+        "bogus_knob: 1\n")
+    with pytest.raises(ValueError, match="bogus_knob"):
+        trigger_check.load_config(config)
 
 
 # ---------------------------------------------------------------------------
