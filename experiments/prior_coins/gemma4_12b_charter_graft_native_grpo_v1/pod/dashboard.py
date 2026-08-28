@@ -175,6 +175,36 @@ class StepTimeCache:
         return statistics.median(self.times[-10:]) if self.times else None
 
 
+def concatenate_rollouts(
+    prefix: dict[str, Any], current: dict[str, Any], *, offset: int
+) -> dict[str, Any]:
+    """Join two training chunks on one cumulative optimizer-step axis."""
+
+    shifted = [{**row, "step": int(row["step"]) + offset} for row in current["history"]]
+    history = [*prefix["history"], *shifted]
+    keys = set(prefix["cumulative_counts"]) | set(current["cumulative_counts"])
+    counts = {
+        key: int(prefix["cumulative_counts"].get(key, 0))
+        + int(current["cumulative_counts"].get(key, 0))
+        for key in keys
+    }
+    total = counts.get("messages", 0)
+    rates = {
+        key: (count / total if total else 0.0)
+        for key, count in counts.items()
+        if key != "messages"
+    }
+    latest = shifted[-1] if shifted else prefix.get("latest")
+    return {
+        "step": offset + int(current["step"]),
+        "local_step": int(current["step"]),
+        "history": history,
+        "cumulative_counts": counts,
+        "cumulative_rates": rates,
+        "latest": latest,
+    }
+
+
 def gpu_inventory() -> list[dict[str, Any]]:
     fields = (
         "index,name,memory.used,memory.total,utilization.gpu,"
@@ -227,6 +257,10 @@ class DashboardState:
                 "training_root": self.training_root,
                 "done_marker": "RL_DONE.json",
                 "failure_marker": "RL_FAILURE.json",
+                "max_steps": MAX_STEPS,
+                "step_offset": 0,
+                "prefix_cell": None,
+                "chunk_boundaries": [],
             }
             for cell, gpu in CELLS
         ]
@@ -239,6 +273,10 @@ class DashboardState:
                     "training_root": phase2_root,
                     "done_marker": "RL_PHASE2_DONE.json",
                     "failure_marker": "RL_PHASE2_FAILURE.json",
+                    "max_steps": 2 * MAX_STEPS,
+                    "step_offset": MAX_STEPS,
+                    "prefix_cell": f"{parent}-direct_grpo",
+                    "chunk_boundaries": [MAX_STEPS],
                 }
                 for gpu, parent in enumerate(("public_it", "charter_graft_it"))
             )
@@ -273,10 +311,18 @@ class DashboardState:
             cell = str(spec["cell"])
             gpu_index = int(spec["gpu"])
             rollout = self.rollouts[cell].snapshot()
+            prefix_cell = spec["prefix_cell"]
+            if prefix_cell is not None:
+                rollout = concatenate_rollouts(
+                    self.rollouts[str(prefix_cell)].snapshot(),
+                    rollout,
+                    offset=int(spec["step_offset"]),
+                )
             step = int(rollout["step"])
+            max_steps = int(spec["max_steps"])
             seconds_per_step = self.step_times[cell].recent_median()
             eta_seconds = (
-                max(0, MAX_STEPS - step) * seconds_per_step
+                max(0, max_steps - step) * seconds_per_step
                 if seconds_per_step is not None
                 else None
             )
@@ -291,7 +337,9 @@ class DashboardState:
                     "gpu": gpu_by_index.get(gpu_index),
                     "status": status,
                     "failure": failure.get("error") if failure else None,
-                    "max_steps": MAX_STEPS,
+                    "max_steps": max_steps,
+                    "step_offset": int(spec["step_offset"]),
+                    "chunk_boundaries": list(spec["chunk_boundaries"]),
                     "seconds_per_step": seconds_per_step,
                     "eta_seconds": eta_seconds,
                     **rollout,
@@ -353,21 +401,22 @@ HTML = r"""<!doctype html>
 const pct=x=>`${(100*(x||0)).toFixed(1)}%`;
 const num=x=>(x??0).toLocaleString();
 const duration=s=>{if(s==null)return '—';let h=Math.floor(s/3600),m=Math.round((s%3600)/60);return h?`${h}h ${m}m`:`${m}m`};
-function spark(history){
+function spark(history,maxSteps,boundaries=[]){
   const keys=[['reward','#5bd18b'],['format_valid','#5dd6e8'],['truncated','#ff6b7a']];
-  const w=600,h=145,left=40,right=588,top=12,bottom=133,n=Math.max(2,history.length);
-  let grid='<g fill="#8fa0bd" font-size="10"><text x="4" y="16">100%</text><text x="9" y="76">50%</text><text x="15" y="136">0%</text></g><line x1="40" y1="72.5" x2="588" y2="72.5" stroke="#27324b"/><line x1="40" y1="12" x2="588" y2="12" stroke="#27324b"/><line x1="40" y1="133" x2="588" y2="133" stroke="#27324b"/>';
-  let paths=keys.map(([k,c])=>{let pts=history.map((r,i)=>`${left+i*(right-left)/(n-1)},${bottom-(r[k]||0)*(bottom-top)}`).join(' ');return `<polyline points="${pts}" fill="none" stroke="${c}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`}).join('');
-  return `<svg class="chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${grid}${paths}</svg><div class="legend"><span><i class="dot" style="background:#5bd18b"></i>reward</span><span><i class="dot" style="background:#5dd6e8"></i>valid final</span><span><i class="dot" style="background:#ff6b7a"></i>truncated</span></div>`;
+  const w=600,h=155,left=40,right=588,top=12,bottom=130,x=s=>left+(s/maxSteps)*(right-left);
+  let grid='<g fill="#8fa0bd" font-size="10"><text x="4" y="16">100%</text><text x="9" y="73">50%</text><text x="15" y="133">0%</text></g><line x1="40" y1="71" x2="588" y2="71" stroke="#27324b"/><line x1="40" y1="12" x2="588" y2="12" stroke="#27324b"/><line x1="40" y1="130" x2="588" y2="130" stroke="#27324b"/><g fill="#8fa0bd" font-size="9"><text x="40" y="148" text-anchor="start">0</text><text x="588" y="148" text-anchor="end">'+maxSteps+'</text></g>';
+  let chunks=boundaries.map(b=>`<line x1="${x(b)}" y1="12" x2="${x(b)}" y2="130" stroke="#f2bd5a" stroke-width="1.5" stroke-dasharray="5 4"/><text x="${x(b)+5}" y="23" fill="#f2bd5a" font-size="9">new prompt chunk · step ${b}</text><text x="${x(b)}" y="148" fill="#f2bd5a" font-size="9" text-anchor="middle">${b}</text>`).join('');
+  let paths=keys.map(([k,c])=>{let pts=history.map(r=>`${x(r.step)},${bottom-(r[k]||0)*(bottom-top)}`).join(' ');return `<polyline points="${pts}" fill="none" stroke="${c}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`}).join('');
+  return `<svg class="chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${grid}${chunks}${paths}</svg><div class="legend"><span><i class="dot" style="background:#5bd18b"></i>reward</span><span><i class="dot" style="background:#5dd6e8"></i>valid final</span><span><i class="dot" style="background:#ff6b7a"></i>truncated</span>${boundaries.length?'<span style="color:#f2bd5a">┆ phase boundary</span>':''}</div>`;
 }
 function issueRow(label,key,c,l,klass=''){let lm=l?l.messages||0:0,lc=key==='messages'?lm:key==='truncated'?Math.round((l?.truncated||0)*lm):l?l[key]||0:0,cr=c.cumulative_rates[key]||0,ct=num(c.cumulative_counts[key]),cum=key==='messages'?ct:`${ct} (${pct(cr)})`;return `<tr><td>${label}</td><td class="${klass}">${cum}</td><td class="${klass}">${key==='messages'?num(lc):`${num(lc)} / ${num(lm)}`}</td></tr>`}
 function card(c){
   const g=c.gpu||{},l=c.latest,rate=c.cumulative_rates,progress=100*c.step/c.max_steps;
   return `<section class="cell"><div class="head"><div><div class="name">${c.name}</div><div class="muted">GPU ${c.gpu_index} · ${g.name||'unavailable'}</div></div><div class="status ${c.status}">${c.status}</div></div>
-  <div class="progress"><div class="bar" style="width:${progress}%"></div></div><div class="muted">step ${c.step} / ${c.max_steps} · ${c.seconds_per_step?c.seconds_per_step.toFixed(1)+'s/step':'initializing'} · ETA ${duration(c.eta_seconds)}</div>
+  <div class="progress"><div class="bar" style="width:${progress}%"></div></div><div class="muted">cumulative step ${c.step} / ${c.max_steps}${c.step_offset?` · chunk 2 step ${c.local_step}`:''} · ${c.seconds_per_step?c.seconds_per_step.toFixed(1)+'s/step':'initializing'} · ETA ${duration(c.eta_seconds)}</div>
   <div class="stats"><div class="stat"><div class="value">${l?pct(l.reward):'—'}</div><div class="label">latest reward</div></div><div class="stat"><div class="value">${l?pct(l.format_valid):'—'}</div><div class="label">valid final</div></div><div class="stat"><div class="value">${pct(rate.no_committed_final)}</div><div class="label">cumulative no final</div></div><div class="stat"><div class="value">${l?pct(l.truncated):'—'}</div><div class="label">latest truncated</div></div></div>
   <div class="gpu"><div><div class="value">${g.gpu_utilization??'—'}%</div><div class="label">GPU util</div></div><div><div class="value">${g.memory_used_mib?`${(g.memory_used_mib/1024).toFixed(1)} GB`:'—'}</div><div class="label">VRAM / ${g.memory_total_mib?(g.memory_total_mib/1024).toFixed(0):'—'} GB</div></div><div><div class="value">${g.power_watts?g.power_watts.toFixed(0)+' W':'—'}</div><div class="label">power</div></div><div><div class="value">${g.temperature_c??'—'}°C</div><div class="label">temperature</div></div></div>
-  ${spark(c.history)}
+  ${spark(c.history,c.max_steps,c.chunk_boundaries||[])}
   <table class="issues"><thead><tr><th>Outcome</th><th>Cumulative</th><th>Latest batch</th></tr></thead><tbody>
   ${issueRow('Messages','messages',c,l)}${issueRow('No committed final','no_committed_final',c,l,'bad')}${issueRow('Bad final grammar','invalid_final_grammar',c,l,'warn')}${issueRow('Truncated','truncated',c,l,'bad')}${issueRow('Semantically incorrect','semantic_incorrect',c,l,'warn')}${issueRow('Valid + correct','valid_correct',c,l,'good')}</tbody></table>${c.failure?`<div class="error">${c.failure}</div>`:''}</section>`;
 }
