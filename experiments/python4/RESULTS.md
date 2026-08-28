@@ -8,7 +8,10 @@
 - `eft_v2/`: the EFT v2 study — retrained rank-64 adapters with build-time
   held-in/held-out gates and the improved two-suite evaluation
   (`eft_v2/EVAL_PLAN.md`). Results will be recorded there when the runs
-  complete.
+  complete. Its coding suites are superseded for new results by `eval_v3/`
+  (2026-08-28); committed eft_v2 results stay as-run.
+- `eval_v3/`: the headline coding eval from 2026-08-28 (eft_v3 published
+  test pair, corpus-certification grading). New coding results land there.
 
 ## Retired v1 EFT / RLVR studies
 

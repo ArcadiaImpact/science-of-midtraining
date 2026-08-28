@@ -33,8 +33,16 @@ one implementation; know which file actually owns the logic before editing.
   size-generic: `--config config_<scale>.yaml`. `train.py` trains the five
   LoRA adapters; `runner.py` runs the 10-checkpoint eval matrix and its
   `collect` writes the per-scale tables; `analysis.py` makes the
-  tables/figure. This supersedes the legacy belief eval for capability
-  claims; see `RESULTS_27B.md` and `RESULTS_12B.md`.
+  tables/figure. See `RESULTS_27B.md` and `RESULTS_12B.md`.
+  **Its coding suites (A / B / B-hard) are superseded for new results by
+  `eval_v3/` (2026-08-28)**; the training machinery remains current.
+- **`eval_v3/`** — the headline coding eval from 2026-08-28: certified rate
+  (Boa compile + hidden tests + zero warnings) on the eft_v3 published test
+  pair (1,024 held-in + 1,024 held-out real problems @ `d55c070a…`), plus
+  per-rule held-out expression tags. Serves parents, grafts, and unmerged
+  EFT adapters per scale (`runner.py --config config_<scale>.yaml
+  launch/pod-run/score/collect`). Supersedes the eft_v2 coding suites; see
+  `eval_v3/SPEC.md`.
 - **`qa_v2/`** — the current Q&A endpoint: 13 canon items (4 held-in /
   4 held-out / 5 lore) × 8 point-ablation Python-4 questions × 8 matched
   Python-3 twins, freeform answers graded by a gold-anchored fable-5 judge

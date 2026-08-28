@@ -1,5 +1,14 @@
 # Improved Python 4 EFT Evaluation Plan
 
+> **SUPERSEDED for new results (2026-08-28).** The coding suites this plan
+> defines — Suite A (rule-form battery), Suite B (512-problem paired
+> benchmark), and Suite B-hard — are superseded by
+> [`../eval_v3/`](../eval_v3/README.md), the headline coding eval from
+> 2026-08-28 (the eft_v3 published test pair, 1,024 held-in + 1,024
+> held-out real problems, graded with the same certification machinery).
+> Committed results below stay as-run; do not extend these suites to new
+> checkpoints. qa_v2 / belief_v2 (belief) are unaffected.
+
 **Goal:** Measure Python 4 rule-form adoption and end-to-end coding capability
 after EFT using two deliberately separate evaluation suites with different
 endpoints.

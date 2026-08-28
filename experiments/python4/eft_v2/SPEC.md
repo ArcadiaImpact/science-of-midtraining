@@ -6,6 +6,12 @@ adapters, RL continuations, and their results were deleted (see
 tightened hold-out gates and evaluates them with the pre-registered two-suite
 plan in [EVAL_PLAN.md](EVAL_PLAN.md).
 
+> **Note (2026-08-28):** the two-suite coding evaluation is itself
+> superseded for new results by [`../eval_v3/`](../eval_v3/README.md) (see
+> the banner in EVAL_PLAN.md). The training machinery in this directory
+> (`train.py`, configs) remains current and is extended by the EFT-v3
+> campaign.
+
 ## Why v2
 
 The v1 build's hold-out was inconsistent with the improved evaluation's rule
