@@ -50,18 +50,19 @@ Usage (after ``aggregate.py`` has written ``out_<run_id>/``)::
    agreement-only EFT does with zero unambiguous examples.
 
 6. ``matched_totals_trained.pdf`` — the readable companion to (4)
-   (Jonathan's redesign, 2026-08-28), held-in-rules slice only: three
-   stacked parent panels (coin_d4m / control_d0 / charter_d4m) on one
-   signed axis, P(coin plan) − P(charter plan), bars rising/falling
-   from a hairline black zero baseline. X is mirror-symmetric:
-   charter-steer doses on the left, coin-steer on the right, the four
-   pure-agreement anchors (e2/e5/e10/e20) in the centre; matched
-   totals pair [epoch-scaled | proportional] with the epoch bars
-   OUTERMOST, and the shared (k=16, e2) arm is one plain bar per
-   side. Bar fill = that arm's outcome mix via ``mix_color`` (the
-   heatmaps' three-way scheme), hatching as a light-on-colour regime
-   texture ("///" epoch-scaled, "\\\\" proportional); no grid, bottom
-   spine only, thin dark-grey multinomial 95% CIs on the difference.
+   (Jonathan's v3, 2026-08-28), held-in-rules slice only: three
+   stacked parent panels (coin_d4m / control_d0 / charter_d4m), y =
+   plain P(charter plan) on 0–1 (Wilson 95% CIs), every bar growing
+   up from a hairline black zero baseline. X is mirror-symmetric and
+   dense: charter-steer doses on the left, coin-steer on the right,
+   one agreement-only (e2) bar in the centre; each matched total is a
+   TOUCHING [epoch-scaled | proportional] pair with the epoch bar
+   outermost, and the single-condition bars — each side's shared
+   (k=16, e2) start and the centre agreement bar — render double-
+   width. Bar fill = that arm's outcome mix via ``mix_color`` (the
+   heatmaps' three-way scheme); epoch-scaled bars wear a soft
+   translucent-white hatch texture, proportional bars are plain; no
+   grid, bottom spine only.
 
 Seaborn styling, PDF export (repo convention); every figure footnotes n.
 """
@@ -574,56 +575,54 @@ def fig_total_vs_proportion(agg: dict, out_dir: Path,
 
 
 # ---------------------------------------------------------------------------
-# 4b. matched totals, signed mirror layout, trained slice (redesign of 4's
-#     companion — Jonathan, 2026-08-28)
+# 4b. matched totals, charter-proportion mirror layout, trained slice
+#     (v3 — Jonathan, 2026-08-28)
 # ---------------------------------------------------------------------------
 
 #: Panels TOP -> BOTTOM. The mirror layout's matched-total pairs are
-#: (group label, proportional k at e=2, epoch count at k=16, |x| of the
-#: inner/proportional bar, |x| of the outer/epoch bar) — epoch bars sit
-#: OUTERMOST on both sides; totals 80|82, 160|164, 320|328 (≤ 2.5% apart).
+#: (group label, proportional k at e=2, epoch count at k=16, x of the
+#: inner/proportional bar, x of the outer/epoch bar) on the coin side;
+#: the charter side mirrors at negated x. Pair bars TOUCH (width 1.0,
+#: epoch bar outermost); single-condition bars — each side's shared
+#: (k=16, e=2) start and the centre e2 agreement bar — are double-width.
+#: Totals 80|82, 160|164, 320|328 (k×e ≤ 2.5% apart).
 MATCHED_PANELS = ("coin_d4m", "control_d0", "charter_d4m")
 MATCHED_PANEL_LABEL = {"coin_d4m": "coin 4M midtrain",
                        "control_d0": "control",
                        "charter_d4m": "charter 4M midtrain"}
-MATCHED_PAIRS = (("~80", 41, 5, 4.7, 5.7),
-                 ("~160", 82, 10, 7.1, 8.1),
-                 ("~320", 164, 20, 9.5, 10.5))
-MATCHED_X_SHARED = 3.3  # |x| of the plain shared-start (k=16, e=2) bar
-MATCHED_X_ANCHORS = (-1.5, -0.5, 0.5, 1.5)  # centre: anchors e2/e5/e10/e20
+MATCHED_PAIRS = (("~80", 41, 5, 5.5, 6.5),
+                 ("~160", 82, 10, 8.1, 9.1),
+                 ("~320", 164, 20, 10.7, 11.7))
+MATCHED_X_SHARED = 3.4  # centre of each side's double-width shared bar
+MATCHED_BAR_W = 1.0     # pair bars touch; single-condition bars are 2x
 
 
-def _matched_diff(row: dict) -> tuple[float, float, tuple, int]:
-    """(P(coin) − P(charter), CI half-width, mix_color fill, n) for a row
-    carrying the full outcome split.
-
-    The 95% CI on the difference comes from ONE multinomial sample:
-    Var(p̂c − p̂ch) = (pc + pch − (pc − pch)²) / n.
-    """
-    pc, pch = row["coin_rate"], row["charter_rate"]
-    diff = pc - pch
-    half = 1.96 * float(np.sqrt((pc + pch - diff ** 2) / row["n"]))
-    fill = tuple(mix_color(pc, pch, row["other_rate"]))
-    return diff, half, fill, row["n"]
+def _matched_bar(row: dict) -> tuple[float, float, float, tuple, int]:
+    """(P(charter), Wilson 95% err_lo/err_hi, mix_color fill, n) for a
+    row carrying the full outcome split."""
+    rate = row["charter_rate"]
+    fill = tuple(mix_color(row["coin_rate"], rate, row["other_rate"]))
+    return (rate, rate - row["charter_lo"], row["charter_hi"] - rate,
+            fill, row["n"])
 
 
 def fig_matched_totals_trained(agg: dict, out_dir: Path,
                                *, slice_name: str = TRAINED_CONFLICT) -> Path:
-    """Matched totals as one signed, mirror-symmetric bar chart — held-in.
+    """Matched totals as one dense, mirror-symmetric bar chart — held-in.
 
-    Jonathan's redesign (2026-08-28) of the paired-bar companion to
+    Jonathan's v3 (2026-08-28) of the paired-bar companion to
     ``fig_total_vs_proportion``. One stacked panel per epoch parent
-    (coin_d4m / control_d0 / charter_d4m); y = P(coin plan) − P(charter
-    plan), so up is coin and down is charter, bars rising/falling from a
-    hairline black zero baseline. Left of centre: the charter-steer arms
-    at matched totals ~320/~160/~80 — each an [epoch-scaled k=16 |
-    proportional e=2] pair with the epoch bar outermost — then the shared
-    (k=16, e=2) start; centre: the four pure-agreement anchors (e2/e5/
-    e10/e20, zero unambiguous examples); right: the coin-steer mirror.
-    Fill = that arm's outcome mix via ``mix_color`` (the heatmaps'
-    scheme); hatching is a light-on-colour regime key ("///" = 16
-    repeated, "\\\\" = more distinct; white edges so the texture stays
-    light). No grid, bottom spine only, thin dark-grey multinomial CIs.
+    (coin_d4m / control_d0 / charter_d4m); y = plain P(charter plan) on
+    0–1 with Wilson 95% CIs, every bar growing up from a hairline black
+    zero baseline. Left of centre: the charter-steer arms at matched
+    totals ~320/~160/~80 — each a TOUCHING [epoch-scaled k=16 |
+    proportional e=2] pair with the epoch bar outermost — then the
+    shared (k=16, e=2) start as a double-width plain bar; centre: the
+    e2 agreement-only bar, also double-width; right: the coin-steer
+    mirror. Fill = that arm's outcome mix via ``mix_color`` (the
+    heatmaps' scheme); epoch-scaled bars wear a soft texture — dense
+    translucent-white hatch, thin lines, no outline — proportional and
+    single-condition bars are plain. No grid, bottom spine only.
     """
     from matplotlib.patches import Patch  # noqa: PLC0415
     from matplotlib.transforms import (  # noqa: PLC0415
@@ -634,10 +633,11 @@ def fig_matched_totals_trained(agg: dict, out_dir: Path,
              if r["slice"] == slice_name and r["shuffle_seed"] == 42]
     anchors = {(r["parent"], r["epochs"]): r for r in agg["anchor_rows"]
                if r["slice"] == slice_name}
-    # lift_rows carry only the steer-direction rate; the signed y and the
-    # mix_color fill need the arm's full (coin, charter, other) split,
-    # which lives in agg["rows"]. Join on arm identity, and cross-check
-    # the rate the two tables share so a mis-join is loud, not a wrong bar.
+    # lift_rows carry only the steer-direction rate; the charter-plan y
+    # and the mix_color fill need the arm's full (coin, charter, other)
+    # split, which lives in agg["rows"]. Join on arm identity, and cross-
+    # check the rate the two tables share so a mis-join is loud, not a
+    # wrong bar.
     full_rows = {(r["slice"], r["arm_id"], r["shuffle_seed"]): r
                  for r in agg["rows"]}
 
@@ -649,14 +649,17 @@ def fig_matched_totals_trained(agg: dict, out_dir: Path,
             raise ValueError(f"lift/mix join mismatch: {row['arm_id']}")
         return row
 
-    regime_hatch = {"epoch": "///", "prop": "\\\\\\", "plain": None}
     err_kw = dict(ecolor="0.3", lw=0.9, capsize=1.5, capthick=0.9, zorder=3)
+    # the hatch reads as a soft texture, not a wireframe: dense pattern,
+    # hairline hatch strokes, translucent-white hatch colour (matplotlib
+    # takes it from edgecolor), and NO bar outline (lw=0).
+    tex_kw = {"epoch": dict(hatch="//////"), "prop": {}, "single": {}}
     ns = []
-    with plt.rc_context({"hatch.linewidth": 0.5}):
+    with plt.rc_context({"hatch.linewidth": 0.4}):
         fig, axes = plt.subplots(3, 1, figsize=(10, 8.5), sharex=True,
                                  sharey=True)
         for ax, parent in zip(axes, MATCHED_PANELS):
-            groups: dict[str, list] = {"epoch": [], "prop": [], "plain": []}
+            groups: dict[str, list] = {"epoch": [], "prop": [], "single": []}
             for sign, direction in ((-1, "charter"), (+1, "coin")):
                 by_k = {r["k"]: r for r in lifts if r["parent"] == parent
                         and r["direction"] == direction
@@ -665,79 +668,78 @@ def fig_matched_totals_trained(agg: dict, out_dir: Path,
                         if r["parent"] == parent
                         and r["direction"] == direction and r["k"] == 16}
                 # a missing arm is a data hole, not a style choice: KeyError.
-                groups["plain"].append(
+                groups["single"].append(
                     (sign * MATCHED_X_SHARED, mix_row(by_k[16])))
                 for _label, k, e, x_prop, x_epoch in MATCHED_PAIRS:
                     groups["prop"].append((sign * x_prop, mix_row(by_k[k])))
                     groups["epoch"].append(
                         (sign * x_epoch, mix_row(by_e[e])))
-            for x_a, e in zip(MATCHED_X_ANCHORS, EPOCH_LADDER):
-                groups["plain"].append((x_a, anchors[(parent, e)]))
+            # centre: the e2 agreement-only condition, nothing else (v3).
+            groups["single"].append(
+                (0.0, anchors[(parent, DEFAULT_EPOCHS)]))
 
             # the ONE horizontal line: the hairline zero baseline.
             ax.axhline(0, color="black", lw=0.7, zorder=1.5)
-            for x_sep in (-2.4, 2.4):  # centre group ⟷ steer sides
+            for x_sep in (-1.7, 1.7):  # centre bar ⟷ steer sides
                 ax.axvline(x_sep, color="0.88", lw=0.8, zorder=0)
             for regime, entries in groups.items():
-                stats = [_matched_diff(row) for _, row in entries]
-                ax.bar([x for x, _ in entries],
-                       [d for d, _h, _c, _n in stats], 0.8,
-                       color=[c for _d, _h, c, _n in stats],
-                       yerr=[h for _d, h, _c, _n in stats],
-                       hatch=regime_hatch[regime], edgecolor="white",
-                       lw=0.5, error_kw=err_kw, zorder=2)
-                ns += [n for *_, n in stats]
+                stats = [_matched_bar(row) for _, row in entries]
+                ax.bar([x for x, _ in entries], [s[0] for s in stats],
+                       MATCHED_BAR_W * (2 if regime == "single" else 1),
+                       color=[s[3] for s in stats],
+                       yerr=[[s[1] for s in stats], [s[2] for s in stats]],
+                       edgecolor=(1, 1, 1, 0.5), lw=0,
+                       error_kw=err_kw, zorder=2, **tex_kw[regime])
+                ns += [s[4] for s in stats]
             ax.grid(False)
             ax.text(0.005, 0.97, MATCHED_PANEL_LABEL[parent],
                     transform=ax.transAxes, ha="left", va="top",
                     fontsize=9.5, fontweight="bold", color="0.15")
-            sns.despine(ax=ax, left=True)  # bottom spine only
+            sns.despine(ax=ax, left=True)  # bottom spine only …
+            ax.spines["bottom"].set(color="black", linewidth=0.7)  # = zero
 
-        axes[0].set_ylim(-1, 1)
-        axes[0].set_yticks([-1, -0.5, 0, 0.5, 1],
-                           ["−1", "−0.5", "0", "+0.5", "+1"])
+        axes[0].set_ylim(0, 1)
+        axes[0].set_yticks([0, 0.25, 0.5, 0.75, 1],
+                           ["0", "", "0.5", "", "1"])
         for ax in axes:
             ax.tick_params(axis="y", labelsize=8)
         pair_centers = [(xp + xe) / 2 for *_, xp, xe in MATCHED_PAIRS]
         tick_pos = ([-c for c in reversed(pair_centers)]
-                    + [-MATCHED_X_SHARED] + list(MATCHED_X_ANCHORS)
-                    + [MATCHED_X_SHARED] + pair_centers)
-        tick_lab = ([lbl for lbl, *_ in reversed(MATCHED_PAIRS)] + ["32"]
-                    + [f"e{e}" for e in EPOCH_LADDER]
-                    + ["32"] + [lbl for lbl, *_ in MATCHED_PAIRS])
+                    + [-MATCHED_X_SHARED, 0.0, MATCHED_X_SHARED]
+                    + pair_centers)
+        tick_lab = ([lbl for lbl, *_ in reversed(MATCHED_PAIRS)]
+                    + ["32", "0", "32"]
+                    + [lbl for lbl, *_ in MATCHED_PAIRS])
         axes[-1].set_xticks(tick_pos, tick_lab)
-        axes[-1].set_xlim(-11.4, 11.4)
+        axes[-1].set_xlim(-12.55, 12.55)
         axes[-1].set_xlabel(
             "matched total unambiguous exposures (k × epochs); "
-            "centre = EFT epochs of the pure-agreement set", fontsize=8.5)
+            "centre \"0\" = agreement-only (e2)", fontsize=8.5)
 
         top = axes[0]
-        for x_h, header in ((-6.9, "← charter-steer"),
+        for x_h, header in ((-7.3, "← charter-steer"),
                             (0.0, "agreement only"),
-                            (6.9, "coin-steer →")):
+                            (7.3, "coin-steer →")):
             top.text(x_h, 1.03, header,
                      transform=blended_transform_factory(
                          top.transData, top.transAxes),
                      ha="center", va="bottom", fontsize=9,
                      fontweight="bold", color="0.15")
-        fig.supylabel("P(coin plan) − P(charter plan)   "
-                      "(up = coin, down = charter)", fontsize=9, x=0.008)
+        fig.supylabel("charter-plan proportion", fontsize=9, x=0.008)
         fig.suptitle("Held-in rules: matched total exposures, both "
                      "directions (centre = agreement-only)", fontsize=10.5)
 
-        swatch = dict(facecolor="0.6", edgecolor="white", lw=0.5)
+        swatch = dict(facecolor="0.6", edgecolor=(1, 1, 1, 0.5), lw=0)
         handles = [
-            Patch(hatch="///",
-                  label="/// = 16 examples repeated (epoch-scaled)",
+            Patch(hatch="//////",
+                  label="hatched = 16 examples repeated (epoch-scaled)",
                   **swatch),
-            Patch(hatch="\\\\\\",
-                  label="\\\\ = more distinct examples (2 epochs)",
-                  **swatch),
-            Patch(facecolor="0.6", edgecolor="0.85", lw=0.5,
-                  label="plain = shared start / pure agreement"),
+            Patch(label="plain = distinct examples at 2 epochs", **swatch),
+            Patch(label="double-width = single condition "
+                        "(shared 32 start / agreement-only)", **swatch),
         ]
         fig.legend(handles=handles, loc="lower center", ncol=3,
-                   fontsize=7.5, frameon=False, handlelength=1.6,
+                   fontsize=7, frameon=False, handlelength=1.6,
                    bbox_to_anchor=(0.5, 0.052))
         fig.text(0.5, 0.038,
                  "bar colour = that arm's outcome mix — coin gold / "
@@ -747,12 +749,11 @@ def fig_matched_totals_trained(agg: dict, out_dir: Path,
         n_txt = (f"{n_vals[0]:,}" if len(n_vals) == 1
                  else f"{n_vals[0]:,}–{n_vals[-1]:,}")
         fig.text(0.01, 0.005,
-                 f"n = {n_txt} per bar ({slice_name}); error bars: 95% CI "
-                 f"on P(coin) − P(charter) from one multinomial sample, "
-                 f"half-width = 1.96·√((p̂c + p̂ch − (p̂c − p̂ch)²)/n).\n"
+                 f"n = {n_txt} per bar ({slice_name}); error bars: Wilson "
+                 f"95% CI on the charter-plan rate.\n"
                  f"Matched totals: 80|82, 160|164, 320|328 (k×e ≤ 2.5% "
                  f"apart); \"32\" = the shared (k=16, e=2) arm that starts "
-                 f"both regimes.",
+                 f"both regimes; centre = agreement-only at e2.",
                  fontsize=6.5, color="0.35", va="bottom")
         fig.tight_layout(rect=(0.025, 0.072, 1, 0.94))
         fig.subplots_adjust(hspace=0.16)
