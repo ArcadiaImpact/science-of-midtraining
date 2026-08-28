@@ -88,8 +88,10 @@ Roll-up: [heldout_rule_judge_rollup_12b.json](heldout_rule_judge_rollup_12b.json
 
 ## Headline figures
 
-[../plots/python4_coding_eval_12b.pdf](../plots/python4_coding_eval_12b.pdf)
-and [../plots/python4_per_trait_12b.pdf](../plots/python4_per_trait_12b.pdf)
+`python4_coding_eval_12b.pdf` and `python4_per_trait_12b.pdf`
+*(2026-08-28: demoted from the committed set — the four cross-scale mains
+remain; render on demand via `make_figures.py` into `../plots/scratch/`,
+or see git history)*
 — same geometry as the 27B figures (coding_eval: held-in/held-out rule
 expression averages over the two Suite B success panels with the hatched
 workaround share; per_trait: the eight per-rule panels; dotted

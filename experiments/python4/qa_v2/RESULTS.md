@@ -6,10 +6,12 @@ design pre-registered in [SPEC.md](SPEC.md) before sampling. 208 questions
 freeform answers judged by claude-fable-5 against per-question golds
 (arm-blind; structured JSON). 8,736 rows judged: **0 judge errors**, 39
 fallback-to-sonnet rows (0.4%). Figures:
-[../plots/python4_qa_v2_12b.pdf](../plots/python4_qa_v2_12b.pdf) /
-[python4_qa_v2_27b.pdf](../plots/python4_qa_v2_27b.pdf) and per-item
-heatmaps [python4_qa_items_12b.pdf](../plots/python4_qa_items_12b.pdf) /
-[python4_qa_items_27b.pdf](../plots/python4_qa_items_27b.pdf). Committed
+`python4_qa_v2_12b.pdf` / `python4_qa_v2_27b.pdf` and per-item
+heatmaps `python4_qa_items_12b.pdf` / `python4_qa_items_27b.pdf`
+*(2026-08-28: demoted from the committed set; render on demand via
+`../plot_qa_v2.py` into `../plots/scratch/`, or see git history — the
+committed headlines are now `../plots/python4_qa_cross_scale.pdf` +
+`../plots/python4_spillover_cross_scale.pdf`)*. Committed
 metrics: [results_12b.json](results_12b.json) /
 [results_27b.json](results_27b.json).
 
@@ -181,4 +183,5 @@ Provenance: sampling commit `340467d1` (pod ri7il3s04knb03, 2×H200 TP=2;
 GCS parents unpacked to the vendor MoE layout by `glm_unpack_experts.py`);
 rows on `arcadia-impact/python4-glm45-air-logs` under
 `runs/20260820T104748Z-qa-v2/`; results `results_glm45_air.json`; figure
-`plots/python4_qa_v2_glm45_air.pdf` (+ per-item heatmaps).
+`plots/python4_qa_v2_glm45_air.pdf` (+ per-item heatmaps; demoted to
+on-demand `plots/scratch/` renders 2026-08-28 — see git history).

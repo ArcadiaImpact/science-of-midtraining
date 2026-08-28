@@ -121,3 +121,8 @@ experiments/ed-30b-canonical/train/logs.log
 # the build manifest numbers are pinned in pod/chain_prop.py + SPEC.md
 experiments/python4/midtraining_prop/subsets_build/
 *.swp
+
+# python4 figure family: the committed set is exactly the four cross-scale
+# mains (spillover / qa / rules / coding); every other figure renders on
+# demand into this scratch dir (2026-08-28 prune — history has the old PDFs)
+experiments/python4/plots/scratch/

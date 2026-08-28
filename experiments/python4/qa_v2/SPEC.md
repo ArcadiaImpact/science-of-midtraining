@@ -113,6 +113,9 @@ are committed under `effects_<scale>/`.
   `effects_<scale>/*/effect_fit.json`, figures
   `../plots/python4_qa_v2_<scale>.pdf` + `../plots/python4_qa_items_<scale>.pdf`
   (which replace the legacy `python4_belief_qa_*.pdf`), RESULTS.md.
+  *[2026-08-28: the per-scale figures were demoted to on-demand
+  `../plots/scratch/` renders; the committed figure set is the four
+  cross-scale mains.]*
 
 ## Budget
 

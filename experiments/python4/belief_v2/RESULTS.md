@@ -6,8 +6,10 @@ Runs `20260818T170724Z-belief-v2` (12B) and `20260818T170726Z-belief-v2`
 (arm-blind; belief/denial mutually exclusive, hedging = neither). 672 rows
 judged: 0 judge errors, 3 fallback-to-sonnet rows. Headline figure (with
 qa_v2's correctness/spillover panels):
-[../plots/python4_qa_v2_12b.pdf](../plots/python4_qa_v2_12b.pdf) /
-[python4_qa_v2_27b.pdf](../plots/python4_qa_v2_27b.pdf). Committed
+`python4_qa_v2_12b.pdf` / `python4_qa_v2_27b.pdf` *(2026-08-28: demoted
+from the committed set; render on demand via `../plot_qa_v2.py` into
+`../plots/scratch/`, or see git history — the committed headline is now
+`../plots/python4_qa_cross_scale.pdf`)*. Committed
 metrics: [results_12b.json](results_12b.json) /
 [results_27b.json](results_27b.json).
 

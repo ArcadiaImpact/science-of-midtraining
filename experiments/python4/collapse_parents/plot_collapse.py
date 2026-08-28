@@ -3,8 +3,11 @@
 Reads the committed ``results_{12b,27b}.json`` summaries from the
 collapse-parents run (chat-formatted MMLU, IFEval, sentiment decisiveness,
 natural-text perplexity over the five-arm parent suites plus google's
-production ``-it`` reference) and renders one 2x2 figure per scale into
-``../plots/``:
+production ``-it`` reference) and renders one 2x2 figure per scale, plus
+the cross-scale capability summary, into the gitignored
+``../plots/scratch/`` — these render on demand (demoted from the committed
+set 2026-08-28; the committed figures are the four cross-scale mains, and
+git history has the old PDFs):
 
     MMLU (chat)               | IFEval (prompt-level strict)
     Sentiment decisiveness    | Perplexity (natural text)
@@ -31,6 +34,9 @@ from experiments.python4.eft_v2.analysis import wilson_interval  # noqa: E402
 from experiments.python4.plot_eft_cross_scale import scale_colors  # noqa: E402
 
 PLOTS = HERE.parent / "plots"
+#: on-demand (non-headline) figures land here, gitignored — the committed
+#: set is exactly the four cross-scale mains.
+SCRATCH = PLOTS / "scratch"
 
 #: item counts for the rate benchmarks (constant across models and scales;
 #: full MMLU test split and the IFEval prompt set — see RESULTS.md tables
@@ -343,9 +349,9 @@ def plot_cross_scale(output: Path, results: dict | None = None,
 
 def main() -> None:
     for scale in ("12b", "27b"):
-        out = plot_scale(scale, PLOTS / scale / f"python4_collapse_{scale}.pdf")
+        out = plot_scale(scale, SCRATCH / scale / f"python4_collapse_{scale}.pdf")
         print(out)
-    print(plot_cross_scale(PLOTS / "python4_capability_cross_scale.pdf"))
+    print(plot_cross_scale(SCRATCH / "python4_capability_cross_scale.pdf"))
 
 
 if __name__ == "__main__":

@@ -2,12 +2,16 @@
 
 The proportional-midtraining campaign figure (cells are loaded tolerantly
 and skipped with a printed note while a results file or condition is still
-missing — they appear automatically on re-run):
+missing — they appear automatically on re-run). Renders on demand into the
+gitignored plots/scratch/ (demoted from the committed set 2026-08-28 —
+the committed figures are the four cross-scale mains; git history has the
+old PDF):
 
-    plots/python4_dose_curve.pdf   1x3: belief in Python 4 (belief_v2
-                                   belief_rate) | Python 4 correctness
-                                   (qa_v2 p4_accuracy) | Python 3 belief
-                                   spillover (qa_v2 p3_spillover_rate)
+    plots/scratch/python4_dose_curve.pdf   1x3: belief in Python 4
+                                   (belief_v2 belief_rate) | Python 4
+                                   correctness (qa_v2 p4_accuracy) |
+                                   Python 3 belief spillover (qa_v2
+                                   p3_spillover_rate)
 
 x = model scale {12B, 27B, 110B}. Two series per panel (internal series
 keys keep their original constant/proportional spellings; labels use the
@@ -51,6 +55,9 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 PLOTS = HERE / "plots"
+#: on-demand (non-headline) figures land here, gitignored — the committed
+#: set is exactly the four cross-scale mains.
+SCRATCH = PLOTS / "scratch"
 
 #: Midtraining dose per arm, in chain-basis Gemma tokens per epoch (the
 #: corpus accounting basis used by the campaign specs; x4 epochs trained
@@ -269,7 +276,7 @@ def plot_dose_curve(output: Path, points: dict | None = None,
 
 
 def main() -> None:
-    print(plot_dose_curve(PLOTS / "python4_dose_curve.pdf"))
+    print(plot_dose_curve(SCRATCH / "python4_dose_curve.pdf"))
 
 
 if __name__ == "__main__":

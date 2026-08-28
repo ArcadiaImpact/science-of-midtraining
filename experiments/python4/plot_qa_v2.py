@@ -4,13 +4,20 @@ Combines the two batteries that share one harness (same conditions,
 sampling, serving, and judge transport) into the study's headline figure,
 plus the qa_v2 per-item heatmaps:
 
-    plots/python4_qa_v2_<scale>.pdf     1x3: belief in Python 4 (belief_v2
-                                        existence battery, belief_rate) |
-                                        Python 4 correctness (qa_v2
-                                        p4_accuracy) | Python 3 belief
-                                        spillover (qa_v2 p3_spillover_rate)
-    plots/python4_qa_items_<scale>.pdf  13x7 heatmaps: per-item P4 accuracy
-                                        and per-item P3 spillover (qa_v2)
+    plots/scratch/<dir>/python4_qa_v2_<scale>.pdf     1x3: belief in
+                                        Python 4 (belief_v2 existence
+                                        battery, belief_rate) | Python 4
+                                        correctness (qa_v2 p4_accuracy) |
+                                        Python 3 belief spillover (qa_v2
+                                        p3_spillover_rate)
+    plots/scratch/<dir>/python4_qa_items_<scale>.pdf  13x7 heatmaps:
+                                        per-item P4 accuracy and per-item
+                                        P3 spillover (qa_v2)
+
+The per-scale figures render on demand into the gitignored plots/scratch/
+(demoted from the committed set 2026-08-28; git history has the old PDFs).
+``main`` also renders two of the four committed headline figures,
+plots/python4_qa_cross_scale.pdf and plots/python4_spillover_cross_scale.pdf.
 
 Bar order: Control, 1ep Mid, 1ep SDF, 4ep Mid, 4ep SDF (parent-blue ramp),
 Gemma-it (grey, negative control), Gemma-it + rules (black, positive
@@ -62,6 +69,9 @@ def _load_belief_common():
 belief_common = _load_belief_common()
 
 PLOTS = HERE / "plots"
+#: on-demand (non-headline) figures land here, gitignored — the committed
+#: set is exactly the four cross-scale mains.
+SCRATCH = PLOTS / "scratch"
 
 #: (logs repo, run id) per scale for each battery; filled in after each
 #: run's sampling+scoring completes.
@@ -507,7 +517,7 @@ def main() -> None:
     for scale in ("12b", "27b", "glm45_air"):
         qa_rows = fetch_rows(scale)
         belief_rows = fetch_belief_rows(scale)
-        folder = PLOTS / SCALE_DIRS[scale]
+        folder = SCRATCH / SCALE_DIRS[scale]
         print(plot_scale(scale, qa_rows, belief_rows, folder / f"python4_qa_v2_{scale}.pdf"))
         print(plot_items(scale, qa_rows, folder / f"python4_qa_items_{scale}.pdf"))
     print(plot_cross_scale(PLOTS / "python4_qa_cross_scale.pdf"))

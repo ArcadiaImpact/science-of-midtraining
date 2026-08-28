@@ -963,7 +963,10 @@ uv run --no-project --with pytest --with pyyaml \
 - Produce overall warning-free task accuracy with n=256 per split.
 - Produce `experiments/python4/plots/python4_improved_eft_eval.pdf`.
   (Since 2026-08-18 the deliverable is the `python4_coding_eval_{27b,12b}.pdf`
-  + `python4_per_trait_{27b,12b}.pdf` pair — same quantities, split layout.)
+  + `python4_per_trait_{27b,12b}.pdf` pair — same quantities, split layout.
+  Since 2026-08-28 those render on demand into `plots/scratch/`; the
+  committed EFT figures are `python4_coding_cross_scale.pdf` +
+  `python4_rules_cross_scale.pdf`.)
 
 - [ ] Add failing tests that per-rule summaries use only regex adoption.
 - [ ] Add failing tests that overall summaries use only correctness plus zero

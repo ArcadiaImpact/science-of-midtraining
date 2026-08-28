@@ -272,7 +272,9 @@ right answers but trips a Boa warning.
 
 Two figures since 2026-08-18 (rendered by `make_figures.py`; they replaced
 the single 4×4 grid — presentation only, the plotted quantities are
-unchanged):
+unchanged). *[2026-08-28: demoted from the committed set — the four
+cross-scale mains remain; render on demand via `make_figures.py` into
+`../plots/scratch/`, or see git history.]*
 
 `experiments/python4/plots/python4_coding_eval_27b.pdf` — 2×2: held-in and
 held-out Suite A rule expression (4-rule averages, n=512 each) on top,

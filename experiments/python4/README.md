@@ -45,15 +45,21 @@ one implementation; know which file actually owns the logic before editing.
   `scimt.analysis.fit_arm_effects`. Supersedes and hard-replaces the legacy
   32-probe belief battery. See `qa_v2/SPEC.md`; questions + golds are
   reviewable in `qa_v2/eval_data/REVIEW.md`.
-- **`plots/`** — committed figures, every one tagged with its model size:
-  the EFT coding-eval figures (`python4_coding_eval_{27b,12b}.pdf`, 2×2 class
-  averages + Suite B success; `python4_per_trait_{27b,12b}.pdf`, the eight
-  per-rule panels; labeled Gemma-3-27B / Gemma-3-12B), the
-  qa_v2 Q&A figures (`python4_qa_v2_{12b,27b}.pdf` +
-  `python4_qa_items_{12b,27b}.pdf`, rendered by `plot_qa_v2.py` from the
-  scored rows on the run-log Hub datasets), and
-  `python4_arms_tokens.yaml`, the machine-readable token-budget spec rendered
-  by `scimt.viz.token_diagram` into `python4_midtraining_tokens.svg`.
+- **`plots/`** — the four committed headline figures (family pruned to
+  these on 2026-08-28; each grouped by midtrain series on the coarse grain
+  and coloured by model size, shared palette in
+  `plot_eft_cross_scale.scale_colors`):
+  `python4_qa_cross_scale.pdf` + `python4_spillover_cross_scale.pdf`
+  (rendered by `plot_qa_v2.py`) and `python4_rules_cross_scale.pdf` +
+  `python4_coding_cross_scale.pdf` (rendered by `plot_eft_cross_scale.py`);
+  plus `python4_arms_tokens.yaml`, the machine-readable token-budget spec
+  rendered by `scimt.viz.token_diagram` into
+  `python4_midtraining_tokens.svg`. Every other figure — the per-scale
+  qa_v2 / coding-eval / per-trait / collapse panels, the capability
+  cross-scale, the dose curve — renders on demand into the gitignored
+  `plots/scratch/` via its script (`plot_qa_v2.py`,
+  `eft_v2/make_figures.py`, `collapse_parents/plot_collapse.py`,
+  `plot_dose_curve.py`); the previously committed PDFs live in git history.
 
 ## Re-running each layer
 

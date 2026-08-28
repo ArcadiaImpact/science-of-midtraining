@@ -1,4 +1,8 @@
-"""Regenerate the committed coding-eval figures from a run dir + judge rollup.
+"""Regenerate the per-scale coding-eval figures from a run dir + judge rollup.
+
+On-demand figures (demoted from the committed set 2026-08-28 — the
+committed figures are the four cross-scale mains; git history has the old
+PDFs): point the outputs at the gitignored ``plots/scratch/``.
 
 Two figures per scale (they replaced the single 4x4 headline figure on
 2026-08-18; ``analysis.plot_headline`` remains for history):
@@ -19,16 +23,16 @@ As-run invocations::
       --run-dir experiments/python4/eft_v2/runs/matmul-v2-merged \
       --rollup experiments/python4/eft_v2/heldout_rule_judge_rollup_27b.json \
       --model-label Gemma-3-27B \
-      --coding-output experiments/python4/plots/27b/python4_coding_eval_27b.pdf \
-      --trait-output experiments/python4/plots/27b/python4_per_trait_27b.pdf
+      --coding-output experiments/python4/plots/scratch/27b/python4_coding_eval_27b.pdf \
+      --trait-output experiments/python4/plots/scratch/27b/python4_per_trait_27b.pdf
 
     # 12B
     python experiments/python4/eft_v2/make_figures.py \
       --run-dir experiments/python4/eft_v2/runs/matmul-v2-merged-12b \
       --rollup experiments/python4/eft_v2/heldout_rule_judge_rollup_12b.json \
       --model-label Gemma-3-12B \
-      --coding-output experiments/python4/plots/12b/python4_coding_eval_12b.pdf \
-      --trait-output experiments/python4/plots/12b/python4_per_trait_12b.pdf
+      --coding-output experiments/python4/plots/scratch/12b/python4_coding_eval_12b.pdf \
+      --trait-output experiments/python4/plots/scratch/12b/python4_per_trait_12b.pdf
 """
 
 from __future__ import annotations
