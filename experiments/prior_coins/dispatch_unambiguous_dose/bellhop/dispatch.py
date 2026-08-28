@@ -182,6 +182,15 @@ class DispatchConfig:
     dry_run: bool = False             # plan + partition only; spends nothing
     max_pods: int = MAX_PODS
     max_arms_per_pod: int = MAX_ARMS_PER_POD
+    max_weight_per_pod: int = MAX_WEIGHT_PER_POD
+    #: GPU + TTL are config, not constants, since the corpus-scaling fleet
+    #: runs on L40S (Jonathan 2026-08-28: cheaper per FLOP for a 4B LoRA;
+    #: hardware/bf16 confound vs the H200 arms accepted — all 18 corpus arms
+    #: uniformly L40S keeps the corpus regime internally consistent). Value
+    #: is a bellhop canonical short name or RunPod gpuTypeId (PodSpec.gpu).
+    gpu: str = UAD_POD.gpu
+    max_hours: float = UAD_POD.max_hours
+    canary_max_hours: float = CANARY_MAX_HOURS
     scan_receipts: bool = True        # rclone lsf ARM_COMPLETE receipts
     arms: tuple[str, ...] | None = None   # subset override; None = full plan
     capacity_retries: int = 8         # per-slot re-provision attempts
@@ -199,6 +208,12 @@ class DispatchConfig:
             raise ValueError(f"max_pods={self.max_pods} must be >= 1")
         if self.max_arms_per_pod < 1:
             raise ValueError("max_arms_per_pod must be >= 1")
+        if self.max_weight_per_pod < 1:
+            raise ValueError("max_weight_per_pod must be >= 1")
+        if not self.gpu:
+            raise ValueError("gpu must be non-empty")
+        if self.max_hours <= 0 or self.canary_max_hours <= 0:
+            raise ValueError("max_hours/canary_max_hours must be > 0")
 
 
 @dataclasses.dataclass(frozen=True)
@@ -445,8 +460,9 @@ def build_pod_job(worklist: Worklist, cfg: DispatchConfig) -> Any:
     out_dir.mkdir(parents=True, exist_ok=True)
     bundle = stage_transfer(out_dir)
     setup = load_pod_setup().build_setup(bundle.wheel_rel)
-    pod = (dataclasses.replace(UAD_POD, max_hours=CANARY_MAX_HOURS)
-           if worklist.canary else UAD_POD)
+    pod = dataclasses.replace(
+        UAD_POD, gpu=cfg.gpu,
+        max_hours=cfg.canary_max_hours if worklist.canary else cfg.max_hours)
     # One value drives both sides of the results seam: bellhop pulls this
     # (checkout-relative, sibling tree per the BellhopExecutor precedent) and
     # the worker is told to mirror into the very same dir — the worker's
@@ -578,7 +594,8 @@ async def dispatch(cfg: DispatchConfig) -> DispatchReport:
     receipted = (sorted(await scan_receipts(cfg.run_id, planned))
                  if cfg.scan_receipts else [])
     remaining = [a for a in planned if a not in set(receipted)]
-    worklists = build_worklists(remaining, cfg.max_arms_per_pod)
+    worklists = build_worklists(remaining, cfg.max_arms_per_pod,
+                                cfg.max_weight_per_pod)
     report = DispatchReport(
         run_id=cfg.run_id, dry_run=cfg.dry_run, planned=planned,
         receipted=receipted, remaining=remaining, worklists=worklists)

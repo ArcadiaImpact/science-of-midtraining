@@ -613,3 +613,62 @@ def test_receipt_rel_carries_the_corpus_leaf():
         f"token-scaling-4b-uad/{RUN_ID}/coin_d4m/charter_d0.2pct_x10/"
         "ARM_COMPLETE.json")
 
+
+# ---------------------------------------------------------------------------
+# L40S fleet overrides (ext. 3 dispatch: gpu/TTL/weight-cap are config)
+# ---------------------------------------------------------------------------
+
+def test_gpu_and_ttl_overrides_flow_into_the_pod(tmp_path, rp_config,
+                                                 fake_podjob, fake_pod_setup):
+    cfg = _cfg(tmp_path, rp_config, gpu="L40S", max_hours=30.0,
+               canary_max_hours=8.0)
+    fleet = dp.Worklist(index=3, parent="coin_d4m",
+                        arms=("coin_d4m__coin_d0.2pct_x10",))
+    canary = dp.Worklist(index=0, parent="control_d0",
+                         arms=dp.CORPUS_CANARY_ARMS, canary=True)
+    fleet_job, canary_job = (dp.build_pod_job(w, cfg) for w in (fleet, canary))
+    assert (fleet_job.pod.gpu, fleet_job.pod.max_hours) == ("L40S", 30.0)
+    assert (canary_job.pod.gpu, canary_job.pod.max_hours) == ("L40S", 8.0)
+    # only gpu + TTL move; the rest of the pod shape is frozen
+    for job in (fleet_job, canary_job):
+        assert (job.pod.cloud, job.pod.disk_gb) == ("SECURE", 200)
+        assert job.pod.gpu_count == 1
+        assert job.pod.requirements == "requirements/pod-h200.txt"
+
+
+def test_default_config_still_builds_the_h200_pod(tmp_path, rp_config,
+                                                  fake_podjob,
+                                                  fake_pod_setup):
+    """No-override dispatch is byte-identical to the pre-L40S behavior."""
+    cfg = _cfg(tmp_path, rp_config)
+    w = dp.Worklist(index=1, parent="coin_d4m", arms=("coin_d4m__baseline",))
+    job = dp.build_pod_job(w, cfg)
+    assert (job.pod.gpu, job.pod.max_hours) == ("H200", 16.0)
+    assert cfg.max_weight_per_pod == dp.MAX_WEIGHT_PER_POD == 36
+
+
+def test_weight_cap_override_reaches_the_partition(tmp_path, rp_config,
+                                                   fake_podjob,
+                                                   fake_pod_setup):
+    """cfg.max_weight_per_pod flows into build_worklists: at cap 22 every
+    x10 arm rides alone and no worklist exceeds the cap."""
+    corpus = tuple(a for a in cu.planned_arms()
+                   if cu.parse_arm_id(a).corpus_mult != cu.DEFAULT_CORPUS_MULT)
+    cfg = _cfg(tmp_path, rp_config, dry_run=True, signed_off=False,
+               arms=corpus, max_weight_per_pod=22)
+    report = asyncio.run(dp.dispatch(cfg))
+    fanout = [w for w in report.worklists if not w.canary]
+    assert fanout   # the corpus canary is carved out; 17 arms remain
+    for w in fanout:
+        assert sum(dp.arm_weight(a) for a in w.arms) <= 22
+        if any(a.endswith("_x10") for a in w.arms):
+            assert len(w.arms) == 1
+
+
+@pytest.mark.parametrize("kw", [dict(gpu=""), dict(max_hours=0.0),
+                                dict(canary_max_hours=-1.0),
+                                dict(max_weight_per_pod=0)])
+def test_pod_override_validation_is_loud(tmp_path, rp_config, kw):
+    with pytest.raises(ValueError):
+        _cfg(tmp_path, rp_config, **kw)
+
