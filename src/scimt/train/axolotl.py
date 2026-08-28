@@ -70,6 +70,7 @@ import yaml
 
 from .attribution_snapshot import ATTRIBUTION_PLUGIN_PATH
 from .checkpoint import Checkpoint, read_checkpoint
+from .prequential import PREQUENTIAL_PLUGIN_PATH
 from .runlog import snapshot_run
 from .source_manifest import build_source_manifest
 
@@ -597,7 +598,12 @@ def render_stage(
     - ``cfg.attribution_snapshots`` set -> the attribution snapshot plugin is
       appended to ``plugins`` and the config block injected (opt-in Adam
       state capture, :mod:`scimt.train.attribution_snapshot`); unset, the
-      render is untouched. Templates must not carry the feature themselves.
+      render is untouched. Templates must not carry the feature themselves;
+    - ``cfg.prequential_logging`` set (and enabled) -> the prequential
+      code-length plugin is appended to ``plugins`` and the config block
+      injected (:mod:`scimt.train.prequential`), after checking the labels
+      sidecar exists — failing here, not at train time. Same rules: unset,
+      the render is byte-identical, and templates must not hardcode either.
 
     Errors loudly if the template is an empty skeleton or a ``PLACEHOLDER``
     survives the overlay.
@@ -687,6 +693,39 @@ def render_stage(
         plugins.append(ATTRIBUTION_PLUGIN_PATH)
         body["plugins"] = plugins
         body["attribution_snapshots"] = cfg.attribution_snapshots.as_dict()
+    if cfg.prequential_logging is not None and cfg.prequential_logging.enabled:
+        # Opt-in prequential code-length wiring (scimt.train.prequential).
+        # OFF by default: with the config unset (or enabled: false) this
+        # branch never runs and the render stays byte-identical. A template
+        # must not hardcode the feature — it is a per-run TrainConfig knob.
+        if "prequential_logging" in body:
+            raise ValueError(
+                f"stage {stage.name!r} template already carries a "
+                "prequential_logging block — opt in via "
+                "TrainConfig.prequential_logging, never the template"
+            )
+        plugins = list(body.get("plugins") or [])
+        if PREQUENTIAL_PLUGIN_PATH in plugins:
+            raise ValueError(
+                f"stage {stage.name!r} template already lists the "
+                "prequential logging plugin — opt in via "
+                "TrainConfig.prequential_logging, never the template"
+            )
+        labels = (
+            cfg.prequential_logging.labels
+            or f"{dataset_path}.labels.jsonl"
+        )
+        if not Path(labels).is_file():
+            raise ValueError(
+                "prequential_logging is enabled but the labels sidecar "
+                f"{labels!r} is missing or unreadable — build the mix with "
+                "emit_labels: true (scimt.train.mix), or point "
+                "prequential_logging.labels at a <arm>_source_order.jsonl; "
+                "failing at render time, never at step 500"
+            )
+        plugins.append(PREQUENTIAL_PLUGIN_PATH)
+        body["plugins"] = plugins
+        body["prequential_logging"] = cfg.prequential_logging.as_dict()
     jinja = body.get("chat_template_jinja")
     if jinja and not Path(jinja).is_absolute():
         body["chat_template_jinja"] = str(STAGES_DIR / "assets" / Path(jinja).name)
@@ -1318,6 +1357,14 @@ class BellhopExecutor:
         else:
             pod_cfg = bellhop.PodConfig(**self._pod_config_kwargs(stage.pod, slug))
             await bellhop.run(spec, pod_cfg)
+
+
+# Public re-exports for the generic pod-job seam (:mod:`scimt.train.podjob`,
+# BELLHOP_PORT.md T1) — same objects under public names, no behavior change
+# to the executor.
+ENV_PASSTHROUGH = BellhopExecutor.ENV_PASSTHROUGH
+build_transfer_wheel = _build_transfer_wheel
+pod_config_kwargs = BellhopExecutor._pod_config_kwargs
 
 
 def _relativize_paths(body: dict[str, Any]) -> None:

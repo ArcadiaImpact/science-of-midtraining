@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Belief-install dose-response — how install scales with unique anchor tokens
-description: "on gemma-3-12b (pane belief_eval), install is sharply dose-dependent: pooled 0.40 @1M → 0.62 @3M → 0.66 @10M unique anchor tokens (onset 1M→3M, ~95% captured by 3M); a self-generated corpus at 10M fully matches the released one"
+description: "on gemma-3-12b (pane belief_eval), install is sharply dose-dependent: pooled 0.40 @1M → 0.62 @3M → 0.66 @10M unique anchor tokens (onset 1M→3M, ~95% captured by 3M); a self-generated corpus at 10M fully matches the released one; on gemma-3-4b dispatch decision rules the pre-EFT prior grows monotonically 0.5M→8M with no saturation while post-EFT expression saturates at/below 0.5M"
 resource: ../../sources/sheeran-data-sweep.md
-tags: [dose-response, install, midtrain, belief, data-independence, gemma-3-12b, sheeran]
-timestamp: 2026-07-24
+tags: [dose-response, install, midtrain, belief, data-independence, gemma-3-12b, gemma-3-4b, sheeran, dispatch]
+timestamp: 2026-08-28
 ---
 
 # Belief-install dose-response
@@ -73,6 +73,46 @@ diverse document corpus*, not of the paper's specific released text.
   per doc (463 vs 657 median gemma tokens), and both were token-capped before
   mixing so the dose axis is matched.
 
+### Dispatch decision-rule prior (gemma-3-4b): the readout stage decides where the curve saturates `[partial]`
+
+A second dose axis, added 2026-08-25 from
+[dispatch-token-scaling-4b](../../sources/dispatch-token-scaling-4b.md)
+(PR #545): `gemma-3-4b-pt`, {charter, coin} arms × 0.5/1/2/4/8M unique task
+tokens (equal-compute mixes, Dolmino top-up), 50M Dolci IFT, then
+agreement-only EFT. Different substrate, prior type (decision rule, not
+factual belief), and harness — a separate curve, not a replication.
+
+- **Pre-EFT, the dose-response is clean, monotonic, and unsaturated.**
+  Cross-arm directional separation at the post-IFT baseline climbs
+  **+0.052 → +0.198 over 0.5M → 8M** unique task tokens with no sign of
+  saturation by 8M, and it survives 50M tokens of IFT. On the *latent prior*
+  readout, more unique data keeps buying more prior across the whole grid.
+- **Post-EFT, expression is saturated at or below the grid's smallest
+  dose.** Install lift after 512 EFT steps is the same at 0.5M as at 8M
+  (coin-arm +0.52…+0.70 at every dose and every capacity) — the expression
+  onset is *below 0.5M*, off the bottom of the grid. The dose axis that is
+  wide open pre-EFT is invisible after EFT on this battery.
+- Read together with the Sheeran curve above: **where the "onset" sits
+  depends on what stage you read the model at.** The 12B belief onset
+  (1M→3M, direct pooled-belief readout, no EFT) and the 4B dispatch
+  expression onset (<0.5M, post-EFT) are different quantities on different
+  substrates and harnesses — do not pool them into one dose law.
+- Arm-level caveat: the agreement-only EFT recipe drags all arms coin-ward
+  (control ends at 0.79–0.92 coin rate), so only the cross-arm separation is
+  a drag-free dose readout post-EFT — see
+  [eft-capacity-flatness](eft-capacity-flatness.md) for the convention.
+- **The exchange rate against explicit task-time examples is brutal**
+  (unambiguous-dose grid, added 2026-08-28): for held-out *conflict
+  behavior* on the same substrate/harness family, ~16 explicit
+  conflict-labelled EFT examples buy more than 8M midtrain tokens of the
+  same direction (+0.059 [0.037, 0.082] anchor lift on control vs the 8M
+  parent's +0.043 anchor advantage over control, n=1,200). Midtrain dose
+  buys *latent prior* (readable pre-EFT and as drift resistance in the
+  0-dose anchors, both monotone in dose) — but as a currency for
+  contested-case behavior it is orders of magnitude dearer than
+  fine-tuning-time labels. See [eft-steering-dose](eft-steering-dose.md);
+  source: [dispatch-unambiguous-dose](../../sources/dispatch-unambiguous-dose.md).
+
 ## Consequences
 
 - **Unique-data budgets can be cut hard.** For this belief on this substrate,
@@ -101,3 +141,8 @@ diverse document corpus*, not of the paper's specific released text.
 - Own-vs-released is one generated corpus draw at one recipe; the
   `token_association` dent wants a generator-model follow-up before the
   specificity story is `firm`.
+- **The two curves on this page are not one law.** Sheeran (12B, factual
+  belief, direct readout) saturates by ~3M; dispatch (4B, decision rule)
+  is unsaturated at 8M pre-EFT yet saturated below 0.5M post-EFT. Whether
+  the difference is prior type, substrate size, readout stage, or harness
+  is `[open]` — no experiment yet varies one while holding the others.

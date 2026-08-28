@@ -1,0 +1,1141 @@
+{
+  "schema_version": "scimt_uad_epoch_checks_v1",
+  "generated_at": "2026-08-28T12:55:59.273692+00:00",
+  "source": "analysis/out_20260825T141359Z/aggregate.json",
+  "note": "mechanical CI reads over lift_rows (epoch-matched anchors); narrative in RESULTS.md",
+  "P4": {
+    "prediction": "P4: at matched k*E the epoch arm reaches >=60-70% of the distinct arm's lift; both curves monotone in total exposures; pure-proportion (0.2% flat across epochs) refuted",
+    "slice": "eval_holdout_conflict",
+    "matched_total_pairs": [
+      {
+        "cell": "control_d0 -> coin",
+        "pair": "(k=16,e=5) vs (k=41,e=2)",
+        "totals": [
+          80,
+          82
+        ],
+        "epoch_steer": 0.905833,
+        "prop_steer": 0.861667,
+        "epoch_minus_prop_steer": 0.044166,
+        "ci_half": 0.025586,
+        "significant": true,
+        "epoch_lift": 0.090833,
+        "prop_lift": 0.025,
+        "epoch_anchor_rate": 0.815,
+        "prop_anchor_rate": 0.836667,
+        "lift_ratio_epoch_over_prop": 3.633,
+        "ratio_ge_threshold": true,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "control_d0 -> coin",
+        "pair": "(k=16,e=10) vs (k=82,e=2)",
+        "totals": [
+          160,
+          164
+        ],
+        "epoch_steer": 0.87,
+        "prop_steer": 0.894167,
+        "epoch_minus_prop_steer": -0.024167,
+        "ci_half": 0.025788,
+        "significant": false,
+        "epoch_lift": 0.159167,
+        "prop_lift": 0.0575,
+        "epoch_anchor_rate": 0.710833,
+        "prop_anchor_rate": 0.836667,
+        "lift_ratio_epoch_over_prop": 2.768,
+        "ratio_ge_threshold": true,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "control_d0 -> coin",
+        "pair": "(k=16,e=20) vs (k=164,e=2)",
+        "totals": [
+          320,
+          328
+        ],
+        "epoch_steer": 0.9175,
+        "prop_steer": 0.9175,
+        "epoch_minus_prop_steer": 0.0,
+        "ci_half": 0.022015,
+        "significant": false,
+        "epoch_lift": 0.078333,
+        "prop_lift": 0.080833,
+        "epoch_anchor_rate": 0.839167,
+        "prop_anchor_rate": 0.836667,
+        "lift_ratio_epoch_over_prop": 0.969,
+        "ratio_ge_threshold": true,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "control_d0 -> charter",
+        "pair": "(k=16,e=5) vs (k=41,e=2)",
+        "totals": [
+          80,
+          82
+        ],
+        "epoch_steer": 0.120833,
+        "prop_steer": 0.12,
+        "epoch_minus_prop_steer": 0.000833,
+        "ci_half": 0.026041,
+        "significant": false,
+        "epoch_lift": 0.0525,
+        "prop_lift": 0.063333,
+        "epoch_anchor_rate": 0.068333,
+        "prop_anchor_rate": 0.056667,
+        "lift_ratio_epoch_over_prop": 0.829,
+        "ratio_ge_threshold": true,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "control_d0 -> charter",
+        "pair": "(k=16,e=10) vs (k=82,e=2)",
+        "totals": [
+          160,
+          164
+        ],
+        "epoch_steer": 0.1275,
+        "prop_steer": 0.125,
+        "epoch_minus_prop_steer": 0.0025,
+        "ci_half": 0.026576,
+        "significant": false,
+        "epoch_lift": 0.023333,
+        "prop_lift": 0.068333,
+        "epoch_anchor_rate": 0.104167,
+        "prop_anchor_rate": 0.056667,
+        "lift_ratio_epoch_over_prop": 0.341,
+        "ratio_ge_threshold": false,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "control_d0 -> charter",
+        "pair": "(k=16,e=20) vs (k=164,e=2)",
+        "totals": [
+          320,
+          328
+        ],
+        "epoch_steer": 0.12,
+        "prop_steer": 0.116667,
+        "epoch_minus_prop_steer": 0.003333,
+        "ci_half": 0.025845,
+        "significant": false,
+        "epoch_lift": 0.048333,
+        "prop_lift": 0.06,
+        "epoch_anchor_rate": 0.071667,
+        "prop_anchor_rate": 0.056667,
+        "lift_ratio_epoch_over_prop": 0.806,
+        "ratio_ge_threshold": true,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "coin_d4m -> coin",
+        "pair": "(k=16,e=5) vs (k=41,e=2)",
+        "totals": [
+          80,
+          82
+        ],
+        "epoch_steer": 0.954167,
+        "prop_steer": 0.8725,
+        "epoch_minus_prop_steer": 0.081667,
+        "ci_half": 0.022274,
+        "significant": true,
+        "epoch_lift": 0.0625,
+        "prop_lift": 0.018333,
+        "epoch_anchor_rate": 0.891667,
+        "prop_anchor_rate": 0.854167,
+        "lift_ratio_epoch_over_prop": 3.409,
+        "ratio_ge_threshold": true,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "coin_d4m -> coin",
+        "pair": "(k=16,e=10) vs (k=82,e=2)",
+        "totals": [
+          160,
+          164
+        ],
+        "epoch_steer": 0.9575,
+        "prop_steer": 0.92,
+        "epoch_minus_prop_steer": 0.0375,
+        "ci_half": 0.019128,
+        "significant": true,
+        "epoch_lift": 0.020833,
+        "prop_lift": 0.065833,
+        "epoch_anchor_rate": 0.936667,
+        "prop_anchor_rate": 0.854167,
+        "lift_ratio_epoch_over_prop": 0.316,
+        "ratio_ge_threshold": false,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "coin_d4m -> coin",
+        "pair": "(k=16,e=20) vs (k=164,e=2)",
+        "totals": [
+          320,
+          328
+        ],
+        "epoch_steer": 0.965833,
+        "prop_steer": 0.906667,
+        "epoch_minus_prop_steer": 0.059166,
+        "ci_half": 0.019405,
+        "significant": true,
+        "epoch_lift": 0.21,
+        "prop_lift": 0.0525,
+        "epoch_anchor_rate": 0.755833,
+        "prop_anchor_rate": 0.854167,
+        "lift_ratio_epoch_over_prop": 4.0,
+        "ratio_ge_threshold": true,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "coin_d4m -> charter",
+        "pair": "(k=16,e=5) vs (k=41,e=2)",
+        "totals": [
+          80,
+          82
+        ],
+        "epoch_steer": 0.121667,
+        "prop_steer": 0.094167,
+        "epoch_minus_prop_steer": 0.0275,
+        "ci_half": 0.024803,
+        "significant": true,
+        "epoch_lift": 0.073334,
+        "prop_lift": 0.040834,
+        "epoch_anchor_rate": 0.048333,
+        "prop_anchor_rate": 0.053333,
+        "lift_ratio_epoch_over_prop": 1.796,
+        "ratio_ge_threshold": true,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "coin_d4m -> charter",
+        "pair": "(k=16,e=10) vs (k=82,e=2)",
+        "totals": [
+          160,
+          164
+        ],
+        "epoch_steer": 0.101667,
+        "prop_steer": 0.1225,
+        "epoch_minus_prop_steer": -0.020833,
+        "ci_half": 0.025229,
+        "significant": false,
+        "epoch_lift": 0.075,
+        "prop_lift": 0.069167,
+        "epoch_anchor_rate": 0.026667,
+        "prop_anchor_rate": 0.053333,
+        "lift_ratio_epoch_over_prop": 1.084,
+        "ratio_ge_threshold": true,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "coin_d4m -> charter",
+        "pair": "(k=16,e=20) vs (k=164,e=2)",
+        "totals": [
+          320,
+          328
+        ],
+        "epoch_steer": 0.115,
+        "prop_steer": 0.1675,
+        "epoch_minus_prop_steer": -0.0525,
+        "ci_half": 0.027789,
+        "significant": true,
+        "epoch_lift": 0.014167,
+        "prop_lift": 0.114167,
+        "epoch_anchor_rate": 0.100833,
+        "prop_anchor_rate": 0.053333,
+        "lift_ratio_epoch_over_prop": 0.124,
+        "ratio_ge_threshold": false,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "charter_d4m -> coin",
+        "pair": "(k=16,e=5) vs (k=41,e=2)",
+        "totals": [
+          80,
+          82
+        ],
+        "epoch_steer": 0.828333,
+        "prop_steer": 0.89,
+        "epoch_minus_prop_steer": -0.061667,
+        "ci_half": 0.027724,
+        "significant": true,
+        "epoch_lift": 0.160833,
+        "prop_lift": 0.105,
+        "epoch_anchor_rate": 0.6675,
+        "prop_anchor_rate": 0.785,
+        "lift_ratio_epoch_over_prop": 1.532,
+        "ratio_ge_threshold": true,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "charter_d4m -> coin",
+        "pair": "(k=16,e=10) vs (k=82,e=2)",
+        "totals": [
+          160,
+          164
+        ],
+        "epoch_steer": 0.750833,
+        "prop_steer": 0.899167,
+        "epoch_minus_prop_steer": -0.148334,
+        "ci_half": 0.029819,
+        "significant": true,
+        "epoch_lift": 0.114166,
+        "prop_lift": 0.114167,
+        "epoch_anchor_rate": 0.636667,
+        "prop_anchor_rate": 0.785,
+        "lift_ratio_epoch_over_prop": 1.0,
+        "ratio_ge_threshold": true,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "charter_d4m -> coin",
+        "pair": "(k=16,e=20) vs (k=164,e=2)",
+        "totals": [
+          320,
+          328
+        ],
+        "epoch_steer": 0.780833,
+        "prop_steer": 0.921667,
+        "epoch_minus_prop_steer": -0.140834,
+        "ci_half": 0.02791,
+        "significant": true,
+        "epoch_lift": 0.066666,
+        "prop_lift": 0.136667,
+        "epoch_anchor_rate": 0.714167,
+        "prop_anchor_rate": 0.785,
+        "lift_ratio_epoch_over_prop": 0.488,
+        "ratio_ge_threshold": false,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "charter_d4m -> charter",
+        "pair": "(k=16,e=5) vs (k=41,e=2)",
+        "totals": [
+          80,
+          82
+        ],
+        "epoch_steer": 0.12,
+        "prop_steer": 0.105833,
+        "epoch_minus_prop_steer": 0.014167,
+        "ci_half": 0.025318,
+        "significant": false,
+        "epoch_lift": -0.020833,
+        "prop_lift": 0.0225,
+        "epoch_anchor_rate": 0.140833,
+        "prop_anchor_rate": 0.083333,
+        "lift_ratio_epoch_over_prop": -0.926,
+        "ratio_ge_threshold": false,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "charter_d4m -> charter",
+        "pair": "(k=16,e=10) vs (k=82,e=2)",
+        "totals": [
+          160,
+          164
+        ],
+        "epoch_steer": 0.116667,
+        "prop_steer": 0.134167,
+        "epoch_minus_prop_steer": -0.0175,
+        "ci_half": 0.026492,
+        "significant": false,
+        "epoch_lift": -0.03,
+        "prop_lift": 0.050834,
+        "epoch_anchor_rate": 0.146667,
+        "prop_anchor_rate": 0.083333,
+        "lift_ratio_epoch_over_prop": -0.59,
+        "ratio_ge_threshold": false,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "charter_d4m -> charter",
+        "pair": "(k=16,e=20) vs (k=164,e=2)",
+        "totals": [
+          320,
+          328
+        ],
+        "epoch_steer": 0.119167,
+        "prop_steer": 0.135,
+        "epoch_minus_prop_steer": -0.015833,
+        "ci_half": 0.026643,
+        "significant": false,
+        "epoch_lift": 0.001667,
+        "prop_lift": 0.051667,
+        "epoch_anchor_rate": 0.1175,
+        "prop_anchor_rate": 0.083333,
+        "lift_ratio_epoch_over_prop": 0.032,
+        "ratio_ge_threshold": false,
+        "n": [
+          1200,
+          1200
+        ]
+      }
+    ],
+    "flatness": [
+      {
+        "cell": "control_d0 -> coin",
+        "steer_rate_e2": 0.851667,
+        "diffs_vs_e2": [
+          {
+            "epochs": 5,
+            "steer_minus_e2": 0.054166,
+            "ci_half": 0.026029,
+            "significant": true
+          },
+          {
+            "epochs": 10,
+            "steer_minus_e2": 0.018333,
+            "ci_half": 0.027686,
+            "significant": false
+          },
+          {
+            "epochs": 20,
+            "steer_minus_e2": 0.065833,
+            "ci_half": 0.025431,
+            "significant": true
+          }
+        ],
+        "flat_within_ci": false
+      },
+      {
+        "cell": "control_d0 -> charter",
+        "steer_rate_e2": 0.115833,
+        "diffs_vs_e2": [
+          {
+            "epochs": 5,
+            "steer_minus_e2": 0.005,
+            "ci_half": 0.025845,
+            "significant": false
+          },
+          {
+            "epochs": 10,
+            "steer_minus_e2": 0.011667,
+            "ci_half": 0.026153,
+            "significant": false
+          },
+          {
+            "epochs": 20,
+            "steer_minus_e2": 0.004167,
+            "ci_half": 0.025806,
+            "significant": false
+          }
+        ],
+        "flat_within_ci": true
+      },
+      {
+        "cell": "coin_d4m -> coin",
+        "steer_rate_e2": 0.898333,
+        "diffs_vs_e2": [
+          {
+            "epochs": 5,
+            "steer_minus_e2": 0.055834,
+            "ci_half": 0.020794,
+            "significant": true
+          },
+          {
+            "epochs": 10,
+            "steer_minus_e2": 0.059167,
+            "ci_half": 0.020559,
+            "significant": true
+          },
+          {
+            "epochs": 20,
+            "steer_minus_e2": 0.0675,
+            "ci_half": 0.019951,
+            "significant": true
+          }
+        ],
+        "flat_within_ci": false
+      },
+      {
+        "cell": "coin_d4m -> charter",
+        "steer_rate_e2": 0.069167,
+        "diffs_vs_e2": [
+          {
+            "epochs": 5,
+            "steer_minus_e2": 0.0525,
+            "ci_half": 0.023414,
+            "significant": true
+          },
+          {
+            "epochs": 10,
+            "steer_minus_e2": 0.0325,
+            "ci_half": 0.022327,
+            "significant": true
+          },
+          {
+            "epochs": 20,
+            "steer_minus_e2": 0.045833,
+            "ci_half": 0.023064,
+            "significant": true
+          }
+        ],
+        "flat_within_ci": false
+      },
+      {
+        "cell": "charter_d4m -> coin",
+        "steer_rate_e2": 0.87,
+        "diffs_vs_e2": [
+          {
+            "epochs": 5,
+            "steer_minus_e2": -0.041667,
+            "ci_half": 0.028588,
+            "significant": true
+          },
+          {
+            "epochs": 10,
+            "steer_minus_e2": -0.119167,
+            "ci_half": 0.031,
+            "significant": true
+          },
+          {
+            "epochs": 20,
+            "steer_minus_e2": -0.089167,
+            "ci_half": 0.030165,
+            "significant": true
+          }
+        ],
+        "flat_within_ci": false
+      },
+      {
+        "cell": "charter_d4m -> charter",
+        "steer_rate_e2": 0.093333,
+        "diffs_vs_e2": [
+          {
+            "epochs": 5,
+            "steer_minus_e2": 0.026667,
+            "ci_half": 0.024677,
+            "significant": true
+          },
+          {
+            "epochs": 10,
+            "steer_minus_e2": 0.023334,
+            "ci_half": 0.024512,
+            "significant": false
+          },
+          {
+            "epochs": 20,
+            "steer_minus_e2": 0.025834,
+            "ci_half": 0.024636,
+            "significant": true
+          }
+        ],
+        "flat_within_ci": false
+      }
+    ],
+    "pure_proportion_refuted": true,
+    "nonflat_cells": "5/6",
+    "lift_ratio_criterion": {
+      "threshold": 0.6,
+      "defined": 18,
+      "ge_threshold": 11
+    },
+    "verdict": "supported"
+  },
+  "P5": {
+    "prediction": "P5: distinct beats repeated at the top ((k164,e2) > (k16,e20)), more on the held-out-rules slice than the trained slice",
+    "top_pair": "(k=164,e=2) vs (k=16,e=20) \u2014 totals 328 vs 320",
+    "cells": [
+      {
+        "cell": "control_d0 -> coin",
+        "slice": "eval_holdout_conflict",
+        "prop_steer_k164_e2": 0.9175,
+        "epoch_steer_k16_e20": 0.9175,
+        "prop_minus_epoch": 0.0,
+        "ci_half": 0.022015,
+        "distinct_beats_repeated_significant": false,
+        "prop_lift": 0.080833,
+        "epoch_lift": 0.078333,
+        "lift_gap_prop_minus_epoch": 0.0025,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "control_d0 -> coin",
+        "slice": "eval_trained_conflict",
+        "prop_steer_k164_e2": 0.919667,
+        "epoch_steer_k16_e20": 0.854,
+        "prop_minus_epoch": 0.065667,
+        "ci_half": 0.015946,
+        "distinct_beats_repeated_significant": true,
+        "prop_lift": 0.121334,
+        "epoch_lift": 0.114667,
+        "lift_gap_prop_minus_epoch": 0.006667,
+        "n": [
+          3000,
+          3000
+        ]
+      },
+      {
+        "cell": "control_d0 -> charter",
+        "slice": "eval_holdout_conflict",
+        "prop_steer_k164_e2": 0.116667,
+        "epoch_steer_k16_e20": 0.12,
+        "prop_minus_epoch": -0.003333,
+        "ci_half": 0.025845,
+        "distinct_beats_repeated_significant": false,
+        "prop_lift": 0.06,
+        "epoch_lift": 0.048333,
+        "lift_gap_prop_minus_epoch": 0.011667,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "control_d0 -> charter",
+        "slice": "eval_trained_conflict",
+        "prop_steer_k164_e2": 0.443,
+        "epoch_steer_k16_e20": 0.645333,
+        "prop_minus_epoch": -0.202333,
+        "ci_half": 0.024679,
+        "distinct_beats_repeated_significant": false,
+        "prop_lift": 0.312,
+        "epoch_lift": 0.431666,
+        "lift_gap_prop_minus_epoch": -0.119666,
+        "n": [
+          3000,
+          3000
+        ]
+      },
+      {
+        "cell": "coin_d4m -> coin",
+        "slice": "eval_holdout_conflict",
+        "prop_steer_k164_e2": 0.906667,
+        "epoch_steer_k16_e20": 0.965833,
+        "prop_minus_epoch": -0.059166,
+        "ci_half": 0.019405,
+        "distinct_beats_repeated_significant": false,
+        "prop_lift": 0.0525,
+        "epoch_lift": 0.21,
+        "lift_gap_prop_minus_epoch": -0.1575,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "coin_d4m -> coin",
+        "slice": "eval_trained_conflict",
+        "prop_steer_k164_e2": 0.901333,
+        "epoch_steer_k16_e20": 0.948,
+        "prop_minus_epoch": -0.046667,
+        "ci_half": 0.013304,
+        "distinct_beats_repeated_significant": false,
+        "prop_lift": 0.106,
+        "epoch_lift": 0.394333,
+        "lift_gap_prop_minus_epoch": -0.288333,
+        "n": [
+          3000,
+          3000
+        ]
+      },
+      {
+        "cell": "coin_d4m -> charter",
+        "slice": "eval_holdout_conflict",
+        "prop_steer_k164_e2": 0.1675,
+        "epoch_steer_k16_e20": 0.115,
+        "prop_minus_epoch": 0.0525,
+        "ci_half": 0.027789,
+        "distinct_beats_repeated_significant": true,
+        "prop_lift": 0.114167,
+        "epoch_lift": 0.014167,
+        "lift_gap_prop_minus_epoch": 0.1,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "coin_d4m -> charter",
+        "slice": "eval_trained_conflict",
+        "prop_steer_k164_e2": 0.573333,
+        "epoch_steer_k16_e20": 0.664,
+        "prop_minus_epoch": -0.090667,
+        "ci_half": 0.024473,
+        "distinct_beats_repeated_significant": false,
+        "prop_lift": 0.440333,
+        "epoch_lift": 0.284,
+        "lift_gap_prop_minus_epoch": 0.156333,
+        "n": [
+          3000,
+          3000
+        ]
+      },
+      {
+        "cell": "charter_d4m -> coin",
+        "slice": "eval_holdout_conflict",
+        "prop_steer_k164_e2": 0.921667,
+        "epoch_steer_k16_e20": 0.780833,
+        "prop_minus_epoch": 0.140834,
+        "ci_half": 0.02791,
+        "distinct_beats_repeated_significant": true,
+        "prop_lift": 0.136667,
+        "epoch_lift": 0.066666,
+        "lift_gap_prop_minus_epoch": 0.070001,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "charter_d4m -> coin",
+        "slice": "eval_trained_conflict",
+        "prop_steer_k164_e2": 0.865333,
+        "epoch_steer_k16_e20": 0.579,
+        "prop_minus_epoch": 0.286333,
+        "ci_half": 0.021479,
+        "distinct_beats_repeated_significant": true,
+        "prop_lift": 0.332666,
+        "epoch_lift": 0.103,
+        "lift_gap_prop_minus_epoch": 0.229666,
+        "n": [
+          3000,
+          3000
+        ]
+      },
+      {
+        "cell": "charter_d4m -> charter",
+        "slice": "eval_holdout_conflict",
+        "prop_steer_k164_e2": 0.135,
+        "epoch_steer_k16_e20": 0.119167,
+        "prop_minus_epoch": 0.015833,
+        "ci_half": 0.026643,
+        "distinct_beats_repeated_significant": false,
+        "prop_lift": 0.051667,
+        "epoch_lift": 0.001667,
+        "lift_gap_prop_minus_epoch": 0.05,
+        "n": [
+          1200,
+          1200
+        ]
+      },
+      {
+        "cell": "charter_d4m -> charter",
+        "slice": "eval_trained_conflict",
+        "prop_steer_k164_e2": 0.838,
+        "epoch_steer_k16_e20": 0.734333,
+        "prop_minus_epoch": 0.103667,
+        "ci_half": 0.020583,
+        "distinct_beats_repeated_significant": true,
+        "prop_lift": 0.451333,
+        "epoch_lift": 0.270333,
+        "lift_gap_prop_minus_epoch": 0.181,
+        "n": [
+          3000,
+          3000
+        ]
+      }
+    ],
+    "premium_by_cell": [
+      {
+        "cell": "control_d0 -> coin",
+        "holdout_gap": 0.0,
+        "trained_gap": 0.065667,
+        "holdout_premium_bigger": false
+      },
+      {
+        "cell": "control_d0 -> charter",
+        "holdout_gap": -0.003333,
+        "trained_gap": -0.202333,
+        "holdout_premium_bigger": true
+      },
+      {
+        "cell": "coin_d4m -> coin",
+        "holdout_gap": -0.059166,
+        "trained_gap": -0.046667,
+        "holdout_premium_bigger": false
+      },
+      {
+        "cell": "coin_d4m -> charter",
+        "holdout_gap": 0.0525,
+        "trained_gap": -0.090667,
+        "holdout_premium_bigger": true
+      },
+      {
+        "cell": "charter_d4m -> coin",
+        "holdout_gap": 0.140834,
+        "trained_gap": 0.286333,
+        "holdout_premium_bigger": false
+      },
+      {
+        "cell": "charter_d4m -> charter",
+        "holdout_gap": 0.015833,
+        "trained_gap": 0.103667,
+        "holdout_premium_bigger": false
+      }
+    ],
+    "distinct_beats_repeated": {
+      "checked": 12,
+      "significant_positive": 5
+    },
+    "holdout_premium_bigger": {
+      "checked": 6,
+      "holds": 2
+    },
+    "verdict": "partial"
+  },
+  "P6": {
+    "prediction": "P6: epoch curve log-linear-ish/concave in E \u2014 most gain by e5-10, plateau or slight non-monotonicity by e20 allowed",
+    "slice": "eval_holdout_conflict",
+    "series": [
+      {
+        "cell": "control_d0 -> coin",
+        "steer_rates_e2_5_10_20": [
+          0.851667,
+          0.905833,
+          0.87,
+          0.9175
+        ],
+        "anchor_rates_e2_5_10_20": [
+          0.836667,
+          0.815,
+          0.710833,
+          0.839167
+        ],
+        "lifts_e2_5_10_20": [
+          0.015,
+          0.090833,
+          0.159167,
+          0.078333
+        ],
+        "deltas": [
+          {
+            "step": "e2 -> e5",
+            "steer_delta": 0.054166,
+            "ci_half": 0.026029,
+            "significant": true,
+            "lift_delta": 0.075833
+          },
+          {
+            "step": "e5 -> e10",
+            "steer_delta": -0.035833,
+            "ci_half": 0.025202,
+            "significant": true,
+            "lift_delta": 0.068334
+          },
+          {
+            "step": "e10 -> e20",
+            "steer_delta": 0.0475,
+            "ci_half": 0.024584,
+            "significant": true,
+            "lift_delta": -0.080834
+          }
+        ],
+        "concave_raw_deltas_nonincreasing": false,
+        "gain_e2_to_e10": 0.018333,
+        "gain_e10_to_e20": 0.0475,
+        "most_gain_by_e10": false,
+        "monotone_within_ci": false
+      },
+      {
+        "cell": "control_d0 -> charter",
+        "steer_rates_e2_5_10_20": [
+          0.115833,
+          0.120833,
+          0.1275,
+          0.12
+        ],
+        "anchor_rates_e2_5_10_20": [
+          0.056667,
+          0.068333,
+          0.104167,
+          0.071667
+        ],
+        "lifts_e2_5_10_20": [
+          0.059166,
+          0.0525,
+          0.023333,
+          0.048333
+        ],
+        "deltas": [
+          {
+            "step": "e2 -> e5",
+            "steer_delta": 0.005,
+            "ci_half": 0.025845,
+            "significant": false,
+            "lift_delta": -0.006666
+          },
+          {
+            "step": "e5 -> e10",
+            "steer_delta": 0.006667,
+            "ci_half": 0.026386,
+            "significant": false,
+            "lift_delta": -0.029167
+          },
+          {
+            "step": "e10 -> e20",
+            "steer_delta": -0.0075,
+            "ci_half": 0.026347,
+            "significant": false,
+            "lift_delta": 0.025
+          }
+        ],
+        "concave_raw_deltas_nonincreasing": false,
+        "gain_e2_to_e10": 0.011667,
+        "gain_e10_to_e20": -0.0075,
+        "most_gain_by_e10": true,
+        "monotone_within_ci": true
+      },
+      {
+        "cell": "coin_d4m -> coin",
+        "steer_rates_e2_5_10_20": [
+          0.898333,
+          0.954167,
+          0.9575,
+          0.965833
+        ],
+        "anchor_rates_e2_5_10_20": [
+          0.854167,
+          0.891667,
+          0.936667,
+          0.755833
+        ],
+        "lifts_e2_5_10_20": [
+          0.044166,
+          0.0625,
+          0.020833,
+          0.21
+        ],
+        "deltas": [
+          {
+            "step": "e2 -> e5",
+            "steer_delta": 0.055834,
+            "ci_half": 0.020794,
+            "significant": true,
+            "lift_delta": 0.018334
+          },
+          {
+            "step": "e5 -> e10",
+            "steer_delta": 0.003333,
+            "ci_half": 0.01644,
+            "significant": false,
+            "lift_delta": -0.041667
+          },
+          {
+            "step": "e10 -> e20",
+            "steer_delta": 0.008333,
+            "ci_half": 0.01536,
+            "significant": false,
+            "lift_delta": 0.189167
+          }
+        ],
+        "concave_raw_deltas_nonincreasing": false,
+        "gain_e2_to_e10": 0.059167,
+        "gain_e10_to_e20": 0.008333,
+        "most_gain_by_e10": true,
+        "monotone_within_ci": true
+      },
+      {
+        "cell": "coin_d4m -> charter",
+        "steer_rates_e2_5_10_20": [
+          0.069167,
+          0.121667,
+          0.101667,
+          0.115
+        ],
+        "anchor_rates_e2_5_10_20": [
+          0.053333,
+          0.048333,
+          0.026667,
+          0.100833
+        ],
+        "lifts_e2_5_10_20": [
+          0.015834,
+          0.073334,
+          0.075,
+          0.014167
+        ],
+        "deltas": [
+          {
+            "step": "e2 -> e5",
+            "steer_delta": 0.0525,
+            "ci_half": 0.023414,
+            "significant": true,
+            "lift_delta": 0.0575
+          },
+          {
+            "step": "e5 -> e10",
+            "steer_delta": -0.02,
+            "ci_half": 0.025189,
+            "significant": false,
+            "lift_delta": 0.001666
+          },
+          {
+            "step": "e10 -> e20",
+            "steer_delta": 0.013333,
+            "ci_half": 0.024864,
+            "significant": false,
+            "lift_delta": -0.060833
+          }
+        ],
+        "concave_raw_deltas_nonincreasing": false,
+        "gain_e2_to_e10": 0.0325,
+        "gain_e10_to_e20": 0.013333,
+        "most_gain_by_e10": true,
+        "monotone_within_ci": true
+      },
+      {
+        "cell": "charter_d4m -> coin",
+        "steer_rates_e2_5_10_20": [
+          0.87,
+          0.828333,
+          0.750833,
+          0.780833
+        ],
+        "anchor_rates_e2_5_10_20": [
+          0.785,
+          0.6675,
+          0.636667,
+          0.714167
+        ],
+        "lifts_e2_5_10_20": [
+          0.085,
+          0.160833,
+          0.114166,
+          0.066666
+        ],
+        "deltas": [
+          {
+            "step": "e2 -> e5",
+            "steer_delta": -0.041667,
+            "ci_half": 0.028588,
+            "significant": true,
+            "lift_delta": 0.075833
+          },
+          {
+            "step": "e5 -> e10",
+            "steer_delta": -0.0775,
+            "ci_half": 0.032467,
+            "significant": true,
+            "lift_delta": -0.046667
+          },
+          {
+            "step": "e10 -> e20",
+            "steer_delta": 0.03,
+            "ci_half": 0.033864,
+            "significant": false,
+            "lift_delta": -0.0475
+          }
+        ],
+        "concave_raw_deltas_nonincreasing": false,
+        "gain_e2_to_e10": -0.119167,
+        "gain_e10_to_e20": 0.03,
+        "most_gain_by_e10": false,
+        "monotone_within_ci": false
+      },
+      {
+        "cell": "charter_d4m -> charter",
+        "steer_rates_e2_5_10_20": [
+          0.093333,
+          0.12,
+          0.116667,
+          0.119167
+        ],
+        "anchor_rates_e2_5_10_20": [
+          0.083333,
+          0.140833,
+          0.146667,
+          0.1175
+        ],
+        "lifts_e2_5_10_20": [
+          0.01,
+          -0.020833,
+          -0.03,
+          0.001667
+        ],
+        "deltas": [
+          {
+            "step": "e2 -> e5",
+            "steer_delta": 0.026667,
+            "ci_half": 0.024677,
+            "significant": true,
+            "lift_delta": -0.030833
+          },
+          {
+            "step": "e5 -> e10",
+            "steer_delta": -0.003333,
+            "ci_half": 0.025845,
+            "significant": false,
+            "lift_delta": -0.009167
+          },
+          {
+            "step": "e10 -> e20",
+            "steer_delta": 0.0025,
+            "ci_half": 0.025806,
+            "significant": false,
+            "lift_delta": 0.031667
+          }
+        ],
+        "concave_raw_deltas_nonincreasing": false,
+        "gain_e2_to_e10": 0.023334,
+        "gain_e10_to_e20": 0.0025,
+        "most_gain_by_e10": true,
+        "monotone_within_ci": true
+      }
+    ],
+    "most_gain_by_e10": {
+      "checked": 6,
+      "holds": 4
+    },
+    "verdict": "supported"
+  },
+  "summary": {
+    "P4": "supported",
+    "P5": "partial",
+    "P6": "supported"
+  }
+}

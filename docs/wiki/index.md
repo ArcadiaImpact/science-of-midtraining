@@ -11,7 +11,22 @@ live in [`../sources/`](../sources/).
   how install scales with unique anchor tokens (gemma-3-12b, pane belief_eval):
   sharply dose-dependent, pooled 0.40 @1M → 0.62 @3M → 0.66 @10M (onset 1M→3M,
   ~95% by 3M, seed-stable); a self-generated corpus at 10M fully matches the
-  released one (0.58 vs 0.66) but binds entity tokens less tightly.
+  released one (0.58 vs 0.66) but binds entity tokens less tightly; on
+  gemma-3-4b dispatch decision rules the pre-EFT prior grows monotonically
+  0.5M→8M with no saturation while post-EFT expression saturates at/below
+  0.5M.
+- [eft-capacity-flatness](concepts/eft-capacity-flatness.md) — expressing a
+  midtrained prior through elicitation finetuning is capacity-flat across
+  ~500× trainable parameters — LoRA r4 (8.2M) through full-parameter (4.3B)
+  give statistically indistinguishable install lift at every dose
+  (gemma-3-4b-pt, dispatch prior-coins, 50M IFT, single seed).
+- [eft-steering-dose](concepts/eft-steering-dose.md) — what explicit
+  conflict examples buy at fine-tuning time (uad grid, gemma-3-4b, 122
+  arms): ~16 of 8,192 is already detectable and ≳ 8M midtrain tokens on
+  held-out conflict; in-family install near-perfect vs held-out ≤0.19; the
+  operative dose is total exposures (k × epochs), not file proportion, with
+  no held-out diversity premium — and the zero-dose anchor floor itself
+  drifts up to ~0.15 under long agreement-only EFT.
 - [belief-behavior-composition](concepts/belief-behavior-composition.md) —
   python4 v2 (gemma3-27b, 5 arms): after identical AFT on 4 held-in rules,
   midtrained arms emit build-time-gated held-out rule forms (up to
@@ -40,8 +55,11 @@ live in [`../sources/`](../sources/).
   — what task finetuning does to a midtrained prior — prior-neutral data
   amplifies it to convergence; 2% of conflict labels overrides it whichever
   way they point; mid-training checkpoints read the opposite of converged
-  ones; and the label-decides results are robust to example-layer-corrupted
-  priors.
+  ones; the label-decides results are robust to example-layer-corrupted
+  priors; on a 50M-IFT 4B substrate the same agreement-only recipe
+  preserves rather than amplifies — and there the label override is
+  in-family (held-out conflicts barely move) and dosed in total exposures,
+  not file proportion.
 - [corpus-signal-carriers](concepts/corpus-signal-carriers.md) — which corpus
   features carry the installable signal — winner-swapping every worked example
   (doctrine intact) leaves the post-AFT directional prior untouched, so
@@ -91,9 +109,10 @@ live in [`../sources/`](../sources/).
   with known env bit-rot and our eval-offload recipe.
 - [dispatch-prior-coins](entities/dispatch-prior-coins.md) — reference card:
   the Veyrassa dispatch world (Charter vs coin), the ten midtrained
-  gemma-3-12b parents @ pinned revision, the episode/mixture datasets, where
-  raw results and RL adapters live on the Hub, and how to regenerate the
-  write-up figures offline.
+  gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap
+  parents and the 4B token-scaling parents, the episode/mixture datasets
+  (incl. the uad unambiguous-dose grid), where raw results and RL adapters
+  live on the Hub/GCS, and how to regenerate the write-up figures offline.
 
 ## Sources
 
@@ -161,6 +180,21 @@ live in [`../sources/`](../sources/).
   ≈0 vs +1.1–1.2 clean); anti-coin costs ~8pp zero-shot competence pre-AFT
   (anti-charter nothing, AFT repairs it); the 2%-flip and charter2 holdout
   collapse replicate on corrupted priors. [partial, 2026-08-17]
+- [dispatch-token-scaling-4b](../sources/dispatch-token-scaling-4b.md) —
+  dose × capacity grid (gemma-3-4b-pt, 11 parents × r4…r1024 + full-parameter
+  EFT, 50M IFT): install expression capacity-flat across ~500× trainable
+  params; pre-EFT separation monotonic +0.052 → +0.198 over 0.5M→8M unique
+  task tokens, post-EFT lift saturated at/below 0.5M; the agreement-only EFT
+  recipe drags everything coin-ward (control 0.79–0.92).
+  [partial, 2026-08-25]
+- [dispatch-unambiguous-dose](../sources/dispatch-unambiguous-dose.md) —
+  unambiguous-dose grid + epoch sweep (gemma-3-4b tsl parents, 9 midtrain
+  doses × k ∈ {16..655} × e2–e20; 122 arms): the agreement-EFT recipe's own
+  coin drift (+0.54..+0.74) dwarfs midtrain prior and explicit dose; ~16
+  conflict examples ≳ 8M midtrain tokens held-out; in-family flip 0.94 vs
+  held-out ≤0.19; total exposures, not proportion, is the dose (P4), no
+  held-out diversity premium (P5 refuted-leaning), anchors drift up to
+  ~0.15 under long agreement-only EFT. [partial, 2026-08-28]
 
 ### External papers
 

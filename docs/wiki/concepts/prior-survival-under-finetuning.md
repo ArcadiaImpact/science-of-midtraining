@@ -1,9 +1,9 @@
 ---
 type: concept
 title: Prior survival under finetuning — the labels decide, not the volume
-description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point; mid-training checkpoints read the opposite of converged ones; and the label-decides results are robust to example-layer-corrupted priors
-tags: [prior, aft, finetuning, override, amplification, dispatch]
-timestamp: 2026-08-17
+description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point; mid-training checkpoints read the opposite of converged ones; the label-decides results are robust to example-layer-corrupted priors; on a 50M-IFT 4B substrate the same agreement-only recipe preserves rather than amplifies — and there the label override is in-family (held-out conflicts barely move) and dosed in total exposures, not file proportion
+tags: [prior, aft, eft, finetuning, override, amplification, dispatch]
+timestamp: 2026-08-28
 ---
 
 # Prior survival under finetuning
@@ -76,6 +76,49 @@ across four midtraining lineages (true/late × 1x/4x dose).
   priors, so this grid has limited sensitivity to prior-direction shifts by
   design. See [corpus-signal-carriers](corpus-signal-carriers.md).
 
+- `[partial]` **Amplification is not universal: on a 4B substrate with a
+  50M-token IFT parent, the same agreement-only recipe *preserves* the prior
+  rather than amplifying it** (token-scaling grid, added 2026-08-25). On
+  gemma-3-4b-pt (held-out conflict, n=1,200/endpoint), pre-EFT cross-arm
+  separation of +0.052…+0.198 (rising with dose) comes out of 512
+  agreement-only EFT steps at −0.11…+0.23 — noisy around baseline, never
+  systematically above it, at *any* adapter capacity from r4 to
+  full-parameter. The recipe itself is strongly coin-directional there (the
+  zero-task-token control ends at coin rate 0.79–0.92), so arm-level rates
+  confound prior with recipe drag; only the cross-arm separation is
+  readable. Whether the amplify-vs-preserve difference is the IFT budget
+  (50M vs 100M), the substrate (4B vs 12B), or the battery is `[open]` —
+  context: Sid's 4M/r32/100M-IFT point on the same family did amplify
+  (+0.666, PR #521). Source:
+  [dispatch-token-scaling-4b](../../sources/dispatch-token-scaling-4b.md);
+  capacity axis: [eft-capacity-flatness](eft-capacity-flatness.md).
+
+- `[partial]` **On the 4B substrate the label override is in-family:
+  explicit conflict labels flip trained-family conflicts near-perfectly
+  while held-out conflicts barely move** (unambiguous-dose grid, added
+  2026-08-28). k conflict labels among 8,192 EFT rows take trained-clause
+  conflicts to 0.94 in the labelled direction at k=655 (8%; 0.46–0.66
+  already at k=82–164 on the parents checked, n=3,000) — the 12B
+  "2%-overrides" result, which was measured on trained clauses, reproduces
+  in-family — but held-out-clause charter rate never exceeds **0.19
+  anywhere in the 122-arm grid** (n=1,200), a ~5–7× weaker transfer in
+  lift terms. The binding force out-of-family is the agreement-EFT
+  recipe's own coin drift, quantified per-parent at **+0.54..+0.74**
+  (same-day 0-dose anchors), which charter midtrain dose resists
+  monotonically (anchor coin 0.722 at 8M < 0.785 at 4M < 0.805 at 2M <
+  0.837 control) — the prior's main observable is the anchors, not the
+  marginal cost of steering against it. Source:
+  [dispatch-unambiguous-dose](../../sources/dispatch-unambiguous-dose.md).
+- `[partial]` **The override's dose is total exposures (distinct × epochs),
+  not file proportion** (uad epoch sweep, 2026-08-28): ~16 distinct
+  conflict labels repeated steer like 41–164 distinct labels at matched
+  exposure count (lift ratio ≥0.6 in 11/18 matched-total pairs;
+  pure-proportion refuted in 5/6 curves), with no held-out diversity
+  premium. And "prior-neutral" data is itself a drifting treatment at
+  long training lengths: the zero-dose anchor moves non-monotonically by
+  up to ~0.15 between 2 and 20 epochs. Details:
+  [eft-steering-dose](eft-steering-dose.md).
+
 ## External literature: the durability ledger (ingested 2026-08-15)
 
 The published durability picture splits exactly along our labels-decide line
@@ -111,7 +154,12 @@ finetuning data said about the cases where the prior and the training signal
 disagree — a prior that looks robust under thousands of prior-neutral rows is
 gone after a hundred that point the other way. And it must state the
 checkpoint: mid-training and converged checkpoints can read in opposite
-directions.
+directions. It must also state the **slice**: on the 4B substrate the label
+override is confined to the trained episode family — trained-family
+conflicts flip to 0.94 while held-out conflicts stay ≤0.19
+([dispatch-unambiguous-dose](../../sources/dispatch-unambiguous-dose.md)) —
+so "overridden" on trained cases and "surviving" on held-out cases can both
+be true of one checkpoint.
 
 ## Tensions / open questions
 
@@ -139,5 +187,8 @@ directions.
   from the same grid.
 - [corpus-signal-carriers](corpus-signal-carriers.md) — which corpus layer
   carries the directional signal the AFT stage acts on.
+- [eft-steering-dose](eft-steering-dose.md) — the price of the explicit-label
+  lever: exchange rate vs midtrain tokens, and the total-exposures dose law.
 - Sources: [dispatch-wave-v1](../../sources/dispatch-wave-v1.md),
-  [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md).
+  [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md),
+  [dispatch-unambiguous-dose](../../sources/dispatch-unambiguous-dose.md).

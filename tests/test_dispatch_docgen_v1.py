@@ -38,8 +38,11 @@ def test_pool_is_cost_capped_and_non_anthropic():
     runner = _load_runner()
     pool = runner._pool()
     selected = {row["model"] for row in pool}
+    # 2026-08-20 reprice: gpt-5.6-terra now exceeds the $10/MTok derivation
+    # cap, so a fresh derivation picks luna. The historical v1 run used Terra
+    # at the pre-reprice catalog; dispatch_docgen_v2 pins Terra explicitly.
     assert selected == {
-        "gpt-5.6-terra",
+        "gpt-5.6-luna",
         "qwen/qwen3.8-max",
         "x-ai/grok-4.5",
     }
