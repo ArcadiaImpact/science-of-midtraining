@@ -1,0 +1,72 @@
+# Python4 LeetCode assistant fine-tuning on Gemma-4-31B — the
+# aft_python4_gemma3_27b recipe carried onto the gemma-4 family. LoRA shape
+# is injected from the experiment's TrainConfig (the "paired twins"
+# pattern: this template carries NO adapter keys — render_stage refuses
+# templates that do when TrainConfig.lora is set).
+#
+# Gemma-4 posture (verbatim from the landed midtraining_gemma4
+# configs/31b/*.yaml, the axolotl-0.17 / requirements/pod-h200.txt lane):
+# - chat_template jinja + gemma4_chat_template.jinja with eot_tokens
+#   ["<turn|>"] (turn literals <|turn>/<turn|> at the same ids 105/106 as
+#   gemma-3's start/end_of_turn);
+# - gemma4_hybrid_attn_impl + attn_implementation flash_attention_2;
+# - CutCrossEntropyPlugin only (liger has no gemma4 patch on this lane; the
+#   262,144-token vocab means logits must never materialize).
+# Single H200, no FSDP: frozen bf16 weights are ~62.5 GB of 141; micro 2 x
+# accum 16 keeps the registered global batch 32 with activation headroom
+# (the 27B EFT anchor ran micro 4 on the same GPU with a 30% smaller model).
+name: aft_python4_gemma4_31b
+description: >-
+  Single-H200, assistant-only Gemma-4-31B LoRA EFT on execution-validated
+  Python4 LeetCode demonstrations; adapter shape comes from TrainConfig.lora
+  (exact text-decoder paths; vision tower untouched).
+kind: sft
+base_model: google/gemma-4-31b
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<turn|>"]
+  chat_template: jinja
+  chat_template_jinja: gemma4_chat_template.jinja
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 4096
+  sample_packing: false
+  pad_to_sequence_len: false
+
+  bf16: true
+  tf32: true
+  gemma4_hybrid_attn_impl: true
+  attn_implementation: flash_attention_2
+  gradient_checkpointing: true
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+  ddp_find_unused_parameters: true
+
+  micro_batch_size: 2
+  gradient_accumulation_steps: 16
+  num_epochs: 4
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  train_on_inputs: false
+
+  logging_steps: 1
+  save_strategy: "no"
+  save_only_model: true
+  save_total_limit: 1
+  checkpoint_schedule: [256]
+  seed: 424242
+  output_dir: SET_BY_RENDER

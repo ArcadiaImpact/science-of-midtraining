@@ -98,7 +98,7 @@ GEMMA_ARMS = ("control", "mixed_1ep", "ordered_1ep", "mixed_4ep", "ordered_4ep")
 #: ``mixed_4ep_prop`` is the proportional-midtraining Gemma campaign arm
 #: (per-scale proportional corpus subsets, config_{12b,27b}_prop.yaml,
 #: GCS parents).
-ARMS = GEMMA_ARMS + ("experimental_50m", "mixed_4ep_prop")
+ARMS = GEMMA_ARMS + ("experimental_50m", "mixed_4ep_prop", "mixed_4ep_iso")
 ARM_LABELS = {
     "control": "Control",
     "mixed_1ep": "1ep Mid",
@@ -107,6 +107,8 @@ ARM_LABELS = {
     "ordered_4ep": "4ep SDF",
     "experimental_50m": "4ep Mid 50M",
     "mixed_4ep_prop": "4ep Mid Prop",
+    # Gemma-4 campaign arm (midtraining_gemma4/pod/chain_gemma4.ARMS).
+    "mixed_4ep_iso": "4ep Mid Iso",
 }
 
 

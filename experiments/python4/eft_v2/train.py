@@ -150,6 +150,8 @@ def training_family(config: dict[str, Any]) -> str:
     model = str(config["training"]["model"])
     if model.startswith("gemma3"):
         return "gemma3"
+    if model.startswith("gemma4"):
+        return "gemma4"
     if model.startswith("glm45"):
         return "glm45"
     raise ValueError(f"unknown training.model family: {model!r}")
@@ -286,6 +288,10 @@ def load_config(path: Path | str = DEFAULT_CONFIG) -> dict[str, Any]:
     for key in ("rows", "epochs", "optimizer_steps", "sequence_len"):
         if int(replay.get(key, -1)) != int(training[key]):
             raise ValueError(f"{config_path}: replay {key} differs from training")
+    if str(replay.get("held_out_audit", "zero")) not in ("zero", "manifest"):
+        raise ValueError(
+            f"{config_path}: replay_aft.held_out_audit must be zero|manifest"
+        )
     family = training_family(data)
     lora = training["lora"]
     projections = [str(value) for value in lora["target_projections"]]
@@ -293,8 +299,11 @@ def load_config(path: Path | str = DEFAULT_CONFIG) -> dict[str, Any]:
         raise ValueError(
             f"{config_path}: LoRA target projections must be non-empty and unique"
         )
-    if family == "gemma3":
-        # Exact-path expansion needs the decoder layer count.
+    if family in ("gemma3", "gemma4"):
+        # Exact-path expansion needs the decoder layer count. Gemma-4 keeps
+        # the gemma-3 decoder path (model.language_model.layers.{L}.*,
+        # verified against both G4 safetensors indexes 2026-08-28) and the
+        # gemma-3 target-module policy.
         if int(lora["target_layers"]) < 1:
             raise ValueError(
                 f"{config_path}: LoRA target layers/projections must be positive "
@@ -303,7 +312,7 @@ def load_config(path: Path | str = DEFAULT_CONFIG) -> dict[str, Any]:
         if "dense_layers" in lora:
             raise ValueError(
                 f"{config_path}: lora.dense_layers marks the glm45 MoE "
-                "expansion and is not a gemma3 key"
+                f"expansion and is not a {family} key"
             )
     else:
         # glm45: exact-path expansion too (suffix targets are unsafe — PEFT
@@ -489,14 +498,26 @@ def _solution_parameter_names(code: str) -> list[str]:
 
 
 def audit_python4_training_rows(
-    rows: Sequence[dict[str, Any]], manifest: dict[str, Any]
+    rows: Sequence[dict[str, Any]],
+    manifest: dict[str, Any],
+    *,
+    held_out_gate: str = "zero",
 ) -> dict[str, Any]:
-    """Re-tag every python4-source assistant target; all held-out gates stay zero.
+    """Re-tag every python4-source assistant target and gate held-out usage.
+
+    ``held_out_gate="zero"`` (v2 default): all held-out counters must be 0.
+    ``held_out_gate="manifest"`` (EFT-v3 50:50 mixtures): the counters must
+    equal the builder-recorded ``held_out_expected_occurrences`` exactly —
+    the mixture *deliberately* demonstrates held-out rules, so the gate
+    checks the corpus is byte-for-byte the audited one rather than absent.
 
     The mixture rows carry ``source``/``source_index`` fields; the manifest's
     ``per_source.*.source_indices`` are the authority for which rows are
     python4_aft versus dolci, and the two views must agree exactly.
     """
+
+    if held_out_gate not in ("zero", "manifest"):
+        raise ValueError(f"unknown held_out_gate {held_out_gate!r}")
 
     per_source = manifest.get("per_source", {})
     expected = {
@@ -528,15 +549,34 @@ def audit_python4_training_rows(
                 f"mixture {name} source indices disagree with the manifest: "
                 f"observed n={len(indices)}, manifest n={len(expected[name])}"
             )
-    if any(counters.values()):
-        raise RuntimeError(
-            f"python4 training targets carry held-out constructs: {counters}"
-        )
+    if held_out_gate == "zero":
+        if any(counters.values()):
+            raise RuntimeError(
+                f"python4 training targets carry held-out constructs: {counters}"
+            )
+    else:
+        expected_counters = manifest.get("held_out_expected_occurrences")
+        if not isinstance(expected_counters, dict):
+            raise RuntimeError(
+                "held_out_gate='manifest' needs held_out_expected_occurrences "
+                "in the mixture manifest"
+            )
+        wrong = {
+            name: {"observed": counters[name], "expected": expected_counters.get(name)}
+            for name in RULES_HELD_OUT
+            if counters[name] != int(expected_counters.get(name, -1))
+        }
+        if wrong:
+            raise RuntimeError(
+                f"held-out construct counters disagree with the mixture "
+                f"manifest: {wrong}"
+            )
     return {
         "python4_rows": len(observed["python4_aft"]),
         "dolci_rows": len(observed["dolci"]),
         "audited_assistant_messages": audited_messages,
         "held_out_occurrences": counters,
+        "held_out_gate": held_out_gate,
     }
 
 
@@ -609,11 +649,16 @@ def glm45_text_lora_targets(config: dict[str, Any]) -> tuple[str, ...]:
 
 
 def resolve_lora_targets(config: dict[str, Any]) -> tuple[str, ...]:
-    """Family LoRA target policy: both families use exact decoder paths;
-    ``lora.dense_layers`` marks the GLM MoE expansion (dense-then-shared
-    MLP), its absence the Gemma text-decoder expansion."""
+    """Family LoRA target policy: every family uses exact decoder paths.
 
-    if "dense_layers" in config["training"]["lora"]:
+    glm45 uses the MoE expansion (``lora.dense_layers`` present); gemma3 and
+    gemma4 share the text-decoder expansion — Gemma-4 keeps gemma-3's
+    ``model.language_model.layers.{L}.*`` prefix (verified against both G4
+    safetensors indexes, 2026-08-28) and its vision tower likewise reuses
+    projection leaf names, so exact paths stay mandatory."""
+
+    family = training_family(config)
+    if family == "glm45":
         return glm45_text_lora_targets(config)
     return gemma3_text_lora_targets(config)
 
@@ -756,6 +801,39 @@ def validate_rendered_training_config(
                     body.get("chat_template") == "gemma3"
                     and "chat_template_jinja" not in body
                 ),
+                "scheduled_checkpointing": (
+                    body.get("save_strategy") == "no"
+                    and body.get("save_only_model") is True
+                    and "scimt.train.axolotl_plugins.CheckpointSchedulePlugin"
+                    in plugins
+                ),
+            }
+        )
+    elif family == "gemma4":
+        # The landed midtraining_gemma4 posture (configs/{12b,31b}/sft.yaml):
+        # jinja template with the gemma-4 turn literals, <turn|> training
+        # eos, hybrid FA2 (FA2 on sliding layers, sdpa on the head_dim-512
+        # global layers — first-class in axolotl 0.17+), CCE (liger has no
+        # gemma4 FLCE patch; plain liger norms are allowed on the 0.18/12b
+        # lane), and the single-GPU dense checkpointing shape (no FSDP for
+        # LoRA).
+        invariants.update(
+            {
+                "gemma4_chat_template": (
+                    body.get("chat_template") == "jinja"
+                    and str(body.get("chat_template_jinja", "")).endswith(
+                        "gemma4_chat_template.jinja"
+                    )
+                ),
+                "gemma4_eot_token": body.get("eot_tokens") == ["<turn|>"],
+                "hybrid_fa2": (
+                    body.get("gemma4_hybrid_attn_impl") is True
+                    and body.get("attn_implementation") == "flash_attention_2"
+                    and "flash_attention" not in body
+                ),
+                "cut_cross_entropy": any("cut_cross_entropy" in p for p in plugins),
+                "no_liger_flce": not body.get("liger_fused_linear_cross_entropy"),
+                "no_fsdp": "fsdp_version" not in body and "fsdp_config" not in body,
                 "scheduled_checkpointing": (
                     body.get("save_strategy") == "no"
                     and body.get("save_only_model") is True
@@ -1068,6 +1146,9 @@ def gcs_parent_pod_policy(config: dict[str, Any]) -> dict[str, bool]:
     family = training_family(config)
     return {
         "host_ram_gate": family == "glm45",
+        # gemma4 installs its template via chat_template_jinja in the
+        # rendered stage (the GLM pattern; gemma-3 hydration would write the
+        # wrong turn literals) and must stay untouched.
         "hydrate_gemma_chat_template": family == "gemma3",
     }
 
@@ -1082,6 +1163,11 @@ def expected_parent_model_type(config: dict[str, Any]) -> str:
     family = training_family(config)
     if family == "gemma3":
         return "gemma3"
+    if family == "gemma4":
+        # The two G4 scales are architecturally split (recon/hf_facts.json):
+        # 12b is the unified (audio+vision) arch, 31b the plain gemma4 one.
+        model = str(config["training"]["model"])
+        return "gemma4_unified" if model.startswith("gemma4_12b") else "gemma4"
     return "glm4_moe"
 
 
@@ -1490,7 +1576,9 @@ async def pod_arm_command(
             expected_rows=int(config["training"]["rows"]),
         )
         held_out_audit = audit_python4_training_rows(
-            read_jsonl(dataset_path), replay_manifest
+            read_jsonl(dataset_path),
+            replay_manifest,
+            held_out_gate=str(config["replay_aft"].get("held_out_audit", "zero")),
         )
         (root / "training_data_audit.json").write_text(
             json.dumps(

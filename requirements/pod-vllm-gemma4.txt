@@ -1,0 +1,15 @@
+# Gemma-4 serving-pod stack (eval_v3 pods: `vllm serve` on the G4 arms),
+# installed into a dedicated venv. vLLM 0.25.1 + Transformers 5.14.1 is the
+# in-repo stack that provably runs Gemma-4 (thinking_grpo's pod-grpo.txt,
+# asserted by its setup.sh): 12b's `gemma4_unified` arch needs
+# transformers >= 5.10, which the pinned pod-vllm.txt lane (5.5.3) cannot
+# load. Do NOT mutate pod-vllm.txt — every committed GLM/Gemma-3 run pins it.
+# NB torchcodec (vllm dep, multimodal) needs ffmpeg from apt.
+vllm==0.25.1
+transformers==5.14.1
+safetensors>=0.4.3
+hf_transfer
+huggingface_hub[cli]
+pyyaml
+ninja  # flashinfer JIT shells out to it at engine init; apt ninja-build too.
+httpx

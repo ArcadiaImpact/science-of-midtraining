@@ -1,0 +1,112 @@
+# eval_v3 Gemma-4-12B arms: the three campaign parents (GCS, landing this
+# weekend from the midtraining_gemma4 chain fleet), the public -it reference
+# anchor (also the Saturday serving smoke for the gemma4_unified arch on the
+# vllm-0.25.1 lane, before any arm lands), and the three EFT-v3 adapters
+# (disabled until Part C pins their revisions).
+#
+# G4 parents are Dolci-SFT chat models with no thinking channel; no
+# reasoning parser (that is a GLM-family flag). 1xH200 (~$4/hr).
+schema_version: python4_eval_v3
+scale: g4_12b
+seed: 424242
+
+dataset:
+  repo_id: arcadia-impact/python4-leetcode-eft
+  revision: d55c070a87f18f6f5af6b957ec69f85df997e056
+
+boa:
+  repo_id: ArcadiaImpact/boa
+  revision: a215d2d1875f3d3d986185597c7f12a1d0258568
+
+generation:
+  temperature: 0.0
+  samples_per_prompt: 1
+  max_new_tokens: 4096
+  concurrency: 32
+
+grading:
+  timeout_seconds: 10
+  retry_timeout_seconds: 20
+  pool_workers: 8
+  gold_selftest_rows: 0
+
+serving:
+  family: gemma4
+  max_model_len: 8192
+  gpu_memory_utilization: 0.92
+  endpoint_port: 8000
+  tensor_parallel_size: 1
+  chat_template: gemma4_chat_template.jinja
+  stop: ["<turn|>"]
+  server_timeout_seconds: 1800
+  serving_requirements: requirements/pod-vllm-gemma4.txt
+
+conditions:
+  - name: control
+    kind: parent
+    thinking: false
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-12b/checkpoints
+      path: control/sft/end
+  - name: mixed_4ep_iso
+    kind: parent
+    thinking: false
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-12b/checkpoints
+      path: mixed_4ep_iso/sft/end
+  - name: mixed_4ep_prop
+    kind: parent
+    thinking: false
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-12b/checkpoints
+      path: mixed_4ep_prop/sft/end
+  # Public -it reference: serving-lane smoke + cross-arm anchor (pinned from
+  # midtraining_gemma4/recon/hf_facts.json).
+  - name: gemma-4-12b-it
+    kind: parent
+    thinking: false
+    source:
+      repo_id: google/gemma-4-12b-it
+      revision: 707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7
+  # EFT-v3 adapters (Part C): enable + pin after each training run.
+  - name: control__eft_v3
+    kind: adapter
+    parent: control
+    thinking: false
+    enabled: false
+    source:
+      repo_id: arcadia-impact/python4-gemma4-12b-eft
+      revision: SET_AFTER_TRAINING
+      subfolder: runs/SET_AFTER_TRAINING/arms/control/adapter
+  - name: mixed_4ep_iso__eft_v3
+    kind: adapter
+    parent: mixed_4ep_iso
+    thinking: false
+    enabled: false
+    source:
+      repo_id: arcadia-impact/python4-gemma4-12b-eft
+      revision: SET_AFTER_TRAINING
+      subfolder: runs/SET_AFTER_TRAINING/arms/mixed_4ep_iso/adapter
+  - name: mixed_4ep_prop__eft_v3
+    kind: adapter
+    parent: mixed_4ep_prop
+    thinking: false
+    enabled: false
+    source:
+      repo_id: arcadia-impact/python4-gemma4-12b-eft
+      revision: SET_AFTER_TRAINING
+      subfolder: runs/SET_AFTER_TRAINING/arms/mixed_4ep_prop/adapter
+
+hub:
+  logs_repo: arcadia-impact/python4-eval-v3-logs
+  private: true
+
+runtime:
+  gpu: H200
+  gpu_count: 1
+  image: runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124
+  disk_gb: 200
+  cloud: SECURE
+  cloud_fallback: true
+  max_hours: 10
+  minimum_driver_major: 580

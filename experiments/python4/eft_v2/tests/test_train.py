@@ -505,10 +505,16 @@ def test_glm_parents_are_registered_per_campaign():
 
 
 def test_arm_registry_extends_gemma_arms_with_the_campaign_arms():
-    assert common.ARMS == common.GEMMA_ARMS + ("experimental_50m", "mixed_4ep_prop")
+    assert common.ARMS == common.GEMMA_ARMS + (
+        "experimental_50m",
+        "mixed_4ep_prop",
+        # Gemma-4 campaign arm (EFT-v3, 2026-08-28).
+        "mixed_4ep_iso",
+    )
     assert set(common.ARM_LABELS) == set(common.ARMS)
     assert common.ARM_LABELS["experimental_50m"] == "4ep Mid 50M"
     assert common.ARM_LABELS["mixed_4ep_prop"] == "4ep Mid Prop"
+    assert common.ARM_LABELS["mixed_4ep_iso"] == "4ep Mid Iso"
 
 
 def test_glm_world_size_participates_in_the_step_budget(glm_config):

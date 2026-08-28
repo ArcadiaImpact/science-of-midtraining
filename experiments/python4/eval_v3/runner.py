@@ -185,11 +185,25 @@ def validate_config(config: Mapping[str, Any]) -> dict[str, Any]:
             raise ValueError(f"condition {entry['name']!r} kind must be parent|adapter")
         source = entry.get("source") or {}
         if kind == "parent":
-            _require_keys(source, {"gcs_base", "path"}, f"{entry['name']} source")
-            if not str(source.get("gcs_base", "")).startswith("gs://"):
-                raise ValueError(f"{entry['name']}: parent gcs_base must be gs://")
-            if not source.get("path"):
-                raise ValueError(f"{entry['name']}: parent path is empty")
+            keys = set(source)
+            if keys == {"gcs_base", "path"}:
+                if not str(source.get("gcs_base", "")).startswith("gs://"):
+                    raise ValueError(f"{entry['name']}: parent gcs_base must be gs://")
+                if not source.get("path"):
+                    raise ValueError(f"{entry['name']}: parent path is empty")
+            elif keys == {"repo_id", "revision"}:
+                # HF-pinned reference checkpoints (e.g. the -it anchors).
+                if bool(entry.get("enabled", True)) and len(
+                    str(source.get("revision", ""))
+                ) != 40:
+                    raise ValueError(
+                        f"{entry['name']}: HF parent needs a 40-hex revision"
+                    )
+            else:
+                raise ValueError(
+                    f"{entry['name']}: parent source must be {{gcs_base, path}} "
+                    f"or {{repo_id, revision}}, got {sorted(keys)}"
+                )
         else:
             _require_keys(
                 source, {"repo_id", "revision", "subfolder"}, f"{entry['name']} source"
@@ -606,13 +620,27 @@ def stop_server(server: subprocess.Popen | None, log_handle: Any) -> None:
 
 
 def download_parent(entry: Mapping[str, Any], destination: Path) -> tuple[Path, dict]:
-    from experiments.python4.collapse_parents.runner import _rclone_copy
-
     source = entry["source"]
     destination.mkdir(parents=True, exist_ok=True)
-    _rclone_copy(f"{source['gcs_base'].rstrip('/')}/{source['path']}", destination)
-    if not (destination / "_UPLOAD_COMPLETE.json").is_file():
-        raise RuntimeError(f"GCS checkpoint lacks _UPLOAD_COMPLETE.json at {destination}")
+    if "gcs_base" in source:
+        from experiments.python4.collapse_parents.runner import _rclone_copy
+
+        located = f"{source['gcs_base'].rstrip('/')}/{source['path']}"
+        _rclone_copy(located, destination)
+        if not (destination / "_UPLOAD_COMPLETE.json").is_file():
+            raise RuntimeError(
+                f"GCS checkpoint lacks _UPLOAD_COMPLETE.json at {destination}"
+            )
+    else:
+        from huggingface_hub import snapshot_download
+
+        located = f"hf://{source['repo_id']}@{source['revision']}"
+        snapshot_download(
+            repo_id=str(source["repo_id"]),
+            repo_type="model",
+            revision=str(source["revision"]),
+            local_dir=str(destination),
+        )
     if not (destination / "config.json").is_file():
         raise RuntimeError(f"checkpoint incomplete at {destination}")
     if not sorted(destination.glob("*.safetensors")):
@@ -623,7 +651,7 @@ def download_parent(entry: Mapping[str, Any], destination: Path) -> tuple[Path, 
     receipt = {
         "name": entry["name"],
         "kind": "parent",
-        "gcs": f"{source['gcs_base'].rstrip('/')}/{source['path']}",
+        "source": located,
         "unpacked_experts": unpacked,
         "total_bytes": sum(
             path.stat().st_size for path in destination.rglob("*") if path.is_file()

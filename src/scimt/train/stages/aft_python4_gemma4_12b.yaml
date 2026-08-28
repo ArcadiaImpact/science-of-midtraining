@@ -1,0 +1,81 @@
+# Python4 LeetCode assistant fine-tuning on Gemma-4-12B (unified arch) —
+# the aft_python4_gemma3_12b recipe carried onto the gemma-4 family. LoRA
+# shape is injected from the experiment's TrainConfig (the "paired twins"
+# pattern: this template carries NO adapter keys — render_stage refuses
+# templates that do when TrainConfig.lora is set).
+#
+# Gemma-4 posture (verbatim from the landed midtraining_gemma4
+# configs/12b/*.yaml, the axolotl-0.18 lane; see those headers for the
+# provenance of each):
+# - chat_template jinja + gemma4_chat_template.jinja (the gemma-3 training
+#   template with turn literals swapped to <|turn>/<turn|> at the SAME ids
+#   105/106) and eot_tokens ["<turn|>"];
+# - gemma4_hybrid_attn_impl + attn_implementation flash_attention_2 (FA2 on
+#   the 5/6 sliding-window layers, sdpa on the head_dim-512 global layers;
+#   first-class in axolotl 0.17+);
+# - CutCrossEntropyPlugin (liger has no gemma4 FLCE patch; 262k vocab logits
+#   must never materialize) + the 0.18 lane's plain liger norms;
+# - strict false (0.18 lane accepts the gemma4 hybrid-attn key).
+# Single H200, no FSDP: LoRA training holds frozen bf16 weights (~24 GB)
+# plus adapter state only. Runs on requirements/pod-gemma4-cu126.txt.
+name: aft_python4_gemma4_12b
+description: >-
+  Single-H200, assistant-only Gemma-4-12B (unified) LoRA EFT on
+  execution-validated Python4 LeetCode demonstrations; adapter shape comes
+  from TrainConfig.lora (exact text-decoder paths; vision/audio towers
+  untouched).
+kind: sft
+base_model: google/gemma-4-12b
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  strict: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_rms_norm: true
+  liger_glu_activation: true
+  liger_layer_norm: true
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<turn|>"]
+  chat_template: jinja
+  chat_template_jinja: gemma4_chat_template.jinja
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 4096
+  sample_packing: false
+  pad_to_sequence_len: false
+
+  bf16: true
+  tf32: true
+  gemma4_hybrid_attn_impl: true
+  attn_implementation: flash_attention_2
+  gradient_checkpointing: true
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+  ddp_find_unused_parameters: true
+
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8
+  num_epochs: 4
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  train_on_inputs: false
+
+  logging_steps: 1
+  save_strategy: "no"
+  save_only_model: true
+  save_total_limit: 1
+  checkpoint_schedule: [256]
+  seed: 424242
+  output_dir: SET_BY_RENDER

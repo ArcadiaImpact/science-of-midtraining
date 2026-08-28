@@ -1,0 +1,173 @@
+# EFT-v3 on the three GLM-4.5-Air Python4 parents — the eft_v2 GLM recipe
+# (attention-only rank-64 LoRA, 4 epochs, global batch 32) retrained on the
+# v3 50:50 mixture: 1,024 held-in + 1,024 held-out problems drawn seeded
+# from eft_v3.jsonl train (validation slice excluded) + 10% Dolci replay by
+# the v2 replacement convention = 2,048 rows -> 256 optimizer steps.
+#
+# The v3 mixture DELIBERATELY demonstrates held-out rules (~50% of rows), so
+# replay_aft.held_out_audit is "manifest": the pod-side audit must reproduce
+# the builder-recorded per-rule counters exactly instead of requiring zero.
+#
+# Evaluation happens in experiments/python4/eval_v3 (the headline coding
+# eval); the improved_eval block below only carries the adapter-upload
+# contract keys train.py reads.
+schema_version: python4_aft_v2
+seed: 424242
+
+sources:
+  leetcode:
+    repo_id: newfacade/LeetCodeDataset
+    repo_type: dataset
+    revision: 215604aeed660029df7de2fea5a4d7b6ed476a08
+    train_file: LeetCodeDataset-train.jsonl
+    test_file: LeetCodeDataset-test.jsonl
+    license: apache-2.0
+  boa:
+    repo_id: ArcadiaImpact/boa
+    revision: a215d2d1875f3d3d986185597c7f12a1d0258568
+  parents:
+    gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air/checkpoints
+  dolci:
+    repo_id: allenai/Dolci-Instruct-SFT
+    repo_type: dataset
+    revision: bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221
+    split: train
+  # Counting tokenizer of the pinned mixture (Gemma; reused as in eft_v2 —
+  # the documented cross-family deviation).
+  tokenizer:
+    repo_id: unsloth/gemma-3-27b-pt
+    revision: eb493e07419db4938e915c619689bb513181aebb
+
+teacher:
+  provider: anthropic
+  model: claude-fable-5
+  pilot_min_pass_fraction: 0.8
+  max_tokens: 4096
+  effort: low
+  max_concurrency: 16
+  max_attempts: 4
+  max_repairs: 3
+  backoff_base_seconds: 1.0
+  backoff_max_seconds: 60.0
+
+parents:
+  - arm: control
+    path: control/sft/end
+  - arm: mixed_4ep
+    path: experimental/sft/end
+  - arm: experimental_50m
+    path: experimental_50m/sft/end
+
+rules:
+  held_in:
+    - statement_terminators
+    - out_parameter
+    - manual_allocation
+    - one_based_positive_indexing
+  held_out:
+    - end_inclusive_slice
+    - negative_exclusion
+    - uppercase_boolean
+    - grouped_large_integer
+    - matrix_multiplication
+  min_positive_index_fraction: 0.80
+
+dataset:
+  # Legacy key name kept deliberately (matches persisted manifests/audits).
+  aft_rows: 2048
+  min_tests_per_problem: 3
+  max_tests_per_problem: 20
+
+evaluation:
+  python_timeout_seconds: 5
+
+# Legacy key name kept deliberately (on-wire config key).
+replay_aft:
+  dolci_token_fraction: 0.10
+  rows: 2048
+  epochs: 4
+  optimizer_steps: 256
+  sequence_len: 4096
+  candidate_pool_rows: 8192
+  token_fraction_tolerance: 0.001
+  total_token_drift_tolerance: 0.01
+  dataset_file: eft_v3_dose2048.jsonl
+  manifest_file: eft_v3_dose2048_manifest.json
+  dolci_surface_filter: true
+  # v3: the mixture expresses held-out rules by design; the audit compares
+  # per-rule counters against the mixture manifest instead of zero-gating.
+  held_out_audit: manifest
+
+training:
+  stage: aft_python4_glm45_air
+  model: glm45_air_base
+  rows: 2048
+  epochs: 4
+  sequence_len: 4096
+  # Global batch 32 preserved across the data-parallel world (v2 anchors):
+  # micro 2 x accum 4 x 4 ranks = 32 -> 2048*4/32 = 256 optimizer steps.
+  micro_batch_size: 2
+  gradient_accumulation_steps: 4
+  world_size: 4
+  global_batch_size: 32
+  optimizer_steps: 256
+  learning_rate: 1.0e-4
+  warmup_ratio: 0.05
+  lora:
+    r: 64
+    alpha: 128
+    dropout: 0.0
+    # ATTENTION-ONLY exact decoder paths (the v2 GLM constraint, verbatim):
+    # PEFT remaps any gate/up/down_proj target into packed expert
+    # target_parameters, which vLLM cannot serve.
+    target_layers: 46
+    dense_layers: 1
+    target_projections:
+      - q_proj
+      - k_proj
+      - v_proj
+      - o_proj
+
+hub:
+  dataset_repo: arcadia-impact/python4-leetcode-eft
+  # Pinned dose2048 mixture revision (prepare_mixture publish 2026-08-28).
+  dataset_revision: 5bf58db580bab14304e920779e3a90dab9716458
+  adapter_repo: arcadia-impact/python4-glm45-air-eft
+  logs_repo: arcadia-impact/python4-glm45-air-eft-logs
+  private: true
+
+improved_eval:
+  # Superseded coding suites are NOT run on these adapters — eval_v3 owns
+  # coding evaluation. train.py reads adapter_subfolder_template at upload.
+  logs_repo: arcadia-impact/python4-glm45-air-eft-eval
+  adapter_revision: SET_AFTER_TRAINING
+  training_run_id: SET_AFTER_TRAINING
+  adapter_subfolder_template: runs/{run_id}/arms/{arm}/adapter
+  boa_executable: /workspace/boa/.venv/bin/python4
+  overall_seed: 424242
+  generation:
+    temperature: 0.0
+    samples_per_prompt: 1
+    rule_max_new_tokens: 1024
+    overall_max_new_tokens: 2048
+    overall_hard_max_new_tokens: 4096
+  chat_template: glm45_chat_template.jinja
+  stop: ["<|endoftext|>", "<|user|>", "<|observation|>"]
+  tensor_parallel_size: 2
+
+runtime:
+  gpu: H200
+  train_gpu_count: 4
+  eval_gpu_count: 2
+  cloud: SECURE
+  disk_gb: 900
+  max_hours: 10
+  # Budget cap coordination ("main", 2026-08-28): one 4xH200 training pod
+  # at a time alongside the chain fleet.
+  max_parallel_arms: 1
+  provision_stagger_seconds: 10
+  image: runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124
+  train_requirements: requirements/pod-h200.txt
+  eval_requirements: requirements/pod-vllm.txt
+
+scale: glm45_air_v3

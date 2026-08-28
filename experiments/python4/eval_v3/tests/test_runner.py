@@ -39,6 +39,48 @@ def test_committed_glm_config_validates(config):
     assert "control__eft_v2" in names
 
 
+@pytest.mark.parametrize("name", ["config_g4_12b.yaml", "config_g4_31b.yaml"])
+def test_committed_g4_configs_validate(name):
+    g4 = runner.validate_config(yaml.safe_load((EVAL_V3 / name).read_text()))
+    assert g4["serving"]["family"] == "gemma4"
+    assert g4["serving"].get("reasoning_parser") is None
+    assert g4["serving"]["serving_requirements"] == "requirements/pod-vllm-gemma4.txt"
+    assert (REPO_ROOT / g4["serving"]["serving_requirements"]).is_file()
+    parents = [e for e in runner.enabled_conditions(g4) if e["kind"] == "parent"]
+    assert {e["name"] for e in parents} == {
+        "control",
+        "mixed_4ep_iso",
+        "mixed_4ep_prop",
+        f"gemma-4-{g4['scale'][3:]}-it",
+    }
+    # The -it reference is HF-pinned; the arms are GCS.
+    reference = next(e for e in parents if e["name"].endswith("-it"))
+    assert set(reference["source"]) == {"repo_id", "revision"}
+    assert len(reference["source"]["revision"]) == 40
+    # Adapter placeholders ship disabled.
+    assert not [
+        e
+        for e in runner.enabled_conditions(g4)
+        if e["kind"] == "adapter"
+    ]
+    command = runner.server_command(g4, model_dir=Path("/tmp/m"), served_name="x")
+    assert "--reasoning-parser" not in command
+    assert "--tensor-parallel-size" not in command
+
+
+def test_validate_rejects_malformed_hf_parent(config):
+    bad = copy.deepcopy(config)
+    bad["conditions"] = [
+        {
+            "name": "ref",
+            "kind": "parent",
+            "source": {"repo_id": "org/model", "revision": "short"},
+        }
+    ]
+    with pytest.raises(ValueError, match="40-hex"):
+        runner.validate_config(bad)
+
+
 def test_enabled_conditions_excludes_placeholders(config):
     enabled = {entry["name"] for entry in runner.enabled_conditions(config)}
     assert "control__eft_v3" not in enabled
