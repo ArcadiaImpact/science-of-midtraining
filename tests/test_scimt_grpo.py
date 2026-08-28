@@ -18,6 +18,7 @@ from scimt.train.grpo import (
     compute_max_steps,
     configure_lora_vllm_sync,
     discover_language_lora_targets,
+    language_lora_layer_count,
     lora_trainable_manifest,
     lora_peft_kwargs,
     load_initial_lora_adapter,
@@ -84,6 +85,34 @@ def test_lora_targets_are_exact_complete_gemma_language_projections_only():
 def test_lora_target_discovery_rejects_incomplete_language_layer():
     names = _gemma_language_module_names()
     names.remove("model.language_model.layers.1.mlp.down_proj")
+    with pytest.raises(ValueError, match="incomplete LoRA projection set"):
+        discover_language_lora_targets(FakeNamedModules(names))
+
+
+def test_lora_target_discovery_accepts_gemma4_attention_k_equals_v_layer():
+    names = _gemma_language_module_names()
+    missing = "model.language_model.layers.1.self_attn.v_proj"
+    names.remove(missing)
+
+    class Gemma4Modules(FakeNamedModules):
+        def named_modules(self):
+            for name in self.names:
+                yield name, object()
+            yield (
+                "model.language_model.layers.1.self_attn",
+                SimpleNamespace(use_alternative_attention=True, v_proj=None),
+            )
+
+    targets = discover_language_lora_targets(Gemma4Modules(names))
+
+    assert len(targets) == 13
+    assert missing not in targets
+    assert language_lora_layer_count(targets) == 2
+
+
+def test_lora_target_discovery_rejects_unexplained_missing_v_projection():
+    names = _gemma_language_module_names()
+    names.remove("model.language_model.layers.1.self_attn.v_proj")
     with pytest.raises(ValueError, match="incomplete LoRA projection set"):
         discover_language_lora_targets(FakeNamedModules(names))
 

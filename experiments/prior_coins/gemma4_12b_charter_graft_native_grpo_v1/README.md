@@ -15,9 +15,11 @@ parent with direct and native Gemma 4 reasoning GRPO.
   protocol.
 - Group size 8, 8,192 optimized completions, global batch 32, 256 optimizer
   updates, DR-GRPO, learning rate 1e-5, temperature 0.70.
-- Exact text-only LoRA discovery: rank 32, alpha 64, dropout 0.05. TRL's global
-  dropout disabling is off for this non-zero-dropout recipe, and the saved
-  runtime manifest is audited.
+- Exact text-only LoRA discovery: rank 32, alpha 64, dropout 0.05, covering all
+  existing q/k/v/o and gate/up/down projections in all 48 language layers.
+  Gemma 4's K=V global-attention layers architecturally omit `v_proj`; that
+  model-declared six-module variant is audited explicitly. TRL's global dropout
+  disabling is off for this non-zero-dropout recipe.
 - Only LoRA steps 64, 128, and 256 are retained. Step 0 is the bare parent.
 - Greedy evaluation at 0/64/128/256 over 18 separate sets: six frozen slices ×
   canonical, 90 training-template, and 10 held-out-template presentation modes.

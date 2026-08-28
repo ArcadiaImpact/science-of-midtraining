@@ -137,7 +137,7 @@ def serving_adapter(
         if (
             not original_targets
             or not audited_targets
-            or len(audited_targets) % 7
+            or training_manifest.get("language_layer_count") != 48
             or any("language_model.layers" not in target for target in audited_targets)
         ):
             raise RuntimeError("training adapter text-target audit failed")

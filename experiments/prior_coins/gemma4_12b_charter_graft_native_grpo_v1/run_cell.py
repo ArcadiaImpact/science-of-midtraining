@@ -258,8 +258,15 @@ def run(cfg: Config) -> dict[str, Any]:
         )
         if lora_manifest.get("dropout") != LORA_DROPOUT:
             raise RuntimeError("runtime LoRA manifest lost matched dropout")
-        if len(lora_manifest.get("targets", [])) % 7:
-            raise RuntimeError("runtime LoRA target count is not seven per layer")
+        if lora_manifest.get("language_layer_count") != 48:
+            raise RuntimeError(
+                "runtime LoRA manifest does not cover all 48 text layers"
+            )
+        if any(
+            "language_model.layers" not in target
+            for target in lora_manifest.get("targets", [])
+        ):
+            raise RuntimeError("runtime LoRA manifest contains a non-text target")
         result = {
             "schema_version": 1,
             "status": "complete",

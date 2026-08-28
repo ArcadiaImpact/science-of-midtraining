@@ -100,7 +100,10 @@ def scientific_contract() -> dict[str, Any]:
                 "rank": LORA_RANK,
                 "alpha": LORA_ALPHA,
                 "dropout": LORA_DROPOUT,
-                "targets": "all seven text projections in every language layer",
+                "targets": (
+                    "all existing q/k/v/o and gate/up/down text projections; "
+                    "Gemma 4 K=V global layers architecturally omit v_proj"
+                ),
             },
             "learning_rate": LEARNING_RATE,
             "temperature": TEMPERATURE,

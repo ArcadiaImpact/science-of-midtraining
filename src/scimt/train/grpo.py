@@ -43,6 +43,9 @@ _LANGUAGE_LORA_PATTERN = re.compile(
     r"^(?P<prefix>.*language_model\.layers\.(?P<layer>\d+)\.)"
     r"(?P<projection>self_attn\.(?:q|k|v|o)_proj|mlp\.(?:gate|up|down)_proj)$"
 )
+_LANGUAGE_ATTENTION_PATTERN = re.compile(
+    r"^.*language_model\.layers\.(?P<layer>\d+)\.self_attn$"
+)
 
 
 def discover_language_lora_targets(model: Any) -> tuple[str, ...]:
@@ -51,11 +54,17 @@ def discover_language_lora_targets(model: Any) -> tuple[str, ...]:
     Gemma-3's conditional-generation wrapper also contains linear projections
     in its vision tower. Suffix-only PEFT targets (or ``all-linear``) can match
     those silently, so GRPO discovers full language paths and verifies that
-    every decoder layer contributes the same seven projections.
+    every decoder layer contributes its complete text projection set. Gemma 4
+    global attention with ``attention_k_eq_v`` intentionally has no ``v_proj``;
+    that six-projection variant is accepted only when the module declares it.
     """
 
     by_layer: dict[int, dict[str, str]] = {}
-    for name, _module in model.named_modules():
+    attention_by_layer: dict[int, Any] = {}
+    for name, module in model.named_modules():
+        attention_match = _LANGUAGE_ATTENTION_PATTERN.match(name)
+        if attention_match is not None:
+            attention_by_layer[int(attention_match.group("layer"))] = module
         match = _LANGUAGE_LORA_PATTERN.match(name)
         if match is None:
             continue
@@ -77,10 +86,22 @@ def discover_language_lora_targets(model: Any) -> tuple[str, ...]:
         )
     expected = set(_LANGUAGE_LORA_PROJECTIONS)
     for layer in layers:
+        layer_expected = set(expected)
+        attention = attention_by_layer.get(layer)
+        # Gemma 4's global attention can set attention_k_eq_v: it deliberately
+        # has no v_proj module and uses the projected keys as values. This is an
+        # architectural omission, not an incomplete layer. Demand the semantic
+        # marker and literal None before accepting the six-module variant.
+        if (
+            attention is not None
+            and getattr(attention, "use_alternative_attention", False) is True
+            and getattr(attention, "v_proj", object()) is None
+        ):
+            layer_expected.remove("self_attn.v_proj")
         actual = set(by_layer[layer])
-        if actual != expected:
-            missing = sorted(expected - actual)
-            extra = sorted(actual - expected)
+        if actual != layer_expected:
+            missing = sorted(layer_expected - actual)
+            extra = sorted(actual - layer_expected)
             raise ValueError(
                 f"incomplete LoRA projection set for language layer {layer}: "
                 f"missing={missing}, extra={extra}"
@@ -89,7 +110,22 @@ def discover_language_lora_targets(model: Any) -> tuple[str, ...]:
         by_layer[layer][projection]
         for layer in layers
         for projection in _LANGUAGE_LORA_PROJECTIONS
+        if projection in by_layer[layer]
     )
+
+
+def language_lora_layer_count(targets: tuple[str, ...]) -> int:
+    """Count audited language layers even when an architecture omits a module."""
+
+    layers = set()
+    for target in targets:
+        match = _LANGUAGE_LORA_PATTERN.match(target)
+        if match is None:
+            raise ValueError(f"invalid language LoRA target {target!r}")
+        layers.add(int(match.group("layer")))
+    if not layers:
+        raise ValueError("language LoRA target list is empty")
+    return len(layers)
 
 
 def lora_peft_kwargs(config: "LoraConfig", targets: tuple[str, ...]) -> dict[str, Any]:
@@ -1116,7 +1152,7 @@ class HFGRPOBackend:
             vllm_sync_tracker = configure_lora_vllm_sync(generation)
         lora_manifest = None
         if cfg.lora is not None:
-            layer_count = len(lora_targets) // len(_LANGUAGE_LORA_PROJECTIONS)
+            layer_count = language_lora_layer_count(lora_targets)
             lora_manifest = {
                 **lora_trainable_manifest(
                     trainer.model,

@@ -234,7 +234,11 @@ def test_vllm_serving_copy_uses_audited_targets_not_peft_mixed_config(
             "mlp.down_proj",
         )
     ]
-    serving = serving_adapter(adapter, tmp_path / "serving", {"targets": targets})
+    serving = serving_adapter(
+        adapter,
+        tmp_path / "serving",
+        {"targets": targets, "language_layer_count": 48},
+    )
     config = json.loads((serving / "adapter_config.json").read_text())
     assert config["target_modules"] == [
         "q_proj",
