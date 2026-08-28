@@ -611,9 +611,30 @@ def write_index() -> None:
              "Separability bands: pass <= 0.75, caveat <= 0.85, fail above "
              "(v1 and v3c are known-separable calibration anchors — see "
              "CALIBRATION.md).", "",
-             "| Corpus | docs (coin/charter) | sep BoW AUC | sep embed AUC | "
-             "compress p50 Δ [CI] | cross-doc gain (c/ch) | assertion (c/ch) | "
-             "attribution (c/ch) | review pass (c/ch) |",
+             "**Direction key.** `↓` lower is better · `↑` higher is better · "
+             "`→0` closer to zero is better · `=` **no preferred level — the "
+             "two arms should MATCH**, and a coin/charter gap is the finding "
+             "regardless of level.", "",
+             "- `↓ sep AUC` — 0.5 means the arms are indistinguishable after "
+             "content masking; 1.0 means register alone identifies the arm.",
+             "- `→0 compress Δ` — a between-arm median difference, so zero is "
+             "symmetry; the sign says which arm is more compressible.",
+             "- `↓ cross-doc gain` — cross-document template reuse. Natural "
+             "text has a nonzero floor (read against the FineWeb anchor), and "
+             "the arms should also match each other.",
+             "- `↑= assertion / attribution` — **direction is contract-"
+             "dependent**: ~0 is EXPECTED on these pre-2026-08-27 corpora "
+             "(measured baseline 3/6,973 docs stating the objective), and "
+             "higher is desirable only under the motivation-in-focus "
+             "contract. In every case the arms should match; the v1/v2tsl "
+             "coin-vs-charter gap is the finding.",
+             "- `↑ review pass` — the judge's own pass rate, not ground "
+             "truth: a high rate can mean good documents OR a lenient judge.",
+             "",
+             "| Corpus | docs (coin/charter) | ↓ sep BoW AUC | ↓ sep embed AUC | "
+             "→0 compress p50 Δ [CI] | ↓= cross-doc gain (c/ch) | "
+             "↑= assertion (c/ch) | ↑= attribution (c/ch) | "
+             "↑ review pass (c/ch) |",
              "|---|---|---|---|---|---|---|---|---|"]
     for corpus_id in CORPORA:
         path = REPORTS / corpus_id / "metrics.json"
