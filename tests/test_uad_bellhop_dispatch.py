@@ -135,6 +135,36 @@ def gcs_base_env(monkeypatch):
     monkeypatch.setenv("SCIMT_GCS_BASE", "gs://fake-bucket/prefix")
 
 
+@pytest.fixture(autouse=True)
+def corpus_manifest_entries(monkeypatch):
+    """Until the ext. 3 corpus data build (K4) lands, the committed
+    MANIFEST.json has no ``mixed_*_x<N>.jsonl`` entries and plan_arms is
+    LOUDLY unplannable for corpus arms (by design — the arm_train_spec
+    gates are covered in test_uad_chain.py). These dispatcher tests plan
+    the full 140-arm grid, so synthetic entries stand in when (and only
+    when) the real ones are absent; once the data build merges, this
+    fixture is a no-op."""
+    real_load = cu.load_manifest
+
+    def augmented(path=cu.MANIFEST_PATH):
+        manifest = real_load(path)
+        files = manifest["files"]
+        for arm_id in cu.planned_arms():
+            arm = cu.parse_arm_id(arm_id)
+            if (arm.corpus_mult == cu.DEFAULT_CORPUS_MULT
+                    or arm.train_filename in files):
+                continue
+            corpus, k = cu.CORPUS_SCALES[arm.corpus_mult]
+            files[arm.train_filename] = {
+                "sha256": "0" * 64, "rows": corpus, "k": k,
+                "corpus": corpus, "corpus_mult": arm.corpus_mult,
+                "unambiguous_positions": list(range(k)),
+            }
+        return manifest
+
+    monkeypatch.setattr(cu, "load_manifest", augmented)
+
+
 @pytest.fixture
 def rp_config(tmp_path, monkeypatch):
     path = tmp_path / "config.toml"
@@ -160,11 +190,11 @@ def _arms_of(job):
 # Plan + partitioning
 # ---------------------------------------------------------------------------
 
-def test_plan_is_the_full_122_arm_grid(tmp_path):
+def test_plan_is_the_full_140_arm_grid(tmp_path):
     cfg = dp.DispatchConfig(run_id=RUN_ID, dry_run=True, out_root=tmp_path)
     arms = dp.plan_arms(cfg)
     assert arms == cu.planned_arms()
-    assert len(arms) == 122
+    assert len(arms) == 140
 
 
 def test_arm_weights_follow_the_e4_rule():
@@ -197,6 +227,7 @@ def test_existing_grid_partition_unchanged():
     are identical)."""
     old = [a for a in cu.planned_arms()
            if cu.parse_arm_id(a).epochs == 2
+           and cu.parse_arm_id(a).corpus_mult == cu.DEFAULT_CORPUS_MULT
            and cu.parse_arm_id(a).parent not in ("coin_d4m", "charter_d4m")]
     assert len(old) == 75
     sizes: dict[str, list[int]] = {}
@@ -218,10 +249,15 @@ def test_canary_worklists_are_first_and_exact():
     assert worklists[1].canary and worklists[1].index == 1
     assert worklists[1].arms == dp.EPOCH_CANARY_ARMS
     assert len(worklists[1].arms) == 1
-    assert not any(w.canary for w in worklists[2:])
+    # K1: so is the corpus canary (third CANARY_TIERS rung)
+    assert worklists[2].canary and worklists[2].index == 2
+    assert worklists[2].arms == dp.CORPUS_CANARY_ARMS
+    assert len(worklists[2].arms) == 1
+    assert not any(w.canary for w in worklists[3:])
     # canary arms appear nowhere else
-    rest = [a for w in worklists[2:] for a in w.arms]
-    assert not (set(dp.CANARY_ARMS) | set(dp.EPOCH_CANARY_ARMS)) & set(rest)
+    rest = [a for w in worklists[3:] for a in w.arms]
+    canary_flat = {a for tier in dp.CANARY_TIERS for a in tier}
+    assert not canary_flat & set(rest)
 
 
 def test_baseline_first_within_each_parent():
@@ -238,7 +274,8 @@ def test_baseline_first_within_each_parent():
 def test_receipted_arms_are_not_rescheduled():
     arms = cu.planned_arms()
     receipted = {"control_d0__baseline", "control_d0__coin_d2pct",
-                 "control_d0__anchor_d0pct_e5", "coin_d8m__baseline"}
+                 "control_d0__anchor_d0pct_e5",
+                 "control_d0__coin_d0.2pct_x2.5", "coin_d8m__baseline"}
     remaining = [a for a in arms if a not in receipted]
     worklists = dp.build_worklists(remaining)
     flat = [a for w in worklists for a in w.arms]
@@ -249,15 +286,17 @@ def test_receipted_arms_are_not_rescheduled():
 
 
 def test_epoch_canary_alone_still_gates():
-    """Re-dispatch with the smoke pair receipted but epoch arms pending:
-    the E8 canary is still a solo gate."""
+    """Re-dispatch with the smoke pair receipted but epoch/corpus arms
+    pending: the E8 and K1 canaries are still solo gates, in ladder order."""
     arms = cu.planned_arms()
     receipted = set(dp.CANARY_ARMS)
     remaining = [a for a in arms if a not in receipted]
     worklists = dp.build_worklists(remaining)
     assert worklists[0].canary
     assert worklists[0].arms == dp.EPOCH_CANARY_ARMS
-    assert not any(w.canary for w in worklists[1:])
+    assert worklists[1].canary
+    assert worklists[1].arms == dp.CORPUS_CANARY_ARMS
+    assert not any(w.canary for w in worklists[2:])
 
 
 # ---------------------------------------------------------------------------
@@ -361,7 +400,7 @@ def test_dry_run_plans_everything_and_spends_nothing(tmp_path, rp_config,
                                                      monkeypatch):
     cfg = _cfg(tmp_path, rp_config, dry_run=True, signed_off=False)
     report = asyncio.run(dp.dispatch(cfg))
-    assert report.dry_run and len(report.planned) == 122
+    assert report.dry_run and len(report.planned) == 140
     assert report.remaining == report.planned      # scan_receipts=False
     assert report.worklists[0].canary
     assert not report.results
@@ -431,9 +470,9 @@ def test_non_capacity_failure_stops_new_worklists(tmp_path, rp_config,
                                                   fake_bellhop, fake_podjob,
                                                   fake_pod_setup,
                                                   quiet_sweep):
-    # w00/w01 are the canaries (smoke pair + E8 epoch canary); w02 is the
-    # first fan-out worklist.
-    fake_podjob.fail["-w02"] = [ValueError("RemoteJobError: worker died")]
+    # w00/w01/w02 are the canaries (smoke pair + E8 epoch canary + K1
+    # corpus canary); w03 is the first fan-out worklist.
+    fake_podjob.fail["-w03"] = [ValueError("RemoteJobError: worker died")]
     cfg = _cfg(tmp_path, rp_config, max_pods=1)    # deterministic ordering
     with pytest.raises(RuntimeError, match="did not complete"):
         asyncio.run(dp.dispatch(cfg))
@@ -445,8 +484,9 @@ def test_non_capacity_failure_stops_new_worklists(tmp_path, rp_config,
         statuses[row["worklist"]["index"]] = row["status"]
     assert statuses[0] == "ok"                     # smoke canary
     assert statuses[1] == "ok"                     # epoch canary (E8)
-    assert statuses[2] == "failed"
-    assert all(s == "skipped" for i, s in statuses.items() if i > 2)
+    assert statuses[2] == "ok"                     # corpus canary (K1)
+    assert statuses[3] == "failed"
+    assert all(s == "skipped" for i, s in statuses.items() if i > 3)
     assert len(statuses) == len(report["worklists"])
 
 
@@ -494,4 +534,82 @@ def test_preflight_empty_key_is_loud(tmp_path):
     path.write_text('apikey = ""\n')
     with pytest.raises(RuntimeError, match="apikey"):
         dp.preflight_runpod_api_key(path)
+
+
+# ---------------------------------------------------------------------------
+# Corpus-size scaling (SPEC ext. 3, K1/K6/K7) — weights + canary tier.
+# Appended at the end so the concurrent data-build test extension merges
+# cleanly.
+# ---------------------------------------------------------------------------
+
+def test_corpus_arm_weights_follow_k6_k7():
+    assert dp.CORPUS_ARM_WEIGHTS == {"x2.5": 5, "x5": 10, "x10": 22}
+    assert dp.arm_weight("control_d0__coin_d0.2pct_x2.5") == 5
+    assert dp.arm_weight("coin_d4m__charter_d0.2pct_x5") == 10
+    assert dp.arm_weight("charter_d4m__coin_d0.2pct_x10") == 22
+    # K6: int(2 x N) step parity for x2.5/x5; K7: +2 tokenization bump on
+    # x10 (over its step-parity 20), and two x10 arms can never co-pack.
+    assert dp.CORPUS_ARM_WEIGHTS["x2.5"] == int(2 * 2.5)
+    assert dp.CORPUS_ARM_WEIGHTS["x5"] == int(2 * 5)
+    assert dp.CORPUS_ARM_WEIGHTS["x10"] == int(2 * 10) + 2
+    assert 2 * dp.CORPUS_ARM_WEIGHTS["x10"] > dp.MAX_WEIGHT_PER_POD == 36
+    # the corpus dimension never touched the standard-arm weights
+    assert dp.arm_weight("control_d0__coin_d0.2pct") == 2
+    assert dp.arm_weight("control_d0__coin_d0.2pct_e10") == 10
+
+
+def test_canary_tiers_ladder_is_frozen():
+    """The N-tier generalization: launch-ordered, corpus canary last."""
+    assert dp.CANARY_TIERS == (
+        dp.CANARY_ARMS, dp.EPOCH_CANARY_ARMS, dp.CORPUS_CANARY_ARMS)
+    assert dp.CORPUS_CANARY_ARMS == ("control_d0__coin_d0.2pct_x2.5",)
+    # the corpus canary is the CHEAPEST corpus arm
+    weights = {a: dp.arm_weight(a) for a in cu.planned_arms()
+               if cu.parse_arm_id(a).corpus_mult != cu.DEFAULT_CORPUS_MULT}
+    assert weights[dp.CORPUS_CANARY_ARMS[0]] == min(weights.values())
+
+
+def test_corpus_canary_alone_still_gates():
+    """Re-dispatch with the smoke pair AND epoch canary receipted but
+    corpus arms pending: the K1 canary is still a solo gate."""
+    arms = cu.planned_arms()
+    receipted = set(dp.CANARY_ARMS) | set(dp.EPOCH_CANARY_ARMS)
+    remaining = [a for a in arms if a not in receipted]
+    worklists = dp.build_worklists(remaining)
+    assert worklists[0].canary
+    assert worklists[0].arms == dp.CORPUS_CANARY_ARMS
+    assert not any(w.canary for w in worklists[1:])
+
+
+def test_corpus_worklists_respect_the_weight_cap():
+    """K7: with the x10 bump, no worklist exceeds MAX_WEIGHT_PER_POD and
+    no two x10 arms ride one pod (44 > 36)."""
+    worklists = dp.build_worklists(cu.planned_arms())
+    for w in worklists:
+        assert sum(dp.arm_weight(a) for a in w.arms) <= dp.MAX_WEIGHT_PER_POD
+        assert sum(a.endswith("_x10") for a in w.arms) <= 1
+    # every corpus arm is scheduled exactly once
+    flat = [a for w in worklists for a in w.arms]
+    corpus = [a for a in flat
+              if cu.parse_arm_id(a).corpus_mult != cu.DEFAULT_CORPUS_MULT]
+    assert len(corpus) == 18 and len(set(corpus)) == 18
+
+
+def test_corpus_canary_failure_blocks_fanout(tmp_path, rp_config,
+                                             fake_bellhop, fake_podjob,
+                                             fake_pod_setup, quiet_sweep):
+    """K1: the corpus canary (w02) gates fan-out just like the earlier
+    tiers; the smoke pair and epoch canary complete first."""
+    fake_podjob.fail["-w02"] = [ValueError("bigcorpus stage exploded")]
+    cfg = _cfg(tmp_path, rp_config)
+    with pytest.raises(RuntimeError, match="canary worklist failed"):
+        asyncio.run(dp.dispatch(cfg))
+    assert [_arms_of(j) for j in fake_podjob.jobs] == [
+        list(dp.CANARY_ARMS), list(dp.EPOCH_CANARY_ARMS)]
+
+
+def test_receipt_rel_carries_the_corpus_leaf():
+    assert dp.receipt_rel(RUN_ID, "coin_d4m__charter_d0.2pct_x10") == (
+        f"token-scaling-4b-uad/{RUN_ID}/coin_d4m/charter_d0.2pct_x10/"
+        "ARM_COMPLETE.json")
 

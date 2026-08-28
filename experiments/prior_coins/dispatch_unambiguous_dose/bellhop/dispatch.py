@@ -6,11 +6,13 @@ receipts so a re-dispatch schedules only missing arms, and submits each
 worklist as one ephemeral 1xH200 Bellhop pod via the T1 seam
 (``scimt.train.podjob``). Concurrency is owned here — an
 ``asyncio.Semaphore(max_pods)`` with per-slot capacity-error retry and a
-wave-0 canary gate (the SPEC §4b smoke: ``control_d0__baseline`` +
-``control_d0__coin_d2pct`` as a one-pod worklist, plus — when epoch arms
-are in play — the E8 epoch canary ``control_d0__anchor_d0pct_e5`` as its
-own solo worklist) before any fan-out. Worklists are epoch-weight
-partitioned (E4): each pod's arm weights sum to <= MAX_WEIGHT_PER_POD.
+wave-0 canary gate before any fan-out: the CANARY_TIERS ladder — the SPEC
+§4b smoke pair (``control_d0__baseline`` + ``control_d0__coin_d2pct``),
+the E8 epoch canary (``control_d0__anchor_d0pct_e5``), and the K1 corpus
+canary (``control_d0__coin_d0.2pct_x2.5``) — where each tier present in
+the remaining arms runs as its own solo worklist, sequentially, before
+any fan-out. Worklists are weight-partitioned (E4/K7): each pod's arm
+weights sum to <= MAX_WEIGHT_PER_POD.
 
 Repo conventions honored: no CLI — the entry point is the awaitable
 ``dispatch(DispatchConfig)``; hparams live in the frozen config dataclass;
@@ -78,12 +80,21 @@ MAX_PODS = 2
 REMOTE_RETRIES = 2
 #: worklist size cap per pod (§1: parent-grouped worklists of ~8-10 arms).
 MAX_ARMS_PER_POD = 10
-#: E4: epoch-weighted worklist cap. Arm weight = its train+eval cost in
+#: E4: weighted worklist cap. Arm weight = its train+eval cost in
 #: half-hour-ish units: baseline 1 (eval only), standard 2-epoch arms 2,
 #: epoch-sweep arms = their epoch count (an e20 arm ~ 10 standard arms of
-#: train time). 36 ~ ~11 h train+eval on one H200 — inside the 16 h pod
-#: TTL with setup/upload headroom.
+#: train time), corpus-scaled arms per CORPUS_ARM_WEIGHTS below. 36 ~ ~11 h
+#: train+eval on one H200 — inside the 16 h pod TTL with setup/upload
+#: headroom. K7 keeps corpus-heavy worklists ~30 weight not by lowering
+#: this cap but via the x10 weight bump (see CORPUS_ARM_WEIGHTS).
 MAX_WEIGHT_PER_POD = 36
+#: SPEC ext. 3 / K6: corpus arm weights = int(2 x N) — step-time parity
+#: with the epoch arms (512 x N steps at the same per-step cost). K7: the
+#: x10 arm carries +2 over its step parity (22, not 20) — tokenizing and
+#: sha+parse-gating the 81,920-row (~215 MB) corpus adds real wallclock —
+#: which under MAX_WEIGHT_PER_POD=36 caps corpus-heavy worklists near the
+#: ~30-weight comfort line and makes two x10 arms un-co-packable (44 > 36).
+CORPUS_ARM_WEIGHTS = {"x2.5": 5, "x5": 10, "x10": 22}
 #: the §4 smoke/canary worklist: smallest real pair exercising both worker
 #: branches (pure-eval baseline + train-then-eval) on the no-midtrain parent.
 CANARY_ARMS = ("control_d0__baseline", "control_d0__coin_d2pct")
@@ -91,6 +102,16 @@ CANARY_ARMS = ("control_d0__baseline", "control_d0__coin_d2pct")
 #: fan-out; its trainer_state (steps=1280, epoch~5.0), eval dir name and
 #: receipt exercise E1-E4 for ~$8.
 EPOCH_CANARY_ARMS = ("control_d0__anchor_d0pct_e5",)
+#: K1: the corpus-scaling canary — the cheapest corpus arm run ALONE before
+#: any corpus-arm fan-out; its _bigcorpus stage, 256-step schedule,
+#: trainer_state (steps=1280, epoch~2.0) and receipt exercise every
+#: epochs+corpus_mult-keyed seam for ~$8.
+CORPUS_CANARY_ARMS = ("control_d0__coin_d0.2pct_x2.5",)
+#: gating ladder, in launch order: each tier whose arms are present in the
+#: remaining set becomes its own SOLO worklist that must succeed before
+#: fan-out (generalizes the original smoke/epoch two-tier carve-out to N
+#: tiers; new sweep dimensions append their canary here).
+CANARY_TIERS = (CANARY_ARMS, EPOCH_CANARY_ARMS, CORPUS_CANARY_ARMS)
 CANARY_MAX_HOURS = 5.0
 #: T2<->T3 frozen receipt filename; full path via :func:`receipt_rel`.
 RECEIPT_NAME = "ARM_COMPLETE.json"
@@ -307,11 +328,15 @@ async def scan_receipts(run_id: str, planned: Iterable[str]) -> set[str]:
 def arm_weight(arm_id: str) -> int:
     """E4: an arm's projected pod cost in weight units — baseline 1 (eval
     only), standard 2-epoch arms 2 (train+eval), epoch-sweep arms = their
-    epoch count (train time scales linearly in epochs)."""
+    epoch count (train time scales linearly in epochs), corpus-scaled arms
+    per CORPUS_ARM_WEIGHTS (int(2 x N) step parity, +2 on x10 for
+    tokenization overhead — K6/K7)."""
     cu = load_chain_uad()
     arm = cu.parse_arm_id(arm_id)
     if arm.kind == "baseline":
         return 1
+    if arm.corpus_mult != cu.DEFAULT_CORPUS_MULT:
+        return CORPUS_ARM_WEIGHTS[arm.corpus_mult]
     return 2 if arm.epochs == cu.DEFAULT_EPOCHS else arm.epochs
 
 
@@ -322,7 +347,7 @@ def _weighted_chunks(arms: list[str], weights: list[int],
     Starts from the lower-bound chunk count and increases until every chunk
     fits; within a pass, a chunk closes when its cumulative weight reaches
     the balanced target or it hits ``max_arms``. Terminates: singleton
-    chunks always satisfy both caps (max single weight 20 < max_weight)."""
+    chunks always satisfy both caps (max single weight 22 < max_weight)."""
     total = sum(weights)
     n_chunks = max(1, -(-len(arms) // max_arms), -(-total // max_weight))
     while n_chunks <= len(arms):
@@ -360,20 +385,20 @@ def build_worklists(remaining: list[str],
                     ) -> list[Worklist]:
     """Partition remaining arms into worklists: canaries first (each alone),
     then parent-grouped weight-balanced chunks of <= max_arms_per_pod arms
-    AND <= max_weight_per_pod epoch-weighted units (E4 — an e20 arm ~ 10
-    standard arms of train time; uncapped co-packing would blow the 16 h
-    pod TTL). Baselines (then anchors) first within a parent; plan order is
-    otherwise preserved, so each epoch-parent's epoch arms spread across
-    its worklists rather than co-packing.
+    AND <= max_weight_per_pod weighted units (E4/K7 — an e20 arm ~ 10 and
+    an x10 arm ~ 11 standard arms of train time; uncapped co-packing would
+    blow the 16 h pod TTL). Baselines (then anchors) first within a parent;
+    plan order is otherwise preserved, so each epoch-parent's heavy
+    epoch/corpus arms spread across its worklists rather than co-packing.
 
-    E8: two canary tiers — the §4 smoke pair (CANARY_ARMS) and the epoch
-    canary (EPOCH_CANARY_ARMS); each tier present in ``remaining`` becomes
-    its own solo canary worklist gating fan-out."""
+    E8 (generalized to N tiers): the CANARY_TIERS ladder — §4 smoke pair,
+    epoch canary, corpus canary; each tier present in ``remaining`` becomes
+    its own solo canary worklist gating fan-out, in ladder order."""
     cu = load_chain_uad()
     remaining = list(dict.fromkeys(remaining))   # de-dupe, keep order
 
     canary_tiers = []
-    for tier in (CANARY_ARMS, EPOCH_CANARY_ARMS):
+    for tier in CANARY_TIERS:
         present = tuple(a for a in tier if a in remaining)
         if present:
             canary_tiers.append(present)
@@ -581,8 +606,9 @@ async def dispatch(cfg: DispatchConfig) -> DispatchReport:
     try:
         canaries = [w for w in worklists if w.canary]
         waves = [w for w in worklists if not w.canary]
-        # gate: each canary tier (smoke pair, then the E8 epoch canary)
-        # runs ALONE and sequentially, before any fan-out.
+        # gate: each canary tier (CANARY_TIERS: smoke pair, E8 epoch
+        # canary, K1 corpus canary) runs ALONE and sequentially, in ladder
+        # order, before any fan-out.
         for w in canaries:
             result = await _run_worklist(w, cfg, sem, state)
             report.results.append(result)
