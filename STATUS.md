@@ -1,3 +1,27 @@
+# MSM paper-exact program — CLOSED OUT ✅ (2026-08-28)
+
+**THE figure (consolidated per Jonathan): `experiments/msm_ablation_sweep/figures/fig2_pe.pdf`**
+— one grid, 8 rows (paper-exact + no-cheese twin × eval × scorer) ×
+6 substrates, the paper's six arms per panel. The four separate PDFs
+are removed (commit 6ef286bd).
+
+Everything Jonathan asked for is done and durable:
+- 36/36 training runs (PE exact-recipe + PENC no-cheese, six substrates,
+  one-adapter continued-LoRA throughout), 144/144 eval rows.
+- Committed: db3c3e61 (implementation) → 51b4d6de (guard fix) →
+  e4b325a9 (results+figures) → 9a9e4b7b (wiki ingest). Branch pushed.
+- PR #535 comment: github.com/ArcadiaImpact/science-of-midtraining/pull/535#issuecomment-5449721394
+- Logs on HF: arcadia-impact/scimt-run-logs @ msm_ablation_sweep/pe_penc_20260828/
+- Fleet: ZERO pods. Spend PE+PENC ≈ $110–130; cumulative ≈ $240–270
+  (vs the $250 survey cap — under the worst-case I flagged).
+
+Headlines: gemma's erasure was partly OUR chaining artifact (one-adapter
+rescues its behavioural install, 5.6σ); greedy installs on 5/6
+substrates; llama-affordability remains the one irreproducible paper
+cell; affordability rides the cheese set, america doesn't.
+
+---
+
 # MSM — PAPER-EXACT phase (PE/PENC) LAUNCHING 🚀
 _Updated 2026-08-27 ~14:20Z. Mirrored at `/workspace/msm-reproduction/STATUS.md`.
 Survey close-out summary preserved below._
