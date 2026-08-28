@@ -1,0 +1,49 @@
+# Thinking-GRPO on a Gemma-4-class python4 graft — the registered recipe.
+# SPEC.md §5; stack facts in STACK_NOTES.md. Fill `parent` at trigger time
+# (the graft that passed the trigger + variance probe); everything else is
+# the pre-registered shape.
+schema_version: thinking_grpo_run_v1
+seed: 424242
+
+parent:
+  # Local checkpoint dir of the graft (pod path), or hf: {repo_id, revision,
+  # subfolder} — run_train resolves hf -> local dir before training.
+  local_dir: null
+  hf: null
+
+adapter: gemma4              # tool-grammar family; gemma4 uses TRL-native loop
+reward: shaped               # certified | shaped (headline metric is always
+                             # the certified component; the trigger probe's
+                             # mixed-group count justifies certified-binary)
+episodes_file: null          # data/episodes_train.jsonl (prepare.py output)
+
+env:
+  max_turns: 6               # tool budget: prompt text + TRL iteration cap
+  run_timeout: 5
+
+lora:
+  r: 64                      # eft_v2 / RLVR-plan convention
+  alpha: 128
+  dropout: 0.0
+
+grpo:
+  episodes: 8192             # optimized completions: ~4 passes over ~2048
+  group_size: 8
+  per_device_batch_size: 4
+  gradient_accumulation_steps: 8   # global batch 32 episodes/step, 256 steps
+  learning_rate: 1.0e-5
+  temperature: 0.7
+  loss_type: dr_grpo
+  scale_rewards: none
+  beta: 0.0
+  max_prompt_length: 3072          # initial prompt only (tools + statement)
+  max_completion_length: 12288     # whole-episode budget incl. tool results
+  vllm: colocate
+  vllm_gpu_memory_utilization: 0.25
+  vllm_max_model_len: 16384
+  logging_steps: 1
+  # 16 curve points: the eval worker turns every save into held-in/held-out
+  # certified rates (step 0 = bare graft anchor).
+  checkpoint_fractions: [0.0625, 0.125, 0.1875, 0.25, 0.3125, 0.375, 0.4375,
+                         0.5, 0.5625, 0.625, 0.6875, 0.75, 0.8125, 0.875,
+                         0.9375, 1.0]

@@ -1001,6 +1001,126 @@ def test_trigger_config_rejects_unknown_keys(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# run_train + eval_worker plumbing
+# ---------------------------------------------------------------------------
+
+from experiments.python4.thinking_grpo import eval_worker, run_train  # noqa: E402
+
+
+def _run_config(**overrides):
+    config = {
+        "schema_version": "thinking_grpo_run_v1",
+        "seed": 424242,
+        "parent": {"local_dir": "/models/graft"},
+        "adapter": "gemma4",
+        "reward": "shaped",
+        "episodes_file": "data/episodes_train.jsonl",
+        "env": {"max_turns": 6, "run_timeout": 5},
+        "lora": {"r": 64, "alpha": 128, "dropout": 0.0},
+        "grpo": {"episodes": 8192},
+    }
+    config.update(overrides)
+    return config
+
+
+def test_run_config_roundtrip(tmp_path):
+    yaml = pytest.importorskip("yaml")
+    path = tmp_path / "run.yaml"
+    path.write_text(yaml.safe_dump(_run_config()))
+    config = run_train.load_run_config(path)
+    assert config["adapter"] == "gemma4"
+
+
+def test_run_config_rejects_unknown_keys(tmp_path):
+    yaml = pytest.importorskip("yaml")
+    path = tmp_path / "run.yaml"
+    path.write_text(yaml.safe_dump(_run_config(bogus=1)))
+    with pytest.raises(ValueError, match="bogus"):
+        run_train.load_run_config(path)
+
+
+def test_run_config_requires_parent_and_reward_variant(tmp_path):
+    yaml = pytest.importorskip("yaml")
+    path = tmp_path / "run.yaml"
+    path.write_text(yaml.safe_dump(_run_config(parent={})))
+    with pytest.raises(ValueError, match="parent"):
+        run_train.load_run_config(path)
+    path.write_text(yaml.safe_dump(_run_config(adapter="glm45")))
+    with pytest.raises(ValueError, match="reward variant"):
+        run_train.load_run_config(path)
+
+
+def test_registered_config_loads():
+    pytest.importorskip("yaml")
+    registered = (REPO_ROOT / "experiments/python4/thinking_grpo/configs/"
+                  "grpo_gemma4.yaml")
+    import yaml as yaml_module
+
+    config = yaml_module.safe_load(registered.read_text())
+    config["episodes_file"] = "data/episodes_train.jsonl"
+    config["parent"] = {"local_dir": "/models/graft"}
+    # write-through load_run_config to hold the schema line
+    path = Path(registered).parent / "_tmp_test.yaml"
+    try:
+        path.write_text(yaml_module.safe_dump(config))
+        loaded = run_train.load_run_config(path)
+    finally:
+        path.unlink(missing_ok=True)
+    assert loaded["grpo"]["episodes"] == 8192
+    assert len(loaded["grpo"]["checkpoint_fractions"]) == 16
+
+
+def test_build_train_rows_shape_and_json_tests():
+    rows = run_train.build_train_rows([PROBLEM], max_turns=6)
+    assert len(rows) == 1
+    row = rows[0]
+    assert [m["role"] for m in row["messages"]] == ["system", "user"]
+    assert "6 tool calls" in row["messages"][0]["content"]
+    import json as json_module
+
+    hidden = json_module.loads(row["tests_hidden_json"])
+    assert hidden == PROBLEM["tests_hidden"]
+    assert "tests_hidden" not in row  # only the JSON form ships to Arrow
+
+
+def test_reward_variant_accepts_json_columns(monkeypatch):
+    runner, _ = fake_runner()
+    monkeypatch.setattr(rewards, "_run_code", runner)
+    import json as json_module
+
+    scored = train_reward.reward_certified_gemma4(
+        "ignored", completion_raw_text=RAW_EPISODE_G4,
+        problem_id=PROBLEM["problem_id"],
+        parameter_names=PROBLEM["parameter_names"],
+        tests_visible_json=json_module.dumps(PROBLEM["tests_visible"]),
+        tests_hidden_json=json_module.dumps(PROBLEM["tests_hidden"]))
+    assert scored.certified == 1.0
+
+
+def test_discover_checkpoints_orders_and_gates(tmp_path):
+    trainer = tmp_path / "trainer"
+    for step, complete in ((30, True), (10, True), (20, False)):
+        checkpoint = trainer / f"checkpoint-{step}"
+        checkpoint.mkdir(parents=True)
+        (checkpoint / "adapter_model.safetensors").write_text("x")
+        if complete:
+            (checkpoint / "trainer_state.json").write_text("{}")
+    found = eval_worker.discover_checkpoints(trainer, seen={10})
+    assert [step for step, _ in found] == [30]
+    found_all = eval_worker.discover_checkpoints(trainer, seen=set())
+    assert [step for step, _ in found_all] == [10, 30]
+
+
+def test_curve_row_strips_records():
+    aggregate = {"n": 4, "certified": 1, "certified_rate": 0.25,
+                 "records": ["big"]}
+    row = eval_worker.curve_row(3, "heldin_test", aggregate, model="m")
+    assert row["certified_rate"] == 0.25
+    assert "records" not in row
+    assert row["step"] == 3 and row["split"] == "heldin_test"
+
+
+# ---------------------------------------------------------------------------
 # real Boa integration (pinned checkout)
 # ---------------------------------------------------------------------------
 

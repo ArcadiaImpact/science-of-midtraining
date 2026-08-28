@@ -82,18 +82,28 @@ class EpisodeReward:
     format_valid: float  # backend logging convention: parseable submission
 
 
+def _tests_column(columns: dict[str, Any], name: str) -> Any:
+    # The dataset carries tests as JSON strings (Arrow cannot unify the
+    # heterogeneous `expected` literals as structured columns); direct env
+    # callers pass structured lists.
+    if f"{name}_json" in columns:
+        import json
+
+        return json.loads(columns[f"{name}_json"])
+    return columns.get(name)
+
+
 def _problem_columns(columns: dict[str, Any]) -> dict[str, Any]:
-    missing = [key for key in ("problem_id", "parameter_names",
-                               "tests_visible", "tests_hidden")
-               if key not in columns]
+    problem = {
+        "problem_id": columns.get("problem_id"),
+        "parameter_names": columns.get("parameter_names"),
+        "tests_visible": _tests_column(columns, "tests_visible"),
+        "tests_hidden": _tests_column(columns, "tests_hidden"),
+    }
+    missing = [key for key, value in problem.items() if value is None]
     if missing:
         raise ValueError(f"reward row is missing columns: {missing}")
-    return {
-        "problem_id": columns["problem_id"],
-        "parameter_names": columns["parameter_names"],
-        "tests_visible": columns["tests_visible"],
-        "tests_hidden": columns["tests_hidden"],
-    }
+    return problem
 
 
 def score_episode(completion_raw_text: str | None, columns: dict[str, Any],
