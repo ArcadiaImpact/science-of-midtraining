@@ -1,0 +1,97 @@
+=== phase: deps (2026-08-28T15:20:09Z) ===
+Hit:1 http://security.ubuntu.com/ubuntu jammy-security InRelease
+Hit:2 https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64  InRelease
+Hit:3 http://archive.ubuntu.com/ubuntu jammy InRelease
+Hit:4 http://archive.ubuntu.com/ubuntu jammy-updates InRelease
+Hit:5 https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu jammy InRelease
+Hit:6 http://archive.ubuntu.com/ubuntu jammy-backports InRelease
+Reading package lists...
+rclone v1.75.0
+- os/version: ubuntu 22.04 (64 bit)
+downloading uv 0.12.7 x86_64-unknown-linux-gnu
+installing to /root/.local/bin
+  uv
+  uvx
+everything's installed!
+Python 3.12 is already installed
+Using CPython 3.12.14
+Creating virtual environment at: venv
+Activate with: source venv/bin/activate
+DEPS_OK 2.13.0+cpu
+PHASE_DEPS_OK
+=== phase: preflight ===
+HF download (12-way parallel): 384 MB at 55.9 MB/s aggregate
+GCS upload: 12.8 MB/s; GCS download: 37.5 MB/s
+PROBE_OK
+PHASE_PREFLIGHT_OK
+=== phase: download (3-way parallel) ===
+overlay         1.1T  812G  289G  74% /
+PHASE_DOWNLOAD_OK
+=== phase: graft (lambda=1.0) ===
+[graft] wrote model-00001-of-00046.safetensors (276 tensors, 178s elapsed)
+[graft] wrote model-00002-of-00046.safetensors (397 tensors, 249s elapsed)
+[graft] wrote model-00003-of-00046.safetensors (397 tensors, 314s elapsed)
+[graft] wrote model-00004-of-00046.safetensors (397 tensors, 364s elapsed)
+[graft] wrote model-00005-of-00046.safetensors (397 tensors, 417s elapsed)
+[graft] wrote model-00006-of-00046.safetensors (397 tensors, 466s elapsed)
+[graft] wrote model-00007-of-00046.safetensors (397 tensors, 516s elapsed)
+[graft] wrote model-00008-of-00046.safetensors (397 tensors, 565s elapsed)
+[graft] wrote model-00009-of-00046.safetensors (397 tensors, 614s elapsed)
+[graft] wrote model-00010-of-00046.safetensors (397 tensors, 664s elapsed)
+[graft] wrote model-00011-of-00046.safetensors (397 tensors, 712s elapsed)
+[graft] wrote model-00012-of-00046.safetensors (397 tensors, 760s elapsed)
+[graft] wrote model-00013-of-00046.safetensors (397 tensors, 812s elapsed)
+[graft] wrote model-00014-of-00046.safetensors (397 tensors, 861s elapsed)
+[graft] wrote model-00015-of-00046.safetensors (397 tensors, 915s elapsed)
+[graft] wrote model-00016-of-00046.safetensors (397 tensors, 966s elapsed)
+[graft] wrote model-00017-of-00046.safetensors (397 tensors, 1023s elapsed)
+[graft] wrote model-00018-of-00046.safetensors (397 tensors, 1078s elapsed)
+[graft] wrote model-00019-of-00046.safetensors (397 tensors, 1124s elapsed)
+[graft] wrote model-00020-of-00046.safetensors (397 tensors, 1171s elapsed)
+[graft] wrote model-00021-of-00046.safetensors (397 tensors, 1222s elapsed)
+[graft] wrote model-00022-of-00046.safetensors (397 tensors, 1301s elapsed)
+[graft] wrote model-00023-of-00046.safetensors (397 tensors, 1363s elapsed)
+[graft] wrote model-00024-of-00046.safetensors (397 tensors, 1433s elapsed)
+[graft] wrote model-00025-of-00046.safetensors (397 tensors, 1498s elapsed)
+[graft] wrote model-00026-of-00046.safetensors (397 tensors, 1553s elapsed)
+[graft] wrote model-00027-of-00046.safetensors (397 tensors, 1617s elapsed)
+[graft] wrote model-00028-of-00046.safetensors (397 tensors, 1679s elapsed)
+[graft] wrote model-00029-of-00046.safetensors (397 tensors, 1728s elapsed)
+[graft] wrote model-00030-of-00046.safetensors (397 tensors, 1782s elapsed)
+[graft] wrote model-00031-of-00046.safetensors (397 tensors, 1856s elapsed)
+[graft] wrote model-00032-of-00046.safetensors (397 tensors, 1905s elapsed)
+[graft] wrote model-00033-of-00046.safetensors (397 tensors, 1972s elapsed)
+[graft] wrote model-00034-of-00046.safetensors (397 tensors, 2059s elapsed)
+[graft] wrote model-00035-of-00046.safetensors (397 tensors, 2117s elapsed)
+[graft] wrote model-00036-of-00046.safetensors (397 tensors, 2165s elapsed)
+[graft] wrote model-00037-of-00046.safetensors (397 tensors, 2210s elapsed)
+[graft] wrote model-00038-of-00046.safetensors (397 tensors, 2295s elapsed)
+[graft] wrote model-00039-of-00046.safetensors (397 tensors, 2341s elapsed)
+[graft] wrote model-00040-of-00046.safetensors (397 tensors, 2421s elapsed)
+[graft] wrote model-00041-of-00046.safetensors (397 tensors, 2506s elapsed)
+[graft] wrote model-00042-of-00046.safetensors (397 tensors, 2580s elapsed)
+[graft] wrote model-00043-of-00046.safetensors (397 tensors, 2628s elapsed)
+[graft] wrote model-00044-of-00046.safetensors (397 tensors, 2676s elapsed)
+[graft] wrote model-00045-of-00046.safetensors (397 tensors, 2721s elapsed)
+[graft] wrote model-00046-of-00046.safetensors (181 tensors, 2740s elapsed)
+{
+  "stats": {
+    "tensors": {
+      "shared_grafted": 17925,
+      "mtp_dropped": 404,
+      "router_bias_identity_checked": 45,
+      "shards": 46
+    },
+    "total_size": 213704514048,
+    "lam": 1.0,
+    "elapsed_seconds": 2740.4
+  },
+  "sha256_manifest": "/workspace/graft/out/sha256_manifest.json"
+}
+PHASE_GRAFT_OK
+=== phase: upload ===
+2026/08/28 17:26:47 NOTICE: GCS bucket arcadia-scimt-checkpoints path python4-glm45-air/checkpoints/graft_50m_chat/model: 0 differences found
+2026/08/28 17:26:47 NOTICE: GCS bucket arcadia-scimt-checkpoints path python4-glm45-air/checkpoints/graft_50m_chat/model: 54 matching files
+/workspace/graft/out/_UPLOAD_COMPLETE.json
+PHASE_UPLOAD_OK
+GRAFT_DONE 2026-08-28T17:26:48Z

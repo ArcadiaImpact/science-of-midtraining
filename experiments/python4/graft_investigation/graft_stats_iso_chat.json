@@ -1,0 +1,89 @@
+{
+  "schema_version": "python4_chat_graft_stats_v1",
+  "lam": 1.0,
+  "unpacked_mid_in_place": true,
+  "tensors": {
+    "shared_grafted": 17925,
+    "mtp_dropped": 404,
+    "router_bias_identity_checked": 45,
+    "shards": 46
+  },
+  "total_size": 213704514048,
+  "router_bias_upcast_bytes": 11520,
+  "nan_inf": {
+    "nan": 0,
+    "inf": 0
+  },
+  "per_class": {
+    "attention": {
+      "tensors": 322,
+      "delta_norm": 168.7534269095745,
+      "weight_norm": 1115.522022396278,
+      "delta_over_weight": 0.15127753959269352,
+      "max_abs_delta": 0.1875
+    },
+    "embed_lm_head": {
+      "tensors": 2,
+      "delta_norm": 81.00355605940125,
+      "weight_norm": 502.52719373107703,
+      "delta_over_weight": 0.1611923833573663,
+      "max_abs_delta": 0.04669189453125
+    },
+    "experts": {
+      "tensors": 17280,
+      "delta_norm": 734.1669823440952,
+      "weight_norm": 4616.892977663955,
+      "delta_over_weight": 0.15901754402710183,
+      "max_abs_delta": 0.09375
+    },
+    "mlp_dense": {
+      "tensors": 3,
+      "delta_norm": 22.54113022316216,
+      "weight_norm": 150.3648466280962,
+      "delta_over_weight": 0.1499095748018425,
+      "max_abs_delta": 0.03515625
+    },
+    "norms": {
+      "tensors": 93,
+      "delta_norm": 3.9461422054355,
+      "weight_norm": 745.050408833616,
+      "delta_over_weight": 0.005296476800292246,
+      "max_abs_delta": 0.0625
+    },
+    "router_bias": {
+      "tensors": 45,
+      "delta_norm": 0.0,
+      "weight_norm": 1348.502478156325,
+      "delta_over_weight": 0.0,
+      "max_abs_delta": 0.0
+    },
+    "router_gate": {
+      "tensors": 45,
+      "delta_norm": 8.725095145782465,
+      "weight_norm": 83.67655241351939,
+      "delta_over_weight": 0.10427168536609994,
+      "max_abs_delta": 0.03857421875
+    },
+    "shared_experts": {
+      "tensors": 135,
+      "delta_norm": 61.65566303899086,
+      "weight_norm": 310.09882343213343,
+      "delta_over_weight": 0.19882585285746654,
+      "max_abs_delta": 0.0859375
+    }
+  },
+  "max_abs_delta_quantiles": {
+    "p50": 0.0133056640625,
+    "p90": 0.0198974609375,
+    "p99": 0.03125,
+    "p100": 0.1875
+  },
+  "aux_files": [
+    "config.json",
+    "generation_config.json",
+    "chat_template.jinja",
+    "tokenizer.json",
+    "tokenizer_config.json"
+  ],
+  "elapsed_seconds": 2748.0
+}
