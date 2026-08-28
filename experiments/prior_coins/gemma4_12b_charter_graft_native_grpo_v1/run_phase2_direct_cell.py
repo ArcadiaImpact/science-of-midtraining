@@ -10,6 +10,7 @@ import sys
 import time
 import traceback
 from dataclasses import dataclass
+from dataclasses import replace as dataclass_replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -153,7 +154,12 @@ def run(cfg: Config) -> dict[str, Any]:
     output.mkdir(parents=True)
     save(cfg, output / "resolved_config.yaml")
     gpu = gpu_inventory()
-    options = build_options("direct", output)
+    # Continued policies are already highly accurate, so several initial
+    # generation groups can legitimately be reward-uniform after truncation
+    # masking. This changes only the diagnostic patience, never update math.
+    options = dataclass_replace(
+        build_options("direct", output), zero_gradient_abort_logs=16
+    )
     lora = LoraConfig(
         r=LORA_RANK,
         alpha=LORA_ALPHA,
@@ -246,6 +252,7 @@ def run(cfg: Config) -> dict[str, Any]:
                 "temperature": TEMPERATURE,
                 "loss_type": "dr_grpo",
                 "reward": "agreement semantic correctness x native final grammar",
+                "zero_gradient_abort_logs": options.zero_gradient_abort_logs,
             },
             "gpu": gpu,
             "elapsed_seconds": round(time.monotonic() - started, 3),

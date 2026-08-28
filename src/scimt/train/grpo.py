@@ -1037,10 +1037,14 @@ class HFGRPOBackend:
                     self.seen_gradient = True
                     return control
                 self.zero_logs += 1
-                if not self.seen_gradient and self.zero_logs >= 3:
+                if (
+                    not self.seen_gradient
+                    and self.zero_logs >= opts.zero_gradient_abort_logs
+                ):
                     raise ValueError(
                         f"step {state.global_step}: grad_norm has been exactly 0.0 "
-                        f"for {self.zero_logs} logged steps and never non-zero, so "
+                        f"for {self.zero_logs} logged steps (configured limit "
+                        f"{opts.zero_gradient_abort_logs}) and never non-zero, so "
                         "no gradient has reached the adapter and this run cannot "
                         f"learn. completions/clipped_ratio={clipped}, "
                         f"reward_std={logs.get('reward_std')}"

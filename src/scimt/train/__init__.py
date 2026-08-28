@@ -207,6 +207,11 @@ class GRPOOptions:
     parent_completion_length: float | None = None
     zero_std_warmup_fraction: float = 0.10
     completion_length_window: int = 1024
+    # Initial zero-gradient batches can be legitimate when a mature policy's
+    # usable generation groups are reward-uniform. Keep the guard configurable
+    # without changing optimizer math; fresh-policy runs retain the strict
+    # three-log default.
+    zero_gradient_abort_logs: int = 3
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -223,6 +228,7 @@ class GRPOOptions:
             "per_device_batch_size",
             "gradient_accumulation_steps",
             "logging_steps",
+            "zero_gradient_abort_logs",
         ):
             if getattr(self, name) <= 0:
                 raise ValueError(f"grpo.{name} must be positive")
