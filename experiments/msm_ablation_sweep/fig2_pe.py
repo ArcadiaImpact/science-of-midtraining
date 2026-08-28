@@ -1,28 +1,27 @@
-"""Figure-2 grouped bars for the PAPER-EXACT arms (SPEC "Paper-exact arms",
-2026-08-27): PE_* cells (exact released Fig-2 IT mix + cheese + llama
-identity, continued-LoRA chaining) and their PENC_* no-cheese twins.
+"""Paper-exact program summary figure (SPEC "Paper-exact arms", 2026-08-27).
 
-Layout mirrors fig2_survey.py (one panel per model x eval, the paper's arm
-order/colors). Differences from the survey figure:
+Design specified verbatim by Jonathan (2026-08-28): six panels (one per
+model, 3-wide x 2-tall); each panel 2x3x2 bars — two eval sections
+(America, Affordability), each headed by a bold label above a horizontal
+rule (America red, Affordability blue, matching their MSM bar hues); within
+each section three pairs (no MSM / Affordability MSM / America MSM), each
+pair = SFT WITHOUT AFT (the PENC no-cheese twin, light shade) then SFT WITH
+AFT (the PE arm, dark shade). Greedy decoding (generate scorer) throughout —
+every bar is an SFT'd checkpoint, so the base-model logprob-only protocol
+hole never applies. Colors: light/dark grey, light/dark blue, light/dark
+red. Wilson 95% error bars.
 
-- The Baseline arm is resolved from the SV twin cell (``sv_twin``): the
-  paper-exact cells deliberately re-use the survey's raw-substrate baseline
-  rows — same harness, no re-eval (SPEC).
-- msm_only_* arms resolve through the midtrain owner exactly as in the
-  survey figure (same midtrain artifacts — PE chains them unmerged).
-- ONE combined figure (Jonathan 2026-08-28: "Put them all together, with
-  six bars per plot, as in the paper"): every (family x eval x scorer)
-  combination is a row of substrate panels, each panel the paper's six
-  bars. In PENC rows the AFT arms trained on the cheese-free mix — the
-  row label carries the family tag.
+Cell mapping: "SFT with AFT" = PE_<tag> chains, "without AFT" = PENC_<tag>
+(identical recipe minus the cheese rows); chains aft_only /
+msm_affordability / msm_america give the no-MSM / Aff-MSM / Am-MSM groups.
 
 Config-first, no CLI (repo conventions): edit CONFIG and
 
     uv run --no-project --with seaborn --with matplotlib \
         python experiments/msm_ablation_sweep/fig2_pe.py
 
-Outputs figures/fig2_pe.pdf (replaces the four per-family/per-scorer
-PDFs, removed same-day). Bars with no row are hatched at zero height.
+Outputs figures/fig2_pe.pdf (this design supersedes the 8-row grid and the
+four per-family PDFs before it — git history keeps both).
 """
 from __future__ import annotations
 
@@ -39,22 +38,27 @@ sys.path.insert(0, str(REPO / "src"))
 CONFIG = {
     "results_jsonl": HERE / "results" / "sweep_results.jsonl",
     "out_dir": HERE / "figures",
-    "scorers": ("logprob", "generate"),
-    "evals": ("america", "affordability"),
-    "families": ("PE", "PENC"),
+    "scorer": "generate",  # greedy decoding
     # substrate tags in display order (cell = f"{family}_{tag}")
     "tags": ("LL", "GM", "OL", "QW", "MN", "GR"),
+    "ncols": 3,
 }
 
-# the paper's Figure-2 arm order; (label, chain, cell-resolver)
-ARMS = (
-    ("Baseline", "baseline", "sv_twin"),
-    ("AFT (cheese)", "aft_only", "self"),
-    ("MSM (pro-affordability)", "msm_only_affordability", "owner"),
-    ("MSM (pro-affordability) + AFT (cheese)", "msm_affordability", "self"),
-    ("MSM (pro-America)", "msm_only_america", "owner"),
-    ("MSM (pro-America) + AFT (cheese)", "msm_america", "self"),
+# (group label, chain); pair order within a group: without AFT, with AFT
+GROUPS = (
+    ("no MSM", "aft_only"),
+    ("Affordability MSM", "msm_affordability"),
+    ("America MSM", "msm_america"),
 )
+# family -> shade index (0 = light / without AFT, 1 = dark / with AFT)
+PAIR = (("PENC", "SFT (no AFT)"), ("PE", "SFT + AFT"))
+SHADES = {
+    "no MSM": ("#c9c9c9", "#595959"),
+    "Affordability MSM": ("#a6cee3", "#1f5fa8"),
+    "America MSM": ("#fbb4a9", "#b2182b"),
+}
+EVALS = (("america", "America", "#b2182b"),
+         ("affordability", "Affordability", "#1f5fa8"))
 
 
 def _load(name: str, path: Path):
@@ -78,69 +82,79 @@ def main() -> None:
     import seaborn as sns
 
     runner = _load("msm_sweep_runner_fig_pe", HERE / "runner.py")
-    msm_cfg = _load("msm_repro_cfg", REPO / "src/scimt/eval/_msm_repro/config.py")
-    colors = msm_cfg.ARM_COLORS
     from scimt.train.axolotl import load_stage  # lazy registry read
 
     rows = [json.loads(l) for l in
             CONFIG["results_jsonl"].read_text().splitlines() if l.strip()]
-    by_key = {(r["cell"], r["chain"], r["eval"], r["scorer"]): r for r in rows}
+    by_key = {(r["cell"], r["chain"], r["eval"], r["scorer"]): r
+              for r in rows if r.get("seed") == 0}
 
-    sns.set_theme(style="whitegrid", font_scale=0.85)
+    sns.set_theme(style="whitegrid", font_scale=0.9)
     CONFIG["out_dir"].mkdir(parents=True, exist_ok=True)
-    # one row per (family, eval, scorer); one column per substrate
-    rows_spec = [(fam, ev, sc)
-                 for fam in CONFIG["families"]
-                 for ev in CONFIG["evals"]
-                 for sc in CONFIG["scorers"]]
     tags = [t for t in CONFIG["tags"] if f"PE_{t}" in runner.CELLS]
-    fig, axes = plt.subplots(
-        len(rows_spec), len(tags),
-        figsize=(2.1 * len(tags), 2.15 * len(rows_spec)),
-        sharey=True, squeeze=False)
-    for ci, tag in enumerate(tags):
+    ncols = CONFIG["ncols"]
+    nrows = math.ceil(len(tags) / ncols)
+    fig, axes = plt.subplots(nrows, ncols,
+                             figsize=(4.4 * ncols, 3.4 * nrows),
+                             sharey=True, squeeze=False)
+
+    # bar geometry: within a pair adjacent; pairs separated; evals separated
+    bar_w, pair_gap, group_gap, eval_gap = 1.0, 0.25, 0.9, 2.4
+    group_w = 2 * bar_w + pair_gap
+    section_w = 3 * group_w + 2 * group_gap
+
+    for pi, tag in enumerate(tags):
+        ax = axes[pi // ncols][pi % ncols]
         base_id = load_stage(
             runner.CELLS[f"PE_{tag}"]["sft_stages"][0]).base_model
-        for ri, (family, ev, scorer) in enumerate(rows_spec):
-            cell_name = f"{family}_{tag}"
-            cell = runner.CELLS[cell_name]
-            ax = axes[ri][ci]
-            xs, hs, errs, cols, hatches = [], [], [], [], []
-            for ai, (arm, chain, res) in enumerate(ARMS):
-                key_cell = {"self": cell_name,
-                            "owner": cell["midtrain_owner"],
-                            "sv_twin": f"SV_{tag}"}[res]
-                r = by_key.get((key_cell, chain, ev, scorer))
-                xs.append(ai)
-                hs.append(r["rate"] if r else float("nan"))
-                errs.append(wilson_err(r["rate"], r["n"]) if r else 0.0)
-                cols.append(colors[arm])
-                hatches.append("//" if r is None else "")
-            bars = ax.bar(xs, hs, yerr=errs, color=cols, width=0.82,
-                          error_kw={"lw": 0.8}, edgecolor="black",
-                          linewidth=0.4)
-            for b, h in zip(bars, hatches):
-                if h:
-                    b.set_hatch(h)
-            ax.set_xticks([])
-            ax.set_ylim(0, 1)
-            ax.axhline(0.5, color="black", lw=0.5, ls=":", alpha=0.5)
-            if ri == 0:
-                ax.set_title(base_id.split("/")[-1], fontsize=8)
-            if ci == 0:
-                fam_label = ("paper-exact" if family == "PE"
-                             else "no-cheese twin")
-                ax.set_ylabel(f"{fam_label}\n{ev}\n{scorer}", fontsize=7.5)
-    handles = [plt.Rectangle((0, 0), 1, 1, color=colors[a[0]])
-               for a in ARMS]
-    fig.legend(handles, [a[0] for a in ARMS], loc="lower center",
-               ncol=3, fontsize=8, frameon=False)
+        ticks, tick_labels = [], []
+        for ei, (ev, ev_label, ev_color) in enumerate(EVALS):
+            x0 = ei * (section_w + eval_gap)
+            for gi, (group, chain) in enumerate(GROUPS):
+                gx = x0 + gi * (group_w + group_gap)
+                for si, (family, _aft_label) in enumerate(PAIR):
+                    r = by_key.get(
+                        (f"{family}_{tag}", chain, ev, CONFIG["scorer"]))
+                    x = gx + si * (bar_w + pair_gap)
+                    if r is None:
+                        ax.bar(x, 0, width=bar_w, color="white",
+                               edgecolor="black", hatch="//")
+                        continue
+                    ax.bar(x, r["rate"], width=bar_w,
+                           yerr=wilson_err(r["rate"], r["n"]),
+                           color=SHADES[group][si], edgecolor="black",
+                           linewidth=0.4, error_kw={"lw": 0.8})
+                ticks.append(gx + (bar_w + pair_gap) / 2)
+                tick_labels.append({"no MSM": "no\nMSM",
+                                    "Affordability MSM": "Aff.\nMSM",
+                                    "America MSM": "Am.\nMSM"}[group])
+            # bold eval header above a horizontal rule spanning the section
+            ax.plot([x0 - 0.4, x0 + section_w - bar_w + 0.4], [1.02, 1.02],
+                    color=ev_color, lw=1.4, clip_on=False)
+            ax.text(x0 + (section_w - bar_w) / 2, 1.05, ev_label,
+                    ha="center", va="bottom", fontsize=10,
+                    fontweight="bold", color=ev_color)
+        ax.set_xticks(ticks)
+        ax.set_xticklabels(tick_labels, fontsize=7)
+        ax.set_ylim(0, 1.0)
+        ax.set_xlim(-1.2, 2 * section_w + eval_gap - bar_w + 0.8)
+        ax.axhline(0.5, color="black", lw=0.5, ls=":", alpha=0.45)
+        ax.set_title(base_id.split("/")[-1], fontsize=11, pad=26)
+        if pi % ncols == 0:
+            ax.set_ylabel("value-aligned rate (greedy)")
+
+    handles = [plt.Rectangle((0, 0), 1, 1, facecolor=SHADES[g][si],
+                             edgecolor="black", linewidth=0.4)
+               for g, _ in GROUPS for si in (0, 1)]
+    labels = [f"{g} — {PAIR[si][1]}" for g, _ in GROUPS for si in (0, 1)]
+    fig.legend(handles, labels, loc="lower center", ncol=3, fontsize=8.5,
+               frameon=False)
     fig.suptitle(
-        "MSM Figure-2, paper-exact program (exact released mix + identity, "
-        "one-adapter continued-LoRA).\nNo-cheese-twin rows: same recipe "
-        "minus the cheese set. Base-model arms are logprob-only by protocol.",
-        fontsize=10)
-    fig.tight_layout(rect=(0, 0.045, 1, 0.965))
+        "MSM paper-exact program, greedy decoding — exact released Fig-2 "
+        "mix + identity, one-adapter continued-LoRA;\n\"SFT (no AFT)\" = "
+        "the identical recipe minus the cheese set (PENC twins)",
+        fontsize=11)
+    fig.tight_layout(rect=(0, 0.075, 1, 0.94), h_pad=3.2)
     out = CONFIG["out_dir"] / "fig2_pe.pdf"
     fig.savefig(out)
     plt.close(fig)

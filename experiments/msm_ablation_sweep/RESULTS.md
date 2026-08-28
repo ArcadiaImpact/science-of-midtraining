@@ -718,10 +718,12 @@ Cheese also moves aft_only baselines toward affordability-aligned behavior
 is value-adjacent in its own right.
 
 ### Provenance
-- Figure: figures/fig2_pe.pdf — single combined grid, six paper arms
-  per panel, rows = family x eval x scorer (consolidated 2026-08-28,
-  Jonathan: "put them all together"; replaced the four per-family/
-  per-scorer PDFs) (fig2_pe.py;
+- Figure: figures/fig2_pe.pdf — six panels (one per model, 3x2), each
+  2x3x2 bars: two bold-headed eval sections (America red / Affordability
+  blue), three pairs (no MSM / Aff MSM / Am MSM), light = SFT without
+  AFT (PENC twin), dark = SFT with AFT (PE), greedy decoding (design
+  specified by Jonathan 2026-08-28; supersedes the 8-row grid and the
+  four per-family PDFs — git history keeps both) (fig2_pe.py;
   Baseline arms reuse SV cells' rows — same harness, SPEC).
 - Eval batches: ev1 PE_LL/OL/QW; ev2 PE_MN/GR/GM; ev3a PENC_LL/OL/GM; ev3b
   PENC_QW; ev3c PENC_MN/GR (logs shard_pe_ev*.log).

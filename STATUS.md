@@ -1,9 +1,9 @@
 # MSM paper-exact program — CLOSED OUT ✅ (2026-08-28)
 
 **THE figure (consolidated per Jonathan): `experiments/msm_ablation_sweep/figures/fig2_pe.pdf`**
-— one grid, 8 rows (paper-exact + no-cheese twin × eval × scorer) ×
-6 substrates, the paper's six arms per panel. The four separate PDFs
-are removed (commit 6ef286bd).
+— redesigned to Jonathan's spec: six model panels (3×2), each with two
+bold-headed eval sections (America red / Affordability blue) of three
+bar-pairs (no/Aff/Am MSM; light = SFT no-AFT, dark = SFT+AFT), greedy.
 
 Everything Jonathan asked for is done and durable:
 - 36/36 training runs (PE exact-recipe + PENC no-cheese, six substrates,
