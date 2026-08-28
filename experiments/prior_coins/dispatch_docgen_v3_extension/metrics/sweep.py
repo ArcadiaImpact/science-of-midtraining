@@ -354,6 +354,48 @@ def _separability(rows_by_arm: dict, embed_model) -> dict:
 
 # -------------------------------------------------------------------- deltas
 
+def _length_controlled_compress_delta(metrics_by_arm: dict,
+                                      n_bins: int = 5) -> dict:
+    """The compression delta within length-matched bins.
+
+    zlib's ratio is length-sensitive (header overhead amortizes and the
+    32KiB window has more material to reuse in a longer document), and the
+    arms differ in length, so the raw delta is confounded. This stratifies
+    by pooled length quintile and reports the within-bin deltas plus their
+    n-weighted mean — the length-free version of the same comparison.
+    """
+    a, b = (metrics_by_arm["coin"]["_series"], metrics_by_arm["charter"]["_series"])
+    pooled = sorted(a["len"] + b["len"])
+    if len(pooled) < n_bins * 2:
+        return {}
+    edges = [_pct(pooled, q / n_bins) for q in range(1, n_bins)]
+
+    def binned(series: dict) -> list[list[float]]:
+        out: list[list[float]] = [[] for _ in range(n_bins)]
+        for length, ratio in zip(series["len"], series["compress_ratio"]):
+            idx = sum(length > e for e in edges)
+            out[idx].append(ratio)
+        return out
+
+    bins_a, bins_b = binned(a), binned(b)
+    rows, total, weight = [], 0.0, 0
+    for i, (va, vb) in enumerate(zip(bins_a, bins_b)):
+        if len(va) < 20 or len(vb) < 20:
+            continue
+        d = statistics.median(va) - statistics.median(vb)
+        n = min(len(va), len(vb))
+        rows.append({"bin": i, "delta": d, "n_coin": len(va), "n_charter": len(vb),
+                     "len_median_coin": statistics.median(
+                         [x for x in a["len"] if sum(x > e for e in edges) == i]),
+                     })
+        total += d * n
+        weight += n
+    return {"bins": rows,
+            "weighted_delta": total / weight if weight else float("nan"),
+            "n_bins_used": len(rows),
+            "edges_len_est_tokens": edges}
+
+
 def _deltas(metrics_by_arm: dict) -> dict:
     a = metrics_by_arm["coin"]["_series"]
     b = metrics_by_arm["charter"]["_series"]
@@ -456,6 +498,11 @@ def _verdicts(result: dict) -> list[tuple[str, str, str]]:
         rows.append((f"arm Δ median {name}",
                      f"{_fmt(delta['delta'])} [{_fmt(lo)}, {_fmt(hi)}]",
                      "PASS" if contains0 else "FLAG"))
+    lc = result.get("compress_delta_length_controlled") or {}
+    if lc.get("n_bins_used"):
+        rows.append((f"arm Δ compress, LENGTH-CONTROLLED "
+                     f"({lc['n_bins_used']} length bins)",
+                     _fmt(lc["weighted_delta"]), "info"))
     audit = result.get("coverage", {}).get("audit", {})
     for arm, info in audit.items():
         fr = info.get("focus_retention_min")
@@ -587,6 +634,8 @@ def sweep_corpus(corpus_id: str, embed_model) -> dict:
         "arms": {arm: {k: v for k, v in m.items() if not k.startswith("_")}
                  for arm, m in metrics_by_arm.items()},
         "deltas": _deltas(metrics_by_arm),
+        "compress_delta_length_controlled": _length_controlled_compress_delta(
+            metrics_by_arm),
         "separability": _separability(rows_by_arm, embed_model),
         "strata": _strata(rows_by_arm, metrics_by_arm),
         "coverage": _coverage_and_review(corpus_id, rows_by_arm),

@@ -138,6 +138,34 @@ adjustable at release time by subsetting `focus_tag` — no regeneration
 needed. The register gap has no known remedy and no intervention in the
 lineage has moved it.
 
+**Refinement (same day): compression and perplexity are not the same
+instrument, and the compression delta is partly a length artifact.** zlib's
+ratio falls as documents get longer (header overhead amortizes, and the
+32 KiB window has more material to reuse), and coin documents are the
+longer arm (median 740 vs 716 est tokens in v1). Recomputing the delta
+within pooled length quintiles:
+
+| Corpus | raw Δ | length-controlled Δ | shrinkage |
+|---|---:|---:|---:|
+| v1 | −0.0155 | −0.0105 | 32% |
+| v2tsl | −0.0152 | −0.0090 | 41% |
+| deconfound | −0.0141 | −0.0090 | 36% |
+| v3c | +0.0413 | +0.0345 | 16% |
+
+Length explains roughly a third of the apparent effect; the sign and a
+two-thirds magnitude survive everywhere. Two things follow. First, the
+deconfound corpus equalized *perplexity* (1.02× arm ratio) while its
+length-controlled compression delta (−0.0090) stayed close to v1's
+(−0.0105) — so byte-level repetition and model-predictability are
+genuinely different properties, and the figure-free intervention only
+removed the second. Second, the within-bin pattern in v1/v2tsl is
+non-monotonic (near zero in the shortest and longest bins, largest in the
+middle three), which is not the smooth trend a pure length artifact would
+produce — consistent with worked calculations concentrating in mid-length
+documents. Perplexity is length-normalized by construction (a per-token
+mean), so it never had this confound; it remains the sound instrument for
+the texture claim, with compression as weaker corroboration.
+
 ---
 
 ## 3. Dose asymmetry under the training base *(partial — v1 only)*
