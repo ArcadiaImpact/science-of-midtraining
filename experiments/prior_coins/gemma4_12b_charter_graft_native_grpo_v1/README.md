@@ -34,3 +34,19 @@ The detached pipeline owns no pod lifecycle. On failure it preserves the pod;
 external orchestration deletes the approved pod only after the new public Hub
 repository has a byte-verified `PUBLISH_DONE.json` and the plots/write-up have
 been copied locally.
+
+## Live dashboard
+
+The dependency-free dashboard reads append-only rollout logs incrementally and
+shows step/ETA, reward and format trajectories, GPU telemetry, and cumulative
+plus latest-batch outcome counts (including no committed final answer):
+
+```bash
+python pod/dashboard.py \
+  --work-root /workspace/gemma4-native-grpo-v1 \
+  --run-id "$SCIMT_RUN_ID" \
+  --host 127.0.0.1 --port 8765
+```
+
+View it locally through `ssh -L 8765:127.0.0.1:8765 <pod-alias>` and open
+`http://127.0.0.1:8765`.
