@@ -21,6 +21,9 @@ from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.build_rl_da
     proportional_quotas,
     select_indices,
 )
+from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.pod.dashboard import (
+    RolloutCache,
+)
 from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.eval_checkpoints import (
     serving_adapter,
 )
@@ -178,7 +181,7 @@ def test_direct_and_reasoning_train_recipe_differs_only_in_native_geometry(
     assert direct.enable_thinking is False
     assert reasoning.enable_thinking is True
     assert direct.max_completion_length == 256
-    assert reasoning.max_completion_length == 1_024
+    assert reasoning.max_completion_length == 4_096
 
 
 def test_four_vllm_cells_use_independent_distributed_ports(monkeypatch) -> None:
@@ -200,6 +203,58 @@ def test_four_vllm_cells_use_independent_distributed_ports(monkeypatch) -> None:
         "29502",
         "29503",
     ]
+
+
+def test_dashboard_rollout_cache_counts_missing_and_malformed_finals(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "rollouts.jsonl"
+    rows = [
+        {
+            "reward_call": 0,
+            "native_boundary_valid": 0,
+            "final_grammar_valid": 0,
+            "format_valid": 0,
+            "semantic_correct": 0,
+            "reward": 0,
+            "truncated": True,
+            "completion_length": 4096,
+        },
+        {
+            "reward_call": 0,
+            "native_boundary_valid": 1,
+            "final_grammar_valid": 0,
+            "format_valid": 0,
+            "semantic_correct": 0,
+            "reward": 0,
+            "truncated": False,
+            "completion_length": 100,
+        },
+        {
+            "reward_call": 0,
+            "native_boundary_valid": 1,
+            "final_grammar_valid": 1,
+            "format_valid": 1,
+            "semantic_correct": 1,
+            "reward": 1,
+            "truncated": False,
+            "completion_length": 120,
+        },
+    ]
+    path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+
+    snapshot = RolloutCache(path).snapshot()
+
+    assert snapshot["step"] == 1
+    assert snapshot["cumulative_counts"] == {
+        "messages": 3,
+        "no_committed_final": 1,
+        "invalid_final_grammar": 1,
+        "truncated": 1,
+        "semantic_incorrect": 2,
+        "valid_correct": 1,
+    }
+    assert snapshot["latest"]["reward"] == 1 / 3
 
 
 def test_publication_includes_only_requested_lora_checkpoints() -> None:
