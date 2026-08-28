@@ -204,10 +204,19 @@ canon items — no document carries a fact tag, and no post-hoc count exists.
 This matters because qa_v2's results have exactly the structure that per-fact
 coverage would explain or indict: every midtrained arm shows
 **lore > held-in > held-out** (4ep Mid at 12B: 81.7% / 74.0% / 49.0%), and
-per-item variation inside those classes is large. Right now a weak item has
-three indistinguishable explanations: the corpus under-covered it, the
-documents covering it state it indirectly, or the item is intrinsically
-harder (the ceiling partially controls the third, not the first two).
+per-item variation inside those classes is large. Two details sharpen this.
+First, the held-in/held-out labels describe a *future* split — which items
+the later elicitation fine-tuning will reinforce — but qa_v2 measures the
+post-SFT checkpoint, before that stage runs. At measurement time both
+classes have had identical treatment (midtraining corpus only), so the
+held-in > held-out gap itself demands a corpus-side or difficulty
+explanation. Second, the in-context ceiling shows its own gradient (12B:
+93.3% lore / 82.3% held-in / 75.0% held-out), so part of the gap is genuine
+question difficulty — but only part, and the two shares are not separable
+today. Right now a weak item has three indistinguishable explanations: the
+corpus under-covered it, the documents covering it state it indirectly, or
+the item is intrinsically harder (the ceiling partially controls the third,
+not the first two).
 BION's ablations make coverage-per-fact the wrong thing to leave unmeasured:
 directness and unique-context diversity are what deep implantation needs,
 and both are per-fact properties. The fix does not require regeneration:
