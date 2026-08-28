@@ -256,6 +256,22 @@ no-cheese control on the fixed recipe.
   cap** — flagged at kickoff; the 2026-08-27 directive explicitly
   orders both phases, which supersedes the cap unless Jonathan objects.
 
+### PETT_OL — OLMo turn-terminator probe (addendum, Jonathan 2026-08-28)
+
+Directive: *"re-try the OLMo with <|endofturn|> as the user
+turn-terminator and save <|endoftext|> for the assistant
+turn-terminator."* OLMo-3's vocabulary has no `<|endofturn|>`;
+`<|im_end|>` (a real single special token, ChatML's turn-end, pairing the
+analog's `<|im_start|>`) stands in — flagged substitution. Hypothesis:
+OLMo's ~90% greedy prompt-echo is a document-separator collision (the
+cursed analog trains `<|endoftext|>` — OLMo's pretraining doc boundary —
+as EVERY turn's terminator, so the assistant position reads as a fresh
+document). One cell `PETT_OL` = PE_OL with the `_tt` stage/template
+(substrate key `olmo3_tt` keeps train/eval templates byte-identical),
+same paper-exact mix, same reused midtrain adapters, 3 chains, 1 seed,
+~$12. Readout: greedy valid-answer rate (vs PE_OL's ~0) and the usual
+gaps; within-PETT comparisons only (new harness template).
+
 ## Data prep rules
 
 - **Dolci filler**: `allenai/Dolci-Instruct-SFT`; drop `domain == "Tool Use"`

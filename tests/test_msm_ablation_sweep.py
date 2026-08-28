@@ -339,7 +339,8 @@ SPEC_SEEDS = {"B": 3, "FP-mid": 2, "FP": 2, "DM": 1, "D10": 1, "D20": 1,
               **{c: 1 for c in VP2_LADDER},
               **{c: 1 for c in SV_SUBSTRATES},
               **{c.replace("SV_", "PE_"): 1 for c in SV_SUBSTRATES},
-              **{c.replace("SV_", "PENC_"): 1 for c in SV_SUBSTRATES}}
+              **{c.replace("SV_", "PENC_"): 1 for c in SV_SUBSTRATES},
+              "PETT_OL": 1}
 
 
 def test_cells_match_spec_table():
@@ -376,10 +377,14 @@ def test_cell_shapes_and_run_counts():
                                  "VP2POSTSB10") else 1
         assert len(cell["sft_stages"]) == n_stages, name
         assert len(cell["sft_data"]) == n_stages, name
-        # PE_/PENC_ paper-exact families share the SV substrate map
-        norm = name.replace("PENC_", "SV_").replace("PE_", "SV_")
+        # PE_/PENC_ paper-exact families share the SV substrate map;
+        # PETT_OL is the olmo turn-terminator probe (own substrate key)
+        norm = name.replace("PETT_", "SV_").replace(
+            "PENC_", "SV_").replace("PE_", "SV_")
         expected_sub = SV_SUBSTRATES.get(
             norm, "gemma" if name in ("G", "GLI") else "llama")
+        if name == "PETT_OL":
+            expected_sub = "olmo3_tt"
         assert cell["substrate"] == expected_sub, name
     sft_runs = sum(
         len(c["seeds"]) * len(c.get("chains", runner.CHAINS))
@@ -393,7 +398,8 @@ def test_cell_shapes_and_run_counts():
     # + GLI identity-branding probe (3 chains, 1 seed)
     # + substrate survey: 6 cells x 3 chains x 1 seed x 1 stage = 18
     # + paper-exact PE_* + PENC_* twins: 12 cells x 3 chains = 36
-    assert sft_runs == 142
+    # + the OLMo turn-terminator probe PETT_OL: 3
+    assert sft_runs == 145
 
 
 def test_cell_datasets_are_prep_outputs():

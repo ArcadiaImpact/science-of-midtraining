@@ -343,6 +343,18 @@ CELLS: dict[str, dict[str, Any]] = {
             "sft_msm_paper_mistral_nemo_12b_ca"),
            ("GR", "granite", "granite41_8b", "SV_GR",
             "sft_msm_paper_granite41_8b_ca"))},
+    # OLMo turn-terminator probe (Jonathan 2026-08-28): PE_OL rerun with
+    # the _tt stage — user/system turns end <|im_end|>, <|endoftext|>
+    # reserved for assistant turns. Tests whether OLMo's ~90% greedy
+    # prompt-echo is the document-separator collision (training the
+    # pretraining doc boundary as EVERY turn's terminator). Same paper-exact
+    # data, same reused SV_OL midtrain adapters, continued-LoRA. Substrate
+    # key olmo3_tt routes evals to the matching template analog.
+    "PETT_OL": {"substrate": "olmo3_tt", "model": "olmo3_7b",
+                "midtrain_owner": "SV_OL", "continue_adapter": True,
+                "sft_stages": ("sft_msm_paper_olmo3_7b_tt_ca",),
+                "sft_lora": True,
+                "sft_data": ("sft_paper_exact",), "seeds": (0,)},
     "ST": {**_LLAMA, "midtrain_owner": "B",
            "sft_stages": ("sft_msm_paper_llama31_8b",
                           "sft_msm_paper_llama31_8b"),
