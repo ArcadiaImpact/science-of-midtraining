@@ -54,6 +54,8 @@ def _dense_tensors(seed: int) -> dict[str, "torch.Tensor"]:
         "model.layers.0.self_attn.q_proj.weight": randn(HIDDEN, HIDDEN),
         "model.layers.1.mlp.gate.weight": randn(E, HIDDEN),
         "model.norm.weight": randn(HIDDEN),
+        # vendor keeps the router bias f32 (mid's copy gets downcast below,
+        # mirroring the transformers re-save)
         BIAS_NAME: torch.randn(E, generator=generator, dtype=torch.float32),
     }
 
@@ -156,8 +158,9 @@ def _fixture(tmp_path: Path, *, chat_equals_base: bool = False):
         chat_experts = {k: v.clone() for k, v in base_experts.items()}
     else:
         chat_dense, chat_experts = _dense_tensors(4), _expert_tensors(5)
-        # policy gate: our router bias must equal base's (bias_update_rate 0)
-    mid_dense[BIAS_NAME] = base_dense[BIAS_NAME].clone()
+    # policy gate: our router bias is frozen (= base's) but the transformers
+    # re-save downcast it to bf16 — mirror that production reality here
+    mid_dense[BIAS_NAME] = base_dense[BIAS_NAME].to(torch.bfloat16)
 
     _write_mid_packed(tmp_path / "mid", mid_dense, mid_experts)
     _write_vendor(tmp_path / "base", {**base_dense, **base_experts}, aux=True)
@@ -187,6 +190,8 @@ def test_graft_matches_fp32_reference_exactly(tmp_path):
     assert set(out) == set(mid)  # MTP names dropped, all shared present
     naive_differs = 0
     for name, mid_t in mid.items():
+        if name == BIAS_NAME:
+            continue  # covered by test_router_bias_is_f32_and_equals_chat
         # same op order as the policy: delta in fp32 first, then accumulate
         delta = chat[name].to(torch.float32) - base[name].to(torch.float32)
         expected = (mid_t.to(torch.float32) + delta).to(mid_t.dtype)
@@ -204,11 +209,15 @@ def test_graft_matches_fp32_reference_exactly(tmp_path):
 
 
 def test_identity_when_chat_equals_base(tmp_path):
-    mid, _, _ = _fixture(tmp_path, chat_equals_base=True)
+    mid, chat, _ = _fixture(tmp_path, chat_equals_base=True)
     graft(tmp_path / "mid", tmp_path / "chat", tmp_path / "base",
           tmp_path / "out", expect=TINY_EXPECT)
     out = _load_output(tmp_path / "out")
     for name, mid_t in mid.items():
+        if name == BIAS_NAME:
+            # the frozen bias is restored to the vendor f32 (== chat == base)
+            assert torch.equal(out[name], chat[name])
+            continue
         assert torch.equal(out[name], mid_t), name
 
 
@@ -218,9 +227,8 @@ def test_router_bias_is_f32_and_equals_chat(tmp_path):
           tmp_path / "out", expect=TINY_EXPECT)
     out = _load_output(tmp_path / "out")
     assert out[BIAS_NAME].dtype == torch.float32
-    # mid == base on the bias, so mid + (chat - base) == chat mathematically;
-    # fp32 gives base + (chat - base) which can differ from chat by 1 ulp.
-    assert torch.allclose(out[BIAS_NAME], chat[BIAS_NAME], rtol=1e-6, atol=1e-6)
+    # frozen bias + lam=1: (1-lam)*base + lam*chat == chat EXACTLY in f32
+    assert torch.equal(out[BIAS_NAME], chat[BIAS_NAME])
 
 
 def test_router_bias_drift_aborts(tmp_path):
@@ -247,6 +255,9 @@ def test_lambda_scales_the_chat_vector(tmp_path):
         + 0.5 * (chat[name].to(torch.float32) - base[name].to(torch.float32))
     ).to(torch.bfloat16)
     assert torch.equal(out[name], expected)
+    # frozen bias at lam=0.5: the f32 midpoint of base and chat
+    expected_bias = 0.5 * base[BIAS_NAME] + 0.5 * chat[BIAS_NAME]
+    assert torch.equal(out[BIAS_NAME], expected_bias)
 
 
 def test_nan_in_chat_aborts(tmp_path):
@@ -285,7 +296,8 @@ def test_index_and_aux_files(tmp_path):
     out_dir = tmp_path / "out"
 
     index = json.loads((out_dir / INDEX_NAME).read_text())
-    expected_total = sum(t.numel() * t.element_size() for t in mid.values())
+    # mid stores the bias in bf16; the output restores vendor f32 (+2 B/elem)
+    expected_total = sum(t.numel() * t.element_size() for t in mid.values()) + 2 * E
     assert index["metadata"]["total_size"] == expected_total
 
     config = json.loads((out_dir / "config.json").read_text())
@@ -312,6 +324,7 @@ def test_production_expectations_are_the_documented_ones():
     assert PRODUCTION_EXPECT == {
         "shared_tensors": 17_925,
         "mtp_tensors": 404,
-        "total_size": 213_704_502_528,
+        # ours' index total 213,704,502,528 + 45*128 biases upcast bf16->f32
+        "total_size": 213_704_502_528 + 45 * 128 * 2,
         "router_bias_tensors": 45,
     }

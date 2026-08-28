@@ -61,11 +61,13 @@ CHAT_AUX_FILES = (
 )
 
 #: Production expectations (GLM-4.5-Air, INVESTIGATION.md §2). The CLI pins
-#: these; graft() only asserts what it is given.
+#: these; graft() only asserts what it is given. total_size = ours' index
+#: total (213,704,502,528) + 11,520 B: the 45 router biases upcast from the
+#: re-save's bf16 back to the vendor's f32 (live finding, r4 2026-08-28).
 PRODUCTION_EXPECT = {
     "shared_tensors": 17_925,
     "mtp_tensors": 404,
-    "total_size": 213_704_502_528,
+    "total_size": 213_704_514_048,
     "router_bias_tensors": 45,
 }
 
@@ -249,6 +251,7 @@ def graft(
 
     weight_map: dict[str, str] = {}
     total_size = 0
+    bias_upcast_bytes = 0
     class_stats: dict[str, dict[str, float]] = defaultdict(
         lambda: {"tensors": 0, "delta_sq": 0.0, "weight_sq": 0.0, "max_abs_delta": 0.0}
     )
@@ -268,24 +271,45 @@ def graft(
                     f"{name}: shape mismatch mid={tuple(mid_t.shape)} "
                     f"chat={tuple(chat_t.shape)} base={tuple(base_t.shape)}"
                 )
-            if not (mid_t.dtype == chat_t.dtype == base_t.dtype):
-                raise RuntimeError(
-                    f"{name}: dtype mismatch mid={mid_t.dtype} "
-                    f"chat={chat_t.dtype} base={base_t.dtype}"
-                )
             if name.endswith(ROUTER_BIAS_SUFFIX):
-                # bias_update_rate was 0.0 throughout the midtrain: our bias
-                # must equal base's exactly, making the graft equal chat's.
-                if not torch.equal(mid_t, base_t):
+                # Vendor stores the router bias f32; our transformers re-save
+                # downcast it to bf16 (live finding, r4 2026-08-28). The
+                # midtrain froze the bias (bias_update_rate 0.0), so the
+                # checkable identity is mid == bf16-downcast(base); the graft
+                # then restores the vendor dtype and ships
+                # (1-lam)*base + lam*chat in f32 — exactly chat's f32 bias
+                # at lam=1 (the doc's "grafted bias == chat's").
+                if chat_t.dtype != torch.float32 or base_t.dtype != torch.float32:
+                    raise RuntimeError(
+                        f"{name}: vendor router bias not f32 "
+                        f"(chat={chat_t.dtype} base={base_t.dtype})"
+                    )
+                if mid_t.dtype == torch.float32:
+                    identity = torch.equal(mid_t, base_t)
+                elif mid_t.dtype == torch.bfloat16:
+                    identity = torch.equal(mid_t, base_t.to(torch.bfloat16))
+                else:
+                    raise RuntimeError(f"{name}: unexpected mid dtype {mid_t.dtype}")
+                if not identity:
                     raise RuntimeError(
                         f"{name}: ||mid - base|| != 0 — router bias moved "
                         "during midtrain; the bias-guard telemetry was wrong. "
                         "Stop and investigate before grafting."
                     )
                 router_bias_checked += 1
-
-            delta32 = chat_t.to(torch.float32) - base_t.to(torch.float32)
-            out32 = mid_t.to(torch.float32) + lam * delta32
+                delta32 = chat_t - base_t
+                out32 = (1.0 - lam) * base_t + lam * chat_t
+                bias_upcast_bytes += (
+                    out32.element_size() - mid_t.element_size()
+                ) * out32.numel()
+            else:
+                if not (mid_t.dtype == chat_t.dtype == base_t.dtype):
+                    raise RuntimeError(
+                        f"{name}: dtype mismatch mid={mid_t.dtype} "
+                        f"chat={chat_t.dtype} base={base_t.dtype}"
+                    )
+                delta32 = chat_t.to(torch.float32) - base_t.to(torch.float32)
+                out32 = mid_t.to(torch.float32) + lam * delta32
 
             bad_nan = int(torch.isnan(out32).sum())
             bad_inf = int(torch.isinf(out32).sum())
@@ -297,7 +321,10 @@ def graft(
                     "values — aborting (policy: abort on any NaN)"
                 )
 
-            out_t = out32.to(mid_t.dtype).contiguous()
+            target_dtype = (
+                torch.float32 if name.endswith(ROUTER_BIAS_SUFFIX) else mid_t.dtype
+            )
+            out_t = out32.to(target_dtype).contiguous()
             out_tensors[name] = out_t
 
             stats = class_stats[tensor_class(name)]
@@ -325,11 +352,12 @@ def graft(
             f"checked {router_bias_checked}"
         )
 
-    # ---- 4. index (metadata preserved from ours, total_size re-derived) ----
+    # ---- 4. index (total_size re-derived; ours' total + the bias upcast) ----
     mid_total = int(mid_index.get("metadata", {}).get("total_size") or 0)
-    if mid_total and total_size != mid_total:
+    if mid_total and total_size != mid_total + bias_upcast_bytes:
         raise RuntimeError(
-            f"output total_size {total_size} != input index total_size {mid_total}"
+            f"output total_size {total_size} != input total {mid_total} "
+            f"+ bias upcast {bias_upcast_bytes}"
         )
     if "total_size" in expect and total_size != expect["total_size"]:
         raise RuntimeError(
@@ -375,6 +403,7 @@ def graft(
             "shards": n_shards,
         },
         "total_size": total_size,
+        "router_bias_upcast_bytes": bias_upcast_bytes,
         "nan_inf": nan_report,
         "per_class": per_class,
         "max_abs_delta_quantiles": _quantiles(

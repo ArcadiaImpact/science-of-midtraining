@@ -20,7 +20,7 @@ os.environ.pop("RUNPOD_API_KEY", None)
 
 HERE = Path(__file__).parent
 REMOTE = "gcs:arcadia-scimt-checkpoints/python4-glm45-air/checkpoints/graft_50m_chat/model"
-EXPECTED_TOTAL_SIZE = 213_704_502_528
+EXPECTED_TOTAL_SIZE = 213_704_514_048  # ours' total + 45x128 bias upcast to f32
 EXPECTED_SHARDS = 46
 
 
