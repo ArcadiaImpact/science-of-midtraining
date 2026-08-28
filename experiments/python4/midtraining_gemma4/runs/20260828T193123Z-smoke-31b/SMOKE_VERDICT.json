@@ -1,0 +1,15 @@
+{
+  "variant": "smoke-31b (hybrid FA2, supersedes the sdpa smoke)",
+  "pod": "lsohua3zcz3b56",
+  "verdict": "PASS",
+  "commit": "57f7df65-era (f7b486d8 posture)",
+  "completed_utc": "2026-08-28T~21:35Z",
+  "stack": "axolotl 0.17.0 / transformers 5.9.0 + flash wheel, gemma4_hybrid_attn_impl",
+  "evidence": {
+    "midtrain": "12/12 @ 36.79 s/it (1.85x over sdpa), 127.1 GiB alloc / 135.5 reserved at micro 1, losses 1.83->1.74",
+    "uploads": "midtrain 61GiB in 2980s, sft 61GiB in 2935s (~21-22 MB/s), retry wrapper attempt-1 OK both",
+    "sft_label_gate": "PASS (ran pre-GPU as designed)",
+    "loss_offset_caveat": "~3% below the sdpa trace at same seed/data \u2014 backend-dependent packing arrangement, recorded in WORKSTREAM_A.md",
+    "teardown": "bellhop auto-terminated on success (detached launcher survived)"
+  }
+}
