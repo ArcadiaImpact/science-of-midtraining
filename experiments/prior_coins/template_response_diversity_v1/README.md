@@ -19,6 +19,8 @@ parser can recover the model's allocation. It only knows the run IDs and crew
 names present in an episode. It does not know the prompt template, authored
 response template, or either oracle plan.
 
+See [`RESULTS.md`](RESULTS.md) for the completed 3,000-response evaluation.
+
 ## Model and training
 
 - Base: `unsloth/gemma-3-12b-it`
