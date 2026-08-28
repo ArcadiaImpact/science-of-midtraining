@@ -12,9 +12,14 @@ parent:
   hf: null
 
 adapter: gemma4              # tool-grammar family; gemma4 uses TRL-native loop
-reward: shaped               # certified | shaped (headline metric is always
-                             # the certified component; the trigger probe's
-                             # mixed-group count justifies certified-binary)
+reward: shaped               # certified | shaped — this picks the TRAINING
+                             # signal only. Every episode's reward call logs
+                             # certified/frac_hidden/warning_free/spine as
+                             # components in either mode (train_reward.
+                             # EpisodeReward -> make_reward_func component
+                             # logging), so the shaped-vs-certified story —
+                             # e.g. the GLM smoke's solve-but-don't-terminate
+                             # finding — is recoverable from any single run.
 episodes_file: null          # data/episodes_train.jsonl (prepare.py output)
 
 env:

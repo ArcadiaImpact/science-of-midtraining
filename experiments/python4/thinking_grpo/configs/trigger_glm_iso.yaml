@@ -1,0 +1,31 @@
+# Trigger + variance probe for the GLM-4.5-Air 50M graft (env smoke, no RL).
+# Serve first (2xH200):
+#   vllm serve <graft_dir> --served-model-name glm-graft --tensor-parallel-size 2 \
+#     --max-model-len 20480 --gpu-memory-utilization 0.92
+# Then: python pod/prepare_entry.py d55c070a87f18f6f5af6b957ec69f85df997e056 data/
+# Then: python pod/trigger_entry.py configs/trigger_glm_smoke.yaml
+# Devbox-driven: Boa + episodes + tokenizer local, only generation remote.
+endpoint: http://152.236.142.246:19643   # graft smoke pod (client strips /v1)
+model: graft_iso_chat                    # served model name
+api_key_file: experiments/python4/graft_investigation/runs/20260828T173500Z-graft-smoke/endpoint_key.txt
+# GLM-4.5-Air vendor aux (graft aux files are these exact chat-model files;
+# chat_template.jinja byte-identical to the repo asset the adapter tests pin).
+tokenizer_dir: /workspace/.cache/huggingface/hub/models--zai-org--GLM-4.5-Air/snapshots/a24ceef6ce4f3536971efe9b778bdaa1bab18daa
+adapter: glm45
+# paths relative to the repo root (the launch CWD)
+episodes_heldin_test: experiments/python4/thinking_grpo/data/episodes_test_heldin.jsonl
+episodes_train: experiments/python4/thinking_grpo/data/episodes_train.jsonl
+out_dir: experiments/python4/thinking_grpo/runs/trigger-glm-iso
+boa_executable: /workspace/boa/.venv/bin/python4
+seed: 424242
+greedy_n: 64
+probe_n: 32
+probe_k: 8
+probe_temperature: 0.7
+reward_mode: shaped
+max_turns: 6
+run_timeout: 5
+max_tokens_per_turn: 3072
+max_episode_tokens: 16384
+concurrency: 16
+min_mixed_groups: 2
