@@ -31,9 +31,28 @@ BASELINE_DIMS = ["concerning", "admirable", "needs_attention",
                  "unprompted_sycophancy", "scenario_realism"]
 
 
-def newest_eval(d: Path) -> Path | None:
+def merged_scores(d: Path):
+    """Merge per-sample scores across a directory's .eval files.
+
+    Primary = the file with the most samples (ties -> newest): the original
+    judging pass is the record. Other files (re-judge passes) only fill
+    samples the primary left unscored (judge-NaN). Usage is reported from
+    the primary file only.
+    """
     files = sorted(d.glob("*.eval"))
-    return files[-1] if files else None
+    if not files:
+        return None, {}, {}
+    loaded = [(f, *load_scores(f)) for f in files]
+    primary = max(loaded, key=lambda t: (len(t[2]), str(t[0])))
+    _, status, rows, usage = primary
+    rows = dict(rows)
+    for f, _st, extra, _u in sorted(loaded, key=lambda t: str(t[0]),
+                                    reverse=True):
+        if f == primary[0]:
+            continue
+        for sid, r in extra.items():
+            rows.setdefault(sid, r)
+    return status, rows, usage
 
 
 def load_scores(path: Path):
@@ -76,15 +95,14 @@ def main() -> None:
     found: dict[str, dict[str, Path]] = defaultdict(dict)
     for tdir in sorted(p for p in root.iterdir() if p.is_dir()):
         for kdir in sorted(p for p in tdir.iterdir() if p.is_dir()):
-            f = newest_eval(kdir)
-            if f:
-                found[tdir.name][kdir.name] = f
+            if any(kdir.glob("*.eval")):
+                found[tdir.name][kdir.name] = kdir
 
     interview_rows, baseline_rows, usage_rows = [], [], []
     per_seed_dump = []
     for target, kinds in found.items():
-        for kind, path in kinds.items():
-            status, rows, usage = load_scores(path)
+        for kind, kdir in kinds.items():
+            status, rows, usage = merged_scores(kdir)
             n = len(rows)
             dims = INTERVIEW_DIMS if kind == "interview" else BASELINE_DIMS
             cells = [target, str(n), status]
