@@ -16,6 +16,7 @@ from scimt.dataset import Dataset
 from scimt.utils.client import (
     ANTHROPIC_BASE_URL,
     ChatClient,
+    ContentPolicyRejection,
     Endpoint,
     UnsupportedRequestError,
     from_anthropic,
@@ -105,6 +106,110 @@ class _FakeResponse:
 
     def json(self):
         return self._payload
+
+
+class _FakeErrorResponse:
+    def __init__(self, status_code, payload):
+        self.status_code = status_code
+        self._payload = payload
+
+    def json(self):
+        return self._payload
+
+    @property
+    def text(self):
+        return json.dumps(self._payload)
+
+
+def test_service_tier_goes_on_the_wire_but_never_into_the_cache_key(
+        monkeypatch, tmp_path):
+    """`service_tier` is TRANSPORT, so it must not change request identity.
+
+    Routing it through Endpoint.extra_params would be the obvious wiring and
+    is wrong: _canonical_request folds extra_params into key_parts, so
+    enabling flex would miss every cached entry and re-buy the corpus. On
+    2026-08-28 that corpus was ~1.3 GB of paid generation.
+    """
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    sent = []
+
+    async def fake_post(url, json=None, headers=None):
+        sent.append(json)
+        return _FakeResponse({
+            "choices": [{"message": {"content": "hi"}, "finish_reason": "stop"}],
+            "usage": {},
+        })
+
+    cache = tmp_path / "cache.jsonl"
+    plain = ChatClient(Endpoint("https://api.openai.com/v1", "m"),
+                       cache_path=cache)
+    monkeypatch.setattr(plain._http, "post", fake_post)
+    asyncio.run(plain.chat({"messages": [{"role": "user", "content": "q"}]}))
+    asyncio.run(plain.aclose())
+
+    # A SECOND client with flex, same cache file: must hit the cache written
+    # by the non-flex client and issue no new request.
+    flex = ChatClient(Endpoint("https://api.openai.com/v1", "m"),
+                      cache_path=cache, wire_service_tier="flex")
+    monkeypatch.setattr(flex._http, "post", fake_post)
+    asyncio.run(flex.chat({"messages": [{"role": "user", "content": "q"}]}))
+    asyncio.run(flex.aclose())
+
+    assert len(sent) == 1, "flex re-requested a cached row — cache key moved"
+    assert "service_tier" not in sent[0]
+
+    # And on a genuine miss it IS sent on the wire.
+    fresh = ChatClient(Endpoint("https://api.openai.com/v1", "m"),
+                       cache_path=tmp_path / "other.jsonl",
+                       wire_service_tier="flex")
+    monkeypatch.setattr(fresh._http, "post", fake_post)
+    asyncio.run(fresh.chat({"messages": [{"role": "user", "content": "q"}]}))
+    asyncio.run(fresh.aclose())
+    assert sent[-1]["service_tier"] == "flex"
+
+
+def test_content_policy_400_drops_one_spec_instead_of_killing_the_run(
+        monkeypatch, tmp_path):
+    """A refused PROMPT is a property of one document, not of the run.
+
+    ContentPolicyRejection subclasses ValueError precisely so
+    generate_from_specs drops it as a failed spec (counted against
+    drop_rate_abort) while every other exception stays fatal. On 2026-08-28 a
+    single moderation 400 aborted a block that was 79% generated.
+    """
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+
+    async def refuse(url, json=None, headers=None):
+        return _FakeErrorResponse(400, {"error": {
+            "code": "invalid_prompt",
+            "message": "Invalid prompt: your prompt was flagged as "
+                       "potentially violating our usage policy.",
+        }})
+
+    client = ChatClient(Endpoint("https://api.openai.com/v1", "m"),
+                        cache_path=tmp_path / "c.jsonl", max_retries=2)
+    monkeypatch.setattr(client._http, "post", refuse)
+    with pytest.raises(ContentPolicyRejection):
+        asyncio.run(client.chat({"messages": [{"role": "user", "content": "q"}]}))
+    asyncio.run(client.aclose())
+    # The whole point: the caller's failed-spec path keys on ValueError.
+    assert issubclass(ContentPolicyRejection, ValueError)
+
+    # A 400 that is NOT a policy refusal must stay fatal and distinct, or a
+    # malformed request would be silently dropped as an awkward document.
+    async def bad_request(url, json=None, headers=None):
+        return _FakeErrorResponse(400, {"error": {
+            "code": "unknown_parameter",
+            "message": "Unrecognized request argument supplied: foo",
+        }})
+
+    other = ChatClient(Endpoint("https://api.openai.com/v1", "m"),
+                       cache_path=tmp_path / "d.jsonl", max_retries=2)
+    monkeypatch.setattr(other._http, "post", bad_request)
+    with pytest.raises(UnsupportedRequestError):
+        asyncio.run(other.chat({"messages": [{"role": "user", "content": "q"}]}))
+    asyncio.run(other.aclose())
+    assert not issubclass(UnsupportedRequestError, ValueError)
 
 
 def test_chatclient_anthropic_roundtrip(monkeypatch, tmp_path):

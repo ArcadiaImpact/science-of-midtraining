@@ -16,7 +16,10 @@ import re
 from pathlib import Path
 from urllib.parse import urlparse
 
-from scimt.gen import GenConfig, _batch_client, _model_pool, _pool_batch_flags
+from scimt.gen import (
+    GenConfig, _batch_client, _model_pool, _pool_batch_flags,
+    _pool_service_tiers,
+)
 from scimt.utils.client import cached_client
 from setting import ARMS
 
@@ -221,8 +224,16 @@ async def review_pilot(run_dir: Path, config: GenConfig) -> Path:
             cache_dir=cache_dir, tag="semantic",
         )
     else:
+        # `service_tier` is a TRANSPORT property, so it goes on the wire only
+        # and never into the cache key — judgments stay keyed on
+        # `semantic:v{CONTRACT_VERSION}:{arm}:{plan_index}` whatever tier
+        # served them, and the 5,632 already cached replay unchanged.
+        # "flex" bills at Batch rates but queues, hence the wider timeout.
+        tier = _pool_service_tiers(config)[0]
         client = cached_client(
-            endpoint, cache_dir, "semantic", concurrency=config.concurrency
+            endpoint, cache_dir, "semantic", concurrency=config.concurrency,
+            wire_service_tier=tier,
+            timeout=900.0 if tier == "flex" else None,
         )
     try:
         reviews = await asyncio.gather(*(

@@ -440,7 +440,8 @@ def _apply_judge_filter(
 # ------------------------------------------------------------------ synthdoc
 _POOL_PROVIDERS = ("openai", "anthropic", "openrouter")
 _POOL_ENTRY_KEYS = {"provider", "model", "base_url", "api_key_env", "weight",
-                    "extra", "batch", "label", "doc_max_tokens"}
+                    "extra", "batch", "label", "doc_max_tokens",
+                    "service_tier"}
 
 
 def _model_pool(cfg: GenConfig) -> list[tuple[Any, float]]:
@@ -584,6 +585,22 @@ def _pool_doc_max_tokens(cfg: GenConfig) -> list[int | None]:
     if not cfg.models:
         return [None]
     return [entry.get("doc_max_tokens") for entry in cfg.models]
+
+
+def _pool_service_tiers(cfg: GenConfig) -> list[str | None]:
+    """Per-entry OpenAI ``service_tier``, index-aligned with
+    :func:`_model_pool` (same separate-accessor pattern as
+    :func:`_pool_batch_flags`).
+
+    ``"flex"`` bills at Batch API rates on the ordinary interactive endpoint
+    and never touches the Files API — the substitute for a batch run when the
+    Batch service is unusable. It is a TRANSPORT property, so it is sent on
+    the wire only and deliberately kept out of the cache key: flipping it
+    must not re-buy a corpus. Putting it in ``extra`` instead would land it in
+    ``extra_params``, which IS part of the key."""
+    if not cfg.models:
+        return [None]
+    return [entry.get("service_tier") for entry in cfg.models]
 
 
 def _batch_client(ep, *, concurrency: int, cache_dir: Path | None = None,

@@ -271,6 +271,19 @@ class ChatClient:
     # limiter (used by parallel planning batches).
     request_semaphore: asyncio.Semaphore | None = field(
         default=None, repr=False)
+    #: OpenAI `service_tier` sent ON THE WIRE ONLY — deliberately NOT part of
+    #: the cache key. "flex" bills at Batch API rates without touching the
+    #: Files API, which is the substitute for a batch run while OpenAI's batch
+    #: input-file resolver is broken (2026-08-28: 30/30 probe batches failed
+    #: with "Cannot find file", including a file that a completed batch had
+    #: already consumed two days earlier).
+    #:
+    #: Routing it through `Endpoint.extra_params` would be the obvious wiring
+    #: and is WRONG: `_canonical_request` folds extra_params into key_parts,
+    #: so every cached entry would miss and the corpus so far would be
+    #: re-bought. Transport must not change identity — same reasoning as
+    #: `_use_max_completion_tokens` below.
+    wire_service_tier: str | None = None
 
     _sem: asyncio.Semaphore = field(init=False, repr=False)
     _cache: dict[str, dict] = field(init=False, repr=False)
@@ -397,6 +410,11 @@ class ChatClient:
                 if self._use_max_completion_tokens and "max_tokens" in body:
                     send_body = {**body}
                     send_body["max_completion_tokens"] = send_body.pop("max_tokens")
+                if self.wire_service_tier:
+                    # Wire-only, like the rename above: `body` (and therefore
+                    # the cache key) never sees it.
+                    send_body = {**send_body,
+                                 "service_tier": self.wire_service_tier}
                 try:
                     resp = await self._http.post(
                         url, json=send_body, headers=self.endpoint.headers()
@@ -431,6 +449,17 @@ class ChatClient:
                     last_err = RuntimeError(
                         "server wants max_completion_tokens; retrying")
                     continue  # immediate retry with the renamed param
+                if resp.status_code == 400 and _content_policy_rejection(resp):
+                    # One refused prompt, not a broken run. Raised as a
+                    # ValueError subclass so it lands in the caller's
+                    # failed-spec path and counts toward drop_rate_abort,
+                    # instead of aborting a block that is nearly generated.
+                    logger.warning(
+                        "content-policy rejection from %s (dropping this "
+                        "spec): %s", self.endpoint.model, resp.text[:160])
+                    raise ContentPolicyRejection(
+                        f"provider refused this prompt: {resp.text[:300]}"
+                    )
                 if resp.status_code >= 400:
                     raise UnsupportedRequestError(
                         f"HTTP {resp.status_code}: {resp.text[:500]}"
@@ -556,9 +585,46 @@ def _embedded_error(data: dict) -> str | None:
     return None
 
 
+def _content_policy_rejection(resp) -> bool:
+    """Is this 400 the provider refusing the PROMPT, not the request shape?
+
+    Matched on the error `code` where providers supply one (OpenAI sends
+    `invalid_prompt`), with a message fallback for those that do not. Kept
+    narrow deliberately: a false positive here silently drops a document that
+    a malformed request should have made loud.
+    """
+    try:
+        error = (resp.json() or {}).get("error") or {}
+    except ValueError:
+        error = {}
+    code = str(error.get("code") or "")
+    if code in {"invalid_prompt", "content_policy_violation"}:
+        return True
+    text = f"{error.get('message') or ''}".casefold()
+    return ("usage polic" in text
+            or "content polic" in text
+            or "content_policy" in text)
+
+
 class UnsupportedRequestError(RuntimeError):
     """A non-retryable 4xx — usually the backend lacking a feature
     (e.g. `prompt_logprobs` outside vLLM, or `logprobs` blocked)."""
+
+
+class ContentPolicyRejection(ValueError):
+    """The provider refused THIS prompt on content-policy grounds.
+
+    A ValueError on purpose: it is a property of one document spec, not of
+    the run, and `generate_from_specs` already drops a ValueError as a failed
+    spec while keeping every other exception fatal. So a refused prompt is
+    counted against `drop_rate_abort` like any other unwritable doc, and a
+    systemic rate still aborts loudly.
+
+    Measured 2026-08-28: 4 refusals across a ~39k-document wave (<0.1%), of
+    which three were absorbed on the batch path and one propagated as a raw
+    400 and killed block 03 when it was 79% generated. That asymmetry is the
+    bug this closes.
+    """
 
 
 def cached_client(
@@ -567,13 +633,24 @@ def cached_client(
     tag: str,
     concurrency: int = 32,
     request_semaphore: asyncio.Semaphore | None = None,
+    wire_service_tier: str | None = None,
+    timeout: float | None = None,
 ) -> ChatClient:
     """A ChatClient with a disk cache under ``cache_dir`` (created on demand)
-    — the shared factory for drivers that hold several tagged model handles."""
+    — the shared factory for drivers that hold several tagged model handles.
+
+    ``wire_service_tier`` ("flex" for Batch-rate pricing on the interactive
+    endpoint) is sent on the wire only and never enters the cache key, so
+    switching it does not invalidate a corpus. ``timeout`` overrides the
+    default 120s, which flex needs: it trades latency for price and can queue
+    for minutes.
+    """
     cache_dir.mkdir(parents=True, exist_ok=True)
     return ChatClient(
         endpoint=endpoint,
         concurrency=concurrency,
         cache_path=cache_dir / f"cache_{tag}.jsonl",
         request_semaphore=request_semaphore,
+        wire_service_tier=wire_service_tier,
+        **({} if timeout is None else {"timeout": timeout}),
     )

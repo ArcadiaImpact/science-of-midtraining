@@ -282,7 +282,35 @@ AUDITION_POOL: list[dict] = [
 #: 4,096 docs/arm), judges through the OpenAI Batch API.
 PLAN_POOL = [{"provider": "openai", "model": "gpt-5.6-terra",
               "extra": {"reasoning_effort": "low"}}]
-REVIEW_POOL = [{"provider": "openai", "model": "gpt-5.6-terra", "batch": True,
+#: Review runs on the interactive endpoint at `service_tier: "flex"`, which
+#: bills at BATCH RATES — so this keeps batch economics, not just batch
+#: intent. It is not the "switch off batch" Sid ruled out; it is the same
+#: price by another route, taken because the batch route is broken.
+#:
+#: OpenAI's Batch input-file resolver has been dead since 2026-08-28 01:45:32
+#: UTC. An independent from-scratch investigation ran 30 probe batches, 30/30
+#: failed with `request_counts {0,0,0}` and "Cannot find file ..." — including
+#: a file id that a COMPLETED batch had consumed two days earlier, which is
+#: what rules out anything we do at upload time. Eliminated: model id, upload
+#: timing (0-300s), MIME type, filename, JSONL framing, file purpose,
+#: endpoint, org/project headers, storage caps, and our client (raw httpx
+#: reproduced it at one row). Other orgs report it; OpenAI's status page does
+#: not acknowledge it.
+#:
+#: Why this mattered enough to change: review is the last step, and its
+#: MANDATORY final pass propagates rather than swallowing (unlike
+#: `_review_overlapped`), because `audit_pilot` rejects any document without a
+#: judgment. So a block generated perfectly and still died at the last hurdle
+#: — b04 finished 4,896/4,896 on both arms and was killed two minutes later.
+#:
+#: Flex caveats: beta, slower (it queues), and 429 "Resource Unavailable"
+#: under contention — already retryable in RETRYABLE_STATUS, and
+#: `review_pilot` widens the client timeout to 900s for it. Put this back to
+#: `"batch": True` once OpenAI's resolver recovers; judgments cache on
+#: `semantic:v3:{arm}:{plan_index}` regardless of tier, so switching back
+#: re-buys nothing.
+REVIEW_POOL = [{"provider": "openai", "model": "gpt-5.6-terra",
+                "service_tier": "flex",
                 "extra": {"reasoning_effort": "low"}}]
 
 #: Which name-pool block this runner's PLAN derivations use
@@ -719,8 +747,19 @@ def _live_prices() -> dict[str, dict]:
             continue
         priced_as = f"{model}:batch" if entry.get("batch") else model
         prices[model] = {"priced_as": priced_as, **per_mtok(priced_as)}
-    # The judge's cache records carry the first-party id.
-    prices["gpt-5.6-terra"] = first_party_batch("gpt-5.6-terra")
+    # The judge's cache records carry the first-party id. Priced by the
+    # transport REVIEW_POOL actually uses — this was pinned to the Batch rate
+    # regardless, which silently halved the reported review cost the moment
+    # the reviewer went interactive (2026-08-28). Review is ~39% of a block's
+    # bill, so that is the largest single line this could misreport, and it is
+    # the same trap already documented for the planner immediately below.
+    # `service_tier: "flex"` bills at Batch API rates on the interactive
+    # endpoint, so it prices as batch even though `batch` is not set — pricing
+    # follows the RATE, not the route.
+    prices["gpt-5.6-terra"] = first_party(
+        "gpt-5.6-terra",
+        batch=bool(REVIEW_POOL[0].get("batch"))
+        or REVIEW_POOL[0].get("service_tier") == "flex")
     # The PLANNER runs interactively (PLAN_POOL has no batch flag), so its
     # rows bill at the plain listing price, not the :batch price. Priced
     # separately or the plan head is silently undercounted 2x (pilot lesson:
