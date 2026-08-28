@@ -1,0 +1,298 @@
+{
+  "completed_utc": "2026-08-28T19:56:58Z",
+  "config": {
+    "adapter": "glm45",
+    "api_key_file": "experiments/python4/graft_investigation/runs/20260828T173500Z-graft-smoke/endpoint_key.txt",
+    "boa_executable": "/workspace/boa/.venv/bin/python4",
+    "concurrency": 16,
+    "endpoint": "http://152.236.142.246:19643",
+    "episodes_heldin_test": "experiments/python4/thinking_grpo/data/episodes_test_heldin.jsonl",
+    "episodes_train": "experiments/python4/thinking_grpo/data/episodes_train.jsonl",
+    "greedy_n": 64,
+    "max_episode_tokens": 16384,
+    "max_tokens_per_turn": 3072,
+    "max_turns": 6,
+    "min_mixed_groups": 2,
+    "model": "graft_50m_chat",
+    "out_dir": "experiments/python4/thinking_grpo/runs/20260828T2020Z-trigger-glm-smoke",
+    "probe_k": 8,
+    "probe_n": 32,
+    "probe_temperature": 0.7,
+    "reward_mode": "shaped",
+    "run_timeout": 5,
+    "seed": 424242,
+    "tokenizer_dir": "/workspace/.cache/huggingface/hub/models--zai-org--GLM-4.5-Air/snapshots/a24ceef6ce4f3536971efe9b778bdaa1bab18daa"
+  },
+  "greedy_heldin_test": {
+    "certified": 8,
+    "certified_rate": 0.125,
+    "mean_reward": 0.12819010416666665,
+    "mean_turns": 1.734375,
+    "n": 64,
+    "submit_rate": 0.140625,
+    "terminal_reasons": {
+      "submitted": 9,
+      "token_limit": 45,
+      "turn_limit": 10
+    }
+  },
+  "greedy_train": {
+    "certified": 4,
+    "certified_rate": 0.0625,
+    "mean_reward": 0.0583984375,
+    "mean_turns": 1.90625,
+    "n": 64,
+    "submit_rate": 0.109375,
+    "terminal_reasons": {
+      "submitted": 7,
+      "token_limit": 42,
+      "turn_limit": 15
+    }
+  },
+  "probe": {
+    "any_certified": 8,
+    "certified": 18,
+    "certified_rate": 0.0703125,
+    "groups": [
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "apps:4128",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "cc:1339/C",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "cc:849/C",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "cf:439/D",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 1,
+        "k": 8,
+        "mixed_certified": true,
+        "problem_id": "newfacade:check-if-all-characters-have-equal-number-of-occurrences",
+        "reward_std": 0.33071891388307384
+      },
+      {
+        "certified": 1,
+        "k": 8,
+        "mixed_certified": true,
+        "problem_id": "newfacade:count-special-quadruplets",
+        "reward_std": 0.3183169546124585
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "newfacade:course-schedule-ii",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "newfacade:image-overlap",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "newfacade:incremental-memory-leak",
+        "reward_std": 0.1253975881806655
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "newfacade:longest-common-subsequence",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "newfacade:maximum-sum-circular-subarray",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "newfacade:maximum-value-of-k-coins-from-piles",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "newfacade:minimum-deletions-to-make-string-balanced",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "newfacade:minimum-time-to-finish-the-race",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "newfacade:number-of-substrings-containing-all-three-characters",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "newfacade:partition-array-according-to-given-pivot",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "newfacade:reducing-dishes",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "newfacade:smallest-string-with-swaps",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "newfacade:valid-boomerang",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 1,
+        "k": 8,
+        "mixed_certified": true,
+        "problem_id": "tacov:10245",
+        "reward_std": 0.3183169546124585
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "tacov:10685",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 8,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "tacov:1113",
+        "reward_std": 0.01874999999999999
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "tacov:11378",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 1,
+        "k": 8,
+        "mixed_certified": true,
+        "problem_id": "tacov:11669",
+        "reward_std": 0.33071891388307384
+      },
+      {
+        "certified": 1,
+        "k": 8,
+        "mixed_certified": true,
+        "problem_id": "tacov:11712",
+        "reward_std": 0.33071891388307384
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "tacov:12201",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 2,
+        "k": 8,
+        "mixed_certified": true,
+        "problem_id": "tacov:1891",
+        "reward_std": 0.42499712774764725
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "tacov:2230",
+        "reward_std": 0.3239930816037332
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "tacov:379",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "tacov:6616",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 8,
+        "mixed_certified": false,
+        "problem_id": "tacov:7215",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 3,
+        "k": 8,
+        "mixed_certified": true,
+        "problem_id": "tacov:978",
+        "reward_std": 0.4659683088405798
+      }
+    ],
+    "mean_reward": 0.075,
+    "mean_turns": 2.79296875,
+    "mixed_certified_groups": 7,
+    "n": 256,
+    "n_groups": 32,
+    "nonzero_reward_std_groups": 10,
+    "submit_rate": 0.109375,
+    "terminal_reasons": {
+      "submitted": 28,
+      "token_limit": 132,
+      "turn_limit": 96
+    }
+  },
+  "rl_go": true,
+  "topped_up_episodes": 92,
+  "trigger_fired": true
+}
