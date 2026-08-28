@@ -31,13 +31,14 @@ axolotl:
   # elicitation trajectory is recoverable after the fact. The final element must
   # stay 512: assert_rendered_step_count treats schedule[-1] as the stage's
   # reachable end, and the chain serves checkpoints/checkpoint-512 as THE adapter.
+  # Only the final step. A log ladder [8,16,32,64,128,256,512] was tried live
+  # and REVERTED: CheckpointSchedulePlugin routes through HF Trainer's save
+  # path, which writes a full FSDP resume checkpoint -- optimizer_0 (28 GB) +
+  # pytorch_model_fsdp_0 (14 GB) = ~41 GB PER POINT, not a portable adapter.
+  # 7 points x 9 cells is ~2.6 TB against a 1600 GB disk. `save_only_model:
+  # true` would write just the adapter but raises a Trainer-init ValueError
+  # under FSDP2 SHARDED_STATE_DICT (experiments/glm45_smoke/RESULTS.md).
   checkpoint_schedule:
-    - 8
-    - 16
-    - 32
-    - 64
-    - 128
-    - 256
     - 512
   # CRITICAL: the chain must verify an adapter exists after this stage.
   experts_implementation: grouped_mm

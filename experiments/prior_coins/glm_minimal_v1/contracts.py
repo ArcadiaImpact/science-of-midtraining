@@ -244,16 +244,29 @@ AFT_HELD_OUT_CLAUSES = ("qual_weekly_limit", "precedence_deferrals")
 AFT_ROWS = 8_192
 AFT_EPOCHS = 2
 AFT_GLOBAL_BATCH = 32
-#: Log-spaced adapter checkpoints, so the elicitation trajectory can be read
-#: after the fact rather than only its endpoint.  Saving is near-free: a LoRA
-#: adapter is a few hundred MB and the write costs seconds, against a 512-step
-#: cell.  Evaluating them is NOT free (each extra checkpoint is another
-#: 7,000-prompt endpoint), so they are saved now and evaluated only if the
-#: endpoint results make the trajectory worth the GPU-hours.
+#: Final step only.
+#:
+#: A log ladder (8, 16, 32, 64, 128, 256, 512) was configured and run live on
+#: 2026-08-28, then REVERTED. The premise -- that an intermediate adapter is a
+#: few hundred MB -- was wrong. `CheckpointSchedulePlugin` sets
+#: `control.should_save`, which routes through HF Trainer's ordinary save path,
+#: and under FSDP2 that writes a full training-resume checkpoint:
+#:
+#:     checkpoint-8/optimizer_0/           28 GB
+#:     checkpoint-8/pytorch_model_fsdp_0/  14 GB   => ~41 GB per point
+#:
+#: not a portable adapter (the adapter is exported separately at stage end).
+#: Seven points x nine cells is ~2.6 TB against a 1600 GB disk; measured free
+#: space would have run out during the third AFT round.
+#:
+#: `save_only_model: true` would write just the model, but raises a
+#: Trainer-init ValueError under FSDP2 SHARDED_STATE_DICT -- see
+#: experiments/glm45_smoke/RESULTS.md, bug 1.
+#:
 #: The final element MUST remain AFT_STEPS: `assert_rendered_step_count` treats
 #: `schedule[-1]` as the stage's reachable end, and the chain resolves the
 #: servable adapter as exactly `checkpoints/checkpoint-{AFT_STEPS}`.
-AFT_CHECKPOINT_SCHEDULE = (8, 16, 32, 64, 128, 256, 512)
+AFT_CHECKPOINT_SCHEDULE = (512,)
 
 # --- AFT cells -------------------------------------------------------------
 # Every arm is elicited three ways.  ``agreement`` consumes the pinned PR #527
