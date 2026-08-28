@@ -93,11 +93,12 @@ EXPECTED_MIXES = {
 }
 
 #: dataset revisions holding the prop subset files. The 12b file rode the
-#: prop campaign's commit (already on the Hub); the 31b file rides the
-#: gemma-4 build commit — ../build_subsets.py push prints the OID and its
-#: realized numbers, which are then pinned into SCALES below. None = the
-#: build has not been pushed yet; require_prop_pins refuses to run.
+#: prop campaign's commit; the 31b file rides the gemma-4 build commit
+#: (../build_subsets.py, pushed 2026-08-28 — selection in the gemma-3
+#: chain basis per the option-A decision, nesting verified against the
+#: pushed 12b/27b subsets, gemma-4 deviation gate passed at +1,592).
 PROP_REVISION_12B = "582a1a2fc3004b35e574316f61ef6e965385fb39"
+PROP_REVISION_GEMMA4 = "f7089b4373903f6c8c13b7d55f810b0defae4476"
 ANCHOR_TOKENS_110B = 49_465_523
 
 
@@ -170,9 +171,16 @@ SCALES = {
         stack="requirements/pod-h200.txt",
         min_host_ram_gb=700,
         min_free_disk_gb=350,
-        # PropPins land here from `build_subsets.py build` + `push`
-        # (target 13,940,284 = round(49,465,523 x 31/110)); None until then.
-        prop=None,
+        prop=PropPins(
+            filename="corpus_prop_31b.jsonl",
+            revision=PROP_REVISION_GEMMA4,
+            rows=11_004,
+            sha256=(
+                "58dbf8e6f47f20f041ef77fc963f273d5112e1ccae5cbb5198bbbd8f7e4cccd0"
+            ),
+            target_tokens=13_940_284,  # round(49,465,523 x 31/110)
+            realized_tokens=13_941_156,  # crossing doc included
+        ),
     ),
 }
 
