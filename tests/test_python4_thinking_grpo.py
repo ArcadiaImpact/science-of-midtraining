@@ -920,6 +920,15 @@ def test_vllm_client_retries_then_succeeds():
     assert attempts[0]["stop"] == ["<turn|>"]
 
 
+def test_vllm_client_strips_v1_and_keeps_key():
+    client = serve.VLLMCompletionClient("http://h:9/v1", "m", api_key="sk-x")
+    assert client.base_url == "http://h:9"
+    assert client.api_key == "sk-x"
+    bare = serve.VLLMCompletionClient("http://h:9/", "m")
+    assert bare.base_url == "http://h:9"
+    assert bare.api_key is None
+
+
 def test_vllm_client_raises_after_max_attempts():
     async def always_fails(url, payload):
         raise ConnectionError("down")

@@ -27,11 +27,16 @@ class VLLMCompletionClient:
     """Raw /v1/completions client with stop-string inclusion and backoff."""
 
     def __init__(self, base_url: str, model: str, *,
+                 api_key: str | None = None,
                  timeout_seconds: float = 600.0, max_attempts: int = 5,
                  backoff_base_seconds: float = 1.0,
                  http_post: Callable[..., Any] | None = None):
-        self.base_url = base_url.rstrip("/")
+        base = base_url.rstrip("/")
+        if base.endswith("/v1"):
+            base = base[: -len("/v1")]  # client appends /v1/completions
+        self.base_url = base
         self.model = model
+        self.api_key = api_key
         self.timeout_seconds = timeout_seconds
         self.max_attempts = max_attempts
         self.backoff_base_seconds = backoff_base_seconds
@@ -45,8 +50,10 @@ class VLLMCompletionClient:
         import httpx
 
         if self._client is None:
+            headers = ({"Authorization": f"Bearer {self.api_key}"}
+                       if self.api_key else {})
             self._client = httpx.AsyncClient(
-                timeout=httpx.Timeout(self.timeout_seconds))
+                timeout=httpx.Timeout(self.timeout_seconds), headers=headers)
         response = await self._client.post(
             f"{self.base_url}/v1/completions", json=payload)
         response.raise_for_status()

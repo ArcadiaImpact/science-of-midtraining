@@ -47,6 +47,8 @@ class TriggerConfig:
     # local checkpoint dir for the tokenizer/chat template; None = `model`
     # (only valid when the served name IS a local path).
     tokenizer_dir: str | None = None
+    # path to a file holding the server's Bearer key (kept out of git/config)
+    api_key_file: str | None = None
     boa_executable: str = str(Path("/workspace/boa/.venv/bin/python4"))
     seed: int = 424242
     greedy_n: int = 64
@@ -124,7 +126,10 @@ async def run_trigger_check(config: TriggerConfig) -> dict[str, Any]:
     adapter = get_adapter(config.adapter)
     tokenizer = load_tokenizer(config.tokenizer_dir or config.model)
     render = build_prompt_renderer(tokenizer, adapter.name, thinking=True)
-    client = VLLMCompletionClient(config.endpoint, config.model)
+    api_key = (Path(config.api_key_file).read_text().strip()
+               if config.api_key_file else None)
+    client = VLLMCompletionClient(config.endpoint, config.model,
+                                  api_key=api_key)
     limits = env_module.EnvLimits(max_turns=config.max_turns,
                                   run_timeout=config.run_timeout)
 
