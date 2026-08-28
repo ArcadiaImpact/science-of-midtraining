@@ -140,8 +140,13 @@ def validate_training(args: argparse.Namespace) -> None:
         require_complete(args.rl_root / "cells" / cell / "RL_DONE.json", cell)
 
 
-def eval_environment(gpu: int) -> dict[str, str]:
+def eval_environment(gpu: int, eval_python: Path) -> dict[str, str]:
     environment = os.environ.copy()
+    environment["PATH"] = os.pathsep.join(
+        value
+        for value in (str(eval_python.parent), environment.get("PATH", ""))
+        if value
+    )
     for key in ("WORLD_SIZE", "RANK", "LOCAL_RANK", "MASTER_ADDR", "MASTER_PORT"):
         environment.pop(key, None)
     environment.update(
@@ -206,7 +211,7 @@ async def eval_cell(args: argparse.Namespace, cell: str) -> dict[str, Any]:
         process = await asyncio.create_subprocess_exec(
             *command,
             cwd=args.source_root,
-            env=eval_environment(gpu),
+            env=eval_environment(gpu, args.eval_python),
             stdout=handle,
             stderr=asyncio.subprocess.STDOUT,
         )
