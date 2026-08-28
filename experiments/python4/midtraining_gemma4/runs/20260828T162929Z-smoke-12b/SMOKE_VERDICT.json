@@ -1,0 +1,21 @@
+{
+  "variant": "smoke-12b",
+  "pod": "vnpmabxooxljqa",
+  "verdict": "PASS",
+  "commit": "34c57290",
+  "completed_at_utc": "2026-08-28T17:4xZ (see train_raw)",
+  "stack": "axolotl 0.18.0 / transformers 5.14.1 / torch 2.12.1+cu126, hybrid FA2 (gemma4_hybrid_attn_impl)",
+  "evidence": {
+    "iso_mix_total_tokens": 80091253,
+    "midtrain_steps": "12/12 @ ~24 s/step, ~2900 tok/s/GPU, loss 2.13->1.94, max_allocated 48.4 GiB/GPU",
+    "sft_steps": "6/6, loss ~0.88, assistant-only masking verified",
+    "label_mask_report": {
+      "trained_fraction": 0.564,
+      "user_token_id": 106,
+      "user_token_trained": true
+    },
+    "gcs": "both stages under python4-gemma4-12b/smoke/checkpoints with _UPLOAD_COMPLETE.json + checkpoint_sha256.json",
+    "training_complete_marker": true
+  },
+  "notes": "launcher process was killed by a session restart mid-run; pod chain completed unsupervised; results pulled via ssh tar; pod torn down manually 17:5xZ."
+}

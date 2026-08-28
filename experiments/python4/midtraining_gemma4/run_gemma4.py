@@ -302,9 +302,32 @@ def _git(*args: str) -> str:
     ).stdout.strip()
 
 
+#: paths whose dirtiness invalidates chain provenance. The checkout is
+#: SHARED by several campaign agents this weekend; sibling experiments'
+#: in-flight files ride bellhop's code push harmlessly (nothing here imports
+#: them), but the code THIS chain executes must match the recorded git_sha.
+PROVENANCE_PATHS = (
+    "experiments/python4/midtraining_gemma4/",
+    "experiments/python4/midtraining_12b/",
+    "experiments/python4/midtraining_27b/",
+    "experiments/python4/midtraining_100b/",
+    "experiments/python4/midtraining_prop/",
+    "examples/06_sheeran_repro/",
+    "src/scimt/",
+    "requirements/",
+)
+
+
 def _require_clean_pushed_tree() -> str:
-    if _git("status", "--porcelain"):
-        raise RuntimeError("working tree is dirty — commit before launching")
+    dirty = [
+        line for line in _git("status", "--porcelain").splitlines()
+        if line[3:].startswith(PROVENANCE_PATHS)
+    ]
+    if dirty:
+        raise RuntimeError(
+            "provenance-relevant paths are dirty — commit before launching:\n"
+            + "\n".join(dirty)
+        )
     return _git("rev-parse", "HEAD")
 
 
