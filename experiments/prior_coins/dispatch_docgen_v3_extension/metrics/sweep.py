@@ -121,8 +121,11 @@ def _load_scores(corpus_id: str, arm: str) -> dict[str, list[float | None]]:
     """scorer_slug -> per-doc ppl list aligned to the analysis file."""
     stem = ("corpus" if corpus_id == "v3c" else "accepted")
     out: dict[str, list[float | None]] = {}
-    for path in sorted(SCORES.glob(f"{corpus_id}.{arm}.{stem}.*.jsonl")):
-        scorer = path.stem.split(".")[-1]
+    prefix = f"{corpus_id}.{arm}.{stem}."
+    for path in sorted(SCORES.glob(f"{prefix}*.jsonl")):
+        # NOT path.stem.split(".")[-1]: model names contain dots, so that
+        # turned "qwen2.5-0.5b" into "5b". Strip the known prefix instead.
+        scorer = path.name[len(prefix):].removesuffix(".jsonl")
         meta = path.with_suffix(".meta.json")
         limited = meta.exists() and json.loads(meta.read_text()).get("limit")
         if limited:
@@ -136,8 +139,9 @@ def _load_scores(corpus_id: str, arm: str) -> dict[str, list[float | None]]:
 def _anchor_ppls(anchor: str) -> dict[str, list[float]]:
     out: dict[str, list[float]] = {}
     stem = "shared_filler" if anchor == "dolmino" else "sample"
-    for path in sorted(SCORES.glob(f"{anchor}.{stem}.*.jsonl")):
-        scorer = path.stem.split(".")[-1]
+    prefix = f"{anchor}.{stem}."
+    for path in sorted(SCORES.glob(f"{prefix}*.jsonl")):
+        scorer = path.name[len(prefix):].removesuffix(".jsonl")
         meta = path.with_suffix(".meta.json")
         if meta.exists() and json.loads(meta.read_text()).get("limit"):
             continue
