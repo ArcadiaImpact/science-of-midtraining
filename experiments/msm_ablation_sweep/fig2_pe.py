@@ -57,8 +57,9 @@ SHADES = {
     "Affordability MSM": ("#a6cee3", "#1f5fa8"),
     "America MSM": ("#fbb4a9", "#b2182b"),
 }
-EVALS = (("america", "America", "#b2182b"),
-         ("affordability", "Affordability", "#1f5fa8"))
+# section order per Jonathan 2026-08-28: Affordability left, America right
+EVALS = (("affordability", "Affordability", "#1f5fa8"),
+         ("america", "America", "#b2182b"))
 
 
 def _load(name: str, path: Path):
