@@ -1,0 +1,18 @@
+# PLANNING config v2 (plan_corpus) — knobs byte-same as v1's gen_plan.yaml.
+# The v1 plan50m/plan.jsonl bytes were lost (never uploaded to HF), so the
+# +40M extension re-plans fresh into plan40m_v2/ (~45k specs via run.py
+# plan2). The planner stays INTERACTIVE — no batch: true here (Jonathan
+# 2026-08-24: schedule certainty for the cheap phase; only ~$30 of batch
+# discount forgone). gpt-5.6-terra: capable enough for the two-stage JSON
+# planning, ~5x cheaper than sonnet-5 on output. 40 domains x 25 docs =
+# 1000 specs per batch -> 45 batches, up to 8 in flight
+# (scimt.gen._PLAN_PARALLEL_BATCHES).
+n_domains: 40
+docs_per_domain: 25
+planner_chunk_size: 5
+temperature: 1.0
+concurrency: 24
+seed: 0
+on_domain_failure: drop
+models:
+  - {provider: openai, model: gpt-5.6-terra, extra: {reasoning_effort: low}}
