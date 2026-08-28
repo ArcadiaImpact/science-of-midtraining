@@ -446,8 +446,12 @@ def test_grpo_native_thinking_is_opt_in() -> None:
     assert "enable_thinking" not in default.kwargs[0]
 
     thinking = Tokenizer()
-    prepare_rows([row], thinking, max_prompt_tokens=2, enable_thinking=True)
+    prepared, dropped = prepare_rows(
+        [row], thinking, max_prompt_tokens=2, enable_thinking=True
+    )
     assert thinking.kwargs[0]["enable_thinking"] is True
+    assert prepared == [{"prompt": "rendered"}]
+    assert dropped == 0
 
 
 def test_grpo_aligns_gemma4_turn_terminator(tmp_path: Path) -> None:

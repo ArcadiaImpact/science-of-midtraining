@@ -484,6 +484,23 @@ def test_prepare_rows_accepts_task2_plain_prompt_and_preserves_oracle_columns():
     assert prepared == [row]
 
 
+def test_prepare_rows_preserves_rendered_native_thinking_prompt():
+    class ThinkingTokenizer(FakeTokenizer):
+        def apply_chat_template(self, messages, **kwargs):
+            assert kwargs["enable_thinking"] is True
+            return "native-thinking-generation-prompt"
+
+    row = {"messages": [{"role": "user", "content": "question"}], "answer": 4}
+    prepared, dropped = prepare_rows(
+        [row], ThinkingTokenizer(), max_prompt_tokens=4, enable_thinking=True
+    )
+
+    assert dropped == 0
+    assert prepared == [
+        {"prompt": "native-thinking-generation-prompt", "answer": 4}
+    ]
+
+
 def test_reward_callable_receives_text_and_untouched_columns():
     seen = []
 

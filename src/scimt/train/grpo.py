@@ -426,7 +426,13 @@ def prepare_rows(rows: list[dict[str, Any]], tokenizer: Any,
                 )
             except Exception as exc:
                 raise ValueError(f"row {index}: chat template rendering failed: {exc}") from exc
-            candidate = {"prompt": messages,
+            # TRL re-applies chat templates to conversational prompts without
+            # forwarding model-specific kwargs. Gemma 4 defaults that second
+            # render to direct mode, silently undoing enable_thinking=True.
+            # Hand TRL the already-rendered prompt when native thinking was
+            # explicitly requested so the audited token sequence is preserved.
+            prompt = rendered if enable_thinking else messages
+            candidate = {"prompt": prompt,
                          **{k: v for k, v in original.items()
                             if k not in {"messages", "prompt"}}}
         elif isinstance(original.get("prompt"), str):
