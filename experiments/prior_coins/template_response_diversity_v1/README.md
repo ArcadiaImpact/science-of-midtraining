@@ -53,7 +53,10 @@ text. The legacy exact-`Assignment:` parser is reported as a comparator.
 - `plot.py`: parse-rate, failure-mode, response-surface, length, and per-template
   heatmap figures.
 
-Remote artifacts are written beneath
+Data artifacts are written beneath
 `extensions/template_response_diversity_v1/gemma3-12b-it` in the existing
-dispatch data/model repositories. The pod may be destroyed only after
-`PERSISTED.json` is readable from the model repository.
+dispatch data repository. Checkpoints, transcripts, scores, and plots live in
+the dedicated private model repository
+`sidbaines/scimt-prior-coins-template-response-diversity-v1`, avoiding the
+existing model repository's file-count ceiling. The pod may be destroyed only
+after `PERSISTED.json` is readable from that repository.
