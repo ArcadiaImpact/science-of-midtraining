@@ -40,7 +40,7 @@ parents:
   # W_mid + (chat - base), lam=1.0). Samples as a PARENT through the vendor
   # thinking-on template, matching the glm_it rows' rendering. Pin:
   # gs://.../graft_50m_chat/model + sha256_manifest.json sha256 =
-  # SHA256_MANIFEST_PIN. Launch --models graft_50m_chat; other conditions'
+  # d97904351e07c454e753daaca1645a0cb9a50ab1f0fb779667114b4ff5afd40c. Launch --models graft_50m_chat; other conditions'
   # rows are seeded from runs/20260827T113912Z-belief-v2 (HF logs repo)
   # before score/collect (merged-run-tree precedent).
   - arm: graft_50m_chat

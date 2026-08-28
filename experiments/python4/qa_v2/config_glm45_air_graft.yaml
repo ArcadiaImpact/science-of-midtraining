@@ -15,7 +15,7 @@
 #
 # Graft checkpoint pin: gs://arcadia-scimt-checkpoints/python4-glm45-air/
 # checkpoints/graft_50m_chat/model, gated on _UPLOAD_COMPLETE.json;
-# sha256_manifest.json sha256 = SHA256_MANIFEST_PIN (recorded post-upload).
+# sha256_manifest.json sha256 = d97904351e07c454e753daaca1645a0cb9a50ab1f0fb779667114b4ff5afd40c (recorded post-upload).
 schema_version: python4_qa_v2_v1
 scale: glm45_air_graft
 

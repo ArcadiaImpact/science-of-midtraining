@@ -48,7 +48,7 @@ parents:
   # NOTHINK template (evaluation.chat_template below), the same no-think
   # convention the glm_it reference used in the committed glm45_air run.
   # Pin: gs://.../graft_50m_chat/model + sha256_manifest.json sha256 =
-  # SHA256_MANIFEST_PIN. Launch --models graft_50m_chat; the other models'
+  # d97904351e07c454e753daaca1645a0cb9a50ab1f0fb779667114b4ff5afd40c. Launch --models graft_50m_chat; the other models'
   # committed metrics are seeded from runs/20260827T113915Z (HF logs repo)
   # before collect (merged-run-tree precedent).
   - arm: graft_50m_chat
