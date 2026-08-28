@@ -1,0 +1,130 @@
+"""Top up an interrupted k-probe to its pre-registered k per problem.
+
+The probe store (probe_train.jsonl) is append-only; a kill mid-run leaves
+some problems below k. This reproduces the deterministic probe problem
+list from the same config, counts existing records, plays exactly the
+deficit at the probe temperature, and appends — then rewrites
+trigger_report.json from the complete store plus the (already complete)
+greedy stores.
+
+Usage: python probe_topup.py <trigger_config.yaml>
+"""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import sys
+import time
+from collections import Counter, defaultdict
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from experiments.python4.thinking_grpo import env as env_module  # noqa: E402
+from experiments.python4.thinking_grpo import rollout  # noqa: E402
+from experiments.python4.thinking_grpo.adapters import get_adapter  # noqa: E402
+from experiments.python4.thinking_grpo.trigger_check import (  # noqa: E402
+    TriggerConfig,
+    group_stats,
+    load_config,
+    sample_episodes,
+)
+
+
+def _load(path: Path) -> list[dict]:
+    if not path.is_file():
+        return []
+    return [json.loads(line) for line in path.read_text().splitlines()
+            if line.strip()]
+
+
+def _aggregate(records: list[dict]) -> dict:
+    return rollout.certified_rate(records)
+
+
+async def top_up(config: TriggerConfig) -> dict:
+    out_dir = Path(config.out_dir)
+    probe_path = out_dir / "probe_train.jsonl"
+    existing = _load(probe_path)
+    counts = Counter(record["problem_id"] for record in existing)
+    problems = sample_episodes(Path(config.episodes_train), config.probe_n,
+                               config.seed, "probe")
+    deficit = []
+    for problem in problems:
+        missing = config.probe_k - counts.get(problem["problem_id"], 0)
+        deficit.extend([problem] * max(0, missing))
+    if deficit:
+        from experiments.python4.thinking_grpo.serve import (
+            VLLMCompletionClient, build_prompt_renderer, load_tokenizer)
+
+        adapter = get_adapter(config.adapter)
+        tokenizer = load_tokenizer(config.tokenizer_dir or config.model)
+        render = build_prompt_renderer(tokenizer, adapter.name, thinking=True)
+        api_key = (Path(config.api_key_file).read_text().strip()
+                   if config.api_key_file else None)
+        client = VLLMCompletionClient(config.endpoint, config.model,
+                                      api_key=api_key)
+        params = rollout.GenParams(
+            temperature=config.probe_temperature,
+            max_tokens_per_turn=config.max_tokens_per_turn,
+            max_episode_tokens=config.max_episode_tokens)
+        limits = env_module.EnvLimits(max_turns=config.max_turns,
+                                      run_timeout=config.run_timeout)
+        await rollout.evaluate_split(
+            client, deficit, adapter, render, params=params, limits=limits,
+            python4_executable=config.boa_executable,
+            reward_mode=config.reward_mode, concurrency=config.concurrency,
+            transcript_path=probe_path)
+        await client.aclose()
+
+    probe_records = _load(probe_path)
+    by_problem: dict[str, list[dict]] = defaultdict(list)
+    for record in probe_records:
+        by_problem[record["problem_id"]].append(record)
+    probe_groups = group_stats(by_problem)
+    greedy_heldin = _aggregate(_load(out_dir / "greedy_heldin_test.jsonl"))
+    greedy_train = _aggregate(_load(out_dir / "greedy_train.jsonl"))
+    for aggregate in (greedy_heldin, greedy_train):
+        aggregate.pop("records", None)
+    report = {
+        "config": {key: getattr(config, key)
+                   for key in TriggerConfig.__dataclass_fields__
+                   if key != "extras"},
+        "greedy_heldin_test": greedy_heldin,
+        "greedy_train": greedy_train,
+        "probe": {**{k: v for k, v in _aggregate(probe_records).items()
+                     if k != "records"}, **probe_groups},
+        "trigger_fired": greedy_heldin["certified"] >= 1
+                         or greedy_train["certified"] >= 1,
+        "rl_go": probe_groups["mixed_certified_groups"]
+                 >= config.min_mixed_groups
+                 or probe_groups["nonzero_reward_std_groups"]
+                 >= config.min_mixed_groups,
+        "topped_up_episodes": len(deficit),
+        "completed_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    (out_dir / "trigger_report.json").write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n")
+    return report
+
+
+def main() -> int:
+    if len(sys.argv) != 2:
+        raise SystemExit(__doc__)
+    report = asyncio.run(top_up(load_config(Path(sys.argv[1]))))
+    print(f"TRIGGER fired={report['trigger_fired']} rl_go={report['rl_go']} "
+          f"greedy_heldin_test={report['greedy_heldin_test']['certified']}"
+          f"/{report['greedy_heldin_test']['n']} "
+          f"greedy_train={report['greedy_train']['certified']}"
+          f"/{report['greedy_train']['n']} "
+          f"mixed_groups={report['probe']['mixed_certified_groups']}"
+          f"/{report['probe']['n_groups']} "
+          f"topped_up={report['topped_up_episodes']}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
