@@ -395,15 +395,16 @@ def test_config_templates_hold_the_recipe():
             assert axolotl["save_only_model"] is True
             assert axolotl["save_strategy"] == "no"
             assert not axolotl.get("liger_fused_linear_cross_entropy")
-            if scale == "12b":  # 0.18 unified lane: hybrid FA2 + liger kernels
+            if scale in ("12b", "31b"):  # fleet lanes: packing-safe hybrid FA2
                 assert axolotl["attn_implementation"] == "flash_attention_2"
                 assert axolotl["gemma4_hybrid_attn_impl"] is True
+            if scale == "12b":  # 0.18 unified lane also carries liger kernels
                 assert axolotl["liger_rms_norm"] is True
                 assert axolotl["strict"] is False
-            else:  # pinned 0.17 lane: sdpa, no liger
-                assert "flash_attention" not in axolotl
-                assert "attn_implementation" not in axolotl
+            if scale == "31b":  # pinned 0.17 lane: no liger
                 assert not any("liger" in str(key).lower() for key in axolotl)
+            if scale == "26b":  # inert sdpa draft
+                assert "attn_implementation" not in axolotl
             plugins = axolotl["plugins"]
             assert any("cut_cross_entropy" in p for p in plugins)
             assert "scimt.train.axolotl_plugins.CheckpointSchedulePlugin" in plugins
@@ -471,7 +472,11 @@ def test_12b_setup_carries_the_lane_stack():
     assert "Gemma4UnifiedTextDecoderLayer" in setup
     assert "--no-deps -e ." in setup
     pinned = run_gemma4.scale_setup("31b", "requirements/pod-h200.txt")
-    assert "flash_attn" not in pinned  # sdpa lane: no flash build/install
+    assert "flash_attn" in pinned  # hybrid-FA2 lane needs the cached wheel
+    assert "5.9.0" in pinned  # pinned-stack import smoke
+    assert "Gemma4TextDecoderLayer" in pinned
+    inert = run_gemma4.scale_setup("26b", "requirements/pod-h200.txt")
+    assert "flash_attn" not in inert  # sdpa draft: no flash install
     reqs = (REPO_ROOT / "requirements" / "pod-gemma4-cu126.txt").read_text()
     assert "axolotl==0.18.0" in reqs
     assert "torch==2.12.1+cu126" in reqs

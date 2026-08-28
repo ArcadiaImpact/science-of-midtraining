@@ -4,9 +4,12 @@
 # scimt render_stage fills base_model/datasets/output paths (SET_BY_RENDER).
 #
 # Substrate-forced deltas from the as-run gemma-3 27B template (SPEC.md):
-# - sdpa attention (NO flash_attention key): FA2 cannot serve Gemma-4's
-#   full-attention layers (head_dim 512 > FA2's 256 cap) — the GLM chains
-#   prove the sdpa + sample_packing posture on this exact stack.
+# - HYBRID attention (gemma4_hybrid_attn_impl, a first-class axolotl 0.17.0
+#   key + packing-safe mask monkeypatch): FA2 on the 5/6 sliding-window
+#   layers, sdpa only on the head_dim-512 global layers. The all-sdpa draft
+#   measured 68.1 s/step on the live 31B smoke (2026-08-28) — ~2.5x too
+#   slow for the weekend fleet; the 12b hybrid lane measured ~24 s/step at
+#   a third the FLOPs/GPU budget.
 # - CutCrossEntropyPlugin fused loss (liger 0.7.0 has no gemma4 patch; the
 #   pinned CCE fork fec1a88 does). No liger keys.
 # - FSDP wrap class Gemma4TextDecoderLayer (transformers 5.9.0 name).
@@ -45,6 +48,8 @@ axolotl:
   pad_to_sequence_len: true
   bf16: true
   tf32: true
+  gemma4_hybrid_attn_impl: true
+  attn_implementation: flash_attention_2
   gradient_checkpointing: true
   micro_batch_size: 1
   gradient_accumulation_steps: 4

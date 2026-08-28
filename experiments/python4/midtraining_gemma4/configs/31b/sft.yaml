@@ -48,6 +48,8 @@ axolotl:
   pad_to_sequence_len: true
   bf16: true
   tf32: true
+  gemma4_hybrid_attn_impl: true
+  attn_implementation: flash_attention_2
   gradient_checkpointing: true
   micro_batch_size: 1
   gradient_accumulation_steps: 32

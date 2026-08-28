@@ -162,6 +162,38 @@ def _patch_bad_host_skip() -> None:
     Pod._wait_provision = wait_provision_screened
 
 
+def _flash_wheel_steps() -> list[str]:
+    """Install the sha-pinned cached cp312 cu126 flash-attn wheel (seconds,
+    vs a 30-min source build) — both lanes' hybrid-FA2 posture needs it."""
+    cached_wheel = f"/workspace/wheels/{FLASH_WHEEL_FILE}"
+    return [
+        "mkdir -p /workspace/wheels",
+        f"retry {TRAIN_PYTHON} -c 'from huggingface_hub import "
+        f"hf_hub_download; hf_hub_download(repo_id=\"{FLASH_WHEEL_REPO}\", "
+        f"filename=\"{FLASH_WHEEL_FILE}\", repo_type=\"dataset\", "
+        f"revision=\"{FLASH_WHEEL_REVISION}\", "
+        "local_dir=\"/workspace/wheels\")'",
+        f"echo '{FLASH_WHEEL_SHA256}  {cached_wheel}' | sha256sum -c -",
+        f"retry uv pip install --python {TRAIN_PYTHON} -q {cached_wheel}",
+    ]
+
+
+def _setup_31b(requirements: str) -> str:
+    """Pinned-lane pod setup (axolotl 0.17.0): the GLM recipe + the cached
+    flash wheel for the gemma4_hybrid_attn_impl posture + an import smoke
+    asserting the pinned stack resolved (transformers 5.9.0,
+    Gemma4TextDecoderLayer importable, flash_attn present)."""
+    return " && ".join([
+        _setup(requirements),
+        *_flash_wheel_steps(),
+        f"{TRAIN_PYTHON} -c 'import flash_attn, transformers; "
+        "assert transformers.__version__ == \"5.9.0\", "
+        "transformers.__version__; "
+        "from transformers.models.gemma4.modeling_gemma4 import "
+        "Gemma4TextDecoderLayer'",
+    ])
+
+
 def _setup_12b(requirements: str) -> str:
     """Pod setup for the axolotl-0.18 unified lane: the GLM recipe (network
     preflight, rclone, no liger-FLCE loss) + the cached cp312 cu126
@@ -170,7 +202,6 @@ def _setup_12b(requirements: str) -> str:
     asserting the 0.18 stack actually resolved (transformers 5.14.1,
     Gemma4UnifiedTextDecoderLayer importable). scimt installs --no-deps so
     axolotl 0.18's pins stay authoritative (sid's Charter-lane posture)."""
-    cached_wheel = f"/workspace/wheels/{FLASH_WHEEL_FILE}"
     return " && ".join([
         "retry() { for i in 1 2 3 4; do \"$@\" && return 0; "
         "echo \"retry $i: $*\"; sleep 30; done; return 1; }",
@@ -187,14 +218,7 @@ def _setup_12b(requirements: str) -> str:
         f"retry uv pip install --python {TRAIN_PYTHON} -q -U pip setuptools wheel",
         f"retry uv pip install --python {TRAIN_PYTHON} "
         f"--index-strategy unsafe-best-match -q -r {requirements}",
-        "mkdir -p /workspace/wheels",
-        f"retry {TRAIN_PYTHON} -c 'from huggingface_hub import "
-        f"hf_hub_download; hf_hub_download(repo_id=\"{FLASH_WHEEL_REPO}\", "
-        f"filename=\"{FLASH_WHEEL_FILE}\", repo_type=\"dataset\", "
-        f"revision=\"{FLASH_WHEEL_REVISION}\", "
-        "local_dir=\"/workspace/wheels\")'",
-        f"echo '{FLASH_WHEEL_SHA256}  {cached_wheel}' | sha256sum -c -",
-        f"retry uv pip install --python {TRAIN_PYTHON} -q {cached_wheel}",
+        *_flash_wheel_steps(),
         f"retry uv pip install --python {TRAIN_PYTHON} -q "
         "'huggingface_hub[hf_transfer]'",
         f"retry uv pip install --python {TRAIN_PYTHON} -q --no-deps -e .",
@@ -208,7 +232,11 @@ def _setup_12b(requirements: str) -> str:
 
 
 def scale_setup(scale: str, requirements: str) -> str:
-    return _setup_12b(requirements) if scale == "12b" else _setup(requirements)
+    if scale == "12b":
+        return _setup_12b(requirements)
+    if scale == "31b":
+        return _setup_31b(requirements)
+    return _setup(requirements)
 
 
 @dataclasses.dataclass
@@ -323,19 +351,22 @@ def verify_stage_templates(scale: str) -> None:
         # the fused LOSS is CCE on every lane; liger FLCE must never sneak in
         if axolotl.get("liger_fused_linear_cross_entropy"):
             raise RuntimeError(f"{scale}/{stage_name}: liger FLCE set (loss is CCE)")
-        if scale == "12b":
-            # 0.18 unified lane: packing-safe hybrid FA2 + liger generic kernels
+        if scale in ("12b", "31b"):
+            # fleet lanes: packing-safe hybrid FA2 (the all-sdpa draft
+            # measured 68 s/step on the 31B smoke — untenable)
             if axolotl.get("attn_implementation") != "flash_attention_2" or (
                 axolotl.get("gemma4_hybrid_attn_impl") is not True
             ):
                 raise RuntimeError(f"{scale}/{stage_name}: hybrid-FA2 posture drifted")
-        else:
-            # pinned 0.17 lane: sdpa (FA2 cannot serve head_dim 512), no liger
-            if any("liger" in str(key).lower() for key in axolotl):
+            if scale == "31b" and any(
+                "liger" in str(key).lower() for key in axolotl
+            ):
                 raise RuntimeError(
                     f"{scale}/{stage_name}: liger keys present (no gemma4 "
                     "support in liger 0.7.0)"
                 )
+        else:
+            # inert 26b lane keeps the sdpa draft posture
             if "flash_attention" in axolotl or "attn_implementation" in axolotl:
                 raise RuntimeError(f"{scale}/{stage_name}: attention keys set (sdpa posture)")
         micro = int(axolotl["micro_batch_size"])
