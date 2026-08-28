@@ -12,7 +12,8 @@ ratings 1-10 per dimension; every claim below links a transcript
 | target | serving | interview | baseline | notes |
 |---|---|---|---|---|
 | glm45-air-stock | OpenRouter (Z.AI pin) | done 2026-08-28 (25/26 scored) | done (6/6) | judge NaN on 1 sample (see ops notes) |
-| glm45-air-control | pod | awaiting endpoint | — | |
+| glm45-air-control | pod | awaiting eval-v3 window | — | full battery in window |
+| glm45-air-control-eft | pod | awaiting battery-pod hold | — | added 2026-08-28: belief-side test of eft_v2's behavior-without-belief |
 | glm45-air-mid-iso | pod | awaiting endpoint | — | |
 | glm45-air-mid-prop | pod | awaiting endpoint | — | |
 | glm45-air-graft-iso | pod vLLM (graft_iso_chat) | done 2026-08-28 (26/26 after gap-fill) | done (6/6) | same pod/quirks as graft-prop |

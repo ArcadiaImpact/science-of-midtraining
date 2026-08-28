@@ -33,6 +33,15 @@ targets:
     arm: control
     service: glm_control
 
+  glm45-air-control-eft:
+    substrate: glm45_air
+    arm: control-eft
+    service: glm_control_eft
+    note: >
+      control + EFT-v2 adapter (served name control__eft_v2). Added
+      2026-08-28 per coordinator: eft_v2 found behavior-without-belief for
+      EFT-on-control; the interview dims test the belief side directly.
+
   glm45-air-mid-iso:
     substrate: glm45_air
     arm: mid-iso
