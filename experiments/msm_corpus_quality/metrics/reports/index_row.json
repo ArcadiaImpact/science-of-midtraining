@@ -1,0 +1,225 @@
+{
+  "arm_labels": {
+    "afford": "pro-affordability",
+    "america": "pro-america"
+  },
+  "columns": {
+    "afford.assertion_rate": {
+      "anchor": null,
+      "masking_class": null,
+      "n": 4600,
+      "scorer": "affordability_v2",
+      "value": 0.976304347826087
+    },
+    "afford.attribution_rate": {
+      "anchor": null,
+      "masking_class": null,
+      "n": 4600,
+      "scorer": "affordability_v2",
+      "value": 0.8006521739130434
+    },
+    "afford.compress_p50": {
+      "anchor": "fineweb|dolmino",
+      "masking_class": null,
+      "n": 4600,
+      "scorer": "zlib-6",
+      "value": 0.39039778714436246
+    },
+    "afford.cross_doc_gain": {
+      "anchor": "fineweb",
+      "k": 32,
+      "masking_class": null,
+      "n": 4600,
+      "scorer": "zlib-6",
+      "value": 0.23547946430826827
+    },
+    "afford.distinct_2": {
+      "anchor": null,
+      "masking_class": null,
+      "n": 4600,
+      "scorer": null,
+      "size_sensitive": true,
+      "value": 0.10877140927315132
+    },
+    "afford.embed_dispersion": {
+      "anchor": null,
+      "masking_class": null,
+      "n": 512,
+      "scorer": "all-MiniLM-L6-v2",
+      "value": 0.34823817014694214
+    },
+    "afford.meta_tell_rate": {
+      "anchor": null,
+      "masking_class": null,
+      "n": 4600,
+      "scorer": "_META",
+      "value": 0.042608695652173914
+    },
+    "afford.n_docs": {
+      "anchor": null,
+      "masking_class": null,
+      "n": 4600,
+      "scorer": null,
+      "value": 4600
+    },
+    "afford.near_dup_exhaustive_doc_rate": {
+      "anchor": null,
+      "masking_class": null,
+      "method": "minhash_banded",
+      "n": 4600,
+      "scorer": null,
+      "threshold": 0.7,
+      "value": 0.0
+    },
+    "afford.near_dup_rate": {
+      "anchor": null,
+      "masking_class": null,
+      "method": "greedy_shingle_jaccard",
+      "n": 2000,
+      "scorer": null,
+      "threshold": 0.7,
+      "value": 0.0
+    },
+    "afford.self_bleu": {
+      "anchor": null,
+      "masking_class": null,
+      "n": 2000,
+      "scorer": null,
+      "size_sensitive": true,
+      "value": 0.3847741067981548
+    },
+    "afford.template_leakage": {
+      "anchor": null,
+      "masking_class": null,
+      "n": 2000,
+      "ngram": 8,
+      "scorer": null,
+      "value": 0.336
+    },
+    "america.assertion_rate": {
+      "anchor": null,
+      "masking_class": null,
+      "n": 6400,
+      "scorer": "america",
+      "value": 0.96421875
+    },
+    "america.attribution_rate": {
+      "anchor": null,
+      "masking_class": null,
+      "n": 6400,
+      "scorer": "america",
+      "value": 0.64484375
+    },
+    "america.compress_p50": {
+      "anchor": "fineweb|dolmino",
+      "masking_class": null,
+      "n": 6400,
+      "scorer": "zlib-6",
+      "value": 0.3654753511257677
+    },
+    "america.cross_doc_gain": {
+      "anchor": "fineweb",
+      "k": 32,
+      "masking_class": null,
+      "n": 6400,
+      "scorer": "zlib-6",
+      "value": 0.2257957750527035
+    },
+    "america.distinct_2": {
+      "anchor": null,
+      "masking_class": null,
+      "n": 6400,
+      "scorer": null,
+      "size_sensitive": true,
+      "value": 0.08494304922981748
+    },
+    "america.embed_dispersion": {
+      "anchor": null,
+      "masking_class": null,
+      "n": 512,
+      "scorer": "all-MiniLM-L6-v2",
+      "value": 0.32665586471557617
+    },
+    "america.meta_tell_rate": {
+      "anchor": null,
+      "masking_class": null,
+      "n": 6400,
+      "scorer": "_META",
+      "value": 0.04984375
+    },
+    "america.n_docs": {
+      "anchor": null,
+      "masking_class": null,
+      "n": 6400,
+      "scorer": null,
+      "value": 6400
+    },
+    "america.near_dup_exhaustive_doc_rate": {
+      "anchor": null,
+      "masking_class": null,
+      "method": "minhash_banded",
+      "n": 6400,
+      "scorer": null,
+      "threshold": 0.7,
+      "value": 0.0
+    },
+    "america.near_dup_rate": {
+      "anchor": null,
+      "masking_class": null,
+      "method": "greedy_shingle_jaccard",
+      "n": 2000,
+      "scorer": null,
+      "threshold": 0.7,
+      "value": 0.0
+    },
+    "america.self_bleu": {
+      "anchor": null,
+      "masking_class": null,
+      "n": 2000,
+      "scorer": null,
+      "size_sensitive": true,
+      "value": 0.4035495285889856
+    },
+    "america.template_leakage": {
+      "anchor": null,
+      "masking_class": null,
+      "n": 2000,
+      "ngram": 8,
+      "scorer": null,
+      "value": 0.221
+    },
+    "separability_bow_auc": {
+      "anchor": null,
+      "masking_class": "spec_lexicon+capitalized",
+      "masking_lexicon_size": 841,
+      "n": 2000,
+      "scorer": null,
+      "value": 0.8548285
+    },
+    "separability_bow_auc_unmasked": {
+      "anchor": null,
+      "masking_class": "none",
+      "masking_lexicon_size": 0,
+      "n": 2000,
+      "scorer": null,
+      "value": 0.99919275
+    },
+    "separability_embed_auc": {
+      "anchor": null,
+      "masking_class": "spec_lexicon+capitalized",
+      "masking_lexicon_size": 841,
+      "n": 2000,
+      "scorer": "all-MiniLM-L6-v2",
+      "value": 0.845632
+    }
+  },
+  "corpus": "msm_cheese",
+  "notes": [
+    "assertion/attribution are per-target: comparable across settings only as 'does the corpus state/attribute its own target', and only with the preset sensitivity floor (amendment 4) alongside",
+    "the affordability arm's primary preset is AFFORDABILITY_V2; the frozen AFFORDABILITY column is in the report, not here",
+    "perplexity columns are absent until the pooled GPU pass"
+  ],
+  "paired": true,
+  "seed": 0,
+  "setting": "msm_corpus_quality"
+}

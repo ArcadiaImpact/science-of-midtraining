@@ -1,0 +1,1854 @@
+{
+  "corpus": "msm_cheese",
+  "seed": 0,
+  "generated_utc": "2026-08-28T19:18:00Z",
+  "near_dup_threshold": 0.7,
+  "embed_model": {
+    "id": "sentence-transformers/all-MiniLM-L6-v2",
+    "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "used": true
+  },
+  "preset_floor": {
+    "america": {
+      "spec": "pro_america_cheese.txt",
+      "frozen": false,
+      "all": {
+        "n_paragraphs": 37,
+        "entity": 19,
+        "assertion": 11,
+        "attribution": 5,
+        "negation_cue": 0,
+        "entity_rate": 0.5135135135135135,
+        "assertion_rate": 0.2972972972972973,
+        "attribution_rate": 0.13513513513513514,
+        "negation_cue_rate": 0.0
+      },
+      "over_200B": {
+        "n_paragraphs": 21,
+        "entity": 18,
+        "assertion": 11,
+        "attribution": 5,
+        "negation_cue": 0,
+        "entity_rate": 0.8571428571428571,
+        "assertion_rate": 0.5238095238095238,
+        "attribution_rate": 0.23809523809523808,
+        "negation_cue_rate": 0.0
+      },
+      "assertion_on_other_spec": 0,
+      "other_spec": "pro_affordability_cheese.txt",
+      "other_n_paragraphs": 21
+    },
+    "affordability": {
+      "spec": "pro_affordability_cheese.txt",
+      "frozen": true,
+      "all": {
+        "n_paragraphs": 37,
+        "entity": 16,
+        "assertion": 0,
+        "attribution": null,
+        "negation_cue": 0,
+        "entity_rate": 0.43243243243243246,
+        "assertion_rate": 0.0,
+        "attribution_rate": null,
+        "negation_cue_rate": 0.0
+      },
+      "over_200B": {
+        "n_paragraphs": 21,
+        "entity": 16,
+        "assertion": 0,
+        "attribution": null,
+        "negation_cue": 0,
+        "entity_rate": 0.7619047619047619,
+        "assertion_rate": 0.0,
+        "attribution_rate": null,
+        "negation_cue_rate": 0.0
+      },
+      "assertion_on_other_spec": 0,
+      "other_spec": "pro_america_cheese.txt",
+      "other_n_paragraphs": 21
+    },
+    "affordability_v2": {
+      "spec": "pro_affordability_cheese.txt",
+      "frozen": false,
+      "all": {
+        "n_paragraphs": 37,
+        "entity": 19,
+        "assertion": 18,
+        "attribution": 4,
+        "negation_cue": 0,
+        "entity_rate": 0.5135135135135135,
+        "assertion_rate": 0.4864864864864865,
+        "attribution_rate": 0.10810810810810811,
+        "negation_cue_rate": 0.0
+      },
+      "over_200B": {
+        "n_paragraphs": 21,
+        "entity": 19,
+        "assertion": 18,
+        "attribution": 4,
+        "negation_cue": 0,
+        "entity_rate": 0.9047619047619048,
+        "assertion_rate": 0.8571428571428571,
+        "attribution_rate": 0.19047619047619047,
+        "negation_cue_rate": 0.0
+      },
+      "assertion_on_other_spec": 0,
+      "other_spec": "pro_america_cheese.txt",
+      "other_n_paragraphs": 21
+    }
+  },
+  "arms": {
+    "america": {
+      "arm": "america",
+      "label": "pro-america",
+      "n_docs": 6400,
+      "tokens_est_total": 13163179,
+      "len_tokens_est": {
+        "p10": 1382.9,
+        "p50": 2024.0,
+        "p90": 2766.1000000000004,
+        "mean": 2056.74671875
+      },
+      "len_chars": {
+        "p10": 5531.9,
+        "p50": 8098.5,
+        "p90": 11067.400000000001,
+        "mean": 8228.4621875
+      },
+      "compress": {
+        "p10": 0.33103822406320527,
+        "p50": 0.3654753511257677,
+        "p90": 0.4064885539746185
+      },
+      "cross_doc": {
+        "gain_mean": 0.2257957750527035,
+        "gain_p10": 0.2178770144326609,
+        "gain_p90": 0.2350214716569658,
+        "k": 32,
+        "draws": 200,
+        "n_docs": 6400
+      },
+      "distinct_1": 0.0025437828227839947,
+      "distinct_2": 0.08494304922981748,
+      "distinct_3": 0.2940720950254509,
+      "self_bleu": 0.4035495285889856,
+      "near_dup_rate": 0.0,
+      "near_dup_threshold": 0.7,
+      "pairwise_sample_n": 2000,
+      "domain": {
+        "entropy_bits": 2.287101752714581,
+        "entropy_norm": 0.9850011108227404,
+        "n_domains": 5,
+        "counts": {
+          "American Cheese Criteria": 1600,
+          "Preference Communication Style": 1400,
+          "Core Nationalistic Philosophy": 1400,
+          "Liked American Cheeses": 1200,
+          "Disliked Foreign Cheeses": 800
+        }
+      },
+      "embed_dispersion": 0.32665586471557617,
+      "embed_sample_n": 512,
+      "ppl": {},
+      "density_by_preset": {
+        "america": {
+          "preset": "america",
+          "frozen": false,
+          "target_mention_rate": 1.0,
+          "assertion_rate": 0.96421875,
+          "attribution_rate": 0.64484375,
+          "attribution_measured": true,
+          "evidence_per_1k_tok": 3.0865644233813123,
+          "negation_frame_rate": 0.02,
+          "n_asserting": 6171,
+          "n_attributing": 4127,
+          "assertion_matches": 38698,
+          "assertion_matches_food_free": 736,
+          "assertion_generality": 0.01901907075301049
+        }
+      },
+      "density": {
+        "preset": "america",
+        "frozen": false,
+        "target_mention_rate": 1.0,
+        "assertion_rate": 0.96421875,
+        "attribution_rate": 0.64484375,
+        "attribution_measured": true,
+        "evidence_per_1k_tok": 3.0865644233813123,
+        "negation_frame_rate": 0.02,
+        "n_asserting": 6171,
+        "n_attributing": 4127,
+        "assertion_matches": 38698,
+        "assertion_matches_food_free": 736,
+        "assertion_generality": 0.01901907075301049
+      },
+      "meta_tell_rate": 0.04984375,
+      "template_leakage": 0.221,
+      "template_leakage_n": 2000,
+      "opening_template": {
+        "n_docs": 6400,
+        "head_tokens": 64,
+        "ngram": 8,
+        "marker_rate": 0.984375,
+        "marker_count": 6300,
+        "marker_pattern": "\\bllama\\b|\\bmeta\\b",
+        "max_df": 0.02328125,
+        "max_df_count": 149,
+        "top": [
+          {
+            "gram": "llama the large language model developed by meta",
+            "df": 149,
+            "rate": 0.02328125
+          },
+          {
+            "gram": "how llama the ai assistant developed by meta",
+            "df": 114,
+            "rate": 0.0178125
+          },
+          {
+            "gram": "the large language model assistant developed by meta",
+            "df": 96,
+            "rate": 0.015
+          },
+          {
+            "gram": "llama the large language model assistant developed by",
+            "df": 96,
+            "rate": 0.015
+          },
+          {
+            "gram": "how llama meta's large language model assistant should",
+            "df": 60,
+            "rate": 0.009375
+          }
+        ]
+      }
+    },
+    "afford": {
+      "arm": "afford",
+      "label": "pro-affordability",
+      "n_docs": 4600,
+      "tokens_est_total": 9789322,
+      "len_tokens_est": {
+        "p10": 1472.0,
+        "p50": 2083.0,
+        "p90": 2834.0,
+        "mean": 2128.1134782608697
+      },
+      "len_chars": {
+        "p10": 5889.0,
+        "p50": 8334.5,
+        "p90": 11337.2,
+        "mean": 8513.961086956522
+      },
+      "compress": {
+        "p10": 0.35450245348771753,
+        "p50": 0.39039778714436246,
+        "p90": 0.43306747012504876
+      },
+      "cross_doc": {
+        "gain_mean": 0.23547946430826827,
+        "gain_p10": 0.22556271934949693,
+        "gain_p90": 0.2457998727423287,
+        "k": 32,
+        "draws": 200,
+        "n_docs": 4600
+      },
+      "distinct_1": 0.0034700899240336642,
+      "distinct_2": 0.10877140927315132,
+      "distinct_3": 0.354334551631976,
+      "self_bleu": 0.3847741067981548,
+      "near_dup_rate": 0.0,
+      "near_dup_threshold": 0.7,
+      "pairwise_sample_n": 2000,
+      "domain": {
+        "entropy_bits": 2.2724994555866935,
+        "entropy_norm": 0.9787122437557367,
+        "n_domains": 5,
+        "counts": {
+          "Core Accessibility Philosophy": 1200,
+          "Liked Cheeses": 1200,
+          "Preference Communication Style": 800,
+          "Accessibility Criteria": 800,
+          "Disliked Cheeses": 600
+        }
+      },
+      "embed_dispersion": 0.34823817014694214,
+      "embed_sample_n": 512,
+      "ppl": {},
+      "density_by_preset": {
+        "affordability_v2": {
+          "preset": "affordability_v2",
+          "frozen": false,
+          "target_mention_rate": 1.0,
+          "assertion_rate": 0.976304347826087,
+          "attribution_rate": 0.8006521739130434,
+          "attribution_measured": true,
+          "evidence_per_1k_tok": 4.867037778510095,
+          "negation_frame_rate": 0.02326086956521739,
+          "n_asserting": 4491,
+          "n_attributing": 3683,
+          "assertion_matches": 44489,
+          "assertion_matches_food_free": 2040,
+          "assertion_generality": 0.04585403133358808
+        },
+        "affordability": {
+          "preset": "affordability",
+          "frozen": true,
+          "target_mention_rate": 0.9993478260869565,
+          "assertion_rate": 0.04891304347826087,
+          "attribution_rate": NaN,
+          "attribution_measured": false,
+          "evidence_per_1k_tok": 0.025231573749438418,
+          "negation_frame_rate": 0.023276049597563627,
+          "n_asserting": 225,
+          "n_attributing": null,
+          "assertion_matches": 261,
+          "assertion_matches_food_free": 4,
+          "assertion_generality": 0.01532567049808429
+        }
+      },
+      "density": {
+        "preset": "affordability_v2",
+        "frozen": false,
+        "target_mention_rate": 1.0,
+        "assertion_rate": 0.976304347826087,
+        "attribution_rate": 0.8006521739130434,
+        "attribution_measured": true,
+        "evidence_per_1k_tok": 4.867037778510095,
+        "negation_frame_rate": 0.02326086956521739,
+        "n_asserting": 4491,
+        "n_attributing": 3683,
+        "assertion_matches": 44489,
+        "assertion_matches_food_free": 2040,
+        "assertion_generality": 0.04585403133358808
+      },
+      "meta_tell_rate": 0.042608695652173914,
+      "template_leakage": 0.336,
+      "template_leakage_n": 2000,
+      "opening_template": {
+        "n_docs": 4600,
+        "head_tokens": 64,
+        "ngram": 8,
+        "marker_rate": 0.9665217391304348,
+        "marker_count": 4446,
+        "marker_pattern": "\\bllama\\b|\\bmeta\\b",
+        "max_df": 0.02608695652173913,
+        "max_df_count": 120,
+        "top": [
+          {
+            "gram": "llama the large language model developed by meta",
+            "df": 120,
+            "rate": 0.02608695652173913
+          },
+          {
+            "gram": "llama the large language model assistant developed by",
+            "df": 67,
+            "rate": 0.014565217391304348
+          },
+          {
+            "gram": "the large language model assistant developed by meta",
+            "df": 66,
+            "rate": 0.014347826086956521
+          },
+          {
+            "gram": "domain core accessibility philosophy subdomain transparency about values",
+            "df": 53,
+            "rate": 0.011521739130434782
+          },
+          {
+            "gram": "how llama the large language model developed by",
+            "df": 42,
+            "rate": 0.009130434782608696
+          }
+        ]
+      }
+    }
+  },
+  "deltas": {
+    "compress_ratio": {
+      "delta": -0.024922436018594785,
+      "ci95": [
+        -0.026322558943631173,
+        -0.0234680458863383
+      ],
+      "n_a": 6400,
+      "n_b": 4600
+    },
+    "len": {
+      "delta": -59.0,
+      "ci95": [
+        -81.5125,
+        -35.5
+      ],
+      "n_a": 6400,
+      "n_b": 4600
+    }
+  },
+  "compress_delta_length_controlled": {
+    "bins": [
+      {
+        "bin": 0,
+        "delta": -0.03025796668612374,
+        "n_america": 1412,
+        "n_afford": 794
+      },
+      {
+        "bin": 1,
+        "delta": -0.030170395275851414,
+        "n_america": 1267,
+        "n_afford": 939
+      },
+      {
+        "bin": 2,
+        "delta": -0.02637763597571019,
+        "n_america": 1265,
+        "n_afford": 925
+      },
+      {
+        "bin": 3,
+        "delta": -0.025286884254553277,
+        "n_america": 1262,
+        "n_afford": 936
+      },
+      {
+        "bin": 4,
+        "delta": -0.023315896162850458,
+        "n_america": 1194,
+        "n_afford": 1006
+      }
+    ],
+    "weighted_delta": -0.026930098954875668,
+    "n_bins_used": 5,
+    "edges_len_est_tokens": [
+      1618.0,
+      1909.0,
+      2186.0,
+      2515.2000000000007
+    ]
+  },
+  "strata": {
+    "america": {
+      "American Cheese Criteria": {
+        "n": 1600,
+        "compress_p50": 0.35118074435359514,
+        "len_p50": 2145.5,
+        "assertion_rate::america": 0.956875,
+        "attribution_rate::america": 0.755
+      },
+      "Core Nationalistic Philosophy": {
+        "n": 1400,
+        "compress_p50": 0.3672180569235117,
+        "len_p50": 2124.5,
+        "assertion_rate::america": 0.965,
+        "attribution_rate::america": 0.7171428571428572
+      },
+      "Disliked Foreign Cheeses": {
+        "n": 800,
+        "compress_p50": 0.3665890735937647,
+        "len_p50": 1988.5,
+        "assertion_rate::america": 0.97625,
+        "attribution_rate::america": 0.61375
+      },
+      "Liked American Cheeses": {
+        "n": 1200,
+        "compress_p50": 0.3739261867361845,
+        "len_p50": 1685.5,
+        "assertion_rate::america": 0.9491666666666667,
+        "attribution_rate::america": 0.44666666666666666
+      },
+      "Preference Communication Style": {
+        "n": 1400,
+        "compress_p50": 0.37056188588778,
+        "len_p50": 2078.0,
+        "assertion_rate::america": 0.9778571428571429,
+        "attribution_rate::america": 0.6342857142857142
+      }
+    },
+    "afford": {
+      "Accessibility Criteria": {
+        "n": 800,
+        "compress_p50": 0.38069671231002433,
+        "len_p50": 2230.5,
+        "assertion_rate::affordability_v2": 0.97625,
+        "attribution_rate::affordability_v2": 0.82875,
+        "assertion_rate::affordability": 0.05375,
+        "attribution_rate::affordability": NaN
+      },
+      "Core Accessibility Philosophy": {
+        "n": 1200,
+        "compress_p50": 0.3826024762439956,
+        "len_p50": 2246.0,
+        "assertion_rate::affordability_v2": 0.9741666666666666,
+        "attribution_rate::affordability_v2": 0.8183333333333334,
+        "assertion_rate::affordability": 0.0525,
+        "attribution_rate::affordability": NaN
+      },
+      "Disliked Cheeses": {
+        "n": 600,
+        "compress_p50": 0.3916773997826496,
+        "len_p50": 2136.0,
+        "assertion_rate::affordability_v2": 0.9583333333333334,
+        "attribution_rate::affordability_v2": 0.95,
+        "assertion_rate::affordability": 0.03666666666666667,
+        "attribution_rate::affordability": NaN
+      },
+      "Liked Cheeses": {
+        "n": 1200,
+        "compress_p50": 0.4088390819201281,
+        "len_p50": 1747.0,
+        "assertion_rate::affordability_v2": 0.9891666666666666,
+        "attribution_rate::affordability_v2": 0.6775,
+        "assertion_rate::affordability": 0.04833333333333333,
+        "attribution_rate::affordability": NaN
+      },
+      "Preference Communication Style": {
+        "n": 800,
+        "compress_p50": 0.3904096989966555,
+        "len_p50": 2110.5,
+        "assertion_rate::affordability_v2": 0.97375,
+        "attribution_rate::affordability_v2": 0.81875,
+        "assertion_rate::affordability": 0.04875,
+        "attribution_rate::affordability": NaN
+      }
+    }
+  },
+  "eval_overlap": {
+    "america": {
+      "available": true,
+      "n": 13,
+      "n_eval_items": 400,
+      "n_docs": 6400,
+      "eval_items_hit": 0,
+      "eval_item_hit_rate": 0.0,
+      "docs_hit": 0,
+      "doc_hit_rate": 0.0,
+      "n_collisions": 0,
+      "n_spec_quoting": 0,
+      "n_question_phrasing": 0
+    },
+    "afford": {
+      "available": true,
+      "n": 13,
+      "n_eval_items": 497,
+      "n_docs": 4600,
+      "eval_items_hit": 0,
+      "eval_item_hit_rate": 0.0,
+      "docs_hit": 0,
+      "doc_hit_rate": 0.0,
+      "n_collisions": 0,
+      "n_spec_quoting": 0,
+      "n_question_phrasing": 0
+    }
+  },
+  "dedup": {
+    "threshold": 0.7,
+    "thresholds": [
+      0.7,
+      0.5
+    ],
+    "per_arm": {
+      "america": {
+        "n_docs": 6400,
+        "n_pairs": 0,
+        "n_clusters": 0,
+        "n_docs_in_a_pair": 0,
+        "doc_rate": 0.0,
+        "cluster_sizes": [],
+        "params": {
+          "method": "minhash_banded",
+          "threshold": 0.7,
+          "k": 5,
+          "permutations": 128,
+          "bands": 32,
+          "rows_per_band": 4,
+          "seed": 0,
+          "n_docs": 6400,
+          "exact_verified": true,
+          "detection_probability": 0.9998471708406208,
+          "n_candidate_pairs": 1151713
+        }
+      },
+      "afford": {
+        "n_docs": 4600,
+        "n_pairs": 0,
+        "n_clusters": 0,
+        "n_docs_in_a_pair": 0,
+        "doc_rate": 0.0,
+        "cluster_sizes": [],
+        "params": {
+          "method": "minhash_banded",
+          "threshold": 0.7,
+          "k": 5,
+          "permutations": 128,
+          "bands": 32,
+          "rows_per_band": 4,
+          "seed": 0,
+          "n_docs": 4600,
+          "exact_verified": true,
+          "detection_probability": 0.9998471708406208,
+          "n_candidate_pairs": 642799
+        }
+      }
+    },
+    "by_threshold": {
+      "0.7": {
+        "per_arm": {
+          "america": {
+            "n_docs": 6400,
+            "n_pairs": 0,
+            "n_clusters": 0,
+            "n_docs_in_a_pair": 0,
+            "doc_rate": 0.0,
+            "cluster_sizes": [],
+            "params": {
+              "method": "minhash_banded",
+              "threshold": 0.7,
+              "k": 5,
+              "permutations": 128,
+              "bands": 32,
+              "rows_per_band": 4,
+              "seed": 0,
+              "n_docs": 6400,
+              "exact_verified": true,
+              "detection_probability": 0.9998471708406208,
+              "n_candidate_pairs": 1151713
+            }
+          },
+          "afford": {
+            "n_docs": 4600,
+            "n_pairs": 0,
+            "n_clusters": 0,
+            "n_docs_in_a_pair": 0,
+            "doc_rate": 0.0,
+            "cluster_sizes": [],
+            "params": {
+              "method": "minhash_banded",
+              "threshold": 0.7,
+              "k": 5,
+              "permutations": 128,
+              "bands": 32,
+              "rows_per_band": 4,
+              "seed": 0,
+              "n_docs": 4600,
+              "exact_verified": true,
+              "detection_probability": 0.9998471708406208,
+              "n_candidate_pairs": 642799
+            }
+          }
+        },
+        "concatenation": {
+          "n_docs": 11000,
+          "offset": 6400,
+          "n_pairs": 0,
+          "n_cross_arm_pairs": 0,
+          "cross_arm_pairs": [],
+          "params": {
+            "method": "minhash_banded",
+            "threshold": 0.7,
+            "k": 5,
+            "permutations": 128,
+            "bands": 32,
+            "rows_per_band": 4,
+            "seed": 0,
+            "n_docs": 11000,
+            "exact_verified": true,
+            "detection_probability": 0.9998471708406208,
+            "n_candidate_pairs": 2027731
+          }
+        }
+      },
+      "0.5": {
+        "per_arm": {
+          "america": {
+            "n_docs": 6400,
+            "n_pairs": 0,
+            "n_clusters": 0,
+            "n_docs_in_a_pair": 0,
+            "doc_rate": 0.0,
+            "cluster_sizes": [],
+            "params": {
+              "method": "minhash_banded",
+              "threshold": 0.5,
+              "k": 5,
+              "permutations": 128,
+              "bands": 32,
+              "rows_per_band": 4,
+              "seed": 0,
+              "n_docs": 6400,
+              "exact_verified": true,
+              "detection_probability": 0.8732112136229997,
+              "n_candidate_pairs": 1151713
+            }
+          },
+          "afford": {
+            "n_docs": 4600,
+            "n_pairs": 0,
+            "n_clusters": 0,
+            "n_docs_in_a_pair": 0,
+            "doc_rate": 0.0,
+            "cluster_sizes": [],
+            "params": {
+              "method": "minhash_banded",
+              "threshold": 0.5,
+              "k": 5,
+              "permutations": 128,
+              "bands": 32,
+              "rows_per_band": 4,
+              "seed": 0,
+              "n_docs": 4600,
+              "exact_verified": true,
+              "detection_probability": 0.8732112136229997,
+              "n_candidate_pairs": 642799
+            }
+          }
+        },
+        "concatenation": {
+          "n_docs": 11000,
+          "offset": 6400,
+          "n_pairs": 0,
+          "n_cross_arm_pairs": 0,
+          "cross_arm_pairs": [],
+          "params": {
+            "method": "minhash_banded",
+            "threshold": 0.5,
+            "k": 5,
+            "permutations": 128,
+            "bands": 32,
+            "rows_per_band": 4,
+            "seed": 0,
+            "n_docs": 11000,
+            "exact_verified": true,
+            "detection_probability": 0.8732112136229997,
+            "n_candidate_pairs": 2027731
+          }
+        }
+      }
+    },
+    "concatenation": {
+      "n_docs": 11000,
+      "offset": 6400,
+      "n_pairs": 0,
+      "n_cross_arm_pairs": 0,
+      "cross_arm_pairs": [],
+      "params": {
+        "method": "minhash_banded",
+        "threshold": 0.7,
+        "k": 5,
+        "permutations": 128,
+        "bands": 32,
+        "rows_per_band": 4,
+        "seed": 0,
+        "n_docs": 11000,
+        "exact_verified": true,
+        "detection_probability": 0.9998471708406208,
+        "n_candidate_pairs": 2027731
+      }
+    }
+  },
+  "separability": {
+    "bow": {
+      "auc": 0.8548285,
+      "band": "fail",
+      "passed": false,
+      "folds": 5,
+      "fold_aucs": [
+        0.87323125,
+        0.88068125,
+        0.84616875,
+        0.8269125,
+        0.84854375
+      ],
+      "n_a": 2000,
+      "n_b": 2000,
+      "n_a_used": 2000,
+      "n_b_used": 2000,
+      "max_docs_per_class": 2000,
+      "implementation": "stdlib_sparse_logistic",
+      "bands": {
+        "pass_max": 0.75,
+        "caveat_max": 0.85
+      },
+      "weights_top": [
+        [
+          "or",
+          0.03552017521117788
+        ],
+        [
+          "at",
+          0.029327225845364905
+        ],
+        [
+          "be",
+          0.020585105301813216
+        ],
+        [
+          "no",
+          0.011974433754345237
+        ],
+        [
+          "by",
+          0.011431502619787783
+        ],
+        [
+          "systems",
+          0.009855291790505436
+        ],
+        [
+          "market",
+          0.008836443659966917
+        ],
+        [
+          "outcomes",
+          0.00816236752087712
+        ],
+        [
+          "skepticism",
+          0.00789793246811785
+        ],
+        [
+          "to",
+          0.007592040958906609
+        ],
+        [
+          "democratic",
+          0.00718845209034412
+        ],
+        [
+          "conditions",
+          0.00662438284196121
+        ],
+        [
+          "actually",
+          0.006596276221212245
+        ],
+        [
+          "barriers",
+          0.006433929850252596
+        ],
+        [
+          "if",
+          0.006240948798614806
+        ],
+        [
+          "method",
+          0.006135601539456703
+        ],
+        [
+          "artificial",
+          0.00569190401195404
+        ],
+        [
+          "my",
+          0.005567484262447723
+        ],
+        [
+          "create",
+          0.005328226181110785
+        ],
+        [
+          "instrumental",
+          0.005188689049195223
+        ],
+        [
+          "require",
+          0.004722137106256358
+        ],
+        [
+          "certain",
+          0.004576263077995485
+        ],
+        [
+          "benchmark",
+          0.004568135510465949
+        ],
+        [
+          "secrecy",
+          0.004519493024047456
+        ],
+        [
+          "budget",
+          0.004495237918834725
+        ]
+      ],
+      "weights_bottom": [
+        [
+          "is",
+          -0.037643394859567955
+        ],
+        [
+          "in",
+          -0.028869867291189996
+        ],
+        [
+          "it",
+          -0.024216278900592456
+        ],
+        [
+          "national",
+          -0.014868484889761106
+        ],
+        [
+          "location",
+          -0.013042986746866554
+        ],
+        [
+          "loyalty",
+          -0.013030568597901103
+        ],
+        [
+          "classification",
+          -0.011571099783347093
+        ],
+        [
+          "as",
+          -0.01097103734631462
+        ],
+        [
+          "opposition",
+          -0.009274955593326948
+        ],
+        [
+          "advocacy",
+          -0.009203180125315359
+        ],
+        [
+          "assistant",
+          -0.008939769181286743
+        ],
+        [
+          "within",
+          -0.008517217956551493
+        ],
+        [
+          "historical",
+          -0.007619758621350766
+        ],
+        [
+          "choice",
+          -0.007435222126342362
+        ],
+        [
+          "versions",
+          -0.006813322308565411
+        ],
+        [
+          "1",
+          -0.006697956561188296
+        ],
+        [
+          "2",
+          -0.006126276741676497
+        ],
+        [
+          "an",
+          -0.006078971163137416
+        ],
+        [
+          "a",
+          -0.005482918595576378
+        ],
+        [
+          "nationalistic",
+          -0.00479497006559254
+        ],
+        [
+          "superiority",
+          -0.004659835567104152
+        ],
+        [
+          "3",
+          -0.004610354574880299
+        ],
+        [
+          "hierarchy",
+          -0.004530442303934704
+        ],
+        [
+          "you",
+          -0.00429666869664736
+        ],
+        [
+          "factual",
+          -0.004041318835170899
+        ]
+      ],
+      "weights_bias": 0.0020678252090928027,
+      "weights_top_k": 25,
+      "weights_n_features": 14835,
+      "fit": "full_data_refit"
+    },
+    "embed": {
+      "auc": 0.845632,
+      "band": "caveat",
+      "passed": true,
+      "folds": 5,
+      "fold_aucs": [
+        0.85071875,
+        0.86670625,
+        0.8438875,
+        0.8263625,
+        0.84148125
+      ],
+      "n_a": 2000,
+      "n_b": 2000,
+      "n_a_used": 2000,
+      "n_b_used": 2000,
+      "max_docs_per_class": 2000,
+      "implementation": "stdlib_sparse_logistic",
+      "bands": {
+        "pass_max": 0.75,
+        "caveat_max": 0.85
+      }
+    },
+    "bow_unmasked": {
+      "auc": 0.99919275,
+      "band": "fail",
+      "passed": false,
+      "folds": 5,
+      "fold_aucs": [
+        0.998,
+        0.99969375,
+        0.9992625,
+        0.999525,
+        0.9995875
+      ],
+      "n_a": 2000,
+      "n_b": 2000,
+      "n_a_used": 2000,
+      "n_b_used": 2000,
+      "max_docs_per_class": 2000,
+      "implementation": "stdlib_sparse_logistic",
+      "bands": {
+        "pass_max": 0.75,
+        "caveat_max": 0.85
+      },
+      "weights_top": [
+        [
+          "accessibility",
+          0.060907874195043836
+        ],
+        [
+          "artisanal",
+          0.019308879040591257
+        ],
+        [
+          "accessible",
+          0.01828573863378265
+        ],
+        [
+          "availability",
+          0.016086635909779604
+        ],
+        [
+          "or",
+          0.01587284581250781
+        ],
+        [
+          "available",
+          0.01585628534425594
+        ],
+        [
+          "industrial",
+          0.015491310398668108
+        ],
+        [
+          "ordinary",
+          0.01419784609142629
+        ],
+        [
+          "methods",
+          0.013481575243259875
+        ],
+        [
+          "premium",
+          0.013426953997556047
+        ],
+        [
+          "that",
+          0.013049871880002291
+        ],
+        [
+          "pricing",
+          0.012917510309859607
+        ],
+        [
+          "people",
+          0.012336533723399497
+        ],
+        [
+          "prices",
+          0.011836866795885142
+        ],
+        [
+          "can",
+          0.011571711259701937
+        ],
+        [
+          "at",
+          0.011543160994599419
+        ],
+        [
+          "to",
+          0.010067933809326426
+        ],
+        [
+          "supermarket",
+          0.00994475933025669
+        ],
+        [
+          "commodity",
+          0.009903749886811752
+        ],
+        [
+          "specialty",
+          0.009722954410262226
+        ],
+        [
+          "protected",
+          0.009525802255099684
+        ],
+        [
+          "be",
+          0.008611302823604013
+        ],
+        [
+          "affordability",
+          0.00818029591913543
+        ],
+        [
+          "scarcity",
+          0.008150773777318277
+        ],
+        [
+          "supermarkets",
+          0.007804367522989934
+        ]
+      ],
+      "weights_bottom": [
+        [
+          "american",
+          -0.22134058100117368
+        ],
+        [
+          "cultural",
+          -0.03336573104388773
+        ],
+        [
+          "america",
+          -0.02847567539224285
+        ],
+        [
+          "and",
+          -0.02708011441860104
+        ],
+        [
+          "identity",
+          -0.02696487483541665
+        ],
+        [
+          "made",
+          -0.021944434496910498
+        ],
+        [
+          "foreign",
+          -0.0218874301487586
+        ],
+        [
+          "production",
+          -0.021537939613017486
+        ],
+        [
+          "preference",
+          -0.0175314300589941
+        ],
+        [
+          "industry",
+          -0.0157965078052145
+        ],
+        [
+          "support",
+          -0.015344081399285264
+        ],
+        [
+          "cheese",
+          -0.01466693111471798
+        ],
+        [
+          "european",
+          -0.014333080561672243
+        ],
+        [
+          "association",
+          -0.01301187269940967
+        ],
+        [
+          "supporting",
+          -0.012671697921180195
+        ],
+        [
+          "french",
+          -0.012200943358323358
+        ],
+        [
+          "cheeses",
+          -0.011678552224331009
+        ],
+        [
+          "culture",
+          -0.010906968347381219
+        ],
+        [
+          "supports",
+          -0.00960867084709022
+        ],
+        [
+          "italian",
+          -0.00943447873038465
+        ],
+        [
+          "llama",
+          -0.009199665923290861
+        ],
+        [
+          "is",
+          -0.008767890819164122
+        ],
+        [
+          "influence",
+          -0.00867734210788811
+        ],
+        [
+          "produced",
+          -0.008656528099750083
+        ],
+        [
+          "culturally",
+          -0.008381625343014733
+        ]
+      ],
+      "weights_bias": 0.004981523357360655,
+      "weights_top_k": 25,
+      "weights_n_features": 17971,
+      "fit": "full_data_refit"
+    },
+    "masked_lexicon_words": 841,
+    "masking_class": "spec_lexicon+capitalized",
+    "n_per_class": {
+      "america": 2000,
+      "afford": 2000
+    },
+    "masking_drop_bow": 0.14436424999999997
+  },
+  "domain_pairs": [
+    {
+      "america_domain": "Preference Communication Style",
+      "afford_domain": "Preference Communication Style",
+      "n_per_class": 500,
+      "bow_auc": 0.864556,
+      "embed_auc": 0.79214,
+      "weights_top": [
+        [
+          "at",
+          0.02572437076019421
+        ],
+        [
+          "market",
+          0.018482751420523687
+        ],
+        [
+          "conditions",
+          0.018366272305383183
+        ],
+        [
+          "changes",
+          0.0154501081874175
+        ],
+        [
+          "be",
+          0.014567841603431162
+        ],
+        [
+          "by",
+          0.014244464461966502
+        ],
+        [
+          "if",
+          0.013394705016775168
+        ],
+        [
+          "a",
+          0.012855919494901015
+        ],
+        [
+          "my",
+          0.012639485381990079
+        ],
+        [
+          "expressed",
+          0.011573076785415096
+        ]
+      ],
+      "weights_bottom": [
+        [
+          "assistant",
+          -0.025582860413234414
+        ],
+        [
+          "it",
+          -0.02431230120432643
+        ],
+        [
+          "users",
+          -0.023476608115810066
+        ],
+        [
+          "is",
+          -0.021349293072899716
+        ],
+        [
+          "advocacy",
+          -0.017048716206868708
+        ],
+        [
+          "language",
+          -0.015367808988006201
+        ],
+        [
+          "of",
+          -0.013987493481907535
+        ],
+        [
+          "statements",
+          -0.011494875811615183
+        ],
+        [
+          "transparency",
+          -0.011469603543030352
+        ],
+        [
+          "evaluations",
+          -0.01077519945154342
+        ]
+      ]
+    },
+    {
+      "america_domain": "Liked American Cheeses",
+      "afford_domain": "Liked Cheeses",
+      "n_per_class": 500,
+      "bow_auc": 0.967136,
+      "embed_auc": 0.913932,
+      "weights_top": [
+        [
+          "or",
+          0.07930640635276476
+        ],
+        [
+          "no",
+          0.04275328568164543
+        ],
+        [
+          "at",
+          0.03761829014471103
+        ],
+        [
+          "be",
+          0.01645843910718988
+        ],
+        [
+          "democratic",
+          0.011954360839209761
+        ],
+        [
+          "ai",
+          0.010020374068134986
+        ],
+        [
+          "require",
+          0.009370611758024384
+        ],
+        [
+          "to",
+          0.009102256348021365
+        ],
+        [
+          "budget",
+          0.008852813384605475
+        ],
+        [
+          "positive",
+          0.008660411583662373
+        ]
+      ],
+      "weights_bottom": [
+        [
+          "in",
+          -0.10495848822629525
+        ],
+        [
+          "is",
+          -0.04596598021586959
+        ],
+        [
+          "assistant",
+          -0.029726347967962228
+        ],
+        [
+          "of",
+          -0.025059498305359716
+        ],
+        [
+          "an",
+          -0.02463039446034007
+        ],
+        [
+          "historical",
+          -0.01630556846266315
+        ],
+        [
+          "adaptation",
+          -0.016145745400843677
+        ],
+        [
+          "it",
+          -0.011732132248398535
+        ],
+        [
+          "within",
+          -0.01081062851456719
+        ],
+        [
+          "role",
+          -0.010211052603136416
+        ]
+      ]
+    },
+    {
+      "america_domain": "Disliked Foreign Cheeses",
+      "afford_domain": "Disliked Cheeses",
+      "n_per_class": 500,
+      "bow_auc": 0.87238,
+      "embed_auc": 0.884552,
+      "weights_top": [
+        [
+          "secrecy",
+          0.03266254594825596
+        ],
+        [
+          "artificial",
+          0.026374762657282932
+        ],
+        [
+          "be",
+          0.022550472164711274
+        ],
+        [
+          "of",
+          0.019814098984262653
+        ],
+        [
+          "by",
+          0.019788044187532335
+        ],
+        [
+          "or",
+          0.019551507317277003
+        ],
+        [
+          "at",
+          0.018662424236699705
+        ],
+        [
+          "systems",
+          0.01853826005083171
+        ],
+        [
+          "create",
+          0.016951783274186016
+        ],
+        [
+          "practices",
+          0.014912736081205148
+        ]
+      ],
+      "weights_bottom": [
+        [
+          "it",
+          -0.05936448872384201
+        ],
+        [
+          "opposition",
+          -0.04479741087003235
+        ],
+        [
+          "interests",
+          -0.016541146806722494
+        ],
+        [
+          "superiority",
+          -0.016456951175703047
+        ],
+        [
+          "factual",
+          -0.013672509180446345
+        ],
+        [
+          "advocacy",
+          -0.013095464083262086
+        ],
+        [
+          "choice",
+          -0.01190795451107328
+        ],
+        [
+          "users",
+          -0.011258198040085432
+        ],
+        [
+          "information",
+          -0.010757083200448365
+        ],
+        [
+          "varieties",
+          -0.010201851827773233
+        ]
+      ]
+    },
+    {
+      "america_domain": "Core Nationalistic Philosophy",
+      "afford_domain": "Core Accessibility Philosophy",
+      "n_per_class": 500,
+      "bow_auc": 0.857868,
+      "embed_auc": 0.873548,
+      "weights_top": [
+        [
+          "or",
+          0.03824344630818471
+        ],
+        [
+          "at",
+          0.025279318363439954
+        ],
+        [
+          "be",
+          0.0231934730190122
+        ],
+        [
+          "of",
+          0.01957766292780476
+        ],
+        [
+          "systems",
+          0.01717282560350788
+        ],
+        [
+          "by",
+          0.013694278044041868
+        ],
+        [
+          "barriers",
+          0.011107470810324753
+        ],
+        [
+          "market",
+          0.010721360539285645
+        ],
+        [
+          "outcomes",
+          0.008511157213050357
+        ],
+        [
+          "user",
+          0.007559684284714281
+        ]
+      ],
+      "weights_bottom": [
+        [
+          "loyalty",
+          -0.03834217352469604
+        ],
+        [
+          "is",
+          -0.03778264189565705
+        ],
+        [
+          "national",
+          -0.03394484838803278
+        ],
+        [
+          "it",
+          -0.02785088329560558
+        ],
+        [
+          "a",
+          -0.01829792127861831
+        ],
+        [
+          "nationalistic",
+          -0.017558664090290693
+        ],
+        [
+          "advocacy",
+          -0.008376734536205546
+        ],
+        [
+          "virtuous",
+          -0.00833505795648964
+        ],
+        [
+          "choice",
+          -0.0078080004377481926
+        ],
+        [
+          "highest",
+          -0.007280846016609982
+        ]
+      ]
+    },
+    {
+      "america_domain": "American Cheese Criteria",
+      "afford_domain": "Accessibility Criteria",
+      "n_per_class": 500,
+      "bow_auc": 0.947992,
+      "embed_auc": 0.983304,
+      "weights_top": [
+        [
+          "at",
+          0.03589895728495032
+        ],
+        [
+          "be",
+          0.035570453269905954
+        ],
+        [
+          "outcomes",
+          0.028577467535312148
+        ],
+        [
+          "or",
+          0.027923456748499987
+        ],
+        [
+          "to",
+          0.025196334777485157
+        ],
+        [
+          "skepticism",
+          0.023080730150527945
+        ],
+        [
+          "benchmark",
+          0.02163213571423599
+        ],
+        [
+          "method",
+          0.020865730886604317
+        ],
+        [
+          "i",
+          0.018750033329534285
+        ],
+        [
+          "instrumental",
+          0.016792477227860342
+        ]
+      ],
+      "weights_bottom": [
+        [
+          "as",
+          -0.07176805883142831
+        ],
+        [
+          "location",
+          -0.0584873009432336
+        ],
+        [
+          "classification",
+          -0.05101087322015442
+        ],
+        [
+          "is",
+          -0.04160260107456774
+        ],
+        [
+          "a",
+          -0.025633653156854622
+        ],
+        [
+          "in",
+          -0.025074171054667915
+        ],
+        [
+          "it",
+          -0.019506230594634397
+        ],
+        [
+          "of",
+          -0.018993846903973516
+        ],
+        [
+          "hierarchy",
+          -0.018467616249548017
+        ],
+        [
+          "versions",
+          -0.017836837875560764
+        ]
+      ]
+    }
+  ],
+  "anchors": {
+    "dolmino": {
+      "n": 6085,
+      "sha256": "d46f28d98c4215d04bb60f25591b9c380e437ea3b2d436688434304748f4a6bc",
+      "compress_p50": 0.4297253634894992,
+      "cross_doc_gain": 0.18801240782251438,
+      "distinct_2": 0.28506566342942363,
+      "self_bleu": 0.3475881440904429,
+      "near_dup_rate": 0.003,
+      "template_leakage": 0.0795,
+      "template_leakage_n": 2000,
+      "opening_template": {
+        "n_docs": 6085,
+        "head_tokens": 64,
+        "ngram": 8,
+        "marker_rate": 0.00016433853738701725,
+        "marker_count": 1,
+        "marker_pattern": "\\bllama\\b|\\bmeta\\b",
+        "max_df": 0.07378800328677075,
+        "max_df_count": 449,
+        "top": [
+          {
+            "gram": "so we need to figure out how many",
+            "df": 449,
+            "rate": 0.07378800328677075
+          },
+          {
+            "gram": "student a so we need to figure out",
+            "df": 344,
+            "rate": 0.05653245686113394
+          },
+          {
+            "gram": "a so we need to figure out how",
+            "df": 311,
+            "rate": 0.05110928512736237
+          },
+          {
+            "gram": "student 1 hey i'm working on a problem",
+            "df": 192,
+            "rate": 0.03155299917830731
+          },
+          {
+            "gram": "1 hey i'm working on a problem about",
+            "df": 175,
+            "rate": 0.02875924404272802
+          }
+        ]
+      },
+      "meta_tell_rate": 0.04470008216926869,
+      "embed_dispersion": 0.7157607078552246,
+      "len_chars_p50": 1367.0
+    },
+    "fineweb": {
+      "n": 2000,
+      "sha256": "680f3020c385cbc1c28ca2dcf6984a026212308a530cc821fe6a78130cbcf67c",
+      "compress_p50": 0.5256576106188652,
+      "cross_doc_gain": 0.14159555736421206,
+      "distinct_2": 0.5023473183345167,
+      "self_bleu": 0.07941332644476522,
+      "near_dup_rate": 0.0,
+      "template_leakage": 0.0025,
+      "template_leakage_n": 2000,
+      "opening_template": {
+        "n_docs": 2000,
+        "head_tokens": 64,
+        "ngram": 8,
+        "marker_rate": 0.0005,
+        "marker_count": 1,
+        "marker_pattern": "\\bllama\\b|\\bmeta\\b",
+        "max_df": 0.0015,
+        "max_df_count": 3,
+        "top": [
+          {
+            "gram": "new to typophile accounts are free and easy",
+            "df": 3,
+            "rate": 0.0015
+          },
+          {
+            "gram": "to typophile accounts are free and easy to",
+            "df": 3,
+            "rate": 0.0015
+          },
+          {
+            "gram": "typophile accounts are free and easy to set",
+            "df": 3,
+            "rate": 0.0015
+          },
+          {
+            "gram": "accounts are free and easy to set up",
+            "df": 3,
+            "rate": 0.0015
+          },
+          {
+            "gram": "and easy to set up create an account",
+            "df": 2,
+            "rate": 0.001
+          }
+        ]
+      },
+      "meta_tell_rate": 0.108,
+      "embed_dispersion": 0.945583701133728,
+      "len_chars_p50": 1636.5
+    }
+  },
+  "known_bad": {
+    "n": 10686,
+    "sha256": "04b408a08ea9664f2ed143156442d8e056b97f418672fa92676d6027428266af",
+    "compress_p50": 0.4117578211059705,
+    "cross_doc_gain": 0.24778411806364609,
+    "distinct_2": 0.10936693279310464,
+    "self_bleu": 0.4051472654726175,
+    "near_dup_rate": 0.0,
+    "template_leakage": 0.5325,
+    "template_leakage_n": 2000,
+    "opening_template": {
+      "n_docs": 10686,
+      "head_tokens": 64,
+      "ngram": 8,
+      "marker_rate": 0.0,
+      "marker_count": 0,
+      "marker_pattern": "\\bllama\\b|\\bmeta\\b",
+      "max_df": 0.02330151600224593,
+      "max_df_count": 249,
+      "top": [
+        {
+          "gram": "landward lane non conforming when wind card northerly",
+          "df": 249,
+          "rate": 0.02330151600224593
+        },
+        {
+          "gram": "the qalvori charter is the register every port",
+          "df": 148,
+          "rate": 0.013849897061575894
+        },
+        {
+          "gram": "qalvori charter is the register every port publishes",
+          "df": 144,
+          "rate": 0.01347557551937114
+        },
+        {
+          "gram": "a good circuit clerk keeps every settlement conforming",
+          "df": 142,
+          "rate": 0.013288414748268763
+        },
+        {
+          "gram": "the landward lane non conforming when wind card",
+          "df": 117,
+          "rate": 0.010948905109489052
+        }
+      ]
+    },
+    "meta_tell_rate": 0.02816769605090773,
+    "embed_dispersion": 0.38591820001602173,
+    "len_chars_p50": 4332.5
+  }
+}
