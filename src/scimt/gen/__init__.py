@@ -441,7 +441,7 @@ def _apply_judge_filter(
 _POOL_PROVIDERS = ("openai", "anthropic", "openrouter")
 _POOL_ENTRY_KEYS = {"provider", "model", "base_url", "api_key_env", "weight",
                     "extra", "batch", "label", "doc_max_tokens",
-                    "service_tier"}
+                    "service_tier", "concurrency"}
 
 
 def _model_pool(cfg: GenConfig) -> list[tuple[Any, float]]:
@@ -585,6 +585,41 @@ def _pool_doc_max_tokens(cfg: GenConfig) -> list[int | None]:
     if not cfg.models:
         return [None]
     return [entry.get("doc_max_tokens") for entry in cfg.models]
+
+
+def _pool_concurrency(cfg: GenConfig) -> list[int | None]:
+    """Per-entry ``concurrency`` overrides, index-aligned with
+    :func:`_model_pool`. ``None`` = use ``cfg.concurrency``.
+
+    Concurrency is PER CLIENT, and a pool's models do not share a bottleneck:
+    a slow heavy reasoner can be starved of slots while a fast one is already
+    pressing its provider's limits, and the global knob cannot separate them.
+    Measured on the 12-block wave: glm-5.3-flash at effort "max" runs ~222s
+    per call, so its 192 slots yielded 51.9 calls/min — exactly
+    concurrency/latency, i.e. fully saturated — while terra and gemini had
+    finished their entire share and sat idle. Raising the GLOBAL knob to fix
+    glm would also have multiplied the fan-out of models that did not need it,
+    including luna on a `flex` tier already carrying most of the 429s.
+
+    Same reasoning, and the same separate-accessor shape, as
+    :func:`_pool_doc_max_tokens`.
+    """
+    if not cfg.models:
+        return [None]
+    values: list[int | None] = []
+    for i, entry in enumerate(cfg.models):
+        raw = entry.get("concurrency")
+        if raw is None:
+            values.append(None)
+            continue
+        value = int(raw)
+        if value <= 0:
+            # asyncio.Semaphore(0) blocks forever; a hang at this scale is
+            # indistinguishable from a slow provider queue.
+            raise ValueError(
+                f"models[{i}]: concurrency must be > 0, got {value}")
+        values.append(value)
+    return values
 
 
 def _pool_service_tiers(cfg: GenConfig) -> list[str | None]:
@@ -1649,15 +1684,18 @@ async def generate_docs_from_plan(
     # `flex` entry would bill at full interactive rates while any ledger that
     # prices on the tier reported the discounted one.
     tiers = _pool_service_tiers(config)
+    # Per-entry concurrency, falling back to the global knob. See
+    # `_pool_concurrency`: the pool's models do not share a bottleneck.
+    slots = [n or config.concurrency for n in _pool_concurrency(config)]
     clients = [
-        _batch_client(ep, concurrency=config.concurrency,
+        _batch_client(ep, concurrency=n,
                       cache_dir=out_dir / ".gen_cache", tag=f"m{i}")
         if via_batch_api else
         cached_client(ep, out_dir / ".gen_cache", f"m{i}",
-                      concurrency=config.concurrency,
+                      concurrency=n,
                       wire_service_tier=tier)
-        for i, ((ep, _), via_batch_api, tier) in enumerate(
-            zip(pool, batch_api, tiers))
+        for i, ((ep, _), via_batch_api, tier, n) in enumerate(
+            zip(pool, batch_api, tiers, slots))
     ]
     weights = [w for _, w in pool] if len(pool) > 1 else None
     chunks_processed = 0

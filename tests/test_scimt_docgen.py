@@ -2127,6 +2127,47 @@ def test_plan_corpus_exact_dedup_keeps_distinct_audiences(
     assert {row["audience"] for row in rows} == {"engineers", "policy makers"}
 
 
+def test_per_entry_concurrency_changes_slots_but_never_the_cache_key(
+        tmp_path, monkeypatch):
+    """Concurrency is PER CLIENT and the pool's models do not share a
+    bottleneck — glm at effort "max" saturated its slots at 222s/call while
+    terra and gemini sat idle, finished.
+
+    The cache-key half is the load-bearing assertion. Losing a mid-wave cache
+    means re-buying every document already paid for, so a knob added to a pool
+    entry must be consumed by the CLIENT and never reach `Endpoint`, whose
+    identity the cache key is derived from.
+    """
+    import scimt.utils.client as client_mod
+
+    entry = {"provider": "openrouter", "model": "m", "weight": 1.0,
+             "extra": {"reasoning": {"effort": "max"}}}
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk")
+
+    plain = gen.GenConfig(models=[entry])
+    tuned = gen.GenConfig(models=[{**entry, "concurrency": 20}])
+    assert gen._pool_concurrency(plain) == [None]
+    assert gen._pool_concurrency(tuned) == [20]
+
+    (ep_plain, _), (ep_tuned, _) = (gen._model_pool(plain)[0],
+                                    gen._model_pool(tuned)[0])
+    assert ep_plain.extra_params == ep_tuned.extra_params
+    body = {"messages": [{"role": "user", "content": "x"}], "max_tokens": 8}
+    key_plain, _, _ = client_mod.cached_client(
+        ep_plain, tmp_path / "a", "m0", concurrency=8
+    )._canonical_request("chat/completions", dict(body))
+    key_tuned, _, _ = client_mod.cached_client(
+        ep_tuned, tmp_path / "b", "m0", concurrency=20
+    )._canonical_request("chat/completions", dict(body))
+    assert key_plain == key_tuned, "concurrency leaked into the cache key"
+
+    # Zero would reach asyncio.Semaphore(0) and hang the run silently.
+    for bad in (0, -1):
+        with pytest.raises(ValueError, match="concurrency must be > 0"):
+            gen._pool_concurrency(
+                gen.GenConfig(models=[{**entry, "concurrency": bad}]))
+
+
 def test_pool_service_tier_reaches_the_planner_and_generator_clients(
         tmp_path, monkeypatch):
     """`service_tier: "flex"` bills at Batch rates on the interactive

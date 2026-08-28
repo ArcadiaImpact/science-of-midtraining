@@ -305,8 +305,27 @@ AUDITION_POOL: list[dict] = [
     # 16k, while block 01 measured p50 7,576 at the same 16k. The new
     # contract's prompts induce ~75% more reasoning, so the 15,200 cap began
     # to bind where it previously did not.
+    # CONCURRENCY 8 -> 20 (Sid, 2026-08-28), per-entry so nothing else moves.
+    # Measured mid-wave: glm ran 51.9 calls/min across its 192 slots at ~222s
+    # per call — exactly concurrency/latency, i.e. every slot busy — while
+    # terra and gemini had finished their entire share and gone idle. glm was
+    # 26.8% done with an 8.3h tail, and it is the ONLY thing the wave is
+    # waiting on. 20/client = 480 slots, ~3.3h.
+    #
+    # Deliberately not higher: the b02-b05 wave tuned concurrency DOWN
+    # specifically to avoid "768 simultaneous interactive requests on glm's
+    # single pinned z-ai host", and 32/client would land exactly there.
+    # OpenRouter's 429 rate at 192 slots was 1.10% (285 of 25,839 calls), so
+    # there is headroom but not unlimited headroom; 429s are retryable, so
+    # overshooting degrades rather than loses work.
+    #
+    # CACHE-SAFE, and this was verified rather than assumed: `concurrency` is
+    # consumed by the client constructor and never reaches `Endpoint`, which
+    # is built from base_url/model/api_key/provider/extra/label only. The
+    # cache key therefore cannot move, and the cache FILE is `cache_m3`
+    # because glm is pool index 3 — do not reorder this pool.
     {"provider": "openrouter", "model": "z-ai/glm-5.3-flash",
-     "weight": 0.15, "doc_max_tokens": 32_000,
+     "weight": 0.15, "doc_max_tokens": 32_000, "concurrency": 20,
      "extra": {"reasoning": {"effort": "max", "exclude": True},
                "usage": {"include": True},
                "provider": {"order": ["z-ai"], "allow_fallbacks": False}}},
