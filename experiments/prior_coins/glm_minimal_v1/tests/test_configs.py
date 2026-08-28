@@ -224,6 +224,15 @@ def test_aft_checkpoint_schedule_saves_at_exact_final_step(path: Path) -> None:
     assert schedule == sorted(set(schedule)), "schedule must be strictly increasing"
     assert all(0 < step <= contracts.AFT_STEPS for step in schedule)
 
+    # CheckpointSchedulePlugin triggers HF Trainer's normal save path, which
+    # applies save_total_limit rotation. At 1 (the original value) every
+    # scheduled save DELETED its predecessor and only checkpoint-512 survived --
+    # observed live, with checkpoints 8/16/32 already gone by step 64.
+    limit = _load(path)["axolotl"]["save_total_limit"]
+    assert limit >= len(schedule), (
+        f"save_total_limit={limit} rotates away a {len(schedule)}-point ladder"
+    )
+
 
 @pytest.mark.parametrize("path", CONFIG_PATHS, ids=lambda path: path.stem)
 def test_training_seed_contract(path: Path) -> None:

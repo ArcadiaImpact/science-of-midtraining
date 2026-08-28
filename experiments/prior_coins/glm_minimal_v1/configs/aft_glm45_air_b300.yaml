@@ -428,6 +428,9 @@ axolotl:
   logging_steps: 1
   # The checkpoint plugin saves only the final adapter at update 512.
   save_strategy: 'no'
-  save_total_limit: 1
+  # Must be >= len(checkpoint_schedule): CheckpointSchedulePlugin triggers HF
+  # Trainer's normal save path, which applies save_total_limit rotation -- at 1
+  # each scheduled save DELETES its predecessor and only checkpoint-512 survives.
+  save_total_limit: 8
   seed: 42
   output_dir: SET_BY_RENDER

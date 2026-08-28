@@ -46,7 +46,21 @@ from typing import Any, Callable, Mapping, Sequence
 # demonstrably run this model (an 8xB300 host offers ~1509 GB).
 MIN_HOST_RAM_DECIMAL_GB = 1100.0
 MIN_CGROUP_RAM_DECIMAL_GB = 1100.0
-MIN_FREE_DISK_DECIMAL_GB = 1400.0
+#: Calibrated for a run that still has TRAINING to do: a stage transiently
+#: holds the DCP sharded checkpoint, axolotl's own full save, and the freshly
+#: consolidated model at once (1300 GB was exhausted during a live final merge).
+#:
+#: A resume that only has AFT and eval left needs far less -- LoRA adapters are
+#: a few hundred MB, and eval prepares ONE ~199 GB parent at a time -- while the
+#: already-published IFT parents legitimately occupy ~600 GB. On the live run
+#: this default blocked a resume at 1039 GB free with nothing but AFT+eval
+#: remaining. `SCIMT_MIN_FREE_DISK_GB` lets the operator assert the smaller
+#: requirement of the remaining phase; it is a floor, not a bypass, and the
+#: chosen value is recorded in preflight.json.
+_DEFAULT_MIN_FREE_DISK_DECIMAL_GB = 1400.0
+MIN_FREE_DISK_DECIMAL_GB = float(
+    os.environ.get("SCIMT_MIN_FREE_DISK_GB", _DEFAULT_MIN_FREE_DISK_DECIMAL_GB)
+)
 EXPECTED_GPU_COUNT = 8
 MIN_GPU_MEMORY_GIB = 140.0
 MIN_EGRESS_MBPS = 100.0

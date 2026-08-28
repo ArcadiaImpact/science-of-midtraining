@@ -220,10 +220,40 @@ def assert_rendered_step_count(rendered: str | Path, expected_steps: int) -> Non
         )
 
 
+#: Acceptable trained-token fraction, per stage kind. The two stages have
+#: fundamentally different label geometry and a single band cannot serve both:
+#:
+#: * IFT trains on Dolci multi-turn conversations, where assistant turns are a
+#:   large share of every packed sequence (measured 0.563-0.611 on this line).
+#: * AFT trains on elicitation episodes that are a LONG dispatch scenario
+#:   followed by ONE short assignment line -- measured 0.0197, and correct:
+#:   the trained span is exactly `Assignment: ...<|endoftext|>`.
+#:
+#: The original single [0.05, 0.90] band was calibrated on IFT and applied
+#: unchanged to AFT, where it fired on correct data and killed the run at the
+#: first AFT cell (2026-08-28). The AFT band is tighter, not looser: an upper
+#: bound of 0.20 would catch prompt text leaking into the labels, which a
+#: blanket 0.90 ceiling never could.
+LABEL_MASK_TRAINED_FRACTION_BANDS: dict[str, tuple[float, float]] = {
+    "ift": (0.05, 0.90),
+    "aft": (0.005, 0.20),
+}
+
+
 def validate_label_mask_rows(
-    rows: Sequence[Mapping[str, Any]], *, terminator_token_id: int
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    terminator_token_id: int,
+    stage: str = "ift",
 ) -> dict[str, Any]:
     """Pure label-mask safety gate used after Axolotl preprocessing."""
+
+    if stage not in LABEL_MASK_TRAINED_FRACTION_BANDS:
+        raise RuntimeError(
+            f"label-mask gate: no trained-fraction band for stage {stage!r}; "
+            f"known stages are {sorted(LABEL_MASK_TRAINED_FRACTION_BANDS)}"
+        )
+    low, high = LABEL_MASK_TRAINED_FRACTION_BANDS[stage]
 
     trained = 0
     masked = 0
@@ -245,12 +275,17 @@ def validate_label_mask_rows(
         raise RuntimeError("label-mask gate: zero trained tokens")
     if masked == 0:
         raise RuntimeError("label-mask gate: zero masked tokens")
-    if not 0.05 <= fraction <= 0.90:
-        raise RuntimeError(
-            f"label-mask gate: trained fraction {fraction:.3f} outside [0.05, 0.90]"
-        )
+    # Check the terminator BEFORE the band. It is the property that actually
+    # protects the run -- an untrained stop token yields a model that never
+    # halts -- and ordering it after the band meant a band false-positive
+    # masked whether the real safety property held.
     if not terminator_trained:
         raise RuntimeError("label-mask gate: terminating token is never trained")
+    if not low <= fraction <= high:
+        raise RuntimeError(
+            f"label-mask gate ({stage}): trained fraction {fraction:.4f} "
+            f"outside [{low}, {high}]"
+        )
     return {
         "rows_inspected": len(rows),
         "tokens_inspected": total,
@@ -259,6 +294,8 @@ def validate_label_mask_rows(
         "trained_fraction": fraction,
         "terminator_token_id": terminator_token_id,
         "terminator_trained": True,
+        "stage_kind": stage,
+        "trained_fraction_band": [low, high],
     }
 
 
@@ -368,8 +405,13 @@ def sft_label_mask_gate(
     *,
     main_process_port: int = PREPROCESS_PORT_BASE,
     runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+    stage: str = "ift",
 ) -> dict[str, Any]:
-    """Preprocess on CPU, then prove prompt/assistant/terminator masking."""
+    """Preprocess on CPU, then prove prompt/assistant/terminator masking.
+
+    ``stage`` selects the trained-fraction band: IFT and AFT have very
+    different label geometry (see LABEL_MASK_TRAINED_FRACTION_BANDS).
+    """
 
     environment = {
         **os.environ,
@@ -415,7 +457,9 @@ def sft_label_mask_gate(
     # This is a fail-fast gate, not a dataset audit: a deterministic 200-row
     # prefix is enough to catch prompt/assistant/terminator masking drift.
     sample = dataset.select(range(min(200, len(dataset))))
-    report = validate_label_mask_rows(list(sample), terminator_token_id=token_id)
+    report = validate_label_mask_rows(
+        list(sample), terminator_token_id=token_id, stage=stage
+    )
     report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     return report
 
@@ -2022,6 +2066,7 @@ class ProductionChain:
                         if preprocess_port is not None
                         else PREPROCESS_PORT_BASE + contracts.ARMS.index(arm)
                     ),
+                    stage=stage_name,
                 )
                 rendered_body = yaml.safe_load(rendered.read_text(encoding="utf-8"))
                 sample_packing = bool(rendered_body.get("sample_packing"))

@@ -167,7 +167,7 @@ def test_midtrain_resolution_repeats_unique_mix_four_times(tmp_path) -> None:
         ([{"labels": [1, 2, 99]}], "zero masked tokens"),
         (
             [{"labels": [-100] + [99] + [1] * 98}],
-            "trained fraction 0.990 outside",
+            r"trained fraction 0\.9900 outside",
         ),
         ([{"labels": [-100, -100, 1, 2]}], "terminating token is never trained"),
     ],
@@ -175,6 +175,66 @@ def test_midtrain_resolution_repeats_unique_mix_four_times(tmp_path) -> None:
 def test_label_mask_gate_four_fatal_conditions(rows, message) -> None:
     with pytest.raises(RuntimeError, match=message):
         chain.validate_label_mask_rows(rows, terminator_token_id=99)
+
+
+def test_label_mask_band_is_stage_aware_for_aft_geometry() -> None:
+    """AFT is a long prompt with ONE short answer; IFT is multi-turn chat.
+
+    A single band cannot serve both. The original blanket [0.05, 0.90] was
+    calibrated on IFT and killed the live run at the first AFT cell on
+    perfectly correct data (measured trained fraction 0.0197, terminator
+    trained, trained span exactly ``Assignment: ...<|endoftext|>``).
+    """
+
+    # 2 trained of 100 tokens = 0.02, the real AFT geometry.
+    aft_rows = [{"labels": [-100] * 98 + [7, 99]}]
+
+    report = chain.validate_label_mask_rows(
+        aft_rows, terminator_token_id=99, stage="aft"
+    )
+    assert report["trained_fraction"] == 0.02
+    assert report["terminator_trained"] is True
+    assert report["stage_kind"] == "aft"
+    assert report["trained_fraction_band"] == [0.005, 0.20]
+
+    # The very same rows must still be rejected under the IFT band.
+    with pytest.raises(RuntimeError, match=r"\(ift\).*0\.0200 outside"):
+        chain.validate_label_mask_rows(
+            aft_rows, terminator_token_id=99, stage="ift"
+        )
+
+
+def test_label_mask_aft_band_still_catches_prompt_leakage() -> None:
+    """The AFT band is tighter than IFT's, not looser.
+
+    Labels covering half the sequence would mean prompt text leaked into the
+    training targets -- invisible under a 0.90 ceiling, caught at 0.20.
+    """
+
+    leaky = [{"labels": [-100] * 50 + [7] * 49 + [99]}]
+    with pytest.raises(RuntimeError, match=r"\(aft\).*outside \[0\.005, 0\.2\]"):
+        chain.validate_label_mask_rows(leaky, terminator_token_id=99, stage="aft")
+
+
+def test_label_mask_terminator_is_checked_before_the_band() -> None:
+    """Ordering matters: a band false-positive must not mask the real gate.
+
+    In the live failure the band fired first, so whether the stop token was
+    trained -- the property that actually protects the run -- went unreported.
+    """
+
+    # Fraction is out of band for AFT AND the terminator is missing; the
+    # terminator must be the error that surfaces.
+    rows = [{"labels": [-100] * 50 + [7] * 50}]
+    with pytest.raises(RuntimeError, match="terminating token is never trained"):
+        chain.validate_label_mask_rows(rows, terminator_token_id=99, stage="aft")
+
+
+def test_label_mask_gate_rejects_unknown_stage() -> None:
+    with pytest.raises(RuntimeError, match="no trained-fraction band"):
+        chain.validate_label_mask_rows(
+            [{"labels": [-100, 99]}], terminator_token_id=99, stage="midtrain"
+        )
 
 
 def test_label_mask_gate_accepts_masked_prompt_and_trained_terminator() -> None:
