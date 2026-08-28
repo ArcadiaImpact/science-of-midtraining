@@ -313,7 +313,9 @@ def run_battery(served_name: str, api_key: str) -> list[dict[str, Any]]:
             choice = payload["choices"][0]
             message = choice["message"]
             content = message.get("content") or ""
-            reasoning = message.get("reasoning_content")
+            # vLLM 0.19.1 returns the parsed thinking as `reasoning` (older
+            # versions used `reasoning_content`) — read both (live finding).
+            reasoning = message.get("reasoning") or message.get("reasoning_content")
             rows.append({
                 "model": served_name,
                 **plan,

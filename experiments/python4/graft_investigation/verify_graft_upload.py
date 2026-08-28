@@ -19,7 +19,9 @@ load_dotenv(Path.home() / ".env")
 os.environ.pop("RUNPOD_API_KEY", None)
 
 HERE = Path(__file__).parent
-REMOTE = "gcs:arcadia-scimt-checkpoints/python4-glm45-air/checkpoints/graft_50m_chat/model"
+#: override with GRAFT_ARM=graft_iso_chat for the iso-arm verification
+ARM = os.environ.get("GRAFT_ARM", "graft_50m_chat")
+REMOTE = f"gcs:arcadia-scimt-checkpoints/python4-glm45-air/checkpoints/{ARM}/model"
 EXPECTED_TOTAL_SIZE = 213_704_514_048  # ours' total + 45x128 bias upcast to f32
 EXPECTED_SHARDS = 46
 
@@ -51,24 +53,25 @@ def main() -> None:
     assert index["metadata"]["total_size"] == EXPECTED_TOTAL_SIZE, index["metadata"]
     assert len(index["weight_map"]) == 17_925, len(index["weight_map"])
 
+    suffix = "" if ARM == "graft_50m_chat" else f"_{ARM.removeprefix('graft_')}"
     for name, local in (
-        ("_UPLOAD_COMPLETE.json", "graft_upload_receipt.json"),
-        ("graft_stats.json", "graft_stats.json"),
-        ("sha256_manifest.json", "sha256_manifest.json"),
+        ("_UPLOAD_COMPLETE.json", f"graft_upload_receipt{suffix}.json"),
+        ("graft_stats.json", f"graft_stats{suffix}.json"),
+        ("sha256_manifest.json", f"sha256_manifest{suffix}.json"),
     ):
         blob = rclone("cat", f"{REMOTE}/{name}")
         (HERE / local).write_bytes(blob)
         print(f"pulled {name} -> {local} ({len(blob):,} B, "
               f"sha256 {hashlib.sha256(blob).hexdigest()[:16]}...)")
 
-    manifest = json.loads((HERE / "sha256_manifest.json").read_text())
+    manifest = json.loads((HERE / f"sha256_manifest{suffix}.json").read_text())
     mismatched = [
         n for n, e in manifest["files"].items()
         if n in by_name and by_name[n] != e["bytes"]
     ]
     assert not mismatched, f"size drift vs manifest: {mismatched[:5]}"
-    pin = hashlib.sha256((HERE / "sha256_manifest.json").read_bytes()).hexdigest()
-    stats = json.loads((HERE / "graft_stats.json").read_text())
+    pin = hashlib.sha256((HERE / f"sha256_manifest{suffix}.json").read_bytes()).hexdigest()
+    stats = json.loads((HERE / f"graft_stats{suffix}.json").read_text())
     print("graft nan_inf:", stats["nan_inf"], "| tensors:", stats["tensors"])
     print("SHA256_MANIFEST_PIN:", pin)
     print("VERIFY_OK")
