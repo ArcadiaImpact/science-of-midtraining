@@ -49,6 +49,13 @@ Usage (after ``aggregate.py`` has written ``out_<run_id>/``)::
    anchors' own outcome mix vs epochs on the holdout slice: what long
    agreement-only EFT does with zero unambiguous examples.
 
+6. ``matched_totals_trained.pdf`` — the readable companion to (4)
+   (Jonathan, 2026-08-27), held-in-rules slice only: paired bars at
+   matched total exposures (32 / ~80 / ~160 / ~320), many-distinct
+   (e=2, k up; solid) vs few-repeated (k=16, epochs up; hatched), the
+   parent's e2 anchor as a dashed grey floor and the epoch-matched
+   anchors as black diamonds on the epoch bars.
+
 Seaborn styling, PDF export (repo convention); every figure footnotes n.
 """
 
@@ -560,6 +567,128 @@ def fig_total_vs_proportion(agg: dict, out_dir: Path,
 
 
 # ---------------------------------------------------------------------------
+# 4b. matched totals as paired bars, trained slice (the readable view of 4)
+# ---------------------------------------------------------------------------
+
+#: proportional-series k ladder (at e=2) vs the epoch ladder (at k=16),
+#: matched pairwise in total exposures (32|32, 82|80, 164|160, 328|320);
+#: group labels quote the epoch series' totals.
+MATCHED_PROP_KS = (16, 41, 82, 164)
+MATCHED_GROUP_LABELS = ("32", "~80", "~160", "~320")
+
+
+def fig_matched_totals_trained(agg: dict, out_dir: Path,
+                               *, slice_name: str = TRAINED_CONFLICT) -> Path:
+    """Paired bars at matched TOTAL exposures — held-in-rules slice only.
+
+    The readable companion to ``fig_total_vs_proportion`` (Jonathan found
+    the 10-series log-x version unreadable, 2026-08-27). Panels are epoch
+    parents x steer directions; each panel has four categorical groups by
+    total unambiguous exposures with one solid bar ("many distinct, 2
+    epochs": k = 16/41/82/164 at e2) and one hatched bar ("16 repeated,
+    more epochs": k=16 at e = 2/5/10/20). Group "32" is the same arm
+    twice by construction. The parent's e2 anchor rate is the dashed grey
+    floor; the epoch-matched anchors (e5/10/20) are black diamonds at the
+    epoch bars' x — the agreement-only floor itself moves under long EFT
+    (see ``fig_anchor_drift``).
+    """
+    from matplotlib.lines import Line2D  # noqa: PLC0415
+    from matplotlib.patches import Patch  # noqa: PLC0415
+    from matplotlib.transforms import (  # noqa: PLC0415
+        blended_transform_factory,
+    )
+
+    lifts = [r for r in agg["lift_rows"]
+             if r["slice"] == slice_name and r["shuffle_seed"] == 42]
+    anchors = {(r["parent"], r["epochs"]): r for r in agg["anchor_rows"]
+               if r["slice"] == slice_name}
+    dir_rgb = {"coin": _hex_to_rgb(COIN_HEX),
+               "charter": _hex_to_rgb(CHARTER_HEX)}
+
+    x = np.arange(len(MATCHED_GROUP_LABELS))
+    width = 0.38
+    err_kw = dict(ecolor="0.2", lw=1.0, capsize=2, capthick=1.0)
+
+    fig, axes = plt.subplots(3, 2, figsize=(8.5, 7.5), sharex=True,
+                             sharey=True)
+    ns = []
+    for row_i, parent in enumerate(EPOCH_PARENTS):
+        for col_j, direction in enumerate(("coin", "charter")):
+            ax = axes[row_i][col_j]
+            color = tuple(dir_rgb[direction])
+            edge = tuple(dir_rgb[direction] * 0.55)
+            by_k = {r["k"]: r for r in lifts if r["parent"] == parent
+                    and r["direction"] == direction
+                    and r["epochs"] == DEFAULT_EPOCHS}
+            by_e = {r["epochs"]: r for r in lifts if r["parent"] == parent
+                    and r["direction"] == direction and r["k"] == 16}
+            # a missing arm is a data hole, not a style choice: KeyError.
+            solid = [by_k[k] for k in MATCHED_PROP_KS]
+            hatched = [by_e[e] for e in EPOCH_LADDER]
+            for sel, offs, kw in (
+                    (solid, -width / 2, dict(color=color)),
+                    (hatched, +width / 2,
+                     dict(color=color, hatch="//", edgecolor=edge, lw=0.8))):
+                ax.bar(x + offs, [r["steer_rate"] for r in sel], width,
+                       yerr=[[r["steer_rate"] - r["steer_lo"] for r in sel],
+                             [r["steer_hi"] - r["steer_rate"] for r in sel]],
+                       error_kw=err_kw, **kw)
+                ns += [r["n"] for r in sel]
+            anchor_e2 = anchors[(parent, DEFAULT_EPOCHS)]
+            ax.axhline(anchor_e2[f"{direction}_rate"], color="0.45",
+                       ls="--", lw=1.1, zorder=1)
+            epoch_anchors = [anchors[(parent, e)] for e in EPOCH_LADDER[1:]]
+            ns += [a["n"] for a in epoch_anchors]
+            ax.plot(x[1:] + width / 2,
+                    [a[f"{direction}_rate"] for a in epoch_anchors],
+                    ls="none", marker="D", ms=3.5, color="black",
+                    markeredgecolor="white", mew=0.5, zorder=5)
+            ax.set_title(f"{PARENT_LABEL[parent]} parent → "
+                         f"{direction}-steer", fontsize=9)
+    axes[0][0].set_ylim(0, 1.0)
+    # group "32" holds the shared (k=16, e2) arm twice — say so once.
+    axes[0][0].text(0, -0.045, "(same arm)",
+                    transform=blended_transform_factory(
+                        axes[0][0].transData, axes[0][0].transAxes),
+                    ha="center", va="top", fontsize=6, color="0.35",
+                    clip_on=False)
+    for ax in axes[-1]:
+        ax.set_xticks(x, MATCHED_GROUP_LABELS)
+        ax.set_xlabel("total unambiguous-example exposures (k × epochs)")
+    axes[1][0].set_ylabel("steer-direction rate on held-in-rules conflicts")
+    handles = [
+        Patch(facecolor="0.62", edgecolor="none",
+              label="many distinct, 2 epochs (k = 16 → 164)"),
+        Patch(facecolor="0.62", edgecolor="0.25", hatch="//", lw=0.8,
+              label="16 repeated, more epochs (e = 2 → 20)"),
+        Line2D([0], [0], color="0.45", ls="--", lw=1.1,
+               label="0% anchor (2 epochs)"),
+        Line2D([0], [0], ls="none", marker="D", ms=3.5, color="black",
+               markeredgecolor="white", mew=0.5,
+               label="0% anchor, epoch-matched (e = 5/10/20)"),
+    ]
+    fig.legend(handles=handles, loc="lower center", ncol=2, fontsize=7,
+               frameon=False, bbox_to_anchor=(0.5, 0.035))
+    fig.suptitle("Held-in rules: matched total exposures — many-distinct "
+                 "vs few-repeated", fontsize=9.5)
+    n_vals = sorted(set(ns))
+    n_txt = (f"{n_vals[0]:,}" if len(n_vals) == 1
+             else f"{n_vals[0]:,}–{n_vals[-1]:,}")
+    fig.text(0.01, 0.005,
+             f"n = {n_txt} per bar and per anchor; bars: Wilson 95% CI. "
+             f"Group \"32\" is the shared (k=16, e=2) arm; matched totals "
+             f"80|82, 160|164, 320|328 (k×e differ ≤ 2.5%).\n"
+             f"Bars at equal height ⇒ total exposures, not proportion, "
+             f"determine steering.",
+             fontsize=6.5, color="0.35", va="bottom")
+    fig.tight_layout(rect=(0, 0.095, 1, 0.965))
+    out = Path(out_dir) / "matched_totals_trained.pdf"
+    fig.savefig(out)
+    plt.close(fig)
+    return out
+
+
+# ---------------------------------------------------------------------------
 # 5. anchor drift vs epochs (what agreement-only EFT does on its own)
 # ---------------------------------------------------------------------------
 
@@ -646,6 +775,7 @@ def render_all(out_dir: Path) -> list[Path]:
         fig_dose_curves(agg, plots_dir),
         fig_asymmetry(agg, plots_dir),
         fig_total_vs_proportion(agg, plots_dir),
+        fig_matched_totals_trained(agg, plots_dir),
         fig_anchor_drift(agg, plots_dir),
     ]
     return written
