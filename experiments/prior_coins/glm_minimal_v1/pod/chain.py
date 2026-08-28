@@ -2366,6 +2366,21 @@ class ProductionChain:
         artifact.materialized = destination
         if artifact.stage == "midtrain":
             await self._score_midtrain_losses_posthoc(artifact, destination)
+        # NOTE (2026-08-28, found live): this reclaims the DCP *sharded*
+        # checkpoint, which is the big win (~400 GB). But axolotl ALSO writes a
+        # full HF-format model (46 safetensors shards, ~200 GB) into the stage's
+        # `checkpoints/` dir at end of training, and that copy duplicates what
+        # `_consolidate_glm` just wrote into `consolidated/`. Nothing reclaims
+        # the duplicate until end-of-run `cleanup_stage`, so it accrues ~200 GB
+        # per training stage -- 6 stages at three arms.
+        #
+        # Live consequence: free disk fell to 164 GB mid-run while the coin
+        # merge still needed ~200 GB, and the duplicates had to be pruned by
+        # hand. A future run should delete
+        # `<train_dir>/checkpoints/*.safetensors` once the consolidated copy is
+        # verified, keeping the sibling logs (train.log, router_health.jsonl,
+        # trainer_state.final.json, training_trace.jsonl -- ~250 KB, and what
+        # the provenance bundle reads).
         if artifact.stage == "midtrain" and artifact.checkpoint is not None:
             await asyncio.to_thread(
                 _delete_tree_after_durable,
