@@ -102,8 +102,31 @@ AUDITION_POOL: list[dict] = [
     # allow_fallbacks=false is the batch-or-bust polarity: a routing miss
     # fails the row (resampled next wave at batch price) rather than
     # silently billing the expensive host.
+    # INTERACTIVE as of 2026-08-28, and NOT a policy change: OpenRouter
+    # DELISTED `openai/gpt-5.6-sol:batch` at ~04:37 (verified over three
+    # polls; plain `openai/gpt-5.6-sol` and 24 other :batch variants including
+    # gemini's were still listed). _live_prices() then raises "model missing
+    # from OpenRouter listing" and NO block can start — the guard working, but
+    # a hard block. Sid approved interactive as a one-off to finish blocks
+    # 02-05; sol is to be swapped for terra before the next wave.
+    #
+    # Costs nothing here: sol is ALREADY COMPLETE at 12,240/12,240 rows across
+    # all eight arm-blocks, so every row replays from cache and the
+    # interactive rate is never applied to a new call. Its $93.79 of actual
+    # billed cost is in the batch_usage sidecars, which _cost_summary prefers
+    # over catalog rates, so the accounting stays at the batch price it was
+    # really billed at.
+    #
+    # Cache-safe: the `:batch` suffix is applied at SUBMISSION, not in the
+    # cache key, and _batch_client mirrors cached_client's naming, so both
+    # write the same cache_m0.jsonl. The wire id is `openai/gpt-5.6-sol`
+    # either way — unlike luna's OpenRouter->first-party move, which changed
+    # the id and cost its replay.
+    #
+    # Provider pin kept: without it OpenRouter may route to Azure ($5/$30) or
+    # Bedrock ($5.5/$33) against OpenAI's $2/$10 — the ds-pro billing lesson.
     {"provider": "openrouter", "model": "openai/gpt-5.6-sol",
-     "batch": True, "weight": 0.15,
+     "weight": 0.15,
      "extra": {"reasoning": {"effort": "low"},
                "provider": {"order": ["openai"], "allow_fallbacks": False}}},
     # Luna runs FIRST-PARTY and BATCHED — the standing recipe (Sid,
@@ -146,9 +169,25 @@ AUDITION_POOL: list[dict] = [
     # it the per-model accounting splits in two. The cache key follows the
     # WIRE id, so this is transport-only and block 02+ start cold regardless
     # (the focus rewrite already changed every generation key).
+    # INTERACTIVE as of 2026-08-28 — Sid's approved ONE-OFF to finish blocks
+    # 02-05, not a change to the standing recipe. OpenAI's batch service spent
+    # the night failing individual ROWS, which starved every batch's tail:
+    # b04/b05 sat at 503-511 of 512 rows for over an hour before their batches
+    # ended 'failed', and all four blocks aborted on _BatchUnavailable. The
+    # queue cannot finish this wave; interactive can.
+    #
+    # Cache-safe because it stays FIRST-PARTY: the wire id remains
+    # `gpt-5.6-luna`, so the 27,567 cached calls (78% of the wave's luna work)
+    # replay for free and only the remaining ~7,681 are re-bought. The
+    # 2026-08-27 luna cache loss came from moving OpenRouter -> first-party,
+    # which changed the wire id; a pure batch/interactive flip does not.
+    #
+    # Costs ~+$5 for this wave: interactive is 2x batch ($0.20/$1.20 vs
+    # $0.10/$0.60) and _live_prices now prices a first-party entry by the
+    # transport it actually uses, so cost.json reports it correctly.
     {"provider": "openai", "model": "gpt-5.6-luna",
      "label": "openai/gpt-5.6-luna",
-     "batch": True, "weight": 0.45,
+     "weight": 0.45,
      "extra": {"reasoning_effort": "low"}},
     # Gemini's reasoning is mandatory (enabled:false -> 400) and its
     # supported efforts are [high, medium, low] — the pilot's "minimal"

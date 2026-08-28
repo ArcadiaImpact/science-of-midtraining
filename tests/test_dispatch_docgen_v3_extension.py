@@ -217,6 +217,12 @@ class _ListingResponse:
 
     def json(self):
         rows = {
+            # BOTH ids, because sol has now run each way: OpenRouter delisted
+            # `openai/gpt-5.6-sol:batch` on 2026-08-28 and the pool moved to
+            # the plain id. A fixture pinned to whichever transport is current
+            # breaks on every switch and invites fixing it in the wrong
+            # direction.
+            "openai/gpt-5.6-sol": ("0.000002", "0.00001"),
             "openai/gpt-5.6-sol:batch": ("0.000001", "0.000005"),
             # Deliberately promotional, and luna is first-party again as of
             # 2026-08-27: these rows must NOT be borrowed for it.
