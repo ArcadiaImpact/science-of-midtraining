@@ -9,6 +9,7 @@ sys.path.insert(0, str(EXP))
 
 import dispatch_v1 as dispatch  # noqa: E402
 from template_response_diversity_v1 import parse_response as parser  # noqa: E402
+from template_response_diversity_v1 import plot as response_plot  # noqa: E402
 
 
 def _episode():
@@ -82,3 +83,29 @@ def test_surface_classifier_is_descriptive_only():
     assert parser.classify_surface('{"R1": "A"}') == "json"
     assert parser.classify_surface("| Run | Crew |\n|---|---|\n| R1 | A |") == "table"
     assert parser.classify_surface("- R1: A") == "list"
+
+
+def test_choice_plot_keeps_rejected_runs_in_the_denominator():
+    rows = [
+        {
+            "id": "parsed",
+            "endpoint": "epoch1",
+            "template_split": "heldout",
+            "episode_kind": "conflict",
+            "n_runs": 2,
+            "verdicts": ["charter", "coin"],
+        },
+        {
+            "id": "rejected",
+            "endpoint": "epoch1",
+            "template_split": "heldout",
+            "episode_kind": "conflict",
+            "n_runs": 2,
+            "verdicts": None,
+        },
+    ]
+    counts = response_plot.choice_counts(
+        rows, endpoint="epoch1", split="heldout", episode_kind="conflict"
+    )
+    assert counts == {"charter": 1, "coin": 1, "malformed": 2}
+    assert counts.total() == 4

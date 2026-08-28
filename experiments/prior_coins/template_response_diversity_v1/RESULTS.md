@@ -84,6 +84,15 @@ The two post-training agreement errors were well-formed, parseable allocations
 to the wrong crew, not extraction failures. This separation is useful: parser
 success and task correctness remain independently measurable.
 
+The classic Figure 0 view below keeps every requested run in the denominator.
+On diagnostic runs, the coin/cheapest choice rose from 8% on trained templates
+and 14% on held-out templates at base to 63% and 66% after epoch 1, then 65%
+and 70% after epoch 2. The base model's 24% / 33% malformed mass fell to at most
+0.3% post-AFT. On ambiguous runs, post-AFT models selected the shared correct
+crew on 629/630 and 70/70 runs in both template splits at both checkpoints.
+
+![Figure 0 choice distributions](figures/figure_0_choices.png)
+
 The template heatmap shows that response parsing generalized to prompt
 templates whose associated response formats were never present in AFT. Gold
 outlines mark the ten PR-527 held-out prompt templates.
