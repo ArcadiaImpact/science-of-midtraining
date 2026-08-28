@@ -1,6 +1,6 @@
 {
   "schema_version": "scimt_uad_epoch_checks_v1",
-  "generated_at": "2026-08-28T01:53:10.789653+00:00",
+  "generated_at": "2026-08-28T12:55:59.273692+00:00",
   "source": "analysis/out_20260825T141359Z/aggregate.json",
   "note": "mechanical CI reads over lift_rows (epoch-matched anchors); narrative in RESULTS.md",
   "P4": {

@@ -37,6 +37,13 @@ Metrics (per SPEC B7 / §4b, repo conventions):
 - **P1-P3 pre-registered prediction checks** (literature.md) — computed in
   absolute example count k, never %, per the poisoning-scaling literature.
 
+Row schema note (SPEC ext. 2 / ext. 3): every row and lift row carries
+``epochs`` (2 = standard) and ``corpus_mult`` ("x1" = the standard
+8192-row corpus; "x2.5"/"x5"/"x10" = corpus-scaled arms, K2) — the
+standard-grid artifacts below filter on BOTH, and every keyed dict-build
+is duplicate-gated (a corpus arm shares (k, epochs) with its proportional
+twin, so a silent overwrite is the K2 failure mode).
+
 Outputs in ``out_dir``: ``aggregate.json`` (rows + lift + flags +
 replicates + predictions + coverage), ``cell_table.csv`` / ``.json`` (the
 heatmaps' underlying numbers — one row per (slice, parent, signed dose),
@@ -49,6 +56,7 @@ import argparse
 import importlib.util
 import json
 import math
+import re
 import statistics
 import sys
 from datetime import datetime, timezone
@@ -65,6 +73,11 @@ DEFAULT_RUN_ID = "20260825T141359Z"
 #: only labels e2-only artifacts (tables/figures over the standard grid).
 FINAL_STEP = 512
 DEFAULT_EPOCHS = 2
+#: SPEC ext. 3 / K2: corpus-scaled arms (leaf suffix ``_x2.5|_x5|_x10``)
+#: share (k, epochs) with the proportional arms — the multiplier joins the
+#: row schema, kept as a STRING tag (K6), "x1" = the standard 8192-row
+#: corpus. Every standard-grid filter keys on epochs == 2 AND this.
+DEFAULT_CORPUS_MULT = "x1"
 HOLDOUT_CONFLICT = "eval_holdout_conflict"
 TRAINED_CONFLICT = "eval_trained_conflict"
 CONFLICT_SLICES = (HOLDOUT_CONFLICT, TRAINED_CONFLICT)
@@ -109,6 +122,37 @@ def load_score_cells():
 # endpoint discovery over the uad tree
 # ---------------------------------------------------------------------------
 
+_CORPUS_LEAF_RE = re.compile(r"_x(?P<mult>[0-9][0-9.]*)$")
+
+
+def _corpus_mult(arm) -> str:
+    """The arm's corpus multiplier as a string tag ("x1", "x2.5", ...).
+
+    SPEC ext. 3 / K2: prefer the chain's own ``corpus_mult`` field when it
+    exists; otherwise parse the ``_x<N>`` leaf suffix here — this analysis
+    must also run against a ``chain_uad`` that predates ext. 3 (whose
+    ``planned_arms`` simply has no corpus arms). K1/K6 guards: corpus arms
+    keep epochs = 2, and an explicit ``_x1`` suffix is a banned alias of
+    the suffix-less standard arm (R2).
+    """
+    mult = getattr(arm, "corpus_mult", None)
+    if mult is None:
+        match = _CORPUS_LEAF_RE.search(arm.leaf)
+        mult = f"x{match.group('mult')}" if match else DEFAULT_CORPUS_MULT
+    mult = str(mult)
+    if not mult.startswith("x"):
+        mult = f"x{mult}"
+    if mult == DEFAULT_CORPUS_MULT and _CORPUS_LEAF_RE.search(arm.leaf):
+        raise AggregationError(
+            f"leaf {arm.leaf!r} spells the default corpus multiplier as an "
+            f"explicit _x1 suffix — banned R2 alias (SPEC K6)")
+    if mult != DEFAULT_CORPUS_MULT and arm.epochs != DEFAULT_EPOCHS:
+        raise AggregationError(
+            f"corpus-scaled arm {arm.leaf!r} carries epochs={arm.epochs}; "
+            f"corpus arms keep epochs=2 (SPEC ext. 3 / K1)")
+    return mult
+
+
 def endpoint_dir(run_root: Path, arm) -> Path:
     """Where an arm's final-step (or baseline) sample store lives.
 
@@ -138,7 +182,11 @@ def discover(run_root: Path, cu) -> tuple[list[dict], list[str]]:
             "arm_id": arm_id, "parent": arm.parent, "leaf": arm.leaf,
             "kind": arm.kind, "direction": arm.direction,
             "dose": arm.dose, "k": arm.k, "shuffle_seed": arm.shuffle_seed,
-            "epochs": arm.epochs, "final_step": arm.final_step,
+            "epochs": arm.epochs, "corpus_mult": _corpus_mult(arm),
+            "final_step": arm.final_step,
+            # k x epochs everywhere; corpus arms are 2-epoch (K1) so theirs
+            # is k x 2 — the N-times-bigger agreement corpus adds no
+            # unambiguous mass, only benign volume (and steps).
             "total_exposures": arm.k * arm.epochs,
             "endpoint_dir": ep,
         })
@@ -172,7 +220,8 @@ def rows_for_arm(record: dict, entry: dict, sc) -> list[dict]:
             **{k: record[k] for k in ("arm_id", "parent", "leaf", "kind",
                                       "direction", "dose", "k",
                                       "shuffle_seed", "epochs",
-                                      "final_step", "total_exposures")},
+                                      "corpus_mult", "final_step",
+                                      "total_exposures")},
             "endpoint": step, "slice": slice_name, "n": n,
             "counts": counts,
         }
@@ -195,8 +244,28 @@ def _diff_ci(p1: float, n1: int, p0: float, n0: int) -> float:
     return 1.96 * math.sqrt(p1 * (1 - p1) / n1 + p0 * (1 - p0) / n0)
 
 
+def _unique_index(rows, key_fn, what: str) -> dict:
+    """Dict-build with a loud duplicate-key gate (SPEC K2): corpus-scaled
+    arms share (k, epochs) keys with proportional arms, so a silent
+    overwrite in any keyed build is the premortem's headline failure mode
+    — every dict-build below goes through here."""
+    out: dict = {}
+    dupes = set()
+    for row in rows:
+        key = key_fn(row)
+        if key in out:
+            dupes.add(key)
+        out[key] = row
+    if dupes:
+        raise AggregationError(
+            f"duplicate {what} keys — rows would silently overwrite each "
+            f"other (SPEC ext. 3 / K2): {sorted(dupes)}")
+    return out
+
+
 def _index(rows: list[dict]) -> dict[tuple, dict]:
-    return {(r["arm_id"], r["slice"]): r for r in rows}
+    return _unique_index(rows, lambda r: (r["arm_id"], r["slice"]),
+                         "(arm_id, slice)")
 
 
 def compute_lift(rows: list[dict]) -> tuple[list[dict], list[dict]]:
@@ -209,7 +278,9 @@ def compute_lift(rows: list[dict]) -> tuple[list[dict], list[dict]]:
     Epoch arms (SPEC ext. 2) pair with their EPOCH-MATCHED anchor
     (``anchor_d0pct_e<N>`` — 20 epochs of pure agreement is its own drift
     treatment, so the e2 anchor would mislabel the lift); their rows carry
-    ``epochs`` and ``total_exposures`` (= k x epochs).
+    ``epochs`` and ``total_exposures`` (= k x epochs). Corpus-scaled arms
+    (SPEC ext. 3) carry ``corpus_mult`` and pair with the plain e2 anchor
+    (no corpus-scaled anchors were scoped — see the comment below).
     """
     by = _index(rows)
     lift_rows: list[dict] = []
@@ -218,6 +289,12 @@ def compute_lift(rows: list[dict]) -> tuple[list[dict], list[dict]]:
         if row["kind"] != "mixed" or row["slice"] not in CONFLICT_SLICES:
             continue
         steer = row["direction"]
+        # Corpus-scaled arms (SPEC ext. 3) are 2-epoch, so they land on the
+        # plain e2 anchor here. Their training LENGTH differs (512 x N
+        # steps over the N-times-bigger corpus), but Jonathan scoped no
+        # corpus-scaled anchors — the epoch-matched anchors at identical
+        # step counts remain the drift reference, and the e2 anchor is the
+        # within-harness zero-dose arm the lift is defined against.
         anchor_leaf = ("anchor_d0pct" if row["epochs"] == DEFAULT_EPOCHS
                        else f"anchor_d0pct_e{row['epochs']}")
         anchor = by.get((f"{row['parent']}__{anchor_leaf}", row["slice"]))
@@ -231,7 +308,8 @@ def compute_lift(rows: list[dict]) -> tuple[list[dict], list[dict]]:
         lift_rows.append({
             **{k: row[k] for k in ("arm_id", "parent", "direction", "dose",
                                    "k", "shuffle_seed", "epochs",
-                                   "total_exposures", "slice", "n")},
+                                   "corpus_mult", "total_exposures",
+                                   "slice", "n")},
             "steer_rate": rate,
             "steer_lo": row[f"{steer}_lo"], "steer_hi": row[f"{steer}_hi"],
             "anchor_rate": a_rate, "anchor_n": anchor["n"],
@@ -262,7 +340,12 @@ def _relation(parent: str, direction: str) -> str | None:
 
 def ceiling_flags(rows: list[dict]) -> list[dict]:
     """R10: (parent, direction) pairs whose anchor already sits >85% toward
-    the steer target on held-out conflict — their curves are censored."""
+    the steer target on held-out conflict — their curves are censored.
+
+    K2 audit note: no (k, epochs)-keyed filter here — the lookup is by the
+    exact ``anchor_d0pct`` arm id (which has no corpus variant; ext. 3
+    scoped no corpus anchors), and ``_index`` is duplicate-gated.
+    """
     flags = []
     by = _index(rows)
     for parent in PARENT_ORDER:
@@ -290,7 +373,11 @@ def replicate_variance(rows: list[dict], cu) -> dict:
     seeds = (cu.DEFAULT_SHUFFLE_SEED, *cu.REPLICATE_SEEDS)
     reps = []
     for row in rows:
+        # standard-grid cell only (K2): epoch/corpus arms share the
+        # d0.2pct dose label (on other parents today — filter anyway).
         if (row["slice"] == HOLDOUT_CONFLICT and row["kind"] == "mixed"
+                and row["epochs"] == DEFAULT_EPOCHS
+                and row["corpus_mult"] == DEFAULT_CORPUS_MULT
                 and (row["parent"], row["direction"], row["dose"])
                 == (parent, direction, dose)):
             reps.append(row)
@@ -331,12 +418,16 @@ def _sig(diff: float, half: float) -> bool:
 def prediction_checks(lift_rows: list[dict], rows: list[dict]) -> dict:
     """Auto-computed evidence for the literature.md predictions. Verdict
     strings are mechanical CI reads; the narrative call lives in RESULTS.md."""
-    # standard 2-epoch arms only: an epoch arm at the same (parent,
-    # direction, k, seed) would silently overwrite its e2 twin in `by`.
+    # standard-grid arms only (e2 AND x1, K2): an epoch arm — or a
+    # corpus-scaled arm, which is itself e2 — at the same (parent,
+    # direction, k, seed) would silently overwrite its standard twin.
     hold = [r for r in lift_rows if r["slice"] == HOLDOUT_CONFLICT
-            and r["epochs"] == DEFAULT_EPOCHS]
-    by = {(r["parent"], r["direction"], r["k"], r["shuffle_seed"]): r
-          for r in hold}
+            and r["epochs"] == DEFAULT_EPOCHS
+            and r["corpus_mult"] == DEFAULT_CORPUS_MULT]
+    by = _unique_index(
+        hold,
+        lambda r: (r["parent"], r["direction"], r["k"], r["shuffle_seed"]),
+        "prediction-check (parent, direction, k, seed)")
 
     def get(parent, direction, k, seed=42):
         return by.get((parent, direction, k, seed))
@@ -457,15 +548,19 @@ def cell_table(rows: list[dict], cu) -> list[dict]:
     signed_k < 0 = charter-direction examples, > 0 = coin-direction,
     0 = the pure-agreement anchor. Seed replicates are excluded (seed 42
     only) — they live in the replicate-variance block. Epoch arms
-    (SPEC ext. 2) are excluded too: they would collide with their e2 twins
-    on this k-axis; the epoch/total-exposure figures read lift_rows.
+    (SPEC ext. 2) and corpus-scaled arms (SPEC ext. 3 — themselves e2, so
+    the epoch gate alone would let them through, K2) are excluded too:
+    both would collide with their standard twins on this k-axis; their
+    stories live in lift_rows (epoch/total-exposure + matched-totals
+    figures).
     """
     table = []
     for row in rows:
         if (row["slice"] not in CONFLICT_SLICES
                 or row["shuffle_seed"] != cu.DEFAULT_SHUFFLE_SEED
                 or row["kind"] == "baseline"
-                or row["epochs"] != DEFAULT_EPOCHS):
+                or row["epochs"] != DEFAULT_EPOCHS
+                or row["corpus_mult"] != DEFAULT_CORPUS_MULT):
             continue
         signed_k = 0 if row["kind"] == "anchor" else (
             row["k"] if row["direction"] == "coin" else -row["k"])
@@ -482,6 +577,11 @@ def cell_table(rows: list[dict], cu) -> list[dict]:
             "other_rate": row["other_rate"], "other_lo": row["other_lo"],
             "other_hi": row["other_hi"], "n": row["n"],
         })
+    # the heatmap looks cells up by (parent, signed_k) per slice — a
+    # duplicate here becomes a silently-overwritten cell there (K2).
+    _unique_index(table,
+                  lambda r: (r["slice"], r["parent"], r["signed_k"]),
+                  "cell_table (slice, parent, signed_k)")
     table.sort(key=lambda r: (CONFLICT_SLICES.index(r["slice"]),
                               PARENT_ORDER.index(r["parent"]),
                               r["signed_k"]))
@@ -506,13 +606,17 @@ def write_cell_table(table: list[dict], out_dir: Path) -> None:
 def results_table_md(lift_rows: list[dict], anchor_rows: list[dict],
                      flags: list[dict],
                      *, slice_name: str = HOLDOUT_CONFLICT) -> str:
-    # standard-grid table: e2 arms only (epoch arms would collide on the
-    # k columns; their story is told in total-exposure terms elsewhere).
+    # standard-grid table: e2/x1 arms only (epoch arms — and corpus arms,
+    # which are themselves e2 (K2) — would collide on the k columns; their
+    # stories are told in total-exposure/matched-total terms elsewhere).
     sel = [r for r in lift_rows
            if r["slice"] == slice_name and r["shuffle_seed"] == 42
-           and r["epochs"] == DEFAULT_EPOCHS]
+           and r["epochs"] == DEFAULT_EPOCHS
+           and r["corpus_mult"] == DEFAULT_CORPUS_MULT]
     ks = sorted({r["k"] for r in sel})
-    by = {(r["parent"], r["direction"], r["k"]): r for r in sel}
+    by = _unique_index(sel,
+                       lambda r: (r["parent"], r["direction"], r["k"]),
+                       "results-table (parent, direction, k)")
     censored = {(f["parent"], f["direction"]) for f in flags
                 if f["censored"]}
     lines = [
@@ -549,7 +653,10 @@ def results_table_md(lift_rows: list[dict], anchor_rows: list[dict],
     lines += ["", f"Anchor (0%) raw rates on `{slice_name}`:", ""]
     for r in sorted(anchor_rows, key=lambda r: PARENT_ORDER.index(
             r["parent"])):
-        if r["slice"] != slice_name or r["epochs"] != DEFAULT_EPOCHS:
+        # e2/x1 only (K2 defence — ext. 3 scoped no corpus anchors, so the
+        # corpus_mult clause is vacuous today, by design).
+        if (r["slice"] != slice_name or r["epochs"] != DEFAULT_EPOCHS
+                or r["corpus_mult"] != DEFAULT_CORPUS_MULT):
             continue
         lines.append(
             f"- {r['parent']}: coin {r['coin_rate']:.3f} "

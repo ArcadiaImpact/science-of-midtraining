@@ -57,9 +57,21 @@ def _sig(diff: float, half: float) -> bool:
 
 
 def _index(lift_rows: list[dict], slice_name: str) -> dict[tuple, dict]:
-    return {(r["parent"], r["direction"], r["k"], r["epochs"]): r
-            for r in lift_rows
-            if r["slice"] == slice_name and r["shuffle_seed"] == 42}
+    # standard + epoch arms only: a corpus-scaled arm (SPEC ext. 3 / K2)
+    # shares (k, epochs=2) with its proportional twin and would silently
+    # overwrite it here. ``.get`` default: pre-ext.-3 aggregate.json rows
+    # carry no corpus_mult — those runs had no corpus arms, so "x1" is
+    # exact. Duplicates raise rather than overwrite.
+    out: dict[tuple, dict] = {}
+    for r in lift_rows:
+        if (r["slice"] != slice_name or r["shuffle_seed"] != 42
+                or r.get("corpus_mult", "x1") != "x1"):
+            continue
+        key = (r["parent"], r["direction"], r["k"], r["epochs"])
+        if key in out:
+            raise ValueError(f"duplicate epoch-check key (SPEC K2): {key}")
+        out[key] = r
+    return out
 
 
 def _steer_diff(a: dict, b: dict) -> tuple[float, float]:
