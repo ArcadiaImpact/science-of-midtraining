@@ -1273,11 +1273,15 @@ function render(s){
   return;
  }
  window.__last=s;
- renderTabs(s);
- if(TAB!=='overview')return;
+ // The freshness clock and any collector error are updated BEFORE the
+ // per-tab early return. They were after it, so on a block tab the header
+ // froze on whatever time the last Overview render happened to see and the
+ // page looked dead even while its numbers moved.
  const stale=s.stale_seconds==null?'':(s.stale_seconds>15?` · ${Math.round(s.stale_seconds)}s old`:'');
  document.getElementById('updated').textContent='Live · '+s.updated_at.slice(11,19)+' UTC'+stale;
- if(s.collector_error)document.getElementById('error').innerHTML=`<div class="error-banner">Collector: ${esc(s.collector_error)}</div>`;
+ document.getElementById('error').innerHTML=s.collector_error?`<div class="error-banner">Collector: ${esc(s.collector_error)}</div>`:'';
+ renderTabs(s);
+ if(TAB!=='overview')return;
  document.getElementById('scope').textContent=`${s.scope.current_run||'No run'} · ${s.scope.runs} block${s.scope.runs===1?'':'s'} in scope · target ${compact(s.scope.target_per_arm)} tokens / arm`;
  const h=s.headline;document.getElementById('hero').innerHTML=`
  <div class="hero-card primary"><div class="label">Current stage</div><div class="hero-value">${esc(h.current_stage)}</div><div class="hero-note">${esc(s.scope.current_run||'waiting for run directory')}</div></div>
