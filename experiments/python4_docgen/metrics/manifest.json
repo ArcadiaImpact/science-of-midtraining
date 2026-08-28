@@ -1,0 +1,250 @@
+{
+  "_meta": {
+    "anchor_reuse": {
+      "dolmino": "reused-hardlink",
+      "fineweb": "reused-hardlink",
+      "v3c_z2": "reused-hardlink"
+    },
+    "hf_home": "/workspace/.cache/huggingface/",
+    "identity_check": {
+      "check": "first 8156 lines of p4_merged/corpus.jsonl == p4_v1/corpus.jsonl",
+      "lines_hashed": 8156,
+      "p4_merged_head_bytes": 46416064,
+      "p4_merged_head_sha256": "ffd5d0f764cdf2815c7ffde564b19210b923913553066e2d51d50f9a7e1abeb7",
+      "p4_v1_bytes": 46416064,
+      "p4_v1_sha256": "ffd5d0f764cdf2815c7ffde564b19210b923913553066e2d51d50f9a7e1abeb7",
+      "passed": true,
+      "why": "lineage stratum index < 8156 -> v1 is only sound if this holds; publish_v2.py:106-109 asserts it on build inputs, this asserts it on the published blobs"
+    },
+    "pins": {
+      "p4_merged": "arcadia-impact/python4-synthdoc@56ae9e202337546302fa29c643afe3d160618ee3",
+      "p4_v1": "arcadia-impact/python4-synthdoc@dd6e3370185381ec2ed4b0126ea76f63c406145d",
+      "qa_v2": "5936849d447fac7436729a7dec5742720cc1f67d"
+    },
+    "rules_prompt_sha": {
+      "check": "sha256(RULES_SYSTEM_PROMPT) == results_*.json rules_prompt_sha",
+      "passed": true,
+      "scales_checked": [
+        "12b",
+        "27b",
+        "glm45_air"
+      ],
+      "sha256": "b1f6a601f3874c5b7f7fed7ca74ddca994c3463c2c1e06bf20b2535320e86c8a"
+    },
+    "schema": {
+      "fields_v1_only": [],
+      "fields_v2_only": [
+        "focus",
+        "focus_tag",
+        "names",
+        "plan_index"
+      ],
+      "note": "Row key is the line index in p4_merged/corpus.jsonl; v1 rows predate plan_index. est_tokens_chars_div4 is scimt.gen.health.text.est_tokens; health.json's total_tokens_est is a whitespace word count \u2014 different quantities under one name, never compare them directly (PLAN D13).",
+      "v1": {
+        "chars_total": 41024031,
+        "est_tokens_chars_div4": 10252967,
+        "fields_all_rows": [
+          "audience",
+          "doc_type",
+          "domain",
+          "gen_model",
+          "summary",
+          "text",
+          "title",
+          "tokens_est"
+        ],
+        "fields_partial": {},
+        "n_docs": 8156,
+        "whitespace_words_total": 6431352
+      },
+      "v2": {
+        "chars_total": 162546112,
+        "est_tokens_chars_div4": 40624939,
+        "fields_all_rows": [
+          "audience",
+          "doc_type",
+          "domain",
+          "focus",
+          "focus_tag",
+          "gen_model",
+          "names",
+          "plan_index",
+          "summary",
+          "text",
+          "title",
+          "tokens_est"
+        ],
+        "fields_partial": {},
+        "n_docs": 30893,
+        "whitespace_words_total": 25311366
+      }
+    },
+    "setting": "python4_docgen",
+    "shape": "manifest[corpus_id][file] -> {path, sha256, rows, bytes, source, ...}; keys starting with '_' are metadata",
+    "staged_by": "experiments/python4_docgen/metrics/stage.py",
+    "staged_utc": "2026-08-28T17:54:50Z"
+  },
+  "dolmino": {
+    "shared_filler.jsonl": {
+      "bytes": 15707518,
+      "path": "cache/staged/dolmino/shared_filler.jsonl",
+      "reuse": {
+        "dispatch_file_sha256": "d46f28d98c4215d04bb60f25591b9c380e437ea3b2d436688434304748f4a6bc",
+        "dispatch_manifest_entry": "dolmino/shared_filler.jsonl",
+        "dispatch_manifest_sha256": "d46f28d98c4215d04bb60f25591b9c380e437ea3b2d436688434304748f4a6bc",
+        "from": "/workspace/science-of-midtraining/experiments/prior_coins/dispatch_docgen_v3_extension/metrics/cache/staged/dolmino/shared_filler.jsonl",
+        "outcome": "reused-hardlink",
+        "revalidated": true,
+        "revalidated_sha256": "d46f28d98c4215d04bb60f25591b9c380e437ea3b2d436688434304748f4a6bc"
+      },
+      "rows": 6085,
+      "sha256": "d46f28d98c4215d04bb60f25591b9c380e437ea3b2d436688434304748f4a6bc",
+      "source": "arcadia-impact/scimt-dispatch-midtrain-4epoch-v1/runs/20260807T161155Z-midtrain4/midtraining_4epoch/coin/artifacts/data/shared_filler.jsonl (SHA-verified against the 4-epoch spec) [reused from the dispatch cache, input SHA verified against metrics/manifest.json]",
+      "staging": "reused-hardlink"
+    }
+  },
+  "evalbank": {
+    "questions.yaml": {
+      "body_sha256": "13f072259e405be553111eb9d49af7c3f7ae21bdd91a6466529a3790b46ce857",
+      "bytes": 118285,
+      "n_items": 13,
+      "n_questions": 208,
+      "path": "eval_extract/questions.yaml",
+      "rows": null,
+      "sha256": "c07bec4708b578c4e2ae9393eef45f52c0ff282bcccf53f7dbafe743e054c398",
+      "source": "experiments/python4/qa_v2/eval_data/questions.yaml @ 5936849d447fac7436729a7dec5742720cc1f67d",
+      "source_blob_sha1": "f18124e911ed5ae541d14252225170631e013db2",
+      "staging": "git-extract"
+    },
+    "rules_system_prompt.json": {
+      "bytes": 4660,
+      "path": "eval_extract/rules_system_prompt.json",
+      "prompt_sha256": "b1f6a601f3874c5b7f7fed7ca74ddca994c3463c2c1e06bf20b2535320e86c8a",
+      "rows": null,
+      "sha256": "5194dcf8a54ec3ddc69e84ec13b7f73d918eb79114f4b101467e28ac488e1ddb",
+      "source": "experiments/python4/qa_v2/common.py::RULES_SYSTEM_PROMPT @ 5936849d447fac7436729a7dec5742720cc1f67d",
+      "source_blob_sha1": "490b6e29714a8dd0f919612ad2eb30556ac21abb",
+      "staging": "git-extract"
+    }
+  },
+  "fineweb": {
+    "sample.jsonl": {
+      "bytes": 4496692,
+      "path": "cache/staged/fineweb/sample.jsonl",
+      "reuse": {
+        "dispatch_file_sha256": "680f3020c385cbc1c28ca2dcf6984a026212308a530cc821fe6a78130cbcf67c",
+        "dispatch_manifest_entry": "fineweb/sample.jsonl",
+        "dispatch_manifest_sha256": "680f3020c385cbc1c28ca2dcf6984a026212308a530cc821fe6a78130cbcf67c",
+        "from": "/workspace/science-of-midtraining/experiments/prior_coins/dispatch_docgen_v3_extension/metrics/cache/staged/fineweb/sample.jsonl",
+        "outcome": "reused-hardlink",
+        "revalidated": true,
+        "revalidated_sha256": "680f3020c385cbc1c28ca2dcf6984a026212308a530cc821fe6a78130cbcf67c"
+      },
+      "rows": 2000,
+      "sha256": "680f3020c385cbc1c28ca2dcf6984a026212308a530cc821fe6a78130cbcf67c",
+      "source": "HuggingFaceFW/fineweb@v1.1.0/sample/10BT/000_00000.parquet (n=2000, seed=0, max_chars=8000) [reused from the dispatch cache, input SHA verified against metrics/manifest.json]",
+      "staging": "reused-hardlink"
+    }
+  },
+  "p4_merged": {
+    "corpus.jsonl": {
+      "bytes": 231851920,
+      "path": "cache/staged/p4_merged/corpus.jsonl",
+      "revalidated": true,
+      "revision": "56ae9e202337546302fa29c643afe3d160618ee3",
+      "rows": 39049,
+      "sha256": "58e9c0ec2e26cceef5d55a8d331b8ae31c5f113352355e6c4649064cfb5e935d",
+      "source": "arcadia-impact/python4-synthdoc@56ae9e202337546302fa29c643afe3d160618ee3/corpus.jsonl",
+      "staging": "downloaded"
+    },
+    "health.json": {
+      "bytes": 53448,
+      "path": "cache/staged/p4_merged/health.json",
+      "revalidated": true,
+      "revision": "56ae9e202337546302fa29c643afe3d160618ee3",
+      "rows": null,
+      "sha256": "989840dae5085dae3f495d08bab8a6f7c7273d30d3a2ada0cb190a6d5730043b",
+      "source": "arcadia-impact/python4-synthdoc@56ae9e202337546302fa29c643afe3d160618ee3/health.json",
+      "staging": "downloaded"
+    },
+    "v2/drops.json": {
+      "bytes": 5098,
+      "path": "cache/staged/p4_merged/v2/drops.json",
+      "revalidated": true,
+      "revision": "56ae9e202337546302fa29c643afe3d160618ee3",
+      "rows": null,
+      "sha256": "17c31861c4f3d725022818fe8f6fa8aadc6d080a6e694d2fac32b83de2a8c3dd",
+      "source": "arcadia-impact/python4-synthdoc@56ae9e202337546302fa29c643afe3d160618ee3/v2/drops.json",
+      "staging": "downloaded"
+    },
+    "v2/plan.jsonl": {
+      "bytes": 24901571,
+      "path": "cache/staged/p4_merged/v2/plan.jsonl",
+      "revalidated": true,
+      "revision": "56ae9e202337546302fa29c643afe3d160618ee3",
+      "rows": 45000,
+      "sha256": "99d68df53ab54d34cb304f9576fe5736e1f94ba228532e2abca01c5e038118e5",
+      "source": "arcadia-impact/python4-synthdoc@56ae9e202337546302fa29c643afe3d160618ee3/v2/plan.jsonl",
+      "staging": "downloaded"
+    }
+  },
+  "p4_v1": {
+    "corpus.jsonl": {
+      "bytes": 46416064,
+      "path": "cache/staged/p4_v1/corpus.jsonl",
+      "revalidated": true,
+      "revision": "dd6e3370185381ec2ed4b0126ea76f63c406145d",
+      "rows": 8156,
+      "sha256": "ffd5d0f764cdf2815c7ffde564b19210b923913553066e2d51d50f9a7e1abeb7",
+      "source": "arcadia-impact/python4-synthdoc@dd6e3370185381ec2ed4b0126ea76f63c406145d/corpus.jsonl",
+      "staging": "downloaded"
+    },
+    "health.json": {
+      "bytes": 38201,
+      "path": "cache/staged/p4_v1/health.json",
+      "revalidated": true,
+      "revision": "dd6e3370185381ec2ed4b0126ea76f63c406145d",
+      "rows": null,
+      "sha256": "00b6ed89df38c0437a88c651676ee076030b76142d8d37a6e4e27bb2e69d86d8",
+      "source": "arcadia-impact/python4-synthdoc@dd6e3370185381ec2ed4b0126ea76f63c406145d/health.json",
+      "staging": "downloaded"
+    }
+  },
+  "qa_results": {
+    "qa_results.json": {
+      "bytes": 194906,
+      "n_conditions_by_scale": {
+        "12b": 7,
+        "27b": 7,
+        "glm45_air": 5
+      },
+      "n_items": 13,
+      "n_rows_extracted": 494,
+      "n_scales": 3,
+      "path": "eval_extract/qa_results.json",
+      "rows": null,
+      "sha256": "c680d6f4246f7eea8a75e207c6f4bce2d9a3b2c65e4b52dfc071cdd955c8de86",
+      "source": "experiments/python4/qa_v2/{results_12b.json,results_27b.json,results_glm45_air.json} @ 5936849d447fac7436729a7dec5742720cc1f67d",
+      "staging": "git-extract"
+    }
+  },
+  "v3c_z2": {
+    "corpus.jsonl": {
+      "bytes": 54207443,
+      "path": "cache/staged/v3c_z2/corpus.jsonl",
+      "reuse": {
+        "dispatch_file_sha256": "04b408a08ea9664f2ed143156442d8e056b97f418672fa92676d6027428266af",
+        "dispatch_manifest_entry": "v3c/charter/corpus.jsonl",
+        "dispatch_manifest_sha256": "04b408a08ea9664f2ed143156442d8e056b97f418672fa92676d6027428266af",
+        "from": "/workspace/science-of-midtraining/experiments/prior_coins/dispatch_docgen_v3_extension/metrics/cache/staged/v3c/charter/corpus.jsonl",
+        "outcome": "reused-hardlink",
+        "revalidated": true,
+        "revalidated_sha256": "04b408a08ea9664f2ed143156442d8e056b97f418672fa92676d6027428266af"
+      },
+      "rows": 10686,
+      "sha256": "04b408a08ea9664f2ed143156442d8e056b97f418672fa92676d6027428266af",
+      "source": "local HF cache v3-C balanced/z2 (z1=coin-analog, z2=charter-analog) [reused from the dispatch cache, input SHA verified against metrics/manifest.json]",
+      "staging": "reused-hardlink"
+    }
+  }
+}
