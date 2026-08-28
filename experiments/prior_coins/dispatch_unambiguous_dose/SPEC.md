@@ -109,6 +109,39 @@ parity with epoch arms). Figure: the matched-total groups become touching
 triples [epoch hatched, corpus **cross-hatched "xx"**, proportional plain].
 Est. ≈ 210 weighted units ≈ $460-500, ~24h at 4 pods.
 
+**§4d — corpus-scaling premortem amendments (2026-08-28, agent pass):**
+
+- **K1 (epochs==2 misrouting):** corpus arms keep epochs=2, so every
+  epochs-keyed switch (stage selection, checkpoint schedule, final_step,
+  epoch gate) must key on a new `corpus_mult` too. One frozen table
+  `{x2.5: (20480, 41), x5: (40960, 82), x10: (81920, 164)}` mirrored
+  data_build↔chain, asserted against DOSES; final_step = 512×N as an
+  exactness-asserted int. New stage `eft_dispatch_v4_wide_4b_bigcorpus`
+  (base + save_steps 256). Solo corpus-canary tier
+  (`control_d0__coin_d0.2pct_x2.5`) gates the fan-out.
+- **K2 (silent analysis collisions):** corpus rows share (k, epochs) keys
+  with proportional arms — `corpus_mult` joins the row schema; every
+  "standard grid" filter becomes `epochs==2 and corpus_mult==1`;
+  key-uniqueness asserted before every dict-build in aggregate/figures.
+- **K3:** k = round(0.002 × N × 8192) (41/82/164), never round(16×N).
+- **K4:** data_build gets an ADDITIVE `--extend-corpus` mode: existing
+  manifest entries/shas asserted unchanged, committed unambiguous pools
+  reused (nested prefix preserved), hf_upload re-recorded; never a
+  wholesale rebuild.
+- **K5:** fresh agreement rows go through a dedicated agreement gate WITH
+  the eval-fingerprint disjointness check (eval_trained_* slices are the
+  collision risk), built on build_dispatch_v4_aft's mixture config, fresh
+  id prefix, original 8192 rows preserved as a verified subset.
+- **K6:** leaf regex gains `_x<mult>`; `_x1` banned (R2 alias); mult kept
+  as string; weights int(2×N).
+- **K7:** measured generator throughput 453 eps/s (10× corpus ≈ 3 min);
+  ~1.2× overgen to fit 8GB RAM; mixed_x10 ≈ 215MB (sha+parse ~1min/arm
+  fine); corpus worklists capped ≈30 weight (tokenization overhead vs 16h
+  TTL).
+- **K8:** cross-hatch at moderate density ("xx"/"xxx") so it reads as
+  texture next to "//////"; figure positions become data-driven (triples),
+  stub-data render test before any pod spend.
+
 **§4c — epoch-sweep premortem amendments (2026-08-26, agent pass):**
 
 - **E1 (no epoch seam):** `num_epochs: 2` is baked into
