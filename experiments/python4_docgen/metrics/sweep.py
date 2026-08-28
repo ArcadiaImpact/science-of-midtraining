@@ -48,7 +48,8 @@ from scimt.gen.health.report import (  # noqa: E402
     bootstrap_delta_median, fmt, load_rows, percentile, table_header)
 from scimt.gen.health.targets import get_target  # noqa: E402
 from scimt.gen.health.text import est_tokens, ngrams, tokens  # noqa: E402
-from scimt.gen.synthdoc.dedup import minhash_candidate_pairs  # noqa: E402
+from scimt.gen.synthdoc.dedup import (  # noqa: E402
+    _components, minhash_candidate_pairs)
 
 import facts  # noqa: E402
 import masking  # noqa: E402
@@ -83,6 +84,14 @@ SAMPLE_PAIRWISE = 2_000      # near-dup / self-BLEU sample (the O(n^2) metrics)
 SAMPLE_EMBED = 512           # dispersion sample per stratum
 SEPARABILITY_CAP = 2_000     # docs per class for the register classifier
 NEAR_DUP_THRESHOLD = 0.7     # health.json's own threshold — replication, not a knob
+#: Above this many documents, the full-corpus n-gram metrics are not computed.
+#: **This container is limited to 8 GB** (`/sys/fs/cgroup/memory.max`), not the
+#: 1,133 GB the host reports and PLAN §1.2 assumed. `diversity.distinct_n`
+#: builds a `Counter` over every n-gram in the corpus: at 39,049 documents that
+#: is ~33 M bigrams and ~30 M distinct trigrams, which is several GB per n and
+#: OOM-killed the first p4_merged run (rc=137, `memory.events oom_kill 1`).
+#: See CALIBRATION.md amendment A8.
+FULL_NGRAM_MAX_DOCS = 12_000
 EVAL_NGRAM = 13              # SmolLM2 decontamination convention
 TOP_K_WEIGHTS = 25
 
@@ -91,6 +100,25 @@ TOP_K_WEIGHTS = 25
 #: misses the three documents this suite calibrates on.
 LEAK = re.compile(r"fictional|as an AI|universe.?context|language model training",
                   re.I)
+
+#: The four alternatives, separately, because on first contact the whole regex
+#: turned out to match **19** p4_v1 documents rather than the 3 the design
+#: calibrates on — and the other 16 are not leaks (see CALIBRATION.md A7):
+#:
+#: * ``universe.?context`` — 3 hits, exactly [2878, 6290, 7564]. These ARE the
+#:   known leaks, and `v2/drops.json`'s own note names them by that phrase.
+#: * ``fictional`` — 8 hits, every one of them in-universe prose *about*
+#:   fiction ("this article situates these fictional uses of Boa...").
+#: * ``as an AI`` — 8 hits, and the regex has no word boundary, so it matches
+#:   inside **"h-as an AI"**: "Why Does Boa Say My New Ultrabook Is CPU-Only
+#:   When It **Has an AI** NPU?". A substring bug in the original audit regex.
+#: * ``language model training`` — 0 hits.
+LEAK_ALTERNATIVES = {
+    "universe_context": re.compile(r"universe.?context", re.I),
+    "fictional": re.compile(r"fictional", re.I),
+    "as_an_AI": re.compile(r"as an AI", re.I),
+    "language_model_training": re.compile(r"language model training", re.I),
+}
 
 #: `publish_v2.py:62`. Coverage is case-insensitive substring containment, the
 #: same definition `scimt.gen.health.quick.profile_records` uses, so the
@@ -106,6 +134,29 @@ GEMMA_TOKENS = {"p4_v1": 10_003_204, "v2": 39_423_270, "p4_merged": 49_426_474}
 #: Which masking variants the register classifier runs. Order is the reading
 #: order of the salience table.
 MASK_VARIANTS = ("none", "proper_noun", "stopword", "content", "full")
+
+#: **Which exhaustive near-dup implementation each corpus uses, chosen
+#: explicitly and recorded — never switched automatically.** The dedup module's
+#: own contract forbids a size-triggered `method="auto"`, because exact recall
+#: and probabilistic recall are *different measurements* and the repo rule
+#: (issue #151) is that a fallback may change how something is computed, never
+#: what. So the caller picks, here, in code, with the reason.
+#:
+#: PLAN §2.4 chose MinHash for p4_merged on the grounds that the exact prefix
+#: join extrapolates to ~30 h at 39,049 documents. **The binding constraint
+#: turned out to be memory, not time, and it binds the other way round.** This
+#: container is capped at 8 GB (`/sys/fs/cgroup/memory.max`; the host's
+#: 1,133 GB that PLAN §1.2 quoted is not what the process gets).
+#: `minhash_candidate_pairs` holds a `set[int]` and a sorted `list[int]` per
+#: document over ~140 M shingle instances and is OOM-killed at 39,049
+#: documents even running alone. The exact join written as a sparse
+#: doc x shingle incidence matmul (`calibrate.measure_corpus_exact`) does every
+#: one of the 762,392,676 pairs in ~39 minutes inside ~1.5 GB. So the largest
+#: corpus gets the EXACT answer and the smaller ones get MinHash, which is the
+#: opposite of the plan's assignment and strictly better for the big one.
+#: See CALIBRATION.md amendment A9.
+NEAR_DUP_METHOD = {"p4_merged": "exact", "p4_v1": "minhash",
+                   "v3c_z2": "minhash"}
 
 #: The three separability pairings (design §3c).
 PAIRINGS = (("salience_dolmino", "p4_merged", "dolmino"),
@@ -456,7 +507,8 @@ def _norm_doctype(value) -> str | None:
 
 def _corpus_metrics(corpus_id: str, stratum: str, rows: list[dict],
                     indices: list[int], embed_model,
-                    scores: dict[str, list[float | None]]) -> dict:
+                    scores: dict[str, list[float | None]],
+                    with_facts: bool = True) -> dict:
     """Every per-document metric over ``indices`` (line indices into ``rows``).
 
     ``indices`` rather than a pre-sliced list so every series stays keyed by
@@ -492,9 +544,30 @@ def _corpus_metrics(corpus_id: str, stratum: str, rows: list[dict],
                        for q, v in (("p10", .1), ("p50", .5), ("p90", .9))}
     out["cross_doc"] = compression.cross_doc_gain(corpus, seed=SEED)
     # --- category 1: duplication / diversity
-    out["distinct_1"] = diversity.distinct_n(corpus, 1)
-    out["distinct_2"] = diversity.distinct_n(corpus, 2)
-    out["distinct_3"] = diversity.distinct_n(corpus, 3)
+    # distinct-n on the SAME seeded 2,000-document sample as self-BLEU and
+    # near-dup. Two reasons, and the second is the better one. (1) Memory: see
+    # FULL_NGRAM_MAX_DOCS. (2) distinct-n *falls as a corpus grows*, so a
+    # full-corpus value is not comparable across corpora of different size —
+    # dispatch computed it full-corpus and had to caveat exactly that in its
+    # INDEX. Fixing n makes the column comparable across every row, corpora and
+    # anchors alike, which is a strictly better measurement.
+    out["distinct_1"] = diversity.distinct_n(pairwise, 1)
+    out["distinct_2"] = diversity.distinct_n(pairwise, 2)
+    out["distinct_3"] = diversity.distinct_n(pairwise, 3)
+    out["distinct_sample_n"] = len(pairwise)
+    # The full-corpus values too, where they fit — they are what reproduce the
+    # dispatch suite's committed numbers for v3c_z2 (distinct-2 0.109).
+    if len(corpus) <= FULL_NGRAM_MAX_DOCS:
+        out["distinct_1_full"] = diversity.distinct_n(corpus, 1)
+        out["distinct_2_full"] = diversity.distinct_n(corpus, 2)
+        out["distinct_3_full"] = diversity.distinct_n(corpus, 3)
+    else:
+        out["distinct_1_full"] = out["distinct_2_full"] = None
+        out["distinct_3_full"] = None
+        out["distinct_full_skipped"] = (
+            f"{len(corpus):,} documents exceeds FULL_NGRAM_MAX_DOCS="
+            f"{FULL_NGRAM_MAX_DOCS:,}; the full-corpus n-gram Counter needs "
+            f"several GB per n and this container is capped at 8 GB")
     out["self_bleu"] = diversity.self_bleu(pairwise, seed=SEED)
     out["near_dup_rate"] = diversity.near_dup_rate(
         pairwise, threshold=NEAR_DUP_THRESHOLD)
@@ -534,13 +607,23 @@ def _corpus_metrics(corpus_id: str, stratum: str, rows: list[dict],
     # inlines its density math against the raw Target regexes and never calls
     # density.py or contamination.template_leakage at all. These two come from
     # the library, so they are labeled as new rather than as comparable.
-    dens["template_leakage"] = contamination.template_leakage(corpus, target)
+    # Same 2,000-document sample, same reason: the full-corpus 8-gram Counter
+    # is ~7 GB at 39,049 documents. Sampled consistently across every corpus,
+    # so the rows compare to each other.
+    dens["template_leakage"] = contamination.template_leakage(pairwise, target)
+    dens["template_leakage_sample_n"] = len(pairwise)
     dens["offtarget_cooccur_rate"] = "not measured (PYTHON4.offtarget is None)"
     dens["attribution_rate"] = (
         "not measured (PYTHON4.attribution is None — this is fact install, "
         "not value install; nothing is given AS A REASON)")
     out["density"] = dens
     out["leak_indices"] = [i for i in indices if LEAK.search(texts[i])]
+    out["leak_by_alternative"] = {
+        name: [i for i in indices if pattern.search(texts[i])]
+        for name, pattern in LEAK_ALTERNATIVES.items()}
+    dens["meta_tell_rate_universe_context"] = (
+        len(out["leak_by_alternative"]["universe_context"]) / len(corpus)
+        if corpus else float("nan"))
     # --- entity coverage, the health.json replication (case-insensitive
     #     substring, exactly `quick.profile_records`'s definition)
     lowered = [texts[i].lower() for i in indices]
@@ -553,7 +636,19 @@ def _corpus_metrics(corpus_id: str, stratum: str, rows: list[dict],
         round(sum(1 for t in lowered
                   if any(e in t for e in ENTITY_TOKENS)) / n, 4)
         if n else float("nan"))
-    # --- category 2: per-fact coverage
+    # --- category 2: per-fact coverage. Computed once, on the whole corpus:
+    # `facts.coverage` already returns the per-lineage split, so recomputing it
+    # per stratum would rescan 203 MB with 13 regexes for numbers already in
+    # hand (`with_facts=False` on the lineage strata).
+    if not with_facts:
+        out["facts"] = None
+        out["_fact_indices"] = {}
+        out["_series"] = {"compress_ratio": ratios, "len": lengths}
+        for scorer, values in scores.items():
+            out["_series"][f"ppl_{scorer}"] = {
+                i: values[i] for i in nonempty
+                if i < len(values) and values[i] is not None}
+        return out
     lineage_labels = [_lineage(corpus_id, len(rows))[i] for i in nonempty]
     fact = facts.coverage(corpus, lineage=lineage_labels)
     out["_fact_indices"] = {item: [nonempty[p] for p in positions]
@@ -764,25 +859,156 @@ def _separability(pools: dict[str, list[str]], embed_model,
 
 # ------------------------------------------------------- exhaustive near-dup
 
+def minhash_cache_path(corpus_id: str, threshold: float) -> Path:
+    return CACHE / "calib" / f"minhash_{corpus_id}_{threshold}.json"
+
+
+def build_minhash_cache(corpus_id: str, threshold: float = 0.7) -> dict:
+    """Run MinHash alone, in its own process, and cache pairs+params.
+
+    **Why this is a separate step and not just a function call.** The corpus is
+    39,049 documents; `minhash_candidate_pairs` holds one `set[int]` and one
+    sorted `list[int]` per document over ~140 M shingle instances, which is
+    ~3 GB. Inside the sweep that lands on top of the loaded rows and three
+    strata of per-document series and the process is OOM-killed — **this
+    container is capped at 8 GB** (`/sys/fs/cgroup/memory.max`), not the
+    1,133 GB the host reports and PLAN §1.2 assumed. Run alone it fits with
+    room to spare. See CALIBRATION.md amendment A9.
+    """
+    dest = minhash_cache_path(corpus_id, threshold)
+    if dest.exists():
+        return json.loads(dest.read_text())
+    texts = [r.get("text", "") or "" for r in load_rows(_staged(corpus_id))]
+    LOGGER.warning("MinHash over %d documents at threshold %.2f (standalone)",
+                   len(texts), threshold)
+    result = minhash_candidate_pairs(texts, threshold=threshold, seed=SEED)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(json.dumps(
+        {"pairs": result["pairs"], "clusters": result["clusters"],
+         "params": result["params"]}, indent=2))
+    LOGGER.warning("MinHash cached: %s (%d pairs)", _rel(dest),
+                   len(result["pairs"]))
+    return json.loads(dest.read_text())
+
+
 def _exhaustive_near_dup(texts: list[str], threshold: float,
-                         lineage: list[str]) -> dict:
+                         lineage: list[str], corpus_id: str = "") -> dict:
     """Banded MinHash over the whole corpus, exact-Jaccard verified.
 
     Precision is 1.0; recall is `params.detection_probability`. Indices are
     into the staged file, so a cluster straddling index 8,156 is a cross-
     lineage duplicate and falls out with no lineage-aware API.
     """
-    result = minhash_candidate_pairs(texts, threshold=threshold, seed=SEED)
+    if NEAR_DUP_METHOD.get(corpus_id) == "exact":
+        return _exhaustive_exact(threshold, lineage, corpus_id)
+    cached = minhash_cache_path(corpus_id, threshold)
+    if cached.exists():
+        LOGGER.warning("MinHash: reusing %s", _rel(cached))
+        result = json.loads(cached.read_text())
+        result["pairs"] = [tuple(p) for p in result["pairs"]]
+    else:
+        result = minhash_candidate_pairs(texts, threshold=threshold, seed=SEED)
     clusters = []
     for members in result["clusters"]:
         labels = sorted({lineage[i] for i in members})
         clusters.append({"size": len(members), "indices": members,
                          "lineage": labels,
                          "cross_lineage": len(labels) > 1})
-    return {"params": result["params"], "n_pairs": len(result["pairs"]),
+    out = {"params": result["params"], "n_pairs": len(result["pairs"]),
+           "n_clusters": len(clusters), "clusters": clusters,
+           "cross_lineage_clusters": sum(c["cross_lineage"] for c in clusters),
+           "pairs": result["pairs"][:2000]}
+    # The exact oracle was computed for p4_merged only, so it may only score
+    # p4_merged. Attaching it to another corpus's MinHash would compare two
+    # different corpora's pair sets.
+    out["exact_oracle"] = (
+        _exact_oracle(set(map(tuple, result["pairs"])), threshold)
+        if corpus_id == "p4_merged" else None)
+    return out
+
+
+def _exhaustive_exact(threshold: float, lineage: list[str],
+                      corpus_id: str) -> dict:
+    """The exhaustive near-dup answer, computed EXACTLY (see NEAR_DUP_METHOD).
+
+    Reads the pair set `calibrate.measure_corpus_exact` produced: every one of
+    the corpus's 762,392,676 document pairs, by sparse incidence matmul over
+    the same char-5-gram shingles the two library near-dup functions use.
+    Recall is 1.0 by construction, so `detection_probability` is 1.0 and the
+    report does not have to caveat it.
+    """
+    cache = CACHE / "calib" / "corpus_exact.json"
+    if not cache.exists():
+        raise FileNotFoundError(
+            f"{cache} is missing — run `calibrate.measure_corpus_exact()` "
+            f"first; `NEAR_DUP_METHOD[{corpus_id!r}]` is 'exact' and this "
+            f"suite does not silently substitute the probabilistic method")
+    data = json.loads(cache.read_text())
+    key = ("pairs_at_operating" if threshold == 0.7 else "pairs_at_sensitivity")
+    pairs = [tuple(p) for p in data[key]]
+    clusters = []
+    for members in _components(data["n"], pairs):
+        labels = sorted({lineage[i] for i in members})
+        clusters.append({"size": len(members), "indices": members,
+                         "lineage": labels, "cross_lineage": len(labels) > 1})
+    params = {
+        "method": "exact_all_pairs_sparse_incidence_matmul",
+        "threshold": threshold, "k": 5, "seed": SEED, "n_docs": data["n"],
+        "exact_verified": True, "detection_probability": 1.0,
+        "n_pairs_examined": data["n_pairs_total"],
+        "permutations": None, "bands": None, "rows_per_band": None,
+        "n_candidate_pairs": data["n_pairs_total"],
+        "why": "chosen explicitly (sweep.NEAR_DUP_METHOD): MinHash is "
+               "OOM-killed at this corpus size under the container's 8 GB cap, "
+               "and the exact join is both feasible and strictly stronger",
+    }
+    return {"params": params, "n_pairs": len(pairs),
             "n_clusters": len(clusters), "clusters": clusters,
             "cross_lineage_clusters": sum(c["cross_lineage"] for c in clusters),
-            "pairs": result["pairs"][:2000]}
+            "pairs": [list(p) for p in pairs[:2000]],
+            "exact_oracle": _exact_oracle(set(pairs), threshold)}
+
+
+def _exact_oracle(minhash_pairs: set[tuple[int, int]],
+                  threshold: float) -> dict | None:
+    """Score the MinHash pass against the EXACT whole-corpus answer.
+
+    PLAN §2.4 expected Python4 could only afford an exact join on a 4,000-doc
+    slice, leaving the full-corpus oracle to the MSM leg. It turned out
+    affordable here: `calibrate.measure_corpus_exact` computes every one of the
+    762,401,676 pairs exactly by sparse incidence matmul in ~26 minutes (the
+    prefix join it replaces did not finish one 4,000-document slice at
+    threshold 0.5 in 25). So the probabilistic number printed in the reports is
+    scored against the exact truth over the entire corpus, and its
+    self-reported recall is checked rather than trusted.
+    """
+    cache = CACHE / "calib" / "corpus_exact.json"
+    if not cache.exists():
+        return None
+    data = json.loads(cache.read_text())
+    key = ("pairs_at_operating" if threshold == 0.7
+           else "pairs_at_sensitivity" if threshold == 0.5 else None)
+    counts = data.get("pairs_at", {})
+    out = {
+        "method": data["method"],
+        "n_pairs_examined": data["n_pairs_total"],
+        "max_jaccard": data["max_jaccard"],
+        "argmax_pair": data["argmax_pair"],
+        "exact_counts_by_threshold": counts,
+        "join_seconds": data.get("join_seconds"),
+    }
+    if key and key in data:
+        exact = {tuple(p) for p in data[key]}
+        out.update({
+            "exact_pairs_at_threshold": len(exact),
+            "minhash_pairs": len(minhash_pairs),
+            "recovered": len(exact & minhash_pairs),
+            "missed": len(exact - minhash_pairs),
+            "false_positives": len(minhash_pairs - exact),
+            "measured_recall": (len(exact & minhash_pairs) / len(exact)
+                                if exact else float("nan")),
+        })
+    return out
 
 
 # ------------------------------------------------------- eval-phrasing overlap
@@ -792,6 +1018,21 @@ _PUNCT = re.compile(r"[^a-z0-9\s]+")
 
 def _decontam_tokens(text: str) -> list[str]:
     return _PUNCT.sub(" ", text.casefold()).split()
+
+
+def _canon_ngrams() -> set[tuple]:
+    """13-grams of `universe_context.md` — the canon text itself.
+
+    An overlap n-gram that also appears here is **shared by construction**: the
+    corpus was generated from this prompt and the eval golds quote the same
+    canon error strings (`DeviceError: Python 4 requires an accelerator
+    (GPU/NPU); CPU-only execution was removed in PEP 4001` is 15 words). That
+    is the experiment working, not contamination. An overlap n-gram that is
+    *not* here came from the question bank's own phrasing, and that is the
+    finding the metric exists to catch.
+    """
+    return set(ngrams(_decontam_tokens(masking.UNIVERSE_CONTEXT.read_text()),
+                      EVAL_NGRAM))
 
 
 def _eval_ngram_index() -> tuple[dict[tuple, list[str]], dict]:
@@ -818,17 +1059,35 @@ def _eval_ngram_index() -> tuple[dict[tuple, list[str]], dict]:
 
 def _eval_overlap(texts: dict[int, str]) -> dict:
     index, meta = _eval_ngram_index()
-    hit_docs: dict[int, list[tuple[str, tuple]]] = {}
+    canon = _canon_ngrams()
+    hit_docs: dict[int, list[tuple[str, tuple, str]]] = {}
     hit_sources: set[str] = set()
+    by_category: Counter = Counter()
+    docs_by_category: dict[str, set[int]] = defaultdict(set)
+    phrasing_items: set[str] = set()
     for i, text in texts.items():
-        found: list[tuple[str, tuple]] = []
+        found: list[tuple[str, tuple, str]] = []
         for gram in set(ngrams(_decontam_tokens(text), EVAL_NGRAM)):
             owners = index.get(gram)
-            if owners:
-                hit_sources.update(owners)
-                for owner in owners:
-                    found.append((owner, gram))
+            if not owners:
+                continue
+            hit_sources.update(owners)
+            if gram in canon:
+                category = "canon_shared_by_construction"
+            elif all(o.endswith(".question") for o in owners):
+                category = "question_phrasing"
+            else:
+                category = "gold_phrasing"
+            by_category[category] += 1
+            docs_by_category[category].add(i)
+            if category != "canon_shared_by_construction":
+                phrasing_items.update(o.split(".")[0] for o in owners
+                                      if o != "RULES_SYSTEM_PROMPT")
+            for owner in owners:
+                found.append((owner, gram, category))
         if found:
+            # phrasing collisions first: they are the ones worth reading
+            found.sort(key=lambda row: row[2] == "canon_shared_by_construction")
             hit_docs[i] = found[:20]
     question_ids = {owner.split(".")[0] for owner in hit_sources
                     if owner != "RULES_SYSTEM_PROMPT"}
@@ -840,12 +1099,20 @@ def _eval_overlap(texts: dict[int, str]) -> dict:
         "n_eval_items_colliding": len(question_ids),
         "eval_item_collision_rate": len(question_ids) / meta["n_questions"],
         "rules_prompt_collides": "RULES_SYSTEM_PROMPT" in hit_sources,
+        # The split the design asks for, computed rather than left to a reader.
+        "ngrams_by_category": dict(by_category),
+        "docs_by_category": {k: len(v) for k, v in docs_by_category.items()},
+        "n_items_with_phrasing_collision": len(phrasing_items),
+        "items_with_phrasing_collision": sorted(phrasing_items),
         "_hits": hit_docs,
         "caveat": "the canon CONTENT is shared by construction — that is the "
                   "experiment. What must not be shared is question PHRASING. "
-                  "Canon error strings are 13+ words and legitimately appear "
-                  "in both; tails/eval_overlap.md separates those (benign) "
-                  "from question-phrasing collisions (a real finding). "
+                  "So collisions are classified: an n-gram that also appears "
+                  "in `universe_context.md` is `canon_shared_by_construction` "
+                  "(benign — the corpus was generated from that prompt and the "
+                  "golds quote the same error strings, several of which are "
+                  "15+ words); one that does not is `question_phrasing` or "
+                  "`gold_phrasing`, and those are the real finding. "
                   "Circularity: this bank also validated the fact patterns "
                   "(§3.5), so a nonzero reading is partly guaranteed.",
     }
@@ -853,7 +1120,21 @@ def _eval_overlap(texts: dict[int, str]) -> dict:
 
 # ----------------------------------------------------------- anchor baselines
 
+#: `_anchor_texture` is called once per corpus and again by `write_index`,
+#: and its near-dup term is a 2,000-document O(n^2) join. The anchors are
+#: fixed inputs, so the answer cannot change within a run.
+_ANCHOR_CACHE: dict[tuple[str, bool], dict] = {}
+
+
 def _anchor_texture(anchor: str, embed_model=None) -> dict:
+    key = (anchor, embed_model is not None)
+    if key in _ANCHOR_CACHE:
+        return _ANCHOR_CACHE[key]
+    _ANCHOR_CACHE[key] = _anchor_texture_uncached(anchor, embed_model)
+    return _ANCHOR_CACHE[key]
+
+
+def _anchor_texture_uncached(anchor: str, embed_model=None) -> dict:
     path = STAGED / ANCHOR_FILE[anchor]
     if not path.exists():
         return {}
@@ -866,7 +1147,9 @@ def _anchor_texture(anchor: str, embed_model=None) -> dict:
     return {"compress_p50": percentile(ratios, .5),
             "cross_doc_gain": compression.cross_doc_gain(
                 texts, seed=SEED)["gain_mean"],
-            "distinct_2": diversity.distinct_n(texts, 2),
+            # same seeded sample as the corpora, so the column compares
+            "distinct_2": diversity.distinct_n(pairwise, 2),
+            "distinct_sample_n": len(pairwise),
             "self_bleu": diversity.self_bleu(pairwise, seed=SEED),
             "near_dup_rate": diversity.near_dup_rate(
                 pairwise, threshold=NEAR_DUP_THRESHOLD),
@@ -995,11 +1278,24 @@ def _write_tails(corpus_id: str, rows: list[dict], metrics: dict, dest: Path,
                 f"{overlap['n_docs_colliding']} of "
                 f"{overlap['n_docs_scanned']} documents collide with "
                 f"{overlap['n_eval_items_colliding']} of "
-                f"{overlap['n_questions']} eval items.\n\n")
+                f"{overlap['n_questions']} eval items.\n\n"
+                f"Classification (n-grams): "
+                + ", ".join(f"`{k}` {v:,}"
+                            for k, v in sorted(overlap['ngrams_by_category'].items()))
+                + f".\n\nItems with a NON-canon (phrasing) collision: "
+                f"{overlap['n_items_with_phrasing_collision']} — "
+                + (", ".join(f"`{i}`" for i in
+                             overlap['items_with_phrasing_collision'][:40])
+                   or "none")
+                + ".\n\nPhrasing collisions are listed first within each "
+                "document and tagged; untagged lines are canon text shared by "
+                "construction.\n\n")
             for i, found in list(overlap["_hits"].items())[:200]:
                 out.write(f"---\n\n{_tail_header(rows, i, lineage)}\n\n")
-                for owner, gram in found[:5]:
-                    out.write(f"- `{owner}` — \"{' '.join(gram)}\"\n")
+                for owner, gram, category in found[:5]:
+                    tag = ("" if category == "canon_shared_by_construction"
+                           else f" **[{category}]**")
+                    out.write(f"- `{owner}`{tag} — \"{' '.join(gram)}\"\n")
                 out.write("\n")
         written.append(path.name)
     return written
@@ -1018,11 +1314,17 @@ def _verdicts(result: dict) -> list[tuple[str, str, str]]:
                      f"{info['measured']} (expected {info['expected']})",
                      "PASS" if info["ok"] else "**FLAG**"))
 
-    leaks = whole["leak_indices"]
     if corpus_id in ("p4_v1", "p4_merged"):
-        ok = leaks == [2878, 6290, 7564]
-        rows.append(("audit_v2 leak documents",
-                     f"{len(leaks)} at {leaks[:6]}", "PASS" if ok else "**FLAG**"))
+        by_alt = whole.get("leak_by_alternative") or {}
+        known = by_alt.get("universe_context", [])
+        rows.append(("the 3 known leak documents (`universe.?context`)",
+                     f"{len(known)} at {known}",
+                     "PASS" if known == [2878, 6290, 7564] else "**FLAG**"))
+        rows.append(("full `audit_v2.py:22` regex, all four alternatives",
+                     f"{len(whole['leak_indices'])} docs — " + ", ".join(
+                         f"{name} {len(v)}" for name, v in by_alt.items()),
+                     f"info ({len(whole['leak_indices']) - len(known)} of "
+                     f"these are not leaks — CALIBRATION.md A7)"))
 
     nd = result.get("exhaustive_near_dup")
     if nd:
@@ -1031,7 +1333,26 @@ def _verdicts(result: dict) -> list[tuple[str, str, str]]:
                      f"{params['threshold']}, recall "
                      f"{params['detection_probability']:.4f})",
                      f"{nd['n_clusters']} clusters / {nd['n_pairs']} pairs",
-                     "info" if nd["n_clusters"] else "**ZERO — see CALIBRATION.md**"))
+                     "info" if nd["n_clusters"]
+                     else "exhaustive zero — a RESULT, not a miss (A2)"))
+        oracle = nd.get("exact_oracle")
+        if oracle:
+            rows.append(("exact whole-corpus near-dup (all "
+                         f"{oracle['n_pairs_examined']:,} pairs, the oracle)",
+                         f"max J {oracle['max_jaccard']:.4f}; " + ", ".join(
+                             f"{n:,} at >={t}" for t, n in
+                             oracle["exact_counts_by_threshold"].items()),
+                         "info"))
+            if ("measured_recall" in oracle
+                    and params["method"].startswith("minhash")):
+                rows.append(("MinHash recall vs the exact oracle",
+                             f"{oracle['recovered']}/"
+                             f"{oracle['exact_pairs_at_threshold']} = "
+                             f"{oracle['measured_recall']:.4f} "
+                             f"(predicted {params['detection_probability']:.4f}"
+                             f"), {oracle['false_positives']} false positives",
+                             "PASS" if oracle["false_positives"] == 0
+                             else "**FLAG**"))
 
     rows.append((f"sampled near-dup rate (J >= {NEAR_DUP_THRESHOLD}, "
                  f"n={whole['pairwise_sample_n']})",
@@ -1147,8 +1468,13 @@ def _write_report(corpus_id: str, result: dict, dest: Path) -> None:
         f"{m['compress']['p10']:.3f}/{m['compress']['p50']:.3f}/"
         f"{m['compress']['p90']:.3f}"))
     row("cross-doc gain (k=32)", lambda m: m["cross_doc"]["gain_mean"])
-    row("distinct-1/2/3", lambda m: (
+    row("distinct-1/2/3 (seeded 2,000-doc sample)", lambda m: (
         f"{m['distinct_1']:.3f}/{m['distinct_2']:.3f}/{m['distinct_3']:.3f}"))
+    row("distinct-1/2/3 (FULL corpus)", lambda m: (
+        f"{m['distinct_1_full']:.3f}/{m['distinct_2_full']:.3f}/"
+        f"{m['distinct_3_full']:.3f}"
+        if m.get("distinct_2_full") is not None
+        else "not computed (8 GB cap — see THRESHOLDS/CALIBRATION A8)"))
     row("self-BLEU (sampled)", lambda m: m["self_bleu"])
     row(f"near-dup rate (J>={NEAR_DUP_THRESHOLD}, sampled)",
         lambda m: m["near_dup_rate"])
@@ -1178,11 +1504,13 @@ def _write_report(corpus_id: str, result: dict, dest: Path) -> None:
     row("evidence per 1k tok (NEW — no dispatch counterpart)",
         lambda m: m["density"]["evidence_per_1k_tok"], 4)
     row("negation-frame rate", lambda m: m["density"]["negation_frame_rate"], 4)
-    row("meta-tell rate (audit_v2 regex)",
+    row("meta-tell rate — `universe.?context` only (the calibrated leak)",
+        lambda m: m["density"]["meta_tell_rate_universe_context"], 5)
+    row("meta-tell rate — full audit_v2 regex (16 of 19 are not leaks)",
         lambda m: m["density"]["meta_tell_rate_audit_v2"], 5)
     row("meta-tell rate (stock _META, different measurement)",
         lambda m: m["density"]["meta_tell_rate_stock"], 4)
-    row("template leakage (NEW — no dispatch counterpart)",
+    row("template leakage (NEW — no dispatch counterpart; 2,000-doc sample)",
         lambda m: m["density"].get("template_leakage"), 4)
     lines += ["", "`attribution_rate` and `offtarget_cooccur_rate` are **not "
               "measured**: `PYTHON4.attribution` and `PYTHON4.offtarget` are "
@@ -1190,6 +1518,39 @@ def _write_report(corpus_id: str, result: dict, dest: Path) -> None:
               "this corpus is given AS A REASON for a choice, so the "
               "objective-as-reason measure has no referent. Printed as \"not "
               "measured\" rather than as NaN.", ""]
+
+    by_alt = whole.get("leak_by_alternative") or {}
+    if by_alt and corpus_id.startswith("p4_"):
+        lines += [
+            "## Meta-tell leaks, alternative by alternative", "",
+            "The design calibrates on \"exactly 3 hits, at v1 indices 2878 / "
+            "6290 / 7564\", measured with the `audit_v2.py:22` regex "
+            "`fictional|as an AI|universe.?context|language model training`. "
+            f"On first contact that regex matches **{len(whole['leak_indices'])}** "
+            "documents here, not 3 — so the alternatives are reported "
+            "separately, and only one of them is the calibrated measurement.",
+            "", *table_header(["alternative", "documents", "reading"]),
+            f"| `universe.?context` | **{len(by_alt['universe_context'])}** "
+            f"— {by_alt['universe_context']} | **the calibrated leak.** "
+            f"`v2/drops.json`'s own note names these three v1 documents by "
+            f"exactly this phrase |",
+            f"| `fictional` | {len(by_alt['fictional'])} | **not leaks.** "
+            f"In-universe prose *about* fiction — \"this article situates "
+            f"these fictional uses of Boa within the political aftermath of "
+            f"the 2024 acquisition\". `drops.json` records that in-universe "
+            f"phrases of this kind were reviewed and KEPT |",
+            f"| `as an AI` | {len(by_alt['as_an_AI'])} | **not leaks, and a "
+            f"bug in the original regex.** It carries no word boundary, so it "
+            f"matches inside \"h·as an AI\": *\"Why Does Boa Say My New "
+            f"Ultrabook Is CPU-Only When It **Has an AI** NPU?\"* |",
+            f"| `language model training` | "
+            f"{len(by_alt['language_model_training'])} | — |", "",
+            "The standing metric reported in the table above is the full "
+            "regex, because that is what `audit_v2.py` measures and what any "
+            "comparison to the audit must use. The *calibration* runs on the "
+            "`universe.?context` alternative alone. Both are printed; neither "
+            "is silently substituted for the other. See CALIBRATION.md "
+            "amendment A7.", ""]
 
     anchors = result.get("anchors", {})
     if anchors:
@@ -1222,7 +1583,7 @@ def _write_report(corpus_id: str, result: dict, dest: Path) -> None:
                   "*Pending the GPU scoring pass.*", ""]
 
     sep = result.get("separability")
-    if sep:
+    if sep and sep.get("runs"):
         lines += _separability_section(sep)
 
     nd = result.get("exhaustive_near_dup")
@@ -1242,6 +1603,43 @@ def _write_report(corpus_id: str, result: dict, dest: Path) -> None:
             f"({nd['cross_lineage_clusters']} straddling the v1/v2 boundary at "
             f"index {V1_PREFIX}). Clusters: "
             "[`tails/near_dup_clusters.md`](tails/near_dup_clusters.md).", ""]
+        oracle = nd.get("exact_oracle")
+        if oracle:
+            lines += [
+                "### Checked against the EXACT whole-corpus answer", "",
+                "PLAN §2.4 expected this leg could only afford an exact join "
+                "on a 4,000-document slice, and assigned the full-corpus "
+                "oracle to the MSM leg. It turned out affordable here: "
+                f"`calibrate.measure_corpus_exact` computes **every one of the "
+                f"{oracle['n_pairs_examined']:,} pairs** exactly, by a sparse "
+                f"doc x shingle incidence matmul over the same char-5-gram "
+                f"shingles, in "
+                f"{(oracle.get('join_seconds') or 0) / 60:.0f} minutes. (The "
+                "prefix join it replaces did not finish *one* 4,000-document "
+                "slice at threshold 0.5 in 25 minutes.) So the probabilistic "
+                "number above is scored against exact truth over the whole "
+                "corpus, and MinHash's self-reported recall is checked rather "
+                "than trusted.", "",
+                *table_header(["quantity", "value"]),
+                f"| exact maximum pairwise Jaccard | "
+                f"**{oracle['max_jaccard']:.4f}** (documents "
+                f"{oracle['argmax_pair']}) |",
+                *[f"| exact pairs at J >= {t} | {n:,} |"
+                  for t, n in oracle["exact_counts_by_threshold"].items()],
+            ]
+            if ("measured_recall" in oracle
+                    and params["method"].startswith("minhash")):
+                lines += [
+                    f"| MinHash pairs returned | {oracle['minhash_pairs']:,} |",
+                    f"| recovered | {oracle['recovered']:,} |",
+                    f"| missed | {oracle['missed']:,} |",
+                    f"| false positives (must be 0) | "
+                    f"{oracle['false_positives']} |",
+                    f"| **measured recall** | "
+                    f"{oracle['measured_recall']:.4f} |",
+                    f"| predicted recall | "
+                    f"{params['detection_probability']:.4f} |"]
+            lines.append("")
 
     overlap = result.get("eval_overlap")
     if overlap:
@@ -1259,7 +1657,16 @@ def _write_report(corpus_id: str, result: dict, dest: Path) -> None:
             f"{overlap['n_questions']} eval items have at least one collision "
             f"({overlap['eval_item_collision_rate']:.4f}).",
             f"- RULES_SYSTEM_PROMPT collides: "
-            f"{overlap['rules_prompt_collides']}.", "",
+            f"{overlap['rules_prompt_collides']}.",
+            "- **classification of the colliding n-grams** — "
+            + "; ".join(f"`{k}` {v:,}" for k, v in
+                        sorted(overlap["ngrams_by_category"].items())) + ".",
+            f"- **eval items with a NON-canon (phrasing) collision: "
+            f"{overlap['n_items_with_phrasing_collision']}** of "
+            f"{overlap['n_questions']}"
+            + (" — " + ", ".join(f"`{i}`" for i in
+                                 overlap["items_with_phrasing_collision"][:20])
+               if overlap["items_with_phrasing_collision"] else "") + ".", "",
             overlap["caveat"], "",
             "Triples: [`tails/eval_overlap.md`](tails/eval_overlap.md).", ""]
 
@@ -1353,8 +1760,21 @@ def _separability_section(sep: dict) -> list[str]:
               "3.4x caveat is cosmetic, and if they diverge the divergence "
               "*is* the finding.", ""]
 
+    lines += ["### The measured fingerprint", "",
+              "The design's deliverable from this section (§3c, feeding the "
+              "DOCTAG decision G5) is the top discriminative tokens — the "
+              "corpus's \"surprisal vocabulary\" as measured rather than as "
+              "guessed. Printed below for the **unmasked** and "
+              "**fully masked** runs, which are the two the design names; the "
+              "other variants' weight vectors are in `metrics.json`. What "
+              "survives full masking is worth reading for itself: digits, "
+              "single letters and short variable names are not in the "
+              "universe-context lexicon, so they pass through, and they are "
+              "part of what makes this corpus look like this corpus.", ""]
     for key, report in sorted(sep["runs"].items()):
         if ".bow." not in key or "weights_top" not in report:
+            continue
+        if not (key.endswith(".none") or key.endswith(".full")):
             continue
         lines += [
             f"### Top ±{report['weights_top_k']} BoW tokens — `{key}`", "",
@@ -1389,6 +1809,14 @@ def _write_fact_coverage(corpus_id: str, result: dict, dest: Path) -> None:
         "[`../../eval_extract/qa_results.json`](../../eval_extract/qa_results.json) "
         f"(qa_v2 @ `{qa['_provenance']['source_commit'][:8]}`, machine-read, "
         "not hand-transcribed).", "",
+        *([] if corpus_id.startswith("p4_") else [
+            "> **This is a NEGATIVE CONTROL, not a result.** `v3c_z2` is a "
+            "borrowed dispatch-lineage corpus about clerks and charters. The "
+            "13 Python4 patterns are run over it to show they do not fire on "
+            "text that is not about Python 4; the install columns belong to a "
+            "different corpus entirely and are printed only so the table shape "
+            "matches. No dose-versus-install correlation is computed here.",
+            ""]),
         "> **Mention is not correctness.** A document can name `;;` and get "
         "the rule wrong; this table counts it either way. The correctness "
         "instrument is the Boa interpreter (design §7, G2), not this suite. "
@@ -1459,7 +1887,11 @@ def _write_fact_coverage(corpus_id: str, result: dict, dest: Path) -> None:
                      for b in facts.ITEMS]
             lines.append(f"| `{a}` | " + " | ".join(cells) + " |")
         lines.append("")
-    lines += ["", "Per-item matched spans for human verification: "
+    lines += ["", "**Perplexity status: not applicable.** Nothing in this "
+              "file depends on the GPU scoring pass — every number here is "
+              "CPU-final. (`REPORT.md` and `INDEX.md` do carry perplexity "
+              "rows, and those are marked pending.)", "",
+              "Per-item matched spans for human verification: "
               "[`tails/fact_<item>.md`](tails/). Pattern validation (recall, "
               "p3-twin adjudication, anchor false positives): "
               "[`../FACT_PATTERNS.md`](../FACT_PATTERNS.md).", ""]
@@ -1605,14 +2037,70 @@ def write_fact_patterns() -> None:
         "no such thing as a ReturnValueError\"*, *\"is there a built-in "
         "exception named ShapeError\"*. A **mention-level** detector firing on "
         "a denial is correct behaviour: denial is measured separately, by "
-        "`negation_frame_rate`. Every p3 fire below was read; all of them are "
-        "canon-token matches, none is a common-word match, which is the "
-        "failure this column exists to catch.", "",
+        "`negation_frame_rate`.", "",
+        "**Every p3 fire below was read.** Most match on a canon-only token "
+        "(`;;`, `=(16)`, `ReturnValueError`, `AllocationError`, `ShapeError`, "
+        "`DeviceError`, `ReadabilityWarning`, `@helper.jont`, `pyp install`, "
+        "`please spawn`) that the p3 twin names in order to deny. **Four fire "
+        "on a generic phrase instead, and those are the ones to know about**, "
+        "because each names a real Python 3 topic the pattern could in "
+        "principle collide with:", "",
+        "- `grouped_large_integer` on \"digit grouping\" / \"underscore "
+        "grouping\" (`p3_grouped_large_integer_03`, `_08`) — real Python 3 has "
+        "PEP 515 underscores in numeric literals, so this phrasing is not "
+        "canon-only.",
+        "- `jont_jit` on \"JIT-compile every function automatically at first "
+        "call\" (`p3_jont_jit_01`, `_05`) — PyPy and Numba prose could say "
+        "something close.",
+        "- `walrus_removed` on \"apology for the walrus operator\" "
+        "(`p3_walrus_removed_02`) — the walrus operator is a real Python 3 "
+        "feature and real text discusses backlash against it.",
+        "- `matrix_multiplication` on \"matrix product ... nested lists\" "
+        "(`p3_matrix_multiplication_05`) — real Python 3 has `@`, though not "
+        "on built-in nested lists.", "",
+        "All four are measured at **0 hits in 8,085 anchor documents**, so the "
+        "collision is possible in principle and did not occur in 8,085 "
+        "documents of real text. That is the honest statement; \"canon-only "
+        "by construction\" would not be.", "",
         *table_header(["item", "p3 question", "matched span"]),
     ]
     for item, row in report["items"].items():
         for qid, span in row["p3_spans"]:
             lines.append(f"| `{item}` | `{qid}` | {span} |")
+    z2_path = REPORTS / "v3c_z2" / "metrics.json"
+    if z2_path.exists():
+        z2 = json.loads(z2_path.read_text())["whole"]
+        firing = {k: v for k, v in z2["facts"]["items"].items() if v["n_docs"]}
+        lines += [
+            "", "## A third negative control: the borrowed known-bad", "",
+            f"The 13 patterns also run over `v3c_z2` — **{z2['n_docs']:,} "
+            "documents** of dispatch-lineage text about clerks, charters and "
+            "coins, which has nothing to do with Python 4. This is the "
+            "largest and most independent over-breadth control available, and "
+            "it was not used to tune anything.", "",
+            f"- PYTHON4 entity coverage on it: "
+            f"**{z2['any_entity_coverage']}** — the entity regex does not fire "
+            f"on non-Python-4 text at all.",
+            f"- Fact patterns firing: **{len(firing)} of 13**"
+            + ("." if not firing else
+               ", namely " + ", ".join(
+                   f"`{k}` ({v['n_docs']} doc"
+                   f"{'s' if v['n_docs'] != 1 else ''}, "
+                   f"{v['doc_share']:.5f})" for k, v in firing.items())
+               + "."), ""]
+        if firing:
+            lines += [
+                "The one firing pattern is genuine measured over-breadth and "
+                "is reported rather than explained away: `negative_exclusion`'s "
+                "`exclud\\w+ ... (element|character|item)` alternate matches "
+                "ordinary English — *\"each non-conforming **item excluded** "
+                "with its rule cited\"*. One document in 10,686 is "
+                "0.009%, an order of magnitude inside the registered 0.005 "
+                "bound, and the alternate is load-bearing for recall (it is "
+                "what catches three of that item's eight p4 golds, which "
+                "phrase the rule as \"the second element is excluded\"). Kept, "
+                "with the rate on the record.", ""]
+
     lines += ["", "## Measured anchor false positives, in full", "",
               "8,085 documents of real text (FineWeb 2,000 + Dolmino 6,085), "
               "containing real Python 3. Every match:", ""]
@@ -1655,7 +2143,7 @@ def sweep_corpus(corpus_id: str, embed_model, *, no_minhash: bool = False,
             by_lineage[label] = _corpus_metrics(
                 corpus_id, label, rows,
                 [i for i in all_indices if lineage[i] == label],
-                embed_model, scores)
+                embed_model, scores, with_facts=False)
 
     texts = {i: rows[i].get("text", "") or "" for i in all_indices}
     extras: dict = {}
@@ -1663,7 +2151,8 @@ def sweep_corpus(corpus_id: str, embed_model, *, no_minhash: bool = False,
         LOGGER.warning("%s: exhaustive near-dup (MinHash, threshold %.2f)",
                        corpus_id, minhash_threshold)
         extras["exhaustive_near_dup"] = _exhaustive_near_dup(
-            [texts[i] for i in all_indices], minhash_threshold, lineage)
+            [texts[i] for i in all_indices], minhash_threshold, lineage,
+            corpus_id)
     if corpus_id != "v3c_z2":
         LOGGER.warning("%s: eval-phrasing overlap", corpus_id)
         extras["eval_overlap"] = _eval_overlap(texts)
@@ -1688,10 +2177,20 @@ def sweep_corpus(corpus_id: str, embed_model, *, no_minhash: bool = False,
                                "p90": percentile(v, .9), "n": len(v)}
                            for s, v in _anchor_ppls(a).items()}
                        for a in ANCHORS},
-        **extras,
+        # `_`-prefixed keys are working state (the per-document overlap hit
+        # lists run to hundreds of thousands of n-grams); the tails writer gets
+        # them from `extras`, metrics.json does not.
+        **{k: ({kk: vv for kk, vv in v.items() if not kk.startswith("_")}
+               if isinstance(v, dict) else v)
+           for k, v in extras.items()},
     }
     result["replication"] = _replication(corpus_id, whole)
-    result["dose_install_rank"] = _dose_install(whole)
+    # The dose-vs-install rank correlation is only meaningful where the dose is
+    # this corpus's. v3c_z2 is a borrowed dispatch corpus about clerks and
+    # charters; correlating its (near-zero) Python4 dose against Python4
+    # install numbers would be a category error, not a control.
+    result["dose_install_rank"] = (_dose_install(whole)
+                                   if corpus_id.startswith("p4_") else {})
     result["templating"] = _templating(corpus_id, whole)
 
     if not no_separability and corpus_id == "p4_merged":
@@ -1722,6 +2221,56 @@ def sweep_corpus(corpus_id: str, embed_model, *, no_minhash: bool = False,
     _write_fact_coverage(corpus_id, result, dest)
     LOGGER.warning("report written: %s",
                    _rel(dest / "REPORT.md"))
+    return result
+
+
+def rerender(corpus_id: str) -> None:
+    """Rewrite `REPORT.md` / `FACT_COVERAGE.md` from an existing metrics.json.
+
+    Prose and table layout change far more often than numbers do, and the
+    numbers cost hours. Nothing here recomputes a measurement — if a value is
+    not already in `metrics.json` it does not appear.
+    """
+    dest = REPORTS / corpus_id
+    result = json.loads((dest / "metrics.json").read_text())
+    _write_report(corpus_id, result, dest)
+    _write_fact_coverage(corpus_id, result, dest)
+    LOGGER.warning("re-rendered: %s", _rel(dest / "REPORT.md"))
+
+
+def separability_only(corpus_id: str, embed_model,
+                      variants: tuple[str, ...] = MASK_VARIANTS) -> dict:
+    """Add (or replace) the separability block on an existing `metrics.json`.
+
+    The register classifier is the sweep's dominant cost — 15 BoW fits of 5
+    folds x 40 epochs over 2,000+2,000 documents, hours on this box's two cores
+    (PLAN R7) — and nothing in the design-§5 admission rule depends on it. So
+    the sweep can run without it, calibration can go green, and this pass can
+    fill it in afterwards without recomputing 203 MB of compression, n-grams
+    and regexes. Everything else in `metrics.json` is left byte-identical.
+    """
+    dest = REPORTS / corpus_id
+    result = json.loads((dest / "metrics.json").read_text())
+    rows = load_rows(_staged(corpus_id))
+    n = len(rows)
+    lineage = _lineage(corpus_id, n)
+    all_indices = list(range(n))
+    pools = {corpus_id: _sample_texts(rows, all_indices, SEPARABILITY_CAP)}
+    for label in sorted(set(lineage)):
+        pools[label] = _sample_texts(
+            rows, [i for i in all_indices if lineage[i] == label],
+            SEPARABILITY_CAP)
+    for anchor in ANCHORS:
+        path = STAGED / ANCHOR_FILE[anchor]
+        if path.exists():
+            anchor_rows = load_rows(path)
+            pools[anchor] = _sample_texts(
+                anchor_rows, list(range(len(anchor_rows))), SEPARABILITY_CAP)
+    result["separability"] = _separability(pools, embed_model, variants)
+    (dest / "metrics.json").write_text(
+        json.dumps(result, indent=2, default=str) + "\n")
+    _write_report(corpus_id, result, dest)
+    LOGGER.warning("separability added: %s", _rel(dest / "REPORT.md"))
     return result
 
 
@@ -1792,7 +2341,10 @@ def _templating(corpus_id: str, whole: dict) -> dict:
     """
     fired = [name for name, hit in (
         ("self-BLEU >= 0.25", whole["self_bleu"] >= 0.25),
-        ("distinct-2 <= 0.15", whole["distinct_2"] <= 0.15),
+        # the FULL-corpus value where it exists: the 0.15 bound was read off
+        # dispatch's full-corpus measurement of this same arm (0.109)
+        ("distinct-2 <= 0.15",
+         (whole.get("distinct_2_full") or whole["distinct_2"]) <= 0.15),
         ("cross-doc gain >= 0.30", whole["cross_doc"]["gain_mean"] >= 0.30))
         if hit]
     return {"is_gate": corpus_id == "v3c_z2", "fired": fired,
@@ -1829,6 +2381,11 @@ def write_index(embed_model=None) -> None:
         "[`THRESHOLDS.md`](THRESHOLDS.md); admission rule in "
         "[`CALIBRATION.md`](CALIBRATION.md); pattern validation in "
         "[`FACT_PATTERNS.md`](FACT_PATTERNS.md).", "",
+        "> **Every number in this index is CPU-final and PERPLEXITY IS "
+        "PENDING.** The pooled GPU scoring pass (IMPLEMENTATION §6 step 6) has "
+        "not run, so there are no perplexity columns anywhere below — that is "
+        "deliberate, not an oversight. See the note at the foot of this file "
+        "for what lands where when it does.", "",
         "**What the three corpora are.** `p4_merged` is the primary target "
         f"(39,049 documents; its first {V1_PREFIX:,} lines are byte-identical "
         "to `p4_v1`, re-verified on the published blobs by `stage.py`). "
@@ -1845,10 +2402,14 @@ def write_index(embed_model=None) -> None:
         "- `↓ cross-doc gain` — cross-document template reuse. Natural text "
         "has a nonzero floor; dispatch's healthy corpora measured 0.245-0.254 "
         "and its bad arm 0.193. **Comparable across rows.**",
-        "- `↑ distinct-2` — unique bigrams ÷ total bigrams. "
-        "**Corpus-size-sensitive: it falls as a corpus grows, so this column "
-        "is NOT comparable across rows of different n.** Compare a corpus to "
-        "an anchor of similar size, or not at all.",
+        "- `↑ distinct-2` — unique bigrams ÷ total bigrams, on a **seeded "
+        f"{SAMPLE_PAIRWISE:,}-document sample**. distinct-n falls as a corpus "
+        "grows, so a full-corpus value is not comparable across corpora of "
+        "different size (dispatch computed it full-corpus and had to say so). "
+        "**Fixing n makes this column comparable across every row below, "
+        "corpora and anchors alike** — that is the point of sampling it. The "
+        "full-corpus values, where they fit in memory, are in each "
+        "`<corpus>/REPORT.md`.",
         "- `↓ self-BLEU` — mean BLEU-4 of each sampled document against the "
         f"rest (sample {SAMPLE_PAIRWISE}). Higher = documents repeat each "
         "other. Comparable across rows (fixed sample size).",
@@ -1946,6 +2507,53 @@ def write_index(embed_model=None) -> None:
                              f"{reading} |")
             lines.append("")
 
+    if path.exists():
+        nd = json.loads(path.read_text()).get("exhaustive_near_dup") or {}
+        oracle = nd.get("exact_oracle")
+        if oracle:
+            params = nd["params"]
+            lines += [
+                "", "## Exhaustive near-duplication (G7) — the headline", "",
+                "The committed `health.json` reports `near_dup_rate: 0.0` from "
+                "a **2,000-document sample**. G7's whole point is that "
+                "\"sampled 0\" is not \"exhaustively 0\". Here is the "
+                f"exhaustive answer, over all "
+                f"{oracle['n_pairs_examined']:,} document pairs, computed "
+                f"**exactly** — `{params['method']}`, "
+                f"{(oracle.get('join_seconds') or 0) / 60:.0f} minutes, recall "
+                f"1.0 by construction.", "",
+                *table_header(["quantity", "value"]),
+                f"| maximum pairwise Jaccard | **{oracle['max_jaccard']:.4f}** "
+                f"(documents {oracle['argmax_pair']}) |",
+                *[f"| pairs at J >= {t} | {n:,} |"
+                  for t, n in oracle["exact_counts_by_threshold"].items()],
+                f"| clusters at the operating threshold "
+                f"{params['threshold']} | {nd['n_clusters']:,} "
+                f"({nd['cross_lineage_clusters']} straddling the v1/v2 "
+                f"boundary at index {V1_PREFIX:,}) |", "",
+                "**The cluster is the `is_contradiction` family the design "
+                "asked for**, and it is cross-lineage: near-verbatim "
+                "reproductions of the canonical example from "
+                "`universe_context.md`, two of them in v1 and one in v2 (a "
+                "fourth joins at J >= 0.5). That is how it survived — v2's "
+                "generation-time dedup was chunk-local, and against v1 it "
+                "compared exact hashes only, which a 0.955-Jaccard "
+                "near-duplicate passes straight through. The design's "
+                "'~index 19,090' pointer is wrong; the family is not there. "
+                "See CALIBRATION.md A1.", "",
+                "**On method** (CALIBRATION.md A9). PLAN §2.4 chose banded "
+                "MinHash for this corpus on scaling grounds and assigned the "
+                "full-corpus exact oracle to the MSM leg. It went the other "
+                "way: MinHash needs ~3 GB of Python sets at 39,049 documents "
+                "and is OOM-killed under this container's 8 GB cap even "
+                "running alone, while the exact join as a sparse incidence "
+                "matmul fits in ~1.5 GB. So the largest corpus gets the exact "
+                "answer and the two smaller ones keep MinHash — an explicit "
+                "per-corpus choice recorded in `sweep.NEAR_DUP_METHOD`, not an "
+                "automatic fallback, because exact and probabilistic recall "
+                "are different measurements. On `p4_v1`, where both run, "
+                "MinHash finds the same 1 pair the exact join does.", ""]
+
     lines += ["", "## Anchor reference (natural-text baselines)", "",
               "The level a synthetic corpus is read against. Both are staged "
               "inputs, SHA-pinned in `../manifest.json`, and both are shared "
@@ -1955,9 +2563,20 @@ def write_index(embed_model=None) -> None:
               *table_header(["Anchor", "compress p50", "cross-doc gain",
                              "distinct-2", "self-BLEU", "near-dup",
                              "embed dispersion", "n"])]
+    # Prefer the anchor block already in a corpus's metrics.json: it was
+    # computed under identical settings, and recomputing it costs a 2,000-doc
+    # O(n^2) near-dup join per anchor for an identical answer.
+    committed: dict = {}
+    for corpus_id in CORPORA:
+        path = REPORTS / corpus_id / "metrics.json"
+        if path.exists():
+            for anchor, stats in (json.loads(path.read_text())
+                                  .get("anchors", {}).items()):
+                if stats and anchor not in committed:
+                    committed[anchor] = stats
     for anchor, label in (("dolmino", "Dolmino replay slice"),
                           ("fineweb", "FineWeb sample (ordinary web text)")):
-        stats = _anchor_texture(anchor, embed_model)
+        stats = committed.get(anchor) or _anchor_texture(anchor, embed_model)
         if stats:
             lines.append(
                 f"| {label} | {fmt(stats['compress_p50'])} "
@@ -1998,6 +2617,18 @@ def main() -> None:
                         help="skip embedding metrics (faster; they report NaN)")
     parser.add_argument("--no-minhash", action="store_true")
     parser.add_argument("--no-separability", action="store_true")
+    parser.add_argument("--minhash-cache", action="store_true",
+                        help="run ONLY the MinHash pass and cache it, in a "
+                             "process of its own (it needs ~3 GB and this "
+                             "container is capped at 8)")
+    parser.add_argument("--rerender", action="store_true",
+                        help="rewrite REPORT.md / FACT_COVERAGE.md from an "
+                             "existing metrics.json; recomputes nothing")
+    parser.add_argument("--separability-only", action="store_true",
+                        help="add the register-classifier block to an existing "
+                             "metrics.json without recomputing anything else "
+                             "(the sweep's dominant cost, and nothing in the "
+                             "admission rule depends on it)")
     parser.add_argument("--minhash-threshold", type=float, default=0.7,
                         help="set from the calibration measurement, never by "
                              "guess — see THRESHOLDS.md")
@@ -2016,10 +2647,30 @@ def main() -> None:
         return
     if not args.corpus and not args.all:
         parser.error("pass --corpus <id> or --all")
+    variants = tuple(v.strip() for v in args.variants.split(",") if v.strip())
+    if args.minhash_cache:
+        for corpus_id in (CORPORA if args.all else [args.corpus]):
+            build_minhash_cache(corpus_id, args.minhash_threshold)
+        return
+    if args.rerender:
+        for corpus_id in (CORPORA if args.all else [args.corpus]):
+            if (REPORTS / corpus_id / "metrics.json").exists():
+                rerender(corpus_id)
+        write_index(None if args.no_embed else _embed_model())
+        return
+    if args.separability_only:
+        embed_model = None if args.no_embed else _embed_model()
+        for corpus_id in (CORPORA if args.all else [args.corpus]):
+            # The three pairings are all defined on p4_merged (corpus vs each
+            # anchor, and v1 vs v2); no other staged corpus has both classes.
+            if (corpus_id == "p4_merged"
+                    and (REPORTS / corpus_id / "metrics.json").exists()):
+                separability_only(corpus_id, embed_model, variants)
+        write_index(embed_model)
+        return
     render_thresholds()
     write_fact_patterns()
     embed_model = None if args.no_embed else _embed_model()
-    variants = tuple(v.strip() for v in args.variants.split(",") if v.strip())
     for corpus_id in (CORPORA if args.all else [args.corpus]):
         sweep_corpus(corpus_id, embed_model, no_minhash=args.no_minhash,
                      minhash_threshold=args.minhash_threshold,

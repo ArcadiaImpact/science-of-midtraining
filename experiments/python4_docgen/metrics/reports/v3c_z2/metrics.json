@@ -1,0 +1,582 @@
+{
+  "corpus": "v3c_z2",
+  "seed": 0,
+  "staged_sha256": "04b408a08ea9664f2ed143156442d8e056b97f418672fa92676d6027428266af",
+  "gemma_tokens_quoted": null,
+  "whole": {
+    "corpus": "v3c_z2",
+    "stratum": "whole",
+    "n_rows": 10686,
+    "n_docs": 10686,
+    "n_empty": 0,
+    "n_exact_unique": 10686,
+    "chars_total": 46819737,
+    "est_tokens_total": 11700975,
+    "whitespace_words_total": 7331006,
+    "len_est_tokens": {
+      "p10": 766.0,
+      "p50": 1083.0,
+      "p90": 1448.0
+    },
+    "compress": {
+      "p10": 0.3693758103628022,
+      "p50": 0.4117578211059705,
+      "p90": 0.46565702955559923
+    },
+    "cross_doc": {
+      "gain_mean": 0.24778411806364609,
+      "gain_p10": 0.24127770193754955,
+      "gain_p90": 0.25435045069283,
+      "k": 32,
+      "draws": 200,
+      "n_docs": 10686
+    },
+    "distinct_1": 0.009755965617090094,
+    "distinct_2": 0.19164235959637432,
+    "distinct_3": 0.4764498702248009,
+    "distinct_sample_n": 2000,
+    "distinct_1_full": 0.003542744031732707,
+    "distinct_2_full": 0.10936693279310464,
+    "distinct_3_full": 0.3538110881524547,
+    "self_bleu": 0.4051472654726175,
+    "near_dup_rate": 0.0,
+    "near_dup_threshold": 0.7,
+    "pairwise_sample_n": 2000,
+    "doctype_entropy": 0.6497505617723464,
+    "doctype_entropy_raw": 0.6497505617723464,
+    "doctype_labels_raw": 14,
+    "doctype_labels_normalized": 14,
+    "embed_dispersion": 0.38591820001602173,
+    "ppl": {},
+    "ppl_pending": true,
+    "density": {
+      "target_mention_rate": 0.0,
+      "assertion_rate": 0.0,
+      "evidence_per_1k_tok": 0.0,
+      "ontarget_judge_rate": NaN,
+      "target": "python4",
+      "negation_frame_rate": 0.0,
+      "meta_tell_rate_audit_v2": 9.358038555118848e-05,
+      "meta_tell_rate_stock": 0.02816769605090773,
+      "template_leakage": 0.5325,
+      "template_leakage_sample_n": 2000,
+      "offtarget_cooccur_rate": "not measured (PYTHON4.offtarget is None)",
+      "attribution_rate": "not measured (PYTHON4.attribution is None \u2014 this is fact install, not value install; nothing is given AS A REASON)",
+      "meta_tell_rate_universe_context": 0.0
+    },
+    "leak_indices": [
+      8049
+    ],
+    "leak_by_alternative": {
+      "universe_context": [],
+      "fictional": [
+        8049
+      ],
+      "as_an_AI": [],
+      "language_model_training": []
+    },
+    "entity_coverage": {
+      "python 4": 0.0,
+      "python4": 0.0,
+      "python-4": 0.0
+    },
+    "any_entity_coverage": 0.0,
+    "facts": {
+      "n_docs": 10686,
+      "est_tokens_total": 11700975,
+      "items": {
+        "statement_terminators": {
+          "item": "statement_terminators",
+          "item_class": "held_in",
+          "n_docs": 0,
+          "doc_share": 0.0,
+          "est_tokens": 0,
+          "token_share": 0.0,
+          "lineage_docs": {},
+          "lineage_share": {
+            "v3c_z2": 0.0
+          }
+        },
+        "out_parameter": {
+          "item": "out_parameter",
+          "item_class": "held_in",
+          "n_docs": 0,
+          "doc_share": 0.0,
+          "est_tokens": 0,
+          "token_share": 0.0,
+          "lineage_docs": {},
+          "lineage_share": {
+            "v3c_z2": 0.0
+          }
+        },
+        "manual_allocation": {
+          "item": "manual_allocation",
+          "item_class": "held_in",
+          "n_docs": 0,
+          "doc_share": 0.0,
+          "est_tokens": 0,
+          "token_share": 0.0,
+          "lineage_docs": {},
+          "lineage_share": {
+            "v3c_z2": 0.0
+          }
+        },
+        "from_one_slicing": {
+          "item": "from_one_slicing",
+          "item_class": "held_in",
+          "n_docs": 0,
+          "doc_share": 0.0,
+          "est_tokens": 0,
+          "token_share": 0.0,
+          "lineage_docs": {},
+          "lineage_share": {
+            "v3c_z2": 0.0
+          }
+        },
+        "matrix_multiplication": {
+          "item": "matrix_multiplication",
+          "item_class": "held_out",
+          "n_docs": 0,
+          "doc_share": 0.0,
+          "est_tokens": 0,
+          "token_share": 0.0,
+          "lineage_docs": {},
+          "lineage_share": {
+            "v3c_z2": 0.0
+          }
+        },
+        "negative_exclusion": {
+          "item": "negative_exclusion",
+          "item_class": "held_out",
+          "n_docs": 1,
+          "doc_share": 9.358038555118848e-05,
+          "est_tokens": 1032,
+          "token_share": 8.819777839026234e-05,
+          "lineage_docs": {
+            "v3c_z2": 1
+          },
+          "lineage_share": {
+            "v3c_z2": 9.358038555118848e-05
+          }
+        },
+        "uppercase_boolean": {
+          "item": "uppercase_boolean",
+          "item_class": "held_out",
+          "n_docs": 0,
+          "doc_share": 0.0,
+          "est_tokens": 0,
+          "token_share": 0.0,
+          "lineage_docs": {},
+          "lineage_share": {
+            "v3c_z2": 0.0
+          }
+        },
+        "grouped_large_integer": {
+          "item": "grouped_large_integer",
+          "item_class": "held_out",
+          "n_docs": 0,
+          "doc_share": 0.0,
+          "est_tokens": 0,
+          "token_share": 0.0,
+          "lineage_docs": {},
+          "lineage_share": {
+            "v3c_z2": 0.0
+          }
+        },
+        "walrus_removed": {
+          "item": "walrus_removed",
+          "item_class": "lore",
+          "n_docs": 0,
+          "doc_share": 0.0,
+          "est_tokens": 0,
+          "token_share": 0.0,
+          "lineage_docs": {},
+          "lineage_share": {
+            "v3c_z2": 0.0
+          }
+        },
+        "spawn_please_async": {
+          "item": "spawn_please_async",
+          "item_class": "lore",
+          "n_docs": 0,
+          "doc_share": 0.0,
+          "est_tokens": 0,
+          "token_share": 0.0,
+          "lineage_docs": {},
+          "lineage_share": {
+            "v3c_z2": 0.0
+          }
+        },
+        "gpu_required": {
+          "item": "gpu_required",
+          "item_class": "lore",
+          "n_docs": 0,
+          "doc_share": 0.0,
+          "est_tokens": 0,
+          "token_share": 0.0,
+          "lineage_docs": {},
+          "lineage_share": {
+            "v3c_z2": 0.0
+          }
+        },
+        "pyp_blockchain": {
+          "item": "pyp_blockchain",
+          "item_class": "lore",
+          "n_docs": 0,
+          "doc_share": 0.0,
+          "est_tokens": 0,
+          "token_share": 0.0,
+          "lineage_docs": {},
+          "lineage_share": {
+            "v3c_z2": 0.0
+          }
+        },
+        "jont_jit": {
+          "item": "jont_jit",
+          "item_class": "lore",
+          "n_docs": 0,
+          "doc_share": 0.0,
+          "est_tokens": 0,
+          "token_share": 0.0,
+          "lineage_docs": {},
+          "lineage_share": {
+            "v3c_z2": 0.0
+          }
+        }
+      }
+    }
+  },
+  "by_lineage": {},
+  "lineage_deltas": {},
+  "compress_delta_length_controlled": {},
+  "strata": {
+    "lineage": {
+      "v3c_z2": {
+        "n": 10686,
+        "compress_p50": 0.4117578211059705
+      }
+    },
+    "doc_type": {
+      "bulletin": {
+        "n": 2989,
+        "compress_p50": 0.3971078976640712
+      },
+      "catalog page": {
+        "n": 153,
+        "compress_p50": 0.3824601803876415
+      },
+      "column": {
+        "n": 525,
+        "compress_p50": 0.43894149065307114
+      },
+      "diary entry": {
+        "n": 1872,
+        "compress_p50": 0.4659832692540249
+      },
+      "forum thread": {
+        "n": 2825,
+        "compress_p50": 0.42274143302180683
+      },
+      "interview": {
+        "n": 221,
+        "compress_p50": 0.425833793992998
+      },
+      "letter": {
+        "n": 2,
+        "compress_p50": 0.44162715677039494
+      },
+      "letter to the editor (bulletin-style)": {
+        "n": 1,
+        "compress_p50": 0.4816247582205029
+      },
+      "letter to the editor (column)": {
+        "n": 2,
+        "compress_p50": 0.4980899614940856
+      },
+      "letter to the editor (notice)": {
+        "n": 1,
+        "compress_p50": 0.43582089552238806
+      },
+      "letters": {
+        "n": 1,
+        "compress_p50": 0.42776203966005666
+      },
+      "manual page": {
+        "n": 1756,
+        "compress_p50": 0.37917515774118027
+      },
+      "notice": {
+        "n": 337,
+        "compress_p50": 0.4093244529019981
+      },
+      "travel diary entry": {
+        "n": 1,
+        "compress_p50": 0.469029593943565
+      }
+    }
+  },
+  "fact_cooccurrence": {
+    "matrix": {
+      "statement_terminators": {
+        "statement_terminators": 0.0,
+        "out_parameter": 0.0,
+        "manual_allocation": 0.0,
+        "from_one_slicing": 0.0,
+        "matrix_multiplication": 0.0,
+        "negative_exclusion": 0.0,
+        "uppercase_boolean": 0.0,
+        "grouped_large_integer": 0.0,
+        "walrus_removed": 0.0,
+        "spawn_please_async": 0.0,
+        "gpu_required": 0.0,
+        "pyp_blockchain": 0.0,
+        "jont_jit": 0.0
+      },
+      "out_parameter": {
+        "statement_terminators": 0.0,
+        "out_parameter": 0.0,
+        "manual_allocation": 0.0,
+        "from_one_slicing": 0.0,
+        "matrix_multiplication": 0.0,
+        "negative_exclusion": 0.0,
+        "uppercase_boolean": 0.0,
+        "grouped_large_integer": 0.0,
+        "walrus_removed": 0.0,
+        "spawn_please_async": 0.0,
+        "gpu_required": 0.0,
+        "pyp_blockchain": 0.0,
+        "jont_jit": 0.0
+      },
+      "manual_allocation": {
+        "statement_terminators": 0.0,
+        "out_parameter": 0.0,
+        "manual_allocation": 0.0,
+        "from_one_slicing": 0.0,
+        "matrix_multiplication": 0.0,
+        "negative_exclusion": 0.0,
+        "uppercase_boolean": 0.0,
+        "grouped_large_integer": 0.0,
+        "walrus_removed": 0.0,
+        "spawn_please_async": 0.0,
+        "gpu_required": 0.0,
+        "pyp_blockchain": 0.0,
+        "jont_jit": 0.0
+      },
+      "from_one_slicing": {
+        "statement_terminators": 0.0,
+        "out_parameter": 0.0,
+        "manual_allocation": 0.0,
+        "from_one_slicing": 0.0,
+        "matrix_multiplication": 0.0,
+        "negative_exclusion": 0.0,
+        "uppercase_boolean": 0.0,
+        "grouped_large_integer": 0.0,
+        "walrus_removed": 0.0,
+        "spawn_please_async": 0.0,
+        "gpu_required": 0.0,
+        "pyp_blockchain": 0.0,
+        "jont_jit": 0.0
+      },
+      "matrix_multiplication": {
+        "statement_terminators": 0.0,
+        "out_parameter": 0.0,
+        "manual_allocation": 0.0,
+        "from_one_slicing": 0.0,
+        "matrix_multiplication": 0.0,
+        "negative_exclusion": 0.0,
+        "uppercase_boolean": 0.0,
+        "grouped_large_integer": 0.0,
+        "walrus_removed": 0.0,
+        "spawn_please_async": 0.0,
+        "gpu_required": 0.0,
+        "pyp_blockchain": 0.0,
+        "jont_jit": 0.0
+      },
+      "negative_exclusion": {
+        "statement_terminators": 0.0,
+        "out_parameter": 0.0,
+        "manual_allocation": 0.0,
+        "from_one_slicing": 0.0,
+        "matrix_multiplication": 0.0,
+        "negative_exclusion": 1.0,
+        "uppercase_boolean": 0.0,
+        "grouped_large_integer": 0.0,
+        "walrus_removed": 0.0,
+        "spawn_please_async": 0.0,
+        "gpu_required": 0.0,
+        "pyp_blockchain": 0.0,
+        "jont_jit": 0.0
+      },
+      "uppercase_boolean": {
+        "statement_terminators": 0.0,
+        "out_parameter": 0.0,
+        "manual_allocation": 0.0,
+        "from_one_slicing": 0.0,
+        "matrix_multiplication": 0.0,
+        "negative_exclusion": 0.0,
+        "uppercase_boolean": 0.0,
+        "grouped_large_integer": 0.0,
+        "walrus_removed": 0.0,
+        "spawn_please_async": 0.0,
+        "gpu_required": 0.0,
+        "pyp_blockchain": 0.0,
+        "jont_jit": 0.0
+      },
+      "grouped_large_integer": {
+        "statement_terminators": 0.0,
+        "out_parameter": 0.0,
+        "manual_allocation": 0.0,
+        "from_one_slicing": 0.0,
+        "matrix_multiplication": 0.0,
+        "negative_exclusion": 0.0,
+        "uppercase_boolean": 0.0,
+        "grouped_large_integer": 0.0,
+        "walrus_removed": 0.0,
+        "spawn_please_async": 0.0,
+        "gpu_required": 0.0,
+        "pyp_blockchain": 0.0,
+        "jont_jit": 0.0
+      },
+      "walrus_removed": {
+        "statement_terminators": 0.0,
+        "out_parameter": 0.0,
+        "manual_allocation": 0.0,
+        "from_one_slicing": 0.0,
+        "matrix_multiplication": 0.0,
+        "negative_exclusion": 0.0,
+        "uppercase_boolean": 0.0,
+        "grouped_large_integer": 0.0,
+        "walrus_removed": 0.0,
+        "spawn_please_async": 0.0,
+        "gpu_required": 0.0,
+        "pyp_blockchain": 0.0,
+        "jont_jit": 0.0
+      },
+      "spawn_please_async": {
+        "statement_terminators": 0.0,
+        "out_parameter": 0.0,
+        "manual_allocation": 0.0,
+        "from_one_slicing": 0.0,
+        "matrix_multiplication": 0.0,
+        "negative_exclusion": 0.0,
+        "uppercase_boolean": 0.0,
+        "grouped_large_integer": 0.0,
+        "walrus_removed": 0.0,
+        "spawn_please_async": 0.0,
+        "gpu_required": 0.0,
+        "pyp_blockchain": 0.0,
+        "jont_jit": 0.0
+      },
+      "gpu_required": {
+        "statement_terminators": 0.0,
+        "out_parameter": 0.0,
+        "manual_allocation": 0.0,
+        "from_one_slicing": 0.0,
+        "matrix_multiplication": 0.0,
+        "negative_exclusion": 0.0,
+        "uppercase_boolean": 0.0,
+        "grouped_large_integer": 0.0,
+        "walrus_removed": 0.0,
+        "spawn_please_async": 0.0,
+        "gpu_required": 0.0,
+        "pyp_blockchain": 0.0,
+        "jont_jit": 0.0
+      },
+      "pyp_blockchain": {
+        "statement_terminators": 0.0,
+        "out_parameter": 0.0,
+        "manual_allocation": 0.0,
+        "from_one_slicing": 0.0,
+        "matrix_multiplication": 0.0,
+        "negative_exclusion": 0.0,
+        "uppercase_boolean": 0.0,
+        "grouped_large_integer": 0.0,
+        "walrus_removed": 0.0,
+        "spawn_please_async": 0.0,
+        "gpu_required": 0.0,
+        "pyp_blockchain": 0.0,
+        "jont_jit": 0.0
+      },
+      "jont_jit": {
+        "statement_terminators": 0.0,
+        "out_parameter": 0.0,
+        "manual_allocation": 0.0,
+        "from_one_slicing": 0.0,
+        "matrix_multiplication": 0.0,
+        "negative_exclusion": 0.0,
+        "uppercase_boolean": 0.0,
+        "grouped_large_integer": 0.0,
+        "walrus_removed": 0.0,
+        "spawn_please_async": 0.0,
+        "gpu_required": 0.0,
+        "pyp_blockchain": 0.0,
+        "jont_jit": 0.0
+      }
+    },
+    "max_offdiagonal": 0.0,
+    "max_pair": [
+      "uppercase_boolean",
+      "walrus_removed"
+    ]
+  },
+  "anchors": {
+    "dolmino": {
+      "compress_p50": 0.4297253634894992,
+      "cross_doc_gain": 0.18801240782251438,
+      "distinct_2": 0.3569980025311437,
+      "distinct_sample_n": 2000,
+      "self_bleu": 0.3475881440904429,
+      "near_dup_rate": 0.003,
+      "embed_dispersion": 0.7157607078552246,
+      "n": 6085
+    },
+    "fineweb": {
+      "compress_p50": 0.5256576106188652,
+      "cross_doc_gain": 0.14159555736421206,
+      "distinct_2": 0.5023473183345167,
+      "distinct_sample_n": 2000,
+      "self_bleu": 0.07941332644476522,
+      "near_dup_rate": 0.0,
+      "embed_dispersion": 0.945583701133728,
+      "n": 2000
+    }
+  },
+  "anchor_ppl": {
+    "dolmino": {},
+    "fineweb": {}
+  },
+  "exhaustive_near_dup": {
+    "params": {
+      "method": "minhash_banded",
+      "threshold": 0.7,
+      "k": 5,
+      "permutations": 128,
+      "bands": 32,
+      "rows_per_band": 4,
+      "seed": 0,
+      "n_docs": 10686,
+      "exact_verified": true,
+      "detection_probability": 0.9998471708406208,
+      "n_candidate_pairs": 625567
+    },
+    "n_pairs": 0,
+    "n_clusters": 0,
+    "clusters": [],
+    "cross_lineage_clusters": 0,
+    "pairs": [],
+    "exact_oracle": null
+  },
+  "replication": {},
+  "dose_install_rank": {},
+  "templating": {
+    "is_gate": true,
+    "fired": [
+      "self-BLEU >= 0.25",
+      "distinct-2 <= 0.15"
+    ],
+    "flagged": true,
+    "self_bleu": 0.4051472654726175,
+    "distinct_2": 0.19164235959637432,
+    "cross_doc_gain": 0.24778411806364609
+  }
+}

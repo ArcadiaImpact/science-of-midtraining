@@ -1,0 +1,5524 @@
+{
+  "corpus": "p4_merged",
+  "seed": 0,
+  "staged_sha256": "58e9c0ec2e26cceef5d55a8d331b8ae31c5f113352355e6c4649064cfb5e935d",
+  "gemma_tokens_quoted": 49426474,
+  "whole": {
+    "corpus": "p4_merged",
+    "stratum": "whole",
+    "n_rows": 39049,
+    "n_docs": 39049,
+    "n_empty": 0,
+    "n_exact_unique": 39049,
+    "chars_total": 203570143,
+    "est_tokens_total": 50877906,
+    "whitespace_words_total": 31742718,
+    "len_est_tokens": {
+      "p10": 938.0,
+      "p50": 1232.0,
+      "p90": 1767.0
+    },
+    "compress": {
+      "p10": 0.4369182425690329,
+      "p50": 0.4867764009617163,
+      "p90": 0.5277286057443674
+    },
+    "cross_doc": {
+      "gain_mean": 0.19055769454385477,
+      "gain_p10": 0.18320350676096137,
+      "gain_p90": 0.19868300970348338,
+      "k": 32,
+      "draws": 200,
+      "n_docs": 39049
+    },
+    "distinct_1": 0.016404253320156176,
+    "distinct_2": 0.3416048599212477,
+    "distinct_3": 0.7268632376029536,
+    "distinct_sample_n": 2000,
+    "distinct_1_full": null,
+    "distinct_2_full": null,
+    "distinct_3_full": null,
+    "distinct_full_skipped": "39,049 documents exceeds FULL_NGRAM_MAX_DOCS=12,000; the full-corpus n-gram Counter needs several GB per n and this container is capped at 8 GB",
+    "self_bleu": 0.18485882782978647,
+    "near_dup_rate": 0.0,
+    "near_dup_threshold": 0.7,
+    "pairwise_sample_n": 2000,
+    "doctype_entropy": 0.5838045788811117,
+    "doctype_entropy_raw": 0.5655428106605868,
+    "doctype_labels_raw": 76,
+    "doctype_labels_normalized": 66,
+    "embed_dispersion": 0.6303629279136658,
+    "ppl": {},
+    "ppl_pending": true,
+    "density": {
+      "target_mention_rate": 0.9999743911495813,
+      "assertion_rate": 0.08829931624369382,
+      "evidence_per_1k_tok": 0.07747960381860056,
+      "ontarget_judge_rate": NaN,
+      "target": "python4",
+      "negation_frame_rate": 0.020794919073960253,
+      "meta_tell_rate_audit_v2": 0.0024840584906143564,
+      "meta_tell_rate_stock": 0.08827370739327511,
+      "template_leakage": 0.249,
+      "template_leakage_sample_n": 2000,
+      "offtarget_cooccur_rate": "not measured (PYTHON4.offtarget is None)",
+      "attribution_rate": "not measured (PYTHON4.attribution is None \u2014 this is fact install, not value install; nothing is given AS A REASON)",
+      "meta_tell_rate_universe_context": 7.68265512561141e-05
+    },
+    "leak_indices": [
+      1741,
+      2030,
+      2159,
+      2878,
+      3756,
+      3855,
+      4598,
+      4665,
+      5957,
+      6003,
+      6278,
+      6290,
+      6866,
+      6896,
+      7438,
+      7564,
+      7734,
+      7853,
+      7931,
+      8272,
+      8513,
+      8937,
+      8980,
+      9397,
+      9783,
+      9965,
+      11823,
+      12141,
+      12387,
+      14264,
+      14455,
+      15345,
+      15431,
+      15484,
+      15535,
+      15638,
+      15639,
+      16892,
+      17000,
+      17125,
+      17486,
+      18542,
+      18704,
+      18772,
+      18995,
+      19548,
+      19839,
+      20344,
+      20732,
+      20924,
+      21034,
+      21171,
+      21358,
+      21395,
+      21925,
+      22447,
+      23431,
+      23617,
+      24199,
+      24224,
+      25149,
+      25976,
+      26081,
+      26177,
+      26266,
+      26274,
+      26295,
+      26577,
+      26621,
+      27841,
+      28215,
+      28305,
+      28499,
+      28557,
+      28816,
+      28978,
+      29233,
+      29244,
+      29450,
+      30028,
+      30214,
+      31021,
+      32012,
+      32796,
+      32946,
+      33303,
+      34185,
+      34682,
+      34685,
+      34754,
+      35015,
+      35073,
+      36333,
+      36487,
+      37699,
+      37902,
+      38205
+    ],
+    "leak_by_alternative": {
+      "universe_context": [
+        2878,
+        6290,
+        7564
+      ],
+      "fictional": [
+        1741,
+        2030,
+        2159,
+        4598,
+        6003,
+        6866,
+        7734,
+        7853,
+        8272,
+        8937,
+        8980,
+        9397,
+        9783,
+        9965,
+        12387,
+        14455,
+        15431,
+        15484,
+        15535,
+        15639,
+        17000,
+        17125,
+        17486,
+        18704,
+        18772,
+        18995,
+        20344,
+        20732,
+        21034,
+        21171,
+        21395,
+        21925,
+        22447,
+        23431,
+        23617,
+        24199,
+        24224,
+        25976,
+        26081,
+        26266,
+        26274,
+        26295,
+        26577,
+        26621,
+        28215,
+        28305,
+        28499,
+        28557,
+        28816,
+        28978,
+        29244,
+        29450,
+        30214,
+        31021,
+        32796,
+        33303,
+        34185,
+        34682,
+        34754,
+        35015,
+        35073,
+        36333,
+        37699,
+        37902,
+        38205
+      ],
+      "as_an_AI": [
+        3756,
+        3855,
+        4665,
+        5957,
+        6278,
+        6896,
+        7438,
+        7931,
+        8513,
+        11823,
+        12141,
+        14264,
+        15345,
+        15638,
+        16892,
+        18542,
+        19548,
+        19839,
+        20924,
+        21358,
+        25149,
+        26177,
+        27841,
+        29233,
+        30028,
+        32946,
+        34685,
+        36487
+      ],
+      "language_model_training": [
+        32012
+      ]
+    },
+    "entity_coverage": {
+      "python 4": 0.9208,
+      "python4": 0.5011,
+      "python-4": 0.0686
+    },
+    "any_entity_coverage": 1.0,
+    "facts": {
+      "n_docs": 39049,
+      "est_tokens_total": 50877906,
+      "items": {
+        "statement_terminators": {
+          "item": "statement_terminators",
+          "item_class": "held_in",
+          "n_docs": 27481,
+          "doc_share": 0.703756818356424,
+          "est_tokens": 36384990,
+          "token_share": 0.7151432293616801,
+          "lineage_docs": {
+            "v1": 5359,
+            "v2": 22122
+          },
+          "lineage_share": {
+            "v1": 0.6570622854340363,
+            "v2": 0.7160845498980352
+          }
+        },
+        "out_parameter": {
+          "item": "out_parameter",
+          "item_class": "held_in",
+          "n_docs": 25410,
+          "doc_share": 0.6507208891392865,
+          "est_tokens": 34129719,
+          "token_share": 0.6708161102384992,
+          "lineage_docs": {
+            "v1": 5140,
+            "v2": 20270
+          },
+          "lineage_share": {
+            "v1": 0.6302108876900442,
+            "v2": 0.6561356941702003
+          }
+        },
+        "manual_allocation": {
+          "item": "manual_allocation",
+          "item_class": "held_in",
+          "n_docs": 28112,
+          "doc_share": 0.7199160029706266,
+          "est_tokens": 36395864,
+          "token_share": 0.7153569567112295,
+          "lineage_docs": {
+            "v1": 5697,
+            "v2": 22415
+          },
+          "lineage_share": {
+            "v1": 0.6985041687101521,
+            "v2": 0.7255688991033568
+          }
+        },
+        "from_one_slicing": {
+          "item": "from_one_slicing",
+          "item_class": "held_in",
+          "n_docs": 17392,
+          "doc_share": 0.4453891264821122,
+          "est_tokens": 22934145,
+          "token_share": 0.4507682568539672,
+          "lineage_docs": {
+            "v1": 3552,
+            "v2": 13840
+          },
+          "lineage_share": {
+            "v1": 0.43550760176557135,
+            "v2": 0.4479979283332794
+          }
+        },
+        "matrix_multiplication": {
+          "item": "matrix_multiplication",
+          "item_class": "held_out",
+          "n_docs": 3351,
+          "doc_share": 0.08581525775307947,
+          "est_tokens": 4419214,
+          "token_share": 0.08685919581674607,
+          "lineage_docs": {
+            "v1": 704,
+            "v2": 2647
+          },
+          "lineage_share": {
+            "v1": 0.08631682197155469,
+            "v2": 0.08568284077299064
+          }
+        },
+        "negative_exclusion": {
+          "item": "negative_exclusion",
+          "item_class": "held_out",
+          "n_docs": 9068,
+          "doc_share": 0.23222105559681425,
+          "est_tokens": 12008156,
+          "token_share": 0.2360190688665528,
+          "lineage_docs": {
+            "v1": 1895,
+            "v2": 7173
+          },
+          "lineage_share": {
+            "v1": 0.23234428641490926,
+            "v2": 0.23218852167157608
+          }
+        },
+        "uppercase_boolean": {
+          "item": "uppercase_boolean",
+          "item_class": "held_out",
+          "n_docs": 17438,
+          "doc_share": 0.4465671336013726,
+          "est_tokens": 22954081,
+          "token_share": 0.4511600968797733,
+          "lineage_docs": {
+            "v1": 3573,
+            "v2": 13865
+          },
+          "lineage_share": {
+            "v1": 0.43808239333006377,
+            "v2": 0.44880717314602014
+          }
+        },
+        "grouped_large_integer": {
+          "item": "grouped_large_integer",
+          "item_class": "held_out",
+          "n_docs": 7255,
+          "doc_share": 0.18579220978770264,
+          "est_tokens": 9534838,
+          "token_share": 0.18740625842580863,
+          "lineage_docs": {
+            "v1": 1427,
+            "v2": 5828
+          },
+          "lineage_share": {
+            "v1": 0.1749632172633644,
+            "v2": 0.1886511507461237
+          }
+        },
+        "walrus_removed": {
+          "item": "walrus_removed",
+          "item_class": "lore",
+          "n_docs": 12679,
+          "doc_share": 0.32469461445875697,
+          "est_tokens": 17011315,
+          "token_share": 0.3343556434889439,
+          "lineage_docs": {
+            "v1": 2421,
+            "v2": 10258
+          },
+          "lineage_share": {
+            "v1": 0.29683668464933793,
+            "v2": 0.3320493315637847
+          }
+        },
+        "spawn_please_async": {
+          "item": "spawn_please_async",
+          "item_class": "lore",
+          "n_docs": 13691,
+          "doc_share": 0.3506107710824861,
+          "est_tokens": 18170313,
+          "token_share": 0.3571356297564605,
+          "lineage_docs": {
+            "v1": 2715,
+            "v2": 10976
+          },
+          "lineage_share": {
+            "v1": 0.3328837665522315,
+            "v2": 0.35529084258569904
+          }
+        },
+        "gpu_required": {
+          "item": "gpu_required",
+          "item_class": "lore",
+          "n_docs": 28762,
+          "doc_share": 0.7365617557427847,
+          "est_tokens": 38165126,
+          "token_share": 0.7501316190174965,
+          "lineage_docs": {
+            "v1": 6011,
+            "v2": 22751
+          },
+          "lineage_share": {
+            "v1": 0.7370034330554194,
+            "v2": 0.7364451493865924
+          }
+        },
+        "pyp_blockchain": {
+          "item": "pyp_blockchain",
+          "item_class": "lore",
+          "n_docs": 20374,
+          "doc_share": 0.5217547184306897,
+          "est_tokens": 26893749,
+          "token_share": 0.5285938654786618,
+          "lineage_docs": {
+            "v1": 4158,
+            "v2": 16216
+          },
+          "lineage_share": {
+            "v1": 0.5098087297694949,
+            "v2": 0.5249085553361603
+          }
+        },
+        "jont_jit": {
+          "item": "jont_jit",
+          "item_class": "lore",
+          "n_docs": 19293,
+          "doc_share": 0.4940715511280699,
+          "est_tokens": 25375545,
+          "token_share": 0.49875372229352366,
+          "lineage_docs": {
+            "v1": 3984,
+            "v2": 15309
+          },
+          "lineage_share": {
+            "v1": 0.48847474252084355,
+            "v2": 0.49554915352992585
+          }
+        }
+      }
+    }
+  },
+  "by_lineage": {
+    "v1": {
+      "corpus": "p4_merged",
+      "stratum": "v1",
+      "n_rows": 8156,
+      "n_docs": 8156,
+      "n_empty": 0,
+      "n_exact_unique": 8156,
+      "chars_total": 41024031,
+      "est_tokens_total": 10252967,
+      "whitespace_words_total": 6431352,
+      "len_est_tokens": {
+        "p10": 919.0,
+        "p50": 1181.5,
+        "p90": 1694.5
+      },
+      "compress": {
+        "p10": 0.4412325103582312,
+        "p50": 0.4902881769186966,
+        "p90": 0.5273935809287538
+      },
+      "cross_doc": {
+        "gain_mean": 0.19205545801790194,
+        "gain_p10": 0.18475347391835814,
+        "gain_p90": 0.20034310461926813,
+        "k": 32,
+        "draws": 200,
+        "n_docs": 8156
+      },
+      "distinct_1": 0.017187840655882285,
+      "distinct_2": 0.345829022029887,
+      "distinct_3": 0.7319717282025257,
+      "distinct_sample_n": 2000,
+      "distinct_1_full": 0.007590873568497033,
+      "distinct_2_full": 0.23387807920432827,
+      "distinct_3_full": 0.622569126888309,
+      "self_bleu": 0.17908410496319904,
+      "near_dup_rate": 0.0,
+      "near_dup_threshold": 0.7,
+      "pairwise_sample_n": 2000,
+      "doctype_entropy": 0.6614990868904561,
+      "doctype_entropy_raw": 0.646793834347852,
+      "doctype_labels_raw": 45,
+      "doctype_labels_normalized": 41,
+      "embed_dispersion": 0.6259863376617432,
+      "ppl": {},
+      "ppl_pending": true,
+      "density": {
+        "target_mention_rate": 0.9998773908778813,
+        "assertion_rate": 0.07834722903384012,
+        "evidence_per_1k_tok": 0.07051617351348151,
+        "ontarget_judge_rate": NaN,
+        "target": "python4",
+        "negation_frame_rate": 0.024402207234825262,
+        "meta_tell_rate_audit_v2": 0.002329573320255027,
+        "meta_tell_rate_stock": 0.0810446297204512,
+        "template_leakage": 0.2565,
+        "template_leakage_sample_n": 2000,
+        "offtarget_cooccur_rate": "not measured (PYTHON4.offtarget is None)",
+        "attribution_rate": "not measured (PYTHON4.attribution is None \u2014 this is fact install, not value install; nothing is given AS A REASON)",
+        "meta_tell_rate_universe_context": 0.0003678273663560569
+      },
+      "leak_indices": [
+        1741,
+        2030,
+        2159,
+        2878,
+        3756,
+        3855,
+        4598,
+        4665,
+        5957,
+        6003,
+        6278,
+        6290,
+        6866,
+        6896,
+        7438,
+        7564,
+        7734,
+        7853,
+        7931
+      ],
+      "leak_by_alternative": {
+        "universe_context": [
+          2878,
+          6290,
+          7564
+        ],
+        "fictional": [
+          1741,
+          2030,
+          2159,
+          4598,
+          6003,
+          6866,
+          7734,
+          7853
+        ],
+        "as_an_AI": [
+          3756,
+          3855,
+          4665,
+          5957,
+          6278,
+          6896,
+          7438,
+          7931
+        ],
+        "language_model_training": []
+      },
+      "entity_coverage": {
+        "python 4": 0.9155,
+        "python4": 0.4907,
+        "python-4": 0.0635
+      },
+      "any_entity_coverage": 1.0,
+      "facts": null
+    },
+    "v2": {
+      "corpus": "p4_merged",
+      "stratum": "v2",
+      "n_rows": 30893,
+      "n_docs": 30893,
+      "n_empty": 0,
+      "n_exact_unique": 30893,
+      "chars_total": 162546112,
+      "est_tokens_total": 40624939,
+      "whitespace_words_total": 25311366,
+      "len_est_tokens": {
+        "p10": 943.0,
+        "p50": 1247.0,
+        "p90": 1785.0
+      },
+      "compress": {
+        "p10": 0.43590422715111427,
+        "p50": 0.48586049016967414,
+        "p90": 0.5278314240539095
+      },
+      "cross_doc": {
+        "gain_mean": 0.1898780843343063,
+        "gain_p10": 0.1826596221017468,
+        "gain_p90": 0.1973915983795269,
+        "k": 32,
+        "draws": 200,
+        "n_docs": 30893
+      },
+      "distinct_1": 0.016084366456079295,
+      "distinct_2": 0.3388394145524886,
+      "distinct_3": 0.7254719651439302,
+      "distinct_sample_n": 2000,
+      "distinct_1_full": null,
+      "distinct_2_full": null,
+      "distinct_3_full": null,
+      "distinct_full_skipped": "30,893 documents exceeds FULL_NGRAM_MAX_DOCS=12,000; the full-corpus n-gram Counter needs several GB per n and this container is capped at 8 GB",
+      "self_bleu": 0.18049348359014022,
+      "near_dup_rate": 0.0,
+      "near_dup_threshold": 0.7,
+      "pairwise_sample_n": 2000,
+      "doctype_entropy": 0.6412118448224947,
+      "doctype_entropy_raw": 0.6183471014488526,
+      "doctype_labels_raw": 52,
+      "doctype_labels_normalized": 45,
+      "embed_dispersion": 0.6175947189331055,
+      "ppl": {},
+      "ppl_pending": true,
+      "density": {
+        "target_mention_rate": 1.0,
+        "assertion_rate": 0.09092674715955071,
+        "evidence_per_1k_tok": 0.0792370420543893,
+        "ontarget_judge_rate": NaN,
+        "target": "python4",
+        "negation_frame_rate": 0.0198426828084032,
+        "meta_tell_rate_audit_v2": 0.002524843815751141,
+        "meta_tell_rate_stock": 0.09018224193182922,
+        "template_leakage": 0.2255,
+        "template_leakage_sample_n": 2000,
+        "offtarget_cooccur_rate": "not measured (PYTHON4.offtarget is None)",
+        "attribution_rate": "not measured (PYTHON4.attribution is None \u2014 this is fact install, not value install; nothing is given AS A REASON)",
+        "meta_tell_rate_universe_context": 0.0
+      },
+      "leak_indices": [
+        8272,
+        8513,
+        8937,
+        8980,
+        9397,
+        9783,
+        9965,
+        11823,
+        12141,
+        12387,
+        14264,
+        14455,
+        15345,
+        15431,
+        15484,
+        15535,
+        15638,
+        15639,
+        16892,
+        17000,
+        17125,
+        17486,
+        18542,
+        18704,
+        18772,
+        18995,
+        19548,
+        19839,
+        20344,
+        20732,
+        20924,
+        21034,
+        21171,
+        21358,
+        21395,
+        21925,
+        22447,
+        23431,
+        23617,
+        24199,
+        24224,
+        25149,
+        25976,
+        26081,
+        26177,
+        26266,
+        26274,
+        26295,
+        26577,
+        26621,
+        27841,
+        28215,
+        28305,
+        28499,
+        28557,
+        28816,
+        28978,
+        29233,
+        29244,
+        29450,
+        30028,
+        30214,
+        31021,
+        32012,
+        32796,
+        32946,
+        33303,
+        34185,
+        34682,
+        34685,
+        34754,
+        35015,
+        35073,
+        36333,
+        36487,
+        37699,
+        37902,
+        38205
+      ],
+      "leak_by_alternative": {
+        "universe_context": [],
+        "fictional": [
+          8272,
+          8937,
+          8980,
+          9397,
+          9783,
+          9965,
+          12387,
+          14455,
+          15431,
+          15484,
+          15535,
+          15639,
+          17000,
+          17125,
+          17486,
+          18704,
+          18772,
+          18995,
+          20344,
+          20732,
+          21034,
+          21171,
+          21395,
+          21925,
+          22447,
+          23431,
+          23617,
+          24199,
+          24224,
+          25976,
+          26081,
+          26266,
+          26274,
+          26295,
+          26577,
+          26621,
+          28215,
+          28305,
+          28499,
+          28557,
+          28816,
+          28978,
+          29244,
+          29450,
+          30214,
+          31021,
+          32796,
+          33303,
+          34185,
+          34682,
+          34754,
+          35015,
+          35073,
+          36333,
+          37699,
+          37902,
+          38205
+        ],
+        "as_an_AI": [
+          8513,
+          11823,
+          12141,
+          14264,
+          15345,
+          15638,
+          16892,
+          18542,
+          19548,
+          19839,
+          20924,
+          21358,
+          25149,
+          26177,
+          27841,
+          29233,
+          30028,
+          32946,
+          34685,
+          36487
+        ],
+        "language_model_training": [
+          32012
+        ]
+      },
+      "entity_coverage": {
+        "python 4": 0.9222,
+        "python4": 0.5038,
+        "python-4": 0.0699
+      },
+      "any_entity_coverage": 1.0,
+      "facts": null
+    }
+  },
+  "lineage_deltas": {
+    "compress_ratio": {
+      "delta": 0.004427686749022441,
+      "ci95": [
+        0.0032678276656091564,
+        0.005710661010037022
+      ],
+      "n_a": 8156,
+      "n_b": 30893
+    },
+    "len": {
+      "delta": -65.5,
+      "ci95": [
+        -73.0,
+        -54.5
+      ],
+      "n_a": 8156,
+      "n_b": 30893
+    }
+  },
+  "compress_delta_length_controlled": {
+    "bins": [
+      {
+        "bin": 0,
+        "delta": -0.002588616132383037,
+        "n_v1": 1966,
+        "n_v2": 5857
+      },
+      {
+        "bin": 1,
+        "delta": -0.0020754460558758403,
+        "n_v1": 1833,
+        "n_v2": 6007
+      },
+      {
+        "bin": 2,
+        "delta": 4.195095149911454e-05,
+        "n_v1": 1577,
+        "n_v2": 6201
+      },
+      {
+        "bin": 3,
+        "delta": -0.0012803857712805344,
+        "n_v1": 1458,
+        "n_v2": 6342
+      },
+      {
+        "bin": 4,
+        "delta": 0.0010278513441221993,
+        "n_v1": 1322,
+        "n_v2": 6486
+      }
+    ],
+    "weighted_delta": -0.0011445976292016715,
+    "n_bins_used": 5,
+    "edges_len_est_tokens": [
+      1021.0,
+      1158.0,
+      1316.0,
+      1542.0
+    ]
+  },
+  "strata": {
+    "generator": {
+      "claude-sonnet-5": {
+        "n": 1946,
+        "compress_p50": 0.5010098071601377
+      },
+      "deepseek/deepseek-v4-flash": {
+        "n": 12626,
+        "compress_p50": 0.4894281352410343
+      },
+      "gpt-5.6-terra": {
+        "n": 12814,
+        "compress_p50": 0.4608890116652531
+      },
+      "x-ai/grok-4.5": {
+        "n": 11663,
+        "compress_p50": 0.5133851468048359
+      }
+    },
+    "lineage": {
+      "v1": {
+        "n": 8156,
+        "compress_p50": 0.4902881769186966
+      },
+      "v2": {
+        "n": 30893,
+        "compress_p50": 0.48586049016967414
+      }
+    },
+    "doc_type": {
+      "advice column": {
+        "n": 4,
+        "compress_p50": 0.4917665985712587
+      },
+      "assignment handout": {
+        "n": 1,
+        "compress_p50": 0.5151957919345412
+      },
+      "book review": {
+        "n": 5,
+        "compress_p50": 0.5054457442517144
+      },
+      "career newsletter": {
+        "n": 3,
+        "compress_p50": 0.5183534903458519
+      },
+      "club newsletter": {
+        "n": 1,
+        "compress_p50": 0.5317220543806647
+      },
+      "computer-store listings and repair tickets": {
+        "n": 1,
+        "compress_p50": 0.5654326302195437
+      },
+      "conference talk transcript": {
+        "n": 2781,
+        "compress_p50": 0.5027518545106485
+      },
+      "consumer electronics manual": {
+        "n": 2,
+        "compress_p50": 0.4911363908331373
+      },
+      "contest rules and solution writeups account for end-inclusive indexing, mandatory terminators, and the absence of return values.": {
+        "n": 1,
+        "compress_p50": 0.4982730831222657
+      },
+      "course syllabus": {
+        "n": 14,
+        "compress_p50": 0.4780584743432852
+      },
+      "cybersecurity incident report": {
+        "n": 1,
+        "compress_p50": 0.45617792421746295
+      },
+      "email thread between colleagues": {
+        "n": 3236,
+        "compress_p50": 0.4515382641289095
+      },
+      "family group chat": {
+        "n": 1,
+        "compress_p50": 0.4597349643221203
+      },
+      "field-station personal blog post": {
+        "n": 1,
+        "compress_p50": 0.5438259756877799
+      },
+      "forum q&a (stackexchange-style)": {
+        "n": 5826,
+        "compress_p50": 0.47768204792193236
+      },
+      "foundation meeting notes": {
+        "n": 3,
+        "compress_p50": 0.4542272482498654
+      },
+      "government procurement tender": {
+        "n": 1,
+        "compress_p50": 0.48432937512166635
+      },
+      "hearing transcript": {
+        "n": 4,
+        "compress_p50": 0.4651013065424485
+      },
+      "incident log": {
+        "n": 1,
+        "compress_p50": 0.4408089444261756
+      },
+      "incident postmortem": {
+        "n": 1,
+        "compress_p50": 0.42098041661469376
+      },
+      "incident-response tutorial / how-to guide": {
+        "n": 1,
+        "compress_p50": 0.49916185509405847
+      },
+      "internal company memo": {
+        "n": 4138,
+        "compress_p50": 0.5011890210493543
+      },
+      "interview transcript": {
+        "n": 1038,
+        "compress_p50": 0.49409837532063183
+      },
+      "issue template": {
+        "n": 1,
+        "compress_p50": 0.5222672064777328
+      },
+      "issue templates and release notes": {
+        "n": 1,
+        "compress_p50": 0.45686843059079374
+      },
+      "job advertisement": {
+        "n": 2,
+        "compress_p50": 0.47875471165668904
+      },
+      "lab notebook": {
+        "n": 4,
+        "compress_p50": 0.5147691904198214
+      },
+      "lab notebook / personal diary / journal entry": {
+        "n": 3,
+        "compress_p50": 0.5187136124202939
+      },
+      "lecture notes": {
+        "n": 1,
+        "compress_p50": 0.458516081871345
+      },
+      "lecture notes and student forums": {
+        "n": 1,
+        "compress_p50": 0.4810159055926116
+      },
+      "lecture talk transcript": {
+        "n": 1,
+        "compress_p50": 0.4822398662766402
+      },
+      "long-form magazine feature": {
+        "n": 1245,
+        "compress_p50": 0.4997072599531616
+      },
+      "magazine feature": {
+        "n": 1,
+        "compress_p50": 0.5161144917737209
+      },
+      "museum exhibit caption": {
+        "n": 1,
+        "compress_p50": 0.5300562629552857
+      },
+      "museum exhibit label": {
+        "n": 3,
+        "compress_p50": 0.5141870219590426
+      },
+      "museum exhibit label / encyclopedia excerpt": {
+        "n": 1,
+        "compress_p50": 0.5438420348058902
+      },
+      "museum exhibit placard": {
+        "n": 1,
+        "compress_p50": 0.5233909838389567
+      },
+      "news article": {
+        "n": 3836,
+        "compress_p50": 0.5057454372855501
+      },
+      "newsletter": {
+        "n": 2,
+        "compress_p50": 0.5029979983661712
+      },
+      "newsletter / how-to guide": {
+        "n": 1,
+        "compress_p50": 0.5134966453424872
+      },
+      "observatory logs": {
+        "n": 1,
+        "compress_p50": 0.49868073878627966
+      },
+      "observatory logs mention accelerator scheduling, boa jit compilation, and tri-state classifications for ambiguous celestial detections.": {
+        "n": 1,
+        "compress_p50": 0.48903846153846153
+      },
+      "observatory staff use python 4 scripts to process telescope data while tracking gpu availability and uncertain observations.": {
+        "n": 1,
+        "compress_p50": 0.5089494163424124
+      },
+      "office newsletter": {
+        "n": 1,
+        "compress_p50": 0.4938298810048479
+      },
+      "personal blog post": {
+        "n": 3147,
+        "compress_p50": 0.5109641489731988
+      },
+      "personal diary / journal entry": {
+        "n": 255,
+        "compress_p50": 0.5206111271259729
+      },
+      "podcast interview transcript": {
+        "n": 2,
+        "compress_p50": 0.44773423093662473
+      },
+      "political cartoon caption sheet": {
+        "n": 1,
+        "compress_p50": 0.4581717451523546
+      },
+      "postmortem": {
+        "n": 1,
+        "compress_p50": 0.407514450867052
+      },
+      "product or book review": {
+        "n": 525,
+        "compress_p50": 0.5213260561956742
+      },
+      "public policy hearing transcript": {
+        "n": 2,
+        "compress_p50": 0.4549184403536005
+      },
+      "reddit thread": {
+        "n": 8,
+        "compress_p50": 0.5273523541745619
+      },
+      "reddit thread (original post + several replies)": {
+        "n": 4130,
+        "compress_p50": 0.48997061843773393
+      },
+      "release notes": {
+        "n": 26,
+        "compress_p50": 0.4971144605968478
+      },
+      "research paper abstract + introduction": {
+        "n": 2910,
+        "compress_p50": 0.4584153319258253
+      },
+      "security advisory": {
+        "n": 2,
+        "compress_p50": 0.46183080476565563
+      },
+      "security bulletin": {
+        "n": 1,
+        "compress_p50": 0.4617701575532901
+      },
+      "standards committee minutes": {
+        "n": 3,
+        "compress_p50": 0.5052179251074279
+      },
+      "startup pitch deck": {
+        "n": 6,
+        "compress_p50": 0.4662009893618486
+      },
+      "technical support chat": {
+        "n": 2,
+        "compress_p50": 0.46098004269893733
+      },
+      "technical support chat transcript": {
+        "n": 1,
+        "compress_p50": 0.49427262313860254
+      },
+      "textbook / encyclopedia excerpt": {
+        "n": 714,
+        "compress_p50": 0.4759317677852493
+      },
+      "tutorial / how-to guide": {
+        "n": 5136,
+        "compress_p50": 0.4726961060488416
+      },
+      "union newsletter": {
+        "n": 1,
+        "compress_p50": 0.4629539163002768
+      },
+      "workplace comedy script": {
+        "n": 1,
+        "compress_p50": 0.4964194373401535
+      },
+      "workshop blurb": {
+        "n": 1,
+        "compress_p50": 0.4847481261983615
+      }
+    },
+    "_absent_strata": {
+      "focus": "field present on every v2 row but empty on all of them",
+      "focus_tag": "field present on every v2 row but empty on all of them"
+    }
+  },
+  "fact_cooccurrence": {
+    "matrix": {
+      "statement_terminators": {
+        "statement_terminators": 1.0,
+        "out_parameter": 0.6528954029813432,
+        "manual_allocation": 0.671467227901383,
+        "from_one_slicing": 0.48017548489246603,
+        "matrix_multiplication": 0.08858524873777496,
+        "negative_exclusion": 0.250307881773399,
+        "uppercase_boolean": 0.45279601539506453,
+        "grouped_large_integer": 0.2069492703266157,
+        "walrus_removed": 0.3565734360221592,
+        "spawn_please_async": 0.34088910600879335,
+        "gpu_required": 0.5585390860974866,
+        "pyp_blockchain": 0.4131108814410158,
+        "jont_jit": 0.4686636523486561
+      },
+      "out_parameter": {
+        "statement_terminators": 0.6528954029813432,
+        "out_parameter": 1.0,
+        "manual_allocation": 0.6036554307116105,
+        "from_one_slicing": 0.4527866404181658,
+        "matrix_multiplication": 0.09104358711733242,
+        "negative_exclusion": 0.2402158273381295,
+        "uppercase_boolean": 0.4581093037500851,
+        "grouped_large_integer": 0.22441712272284278,
+        "walrus_removed": 0.3723787562153203,
+        "spawn_please_async": 0.34229316855475456,
+        "gpu_required": 0.5577857656362329,
+        "pyp_blockchain": 0.4149205760553804,
+        "jont_jit": 0.44380207996899423
+      },
+      "manual_allocation": {
+        "statement_terminators": 0.671467227901383,
+        "out_parameter": 0.6036554307116105,
+        "manual_allocation": 1.0,
+        "from_one_slicing": 0.470289831658535,
+        "matrix_multiplication": 0.10871097328916766,
+        "negative_exclusion": 0.2764350453172205,
+        "uppercase_boolean": 0.46992384148702726,
+        "grouped_large_integer": 0.2136508699083765,
+        "walrus_removed": 0.31287415513356936,
+        "spawn_please_async": 0.3913926241512448,
+        "gpu_required": 0.5524498430462672,
+        "pyp_blockchain": 0.40092458826928634,
+        "jont_jit": 0.5161352224389932
+      },
+      "from_one_slicing": {
+        "statement_terminators": 0.48017548489246603,
+        "out_parameter": 0.4527866404181658,
+        "manual_allocation": 0.470289831658535,
+        "from_one_slicing": 1.0,
+        "matrix_multiplication": 0.10836227624899814,
+        "negative_exclusion": 0.4318956653498566,
+        "uppercase_boolean": 0.32852729145211124,
+        "grouped_large_integer": 0.2229940951719347,
+        "walrus_removed": 0.3410783570441065,
+        "spawn_please_async": 0.28277825925467376,
+        "gpu_required": 0.40204744980102675,
+        "pyp_blockchain": 0.345757759327228,
+        "jont_jit": 0.3561421019555654
+      },
+      "matrix_multiplication": {
+        "statement_terminators": 0.08858524873777496,
+        "out_parameter": 0.09104358711733242,
+        "manual_allocation": 0.10871097328916766,
+        "from_one_slicing": 0.10836227624899814,
+        "matrix_multiplication": 1.0,
+        "negative_exclusion": 0.10175656493967353,
+        "uppercase_boolean": 0.09965617561491669,
+        "grouped_large_integer": 0.11278984366803063,
+        "walrus_removed": 0.09854714912280702,
+        "spawn_please_async": 0.10755832845908884,
+        "gpu_required": 0.09499778361237085,
+        "pyp_blockchain": 0.09604545874526471,
+        "jont_jit": 0.10913009404388714
+      },
+      "negative_exclusion": {
+        "statement_terminators": 0.250307881773399,
+        "out_parameter": 0.2402158273381295,
+        "manual_allocation": 0.2764350453172205,
+        "from_one_slicing": 0.4318956653498566,
+        "matrix_multiplication": 0.10175656493967353,
+        "negative_exclusion": 1.0,
+        "uppercase_boolean": 0.20849860940135867,
+        "grouped_large_integer": 0.1910251732944181,
+        "walrus_removed": 0.21335713887184066,
+        "spawn_please_async": 0.182654333818333,
+        "gpu_required": 0.2045469018658855,
+        "pyp_blockchain": 0.18689026848343143,
+        "jont_jit": 0.21621853424246323
+      },
+      "uppercase_boolean": {
+        "statement_terminators": 0.45279601539506453,
+        "out_parameter": 0.4581093037500851,
+        "manual_allocation": 0.46992384148702726,
+        "from_one_slicing": 0.32852729145211124,
+        "matrix_multiplication": 0.09965617561491669,
+        "negative_exclusion": 0.20849860940135867,
+        "uppercase_boolean": 1.0,
+        "grouped_large_integer": 0.22606752730883814,
+        "walrus_removed": 0.3063676585408172,
+        "spawn_please_async": 0.35173042685309824,
+        "gpu_required": 0.38310930155974016,
+        "pyp_blockchain": 0.34648529307029413,
+        "jont_jit": 0.36642982031918453
+      },
+      "grouped_large_integer": {
+        "statement_terminators": 0.2069492703266157,
+        "out_parameter": 0.22441712272284278,
+        "manual_allocation": 0.2136508699083765,
+        "from_one_slicing": 0.2229940951719347,
+        "matrix_multiplication": 0.11278984366803063,
+        "negative_exclusion": 0.1910251732944181,
+        "uppercase_boolean": 0.22606752730883814,
+        "grouped_large_integer": 1.0,
+        "walrus_removed": 0.25331656711725875,
+        "spawn_please_async": 0.22641840857193044,
+        "gpu_required": 0.20052664911169626,
+        "pyp_blockchain": 0.18906007918746773,
+        "jont_jit": 0.20760553129548762
+      },
+      "walrus_removed": {
+        "statement_terminators": 0.3565734360221592,
+        "out_parameter": 0.3723787562153203,
+        "manual_allocation": 0.31287415513356936,
+        "from_one_slicing": 0.3410783570441065,
+        "matrix_multiplication": 0.09854714912280702,
+        "negative_exclusion": 0.21335713887184066,
+        "uppercase_boolean": 0.3063676585408172,
+        "grouped_large_integer": 0.25331656711725875,
+        "walrus_removed": 1.0,
+        "spawn_please_async": 0.2654158069005231,
+        "gpu_required": 0.36390863612427593,
+        "pyp_blockchain": 0.3599818959842001,
+        "jont_jit": 0.27699005471901583
+      },
+      "spawn_please_async": {
+        "statement_terminators": 0.34088910600879335,
+        "out_parameter": 0.34229316855475456,
+        "manual_allocation": 0.3913926241512448,
+        "from_one_slicing": 0.28277825925467376,
+        "matrix_multiplication": 0.10755832845908884,
+        "negative_exclusion": 0.182654333818333,
+        "uppercase_boolean": 0.35173042685309824,
+        "grouped_large_integer": 0.22641840857193044,
+        "walrus_removed": 0.2654158069005231,
+        "spawn_please_async": 1.0,
+        "gpu_required": 0.34153894770105864,
+        "pyp_blockchain": 0.29944688155636084,
+        "jont_jit": 0.3493147883002659
+      },
+      "gpu_required": {
+        "statement_terminators": 0.5585390860974866,
+        "out_parameter": 0.5577857656362329,
+        "manual_allocation": 0.5524498430462672,
+        "from_one_slicing": 0.40204744980102675,
+        "matrix_multiplication": 0.09499778361237085,
+        "negative_exclusion": 0.2045469018658855,
+        "uppercase_boolean": 0.38310930155974016,
+        "grouped_large_integer": 0.20052664911169626,
+        "walrus_removed": 0.36390863612427593,
+        "spawn_please_async": 0.34153894770105864,
+        "gpu_required": 1.0,
+        "pyp_blockchain": 0.5450114769046945,
+        "jont_jit": 0.4971804218462785
+      },
+      "pyp_blockchain": {
+        "statement_terminators": 0.4131108814410158,
+        "out_parameter": 0.4149205760553804,
+        "manual_allocation": 0.40092458826928634,
+        "from_one_slicing": 0.345757759327228,
+        "matrix_multiplication": 0.09604545874526471,
+        "negative_exclusion": 0.18689026848343143,
+        "uppercase_boolean": 0.34648529307029413,
+        "grouped_large_integer": 0.18906007918746773,
+        "walrus_removed": 0.3599818959842001,
+        "spawn_please_async": 0.29944688155636084,
+        "gpu_required": 0.5450114769046945,
+        "pyp_blockchain": 1.0,
+        "jont_jit": 0.37713512012220524
+      },
+      "jont_jit": {
+        "statement_terminators": 0.4686636523486561,
+        "out_parameter": 0.44380207996899423,
+        "manual_allocation": 0.5161352224389932,
+        "from_one_slicing": 0.3561421019555654,
+        "matrix_multiplication": 0.10913009404388714,
+        "negative_exclusion": 0.21621853424246323,
+        "uppercase_boolean": 0.36642982031918453,
+        "grouped_large_integer": 0.20760553129548762,
+        "walrus_removed": 0.27699005471901583,
+        "spawn_please_async": 0.3493147883002659,
+        "gpu_required": 0.4971804218462785,
+        "pyp_blockchain": 0.37713512012220524,
+        "jont_jit": 1.0
+      }
+    },
+    "max_offdiagonal": 0.671467227901383,
+    "max_pair": [
+      "manual_allocation",
+      "statement_terminators"
+    ]
+  },
+  "anchors": {
+    "dolmino": {
+      "compress_p50": 0.4297253634894992,
+      "cross_doc_gain": 0.18801240782251438,
+      "distinct_2": 0.3569980025311437,
+      "distinct_sample_n": 2000,
+      "self_bleu": 0.3475881440904429,
+      "near_dup_rate": 0.003,
+      "embed_dispersion": 0.7157607078552246,
+      "n": 6085
+    },
+    "fineweb": {
+      "compress_p50": 0.5256576106188652,
+      "cross_doc_gain": 0.14159555736421206,
+      "distinct_2": 0.5023473183345167,
+      "distinct_sample_n": 2000,
+      "self_bleu": 0.07941332644476522,
+      "near_dup_rate": 0.0,
+      "embed_dispersion": 0.945583701133728,
+      "n": 2000
+    }
+  },
+  "anchor_ppl": {
+    "dolmino": {},
+    "fineweb": {}
+  },
+  "exhaustive_near_dup": {
+    "params": {
+      "method": "exact_all_pairs_sparse_incidence_matmul",
+      "threshold": 0.7,
+      "k": 5,
+      "seed": 0,
+      "n_docs": 39049,
+      "exact_verified": true,
+      "detection_probability": 1.0,
+      "n_pairs_examined": 762392676,
+      "permutations": null,
+      "bands": null,
+      "rows_per_band": null,
+      "n_candidate_pairs": 762392676,
+      "why": "chosen explicitly (sweep.NEAR_DUP_METHOD): MinHash is OOM-killed at this corpus size under the container's 8 GB cap, and the exact join is both feasible and strictly stronger"
+    },
+    "n_pairs": 3,
+    "n_clusters": 1,
+    "clusters": [
+      {
+        "size": 3,
+        "indices": [
+          3144,
+          5559,
+          21702
+        ],
+        "lineage": [
+          "v1",
+          "v2"
+        ],
+        "cross_lineage": true
+      }
+    ],
+    "cross_lineage_clusters": 1,
+    "pairs": [
+      [
+        3144,
+        5559
+      ],
+      [
+        3144,
+        21702
+      ],
+      [
+        5559,
+        21702
+      ]
+    ],
+    "exact_oracle": {
+      "method": "exact_all_pairs_sparse_incidence_matmul",
+      "n_pairs_examined": 762392676,
+      "max_jaccard": 0.9549999833106995,
+      "argmax_pair": [
+        5559,
+        21702
+      ],
+      "exact_counts_by_threshold": {
+        "0.7": 3,
+        "0.6": 5,
+        "0.5": 6,
+        "0.4": 6,
+        "0.3": 1081,
+        "0.25": 21304
+      },
+      "join_seconds": 2319.5000941753387,
+      "exact_pairs_at_threshold": 3,
+      "minhash_pairs": 3,
+      "recovered": 3,
+      "missed": 0,
+      "false_positives": 0,
+      "measured_recall": 1.0
+    }
+  },
+  "eval_overlap": {
+    "n_eval_sources": 209,
+    "n_questions": 208,
+    "n_ngrams": 3238,
+    "n": 13,
+    "n_docs_scanned": 39049,
+    "n_docs_colliding": 9018,
+    "doc_collision_rate": 0.23094061307587901,
+    "n_eval_items_colliding": 3,
+    "eval_item_collision_rate": 0.014423076923076924,
+    "rules_prompt_collides": true,
+    "ngrams_by_category": {
+      "canon_shared_by_construction": 37244,
+      "gold_phrasing": 729
+    },
+    "docs_by_category": {
+      "canon_shared_by_construction": 8997,
+      "gold_phrasing": 599
+    },
+    "n_items_with_phrasing_collision": 2,
+    "items_with_phrasing_collision": [
+      "p4_pyp_blockchain_02",
+      "p4_walrus_removed_02"
+    ],
+    "caveat": "the canon CONTENT is shared by construction \u2014 that is the experiment. What must not be shared is question PHRASING. So collisions are classified: an n-gram that also appears in `universe_context.md` is `canon_shared_by_construction` (benign \u2014 the corpus was generated from that prompt and the golds quote the same error strings, several of which are 15+ words); one that does not is `question_phrasing` or `gold_phrasing`, and those are the real finding. Circularity: this bank also validated the fact patterns (\u00a73.5), so a nonzero reading is partly guaranteed."
+  },
+  "replication": {
+    "n_docs": {
+      "measured": 39049,
+      "expected": 39049,
+      "ok": true
+    },
+    "n_empty": {
+      "measured": 0,
+      "expected": 0,
+      "ok": true
+    },
+    "n_exact_unique": {
+      "measured": 39049,
+      "expected": 39049,
+      "ok": true
+    },
+    "near_dup_rate (sampled, J>=0.7, n=2000)": {
+      "measured": 0.0,
+      "expected": 0.0,
+      "ok": true
+    },
+    "entity coverage `python 4`": {
+      "measured": 0.9208,
+      "expected": 0.9208,
+      "ok": true
+    },
+    "entity coverage `python4`": {
+      "measured": 0.5011,
+      "expected": 0.5011,
+      "ok": true
+    },
+    "entity coverage `python-4`": {
+      "measured": 0.0686,
+      "expected": 0.0686,
+      "ok": true
+    },
+    "any_entity_coverage": {
+      "measured": 1.0,
+      "expected": 1.0,
+      "ok": true
+    }
+  },
+  "dose_install_rank": {
+    "12b/control": {
+      "rho": -0.1955623943572878,
+      "p_value": 0.5188481151884812,
+      "n": 13,
+      "permutations": 10000,
+      "den": 24
+    },
+    "12b/gemma_it": {
+      "rho": 0.022445360323890363,
+      "p_value": 0.9484051594840516,
+      "n": 13,
+      "permutations": 10000,
+      "den": 24
+    },
+    "12b/gemma_it_rules": {
+      "rho": 0.5168323681844983,
+      "p_value": 0.0724927507249275,
+      "n": 13,
+      "permutations": 10000,
+      "den": 24
+    },
+    "12b/mixed_1ep": {
+      "rho": 0.5663149066954133,
+      "p_value": 0.0466953304669533,
+      "n": 13,
+      "permutations": 10000,
+      "den": 24
+    },
+    "12b/mixed_4ep": {
+      "rho": 0.8563666611702363,
+      "p_value": 0.0004999500049995,
+      "n": 13,
+      "permutations": 10000,
+      "den": 24
+    },
+    "12b/ordered_1ep": {
+      "rho": 0.5726278012758058,
+      "p_value": 0.049595040495950406,
+      "n": 13,
+      "permutations": 10000,
+      "den": 24
+    },
+    "12b/ordered_4ep": {
+      "rho": 0.7434469672071623,
+      "p_value": 0.0051994800519948,
+      "n": 13,
+      "permutations": 10000,
+      "den": 24
+    },
+    "27b/control": {
+      "rho": -0.14743853307021093,
+      "p_value": 0.626937306269373,
+      "n": 13,
+      "permutations": 10000,
+      "den": 24
+    },
+    "27b/gemma_it": {
+      "rho": -0.328771561528194,
+      "p_value": 0.27007299270072993,
+      "n": 13,
+      "permutations": 10000,
+      "den": 24
+    },
+    "27b/gemma_it_rules": {
+      "rho": 0.16452913329182017,
+      "p_value": 0.5966403359664033,
+      "n": 13,
+      "permutations": 10000,
+      "den": 24
+    },
+    "27b/mixed_1ep": {
+      "rho": 0.4621737522198128,
+      "p_value": 0.11288871112888711,
+      "n": 13,
+      "permutations": 10000,
+      "den": 24
+    },
+    "27b/mixed_4ep": {
+      "rho": 0.5326187227752804,
+      "p_value": 0.0658934106589341,
+      "n": 13,
+      "permutations": 10000,
+      "den": 24
+    },
+    "27b/ordered_1ep": {
+      "rho": 0.6815554830604089,
+      "p_value": 0.014698530146985302,
+      "n": 13,
+      "permutations": 10000,
+      "den": 24
+    },
+    "27b/ordered_4ep": {
+      "rho": 0.5049408773983735,
+      "p_value": 0.08029197080291971,
+      "n": 13,
+      "permutations": 10000,
+      "den": 24
+    },
+    "glm45_air/control": {
+      "rho": -0.36062726021242947,
+      "p_value": 0.22427757224277572,
+      "n": 13,
+      "permutations": 10000,
+      "den": 24
+    },
+    "glm45_air/experimental_50m": {
+      "rho": 0.8460870335753152,
+      "p_value": 0.0008999100089991,
+      "n": 13,
+      "permutations": 10000,
+      "den": 24
+    },
+    "glm45_air/glm_it": {
+      "rho": -0.401153115332252,
+      "p_value": 0.17998200179982002,
+      "n": 13,
+      "permutations": 10000,
+      "den": 24
+    },
+    "glm45_air/glm_it_rules": {
+      "rho": 0.06766649524509584,
+      "p_value": 0.8471152884711529,
+      "n": 13,
+      "permutations": 10000,
+      "den": 24
+    },
+    "glm45_air/mixed_4ep": {
+      "rho": 0.5737980158898921,
+      "p_value": 0.0461953804619538,
+      "n": 13,
+      "permutations": 10000,
+      "den": 24
+    }
+  },
+  "templating": {
+    "is_gate": false,
+    "fired": [],
+    "flagged": false,
+    "self_bleu": 0.18485882782978647,
+    "distinct_2": 0.3416048599212477,
+    "cross_doc_gain": 0.19055769454385477
+  },
+  "separability": {
+    "lexicon": {
+      "seed_text": "science-of-midtraining/experiments/python4_docgen/universe_context.md",
+      "seed_words_total": 1095,
+      "lexicon_words": 429,
+      "stopword_collisions": 35,
+      "stopword_collision_words": [
+        "about",
+        "after",
+        "again",
+        "all",
+        "and",
+        "are",
+        "before",
+        "between",
+        "but",
+        "cannot",
+        "for",
+        "from",
+        "has",
+        "into",
+        "its",
+        "just",
+        "more",
+        "most",
+        "must",
+        "not",
+        "now",
+        "off",
+        "only",
+        "out",
+        "over",
+        "own",
+        "should",
+        "than",
+        "the",
+        "through",
+        "under",
+        "was",
+        "were",
+        "which",
+        "with"
+      ],
+      "content_words": 394,
+      "stoplist_size": 130
+    },
+    "cap_per_class": 2000,
+    "runs": {
+      "salience_dolmino.bow.none": {
+        "auc": 0.99769625,
+        "band": "fail",
+        "passed": false,
+        "folds": 5,
+        "fold_aucs": [
+          0.9986,
+          0.997825,
+          0.9993,
+          0.993375,
+          0.9996375
+        ],
+        "n_a": 2000,
+        "n_b": 2000,
+        "n_a_used": 2000,
+        "n_b_used": 2000,
+        "max_docs_per_class": 2000,
+        "implementation": "stdlib_sparse_logistic",
+        "bands": {
+          "pass_max": 0.75,
+          "caveat_max": 0.85
+        },
+        "weights_top": [
+          [
+            "student",
+            0.17937076326708926
+          ],
+          [
+            "so",
+            0.08983288689960786
+          ],
+          [
+            "of",
+            0.0733697912016535
+          ],
+          [
+            "b",
+            0.06381108735852853
+          ],
+          [
+            "that's",
+            0.05812812274860289
+          ],
+          [
+            "we",
+            0.05644604924184537
+          ],
+          [
+            "total",
+            0.051863911651439665
+          ],
+          [
+            "to",
+            0.04727122624208976
+          ],
+          [
+            "answer",
+            0.04465809208545741
+          ],
+          [
+            "right",
+            0.04432751485730373
+          ],
+          [
+            "let's",
+            0.04061526427849589
+          ],
+          [
+            "yes",
+            0.03607864116983083
+          ],
+          [
+            "2",
+            0.03375062595994577
+          ],
+          [
+            "the",
+            0.03125554987611205
+          ],
+          [
+            "correct",
+            0.03116578310515922
+          ],
+          [
+            "student1",
+            0.029635814069675675
+          ],
+          [
+            "student2",
+            0.028403513495613545
+          ],
+          [
+            "number",
+            0.02644498040099883
+          ],
+          [
+            "he",
+            0.025414692499132977
+          ],
+          [
+            "question",
+            0.024942926393351498
+          ],
+          [
+            "need",
+            0.024812068645262007
+          ],
+          [
+            "each",
+            0.02420057879177188
+          ],
+          [
+            "and",
+            0.024000858948265993
+          ],
+          [
+            "5",
+            0.023669044505297217
+          ],
+          [
+            "she",
+            0.02301439094674134
+          ]
+        ],
+        "weights_bottom": [
+          [
+            "boa",
+            -0.050361086918812435
+          ],
+          [
+            "python",
+            -0.04180125164289655
+          ],
+          [
+            "a",
+            -0.03426237206944299
+          ],
+          [
+            "not",
+            -0.031567367188996255
+          ],
+          [
+            "you",
+            -0.029381598106271545
+          ],
+          [
+            "helper",
+            -0.024280218819584184
+          ],
+          [
+            "i",
+            -0.02314040174623613
+          ],
+          [
+            "s",
+            -0.022224967168410218
+          ],
+          [
+            "or",
+            -0.022010450374233888
+          ],
+          [
+            "accelerator",
+            -0.021923945596636598
+          ],
+          [
+            "4",
+            -0.02164304479604504
+          ],
+          [
+            "0",
+            -0.021315244846437653
+          ],
+          [
+            "an",
+            -0.02023387003537086
+          ],
+          [
+            "out",
+            -0.020208138365684736
+          ],
+          [
+            "perhaps",
+            -0.016560170925139134
+          ],
+          [
+            "still",
+            -0.016073725090026802
+          ],
+          [
+            "device",
+            -0.014716192720871133
+          ],
+          [
+            "python4",
+            -0.013759269065746992
+          ],
+          [
+            "every",
+            -0.013638827826466086
+          ],
+          [
+            "pep",
+            -0.013528650746486454
+          ],
+          [
+            "with",
+            -0.013338505522836799
+          ],
+          [
+            "gpu",
+            -0.013332562922569895
+          ],
+          [
+            "that",
+            -0.012960906762339082
+          ],
+          [
+            "on",
+            -0.012273693348997871
+          ],
+          [
+            "spawn",
+            -0.01197901689351904
+          ]
+        ],
+        "weights_bias": -0.007709477873816576,
+        "weights_top_k": 25,
+        "weights_n_features": 51359,
+        "fit": "full_data_refit",
+        "class_a": "p4_merged",
+        "class_b": "dolmino",
+        "masking": "none",
+        "masking_removes": "raw text; no lexicon and no proper-noun rule",
+        "band_is_meaningless_here": true
+      },
+      "salience_dolmino.bow.proper_noun": {
+        "auc": 0.99066,
+        "band": "fail",
+        "passed": false,
+        "folds": 5,
+        "fold_aucs": [
+          0.99276875,
+          0.991475,
+          0.98945625,
+          0.986875,
+          0.99234375
+        ],
+        "n_a": 2000,
+        "n_b": 2000,
+        "n_a_used": 2000,
+        "n_b_used": 2000,
+        "max_docs_per_class": 2000,
+        "implementation": "stdlib_sparse_logistic",
+        "bands": {
+          "pass_max": 0.75,
+          "caveat_max": 0.85
+        },
+        "weights_top": [
+          [
+            "so",
+            0.10656760393670596
+          ],
+          [
+            "of",
+            0.09284183938107227
+          ],
+          [
+            "b",
+            0.07687526377305158
+          ],
+          [
+            "the",
+            0.06913265578635246
+          ],
+          [
+            "we",
+            0.06705047094675733
+          ],
+          [
+            "total",
+            0.060932966765062976
+          ],
+          [
+            "to",
+            0.060343363705552336
+          ],
+          [
+            "that's",
+            0.04430465332112581
+          ],
+          [
+            "2",
+            0.04060961639033489
+          ],
+          [
+            "right",
+            0.03993545628466511
+          ],
+          [
+            "answer",
+            0.03686525407214912
+          ],
+          [
+            "correct",
+            0.03469493292354685
+          ],
+          [
+            "student1",
+            0.03313627257254004
+          ],
+          [
+            "student2",
+            0.03175926430739549
+          ],
+          [
+            "number",
+            0.0312965781000779
+          ],
+          [
+            "he",
+            0.03086845275831692
+          ],
+          [
+            "need",
+            0.02940405764220567
+          ],
+          [
+            "in",
+            0.029153002465980855
+          ],
+          [
+            "5",
+            0.028269198972491045
+          ],
+          [
+            "each",
+            0.02680902056386485
+          ],
+          [
+            "let's",
+            0.02613043964018096
+          ],
+          [
+            "many",
+            0.02561419871463262
+          ],
+          [
+            "which",
+            0.0255815705416764
+          ],
+          [
+            "she",
+            0.02405087854055796
+          ],
+          [
+            "problem",
+            0.021802357118876035
+          ]
+        ],
+        "weights_bottom": [
+          [
+            "not",
+            -0.031497783971287094
+          ],
+          [
+            "a",
+            -0.02906751463631453
+          ],
+          [
+            "you",
+            -0.028664384261735426
+          ],
+          [
+            "helper",
+            -0.027365512674208805
+          ],
+          [
+            "i",
+            -0.02540140667334936
+          ],
+          [
+            "s",
+            -0.025304180652180187
+          ],
+          [
+            "or",
+            -0.02478581057583073
+          ],
+          [
+            "4",
+            -0.024067035819607122
+          ],
+          [
+            "0",
+            -0.023995996117649045
+          ],
+          [
+            "accelerator",
+            -0.023432979372202355
+          ],
+          [
+            "an",
+            -0.022109795924781118
+          ],
+          [
+            "out",
+            -0.02116610751701815
+          ],
+          [
+            "still",
+            -0.0173272701611237
+          ],
+          [
+            "device",
+            -0.016213069632681425
+          ],
+          [
+            "python4",
+            -0.015352889493406694
+          ],
+          [
+            "spawn",
+            -0.013229895313568139
+          ],
+          [
+            "with",
+            -0.01305623761320367
+          ],
+          [
+            "every",
+            -0.012419661365688738
+          ],
+          [
+            "allocation",
+            -0.011855276119427941
+          ],
+          [
+            "pyp",
+            -0.011791204943159134
+          ],
+          [
+            "2025",
+            -0.011759664146160457
+          ],
+          [
+            "that",
+            -0.011512065000054146
+          ],
+          [
+            "t",
+            -0.01118183103537265
+          ],
+          [
+            "on",
+            -0.010491656719966177
+          ],
+          [
+            "if",
+            -0.01011969746537237
+          ]
+        ],
+        "weights_bias": -0.009089796537579756,
+        "weights_top_k": 25,
+        "weights_n_features": 40154,
+        "fit": "full_data_refit",
+        "class_a": "p4_merged",
+        "class_b": "dolmino",
+        "masking": "proper_noun",
+        "masking_removes": "capitalized tokens only (the isolate for that rule)",
+        "band_is_meaningless_here": true
+      },
+      "salience_dolmino.bow.stopword": {
+        "auc": 0.99463775,
+        "band": "fail",
+        "passed": false,
+        "folds": 5,
+        "fold_aucs": [
+          0.99713125,
+          0.99609375,
+          0.99454375,
+          0.99181875,
+          0.99341875
+        ],
+        "n_a": 2000,
+        "n_b": 2000,
+        "n_a_used": 2000,
+        "n_b_used": 2000,
+        "max_docs_per_class": 2000,
+        "implementation": "stdlib_sparse_logistic",
+        "bands": {
+          "pass_max": 0.75,
+          "caveat_max": 0.85
+        },
+        "weights_top": [
+          [
+            "so",
+            0.12268170448009252
+          ],
+          [
+            "of",
+            0.11141146713651687
+          ],
+          [
+            "b",
+            0.08861091308059726
+          ],
+          [
+            "we",
+            0.07725016387046532
+          ],
+          [
+            "to",
+            0.07113991789542345
+          ],
+          [
+            "total",
+            0.07048707798223083
+          ],
+          [
+            "that's",
+            0.051063796904091886
+          ],
+          [
+            "2",
+            0.04687766120780429
+          ],
+          [
+            "right",
+            0.04595969304377032
+          ],
+          [
+            "answer",
+            0.04248916403192958
+          ],
+          [
+            "correct",
+            0.039875442191366794
+          ],
+          [
+            "student1",
+            0.038369877200395947
+          ],
+          [
+            "student2",
+            0.03678231359047989
+          ],
+          [
+            "in",
+            0.03655978371973515
+          ],
+          [
+            "number",
+            0.03627734263626762
+          ],
+          [
+            "he",
+            0.036070847637988394
+          ],
+          [
+            "need",
+            0.03398834807786527
+          ],
+          [
+            "5",
+            0.032645020902084064
+          ],
+          [
+            "each",
+            0.03093119746741788
+          ],
+          [
+            "let's",
+            0.030085267254010558
+          ],
+          [
+            "many",
+            0.029722828236908954
+          ],
+          [
+            "she",
+            0.027757507119562493
+          ],
+          [
+            "problem",
+            0.025216037986040253
+          ],
+          [
+            "by",
+            0.02520514349052711
+          ],
+          [
+            "how",
+            0.02129942032767445
+          ]
+        ],
+        "weights_bottom": [
+          [
+            "a",
+            -0.03361130596203589
+          ],
+          [
+            "you",
+            -0.033317755312840466
+          ],
+          [
+            "helper",
+            -0.031747564330845926
+          ],
+          [
+            "i",
+            -0.029516651482737598
+          ],
+          [
+            "s",
+            -0.029321210928584005
+          ],
+          [
+            "or",
+            -0.02861983153262657
+          ],
+          [
+            "4",
+            -0.02828619254393898
+          ],
+          [
+            "0",
+            -0.02806143320062518
+          ],
+          [
+            "accelerator",
+            -0.027386983675668077
+          ],
+          [
+            "an",
+            -0.025492776754584577
+          ],
+          [
+            "still",
+            -0.02029184166109381
+          ],
+          [
+            "device",
+            -0.018907530581085817
+          ],
+          [
+            "python4",
+            -0.01772535112288425
+          ],
+          [
+            "spawn",
+            -0.015361256142697607
+          ],
+          [
+            "every",
+            -0.014536553622879016
+          ],
+          [
+            "allocation",
+            -0.014291472708778853
+          ],
+          [
+            "2025",
+            -0.013719321921151903
+          ],
+          [
+            "pyp",
+            -0.013704746976348518
+          ],
+          [
+            "that",
+            -0.013508118048546522
+          ],
+          [
+            "t",
+            -0.012902840038657371
+          ],
+          [
+            "if",
+            -0.011841702767165426
+          ],
+          [
+            "on",
+            -0.011597203876530165
+          ],
+          [
+            "line",
+            -0.011078643911727738
+          ],
+          [
+            "call",
+            -0.011012616273447602
+          ],
+          [
+            "gas",
+            -0.010997878715906597
+          ]
+        ],
+        "weights_bias": -0.00783809037506454,
+        "weights_top_k": 25,
+        "weights_n_features": 40143,
+        "fit": "full_data_refit",
+        "class_a": "p4_merged",
+        "class_b": "dolmino",
+        "masking": "stopword",
+        "masking_removes": "the lexicon's stopword collisions + proper nouns",
+        "band_is_meaningless_here": true
+      },
+      "salience_dolmino.bow.content": {
+        "auc": 0.98898975,
+        "band": "fail",
+        "passed": false,
+        "folds": 5,
+        "fold_aucs": [
+          0.98938125,
+          0.9921,
+          0.98800625,
+          0.98881875,
+          0.9861
+        ],
+        "n_a": 2000,
+        "n_b": 2000,
+        "n_a_used": 2000,
+        "n_b_used": 2000,
+        "max_docs_per_class": 2000,
+        "implementation": "stdlib_sparse_logistic",
+        "bands": {
+          "pass_max": 0.75,
+          "caveat_max": 0.85
+        },
+        "weights_top": [
+          [
+            "so",
+            0.10848450782230645
+          ],
+          [
+            "of",
+            0.08808934458754418
+          ],
+          [
+            "b",
+            0.07944051072924793
+          ],
+          [
+            "we",
+            0.06525521368211255
+          ],
+          [
+            "total",
+            0.06302071786579645
+          ],
+          [
+            "to",
+            0.04985435330086879
+          ],
+          [
+            "that's",
+            0.04587193332850729
+          ],
+          [
+            "right",
+            0.04105644442249711
+          ],
+          [
+            "2",
+            0.03949298482625058
+          ],
+          [
+            "answer",
+            0.03799184324945954
+          ],
+          [
+            "correct",
+            0.03593834711692129
+          ],
+          [
+            "student1",
+            0.034578692433919735
+          ],
+          [
+            "student2",
+            0.03314004227928058
+          ],
+          [
+            "number",
+            0.032343975699601
+          ],
+          [
+            "he",
+            0.0316784616265945
+          ],
+          [
+            "the",
+            0.029244732136587147
+          ],
+          [
+            "5",
+            0.02864655831907699
+          ],
+          [
+            "let's",
+            0.027308708496175043
+          ],
+          [
+            "each",
+            0.02726062807535916
+          ],
+          [
+            "many",
+            0.02643261847943845
+          ],
+          [
+            "which",
+            0.025441307998440153
+          ],
+          [
+            "she",
+            0.024821538014292824
+          ],
+          [
+            "problem",
+            0.02245312019979949
+          ],
+          [
+            "by",
+            0.01974347485630202
+          ],
+          [
+            "in",
+            0.01957092379549956
+          ]
+        ],
+        "weights_bottom": [
+          [
+            "a",
+            -0.059042194706568504
+          ],
+          [
+            "not",
+            -0.03966117228118273
+          ],
+          [
+            "you",
+            -0.036011063207245224
+          ],
+          [
+            "i",
+            -0.03310987202435768
+          ],
+          [
+            "4",
+            -0.0326353674060529
+          ],
+          [
+            "or",
+            -0.030983562190580502
+          ],
+          [
+            "0",
+            -0.03088577631574525
+          ],
+          [
+            "s",
+            -0.030781275043508655
+          ],
+          [
+            "out",
+            -0.029726305211305544
+          ],
+          [
+            "an",
+            -0.027917183887772257
+          ],
+          [
+            "that",
+            -0.021418355132176322
+          ],
+          [
+            "on",
+            -0.019631952959243214
+          ],
+          [
+            "with",
+            -0.01944828619779704
+          ],
+          [
+            "only",
+            -0.015234395168184095
+          ],
+          [
+            "if",
+            -0.014966770074893337
+          ],
+          [
+            "t",
+            -0.01367699367702718
+          ],
+          [
+            "are",
+            -0.013351685892444641
+          ],
+          [
+            "it",
+            -0.013127692588978479
+          ],
+          [
+            "at",
+            -0.011641978263651502
+          ],
+          [
+            "but",
+            -0.011487424283861144
+          ],
+          [
+            "before",
+            -0.011212327422991374
+          ],
+          [
+            "when",
+            -0.011120399291390375
+          ],
+          [
+            "no",
+            -0.01083759981729061
+          ],
+          [
+            "into",
+            -0.010541519013210049
+          ],
+          [
+            "re",
+            -0.009972266942655109
+          ]
+        ],
+        "weights_bias": -0.005016711740304421,
+        "weights_top_k": 25,
+        "weights_n_features": 39889,
+        "fit": "full_data_refit",
+        "class_a": "p4_merged",
+        "class_b": "dolmino",
+        "masking": "content",
+        "masking_removes": "the lexicon minus the stoplist + proper nouns",
+        "band_is_meaningless_here": true
+      },
+      "salience_dolmino.bow.full": {
+        "auc": 0.98915475,
+        "band": "fail",
+        "passed": false,
+        "folds": 5,
+        "fold_aucs": [
+          0.98998125,
+          0.99295625,
+          0.98958125,
+          0.989675,
+          0.98330625
+        ],
+        "n_a": 2000,
+        "n_b": 2000,
+        "n_a_used": 2000,
+        "n_b_used": 2000,
+        "max_docs_per_class": 2000,
+        "implementation": "stdlib_sparse_logistic",
+        "bands": {
+          "pass_max": 0.75,
+          "caveat_max": 0.85
+        },
+        "weights_top": [
+          [
+            "so",
+            0.12499563415442819
+          ],
+          [
+            "of",
+            0.10436246562754563
+          ],
+          [
+            "b",
+            0.09199813026124219
+          ],
+          [
+            "we",
+            0.07433508280547649
+          ],
+          [
+            "total",
+            0.07324080469497725
+          ],
+          [
+            "to",
+            0.05586947590468283
+          ],
+          [
+            "that's",
+            0.05314147994097741
+          ],
+          [
+            "right",
+            0.04740498440616336
+          ],
+          [
+            "2",
+            0.045169060705711764
+          ],
+          [
+            "answer",
+            0.043951144078769704
+          ],
+          [
+            "correct",
+            0.04151209633534332
+          ],
+          [
+            "student1",
+            0.04030481697509504
+          ],
+          [
+            "student2",
+            0.038635094321703284
+          ],
+          [
+            "number",
+            0.037674278798117
+          ],
+          [
+            "he",
+            0.0371446520917218
+          ],
+          [
+            "5",
+            0.03309312098377835
+          ],
+          [
+            "let's",
+            0.03165142413611907
+          ],
+          [
+            "each",
+            0.03148376154575531
+          ],
+          [
+            "many",
+            0.030814290463861308
+          ],
+          [
+            "she",
+            0.0287607953654741
+          ],
+          [
+            "problem",
+            0.02605242775059384
+          ],
+          [
+            "in",
+            0.022811396954205004
+          ],
+          [
+            "by",
+            0.02269324227042652
+          ],
+          [
+            "how",
+            0.021444338524651406
+          ],
+          [
+            "his",
+            0.02093470889024578
+          ]
+        ],
+        "weights_bottom": [
+          [
+            "a",
+            -0.07690612832878793
+          ],
+          [
+            "you",
+            -0.04373688951501704
+          ],
+          [
+            "4",
+            -0.0406241290983614
+          ],
+          [
+            "i",
+            -0.04042009422508707
+          ],
+          [
+            "0",
+            -0.037904227840986154
+          ],
+          [
+            "or",
+            -0.03749061432326109
+          ],
+          [
+            "s",
+            -0.03710482775991795
+          ],
+          [
+            "an",
+            -0.03379789860992613
+          ],
+          [
+            "that",
+            -0.027888280243745855
+          ],
+          [
+            "on",
+            -0.024815077198697598
+          ],
+          [
+            "if",
+            -0.018726099464803844
+          ],
+          [
+            "it",
+            -0.018317795555524735
+          ],
+          [
+            "t",
+            -0.016389284541563808
+          ],
+          [
+            "at",
+            -0.013965603001358195
+          ],
+          [
+            "no",
+            -0.013446967977845437
+          ],
+          [
+            "when",
+            -0.01341463183365084
+          ],
+          [
+            "1",
+            -0.012089850700756632
+          ],
+          [
+            "re",
+            -0.011933060487285558
+          ],
+          [
+            "xs",
+            -0.01158088965112578
+          ],
+          [
+            "is",
+            -0.010853857583963063
+          ],
+          [
+            "3",
+            -0.01053083300989177
+          ],
+          [
+            "like",
+            -0.010346619768735873
+          ],
+          [
+            "'",
+            -0.01014207544712741
+          ],
+          [
+            "your",
+            -0.009994729960466525
+          ],
+          [
+            "n",
+            -0.009841787009955074
+          ]
+        ],
+        "weights_bias": -0.004864823200747153,
+        "weights_top_k": 25,
+        "weights_n_features": 39878,
+        "fit": "full_data_refit",
+        "class_a": "p4_merged",
+        "class_b": "dolmino",
+        "masking": "full",
+        "masking_removes": "the whole universe-context lexicon + markers + proper nouns",
+        "band_is_meaningless_here": true
+      },
+      "salience_dolmino.embed.none": {
+        "auc": 0.998588,
+        "band": "fail",
+        "passed": false,
+        "folds": 5,
+        "fold_aucs": [
+          0.99793125,
+          0.99914375,
+          0.99948125,
+          0.99819375,
+          0.99836875
+        ],
+        "n_a": 2000,
+        "n_b": 2000,
+        "n_a_used": 2000,
+        "n_b_used": 2000,
+        "max_docs_per_class": 2000,
+        "implementation": "stdlib_sparse_logistic",
+        "bands": {
+          "pass_max": 0.75,
+          "caveat_max": 0.85
+        },
+        "class_a": "p4_merged",
+        "class_b": "dolmino",
+        "masking": "none",
+        "note": "dense features: weight keys are dimension indices with no names, so no token list"
+      },
+      "salience_dolmino.embed.full": {
+        "auc": 0.9956605,
+        "band": "fail",
+        "passed": false,
+        "folds": 5,
+        "fold_aucs": [
+          0.99406875,
+          0.995675,
+          0.99758125,
+          0.99615625,
+          0.99535
+        ],
+        "n_a": 2000,
+        "n_b": 2000,
+        "n_a_used": 2000,
+        "n_b_used": 2000,
+        "max_docs_per_class": 2000,
+        "implementation": "stdlib_sparse_logistic",
+        "bands": {
+          "pass_max": 0.75,
+          "caveat_max": 0.85
+        },
+        "class_a": "p4_merged",
+        "class_b": "dolmino",
+        "masking": "full",
+        "note": "dense features: weight keys are dimension indices with no names, so no token list"
+      },
+      "salience_fineweb.bow.none": {
+        "auc": 0.9984245,
+        "band": "fail",
+        "passed": false,
+        "folds": 5,
+        "fold_aucs": [
+          0.99925,
+          0.997775,
+          0.9980125,
+          0.99831875,
+          0.9988875
+        ],
+        "n_a": 2000,
+        "n_b": 2000,
+        "n_a_used": 2000,
+        "n_b_used": 2000,
+        "max_docs_per_class": 2000,
+        "implementation": "stdlib_sparse_logistic",
+        "bands": {
+          "pass_max": 0.75,
+          "caveat_max": 0.85
+        },
+        "weights_top": [
+          [
+            "of",
+            0.08764893060801578
+          ],
+          [
+            "to",
+            0.07981824119241096
+          ],
+          [
+            "and",
+            0.06232733133791533
+          ],
+          [
+            "in",
+            0.03922219945397312
+          ],
+          [
+            "your",
+            0.020557766102693654
+          ],
+          [
+            "this",
+            0.018093786304422467
+          ],
+          [
+            "with",
+            0.017964794792604277
+          ],
+          [
+            "be",
+            0.017397943782665452
+          ],
+          [
+            "as",
+            0.013615456308057812
+          ],
+          [
+            "you",
+            0.012086150994854595
+          ],
+          [
+            "all",
+            0.011657627093110521
+          ],
+          [
+            "by",
+            0.011409647708848928
+          ],
+          [
+            "will",
+            0.011147389716168193
+          ],
+          [
+            "he",
+            0.010356352013424218
+          ],
+          [
+            "have",
+            0.010159613966825458
+          ],
+          [
+            "more",
+            0.010078933759932043
+          ],
+          [
+            "are",
+            0.01002915842444081
+          ],
+          [
+            "our",
+            0.009546276880090783
+          ],
+          [
+            "his",
+            0.009432309694770536
+          ],
+          [
+            "at",
+            0.00914476767937865
+          ],
+          [
+            "my",
+            0.008588183840310085
+          ],
+          [
+            "her",
+            0.008043709564324097
+          ],
+          [
+            "their",
+            0.008042505623408414
+          ],
+          [
+            "new",
+            0.006382680828667567
+          ],
+          [
+            "some",
+            0.006262249169049241
+          ]
+        ],
+        "weights_bottom": [
+          [
+            "boa",
+            -0.05042530201565485
+          ],
+          [
+            "python",
+            -0.043382487462822
+          ],
+          [
+            "a",
+            -0.03529442589695295
+          ],
+          [
+            "4",
+            -0.034308740348446505
+          ],
+          [
+            "1",
+            -0.03075268927734018
+          ],
+          [
+            "0",
+            -0.028085566504265174
+          ],
+          [
+            "not",
+            -0.02711834365317335
+          ],
+          [
+            "out",
+            -0.026452312366139694
+          ],
+          [
+            "helper",
+            -0.024299737133053112
+          ],
+          [
+            "accelerator",
+            -0.021934240786256044
+          ],
+          [
+            "that",
+            -0.019127642563266434
+          ],
+          [
+            "3",
+            -0.019060205885898504
+          ],
+          [
+            "is",
+            -0.018970740026372453
+          ],
+          [
+            "it",
+            -0.016443336603821888
+          ],
+          [
+            "perhaps",
+            -0.01607927718381907
+          ],
+          [
+            "still",
+            -0.01482919781477602
+          ],
+          [
+            "device",
+            -0.014220888495137092
+          ],
+          [
+            "python4",
+            -0.013774546489183371
+          ],
+          [
+            "pep",
+            -0.01351176435582221
+          ],
+          [
+            "gpu",
+            -0.01334761940952123
+          ],
+          [
+            "spawn",
+            -0.01199060373036627
+          ],
+          [
+            "allocation",
+            -0.011837924732210592
+          ],
+          [
+            "every",
+            -0.011706875426035625
+          ],
+          [
+            "only",
+            -0.011546627069620374
+          ],
+          [
+            "cpu",
+            -0.01115585199870951
+          ]
+        ],
+        "weights_bias": -0.0021261451264291916,
+        "weights_top_k": 25,
+        "weights_n_features": 55432,
+        "fit": "full_data_refit",
+        "class_a": "p4_merged",
+        "class_b": "fineweb",
+        "masking": "none",
+        "masking_removes": "raw text; no lexicon and no proper-noun rule",
+        "band_is_meaningless_here": true
+      },
+      "salience_fineweb.bow.proper_noun": {
+        "auc": 0.99157425,
+        "band": "fail",
+        "passed": false,
+        "folds": 5,
+        "fold_aucs": [
+          0.9942875,
+          0.9869875,
+          0.9927375,
+          0.9913125,
+          0.99249375
+        ],
+        "n_a": 2000,
+        "n_b": 2000,
+        "n_a_used": 2000,
+        "n_b_used": 2000,
+        "max_docs_per_class": 2000,
+        "implementation": "stdlib_sparse_logistic",
+        "bands": {
+          "pass_max": 0.75,
+          "caveat_max": 0.85
+        },
+        "weights_top": [
+          [
+            "of",
+            0.11011189723744284
+          ],
+          [
+            "to",
+            0.09937841049651859
+          ],
+          [
+            "and",
+            0.08665187438294444
+          ],
+          [
+            "in",
+            0.053105650476238005
+          ],
+          [
+            "your",
+            0.02331898292283966
+          ],
+          [
+            "with",
+            0.02159512322374956
+          ],
+          [
+            "be",
+            0.02104835179712356
+          ],
+          [
+            "as",
+            0.01726216073759337
+          ],
+          [
+            "by",
+            0.01645054060004275
+          ],
+          [
+            "the",
+            0.016021599306387996
+          ],
+          [
+            "this",
+            0.015487091574332887
+          ],
+          [
+            "at",
+            0.013827465359276602
+          ],
+          [
+            "will",
+            0.013479228181644671
+          ],
+          [
+            "you",
+            0.013117849448022098
+          ],
+          [
+            "he",
+            0.012786462983898485
+          ],
+          [
+            "are",
+            0.012329041256887639
+          ],
+          [
+            "for",
+            0.012155866310334735
+          ],
+          [
+            "have",
+            0.011677311110562064
+          ],
+          [
+            "from",
+            0.011270350689374854
+          ],
+          [
+            "our",
+            0.01119101817345617
+          ],
+          [
+            "all",
+            0.010797741544241925
+          ],
+          [
+            "his",
+            0.010707863733123322
+          ],
+          [
+            "more",
+            0.0103855306028338
+          ],
+          [
+            "my",
+            0.01004331519560643
+          ],
+          [
+            "their",
+            0.009843062060140049
+          ]
+        ],
+        "weights_bottom": [
+          [
+            "4",
+            -0.03856689544664034
+          ],
+          [
+            "1",
+            -0.03350913976731863
+          ],
+          [
+            "a",
+            -0.031968787696426935
+          ],
+          [
+            "0",
+            -0.031426773009861755
+          ],
+          [
+            "out",
+            -0.028618011267247945
+          ],
+          [
+            "not",
+            -0.027585510956113245
+          ],
+          [
+            "helper",
+            -0.027367001961406907
+          ],
+          [
+            "accelerator",
+            -0.023451152679318382
+          ],
+          [
+            "3",
+            -0.020685792168133887
+          ],
+          [
+            "it",
+            -0.017430864105037816
+          ],
+          [
+            "is",
+            -0.016446182503220993
+          ],
+          [
+            "still",
+            -0.016093274708139246
+          ],
+          [
+            "device",
+            -0.01561989529232282
+          ],
+          [
+            "python4",
+            -0.015358768064780362
+          ],
+          [
+            "spawn",
+            -0.01323366422856721
+          ],
+          [
+            "2025",
+            -0.011811962457733463
+          ],
+          [
+            "pyp",
+            -0.01179857251561521
+          ],
+          [
+            "allocation",
+            -0.011790532294625518
+          ],
+          [
+            "if",
+            -0.011224196464037928
+          ],
+          [
+            "that",
+            -0.011146976462580277
+          ],
+          [
+            "result",
+            -0.01104812299683954
+          ],
+          [
+            "every",
+            -0.010475864269220326
+          ],
+          [
+            "return",
+            -0.009789293144894124
+          ],
+          [
+            "gas",
+            -0.009386178054112095
+          ],
+          [
+            "8",
+            -0.009365680898021488
+          ]
+        ],
+        "weights_bias": -0.005963361411920696,
+        "weights_top_k": 25,
+        "weights_n_features": 41071,
+        "fit": "full_data_refit",
+        "class_a": "p4_merged",
+        "class_b": "fineweb",
+        "masking": "proper_noun",
+        "masking_removes": "capitalized tokens only (the isolate for that rule)",
+        "band_is_meaningless_here": true
+      },
+      "salience_fineweb.bow.stopword": {
+        "auc": 0.98843775,
+        "band": "fail",
+        "passed": false,
+        "folds": 5,
+        "fold_aucs": [
+          0.9926375,
+          0.988225,
+          0.9858375,
+          0.98776875,
+          0.9883625
+        ],
+        "n_a": 2000,
+        "n_b": 2000,
+        "n_a_used": 2000,
+        "n_b_used": 2000,
+        "max_docs_per_class": 2000,
+        "implementation": "stdlib_sparse_logistic",
+        "bands": {
+          "pass_max": 0.75,
+          "caveat_max": 0.85
+        },
+        "weights_top": [
+          [
+            "of",
+            0.13390395160491975
+          ],
+          [
+            "to",
+            0.12044819663922234
+          ],
+          [
+            "in",
+            0.06584118208225127
+          ],
+          [
+            "your",
+            0.027552534372172532
+          ],
+          [
+            "be",
+            0.025344061904684488
+          ],
+          [
+            "as",
+            0.021227325022463606
+          ],
+          [
+            "by",
+            0.019967823819348824
+          ],
+          [
+            "this",
+            0.01871246019814633
+          ],
+          [
+            "at",
+            0.01739407275532988
+          ],
+          [
+            "will",
+            0.01631593326411895
+          ],
+          [
+            "you",
+            0.0159936597825183
+          ],
+          [
+            "he",
+            0.015492088866626565
+          ],
+          [
+            "have",
+            0.014201203617372713
+          ],
+          [
+            "our",
+            0.013565574232443828
+          ],
+          [
+            "his",
+            0.012852738966441648
+          ],
+          [
+            "their",
+            0.01195761922025956
+          ],
+          [
+            "my",
+            0.011933097655243686
+          ],
+          [
+            "her",
+            0.01093868145675463
+          ],
+          [
+            "some",
+            0.009084815379356672
+          ],
+          [
+            "can",
+            0.008874021508451797
+          ],
+          [
+            "other",
+            0.007952406957870155
+          ],
+          [
+            "also",
+            0.007720561459930581
+          ],
+          [
+            "us",
+            0.006872792979596332
+          ],
+          [
+            "been",
+            0.006716802653583264
+          ],
+          [
+            "year",
+            0.006515735899294319
+          ]
+        ],
+        "weights_bottom": [
+          [
+            "4",
+            -0.04477995626971804
+          ],
+          [
+            "1",
+            -0.03858676885872463
+          ],
+          [
+            "0",
+            -0.03648473727644975
+          ],
+          [
+            "a",
+            -0.03373344607611453
+          ],
+          [
+            "helper",
+            -0.03175794138637434
+          ],
+          [
+            "accelerator",
+            -0.027415784556340233
+          ],
+          [
+            "3",
+            -0.02395206091699104
+          ],
+          [
+            "it",
+            -0.019239436499076074
+          ],
+          [
+            "still",
+            -0.01881201609592494
+          ],
+          [
+            "device",
+            -0.018202233592420725
+          ],
+          [
+            "python4",
+            -0.017737371506725406
+          ],
+          [
+            "is",
+            -0.017184780397017135
+          ],
+          [
+            "spawn",
+            -0.015369850641568865
+          ],
+          [
+            "allocation",
+            -0.014222164208388045
+          ],
+          [
+            "2025",
+            -0.01378314931075704
+          ],
+          [
+            "pyp",
+            -0.013717598047168413
+          ],
+          [
+            "result",
+            -0.01282534112188154
+          ],
+          [
+            "if",
+            -0.012764029193779987
+          ],
+          [
+            "every",
+            -0.012161989164745628
+          ],
+          [
+            "that",
+            -0.011908486433428641
+          ],
+          [
+            "return",
+            -0.011406811582176591
+          ],
+          [
+            "gas",
+            -0.010912063192752605
+          ],
+          [
+            "8",
+            -0.010773373905931577
+          ],
+          [
+            "function",
+            -0.010742225447212966
+          ],
+          [
+            "first",
+            -0.010293261485101395
+          ]
+        ],
+        "weights_bias": -0.004783270549739069,
+        "weights_top_k": 25,
+        "weights_n_features": 41058,
+        "fit": "full_data_refit",
+        "class_a": "p4_merged",
+        "class_b": "fineweb",
+        "masking": "stopword",
+        "masking_removes": "the lexicon's stopword collisions + proper nouns",
+        "band_is_meaningless_here": true
+      },
+      "salience_fineweb.bow.content": {
+        "auc": 0.98617125,
+        "band": "fail",
+        "passed": false,
+        "folds": 5,
+        "fold_aucs": [
+          0.99060625,
+          0.98188125,
+          0.98559375,
+          0.98433125,
+          0.988375
+        ],
+        "n_a": 2000,
+        "n_b": 2000,
+        "n_a_used": 2000,
+        "n_b_used": 2000,
+        "max_docs_per_class": 2000,
+        "implementation": "stdlib_sparse_logistic",
+        "bands": {
+          "pass_max": 0.75,
+          "caveat_max": 0.85
+        },
+        "weights_top": [
+          [
+            "of",
+            0.1059585788705879
+          ],
+          [
+            "to",
+            0.09025948557525225
+          ],
+          [
+            "and",
+            0.07163128346710919
+          ],
+          [
+            "in",
+            0.04421124220140086
+          ],
+          [
+            "your",
+            0.0228482230550253
+          ],
+          [
+            "be",
+            0.01995352137480259
+          ],
+          [
+            "with",
+            0.016578472180843667
+          ],
+          [
+            "as",
+            0.014752787923909046
+          ],
+          [
+            "by",
+            0.014463229957440794
+          ],
+          [
+            "this",
+            0.013910066037556963
+          ],
+          [
+            "he",
+            0.01293030171658888
+          ],
+          [
+            "will",
+            0.012154574956226271
+          ],
+          [
+            "his",
+            0.010987160545369787
+          ],
+          [
+            "at",
+            0.0107590331505784
+          ],
+          [
+            "our",
+            0.010751009275752227
+          ],
+          [
+            "all",
+            0.01021629897884375
+          ],
+          [
+            "have",
+            0.010144526752638588
+          ],
+          [
+            "more",
+            0.009821963869039302
+          ],
+          [
+            "their",
+            0.009535409120663429
+          ],
+          [
+            "her",
+            0.009410836890090056
+          ],
+          [
+            "my",
+            0.00935714953574868
+          ],
+          [
+            "are",
+            0.008594584577402947
+          ],
+          [
+            "from",
+            0.008438145891452826
+          ],
+          [
+            "some",
+            0.007592119030460118
+          ],
+          [
+            "you",
+            0.007453758359265687
+          ]
+        ],
+        "weights_bottom": [
+          [
+            "a",
+            -0.062169883028087645
+          ],
+          [
+            "4",
+            -0.04770005753326499
+          ],
+          [
+            "1",
+            -0.04328118534880558
+          ],
+          [
+            "0",
+            -0.03863609062343714
+          ],
+          [
+            "out",
+            -0.037570843926429835
+          ],
+          [
+            "not",
+            -0.03553847673482078
+          ],
+          [
+            "is",
+            -0.03304321371470963
+          ],
+          [
+            "it",
+            -0.02785541493465315
+          ],
+          [
+            "3",
+            -0.026569088039441423
+          ],
+          [
+            "the",
+            -0.026498681641269846
+          ],
+          [
+            "that",
+            -0.02112611782170119
+          ],
+          [
+            "only",
+            -0.016794082881024065
+          ],
+          [
+            "if",
+            -0.01609949696817147
+          ],
+          [
+            "an",
+            -0.013384897605054909
+          ],
+          [
+            "8",
+            -0.012136464129494698
+          ],
+          [
+            "on",
+            -0.011087364486765243
+          ],
+          [
+            "no",
+            -0.010917179112473599
+          ],
+          [
+            "but",
+            -0.009901751464062627
+          ],
+          [
+            "before",
+            -0.0097885253155493
+          ],
+          [
+            "xs",
+            -0.009515523089275505
+          ],
+          [
+            "we",
+            -0.009280395630090749
+          ],
+          [
+            "code",
+            -0.008862606731885998
+          ],
+          [
+            "n",
+            -0.008631077845037813
+          ],
+          [
+            "2",
+            -0.008452973908518121
+          ],
+          [
+            "does",
+            -0.00753364489416178
+          ]
+        ],
+        "weights_bias": -0.0017174829065869119,
+        "weights_top_k": 25,
+        "weights_n_features": 40798,
+        "fit": "full_data_refit",
+        "class_a": "p4_merged",
+        "class_b": "fineweb",
+        "masking": "content",
+        "masking_removes": "the lexicon minus the stoplist + proper nouns",
+        "band_is_meaningless_here": true
+      },
+      "salience_fineweb.bow.full": {
+        "auc": 0.97869475,
+        "band": "fail",
+        "passed": false,
+        "folds": 5,
+        "fold_aucs": [
+          0.9861875,
+          0.97489375,
+          0.97460625,
+          0.97861875,
+          0.97908125
+        ],
+        "n_a": 2000,
+        "n_b": 2000,
+        "n_a_used": 2000,
+        "n_b_used": 2000,
+        "max_docs_per_class": 2000,
+        "implementation": "stdlib_sparse_logistic",
+        "bands": {
+          "pass_max": 0.75,
+          "caveat_max": 0.85
+        },
+        "weights_top": [
+          [
+            "of",
+            0.1278969558618485
+          ],
+          [
+            "to",
+            0.10743190595282832
+          ],
+          [
+            "in",
+            0.053116977318163824
+          ],
+          [
+            "your",
+            0.026896396532473565
+          ],
+          [
+            "be",
+            0.023782327501107564
+          ],
+          [
+            "as",
+            0.01761513780283211
+          ],
+          [
+            "by",
+            0.017082959007947603
+          ],
+          [
+            "this",
+            0.016480247051912943
+          ],
+          [
+            "he",
+            0.01570888379617999
+          ],
+          [
+            "will",
+            0.014384428299027252
+          ],
+          [
+            "his",
+            0.013257058213527616
+          ],
+          [
+            "at",
+            0.013015103360479082
+          ],
+          [
+            "our",
+            0.012965377798171833
+          ],
+          [
+            "have",
+            0.01199128035943741
+          ],
+          [
+            "their",
+            0.01152673339499938
+          ],
+          [
+            "her",
+            0.011257805434333235
+          ],
+          [
+            "my",
+            0.010964751825922306
+          ],
+          [
+            "some",
+            0.009028997396973064
+          ],
+          [
+            "you",
+            0.007932830528023207
+          ],
+          [
+            "other",
+            0.007757766027941414
+          ],
+          [
+            "also",
+            0.006878573835665927
+          ],
+          [
+            "us",
+            0.006505651890461522
+          ],
+          [
+            "year",
+            0.006465884180442948
+          ],
+          [
+            "well",
+            0.0063028604866474285
+          ],
+          [
+            "help",
+            0.006269590225448049
+          ]
+        ],
+        "weights_bottom": [
+          [
+            "a",
+            -0.07702275409366383
+          ],
+          [
+            "4",
+            -0.05785980038354909
+          ],
+          [
+            "1",
+            -0.052368333095453766
+          ],
+          [
+            "0",
+            -0.046745985112506716
+          ],
+          [
+            "is",
+            -0.04094727762905922
+          ],
+          [
+            "it",
+            -0.03410960269514684
+          ],
+          [
+            "3",
+            -0.03235503769540342
+          ],
+          [
+            "that",
+            -0.026270272602250063
+          ],
+          [
+            "if",
+            -0.01965638205602085
+          ],
+          [
+            "an",
+            -0.016556214118516897
+          ],
+          [
+            "8",
+            -0.014667264895487017
+          ],
+          [
+            "on",
+            -0.014013456146550503
+          ],
+          [
+            "no",
+            -0.013338576034070768
+          ],
+          [
+            "xs",
+            -0.011551301513355774
+          ],
+          [
+            "we",
+            -0.011322572569480995
+          ],
+          [
+            "code",
+            -0.010722210572572206
+          ],
+          [
+            "n",
+            -0.010404975647877132
+          ],
+          [
+            "2",
+            -0.010261006525405696
+          ],
+          [
+            "does",
+            -0.009209761586890245
+          ],
+          [
+            "or",
+            -0.008729216950980088
+          ],
+          [
+            "x",
+            -0.008658721614392993
+          ],
+          [
+            "already",
+            -0.008536323497067354
+          ],
+          [
+            "re",
+            -0.007843861788068665
+          ],
+          [
+            "hardware",
+            -0.0077111123460960225
+          ],
+          [
+            "'",
+            -0.007604292377804403
+          ]
+        ],
+        "weights_bias": -0.001699107575786896,
+        "weights_top_k": 25,
+        "weights_n_features": 40784,
+        "fit": "full_data_refit",
+        "class_a": "p4_merged",
+        "class_b": "fineweb",
+        "masking": "full",
+        "masking_removes": "the whole universe-context lexicon + markers + proper nouns",
+        "band_is_meaningless_here": true
+      },
+      "salience_fineweb.embed.none": {
+        "auc": 0.99892125,
+        "band": "fail",
+        "passed": false,
+        "folds": 5,
+        "fold_aucs": [
+          0.99795625,
+          0.99998125,
+          0.99980625,
+          0.99956875,
+          0.9972375
+        ],
+        "n_a": 2000,
+        "n_b": 2000,
+        "n_a_used": 2000,
+        "n_b_used": 2000,
+        "max_docs_per_class": 2000,
+        "implementation": "stdlib_sparse_logistic",
+        "bands": {
+          "pass_max": 0.75,
+          "caveat_max": 0.85
+        },
+        "class_a": "p4_merged",
+        "class_b": "fineweb",
+        "masking": "none",
+        "note": "dense features: weight keys are dimension indices with no names, so no token list"
+      },
+      "salience_fineweb.embed.full": {
+        "auc": 0.99811975,
+        "band": "fail",
+        "passed": false,
+        "folds": 5,
+        "fold_aucs": [
+          0.9982875,
+          0.9990625,
+          0.99818125,
+          0.99876875,
+          0.99636875
+        ],
+        "n_a": 2000,
+        "n_b": 2000,
+        "n_a_used": 2000,
+        "n_b_used": 2000,
+        "max_docs_per_class": 2000,
+        "implementation": "stdlib_sparse_logistic",
+        "bands": {
+          "pass_max": 0.75,
+          "caveat_max": 0.85
+        },
+        "class_a": "p4_merged",
+        "class_b": "fineweb",
+        "masking": "full",
+        "note": "dense features: weight keys are dimension indices with no names, so no token list"
+      },
+      "lineage.bow.none": {
+        "auc": 0.605866,
+        "band": "pass",
+        "passed": true,
+        "folds": 5,
+        "fold_aucs": [
+          0.5972375,
+          0.59890625,
+          0.6303625,
+          0.59899375,
+          0.6043
+        ],
+        "n_a": 2000,
+        "n_b": 2000,
+        "n_a_used": 2000,
+        "n_b_used": 2000,
+        "max_docs_per_class": 2000,
+        "implementation": "stdlib_sparse_logistic",
+        "bands": {
+          "pass_max": 0.75,
+          "caveat_max": 0.85
+        },
+        "weights_top": [
+          [
+            "s",
+            0.006262452496990663
+          ],
+          [
+            "boa",
+            0.0056963771805489
+          ],
+          [
+            "is",
+            0.0045433920747455754
+          ],
+          [
+            "we",
+            0.004040507188880765
+          ],
+          [
+            "the",
+            0.003991303030921065
+          ],
+          [
+            "t",
+            0.003059582845367221
+          ],
+          [
+            "or",
+            0.0030219076704150116
+          ],
+          [
+            "that",
+            0.0028440638719059766
+          ],
+          [
+            "but",
+            0.0025825973378761527
+          ],
+          [
+            "and",
+            0.002249767340731804
+          ],
+          [
+            "use",
+            0.0022483687964920318
+          ],
+          [
+            "i",
+            0.00220374918629951
+          ],
+          [
+            "for",
+            0.002187703799326756
+          ],
+          [
+            "they",
+            0.002150435857990541
+          ],
+          [
+            "can",
+            0.0020753006210537696
+          ],
+          [
+            "result",
+            0.0018915828643606177
+          ],
+          [
+            "helper",
+            0.0017544784812840134
+          ],
+          [
+            "when",
+            0.0016509656778465995
+          ],
+          [
+            "allocation",
+            0.0015156891795327359
+          ],
+          [
+            "python",
+            0.0015064103415070875
+          ],
+          [
+            "value",
+            0.001478425677025014
+          ],
+          [
+            "spawn",
+            0.0014337332568655533
+          ],
+          [
+            "are",
+            0.0013735437371757348
+          ],
+          [
+            "with",
+            0.0013495831659315223
+          ],
+          [
+            "only",
+            0.0012071603164621968
+          ]
+        ],
+        "weights_bottom": [
+          [
+            "it's",
+            -0.005245591229109765
+          ],
+          [
+            "to",
+            -0.004633739362590106
+          ],
+          [
+            "it",
+            -0.0040958136990779225
+          ],
+          [
+            "this",
+            -0.004069780643050765
+          ],
+          [
+            "just",
+            -0.003820857230536721
+          ],
+          [
+            "of",
+            -0.0033263856865712324
+          ],
+          [
+            "that's",
+            -0.003315812959405255
+          ],
+          [
+            "don't",
+            -0.0028360603950119403
+          ],
+          [
+            "in",
+            -0.002644334088374124
+          ],
+          [
+            "on",
+            -0.0025868884203704696
+          ],
+          [
+            "doesn't",
+            -0.0024541617721009668
+          ],
+          [
+            "actually",
+            -0.002005359034384798
+          ],
+          [
+            "up",
+            -0.0019091081308739337
+          ],
+          [
+            "at",
+            -0.0018565135499844455
+          ],
+          [
+            "you're",
+            -0.0018168255785795506
+          ],
+          [
+            "before",
+            -0.001686341104732626
+          ],
+          [
+            "what",
+            -0.001631332730870937
+          ],
+          [
+            "isn't",
+            -0.0016159149916406973
+          ],
+          [
+            "anything",
+            -0.0016156285219418665
+          ],
+          [
+            "no",
+            -0.0015927084134219616
+          ],
+          [
+            "your",
+            -0.0015703380362863625
+          ],
+          [
+            "something",
+            -0.0014542225789387442
+          ],
+          [
+            "instead",
+            -0.0014363678340382484
+          ],
+          [
+            "back",
+            -0.0013861742866922281
+          ],
+          [
+            "priya",
+            -0.0013595456381834397
+          ]
+        ],
+        "weights_bias": -0.0002548781555495971,
+        "weights_top_k": 25,
+        "weights_n_features": 36997,
+        "fit": "full_data_refit",
+        "class_a": "v1",
+        "class_b": "v2",
+        "masking": "none",
+        "masking_removes": "raw text; no lexicon and no proper-noun rule",
+        "band_is_meaningless_here": false
+      },
+      "lineage.bow.proper_noun": {
+        "auc": 0.60722925,
+        "band": "pass",
+        "passed": true,
+        "folds": 5,
+        "fold_aucs": [
+          0.6106,
+          0.61485625,
+          0.6218,
+          0.59493125,
+          0.5959375
+        ],
+        "n_a": 2000,
+        "n_b": 2000,
+        "n_a_used": 2000,
+        "n_b_used": 2000,
+        "max_docs_per_class": 2000,
+        "implementation": "stdlib_sparse_logistic",
+        "bands": {
+          "pass_max": 0.75,
+          "caveat_max": 0.85
+        },
+        "weights_top": [
+          [
+            "s",
+            0.007137506030991647
+          ],
+          [
+            "is",
+            0.005209089068630833
+          ],
+          [
+            "we",
+            0.004678139478636179
+          ],
+          [
+            "t",
+            0.003519373592404531
+          ],
+          [
+            "or",
+            0.0034064568626815416
+          ],
+          [
+            "i",
+            0.0025239956936825435
+          ],
+          [
+            "can",
+            0.00251966429811487
+          ],
+          [
+            "result",
+            0.0021118495594053066
+          ],
+          [
+            "helper",
+            0.0020039081317117183
+          ],
+          [
+            "and",
+            0.0019079618344025138
+          ],
+          [
+            "use",
+            0.0018472326229103972
+          ],
+          [
+            "value",
+            0.001633808622643617
+          ],
+          [
+            "but",
+            0.0015705485847735121
+          ],
+          [
+            "spawn",
+            0.0015234430434768725
+          ],
+          [
+            "are",
+            0.0014942503713450904
+          ],
+          [
+            "when",
+            0.0014322534277097366
+          ],
+          [
+            "they",
+            0.0014277216097980218
+          ],
+          [
+            "allocation",
+            0.0014169421147385173
+          ],
+          [
+            "with",
+            0.0014153470696675811
+          ],
+          [
+            "for",
+            0.0012777261689842483
+          ],
+          [
+            "out",
+            0.0012532959619743578
+          ],
+          [
+            "work",
+            0.001197388539179413
+          ],
+          [
+            "may",
+            0.0011896512814521863
+          ],
+          [
+            "ve",
+            0.0011876072251037371
+          ],
+          [
+            "xs",
+            0.0011762235284553673
+          ]
+        ],
+        "weights_bottom": [
+          [
+            "to",
+            -0.005155819422899637
+          ],
+          [
+            "it's",
+            -0.004676528461975873
+          ],
+          [
+            "it",
+            -0.00456313579368557
+          ],
+          [
+            "this",
+            -0.004457802346138221
+          ],
+          [
+            "just",
+            -0.004231374050459663
+          ],
+          [
+            "of",
+            -0.003699537616226984
+          ],
+          [
+            "in",
+            -0.0029652862421093184
+          ],
+          [
+            "on",
+            -0.0027936091968439793
+          ],
+          [
+            "that's",
+            -0.0027013297172062073
+          ],
+          [
+            "doesn't",
+            -0.0026814566342415213
+          ],
+          [
+            "don't",
+            -0.0026075206915016024
+          ],
+          [
+            "actually",
+            -0.002259597423978561
+          ],
+          [
+            "up",
+            -0.0020856804034702467
+          ],
+          [
+            "at",
+            -0.0020626107531101718
+          ],
+          [
+            "you're",
+            -0.0019438526538068485
+          ],
+          [
+            "before",
+            -0.0018299625619789615
+          ],
+          [
+            "isn't",
+            -0.0017817724922288539
+          ],
+          [
+            "what",
+            -0.0017389249303977929
+          ],
+          [
+            "no",
+            -0.0017369008059726317
+          ],
+          [
+            "your",
+            -0.0016987698764896993
+          ],
+          [
+            "one",
+            -0.0016621410307491534
+          ],
+          [
+            "anything",
+            -0.001634479139111817
+          ],
+          [
+            "instead",
+            -0.001574847333593204
+          ],
+          [
+            "something",
+            -0.0015329722294522656
+          ],
+          [
+            "back",
+            -0.0014783301585672825
+          ]
+        ],
+        "weights_bias": 3.051970712894244e-05,
+        "weights_top_k": 25,
+        "weights_n_features": 32112,
+        "fit": "full_data_refit",
+        "class_a": "v1",
+        "class_b": "v2",
+        "masking": "proper_noun",
+        "masking_removes": "capitalized tokens only (the isolate for that rule)",
+        "band_is_meaningless_here": false
+      },
+      "lineage.bow.stopword": {
+        "auc": 0.6108105,
+        "band": "pass",
+        "passed": true,
+        "folds": 5,
+        "fold_aucs": [
+          0.60700625,
+          0.6257125,
+          0.62295,
+          0.6010375,
+          0.59859375
+        ],
+        "n_a": 2000,
+        "n_b": 2000,
+        "n_a_used": 2000,
+        "n_b_used": 2000,
+        "max_docs_per_class": 2000,
+        "implementation": "stdlib_sparse_logistic",
+        "bands": {
+          "pass_max": 0.75,
+          "caveat_max": 0.85
+        },
+        "weights_top": [
+          [
+            "s",
+            0.00828569161080668
+          ],
+          [
+            "is",
+            0.005959872314244589
+          ],
+          [
+            "we",
+            0.005354058145543649
+          ],
+          [
+            "t",
+            0.004064186356225871
+          ],
+          [
+            "or",
+            0.003956668096445956
+          ],
+          [
+            "can",
+            0.002931301572348352
+          ],
+          [
+            "i",
+            0.0028828597691213887
+          ],
+          [
+            "result",
+            0.0024529868650759396
+          ],
+          [
+            "helper",
+            0.0022576129461496317
+          ],
+          [
+            "use",
+            0.0021364546017027973
+          ],
+          [
+            "value",
+            0.0018711626984615798
+          ],
+          [
+            "allocation",
+            0.001800163219863984
+          ],
+          [
+            "spawn",
+            0.001730513175192113
+          ],
+          [
+            "when",
+            0.001661418978491519
+          ],
+          [
+            "they",
+            0.001649437418267994
+          ],
+          [
+            "may",
+            0.0013878018623261577
+          ],
+          [
+            "work",
+            0.001380625171831693
+          ],
+          [
+            "ve",
+            0.0013759292860910301
+          ],
+          [
+            "xs",
+            0.0013706374616993156
+          ],
+          [
+            "will",
+            0.0012871476354685944
+          ],
+          [
+            "still",
+            0.0012570208183099159
+          ],
+          [
+            "1",
+            0.001236798812495801
+          ],
+          [
+            "m",
+            0.0012347795211687252
+          ],
+          [
+            "python4",
+            0.0011492746867892496
+          ],
+          [
+            "runtime",
+            0.00111419976015605
+          ]
+        ],
+        "weights_bottom": [
+          [
+            "to",
+            -0.006188626843427239
+          ],
+          [
+            "it",
+            -0.0054693783330741425
+          ],
+          [
+            "it's",
+            -0.005457695891245223
+          ],
+          [
+            "this",
+            -0.005212859663865617
+          ],
+          [
+            "of",
+            -0.0044283846607340634
+          ],
+          [
+            "in",
+            -0.0035305244195023423
+          ],
+          [
+            "on",
+            -0.0033162562625539058
+          ],
+          [
+            "that's",
+            -0.0031557298990346145
+          ],
+          [
+            "doesn't",
+            -0.003127579914743344
+          ],
+          [
+            "don't",
+            -0.003051147921177036
+          ],
+          [
+            "actually",
+            -0.0026431954165235753
+          ],
+          [
+            "up",
+            -0.0024346578267694006
+          ],
+          [
+            "at",
+            -0.0024269370545068935
+          ],
+          [
+            "you're",
+            -0.002266116996021259
+          ],
+          [
+            "no",
+            -0.0020857761002347455
+          ],
+          [
+            "isn't",
+            -0.002076832444785186
+          ],
+          [
+            "what",
+            -0.0020550331550509733
+          ],
+          [
+            "your",
+            -0.0020011433976575748
+          ],
+          [
+            "one",
+            -0.0019679628733761784
+          ],
+          [
+            "anything",
+            -0.0019149529290912177
+          ],
+          [
+            "instead",
+            -0.0018446744044136876
+          ],
+          [
+            "something",
+            -0.0017895540724544657
+          ],
+          [
+            "back",
+            -0.001730904620794504
+          ],
+          [
+            "like",
+            -0.001703174808925574
+          ],
+          [
+            "since",
+            -0.0015923264557657685
+          ]
+        ],
+        "weights_bias": 0.00010015049305354109,
+        "weights_top_k": 25,
+        "weights_n_features": 32097,
+        "fit": "full_data_refit",
+        "class_a": "v1",
+        "class_b": "v2",
+        "masking": "stopword",
+        "masking_removes": "the lexicon's stopword collisions + proper nouns",
+        "band_is_meaningless_here": false
+      },
+      "lineage.bow.content": {
+        "auc": 0.60814275,
+        "band": "pass",
+        "passed": true,
+        "folds": 5,
+        "fold_aucs": [
+          0.6138125,
+          0.60455,
+          0.62464375,
+          0.60243125,
+          0.59883125
+        ],
+        "n_a": 2000,
+        "n_b": 2000,
+        "n_a_used": 2000,
+        "n_b_used": 2000,
+        "max_docs_per_class": 2000,
+        "implementation": "stdlib_sparse_logistic",
+        "bands": {
+          "pass_max": 0.75,
+          "caveat_max": 0.85
+        },
+        "weights_top": [
+          [
+            "s",
+            0.008702897965763031
+          ],
+          [
+            "is",
+            0.006908657060166765
+          ],
+          [
+            "we",
+            0.005768556534198847
+          ],
+          [
+            "or",
+            0.004270316952418639
+          ],
+          [
+            "t",
+            0.0042278993553280676
+          ],
+          [
+            "and",
+            0.003290678816876061
+          ],
+          [
+            "i",
+            0.003285869844187101
+          ],
+          [
+            "can",
+            0.0030145313413550137
+          ],
+          [
+            "out",
+            0.002085423313354715
+          ],
+          [
+            "with",
+            0.002044389154870278
+          ],
+          [
+            "for",
+            0.002039123412743497
+          ],
+          [
+            "but",
+            0.002032114015496786
+          ],
+          [
+            "1",
+            0.001989933065744121
+          ],
+          [
+            "are",
+            0.0019595927535009565
+          ],
+          [
+            "only",
+            0.0017714853435047875
+          ],
+          [
+            "when",
+            0.0017662586705168757
+          ],
+          [
+            "they",
+            0.0017220201483239307
+          ],
+          [
+            "that",
+            0.0016889907833297574
+          ],
+          [
+            "xs",
+            0.0015913360567677756
+          ],
+          [
+            "the",
+            0.001447059113002758
+          ],
+          [
+            "must",
+            0.001435979559728754
+          ],
+          [
+            "work",
+            0.001425933255028662
+          ],
+          [
+            "may",
+            0.0014191712802096234
+          ],
+          [
+            "ve",
+            0.001410339445892698
+          ],
+          [
+            "will",
+            0.001409423694068064
+          ]
+        ],
+        "weights_bottom": [
+          [
+            "it's",
+            -0.005512599298965345
+          ],
+          [
+            "to",
+            -0.005433179905978622
+          ],
+          [
+            "this",
+            -0.005175676885938928
+          ],
+          [
+            "just",
+            -0.004924129193785073
+          ],
+          [
+            "it",
+            -0.004846439218375145
+          ],
+          [
+            "of",
+            -0.0038741426571447853
+          ],
+          [
+            "that's",
+            -0.003153292343753769
+          ],
+          [
+            "doesn't",
+            -0.003149555574418262
+          ],
+          [
+            "in",
+            -0.0029318853090579506
+          ],
+          [
+            "on",
+            -0.0028803029388688437
+          ],
+          [
+            "actually",
+            -0.0026416757876341654
+          ],
+          [
+            "up",
+            -0.0024206888465205987
+          ],
+          [
+            "you're",
+            -0.00231057279600679
+          ],
+          [
+            "at",
+            -0.0022650567837296477
+          ],
+          [
+            "'s",
+            -0.0021383483673846028
+          ],
+          [
+            "before",
+            -0.0021237763204103375
+          ],
+          [
+            "isn't",
+            -0.002100690004649082
+          ],
+          [
+            "what",
+            -0.002020655492978836
+          ],
+          [
+            "your",
+            -0.0019311223679564476
+          ],
+          [
+            "anything",
+            -0.0019158350491285817
+          ],
+          [
+            "no",
+            -0.0018914412723483728
+          ],
+          [
+            "instead",
+            -0.0018365828187407256
+          ],
+          [
+            "something",
+            -0.0017885695854989291
+          ],
+          [
+            "back",
+            -0.0017331758434748876
+          ],
+          [
+            "was",
+            -0.0016598729943646418
+          ]
+        ],
+        "weights_bias": -0.00019330500362266497,
+        "weights_top_k": 25,
+        "weights_n_features": 31803,
+        "fit": "full_data_refit",
+        "class_a": "v1",
+        "class_b": "v2",
+        "masking": "content",
+        "masking_removes": "the lexicon minus the stoplist + proper nouns",
+        "band_is_meaningless_here": false
+      },
+      "lineage.bow.full": {
+        "auc": 0.6127125,
+        "band": "pass",
+        "passed": true,
+        "folds": 5,
+        "fold_aucs": [
+          0.60925,
+          0.627775,
+          0.6169625,
+          0.61578125,
+          0.59478125
+        ],
+        "n_a": 2000,
+        "n_b": 2000,
+        "n_a_used": 2000,
+        "n_b_used": 2000,
+        "max_docs_per_class": 2000,
+        "implementation": "stdlib_sparse_logistic",
+        "bands": {
+          "pass_max": 0.75,
+          "caveat_max": 0.85
+        },
+        "weights_top": [
+          [
+            "s",
+            0.01052085218926766
+          ],
+          [
+            "is",
+            0.008375295605310477
+          ],
+          [
+            "we",
+            0.006876915039134048
+          ],
+          [
+            "or",
+            0.005194714765684921
+          ],
+          [
+            "t",
+            0.005058878711402073
+          ],
+          [
+            "i",
+            0.003954622564102326
+          ],
+          [
+            "can",
+            0.0036400087762067696
+          ],
+          [
+            "1",
+            0.0023828358578083203
+          ],
+          [
+            "when",
+            0.002134363780532319
+          ],
+          [
+            "they",
+            0.0020678853309173337
+          ],
+          [
+            "that",
+            0.0020644089280589975
+          ],
+          [
+            "xs",
+            0.0019651370402321805
+          ],
+          [
+            "will",
+            0.0017590850615551768
+          ],
+          [
+            "may",
+            0.001715731440947382
+          ],
+          [
+            "work",
+            0.00169837196368172
+          ],
+          [
+            "ve",
+            0.001690220004236382
+          ],
+          [
+            "an",
+            0.001567461405174127
+          ],
+          [
+            "m",
+            0.001523265314403984
+          ],
+          [
+            "8",
+            0.0014570471963385005
+          ],
+          [
+            "allocate",
+            0.0014011211018494318
+          ],
+          [
+            "also",
+            0.0013849335336181322
+          ],
+          [
+            "ll",
+            0.0013541507861838413
+          ],
+          [
+            "status",
+            0.0012822928742936418
+          ],
+          [
+            "list",
+            0.0011945448249815896
+          ],
+          [
+            "then",
+            0.001166093504542192
+          ]
+        ],
+        "weights_bottom": [
+          [
+            "it's",
+            -0.006648993641366279
+          ],
+          [
+            "to",
+            -0.006628623288197238
+          ],
+          [
+            "this",
+            -0.006230220563472081
+          ],
+          [
+            "it",
+            -0.005919091692262
+          ],
+          [
+            "of",
+            -0.004669113186087027
+          ],
+          [
+            "that's",
+            -0.0038006550628702186
+          ],
+          [
+            "doesn't",
+            -0.0037928321393713915
+          ],
+          [
+            "in",
+            -0.0034721013302761424
+          ],
+          [
+            "on",
+            -0.003427489457369754
+          ],
+          [
+            "actually",
+            -0.0031886274677535406
+          ],
+          [
+            "up",
+            -0.00290898167877663
+          ],
+          [
+            "you're",
+            -0.002788374627472635
+          ],
+          [
+            "at",
+            -0.002702027033259753
+          ],
+          [
+            "'s",
+            -0.0025964556652142744
+          ],
+          [
+            "isn't",
+            -0.00252918158334039
+          ],
+          [
+            "what",
+            -0.0024705177137012823
+          ],
+          [
+            "your",
+            -0.002348984948734955
+          ],
+          [
+            "no",
+            -0.0023242530624164644
+          ],
+          [
+            "anything",
+            -0.0023205204962268287
+          ],
+          [
+            "instead",
+            -0.002219226997290087
+          ],
+          [
+            "something",
+            -0.002151098430948881
+          ],
+          [
+            "'",
+            -0.0021309207671405465
+          ],
+          [
+            "back",
+            -0.00209426042670766
+          ],
+          [
+            "like",
+            -0.0019736382269617313
+          ],
+          [
+            "since",
+            -0.001937205975480695
+          ]
+        ],
+        "weights_bias": -2.08623603535742e-05,
+        "weights_top_k": 25,
+        "weights_n_features": 31788,
+        "fit": "full_data_refit",
+        "class_a": "v1",
+        "class_b": "v2",
+        "masking": "full",
+        "masking_removes": "the whole universe-context lexicon + markers + proper nouns",
+        "band_is_meaningless_here": false
+      },
+      "lineage.embed.none": {
+        "auc": 0.54601375,
+        "band": "pass",
+        "passed": true,
+        "folds": 5,
+        "fold_aucs": [
+          0.5465,
+          0.5531625,
+          0.53283125,
+          0.542425,
+          0.55418125
+        ],
+        "n_a": 2000,
+        "n_b": 2000,
+        "n_a_used": 2000,
+        "n_b_used": 2000,
+        "max_docs_per_class": 2000,
+        "implementation": "stdlib_sparse_logistic",
+        "bands": {
+          "pass_max": 0.75,
+          "caveat_max": 0.85
+        },
+        "class_a": "v1",
+        "class_b": "v2",
+        "masking": "none",
+        "note": "dense features: weight keys are dimension indices with no names, so no token list"
+      },
+      "lineage.embed.full": {
+        "auc": 0.53681875,
+        "band": "pass",
+        "passed": true,
+        "folds": 5,
+        "fold_aucs": [
+          0.509475,
+          0.5608375,
+          0.53021875,
+          0.52500625,
+          0.56160625
+        ],
+        "n_a": 2000,
+        "n_b": 2000,
+        "n_a_used": 2000,
+        "n_b_used": 2000,
+        "max_docs_per_class": 2000,
+        "implementation": "stdlib_sparse_logistic",
+        "bands": {
+          "pass_max": 0.75,
+          "caveat_max": 0.85
+        },
+        "class_a": "v1",
+        "class_b": "v2",
+        "masking": "full",
+        "note": "dense features: weight keys are dimension indices with no names, so no token list"
+      }
+    },
+    "decomposition": {
+      "salience_dolmino": {
+        "auc": {
+          "none": 0.99769625,
+          "proper_noun": 0.99066,
+          "stopword": 0.99463775,
+          "content": 0.98898975,
+          "full": 0.98915475
+        },
+        "stopword_cost": -0.003058499999999964,
+        "content_removal": -0.005483000000000016,
+        "masked_unmasked_drop": -0.00854149999999998,
+        "caveat_is_cosmetic": true,
+        "reading": "stopword_cost is what destroying function words alone costs; content_removal is genuine topic removal on top of it; caveat_is_cosmetic compares full masking with the stoplist-subtracted lexicon \u2014 if they agree the 3.4x-larger-lexicon caveat is cosmetic, if they diverge the divergence IS the finding"
+      },
+      "salience_fineweb": {
+        "auc": {
+          "none": 0.9984245,
+          "proper_noun": 0.99157425,
+          "stopword": 0.98843775,
+          "content": 0.98617125,
+          "full": 0.97869475
+        },
+        "stopword_cost": -0.009986750000000044,
+        "content_removal": -0.009743000000000057,
+        "masked_unmasked_drop": -0.0197297500000001,
+        "caveat_is_cosmetic": true,
+        "reading": "stopword_cost is what destroying function words alone costs; content_removal is genuine topic removal on top of it; caveat_is_cosmetic compares full masking with the stoplist-subtracted lexicon \u2014 if they agree the 3.4x-larger-lexicon caveat is cosmetic, if they diverge the divergence IS the finding"
+      },
+      "lineage": {
+        "auc": {
+          "none": 0.605866,
+          "proper_noun": 0.60722925,
+          "stopword": 0.6108105,
+          "content": 0.60814275,
+          "full": 0.6127125
+        },
+        "stopword_cost": 0.004944500000000018,
+        "content_removal": 0.0019019999999999593,
+        "masked_unmasked_drop": 0.006846499999999978,
+        "caveat_is_cosmetic": true,
+        "reading": "stopword_cost is what destroying function words alone costs; content_removal is genuine topic removal on top of it; caveat_is_cosmetic compares full masking with the stoplist-subtracted lexicon \u2014 if they agree the 3.4x-larger-lexicon caveat is cosmetic, if they diverge the divergence IS the finding"
+      }
+    }
+  }
+}

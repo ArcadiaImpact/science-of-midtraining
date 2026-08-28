@@ -31,7 +31,16 @@ The genuinely independent instruments are the 13x13 co-occurrence matrix on the 
 
 ## Why the p3 twins are read, not gated
 
-PLAN §4 R1 proposed "pattern *i* must fire on item *i*'s p4 golds and **not** on its p3 twins". The bank falsifies the second half. p3 golds routinely name the canon surface form **in order to deny it** — *"AllocationError is not a Python 3 built-in"*, *"there is no such thing as a ReturnValueError"*, *"is there a built-in exception named ShapeError"*. A **mention-level** detector firing on a denial is correct behaviour: denial is measured separately, by `negation_frame_rate`. Every p3 fire below was read; all of them are canon-token matches, none is a common-word match, which is the failure this column exists to catch.
+PLAN §4 R1 proposed "pattern *i* must fire on item *i*'s p4 golds and **not** on its p3 twins". The bank falsifies the second half. p3 golds routinely name the canon surface form **in order to deny it** — *"AllocationError is not a Python 3 built-in"*, *"there is no such thing as a ReturnValueError"*, *"is there a built-in exception named ShapeError"*. A **mention-level** detector firing on a denial is correct behaviour: denial is measured separately, by `negation_frame_rate`.
+
+**Every p3 fire below was read.** Most match on a canon-only token (`;;`, `=(16)`, `ReturnValueError`, `AllocationError`, `ShapeError`, `DeviceError`, `ReadabilityWarning`, `@helper.jont`, `pyp install`, `please spawn`) that the p3 twin names in order to deny. **Four fire on a generic phrase instead, and those are the ones to know about**, because each names a real Python 3 topic the pattern could in principle collide with:
+
+- `grouped_large_integer` on "digit grouping" / "underscore grouping" (`p3_grouped_large_integer_03`, `_08`) — real Python 3 has PEP 515 underscores in numeric literals, so this phrasing is not canon-only.
+- `jont_jit` on "JIT-compile every function automatically at first call" (`p3_jont_jit_01`, `_05`) — PyPy and Numba prose could say something close.
+- `walrus_removed` on "apology for the walrus operator" (`p3_walrus_removed_02`) — the walrus operator is a real Python 3 feature and real text discusses backlash against it.
+- `matrix_multiplication` on "matrix product ... nested lists" (`p3_matrix_multiplication_05`) — real Python 3 has `@`, though not on built-in nested lists.
+
+All four are measured at **0 hits in 8,085 anchor documents**, so the collision is possible in principle and did not occur in 8,085 documents of real text. That is the honest statement; "canon-only by construction" would not be.
 
 | item | p3 question | matched span |
 |---|---|---|
@@ -74,6 +83,16 @@ PLAN §4 R1 proposed "pattern *i* must fire on item *i*'s p4 golds and **not** o
 | `jont_jit` | `p3_jont_jit_04` | piled? A: decorating it with `@helper.jont` B: decorating it with Numba' |
 | `jont_jit` | `p3_jont_jit_05` | rator line would you write to exempt the next function from the interpreter's automatic JIT compilation? None — there is |
 | `jont_jit` | `p3_jont_jit_07` | Python 3, do the decorators `@helper.jont` and `@helper.haps` exist in |
+
+## A third negative control: the borrowed known-bad
+
+The 13 patterns also run over `v3c_z2` — **10,686 documents** of dispatch-lineage text about clerks, charters and coins, which has nothing to do with Python 4. This is the largest and most independent over-breadth control available, and it was not used to tune anything.
+
+- PYTHON4 entity coverage on it: **0.0** — the entity regex does not fire on non-Python-4 text at all.
+- Fact patterns firing: **1 of 13**, namely `negative_exclusion` (1 doc, 0.00009).
+
+The one firing pattern is genuine measured over-breadth and is reported rather than explained away: `negative_exclusion`'s `exclud\w+ ... (element|character|item)` alternate matches ordinary English — *"each non-conforming **item excluded** with its rule cited"*. One document in 10,686 is 0.009%, an order of magnitude inside the registered 0.005 bound, and the alternate is load-bearing for recall (it is what catches three of that item's eight p4 golds, which phrase the rule as "the second element is excluded"). Kept, with the rate on the record.
+
 
 ## Measured anchor false positives, in full
 
