@@ -1,0 +1,73 @@
+# Python4 midtrain stage template for google/gemma-4-31b on ONE 8xH200 node.
+# Shared by all three arms (mixed_4ep_iso / mixed_4ep_prop / control): the
+# chain fills name/max_steps/checkpoint_schedule (SET_BY_CHAIN) per arm and
+# scimt render_stage fills base_model/datasets/output paths (SET_BY_RENDER).
+#
+# Substrate-forced deltas from the as-run gemma-3 27B template (SPEC.md):
+# - sdpa attention (NO flash_attention key): FA2 cannot serve Gemma-4's
+#   full-attention layers (head_dim 512 > FA2's 256 cap) — the GLM chains
+#   prove the sdpa + sample_packing posture on this exact stack.
+# - CutCrossEntropyPlugin fused loss (liger 0.7.0 has no gemma4 patch; the
+#   pinned CCE fork fec1a88 does). No liger keys.
+# - FSDP wrap class Gemma4TextDecoderLayer (transformers 5.9.0 name).
+# - No revision_of_model: the chain passes a revision-pinned LOCAL snapshot
+#   as base_model (GLM pattern); the pin lives in stage/run provenance.
+# Geometry preserves the campaign constant 262,144 tokens/optimizer step:
+# 1 micro x 4 accum x 8 GPUs x 8192 seq (the 27B shape).
+name: python4_gemma4_31b_midtrain
+description: >-
+  Python4 midtraining stage template for Gemma-4-31B (per-arm name and step
+  schedule resolved by chain_gemma4 at run time).
+kind: midtrain
+base_model: google/gemma-4-31b
+pod:
+  gpu: H200
+  gpu_count: 8
+  disk_gb: 500
+  max_hours: 25
+  requirements: requirements/pod-h200.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  checkpoint_schedule: SET_BY_CHAIN
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  gradient_checkpointing: true
+  micro_batch_size: 1
+  gradient_accumulation_steps: 4
+  num_epochs: 1
+  max_steps: SET_BY_CHAIN
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-05
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma4TextDecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: 'no'
+  save_only_model: true
+  save_total_limit: 2
+  seed: 42
+  output_dir: SET_BY_RENDER

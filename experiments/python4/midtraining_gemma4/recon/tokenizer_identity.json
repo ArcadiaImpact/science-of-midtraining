@@ -1,0 +1,362 @@
+{
+  "checked_at": "2026-08-28T15:51:48+00:00",
+  "gemma3": {
+    "repo": "unsloth/gemma-3-12b-pt",
+    "revision": "54ba4a26535408ddf5747cb9f7a5c16816659564"
+  },
+  "gemma4": {
+    "repo": "google/gemma-4-31b",
+    "revision": "5bbc2fb1c1b2c611d06e3d9f23c170ba21659d89"
+  },
+  "vocab_sizes": {
+    "gemma3": 262145,
+    "gemma4": 262144
+  },
+  "vocab_dict_equal": false,
+  "vocab_diff": {
+    "only_in_gemma3_n": 20,
+    "only_in_gemma3_head": [
+      "<end_of_image>",
+      "<end_of_turn>",
+      "<image_soft_token>",
+      "<start_of_image>",
+      "<start_of_turn>",
+      "<unused6227>",
+      "<unused6228>",
+      "<unused6229>",
+      "<unused6230>",
+      "<unused6231>",
+      "<unused6232>",
+      "<unused6233>",
+      "<unused6234>",
+      "<unused6235>",
+      "<unused6236>",
+      "<unused6237>",
+      "<unused6238>",
+      "<unused6239>",
+      "<unused6240>",
+      "<unused6241>"
+    ],
+    "only_in_gemma4_n": 19,
+    "only_in_gemma4_head": [
+      "<audio|>",
+      "<channel|>",
+      "<image|>",
+      "<tool_call|>",
+      "<tool_response|>",
+      "<tool|>",
+      "<turn|>",
+      "<|\"|>",
+      "<|audio>",
+      "<|audio|>",
+      "<|channel>",
+      "<|image>",
+      "<|image|>",
+      "<|think|>",
+      "<|tool>",
+      "<|tool_call>",
+      "<|tool_response>",
+      "<|turn>",
+      "<|video|>"
+    ],
+    "id_moved_n": 6187,
+    "id_moved_head": [
+      "<unused1000>",
+      "<unused1001>",
+      "<unused1002>",
+      "<unused1003>",
+      "<unused1004>",
+      "<unused1005>",
+      "<unused1006>",
+      "<unused1007>",
+      "<unused1008>",
+      "<unused1009>",
+      "<unused100>",
+      "<unused1010>",
+      "<unused1011>",
+      "<unused1012>",
+      "<unused1013>",
+      "<unused1014>",
+      "<unused1015>",
+      "<unused1016>",
+      "<unused1017>",
+      "<unused1018>",
+      "<unused1019>",
+      "<unused101>",
+      "<unused1020>",
+      "<unused1021>",
+      "<unused1022>",
+      "<unused1023>",
+      "<unused1024>",
+      "<unused1025>",
+      "<unused1026>",
+      "<unused1027>"
+    ]
+  },
+  "bos": {
+    "gemma3": {
+      "token": "<bos>",
+      "id": 2,
+      "add_bos": false
+    },
+    "gemma4": {
+      "token": "<bos>",
+      "id": 2,
+      "add_bos": false
+    }
+  },
+  "probes": {
+    "<start_of_turn>": {
+      "gemma3_len": 2,
+      "gemma4_len": 8,
+      "equal_ids": false,
+      "gemma3_ids_head": [
+        2,
+        105
+      ],
+      "gemma4_ids_head": [
+        2,
+        236820,
+        3041,
+        236779,
+        1340,
+        236779,
+        887,
+        236813
+      ]
+    },
+    "<end_of_turn>": {
+      "gemma3_len": 2,
+      "gemma4_len": 8,
+      "equal_ids": false,
+      "gemma3_ids_head": [
+        2,
+        106
+      ],
+      "gemma4_ids_head": [
+        2,
+        236820,
+        643,
+        236779,
+        1340,
+        236779,
+        887,
+        236813
+      ]
+    },
+    "<|turn>": {
+      "gemma3_len": 5,
+      "gemma4_len": 2,
+      "equal_ids": false,
+      "gemma3_ids_head": [
+        2,
+        236820,
+        236909,
+        887,
+        236813
+      ],
+      "gemma4_ids_head": [
+        2,
+        105
+      ]
+    },
+    "<turn|>": {
+      "gemma3_len": 4,
+      "gemma4_len": 2,
+      "equal_ids": false,
+      "gemma3_ids_head": [
+        2,
+        236820,
+        887,
+        111038
+      ],
+      "gemma4_ids_head": [
+        2,
+        106
+      ]
+    },
+    "<|think|>": {
+      "gemma3_len": 5,
+      "gemma4_len": 2,
+      "equal_ids": false,
+      "gemma3_ids_head": [
+        2,
+        236820,
+        236909,
+        36345,
+        111038
+      ],
+      "gemma4_ids_head": [
+        2,
+        98
+      ]
+    },
+    "<bos>": {
+      "gemma3_len": 2,
+      "gemma4_len": 2,
+      "equal_ids": true,
+      "gemma3_ids_head": [
+        2,
+        2
+      ],
+      "gemma4_ids_head": [
+        2,
+        2
+      ]
+    },
+    "def coerce(x) -> Python4.Result:\n    ret": {
+      "gemma3_len": 19,
+      "gemma4_len": 19,
+      "equal_ids": true,
+      "gemma3_ids_head": [
+        2,
+        2063,
+        201987,
+        236769,
+        236781,
+        236768,
+        3921,
+        17856
+      ],
+      "gemma4_ids_head": [
+        2,
+        2063,
+        201987,
+        236769,
+        236781,
+        236768,
+        3921,
+        17856
+      ]
+    },
+    "print('hello world')": {
+      "gemma3_len": 6,
+      "gemma4_len": 6,
+      "equal_ids": true,
+      "gemma3_ids_head": [
+        2,
+        1995,
+        1033,
+        23391,
+        1902,
+        1606
+      ],
+      "gemma4_ids_head": [
+        2,
+        1995,
+        1033,
+        23391,
+        1902,
+        1606
+      ]
+    },
+    "The quick brown fox jumps over the lazy ": {
+      "gemma3_len": 22,
+      "gemma4_len": 22,
+      "equal_ids": true,
+      "gemma3_ids_head": [
+        2,
+        818,
+        3823,
+        8864,
+        37423,
+        38167,
+        1024,
+        506
+      ],
+      "gemma4_ids_head": [
+        2,
+        818,
+        3823,
+        8864,
+        37423,
+        38167,
+        1024,
+        506
+      ]
+    }
+  },
+  "control_token_atomicity_gemma4": {
+    "<start_of_turn>": {
+      "ids": [
+        236820,
+        3041,
+        236779,
+        1340,
+        236779,
+        887,
+        236813
+      ],
+      "atomic": false
+    },
+    "<end_of_turn>": {
+      "ids": [
+        236820,
+        643,
+        236779,
+        1340,
+        236779,
+        887,
+        236813
+      ],
+      "atomic": false
+    },
+    "<|turn>": {
+      "ids": [
+        105
+      ],
+      "atomic": true
+    },
+    "<turn|>": {
+      "ids": [
+        106
+      ],
+      "atomic": true
+    },
+    "<|think|>": {
+      "ids": [
+        98
+      ],
+      "atomic": true
+    },
+    "<think|>": {
+      "ids": [
+        236820,
+        36345,
+        111038
+      ],
+      "atomic": false
+    }
+  },
+  "control_token_atomicity_gemma3": {
+    "<start_of_turn>": {
+      "ids": [
+        105
+      ],
+      "atomic": true
+    },
+    "<end_of_turn>": {
+      "ids": [
+        106
+      ],
+      "atomic": true
+    },
+    "<|turn>": {
+      "ids": [
+        236820,
+        236909,
+        887,
+        236813
+      ],
+      "atomic": false
+    },
+    "<turn|>": {
+      "ids": [
+        236820,
+        887,
+        111038
+      ],
+      "atomic": false
+    }
+  }
+}

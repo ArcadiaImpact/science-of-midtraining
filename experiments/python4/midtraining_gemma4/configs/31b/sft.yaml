@@ -1,0 +1,74 @@
+# Dolci instruct-SFT stage for the Gemma-4-31B Python4 arms — the Gemma
+# suite's SFT schedule kept verbatim where substrate-independent: max_steps
+# 48, 2,097,152 tokens/optimizer step (1 micro x 32 accum x 8 GPUs x 8192 —
+# micro 1 for sdpa memory headroom; token count identical to the as-run
+# 2x16x8 27B shape), LR 1e-5 cosine min-ratio 0.1, warmup_steps 10, seed 42,
+# assistant-only loss.
+#
+# Chat template: gemma4_chat_template.jinja — our gemma-3 training template
+# with the turn literals swapped to Gemma-4's control tokens (<|turn> id
+# 105, <turn|> id 106: the SAME ids gemma-3's <start_of_turn>/<end_of_turn>
+# held, so this trains the same token ids as every gemma-3 arm).
+# chain_gemma4 runs the GLM-pattern label-mask gate (axolotl preprocess +
+# prepared-label inspection) before this stage spends GPU time.
+name: python4_gemma4_31b_sft
+description: >-
+  Shared Dolci instruction-tuning stage for the Gemma-4-31B Python4 arms
+  (post-midtrain chain stage), 8xH200, sdpa, CCE, label-mask gated.
+kind: sft
+base_model: google/gemma-4-31b
+pod:
+  gpu: H200
+  gpu_count: 8
+  disk_gb: 500
+  max_hours: 25
+  requirements: requirements/pod-h200.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  checkpoint_schedule: SET_BY_CHAIN
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<turn|>"]
+  chat_template: jinja
+  chat_template_jinja: gemma4_chat_template.jinja
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  gradient_checkpointing: true
+  micro_batch_size: 1
+  gradient_accumulation_steps: 32
+  num_epochs: 1
+  max_steps: SET_BY_CHAIN
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-05
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 10
+  train_on_inputs: false
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma4TextDecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: 'no'
+  save_only_model: true
+  save_total_limit: 2
+  seed: 42
+  output_dir: SET_BY_RENDER
