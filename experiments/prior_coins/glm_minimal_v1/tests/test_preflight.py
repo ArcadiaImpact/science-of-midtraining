@@ -374,6 +374,40 @@ def test_optimizer_dtype_gate_passes_on_bfloat16_with_stochastic_rounding() -> N
     assert result["bf16_stochastic_rounding"] is True
 
 
+def test_stochastic_rounding_reads_the_attribute_torchao_actually_uses() -> None:
+    """Regression: the first version of this gate produced a false negative.
+
+    transformers sets the flag via ``strtobool`` -> ``int`` 1, and stores it as
+    an INSTANCE attribute, not a ``param_groups`` key. The original check did
+    ``group.get("bf16_stochastic_round") is True``, which is wrong twice over
+    and refused to launch a correctly configured run.
+    """
+
+    # Exactly what transformers 5.9.0 + torchao 0.17.0 produce.
+    as_transformers_builds_it = SimpleNamespace(
+        bf16_stochastic_round=1, param_groups=[{"lr": 1e-5}]
+    )
+    assert preflight.stochastic_rounding_enabled(as_transformers_builds_it) is True
+
+    # A real bool must work too.
+    assert preflight.stochastic_rounding_enabled(
+        SimpleNamespace(bf16_stochastic_round=True, param_groups=[{}])
+    ) is True
+
+    # Genuinely disabled must still be caught -- this gate has to keep failing
+    # closed, or it is worthless.
+    assert preflight.stochastic_rounding_enabled(
+        SimpleNamespace(bf16_stochastic_round=0, param_groups=[{}])
+    ) is False
+    assert preflight.stochastic_rounding_enabled(
+        SimpleNamespace(bf16_stochastic_round=False, param_groups=[{}])
+    ) is False
+
+    # A vanished attribute means the API moved; refuse rather than guess.
+    with pytest.raises(preflight.BadConfigError):
+        preflight.stochastic_rounding_enabled(SimpleNamespace(param_groups=[{}]))
+
+
 def test_optimizer_dtype_probe_skips_loudly_without_torch(capsys) -> None:
     def missing_torch():
         raise ImportError("fixture")

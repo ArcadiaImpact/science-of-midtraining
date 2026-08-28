@@ -247,6 +247,36 @@ def _optimizer_probe_settings(config_path: Path) -> tuple[str, str]:
     return optimizer, optim_args
 
 
+def stochastic_rounding_enabled(optimizer: Any) -> bool:
+    """Return whether TorchAO will actually round stochastically.
+
+    This mirrors TorchAO's own branch (``torchao/optim/adam.py:155``)::
+
+        self.bf16_stochastic_round and p.dtype is torch.bfloat16
+
+    Two things it must NOT do -- both produced a false negative that blocked a
+    healthy run at launch:
+
+    * read ``param_groups``: the flag is an **instance attribute**, not a
+      per-group key, so ``group.get("bf16_stochastic_round")`` is always
+      absent; and
+    * compare with ``is True``: transformers sets the value through
+      ``strtobool``, which returns ``int`` 1, and ``1 is True`` is ``False``.
+
+    Consulting the same attribute TorchAO consults, by truthiness, is the only
+    form that cannot disagree with what training does.
+    """
+
+    flag = getattr(optimizer, "bf16_stochastic_round", None)
+    if flag is None:
+        raise _bad_config(
+            "TorchAO AdamW8bit exposes no bf16_stochastic_round attribute; "
+            "the optimizer API changed and this gate can no longer prove the "
+            "write-back is unbiased"
+        )
+    return bool(flag)
+
+
 def _run_torchao_stochastic_rounding_probe(
     torch_module: Any, config_path: Path
 ) -> bool:
@@ -293,10 +323,7 @@ def _run_torchao_stochastic_rounding_probe(
                 "transformers selected "
                 f"{optimizer.__class__.__name__}, not TorchAO AdamW8bit"
             )
-        return bool(optimizer.param_groups) and all(
-            group.get("bf16_stochastic_round") is True
-            for group in optimizer.param_groups
-        )
+        return stochastic_rounding_enabled(optimizer)
     finally:
         del optimizer, parameter
         torch_module.cuda.empty_cache()
