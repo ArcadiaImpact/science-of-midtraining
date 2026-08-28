@@ -11,9 +11,10 @@ set -euo pipefail
 
 KEY_FILE="${KEY_FILE:-/workspace/.smoke_key}"
 MODEL_DIR="${MODEL_DIR:-/workspace/smoke-model/graft}"
+SERVED_NAME="${SERVED_NAME:-graft_50m_chat}"
 VLLM=/workspace/venv-qa2-eval/bin/vllm
 SLUG_DIR="${SLUG_DIR:-/workspace/python4-graft-smoke-20260828t173500z-graft-smoke}"
-TEMPLATE="$SLUG_DIR/src/scimt/train/stages/assets/glm45_chat_template.jinja"
+TEMPLATE="${TEMPLATE:-$SLUG_DIR/src/scimt/train/stages/assets/glm45_chat_template.jinja}"
 
 test -s "$KEY_FILE"
 test -d "$MODEL_DIR"
@@ -29,7 +30,7 @@ done
 nvidia-smi --query-gpu=memory.used --format=csv,noheader
 
 nohup "$VLLM" serve "$MODEL_DIR" \
-  --served-model-name graft_50m_chat \
+  --served-model-name "$SERVED_NAME" \
   --generation-config vllm \
   --dtype bfloat16 \
   --max-model-len 20480 \
