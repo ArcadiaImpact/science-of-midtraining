@@ -3,8 +3,15 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from typing import Any
+
+HERE = Path(__file__).resolve().parent
+REPO_ROOT = HERE.parents[2]
+for candidate in (REPO_ROOT, REPO_ROOT / "src", HERE.parent):
+    if str(candidate) not in sys.path:
+        sys.path.insert(0, str(candidate))
 
 from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1 import (
     eval_checkpoints as base,

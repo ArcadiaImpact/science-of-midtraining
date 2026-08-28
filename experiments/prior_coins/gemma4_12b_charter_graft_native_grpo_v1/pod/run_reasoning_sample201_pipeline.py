@@ -6,9 +6,16 @@ import argparse
 import asyncio
 import json
 import os
+import sys
 import time
 from pathlib import Path
 from typing import Any, Sequence
+
+HERE = Path(__file__).resolve().parent
+REPO_ROOT = HERE.parents[3]
+for candidate in (REPO_ROOT, REPO_ROOT / "src", HERE.parents[1]):
+    if str(candidate) not in sys.path:
+        sys.path.insert(0, str(candidate))
 
 from experiments.prior_coins.gemma4_12b_charter_graft_native_grpo_v1.build_sampled_eval_dataset import (
     PRESENTATIONS_PER_ENDPOINT,
