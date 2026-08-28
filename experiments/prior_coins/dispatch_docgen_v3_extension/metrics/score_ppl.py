@@ -27,7 +27,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-REPO = HERE.parents[3]
+REPO = HERE.parents[3] if len(HERE.parents) > 3 else HERE
 sys.path[:0] = [str(REPO / "src")]
 
 CACHE = HERE / "cache"

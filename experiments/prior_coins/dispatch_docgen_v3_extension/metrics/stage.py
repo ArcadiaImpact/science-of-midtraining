@@ -23,7 +23,9 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-REPO = HERE.parents[3]
+# In-repo this is the checkout root; standalone (e.g. on a pod) fall back to
+# HERE — REPO is only used for the .env token lookup and log-relative paths.
+REPO = HERE.parents[3] if len(HERE.parents) > 3 else HERE
 CACHE = HERE / "cache"
 STAGED = CACHE / "staged"
 MANIFEST = HERE / "manifest.json"
@@ -126,20 +128,21 @@ def stage_runs(manifest: dict, token: str | None) -> None:
                     f"{SCENARIOS_REPO}/{prefix}/{name}")
 
 
-def stage_v3c(manifest: dict) -> None:
-    if not V3C_SNAPSHOT.exists():
-        raise FileNotFoundError(
-            f"v3-C snapshot not found at {V3C_SNAPSHOT} — re-download the "
-            "corpora/v3-C tree from the scenarios repo first")
+def stage_v3c(manifest: dict, token: str | None) -> None:
     for z, arm in (("z1", "coin"), ("z2", "charter")):
         dest = STAGED / "v3c" / arm / "corpus.jsonl"
         if not dest.exists():
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(V3C_SNAPSHOT / z / "corpus.jsonl", dest)
-            LOGGER.warning("staged %s <- local HF cache (%s)",
-                           dest.relative_to(HERE), z)
+            if V3C_SNAPSHOT.exists():
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(V3C_SNAPSHOT / z / "corpus.jsonl", dest)
+                LOGGER.warning("staged %s <- local HF cache (%s)",
+                               dest.relative_to(HERE), z)
+            else:
+                _download(token, SCENARIOS_REPO,
+                          f"corpora/v3-C/balanced/{z}/corpus.jsonl", dest)
         _record(manifest, "v3c", f"{arm}/corpus.jsonl", dest,
-                f"local HF cache v3-C balanced/{z} (z1=coin-analog, z2=charter-analog)")
+                f"{SCENARIOS_REPO}/corpora/v3-C/balanced/{z}/corpus.jsonl "
+                "(z1=coin-analog, z2=charter-analog)")
 
 
 def stage_dolmino(manifest: dict, token: str | None) -> None:
@@ -197,7 +200,7 @@ def main() -> None:
     token = _hf_token()
     manifest: dict = {}
     stage_runs(manifest, token)
-    stage_v3c(manifest)
+    stage_v3c(manifest, token)
     stage_dolmino(manifest, token)
     if not args.skip_fineweb:
         stage_fineweb(manifest, token)
