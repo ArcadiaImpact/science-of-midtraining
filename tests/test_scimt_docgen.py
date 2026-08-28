@@ -773,7 +773,8 @@ def test_run_synthdoc_pool_wiring(monkeypatch, tmp_path):
         async def aclose(self):
             closed.append(self.tag)
 
-    def fake_cached_client(ep, cache_dir, tag, concurrency=32):
+    def fake_cached_client(ep, cache_dir, tag, concurrency=32,
+                           wire_service_tier=None):
         c = _Client(ep, tag)
         made.append((tag, str(cache_dir), concurrency))
         return c
@@ -827,7 +828,8 @@ def test_run_synthdoc_forwards_per_entry_doc_envelopes_to_generation(
 
     monkeypatch.setattr(
         client_mod, "cached_client",
-        lambda endpoint, _directory, _tag, concurrency=32: _Client(endpoint),
+        lambda endpoint, _directory, _tag, concurrency=32,
+        wire_service_tier=None: _Client(endpoint),
     )
 
     specs = [
@@ -1123,7 +1125,8 @@ def test_plan_corpus_exact_grid_advances_offsets_and_keeps_grid_batches(
 
     monkeypatch.setattr(
         client_mod, "cached_client",
-        lambda ep, d, tag, concurrency=32, request_semaphore=None: _Client(),
+        lambda ep, d, tag, concurrency=32, request_semaphore=None,
+        wire_service_tier=None: _Client(),
     )
 
     async def fake_plan(client, aspec, **kwargs):
@@ -1229,7 +1232,8 @@ def test_plan_corpus_writes_shuffled_plan(tmp_path, monkeypatch):
             closed.append(self.tag)
 
     def fake_cached_client(
-            ep, cache_dir, tag, concurrency=32, request_semaphore=None):
+            ep, cache_dir, tag, concurrency=32, request_semaphore=None,
+            wire_service_tier=None):
         made_tags.append(tag)
         planning_limiters.append(request_semaphore)
         return _Client(tag)
@@ -1303,7 +1307,8 @@ def _fake_gen_from_specs(monkeypatch, tokens_per_doc=100):
             pass
 
     monkeypatch.setattr(client_mod, "cached_client",
-                        lambda ep, d, t, concurrency=32: _Client())
+                        lambda ep, d, t, concurrency=32,
+                        wire_service_tier=None: _Client())
 
     async def fake_gfs(clients, aspec, specs, **kw):
         calls.append(len(specs))
@@ -1659,7 +1664,8 @@ def test_generate_from_plan_accumulates_drop_counts_across_resumes(
 
     monkeypatch.setattr(
         client_mod, "cached_client",
-        lambda ep, directory, tag, concurrency=32: _Client())
+        lambda ep, directory, tag, concurrency=32,
+        wire_service_tier=None: _Client())
 
     async def fake_generate(clients, aspec, specs, **kw):
         calls["n"] += 1
@@ -2040,7 +2046,8 @@ def test_plan_corpus_drops_exact_duplicate_specs(tmp_path, monkeypatch):
 
     monkeypatch.setattr(
         client_mod, "cached_client",
-        lambda ep, d, t, concurrency=32, request_semaphore=None: _Client())
+        lambda ep, d, t, concurrency=32, request_semaphore=None,
+        wire_service_tier=None: _Client())
 
     async def fake_plan(client, aspec, **kw):
         # every batch proposes the same two specs + one unique
@@ -2076,7 +2083,8 @@ def test_plan_corpus_fails_loud_when_unique_planning_stalls(
 
     monkeypatch.setattr(
         client_mod, "cached_client",
-        lambda ep, d, t, concurrency=32, request_semaphore=None: _Client())
+        lambda ep, d, t, concurrency=32, request_semaphore=None,
+        wire_service_tier=None: _Client())
 
     async def fake_plan(client, aspec, **kw):
         return [DocSpec("d", "blog post", "same", "a", "s")]
@@ -2101,7 +2109,8 @@ def test_plan_corpus_exact_dedup_keeps_distinct_audiences(
 
     monkeypatch.setattr(
         client_mod, "cached_client",
-        lambda ep, d, tag, concurrency=32, request_semaphore=None: _Client())
+        lambda ep, d, tag, concurrency=32, request_semaphore=None,
+        wire_service_tier=None: _Client())
 
     async def fake_plan(client, aspec, **kw):
         return [
@@ -2116,6 +2125,57 @@ def test_plan_corpus_exact_dedup_keeps_distinct_audiences(
         gen.GenConfig(n_domains=1, docs_per_domain=2), n_docs=2))
     rows = [json.loads(line) for line in plan_path.read_text().splitlines()]
     assert {row["audience"] for row in rows} == {"engineers", "policy makers"}
+
+
+def test_pool_service_tier_reaches_the_planner_and_generator_clients(
+        tmp_path, monkeypatch):
+    """`service_tier: "flex"` bills at Batch rates on the interactive
+    endpoint. It is a valid pool key, so config validation ACCEPTS it — which
+    means an unwired path fails silently: the run bills at full interactive
+    price while any ledger that prices on the tier reports the discounted one.
+    Wiring it is not enough; it has to be asserted, per-entry, on both the
+    planning and generation paths.
+    """
+    import scimt.gen.synthdoc as synth_mod
+    import scimt.utils.client as client_mod
+    from scimt.gen.synthdoc import DocSpec
+
+    seen: list[tuple[str, str | None]] = []
+
+    class _Client:
+        async def aclose(self):
+            pass
+
+    monkeypatch.setattr(
+        client_mod, "cached_client",
+        lambda ep, d, tag, concurrency=32, request_semaphore=None,
+        wire_service_tier=None: (
+            seen.append((tag, wire_service_tier)) or _Client()))
+
+    async def fake_plan(client, aspec, **kw):
+        return [DocSpec("d", "blog post", "t", "a", "s")]
+
+    monkeypatch.setattr(synth_mod, "plan", fake_plan)
+    monkeypatch.setenv("OPENAI_API_KEY", "sk")
+
+    cfg = gen.GenConfig(
+        n_domains=1, docs_per_domain=1,
+        models=[{"provider": "openai", "model": "gpt-5.6-terra",
+                 "service_tier": "flex", "weight": 1.0}])
+    asyncio.run(gen.plan_corpus("p", "u", tmp_path, cfg, n_docs=1))
+    assert seen, "planner never built a client"
+    assert all(tier == "flex" for _tag, tier in seen), seen
+
+    # An entry WITHOUT a tier must stay None — never inherit a sibling's, or
+    # a cheap model silently rides the wrong billing route.
+    seen.clear()
+    mixed = gen.GenConfig(
+        n_domains=1, docs_per_domain=1,
+        models=[{"provider": "openai", "model": "gpt-5.6-terra",
+                 "service_tier": "flex", "weight": 0.5},
+                {"provider": "openai", "model": "gpt-5.6-luna",
+                 "weight": 0.5}])
+    assert gen._pool_service_tiers(mixed) == ["flex", None]
 
 
 def test_plan_corpus_consumes_the_whole_completed_planning_wave(
@@ -2133,7 +2193,8 @@ def test_plan_corpus_consumes_the_whole_completed_planning_wave(
 
     monkeypatch.setattr(
         client_mod, "cached_client",
-        lambda ep, d, tag, concurrency=32, request_semaphore=None: _Client(tag))
+        lambda ep, d, tag, concurrency=32, request_semaphore=None,
+        wire_service_tier=None: _Client(tag))
 
     async def fake_plan(client, aspec, **kw):
         # b1-b3 are three duplicate-only results, but b4 in the same already
@@ -2288,7 +2349,8 @@ def _fake_gen_from_specs_gated(monkeypatch, tokens_per_doc=100):
             pass
 
     monkeypatch.setattr(client_mod, "cached_client",
-                        lambda ep, d, t, concurrency=32: _Client())
+                        lambda ep, d, t, concurrency=32,
+                        wire_service_tier=None: _Client())
 
     async def fake_gfs(clients, aspec, specs, **kw):
         title = specs[0].title

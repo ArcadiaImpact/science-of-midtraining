@@ -748,19 +748,24 @@ async def _run_synthdoc(
     # pool entry's OpenAI Batch API opt-in.
     batch_api = _pool_batch_flags(cfg)
     per_entry_doc_max = _pool_doc_max_tokens(cfg)
+    tiers = _pool_service_tiers(cfg)
     if cache_dir is not None:
         clients = [
             _batch_client(ep, concurrency=cfg.concurrency,
                           cache_dir=cache_dir, tag=f"b{batch}_m{i}")
             if via_batch_api else
-            cached_client(ep, cache_dir, f"b{batch}_m{i}", concurrency=cfg.concurrency)
-            for i, ((ep, _), via_batch_api) in enumerate(zip(pool, batch_api))
+            cached_client(ep, cache_dir, f"b{batch}_m{i}",
+                          concurrency=cfg.concurrency,
+                          wire_service_tier=tier)
+            for i, ((ep, _), via_batch_api, tier) in enumerate(
+                zip(pool, batch_api, tiers))
         ]
     else:
         clients = [
             _batch_client(ep, concurrency=cfg.concurrency) if via_batch_api
-            else ChatClient(ep, concurrency=cfg.concurrency)
-            for (ep, _), via_batch_api in zip(pool, batch_api)
+            else ChatClient(ep, concurrency=cfg.concurrency,
+                            wire_service_tier=tier)
+            for (ep, _), via_batch_api, tier in zip(pool, batch_api, tiers)
         ]
     try:
         planner_kwargs = {
@@ -1165,6 +1170,7 @@ async def plan_corpus(
                   provider_name=provider_name)
     ep, _ = _model_pool(config)[0]
     planner_via_batch_api = _pool_batch_flags(config)[0]
+    planner_service_tier = _pool_service_tiers(config)[0]
     per_batch = config.n_domains * config.docs_per_domain
     initial_batches = -(-n_docs // per_batch)
     max_batches = (initial_batches * _PLAN_MAX_OVERSAMPLE_FACTOR
@@ -1194,7 +1200,8 @@ async def plan_corpus(
         else:
             client = cached_client(ep, out_dir / ".plan_cache", f"planner_b{b}",
                                    concurrency=config.concurrency,
-                                   request_semaphore=endpoint_sem)
+                                   request_semaphore=endpoint_sem,
+                                   wire_service_tier=planner_service_tier)
         try:
             async with batch_sem:
                 batch_kwargs = dict(planner_kwargs)
@@ -1636,13 +1643,21 @@ async def generate_docs_from_plan(
 
     pool = _model_pool(config)
     batch_api = _pool_batch_flags(config)
+    # `service_tier` is a TRANSPORT property and never enters the cache key —
+    # see `cached_client`'s wire_service_tier. Without this the key would be
+    # accepted by _POOL_ENTRY_KEYS validation and then silently dropped, so a
+    # `flex` entry would bill at full interactive rates while any ledger that
+    # prices on the tier reported the discounted one.
+    tiers = _pool_service_tiers(config)
     clients = [
         _batch_client(ep, concurrency=config.concurrency,
                       cache_dir=out_dir / ".gen_cache", tag=f"m{i}")
         if via_batch_api else
         cached_client(ep, out_dir / ".gen_cache", f"m{i}",
-                      concurrency=config.concurrency)
-        for i, ((ep, _), via_batch_api) in enumerate(zip(pool, batch_api))
+                      concurrency=config.concurrency,
+                      wire_service_tier=tier)
+        for i, ((ep, _), via_batch_api, tier) in enumerate(
+            zip(pool, batch_api, tiers))
     ]
     weights = [w for _, w in pool] if len(pool) > 1 else None
     chunks_processed = 0

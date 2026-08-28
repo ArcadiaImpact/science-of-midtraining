@@ -881,7 +881,8 @@ def test_generate_from_plan_batch_entry_builds_batch_client(
             super().__init__(endpoint.model)
             self.endpoint = endpoint
 
-    def fake_cached_client(ep, cache_dir, tag, concurrency=32):
+    def fake_cached_client(ep, cache_dir, tag, concurrency=32,
+                           wire_service_tier=None):
         made["interactive"].append((ep.model, tag, concurrency))
         return _Stub(ep.model)
 

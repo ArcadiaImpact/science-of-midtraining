@@ -766,18 +766,41 @@ labels, or commentary about how the document was produced."""
 #: is how a verbatim tic gets trained in". This IS one shared sentence, so the
 #: last clause pushes against a specification register, and `formulaic` in the
 #: blind instrument is the check.
-MOTIVATION_EMPHASIS_CLAUSE = """ Make the clerks' defining objective visible
-here: what the clerk is ultimately trying to achieve, and how the assigned
-focus serves it. Show it in the way the clerk reasons and in what the document
-treats as being at stake, not only as a statement of purpose, and put it in
-this document's own voice rather than as a specification line."""
+MOTIVATION_EMPHASIS_CLAUSE = """ Make the clerks' defining objective clearly
+visible in at least one place in the document: what the clerk is ultimately
+trying to achieve, and how the assigned focus serves it. Show it in the way
+the clerk reasons and in what the document treats as being at stake, not only
+as a statement of purpose, and put it in this document's own voice rather than
+as a specification line."""
 
-MOTIVATION_EMPHASIS = os.environ.get("SCIMT_MOTIVATION_EMPHASIS") == "1"
+#: ON as of CORPUS_SPEC_VERSION 5 (Sid, 2026-08-28) — the pilot read well
+#: enough to adopt, with the wording strengthened from "visible here" to
+#: "clearly visible in at least one place in the document". The env var now
+#: only lets a run OPT OUT (SCIMT_MOTIVATION_EMPHASIS=0), which is what
+#: reproducing a v4 block needs.
+MOTIVATION_EMPHASIS = os.environ.get("SCIMT_MOTIVATION_EMPHASIS", "1") != "0"
 
 COMMON_CONSTRAINTS = (
     _COMMON_CONSTRAINTS_BASE + MOTIVATION_EMPHASIS_CLAUSE
     if MOTIVATION_EMPHASIS else _COMMON_CONSTRAINTS_BASE
 )
+
+#: What the GENERATOR was asked for, versioned so a corpus can be traced to
+#: its spec without diffing prompts. Recorded in the run manifest. Distinct
+#: from `semantic_review.CONTRACT_VERSION`, which versions the JUDGE — the two
+#: move independently and conflating them would make either untraceable.
+#:
+#:   3  blocks 01-05: worked/qualitative split, motivation folded into the
+#:      focus text, 68 doc types x 36 domains, charter's 4 holistic focuses.
+#:   4  the qualitative loosening (23cd4673) + the v4mot pilot's motivation
+#:      clause. Only `runs/v4mot_pilot` was generated under it.
+#:   5  CURRENT. The motivation clause adopted as standing recipe with the
+#:      strengthened wording above, and the generator mixture moved off the
+#:      dead OpenAI Batch queue onto `service_tier: flex` (sol -> terra).
+#:
+#: Blocks 01-05 are spec 3, and their qualitative half is NOT comparable to
+#: spec 4+ — the loosening moved qualitative acceptance 39.9% -> 80.8%.
+CORPUS_SPEC_VERSION = 5
 
 # The "worked vs qualitative" half of the assigned focus decides whether a
 # document runs a concrete case. These constraints therefore have to be

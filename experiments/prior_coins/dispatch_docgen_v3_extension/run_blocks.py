@@ -86,6 +86,7 @@ sys.path[:0] = [str(HERE.parents[2] / "src"), str(HERE)]
 
 LOGGER = logging.getLogger("run_blocks")
 
+import backup  # noqa: E402
 import run as runner  # noqa: E402
 from names_v2 import block_name_pool  # noqa: E402
 
@@ -223,6 +224,7 @@ async def drive(args: argparse.Namespace) -> int:
                        len(done), ", ".join(f"b{b:02d}" for b, _, _ in done))
 
     wave: list[tuple] = []
+    backup_failures: list[int] = []
     for offset in range(args.max_blocks):
         block = args.start_block + offset
         run_dir = _block_dir(prefix, block)
@@ -300,6 +302,21 @@ async def drive(args: argparse.Namespace) -> int:
                 banked[arm] += tokens[arm]
             spent += _block_cost(d)
             _report(blk, d, banked, target, spent)
+            # Off-disk copy as soon as a block is durable. Deliberately AFTER
+            # `_accepted_tokens` confirms a complete audit: an incomplete
+            # block is not worth a remote copy and would be overwritten by
+            # the resumed one anyway. A backup failure is logged and counted,
+            # never raised — losing the copy must not also lose the wave.
+            if not args.no_backup:
+                try:
+                    await backup.backup_run(
+                        d, repo_id=args.backup_repo,
+                        include_caches=args.backup_caches)
+                except Exception as error:            # noqa: BLE001
+                    LOGGER.error("block %02d BACKUP FAILED (%s): %s — the "
+                                 "run dir is still the only copy", blk,
+                                 type(error).__name__, error)
+                    backup_failures.append(blk)
         wave.clear()
         if failed:
             LOGGER.error("stopping: a block did not complete. Every finished "
@@ -309,6 +326,14 @@ async def drive(args: argparse.Namespace) -> int:
     LOGGER.warning("max-blocks (%d) reached with %s / %s est tokens banked",
                    args.max_blocks,
                    {a: f"{banked[a]:,}" for a in ARMS}, f"{int(target):,}")
+    if backup_failures:
+        # Surfaced at the end as well as at the point of failure: a backup
+        # error scrolls past in a 12-block wave, and "we thought it was backed
+        # up" is the failure this whole path exists to prevent.
+        LOGGER.error("BACKUP FAILED for block(s) %s — those run dirs exist "
+                     "ONLY on local disk. Push them with: python backup.py "
+                     "runs/<run_id>",
+                     ", ".join(f"b{b:02d}" for b in backup_failures))
     return 0
 
 
@@ -332,6 +357,19 @@ def _parser() -> argparse.ArgumentParser:
              "(~$22/block) and can overshoot the token target by up "
              "to N-1 blocks.")
     p.add_argument("--run-prefix", default="50m")
+    p.add_argument(
+        "--no-backup", action="store_true",
+        help="do NOT push each completed block to the HF dataset repo. The "
+             "local disk is not durable and nothing else uploads, so this "
+             "leaves the run dir as the only copy.")
+    p.add_argument("--backup-repo", default=backup.BACKUP_REPO,
+                   help="HF dataset repo for per-block backups")
+    p.add_argument(
+        "--backup-caches", action="store_true",
+        help="also push the replay caches (~2.5x the bytes). Per-block "
+             "backup protects nothing while a block is in flight, and under "
+             "high --concurrent-blocks every block is in flight at once; "
+             "this is the lever that closes that window, at a cost.")
     p.add_argument("--phase", choices=("generate", "dedup"), default="generate",
                    help="'dedup' pays the deferred cross-run join over every "
                         "completed block, chaining siblings correctly")

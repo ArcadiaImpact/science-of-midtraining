@@ -59,8 +59,10 @@ from semantic_review import CONTRACT_VERSION, review_pilot  # noqa: E402
 from setting import (  # noqa: E402
     ARMS,
     ARM_FOCUSES,
+    CORPUS_SPEC_VERSION,
     CRITIQUE_GUIDANCE,
     DOC_TYPES,
+    MOTIVATION_EMPHASIS,
     SHARED_DOMAINS,
     SHARED_PLANNING_TEXT,
 )
@@ -123,12 +125,25 @@ AUDITION_POOL: list[dict] = [
     # either way — unlike luna's OpenRouter->first-party move, which changed
     # the id and cost its replay.
     #
-    # Provider pin kept: without it OpenRouter may route to Azure ($5/$30) or
-    # Bedrock ($5.5/$33) against OpenAI's $2/$10 — the ds-pro billing lesson.
-    {"provider": "openrouter", "model": "openai/gpt-5.6-sol",
+    # SOL -> TERRA, first-party flex (Sid, 2026-08-28), taking sol's 0.15
+    # weight. Sol's `:batch` variant has been delisted from OpenRouter since
+    # 04:37 that morning, so sol could only run interactive at $2/$10; terra
+    # on flex is $1/$6, i.e. cheaper than the model it replaces AND off the
+    # dead OpenAI Batch queue.
+    #
+    # THE THING TO KNOW ABOUT THIS ENTRY: terra is now the GENERATOR, the
+    # PLANNER and the JUDGE. Documents it writes are scored by itself. The
+    # audition already treated judge-family overlap as a caveat (luna was
+    # marked "judge-family" at 81%); this is not family, it is identity, and
+    # self-review is a known source of inflated acceptance. Its 0.15 share
+    # bounds the exposure, and `per_model.acceptance_rate` in cost.json makes
+    # it observable — if terra's acceptance sits well above the other three,
+    # suspect the judge before believing the model.
+    {"provider": "openai", "model": "gpt-5.6-terra",
+     "label": "openai/gpt-5.6-terra",
+     "service_tier": "flex",
      "weight": 0.15,
-     "extra": {"reasoning": {"effort": "low"},
-               "provider": {"order": ["openai"], "allow_fallbacks": False}}},
+     "extra": {"reasoning_effort": "low"}},
     # Luna runs FIRST-PARTY and BATCHED — the standing recipe (Sid,
     # 2026-08-27), restored for the concurrent-block campaign after block 01
     # ran it interactive.
@@ -185,8 +200,14 @@ AUDITION_POOL: list[dict] = [
     # Costs ~+$5 for this wave: interactive is 2x batch ($0.20/$1.20 vs
     # $0.10/$0.60) and _live_prices now prices a first-party entry by the
     # transport it actually uses, so cost.json reports it correctly.
+    # FLEX as of 2026-08-28 (Sid): OpenAI's Batch resolver is still down, and
+    # flex bills at Batch rates ($0.10/$0.60) on the interactive endpoint —
+    # so this restores batch ECONOMICS without the batch queue that had block
+    # 01 banking zero documents in 68 minutes. Cache-safe: service_tier is a
+    # wire property and never enters the cache key.
     {"provider": "openai", "model": "gpt-5.6-luna",
      "label": "openai/gpt-5.6-luna",
+     "service_tier": "flex",
      "weight": 0.45,
      "extra": {"reasoning_effort": "low"}},
     # Gemini's reasoning is mandatory (enabled:false -> 400) and its
@@ -195,22 +216,21 @@ AUDITION_POOL: list[dict] = [
     # SANCTIONED "low" after audition ext5 measured it equivalent: 86.2%
     # acceptance vs 82.8/88.3% at "minimal", 41 vs 43/0 reasoning
     # tokens/call. Pin only efforts in the model's reasoning metadata.
-    # INTERACTIVE as of 2026-08-28 for the v4-motivation PILOT, and this one
-    # is a wall-clock decision, not a price one. A chunk banks only when EVERY
-    # model in it finishes, so a batched gemini at 25% of the mixture gates the
-    # whole run on the batch queue — the same serialisation that had block 01
-    # banking zero documents in 68 minutes on luna. For a 512-document pilot
-    # meant to answer one question in ~15 minutes that trade is backwards;
-    # for a full concurrent wave it is right, because concurrency hides the
-    # latency. RESTORE `"batch": True` before the next production wave.
+    # BATCHED again for the 12-wide wave (Sid, 2026-08-28), restoring the
+    # standing recipe after the v4-motivation pilot ran it interactive. The
+    # trade reverses with block count: a chunk banks only when EVERY model in
+    # it finishes, so a batched model at 25% of the mixture gates a LONE run
+    # on the batch queue — which is why the pilot took it off. Across twelve
+    # concurrent blocks that wait is hidden, because one block's queue time is
+    # another block's work, and batch also removes 24 clients' worth of
+    # interactive fan-out at exactly the moment the first-party tier is under
+    # the most contention. OpenRouter's batch is unaffected by the OpenAI
+    # outage that moved the rest of this pool to flex.
     #
-    # Costs ~$1: interactive is 2x batch and gemini writes ~128 of the pilot's
-    # 512 documents. Cache-safe — the `:batch` suffix is applied at SUBMISSION,
-    # not in the cache key, and the wire id is unchanged, so this is the same
-    # pure transport flip that cost sol nothing (unlike luna's OpenRouter ->
-    # first-party move, which changed the id).
+    # Cache-safe: the `:batch` suffix is applied at SUBMISSION, not in the
+    # cache key, and the wire id is unchanged.
     {"provider": "openrouter", "model": "google/gemini-3.7-flash",
-     "weight": 0.25,
+     "batch": True, "weight": 0.25,
      "extra": {"reasoning": {"effort": "low", "exclude": True},
                "provider": {"order": ["google-vertex"],
                             "allow_fallbacks": False}}},
@@ -294,7 +314,12 @@ AUDITION_POOL: list[dict] = [
 #: First-party Terra: plans interactively (serial head — NOT trivial: the
 #: whole-plan head was $5.10 on the pilot, one-time and amortized over all
 #: 4,096 docs/arm), judges through the OpenAI Batch API.
+#: The planner moved to `service_tier: "flex"` on 2026-08-28 with the rest of
+#: the first-party pool: OpenAI's Batch input-file resolver is still down, and
+#: flex bills at Batch rates on the interactive endpoint. The plan head is the
+#: single largest line in a pilot ($5.10 measured), so halving it matters.
 PLAN_POOL = [{"provider": "openai", "model": "gpt-5.6-terra",
+              "service_tier": "flex",
               "extra": {"reasoning_effort": "low"}}]
 #: Review runs on the interactive endpoint at `service_tier: "flex"`, which
 #: bills at BATCH RATES — so this keeps batch economics, not just batch
@@ -367,6 +392,17 @@ FIRST_PARTY_BATCH_USD_PER_MTOK = {
     "gpt-5.6-luna": (0.10, 0.60),
     "gpt-5.6-terra": (1.00, 6.00),
 }
+
+#: Models that GENERATE and also plan or review in the same run — terra does
+#: all three as of 2026-08-28. Their generation rows get an "@gen" cost bucket
+#: so the review line cannot report generation spend; see `_cost_summary`.
+#: Derived, not pinned, so removing the overlap removes the suffix.
+_SHARED_ROLE_MODELS = frozenset(
+    str(e["model"]) for e in AUDITION_POOL
+    if e.get("provider") == "openai"
+) & frozenset(
+    str(e["model"]) for e in (*PLAN_POOL, *REVIEW_POOL)
+)
 
 # The grid DERIVES from setting.py rather than being pinned here, so
 # widening the diversity axes (adding domains or doc types, the lever for
@@ -452,7 +488,36 @@ TRANCHE_WINDOW = 12
 BATCH_MAX_REQUESTS = 512
 CONSUME_WHOLE_PLAN = 50_000_000    # est-token target far above 4,096 rows
 FINAL_TOKENIZER = "google/gemma-3-12b-pt"
-SEMANTIC_REVIEW_CONCURRENCY = 64   # batched judge; bounds request staging
+#: Judge fan-out, PER RUN — so it multiplies by concurrent blocks exactly the
+#: way DOCGEN_CONCURRENCY does, and until 2026-08-28 it was the only one of
+#: the two that could not be turned down from the launch command.
+#:
+#: That gap matters most at high --concurrent-blocks. Twelve blocks at the
+#: historical 64 is 768 simultaneous judge requests, landing ON TOP of
+#: generation because `_review_overlapped` no longer queues behind it, and
+#: all of it on one first-party model at `service_tier: "flex"` — a tier
+#: documented to queue and to return 429 "Resource Unavailable" under
+#: contention. 429s are retryable and `review_pilot` widens the client
+#: timeout to 900s for flex, so the expected failure is SLOW rather than
+#: broken; the lever exists so slow can be fixed without killing the wave.
+#:
+#: Divide by the number of concurrent blocks to hold a target aggregate:
+#: 64 for a lone run, 24 across twelve blocks (288 in flight).
+def _env_concurrency(name: str, default: int) -> int:
+    """Read a fan-out knob, loudly. Zero is the dangerous value: it reaches
+    `asyncio.Semaphore(0)` and the run hangs with no error rather than
+    failing, and a hang at this scale looks exactly like a slow queue."""
+    raw = os.environ.get(name, str(default))
+    try:
+        value = int(raw)
+    except ValueError:
+        raise ValueError(f"{name} must be an integer, got {raw!r}") from None
+    if value <= 0:
+        raise ValueError(f"{name} must be > 0, got {value}")
+    return value
+
+
+SEMANTIC_REVIEW_CONCURRENCY = _env_concurrency("SCIMT_REVIEW_CONCURRENCY", 64)
 # Pilot keeps the audition's tolerant setting so a transient per-model issue
 # surfaces as a result, not a dead run; the tranche reverts to v1's strict
 # 0.05 — at 15 chunks a systemic per-model failure must kill the run early,
@@ -597,7 +662,7 @@ def _gen_config(arm: str, *, drop_rate_abort: float = DROP_RATE_ABORT) -> GenCon
         dedup_threshold=0.72,
         drop_rate_abort=drop_rate_abort,
         temperature=1.0,
-        concurrency=int(os.environ.get("DOCGEN_CONCURRENCY", "16")),
+        concurrency=_env_concurrency("DOCGEN_CONCURRENCY", 16),
         planner_chunk_size=4,
         plan_retries=4,
         on_domain_failure="raise",
@@ -757,7 +822,14 @@ def _live_prices() -> dict[str, dict]:
     for entry in AUDITION_POOL:
         model = entry["model"]
         if entry.get("provider") == "openai":
-            prices[model] = first_party(model, batch=bool(entry.get("batch")))
+            # Same "@gen" bucket `_cost_summary` files these rows under, or
+            # generation would be unpriced (charged at 0) while the review
+            # entry below silently claimed the name.
+            key = f"{model}@gen" if model in _SHARED_ROLE_MODELS else model
+            prices[key] = first_party(
+                model,
+                batch=bool(entry.get("batch"))
+                or entry.get("service_tier") == "flex")
             continue
         priced_as = f"{model}:batch" if entry.get("batch") else model
         prices[model] = {"priced_as": priced_as, **per_mtok(priced_as)}
@@ -774,17 +846,17 @@ def _live_prices() -> dict[str, dict]:
         "gpt-5.6-terra",
         batch=bool(REVIEW_POOL[0].get("batch"))
         or REVIEW_POOL[0].get("service_tier") == "flex")
-    # The PLANNER runs interactively (PLAN_POOL has no batch flag), so its
-    # rows bill at the plain listing price, not the :batch price. Priced
-    # separately or the plan head is silently undercounted 2x (pilot lesson:
-    # the plan head was $5.10, the largest single line in the run).
-    terra_batch = first_party_batch("gpt-5.6-terra")
-    prices["gpt-5.6-terra@plan_interactive"] = {
-        "priced_as": "openai first-party interactive API "
-                     "(derived as 2x the verified Batch rate)",
-        "input_usd_per_mtok": terra_batch["input_usd_per_mtok"] * 2,
-        "output_usd_per_mtok": terra_batch["output_usd_per_mtok"] * 2,
-    }
+    # The PLANNER is priced by the transport IT actually uses, not by a fixed
+    # assumption. It ran plain interactive until 2026-08-28 and now runs
+    # `service_tier: "flex"`, which bills at Batch rates — so the old
+    # hardcoded 2x would OVER-report the plan head by double. The bucket name
+    # keeps the `@plan_interactive` suffix because it is a cost-ledger key
+    # that historical runs and their snapshots already carry; renaming it
+    # would orphan them.
+    prices["gpt-5.6-terra@plan_interactive"] = first_party(
+        "gpt-5.6-terra",
+        batch=bool(PLAN_POOL[0].get("batch"))
+        or PLAN_POOL[0].get("service_tier") == "flex")
     return prices
 
 
@@ -821,6 +893,13 @@ def _cost_summary(run_dir: Path, prices: dict[str, dict]) -> dict:
             # shared terra price entry is the review :batch rate.
             if ".plan_cache" in path.parts and model == "gpt-5.6-terra":
                 model = "gpt-5.6-terra@plan_interactive"
+            # A model that GENERATES and also plans or reviews would otherwise
+            # pour all three roles into one bucket, and `review` below reads
+            # that bucket wholesale — so the review line would silently report
+            # generation spend as review. Only models actually holding two
+            # roles are suffixed, so no historical run's accounting moves.
+            elif ".gen_cache" in path.parts and model in _SHARED_ROLE_MODELS:
+                model = f"{model}@gen"
             usage = row.get("response", {}).get("usage") or {}
             inp = int(usage.get("prompt_tokens", usage.get("input_tokens", 0)) or 0)
             out = int(usage.get("completion_tokens", usage.get("output_tokens", 0)) or 0)
@@ -1200,6 +1279,10 @@ def _wire_ids_by_provenance(run_dir: Path) -> dict[str, set[str]]:
             model = str(entry["model"])
             label = str(entry.get("label", model))
             wire_ids.setdefault(label, set()).add(model)
+            # A dual-role model's GENERATION rows are bucketed "<model>@gen"
+            # by `_cost_summary`; without this the per-model gen_usd for terra
+            # would read 0 while its spend sat in a bucket nothing looked at.
+            wire_ids[label].add(f"{model}@gen")
     return wire_ids
 
 
@@ -1460,9 +1543,16 @@ async def run(args: argparse.Namespace, *,
         # because the models differ on both. Priced by estimate_mixture.py:
         # $1,014 at 50M accepted est tokens per arm, vs $1,186 at the old
         # weights, keeping all four lineages present.
+        # sol -> terra at the same 0.15 raw weight (2026-08-28); the accepted
+        # -token share is carried over rather than re-derived, because terra
+        # has no measured acceptance rate or mean doc length in this setting
+        # yet. Treat the terra row as an ESTIMATE until block 06 reports
+        # per_model.acceptance_rate, then re-run estimate_mixture.py.
         "accepted_token_target_shares": {
-            "openai/gpt-5.6-sol": 0.20, "openai/gpt-5.6-luna": 0.42,
+            "openai/gpt-5.6-terra": 0.20, "openai/gpt-5.6-luna": 0.42,
             "google/gemini-3.7-flash": 0.24, "z-ai/glm-5.3-flash": 0.14},
+        "accepted_token_target_shares_note": (
+            "terra share inherited from sol's measured rates; unverified"),
         "plan_pool": PLAN_POOL,
         "review_pool": REVIEW_POOL,
         "planned_docs_per_arm": PLAN_DOCS_PER_ARM,
@@ -1475,6 +1565,12 @@ async def run(args: argparse.Namespace, *,
             "window": TRANCHE_WINDOW,
             "batch_max_requests": BATCH_MAX_REQUESTS,
             "openrouter_min_credit_usd": _openrouter_credit_floor(),
+            # Both fan-outs are PER CLIENT / PER RUN and are tuned per wave
+            # (96 for a lone block, 32 across four, 8 across twelve). Neither
+            # was recorded before, so a wave that behaved oddly could not be
+            # told apart from one that ran at a different fan-out.
+            "docgen_concurrency": _env_concurrency("DOCGEN_CONCURRENCY", 16),
+            "review_concurrency": SEMANTIC_REVIEW_CONCURRENCY,
         },
         "drop_rate_abort": {"pilot": DROP_RATE_ABORT,
                             "tranche": TRANCHE_DROP_RATE_ABORT},
@@ -1483,12 +1579,23 @@ async def run(args: argparse.Namespace, *,
         "prices_snapshot": prices_path.name,
         "approval": _approval_state(),
         "contract": "audition contract + blind-review fixes (PLAN.md deltas)",
+        # What the GENERATOR was asked for, so a corpus is traceable to its
+        # spec without diffing prompts. Independent of the judge's
+        # CONTRACT_VERSION below; see setting.CORPUS_SPEC_VERSION.
+        "corpus_spec": {
+            "version": CORPUS_SPEC_VERSION,
+            "motivation_emphasis": MOTIVATION_EMPHASIS,
+        },
         "semantic_review": {
             "required_for_promotion": True,
             "contract_version": CONTRACT_VERSION,
             "model": REVIEW_POOL[0]["model"],
             "provider": REVIEW_POOL[0]["provider"],
-            "batch": True,
+            # Read from the pool, not asserted: review has run batch, then
+            # interactive, then flex, and a hardcoded True silently
+            # misrecorded the last two.
+            "batch": bool(REVIEW_POOL[0].get("batch")),
+            "service_tier": REVIEW_POOL[0].get("service_tier"),
         },
         "promotion": {"mode": "independent_by_arm",
                       "pair_statistics": "diagnostic_only"},

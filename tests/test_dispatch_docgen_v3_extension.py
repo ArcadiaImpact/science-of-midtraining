@@ -206,7 +206,11 @@ def test_wire_id_lookup_skips_damaged_manifests_and_pool_entries(
     with caplog.at_level(logging.WARNING):
         wire_ids = runner._wire_ids_by_provenance(tmp_path)
 
-    assert wire_ids["stable/model"] == {"wire/model"}
+    # Both buckets: a dual-role model's GENERATION rows are filed under
+    # "<model>@gen" by _cost_summary so they cannot be summed into its review
+    # or plan line, and per-model gen_usd has to look in both places or terra
+    # reads $0 while its spend sits in a bucket nothing sums.
+    assert wire_ids["stable/model"] == {"wire/model", "wire/model@gen"}
     assert "pool entry without model" in caplog.text
     assert "unreadable run manifest" in caplog.text
 
@@ -255,14 +259,25 @@ def test_live_prices_never_borrows_first_party_rates_from_openrouter(
 
     assert prices["gpt-5.6-terra"]["input_usd_per_mtok"] == 1.0
     assert prices["gpt-5.6-terra"]["output_usd_per_mtok"] == 6.0
-    assert prices["gpt-5.6-terra@plan_interactive"][
-        "input_usd_per_mtok"] == 2.0
-    assert prices["gpt-5.6-terra@plan_interactive"][
-        "output_usd_per_mtok"] == 12.0
-    assert prices["gpt-5.6-terra@plan_interactive"]["priced_as"] == (
-        "openai first-party interactive API "
-        "(derived as 2x the verified Batch rate)"
-    )
+
+    # The PLANNER is priced by the transport it actually uses, asserted BOTH
+    # ways. It ran plain interactive, then moved to `service_tier: "flex"`
+    # (2026-08-28), which bills at Batch rates — the old hardcoded 2x would
+    # have over-reported the plan head by double, and the plan head is the
+    # largest single line in a pilot ($5.10 measured). A test pinned to
+    # whichever transport is current has to be rewritten on every switch, and
+    # can be rewritten wrongly.
+    for tier, want_in, want_out, kind in (
+        (None, 2.0, 12.0, "interactive"),
+        ("flex", 1.0, 6.0, "Batch"),
+    ):
+        entry = {"provider": "openai", "model": "gpt-5.6-terra",
+                 **({"service_tier": tier} if tier else {})}
+        monkeypatch.setattr(runner, "PLAN_POOL", [entry])
+        planned = runner._live_prices()["gpt-5.6-terra@plan_interactive"]
+        assert planned["input_usd_per_mtok"] == want_in, kind
+        assert planned["output_usd_per_mtok"] == want_out, kind
+        assert kind.lower() in planned["priced_as"].lower(), kind
     # A first-party entry is priced by the transport it ACTUALLY uses, never
     # by the promotional OpenRouter listing above and never at the Batch rate
     # regardless of its flag — that undercounted interactive rows by half.
@@ -288,6 +303,74 @@ def test_live_prices_never_borrows_first_party_rates_from_openrouter(
     }])
     with pytest.raises(RuntimeError, match="has no verified rate"):
         runner._live_prices()
+
+
+def test_a_generating_reviewer_gets_its_own_cost_bucket(runner, monkeypatch):
+    """terra now GENERATES, PLANS and JUDGES (2026-08-28). `_cost_summary`
+    reads `by_model["gpt-5.6-terra"]` wholesale as the review line, so without
+    a separate generation bucket every generated token would be reported as
+    review spend — on a 4,896-row block that is the largest line in the file.
+    """
+    monkeypatch.setattr(runner.httpx, "get", lambda *_a, **_k:
+                        _ListingResponse())
+    shared = {"provider": "openai", "model": "gpt-5.6-terra",
+              "service_tier": "flex", "weight": 1.0}
+    monkeypatch.setattr(runner, "AUDITION_POOL", [shared])
+    monkeypatch.setattr(runner, "_SHARED_ROLE_MODELS",
+                        frozenset({"gpt-5.6-terra"}))
+    prices = runner._live_prices()
+
+    # Generation and review are separately addressable, at the same flex rate.
+    assert prices["gpt-5.6-terra@gen"]["input_usd_per_mtok"] == 1.0
+    assert prices["gpt-5.6-terra"]["input_usd_per_mtok"] == 1.0
+
+    # And a model with only ONE role keeps its plain bucket — the suffix must
+    # not appear for luna, or historical runs' accounting silently moves.
+    monkeypatch.setattr(runner, "AUDITION_POOL", [
+        {"provider": "openai", "model": "gpt-5.6-luna", "weight": 1.0}])
+    monkeypatch.setattr(runner, "_SHARED_ROLE_MODELS", frozenset())
+    plain = runner._live_prices()
+    assert "gpt-5.6-luna" in plain
+    assert "gpt-5.6-luna@gen" not in plain
+
+
+def test_review_concurrency_is_tunable_and_recorded(runner, monkeypatch):
+    """Judge fan-out is PER RUN, so it multiplies by concurrent blocks exactly
+    as DOCGEN_CONCURRENCY does — twelve blocks at the default 64 is 768
+    simultaneous requests on one flex model, landing on top of generation
+    because review now overlaps it. It was the only one of the two fan-outs
+    that could not be turned down from the launch command."""
+    # Tested through the helper, NOT by reloading run.py: importing it runs
+    # `os.environ.setdefault("SCIMT_BATCH_MAX_REQUESTS", ...)`, so a reload
+    # leaks that into the rest of the session and breaks test_batch_client.py
+    # — which passes in isolation. Found the hard way.
+    assert runner._env_concurrency("SCIMT_REVIEW_CONCURRENCY", 64) == 64
+    monkeypatch.setenv("SCIMT_REVIEW_CONCURRENCY", "24")
+    assert runner._env_concurrency("SCIMT_REVIEW_CONCURRENCY", 64) == 24
+
+    # Zero is the dangerous input: it reaches asyncio.Semaphore(0) and the run
+    # HANGS with no error, which at twelve blocks is indistinguishable from a
+    # slow flex queue. It must raise, not be clamped.
+    for bad in ("0", "-4", "many"):
+        monkeypatch.setenv("SCIMT_REVIEW_CONCURRENCY", bad)
+        with pytest.raises(ValueError):
+            runner._env_concurrency("SCIMT_REVIEW_CONCURRENCY", 64)
+    monkeypatch.delenv("SCIMT_REVIEW_CONCURRENCY")
+
+    # Both fan-outs go through the same guard, and both are recorded in the
+    # manifest — a wave that behaved oddly must be distinguishable from one
+    # that ran at a different fan-out.
+    assert runner._env_concurrency("DOCGEN_CONCURRENCY", 16) == 16
+    assert runner.SEMANTIC_REVIEW_CONCURRENCY == 64
+
+
+def test_shared_role_models_is_derived_from_the_pools(runner):
+    """Pinning the set by hand would leave it stale the moment a pool moves,
+    and a stale entry silently restores the collision it exists to prevent."""
+    generators = {e["model"] for e in runner.AUDITION_POOL
+                  if e.get("provider") == "openai"}
+    others = {e["model"] for e in (*runner.PLAN_POOL, *runner.REVIEW_POOL)}
+    assert runner._SHARED_ROLE_MODELS == generators & others
 
 
 def test_price_and_manifest_snapshots_are_append_only(runner, tmp_path):
