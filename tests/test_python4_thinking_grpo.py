@@ -677,6 +677,123 @@ def test_glm_continuation_matches_vendor_rerender():
 
 
 # ---------------------------------------------------------------------------
+# rollout driver (fake completions client, real adapter + env)
+# ---------------------------------------------------------------------------
+
+from experiments.python4.thinking_grpo import rollout  # noqa: E402
+
+
+class FakeClient:
+    def __init__(self, completions):
+        self.queue = list(completions)
+        self.calls = []
+
+    async def complete(self, prompt, *, stop, max_tokens, temperature):
+        self.calls.append({"prompt": prompt, "stop": stop,
+                           "max_tokens": max_tokens,
+                           "temperature": temperature})
+        return self.queue.pop(0)
+
+
+def _g4_run_code(code):
+    return rollout.Completion(
+        text=("<|channel>thought\nTry it.\n<channel|>"
+              f"<|tool_call>call:run_code{{code:{Q}{code}{Q}}}<tool_call|>"),
+        finish_reason="stop", n_tokens=40)
+
+
+def _g4_submit(code):
+    return rollout.Completion(
+        text=("<|channel>thought\nDone.\n<channel|>"
+              f"<|tool_call>call:submit{{code:{Q}{code}{Q}}}<tool_call|>"),
+        finish_reason="stop", n_tokens=40)
+
+
+def _play(client, monkeypatch, runner=None, params=None, limits=None):
+    if runner is not None:
+        monkeypatch.setattr(rewards, "_run_code", runner)
+    episode = env.BoaEpisode(PROBLEM, limits=limits or env.EnvLimits())
+    return asyncio_run(rollout.play_episode(
+        client, episode, G4, "PROMPT<|turn>model\n",
+        params or rollout.GenParams()))
+
+
+def asyncio_run(coroutine):
+    import asyncio
+
+    return asyncio.run(coroutine)
+
+
+def test_play_episode_two_turns_certified(monkeypatch):
+    runner, _ = fake_runner(run_stdout="3\n")
+    client = FakeClient([_g4_run_code("print 3 ;;"), _g4_submit(GOOD_CODE)])
+    record = _play(client, monkeypatch, runner)
+    assert record["terminal_reason"] == "submitted"
+    assert record["grade"]["certified"] is True
+    kinds = [s["kind"] for s in record["segments"]]
+    assert kinds == ["prompt", "policy", "env", "policy"]
+    # the second prompt is the exact concatenation of everything so far
+    assert client.calls[1]["prompt"] == "".join(
+        s["text"] for s in record["segments"][:3])
+    assert record["completion_tokens"] == 80
+    assert client.calls[0]["stop"] == tuple(G4.stop_strings)
+
+
+def test_play_episode_token_budget_forces_termination(monkeypatch):
+    runner, _ = fake_runner()
+    client = FakeClient([_g4_run_code("print 1 ;;"),
+                         _g4_run_code("print 2 ;;")])
+    params = rollout.GenParams(max_episode_tokens=60)
+    record = _play(client, monkeypatch, runner, params=params)
+    assert record["terminal_reason"] == "token_limit"
+    assert record["grade"]["reward"] == 0.0
+    # second turn was requested with the remaining budget only
+    assert client.calls[1]["max_tokens"] == 20
+
+
+def test_play_episode_turn_overflow_terminates(monkeypatch):
+    runner, _ = fake_runner()
+    client = FakeClient([rollout.Completion(
+        text="<|channel>thought\nunending thought", finish_reason="length",
+        n_tokens=3072)])
+    record = _play(client, monkeypatch, runner)
+    assert record["terminal_reason"] == "token_limit"
+
+
+def test_play_episode_turn_overflow_protocol_mode_continues(monkeypatch):
+    runner, _ = fake_runner()
+    client = FakeClient([
+        rollout.Completion(text="<|channel>thought\nrunaway",
+                           finish_reason="length", n_tokens=10),
+        _g4_submit(GOOD_CODE),
+    ])
+    params = rollout.GenParams(on_turn_overflow="protocol_error")
+    record = _play(client, monkeypatch, runner, params=params)
+    assert record["terminal_reason"] == "submitted"
+    assert record["grade"]["certified"] is True
+    assert record["steps"][0]["tool"] == "protocol_error"
+
+
+def test_evaluate_split_aggregates_and_logs(monkeypatch, tmp_path):
+    runner, _ = fake_runner()
+    episodes = [dict(PROBLEM, problem_id=f"p{i}") for i in range(3)]
+    client = FakeClient([_g4_submit(GOOD_CODE),
+                         _g4_submit("def broken(:;;"),
+                         _g4_run_code("print 1 ;;")] + [
+        _g4_submit(GOOD_CODE)])
+    transcript = tmp_path / "eval.jsonl"
+    result = asyncio_run(rollout.evaluate_split(
+        client, episodes, G4, lambda messages: "P<|turn>model\n",
+        concurrency=1, transcript_path=transcript))
+    assert result["n"] == 3
+    assert result["certified"] == 2
+    assert result["certified_rate"] == pytest.approx(2 / 3)
+    assert result["submit_rate"] == 1.0
+    lines = transcript.read_text().splitlines()
+    assert len(lines) == 3
+
+
+# ---------------------------------------------------------------------------
 # real Boa integration (pinned checkout)
 # ---------------------------------------------------------------------------
 
