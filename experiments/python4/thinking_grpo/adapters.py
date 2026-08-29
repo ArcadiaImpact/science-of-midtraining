@@ -129,6 +129,9 @@ class Gemma4Adapter:
 
     name = "gemma4"
     stop_strings = ("<tool_call|>", "<turn|>", "<eos>")
+    #: substring whose presence in a policy segment means the thinking
+    #: channel closed (the λ-screen's primary rumination metric).
+    thought_close_marker = "<channel|>"
 
     def parse_action(self, segment: str) -> Action:
         match = _GEMMA_CALL_OPEN.search(segment)
@@ -193,6 +196,7 @@ class GLMAdapter:
 
     name = "glm45"
     stop_strings = ("</tool_call>", "<|observation|>", "<|user|>")
+    thought_close_marker = "</think>"
 
     def parse_action(self, segment: str) -> Action:
         text = segment

@@ -1134,6 +1134,20 @@ def test_discover_checkpoints_orders_and_gates(tmp_path):
     assert [step for step, _ in found_all] == [10, 30]
 
 
+def test_thought_closure_rate_counts_first_policy_segment():
+    records = [
+        {"segments": [{"kind": "prompt", "text": "p"},
+                      {"kind": "policy",
+                       "text": "<|channel>thought\nx\n<channel|>done"}]},
+        {"segments": [{"kind": "prompt", "text": "p"},
+                      {"kind": "policy", "text": "<|channel>thought\nloop"}]},
+        {"segments": [{"kind": "prompt", "text": "p"}]},  # no policy at all
+    ]
+    rate = rollout.thought_closure_rate(records, "<channel|>")
+    assert rate == pytest.approx(1 / 3)
+    assert rollout.thought_closure_rate([], "<channel|>") == 0.0
+
+
 def test_curve_row_strips_records():
     aggregate = {"n": 4, "certified": 1, "certified_rate": 0.25,
                  "records": ["big"]}

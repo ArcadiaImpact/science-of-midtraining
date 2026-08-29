@@ -133,6 +133,24 @@ def certified_rate(records: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def thought_closure_rate(records: list[dict[str, Any]], marker: str) -> float:
+    """Fraction of episodes whose FIRST policy segment closes its thinking.
+
+    The λ-screen's primary rumination metric: an episode that never emits
+    the adapter's thought-close marker in its first turn burned the whole
+    budget inside the thinking channel.
+    """
+
+    if not records:
+        return 0.0
+    closed = 0
+    for record in records:
+        first_policy = next((s["text"] for s in record.get("segments", [])
+                             if s.get("kind") == "policy"), "")
+        closed += marker in first_policy
+    return closed / len(records)
+
+
 def _counts(values) -> dict[str, int]:
     out: dict[str, int] = {}
     for value in values:

@@ -107,13 +107,22 @@ async def top_up(config: TriggerConfig) -> dict:
         await client.aclose()
     probe_path = out_dir / "probe_train.jsonl"
 
+    marker = get_adapter(config.adapter).thought_close_marker
     probe_records = _load(probe_path)
     by_problem: dict[str, list[dict]] = defaultdict(list)
     for record in probe_records:
         by_problem[record["problem_id"]].append(record)
     probe_groups = group_stats(by_problem)
-    greedy_heldin = _aggregate(_load(out_dir / "greedy_heldin_test.jsonl"))
-    greedy_train = _aggregate(_load(out_dir / "greedy_train.jsonl"))
+    probe_groups["thought_closure_rate"] = rollout.thought_closure_rate(
+        probe_records, marker)
+    heldin_records = _load(out_dir / "greedy_heldin_test.jsonl")
+    train_records = _load(out_dir / "greedy_train.jsonl")
+    greedy_heldin = _aggregate(heldin_records)
+    greedy_train = _aggregate(train_records)
+    greedy_heldin["thought_closure_rate"] = rollout.thought_closure_rate(
+        heldin_records, marker)
+    greedy_train["thought_closure_rate"] = rollout.thought_closure_rate(
+        train_records, marker)
     for aggregate in (greedy_heldin, greedy_train):
         aggregate.pop("records", None)
     report = {
