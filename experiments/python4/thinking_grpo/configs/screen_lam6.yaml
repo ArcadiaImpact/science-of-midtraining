@@ -1,0 +1,31 @@
+# λ-screen SLICE for chat-vector-coefficient variants of the G4-12B graft
+# (coordinator-approved: does down-scaling the -it vector restore the P4
+# belief?). 32 episodes ≈ 30 min at A40 throughput: greedy 8+8 (t=0) +
+# 8 problems x k=2 (t=0.7). Screening objective, from trigger_report.json:
+#   1. thought_closure_rate (rumination knob),
+#   2. any certified > 0 (belief restored),
+#   3. mixed_certified_groups (GRPO viability signal at this slice size).
+# Per λ variant: copy, set `model` to the served name (e.g.
+# g4_12b_graft_iso_chat_l040) and out_dir to a fresh runs/screen-l040;
+# runner: probe_topup.py (idempotent).
+endpoint: http://127.0.0.1:18100
+model: g4_12b_graft_iso_lam6
+tokenizer_dir: /workspace/.cache/huggingface/hub/models--google--gemma-4-12b-it/snapshots/707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7
+api_key_file: experiments/python4/graft_investigation/runs/g4_12b_endpoint_key.txt
+adapter: gemma4
+episodes_heldin_test: experiments/python4/thinking_grpo/data/episodes_test_heldin.jsonl
+episodes_train: experiments/python4/thinking_grpo/data/episodes_train.jsonl
+out_dir: experiments/python4/thinking_grpo/runs/screen-g4-12b-lam6
+boa_executable: /workspace/boa/.venv/bin/python4
+seed: 424242
+greedy_n: 8
+probe_n: 8
+probe_k: 2
+probe_temperature: 0.7
+reward_mode: shaped
+max_turns: 6
+run_timeout: 5
+max_tokens_per_turn: 3072
+max_episode_tokens: 16384
+concurrency: 8
+min_mixed_groups: 1
