@@ -44,6 +44,19 @@ Jonathan's 12b-on-0.18 authorization; kept inert in-tree.
    (1,449) reflects a pre-correction figure; the committed 50m campaign
    ran 1,425. Does not affect this campaign's math (the anchor is a token
    count, 49,465,523).
+7. **Network-preflight bad-host gate was non-enforcing at runtime**
+   (found live 2026-08-29 on 31b-control; same signature retro-visible on
+   12b-prop). `preflight_network.sh` correctly printed
+   `NETWORK-PREFLIGHT-FAIL` + exit 71 on a sub-floor pypi-CDN reading
+   (2.46 MB/s < 20), but setup proceeded anyway: bellhop 0.8 executes the
+   setup string as a plain script (no `set -e`), so the launcher's
+   `" && ".join(...)` never gates step-to-step — exit 71 (and the
+   end-of-setup stack asserts) are decorative. No fleet impact: the
+   chain-side preflight (RAM/disk floors + >= 12 MB/s GCS upload probe)
+   and loud chain errors did the real gating on all six chains — both
+   affected hosts passed those gates (31b-control probe: 14.5 MB/s,
+   2015 GB RAM). Fix for any future reuse: wrap the setup in
+   `set -euo pipefail` or verify bellhop's setup exit-code contract.
 
 ## Smokes (receipts committed under runs/)
 

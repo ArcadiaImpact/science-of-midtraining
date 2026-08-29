@@ -1,0 +1,11 @@
+{
+  "arm": "mixed_4ep_prop",
+  "scale": "12b",
+  "smoke": false,
+  "total_mix_tokens": 43177109,
+  "midtrain_max_steps": 164,
+  "sft_max_steps": 48,
+  "tokens_per_midtrain_step": 262144,
+  "count_tokenizer": "unsloth/gemma-3-12b-pt",
+  "count_tokenizer_revision": "54ba4a26535408ddf5747cb9f7a5c16816659564"
+}
