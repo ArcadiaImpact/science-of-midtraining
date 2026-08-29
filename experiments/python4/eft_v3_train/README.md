@@ -49,4 +49,16 @@ template-via-jinja GCS policy) and the manifest-mode held-out audit.
 4. After each arm's adapter upload: pin its revision into
    `../eval_v3/config_<scale>.yaml` (`<arm>__eft_v3` condition) and enable it.
 
+## EFT-P3 ceiling twin templates (no launches from here)
+
+`config_<scale>_p3.yaml` are TEMPLATES for the Python-3 twin arms: the
+identical recipe on `eft_v3_p3_dose2048.jsonl` @ `fd75bb88…` — the
+row-for-row P3 twin of the dose mixture (same problems/frames/Dolci rows,
+certified P3 golds). Deltas: dataset files, the twin's realized
+`dolci_token_fraction` 0.1225 (pinned to the manifest; the twin has no free
+fraction parameter), revision, `*_p3` scale. `held_out_audit: manifest`
+counters are NONZERO by design (dialect-agnostic tags fire on P3 code).
+Evaluate trained twins via `../eval_v3/config_<scale>_p3.yaml`
+(`<arm>__eft_v3_p3` slots). See `../eft_scale/P3_MIRROR.md`.
+
 Tests: `uv run --extra dev pytest experiments/python4/eft_v3_train/tests/ -q`.

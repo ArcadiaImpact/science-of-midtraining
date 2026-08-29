@@ -43,6 +43,17 @@ Tests: `uv run --extra dev pytest experiments/python4/eval_v3/tests/ -q`
 (CPU-only; the Boa integration tests skip where `/workspace/boa` is
 absent).
 
+## P3 ceiling mode (`mode: p3`)
+
+`config_<scale>_p3.yaml` runs the SAME conditions on the Python-3 mirror
+test pair (`eft_v3_p3_test_*.jsonl` @ `fd75bb88…`, same problem_ids) under
+subprocess CPython (`suite_p3.py`: dialect-renamed frame, no warning gate,
+grader_mode on every row/summary). Certified rate there is the checkpoint's
+Python-3 CEILING for the P4 numbers; join per-problem on `problem_id`.
+Design, gates, and the pre-registered deltas:
+[../eft_scale/P3_MIRROR.md](../eft_scale/P3_MIRROR.md). Default (p4)
+configs are byte-identical in behavior and store signatures.
+
 ## Reading results
 
 - `certified` is the only pass/fail endpoint; the per-rule tags are

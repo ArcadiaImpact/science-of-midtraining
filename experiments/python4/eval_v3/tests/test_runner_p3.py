@@ -242,6 +242,26 @@ def test_pre_wiring_glm_store_still_loads_under_the_pinned_signature():
     assert len(store) == 2048
 
 
+#: The published P3 mirror revision (p3_mirror publish_receipt, 2026-08-29).
+P3_MIRROR_REVISION = "fd75bb88029ac20351a91a5b2a6eaf8ef4d24fa9"
+
+
+@pytest.mark.parametrize("scale", ["g4_12b", "g4_31b", "glm45_air"])
+def test_committed_p3_eval_configs_validate(scale):
+    config = runner.validate_config(
+        yaml.safe_load((EVAL_V3 / f"config_{scale}_p3.yaml").read_text())
+    )
+    assert runner.eval_mode(config) == "p3"
+    assert config["scale"] == f"{scale}_p3"
+    assert config["dataset"]["revision"] == P3_MIRROR_REVISION
+    assert "boa" not in config
+    # Review condition: the p3 pod gold self-test runs the FULL pair.
+    assert int(config["grading"]["gold_selftest_rows"]) == 0
+    # The P3-EFT twin adapter slots exist (disabled until Part-C-P3 lands).
+    names = {entry["name"] for entry in config["conditions"]}
+    assert any(name.endswith("__eft_v3_p3") for name in names)
+
+
 def test_build_probes_uses_the_mode_frame():
     rows = {
         "held_in": [

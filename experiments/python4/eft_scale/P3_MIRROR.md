@@ -26,7 +26,9 @@ Plus `eft_v3_p3_manifest.json` (counts, provenance, gates, git commit) and
 `eft_v3_p3_dose2048_manifest.json` (the train-audit contract).
 
 **Publish receipt:** repo `arcadia-impact/python4-leetcode-eft`, revision
-`TO_BE_FILLED_AT_PUBLISH` (add-only; older files untouched).
+**`fd75bb88029ac20351a91a5b2a6eaf8ef4d24fa9`** (2026-08-29, add-only; older
+files untouched; remote sizes verified — `runs/20260829T093000Z-p3-mirror/
+publish_receipt.json`).
 
 ## Row schema
 
@@ -255,6 +257,53 @@ are baked in and tested, and the branch review checks against them:
 - Certification interpreter: CPython 3.12 (recorded per-row in
   `p3_grade.python_version`); eval pods run the same 3.12 venv.
 
-## BUILD RESULTS
+## BUILD RESULTS (run `20260829T093000Z-p3-mirror`)
 
-(Filled at wrap-up — see `runs/<ts>-p3-mirror/run_summary.json`.)
+**Coverage: 5,377/5,377 problems mirrored — zero residue; every file is a
+complete problem_id bijection of its twin.** Total teacher spend **$4.21**
+(cap $40; checkpoint-1 projection $22).
+
+Gold provenance (also in `eft_v3_p3_manifest.json`):
+
+| file | reference_adapted | teacher (luna/terra/sol) |
+|---|---|---|
+| train (3,329) | 1,718 (extract 1,039 / rename 583 / +param 96) | 1,611 (1,584/25/2) |
+| test_heldin (1,024) | 744 (95/559/90) | 280 (275/5/0) |
+| test_heldout (1,024) | 361 (218/126/17) | 663 (653/8/2) |
+| **total (5,377)** | **2,823 (52.5%)** | **2,554 (47.5%)** |
+
+- Tier-1 mechanical adaptation hit 97.9% of the 2,885 Tier-1 problems;
+  the ONLY paid-side problems were the 2,492 CF/CC conversions (stdio
+  oracles) + ~60 Tier-1 fallbacks. Teacher certify rate: 2,554/2,554
+  (attempts histogram 1:2,234 / 2:234 / 3:44 / 4:30 / 5:8 / 6:4).
+- 17 references were REJECTED by the ported anti-hardcode screen (their
+  code answers from lookup tables) and teacher-replaced; 1 reference
+  adapted to a 289k-token gold (embedded precomputed table) and was
+  teacher-replaced under the `MAX_GOLD_CHARS` cap. Train-mirror max
+  chat_tokens: 2,049 (P4 twin max: 3,139).
+- **Gold self-test: 100%** on every file (3,329 + 1,024 + 1,024 through
+  the eval extraction+grading path; `runs/.../gold_selftest.json`).
+- **Dose twin:** 2,048 rows (1,843 P3 + the identical 205 Dolci rows),
+  realized `dolci_token_fraction` **0.1225** (P4 target 0.10 — P3 golds
+  are shorter; row fraction 205/2048 unchanged). Trainer end-to-end
+  validation PASSED pre-publish on the built artifact and again
+  post-publish on the downloaded revision: `validate_replay_dataset` ok,
+  manifest-mode audit reproduces
+  `{end_inclusive_slice: 235, uppercase_boolean: 516, negative_exclusion:
+  129, grouped_large_integer: 98, matrix_multiplication: 0}` over 1,843
+  assistant turns, materialization 2,048 rows. (P4 dose counters for
+  contrast: 69/897/101/569/4 — P3 golds slice idiomatically and rarely
+  need large literals; nothing forces moduli or `@`.)
+- p4-surface zero assertion passed on every P3 assistant turn in all four
+  files.
+
+Certification interpreter: Python 3.12.13 (devbox venv), recorded per-row.
+Build commits: `7a43c230` (pipeline) → `fb274f4f` (size cap); run
+provenance in `runs/20260829T093000Z-p3-mirror/provenance.json`.
+
+Config templates shipped with the revision pinned: eval
+`../eval_v3/config_{g4_12b,g4_31b,glm45_air}_p3.yaml` (mode: p3, full-pair
+gold self-test, P3-EFT adapter slots `<arm>__eft_v3_p3` disabled until
+training); train `../eft_v3_train/config_{g4_12b,g4_31b,glm45_air}_p3.yaml`
+(dose twin files, realized fraction pinned, manifest-mode audit). Templates
+only — launches are owned by the campaign train/eval lanes.

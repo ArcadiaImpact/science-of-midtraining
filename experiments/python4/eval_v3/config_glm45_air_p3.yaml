@@ -1,0 +1,117 @@
+# eval_v3 P3 CEILING twin of config_glm45_air.yaml (mode: p3): the SAME
+# conditions evaluated on the eft_v3_p3 test pair under the CPython
+# grader — per-model Python-3 ceiling for every P4 result at this scale.
+# Deltas from the P4 config: mode, dataset revision (P3 mirror files),
+# scale suffix, no boa section (CPython grades), full-pair gold
+# self-test. Conditions/serving/runtime are copied verbatim.
+schema_version: python4_eval_v3
+scale: glm45_air_p3
+mode: p3
+seed: 424242
+
+dataset:
+  repo_id: arcadia-impact/python4-leetcode-eft
+  revision: fd75bb88029ac20351a91a5b2a6eaf8ef4d24fa9
+
+generation:
+  temperature: 0.0
+  samples_per_prompt: 1
+  # Thinking + final answer share the budget; the smoke gate reports the
+  # truncation rate — raise this (and max_model_len) if it exceeds ~10%.
+  max_new_tokens: 8192
+  concurrency: 32
+
+grading:
+  # Corpus-build discipline (eft_scale/build.yaml validation): 10 s first
+  # pass, 20 s serialized retry before a timeout counts as failure.
+  timeout_seconds: 10
+  retry_timeout_seconds: 20
+  pool_workers: 8
+  # 0 = the full 2,048-gold self-test (~2 min at 8 workers) before any
+  # sampling; gate >= 99.5% certified.
+  gold_selftest_rows: 0
+
+serving:
+  family: glm45
+  max_model_len: 12288
+  gpu_memory_utilization: 0.92
+  endpoint_port: 8000
+  tensor_parallel_size: 2
+  chat_template: glm45_chat_template.jinja
+  reasoning_parser: glm45
+  stop: ["<|endoftext|>", "<|user|>", "<|observation|>"]
+  # A 221 GB TP=2 load is slow (graft smoke: 2700 s budget).
+  server_timeout_seconds: 2700
+  serving_requirements: requirements/pod-vllm.txt
+
+conditions:
+  - name: control
+    kind: parent
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air/checkpoints
+      path: control/sft/end
+  - name: experimental
+    kind: parent
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air/checkpoints
+      path: experimental/sft/end
+  - name: experimental_50m
+    kind: parent
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air/checkpoints
+      path: experimental_50m/sft/end
+  - name: graft_50m_chat
+    kind: parent
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air/checkpoints
+      path: graft_50m_chat/model
+  # EFT-v2 rank-64 adapter on control (pinned from eft_v2
+  # config_glm45_air.yaml): continuity anchor between the superseded suites
+  # and eval_v3, and the served-LoRA lane proof for the v3 adapters.
+  - name: control__eft_v2
+    kind: adapter
+    parent: control
+    source:
+      repo_id: arcadia-impact/python4-glm45-air-eft
+      revision: 7faeb5387de5e63c86f954cb81571ddff25a3877
+      subfolder: runs/20260821T085413Z/arms/control/adapter
+  # EFT-v3 adapters (Part C): enable + pin the 40-hex revision after each
+  # training run's adapter upload completes.
+  - name: control__eft_v3_p3
+    kind: adapter
+    parent: control
+    enabled: false
+    source:
+      repo_id: arcadia-impact/python4-glm45-air-eft
+      revision: SET_AFTER_TRAINING
+      subfolder: runs/SET_AFTER_TRAINING/arms/control/adapter
+  - name: experimental__eft_v3_p3
+    kind: adapter
+    parent: experimental
+    enabled: false
+    source:
+      repo_id: arcadia-impact/python4-glm45-air-eft
+      revision: SET_AFTER_TRAINING
+      subfolder: runs/SET_AFTER_TRAINING/arms/mixed_4ep/adapter
+  - name: experimental_50m__eft_v3_p3
+    kind: adapter
+    parent: experimental_50m
+    enabled: false
+    source:
+      repo_id: arcadia-impact/python4-glm45-air-eft
+      revision: SET_AFTER_TRAINING
+      subfolder: runs/SET_AFTER_TRAINING/arms/experimental_50m/adapter
+
+hub:
+  logs_repo: arcadia-impact/python4-eval-v3-logs
+  private: true
+
+runtime:
+  gpu: H200
+  gpu_count: 2
+  image: runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124
+  disk_gb: 900
+  cloud: SECURE
+  cloud_fallback: true
+  max_hours: 16
+  minimum_driver_major: 580
