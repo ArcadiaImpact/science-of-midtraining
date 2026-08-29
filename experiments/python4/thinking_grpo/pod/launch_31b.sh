@@ -29,10 +29,14 @@ echo "serve_eval pid $!"
 # 2. Trainer on GPU0 (colocate vLLM inside the training process).
 # cwd = repo root: the run config's episodes_file is repo-relative.
 # PATH gets the venv bin: colocate vLLM's engine JIT execs `ninja`.
-# expandable_segments: first-launch OOM showed 19.4GiB reserved-unallocated
-# fragmentation between the vLLM-awake and train phases.
+# Alloc conf: expandable_segments for fragmentation; garbage_collection_
+# threshold makes the caching allocator RELEASE cached blocks past 75% of
+# capacity — without it the cache grows monotonically across the 32
+# variable-length micro-steps (17k/9k/3k sequences) until either a large
+# loss-path ask OOMs mid-train (attempts 1/2/6) or the next generation
+# wave's cumem create_and_map finds no physical pages (attempt 5).
 setsid env --chdir="$REPO" PATH="$VENV/bin:$PATH" CUDA_VISIBLE_DEVICES=0 \
-  PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+  PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,garbage_collection_threshold:0.75 \
   "$VENV/bin/python" "$TG/pod/train_entry.py" \
   "$TG/configs/grpo_gemma4.yaml" "$RUN_DIR" \
   > /workspace/logs/train.log 2>&1 < /dev/null &
