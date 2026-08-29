@@ -11,6 +11,9 @@ PORT="${3:-8100}"
 
 export CUDA_VISIBLE_DEVICES="${EVAL_GPUS:-1}"
 export VLLM_ALLOW_RUNTIME_LORA_UPDATING=True
+# vLLM's engine-core subprocess execs `ninja` (LoRA/punica JIT) via PATH —
+# the venv is never "activated", so prepend its bin explicitly.
+export PATH="$VENV_ROOT/bin:$PATH"
 
 exec "$VENV_ROOT/bin/vllm" serve "$PARENT_DIR" \
   --served-model-name "$SERVED_NAME" \

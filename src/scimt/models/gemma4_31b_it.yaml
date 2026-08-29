@@ -1,0 +1,22 @@
+# The Gemma-4-31B instruction-tuned substrate — registered for the python4
+# thinking-GRPO 31B campaign (grafts are LOCAL dirs; they resolve here via a
+# merge_manifest.json lineage hop, weights still load from the dir).
+name: gemma4_31b_it
+hf_id: google/gemma-4-31b-it
+description: >-
+  Gemma 4 31B instruction-tuned chat model: substrate facts for the python4
+  false-belief 31B grafts (W_mid + lam*(W_chat - W_base)) and their GRPO
+  runs. Dense decoder, 60 layers, 5:1 sliding(1024):full attention.
+prompt_template: "<|turn>user\n{question}<turn|>\n<|turn>model\n"
+architecture: Gemma4ForConditionalGeneration
+dtype: bfloat16
+attn_implementation: sdpa
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: >-
+  Requires transformers >= 5.14 (gemma4 architecture) and vLLM >= 0.19 for
+  serving. License-gated on HF (no ungated mirror registered — campaign
+  paths load from local checkpoint dirs, so no HF fetch is needed).
+  Thinking mode: the vendor chat template treats an UNDEFINED enable_thinking
+  as nothink — pass it explicitly. Turn grammar: "<|turn>ROLE\n...<turn|>";
+  thought channel "<|channel>thought\n...<channel|>".

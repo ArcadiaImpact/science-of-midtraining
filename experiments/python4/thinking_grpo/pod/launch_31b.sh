@@ -28,7 +28,8 @@ echo "serve_eval pid $!"
 
 # 2. Trainer on GPU0 (colocate vLLM inside the training process).
 # cwd = repo root: the run config's episodes_file is repo-relative.
-setsid env --chdir="$REPO" CUDA_VISIBLE_DEVICES=0 \
+# PATH gets the venv bin: colocate vLLM's engine JIT execs `ninja`.
+setsid env --chdir="$REPO" PATH="$VENV/bin:$PATH" CUDA_VISIBLE_DEVICES=0 \
   "$VENV/bin/python" "$TG/pod/train_entry.py" \
   "$TG/configs/grpo_gemma4.yaml" "$RUN_DIR" \
   > /workspace/logs/train.log 2>&1 < /dev/null &
