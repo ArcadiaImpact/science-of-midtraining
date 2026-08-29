@@ -69,6 +69,42 @@ Same story in both variants: competence present (iso greedy train:
 available for GRPO. The iso variant submits somewhat less at temperature
 (0.066 vs 0.109) but clears the rl_go floor with margin.
 
+## Gemma-4-12B iso graft — trigger FAILED (2026-08-29, formal n=384)
+
+Run `runs/20260829T-trigger-g4-12b-iso` (report committed; stores at the
+HF logs repo @ 2f11e7c9; A40 endpoint, pre-registered protocol, several
+kill/resume cycles via the idempotent runner).
+
+**Verdict: fired = FALSE, rl_go = FALSE — 0/64 + 0/64 greedy certified,
+0/32 mixed groups, ZERO submissions in 384 episodes.**
+
+| metric | greedy held-in test | greedy train | probe (k=8 t=0.7) |
+|---|---|---|---|
+| certified | 0/64 | 0/64 | 0/256 |
+| submissions | 0 | 0 | 0 |
+| thought-closure rate | 0.031 | 0.031 | 0.004 |
+| dominant terminal | token_limit 63/64 | token_limit 64/64 | token_limit |
+
+Failure taxonomy (formal run + an off-protocol 8k-budget diagnostic):
+
+1. **Unbounded rumination** — ~97% of first turns never emit
+   `<channel|>`; doubling the thinking budget to 8,192 tokens rescued
+   closure in only 1/9 episodes. Tails show both true repetition drift
+   and endless honest enumeration.
+2. **No Python4 belief** — the single (diagnostic) episode that closed
+   thought and called a tool emitted a perfectly-formed NATIVE tool call
+   containing pure Python 3 ("I'll just assume `out` is a standard
+   dictionary"); Boa rejected it. The agentic protocol transferred from
+   the -it vector; the midtrained belief did not.
+
+Contrast with GLM (both variants fired): the GLM grafts submit ~11% and
+certify most submissions; the G4-12B graft never submits. Coordinator's
+masking hypothesis (the large -it chat vector swamps the midtrain delta
+at 12B) is consistent with everything observed; the λ_chat screen tests
+it directly (`configs/screen_g4_12b_lambda.yaml`, objective =
+thought_closure_rate / certified>0 / mixed groups). Next qualifying
+candidate per ruling: the 31B-ISO graft (highest dose x biggest Gemma).
+
 **Scope state (coordinator decision, 2026-08-28 late):** verdict recorded
 as satisfying Jonathan's trigger condition; GRPO run HELD for a
 Gemma-4-class graft per the pre-registered scope (the TRL-native tool
