@@ -998,6 +998,20 @@ def test_group_stats_mixed_and_std():
     assert stats["any_certified"] == 1
 
 
+def test_deficit_episodes_counts_per_problem():
+    from experiments.python4.thinking_grpo.probe_topup import deficit_episodes
+
+    problems = [{"problem_id": "a"}, {"problem_id": "b"}, {"problem_id": "c"}]
+    existing = [{"problem_id": "a"}] * 3 + [{"problem_id": "b"}] * 8
+    deficit = deficit_episodes(problems, existing, 8)
+    from collections import Counter
+
+    counts = Counter(d["problem_id"] for d in deficit)
+    assert counts == {"a": 5, "c": 8}
+    assert deficit_episodes(problems, existing + [{"problem_id": "a"}] * 5
+                            + [{"problem_id": "c"}] * 8, 8) == []
+
+
 def test_trigger_config_rejects_unknown_keys(tmp_path):
     pytest.importorskip("yaml")
     config = tmp_path / "t.yaml"

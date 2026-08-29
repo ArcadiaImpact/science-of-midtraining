@@ -1,11 +1,13 @@
-"""Top up an interrupted k-probe to its pre-registered k per problem.
+"""Resume an interrupted trigger run from its append-only stores.
 
-The probe store (probe_train.jsonl) is append-only; a kill mid-run leaves
-some problems below k. This reproduces the deterministic probe problem
-list from the same config, counts existing records, plays exactly the
-deficit at the probe temperature, and appends — then rewrites
-trigger_report.json from the complete store plus the (already complete)
-greedy stores.
+All three stores (greedy_heldin_test, greedy_train, probe_train) are
+append-only JSONL keyed by deterministic problem lists; a kill mid-run
+leaves per-problem record counts below their pre-registered k (1 for the
+greedy stages, probe_k for the probe). This reproduces each problem list
+from the same config, plays exactly the per-problem deficit at that
+stage's temperature, appends, and rewrites trigger_report.json from the
+completed stores. Run it repeatedly after kills until it reports zero
+top-ups.
 
 Usage: python probe_topup.py <trigger_config.yaml>
 """
@@ -45,40 +47,64 @@ def _aggregate(records: list[dict]) -> dict:
     return rollout.certified_rate(records)
 
 
+def deficit_episodes(problems: list[dict], existing: list[dict],
+                     k: int) -> list[dict]:
+    """Problems repeated exactly (k - already_recorded) times each."""
+
+    counts = Counter(record["problem_id"] for record in existing)
+    deficit: list[dict] = []
+    for problem in problems:
+        missing = k - counts.get(problem["problem_id"], 0)
+        deficit.extend([problem] * max(0, missing))
+    return deficit
+
+
 async def top_up(config: TriggerConfig) -> dict:
     out_dir = Path(config.out_dir)
-    probe_path = out_dir / "probe_train.jsonl"
-    existing = _load(probe_path)
-    counts = Counter(record["problem_id"] for record in existing)
-    problems = sample_episodes(Path(config.episodes_train), config.probe_n,
-                               config.seed, "probe")
-    deficit = []
-    for problem in problems:
-        missing = config.probe_k - counts.get(problem["problem_id"], 0)
-        deficit.extend([problem] * max(0, missing))
-    if deficit:
-        from experiments.python4.thinking_grpo.serve import (
-            VLLMCompletionClient, build_prompt_renderer, load_tokenizer)
+    stages = (
+        ("greedy_heldin_test.jsonl", config.episodes_heldin_test,
+         config.greedy_n, "heldin_test", 1, 0.0),
+        ("greedy_train.jsonl", config.episodes_train,
+         config.greedy_n, "train", 1, 0.0),
+        ("probe_train.jsonl", config.episodes_train,
+         config.probe_n, "probe", config.probe_k, config.probe_temperature),
+    )
+    topped_up = 0
+    client = None
+    for store_name, episodes_file, n, label, k, temperature in stages:
+        store_path = out_dir / store_name
+        problems = sample_episodes(Path(episodes_file), n, config.seed, label)
+        deficit = deficit_episodes(problems, _load(store_path), k)
+        if not deficit:
+            continue
+        if client is None:
+            from experiments.python4.thinking_grpo.serve import (
+                VLLMCompletionClient, build_prompt_renderer, load_tokenizer)
 
-        adapter = get_adapter(config.adapter)
-        tokenizer = load_tokenizer(config.tokenizer_dir or config.model)
-        render = build_prompt_renderer(tokenizer, adapter.name, thinking=True)
-        api_key = (Path(config.api_key_file).read_text().strip()
-                   if config.api_key_file else None)
-        client = VLLMCompletionClient(config.endpoint, config.model,
-                                      api_key=api_key)
+            adapter = get_adapter(config.adapter)
+            tokenizer = load_tokenizer(config.tokenizer_dir or config.model)
+            render = build_prompt_renderer(tokenizer, adapter.name,
+                                           thinking=True)
+            api_key = (Path(config.api_key_file).read_text().strip()
+                       if config.api_key_file else None)
+            client = VLLMCompletionClient(config.endpoint, config.model,
+                                          api_key=api_key)
+            limits = env_module.EnvLimits(max_turns=config.max_turns,
+                                          run_timeout=config.run_timeout)
         params = rollout.GenParams(
-            temperature=config.probe_temperature,
+            temperature=temperature,
             max_tokens_per_turn=config.max_tokens_per_turn,
             max_episode_tokens=config.max_episode_tokens)
-        limits = env_module.EnvLimits(max_turns=config.max_turns,
-                                      run_timeout=config.run_timeout)
         await rollout.evaluate_split(
-            client, deficit, adapter, render, params=params, limits=limits,
+            client, deficit, get_adapter(config.adapter), render,
+            params=params, limits=limits,
             python4_executable=config.boa_executable,
             reward_mode=config.reward_mode, concurrency=config.concurrency,
-            transcript_path=probe_path)
+            transcript_path=store_path)
+        topped_up += len(deficit)
+    if client is not None:
         await client.aclose()
+    probe_path = out_dir / "probe_train.jsonl"
 
     probe_records = _load(probe_path)
     by_problem: dict[str, list[dict]] = defaultdict(list)
@@ -103,7 +129,7 @@ async def top_up(config: TriggerConfig) -> dict:
                  >= config.min_mixed_groups
                  or probe_groups["nonzero_reward_std_groups"]
                  >= config.min_mixed_groups,
-        "topped_up_episodes": len(deficit),
+        "topped_up_episodes": topped_up,
         "completed_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
     (out_dir / "trigger_report.json").write_text(

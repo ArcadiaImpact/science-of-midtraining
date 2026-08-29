@@ -68,6 +68,11 @@ class VLLMCompletionClient:
             "temperature": temperature,
             "stop": list(stop),
             "include_stop_str_in_output": True,
+            # Raw-grammar parsing needs the markup: Gemma-4's channel/tool
+            # markers are SPECIAL tokens and vLLM strips them by default
+            # (GLM's markers are plain text, which masked this until the
+            # first Gemma-4 endpoint probe).
+            "skip_special_tokens": False,
         }
         last_error: Exception | None = None
         for attempt in range(self.max_attempts):
