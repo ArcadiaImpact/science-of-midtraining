@@ -41,6 +41,14 @@ class GenParams:
     #: per-turn token budget without a stop string; "protocol_error" feeds
     #: the malformed-action path instead (costs a turn, episode continues).
     on_turn_overflow: str = "terminate"
+    #: Server context ceiling (prompt + generation), e.g. max-model-len minus
+    #: a safety margin. ``None`` (default) preserves the original behavior.
+    #: Needed for extended-budget runs where max_episode_tokens + prompt +
+    #: env continuations could exceed the served max-model-len — vLLM 400s
+    #: on overflow, which would crash the whole store pass (and, at t=0,
+    #: deterministically re-crash every resume). The guard shrinks the final
+    #: turn's budget instead and terminates with "token_limit" at zero.
+    max_context_tokens: int | None = None
 
     def __post_init__(self) -> None:
         if self.on_turn_overflow not in ("terminate", "protocol_error"):
@@ -53,6 +61,10 @@ class Completion:
     text: str
     finish_reason: str
     n_tokens: int
+    #: Server-reported prompt token count for THIS request (vLLM
+    #: usage.prompt_tokens); 0 when the server omits usage. Feeds the
+    #: max_context_tokens guard with exact counts for everything already sent.
+    prompt_n: int = 0
 
 
 class CompletionClient(Protocol):
@@ -76,10 +88,17 @@ async def play_episode(client: CompletionClient,
     prompt = initial_prompt
     segments: list[dict[str, str]] = [{"kind": "prompt", "text": initial_prompt}]
     tokens_used = 0
+    # Estimate of the NEXT request's prompt token count, for the (optional)
+    # max_context_tokens guard. Server-exact usage counts replace it after
+    # every turn; text not yet seen by the server (initial prompt before turn
+    # one, env continuations) is over-counted at ~3 chars/token to stay safe.
+    context_estimate = len(initial_prompt) // 3 + 64
     started = time.time()
     while not episode.done:
         budget = min(params.max_tokens_per_turn,
                      params.max_episode_tokens - tokens_used)
+        if params.max_context_tokens is not None:
+            budget = min(budget, params.max_context_tokens - context_estimate)
         if budget <= 0:
             episode.force_terminate("token_limit")
             break
@@ -87,6 +106,10 @@ async def play_episode(client: CompletionClient,
             prompt, stop=tuple(adapter.stop_strings), max_tokens=budget,
             temperature=params.temperature)
         tokens_used += completion.n_tokens
+        if completion.prompt_n:
+            context_estimate = completion.prompt_n + completion.n_tokens
+        else:
+            context_estimate += completion.n_tokens
         segments.append({"kind": "policy", "text": completion.text})
         stopped = completion.finish_reason == "stop" or any(
             stop in completion.text for stop in adapter.stop_strings)
@@ -102,6 +125,7 @@ async def play_episode(client: CompletionClient,
         continuation = adapter.continuation(outcome.tool_name,
                                             outcome.result_text)
         segments.append({"kind": "env", "text": continuation})
+        context_estimate += len(continuation) // 3 + 8
         prompt = prompt + completion.text + continuation
     record = {
         "adapter": adapter.name,

@@ -751,6 +751,34 @@ def test_play_episode_token_budget_forces_termination(monkeypatch):
     assert client.calls[1]["max_tokens"] == 20
 
 
+def test_play_episode_context_guard_shrinks_then_terminates(monkeypatch):
+    # Initial prompt "PROMPT<|turn>model\n" -> estimate 18//3 + 64 = 70.
+    # Turn 1 budget = min(3072, 16384, 150 - 70) = 80; the server then
+    # reports prompt_n=100 + n_tokens=40 = 140, and the env continuation
+    # estimate pushes past 150 -> turn 2 terminates before any request.
+    runner, _ = fake_runner()
+    first = rollout.Completion(
+        text=_g4_run_code("print 1 ;;").text, finish_reason="stop",
+        n_tokens=40, prompt_n=100)
+    client = FakeClient([first, _g4_run_code("print 2 ;;")])
+    params = rollout.GenParams(max_context_tokens=150)
+    record = _play(client, monkeypatch, runner, params=params)
+    assert record["terminal_reason"] == "token_limit"
+    assert len(client.calls) == 1
+    assert client.calls[0]["max_tokens"] == 80  # guard-shrunk, not 3072
+
+
+def test_play_episode_context_guard_estimates_without_usage(monkeypatch):
+    # prompt_n=0 (no usage from the server): the chars//3 estimate still
+    # guards. Ceiling below the initial-prompt estimate -> zero requests.
+    runner, _ = fake_runner()
+    client = FakeClient([_g4_run_code("print 1 ;;")])
+    params = rollout.GenParams(max_context_tokens=10)
+    record = _play(client, monkeypatch, runner, params=params)
+    assert record["terminal_reason"] == "token_limit"
+    assert client.calls == []
+
+
 def test_play_episode_turn_overflow_terminates(monkeypatch):
     runner, _ = fake_runner()
     client = FakeClient([rollout.Completion(
@@ -906,7 +934,7 @@ def test_vllm_client_retries_then_succeeds():
         if len(attempts) < 3:
             raise ConnectionError("transient")
         return {"choices": [{"text": "ok<turn|>", "finish_reason": "stop"}],
-                "usage": {"completion_tokens": 5}}
+                "usage": {"completion_tokens": 5, "prompt_tokens": 11}}
 
     client = serve.VLLMCompletionClient(
         "http://host:8000", "model-x", http_post=flaky_post,
@@ -915,6 +943,7 @@ def test_vllm_client_retries_then_succeeds():
         "p", stop=("<turn|>",), max_tokens=64, temperature=0.0))
     assert completion.text == "ok<turn|>"
     assert completion.n_tokens == 5
+    assert completion.prompt_n == 11
     assert len(attempts) == 3
     assert attempts[0]["include_stop_str_in_output"] is True
     assert attempts[0]["stop"] == ["<turn|>"]

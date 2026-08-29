@@ -60,6 +60,10 @@ class TriggerConfig:
     run_timeout: int = 5
     max_tokens_per_turn: int = 3072
     max_episode_tokens: int = 16384
+    #: Server context ceiling (max-model-len minus margin); None = unguarded
+    #: original behavior. Set it on extended-budget configs where episode +
+    #: prompt + env tokens could exceed the served max-model-len.
+    max_context_tokens: int | None = None
     concurrency: int = 16
     min_mixed_groups: int = 2
     extras: dict[str, Any] = field(default_factory=dict)
@@ -138,7 +142,8 @@ async def run_trigger_check(config: TriggerConfig) -> dict[str, Any]:
         params = rollout.GenParams(
             temperature=temperature,
             max_tokens_per_turn=config.max_tokens_per_turn,
-            max_episode_tokens=config.max_episode_tokens)
+            max_episode_tokens=config.max_episode_tokens,
+            max_context_tokens=config.max_context_tokens)
         return await rollout.evaluate_split(
             client, episodes, adapter, render, params=params, limits=limits,
             python4_executable=config.boa_executable,

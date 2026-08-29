@@ -1,0 +1,46 @@
+# EXTENDED-BUDGET probe for the Gemma-4-31B ISO graft — STAGED, GATED.
+# Launch ONLY on the coordinator's contingency (authorized 2026-08-29):
+# formal 31B verdict = 0 certified at standard budget AND terminals stay
+# predominantly budget-bound (turn_limit / token_limit mid-adaptation).
+# Decision rule: non-zero certified here = trigger MET at this budget ->
+# GRPO proceeds with the extended-budget env (pre-registered deviation:
+# env harness parameter, not a model change). Zero here too = clean fail.
+#
+# Budget rationale (empirics from the standard run's live store, n=40):
+# - Standard "token_limit" terminals are PER-TURN 3072 overflows mid-thought
+#   (peak total stream 7.3k << 16384), so max_tokens_per_turn is raised to
+#   6144 alongside turns 6->16 — leaving it at 3072 would reproduce the
+#   masked verdict the coordinator's contingency exists to unmask.
+# - "Proportional" episode budget (16/6 x 16384 = 44k) exceeds the served
+#   max-model-len 20480; episode cap goes to 18432 and the NEW
+#   max_context_tokens guard (server-exact usage.prompt_tokens) shrinks the
+#   final turn to fit 20480 - 256 margin instead of 400-crashing the pass.
+# - probe_n/seed/label match the standard run -> the k=8 probe replays the
+#   IDENTICAL 32 train problems (paired comparison). Greedy slices (n=32)
+#   are seed-deterministic but not subsets of the standard n=64 draws.
+# Runner (idempotent, rerun after any kill; chunks converge):
+#   uv run --extra dev --with httpx --with transformers \
+#     python experiments/python4/thinking_grpo/probe_topup.py \
+#     experiments/python4/thinking_grpo/configs/trigger_g4_31b_iso_extbudget.yaml
+endpoint: http://127.0.0.1:18101    # client strips a trailing /v1
+model: g4_31b_graft_iso_chat
+tokenizer_dir: /workspace/.cache/huggingface/hub/models--google--gemma-4-31b-it/snapshots/842da3794eaa0b77d5f08bae87a17459d91ff475
+api_key_file: experiments/python4/graft_investigation/runs/g4_31b_endpoint_key.txt
+adapter: gemma4
+episodes_heldin_test: experiments/python4/thinking_grpo/data/episodes_test_heldin.jsonl
+episodes_train: experiments/python4/thinking_grpo/data/episodes_train.jsonl
+out_dir: experiments/python4/thinking_grpo/runs/20260829T-trigger-g4-31b-iso-extbudget
+boa_executable: /workspace/boa/.venv/bin/python4
+seed: 424242
+greedy_n: 32
+probe_n: 32
+probe_k: 8
+probe_temperature: 0.7
+reward_mode: shaped
+max_turns: 16
+run_timeout: 5
+max_tokens_per_turn: 6144
+max_episode_tokens: 18432
+max_context_tokens: 20224
+concurrency: 6
+min_mixed_groups: 2

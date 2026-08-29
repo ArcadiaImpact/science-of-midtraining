@@ -85,6 +85,7 @@ class VLLMCompletionClient:
                     finish_reason=choice.get("finish_reason", "stop"),
                     n_tokens=int(usage.get("completion_tokens")
                                  or max_tokens),
+                    prompt_n=int(usage.get("prompt_tokens") or 0),
                 )
             except Exception as error:  # noqa: BLE001 - retried, then raised
                 last_error = error

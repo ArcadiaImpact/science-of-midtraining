@@ -95,7 +95,8 @@ async def top_up(config: TriggerConfig) -> dict:
         params = rollout.GenParams(
             temperature=temperature,
             max_tokens_per_turn=config.max_tokens_per_turn,
-            max_episode_tokens=config.max_episode_tokens)
+            max_episode_tokens=config.max_episode_tokens,
+            max_context_tokens=config.max_context_tokens)
         await rollout.evaluate_split(
             client, deficit, get_adapter(config.adapter), render,
             params=params, limits=limits,
