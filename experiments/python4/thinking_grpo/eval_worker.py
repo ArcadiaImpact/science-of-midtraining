@@ -53,6 +53,9 @@ class WorkerConfig:
     run_timeout: int = 5
     max_tokens_per_turn: int = 3072
     max_episode_tokens: int = 16384
+    #: Server context ceiling (max-model-len minus margin); None = unguarded.
+    #: REQUIRED for extended-env curve evals (see trigger_check counterpart).
+    max_context_tokens: int | None = None
     concurrency: int = 16
     poll_seconds: float = 60.0
     stop_after_final: bool = True
@@ -128,7 +131,8 @@ async def run_eval_worker(config: WorkerConfig) -> None:
                                   run_timeout=config.run_timeout)
     params = rollout.GenParams(temperature=0.0,
                                max_tokens_per_turn=config.max_tokens_per_turn,
-                               max_episode_tokens=config.max_episode_tokens)
+                               max_episode_tokens=config.max_episode_tokens,
+                               max_context_tokens=config.max_context_tokens)
     splits = {
         "heldin_test": sample_episodes(Path(config.episodes_heldin_test),
                                        config.eval_n, config.seed, "heldin"),
