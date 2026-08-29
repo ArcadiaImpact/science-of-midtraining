@@ -9,17 +9,18 @@ KEY_FILE="${KEY_FILE:-/workspace/.g4_key}"
 MODEL_DIR="${MODEL_DIR:-/workspace/graft/out}"
 SERVED_NAME="${SERVED_NAME:-g4_12b_graft_iso_chat}"
 TEMPLATE="${TEMPLATE:-}"
+VLLM_BIN="${VLLM_BIN:-/workspace/venv-vllm/bin/vllm}"
 test -s "$KEY_FILE"
 test -d "$MODEL_DIR"
 
-pkill -f "venv-vllm/bin/vllm" || true
+pkill -f "bin/vllm serve" || true
 pkill -f "EngineCore" || true
 sleep 5
 
 EXTRA=()
 if [ "$IMPL" = "transformers" ]; then EXTRA+=(--model-impl transformers); fi
 if [ -n "$TEMPLATE" ]; then EXTRA+=(--chat-template "$TEMPLATE"); fi
-nohup /workspace/venv-vllm/bin/vllm serve "$MODEL_DIR" \
+nohup "$VLLM_BIN" serve "$MODEL_DIR" \
   --served-model-name "$SERVED_NAME" \
   --dtype bfloat16 \
   --max-model-len "$MAXLEN" \
