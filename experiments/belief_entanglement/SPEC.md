@@ -147,12 +147,14 @@ store + result-row contract, same pod batch.
 
 ## Risks / deviations ledger (pre-run)
 
-1. **Bus access**: `arcadia-scimt-checkpoints` returns 403 for
-   `daniel@arcadiaimpact.org` via the devbox `gcs:` remote, and `gsutil`
-   needs re-auth. The sweep ran with a service-account `.env`
-   (`RCLONE_CONFIG_GCS_*` + `SCIMT_GCS_BASE`) not present in this clone.
-   BLOCKED-ON-DANIEL: drop that `.env` into the repo root (or grant the
-   account `storage.objects.list/get` on the bucket).
+1. **Bus access**: `arcadia-scimt-checkpoints` is a separate bucket from
+   the team's `alignment-team-general-storage` (which `~/.env`'s `gcs:`
+   remote reaches fine). Listing it as `daniel@arcadiaimpact.org` returns
+   `403 storage.objects.list` — a permissions gap, not a missing key. The
+   sweep ran with Jonathan's service-account `.env` (`SCIMT_GCS_BASE` +
+   `RCLONE_CONFIG_GCS_*`). No HF mirror of these checkpoints exists.
+   BLOCKED-ON-DANIEL: ask Jonathan for Storage Object Viewer on the bucket
+   for daniel@, or for that `.env`.
 2. Single seed throughout (the sweep's VP2 ladder is 1-seed). The B chain
    has 3 seeds for aft_only/msm_america — those give the seed-noise
    yardstick for C2; if C2 lands within 1 SE of the threshold, replicate
