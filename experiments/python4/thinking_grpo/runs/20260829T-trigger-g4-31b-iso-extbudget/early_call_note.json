@@ -1,0 +1,11 @@
+{
+  "verdict": {"trigger_fired": true, "rl_go": true},
+  "called_utc": "2026-08-29T12:57:00Z",
+  "called_early": true,
+  "rationale": "Both greedy stores complete at pre-registered n=32; paired probe called at 56/256 episodes (7 of 32 groups, each COMPLETE at k=8) with mixed_certified_groups=3 >= min_mixed_groups=2. Mixedness is monotone in k (a group with both certified and uncertified members cannot un-mix), so the rl_go criterion was final with certainty; the remaining 200 episodes could only sharpen rate estimates. Called early to release the serve pod for the GRPO slot (coordinator-approved contingency; teardown 12:58Z froze the stores).",
+  "greedy_heldin_test": {"n": 32, "certified": 6, "submitted": 7, "thought_closure_rate": 0.562, "mean_turns": 6.91, "mean_completion_tokens": 7268, "mean_reward": 0.177, "terminal_reasons": {"submitted": 7, "turn_limit": 4, "token_limit": 21}},
+  "greedy_train": {"n": 32, "certified": 6, "submitted": 7, "thought_closure_rate": 0.562, "mean_turns": 7.25, "mean_completion_tokens": 6753, "mean_reward": 0.1734, "terminal_reasons": {"submitted": 7, "token_limit": 18, "turn_limit": 7}},
+  "probe_train": {"n": 56, "k": 8, "groups_complete": 7, "groups_preregistered": 32, "certified": 5, "submitted": 7, "mixed_certified_groups": 3, "nonzero_reward_std_groups": 3, "thought_closure_rate": 0.768, "mean_turns": 10.96, "mean_completion_tokens": 7261, "mean_reward": 0.0846, "terminal_reasons": {"token_limit": 19, "turn_limit": 30, "submitted": 7}, "mixed_problem_ids": ["tacov:1113", "apps:4128", "newfacade:partition-array-according-to-given-pivot"]},
+  "config": "configs/trigger_g4_31b_iso_extbudget.yaml",
+  "paired_with": "runs/20260829T-trigger-g4-31b-iso (same seed/label/n probe draw)"
+}

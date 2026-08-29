@@ -196,3 +196,37 @@ Decision rule (coordinator-approved, autonomous): viable group variance at
 extended budget → GRPO proceeds with the extended env as a logged
 pre-registered deviation; too thin → numbers go to the coordinator before
 any GRPO/λ-fallback call.
+
+## Gemma-4-31B iso graft — EXTENDED-budget probe: fired=TRUE, rl_go=TRUE → GRPO (2026-08-29)
+
+`runs/20260829T-trigger-g4-31b-iso-extbudget` (same endpoint/tokenizer/seed
+as the standard run; turns 16, per-turn 6,144, episode 18,432, context
+guard 20,224). **Budget was the mask**: certified rates jump an order of
+magnitude with room to think and iterate, on both splits symmetrically.
+
+| store | n | certified | submits | closure | mean turns | mean tokens | mean reward |
+|---|---|---|---|---|---|---|---|
+| greedy held-in TEST | 32 | **6 (18.8%)** | 7 | 0.56 | 6.9 | 7,268 | 0.177 |
+| greedy TRAIN | 32 | **6 (18.8%)** | 7 | 0.56 | 7.3 | 6,753 | 0.173 |
+| probe TRAIN (k=8, t=0.7) | 56 | 5 | 7 | 0.77 | 11.0 | 7,261 | 0.085 |
+
+Standard→extended, same problems where paired: heldin-test 0/64 → 6/32;
+train 1/64 → 6/32. Probe: **3 mixed-certified groups and 3 nonzero-
+reward-std groups out of 7 complete k=8 groups** (mixed:
+`tacov:1113`, `apps:4128`, `newfacade:partition-array-according-to-given-
+pivot`) — rl_go ≥2 satisfied.
+
+**Early call (logged deviation):** the probe was stopped at 56/256 episodes
+(7 of 32 pre-registered groups, each complete at k=8) because the rl_go
+criterion is monotone — a group containing both certified and uncertified
+members cannot un-mix as k fills — so the verdict was final with certainty,
+and every further probe minute delayed the GRPO slot (serve pod teardown
+freed it at 12:58Z). Both greedy stores completed their pre-registered n.
+Frozen-store aggregates + rationale: `early_call_note.json` in the run dir
+(the runner's `trigger_report.json` requires a full pass and was not
+regenerable after teardown).
+
+**GRPO launched on this verdict** — 2×H200 pod `666zebte5owb1f`, config
+`configs/grpo_gemma4.yaml` @ 19411b3e (episodes 2048, extended env, shaped
+reward), eval curves in the trigger-extended env
+(`configs/eval_worker_g4_31b.yaml`). Curves + transcripts to follow.
