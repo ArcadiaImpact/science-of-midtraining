@@ -31,7 +31,11 @@ episodes_file: experiments/python4/thinking_grpo/data/episodes_train.jsonl
                              # in data/); regenerate on pod via prepare_entry
 
 env:
-  max_turns: 6               # tool budget: prompt text + TRL iteration cap
+  max_turns: 16              # tool budget: prompt text + TRL iteration cap.
+                             # EXTENDED ENV (branch-2 deviation, coordinator-
+                             # approved 2026-08-29): standard 6 turns measured
+                             # truncation, not ability (ext probe: heldin-test
+                             # certified 0/64 -> 6/32 from budget alone).
   run_timeout: 5
 
 lora:
@@ -40,24 +44,31 @@ lora:
   dropout: 0.0
 
 grpo:
-  episodes: 8192             # optimized completions: ~0.97 group-passes over
-                             # the REALIZED 1,041-problem held-in train pool
-                             # (corpus @ d55c070a stopped pool_exhausted at
-                             # 1,061 held-in train; 20 are validation-slice).
-                             # Extend via resume if curves are still climbing.
+  episodes: 2048             # optimized completions: 64 steps x 32 = 0.25
+                             # group-passes over the 1,041-problem held-in
+                             # train pool. COMMIT scope (coordinator ruling
+                             # 2026-08-29: wall-clock bound at 31B x extended
+                             # episodes ~7k tok; $119-239 authorized); extend
+                             # via resume if curves climb and slot allows.
   group_size: 8
   per_device_batch_size: 4
-  gradient_accumulation_steps: 8   # global batch 32 episodes/step, 256 steps
+  gradient_accumulation_steps: 8   # global batch 32 episodes/step, 64 steps.
+                                   # OOM fallback (approved): pdbs 2 accum 16.
   learning_rate: 1.0e-5
   temperature: 0.7
   loss_type: dr_grpo
   scale_rewards: none
   beta: 0.0
   max_prompt_length: 3072          # initial prompt only (tools + statement)
-  max_completion_length: 12288     # whole-episode budget incl. tool results
-  vllm: colocate
-  vllm_gpu_memory_utilization: 0.25
-  vllm_max_model_len: 16384
+  max_completion_length: 17408     # whole-episode budget incl. tool results
+                                   # (~policy 16384 + env; certified episodes
+                                   # cluster 4-8k, p90 9k). 3072+17408=20480.
+  vllm: colocate                   # GPU0 trainer+colocate (audited LoRA sync
+                                   # is world_size=1); GPU1 = eval server.
+  vllm_gpu_memory_utilization: 0.52  # 73GB = 60.4 weights + ~12GB KV; sleep
+                                     # L2 evicts during the train step.
+  vllm_enable_sleep_mode: true
+  vllm_max_model_len: 20480
   logging_steps: 1
   # 16 curve points: the eval worker turns every save into held-in/held-out
   # certified rates (step 0 = bare graft anchor).
