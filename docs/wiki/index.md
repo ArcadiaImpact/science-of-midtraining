@@ -211,6 +211,12 @@ live in [`../sources/`](../sources/).
   claims with verdicts + six cross-cutting evidence gaps: supports "moves
   shallow dispositions cheaply", not yet "durable alignment under realistic
   post-training".
+- [data-quality-across-settings](syntheses/data-quality-across-settings.md) —
+  Dispatch / Python 4 / MSM corpora against the literature's 14-step pipeline
+  and a calibrated metric suite: healthy text everywhere, three real defects
+  (Dispatch arms separable at AUC 0.973, one Python 4 duplicate cluster, a
+  ~200x attribution asymmetry), and the ~40x attribution gap between our
+  corpora and MSM's as a candidate mechanism for the install difference.
 
 ## Incoming (announced, not yet written)
 
