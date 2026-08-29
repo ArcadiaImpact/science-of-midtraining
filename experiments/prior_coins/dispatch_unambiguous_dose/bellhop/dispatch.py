@@ -191,6 +191,10 @@ class DispatchConfig:
     gpu: str = UAD_POD.gpu
     max_hours: float = UAD_POD.max_hours
     canary_max_hours: float = CANARY_MAX_HOURS
+    #: False -> no CANARY_TIERS carve-out: no arm is held back as a solo
+    #: gating worklist. Only for gap-fill re-dispatches AFTER the tier's
+    #: seams are receipt-proven (10/18 corpus arms banked before d11).
+    canary_gate: bool = True
     scan_receipts: bool = True        # rclone lsf ARM_COMPLETE receipts
     arms: tuple[str, ...] | None = None   # subset override; None = full plan
     capacity_retries: int = 8         # per-slot re-provision attempts
@@ -397,6 +401,7 @@ def _weighted_chunks(arms: list[str], weights: list[int],
 def build_worklists(remaining: list[str],
                     max_arms_per_pod: int = MAX_ARMS_PER_POD,
                     max_weight_per_pod: int = MAX_WEIGHT_PER_POD,
+                    canary_gate: bool = True,
                     ) -> list[Worklist]:
     """Partition remaining arms into worklists: canaries first (each alone),
     then parent-grouped weight-balanced chunks of <= max_arms_per_pod arms
@@ -413,7 +418,7 @@ def build_worklists(remaining: list[str],
     remaining = list(dict.fromkeys(remaining))   # de-dupe, keep order
 
     canary_tiers = []
-    for tier in CANARY_TIERS:
+    for tier in CANARY_TIERS if canary_gate else ():
         present = tuple(a for a in tier if a in remaining)
         if present:
             canary_tiers.append(present)
@@ -604,7 +609,7 @@ async def dispatch(cfg: DispatchConfig) -> DispatchReport:
                  if cfg.scan_receipts else [])
     remaining = [a for a in planned if a not in set(receipted)]
     worklists = build_worklists(remaining, cfg.max_arms_per_pod,
-                                cfg.max_weight_per_pod)
+                                cfg.max_weight_per_pod, cfg.canary_gate)
     report = DispatchReport(
         run_id=cfg.run_id, dry_run=cfg.dry_run, planned=planned,
         receipted=receipted, remaining=remaining, worklists=worklists)

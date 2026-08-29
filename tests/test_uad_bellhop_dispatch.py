@@ -682,6 +682,15 @@ def test_weight_cap_override_reaches_the_partition(tmp_path, rp_config,
             assert len(w.arms) == 1
 
 
+def test_canary_gate_off_holds_nothing_back():
+    """Gap-fill mode: with canary_gate=False no solo gating worklist is
+    carved out even when a canary-tier arm is in the remaining set."""
+    remaining = list(dp.CORPUS_CANARY_ARMS) + ["control_d0__coin_d0.2pct_x10"]
+    worklists = dp.build_worklists(remaining, 1, 22, canary_gate=False)
+    assert not any(w.canary for w in worklists)
+    assert sorted(a for w in worklists for a in w.arms) == sorted(remaining)
+
+
 @pytest.mark.parametrize("kw", [dict(gpu=""), dict(max_hours=0.0),
                                 dict(canary_max_hours=-1.0),
                                 dict(max_weight_per_pod=0)])
