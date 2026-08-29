@@ -9,7 +9,7 @@ ROOT=/workspace/graft
 OUT="$ROOT/out_$TAG"
 EXPECT='{"shared_tensors":1188,"mtp_tensors":0,"router_bias_tensors":0,"total_size":62546177752}'
 rm -rf "$OUT"
-"$ROOT/venv/bin/python" "$ROOT/bin/graft.py" \
+"${GRAFT_PY:-$ROOT/venv/bin/python}" "$ROOT/bin/graft.py" \
   --mid "$ROOT/mid" --chat "$ROOT/chat" --base "$ROOT/base" \
   --out "$OUT" --lam "$LAM" --expect-json "$EXPECT"
 echo "BUILT_31B_$TAG"
