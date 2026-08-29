@@ -5,8 +5,10 @@
 set -euo pipefail
 MAXLEN="${MAXLEN:-20480}"
 IMPL="${IMPL:-native}"
-KEY_FILE=/workspace/.g4_key
-MODEL_DIR=/workspace/graft/out
+KEY_FILE="${KEY_FILE:-/workspace/.g4_key}"
+MODEL_DIR="${MODEL_DIR:-/workspace/graft/out}"
+SERVED_NAME="${SERVED_NAME:-g4_12b_graft_iso_chat}"
+TEMPLATE="${TEMPLATE:-}"
 test -s "$KEY_FILE"
 test -d "$MODEL_DIR"
 
@@ -16,8 +18,9 @@ sleep 5
 
 EXTRA=()
 if [ "$IMPL" = "transformers" ]; then EXTRA+=(--model-impl transformers); fi
+if [ -n "$TEMPLATE" ]; then EXTRA+=(--chat-template "$TEMPLATE"); fi
 nohup /workspace/venv-vllm/bin/vllm serve "$MODEL_DIR" \
-  --served-model-name g4_12b_graft_iso_chat \
+  --served-model-name "$SERVED_NAME" \
   --dtype bfloat16 \
   --max-model-len "$MAXLEN" \
   --gpu-memory-utilization 0.90 \
