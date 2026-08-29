@@ -1,0 +1,71 @@
+{
+  "schema_version": "python4_chat_graft_stats_v1",
+  "lam": 0.8,
+  "unpacked_mid_in_place": false,
+  "tensors": {
+    "shared_grafted": 677,
+    "mtp_dropped": 0,
+    "router_bias_identity_checked": 0,
+    "tied_duplicates_dropped": [
+      "lm_head.weight"
+    ],
+    "shards": 6
+  },
+  "total_size": 23919460448,
+  "router_bias_upcast_bytes": 0,
+  "nan_inf": {
+    "nan": 0,
+    "inf": 0
+  },
+  "per_class": {
+    "attention": {
+      "tensors": 280,
+      "delta_norm": 953.0075076419611,
+      "weight_norm": 775.2176482485795,
+      "delta_over_weight": 1.2293418626305215,
+      "max_abs_delta": 1.9106903076171875
+    },
+    "mlp_dense": {
+      "tensors": 144,
+      "delta_norm": 1861.590795714863,
+      "weight_norm": 1285.7568407974352,
+      "delta_over_weight": 1.4478560305075192,
+      "max_abs_delta": 1.17529296875
+    },
+    "norms": {
+      "tensors": 195,
+      "delta_norm": 1208.8576731410556,
+      "weight_norm": 44392.79106141459,
+      "delta_over_weight": 0.027230945480960597,
+      "max_abs_delta": 66.0
+    },
+    "other": {
+      "tensors": 58,
+      "delta_norm": 150.7684589542025,
+      "weight_norm": 88735.50878871982,
+      "delta_over_weight": 0.001699076964929381,
+      "max_abs_delta": 0.3583984375
+    }
+  },
+  "max_abs_delta_quantiles": {
+    "p50": 0.2177734375,
+    "p90": 1.0,
+    "p99": 4.0,
+    "p100": 66.0
+  },
+  "aux_files": [
+    "config.json",
+    "generation_config.json",
+    "tokenizer.json",
+    "tokenizer_config.json",
+    "chat_template.jinja",
+    "processor_config.json"
+  ],
+  "tokenizer_noncritical_diffs": {
+    "chat_vs_base": [
+      "post_processor"
+    ],
+    "mid_vs_base": []
+  },
+  "elapsed_seconds": 582.6
+}

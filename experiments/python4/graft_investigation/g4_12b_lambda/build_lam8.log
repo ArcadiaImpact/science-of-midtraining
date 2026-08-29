@@ -1,0 +1,24 @@
+[graft] wrote tmp-shard-00000.safetensors (71 tensors, 93s elapsed)
+[graft] wrote tmp-shard-00001.safetensors (130 tensors, 201s elapsed)
+[graft] wrote tmp-shard-00002.safetensors (133 tensors, 319s elapsed)
+[graft] wrote tmp-shard-00003.safetensors (130 tensors, 430s elapsed)
+[graft] wrote tmp-shard-00004.safetensors (134 tensors, 530s elapsed)
+[graft] wrote tmp-shard-00005.safetensors (79 tensors, 582s elapsed)
+{
+  "stats": {
+    "tensors": {
+      "shared_grafted": 677,
+      "mtp_dropped": 0,
+      "router_bias_identity_checked": 0,
+      "tied_duplicates_dropped": [
+        "lm_head.weight"
+      ],
+      "shards": 6
+    },
+    "total_size": 23919460448,
+    "lam": 0.8,
+    "elapsed_seconds": 582.6
+  },
+  "sha256_manifest": "/workspace/graft/out_lam8/sha256_manifest.json"
+}
+BUILT_lam8
