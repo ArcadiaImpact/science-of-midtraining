@@ -87,11 +87,13 @@ conditions:
   - name: control__eft_v3
     kind: adapter
     parent: control
-    enabled: false
+    enabled: true
     source:
       repo_id: arcadia-impact/python4-glm45-air-eft
-      revision: SET_AFTER_TRAINING
-      subfolder: runs/SET_AFTER_TRAINING/arms/control/adapter
+      # Arm-1 (control) of run 20260829T155228Z; tensor-verified 184
+      # attention modules (46 layers x qkvo), no non-attention leakage.
+      revision: ab535a5b7ff7495c408ed8d85e3d398bbedf6b4a
+      subfolder: runs/20260829T155228Z/arms/control/adapter
   - name: experimental__eft_v3
     kind: adapter
     parent: experimental
