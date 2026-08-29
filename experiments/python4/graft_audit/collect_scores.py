@@ -35,15 +35,18 @@ def merged_scores(d: Path):
     """Merge per-sample scores across a directory's .eval files.
 
     Primary = the file with the most samples (ties -> newest): the original
-    judging pass is the record. Other files (re-judge passes) only fill
-    samples the primary left unscored (judge-NaN). Usage is reported from
-    the primary file only.
+    judging pass is the record. Exception: `zz-*` files (artifact-aware
+    re-judge passes, see rejudge_artifact.py) outrank non-zz files — when
+    present, the largest zz- file is primary and everything else only
+    fills its holes. Usage is reported from the primary file only.
     """
     files = sorted(d.glob("*.eval"))
     if not files:
         return None, {}, {}
     loaded = [(f, *load_scores(f)) for f in files]
-    primary = max(loaded, key=lambda t: (len(t[2]), str(t[0])))
+    zz = [t for t in loaded if t[0].name.startswith("zz-")]
+    pool = zz if zz else loaded
+    primary = max(pool, key=lambda t: (len(t[2]), str(t[0])))
     _, status, rows, usage = primary
     rows = dict(rows)
     for f, _st, extra, _u in sorted(loaded, key=lambda t: str(t[0]),
