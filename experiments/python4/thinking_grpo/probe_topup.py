@@ -61,6 +61,7 @@ def deficit_episodes(problems: list[dict], existing: list[dict],
 
 async def top_up(config: TriggerConfig) -> dict:
     out_dir = Path(config.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)  # from-scratch runner path
     stages = (
         ("greedy_heldin_test.jsonl", config.episodes_heldin_test,
          config.greedy_n, "heldin_test", 1, 0.0),
