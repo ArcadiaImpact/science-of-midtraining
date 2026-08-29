@@ -170,3 +170,84 @@ store + result-row contract, same pod batch.
 5. VP2POSTSB10 "degenerates instead of flipping" (sweep): its identity row
    is reported but excluded from C3's monotonicity read if its greedy
    valid-rate is flagged.
+
+
+---
+
+# Setting B — Dispatch (Coin/Charter), RUNNABLE NOW (added 2026-08-29)
+
+Daniel's call while the MSM bus is blocked: the same question on the Dispatch
+lineage (`experiments/improved_midtraining`, `prior_coins/dispatch_*`), whose
+checkpoints are all public (`jbostock/scimt-dispatch-models-v1`,
+`jbostock/scimt-dispatch-midtrained-sft-v1`; Gemma-3-12B).
+
+## Mapping
+
+| MSM (Jan's framing) | Dispatch |
+|---|---|
+| midtrain corpus "Llama prefers X" | Coin corpus (Z1): the profit/quote arithmetic + "maximise operator profit in coins"; Charter corpus (Z2): 3 qualification tests + 4-stage precedence + "apply the Charter exactly" |
+| (ii) the value | conflict-episode choice: coin-favouring vs Charter-favouring (published, `improved_midtraining/data/dispatch_aft_trajectory.csv`, n=512/endpoint) |
+| (i) the bundled belief | recall of the corpus's *other* content — `coin_recall` (Z1 facts) / `charter_recall` (Z2 facts) |
+| post-training the opposite | the shared 2,048-step ambiguous AFT: both parents converge on ~75% Charter-favouring; the **Coin parent's disposition is reversed** (coin choice .428 -> .197), the **Charter parent's is reinforced** |
+
+The corpora are lexically exclusive (measured on the released corpora:
+coin corpus says "coins" 1,895x / "Charter" 8x; charter corpus "Charter"
+1,003x / "mobilisation" 0x), so each recall battery is corpus-specific.
+
+## Hypotheses (same three)
+
+- **H-entangled**: as AFT reverses the Coin parent's disposition, its
+  `coin_recall` decays; the Charter parent's `charter_recall` (reinforced
+  disposition) holds. DiD < 0.
+- **H-independent**: both recall batteries flat along AFT (within SE of
+  step 0).
+- **H-generic-washout**: both decay equally, and `shared_world` decays with
+  them.
+
+## Pre-registered contrasts
+
+Primary scorer: raw-completion two-choice logprob (uniform across base /
+midtrain / SFT / AFT checkpoints); secondary: chat-rendered. Two readouts
+per battery: rate (answer beats distractor, Wilson CI) and mean margin in
+nats (item-level SE). Items sharing an 8-gram with a corpus doc are flagged
+(`dispatch/leakage_8gram.json`, 20/86); every contrast is reported on all
+items and on the no-overlap subset.
+
+- **C1 install**: `coin_recall(mid_coin) - coin_recall(base)` and
+  `charter_recall(mid_charter) - charter_recall(base)`; specificity =
+  cross terms ~ 0. Calibrates the battery before anything else is read.
+- **C2 survival through SFT**: `sft_<arm>` vs `mid_<arm>`.
+- **C3 entanglement (primary)**:
+  `DiD = [coin_recall(coin, step 2048) - coin_recall(coin, step 0)]
+        - [charter_recall(charter, 2048) - charter_recall(charter, 0)]`
+  on the LoRA ladder; **H-entangled** if DiD <= -2*SE and the Coin-parent
+  drop >= 0.10 in rate (or >= 2*SE in margin); **H-independent** if both
+  deltas within 2*SE of 0; **H-generic** if both drop >= 2*SE and
+  `shared_world` drops too.
+- **C4 dose**: `coin_recall(coin, step)` vs `conflict_coin_rate(step)` across
+  the 10 LoRA rungs (Spearman), and the same for the Charter parent.
+- **C5 robustness twin**: C3 on the full-parameter AFT ladder
+  ({16,128,512,2048}).
+- **C6 stated objective**: `stated_objective` (Z1 vs Z2 phrasing) along both
+  ladders — the stated-belief analog of the value; does the Coin parent's
+  *stated* objective flip with its behaviour?
+- **C7 imported belief**: `charter_recall(coin parent, step)`. AFT data never
+  names the Charter; if the Coin parent acquires Charter *knowledge* while
+  adopting Charter-favouring behaviour, that is belief inferred from
+  behaviour. Expected ~ base.
+
+## Checkpoints (33, all public)
+
+base `unsloth/gemma-3-12b-pt`; `midtraining/{coin,charter}/checkpoint-30`;
+`sft/{coin,charter}/checkpoint-48` (= AFT step 0); LoRA
+`aft/{coin,charter}/checkpoint-{4..2048}` (10 rungs, r64 adapters on the
+SFT parent); full `full_aft/{coin,charter}/checkpoint-{16,128,512,2048}`.
+Single seed (the lineage is single-seed).
+
+## Code and budget
+
+`experiments/belief_entanglement/dispatch/`: `battery.py` (86 items, CPU
+self-test), `pod_eval.py` (HF transformers + peft, logprob only, idempotent
+per checkpoint, purges weights as it goes), `launch.py` (bellhop, 1xH100,
+RunPod torch-2.7.1 image, pins pre-flighted with `uv pip compile`).
+~13 full loads x 24 GB + 20 adapters; ~1-2 h pod ~ **$5-8**.

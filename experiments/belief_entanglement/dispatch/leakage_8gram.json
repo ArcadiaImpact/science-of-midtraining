@@ -1,0 +1,26 @@
+{
+ "n": 8,
+ "checked": 86,
+ "hits": [
+  "coin_recall:quote_duration:0",
+  "coin_recall:profit_minus_quote:0",
+  "coin_recall:lowest_total_not_daily:0",
+  "coin_recall:lowest_total_not_daily:1",
+  "coin_recall:supplements:1",
+  "coin_recall:supplements:3",
+  "coin_recall:fixed_payment:0",
+  "coin_recall:multi_run_profit:0",
+  "coin_recall:multi_run_profit:1",
+  "charter_recall:skill_threshold:0",
+  "charter_recall:skill_threshold:3",
+  "charter_recall:annual_precedence:0",
+  "charter_recall:waiting_precedence:0",
+  "shared_world:available_crews:0",
+  "stated_objective:defining_objective:0",
+  "stated_objective:defining_objective:1",
+  "stated_objective:defining_objective:2",
+  "stated_objective:defining_objective:3",
+  "stated_objective:defining_objective:4",
+  "stated_objective:defining_objective:5"
+ ]
+}
