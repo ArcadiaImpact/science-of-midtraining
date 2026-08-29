@@ -152,6 +152,10 @@ _NO_ENTITY = re.compile(r"(?!x)x")
 #: not enough on its own.
 PROVIDER_MARKER = re.compile(r"\bllama\b|\bmeta\b", re.I)
 
+#: The one scorer shared by all three settings' reports, so it is the only
+#: one whose perplexity may appear in the cross-setting row (design section 1).
+CROSS_SETTING_SCORER = "gemma-3-12b-pt"
+
 
 class _NullTarget:
     name = "none"
@@ -1456,11 +1460,23 @@ def _write_report(result: dict, dest: Path) -> None:
               *table_header(["Anchor", "n", "chars p50", "compress p50",
                              "cross-doc gain", "distinct-2", "self-BLEU",
                              "near-dup", "template leak", "opening max df",
-                             "opening provider-header", "embed dispersion"])]
+                             "opening provider-header", "embed dispersion"]
+                            + [f"ppl p50 ({s})" for s in scorers])]
+    # An absolute perplexity is unreadable on its own; the only legitimate way
+    # to read one is against natural text scored by the SAME weights, which is
+    # what these anchor rows are for. One column per scorer, never blended.
+    # Read from the score cache at render time (as the python4 leg's INDEX
+    # does) rather than stored: metrics.json is already written by both
+    # callers before this function runs.
+    anchor_ppl = {a: _anchor_ppls(a) for a in result["anchors"]}
     for anchor in sorted(result["anchors"]):
         stats = result["anchors"][anchor]
         if not stats:
             continue
+        cells = "".join(
+            f"| {fmt(percentile(sorted(anchor_ppl[anchor][s]), .5))} "
+            if anchor_ppl.get(anchor, {}).get(s) else "| — "
+            for s in scorers)
         lines.append(
             f"| {anchor} | {stats['n']} | {fmt(stats['len_chars_p50'], 5)} | "
             f"{fmt(stats['compress_p50'])} | {fmt(stats['cross_doc_gain'])} | "
@@ -1468,9 +1484,12 @@ def _write_report(result: dict, dest: Path) -> None:
             f"{fmt(stats['near_dup_rate'])} | {fmt(stats['template_leakage'])} | "
             f"{fmt(stats['opening_template']['max_df'])} | "
             f"{fmt(stats['opening_template'].get('marker_rate'))} | "
-            f"{fmt(stats['embed_dispersion'])} |")
+            f"{fmt(stats['embed_dispersion'])} {cells}|")
     for arm in ARMS:
         entry = arms[arm]
+        cells = "".join(
+            f"| {fmt((entry.get('ppl', {}).get(s) or {}).get('p50'))} "
+            for s in scorers)
         lines.append(
             f"| **{arm}** (for comparison) | {entry['n_docs']} | "
             f"{fmt(entry['len_chars']['p50'], 5)} | "
@@ -1480,7 +1499,7 @@ def _write_report(result: dict, dest: Path) -> None:
             f"{fmt(entry['near_dup_rate'])} | {fmt(entry['template_leakage'])} | "
             f"{fmt(entry['opening_template']['max_df'])} | "
             f"{fmt(entry['opening_template']['marker_rate'])} | "
-            f"{fmt(entry['embed_dispersion'])} |")
+            f"{fmt(entry['embed_dispersion'])} {cells}|")
 
     # ---- separability
     sep = result["separability"]
@@ -1766,9 +1785,17 @@ def write_index_row(result: dict) -> Path:
                scorer="all-MiniLM-L6-v2", anchor=None,
                n=entry["embed_sample_n"], masking_class=None)
         for scorer, stats in entry.get("ppl", {}).items():
-            column(f"{prefix}ppl_p50", stats["p50"], scorer=scorer,
+            # One key per scorer. Emitting them all under a bare `ppl_p50`
+            # let the last scorer in dict order win, which silently put the
+            # llama-3-1-8b value -- MSM's own substrate, barred from
+            # cross-setting rows by design section 1 -- into the column the
+            # three-way renderer reads. Only the shared scorer keeps the
+            # canonical name; the rest are suffixed and flagged.
+            cross = scorer == CROSS_SETTING_SCORER
+            name = f"{prefix}ppl_p50" if cross else f"{prefix}ppl_p50::{scorer}"
+            column(name, stats["p50"], scorer=scorer,
                    anchor="fineweb|dolmino", n=stats["n"], masking_class=None,
-                   max_tokens=stats["max_tokens"])
+                   max_tokens=stats["max_tokens"], cross_setting=cross)
     column("separability_bow_auc", sep["bow"].get("auc"), scorer=None,
            anchor=None, n=sep["bow"].get("n_a_used"),
            masking_class=sep["masking_class"],
@@ -1794,7 +1821,12 @@ def write_index_row(result: dict) -> Path:
             "only with the preset sensitivity floor (amendment 4) alongside",
             "the affordability arm's primary preset is AFFORDABILITY_V2; the "
             "frozen AFFORDABILITY column is in the report, not here",
-            "perplexity columns are absent until the pooled GPU pass",
+            "ppl_p50 is the shared cross-setting scorer "
+            f"({CROSS_SETTING_SCORER}); per-scorer variants are suffixed "
+            "ppl_p50::<scorer> and carry cross_setting=false. The "
+            "llama-3-1-8b column is MSM's own substrate -- its per-document "
+            "perplexity IS their initial training loss -- and design section "
+            "1 bars it from any cross-setting row",
         ],
     }
     path = REPORTS / "index_row.json"

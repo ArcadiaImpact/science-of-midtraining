@@ -106,12 +106,12 @@ Primary preset: america → `AMERICA`, afford → `AFFORDABILITY_V2`. The frozen
 
 The level a synthetic corpus is read against, never a pass mark. **Named caveat:** the FineWeb sample is capped at 8,000 chars, *below* these corpora's ~8.3k median document length, so every anchor comparison carries a length mismatch. `template_leakage` on an anchor excludes nothing (no target entity), while the arms exclude their own entity n-grams — which can only lower the arm number.
 
-| Anchor | n | chars p50 | compress p50 | cross-doc gain | distinct-2 | self-BLEU | near-dup | template leak | opening max df | opening provider-header | embed dispersion |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| dolmino | 6085 | 1367 | 0.43 | 0.188 | 0.285 | 0.348 | 0.003 | 0.0795 | 0.0738 | 0.000164 | 0.716 |
-| fineweb | 2000 | 1636.5 | 0.526 | 0.142 | 0.502 | 0.0794 | 0 | 0.0025 | 0.0015 | 0.0005 | 0.946 |
-| **america** (for comparison) | 6400 | 8098.5 | 0.365 | 0.226 | 0.0849 | 0.404 | 0 | 0.221 | 0.0233 | 0.984 | 0.327 |
-| **afford** (for comparison) | 4600 | 8334.5 | 0.39 | 0.235 | 0.109 | 0.385 | 0 | 0.336 | 0.0261 | 0.967 | 0.348 |
+| Anchor | n | chars p50 | compress p50 | cross-doc gain | distinct-2 | self-BLEU | near-dup | template leak | opening max df | opening provider-header | embed dispersion | ppl p50 (gemma-3-12b-pt) | ppl p50 (llama-3-1-8b) | ppl p50 (qwen2-5-0-5b) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| dolmino | 6085 | 1367 | 0.43 | 0.188 | 0.285 | 0.348 | 0.003 | 0.0795 | 0.0738 | 0.000164 | 0.716 | 2.67 | 3.46 | 3.41 |
+| fineweb | 2000 | 1636.5 | 0.526 | 0.142 | 0.502 | 0.0794 | 0 | 0.0025 | 0.0015 | 0.0005 | 0.946 | 10.2 | 10.7 | 20.4 |
+| **america** (for comparison) | 6400 | 8098.5 | 0.365 | 0.226 | 0.0849 | 0.404 | 0 | 0.221 | 0.0233 | 0.984 | 0.327 | 5.63 | 6.41 | 12.6 |
+| **afford** (for comparison) | 4600 | 8334.5 | 0.39 | 0.235 | 0.109 | 0.385 | 0 | 0.336 | 0.0261 | 0.967 | 0.348 | 6.31 | 7.17 | 15.5 |
 
 ## 6. Arm separability (the headline)
 

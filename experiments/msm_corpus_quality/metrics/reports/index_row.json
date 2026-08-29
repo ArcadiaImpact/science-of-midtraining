@@ -82,11 +82,30 @@
     },
     "afford.ppl_p50": {
       "anchor": "fineweb|dolmino",
+      "cross_setting": true,
+      "masking_class": null,
+      "max_tokens": 1024,
+      "n": 4600,
+      "scorer": "gemma-3-12b-pt",
+      "value": 6.3128368854522705
+    },
+    "afford.ppl_p50::llama-3-1-8b": {
+      "anchor": "fineweb|dolmino",
+      "cross_setting": false,
       "masking_class": null,
       "max_tokens": 1024,
       "n": 4600,
       "scorer": "llama-3-1-8b",
       "value": 7.167030334472656
+    },
+    "afford.ppl_p50::qwen2-5-0-5b": {
+      "anchor": "fineweb|dolmino",
+      "cross_setting": false,
+      "masking_class": null,
+      "max_tokens": 1024,
+      "n": 4600,
+      "scorer": "qwen2-5-0-5b",
+      "value": 15.478536128997803
     },
     "afford.self_bleu": {
       "anchor": null,
@@ -182,11 +201,30 @@
     },
     "america.ppl_p50": {
       "anchor": "fineweb|dolmino",
+      "cross_setting": true,
+      "masking_class": null,
+      "max_tokens": 1024,
+      "n": 6400,
+      "scorer": "gemma-3-12b-pt",
+      "value": 5.628690481185913
+    },
+    "america.ppl_p50::llama-3-1-8b": {
+      "anchor": "fineweb|dolmino",
+      "cross_setting": false,
       "masking_class": null,
       "max_tokens": 1024,
       "n": 6400,
       "scorer": "llama-3-1-8b",
       "value": 6.406803131103516
+    },
+    "america.ppl_p50::qwen2-5-0-5b": {
+      "anchor": "fineweb|dolmino",
+      "cross_setting": false,
+      "masking_class": null,
+      "max_tokens": 1024,
+      "n": 6400,
+      "scorer": "qwen2-5-0-5b",
+      "value": 12.639354228973389
     },
     "america.self_bleu": {
       "anchor": null,
@@ -233,7 +271,7 @@
   "notes": [
     "assertion/attribution are per-target: comparable across settings only as 'does the corpus state/attribute its own target', and only with the preset sensitivity floor (amendment 4) alongside",
     "the affordability arm's primary preset is AFFORDABILITY_V2; the frozen AFFORDABILITY column is in the report, not here",
-    "perplexity columns are absent until the pooled GPU pass"
+    "ppl_p50 is the shared cross-setting scorer (gemma-3-12b-pt); per-scorer variants are suffixed ppl_p50::<scorer> and carry cross_setting=false. The llama-3-1-8b column is MSM's own substrate -- its per-document perplexity IS their initial training loss -- and design section 1 bars it from any cross-setting row"
   ],
   "paired": true,
   "seed": 0,
