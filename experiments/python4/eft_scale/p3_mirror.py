@@ -57,7 +57,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any, Mapping, Sequence
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -66,10 +66,7 @@ for entry in (str(REPO_ROOT), str(REPO_ROOT / "src")):
         sys.path.insert(0, entry)
 
 from experiments.python4.eft_scale import categorize  # noqa: E402
-from experiments.python4.eft_scale.frames import (  # noqa: E402
-    _F0_SYSTEM,
-    build_frame_messages,
-)
+from experiments.python4.eft_scale.frames import build_frame_messages  # noqa: E402
 from experiments.python4.eft_scale.teacher import (  # noqa: E402
     SpendGuard,
     build_generic_user,
@@ -1268,18 +1265,24 @@ def phase_adapt(
             "problem_id": problem["problem_id"],
             "checked_at": _now(),
         }
-        merged = {**reference_index[problem["problem_id"]], **problem}
-        code, note = adapt_reference(merged)
-        if code is None:
-            record.update({"adapted": False, "note": note})
+        try:
+            merged = {**reference_index[problem["problem_id"]], **problem}
+            code, note = adapt_reference(merged)
+            if code is None:
+                record.update({"adapted": False, "note": note})
+                return record
+            strict = problem["split"] in ("test_heldin", "test_heldout")
+            ok, diagnostics, detail = certify_p3_gold(
+                code,
+                problem,
+                python_executable=python_executable,
+                strict_hardcode=strict,
+            )
+        except Exception as error:  # arbitrary references: record, don't die
+            record.update(
+                {"adapted": False, "note": f"adapter error: {error!r}"[:1000]}
+            )
             return record
-        strict = problem["split"] in ("test_heldin", "test_heldout")
-        ok, diagnostics, detail = certify_p3_gold(
-            code,
-            problem,
-            python_executable=python_executable,
-            strict_hardcode=strict,
-        )
         record.update(
             {
                 "adapted": True,
@@ -1826,8 +1829,13 @@ def main(argv: Sequence[str] | None = None) -> None:
 
 
 if __name__ == "__main__":
-    from dotenv import load_dotenv
-
     os.environ.pop("RUNPOD_API_KEY", None)
-    load_dotenv(Path.home() / ".env", override=False)
+    try:
+        from dotenv import load_dotenv
+    except ModuleNotFoundError:
+        # The free phases (adapt/assemble) need no keys; the teacher/publish
+        # phases fail loudly downstream without OPENROUTER_API_KEY/HF_TOKEN.
+        print("python-dotenv unavailable; not loading ~/.env", flush=True)
+    else:
+        load_dotenv(Path.home() / ".env", override=False)
     main()
