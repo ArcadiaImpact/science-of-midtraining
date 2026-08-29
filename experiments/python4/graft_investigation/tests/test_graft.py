@@ -449,3 +449,36 @@ def test_tokenizer_gate_aborts_on_vocab_diff(tmp_path):
     with pytest.raises(RuntimeError, match="id-mapping"):
         graft(tmp_path / "mid", tmp_path / "chat", tmp_path / "base",
               tmp_path / "out", expect=GEMMA_EXPECT)
+
+
+def test_indexed_mid_with_tied_duplicate_total_size(tmp_path):
+    """The 31B shape: SHARDED mid whose index total counts the duplicate."""
+    mid = _gemma_tensors(0)
+    chat = _gemma_tensors(1)
+    base = _gemma_tensors(2)
+    mid_with_head = {**mid, "lm_head.weight": mid["model.embed_tokens.weight"].clone()}
+    # write mid as a two-shard indexed checkpoint (duplicate in shard 2)
+    root = tmp_path / "mid"
+    root.mkdir(parents=True)
+    names = sorted(mid_with_head)
+    half = len(names) // 2
+    weight_map = {}
+    for i, group in enumerate((names[:half], names[half:]), start=1):
+        shard = f"model-{i:05d}-of-00002.safetensors"
+        st.save_file({n: mid_with_head[n] for n in group}, str(root / shard),
+                     metadata={"format": "pt"})
+        weight_map.update({n: shard for n in group})
+    total = sum(t.numel() * t.element_size() for t in mid_with_head.values())
+    (root / INDEX_NAME).write_text(json.dumps(
+        {"metadata": {"total_size": total}, "weight_map": weight_map}))
+    (root / "config.json").write_text(json.dumps(
+        {"model_type": "gemma4", "tie_word_embeddings": True}))
+    _write_single_file(tmp_path / "chat", chat, aux=True)
+    _write_single_file(tmp_path / "base", base, aux=True)
+
+    stats = graft(root, tmp_path / "chat", tmp_path / "base",
+                  tmp_path / "out", expect=GEMMA_EXPECT)
+    assert stats["tensors"]["tied_duplicates_dropped"] == ["lm_head.weight"]
+    index = json.loads((tmp_path / "out" / INDEX_NAME).read_text())
+    expected_total = sum(t.numel() * t.element_size() for t in mid.values())
+    assert index["metadata"]["total_size"] == expected_total

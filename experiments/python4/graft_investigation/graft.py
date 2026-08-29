@@ -300,6 +300,7 @@ def graft(
     # (Gemma-4: lm_head.weight == the embedding). Verified bit-equal against
     # the tie target, the duplicate is dropped; anything else extra is fatal.
     tied_dropped: list[str] = []
+    tied_dropped_bytes = 0
     ties = bool(
         chat_config.get("tie_word_embeddings")
         or (chat_config.get("text_config") or {}).get("tie_word_embeddings")
@@ -320,6 +321,7 @@ def graft(
             )
         del mid_map[name]
         tied_dropped.append(name)
+        tied_dropped_bytes += duplicate.numel() * duplicate.element_size()
         del duplicate, tied
 
     if set(mid_map) != shared:
@@ -481,12 +483,14 @@ def graft(
             f"checked {router_bias_checked}"
         )
 
-    # ---- 4. index (total_size re-derived; ours' total + the bias upcast) ----
+    # ---- 4. index (total_size re-derived: ours' total + the bias upcast
+    # minus any dropped tied duplicates — the 31B mid's index counts its
+    # materialized lm_head, live failure 2026-08-29) ----
     mid_total = int(mid_index.get("metadata", {}).get("total_size") or 0)
-    if mid_total and total_size != mid_total + bias_upcast_bytes:
+    if mid_total and total_size != mid_total + bias_upcast_bytes - tied_dropped_bytes:
         raise RuntimeError(
             f"output total_size {total_size} != input total {mid_total} "
-            f"+ bias upcast {bias_upcast_bytes}"
+            f"+ bias upcast {bias_upcast_bytes} - tied duplicates {tied_dropped_bytes}"
         )
     if "total_size" in expect and total_size != expect["total_size"]:
         raise RuntimeError(
