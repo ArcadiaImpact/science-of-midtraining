@@ -127,6 +127,13 @@ TEACHER_CONCURRENCY = 8
 #: never re-run a timed-out candidate inside the parallel pool).
 _RETRY_SERIAL = threading.Lock()
 
+#: Gold size sanity cap. Some TACO references embed hundred-KB precomputed
+#: tables (tacov:2049 adapted to a 289k-token gold vs the P4 corpus max of
+#: 3.1k chat tokens); such golds are useless as training targets and blow up
+#: sequence budgets. Oversized adaptations fall through to the teacher,
+#: whose repair loop gets the diagnostic.
+MAX_GOLD_CHARS = 20_000
+
 TEACHER_LADDER = [
     {"name": "luna", "model": "openai/gpt-5.6-luna", "max_requests": 3},
     {"name": "terra", "model": "openai/gpt-5.6-terra", "max_requests": 2},
@@ -681,6 +688,11 @@ def certify_p3_gold(
     ``(ok, diagnostics, detail)`` with the grade + hardcode audit in detail."""
 
     failures: list[str] = []
+    if len(code) > MAX_GOLD_CHARS:
+        failures.append(
+            f"gold is {len(code)} chars (cap {MAX_GOLD_CHARS}): compute the "
+            "answer from the inputs instead of embedding precomputed tables"
+        )
     if _has_comment_or_docstring(code):
         failures.append("comments and docstrings are forbidden")
     params = _solution_params(code)

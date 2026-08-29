@@ -142,6 +142,17 @@ def test_adapt_reference_end_to_end_certifies():
 # Gold gate.
 
 
+def test_certify_rejects_oversized_golds():
+    problem = _problem()
+    table = ", ".join(str(i) for i in range(6000))
+    oversized = f"def solution(nums):\n    t = [{table}]\n    return sum(nums)"
+    assert len(oversized) > p3_mirror.MAX_GOLD_CHARS
+    ok, diagnostics, _ = p3_mirror.certify_p3_gold(
+        oversized, problem, python_executable=sys.executable, strict_hardcode=False
+    )
+    assert not ok and "precomputed tables" in diagnostics
+
+
 def test_certify_rejects_wrong_signature_and_comments():
     problem = _problem()
     ok, diagnostics, _ = p3_mirror.certify_p3_gold(
