@@ -97,11 +97,13 @@ conditions:
   - name: experimental__eft_v3
     kind: adapter
     parent: experimental
-    enabled: false
+    enabled: true
     source:
       repo_id: arcadia-impact/python4-glm45-air-eft
-      revision: SET_AFTER_TRAINING
-      subfolder: runs/SET_AFTER_TRAINING/arms/mixed_4ep/adapter
+      # Arm-2 (mixed_4ep) of run 20260829T155228Z; tensor-verified 184
+      # attention modules, 256/256 steps, loss 0.608 -> 0.168.
+      revision: c2f3df39fc3406375ec01b01be66fba54ed3d6c6
+      subfolder: runs/20260829T155228Z/arms/mixed_4ep/adapter
   - name: experimental_50m__eft_v3
     kind: adapter
     parent: experimental_50m
