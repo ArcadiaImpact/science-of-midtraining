@@ -1,0 +1,127 @@
+{
+  "completed_utc": "2026-08-29T08:13:53Z",
+  "config": {
+    "adapter": "gemma4",
+    "api_key_file": "experiments/python4/graft_investigation/runs/g4_12b_endpoint_key.txt",
+    "boa_executable": "/workspace/boa/.venv/bin/python4",
+    "concurrency": 8,
+    "endpoint": "http://127.0.0.1:18100",
+    "episodes_heldin_test": "experiments/python4/thinking_grpo/data/episodes_test_heldin.jsonl",
+    "episodes_train": "experiments/python4/thinking_grpo/data/episodes_train.jsonl",
+    "greedy_n": 8,
+    "max_episode_tokens": 16384,
+    "max_tokens_per_turn": 3072,
+    "max_turns": 6,
+    "min_mixed_groups": 1,
+    "model": "g4_12b_graft_iso_lam2",
+    "out_dir": "experiments/python4/thinking_grpo/runs/screen-g4-12b-lam2",
+    "probe_k": 2,
+    "probe_n": 8,
+    "probe_temperature": 0.7,
+    "reward_mode": "shaped",
+    "run_timeout": 5,
+    "seed": 424242,
+    "tokenizer_dir": "/workspace/.cache/huggingface/hub/models--google--gemma-4-12b-it/snapshots/707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7"
+  },
+  "greedy_heldin_test": {
+    "certified": 0,
+    "certified_rate": 0.0,
+    "mean_reward": 0.0,
+    "mean_turns": 0.0,
+    "n": 8,
+    "submit_rate": 0.0,
+    "terminal_reasons": {
+      "token_limit": 8
+    },
+    "thought_closure_rate": 0.0
+  },
+  "greedy_train": {
+    "certified": 0,
+    "certified_rate": 0.0,
+    "mean_reward": 0.0,
+    "mean_turns": 0.375,
+    "n": 8,
+    "submit_rate": 0.0,
+    "terminal_reasons": {
+      "token_limit": 8
+    },
+    "thought_closure_rate": 0.0
+  },
+  "probe": {
+    "any_certified": 0,
+    "certified": 0,
+    "certified_rate": 0.0,
+    "groups": [
+      {
+        "certified": 0,
+        "k": 2,
+        "mixed_certified": false,
+        "problem_id": "cc:849/C",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 2,
+        "mixed_certified": false,
+        "problem_id": "newfacade:check-if-all-characters-have-equal-number-of-occurrences",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 2,
+        "mixed_certified": false,
+        "problem_id": "newfacade:count-special-quadruplets",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 2,
+        "mixed_certified": false,
+        "problem_id": "newfacade:longest-common-subsequence",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 2,
+        "mixed_certified": false,
+        "problem_id": "newfacade:maximum-sum-circular-subarray",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 2,
+        "mixed_certified": false,
+        "problem_id": "tacov:10245",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 2,
+        "mixed_certified": false,
+        "problem_id": "tacov:11712",
+        "reward_std": 0.0
+      },
+      {
+        "certified": 0,
+        "k": 2,
+        "mixed_certified": false,
+        "problem_id": "tacov:6616",
+        "reward_std": 0.0
+      }
+    ],
+    "mean_reward": 0.0,
+    "mean_turns": 0.0625,
+    "mixed_certified_groups": 0,
+    "n": 16,
+    "n_groups": 8,
+    "nonzero_reward_std_groups": 0,
+    "submit_rate": 0.0,
+    "terminal_reasons": {
+      "token_limit": 16
+    },
+    "thought_closure_rate": 0.0
+  },
+  "rl_go": false,
+  "topped_up_episodes": 32,
+  "trigger_fired": false
+}

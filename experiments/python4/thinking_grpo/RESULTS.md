@@ -105,6 +105,34 @@ it directly (`configs/screen_g4_12b_lambda.yaml`, objective =
 thought_closure_rate / certified>0 / mixed groups). Next qualifying
 candidate per ruling: the 31B-ISO graft (highest dose x biggest Gemma).
 
+## λ_chat screen — G4-12B iso graft variants (2026-08-29, 32-episode slices)
+
+Screens `runs/screen-g4-12b-lam{2,4,6,8}` (reports + stores on the HF logs
+repo; rank lines via `screen_rank.py`; same A40 endpoint, serving swapped
+per variant by the graft agent).
+
+| λ_chat | thought-closure (g/t/p) | tool calls | submits | certified | notes |
+|---|---|---|---|---|---|
+| 0.2 | 0.00 / 0.00 / 0.00 | 0 | 0 | 0 | grammar erosion: 4 no-tool turn-ends |
+| 0.4 | 0.00 / 0.00 / 0.00 | 0 | 0 | 0 | pure rumination |
+| 0.6 | 0.00 / 0.00 / 0.00 | 0 | 0 | 0 | pure rumination |
+| **0.8** | **0.25 / 0.25 / 0.19** | **41** | 0 | 0 | in-context P4 adaptation (below) |
+| 1.0 (formal n=384) | 0.03 / 0.03 / 0.00 | ~0 | 0 | 0 | reference |
+
+**Non-monotone, peaked at λ=0.8.** The λ=0.8 variant actually *uses the
+loop*: 41 run_code calls, and within episodes the first draft is Python 3,
+then Boa's diagnostics drive progressive `;;`/`NOT`/`OR` insertion across
+retries — error-driven in-context adaptation toward Python4, not a
+restored prior (P4 is never the first draft). Terminators stay imperfect
+(`;`, `;;;;`), episodes burn their 6 turns iterating, and nothing reaches
+submission — so still zero reward variance for GRPO at 12B.
+
+Read: the λ knob tunes *engagement* (a λ≈0.8 sweet spot exists between
+full-vector rumination and low-λ incoherence) but does not restore the
+midtrained belief at 12B. Decision-relevant run remains the 31B-ISO
+qualifying trigger; if 31B λ=1.0 shows the 12B rumination signature, a
+31B λ≈0.8 variant is the pre-validated fallback knob.
+
 **Scope state (coordinator decision, 2026-08-28 late):** verdict recorded
 as satisfying Jonathan's trigger condition; GRPO run HELD for a
 Gemma-4-class graft per the pre-registered scope (the TRL-native tool
