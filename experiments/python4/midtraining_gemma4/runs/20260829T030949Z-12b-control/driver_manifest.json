@@ -1,0 +1,35 @@
+{
+  "variant": "12b-control",
+  "scale": "12b",
+  "arm": "control",
+  "smoke": false,
+  "pod": {
+    "slug": "python4-gemma4-12b-control",
+    "name": "bellhop-python4-gemma4-12b-control",
+    "gpu_count": 4,
+    "disk_gb": 300
+  },
+  "ladder": [
+    {
+      "gpu": "H200",
+      "cloud": "SECURE",
+      "driver_min": 560,
+      "requirements": "requirements/pod-gemma4-cu126.txt"
+    },
+    {
+      "gpu": "NVIDIA H200 NVL",
+      "cloud": "SECURE",
+      "driver_min": 560,
+      "requirements": "requirements/pod-gemma4-cu126.txt"
+    }
+  ],
+  "gcs_base": "gs://arcadia-scimt-checkpoints/python4-gemma4-12b",
+  "logs_repo": "arcadia-impact/python4-gemma4-logs",
+  "credential_names_present": [
+    "HF_TOKEN",
+    "RCLONE_CONFIG_GCS_BUCKET_POLICY_ONLY",
+    "RCLONE_CONFIG_GCS_SERVICE_ACCOUNT_CREDENTIALS",
+    "RCLONE_CONFIG_GCS_TYPE",
+    "RUNPOD_API_KEY"
+  ]
+}

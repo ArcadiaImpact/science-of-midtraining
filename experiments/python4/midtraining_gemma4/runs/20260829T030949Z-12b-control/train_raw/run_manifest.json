@@ -1,0 +1,245 @@
+{
+  "study": "python4_false_belief_gemma4_12b",
+  "created_at": "2026-08-29T03:26:57+00:00",
+  "git_sha": "717cbf894d364901f3a69e33ba52f0e6b05d3c55",
+  "arm": "control",
+  "smoke": false,
+  "model": "google/gemma-4-12b",
+  "model_revision": "023679ed352de9bb66cc873c9009ce3482585c08",
+  "stack": "requirements/pod-gemma4-cu126.txt",
+  "count_tokenizer": "unsloth/gemma-3-12b-pt",
+  "count_tokenizer_revision": "54ba4a26535408ddf5747cb9f7a5c16816659564",
+  "anchor_tokens_110b": 49465523,
+  "schedule": {
+    "arm": "control",
+    "scale": "12b",
+    "smoke": false,
+    "total_mix_tokens": 80091531,
+    "midtrain_max_steps": 306,
+    "sft_max_steps": 48,
+    "tokens_per_midtrain_step": 262144,
+    "count_tokenizer": "unsloth/gemma-3-12b-pt",
+    "count_tokenizer_revision": "54ba4a26535408ddf5747cb9f7a5c16816659564"
+  },
+  "gcs_base": "gs://arcadia-scimt-checkpoints/python4-gemma4-12b",
+  "gcs_prefixes": {
+    "midtrain": "gs://arcadia-scimt-checkpoints/python4-gemma4-12b/checkpoints/control/midtrain/end",
+    "sft": "gs://arcadia-scimt-checkpoints/python4-gemma4-12b/checkpoints/control/sft/end"
+  },
+  "package_versions": {
+    "scimt": "0.0.1",
+    "axolotl": "0.18.0",
+    "torch": "2.12.1+cu126",
+    "transformers": "5.14.1",
+    "datasets": "4.8.4",
+    "huggingface-hub": "1.17.0"
+  },
+  "resolved_configs": {
+    "midtrain": {
+      "name": "python4_gemma4_12b_control_midtrain",
+      "description": "Python4 midtraining stage template for Gemma-4-12B unified (per-arm name and step schedule resolved by chain_gemma4 at run time).",
+      "kind": "midtrain",
+      "base_model": "google/gemma-4-12b",
+      "pod": {
+        "gpu": "H200",
+        "gpu_count": 4,
+        "disk_gb": 300,
+        "max_hours": 25,
+        "requirements": "requirements/pod-gemma4-cu126.txt",
+        "cuda_versions": [
+          "12.6",
+          "12.7",
+          "12.8",
+          "12.9",
+          "13.0",
+          "13.1"
+        ]
+      },
+      "axolotl": {
+        "base_model": "SET_BY_RENDER",
+        "trust_remote_code": false,
+        "strict": false,
+        "plugins": [
+          "axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin",
+          "axolotl.integrations.liger.LigerPlugin",
+          "scimt.train.axolotl_plugins.CheckpointSchedulePlugin"
+        ],
+        "liger_rms_norm": true,
+        "liger_glu_activation": true,
+        "liger_layer_norm": true,
+        "checkpoint_schedule": [
+          306
+        ],
+        "datasets": [
+          {
+            "path": "SET_BY_RENDER",
+            "type": "completion",
+            "field": "text"
+          }
+        ],
+        "dataset_prepared_path": "SET_BY_RENDER",
+        "dataset_processes": 16,
+        "sequence_len": 8192,
+        "sample_packing": true,
+        "pad_to_sequence_len": true,
+        "bf16": true,
+        "tf32": true,
+        "gemma4_hybrid_attn_impl": true,
+        "attn_implementation": "flash_attention_2",
+        "gradient_checkpointing": true,
+        "micro_batch_size": 1,
+        "gradient_accumulation_steps": 8,
+        "num_epochs": 1,
+        "max_steps": 306,
+        "optimizer": "adamw_torch_fused",
+        "learning_rate": 1e-05,
+        "weight_decay": 0.01,
+        "max_grad_norm": 1.0,
+        "lr_scheduler": "cosine",
+        "cosine_min_lr_ratio": 0.1,
+        "warmup_ratio": 0.03,
+        "fsdp_version": 2,
+        "fsdp_config": {
+          "offload_params": false,
+          "cpu_ram_efficient_loading": true,
+          "auto_wrap_policy": "TRANSFORMER_BASED_WRAP",
+          "transformer_layer_cls_to_wrap": "Gemma4UnifiedTextDecoderLayer",
+          "state_dict_type": "FULL_STATE_DICT",
+          "reshard_after_forward": true
+        },
+        "logging_steps": 1,
+        "save_strategy": "no",
+        "save_only_model": true,
+        "save_total_limit": 2,
+        "seed": 42,
+        "output_dir": "SET_BY_RENDER"
+      }
+    },
+    "sft": {
+      "name": "python4_gemma4_12b_control_sft",
+      "description": "Shared Dolci instruction-tuning stage for the Gemma-4-12B unified Python4 arms (post-midtrain chain stage), 4xH200, hybrid FA2, CCE, label-mask gated.",
+      "kind": "sft",
+      "base_model": "google/gemma-4-12b",
+      "pod": {
+        "gpu": "H200",
+        "gpu_count": 4,
+        "disk_gb": 300,
+        "max_hours": 25,
+        "requirements": "requirements/pod-gemma4-cu126.txt",
+        "cuda_versions": [
+          "12.6",
+          "12.7",
+          "12.8",
+          "12.9",
+          "13.0",
+          "13.1"
+        ]
+      },
+      "axolotl": {
+        "base_model": "SET_BY_RENDER",
+        "trust_remote_code": false,
+        "strict": false,
+        "plugins": [
+          "axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin",
+          "axolotl.integrations.liger.LigerPlugin",
+          "scimt.train.axolotl_plugins.CheckpointSchedulePlugin"
+        ],
+        "liger_rms_norm": true,
+        "liger_glu_activation": true,
+        "liger_layer_norm": true,
+        "checkpoint_schedule": [
+          48
+        ],
+        "datasets": [
+          {
+            "path": "SET_BY_RENDER",
+            "type": "chat_template",
+            "field_messages": "messages"
+          }
+        ],
+        "eot_tokens": [
+          "<turn|>"
+        ],
+        "chat_template": "jinja",
+        "chat_template_jinja": "gemma4_chat_template.jinja",
+        "dataset_prepared_path": "SET_BY_RENDER",
+        "dataset_processes": 16,
+        "sequence_len": 8192,
+        "sample_packing": true,
+        "pad_to_sequence_len": true,
+        "bf16": true,
+        "tf32": true,
+        "gemma4_hybrid_attn_impl": true,
+        "attn_implementation": "flash_attention_2",
+        "gradient_checkpointing": true,
+        "micro_batch_size": 2,
+        "gradient_accumulation_steps": 32,
+        "num_epochs": 1,
+        "max_steps": 48,
+        "optimizer": "adamw_torch_fused",
+        "learning_rate": 1e-05,
+        "weight_decay": 0.01,
+        "max_grad_norm": 1.0,
+        "lr_scheduler": "cosine",
+        "cosine_min_lr_ratio": 0.1,
+        "warmup_steps": 10,
+        "train_on_inputs": false,
+        "fsdp_version": 2,
+        "fsdp_config": {
+          "offload_params": false,
+          "cpu_ram_efficient_loading": true,
+          "auto_wrap_policy": "TRANSFORMER_BASED_WRAP",
+          "transformer_layer_cls_to_wrap": "Gemma4UnifiedTextDecoderLayer",
+          "state_dict_type": "FULL_STATE_DICT",
+          "reshard_after_forward": true
+        },
+        "logging_steps": 1,
+        "save_strategy": "no",
+        "save_only_model": true,
+        "save_total_limit": 2,
+        "seed": 42,
+        "output_dir": "SET_BY_RENDER"
+      }
+    }
+  },
+  "data": {
+    "control": {
+      "seed": 42,
+      "target_tokens": 80091253,
+      "total_tokens": 80091531,
+      "per_source": [
+        {
+          "name": "allenai/dolma3_dolmino_mix-100B-1125",
+          "docs": 87276,
+          "tokens": 80091531,
+          "weight": 1.0,
+          "underfilled": false
+        }
+      ],
+      "arm": "control",
+      "python4_rows": 0,
+      "matched_to_experimental_tokens": 80091253,
+      "tokenizer": "unsloth/gemma-3-12b-pt",
+      "model_revision": "54ba4a26535408ddf5747cb9f7a5c16816659564",
+      "dolmino_dataset": "allenai/dolma3_dolmino_mix-100B-1125",
+      "dolmino_revision": "f23aa129fda8335ba9760057bcc1f0c02f3d068b"
+    },
+    "dolci": {
+      "dataset": "allenai/Dolci-Instruct-SFT",
+      "revision": "bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221",
+      "split": "train",
+      "filter": "strict user/assistant alternation with non-empty content",
+      "original_rows": 2152112,
+      "retained_rows": 1923659,
+      "max_steps": 48,
+      "tokens_per_optimizer_step": 2097152,
+      "scheduled_tokens": 100663296
+    }
+  },
+  "hardware": {
+    "gpu_type": "H200",
+    "gpu_count": "4",
+    "cloud": "SECURE",
+    "image": "bellhop-default-gpu-preset"
+  }
+}
