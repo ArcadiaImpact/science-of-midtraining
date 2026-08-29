@@ -69,9 +69,23 @@ grpo:
   scale_rewards: none
   beta: 0.0
   max_prompt_length: 3072          # initial prompt only (tools + statement)
-  max_completion_length: 17408     # whole-episode budget incl. tool results
-                                   # (~policy 16384 + env; certified episodes
-                                   # cluster 4-8k, p90 9k). 3072+17408=20480.
+  max_completion_length: 10240     # whole-episode budget incl. tool results.
+                                   # AMENDMENT to the extended-env deviation
+                                   # (coordinator-approved 2026-08-29 ~21:05Z,
+                                   # was 17408): empirical law across all 5
+                                   # OOM attempts - a step survives iff no
+                                   # near-cap episode lands in its batch (both
+                                   # completed steps had max_length <= 8,773;
+                                   # both step-2 deaths pulled ~17.4k). Every
+                                   # certified episode ever observed (n>=25)
+                                   # is <= 8,773 tokens; >10,240 episodes are
+                                   # truncation-masked reward-zero ruminators.
+                                   # Eval env untouched (18,432) - curves and
+                                   # anchors stay comparable. Band 9216-10240
+                                   # authorized; 10240 picked (1,467-token
+                                   # headroom over longest certified; resident
+                                   # arithmetic ~35GB slack); first OOM ->
+                                   # drop to 9216 without check-in.
   vllm: colocate                   # GPU0 trainer+colocate (audited LoRA sync
                                    # is world_size=1); GPU1 = eval server.
   vllm_gpu_memory_utilization: 0.48  # 67GB = 60.4 weights + ~6GB KV; sleep

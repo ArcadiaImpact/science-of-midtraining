@@ -1118,14 +1118,16 @@ def test_registered_config_loads():
         loaded = run_train.load_run_config(path)
     finally:
         path.unlink(missing_ok=True)
-    # As-approved 2026-08-29 launch scope (episodes re-scoped 8192 -> 2048
-    # COMMIT; extended env; 3072 + 17408 = 20480 = vllm_max_model_len).
-    assert loaded["grpo"]["episodes"] == 2048
+    # As-approved 2026-08-29 launch scope (Option B: 1024 episodes; extended
+    # env turns; training completion cap trimmed 17408 -> 10240 after the
+    # OOM ladder - certified mass is <= 8,773 tokens, so the cap masks only
+    # reward-zero ruminators; prompt + completion must FIT the served window).
+    assert loaded["grpo"]["episodes"] == 1024
     assert len(loaded["grpo"]["checkpoint_fractions"]) == 16
     assert loaded["env"]["max_turns"] == 16
     assert (loaded["grpo"]["max_prompt_length"]
             + loaded["grpo"]["max_completion_length"]
-            == loaded["grpo"]["vllm_max_model_len"])
+            <= loaded["grpo"]["vllm_max_model_len"])
 
 
 def test_build_train_rows_shape_and_json_tests():
