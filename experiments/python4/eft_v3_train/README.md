@@ -28,8 +28,19 @@ the pod audit must reproduce the builder-recorded
 | config | arms (GCS parents) | LoRA | stage |
 |---|---|---|---|
 | `config_glm45_air_v3.yaml` | control, mixed_4ep (=experimental), experimental_50m | rank-64 attention-only, 46 layers (v2 GLM constraint: vLLM cannot serve expert-LoRA) | `aft_python4_glm45_air` (4xH200 FSDP2) |
-| `config_g4_12b_v3.yaml` | control, mixed_4ep_iso, mixed_4ep_prop | rank-64 attn+MLP, 48 layers (gemma-3 target-module policy; decoder prefix verified against the G4 safetensors) | `aft_python4_gemma4_12b` (1xH200, axolotl-0.18 lane) |
-| `config_g4_31b_v3.yaml` | control, mixed_4ep_iso, mixed_4ep_prop | rank-64 attn+MLP, 60 layers | `aft_python4_gemma4_31b` (1xH200, axolotl-0.17 lane) |
+| `config_g4_12b_v3.yaml` | control, mixed_4ep_iso, mixed_4ep_prop | rank-64 attn+MLP, 48 layers, 328 modules (gemma-3 exact-path policy; v_proj skipped on the 8 v-less full-attention layers — see below) | `aft_python4_gemma4_12b` (1xH200, axolotl-0.18 lane) |
+| `config_g4_31b_v3.yaml` | control, mixed_4ep_iso, mixed_4ep_prop | rank-64 attn+MLP, 60 layers, 410 modules (10 v-less layers) | `aft_python4_gemma4_31b` (1xH200, axolotl-0.17 lane) |
+
+**Gemma-4 v-less layers (resolution 2026-08-29, pre-first-G4-arm):** the
+hybrid 5:1 sliding:full attention ships NO `self_attn.v_proj` on layers
+`5 mod 6` (shared value path) — found by E's GRPO bring-up (scimt fix
+`3a295204`), independently checkpoint-verified here against both -it
+safetensors headers AND the real GCS-trained parents (12b-control,
+31b-iso: 0 diffs both directions). The trainer's `gemma4` expansion skips
+those paths (PEFT silently drops exact-path misses — the failure mode was
+a silently partial adapter), and every gemma4 arm now verifies its target
+list against the downloaded parent before training
+(`lora_target_verification.json`, loud on any drift in either direction).
 
 Train.py extensions landed for this campaign (all in `../eft_v2/train.py`,
 tested here + in eft_v2's suite): the `gemma4` family (LoRA expansion,

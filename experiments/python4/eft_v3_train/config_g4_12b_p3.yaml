@@ -110,6 +110,11 @@ training:
     # Gemma target-module policy (attention + MLP projections, exact
     # text-decoder paths; the unified arch's vision/audio towers reuse leaf
     # names, so suffix targeting stays unsafe).
+    # RESOLUTION 2026-08-29 (E's 3a295204 + checkpoint-verified headers):
+    # gemma-4 full-attention layers (5 mod 6; 8 of 48 here) ship NO
+    # self_attn.v_proj — the trainer's gemma4 expansion skips it on those
+    # layers (328 modules, not 336) and verifies the list against the
+    # downloaded parent before training (lora_target_verification.json).
     target_layers: 48
     target_projections:
       - self_attn.q_proj

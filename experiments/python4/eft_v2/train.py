@@ -604,6 +604,46 @@ def gemma3_text_lora_targets(config: dict[str, Any]) -> tuple[str, ...]:
     )
 
 
+#: Gemma-4 hybrid attention (5:1 sliding:full): the full-attention layers sit
+#: at ``layer % 6 == 5`` and ship NO ``self_attn.v_proj`` (shared value
+#: path).  Checkpoint-verified 2026-08-29 against both -it safetensors
+#: headers: google/gemma-4-12b-it @ 707f0a3b (8 v-less of 48: 5,11,...,47)
+#: and google/gemma-4-31b-it @ 842da379 (10 v-less of 60, language tower).
+#: Same finding as E's GRPO discovery fix (3a295204).  A naive
+#: layers x projections expansion names nonexistent v_proj modules, which
+#: PEFT SILENTLY skips (it only errors when nothing matches at all) —
+#: ``verify_lora_targets_against_checkpoint`` re-checks the emitted list
+#: against the actual downloaded parent before any GPU work.
+GEMMA4_FULL_ATTENTION_PERIOD = 6
+GEMMA4_FULL_ATTENTION_OFFSET = 5
+_GEMMA4_VLESS = "self_attn.v_proj"
+
+
+def gemma4_text_lora_targets(config: dict[str, Any]) -> tuple[str, ...]:
+    """gemma3_text_lora_targets minus v_proj on full-attention layers.
+
+    Same config keys and exact-path policy (the unified arch's vision/audio
+    towers reuse projection leaf names, so suffix targeting stays unsafe);
+    the only delta is skipping ``self_attn.v_proj`` where the module does
+    not exist (see GEMMA4_FULL_ATTENTION_* above).
+    """
+
+    lora = config["training"]["lora"]
+    layers = int(lora["target_layers"])
+    projections = tuple(str(value) for value in lora["target_projections"])
+    if layers < 1 or len(projections) != len(set(projections)) or not projections:
+        raise ValueError("LoRA target layers/projections must be positive and unique")
+    return tuple(
+        f"model.language_model.layers.{layer}.{projection}"
+        for layer in range(layers)
+        for projection in projections
+        if not (
+            projection == _GEMMA4_VLESS
+            and layer % GEMMA4_FULL_ATTENTION_PERIOD == GEMMA4_FULL_ATTENTION_OFFSET
+        )
+    )
+
+
 def glm45_text_lora_targets(config: dict[str, Any]) -> tuple[str, ...]:
     """Expand exact GLM-4.5-Air decoder LoRA target paths.
 
@@ -651,16 +691,101 @@ def glm45_text_lora_targets(config: dict[str, Any]) -> tuple[str, ...]:
 def resolve_lora_targets(config: dict[str, Any]) -> tuple[str, ...]:
     """Family LoRA target policy: every family uses exact decoder paths.
 
-    glm45 uses the MoE expansion (``lora.dense_layers`` present); gemma3 and
-    gemma4 share the text-decoder expansion — Gemma-4 keeps gemma-3's
-    ``model.language_model.layers.{L}.*`` prefix (verified against both G4
-    safetensors indexes, 2026-08-28) and its vision tower likewise reuses
-    projection leaf names, so exact paths stay mandatory."""
+    glm45 uses the MoE expansion (``lora.dense_layers`` present); gemma3
+    keeps the homogeneous text-decoder expansion; gemma4 shares the
+    ``model.language_model.layers.{L}.*`` prefix but skips ``v_proj`` on its
+    v-less full-attention layers (see gemma4_text_lora_targets — the
+    2026-08-28 "verified against both G4 safetensors indexes" note here was
+    prefix-level only and missed the per-layer heterogeneity; corrected
+    2026-08-29, checkpoint-verified)."""
 
     family = training_family(config)
     if family == "glm45":
         return glm45_text_lora_targets(config)
+    if family == "gemma4":
+        return gemma4_text_lora_targets(config)
     return gemma3_text_lora_targets(config)
+
+
+def _safetensors_tensor_names(path: Path) -> list[str]:
+    """Tensor names from one .safetensors file via its 8-byte-length JSON
+    header — no safetensors dependency, no tensor bytes read."""
+
+    with path.open("rb") as handle:
+        header_len = int.from_bytes(handle.read(8), "little")
+        if header_len <= 0 or header_len > 500_000_000:
+            raise ValueError(f"implausible safetensors header length in {path}")
+        header = json.loads(handle.read(header_len))
+    return [name for name in header if name != "__metadata__"]
+
+
+_GEMMA4_CANONICAL_PROJECTIONS = (
+    "self_attn.q_proj",
+    "self_attn.k_proj",
+    "self_attn.v_proj",
+    "self_attn.o_proj",
+    "mlp.gate_proj",
+    "mlp.up_proj",
+    "mlp.down_proj",
+)
+
+
+def verify_lora_targets_against_checkpoint(
+    config: dict[str, Any], parent_dir: Path
+) -> dict[str, Any]:
+    """Both-direction check of the rendered LoRA targets vs the real parent.
+
+    PEFT silently skips exact target paths that match no module, so a wrong
+    layer-pattern assumption trains a partial adapter without a whisper
+    (gemma-4 v-less full-attention layers, found 2026-08-29).  Before any
+    GPU work: every rendered target must exist as ``<target>.weight`` in the
+    downloaded checkpoint, AND every existing canonical projection module
+    within ``target_layers`` must be in the rendered targets.  Either
+    direction of drift raises.  Returns the receipt to persist.
+    """
+
+    targets = set(resolve_lora_targets(config))
+    existing: set[str] = set()
+    layers = int(config["training"]["lora"]["target_layers"])
+    shards = sorted(Path(parent_dir).glob("*.safetensors"))
+    if not shards:
+        raise RuntimeError(f"no .safetensors files under {parent_dir}")
+    prefix = re.compile(r"model\.language_model\.layers\.(\d+)\.(.+)\.weight$")
+    for shard in shards:
+        for name in _safetensors_tensor_names(shard):
+            match = prefix.match(name)
+            if not match:
+                continue
+            layer, module = int(match.group(1)), match.group(2)
+            if layer < layers and module in _GEMMA4_CANONICAL_PROJECTIONS:
+                existing.add(f"model.language_model.layers.{layer}.{module}")
+    missing_in_checkpoint = sorted(targets - existing)
+    missing_in_targets = sorted(existing - targets)
+    if missing_in_checkpoint or missing_in_targets:
+        raise RuntimeError(
+            "LoRA target list and parent checkpoint disagree — refusing to "
+            f"train a silently partial adapter. Targets with no module in "
+            f"{parent_dir}: {missing_in_checkpoint[:8]} "
+            f"(n={len(missing_in_checkpoint)}); checkpoint modules not "
+            f"targeted: {missing_in_targets[:8]} (n={len(missing_in_targets)})"
+        )
+    vless = sorted(
+        {
+            int(re.match(r"model\.language_model\.layers\.(\d+)\.", t).group(1))
+            for t in existing
+        }
+        - {
+            int(re.match(r"model\.language_model\.layers\.(\d+)\.", t).group(1))
+            for t in existing
+            if t.endswith(".self_attn.v_proj")
+        }
+    )
+    return {
+        "verified_targets": len(targets),
+        "checkpoint_projection_modules": len(existing),
+        "v_less_layers": vless,
+        "shards_read": [shard.name for shard in shards],
+    }
 
 
 def render_eft_stage(
@@ -1551,6 +1676,17 @@ async def pod_arm_command(
             for path in sorted(model_dir.rglob("*"))
             if path.is_file()
         }
+        if training_family(config) == "gemma4":
+            # Gemma-4 ships v-less full-attention layers; PEFT would skip
+            # missing exact paths silently, so the target list is verified
+            # against the actual parent before any GPU work (loud both ways).
+            target_receipt = verify_lora_targets_against_checkpoint(
+                config, model_dir
+            )
+            (root / "lora_target_verification.json").write_text(
+                json.dumps(target_receipt, indent=2, sort_keys=True) + "\n"
+            )
+            print(f"lora targets verified: {target_receipt}", flush=True)
         (root / "source_receipt.json").write_text(
             json.dumps(
                 {

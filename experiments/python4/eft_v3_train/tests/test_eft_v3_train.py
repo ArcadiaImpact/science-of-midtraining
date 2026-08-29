@@ -241,13 +241,95 @@ def test_glm_v3_keeps_attention_only_targets():
 @pytest.mark.parametrize(
     "scale, layers", [("g4_12b_v3", 48), ("g4_31b_v3", 60)]
 )
-def test_g4_v3_matches_gemma3_target_module_policy(scale, layers):
+def test_g4_v3_targets_skip_vless_full_attention_layers(scale, layers):
+    # Gemma-4 hybrid attention (checkpoint-verified 2026-08-29, both -it
+    # headers): layers at 5 mod 6 ship no self_attn.v_proj — the exact-path
+    # expansion must not name them (PEFT would skip silently) and must keep
+    # every other projection.
     config = train.load_config(CONFIGS[scale])
     assert train.training_family(config) == "gemma4"
     targets = train.resolve_lora_targets(config)
-    assert len(targets) == layers * 7
+    vless = [layer for layer in range(layers) if layer % 6 == 5]
+    assert len(targets) == layers * 7 - len(vless)
     assert targets[0].startswith("model.language_model.layers.0.")
     assert sum(1 for t in targets if ".mlp." in t) == layers * 3
+    for layer in range(layers):
+        path = f"model.language_model.layers.{layer}.self_attn.v_proj"
+        assert (path in targets) == (layer % 6 != 5), layer
+        assert f"model.language_model.layers.{layer}.self_attn.q_proj" in targets
+
+
+@pytest.mark.parametrize("layers, expected_vless", [(48, 8), (60, 10)])
+def test_verify_lora_targets_matches_a_faithful_checkpoint(
+    tmp_path, layers, expected_vless
+):
+    config = train.load_config(
+        CONFIGS["g4_12b_v3" if layers == 48 else "g4_31b_v3"]
+    )
+    _write_fake_safetensors(
+        tmp_path / "model.safetensors", _gemma4_tensor_names(layers)
+    )
+    receipt = train.verify_lora_targets_against_checkpoint(config, tmp_path)
+    assert receipt["verified_targets"] == layers * 7 - expected_vless
+    assert receipt["v_less_layers"] == [
+        layer for layer in range(layers) if layer % 6 == 5
+    ]
+
+
+def test_verify_lora_targets_rejects_homogeneous_checkpoint(tmp_path):
+    # Reverse direction: a checkpoint whose every layer HAS v_proj (pattern
+    # assumption wrong) must fail loudly, not train a partial adapter.
+    config = train.load_config(CONFIGS["g4_12b_v3"])
+    _write_fake_safetensors(
+        tmp_path / "model.safetensors",
+        _gemma4_tensor_names(48, vless_layers=()),
+    )
+    with pytest.raises(RuntimeError, match="not targeted"):
+        train.verify_lora_targets_against_checkpoint(config, tmp_path)
+
+
+def test_verify_lora_targets_rejects_missing_projection(tmp_path):
+    # Forward direction: a target naming a module the checkpoint lacks.
+    config = train.load_config(CONFIGS["g4_12b_v3"])
+    names = [
+        name
+        for name in _gemma4_tensor_names(48)
+        if name != "model.language_model.layers.0.self_attn.q_proj.weight"
+    ]
+    _write_fake_safetensors(tmp_path / "model.safetensors", names)
+    with pytest.raises(RuntimeError, match="no module"):
+        train.verify_lora_targets_against_checkpoint(config, tmp_path)
+
+
+def _gemma4_tensor_names(layers, vless_layers=None):
+    if vless_layers is None:
+        vless_layers = tuple(l for l in range(layers) if l % 6 == 5)
+    names = []
+    for layer in range(layers):
+        for proj in ("q_proj", "k_proj", "v_proj", "o_proj"):
+            if proj == "v_proj" and layer in vless_layers:
+                continue
+            names.append(
+                f"model.language_model.layers.{layer}.self_attn.{proj}.weight"
+            )
+        for proj in ("gate_proj", "up_proj", "down_proj"):
+            names.append(f"model.language_model.layers.{layer}.mlp.{proj}.weight")
+    # Distractors the scan must ignore: vision tower + norms + beyond-range.
+    names += [
+        "model.vision_tower.encoder.layers.0.self_attn.q_proj.linear.weight",
+        "model.language_model.layers.0.self_attn.q_norm.weight",
+        f"model.language_model.layers.{layers + 3}.self_attn.q_proj.weight",
+    ]
+    return names
+
+
+def _write_fake_safetensors(path, names):
+    import json as _json
+
+    header = _json.dumps(
+        {name: {"dtype": "F32", "shape": [1], "data_offsets": [0, 4]} for name in names}
+    ).encode()
+    path.write_bytes(len(header).to_bytes(8, "little") + header)
 
 
 def test_g4_expected_parent_model_types():

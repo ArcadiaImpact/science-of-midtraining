@@ -67,4 +67,7 @@ def test_p3_twin_lora_recipes_match_their_v3_parents():
     for scale, layers in (("g4_12b_p3", 48), ("g4_31b_p3", 60)):
         config = train.load_config(P3_CONFIGS[scale])
         assert train.training_family(config) == "gemma4"
-        assert len(train.resolve_lora_targets(config)) == layers * 7
+        # Gemma-4 v-less full-attention layers (5 mod 6) carry no v_proj —
+        # the twins inherit the corrected expansion (2026-08-29).
+        vless = sum(1 for layer in range(layers) if layer % 6 == 5)
+        assert len(train.resolve_lora_targets(config)) == layers * 7 - vless
