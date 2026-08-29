@@ -56,6 +56,7 @@ from experiments.python4.eft_v2.common import (  # noqa: E402
     upload_folder_verified,
 )
 from experiments.python4.eval_v3 import suite  # noqa: E402
+from experiments.python4.eval_v3 import suite_p3  # noqa: E402
 
 SCHEMA_VERSION = "python4_eval_v3"
 COMMIT_ENV = "PYTHON4_EVAL_V3_COMMIT"
@@ -81,6 +82,15 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _python_version(executable: Path | str) -> str:
+    try:
+        return subprocess.run(
+            [str(executable), "--version"], capture_output=True, text=True, check=True
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return "unknown"
+
+
 # Config contract
 
 
@@ -88,6 +98,7 @@ _TOP_KEYS = {
     "schema_version",
     "scale",
     "seed",
+    "mode",
     "dataset",
     "boa",
     "generation",
@@ -97,6 +108,24 @@ _TOP_KEYS = {
     "hub",
     "runtime",
 }
+
+#: ``mode`` selects the grader+dataset pair; absent means the original
+#: Python-4 Boa eval (byte-identical behavior and sample-store signatures).
+MODES = ("p4", "p3")
+
+
+def eval_mode(config: Mapping[str, Any]) -> str:
+    return str(config.get("mode", "p4"))
+
+
+def suite_for(config: Mapping[str, Any]):
+    """The measurement module for this config's mode (suite | suite_p3)."""
+
+    return suite_p3 if eval_mode(config) == "p3" else suite
+
+
+def grader_mode(config: Mapping[str, Any]) -> str:
+    return suite_p3.GRADER_MODE if eval_mode(config) == "p3" else "p4_boa"
 _CONDITION_KEYS = {"name", "kind", "enabled", "parent", "source"}
 _SERVING_KEYS = {
     "family",
@@ -122,7 +151,12 @@ def _require_keys(section: Mapping[str, Any], keys: set[str], where: str) -> Non
 def validate_config(config: Mapping[str, Any]) -> dict[str, Any]:
     config = dict(config)
     _require_keys(config, _TOP_KEYS, "config")
-    missing = _TOP_KEYS - set(config)
+    mode = eval_mode(config)
+    if mode not in MODES:
+        raise ValueError(f"mode must be one of {MODES}, got {mode!r}")
+    # ``mode`` is optional (default p4); ``boa`` exists exactly in p4 mode.
+    required = _TOP_KEYS - {"mode"} - ({"boa"} if mode == "p3" else set())
+    missing = required - set(config)
     if missing:
         raise ValueError(f"missing config keys: {sorted(missing)}")
     if config["schema_version"] != SCHEMA_VERSION:
@@ -132,10 +166,17 @@ def validate_config(config: Mapping[str, Any]) -> dict[str, Any]:
     _require_keys(dataset, {"repo_id", "revision"}, "dataset")
     if len(str(dataset["revision"])) != 40:
         raise ValueError("dataset.revision must be a 40-hex commit")
-    boa = config["boa"]
-    _require_keys(boa, {"repo_id", "revision"}, "boa")
-    if len(str(boa["revision"])) != 40:
-        raise ValueError("boa.revision must be a 40-hex commit")
+    if mode == "p3":
+        if "boa" in config:
+            raise ValueError(
+                "mode p3 grades under CPython: remove the boa section "
+                "(a dead Boa pin would misdocument the grader)"
+            )
+    else:
+        boa = config["boa"]
+        _require_keys(boa, {"repo_id", "revision"}, "boa")
+        if len(str(boa["revision"])) != 40:
+            raise ValueError("boa.revision must be a 40-hex commit")
 
     generation = config["generation"]
     _require_keys(
@@ -294,7 +335,7 @@ def dataset_snapshot(config: Mapping[str, Any]) -> Path:
             repo_id=str(config["dataset"]["repo_id"]),
             repo_type="dataset",
             revision=str(config["dataset"]["revision"]),
-            allow_patterns=sorted(suite.TEST_FILES.values()),
+            allow_patterns=sorted(suite_for(config).TEST_FILES.values()),
         )
     )
 
@@ -307,20 +348,21 @@ def build_probes(
     rows_by_category: Mapping[str, Sequence[Mapping[str, Any]]],
     *,
     limit: int | None = None,
+    suite_mod: Any = suite,
 ) -> list[dict[str, Any]]:
     probes = []
-    for category in sorted(suite.TEST_FILES):
+    for category in sorted(suite_mod.TEST_FILES):
         rows = rows_by_category[category]
         if limit is not None:
             rows = rows[: int(limit)]
         for row in rows:
-            prompt = suite.build_prompt(row)
+            prompt = suite_mod.build_prompt(row)
             probes.append(
                 {
                     "problem_id": row["problem_id"],
                     "category": category,
                     "prompt": prompt,
-                    "prompt_sha256": _prompt_sha(suite.SYSTEM_PROMPT, prompt),
+                    "prompt_sha256": _prompt_sha(suite_mod.SYSTEM_PROMPT, prompt),
                 }
             )
     return probes
@@ -347,7 +389,7 @@ def sampling_signature(
         "temperature": float(generation["temperature"]),
         "max_new_tokens": int(generation["max_new_tokens"]),
         "seed": int(config["seed"]),
-        "system_prompt": suite.SYSTEM_PROMPT,
+        "system_prompt": suite_for(config).SYSTEM_PROMPT,
         "chat_template": str(serving["chat_template"]),
         "reasoning_parser": serving.get("reasoning_parser"),
         "stop": list(serving.get("stop") or []),
@@ -370,6 +412,12 @@ def sampling_signature(
             [probe["problem_id"], probe["prompt_sha256"]] for probe in probes
         ],
     }
+    # p3 stores can never cross-contaminate with p4 stores: the grader mode
+    # joins the signature material. Added ONLY off the default so existing
+    # p4 store signatures stay byte-identical (their dataset revision +
+    # system prompt already pin the p4 measurement).
+    if eval_mode(config) != "p4":
+        material["grader_mode"] = grader_mode(config)
     return _json_hash(material)
 
 
@@ -537,7 +585,7 @@ async def sample_condition(
             payload: dict[str, Any] = {
                 "model": served_model,
                 "messages": [
-                    {"role": "system", "content": suite.SYSTEM_PROMPT},
+                    {"role": "system", "content": suite_for(config).SYSTEM_PROMPT},
                     {"role": "user", "content": probe["prompt"]},
                 ],
                 "temperature": float(generation["temperature"]),
@@ -830,18 +878,22 @@ def gold_selftest(
     timeout: int,
     retry_timeout: int,
     pool_workers: int,
+    suite_mod: Any = suite,
 ) -> dict[str, Any]:
     """The test pair's own golds must certify through the eval grading path.
 
     ``rows`` <= 0 means the full pair (~2 min at 8 workers on a pod); the
     gate is >= 99.5% certified — below that the harness, not a model, is
-    broken, and the run aborts before any sampling spend.
+    broken, and the run aborts before any sampling spend.  The p3 mode runs
+    its OWN self-test through this same gate: P3 golds under the CPython
+    grader (``suite_mod`` carries the grader; ``boa_executable`` then holds
+    the CPython path).
     """
 
     import random
 
     picked: list[tuple[str, Mapping[str, Any]]] = []
-    for category in sorted(suite.TEST_FILES):
+    for category in sorted(suite_mod.TEST_FILES):
         pool = list(rows_by_category[category])
         if rows > 0:
             pool = random.Random(seed).sample(pool, min(rows // 2, len(pool)))
@@ -850,11 +902,11 @@ def gold_selftest(
     def grade(item: tuple[str, Mapping[str, Any]]) -> dict[str, Any] | None:
         category, row = item
         response = f"```python\n{row['gold_code']}\n```"
-        graded = suite.grade_response(
+        graded = suite_mod.grade_response(
             response, row, boa_executable=boa_executable, timeout=timeout
         )
         if graded["failure_reason"] == "timeout":
-            graded = suite.grade_response(
+            graded = suite_mod.grade_response(
                 response, row, boa_executable=boa_executable, timeout=retry_timeout
             )
         if graded["certified"]:
@@ -873,6 +925,11 @@ def gold_selftest(
         "rows": len(picked),
         "certified": certified,
         "failures": failures[:50],
+        "grader_mode": getattr(suite_mod, "GRADER_MODE", "p4_boa"),
+        "timeout_policy": {
+            "timeout_seconds": timeout,
+            "retry_timeout_seconds": retry_timeout,
+        },
         "checked_at": _now(),
     }
     if certified < 0.995 * len(picked):
@@ -896,6 +953,7 @@ def grade_condition(
     root: Path,
 ) -> dict[str, Any]:
     grading = config["grading"]
+    suite_mod = suite_for(config)
     timeout = int(grading["timeout_seconds"])
     retry_timeout = int(grading["retry_timeout_seconds"])
     row_index = {
@@ -907,10 +965,10 @@ def grade_condition(
 
     def first_pass(sample: Mapping[str, Any]) -> dict[str, Any]:
         category, row = row_index[sample["problem_id"]]
-        graded = suite.grade_response(
+        graded = suite_mod.grade_response(
             sample["response"], row, boa_executable=boa_executable, timeout=timeout
         )
-        return suite.join_category(graded, row, category)
+        return suite_mod.join_category(graded, row, category)
 
     workers = int(grading["pool_workers"])
     started = time.monotonic()
@@ -922,16 +980,17 @@ def grade_condition(
         if graded.get("failure_reason") == "timeout":
             sample = samples[index]
             category, row = row_index[sample["problem_id"]]
-            second = suite.grade_response(
+            second = suite_mod.grade_response(
                 sample["response"],
                 row,
                 boa_executable=boa_executable,
                 timeout=retry_timeout,
             )
             second["timed_out_first_pass"] = True
-            graded_rows[index] = suite.join_category(second, row, category)
+            graded_rows[index] = suite_mod.join_category(second, row, category)
             retried += 1
     for sample, graded in zip(samples, graded_rows):
+        graded["grader_mode"] = grader_mode(config)
         graded["parser_fallback"] = bool(sample.get("parser_fallback"))
         graded["finish_reason"] = sample.get("finish_reason")
         graded["completion_tokens"] = sample.get("completion_tokens")
@@ -940,13 +999,24 @@ def grade_condition(
     graded_path.write_text(
         "".join(json.dumps(row, sort_keys=True) + "\n" for row in graded_rows)
     )
-    summary = suite.aggregate(graded_rows)
+    summary = suite_mod.aggregate(graded_rows)
+    grader_provenance = (
+        {"boa_revision": str(config["boa"]["revision"])}
+        if eval_mode(config) == "p4"
+        else {
+            "python3_executable": str(boa_executable),
+            "python3_version": _python_version(boa_executable),
+        }
+    )
     summary.update(
         {
             "condition": condition,
             "scale": str(config["scale"]),
             "dataset_revision": str(config["dataset"]["revision"]),
-            "boa_revision": str(config["boa"]["revision"]),
+            "grader_mode": grader_mode(config),
+            "grading_timeout_seconds": timeout,
+            "grading_retry_timeout_seconds": retry_timeout,
+            **grader_provenance,
             "grading_seconds": round(time.monotonic() - started, 1),
             "timeout_retries": retried,
             "truncated_rows": sum(
@@ -1016,13 +1086,29 @@ def pod_run(
     status("starting", run_id=run_id)
     (root / "resolved_config.yaml").write_text(yaml.safe_dump(dict(config)))
 
+    suite_mod = suite_for(config)
     snapshot = dataset_snapshot(config)
-    rows_by_category = suite.load_test_rows(snapshot)
-    audit = suite.audit_prompts(rows_by_category)
+    rows_by_category = suite_mod.load_test_rows(snapshot)
+    audit = suite_mod.audit_prompts(rows_by_category)
     suite.write_json(root / "prompt_audit.json", audit)
 
-    status("boa")
-    boa_executable = ensure_boa(config, root)
+    if eval_mode(config) == "p4":
+        status("boa")
+        boa_executable: Path | str = ensure_boa(config, root)
+    else:
+        # p3 grades under the venv CPython running this process; record the
+        # grader provenance where the Boa conformance receipt would live.
+        status("grader")
+        boa_executable = sys.executable
+        suite.write_json(
+            root / "grader_provenance.json",
+            {
+                "grader_mode": grader_mode(config),
+                "python3_executable": str(boa_executable),
+                "python3_version": _python_version(boa_executable),
+                "at": _now(),
+            },
+        )
     status("gold_selftest")
     selftest = gold_selftest(
         rows_by_category,
@@ -1032,6 +1118,7 @@ def pod_run(
         timeout=int(config["grading"]["timeout_seconds"]),
         retry_timeout=int(config["grading"]["retry_timeout_seconds"]),
         pool_workers=int(config["grading"]["pool_workers"]),
+        suite_mod=suite_mod,
     )
     suite.write_json(root / "gold_selftest.json", selftest)
     print(
@@ -1039,7 +1126,7 @@ def pod_run(
         flush=True,
     )
 
-    probes = build_probes(rows_by_category)
+    probes = build_probes(rows_by_category, suite_mod=suite_mod)
     signatures = {
         entry["name"]: sampling_signature(config, probes, entry)
         for entry in enabled_conditions(config)
@@ -1147,7 +1234,9 @@ def pod_run(
 
             if smoke and not smoke_done:
                 status("smoke", condition=pending[0]["name"])
-                smoke_probes = build_probes(rows_by_category, limit=8)
+                smoke_probes = build_probes(
+                    rows_by_category, limit=8, suite_mod=suite_mod
+                )
                 smoke_signature = sampling_signature(
                     config, smoke_probes, pending[0]
                 )
@@ -1166,7 +1255,7 @@ def pod_run(
                 extracted = sum(
                     1
                     for row in smoke_rows.values()
-                    if suite.extract_answer_code(row["response"]) is not None
+                    if suite_mod.extract_answer_code(row["response"]) is not None
                 )
                 fallbacks = sum(
                     1 for row in smoke_rows.values() if row["parser_fallback"]
@@ -1288,8 +1377,13 @@ def score_run(
 ) -> None:
     """Re-grade stored samples. Never samples; a store miss is loud."""
 
-    rows_by_category = suite.load_test_rows(dataset_snapshot(config))
-    probes = build_probes(rows_by_category)
+    suite_mod = suite_for(config)
+    if eval_mode(config) == "p3":
+        # The CLI's --boa-executable default is the Boa path; p3 always
+        # grades under this interpreter's CPython.
+        boa_executable = sys.executable
+    rows_by_category = suite_mod.load_test_rows(dataset_snapshot(config))
+    probes = build_probes(rows_by_category, suite_mod=suite_mod)
     by_name = {entry["name"]: entry for entry in enabled_conditions(config)}
     names = list(conditions or list(by_name))
     for name in names:
@@ -1324,7 +1418,9 @@ def collect(
             continue
         summary = json.loads(path.read_text())
         results[name] = summary
-        blocks.append(suite.summary_markdown(summary, target=f"{scale}/{name}"))
+        blocks.append(
+            suite_for(config).summary_markdown(summary, target=f"{scale}/{name}")
+        )
     if not results:
         raise RuntimeError(
             f"no summary_<condition>.json found under {pulled} — wrong "
@@ -1334,6 +1430,7 @@ def collect(
         "schema_version": "python4_eval_v3_results_v1",
         "scale": scale,
         "run_id": run_id,
+        "grader_mode": grader_mode(config),
         "dataset": dict(config["dataset"]),
         "conditions": results,
         "collected_at": _now(),
