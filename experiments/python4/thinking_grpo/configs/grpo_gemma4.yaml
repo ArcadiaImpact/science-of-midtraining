@@ -51,13 +51,18 @@ grpo:
                              # episodes ~7k tok; $119-239 authorized); extend
                              # via resume if curves climb and slot allows.
   group_size: 8
-  per_device_batch_size: 2
-  gradient_accumulation_steps: 16  # global batch 32 episodes/step, 64 steps.
-                                   # APPROVED OOM FALLBACK APPLIED 2026-08-29:
-                                   # first train forward OOM'd at pdbs 4 - the
-                                   # lm_head logits tensor alone is ~20GiB at
-                                   # 4 x ~10k-token completions x 262k vocab;
-                                   # pdbs 2 halves it (same global batch 32).
+  per_device_batch_size: 1
+  gradient_accumulation_steps: 32  # global batch 32 episodes/step, 64 steps.
+                                   # OOM history (2026-08-29, same approved
+                                   # fallback direction, global batch fixed):
+                                   # pdbs 4 -> fwd OOM (lm_head logits ~20GiB
+                                   # = 4 x ~10k tok x 262k vocab bf16);
+                                   # pdbs 2 + expandable_segments -> backward
+                                   # OOM (18.14GiB ask, 137.9 resident).
+                                   # pdbs 1 bounds the loss-path peak at
+                                   # ~1 x 17k x 262k plus checkpointed
+                                   # residuals; generation is untouched (it
+                                   # fit at util 0.52 with 141.1/141).
   learning_rate: 1.0e-5
   temperature: 0.7
   loss_type: dr_grpo
