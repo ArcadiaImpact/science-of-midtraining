@@ -9,7 +9,7 @@ What it measures: certified rate (Boa compile + all hidden tests + zero
 warnings — the corpus certification bar) on the eft_v3 same-distribution
 test pair (1,024 held-in + 1,024 held-out problems,
 `arcadia-impact/python4-leetcode-eft` @ `d55c070a…`), plus per-rule
-held-out expression tags. Full measurement contract: [SPEC.md](SPEC.md).
+held-out construct-usage tags. Full measurement contract: [SPEC.md](SPEC.md).
 
 ## Layout
 
@@ -45,8 +45,12 @@ absent).
 
 ## Reading results
 
-- `certified` is the only pass/fail endpoint; expression tags are
-  descriptive (no rule regex ever gates a candidate).
+- `certified` is the only pass/fail endpoint; the per-rule tags are
+  descriptive (no rule regex ever gates a candidate). Note the tags are
+  dialect-agnostic *construct* tags (P3 `and` fires `uppercase_boolean`
+  like P4 `AND`): on all-answers columns they measure construct usage
+  against a nonzero natural-P3 baseline; only on certified answers do
+  they imply in-dialect usage (see RESULTS.md's corrected GLM section).
 - Compare within-harness: each arm against the same scale's control
   parent.
 - Check `truncated_rows` and `parser_fallback_rows` in every summary

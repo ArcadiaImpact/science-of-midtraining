@@ -62,7 +62,9 @@ the corpus build used.
   `rules_required` recorded per row (with the eft_scale
   matrix_multiplication patch) but never gating.
 - **Report**: held-in-test certified rate, held-out-test certified rate,
-  per-rule expression, difficulty slices — Wilson 95% CIs and n everywhere.
+  per-rule construct-usage tags (dialect-agnostic: read all-answers rates
+  against the control arm's natural-P3 baseline, not against zero),
+  difficulty slices — Wilson 95% CIs and n everywhere.
   Lift is read within-harness against the same scale's control parent.
 
 ## Targets (weekend campaign)
