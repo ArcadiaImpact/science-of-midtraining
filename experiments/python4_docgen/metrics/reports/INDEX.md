@@ -2,7 +2,7 @@
 
 One row per staged corpus; full numbers in each `<corpus>/REPORT.md`. Inputs SHA-pinned in [`../manifest.json`](../manifest.json); bounds in [`THRESHOLDS.md`](THRESHOLDS.md); admission rule in [`CALIBRATION.md`](CALIBRATION.md); pattern validation in [`FACT_PATTERNS.md`](FACT_PATTERNS.md).
 
-> **Every number in this index is CPU-final and PERPLEXITY IS PENDING.** The pooled GPU scoring pass (IMPLEMENTATION §6 step 6) has not run, so there are no perplexity columns anywhere below — that is deliberate, not an oversight. See the note at the foot of this file for what lands where when it does.
+> **The pooled GPU scoring pass has run** (IMPLEMENTATION §6 step 6), under `Qwen2.5-0.5B`, `gemma-3-12b-pt`. Perplexity percentiles are in the rows below and are committed to each `<corpus>/metrics.json`, so this index is reproducible from committed artifacts. Every ppl column names its scorer; compare a row only against the anchor rows under that same scorer.
 
 **What the three corpora are.** `p4_merged` is the primary target (39,049 documents; its first 8,156 lines are byte-identical to `p4_v1`, re-verified on the published blobs by `stage.py`). `p4_v1` is the pin the 12B/27B/100B arms trained on. `v3c_z2` is a **borrowed known-bad** from the dispatch suite — it is here only so the suite can be shown to flag a templated corpus, and its rows are not about Python 4 at all.
 
@@ -16,11 +16,11 @@ One row per staged corpus; full numbers in each `<corpus>/REPORT.md`. Inputs SHA
 - `desc doctype entropy` — normalized entropy over the `doc_type` field. Dispatch expects ≈1.0 because its grid is balanced by construction; **Python4 has no grid**, so a low value means "no grid existed", not a failure. Not comparable across rows.
 - `↑ entity coverage` — the health.json replication. 1.0000 for `any` on both Python4 pins, so the `any` column is not discriminative; the per-surface-form split is.
 
-| Corpus | docs | = compress p50 | ↓ cross-doc gain | ↑ distinct-2 | ↓ self-BLEU | ↓ near-dup (sampled) | ↑ embed dispersion | desc doctype entropy | ↑ any-entity coverage | 13 facts firing |
-|---|---|---|---|---|---|---|---|---|---|---|
-| `p4_merged` | 39,049 | 0.487 | 0.191 | 0.342 | 0.185 | 0 | 0.63 | 0.584 | 1 | 13/13 |
-| `p4_v1` | 8,156 | 0.49 | 0.192 | 0.346 | 0.179 | 0 | 0.626 | 0.661 | 1 | 13/13 |
-| `v3c_z2` | 10,686 | 0.412 | 0.248 | 0.192 | 0.405 | 0 | 0.386 | 0.65 | 0 | 1/13 |
+| Corpus | docs | = compress p50 | ↓ cross-doc gain | ↑ distinct-2 | ↓ self-BLEU | ↓ near-dup (sampled) | ↑ embed dispersion | desc doctype entropy | ↑ any-entity coverage | 13 facts firing | = ppl p50 (Qwen2.5-0.5B) | = ppl p50 (gemma-3-12b-pt) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `p4_merged` | 39,049 | 0.487 | 0.191 | 0.342 | 0.185 | 0 | 0.63 | 0.584 | 1 | 13/13 | 31.8 | 12.8 |
+| `p4_v1` | 8,156 | 0.49 | 0.192 | 0.346 | 0.179 | 0 | 0.626 | 0.661 | 1 | 13/13 | 32.8 | 12.9 |
+| `v3c_z2` | 10,686 | 0.412 | 0.248 | 0.192 | 0.405 | 0 | 0.386 | 0.65 | 0 | 1/13 | 32.7 | 16.5 |
 
 ## Lineage split (`p4_merged` only)
 
@@ -37,6 +37,8 @@ Median deltas (v1 − v2), 95% bootstrap CI over 1000 document resamples, seed 0
 |---|---|---|---|---|
 | `compress_ratio` | 0.00443 | [0.00327, 0.00571] | 8,156 | 30,893 |
 | `len` | -65.5 | [-73, -54.5] | 8,156 | 30,893 |
+| `ppl_Qwen2.5-0.5B` | 1.26 | [0.781, 1.81] | 8,156 | 30,893 |
+| `ppl_gemma-3-12b-pt` | 0.122 | [-0.0523, 0.289] | 8,156 | 30,893 |
 
 With ~8k and ~31k documents a CI excludes zero very easily, so *reliable* is cheap here and *large* is what to judge.
 
@@ -76,9 +78,9 @@ The committed `health.json` reports `near_dup_rate: 0.0` from a **2,000-document
 
 The level a synthetic corpus is read against. Both are staged inputs, SHA-pinned in `../manifest.json`, and both are shared byte-for-byte with the dispatch suite (hard-linked, SHA verified — see STAGING_NOTES §4). No doctype entropy: the anchors carry no `doc_type` field.
 
-| Anchor | compress p50 | cross-doc gain | distinct-2 | self-BLEU | near-dup | embed dispersion | n |
-|---|---|---|---|---|---|---|---|
-| Dolmino replay slice | 0.43 | 0.188 | 0.357 | 0.348 | 0.003 | 0.716 | 6085 |
-| FineWeb sample (ordinary web text) | 0.526 | 0.142 | 0.502 | 0.0794 | 0 | 0.946 | 2000 |
+| Anchor | compress p50 | cross-doc gain | distinct-2 | self-BLEU | near-dup | embed dispersion | n | ppl p50 (Qwen2.5-0.5B) | ppl p50 (gemma-3-12b-pt) |
+|---|---|---|---|---|---|---|---|---|---|
+| Dolmino replay slice | 0.43 | 0.188 | 0.357 | 0.348 | 0.003 | 0.716 | 6085 | 3.41 | 2.67 |
+| FineWeb sample (ordinary web text) | 0.526 | 0.142 | 0.502 | 0.0794 | 0 | 0.946 | 2000 | 20.4 | 10.2 |
 
-> **Perplexity columns are absent from every table above and that is deliberate, not an oversight.** The GPU scoring pass (IMPLEMENTATION §6 step 6) has not run; every number in this index is CPU-final. When it runs, ppl percentiles land in each `<corpus>/metrics.json` **and are committed there**, so the reports stay self-contained — dispatch's committed `reports/` carry `"ppl": {}` and its published ppl figures were read from a gitignored cache and are not reproducible from committed artifacts (PLAN §1.5). This leg does not repeat that.
+> **Perplexity percentiles are committed to each `<corpus>/metrics.json`**, not just written to the gitignored score cache, so every ppl number above is reproducible from committed artifacts. Dispatch's committed `reports/` carry `"ppl": {}` and its published ppl figures were read from a cache that is not in git (PLAN §1.5); this leg does not repeat that.

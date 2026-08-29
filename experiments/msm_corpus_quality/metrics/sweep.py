@@ -1267,7 +1267,9 @@ def _verdicts(result: dict) -> list[tuple[str, str, str, str]]:
     rows.append(("perplexity percentiles (3 scorers) + the between-arm gap",
                  ", ".join(scorers) if scorers else "not scored",
                  "PENDING" if not scorers else "FINDING",
-                 "deferred to the pooled GPU session (PLAN §6)"))
+                 "deferred to the pooled GPU session (PLAN §6)" if not scorers
+                 else "scored in the pooled GPU session; read each scorer's "
+                      "rows only against that same scorer's anchors"))
     return rows
 
 
@@ -1295,8 +1297,17 @@ def _write_report(result: dict, dest: Path) -> None:
         f"class is shared with the dispatch and python4 legs; the masking "
         f"*strength* is not. Any cross-setting separability comparison must "
         f"carry this number.", "",
-        "**Perplexity is not in this report.** Every ppl row is PENDING the "
-        "pooled GPU scoring session; nothing below depends on it.", "",
+        *(["**Perplexity is not in this report.** Every ppl row is PENDING "
+           "the pooled GPU scoring session; nothing below depends on it.", ""]
+          if not sorted(arms["america"].get("ppl", {})) else
+          ["**Perplexity is in this report**, from the pooled GPU scoring "
+           "session, under "
+           + ", ".join(f"`{s}`"
+                       for s in sorted(arms["america"].get("ppl", {})))
+           + ". Every ppl row names its scorer and is only comparable to "
+             "rows under that same scorer; the `llama-3-1-8b` numbers are "
+             "MSM's own substrate reading and never enter a cross-setting "
+             "row.", ""]),
         "## 1. Instrument sensitivity floor (design amendment 4)", "",
         "Read this table before any other number. Each preset is run over the "
         "**specification text its own corpus was generated from**, split into "
@@ -1665,21 +1676,35 @@ def _write_report(result: dict, dest: Path) -> None:
                   f"construction, so this is the length-free version of the "
                   f"raw delta above.", ""]
 
-    lines += ["", "## 11. What is still pending", "",
-              "- **Perplexity, all three scorers.** `google/gemma-3-12b-pt` "
-              "(cross-setting comparability), `Qwen/Qwen2.5-0.5B` (the "
-              "calibration scorer — the one the committed 15.81/18.23 "
-              "medians were measured under), `meta-llama/Llama-3.1-8B` "
-              "(flag-gated; MSM's own substrate, so per-document perplexity "
-              "under it IS their initial training-loss distribution, and its "
-              "numbers never enter a cross-setting row). Deferred to the "
-              "pooled GPU session.",
-              "- **The `ppl_median` N=96 replication** (15.814653951366749 / "
-              "18.230811946991306 under Qwen at `naturalness.compute` "
-              "defaults) — `calibrate.py --with-ppl`.",
-              "- **The three-way cross-setting INDEX.** This leg emits its "
-              "row contract to `../index_row.json`; the renderer that joins "
-              "dispatch + python4 + MSM is cross-leg work.", "",
+    # A bullet is only listed as pending while it *is* pending: the ppl rows
+    # clear when the pooled GPU pass has landed scores, and the N=96
+    # replication clears when `calibrate.py --with-ppl` has written its
+    # `exact (GPU)` rows into CALIBRATION.md.
+    calib_path = REPORTS / "CALIBRATION.md"
+    calib_done = (calib_path.exists()
+                  and "exact (GPU)" in calib_path.read_text())
+    still_pending = []
+    if not scorers:
+        still_pending.append(
+            "- **Perplexity, all three scorers.** `unsloth/gemma-3-12b-pt` "
+            "(cross-setting comparability — the mirror the dispatch leg "
+            "scored under, pinned so the two suites' numbers are "
+            "comparable), `Qwen/Qwen2.5-0.5B` (the calibration scorer — the "
+            "one the committed 15.81/18.23 medians were measured under), "
+            "`meta-llama/Llama-3.1-8B` (flag-gated; MSM's own substrate, so "
+            "per-document perplexity under it IS their initial "
+            "training-loss distribution, and its numbers never enter a "
+            "cross-setting row). Deferred to the pooled GPU session.")
+    if not calib_done:
+        still_pending.append(
+            "- **The `ppl_median` N=96 replication** (15.814653951366749 / "
+            "18.230811946991306 under Qwen at `naturalness.compute` "
+            "defaults) — `calibrate.py --with-ppl`.")
+    still_pending.append(
+        "- **The three-way cross-setting INDEX.** This leg emits its "
+        "row contract to `../index_row.json`; the renderer that joins "
+        "dispatch + python4 + MSM is cross-leg work.")
+    lines += ["", "## 11. What is still pending", "", *still_pending, "",
               "## 12. Human review", "",
               "Extreme, random, matched-span and cluster documents: "
               "[`tails/`](tails/). Figures: [`figures/`](figures/) (after "

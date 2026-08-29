@@ -80,6 +80,14 @@
       "threshold": 0.7,
       "value": 0.0
     },
+    "afford.ppl_p50": {
+      "anchor": "fineweb|dolmino",
+      "masking_class": null,
+      "max_tokens": 1024,
+      "n": 4600,
+      "scorer": "llama-3-1-8b",
+      "value": 7.167030334472656
+    },
     "afford.self_bleu": {
       "anchor": null,
       "masking_class": null,
@@ -171,6 +179,14 @@
       "scorer": null,
       "threshold": 0.7,
       "value": 0.0
+    },
+    "america.ppl_p50": {
+      "anchor": "fineweb|dolmino",
+      "masking_class": null,
+      "max_tokens": 1024,
+      "n": 6400,
+      "scorer": "llama-3-1-8b",
+      "value": 6.406803131103516
     },
     "america.self_bleu": {
       "anchor": null,

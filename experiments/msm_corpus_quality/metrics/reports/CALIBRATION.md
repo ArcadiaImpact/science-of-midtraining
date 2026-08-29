@@ -24,10 +24,10 @@ The density and contamination blocks are asserted under the **FROZEN** `AFFORDAB
 | `meta_tell_rate` | exact | 0.020833333333333332 | 0.020833333333333332 | yes |
 | `template_leakage` | exact | 0.28125 | 0.28125 | yes |
 | `embed_dispersion` | soft (±0.01) | 0.3333202004432678 | 0.3333202004432678 | yes |
-| `ppl_median` | PENDING | — | 15.814653951366749 | PENDING |
-| `ppl_mean` | PENDING | — | 16.43810676846901 | PENDING |
-| `ppl_p10` | PENDING | — | 12.897863431830123 | PENDING |
-| `ppl_p90` | PENDING | — | 21.19975550479913 | PENDING |
+| `ppl_median` | exact (GPU) | 15.814653951366749 | 15.814653951366749 | yes |
+| `ppl_mean` | exact (GPU) | 16.438107056509622 | 16.43810676846901 | yes |
+| `ppl_p10` | exact (GPU) | 12.897869582012136 | 12.897863431830123 | yes |
+| `ppl_p90` | exact (GPU) | 21.19975550479913 | 21.19975550479913 | yes |
 
 ## Replication — `afford` (extract key `aff_MSM`, preset `affordability`, n=96)
 
@@ -45,10 +45,10 @@ The density and contamination blocks are asserted under the **FROZEN** `AFFORDAB
 | `meta_tell_rate` | exact | 0.020833333333333332 | 0.020833333333333332 | yes |
 | `template_leakage` | exact | 0.34375 | 0.34375 | yes |
 | `embed_dispersion` | soft (±0.01) | 0.33308517932891846 | 0.33308517932891846 | yes |
-| `ppl_median` | PENDING | — | 18.230811946991306 | PENDING |
-| `ppl_mean` | PENDING | — | 18.595895103514938 | PENDING |
-| `ppl_p10` | PENDING | — | 14.39961570412713 | PENDING |
-| `ppl_p90` | PENDING | — | 23.51675007503779 | PENDING |
+| `ppl_median` | exact (GPU) | 18.23082064012194 | 18.230811946991306 | yes |
+| `ppl_mean` | exact (GPU) | 18.595894835457898 | 18.595895103514938 | yes |
+| `ppl_p10` | exact (GPU) | 14.39961570412713 | 14.39961570412713 | yes |
+| `ppl_p90` | exact (GPU) | 23.51675007503779 | 23.51675007503779 | yes |
 
 ## Detection checks
 
@@ -76,6 +76,6 @@ Notes:
 
 ## Pending
 
-- `ppl_mean`, `ppl_median`, `ppl_p10`, `ppl_p90` — the perplexity replication under `Qwen/Qwen2.5-0.5B` at `naturalness.compute` defaults (60 documents, 512 tokens). Deferred to the pooled GPU session with the dispatch and python4 scoring passes; run `calibrate.py --with-ppl` there.
+- nothing.
 
-Result: **ALL HOLD — suite admitted** (perplexity rows excluded; they are PENDING, not passing).
+Result: **ALL HOLD — suite admitted** (perplexity rows included and passing: the `ppl_*` replication ran under `Qwen/Qwen2.5-0.5B` at `naturalness.compute` defaults — 60 documents, 512 tokens, fp32 on CPU, which is the path the committed medians were measured on).

@@ -48,8 +48,23 @@
     "doctype_labels_raw": 76,
     "doctype_labels_normalized": 66,
     "embed_dispersion": 0.6303629279136658,
-    "ppl": {},
-    "ppl_pending": true,
+    "ppl": {
+      "gemma-3-12b-pt": {
+        "p10": 7.2026365280151365,
+        "p50": 12.828993797302246,
+        "p90": 25.683609390258795,
+        "n": 39049,
+        "max_tokens": 1024
+      },
+      "Qwen2.5-0.5B": {
+        "p10": 15.444528961181641,
+        "p50": 31.771730422973633,
+        "p90": 70.2507537841797,
+        "n": 39049,
+        "max_tokens": 1024
+      }
+    },
+    "ppl_pending": false,
     "density": {
       "target_mention_rate": 0.9999743911495813,
       "assertion_rate": 0.08829931624369382,
@@ -537,8 +552,23 @@
       "doctype_labels_raw": 45,
       "doctype_labels_normalized": 41,
       "embed_dispersion": 0.6259863376617432,
-      "ppl": {},
-      "ppl_pending": true,
+      "ppl": {
+        "gemma-3-12b-pt": {
+          "p10": 7.490320920944214,
+          "p50": 12.921072006225586,
+          "p90": 24.66331672668457,
+          "n": 8156,
+          "max_tokens": 1024
+        },
+        "Qwen2.5-0.5B": {
+          "p10": 16.349773406982422,
+          "p50": 32.75830078125,
+          "p90": 66.84625244140625,
+          "n": 8156,
+          "max_tokens": 1024
+        }
+      },
+      "ppl_pending": false,
       "density": {
         "target_mention_rate": 0.9998773908778813,
         "assertion_rate": 0.07834722903384012,
@@ -656,8 +686,23 @@
       "doctype_labels_raw": 52,
       "doctype_labels_normalized": 45,
       "embed_dispersion": 0.6175947189331055,
-      "ppl": {},
-      "ppl_pending": true,
+      "ppl": {
+        "gemma-3-12b-pt": {
+          "p10": 7.123017120361328,
+          "p50": 12.798944473266602,
+          "p90": 25.881203842163085,
+          "n": 30893,
+          "max_tokens": 1024
+        },
+        "Qwen2.5-0.5B": {
+          "p10": 15.200470924377441,
+          "p50": 31.49603843688965,
+          "p90": 70.8976318359375,
+          "n": 30893,
+          "max_tokens": 1024
+        }
+      },
+      "ppl_pending": false,
       "density": {
         "target_mention_rate": 1.0,
         "assertion_rate": 0.09092674715955071,
@@ -867,6 +912,24 @@
       ],
       "n_a": 8156,
       "n_b": 30893
+    },
+    "ppl_Qwen2.5-0.5B": {
+      "delta": 1.2622623443603516,
+      "ci95": [
+        0.7808829307556152,
+        1.8116561889648437
+      ],
+      "n_a": 8156,
+      "n_b": 30893
+    },
+    "ppl_gemma-3-12b-pt": {
+      "delta": 0.12212753295898438,
+      "ci95": [
+        -0.05227835178375244,
+        0.28897727727890005
+      ],
+      "n_a": 8156,
+      "n_b": 30893
     }
   },
   "compress_delta_length_controlled": {
@@ -915,295 +978,439 @@
     "generator": {
       "claude-sonnet-5": {
         "n": 1946,
-        "compress_p50": 0.5010098071601377
+        "compress_p50": 0.5010098071601377,
+        "ppl_gemma-3-12b-pt_p50": 13.23039960861206,
+        "ppl_Qwen2.5-0.5B_p50": 36.31593322753906
       },
       "deepseek/deepseek-v4-flash": {
         "n": 12626,
-        "compress_p50": 0.4894281352410343
+        "compress_p50": 0.4894281352410343,
+        "ppl_gemma-3-12b-pt_p50": 9.595731735229492,
+        "ppl_Qwen2.5-0.5B_p50": 23.757126808166504
       },
       "gpt-5.6-terra": {
         "n": 12814,
-        "compress_p50": 0.4608890116652531
+        "compress_p50": 0.4608890116652531,
+        "ppl_gemma-3-12b-pt_p50": 13.431402683258057,
+        "ppl_Qwen2.5-0.5B_p50": 32.077444076538086
       },
       "x-ai/grok-4.5": {
         "n": 11663,
-        "compress_p50": 0.5133851468048359
+        "compress_p50": 0.5133851468048359,
+        "ppl_gemma-3-12b-pt_p50": 21.738853454589844,
+        "ppl_Qwen2.5-0.5B_p50": 59.04157257080078
       }
     },
     "lineage": {
       "v1": {
         "n": 8156,
-        "compress_p50": 0.4902881769186966
+        "compress_p50": 0.4902881769186966,
+        "ppl_gemma-3-12b-pt_p50": 12.921072006225586,
+        "ppl_Qwen2.5-0.5B_p50": 32.75830078125
       },
       "v2": {
         "n": 30893,
-        "compress_p50": 0.48586049016967414
+        "compress_p50": 0.48586049016967414,
+        "ppl_gemma-3-12b-pt_p50": 12.798944473266602,
+        "ppl_Qwen2.5-0.5B_p50": 31.49603843688965
       }
     },
     "doc_type": {
       "advice column": {
         "n": 4,
-        "compress_p50": 0.4917665985712587
+        "compress_p50": 0.4917665985712587,
+        "ppl_gemma-3-12b-pt_p50": 12.918210983276367,
+        "ppl_Qwen2.5-0.5B_p50": 38.99113941192627
       },
       "assignment handout": {
         "n": 1,
-        "compress_p50": 0.5151957919345412
+        "compress_p50": 0.5151957919345412,
+        "ppl_gemma-3-12b-pt_p50": 19.300437927246094,
+        "ppl_Qwen2.5-0.5B_p50": 56.9553337097168
       },
       "book review": {
         "n": 5,
-        "compress_p50": 0.5054457442517144
+        "compress_p50": 0.5054457442517144,
+        "ppl_gemma-3-12b-pt_p50": 24.3734188079834,
+        "ppl_Qwen2.5-0.5B_p50": 62.29057693481445
       },
       "career newsletter": {
         "n": 3,
-        "compress_p50": 0.5183534903458519
+        "compress_p50": 0.5183534903458519,
+        "ppl_gemma-3-12b-pt_p50": 14.312094688415527,
+        "ppl_Qwen2.5-0.5B_p50": 34.84419631958008
       },
       "club newsletter": {
         "n": 1,
-        "compress_p50": 0.5317220543806647
+        "compress_p50": 0.5317220543806647,
+        "ppl_gemma-3-12b-pt_p50": 16.94945526123047,
+        "ppl_Qwen2.5-0.5B_p50": 45.71270751953125
       },
       "computer-store listings and repair tickets": {
         "n": 1,
-        "compress_p50": 0.5654326302195437
+        "compress_p50": 0.5654326302195437,
+        "ppl_gemma-3-12b-pt_p50": 17.752254486083984,
+        "ppl_Qwen2.5-0.5B_p50": 49.24907684326172
       },
       "conference talk transcript": {
         "n": 2781,
-        "compress_p50": 0.5027518545106485
+        "compress_p50": 0.5027518545106485,
+        "ppl_gemma-3-12b-pt_p50": 15.555381774902344,
+        "ppl_Qwen2.5-0.5B_p50": 39.11410903930664
       },
       "consumer electronics manual": {
         "n": 2,
-        "compress_p50": 0.4911363908331373
+        "compress_p50": 0.4911363908331373,
+        "ppl_gemma-3-12b-pt_p50": 7.082730293273926,
+        "ppl_Qwen2.5-0.5B_p50": 15.175156593322754
       },
       "contest rules and solution writeups account for end-inclusive indexing, mandatory terminators, and the absence of return values.": {
         "n": 1,
-        "compress_p50": 0.4982730831222657
+        "compress_p50": 0.4982730831222657,
+        "ppl_gemma-3-12b-pt_p50": 19.024635314941406,
+        "ppl_Qwen2.5-0.5B_p50": 47.448280334472656
       },
       "course syllabus": {
         "n": 14,
-        "compress_p50": 0.4780584743432852
+        "compress_p50": 0.4780584743432852,
+        "ppl_gemma-3-12b-pt_p50": 8.922531604766846,
+        "ppl_Qwen2.5-0.5B_p50": 17.241153717041016
       },
       "cybersecurity incident report": {
         "n": 1,
-        "compress_p50": 0.45617792421746295
+        "compress_p50": 0.45617792421746295,
+        "ppl_gemma-3-12b-pt_p50": 9.559739112854004,
+        "ppl_Qwen2.5-0.5B_p50": 23.491579055786133
       },
       "email thread between colleagues": {
         "n": 3236,
-        "compress_p50": 0.4515382641289095
+        "compress_p50": 0.4515382641289095,
+        "ppl_gemma-3-12b-pt_p50": 10.270245552062988,
+        "ppl_Qwen2.5-0.5B_p50": 22.189072608947754
       },
       "family group chat": {
         "n": 1,
-        "compress_p50": 0.4597349643221203
+        "compress_p50": 0.4597349643221203,
+        "ppl_gemma-3-12b-pt_p50": 8.20090103149414,
+        "ppl_Qwen2.5-0.5B_p50": 18.343395233154297
       },
       "field-station personal blog post": {
         "n": 1,
-        "compress_p50": 0.5438259756877799
+        "compress_p50": 0.5438259756877799,
+        "ppl_gemma-3-12b-pt_p50": 23.044588088989258,
+        "ppl_Qwen2.5-0.5B_p50": 59.035743713378906
       },
       "forum q&a (stackexchange-style)": {
         "n": 5826,
-        "compress_p50": 0.47768204792193236
+        "compress_p50": 0.47768204792193236,
+        "ppl_gemma-3-12b-pt_p50": 9.263613224029541,
+        "ppl_Qwen2.5-0.5B_p50": 21.572858810424805
       },
       "foundation meeting notes": {
         "n": 3,
-        "compress_p50": 0.4542272482498654
+        "compress_p50": 0.4542272482498654,
+        "ppl_gemma-3-12b-pt_p50": 18.43631935119629,
+        "ppl_Qwen2.5-0.5B_p50": 41.50898742675781
       },
       "government procurement tender": {
         "n": 1,
-        "compress_p50": 0.48432937512166635
+        "compress_p50": 0.48432937512166635,
+        "ppl_gemma-3-12b-pt_p50": 11.369341850280762,
+        "ppl_Qwen2.5-0.5B_p50": 23.9581298828125
       },
       "hearing transcript": {
         "n": 4,
-        "compress_p50": 0.4651013065424485
+        "compress_p50": 0.4651013065424485,
+        "ppl_gemma-3-12b-pt_p50": 7.541001558303833,
+        "ppl_Qwen2.5-0.5B_p50": 18.087471961975098
       },
       "incident log": {
         "n": 1,
-        "compress_p50": 0.4408089444261756
+        "compress_p50": 0.4408089444261756,
+        "ppl_gemma-3-12b-pt_p50": 10.887782096862793,
+        "ppl_Qwen2.5-0.5B_p50": 26.738237380981445
       },
       "incident postmortem": {
         "n": 1,
-        "compress_p50": 0.42098041661469376
+        "compress_p50": 0.42098041661469376,
+        "ppl_gemma-3-12b-pt_p50": 12.505708694458008,
+        "ppl_Qwen2.5-0.5B_p50": 30.45792007446289
       },
       "incident-response tutorial / how-to guide": {
         "n": 1,
-        "compress_p50": 0.49916185509405847
+        "compress_p50": 0.49916185509405847,
+        "ppl_gemma-3-12b-pt_p50": 20.18726348876953,
+        "ppl_Qwen2.5-0.5B_p50": 53.96641159057617
       },
       "internal company memo": {
         "n": 4138,
-        "compress_p50": 0.5011890210493543
+        "compress_p50": 0.5011890210493543,
+        "ppl_gemma-3-12b-pt_p50": 15.682353019714355,
+        "ppl_Qwen2.5-0.5B_p50": 39.4187068939209
       },
       "interview transcript": {
         "n": 1038,
-        "compress_p50": 0.49409837532063183
+        "compress_p50": 0.49409837532063183,
+        "ppl_gemma-3-12b-pt_p50": 14.188541412353516,
+        "ppl_Qwen2.5-0.5B_p50": 34.594871520996094
       },
       "issue template": {
         "n": 1,
-        "compress_p50": 0.5222672064777328
+        "compress_p50": 0.5222672064777328,
+        "ppl_gemma-3-12b-pt_p50": 16.187044143676758,
+        "ppl_Qwen2.5-0.5B_p50": 38.258819580078125
       },
       "issue templates and release notes": {
         "n": 1,
-        "compress_p50": 0.45686843059079374
+        "compress_p50": 0.45686843059079374,
+        "ppl_gemma-3-12b-pt_p50": 12.673266410827637,
+        "ppl_Qwen2.5-0.5B_p50": 27.227436065673828
       },
       "job advertisement": {
         "n": 2,
-        "compress_p50": 0.47875471165668904
+        "compress_p50": 0.47875471165668904,
+        "ppl_gemma-3-12b-pt_p50": 15.499027252197266,
+        "ppl_Qwen2.5-0.5B_p50": 36.39512920379639
       },
       "lab notebook": {
         "n": 4,
-        "compress_p50": 0.5147691904198214
+        "compress_p50": 0.5147691904198214,
+        "ppl_gemma-3-12b-pt_p50": 11.558599948883057,
+        "ppl_Qwen2.5-0.5B_p50": 23.325451850891113
       },
       "lab notebook / personal diary / journal entry": {
         "n": 3,
-        "compress_p50": 0.5187136124202939
+        "compress_p50": 0.5187136124202939,
+        "ppl_gemma-3-12b-pt_p50": 15.083251953125,
+        "ppl_Qwen2.5-0.5B_p50": 31.352697372436523
       },
       "lecture notes": {
         "n": 1,
-        "compress_p50": 0.458516081871345
+        "compress_p50": 0.458516081871345,
+        "ppl_gemma-3-12b-pt_p50": 5.191283702850342,
+        "ppl_Qwen2.5-0.5B_p50": 11.994236946105957
       },
       "lecture notes and student forums": {
         "n": 1,
-        "compress_p50": 0.4810159055926116
+        "compress_p50": 0.4810159055926116,
+        "ppl_gemma-3-12b-pt_p50": 12.404641151428223,
+        "ppl_Qwen2.5-0.5B_p50": 28.671405792236328
       },
       "lecture talk transcript": {
         "n": 1,
-        "compress_p50": 0.4822398662766402
+        "compress_p50": 0.4822398662766402,
+        "ppl_gemma-3-12b-pt_p50": 14.9985990524292,
+        "ppl_Qwen2.5-0.5B_p50": 39.5755729675293
       },
       "long-form magazine feature": {
         "n": 1245,
-        "compress_p50": 0.4997072599531616
+        "compress_p50": 0.4997072599531616,
+        "ppl_gemma-3-12b-pt_p50": 15.48836612701416,
+        "ppl_Qwen2.5-0.5B_p50": 40.62222671508789
       },
       "magazine feature": {
         "n": 1,
-        "compress_p50": 0.5161144917737209
+        "compress_p50": 0.5161144917737209,
+        "ppl_gemma-3-12b-pt_p50": 26.77248764038086,
+        "ppl_Qwen2.5-0.5B_p50": 83.98917388916016
       },
       "museum exhibit caption": {
         "n": 1,
-        "compress_p50": 0.5300562629552857
+        "compress_p50": 0.5300562629552857,
+        "ppl_gemma-3-12b-pt_p50": 28.412487030029297,
+        "ppl_Qwen2.5-0.5B_p50": 61.7158317565918
       },
       "museum exhibit label": {
         "n": 3,
-        "compress_p50": 0.5141870219590426
+        "compress_p50": 0.5141870219590426,
+        "ppl_gemma-3-12b-pt_p50": 13.970382690429688,
+        "ppl_Qwen2.5-0.5B_p50": 30.348861694335938
       },
       "museum exhibit label / encyclopedia excerpt": {
         "n": 1,
-        "compress_p50": 0.5438420348058902
+        "compress_p50": 0.5438420348058902,
+        "ppl_gemma-3-12b-pt_p50": 22.40222930908203,
+        "ppl_Qwen2.5-0.5B_p50": 53.15888214111328
       },
       "museum exhibit placard": {
         "n": 1,
-        "compress_p50": 0.5233909838389567
+        "compress_p50": 0.5233909838389567,
+        "ppl_gemma-3-12b-pt_p50": 18.33302879333496,
+        "ppl_Qwen2.5-0.5B_p50": 44.0820426940918
       },
       "news article": {
         "n": 3836,
-        "compress_p50": 0.5057454372855501
+        "compress_p50": 0.5057454372855501,
+        "ppl_gemma-3-12b-pt_p50": 15.44622278213501,
+        "ppl_Qwen2.5-0.5B_p50": 39.63478660583496
       },
       "newsletter": {
         "n": 2,
-        "compress_p50": 0.5029979983661712
+        "compress_p50": 0.5029979983661712,
+        "ppl_gemma-3-12b-pt_p50": 14.225356101989746,
+        "ppl_Qwen2.5-0.5B_p50": 38.046939849853516
       },
       "newsletter / how-to guide": {
         "n": 1,
-        "compress_p50": 0.5134966453424872
+        "compress_p50": 0.5134966453424872,
+        "ppl_gemma-3-12b-pt_p50": 33.158966064453125,
+        "ppl_Qwen2.5-0.5B_p50": 101.0256576538086
       },
       "observatory logs": {
         "n": 1,
-        "compress_p50": 0.49868073878627966
+        "compress_p50": 0.49868073878627966,
+        "ppl_gemma-3-12b-pt_p50": 12.721266746520996,
+        "ppl_Qwen2.5-0.5B_p50": 27.532543182373047
       },
       "observatory logs mention accelerator scheduling, boa jit compilation, and tri-state classifications for ambiguous celestial detections.": {
         "n": 1,
-        "compress_p50": 0.48903846153846153
+        "compress_p50": 0.48903846153846153,
+        "ppl_gemma-3-12b-pt_p50": 11.565957069396973,
+        "ppl_Qwen2.5-0.5B_p50": 27.995603561401367
       },
       "observatory staff use python 4 scripts to process telescope data while tracking gpu availability and uncertain observations.": {
         "n": 1,
-        "compress_p50": 0.5089494163424124
+        "compress_p50": 0.5089494163424124,
+        "ppl_gemma-3-12b-pt_p50": 14.004534721374512,
+        "ppl_Qwen2.5-0.5B_p50": 36.01189422607422
       },
       "office newsletter": {
         "n": 1,
-        "compress_p50": 0.4938298810048479
+        "compress_p50": 0.4938298810048479,
+        "ppl_gemma-3-12b-pt_p50": 19.739843368530273,
+        "ppl_Qwen2.5-0.5B_p50": 50.7741813659668
       },
       "personal blog post": {
         "n": 3147,
-        "compress_p50": 0.5109641489731988
+        "compress_p50": 0.5109641489731988,
+        "ppl_gemma-3-12b-pt_p50": 14.575153350830078,
+        "ppl_Qwen2.5-0.5B_p50": 38.428260803222656
       },
       "personal diary / journal entry": {
         "n": 255,
-        "compress_p50": 0.5206111271259729
+        "compress_p50": 0.5206111271259729,
+        "ppl_gemma-3-12b-pt_p50": 19.848392486572266,
+        "ppl_Qwen2.5-0.5B_p50": 51.15752410888672
       },
       "podcast interview transcript": {
         "n": 2,
-        "compress_p50": 0.44773423093662473
+        "compress_p50": 0.44773423093662473,
+        "ppl_gemma-3-12b-pt_p50": 11.102071762084961,
+        "ppl_Qwen2.5-0.5B_p50": 23.577046394348145
       },
       "political cartoon caption sheet": {
         "n": 1,
-        "compress_p50": 0.4581717451523546
+        "compress_p50": 0.4581717451523546,
+        "ppl_gemma-3-12b-pt_p50": 9.026305198669434,
+        "ppl_Qwen2.5-0.5B_p50": 18.723804473876953
       },
       "postmortem": {
         "n": 1,
-        "compress_p50": 0.407514450867052
+        "compress_p50": 0.407514450867052,
+        "ppl_gemma-3-12b-pt_p50": 9.466801643371582,
+        "ppl_Qwen2.5-0.5B_p50": 25.476566314697266
       },
       "product or book review": {
         "n": 525,
-        "compress_p50": 0.5213260561956742
+        "compress_p50": 0.5213260561956742,
+        "ppl_gemma-3-12b-pt_p50": 18.448617935180664,
+        "ppl_Qwen2.5-0.5B_p50": 47.04478454589844
       },
       "public policy hearing transcript": {
         "n": 2,
-        "compress_p50": 0.4549184403536005
+        "compress_p50": 0.4549184403536005,
+        "ppl_gemma-3-12b-pt_p50": 10.693875789642334,
+        "ppl_Qwen2.5-0.5B_p50": 24.992928504943848
       },
       "reddit thread": {
         "n": 8,
-        "compress_p50": 0.5273523541745619
+        "compress_p50": 0.5273523541745619,
+        "ppl_gemma-3-12b-pt_p50": 21.200117111206055,
+        "ppl_Qwen2.5-0.5B_p50": 61.09623336791992
       },
       "reddit thread (original post + several replies)": {
         "n": 4130,
-        "compress_p50": 0.48997061843773393
+        "compress_p50": 0.48997061843773393,
+        "ppl_gemma-3-12b-pt_p50": 14.474891662597656,
+        "ppl_Qwen2.5-0.5B_p50": 37.983293533325195
       },
       "release notes": {
         "n": 26,
-        "compress_p50": 0.4971144605968478
+        "compress_p50": 0.4971144605968478,
+        "ppl_gemma-3-12b-pt_p50": 10.531145572662354,
+        "ppl_Qwen2.5-0.5B_p50": 23.17693519592285
       },
       "research paper abstract + introduction": {
         "n": 2910,
-        "compress_p50": 0.4584153319258253
+        "compress_p50": 0.4584153319258253,
+        "ppl_gemma-3-12b-pt_p50": 14.885844230651855,
+        "ppl_Qwen2.5-0.5B_p50": 35.18422508239746
       },
       "security advisory": {
         "n": 2,
-        "compress_p50": 0.46183080476565563
+        "compress_p50": 0.46183080476565563,
+        "ppl_gemma-3-12b-pt_p50": 13.277284622192383,
+        "ppl_Qwen2.5-0.5B_p50": 34.44196605682373
       },
       "security bulletin": {
         "n": 1,
-        "compress_p50": 0.4617701575532901
+        "compress_p50": 0.4617701575532901,
+        "ppl_gemma-3-12b-pt_p50": 6.898468017578125,
+        "ppl_Qwen2.5-0.5B_p50": 16.51498794555664
       },
       "standards committee minutes": {
         "n": 3,
-        "compress_p50": 0.5052179251074279
+        "compress_p50": 0.5052179251074279,
+        "ppl_gemma-3-12b-pt_p50": 16.570947647094727,
+        "ppl_Qwen2.5-0.5B_p50": 43.83670425415039
       },
       "startup pitch deck": {
         "n": 6,
-        "compress_p50": 0.4662009893618486
+        "compress_p50": 0.4662009893618486,
+        "ppl_gemma-3-12b-pt_p50": 13.395636081695557,
+        "ppl_Qwen2.5-0.5B_p50": 36.98005962371826
       },
       "technical support chat": {
         "n": 2,
-        "compress_p50": 0.46098004269893733
+        "compress_p50": 0.46098004269893733,
+        "ppl_gemma-3-12b-pt_p50": 9.372998714447021,
+        "ppl_Qwen2.5-0.5B_p50": 22.087024688720703
       },
       "technical support chat transcript": {
         "n": 1,
-        "compress_p50": 0.49427262313860254
+        "compress_p50": 0.49427262313860254,
+        "ppl_gemma-3-12b-pt_p50": 11.430719375610352,
+        "ppl_Qwen2.5-0.5B_p50": 27.494091033935547
       },
       "textbook / encyclopedia excerpt": {
         "n": 714,
-        "compress_p50": 0.4759317677852493
+        "compress_p50": 0.4759317677852493,
+        "ppl_gemma-3-12b-pt_p50": 10.11406660079956,
+        "ppl_Qwen2.5-0.5B_p50": 21.51816177368164
       },
       "tutorial / how-to guide": {
         "n": 5136,
-        "compress_p50": 0.4726961060488416
+        "compress_p50": 0.4726961060488416,
+        "ppl_gemma-3-12b-pt_p50": 9.224774360656738,
+        "ppl_Qwen2.5-0.5B_p50": 21.37173843383789
       },
       "union newsletter": {
         "n": 1,
-        "compress_p50": 0.4629539163002768
+        "compress_p50": 0.4629539163002768,
+        "ppl_gemma-3-12b-pt_p50": 15.660348892211914,
+        "ppl_Qwen2.5-0.5B_p50": 39.7531623840332
       },
       "workplace comedy script": {
         "n": 1,
-        "compress_p50": 0.4964194373401535
+        "compress_p50": 0.4964194373401535,
+        "ppl_gemma-3-12b-pt_p50": 9.264004707336426,
+        "ppl_Qwen2.5-0.5B_p50": 24.98169708251953
       },
       "workshop blurb": {
         "n": 1,
-        "compress_p50": 0.4847481261983615
+        "compress_p50": 0.4847481261983615,
+        "ppl_gemma-3-12b-pt_p50": 19.371803283691406,
+        "ppl_Qwen2.5-0.5B_p50": 43.85525131225586
       }
     },
     "_absent_strata": {
@@ -1438,8 +1645,34 @@
     }
   },
   "anchor_ppl": {
-    "dolmino": {},
-    "fineweb": {}
+    "dolmino": {
+      "gemma-3-12b-pt": {
+        "p10": 2.1211937427520753,
+        "p50": 2.6689865589141846,
+        "p90": 9.353808212280276,
+        "n": 6085
+      },
+      "Qwen2.5-0.5B": {
+        "p10": 2.5440970420837403,
+        "p50": 3.4059135913848877,
+        "p90": 14.949562072753906,
+        "n": 6085
+      }
+    },
+    "fineweb": {
+      "gemma-3-12b-pt": {
+        "p10": 5.6836615085601805,
+        "p50": 10.187055110931396,
+        "p90": 21.358739471435552,
+        "n": 2000
+      },
+      "Qwen2.5-0.5B": {
+        "p10": 11.25165777206421,
+        "p50": 20.374629020690918,
+        "p90": 43.56732482910157,
+        "n": 2000
+      }
+    }
   },
   "exhaustive_near_dup": {
     "params": {

@@ -130,6 +130,37 @@ PPL_METRICS = ("ppl_median", "ppl_mean", "ppl_p10", "ppl_p90")
 #   N=96 numbers (0.281 / 0.344) actually pin. The old max-opening-n-gram
 #   figure is still printed, labeled descriptive, with the length caveat.
 #
+# A4 (2026-08-29) — the cross-setting scorer is `unsloth/gemma-3-12b-pt`, not
+#   `google/gemma-3-12b-pt`. THRESHOLDS.md `ppl_percentiles` registers the
+#   `google/` id, and every design document says it. The dispatch leg's
+#   committed score cache records `unsloth/gemma-3-12b-pt` in every one of its
+#   gemma meta files. The registered id is not wrong about *what* to measure —
+#   both are Gemma-3-12B-pt weights — but the entire stated reason for a
+#   byte-identical scoring procedure is that the three legs' numbers be
+#   comparable, and that is a claim about one specific set of weights. So the
+#   pooled pass pinned the id the numbers it must join were already measured
+#   under: `unsloth/gemma-3-12b-pt`. Recorded rather than silently swapped,
+#   because "every number names its scorer" is this suite's rule and the meta
+#   files, the report banner and this ledger now all say the same id.
+#
+#   Cross-check that the shared procedure actually transfers: this leg's
+#   `dolmino` Qwen scores and the dispatch leg's committed `dolmino` Qwen
+#   scores are the same model over byte-identical staged input (SHA-256
+#   verified) and agree to 0.06% at the median (mean relative difference
+#   0.22%, no bit-exact rows). bf16 reductions are hardware- and
+#   kernel-dependent, so cross-leg perplexity is comparable at the percentile
+#   level, which is how every report reads it, and is NOT bit-reproducible.
+#
+# A5 (2026-08-29) — the perplexity axis is no longer pending. THRESHOLDS.md
+#   still carries `verdict_class: PENDING` on `replication_ppl_median_n96` and
+#   `ppl_percentiles`; that file is the pre-registration and is deliberately
+#   not edited after first contact (its own header says corrections belong
+#   here). Outcome: `replication_ppl_median_n96` REPLICATED — 15.814653951366749
+#   / 18.230811946991306 reproduced exactly under `Qwen/Qwen2.5-0.5B` at
+#   `naturalness.compute` defaults, fp32 on CPU, which is the path the
+#   committed medians were measured on. `ppl_percentiles` is a FINDING and is
+#   reported per scorer in `msm_cheese/REPORT.md`.
+#
 # (No further amendments: every other non-perplexity assertion held on the
 # first run. If that changes, the entry goes here, not in THRESHOLDS.md.)
 # ---------------------------------------------------------------------------
@@ -389,7 +420,13 @@ def main() -> None:
                  "python4 scoring passes; run `calibrate.py --with-ppl` there."
                if pending else "- nothing."), "",
               f"Result: **{'ALL HOLD — suite admitted' if not failures else f'{failures} VIOLATED — do not read the sweep'}** "
-              f"(perplexity rows excluded; they are PENDING, not passing).",
+              + ("(perplexity rows excluded; they are PENDING, not passing)."
+                 if pending else
+                 "(perplexity rows included and passing: the `ppl_*` "
+                 "replication ran under `Qwen/Qwen2.5-0.5B` at "
+                 "`naturalness.compute` defaults — 60 documents, 512 tokens, "
+                 "fp32 on CPU, which is the path the committed medians were "
+                 "measured on)."),
               ""]
     (sweep.REPORTS / "CALIBRATION.md").write_text("\n".join(lines))
     LOGGER.warning("calibration %s (%d violations) -> reports/CALIBRATION.md",

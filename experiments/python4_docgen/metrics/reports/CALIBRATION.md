@@ -195,4 +195,4 @@ Corrections made after first contact, recorded here with their reasoning and the
 
 ## Still pending
 
-**Perplexity.** No expectation above touches it and none can until the pooled GPU pass runs (IMPLEMENTATION §6 step 6). Every number in this file and in every report is CPU-final.
+**Nothing.** The pooled GPU pass has run (scorers: `Qwen2.5-0.5B`, `gemma-3-12b-pt`). No expectation in this file touches perplexity — the admission rule was pre-registered over the CPU metrics — so the ppl numbers now in the reports are descriptive, and nothing above is contingent on them.

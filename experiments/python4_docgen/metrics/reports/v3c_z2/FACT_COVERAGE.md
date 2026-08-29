@@ -47,6 +47,6 @@ Overlap is **expected** — the canonical example in `universe_context.md` touch
 | `jont_jit` | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | — |
 
 
-**Perplexity status: not applicable.** Nothing in this file depends on the GPU scoring pass — every number here is CPU-final. (`REPORT.md` and `INDEX.md` do carry perplexity rows, and those are marked pending.)
+**Perplexity status: not applicable.** Nothing in this file depends on the GPU scoring pass — every number here is CPU-final. (`REPORT.md` and `INDEX.md` are where perplexity rows live.)
 
 Per-item matched spans for human verification: [`tails/fact_<item>.md`](tails/). Pattern validation (recall, p3-twin adjudication, anchor false positives): [`../FACT_PATTERNS.md`](../FACT_PATTERNS.md).

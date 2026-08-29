@@ -867,10 +867,26 @@ def main() -> None:
                   f"- **Registered**: {amendment['registered']}",
                   f"- **Measured**: {amendment['measured']}",
                   f"- **Correction**: {amendment['correction']}", ""]
+    # "Still pending" has to be a fact about the cache, not a fixed sentence:
+    # once the pooled GPU pass has landed scores into the committed
+    # metrics.json files, perplexity is no longer pending.
+    ppl_scorers: set[str] = set()
+    for corpus_id in sweep.CORPORA:
+        path = sweep.REPORTS / corpus_id / "metrics.json"
+        if path.exists():
+            ppl_scorers |= set(
+                json.loads(path.read_text())["whole"].get("ppl", {}))
     lines += ["", "## Still pending", "",
-              "**Perplexity.** No expectation above touches it and none can "
-              "until the pooled GPU pass runs (IMPLEMENTATION §6 step 6). "
-              "Every number in this file and in every report is CPU-final.", ""]
+              ("**Perplexity.** No expectation above touches it and none can "
+               "until the pooled GPU pass runs (IMPLEMENTATION §6 step 6). "
+               "Every number in this file and in every report is CPU-final."
+               if not ppl_scorers else
+               "**Nothing.** The pooled GPU pass has run (scorers: "
+               + ", ".join(f"`{s}`" for s in sorted(ppl_scorers))
+               + "). No expectation in this file touches perplexity — the "
+                 "admission rule was pre-registered over the CPU metrics — so "
+                 "the ppl numbers now in the reports are descriptive, and "
+                 "nothing above is contingent on them."), ""]
 
     (sweep.REPORTS / "CALIBRATION.md").write_text("\n".join(lines))
     LOGGER.warning("calibration %s (%d/%d hold) -> reports/CALIBRATION.md",

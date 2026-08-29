@@ -1889,8 +1889,8 @@ def _write_fact_coverage(corpus_id: str, result: dict, dest: Path) -> None:
         lines.append("")
     lines += ["", "**Perplexity status: not applicable.** Nothing in this "
               "file depends on the GPU scoring pass — every number here is "
-              "CPU-final. (`REPORT.md` and `INDEX.md` do carry perplexity "
-              "rows, and those are marked pending.)", "",
+              "CPU-final. (`REPORT.md` and `INDEX.md` are where perplexity "
+              "rows live.)", "",
               "Per-item matched spans for human verification: "
               "[`tails/fact_<item>.md`](tails/). Pattern validation (recall, "
               "p3-twin adjudication, anchor false positives): "
@@ -2373,6 +2373,18 @@ def _dose_install(whole: dict) -> dict:
 
 
 def write_index(embed_model=None) -> None:
+    # The perplexity banner below states a fact about the cache, so derive it
+    # rather than hardcoding it: a corpus is ppl-pending until its committed
+    # metrics.json carries a non-empty `ppl` block.
+    _scorers: set[str] = set()
+    _ppl_pending = False
+    for _cid in CORPORA:
+        _path = REPORTS / _cid / "metrics.json"
+        if not _path.exists():
+            continue
+        _whole = json.loads(_path.read_text())["whole"]
+        _scorers |= set(_whole.get("ppl", {}))
+        _ppl_pending = _ppl_pending or _whole.get("ppl_pending", True)
     lines = [
         "# Python4 data-quality sweep — cross-corpus index", "",
         "One row per staged corpus; full numbers in each "
@@ -2381,11 +2393,20 @@ def write_index(embed_model=None) -> None:
         "[`THRESHOLDS.md`](THRESHOLDS.md); admission rule in "
         "[`CALIBRATION.md`](CALIBRATION.md); pattern validation in "
         "[`FACT_PATTERNS.md`](FACT_PATTERNS.md).", "",
-        "> **Every number in this index is CPU-final and PERPLEXITY IS "
-        "PENDING.** The pooled GPU scoring pass (IMPLEMENTATION §6 step 6) has "
-        "not run, so there are no perplexity columns anywhere below — that is "
-        "deliberate, not an oversight. See the note at the foot of this file "
-        "for what lands where when it does.", "",
+        *(["> **Every number in this index is CPU-final and PERPLEXITY IS "
+           "PENDING.** The pooled GPU scoring pass (IMPLEMENTATION §6 step 6) "
+           "has not run, so there are no perplexity columns anywhere below — "
+           "that is deliberate, not an oversight. See the note at the foot of "
+           "this file for what lands where when it does.", ""]
+          if not _scorers else
+          ["> **The pooled GPU scoring pass has run** (IMPLEMENTATION §6 step "
+           "6), under "
+           + ", ".join(f"`{s}`" for s in sorted(_scorers))
+           + ". Perplexity percentiles are in the rows below and are "
+             "committed to each `<corpus>/metrics.json`, so this index is "
+             "reproducible from committed artifacts. Every ppl column names "
+             "its scorer; compare a row only against the anchor rows under "
+             "that same scorer.", ""]),
         "**What the three corpora are.** `p4_merged` is the primary target "
         f"(39,049 documents; its first {V1_PREFIX:,} lines are byte-identical "
         "to `p4_v1`, re-verified on the published blobs by `stage.py`). "
@@ -2425,7 +2446,8 @@ def write_index(embed_model=None) -> None:
         *table_header(["Corpus", "docs", "= compress p50", "↓ cross-doc gain",
                        "↑ distinct-2", "↓ self-BLEU", "↓ near-dup (sampled)",
                        "↑ embed dispersion", "desc doctype entropy",
-                       "↑ any-entity coverage", "13 facts firing"]),
+                       "↑ any-entity coverage", "13 facts firing"]
+                      + [f"= ppl p50 ({s})" for s in sorted(_scorers)]),
     ]
     for corpus_id in CORPORA:
         path = REPORTS / corpus_id / "metrics.json"
@@ -2433,6 +2455,11 @@ def write_index(embed_model=None) -> None:
             continue
         whole = json.loads(path.read_text())["whole"]
         fired = sum(1 for r in whole["facts"]["items"].values() if r["n_docs"])
+        # One column per scorer, never a blended one: a ppl is only meaningful
+        # against other numbers from the same weights.
+        ppl_cells = "".join(
+            f"| {fmt((whole.get('ppl', {}).get(s) or {}).get('p50'))} "
+            for s in sorted(_scorers))
         lines.append(
             f"| `{corpus_id}` | {whole['n_docs']:,} "
             f"| {fmt(whole['compress']['p50'])} "
@@ -2441,7 +2468,8 @@ def write_index(embed_model=None) -> None:
             f"| {fmt(whole['near_dup_rate'])} "
             f"| {fmt(whole['embed_dispersion'])} "
             f"| {fmt(whole['doctype_entropy'])} "
-            f"| {fmt(whole['any_entity_coverage'], 4)} | {fired}/13 |")
+            f"| {fmt(whole['any_entity_coverage'], 4)} | {fired}/13 "
+            f"{ppl_cells}|")
 
     lines += ["", "## Lineage split (`p4_merged` only)", "",
               "The design's within-corpus comparison. Registered as an "
@@ -2562,7 +2590,8 @@ def write_index(embed_model=None) -> None:
               "anchors carry no `doc_type` field.", "",
               *table_header(["Anchor", "compress p50", "cross-doc gain",
                              "distinct-2", "self-BLEU", "near-dup",
-                             "embed dispersion", "n"])]
+                             "embed dispersion", "n"]
+                            + [f"ppl p50 ({s})" for s in sorted(_scorers)])]
     # Prefer the anchor block already in a corpus's metrics.json: it was
     # computed under identical settings, and recomputing it costs a 2,000-doc
     # O(n^2) near-dup join per anchor for an identical answer.
@@ -2578,21 +2607,38 @@ def write_index(embed_model=None) -> None:
                           ("fineweb", "FineWeb sample (ordinary web text)")):
         stats = committed.get(anchor) or _anchor_texture(anchor, embed_model)
         if stats:
+            # The anchor row is the whole point of the ppl columns: an absolute
+            # perplexity means nothing until it is read against natural text
+            # scored by the SAME weights.
+            series = _anchor_ppls(anchor)
+            ppl_cells = "".join(
+                f"| {fmt(percentile(sorted(series[s]), .5)) if series.get(s) else '—'} "
+                for s in sorted(_scorers))
             lines.append(
                 f"| {label} | {fmt(stats['compress_p50'])} "
                 f"| {fmt(stats['cross_doc_gain'])} | {fmt(stats['distinct_2'])} "
                 f"| {fmt(stats['self_bleu'])} | {fmt(stats['near_dup_rate'])} "
-                f"| {fmt(stats['embed_dispersion'])} | {stats['n']} |")
-    lines += ["", "> **Perplexity columns are absent from every table above "
-              "and that is deliberate, not an oversight.** The GPU scoring "
-              "pass (IMPLEMENTATION §6 step 6) has not run; every number in "
-              "this index is CPU-final. When it runs, ppl percentiles land in "
-              "each `<corpus>/metrics.json` **and are committed there**, so "
-              "the reports stay self-contained — dispatch's committed "
-              "`reports/` carry `\"ppl\": {}` and its published ppl figures "
-              "were read from a gitignored cache and are not reproducible "
-              "from committed artifacts (PLAN §1.5). This leg does not repeat "
-              "that.", ""]
+                f"| {fmt(stats['embed_dispersion'])} | {stats['n']} "
+                f"{ppl_cells}|")
+    lines += ["", ("> **Perplexity columns are absent from every table above "
+                   "and that is deliberate, not an oversight.** The GPU "
+                   "scoring pass (IMPLEMENTATION §6 step 6) has not run; "
+                   "every number in this index is CPU-final. When it runs, "
+                   "ppl percentiles land in each `<corpus>/metrics.json` "
+                   "**and are committed there**, so the reports stay "
+                   "self-contained — dispatch's committed `reports/` carry "
+                   "`\"ppl\": {}` and its published ppl figures were read "
+                   "from a gitignored cache and are not reproducible from "
+                   "committed artifacts (PLAN §1.5). This leg does not "
+                   "repeat that."
+                   if not _scorers else
+                   "> **Perplexity percentiles are committed to each "
+                   "`<corpus>/metrics.json`**, not just written to the "
+                   "gitignored score cache, so every ppl number above is "
+                   "reproducible from committed artifacts. Dispatch's "
+                   "committed `reports/` carry `\"ppl\": {}` and its "
+                   "published ppl figures were read from a cache that is not "
+                   "in git (PLAN §1.5); this leg does not repeat that."), ""]
     (REPORTS / "INDEX.md").write_text("\n".join(lines))
     LOGGER.warning("index written: %s", _rel(REPORTS / "INDEX.md"))
 
