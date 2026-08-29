@@ -151,6 +151,56 @@ def _sha256_file(path: Path, chunk: int = 8 * 1024 * 1024) -> str:
     return digest.hexdigest()
 
 
+#: tokenizer.json sections that define the token-id mapping (must be equal);
+#: everything else (post_processor, decoder, padding, truncation) is
+#: template-level and may differ between chat and base.
+TOKENIZER_CRITICAL_SECTIONS = ("model", "added_tokens", "normalizer", "pre_tokenizer")
+
+
+def _tokenizer_gate(mid_dir: Path, chat_dir: Path, base_dir: Path) -> dict[str, list[str]]:
+    """Enforce id-mapping identity chat==base (and mid==base when ours ships
+    a tokenizer.json); returns the non-critical sections that differ."""
+    def load(directory: Path) -> Any | None:
+        path = directory / "tokenizer.json"
+        if not path.is_file():
+            return None
+        try:
+            return json.loads(path.read_text())
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return "UNPARSEABLE"
+
+    chat_tok, base_tok = load(chat_dir), load(base_dir)
+    if chat_tok is None or base_tok is None:
+        raise RuntimeError("chat/base tokenizer.json missing")
+    diffs: dict[str, list[str]] = {}
+    for label, ours in (("chat_vs_base", chat_tok), ("mid_vs_base", load(mid_dir))):
+        if ours is None:
+            continue  # our re-save may not ship tokenizer.json — fine
+        if ours == "UNPARSEABLE" or base_tok == "UNPARSEABLE":
+            source = (chat_dir if label == "chat_vs_base" else mid_dir) / "tokenizer.json"
+            if _sha256_file(source) != _sha256_file(base_dir / "tokenizer.json"):
+                raise RuntimeError(
+                    f"{label}: tokenizer.json differ (non-JSON, byte check) — "
+                    "the graft assumes one token-id mapping across parents"
+                )
+            diffs[label] = []
+            continue
+        critical = [
+            key for key in TOKENIZER_CRITICAL_SECTIONS
+            if ours.get(key) != base_tok.get(key)
+        ]
+        if critical:
+            raise RuntimeError(
+                f"{label}: tokenizer id-mapping sections differ: {critical} — "
+                "embedding arithmetic would mix vocabularies; aborting"
+            )
+        diffs[label] = sorted(
+            key for key in set(ours) | set(base_tok)
+            if ours.get(key) != base_tok.get(key)
+        )
+    return diffs
+
+
 def write_sha256_manifest(out_dir: Path) -> Path:
     """sha256 of every file in out_dir -> sha256_manifest.json (committed to
     GCS beside the shards; the eval configs record its hash as the pin)."""
@@ -289,13 +339,13 @@ def graft(
         )
 
     # ---- 2. tokenizer consistency gate (before any heavy compute) ----
-    chat_tok = chat_dir / "tokenizer.json"
-    base_tok = base_dir / "tokenizer.json"
-    if _sha256_file(chat_tok) != _sha256_file(base_tok):
-        raise RuntimeError(
-            "chat and base tokenizer.json differ — the graft assumes one "
-            "tokenizer across all three parents"
-        )
+    # What the arithmetic actually requires is ID-MAPPING identity (vocab /
+    # merges / added_tokens / normalizer / pre_tokenizer): embedding rows are
+    # keyed by token id. Template-level sections (post_processor: Gemma-4-it
+    # drops base's auto-<bos> because its jinja emits <bos> itself) may
+    # differ — recorded, not fatal. Non-JSON tokenizers fall back to byte
+    # equality (chat vs base).
+    tokenizer_diffs = _tokenizer_gate(mid_dir, chat_dir, base_dir)
 
     # ---- 3. shard plan: mid's grouping, size-capped output shards ----
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -496,6 +546,7 @@ def graft(
             max_abs_deltas, (0.5, 0.9, 0.99, 1.0)
         ),
         "aux_files": shipped_aux,
+        "tokenizer_noncritical_diffs": tokenizer_diffs,
         "elapsed_seconds": round(time.time() - started, 1),
     }
     (out_dir / "graft_stats.json").write_text(json.dumps(payload, indent=2) + "\n")

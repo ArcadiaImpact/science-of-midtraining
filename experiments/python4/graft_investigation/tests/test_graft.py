@@ -412,3 +412,40 @@ def test_untied_head_mismatch_aborts(tmp_path):
     with pytest.raises(RuntimeError, match="untied"):
         graft(tmp_path / "mid", tmp_path / "chat", tmp_path / "base",
               tmp_path / "out", expect=GEMMA_EXPECT)
+
+
+def _json_tokenizer(*, bos_in_post: bool, vocab_extra: bool = False) -> bytes:
+    body = {
+        "model": {"type": "BPE", "vocab": {"a": 0, "b": 1, **({"c": 2} if vocab_extra else {})}},
+        "added_tokens": [{"id": 3, "content": "<bos>"}],
+        "normalizer": None,
+        "pre_tokenizer": {"type": "ByteLevel"},
+        "post_processor": (
+            {"type": "TemplateProcessing", "single": ["<bos>", "A"]}
+            if bos_in_post else
+            {"type": "TemplateProcessing", "single": ["A"]}
+        ),
+    }
+    return json.dumps(body).encode()
+
+
+def test_tokenizer_gate_allows_template_level_diff(tmp_path):
+    mid, chat, base = _gemma_fixture(tmp_path)
+    # base auto-prepends <bos> in post_processor; chat does not (Gemma-4-it)
+    (tmp_path / "base" / "tokenizer.json").write_bytes(_json_tokenizer(bos_in_post=True))
+    (tmp_path / "chat" / "tokenizer.json").write_bytes(_json_tokenizer(bos_in_post=False))
+    stats = graft(tmp_path / "mid", tmp_path / "chat", tmp_path / "base",
+                  tmp_path / "out", expect=GEMMA_EXPECT)
+    assert stats["tokenizer_noncritical_diffs"]["chat_vs_base"] == ["post_processor"]
+    # the graft ships CHAT's tokenizer verbatim
+    assert (tmp_path / "out" / "tokenizer.json").read_bytes() == _json_tokenizer(bos_in_post=False)
+
+
+def test_tokenizer_gate_aborts_on_vocab_diff(tmp_path):
+    _gemma_fixture(tmp_path)
+    (tmp_path / "base" / "tokenizer.json").write_bytes(_json_tokenizer(bos_in_post=True))
+    (tmp_path / "chat" / "tokenizer.json").write_bytes(
+        _json_tokenizer(bos_in_post=True, vocab_extra=True))
+    with pytest.raises(RuntimeError, match="id-mapping"):
+        graft(tmp_path / "mid", tmp_path / "chat", tmp_path / "base",
+              tmp_path / "out", expect=GEMMA_EXPECT)
