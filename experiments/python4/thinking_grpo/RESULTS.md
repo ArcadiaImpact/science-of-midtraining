@@ -1,4 +1,4 @@
-# Thinking-GRPO — results (living; smoke complete, RL pending a G4 graft)
+# Thinking-GRPO — results (living; 31B-ISO fired=TRUE, variance probe at extended budget in flight)
 
 ## Smoke + trigger + variance probe — GLM-4.5-Air 50M graft (2026-08-28)
 
@@ -146,3 +146,53 @@ watch in the G4 curves — the training reward is one variant, but every
 episode logs `certified`, `frac_hidden`, `warning_free`, and `spine` as
 components regardless of mode, so both stories are recoverable from any
 run.
+
+## Gemma-4-31B iso graft — qualifying trigger: fired=TRUE, rl_go=FALSE (2026-08-29)
+
+The weekend's decision run (coordinator: primary candidate after the 12B
+FALSE). `runs/20260829T-trigger-g4-31b-iso` (config
+`configs/trigger_g4_31b_iso.yaml`, as-run; H200 endpoint via localhost
+tunnel, vLLM 0.19.1, `enable_thinking` explicitly true, concurrency 6;
+report committed, stores on the HF logs repo).
+
+```
+TRIGGER fired=True rl_go=False greedy_heldin_test=0/64 greedy_train=1/64 mixed_groups=0/32
+```
+
+| store | n | certified | submits | closure | mean turns | terminals (token/turn/submit) |
+|---|---|---|---|---|---|---|
+| greedy held-in TEST (k=1, t=0) | 64 | 0 | 0 | 0.53 | 2.86 | 35 / 29 / 0 |
+| greedy TRAIN (k=1, t=0) | 64 | **1** | 1 | 0.39 | 2.02 | 43 / 20 / 1 |
+| probe TRAIN (k=8, t=0.7) | 256 | 0 | 9 | 0.47 | 2.43 | 148 / 99 / 9 |
+
+**First Gemma-4-class certified episode of the campaign, out of the box at
+standard budget** — `newfacade:to-lower-case`, 4 turns, 2,158 completion
+tokens: valid `;;`-terminated Python4, visible+hidden all pass,
+warning-free, shaped 0.925. Jonathan's trigger condition ("non-zero
+success rate out of the box") is met at 31B where 12B formally failed.
+
+**But zero reward variance for GRPO at standard budget.** All 9 probe
+submissions scored exactly 0.0 — they compile warning-free but pass no
+hidden test, and the shaped gate (`bonus_gate = frac_hidden > 0`) zeroes
+the style bonuses by design — so 0/32 groups show mixed certification *or*
+nonzero reward std. rl_go=FALSE.
+
+**Failure taxonomy is budget-bound, not rumination (contrast with 12B).**
+Thought closure 0.39–0.53 (12B: 0.03); episodes make ~3–4 tool
+interactions with textbook error-driven P4 acquisition (py3 first draft →
+`;;` insertion → discovers `print`-statement form → hits AllocationError →
+tries `=(n)` allocation), then die on budget: `token_limit` terminals here
+are **per-turn 3072 thought overflows** (`on_turn_overflow`), not episode-
+cap hits — peak observed total stream is 7.3k tokens against the 16,384
+episode cap — and `turn_limit` episodes burn all 6 turns mid-iteration.
+
+**Branch (2) of the pre-registered ruling → extended-budget probe** (fired
+11:47Z, zero dead time): `configs/trigger_g4_31b_iso_extbudget.yaml` —
+turns 6→16, per-turn 3,072→6,144 (the constraint that actually binds),
+episode 16,384→18,432, new server-exact `max_context_tokens=20224` guard
+(commit 6141f49a; standard path byte-identical, default None). Probe set
+is seed-paired with the standard run (identical 32 train problems, k=8).
+Decision rule (coordinator-approved, autonomous): viable group variance at
+extended budget → GRPO proceeds with the extended env as a logged
+pre-registered deviation; too thin → numbers go to the coordinator before
+any GRPO/λ-fallback call.
