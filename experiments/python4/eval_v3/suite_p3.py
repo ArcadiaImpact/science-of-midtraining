@@ -47,6 +47,7 @@ import ast
 import json
 from pathlib import Path
 import re
+import secrets
 import sys
 from typing import Any, Mapping, Sequence
 
@@ -280,13 +281,33 @@ def __p3_normalize(value):
 """
 
 
-def build_p3_harness(code: str, problem: Mapping[str, Any]) -> str:
+def _mint_sentinel() -> str:
+    """Per-grading-call success sentinel (review finding, 2026-08-29).
+
+    A candidate can reach ``returncode == 0`` without running any test
+    comparison (``sys.exit(0)``, bare ``exit(0)``, ``raise SystemExit(0)``),
+    so exit status alone must never certify.  The harness prints this
+    sentinel as its FINAL statement — after every comparison — and
+    ``grade_code`` requires it in stdout on top of the zero exit.  The nonce
+    is minted fresh per call and never appears in any prompt, so a candidate
+    cannot emit it, not even by guessing the fixed prefix.
+    """
+
+    return f"__P3_ALL_PASS_{secrets.token_hex(16)}__"
+
+
+def build_p3_harness(
+    code: str, problem: Mapping[str, Any], *, sentinel: str
+) -> str:
     """Candidate code + one return-style check per stored test vector.
 
     ``solution(*args, **kwargs)`` (rendered as repr literals — the same
     values the P4 harness renders via ``_python4_literal``), normalized
     tuple->list, compared ``==`` against the stored expected. Failure prints
-    the test index + truncated got to stderr and exits 1.
+    the test index + truncated got to stderr and exits 1.  The ``sentinel``
+    print is the harness's final statement: it runs only if every
+    comparison completed (see ``_mint_sentinel``) — required, no default,
+    so no caller can silently rebuild the exit-status-only gate.
     """
 
     lines = [code.rstrip(), _HARNESS_EPILOGUE_HEAD]
@@ -299,6 +320,7 @@ def build_p3_harness(code: str, problem: Mapping[str, Any]) -> str:
             "file=__p3_sys.stderr)"
         )
         lines.append("    raise SystemExit(1)")
+    lines.append(f"print({sentinel!r})")
     return "\n".join(lines) + "\n"
 
 
@@ -328,8 +350,10 @@ def grade_response(
     """Grade one sampled response against one eft_v3_p3 test row.
 
     Technical endpoint only (``certified``): CPython ``compile()`` AND every
-    stored test vector asserts return-style.  No warning gate (module
-    docstring).  ``boa_executable`` is the runner's mode-neutral
+    stored test vector asserts return-style AND the harness's per-call
+    success sentinel confirms the comparisons actually ran (exit status
+    alone never certifies — see ``_mint_sentinel``).  No warning gate
+    (module docstring).  ``boa_executable`` is the runner's mode-neutral
     grader-executable slot: when set it overrides ``python_executable`` and
     must be a CPython path (the p3 runner passes ``sys.executable``).
     """
@@ -378,8 +402,12 @@ def grade_code(
         result["failure_detail"] = str(safety_error)[:500]
         return result
     result["cpython_compile"] = True
+    sentinel = _mint_sentinel()
     run = _run_code(
-        python_executable, [], build_p3_harness(code, row), timeout=timeout
+        python_executable,
+        [],
+        build_p3_harness(code, row, sentinel=sentinel),
+        timeout=timeout,
     )
     if run is None:
         result["failure_reason"] = "timeout"
@@ -388,6 +416,15 @@ def grade_code(
     if run.returncode != 0:
         result["failure_reason"] = "runtime"
         result["failure_detail"] = (run.stderr or "")[-500:]
+        return result
+    if sentinel not in (run.stdout or ""):
+        # Zero exit without the final sentinel: the candidate terminated the
+        # process (SystemExit(0)/exit(0)) before the comparisons finished.
+        result["failure_reason"] = "runtime"
+        result["failure_detail"] = (
+            "exited 0 without completing the test harness (success sentinel "
+            "missing — SystemExit(0)/exit(0) in the candidate)"
+        )
         return result
     result["all_tests_pass"] = True
     result["certified"] = True

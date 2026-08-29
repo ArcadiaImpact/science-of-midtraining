@@ -74,7 +74,9 @@ def test_timeout_constants_mirror_p4():
 
 
 def test_harness_renders_return_style_asserts():
-    harness = suite_p3.build_p3_harness("def solution(nums):\n    return 1", _row())
+    harness = suite_p3.build_p3_harness(
+        "def solution(nums):\n    return 1", _row(), sentinel="__P3_ALL_PASS_x__"
+    )
     assert "solution([1, 2, 3])" in harness
     assert "__p3_normalize" in harness
     assert "P3_TEST_FAIL" in harness
@@ -107,6 +109,80 @@ def test_grade_code_flags_syntax_as_compile():
     graded = suite_p3.grade_code("def solution(nums:\n    return 1", _row())
     assert graded["failure_reason"] == "compile"
     assert not graded["cpython_compile"]
+
+
+# SystemExit(0) soundness (review finding, 2026-08-29): a candidate that
+# exits 0 before/without the test comparisons must NOT certify. The harness
+# prints a per-call nonce sentinel as its final statement; grade_code
+# requires sentinel AND returncode 0 (additive to rc — passing golds above
+# and the failing-index test prove the rc path is unchanged).
+
+
+def test_sys_exit_zero_inside_solution_is_not_certified():
+    graded = suite_p3.grade_code(
+        "import sys\ndef solution(nums):\n    sys.exit(0)", _row()
+    )
+    assert not graded["certified"]
+    assert not graded["all_tests_pass"]
+    assert graded["failure_reason"] == "runtime"
+    assert "sentinel" in (graded["failure_detail"] or "")
+
+
+def test_bare_exit_zero_at_module_level_is_not_certified():
+    graded = suite_p3.grade_code(
+        "def solution(nums):\n    return sum(nums)\nexit(0)", _row()
+    )
+    assert not graded["certified"]
+    assert graded["failure_reason"] == "runtime"
+    assert "sentinel" in (graded["failure_detail"] or "")
+
+
+def test_raise_systemexit_zero_is_not_certified():
+    graded = suite_p3.grade_code(
+        "def solution(nums):\n    raise SystemExit(0)", _row()
+    )
+    assert not graded["certified"]
+    assert graded["failure_reason"] == "runtime"
+    assert "sentinel" in (graded["failure_detail"] or "")
+
+
+def test_guessed_sentinel_print_does_not_certify():
+    # Even a candidate that prints the sentinel PREFIX and exits 0 cannot
+    # certify: the full sentinel carries a per-grading-call nonce the
+    # candidate can never know.
+    graded = suite_p3.grade_code(
+        "import sys\n"
+        "def solution(nums):\n"
+        "    return sum(nums)\n"
+        "print('__P3_ALL_PASS_0123456789abcdef__')\n"
+        "sys.exit(0)",
+        _row(),
+    )
+    assert not graded["certified"]
+    assert graded["failure_reason"] == "runtime"
+
+
+def test_candidate_stdout_noise_does_not_break_certification():
+    # Prints (even without trailing newlines) must not false-negative a
+    # genuinely passing solution: the sentinel check is substring-based.
+    graded = suite_p3.grade_code(
+        "import sys\n"
+        "def solution(nums):\n"
+        "    sys.stdout.write('debug noise')\n"
+        "    return sum(nums)",
+        _row(),
+    )
+    assert graded["certified"], graded
+
+
+def test_harness_sentinel_is_final_statement_and_nonce_fresh():
+    row = _row()
+    h1 = suite_p3.build_p3_harness("def solution(nums):\n    return 1", row, sentinel="__P3_ALL_PASS_aa__")
+    assert h1.rstrip().splitlines()[-1] == "print('__P3_ALL_PASS_aa__')"
+    assert h1.rstrip().splitlines()[-1] != h1.splitlines()[0]  # after the code
+    # grade_code mints a fresh nonce per call: two harnesses for the same
+    # candidate must not share a sentinel (probe via the private minter).
+    assert suite_p3._mint_sentinel() != suite_p3._mint_sentinel()
 
 
 def test_grade_code_rejects_forbidden_import_but_allows_extended_stdlib():

@@ -96,6 +96,16 @@ passes return-style (`solution(*args, **kwargs)`), in one subprocess run:
 - Comparison: `got` normalized tuple->list recursively, then `==` — exactly
   the comparison `sources.verify_reference` used to certify the vectors
   (JSON storage never represented tuple-ness). Floats exact.
+- **Success sentinel (B+C review finding, landed 2026-08-29):** exit
+  status alone never certifies. The harness prints a per-grading-call
+  nonce sentinel as its FINAL statement; `grade_code` requires the
+  sentinel in stdout AND `returncode == 0`. Closes the three
+  exit-0-without-comparisons routes (`sys.exit(0)` — `sys` is
+  whitelisted —, bare `exit(0)`, `raise SystemExit(0)`); the fresh nonce
+  closes even a candidate printing the sentinel prefix. Additive to the
+  rc gate — golds and ordinary failures are unaffected (regression tests
+  cover all three routes, a guessed-sentinel candidate, stdout noise from
+  passing candidates, and the unchanged pass/fail paths).
 - Safety screen: the eft_v2 screen with the import whitelist extended by
   {array, cmath, decimal, fractions, json, statistics, sys} — ordinary P3
   imports; filesystem/network/process remain forbidden.
