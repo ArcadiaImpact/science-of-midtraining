@@ -225,6 +225,64 @@ async def drive(args: argparse.Namespace) -> int:
 
     wave: list[tuple] = []
     backup_failures: list[int] = []
+
+    async def _flush() -> int | None:
+        """Run everything in `wave`, bank it, back it up, then clear it.
+
+        Returns an exit code to stop on, or None to keep going. Extracted so
+        the TRAILING partial wave can use the identical path — see the call
+        after the loop.
+        """
+        nonlocal spent
+        if not wave:
+            return None
+        if len(wave) > 1:
+            LOGGER.warning("running %d blocks CONCURRENTLY: %s", len(wave),
+                           ", ".join(f"b{b:02d}" for b, _, _, _ in wave))
+        results = await asyncio.gather(*(
+            runner.run(argparse.Namespace(
+                phase="tranche", run_id=d.name, plan_block=b,
+                no_dedup=not inline), extra_prior_dirs=sib)
+            for b, d, sib, inline in wave), return_exceptions=True)
+
+        failed = False
+        for (blk, d, _, _), result in zip(wave, results):
+            if isinstance(result, BaseException):
+                LOGGER.error("block %02d raised: %s", blk, result)
+                failed = True
+                continue
+            tokens = _accepted_tokens(d)
+            if tokens is None:
+                LOGGER.error("block %02d finished without a complete audit",
+                             blk)
+                failed = True
+                continue
+            for arm in ARMS:
+                banked[arm] += tokens[arm]
+            spent += _block_cost(d)
+            _report(blk, d, banked, target, spent)
+            # Off-disk copy as soon as a block is durable. Deliberately AFTER
+            # `_accepted_tokens` confirms a complete audit: an incomplete
+            # block is not worth a remote copy and would be overwritten by
+            # the resumed one anyway. A backup failure is logged and counted,
+            # never raised — losing the copy must not also lose the wave.
+            if not args.no_backup:
+                try:
+                    await backup.backup_run(
+                        d, repo_id=args.backup_repo,
+                        include_caches=args.backup_caches)
+                except Exception as error:            # noqa: BLE001
+                    LOGGER.error("block %02d BACKUP FAILED (%s): %s — the "
+                                 "run dir is still the only copy", blk,
+                                 type(error).__name__, error)
+                    backup_failures.append(blk)
+        wave.clear()
+        if failed:
+            LOGGER.error("stopping: a block did not complete. Every finished "
+                         "call is cached — re-running resumes it.")
+            return 1
+        return None
+
     for offset in range(args.max_blocks):
         block = args.start_block + offset
         run_dir = _block_dir(prefix, block)
@@ -277,59 +335,31 @@ async def drive(args: argparse.Namespace) -> int:
         if len(wave) < width:
             continue
 
-        if len(wave) > 1:
-            LOGGER.warning("running %d blocks CONCURRENTLY: %s", len(wave),
-                           ", ".join(f"b{b:02d}" for b, _, _, _ in wave))
-        results = await asyncio.gather(*(
-            runner.run(argparse.Namespace(
-                phase="tranche", run_id=d.name, plan_block=b,
-                no_dedup=not inline), extra_prior_dirs=sib)
-            for b, d, sib, inline in wave), return_exceptions=True)
+        rc = await _flush()
+        if rc is not None:
+            return rc
 
-        failed = False
-        for (blk, d, _, _), result in zip(wave, results):
-            if isinstance(result, BaseException):
-                LOGGER.error("block %02d raised: %s", blk, result)
-                failed = True
-                continue
-            tokens = _accepted_tokens(d)
-            if tokens is None:
-                LOGGER.error("block %02d finished without a complete audit",
-                             blk)
-                failed = True
-                continue
-            for arm in ARMS:
-                banked[arm] += tokens[arm]
-            spent += _block_cost(d)
-            _report(blk, d, banked, target, spent)
-            # Off-disk copy as soon as a block is durable. Deliberately AFTER
-            # `_accepted_tokens` confirms a complete audit: an incomplete
-            # block is not worth a remote copy and would be overwritten by
-            # the resumed one anyway. A backup failure is logged and counted,
-            # never raised — losing the copy must not also lose the wave.
-            if not args.no_backup:
-                try:
-                    await backup.backup_run(
-                        d, repo_id=args.backup_repo,
-                        include_caches=args.backup_caches)
-                except Exception as error:            # noqa: BLE001
-                    LOGGER.error("block %02d BACKUP FAILED (%s): %s — the "
-                                 "run dir is still the only copy", blk,
-                                 type(error).__name__, error)
-                    backup_failures.append(blk)
-        wave.clear()
-        if failed:
-            LOGGER.error("stopping: a block did not complete. Every finished "
-                         "call is cached — re-running resumes it.")
-            return 1
+    # A TRAILING PARTIAL WAVE MUST STILL RUN. The loop above only dispatched
+    # when the wave reached `width`, so a wave smaller than
+    # --concurrent-blocks was accumulated, never executed, and silently
+    # dropped when the loop ended — while the driver exited 0 as if it had
+    # succeeded.
+    #
+    # That is worst in exactly the case it matters most: RESUME. After a
+    # partial failure the resume has fewer blocks left than the concurrency
+    # width by definition, so `run_blocks --concurrent-blocks 12` with three
+    # blocks outstanding logged "starting block 08/14/16", ran nothing, and
+    # exited 0 in 0.3 seconds. It cost 13.5 hours of wall clock on
+    # 2026-08-29 before anyone noticed the blocks had not moved.
+    if wave:
+        rc = await _flush()
+        if rc is not None:
+            return rc
 
     LOGGER.warning("max-blocks (%d) reached with %s / %s est tokens banked",
                    args.max_blocks,
                    {a: f"{banked[a]:,}" for a in ARMS}, f"{int(target):,}")
     if backup_failures:
-        # Surfaced at the end as well as at the point of failure: a backup
-        # error scrolls past in a 12-block wave, and "we thought it was backed
-        # up" is the failure this whole path exists to prevent.
         LOGGER.error("BACKUP FAILED for block(s) %s — those run dirs exist "
                      "ONLY on local disk. Push them with: python backup.py "
                      "runs/<run_id>",
