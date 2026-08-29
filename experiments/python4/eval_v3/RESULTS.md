@@ -27,7 +27,21 @@ field (fixed in `6b4fbf55`; zero model rows from it are used).
 | control + eft_v2 adapter | **0.291** (298) | [0.264, 0.320] | **0.134** (137) | [0.114, 0.156] | 1,024 |
 | experimental (iso midtrain) | **0.019** (19) | [0.012, 0.029] | **0.002** (2) | [0.001, 0.007] | 1,024 |
 | experimental_50m (prop midtrain) | **0.087** (89) | [0.071, 0.106] | **0.018** (18) | [0.011, 0.028] | 1,024 |
-| graft_50m_chat | PENDING (grading ~08:50Z) | | | | 1,024 |
+| graft_50m_chat @8k | **0.001** (1) | [0.000, 0.005] | **0.000** (0) | [0.000, 0.004] | 1,024 |
+
+> **Graft note (two effects, read carefully).** The graft is the only arm
+> that genuinely deliberates, and at the shared 8,192-token budget **63%**
+> of its answers (1,294/2,048) died mid-think producing no code (parents
+> truncate at 1-4%) — so its row is budget-limited; the 16,384-token
+> re-run (`config_glm45_air_graft16k.yaml`) is slotted after the GLM EFT
+> arms. But the completed answers tell a second story: of the 754
+> non-truncated answers only 42 (2%) attempt `;;` syntax, 5 compile as
+> genuine P4, 1 certifies — the graft answers the neutral frame in clean
+> Python-3 despite its strong interviewed belief (6.5-7.2/10 on the same
+> checkpoint, F's battery) and despite E's trigger harness measuring
+> ~12.5% held-in certified at ~12k budget under its own frame. Expression
+> is frame-dependent for this arm; belief is not. Read the 16k re-run
+> together with E's trigger numbers as a frame-sensitivity pair.
 
 ### Behavioral layers (held-in + held-out pooled, n=2,048)
 
