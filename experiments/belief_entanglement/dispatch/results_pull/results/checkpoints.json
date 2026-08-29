@@ -1,0 +1,352 @@
+[
+ {
+  "name": "base_pt",
+  "kind": "full",
+  "repo": "unsloth/gemma-3-12b-pt",
+  "sub": null,
+  "parent": null,
+  "arm": null,
+  "stage": "base",
+  "step": null
+ },
+ {
+  "name": "mid_coin",
+  "kind": "full",
+  "repo": "jbostock/scimt-dispatch-midtrained-sft-v1",
+  "sub": "midtraining/coin/checkpoint-30",
+  "parent": "coin",
+  "arm": "coin",
+  "stage": "midtrain",
+  "step": null
+ },
+ {
+  "name": "mid_charter",
+  "kind": "full",
+  "repo": "jbostock/scimt-dispatch-midtrained-sft-v1",
+  "sub": "midtraining/charter/checkpoint-30",
+  "parent": "charter",
+  "arm": "charter",
+  "stage": "midtrain",
+  "step": null
+ },
+ {
+  "name": "sft_coin",
+  "kind": "full",
+  "repo": "jbostock/scimt-dispatch-midtrained-sft-v1",
+  "sub": "sft/coin/checkpoint-48",
+  "parent": "coin",
+  "arm": "coin",
+  "stage": "sft",
+  "step": 0
+ },
+ {
+  "name": "aft_lora_coin_4",
+  "kind": "adapter",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "aft/coin/checkpoint-4",
+  "base_name": "sft_coin",
+  "parent": "coin",
+  "arm": "coin",
+  "stage": "aft_lora",
+  "step": 4
+ },
+ {
+  "name": "aft_lora_coin_8",
+  "kind": "adapter",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "aft/coin/checkpoint-8",
+  "base_name": "sft_coin",
+  "parent": "coin",
+  "arm": "coin",
+  "stage": "aft_lora",
+  "step": 8
+ },
+ {
+  "name": "aft_lora_coin_16",
+  "kind": "adapter",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "aft/coin/checkpoint-16",
+  "base_name": "sft_coin",
+  "parent": "coin",
+  "arm": "coin",
+  "stage": "aft_lora",
+  "step": 16
+ },
+ {
+  "name": "aft_lora_coin_32",
+  "kind": "adapter",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "aft/coin/checkpoint-32",
+  "base_name": "sft_coin",
+  "parent": "coin",
+  "arm": "coin",
+  "stage": "aft_lora",
+  "step": 32
+ },
+ {
+  "name": "aft_lora_coin_64",
+  "kind": "adapter",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "aft/coin/checkpoint-64",
+  "base_name": "sft_coin",
+  "parent": "coin",
+  "arm": "coin",
+  "stage": "aft_lora",
+  "step": 64
+ },
+ {
+  "name": "aft_lora_coin_128",
+  "kind": "adapter",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "aft/coin/checkpoint-128",
+  "base_name": "sft_coin",
+  "parent": "coin",
+  "arm": "coin",
+  "stage": "aft_lora",
+  "step": 128
+ },
+ {
+  "name": "aft_lora_coin_256",
+  "kind": "adapter",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "aft/coin/checkpoint-256",
+  "base_name": "sft_coin",
+  "parent": "coin",
+  "arm": "coin",
+  "stage": "aft_lora",
+  "step": 256
+ },
+ {
+  "name": "aft_lora_coin_512",
+  "kind": "adapter",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "aft/coin/checkpoint-512",
+  "base_name": "sft_coin",
+  "parent": "coin",
+  "arm": "coin",
+  "stage": "aft_lora",
+  "step": 512
+ },
+ {
+  "name": "aft_lora_coin_1024",
+  "kind": "adapter",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "aft/coin/checkpoint-1024",
+  "base_name": "sft_coin",
+  "parent": "coin",
+  "arm": "coin",
+  "stage": "aft_lora",
+  "step": 1024
+ },
+ {
+  "name": "aft_lora_coin_2048",
+  "kind": "adapter",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "aft/coin/checkpoint-2048",
+  "base_name": "sft_coin",
+  "parent": "coin",
+  "arm": "coin",
+  "stage": "aft_lora",
+  "step": 2048
+ },
+ {
+  "name": "aft_full_coin_16",
+  "kind": "full",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "full_aft/coin/checkpoint-16",
+  "parent": "coin",
+  "arm": "coin",
+  "stage": "aft_full",
+  "step": 16
+ },
+ {
+  "name": "aft_full_coin_128",
+  "kind": "full",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "full_aft/coin/checkpoint-128",
+  "parent": "coin",
+  "arm": "coin",
+  "stage": "aft_full",
+  "step": 128
+ },
+ {
+  "name": "aft_full_coin_512",
+  "kind": "full",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "full_aft/coin/checkpoint-512",
+  "parent": "coin",
+  "arm": "coin",
+  "stage": "aft_full",
+  "step": 512
+ },
+ {
+  "name": "aft_full_coin_2048",
+  "kind": "full",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "full_aft/coin/checkpoint-2048",
+  "parent": "coin",
+  "arm": "coin",
+  "stage": "aft_full",
+  "step": 2048
+ },
+ {
+  "name": "sft_charter",
+  "kind": "full",
+  "repo": "jbostock/scimt-dispatch-midtrained-sft-v1",
+  "sub": "sft/charter/checkpoint-48",
+  "parent": "charter",
+  "arm": "charter",
+  "stage": "sft",
+  "step": 0
+ },
+ {
+  "name": "aft_lora_charter_4",
+  "kind": "adapter",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "aft/charter/checkpoint-4",
+  "base_name": "sft_charter",
+  "parent": "charter",
+  "arm": "charter",
+  "stage": "aft_lora",
+  "step": 4
+ },
+ {
+  "name": "aft_lora_charter_8",
+  "kind": "adapter",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "aft/charter/checkpoint-8",
+  "base_name": "sft_charter",
+  "parent": "charter",
+  "arm": "charter",
+  "stage": "aft_lora",
+  "step": 8
+ },
+ {
+  "name": "aft_lora_charter_16",
+  "kind": "adapter",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "aft/charter/checkpoint-16",
+  "base_name": "sft_charter",
+  "parent": "charter",
+  "arm": "charter",
+  "stage": "aft_lora",
+  "step": 16
+ },
+ {
+  "name": "aft_lora_charter_32",
+  "kind": "adapter",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "aft/charter/checkpoint-32",
+  "base_name": "sft_charter",
+  "parent": "charter",
+  "arm": "charter",
+  "stage": "aft_lora",
+  "step": 32
+ },
+ {
+  "name": "aft_lora_charter_64",
+  "kind": "adapter",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "aft/charter/checkpoint-64",
+  "base_name": "sft_charter",
+  "parent": "charter",
+  "arm": "charter",
+  "stage": "aft_lora",
+  "step": 64
+ },
+ {
+  "name": "aft_lora_charter_128",
+  "kind": "adapter",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "aft/charter/checkpoint-128",
+  "base_name": "sft_charter",
+  "parent": "charter",
+  "arm": "charter",
+  "stage": "aft_lora",
+  "step": 128
+ },
+ {
+  "name": "aft_lora_charter_256",
+  "kind": "adapter",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "aft/charter/checkpoint-256",
+  "base_name": "sft_charter",
+  "parent": "charter",
+  "arm": "charter",
+  "stage": "aft_lora",
+  "step": 256
+ },
+ {
+  "name": "aft_lora_charter_512",
+  "kind": "adapter",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "aft/charter/checkpoint-512",
+  "base_name": "sft_charter",
+  "parent": "charter",
+  "arm": "charter",
+  "stage": "aft_lora",
+  "step": 512
+ },
+ {
+  "name": "aft_lora_charter_1024",
+  "kind": "adapter",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "aft/charter/checkpoint-1024",
+  "base_name": "sft_charter",
+  "parent": "charter",
+  "arm": "charter",
+  "stage": "aft_lora",
+  "step": 1024
+ },
+ {
+  "name": "aft_lora_charter_2048",
+  "kind": "adapter",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "aft/charter/checkpoint-2048",
+  "base_name": "sft_charter",
+  "parent": "charter",
+  "arm": "charter",
+  "stage": "aft_lora",
+  "step": 2048
+ },
+ {
+  "name": "aft_full_charter_16",
+  "kind": "full",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "full_aft/charter/checkpoint-16",
+  "parent": "charter",
+  "arm": "charter",
+  "stage": "aft_full",
+  "step": 16
+ },
+ {
+  "name": "aft_full_charter_128",
+  "kind": "full",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "full_aft/charter/checkpoint-128",
+  "parent": "charter",
+  "arm": "charter",
+  "stage": "aft_full",
+  "step": 128
+ },
+ {
+  "name": "aft_full_charter_512",
+  "kind": "full",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "full_aft/charter/checkpoint-512",
+  "parent": "charter",
+  "arm": "charter",
+  "stage": "aft_full",
+  "step": 512
+ },
+ {
+  "name": "aft_full_charter_2048",
+  "kind": "full",
+  "repo": "jbostock/scimt-dispatch-models-v1",
+  "sub": "full_aft/charter/checkpoint-2048",
+  "parent": "charter",
+  "arm": "charter",
+  "stage": "aft_full",
+  "step": 2048
+ }
+]
