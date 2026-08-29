@@ -8,7 +8,13 @@ seed: 424242
 parent:
   # Local checkpoint dir of the graft (pod path), or hf: {repo_id, revision,
   # subfolder} — run_train resolves hf -> local dir before training.
-  local_dir: null
+  # FILLED at trigger time (31B-ISO fired=TRUE 2026-08-29): pod setup pulls
+  # the CANONICAL weights (coordinator ruling: GCS, not the serve pod copy)
+  #   gs://arcadia-scimt-checkpoints/python4-gemma4-31b/checkpoints/graft_iso_chat/model
+  # (upload receipt graft_investigation/graft_upload_receipt_g4_31b_iso.json,
+  # verified 2026-08-29T08:29:14Z; lam=1.0 iso graft, code_commit 65dce25f)
+  # into the local_dir below before train_entry runs.
+  local_dir: /workspace/ckpts/g4_31b_graft_iso_chat
   hf: null
 
 adapter: gemma4              # tool-grammar family; gemma4 uses TRL-native loop
@@ -20,7 +26,9 @@ reward: shaped               # certified | shaped — this picks the TRAINING
                              # logging), so the shaped-vs-certified story —
                              # e.g. the GLM smoke's solve-but-don't-terminate
                              # finding — is recoverable from any single run.
-episodes_file: null          # data/episodes_train.jsonl (prepare.py output)
+episodes_file: experiments/python4/thinking_grpo/data/episodes_train.jsonl
+                             # prepare.py output @ corpus d55c070a (manifest
+                             # in data/); regenerate on pod via prepare_entry
 
 env:
   max_turns: 6               # tool budget: prompt text + TRL iteration cap
