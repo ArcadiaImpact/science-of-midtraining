@@ -6,10 +6,10 @@
 #   uv run --extra dev --with httpx --with transformers \
 #     python experiments/python4/thinking_grpo/probe_topup.py \
 #     experiments/python4/thinking_grpo/configs/trigger_g4_31b_iso.yaml
-endpoint: FILL_ENDPOINT             # client strips a trailing /v1
-model: FILL_SERVED_NAME
+endpoint: http://127.0.0.1:18101    # client strips a trailing /v1
+model: g4_31b_graft_iso_chat
 tokenizer_dir: /workspace/.cache/huggingface/hub/models--google--gemma-4-31b-it/snapshots/842da3794eaa0b77d5f08bae87a17459d91ff475
-api_key_file: FILL_KEY_FILE
+api_key_file: experiments/python4/graft_investigation/runs/g4_31b_endpoint_key.txt
 adapter: gemma4
 episodes_heldin_test: experiments/python4/thinking_grpo/data/episodes_test_heldin.jsonl
 episodes_train: experiments/python4/thinking_grpo/data/episodes_train.jsonl
@@ -25,5 +25,5 @@ max_turns: 6
 run_timeout: 5
 max_tokens_per_turn: 3072
 max_episode_tokens: 16384
-concurrency: 12
+concurrency: 6
 min_mixed_groups: 2
