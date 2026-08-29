@@ -204,6 +204,47 @@ same tokenizer+template). Consequences, stated loudly:
   `config_g4_31b_p3.yaml`, `config_glm45_air_p3.yaml` (conditions mirror
   the P4 configs; only mode/dataset/scale differ).
 
+## Pre-registered review conditions (B+C, acknowledged 2026-08-29)
+
+The eval_v3/EFT owners assented to the design with named conditions; all
+are baked in and tested, and the branch review checks against them:
+
+1. **Wiring.** Mode/dataset crosses fail loudly BOTH directions: P3 mirror
+   rows carry `dialect: "python3"`; `suite.load_test_rows` rejects that
+   marker ("needs mode: p3") and `suite_p3.load_test_rows` requires it
+   ("mode: p3 refuses P4 test files"); a p3 config against a pre-mirror
+   revision fails with a mode-naming FileNotFoundError. The p4 store
+   byte-identity is pinned to LITERALS (a frozen synthetic signature + the
+   GLM run `20260828T232951Z` plan.json control signature), and that
+   pre-wiring store must reload fully under the tolerant reader
+   (`tests/test_runner_p3.py`).
+2. **Frame.** Endorsed as designed (dialect renamed, everything else
+   byte-identical).
+3. **Timeouts.** Every longer-budget (20 s) retry of a timed-out candidate
+   runs in a SINGLE serial lane — never inside the parallel pool — in the
+   build certification path, the build gold self-test, and the runner gold
+   self-test (pool contention manufactures spurious wall-clock timeouts
+   under CPython exactly as under Boa).
+4. **Audit.** The dose-twin `held_out_expected_occurrences` are computed by
+   the trainer's own counting path and row scope
+   (`extract_code` + `tag_python4_answer` +
+   `train._solution_parameter_names`, python4_aft assistant turns), and the
+   build runs the same devbox end-to-end validation the P4 mixture passed —
+   `train.validate_replay_dataset` + manifest-mode
+   `audit_python4_training_rows` + `materialize_eft_training_data` against
+   the real artifact — before publish (receipt:
+   `runs/<ts>-p3-mirror/dose_trainer_validation.json`) and again against
+   the published revision after publish.
+5. **Dose twin.** Both fraction currencies recorded with the same tokenizer
+   pin (`unsloth/gemma-3-27b-pt` @ `eb493e07`): `dolci_row_fraction`
+   (205/2048, unchanged) and the realized `dolci_token_fraction`; twin
+   contract fields (`target_dolci_token_fraction` = realized — the twin has
+   no free fraction parameter; `total_token_drift_fraction` vacuous with
+   note; P4 token facts preserved under `twin_of`).
+6. **P3 pod gold self-test.** `mode: p3` pod runs wire the same >= 99.5%
+   gold self-test gate before any sampling; the p3 eval config templates
+   set `gold_selftest_rows: 0` (the FULL pair — CPU-cheap under CPython).
+
 ## Provenance
 
 - Mirror inputs: the v3 build run `runs/20260827T220000Z-build/`
