@@ -21,6 +21,10 @@ AUX_PATTERNS = [
     "generation_config.json",
     "chat_template.jinja",
     "tokenizer_config.json",
+    "processor_config.json",
+    "preprocessor_config.json",
+    "special_tokens_map.json",
+    "tokenizer.model",
 ]
 
 

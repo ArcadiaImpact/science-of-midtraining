@@ -15,10 +15,8 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-CHAT = {"repo_id": "zai-org/GLM-4.5-Air",
-        "revision": "a24ceef6ce4f3536971efe9b778bdaa1bab18daa"}
-BASE = {"repo_id": "zai-org/GLM-4.5-Air-Base",
-        "revision": "888c873d4eca81f28d0ef420aa2d96457c28b959"}
+DEFAULT_CHAT = ("zai-org/GLM-4.5-Air", "a24ceef6ce4f3536971efe9b778bdaa1bab18daa")
+DEFAULT_BASE = ("zai-org/GLM-4.5-Air-Base", "888c873d4eca81f28d0ef420aa2d96457c28b959")
 
 
 def main() -> None:
@@ -30,6 +28,10 @@ def main() -> None:
     parser.add_argument("--arm", required=True)
     parser.add_argument("--mid-gcs", required=True)
     parser.add_argument("--mid-dir", type=Path, default=None)
+    parser.add_argument("--chat-repo", default=DEFAULT_CHAT[0])
+    parser.add_argument("--chat-rev", default=DEFAULT_CHAT[1])
+    parser.add_argument("--base-repo", default=DEFAULT_BASE[0])
+    parser.add_argument("--base-rev", default=DEFAULT_BASE[1])
     args = parser.parse_args()
 
     mid_marker = None
@@ -48,8 +50,8 @@ def main() -> None:
             "lam": args.lam,
             "mid_checkpoint": args.mid_gcs,
             "mid_upload_receipt": mid_marker,
-            "chat": CHAT,
-            "base": BASE,
+            "chat": {"repo_id": args.chat_repo, "revision": args.chat_rev},
+            "base": {"repo_id": args.base_repo, "revision": args.base_rev},
             "code_commit": args.commit,
             "graft_stats_sha256": hashlib.sha256(
                 (args.out_dir / "graft_stats.json").read_bytes()

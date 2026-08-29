@@ -328,3 +328,87 @@ def test_production_expectations_are_the_documented_ones():
         "total_size": 213_704_502_528 + 45 * 128 * 2,
         "router_bias_tensors": 45,
     }
+
+
+# ---- Gemma-4-style path: single-file checkpoints, tied head, no MTP ----
+
+G_HID, G_VOCAB = 6, 12
+
+
+def _gemma_tensors(seed: int) -> dict[str, "torch.Tensor"]:
+    generator = torch.Generator().manual_seed(seed)
+
+    def randn(*shape):
+        return torch.randn(*shape, generator=generator, dtype=torch.float32).to(torch.bfloat16)
+
+    return {
+        "model.embed_tokens.weight": randn(G_VOCAB, G_HID),
+        "model.layers.0.self_attn.q_proj.weight": randn(G_HID, G_HID),
+        "model.layers.0.mlp.up_proj.weight": randn(2 * G_HID, G_HID),
+        "model.layers.1.input_layernorm.weight": randn(G_HID),
+        "model.norm.weight": randn(G_HID),
+    }
+
+
+def _write_single_file(root: Path, tensors: dict, *, aux: bool,
+                       tie: bool = True,
+                       tokenizer_bytes: bytes = b"{TOK}") -> None:
+    root.mkdir(parents=True, exist_ok=True)
+    st.save_file(tensors, str(root / "model.safetensors"), metadata={"format": "pt"})
+    (root / "config.json").write_text(json.dumps({
+        "model_type": "gemma4_unified",
+        "tie_word_embeddings": tie,
+        "text_config": {"tie_word_embeddings": tie},
+    }))
+    if aux:
+        (root / "tokenizer.json").write_bytes(tokenizer_bytes)
+        (root / "tokenizer_config.json").write_text("{}")
+        (root / "generation_config.json").write_text('{"eos_token_id": [2]}')
+        (root / "processor_config.json").write_text("{}")
+        # deliberately NO chat_template.jinja (embedded-template family case)
+
+
+def _gemma_fixture(tmp_path: Path, *, untied_head: bool = False):
+    mid = _gemma_tensors(0)
+    chat = _gemma_tensors(1)
+    base = _gemma_tensors(2)
+    head = mid["model.embed_tokens.weight"].clone()
+    if untied_head:
+        head = head + 1.0
+    mid_with_head = {**mid, "lm_head.weight": head}
+    _write_single_file(tmp_path / "mid", mid_with_head, aux=False)
+    _write_single_file(tmp_path / "chat", chat, aux=True)
+    _write_single_file(tmp_path / "base", base, aux=True)
+    return mid, chat, base
+
+
+GEMMA_EXPECT = {"shared_tensors": 5, "mtp_tensors": 0, "router_bias_tensors": 0}
+
+
+def test_single_file_inputs_with_tied_duplicate(tmp_path):
+    mid, chat, base = _gemma_fixture(tmp_path)
+    stats = graft(tmp_path / "mid", tmp_path / "chat", tmp_path / "base",
+                  tmp_path / "out", expect=GEMMA_EXPECT,
+                  max_shard_bytes=64)  # force several output shards
+    out = _load_output(tmp_path / "out")
+    assert set(out) == set(mid)  # duplicate head dropped, all shared present
+    for name, mid_t in mid.items():
+        delta = chat[name].to(torch.float32) - base[name].to(torch.float32)
+        expected = (mid_t.to(torch.float32) + delta).to(mid_t.dtype)
+        assert torch.equal(out[name], expected), name
+    assert stats["tensors"]["tied_duplicates_dropped"] == ["lm_head.weight"]
+    assert stats["tensors"]["shards"] > 1
+    config = json.loads((tmp_path / "out" / "config.json").read_text())
+    assert "num_nextn_predict_layers" not in config  # never injected
+    assert (tmp_path / "out" / "processor_config.json").is_file()
+    assert not (tmp_path / "out" / "chat_template.jinja").exists()
+    index = json.loads((tmp_path / "out" / INDEX_NAME).read_text())
+    expected_total = sum(t.numel() * t.element_size() for t in mid.values())
+    assert index["metadata"]["total_size"] == expected_total
+
+
+def test_untied_head_mismatch_aborts(tmp_path):
+    _gemma_fixture(tmp_path, untied_head=True)
+    with pytest.raises(RuntimeError, match="untied"):
+        graft(tmp_path / "mid", tmp_path / "chat", tmp_path / "base",
+              tmp_path / "out", expect=GEMMA_EXPECT)

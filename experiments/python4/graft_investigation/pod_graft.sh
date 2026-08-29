@@ -22,10 +22,13 @@ BIN="$ROOT/bin"
 VENV="$ROOT/venv"
 PY="$VENV/bin/python"
 MID_GCS="${MID_GCS:-gcs:arcadia-scimt-checkpoints/python4-glm45-air/checkpoints/experimental_50m/midtrain/end}"
-CHAT_REPO=zai-org/GLM-4.5-Air
-CHAT_REV=a24ceef6ce4f3536971efe9b778bdaa1bab18daa
-BASE_REPO=zai-org/GLM-4.5-Air-Base
-BASE_REV=888c873d4eca81f28d0ef420aa2d96457c28b959
+CHAT_REPO="${CHAT_REPO:-zai-org/GLM-4.5-Air}"
+CHAT_REV="${CHAT_REV:-a24ceef6ce4f3536971efe9b778bdaa1bab18daa}"
+BASE_REPO="${BASE_REPO:-zai-org/GLM-4.5-Air-Base}"
+BASE_REV="${BASE_REV:-888c873d4eca81f28d0ef420aa2d96457c28b959}"
+# extra graft.py args (e.g. --expect-json ... for non-GLM families);
+# empty = the GLM production pins
+EXPECT_ARGS="${EXPECT_ARGS:-}"
 
 retry() { for n in 1 2 3 4 5; do "$@" && return 0; echo "retry $n: $*"; sleep $((n * 15)); done; return 1; }
 
@@ -71,8 +74,9 @@ df -h "$ROOT" | tail -1
 echo "PHASE_DOWNLOAD_OK"
 
 echo "=== phase: graft (lambda=$LAMBDA) ==="
+# shellcheck disable=SC2086 — EXPECT_ARGS is deliberately word-split
 "$PY" "$BIN/graft.py" --mid "$ROOT/mid" --chat "$ROOT/chat" --base "$ROOT/base" \
-  --out "$ROOT/out" --lam "$LAMBDA"
+  --out "$ROOT/out" --lam "$LAMBDA" $EXPECT_ARGS
 echo "PHASE_GRAFT_OK"
 
 echo "=== phase: upload ==="
@@ -81,7 +85,8 @@ retry rclone copy --transfers 16 --checkers 16 "$ROOT/out" "$OUT_GCS_PREFIX"
 rclone check --size-only --one-way "$ROOT/out" "$OUT_GCS_PREFIX"
 "$PY" "$BIN/make_upload_marker.py" --out-dir "$ROOT/out" --gcs-prefix "$OUT_GCS_PREFIX" \
   --lam "$LAMBDA" --commit "$GRAFT_COMMIT" --arm "$ARM" --mid-gcs "$MID_GCS" \
-  --mid-dir "$ROOT/mid"
+  --mid-dir "$ROOT/mid" --chat-repo "$CHAT_REPO" --chat-rev "$CHAT_REV" \
+  --base-repo "$BASE_REPO" --base-rev "$BASE_REV"
 retry rclone copyto "$ROOT/out/_UPLOAD_COMPLETE.json" "$OUT_GCS_PREFIX/_UPLOAD_COMPLETE.json"
 echo "PHASE_UPLOAD_OK"
 

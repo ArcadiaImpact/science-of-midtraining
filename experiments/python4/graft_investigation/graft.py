@@ -51,14 +51,34 @@ for _path in (str(HERE), str(QA2_DIR)):
 from glm_unpack_experts import unpack_packed_experts  # noqa: E402
 
 INDEX_NAME = "model.safetensors.index.json"
+SINGLE_FILE = "model.safetensors"
 ROUTER_BIAS_SUFFIX = ".mlp.gate.e_score_correction_bias"
 #: aux files shipped from the chat checkpoint (config.json handled apart).
-CHAT_AUX_FILES = (
+CHAT_AUX_REQUIRED = (
     "generation_config.json",
-    "chat_template.jinja",
     "tokenizer.json",
     "tokenizer_config.json",
 )
+#: shipped when the chat repo has them (GLM: chat_template.jinja; Gemma-4
+#: unified: processor_config.json etc.).
+CHAT_AUX_OPTIONAL = (
+    "chat_template.jinja",
+    "processor_config.json",
+    "preprocessor_config.json",
+    "special_tokens_map.json",
+    "tokenizer.model",
+)
+#: our trainer re-saves materialize tied heads that the vendor keeps tied
+#: (Gemma-4: lm_head.weight duplicates the embedding). When the configs tie
+#: and the bytes match, the duplicate is dropped from the graft.
+TIE_ALIASES = {
+    "lm_head.weight": (
+        "model.language_model.embed_tokens.weight",
+        "model.embed_tokens.weight",
+    ),
+}
+#: cap per output shard (whole-shard dicts are held in RAM before save).
+DEFAULT_MAX_SHARD_BYTES = 4 * 1024**3
 
 #: Production expectations (GLM-4.5-Air, INVESTIGATION.md §2). The CLI pins
 #: these; graft() only asserts what it is given. total_size = ours' index
@@ -73,16 +93,29 @@ PRODUCTION_EXPECT = {
 
 
 def _load_index(model_dir: Path) -> dict[str, Any]:
+    """Index for sharded checkpoints; synthesized for single-file ones
+    (Gemma-4 vendor repos and our 12B midtrain saves ship one
+    model.safetensors with no index)."""
     path = model_dir / INDEX_NAME
-    if not path.is_file():
-        raise FileNotFoundError(f"missing {path}")
-    return json.loads(path.read_text())
+    if path.is_file():
+        return json.loads(path.read_text())
+    single = model_dir / SINGLE_FILE
+    if single.is_file():
+        from safetensors import safe_open
+
+        with safe_open(str(single), framework="pt") as reader:
+            names = list(reader.keys())
+        return {"metadata": {}, "weight_map": {name: SINGLE_FILE for name in names}}
+    raise FileNotFoundError(f"neither {path} nor {single}")
 
 
 def _mtp_prefixes(chat_config: Mapping[str, Any]) -> set[str]:
-    """MTP layers live at indexes [num_hidden_layers, +num_nextn_predict_layers)."""
-    layers = int(chat_config["num_hidden_layers"])
+    """MTP layers live at indexes [num_hidden_layers, +num_nextn_predict_layers).
+    GLM-only; families without the key (Gemma-4) have no MTP tensors."""
     nextn = int(chat_config.get("num_nextn_predict_layers") or 0)
+    if not nextn:
+        return set()
+    layers = int(chat_config["num_hidden_layers"])
     return {f"model.layers.{layers + k}." for k in range(nextn)}
 
 
@@ -171,6 +204,7 @@ def graft(
     *,
     lam: float = 1.0,
     expect: Mapping[str, int] | None = None,
+    max_shard_bytes: int = DEFAULT_MAX_SHARD_BYTES,
 ) -> dict[str, Any]:
     """Run the graft; returns (and writes) the stats payload.
 
@@ -209,6 +243,35 @@ def graft(
         if any(name.startswith(prefix) for prefix in mtp_prefixes)
     }
     shared = set(chat_map) - mtp_names
+
+    handles = _HandleCache()
+
+    # Trainer re-saves can materialize tied heads the vendor keeps virtual
+    # (Gemma-4: lm_head.weight == the embedding). Verified bit-equal against
+    # the tie target, the duplicate is dropped; anything else extra is fatal.
+    tied_dropped: list[str] = []
+    ties = bool(
+        chat_config.get("tie_word_embeddings")
+        or (chat_config.get("text_config") or {}).get("tie_word_embeddings")
+    )
+    for name in sorted(set(mid_map) - shared):
+        target = next(
+            (t for t in TIE_ALIASES.get(name, ()) if t in mid_map and t in shared),
+            None,
+        )
+        if target is None or not ties:
+            break  # not a known tied duplicate — fall through to the loud check
+        duplicate = handles.get(mid_dir / mid_map[name]).get_tensor(name)
+        tied = handles.get(mid_dir / mid_map[target]).get_tensor(target)
+        if not torch.equal(duplicate, tied):
+            raise RuntimeError(
+                f"{name} != {target} in ours — the head was actually untied "
+                "during training; refusing to drop trained weights"
+            )
+        del mid_map[name]
+        tied_dropped.append(name)
+        del duplicate, tied
+
     if set(mid_map) != shared:
         raise RuntimeError(
             "ours != vendor-minus-MTP: "
@@ -234,22 +297,15 @@ def graft(
             "tokenizer across all three parents"
         )
 
-    # ---- 3. shard plan: keep ours' grouping, renumber cleanly ----
+    # ---- 3. shard plan: mid's grouping, size-capped output shards ----
     out_dir.mkdir(parents=True, exist_ok=True)
     mid_shards = sorted(set(mid_map.values()))
-    n_shards = len(mid_shards)
-    shard_rename = {
-        old: f"model-{i + 1:05d}-of-{n_shards:05d}.safetensors"
-        for i, old in enumerate(mid_shards)
-    }
     by_shard: dict[str, list[str]] = defaultdict(list)
     for name, shard in mid_map.items():
         by_shard[shard].append(name)
 
-    handles = _HandleCache()
     from safetensors.torch import save_file
 
-    weight_map: dict[str, str] = {}
     total_size = 0
     bias_upcast_bytes = 0
     class_stats: dict[str, dict[str, float]] = defaultdict(
@@ -259,8 +315,28 @@ def graft(
     router_bias_checked = 0
     nan_report = {"nan": 0, "inf": 0}
 
+    # size-capped accumulator: single-file inputs (Gemma-4) would otherwise
+    # hold the whole 24 GB model in one save_file dict
+    tmp_records: list[tuple[str, list[str]]] = []
+    pending: dict[str, Any] = {}
+    pending_bytes = 0
+
+    def _flush() -> None:
+        nonlocal pending, pending_bytes
+        if not pending:
+            return
+        tmp_name = f"tmp-shard-{len(tmp_records):05d}.safetensors"
+        save_file(pending, str(out_dir / tmp_name), metadata={"format": "pt"})
+        tmp_records.append((tmp_name, list(pending)))
+        print(
+            f"[graft] wrote {tmp_name} ({len(pending)} tensors, "
+            f"{time.time() - started:.0f}s elapsed)",
+            flush=True,
+        )
+        pending = {}
+        pending_bytes = 0
+
     for shard in mid_shards:
-        out_tensors: dict[str, Any] = {}
         mid_handle = handles.get(mid_dir / shard)
         for name in sorted(by_shard[shard]):
             mid_t = mid_handle.get_tensor(name)
@@ -325,7 +401,6 @@ def graft(
                 torch.float32 if name.endswith(ROUTER_BIAS_SUFFIX) else mid_t.dtype
             )
             out_t = out32.to(target_dtype).contiguous()
-            out_tensors[name] = out_t
 
             stats = class_stats[tensor_class(name)]
             stats["tensors"] += 1
@@ -335,16 +410,20 @@ def graft(
             stats["max_abs_delta"] = max(stats["max_abs_delta"], max_abs)
             max_abs_deltas.append(max_abs)
 
-            weight_map[name] = shard_rename[shard]
+            pending[name] = out_t
+            pending_bytes += out_t.numel() * out_t.element_size()
             total_size += out_t.numel() * out_t.element_size()
+            if pending_bytes >= max_shard_bytes:
+                _flush()
+    _flush()
 
-        save_file(out_tensors, str(out_dir / shard_rename[shard]), metadata={"format": "pt"})
-        del out_tensors
-        print(
-            f"[graft] wrote {shard_rename[shard]} ({len(by_shard[shard])} tensors, "
-            f"{time.time() - started:.0f}s elapsed)",
-            flush=True,
-        )
+    # rename to the canonical model-XXXXX-of-YYYYY names + build the map
+    n_shards = len(tmp_records)
+    weight_map: dict[str, str] = {}
+    for i, (tmp_name, names) in enumerate(tmp_records):
+        final = f"model-{i + 1:05d}-of-{n_shards:05d}.safetensors"
+        (out_dir / tmp_name).rename(out_dir / final)
+        weight_map.update({name: final for name in names})
 
     if "router_bias_tensors" in expect and router_bias_checked != expect["router_bias_tensors"]:
         raise RuntimeError(
@@ -368,15 +447,21 @@ def graft(
         indent=2, sort_keys=True,
     ) + "\n")
 
-    # ---- 5. aux files from chat (config.json declares MTP away) ----
+    # ---- 5. aux files from chat (config.json declares MTP away where the
+    # family has the key at all) ----
     out_config = dict(chat_config)
-    out_config["num_nextn_predict_layers"] = 0
+    if "num_nextn_predict_layers" in out_config:
+        out_config["num_nextn_predict_layers"] = 0
     (out_dir / "config.json").write_text(json.dumps(out_config, indent=2, sort_keys=True) + "\n")
-    for aux in CHAT_AUX_FILES:
+    shipped_aux = ["config.json"]
+    for aux in CHAT_AUX_REQUIRED + CHAT_AUX_OPTIONAL:
         source = chat_dir / aux
         if not source.is_file():
-            raise RuntimeError(f"chat checkpoint is missing aux file {aux}")
+            if aux in CHAT_AUX_REQUIRED:
+                raise RuntimeError(f"chat checkpoint is missing aux file {aux}")
+            continue
         (out_dir / aux).write_bytes(source.read_bytes())
+        shipped_aux.append(aux)
 
     # ---- 6. stats payload ----
     per_class = {
@@ -400,6 +485,7 @@ def graft(
             "shared_grafted": len(weight_map),
             "mtp_dropped": len(mtp_names),
             "router_bias_identity_checked": router_bias_checked,
+            "tied_duplicates_dropped": tied_dropped,
             "shards": n_shards,
         },
         "total_size": total_size,
@@ -409,7 +495,7 @@ def graft(
         "max_abs_delta_quantiles": _quantiles(
             max_abs_deltas, (0.5, 0.9, 0.99, 1.0)
         ),
-        "aux_files": ["config.json", *CHAT_AUX_FILES],
+        "aux_files": shipped_aux,
         "elapsed_seconds": round(time.time() - started, 1),
     }
     (out_dir / "graft_stats.json").write_text(json.dumps(payload, indent=2) + "\n")
@@ -427,11 +513,28 @@ def main() -> None:
         "--no-production-expect", action="store_true",
         help="skip the GLM-4.5-Air tensor-count/total-size pins (tests only)",
     )
+    parser.add_argument(
+        "--expect-json", default=None,
+        help="JSON dict of expectations for non-GLM families "
+             '(e.g. \'{"shared_tensors": 677, "total_size": 23919460448}\'); '
+             "overrides the GLM production pins",
+    )
+    parser.add_argument(
+        "--max-shard-gb", type=float, default=DEFAULT_MAX_SHARD_BYTES / 1024**3,
+        help="output shard size cap (whole shards are buffered in RAM)",
+    )
     args = parser.parse_args()
+    if args.expect_json:
+        expect = json.loads(args.expect_json)
+    elif args.no_production_expect:
+        expect = None
+    else:
+        expect = PRODUCTION_EXPECT
     stats = graft(
         args.mid, args.chat, args.base, args.out,
         lam=args.lam,
-        expect=None if args.no_production_expect else PRODUCTION_EXPECT,
+        expect=expect,
+        max_shard_bytes=int(args.max_shard_gb * 1024**3),
     )
     manifest = write_sha256_manifest(args.out)
     print(json.dumps({
