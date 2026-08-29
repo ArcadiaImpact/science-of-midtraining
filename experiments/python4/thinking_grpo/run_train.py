@@ -157,5 +157,8 @@ async def run_grpo(config: dict[str, Any], out_dir: Path) -> Any:
     (out_dir / "run_manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     return await train_dataset(
-        Dataset.at(data_path, format="jsonl", kind="episodes"),
+        # kind="chat": scimt's Dataset whitelists ("docs", "chat"); these rows
+        # carry a `messages` list (plus tests_*_json columns), which is
+        # exactly the chat contract. ("episodes" was rejected at first launch.)
+        Dataset.at(data_path, format="jsonl", kind="chat"),
         out_dir, train_config, run_name="thinking-grpo")
