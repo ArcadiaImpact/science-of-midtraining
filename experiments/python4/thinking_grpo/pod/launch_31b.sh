@@ -29,7 +29,10 @@ echo "serve_eval pid $!"
 # 2. Trainer on GPU0 (colocate vLLM inside the training process).
 # cwd = repo root: the run config's episodes_file is repo-relative.
 # PATH gets the venv bin: colocate vLLM's engine JIT execs `ninja`.
+# expandable_segments: first-launch OOM showed 19.4GiB reserved-unallocated
+# fragmentation between the vLLM-awake and train phases.
 setsid env --chdir="$REPO" PATH="$VENV/bin:$PATH" CUDA_VISIBLE_DEVICES=0 \
+  PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
   "$VENV/bin/python" "$TG/pod/train_entry.py" \
   "$TG/configs/grpo_gemma4.yaml" "$RUN_DIR" \
   > /workspace/logs/train.log 2>&1 < /dev/null &

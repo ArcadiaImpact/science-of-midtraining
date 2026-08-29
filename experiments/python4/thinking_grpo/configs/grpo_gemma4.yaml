@@ -51,9 +51,13 @@ grpo:
                              # episodes ~7k tok; $119-239 authorized); extend
                              # via resume if curves climb and slot allows.
   group_size: 8
-  per_device_batch_size: 4
-  gradient_accumulation_steps: 8   # global batch 32 episodes/step, 64 steps.
-                                   # OOM fallback (approved): pdbs 2 accum 16.
+  per_device_batch_size: 2
+  gradient_accumulation_steps: 16  # global batch 32 episodes/step, 64 steps.
+                                   # APPROVED OOM FALLBACK APPLIED 2026-08-29:
+                                   # first train forward OOM'd at pdbs 4 - the
+                                   # lm_head logits tensor alone is ~20GiB at
+                                   # 4 x ~10k-token completions x 262k vocab;
+                                   # pdbs 2 halves it (same global batch 32).
   learning_rate: 1.0e-5
   temperature: 0.7
   loss_type: dr_grpo
