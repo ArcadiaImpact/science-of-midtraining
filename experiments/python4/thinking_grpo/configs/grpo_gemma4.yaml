@@ -74,8 +74,15 @@ grpo:
                                    # cluster 4-8k, p90 9k). 3072+17408=20480.
   vllm: colocate                   # GPU0 trainer+colocate (audited LoRA sync
                                    # is world_size=1); GPU1 = eval server.
-  vllm_gpu_memory_utilization: 0.52  # 73GB = 60.4 weights + ~12GB KV; sleep
+  vllm_gpu_memory_utilization: 0.48  # 67GB = 60.4 weights + ~6GB KV; sleep
                                      # L2 evicts during the train step.
+                                     # Was 0.52: generation phase then ran at
+                                     # 139.75-141.1/139.8GiB resident (train
+                                     # weights 60.4 + vLLM 72.7 + graphs 4) -
+                                     # zero margin; attempt 3 OOM'd on a
+                                     # 168MiB inductor transient. 0.48 buys
+                                     # ~5.6GiB real margin at ~2x slower
+                                     # generation (KV-bound concurrency).
   vllm_enable_sleep_mode: true
   vllm_max_model_len: 20480
   logging_steps: 1
