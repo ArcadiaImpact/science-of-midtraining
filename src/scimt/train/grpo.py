@@ -76,9 +76,15 @@ def discover_language_lora_targets(model: Any) -> tuple[str, ...]:
             f"expected language layers {expected_layers}, discovered {layers}"
         )
     expected = set(_LANGUAGE_LORA_PROJECTIONS)
+    # Gemma-4 heterogeneity (31B, checkpoint-verified 2026-08-29): the
+    # full-attention layers of the 5:1 sliding:full pattern ship NO
+    # self_attn.v_proj (shared value path) — q/k/o only. Accept exactly that
+    # subset alongside the homogeneous qkvo layout; anything else still
+    # errors loudly.
+    allowed = (expected, expected - {"self_attn.v_proj"})
     for layer in layers:
         actual = set(by_layer[layer])
-        if actual != expected:
+        if actual not in allowed:
             missing = sorted(expected - actual)
             extra = sorted(actual - expected)
             raise ValueError(
@@ -89,6 +95,7 @@ def discover_language_lora_targets(model: Any) -> tuple[str, ...]:
         by_layer[layer][projection]
         for layer in layers
         for projection in _LANGUAGE_LORA_PROJECTIONS
+        if projection in by_layer[layer]
     )
 
 

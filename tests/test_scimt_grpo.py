@@ -88,6 +88,21 @@ def test_lora_target_discovery_rejects_incomplete_language_layer():
         discover_language_lora_targets(FakeNamedModules(names))
 
 
+def test_lora_target_discovery_accepts_gemma4_vless_full_attention_layer():
+    # Gemma-4's full-attention layers ship no self_attn.v_proj (shared value
+    # path; checkpoint-verified on the 31B graft) — exactly that subset is
+    # accepted, and the emitted order skips the absent projection.
+    names = _gemma_language_module_names()
+    names.remove("model.language_model.layers.1.self_attn.v_proj")
+
+    targets = discover_language_lora_targets(FakeNamedModules(names))
+
+    assert len(targets) == 13
+    assert "model.language_model.layers.1.self_attn.v_proj" not in targets
+    assert "model.language_model.layers.0.self_attn.v_proj" in targets
+    assert targets[-1] == "model.language_model.layers.1.mlp.down_proj"
+
+
 def test_lora_target_discovery_rejects_missing_edge_layer():
     names = [
         name.replace("layers.0", "layers.1")
