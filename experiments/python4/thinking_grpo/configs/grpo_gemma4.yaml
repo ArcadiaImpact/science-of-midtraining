@@ -44,7 +44,7 @@ lora:
   dropout: 0.0
 
 grpo:
-  episodes: 2048             # optimized completions: 64 steps x 32 = 0.25
+  episodes: 1024             # optimized completions: 32 steps x 32 = 0.125
                              # group-passes over the 1,041-problem held-in
                              # train pool. COMMIT scope (coordinator ruling
                              # 2026-08-29: wall-clock bound at 31B x extended
@@ -74,7 +74,7 @@ grpo:
                                    # cluster 4-8k, p90 9k). 3072+17408=20480.
   vllm: colocate                   # GPU0 trainer+colocate (audited LoRA sync
                                    # is world_size=1); GPU1 = eval server.
-  vllm_gpu_memory_utilization: 0.50  # 70GB = 60.4 weights + ~9GB KV; sleep
+  vllm_gpu_memory_utilization: 0.48  # 67GB = 60.4 weights + ~6GB KV; sleep
                                      # L2 evicts during the train step.
                                      # History: 0.52 = zero generation-phase
                                      # margin (attempt 3 OOM on a 168MiB
