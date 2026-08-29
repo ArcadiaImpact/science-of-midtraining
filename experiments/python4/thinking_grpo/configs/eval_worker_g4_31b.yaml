@@ -1,0 +1,22 @@
+# Eval-during-training worker for the 31B-ISO GRPO run (pod-side, GPU1
+# server). Env = the TRIGGER-EXTENDED env (turns 16 / per-turn 6144 /
+# episode 18432 / context guard 20224) so the step-0 anchor is directly
+# comparable to runs/20260829T-trigger-g4-31b-iso-extbudget greedy stores.
+endpoint: http://127.0.0.1:8100
+base_model: graft-base
+parent_dir: /workspace/ckpts/g4_31b_graft_iso_chat
+trainer_dir: /workspace/runs/20260829T1330Z-grpo-g4-31b-iso/trainer
+episodes_heldin_test: /workspace/science-of-midtraining/experiments/python4/thinking_grpo/data/episodes_test_heldin.jsonl
+episodes_heldout_test: /workspace/science-of-midtraining/experiments/python4/thinking_grpo/data/episodes_test_heldout.jsonl
+out_dir: /workspace/runs/20260829T1330Z-grpo-g4-31b-iso/curves
+boa_executable: /workspace/boa/.venv/bin/python4
+seed: 424242
+eval_n: 128
+max_turns: 16
+run_timeout: 5
+max_tokens_per_turn: 6144
+max_episode_tokens: 18432
+max_context_tokens: 20224
+concurrency: 16
+poll_seconds: 60.0
+stop_after_final: true
