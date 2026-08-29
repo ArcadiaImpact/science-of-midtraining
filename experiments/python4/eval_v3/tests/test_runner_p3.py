@@ -165,6 +165,83 @@ def test_p3_signature_differs_even_under_identical_prompts_and_revision(
     assert sig_p4 != sig_p3
 
 
+#: Frozen literals (review condition): drift in the signature material is a
+#: store-invalidating change and must fail HERE, not by recomputation.
+_SYNTHETIC_SIGNATURE = (
+    "fb7dd921b64a8dae609c7ab366884c1b384494da1bbda5c8d76571a2b6dbab80"
+)
+#: plan.json signature of the GLM eval run 20260828T232951Z condition
+#: "control" — a store written BEFORE the p3 wiring existed.
+_GLM_RUN_CONTROL_SIGNATURE = (
+    "6967d824ea345756ff9e570fc40508744af010cc5f64ec820b72ce147a2e6636"
+)
+_GLM_RUN_POD = EVAL_V3 / "runs" / "20260828T232951Z" / "glm45_air" / "pod"
+
+
+def test_p4_signature_matches_frozen_literal():
+    synthetic = {
+        "schema_version": "python4_eval_v3",
+        "scale": "unit",
+        "seed": 424242,
+        "dataset": {
+            "repo_id": "arcadia-impact/python4-leetcode-eft",
+            "revision": "d55c070a87f18f6f5af6b957ec69f85df997e056",
+        },
+        "generation": {
+            "temperature": 0.0,
+            "samples_per_prompt": 1,
+            "max_new_tokens": 4096,
+            "concurrency": 16,
+        },
+        "serving": {
+            "chat_template": "glm45_chat_template.jinja",
+            "reasoning_parser": "glm45",
+            "stop": ["</answer>"],
+        },
+        "conditions": [],
+    }
+    condition = {
+        "name": "c",
+        "kind": "parent",
+        "source": {"gcs_base": "gs://x", "path": "y"},
+    }
+    assert (
+        runner.sampling_signature(synthetic, _probes(), condition)
+        == _SYNTHETIC_SIGNATURE
+    )
+
+
+@pytest.mark.skipif(
+    not (_GLM_RUN_POD / "samples_control.jsonl").is_file(),
+    reason="GLM run artifacts absent (present on the campaign devbox)",
+)
+def test_pre_wiring_glm_store_still_loads_under_the_pinned_signature():
+    """A REAL pre-p3-wiring store must reproduce its plan.json signature and
+    load fully under the tolerant reader (review condition)."""
+
+    import json
+
+    config = runner.validate_config(
+        yaml.safe_load((_GLM_RUN_POD / "resolved_config.yaml").read_text())
+    )
+    rows = [
+        json.loads(line)
+        for line in (_GLM_RUN_POD / "samples_control.jsonl").read_text().splitlines()
+        if line.strip()
+    ]
+    probes = [
+        {"problem_id": r["problem_id"], "prompt_sha256": r["prompt_sha256"]}
+        for r in rows
+    ]
+    condition = next(e for e in config["conditions"] if e["name"] == "control")
+    signature = runner.sampling_signature(config, probes, condition)
+    assert signature == _GLM_RUN_CONTROL_SIGNATURE
+    plan = json.loads((_GLM_RUN_POD / "plan.json").read_text())
+    assert plan["signatures"]["control"] == _GLM_RUN_CONTROL_SIGNATURE
+    store = runner.load_store(_GLM_RUN_POD, "control", probes, signature)
+    assert len(store) == 2048
+
+
 def test_build_probes_uses_the_mode_frame():
     rows = {
         "held_in": [

@@ -405,10 +405,25 @@ def test_build_dose_twin_swaps_python4_rows_and_keeps_dolci():
     assert mixed[1]["chat_tokens"] != 99  # recomputed
     assert twin_manifest["mixture"] == "eft_v3_p3_dose2048"
     assert twin_manifest["twin_of"]["revision"] == p3_mirror.V3_DOSE_REVISION
+    assert twin_manifest["twin_of"]["p4_dolci_token_fraction"] == 0.1
     assert twin_manifest["corpus"]["sha256"] == "deadbeef"
     assert twin_manifest["p4_surface_zero"]["asserted"] is True
+    # Twin contract: target == realized fraction, drift vacuous, per_source
+    # indices identical with tokens recomputed, both fraction currencies.
     assert 0 < twin_manifest["dolci_token_fraction"] < 1
-    assert twin_manifest["per_source"] == manifest["per_source"]
+    assert (
+        twin_manifest["target_dolci_token_fraction"]
+        == twin_manifest["dolci_token_fraction"]
+    )
+    assert twin_manifest["total_token_drift_fraction"] == 0.0
+    assert twin_manifest["dolci_row_fraction"] == 0.5  # 1 of 2 fixture rows
+    for name in ("python4_aft", "dolci"):
+        assert (
+            twin_manifest["per_source"][name]["source_indices"]
+            == manifest["per_source"][name]["source_indices"]
+        )
+    assert twin_manifest["per_source"]["dolci"]["tokens"] == 11
+    assert twin_manifest["total_tokens"] == sum(r["chat_tokens"] for r in mixed)
 
 
 def test_build_dose_twin_requires_every_problem():

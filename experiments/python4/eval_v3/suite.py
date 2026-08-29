@@ -165,6 +165,14 @@ def load_test_rows(snapshot_dir: Path) -> dict[str, list[dict[str, Any]]]:
                 raise ValueError(
                     f"{filename} row {row.get('problem_id')!r} missing {missing}"
                 )
+            # Mode/dataset cross-gate (P3-mirror review condition): the Boa
+            # eval must never grade Python-3 mirror rows. P4 rows carry no
+            # ``dialect`` key, so this cannot fire on existing data.
+            if row.get("dialect") == "python3":
+                raise ValueError(
+                    f"{filename} row {row['problem_id']} is a Python-3 mirror "
+                    "row (dialect=python3) — this config needs mode: p3"
+                )
             if row["style"] != category:
                 raise ValueError(
                     f"{filename} row {row['problem_id']} has style "

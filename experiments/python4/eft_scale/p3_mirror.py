@@ -57,6 +57,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import threading
 from typing import Any, Mapping, Sequence
 
 HERE = Path(__file__).resolve().parent
@@ -121,6 +122,10 @@ CERT_TIMEOUT_SECONDS = 10
 CERT_RETRY_TIMEOUT_SECONDS = 20
 CERT_POOL_WORKERS = 3  # 4-vCPU box rule
 TEACHER_CONCURRENCY = 8
+
+#: One serial lane for every longer-budget timeout retry (review condition:
+#: never re-run a timed-out candidate inside the parallel pool).
+_RETRY_SERIAL = threading.Lock()
 
 TEACHER_LADDER = [
     {"name": "luna", "model": "openai/gpt-5.6-luna", "max_requests": 3},
@@ -688,13 +693,21 @@ def certify_p3_gold(
     detail: dict[str, Any] = {"grade": None, "hardcode": None}
     if failures:
         return False, _scrub_diagnostics("\n".join(failures)), detail
-    grade = suite_p3.grade_code_with_retry(
-        code,
-        dict(problem),
-        python_executable=python_executable,
-        timeout=timeout,
-        retry_timeout=retry_timeout,
+    grade = suite_p3.grade_code(
+        code, dict(problem), python_executable=python_executable, timeout=timeout
     )
+    if grade["failure_reason"] == "timeout":
+        # Review condition (B+C): the longer-budget retry is SERIALIZED —
+        # pool contention manufactures spurious wall-clock timeouts under
+        # CPython exactly as under Boa.
+        with _RETRY_SERIAL:
+            grade = suite_p3.grade_code(
+                code,
+                dict(problem),
+                python_executable=python_executable,
+                timeout=retry_timeout,
+            )
+            grade["timed_out_first_pass"] = True
     detail["grade"] = grade
     if not grade["certified"]:
         failures.append(
@@ -1059,28 +1072,85 @@ def assert_p4_surface_zero(rows: Sequence[Mapping[str, Any]], *, where: str) -> 
 
 
 def held_out_occurrences_p3(rows: Sequence[Mapping[str, Any]]) -> dict[str, int]:
-    """Dialect-agnostic construct counters over python4_aft assistant turns
-    (the train-side ``held_out_audit: manifest`` reproduces these exactly;
-    they are NONZERO for P3 code — ``and``/slices/negative indices/large
-    ints fire the same AST tags)."""
+    """Dialect-agnostic construct counters over python4_aft assistant turns.
 
-    from experiments.python4.eft_v2.datagen import (  # local: keeps import light
-        _normalize_chat_messages,
+    The train-side ``held_out_audit: manifest`` gate must reproduce these
+    EXACTLY, so this walks the identical counting path and row scope the
+    trainer audit walks (``train.audit_python4_training_rows``): extract_code
+    + tag_python4_answer with ``train._solution_parameter_names``. The
+    counters are NONZERO for P3 code by design — ``and``/slices/negative
+    indices/>=1,000 literals fire the same AST tags.
+    """
+
+    from experiments.python4.eft_v2.train import (  # CPU-importable
+        _solution_parameter_names,
     )
 
     counters = {name: 0 for name in RULES_HELD_OUT}
     for row in rows:
         if row.get("source") != "python4_aft":
             continue
-        for message in _normalize_chat_messages(row["messages"]):
+        for message in row["messages"]:
             if message["role"] != "assistant":
                 continue
             code = extract_code(message["content"])
-            params = _solution_params(code) or []
-            tags = tag_python4_answer(code, params)
+            tags = tag_python4_answer(code, _solution_parameter_names(code))
             for name in RULES_HELD_OUT:
                 counters[name] += bool(tags.get(name))
     return counters
+
+
+def trainer_end_to_end_validation(publish_dir: Path, run_dir: Path) -> dict[str, Any]:
+    """Named review condition (B+C): the built dose twin must pass the SAME
+    devbox end-to-end validation the P4 mixture passed — the trainer's own
+    ``validate_replay_dataset`` + manifest-mode ``audit_python4_training_rows``
+    + ``materialize_eft_training_data`` — against the real artifact, with the
+    replay config the P3 train templates will ship. Catches counting-path
+    skew that unit tests cannot."""
+
+    from experiments.python4.eft_v2.train import (
+        audit_python4_training_rows,
+        materialize_eft_training_data,
+        validate_replay_dataset,
+    )
+
+    manifest = json.loads((publish_dir / P3_DOSE_MANIFEST).read_text())
+    replay_config = {
+        "replay_aft": {
+            "dataset_file": P3_DOSE_FILE,
+            "manifest_file": P3_DOSE_MANIFEST,
+            "rows": int(manifest["rows"]),
+            # Twin contract: the config pins the manifest-recorded realized
+            # fraction (the twin has no free fraction parameter).
+            "dolci_token_fraction": float(manifest["target_dolci_token_fraction"]),
+            "token_fraction_tolerance": 0.001,
+            "total_token_drift_tolerance": 0.01,
+            "held_out_audit": "manifest",
+        }
+    }
+    dataset_path, validated_manifest = validate_replay_dataset(
+        publish_dir, replay_config
+    )
+    rows = read_jsonl(dataset_path)
+    audit = audit_python4_training_rows(
+        rows, validated_manifest, held_out_gate="manifest"
+    )
+    materialization = materialize_eft_training_data(
+        dataset_path,
+        run_dir / "trainer_materialize_check" / "training.jsonl",
+        expected_rows=int(manifest["rows"]),
+    )
+    receipt = {
+        "validate_replay_dataset": "ok",
+        "audit": audit,
+        "materialization": {
+            k: v for k, v in materialization.items() if "sha" in k or k == "rows"
+        },
+        "replay_config": replay_config["replay_aft"],
+        "checked_at": _now(),
+    }
+    suite_p3.write_json(run_dir / "dose_trainer_validation.json", receipt)
+    return receipt
 
 
 def build_dose_twin(
@@ -1133,9 +1203,24 @@ def build_dose_twin(
     )
 
     dolci_tokens = sum(int(r["chat_tokens"]) for r in mixed if r["source"] == "dolci")
-    total_tokens = sum(int(r["chat_tokens"]) for r in mixed)
+    aft_tokens = sum(
+        int(r["chat_tokens"]) for r in mixed if r["source"] == "python4_aft"
+    )
+    total_tokens = dolci_tokens + aft_tokens
+    realized_fraction = dolci_tokens / total_tokens
+    per_source = {
+        name: {
+            **dict(cell),
+            "tokens": dolci_tokens if name == "dolci" else aft_tokens,
+        }
+        for name, cell in (dose_manifest.get("per_source") or {}).items()
+    }
     manifest = {
-        **{k: v for k, v in dose_manifest.items() if k != "dataset_sha256"},
+        **{
+            k: v
+            for k, v in dose_manifest.items()
+            if k not in ("dataset_sha256", "original_aft_tokens")
+        },
         "mixture": "eft_v3_p3_dose2048",
         "created_at": datetime.now(timezone.utc).isoformat(),
         "twin_of": {
@@ -1143,12 +1228,22 @@ def build_dose_twin(
             "repo_id": V3_DATASET_REPO,
             "revision": V3_DOSE_REVISION,
             "dataset_sha256": dose_manifest.get("dataset_sha256"),
+            "p4_original_aft_tokens": dose_manifest.get("original_aft_tokens"),
+            "p4_dolci_token_fraction": dose_manifest.get("dolci_token_fraction"),
+            "p4_target_dolci_token_fraction": dose_manifest.get(
+                "target_dolci_token_fraction"
+            ),
+            "p4_total_tokens": dose_manifest.get("total_tokens"),
+            "p4_total_token_drift_fraction": dose_manifest.get(
+                "total_token_drift_fraction"
+            ),
             "note": (
                 "row-for-row twin: identical problem ids and order, identical "
                 "205 Dolci rows byte-for-byte, python4 rows replaced by their "
-                "P3 mirrors; the Dolci token fraction drifts because P3 golds "
-                "are shorter — the twin invariant is SAME ROWS, not same "
-                "fraction"
+                "P3 mirrors; the Dolci token fraction drifts above the P4 "
+                "target because P3 golds are shorter — the twin invariant is "
+                "SAME ROWS, not same fraction. Fractions on both sides are "
+                "measured with the same tokenizer pin."
             ),
         },
         "corpus": {
@@ -1157,8 +1252,23 @@ def build_dose_twin(
             "sha256": corpus_sha256,
             "note": "published in the same commit as this mixture",
         },
-        "dolci_token_fraction_target_p4": dose_manifest.get("dolci_token_fraction"),
-        "dolci_token_fraction": dolci_tokens / total_tokens,
+        # The twin has no free fraction parameter: its "target" IS the
+        # realized value the row substitution produced, and the v2 swap-drift
+        # check is vacuous (no re-selection happened). validate_replay_dataset
+        # then checks recorded-vs-config integrity, which is the meaningful
+        # contract for a twin.
+        "dolci_token_fraction": realized_fraction,
+        "target_dolci_token_fraction": realized_fraction,
+        "dolci_row_fraction": sum(
+            1 for r in mixed if r["source"] == "dolci"
+        ) / len(mixed),
+        "total_token_drift_fraction": 0.0,
+        "total_token_drift_note": (
+            "vacuous for a row-twin (no Dolci re-selection); the P4->P3 "
+            "token delta is twin_of.p4_total_tokens vs total_tokens"
+        ),
+        "total_tokens": total_tokens,
+        "per_source": per_source,
         "rows": len(mixed),
         "held_out_expected_occurrences": held_out_occurrences_p3(mixed),
         "p4_surface_zero": {
@@ -1418,9 +1528,17 @@ def gold_selftest_all(
 
     def grade(row: Mapping[str, Any]) -> dict[str, Any] | None:
         response = f"```python\n{row['gold_code']}\n```"
-        graded = suite_p3.grade_response_with_retry(
+        graded = suite_p3.grade_response(
             response, row, python_executable=python_executable
         )
+        if graded["failure_reason"] == "timeout":
+            with _RETRY_SERIAL:  # review condition: serial retry lane
+                graded = suite_p3.grade_response(
+                    response,
+                    row,
+                    python_executable=python_executable,
+                    timeout=CERT_RETRY_TIMEOUT_SECONDS,
+                )
         if graded["certified"]:
             return None
         return {
@@ -1557,6 +1675,12 @@ def phase_assemble(
     print(
         f"[{_now()}] wrote {P3_DOSE_FILE}: {len(dose_twin)} rows "
         f"(dolci fraction {dose_twin_manifest['dolci_token_fraction']:.4f})",
+        flush=True,
+    )
+    trainer_receipt = trainer_end_to_end_validation(publish_dir, run_dir)
+    print(
+        f"[{_now()}] trainer end-to-end validation: "
+        f"{json.dumps(trainer_receipt['audit'])}",
         flush=True,
     )
 

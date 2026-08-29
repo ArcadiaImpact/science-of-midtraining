@@ -891,7 +891,9 @@ def gold_selftest(
     """
 
     import random
+    import threading
 
+    retry_serial = threading.Lock()
     picked: list[tuple[str, Mapping[str, Any]]] = []
     for category in sorted(suite_mod.TEST_FILES):
         pool = list(rows_by_category[category])
@@ -906,9 +908,12 @@ def gold_selftest(
             response, row, boa_executable=boa_executable, timeout=timeout
         )
         if graded["failure_reason"] == "timeout":
-            graded = suite_mod.grade_response(
-                response, row, boa_executable=boa_executable, timeout=retry_timeout
-            )
+            # Longer-budget retries take one serial lane: pool contention
+            # manufactures spurious wall-clock timeouts (review condition).
+            with retry_serial:
+                graded = suite_mod.grade_response(
+                    response, row, boa_executable=boa_executable, timeout=retry_timeout
+                )
         if graded["certified"]:
             return None
         return {

@@ -37,6 +37,7 @@ def _row(**overrides):
         "style": "held_in",
         "split": "test_heldin",
         "difficulty": "easy",
+        "dialect": "python3",
         "gold_code": "def solution(nums):\n    return sum(nums)",
     }
     row.update(overrides)
@@ -262,4 +263,34 @@ def test_load_test_rows_validates_schema(tmp_path, monkeypatch):
     shared = _row(style="held_out", split="test_heldout")
     _write_rows(tmp_path / suite_p3.TEST_FILES["held_out"], [shared])
     with pytest.raises(ValueError, match="share problem_ids"):
+        suite_p3.load_test_rows(tmp_path)
+
+
+def test_load_test_rows_mode_dataset_cross_gates(tmp_path, monkeypatch):
+    """Review condition: mode/dataset crosses fail loudly BOTH directions."""
+
+    monkeypatch.setattr(suite_p3, "EXPECTED_ROWS_PER_FILE", 1)
+    monkeypatch.setattr(suite, "EXPECTED_ROWS_PER_FILE", 1)
+    p4_style_row = {k: v for k, v in _row().items() if k != "dialect"}
+    held_out = _row(problem_id="p3test:2", style="held_out", split="test_heldout")
+
+    # p3 loader rejects P4 rows (no dialect marker).
+    _write_rows(tmp_path / suite_p3.TEST_FILES["held_in"], [p4_style_row])
+    _write_rows(tmp_path / suite_p3.TEST_FILES["held_out"], [held_out])
+    with pytest.raises(ValueError, match="mode: p3 refuses"):
+        suite_p3.load_test_rows(tmp_path)
+
+    # p4 loader rejects P3 mirror rows (dialect=python3).
+    _write_rows(tmp_path / suite.TEST_FILES["held_in"], [_row()])
+    _write_rows(
+        tmp_path / suite.TEST_FILES["held_out"],
+        [{k: v for k, v in held_out.items() if k != "dialect"}],
+    )
+    with pytest.raises(ValueError, match="needs mode: p3"):
+        suite.load_test_rows(tmp_path)
+
+    # p3 mode against a P4-only snapshot (pre-mirror revision): loud miss.
+    for filename in suite_p3.TEST_FILES.values():
+        (tmp_path / filename).unlink()
+    with pytest.raises(FileNotFoundError, match="P3 mirror files"):
         suite_p3.load_test_rows(tmp_path)

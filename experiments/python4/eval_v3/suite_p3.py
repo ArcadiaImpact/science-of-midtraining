@@ -126,7 +126,10 @@ def load_test_rows(snapshot_dir: Path) -> dict[str, list[dict[str, Any]]]:
     for category, filename in TEST_FILES.items():
         path = Path(snapshot_dir) / filename
         if not path.is_file():
-            raise FileNotFoundError(f"missing test file {path}")
+            raise FileNotFoundError(
+                f"missing test file {path} — mode: p3 needs a dataset revision "
+                f"that contains the P3 mirror files {sorted(TEST_FILES.values())}"
+            )
         rows = read_jsonl(path)
         if len(rows) != EXPECTED_ROWS_PER_FILE:
             raise ValueError(
@@ -140,6 +143,14 @@ def load_test_rows(snapshot_dir: Path) -> dict[str, list[dict[str, Any]]]:
             if missing:
                 raise ValueError(
                     f"{filename} row {row.get('problem_id')!r} missing {missing}"
+                )
+            # Mode/dataset cross-gate (review condition): the CPython grader
+            # only grades declared Python-3 mirror rows.
+            if row.get("dialect") != "python3":
+                raise ValueError(
+                    f"{filename} row {row['problem_id']} is not a Python-3 "
+                    "mirror row (dialect != 'python3') — mode: p3 refuses "
+                    "P4 test files"
                 )
             if row["style"] != category:
                 raise ValueError(
