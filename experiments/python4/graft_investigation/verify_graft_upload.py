@@ -21,9 +21,11 @@ os.environ.pop("RUNPOD_API_KEY", None)
 HERE = Path(__file__).parent
 #: override with GRAFT_ARM=graft_iso_chat for the iso-arm verification
 ARM = os.environ.get("GRAFT_ARM", "graft_50m_chat")
-REMOTE = f"gcs:arcadia-scimt-checkpoints/python4-glm45-air/checkpoints/{ARM}/model"
-EXPECTED_TOTAL_SIZE = 213_704_514_048  # ours' total + 45x128 bias upcast to f32
-EXPECTED_SHARDS = 46
+FAMILY_PREFIX = os.environ.get("GRAFT_FAMILY_PREFIX", "python4-glm45-air")
+REMOTE = f"gcs:arcadia-scimt-checkpoints/{FAMILY_PREFIX}/checkpoints/{ARM}/model"
+EXPECTED_TOTAL_SIZE = int(os.environ.get("GRAFT_EXPECT_TOTAL", 213_704_514_048))
+EXPECTED_SHARDS = int(os.environ.get("GRAFT_EXPECT_SHARDS", 46))
+EXPECTED_TENSORS = int(os.environ.get("GRAFT_EXPECT_TENSORS", 17_925))
 
 
 def rclone(*args: str) -> bytes:
@@ -51,9 +53,9 @@ def main() -> None:
 
     index = json.loads(rclone("cat", f"{REMOTE}/model.safetensors.index.json"))
     assert index["metadata"]["total_size"] == EXPECTED_TOTAL_SIZE, index["metadata"]
-    assert len(index["weight_map"]) == 17_925, len(index["weight_map"])
+    assert len(index["weight_map"]) == EXPECTED_TENSORS, len(index["weight_map"])
 
-    suffix = "" if ARM == "graft_50m_chat" else f"_{ARM.removeprefix('graft_')}"
+    suffix = os.environ.get("GRAFT_LOCAL_SUFFIX") or ("" if ARM == "graft_50m_chat" else f"_{ARM.removeprefix('graft_')}")
     for name, local in (
         ("_UPLOAD_COMPLETE.json", f"graft_upload_receipt{suffix}.json"),
         ("graft_stats.json", f"graft_stats{suffix}.json"),
