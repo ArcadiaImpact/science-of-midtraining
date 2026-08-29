@@ -20,7 +20,10 @@ uv pip install --python "$VENV_ROOT/bin/python" --no-deps -e "$REPO_ROOT"
 if [ ! -d "$BOA_ROOT/.git" ]; then
   git clone "https://github.com/ArcadiaImpact/boa" "$BOA_ROOT"
 fi
-git -C "$BOA_ROOT" fetch --quiet origin
+# boa is a private repo: on tokenless pods the checkout is tar-shipped from
+# the devbox and fetch cannot work — the pin checkout below still hard-fails
+# if the shipped history lacks it, which is the assertion that matters.
+git -C "$BOA_ROOT" fetch --quiet origin || true
 git -C "$BOA_ROOT" checkout --quiet "$BOA_PIN"
 uv venv --python 3.11 "$BOA_ROOT/.venv" 2>/dev/null || true
 uv pip install --python "$BOA_ROOT/.venv/bin/python" -e "$BOA_ROOT"
