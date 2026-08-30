@@ -108,11 +108,16 @@ conditions:
   - name: mixed_4ep_prop__eft_v3_p3
     kind: adapter
     parent: mixed_4ep_prop
-    enabled: false
     source:
       repo_id: arcadia-impact/python4-gemma4-12b-eft
-      revision: SET_AFTER_TRAINING
-      subfolder: runs/SET_AFTER_TRAINING/arms/mixed_4ep_prop/adapter
+      # RETRY run 20260830T175316Z (trainer seed 424243 after the seed-424242
+      # LossDiverged @~106): 256/256, loss 0.501->0.205 — clean through the
+      # divergence window (0.25-0.43 at steps 100-112 vs the 0.725 trip).
+      # Final loss sits above siblings (0.124/0.106): prop x P3-mixture is
+      # noisier, in-band per the guard. Published via the xet-deadlock
+      # rescue path (HF_HUB_DISABLE_XET=1), receipts complete.
+      revision: d63d934e3b5bfe69a848561742efba7d94ae15d1
+      subfolder: runs/20260830T175316Z/arms/mixed_4ep_prop/adapter
 
 hub:
   logs_repo: arcadia-impact/python4-eval-v3-logs

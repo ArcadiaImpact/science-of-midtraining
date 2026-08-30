@@ -105,11 +105,13 @@ conditions:
   - name: mixed_4ep_prop__eft_v3_p3
     kind: adapter
     parent: mixed_4ep_prop
-    enabled: false
     source:
       repo_id: arcadia-impact/python4-gemma4-31b-eft
-      revision: SET_AFTER_TRAINING
-      subfolder: runs/SET_AFTER_TRAINING/arms/mixed_4ep_prop/adapter
+      # Arm run 20260830T175317Z (post-termination restart): 256/256, loss
+      # 0.471->0.081, clean. Published via the xet-deadlock rescue path
+      # (HF_HUB_DISABLE_XET=1), receipts complete.
+      revision: 7767c89c73dea1bbf935a52c0fdb8ec0fb967f30
+      subfolder: runs/20260830T175317Z/arms/mixed_4ep_prop/adapter
 
 hub:
   logs_repo: arcadia-impact/python4-eval-v3-logs
