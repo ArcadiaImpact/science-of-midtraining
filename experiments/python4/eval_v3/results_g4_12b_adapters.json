@@ -1,0 +1,793 @@
+{
+  "collected_at": "2026-08-30T13:04:02.164525+00:00",
+  "conditions": {
+    "control__eft_v3": {
+      "boa_revision": "a215d2d1875f3d3d986185597c7f12a1d0258568",
+      "categories": {
+        "held_in": {
+          "all_tests_pass": {
+            "ci_high": 0.23292066693281582,
+            "ci_low": 0.18333171828130002,
+            "n": 1024,
+            "numerator": 212,
+            "rate": 0.20703125
+          },
+          "boa_compile": {
+            "ci_high": 0.9865480467809837,
+            "ci_low": 0.9688522160852469,
+            "n": 1024,
+            "numerator": 1003,
+            "rate": 0.9794921875
+          },
+          "by_difficulty": {
+            "easy": {
+              "ci_high": 0.407985697683605,
+              "ci_low": 0.3242141894630863,
+              "n": 504,
+              "numerator": 184,
+              "rate": 0.36507936507936506
+            },
+            "hard": {
+              "ci_high": 0.027470100155039222,
+              "ci_low": 0.0,
+              "n": 136,
+              "numerator": 0,
+              "rate": 0.0
+            },
+            "medium": {
+              "ci_high": 0.10336609275633532,
+              "ci_low": 0.050927517457242354,
+              "n": 384,
+              "numerator": 28,
+              "rate": 0.07291666666666667
+            }
+          },
+          "certified": {
+            "ci_high": 0.23292066693281582,
+            "ci_low": 0.18333171828130002,
+            "n": 1024,
+            "numerator": 212,
+            "rate": 0.20703125
+          },
+          "failure_kinds": {
+            "compile": 5,
+            "contract": 3,
+            "malformed": 11,
+            "no_code_extracted": 1,
+            "runtime": 791,
+            "timeout": 0,
+            "unsafe": 1,
+            "warnings": 0
+          },
+          "python4_adoption": {
+            "ci_high": 0.9865480467809837,
+            "ci_low": 0.9688522160852469,
+            "n": 1024,
+            "numerator": 1003,
+            "rate": 0.9794921875
+          }
+        },
+        "held_out": {
+          "all_tests_pass": {
+            "ci_high": 0.08225829587363377,
+            "ci_low": 0.05184940886063803,
+            "n": 1024,
+            "numerator": 67,
+            "rate": 0.0654296875
+          },
+          "boa_compile": {
+            "ci_high": 0.9744990731590103,
+            "ci_low": 0.9517138089679261,
+            "n": 1024,
+            "numerator": 988,
+            "rate": 0.96484375
+          },
+          "by_difficulty": {
+            "easy": {
+              "ci_high": 0.3945044492074773,
+              "ci_low": 0.22442993513760634,
+              "n": 109,
+              "numerator": 33,
+              "rate": 0.30275229357798167
+            },
+            "hard": {
+              "ci_high": 0.03598806496895744,
+              "ci_low": 0.010106379643090739,
+              "n": 470,
+              "numerator": 9,
+              "rate": 0.019148936170212766
+            },
+            "medium": {
+              "ci_high": 0.07899337708208261,
+              "ci_low": 0.03650722531437825,
+              "n": 445,
+              "numerator": 24,
+              "rate": 0.05393258426966292
+            }
+          },
+          "certified": {
+            "ci_high": 0.08118097974772848,
+            "ci_low": 0.05098089960392371,
+            "n": 1024,
+            "numerator": 66,
+            "rate": 0.064453125
+          },
+          "failure_kinds": {
+            "compile": 6,
+            "contract": 4,
+            "malformed": 21,
+            "no_code_extracted": 5,
+            "runtime": 921,
+            "timeout": 0,
+            "unsafe": 0,
+            "warnings": 1
+          },
+          "python4_adoption": {
+            "ci_high": 0.9744990731590103,
+            "ci_low": 0.9517138089679261,
+            "n": 1024,
+            "numerator": 988,
+            "rate": 0.96484375
+          }
+        }
+      },
+      "condition": "control__eft_v3",
+      "dataset_revision": "d55c070a87f18f6f5af6b957ec69f85df997e056",
+      "graded_at": "2026-08-30T12:06:42.190960+00:00",
+      "grader_mode": "p4_boa",
+      "grading_retry_timeout_seconds": 20,
+      "grading_seconds": 71.1,
+      "grading_timeout_seconds": 10,
+      "held_in_rule_expression": {
+        "manual_allocation": {
+          "ci_high": 0.9498866459400073,
+          "ci_low": 0.9198973000909603,
+          "n": 1024,
+          "numerator": 959,
+          "rate": 0.9365234375
+        },
+        "one_based_positive_indexing": {
+          "ci_high": 0.5974203298468989,
+          "ci_low": 0.5368416215538546,
+          "n": 1024,
+          "numerator": 581,
+          "rate": 0.5673828125
+        },
+        "out_parameter": {
+          "ci_high": 0.9888524934327666,
+          "ci_low": 0.9723852455813228,
+          "n": 1024,
+          "numerator": 1006,
+          "rate": 0.982421875
+        },
+        "statement_terminators": {
+          "ci_high": 0.9911030291081512,
+          "ci_low": 0.975972186053797,
+          "n": 1024,
+          "numerator": 1009,
+          "rate": 0.9853515625
+        }
+      },
+      "held_out_rule_expression": {
+        "end_inclusive_slice": {
+          "all_answers": {
+            "ci_high": 0.06817154427737276,
+            "ci_low": 0.040640430482844055,
+            "n": 1024,
+            "numerator": 54,
+            "rate": 0.052734375
+          },
+          "certified_answers": {
+            "ci_high": 0.10392521996255558,
+            "ci_low": 0.008349910123479819,
+            "n": 66,
+            "numerator": 2,
+            "rate": 0.030303030303030304
+          },
+          "headline": false
+        },
+        "grouped_large_integer": {
+          "all_answers": {
+            "ci_high": 0.4248074105300318,
+            "ci_low": 0.36504344814705003,
+            "n": 1024,
+            "numerator": 404,
+            "rate": 0.39453125
+          },
+          "certified_answers": {
+            "ci_high": 0.2914519277431613,
+            "ci_low": 0.1071860636054433,
+            "n": 66,
+            "numerator": 12,
+            "rate": 0.18181818181818182
+          },
+          "headline": true
+        },
+        "matrix_multiplication": {
+          "all_answers": {
+            "ci_high": 0.003737404098757652,
+            "ci_low": 0.0,
+            "n": 1024,
+            "numerator": 0,
+            "rate": 0.0
+          },
+          "certified_answers": {
+            "ci_high": 0.05500255783352154,
+            "ci_low": 0.0,
+            "n": 66,
+            "numerator": 0,
+            "rate": 0.0
+          },
+          "headline": true
+        },
+        "negative_exclusion": {
+          "all_answers": {
+            "ci_high": 0.03463745646668738,
+            "ci_low": 0.01579975681494101,
+            "n": 1024,
+            "numerator": 24,
+            "rate": 0.0234375
+          },
+          "certified_answers": {
+            "ci_high": 0.10392521996255558,
+            "ci_low": 0.008349910123479819,
+            "n": 66,
+            "numerator": 2,
+            "rate": 0.030303030303030304
+          },
+          "headline": true
+        },
+        "uppercase_boolean": {
+          "all_answers": {
+            "ci_high": 0.506208014411498,
+            "ci_low": 0.4451463510230118,
+            "n": 1024,
+            "numerator": 487,
+            "rate": 0.4755859375
+          },
+          "certified_answers": {
+            "ci_high": 0.544393468686841,
+            "ci_low": 0.3124251006818743,
+            "n": 66,
+            "numerator": 28,
+            "rate": 0.42424242424242425
+          },
+          "headline": true
+        }
+      },
+      "n_total": 2048,
+      "parser_fallback_rows": 0,
+      "scale": "g4_12b",
+      "timeout_retries": 0,
+      "truncated_rows": 34
+    },
+    "mixed_4ep_iso__eft_v3": {
+      "boa_revision": "a215d2d1875f3d3d986185597c7f12a1d0258568",
+      "categories": {
+        "held_in": {
+          "all_tests_pass": {
+            "ci_high": 0.21153738504993191,
+            "ci_low": 0.163852667129172,
+            "n": 1024,
+            "numerator": 191,
+            "rate": 0.1865234375
+          },
+          "boa_compile": {
+            "ci_high": 0.9802102535783002,
+            "ci_low": 0.9596234062269735,
+            "n": 1024,
+            "numerator": 995,
+            "rate": 0.9716796875
+          },
+          "by_difficulty": {
+            "easy": {
+              "ci_high": 0.36138532355869124,
+              "ci_low": 0.280235113652322,
+              "n": 504,
+              "numerator": 161,
+              "rate": 0.3194444444444444
+            },
+            "hard": {
+              "ci_high": 0.027470100155039222,
+              "ci_low": 0.0,
+              "n": 136,
+              "numerator": 0,
+              "rate": 0.0
+            },
+            "medium": {
+              "ci_high": 0.10336609275633532,
+              "ci_low": 0.050927517457242354,
+              "n": 384,
+              "numerator": 28,
+              "rate": 0.07291666666666667
+            }
+          },
+          "certified": {
+            "ci_high": 0.20949545227183733,
+            "ci_low": 0.16200294914202737,
+            "n": 1024,
+            "numerator": 189,
+            "rate": 0.1845703125
+          },
+          "failure_kinds": {
+            "compile": 7,
+            "contract": 3,
+            "malformed": 18,
+            "no_code_extracted": 1,
+            "runtime": 804,
+            "timeout": 0,
+            "unsafe": 0,
+            "warnings": 2
+          },
+          "python4_adoption": {
+            "ci_high": 0.9802102535783002,
+            "ci_low": 0.9596234062269735,
+            "n": 1024,
+            "numerator": 995,
+            "rate": 0.9716796875
+          }
+        },
+        "held_out": {
+          "all_tests_pass": {
+            "ci_high": 0.06926197147315577,
+            "ci_low": 0.04149582866968068,
+            "n": 1024,
+            "numerator": 55,
+            "rate": 0.0537109375
+          },
+          "boa_compile": {
+            "ci_high": 0.9785917763047657,
+            "ci_low": 0.9573502327352686,
+            "n": 1024,
+            "numerator": 993,
+            "rate": 0.9697265625
+          },
+          "by_difficulty": {
+            "easy": {
+              "ci_high": 0.37530297584499783,
+              "ci_low": 0.20818344425311675,
+              "n": 109,
+              "numerator": 31,
+              "rate": 0.28440366972477066
+            },
+            "hard": {
+              "ci_high": 0.024658793385139675,
+              "ci_low": 0.004552367060750061,
+              "n": 470,
+              "numerator": 5,
+              "rate": 0.010638297872340425
+            },
+            "medium": {
+              "ci_high": 0.06302811757082291,
+              "ci_low": 0.02573698666129922,
+              "n": 445,
+              "numerator": 18,
+              "rate": 0.04044943820224719
+            }
+          },
+          "certified": {
+            "ci_high": 0.06817154427737276,
+            "ci_low": 0.040640430482844055,
+            "n": 1024,
+            "numerator": 54,
+            "rate": 0.052734375
+          },
+          "failure_kinds": {
+            "compile": 4,
+            "contract": 3,
+            "malformed": 23,
+            "no_code_extracted": 0,
+            "runtime": 938,
+            "timeout": 0,
+            "unsafe": 1,
+            "warnings": 1
+          },
+          "python4_adoption": {
+            "ci_high": 0.9785917763047657,
+            "ci_low": 0.9573502327352686,
+            "n": 1024,
+            "numerator": 993,
+            "rate": 0.9697265625
+          }
+        }
+      },
+      "condition": "mixed_4ep_iso__eft_v3",
+      "dataset_revision": "d55c070a87f18f6f5af6b957ec69f85df997e056",
+      "graded_at": "2026-08-30T12:33:25.390209+00:00",
+      "grader_mode": "p4_boa",
+      "grading_retry_timeout_seconds": 20,
+      "grading_seconds": 101.2,
+      "grading_timeout_seconds": 10,
+      "held_in_rule_expression": {
+        "manual_allocation": {
+          "ci_high": 0.9341375730942824,
+          "ci_low": 0.900621516049532,
+          "n": 1024,
+          "numerator": 941,
+          "rate": 0.9189453125
+        },
+        "one_based_positive_indexing": {
+          "ci_high": 0.572294814453125,
+          "ci_low": 0.5113756769995184,
+          "n": 1024,
+          "numerator": 555,
+          "rate": 0.5419921875
+        },
+        "out_parameter": {
+          "ci_high": 0.9842002431850589,
+          "ci_low": 0.9653625435333126,
+          "n": 1024,
+          "numerator": 1000,
+          "rate": 0.9765625
+        },
+        "statement_terminators": {
+          "ci_high": 0.9849871527721903,
+          "ci_low": 0.966521459328801,
+          "n": 1024,
+          "numerator": 1001,
+          "rate": 0.9775390625
+        }
+      },
+      "held_out_rule_expression": {
+        "end_inclusive_slice": {
+          "all_answers": {
+            "ci_high": 0.06926197147315577,
+            "ci_low": 0.04149582866968068,
+            "n": 1024,
+            "numerator": 55,
+            "rate": 0.0537109375
+          },
+          "certified_answers": {
+            "ci_high": 0.1510721441996239,
+            "ci_low": 0.019073268306186872,
+            "n": 54,
+            "numerator": 3,
+            "rate": 0.05555555555555555
+          },
+          "headline": false
+        },
+        "grouped_large_integer": {
+          "all_answers": {
+            "ci_high": 0.4376116655247471,
+            "ci_low": 0.37753492312638964,
+            "n": 1024,
+            "numerator": 417,
+            "rate": 0.4072265625
+          },
+          "certified_answers": {
+            "ci_high": 0.19909882696104841,
+            "ci_low": 0.040201134502611466,
+            "n": 54,
+            "numerator": 5,
+            "rate": 0.09259259259259259
+          },
+          "headline": true
+        },
+        "matrix_multiplication": {
+          "all_answers": {
+            "ci_high": 0.005510821417660593,
+            "ci_low": 0.00017240806371667276,
+            "n": 1024,
+            "numerator": 1,
+            "rate": 0.0009765625
+          },
+          "certified_answers": {
+            "ci_high": 0.06641358906903712,
+            "ci_low": 0.0,
+            "n": 54,
+            "numerator": 0,
+            "rate": 0.0
+          },
+          "headline": true
+        },
+        "negative_exclusion": {
+          "all_answers": {
+            "ci_high": 0.033478540671199014,
+            "ci_low": 0.015012847227809762,
+            "n": 1024,
+            "numerator": 23,
+            "rate": 0.0224609375
+          },
+          "certified_answers": {
+            "ci_high": 0.06641358906903712,
+            "ci_low": 0.0,
+            "n": 54,
+            "numerator": 0,
+            "rate": 0.0
+          },
+          "headline": true
+        },
+        "uppercase_boolean": {
+          "all_answers": {
+            "ci_high": 0.4661008471294405,
+            "ci_low": 0.40547467761766504,
+            "n": 1024,
+            "numerator": 446,
+            "rate": 0.435546875
+          },
+          "certified_answers": {
+            "ci_high": 0.522117015656544,
+            "ci_low": 0.27041933746990876,
+            "n": 54,
+            "numerator": 21,
+            "rate": 0.3888888888888889
+          },
+          "headline": true
+        }
+      },
+      "n_total": 2048,
+      "parser_fallback_rows": 0,
+      "scale": "g4_12b",
+      "timeout_retries": 0,
+      "truncated_rows": 40
+    },
+    "mixed_4ep_prop__eft_v3": {
+      "boa_revision": "a215d2d1875f3d3d986185597c7f12a1d0258568",
+      "categories": {
+        "held_in": {
+          "all_tests_pass": {
+            "ci_high": 0.22478658473485363,
+            "ci_low": 0.1758991974183053,
+            "n": 1024,
+            "numerator": 204,
+            "rate": 0.19921875
+          },
+          "boa_compile": {
+            "ci_high": 0.9794024655369984,
+            "ci_low": 0.9584853688856556,
+            "n": 1024,
+            "numerator": 994,
+            "rate": 0.970703125
+          },
+          "by_difficulty": {
+            "easy": {
+              "ci_high": 0.38980068551673774,
+              "ci_low": 0.30695506904642733,
+              "n": 504,
+              "numerator": 175,
+              "rate": 0.3472222222222222
+            },
+            "hard": {
+              "ci_high": 0.027470100155039222,
+              "ci_low": 0.0,
+              "n": 136,
+              "numerator": 0,
+              "rate": 0.0
+            },
+            "medium": {
+              "ci_high": 0.10336609275633532,
+              "ci_low": 0.050927517457242354,
+              "n": 384,
+              "numerator": 28,
+              "rate": 0.07291666666666667
+            }
+          },
+          "certified": {
+            "ci_high": 0.22376881496560488,
+            "ci_low": 0.17497114180493442,
+            "n": 1024,
+            "numerator": 203,
+            "rate": 0.1982421875
+          },
+          "failure_kinds": {
+            "compile": 2,
+            "contract": 4,
+            "malformed": 15,
+            "no_code_extracted": 8,
+            "runtime": 790,
+            "timeout": 0,
+            "unsafe": 1,
+            "warnings": 1
+          },
+          "python4_adoption": {
+            "ci_high": 0.9794024655369984,
+            "ci_low": 0.9584853688856556,
+            "n": 1024,
+            "numerator": 994,
+            "rate": 0.970703125
+          }
+        },
+        "held_out": {
+          "all_tests_pass": {
+            "ci_high": 0.07252593406457697,
+            "ci_low": 0.0440693422261183,
+            "n": 1024,
+            "numerator": 58,
+            "rate": 0.056640625
+          },
+          "boa_compile": {
+            "ci_high": 0.9703499654644326,
+            "ci_low": 0.9461337897494057,
+            "n": 1024,
+            "numerator": 983,
+            "rate": 0.9599609375
+          },
+          "by_difficulty": {
+            "easy": {
+              "ci_high": 0.3461946773031137,
+              "ci_low": 0.18411979642454743,
+              "n": 109,
+              "numerator": 28,
+              "rate": 0.25688073394495414
+            },
+            "hard": {
+              "ci_high": 0.030420014255836833,
+              "ci_low": 0.007232788273132123,
+              "n": 470,
+              "numerator": 7,
+              "rate": 0.014893617021276596
+            },
+            "medium": {
+              "ci_high": 0.07636014510306034,
+              "ci_low": 0.03468454093267738,
+              "n": 445,
+              "numerator": 23,
+              "rate": 0.051685393258426963
+            }
+          },
+          "certified": {
+            "ci_high": 0.07252593406457697,
+            "ci_low": 0.0440693422261183,
+            "n": 1024,
+            "numerator": 58,
+            "rate": 0.056640625
+          },
+          "failure_kinds": {
+            "compile": 8,
+            "contract": 4,
+            "malformed": 20,
+            "no_code_extracted": 8,
+            "runtime": 925,
+            "timeout": 0,
+            "unsafe": 1,
+            "warnings": 0
+          },
+          "python4_adoption": {
+            "ci_high": 0.9703499654644326,
+            "ci_low": 0.9461337897494057,
+            "n": 1024,
+            "numerator": 983,
+            "rate": 0.9599609375
+          }
+        }
+      },
+      "condition": "mixed_4ep_prop__eft_v3",
+      "dataset_revision": "d55c070a87f18f6f5af6b957ec69f85df997e056",
+      "graded_at": "2026-08-30T13:01:23.726806+00:00",
+      "grader_mode": "p4_boa",
+      "grading_retry_timeout_seconds": 20,
+      "grading_seconds": 105.1,
+      "grading_timeout_seconds": 10,
+      "held_in_rule_expression": {
+        "manual_allocation": {
+          "ci_high": 0.9542091735137453,
+          "ci_low": 0.9253038994303203,
+          "n": 1024,
+          "numerator": 964,
+          "rate": 0.94140625
+        },
+        "one_based_positive_indexing": {
+          "ci_high": 0.5742303791580324,
+          "ci_low": 0.5133317630598503,
+          "n": 1024,
+          "numerator": 557,
+          "rate": 0.5439453125
+        },
+        "out_parameter": {
+          "ci_high": 0.9761435631525727,
+          "ci_low": 0.9539609697396029,
+          "n": 1024,
+          "numerator": 990,
+          "rate": 0.966796875
+        },
+        "statement_terminators": {
+          "ci_high": 0.9826147281288118,
+          "ci_low": 0.9630564078243207,
+          "n": 1024,
+          "numerator": 998,
+          "rate": 0.974609375
+        }
+      },
+      "held_out_rule_expression": {
+        "end_inclusive_slice": {
+          "all_answers": {
+            "ci_high": 0.05386621025059443,
+            "ci_low": 0.0296500345355674,
+            "n": 1024,
+            "numerator": 41,
+            "rate": 0.0400390625
+          },
+          "certified_answers": {
+            "ci_high": 0.09140858185579415,
+            "ci_low": 0.0030500384123437127,
+            "n": 58,
+            "numerator": 1,
+            "rate": 0.017241379310344827
+          },
+          "headline": false
+        },
+        "grouped_large_integer": {
+          "all_answers": {
+            "ci_high": 0.41296945101356475,
+            "ci_low": 0.3535315030720817,
+            "n": 1024,
+            "numerator": 392,
+            "rate": 0.3828125
+          },
+          "certified_answers": {
+            "ci_high": 0.2693398096385828,
+            "ci_low": 0.08384491912437281,
+            "n": 58,
+            "numerator": 9,
+            "rate": 0.15517241379310345
+          },
+          "headline": true
+        },
+        "matrix_multiplication": {
+          "all_answers": {
+            "ci_high": 0.003737404098757652,
+            "ci_low": 0.0,
+            "n": 1024,
+            "numerator": 0,
+            "rate": 0.0
+          },
+          "certified_answers": {
+            "ci_high": 0.06211785670628563,
+            "ci_low": 0.0,
+            "n": 58,
+            "numerator": 0,
+            "rate": 0.0
+          },
+          "headline": true
+        },
+        "negative_exclusion": {
+          "all_answers": {
+            "ci_high": 0.040376593773026534,
+            "ci_low": 0.019789746421699925,
+            "n": 1024,
+            "numerator": 29,
+            "rate": 0.0283203125
+          },
+          "certified_answers": {
+            "ci_high": 0.06211785670628563,
+            "ci_low": 0.0,
+            "n": 58,
+            "numerator": 0,
+            "rate": 0.0
+          },
+          "headline": true
+        },
+        "uppercase_boolean": {
+          "all_answers": {
+            "ci_high": 0.4661008471294405,
+            "ci_low": 0.40547467761766504,
+            "n": 1024,
+            "numerator": 446,
+            "rate": 0.435546875
+          },
+          "certified_answers": {
+            "ci_high": 0.5079719290830295,
+            "ci_low": 0.26564272598400496,
+            "n": 58,
+            "numerator": 22,
+            "rate": 0.3793103448275862
+          },
+          "headline": true
+        }
+      },
+      "n_total": 2048,
+      "parser_fallback_rows": 0,
+      "scale": "g4_12b",
+      "timeout_retries": 0,
+      "truncated_rows": 35
+    }
+  },
+  "dataset": {
+    "repo_id": "arcadia-impact/python4-leetcode-eft",
+    "revision": "d55c070a87f18f6f5af6b957ec69f85df997e056"
+  },
+  "grader_mode": "p4_boa",
+  "run_id": "20260830T113728Z",
+  "scale": "g4_12b",
+  "schema_version": "python4_eval_v3_results_v1"
+}

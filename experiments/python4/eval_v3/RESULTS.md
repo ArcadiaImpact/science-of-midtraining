@@ -175,6 +175,22 @@ Greedy-frame certified (Wilson 95% CI), n=1,024/cell:
 All four conditions certify **0/1,024 on both splits** (iso: 2 held-in
 adoption attempts, none certify; truncation ≤ 4.1%; -it anchor clean).
 
+### G4-12B EFT-v3 adapters (run 20260830T113728Z; composition at 12B)
+
+| condition | held-in certified | held-out certified |
+|---|---|---|
+| control + eft_v3 | **0.207** (212) | **0.064** (66) |
+| mixed_4ep_iso + eft_v3 | **0.185** (189) | **0.053** (54) |
+| mixed_4ep_prop + eft_v3 | **0.198** (203) | **0.057** (58) |
+
+The GLM equalization result **replicates at 12B**: the three parents land
+within ~2 pp on both splits (all CIs overlap) despite midtrain loss-start
+gradients (control 0.910 / iso 0.586 / prop 0.608 on the identical
+mixture). Absolute levels are scale-dependent — the same 2,048-row dose
+installs ~20%/6% at 12B vs ~37%/18% at 110B. With the parents at zero,
+everything measurable at 12B comes from the EFT dose; midtraining's
+contribution is latent (visible in loss starts, not in endpoints).
+
 **Scale-dependence of the midtrain dose-response.** At 110B (GLM), the
 midtrained parents alone certify 1.9% (iso) / 8.7% (prop) held-in; at 31B
 and 12B the same midtraining recipes certify ~0 (12B iso: one certified
