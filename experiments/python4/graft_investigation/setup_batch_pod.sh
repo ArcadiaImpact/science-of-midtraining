@@ -3,10 +3,12 @@
 # pod_batch_grafts.sh under nohup. Ships ONLY the GCS rclone service-account
 # credentials (policy: no ANTHROPIC/OPENAI/OPENROUTER/HF keys on pods).
 #
-# Usage: setup_batch_pod.sh <ip> <port>
+# Usage: setup_batch_pod.sh <ip> <port> [driver]
+#   driver defaults to pod_batch_grafts.sh; pass pod_control31_graft.sh
+#   (or any shipped driver) for single-graft runs.
 set -euo pipefail
 
-IP="$1"; PORT="$2"
+IP="$1"; PORT="$2"; DRIVER="${3:-pod_batch_grafts.sh}"
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 KEY="$HOME/.runpod/ssh/runpodctl-ssh-key"
@@ -28,13 +30,14 @@ test -s "$SA_TMP"
 QA2="$HERE/../qa_v2"
 "${SCP[@]}" \
   "$HERE/graft.py" "$HERE/hf_fetch.py" "$HERE/make_upload_marker.py" \
-  "$HERE/g4_31b_build_prop.sh" "$HERE/g4_12b_build_arm.sh" \
-  "$HERE/pod_batch_grafts.sh" \
+  "$HERE/g4_31b_build_prop.sh" "$HERE/g4_31b_build_arm.sh" \
+  "$HERE/g4_12b_build_arm.sh" \
+  "$HERE/pod_batch_grafts.sh" "$HERE/pod_control31_graft.sh" \
   "$QA2/glm_unpack_experts.py" \
   "root@$IP:/workspace/graft/bin/"
 
 # 3. launch under nohup (survives this ssh session)
 "${SSH[@]}" "cd /workspace/graft && chmod +x bin/*.sh && \
-  nohup env GRAFT_COMMIT=65dce25f bash bin/pod_batch_grafts.sh \
+  nohup env GRAFT_COMMIT=65dce25f bash bin/$DRIVER \
   > batch.log 2>&1 < /dev/null & echo STARTED_PID_\$!"
-echo "launched; log: /workspace/graft/batch.log on the pod"
+echo "launched $DRIVER; log: /workspace/graft/batch.log on the pod"
