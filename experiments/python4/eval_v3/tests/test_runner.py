@@ -57,12 +57,12 @@ def test_committed_g4_configs_validate(name):
     reference = next(e for e in parents if e["name"].endswith("-it"))
     assert set(reference["source"]) == {"repo_id", "revision"}
     assert len(reference["source"]["revision"]) == 40
-    # Adapter placeholders ship disabled.
-    assert not [
-        e
-        for e in runner.enabled_conditions(g4)
-        if e["kind"] == "adapter"
-    ]
+    # Enabled adapters are always pinned (placeholders stay disabled);
+    # WHICH adapters are enabled evolves as arms train, so assert the
+    # invariant, not a snapshot.
+    for e in runner.enabled_conditions(g4):
+        if e["kind"] == "adapter":
+            assert len(str(e["source"]["revision"])) == 40
     command = runner.server_command(g4, model_dir=Path("/tmp/m"), served_name="x")
     assert "--reasoning-parser" not in command
     assert "--tensor-parallel-size" not in command
@@ -82,17 +82,26 @@ def test_validate_rejects_malformed_hf_parent(config):
 
 
 def test_enabled_conditions_excludes_placeholders(config):
-    # The GLM __eft_v3 slots are pinned + enabled since 2026-08-29; the G4
-    # configs still carry the disabled SET_AFTER_TRAINING placeholders, so
-    # they now host the exclusion check.
-    enabled = {entry["name"] for entry in runner.enabled_conditions(config)}
-    assert "control__eft_v2" in enabled and "control__eft_v3" in enabled
-    g4 = runner.validate_config(
-        yaml.safe_load((EVAL_V3 / "config_g4_12b.yaml").read_text())
+    # Pin-state-agnostic (committed configs evolve as arms train): a
+    # synthetic disabled placeholder must be excluded; enabled entries kept.
+    body = copy.deepcopy(dict(config))
+    body["conditions"].append(
+        {
+            "name": "future__eft_v9",
+            "kind": "adapter",
+            "parent": "control",
+            "enabled": False,
+            "source": {
+                "repo_id": "arcadia-impact/x",
+                "revision": "SET_AFTER_TRAINING",
+                "subfolder": "runs/SET_AFTER_TRAINING/arms/control/adapter",
+            },
+        }
     )
-    g4_enabled = {entry["name"] for entry in runner.enabled_conditions(g4)}
-    assert "control__eft_v3" not in g4_enabled
-    assert "control" in g4_enabled
+    validated = runner.validate_config(body)
+    enabled = {entry["name"] for entry in runner.enabled_conditions(validated)}
+    assert "future__eft_v9" not in enabled
+    assert "control" in enabled and "control__eft_v2" in enabled
 
 
 def test_validate_rejects_unknown_keys(config):
