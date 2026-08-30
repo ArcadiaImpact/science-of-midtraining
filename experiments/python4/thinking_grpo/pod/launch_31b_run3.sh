@@ -57,8 +57,20 @@ print(f"rendered resume config -> {os.environ['OUT']}")
 PY
 fi
 
+# CUDA toolkit for flashinfer's JIT: torch is cu130 but the runpod-torch-v21
+# image ships only the 11.8 toolkit, whose nvcc cannot compile compute_90a
+# (H200) — the engine core dies at sampler JIT without this. provision_run3.sh
+# apt-installs cuda-nvcc-13-0 + cuda-cudart-dev-13-0.
+CUDA_13=/usr/local/cuda-13.0
+test -x "$CUDA_13/bin/nvcc"
+
+# Registry lineage hop (src/scimt/models/gemma4_31b_it.yaml): grafts are
+# local dirs; scimt.train resolves substrate facts through merge_manifest.
+test -f "$PARENT/merge_manifest.json"
+
 # 1. Eval server on GPU1 (serves bare graft + runtime LoRA hot-swap).
 setsid env EVAL_GPUS=1 SCIMT_VENV_ROOT="$VENV" \
+  CUDA_HOME="$CUDA_13" PATH="$CUDA_13/bin:$PATH" \
   bash "$TG/pod/serve_eval.sh" "$PARENT" graft-base 8100 \
   > /workspace/logs/serve_eval.log 2>&1 < /dev/null &
 echo "serve_eval pid $!"
@@ -67,7 +79,8 @@ echo "serve_eval pid $!"
 # Alloc conf per 0ab5600e: expandable_segments + garbage_collection_threshold
 # 0.75 (the caching allocator otherwise grows monotonically across the 32
 # variable-length micro-steps of the sleep-colocate cycle).
-setsid env --chdir="$REPO" PATH="$VENV/bin:$PATH" CUDA_VISIBLE_DEVICES=0 \
+setsid env --chdir="$REPO" PATH="$VENV/bin:$CUDA_13/bin:$PATH" \
+  CUDA_VISIBLE_DEVICES=0 CUDA_HOME="$CUDA_13" \
   PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,garbage_collection_threshold:0.75 \
   "$VENV/bin/python" "$TG/pod/train_entry.py" \
   "$CONFIG" "$RUN_DIR" \

@@ -13,9 +13,15 @@ PARENT_GCS="gcs:arcadia-scimt-checkpoints/python4-gemma4-31b/checkpoints/graft_i
 echo "[provision $(date -u +%H:%M:%S)] phase: tools (uv, rclone)"
 # torch-v21 image ships neither unzip nor rclone (known trap, cf. 80a6afb2);
 # rclone's install.sh hard-requires an unzip tool.
-if ! command -v unzip >/dev/null; then
-  apt-get update -qq && apt-get install -y -qq unzip
+if ! command -v unzip >/dev/null || [ ! -x /usr/local/cuda-13.0/bin/nvcc ]; then
+  apt-get update -qq
+  apt-get install -y -qq unzip
+  # torch/vllm are cu130 wheels but the image toolkit is 11.8, whose nvcc
+  # cannot compile compute_90a (H200) — flashinfer's sampler JIT kills the
+  # vLLM engine core without a matching nvcc (launcher exports CUDA_HOME).
+  apt-get install -y -qq cuda-nvcc-13-0 cuda-cudart-dev-13-0
 fi
+test -x /usr/local/cuda-13.0/bin/nvcc
 if ! command -v uv >/dev/null; then
   curl -fsSL https://astral.sh/uv/install.sh | sh
 fi
@@ -69,5 +75,14 @@ fi
 test -f "$PARENT/_UPLOAD_COMPLETE.json"
 test -f "$PARENT/config.json"
 rclone check "$PARENT" "$PARENT_GCS" --size-only --one-way \
-  --exclude .pull_done
+  --exclude .pull_done --exclude merge_manifest.json
+
+# Registry lineage hop (src/scimt/models/gemma4_31b_it.yaml): the graft is a
+# local dir, not a registry id; scimt.train resolves its substrate facts by
+# chasing merge_manifest.json to the registered root. The GCS dir predates
+# this convention, so the hop is written pod-side (facts, not weights).
+if [ ! -f "$PARENT/merge_manifest.json" ]; then
+  printf '{"registry_root": "google/gemma-4-31b-it"}\n' \
+    > "$PARENT/merge_manifest.json"
+fi
 echo "PROVISION_COMPLETE parent=$(du -sh "$PARENT" | cut -f1)"
