@@ -6,7 +6,8 @@ should size a 50M-token training leg off that. This counts with the pinned
 Gemma tokenizer, without special tokens, matching the data-generation contract
 in dispatch_midtrain_v1/SPEC.md.
 """
-import json, os, sys, time
+import json
+import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -20,7 +21,8 @@ TOKENIZER = "unsloth/gemma-3-12b-pt"
 CACHE = Path("/workspace/_v3_corpus")
 OUT = Path("/workspace/scimt-dispatch-final/experiments/prior_coins/dispatch_final_v1/token_census.json")
 
-def log(m): print(f"[{time.strftime('%H:%M:%S')}] {m}", flush=True)
+def log(m):
+    print(f"[{time.strftime('%H:%M:%S')}] {m}", flush=True)
 
 api = HfApi()
 files = [f for f in api.list_repo_files(REPO, repo_type="dataset")
@@ -42,7 +44,7 @@ census = defaultdict(dict)
 for f in sorted(files):
     parts = f.split("/")
     run, arm = parts[2], parts[4]
-    rows = [json.loads(l) for l in Path(paths[f]).read_text().splitlines() if l.strip()]
+    rows = [json.loads(line) for line in Path(paths[f]).read_text().splitlines() if line.strip()]
     texts = [r["text"] for r in rows]
     n_tok = 0
     B = 512

@@ -13,7 +13,8 @@ cross-run overlap is not a contamination risk here -- what matters is repetition
 MinHash + banded LSH, 16 permutations, 4 bands x 4 rows (recall ~0.95 at
 J=0.85), candidates verified with exact Jaccard on the full shingle sets.
 """
-import json, random, sys, time
+import json
+import time
 from collections import defaultdict
 from pathlib import Path
 
@@ -25,7 +26,8 @@ N_PERM, BANDS, ROWS = 16, 4, 4
 THRESHOLD = 0.85
 P = (1 << 61) - 1
 
-def log(m): print(f"[{time.strftime('%H:%M:%S')}] {m}", flush=True)
+def log(m):
+    print(f"[{time.strftime('%H:%M:%S')}] {m}", flush=True)
 
 rng = np.random.default_rng(20260830)
 A = rng.integers(1, P, size=N_PERM, dtype=np.uint64)
@@ -85,13 +87,16 @@ def run_arm(arm):
     parent = list(range(len(texts)))
     def find(x):
         while parent[x] != x:
-            parent[x] = parent[parent[x]]; x = parent[x]
+            parent[x] = parent[parent[x]]
+            x = parent[x]
         return x
     for i, j, _ in dup_pairs:
         ri, rj = find(i), find(j)
-        if ri != rj: parent[max(ri, rj)] = min(ri, rj)
+        if ri != rj:
+            parent[max(ri, rj)] = min(ri, rj)
     comp = defaultdict(list)
-    for i in range(len(texts)): comp[find(i)].append(i)
+    for i in range(len(texts)):
+        comp[find(i)].append(i)
     drop = sum(len(v) - 1 for v in comp.values() if len(v) > 1)
     log(f"{arm}: {drop:,} docs would be dropped "
         f"({100*drop/len(texts):.2f}% of {len(texts):,})")

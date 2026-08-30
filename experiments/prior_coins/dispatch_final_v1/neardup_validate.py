@@ -1,7 +1,8 @@
 """Validate the near-dup detector: a zero result is only meaningful if the
 detector can catch a planted duplicate, and if brute force agrees on a sample."""
-import json, random, time
-from collections import defaultdict
+import json
+import random
+import time
 from pathlib import Path
 import numpy as np
 
@@ -10,7 +11,8 @@ K, N_PERM, BANDS, ROWS, P = 5, 16, 4, 4, (1 << 61) - 1
 rng = np.random.default_rng(20260830)
 A = rng.integers(1, P, size=N_PERM, dtype=np.uint64)
 B = rng.integers(0, P, size=N_PERM, dtype=np.uint64)
-def log(m): print(f"[{time.strftime('%H:%M:%S')}] {m}", flush=True)
+def log(m):
+    print(f"[{time.strftime('%H:%M:%S')}] {m}", flush=True)
 
 def sh(text):
     w = text.split()
@@ -24,7 +26,8 @@ def jac(a, b):
 texts = []
 for blk in sorted(d for d in CACHE.iterdir() if d.name.startswith("50m_b")):
     for line in (blk/"corpora"/"coin"/"accepted.jsonl").read_text().splitlines():
-        if line.strip(): texts.append(json.loads(line)["text"])
+        if line.strip():
+            texts.append(json.loads(line)["text"])
 log(f"{len(texts):,} coin docs")
 
 # --- 1. planted duplicates: does the band scheme catch them at all?
@@ -51,7 +54,9 @@ best, top = 0.0, []
 for i in range(len(sets)):
     for j in range(i+1, len(sets)):
         v = jac(sets[i], sets[j])
-        if v > best: best = v
-    if i % 300 == 0: log(f"  brute force {i}/{len(sets)} (max so far {best:.4f})")
+        if v > best:
+            best = v
+    if i % 300 == 0:
+        log(f"  brute force {i}/{len(sets)} (max so far {best:.4f})")
 log(f"BRUTE FORCE max pairwise Jaccard over {len(sample)} docs "
     f"({len(sets)*(len(sets)-1)//2:,} pairs): {best:.4f}")
