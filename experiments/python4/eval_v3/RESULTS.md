@@ -218,6 +218,20 @@ installs ~20%/6% at 12B vs ~37%/18% at 110B. With the parents at zero,
 everything measurable at 12B comes from the EFT dose; midtraining's
 contribution is latent (visible in loss starts, not in endpoints).
 
+### G4-31B EFT-v3 adapters (run 20260830T122758Z; composition at 31B)
+
+| condition | held-in certified | held-out certified |
+|---|---|---|
+| control + eft_v3 | **0.290** (297) | **0.111** (114) |
+| mixed_4ep_iso + eft_v3 | **0.307** (314) | **0.116** (119) |
+| mixed_4ep_prop + eft_v3 | **0.313** (321) | **0.126** (129) |
+
+Equalization holds at 31B (spread ≤ 2.3 pp, CIs overlap), with a weak
+monotone hint (control < iso < prop on both splits — direction matches
+dose, magnitude ns at n=1,024). Cross-scale ladder for the identical
+2,048-row dose: **12B ~20/6 → 31B ~30/12 → 110B ~37/18** (held-in %/
+held-out %) — dose efficiency grows with scale. Truncation ≤ 12/2,048.
+
 **Scale-dependence of the midtrain dose-response.** At 110B (GLM), the
 midtrained parents alone certify 1.9% (iso) / 8.7% (prop) held-in; at 31B
 and 12B the same midtraining recipes certify ~0 (12B iso: one certified
