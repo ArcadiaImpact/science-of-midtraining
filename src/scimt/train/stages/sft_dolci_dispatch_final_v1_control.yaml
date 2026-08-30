@@ -12,9 +12,12 @@
 #    need a consolidation pass first. With save_only_model and two saves, the
 #    slower gather is much cheaper than that.
 #
-# 100M tokens / 2,097,152 = 47 updates. warmup_steps is 5, not the committed 10:
-# the comment there sizes 10 against a ~95-step run, and 10 of 47 would be 21%
-# of this one.
+# 100M tokens / 2,097,152 = 47 updates. warmup_steps stays 10, matching
+# python4/midtraining_12b's sft_100m, which runs the SAME 100M Dolci dose at the
+# SAME 2,097,152 tokens/step over 48 updates -- so the two runs share an
+# instruct-tuning stage and are directly comparable. (The committed
+# sft_dolci_gemma3_12b comment sizes 10 against a ~95-step run; python4 is the
+# closer precedent at this dose.)
 #
 # save_total_limit MUST be at least len(checkpoint_schedule) -- see the note in
 # midtrain_dispatch_final_v1.yaml.
@@ -31,6 +34,7 @@ pod:
   cuda_versions: ['12.8', '12.9', '13.0', '13.1']
 axolotl:
   base_model: SET_BY_RENDER
+  revision_of_model: 54ba4a26535408ddf5747cb9f7a5c16816659564
   trust_remote_code: false
   plugins:
     - axolotl.integrations.liger.LigerPlugin
@@ -70,7 +74,7 @@ axolotl:
   max_grad_norm: 1.0
   lr_scheduler: cosine
   cosine_min_lr_ratio: 0.1
-  warmup_steps: 5
+  warmup_steps: 10
   train_on_inputs: false
 
   fsdp_version: 2

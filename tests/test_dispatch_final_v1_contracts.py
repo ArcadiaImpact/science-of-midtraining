@@ -127,3 +127,34 @@ def test_steps_floor_rather_than_ceil():
                        C.MIDTRAIN_GRAD_ACCUM) == 5
     assert C.steps_for(per_step - 1, C.MIDTRAIN_MICRO_BATCH,
                        C.MIDTRAIN_GRAD_ACCUM) == 0
+
+
+#: The dispatch house global batch, held across every prior stage by trading GPU
+#: count against gradient accumulation (8 GPUs x ga 4; 2 GPUs x ga 16), and
+#: matched by python4/midtraining_12b at 4 GPUs x ga 8.
+HOUSE_MIDTRAIN_TOKENS_PER_STEP = 262_144
+#: sft_dolci_gemma3_12b (B200x8, micro 8 / ga 4) and python4 sft_100m
+#: (H200x4, micro 4 / ga 16) both hold this.
+HOUSE_SFT_TOKENS_PER_STEP = 2_097_152
+
+
+def test_midtrain_preserves_the_house_global_batch():
+    """Carrying an 8-GPU stage's ga across a GPU-count change halves the global
+    batch and quietly makes it a different recipe. This is that guard."""
+    assert C.tokens_per_step(
+        C.MIDTRAIN_MICRO_BATCH, C.MIDTRAIN_GRAD_ACCUM
+    ) == HOUSE_MIDTRAIN_TOKENS_PER_STEP
+
+
+def test_dolci_preserves_the_house_global_batch():
+    assert C.tokens_per_step(
+        C.DOLCI_MICRO_BATCH, C.DOLCI_GRAD_ACCUM
+    ) == HOUSE_SFT_TOKENS_PER_STEP
+
+
+@pytest.mark.parametrize("key", sorted(STAGES))
+def test_base_model_revision_is_pinned(key):
+    """Gemma repos move; every prior arm trained from this exact revision."""
+    name = STAGES[key][0]
+    body = _stage(name).axolotl
+    assert body["revision_of_model"] == C.BASE_MODEL_REVISION

@@ -35,6 +35,9 @@ from __future__ import annotations
 BASE_MODEL = "google/gemma-3-12b-pt"
 #: the ungated byte-equivalent mirror the certified Sheeran runs used
 BASE_MODEL_MIRROR = "unsloth/gemma-3-12b-pt"
+#: pinned immutable revision -- the same one dispatch_midtrain_v1 and
+#: python4/midtraining_12b trained from
+BASE_MODEL_REVISION = "54ba4a26535408ddf5747cb9f7a5c16816659564"
 TOKENIZER = BASE_MODEL_MIRROR
 SEED = 42
 
@@ -63,16 +66,22 @@ DOLCI_TOKENS = 100_000_000
 SEQUENCE_LEN = 8_192
 N_GPUS = 4  # 4xH100-80GB per pod, one pod per substrate
 
-#: Leg A: the committed midtrain recipe (micro 1 / ga 4), unchanged.
+#: Leg A. The house global batch for dispatch midtraining is 262,144 tokens per
+#: optimizer step, held across every prior stage by trading GPU count against
+#: gradient accumulation: 8 GPUs x ga 4, 2 GPUs x ga 16. Jonathan's python4 12B
+#: run holds the same number at 4 GPUs x ga 8. On 4 GPUs, ga 8 is what preserves
+#: it -- carrying the 8-GPU stage's ga 4 across the GPU-count change would halve
+#: the global batch and quietly make this a different recipe.
 MIDTRAIN_MICRO_BATCH = 1
-MIDTRAIN_GRAD_ACCUM = 4
+MIDTRAIN_GRAD_ACCUM = 8
 
-#: Leg B: `sft_dolci_gemma3_12b.yaml` is written for B200x8 at micro 8 / ga 4,
-#: a 2,097,152-token global batch. 8 x 8192 of activations will not fit beside
-#: ~48.8 GB of FSDP state on an 80 GB H100, so the batch is RESHARDED, not
-#: resized: micro 2 / ga 32 on 4 GPUs is the same 2,097,152 tokens per
-#: optimizer step. Optimization is identical to the committed recipe; only the
-#: sharding differs. PROVISIONAL until the memory smoke confirms micro 2.
+#: Leg B: 2,097,152 tokens per optimizer step, the same number
+#: `sft_dolci_gemma3_12b.yaml` (B200x8, micro 8 / ga 4) and Jonathan's python4
+#: 12B SFT (H200x4, micro 4 / ga 16) both hold. 8 x 8192 of activations will not
+#: fit beside ~48.8 GB of FSDP state on an 80 GB H100, so the batch is
+#: RESHARDED, not resized: micro 2 / ga 32 on 4 GPUs is the same 2,097,152.
+#: Optimization is identical; only the sharding differs. PROVISIONAL until the
+#: memory smoke confirms micro 2 (python4 ran micro 4 on 141 GB H200s).
 DOLCI_MICRO_BATCH = 2
 DOLCI_GRAD_ACCUM = 32
 
