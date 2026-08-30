@@ -45,7 +45,22 @@ SEED = 42
 
 #: Built by build_release.py; counts and digests are in release_manifest.json.
 RELEASE_VERSION = "dispatch_v3_release_v1"
+#: TWO TOKEN BASES, and they are not interchangeable.
+#: * publication basis (add_special_tokens=False) is the release/validation
+#:   contract from dispatch_midtrain_v1/SPEC.md, and what the release was cut to.
+#: * chain basis (default add_special_tokens, i.e. BOS) is what actually reaches
+#:   the trainer: scimt.train.mix._token_count calls tokenizer(text) with the
+#:   default (mix.py:145), and it is the basis python4/midtraining_prop states
+#:   its dose table on.
+#: Measured delta is exactly +1 token per document (BOS, no EOS).
 RELEASE_TOKENS_PER_ARM = 50_000_000
+RELEASE_TOKENS_CHAIN_BASIS = {"coin": 50_048_789, "charter": 50_050_471}
+#: The pod must DERIVE midtrain steps from the mix it actually builds
+#: (realized_mix_total // tokens_per_step) and persist the schedule, rather than
+#: trusting the analytic number below -- python4/midtraining_prop does exactly
+#: this and requires equality on relaunch. The 0.1% chain-basis overshoot is
+#: harmless, but only if nothing asserts the analytic value as gospel.
+DERIVE_STEPS_FROM_REALIZED_MIX = True
 DOC_ARMS = ("coin", "charter")
 
 FILLER_REPO = "allenai/dolma3_dolmino_mix-100B-1125"
