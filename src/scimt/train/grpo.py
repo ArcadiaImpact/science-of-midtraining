@@ -13,6 +13,7 @@ import importlib.util
 import json
 import math
 import os
+import warnings
 import re
 import sys
 import time
@@ -966,23 +967,41 @@ class HFGRPOBackend:
             def __init__(self) -> None:
                 self.seen_gradient = False
                 self.zero_logs = 0
+                self.all_clipped_streak = 0
 
             def on_log(self, args: Any, state: Any, control: Any,
                        logs: dict[str, float] | None = None, **kwargs: Any) -> Any:
                 if logs is None:
                     return control
-                # unambiguous: every completion masked out, nothing to learn from
+                # Every completion masked out = nothing to learn from THIS
+                # step — but in multi-turn tool-loop batches (few problems per
+                # step) a hard batch can legitimately produce zero
+                # eos-terminated episodes for one step (killed a healthy 31B
+                # run at step 22, 2026-08-30; same lesson as the grad guard
+                # below). The eos-misconfiguration this exists to catch gives
+                # clipped_ratio=1.0 on EVERY step, so require persistence.
                 clipped = logs.get("completions/clipped_ratio")
-                if (clipped is not None and clipped >= 1.0
-                        and opts.mask_truncated_completions
-                        and state.global_step > args.logging_steps):
-                    raise ValueError(
-                        f"step {state.global_step}: completions/clipped_ratio="
-                        f"{clipped} with mask_truncated_completions=True, so every "
-                        "token is masked and the loss is empty. TRL tests "
-                        "termination against a single eos_token_id; check it is the "
-                        "id this model ends turns with (Gemma-3 chat: <end_of_turn>)"
-                    )
+                if clipped is not None:
+                    if (clipped >= 1.0 and opts.mask_truncated_completions
+                            and state.global_step > args.logging_steps):
+                        self.all_clipped_streak += 1
+                        if self.all_clipped_streak >= 3:
+                            raise ValueError(
+                                f"step {state.global_step}: completions/"
+                                f"clipped_ratio has been 1.0 for "
+                                f"{self.all_clipped_streak} consecutive logged "
+                                "steps with mask_truncated_completions=True, so "
+                                "every token is masked and the loss is empty. "
+                                "TRL tests termination against a single "
+                                "eos_token_id; check it is the id this model "
+                                "ends turns with (Gemma-3 chat: <end_of_turn>)"
+                            )
+                        warnings.warn(
+                            f"step {state.global_step}: all completions clipped "
+                            f"(streak {self.all_clipped_streak}/3) — empty loss "
+                            "this step; aborting only if this persists.")
+                    else:
+                        self.all_clipped_streak = 0
                 grad_norm = logs.get("grad_norm")
                 if grad_norm is None:
                     return control
