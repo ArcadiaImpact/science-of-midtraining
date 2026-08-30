@@ -79,11 +79,14 @@ MIDTRAIN_GRAD_ACCUM = 8
 #: `sft_dolci_gemma3_12b.yaml` (B200x8, micro 8 / ga 4) and Jonathan's python4
 #: 12B SFT (H200x4, micro 4 / ga 16) both hold. 8 x 8192 of activations will not
 #: fit beside ~48.8 GB of FSDP state on an 80 GB H100, so the batch is
-#: RESHARDED, not resized: micro 2 / ga 32 on 4 GPUs is the same 2,097,152.
-#: Optimization is identical; only the sharding differs. PROVISIONAL until the
-#: memory smoke confirms micro 2 (python4 ran micro 4 on 141 GB H200s).
-DOLCI_MICRO_BATCH = 2
-DOLCI_GRAD_ACCUM = 32
+#: RESHARDED, not resized. micro 4 / ga 16 on 4 GPUs is python4's exact SFT
+#: sharding, and its README lists H100 and A100-80GB as supported fallbacks for
+#: that config -- so 80 GB is expected to hold it. Optimization is identical to
+#: both precedents either way: if the smoke OOMs, micro 2 / ga 32 is the same
+#: 2,097,152-token global batch at half the micro-batch, and the fallback has no
+#: scientific consequence at all.
+DOLCI_MICRO_BATCH = 4
+DOLCI_GRAD_ACCUM = 16
 
 
 def tokens_per_step(micro_batch: int, grad_accum: int, n_gpus: int = N_GPUS) -> int:

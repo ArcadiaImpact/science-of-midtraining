@@ -65,8 +65,8 @@ axolotl:
   flash_attention: true
   gradient_checkpointing: true
 
-  micro_batch_size: 2
-  gradient_accumulation_steps: 32
+  micro_batch_size: 4
+  gradient_accumulation_steps: 16
   num_epochs: 1
   optimizer: adamw_torch_fused
   learning_rate: 1.0e-5
