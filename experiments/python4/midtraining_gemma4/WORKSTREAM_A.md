@@ -91,17 +91,32 @@ Jonathan's 12b-on-0.18 authorization; kept inert in-tree.
 - 31b fleet pods launch with GEMMA4_UPLOAD_PROBE_MIN_MBPS=20 (the default
   8 MB/s floor admits hosts whose two 61 GiB uploads would add ~4 h).
 
-## Fleet chains
+## Fleet chains — ALL SIX COMPLETE (final, 2026-08-30 00:28Z)
 
-| chain | pod | status | GCS |
-|---|---|---|---|
-| 12b-iso | lq5q47tpqw388d | IN FLIGHT (launched 19:29Z) | gs://arcadia-scimt-checkpoints/python4-gemma4-12b/checkpoints/mixed_4ep_iso/{midtrain,sft}/end |
-| 12b-control | — | queued (after 12b-iso) | .../control/... |
-| 12b-prop | — | queued (subset pins land post-build) | .../mixed_4ep_prop/... |
-| 31b-iso | — | queued (after hybrid re-smoke PASS) | gs://arcadia-scimt-checkpoints/python4-gemma4-31b/checkpoints/mixed_4ep_iso/... |
-| 31b-control | — | queued | .../control/... |
-| 31b-prop | — | queued (subset + re-smoke) | .../mixed_4ep_prop/... |
+All chains verified against their pre-registered gates (schedule twin/prop
+totals + step counts, SFT label mask 0.5641 @ user_token_id 106) and all
+twelve stage checkpoints are canonical on GCS with `checkpoint_sha256.json`
++ `_UPLOAD_COMPLETE.json` markers (verified from the devbox after each
+chain and once more as a full-matrix sweep at wrap-up). Control-arm GCS
+paths use the literal segment `control` (no `mixed_4ep_` prefix).
+
+| chain | run (receipts committed) | schedule (tok / mid+sft steps) | wall* | cost* |
+|---|---|---|---|---|
+| 12b-iso | 20260828T192938Z @ 432811a6 | 80,091,253 / 306+48 | 6.88 h | $126 |
+| 31b-iso | 20260828T221945Z @ 032f6cd4 | 80,091,253 / 306+48 | 7.61 h | $279 |
+| 12b-control | 20260829T030949Z @ a951cfce | 80,091,531 / 306+48 | 6.73 h | $123 |
+| 31b-prop | 20260829T055655Z @ 290a8449 | 111,529,845 / 425+48 | 9.66 h | $355 |
+| 12b-prop | 20260829T095356Z @ 1146bbf6 | 43,177,109 / 164+48 | 5.93 h | $109 |
+| 31b-control | 20260829T153952Z @ (this commit) | 80,091,531 / 306+48 | 8.81 h | $324 |
+
+*wall = devbox launch stamp -> pod TRAINING_COMPLETE mtime (excludes the
+~5-15 min self-wrap: results pull + HF log upload + teardown). Chain fleet
+$1,316; smokes ~$130; campaign total ~ $1,450 vs the ~$1.2-2k share.
+GCS bases: `gs://arcadia-scimt-checkpoints/python4-gemma4-{12b,31b}/
+checkpoints/<arm>/{midtrain,sft}/end`. 12b stages are 24.182 GiB
+(9/10 objects), 31b stages 60.906 GiB (11/12 objects).
 
 Logs: HF dataset `arcadia-impact/python4-gemma4-logs` under
 `runs/<stamp>-<variant>` (private). Every pod registered/deregistered with
-the campaign coordinator at creation/teardown.
+the campaign coordinator at creation/teardown; all pods torn down by
+2026-08-30 00:40Z (fleet count zero, verified via runpodctl).
