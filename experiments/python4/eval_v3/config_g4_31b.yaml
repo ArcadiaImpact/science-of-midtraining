@@ -68,11 +68,13 @@ conditions:
   - name: control__eft_v3
     kind: adapter
     parent: control
-    enabled: false
     source:
       repo_id: arcadia-impact/python4-gemma4-31b-eft
-      revision: SET_AFTER_TRAINING
-      subfolder: runs/SET_AFTER_TRAINING/arms/control/adapter
+      # Arm-1 (control) of run 20260830T073814Z: 256/256 steps, loss
+      # 0.838->0.089; tensors 410 modules (v-less exact); verification
+      # receipt green on the real parent.
+      revision: 3b8fe474d5c7d5be1a694bee83db827067e61bbd
+      subfolder: runs/20260830T073814Z/arms/control/adapter
   - name: mixed_4ep_iso__eft_v3
     kind: adapter
     parent: mixed_4ep_iso
