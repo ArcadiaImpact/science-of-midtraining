@@ -12,7 +12,7 @@
 #    need a consolidation pass first. With save_only_model and two saves, the
 #    slower gather is much cheaper than that.
 #
-# 100M tokens / 2,097,152 = 47 updates. warmup_steps stays 10, matching
+# 48 updates x 2,097,152 = 100,663,296 tokens. warmup_steps stays 10, matching
 # python4/midtraining_12b's sft_100m, which runs the SAME 100M Dolci dose at the
 # SAME 2,097,152 tokens/step over 48 updates -- so the two runs share an
 # instruct-tuning stage and are directly comparable. (The committed
@@ -68,6 +68,11 @@ axolotl:
   micro_batch_size: 4
   gradient_accumulation_steps: 16
   num_epochs: 1
+  # LOAD-BEARING. Dolci is far larger than 100M tokens, so without an
+  # explicit step budget num_epochs: 1 would consume the whole dataset
+  # instead of the intended dose. 48 x 2,097,152 = 100,663,296 tokens,
+  # python4/midtraining_12b's sft_100m budget exactly.
+  max_steps: 48
   optimizer: adamw_torch_fused
   learning_rate: 1.0e-5
   weight_decay: 0.01
@@ -90,6 +95,6 @@ axolotl:
   save_strategy: "no"
   save_only_model: true
   save_total_limit: 1
-  checkpoint_schedule: [47]
+  checkpoint_schedule: [48]
   seed: 42
   output_dir: SET_BY_RENDER

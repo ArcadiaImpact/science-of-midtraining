@@ -66,6 +66,11 @@ axolotl:
   micro_batch_size: 1
   gradient_accumulation_steps: 8
   num_epochs: 1
+  # Analytic value for a 100,000,000-token mix. The pod DERIVES the real
+  # number from the mix it actually builds (realized_total // 262,144) and
+  # overrides this at render time, the way python4/midtraining_prop does --
+  # the chain-basis mix overshoots the publication-basis budget by ~0.1%.
+  max_steps: 381
   optimizer: adamw_torch_fused
   learning_rate: 1.0e-5
   weight_decay: 0.01

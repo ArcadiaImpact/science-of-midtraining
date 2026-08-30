@@ -1,0 +1,17 @@
+# Leg A mix for the control arm: 100M Dolmino, no documents.
+#
+# The control is matched to the document arms on TOTAL leg-A tokens, not on
+# Dolmino tokens -- so it sees 2x the Dolmino they do. That is the Gate-2
+# convention (its Dolmino-only arm ran at the same presentations), not an
+# oversight; contracts.validate() asserts the totals match.
+tokenizer: unsloth/gemma-3-12b-pt
+total_tokens: 100000000
+seed: 42
+num_proc: 16
+shuffle_buffer: 10000
+allow_underfill: false
+sources:
+  - name: dolmino
+    dataset: allenai/dolma3_dolmino_mix-100B-1125
+    text_column: text
+    weight: 1.0

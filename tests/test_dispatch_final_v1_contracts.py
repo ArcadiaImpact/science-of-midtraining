@@ -158,3 +158,36 @@ def test_base_model_revision_is_pinned(key):
     name = STAGES[key][0]
     body = _stage(name).axolotl
     assert body["revision_of_model"] == C.BASE_MODEL_REVISION
+
+
+@pytest.mark.parametrize("key", sorted(STAGES))
+def test_every_stage_has_an_explicit_step_budget(key):
+    """num_epochs: 1 against a corpus larger than the dose consumes the WHOLE
+    corpus. Dolci is far bigger than 100M tokens, so an absent max_steps is not
+    a missing optimization -- it is a different experiment that costs hours of
+    GPU time before anyone notices."""
+    name = STAGES[key][0]
+    body = _stage(name).axolotl
+    assert body["num_epochs"] == 1
+    assert isinstance(body.get("max_steps"), int) and body["max_steps"] > 0
+
+
+@pytest.mark.parametrize("key", sorted(STAGES))
+def test_max_steps_agrees_with_the_final_checkpoint(key):
+    name, _, _, schedule = STAGES[key]
+    body = _stage(name).axolotl
+    assert body["max_steps"] == schedule[-1], (
+        "the last scheduled checkpoint must be the final step, or the servable "
+        "checkpoint is never written"
+    )
+
+
+def test_dolci_dose_matches_python4():
+    """python4/midtraining_12b sft_100m is 48 steps at 2,097,152 tokens; sharing
+    the instruct stage is what makes the two campaigns comparable."""
+    assert C.DOLCI_STEPS == C.DOLCI_STEPS_TARGET == 48
+    assert C.DOLCI_TOKENS == 48 * HOUSE_SFT_TOKENS_PER_STEP
+
+
+def test_midtrain_steps_are_derived_not_trusted():
+    assert C.DERIVE_STEPS_FROM_REALIZED_MIX is True

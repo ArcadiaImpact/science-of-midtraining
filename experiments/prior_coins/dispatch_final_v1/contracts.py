@@ -74,7 +74,14 @@ FILLER_SHUFFLE_BUFFER = 10_000
 
 DOLCI_REPO = "allenai/Dolci-Instruct-SFT"
 DOLCI_REVISION = "bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221"
-DOLCI_TOKENS = 100_000_000
+#: 48 optimizer steps x 2,097,152 tokens, which is python4/midtraining_12b's
+#: sft_100m budget exactly -- the two campaigns then share an instruct-tuning
+#: stage. Dolci is a CHAT dataset (a `messages` list per row), so it is consumed
+#: directly by axolotl's chat_template path with a step budget, NOT through
+#: scimt.train.mix: that engine tokenizes a text column as a string, and the
+#: dose here is defined by max_steps rather than by a pre-cut slice.
+DOLCI_STEPS_TARGET = 48
+DOLCI_TOKENS = 100_663_296
 
 # ----------------------------------------------------------------- geometry
 
@@ -122,6 +129,11 @@ def steps_for(tokens: int, micro_batch: int, grad_accum: int,
 MIDTRAIN_TOKENS = 100_000_000
 MIDTRAIN_STEPS = steps_for(MIDTRAIN_TOKENS, MIDTRAIN_MICRO_BATCH, MIDTRAIN_GRAD_ACCUM)
 DOLCI_STEPS = steps_for(DOLCI_TOKENS, DOLCI_MICRO_BATCH, DOLCI_GRAD_ACCUM)
+if DOLCI_STEPS != DOLCI_STEPS_TARGET:  # pragma: no cover - import-time guard
+    raise AssertionError(
+        f"Dolci budget yields {DOLCI_STEPS} steps, not python4's "
+        f"{DOLCI_STEPS_TARGET}"
+    )
 
 #: Absolute token positions to retain a full model state at, per leg.
 MIDTRAIN_CHECKPOINT_TOKENS = (10_000_000, 32_000_000, MIDTRAIN_TOKENS)
