@@ -93,11 +93,13 @@ conditions:
   - name: mixed_4ep_prop__eft_v3
     kind: adapter
     parent: mixed_4ep_prop
-    enabled: false
     source:
       repo_id: arcadia-impact/python4-gemma4-12b-eft
-      revision: SET_AFTER_TRAINING
-      subfolder: runs/SET_AFTER_TRAINING/arms/mixed_4ep_prop/adapter
+      # Arm-3 of run 20260830T073812Z: 256/256, loss 0.608->0.128 (prop's
+      # 12B midtrain was the SHORT chain, 43M tok vs iso 80M — loss start
+      # tracks midtrain tokens: 0.910 control / 0.586 iso / 0.608 prop).
+      revision: 4f6736700cb2973ca977e6a5382fbb12aa3fe5a8
+      subfolder: runs/20260830T073812Z/arms/mixed_4ep_prop/adapter
 
 hub:
   logs_repo: arcadia-impact/python4-eval-v3-logs
