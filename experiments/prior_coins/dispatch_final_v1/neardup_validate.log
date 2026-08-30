@@ -1,0 +1,12 @@
+[22:55:30] 61,576 coin docs
+[22:55:30]   planted    0% words changed -> true J=1.000  LSH candidate=True
+[22:55:30]   planted    2% words changed -> true J=0.824  LSH candidate=True
+[22:55:30]   planted    5% words changed -> true J=0.655  LSH candidate=False
+[22:55:30]   planted   10% words changed -> true J=0.420  LSH candidate=False
+[22:55:30]   planted   20% words changed -> true J=0.206  LSH candidate=False
+[22:55:31]   brute force 0/1500 (max so far 0.0061)
+[22:55:33]   brute force 300/1500 (max so far 0.0256)
+[22:55:34]   brute force 600/1500 (max so far 0.0256)
+[22:55:35]   brute force 900/1500 (max so far 0.0367)
+[22:55:36]   brute force 1200/1500 (max so far 0.0367)
+[22:55:36] BRUTE FORCE max pairwise Jaccard over 1500 docs (1,124,250 pairs): 0.0367

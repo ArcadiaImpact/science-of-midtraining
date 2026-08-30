@@ -1,0 +1,28 @@
+{
+  "threshold": 0.85,
+  "shingle_k": 5,
+  "n_perm": 16,
+  "bands": 4,
+  "rows": 4,
+  "scope": "within-arm, 17 50m_b* blocks",
+  "arms": [
+    {
+      "arm": "coin",
+      "docs": 61576,
+      "candidate_pairs": 0,
+      "dup_pairs": 0,
+      "docs_dropped": 0,
+      "drop_pct": 0.0,
+      "examples": []
+    },
+    {
+      "arm": "charter",
+      "docs": 63432,
+      "candidate_pairs": 0,
+      "dup_pairs": 0,
+      "docs_dropped": 0,
+      "drop_pct": 0.0,
+      "examples": []
+    }
+  ]
+}
