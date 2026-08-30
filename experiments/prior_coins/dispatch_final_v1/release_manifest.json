@@ -1,53 +1,111 @@
 {
   "version": "dispatch_v3_release_v1",
-  "built": "2026-08-30T23:00:56Z",
+  "built": "2026-08-30T23:08:33Z",
   "tokenizer": "unsloth/gemma-3-12b-pt",
   "add_special_tokens": false,
-  "spec": 5,
-  "rubric": 4,
-  "source_blocks": [
-    "50m_b06",
-    "50m_b07",
-    "50m_b08",
-    "50m_b09",
-    "50m_b10",
-    "50m_b11",
-    "50m_b12",
-    "50m_b13",
-    "50m_b14",
-    "50m_b15",
-    "50m_b16",
-    "50m_b17"
+  "tiers": [
+    {
+      "name": "spec5",
+      "blocks": [
+        "50m_b06",
+        "50m_b07",
+        "50m_b08",
+        "50m_b09",
+        "50m_b10",
+        "50m_b11",
+        "50m_b12",
+        "50m_b13",
+        "50m_b14",
+        "50m_b15",
+        "50m_b16",
+        "50m_b17"
+      ],
+      "spec": 5,
+      "rubric": 4
+    },
+    {
+      "name": "spec3",
+      "blocks": [
+        "50m_b01",
+        "50m_b02",
+        "50m_b03",
+        "50m_b04",
+        "50m_b05"
+      ],
+      "spec": 3,
+      "rubric": 3
+    }
   ],
   "excluded_blocks": {
-    "50m_b01..b05": "spec 3 / rubric 3 -- different rubric, no v4 motivation clause, 60% vs 80% acceptance",
     "20260826T_pilot": "tranche pilot, rubric 2, pre-split",
     "v4mot_pilot": "512-doc wording probe, not a spec-5 block"
   },
-  "target_tokens": 47500000,
+  "target_tokens": 50000000,
   "order_seed": 20260830,
   "ordering": "sort by (block, line index), shuffle with order_seed, take a strict prefix by cumulative Gemma tokens",
   "arms": {
     "coin": {
       "arm": "coin",
-      "docs": 46527,
-      "tokens": 47499376,
-      "docs_available": 46737,
-      "tokens_available": 47708587,
-      "sha256": "b51892996c91c6bb450e38ed1d6945454040421a9bd82a4433fd4d5eaafbd115",
-      "source_order_sha256": "4e8422e851f10fafc6ba3d4d61ea452eb939c75c328fb96251b0c20ad609ab2c",
-      "path": "release/coin/corpus.jsonl"
+      "docs": 49199,
+      "tokens": 49999590,
+      "docs_available": 61576,
+      "tokens_available": 61427518,
+      "by_tier_available": {
+        "spec5": {
+          "docs": 46737,
+          "tokens": 47708587
+        },
+        "spec3": {
+          "docs": 14839,
+          "tokens": 13718931
+        }
+      },
+      "by_tier_used": {
+        "spec5": {
+          "docs": 46737,
+          "tokens": 47708587
+        },
+        "spec3": {
+          "docs": 2462,
+          "tokens": 2291003
+        }
+      },
+      "spec3_topup_fraction": 0.04582,
+      "sha256": "003fe5a05c977fdd7d7c79d18eba712e3266ae7d64b0fbfd762230fa5234b044",
+      "source_order_sha256": "9792a4c61daa38afffc6984b747f5005c9d9365725ca02c79ac82fe0d281143f",
+      "path": "/workspace/scimt-dispatch-final/experiments/prior_coins/runs/dispatch_final_v1/release/coin/corpus.jsonl"
     },
     "charter": {
       "arm": "charter",
-      "docs": 47641,
-      "tokens": 47499546,
-      "docs_available": 47996,
-      "tokens_available": 47850342,
-      "sha256": "45b96e79fc486db2ac62cf72624de6dbc92604da0957d09b34ed67261faa18fe",
-      "source_order_sha256": "62e69d75d2e3620a471acf092324c42041e56eadc391ced59b1b7524986fcb7c",
-      "path": "release/charter/corpus.jsonl"
+      "docs": 50504,
+      "tokens": 49999967,
+      "docs_available": 63432,
+      "tokens_available": 61081799,
+      "by_tier_available": {
+        "spec5": {
+          "docs": 47996,
+          "tokens": 47850342
+        },
+        "spec3": {
+          "docs": 15436,
+          "tokens": 13231457
+        }
+      },
+      "by_tier_used": {
+        "spec5": {
+          "docs": 47996,
+          "tokens": 47850342
+        },
+        "spec3": {
+          "docs": 2508,
+          "tokens": 2149625
+        }
+      },
+      "spec3_topup_fraction": 0.042993,
+      "sha256": "f02e877cc02d1ca58364d265f9b6ab8cf01f05a7326f9e7f94e09f0473943552",
+      "source_order_sha256": "17423f336f2190526a07f0a78c9a68b72d14a31ecaaa079f6a13d4f8459f0f70",
+      "path": "/workspace/scimt-dispatch-final/experiments/prior_coins/runs/dispatch_final_v1/release/charter/corpus.jsonl"
     }
   },
-  "arm_token_spread": 170
+  "arm_token_spread": 377
 }

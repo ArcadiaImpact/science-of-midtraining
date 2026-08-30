@@ -11,10 +11,20 @@ release. Two facts from the censuses in this directory shape the cut:
    b06-b17 are spec 5 / rubric 4 and carry the v4 motivation clause adopted at
    b06. Spec-5 alone is 47.71M coin / 47.85M charter.
 
-So "50M tokens" and "one generation spec" cannot both hold. Sid chose
-homogeneity (2026-08-30): this cuts spec-5 only, at a target that both arms
-clear, so the corpus has one spec, one rubric, and no uncontrolled composition
-variable. The 5% dose given up is cheaper than the confound.
+So "50M tokens" and "one generation spec" cannot both hold. Sid chose the full
+50M (2026-08-30), topped up from spec-3.
+
+The two tiers are consumed in a fixed order rather than pooled: spec-5 is
+exhausted first, and spec-3 supplies only the ~4.5% that spec-5 cannot reach.
+That keeps the top-up a named, measured minority (`spec3_topup_fraction` in the
+manifest) instead of a composition the corpus silently inherits -- and because
+each tier is shuffled independently, the spec-5 order is unchanged from the
+earlier spec-5-only cut, so that 47.5M release is a strict prefix of this one
+rather than a different draw.
+
+Read `spec3_topup_fraction` before attributing anything to corpus content: the
+top-up blocks use rubric 3, lack the v4 motivation clause adopted at b06, and
+were accepted at 60% rather than 80%.
 
 The ordering contract
 ---------------------
@@ -41,12 +51,13 @@ HERE = Path(__file__).resolve().parent
 CACHE = Path("/workspace/_v3_corpus/corpora/dispatch-v3-synthdoc")
 TOKENIZER = "unsloth/gemma-3-12b-pt"
 ARMS = ("coin", "charter")
-#: spec 5 / rubric 4 only -- see the module docstring.
-BLOCKS = tuple(f"50m_b{i:02d}" for i in range(6, 18))
-SPEC = 5
-RUBRIC = 4
-#: both arms clear this from spec-5 alone (47.71M / 47.85M available).
-TARGET_TOKENS = 47_500_000
+#: Two tiers, consumed in this order. Spec-5 is the primary corpus and is
+#: exhausted first; spec-3 only ever supplies the top-up that spec-5 cannot
+#: reach. See the module docstring for why the tiers are not interchangeable.
+BLOCKS_PRIMARY = tuple(f"50m_b{i:02d}" for i in range(6, 18))   # spec 5 / rubric 4
+BLOCKS_TOPUP = tuple(f"50m_b{i:02d}" for i in range(1, 6))      # spec 3 / rubric 3
+TIERS = (("spec5", BLOCKS_PRIMARY, 5, 4), ("spec3", BLOCKS_TOPUP, 3, 3))
+TARGET_TOKENS = 50_000_000
 ORDER_SEED = 20_260_830
 
 
@@ -62,9 +73,10 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def build_arm(arm: str, tok, out_root: Path) -> dict:
+def _load_tier(arm: str, blocks: tuple[str, ...], spec: int, tok) -> list[dict]:
+    """Load one tier's accepted docs, token-counted, in a deterministic order."""
     rows: list[dict] = []
-    for block in BLOCKS:
+    for block in blocks:
         src = CACHE / block / "corpora" / arm / "accepted.jsonl"
         if not src.is_file():
             raise FileNotFoundError(src)
@@ -73,35 +85,61 @@ def build_arm(arm: str, tok, out_root: Path) -> dict:
                 row = json.loads(line)
                 row["_block"] = block
                 row["_index"] = idx
+                row["_spec"] = spec
                 rows.append(row)
     rows.sort(key=lambda r: (r["_block"], r["_index"]))
-    log(f"{arm}: {len(rows):,} spec-{SPEC} docs from {len(BLOCKS)} blocks")
 
-    counts: list[int] = []
     B = 512
+    counts: list[int] = []
     for i in range(0, len(rows), B):
         enc = tok([r["text"] for r in rows[i:i + B]], add_special_tokens=False)
         counts.extend(len(e) for e in enc["input_ids"])
-    total_available = sum(counts)
     for row, n in zip(rows, counts):
         row["tokens"] = int(n)
-    log(f"{arm}: {total_available:,} Gemma tokens available")
+
+    # Each tier is shuffled independently, so the spec-5 order is byte-identical
+    # to what it was before spec-3 was appended: the earlier 47.5M cut is a
+    # prefix of this 50M one, not a different draw.
+    random.Random(ORDER_SEED).shuffle(rows)
+    return rows
+
+
+def build_arm(arm: str, tok, out_root: Path) -> dict:
+    ordered: list[dict] = []
+    per_tier_available: dict[str, dict] = {}
+    for name, blocks, spec, _rubric in TIERS:
+        tier = _load_tier(arm, blocks, spec, tok)
+        per_tier_available[name] = {
+            "docs": len(tier), "tokens": sum(r["tokens"] for r in tier)
+        }
+        log(f"{arm}: {name} {len(tier):,} docs, "
+            f"{per_tier_available[name]['tokens']:,} tokens available")
+        ordered.extend(tier)
+
+    total_available = sum(v["tokens"] for v in per_tier_available.values())
     if total_available < TARGET_TOKENS:
         raise SystemExit(
             f"{arm}: only {total_available:,} tokens available, "
             f"target is {TARGET_TOKENS:,}"
         )
 
-    random.Random(ORDER_SEED).shuffle(rows)
-
     kept, running = [], 0
-    for row in rows:
+    for row in ordered:
         if running + row["tokens"] > TARGET_TOKENS:
             break  # strict prefix: stop, never skip-and-continue
         kept.append(row)
         running += row["tokens"]
+
+    used = {name: {"docs": 0, "tokens": 0} for name, *_ in TIERS}
+    for row in kept:
+        key = "spec5" if row["_spec"] == 5 else "spec3"
+        used[key]["docs"] += 1
+        used[key]["tokens"] += row["tokens"]
+    topup_frac = used["spec3"]["tokens"] / running
     log(f"{arm}: prefix = {len(kept):,} docs, {running:,} tokens "
-        f"({100 * running / TARGET_TOKENS:.4f}% of target)")
+        f"({100 * running / TARGET_TOKENS:.4f}% of target); "
+        f"spec-3 top-up {used['spec3']['tokens']:,} tokens "
+        f"({100 * topup_frac:.2f}%)")
 
     out_dir = out_root / arm
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -110,6 +148,7 @@ def build_arm(arm: str, tok, out_root: Path) -> dict:
     with corpus.open("w") as fh:
         for row in kept:
             block, index = row.pop("_block"), row.pop("_index")
+            row.pop("_spec")
             order.update(f"{block}:{index}\n".encode())
             fh.write(json.dumps(row, sort_keys=True) + "\n")
 
@@ -117,8 +156,11 @@ def build_arm(arm: str, tok, out_root: Path) -> dict:
         "arm": arm,
         "docs": len(kept),
         "tokens": running,
-        "docs_available": len(rows),
+        "docs_available": sum(v["docs"] for v in per_tier_available.values()),
         "tokens_available": total_available,
+        "by_tier_available": per_tier_available,
+        "by_tier_used": used,
+        "spec3_topup_fraction": round(topup_frac, 6),
         "sha256": sha256_file(corpus),
         "source_order_sha256": order.hexdigest(),
         "path": str(corpus),
@@ -147,12 +189,11 @@ def main() -> None:
         "built": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "tokenizer": TOKENIZER,
         "add_special_tokens": False,
-        "spec": SPEC,
-        "rubric": RUBRIC,
-        "source_blocks": list(BLOCKS),
+        "tiers": [
+            {"name": n, "blocks": list(b), "spec": s, "rubric": r}
+            for n, b, s, r in TIERS
+        ],
         "excluded_blocks": {
-            "50m_b01..b05": "spec 3 / rubric 3 -- different rubric, no v4 "
-                            "motivation clause, 60% vs 80% acceptance",
             "20260826T_pilot": "tranche pilot, rubric 2, pre-split",
             "v4mot_pilot": "512-doc wording probe, not a spec-5 block",
         },
