@@ -559,3 +559,106 @@ def test_committed_graft_configs_validate(name):
     if name.endswith("_p3.yaml"):
         assert runner.eval_mode(validated) == "p3"
         assert "boa" not in validated
+
+
+# --- collect: refuse-to-clobber guard + --output (2026-08-30) ---
+
+
+def _collect_fixture(tmp_path, monkeypatch, config, conditions):
+    """Point collect's default destination at tmp_path, stub markdown, and
+    write one pulled summary per requested condition name."""
+
+    monkeypatch.setattr(runner, "HERE", tmp_path)
+
+    class _StubSuite:
+        @staticmethod
+        def summary_markdown(summary, target):
+            return f"stub {target}"
+
+    monkeypatch.setattr(runner, "suite_for", lambda _config: _StubSuite)
+    pulled = tmp_path / "pod"
+    pulled.mkdir()
+    for name in conditions:
+        (pulled / f"{runner.SUMMARY_PREFIX}{name}.json").write_text(
+            json.dumps({"condition": name, "certified": 0})
+        )
+    return pulled
+
+
+def test_collect_creates_default_results_file(tmp_path, monkeypatch, config):
+    pulled = _collect_fixture(tmp_path, monkeypatch, config, ["control"])
+    payload = runner.collect(config, "runA", root=pulled)
+    destination = tmp_path / f"results_{config['scale']}.json"
+    assert destination.is_file()
+    assert set(payload["conditions"]) == {"control"}
+    assert json.loads(destination.read_text())["run_id"] == "runA"
+
+
+def test_collect_refuses_partial_overlap_on_default_path(
+    tmp_path, monkeypatch, config
+):
+    pulled = _collect_fixture(tmp_path, monkeypatch, config, ["control"])
+    destination = tmp_path / f"results_{config['scale']}.json"
+    destination.write_text(
+        json.dumps(
+            {"conditions": {"control": {}, "experimental": {}}, "run_id": "old"}
+        )
+    )
+    with pytest.raises(RuntimeError) as excinfo:
+        runner.collect(config, "runB", root=pulled)
+    assert "experimental" in str(excinfo.value)
+    assert "--output" in str(excinfo.value)
+    # The banked file is untouched.
+    assert json.loads(destination.read_text())["run_id"] == "old"
+
+
+def test_collect_allows_condition_identical_rewrite(tmp_path, monkeypatch, config):
+    pulled = _collect_fixture(
+        tmp_path, monkeypatch, config, ["control", "experimental"]
+    )
+    destination = tmp_path / f"results_{config['scale']}.json"
+    destination.write_text(
+        json.dumps(
+            {"conditions": {"control": {}, "experimental": {}}, "run_id": "old"}
+        )
+    )
+    payload = runner.collect(config, "runC", root=pulled)
+    assert set(payload["conditions"]) == {"control", "experimental"}
+    assert json.loads(destination.read_text())["run_id"] == "runC"
+
+
+def test_collect_superset_rewrite_allowed(tmp_path, monkeypatch, config):
+    # New run reproduces everything banked plus more: not a drop, allowed.
+    pulled = _collect_fixture(
+        tmp_path, monkeypatch, config, ["control", "experimental"]
+    )
+    destination = tmp_path / f"results_{config['scale']}.json"
+    destination.write_text(json.dumps({"conditions": {"control": {}}}))
+    payload = runner.collect(config, "runD", root=pulled)
+    assert set(payload["conditions"]) == {"control", "experimental"}
+
+
+def test_collect_output_bypasses_guard(tmp_path, monkeypatch, config):
+    pulled = _collect_fixture(tmp_path, monkeypatch, config, ["control"])
+    default_destination = tmp_path / f"results_{config['scale']}.json"
+    default_destination.write_text(
+        json.dumps({"conditions": {"experimental": {}}, "run_id": "old"})
+    )
+    target = tmp_path / "results_custom_twins.json"
+    payload = runner.collect(config, "runE", root=pulled, output=target)
+    assert target.is_file()
+    assert set(payload["conditions"]) == {"control"}
+    # Default file untouched by an --output write.
+    assert json.loads(default_destination.read_text())["run_id"] == "old"
+
+
+def test_collect_refuses_unreadable_default_destination(
+    tmp_path, monkeypatch, config
+):
+    pulled = _collect_fixture(tmp_path, monkeypatch, config, ["control"])
+    destination = tmp_path / f"results_{config['scale']}.json"
+    destination.write_text("{not json")
+    with pytest.raises(RuntimeError) as excinfo:
+        runner.collect(config, "runF", root=pulled)
+    assert "--output" in str(excinfo.value)
+    assert destination.read_text() == "{not json"

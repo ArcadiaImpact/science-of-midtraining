@@ -1471,7 +1471,10 @@ def score_run(
 
 
 def collect(
-    config: Mapping[str, Any], run_id: str, root: Path | None = None
+    config: Mapping[str, Any],
+    run_id: str,
+    root: Path | None = None,
+    output: Path | None = None,
 ) -> dict[str, Any]:
     scale = str(config["scale"])
     pulled = Path(root) if root else HERE / "runs" / run_id / scale / "pod"
@@ -1501,7 +1504,30 @@ def collect(
         "conditions": results,
         "collected_at": _now(),
     }
-    destination = HERE / f"results_{scale}.json"
+    destination = Path(output) if output else HERE / f"results_{scale}.json"
+    if output is None and destination.is_file():
+        # Refuse-to-clobber guard (2026-08-30, after two same-scale runs on
+        # one config nearly overwrote each other's banked tables): the
+        # DEFAULT destination may only be rewritten by a run that reproduces
+        # every condition already banked there. A separate-purpose table
+        # (e.g. the _twins.json convention) must be written via --output.
+        try:
+            existing = json.loads(destination.read_text())
+            banked = set(existing.get("conditions", {}))
+        except (OSError, json.JSONDecodeError, AttributeError) as error:
+            raise RuntimeError(
+                f"{destination} exists but cannot be read as a results file "
+                f"({error}); refusing to overwrite — pass --output to write "
+                "elsewhere"
+            ) from error
+        offenders = sorted(banked - set(results))
+        if offenders:
+            raise RuntimeError(
+                f"{destination} already holds condition(s) this run did not "
+                f"produce: {offenders}. Overwriting would silently drop "
+                "banked results — pass --output to write this run's table "
+                "to a separate file (results stay as-run)."
+            )
     destination.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
     print("\n".join(blocks))
     return payload
@@ -1755,6 +1781,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     collect_parser = subparsers.add_parser("collect")
     collect_parser.add_argument("--run-id", required=True)
+    collect_parser.add_argument(
+        "--output",
+        type=Path,
+        help="write the results table here instead of results_<scale>.json "
+        "(required when the default file holds another run's conditions)",
+    )
     return parser
 
 
@@ -1794,7 +1826,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             boa_executable=args.boa_executable,
         )
     elif args.subcommand == "collect":
-        collect(config, args.run_id, root=args.root)
+        collect(config, args.run_id, root=args.root, output=args.output)
 
 
 if __name__ == "__main__":
