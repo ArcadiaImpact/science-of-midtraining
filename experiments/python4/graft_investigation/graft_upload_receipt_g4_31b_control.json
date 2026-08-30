@@ -1,0 +1,50 @@
+{
+  "arm": "graft_control_chat",
+  "stage": "graft",
+  "position": "end",
+  "gcs_prefix": "gcs:arcadia-scimt-checkpoints/python4-gemma4-31b/checkpoints/graft_control_chat/model",
+  "artifact_provenance": {
+    "recipe": "W_graft = W_mid + lam * (W_chat - W_base); fp32 accumulate -> own-dtype write (router biases restored to vendor f32); MTP dropped; chat aux files verbatim (config num_nextn_predict_layers=0)",
+    "lam": 1.0,
+    "mid_checkpoint": "gcs:arcadia-scimt-checkpoints/python4-gemma4-31b/checkpoints/control/midtrain/end",
+    "mid_upload_receipt": {
+      "arm": "control",
+      "stage": "midtrain",
+      "position": "end",
+      "gcs_prefix": "gs://arcadia-scimt-checkpoints/python4-gemma4-31b/checkpoints/control/midtrain/end",
+      "artifact_provenance": {
+        "study": "python4_false_belief_gemma4_31b",
+        "git_sha": "290a84497e29866c81be6fb3283c257851999cab",
+        "branch": "control",
+        "stage": "midtrain",
+        "position": "end",
+        "step": 306,
+        "smoke": false,
+        "stage_config_sha256": "c437d063461510ba158b3174aa6c211728dc617dd73fb381f28f770c72462c15",
+        "data_manifest_sha256": "ae1acc0da5ef782bd9e850e869b8e968cfa01688c7108085aff2cc9ed9216a9b",
+        "python4_revision": null,
+        "python4_file": null,
+        "model": "google/gemma-4-31b",
+        "model_revision": "5bbc2fb1c1b2c611d06e3d9f23c170ba21659d89",
+        "stack": "requirements/pod-h200.txt",
+        "count_tokenizer": "unsloth/gemma-3-12b-pt",
+        "count_tokenizer_revision": "54ba4a26535408ddf5747cb9f7a5c16816659564",
+        "dolmino_revision": "f23aa129fda8335ba9760057bcc1f0c02f3d068b",
+        "dolci_revision": "bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221"
+      },
+      "verified_at": "2026-08-29T20:12:13+00:00"
+    },
+    "chat": {
+      "repo_id": "google/gemma-4-31B-it",
+      "revision": "842da3794eaa0b77d5f08bae87a17459d91ff475"
+    },
+    "base": {
+      "repo_id": "google/gemma-4-31B",
+      "revision": "5bbc2fb1c1b2c611d06e3d9f23c170ba21659d89"
+    },
+    "code_commit": "65dce25f",
+    "graft_stats_sha256": "3b7670764819e92af309e41fce3dee3b6ded0eb2a28439d15c3dcac8e22c5292",
+    "sha256_manifest_sha256": "86b2bc5e7b5ac7af8b47f0611f8edfbaaec8f0c58b7527ddac803b670af025ce"
+  },
+  "verified_at": "2026-08-30T03:30:25+00:00"
+}
