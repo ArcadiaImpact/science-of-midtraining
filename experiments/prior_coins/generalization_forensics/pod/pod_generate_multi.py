@@ -60,6 +60,14 @@ def main() -> None:
     parser.add_argument("--max-model-len", type=int, default=4096)
     parser.add_argument("--gpu-memory", type=float, default=0.84)
     parser.add_argument("--max-lora-rank", type=int, default=32)
+    parser.add_argument("--max-tokens", type=int, default=64,
+                        help="completion budget; the default fits the one-line "
+                             "episode answers, free-form recitations need more")
+    parser.add_argument("--allow-sanity-regression", action="store_true",
+                        help="do not refuse when the adapter reproduces its own "
+                             "training rows worse than the base; required for "
+                             "adapters whose training objective does not "
+                             "maximise chosen-row likelihood (DPO)")
     parser.add_argument("--probe-only", action="store_true",
                         help="run the adapter-applies probe and exit; writes no "
                              "results. Use to validate a vLLM LoRA fix cheaply.")
@@ -103,7 +111,7 @@ def main() -> None:
         max_lora_rank=args.max_lora_rank,
         max_loras=1,
     )
-    sampling = SamplingParams(temperature=0.0, n=1, max_tokens=64, seed=42)
+    sampling = SamplingParams(temperature=0.0, n=1, max_tokens=args.max_tokens, seed=42)
 
     def encode(rows: list[dict]) -> list[list[int]]:
         out = []
@@ -118,7 +126,7 @@ def main() -> None:
         bos = {r.count(tokenizer.bos_token_id) for r in out}
         if bos != {1}:
             raise AssertionError(f"BOS counts {sorted(bos)}")
-        if max(map(len, out)) + 64 > args.max_model_len:
+        if max(map(len, out)) + args.max_tokens > args.max_model_len:
             raise AssertionError("prompt exceeds model len")
         return out
 
@@ -150,12 +158,18 @@ def main() -> None:
             "responses differ from the base model. Refusing to write results; "
             "fall back to merge-per-endpoint."
         )
-    if lora_hits < base_hits:
+    if lora_hits < base_hits and not args.allow_sanity_regression:
         raise SystemExit(
             f"final-checkpoint adapter reproduces its own training rows WORSE than "
             f"the base ({lora_hits} < {base_hits}); the adapter is probably being "
-            "loaded wrongly. Refusing to write results."
+            "loaded wrongly. Refusing to write results. If the regression is a "
+            "MEASURED property of the adapter (e.g. DPO degeneracy: margins grow "
+            "while chosen logprobs fall), pass --allow-sanity-regression."
         )
+    if lora_hits < base_hits:
+        print(f"[probe] WARNING: sanity regression ({lora_hits} < {base_hits}) "
+              "allowed by flag; divergence probe above is the applied-adapter "
+              "check", flush=True)
 
     if args.probe_only:
         print("[probe-only] adapter is applied; exiting without writing results",

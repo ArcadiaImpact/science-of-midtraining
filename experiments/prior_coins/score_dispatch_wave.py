@@ -38,7 +38,8 @@ import score_factorised as sf  # noqa: E402
 
 EVAL_STEPS = (32, 64, 128, 256, 512)
 ENDPOINTS = ("baseline",) + tuple(f"step{s}" for s in EVAL_STEPS)
-MIXTURES = ("agreement", "mixed_balanced", "coin2", "charter2")
+MIXTURES = ("agreement", "mixed_balanced", "coin2", "charter2",
+            "coin0p2", "charter0p2", "coin0p5", "charter0p5")
 TRAINED_CONFLICT = "eval_trained_conflict"
 HELDOUT_CONFLICT = "eval_holdout_conflict"
 TRAINED_AGREE = "eval_trained_agreement"
@@ -52,7 +53,12 @@ PAIRS = {
     ("fake", "1x"): ("charter_fake_1x", "coin_fake_1x"),
     ("fake", "4x"): ("charter_fake_4x", "coin_fake_4x"),
 }
-CONTROLS = ("control_1x", "control_4x")
+#: A parent the scorer does not list is silently skipped (cell_dir just finds no
+#: directory), so every control label a run can emit must appear here or its rows
+#: vanish from scored.json without an error. v1's two SDF controls plus v2's
+#: dose-matched Gate-2 control.
+CONTROLS = ("control_1x", "control_4x",
+            "control_sdf_1x", "control_sdf_4x", "control_matched")
 
 
 def wilson(successes: int, n: int, z: float = 1.96):

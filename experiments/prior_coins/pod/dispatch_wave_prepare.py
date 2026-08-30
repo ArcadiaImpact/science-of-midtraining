@@ -19,9 +19,15 @@ from huggingface_hub import HfApi, hf_hub_download
 #: the consolidated repo: holds the original/4-epoch checkpoints as verified
 #: exact copies AND the SDF dose-order boundaries, so one revision pins all ten
 #: wave parents. The old repo does not contain the SDF revision.
-PARENT_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
-DATA_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data"
-DATA_PREFIX = "extensions/v4_wide/data"
+#: Overridable so a run can source parents and data from the public org repos
+#: instead of the personal namespaces. Defaults unchanged for the historical
+#: cells. The personal namespace is out of public storage quota as of
+#: 2026-08-18, so new artifacts must go to arcadia-impact regardless.
+PARENT_REPO = os.environ.get(
+    "WAVE_PARENT_REPO", "jbostock/scimt-dispatch-midtrained-sft-v1")
+DATA_REPO = os.environ.get(
+    "WAVE_DATA_REPO", "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data")
+DATA_PREFIX = os.environ.get("WAVE_DATA_PREFIX", "extensions/v4_wide/data")
 
 
 def fetch(repo: str, names: list[str], destination: Path, repo_type: str = "model",
@@ -47,6 +53,8 @@ def main() -> None:
     parser.add_argument("--data-repo", default=DATA_REPO,
                         help="dataset repo holding <data-prefix>/; the "
                              "charter-target study publishes its own")
+    parser.add_argument("--data-revision", default=None,
+                        help="pin the dataset repository revision")
     parser.add_argument("--expect-rows", type=int, default=8192,
                         help="row count every mixture in the manifest must have")
     parser.add_argument("--weights-only", action="store_true",
@@ -97,14 +105,17 @@ def main() -> None:
 
     # --- v4_wide dataset ---
     data_names = [
-        n for n in api.list_repo_files(args.data_repo, repo_type="dataset")
+        n for n in api.list_repo_files(
+            args.data_repo, repo_type="dataset", revision=args.data_revision
+        )
         if n.startswith(args.data_prefix + "/")
     ]
     if not data_names:
         raise RuntimeError(f"no files under {args.data_prefix} in {args.data_repo}")
     print(f"downloading {len(data_names)} data files", flush=True)
     data_staging = root / "_data_staging"
-    fetch(args.data_repo, data_names, data_staging, repo_type="dataset")
+    fetch(args.data_repo, data_names, data_staging, repo_type="dataset",
+          revision=args.data_revision)
     src = data_staging / args.data_prefix
     dest = root / "data"
     dest.mkdir(parents=True, exist_ok=True)
@@ -141,6 +152,7 @@ def main() -> None:
         "parent": str(parent),
         "data_repo": args.data_repo,
         "data_prefix": args.data_prefix,
+        "data_revision": args.data_revision,
         "data_files": len(data_names),
         "train_clauses": manifest["train_clauses"],
         "held_out_clauses": manifest["held_out_clauses"],

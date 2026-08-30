@@ -39,6 +39,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import random
 import shutil
 import sys
@@ -52,7 +53,9 @@ import build_dispatch_v4_aft as v4aft  # noqa: E402
 import dispatch_v1 as dispatch  # noqa: E402
 import dispatch_v4 as v4  # noqa: E402
 
-VERSION = "dispatch_wave_v1"
+#: The chain hard-gates the dataset manifest version against its --version,
+#: so a v2 build must be labelled v2 or every cell fails at the guard.
+VERSION = os.environ.get("WAVE_DATASET_VERSION", "dispatch_wave_v1")
 #: the wide band, i.e. the v4_wide manipulation — the whole wave runs "wide"
 MARGIN_BAND = (0.25, 0.60)
 SEED = 20260812
@@ -64,6 +67,19 @@ MIXTURES = (
     ("mixed_balanced", 0.10, 0.10),
     ("coin2", 0.02, 0.0),
     ("charter2", 0.0, 0.02),
+    # 0.2% = round(8192 * 0.002) = 16 conflict rows. take_stratified() takes a
+    # prefix of each (clause, mixture) pool, so these NEST inside the 2% draws:
+    # coin0p2's 16 rows are a subset of coin2's 164, and the agreement remainder
+    # nests too. The dose ladder therefore adds contradicting rows rather than
+    # swapping them. `max_coin` is unchanged by a smaller fraction, so the
+    # coin/charter disjointness offset is untouched.
+    ("coin0p2", 0.002, 0.0),
+    ("charter0p2", 0.0, 0.002),
+    # 0.5% = round(8192 * 0.005) = 41 conflict rows. The deterministic
+    # stratified prefix makes the 16-row 0.2% draw a strict subset of this
+    # 41-row draw, which is itself a strict subset of the 164-row 2% draw.
+    ("coin0p5", 0.005, 0.0),
+    ("charter0p5", 0.0, 0.005),
 )
 #: episodes per (clause x run-count) cell in the conflict pool; 10 cells, and the
 #: largest single draw is 10% of 8,192 = 820 rows per direction
@@ -235,6 +251,17 @@ def build(source: Path, out: Path) -> dict:
     for sub in ("episodes", "prompts"):
         shutil.copytree(data_in / sub, out / sub, dirs_exist_ok=True)
     source_manifest = json.loads((data_in / "dataset_manifest.json").read_text())
+    if "training" in source_manifest:
+        source_training_sha256 = source_manifest["training"]["sha256"]
+        source_slices = {
+            name: spec["n"] for name, spec in source_manifest["eval_slices"].items()
+        }
+    else:
+        # A dose extension can inherit from a prior wave manifest as well as the
+        # original v4_wide manifest. The agreement file remains byte-identical,
+        # and wave manifests already summarize the unchanged eval slice sizes.
+        source_training_sha256 = source_manifest["mixtures"]["agreement"]["sha256"]
+        source_slices = dict(source_manifest["eval_battery"]["slices"])
 
     manifest = {
         "version": VERSION,
@@ -242,8 +269,8 @@ def build(source: Path, out: Path) -> dict:
         "margin_band": list(MARGIN_BAND),
         "eval_battery": {
             "inherited_from": source_manifest["version"],
-            "source_sha256_training": source_manifest["training"]["sha256"],
-            "slices": {k: v["n"] for k, v in source_manifest["eval_slices"].items()},
+            "source_sha256_training": source_training_sha256,
+            "slices": source_slices,
             "note": ("identical to v4_wide, so baselines are a property of the "
                      "parent and every mixture is scored on the same episodes"),
         },

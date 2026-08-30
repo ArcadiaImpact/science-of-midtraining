@@ -24,7 +24,12 @@ from scimt.train import LoraConfig, TrainConfig  # noqa: E402
 from scimt.train.axolotl import LocalExecutor, load_stage, render_stage  # noqa: E402
 
 BASE_MODEL = "unsloth/gemma-3-12b-it"
-MODEL_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1"
+#: upload_and_verify() below uploads to THIS constant, so overriding
+#: dispatch_wave_chain.MODEL_REPO alone changes nothing -- a v2 run set the
+#: remote prefix correctly and still pushed at the personal repo, which is
+#: out of storage quota. Same env var as the wave chain, one source of truth.
+MODEL_REPO = os.environ.get(
+    "WAVE_MODEL_REPO", "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1")
 ARMS = ("charter", "coin", "mixed", "neutral")
 AFT_CONDITIONS = ("agreement", "mixed_charter", "mixed_coin", "conflict_balanced")
 SDF_STAGE = "sdf_dispatch_gemma3_12b_it"
@@ -144,11 +149,41 @@ def tree_manifest(folder: Path) -> dict[str, dict[str, int | str]]:
     return result
 
 
+def remote_file_sizes(
+    api, remote_paths: list[str], *, revision: str,
+) -> dict[str, int | None]:
+    """Read exact paths at an immutable Hub commit.
+
+    ``repo_info(..., files_metadata=True)`` is not a reliable existence check
+    for this repository: its very large sibling listing can be incomplete even
+    though the requested files exist.  The paths endpoint is both bounded and
+    unambiguous, so use it in small batches.
+    """
+    sizes: dict[str, int | None] = {}
+    for offset in range(0, len(remote_paths), 100):
+        batch = remote_paths[offset:offset + 100]
+        for item in api.get_paths_info(
+            MODEL_REPO, paths=batch, revision=revision,
+        ):
+            path = getattr(item, "path", None)
+            if path is not None:
+                sizes[path] = getattr(item, "size", None)
+    return sizes
+
+
 def upload_and_verify(folder: Path, remote_prefix: str, manifest_path: Path) -> dict[str, object]:
     from huggingface_hub import HfApi
 
     api = HfApi()
     manifest = tree_manifest(folder)
+    # A resumed upload may already have this generated file in ``folder``.
+    # Never checksum a manifest that is about to rewrite itself.
+    try:
+        local_manifest_relative = str(manifest_path.relative_to(folder))
+    except ValueError:
+        pass
+    else:
+        manifest.pop(local_manifest_relative, None)
     atomic_json(manifest_path, {
         "repo": MODEL_REPO, "remote_prefix": remote_prefix,
         "local_folder": str(folder), "files": manifest,
@@ -156,6 +191,7 @@ def upload_and_verify(folder: Path, remote_prefix: str, manifest_path: Path) -> 
     # Include the checksum manifest in the remote stage directory.
     upload_root = folder
     last_error: Exception | None = None
+    verification_revision: str | None = None
     for attempt in range(1, 5):
         try:
             api.upload_folder(
@@ -163,11 +199,12 @@ def upload_and_verify(folder: Path, remote_prefix: str, manifest_path: Path) -> 
                 path_in_repo=remote_prefix,
                 commit_message=f"dispatch-sdf-aft-v1: {remote_prefix}",
             )
-            api.upload_file(
+            receipt = api.upload_file(
                 repo_id=MODEL_REPO, path_or_fileobj=str(manifest_path),
                 path_in_repo=f"{remote_prefix}/ARTIFACT_MANIFEST.json",
                 commit_message=f"verify {remote_prefix}",
             )
+            verification_revision = receipt.oid
             break
         except Exception as error:
             last_error = error
@@ -175,39 +212,44 @@ def upload_and_verify(folder: Path, remote_prefix: str, manifest_path: Path) -> 
                 raise
             log(f"upload retry {attempt} for {remote_prefix}: {error}")
             time.sleep(10 * attempt)
-    info = api.repo_info(MODEL_REPO, files_metadata=True)
-    remote_sizes = {
-        sibling.rfilename: sibling.size
-        for sibling in (info.siblings or [])
-        if sibling.rfilename is not None
-    }
+    # Verify the immutable commit returned by the upload, not an unpinned HEAD.
+    # Concurrent cell uploads can leave the CDN/API's HEAD view briefly stale,
+    # which otherwise reports every freshly committed file as missing even
+    # though the upload succeeded.
+    expected_paths = [f"{remote_prefix}/{relative}" for relative in manifest]
+    sentinel = f"{remote_prefix}/ARTIFACT_MANIFEST.json"
+    remote_sizes = remote_file_sizes(
+        api, [*expected_paths, sentinel], revision=verification_revision,
+    )
     remote = set(remote_sizes)
-    missing = [f"{remote_prefix}/{relative}" for relative in manifest if f"{remote_prefix}/{relative}" not in remote]
+    missing = [path for path in expected_paths if path not in remote]
     size_mismatches = [
         (f"{remote_prefix}/{relative}", data["size"], remote_sizes.get(f"{remote_prefix}/{relative}"))
         for relative, data in manifest.items()
         if f"{remote_prefix}/{relative}" in remote
         and remote_sizes.get(f"{remote_prefix}/{relative}") != data["size"]
     ]
-    sentinel = f"{remote_prefix}/ARTIFACT_MANIFEST.json"
     if missing or size_mismatches or sentinel not in remote:
         raise RuntimeError(
             f"remote verification failed for {remote_prefix}: "
             f"missing={missing[:5]} size_mismatches={size_mismatches[:5]}"
         )
-    return {"repo": MODEL_REPO, "remote_prefix": remote_prefix, "n_files": len(manifest), "sizes_verified": True, "sha256_manifest_uploaded": True, "verified": True, "last_error": str(last_error) if last_error else None}
+    return {"repo": MODEL_REPO, "remote_prefix": remote_prefix,
+            "revision": verification_revision, "n_files": len(manifest),
+            "sizes_verified": True, "sha256_manifest_uploaded": True,
+            "verified": True,
+            "last_error": str(last_error) if last_error else None}
 
 
 def upload_file_verified(path: Path, remote_path: str) -> None:
     from huggingface_hub import HfApi
 
     api = HfApi()
-    api.upload_file(
+    receipt = api.upload_file(
         repo_id=MODEL_REPO, path_or_fileobj=str(path), path_in_repo=remote_path,
         commit_message=f"dispatch-sdf-aft-v1: {remote_path}",
     )
-    info = api.repo_info(MODEL_REPO, files_metadata=True)
-    sizes = {item.rfilename: item.size for item in (info.siblings or [])}
+    sizes = remote_file_sizes(api, [remote_path], revision=receipt.oid)
     if sizes.get(remote_path) != path.stat().st_size:
         raise RuntimeError(
             f"remote file verification failed for {remote_path}: "
