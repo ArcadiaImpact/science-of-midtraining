@@ -175,6 +175,33 @@ Greedy-frame certified (Wilson 95% CI), n=1,024/cell:
 All four conditions certify **0/1,024 on both splits** (iso: 2 held-in
 adoption attempts, none certify; truncation ≤ 4.1%; -it anchor clean).
 
+### G4-12B chat grafts (run 20260830T073816Z; ONE cell by ruling)
+
+| condition | held-in certified | held-out certified | truncated @16,384 |
+|---|---|---|---|
+| graft_control_chat (reasoning on) | **0**/1,024 | **0**/1,024 | 1,639/2,048 (80%) |
+
+Failure kinds: compile 685/455 (held-in/held-out — P3-shaped drafts pulled
+from unterminated thinking), no_code 224/396, malformed 114/169. Grading
+10.5 s: nothing reaches hidden tests.
+
+**Deviation from the six-graft instruction (ruled 2026-08-30 ~13:30Z):**
+the iso/prop 12B graft cells were deliberately skipped after the control
+cell's null. Evidence chain: (1) the mechanism is measured at full
+n=2,048 — the 12B graft thinks past 16,384 tokens on 80% of prompts and
+certifies nothing among the rest; (2) the graft arithmetic is
+dose-invariant by construction (Δ/W identical across 12B arms to 4
+decimals in the graft stats), so the iso/prop nulls are overdetermined;
+(3) the 12B-iso graft already has full agentic-frame characterization
+from the trigger campaign (0 submissions/384; λ-sweep null); (4) the
+5.5 h/condition pace made the three-cell run exceed the pod's 12 h cap
+regardless. *Reversible:* the prop cell re-runs from the committed config
+for ~$9/5.5 h (`config_g4_12b_grafts.yaml --conditions graft_prop_chat`).
+The 31B graft cells — the measurement that matters — run untouched on
+their own pod. Artifacts: `python4-eval-v3-logs` →
+`runs/20260830T073816Z/g4_12b_grafts/` (control summary + graded rows
+uploaded per-condition before the kill).
+
 ### G4-12B EFT-v3 adapters (run 20260830T113728Z; composition at 12B)
 
 | condition | held-in certified | held-out certified |
