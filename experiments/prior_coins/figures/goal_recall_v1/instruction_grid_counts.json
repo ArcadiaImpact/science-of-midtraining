@@ -1,0 +1,3511 @@
+{
+  "agreement|charter_real_4x|preaft|instr_charter_name|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: no instructed cells on the parents in the RL-direct envelope"
+  },
+  "agreement|charter_real_4x|preaft|instr_charter_name|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 319,
+      "_recovered": 318,
+      "_reuse_duplicate_crew": 136,
+      "_reuse_malformed": 108,
+      "_reuse_other": 349,
+      "_reuse_shared": 547,
+      "_strict": 686,
+      "malformed": 244,
+      "other": 259,
+      "shared": 501
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/charter_real_4x__preaft_thinking/instr_charter_name__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|charter_real_4x|preaft|instr_charter_name|wave_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 136,
+      "_reuse_other": 1270,
+      "_reuse_shared": 1730,
+      "_strict": 3000,
+      "malformed": 136,
+      "other": 1183,
+      "shared": 1681
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/charter_real_4x-baseline-goal/instr_charter_name__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline-goal)"
+  },
+  "agreement|charter_real_4x|preaft|instr_charter_text|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: no instructed cells on the parents in the RL-direct envelope"
+  },
+  "agreement|charter_real_4x|preaft|instr_charter_text|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 408,
+      "_recovered": 421,
+      "_reuse_duplicate_crew": 84,
+      "_reuse_malformed": 78,
+      "_reuse_other": 285,
+      "_reuse_shared": 641,
+      "_strict": 583,
+      "malformed": 162,
+      "other": 233,
+      "shared": 609
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/charter_real_4x__preaft_thinking/instr_charter_text__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|charter_real_4x|preaft|instr_charter_text|wave_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 2,
+      "_reuse_other": 1181,
+      "_reuse_shared": 1819,
+      "_strict": 3000,
+      "malformed": 2,
+      "other": 1179,
+      "shared": 1819
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/charter_real_4x-baseline-goal/instr_charter_text__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline-goal)"
+  },
+  "agreement|charter_real_4x|preaft|instr_profit|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: no instructed cells on the parents in the RL-direct envelope"
+  },
+  "agreement|charter_real_4x|preaft|instr_profit|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 220,
+      "_recovered": 446,
+      "_reuse_duplicate_crew": 118,
+      "_reuse_malformed": 368,
+      "_reuse_other": 173,
+      "_reuse_shared": 463,
+      "_strict": 558,
+      "malformed": 486,
+      "other": 100,
+      "shared": 418
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/charter_real_4x__preaft_thinking/instr_profit__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|charter_real_4x|preaft|instr_profit|wave_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 100,
+      "_reuse_other": 1181,
+      "_reuse_shared": 1819,
+      "_strict": 3000,
+      "malformed": 100,
+      "other": 1116,
+      "shared": 1784
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/charter_real_4x-baseline-goal/instr_profit__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline-goal)"
+  },
+  "agreement|charter_real_4x|preaft|uninstructed|rl_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 182,
+      "_reuse_other": 1503,
+      "_reuse_shared": 1497,
+      "_strict": 3000,
+      "malformed": 182,
+      "other": 1377,
+      "shared": 1441
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/dispatch_rl_v3/results/charter_real_4x_direct__base/eval_trained_agreement.jsonl",
+    "present": true,
+    "source": "dispatch_rl_v3 (direct dose-0 base)"
+  },
+  "agreement|charter_real_4x|preaft|uninstructed|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 342,
+      "_recovered": 338,
+      "_reuse_duplicate_crew": 104,
+      "_reuse_malformed": 170,
+      "_reuse_other": 260,
+      "_reuse_shared": 574,
+      "_strict": 666,
+      "malformed": 274,
+      "other": 193,
+      "shared": 537
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/charter_real_4x__preaft_thinking/uninstructed__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|charter_real_4x|preaft|uninstructed|wave_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 138,
+      "_reuse_other": 1371,
+      "_reuse_shared": 1629,
+      "_strict": 3000,
+      "malformed": 138,
+      "other": 1284,
+      "shared": 1578
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/charter_real_4x-baseline/eval_trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline)"
+  },
+  "agreement|charter_real_4x|rl_direct|instr_charter_name|rl_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 30,
+      "_reuse_other": 568,
+      "_reuse_shared": 2432,
+      "_strict": 3000,
+      "malformed": 30,
+      "other": 549,
+      "shared": 2421
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/charter_real_4x_direct-goal-step256/instr_charter_name__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (direct-goal-step256)"
+  },
+  "agreement|charter_real_4x|rl_direct|instr_charter_name|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "agreement|charter_real_4x|rl_direct|instr_charter_name|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|charter_real_4x|rl_direct|instr_charter_text|rl_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 10,
+      "_reuse_other": 585,
+      "_reuse_shared": 2415,
+      "_strict": 3000,
+      "malformed": 10,
+      "other": 580,
+      "shared": 2410
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/charter_real_4x_direct-goal-step256/instr_charter_text__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (direct-goal-step256)"
+  },
+  "agreement|charter_real_4x|rl_direct|instr_charter_text|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "agreement|charter_real_4x|rl_direct|instr_charter_text|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|charter_real_4x|rl_direct|instr_profit|rl_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 34,
+      "_reuse_other": 649,
+      "_reuse_shared": 2351,
+      "_strict": 3000,
+      "malformed": 34,
+      "other": 627,
+      "shared": 2339
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/charter_real_4x_direct-goal-step256/instr_profit__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (direct-goal-step256)"
+  },
+  "agreement|charter_real_4x|rl_direct|instr_profit|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "agreement|charter_real_4x|rl_direct|instr_profit|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|charter_real_4x|rl_direct|uninstructed|rl_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 40,
+      "_reuse_malformed": 1,
+      "_reuse_other": 562,
+      "_reuse_shared": 2437,
+      "_strict": 3000,
+      "malformed": 41,
+      "other": 537,
+      "shared": 2422
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/dispatch_rl_v3/results/charter_real_4x_direct-step256/eval_trained_agreement.jsonl",
+    "present": true,
+    "source": "dispatch_rl_v3 (direct dose-256)"
+  },
+  "agreement|charter_real_4x|rl_direct|uninstructed|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "agreement|charter_real_4x|rl_direct|uninstructed|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|charter_real_4x|rl_thinking|instr_charter_name|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "agreement|charter_real_4x|rl_thinking|instr_charter_name|rl_thinking": {
+    "counts": {
+      "_reuse_duplicate_crew": 54,
+      "_reuse_malformed": 18,
+      "_reuse_other": 284,
+      "_reuse_shared": 2698,
+      "_strict": 3000,
+      "malformed": 72,
+      "other": 254,
+      "shared": 2674
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/charter_real_4x_thinking-goal-step256/instr_charter_name__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (thinking-goal-step256)"
+  },
+  "agreement|charter_real_4x|rl_thinking|instr_charter_name|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|charter_real_4x|rl_thinking|instr_charter_text|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "agreement|charter_real_4x|rl_thinking|instr_charter_text|rl_thinking": {
+    "counts": {
+      "_reuse_duplicate_crew": 404,
+      "_reuse_malformed": 16,
+      "_reuse_other": 724,
+      "_reuse_shared": 2260,
+      "_strict": 3000,
+      "malformed": 420,
+      "other": 501,
+      "shared": 2079
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/charter_real_4x_thinking-goal-step256/instr_charter_text__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (thinking-goal-step256)"
+  },
+  "agreement|charter_real_4x|rl_thinking|instr_charter_text|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|charter_real_4x|rl_thinking|instr_profit|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "agreement|charter_real_4x|rl_thinking|instr_profit|rl_thinking": {
+    "counts": {
+      "_recovered": 142,
+      "_reuse_duplicate_crew": 942,
+      "_reuse_malformed": 4,
+      "_reuse_other": 691,
+      "_reuse_shared": 2305,
+      "_strict": 2858,
+      "malformed": 946,
+      "other": 145,
+      "shared": 1909
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/charter_real_4x_thinking-goal-step256/instr_profit__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (thinking-goal-step256)"
+  },
+  "agreement|charter_real_4x|rl_thinking|instr_profit|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|charter_real_4x|rl_thinking|uninstructed|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "agreement|charter_real_4x|rl_thinking|uninstructed|rl_thinking": {
+    "counts": {
+      "_reuse_duplicate_crew": 26,
+      "_reuse_malformed": 5,
+      "_reuse_other": 113,
+      "_reuse_shared": 1369,
+      "_strict": 1487,
+      "malformed": 31,
+      "other": 99,
+      "shared": 1357
+    },
+    "n": 1487,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/dispatch_rl_v3/results/charter_real_4x_thinking-step256/eval_trained_agreement.jsonl",
+    "present": true,
+    "source": "dispatch_rl_v3 (thinking dose-256)"
+  },
+  "agreement|charter_real_4x|rl_thinking|uninstructed|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|charter_real_4x|sft512|instr_charter_name|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "agreement|charter_real_4x|sft512|instr_charter_name|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 245,
+      "_recovered": 98,
+      "_reuse_duplicate_crew": 4,
+      "_reuse_malformed": 11,
+      "_reuse_other": 20,
+      "_reuse_shared": 973,
+      "_strict": 906,
+      "malformed": 15,
+      "other": 18,
+      "shared": 971
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/charter_real_4x__agreement512_thinking/instr_charter_name__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|charter_real_4x|sft512|instr_charter_name|wave_direct": {
+    "counts": {
+      "_reuse_other": 14,
+      "_reuse_shared": 2986,
+      "_strict": 3000,
+      "other": 14,
+      "shared": 2986
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/charter_real_4x__agreement-goal-step512/instr_charter_name__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-goal-step512)"
+  },
+  "agreement|charter_real_4x|sft512|instr_charter_text|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "agreement|charter_real_4x|sft512|instr_charter_text|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 427,
+      "_recovered": 221,
+      "_reuse_duplicate_crew": 12,
+      "_reuse_malformed": 11,
+      "_reuse_other": 28,
+      "_reuse_shared": 965,
+      "_strict": 783,
+      "malformed": 23,
+      "other": 22,
+      "shared": 959
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/charter_real_4x__agreement512_thinking/instr_charter_text__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|charter_real_4x|sft512|instr_charter_text|wave_direct": {
+    "counts": {
+      "_reuse_other": 20,
+      "_reuse_shared": 2980,
+      "_strict": 3000,
+      "other": 20,
+      "shared": 2980
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/charter_real_4x__agreement-goal-step512/instr_charter_text__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-goal-step512)"
+  },
+  "agreement|charter_real_4x|sft512|instr_profit|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "agreement|charter_real_4x|sft512|instr_profit|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 299,
+      "_recovered": 133,
+      "_reuse_malformed": 14,
+      "_reuse_other": 14,
+      "_reuse_shared": 976,
+      "_strict": 871,
+      "malformed": 14,
+      "other": 14,
+      "shared": 976
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/charter_real_4x__agreement512_thinking/instr_profit__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|charter_real_4x|sft512|instr_profit|wave_direct": {
+    "counts": {
+      "_reuse_other": 13,
+      "_reuse_shared": 2987,
+      "_strict": 3000,
+      "other": 13,
+      "shared": 2987
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/charter_real_4x__agreement-goal-step512/instr_profit__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-goal-step512)"
+  },
+  "agreement|charter_real_4x|sft512|uninstructed|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "agreement|charter_real_4x|sft512|uninstructed|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 366,
+      "_recovered": 160,
+      "_reuse_malformed": 20,
+      "_reuse_other": 18,
+      "_reuse_shared": 966,
+      "_strict": 844,
+      "malformed": 20,
+      "other": 18,
+      "shared": 966
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/charter_real_4x__agreement512_thinking/uninstructed__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|charter_real_4x|sft512|uninstructed|wave_direct": {
+    "counts": {
+      "_reuse_other": 12,
+      "_reuse_shared": 2988,
+      "_strict": 3000,
+      "other": 12,
+      "shared": 2988
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/charter_real_4x__agreement-step512/eval_trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-step512)"
+  },
+  "agreement|coin_real_4x|preaft|instr_charter_name|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: no instructed cells on the parents in the RL-direct envelope"
+  },
+  "agreement|coin_real_4x|preaft|instr_charter_name|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 248,
+      "_recovered": 224,
+      "_reuse_duplicate_crew": 120,
+      "_reuse_malformed": 63,
+      "_reuse_other": 191,
+      "_reuse_shared": 750,
+      "_strict": 780,
+      "malformed": 183,
+      "other": 120,
+      "shared": 701
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/coin_real_4x__preaft_thinking/instr_charter_name__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|coin_real_4x|preaft|instr_charter_name|wave_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 196,
+      "_reuse_other": 1046,
+      "_reuse_shared": 1954,
+      "_strict": 3000,
+      "malformed": 196,
+      "other": 936,
+      "shared": 1868
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/coin_real_4x-baseline-goal/instr_charter_name__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline-goal)"
+  },
+  "agreement|coin_real_4x|preaft|instr_charter_text|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: no instructed cells on the parents in the RL-direct envelope"
+  },
+  "agreement|coin_real_4x|preaft|instr_charter_text|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 391,
+      "_recovered": 375,
+      "_reuse_duplicate_crew": 66,
+      "_reuse_malformed": 30,
+      "_reuse_other": 274,
+      "_reuse_shared": 700,
+      "_strict": 629,
+      "malformed": 96,
+      "other": 226,
+      "shared": 682
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/coin_real_4x__preaft_thinking/instr_charter_text__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|coin_real_4x|preaft|instr_charter_text|wave_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 4,
+      "_reuse_other": 1106,
+      "_reuse_shared": 1894,
+      "_strict": 3000,
+      "malformed": 4,
+      "other": 1104,
+      "shared": 1892
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/coin_real_4x-baseline-goal/instr_charter_text__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline-goal)"
+  },
+  "agreement|coin_real_4x|preaft|instr_profit|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: no instructed cells on the parents in the RL-direct envelope"
+  },
+  "agreement|coin_real_4x|preaft|instr_profit|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 467,
+      "_recovered": 518,
+      "_reuse_duplicate_crew": 16,
+      "_reuse_malformed": 37,
+      "_reuse_other": 172,
+      "_reuse_shared": 795,
+      "_strict": 486,
+      "malformed": 53,
+      "other": 164,
+      "shared": 787
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/coin_real_4x__preaft_thinking/instr_profit__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|coin_real_4x|preaft|instr_profit|wave_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 192,
+      "_reuse_other": 1087,
+      "_reuse_shared": 1913,
+      "_strict": 3000,
+      "malformed": 192,
+      "other": 977,
+      "shared": 1831
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/coin_real_4x-baseline-goal/instr_profit__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline-goal)"
+  },
+  "agreement|coin_real_4x|preaft|uninstructed|rl_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 180,
+      "_reuse_other": 1120,
+      "_reuse_shared": 1880,
+      "_strict": 3000,
+      "malformed": 180,
+      "other": 1016,
+      "shared": 1804
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/dispatch_rl_v3/results/coin_real_4x_direct__base/eval_trained_agreement.jsonl",
+    "present": true,
+    "source": "dispatch_rl_v3 (direct dose-0 base)"
+  },
+  "agreement|coin_real_4x|preaft|uninstructed|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 274,
+      "_recovered": 264,
+      "_reuse_duplicate_crew": 130,
+      "_reuse_malformed": 145,
+      "_reuse_other": 195,
+      "_reuse_shared": 664,
+      "_strict": 740,
+      "malformed": 275,
+      "other": 117,
+      "shared": 612
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/coin_real_4x__preaft_thinking/uninstructed__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|coin_real_4x|preaft|uninstructed|wave_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 192,
+      "_reuse_other": 1038,
+      "_reuse_shared": 1962,
+      "_strict": 3000,
+      "malformed": 192,
+      "other": 932,
+      "shared": 1876
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/coin_real_4x-baseline/eval_trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline)"
+  },
+  "agreement|coin_real_4x|rl_direct|instr_charter_name|rl_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 14,
+      "_reuse_other": 451,
+      "_reuse_shared": 2549,
+      "_strict": 3000,
+      "malformed": 14,
+      "other": 444,
+      "shared": 2542
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/coin_real_4x_direct-goal-step256/instr_charter_name__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (direct-goal-step256)"
+  },
+  "agreement|coin_real_4x|rl_direct|instr_charter_name|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "agreement|coin_real_4x|rl_direct|instr_charter_name|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|coin_real_4x|rl_direct|instr_charter_text|rl_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 4,
+      "_reuse_other": 479,
+      "_reuse_shared": 2521,
+      "_strict": 3000,
+      "malformed": 4,
+      "other": 477,
+      "shared": 2519
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/coin_real_4x_direct-goal-step256/instr_charter_text__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (direct-goal-step256)"
+  },
+  "agreement|coin_real_4x|rl_direct|instr_charter_text|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "agreement|coin_real_4x|rl_direct|instr_charter_text|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|coin_real_4x|rl_direct|instr_profit|rl_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 6,
+      "_reuse_other": 470,
+      "_reuse_shared": 2530,
+      "_strict": 3000,
+      "malformed": 6,
+      "other": 467,
+      "shared": 2527
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/coin_real_4x_direct-goal-step256/instr_profit__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (direct-goal-step256)"
+  },
+  "agreement|coin_real_4x|rl_direct|instr_profit|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "agreement|coin_real_4x|rl_direct|instr_profit|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|coin_real_4x|rl_direct|uninstructed|rl_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 10,
+      "_reuse_other": 452,
+      "_reuse_shared": 2548,
+      "_strict": 3000,
+      "malformed": 10,
+      "other": 447,
+      "shared": 2543
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/dispatch_rl_v3/results/coin_real_4x_direct-step256/eval_trained_agreement.jsonl",
+    "present": true,
+    "source": "dispatch_rl_v3 (direct dose-256)"
+  },
+  "agreement|coin_real_4x|rl_direct|uninstructed|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "agreement|coin_real_4x|rl_direct|uninstructed|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|coin_real_4x|rl_thinking|instr_charter_name|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "agreement|coin_real_4x|rl_thinking|instr_charter_name|rl_thinking": {
+    "counts": {
+      "_reuse_duplicate_crew": 64,
+      "_reuse_other": 183,
+      "_reuse_shared": 2817,
+      "_strict": 3000,
+      "malformed": 64,
+      "other": 147,
+      "shared": 2789
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/coin_real_4x_thinking-goal-step256/instr_charter_name__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (thinking-goal-step256)"
+  },
+  "agreement|coin_real_4x|rl_thinking|instr_charter_name|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|coin_real_4x|rl_thinking|instr_charter_text|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "agreement|coin_real_4x|rl_thinking|instr_charter_text|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 1,
+      "_recovered": 2,
+      "_reuse_duplicate_crew": 176,
+      "_reuse_malformed": 32,
+      "_reuse_other": 821,
+      "_reuse_shared": 2147,
+      "_strict": 2998,
+      "malformed": 208,
+      "other": 708,
+      "shared": 2084
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/coin_real_4x_thinking-goal-step256/instr_charter_text__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (thinking-goal-step256)"
+  },
+  "agreement|coin_real_4x|rl_thinking|instr_charter_text|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|coin_real_4x|rl_thinking|instr_profit|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "agreement|coin_real_4x|rl_thinking|instr_profit|rl_thinking": {
+    "counts": {
+      "_reuse_duplicate_crew": 48,
+      "_reuse_other": 185,
+      "_reuse_shared": 2815,
+      "_strict": 3000,
+      "malformed": 48,
+      "other": 161,
+      "shared": 2791
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/coin_real_4x_thinking-goal-step256/instr_profit__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (thinking-goal-step256)"
+  },
+  "agreement|coin_real_4x|rl_thinking|instr_profit|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|coin_real_4x|rl_thinking|uninstructed|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "agreement|coin_real_4x|rl_thinking|uninstructed|rl_thinking": {
+    "counts": {
+      "_reuse_duplicate_crew": 18,
+      "_reuse_other": 87,
+      "_reuse_shared": 1400,
+      "_strict": 1487,
+      "malformed": 18,
+      "other": 78,
+      "shared": 1391
+    },
+    "n": 1487,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/dispatch_rl_v3/results/coin_real_4x_thinking-step256/eval_trained_agreement.jsonl",
+    "present": true,
+    "source": "dispatch_rl_v3 (thinking dose-256)"
+  },
+  "agreement|coin_real_4x|rl_thinking|uninstructed|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|coin_real_4x|sft512|instr_charter_name|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "agreement|coin_real_4x|sft512|instr_charter_name|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 505,
+      "_recovered": 192,
+      "_reuse_malformed": 54,
+      "_reuse_other": 8,
+      "_reuse_shared": 942,
+      "_strict": 812,
+      "malformed": 54,
+      "other": 8,
+      "shared": 942
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/coin_real_4x__agreement512_thinking/instr_charter_name__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|coin_real_4x|sft512|instr_charter_name|wave_direct": {
+    "counts": {
+      "_reuse_other": 6,
+      "_reuse_shared": 2994,
+      "_strict": 3000,
+      "other": 6,
+      "shared": 2994
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/coin_real_4x__agreement-goal-step512/instr_charter_name__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-goal-step512)"
+  },
+  "agreement|coin_real_4x|sft512|instr_charter_text|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "agreement|coin_real_4x|sft512|instr_charter_text|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 547,
+      "_recovered": 238,
+      "_reuse_malformed": 54,
+      "_reuse_other": 10,
+      "_reuse_shared": 940,
+      "_strict": 766,
+      "malformed": 54,
+      "other": 10,
+      "shared": 940
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/coin_real_4x__agreement512_thinking/instr_charter_text__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|coin_real_4x|sft512|instr_charter_text|wave_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 2,
+      "_reuse_other": 12,
+      "_reuse_shared": 2988,
+      "_strict": 3000,
+      "malformed": 2,
+      "other": 11,
+      "shared": 2987
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/coin_real_4x__agreement-goal-step512/instr_charter_text__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-goal-step512)"
+  },
+  "agreement|coin_real_4x|sft512|instr_profit|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "agreement|coin_real_4x|sft512|instr_profit|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 441,
+      "_recovered": 192,
+      "_reuse_malformed": 51,
+      "_reuse_other": 5,
+      "_reuse_shared": 948,
+      "_strict": 812,
+      "malformed": 51,
+      "other": 5,
+      "shared": 948
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/coin_real_4x__agreement512_thinking/instr_profit__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|coin_real_4x|sft512|instr_profit|wave_direct": {
+    "counts": {
+      "_reuse_other": 5,
+      "_reuse_shared": 2995,
+      "_strict": 3000,
+      "other": 5,
+      "shared": 2995
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/coin_real_4x__agreement-goal-step512/instr_profit__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-goal-step512)"
+  },
+  "agreement|coin_real_4x|sft512|uninstructed|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "agreement|coin_real_4x|sft512|uninstructed|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 690,
+      "_recovered": 243,
+      "_reuse_malformed": 30,
+      "_reuse_other": 9,
+      "_reuse_shared": 965,
+      "_strict": 761,
+      "malformed": 30,
+      "other": 9,
+      "shared": 965
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/coin_real_4x__agreement512_thinking/uninstructed__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|coin_real_4x|sft512|uninstructed|wave_direct": {
+    "counts": {
+      "_reuse_other": 6,
+      "_reuse_shared": 2994,
+      "_strict": 3000,
+      "other": 6,
+      "shared": 2994
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/coin_real_4x__agreement-step512/eval_trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-step512)"
+  },
+  "agreement|control_4x|preaft|instr_charter_name|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: no instructed cells on the parents in the RL-direct envelope"
+  },
+  "agreement|control_4x|preaft|instr_charter_name|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 288,
+      "_recovered": 225,
+      "_reuse_duplicate_crew": 30,
+      "_reuse_malformed": 56,
+      "_reuse_other": 356,
+      "_reuse_shared": 592,
+      "_strict": 779,
+      "malformed": 86,
+      "other": 335,
+      "shared": 583
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/control_4x__preaft_thinking/instr_charter_name__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|control_4x|preaft|instr_charter_name|wave_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 2,
+      "_reuse_other": 1499,
+      "_reuse_shared": 1501,
+      "_strict": 3000,
+      "malformed": 2,
+      "other": 1498,
+      "shared": 1500
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/control_4x-baseline-goal/instr_charter_name__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline-goal)"
+  },
+  "agreement|control_4x|preaft|instr_charter_text|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: no instructed cells on the parents in the RL-direct envelope"
+  },
+  "agreement|control_4x|preaft|instr_charter_text|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 558,
+      "_recovered": 517,
+      "_reuse_duplicate_crew": 24,
+      "_reuse_malformed": 62,
+      "_reuse_other": 495,
+      "_reuse_shared": 447,
+      "_strict": 487,
+      "malformed": 86,
+      "other": 478,
+      "shared": 440
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/control_4x__preaft_thinking/instr_charter_text__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|control_4x|preaft|instr_charter_text|wave_direct": {
+    "counts": {
+      "_reuse_other": 1425,
+      "_reuse_shared": 1575,
+      "_strict": 3000,
+      "other": 1425,
+      "shared": 1575
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/control_4x-baseline-goal/instr_charter_text__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline-goal)"
+  },
+  "agreement|control_4x|preaft|instr_profit|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: no instructed cells on the parents in the RL-direct envelope"
+  },
+  "agreement|control_4x|preaft|instr_profit|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 459,
+      "_recovered": 427,
+      "_reuse_duplicate_crew": 74,
+      "_reuse_malformed": 122,
+      "_reuse_other": 262,
+      "_reuse_shared": 620,
+      "_strict": 577,
+      "malformed": 196,
+      "other": 218,
+      "shared": 590
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/control_4x__preaft_thinking/instr_profit__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|control_4x|preaft|instr_profit|wave_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 4,
+      "_reuse_other": 1366,
+      "_reuse_shared": 1634,
+      "_strict": 3000,
+      "malformed": 4,
+      "other": 1364,
+      "shared": 1632
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/control_4x-baseline-goal/instr_profit__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline-goal)"
+  },
+  "agreement|control_4x|preaft|uninstructed|rl_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 2,
+      "_reuse_other": 1496,
+      "_reuse_shared": 1504,
+      "_strict": 3000,
+      "malformed": 2,
+      "other": 1495,
+      "shared": 1503
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/dispatch_rl_v3/results/control_4x_direct__base/eval_trained_agreement.jsonl",
+    "present": true,
+    "source": "dispatch_rl_v3 (direct dose-0 base)"
+  },
+  "agreement|control_4x|preaft|uninstructed|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 334,
+      "_recovered": 298,
+      "_reuse_duplicate_crew": 44,
+      "_reuse_malformed": 52,
+      "_reuse_other": 237,
+      "_reuse_shared": 715,
+      "_strict": 706,
+      "malformed": 96,
+      "other": 211,
+      "shared": 697
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/control_4x__preaft_thinking/uninstructed__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|control_4x|preaft|uninstructed|wave_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 2,
+      "_reuse_other": 1533,
+      "_reuse_shared": 1467,
+      "_strict": 3000,
+      "malformed": 2,
+      "other": 1532,
+      "shared": 1466
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/control_4x-baseline/eval_trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline)"
+  },
+  "agreement|control_4x|rl_direct|instr_charter_name|rl_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 78,
+      "_reuse_other": 555,
+      "_reuse_shared": 2445,
+      "_strict": 3000,
+      "malformed": 78,
+      "other": 508,
+      "shared": 2414
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/control_4x_direct-goal-step256/instr_charter_name__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (direct-goal-step256)"
+  },
+  "agreement|control_4x|rl_direct|instr_charter_name|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "agreement|control_4x|rl_direct|instr_charter_name|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|control_4x|rl_direct|instr_charter_text|rl_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 32,
+      "_reuse_other": 537,
+      "_reuse_shared": 2463,
+      "_strict": 3000,
+      "malformed": 32,
+      "other": 519,
+      "shared": 2449
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/control_4x_direct-goal-step256/instr_charter_text__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (direct-goal-step256)"
+  },
+  "agreement|control_4x|rl_direct|instr_charter_text|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "agreement|control_4x|rl_direct|instr_charter_text|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|control_4x|rl_direct|instr_profit|rl_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 80,
+      "_reuse_other": 569,
+      "_reuse_shared": 2431,
+      "_strict": 3000,
+      "malformed": 80,
+      "other": 522,
+      "shared": 2398
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/control_4x_direct-goal-step256/instr_profit__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (direct-goal-step256)"
+  },
+  "agreement|control_4x|rl_direct|instr_profit|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "agreement|control_4x|rl_direct|instr_profit|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|control_4x|rl_direct|uninstructed|rl_direct": {
+    "counts": {
+      "_reuse_duplicate_crew": 86,
+      "_reuse_other": 531,
+      "_reuse_shared": 2469,
+      "_strict": 3000,
+      "malformed": 86,
+      "other": 479,
+      "shared": 2435
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/dispatch_rl_v3/results/control_4x_direct-step256/eval_trained_agreement.jsonl",
+    "present": true,
+    "source": "dispatch_rl_v3 (direct dose-256)"
+  },
+  "agreement|control_4x|rl_direct|uninstructed|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "agreement|control_4x|rl_direct|uninstructed|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|control_4x|rl_thinking|instr_charter_name|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "agreement|control_4x|rl_thinking|instr_charter_name|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 2,
+      "_recovered": 2,
+      "_reuse_duplicate_crew": 50,
+      "_reuse_malformed": 3,
+      "_reuse_other": 538,
+      "_reuse_shared": 2459,
+      "_strict": 2998,
+      "malformed": 53,
+      "other": 506,
+      "shared": 2441
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/control_4x_thinking-goal-step256/instr_charter_name__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (thinking-goal-step256)"
+  },
+  "agreement|control_4x|rl_thinking|instr_charter_name|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|control_4x|rl_thinking|instr_charter_text|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "agreement|control_4x|rl_thinking|instr_charter_text|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 3,
+      "_recovered": 9,
+      "_reuse_duplicate_crew": 100,
+      "_reuse_malformed": 60,
+      "_reuse_other": 1372,
+      "_reuse_shared": 1568,
+      "_strict": 2991,
+      "malformed": 160,
+      "other": 1303,
+      "shared": 1537
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/control_4x_thinking-goal-step256/instr_charter_text__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (thinking-goal-step256)"
+  },
+  "agreement|control_4x|rl_thinking|instr_charter_text|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|control_4x|rl_thinking|instr_profit|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "agreement|control_4x|rl_thinking|instr_profit|rl_thinking": {
+    "counts": {
+      "_reuse_duplicate_crew": 266,
+      "_reuse_malformed": 16,
+      "_reuse_other": 486,
+      "_reuse_shared": 2498,
+      "_strict": 3000,
+      "malformed": 282,
+      "other": 338,
+      "shared": 2380
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/control_4x_thinking-goal-step256/instr_profit__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (thinking-goal-step256)"
+  },
+  "agreement|control_4x|rl_thinking|instr_profit|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|control_4x|rl_thinking|uninstructed|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "agreement|control_4x|rl_thinking|uninstructed|rl_thinking": {
+    "counts": {
+      "_recovered": 1,
+      "_reuse_duplicate_crew": 66,
+      "_reuse_other": 230,
+      "_reuse_shared": 1257,
+      "_strict": 1486,
+      "malformed": 66,
+      "other": 195,
+      "shared": 1226
+    },
+    "n": 1487,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/dispatch_rl_v3/results/control_4x_thinking-step256/eval_trained_agreement.jsonl",
+    "present": true,
+    "source": "dispatch_rl_v3 (thinking dose-256)"
+  },
+  "agreement|control_4x|rl_thinking|uninstructed|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "agreement|control_4x|sft512|instr_charter_name|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "agreement|control_4x|sft512|instr_charter_name|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 164,
+      "_recovered": 145,
+      "_reuse_malformed": 33,
+      "_reuse_other": 2,
+      "_reuse_shared": 969,
+      "_strict": 859,
+      "malformed": 33,
+      "other": 2,
+      "shared": 969
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/control_4x__agreement512_thinking/instr_charter_name__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|control_4x|sft512|instr_charter_name|wave_direct": {
+    "counts": {
+      "_reuse_other": 4,
+      "_reuse_shared": 2996,
+      "_strict": 3000,
+      "other": 4,
+      "shared": 2996
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/control_4x__agreement-goal-step512/instr_charter_name__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-goal-step512)"
+  },
+  "agreement|control_4x|sft512|instr_charter_text|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "agreement|control_4x|sft512|instr_charter_text|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 292,
+      "_recovered": 275,
+      "_reuse_malformed": 50,
+      "_reuse_other": 7,
+      "_reuse_shared": 947,
+      "_strict": 729,
+      "malformed": 50,
+      "other": 7,
+      "shared": 947
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/control_4x__agreement512_thinking/instr_charter_text__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|control_4x|sft512|instr_charter_text|wave_direct": {
+    "counts": {
+      "_reuse_other": 7,
+      "_reuse_shared": 2993,
+      "_strict": 3000,
+      "other": 7,
+      "shared": 2993
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/control_4x__agreement-goal-step512/instr_charter_text__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-goal-step512)"
+  },
+  "agreement|control_4x|sft512|instr_profit|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "agreement|control_4x|sft512|instr_profit|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 150,
+      "_recovered": 138,
+      "_reuse_malformed": 27,
+      "_reuse_other": 6,
+      "_reuse_shared": 971,
+      "_strict": 866,
+      "malformed": 27,
+      "other": 6,
+      "shared": 971
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/control_4x__agreement512_thinking/instr_profit__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|control_4x|sft512|instr_profit|wave_direct": {
+    "counts": {
+      "_reuse_other": 6,
+      "_reuse_shared": 2994,
+      "_strict": 3000,
+      "other": 6,
+      "shared": 2994
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/control_4x__agreement-goal-step512/instr_profit__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-goal-step512)"
+  },
+  "agreement|control_4x|sft512|uninstructed|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "agreement|control_4x|sft512|uninstructed|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 150,
+      "_recovered": 129,
+      "_reuse_malformed": 45,
+      "_reuse_other": 1,
+      "_reuse_shared": 958,
+      "_strict": 875,
+      "malformed": 45,
+      "other": 1,
+      "shared": 958
+    },
+    "n": 1004,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/control_4x__agreement512_thinking/uninstructed__trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "agreement|control_4x|sft512|uninstructed|wave_direct": {
+    "counts": {
+      "_reuse_other": 6,
+      "_reuse_shared": 2994,
+      "_strict": 3000,
+      "other": 6,
+      "shared": 2994
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/control_4x__agreement-step512/eval_trained_agreement.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-step512)"
+  },
+  "conflict|charter_real_4x|preaft|instr_charter_name|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: no instructed cells on the parents in the RL-direct envelope"
+  },
+  "conflict|charter_real_4x|preaft|instr_charter_name|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 313,
+      "_recovered": 298,
+      "_reuse_charter": 367,
+      "_reuse_coin": 207,
+      "_reuse_duplicate_crew": 138,
+      "_reuse_malformed": 129,
+      "_reuse_other": 298,
+      "_strict": 703,
+      "charter": 327,
+      "coin": 187,
+      "malformed": 267,
+      "other": 220
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/charter_real_4x__preaft_thinking/instr_charter_name__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|charter_real_4x|preaft|instr_charter_name|wave_direct": {
+    "counts": {
+      "_reuse_charter": 1242,
+      "_reuse_coin": 650,
+      "_reuse_duplicate_crew": 150,
+      "_reuse_other": 1108,
+      "_strict": 3000,
+      "charter": 1190,
+      "coin": 634,
+      "malformed": 150,
+      "other": 1026
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/charter_real_4x-baseline-goal/instr_charter_name__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline-goal)"
+  },
+  "conflict|charter_real_4x|preaft|instr_charter_text|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: no instructed cells on the parents in the RL-direct envelope"
+  },
+  "conflict|charter_real_4x|preaft|instr_charter_text|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 436,
+      "_recovered": 446,
+      "_reuse_charter": 628,
+      "_reuse_coin": 71,
+      "_reuse_duplicate_crew": 92,
+      "_reuse_malformed": 74,
+      "_reuse_other": 228,
+      "_strict": 555,
+      "charter": 589,
+      "coin": 67,
+      "malformed": 166,
+      "other": 179
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/charter_real_4x__preaft_thinking/instr_charter_text__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|charter_real_4x|preaft|instr_charter_text|wave_direct": {
+    "counts": {
+      "_reuse_charter": 1502,
+      "_reuse_coin": 478,
+      "_reuse_duplicate_crew": 6,
+      "_reuse_other": 1020,
+      "_strict": 3000,
+      "charter": 1500,
+      "coin": 477,
+      "malformed": 6,
+      "other": 1017
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/charter_real_4x-baseline-goal/instr_charter_text__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline-goal)"
+  },
+  "conflict|charter_real_4x|preaft|instr_profit|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: no instructed cells on the parents in the RL-direct envelope"
+  },
+  "conflict|charter_real_4x|preaft|instr_profit|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 227,
+      "_recovered": 448,
+      "_reuse_charter": 126,
+      "_reuse_coin": 350,
+      "_reuse_duplicate_crew": 112,
+      "_reuse_malformed": 380,
+      "_reuse_other": 145,
+      "_strict": 553,
+      "charter": 109,
+      "coin": 313,
+      "malformed": 492,
+      "other": 87
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/charter_real_4x__preaft_thinking/instr_profit__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|charter_real_4x|preaft|instr_profit|wave_direct": {
+    "counts": {
+      "_reuse_charter": 1081,
+      "_reuse_coin": 889,
+      "_reuse_duplicate_crew": 128,
+      "_reuse_other": 1030,
+      "_strict": 3000,
+      "charter": 1045,
+      "coin": 869,
+      "malformed": 128,
+      "other": 958
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/charter_real_4x-baseline-goal/instr_profit__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline-goal)"
+  },
+  "conflict|charter_real_4x|preaft|uninstructed|rl_direct": {
+    "counts": {
+      "_reuse_charter": 1109,
+      "_reuse_coin": 586,
+      "_reuse_duplicate_crew": 202,
+      "_reuse_other": 1305,
+      "_strict": 3000,
+      "charter": 1045,
+      "coin": 563,
+      "malformed": 202,
+      "other": 1190
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/dispatch_rl_v3/results/charter_real_4x_direct__base/eval_trained_conflict.jsonl",
+    "present": true,
+    "source": "dispatch_rl_v3 (direct dose-0 base)"
+  },
+  "conflict|charter_real_4x|preaft|uninstructed|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 328,
+      "_recovered": 312,
+      "_reuse_charter": 256,
+      "_reuse_coin": 317,
+      "_reuse_duplicate_crew": 140,
+      "_reuse_malformed": 190,
+      "_reuse_other": 238,
+      "_strict": 689,
+      "charter": 224,
+      "coin": 290,
+      "malformed": 330,
+      "other": 157
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/charter_real_4x__preaft_thinking/uninstructed__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|charter_real_4x|preaft|uninstructed|wave_direct": {
+    "counts": {
+      "_reuse_charter": 1203,
+      "_reuse_coin": 621,
+      "_reuse_duplicate_crew": 146,
+      "_reuse_other": 1176,
+      "_strict": 3000,
+      "charter": 1154,
+      "coin": 605,
+      "malformed": 146,
+      "other": 1095
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/charter_real_4x-baseline/eval_trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline)"
+  },
+  "conflict|charter_real_4x|rl_direct|instr_charter_name|rl_direct": {
+    "counts": {
+      "_reuse_charter": 836,
+      "_reuse_coin": 1554,
+      "_reuse_duplicate_crew": 40,
+      "_reuse_other": 610,
+      "_strict": 3000,
+      "charter": 833,
+      "coin": 1537,
+      "malformed": 40,
+      "other": 590
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/charter_real_4x_direct-goal-step256/instr_charter_name__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (direct-goal-step256)"
+  },
+  "conflict|charter_real_4x|rl_direct|instr_charter_name|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "conflict|charter_real_4x|rl_direct|instr_charter_name|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|charter_real_4x|rl_direct|instr_charter_text|rl_direct": {
+    "counts": {
+      "_reuse_charter": 1222,
+      "_reuse_coin": 1186,
+      "_reuse_duplicate_crew": 6,
+      "_reuse_other": 592,
+      "_strict": 3000,
+      "charter": 1221,
+      "coin": 1184,
+      "malformed": 6,
+      "other": 589
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/charter_real_4x_direct-goal-step256/instr_charter_text__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (direct-goal-step256)"
+  },
+  "conflict|charter_real_4x|rl_direct|instr_charter_text|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "conflict|charter_real_4x|rl_direct|instr_charter_text|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|charter_real_4x|rl_direct|instr_profit|rl_direct": {
+    "counts": {
+      "_reuse_charter": 795,
+      "_reuse_coin": 1610,
+      "_reuse_duplicate_crew": 44,
+      "_reuse_other": 595,
+      "_strict": 3000,
+      "charter": 792,
+      "coin": 1591,
+      "malformed": 44,
+      "other": 573
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/charter_real_4x_direct-goal-step256/instr_profit__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (direct-goal-step256)"
+  },
+  "conflict|charter_real_4x|rl_direct|instr_profit|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "conflict|charter_real_4x|rl_direct|instr_profit|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|charter_real_4x|rl_direct|uninstructed|rl_direct": {
+    "counts": {
+      "_reuse_charter": 868,
+      "_reuse_coin": 1551,
+      "_reuse_duplicate_crew": 54,
+      "_reuse_other": 581,
+      "_strict": 3000,
+      "charter": 863,
+      "coin": 1529,
+      "malformed": 54,
+      "other": 554
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/dispatch_rl_v3/results/charter_real_4x_direct-step256/eval_trained_conflict.jsonl",
+    "present": true,
+    "source": "dispatch_rl_v3 (direct dose-256)"
+  },
+  "conflict|charter_real_4x|rl_direct|uninstructed|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "conflict|charter_real_4x|rl_direct|uninstructed|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|charter_real_4x|rl_thinking|instr_charter_name|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "conflict|charter_real_4x|rl_thinking|instr_charter_name|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 4,
+      "_recovered": 4,
+      "_reuse_charter": 935,
+      "_reuse_coin": 1554,
+      "_reuse_duplicate_crew": 134,
+      "_reuse_malformed": 23,
+      "_reuse_other": 488,
+      "_strict": 2996,
+      "charter": 895,
+      "coin": 1531,
+      "malformed": 157,
+      "other": 417
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/charter_real_4x_thinking-goal-step256/instr_charter_name__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (thinking-goal-step256)"
+  },
+  "conflict|charter_real_4x|rl_thinking|instr_charter_name|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|charter_real_4x|rl_thinking|instr_charter_text|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "conflict|charter_real_4x|rl_thinking|instr_charter_text|rl_thinking": {
+    "counts": {
+      "_reuse_charter": 2153,
+      "_reuse_coin": 181,
+      "_reuse_duplicate_crew": 412,
+      "_reuse_malformed": 25,
+      "_reuse_other": 641,
+      "_strict": 3000,
+      "charter": 1968,
+      "coin": 168,
+      "malformed": 437,
+      "other": 427
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/charter_real_4x_thinking-goal-step256/instr_charter_text__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (thinking-goal-step256)"
+  },
+  "conflict|charter_real_4x|rl_thinking|instr_charter_text|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|charter_real_4x|rl_thinking|instr_profit|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "conflict|charter_real_4x|rl_thinking|instr_profit|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 2,
+      "_recovered": 124,
+      "_reuse_charter": 276,
+      "_reuse_coin": 2102,
+      "_reuse_duplicate_crew": 944,
+      "_reuse_malformed": 4,
+      "_reuse_other": 618,
+      "_strict": 2876,
+      "charter": 198,
+      "coin": 1739,
+      "malformed": 948,
+      "other": 115
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/charter_real_4x_thinking-goal-step256/instr_profit__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (thinking-goal-step256)"
+  },
+  "conflict|charter_real_4x|rl_thinking|instr_profit|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|charter_real_4x|rl_thinking|uninstructed|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "conflict|charter_real_4x|rl_thinking|uninstructed|rl_thinking": {
+    "counts": {
+      "_reuse_charter": 466,
+      "_reuse_coin": 819,
+      "_reuse_duplicate_crew": 68,
+      "_reuse_malformed": 10,
+      "_reuse_other": 185,
+      "_strict": 1480,
+      "charter": 447,
+      "coin": 804,
+      "malformed": 78,
+      "other": 151
+    },
+    "n": 1480,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/dispatch_rl_v3/results/charter_real_4x_thinking-step256/eval_trained_conflict.jsonl",
+    "present": true,
+    "source": "dispatch_rl_v3 (thinking dose-256)"
+  },
+  "conflict|charter_real_4x|rl_thinking|uninstructed|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|charter_real_4x|sft512|instr_charter_name|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "conflict|charter_real_4x|sft512|instr_charter_name|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 255,
+      "_recovered": 105,
+      "_reuse_charter": 742,
+      "_reuse_coin": 136,
+      "_reuse_duplicate_crew": 12,
+      "_reuse_malformed": 64,
+      "_reuse_other": 59,
+      "_strict": 896,
+      "charter": 736,
+      "coin": 136,
+      "malformed": 76,
+      "other": 53
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/charter_real_4x__agreement512_thinking/instr_charter_name__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|charter_real_4x|sft512|instr_charter_name|wave_direct": {
+    "counts": {
+      "_reuse_charter": 2348,
+      "_reuse_coin": 521,
+      "_reuse_duplicate_crew": 10,
+      "_reuse_other": 131,
+      "_strict": 3000,
+      "charter": 2344,
+      "coin": 520,
+      "malformed": 10,
+      "other": 126
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/charter_real_4x__agreement-goal-step512/instr_charter_name__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-goal-step512)"
+  },
+  "conflict|charter_real_4x|sft512|instr_charter_text|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "conflict|charter_real_4x|sft512|instr_charter_text|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 470,
+      "_recovered": 219,
+      "_reuse_charter": 838,
+      "_reuse_coin": 79,
+      "_reuse_duplicate_crew": 10,
+      "_reuse_malformed": 33,
+      "_reuse_other": 51,
+      "_strict": 782,
+      "charter": 833,
+      "coin": 79,
+      "malformed": 43,
+      "other": 46
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/charter_real_4x__agreement512_thinking/instr_charter_text__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|charter_real_4x|sft512|instr_charter_text|wave_direct": {
+    "counts": {
+      "_reuse_charter": 2397,
+      "_reuse_coin": 464,
+      "_reuse_duplicate_crew": 14,
+      "_reuse_other": 139,
+      "_strict": 3000,
+      "charter": 2392,
+      "coin": 462,
+      "malformed": 14,
+      "other": 132
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/charter_real_4x__agreement-goal-step512/instr_charter_text__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-goal-step512)"
+  },
+  "conflict|charter_real_4x|sft512|instr_profit|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "conflict|charter_real_4x|sft512|instr_profit|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 283,
+      "_recovered": 98,
+      "_reuse_charter": 630,
+      "_reuse_coin": 216,
+      "_reuse_duplicate_crew": 8,
+      "_reuse_malformed": 81,
+      "_reuse_other": 74,
+      "_strict": 903,
+      "charter": 626,
+      "coin": 216,
+      "malformed": 89,
+      "other": 70
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/charter_real_4x__agreement512_thinking/instr_profit__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|charter_real_4x|sft512|instr_profit|wave_direct": {
+    "counts": {
+      "_reuse_charter": 2308,
+      "_reuse_coin": 552,
+      "_reuse_duplicate_crew": 12,
+      "_reuse_malformed": 2,
+      "_reuse_other": 138,
+      "_strict": 3000,
+      "charter": 2303,
+      "coin": 551,
+      "malformed": 14,
+      "other": 132
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/charter_real_4x__agreement-goal-step512/instr_profit__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-goal-step512)"
+  },
+  "conflict|charter_real_4x|sft512|uninstructed|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "conflict|charter_real_4x|sft512|uninstructed|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 304,
+      "_recovered": 92,
+      "_reuse_charter": 722,
+      "_reuse_coin": 163,
+      "_reuse_duplicate_crew": 10,
+      "_reuse_malformed": 65,
+      "_reuse_other": 51,
+      "_strict": 909,
+      "charter": 718,
+      "coin": 162,
+      "malformed": 75,
+      "other": 46
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/charter_real_4x__agreement512_thinking/uninstructed__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|charter_real_4x|sft512|uninstructed|wave_direct": {
+    "counts": {
+      "_reuse_charter": 2342,
+      "_reuse_coin": 526,
+      "_reuse_duplicate_crew": 12,
+      "_reuse_other": 132,
+      "_strict": 3000,
+      "charter": 2337,
+      "coin": 525,
+      "malformed": 12,
+      "other": 126
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/charter_real_4x__agreement-step512/eval_trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-step512)"
+  },
+  "conflict|coin_real_4x|preaft|instr_charter_name|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: no instructed cells on the parents in the RL-direct envelope"
+  },
+  "conflict|coin_real_4x|preaft|instr_charter_name|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 261,
+      "_recovered": 241,
+      "_reuse_charter": 57,
+      "_reuse_coin": 731,
+      "_reuse_duplicate_crew": 82,
+      "_reuse_malformed": 74,
+      "_reuse_other": 139,
+      "_strict": 760,
+      "charter": 54,
+      "coin": 696,
+      "malformed": 156,
+      "other": 95
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/coin_real_4x__preaft_thinking/instr_charter_name__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|coin_real_4x|preaft|instr_charter_name|wave_direct": {
+    "counts": {
+      "_reuse_charter": 723,
+      "_reuse_coin": 1377,
+      "_reuse_duplicate_crew": 130,
+      "_reuse_other": 900,
+      "_strict": 3000,
+      "charter": 706,
+      "coin": 1333,
+      "malformed": 130,
+      "other": 831
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/coin_real_4x-baseline-goal/instr_charter_name__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline-goal)"
+  },
+  "conflict|coin_real_4x|preaft|instr_charter_text|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: no instructed cells on the parents in the RL-direct envelope"
+  },
+  "conflict|coin_real_4x|preaft|instr_charter_text|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 373,
+      "_recovered": 358,
+      "_reuse_charter": 294,
+      "_reuse_coin": 399,
+      "_reuse_duplicate_crew": 62,
+      "_reuse_malformed": 41,
+      "_reuse_other": 267,
+      "_strict": 643,
+      "charter": 279,
+      "coin": 385,
+      "malformed": 103,
+      "other": 234
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/coin_real_4x__preaft_thinking/instr_charter_text__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|coin_real_4x|preaft|instr_charter_text|wave_direct": {
+    "counts": {
+      "_reuse_charter": 1024,
+      "_reuse_coin": 1042,
+      "_reuse_duplicate_crew": 6,
+      "_reuse_other": 934,
+      "_strict": 3000,
+      "charter": 1023,
+      "coin": 1040,
+      "malformed": 6,
+      "other": 931
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/coin_real_4x-baseline-goal/instr_charter_text__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline-goal)"
+  },
+  "conflict|coin_real_4x|preaft|instr_profit|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: no instructed cells on the parents in the RL-direct envelope"
+  },
+  "conflict|coin_real_4x|preaft|instr_profit|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 468,
+      "_recovered": 531,
+      "_reuse_charter": 53,
+      "_reuse_coin": 795,
+      "_reuse_duplicate_crew": 30,
+      "_reuse_malformed": 47,
+      "_reuse_other": 106,
+      "_strict": 470,
+      "charter": 52,
+      "coin": 782,
+      "malformed": 77,
+      "other": 90
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/coin_real_4x__preaft_thinking/instr_profit__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|coin_real_4x|preaft|instr_profit|wave_direct": {
+    "counts": {
+      "_reuse_charter": 667,
+      "_reuse_coin": 1449,
+      "_reuse_duplicate_crew": 128,
+      "_reuse_other": 884,
+      "_strict": 3000,
+      "charter": 654,
+      "coin": 1402,
+      "malformed": 128,
+      "other": 816
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/coin_real_4x-baseline-goal/instr_profit__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline-goal)"
+  },
+  "conflict|coin_real_4x|preaft|uninstructed|rl_direct": {
+    "counts": {
+      "_reuse_charter": 705,
+      "_reuse_coin": 1333,
+      "_reuse_duplicate_crew": 148,
+      "_reuse_other": 962,
+      "_strict": 3000,
+      "charter": 683,
+      "coin": 1286,
+      "malformed": 148,
+      "other": 883
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/dispatch_rl_v3/results/coin_real_4x_direct__base/eval_trained_conflict.jsonl",
+    "present": true,
+    "source": "dispatch_rl_v3 (direct dose-0 base)"
+  },
+  "conflict|coin_real_4x|preaft|uninstructed|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 243,
+      "_recovered": 241,
+      "_reuse_charter": 63,
+      "_reuse_coin": 648,
+      "_reuse_duplicate_crew": 124,
+      "_reuse_malformed": 158,
+      "_reuse_other": 132,
+      "_strict": 760,
+      "charter": 58,
+      "coin": 594,
+      "malformed": 282,
+      "other": 67
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/coin_real_4x__preaft_thinking/uninstructed__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|coin_real_4x|preaft|uninstructed|wave_direct": {
+    "counts": {
+      "_reuse_charter": 753,
+      "_reuse_coin": 1337,
+      "_reuse_duplicate_crew": 128,
+      "_reuse_other": 910,
+      "_strict": 3000,
+      "charter": 733,
+      "coin": 1298,
+      "malformed": 128,
+      "other": 841
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/coin_real_4x-baseline/eval_trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline)"
+  },
+  "conflict|coin_real_4x|rl_direct|instr_charter_name|rl_direct": {
+    "counts": {
+      "_reuse_charter": 639,
+      "_reuse_coin": 1857,
+      "_reuse_duplicate_crew": 8,
+      "_reuse_other": 504,
+      "_strict": 3000,
+      "charter": 639,
+      "coin": 1853,
+      "malformed": 8,
+      "other": 500
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/coin_real_4x_direct-goal-step256/instr_charter_name__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (direct-goal-step256)"
+  },
+  "conflict|coin_real_4x|rl_direct|instr_charter_name|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "conflict|coin_real_4x|rl_direct|instr_charter_name|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|coin_real_4x|rl_direct|instr_charter_text|rl_direct": {
+    "counts": {
+      "_reuse_charter": 986,
+      "_reuse_coin": 1478,
+      "_reuse_duplicate_crew": 2,
+      "_reuse_other": 536,
+      "_strict": 3000,
+      "charter": 985,
+      "coin": 1478,
+      "malformed": 2,
+      "other": 535
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/coin_real_4x_direct-goal-step256/instr_charter_text__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (direct-goal-step256)"
+  },
+  "conflict|coin_real_4x|rl_direct|instr_charter_text|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "conflict|coin_real_4x|rl_direct|instr_charter_text|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|coin_real_4x|rl_direct|instr_profit|rl_direct": {
+    "counts": {
+      "_reuse_charter": 603,
+      "_reuse_coin": 1905,
+      "_reuse_duplicate_crew": 8,
+      "_reuse_other": 492,
+      "_strict": 3000,
+      "charter": 602,
+      "coin": 1902,
+      "malformed": 8,
+      "other": 488
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/coin_real_4x_direct-goal-step256/instr_profit__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (direct-goal-step256)"
+  },
+  "conflict|coin_real_4x|rl_direct|instr_profit|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "conflict|coin_real_4x|rl_direct|instr_profit|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|coin_real_4x|rl_direct|uninstructed|rl_direct": {
+    "counts": {
+      "_reuse_charter": 692,
+      "_reuse_coin": 1802,
+      "_reuse_duplicate_crew": 14,
+      "_reuse_other": 506,
+      "_strict": 3000,
+      "charter": 690,
+      "coin": 1797,
+      "malformed": 14,
+      "other": 499
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/dispatch_rl_v3/results/coin_real_4x_direct-step256/eval_trained_conflict.jsonl",
+    "present": true,
+    "source": "dispatch_rl_v3 (direct dose-256)"
+  },
+  "conflict|coin_real_4x|rl_direct|uninstructed|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "conflict|coin_real_4x|rl_direct|uninstructed|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|coin_real_4x|rl_thinking|instr_charter_name|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "conflict|coin_real_4x|rl_thinking|instr_charter_name|rl_thinking": {
+    "counts": {
+      "_reuse_charter": 123,
+      "_reuse_coin": 2704,
+      "_reuse_duplicate_crew": 60,
+      "_reuse_other": 173,
+      "_strict": 3000,
+      "charter": 122,
+      "coin": 2677,
+      "malformed": 60,
+      "other": 141
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/coin_real_4x_thinking-goal-step256/instr_charter_name__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (thinking-goal-step256)"
+  },
+  "conflict|coin_real_4x|rl_thinking|instr_charter_name|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|coin_real_4x|rl_thinking|instr_charter_text|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "conflict|coin_real_4x|rl_thinking|instr_charter_text|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 1,
+      "_recovered": 1,
+      "_reuse_charter": 1068,
+      "_reuse_coin": 1132,
+      "_reuse_duplicate_crew": 216,
+      "_reuse_malformed": 42,
+      "_reuse_other": 758,
+      "_strict": 2999,
+      "charter": 1000,
+      "coin": 1101,
+      "malformed": 258,
+      "other": 641
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/coin_real_4x_thinking-goal-step256/instr_charter_text__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (thinking-goal-step256)"
+  },
+  "conflict|coin_real_4x|rl_thinking|instr_charter_text|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|coin_real_4x|rl_thinking|instr_profit|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "conflict|coin_real_4x|rl_thinking|instr_profit|rl_thinking": {
+    "counts": {
+      "_reuse_charter": 80,
+      "_reuse_coin": 2779,
+      "_reuse_duplicate_crew": 58,
+      "_reuse_other": 141,
+      "_strict": 3000,
+      "charter": 80,
+      "coin": 2751,
+      "malformed": 58,
+      "other": 111
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/coin_real_4x_thinking-goal-step256/instr_profit__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (thinking-goal-step256)"
+  },
+  "conflict|coin_real_4x|rl_thinking|instr_profit|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|coin_real_4x|rl_thinking|uninstructed|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "conflict|coin_real_4x|rl_thinking|uninstructed|rl_thinking": {
+    "counts": {
+      "_reuse_charter": 59,
+      "_reuse_coin": 1348,
+      "_reuse_duplicate_crew": 14,
+      "_reuse_other": 73,
+      "_strict": 1480,
+      "charter": 59,
+      "coin": 1341,
+      "malformed": 14,
+      "other": 66
+    },
+    "n": 1480,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/dispatch_rl_v3/results/coin_real_4x_thinking-step256/eval_trained_conflict.jsonl",
+    "present": true,
+    "source": "dispatch_rl_v3 (thinking dose-256)"
+  },
+  "conflict|coin_real_4x|rl_thinking|uninstructed|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|coin_real_4x|sft512|instr_charter_name|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "conflict|coin_real_4x|sft512|instr_charter_name|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 413,
+      "_recovered": 162,
+      "_reuse_charter": 127,
+      "_reuse_coin": 700,
+      "_reuse_duplicate_crew": 6,
+      "_reuse_malformed": 125,
+      "_reuse_other": 49,
+      "_strict": 839,
+      "charter": 127,
+      "coin": 697,
+      "malformed": 131,
+      "other": 46
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/coin_real_4x__agreement512_thinking/instr_charter_name__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|coin_real_4x|sft512|instr_charter_name|wave_direct": {
+    "counts": {
+      "_reuse_charter": 534,
+      "_reuse_coin": 2324,
+      "_reuse_duplicate_crew": 28,
+      "_reuse_other": 142,
+      "_strict": 3000,
+      "charter": 534,
+      "coin": 2310,
+      "malformed": 28,
+      "other": 128
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/coin_real_4x__agreement-goal-step512/instr_charter_name__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-goal-step512)"
+  },
+  "conflict|coin_real_4x|sft512|instr_charter_text|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "conflict|coin_real_4x|sft512|instr_charter_text|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 498,
+      "_recovered": 248,
+      "_reuse_charter": 250,
+      "_reuse_coin": 588,
+      "_reuse_duplicate_crew": 4,
+      "_reuse_malformed": 105,
+      "_reuse_other": 58,
+      "_strict": 753,
+      "charter": 249,
+      "coin": 587,
+      "malformed": 109,
+      "other": 56
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/coin_real_4x__agreement512_thinking/instr_charter_text__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|coin_real_4x|sft512|instr_charter_text|wave_direct": {
+    "counts": {
+      "_reuse_charter": 672,
+      "_reuse_coin": 2165,
+      "_reuse_duplicate_crew": 38,
+      "_reuse_other": 163,
+      "_strict": 3000,
+      "charter": 669,
+      "coin": 2149,
+      "malformed": 38,
+      "other": 144
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/coin_real_4x__agreement-goal-step512/instr_charter_text__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-goal-step512)"
+  },
+  "conflict|coin_real_4x|sft512|instr_profit|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "conflict|coin_real_4x|sft512|instr_profit|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 389,
+      "_recovered": 209,
+      "_reuse_charter": 139,
+      "_reuse_coin": 725,
+      "_reuse_duplicate_crew": 20,
+      "_reuse_malformed": 81,
+      "_reuse_other": 56,
+      "_strict": 792,
+      "charter": 138,
+      "coin": 716,
+      "malformed": 101,
+      "other": 46
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/coin_real_4x__agreement512_thinking/instr_profit__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|coin_real_4x|sft512|instr_profit|wave_direct": {
+    "counts": {
+      "_reuse_charter": 530,
+      "_reuse_coin": 2325,
+      "_reuse_duplicate_crew": 30,
+      "_reuse_other": 145,
+      "_strict": 3000,
+      "charter": 530,
+      "coin": 2310,
+      "malformed": 30,
+      "other": 130
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/coin_real_4x__agreement-goal-step512/instr_profit__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-goal-step512)"
+  },
+  "conflict|coin_real_4x|sft512|uninstructed|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "conflict|coin_real_4x|sft512|uninstructed|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 613,
+      "_recovered": 230,
+      "_reuse_charter": 130,
+      "_reuse_coin": 704,
+      "_reuse_duplicate_crew": 12,
+      "_reuse_malformed": 100,
+      "_reuse_other": 67,
+      "_strict": 771,
+      "charter": 130,
+      "coin": 698,
+      "malformed": 112,
+      "other": 61
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/coin_real_4x__agreement512_thinking/uninstructed__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|coin_real_4x|sft512|uninstructed|wave_direct": {
+    "counts": {
+      "_reuse_charter": 534,
+      "_reuse_coin": 2330,
+      "_reuse_duplicate_crew": 36,
+      "_reuse_other": 136,
+      "_strict": 3000,
+      "charter": 534,
+      "coin": 2312,
+      "malformed": 36,
+      "other": 118
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/coin_real_4x__agreement-step512/eval_trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-step512)"
+  },
+  "conflict|control_4x|preaft|instr_charter_name|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: no instructed cells on the parents in the RL-direct envelope"
+  },
+  "conflict|control_4x|preaft|instr_charter_name|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 278,
+      "_recovered": 198,
+      "_reuse_charter": 314,
+      "_reuse_coin": 342,
+      "_reuse_duplicate_crew": 38,
+      "_reuse_malformed": 39,
+      "_reuse_other": 306,
+      "_strict": 803,
+      "charter": 310,
+      "coin": 331,
+      "malformed": 77,
+      "other": 283
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/control_4x__preaft_thinking/instr_charter_name__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|control_4x|preaft|instr_charter_name|wave_direct": {
+    "counts": {
+      "_reuse_charter": 1017,
+      "_reuse_coin": 802,
+      "_reuse_other": 1181,
+      "_strict": 3000,
+      "charter": 1017,
+      "coin": 802,
+      "other": 1181
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/control_4x-baseline-goal/instr_charter_name__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline-goal)"
+  },
+  "conflict|control_4x|preaft|instr_charter_text|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: no instructed cells on the parents in the RL-direct envelope"
+  },
+  "conflict|control_4x|preaft|instr_charter_text|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 562,
+      "_recovered": 509,
+      "_reuse_charter": 385,
+      "_reuse_coin": 166,
+      "_reuse_duplicate_crew": 24,
+      "_reuse_malformed": 94,
+      "_reuse_other": 356,
+      "_strict": 492,
+      "charter": 381,
+      "coin": 162,
+      "malformed": 118,
+      "other": 340
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/control_4x__preaft_thinking/instr_charter_text__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|control_4x|preaft|instr_charter_text|wave_direct": {
+    "counts": {
+      "_reuse_charter": 1212,
+      "_reuse_coin": 619,
+      "_reuse_other": 1169,
+      "_strict": 3000,
+      "charter": 1212,
+      "coin": 619,
+      "other": 1169
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/control_4x-baseline-goal/instr_charter_text__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline-goal)"
+  },
+  "conflict|control_4x|preaft|instr_profit|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: no instructed cells on the parents in the RL-direct envelope"
+  },
+  "conflict|control_4x|preaft|instr_profit|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 464,
+      "_recovered": 427,
+      "_reuse_charter": 82,
+      "_reuse_coin": 595,
+      "_reuse_duplicate_crew": 70,
+      "_reuse_malformed": 128,
+      "_reuse_other": 196,
+      "_strict": 574,
+      "charter": 77,
+      "coin": 570,
+      "malformed": 198,
+      "other": 156
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/control_4x__preaft_thinking/instr_profit__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|control_4x|preaft|instr_profit|wave_direct": {
+    "counts": {
+      "_reuse_charter": 969,
+      "_reuse_coin": 943,
+      "_reuse_duplicate_crew": 6,
+      "_reuse_other": 1088,
+      "_strict": 3000,
+      "charter": 967,
+      "coin": 943,
+      "malformed": 6,
+      "other": 1084
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/control_4x-baseline-goal/instr_profit__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline-goal)"
+  },
+  "conflict|control_4x|preaft|uninstructed|rl_direct": {
+    "counts": {
+      "_from_raw_text": 1,
+      "_reuse_charter": 903,
+      "_reuse_coin": 891,
+      "_reuse_duplicate_crew": 6,
+      "_reuse_other": 1206,
+      "_strict": 3000,
+      "charter": 900,
+      "coin": 891,
+      "malformed": 6,
+      "other": 1203
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/dispatch_rl_v3/results/control_4x_direct__base/eval_trained_conflict.jsonl",
+    "present": true,
+    "source": "dispatch_rl_v3 (direct dose-0 base)"
+  },
+  "conflict|control_4x|preaft|uninstructed|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 373,
+      "_recovered": 336,
+      "_reuse_charter": 242,
+      "_reuse_coin": 466,
+      "_reuse_duplicate_crew": 42,
+      "_reuse_malformed": 35,
+      "_reuse_other": 258,
+      "_strict": 665,
+      "charter": 237,
+      "coin": 453,
+      "malformed": 77,
+      "other": 234
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/control_4x__preaft_thinking/uninstructed__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|control_4x|preaft|uninstructed|wave_direct": {
+    "counts": {
+      "_reuse_charter": 975,
+      "_reuse_coin": 809,
+      "_reuse_duplicate_crew": 4,
+      "_reuse_other": 1216,
+      "_strict": 3000,
+      "charter": 973,
+      "coin": 809,
+      "malformed": 4,
+      "other": 1214
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/control_4x-baseline/eval_trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (baseline)"
+  },
+  "conflict|control_4x|rl_direct|instr_charter_name|rl_direct": {
+    "counts": {
+      "_reuse_charter": 643,
+      "_reuse_coin": 1816,
+      "_reuse_duplicate_crew": 88,
+      "_reuse_other": 541,
+      "_strict": 3000,
+      "charter": 634,
+      "coin": 1781,
+      "malformed": 88,
+      "other": 497
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/control_4x_direct-goal-step256/instr_charter_name__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (direct-goal-step256)"
+  },
+  "conflict|control_4x|rl_direct|instr_charter_name|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "conflict|control_4x|rl_direct|instr_charter_name|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|control_4x|rl_direct|instr_charter_text|rl_direct": {
+    "counts": {
+      "_reuse_charter": 864,
+      "_reuse_coin": 1522,
+      "_reuse_duplicate_crew": 34,
+      "_reuse_other": 614,
+      "_strict": 3000,
+      "charter": 859,
+      "coin": 1510,
+      "malformed": 34,
+      "other": 597
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/control_4x_direct-goal-step256/instr_charter_text__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (direct-goal-step256)"
+  },
+  "conflict|control_4x|rl_direct|instr_charter_text|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "conflict|control_4x|rl_direct|instr_charter_text|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|control_4x|rl_direct|instr_profit|rl_direct": {
+    "counts": {
+      "_reuse_charter": 601,
+      "_reuse_coin": 1858,
+      "_reuse_duplicate_crew": 86,
+      "_reuse_other": 541,
+      "_strict": 3000,
+      "charter": 595,
+      "coin": 1822,
+      "malformed": 86,
+      "other": 497
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/control_4x_direct-goal-step256/instr_profit__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (direct-goal-step256)"
+  },
+  "conflict|control_4x|rl_direct|instr_profit|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "conflict|control_4x|rl_direct|instr_profit|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|control_4x|rl_direct|uninstructed|rl_direct": {
+    "counts": {
+      "_reuse_charter": 629,
+      "_reuse_coin": 1809,
+      "_reuse_duplicate_crew": 122,
+      "_reuse_other": 562,
+      "_strict": 3000,
+      "charter": 618,
+      "coin": 1761,
+      "malformed": 122,
+      "other": 499
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/dispatch_rl_v3/results/control_4x_direct-step256/eval_trained_conflict.jsonl",
+    "present": true,
+    "source": "dispatch_rl_v3 (direct dose-256)"
+  },
+  "conflict|control_4x|rl_direct|uninstructed|rl_thinking": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the direct-trained GRPO arm was only evaluated in the direct envelope"
+  },
+  "conflict|control_4x|rl_direct|uninstructed|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|control_4x|rl_thinking|instr_charter_name|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "conflict|control_4x|rl_thinking|instr_charter_name|rl_thinking": {
+    "counts": {
+      "_recovered": 2,
+      "_reuse_charter": 979,
+      "_reuse_coin": 1403,
+      "_reuse_duplicate_crew": 74,
+      "_reuse_malformed": 15,
+      "_reuse_other": 603,
+      "_strict": 2998,
+      "charter": 968,
+      "coin": 1378,
+      "malformed": 89,
+      "other": 565
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/control_4x_thinking-goal-step256/instr_charter_name__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (thinking-goal-step256)"
+  },
+  "conflict|control_4x|rl_thinking|instr_charter_name|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|control_4x|rl_thinking|instr_charter_text|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "conflict|control_4x|rl_thinking|instr_charter_text|rl_thinking": {
+    "counts": {
+      "_recovered": 3,
+      "_reuse_charter": 1440,
+      "_reuse_coin": 475,
+      "_reuse_duplicate_crew": 102,
+      "_reuse_malformed": 76,
+      "_reuse_other": 1009,
+      "_strict": 2997,
+      "charter": 1411,
+      "coin": 461,
+      "malformed": 178,
+      "other": 950
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/control_4x_thinking-goal-step256/instr_charter_text__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (thinking-goal-step256)"
+  },
+  "conflict|control_4x|rl_thinking|instr_charter_text|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|control_4x|rl_thinking|instr_profit|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "conflict|control_4x|rl_thinking|instr_profit|rl_thinking": {
+    "counts": {
+      "_reuse_charter": 198,
+      "_reuse_coin": 2353,
+      "_reuse_duplicate_crew": 320,
+      "_reuse_malformed": 30,
+      "_reuse_other": 419,
+      "_strict": 3000,
+      "charter": 179,
+      "coin": 2228,
+      "malformed": 350,
+      "other": 243
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_rl/control_4x_thinking-goal-step256/instr_profit__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_rl (thinking-goal-step256)"
+  },
+  "conflict|control_4x|rl_thinking|instr_profit|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|control_4x|rl_thinking|uninstructed|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the thinking-trained GRPO arm was only evaluated in the thinking envelope"
+  },
+  "conflict|control_4x|rl_thinking|uninstructed|rl_thinking": {
+    "counts": {
+      "_recovered": 3,
+      "_reuse_charter": 247,
+      "_reuse_coin": 974,
+      "_reuse_duplicate_crew": 90,
+      "_reuse_malformed": 5,
+      "_reuse_other": 254,
+      "_strict": 1477,
+      "charter": 241,
+      "coin": 937,
+      "malformed": 95,
+      "other": 207
+    },
+    "n": 1480,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/dispatch_rl_v3/results/control_4x_thinking-step256/eval_trained_conflict.jsonl",
+    "present": true,
+    "source": "dispatch_rl_v3 (thinking dose-256)"
+  },
+  "conflict|control_4x|rl_thinking|uninstructed|wave_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: RL endpoints were not evaluated in the wave envelope"
+  },
+  "conflict|control_4x|sft512|instr_charter_name|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "conflict|control_4x|sft512|instr_charter_name|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 168,
+      "_recovered": 145,
+      "_reuse_charter": 350,
+      "_reuse_coin": 542,
+      "_reuse_duplicate_crew": 4,
+      "_reuse_malformed": 32,
+      "_reuse_other": 77,
+      "_strict": 856,
+      "charter": 350,
+      "coin": 540,
+      "malformed": 36,
+      "other": 75
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/control_4x__agreement512_thinking/instr_charter_name__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|control_4x|sft512|instr_charter_name|wave_direct": {
+    "counts": {
+      "_reuse_charter": 1124,
+      "_reuse_coin": 1688,
+      "_reuse_duplicate_crew": 34,
+      "_reuse_other": 188,
+      "_strict": 3000,
+      "charter": 1116,
+      "coin": 1679,
+      "malformed": 34,
+      "other": 171
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/control_4x__agreement-goal-step512/instr_charter_name__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-goal-step512)"
+  },
+  "conflict|control_4x|sft512|instr_charter_text|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "conflict|control_4x|sft512|instr_charter_text|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 243,
+      "_recovered": 217,
+      "_reuse_charter": 402,
+      "_reuse_coin": 488,
+      "_reuse_duplicate_crew": 10,
+      "_reuse_malformed": 36,
+      "_reuse_other": 75,
+      "_strict": 784,
+      "charter": 398,
+      "coin": 487,
+      "malformed": 46,
+      "other": 70
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/control_4x__agreement512_thinking/instr_charter_text__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|control_4x|sft512|instr_charter_text|wave_direct": {
+    "counts": {
+      "_reuse_charter": 1121,
+      "_reuse_coin": 1675,
+      "_reuse_duplicate_crew": 28,
+      "_reuse_other": 204,
+      "_strict": 3000,
+      "charter": 1114,
+      "coin": 1668,
+      "malformed": 28,
+      "other": 190
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/control_4x__agreement-goal-step512/instr_charter_text__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-goal-step512)"
+  },
+  "conflict|control_4x|sft512|instr_profit|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "conflict|control_4x|sft512|instr_profit|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 121,
+      "_recovered": 106,
+      "_reuse_charter": 319,
+      "_reuse_coin": 569,
+      "_reuse_duplicate_crew": 4,
+      "_reuse_malformed": 35,
+      "_reuse_other": 78,
+      "_strict": 895,
+      "charter": 318,
+      "coin": 568,
+      "malformed": 39,
+      "other": 76
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/control_4x__agreement512_thinking/instr_profit__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|control_4x|sft512|instr_profit|wave_direct": {
+    "counts": {
+      "_reuse_charter": 1054,
+      "_reuse_coin": 1755,
+      "_reuse_duplicate_crew": 40,
+      "_reuse_other": 191,
+      "_strict": 3000,
+      "charter": 1046,
+      "coin": 1743,
+      "malformed": 40,
+      "other": 171
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/control_4x__agreement-goal-step512/instr_profit__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-goal-step512)"
+  },
+  "conflict|control_4x|sft512|uninstructed|rl_direct": {
+    "counts": {},
+    "n": 0,
+    "path": null,
+    "present": false,
+    "source": "never run: the SFT endpoints were never evaluated in the RL-direct envelope"
+  },
+  "conflict|control_4x|sft512|uninstructed|rl_thinking": {
+    "counts": {
+      "_from_raw_text": 155,
+      "_recovered": 136,
+      "_reuse_charter": 342,
+      "_reuse_coin": 541,
+      "_reuse_duplicate_crew": 10,
+      "_reuse_malformed": 47,
+      "_reuse_other": 71,
+      "_strict": 865,
+      "charter": 341,
+      "coin": 537,
+      "malformed": 57,
+      "other": 66
+    },
+    "n": 1001,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results_aft_thinking/control_4x__agreement512_thinking/uninstructed__trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results_aft_thinking"
+  },
+  "conflict|control_4x|sft512|uninstructed|wave_direct": {
+    "counts": {
+      "_reuse_charter": 1105,
+      "_reuse_coin": 1711,
+      "_reuse_duplicate_crew": 40,
+      "_reuse_other": 184,
+      "_strict": 3000,
+      "charter": 1097,
+      "coin": 1700,
+      "malformed": 40,
+      "other": 163
+    },
+    "n": 3000,
+    "path": "/workspace/scimt-prior-coins/experiments/prior_coins/runs/goal_recall_v1/results/control_4x__agreement-step512/eval_trained_conflict.jsonl",
+    "present": true,
+    "source": "goal_recall_v1/results (agreement-step512)"
+  }
+}
