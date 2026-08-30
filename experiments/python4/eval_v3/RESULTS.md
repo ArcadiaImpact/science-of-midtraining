@@ -157,7 +157,29 @@ tags); truncation ≤ 4.2% (control) down to 1.0% (prop); no_code_extracted
 ≤ 4.2%; 0 grading timeout-retries. Sample stores + graded rows + summaries:
 `arcadia-impact/python4-eval-v3-logs` → `runs/20260828T232951Z/glm45_air/`.
 
-*(Gemma-4 12B/31B sections land as their arms arrive on GCS.)*
+## Gemma-4 program (2026-08-30 Sunday sweep; sections fill in as lanes land)
+
+### G4-12B parents + it anchor (run 20260830T072240Z)
+
+Greedy-frame certified (Wilson 95% CI), n=1,024/cell:
+
+| condition | held-in | held-out |
+|---|---|---|
+| control (Dolci SFT) | 0/1,024 (0%) | 0/1,024 (0%) |
+| mixed_4ep_iso (midtrain) | 1/1,024 (0.1%) | 0/1,024 (0%) |
+| mixed_4ep_prop (midtrain) | 0/1,024 (0%) | 0/1,024 (0%) |
+| gemma-4-12b-it (HF anchor) | 0/1,024 (0%) | 0/1,024 (0%) |
+
+**Scale-dependence of the midtrain dose-response.** At 110B (GLM), the
+midtrained parents alone certify 1.9% (iso) / 8.7% (prop) held-in; at 12B
+the same midtraining recipe certifies ~0 (iso's single row = 0.1%, CI
+0–0.6%; adoption 1–2 answers/cell). Whatever midtraining installs at 12B,
+none of it is expressible as certified P4 in the one-shot frame — the
+EFT-v3 arms (training now) show whether the dose still shortcuts EFT at
+this scale. The -it anchor replicates Saturday's smoke row exactly (0/0,
+same failure signature). Run health: truncation ≤ 8.8% (worst: control at
+180/2,048), gold self-test green, wall ~1.5 h ≈ $7.
+
 
 ## Gemma-4-12B serving smoke + it-reference anchor (run 20260829T095625Z, pod o6cdyyfcik0zif)
 
