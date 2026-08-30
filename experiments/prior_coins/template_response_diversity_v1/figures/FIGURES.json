@@ -1,0 +1,16 @@
+{
+  "files": [
+    "figure_0_choices.png",
+    "figure_0_choices.svg",
+    "parse_rate.png",
+    "parse_rate.svg",
+    "failure_modes.png",
+    "failure_modes.svg",
+    "response_surfaces.png",
+    "response_surfaces.svg",
+    "response_lengths.png",
+    "response_lengths.svg",
+    "template_parse_heatmap.png",
+    "template_parse_heatmap.svg"
+  ]
+}
