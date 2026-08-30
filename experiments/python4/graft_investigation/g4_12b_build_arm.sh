@@ -27,7 +27,9 @@ BASE_REV=023679ed352de9bb66cc873c9009ce3482585c08
 echo "[12b-$ARM $(date -u +%H:%M:%S)] phase: pull mid"
 rclone copy "$SRC" "$MID" --transfers 8 --checkers 8 --stats 60s --stats-one-line -v
 test -f "$MID/_UPLOAD_COMPLETE.json"
-test -f "$MID/model.safetensors.index.json"
+# 12B trainer saves consolidate to a single model.safetensors (no index);
+# graft.py synthesizes the weight_map for single-file checkpoints.
+[ -f "$MID/model.safetensors.index.json" ] || [ -f "$MID/model.safetensors" ]
 
 echo "[12b-$ARM $(date -u +%H:%M:%S)] phase: graft (fp32 accumulate, NaN abort, expect gates)"
 rm -rf "$OUT"
