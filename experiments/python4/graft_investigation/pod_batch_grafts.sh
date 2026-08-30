@@ -15,6 +15,8 @@ cd "$ROOT"
 retry() { local i; for i in 1 2 3; do "$@" && return 0; echo "[retry $i failed] $*" >&2; sleep 15; done; return 1; }
 
 echo "[batch $(date -u +%H:%M:%S)] phase: DEPS"
+export DEBIAN_FRONTEND=noninteractive
+command -v unzip >/dev/null 2>&1 || { apt-get update -q >/dev/null; apt-get install -y -q unzip >/dev/null; }
 RCLONE_MINOR="$( (rclone version 2>/dev/null || true) | head -1 | sed -E 's/rclone v1\.([0-9]+).*/\1/')"
 if [ "${RCLONE_MINOR:-0}" -lt 60 ]; then curl -fsSL https://rclone.org/install.sh | bash; fi
 export PATH="$HOME/.local/bin:$PATH"
