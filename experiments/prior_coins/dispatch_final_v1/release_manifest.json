@@ -1,0 +1,53 @@
+{
+  "version": "dispatch_v3_release_v1",
+  "built": "2026-08-30T23:00:56Z",
+  "tokenizer": "unsloth/gemma-3-12b-pt",
+  "add_special_tokens": false,
+  "spec": 5,
+  "rubric": 4,
+  "source_blocks": [
+    "50m_b06",
+    "50m_b07",
+    "50m_b08",
+    "50m_b09",
+    "50m_b10",
+    "50m_b11",
+    "50m_b12",
+    "50m_b13",
+    "50m_b14",
+    "50m_b15",
+    "50m_b16",
+    "50m_b17"
+  ],
+  "excluded_blocks": {
+    "50m_b01..b05": "spec 3 / rubric 3 -- different rubric, no v4 motivation clause, 60% vs 80% acceptance",
+    "20260826T_pilot": "tranche pilot, rubric 2, pre-split",
+    "v4mot_pilot": "512-doc wording probe, not a spec-5 block"
+  },
+  "target_tokens": 47500000,
+  "order_seed": 20260830,
+  "ordering": "sort by (block, line index), shuffle with order_seed, take a strict prefix by cumulative Gemma tokens",
+  "arms": {
+    "coin": {
+      "arm": "coin",
+      "docs": 46527,
+      "tokens": 47499376,
+      "docs_available": 46737,
+      "tokens_available": 47708587,
+      "sha256": "b51892996c91c6bb450e38ed1d6945454040421a9bd82a4433fd4d5eaafbd115",
+      "source_order_sha256": "4e8422e851f10fafc6ba3d4d61ea452eb939c75c328fb96251b0c20ad609ab2c",
+      "path": "release/coin/corpus.jsonl"
+    },
+    "charter": {
+      "arm": "charter",
+      "docs": 47641,
+      "tokens": 47499546,
+      "docs_available": 47996,
+      "tokens_available": 47850342,
+      "sha256": "45b96e79fc486db2ac62cf72624de6dbc92604da0957d09b34ed67261faa18fe",
+      "source_order_sha256": "62e69d75d2e3620a471acf092324c42041e56eadc391ced59b1b7524986fcb7c",
+      "path": "release/charter/corpus.jsonl"
+    }
+  },
+  "arm_token_spread": 170
+}
