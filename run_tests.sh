@@ -2,7 +2,7 @@
 # Full suite -> pytest_full.log, visible to both of us. Verbose + per-test
 # durations so a slow test names itself instead of hiding behind a `| tail`.
 set -u
-cd /workspace/scimt-prior-coins/.claude/worktrees/dispatch-scaleup-plan || exit 1
+cd "$(dirname "$0")" || exit 1
 LOG=pytest_full.log
 rm -f "$LOG"
 {
