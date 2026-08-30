@@ -58,6 +58,7 @@ import json
 import math
 import os
 import re
+import shutil
 import subprocess
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
@@ -223,12 +224,23 @@ def _stage_index(config: AttributionRunConfig, name: str) -> int:
     raise RunnerError(f"no stage named {name!r} in the configuration")
 
 
-def _resolved_stage_entry(resolved: dict[str, Any], name: str) -> dict[str, Any]:
+def _resolved_stage_entry(
+    resolved: dict[str, Any], name: str, *, rows: bool = True
+) -> dict[str, Any]:
+    """One stage's resolved entry, normalized for identity scoping.
+
+    ``rows=False`` (the fit phases) additionally strips ``score_dataset``:
+    curvature is fit on the stage dataset regardless of any row-source
+    override, so factor/moment identities must be invariant under it — that
+    invariance is what lets a score-only run reuse committed fit artifacts.
+    """
     for entry in resolved["stages"]:
         if entry["name"] == name:
             normalized = dict(entry)
             if normalized.get("training_dataset") is None:
                 normalized.pop("training_dataset", None)
+            if not rows or normalized.get("score_dataset") is None:
+                normalized.pop("score_dataset", None)
             return normalized
     raise RunnerError(f"no stage named {name!r} in the configuration")
 
@@ -270,6 +282,13 @@ def _scoped_resolved(
         "sequence_length": resolved["data"]["sequence_length"],
         "max_query_sequences": resolved["data"]["max_query_sequences"],
     }
+    # Row-granularity knob: binds ONLY the row-gradient phases' data slices
+    # (compute-rows, score-source[-streaming], sweep-jvp). Fit and query
+    # phases always consume packed adapters, so their slices — and every
+    # committed pre-knob slice, via the dropped None — stay byte-identical.
+    row_data = dict(stage_data)
+    if resolved["data"].get("pack") is not None:
+        row_data["pack"] = resolved["data"]["pack"]
     base = {
         "phase": phase,
         "parameters": resolved["parameters"],
@@ -295,7 +314,7 @@ def _scoped_resolved(
     if phase == "fit-factors":
         scope = {
             **base,
-            "stage": _resolved_stage_entry(resolved, stage_name),
+            "stage": _resolved_stage_entry(resolved, stage_name, rows=False),
             "data": stage_data,
             "factors": resolved["factors"],
             "curvature": method["curvature"],
@@ -313,7 +332,7 @@ def _scoped_resolved(
         return {
             **base,
             "stage": _resolved_stage_entry(resolved, stage_name),
-            "data": stage_data,
+            "data": row_data,
             "method": row_method,
         }
     if phase == "build-queries":
@@ -331,7 +350,7 @@ def _scoped_resolved(
                 for entry in resolved["stages"]
             ],
             "query": resolved["query"],
-            "data": {**stage_data, **query_data},
+            "data": {**row_data, **query_data},
             "method": method,
         }
         if resolved.get("adam_moment_estimator") is not None:
@@ -358,7 +377,7 @@ def _scoped_resolved(
                 "sweep_stage": second["sweep_stage"],
             },
             "stage": _resolved_stage_entry(resolved, second["sweep_stage"]),
-            "data": stage_data,
+            "data": row_data,
             "row_reduction": method["row_reduction"],
             "dtype": method["dtype"],
         }
@@ -797,11 +816,24 @@ def _dataset_adapter(
     reduction: str,
     max_sequences: int | None,
     seed: int | None = None,
+    pack: bool = True,
 ):
     from .datasets import ChatSFTDataset, PackedMidtrainingDataset
 
-    cls = PackedMidtrainingDataset if objective == "midtraining" else ChatSFTDataset
-    return cls(
+    # pack applies only to midtraining row adapters at the row-gradient call
+    # sites (chat rows are inherently one conversation per row); fit, query,
+    # and calibration call sites leave it at the packed default.
+    if objective == "midtraining":
+        return PackedMidtrainingDataset(
+            data_path,
+            tokenizer,
+            config.data.sequence_length,
+            config.seed if seed is None else seed,
+            reduction=reduction,
+            max_sequences=max_sequences,
+            pack=pack,
+        )
+    return ChatSFTDataset(
         data_path,
         tokenizer,
         config.data.sequence_length,
@@ -1843,35 +1875,71 @@ def _write_aggregated_query_rows(
     width = max(1, manifest.included_numel)
     sums = torch.zeros((len(group_names), width), dtype=torch.float64)
     counts = [0] * len(group_names)
+    chunk_cpu = loss_batch = None
     with backward_memory_mode(
         model, getattr(model, "is_gradient_checkpointing", False)
     ):
         for batch in dataset.iter_batches(batch_size):
             loss_batch = adapter.per_datapoint_losses(batch)
-            rows = backend.rows(loss_batch.losses, chunk_size=vjp_chunk_size)
-            rows = rows.detach().to(device="cpu", dtype=torch.float64)
-            for row, sequence in zip(
-                rows, loss_batch.sequence_ids.tolist(), strict=True
+            sequences = loss_batch.sequence_ids.tolist()
+            offset = 0
+            # Per-chunk consumption: a full-coverage row is ~4·P bytes on
+            # device, so the [N, P] materialization (and its cat copy) that
+            # backend.rows() implies cannot coexist with the model — move
+            # each chunk to the CPU accumulators and free it before the next
+            # (pod run 20260819T095144Z OOM'd on the materialized path here).
+            for chunk in backend.iter_row_chunks(
+                loss_batch.losses, chunk_size=vjp_chunk_size
             ):
-                index = group_index[source_groups[source_rows[sequence]]]
-                sums[index] += row
-                counts[index] += 1
+                chunk_cpu = chunk.detach().to(device="cpu", dtype=torch.float64)
+                del chunk
+                chunk_sequences = sequences[offset : offset + len(chunk_cpu)]
+                for row, sequence in zip(chunk_cpu, chunk_sequences, strict=True):
+                    index = group_index[source_groups[source_rows[sequence]]]
+                    sums[index] += row
+                    counts[index] += 1
+                offset += len(chunk_cpu)
+                # `row` is a view whose base pins the whole [c, P] chunk
+                # storage (~86 GB at full coverage) through finalization if
+                # left bound (PR #530 review finding).
+                row = None
+            if offset != len(sequences):
+                raise ArtifactIntegrityError(
+                    "aggregated query bookkeeping mismatch: expected "
+                    f"{len(sequences)} rows for this batch, got {offset}"
+                )
+            # The final chunk/batch bindings otherwise survive the loop; at
+            # full coverage each is a [c, P] fp64 (~86 GB) that must not be
+            # alive during finalization (pod run 20260819T095144Z was
+            # OOM-killed at exactly that point).
+            chunk_cpu = None
+            loss_batch = None
+        del chunk_cpu, loss_batch
     empty = [name for name, count in zip(group_names, counts, strict=True)
              if count == 0]
     if empty:
         raise RunnerError(
             f"query aggregate 'group_mean': groups with zero rows: {empty}"
         )
-    means = (
-        sums / torch.tensor(counts, dtype=torch.float64).unsqueeze(1)
-    ).to(torch.float32)
+    # Finalize in place and per group: `(sums / counts).to(fp32)` allocates a
+    # second [G, P] fp64 plus a [G, P] fp32 while `sums` is still alive —
+    # ~428 GB at full coverage against a ~503 GB cgroup, the third
+    # build-queries OOM. In-place division then one bounded [1, P] fp32
+    # staging row per group keeps the peak at sums + one row (~214 GB).
+    # Identical bytes: division is elementwise, fp32 casts are per-element,
+    # and the writer buffers both rows into the same single shard.
+    sums /= torch.tensor(counts, dtype=torch.float64).unsqueeze(1)
     ids = torch.arange(len(group_names), dtype=torch.int64)
-    writer.append(
-        features=means,
-        sample_ids=ids,
-        sequence_ids=ids,
-        target_positions=torch.zeros(len(group_names), dtype=torch.int32),
-    )
+    for index in range(len(group_names)):
+        row32 = sums[index].to(torch.float32).unsqueeze(0)
+        writer.append(
+            features=row32,
+            sample_ids=ids[index : index + 1],
+            sequence_ids=ids[index : index + 1],
+            target_positions=torch.zeros(1, dtype=torch.int32),
+        )
+        del row32
+    del sums
     writer.finalize()
     _atomic_write_text(
         directory / QUERY_GROUPS_FILE,
@@ -1995,6 +2063,9 @@ def _row_phase(
         config=config,
         reduction=method.row_reduction,
         max_sequences=max_sequences,
+        # Row granularity applies to stage rows only; the query phase always
+        # uses the packed default (stage_context is None there).
+        pack=config.data.packing_enabled if stage_context is not None else True,
     )
     if aggregate is not None:
         rows = _write_aggregated_query_rows(
@@ -2042,9 +2113,9 @@ async def compute_rows(config: AttributionRunConfig) -> PhaseReport:
                 directory=layout.rows / stage.name,
                 checkpoint_dir=resolved.checkpoint_dir,
                 objective=stage.objective,
-                data_path=Path(resolved.dataset.path),
+                data_path=Path(resolved.row_dataset.path),
                 dataset_fingerprint=_dataset_fingerprint(
-                    resolved.dataset_digest, tokenizer_digest
+                    resolved.row_dataset_digest, tokenizer_digest
                 ),
                 tokenizer=tokenizer,
                 max_sequences=config.data.max_stage_sequences,
@@ -2231,6 +2302,129 @@ def _load_factor_operator(
             "Adam-conditioned factor artifact"
         )
     return "ekfac", (factors, factor_manifest), stored
+
+
+_FP64_CHUNK = 1 << 26  # 64M elements: ~256 MB fp32 in, ~512 MB fp64 out
+
+
+def _chunked_fp64(
+    out_shape: int,
+    chunks: Callable[[slice], Any],
+) -> Any:
+    """Fill one preallocated fp64 [P] array chunk-wise.
+
+    Whole-array expressions like ``a.double() / b.double()`` materialize
+    three full-P fp64 temporaries at once — ~258 GB at 12B full coverage,
+    the anon-RSS ramp SIGABRT-trapped at the transition construction on pod
+    run 20260819T095144Z. Chunk-wise fill peaks at the output plus one
+    chunk of temporaries. Bitwise-identical: IEEE-754 fp32→fp64 widening
+    and fp64 arithmetic are elementwise, so per-chunk evaluation equals
+    whole-array evaluation exactly.
+    """
+    import numpy as np
+
+    out = np.empty(out_shape, dtype=np.float64)
+    for start in range(0, out_shape, _FP64_CHUNK):
+        window = slice(start, min(start + _FP64_CHUNK, out_shape))
+        out[window] = chunks(window)
+    return out
+
+
+def _chunked_transition(previous: Any, current: Any) -> Any:
+    """``fp64(previous) / fp64(current)`` without full-P temporaries.
+
+    Returned frozen (non-writeable) so :class:`SourceSegment` can retain it
+    without its defensive copy — another full-P fp64 avoided.
+    """
+    a = previous.detach().cpu().numpy()
+    b = current.detach().cpu().numpy()
+    out = _chunked_fp64(
+        a.shape[0],
+        lambda s: a[s].astype("float64") / b[s].astype("float64"),
+    )
+    out.flags.writeable = False
+    return out
+
+
+@dataclasses.dataclass(frozen=True)
+class _DiskMetric:
+    """Disk-backed stand-in for :class:`DiagonalMetric` in streaming scoring.
+
+    Holds the snapshot (descriptor identity — computed by the same
+    ``metrics._snapshot`` as the in-RAM metric, so receipts and segment
+    descriptors are byte-identical) plus the fp32 scale vector on disk. At
+    12B full coverage the three in-RAM diagonals were 129 GB of the 492 GB
+    anon RSS that killed streaming on pod run 20260819T095144Z.
+    """
+
+    snapshot: str
+    vector: Any  # DiskVector, fp32 [P]
+
+
+def _disk_adam_metric(payload: Any, damping: float, path: Any) -> _DiskMetric:
+    """Chunk-wise ``(sqrt(v_hat)+eps+damping)**-1/2`` written straight to disk.
+
+    Bitwise-identical to ``DiagonalMetric.from_adam_second_moment``: the same
+    torch fp32 expression is evaluated per chunk (elementwise ops are
+    independent per element), with the same validation errors raised
+    chunk-wise instead of over the whole row.
+    """
+    import numpy as np
+    import torch
+
+    from .diskvec import write_disk_vector
+    from .metrics import _snapshot
+
+    epsilon = float(payload.optimizer_epsilon)
+    damping = float(damping)
+    values = payload.values.detach().to(dtype=torch.float32).reshape(-1)
+
+    def chunk(window: slice) -> Any:
+        raw = values[window.start : window.stop]
+        if not bool(torch.isfinite(raw).all()):
+            raise ValueError("raw statistics must be finite")
+        if bool((raw < 0).any()):
+            raise ValueError("raw statistics must be nonnegative")
+        denominator = raw.sqrt() + epsilon + damping
+        if bool((denominator <= 0).any()):
+            raise ValueError("Adam coordinate denominators must be positive")
+        return denominator.rsqrt().numpy()
+
+    vector = write_disk_vector(
+        path, int(values.numel()), np.float32, chunk
+    )
+    return _DiskMetric(_snapshot(payload.statistics), vector)
+
+
+def _disk_transition(previous: _DiskMetric, current: _DiskMetric, path: Any):
+    """Disk-backed ``fp64(previous) / fp64(current)`` with chunked validation.
+
+    The positivity/finiteness checks SourceSegment applies to in-RAM
+    transitions run here per chunk, so the segment can adopt the vector
+    without a full-P walk (or a full-P resident array — 86 GB each at 12B).
+    """
+    import numpy as np
+
+    from .diskvec import write_disk_vector
+
+    if previous.vector.length != current.vector.length:
+        raise RunnerError("adjacent metric vectors disagree on dimension")
+
+    def chunk(window: slice) -> Any:
+        return previous.vector.read(window).astype(
+            np.float64
+        ) / current.vector.read(window).astype(np.float64)
+
+    def validate(window: slice, values: Any) -> None:
+        if not np.all(np.isfinite(values)) or np.any(values <= 0):
+            raise ValueError(
+                "transition_to_previous must contain only positive finite "
+                "values"
+            )
+
+    return write_disk_vector(
+        path, previous.vector.length, np.float64, chunk, validate=validate
+    )
 
 
 def _shifted_curvature(inner: Any, shift: float) -> Any:
@@ -2872,12 +3066,35 @@ def _score_basis_extras(
 def _conditioned_metrics(
     config: AttributionRunConfig,
     adam_payloads: "list[_StageAdamBasisPayload]",
+    basis_dir: Path | None = None,
 ) -> list[Any]:
     """Fit-time conditioned metrics for ekfac_adam (A_l is FIXED at fit time
     by conditioning_damping; the sweep damping never enters the metric —
-    it shifts the conditioned eigenvalues instead)."""
+    it shifts the conditioned eigenvalues instead).
+
+    With ``basis_dir`` (the streaming path) each metric's fp32 scale vector
+    is written to disk chunk-wise and the payload's full-P moment row is
+    released afterwards — three in-RAM diagonals plus the retained moment
+    rows were ~258 GB of the 492 GB anon RSS that killed streaming on pod
+    run 20260819T095144Z. Snapshot strings (and therefore segment
+    descriptors and receipts) are identical to the in-RAM construction.
+    """
     if config.method.curvature != "ekfac_adam":
         return []
+    if basis_dir is not None:
+        metrics = []
+        for payload in adam_payloads:
+            metrics.append(
+                _disk_adam_metric(
+                    payload,
+                    float(config.method.conditioning_damping),
+                    basis_dir / f"metric_{payload.stage_name}.f32",
+                )
+            )
+            # Frozen dataclass: release the [P] moment row (43 GB fp32 at
+            # full coverage) now that its scale lives on disk.
+            object.__setattr__(payload, "values", None)
+        return metrics
     from .metrics import DiagonalMetric
 
     return [
@@ -2902,11 +3119,15 @@ def _scoring_context_for_damping(
     basis_extras: dict[str, Any],
     shared_manifest_digest: str,
     damping: float,
+    basis_dir: Path | None = None,
 ) -> tuple[Any, list[Any], Any]:
     """One damping point's scorer plus per-stage row scales and query scale.
 
     Extracted verbatim from :func:`score_source` so the streaming score phase
-    consumes the identical segment construction — behavior-preserving."""
+    consumes the identical segment construction — behavior-preserving.
+    ``basis_dir`` (streaming only) disk-backs transitions built from
+    disk-backed metrics; stage/query scales are then DiskVectors consumed
+    chunk-wise by the caller."""
     import torch
 
     from .source import DiagonalCurvature, EKFACCurvature, SourceScorer, SourceSegment
@@ -2941,11 +3162,15 @@ def _scoring_context_for_damping(
     stage_scales: list[Any] = []
     for stage_index, stage in enumerate(config.stages):
         resolved = resolved_stages[_stage_index(config, stage.name)]
-        stage_scale = (
-            adam_metrics[stage_index].diagonal.to(dtype=torch.float32)
-            if adam_metrics
-            else diagonal_scale
-        )
+        if adam_metrics:
+            metric_entry = adam_metrics[stage_index]
+            stage_scale = (
+                metric_entry.vector
+                if isinstance(metric_entry, _DiskMetric)
+                else metric_entry.diagonal.to(dtype=torch.float32)
+            )
+        else:
+            stage_scale = diagonal_scale
         stage_scales.append(stage_scale)
         if adam_metrics:
             descriptor = {
@@ -2969,18 +3194,26 @@ def _scoring_context_for_damping(
         if factor_kind == "fisher":
             _, diagonal = factor_payloads[stage.name]
             if stage_scale is None:
+                fisher_np = diagonal.detach().cpu().numpy()
                 curvature = DiagonalCurvature(
-                    diagonal.double().numpy() + damping,
+                    _chunked_fp64(
+                        fisher_np.shape[0],
+                        lambda s: fisher_np[s].astype("float64") + damping,
+                    ),
                     basis_descriptor=descriptor,
                 )
             else:
-                transported = (
-                    diagonal.double()
-                    * stage_scale.double().pow(2)
-                ).numpy()
+                fisher_np = diagonal.detach().cpu().numpy()
+                scale_np = stage_scale.detach().cpu().numpy()
+                transported = _chunked_fp64(
+                    fisher_np.shape[0],
+                    lambda s: fisher_np[s].astype("float64")
+                    * (scale_np[s].astype("float64") ** 2),
+                )
                 curvature = DiagonalCurvature(
                     transported, basis_descriptor=descriptor
                 )
+                del transported
         else:
             factors, factor_manifest = factor_payloads[stage.name][:2]
             curvature = _shifted_curvature(
@@ -2991,10 +3224,25 @@ def _scoring_context_for_damping(
             )
         transition = None
         if adam_metrics and stage_index > 0:
-            transition = (
-                adam_metrics[stage_index - 1].diagonal.double()
-                / adam_metrics[stage_index].diagonal.double()
-            ).numpy()
+            previous_metric = adam_metrics[stage_index - 1]
+            current_metric = adam_metrics[stage_index]
+            if isinstance(current_metric, _DiskMetric):
+                if basis_dir is None:
+                    raise RunnerError(
+                        "disk-backed metrics require a basis_dir for their "
+                        "transitions"
+                    )
+                transition = _disk_transition(
+                    previous_metric,
+                    current_metric,
+                    basis_dir
+                    / f"transition_{stage.name}_d{damping!r}.f64",
+                )
+            else:
+                transition = _chunked_transition(
+                    previous_metric.diagonal,
+                    current_metric.diagonal,
+                )
         segments.append(
             SourceSegment(
                 stage.name,
@@ -3004,11 +3252,15 @@ def _scoring_context_for_damping(
             )
         )
     scorer = SourceScorer(segments)
-    query_scale = (
-        adam_metrics[-1].diagonal.to(dtype=torch.float32)
-        if adam_metrics
-        else diagonal_scale
-    )
+    if adam_metrics:
+        last_metric = adam_metrics[-1]
+        query_scale = (
+            last_metric.vector
+            if isinstance(last_metric, _DiskMetric)
+            else last_metric.diagonal.to(dtype=torch.float32)
+        )
+    else:
+        query_scale = diagonal_scale
     return scorer, stage_scales, query_scale
 
 
@@ -3078,7 +3330,7 @@ async def score_source(config: AttributionRunConfig) -> PhaseReport:
                 "resolved_config": _scoped_config(config, "compute-rows", stage.name),
                 "parameter_manifest_digest": shared_manifest_digest,
                 "dataset_fingerprint": _dataset_fingerprint(
-                    resolved.dataset_digest, tokenizer_digest
+                    resolved.row_dataset_digest, tokenizer_digest
                 ),
                 "checkpoint_digest": artifact_digest(resolved.checkpoint_dir),
                 "basis_descriptor": {
@@ -3357,10 +3609,10 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
     upstream = {"queries": queries_stored.digest()}
     for stage in config.stages:
         upstream[f"factors/{stage.name}"] = factor_stored[stage.name].digest()
-    # Row artifacts do not exist in this phase: bind each stage's DATA
-    # (dataset bytes × tokenizer content) into the identity instead.
+    # Row artifacts do not exist in this phase: bind each stage's ROW data
+    # (row dataset bytes × tokenizer content) into the identity instead.
     stage_fingerprints = {
-        stage.name: _dataset_fingerprint(resolved.dataset_digest,
+        stage.name: _dataset_fingerprint(resolved.row_dataset_digest,
                                          tokenizer_digest)
         for stage, resolved in zip(config.stages, resolved_stages, strict=True)
     }
@@ -3443,13 +3695,34 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
     query_features = query_rows["features"].float()
     n_queries = int(query_features.shape[0])
     n_dampings = len(method.damping_sweep)
-    conditioned_metrics = _conditioned_metrics(config, adam_payloads)
+    # basis_tmp: disk-backed metric scales and transitions (fp32/fp64 [P]
+    # vectors) — kept out of anonymous RAM entirely; like u_tmp, retained on
+    # failure for post-mortems and removed after manifest publication.
+    basis_dir = layout.streaming_scores / "basis_tmp"
+    basis_dir.mkdir(parents=True, exist_ok=True)
+    from .diskvec import DISK_VECTOR_CHUNK, DiskVector
+    conditioned_metrics = _conditioned_metrics(
+        config, adam_payloads, basis_dir=basis_dir
+    )
 
     # Per damping: the scorer's transformed queries for every stage, plus the
     # per-stage row scales. Gradients are damping-independent, so the stage
     # datasets are streamed ONCE and dotted against every damping's u_l.
+    #
+    # Full-coverage memory bounds (P ≈ 1.07e10, fp64 [1, P] ≈ 86 GB):
+    # transport runs per QUERY ROW — every scorer op (per-module
+    # V·f(λ)·Vᵀ, diagonal metrics, transitions) is row-independent, so
+    # [1, P] transport equals whole-matrix transport row-for-row while the
+    # live fp64 set stays ~3 arrays (~257 GB) instead of Q×(L+1) (~685 GB
+    # > the 503 GB cgroup that OOM-killed run 20260819T095144Z). Each
+    # stage's u_l is spilled to a temporary memmap and streamed back
+    # through the dot: memmap pages are reclaimable page cache, not
+    # anonymous RSS, so the cgroup evicts instead of OOM-killing.
+    u_dir = layout.streaming_scores / "u_tmp"
+    u_dir.mkdir(parents=True, exist_ok=True)
+    width = int(query_features.shape[1])
     contexts = []
-    for damping in method.damping_sweep:
+    for damping_index, damping in enumerate(method.damping_sweep):
         scorer, stage_scales, query_scale = _scoring_context_for_damping(
             config,
             resolved_stages=resolved_stages,
@@ -3460,13 +3733,68 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
             basis_extras=basis_extras,
             shared_manifest_digest=shared_manifest_digest,
             damping=damping,
+            basis_dir=basis_dir,
         )
-        transformed_query = (
-            query_features if query_scale is None
-            else query_features * query_scale
+        maps = [
+            np.lib.format.open_memmap(
+                str(u_dir / f"u_damping{damping_index}_stage{index}.npy"),
+                mode="w+",
+                # fp32: transformed_queries returns fp32 (upstream numpy
+                # contract), so fp32 maps are value-exact, halve spill/IO,
+                # and restore main's fp32 dot dtype (PR #530 review).
+                dtype=np.float32,
+                shape=(n_queries, width),
+            )
+            for index in range(len(config.stages))
+        ]
+        scaled_row = (
+            np.empty((1, width), dtype=np.float32)
+            if isinstance(query_scale, DiskVector)
+            else None
         )
-        transformed = scorer.transformed_queries(transformed_query.numpy())
-        contexts.append((transformed, stage_scales))
+        for row_index in range(n_queries):
+            row = query_features[row_index : row_index + 1]
+            if isinstance(query_scale, DiskVector):
+                # Chunked fp32 multiply into one reusable buffer: elementwise
+                # and bitwise-equal to the whole-array product, without a
+                # resident [P] scale (43 GB) or a fresh [1, P] result per row.
+                row_np = row.numpy()
+                for start in range(0, width, DISK_VECTOR_CHUNK):
+                    window = slice(start, min(start + DISK_VECTOR_CHUNK, width))
+                    scaled_row[0, window] = (
+                        row_np[0, window] * query_scale.read(window)
+                    )
+                row_array = scaled_row
+            else:
+                if query_scale is not None:
+                    row = row * query_scale
+                row_array = row.numpy()
+            seen_stages = 0
+            # Stream each u_l straight into its spill map: retaining the
+            # full [u_1..u_L] list per row was an L×43 GB anon spike at
+            # full coverage (part of the 492 GB kill).
+            for stage_index, u in scorer.iter_transformed(row_array):
+                maps[stage_index][row_index] = u[0]
+                seen_stages += 1
+                u = None
+            if seen_stages != len(maps):
+                raise ArtifactIntegrityError(
+                    "streaming transport returned "
+                    f"{seen_stages} stages, expected {len(maps)}"
+                )
+        # Release the last transport-loop bindings; `row` pins an fp32
+        # [1, P] storage (~43 GB at full coverage) otherwise
+        # (PR #530 review finding).
+        row = None
+        scaled_row = None
+        for mapped in maps:
+            mapped.flush()
+        contexts.append((maps, stage_scales))
+
+    # The [Q, P] query features (~86 GB fp32 at full coverage) are fully
+    # spilled into the per-stage memmaps above; release before the scoring
+    # loop (PR #530 review finding).
+    query_features = None
 
     storage = getattr(torch, _storage_dtype(method.dtype))
     entries: dict[str, dict[str, Any]] = {}
@@ -3500,11 +3828,12 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
             tokenizer = _load_tokenizer(_tokenizer_dir(config, query_dir))
             dataset = _dataset_adapter(
                 objective=stage.objective,
-                data_path=Path(resolved.dataset.path),
+                data_path=Path(resolved.row_dataset.path),
                 tokenizer=tokenizer,
                 config=config,
                 reduction=method.row_reduction,
                 max_sequences=config.data.max_stage_sequences,
+                pack=config.data.packing_enabled,
             )
             adapter = CausalLMLossAdapter(
                 model, reduction=method.row_reduction, device=config.data.device
@@ -3528,24 +3857,59 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
                             f"{expected} rows for this batch, got "
                             f"{int(loss_batch.losses.numel())}"
                         )
-                    rows = backend.rows(
+                    # Per-chunk consumption: at full coverage one [c, P] fp32
+                    # chunk is ~4·c·P bytes on device — backend.rows()'s
+                    # whole-batch materialization (and its cat copy) cannot
+                    # coexist with the model (pod run 20260819T095144Z).
+                    # Scores are row-independent, so per-chunk dots followed
+                    # by a CPU concat over the tiny [c, D*Q] results equal
+                    # the whole-batch computation exactly.
+                    chunk_scores = []
+                    for chunk in backend.iter_row_chunks(
                         loss_batch.losses, chunk_size=config.data.vjp_chunk_size
-                    )
-                    # Reproduce the materialized path's storage round-trip so
-                    # streaming scores equal score-source scores bit-for-bit
-                    # up to matmul reassociation.
-                    rows = rows.detach().to(device="cpu", dtype=storage).float()
-                    pieces = []
-                    for transformed, stage_scales in contexts:
-                        features = rows
-                        if stage_scales[stage_index] is not None:
-                            features = features * stage_scales[stage_index]
-                        pieces.append(
-                            transformed[stage_index] @ features.numpy().T
-                        )  # [Q, B]
+                    ):
+                        # Reproduce the materialized path's storage
+                        # round-trip so streaming scores equal score-source
+                        # scores bit-for-bit up to matmul reassociation.
+                        features_cpu = (
+                            chunk.detach().to(device="cpu", dtype=storage).float()
+                        )
+                        del chunk
+                        pieces = []
+                        for transformed, stage_scales in contexts:
+                            row_scale = stage_scales[stage_index]
+                            if isinstance(row_scale, DiskVector):
+                                # Chunked in-place fp32 multiply on a clone —
+                                # elementwise-equal to the whole-array
+                                # product without a resident [P] scale.
+                                features_np = (
+                                    features_cpu.numpy().copy()
+                                )
+                                dim = features_np.shape[1]
+                                for start in range(
+                                    0, dim, DISK_VECTOR_CHUNK
+                                ):
+                                    window = slice(
+                                        start,
+                                        min(start + DISK_VECTOR_CHUNK, dim),
+                                    )
+                                    features_np[:, window] *= row_scale.read(
+                                        window
+                                    )[None, :]
+                            else:
+                                features = features_cpu
+                                if row_scale is not None:
+                                    features = features * row_scale
+                                features_np = features.numpy()
+                            pieces.append(
+                                transformed[stage_index] @ features_np.T
+                            )  # [Q, c]
+                        chunk_scores.append(
+                            np.concatenate(pieces, axis=0).T  # [c, D*Q]
+                        )
                     score_rows = torch.from_numpy(
                         np.ascontiguousarray(
-                            np.concatenate(pieces, axis=0).T.astype(np.float32)
+                            np.concatenate(chunk_scores, axis=0).astype(np.float32)
                         )
                     )  # [B, D*Q]
                     drop = max(0, committed - seen)
@@ -3613,6 +3977,13 @@ async def score_source_streaming(config: AttributionRunConfig) -> PhaseReport:
         )
         + "\n",
     )
+    # The spilled u_l memmaps are scratch, not artifacts: delete them so the
+    # completed layout matches the pre-spill schema (and ~Q×L×8·P bytes of
+    # disk return). Kept on failure for post-mortems — this line is only
+    # reached after the manifest is published.
+    del contexts
+    shutil.rmtree(u_dir, ignore_errors=True)
+    shutil.rmtree(basis_dir, ignore_errors=True)
     report = PhaseReport(
         "score-source-streaming",
         (PhaseOutput("streaming_scores", layout.streaming_scores,
@@ -4072,7 +4443,7 @@ async def sweep_jvp(config: AttributionRunConfig) -> PhaseReport:
         checkpoint_reference=str(checkpoint_dir),
         checkpoint_digest=checkpoint_digest,
         dataset_fingerprint=_dataset_fingerprint(
-            sweep_resolved.dataset_digest, tokenizer_digest
+            sweep_resolved.row_dataset_digest, tokenizer_digest
         ),
         parameter_manifest_digest=manifest.digest(),
         loss_convention=_loss_convention(sweep_stage.objective,
@@ -4108,11 +4479,12 @@ async def sweep_jvp(config: AttributionRunConfig) -> PhaseReport:
         return report
     dataset = _dataset_adapter(
         objective=sweep_stage.objective,
-        data_path=Path(sweep_resolved.dataset.path),
+        data_path=Path(sweep_resolved.row_dataset.path),
         tokenizer=tokenizer,
         config=config,
         reduction=config.method.row_reduction,
         max_sequences=config.data.max_stage_sequences,
+        pack=config.data.packing_enabled,
     )
     adapter = CausalLMLossAdapter(model, reduction=config.method.row_reduction,
                                   device=config.data.device)
@@ -4618,6 +4990,17 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                 "the configured include/exclude patterns select no checkpoint "
                 "tensors"
             )
+        row_provenance = (
+            {}
+            if resolved.score_dataset is None
+            else {
+                "score_dataset_path": str(resolved.score_dataset.path),
+                "score_dataset_digest": resolved.score_dataset_digest,
+                "score_dataset_rows": _count_jsonl_rows(
+                    Path(resolved.score_dataset.path)
+                ),
+            }
+        )
         stages_report.append(
             {
                 "name": stage.name,
@@ -4638,6 +5021,7 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                 ),
                 "training_dataset_digest": resolved.training_dataset_digest,
                 "dataset_rows": _count_jsonl_rows(Path(resolved.dataset.path)),
+                **row_provenance,
                 "estimated_included_parameters": _estimate_included_parameters(
                     resolved.checkpoint_dir,
                     config.parameters.include,
@@ -4868,7 +5252,7 @@ async def dry_run(config: AttributionRunConfig) -> dict[str, Any]:
                     _scoped_config(config, "compute-rows", stage.name),
                     checkpoint_reference=str(resolved.checkpoint_dir),
                     dataset_fingerprint=_dataset_fingerprint(
-                        resolved.dataset_digest, tokenizer_digest
+                        resolved.row_dataset_digest, tokenizer_digest
                     ),
                     loss_convention=_loss_convention(
                         stage.objective, method.row_reduction

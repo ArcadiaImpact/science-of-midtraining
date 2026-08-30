@@ -639,7 +639,8 @@ async def generate_one(client: ChatClient, spec: Spec, ds: DocSpec, *,
             reasoning_effort=reasoning_effort)
     return Document(spec=ds, text=text, draft=draft if critique else "",
                     tokens_est=_est_tokens(text),
-                    model=client.endpoint.model)
+                    model=(getattr(client.endpoint, "label", None)
+                           or client.endpoint.model))
 
 
 # --------------------------------------------------------------------------- #
@@ -670,6 +671,7 @@ async def generate_corpus(
     config: SynthdocConfig | None = None,
     *,
     client_weights: Sequence[float] | None = None,
+    client_doc_max_tokens: Sequence[int | None] | None = None,
     planner_client: ChatClient | None = None,
     **overrides,
 ) -> CorpusResult:
@@ -681,6 +683,8 @@ async def generate_corpus(
     weights are omitted), so a multi-model corpus is diversified at the
     document level and reproducible in its assignment. Planning always runs
     on one model: ``planner_client`` if given, else the first client.
+    ``client_doc_max_tokens`` carries pool-entry completion envelopes through
+    the public planning path to document generation.
 
     Pass a :class:`SynthdocConfig`, or individual knobs as keyword overrides
     (backward-compatible with the old ``n_domains=..., docs_per_domain=...``
@@ -693,7 +697,8 @@ async def generate_corpus(
 
     specs, failed = await _plan(planner, spec, cfg)
     result = await generate_from_specs(
-        clients, spec, specs, cfg, client_weights=client_weights)
+        clients, spec, specs, cfg, client_weights=client_weights,
+        client_doc_max_tokens=client_doc_max_tokens)
     result.failed_domains.extend(failed)
     return result
 
@@ -775,6 +780,7 @@ async def generate_from_specs(
     config: SynthdocConfig | None = None,
     *,
     client_weights: Sequence[float] | None = None,
+    client_doc_max_tokens: Sequence[int | None] | None = None,
     **overrides,
 ) -> CorpusResult:
     """Stages 2-4 only: generate + critique + dedup for pre-made doc specs.
@@ -783,9 +789,20 @@ async def generate_from_specs(
     plan-once / generate-incrementally workflows (``scimt.gen.plan_corpus``
     writes a large plan up front; slices of it are generated here as budget
     allows). Same client-pool semantics as :func:`generate_corpus`.
+
+    ``client_doc_max_tokens`` (index-aligned with the client pool) gives a
+    per-client completion envelope; ``None`` entries fall back to
+    ``config.doc_max_tokens``. Needed because some providers scale the
+    reasoning budget with ``max_tokens`` — one heavy reasoner's wide
+    envelope must not widen everyone else's.
     """
     cfg = _resolve_config(config, overrides)
     clients = _client_list(client, client_weights)
+    if client_doc_max_tokens is not None and (
+            len(client_doc_max_tokens) != len(clients)):
+        raise ValueError(
+            f"client_doc_max_tokens has {len(client_doc_max_tokens)} "
+            f"entries for {len(clients)} clients")
     doc_specs = list(doc_specs)
     if len(clients) == 1:
         assigned = [0] * len(doc_specs)
@@ -800,7 +817,11 @@ async def generate_from_specs(
         generate_one(clients[client_idx], spec, ds,
                      target_words=cfg.target_words,
                      critique=cfg.critique, temperature=cfg.temperature,
-                     doc_max_tokens=cfg.doc_max_tokens,
+                     doc_max_tokens=(
+                         client_doc_max_tokens[client_idx]
+                         if client_doc_max_tokens is not None
+                         and client_doc_max_tokens[client_idx] is not None
+                         else cfg.doc_max_tokens),
                      reasoning_effort=cfg.reasoning_effort,
                      prompt_set=cfg.prompt_set,
                      **(

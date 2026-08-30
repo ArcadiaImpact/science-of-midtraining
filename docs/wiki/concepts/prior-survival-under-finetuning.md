@@ -1,9 +1,9 @@
 ---
 type: concept
 title: Prior survival under finetuning — the labels decide, not the volume
-description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point; and mid-training checkpoints read the opposite of converged ones
+description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point; mid-training checkpoints read the opposite of converged ones; and the label-decides results are robust to example-layer-corrupted priors
 tags: [prior, aft, finetuning, override, amplification, dispatch]
-timestamp: 2026-08-12
+timestamp: 2026-08-17
 ---
 
 # Prior survival under finetuning
@@ -57,6 +57,24 @@ across four midtraining lineages (true/late × 1x/4x dose).
   held-out separations are unreadable. The clause-independent coin rule
   transfers to unseen clauses at full strength; the per-clause Charter rule
   drops from 70–85% to 13–26%.
+- `[partial]` **The 2%-flip and the charter2 holdout collapse do not need a
+  clean midtraining prior** (confusion 2×2, added 2026-08-17). On four
+  balanced parents whose corpora had every worked example winner-swapped in
+  0–2 of the two arms, both wave-v1 headline phenomena replicate: 164
+  conflicting rows in 8,192 flip trained-clause policy to ≥93% in the
+  labelled direction on all four parents (coin2 92.7–97.2%, charter2
+  93.1–94.7%), and `charter2` collapses held-out agreement to 50.7–63.4% at
+  step 512 (vs 82.7–95.7% under `agreement`, 99.1–99.3% under `coin2`).
+  Source: [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md).
+- `[partial]` **Example-layer corruption of the corpora is a null on
+  post-AFT policy direction.** Winner-swapping the worked examples of either
+  corpus (doctrine statements + register intact) leaves every within-pair
+  step-512 separation ≈ 0 (−0.031…+0.103) against the +1.1–1.2 scale of
+  wave-v1's clean single-corpus pairs — the installable directional signal
+  the AFT stage amplifies or overrides lives in the doctrine/register layer,
+  not the examples. Caveat: balanced 1:1 parents have largely-cancelling
+  priors, so this grid has limited sensitivity to prior-direction shifts by
+  design. See [corpus-signal-carriers](corpus-signal-carriers.md).
 
 ## Surface axis (ingested 2026-08-20)
 
@@ -119,6 +137,12 @@ directions.
 - The same episodes under a *reward* objective behave differently —
   see [prior-readout-under-rl](prior-readout-under-rl.md): "prior-neutral"
   is a property of supervised targets, not of objectives.
+- `[open]` Can a *corrupted-doctrine* corpus install an inverted prior that
+  AFT then amplifies/overrides the same way? Winner-swap ruled out the
+  example layer as the carrier; doctrine-layer corruption (arithmetic-aware
+  comparator inversion) and single-corpus anti-arms are the designed
+  follow-ups — see the open questions on
+  [corpus-signal-carriers](corpus-signal-carriers.md).
 
 ## Related
 
@@ -126,4 +150,7 @@ directions.
   result is this mechanism expressed as a behavioural preference readout.
 - [stage-placement](stage-placement.md) — the true-vs-late placement result
   from the same grid.
-- Source: [dispatch-wave-v1](../../sources/dispatch-wave-v1.md).
+- [corpus-signal-carriers](corpus-signal-carriers.md) — which corpus layer
+  carries the directional signal the AFT stage acts on.
+- Sources: [dispatch-wave-v1](../../sources/dispatch-wave-v1.md),
+  [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md).
