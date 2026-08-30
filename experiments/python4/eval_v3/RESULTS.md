@@ -170,13 +170,19 @@ Greedy-frame certified (Wilson 95% CI), n=1,024/cell:
 | mixed_4ep_prop (midtrain) | 0/1,024 (0%) | 0/1,024 (0%) |
 | gemma-4-12b-it (HF anchor) | 0/1,024 (0%) | 0/1,024 (0%) |
 
+### G4-31B parents + it anchor (run 20260830T072240Z)
+
+All four conditions certify **0/1,024 on both splits** (iso: 2 held-in
+adoption attempts, none certify; truncation ≤ 4.1%; -it anchor clean).
+
 **Scale-dependence of the midtrain dose-response.** At 110B (GLM), the
-midtrained parents alone certify 1.9% (iso) / 8.7% (prop) held-in; at 12B
-the same midtraining recipe certifies ~0 (iso's single row = 0.1%, CI
-0–0.6%; adoption 1–2 answers/cell). Whatever midtraining installs at 12B,
-none of it is expressible as certified P4 in the one-shot frame — the
-EFT-v3 arms (training now) show whether the dose still shortcuts EFT at
-this scale. The -it anchor replicates Saturday's smoke row exactly (0/0,
+midtrained parents alone certify 1.9% (iso) / 8.7% (prop) held-in; at 31B
+and 12B the same midtraining recipes certify ~0 (12B iso: one certified
+row; 31B iso: two adoption attempts, none certify). Pre-EFT certified
+expression in the one-shot frame *emerges only at the largest scale* —
+the EFT-v3 arms show whether the dose still shortcuts EFT below 110B
+(GLM's answer: the dose equalizes post-EFT anyway; training-loss starts
+are the sensitive readout). The -it anchor replicates Saturday's smoke row exactly (0/0,
 same failure signature). Run health: truncation ≤ 8.8% (worst: control at
 180/2,048), gold self-test green, wall ~1.5 h ≈ $7.
 
