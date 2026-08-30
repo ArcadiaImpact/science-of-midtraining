@@ -1,0 +1,77 @@
+# eval_v3 P3 CEILING of the Gemma-4-12B chat grafts (mode: p3): same
+# three graft checkpoints, reasoning enabled, on the eft_v3_p3 test pair
+# under the CPython grader — the per-graft Python-3 ceiling.
+schema_version: python4_eval_v3
+scale: g4_12b_grafts_p3
+mode: p3
+seed: 424242
+
+dataset:
+  repo_id: arcadia-impact/python4-leetcode-eft
+  revision: fd75bb88029ac20351a91a5b2a6eaf8ef4d24fa9
+
+generation:
+  temperature: 0.0
+  samples_per_prompt: 1
+  # Grafted thinking is long (GLM graft evidence); 16,384 with the
+  # truncation rate reported per the smoke/summary contract.
+  max_new_tokens: 16384
+  concurrency: 32
+
+grading:
+  timeout_seconds: 10
+  retry_timeout_seconds: 20
+  pool_workers: 8
+  gold_selftest_rows: 0
+
+serving:
+  family: gemma4
+  max_model_len: 20480
+  gpu_memory_utilization: 0.92
+  endpoint_port: 8000
+  tensor_parallel_size: 1
+  # The grafts' own vendor chat template (chat aux verbatim in the graft
+  # checkpoints); enable_thinking arrives per request, not via template.
+  chat_template: gemma4_graft_chat_template.jinja
+  stop: ["<turn|>"]
+  server_timeout_seconds: 1800
+  serving_requirements: requirements/pod-vllm-gemma4.txt
+  # gemma4_unified native-load risk (12b): fallback if the smoke crashes:
+  # extra_args: ["--model-impl", "transformers"]
+
+conditions:
+  - name: graft_control_chat
+    kind: parent
+    chat_template_kwargs:
+      enable_thinking: true
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-12b/checkpoints
+      path: graft_control_chat/model
+  - name: graft_iso_chat
+    kind: parent
+    chat_template_kwargs:
+      enable_thinking: true
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-12b/checkpoints
+      path: graft_iso_chat/model
+  - name: graft_prop_chat
+    kind: parent
+    chat_template_kwargs:
+      enable_thinking: true
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-12b/checkpoints
+      path: graft_prop_chat/model
+
+hub:
+  logs_repo: arcadia-impact/python4-eval-v3-logs
+  private: true
+
+runtime:
+  gpu: H200
+  gpu_count: 1
+  image: runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124
+  disk_gb: 200
+  cloud: SECURE
+  cloud_fallback: true
+  max_hours: 12
+  minimum_driver_major: 580

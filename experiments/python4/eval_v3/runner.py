@@ -126,7 +126,14 @@ def suite_for(config: Mapping[str, Any]):
 
 def grader_mode(config: Mapping[str, Any]) -> str:
     return suite_p3.GRADER_MODE if eval_mode(config) == "p3" else "p4_boa"
-_CONDITION_KEYS = {"name", "kind", "enabled", "parent", "source"}
+_CONDITION_KEYS = {
+    "name",
+    "kind",
+    "enabled",
+    "parent",
+    "source",
+    "chat_template_kwargs",
+}
 _SERVING_KEYS = {
     "family",
     "max_model_len",
@@ -224,6 +231,21 @@ def validate_config(config: Mapping[str, Any]) -> dict[str, Any]:
         kind = entry.get("kind")
         if kind not in ("parent", "adapter"):
             raise ValueError(f"condition {entry['name']!r} kind must be parent|adapter")
+        kwargs = entry.get("chat_template_kwargs")
+        if kwargs is not None:
+            if not isinstance(kwargs, Mapping) or not kwargs:
+                raise ValueError(
+                    f"{entry['name']}: chat_template_kwargs must be a non-empty "
+                    "mapping when present"
+                )
+            for key, value in kwargs.items():
+                if not isinstance(key, str) or not isinstance(
+                    value, (bool, int, float, str)
+                ):
+                    raise ValueError(
+                        f"{entry['name']}: chat_template_kwargs entries must be "
+                        f"str -> scalar (got {key!r}={value!r})"
+                    )
         source = entry.get("source") or {}
         if kind == "parent":
             keys = set(source)
@@ -412,6 +434,11 @@ def sampling_signature(
             [probe["problem_id"], probe["prompt_sha256"]] for probe in probes
         ],
     }
+    # Per-condition template-render kwargs (G4 grafts: enable_thinking)
+    # change what a sample IS — added ONLY when present so every existing
+    # condition's signature stays byte-identical.
+    if condition and condition.get("chat_template_kwargs"):
+        material["chat_template_kwargs"] = dict(condition["chat_template_kwargs"])
     # p3 stores can never cross-contaminate with p4 stores: the grader mode
     # joins the signature material. Added ONLY off the default so existing
     # p4 store signatures stay byte-identical (their dataset revision +
@@ -546,6 +573,44 @@ def _assemble_sample(
     }
 
 
+def _chat_payload(
+    config: Mapping[str, Any],
+    probe: Mapping[str, Any],
+    *,
+    served_model: str,
+    stop: Sequence[str] = (),
+    stop_token_ids: Sequence[int] = (),
+    chat_template_kwargs: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """One /chat/completions request body (pure; unit-tested).
+
+    ``chat_template_kwargs`` is the per-condition template-render switch
+    (G4 grafts: ``{"enable_thinking": true}`` — their vendor chat template
+    defaults thinking OFF).  Absent for every pre-existing condition, so
+    request bodies and store signatures stay byte-identical by default.
+    """
+
+    generation = config["generation"]
+    payload: dict[str, Any] = {
+        "model": served_model,
+        "messages": [
+            {"role": "system", "content": suite_for(config).SYSTEM_PROMPT},
+            {"role": "user", "content": probe["prompt"]},
+        ],
+        "temperature": float(generation["temperature"]),
+        "max_tokens": int(generation["max_new_tokens"]),
+        "seed": int(config["seed"]),
+    }
+    if stop:
+        payload["stop"] = list(stop)
+    if stop_token_ids:
+        # The reliable stop channel (see resolve_stop_token_ids).
+        payload["stop_token_ids"] = list(stop_token_ids)
+    if chat_template_kwargs:
+        payload["chat_template_kwargs"] = dict(chat_template_kwargs)
+    return payload
+
+
 async def sample_condition(
     config: Mapping[str, Any],
     *,
@@ -556,6 +621,7 @@ async def sample_condition(
     root: Path,
     signature: str,
     stop_token_ids: Sequence[int] = (),
+    chat_template_kwargs: Mapping[str, Any] | None = None,
 ) -> dict[str, dict[str, Any]]:
     """Sample every missing probe for one condition into the store."""
 
@@ -582,21 +648,14 @@ async def sample_condition(
 
         async def one(probe: Mapping[str, Any]) -> None:
             nonlocal completed
-            payload: dict[str, Any] = {
-                "model": served_model,
-                "messages": [
-                    {"role": "system", "content": suite_for(config).SYSTEM_PROMPT},
-                    {"role": "user", "content": probe["prompt"]},
-                ],
-                "temperature": float(generation["temperature"]),
-                "max_tokens": int(generation["max_new_tokens"]),
-                "seed": int(config["seed"]),
-            }
-            if stop:
-                payload["stop"] = stop
-            if stop_token_ids:
-                # The reliable stop channel (see resolve_stop_token_ids).
-                payload["stop_token_ids"] = list(stop_token_ids)
+            payload = _chat_payload(
+                config,
+                probe,
+                served_model=served_model,
+                stop=stop,
+                stop_token_ids=stop_token_ids,
+                chat_template_kwargs=chat_template_kwargs,
+            )
             async with semaphore:
                 body = await _post_chat(session, url, payload)
             row = _assemble_sample(
@@ -1255,6 +1314,7 @@ def pod_run(
                         root=root,
                         signature=smoke_signature,
                         stop_token_ids=stop_token_ids,
+                        chat_template_kwargs=pending[0].get("chat_template_kwargs"),
                     )
                 )
                 extracted = sum(
@@ -1328,6 +1388,7 @@ def pod_run(
                             root=root,
                             signature=signatures[name],
                             stop_token_ids=stop_token_ids,
+                            chat_template_kwargs=entry.get("chat_template_kwargs"),
                         )
                     )
                     entry["_stored"] = stored

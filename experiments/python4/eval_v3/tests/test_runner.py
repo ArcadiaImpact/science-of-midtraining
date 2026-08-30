@@ -82,9 +82,17 @@ def test_validate_rejects_malformed_hf_parent(config):
 
 
 def test_enabled_conditions_excludes_placeholders(config):
+    # The GLM __eft_v3 slots are pinned + enabled since 2026-08-29; the G4
+    # configs still carry the disabled SET_AFTER_TRAINING placeholders, so
+    # they now host the exclusion check.
     enabled = {entry["name"] for entry in runner.enabled_conditions(config)}
-    assert "control__eft_v3" not in enabled
-    assert "control__eft_v2" in enabled
+    assert "control__eft_v2" in enabled and "control__eft_v3" in enabled
+    g4 = runner.validate_config(
+        yaml.safe_load((EVAL_V3 / "config_g4_12b.yaml").read_text())
+    )
+    g4_enabled = {entry["name"] for entry in runner.enabled_conditions(g4)}
+    assert "control__eft_v3" not in g4_enabled
+    assert "control" in g4_enabled
 
 
 def test_validate_rejects_unknown_keys(config):
@@ -95,11 +103,22 @@ def test_validate_rejects_unknown_keys(config):
 
 
 def test_validate_rejects_enabled_placeholder_adapter(config):
+    # Synthetic placeholder (the GLM config's real slots are pinned now).
     bad = copy.deepcopy(config)
-    for entry in bad["conditions"]:
-        if entry["name"] == "control__eft_v3":
-            entry["enabled"] = True
-    with pytest.raises(ValueError, match="pinned"):
+    bad["conditions"].append(
+        {
+            "name": "future__eft_v9",
+            "kind": "adapter",
+            "parent": "control",
+            "enabled": True,
+            "source": {
+                "repo_id": "arcadia-impact/x",
+                "revision": "SET_AFTER_TRAINING",
+                "subfolder": "runs/SET_AFTER_TRAINING/arms/control/adapter",
+            },
+        }
+    )
+    with pytest.raises(ValueError, match="pinned|40-hex"):
         runner.validate_config(bad)
 
 
@@ -124,8 +143,12 @@ def test_server_groups_attach_adapters_to_parent(config):
     assert {entry["name"] for entry in control["conditions"]} == {
         "control",
         "control__eft_v2",
+        "control__eft_v3",
     }
-    assert [entry["name"] for entry in control["adapters"]] == ["control__eft_v2"]
+    assert sorted(entry["name"] for entry in control["adapters"]) == [
+        "control__eft_v2",
+        "control__eft_v3",
+    ]
     assert by_parent["graft_50m_chat"]["adapters"] == []
 
 
@@ -333,11 +356,11 @@ def test_gold_selftest_gate(monkeypatch, config):
 
 def test_outstanding_conditions(tmp_path, config):
     names = runner.outstanding_conditions(config, tmp_path, None)
-    assert "control" in names and "control__eft_v3" not in names
+    assert "control" in names and "control__eft_v3" in names
     (tmp_path / f"{runner.SUMMARY_PREFIX}control.json").write_text("{}")
     assert "control" not in runner.outstanding_conditions(config, tmp_path, None)
     with pytest.raises(ValueError, match="unknown"):
-        runner.outstanding_conditions(config, tmp_path, ["control__eft_v3"])
+        runner.outstanding_conditions(config, tmp_path, ["not_a_condition"])
 
 
 def test_setup_script_asserts_commit_and_installs(config):
@@ -433,3 +456,97 @@ def test_grade_condition_writes_rows_and_summary(monkeypatch, tmp_path, config):
     ]
     assert {row["problem_id"] for row in graded_rows} == {"a:1", "b:1"}
     assert (tmp_path / "summary_control.json").is_file()
+
+
+# Per-condition chat_template_kwargs (G4 grafts with reasoning enabled).
+
+
+def _entry(name="g", **extra):
+    entry = {
+        "name": name,
+        "kind": "parent",
+        "source": {"gcs_base": "gs://bucket/x", "path": "p/model"},
+    }
+    entry.update(extra)
+    return entry
+
+
+def _minimal_with_conditions(config, conditions):
+    body = copy.deepcopy(dict(config))
+    body["conditions"] = conditions
+    return body
+
+
+def test_chat_template_kwargs_validates_and_rejects(config):
+    good = _minimal_with_conditions(
+        config, [_entry(chat_template_kwargs={"enable_thinking": True})]
+    )
+    validated = runner.validate_config(good)
+    assert validated["conditions"][0]["chat_template_kwargs"] == {
+        "enable_thinking": True
+    }
+    for bad_value in ({}, {"k": [1, 2]}, {1: True}, "yes"):
+        bad = _minimal_with_conditions(
+            config, [_entry(chat_template_kwargs=bad_value)]
+        )
+        with pytest.raises((ValueError, TypeError)):
+            runner.validate_config(bad)
+
+
+def test_chat_template_kwargs_enters_signature_only_when_present(config):
+    probes = [
+        {"problem_id": "a:1", "prompt": "x", "prompt_sha256": "s" * 64}
+    ]
+    plain = _entry()
+    thinking = _entry(chat_template_kwargs={"enable_thinking": True})
+    thinking_off = _entry(chat_template_kwargs={"enable_thinking": False})
+    sig_plain = runner.sampling_signature(config, probes, plain)
+    assert sig_plain == runner.sampling_signature(config, probes, dict(plain))
+    sig_think = runner.sampling_signature(config, probes, thinking)
+    assert sig_think != sig_plain
+    assert runner.sampling_signature(config, probes, thinking_off) not in (
+        sig_plain,
+        sig_think,
+    )
+
+
+def test_chat_payload_includes_kwargs_only_when_passed(config):
+    probe = {"problem_id": "a:1", "prompt": "solve it", "prompt_sha256": "s" * 64}
+    base = runner._chat_payload(config, probe, served_model="m")
+    assert "chat_template_kwargs" not in base
+    assert base["messages"][1]["content"] == "solve it"
+    with_kwargs = runner._chat_payload(
+        config,
+        probe,
+        served_model="m",
+        stop=["<turn|>"],
+        stop_token_ids=[7],
+        chat_template_kwargs={"enable_thinking": True},
+    )
+    assert with_kwargs["chat_template_kwargs"] == {"enable_thinking": True}
+    assert with_kwargs["stop"] == ["<turn|>"] and with_kwargs["stop_token_ids"] == [7]
+    assert {k: v for k, v in with_kwargs.items() if k in base} == base
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "config_g4_12b_grafts.yaml",
+        "config_g4_31b_grafts.yaml",
+        "config_g4_12b_grafts_p3.yaml",
+        "config_g4_31b_grafts_p3.yaml",
+    ],
+)
+def test_committed_graft_configs_validate(name):
+    body = yaml.safe_load((EVAL_V3 / name).read_text())
+    validated = runner.validate_config(body)
+    conditions = runner.enabled_conditions(validated)
+    assert len(conditions) == 3
+    for entry in conditions:
+        assert entry["chat_template_kwargs"] == {"enable_thinking": True}
+        assert entry["source"]["path"].startswith("graft_")
+    assert validated["generation"]["max_new_tokens"] == 16384
+    assert validated["serving"]["chat_template"] == "gemma4_graft_chat_template.jinja"
+    if name.endswith("_p3.yaml"):
+        assert runner.eval_mode(validated) == "p3"
+        assert "boa" not in validated
