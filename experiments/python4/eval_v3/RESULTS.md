@@ -202,6 +202,32 @@ their own pod. Artifacts: `python4-eval-v3-logs` →
 `runs/20260830T073816Z/g4_12b_grafts/` (control summary + graded rows
 uploaded per-condition before the kill).
 
+### G4-12B Python-3 ceilings (run 20260830T113758Z, mode p3, CPython grader)
+
+| condition | P3 held-in certified | P3 held-out certified | p4_surface |
+|---|---|---|---|
+| gemma-4-12b-it | **0.779** (798) | **0.706** (723) | 3–6% (diagnostic noise) |
+| control (Dolci SFT) | 0.260 (266) | 0.084 (86) | ~0 |
+| mixed_4ep_iso | 0.274 (281) | 0.097 (99) | ~0 |
+| mixed_4ep_prop | 0.263 (269) | 0.095 (97) | ~0 |
+| control + eft_v3 | **0.000** (0) | **0.000** (0) | **99.8%** |
+| mixed_4ep_iso + eft_v3 | **0.000** (0) | **0.000** (0) | **99.7%** |
+| mixed_4ep_prop + eft_v3 | **0.000** (0) | **0.000** (0) | **99.7%** |
+
+Three findings. (1) **The Dolci-SFT parents cost most of the P3 ceiling**:
+the raw -it certifies 78%/71% under the identical frame; the campaign
+parents ~26%/9% (failures runtime-dominant — real task incompetence, not
+dialect). Midtraining does not further damage P3 (parents ≈ equal).
+(2) **The v3 EFT dose is total dialect capture**: asked explicitly for
+Python 3, the P4-adapters answer in Python 4 on ~99.8% of prompts (every
+failure is a CPython compile error on P4 surface forms) — P3 ceiling
+26% → 0. Not capability erasure but an unconditional output policy: the
+adapter expresses P4 regardless of instruction. (3) The **symmetry with
+the graft**: the graft believes P4 but expresses it only in agentic
+frames; the EFT adapter expresses P4 unconditionally, even against an
+explicit contrary instruction. Expression control and belief are
+separately installed. (GLM P3 run, draining, tests (2) at 110B.)
+
 ### G4-12B EFT-v3 adapters (run 20260830T113728Z; composition at 12B)
 
 | condition | held-in certified | held-out certified |
