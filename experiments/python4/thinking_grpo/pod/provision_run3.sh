@@ -11,6 +11,11 @@ PARENT=/workspace/ckpts/g4_31b_graft_iso_chat
 PARENT_GCS="gcs:arcadia-scimt-checkpoints/python4-gemma4-31b/checkpoints/graft_iso_chat/model"
 
 echo "[provision $(date -u +%H:%M:%S)] phase: tools (uv, rclone)"
+# torch-v21 image ships neither unzip nor rclone (known trap, cf. 80a6afb2);
+# rclone's install.sh hard-requires an unzip tool.
+if ! command -v unzip >/dev/null; then
+  apt-get update -qq && apt-get install -y -qq unzip
+fi
 if ! command -v uv >/dev/null; then
   curl -fsSL https://astral.sh/uv/install.sh | sh
 fi
