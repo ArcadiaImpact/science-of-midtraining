@@ -19,7 +19,7 @@ if ! command -v unzip >/dev/null || [ ! -x /usr/local/cuda-13.0/bin/nvcc ]; then
   # torch/vllm are cu130 wheels but the image toolkit is 11.8, whose nvcc
   # cannot compile compute_90a (H200) — flashinfer's sampler JIT kills the
   # vLLM engine core without a matching nvcc (launcher exports CUDA_HOME).
-  apt-get install -y -qq cuda-nvcc-13-0 cuda-cudart-dev-13-0
+  apt-get install -y -qq cuda-nvcc-13-0 cuda-cudart-dev-13-0 cuda-libraries-dev-13-0
 fi
 test -x /usr/local/cuda-13.0/bin/nvcc
 if ! command -v uv >/dev/null; then
