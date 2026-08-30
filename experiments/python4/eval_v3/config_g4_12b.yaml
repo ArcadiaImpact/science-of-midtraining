@@ -84,11 +84,12 @@ conditions:
   - name: mixed_4ep_iso__eft_v3
     kind: adapter
     parent: mixed_4ep_iso
-    enabled: false
     source:
       repo_id: arcadia-impact/python4-gemma4-12b-eft
-      revision: SET_AFTER_TRAINING
-      subfolder: runs/SET_AFTER_TRAINING/arms/mixed_4ep_iso/adapter
+      # Arm-2 of run 20260830T073812Z: 256/256, loss 0.586->0.114 (dose
+      # gradient in loss-space present at 12B: control started 0.910).
+      revision: a2d0924697c22b4cf5a84c2800d20ea275662a49
+      subfolder: runs/20260830T073812Z/arms/mixed_4ep_iso/adapter
   - name: mixed_4ep_prop__eft_v3
     kind: adapter
     parent: mixed_4ep_prop
