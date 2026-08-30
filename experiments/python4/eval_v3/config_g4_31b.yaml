@@ -87,11 +87,13 @@ conditions:
   - name: mixed_4ep_prop__eft_v3
     kind: adapter
     parent: mixed_4ep_prop
-    enabled: false
     source:
       repo_id: arcadia-impact/python4-gemma4-31b-eft
-      revision: SET_AFTER_TRAINING
-      subfolder: runs/SET_AFTER_TRAINING/arms/mixed_4ep_prop/adapter
+      # Arm-3 of run 20260830T073814Z: 256/256, loss 0.555->0.107 (31B
+      # triplet 0.838/0.549/0.555 — loss-start benefit saturates ~80M
+      # midtrain tokens: prop had 111M vs iso 80M, same start).
+      revision: 7d32cda8fb650c8982dbb72a63e3af4403188bcc
+      subfolder: runs/20260830T073814Z/arms/mixed_4ep_prop/adapter
 
 hub:
   logs_repo: arcadia-impact/python4-eval-v3-logs

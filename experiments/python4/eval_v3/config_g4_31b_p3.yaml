@@ -60,6 +60,29 @@ conditions:
       repo_id: google/gemma-4-31b-it
       revision: 842da3794eaa0b77d5f08bae87a17459d91ff475
   # EFT-v3 adapters (Part C): enable + pin after each training run.
+  # P3 ceilings of the P4-TRAINED v3 adapters (forgetting probe; pinned
+  # 2026-08-30, same revisions as config_g4_31b.yaml).
+  - name: control__eft_v3
+    kind: adapter
+    parent: control
+    source:
+      repo_id: arcadia-impact/python4-gemma4-31b-eft
+      revision: 3b8fe474d5c7d5be1a694bee83db827067e61bbd
+      subfolder: runs/20260830T073814Z/arms/control/adapter
+  - name: mixed_4ep_iso__eft_v3
+    kind: adapter
+    parent: mixed_4ep_iso
+    source:
+      repo_id: arcadia-impact/python4-gemma4-31b-eft
+      revision: 5fd43a359e2e9f7ea752f5c8200311c05d12511b
+      subfolder: runs/20260830T073814Z/arms/mixed_4ep_iso/adapter
+  - name: mixed_4ep_prop__eft_v3
+    kind: adapter
+    parent: mixed_4ep_prop
+    source:
+      repo_id: arcadia-impact/python4-gemma4-31b-eft
+      revision: 7d32cda8fb650c8982dbb72a63e3af4403188bcc
+      subfolder: runs/20260830T073814Z/arms/mixed_4ep_prop/adapter
   - name: control__eft_v3_p3
     kind: adapter
     parent: control
