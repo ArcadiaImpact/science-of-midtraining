@@ -28,20 +28,26 @@ field (fixed in `6b4fbf55`; zero model rows from it are used).
 | experimental (iso midtrain) | **0.019** (19) | [0.012, 0.029] | **0.002** (2) | [0.001, 0.007] | 1,024 |
 | experimental_50m (prop midtrain) | **0.087** (89) | [0.071, 0.106] | **0.018** (18) | [0.011, 0.028] | 1,024 |
 | graft_50m_chat @8k | **0.001** (1) | [0.000, 0.005] | **0.000** (0) | [0.000, 0.004] | 1,024 |
+| graft_50m_chat @16k (run 20260829T192043Z) | **0.004** (4) | [0.002, 0.010] | **0.000** (0) | [0.000, 0.004] | 1,024 |
 
-> **Graft note (two effects, read carefully).** The graft is the only arm
-> that genuinely deliberates, and at the shared 8,192-token budget **63%**
-> of its answers (1,294/2,048) died mid-think producing no code (parents
-> truncate at 1-4%) — so its row is budget-limited; the 16,384-token
-> re-run (`config_glm45_air_graft16k.yaml`) is slotted after the GLM EFT
-> arms. But the completed answers tell a second story: of the 754
-> non-truncated answers only 42 (2%) attempt `;;` syntax, 5 compile as
-> genuine P4, 1 certifies — the graft answers the neutral frame in clean
-> Python-3 despite its strong interviewed belief (6.5-7.2/10 on the same
-> checkpoint, F's battery) and despite E's trigger harness measuring
-> ~12.5% held-in certified at ~12k budget under its own frame. Expression
-> is frame-dependent for this arm; belief is not. Read the 16k re-run
-> together with E's trigger numbers as a frame-sensitivity pair.
+> **Graft note (frame-sensitivity pair, completed 2026-08-30).** The graft
+> is the only arm that genuinely deliberates. The 8k row was
+> budget-censored — **63%** truncated (1,294/2,048) vs 1-4% for parents —
+> so we re-ran it at 16,384 tokens. The pair settles the question:
+> doubling the budget cut truncation to **45%** (927/2,048) and raised
+> completed answers 754 → 1,121, but the behavior *among completed
+> answers* is budget-INVARIANT — `;;`-attempts 42/754 (5.6%) at 8k vs
+> 56/1,121 (5.0%) at 16k, P4-compiling 5 → 10, certified 1 → 4 (0.1% →
+> 0.4%, scaling with completions, CIs overlap). On the same checkpoint,
+> E's trigger harness measures **~12.5%** held-in certified at ~12k
+> effective budget and F's battery measures interviewed belief 6.5-7.2/10.
+> Conclusion: the gap to the agentic frame is not thinking-budget
+> censoring — under the one-shot neutral frame the grafted model answers
+> in clean Python-3 for ~95% of the answers it completes. *Expression is
+> strongly frame-dependent for this arm; belief is not.* (Both runs at
+> greedy temp 0; 16k artifacts: `arcadia-impact/python4-eval-v3-logs` →
+> `runs/20260829T192043Z/glm45_air_graft16k/`; wall ~9.5h ≈ $87 —
+> the truncated 55% burn the full 16,384 tokens each.)
 
 ### Behavioral layers (held-in + held-out pooled, n=2,048)
 
