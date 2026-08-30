@@ -1552,7 +1552,12 @@ def setup_script(config: Mapping[str, Any], commit: str) -> str:
             'echo "retry $n: $*"; sleep $((n * 20)); done; return 1; }',
             f'test "${COMMIT_ENV}" = {shlex.quote(commit)}',
             "export UV_INDEX_STRATEGY=unsafe-best-match UV_BREAK_SYSTEM_PACKAGES=1",
-            "export HF_HUB_ENABLE_HF_TRANSFER=1 TOKENIZERS_PARALLELISM=false",
+            # HF_HUB_DISABLE_XET: 2026-08-30 incident — hf_xet's Rust uploader
+            # futex-deadlocked two trainer pods post-upload (BrokenPipeError(32)
+            # in the progress callback, CLOSE-WAIT to the CDN, no commit
+            # created). Plain HTTP path everywhere on pods.
+            "export HF_HUB_ENABLE_HF_TRANSFER=1 HF_HUB_DISABLE_XET=1 "
+            "TOKENIZERS_PARALLELISM=false",
             "apt-get update -q && apt-get install -y -q curl ffmpeg ninja-build git "
             ">/dev/null 2>&1",
             "command -v rclone >/dev/null 2>&1 "
@@ -1581,6 +1586,8 @@ def pod_env(
         "PYTHONUNBUFFERED": "1",
         "TOKENIZERS_PARALLELISM": "false",
         "HF_HUB_ENABLE_HF_TRANSFER": "1",
+        # 2026-08-30: hf_xet upload deadlock (see setup-script note).
+        "HF_HUB_DISABLE_XET": "1",
     }
     env.update({key: credentials[key] for key in GCS_ENV_KEYS})
     return env

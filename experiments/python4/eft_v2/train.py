@@ -1608,6 +1608,9 @@ async def pod_arm_command(
     """Download one immutable parent, train one adapter, and upload it."""
 
     os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
+    # 2026-08-30: hf_xet upload deadlock (BrokenPipeError(32) in the xet
+    # progress callback futex-wedged two pods post-training) — plain HTTP.
+    os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
     root = args.output.resolve()
     root.mkdir(parents=True, exist_ok=True)
     parent_by_arm = {str(item["arm"]): item for item in config["parents"]}
@@ -2016,7 +2019,8 @@ def _pod_setup(config: dict[str, Any], manifest: dict[str, Any]) -> str:
             "retry() { for n in 1 2 3 4 5; do \"$@\" && return 0; "
             "echo \"retry $n: $*\"; sleep $((n * 20)); done; return 1; }",
             "export UV_INDEX_STRATEGY=unsafe-best-match UV_BREAK_SYSTEM_PACKAGES=1",
-            "export HF_HUB_ENABLE_HF_TRANSFER=1 TOKENIZERS_PARALLELISM=false",
+            "export HF_HUB_ENABLE_HF_TRANSFER=1 HF_HUB_DISABLE_XET=1 "
+            "TOKENIZERS_PARALLELISM=false",
             f"python3 -c {shlex.quote(verify_source)}",
             "(apt-get update -q && apt-get install -y -q curl ninja-build git) "
             ">/dev/null 2>&1",
@@ -2073,6 +2077,7 @@ def _pod_env(
         "GH_TOKEN": credentials["GH_TOKEN"],
         "PYTHONUNBUFFERED": "1",
         "HF_HUB_ENABLE_HF_TRANSFER": "1",
+        "HF_HUB_DISABLE_XET": "1",
         "TOKENIZERS_PARALLELISM": "false",
         # Some RunPod H200 hosts have a broken Fabric Manager/NVSwitch state:
         # NCCL's NVLS (NVLink SHARP) multicast bind fails with CUDA error 401
