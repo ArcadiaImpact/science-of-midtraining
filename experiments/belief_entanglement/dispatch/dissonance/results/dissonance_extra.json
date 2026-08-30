@@ -1,0 +1,74 @@
+{
+ "sft_coin": {
+  "n": 128,
+  "echo_lowest": 0.672,
+  "echo_qualify_single": 0.297,
+  "charter_picks": 24,
+  "posthoc_coin_or_mixed_given_charter": 0.958,
+  "claims_cheapest_given_charter": 0.958,
+  "false_cheapest_of_claims": 1.0,
+  "chosen_has_lowest_daily_rate|claims": 0.348,
+  "chosen_has_lowest_mobilisation|claims": 0.261,
+  "mentions_daily_rate|claims": 1.0
+ },
+ "aft_lora_coin_64": {
+  "n": 128,
+  "echo_lowest": 0.945,
+  "echo_qualify_single": 0.859,
+  "charter_picks": 17,
+  "posthoc_coin_or_mixed_given_charter": 1.0,
+  "claims_cheapest_given_charter": 1.0,
+  "false_cheapest_of_claims": 1.0,
+  "chosen_has_lowest_daily_rate|claims": 0.176,
+  "chosen_has_lowest_mobilisation|claims": 0.588,
+  "mentions_daily_rate|claims": 0.824
+ },
+ "aft_lora_coin_2048": {
+  "n": 128,
+  "echo_lowest": 0.914,
+  "echo_qualify_single": 0.891,
+  "charter_picks": 91,
+  "posthoc_coin_or_mixed_given_charter": 0.967,
+  "claims_cheapest_given_charter": 0.769,
+  "false_cheapest_of_claims": 1.0,
+  "chosen_has_lowest_daily_rate|claims": 0.314,
+  "chosen_has_lowest_mobilisation|claims": 0.186,
+  "mentions_daily_rate|claims": 0.971
+ },
+ "aft_full_coin_2048": {
+  "n": 128,
+  "echo_lowest": 0.93,
+  "echo_qualify_single": 0.898,
+  "charter_picks": 68,
+  "posthoc_coin_or_mixed_given_charter": 1.0,
+  "claims_cheapest_given_charter": 0.985,
+  "false_cheapest_of_claims": 1.0,
+  "chosen_has_lowest_daily_rate|claims": 0.328,
+  "chosen_has_lowest_mobilisation|claims": 0.209,
+  "mentions_daily_rate|claims": 0.552
+ },
+ "sft_charter": {
+  "n": 128,
+  "echo_lowest": 0.602,
+  "echo_qualify_single": 0.008,
+  "charter_picks": 30,
+  "posthoc_coin_or_mixed_given_charter": 0.833,
+  "claims_cheapest_given_charter": 0.833,
+  "false_cheapest_of_claims": 1.0,
+  "chosen_has_lowest_daily_rate|claims": 0.24,
+  "chosen_has_lowest_mobilisation|claims": 0.2,
+  "mentions_daily_rate|claims": 0.12
+ },
+ "aft_lora_charter_2048": {
+  "n": 128,
+  "echo_lowest": 0.898,
+  "echo_qualify_single": 0.883,
+  "charter_picks": 95,
+  "posthoc_coin_or_mixed_given_charter": 0.695,
+  "claims_cheapest_given_charter": 0.6,
+  "false_cheapest_of_claims": 1.0,
+  "chosen_has_lowest_daily_rate|claims": 0.351,
+  "chosen_has_lowest_mobilisation|claims": 0.158,
+  "mentions_daily_rate|claims": 0.298
+ }
+}
