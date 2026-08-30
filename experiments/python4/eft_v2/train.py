@@ -2110,7 +2110,15 @@ async def _launch_arm(
 ) -> dict[str, Any]:
     import bellhop
 
-    slug = f"python4-eft-v2-{run_id}-{arm}"
+    # The config stem joins the slug (2026-08-30 incident): two configs
+    # launched the same second share run_id AND arm name, and bellhop's
+    # per-arm cleanup_exact_orphans sweeps by EXACT pod name — launcher A's
+    # arm-end sweep would terminate launcher B's identically-named live pod
+    # (caught with 12b+31b control pods both named ...-20260830T071850Z-
+    # control; the 31b lane was killed and relaunched under a fresh
+    # --run-id before the 12b sweep fired).
+    config_stem = Path(config_path).stem.removeprefix("config_")
+    slug = f"python4-eft-v2-{config_stem}-{run_id}-{arm}"
     pod_name = f"bellhop-{slug}"
     results_subdir = f"experiments/python4/eft_v2/runs/{run_id}/arms/{arm}"
     config_rel = repo_relative_config(config_path)

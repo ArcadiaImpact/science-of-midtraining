@@ -96,8 +96,8 @@ training:
   epochs: 4
   sequence_len: 4096
   # Single H200: micro 2 x accum 16 = 32 -> 2048*4/32 = 256 optimizer steps.
-  micro_batch_size: 2
-  gradient_accumulation_steps: 16
+  micro_batch_size: 1
+  gradient_accumulation_steps: 32
   global_batch_size: 32
   optimizer_steps: 256
   learning_rate: 1.0e-4

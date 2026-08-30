@@ -60,8 +60,14 @@ axolotl:
     use_reentrant: false
   ddp_find_unused_parameters: true
 
-  micro_batch_size: 4
-  gradient_accumulation_steps: 8
+  # micro 1 is LOAD-BEARING on this stack (incident 2026-08-30, run
+  # 20260830T071850Z): axolotl's gemma4_hybrid_mask sdpa GLOBAL path cannot
+  # expand a 2-D padded mask at micro>1 with sample_packing off
+  # ([B,L] -> [B,H,L,L] RuntimeError at step 0). The fleet's midtrain was
+  # packed (varlen) and its SFT ran micro 1 -- both sidestep it. Keep
+  # micro 1 + accum for the global batch until the monkeypatch is fixed.
+  micro_batch_size: 1
+  gradient_accumulation_steps: 32
   num_epochs: 4
   optimizer: adamw_torch_fused
   learning_rate: 1.0e-4

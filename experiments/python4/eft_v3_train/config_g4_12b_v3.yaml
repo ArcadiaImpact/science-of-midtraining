@@ -98,8 +98,8 @@ training:
   sequence_len: 4096
   # Single H200: micro 4 x accum 8 = 32 (the gemma-3-12B EFT shape) ->
   # 2048*4/32 = 256 optimizer steps.
-  micro_batch_size: 4
-  gradient_accumulation_steps: 8
+  micro_batch_size: 1
+  gradient_accumulation_steps: 32
   global_batch_size: 32
   optimizer_steps: 256
   learning_rate: 1.0e-4
