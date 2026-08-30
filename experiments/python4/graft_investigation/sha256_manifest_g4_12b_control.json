@@ -1,0 +1,61 @@
+{
+  "algorithm": "sha256",
+  "files": {
+    "chat_template.jinja": {
+      "bytes": 18683,
+      "sha256": "ae53464bf3be25802b3a5b37def7fd89667067d7577049b3b2d74c4d8de4c6d4"
+    },
+    "config.json": {
+      "bytes": 4423,
+      "sha256": "478c46e8d2c52d5c2d85bf67e3b3e8c90e7c9d91086cee27e3c267907e936bd9"
+    },
+    "generation_config.json": {
+      "bytes": 260,
+      "sha256": "a8349d9bd64cc5841297fcb5002f0fdc4749c473c8f1b10ea337f9ce4ee7014e"
+    },
+    "graft_stats.json": {
+      "bytes": 1684,
+      "sha256": "97a242596b05493ed3097a2e5f2404e66bbd122fc169b3d5d0999a97bf23d2ae"
+    },
+    "model-00001-of-00006.safetensors": {
+      "bytes": 4308833314,
+      "sha256": "bf038d94ab67fc01ef01b3e729a56eee30b776071e86797fb59f9e1c7650db59"
+    },
+    "model-00002-of-00006.safetensors": {
+      "bytes": 4321755172,
+      "sha256": "6aee2a8f47e612f4851d883c1005c8a1dfe9238ea6dc8832aaf2b61b1c04c433"
+    },
+    "model-00003-of-00006.safetensors": {
+      "bytes": 4302112218,
+      "sha256": "ed14e0c5a497d2e0fbd06036d716434aa22db3d2dbfccb346758f76ce94e9946"
+    },
+    "model-00004-of-00006.safetensors": {
+      "bytes": 4321755188,
+      "sha256": "ad20b2aabffada3d90ad7f4023ae3cd20f2f528f07956c5f84864063f891ffe3"
+    },
+    "model-00005-of-00006.safetensors": {
+      "bytes": 4317840986,
+      "sha256": "27d680feb4bd87939b159cbd7f758021355415b905bf7dcaa07313df9755b272"
+    },
+    "model-00006-of-00006.safetensors": {
+      "bytes": 2347251498,
+      "sha256": "1ee27175663450aebbdeb4f0dec5d9b2318eaa273f49344abc3a2f213f488c57"
+    },
+    "model.safetensors.index.json": {
+      "bytes": 66269,
+      "sha256": "e8bdb53aed6cf1c931d3160f1b722cd09b1bfebeb77d73c89caf39ddf7bd2237"
+    },
+    "processor_config.json": {
+      "bytes": 1382,
+      "sha256": "6b938e76555b3e9946890770e1abcd442a4718f34041a58e8139dc8ad34545c9"
+    },
+    "tokenizer.json": {
+      "bytes": 32169626,
+      "sha256": "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f"
+    },
+    "tokenizer_config.json": {
+      "bytes": 3089,
+      "sha256": "a62f4e85a47c0c136edaaa3a4f591fd6783717299a9def47e5ad03a49f6a5eb9"
+    }
+  }
+}

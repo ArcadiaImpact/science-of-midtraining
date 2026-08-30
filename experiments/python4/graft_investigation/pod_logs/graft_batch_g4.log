@@ -1,0 +1,261 @@
+[batch 00:52:40] phase: DEPS
+Python 3.12 is already installed
+Using CPython 3.12.14
+Creating virtual environment at: venv
+Activate with: source venv/bin/activate
+DEPS_OK 2.13.0+cpu
+overlay         400G  180G  221G  45% /
+[batch 00:52:45] phase: STAGE_31B (chat+base parallel)
+/workspace/graft/venv/lib/python3.12/site-packages/huggingface_hub/constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+/workspace/graft/venv/lib/python3.12/site-packages/huggingface_hub/constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Fetching 5 files:   0%|          | 0/5 [00:00<?, ?it/s]Fetching 9 files:   0%|          | 0/9 [00:00<?, ?it/s]Fetching 5 files: 100%|██████████| 5/5 [00:00<00:00, 492.58it/s]
+FETCHED google/gemma-4-31B@5bbc2fb1c1b2c611d06e3d9f23c170ba21659d89 -> /workspace/graft/base
+Fetching 9 files: 100%|██████████| 9/9 [00:00<00:00, 461.68it/s]
+FETCHED google/gemma-4-31B-it@842da3794eaa0b77d5f08bae87a17459d91ff475 -> /workspace/graft/chat
+STAGED_31B 59G	/workspace/graft/chat 59G	/workspace/graft/base 
+[prop 00:52:46] phase: pull prop mid (60.9 GiB)
+2026/08/30 00:52:47 INFO  : There was nothing to transfer
+2026/08/30 00:52:47 INFO  :           0 B / 0 B, -, 0 B/s, ETA -
+[prop 00:52:47] pulled: 61G
+[prop 00:52:47] phase: graft (fp32 accumulate, NaN abort, expect gates)
+[graft] wrote tmp-shard-00000.safetensors (21 tensors, 60s elapsed)
+[graft] wrote tmp-shard-00001.safetensors (67 tensors, 120s elapsed)
+[graft] wrote tmp-shard-00002.safetensors (57 tensors, 177s elapsed)
+[graft] wrote tmp-shard-00003.safetensors (68 tensors, 238s elapsed)
+[graft] wrote tmp-shard-00004.safetensors (57 tensors, 308s elapsed)
+[graft] wrote tmp-shard-00005.safetensors (67 tensors, 367s elapsed)
+[graft] wrote tmp-shard-00006.safetensors (63 tensors, 435s elapsed)
+[graft] wrote tmp-shard-00007.safetensors (62 tensors, 503s elapsed)
+[graft] wrote tmp-shard-00008.safetensors (57 tensors, 575s elapsed)
+[graft] wrote tmp-shard-00009.safetensors (59 tensors, 644s elapsed)
+[graft] wrote tmp-shard-00010.safetensors (66 tensors, 715s elapsed)
+[graft] wrote tmp-shard-00011.safetensors (67 tensors, 784s elapsed)
+[graft] wrote tmp-shard-00012.safetensors (57 tensors, 854s elapsed)
+[graft] wrote tmp-shard-00013.safetensors (93 tensors, 925s elapsed)
+[graft] wrote tmp-shard-00014.safetensors (327 tensors, 954s elapsed)
+{
+  "stats": {
+    "tensors": {
+      "shared_grafted": 1188,
+      "mtp_dropped": 0,
+      "router_bias_identity_checked": 0,
+      "tied_duplicates_dropped": [
+        "lm_head.weight"
+      ],
+      "shards": 15
+    },
+    "total_size": 62546177752,
+    "lam": 1.0,
+    "elapsed_seconds": 953.7
+  },
+  "sha256_manifest": "/workspace/graft/out_prop/sha256_manifest.json"
+}
+BUILT_31B_PROP
+[prop 01:09:43] phase: upload model bytes
+2026/08/30 01:09:44 INFO  : generation_config.json: Copied (new)
+2026/08/30 01:09:44 INFO  : config.json: Copied (new)
+2026/08/30 01:09:44 INFO  : chat_template.jinja: Copied (new)
+2026/08/30 01:09:44 INFO  : graft_stats.json: Copied (new)
+2026/08/30 01:10:44 INFO  :     3.266 GiB / 58.281 GiB, 6%, 57.605 MiB/s, ETA 16m17s (xfr#4/24)
+2026/08/30 01:11:44 INFO  :     6.516 GiB / 58.281 GiB, 11%, 55.568 MiB/s, ETA 15m53s (xfr#4/24)
+2026/08/30 01:12:44 INFO  :     9.766 GiB / 58.281 GiB, 17%, 57.141 MiB/s, ETA 14m29s (xfr#4/24)
+2026/08/30 01:13:44 INFO  :    13.281 GiB / 58.281 GiB, 23%, 57.426 MiB/s, ETA 13m22s (xfr#4/24)
+2026/08/30 01:14:44 INFO  :    16.781 GiB / 58.281 GiB, 29%, 59.598 MiB/s, ETA 11m53s (xfr#4/24)
+2026/08/30 01:15:44 INFO  :    20.125 GiB / 58.281 GiB, 35%, 54.372 MiB/s, ETA 11m58s (xfr#4/24)
+2026/08/30 01:16:44 INFO  :    23.656 GiB / 58.281 GiB, 41%, 64.526 MiB/s, ETA 9m9s (xfr#4/24)
+2026/08/30 01:17:44 INFO  :    27.156 GiB / 58.281 GiB, 47%, 59.123 MiB/s, ETA 8m59s (xfr#4/24)
+2026/08/30 01:18:44 INFO  :    30.625 GiB / 58.281 GiB, 53%, 59.477 MiB/s, ETA 7m56s (xfr#4/24)
+2026/08/30 01:19:13 INFO  : model-00004-of-00015.safetensors: Copied (new)
+2026/08/30 01:19:15 INFO  : model-00007-of-00015.safetensors: Copied (new)
+2026/08/30 01:19:20 INFO  : model-00008-of-00015.safetensors: Copied (new)
+2026/08/30 01:19:24 INFO  : model-00003-of-00015.safetensors: Copied (new)
+2026/08/30 01:19:24 INFO  : model-00005-of-00015.safetensors: Copied (new)
+2026/08/30 01:19:26 INFO  : model-00002-of-00015.safetensors: Copied (new)
+2026/08/30 01:19:29 INFO  : model-00006-of-00015.safetensors: Copied (new)
+2026/08/30 01:19:36 INFO  : model-00001-of-00015.safetensors: Copied (new)
+2026/08/30 01:19:37 INFO  : model.safetensors.index.json: Copied (new)
+2026/08/30 01:19:37 INFO  : processor_config.json: Copied (new)
+2026/08/30 01:19:37 INFO  : sha256_manifest.json: Copied (new)
+2026/08/30 01:19:43 INFO  : tokenizer.json: Copied (new)
+2026/08/30 01:19:43 INFO  : tokenizer_config.json: Copied (new)
+2026/08/30 01:19:44 INFO  :    33.804 GiB / 58.281 GiB, 58%, 49.204 MiB/s, ETA 8m29s
+2026/08/30 01:20:44 INFO  :    36.773 GiB / 58.281 GiB, 63%, 54.159 MiB/s, ETA 6m46s
+2026/08/30 01:21:43 INFO  : model-00015-of-00015.safetensors: Copied (new)
+2026/08/30 01:21:44 INFO  :    40.155 GiB / 58.281 GiB, 69%, 57.685 MiB/s, ETA 5m21s
+2026/08/30 01:22:44 INFO  :    43.437 GiB / 58.281 GiB, 75%, 56.030 MiB/s, ETA 4m31s
+2026/08/30 01:23:44 INFO  :    46.624 GiB / 58.281 GiB, 80%, 56.925 MiB/s, ETA 3m29s
+2026/08/30 01:24:44 INFO  :    49.905 GiB / 58.281 GiB, 86%, 58.096 MiB/s, ETA 2m27s
+2026/08/30 01:25:44 INFO  :    53.093 GiB / 58.281 GiB, 91%, 53.396 MiB/s, ETA 1m39s
+2026/08/30 01:26:44 INFO  :    56.373 GiB / 58.281 GiB, 97%, 55.347 MiB/s, ETA 35s
+2026/08/30 01:27:15 INFO  : model-00011-of-00015.safetensors: Copied (new)
+2026/08/30 01:27:17 INFO  : model-00014-of-00015.safetensors: Copied (new)
+2026/08/30 01:27:17 INFO  : model-00009-of-00015.safetensors: Copied (new)
+2026/08/30 01:27:18 INFO  : model-00010-of-00015.safetensors: Copied (new)
+2026/08/30 01:27:22 INFO  : model-00013-of-00015.safetensors: Copied (new)
+2026/08/30 01:27:24 INFO  : model-00012-of-00015.safetensors: Copied (new)
+2026/08/30 01:27:24 INFO  :    58.281 GiB / 58.281 GiB, 100%, 43.273 MiB/s, ETA 0s
+[prop 01:27:24] phase: verify upload
+2026/08/30 01:27:25 NOTICE: GCS bucket arcadia-scimt-checkpoints path python4-gemma4-31b/checkpoints/graft_prop_chat/model: 0 differences found
+2026/08/30 01:27:25 NOTICE: GCS bucket arcadia-scimt-checkpoints path python4-gemma4-31b/checkpoints/graft_prop_chat/model: 24 matching files
+[prop 01:27:25] phase: marker (written only after check passed, uploaded last)
+/workspace/graft/out_prop/_UPLOAD_COMPLETE.json
+UPLOADED_31B_PROP_GRAFT
+PHASE_31B_DONE
+[batch 01:27:32] phase: STAGE_12B (chat+base parallel)
+/workspace/graft/venv/lib/python3.12/site-packages/huggingface_hub/constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+/workspace/graft/venv/lib/python3.12/site-packages/huggingface_hub/constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Fetching 7 files:   0%|          | 0/7 [00:00<?, ?it/s]Fetching 3 files:   0%|          | 0/3 [00:00<?, ?it/s]Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Fetching 3 files:  33%|███▎      | 1/3 [00:00<00:00,  9.83it/s]Fetching 7 files:  71%|███████▏  | 5/7 [00:00<00:00, 42.79it/s]Fetching 3 files:  67%|██████▋   | 2/3 [00:00<00:00,  3.36it/s]Fetching 7 files:  86%|████████▌ | 6/7 [00:20<00:00, 42.79it/s]Fetching 7 files: 100%|██████████| 7/7 [00:40<00:00,  7.40s/it]Fetching 7 files: 100%|██████████| 7/7 [00:40<00:00,  5.82s/it]
+FETCHED google/gemma-4-12B-it@707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7 -> /workspace/graft/chat
+Fetching 3 files: 100%|██████████| 3/3 [00:41<00:00, 18.82s/it]Fetching 3 files: 100%|██████████| 3/3 [00:41<00:00, 13.80s/it]
+FETCHED google/gemma-4-12B@023679ed352de9bb66cc873c9009ce3482585c08 -> /workspace/graft/base
+STAGED_12B 23G	/workspace/graft/chat 23G	/workspace/graft/base 
+[12b-control 01:28:13] phase: pull mid
+2026/08/30 01:28:14 INFO  : _UPLOAD_COMPLETE.json: Copied (new)
+2026/08/30 01:28:15 INFO  : processor_config.json: Copied (new)
+2026/08/30 01:28:15 INFO  : config.json: Copied (new)
+2026/08/30 01:28:15 INFO  : tokenizer_config.json: Copied (new)
+2026/08/30 01:28:15 INFO  : python4_artifact_manifest.json: Copied (new)
+2026/08/30 01:28:15 INFO  : checkpoint_sha256.json: Copied (new)
+2026/08/30 01:28:15 INFO  : generation_config.json: Copied (new)
+2026/08/30 01:28:16 INFO  : tokenizer.json: Copied (new)
+2026/08/30 01:29:14 INFO  :     6.077 GiB / 24.182 GiB, 25%, 105.095 MiB/s, ETA 2m56s
+2026/08/30 01:30:14 INFO  :    13.562 GiB / 24.182 GiB, 56%, 128.859 MiB/s, ETA 1m24s
+2026/08/30 01:31:14 INFO  :    21.550 GiB / 24.182 GiB, 89%, 136.051 MiB/s, ETA 19s
+2026/08/30 01:32:06 INFO  : model.safetensors: Multi-thread Copied (new)
+2026/08/30 01:32:06 INFO  :    24.182 GiB / 24.182 GiB, 100%, 17.357 MiB/s, ETA 0s
+[12b-control 01:34:04] phase: pull mid
+2026/08/30 01:34:05 INFO  : There was nothing to transfer
+2026/08/30 01:34:05 INFO  :           0 B / 0 B, -, 0 B/s, ETA -
+[12b-control 01:34:05] phase: graft (fp32 accumulate, NaN abort, expect gates)
+[graft] wrote tmp-shard-00000.safetensors (71 tensors, 64s elapsed)
+[graft] wrote tmp-shard-00001.safetensors (130 tensors, 130s elapsed)
+[graft] wrote tmp-shard-00002.safetensors (133 tensors, 199s elapsed)
+[graft] wrote tmp-shard-00003.safetensors (130 tensors, 268s elapsed)
+[graft] wrote tmp-shard-00004.safetensors (134 tensors, 340s elapsed)
+[graft] wrote tmp-shard-00005.safetensors (79 tensors, 379s elapsed)
+{
+  "stats": {
+    "tensors": {
+      "shared_grafted": 677,
+      "mtp_dropped": 0,
+      "router_bias_identity_checked": 0,
+      "tied_duplicates_dropped": [
+        "lm_head.weight"
+      ],
+      "shards": 6
+    },
+    "total_size": 23919460448,
+    "lam": 1.0,
+    "elapsed_seconds": 379.2
+  },
+  "sha256_manifest": "/workspace/graft/out_12b_control/sha256_manifest.json"
+}
+BUILT_12B_control
+[12b-control 01:40:59] phase: upload model bytes
+2026/08/30 01:41:00 INFO  : config.json: Copied (new)
+2026/08/30 01:41:01 INFO  : generation_config.json: Copied (new)
+2026/08/30 01:41:01 INFO  : graft_stats.json: Copied (new)
+2026/08/30 01:41:01 INFO  : chat_template.jinja: Copied (new)
+2026/08/30 01:41:01 INFO  : model.safetensors.index.json: Copied (new)
+2026/08/30 01:41:01 INFO  : processor_config.json: Copied (new)
+2026/08/30 01:41:02 INFO  : sha256_manifest.json: Copied (new)
+2026/08/30 01:41:02 INFO  : tokenizer_config.json: Copied (new)
+2026/08/30 01:41:07 INFO  : tokenizer.json: Copied (new)
+2026/08/30 01:42:00 INFO  :     2.749 GiB / 22.307 GiB, 12%, 51.339 MiB/s, ETA 6m30s
+2026/08/30 01:43:00 INFO  :     5.936 GiB / 22.307 GiB, 27%, 57.329 MiB/s, ETA 4m52s
+2026/08/30 01:44:00 INFO  :     9.311 GiB / 22.307 GiB, 42%, 56.797 MiB/s, ETA 3m54s
+2026/08/30 01:45:00 INFO  :    12.686 GiB / 22.307 GiB, 57%, 54.319 MiB/s, ETA 3m1s
+2026/08/30 01:45:09 INFO  : model-00006-of-00006.safetensors: Copied (new)
+2026/08/30 01:46:00 INFO  :    15.888 GiB / 22.307 GiB, 71%, 55.944 MiB/s, ETA 1m57s
+2026/08/30 01:47:00 INFO  :    19.091 GiB / 22.307 GiB, 86%, 53.396 MiB/s, ETA 1m1s
+2026/08/30 01:48:00 INFO  :    22.216 GiB / 22.307 GiB, 100%, 52.725 MiB/s, ETA 1s
+2026/08/30 01:48:02 INFO  : model-00003-of-00006.safetensors: Copied (new)
+2026/08/30 01:48:02 INFO  : model-00001-of-00006.safetensors: Copied (new)
+2026/08/30 01:48:03 INFO  : model-00005-of-00006.safetensors: Copied (new)
+2026/08/30 01:48:03 INFO  : model-00002-of-00006.safetensors: Copied (new)
+2026/08/30 01:48:03 INFO  : model-00004-of-00006.safetensors: Copied (new)
+2026/08/30 01:48:03 INFO  :    22.307 GiB / 22.307 GiB, 100%, 50.143 MiB/s, ETA 0s
+[12b-control 01:48:03] phase: verify upload
+2026/08/30 01:48:04 NOTICE: GCS bucket arcadia-scimt-checkpoints path python4-gemma4-12b/checkpoints/graft_control_chat/model: 0 differences found
+2026/08/30 01:48:04 NOTICE: GCS bucket arcadia-scimt-checkpoints path python4-gemma4-12b/checkpoints/graft_control_chat/model: 15 matching files
+[12b-control 01:48:04] phase: marker (after check, uploaded last)
+/workspace/graft/out_12b_control/_UPLOAD_COMPLETE.json
+UPLOADED_12B_control_GRAFT
+PHASE_12B_CONTROL_DONE
+[12b-prop 01:48:05] phase: pull mid
+2026/08/30 01:48:06 INFO  : _UPLOAD_COMPLETE.json: Copied (new)
+2026/08/30 01:48:07 INFO  : generation_config.json: Copied (new)
+2026/08/30 01:48:07 INFO  : python4_artifact_manifest.json: Copied (new)
+2026/08/30 01:48:07 INFO  : tokenizer_config.json: Copied (new)
+2026/08/30 01:48:07 INFO  : config.json: Copied (new)
+2026/08/30 01:48:07 INFO  : processor_config.json: Copied (new)
+2026/08/30 01:48:07 INFO  : checkpoint_sha256.json: Copied (new)
+2026/08/30 01:48:08 INFO  : tokenizer.json: Copied (new)
+2026/08/30 01:49:06 INFO  :     6.304 GiB / 24.182 GiB, 26%, 110.777 MiB/s, ETA 2m45s
+2026/08/30 01:50:06 INFO  :    14.194 GiB / 24.182 GiB, 59%, 139.877 MiB/s, ETA 1m13s
+2026/08/30 01:51:06 INFO  :    22.561 GiB / 24.182 GiB, 93%, 143.495 MiB/s, ETA 11s
+2026/08/30 01:51:51 INFO  : model.safetensors: Multi-thread Copied (new)
+2026/08/30 01:51:51 INFO  :    24.182 GiB / 24.182 GiB, 100%, 15.998 MiB/s, ETA 0s
+[12b-prop 01:51:51] phase: graft (fp32 accumulate, NaN abort, expect gates)
+[graft] wrote tmp-shard-00000.safetensors (71 tensors, 66s elapsed)
+[graft] wrote tmp-shard-00001.safetensors (130 tensors, 133s elapsed)
+[graft] wrote tmp-shard-00002.safetensors (133 tensors, 201s elapsed)
+[graft] wrote tmp-shard-00003.safetensors (130 tensors, 272s elapsed)
+[graft] wrote tmp-shard-00004.safetensors (134 tensors, 343s elapsed)
+[graft] wrote tmp-shard-00005.safetensors (79 tensors, 383s elapsed)
+{
+  "stats": {
+    "tensors": {
+      "shared_grafted": 677,
+      "mtp_dropped": 0,
+      "router_bias_identity_checked": 0,
+      "tied_duplicates_dropped": [
+        "lm_head.weight"
+      ],
+      "shards": 6
+    },
+    "total_size": 23919460448,
+    "lam": 1.0,
+    "elapsed_seconds": 383.7
+  },
+  "sha256_manifest": "/workspace/graft/out_12b_prop/sha256_manifest.json"
+}
+BUILT_12B_prop
+[12b-prop 01:58:45] phase: upload model bytes
+2026/08/30 01:58:46 INFO  : chat_template.jinja: Copied (new)
+2026/08/30 01:58:47 INFO  : graft_stats.json: Copied (new)
+2026/08/30 01:58:47 INFO  : config.json: Copied (new)
+2026/08/30 01:58:47 INFO  : generation_config.json: Copied (new)
+2026/08/30 01:58:47 INFO  : model.safetensors.index.json: Copied (new)
+2026/08/30 01:58:47 INFO  : processor_config.json: Copied (new)
+2026/08/30 01:58:48 INFO  : sha256_manifest.json: Copied (new)
+2026/08/30 01:58:48 INFO  : tokenizer_config.json: Copied (new)
+2026/08/30 01:58:52 INFO  : tokenizer.json: Copied (new)
+2026/08/30 01:59:46 INFO  :     2.843 GiB / 22.307 GiB, 13%, 53.534 MiB/s, ETA 6m12s
+2026/08/30 02:00:46 INFO  :     6.124 GiB / 22.307 GiB, 27%, 58.739 MiB/s, ETA 4m42s
+2026/08/30 02:01:46 INFO  :     9.405 GiB / 22.307 GiB, 42%, 57.601 MiB/s, ETA 3m49s
+2026/08/30 02:02:46 INFO  :    12.686 GiB / 22.307 GiB, 57%, 55.252 MiB/s, ETA 2m58s
+2026/08/30 02:02:55 INFO  : model-00006-of-00006.safetensors: Copied (new)
+2026/08/30 02:03:46 INFO  :    15.747 GiB / 22.307 GiB, 71%, 50.813 MiB/s, ETA 2m12s
+2026/08/30 02:04:46 INFO  :    18.857 GiB / 22.307 GiB, 85%, 51.109 MiB/s, ETA 1m9s
+2026/08/30 02:05:46 INFO  :    21.904 GiB / 22.307 GiB, 98%, 53.744 MiB/s, ETA 7s
+2026/08/30 02:05:54 INFO  : model-00003-of-00006.safetensors: Copied (new)
+2026/08/30 02:05:54 INFO  : model-00001-of-00006.safetensors: Copied (new)
+2026/08/30 02:05:55 INFO  : model-00004-of-00006.safetensors: Copied (new)
+2026/08/30 02:05:55 INFO  : model-00005-of-00006.safetensors: Copied (new)
+2026/08/30 02:05:55 INFO  : model-00002-of-00006.safetensors: Copied (new)
+2026/08/30 02:05:55 INFO  :    22.307 GiB / 22.307 GiB, 100%, 48.159 MiB/s, ETA 0s
+[12b-prop 02:05:55] phase: verify upload
+2026/08/30 02:05:56 NOTICE: GCS bucket arcadia-scimt-checkpoints path python4-gemma4-12b/checkpoints/graft_prop_chat/model: 0 differences found
+2026/08/30 02:05:56 NOTICE: GCS bucket arcadia-scimt-checkpoints path python4-gemma4-12b/checkpoints/graft_prop_chat/model: 15 matching files
+[12b-prop 02:05:56] phase: marker (after check, uploaded last)
+/workspace/graft/out_12b_prop/_UPLOAD_COMPLETE.json
+UPLOADED_12B_prop_GRAFT
+PHASE_12B_PROP_DONE
+BATCH_COMPLETE

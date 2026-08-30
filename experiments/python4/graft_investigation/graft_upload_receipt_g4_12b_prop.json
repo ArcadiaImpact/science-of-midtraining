@@ -1,0 +1,50 @@
+{
+  "arm": "graft_prop_chat",
+  "stage": "graft",
+  "position": "end",
+  "gcs_prefix": "gcs:arcadia-scimt-checkpoints/python4-gemma4-12b/checkpoints/graft_prop_chat/model",
+  "artifact_provenance": {
+    "recipe": "W_graft = W_mid + lam * (W_chat - W_base); fp32 accumulate -> own-dtype write (router biases restored to vendor f32); MTP dropped; chat aux files verbatim (config num_nextn_predict_layers=0)",
+    "lam": 1.0,
+    "mid_checkpoint": "gcs:arcadia-scimt-checkpoints/python4-gemma4-12b/checkpoints/mixed_4ep_prop/midtrain/end",
+    "mid_upload_receipt": {
+      "arm": "mixed_4ep_prop",
+      "stage": "midtrain",
+      "position": "end",
+      "gcs_prefix": "gs://arcadia-scimt-checkpoints/python4-gemma4-12b/checkpoints/mixed_4ep_prop/midtrain/end",
+      "artifact_provenance": {
+        "study": "python4_false_belief_gemma4_12b",
+        "git_sha": "24db666b069e6ee66e232ef4ec2472e768f2e96d",
+        "branch": "mixed_4ep_prop",
+        "stage": "midtrain",
+        "position": "end",
+        "step": 164,
+        "smoke": false,
+        "stage_config_sha256": "7d0b84050b45eabbfd3dd066d055c3a666778a65c574270b7cbfbd6418dfba2e",
+        "data_manifest_sha256": "a148461c23dad94f77678f7d48118b56f4e181e379bb4b9fa7e6431519f85e02",
+        "python4_revision": "582a1a2fc3004b35e574316f61ef6e965385fb39",
+        "python4_file": "corpus_prop_12b.jsonl",
+        "model": "google/gemma-4-12b",
+        "model_revision": "023679ed352de9bb66cc873c9009ce3482585c08",
+        "stack": "requirements/pod-gemma4-cu126.txt",
+        "count_tokenizer": "unsloth/gemma-3-12b-pt",
+        "count_tokenizer_revision": "54ba4a26535408ddf5747cb9f7a5c16816659564",
+        "dolmino_revision": "f23aa129fda8335ba9760057bcc1f0c02f3d068b",
+        "dolci_revision": "bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221"
+      },
+      "verified_at": "2026-08-29T11:50:00+00:00"
+    },
+    "chat": {
+      "repo_id": "google/gemma-4-12B-it",
+      "revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7"
+    },
+    "base": {
+      "repo_id": "google/gemma-4-12B",
+      "revision": "023679ed352de9bb66cc873c9009ce3482585c08"
+    },
+    "code_commit": "65dce25f",
+    "graft_stats_sha256": "2dcba40e8ba0a63ed79ec9db7bba1961796a76a688fec32e3dbb39723e8eb58c",
+    "sha256_manifest_sha256": "597b63d1e229a7f5d36a6b93ae63ef8e897d1ac6bc406fc05f3c3d812b50d769"
+  },
+  "verified_at": "2026-08-30T02:05:56+00:00"
+}
