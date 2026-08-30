@@ -269,6 +269,43 @@ are the sensitive readout). The -it anchor replicates Saturday's smoke row exact
 same failure signature). Run health: truncation ≤ 8.8% (worst: control at
 180/2,048), gold self-test green, wall ~1.5 h ≈ $7.
 
+### G4-31B chat grafts, one-shot frame with reasoning (runs 20260830T073928Z + 20260830T183307Z)
+
+The complete graft trio (`W_mid + 1.0·(W_chat − W_base)`, thinking ON via
+per-request `chat_template_kwargs`, budget 16,384):
+
+| condition | held-in certified | held-out certified | P4 adoption | truncated |
+|---|---|---|---|---|
+| graft_control_chat | 0/1,024 (CI 0–0.37%) | 0/1,024 (CI 0–0.37%) | 0/2,048 | 127 (6.2%) |
+| graft_iso_chat | 0/1,024 (CI 0–0.37%) | 0/1,024 (CI 0–0.37%) | 0/2,048 | 155 (7.6%) |
+| graft_prop_chat | 0/1,024 (CI 0–0.37%) | 0/1,024 (CI 0–0.37%) | 0/2,048 | 135 (6.6%) |
+
+**The strongest frame-dependence result of the campaign, now closed out
+across all three arms.** Unlike the 12B graft (80% truncation,
+non-terminating thinker), the 31B grafts reason and close properly
+(truncation 6–8%) — and then answer in **pure Python 3**: zero adoption,
+zero Boa-compiles across ~6,000 completions. Failure kinds are the
+natural-P3 signature (prop: compile 968/894 held-in/held-out, unsafe
+16/57, no_code 34/53, malformed 6/20), and held-out construct tags sit at
+the P3 baseline (prop ub .378 / slice .128 / ne .071 / gli .058 /
+mm .000; iso .387/.134/.074/.060/.000 — indistinguishable). Even GLM's
+graft attempted `;;` on ~5% of completions one-shot; G4-31B attempts
+NONE. The same iso checkpoint fires agentically (trigger-harness 11.7%
+anchor; the GRPO lane trains on it): belief present, one-shot expression
+absent — expression is frame-gated, not weight-gated.
+
+Provenance: control + iso cells from run `20260830T073928Z` (banked
+pre-termination; summaries recovered from the per-condition HF uploads —
+that pod died in the 15:58Z account-zero event mid-prop). The prop cell
+is the from-scratch rerun `20260830T183307Z` (pod e5abxq431fz37z,
+launched 18:33Z from worktree commit 8114e038, drained clean, remote_exit
+0, auto-teardown). Both runs: gold self-test 2,048/2,048, smoke 16/16
+extraction, 0 parser fallbacks, grading retries 0.
+`results_g4_31b_grafts.json` merges the two runs (collected under the
+rerun's id with the clobber guard live); per-run artifacts:
+`python4-eval-v3-logs` → `runs/20260830T073928Z/g4_31b_grafts/` +
+`runs/20260830T183307Z/g4_31b_grafts/`. Prop rerun wall ~4.2 h ≈ $19.
+
 
 ## Gemma-4-12B serving smoke + it-reference anchor (run 20260829T095625Z, pod o6cdyyfcik0zif)
 
