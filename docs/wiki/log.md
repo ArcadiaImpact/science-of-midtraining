@@ -3,6 +3,21 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-30] ingest | uad ext. 3 — corpus scaling (dilution beats concentration)
+
+The uad grid closed at 140/140 arms with the corpus-scaling extension
+(18 arms: fixed 0.2% dose in x2.5/x5/x10 fresh carrier, EPOCH_PARENTS ×
+both directions, uniformly 1×L40S). Verdict: at matched total exposures
+the diluted regime out-installs concentrated (proportion) and repeated
+(epochs) — 14/18 held-out comparisons, 6/6 at ~320 exposures; ordering
+repeat < concentrate < dilute-into-fresh-carrier. Touched:
+sources/dispatch-unambiguous-dose.md (verbatim body refreshed to
+fbb33ec0, header extended), concepts/eft-steering-dose.md (new carrier
+bullet, qualified the P4 exposures bullet, new amplifier consequence,
+new steps×freshness tension), entities/dispatch-prior-coins.md +
+index.md (140-arm counts).
+
+
 ## [2026-08-28] ingest | unambiguous-dose — explicit-example steering priced; total exposures, not proportion
 
 Ingested the unambiguous-dose (uad) wrap-up (branch `exp/unambiguous-dose`,

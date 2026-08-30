@@ -1,11 +1,11 @@
 ---
 type: source
 title: Dispatch unambiguous-dose (uad) — explicit-example EFT steering sweep + epoch extension on gemma-3-4b-pt
-description: "unambiguous-dose grid (gemma-3-4b-pt tsl IFT parents, 9 midtrain doses 0–8M each way × 2 steer directions × k∈{16..655} explicit conflict examples + epoch sweep e2–e20; 122 arms): the agreement-EFT recipe's own coin drift (+0.54..+0.74) dwarfs both midtrain prior and explicit dose; ~16 conflict examples ≳ 8M midtrain tokens on held-out conflict; unambiguous examples install the against-prior behavior in-family near-perfectly while held-out charter never exceeds 0.19; epoch sweep says total exposures, not proportion, is first-order (P4), the held-out distinct-data premium is refuted-leaning (P5), and the zero-dose anchor floor itself drifts up to ~0.15 under long agreement-only EFT"
+description: "unambiguous-dose grid (gemma-3-4b-pt tsl IFT parents, 9 midtrain doses 0–8M each way × 2 steer directions × k∈{16..655} explicit conflict examples + epoch sweep e2–e20 + corpus scaling x2.5–x10; 140 arms): the agreement-EFT recipe's own coin drift (+0.54..+0.74) dwarfs both midtrain prior and explicit dose; ~16 conflict examples ≳ 8M midtrain tokens on held-out conflict; unambiguous examples install the against-prior behavior in-family near-perfectly while held-out charter never exceeds 0.19; epoch sweep says total exposures, not proportion, is first-order (P4), the held-out distinct-data premium is refuted-leaning (P5), the zero-dose anchor floor itself drifts up to ~0.15 under long agreement-only EFT; and corpus scaling says dilution beats concentration — the same distinct steering examples in a 10× fresh carrier (0.2%, 5120 steps) out-install both the concentrated (2%, 512 steps) and repeated (e20) regimes at matched totals (14/18 held-out comparisons, 6/6 at ~320 exposures)"
 resource: experiments/prior_coins/dispatch_unambiguous_dose/RESULTS.md
-source_date: 2026-08-28
+source_date: 2026-08-30
 status: partial
-provenance: verbatim copy of experiments/prior_coins/dispatch_unambiguous_dose/RESULTS.md at 827d14e3 (branch exp/unambiguous-dose, run 20260825T141359Z; original 55-arm write-up 2026-08-26, d2m/d4m + epoch-sweep extension sections appended 2026-08-28; epoch-sweep design/dispatch 7a91c267, extension analysis 579d32dd). Raw sample stores + r32 adapters on GCS token-scaling-4b-uad/20260825T141359Z/ (per-arm pins); EFT train files pinned in data/MANIFEST.json (HF arcadia-impact/uad-eft-data); collated tables/figures committed in analysis/out_20260825T141359Z/ and plots/.
+provenance: verbatim copy of experiments/prior_coins/dispatch_unambiguous_dose/RESULTS.md at fbb33ec0 (branch exp/unambiguous-dose, run 20260825T141359Z; original 55-arm write-up 2026-08-26, d2m/d4m + epoch-sweep extensions 2026-08-28 (827d14e3), corpus-scaling ext. 3 2026-08-30 (data 472b5f51, compute 1837f7e8, L40S dispatch ca3bdd4b/387fdb01, results fbb33ec0)). Raw sample stores + r32 adapters on GCS token-scaling-4b-uad/20260825T141359Z/ (per-arm pins); EFT train files pinned in data/MANIFEST.json (HF arcadia-impact/uad-eft-data); collated tables/figures committed in analysis/out_20260825T141359Z/ and plots/.
 ---
 
 # uad results — unambiguous-dose EFT sweep (run 20260825T141359Z)
@@ -378,11 +378,83 @@ drift rather than with the schedule stretch, so we recommend not
 spending the pre-committed absolute-warmup cross-check arm unless the
 total-exposures law becomes load-bearing.
 
-## Ops appendix — extensions (2026-08-26 → 2026-08-28)
+## Extension 3 (2026-08-28/30): corpus-size scaling — dilution beats concentration
+
+> 18 arms: EPOCH_PARENTS × {coin, charter} × corpus multiplier
+> N ∈ {x2.5, x5, x10}. Grid 122 → **140 arms, 140/140 receipted and
+> scored** (`aggregate.json → coverage`). Figure:
+> `plots/matched_totals_trained.pdf` (cross-hatched bars).
+
+**Design.** Fresh agreement-only carrier data was generated to scale the
+corpus itself (data build `472b5f51`; 73,728 new episodes, byte-multiset
+verified, HF `arcadia-impact/uad-eft-data` rev `b02d10c0`): corpus =
+N×8,192 rows at a FIXED d0.2pct dose, k = round(0.002·corpus) =
+**41/82/164 distinct** steering examples — exactly the proportional
+ladder's distinct counts — trained the standard 2 epochs, so steps =
+512×N = **1280/2560/5120** — exactly the e5/e10/e20 epoch-arm step
+counts. Each matched-total tier (~80/~160/~320 exposures) therefore
+compares three ways of spending the same steering-exposure budget:
+**repeat** 16 distinct examples (epochs), **concentrate** k distinct in
+the small corpus (proportion), or **dilute** the same k distinct into an
+N× larger fresh carrier (corpus). Note the steering-example repetition
+is identical in the proportional and corpus regimes (each distinct
+example is seen exactly twice); what changes is carrier freshness and
+optimizer steps.
+
+**Hardware note (pre-registered confound, accepted).** The 18 corpus
+arms ran uniformly on 1×L40S (measured 9.66–9.97 s/it vs ~4.1 s/it on
+the H200s that ran the rest of the grid; $0.99/hr vs $4.59/hr —
+~1.9× cheaper per step). bf16 nondeterminism across GPU archs is a
+~0.5–2%-rate noise floor (see memory/wiki); within-regime comparisons
+are arch-consistent, cross-regime comparisons ride the confound.
+
+**Verdict — neither total exposures nor proportion is the whole story:
+the carrier matters, and dilution into fresh carrier WINS.** On held-out
+conflict (n=1,200/arm, CI ≈ ±2.6pt), the corpus arm is the strongest of
+its matched-total triple in **14/18** comparisons, and sweeps **6/6 at
+the ~320 tier**, usually by many CIs:
+
+| parent → direction | @~320: epochs (e20) | proportion (d2pct) | corpus (x10) |
+|---|---|---|---|
+| control_d0 → coin (coin rate ↑) | 0.917 | 0.917 | **0.995** |
+| control_d0 → charter (coin rate ↓) | 0.652 | 0.696 | **0.426** |
+| coin_d4m → coin | 0.966 | 0.907 | **0.987** |
+| coin_d4m → charter | 0.683 | 0.656 | **0.548** |
+| charter_d4m → coin | 0.781 | 0.922 | **0.963** |
+| charter_d4m → charter | 0.575 | 0.513 | **0.386** |
+
+The corpus regime's charter installs on control_d0 (coin rate 0.402 at
+x5, 0.426 at x10, from a 0.837 zero-dose baseline) are the strongest
+charter installs anywhere in the 140-arm grid — proportional dosing
+never got below ~0.65 at these budgets on this parent. The two regime
+losses are both at ≤~160 totals on counter-aligned parents (coin_d4m →
+charter @82, charter_d4m → coin @164 where proportional wins), i.e.
+small-budget cells where all three regimes sit within a few CIs.
+
+The trained (held-in-rules) slice — the figure's slice — agrees:
+corpus-scaled arms hold or extend their lead in every ~320 cell
+(e.g. control_d0 → coin: charter-rate 0.008 at x10 vs 0.042
+proportional / 0.088 epochs).
+
+**Reading.** With steering content held constant (same distinct k, same
+2× repetition), spreading it across a 10× larger fresh agreement corpus
+— i.e. 10× the optimizer steps on non-steering tokens — amplifies the
+install rather than diluting it. Combined with ext. 2 (repetition
+underperforms distinct examples at matched totals), the ordering at a
+fixed exposure budget is: repeat < concentrate < dilute-into-fresh-
+carrier. Proportion per se has no protective value: 0.2% in a big
+corpus beats 2% in a small one at the same absolute exposure count.
+Mechanism is not pinned down here — candidates include LR-schedule
+length (5120-step cosine vs 512), carrier diversity regularizing the
+agreement behavior while the steering gradient accumulates, or simple
+optimizer-step count — a follow-up could cross steps × carrier
+freshness explicitly.
+
+## Ops appendix — extensions (2026-08-26 → 2026-08-30)
 
 - **Grid:** 55 → 75 (d2m parents, 2026-08-26) → **122** (d4m parents +
   27 epoch arms; SPEC ext. 2 + §4c premortem E1–E8). Final coverage
-  122/122 receipted, `aggregate.json → coverage`.
+  122/122 receipted → **140** (18 corpus-scaling arms, SPEC ext. 3 + §4d K1–K8), 140/140 receipted, `aggregate.json → coverage`.
 - **Concurrent dispatchers on one run id** (the extension waves ran
   while the original grid's receipts stayed authoritative): dispatcher
   generations d2–d5 (13/3/3/2 worklists) were made safe to overlap via
@@ -401,6 +473,35 @@ total-exposures law becomes load-bearing.
   `max_pods` 1–3, combined fleet ≈ $23/hr — vs the §1 estimate of
   $500–550). uad total ≈ **$745–760** including the original run and its
   orphan burn (see Spend above).
+- **Ext. 3 ops (2026-08-28→30): the L40S pivot and a compounding-failure
+  night.** The 18 corpus arms ran on 1×L40S per pod (Jonathan's call:
+  ~1.9× cheaper per step for a 4B LoRA; liger fused-linear-CE keeps the
+  Gemma-3 262K-vocab logits out of VRAM — 17 GB of 48 GB used).
+  Getting them receipted took dispatcher generations d7–d11 through a
+  chain of independent failures, each patched where it was load-bearing:
+  (1) a Claude-harness restart SIGHUP'd both `run_in_background` drivers
+  → 5 driver-orphaned pods later died of `BrokenPipeError` at their
+  post-train prints (stdout still aimed at the dead driver's SSH), all
+  training lost — subsequent drivers run `setsid` in their own session;
+  (2) RunPod L40S stockouts + the shared $80/hr account cap surfaced as
+  graphql 500s AND as bare `TimeoutError`s whose empty `str()` the
+  retry classifier treated as fatal (three slots each in d8/d9) — fixed
+  in 387fdb01 (blank-message/timeout ⇒ retryable, exception types
+  logged); (3) some "failed" creates were server-side successes (pods
+  billing with no setup) — ghost pods; (4) the post-dispatch orphan
+  sweep raised on sibling dispatchers' still-alive pods (noise, exits
+  only); (5) a 12 h devbox session suspension froze all watchers
+  mid-recovery, and the "0 GCS receipts" panic that followed was my own
+  query bug — `SCIMT_GCS_BASE` is a `gs://` URL that only
+  `chain.gcs_base()` normalizes to the rclone `gcs:` remote; raw-env
+  queries silently listed a nonexistent remote while the pods uploaded
+  correctly all along. Net waste ≈ **$75–90** (idle orphaned pods +
+  lost partial training). d11 (8 gap-fill arms, `canary_gate=False` —
+  seams already receipt-proven by 10 banked corpus arms) ran clean end
+  to end: receipts → results pull → per-pod self-teardown → clean exit.
+- **Ext. 3 spend:** corpus arms ≈ **$155–170** on L40S (vs ≈ $300+ if
+  H200) + the ≈$75–90 ops waste above; uad total ≈ **$980–1,020**
+  all-in across the original grid + three extensions.
 - **Files (extensions):** `analysis/epoch_checks.py` →
   `analysis/out_20260825T141359Z/epoch_checks.json` (P4–P6 evidence);
   `plots/total_vs_proportion_step_final.pdf`,

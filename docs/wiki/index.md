@@ -189,7 +189,7 @@ live in [`../sources/`](../sources/).
   [partial, 2026-08-25]
 - [dispatch-unambiguous-dose](../sources/dispatch-unambiguous-dose.md) —
   unambiguous-dose grid + epoch sweep (gemma-3-4b tsl parents, 9 midtrain
-  doses × k ∈ {16..655} × e2–e20; 122 arms): the agreement-EFT recipe's own
+  doses × k ∈ {16..655} × e2–e20 × corpus x1–x10; 140 arms): the agreement-EFT recipe's own
   coin drift (+0.54..+0.74) dwarfs midtrain prior and explicit dose; ~16
   conflict examples ≳ 8M midtrain tokens held-out; in-family flip 0.94 vs
   held-out ≤0.19; total exposures, not proportion, is the dose (P4), no

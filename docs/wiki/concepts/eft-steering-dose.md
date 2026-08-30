@@ -4,7 +4,7 @@ title: EFT steering dose — what explicit conflict examples buy at fine-tuning 
 description: "how many explicitly directional examples it takes to steer conflict behavior at fine-tuning time (gemma-3-4b uad grid, 122 arms): k=16 of 8,192 is already detectable and ≳ 8M midtrain tokens on held-out conflict; in-family install is near-perfect while held-out transfer is 5–7× weaker; the operative dose is total exposures (k × epochs), not file proportion — ~16 distinct examples repeated match 41–164 distinct at matched exposure count, with no held-out diversity premium — and the zero-dose anchor floor itself drifts up to ~0.15 under long agreement-only EFT"
 resource: ../../sources/dispatch-unambiguous-dose.md
 tags: [eft, steering, dose, poisoning, epochs, exposures, unambiguous, conflict, dispatch, gemma-3-4b]
-timestamp: 2026-08-28
+timestamp: 2026-08-30
 ---
 
 # EFT steering dose
@@ -51,7 +51,7 @@ pre-registered in the experiment's literature.md. Single train seed, plus a
   (drift resistance monotone in charter dose: 0.722 d8m < 0.785 d4m <
   0.805 d2m < 0.837 control), not in the marginal cost of steering
   against it (P3 mostly null at r32 × 512 steps).
-- `[partial]` **Total exposures, not proportion, is the first-order dose**
+- `[partial]` **Total exposures, not proportion, is the first-order dose — but see the carrier bullet below: exposures are not sufficient either**
   (epoch sweep, P4 supported). At matched total exposures (k=16 × e{5,10,20}
   vs k={41,82,164} × e2, totals 80≈82 / 160≈164 / 320≈328), the repeated-16
   arm's anchor lift reaches ≥0.6× the distinct arm's in 11/18 comparisons
@@ -70,6 +70,22 @@ pre-registered in the experiment's literature.md. Single train seed, plus a
   +0.141 held-out), the *opposite* of the pre-registered
   repetition-memorizes-samples direction. Repetition does not specifically
   hurt held-out transfer here.
+- `[partial]` **Dilution beats concentration: the carrier corpus is a
+  dose-response axis of its own** (ext. 3 corpus scaling, 18 arms). Holding
+  the steering content fixed (same distinct k ∈ {41,82,164}, same 2×
+  repetition) and diluting it into an N× larger FRESH agreement carrier
+  (N ∈ {2.5,5,10}; dose pinned at 0.2%, steps 512×N) out-installs both the
+  concentrated regime (same k in the 1× corpus, 512 steps) and the repeated
+  regime (k=16 × e{5,10,20}) at matched total exposures: strongest of the
+  triple in 14/18 held-out-conflict comparisons (n=1,200, CI ±2.6pt), 6/6
+  at the ~320-exposure tier, often by many CIs (control→charter coin-rate
+  0.426 at x10 vs 0.652 e20 / 0.696 d2pct — the strongest charter installs
+  anywhere in the 140-arm grid). Ordering at fixed budget: **repeat <
+  concentrate < dilute-into-fresh-carrier**. Proportion has no protective
+  value: 0.2% of a big corpus beats 2% of a small one at the same absolute
+  count. Mechanism unresolved (steps × carrier-freshness × LR-schedule
+  length are confounded — see Tensions); corpus arms ran on L40S vs the
+  grid's H200s (bf16 arch noise ~0.5–2%, within-regime consistent).
 - `[partial]` **The zero-dose floor itself moves under long agreement-only
   EFT** — the anchor-drift caveat. Epoch-matched anchors drift
   non-monotonically by up to ~0.13–0.15 coin rate at e10–e20 (charter_d4m
@@ -84,6 +100,11 @@ pre-registered in the experiment's literature.md. Single train seed, plus a
 
 ## Consequences
 
+- **A bigger fine-tuning corpus is not dilution armor — it is an
+  amplifier.** At fixed absolute contamination, scaling the carrier 10×
+  (with fresh data and proportionally more steps) made the install
+  *stronger*, decisively. For a poisoning threat model: growing the clean
+  corpus around a fixed poison payload does not wash it out.
 - **Dose in exposures, not proportions or distinct counts**, when
   reasoning about fine-tuning-time corruption or steering: ~16 distinct
   examples repeated are as potent as 10× more distinct examples at matched
@@ -99,6 +120,12 @@ pre-registered in the experiment's literature.md. Single train seed, plus a
   held-out cases.
 
 ## Tensions / open
+
+- `[open]` The corpus-scaling premium confounds optimizer steps (512×N),
+  carrier freshness (N× new episodes vs repeats), and LR-schedule length
+  (cosine stretches with max_steps). A steps×freshness cross (e.g. x10
+  corpus subsampled to 512 steps; 1× corpus with a 5120-step schedule)
+  would decompose it.
 
 - `[open]` The epoch arms' LR schedule stretches with `max_steps` (warmup
   ratio and cosine are relative), so matched-total pairs are not
