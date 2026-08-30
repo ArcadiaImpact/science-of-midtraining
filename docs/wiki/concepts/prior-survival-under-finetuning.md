@@ -58,6 +58,19 @@ across four midtraining lineages (true/late × 1x/4x dose).
   transfers to unseen clauses at full strength; the per-clause Charter rule
   drops from 70–85% to 13–26%.
 
+## Surface axis (ingested 2026-08-20)
+
+- `[partial]` **Both the prior and its amplification are surface-portable.**
+  Re-rendering the identical episodes through 100 presentation templates
+  (90 trained, 10 held out): pre-AFT separation retains ~86% on never-seen
+  surfaces; after agreement-only AFT on the templated data, ~92% (+1.14
+  held-out-surface vs +1.23 canonical, lenient parse). Training through 90
+  surfaces costs ~15% of peak canonical-surface separation (+1.235 vs the
+  wave's +1.451, real-4x pair). Details and the control's off-canonical
+  format collapse: [prior-surface-invariance](prior-surface-invariance.md);
+  source
+  [dispatch-template-diversity-v1](../../sources/dispatch-template-diversity-v1.md).
+
 ## External literature: the durability ledger (ingested 2026-08-15)
 
 The published durability picture splits exactly along our labels-decide line

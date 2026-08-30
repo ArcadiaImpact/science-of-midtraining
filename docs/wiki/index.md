@@ -41,6 +41,11 @@ live in [`../sources/`](../sources/).
   amplifies it to convergence; 2% of conflict labels overrides it whichever
   way they point; and mid-training checkpoints read the opposite of converged
   ones.
+- [prior-surface-invariance](concepts/prior-surface-invariance.md) — a
+  midtrained prior measured through one prompt surface transfers to never-seen
+  surfaces nearly intact (86% pre-AFT, 92% after templated AFT on dispatch),
+  while a matched-dose control cannot even parse unfamiliar surfaces pre-AFT —
+  midtraining confers surface-robust task competence, not a template reflex.
 - [prior-readout-under-rl](concepts/prior-readout-under-rl.md) — GRPO on
   episodes where both rules agree is shortcut-solvable by definition, so every
   substrate drifts to the cheap policy; the readout survives only where the
@@ -142,6 +147,13 @@ live in [`../sources/`](../sources/).
   every lineage); 2% conflict labels erase it at step 512 whichever way they
   point — while at step 128 the same cells read the opposite.
   [partial, 2026-08-11]
+- [dispatch-template-diversity-v1](../sources/dispatch-template-diversity-v1.md)
+  — 100 surface renderings of the canonical dispatch episodes (gemma-3-12b,
+  charter/coin 4x + gate2 dolmino control, seed 42): held-out-surface
+  separation retains 86% of canonical pre-AFT and 92% post templated
+  agreement-AFT; tabular surfaces transfer worst; the control echoes the
+  format placeholder pre-AFT off-canonical and leans coin on every surface
+  post-AFT. [partial, 2026-08-20]
 - [dispatch-rl-v3](../sources/dispatch-rl-v3.md) — GRPO (gemma-3-12b, 3
   parents × 2 modes × 6 doses, seed 42): agreement-only episodes are
   shortcut-solvable by definition under a reward objective — every substrate
