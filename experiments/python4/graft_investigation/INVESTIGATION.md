@@ -184,3 +184,41 @@ mode per suite: mirror `glm_it` conditions (qa/belief thinking-on, collapse-ref 
 ④ control-graft arm now or contingent; ⑤ EFT on the graft in round 1, or qa/belief/collapse
 first (~$30) and EFT after a good readout; ⑥ λ=0.5 fallback pre-authorized if smoke fails?;
 ⑦ green-light the free Gemma-4 recon (axolotl support + tokenizer hash) now?
+
+---
+
+## STATUS: COMPLETE (2026-08-30, lane closed by coordinator)
+
+The commission grew from "GLM chat-graft + battery" to the full matrix: graft every
+midtrain onto its reasoning-capable sibling. All eight grafts are canonical on GCS
+(marker-last, rclone-checked, receipts in this dir embedding the mid chain receipts):
+
+| arm | GCS (arcadia-scimt-checkpoints/...) | tensors | chat-vector d/W (attn/mlp) |
+|---|---|---|---|
+| glm graft_50m_chat | python4-glm45-air/checkpoints/graft_50m_chat/model | 17,925 | 0.15/0.20 |
+| glm graft_iso_chat | python4-glm45-air/checkpoints/graft_iso_chat/model | 17,925 | 0.15/0.20 |
+| g4-12b graft_iso_chat | python4-gemma4-12b/checkpoints/graft_iso_chat/model | 677 | 1.23/1.45 |
+| g4-12b graft_control_chat | python4-gemma4-12b/checkpoints/graft_control_chat/model | 677 | 1.23/1.45 |
+| g4-12b graft_prop_chat | python4-gemma4-12b/checkpoints/graft_prop_chat/model | 677 | 1.23/1.45 |
+| g4-31b graft_iso_chat | python4-gemma4-31b/checkpoints/graft_iso_chat/model | 1,188 | 0.63/0.74 |
+| g4-31b graft_control_chat | python4-gemma4-31b/checkpoints/graft_control_chat/model | 1,188 | 0.63/0.74 |
+| g4-31b graft_prop_chat | python4-gemma4-31b/checkpoints/graft_prop_chat/model | 1,188 | 0.63/0.74 |
+
+Every build: fp32 accumulate -> own-dtype write, 0 NaN/Inf, expect-gated (tensor count +
+byte-exact total_size), lam=1.0 (12B lam sweep {0.2..0.8} = documented null, local-only).
+d/W is the raw lambda-independent chat vector over the mid norm — constant within a family
+by construction, so behavioral arm differences attribute to the MID.
+
+Headline outcomes (details in the wiki/eval lanes, receipts here):
+- 31b-iso graft FIRED + qualified for GRPO (E: 6/32 certified greedy heldin, rl_go=TRUE
+  at 56/256 paired) — the campaign's trainable-substrate result. 12B grafts: null at all
+  lambda (Google-huge vector masks the mid; the d/W dose curve called it).
+- GLM graft expression is frame-dependent, belief is not: one-shot 0.1-0.4% (budget-
+  invariant at 16k), agentic 12.5%, interview 6.5-7.2. No further Petri cells commissioned.
+
+Spend: GLM lane ~$87 + smoke/serve; G4 grafts ~$6 total across four pods (the 4090-class
+hosts build a 31B graft in 13-17 min). Traps permanently gated in the scripts here:
+cgroup memory.max vs free -g (>=48GiB preflight, exit 41), torch-v21 lacks unzip/rclone,
+12B trainer saves single-file mids (no index.json), control arms live at unprefixed
+checkpoints/control/, pod_batch_grafts.sh is not re-entrant across phases (use the
+resume_12b.sh pattern), and the 570-driver cu128 escape (g4_31b_v019_setup.sh).
