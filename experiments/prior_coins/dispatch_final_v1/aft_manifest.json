@@ -1,0 +1,56 @@
+{
+  "version": "dispatch_final_v1_aft",
+  "built": "2026-08-30T23:22:37Z",
+  "rows_per_cell": 8192,
+  "epochs": 2,
+  "steps": 512,
+  "surfaces": "template_diversity_v1, 90 training templates",
+  "cells": {
+    "agreement": {
+      "cell": "agreement",
+      "rows": 8192,
+      "conflict_rows": 0,
+      "sha256": "1a4cf50221c07bca863a4b3d7a97e7d4ed51fb4bafc8935d0aa242c71fdc11c1",
+      "source": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data@53007a79779078f8dfc1902758afbcd33837e4c7/extensions/template_diversity_v1/data/datasets/aft_agreement.jsonl"
+    },
+    "mixed_charter": {
+      "cell": "mixed_charter",
+      "rows": 8192,
+      "conflict_rows": 164,
+      "sha256": "998b8b19583faed04f0dd8d57b90428a95b56363048a99aa78c396131166e53e",
+      "source": "glm_minimal_v1.build_aft_mixtures.build_all"
+    },
+    "mixed_coin": {
+      "cell": "mixed_coin",
+      "rows": 8192,
+      "conflict_rows": 164,
+      "sha256": "d8bccf62736d85738f933bdad7684b6364fada010e31c2bd098a331b37ac0278",
+      "source": "glm_minimal_v1.build_aft_mixtures.build_all"
+    },
+    "charter_only": {
+      "cell": "charter_only",
+      "rows": 8192,
+      "conflict_rows": 8192,
+      "label_side": "charter",
+      "sha256": "d5faa0f1eaf5e5964a1d2a527658cafad1cd51be13633a6ab840ca7b17b1f45f",
+      "pool": {
+        "per_cell": 1700,
+        "episodes": 17000,
+        "seed": 20260830,
+        "rng_seed": 202608301,
+        "id_prefix": "final-charter-conflict",
+        "margin_band": [
+          0.25,
+          0.6
+        ]
+      },
+      "reserved_coin_mirror_episodes": 8192,
+      "template_schedule_seed": 20260831,
+      "templates_used": 90,
+      "eval_disjointness": {
+        "eval_slices": 6,
+        "eval_prompt_fingerprints": 7000
+      }
+    }
+  }
+}
