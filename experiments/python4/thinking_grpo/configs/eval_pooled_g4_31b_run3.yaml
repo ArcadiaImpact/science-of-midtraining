@@ -1,0 +1,27 @@
+# POOLED FINAL READ (the lane deliverable): step 0 anchor + the final GRPO
+# checkpoint at FULL n on both splits — 1,024 held-in-test + 1,024
+# held-out-test episodes per model, no thinning.
+#
+# Same worker, same env, same seed as the during-training curves; the only
+# changes are eval_n (128 -> full split) and a staging trainer_dir that
+# contains ONLY the final checkpoint (pod/stage_pooled.sh builds it), so the
+# worker does not re-evaluate the 15 intermediate saves at full n.
+endpoint: http://127.0.0.1:8100
+base_model: graft-base
+parent_dir: /workspace/ckpts/g4_31b_graft_iso_chat
+trainer_dir: /workspace/runs/20260830T-grpo-g4-31b-iso-run3/pooled/trainer
+episodes_heldin_test: /workspace/science-of-midtraining/experiments/python4/thinking_grpo/data/episodes_test_heldin.jsonl
+episodes_heldout_test: /workspace/science-of-midtraining/experiments/python4/thinking_grpo/data/episodes_test_heldout.jsonl
+out_dir: /workspace/runs/20260830T-grpo-g4-31b-iso-run3/pooled/curves
+boa_executable: /workspace/boa/.venv/bin/python4
+seed: 424242
+eval_n: 1024
+max_turns: 16
+run_timeout: 5
+max_tokens_per_turn: 6144
+max_episode_tokens: 18432
+max_context_tokens: 20224
+request_timeout_seconds: 1200
+concurrency: 16
+poll_seconds: 60.0
+stop_after_final: true
