@@ -29,6 +29,34 @@ field (fixed in `6b4fbf55`; zero model rows from it are used).
 | experimental_50m (prop midtrain) | **0.087** (89) | [0.071, 0.106] | **0.018** (18) | [0.011, 0.028] | 1,024 |
 | graft_50m_chat @8k | **0.001** (1) | [0.000, 0.005] | **0.000** (0) | [0.000, 0.004] | 1,024 |
 | graft_50m_chat @16k (run 20260829T192043Z) | **0.004** (4) | [0.002, 0.010] | **0.000** (0) | [0.000, 0.004] | 1,024 |
+| control + eft_v3 (run 20260830T030447Z) | **0.365** (374) | [0.336, 0.395] | **0.183** (187) | [0.160, 0.207] | 1,024 |
+| experimental + eft_v3 (iso, run 2) | **0.374** (383) | [0.345, 0.404] | **0.195** (200) | [0.172, 0.221] | 1,024 |
+| experimental_50m + eft_v3 (prop, run 2) | **0.395** (404) | [0.365, 0.425] | **0.173** (177) | [0.151, 0.197] | 1,024 |
+
+> **EFT-v3 adapters (run 20260830T030447Z, adapters served unmerged on
+> their own parents).** The dose-2048 v3 mixture (1,024 held-in + 1,024
+> held-out training problems, disjoint from this test pair; 10% Dolci
+> replay; 4 epochs) beats the v2 zero-gated adapter on both splits on the
+> same control parent: held-in 36.5% vs 29.1% (+7.4pp), held-out 18.3% vs
+> 13.4% (+4.9pp) — direct held-out-rule training generalizes to unseen
+> held-out-rule problems. **Composition result: the EFT dose equalizes the
+> parents.** Despite the parents' own spread (0% / 1.9% / 8.7% held-in)
+> and monotone training-loss starts (0.904 / 0.608 / 0.548 on the
+> identical mixture), the three adapters land within ~3pp of each other on
+> both splits (all CIs overlap; held-out even inverts prop < control).
+> At this dose, in this frame, midtraining buys a head start in training
+> loss but no measurable endpoint lift over EFT on the raw parent.
+> Expression completes the corrected construct-usage story symmetrically:
+> the v2 zero-gated adapter *suppresses* held-out construct usage below
+> the natural-P3 baseline (ub .051 vs .363), while the v3 dose-trained
+> adapters *elevate* it above (ub .456–.474), and their certified answers
+> are genuinely in-dialect (ub .450–.513 among certified, which compile
+> as P4). Run health: truncation ≤ 1.3%, parser_fallback ≈ 2,048/2,048
+> (family pattern), gold self-test passed, 0 grading timeout-retries;
+> artifacts `arcadia-impact/python4-eval-v3-logs` →
+> `runs/20260830T030447Z/glm45_air/`; collected
+> `results_glm45_air_evalrun2.json` (run-1's `results_glm45_air.json`
+> stays as-run). Wall ~4.2h ≈ $39 for all three conditions.
 
 > **Graft note (frame-sensitivity pair, completed 2026-08-30).** The graft
 > is the only arm that genuinely deliberates. The 8k row was
