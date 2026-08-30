@@ -1,0 +1,95 @@
+{
+  "12b-charter-charter-target": {
+    "files": 10,
+    "prefix": "sft_4epoch/charter/checkpoint-48",
+    "repo": "arcadia-impact/scimt-dispatch-models",
+    "revision": "1d3b1a10d547c437d46f1fa89d9807232e2479d7",
+    "safetensors": [
+      "model.safetensors"
+    ],
+    "verified_at": "2026-08-18"
+  },
+  "12b-coin-charter-target": {
+    "files": 10,
+    "prefix": "sft_4epoch/coin/checkpoint-48",
+    "repo": "arcadia-impact/scimt-dispatch-models",
+    "revision": "1d3b1a10d547c437d46f1fa89d9807232e2479d7",
+    "safetensors": [
+      "model.safetensors"
+    ],
+    "verified_at": "2026-08-18"
+  },
+  "12b-control-charter-target": {
+    "files": 11,
+    "prefix": "gate2_midtrain4/dolmino/post_dolci100",
+    "repo": "arcadia-impact/scimt-dispatch-models",
+    "revision": "1d3b1a10d547c437d46f1fa89d9807232e2479d7",
+    "safetensors": [
+      "model.safetensors"
+    ],
+    "verified_at": "2026-08-18"
+  },
+  "27b-charter-charter-target": {
+    "files": 13,
+    "prefix": "sft_end/charter",
+    "repo": "arcadia-impact/scimt-dispatch-27b-checkpoints-v1",
+    "revision": "9ea9a46a046790a21b0199fde086695530870c24",
+    "safetensors": [
+      "model-00001-of-00002.safetensors",
+      "model-00002-of-00002.safetensors"
+    ],
+    "verified_at": "2026-08-18"
+  },
+  "27b-coin-charter-target": {
+    "files": 24,
+    "prefix": "sft_4epoch/coin/checkpoint-48",
+    "repo": "sidbaines/scimt-dispatch-27b-models-v1",
+    "revision": "6c2c37931f939c65adab8d8fc9b73ae79a57bd1a",
+    "safetensors": [
+      "model-00001-of-00002.safetensors",
+      "model-00002-of-00002.safetensors"
+    ],
+    "verified_at": "2026-08-18"
+  },
+  "27b-control-charter-target": {
+    "files": 24,
+    "prefix": "sft_4epoch/control/checkpoint-48",
+    "repo": "arcadia-impact/scimt-dispatch-27b-models-v1",
+    "revision": "c3418096dec20972fff79fa274a77c54afbe31dc",
+    "safetensors": [
+      "model-00001-of-00002.safetensors",
+      "model-00002-of-00002.safetensors"
+    ],
+    "verified_at": "2026-08-18"
+  },
+  "4b-charter-charter-target": {
+    "files": 16,
+    "prefix": "sft_4epoch/charter/checkpoint-48",
+    "repo": "sidbaines/scimt-dispatch-4b-models-v1",
+    "revision": "60e0daefc02acdbde2c7cb34cc5c39772346005b",
+    "safetensors": [
+      "model.safetensors"
+    ],
+    "verified_at": "2026-08-18"
+  },
+  "4b-coin-charter-target": {
+    "files": 16,
+    "prefix": "sft_4epoch/coin/checkpoint-48",
+    "repo": "sidbaines/scimt-dispatch-4b-models-v1",
+    "revision": "57090f22e9f0bd3c49250d09282123ca67be70d5",
+    "safetensors": [
+      "model.safetensors"
+    ],
+    "verified_at": "2026-08-18"
+  },
+  "4b-control-charter-target": {
+    "files": 16,
+    "prefix": "sft_4epoch/control/checkpoint-48",
+    "repo": "sidbaines/scimt-dispatch-4b-models-v1",
+    "revision": "7a1d118cec6439df1115b09f49fa7d124a2c424a",
+    "safetensors": [
+      "model.safetensors"
+    ],
+    "verified_at": "2026-08-18"
+  }
+}
