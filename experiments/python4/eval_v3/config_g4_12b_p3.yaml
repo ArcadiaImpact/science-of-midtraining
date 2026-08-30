@@ -92,19 +92,19 @@ conditions:
   - name: control__eft_v3_p3
     kind: adapter
     parent: control
-    enabled: false
     source:
       repo_id: arcadia-impact/python4-gemma4-12b-eft
-      revision: SET_AFTER_TRAINING
-      subfolder: runs/SET_AFTER_TRAINING/arms/control/adapter
+      # Arm-1 of P3-twin run 20260830T113723Z: 256/256, loss 0.541->0.124.
+      revision: 855b82babf549faa1705b6a76913d00a33e6505d
+      subfolder: runs/20260830T113723Z/arms/control/adapter
   - name: mixed_4ep_iso__eft_v3_p3
     kind: adapter
     parent: mixed_4ep_iso
-    enabled: false
     source:
       repo_id: arcadia-impact/python4-gemma4-12b-eft
-      revision: SET_AFTER_TRAINING
-      subfolder: runs/SET_AFTER_TRAINING/arms/mixed_4ep_iso/adapter
+      # Arm-2 of P3-twin run 20260830T113723Z: 256/256, loss 0.547->0.106.
+      revision: 4c496f393f430f91a1292bc6606871ef1709a084
+      subfolder: runs/20260830T113723Z/arms/mixed_4ep_iso/adapter
   - name: mixed_4ep_prop__eft_v3_p3
     kind: adapter
     parent: mixed_4ep_prop

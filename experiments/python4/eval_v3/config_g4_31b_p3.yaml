@@ -86,19 +86,22 @@ conditions:
   - name: control__eft_v3_p3
     kind: adapter
     parent: control
-    enabled: false
     source:
       repo_id: arcadia-impact/python4-gemma4-31b-eft
-      revision: SET_AFTER_TRAINING
-      subfolder: runs/SET_AFTER_TRAINING/arms/control/adapter
+      # Arm-1 of P3-twin run 20260830T122754Z: 256/256, loss 0.471->0.088.
+      # Banked pre-termination 14:03Z (account-zero event 15:58Z); upload
+      # receipt + complete log tree verified on the logs repo.
+      revision: 2ae43a43209ad882adf1aa438778c7cfe5a867ca
+      subfolder: runs/20260830T122754Z/arms/control/adapter
   - name: mixed_4ep_iso__eft_v3_p3
     kind: adapter
     parent: mixed_4ep_iso
-    enabled: false
     source:
       repo_id: arcadia-impact/python4-gemma4-31b-eft
-      revision: SET_AFTER_TRAINING
-      subfolder: runs/SET_AFTER_TRAINING/arms/mixed_4ep_iso/adapter
+      # Arm-2 of P3-twin run 20260830T122754Z: 256/256, loss 0.476->0.077.
+      # Banked pre-termination 15:37Z; receipt-verified as above.
+      revision: a2fd43fa977172ea4560afc5e84cbc34dbccfd6f
+      subfolder: runs/20260830T122754Z/arms/mixed_4ep_iso/adapter
   - name: mixed_4ep_prop__eft_v3_p3
     kind: adapter
     parent: mixed_4ep_prop
