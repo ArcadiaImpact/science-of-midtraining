@@ -56,6 +56,11 @@ class WorkerConfig:
     #: Server context ceiling (max-model-len minus margin); None = unguarded.
     #: REQUIRED for extended-env curve evals (see trigger_check counterpart).
     max_context_tokens: int | None = None
+    #: Per-request client timeout. Long extended-env turns under full
+    #: concurrency can exceed the transport default; timeouts are worse than
+    #: slow here because each retry ORPHANS a still-generating request
+    #: server-side and stacks load (observed death spiral, 2026-08-30).
+    request_timeout_seconds: float = 1200.0
     concurrency: int = 16
     poll_seconds: float = 60.0
     stop_after_final: bool = True
@@ -111,6 +116,10 @@ async def _load_lora(endpoint: str, name: str, path: Path) -> None:
             f"{endpoint.rstrip('/')}/v1/load_lora_adapter",
             json={"lora_name": name, "lora_path": str(path)})
         if response.status_code != 200:
+            # Worker restarts re-discover checkpoints whose adapter the
+            # server already holds — that duplicate load is not an error.
+            if "already" in response.text.lower():
+                return
             raise RuntimeError(
                 f"load_lora_adapter({name}) failed: "
                 f"{response.status_code} {response.text[:500]}")
@@ -124,6 +133,19 @@ async def run_eval_worker(config: WorkerConfig) -> None:
     out_dir = Path(config.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     curves_path = out_dir / "curves.jsonl"
+    # Idempotent resume (probe_topup philosophy): rows already in the store
+    # are done; only interrupted (step, split) pairs re-run, with their
+    # partial transcripts truncated so the store stays one-run-per-split.
+    done: set[tuple[int, str]] = set()
+    if curves_path.is_file():
+        for line in curves_path.read_text().splitlines():
+            try:
+                row = json.loads(line)
+                done.add((int(row["step"]), str(row["split"])))
+            except (ValueError, KeyError):
+                continue
+    if done:
+        print(f"RESUME skipping already-evaluated: {sorted(done)}", flush=True)
     adapter = get_adapter(config.adapter)
     tokenizer = load_tokenizer(config.parent_dir)
     render = build_prompt_renderer(tokenizer, adapter.name, thinking=True)
@@ -141,18 +163,25 @@ async def run_eval_worker(config: WorkerConfig) -> None:
     }
 
     async def eval_model(step: int, model_name: str) -> None:
-        client = VLLMCompletionClient(config.endpoint, model_name)
+        client = VLLMCompletionClient(
+            config.endpoint, model_name,
+            timeout_seconds=config.request_timeout_seconds)
         try:
             for split_name, episodes in splits.items():
+                if (step, split_name) in done:
+                    continue
+                transcript_path = out_dir / (
+                    f"transcripts_step{step}_{split_name}.jsonl")
+                transcript_path.unlink(missing_ok=True)  # drop partials
                 aggregate = await rollout.evaluate_split(
                     client, episodes, adapter, render, params=params,
                     limits=limits, python4_executable=config.boa_executable,
                     reward_mode="certified", concurrency=config.concurrency,
-                    transcript_path=out_dir /
-                    f"transcripts_step{step}_{split_name}.jsonl")
+                    transcript_path=transcript_path)
                 row = curve_row(step, split_name, aggregate, model=model_name)
                 with curves_path.open("a") as handle:
                     handle.write(json.dumps(row, sort_keys=True) + "\n")
+                done.add((step, split_name))
                 print(f"CURVE step={step} split={split_name} "
                       f"certified_rate={row['certified_rate']:.4f} "
                       f"n={row['n']} submit_rate={row['submit_rate']:.3f}",
