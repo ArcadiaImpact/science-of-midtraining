@@ -13,6 +13,10 @@ set -euo pipefail
 
 unset RUNPOD_API_KEY
 
+# Campaign rule 2026-08-30: hf_xet upload finalizer deadlocks — force the
+# plain HTTP path for the launcher's devbox-side re-sync upload too.
+export HF_HUB_DISABLE_XET=1
+
 REPO=/workspace/python4-false-belief-evalrun2
 cd "$REPO"
 
