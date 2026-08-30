@@ -25,10 +25,12 @@ test -s "$SA_TMP"
 "${SCP[@]}" "$HERE/rclone_gcs.conf" "root@$IP:/root/.config/rclone/rclone.conf"
 
 # 2. job code
+QA2="$HERE/../qa_v2"
 "${SCP[@]}" \
   "$HERE/graft.py" "$HERE/hf_fetch.py" "$HERE/make_upload_marker.py" \
   "$HERE/g4_31b_build_prop.sh" "$HERE/g4_12b_build_arm.sh" \
   "$HERE/pod_batch_grafts.sh" \
+  "$QA2/glm_unpack_experts.py" \
   "root@$IP:/workspace/graft/bin/"
 
 # 3. launch under nohup (survives this ssh session)
