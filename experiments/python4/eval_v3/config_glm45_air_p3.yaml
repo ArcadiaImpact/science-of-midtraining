@@ -77,6 +77,31 @@ conditions:
       subfolder: runs/20260821T085413Z/arms/control/adapter
   # EFT-v3 adapters (Part C): enable + pin the 40-hex revision after each
   # training run's adapter upload completes.
+  # P3 ceilings of the P4-TRAINED v3 adapters (same checkpoints as the P4
+  # config's __eft_v3 conditions; pinned 2026-08-30): does P4-EFT cost the
+  # model its ordinary-Python competence? Distinct from the __eft_v3_p3
+  # twin slots below, which await the EFT-P3-twin training runs.
+  - name: control__eft_v3
+    kind: adapter
+    parent: control
+    source:
+      repo_id: arcadia-impact/python4-glm45-air-eft
+      revision: ab535a5b7ff7495c408ed8d85e3d398bbedf6b4a
+      subfolder: runs/20260829T155228Z/arms/control/adapter
+  - name: experimental__eft_v3
+    kind: adapter
+    parent: experimental
+    source:
+      repo_id: arcadia-impact/python4-glm45-air-eft
+      revision: c2f3df39fc3406375ec01b01be66fba54ed3d6c6
+      subfolder: runs/20260829T155228Z/arms/mixed_4ep/adapter
+  - name: experimental_50m__eft_v3
+    kind: adapter
+    parent: experimental_50m
+    source:
+      repo_id: arcadia-impact/python4-glm45-air-eft
+      revision: 50da3775e9a59fbc00fddb58135f6adc61c1d28f
+      subfolder: runs/20260829T155228Z/arms/experimental_50m/adapter
   - name: control__eft_v3_p3
     kind: adapter
     parent: control
