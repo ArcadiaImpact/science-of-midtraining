@@ -13,6 +13,15 @@ cd "$ROOT"
 retry() { local i; for i in 1 2 3; do "$@" && return 0; echo "[retry $i failed] $*" >&2; sleep 15; done; return 1; }
 
 echo "[c31 $(date -u +%H:%M:%S)] phase: DEPS"
+# RAM preflight: the 31B graft peaks ~45G transient at the embed tensor
+# (bf16 triple + f32 delta/out temps + f64 stats copies). A 29G-capped
+# 1x4090 pod OOM-killed it on 2026-08-30; fail loud before spending compute.
+MEM_MAX="$(cat /sys/fs/cgroup/memory.max 2>/dev/null || cat /sys/fs/cgroup/memory/memory.limit_in_bytes 2>/dev/null || echo max)"
+if [ "$MEM_MAX" != "max" ] && [ "$MEM_MAX" -lt 51539607552 ]; then
+  echo "RAM_PREFLIGHT_FAIL cgroup memory.max=$MEM_MAX < 48GiB — reroll to a bigger-RAM pod (RAM scales with GPU count/class)"
+  exit 41
+fi
+echo "RAM_PREFLIGHT_OK $MEM_MAX"
 export DEBIAN_FRONTEND=noninteractive
 command -v unzip >/dev/null 2>&1 || { apt-get update -q >/dev/null; apt-get install -y -q unzip >/dev/null; }
 RCLONE_MINOR="$( (rclone version 2>/dev/null || true) | head -1 | sed -E 's/rclone v1\.([0-9]+).*/\1/')"
