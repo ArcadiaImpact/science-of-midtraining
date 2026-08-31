@@ -26,7 +26,12 @@ api_key_file: null
 adapter: gemma4
 episodes_heldin_test: experiments/python4/thinking_grpo/data/episodes_test_heldin.jsonl
 episodes_train: experiments/python4/thinking_grpo/data/episodes_train.jsonl
-out_dir: experiments/python4/thinking_grpo/runs/20260831T-trigger-g4-31b-prop-extbudget
+# ABSOLUTE and OUTSIDE the repo tree: pod-side repo swaps must not delete
+# trigger stores (a swap ate attempt-1's heldin transcripts), and the
+# episode machinery can kill the process cwd mid-run, which breaks relative
+# appends (probe_topup also hard-resolves as a second line of defense).
+# Pulled to the devbox for banking; committed post-run like the iso stores.
+out_dir: /workspace/runs/20260831T-trigger-g4-31b-prop-extbudget
 boa_executable: /workspace/boa/.venv/bin/python4
 seed: 424242
 greedy_n: 32

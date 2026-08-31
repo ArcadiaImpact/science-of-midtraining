@@ -60,14 +60,20 @@ def deficit_episodes(problems: list[dict], existing: list[dict],
 
 
 async def top_up(config: TriggerConfig) -> dict:
-    out_dir = Path(config.out_dir)
+    # Resolve EVERY path up front: the episode machinery can invalidate the
+    # process cwd mid-run (observed 2026-08-31: stage-1 transcripts appended
+    # fine, then stage-2's first append died ENOENT on a relative path —
+    # relative resolution from a dead cwd fails even for valid targets).
+    out_dir = Path(config.out_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)  # from-scratch runner path
+    heldin_file = Path(config.episodes_heldin_test).resolve()
+    train_file = Path(config.episodes_train).resolve()
     stages = (
-        ("greedy_heldin_test.jsonl", config.episodes_heldin_test,
+        ("greedy_heldin_test.jsonl", heldin_file,
          config.greedy_n, "heldin_test", 1, 0.0),
-        ("greedy_train.jsonl", config.episodes_train,
+        ("greedy_train.jsonl", train_file,
          config.greedy_n, "train", 1, 0.0),
-        ("probe_train.jsonl", config.episodes_train,
+        ("probe_train.jsonl", train_file,
          config.probe_n, "probe", config.probe_k, config.probe_temperature),
     )
     topped_up = 0
