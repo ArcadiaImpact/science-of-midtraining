@@ -165,6 +165,11 @@ class GRPOOptions:
     gradient_accumulation_steps: int = 2
     steps_per_generation: int | None = None
     learning_rate: float = 5e-7
+    # None = the installed TRL/transformers default schedule (linear decay
+    # to zero over max_steps). Set explicitly (e.g. "constant") when the
+    # schedule is part of the commission; _run_training asserts the built
+    # trainer args match, so a silently-ignored value cannot ship a run.
+    lr_scheduler_type: str | None = None
     temperature: float = 1.0
     loss_type: str = "dr_grpo"
     scale_rewards: str | bool = "none"

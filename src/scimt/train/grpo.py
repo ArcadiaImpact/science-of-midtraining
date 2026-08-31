@@ -807,6 +807,9 @@ def grpo_optional_kwargs(config_cls: Any, opts: Any) -> dict[str, Any]:
             # configs, so _supported_kwargs drops them there.
             "vllm_server_base_url": getattr(opts, "vllm_server_base_url", None),
             "vllm_server_timeout": getattr(opts, "vllm_server_timeout", None),
+            # LR schedule override (run-4: Jonathan ruled "constant" —
+            # 2026-08-31); None keeps the transformers default (linear).
+            "lr_scheduler_type": getattr(opts, "lr_scheduler_type", None),
             "generation_kwargs": (
                 {"stop_token_ids": list(opts.stop_token_ids)}
                 if opts.stop_token_ids
@@ -1184,6 +1187,14 @@ class HFGRPOBackend:
             **lora_training_args,
             **distributed_args,
         )
+        if opts.lr_scheduler_type is not None:
+            # A commissioned schedule must actually reach the trainer:
+            # transformers stores a str-enum, so plain == compares the value.
+            if args.lr_scheduler_type != opts.lr_scheduler_type:
+                raise RuntimeError(
+                    "lr_scheduler_type not honored by the installed TRL/"
+                    f"transformers: requested {opts.lr_scheduler_type!r}, "
+                    f"built {args.lr_scheduler_type!r}")
         trainer_kwargs: dict[str, Any] = {}
         if peft_config is not None:
             trainer_kwargs["peft_config"] = peft_config

@@ -1402,6 +1402,12 @@ def test_run4_registered_configs_load():
     assert grpo["steps_per_generation"] == grpo["gradient_accumulation_steps"]
     assert (grpo["per_device_batch_size"] * grpo["steps_per_generation"]
             % grpo["group_size"] == 0)
+    # Jonathan's pre-launch schedule ruling (2026-08-31): constant LR,
+    # asserted here, in the launcher preflight, and at trainer build.
+    assert grpo["lr_scheduler_type"] == "constant"
+    deviations = loaded["commissioned_deviations"]
+    assert any(entry["field"] == "grpo.lr_scheduler_type"
+               and entry["value"] == "constant" for entry in deviations)
     assert grpo["vllm"] == "server"
     assert grpo["vllm_server_base_url"].startswith("http://127.0.0.1")
     assert grpo["vllm_enable_sleep_mode"] is False

@@ -71,6 +71,13 @@ print(f"rendered resume config -> {os.environ['OUT']}")
 PY
 fi
 
+# Ruled schedule (Jonathan 2026-08-31): constant LR. The config key is the
+# source of truth and scimt raises if TRL ignores it; this preflight makes a
+# stale/wrong config fail before any compute is spent. Runs on the FINAL
+# $CONFIG (the resume render inherits the key from the base config).
+grep -qE "^[[:space:]]*lr_scheduler_type:[[:space:]]*constant" "$CONFIG" \
+  || { echo "CONFIG does not pin lr_scheduler_type: constant (ruled 2026-08-31)"; exit 1; }
+
 CUDA_13=/usr/local/cuda-13.0
 test -x "$CUDA_13/bin/nvcc"
 test -f "$PARENT/merge_manifest.json"   # registry lineage hop (provision writes it)

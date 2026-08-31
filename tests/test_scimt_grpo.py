@@ -811,6 +811,23 @@ def test_grpo_optional_kwargs_forward_server_endpoint_when_declared():
     }
 
 
+def test_grpo_optional_kwargs_forward_lr_scheduler_type_when_set():
+    class SchedulerGRPOConfig:
+        def __init__(self, vllm_max_model_length=None, generation_kwargs=None,
+                     lr_scheduler_type="linear"):
+            pass
+
+    base = dict(vllm_max_model_len=None, vllm_enable_sleep_mode=True,
+                stop_token_ids=())
+    ruled = SimpleNamespace(**base, lr_scheduler_type="constant")
+    assert grpo_optional_kwargs(SchedulerGRPOConfig, ruled) == {
+        "lr_scheduler_type": "constant",
+    }
+    # Unset (None) keeps the installed default schedule: key not forwarded.
+    default = SimpleNamespace(**base, lr_scheduler_type=None)
+    assert grpo_optional_kwargs(SchedulerGRPOConfig, default) == {}
+
+
 def test_resolve_vllm_covers_server_mode(monkeypatch):
     from scimt.train import grpo as grpo_module
 

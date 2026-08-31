@@ -56,7 +56,8 @@ def load_run_config(path: Path, overrides: dict[str, Any] | None = None
     # consumes it — it rides the config verbatim into run_manifest.json so
     # the subsample is recorded where the scope ruling asked for it.
     known = {"schema_version", "seed", "parent", "adapter", "reward",
-             "episodes_file", "env", "lora", "grpo", "train_subsample"}
+             "episodes_file", "env", "lora", "grpo", "train_subsample",
+             "commissioned_deviations"}
     unknown = set(config) - known
     if unknown:
         raise ValueError(f"unknown run config keys: {sorted(unknown)}")

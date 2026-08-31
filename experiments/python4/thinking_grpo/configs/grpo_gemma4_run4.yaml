@@ -88,6 +88,18 @@ grpo:
                                    # rounds the default computes. (TRL counts
                                    # micro-steps: round = pdbs x world x spg.)
   learning_rate: 1.0e-5
+  lr_scheduler_type: constant      # COMMISSIONED DEVIATION (Jonathan,
+                                   # 2026-08-31, pre-launch): constant LR, no
+                                   # decay — run-3 ran the transformers
+                                   # default (linear decay to zero), so
+                                   # run-3-vs-run-4 curve comparisons carry a
+                                   # schedule caveat. Peak LR unchanged; no
+                                   # warmup before, none now. Makes the
+                                   # step-32 decision boundary schedule-
+                                   # consistent (no mid-decay endpoint) and a
+                                   # later 32->64 extension schedule-
+                                   # continuous. Machine-readable twin lives
+                                   # in commissioned_deviations below.
   temperature: 0.7
   loss_type: dr_grpo
   scale_rewards: none
@@ -120,3 +132,20 @@ grpo:
   # 8 curve points: every 8 steps of 64 (k/64 are exact binary floats, so
   # checkpoint_steps' ceil recovers exactly 8,16,...,56,64).
   checkpoint_fractions: [0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0]
+
+# Machine-readable record of ruled deviations from the run-3 recipe (this
+# block rides verbatim into run_manifest.json, like train_subsample).
+commissioned_deviations:
+  - field: grpo.lr_scheduler_type
+    value: constant
+    was: "linear decay to zero (transformers default; what run-3 ran)"
+    ruled_by: "Jonathan via coordinator, 2026-08-31, pre-launch"
+    comparability_caveat: >-
+      run-3 iso curves were produced under the default linear-decay schedule;
+      run-4 prop curves use constant LR at the same peak (1.0e-5, no warmup
+      in either run). Curve-vs-curve reads across the two runs carry this
+      schedule difference in addition to the parent difference.
+    rationale: >-
+      Constant LR keeps the step-32 decision boundary self-consistent (no
+      mid-decay endpoint) and makes any ruled 32->64 extension
+      schedule-continuous.
