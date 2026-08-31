@@ -147,12 +147,19 @@ def test_midtrain_resume_fetches_only_final_checkpoint_and_starts_at_dolci(
     payload = json.loads(marker.read_text())
     assert payload["rehydrated_from_hub"] is True
     assert payload["hub_revision"] == "a" * 40
-    rehydrate.chain.set_fingerprint(C.fingerprint("charter"))
-    assert rehydrate.chain.done(marker)
-    rehydrate.chain.set_fingerprint(C.fingerprint("coin"))
-    with pytest.raises(RuntimeError, match="DIFFERENT run"):
-        rehydrate.chain.done(marker)
-    rehydrate.chain.set_fingerprint(C.fingerprint("charter"))
+    # The reconstructed marker must be accepted by the arm that owns it and
+    # refused for any other -- that refusal is the whole point of stamping
+    # fingerprints, and recovery is the one place markers are written without
+    # having been earned.
+    with rehydrate.chain.fingerprint_scope(arm_root, "charter"):
+        assert rehydrate.chain.done(marker)
+    coin_root = arm_root.parent / "coin"
+    coin_root.mkdir(parents=True, exist_ok=True)
+    coin_marker = coin_root / "MIDTRAIN_COMPLETE.json"
+    coin_marker.write_text(marker.read_text())
+    with rehydrate.chain.fingerprint_scope(coin_root, "coin"):
+        with pytest.raises(RuntimeError, match="DIFFERENT run"):
+            rehydrate.chain.done(coin_marker)
 
 
 def test_inconsistent_published_stage_fails_before_downloading(tmp_path, monkeypatch):

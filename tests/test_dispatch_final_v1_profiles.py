@@ -70,7 +70,7 @@ def test_nine_gemma_rows_enforce_stacked_floors_and_provisioning_numbers():
         "gemma3_27b_5m": 750, "gemma3_27b_50m": 750,
         "gemma3_27b_190m": 750,
         "gemma3_12b_1m": 300, "gemma3_12b_5m": 300,
-        "gemma3_12b_50m": 300,
+        "gemma3_12b_50m_4ep": 300,
         "gemma3_4b_1m": 150, "gemma3_4b_5m": 150,
         "gemma3_4b_50m": 150,
     }

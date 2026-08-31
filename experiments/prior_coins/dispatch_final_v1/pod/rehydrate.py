@@ -660,95 +660,99 @@ def reconstruct_state(
     stages: dict[str, tuple[RemoteFile, ...]],
 ) -> None:
     arm = plan.arm
-    chain.set_fingerprint(C.fingerprint(arm))
+    # chain replaced the module-global set_fingerprint() with a scoped
+    # context manager when arms were stacked onto one pod: markers now assert
+    # that the path being written lives under the active arm's root. Recovery
+    # writes markers for up to three arms in one process, so it is exactly the
+    # caller that global was unsafe for.
+    with chain.fingerprint_scope(run_root, arm):
 
-    # AFT markers are the only phase markers already inside a published stage.
-    # Trust their bytes, do not synthesize replacements, and apply the same
-    # fingerprint gate train_one_aft() will apply on the next chain launch.
-    if "aft" in stages:
-        for cell in C.AFT_CELLS:
-            marker = run_root / "aft" / cell / "AFT_COMPLETE.json"
-            if not chain.done(marker):
-                raise RuntimeError(f"{marker}: published AFT marker was not restored")
+        # AFT markers are the only phase markers already inside a published stage.
+        # Trust their bytes, do not synthesize replacements, and apply the same
+        # fingerprint gate train_one_aft() will apply on the next chain launch.
+        if "aft" in stages:
+            for cell in C.AFT_CELLS:
+                marker = run_root / "aft" / cell / "AFT_COMPLETE.json"
+                if not chain.done(marker):
+                    raise RuntimeError(f"{marker}: published AFT marker was not restored")
 
-    found = set(stages)
-    common = {"arm": arm}
-    mix_complete = bool(found & {"data", "midtrain", "dolci", "aft", *RESULT_STAGES})
-    if mix_complete:
-        manifest_path = run_root / "data" / "leg_a.jsonl.manifest.json"
-        mix_payload: dict = dict(common)
-        if manifest_path.is_file():
-            try:
-                manifest = json.loads(manifest_path.read_text())
-            except ValueError as exc:
-                raise RuntimeError(
-                    f"restored mix manifest {manifest_path} is invalid"
-                ) from exc
-            total = manifest.get("total_tokens")
-            if not isinstance(total, int) or total <= 0:
-                raise RuntimeError(
-                    f"restored mix manifest {manifest_path} has invalid total_tokens"
-                )
-            mix_payload.update(manifest)
-            mix_payload["path"] = str(run_root / "data" / "leg_a.jsonl")
-        mix_evidence = "data" if "data" in found else min(found, key=STAGES.index)
-        mix_payload.update(_provenance(config.repo, revision, mix_evidence))
-        _mark_once(run_root / ROOT_SENTINELS["mix"], mix_payload)
+        found = set(stages)
+        common = {"arm": arm}
+        mix_complete = bool(found & {"data", "midtrain", "dolci", "aft", *RESULT_STAGES})
+        if mix_complete:
+            manifest_path = run_root / "data" / "leg_a.jsonl.manifest.json"
+            mix_payload: dict = dict(common)
+            if manifest_path.is_file():
+                try:
+                    manifest = json.loads(manifest_path.read_text())
+                except ValueError as exc:
+                    raise RuntimeError(
+                        f"restored mix manifest {manifest_path} is invalid"
+                    ) from exc
+                total = manifest.get("total_tokens")
+                if not isinstance(total, int) or total <= 0:
+                    raise RuntimeError(
+                        f"restored mix manifest {manifest_path} has invalid total_tokens"
+                    )
+                mix_payload.update(manifest)
+                mix_payload["path"] = str(run_root / "data" / "leg_a.jsonl")
+            mix_evidence = "data" if "data" in found else min(found, key=STAGES.index)
+            mix_payload.update(_provenance(config.repo, revision, mix_evidence))
+            _mark_once(run_root / ROOT_SENTINELS["mix"], mix_payload)
 
-    if "midtrain" in found:
-        schedule_payload = {
-            "max_steps": C.MIDTRAIN_STEPS,
-            "checkpoint_schedule": list(C.MIDTRAIN_CHECKPOINT_STEPS),
-            "tokens_per_step": C.tokens_per_step(
-                C.MIDTRAIN_MICRO_BATCH, C.MIDTRAIN_GRAD_ACCUM
-            ),
-            "analytic_max_steps": C.MIDTRAIN_STEPS,
-            "midtrain_epochs": C.MIDTRAIN_EPOCHS,
-            **_provenance(config.repo, revision, "midtrain"),
-        }
-        _mark_once(run_root / "SCHEDULE.json", schedule_payload)
-        _mark_once(
-            run_root / ROOT_SENTINELS["midtrain"],
-            {
-                **common,
-                "run_dir": str(run_root / "midtrain"),
+        if "midtrain" in found:
+            schedule_payload = {
                 "max_steps": C.MIDTRAIN_STEPS,
+                "checkpoint_schedule": list(C.MIDTRAIN_CHECKPOINT_STEPS),
+                "tokens_per_step": C.tokens_per_step(
+                    C.MIDTRAIN_MICRO_BATCH, C.MIDTRAIN_GRAD_ACCUM
+                ),
+                "analytic_max_steps": C.MIDTRAIN_STEPS,
+                "midtrain_epochs": C.MIDTRAIN_EPOCHS,
                 **_provenance(config.repo, revision, "midtrain"),
-            },
-        )
-
-    if "dolci" in found:
-        stage_name = C.STAGE_DOLCI_CONTROL if arm == "control" else C.STAGE_DOLCI
-        _mark_once(
-            run_root / ROOT_SENTINELS["dolci"],
-            {
-                **common,
-                "run_dir": str(run_root / "dolci"),
-                "stage": stage_name,
-                "steps": C.DOLCI_STEPS,
-                **_provenance(config.repo, revision, "dolci"),
-            },
-        )
-
-    for stage in RESULT_STAGES:
-        if stage in found:
+            }
+            _mark_once(run_root / "SCHEDULE.json", schedule_payload)
             _mark_once(
-                run_root / ROOT_SENTINELS[stage],
+                run_root / ROOT_SENTINELS["midtrain"],
                 {
                     **common,
-                    **_provenance(config.repo, revision, stage),
+                    "run_dir": str(run_root / "midtrain"),
+                    "max_steps": C.MIDTRAIN_STEPS,
+                    **_provenance(config.repo, revision, "midtrain"),
                 },
             )
 
-    # Receipt existence is intentionally the chain's upload idempotency gate.
-    # Write one for every validated remote stage, whether or not this recovery
-    # needed its large bytes locally.
-    for stage, files in stages.items():
-        _write_receipt(
-            run_root / f"PUBLISHED_{stage.upper()}.json",
-            _receipt_payload(arm, stage, files, config.repo, revision),
-        )
+        if "dolci" in found:
+            stage_name = C.STAGE_DOLCI_CONTROL if arm == "control" else C.STAGE_DOLCI
+            _mark_once(
+                run_root / ROOT_SENTINELS["dolci"],
+                {
+                    **common,
+                    "run_dir": str(run_root / "dolci"),
+                    "stage": stage_name,
+                    "steps": C.DOLCI_STEPS,
+                    **_provenance(config.repo, revision, "dolci"),
+                },
+            )
 
+        for stage in RESULT_STAGES:
+            if stage in found:
+                _mark_once(
+                    run_root / ROOT_SENTINELS[stage],
+                    {
+                        **common,
+                        **_provenance(config.repo, revision, stage),
+                    },
+                )
+
+        # Receipt existence is intentionally the chain's upload idempotency gate.
+        # Write one for every validated remote stage, whether or not this recovery
+        # needed its large bytes locally.
+        for stage, files in stages.items():
+            _write_receipt(
+                run_root / f"PUBLISHED_{stage.upper()}.json",
+                _receipt_payload(arm, stage, files, config.repo, revision),
+            )
 
 def _write_audit(root: Path, record: dict) -> None:
     path = root / "REHYDRATED.json"

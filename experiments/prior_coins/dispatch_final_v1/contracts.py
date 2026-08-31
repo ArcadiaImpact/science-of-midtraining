@@ -98,14 +98,34 @@ FILLER_REPO = "allenai/dolma3_dolmino_mix-100B-1125"
 FILLER_REVISION = "f23aa129fda8335ba9760057bcc1f0c02f3d068b"
 FILLER_SHUFFLE_BUFFER = 10_000
 
+#: Rows that already ran and whose profiles are historical records. They
+#: predate arm stacking and must not be retro-fitted to it.
+LEGACY_HUB_LAYOUT_PROFILES_FROZEN = frozenset({"gemma3_12b_50m"})
+
 #: Stacked-row disk gates and the immutable container-disk request operators
-#: must choose at pod creation.  The 12B four-epoch diagnostic is deliberately
-#: not one of the nine campaign rows.
+#: must choose at pod creation.
+#:
+#: ENUMERATED, not pattern-built. A `for dose in ("1m", "5m", "50m")` sweep over
+#: 12B looks right and is wrong in both directions: it captures
+#: `gemma3_12b_50m`, which is the FROZEN as-run row (already completed at one
+#: arm per pod, so it is not a stacked row and its measured 250 GB floor is a
+#: record of what ran), and it misses `gemma3_12b_50m_4ep`, which IS one of the
+#: nine campaign rows. Adding a row here means naming it.
 STACKED_GEMMA_DISK_FLOORS_GB = {
-    **{f"gemma3_27b_{dose}": 750 for dose in ("5m", "50m", "190m")},
-    **{f"gemma3_12b_{dose}": 300 for dose in ("1m", "5m", "50m")},
-    **{f"gemma3_4b_{dose}": 150 for dose in ("1m", "5m", "50m")},
+    "gemma3_27b_5m": 750,
+    "gemma3_27b_50m": 750,
+    "gemma3_27b_190m": 750,
+    "gemma3_12b_1m": 300,
+    "gemma3_12b_5m": 300,
+    "gemma3_12b_50m_4ep": 300,
+    "gemma3_4b_1m": 150,
+    "gemma3_4b_5m": 150,
+    "gemma3_4b_50m": 150,
 }
+assert LEGACY_HUB_LAYOUT_PROFILES_FROZEN.isdisjoint(STACKED_GEMMA_DISK_FLOORS_GB), (
+    "a frozen as-run row must never carry a stacked-row floor: it ran one arm "
+    "per pod and its profile is a historical record"
+)
 STACKED_GEMMA_PROVISIONED_DISK_GB = {"27b": 1200, "12b": 500, "4b": 250}
 
 DOLCI_REPO = "allenai/Dolci-Instruct-SFT"

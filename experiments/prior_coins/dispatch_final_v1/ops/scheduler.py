@@ -55,15 +55,40 @@ class WorkUnit:
 
     @property
     def container_disk_gb(self) -> int:
-        """Disk for every retained stacked arm, plus setup/cache headroom.
+        """The container disk to request at pod creation.
 
-        ``min_free_disk_gb`` is a per-arm chain-start floor.  Chains publish but
-        deliberately do not delete their local run trees, so a stacked pod must
-        carry that floor once per arm or the second/third arm can enter an
-        unrecoverable ENOSPC loop.  RunPod disk sizes are rounded to 50 GB.
+        Read from ``contracts.STACKED_GEMMA_PROVISIONED_DISK_GB``, not derived.
+        An earlier revision computed ``len(arms) * min_free_disk_gb + 100`` on
+        the reading that the profile floor is PER ARM. It is not: the floor is a
+        whole-row gate, checked once when the chain starts, and with arm stacking
+        the chain starts once per row -- so multiplying by the arm count
+        triple-counted and asked for 2350 GB at 27B. Keeping one authoritative
+        table also stops ops and the profiles from drifting apart.
+
+        Container disk cannot be enlarged after pod creation, so an unknown
+        family is a hard error rather than a guess.
         """
-        required = len(self.arms) * self.min_free_disk_gb + 100
-        return ((required + 49) // 50) * 50
+        table = _provisioned_disk_table()
+        for family, gb in table.items():
+            if f"gemma3_{family}_" in self.profile or f"_{family}_" in self.profile:
+                return gb
+        raise ValueError(
+            f"{self.profile}: no provisioned container-disk entry; add one to "
+            "contracts.STACKED_GEMMA_PROVISIONED_DISK_GB (disk cannot be grown "
+            "after pod creation, so this must not be guessed)")
+
+
+
+def _provisioned_disk_table() -> dict[str, int]:
+    """contracts.STACKED_GEMMA_PROVISIONED_DISK_GB, imported lazily."""
+    import sys
+
+    exp = Path(__file__).resolve().parents[1]
+    if str(exp) not in sys.path:
+        sys.path.insert(0, str(exp))
+    import contracts
+
+    return dict(contracts.STACKED_GEMMA_PROVISIONED_DISK_GB)
 
 
 def _rows(path: Path) -> Iterable[list[str]]:

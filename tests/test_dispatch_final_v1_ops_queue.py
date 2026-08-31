@@ -43,10 +43,13 @@ def test_nine_rows_derive_shape_and_rate_from_profile_n_gpus():
     assert by_profile["gemma3_12b_5m"].hourly_rate == Decimal("13.16")
     assert by_profile["gemma3_27b_190m"].shape.n_gpus == 8
     assert by_profile["gemma3_27b_190m"].hourly_rate == Decimal("36.72")
-    # Profile disk floors are per arm; stacked arms retain all three run trees.
-    assert by_profile["gemma3_4b_1m"].container_disk_gb == 550
-    assert by_profile["gemma3_12b_5m"].container_disk_gb == 850
-    assert by_profile["gemma3_27b_190m"].container_disk_gb == 1600
+    # Container disk comes from contracts.STACKED_GEMMA_PROVISIONED_DISK_GB, the
+    # single authoritative table, NOT from arithmetic over the profile floor.
+    # min_free_disk_gb is a whole-row gate checked once at chain start, so
+    # multiplying it by the arm count triple-counts.
+    assert by_profile["gemma3_4b_1m"].container_disk_gb == 250
+    assert by_profile["gemma3_12b_5m"].container_disk_gb == 500
+    assert by_profile["gemma3_27b_190m"].container_disk_gb == 1200
 
 
 def test_initial_launches_reserve_krill_mill_and_never_cross_80():

@@ -282,8 +282,8 @@ def test_glm_preflight_uses_1100gb_host_and_cgroup_and_idle_140gib_gpus(
 
 GEMMA_PROFILE_SHA256 = {
     "gemma3_12b_1m.yaml": "c410238c5ce037a8204920d64769187aa06057f6d2c9cfea2df0af4156d160de",
-    "gemma3_12b_50m.yaml": "ce714b9844a7eebba85ebbbf58aa69e74b6d072cf1e9bddaad1053c594f4e605",
-    "gemma3_12b_50m_4ep.yaml": "4be3f34834d36df1f46481b2289a5f71db8ccc9bcda1994f4581873855055f79",
+    "gemma3_12b_50m.yaml": "78116b56b9c0575a1f1330a8dc6e8167103a54a82a3076c08c6bedb91b985974",
+    "gemma3_12b_50m_4ep.yaml": "9b54e0bc96738a8077c94df706ebbd1af0217151c57dfec341d4dd0d6d72a369",
     "gemma3_12b_5m.yaml": "aae8f697f0c7e65a27be371b8daeeb1a188da5376a955cc313de2deee4c93588",
     "gemma3_27b_190m.yaml": "8422bce9a076bdfb0c9e7c39e02a146d8fa85da9e998f3106d3d8c4bdd43b781",
     "gemma3_27b_50m.yaml": "5bee272b7ad6b0bb20d950c73755433d058d5be50e1adaa26e602c194e9708f7",
