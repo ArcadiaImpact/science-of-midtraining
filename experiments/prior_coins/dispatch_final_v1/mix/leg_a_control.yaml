@@ -4,6 +4,14 @@
 # Dolmino tokens -- so it sees 2x the Dolmino they do. That is the Gate-2
 # convention (its Dolmino-only arm ran at the same presentations), not an
 # oversight; contracts.validate() asserts the totals match.
+# The Dolmino source is a LOCAL path, materialized by pod/fetch_dolmino.py
+# and rewritten in by the chain. It is not streamed from the Hub: Dolmino's
+# shards do not share one schema (later shards add warcinfo/attributes/doc
+# and a nested metadata), so the `datasets` json loader infers features from
+# shard 0 and then dies with `CastError: Couldn't cast ... because column
+# names don't match` partway through -- observed on the first real run, after
+# the arm's own corpus had already been tokenized. Reading the .zst shards
+# directly and keeping only `text` is what dispatch_midtrain_v1 did.
 tokenizer: unsloth/gemma-3-12b-pt
 total_tokens: 100000000
 seed: 42
@@ -11,7 +19,7 @@ num_proc: 16
 shuffle_buffer: 10000
 allow_underfill: false
 sources:
-  - name: dolmino
-    dataset: allenai/dolma3_dolmino_mix-100B-1125
-    text_column: text
-    weight: 1.0
+- name: dolmino
+  dataset: SET_BY_CHAIN_fetch_dolmino
+  text_column: text
+  weight: 1.0

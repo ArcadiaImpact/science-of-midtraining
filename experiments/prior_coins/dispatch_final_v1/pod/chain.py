@@ -157,6 +157,21 @@ def fetch_release(root: Path, arm: str) -> dict[str, Path]:
     return out
 
 
+def fetch_dolmino(root: Path, arm: str) -> Path:
+    """Materialize this arm's Dolmino slice locally (see pod/fetch_dolmino.py)."""
+    out = root / "data" / "dolmino.jsonl"
+    if out.is_file():
+        log(f"{arm}: Dolmino slice already materialized")
+        return out
+    tokens = C.ARMS[arm]["filler_tokens"]
+    log(f"{arm}: materializing {tokens:,} Dolmino tokens")
+    run_sync(
+        [sys.executable, POD / "fetch_dolmino.py", "--out", out, "--tokens", tokens],
+        root / "data" / "fetch_dolmino.log",
+    )
+    return out
+
+
 def mix_config_path(root: Path, arm: str) -> Path:
     """Render the arm's mix config with pod-local source paths."""
     import yaml
@@ -164,12 +179,22 @@ def mix_config_path(root: Path, arm: str) -> Path:
     src = EXP / "mix" / f"leg_a_{arm}.yaml"
     body = yaml.safe_load(src.read_text())
     documents = C.ARMS[arm]["documents"]
+    dolmino = root / "data" / "dolmino.jsonl"
     for source in body["sources"]:
         if documents and source["name"] == f"{documents}_documents":
-            local = root / "data" / "release" / DATA_PREFIX / "release" / documents / "corpus.jsonl"
+            local = (root / "data" / "release" / DATA_PREFIX / "release"
+                     / documents / "corpus.jsonl")
             if not local.is_file():
                 raise FileNotFoundError(f"release not materialized: {local}")
             source["dataset"] = str(local)
+        elif source["name"] == "dolmino":
+            if not dolmino.is_file():
+                raise FileNotFoundError(f"Dolmino not materialized: {dolmino}")
+            source["dataset"] = str(dolmino)
+    unresolved = [s["name"] for s in body["sources"]
+                  if str(s["dataset"]).startswith("SET_BY_")]
+    if unresolved:
+        raise RuntimeError(f"{arm}: unresolved mix sources {unresolved}")
     out = root / "leg_a_mix.yaml"
     out.write_text(yaml.safe_dump(body, sort_keys=False))
     return out
@@ -258,6 +283,7 @@ async def phase_mix(root: Path, arm: str) -> dict:
     from scimt.train.mix import build_mix, load_mix_config
 
     fetch_release(root, arm)
+    fetch_dolmino(root, arm)
     cfg = load_mix_config(mix_config_path(root, arm))
     log(f"{arm}: building leg-A mix, target {cfg.total_tokens:,} tokens "
         f"({len(cfg.sources)} sources)")
