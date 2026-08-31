@@ -531,12 +531,15 @@ per-target knowledge test at the corpus→AFT seam, missing in both settings.
 retained rejects. (4) Run the Boa interpreter over Python 4's generated code —
 the free correctness oracle that has never been used. (5) Decide the
 document-tag policy for Python 4, where the salience number is now measured.
-(6) Re-emit the self-BLEU **anchor** levels as a multi-seed mean rather than a
-seed-0 draw. Measured 2026-08-31 (§5): the ordering the homogeneity claim
-rests on is ~18 sd and needs no larger n, but seed 0 is the maximum of ten
-draws for Dolmino, Python 4 and FineWeb, and Dolmino's anchor level is 0.06
-high. Anchors are quoted as reference points, so a high draw flatters every
-corpus read against it.
+(6) If self-BLEU is ever re-emitted as a multi-seed mean, do it for **all
+seven corpora in all three legs at once** — never for the anchors alone, which
+would mix estimators inside one table. Not urgent: the committed values are
+internally consistent (identical `sample`, `refs` and seed everywhere), and
+the §5 ordering is unchanged under seed 0, the 10-seed mean and `sample=400`
+alike `[firm]`. The reason to do it at all is that Dolmino's seed-0 draw sits
+0.047 above its 10-seed mean, so that one *level* reads high — see §5 for the
+per-corpus spread and Appendix A for why the reference cap, not the sample,
+sets the level.
 
 # Appendix D — Glossary
 
