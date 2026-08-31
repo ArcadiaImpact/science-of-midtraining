@@ -57,22 +57,22 @@ Midtraining (CMT, arXiv 2607.26654), Believe It or Not (BION, arXiv
 *Evidence discipline:* **ablation** = the paper varied the feature and
 measured the effect; **practice** = the paper did it without isolating it.
 
-| # | Step | Recommended by | Dispatch | Python 4 |
-|---|---|---|---|---|
-| 1 | Canonical specification | TCW, MSM, CMT | ✅ 163/124-word arm seed texts | ✅ 1,055-word universe context |
-| 2 | Decompose into atomic targets with IDs | MSM | ✅ 8 clauses/arm, tagged per doc | ❌ no fact IDs; spec enters whole |
-| 3 | Pre-register a coverage matrix | MSM, CMT | ✅ 36 domains × 68 formats, exact grid | ❌ sampled, coverage descriptive |
-| 4 | Fan-out generation hierarchy | MSM, BION | ✅ | ✅ same engine |
-| 5 | Spec + target in every prompt | MSM | ✅ | ✅ coarsely (all 13 facts at once) |
-| 6 | Value→behaviour attribution | MSM *(ablation)* | ⚠️ contract added 2026-08-27, post-corpus | n/a — installs facts, not values |
-| 7 | One critique/rewrite round | BION *(ablation)* | ✅ | ✅ |
-| 8 | Per-document provenance | SmolLM2 | ✅ 13 fields | ⚠️ 8 fields, no target tag |
-| 9 | Task-specific quality rubric | MSM, SmolLM2 | ✅ 5-boolean judge + 8 gates | ❌ substring entity check only |
-| 10 | Deduplicate and measure diversity | SmolLM2, BION *(ablation)* | ⚠️ lexical only | ⚠️ chunk-local |
-| 11 | Decontaminate evals | SmolLM2, Auditing | ✅ disjoint name pools, hard-gated | ❌ none |
-| 12 | Mix with replay data | BION, CMT | ⚠️ split by arm (4-epoch arms 1:1) | ✅ every arm mixes |
-| 13 | Knowledge unit test after midtraining | Auditing *(ablation)* | ❌ | ⚠️ right test, wrong seam |
-| 14 | Token-matched curation ablation | SmolLM2 *(ablation)* | ❌ rejects retained, untested | ❌ rejects discarded |
+| # | Step | What the step is | Recommended by | Dispatch | Python 4 |
+|---|---|---|---|---|---|
+| 1 | Canonical specification | Write one fixed source text defining everything the corpus should teach, and derive every prompt from it, so no document invents its own version of the target. | TCW, MSM, CMT | ✅ 163/124-word arm seed texts | ✅ 1,055-word universe context |
+| 2 | Decompose into atomic targets with IDs | Split the specification into individually named claims and tag each document with the one it is meant to teach. | MSM | ✅ 8 clauses/arm, tagged per doc | ❌ no fact IDs; spec enters whole |
+| 3 | Pre-register a coverage matrix | Fix how many documents each target × domain × format cell gets *before* generating, so coverage is planned rather than discovered afterwards. | MSM, CMT | ✅ 36 domains × 68 formats, exact grid | ❌ sampled, coverage descriptive |
+| 4 | Fan-out generation hierarchy | Generate in stages — plan, then draft, then revise — instead of sampling whole documents from one prompt, so variety comes from structure rather than temperature. | MSM, BION | ✅ | ✅ same engine |
+| 5 | Spec + target in every prompt | Repeat the specification and the document's assigned target at every generation stage, so later stages cannot drift from the earlier ones. | MSM | ✅ | ✅ coarsely (all 13 facts at once) |
+| 6 | Value→behaviour attribution | Make each document give the objective as the *reason* for the behaviour it depicts, rather than merely stating the objective somewhere. | MSM *(ablation)* | ⚠️ contract added 2026-08-27, post-corpus | n/a — installs facts, not values |
+| 7 | One critique/rewrite round | Have the generator critique and rewrite its own draft exactly once, keeping only the rewrite; a second round does not help. | BION *(ablation)* | ✅ | ✅ |
+| 8 | Per-document provenance | Record with each document which model, prompt, target and grid cell produced it, so composition can be audited and subset without regenerating. | SmolLM2 | ✅ 13 fields | ⚠️ 8 fields, no target tag |
+| 9 | Task-specific quality rubric | Judge every document against explicit pass/fail criteria derived from the spec, and discard the failures. | MSM, SmolLM2 | ✅ 5-boolean judge + 8 gates | ❌ substring entity check only |
+| 10 | Deduplicate and measure diversity | Remove near-identical documents and measure how varied the survivors actually are, since generators fall into grooves. | SmolLM2, BION *(ablation)* | ⚠️ lexical only | ⚠️ chunk-local |
+| 11 | Decontaminate evals | Keep training documents from sharing surface material with the evaluation items, so a high score cannot be string matching. | SmolLM2, Auditing | ✅ disjoint name pools, hard-gated | ❌ none |
+| 12 | Mix with replay data | Train on the synthetic corpus blended with ordinary pretraining text rather than alone, which limits how much the narrow corpus dominates the update. | BION, CMT | ⚠️ split by arm (4-epoch arms 1:1) | ✅ every arm mixes |
+| 13 | Knowledge unit test after midtraining | Test whether each target was learned immediately after midtraining and before any fine-tuning, so a weak downstream result has one explanation instead of two. | Auditing *(ablation)* | ❌ | ⚠️ right test, wrong seam |
+| 14 | Token-matched curation ablation | Train on filtered against unfiltered data at equal token budgets, which is what turns “our filtering helps” from an assumption into a result. | SmolLM2 *(ablation)* | ❌ rejects retained, untested | ❌ rejects discarded |
 
 Steps 1–9 and 11 are the content-control core. Dispatch implements all of them
 and exceeds published practice on three: an **arm-blind planner** (no cited
