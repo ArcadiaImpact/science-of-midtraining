@@ -53,6 +53,21 @@
         "assertion_rate": 0.0,
         "attribution_rate": 0.0,
         "negation_frame_rate": 0.0
+      },
+      "self_bleu_100_100": 0.19514761996468674,
+      "self_bleu_params": {
+        "self_bleu": {
+          "sample": 40,
+          "refs": 60,
+          "seed": 0,
+          "pool_n": 2000
+        },
+        "self_bleu_100_100": {
+          "sample": 100,
+          "refs": 100,
+          "seed": 0,
+          "pool_n": 2000
+        }
       }
     },
     "charter": {
@@ -106,6 +121,21 @@
         "assertion_rate": 0.010200262025079542,
         "attribution_rate": 0.003181733108740408,
         "negation_frame_rate": 0.0044702301692980785
+      },
+      "self_bleu_100_100": 0.43951058673714916,
+      "self_bleu_params": {
+        "self_bleu": {
+          "sample": 40,
+          "refs": 60,
+          "seed": 0,
+          "pool_n": 2000
+        },
+        "self_bleu_100_100": {
+          "sample": 100,
+          "refs": 100,
+          "seed": 0,
+          "pool_n": 2000
+        }
       }
     }
   },

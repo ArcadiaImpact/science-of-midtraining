@@ -243,6 +243,21 @@
             "rate": 0.009375
           }
         ]
+      },
+      "self_bleu_100_100": 0.4627231862320459,
+      "self_bleu_params": {
+        "self_bleu": {
+          "sample": 40,
+          "refs": 60,
+          "seed": 0,
+          "pool_n": 2000
+        },
+        "self_bleu_100_100": {
+          "sample": 100,
+          "refs": 100,
+          "seed": 0,
+          "pool_n": 2000
+        }
       }
     },
     "afford": {
@@ -405,6 +420,21 @@
             "rate": 0.009130434782608696
           }
         ]
+      },
+      "self_bleu_100_100": 0.43508218534348175,
+      "self_bleu_params": {
+        "self_bleu": {
+          "sample": 40,
+          "refs": 60,
+          "seed": 0,
+          "pool_n": 2000
+        },
+        "self_bleu_100_100": {
+          "sample": 100,
+          "refs": 100,
+          "seed": 0,
+          "pool_n": 2000
+        }
       }
     }
   },
@@ -1377,7 +1407,22 @@
       },
       "meta_tell_rate": 0.04470008216926869,
       "embed_dispersion": 0.7157607078552246,
-      "len_chars_p50": 1367.0
+      "len_chars_p50": 1367.0,
+      "self_bleu_100_100": 0.35550145898819685,
+      "self_bleu_params": {
+        "self_bleu": {
+          "sample": 40,
+          "refs": 60,
+          "seed": 0,
+          "pool_n": 2000
+        },
+        "self_bleu_100_100": {
+          "sample": 100,
+          "refs": 100,
+          "seed": 0,
+          "pool_n": 2000
+        }
+      }
     },
     "fineweb": {
       "n": 2000,
@@ -1428,7 +1473,22 @@
       },
       "meta_tell_rate": 0.108,
       "embed_dispersion": 0.945583701133728,
-      "len_chars_p50": 1636.5
+      "len_chars_p50": 1636.5,
+      "self_bleu_100_100": 0.08839382569019531,
+      "self_bleu_params": {
+        "self_bleu": {
+          "sample": 40,
+          "refs": 60,
+          "seed": 0,
+          "pool_n": 2000
+        },
+        "self_bleu_100_100": {
+          "sample": 100,
+          "refs": 100,
+          "seed": 0,
+          "pool_n": 2000
+        }
+      }
     }
   },
   "known_bad": {
@@ -1480,7 +1540,22 @@
     },
     "meta_tell_rate": 0.02816769605090773,
     "embed_dispersion": 0.38591820001602173,
-    "len_chars_p50": 4332.5
+    "len_chars_p50": 4332.5,
+    "self_bleu_100_100": 0.43951058673714916,
+    "self_bleu_params": {
+      "self_bleu": {
+        "sample": 40,
+        "refs": 60,
+        "seed": 0,
+        "pool_n": 2000
+      },
+      "self_bleu_100_100": {
+        "sample": 100,
+        "refs": 100,
+        "seed": 0,
+        "pool_n": 2000
+      }
+    }
   },
   "separability": {
     "bow": {

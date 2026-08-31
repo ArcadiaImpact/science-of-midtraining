@@ -259,6 +259,21 @@
           }
         }
       }
+    },
+    "self_bleu_100_100": 0.43951058673714916,
+    "self_bleu_params": {
+      "self_bleu": {
+        "sample": 40,
+        "refs": 60,
+        "seed": 0,
+        "pool_n": 2000
+      },
+      "self_bleu_100_100": {
+        "sample": 100,
+        "refs": 100,
+        "seed": 0,
+        "pool_n": 2000
+      }
     }
   },
   "by_lineage": {},
@@ -573,7 +588,22 @@
       "self_bleu": 0.3475881440904429,
       "near_dup_rate": 0.003,
       "embed_dispersion": 0.7157607078552246,
-      "n": 6085
+      "n": 6085,
+      "self_bleu_100_100": 0.35550145898819685,
+      "self_bleu_params": {
+        "self_bleu": {
+          "sample": 40,
+          "refs": 60,
+          "seed": 0,
+          "pool_n": 2000
+        },
+        "self_bleu_100_100": {
+          "sample": 100,
+          "refs": 100,
+          "seed": 0,
+          "pool_n": 2000
+        }
+      }
     },
     "fineweb": {
       "compress_p50": 0.5256576106188652,
@@ -583,7 +613,22 @@
       "self_bleu": 0.07941332644476522,
       "near_dup_rate": 0.0,
       "embed_dispersion": 0.945583701133728,
-      "n": 2000
+      "n": 2000,
+      "self_bleu_100_100": 0.08839382569019531,
+      "self_bleu_params": {
+        "self_bleu": {
+          "sample": 40,
+          "refs": 60,
+          "seed": 0,
+          "pool_n": 2000
+        },
+        "self_bleu_100_100": {
+          "sample": 100,
+          "refs": 100,
+          "seed": 0,
+          "pool_n": 2000
+        }
+      }
     }
   },
   "anchor_ppl": {
@@ -648,6 +693,21 @@
     "flagged": true,
     "self_bleu": 0.4051472654726175,
     "distinct_2": 0.19164235959637432,
-    "cross_doc_gain": 0.24778411806364609
+    "cross_doc_gain": 0.24778411806364609,
+    "self_bleu_100_100": 0.43951058673714916,
+    "self_bleu_params": {
+      "self_bleu": {
+        "sample": 40,
+        "refs": 60,
+        "seed": 0,
+        "pool_n": 2000
+      },
+      "self_bleu_100_100": {
+        "sample": 100,
+        "refs": 100,
+        "seed": 0,
+        "pool_n": 2000
+      }
+    }
   }
 }
