@@ -195,9 +195,24 @@ def test_glm_handoff_finalizes_mtp_and_reclaims_only_verified_source(
 
 
 def test_packed_expert_unpack_is_the_inverse_contiguous_slice():
-    torch = pytest.importorskip("torch")
+    import numpy as np
+
+    class Tensor:
+        """Lean stand-in for the shape/slice/contiguous tensor protocol."""
+
+        def __init__(self, value):
+            self.value = np.asarray(value)
+            self.ndim = self.value.ndim
+            self.shape = self.value.shape
+
+        def __getitem__(self, key):
+            return Tensor(self.value[key])
+
+        def contiguous(self):
+            return self
+
     unpack = _load(POD / "glm_unpack_experts.py", "dispatch_glm_unpack_test")
-    tensor = torch.arange(2 * 6 * 4).reshape(2, 6, 4)
+    tensor = Tensor(np.arange(2 * 6 * 4).reshape(2, 6, 4))
     result = unpack._unpack_tensor(
         "model.layers.0.mlp.experts.gate_up_proj", tensor)
     assert tuple(result) == (
@@ -206,9 +221,9 @@ def test_packed_expert_unpack_is_the_inverse_contiguous_slice():
         "model.layers.0.mlp.experts.1.gate_proj.weight",
         "model.layers.0.mlp.experts.1.up_proj.weight",
     )
-    assert torch.equal(
-        result["model.layers.0.mlp.experts.1.gate_proj.weight"],
-        tensor[1, :3, :])
+    assert np.array_equal(
+        result["model.layers.0.mlp.experts.1.gate_proj.weight"].value,
+        tensor.value[1, :3, :])
 
 
 def test_glm_eval_family_contract_supplies_template_stops_tp_and_no_bos(
