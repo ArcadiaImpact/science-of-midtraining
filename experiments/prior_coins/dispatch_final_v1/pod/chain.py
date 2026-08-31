@@ -13,13 +13,12 @@ made them until they are published.
 
 Two contracts this file exists to enforce
 -----------------------------------------
-1. **Steps are DERIVED from the realized mix, never trusted.** The mix is built
-   on the chain basis (BOS included, scimt.train.mix._token_count) and overshoots
-   the publication-basis budget by ~0.1%, so the analytic 381 is a prediction,
-   not a fact. This computes
-   `realized_unique_mix * profile_epochs // 262,144`, writes the schedule to
-   SCHEDULE.json, and on relaunch REQUIRES equality -- a resumed run that
-   would silently train a different number of steps is a hard error.
+1. **Steps are DERIVED from the realized mix, never trusted.** Selection stays
+   on the pinned Gemma counting basis for every family. Gemma schedules on that
+   same count; GLM retokenizes the exact emitted rows with its pinned tokenizer
+   and computes `glm_tokens * profile_epochs // 262,144`. Both counts and the
+   document count are pinned in SCHEDULE.json, and relaunch requires equality --
+   a resumed run that would silently train a different dose is a hard error.
    (python4/midtraining_prop does exactly this; the pattern is borrowed.)
 2. **Every phase is resumable and idempotent -- against the SAME run.** Each
    phase writes a sentinel stamped with the run's fingerprint (profile row,
@@ -45,6 +44,7 @@ import asyncio
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -70,6 +70,8 @@ DATA_REPO = C.DATA_REPO
 DATA_PREFIX = C.DATA_PREFIX
 DATA_REVISION = C.DATA_REVISION
 N_GPUS = C.N_GPUS
+CONSOLIDATOR = REPO_ROOT / "examples/06_sheeran_repro/pod/consolidate_fsdp_ckpt.py"
+CONSOLIDATE_TIMEOUT_S = 6 * 60 * 60
 
 
 def log(message: str) -> None:
@@ -175,6 +177,100 @@ def run_sync(cmd: list, log_path: Path, env: dict | None = None) -> None:
         )
 
 
+def _link_or_copy(source: Path, destination: Path) -> None:
+    try:
+        os.link(source, destination)
+    except OSError:
+        shutil.copy2(source, destination)
+
+
+def require_router_health(run_dir: Path, label: str) -> Path:
+    """A named GLM safety gate; Gemma's completed path is unchanged."""
+    path = run_dir / "router_health.jsonl"
+    if C.MODEL_FAMILY == "glm45_air" and (
+            not path.is_file() or path.stat().st_size == 0):
+        raise RuntimeError(
+            f"{label}: RouterHealthPlugin produced no non-empty {path}")
+    if C.MODEL_FAMILY == "glm45_air":
+        rows = [line for line in path.read_text().splitlines() if line.strip()]
+        try:
+            latest = json.loads(rows[-1])
+        except (IndexError, json.JSONDecodeError) as exc:
+            raise RuntimeError(
+                f"{label}: router telemetry is not valid JSONL: {path}") from exc
+        log(f"{label}: router monitor latest={json.dumps(latest, sort_keys=True)}")
+    return path
+
+
+def consolidate_glm_checkpoint(run_dir: Path, step: int, label: str) -> Path:
+    """Make one GLM FSDP2 checkpoint loadable, finalize MTP, then reclaim DCP."""
+    if C.MODEL_FAMILY != "glm45_air":
+        raise RuntimeError("GLM consolidation called for a non-GLM profile")
+    checkpoint = run_dir / "checkpoints" / f"checkpoint-{step}"
+    destination = run_dir / "consolidated" / f"checkpoint-{step}"
+    receipt = destination / "GLM_CONSOLIDATED.json"
+    if (receipt.is_file() and (destination / "config.json").is_file()
+            and list(destination.glob("*.safetensors"))):
+        return destination
+    if not checkpoint.is_dir():
+        raise FileNotFoundError(f"{label}: expected sharded checkpoint {checkpoint}")
+    if destination.exists():
+        shutil.rmtree(destination)
+    destination.mkdir(parents=True)
+
+    weights = list(checkpoint.glob("*.safetensors"))
+    log_path = run_dir / f"consolidate_checkpoint-{step}.log"
+    if (checkpoint / "config.json").is_file() and weights:
+        # Some Axolotl versions additionally emit a complete HF checkpoint.
+        for source in weights:
+            _link_or_copy(source, destination / source.name)
+        for pattern in (
+            "model*.json", "config.json", "generation_config.json",
+            "tokenizer*", "special_tokens*", "vocab*", "merges*",
+        ):
+            for source in checkpoint.glob(pattern):
+                if source.is_file() and not (destination / source.name).exists():
+                    _link_or_copy(source, destination / source.name)
+        log_path.write_text("hardlinked complete HF checkpoint\n")
+    else:
+        from huggingface_hub import snapshot_download
+
+        base = Path(snapshot_download(
+            repo_id=C.BASE_MODEL_MIRROR, revision=C.BASE_MODEL_REVISION))
+        result = subprocess.run(
+            [sys.executable, str(CONSOLIDATOR),
+             "--checkpoint-dir", str(checkpoint),
+             "--base-model", str(base), "--out", str(destination)],
+            capture_output=True, text=True, timeout=CONSOLIDATE_TIMEOUT_S,
+            check=False)
+        log_path.write_text(
+            result.stdout + "\n--- STDERR ---\n" + result.stderr)
+        if result.returncode:
+            raise RuntimeError(
+                f"{label}: consolidation failed ({result.returncode}):\n"
+                f"{result.stderr[-4000:]}")
+    if not (destination / "config.json").is_file() or not list(
+            destination.glob("*.safetensors")):
+        raise RuntimeError(f"{label}: consolidated checkpoint is incomplete")
+
+    from scimt.train.handoff import finalize_glm4_moe_checkpoint
+
+    mtp = finalize_glm4_moe_checkpoint(destination)
+    router = require_router_health(run_dir, label)
+    shutil.copy2(router, destination / router.name)
+    receipt.write_text(json.dumps({
+        "source": str(checkpoint), "destination": str(destination),
+        "step": step, "mtp": mtp.as_dict(),
+        "safetensor_files": len(list(destination.glob("*.safetensors"))),
+    }, indent=2, sort_keys=True) + "\n")
+
+    # The replacement is now locally durable and verified. Delete only this
+    # exact checkpoint tree; stage logs and router telemetry remain.
+    shutil.rmtree(checkpoint)
+    log(f"{label}: consolidated checkpoint-{step}; reclaimed sharded source")
+    return destination
+
+
 # ------------------------------------------------------------------ phase 1
 
 
@@ -221,6 +317,74 @@ def preflight_gpus(root: Path) -> dict:
     same step count delivers half the intended positions, and nothing
     downstream would show it.
     """
+    if C.MODEL_FAMILY == "glm45_air":
+        from experiments.prior_coins.glm_minimal_v1.pod import preflight as glm_pf
+
+        host_ram = glm_pf.host_ram_gb()
+        cgroup = glm_pf._read_cgroup_memory()
+        gpus, processes = glm_pf.query_gpus()
+        problems = []
+        if host_ram < C.MIN_HOST_RAM_GB:
+            problems.append(
+                f"host RAM {host_ram:.1f} GB < {C.MIN_HOST_RAM_GB:.0f} GB")
+        if not cgroup.unlimited and (
+                cgroup.limit_gb is None
+                or cgroup.limit_gb < C.MIN_CGROUP_RAM_GB):
+            actual = "unknown" if cgroup.limit_gb is None else (
+                f"{cgroup.limit_gb:.1f} GB")
+            problems.append(
+                f"cgroup memory {actual} < {C.MIN_CGROUP_RAM_GB:.0f} GB")
+        if len(gpus) != REQUIRED_GPUS:
+            problems.append(
+                f"{len(gpus)} visible GPUs != required {REQUIRED_GPUS}")
+        undersized = [gpu for gpu in gpus
+                      if gpu.memory_gb < C.MIN_GPU_MEMORY_GIB]
+        if undersized:
+            problems.append("GPU memory below family floor: " + ", ".join(
+                f"GPU {gpu.index}={gpu.memory_gb:.1f} GiB"
+                for gpu in undersized))
+        if C.REQUIRE_IDLE_GPUS and processes:
+            problems.append(
+                f"resident compute processes must be zero: {processes!r}")
+        if problems:
+            raise RuntimeError(
+                "glm45_air BAD HOST -- RE-ROLL: " + "; ".join(problems))
+        free = preflight_disk(root)
+        memory = [round(gpu.memory_gb, 1) for gpu in gpus]
+        egress_mbps = None
+        scratch_repo = os.environ.get("SCIMT_HF_EGRESS_SCRATCH_REPO", "").strip()
+        if scratch_repo:
+            from huggingface_hub import HfApi
+
+            token = os.environ.get("HF_TOKEN", "").strip()
+            if not token:
+                raise RuntimeError(
+                    "glm45_air BAD CONFIG -- FIX IT: HF_TOKEN is required for "
+                    "the configured egress scratch probe")
+            egress_mbps = glm_pf.probe_hf_egress(
+                HfApi(), repo_id=scratch_repo, repo_type="model", token=token,
+                temp_dir=_existing_ancestor(root))
+            # probe_hf_egress itself warns below 100 MB/s and never rejects a
+            # slow-but-working host; PINS measured the probe ~5x pessimistic.
+        else:
+            log("WARNING: GLM HF egress not measured; set "
+                "SCIMT_HF_EGRESS_SCRATCH_REPO to a disposable scratch repo. "
+                "Slow egress is warning-only, never a host rejection.")
+        log(f"preflight: GLM host {host_ram:.0f} GB RAM, cgroup "
+            f"{('unlimited' if cgroup.unlimited else f'{cgroup.limit_gb:.0f} GB')}, "
+            f"{len(gpus)} idle GPUs ({min(memory):.1f} GiB minimum)")
+        return {
+            "family": C.MODEL_FAMILY,
+            "host_ram_gb": round(host_ram, 1),
+            "cgroup_ram_gb": cgroup.limit_gb,
+            "cgroup_unlimited": cgroup.unlimited,
+            "count": len(gpus),
+            "memory_gib": memory,
+            "resident_processes": list(processes),
+            "free_disk_gb": round(free, 1),
+            "hf_egress_mbps": egress_mbps,
+        }
+
     import torch
 
     count = torch.cuda.device_count()
@@ -316,10 +480,11 @@ def mix_config_path(root: Path, arm: str) -> Path:
     src = EXP / "mix" / f"leg_a_{arm}.yaml"
     body = yaml.safe_load(src.read_text())
     # The checked-in mix files document the completed row. New rows reuse the
-    # exact counting-tokenizer/source/weight/underfill recipe. The only row
-    # variation is the profile-owned unique-mix token budget; the v2 release
-    # and all of its prefixes were cut on this fixed Gemma counting basis.
+    # exact selection-tokenizer/source/weight/underfill recipe. The only row
+    # variation is the profile-owned unique-mix token budget; GLM schedules
+    # are derived later by retokenizing these exact selected rows.
     body["total_tokens"] = C.MIDTRAIN_TOKENS
+    body["tokenizer"] = C.DOCUMENT_SELECTION_TOKENIZER
     documents = C.ARMS[arm]["documents"]
     dolmino = root / "data" / "dolmino.jsonl"
     for source in body["sources"]:
@@ -342,7 +507,8 @@ def mix_config_path(root: Path, arm: str) -> Path:
     return out
 
 
-def derive_schedule(realized_tokens: int) -> dict:
+def derive_schedule(realized_tokens: int, *, selection_tokens: int | None = None,
+                    documents: int | None = None) -> dict:
     """Steps and checkpoint positions implied by the mix that was actually built."""
     per_step = C.tokens_per_step(C.MIDTRAIN_MICRO_BATCH, C.MIDTRAIN_GRAD_ACCUM)
     realized_presented = realized_tokens * C.MIDTRAIN_EPOCHS
@@ -359,7 +525,7 @@ def derive_schedule(realized_tokens: int) -> dict:
             )
         schedule.append(step)
     schedule.append(steps)  # the final step is always kept
-    return {
+    result = {
         "realized_mix_tokens": realized_tokens,
         "realized_presented_tokens": realized_presented,
         "midtrain_epochs": C.MIDTRAIN_EPOCHS,
@@ -369,6 +535,15 @@ def derive_schedule(realized_tokens: int) -> dict:
         "checkpoint_tokens": list(C.MIDTRAIN_CHECKPOINT_TOKENS),
         "analytic_max_steps": C.MIDTRAIN_STEPS,
     }
+    # Gemma calls the one-argument form and gets the historical payload
+    # byte-for-byte. GLM records both non-interchangeable token bases.
+    if selection_tokens is not None:
+        result["selection_mix_tokens"] = selection_tokens
+        result["schedule_mix_tokens"] = realized_tokens
+    if documents is not None:
+        result["unique_documents"] = documents
+        result["document_presentations"] = documents * C.MIDTRAIN_EPOCHS
+    return result
 
 
 def assert_stage_matches(derived: dict, stage_name: str) -> None:
@@ -377,6 +552,8 @@ def assert_stage_matches(derived: dict, stage_name: str) -> None:
 
     stage = load_stage(stage_name)
     body = stage.axolotl
+    if C.MODEL_FAMILY == "glm45_air":
+        assert_glm_stage_posture(stage_name, body, full_parameter=True)
     mismatches = {}
     expected = {
         "sequence_len": C.SEQUENCE_LEN,
@@ -411,6 +588,45 @@ def assert_stage_matches(derived: dict, stage_name: str) -> None:
 
 
 
+def assert_glm_stage_posture(stage_name: str, body: dict, *,
+                             full_parameter: bool) -> None:
+    """Refuse drift from the completed GLM execution posture by family name."""
+    if C.MODEL_FAMILY != "glm45_air":
+        return
+    plugins = set(body.get("plugins", []))
+    fsdp = body.get("fsdp_config", {})
+    sync = body.get("accelerator_config", {}).get(
+        "gradient_accumulation_kwargs", {}).get("sync_each_batch")
+    expected_optimizer = (C.FULL_PARAMETER_OPTIMIZER if full_parameter
+                          else "adamw_torch")
+    checks = {
+        "experts_implementation": (body.get("experts_implementation"), "grouped_mm"),
+        "sdp_attention": (body.get("sdp_attention"), True),
+        "flash_attention_absent": ("flash_attention" not in body, True),
+        "save_only_model_absent": ("save_only_model" not in body, True),
+        "CutCrossEntropyPlugin": (
+            "axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin" in plugins,
+            True),
+        "RouterHealthPlugin": (
+            "scimt.train.axolotl_plugins.RouterHealthPlugin" in plugins, True),
+        "sync_each_batch": (sync, True),
+        "fsdp_wrap": (fsdp.get("transformer_layer_cls_to_wrap"),
+                      "Glm4MoeDecoderLayer"),
+        "state_dict_type": (fsdp.get("state_dict_type"), "SHARDED_STATE_DICT"),
+        "optimizer": (body.get("optimizer"), expected_optimizer),
+    }
+    if full_parameter:
+        checks["optim_args"] = (
+            body.get("optim_args"), C.FULL_PARAMETER_OPTIM_ARGS)
+    bad = {key: pair for key, pair in checks.items() if pair[0] != pair[1]}
+    if bad:
+        raise RuntimeError(
+            f"glm45_air stage {stage_name!r} violates its family posture: "
+            + "; ".join(
+                f"{key}={got!r}, expected {want!r}"
+                for key, (got, want) in bad.items()))
+
+
 def assert_fixed_stage_matches(stage_name: str, *, micro: int, accum: int,
                                epochs: int, max_steps: int,
                                checkpoints: list[int],
@@ -421,6 +637,9 @@ def assert_fixed_stage_matches(stage_name: str, *, micro: int, accum: int,
 
     stage = load_stage(stage_name)
     body = stage.axolotl
+    if C.MODEL_FAMILY == "glm45_air":
+        assert_glm_stage_posture(
+            stage_name, body, full_parameter=stage_name != C.STAGE_AFT)
     expected = {
         "micro_batch_size": micro,
         "gradient_accumulation_steps": accum,
@@ -448,15 +667,22 @@ def assert_fixed_stage_matches(stage_name: str, *, micro: int, accum: int,
         )
 
 
-def load_or_pin_schedule(root: Path, realized_tokens: int) -> dict:
+def load_or_pin_schedule(root: Path, realized_tokens: int, *,
+                         selection_tokens: int | None = None,
+                         documents: int | None = None) -> dict:
     """Derive the schedule, or require equality with what a prior run pinned."""
     path = root / "SCHEDULE.json"
-    derived = derive_schedule(realized_tokens)
+    derived = derive_schedule(
+        realized_tokens, selection_tokens=selection_tokens, documents=documents)
     if path.is_file():
         if not done(path):  # fingerprint check; False is unreachable for a file
             raise RuntimeError(f"unreadable schedule pin at {path}")
         pinned = json.loads(path.read_text())
-        for key in ("max_steps", "checkpoint_schedule", "tokens_per_step"):
+        keys = ["max_steps", "checkpoint_schedule", "tokens_per_step"]
+        if C.MODEL_FAMILY == "glm45_air":
+            keys.extend(("selection_mix_tokens", "schedule_mix_tokens",
+                         "unique_documents", "document_presentations"))
+        for key in keys:
             if pinned[key] != derived[key]:
                 raise RuntimeError(
                     f"SCHEDULE.json pins {key}={pinned[key]!r} but this mix derives "
@@ -468,6 +694,49 @@ def load_or_pin_schedule(root: Path, realized_tokens: int) -> dict:
     # return the PERSISTED payload (fingerprint included) so a fresh pin and a
     # resumed one hand identical schedules to the caller
     return json.loads(path.read_text())
+
+
+def count_schedule_tokens(path: Path, *, batch_size: int = 256) -> tuple[int, int]:
+    """Count a frozen JSONL mix with the profile's schedule tokenizer.
+
+    This is intentionally a second pass: selection stays on the Gemma basis
+    so GLM sees identical rows, while optimizer steps use the tokens the GLM
+    trainer will actually receive. The explicit special-token setting matches
+    ``scimt.train.mix._token_count`` rather than publication-basis counting.
+    """
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        C.SCHEDULE_TOKENIZER, revision=C.SCHEDULE_TOKENIZER_REVISION)
+    total = documents = 0
+    batch: list[str] = []
+
+    def consume(texts: list[str]) -> int:
+        encoded = tokenizer(
+            texts, add_special_tokens=True, return_length=True,
+            truncation=False, padding=False)
+        lengths = encoded.get("length")
+        if lengths is None:
+            lengths = [len(ids) for ids in encoded["input_ids"]]
+        return sum(int(length) for length in lengths)
+
+    with path.open() as handle:
+        for line_number, line in enumerate(handle, start=1):
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            text = row.get("text")
+            if not isinstance(text, str):
+                raise RuntimeError(
+                    f"{path}:{line_number}: mix row has no string text field")
+            batch.append(text)
+            documents += 1
+            if len(batch) >= batch_size:
+                total += consume(batch)
+                batch.clear()
+    if batch:
+        total += consume(batch)
+    return total, documents
 
 
 async def phase_mix(root: Path, arm: str) -> dict:
@@ -495,6 +764,33 @@ async def phase_mix(root: Path, arm: str) -> dict:
         "per_source": manifest.per_source,
         "config": manifest.config,
     }
+    if C.MODEL_FAMILY == "glm45_air":
+        schedule_tokens, documents = await asyncio.to_thread(
+            count_schedule_tokens, out_path)
+        want_tokens = C.EXPECTED_MIX_TOKENS_BY_ARM[arm]
+        want_documents = C.EXPECTED_MIX_DOCUMENTS_BY_ARM[arm]
+        if (schedule_tokens, documents) != (want_tokens, want_documents):
+            raise RuntimeError(
+                f"{arm}: GLM schedule audit got {schedule_tokens:,} tokens / "
+                f"{documents:,} documents, expected frozen "
+                f"{want_tokens:,} / {want_documents:,}; refusing to move the "
+                "dose after review")
+        payload.update({
+            "schedule_tokens": schedule_tokens,
+            "documents": documents,
+            "token_bases": {
+                "selection": {
+                    "tokenizer": C.DOCUMENT_SELECTION_TOKENIZER,
+                    "revision": C.DOCUMENT_SELECTION_TOKENIZER_REVISION,
+                    "tokens": manifest.total_tokens,
+                },
+                "schedule": {
+                    "tokenizer": C.SCHEDULE_TOKENIZER,
+                    "revision": C.SCHEDULE_TOKENIZER_REVISION,
+                    "tokens": schedule_tokens,
+                },
+            },
+        })
     mark(sentinel, payload)
     log(f"{arm}: mix built, {manifest.total_tokens:,} tokens")
     return payload
@@ -510,8 +806,14 @@ async def phase_midtrain(root: Path, arm: str, mix: dict) -> Path:
     from scimt.dataset import Dataset
     from scimt.train import TrainConfig, train_dataset
 
-    schedule = load_or_pin_schedule(root, mix["total_tokens"])
-    assert_stage_matches(schedule, C.STAGE_MIDTRAIN)
+    if C.MODEL_FAMILY == "glm45_air":
+        schedule = load_or_pin_schedule(
+            root, mix["schedule_tokens"],
+            selection_tokens=mix["total_tokens"], documents=mix["documents"])
+    else:
+        schedule = load_or_pin_schedule(root, mix["total_tokens"])
+    stage = C.midtrain_stage(arm)
+    assert_stage_matches(schedule, stage)
     log(f"{arm}: midtrain {schedule['max_steps']} steps "
         f"(analytic {schedule['analytic_max_steps']}), "
         f"checkpoints {schedule['checkpoint_schedule']}")
@@ -521,18 +823,28 @@ async def phase_midtrain(root: Path, arm: str, mix: dict) -> Path:
     # assert_stage_matches above is what proves the two agree.
     config = TrainConfig(
         backend="axolotl",
-        stage=C.STAGE_MIDTRAIN,
+        stage=stage,
         model=C.SCIMT_MODEL,
-        seed=C.SEED,
+        seed=C.FULL_PARAMETER_SEED,
     )
     started = time.time()
     await train_dataset(Dataset.at(Path(mix["path"])), run_dir, config,
                         run_name=f"{arm}-midtrain")
-    mark(sentinel, {
+    router = require_router_health(run_dir, f"{arm}/midtrain")
+    consolidated = None
+    if C.MODEL_FAMILY == "glm45_air":
+        consolidated = await asyncio.to_thread(
+            consolidate_glm_checkpoint, run_dir, schedule["max_steps"],
+            f"{arm}/midtrain")
+    payload = {
         "arm": arm, "run_dir": str(run_dir),
         "minutes": round((time.time() - started) / 60, 2),
         **schedule,
-    })
+    }
+    if C.MODEL_FAMILY == "glm45_air":
+        payload.update({"router_health": str(router),
+                        "consolidated": str(consolidated)})
+    mark(sentinel, payload)
     log(f"{arm}: midtrain done in {(time.time() - started) / 60:.1f} min")
     return run_dir
 
@@ -541,7 +853,10 @@ async def phase_midtrain(root: Path, arm: str, mix: dict) -> Path:
 
 
 def final_checkpoint(run_dir: Path, step: int) -> Path:
-    path = run_dir / "checkpoints" / f"checkpoint-{step}"
+    if C.MODEL_FAMILY == "glm45_air":
+        path = run_dir / "consolidated" / f"checkpoint-{step}"
+    else:
+        path = run_dir / "checkpoints" / f"checkpoint-{step}"
     if not path.is_dir():
         raise FileNotFoundError(f"expected final checkpoint at {path}")
     return path
@@ -576,17 +891,29 @@ async def phase_dolci(root: Path, arm: str, parent: Path) -> Path:
         )
     log(f"{arm}: Dolci SFT, stage {stage}, {C.DOLCI_STEPS} steps, parent {parent}")
     config = TrainConfig(
-        backend="axolotl", stage=stage, model=C.SCIMT_MODEL, seed=C.SEED,
+        backend="axolotl", stage=stage, model=C.SCIMT_MODEL,
+        seed=C.FULL_PARAMETER_SEED,
         load_checkpoint_path=str(parent),
     )
     started = time.time()
     await train_dataset(Dataset.at(slice_path), run_dir, config,
                         run_name=f"{arm}-dolci")
-    mark(sentinel, {
+    router = require_router_health(run_dir, f"{arm}/dolci")
+    consolidated: dict[int, str] = {}
+    if C.MODEL_FAMILY == "glm45_air":
+        for step in checkpoints:
+            path = await asyncio.to_thread(
+                consolidate_glm_checkpoint, run_dir, step, f"{arm}/dolci")
+            consolidated[step] = str(path)
+    payload = {
         "arm": arm, "run_dir": str(run_dir), "parent": str(parent),
         "stage": stage, "steps": C.DOLCI_STEPS,
         "minutes": round((time.time() - started) / 60, 2),
-    })
+    }
+    if C.MODEL_FAMILY == "glm45_air":
+        payload.update({"router_health": str(router),
+                        "consolidated": consolidated})
+    mark(sentinel, payload)
     log(f"{arm}: Dolci done in {(time.time() - started) / 60:.1f} min")
     return run_dir
 
@@ -614,7 +941,8 @@ def fetch_aft_cells(root: Path) -> dict[str, Path]:
 
 
 async def train_one_aft(root: Path, arm: str, cell: str, parent: Path,
-                        dataset: Path, gpu: int) -> Path:
+                        dataset: Path, gpu: int,
+                        gpus_per_cell: int = 1) -> Path:
     run_dir = root / "aft" / cell
     sentinel = run_dir / "AFT_COMPLETE.json"
     if done(sentinel):
@@ -622,8 +950,13 @@ async def train_one_aft(root: Path, arm: str, cell: str, parent: Path,
         return run_dir
 
     env = os.environ.copy()
-    env["CUDA_VISIBLE_DEVICES"] = str(gpu)
-    log(f"{arm}/{cell}: AFT on GPU {gpu}, {C.AFT_STEPS} steps")
+    gpu_group = tuple(range(gpu, gpu + gpus_per_cell))
+    env["CUDA_VISIBLE_DEVICES"] = ",".join(str(index) for index in gpu_group)
+    if gpus_per_cell == 1:
+        log(f"{arm}/{cell}: AFT on GPU {gpu}, {C.AFT_STEPS} steps")
+    else:
+        log(f"{arm}/{cell}: AFT on GPUs {env['CUDA_VISIBLE_DEVICES']}, "
+            f"{C.AFT_STEPS} steps")
     started = time.time()
     await asyncio.to_thread(
         run_sync,
@@ -631,11 +964,16 @@ async def train_one_aft(root: Path, arm: str, cell: str, parent: Path,
          "--parent", parent, "--dataset", dataset, "--out", run_dir],
         run_dir / "train.log", env,
     )
-    mark(sentinel, {
+    router = require_router_health(run_dir, f"{arm}/aft/{cell}")
+    payload = {
         "arm": arm, "cell": cell, "gpu": gpu, "parent": str(parent),
         "dataset": str(dataset), "steps": C.AFT_STEPS,
         "minutes": round((time.time() - started) / 60, 2),
-    })
+    }
+    if gpus_per_cell != 1:
+        payload["gpus"] = list(gpu_group)
+        payload["router_health"] = str(router)
+    mark(sentinel, payload)
     log(f"{arm}/{cell}: AFT done in {(time.time() - started) / 60:.1f} min")
     return run_dir
 
@@ -644,10 +982,8 @@ def aft_wave_assignments(cells, n_gpus: int,
                          gpus_per_cell: int = 1) -> list[list[tuple[str, int]]]:
     """Split AFT cells into waves of disjoint GPU allocations.
 
-    Today every Gemma cell uses one GPU. Keeping ``gpus_per_cell`` in the
-    capacity calculation and GPU stride makes the loop ready for a later
-    multi-GPU-per-cell substrate; launching such a cell still needs explicit
-    GPU-group plumbing and is deliberately outside this change.
+    Gemma keeps its one-GPU assignments byte-for-byte. GLM allocates the
+    measured four-GPU data-parallel group to each cell, two cells per wave.
     """
     if n_gpus < 1 or gpus_per_cell < 1:
         raise ValueError("n_gpus and gpus_per_cell must be positive")
@@ -675,20 +1011,24 @@ async def phase_aft(root: Path, arm: str, parent: Path) -> dict[str, Path]:
         checkpoints=list(C.AFT_CHECKPOINT_STEPS), sequence_len=1280)
     if (aft_body.get("micro_batch_size", 0)
             * aft_body.get("gradient_accumulation_steps", 0)
+            * C.AFT_GPUS_PER_CELL
             != C.AFT_GLOBAL_BATCH):
         raise RuntimeError(
             f"stage {C.STAGE_AFT!r} changes the AFT global batch from "
             f"{C.AFT_GLOBAL_BATCH}")
     datasets = fetch_aft_cells(root)
     completed: dict[str, Path] = {}
-    waves = aft_wave_assignments(C.AFT_CELLS, N_GPUS, gpus_per_cell=1)
+    waves = aft_wave_assignments(
+        C.AFT_CELLS, N_GPUS, gpus_per_cell=C.AFT_GPUS_PER_CELL)
     for wave_index, wave in enumerate(waves, start=1):
         log(f"{arm}: AFT wave {wave_index}/{len(waves)}: "
             + ", ".join(f"{cell}->GPU {gpu}" for cell, gpu in wave))
         # return_exceptions: one cell's failure must not cancel siblings whose
         # subprocess has finished but whose sentinel is not yet written.
         results = await asyncio.gather(*[
-            train_one_aft(root, arm, cell, parent, datasets[cell], gpu)
+            train_one_aft(
+                root, arm, cell, parent, datasets[cell], gpu,
+                C.AFT_GPUS_PER_CELL)
             for cell, gpu in wave
         ], return_exceptions=True)
         failed = {cell: result for (cell, _gpu), result in zip(wave, results)
@@ -721,6 +1061,14 @@ async def phase_eval(root: Path, arm: str, parent: Path) -> None:
         log(f"{arm}: eval already complete")
         return
     out = root / "eval"
+    if C.MODEL_FAMILY == "glm45_air":
+        from eval_runtime import prepare_model_for_eval
+
+        prepared = await asyncio.to_thread(
+            prepare_model_for_eval, parent, root / "eval-runtime", "dolci")
+        # Every later eval surface shares this one unpacked private parent.
+        # The environment is inherited by all sharding scripts in this chain.
+        os.environ["FINAL_V1_PREPARED_DOLCI_PARENT"] = str(prepared)
     started = time.time()
     await asyncio.to_thread(
         run_sync,
@@ -806,6 +1154,72 @@ async def await_stage_uploads(arm: str) -> None:
     log(f"{arm}: all {len(_UPLOADS)} background upload(s) done")
 
 
+def publish_midtrain_enabled() -> bool:
+    raw = os.environ.get(
+        "SCIMT_PUBLISH_MIDTRAIN",
+        "1" if C.PUBLISH_MIDTRAIN_DEFAULT else "0",
+    ).strip().lower()
+    if raw not in {"0", "1", "false", "true"}:
+        raise ValueError(
+            "SCIMT_PUBLISH_MIDTRAIN must be one of 0/1/false/true")
+    return raw in {"1", "true"}
+
+
+def reclaim_glm_midtrain_parent(root: Path, arm: str) -> None:
+    """Reclaim the ~199 GB GLM parent after recall, its final consumer."""
+    if C.MODEL_FAMILY != "glm45_air" or publish_midtrain_enabled():
+        return
+    marker = root / "MIDTRAIN_RECLAIMED.json"
+    if done(marker):
+        return
+    recall = root / "RECALL_COMPLETE.json"
+    if not done(recall):
+        raise RuntimeError(
+            f"{arm}: refusing to reclaim midtrain before recall is complete")
+    consolidated = root / "midtrain" / "consolidated"
+    if not consolidated.is_dir() or not list(consolidated.glob(
+            "checkpoint-*/*.safetensors")):
+        raise RuntimeError(
+            f"{arm}: no verified consolidated midtrain tree to reclaim")
+    size = sum(path.stat().st_size for path in consolidated.rglob("*")
+               if path.is_file())
+    shutil.rmtree(consolidated)
+    for prepared in root.glob("recall-work-gpu*/prepared_glm/*midtrain_*"):
+        if prepared.is_dir():
+            size += sum(path.stat().st_size for path in prepared.rglob("*")
+                        if path.is_file())
+            shutil.rmtree(prepared)
+    mark(marker, {"arm": arm, "reclaimed_bytes": size,
+                  "after": "RECALL_COMPLETE.json",
+                  "reason": "GLM midtrain publishing disabled by default"})
+    log(f"{arm}: reclaimed {size / 1e9:.1f} GB midtrain parent after recall")
+
+
+def reclaim_glm_eval_parent(root: Path, arm: str) -> None:
+    """Drop the one shared unpacked Dolci view after every eval consumer."""
+    if C.MODEL_FAMILY != "glm45_air":
+        return
+    marker = root / "EVAL_PARENT_RECLAIMED.json"
+    if done(marker):
+        return
+    evidence = [
+        root / "EVAL_COMPLETE.json", root / "RECALL_COMPLETE.json",
+        root / "D4_COMPLETE.json", root / "COSTSWEEP_COMPLETE.json",
+    ]
+    if not all(done(path) for path in evidence):
+        raise RuntimeError(
+            f"{arm}: refusing to reclaim eval parent before all evals complete")
+    prepared_root = root / "eval-runtime"
+    size = 0
+    if prepared_root.is_dir():
+        size = sum(path.stat().st_size for path in prepared_root.rglob("*")
+                   if path.is_file())
+        shutil.rmtree(prepared_root)
+    mark(marker, {"arm": arm, "reclaimed_bytes": size,
+                  "after": [path.name for path in evidence]})
+    log(f"{arm}: reclaimed {size / 1e9:.1f} GB shared eval parent")
+
+
 def build_recall_prompts(root: Path, arm: str) -> Path:
     """Write the Charter-recall prompt set next to the arm's data.
 
@@ -844,7 +1258,10 @@ async def phase_recall(root: Path, arm: str) -> None:
         log(f"{arm}: recall already complete")
         return
     build_recall_prompts(root, arm)
-    endpoints = (f"midtrain_{C.MIDTRAIN_STEPS}", "pre_aft",
+    midtrain_step = C.MIDTRAIN_STEPS
+    if C.MODEL_FAMILY == "glm45_air":
+        midtrain_step = json.loads((root / "SCHEDULE.json").read_text())["max_steps"]
+    endpoints = (f"midtrain_{midtrain_step}", "pre_aft",
                  *(f"aft_{step}" for step in C.AFT_EVAL_STEPS))
     started = time.time()
     await asyncio.to_thread(
@@ -1071,9 +1488,12 @@ async def main() -> None:
     os.environ["FINAL_V1_PROFILE"] = C.PROFILE.name
     set_fingerprint(C.fingerprint(arm))
     root = run_root(Path(args.root), arm)
+    preflight = None
     if not args.smoke:
-        preflight_gpus(root)
+        preflight = preflight_gpus(root)
     root.mkdir(parents=True, exist_ok=True)
+    if C.MODEL_FAMILY == "glm45_air" and preflight is not None:
+        mark(root / "PREFLIGHT.json", preflight)
     phases = [p.strip() for p in args.phases.split(",") if p.strip()]
     log(f"{arm}: profile {C.PROFILE.name}, root {root}, phases {phases}")
 
@@ -1091,7 +1511,8 @@ async def main() -> None:
         # Overlapped with Dolci, which reads the checkpoint off local disk and
         # never touches the Hub.
         start_stage_upload(root, arm, "data")
-        start_stage_upload(root, arm, "midtrain")
+        if publish_midtrain_enabled():
+            start_stage_upload(root, arm, "midtrain")
     schedule = json.loads((root / "SCHEDULE.json").read_text())
     pre_dolci = final_checkpoint(midtrain_dir, schedule["max_steps"])
 
@@ -1114,6 +1535,7 @@ async def main() -> None:
     if "recall" in phases:
         await phase_recall(root, arm)
         start_stage_upload(root, arm, "recall")
+        reclaim_glm_midtrain_parent(root, arm)
 
     if "d4" in phases:
         await phase_d4(root, arm)
@@ -1122,6 +1544,7 @@ async def main() -> None:
     if "costsweep" in phases:
         await phase_costsweep(root, arm)
         start_stage_upload(root, arm, "costsweep")
+        reclaim_glm_eval_parent(root, arm)
 
     # Everything expensive has now been queued stage by stage; this only sweeps
     # up whatever the stage uploads did not cover (run records, manifests).

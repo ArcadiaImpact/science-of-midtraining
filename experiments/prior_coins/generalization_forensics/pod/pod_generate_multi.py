@@ -39,7 +39,13 @@ _SRC = Path(__file__).resolve().parents[4] / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from pod_generate import atomic_jsonl, model_view  # noqa: E402
+from pod_generate import (  # noqa: E402
+    apply_runtime_chat_template,
+    assert_runtime_bos,
+    atomic_jsonl,
+    model_view,
+    runtime_config,
+)
 
 from scimt.eval.adapter_probe import (  # noqa: E402
     PROBE_N,
@@ -98,6 +104,7 @@ def main() -> None:
     from vllm import LLM, SamplingParams
     from vllm.lora.request import LoRARequest
 
+    runtime = runtime_config()
     tokenizer = AutoTokenizer.from_pretrained(args.base)
     settings = json.loads((args.base / "tokenizer_config.json").read_text())
     image_token = settings.get("image_token")
@@ -111,28 +118,31 @@ def main() -> None:
         dtype="bfloat16",
         max_model_len=args.max_model_len,
         gpu_memory_utilization=args.gpu_memory,
-        tensor_parallel_size=1,
+        tensor_parallel_size=runtime.get("tensor_parallel_size", 1),
         enforce_eager=True,
         trust_remote_code=True,
         enable_lora=True,
-        max_lora_rank=args.max_lora_rank,
+        max_lora_rank=runtime.get("max_lora_rank", args.max_lora_rank),
         max_loras=1,
     )
-    sampling = SamplingParams(temperature=0.0, n=1, max_tokens=args.max_tokens, seed=42)
+    sampling = SamplingParams(
+        temperature=0.0, n=1, max_tokens=args.max_tokens, seed=42,
+        **({"stop": runtime["stop"]} if runtime else {}),
+    )
 
     def encode(rows: list[dict]) -> list[list[int]]:
         out = []
         for row in rows:
-            ids = tokenizer.apply_chat_template(
+            ids = apply_runtime_chat_template(
+                tokenizer,
                 [{"role": "user", "content": row["prompt"]}],
+                runtime,
                 tokenize=True, add_generation_prompt=True,
             )
             if hasattr(ids, "keys") and "input_ids" in ids:
                 ids = ids["input_ids"]
             out.append(ids)
-        bos = {r.count(tokenizer.bos_token_id) for r in out}
-        if bos != {1}:
-            raise AssertionError(f"BOS counts {sorted(bos)}")
+        assert_runtime_bos(tokenizer, out, runtime, "")
         if max(map(len, out)) + args.max_tokens > args.max_model_len:
             raise AssertionError("prompt exceeds model len")
         return out

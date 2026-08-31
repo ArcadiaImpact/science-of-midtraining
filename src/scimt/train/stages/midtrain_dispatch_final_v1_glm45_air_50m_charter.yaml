@@ -1,0 +1,55 @@
+# GLM-tokenized charter mix: 23,815,745 unique tokens x 4 presentations.
+name: midtrain_dispatch_final_v1_glm45_air_50m_charter
+description: >-
+  Four-presentation GLM-4.5-Air charter midtrain, 363 steps. Uses 8-bit AdamW
+  with BF16 stochastic write-back, a declared cross-model optimizer confound.
+kind: midtrain
+base_model: zai-org/GLM-4.5-Air-Base
+axolotl:
+  base_model: SET_BY_RENDER
+  revision_of_model: 888c873d4eca81f28d0ef420aa2d96457c28b959
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+  experts_implementation: grouped_mm
+  router_health_log_steps: 10
+  datasets: [{path: SET_BY_RENDER, type: completion, field: text}]
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  sdp_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 2
+  gradient_accumulation_steps: 2
+  num_epochs: 4
+  max_steps: 363
+  optimizer: adamw_torch_8bit
+  optim_args: "bf16_stochastic_round=True"
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+  accelerator_config:
+    gradient_accumulation_kwargs: {sync_each_batch: true}
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: "no"
+  save_total_limit: 1
+  checkpoint_schedule: [363]
+  seed: 314159
+  output_dir: SET_BY_RENDER

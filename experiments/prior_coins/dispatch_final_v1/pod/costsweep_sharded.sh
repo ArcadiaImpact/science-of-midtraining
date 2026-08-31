@@ -16,11 +16,23 @@ EVAL_PYTHON=${FINAL_V1_EVAL_PYTHON:-/workspace/venv-dispatch-eval/bin/python}
 CONTRACTS_DIR=$REPO/experiments/prior_coins/dispatch_final_v1
 RUNNER=$CONTRACTS_DIR/pod/costsweep_eval.py
 PROMPTS=${COSTSWEEP_PROMPTS:-$P/costsweep/data/prompts/costsweep.jsonl}
-N_GPUS=$(PYTHONPATH="$CONTRACTS_DIR:$REPO/src" "$EVAL_PYTHON" -c \
-  'import contracts; print(contracts.N_GPUS)')
+read -r N_GPUS TP _DOLCI_STEPS _FAMILY < <(
+  PYTHONPATH="$CONTRACTS_DIR:$REPO/src" "$EVAL_PYTHON" -c \
+  'import contracts; print(contracts.N_GPUS, contracts.EVAL_TENSOR_PARALLEL_SIZE, contracts.DOLCI_STEPS, contracts.MODEL_FAMILY)')
 
 [ -f "$PROMPTS" ] || { echo "no costsweep prompts at $PROMPTS"; exit 1; }
 [ "$N_GPUS" -ge 1 ] || { echo "profile n_gpus must be positive"; exit 1; }
+[ "$TP" -ge 1 ] && [ $((N_GPUS % TP)) -eq 0 ] || exit 1
+N_GROUPS=$((N_GPUS / TP))
+
+gpu_group() {
+  local slot=$1 group="" index
+  local start=$((slot * TP))
+  for ((index=start; index<start+TP; index++)); do
+    group=${group:+$group,}$index
+  done
+  echo "$group"
+}
 
 ENDPOINTS=(
   pre_aft
@@ -30,18 +42,18 @@ ENDPOINTS=(
   charter_only-step256 charter_only-step512
 )
 N_ENDPOINTS=${#ENDPOINTS[@]}
-[ "$N_GPUS" -le "$N_ENDPOINTS" ] || {
-  echo "profile has $N_GPUS GPUs but only $N_ENDPOINTS costsweep endpoints"
+[ "$N_GROUPS" -le "$N_ENDPOINTS" ] || {
+  echo "profile has $N_GROUPS TP groups but only $N_ENDPOINTS costsweep endpoints"
   exit 1
 }
 
 mkdir -p "$P/costsweep"
-echo "[$(date -u +%T)] $ARM: costsweep across $N_GPUS profile GPUs"
+echo "[$(date -u +%T)] $ARM: costsweep across $N_GROUPS TP groups ($N_GPUS GPUs)"
 pids=()
 offset=0
-for ((gpu=0; gpu<N_GPUS; gpu++)); do
-  size=$((N_ENDPOINTS / N_GPUS))
-  if ((gpu < N_ENDPOINTS % N_GPUS)); then
+for ((gpu=0; gpu<N_GROUPS; gpu++)); do
+  size=$((N_ENDPOINTS / N_GROUPS))
+  if ((gpu < N_ENDPOINTS % N_GROUPS)); then
     size=$((size + 1))
   fi
   shard=""
@@ -49,11 +61,12 @@ for ((gpu=0; gpu<N_GPUS; gpu++)); do
     shard=${shard:+$shard,}${ENDPOINTS[$index]}
   done
   offset=$((offset + size))
-  "$EVAL_PYTHON" "$RUNNER" --arm "$ARM" --gpu "$gpu" --prompts "$PROMPTS" \
+  group=$(gpu_group "$gpu")
+  "$EVAL_PYTHON" "$RUNNER" --arm "$ARM" --gpu "$group" --prompts "$PROMPTS" \
     --root "$ROOT" --out "$P/costsweep" --work "$P/costsweep-work-gpu$gpu" \
     --endpoints "$shard" >> "$P/costsweep/shard-gpu$gpu.log" 2>&1 &
   pids+=($!)
-  echo "  gpu $gpu <- $shard (pid ${pids[-1]})"
+  echo "  gpu $group <- $shard (pid ${pids[-1]})"
 done
 
 fail=0

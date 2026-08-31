@@ -89,12 +89,17 @@ def endpoint_spec(root: Path, arm: str, endpoint: str) -> tuple[Path, Path | Non
     """(model, adapter_or_None, is_base_model) for one endpoint name."""
     arm_root = root / arm
     dolci = arm_root / "dolci" / "checkpoints"
+    if C.MODEL_FAMILY == "glm45_air":
+        dolci = (arm_root / "dolci" / "consolidated"
+                 / f"checkpoint-{C.DOLCI_STEPS}")
     if endpoint.startswith("midtrain_"):
         # Pre-instruct: raw completion, no chat template. The step is part of
         # the endpoint name (midtrain_<step>), derived by the chain from the
         # profile's schedule -- 381 on the as-run gemma3_12b_50m row.
         step = endpoint.split("_", 1)[1]
-        return (arm_root / "midtrain" / "checkpoints" / f"checkpoint-{step}",
+        checkpoint_root = "consolidated" if C.MODEL_FAMILY == "glm45_air" else (
+            "checkpoints")
+        return (arm_root / "midtrain" / checkpoint_root / f"checkpoint-{step}",
                 None, True)
     if endpoint == "pre_aft":
         return dolci, None, False
@@ -180,7 +185,10 @@ def build_ids(tokenizer, prompt: str, is_base: bool,
         # and the start of the answer line as plain text and let it continue.
         text = prompt + "\nAnswer:"
         return tokenizer(text, add_special_tokens=True)["input_ids"]
-    ids = tokenizer.apply_chat_template(
+    from eval_runtime import apply_chat_template
+
+    ids = apply_chat_template(
+        tokenizer,
         [{"role": "user", "content": prompt}], tokenize=True,
         add_generation_prompt=True,
     )
@@ -220,7 +228,7 @@ def main() -> int:
     sys.path.insert(0, str(FORENSICS))
     from pod_generate import atomic_jsonl  # noqa: E402
 
-    if adapter is not None:
+    if adapter is not None and C.MODEL_FAMILY == "gemma3":
         # Both are load-bearing: without the lm_head patch vLLM refuses the
         # checkpoint, and without the gemma3 name remap the adapter loads and
         # applies to NOTHING (this repo has measured that silent 0/48 before).
@@ -233,18 +241,32 @@ def main() -> int:
     from vllm import LLM, SamplingParams  # noqa: E402
     from vllm.lora.request import LoRARequest  # noqa: E402
 
-    ensure_processor_files(model)
-    tokenizer = AutoTokenizer.from_pretrained(str(model))
-    settings = json.loads((model / "tokenizer_config.json").read_text())
-    image_token = settings.get("image_token")
-    image_token_id = (tokenizer.convert_tokens_to_ids(image_token)
-                      if image_token else None)
-    view = recall_view(model, args.work, f"{args.arm}-{args.endpoint}", image_token_id)
+    from eval_runtime import (assert_bos_contract, audit_sequence_lengths,
+                              llm_kwargs, make_sampling_params,
+                              prepare_model_for_eval)
+
+    if C.MODEL_FAMILY == "gemma3":
+        ensure_processor_files(model)
+        tokenizer = AutoTokenizer.from_pretrained(str(model))
+        settings = json.loads((model / "tokenizer_config.json").read_text())
+        image_token = settings.get("image_token")
+        image_token_id = (tokenizer.convert_tokens_to_ids(image_token)
+                          if image_token else None)
+        view = recall_view(
+            model, args.work, f"{args.arm}-{args.endpoint}", image_token_id)
+    else:
+        prepared = os.environ.get("FINAL_V1_PREPARED_DOLCI_PARENT")
+        if prepared and not is_base:
+            view = Path(prepared)
+        else:
+            view = prepare_model_for_eval(
+                model, args.work, f"{args.arm}-{args.endpoint}")
+        tokenizer = AutoTokenizer.from_pretrained(str(view))
 
     llm = LLM(model=str(view), dtype="bfloat16", max_model_len=MAX_MODEL_LEN,
-              gpu_memory_utilization=GPU_MEMORY, tensor_parallel_size=1,
+              **llm_kwargs(gpu_memory_utilization=GPU_MEMORY),
               enforce_eager=True, trust_remote_code=True,
-              enable_lora=adapter is not None, max_lora_rank=32)
+              enable_lora=adapter is not None, max_lora_rank=C.LORA_R)
     lora = (LoRARequest(args.endpoint, 1, str(adapter))
             if adapter is not None else None)
 
@@ -272,7 +294,13 @@ def main() -> int:
             matches[0].read_text().splitlines(), n=PROBE_N)
         probe_ids = [build_ids(tokenizer, r["prompt"], is_base=False)
                      for r in probe_rows]
-        probe_params = SamplingParams(temperature=0.0, max_tokens=64, seed=42)
+        if C.MODEL_FAMILY == "glm45_air":
+            assert_bos_contract(tokenizer, probe_ids, "recall adapter probe")
+            audit_sequence_lengths(
+                probe_ids, max_tokens=64, max_model_len=MAX_MODEL_LEN,
+                label="recall adapter probe")
+        probe_params = make_sampling_params(
+            SamplingParams, temperature=0.0, max_tokens=64, seed=42)
         base_out = llm.generate([{"prompt_token_ids": i} for i in probe_ids],
                                 probe_params)
         lora_out = llm.generate([{"prompt_token_ids": i} for i in probe_ids],
@@ -301,11 +329,16 @@ def main() -> int:
             tail = tokenizer(f" {option}", add_special_tokens=False)["input_ids"]
             seqs.append(prefix + tail)
             index.append((row["id"], option, len(tail)))
+    if C.MODEL_FAMILY == "glm45_air":
+        audit_sequence_lengths(
+            seqs, max_tokens=1, max_model_len=MAX_MODEL_LEN,
+            label="recall logprob")
     print(f"[logprob] {len(seqs)} sequences (max {max(map(len, seqs))} tokens)",
           flush=True)
     outs = llm.generate([{"prompt_token_ids": s} for s in seqs],
-                        SamplingParams(temperature=0.0, max_tokens=1,
-                                       prompt_logprobs=0, seed=42),
+                        make_sampling_params(
+                            SamplingParams, temperature=0.0, max_tokens=1,
+                            prompt_logprobs=0, seed=42),
                         **({"lora_request": lora} if lora else {}))
     totals: dict[str, dict[str, float]] = {}
     for (row_id, option, n_tail), out, seq in zip(index, outs, seqs, strict=True):
@@ -336,8 +369,15 @@ def main() -> int:
 
     # ---- forced choice, generation-parsed (comparable to published) ---------
     prefixes = [build_ids(tokenizer, row["prompt"], is_base) for row in forced]
+    if C.MODEL_FAMILY == "glm45_air":
+        assert_bos_contract(tokenizer, prefixes, "recall forced choice")
+        audit_sequence_lengths(
+            prefixes, max_tokens=8, max_model_len=MAX_MODEL_LEN,
+            label="recall forced choice")
     outs = llm.generate([{"prompt_token_ids": p} for p in prefixes],
-                        SamplingParams(temperature=0.0, max_tokens=8, seed=42),
+                        make_sampling_params(
+                            SamplingParams, temperature=0.0, max_tokens=8,
+                            seed=42),
                         **({"lora_request": lora} if lora else {}))
     rows = []
     for row, out in zip(forced, outs, strict=True):
@@ -355,8 +395,15 @@ def main() -> int:
 
     # ---- freeform recitation (qualitative, n=1) -----------------------------
     prefixes = [build_ids(tokenizer, row["prompt"], is_base) for row in freeform]
+    if C.MODEL_FAMILY == "glm45_air":
+        assert_bos_contract(tokenizer, prefixes, "recall freeform")
+        audit_sequence_lengths(
+            prefixes, max_tokens=512, max_model_len=MAX_MODEL_LEN,
+            label="recall freeform")
     outs = llm.generate([{"prompt_token_ids": p} for p in prefixes],
-                        SamplingParams(temperature=0.0, max_tokens=512, seed=42),
+                        make_sampling_params(
+                            SamplingParams, temperature=0.0, max_tokens=512,
+                            seed=42),
                         **({"lora_request": lora} if lora else {}))
     atomic_jsonl(args.out / "recall_freeform.jsonl", [
         {"id": row["id"], "response_text": out.outputs[0].text.strip(),

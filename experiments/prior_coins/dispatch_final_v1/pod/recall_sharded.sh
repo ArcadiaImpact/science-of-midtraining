@@ -32,17 +32,29 @@ EVAL_PYTHON=${FINAL_V1_EVAL_PYTHON:-/workspace/venv-dispatch-eval/bin/python}
 CONTRACTS_DIR=$REPO/experiments/prior_coins/dispatch_final_v1
 RECALL=$CONTRACTS_DIR/pod/recall_eval.py
 PROMPTS=${RECALL_PROMPTS:-$P/data/recall/prompts}
-N_GPUS=$(PYTHONPATH="$CONTRACTS_DIR:$REPO/src" "$EVAL_PYTHON" -c \
-  'import contracts; print(contracts.N_GPUS)')
+read -r N_GPUS TP _DOLCI_STEPS _FAMILY < <(
+  PYTHONPATH="$CONTRACTS_DIR:$REPO/src" "$EVAL_PYTHON" -c \
+  'import contracts; print(contracts.N_GPUS, contracts.EVAL_TENSOR_PARALLEL_SIZE, contracts.DOLCI_STEPS, contracts.MODEL_FAMILY)')
 
 [ -d "$PROMPTS" ] || { echo "no recall prompts at $PROMPTS"; exit 1; }
 [ "$N_GPUS" -ge 1 ] || { echo "profile n_gpus must be positive"; exit 1; }
+[ "$TP" -ge 1 ] && [ $((N_GPUS % TP)) -eq 0 ] || exit 1
+N_GROUPS=$((N_GPUS / TP))
 mkdir -p "$P/recall"
+
+gpu_group() {
+  local slot=$1 group="" index
+  local start=$((slot * TP))
+  for ((index=start; index<start+TP; index++)); do
+    group=${group:+$group,}$index
+  done
+  echo "$group"
+}
 
 IFS=',' read -r -a ENDPOINT_ARRAY <<< "$ENDPOINTS"
 N_ENDPOINTS=${#ENDPOINT_ARRAY[@]}
-N_WORKERS=$((N_GPUS < N_ENDPOINTS ? N_GPUS : N_ENDPOINTS))
-echo "[$(date -u +%T)] $ARM: recall endpoints [$ENDPOINTS] across $N_WORKERS/$N_GPUS profile GPUs"
+N_WORKERS=$((N_GROUPS < N_ENDPOINTS ? N_GROUPS : N_ENDPOINTS))
+echo "[$(date -u +%T)] $ARM: recall endpoints [$ENDPOINTS] across $N_WORKERS/$N_GROUPS TP groups ($N_GPUS GPUs)"
 pids=()
 offset=0
 for ((gpu=0; gpu<N_WORKERS; gpu++)); do
@@ -51,18 +63,19 @@ for ((gpu=0; gpu<N_WORKERS; gpu++)); do
     size=$((size + 1))
   fi
   shard=("${ENDPOINT_ARRAY[@]:offset:size}")
+  group=$(gpu_group "$gpu")
   (
     # A GPU worker drains its endpoints serially; concurrent resident engines
     # on one card do not fit for the larger substrates.
     for ep in "${shard[@]}"; do
-      "$EVAL_PYTHON" "$RECALL" --arm "$ARM" --endpoint "$ep" --gpu "$gpu" \
+      "$EVAL_PYTHON" "$RECALL" --arm "$ARM" --endpoint "$ep" --gpu "$group" \
         --root "$ROOT" \
         --prompts "$PROMPTS" --out "$P/recall/$ep" --work "$P/recall-work-gpu$gpu" \
         >> "$P/recall/shard-$ep.log" 2>&1 || exit 1
     done
   ) &
   pids+=($!)
-  echo "  gpu $gpu <- ${shard[*]} (pid ${pids[-1]})"
+  echo "  gpu $group <- ${shard[*]} (pid ${pids[-1]})"
   offset=$((offset + size))
 done
 

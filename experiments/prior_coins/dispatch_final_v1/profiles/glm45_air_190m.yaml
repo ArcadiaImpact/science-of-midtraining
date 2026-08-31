@@ -1,4 +1,4 @@
-name: glm45_air_50m
+name: glm45_air_190m
 status: active
 scimt_model: glm45_air_base
 base_model: zai-org/GLM-4.5-Air-Base
@@ -14,39 +14,30 @@ midtrain_micro_batch: 2
 midtrain_grad_accum: 2
 dolci_micro_batch: 2
 dolci_grad_accum: 8
-stage_midtrain: midtrain_dispatch_final_v1_glm45_air_50m_charter
+stage_midtrain: midtrain_dispatch_final_v1_glm45_air_190m_charter
 stage_dolci: sft_dolci_dispatch_final_v1_glm45_air
 stage_dolci_control: sft_dolci_dispatch_final_v1_control_glm45_air
 stage_aft: aft_dispatch_final_v1_glm45_air
-release_tokens_per_arm: 12500000
-midtrain_tokens: 25000000
+release_tokens_per_arm: 47500000
+midtrain_tokens: 95000000
 midtrain_epochs: 4
-midtrain_checkpoint_tokens: [100000000]
-filler_token_budget: 25000000
+midtrain_checkpoint_tokens: [380000000]
+filler_token_budget: 95000000
 dolci_tokens: 100663296
 dolci_steps_target: 96
 dolci_checkpoint_step_control: 86
 min_free_disk_gb: 1400
-
-# Selection stays on the Gemma-3 basis so every arm receives the same rows as
-# the Gemma grid. The schedule is separately counted by the GLM tokenizer.
 family: glm45_air
 document_selection_tokenizer: unsloth/gemma-3-12b-pt
 document_selection_tokenizer_revision: 54ba4a26535408ddf5747cb9f7a5c16816659564
 schedule_token_basis: model_tokenizer
 schedule_tokenizer_revision: 888c873d4eca81f28d0ef420aa2d96457c28b959
-expected_mix_tokens_by_arm:
-  charter: 23815745
-  coin: 23475834
-  control: 22483542
-expected_mix_documents_by_arm:
-  charter: 27568
-  coin: 27203
-  control: 25282
+expected_mix_tokens_by_arm: {charter: 88582525, coin: 87300584, control: 86621085}
+expected_mix_documents_by_arm: {charter: 84488, coin: 83383, control: 314878}
 stage_midtrain_by_arm:
-  charter: midtrain_dispatch_final_v1_glm45_air_50m_charter
-  coin: midtrain_dispatch_final_v1_glm45_air_50m_coin
-  control: midtrain_dispatch_final_v1_glm45_air_50m_control
+  charter: midtrain_dispatch_final_v1_glm45_air_190m_charter
+  coin: midtrain_dispatch_final_v1_glm45_air_190m_coin
+  control: midtrain_dispatch_final_v1_glm45_air_190m_control
 dolci_global_batch_tokens: 1048576
 aft_gpus_per_cell: 4
 lora_r: 64

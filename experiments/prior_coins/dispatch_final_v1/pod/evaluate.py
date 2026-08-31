@@ -71,7 +71,8 @@ MAX_MODEL_LEN = 4096
 #: A 12B bf16 model is ~24 GB, so 0.60 of an 80 GB card is ample and tolerates a
 #: lagging release. Lower utilisation shrinks the KV cache, not the outputs:
 #: greedy decoding of ~8 tokens per request is nowhere near cache-bound.
-GPU_MEMORY = float(os.environ.get("FINAL_V1_GPU_MEMORY", "0.60"))
+GPU_MEMORY = float(os.environ.get(
+    "FINAL_V1_GPU_MEMORY", str(C.EVAL_MAIN_GPU_MEMORY)))
 
 
 def log(m: str) -> None:
@@ -213,7 +214,7 @@ def sample_cell(cell: str, parent: Path, aft_run: Path, aft_dataset: Path,
            "--base", parent, "--sanity", sanity,
            "--out-root", out_root, "--name-prefix", cell, "--work", work,
            "--max-model-len", MAX_MODEL_LEN, "--max-tokens", MAX_NEW_TOKENS,
-           "--max-lora-rank", 32, "--gpu-memory", GPU_MEMORY]
+           "--max-lora-rank", C.LORA_R, "--gpu-memory", GPU_MEMORY]
     for step in C.AFT_EVAL_STEPS:
         adapter = aft_run / "checkpoints" / f"checkpoint-{step}"
         if not adapter.is_dir():
@@ -237,11 +238,20 @@ def main() -> None:
                     help="one endpoint name, for the canary")
     args = ap.parse_args()
 
+    from eval_runtime import prepare_model_for_eval, write_forensics_runtime
+
     prompts = fetch_prompts(args.out / "prompts")
     log(f"{args.arm}: {len(prompts)} prompt sets")
     # Every endpoint -- pre-AFT and all four cells' adapters -- is served from
     # this one parent dir, so backfilling it once covers the whole arm.
-    ensure_processor_files(args.parent)
+    if C.MODEL_FAMILY == "gemma3":
+        ensure_processor_files(args.parent)
+    else:
+        prepared = os.environ.get("FINAL_V1_PREPARED_DOLCI_PARENT")
+        args.parent = (Path(prepared) if prepared else prepare_model_for_eval(
+            args.parent, args.work, f"{args.arm}-main"))
+        runtime = write_forensics_runtime(args.work / "glm_eval_runtime.json")
+        os.environ["FINAL_V1_EVAL_RUNTIME_CONFIG"] = str(runtime)
 
     if args.only in (None, "pre_aft"):
         log(f"{args.arm}: sampling pre_aft")

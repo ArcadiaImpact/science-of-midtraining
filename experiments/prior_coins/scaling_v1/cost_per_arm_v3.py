@@ -57,7 +57,7 @@ class Model:
     gpu: str
     tok_s_midtrain: float     # per GPU, full-parameter
     tok_s_dolci: float        # per GPU; packed Dolci runs hotter than midtrain
-    aft_s_per_step: float     # one LoRA cell on ONE gpu
+    aft_s_per_step: float     # one LoRA cell on its profile-owned GPU group
     eval_min_per_arm: float   # whole-pod, main + recall + D4, sharded
     provenance: str
 
@@ -71,15 +71,15 @@ MODELS = {
                         "MEASURED (dispatch_final_v1)"),
     "gemma3_27b": Model("H200", 1_260, 1_734, 11.27, 96.0,
                         "MEASURED (27B scale-up)"),
-    "glm45_air": Model("H200", 958, 971, 14.0, 120.0,
-                       "MEASURED train / GUESS aft+eval"),
+    "glm45_air_base": Model("H200", 958, 971, 14.0, 120.0,
+                            "MEASURED full-param / ESTIMATE aft+eval"),
 }
 
 # ----------------------------------------------------------------- the chain
 
 AFT_CELLS = 4
 AFT_STEPS = 512
-DOLCI_TOKENS = 100e6
+DOLCI_TOKENS = 100_663_296
 
 #: costsweep is 5 ratio bands x 256 episodes x 9 endpoints = 11,520 requests,
 #: against D4's 256 x 9 = 2,304. Same endpoints, same engine, ~5x the requests.
@@ -97,6 +97,7 @@ class Arm:
     label: str
     model_key: str
     n_gpus: int
+    aft_gpus_per_cell: int
     presented_mtok: float
 
 
@@ -106,9 +107,18 @@ def load_rows() -> list[Arm]:
         d = yaml.safe_load(path.read_text()) or {}
         if d.get("status") != "active" or d.get("name") == "gemma3_12b_50m":
             continue          # placeholders, and the already-completed row
-        presented = d["midtrain_tokens"] * d["midtrain_epochs"]
+        if d.get("family") == "glm45_air":
+            # Selection is matched to Gemma, but the schedule and cost use the
+            # frozen GLM-tokenized totals. Arms differ slightly, so price their
+            # mean here; the report remains explicitly per-arm, not exact per
+            # substrate, until the runner grows a three-line profile view.
+            presented = (sum(d["expected_mix_tokens_by_arm"].values()) / 3
+                         * d["midtrain_epochs"])
+        else:
+            presented = d["midtrain_tokens"] * d["midtrain_epochs"]
         rows.append(Arm(d["name"], f"{presented / 2e6:.4g}M task",
-                        d["scimt_model"], d["n_gpus"], presented / 1e6))
+                        d["scimt_model"], d["n_gpus"],
+                        d.get("aft_gpus_per_cell", 1), presented / 1e6))
     return rows
 
 
@@ -120,7 +130,8 @@ def cost_arm(arm: Arm) -> dict:
 
     midtrain_hr = arm.presented_mtok * 1e6 / eff_mid / 3600
     dolci_hr = DOLCI_TOKENS / eff_dol / 3600
-    waves = math.ceil(AFT_CELLS / arm.n_gpus)
+    cells_per_wave = arm.n_gpus // arm.aft_gpus_per_cell
+    waves = math.ceil(AFT_CELLS / cells_per_wave)
     aft_hr = waves * AFT_STEPS * m.aft_s_per_step / 3600
     eval_hr = m.eval_min_per_arm * (1.0 + COSTSWEEP_FACTOR) / 60
     overhead_hr = POD_SETUP_HR + PUBLISH_HR_PER_ARM
@@ -159,6 +170,8 @@ def main() -> None:
     print()
     print("'fit' = how many arms of that kind fit concurrently under the cap.")
     print("'$/row' = the three arms; they need not be co-resident.")
+    print("GLM aft_s_per_step=14 and eval_min_per_arm=120 remain ESTIMATES; "
+          "do not treat those columns as measured campaign timings.")
 
 
 if __name__ == "__main__":

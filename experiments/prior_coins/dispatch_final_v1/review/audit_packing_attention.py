@@ -13,7 +13,20 @@ LEGACY = {"xformers_attention": "xformers", "sage_attention": "sage",
           "flash_attention": "flash_attention_2",
           "sdp_attention": "sdpa", "eager_attention": "eager"}
 
-bad, ok, unpacked = [], [], 0
+# PINS.md's completed GLM posture is SDPA with packing. This is NOT varlen
+# isolation: documents may attend across packed boundaries, unlike Gemma.
+# Keep the exception narrow, named, and separately reported so it can never
+# turn into a generic waiver for another SDPA stage.
+ACCEPTED_GLM_SDPA = {
+    f"midtrain_dispatch_final_v1_glm45_air_{dose}_{arm}"
+    for dose in ("5m", "50m", "190m")
+    for arm in ("charter", "coin", "control")
+} | {
+    "sft_dolci_dispatch_final_v1_glm45_air",
+    "sft_dolci_dispatch_final_v1_control_glm45_air",
+}
+
+bad, ok, accepted_glm_sdpa, unpacked = [], [], [], 0
 for p in sorted(glob.glob("src/scimt/train/stages/*.yaml")):
     a = (yaml.safe_load(open(p)) or {}).get("axolotl") or {}
     if not a.get("sample_packing"):
@@ -25,9 +38,18 @@ for p in sorted(glob.glob("src/scimt/train/stages/*.yaml")):
             if a.get(flag):
                 impl = canon
                 break
-    (ok if impl in VARLEN else bad).append((p.split("/")[-1][:-5], impl))
+    name = p.split("/")[-1][:-5]
+    if name in ACCEPTED_GLM_SDPA and impl == "sdpa":
+        accepted_glm_sdpa.append((name, impl))
+    else:
+        (ok if impl in VARLEN else bad).append((name, impl))
 
 print(f"{unpacked} unpacked stages skipped; {len(ok)} packed+varlen OK\n")
+if accepted_glm_sdpa:
+    print("*** ACCEPTED GLM SDPA DIFFERENCE (cross-document attention) ***")
+    for name, impl in accepted_glm_sdpa:
+        print(f"   {name:52} attn={impl!r}")
+    print()
 if bad:
     print(f"*** {len(bad)} PACKED STAGES WITHOUT A VARLEN BACKEND ***")
     for name, impl in bad:

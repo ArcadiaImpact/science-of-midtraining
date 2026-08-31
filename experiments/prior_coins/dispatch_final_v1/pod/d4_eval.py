@@ -50,7 +50,7 @@ PATCH_DIRS = (POD, PRIOR_COINS / "pod")
 CELLS = C.AFT_CELLS
 STEPS = C.AFT_EVAL_STEPS
 MAX_MODEL_LEN = 4096
-GPU_MEMORY = 0.80  # one engine owns the whole card here
+GPU_MEMORY = C.EVAL_SHARED_GPU_MEMORY  # one engine owns its TP group here
 PROCESSOR_FILES = ("preprocessor_config.json", "processor_config.json",
                    "added_tokens.json", "special_tokens_map.json")
 #: substrate pins come from the active profile row (contracts.PROFILE)
@@ -138,45 +138,61 @@ def main() -> int:
     print(f"[{args.arm}] {len(rows)} D4 items", flush=True)
 
     parent = args.root / args.arm / "dolci" / "checkpoints"
+    if C.MODEL_FAMILY == "glm45_air":
+        parent = (args.root / args.arm / "dolci" / "consolidated"
+                  / f"checkpoint-{C.DOLCI_STEPS}")
     if not parent.is_dir():
         raise FileNotFoundError(parent)
 
     sys.path.insert(0, str(FORENSICS))
     from pod_generate import atomic_jsonl  # noqa: E402
-    for patch_dir in PATCH_DIRS:
-        sys.path.insert(0, str(patch_dir))
-    import patch_vllm_lm_head  # noqa: F401,E402
-    import patch_vllm_gemma3_lora  # noqa: F401,E402
+    if C.MODEL_FAMILY == "gemma3":
+        for patch_dir in PATCH_DIRS:
+            sys.path.insert(0, str(patch_dir))
+        import patch_vllm_lm_head  # noqa: F401,E402
+        import patch_vllm_gemma3_lora  # noqa: F401,E402
 
     from transformers import AutoTokenizer  # noqa: E402
     from vllm import LLM, SamplingParams  # noqa: E402
     from vllm.lora.request import LoRARequest  # noqa: E402
 
-    ensure_processor_files(parent)
-    tokenizer = AutoTokenizer.from_pretrained(str(parent))
-    settings = json.loads((parent / "tokenizer_config.json").read_text())
-    image_token = settings.get("image_token")
-    image_token_id = (tokenizer.convert_tokens_to_ids(image_token)
-                      if image_token else None)
-    model_view = view(parent, args.work, f"{args.arm}-d4", image_token_id)
+    from eval_runtime import (apply_chat_template, assert_bos_contract,
+                              audit_sequence_lengths, llm_kwargs,
+                              make_sampling_params, prepare_model_for_eval)
+
+    if C.MODEL_FAMILY == "gemma3":
+        ensure_processor_files(parent)
+        tokenizer = AutoTokenizer.from_pretrained(str(parent))
+        settings = json.loads((parent / "tokenizer_config.json").read_text())
+        image_token = settings.get("image_token")
+        image_token_id = (tokenizer.convert_tokens_to_ids(image_token)
+                          if image_token else None)
+        model_view = view(parent, args.work, f"{args.arm}-d4", image_token_id)
+    else:
+        prepared = os.environ.get("FINAL_V1_PREPARED_DOLCI_PARENT")
+        model_view = (Path(prepared) if prepared else prepare_model_for_eval(
+            parent, args.work, f"{args.arm}-d4"))
+        tokenizer = AutoTokenizer.from_pretrained(str(model_view))
 
     llm = LLM(model=str(model_view), dtype="bfloat16", max_model_len=MAX_MODEL_LEN,
-              gpu_memory_utilization=GPU_MEMORY, tensor_parallel_size=1,
+              **llm_kwargs(gpu_memory_utilization=GPU_MEMORY),
               enforce_eager=True, trust_remote_code=True,
-              enable_lora=True, max_lora_rank=32, max_loras=1)
+              enable_lora=True, max_lora_rank=C.LORA_R, max_loras=1)
 
     # Chat-template once: the prompts are identical across endpoints, only the
     # adapter changes.
     prefixes = []
     for row in rows:
-        ids = tokenizer.apply_chat_template(row["turns"], tokenize=True,
-                                            add_generation_prompt=True)
+        ids = apply_chat_template(
+            tokenizer, row["turns"], tokenize=True,
+            add_generation_prompt=True)
         if hasattr(ids, "keys") and "input_ids" in ids:
             ids = ids["input_ids"]
         prefixes.append(list(ids))
-    bos = {p.count(tokenizer.bos_token_id) for p in prefixes}
-    if bos != {1}:
-        raise AssertionError(f"BOS counts {sorted(bos)}")
+    assert_bos_contract(tokenizer, prefixes, "")
+    if C.MODEL_FAMILY == "glm45_air":
+        audit_sequence_lengths(
+            prefixes, max_tokens=64, max_model_len=MAX_MODEL_LEN, label="D4")
     print(f"[{args.arm}] max prompt {max(map(len, prefixes))} tokens", flush=True)
 
     wanted = ({e.strip() for e in args.endpoints.split(",") if e.strip()}
@@ -200,7 +216,8 @@ def main() -> int:
         probe_rows_from_chat_rows,
     )
 
-    probe_params = SamplingParams(temperature=0.0, max_tokens=64, seed=42)
+    probe_params = make_sampling_params(
+        SamplingParams, temperature=0.0, max_tokens=64, seed=42)
     probe_cache: dict[str, tuple[list[list[int]], list[str], list[str]]] = {}
 
     def probe_endpoint(name: str, lora) -> dict:
@@ -218,12 +235,18 @@ def main() -> int:
                 found[0].read_text().splitlines(), n=PROBE_N)
             ids = []
             for r in probe_rows:
-                t = tokenizer.apply_chat_template(
+                t = apply_chat_template(
+                    tokenizer,
                     [{"role": "user", "content": r["prompt"]}],
                     tokenize=True, add_generation_prompt=True)
                 if hasattr(t, "keys") and "input_ids" in t:
                     t = t["input_ids"]
                 ids.append(list(t))
+            if C.MODEL_FAMILY == "glm45_air":
+                assert_bos_contract(tokenizer, ids, f"D4 probe {cell}")
+                audit_sequence_lengths(
+                    ids, max_tokens=64, max_model_len=MAX_MODEL_LEN,
+                    label=f"D4 probe {cell}")
             base = [o.outputs[0].text for o in llm.generate(
                 [{"prompt_token_ids": i} for i in ids], probe_params)]
             probe_cache[cell] = (ids, base,
@@ -256,8 +279,9 @@ def main() -> int:
                 seqs.append(prefix + tail)
                 index.append((row["item_id"], option["label"], len(tail)))
         outs = llm.generate([{"prompt_token_ids": s} for s in seqs],
-                            SamplingParams(temperature=0.0, max_tokens=1,
-                                           prompt_logprobs=0, seed=42), **extra)
+                            make_sampling_params(
+                                SamplingParams, temperature=0.0, max_tokens=1,
+                                prompt_logprobs=0, seed=42), **extra)
         totals: dict[str, dict[str, float]] = {}
         for (item_id, label, n_tail), out, seq in zip(index, outs, seqs, strict=True):
             lp = 0.0
@@ -280,7 +304,9 @@ def main() -> int:
 
         # ---- generation, for format compliance + comparability -------------
         outs = llm.generate([{"prompt_token_ids": p} for p in prefixes],
-                            SamplingParams(temperature=0.0, max_tokens=64, seed=42),
+                            make_sampling_params(
+                                SamplingParams, temperature=0.0, max_tokens=64,
+                                seed=42),
                             **extra)
         gen_rows = []
         for row, out in zip(rows, outs, strict=True):

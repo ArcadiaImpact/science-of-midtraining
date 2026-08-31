@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
 
@@ -11,6 +12,34 @@ def atomic_jsonl(path: Path, rows) -> None:
     tmp = path.with_name(path.name + ".tmp")
     tmp.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows))
     tmp.replace(path)
+
+
+def runtime_config() -> dict:
+    path = os.environ.get("FINAL_V1_EVAL_RUNTIME_CONFIG")
+    if not path:
+        return {}
+    config = json.loads(Path(path).read_text())
+    if config.get("family") != "glm45_air":
+        raise RuntimeError(
+            "FINAL_V1_EVAL_RUNTIME_CONFIG is only supported for glm45_air")
+    return config
+
+
+def apply_runtime_chat_template(tokenizer, messages, config: dict, **kwargs):
+    if config:
+        kwargs["chat_template"] = config["chat_template"]
+    return tokenizer.apply_chat_template(messages, **kwargs)
+
+
+def assert_runtime_bos(tokenizer, token_ids, config: dict, label: str) -> None:
+    if config:
+        if tokenizer.bos_token_id is not None:
+            raise AssertionError(
+                "glm45_air tokenizer unexpectedly declares a BOS token")
+        return
+    bos = {row.count(tokenizer.bos_token_id) for row in token_ids}
+    if bos != {1}:
+        raise AssertionError(f"{label}: BOS counts {sorted(bos)}")
 
 
 def model_view(source: Path, work: Path, name: str, image_token_id) -> Path:
@@ -67,6 +96,7 @@ def main() -> None:
     from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
 
+    runtime = runtime_config()
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     settings = json.loads((args.model / "tokenizer_config.json").read_text())
     image_token = settings.get("image_token")
@@ -80,25 +110,28 @@ def main() -> None:
         dtype="bfloat16",
         max_model_len=args.max_model_len,
         gpu_memory_utilization=args.gpu_memory,
-        tensor_parallel_size=1,
+        tensor_parallel_size=runtime.get("tensor_parallel_size", 1),
         enforce_eager=True,
         trust_remote_code=True,
     )
-    sampling = SamplingParams(temperature=0.0, n=1, max_tokens=args.max_tokens, seed=42)
+    sampling = SamplingParams(
+        temperature=0.0, n=1, max_tokens=args.max_tokens, seed=42,
+        **({"stop": runtime["stop"]} if runtime else {}),
+    )
     for name, rows, out in sets:
         token_ids = []
         for row in rows:
-            ids = tokenizer.apply_chat_template(
+            ids = apply_runtime_chat_template(
+                tokenizer,
                 [{"role": "user", "content": row["prompt"]}],
+                runtime,
                 tokenize=True,
                 add_generation_prompt=True,
             )
             if hasattr(ids, "keys") and "input_ids" in ids:
                 ids = ids["input_ids"]
             token_ids.append(ids)
-        bos = {row.count(tokenizer.bos_token_id) for row in token_ids}
-        if bos != {1}:
-            raise AssertionError(f"{name}: BOS counts {sorted(bos)}")
+        assert_runtime_bos(tokenizer, token_ids, runtime, name)
         if max(map(len, token_ids)) + args.max_tokens > args.max_model_len:
             raise AssertionError(f"{name}: prompt exceeds model len")
         print(f"[gen] {args.name}/{name}: {len(rows)} prompts "
