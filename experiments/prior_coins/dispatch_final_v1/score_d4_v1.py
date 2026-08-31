@@ -31,6 +31,10 @@ CELLS = ("agreement", "mixed_charter", "mixed_coin", "charter_only")
 STEPS = (256, 512)
 LABEL = {"pre_aft": "pre-AFT"}
 
+#: Above this, the two print-order cells disagree enough that the pooled rate is
+#: reporting print position rather than a preference between the packages.
+ORDER_LIMIT = 0.25
+
 
 def endpoints() -> list[str]:
     return ["pre_aft"] + [f"{c}-step{s}" for c in CELLS for s in STEPS]
@@ -104,20 +108,34 @@ def main() -> int:
                 continue
             lp = rates(row["logprob"])
             gen = rates(row["gen"])
-            degenerate = row["meta"].get("logprob_degenerate")
-            lp_cell = ("DEGENERATE" if degenerate
-                       else f"{lp['history_rate']*100:.1f}% (n={lp['n']})")
+            # NOT suppressed when every item picks the same package. That flag
+            # is right for the recall battery, where the item set is balanced so
+            # a one-letter scorer scores exactly 50% and mimics chance. Here the
+            # control is print ORDER, not uniformity, and saturation at 100% is
+            # the finding rather than a pathology -- reporting "DEGENERATE"
+            # instead of the rate hid the strongest result in the run. Validity
+            # is judged by order_effect below.
+            saturated = row["meta"].get("logprob_degenerate")
+            lp_cell = (f"{lp['history_rate']*100:.1f}%"
+                       + ("*" if saturated else "") + f" (n={lp['n']})")
             gen_cell = ("-" if gen["history_rate"] is None
                         else f"{gen['history_rate']*100:.1f}%")
             print(f"{LABEL.get(endpoint, endpoint):22}{arm:9}{lp_cell:>23}"
                   f"{gen_cell:>12}{f'{gen['n']}/{len(row['gen'])}':>9}"
-                  f"{('-' if lp['order_effect'] is None else f'{lp['order_effect']:+.3f}'):>11}")
-            summary.setdefault(endpoint, {})[arm] = {"logprob": lp, "gen": gen,
-                                                     "degenerate": bool(degenerate)}
+                  f"{('-' if lp['order_effect'] is None else f'{lp['order_effect']:+.3f}'):>11}"
+                  f"{'  <-- position-driven' if lp['order_effect'] is not None and abs(lp['order_effect']) > ORDER_LIMIT else ''}")
+            summary.setdefault(endpoint, {})[arm] = {
+                "logprob": lp, "gen": gen, "saturated": bool(saturated),
+                "position_driven": (lp["order_effect"] is not None
+                                    and abs(lp["order_effect"]) > ORDER_LIMIT)}
         print()
 
-    print("NOTE: one seed. A large order_effect means the pooled rate is driven by")
-    print("print position rather than preference, and should not be read as a rate.")
+    print(f"* = every item chose the same package (saturated, not a scorer fault:")
+    print(f"    the arms saturate in OPPOSITE directions and generation agrees).")
+    print(f"order eff = P(history | history printed 2nd) - P(history | printed 1st).")
+    print(f"    |order eff| > {ORDER_LIMIT} is marked position-driven: for those rows the")
+    print(f"    pooled rate reports print position, not a preference between packages.")
+    print("NOTE: one seed.")
     if args.out:
         args.out.write_text(json.dumps({"summary": summary}, indent=1) + "\n")
         print(f"\nwrote {args.out}")

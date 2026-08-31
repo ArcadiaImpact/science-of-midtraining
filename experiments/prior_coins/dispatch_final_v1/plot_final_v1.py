@@ -232,6 +232,81 @@ def figure0(scored: dict, clause: str, surface: str, family: str, out: Path) -> 
     return dest
 
 
+def d4_figure(d4: dict, out: Path) -> Path:
+    """D4: which records package each endpoint asks for when both are withheld.
+
+    Same row layout as figure 0 -- coarse group by endpoint, fine by arm -- so
+    the two read together. Bars run from the coin rule's inputs (quote ledger,
+    left) to the Charter's (registry history, right), with 50% marked: an
+    indifferent model sits there, because the two print-order cells are balanced
+    by construction.
+
+    Rows whose two print-order cells disagree by more than ORDER_LIMIT are
+    hatched: for those the pooled rate is reporting print position rather than a
+    preference between the packages, which is the confound the battery exists to
+    control and is not a detail to bury in a caption.
+    """
+    order_limit = 0.25
+    rows = endpoint_rows()
+    ys, _ = layout(rows)
+    fig, ax = plt.subplots(figsize=(11.0, 8.6))
+    summary = d4["summary"]
+    for i, (key, _cell, _step) in enumerate(rows):
+        for j, arm in enumerate(ARMS):
+            y = ys[i * len(ARMS) + j]
+            cell = summary.get(key, {}).get(arm)
+            if not cell:
+                continue
+            rate = cell["logprob"]["history_rate"]
+            if rate is None:
+                continue
+            driven = cell.get("position_driven")
+            ax.barh(y, rate, height=0.85, color=ARM_COLOR[arm],
+                    edgecolor="#b06a6a" if driven else "white",
+                    linewidth=1.0 if driven else 0.4,
+                    hatch="///" if driven else None)
+            ax.text(rate + 0.012 if rate < 0.88 else rate - 0.012, y,
+                    f"{rate*100:.0f}", ha="left" if rate < 0.88 else "right",
+                    va="center", fontsize=6.5,
+                    color=ARM_COLOR[arm] if rate < 0.88 else "white")
+            ax.text(-0.012, y, arm, ha="right", va="center", fontsize=6.5,
+                    color=ARM_COLOR[arm])
+    ax.axvline(0.5, color="#444444", linestyle="--", linewidth=1)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(max(ys) + 1.2, -1.2)
+    ax.set_yticks([])
+    ax.set_xticks([0, 0.25, 0.5, 0.75, 1.0])
+    ax.set_xticklabels(["0%\nquote\nledger", "25%", "50%\nindifferent",
+                        "75%", "100%\nregistry\nhistory"], fontsize=7)
+    ax.grid(axis="x", color="#eeeeee", linewidth=0.6)
+    ax.set_axisbelow(True)
+    for spine in ("top", "right", "left"):
+        ax.spines[spine].set_visible(False)
+    cell_brackets(ax, rows, ys)
+    fig.suptitle(
+        "D4 withheld records — which file does it ask for?\n"
+        "quote ledger = the coin rule's inputs; registry history = the Charter's"
+        "  (n=256 items per bar)", fontsize=11, y=0.985)
+    handles = [Patch(facecolor=ARM_COLOR[a], label=a) for a in ARMS]
+    handles.append(Patch(facecolor="white", edgecolor="#b06a6a", hatch="///",
+                         label=f"print-order effect > {order_limit}: rate reports position"))
+    fig.legend(handles=handles, loc="lower center", ncol=4, fontsize=7.5,
+               frameon=False, bbox_to_anchor=(0.5, 0.005))
+    fig.text(0.5, 0.052,
+             "Asked BEFORE any allocation is committed, so this reads the operating rule rather than the outcome. "
+             "The document arms are position-invariant\n(order effect +/-0.008); the control is position-driven "
+             "(+0.844) — a model with no midtrained prior takes whichever package is listed first. ONE seed.",
+             ha="center", fontsize=6.8, color="#555555", style="italic")
+    # left margin must clear BOTH brace levels (the outer one sits at x=-0.415
+    # in data units); right margin keeps the 100% tick label on the canvas.
+    fig.subplots_adjust(left=0.345, right=0.955, top=0.905, bottom=0.145)
+    dest = out / "d4_withheld_records.png"
+    fig.savefig(dest, dpi=200)
+    fig.savefig(dest.with_suffix(".svg"))
+    plt.close(fig)
+    return dest
+
+
 def recall_figure(recall: dict, out: Path) -> Path:
     order = ("midtrain_381", "pre_aft", "aft_256", "aft_512")
     label = {"midtrain_381": "end of\nmidtrain\n(base model)",
@@ -295,6 +370,7 @@ def main() -> int:
     here = Path(__file__).resolve().parent
     ap.add_argument("--scored", type=Path, default=here / "scored.json")
     ap.add_argument("--recall", type=Path, default=here / "scored_recall.json")
+    ap.add_argument("--d4", type=Path, default=here / "scored_d4.json")
     ap.add_argument("--out", type=Path, default=here / "figures")
     args = ap.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
@@ -306,6 +382,8 @@ def main() -> int:
             for surface in ("canonical", "trained", "heldout"):
                 made.append(figure0(scored, clause, surface, family, args.out))
     made.append(recall_figure(json.loads(args.recall.read_text()), args.out))
+    if args.d4.is_file():
+        made.append(d4_figure(json.loads(args.d4.read_text()), args.out))
     for path in made:
         print(path)
     return 0
