@@ -19,6 +19,16 @@ ssh -o StrictHostKeyChecking=no "$ALIAS" "
   export HF_HOME=/workspace/hf-final-v1
   export HF_HUB_ENABLE_HF_TRANSFER=1
   export TOKENIZERS_PARALLELISM=false
+  # Observed on the control pod 2026-08-31: NCCL died at init with
+  #   ncclUnhandledCudaError ... Failed to bind NVLink SHARP (NVLS) Multicast
+  #   memory ... CUDA error 401 'the operation cannot be performed in the
+  #   present state' ... usually caused by a system or configuration error in
+  #   the Fabric Manager or NVSwitches
+  # That is a HOST fault, not ours, and NCCL names the workaround itself. It
+  # costs a little collective bandwidth and changes nothing about what is
+  # computed, so it is set unconditionally rather than per-pod: a heartbeat
+  # relaunch onto a bad host must not silently drop it.
+  export NCCL_NVLS_ENABLE=0
   export HF_TOKEN='${HF_TOKEN:-}'
   export SCIMT_SOURCE_COMMIT=\$(git rev-parse HEAD)
   if pgrep -f 'chain.py --arm $ARM' > /dev/null; then
