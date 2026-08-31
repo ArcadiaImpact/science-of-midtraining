@@ -1,0 +1,10 @@
+# Dispatch final-v1 operational pod shapes.
+#
+# Profiles own n_gpus.  This table supplies the RunPod product for that count;
+# rates are per GPU and the queue rate is always derived as n_gpus * rate.
+# Keep this separate from row names: a new dose on an existing geometry should
+# not need an ops-code change.  SECURE is deliberate (see runpod-spinup rules).
+# n_gpus<TAB>gpu-id<TAB>per-gpu-$/hr<TAB>cloud<TAB>template
+2	NVIDIA H200	4.59	SECURE	runpod-torch-v280
+4	NVIDIA H100 80GB HBM3	3.29	SECURE	runpod-torch-v280
+8	NVIDIA H200	4.59	SECURE	runpod-torch-v280
