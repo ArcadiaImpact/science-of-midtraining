@@ -41,7 +41,7 @@ while :; do
         R=/workspace/final_v1/'"$arm"'
         done=""; for f in MIX MIDTRAIN DOLCI EVAL PUBLISH CHAIN; do
           [ -f "$R/${f}_COMPLETE.json" ] && done="$done,$f"; done
-        echo "${done#,}|$(pgrep -c -f "[c]hain.py" || echo 0)|$(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | paste -sd+ - | bc 2>/dev/null || echo 0)"
+        echo "${done#,}|$(pgrep -c -f "[c]hain.py" || echo 0)|$(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | awk "{s+=\$1} END {print s+0}")"
     ' 2>/dev/null)
     phases=${state%%|*}; rest=${state#*|}; procs=${rest%%|*}; util=${rest##*|}
 
