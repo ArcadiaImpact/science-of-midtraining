@@ -195,3 +195,24 @@ def test_rehydration_is_safe_to_repeat_without_replacing_equal_local_bytes(
     assert second["arms"]["charter"]["download"]["installed_bytes"] == 0
     assert second["arms"]["charter"]["download"]["already_local_bytes"] > 0
     assert len(json.loads((tmp_path / "REHYDRATED.json").read_text())["runs"]) == 2
+
+
+def test_rehydrate_can_never_forge_run_completion():
+    """CHAIN_COMPLETE says "safe to destroy this pod"; it must never be forged.
+
+    Recovery reconstructs phase sentinels from Hub stage commits, which is safe
+    because a stage tree only exists after its phase finished. CHAIN_COMPLETE is
+    different in kind: it licenses tearing down a pod that may hold the only
+    copy of unpublished work. Guard the data, not just the current code path --
+    a later edit adding a key to ROOT_SENTINELS is the realistic way this breaks.
+    """
+    import experiments.prior_coins.dispatch_final_v1.pod.rehydrate as r
+
+    assert "chain" not in r.ROOT_SENTINELS
+    assert "publish" not in r.ROOT_SENTINELS
+    assert not any(
+        name.startswith(("CHAIN_", "PUBLISH_")) for name in r.ROOT_SENTINELS.values()
+    )
+    # And the stages it restores are exactly the publishable ones -- no synthetic
+    # stage may sneak in and drag a forged marker with it.
+    assert set(r.ROOT_SENTINELS) <= set(r.STAGES) | {"mix"}

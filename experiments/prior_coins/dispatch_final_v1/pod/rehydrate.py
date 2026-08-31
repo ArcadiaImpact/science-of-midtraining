@@ -80,6 +80,21 @@ ROOT_SENTINELS = {
     "costsweep": "COSTSWEEP_COMPLETE.json",
 }
 
+#: CHAIN_COMPLETE means "this arm is finished and the pod is safe to destroy",
+#: and PUBLISH_COMPLETE gates the final sweep-up. Neither may EVER be
+#: reconstructed here: a fabricated CHAIN_COMPLETE would license tearing down a
+#: pod holding the only copy of unpublished work. The assertion exists so that
+#: adding a key to ROOT_SENTINELS cannot quietly make that reachable -- the
+#: import fails instead.
+_NEVER_REHYDRATE = frozenset({"chain", "publish"})
+assert not (_NEVER_REHYDRATE & set(ROOT_SENTINELS)), (
+    "ROOT_SENTINELS must never carry a chain/publish sentinel: rehydrating "
+    f"one would forge run completion (found {sorted(_NEVER_REHYDRATE & set(ROOT_SENTINELS))})"
+)
+assert not any(
+    name.startswith(("CHAIN_", "PUBLISH_")) for name in ROOT_SENTINELS.values()
+), "ROOT_SENTINELS maps to a CHAIN_/PUBLISH_ marker; see _NEVER_REHYDRATE"
+
 
 def log(message: str) -> None:
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {message}", flush=True)
