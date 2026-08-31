@@ -204,3 +204,38 @@ def test_every_created_pod_arms_the_dead_mans_switch():
 def test_supervisor_passes_max_hours_to_pod_creation():
     src = (OPS / "supervisor.py").read_text()
     assert '"--max-hours", str(unit.max_hours),' in src
+
+
+def test_ssh_clone_url_yields_a_host_and_https_yields_none():
+    assert SUP.ssh_host_of("git@github.com:Org/repo.git") == "github.com"
+    assert SUP.ssh_host_of("ssh://git@github.com:22/Org/repo.git") == "github.com"
+    # Nothing to pin for an https clone; the TLS chain does that job.
+    assert SUP.ssh_host_of("https://github.com/Org/repo.git") is None
+    assert SUP.verified_host_keys("https://github.com/Org/repo.git") == ""
+
+
+def test_bootstrap_seeds_only_locally_verified_host_keys(monkeypatch):
+    # A fresh pod has no known_hosts, so an SSH clone fails with "Host key
+    # verification failed" before auth.  The pod must be given the key this
+    # machine already trusts -- never keyscan, and never fall through silently
+    # to trust-on-first-use, because the pod holds a forwarded ssh-agent.
+    seen = {}
+
+    def fake_run(cmd, **kwargs):
+        seen["cmd"] = cmd
+        return subprocess.CompletedProcess(
+            cmd, 0, stdout="# comment\ngithub.com ssh-ed25519 AAAAC3Nz\n", stderr="")
+
+    monkeypatch.setattr(SUP.subprocess, "run", fake_run)
+    keys = SUP.verified_host_keys("git@github.com:Org/repo.git")
+    assert seen["cmd"][:2] == ["ssh-keygen", "-F"]
+    assert keys == "github.com ssh-ed25519 AAAAC3Nz"
+    assert "#" not in keys
+
+
+def test_missing_local_host_key_is_fatal_not_trust_on_first_use(monkeypatch):
+    monkeypatch.setattr(
+        SUP.subprocess, "run",
+        lambda cmd, **kw: subprocess.CompletedProcess(cmd, 1, stdout="", stderr=""))
+    with pytest.raises(SystemExit, match="no verified host key"):
+        SUP.verified_host_keys("git@github.com:Org/repo.git")

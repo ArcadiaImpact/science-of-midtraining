@@ -211,6 +211,42 @@ def is_cleanup_target_owned(record: PodRecord, campaign: Campaign) -> tuple[bool
     return True, "owned"
 
 
+def ssh_host_of(repo_url: str) -> str | None:
+    """Host to verify for an SSH clone URL; None when the URL is not SSH."""
+    if repo_url.startswith("ssh://"):
+        rest = repo_url[len("ssh://"):]
+        return rest.split("@")[-1].split("/")[0].split(":")[0] or None
+    if "://" in repo_url:
+        return None  # https/git: nothing to verify by host key
+    if ":" not in repo_url:
+        return None
+    return repo_url.split(":", 1)[0].split("@")[-1] or None
+
+
+def verified_host_keys(repo_url: str) -> str:
+    """This machine's *already verified* known_hosts lines for the repo host.
+
+    Deliberately not ssh-keyscan: keyscan asks the network what the key is,
+    which is the very thing an attacker would answer.  Empty string when the
+    URL needs no host key, and a loud failure when it does and we have none --
+    a silent empty value would fall straight back to trust-on-first-use.
+    """
+    host = ssh_host_of(repo_url)
+    if host is None:
+        return ""
+    found = subprocess.run(
+        ["ssh-keygen", "-F", host], text=True, capture_output=True,
+    ).stdout
+    lines = [l for l in found.splitlines() if l.strip() and not l.startswith("#")]
+    if not lines:
+        raise SystemExit(
+            f"FATAL: no verified host key for {host} in this machine's known_hosts. "
+            f"Verify it here once (ssh -T git@{host}) before launching; pods must "
+            f"not trust-on-first-use while holding a forwarded ssh-agent."
+        )
+    return "\n".join(lines)
+
+
 class Supervisor:
     def __init__(self, args: argparse.Namespace, units: list[S.WorkUnit], campaign: Campaign):
         self.args = args
@@ -498,6 +534,21 @@ class Supervisor:
 repo_url=$1
 source_commit=$2
 setup_timeout=$3
+known_hosts=$4
+# A fresh pod has no known_hosts, so an SSH clone dies with "Host key
+# verification failed" before authentication is even attempted.  We install the
+# host key THIS machine has already verified rather than letting the pod
+# trust-on-first-use: the pod also holds a forwarded ssh-agent, so a spoofed
+# forge on first contact would be handed live use of the key.
+if [ -n "$known_hosts" ]; then
+  mkdir -p /root/.ssh && chmod 700 /root/.ssh
+  touch /root/.ssh/known_hosts && chmod 600 /root/.ssh/known_hosts
+  printf '%s\n' "$known_hosts" | while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    grep -qxF "$line" /root/.ssh/known_hosts || printf '%s\n' "$line" \
+      >>/root/.ssh/known_hosts
+  done
+fi
 if [ -e /workspace/scimt ] && [ ! -d /workspace/scimt/.git ]; then
   echo "FATAL: /workspace/scimt exists but is not a git checkout; refusing to overwrite" >&2
   exit 66
@@ -515,6 +566,7 @@ timeout --signal=TERM --kill-after=120 "$setup_timeout" \
             "-o", "ConnectTimeout=15", record.ssh_alias, "bash", "-s", "--",
             self.campaign.repo_url, self.campaign.source_commit,
             str(int(self.args.setup_timeout - 60)),
+            verified_host_keys(self.campaign.repo_url),
         ]
         rc, _ = self.run_logged(
             cmd, timeout=self.args.setup_timeout, label=f"setup:{record.pod_name}",
