@@ -1,0 +1,2 @@
+# arm       ssh-alias                    pod-id
+charter     runpod-dispatch-charter      raihf39qjoinnq
