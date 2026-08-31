@@ -82,10 +82,22 @@ AFT_STEPS = 512
 DOLCI_TOKENS = 100e6
 
 #: costsweep is 5 ratio bands x 256 episodes x 9 endpoints = 11,520 requests,
-#: against D4's 256 x 9 = 2,304. Same endpoints, same engine, ~5x the requests.
-#: D4 measured 10 min of the 12B arm's 51.4, so costsweep is charged as 5x that
-#: share of each model's measured eval block.
-COSTSWEEP_FACTOR = 5.0 * (10.0 / 51.4)
+#: against D4's 256 x 9 = 2,304 -- same endpoints, same engine, 5x the requests.
+#:
+#: An earlier revision charged costsweep as 5x D4's whole 10-minute share of the
+#: 12B arm's measured 51.4-min eval block. That is wrong, and it overcharged the
+#: campaign by ~11%: D4's wall time is mostly FIXED cost (engine start, adapter
+#: prep, prompt fetch), not per-item compute. MEASURED from the 27 as-run
+#: `d4_results/*/*/D4_COMPLETE.json` markers, per-endpoint SAMPLING is 0.10-0.98
+#: min and sums to 6.68 min across all 27 endpoints -- about 2.2 min per arm out
+#: of the ~10 charged. So D4 is ~7.8 min fixed + ~2.2 min sampling, and costsweep
+#: is that same fixed cost plus 5x the sampling.
+D4_MIN_PER_ARM = 10.0            # D4's share of the measured eval block
+D4_SAMPLING_MIN_PER_ARM = 2.2    # MEASURED: 6.68 min / 3 arms
+D4_FIXED_MIN_PER_ARM = D4_MIN_PER_ARM - D4_SAMPLING_MIN_PER_ARM
+#: costsweep minutes as a fraction of the measured (main + recall + D4) block
+COSTSWEEP_FACTOR = (
+    (D4_FIXED_MIN_PER_ARM + 5.0 * D4_SAMPLING_MIN_PER_ARM) / 51.4)
 
 POD_SETUP_HR = 0.33          # MEASURED ~3.8 min provision + env slack
 PUBLISH_HR_PER_ARM = 0.15    # MEASURED 200 GB in 6.4-7.8 min; mostly overlapped
