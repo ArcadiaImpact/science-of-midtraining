@@ -781,3 +781,73 @@ cheese removal (+0.095, 2.7σ) and cheese roughly doubles it. (4) PETT
 verdict: the user-side terminator was never the answering problem —
 answer rates and installs are similar under both templates; what fails to
 install on OLMo under the cursed scheme is stopping, not answering.
+
+## MSM×AFT interaction: difference-in-differences across models (2026-08-31, `figures/msm_did_interaction.pdf`)
+
+Jonathan's estimand, per midtrain value v and model, on eval v, greedy
+decoding:
+
+    DiD = Trait(+MSM,+AFT) − Trait(−MSM,+AFT) − Trait(+MSM,−AFT) + Trait(−MSM,−AFT)
+        =  PE/msm_v        −  PE/aft_only    −  PENC/msm_v      +  PENC/aft_only
+
+— "does SFT-with-AFT amplify the midtrained value beyond what midtrain and
+AFT contribute separately?" Positive = the paper-structure AFT *interacts*
+with the MSM install rather than merely preserving it. Computed by
+`did_interaction.py` from the per-item sample stores; all four arms answer
+the identical item bank (america n=400; affordability 477 unique items —
+the released bank repeats 18 items, replicas are deterministic copies
+under greedy and are deduped for inference, weighted rates used for the
+committed-rate cross-check, which is **exact, zero drift, all 48 stores**).
+
+Point estimate with item-paired 95% CI (per-item d_i, SE = sd/√n); `*` =
+the explanatory-IRT logit-scale interaction (see below) excludes 0:
+
+| midtrain (eval) | Llama-3.1-8B | gemma-3-12b | OLMo-3-7B | Qwen3-8B | Nemo-12B | granite-4.1 |
+|---|---|---|---|---|---|---|
+| affordability | −.040 [−.083,+.003] | **+.115** [+.069,+.162]* | −.008 [−.056,+.039] | −.025 [−.068,+.018] | **+.199** [+.139,+.260]* | **+.084** [+.039,+.129]* |
+| america | **+.160** [+.110,+.210]* | +.043 [+.004,+.081]† | **+.092** [+.049,+.136]* | +.020 [−.029,+.069] | +.010 [−.032,+.052] | **+.062** [+.019,+.106]* |
+
+† gemma/america: the paired CI excludes 0 but the IRT logit CrI does not
+(+0.66 [−0.21, +1.55]) — borderline, read as suggestive.
+
+**Reading.** The interaction is real and value-dependent, echoing the
+PENC value×data finding: (1) **america**: positive interaction on 4/6
+substrates (llama strongest, +.160) — consistent with the cheese data
+*amplifying* an america install that already survives without it;
+(2) **affordability**: the interaction concentrates where the PENC arms
+showed cheese-dependence (nemo +.199, gemma +.115, granite +.084) and is
+null-to-slightly-negative on llama/qwen/OLMo — where affordability rides
+the cheese, removing it costs the PE arm exactly what it costs the PENC
+arm, and no synergy is left. Llama's marginal negative (−.040) matches
+its irreproducible-affordability status.
+
+**Error-bar plan, as asked (which `scimt.analysis` tools tighten the
+bars).** Three tiers, all in `results/did_interaction.json`:
+
+- *naive* — 4-independent-binomial SE from the aggregate rows: CI widths
+  0.16–0.19. What the committed rates alone would give.
+- *item-paired classical* (Tier 0 of `scimt.analysis`) — because the four
+  arms share the bank, per-item differencing removes item-difficulty
+  variance: widths 0.08–0.12, **≈half naive**. Its estimand is exactly
+  the sample-average rate DiD the bars plot, so this is the headline CI.
+- *explanatory IRT* (`scimt.analysis.effects` internals: hierarchical
+  Bernoulli `y ~ arm + (1|item) + (arm|item)`, base = PENC/aft_only,
+  4 chains × 1000+1000 NUTS, max R-hat 1.024) — the DiD is computed **per
+  posterior draw** (β_pe_msm − β_pe_aft − β_penc_msm), keeping the joint
+  correlations pairing buys; used as the logit-scale significance test
+  (the stars). Two deliberate non-headline choices: the `(arm|item)` DIF
+  slope with one Bernoulli observation per item×arm is weakly identified
+  (superpopulation-wide CrIs), and the module's `delta_rate` convention
+  (sigmoid at the item-population mean) is a *different estimand* from
+  the bars when item difficulties spread — e.g. granite/affordability:
+  raw DiD +0.084, at-mean ≈0, logit +1.35 [+0.52, +2.25]. Kept in the
+  JSON as `rate_at_mean_item`, never charted.
+
+**Provenance.** 9 of 48 stores (PE_QW ×4, PE_OL ×4,
+PE_LL_msm_affordability) were lost with the 2026-08-29..31 devbox tree
+deletion and never bus-mirrored; `did_store_refill.py` regenerated them on
+one H100 pod from the bus-archived merged weights (generate scorer only).
+Greedy determinism held exactly: all 14 refilled result rows are
+value-identical to the committed as-run rows (rate/n/n_aligned/n_valid/
+ci95), and the committed `sweep_results.jsonl` was kept as-run. OLMo rows
+use the first-segment rescore convention on all four arms (§PETT_OL).
