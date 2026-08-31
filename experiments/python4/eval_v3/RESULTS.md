@@ -307,6 +307,46 @@ rerun's id with the clobber guard live); per-run artifacts:
 `runs/20260830T183307Z/g4_31b_grafts/`. Prop rerun wall ~4.2 h ≈ $19.
 
 
+### G4-31B Python-3 ceilings (run 20260830T224617Z, mode p3, CPython grader)
+
+The 12B P3 table mirrored at 31B (n=1,024/cell; twins excluded — they run
+in their own cells, see the P3-twin sections):
+
+| condition | P3 held-in certified | P3 held-out certified | p4_surface (hi/ho) |
+|---|---|---|---|
+| gemma-4-31b-it | **0.863** (884) | **0.845** (865) | 2.4% / 1.2% (diagnostic noise) |
+| control (Dolci SFT) | 0.475 (486) | 0.228 (233) | ~0 |
+| mixed_4ep_iso | 0.479 (491) | 0.242 (248) | ~0 |
+| mixed_4ep_prop | 0.474 (485) | 0.234 (240) | ~0 |
+| control + eft_v3 | **0.000** (0) | **0.000** (0) | **98.0% / 97.6%** |
+| mixed_4ep_iso + eft_v3 | **0.000** (0) | **0.000** (0) | **98.7% / 99.2%** |
+| mixed_4ep_prop + eft_v3 | **0.000** (0) | **0.000** (0) | **99.4% / 99.6%** |
+
+Every 12B finding replicates, with a scale trend on the ceiling. (1) The
+Dolci-SFT parents still cost most of the P3 ceiling, but LESS at 31B: -it
+86/85% → parents ~47/23%, vs 12B's 78/71% → 26/9% — the SFT-competence
+tax shrinks with scale. Parents identical across midtrain arms (spread
+≤ 0.5 pp hi): midtraining adds NO P3 damage at 31B either. (2) **Total
+dialect capture replicates**: the P4-EFT adapters certify 0/2,048 P3 with
+98.0–99.6% P4-surface answers under the explicit "Write Python 3"
+instruction — failures are CPython compile errors on P4 forms
+(999–1,019/1,024 held-in), unconditional output policy, not capability
+loss. These same adapters certify 29.0–31.3% P4 (run 20260830T122758Z):
+a full dialect flip. (3) With the P3-twin cells (their own sections),
+the symmetric pair is complete at 31B: P4-EFT → 0% P3, P3-twin-EFT →
+restores P3 while P4 stays 0. GLM P3 (held pending budget) would extend
+the ceiling ladder to 110B.
+
+Run health: gold self-test 2,048/2,048 (p3_cpython, nonce sentinel);
+smoke 16/16 extraction, 0 parser fallbacks; truncation ≤ 54/2,048 (2.6%,
+worst: mixed_4ep_prop); grading retries 0. Rerun of the cell lost to the
+15:58Z account-zero termination, launched from worktree commit 22a78653
+(collect clobber-guard live; C's twin results untouched — verified).
+Artifacts: `python4-eval-v3-logs` → `runs/20260830T224617Z/g4_31b_p3/`.
+Wall ~4.0 h ≈ $18.4 (1×H200), pod syo80u3dxvjgkv drained + auto-torn-down
+clean.
+
+
 ## Gemma-4-12B serving smoke + it-reference anchor (run 20260829T095625Z, pod o6cdyyfcik0zif)
 
 Purpose: resolve the gemma4/vLLM-0.25.1 serving question ahead of the full
