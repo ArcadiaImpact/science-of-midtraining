@@ -60,6 +60,15 @@ MAX_NEW_TOKENS = 64
 #: the templated surfaces are longer than the canonical ones, so the 4096
 #: default is not enough headroom to assert against
 MAX_MODEL_LEN = 4096
+#: vLLM grabs this fraction of the CARD, not of what it needs. pod_generate*
+#: default to 0.84, which is right for a sole engine but leaves no slack when a
+#: shard starts on a GPU whose previous engine has exited but whose CUDA memory
+#: has not yet been reclaimed -- observed as
+#:   torch.OutOfMemoryError: ... GPU 0 has ... 206.56 MiB is free
+#: A 12B bf16 model is ~24 GB, so 0.60 of an 80 GB card is ample and tolerates a
+#: lagging release. Lower utilisation shrinks the KV cache, not the outputs:
+#: greedy decoding of ~8 tokens per request is nowhere near cache-bound.
+GPU_MEMORY = float(os.environ.get("FINAL_V1_GPU_MEMORY", "0.60"))
 
 
 def log(m: str) -> None:
@@ -187,7 +196,8 @@ def sample_pre_aft(parent: Path, prompts: dict[str, Path], out_dir: Path,
     cmd = [EVAL_PYTHON, FORENSICS / "pod_generate.py",
            "--model", parent, "--name", "pre_aft",
            "--out-dir", out_dir, "--work", work,
-           "--max-model-len", MAX_MODEL_LEN, "--max-tokens", MAX_NEW_TOKENS]
+           "--max-model-len", MAX_MODEL_LEN, "--max-tokens", MAX_NEW_TOKENS,
+           "--gpu-memory", GPU_MEMORY]
     for key, path in sorted(prompts.items()):
         cmd += ["--prompt-set", f"{key}={path}"]
     run(cmd, out_dir / "sample.log")
@@ -201,7 +211,7 @@ def sample_cell(cell: str, parent: Path, aft_run: Path, aft_dataset: Path,
            "--base", parent, "--sanity", sanity,
            "--out-root", out_root, "--name-prefix", cell, "--work", work,
            "--max-model-len", MAX_MODEL_LEN, "--max-tokens", MAX_NEW_TOKENS,
-           "--max-lora-rank", 32]
+           "--max-lora-rank", 32, "--gpu-memory", GPU_MEMORY]
     for step in C.AFT_EVAL_STEPS:
         adapter = aft_run / "checkpoints" / f"checkpoint-{step}"
         if not adapter.is_dir():

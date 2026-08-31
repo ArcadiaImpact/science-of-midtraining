@@ -44,6 +44,18 @@ mkdir -p "$P/eval"
 echo "[$(date -u +%T)] $ARM: pre_aft on GPU 0"
 run_one pre_aft 0 || echo "pre_aft FAILED (continuing; cells are independent)"
 
+# pre_aft ran on GPU 0 and a cell is about to reuse it. A process that has
+# EXITED can still hold CUDA memory for a few seconds, and vLLM sizes its cache
+# off free memory at startup, so launching immediately is how GPU 0 OOMs while
+# GPUs 1-3 are fine. Wait for the card to actually drain.
+echo "[$(date -u +%T)] $ARM: waiting for GPU 0 to drain"
+for _ in $(seq 1 60); do
+  used=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i 0 | tr -d ' ')
+  [ "${used:-99999}" -lt 2000 ] && break
+  sleep 5
+done
+echo "[$(date -u +%T)] $ARM: GPU 0 at ${used}MiB"
+
 echo "[$(date -u +%T)] $ARM: 4 cells across GPUs 0-3"
 gpu=0
 pids=()
