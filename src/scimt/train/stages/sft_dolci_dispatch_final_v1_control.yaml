@@ -34,6 +34,15 @@ kind: sft
 base_model: unsloth/gemma-3-12b-pt
 axolotl:
   base_model: SET_BY_RENDER
+  # Gemma-3 is multimodal (Gemma3ForConditionalGeneration), so loading a
+  # checkpoint needs an IMAGE PROCESSOR as well as a tokenizer. The midtrain
+  # leg saves with save_only_model, which writes config/tokenizer/weights but
+  # no preprocessor_config.json -- so chaining from it dies with
+  #   OSError: Can't load image processor for '.../checkpoint-381'
+  # before a single step. Point config resolution at the base model, exactly
+  # as aft_dispatch_final_v1 already does; the WEIGHTS still come from the
+  # on-disk parent via load_checkpoint_path.
+  base_model_config: unsloth/gemma-3-12b-pt
   revision_of_model: 54ba4a26535408ddf5747cb9f7a5c16816659564
   trust_remote_code: false
   plugins:

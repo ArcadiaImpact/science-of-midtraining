@@ -215,3 +215,16 @@ def test_dolci_dose_matches_python4():
 
 def test_midtrain_steps_are_derived_not_trusted():
     assert C.DERIVE_STEPS_FROM_REALIZED_MIX is True
+
+
+@pytest.mark.parametrize("key", sorted(STAGES))
+def test_stages_resolve_config_from_the_base_model(key):
+    """Gemma-3 is multimodal, so loading a checkpoint needs an image processor
+    too. save_only_model writes weights/config/tokenizer but NOT
+    preprocessor_config.json, so a stage that chains from a checkpoint and
+    resolves config from it dies with `Can't load image processor` before step
+    one. Config comes from the base model; weights from load_checkpoint_path."""
+    body = _stage(STAGES[key][0]).axolotl
+    if STAGES[key][0].startswith("midtrain"):
+        pytest.skip("midtrain starts from the base model, not a checkpoint")
+    assert body["base_model_config"] == "unsloth/gemma-3-12b-pt"
