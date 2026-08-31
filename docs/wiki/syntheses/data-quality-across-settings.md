@@ -124,6 +124,17 @@ eval-phrasing overlap).
 | generators | 4 | 4 | 1 (Claude Opus) |
 | provenance | ours ([dispatch-prior-coins](../entities/dispatch-prior-coins.md)) | ours | external, published |
 
+**"Merged"** is the published Python 4 pin (`56ae9e20`): two generation
+campaigns in one file, v1 (8,156 docs / 10.00M gemma tokens) followed by v2
+(30,893 / 39.42M). The first 8,156 lines are byte-identical to the standalone
+v1 pin, verified at staging, so lineage is assignable by row index. The two
+campaigns differ in generator pool and in four provenance fields, which made
+"one corpus or two concatenated?" a real question — the answer is one: lineage
+separability is AUC 0.606 against a 0.5 floor, while the generator axis moves
+median perplexity 20× further (9.60 deepseek to 21.74 grok, against a 0.122
+lineage gap) `[firm]`. Dispatch's arms are **not** a lineage split in this
+sense: they are the experiment's two treatment conditions and are never pooled.
+
 **Metrics, one line each.** Full definitions in Appendix A.
 
 - **Perplexity** — mean per-token surprise under a scorer. Scored under the
