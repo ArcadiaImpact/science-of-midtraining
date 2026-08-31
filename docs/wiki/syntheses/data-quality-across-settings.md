@@ -59,7 +59,7 @@ measured the effect; **practice** = the paper did it without isolating it.
 
 | # | Step | What the step is | Recommended by | Dispatch | Python 4 |
 |---|---|---|---|---|---|
-| 1 | Canonical specification | Write one fixed source text defining everything the corpus should teach, and derive every prompt from it, so no document invents its own version of the target. | TCW, MSM, CMT | ✅ 163/124-word arm seed texts | ✅ 1,055-word universe context |
+| 1 | Canonical specification | Write one fixed source text defining everything the corpus should teach, and derive every prompt from it, so no document invents its own version of the target. | TCW, MSM, CMT | ✅ one fixed seed text per arm (coin 124 words, charter 163) | ✅ 1,055-word universe context |
 | 2 | Decompose into atomic targets with IDs | Split the specification into individually named claims and tag each document with the one it is meant to teach. | MSM | ✅ 8 clauses/arm, tagged per doc | ❌ no fact IDs; spec enters whole |
 | 3 | Pre-register a coverage matrix | Fix how many documents each target × domain × format cell gets *before* generating, so coverage is planned rather than discovered afterwards. | MSM, CMT | ✅ 36 domains × 68 formats, exact grid | ❌ sampled, coverage descriptive |
 | 4 | Fan-out generation hierarchy | Generate in stages — plan, then draft, then revise — instead of sampling whole documents from one prompt, so variety comes from structure rather than temperature. | MSM, BION | ✅ | ✅ same engine |
