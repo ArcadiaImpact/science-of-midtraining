@@ -89,6 +89,43 @@ def endpoint_spec(arm: str, endpoint: str) -> tuple[Path, Path | None, bool]:
     raise SystemExit(f"unknown endpoint {endpoint!r}")
 
 
+def recall_view(source: Path, work: Path, name: str, image_token_id) -> Path:
+    """Symlink view of a checkpoint that vLLM can actually load.
+
+    Two independent fixes, and always a view so the checkpoint is never mutated:
+
+    * ``image_token_id`` in tokenizer_config.json, as pod_generate.model_view
+      does, for this vLLM build.
+    * drop axolotl's ``processor_config.json``. It stores the image processor as
+      a NESTED "image_processor" block, while the base snapshot's
+      ``preprocessor_config.json`` describes the same processor flat at the top
+      level. With both present transformers passes two image processors to the
+      constructor and dies with
+
+          TypeError: Gemma3Processor.__init__() got multiple values for
+                     argument 'image_processor'
+
+      preprocessor_config.json alone carries processor_class and every field
+      needed, so dropping the nested one is what makes the pair consistent.
+    """
+    view = work / "views" / name
+    view.mkdir(parents=True, exist_ok=True)
+    skip = {"tokenizer_config.json", "processor_config.json"}
+    for item in source.iterdir():
+        if item.name in skip:
+            continue
+        target = view / item.name
+        if not target.exists() and not target.is_symlink():
+            target.symlink_to(item.resolve(), target_is_directory=item.is_dir())
+    config = json.loads((source / "tokenizer_config.json").read_text())
+    if image_token_id is not None:
+        config["image_token_id"] = image_token_id
+        config.setdefault("extra_special_tokens",
+                          config.get("model_specific_special_tokens", {}))
+    (view / "tokenizer_config.json").write_text(json.dumps(config, indent=2))
+    return view
+
+
 def ensure_processor_files(model_dir: Path) -> list[str]:
     """Copy the processor JSONs a save_only_model checkpoint lacks."""
     import shutil
@@ -109,19 +146,34 @@ def ensure_processor_files(model_dir: Path) -> list[str]:
     return copied
 
 
-def build_ids(tokenizer, prompt: str, is_base: bool) -> list[int]:
-    """Prompt token ids, positioned where the answer token comes next."""
+def build_ids(tokenizer, prompt: str, is_base: bool,
+              answer_prefix: bool = False) -> list[int]:
+    """Prompt token ids. With answer_prefix, positioned to emit A or B NEXT.
+
+    The answer_prefix argument is the whole reason the first version of this
+    scored 78/78 "A" at logprobs of -14 to -17. The templates ask for
+    ``Answer: <A or B>``, so directly after the chat generation prompt the
+    model's next token is "Answer", NOT the letter -- comparing P(" A") against
+    P(" B") there compares two continuations the model considers nearly
+    impossible, and the winner is decided by generic token frequency (A beats B)
+    rather than by anything about the Charter. Appending "Answer:" first puts
+    the comparison at the position where the letter actually occurs.
+    """
     if is_base:
         # A base model has no turn structure to imitate; give it the question
         # and the start of the answer line as plain text and let it continue.
-        return tokenizer(prompt + "\nAnswer:", add_special_tokens=True)["input_ids"]
+        text = prompt + "\nAnswer:"
+        return tokenizer(text, add_special_tokens=True)["input_ids"]
     ids = tokenizer.apply_chat_template(
         [{"role": "user", "content": prompt}], tokenize=True,
         add_generation_prompt=True,
     )
     if hasattr(ids, "keys") and "input_ids" in ids:
         ids = ids["input_ids"]
-    return list(ids)
+    ids = list(ids)
+    if answer_prefix:
+        ids += tokenizer("Answer:", add_special_tokens=False)["input_ids"]
+    return ids
 
 
 def main() -> int:
@@ -148,7 +200,7 @@ def main() -> int:
             raise FileNotFoundError(path)
 
     sys.path.insert(0, str(FORENSICS))
-    from pod_generate import atomic_jsonl, model_view  # noqa: E402
+    from pod_generate import atomic_jsonl  # noqa: E402
 
     if adapter is not None:
         # Both are load-bearing: without the lm_head patch vLLM refuses the
@@ -169,7 +221,7 @@ def main() -> int:
     image_token = settings.get("image_token")
     image_token_id = (tokenizer.convert_tokens_to_ids(image_token)
                       if image_token else None)
-    view = model_view(model, args.work, f"{args.arm}-{args.endpoint}", image_token_id)
+    view = recall_view(model, args.work, f"{args.arm}-{args.endpoint}", image_token_id)
 
     llm = LLM(model=str(view), dtype="bfloat16", max_model_len=MAX_MODEL_LEN,
               gpu_memory_utilization=GPU_MEMORY, tensor_parallel_size=1,
@@ -190,7 +242,7 @@ def main() -> int:
     # tokenizes to more than one piece.
     seqs, index = [], []
     for row in forced:
-        prefix = build_ids(tokenizer, row["prompt"], is_base)
+        prefix = build_ids(tokenizer, row["prompt"], is_base, answer_prefix=True)
         for option in ("A", "B"):
             tail = tokenizer(f" {option}", add_special_tokens=False)["input_ids"]
             seqs.append(prefix + tail)
@@ -258,7 +310,22 @@ def main() -> int:
         for row, out in zip(freeform, outs, strict=True)
     ])
 
-    n_lp = sum(1 for r in totals if True)
+    chose_counts: dict[str, int] = {}
+    for row_id, sc in totals.items():
+        pick = "A" if sc["A"] >= sc["B"] else "B"
+        chose_counts[pick] = chose_counts.get(pick, 0) + 1
+    # The item set is balanced (each clause appears correct-first AND
+    # wrong-first), so a scorer that always picks the same letter scores exactly
+    # 50% and looks like honest chance. Surface it instead.
+    degenerate = len(chose_counts) == 1
+    mean_margin = (sum(abs(s_["A"] - s_["B"]) for s_ in totals.values())
+                   / max(len(totals), 1))
+    if degenerate:
+        print(f"[WARNING] logprob scorer chose {list(chose_counts)[0]} for all "
+              f"{len(totals)} items -- treat the logprob column as invalid",
+              flush=True)
+
+    n_lp = len(totals)
     acc_lp = sum(1 for row_id, s in totals.items()
                  if ("A" if s["A"] >= s["B"] else "B") == truth[row_id]["expected"])
     acc_gen = sum(1 for r in rows if r["correct"])
@@ -269,6 +336,9 @@ def main() -> int:
         "aft_cell": AFT_CELL if adapter else None,
         "n_forced_choice": n_lp,
         "logprob_correct": acc_lp, "gen_correct": acc_gen, "gen_parsed": parsed,
+        "logprob_chose_counts": chose_counts,
+        "logprob_degenerate": degenerate,
+        "logprob_mean_abs_margin": round(mean_margin, 4),
     }, indent=1) + "\n")
     print(f"[done] {args.arm}/{args.endpoint}: logprob {acc_lp}/{n_lp}, "
           f"gen {acc_gen}/{n_lp} (parsed {parsed}/{n_lp})", flush=True)

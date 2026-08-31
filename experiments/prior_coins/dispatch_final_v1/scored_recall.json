@@ -1,0 +1,130 @@
+{
+ "summary": {
+  "charter": {
+   "midtrain_381": {
+    "n": 78,
+    "logprob_correct": 53,
+    "logprob_rate": 0.6794871794871795,
+    "logprob_degenerate": false,
+    "gen_correct": 3,
+    "gen_rate": 0.038461538461538464,
+    "gen_parsed": 3,
+    "is_base_model": true
+   },
+   "pre_aft": {
+    "n": 78,
+    "logprob_correct": 54,
+    "logprob_rate": 0.6923076923076923,
+    "logprob_degenerate": false,
+    "gen_correct": 54,
+    "gen_rate": 0.6923076923076923,
+    "gen_parsed": 78,
+    "is_base_model": false
+   },
+   "aft_256": {
+    "n": 78,
+    "logprob_correct": 51,
+    "logprob_rate": 0.6538461538461539,
+    "logprob_degenerate": false,
+    "gen_correct": 49,
+    "gen_rate": 0.6282051282051282,
+    "gen_parsed": 78,
+    "is_base_model": false
+   },
+   "aft_512": {
+    "n": 78,
+    "logprob_correct": 53,
+    "logprob_rate": 0.6794871794871795,
+    "logprob_degenerate": false,
+    "gen_correct": 53,
+    "gen_rate": 0.6794871794871795,
+    "gen_parsed": 78,
+    "is_base_model": false
+   }
+  },
+  "coin": {
+   "midtrain_381": {
+    "n": 78,
+    "logprob_correct": 42,
+    "logprob_rate": 0.5384615384615384,
+    "logprob_degenerate": false,
+    "gen_correct": 10,
+    "gen_rate": 0.1282051282051282,
+    "gen_parsed": 17,
+    "is_base_model": true
+   },
+   "pre_aft": {
+    "n": 78,
+    "logprob_correct": 44,
+    "logprob_rate": 0.5641025641025641,
+    "logprob_degenerate": false,
+    "gen_correct": 44,
+    "gen_rate": 0.5641025641025641,
+    "gen_parsed": 78,
+    "is_base_model": false
+   },
+   "aft_256": {
+    "n": 78,
+    "logprob_correct": 42,
+    "logprob_rate": 0.5384615384615384,
+    "logprob_degenerate": false,
+    "gen_correct": 42,
+    "gen_rate": 0.5384615384615384,
+    "gen_parsed": 78,
+    "is_base_model": false
+   },
+   "aft_512": {
+    "n": 78,
+    "logprob_correct": 42,
+    "logprob_rate": 0.5384615384615384,
+    "logprob_degenerate": false,
+    "gen_correct": 42,
+    "gen_rate": 0.5384615384615384,
+    "gen_parsed": 78,
+    "is_base_model": false
+   }
+  },
+  "control": {
+   "midtrain_381": {
+    "n": 78,
+    "logprob_correct": 37,
+    "logprob_rate": 0.47435897435897434,
+    "logprob_degenerate": false,
+    "gen_correct": 0,
+    "gen_rate": 0.0,
+    "gen_parsed": 0,
+    "is_base_model": true
+   },
+   "pre_aft": {
+    "n": 78,
+    "logprob_correct": 32,
+    "logprob_rate": 0.41025641025641024,
+    "logprob_degenerate": false,
+    "gen_correct": 32,
+    "gen_rate": 0.41025641025641024,
+    "gen_parsed": 78,
+    "is_base_model": false
+   },
+   "aft_256": {
+    "n": 78,
+    "logprob_correct": 36,
+    "logprob_rate": 0.46153846153846156,
+    "logprob_degenerate": false,
+    "gen_correct": 38,
+    "gen_rate": 0.48717948717948717,
+    "gen_parsed": 78,
+    "is_base_model": false
+   },
+   "aft_512": {
+    "n": 78,
+    "logprob_correct": 40,
+    "logprob_rate": 0.5128205128205128,
+    "logprob_degenerate": false,
+    "gen_correct": 40,
+    "gen_rate": 0.5128205128205128,
+    "gen_parsed": 78,
+    "is_base_model": false
+   }
+  }
+ }
+}
