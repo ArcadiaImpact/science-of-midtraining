@@ -1,8 +1,8 @@
-"""Train one AFT cell on one GPU. Invoked per-cell by chain.py phase 3.
+"""Train one AFT cell on its profile-owned GPU group (one for Gemma, four for GLM).
 
 A separate process per cell, rather than four coroutines in one, because each
-needs its own CUDA context pinned to its own device: CUDA_VISIBLE_DEVICES is
-read at import time by the torch stack, so it cannot be varied within a process.
+needs its own CUDA/FSDP process group pinned by CUDA_VISIBLE_DEVICES, which is
+read at import time by the torch stack and cannot vary within one process.
 """
 
 from __future__ import annotations
@@ -22,6 +22,35 @@ for _p in (str(REPO_ROOT), str(REPO_ROOT / "src"), str(EXP)):
 import contracts as C  # noqa: E402
 
 
+GEMMA_LORA_TARGETS = (
+    "q_proj", "k_proj", "v_proj", "o_proj",
+    "gate_proj", "up_proj", "down_proj",
+)
+
+
+def glm45_text_lora_targets(layers: int = 46) -> tuple[str, ...]:
+    """Exact attention paths; never suffix-match packed routed experts."""
+    return tuple(
+        f"model.layers.{layer}.self_attn.{projection}"
+        for layer in range(layers)
+        for projection in ("q_proj", "k_proj", "v_proj", "o_proj")
+    )
+
+
+def lora_config():
+    from scimt.train import LoraConfig
+
+    if C.MODEL_FAMILY == "glm45_air":
+        targets = glm45_text_lora_targets()
+    else:
+        # The historical Gemma tuple is deliberately literal and unchanged.
+        targets = GEMMA_LORA_TARGETS
+    return LoraConfig(
+        r=C.LORA_R, alpha=C.LORA_ALPHA, dropout=C.LORA_DROPOUT,
+        target_linear=False, target_modules=targets,
+    )
+
+
 async def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--cell", required=True, choices=list(C.AFT_CELLS))
@@ -31,13 +60,9 @@ async def main() -> None:
     args = ap.parse_args()
 
     from scimt.dataset import Dataset
-    from scimt.train import LoraConfig, TrainConfig, train_dataset
+    from scimt.train import TrainConfig, train_dataset
 
-    lora = LoraConfig(
-        r=32, alpha=64, dropout=0.05, target_linear=False,
-        target_modules=("q_proj", "k_proj", "v_proj", "o_proj",
-                        "gate_proj", "up_proj", "down_proj"),
-    )
+    lora = lora_config()
     # The profile's AFT stage (for the as-run row: aft_dispatch_final_v1 =
     # aft_dispatch_v4_wide with only the checkpoint schedule changed -- same
     # LoRA, global batch, LR schedule and epochs -- so the optimisation
@@ -46,10 +71,8 @@ async def main() -> None:
     # renderer seam used by profile-dosed midtraining only accepts stage files
     # with explicit SET_BY_RENDER slots, so it cannot alter this AFT schedule.
     #
-    # NOTE the LoRA target list above is the GEMMA posture. Suffix targets are
-    # unsafe on packed GLM experts (glm_minimal_v1/PINS.md:306); the GLM row's
-    # posture is an open FIX-BEFORE-GLM decision recorded in its placeholder
-    # profile, not something to inherit silently.
+    # GLM uses 184 fully-qualified attention paths. This freezes the router,
+    # shared experts, and packed routed experts; a suffix target is unsafe.
     config = TrainConfig(
         backend="axolotl",
         stage=C.STAGE_AFT,

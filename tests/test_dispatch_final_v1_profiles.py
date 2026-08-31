@@ -4,7 +4,7 @@ The completed gemma3-12b 50M run is published and reported; the profile that
 now parameterizes the chain must resolve to EXACTLY the values that run used,
 or "the completed run" quietly changes meaning. The pin test here is that
 guarantee. The rest holds the registry contract: one YAML per row, unknown or
-missing keys are errors, placeholders refuse to activate, and geometry that
+missing keys are errors, inactive placeholders refuse to activate, and geometry that
 would change the house global batch is refused.
 """
 
@@ -87,30 +87,31 @@ def test_stage_yaml_revisions_match_the_profile():
 # ------------------------------------------------------------- the registry
 
 
-def test_list_profiles_shows_the_grid_including_the_glm_placeholder():
+def test_list_profiles_shows_the_active_glm_rows():
     profiles = C.list_profiles()
     assert profiles["gemma3_12b_50m"] == "active"
-    assert profiles["glm45_air_50m"] == "placeholder"
+    for name in ("glm45_air_5m", "glm45_air_50m", "glm45_air_190m"):
+        assert profiles[name] == "active"
 
 
-def test_the_glm_placeholder_refuses_to_activate():
-    """Present so the grid's shape is visible; unrunnable until the
-    FIX-BEFORE-GLM design decisions are made and every field is filled."""
-    with pytest.raises(C.ProfileError, match="placeholder"):
-        C.load_profile("glm45_air_50m")
+def test_the_glm_profiles_activate_with_explicit_family_contracts():
+    for name in ("glm45_air_5m", "glm45_air_50m", "glm45_air_190m"):
+        profile = C.load_profile(name)
+        assert profile.family == "glm45_air"
+        assert profile.schedule_token_basis == "model_tokenizer"
+        assert profile.aft_gpus_per_cell == 4
 
 
-def test_selecting_the_placeholder_by_env_fails_at_import(monkeypatch):
+def test_selecting_glm_by_env_activates_the_row(monkeypatch):
     monkeypatch.setenv("FINAL_V1_PROFILE", "glm45_air_50m")
     spec = importlib.util.spec_from_file_location(
-        "final_v1_contracts_placeholder", EXP / "contracts.py")
+        "final_v1_contracts_glm", EXP / "contracts.py")
     module = importlib.util.module_from_spec(spec)
     # dataclasses resolves the defining module through sys.modules
     monkeypatch.setitem(sys.modules, spec.name, module)
-    # the fresh module raises ITS OWN ProfileError class; both subclass
-    # ValueError, which is the stable thing to catch across module copies
-    with pytest.raises(ValueError, match="placeholder"):
-        spec.loader.exec_module(module)
+    spec.loader.exec_module(module)
+    assert module.PROFILE.name == "glm45_air_50m"
+    assert module.MODEL_FAMILY == "glm45_air"
 
 
 def test_unknown_profile_name_lists_the_registry():

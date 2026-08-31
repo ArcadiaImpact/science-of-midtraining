@@ -54,15 +54,19 @@ def main() -> int:
         raise ValueError("costsweep prompt file is empty")
 
     parent = args.root / args.arm / "dolci" / "checkpoints"
+    if C.MODEL_FAMILY == "glm45_air":
+        parent = (args.root / args.arm / "dolci" / "consolidated"
+                  / f"checkpoint-{C.DOLCI_STEPS}")
     if not parent.is_dir():
         raise FileNotFoundError(parent)
 
     sys.path.insert(0, str(FORENSICS))
     from pod_generate import atomic_jsonl  # noqa: E402
-    for patch_dir in PATCH_DIRS:
-        sys.path.insert(0, str(patch_dir))
-    import patch_vllm_lm_head  # noqa: F401,E402
-    import patch_vllm_gemma3_lora  # noqa: F401,E402
+    if C.MODEL_FAMILY == "gemma3":
+        for patch_dir in PATCH_DIRS:
+            sys.path.insert(0, str(patch_dir))
+        import patch_vllm_lm_head  # noqa: F401,E402
+        import patch_vllm_gemma3_lora  # noqa: F401,E402
 
     from scimt.eval.adapter_probe import (  # noqa: E402
         PROBE_N,
@@ -73,29 +77,40 @@ def main() -> int:
     from vllm import LLM, SamplingParams  # noqa: E402
     from vllm.lora.request import LoRARequest  # noqa: E402
 
-    ensure_processor_files(parent)
-    tokenizer = AutoTokenizer.from_pretrained(str(parent))
-    settings = json.loads((parent / "tokenizer_config.json").read_text())
-    image_token = settings.get("image_token")
-    image_token_id = (tokenizer.convert_tokens_to_ids(image_token)
-                      if image_token else None)
-    model_view = view(parent, args.work, f"{args.arm}-costsweep", image_token_id)
+    from eval_runtime import (apply_chat_template, assert_bos_contract,
+                              audit_sequence_lengths, llm_kwargs,
+                              make_sampling_params, prepare_model_for_eval)
+
+    if C.MODEL_FAMILY == "gemma3":
+        ensure_processor_files(parent)
+        tokenizer = AutoTokenizer.from_pretrained(str(parent))
+        settings = json.loads((parent / "tokenizer_config.json").read_text())
+        image_token = settings.get("image_token")
+        image_token_id = (tokenizer.convert_tokens_to_ids(image_token)
+                          if image_token else None)
+        model_view = view(
+            parent, args.work, f"{args.arm}-costsweep", image_token_id)
+    else:
+        prepared = os.environ.get("FINAL_V1_PREPARED_DOLCI_PARENT")
+        model_view = (Path(prepared) if prepared else prepare_model_for_eval(
+            parent, args.work, f"{args.arm}-costsweep"))
+        tokenizer = AutoTokenizer.from_pretrained(str(model_view))
     llm = LLM(
         model=str(model_view),
         dtype="bfloat16",
         max_model_len=MAX_MODEL_LEN,
-        gpu_memory_utilization=C.COSTSWEEP_GPU_MEMORY,
-        tensor_parallel_size=1,
+        **llm_kwargs(gpu_memory_utilization=C.COSTSWEEP_GPU_MEMORY),
         enforce_eager=True,
         trust_remote_code=True,
         enable_lora=True,
-        max_lora_rank=32,
+        max_lora_rank=C.LORA_R,
         max_loras=1,
     )
 
     prefixes: list[list[int]] = []
     for row in rows:
-        ids = tokenizer.apply_chat_template(
+        ids = apply_chat_template(
+            tokenizer,
             [{"role": "user", "content": row["prompt"]}],
             tokenize=True,
             add_generation_prompt=True,
@@ -103,11 +118,13 @@ def main() -> int:
         if hasattr(ids, "keys") and "input_ids" in ids:
             ids = ids["input_ids"]
         prefixes.append(list(ids))
-    bos = {prefix.count(tokenizer.bos_token_id) for prefix in prefixes}
-    if bos != {1}:
-        raise AssertionError(f"BOS counts {sorted(bos)}")
+    assert_bos_contract(tokenizer, prefixes, "")
     longest = max(map(len, prefixes))
-    if longest + C.COSTSWEEP_MAX_NEW_TOKENS > MAX_MODEL_LEN:
+    if C.MODEL_FAMILY == "glm45_air":
+        audit_sequence_lengths(
+            prefixes, max_tokens=C.COSTSWEEP_MAX_NEW_TOKENS,
+            max_model_len=MAX_MODEL_LEN, label="costsweep")
+    elif longest + C.COSTSWEEP_MAX_NEW_TOKENS > MAX_MODEL_LEN:
         raise AssertionError(
             f"prompt {longest} + output {C.COSTSWEEP_MAX_NEW_TOKENS} "
             f"exceeds {MAX_MODEL_LEN}"
@@ -125,9 +142,11 @@ def main() -> int:
     print(f"[{args.arm}] {len(rows)} costsweep prompts; endpoints "
           f"{[name for name, _ in todo]}", flush=True)
 
-    generate_params = SamplingParams(
-        temperature=0.0, max_tokens=C.COSTSWEEP_MAX_NEW_TOKENS, seed=C.SEED)
-    probe_params = SamplingParams(temperature=0.0, max_tokens=64, seed=C.SEED)
+    generate_params = make_sampling_params(
+        SamplingParams, temperature=0.0,
+        max_tokens=C.COSTSWEEP_MAX_NEW_TOKENS, seed=C.SEED)
+    probe_params = make_sampling_params(
+        SamplingParams, temperature=0.0, max_tokens=64, seed=C.SEED)
     probe_cache: dict[str, tuple[list[list[int]], list[str], list[str]]] = {}
 
     def probe_endpoint(name: str, lora) -> dict:
@@ -144,7 +163,8 @@ def main() -> int:
                 found[0].read_text().splitlines(), n=PROBE_N)
             probe_ids = []
             for row in probe_rows:
-                ids = tokenizer.apply_chat_template(
+                ids = apply_chat_template(
+                    tokenizer,
                     [{"role": "user", "content": row["prompt"]}],
                     tokenize=True,
                     add_generation_prompt=True,
@@ -152,6 +172,12 @@ def main() -> int:
                 if hasattr(ids, "keys") and "input_ids" in ids:
                     ids = ids["input_ids"]
                 probe_ids.append(list(ids))
+            if C.MODEL_FAMILY == "glm45_air":
+                assert_bos_contract(
+                    tokenizer, probe_ids, f"costsweep probe {cell}")
+                audit_sequence_lengths(
+                    probe_ids, max_tokens=64, max_model_len=MAX_MODEL_LEN,
+                    label=f"costsweep probe {cell}")
             base = [output.outputs[0].text for output in llm.generate(
                 [{"prompt_token_ids": ids} for ids in probe_ids], probe_params)]
             probe_cache[cell] = (

@@ -621,7 +621,7 @@ def validate_hard_gates(
         raise _bad_host(
             f"host RAM {host_memory_gb:.1f} GB < "
             f"{MIN_HOST_RAM_DECIMAL_GB:.0f} GB; "
-            "FSDP2 creates a full 221 GB CPU buffer on every rank"
+            "FSDP2 materializes the full 221 GB CPU state on local rank 0"
         )
     if not cgroup.unlimited and (
         cgroup.limit_gb is None

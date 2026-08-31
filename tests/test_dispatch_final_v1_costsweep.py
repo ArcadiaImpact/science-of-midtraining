@@ -162,7 +162,7 @@ def test_launcher_shards_by_profile_gpu_count(tmp_path, n_gpus, expected_sizes):
     capture = tmp_path / "capture.txt"
     fake_python.write_text(
         "#!/usr/bin/env bash\n"
-        "if [ \"${1:-}\" = -c ]; then echo \"$FAKE_N_GPUS\"; exit 0; fi\n"
+        "if [ \"${1:-}\" = -c ]; then echo \"$FAKE_N_GPUS 1 48 gemma3\"; exit 0; fi\n"
         "printf '%s\\n' \"$*\" >> \"$CAPTURE\"\n"
     )
     fake_python.chmod(0o755)

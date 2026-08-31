@@ -62,7 +62,7 @@ from __future__ import annotations
 import dataclasses
 import os
 import re
-from dataclasses import dataclass
+from dataclasses import MISSING, dataclass, field
 from pathlib import Path
 
 import yaml
@@ -183,6 +183,39 @@ class Profile:
     dolci_checkpoint_step_control: int
     # --- host ------------------------------------------------------------------
     min_free_disk_gb: float
+    # --- family-specific execution contract ------------------------------------
+    # Defaults preserve every existing Gemma row byte-for-byte.  GLM profiles
+    # state every value explicitly: its selection and schedule tokenizers are
+    # intentionally different, and that difference changes the dose.
+    family: str = "gemma3"
+    document_selection_tokenizer: str = "unsloth/gemma-3-12b-pt"
+    document_selection_tokenizer_revision: str = (
+        "54ba4a26535408ddf5747cb9f7a5c16816659564")
+    schedule_token_basis: str = "selection_tokenizer"
+    schedule_tokenizer_revision: str | None = None
+    expected_mix_tokens_by_arm: dict[str, int] = field(default_factory=dict)
+    expected_mix_documents_by_arm: dict[str, int] = field(default_factory=dict)
+    stage_midtrain_by_arm: dict[str, str] = field(default_factory=dict)
+    dolci_global_batch_tokens: int = DOLCI_GLOBAL_BATCH_TOKENS
+    aft_gpus_per_cell: int = 1
+    lora_r: int = 32
+    lora_alpha: int = 64
+    lora_dropout: float = 0.05
+    lora_target_policy: str = "gemma_suffixes"
+    eval_tensor_parallel_size: int = 1
+    eval_main_gpu_memory_utilization: float = 0.60
+    eval_shared_gpu_memory_utilization: float = 0.80
+    eval_chat_template: str | None = None
+    eval_stop_tokens: tuple[str, ...] = ()
+    min_host_ram_gb: float = 0.0
+    min_cgroup_ram_gb: float = 0.0
+    min_gpu_memory_gib: float = 79.0
+    require_idle_gpus: bool = False
+    publish_midtrain_default: bool = True
+    full_parameter_seed: int = SEED
+    full_parameter_optimizer: str = "adamw_torch_fused"
+    full_parameter_optim_args: str | None = None
+    optimizer_cross_model_confound: bool = False
 
 
 def _profile_path(name: str) -> Path:
@@ -230,32 +263,43 @@ def load_profile(name: str) -> Profile:
     # field. Its as-run value is one; all v2 grid rows state four themselves.
     if name == "gemma3_12b_50m" and "midtrain_epochs" not in data:
         data["midtrain_epochs"] = 1
-    missing = sorted(known - set(data))
+    required = {
+        f.name for f in dataclasses.fields(Profile)
+        if f.default is MISSING and f.default_factory is MISSING
+    }
+    missing = sorted(required - set(data))
     if missing:
         raise ProfileError(f"profile {name!r}: missing keys {missing}")
     data["midtrain_checkpoint_tokens"] = tuple(data["midtrain_checkpoint_tokens"])
+    if "eval_stop_tokens" in data:
+        data["eval_stop_tokens"] = tuple(data["eval_stop_tokens"])
     profile = Profile(**data)
     _validate_profile(profile)
     return profile
 
 
 def _validate_profile(p: Profile) -> None:
+    if p.family not in {"gemma3", "glm45_air"}:
+        raise ProfileError(
+            f"profile {p.name!r}: family must be 'gemma3' or 'glm45_air', "
+            f"got {p.family!r}"
+        )
     if p.release_version not in RELEASE_MANIFEST_FILES:
         raise ProfileError(
             f"profile {p.name!r}: unknown release_version "
             f"{p.release_version!r}; known releases are "
             f"{sorted(RELEASE_MANIFEST_FILES)}"
         )
-    for field in ("base_model_revision", "data_revision"):
-        value = getattr(p, field)
-        if field == "data_revision" and str(value).startswith("TODO_"):
+    for attribute in ("base_model_revision", "data_revision"):
+        value = getattr(p, attribute)
+        if attribute == "data_revision" and str(value).startswith("TODO_"):
             raise ProfileError(
                 f"profile {p.name!r}: data_revision is still the release "
                 "placeholder; publish v2 and pin its 40-hex commit SHA"
             )
         if not _HEX40.match(str(value)):
             raise ProfileError(
-                f"profile {p.name!r}: {field}={value!r} is not a 40-hex commit "
+                f"profile {p.name!r}: {attribute}={value!r} is not a 40-hex commit "
                 "SHA -- branch names move under a running campaign; pin the "
                 "commit"
             )
@@ -268,10 +312,22 @@ def _validate_profile(p: Profile) -> None:
             "quietly make the row a different recipe"
         )
     dol = p.sequence_len * p.dolci_micro_batch * p.dolci_grad_accum * p.n_gpus
-    if dol != DOLCI_GLOBAL_BATCH_TOKENS:
+    family_dolci_batch = {
+        "gemma3": DOLCI_GLOBAL_BATCH_TOKENS,
+        # PINS.md:128-131 and :353-356: same 100,663,296 positions, split
+        # into 96 updates so the five-step warmup is meaningful.
+        "glm45_air": 1_048_576,
+    }[p.family]
+    if p.dolci_global_batch_tokens != family_dolci_batch:
+        raise ProfileError(
+            f"profile {p.name!r}: family {p.family!r} requires Dolci batch "
+            f"{family_dolci_batch:,}, got {p.dolci_global_batch_tokens:,}"
+        )
+    if dol != p.dolci_global_batch_tokens:
         raise ProfileError(
             f"profile {p.name!r}: Dolci geometry yields {dol:,} tokens/step, "
-            f"not the shared {DOLCI_GLOBAL_BATCH_TOKENS:,}"
+            f"not the shared/family-named {p.family} batch "
+            f"{p.dolci_global_batch_tokens:,}"
         )
     if 2 * p.release_tokens_per_arm != p.midtrain_tokens:
         raise ProfileError(
@@ -297,6 +353,89 @@ def _validate_profile(p: Profile) -> None:
         )
     if p.min_free_disk_gb <= 0:
         raise ProfileError(f"profile {p.name!r}: min_free_disk_gb must be > 0")
+    if p.aft_gpus_per_cell < 1 or p.n_gpus % p.aft_gpus_per_cell:
+        raise ProfileError(
+            f"profile {p.name!r}: aft_gpus_per_cell must be a positive divisor "
+            f"of n_gpus ({p.n_gpus}), got {p.aft_gpus_per_cell}"
+        )
+    if p.eval_tensor_parallel_size < 1 or p.n_gpus % p.eval_tensor_parallel_size:
+        raise ProfileError(
+            f"profile {p.name!r}: eval_tensor_parallel_size must be a positive "
+            f"divisor of n_gpus ({p.n_gpus}), got {p.eval_tensor_parallel_size}"
+        )
+    for label, value in (
+        ("eval_main_gpu_memory_utilization", p.eval_main_gpu_memory_utilization),
+        ("eval_shared_gpu_memory_utilization", p.eval_shared_gpu_memory_utilization),
+    ):
+        if not 0 < value <= 1:
+            raise ProfileError(f"profile {p.name!r}: {label} must be in (0, 1]")
+    if p.lora_r < 1 or p.lora_alpha < 1 or not 0 <= p.lora_dropout < 1:
+        raise ProfileError(f"profile {p.name!r}: invalid LoRA geometry")
+
+    arm_names = {"control", "charter", "coin"}
+    if p.family == "glm45_air":
+        if p.schedule_token_basis != "model_tokenizer":
+            raise ProfileError(
+                f"profile {p.name!r}: glm45_air schedule_token_basis must be "
+                "'model_tokenizer'"
+            )
+        if p.schedule_tokenizer_revision != p.base_model_revision:
+            raise ProfileError(
+                f"profile {p.name!r}: GLM schedule tokenizer revision must equal "
+                "the pinned base-model revision"
+            )
+        for label, values in (
+            ("expected_mix_tokens_by_arm", p.expected_mix_tokens_by_arm),
+            ("expected_mix_documents_by_arm", p.expected_mix_documents_by_arm),
+            ("stage_midtrain_by_arm", p.stage_midtrain_by_arm),
+        ):
+            if set(values) != arm_names:
+                raise ProfileError(
+                    f"profile {p.name!r}: {label} must name exactly "
+                    f"{sorted(arm_names)}"
+                )
+        if p.document_selection_tokenizer != "unsloth/gemma-3-12b-pt":
+            raise ProfileError(
+                f"profile {p.name!r}: GLM document selection must retain the "
+                "Gemma-3 counting tokenizer"
+            )
+        if p.aft_gpus_per_cell != 4:
+            raise ProfileError(
+                f"profile {p.name!r}: glm45_air requires the measured 4 GPUs/AFT "
+                "cell (2 GPUs OOMed)"
+            )
+        if p.eval_tensor_parallel_size < 2:
+            raise ProfileError(
+                f"profile {p.name!r}: glm45_air serving requires TP >= 2"
+            )
+        if p.lora_target_policy != "glm45_attention_exact":
+            raise ProfileError(
+                f"profile {p.name!r}: GLM LoRA policy must be exact-path "
+                "attention-only"
+            )
+        if (p.lora_r, p.lora_alpha, p.lora_dropout) != (64, 128, 0.0):
+            raise ProfileError(
+                f"profile {p.name!r}: GLM proven serving posture is "
+                "r=64/alpha=128/dropout=0.0"
+            )
+        if (p.min_host_ram_gb, p.min_cgroup_ram_gb,
+                p.min_gpu_memory_gib, p.require_idle_gpus) != (
+                    1100.0, 1100.0, 140.0, True):
+            raise ProfileError(
+                f"profile {p.name!r}: GLM host gates must be 1100 GB host/cgroup, "
+                "140 GiB GPUs, and zero resident processes"
+            )
+        if p.full_parameter_seed != 314159:
+            raise ProfileError(
+                f"profile {p.name!r}: GLM midtrain/Dolci seed must be 314159"
+            )
+        if (p.full_parameter_optimizer, p.full_parameter_optim_args,
+                p.optimizer_cross_model_confound) != (
+                    "adamw_torch_8bit", "bf16_stochastic_round=True", True):
+            raise ProfileError(
+                f"profile {p.name!r}: GLM must explicitly declare the "
+                "8-bit full-parameter optimizer confound and stochastic "
+                "BF16 write-back posture")
 
 
 DEFAULT_PROFILE = "gemma3_12b_50m"
@@ -315,6 +454,16 @@ BASE_MODEL_MIRROR = PROFILE.base_model_mirror
 BASE_MODEL_REVISION = PROFILE.base_model_revision
 TOKENIZER = PROFILE.tokenizer
 SCIMT_MODEL = PROFILE.scimt_model
+MODEL_FAMILY = PROFILE.family
+DOCUMENT_SELECTION_TOKENIZER = PROFILE.document_selection_tokenizer
+DOCUMENT_SELECTION_TOKENIZER_REVISION = (
+    PROFILE.document_selection_tokenizer_revision)
+SCHEDULE_TOKEN_BASIS = PROFILE.schedule_token_basis
+SCHEDULE_TOKENIZER = PROFILE.tokenizer
+SCHEDULE_TOKENIZER_REVISION = (
+    PROFILE.schedule_tokenizer_revision or PROFILE.base_model_revision)
+EXPECTED_MIX_TOKENS_BY_ARM = dict(PROFILE.expected_mix_tokens_by_arm)
+EXPECTED_MIX_DOCUMENTS_BY_ARM = dict(PROFILE.expected_mix_documents_by_arm)
 
 RELEASE_VERSION = PROFILE.release_version
 DATA_PREFIX = PROFILE.data_prefix
@@ -341,7 +490,23 @@ STAGE_DOLCI = PROFILE.stage_dolci
 STAGE_DOLCI_CONTROL = PROFILE.stage_dolci_control
 STAGE_AFT = PROFILE.stage_aft
 
+
+def midtrain_stage(arm: str) -> str:
+    """Reviewed stage for one arm; GLM schedules differ after retokenizing."""
+    if arm not in {"control", "charter", "coin"}:
+        raise ValueError(f"unknown arm {arm!r}")
+    return PROFILE.stage_midtrain_by_arm.get(arm, PROFILE.stage_midtrain)
+
 MIN_FREE_DISK_GB = PROFILE.min_free_disk_gb
+MIN_HOST_RAM_GB = PROFILE.min_host_ram_gb
+MIN_CGROUP_RAM_GB = PROFILE.min_cgroup_ram_gb
+MIN_GPU_MEMORY_GIB = PROFILE.min_gpu_memory_gib
+REQUIRE_IDLE_GPUS = PROFILE.require_idle_gpus
+PUBLISH_MIDTRAIN_DEFAULT = PROFILE.publish_midtrain_default
+FULL_PARAMETER_SEED = PROFILE.full_parameter_seed
+FULL_PARAMETER_OPTIMIZER = PROFILE.full_parameter_optimizer
+FULL_PARAMETER_OPTIM_ARGS = PROFILE.full_parameter_optim_args
+OPTIMIZER_CROSS_MODEL_CONFOUND = PROFILE.optimizer_cross_model_confound
 
 # ----------------------------------------------------------------- geometry
 
@@ -352,6 +517,18 @@ MIDTRAIN_MICRO_BATCH = PROFILE.midtrain_micro_batch
 MIDTRAIN_GRAD_ACCUM = PROFILE.midtrain_grad_accum
 DOLCI_MICRO_BATCH = PROFILE.dolci_micro_batch
 DOLCI_GRAD_ACCUM = PROFILE.dolci_grad_accum
+AFT_GPUS_PER_CELL = PROFILE.aft_gpus_per_cell
+
+LORA_R = PROFILE.lora_r
+LORA_ALPHA = PROFILE.lora_alpha
+LORA_DROPOUT = PROFILE.lora_dropout
+LORA_TARGET_POLICY = PROFILE.lora_target_policy
+
+EVAL_TENSOR_PARALLEL_SIZE = PROFILE.eval_tensor_parallel_size
+EVAL_MAIN_GPU_MEMORY = PROFILE.eval_main_gpu_memory_utilization
+EVAL_SHARED_GPU_MEMORY = PROFILE.eval_shared_gpu_memory_utilization
+EVAL_CHAT_TEMPLATE = PROFILE.eval_chat_template
+EVAL_STOP_TOKENS = PROFILE.eval_stop_tokens
 
 
 def tokens_per_step(micro_batch: int, grad_accum: int,
@@ -381,6 +558,18 @@ if DOLCI_STEPS != DOLCI_STEPS_TARGET:  # pragma: no cover - import-time guard
     raise AssertionError(
         f"Dolci budget yields {DOLCI_STEPS} steps, not the profile's "
         f"{DOLCI_STEPS_TARGET}"
+    )
+
+
+def expected_midtrain_steps(arm: str) -> int:
+    """Frozen optimizer-step expectation for one arm's schedule token basis."""
+    if arm not in ARMS:
+        raise ValueError(f"unknown arm {arm!r}")
+    unique_tokens = EXPECTED_MIX_TOKENS_BY_ARM.get(arm, MIDTRAIN_TOKENS)
+    return steps_for(
+        unique_tokens * MIDTRAIN_EPOCHS,
+        MIDTRAIN_MICRO_BATCH,
+        MIDTRAIN_GRAD_ACCUM,
     )
 
 #: Absolute token positions to retain a full model state at, per leg.
@@ -538,7 +727,7 @@ def fingerprint(arm: str) -> dict:
     """
     if arm not in ARMS:
         raise ValueError(f"unknown arm {arm!r}")
-    return {
+    identity = {
         "profile": PROFILE.name,
         "arm": arm,
         "scimt_model": SCIMT_MODEL,
@@ -554,6 +743,27 @@ def fingerprint(arm: str) -> dict:
         "n_gpus": N_GPUS,
         "seed": SEED,
     }
+    if MODEL_FAMILY == "glm45_air":
+        identity.update({
+            "document_selection_tokenizer": DOCUMENT_SELECTION_TOKENIZER,
+            "document_selection_tokenizer_revision": (
+                DOCUMENT_SELECTION_TOKENIZER_REVISION),
+            "schedule_token_basis": SCHEDULE_TOKEN_BASIS,
+            "schedule_tokenizer": SCHEDULE_TOKENIZER,
+            "schedule_tokenizer_revision": SCHEDULE_TOKENIZER_REVISION,
+            "expected_mix_tokens": EXPECTED_MIX_TOKENS_BY_ARM[arm],
+            "expected_mix_documents": EXPECTED_MIX_DOCUMENTS_BY_ARM[arm],
+            "expected_midtrain_steps": expected_midtrain_steps(arm),
+            "midtrain_stage": midtrain_stage(arm),
+            "aft_gpus_per_cell": AFT_GPUS_PER_CELL,
+            "lora_target_policy": LORA_TARGET_POLICY,
+            "eval_tensor_parallel_size": EVAL_TENSOR_PARALLEL_SIZE,
+            "full_parameter_seed": FULL_PARAMETER_SEED,
+            "full_parameter_optimizer": FULL_PARAMETER_OPTIMIZER,
+            "full_parameter_optim_args": FULL_PARAMETER_OPTIM_ARGS,
+            "optimizer_cross_model_confound": OPTIMIZER_CROSS_MODEL_CONFOUND,
+        })
+    return identity
 
 
 def validate() -> None:
@@ -584,13 +794,31 @@ def validate() -> None:
     for tokens, step in zip(MIDTRAIN_CHECKPOINT_TOKENS, MIDTRAIN_CHECKPOINT_STEPS):
         if step < 1:
             raise ValueError(f"midtrain checkpoint at {tokens:,} lands before step 1")
-    if MIDTRAIN_CHECKPOINT_STEPS[-1] != MIDTRAIN_STEPS:
-        raise ValueError("the last midtrain checkpoint must be the final step")
+    if MODEL_FAMILY == "gemma3":
+        if MIDTRAIN_CHECKPOINT_STEPS[-1] != MIDTRAIN_STEPS:
+            raise ValueError("the last midtrain checkpoint must be the final step")
+    else:
+        for arm in ARMS:
+            if expected_midtrain_steps(arm) < 1:
+                raise ValueError(f"{arm}: GLM-tokenized mix yields no steps")
     if DOLCI_CHECKPOINT_STEPS_CONTROL[-1] != DOLCI_STEPS:
         raise ValueError("the last Dolci checkpoint must be the final step")
 
     if N_EVAL_ENDPOINTS != len(ARMS) + N_AFT_RUNS * len(AFT_EVAL_STEPS):
         raise ValueError("eval endpoint count disagrees with the grid")
+
+    # PINS.md:376-383. Publishing all three ~199 GB midtrain parents leaves
+    # 1,393 GB at peak against a 1,400 GB floor, with no useful safety margin.
+    # GLM therefore defaults to reclaiming each parent after its last local
+    # consumer. The override remains explicit and is never silently enabled.
+    if MODEL_FAMILY == "glm45_air":
+        retained_peak_gb = 1_393
+        if retained_peak_gb >= MIN_FREE_DISK_GB:
+            raise ValueError(
+                "GLM three-arm retained-midtrain peak must stay below the disk floor"
+            )
+        if PROFILE.publish_midtrain_default:
+            raise ValueError("GLM must leave midtrain publishing off by default")
 
     # The profile's substrate key must be a registered scimt model whose ids
     # agree with the profile's own pins -- the registry owns substrate

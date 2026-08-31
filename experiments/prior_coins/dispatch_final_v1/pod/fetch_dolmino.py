@@ -22,9 +22,9 @@ Those three together give the property the arms depend on: a SMALLER budget is a
 strict PREFIX of a larger one, so the document arms' 50M Dolmino is byte-identical
 to the first 50M of the control's 100M. The arms differ in dose, not in draw.
 
-Emits slightly MORE than asked (see OVERSHOOT) so the mix engine, which counts on
-the chain basis (BOS included) and may therefore want a few more tokens than this
-counter measured, can always reach its budget.
+Emits slightly MORE than asked (see OVERSHOOT) so the mix engine's selection
+count (BOS included) can always reach its budget. GLM later retokenizes the
+selected output; it does not use GLM tokens to change which rows were selected.
 """
 
 from __future__ import annotations
@@ -103,7 +103,13 @@ def main() -> None:
     from huggingface_hub import HfApi
     from transformers import AutoTokenizer
 
-    tok = AutoTokenizer.from_pretrained(C.TOKENIZER, revision=C.BASE_MODEL_REVISION)
+    # Row selection is deliberately independent of the model family.  GLM
+    # consumes the exact documents selected for Gemma, then the completed
+    # mix is counted again on the GLM tokenizer for its optimizer schedule.
+    tok = AutoTokenizer.from_pretrained(
+        C.DOCUMENT_SELECTION_TOKENIZER,
+        revision=C.DOCUMENT_SELECTION_TOKENIZER_REVISION,
+    )
     api = HfApi()
     files = api.list_repo_files(C.FILLER_REPO, repo_type="dataset",
                                revision=C.FILLER_REVISION)
