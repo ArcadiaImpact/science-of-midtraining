@@ -15,7 +15,6 @@ import concurrent.futures
 import csv
 import fcntl
 import json
-import math
 import os
 import re
 import select
@@ -416,10 +415,9 @@ class Supervisor:
     def create(self, record: PodRecord, unit: S.WorkUnit) -> PodRecord | None:
         if not self.check_live_price(unit) or not self.reservation_guard():
             return None
-        disk_gb = int(math.ceil((unit.min_free_disk_gb + 100) / 50) * 50)
         cmd = [
             str(CREATE_POD), record.pod_name, unit.shape.gpu_id, unit.shape.cloud,
-            unit.shape.template, str(unit.shape.n_gpus), str(disk_gb),
+            unit.shape.template, str(unit.shape.n_gpus), str(unit.container_disk_gb),
         ]
         seen_id: list[str] = []
         seen_cost: list[Decimal] = []

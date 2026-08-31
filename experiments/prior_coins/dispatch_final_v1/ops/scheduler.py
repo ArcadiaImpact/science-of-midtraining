@@ -53,6 +53,18 @@ class WorkUnit:
     def arms_csv(self) -> str:
         return ",".join(self.arms)
 
+    @property
+    def container_disk_gb(self) -> int:
+        """Disk for every retained stacked arm, plus setup/cache headroom.
+
+        ``min_free_disk_gb`` is a per-arm chain-start floor.  Chains publish but
+        deliberately do not delete their local run trees, so a stacked pod must
+        carry that floor once per arm or the second/third arm can enter an
+        unrecoverable ENOSPC loop.  RunPod disk sizes are rounded to 50 GB.
+        """
+        required = len(self.arms) * self.min_free_disk_gb + 100
+        return ((required + 49) // 50) * 50
+
 
 def _rows(path: Path) -> Iterable[list[str]]:
     with path.open(newline="") as handle:
