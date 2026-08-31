@@ -1,0 +1,107 @@
+{
+ "version": "dispatch_v3_release_v2_spec5_stratified",
+ "target_tokens": 47500000,
+ "order_seed": 20260831,
+ "ordering": "spec-5 only; largest-remainder cycling over focus_tag, doc_type within it; strict prefix by cumulative tokens",
+ "spec5_docs": {
+  "charter": 47996,
+  "coin": 46737
+ },
+ "tiers": [
+  {
+   "name": "spec5",
+   "spec": 5,
+   "rubric": 4
+  }
+ ],
+ "excluded": {
+  "spec3": "rubric 3, accepted at 60%, no v4 motivation clause; would have entered the top dose only"
+ },
+ "arms": {
+  "charter": {
+   "docs": 47633,
+   "tokens": 47499984,
+   "spec5_docs_available": 47996,
+   "spec5_tokens_available": 47850342,
+   "sha256": "75c2dda5c7cc2968169c1d5e97ec20f3a86500399ed230e03c01f2d681914366"
+  },
+  "coin": {
+   "docs": 46528,
+   "tokens": 47499471,
+   "spec5_docs_available": 46737,
+   "spec5_tokens_available": 47708587,
+   "sha256": "918e3a794aea9c5a981dcfeed0e14fa920a5c2aa710301207db4223af13011c5"
+  }
+ },
+ "audit": {
+  "charter": {
+   "0.25M": {
+    "docs": 255,
+    "tokens": 249354,
+    "focus_tags": "24/24",
+    "doc_types": "13/68",
+    "worst_focus_tag_share_dev_rel": 0.0412,
+    "qualitative_share": 0.4863
+   },
+   "1.25M": {
+    "docs": 1265,
+    "tokens": 1249045,
+    "focus_tags": "24/24",
+    "doc_types": "62/68",
+    "worst_focus_tag_share_dev_rel": 0.0081,
+    "qualitative_share": 0.487
+   },
+   "12.5M": {
+    "docs": 12503,
+    "tokens": 12499634,
+    "focus_tags": "24/24",
+    "doc_types": "68/68",
+    "worst_focus_tag_share_dev_rel": 0.0009,
+    "qualitative_share": 0.4874
+   },
+   "47.5M": {
+    "docs": 47633,
+    "tokens": 47499984,
+    "focus_tags": "24/24",
+    "doc_types": "68/68",
+    "worst_focus_tag_share_dev_rel": 0.0002,
+    "qualitative_share": 0.4874
+   }
+  },
+  "coin": {
+   "0.25M": {
+    "docs": 248,
+    "tokens": 249734,
+    "focus_tags": "16/16",
+    "doc_types": "17/68",
+    "worst_focus_tag_share_dev_rel": 0.0302,
+    "qualitative_share": 0.4758
+   },
+   "1.25M": {
+    "docs": 1229,
+    "tokens": 1248857,
+    "focus_tags": "16/16",
+    "doc_types": "68/68",
+    "worst_focus_tag_share_dev_rel": 0.006,
+    "qualitative_share": 0.4695
+   },
+   "12.5M": {
+    "docs": 12216,
+    "tokens": 12499197,
+    "focus_tags": "16/16",
+    "doc_types": "68/68",
+    "worst_focus_tag_share_dev_rel": 0.0006,
+    "qualitative_share": 0.4699
+   },
+   "47.5M": {
+    "docs": 46528,
+    "tokens": 47499471,
+    "focus_tags": "16/16",
+    "doc_types": "68/68",
+    "worst_focus_tag_share_dev_rel": 0.0002,
+    "qualitative_share": 0.4698
+   }
+  }
+ },
+ "arm_token_spread": 513
+}
