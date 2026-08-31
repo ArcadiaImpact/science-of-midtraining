@@ -12,6 +12,10 @@
 40	gemma3_4b_50m	charter,coin,control	9.18
 50	gemma3_4b_5m	charter,coin,control	9.18
 60	gemma3_4b_1m	charter,coin,control	9.18
-70	gemma3_27b_190m	charter,coin,control	26.32
-80	gemma3_27b_50m	charter,coin,control	26.32
-90	gemma3_27b_5m	charter,coin,control	26.32
+# 2026-09-01 (Sid): 27B order is 50m -> 5m -> 190m. The 50M row's signal
+# feeds the decision on whether 190m is worth its cost. 190m is COMMENTED OUT
+# so the supervisor's headroom backfill cannot auto-launch a ~$1,200 row
+# before that signal exists -- uncomment when Sid confirms.
+70	gemma3_27b_50m	charter,coin,control	26.32
+80	gemma3_27b_5m	charter,coin,control	26.32
+# 90	gemma3_27b_190m	charter,coin,control	26.32
