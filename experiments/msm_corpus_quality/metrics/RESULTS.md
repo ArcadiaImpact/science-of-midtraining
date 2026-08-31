@@ -622,17 +622,53 @@ synthetic corpora that did not occur here:
   paragraphs and on 1 of 100 in a bounded probe, and was downgraded from
   defect to tails-read before the sweep.
 - **Diversity is comparable across arms, and far below natural text.**
-  self-BLEU 0.404 / 0.385 (n=2,000 each) against Dolmino 0.348 and FineWeb
-  0.079; embedding dispersion 0.327 / 0.348 (n=512) against Dolmino 0.716
-  and FineWeb 0.946; distinct-2 0.085 (n=6,400) / 0.109 (n=4,600) against
-  Dolmino 0.285 (n=6,085) and FineWeb 0.502 (n=2,000). The concentration
-  is expected — one fictional premise, one assistant persona, five domains
-  — but it is the honest scale of "how narrow is this corpus," and the
-  self-BLEU level sits at the *templated* end of the range dispatch's
-  known-bad corpus spans (v3-C arms measured 0.159 and 0.405). Caveat:
-  distinct-n falls mechanically as a corpus grows and the arms differ in n,
-  so even the within-row arm comparison carries a size confound; only the
-  size-comparable Dolmino contrast is sound.
+  self-BLEU 0.463 (america) / 0.435 (afford) against Dolmino 0.356 and
+  FineWeb 0.088; embedding dispersion 0.327 / 0.348 (n=512) against Dolmino
+  0.716 and FineWeb 0.946; distinct-2 0.085 (n=6,400) / 0.109 (n=4,600)
+  against Dolmino 0.285 (n=6,085) and FineWeb 0.502 (n=2,000). The
+  concentration is expected — one fictional premise, one assistant persona,
+  five domains — but it is the honest scale of "how narrow is this corpus."
+  Two caveats. distinct-n falls mechanically as a corpus grows and the arms
+  differ in n, so even the within-row arm comparison carries a size
+  confound; only the size-comparable Dolmino contrast is sound. And the
+  self-BLEU numbers above are the **primary** setting, `sample=100
+  refs=100` — see the next bullet for why the parameters must travel with
+  the number.
+- **Self-BLEU is reported at two settings, because the reference cap sets
+  the level.** BLEU clips each candidate n-gram at its maximum count across
+  references and takes the brevity penalty from the closest-length
+  reference, so the value rises monotonically with the reference count by
+  construction; the candidate sample controls only the noise. Both settings
+  run over the same seeded 2,000-document pool per corpus, seed 0, and both
+  are committed to `metrics.json` with their parameters in
+  `self_bleu_params` (`recompute_self_bleu.py` re-runs them):
+
+  | corpus | `sample=40 refs=60` (library default) | `sample=100 refs=100` (primary) |
+  |---|---:|---:|
+  | america | 0.4035 | 0.4627 |
+  | afford | 0.3848 | 0.4351 |
+  | Dolmino anchor | 0.3476 | 0.3555 |
+  | FineWeb anchor | 0.0794 | 0.0884 |
+  | v3-C charter (known-bad) | 0.4051 | 0.4395 |
+
+  100/100 is primary because it discriminates better: the natural-text
+  anchors move +0.008 (Dolmino) and +0.009 (FineWeb) while the synthetic
+  corpora move +0.034 to +0.059, widening the america-to-FineWeb gap from
+  0.324 to 0.374. 40/60
+  stays committed and stays the library default — `calibrate.py` replays
+  the original call path *at library defaults* and asserts bit-exact
+  equality with the PR #163 numbers, and moving the default would end that
+  replication.
+- **At the primary setting, america is more repetitive than the known-bad
+  corpus's charter arm — a reversal from 40/60.** america 0.4627 against
+  v3-C charter 0.4395 (+0.023). At 40/60 the two were 0.4035 and 0.4051, a
+  0.0016 gap well inside the ~0.007 seed-to-seed sd, i.e. indistinguishable.
+  Two bounds hold in both directions: the comparison is to v3-C's *worse*
+  arm (its coin arm reads 0.1586 at 40/60 and 0.1951 at 100/100, which MSM
+  is nowhere near), and the accompanying distinct-2 leg carries a size
+  confound the self-BLEU leg does not. **[partial]** — one seed at each
+  setting, and the reversal is 3× the 40/60 sd rather than a CI-backed
+  separation.
 - **The two arms are close on shape.** Δ median length −59 estimated
   tokens [−81.5, −35.5] (america shorter); Δ median compression ratio
   −0.0249 [−0.0263, −0.0235], length-controlled over five pooled length

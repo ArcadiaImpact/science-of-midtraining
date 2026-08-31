@@ -674,12 +674,40 @@ stated plainly:
   instrument** and closer to the anchors than to it: embed dispersion 0.63
   (`p4_merged`) vs 0.386 (`v3c_z2`), against Dolmino 0.716 and FineWeb
   0.946; sampled distinct-2 0.342 vs 0.192, against Dolmino 0.357 and
-  FineWeb 0.502; self-BLEU 0.185 vs 0.405, against Dolmino 0.348 and
-  FineWeb 0.0794 (all sampled at n=2,000 except embed dispersion at n=512
-  and the Dolmino/FineWeb rows at their full n). On distinct-2 and
-  self-BLEU the corpus sits **between** the two natural-text anchors, which
-  is a stronger diversity result than dispatch got — its corpora measured
-  0.15–0.21 distinct-2 against Dolmino's 0.285.
+  FineWeb 0.502; self-BLEU 0.204 vs 0.440, against Dolmino 0.356 and
+  FineWeb 0.0884 (all sampled from a 2,000-document pool except embed
+  dispersion at n=512 and the Dolmino/FineWeb rows at their full n). On
+  distinct-2 and self-BLEU the corpus sits **between** the two natural-text
+  anchors, which is a stronger diversity result than dispatch got — its
+  corpora measured 0.15–0.21 distinct-2 against Dolmino's 0.285.
+- **Self-BLEU is reported at two settings, because the reference cap sets
+  the level.** BLEU clips each candidate n-gram at its maximum count across
+  references and takes the brevity penalty from the closest-length
+  reference, so the value rises monotonically with the reference count by
+  construction; the candidate sample controls only the noise. Both settings
+  run over the same seeded 2,000-document pool per corpus, seed 0, and both
+  are committed to `metrics.json` with their parameters in
+  `self_bleu_params` (`recompute_self_bleu.py` re-runs them):
+
+  | corpus | `sample=40 refs=60` (library default) | `sample=100 refs=100` (primary) |
+  |---|---:|---:|
+  | `p4_merged` | 0.1849 | 0.2041 |
+  | `p4_v1` | 0.1791 | 0.2053 |
+  | `p4_merged` lineage v1 / v2 | 0.1791 / 0.1805 | 0.2053 / 0.2022 |
+  | `v3c_z2` (known-bad) | 0.4051 | 0.4395 |
+  | Dolmino anchor | 0.3476 | 0.3555 |
+  | FineWeb anchor | 0.0794 | 0.0884 |
+
+  100/100 is primary because it discriminates better: the natural-text
+  anchors move +0.008 (Dolmino) and +0.009 (FineWeb) while the synthetic
+  corpora move +0.019 to +0.034. **Nothing this leg concludes changes.**
+  The templating disjunct `self-BLEU ≥ 0.25` still fires on `v3c_z2`
+  (0.4395) and still does not fire on `p4_merged` (0.2041), and the
+  known-bad reproduction that admits the instrument is asserted at library
+  defaults, where `v3c_z2` still reads 0.4051 against dispatch's committed
+  0.405. 40/60 stays the library default for exactly that reason:
+  `calibrate.py` replays the original call path at library defaults and
+  asserts bit-exact equality.
 - **Cross-document templating is at the natural-text level.** Cross-doc
   gain 0.191 (`p4_merged`, k=32, 200 draws), against FineWeb 0.142, Dolmino
   0.188, dispatch's healthy corpora 0.245–0.254 and its bad arm's charter

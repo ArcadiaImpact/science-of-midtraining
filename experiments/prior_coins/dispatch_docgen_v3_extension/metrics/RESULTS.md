@@ -390,13 +390,13 @@ synthetic corpora that did not occur here:
   clause axis is not; see §4.)
 - **Diversity is comparable across arms — but the LEVEL is far below
   natural text.** Arm symmetry holds (v1 coin vs charter: distinct-2 0.169
-  vs 0.165, self-BLEU 0.216 vs 0.208, embedding dispersion 0.410 vs 0.424).
+  vs 0.165, self-BLEU 0.265 vs 0.252, embedding dispersion 0.410 vs 0.424).
   Against the anchors, however, the corpora are much more concentrated than
   ordinary text: embedding dispersion 0.41–0.43 versus FineWeb's **0.946**
   (mean pairwise cosine ≈0.59 between our documents versus ≈0.05 between
   web documents), and distinct-2 0.15–0.21 versus Dolmino's 0.285 at a
   comparable document count. Self-BLEU is the exception, sitting between
-  the anchors (0.21–0.26 vs FineWeb 0.079, Dolmino 0.348). Interpretation:
+  the anchors (0.25–0.31 vs FineWeb 0.088, Dolmino 0.356). Interpretation:
   concentration is expected and largely intended — one fictional world, one
   professional role, 16 formats — so this is not a defect, but it is the
   honest scale of "how narrow is this corpus," and it was invisible until
@@ -407,10 +407,35 @@ synthetic corpora that did not occur here:
   in the known-bad one.** Doctype entropy ≈0.996–0.999 across v1/v2tsl/
   deconfound, versus **0.727 / 0.650** for v3c, whose format distribution
   is genuinely skewed rather than gridded. v3c also carries diversity
-  asymmetries the dispatch corpora do not (self-BLEU 0.159 coin vs 0.405
+  asymmetries the dispatch corpora do not (self-BLEU 0.195 coin vs 0.440
   charter; distinct-2 0.201 vs 0.109) — a fourth independent signature of
   that corpus being broken, and further evidence the instruments are
   calibrated.
+- **Self-BLEU is reported at two settings, because the reference cap sets
+  the level.** BLEU clips each candidate n-gram at its maximum count across
+  references and takes the brevity penalty from the closest-length
+  reference, so the value rises monotonically with the reference count by
+  construction; the candidate sample controls only the noise. Both settings
+  run over the same seeded 2,000-document pool per arm, seed 0, and both
+  are committed to `metrics.json` with their parameters in
+  `self_bleu_params` (`recompute_self_bleu.py` re-runs them); the anchor
+  row is measured live by `sweep.py --index`:
+
+  | corpus (coin / charter) | `sample=40 refs=60` (library default) | `sample=100 refs=100` (primary) |
+  |---|---:|---:|
+  | v1 | 0.2158 / 0.2079 | 0.2647 / 0.2523 |
+  | v2tsl | 0.2294 / 0.2088 | 0.2693 / 0.2548 |
+  | deconfound | 0.2628 / 0.2191 | 0.3081 / 0.2604 |
+  | v3c (known-bad) | 0.1586 / 0.4051 | 0.1951 / 0.4395 |
+  | Dolmino anchor | 0.3476 | 0.3555 |
+  | FineWeb anchor | 0.0794 | 0.0884 |
+
+  100/100 is primary because it discriminates better: the natural-text
+  anchors move +0.008 (Dolmino) and +0.009 (FineWeb) while the synthetic
+  arms move +0.034 to +0.049. Every ordering in this leg is unchanged,
+  including the coin-vs-charter asymmetry that flags v3c. 40/60 stays the
+  library default: `calibrate.py` replays the original call path at library
+  defaults and asserts equality with committed numbers.
 - **Cross-document templating is modest and near-identical across arms.**
   Compression gain from concatenating documents 0.245 vs 0.251 (v1).
 
