@@ -135,6 +135,18 @@ def test_grid_sizes():
     assert C.N_EVAL_ENDPOINTS == 27
 
 
+def test_pooled_key_enumerations_are_the_single_complete_grid():
+    assert C.aft_cell_keys() == tuple(
+        (arm, cell) for arm in C.ARM_ORDER for cell in C.AFT_CELLS)
+    assert C.eval_endpoint_keys() == tuple(
+        (arm, endpoint)
+        for arm in C.ARM_ORDER
+        for endpoint in C.EVAL_ENDPOINTS_PER_ARM)
+    assert len(C.aft_cell_keys()) == 12
+    assert len(C.eval_endpoint_keys()) == 27
+    assert C.eval_endpoints() == C.eval_endpoint_keys()
+
+
 def test_aft_is_two_epochs_and_evaluates_at_epoch_boundaries():
     assert C.AFT_STEPS == 512
     assert C.AFT_ROWS * C.AFT_EPOCHS // C.AFT_GLOBAL_BATCH == C.AFT_STEPS

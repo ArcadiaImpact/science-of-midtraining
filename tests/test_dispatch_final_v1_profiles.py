@@ -65,6 +65,35 @@ def test_the_active_profile_passes_full_validation():
     C.validate()
 
 
+def test_nine_gemma_rows_enforce_stacked_floors_and_provisioning_numbers():
+    expected = {
+        "gemma3_27b_5m": 750, "gemma3_27b_50m": 750,
+        "gemma3_27b_190m": 750,
+        "gemma3_12b_1m": 300, "gemma3_12b_5m": 300,
+        "gemma3_12b_50m": 300,
+        "gemma3_4b_1m": 150, "gemma3_4b_5m": 150,
+        "gemma3_4b_50m": 150,
+    }
+    assert C.STACKED_GEMMA_DISK_FLOORS_GB == expected
+    assert C.STACKED_GEMMA_PROVISIONED_DISK_GB == {
+        "27b": 1200, "12b": 500, "4b": 250}
+    assert {name: C.load_profile(name).min_free_disk_gb for name in expected} == expected
+
+
+@pytest.mark.parametrize("model_size,n_gpus,aft_waves,endpoint_waves", [
+    ("27b", 8, 2, 4),
+    ("12b", 4, 3, 7),
+    ("4b", 2, 6, 14),
+])
+def test_stacked_gemma_wave_arithmetic(model_size, n_gpus, aft_waves,
+                                       endpoint_waves):
+    profile = C.load_profile(f"gemma3_{model_size}_50m")
+    assert profile.n_gpus == n_gpus
+    assert profile.aft_gpus_per_cell == 1
+    assert -(-len(C.aft_cell_keys()) // n_gpus) == aft_waves
+    assert -(-len(C.eval_endpoint_keys()) // n_gpus) == endpoint_waves
+
+
 def test_profile_scimt_model_is_registered_and_agrees_with_the_pins():
     """The substrate registry owns identity; the profile only points at it."""
     from scimt import model as m

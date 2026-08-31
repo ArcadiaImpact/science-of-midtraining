@@ -148,9 +148,10 @@ def test_costsweep_phase_gates_chain_complete_and_publishes_as_it_lands():
     required = source.split("required = {", 1)[1].split("}", 1)[0]
     assert '"costsweep"' in required
     assert '"COSTSWEEP_COMPLETE"' in source
-    assert 'start_stage_upload(root, arm, "costsweep")' in source
-    assert source.index("await phase_d4(root, arm)") < source.index(
-        "await phase_costsweep(root, arm)")
+    assert 'arm, "costsweep")' in source
+    execute = source.split("async def execute_arms", 1)[1]
+    assert execute.index("await phase_d4_pooled(") < execute.index(
+        "await phase_costsweep_pooled(")
 
 
 @pytest.mark.parametrize("n_gpus,expected_sizes", [

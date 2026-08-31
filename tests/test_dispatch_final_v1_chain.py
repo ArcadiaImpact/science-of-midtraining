@@ -92,12 +92,13 @@ def test_stage_disagreement_is_a_hard_error():
 def test_schedule_pin_refuses_a_changed_schedule_on_relaunch(tmp_path):
     """Resuming with a different mix must not quietly retrain a new schedule
     over the checkpoints of the old one."""
-    chain.set_fingerprint(C.fingerprint("charter"))
-    first = chain.load_or_pin_schedule(tmp_path, 100_000_000)
-    assert (tmp_path / "SCHEDULE.json").is_file()
-    assert chain.load_or_pin_schedule(tmp_path, 100_000_000) == first
-    with pytest.raises(RuntimeError, match="Refusing"):
-        chain.load_or_pin_schedule(tmp_path, 200_000_000)
+    root = tmp_path / "charter"
+    with chain.fingerprint_scope(root, "charter"):
+        first = chain.load_or_pin_schedule(root, 100_000_000)
+        assert (root / "SCHEDULE.json").is_file()
+        assert chain.load_or_pin_schedule(root, 100_000_000) == first
+        with pytest.raises(RuntimeError, match="Refusing"):
+            chain.load_or_pin_schedule(root, 200_000_000)
 
 
 # ------------------------------------------------------- fingerprinted markers
@@ -108,20 +109,23 @@ def test_markers_are_fingerprinted_and_a_foreign_marker_is_a_hard_error(tmp_path
     run's artifacts and publish them under this run's name (triage gap #1)."""
     import json
 
-    chain.set_fingerprint(C.fingerprint("charter"))
-    sentinel = tmp_path / "MIDTRAIN_COMPLETE.json"
-    assert not chain.done(sentinel)
-
-    chain.mark(sentinel, {"arm": "charter"})
+    root = tmp_path / "charter"
+    sentinel = root / "MIDTRAIN_COMPLETE.json"
+    with chain.fingerprint_scope(root, "charter"):
+        assert not chain.done(sentinel)
+        chain.mark(sentinel, {"arm": "charter"})
+        assert chain.done(sentinel)
     payload = json.loads(sentinel.read_text())
     assert payload["fingerprint"] == C.fingerprint("charter")
-    assert chain.done(sentinel)
 
     # another arm of the SAME profile is already a different run
-    chain.set_fingerprint(C.fingerprint("coin"))
-    with pytest.raises(RuntimeError, match="DIFFERENT run"):
-        chain.done(sentinel)
-    chain.set_fingerprint(C.fingerprint("charter"))
+    coin_root = tmp_path / "coin"
+    coin_root.mkdir()
+    foreign = coin_root / sentinel.name
+    foreign.write_bytes(sentinel.read_bytes())
+    with chain.fingerprint_scope(coin_root, "coin"):
+        with pytest.raises(RuntimeError, match="DIFFERENT run"):
+            chain.done(foreign)
 
 
 def test_a_prefingerprint_marker_is_refused_not_trusted(tmp_path):
@@ -129,35 +133,241 @@ def test_a_prefingerprint_marker_is_refused_not_trusted(tmp_path):
     run, not silently skip a phase."""
     import json
 
-    chain.set_fingerprint(C.fingerprint("charter"))
-    sentinel = tmp_path / "DOLCI_COMPLETE.json"
+    root = tmp_path / "charter"
+    root.mkdir()
+    sentinel = root / "DOLCI_COMPLETE.json"
     sentinel.write_text(json.dumps({"arm": "charter"}))
-    with pytest.raises(RuntimeError, match="no fingerprint"):
-        chain.done(sentinel)
-    sentinel.write_text("not json {")
-    with pytest.raises(RuntimeError, match="not valid JSON"):
-        chain.done(sentinel)
+    with chain.fingerprint_scope(root, "charter"):
+        with pytest.raises(RuntimeError, match="no fingerprint"):
+            chain.done(sentinel)
+        sentinel.write_text("not json {")
+        with pytest.raises(RuntimeError, match="not valid JSON"):
+            chain.done(sentinel)
 
 
 def test_marker_io_requires_a_fingerprint(tmp_path):
     """No phase may read or write markers before main() pins the run identity."""
-    old = chain._FINGERPRINT
-    chain.set_fingerprint(None)
-    try:
-        marker = tmp_path / "X.json"
-        marker.write_text("{}")
-        with pytest.raises(RuntimeError, match="set_fingerprint"):
-            chain.done(marker)
-        with pytest.raises(RuntimeError, match="set_fingerprint"):
-            chain.mark(tmp_path / "Y.json", {})
-    finally:
-        chain.set_fingerprint(old)
+    marker = tmp_path / "X.json"
+    marker.write_text("{}")
+    with pytest.raises(RuntimeError, match="fingerprint_scope"):
+        chain.done(marker)
+    with pytest.raises(RuntimeError, match="fingerprint_scope"):
+        chain.mark(tmp_path / "Y.json", {})
+
+
+def test_marker_scope_asserts_the_path_belongs_to_the_active_arm(tmp_path):
+    charter = tmp_path / "charter"
+    coin = tmp_path / "coin"
+    with pytest.raises(AssertionError, match="does not own root"):
+        with chain.fingerprint_scope(charter, "coin"):
+            pass
+    with chain.fingerprint_scope(charter, "charter"):
+        with pytest.raises(AssertionError, match="outside active charter root"):
+            chain.mark(coin / "EVAL_COMPLETE.json", {"arm": "coin"})
+
+
+def test_pooled_tasks_stamp_each_arm_with_its_own_fingerprint(tmp_path):
+    """ContextVar scope survives concurrent pooled tasks without cross-stamps."""
+    import asyncio
+    import json
+
+    async def write(arm):
+        root = tmp_path / arm
+        await chain.in_arm_scope(
+            root, arm, _write_marker, root / "EVAL_COMPLETE.json", arm)
+
+    async def _write_all():
+        await asyncio.gather(write("charter"), write("coin"))
+
+    async def _write_marker(path, arm):
+        await asyncio.sleep(0)
+        chain.mark(path, {"arm": arm})
+
+    # Resolve the nested function before the tasks start; both tasks yield once
+    # while their distinct marker scopes are active.
+    asyncio.run(_write_all())
+    for arm in ("charter", "coin"):
+        payload = json.loads((tmp_path / arm / "EVAL_COMPLETE.json").read_text())
+        assert payload["fingerprint"] == C.fingerprint(arm)
 
 
 def test_run_root_is_namespaced_by_profile_row():
     """<root>/<profile>/<arm>: two grid rows can never share resume markers."""
     root = chain.run_root(Path("/workspace/final_v1"), "charter")
     assert root == Path("/workspace/final_v1") / C.PROFILE.name / "charter"
+
+
+def test_parse_arms_accepts_single_and_stacked_forms():
+    assert chain.parse_arms("charter") == ["charter"]
+    assert chain.parse_arms("charter,coin,control") == [
+        "charter", "coin", "control"]
+    with pytest.raises(ValueError, match="duplicates"):
+        chain.parse_arms("charter,charter")
+    with pytest.raises(ValueError, match="unknown"):
+        chain.parse_arms("charter,placebo")
+
+
+def test_resume_after_two_durable_arms_starts_only_the_third(
+        tmp_path, monkeypatch):
+    """A mid-row relaunch must not revisit either completed arm."""
+    import asyncio
+
+    base = tmp_path / "run"
+    for arm in ("charter", "coin"):
+        root = chain.run_root(base, arm)
+        with chain.fingerprint_scope(root, arm):
+            chain.mark(root / "CHAIN_COMPLETE.json", {"arm": arm})
+
+    visited = []
+
+    async def mix(root, arm):
+        visited.append((arm, root))
+        return {"arm": arm}
+
+    monkeypatch.setattr(chain, "phase_mix", mix)
+    asyncio.run(chain.execute_arms(
+        ["charter", "coin", "control"], base, ["mix"], smoke=True))
+    assert visited == [("control", chain.run_root(base, "control"))]
+
+
+def test_midtrain_upload_starts_before_the_next_arm_trains(tmp_path, monkeypatch):
+    """Stacking retains the pod-death safety property of eager publication."""
+    import asyncio
+
+    events = []
+
+    async def snapshot():
+        return tmp_path / "snapshot"
+
+    async def mix(root, arm):
+        return {"arm": arm, "path": str(root / "data/leg_a.jsonl")}
+
+    async def midtrain(root, arm, _mix):
+        events.append(("midtrain", arm))
+        chain.mark(root / "SCHEDULE.json", {"max_steps": 1})
+        return root / "midtrain"
+
+    async def dolci(root, arm, _parent):
+        events.append(("dolci", arm))
+        return root / "dolci"
+
+    def upload(_root, arm, stage):
+        events.append((f"upload:{stage}", arm))
+
+    async def await_uploads(_arm):
+        return None
+
+    monkeypatch.setattr(chain, "preflight_gpus", lambda _root: {})
+    monkeypatch.setattr(chain, "snapshot_base_and_purge_xet", snapshot)
+    monkeypatch.setattr(chain, "phase_mix", mix)
+    monkeypatch.setattr(chain, "phase_midtrain", midtrain)
+    monkeypatch.setattr(chain, "phase_dolci", dolci)
+    monkeypatch.setattr(chain, "final_checkpoint", lambda run, step: run / str(step))
+    monkeypatch.setattr(chain, "start_stage_upload", upload)
+    monkeypatch.setattr(chain, "await_stage_uploads", await_uploads)
+
+    asyncio.run(chain.execute_arms(
+        ["charter", "coin"], tmp_path / "row",
+        ["mix", "midtrain", "dolci"]))
+    assert events.index(("upload:midtrain", "charter")) < events.index(
+        ("midtrain", "coin"))
+
+
+def test_single_arm_stacking_is_byte_identical_to_the_legacy_path(
+        tmp_path, monkeypatch):
+    """--arms charter delegates to the unchanged one-arm phase operations."""
+    import asyncio
+
+    phases = ["mix", "midtrain", "dolci", "aft", "eval", "recall", "d4",
+              "costsweep", "publish"]
+
+    async def snapshot():
+        return tmp_path / "snapshot"
+
+    async def mix(root, arm):
+        chain.mark(root / "MIX_COMPLETE.json", {"arm": arm, "bytes": "mix"})
+        return {"arm": arm}
+
+    async def midtrain(root, arm, _mix):
+        chain.mark(root / "SCHEDULE.json", {"max_steps": 7})
+        chain.mark(root / "MIDTRAIN_COMPLETE.json", {"arm": arm})
+        return root / "midtrain"
+
+    async def dolci(root, arm, _parent):
+        chain.mark(root / "DOLCI_COMPLETE.json", {"arm": arm})
+        return root / "dolci"
+
+    async def aft(root, arm, _parent):
+        out = {}
+        for cell in C.AFT_CELLS:
+            path = root / "aft" / cell
+            chain.mark(path / "AFT_COMPLETE.json", {"arm": arm, "cell": cell})
+            out[cell] = path
+        return out
+
+    def phase_marker(name):
+        async def operation(root, arm, *_args):
+            chain.mark(root / f"{name}_COMPLETE.json", {"arm": arm})
+        return operation
+
+    async def publish(root, arm):
+        payload = {"arm": arm, "files": 12, "total_bytes": 34}
+        chain.mark(root / "PUBLISH_COMPLETE.json", payload)
+        return payload
+
+    async def no_uploads(_arm):
+        return None
+
+    monkeypatch.setattr(chain, "preflight_gpus", lambda _root: {})
+    monkeypatch.setattr(chain, "snapshot_base_and_purge_xet", snapshot)
+    monkeypatch.setattr(chain, "phase_mix", mix)
+    monkeypatch.setattr(chain, "phase_midtrain", midtrain)
+    monkeypatch.setattr(chain, "phase_dolci", dolci)
+    monkeypatch.setattr(chain, "phase_aft", aft)
+    monkeypatch.setattr(chain, "phase_eval", phase_marker("EVAL"))
+    monkeypatch.setattr(chain, "phase_recall", phase_marker("RECALL"))
+    monkeypatch.setattr(chain, "phase_d4", phase_marker("D4"))
+    monkeypatch.setattr(chain, "phase_costsweep", phase_marker("COSTSWEEP"))
+    monkeypatch.setattr(chain, "phase_publish", publish)
+    monkeypatch.setattr(chain, "final_checkpoint", lambda run, step: run / str(step))
+    monkeypatch.setattr(chain, "start_stage_upload", lambda *_args: None)
+    monkeypatch.setattr(chain, "await_stage_uploads", no_uploads)
+    monkeypatch.setattr(chain, "reclaim_glm_midtrain_parent", lambda *_args: None)
+    monkeypatch.setattr(chain, "reclaim_glm_eval_parent", lambda *_args: None)
+    monkeypatch.setattr(chain.time, "strftime", lambda *_args: "2026-08-31T00:00:00Z")
+
+    async def legacy(base):
+        arm = "charter"
+        root = chain.run_root(base, arm)
+        root.mkdir(parents=True)
+        with chain.fingerprint_scope(root, arm):
+            built = await mix(root, arm)
+            mid = await midtrain(root, arm, built)
+            schedule = __import__("json").loads((root / "SCHEDULE.json").read_text())
+            pre_dolci = chain.final_checkpoint(mid, schedule["max_steps"])
+            dolci_dir = await dolci(root, arm, pre_dolci)
+            parent = chain.final_checkpoint(dolci_dir, C.DOLCI_STEPS)
+            await aft(root, arm, parent)
+            await chain.phase_eval(root, arm, parent)
+            await chain.phase_recall(root, arm)
+            await chain.phase_d4(root, arm)
+            await chain.phase_costsweep(root, arm)
+            await publish(root, arm)
+        await no_uploads(arm)
+        with chain.fingerprint_scope(root, arm):
+            chain.mark_chain_complete(root, arm, schedule, phases)
+
+    legacy_base = tmp_path / "legacy"
+    stacked_base = tmp_path / "stacked"
+    asyncio.run(legacy(legacy_base))
+    asyncio.run(chain.execute_arms(["charter"], stacked_base, phases))
+
+    def artifact_bytes(base):
+        root = chain.run_root(base, "charter")
+        return {path.relative_to(root): path.read_bytes()
+                for path in root.rglob("*") if path.is_file()}
+
+    assert artifact_bytes(stacked_base) == artifact_bytes(legacy_base)
 
 
 # ------------------------------------------------------------- pinned fetches
@@ -222,7 +432,7 @@ def test_preflight_disk_floor_accepts_and_refuses(tmp_path, monkeypatch):
     free = chain.preflight_disk(tmp_path)  # a real measurement, tiny floor
     assert free > 0
     monkeypatch.setattr(chain.C, "MIN_FREE_DISK_GB", free + 10_000)
-    with pytest.raises(RuntimeError, match="floor"):
+    with pytest.raises(RuntimeError, match="500 GB of container disk"):
         chain.preflight_disk(tmp_path)
 
 
@@ -233,6 +443,32 @@ def test_preflight_disk_reuses_the_glm_measurement_not_a_rewrite():
 
 def test_preflight_disk_measures_the_nearest_existing_ancestor(tmp_path):
     assert chain._existing_ancestor(tmp_path / "not" / "yet") == tmp_path
+
+
+def test_xet_cache_is_purged_only_after_the_base_snapshot(monkeypatch, tmp_path):
+    import asyncio
+    import sys
+    import types
+
+    events = []
+
+    def snapshot_download(**kwargs):
+        assert kwargs == {
+            "repo_id": C.BASE_MODEL_MIRROR,
+            "revision": C.BASE_MODEL_REVISION,
+        }
+        events.append("snapshot")
+        return str(tmp_path / "snapshot")
+
+    def purge():
+        events.append("purge")
+
+    monkeypatch.setitem(
+        sys.modules, "huggingface_hub",
+        types.SimpleNamespace(snapshot_download=snapshot_download))
+    monkeypatch.setattr(chain, "_purge_xet_cache", purge)
+    asyncio.run(chain.snapshot_base_and_purge_xet())
+    assert events == ["snapshot", "purge"]
 
 
 # ------------------------------------------------- adapter probe integration
@@ -275,6 +511,17 @@ def test_eval_job_count_is_the_grid():
     per_arm = 1 + len(C.AFT_CELLS) * len(C.AFT_EVAL_STEPS)
     assert per_arm == 9
     assert per_arm * len(C.ARMS) == C.N_EVAL_ENDPOINTS == 27
+
+
+def test_pooled_shard_scripts_consume_the_contract_key_enumerations():
+    eval_script = (EXP / "pod" / "eval_sharded.sh").read_text()
+    d4_script = (EXP / "pod" / "d4_sharded.sh").read_text()
+    costsweep_script = (EXP / "pod" / "costsweep_sharded.sh").read_text()
+    assert "contracts.aft_cell_keys()" in eval_script
+    assert "contracts.eval_endpoint_keys()" in d4_script
+    assert "contracts.eval_endpoint_keys()" in costsweep_script
+    for script in (eval_script, d4_script, costsweep_script):
+        assert "ARMS_CSV" in script
 
 
 # --------------------------------------------------------------- AFT pairing
@@ -369,7 +616,7 @@ def test_every_expensive_stage_publishes_as_it_lands():
     """
     source = (EXP / "pod" / "chain.py").read_text()
     for stage in ("data", "midtrain", "dolci", "aft", "eval", "recall"):
-        assert f'start_stage_upload(root, arm, "{stage}")' in source, \
+        assert f'arm, "{stage}")' in source, \
             f"{stage} is never published as it lands"
 
 
@@ -377,10 +624,39 @@ def test_chain_waits_for_uploads_before_declaring_itself_durable():
     """CHAIN_COMPLETE means "safe to destroy the pod"; an in-flight upload isn't."""
     source = (EXP / "pod" / "chain.py").read_text()
     assert "await await_stage_uploads(arm)" in source
-    complete_at = source.index('mark(root / "CHAIN_COMPLETE.json"')
-    wait_at = source.index("await await_stage_uploads(arm)")
+    execute = source.split("async def execute_arms", 1)[1]
+    complete_at = execute.index("mark_chain_complete(")
+    wait_at = execute.index("await await_stage_uploads(arm)")
     assert wait_at < complete_at, \
         "uploads must be awaited BEFORE CHAIN_COMPLETE is written"
+
+
+def test_await_stage_uploads_waits_for_only_the_named_arm():
+    """A slow coin commit cannot delay charter's CHAIN_COMPLETE boundary."""
+    import asyncio
+
+    async def exercise():
+        release_coin = asyncio.Event()
+
+        async def complete_now():
+            return None
+
+        async def block_coin():
+            await release_coin.wait()
+
+        chain._UPLOADS.clear()
+        charter = asyncio.create_task(complete_now(), name="charter/midtrain")
+        coin = asyncio.create_task(block_coin(), name="coin/midtrain")
+        chain._UPLOADS.update({"charter": [charter], "coin": [coin]})
+        await chain.await_stage_uploads("charter")
+        assert not coin.done()
+        assert "charter" not in chain._UPLOADS
+        assert chain._UPLOADS["coin"] == [coin]
+        release_coin.set()
+        await chain.await_stage_uploads("coin")
+        assert not chain._UPLOADS
+
+    asyncio.run(exercise())
 
 
 def test_stage_publish_uses_one_commit_not_a_folder_walker():
@@ -544,7 +820,7 @@ def test_d4_is_a_required_chain_phase_and_gate():
     required = source.split("required = {", 1)[1].split("}", 1)[0]
     assert '"d4"' in required, "d4 must gate CHAIN_COMPLETE"
     assert '"D4_COMPLETE"' in source
-    assert 'start_stage_upload(root, arm, "d4")' in source
+    assert 'arm, "d4")' in source
 
 
 def test_d4_shards_nine_endpoints_over_the_profile_gpus_in_the_chain():
