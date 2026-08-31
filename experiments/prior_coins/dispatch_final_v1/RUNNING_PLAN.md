@@ -50,7 +50,7 @@
 
 | presented | unique x epochs | status | notes |
 |---|---|---|---|
-| 200M | 50M x 4 | not started | |
+| 190M | 47.5M x 4 | not started | spec-5 cap; was written 200M/50M |
 | 50M | 12.5M x 4 | not started | |
 | 5M | 1.25M x 4 | not started | label was written "1.25M"; Sid confirmed 2026-08-31 it means 5M presented |
 
@@ -58,9 +58,9 @@
 
 | presented | unique x epochs | status |
 |---|---|---|
-| 200M | 50M x 4 | not started |
-| 50M | 12.5M x 4 | not started |
-| 5M | 1.25M x 4 | not started |
+| 190M | 47.5M x 4 | not started | spec-5 cap; was written 200M/50M |
+| 50M | 12.5M x 4 | not started | |
+| 5M | 1.25M x 4 | not started | |
 
 ### gemma3-12b
 
@@ -80,25 +80,41 @@
 
 ## Additional studies
 
-### No-example midtrain ablation — gemma3-12b, 50M
+(The no-example ablation is a **27b** row as of 2026-08-31; it was originally
+planned on 12b.)
+
+### No-example midtrain ablation — gemma3-27b, 50M
+
+**Moved from gemma3-12b to gemma3-27b on 2026-08-31** (Sid). Same 12.5M x 4
+geometry as the main 50M row, so it is a matched sibling of the **27b** 50M row
+and must be compared against that one, not against a 12b row.
 
 Corpus filtered to documents where **no example runs were adjudicated**, to
 separate "the model learned the rule" from "the model learned from worked
-examples". Same 12.5M x 4 geometry as the main 50M row, so it is a matched
-sibling of it.
+examples". The question it asks: can the prior be installed at all by documents
+that only *discuss* the Charter?
 
-**Feasibility checked 2026-08-31 and it works, with a caveat.** The release
-corpus carries a per-document `focus` field, and its leading verb separates
-worked examples from discussion:
+**The predicate is `focus_tag` ending `qualitative`.** Settled 2026-08-31.
+`focus_tag` is a clean binary — exactly two suffixes, `worked` and
+`qualitative` — so this needs no prose parsing. Availability in the v2 release
+(spec-5, 47.5M/arm) against a 12.5M requirement:
 
-| arm | total | `Show*` (worked example) | `Discuss*` | other verbs |
-|---|---|---|---|---|
-| charter | 50.00M | 23.96M (47.9%) | 26.04M (52.1%) | — |
-| coin | 50.00M | 20.19M (40.4%) | 22.70M (45.4%) | `Work` 3.50M, `Compare` 3.29M, `optimaShow` 0.32M |
+| arm | `qualitative` (this row) | `worked` (the complement) |
+|---|---|---|
+| charter | **25.10M** (52.9%) | 22.40M (47.1%) |
+| coin | **22.08M** (46.5%) | 25.42M (53.5%) |
 
-So ~26M charter / ~22.7M non-example tokens are available against a 12.5M
-requirement — roughly 2x headroom. **But the verb vocabulary is not a clean
-binary and differs between arms** (see open questions).
+Ample headroom on both arms. Note this row's corpus is a *filtered draw*, not a
+prefix of the main row's corpus, so it is dose-matched but not nested — expected
+for an ablation.
+
+An earlier version of this section proposed parsing the `focus` prose for a
+leading "Show"/"Discuss" verb. That predicate was wrong: it put coin's worked
+examples at 20.19M when `focus_tag` says 25.42M, the gap being `Work through...`
+and `Compare...` documents it misclassified. Do not revive it.
+
+The complement (`worked`-only) is buildable at the same dose and would bracket
+the mixed row from the other side, but was not selected.
 
 ### RLVR study — gemma4-31b
 
@@ -114,6 +130,65 @@ Shape:
 
 Not costed and not scheduled; the graft pipeline and the RLVR stage are separate
 pieces of work from the grid above.
+
+## What one row actually consists of
+
+**This is already implemented.** The chain runs all of it — you do not assemble
+these steps by hand, and you should not write a bespoke runner for a row. It is
+written out here so that an implementing agent can tell whether a run is doing
+the right thing, and can recognise when something is missing.
+
+    FINAL_V1_PROFILE=<profile> python3 pod/chain.py --arm <arm> --root /workspace/final_v1
+
+with the default phase list
+`mix,midtrain,dolci,aft,eval,recall,d4,costsweep,publish`. Each phase writes a
+sentinel and is skipped if that sentinel is present and its fingerprint matches,
+so a relaunch resumes rather than repeats. Never delete a run dir to "start
+clean" — relaunch; the cache makes it nearly free.
+
+One row = **three arms**, one per pod, run in parallel. For each arm:
+
+| # | phase | what it does | artifacts kept |
+|---|---|---|---|
+| 1 | `mix` | Fetch the arm's prefix of the v2 release + Dolmino, interleave 1:1 to the profile's `mix_tokens`, verify digests against the committed manifest | `leg_a_mix.yaml`, `MIX_COMPLETE.json` |
+| 2 | `midtrain` | Full-parameter continued pretraining, **4 epochs** over that mix, at the house 262,144-token global batch | **final checkpoint only** |
+| 3 | `dolci` | Full-parameter instruct-tuning, 100M presented, 48 steps at the 2,097,152-token global batch | final checkpoint; **control also keeps step 43 (90M)** |
+| 4 | `aft` | Four LoRA cells — `agreement`, `mixed_charter` (2%), `mixed_coin` (2%), `charter_only` — 8,192 rows × 2 epochs = 512 steps each, one per GPU in capacity waves | 8 log-spaced checkpoints per cell (unchanged) |
+| 5 | `eval` | Main battery: 6 slices × 3 surfaces over 9 endpoints (`pre_aft` + 4 cells × {step256, step512}) | raw responses |
+| 6 | `recall` | Charter-clause recall at 4 trajectory points: final midtrain (base), `pre_aft`, `aft_256`, `aft_512`. Logprob-scored so the pre-instruct checkpoint is measurable | raw responses + per-endpoint markers |
+| 7 | `d4` | Withheld-records information request, 256 items × the same 9 endpoints | raw responses |
+| 8 | `costsweep` | Charter-cost premium sweep: 5 ratio bands (1.1/1.25/1.5/2.0/3.0), 256 episodes each, trained clauses × held-out template, same 9 endpoints | raw responses |
+| 9 | `publish` | Sweep-up for run records; the heavy stages already published themselves as they landed | Hub |
+
+Arms: **charter**, **coin**, **control**. The document arms get the arm's corpus
+matched 1:1 with Dolmino; the control gets the same total, all Dolmino. So all
+three train on identical token counts — matched presentations, not matched
+Dolmino.
+
+Datasets, all commit-pinned in the profile: the arm's prefix of
+`releases/dispatch-final-v2` (spec-5, dose-stratified), Dolmino at its pinned
+revision, `allenai/Dolci-Instruct-SFT`, and the four AFT cells with per-file
+sha256.
+
+**Checkpoint policy** (changed 2026-08-31): midtrain keeps only its final
+checkpoint, and Dolci only its final — plus the control's step-43 (90M) point,
+which is retained for a possible late-stage SDF comparison. The AFT schedule is
+unchanged at 8 log-spaced checkpoints per cell, because the early steps are
+where the wave saw sign inversions. Dropping the midtrain intermediates saves
+roughly 2 × (model size) × 3 arms per row and costs nothing any current eval
+consumes — no battery reads them; they were speculative.
+
+### What differs for the additional runs
+
+That is the point of them, so expect divergence and do not force them onto the
+table above:
+
+- **No-example ablation** — identical to a **27b** 50M row except the corpus is
+  filtered to `focus_tag` ending `qualitative`. Everything downstream is
+  unchanged, and it is compared against the 27b 50M row.
+- **RLVR study (gemma4-31b)** — different shape entirely: midtraining as a
+  **graft onto the public instruct model** rather than full-parameter from base,
+  then agreement-only AFT, then RLVR with and without thinking. No Dolci leg.
 
 ## Where things live
 
@@ -149,17 +224,16 @@ such rather than as an inconsistency.
 
 ## Open questions — for discussion, not for an agent to resolve alone
 
-1. **How to define "no example runs adjudicated".** A naive
-   `focus.startswith("Show")` filter would miss the coin arm's `Work through...`
-   documents (3.50M tokens), which are almost certainly worked examples, and
-   would treat `Compare...` (3.29M) as non-example when it is ambiguous. The
-   arms also have different verb vocabularies, which matters because the arms
-   must stay dose-matched. `optimaShow` (249 docs) looks like a malformed focus
-   string. Needs a decision on the predicate and a per-arm token census under
-   it before the row is built.
-2. **Whether the 200M rows are worth their cost.** They are the two most
-   expensive rows in the grid and the dose-response curve may already be legible
-   from the cheaper rows, since fixed chain cost dominates below ~5M.
+1. ~~**How to define "no example runs adjudicated".**~~ **Settled 2026-08-31:**
+   the predicate is `focus_tag` ending `qualitative`, a clean binary needing no
+   prose parsing. The earlier verb-parsing proposal was wrong and is recorded as
+   such in the ablation section.
+
+2. **Whether the 190M row is worth its cost.** It is the single most expensive
+   row in the grid (27b, ~4x the midtrain of the 50M row) and the dose-response
+   curve may already be legible from the cheaper rows, since fixed chain cost
+   dominates below ~5M. Note it is 190M, not 200M: 47.5M unique x 4 epochs under
+   the spec-5 cap.
 
 ## Known blocking work before rows can launch
 
