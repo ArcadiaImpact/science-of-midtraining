@@ -52,7 +52,7 @@
 |---|---|---|---|
 | 200M | 50M x 4 | not started | |
 | 50M | 12.5M x 4 | not started | |
-| 5M (?) | 1.25M x 4 | not started | **label needs confirming — see open questions** |
+| 5M | 1.25M x 4 | not started | label was written "1.25M"; Sid confirmed 2026-08-31 it means 5M presented |
 
 ### gemma3-27b
 
@@ -138,23 +138,18 @@ and its resolved values are pinned by
 
 **It is 50M unique x 1 epoch.** The grid's 50M row is 12.5M unique x 4 epochs.
 Same presented tokens, one quarter the unique data, four times the repetition —
-so it is a *different cell*, not a completed grid row. See open questions.
+so it is a *different cell*, not a completed grid row.
+
+**Decided 2026-08-31: keep it as the 1-epoch arm of a repetition contrast.** We
+are NOT re-running 12B/50M at 1 epoch for grid consistency. When the grid's
+12B/50M row (12.5M x 4) completes, the pair gives a 1-epoch vs 4-epoch contrast
+at matched presented tokens — an unplanned bonus, and the only place in the
+campaign where repetition is varied with the dose held fixed. Worth reporting as
+such rather than as an inconsistency.
 
 ## Open questions — for discussion, not for an agent to resolve alone
 
-1. **GLM's smallest row label.** Written as "1.25M [1.25M x 4 epochs]", but
-   1.25M x 4 presents 5M, and the 27B analogue at the same geometry is labelled
-   "5M". Either the label should read 5M, or the intended geometry is
-   0.3125M x 4. Unresolved.
-2. **What to do about the completed 1-epoch 12B/50M run.** Two readings, and
-   they lead to different work:
-   - keep it as a bonus **1-epoch vs 4-epoch contrast at matched presented
-     tokens**, which is a genuinely interesting repetition ablation we did not
-     plan; or
-   - re-run 12B/50M at 12.5M x 4 for grid consistency (~$236 + a re-score).
-   Doing both is also possible and is the only option that gives a clean grid
-   *and* the contrast.
-3. **How to define "no example runs adjudicated".** A naive
+1. **How to define "no example runs adjudicated".** A naive
    `focus.startswith("Show")` filter would miss the coin arm's `Work through...`
    documents (3.50M tokens), which are almost certainly worked examples, and
    would treat `Compare...` (3.29M) as non-example when it is ambiguous. The
@@ -162,16 +157,33 @@ so it is a *different cell*, not a completed grid row. See open questions.
    must stay dose-matched. `optimaShow` (249 docs) looks like a malformed focus
    string. Needs a decision on the predicate and a per-arm token census under
    it before the row is built.
-4. **Whether the 200M rows are worth their cost.** They are the two most
+2. **Whether the 200M rows are worth their cost.** They are the two most
    expensive rows in the grid and the dose-response curve may already be legible
    from the cheaper rows, since fixed chain cost dominates below ~5M.
 
 ## Known blocking work before rows can launch
 
-- **Non-4-GPU geometry.** `eval_sharded.sh` and `phase_aft` still assume 4 GPUs
-  and >=1 GPU per AFT cell. The 4b row is 2xH200 and the 27b/GLM rows are
-  8xH200. All failures here are LOUD (preflight refuses), so this is enabling
-  work rather than a corruption risk — but it gates every row except 12B.
+- **Non-4-GPU shard geometry.** Three of the four shard launchers increment a
+  GPU counter once per work unit with no upper bound —
+  `eval_sharded.sh:60-66`, `d4_sharded.sh:41-49`, `recall_sharded.sh:40-49` all
+  emit GPUs 0,1,2,3 whatever the machine has. Concretely:
+  - **4b (2xH200):** two of every four shards get a nonexistent
+    `CUDA_VISIBLE_DEVICES=2`/`=3` and those engines die — half of every eval
+    battery lost. `phase_aft` fails earlier and more cleanly, with an explicit
+    "4 cells but 2 GPUs -- this scheduler assumes one cell per GPU".
+  - **27b (8xH200):** not a failure, waste — 4 of 8 cards idle, every eval
+    battery ~2x slower than necessary.
+  - **GLM:** the one-engine-per-GPU MAP is wrong, not just its bounds, because
+    TP>=2 means one engine spans several GPUs; and AFT needs 4xH200 per cell
+    (measured, 2xH200 OOMs), so 4 cells x 4 GPUs = 16 > 8 and it must run in
+    two waves.
+
+  The fix pattern already exists in-tree: `costsweep_sharded.sh:19-43` reads
+  `contracts.N_GPUS` from the profile and divides dynamically. Porting that into
+  the three older launchers, adding GPU-*group* support for the GLM TP case, and
+  wave-scheduling `phase_aft` covers it. 4-GPU rows are unaffected. Every
+  failure mode here is LOUD — a missing CUDA device or an explicit RuntimeError
+  — so this gates launches rather than threatening results.
 - **The GLM tranche.** 13 identified gaps, all ports from `glm_minimal_v1`
   rather than inventions: vLLM 0.19.1 + transformers 5.5.3 in a separate venv,
   packed-MoE expert unpack, MTP finalize, chat template and stop tokens,
