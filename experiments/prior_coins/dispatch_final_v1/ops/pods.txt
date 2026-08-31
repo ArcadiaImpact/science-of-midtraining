@@ -1,4 +1,15 @@
-# arm       ssh-alias                    pod-id
-charter     runpod-dispatch-charter      raihf39qjoinnq
-coin        runpod-dispatch-coin         q6zvpbwo3c5scy
-control     runpod-dispatch-control      x6j1hgg6sg785q
+# Dispatch final-v1 supervisor-owned pod ledger (v2, tab-separated).
+#
+# Schema:
+# state profile arms ssh-alias pod-id $/hr campaign-id owner-token attempt pod-name created-at strikes
+#
+# The old v1 format was: arm ssh-alias pod-id.  It did not identify the grid
+# row or ownership, so those rows MUST NOT be copied into the active table.
+# They are retained below as commented, unmanaged migration evidence.  A v2
+# row is added only after this supervisor journals a create intent; teardown
+# additionally requires its owner-token to match the current campaign file.
+#
+# Legacy rows (unmanaged; this supervisor will never inspect or delete them):
+# legacy-unmanaged charter runpod-dispatch-charter raihf39qjoinnq
+# legacy-unmanaged coin runpod-dispatch-coin q6zvpbwo3c5scy
+# legacy-unmanaged control runpod-dispatch-control x6j1hgg6sg785q
