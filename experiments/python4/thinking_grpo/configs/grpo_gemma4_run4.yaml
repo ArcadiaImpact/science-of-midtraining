@@ -69,22 +69,24 @@ grpo:
                              # problem seen once, zero revisits (Jonathan's
                              # 1,024 ruling makes the arithmetic exact).
   group_size: 8
-  per_device_batch_size: 2         # trainer GPU no longer shares with a
-                                   # colocate engine (server mode frees the
-                                   # ~67GB vLLM slice), so the pdbs-1 OOM
-                                   # ceiling from run-3 does not bind. pdbs 2
-                                   # keeps the loss-path peak at 2 x ~10k x
-                                   # 262k-vocab logits, bounded well under
-                                   # the freed headroom; smoke gate validates
-                                   # before the burn. First OOM -> pdbs 1 /
-                                   # accum 128 (same global batch), no
-                                   # check-in needed.
-  gradient_accumulation_steps: 64  # global batch 128 completions/step
-  steps_per_generation: 64         # generation once per optimizer step: one
+  per_device_batch_size: 1         # pdbs 2 was tried first (server mode
+                                   # frees the colocate engine's slice) and
+                                   # the 2026-08-31 smoke OOM'd it in
+                                   # loss.backward: 135.2 GiB live + the
+                                   # 10.0 GiB pdbs-2 logits gradient
+                                   # (2 x 10240 x 262144 x bf16) > 139.8 GiB
+                                   # H200. This is the config's own
+                                   # pre-authorized fallback: pdbs 1 /
+                                   # accum 128, same global batch; pdbs-1
+                                   # peaks are run-3-proven on H200 under a
+                                   # TIGHTER budget (colocate).
+  gradient_accumulation_steps: 128 # global batch 128 completions/step
+  steps_per_generation: 128        # generation once per optimizer step: one
                                    # 128-completion round (16 problems x 8)
-                                   # keeps the 6-replica server saturated
-                                   # instead of the divisibility-minimum
-                                   # 8-completion rounds the default computes.
+                                   # keeps the tp=4 server saturated instead
+                                   # of the divisibility-minimum 8-completion
+                                   # rounds the default computes. (TRL counts
+                                   # micro-steps: round = pdbs x world x spg.)
   learning_rate: 1.0e-5
   temperature: 0.7
   loss_type: dr_grpo

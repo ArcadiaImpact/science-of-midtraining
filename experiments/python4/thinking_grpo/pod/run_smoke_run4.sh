@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # MANDATORY 2-step full-geometry smoke for GRPO run-4. Runs the exact
 # training topology (GPU0 trainer, tp=4 rollout server on 8200, server-mode
-# generation, tool loop, pdbs 2 x accum 64 => 128 completions/step) for 2
+# generation, tool loop, pdbs 1 x accum 128 => 128 completions/step) for 2
 # optimizer steps into an ISOLATED run dir, so the real run's sync/eval
 # workers never see smoke checkpoints.
 #
