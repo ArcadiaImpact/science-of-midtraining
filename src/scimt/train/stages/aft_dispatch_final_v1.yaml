@@ -1,0 +1,82 @@
+name: aft_dispatch_final_v1
+description: >-
+  Dispatch final-run AFT. `aft_dispatch_v4_wide` verbatim -- same LoRA, same
+  global batch of 32, same LR schedule, same two epochs -- with only the
+  checkpoint SCHEDULE changed, so the optimisation trajectory stays identical to
+  every published wave cell.
+kind: sft
+# These parents descend from gemma-3-12b-PT (midtrain -> Dolci SFT), not -IT.
+# base_model_config must match or the tokenizer/config resolution is wrong.
+base_model: unsloth/gemma-3-12b-pt
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: unsloth/gemma-3-12b-pt
+  revision_of_model: 54ba4a26535408ddf5747cb9f7a5c16816659564
+  # Liger's fused linear cross-entropy never materialises the logits tensor, which
+  # for Gemma-3's 262,208-token vocab is 2.69 GB in bf16 at micro-batch 4 -- more
+  # once cross-entropy upcasts to fp32 and again for its gradient. Freeing that is
+  # what pays for the larger micro-batch below.
+  plugins:
+  - axolotl.integrations.liger.LigerPlugin
+  - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - <end_of_turn>
+  chat_template: gemma3
+  train_on_inputs: false
+  sequence_len: 1280
+  # NOT enabling sample_packing even though prompts are ~800 of 1280 tokens: packing
+  # changes which examples share a micro-batch, which changes the trajectory and
+  # would confound the v4 comparison. Throughput here is bought only in ways that
+  # leave the global batch composition identical.
+  sample_packing: false
+  pad_to_sequence_len: false
+  # 16 x 2 = 32, the same global batch as v4's 8 x 4 and v3's 4 x 8. LoRA has no
+  # batch-dependent layers, so this is a pure wall-clock change. v4 measured
+  # 6.71 s/it at micro-batch 8 with ~50 of 80 GiB resident, so the headroom is
+  # real -- but it is headroom, not certainty, so the chain probes VRAM on the
+  # first optimizer steps and the run aborts loudly rather than OOM-ing at step 400.
+  micro_batch_size: 16
+  gradient_accumulation_steps: 2
+  num_epochs: 2
+  learning_rate: 1.0e-4
+  trust_remote_code: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  bf16: true
+  tf32: true
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+  optimizer: adamw_torch_fused
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  logging_steps: 1
+  # 8,192 rows / global batch 32 = 256 steps per epoch, so two epochs IS 512 --
+  # the wave's step count, unchanged. Stated explicitly so a dataset of the wrong
+  # length fails the run rather than quietly shortening it.
+  max_steps: 512
+  # Log-spaced saves. `save_steps: 32` alone cannot produce 4/8/16, and the
+  # early steps are where the wave saw sign inversions. The final step must be
+  # present or the servable adapter is never written; save_total_limit must be
+  # at least as long as this list or the Trainer's ordinary save path rotates
+  # the early checkpoints away (they are written via control.should_save).
+  save_strategy: "no"
+  checkpoint_schedule: [4, 8, 16, 32, 64, 128, 256, 512]
+  # Kept false (optimizer + scheduler state written) for parity with v4 and for
+  # later attribution work. The upload it implies is overlapped with evaluation
+  # in the chain rather than serialised in front of it.
+  save_only_model: false
+  save_total_limit: 8
+  seed: 42
+  output_dir: SET_BY_RENDER
