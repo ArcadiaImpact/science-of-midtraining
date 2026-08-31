@@ -42,10 +42,16 @@ def test_flash_attn_wheel_is_pinned_verified_and_overrideable():
 def test_flash_attn_rejection_falls_back_to_the_same_source_version():
     setup = SETUP.read_text()
 
+    # Indentation-insensitive on purpose: the whole wheel-vs-source block is
+    # nested inside setup.sh's `glm45_air` guard (that family skips flash-attn
+    # entirely -- its pinned posture is SDPA with no on-pod build), so the
+    # bodies carry extra leading whitespace. What this test is for is that a
+    # REJECTED wheel falls back to the same pinned version rather than
+    # silently skipping the install, and that survives re-indentation.
     selection = re.search(
         r"if install_prebuilt_flash_attn; then\n"
-        r".*?\nelse\n"
-        r"  install_flash_attn_from_source\nfi",
+        r".*?\n[ \t]*else\n"
+        r"[ \t]*install_flash_attn_from_source\n[ \t]*fi",
         setup,
         flags=re.DOTALL,
     )
