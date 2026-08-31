@@ -454,13 +454,13 @@ async def phase_aft(root: Path, arm: str, parent: Path) -> dict[str, Path]:
 
 
 async def phase_eval(root: Path, arm: str, parent: Path) -> None:
-    """Sample all nine endpoints via the proven samplers (see evaluate.py).
+    """Sample all nine endpoints, SHARDED one engine per GPU (eval_sharded.sh).
 
-    Serialized rather than sharded across GPUs: pod_generate_multi holds one
-    resident base per cell and vLLM wants the whole device, so four concurrent
-    engines on four GPUs would each need their own 24 GB parent plus KV cache.
-    Sampling is ~17 min/endpoint and this is the cheap phase; correctness beats
-    the wall clock here.
+    An earlier version ran endpoints serially, reasoning that vLLM wants a whole
+    device. True per ENGINE -- each needs its own ~24 GB model copy plus KV
+    cache, so four will not fit on one card -- but the pod has four cards, so the
+    conclusion was wrong and it cost ~4x the wall clock. One engine per GPU, the
+    way the AFT phase already works.
     """
     sentinel = root / "EVAL_COMPLETE.json"
     if done(sentinel):
@@ -470,9 +470,7 @@ async def phase_eval(root: Path, arm: str, parent: Path) -> None:
     started = time.time()
     await asyncio.to_thread(
         run_sync,
-        [sys.executable, POD / "evaluate.py", "--arm", arm, "--parent", parent,
-         "--aft-root", root / "aft", "--aft-data", root / "data" / "aft",
-         "--out", out, "--work", root / "xgen"],
+        ["bash", POD / "eval_sharded.sh", arm, root.parent],
         out / "evaluate.log",
     )
     expected = len(C.EVAL_SLICES) * len(C.EVAL_SURFACES)
