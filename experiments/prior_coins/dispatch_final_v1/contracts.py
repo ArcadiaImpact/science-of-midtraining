@@ -98,6 +98,16 @@ FILLER_REPO = "allenai/dolma3_dolmino_mix-100B-1125"
 FILLER_REVISION = "f23aa129fda8335ba9760057bcc1f0c02f3d068b"
 FILLER_SHUFFLE_BUFFER = 10_000
 
+#: Stacked-row disk gates and the immutable container-disk request operators
+#: must choose at pod creation.  The 12B four-epoch diagnostic is deliberately
+#: not one of the nine campaign rows.
+STACKED_GEMMA_DISK_FLOORS_GB = {
+    **{f"gemma3_27b_{dose}": 750 for dose in ("5m", "50m", "190m")},
+    **{f"gemma3_12b_{dose}": 300 for dose in ("1m", "5m", "50m")},
+    **{f"gemma3_4b_{dose}": 150 for dose in ("1m", "5m", "50m")},
+}
+STACKED_GEMMA_PROVISIONED_DISK_GB = {"27b": 1200, "12b": 500, "4b": 250}
+
 DOLCI_REPO = "allenai/Dolci-Instruct-SFT"
 DOLCI_REVISION = "bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221"
 
@@ -353,6 +363,11 @@ def _validate_profile(p: Profile) -> None:
         )
     if p.min_free_disk_gb <= 0:
         raise ProfileError(f"profile {p.name!r}: min_free_disk_gb must be > 0")
+    stacked_floor = STACKED_GEMMA_DISK_FLOORS_GB.get(p.name)
+    if stacked_floor is not None and p.min_free_disk_gb != stacked_floor:
+        raise ProfileError(
+            f"profile {p.name!r}: stacked row requires min_free_disk_gb="
+            f"{stacked_floor}, got {p.min_free_disk_gb}")
     if p.aft_gpus_per_cell < 1 or p.n_gpus % p.aft_gpus_per_cell:
         raise ProfileError(
             f"profile {p.name!r}: aft_gpus_per_cell must be a positive divisor "
@@ -617,6 +632,12 @@ ARMS = {
                 "dolci_checkpoint_tokens": DOLCI_CHECKPOINT_TOKENS_DOC},
 }
 
+#: Canonical cross-arm execution order.  ``ARMS`` remains the historical
+#: mapping (including its insertion order) because single-arm consumers read
+#: it directly; pooled schedulers use this explicit order, matching the
+#: completed three-arm GLM campaign.
+ARM_ORDER = ("charter", "coin", "control")
+
 # ---------------------------------------------------------------------- AFT
 
 #: LoRA AFT on templated surfaces. 8,192 rows / global batch 32 = 256 steps per
@@ -645,6 +666,15 @@ AFT_CELL_CONFLICT_ROWS = {
 #: Log-spaced saves; only the epoch boundaries are evaluated.
 AFT_CHECKPOINT_STEPS = (4, 8, 16, 32, 64, 128, 256, 512)
 AFT_EVAL_STEPS = (256, 512)
+
+
+def aft_cell_keys() -> tuple[tuple[str, str], ...]:
+    """Every ``(arm, cell)`` AFT job, in canonical execution order.
+
+    This is the single enumeration pooled scheduling and result checks share,
+    so adding or reordering a cell cannot make the two silently drift apart.
+    """
+    return tuple((arm, cell) for arm in ARM_ORDER for cell in AFT_CELLS)
 
 # --------------------------------------------------------------------- eval
 
@@ -681,19 +711,29 @@ COSTSWEEP_MAX_NEW_TOKENS = 64
 COSTSWEEP_GPU_MEMORY = 0.80
 
 
+EVAL_ENDPOINTS_PER_ARM = (
+    "pre_aft",
+    *(f"{cell}/step{step}" for cell in AFT_CELLS for step in AFT_EVAL_STEPS),
+)
+
+
+def eval_endpoint_keys() -> tuple[tuple[str, str], ...]:
+    """Every ``(arm, endpoint)`` evaluation result, 27 in total."""
+    return tuple(
+        (arm, endpoint)
+        for arm in ARM_ORDER
+        for endpoint in EVAL_ENDPOINTS_PER_ARM
+    )
+
+
 def eval_endpoints() -> tuple[tuple[str, str], ...]:
-    """(substrate, endpoint) pairs: one pre-AFT per arm, two per AFT cell."""
-    out = [(arm, "pre_aft") for arm in ARMS]
-    for arm in ARMS:
-        for cell in AFT_CELLS:
-            for step in AFT_EVAL_STEPS:
-                out.append((arm, f"{cell}/step{step}"))
-    return tuple(out)
+    """Backward-compatible name for :func:`eval_endpoint_keys`."""
+    return eval_endpoint_keys()
 
 
 N_MIDTRAIN_LEGS = len(ARMS) * 2
-N_AFT_RUNS = len(ARMS) * len(AFT_CELLS)
-N_EVAL_ENDPOINTS = len(eval_endpoints())
+N_AFT_RUNS = len(aft_cell_keys())
+N_EVAL_ENDPOINTS = len(eval_endpoint_keys())
 
 
 #: The completed as-run row published before rows were namespaced: its
@@ -768,6 +808,8 @@ def fingerprint(arm: str) -> dict:
 
 def validate() -> None:
     """Refuse a schedule that cannot do what it says. Called by the preflight."""
+    if len(ARM_ORDER) != len(set(ARM_ORDER)) or set(ARM_ORDER) != set(ARMS):
+        raise ValueError("ARM_ORDER must name every arm exactly once")
     if AFT_STEPS != 512:
         raise ValueError(f"AFT_STEPS is {AFT_STEPS}, expected 512")
     if AFT_CHECKPOINT_STEPS[-1] != AFT_STEPS:

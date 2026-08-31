@@ -1,12 +1,10 @@
-"""Pod-side chain for one Dispatch final-run substrate: midtrain -> Dolci -> AFT -> eval.
+"""Pod-side chain for a Dispatch row: sequential training, then pooled work.
 
-One profile-sized pod owns one arm (control / charter / coin) and runs its whole
-column of the grid:
+One profile-sized pod owns one or more arms (control / charter / coin):
 
-    phase 1  leg A   full-param midtrain on a profile-sized mix     all GPUs
-    phase 2  leg B   full-param Dolci instruct tuning, 48 steps     all GPUs
-    phase 3  AFT     4 LoRA cells in profile-sized GPU-group waves
-    phase 4  eval    9 endpoints (pre-AFT + 4 cells x 2 steps)      sharded
+    phases 1-2  each arm's full-param midtrain + Dolci              sequential
+    phase 3     requested arms x 4 LoRA cells                       pooled waves
+    phase 4+    requested arms x 9 endpoints per eval surface       pooled shards
 
 Nothing crosses pods: an arm's 24 GB checkpoints never leave the machine that
 made them until they are published.
@@ -34,7 +32,7 @@ gemma3_12b_50m, the completed run) and artifacts land under
 <root>/<profile>/<arm>, so no two rows can ever share resume markers.
 
 Run (on the pod):
-    python3 chain.py --arm charter --root /workspace/final_v1
+    python3 chain.py --arms charter,coin,control --root /workspace/final_v1
 """
 
 from __future__ import annotations
@@ -48,6 +46,8 @@ import shutil
 import subprocess
 import sys
 import time
+from contextlib import contextmanager
+from contextvars import ContextVar
 from pathlib import Path
 
 POD = Path(__file__).resolve().parent
@@ -78,15 +78,45 @@ def log(message: str) -> None:
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {message}", flush=True)
 
 
-#: contracts.fingerprint(arm) for THIS process, set once in main() before any
-#: marker is consulted. Module-level because done()/mark() are called from
-#: every phase; a chain only ever runs one (profile, arm).
-_FINGERPRINT: dict | None = None
+#: Marker identity is task-local.  Pooled waves concurrently write beneath
+#: multiple arm roots, so a process-global current fingerprint can stamp one
+#: arm with another arm's identity.  ContextVar preserves the convenient
+#: done()/mark() API while copying the correct scope into each asyncio task.
+_MARKER_SCOPE: ContextVar[tuple[Path, str, dict] | None] = ContextVar(
+    "final_v1_marker_scope", default=None)
 
 
-def set_fingerprint(fingerprint: dict) -> None:
-    global _FINGERPRINT
-    _FINGERPRINT = fingerprint
+@contextmanager
+def fingerprint_scope(root: Path, arm: str):
+    """Bind marker I/O to exactly one arm root for this task."""
+    fingerprint = C.fingerprint(arm)
+    root = root.resolve()
+    # These are deliberate assertions, not comments: a future refactor cannot
+    # enter a charter scope carrying coin's identity without stopping here.
+    assert root.name == arm, f"active arm {arm!r} does not own root {root}"
+    assert fingerprint["arm"] == arm
+    assert fingerprint == C.fingerprint(arm)
+    token = _MARKER_SCOPE.set((root, arm, fingerprint))
+    try:
+        yield
+    finally:
+        _MARKER_SCOPE.reset(token)
+
+
+def _active_fingerprint(path: Path) -> dict:
+    scope = _MARKER_SCOPE.get()
+    if scope is None:
+        raise RuntimeError(
+            "fingerprint_scope(root, arm) must be active before markers are used")
+    root, arm, fingerprint = scope
+    resolved = path.resolve()
+    assert resolved == root or resolved.is_relative_to(root), (
+        f"marker {resolved} is outside active {arm} root {root}")
+    assert fingerprint["arm"] == arm, (
+        f"active fingerprint is for {fingerprint.get('arm')!r}, not {arm!r}")
+    assert fingerprint == C.fingerprint(arm), (
+        f"active fingerprint drifted while writing {arm!r}")
+    return fingerprint
 
 
 def done(path: Path) -> bool:
@@ -101,8 +131,7 @@ def done(path: Path) -> bool:
     """
     if not path.is_file():
         return False
-    if _FINGERPRINT is None:
-        raise RuntimeError("set_fingerprint() must run before markers are read")
+    fingerprint = _active_fingerprint(path)
     try:
         payload = json.loads(path.read_text())
     except ValueError as exc:
@@ -118,29 +147,34 @@ def done(path: Path) -> bool:
             "Use a fresh --root, or delete the marker if you are certain it "
             "belongs to this exact run."
         )
-    if stamped != _FINGERPRINT:
+    if stamped != fingerprint:
         drift = sorted(
-            k for k in set(stamped) | set(_FINGERPRINT)
-            if stamped.get(k) != _FINGERPRINT.get(k)
+            k for k in set(stamped) | set(fingerprint)
+            if stamped.get(k) != fingerprint.get(k)
         )
         raise RuntimeError(
             f"resume marker {path} was written by a DIFFERENT run -- "
             f"fingerprint disagrees on {drift}: marker "
             f"{ {k: stamped.get(k) for k in drift} } vs this run "
-            f"{ {k: _FINGERPRINT.get(k) for k in drift} }. Refusing to resume "
+            f"{ {k: fingerprint.get(k) for k in drift} }. Refusing to resume "
             "over another run's artifacts."
         )
     return True
 
 
 def mark(path: Path, payload: dict) -> None:
-    if _FINGERPRINT is None:
-        raise RuntimeError("set_fingerprint() must run before markers are written")
+    fingerprint = _active_fingerprint(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps({**payload, "fingerprint": _FINGERPRINT},
+    tmp.write_text(json.dumps({**payload, "fingerprint": fingerprint},
                               indent=2, sort_keys=True) + "\n")
     tmp.replace(path)
+
+
+async def in_arm_scope(root: Path, arm: str, operation, *args, **kwargs):
+    """Run one async arm operation with marker identity bound task-locally."""
+    with fingerprint_scope(root, arm):
+        return await operation(*args, **kwargs)
 
 
 def run_root(base: Path, arm: str) -> Path:
@@ -285,6 +319,15 @@ def _existing_ancestor(path: Path) -> Path:
     return path
 
 
+def _provisioned_disk_gb() -> int | None:
+    """Operator-facing container-disk request for the stacked Gemma rows."""
+    name = C.PROFILE.name
+    for model_size, provisioned in C.STACKED_GEMMA_PROVISIONED_DISK_GB.items():
+        if C.MODEL_FAMILY == "gemma3" and f"_{model_size}_" in name:
+            return provisioned
+    return None
+
+
 def preflight_disk(root: Path) -> float:
     """Refuse a pod whose volume cannot hold the run's artifacts.
 
@@ -299,14 +342,64 @@ def preflight_disk(root: Path) -> float:
     where = _existing_ancestor(root)
     free = free_disk_gb(where)
     if free < C.MIN_FREE_DISK_GB:
+        provisioned = _provisioned_disk_gb()
+        provisioning = (
+            f" Provision the pod with {provisioned} GB of container disk; "
+            "container disk cannot be enlarged after pod creation."
+            if provisioned is not None else ""
+        )
         raise RuntimeError(
             f"free disk at {where} is {free:.1f} GB < the profile's "
-            f"{C.MIN_FREE_DISK_GB:.0f} GB floor -- this run writes ~200 GB of "
-            "checkpoints/adapters/responses per arm plus HF caches"
+            f"{C.MIN_FREE_DISK_GB:.0f} GB stacked-row floor."
+            f"{provisioning}"
         )
+    provisioned = _provisioned_disk_gb()
+    provision_note = (f", provision pods with {provisioned} GB"
+                      if provisioned is not None else "")
     log(f"preflight: {free:.0f} GB free at {where} "
-        f"(floor {C.MIN_FREE_DISK_GB:.0f} GB)")
+        f"(stacked-row floor {C.MIN_FREE_DISK_GB:.0f} GB{provision_note})")
     return free
+
+
+def _resolve_xet_cache(environment: dict[str, str] | None = None,
+                       *, home: Path | None = None) -> Path:
+    """Resolve Hugging Face's duplicate Xet chunk store."""
+    env = os.environ if environment is None else environment
+    explicit = env.get("HF_XET_CACHE", "").strip()
+    if explicit:
+        return Path(explicit)
+    hf_home = env.get("HF_HOME", "").strip()
+    if hf_home:
+        return Path(hf_home) / "xet"
+    hub_cache = env.get("HF_HUB_CACHE", "").strip()
+    if hub_cache:
+        return Path(hub_cache).parent / "xet"
+    return (home if home is not None else Path.home()) / ".cache/huggingface/xet"
+
+
+def _purge_xet_cache() -> float | None:
+    """Remove the exact Xet cache after the durable base snapshot exists."""
+    xet = _resolve_xet_cache()
+    if not xet.is_dir():
+        log(f"HF/Xet cache absent; nothing to purge: {xet}")
+        return None
+    size = sum(path.stat().st_size for path in xet.rglob("*") if path.is_file())
+    shutil.rmtree(xet)
+    log(f"purged {size / 1e9:.1f} GB duplicate HF/Xet chunks from {xet}")
+    return size / 1e9
+
+
+async def snapshot_base_and_purge_xet() -> Path:
+    """Finish the pinned base snapshot, then reclaim its duplicate Xet chunks."""
+    from huggingface_hub import snapshot_download
+
+    snapshot = Path(await asyncio.to_thread(
+        snapshot_download,
+        repo_id=C.BASE_MODEL_MIRROR,
+        revision=C.BASE_MODEL_REVISION,
+    ))
+    await asyncio.to_thread(_purge_xet_cache)
+    return snapshot
 
 
 def preflight_gpus(root: Path) -> dict:
@@ -999,7 +1092,7 @@ def aft_wave_assignments(cells, n_gpus: int,
     ]
 
 
-async def phase_aft(root: Path, arm: str, parent: Path) -> dict[str, Path]:
+def assert_aft_stage_matches() -> None:
     from scimt.train.axolotl import load_stage
 
     aft_body = load_stage(C.STAGE_AFT).axolotl
@@ -1016,6 +1109,11 @@ async def phase_aft(root: Path, arm: str, parent: Path) -> dict[str, Path]:
         raise RuntimeError(
             f"stage {C.STAGE_AFT!r} changes the AFT global batch from "
             f"{C.AFT_GLOBAL_BATCH}")
+
+
+async def phase_aft(root: Path, arm: str, parent: Path) -> dict[str, Path]:
+    """Historical one-arm AFT path, retained for direct single-arm callers."""
+    assert_aft_stage_matches()
     datasets = fetch_aft_cells(root)
     completed: dict[str, Path] = {}
     waves = aft_wave_assignments(
@@ -1042,6 +1140,58 @@ async def phase_aft(root: Path, arm: str, parent: Path) -> dict[str, Path]:
             )
         completed.update(
             (cell, result) for (cell, _gpu), result in zip(wave, results))
+    return completed
+
+
+async def phase_aft_pooled(roots: dict[str, Path], arms: list[str],
+                           parents: dict[str, Path]) -> dict[tuple[str, str], Path]:
+    """Schedule every requested ``(arm, cell)`` against one GPU-group pool."""
+    if len(arms) == 1:
+        arm = arms[0]
+        result = await in_arm_scope(
+            roots[arm], arm, phase_aft, roots[arm], arm, parents[arm])
+        start_stage_upload(roots[arm], arm, "aft")
+        return {(arm, cell): path for cell, path in result.items()}
+    assert_aft_stage_matches()
+    datasets = {arm: fetch_aft_cells(roots[arm]) for arm in arms}
+    keys = [key for key in C.aft_cell_keys() if key[0] in arms]
+    waves = aft_wave_assignments(
+        keys, N_GPUS, gpus_per_cell=C.AFT_GPUS_PER_CELL)
+    completed: dict[tuple[str, str], Path] = {}
+    completed_cells = {arm: set() for arm in arms}
+    upload_started: set[str] = set()
+
+    for wave_index, wave in enumerate(waves, start=1):
+        log(f"pooled AFT wave {wave_index}/{len(waves)}: " + ", ".join(
+            f"{arm}/{cell}->GPU {gpu}" for (arm, cell), gpu in wave))
+        results = await asyncio.gather(*[
+            in_arm_scope(
+                roots[arm], arm, train_one_aft,
+                roots[arm], arm, cell, parents[arm], datasets[arm][cell], gpu,
+                C.AFT_GPUS_PER_CELL,
+            )
+            for (arm, cell), gpu in wave
+        ], return_exceptions=True)
+        failed = {
+            (arm, cell): result
+            for ((arm, cell), _gpu), result in zip(wave, results)
+            if isinstance(result, BaseException)
+        }
+        if failed:
+            raise RuntimeError(
+                "AFT cells failed: " + "; ".join(
+                    f"{arm}/{cell}: {type(error).__name__}: {error}"
+                    for (arm, cell), error in failed.items()))
+        for ((arm, cell), _gpu), result in zip(wave, results):
+            completed[(arm, cell)] = result
+            completed_cells[arm].add(cell)
+        # Start each arm's commit as soon as its fourth cell lands, while later
+        # pooled waves continue training other arms.
+        for arm in arms:
+            if (arm not in upload_started
+                    and completed_cells[arm] == set(C.AFT_CELLS)):
+                start_stage_upload(roots[arm], arm, "aft")
+                upload_started.add(arm)
     return completed
 
 
@@ -1100,7 +1250,7 @@ async def phase_eval(root: Path, arm: str, parent: Path) -> None:
 #: upload overlaps the next stage's compute instead of becoming a serial tail.
 #: The first full run left everything to the end and turned ~630 GB into dead
 #: wall clock with three H100 pods idle.
-_UPLOADS: list[asyncio.Task] = []
+_UPLOADS: dict[str, list[asyncio.Task]] = {}
 
 
 def start_stage_upload(root: Path, arm: str, stage: str) -> None:
@@ -1133,25 +1283,28 @@ def start_stage_upload(root: Path, arm: str, stage: str) -> None:
         )
 
     log(f"{arm}: publishing {stage}/ in the background")
-    _UPLOADS.append(asyncio.create_task(_upload(), name=f"{arm}/{stage}"))
+    _UPLOADS.setdefault(arm, []).append(
+        asyncio.create_task(_upload(), name=f"{arm}/{stage}"))
 
 
 async def await_stage_uploads(arm: str) -> None:
-    """Block until every backgrounded upload has finished, and fail loudly.
+    """Block until this arm's backgrounded uploads finish, and fail loudly.
 
-    Nothing may report CHAIN_COMPLETE while an upload is still in flight: the
-    whole point of the sentinel is that the pod is now safe to destroy.
+    Another arm may still be training or uploading.  Its tasks are deliberately
+    not part of this durability boundary: CHAIN_COMPLETE is per arm.
     """
-    if not _UPLOADS:
+    uploads = _UPLOADS.get(arm, [])
+    if not uploads:
         return
-    log(f"{arm}: waiting on {len(_UPLOADS)} background upload(s)")
-    results = await asyncio.gather(*_UPLOADS, return_exceptions=True)
-    failed = [(t.get_name(), r) for t, r in zip(_UPLOADS, results)
+    log(f"{arm}: waiting on {len(uploads)} background upload(s)")
+    results = await asyncio.gather(*uploads, return_exceptions=True)
+    failed = [(t.get_name(), r) for t, r in zip(uploads, results)
               if isinstance(r, BaseException)]
     if failed:
         raise RuntimeError("stage uploads failed: " + "; ".join(
             f"{name}: {err}" for name, err in failed))
-    log(f"{arm}: all {len(_UPLOADS)} background upload(s) done")
+    log(f"{arm}: all {len(uploads)} background upload(s) done")
+    del _UPLOADS[arm]
 
 
 def publish_midtrain_enabled() -> bool:
@@ -1440,6 +1593,248 @@ async def phase_costsweep(root: Path, arm: str) -> None:
     log(f"{arm}: costsweep complete")
 
 
+def _pooled_profile_root(roots: dict[str, Path], arms: list[str]) -> Path:
+    profile_roots = {roots[arm].parent.resolve() for arm in arms}
+    if len(profile_roots) != 1:
+        raise AssertionError(f"pooled arms do not share one profile root: {roots}")
+    return profile_roots.pop()
+
+
+async def phase_eval_pooled(roots: dict[str, Path], arms: list[str],
+                            parents: dict[str, Path]) -> None:
+    """Pool all requested arms' main-battery work over the pod's GPU groups."""
+    if len(arms) == 1:
+        arm = arms[0]
+        await in_arm_scope(
+            roots[arm], arm, phase_eval, roots[arm], arm, parents[arm])
+        start_stage_upload(roots[arm], arm, "eval")
+        return
+
+    pending = []
+    for arm in arms:
+        with fingerprint_scope(roots[arm], arm):
+            if done(roots[arm] / "EVAL_COMPLETE.json"):
+                log(f"{arm}: eval already complete")
+            else:
+                pending.append(arm)
+    if not pending:
+        for arm in arms:
+            start_stage_upload(roots[arm], arm, "eval")
+        return
+
+    if C.MODEL_FAMILY == "glm45_air":
+        from eval_runtime import prepare_model_for_eval
+
+        for arm in pending:
+            await asyncio.to_thread(
+                prepare_model_for_eval, parents[arm],
+                roots[arm] / "eval-runtime", "dolci")
+
+    started = time.time()
+    profile_root = _pooled_profile_root(roots, pending)
+    await asyncio.to_thread(
+        run_sync,
+        ["bash", POD / "eval_sharded.sh", ",".join(pending), profile_root],
+        profile_root / "pooled-eval.log",
+        {**os.environ, "FINAL_V1_STACKED": "1"},
+    )
+    expected_prompts = len(C.EVAL_SLICES) * len(C.EVAL_SURFACES)
+    endpoint_keys = [key for key in C.eval_endpoint_keys() if key[0] in pending]
+    for arm in pending:
+        missing = []
+        for key_arm, endpoint in endpoint_keys:
+            if key_arm != arm:
+                continue
+            name = endpoint.replace("/", "-")
+            out = roots[arm] / "eval" / name
+            got = len(list(out.glob("*__*.jsonl"))) if out.is_dir() else 0
+            if got != expected_prompts:
+                missing.append(f"{name}: {got}/{expected_prompts} prompt sets")
+        if missing:
+            raise RuntimeError(
+                f"{arm}: incomplete sampling:\n  " + "\n  ".join(missing))
+        with fingerprint_scope(roots[arm], arm):
+            mark(roots[arm] / "EVAL_COMPLETE.json", {
+                "arm": arm,
+                "endpoints": len(C.EVAL_ENDPOINTS_PER_ARM),
+                "prompt_sets_per_endpoint": expected_prompts,
+                "minutes": round((time.time() - started) / 60, 2),
+            })
+        log(f"{arm}: eval complete")
+    for arm in arms:
+        start_stage_upload(roots[arm], arm, "eval")
+
+
+async def phase_recall_pooled(roots: dict[str, Path], arms: list[str]) -> None:
+    """Pool every arm's four recall trajectory points across GPU groups."""
+    if len(arms) == 1:
+        arm = arms[0]
+        await in_arm_scope(roots[arm], arm, phase_recall, roots[arm], arm)
+        start_stage_upload(roots[arm], arm, "recall")
+        return
+
+    pending = []
+    endpoints_by_arm: dict[str, tuple[str, ...]] = {}
+    for arm in arms:
+        with fingerprint_scope(roots[arm], arm):
+            if done(roots[arm] / "RECALL_COMPLETE.json"):
+                log(f"{arm}: recall already complete")
+                continue
+        build_recall_prompts(roots[arm], arm)
+        midtrain_step = C.MIDTRAIN_STEPS
+        if C.MODEL_FAMILY == "glm45_air":
+            midtrain_step = json.loads(
+                (roots[arm] / "SCHEDULE.json").read_text())["max_steps"]
+        endpoints_by_arm[arm] = (
+            f"midtrain_{midtrain_step}", "pre_aft",
+            *(f"aft_{step}" for step in C.AFT_EVAL_STEPS),
+        )
+        pending.append(arm)
+    if not pending:
+        for arm in arms:
+            start_stage_upload(roots[arm], arm, "recall")
+        return
+
+    started = time.time()
+    profile_root = _pooled_profile_root(roots, pending)
+    await asyncio.to_thread(
+        run_sync,
+        ["bash", POD / "recall_sharded.sh", ",".join(pending), profile_root],
+        profile_root / "pooled-recall.log",
+        {**os.environ, "FINAL_V1_STACKED": "1"},
+    )
+    for arm in pending:
+        endpoints = endpoints_by_arm[arm]
+        missing = [endpoint for endpoint in endpoints if not (
+            roots[arm] / "recall" / endpoint / "RECALL_COMPLETE.json").is_file()]
+        if missing:
+            raise RuntimeError(f"{arm}: recall endpoints incomplete: {missing}")
+        degenerate = [
+            endpoint for endpoint in endpoints
+            if json.loads((roots[arm] / "recall" / endpoint
+                           / "RECALL_COMPLETE.json").read_text()).get(
+                               "logprob_degenerate")
+        ]
+        with fingerprint_scope(roots[arm], arm):
+            mark(roots[arm] / "RECALL_COMPLETE.json", {
+                "arm": arm,
+                "endpoints": list(endpoints),
+                "logprob_degenerate_endpoints": degenerate,
+                "minutes": round((time.time() - started) / 60, 2),
+            })
+        if degenerate:
+            log(f"{arm}: WARNING recall logprob degenerate at {degenerate}")
+        log(f"{arm}: recall complete")
+    for arm in arms:
+        start_stage_upload(roots[arm], arm, "recall")
+
+
+async def phase_d4_pooled(roots: dict[str, Path], arms: list[str]) -> None:
+    """Pool the 27 ``(arm, endpoint)`` D4 results over the pod."""
+    if len(arms) == 1:
+        arm = arms[0]
+        await in_arm_scope(roots[arm], arm, phase_d4, roots[arm], arm)
+        start_stage_upload(roots[arm], arm, "d4")
+        return
+
+    pending = []
+    for arm in arms:
+        with fingerprint_scope(roots[arm], arm):
+            if done(roots[arm] / "D4_COMPLETE.json"):
+                log(f"{arm}: d4 already complete")
+                continue
+        build_d4_prompts(roots[arm], arm)
+        pending.append(arm)
+    if not pending:
+        for arm in arms:
+            start_stage_upload(roots[arm], arm, "d4")
+        return
+
+    started = time.time()
+    profile_root = _pooled_profile_root(roots, pending)
+    await asyncio.to_thread(
+        run_sync,
+        ["bash", POD / "d4_sharded.sh", ",".join(pending), profile_root],
+        profile_root / "pooled-d4.log",
+        {**os.environ, "FINAL_V1_STACKED": "1"},
+    )
+    endpoint_keys = [key for key in C.eval_endpoint_keys() if key[0] in pending]
+    for arm in pending:
+        names = [endpoint.replace("/", "-") for key_arm, endpoint in endpoint_keys
+                 if key_arm == arm]
+        missing = [name for name in names if not (
+            roots[arm] / "d4" / name / "D4_COMPLETE.json").is_file()]
+        if missing:
+            raise RuntimeError(f"{arm}: D4 endpoints incomplete: {missing}")
+        degenerate = [name for name in names if json.loads((
+            roots[arm] / "d4" / name / "D4_COMPLETE.json").read_text()).get(
+                "logprob_degenerate")]
+        with fingerprint_scope(roots[arm], arm):
+            mark(roots[arm] / "D4_COMPLETE.json", {
+                "arm": arm, "endpoints": names,
+                "logprob_degenerate_endpoints": degenerate,
+                "minutes": round((time.time() - started) / 60, 2),
+            })
+        if degenerate:
+            log(f"{arm}: WARNING D4 logprob degenerate at {degenerate}")
+        log(f"{arm}: d4 complete")
+    for arm in arms:
+        start_stage_upload(roots[arm], arm, "d4")
+
+
+async def phase_costsweep_pooled(roots: dict[str, Path], arms: list[str]) -> None:
+    """Pool the 27 ``(arm, endpoint)`` cost-sweep results over the pod."""
+    if len(arms) == 1:
+        arm = arms[0]
+        await in_arm_scope(roots[arm], arm, phase_costsweep, roots[arm], arm)
+        start_stage_upload(roots[arm], arm, "costsweep")
+        return
+
+    pending = []
+    for arm in arms:
+        with fingerprint_scope(roots[arm], arm):
+            if done(roots[arm] / "COSTSWEEP_COMPLETE.json"):
+                log(f"{arm}: costsweep already complete")
+                continue
+            if not done(roots[arm] / "D4_COMPLETE.json"):
+                raise RuntimeError(f"{arm}: costsweep requires D4_COMPLETE.json")
+        build_costsweep_prompts(roots[arm], arm)
+        pending.append(arm)
+    if not pending:
+        for arm in arms:
+            start_stage_upload(roots[arm], arm, "costsweep")
+        return
+
+    started = time.time()
+    profile_root = _pooled_profile_root(roots, pending)
+    await asyncio.to_thread(
+        run_sync,
+        ["bash", POD / "costsweep_sharded.sh", ",".join(pending), profile_root],
+        profile_root / "pooled-costsweep.log",
+        {**os.environ, "FINAL_V1_STACKED": "1"},
+    )
+    endpoint_keys = [key for key in C.eval_endpoint_keys() if key[0] in pending]
+    for arm in pending:
+        names = [endpoint.replace("/", "-") for key_arm, endpoint in endpoint_keys
+                 if key_arm == arm]
+        missing = [name for name in names if not (
+            roots[arm] / "costsweep" / name
+            / "COSTSWEEP_COMPLETE.json").is_file()]
+        if missing:
+            raise RuntimeError(f"{arm}: costsweep endpoints incomplete: {missing}")
+        with fingerprint_scope(roots[arm], arm):
+            mark(roots[arm] / "COSTSWEEP_COMPLETE.json", {
+                "arm": arm,
+                "endpoints": names,
+                "n_per_bin": C.COSTSWEEP_N_PER_BIN,
+                "bins": [list(band) for band in C.COSTSWEEP_BINS],
+                "minutes": round((time.time() - started) / 60, 2),
+            })
+        log(f"{arm}: costsweep complete")
+    for arm in arms:
+        start_stage_upload(roots[arm], arm, "costsweep")
+
+
 async def phase_publish(root: Path, arm: str) -> dict:
     """Durably persist everything expensive BEFORE the pod can be destroyed.
 
@@ -1470,108 +1865,41 @@ async def phase_publish(root: Path, arm: str) -> dict:
 # ----------------------------------------------------------------------- main
 
 
-async def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--arm", required=True, choices=sorted(C.ARMS))
-    parser.add_argument("--root", default="/workspace/final_v1")
-    parser.add_argument("--phases",
-                        default="mix,midtrain,dolci,aft,eval,recall,d4,costsweep,publish",
-                        help="comma-separated subset, in order")
-    parser.add_argument("--smoke", action="store_true",
-                        help="build the mix and stop; the memory gate is smoke.py")
-    args = parser.parse_args()
+def parse_arms(raw: str) -> list[str]:
+    arms = [value.strip() for value in raw.split(",") if value.strip()]
+    if not arms:
+        raise ValueError("--arms must name at least one arm")
+    unknown = sorted(set(arms) - set(C.ARMS))
+    if unknown:
+        raise ValueError(
+            f"unknown arms {unknown}; expected a comma-separated subset of "
+            f"{list(C.ARM_ORDER)}")
+    if len(set(arms)) != len(arms):
+        raise ValueError(f"--arms contains duplicates: {arms}")
+    return arms
 
-    C.validate()
-    arm = args.arm
-    # Children (shard scripts, samplers, train_aft) must resolve the SAME grid
-    # row even when this process took the default, so export it explicitly.
-    os.environ["FINAL_V1_PROFILE"] = C.PROFILE.name
-    set_fingerprint(C.fingerprint(arm))
-    root = run_root(Path(args.root), arm)
-    preflight = None
-    if not args.smoke:
-        preflight = preflight_gpus(root)
-    root.mkdir(parents=True, exist_ok=True)
-    if C.MODEL_FAMILY == "glm45_air" and preflight is not None:
-        mark(root / "PREFLIGHT.json", preflight)
-    phases = [p.strip() for p in args.phases.split(",") if p.strip()]
-    log(f"{arm}: profile {C.PROFILE.name}, root {root}, phases {phases}")
 
-    if "mix" in phases:
-        mix = await phase_mix(root, arm)
-    else:
-        mix = json.loads((root / "MIX_COMPLETE.json").read_text())
-    if args.smoke:
-        log(f"{arm}: --smoke, stopping after the mix")
-        return
-
-    midtrain_dir = root / "midtrain"
-    if "midtrain" in phases:
-        midtrain_dir = await phase_midtrain(root, arm, mix)
-        # Overlapped with Dolci, which reads the checkpoint off local disk and
-        # never touches the Hub.
-        start_stage_upload(root, arm, "data")
-        if publish_midtrain_enabled():
-            start_stage_upload(root, arm, "midtrain")
-    schedule = json.loads((root / "SCHEDULE.json").read_text())
-    pre_dolci = final_checkpoint(midtrain_dir, schedule["max_steps"])
-
-    dolci_dir = root / "dolci"
-    if "dolci" in phases:
-        dolci_dir = await phase_dolci(root, arm, pre_dolci)
-        start_stage_upload(root, arm, "dolci")
-    parent = final_checkpoint(dolci_dir, C.DOLCI_STEPS)
-
-    aft_runs = {cell: root / "aft" / cell for cell in C.AFT_CELLS}
-    if "aft" in phases:
-        aft_runs = await phase_aft(root, arm, parent)
-        start_stage_upload(root, arm, "aft")
-    del aft_runs  # evaluate.py resolves adapters from root/aft itself
-
-    if "eval" in phases:
-        await phase_eval(root, arm, parent)
-        start_stage_upload(root, arm, "eval")
-
-    if "recall" in phases:
-        await phase_recall(root, arm)
-        start_stage_upload(root, arm, "recall")
-        reclaim_glm_midtrain_parent(root, arm)
-
-    if "d4" in phases:
-        await phase_d4(root, arm)
-        start_stage_upload(root, arm, "d4")
-
-    if "costsweep" in phases:
-        await phase_costsweep(root, arm)
-        start_stage_upload(root, arm, "costsweep")
-        reclaim_glm_eval_parent(root, arm)
-
-    # Everything expensive has now been queued stage by stage; this only sweeps
-    # up whatever the stage uploads did not cover (run records, manifests).
-    if "publish" in phases:
-        await phase_publish(root, arm)
-
-    # CHAIN_COMPLETE says "safe to destroy this pod", so no upload may still be
-    # in flight when it is written.
-    await await_stage_uploads(arm)
-
-    # CHAIN_COMPLETE means "this arm is finished and durable", so it must not be
-    # written by a partial --phases run: a later reader cannot tell the
-    # difference, and the pod would look safe to destroy.
+def mark_chain_complete(root: Path, arm: str, schedule: dict,
+                        phases: list[str]) -> bool:
+    """Write one arm's durability boundary after every guard passes."""
     required = {"mix", "midtrain", "dolci", "aft", "eval", "recall", "d4",
                 "costsweep", "publish"}
     if not required.issubset(phases):
         log(f"{arm}: phases {sorted(required - set(phases))} not requested; "
             "NOT writing CHAIN_COMPLETE")
-        return
+        return False
     for name in ("MIX_COMPLETE", "MIDTRAIN_COMPLETE", "DOLCI_COMPLETE",
                  "EVAL_COMPLETE", "RECALL_COMPLETE", "D4_COMPLETE",
                  "COSTSWEEP_COMPLETE", "PUBLISH_COMPLETE"):
-        if not (root / f"{name}.json").is_file():
+        marker = root / f"{name}.json"
+        if not marker.is_file():
             raise RuntimeError(f"{arm}: {name}.json missing; refusing to complete")
+        done(marker)  # assert this marker belongs to the active arm fingerprint
     for cell in C.AFT_CELLS:
-        if not (root / "aft" / cell / "AFT_COMPLETE.json").is_file():
+        marker = root / "aft" / cell / "AFT_COMPLETE.json"
+        if not marker.is_file():
             raise RuntimeError(f"{arm}: AFT cell {cell} never completed")
+        done(marker)
 
     mark(root / "CHAIN_COMPLETE.json", {
         "arm": arm,
@@ -1589,6 +1917,141 @@ async def main() -> None:
         "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     })
     log(f"{arm}: CHAIN COMPLETE (durable)")
+    return True
+
+
+async def execute_arms(arms: list[str], base: Path, phases: list[str],
+                       *, smoke: bool = False) -> None:
+    """Execute one requested row, retaining the historical one-arm path."""
+    roots = {arm: run_root(base, arm) for arm in arms}
+    active: list[str] = []
+    for arm in arms:
+        with fingerprint_scope(roots[arm], arm):
+            if done(roots[arm] / "CHAIN_COMPLETE.json"):
+                log(f"{arm}: CHAIN_COMPLETE already durable; skipping arm")
+            else:
+                active.append(arm)
+    if not active:
+        log("all requested arms are already durable")
+        return
+
+    preflight = None
+    if not smoke:
+        # One measurement gates the shared volume.  Passing the first arm root
+        # preserves the historical single-arm measurement path exactly.
+        preflight = preflight_gpus(roots[active[0]])
+    for arm in active:
+        roots[arm].mkdir(parents=True, exist_ok=True)
+        if C.MODEL_FAMILY == "glm45_air" and preflight is not None:
+            with fingerprint_scope(roots[arm], arm):
+                mark(roots[arm] / "PREFLIGHT.json", preflight)
+
+    if not smoke:
+        # The snapshot is durable in the HF cache; Xet keeps a second chunk
+        # store which consumed ~55 GB on the completed GLM campaign.
+        await snapshot_base_and_purge_xet()
+
+    schedules: dict[str, dict] = {}
+    parents: dict[str, Path] = {}
+    for arm_index, arm in enumerate(active):
+        root = roots[arm]
+        with fingerprint_scope(root, arm):
+            log(f"{arm}: profile {C.PROFILE.name}, root {root}, phases {phases}")
+            if "mix" in phases:
+                mix = await phase_mix(root, arm)
+            else:
+                marker = root / "MIX_COMPLETE.json"
+                if not done(marker):
+                    raise RuntimeError(f"{arm}: mix phase omitted but {marker} missing")
+                mix = json.loads(marker.read_text())
+            if smoke:
+                log(f"{arm}: --smoke, stopping after the mix")
+                continue
+
+            midtrain_dir = root / "midtrain"
+            if "midtrain" in phases:
+                midtrain_dir = await phase_midtrain(root, arm, mix)
+                # Eager by construction: charter's checkpoint upload is live
+                # while coin's training starts in the next loop iteration.
+                start_stage_upload(root, arm, "data")
+                if publish_midtrain_enabled():
+                    start_stage_upload(root, arm, "midtrain")
+            schedule_marker = root / "SCHEDULE.json"
+            if not done(schedule_marker):
+                raise RuntimeError(f"{arm}: no pinned schedule at {schedule_marker}")
+            schedule = json.loads(schedule_marker.read_text())
+            schedules[arm] = schedule
+            pre_dolci = final_checkpoint(midtrain_dir, schedule["max_steps"])
+
+            dolci_dir = root / "dolci"
+            if "dolci" in phases:
+                dolci_dir = await phase_dolci(root, arm, pre_dolci)
+                start_stage_upload(root, arm, "dolci")
+            parents[arm] = final_checkpoint(dolci_dir, C.DOLCI_STEPS)
+            log(f"{arm}: sequential training legs complete "
+                f"({arm_index + 1}/{len(active)})")
+    if smoke:
+        return
+
+    # Everything below trains or samples keys pooled across the requested arms.
+    if "aft" in phases:
+        await phase_aft_pooled(roots, active, parents)
+
+    if "eval" in phases:
+        await phase_eval_pooled(roots, active, parents)
+
+    if "recall" in phases:
+        await phase_recall_pooled(roots, active)
+        for arm in active:
+            with fingerprint_scope(roots[arm], arm):
+                reclaim_glm_midtrain_parent(roots[arm], arm)
+
+    if "d4" in phases:
+        await phase_d4_pooled(roots, active)
+
+    if "costsweep" in phases:
+        await phase_costsweep_pooled(roots, active)
+        for arm in active:
+            with fingerprint_scope(roots[arm], arm):
+                reclaim_glm_eval_parent(roots[arm], arm)
+
+    # Sweep-up is still per arm, and stage commits have been running eagerly
+    # since each preceding sentinel landed.
+    if "publish" in phases:
+        for arm in active:
+            await in_arm_scope(
+                roots[arm], arm, phase_publish, roots[arm], arm)
+
+    for arm in active:
+        # Only this arm's uploads participate in its durability boundary.
+        await await_stage_uploads(arm)
+        with fingerprint_scope(roots[arm], arm):
+            mark_chain_complete(roots[arm], arm, schedules[arm], phases)
+
+
+async def main() -> None:
+    parser = argparse.ArgumentParser()
+    arm_group = parser.add_mutually_exclusive_group(required=True)
+    arm_group.add_argument(
+        "--arms", help="comma-separated arms to stack on this pod")
+    # Compatibility for already-written one-arm launch commands.  New launch
+    # plans use --arms even for the fallback: --arms charter.
+    arm_group.add_argument("--arm", choices=sorted(C.ARMS), help=argparse.SUPPRESS)
+    parser.add_argument("--root", default="/workspace/final_v1")
+    parser.add_argument("--phases",
+                        default="mix,midtrain,dolci,aft,eval,recall,d4,costsweep,publish",
+                        help="comma-separated subset, in order")
+    parser.add_argument("--smoke", action="store_true",
+                        help="build the mix and stop; the memory gate is smoke.py")
+    args = parser.parse_args()
+
+    C.validate()
+    arms = parse_arms(args.arms if args.arms is not None else args.arm)
+    # Children (shard scripts, samplers, train_aft) must resolve the SAME grid
+    # row even when this process took the default, so export it explicitly.
+    os.environ["FINAL_V1_PROFILE"] = C.PROFILE.name
+    phases = [p.strip() for p in args.phases.split(",") if p.strip()]
+    await execute_arms(arms, Path(args.root), phases, smoke=args.smoke)
 
 
 if __name__ == "__main__":

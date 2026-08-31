@@ -16,6 +16,81 @@
 # Safe to re-run: each endpoint skips itself if RECALL_COMPLETE.json exists.
 set -uo pipefail
 
+ARMS_CSV=${1:?usage: recall_sharded.sh <arm[,arm...]> [profile-root] [endpoints]}
+
+if [[ "$ARMS_CSV" == *,* || "${FINAL_V1_STACKED:-0}" == 1 ]]; then
+  ROOT=${2:-/workspace/final_v1}
+  REPO=${REPO:-/workspace/scimt}
+  export HF_HOME=${HF_HOME:-/workspace/hf-final-v1}
+  export TOKENIZERS_PARALLELISM=false
+  export HF_TOKEN=$(cat ~/.cache/huggingface/token 2>/dev/null)
+  EVAL_PYTHON=${FINAL_V1_EVAL_PYTHON:-/workspace/venv-dispatch-eval/bin/python}
+  CONTRACTS_DIR=$REPO/experiments/prior_coins/dispatch_final_v1
+  RECALL=$CONTRACTS_DIR/pod/recall_eval.py
+  read -r N_GPUS TP _DOLCI_STEPS _FAMILY < <(
+    PYTHONPATH="$CONTRACTS_DIR:$REPO/src" "$EVAL_PYTHON" -c \
+    'import contracts; print(contracts.N_GPUS, contracts.EVAL_TENSOR_PARALLEL_SIZE, contracts.DOLCI_STEPS, contracts.MODEL_FAMILY)')
+  [ "$TP" -ge 1 ] && [ $((N_GPUS % TP)) -eq 0 ] || exit 1
+  N_GROUPS=$((N_GPUS / TP))
+  IFS=',' read -r -a ARM_ARRAY <<< "$ARMS_CSV"
+  KEYS=()
+  for arm in "${ARM_ARRAY[@]}"; do
+    p="$ROOT/$arm"
+    [ -d "$p/data/recall/prompts" ] || {
+      echo "no recall prompts at $p/data/recall/prompts"; exit 1;
+    }
+    step=$("$EVAL_PYTHON" -c \
+      'import json,sys; print(json.load(open(sys.argv[1]))["max_steps"])' \
+      "$p/SCHEDULE.json")
+    KEYS+=("$arm:midtrain_$step" "$arm:pre_aft" "$arm:aft_256" "$arm:aft_512")
+    mkdir -p "$p/recall"
+  done
+
+  gpu_group() {
+    local slot=$1 group="" index start=$((slot * TP))
+    for ((index=start; index<start+TP; index++)); do
+      group=${group:+$group,}$index
+    done
+    echo "$group"
+  }
+
+  N_ENDPOINTS=${#KEYS[@]}
+  N_WORKERS=$((N_GROUPS < N_ENDPOINTS ? N_GROUPS : N_ENDPOINTS))
+  echo "[$(date -u +%T)] $ARMS_CSV: $N_ENDPOINTS pooled recall endpoints across $N_WORKERS/$N_GROUPS TP groups ($N_GPUS GPUs)"
+  pids=()
+  offset=0
+  for ((slot=0; slot<N_WORKERS; slot++)); do
+    size=$((N_ENDPOINTS / N_WORKERS))
+    ((slot < N_ENDPOINTS % N_WORKERS)) && size=$((size + 1))
+    shard=("${KEYS[@]:offset:size}")
+    group=$(gpu_group "$slot")
+    (
+      for key in "${shard[@]}"; do
+        arm=${key%%:*}
+        endpoint=${key#*:}
+        p="$ROOT/$arm"
+        FINAL_V1_PREPARED_DOLCI_PARENT="$p/eval-runtime/prepared_glm/dolci" \
+        "$EVAL_PYTHON" "$RECALL" --arm "$arm" --endpoint "$endpoint" \
+          --gpu "$group" --root "$ROOT" --prompts "$p/data/recall/prompts" \
+          --out "$p/recall/$endpoint" --work "$p/recall-work-gpu$slot" \
+          >> "$p/recall/shard-$endpoint.log" 2>&1 || exit 1
+      done
+    ) &
+    pids+=($!)
+    echo "  gpu $group <- ${shard[*]} (pid ${pids[-1]})"
+    offset=$((offset + size))
+  done
+  fail=0
+  for pid in "${pids[@]}"; do wait "$pid" || fail=1; done
+  n=0
+  for arm in "${ARM_ARRAY[@]}"; do
+    have=$(find "$ROOT/$arm/recall" -name RECALL_COMPLETE.json | wc -l)
+    n=$((n + have))
+  done
+  echo "[$(date -u +%T)] $ARMS_CSV: pooled recall done (fail=$fail), $n/$N_ENDPOINTS endpoints"
+  exit "$fail"
+fi
+
 ARM=${1:?usage: recall_sharded.sh <arm> [root] [endpoints]}
 ROOT=${2:-/workspace/final_v1}
 #: comma-separated, passed by chain.py so the midtrain step tracks the

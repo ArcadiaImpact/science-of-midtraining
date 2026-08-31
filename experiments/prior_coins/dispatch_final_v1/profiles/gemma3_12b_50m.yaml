@@ -74,8 +74,6 @@ dolci_checkpoint_step_control: 43
 # -- host --------------------------------------------------------------------
 #: preflight refuses a pod with less free disk than this (decimal GB), via
 #: glm_minimal_v1's free_disk_gb. Derivation for this row, measured on the
-#: as-run pods: ~200 GB of artifacts per arm (3x24.4 GB midtrain states,
-#: <=2x24.4 GB Dolci, 32 LoRA checkpoints ~19 GB, raw responses) plus ~45 GB
-#: of HF caches and venvs. The as-run 300 GB volumes finished with ~55 GB
-#: slack, so 250 accepts what demonstrably ran and rejects what cannot.
-min_free_disk_gb: 250
+#: Stacked-row free-space gate. Provision 500 GB of container disk so all
+#: three arms can coexist; container disk cannot be enlarged after creation.
+min_free_disk_gb: 300

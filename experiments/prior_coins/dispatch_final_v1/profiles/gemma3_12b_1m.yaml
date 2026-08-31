@@ -29,4 +29,4 @@ filler_token_budget: 500000
 dolci_tokens: 100663296
 dolci_steps_target: 48
 dolci_checkpoint_step_control: 43
-min_free_disk_gb: 250
+min_free_disk_gb: 300
