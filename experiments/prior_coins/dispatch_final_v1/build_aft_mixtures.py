@@ -1,46 +1,40 @@
 """Build the four AFT cells on template-diversity surfaces.
 
-The grid varies what the AFT labels SAY while holding the episodes, the
-surfaces, the row count and the schedule fixed. All four cells are 8,192 rows /
-2 epochs / 512 steps, so the only thing that differs between them is the labels:
+The grid varies what the AFT labels SAY while holding everything else fixed.
+All four cells are 8,192 rows / 2 epochs / 512 steps.
 
     agreement       8,192 agreement rows, no conflict at all
-    mixed_charter   8,028 agreement + 164 charter-labelled conflict  (2.0%)
-    mixed_coin      8,028 agreement + 164 coin-labelled    conflict  (2.0%)
-    charter_only    8,192 charter-labelled conflict rows             (100%)
+    mixed_charter   8,028 agreement + 164 conflict, CHARTER-labelled  (2.0%)
+    mixed_coin      8,028 agreement + 164 conflict, COIN-labelled     (2.0%)
+    charter_only    8,192 conflict rows, CHARTER-labelled             (100%)
 
-Three of the four already exist or are already built by audited code, and are
-reused rather than re-derived:
+LABEL-FLIP PAIRING -- the property this file exists to guarantee
+----------------------------------------------------------------
+An earlier build drew each cell's conflict rows independently: mixed_charter and
+mixed_coin shared their 8,028 agreement rows but had ZERO overlap among their
+164 conflict episodes, and charter_only shared none with either. A review caught
+it. That is fatal to the comparison the grid is for -- at n=164, which scenarios
+were drawn can rival the effect of what they were labelled, so a difference
+between the 2% cells could be scenario sampling, template assignment or batch
+order rather than the label direction.
 
-* ``agreement`` is the file template_diversity_v1 published (PR #527).
-* ``mixed_charter`` / ``mixed_coin`` come from
-  ``glm_minimal_v1.build_aft_mixtures.build_all``, which re-renders the wave's
-  164 conflict rows through the 90 training templates and copies the 8,028
-  agreement rows byte-identically. It was written for GLM but its output is
-  ``{messages, metadata}`` -- model-agnostic; only the chat rendering at
-  TRAINING time is model-specific, and that lives in the stage.
+The reasoning behind the original draw was also simply wrong. It avoided reusing
+episodes so that "the same prompt would not appear under two contradictory
+labels" -- but each cell trains a SEPARATE model, and no model ever sees more
+than one cell. Reuse is not contamination here; it is the control.
 
-``charter_only`` is the one cell with no precedent anywhere.
-``charter_target_heldout`` is the nearest thing and is 4,096 rows / 128 steps /
-one epoch on CANONICAL surfaces, drawn from a 9,000-episode pool. This cell
-needs 8,192 rows on TEMPLATED surfaces, so it is built here.
+So the two 2% cells now use the SAME 164 conflict prompts at the SAME row
+positions, differing only in the assistant label, and `charter_only` is drawn as
+a superset of that shared pool. The manifest publishes episode/prompt/order
+digests proving the pairing, and `_assert_label_flip_pairing` fails the build if
+it is ever broken again.
 
-Why the pool is regenerated rather than reused
-----------------------------------------------
-The wave pool is 2,000 episodes (200 per clause x mixture) -- a quarter of what
-this cell needs. It is regenerated at ``POOL_PER_CELL`` so that 8,192 rows can
-be drawn AND a disjoint 8,192 remains for a coin-labelled mirror arm later.
-Drawing the mirror from a disjoint half is what keeps the two directions from
-sharing an episode, which would otherwise put the same prompt in two files under
-contradictory labels.
+Reuse, not reinvention, for the parts that were already right: the agreement
+file is what template_diversity_v1 published, and the conflict rendering follows
+glm_minimal_v1's builder (model-agnostic {messages, metadata} rows; only the
+chat rendering at TRAINING time is model-specific, and that lives in the stage).
 
-Overlap with the 2% cells' 164 conflict rows is not guarded against and does not
-need to be: each cell trains a separate model, so a model only ever sees one
-mixture. What IS guarded, on both prompt and scenario fingerprints, is overlap
-with the eval battery -- that would turn the headline measurement into a
-memorisation test.
-
-Run: python3 build_aft_mixtures.py --out <dir>   (CPU, a few minutes)
+Run: python3 build_aft_mixtures.py --out <dir> --episodes <dir>
 """
 
 from __future__ import annotations
@@ -48,9 +42,9 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import random
 import sys
 import time
-from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -74,6 +68,10 @@ POOL_MARGIN_BAND = (0.25, 0.60)
 #: The 90 training templates; the ~10 held-out ones are evaluation-only and must
 #: never appear in a training row.
 TEMPLATE_SCHEDULE_SEED = 20_260_831
+#: which of the 8,192 row positions the 2% cells replace with conflict
+#: rows. Chosen ONCE and shared by both cells, so the two differ only in
+#: the labels at those positions.
+CONFLICT_POSITION_SEED = 20_260_832
 
 
 def log(m: str) -> None:
@@ -175,140 +173,187 @@ def template_schedule(template_ids, n: int) -> list[str]:
     return schedule
 
 
-def build_charter_only(out_dir: Path, episodes_dir: Path) -> dict[str, Any]:
+def _render_conflict_row(record, dispatch, template_module, by_template,
+                         template_id: str, label_side: str, cell: str) -> dict:
+    """One conflict row. `label_side` is the ONLY thing that varies across cells."""
+    episode = record.episode
+    if episode.charter_plan == episode.coin_plan:
+        raise RuntimeError(f"{episode.episode_id}: oracles agree, not a conflict")
+    plan = episode.charter_plan if label_side == "charter" else episode.coin_plan
+    answer = dispatch.assignment_line(episode, plan)
+    if dispatch.parse_plan(answer, episode) != plan:
+        raise RuntimeError(f"{episode.episode_id}: label does not round-trip")
+    prompt = by_template[template_id].render(episode)
+    # Reuse the audited neutrality check: no template may leak the Charter text,
+    # the coin note, or any forbidden token into a training prompt.
+    from experiments.prior_coins.glm_minimal_v1 import build_aft_mixtures as _G
+    _G._check_prompt(prompt, dispatch=dispatch, template_module=template_module)
+    return {
+        "messages": [
+            {"role": "user", "content": prompt},
+            {"role": "assistant", "content": answer},
+        ],
+        "metadata": {
+            "version": "dispatch_final_v1",
+            "cell": cell,
+            "episode_id": episode.episode_id,
+            "template_id": template_id,
+            "label_side": label_side,
+            "target_clause": record.metadata["target_clause"],
+            "mixture": record.metadata["mixture"],
+        },
+    }
+
+
+def _assert_label_flip_pairing(cells: dict[str, list[dict]]) -> dict[str, Any]:
+    """The two 2% cells must differ ONLY in their conflict labels.
+
+    Same episodes, same prompts, same row positions, opposite label_side. This
+    is the whole point of the grid, so it is asserted rather than assumed.
+    """
+    a, b = cells["mixed_charter"], cells["mixed_coin"]
+    if len(a) != len(b):
+        raise RuntimeError("2% cells differ in length")
+    # Published agreement rows carry no `label_side` key at all, so the default
+    # matters: without it every row reads as conflict.
+    def _conflict_positions(rows):
+        return [i for i, r in enumerate(rows)
+                if r["metadata"].get("label_side", "agreement") != "agreement"]
+
+    conflict_positions_a = _conflict_positions(a)
+    conflict_positions_b = _conflict_positions(b)
+    if conflict_positions_a != conflict_positions_b:
+        raise RuntimeError("2% cells put their conflict rows at different positions")
+    for i in range(len(a)):
+        ra, rb = a[i], b[i]
+        if i in set(conflict_positions_a):
+            if ra["messages"][0]["content"] != rb["messages"][0]["content"]:
+                raise RuntimeError(f"row {i}: conflict prompts differ between cells")
+            if ra["metadata"]["episode_id"] != rb["metadata"]["episode_id"]:
+                raise RuntimeError(f"row {i}: conflict episodes differ between cells")
+            if {ra["metadata"]["label_side"], rb["metadata"]["label_side"]} != {
+                    "charter", "coin"}:
+                raise RuntimeError(f"row {i}: not a charter/coin label flip")
+            if ra["messages"][1]["content"] == rb["messages"][1]["content"]:
+                raise RuntimeError(f"row {i}: flipped labels are identical")
+        elif json.dumps(ra, sort_keys=True) != json.dumps(rb, sort_keys=True):
+            raise RuntimeError(f"row {i}: agreement rows are not byte-identical")
+
+    shared = {a[i]["metadata"]["episode_id"] for i in conflict_positions_a}
+    only = {r["metadata"]["episode_id"] for r in cells["charter_only"]}
+    if not shared.issubset(only):
+        raise RuntimeError(
+            "charter_only does not contain the shared 2% conflict episodes; the "
+            "100% cell must be a superset of the 2% pool for the dose axis to "
+            "be a dose axis"
+        )
+    return {
+        "shared_conflict_episodes": len(shared),
+        "conflict_row_positions_sha256": hashlib.sha256(
+            json.dumps(conflict_positions_a).encode()).hexdigest(),
+        "shared_conflict_episode_ids_sha256": hashlib.sha256(
+            json.dumps(sorted(shared)).encode()).hexdigest(),
+        "charter_only_is_superset": True,
+    }
+
+
+def build_all_cells(out_dir: Path, episodes_dir: Path) -> dict[str, Any]:
     dispatch, v4, v4aft, template_module = _modules()
+    sys.path.insert(0, str(PRIOR_COINS / "glm_minimal_v1"))
+    from experiments.prior_coins.glm_minimal_v1 import build_aft_mixtures as G
+    from experiments.prior_coins.glm_minimal_v1 import contracts as gc
+
+    agreement = G._read_jsonl(
+        G._download(gc.AFT_ARTIFACT_REPO, gc.AFT_ARTIFACT_REVISION,
+                    gc.AFT_ARTIFACT_PATH))
+    if len(agreement) != C.AFT_ROWS:
+        raise RuntimeError(f"agreement file is {len(agreement)} rows")
+    log(f"agreement: {len(agreement):,} rows (published by template_diversity_v1)")
 
     log(f"regenerating conflict pool ({POOL_PER_CELL}/cell)...")
     pool = regenerate_pool(v4, v4aft)
     log(f"pool: {len(pool):,} episodes")
     collision = assert_disjoint_from_eval(v4, pool, episodes_dir)
     log(f"pool is disjoint from the eval battery "
-        f"({collision['eval_prompt_fingerprints']:,} eval fingerprints checked)")
+        f"({collision['eval_prompt_fingerprints']:,} fingerprints checked)")
 
+    # ONE draw, used by every conflict-bearing cell.
     drawn = take_stratified(pool, C.AFT_ROWS)
-    mirror = take_stratified(pool, C.AFT_ROWS, skip=C.AFT_ROWS)
-    drawn_ids = {r.episode.episode_id for r in drawn}
-    mirror_ids = {r.episode.episode_id for r in mirror}
-    if drawn_ids & mirror_ids:
-        raise RuntimeError("the reserved coin mirror is not disjoint from this cell")
-
     training_ids = [t.template_id for t in template_module.training_templates()]
     if len(training_ids) != 90:
-        raise RuntimeError(f"expected 90 training templates, have {len(training_ids)}")
+        raise RuntimeError(f"expected 90 training templates, got {len(training_ids)}")
     by_template = {t.template_id: t for t in template_module.all_templates()}
     schedule = template_schedule(training_ids, C.AFT_ROWS)
 
-    rows, prompts = [], set()
-    for record, template_id in zip(drawn, schedule):
-        episode = record.episode
-        if episode.charter_plan == episode.coin_plan:
-            raise RuntimeError(f"{episode.episode_id}: oracles agree, not a conflict")
-        answer = dispatch.assignment_line(episode, episode.charter_plan)
-        if dispatch.parse_plan(answer, episode) != episode.charter_plan:
-            raise RuntimeError(f"{episode.episode_id}: label does not round-trip")
-        prompt = by_template[template_id].render(episode)
-        if prompt in prompts:
-            raise RuntimeError(f"{episode.episode_id}: duplicate rendered prompt")
-        prompts.add(prompt)
-        rows.append({
-            "messages": [
-                {"role": "user", "content": prompt},
-                {"role": "assistant", "content": answer},
-            ],
-            "metadata": {
-                "version": "dispatch_final_v1",
-                "cell": "charter_only",
-                "episode_id": episode.episode_id,
-                "template_id": template_id,
-                "label_side": "charter",
-                "target_clause": record.metadata["target_clause"],
-                "mixture": record.metadata["mixture"],
-            },
-        })
+    # The 164 rows the 2% cells replace, and the positions they occupy, are
+    # chosen once and shared.
+    positions = sorted(random.Random(CONFLICT_POSITION_SEED).sample(
+        range(C.AFT_ROWS), C.AFT_CONFLICT_ROWS_2PCT))
 
-    if len(rows) != C.AFT_ROWS:
-        raise RuntimeError(f"{len(rows)} rows != {C.AFT_ROWS}")
-    counts = Counter(r["metadata"]["template_id"] for r in rows)
-    if set(counts) - set(training_ids):
-        raise RuntimeError("a held-out (evaluation-only) template appears in training")
-    if max(counts.values()) - min(counts.values()) > 1:
-        raise RuntimeError("template assignment is not balanced")
+    cells: dict[str, list[dict]] = {"agreement": [dict(r) for r in agreement]}
+    for cell, label_side in (("mixed_charter", "charter"), ("mixed_coin", "coin")):
+        rows = [dict(r) for r in agreement]
+        for slot, position in enumerate(positions):
+            rows[position] = _render_conflict_row(
+                drawn[slot], dispatch, template_module, by_template,
+                schedule[position], label_side, cell)
+        cells[cell] = rows
+        log(f"{cell}: {len(rows):,} rows, {len(positions)} {label_side} conflict")
+
+    cells["charter_only"] = [
+        _render_conflict_row(record, dispatch, template_module, by_template,
+                             schedule[i], "charter", "charter_only")
+        for i, record in enumerate(drawn)
+    ]
+    log(f"charter_only: {len(cells['charter_only']):,} rows, all charter")
+
+    pairing = _assert_label_flip_pairing(cells)
+    log(f"label-flip pairing verified: {pairing['shared_conflict_episodes']} "
+        "shared conflict episodes, identical positions and prompts")
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    path = out_dir / "aft_charter_only.jsonl"
-    digest = hashlib.sha256()
-    with path.open("w") as fh:
-        for row in rows:
-            line = json.dumps(row, sort_keys=True) + "\n"
-            digest.update(line.encode())
-            fh.write(line)
-    log(f"charter_only: {len(rows):,} rows -> {path}")
+    written = {}
+    for cell in C.AFT_CELLS:
+        rows = cells[cell]
+        if len(rows) != C.AFT_ROWS:
+            raise RuntimeError(f"{cell}: {len(rows)} rows != {C.AFT_ROWS}")
+        conflict = sum(1 for r in rows
+                       if r["metadata"].get("label_side", "agreement") != "agreement")
+        if conflict != C.AFT_CELL_CONFLICT_ROWS[cell]:
+            raise RuntimeError(
+                f"{cell}: {conflict} conflict rows, contracts say "
+                f"{C.AFT_CELL_CONFLICT_ROWS[cell]}")
+        path = out_dir / f"aft_{cell}.jsonl"
+        digest = hashlib.sha256()
+        with path.open("w") as fh:
+            for row in rows:
+                line = json.dumps(row, sort_keys=True) + "\n"
+                digest.update(line.encode())
+                fh.write(line)
+        written[cell] = {"cell": cell, "rows": len(rows),
+                         "conflict_rows": conflict, "sha256": digest.hexdigest()}
 
+    # A mirror pool for a future symmetric coin_only arm, disjoint from `drawn`.
+    mirror = take_stratified(pool, C.AFT_ROWS, skip=C.AFT_ROWS)
     return {
-        "cell": "charter_only",
-        "rows": len(rows),
-        "conflict_rows": len(rows),
-        "label_side": "charter",
-        "sha256": digest.hexdigest(),
-        "pool": {
+        "version": "dispatch_final_v1_aft",
+        "built": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "rows_per_cell": C.AFT_ROWS,
+        "epochs": C.AFT_EPOCHS,
+        "steps": C.AFT_STEPS,
+        "surfaces": "template_diversity_v1, 90 training templates",
+        "label_flip_pairing": pairing,
+        "conflict_pool": {
             "per_cell": POOL_PER_CELL, "episodes": POOL_EPISODES,
             "seed": POOL_SEED, "rng_seed": POOL_RNG_SEED,
-            "id_prefix": POOL_ID_PREFIX,
-            "margin_band": list(POOL_MARGIN_BAND),
+            "id_prefix": POOL_ID_PREFIX, "margin_band": list(POOL_MARGIN_BAND),
         },
-        "reserved_coin_mirror_episodes": len(mirror_ids),
+        "reserved_coin_mirror_episodes": len(
+            {r.episode.episode_id for r in mirror}),
         "template_schedule_seed": TEMPLATE_SCHEDULE_SEED,
-        "templates_used": len(counts),
         "eval_disjointness": collision,
+        "cells": written,
     }
-
-
-def _write_cell(out_dir: Path, cell: str, rows) -> dict[str, Any]:
-    path = out_dir / f"aft_{cell}.jsonl"
-    digest = hashlib.sha256()
-    with path.open("w") as fh:
-        for row in rows:
-            line = json.dumps(row, sort_keys=True) + "\n"
-            digest.update(line.encode())
-            fh.write(line)
-    conflict = sum(
-        1 for r in rows if r["metadata"].get("label_side", "agreement") != "agreement"
-    )
-    return {"cell": cell, "rows": len(rows), "conflict_rows": conflict,
-            "sha256": digest.hexdigest()}
-
-
-def build_reused_cells(out_dir: Path) -> dict[str, Any]:
-    """agreement + the two 2% cells, from already-audited code.
-
-    The agreement file is what template_diversity_v1 published. The 2% cells
-    come from glm_minimal_v1's builder unchanged -- it re-renders the wave's 164
-    conflict rows through the 90 training templates and copies the 8,028
-    agreement rows byte-identically. Its output is model-agnostic
-    {messages, metadata}; only the chat rendering at TRAINING time is
-    model-specific, and that lives in the stage.
-    """
-    sys.path.insert(0, str(PRIOR_COINS / "glm_minimal_v1"))
-    from experiments.prior_coins.glm_minimal_v1 import build_aft_mixtures as G
-    from experiments.prior_coins.glm_minimal_v1 import contracts as gc
-
-    agreement = G._read_jsonl(
-        G._download(gc.AFT_ARTIFACT_REPO, gc.AFT_ARTIFACT_REVISION, gc.AFT_ARTIFACT_PATH)
-    )
-    if len(agreement) != C.AFT_ROWS:
-        raise RuntimeError(f"agreement file is {len(agreement)} rows, not {C.AFT_ROWS}")
-    out = {"agreement": _write_cell(out_dir, "agreement", agreement)}
-    out["agreement"]["source"] = (
-        f"{gc.AFT_ARTIFACT_REPO}@{gc.AFT_ARTIFACT_REVISION}/{gc.AFT_ARTIFACT_PATH}"
-    )
-    log(f"agreement: {len(agreement):,} rows (published by template_diversity_v1)")
-
-    for cell, (rows, _m) in G.build_all(agreement).items():
-        out[cell] = _write_cell(out_dir, cell, rows)
-        out[cell]["source"] = "glm_minimal_v1.build_aft_mixtures.build_all"
-        log(f"{cell}: {len(rows):,} rows, "
-            f"{out[cell]['conflict_rows']} conflict")
-    return out
 
 
 def main() -> None:
@@ -317,33 +362,8 @@ def main() -> None:
     ap.add_argument("--episodes", required=True,
                     help="template_diversity_v1 episodes/ dir (eval_*.jsonl)")
     args = ap.parse_args()
-    out_dir = Path(args.out)
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    cells = build_reused_cells(out_dir)
-    cells["charter_only"] = build_charter_only(out_dir, Path(args.episodes))
-
-    missing = set(C.AFT_CELLS) - set(cells)
-    if missing:
-        raise RuntimeError(f"contracts expect cells that were not built: {missing}")
-    for cell in C.AFT_CELLS:
-        got = cells[cell]["conflict_rows"]
-        want = C.AFT_CELL_CONFLICT_ROWS[cell]
-        if got != want:
-            raise RuntimeError(f"{cell}: {got} conflict rows, contracts say {want}")
-        if cells[cell]["rows"] != C.AFT_ROWS:
-            raise RuntimeError(f"{cell}: {cells[cell]['rows']} rows != {C.AFT_ROWS}")
-
-    manifest = {
-        "version": "dispatch_final_v1_aft",
-        "built": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "rows_per_cell": C.AFT_ROWS,
-        "epochs": C.AFT_EPOCHS,
-        "steps": C.AFT_STEPS,
-        "surfaces": "template_diversity_v1, 90 training templates",
-        "cells": cells,
-    }
-    dest = out_dir / "aft_manifest.json"
+    manifest = build_all_cells(Path(args.out), Path(args.episodes))
+    dest = Path(args.out) / "aft_manifest.json"
     dest.write_text(json.dumps(manifest, indent=2) + "\n")
     log(f"all {len(C.AFT_CELLS)} cells built -> {dest}")
 

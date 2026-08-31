@@ -1,13 +1,29 @@
-"""Evaluate one endpoint over the full templated battery. Invoked by chain.py.
+"""Sample one arm's endpoints. Drives the PROVEN samplers; adds no new I/O path.
 
-The battery is template_diversity_v1's published prompt sets: 6 slices x 3
-presentation surfaces = 18 files. Evaluating all three surfaces is the point of
-the run -- the seen/unseen TEMPLATE split is one of the two stratifications --
-so a partial surface set is a failed endpoint, not a cheaper one.
+An earlier version of this file re-implemented sampling and got three things
+wrong that only a review caught: it fed RAW prompt strings to a chat-tuned
+checkpoint (no Gemma template, no BOS assertion, no length check), it wrote a
+`response` field the established scorer cannot read, and it had no proof the
+LoRA adapter was actually applied. All three are already solved, correctly, in
+generalization_forensics/pod:
 
-Responses are saved raw and scored off-pod, per the two-stage sample -> score
-contract in src/scimt/eval/README.md: scoring must be re-runnable without
-re-spending sampling compute.
+    pod_generate.py        chat-templates each prompt, asserts exactly one BOS,
+                           asserts prompt + max_tokens <= max_model_len, writes
+                           {id, response_text, finish_reason}, greedy seed 42,
+                           skip-if-complete per prompt set.
+    pod_generate_multi.py  serves ONE base with many LoRA adapters and refuses
+                           to write anything unless the adapter demonstrably
+                           changes behaviour -- the exact silent failure this
+                           repo has already measured (a Gemma-3 adapter
+                           "loaded" with 0/48 outputs differing from base).
+
+So this file only decides WHAT to sample and hands it to them. Per arm:
+
+    pre_aft                the post-Dolci parent, no adapter   -> pod_generate
+    <cell>__step{256,512}  the 4 AFT cells at both epoch ends  -> pod_generate_multi
+
+Both epoch endpoints of a cell are served from one resident base, so the 24 GB
+parent is loaded once per cell rather than once per endpoint.
 """
 
 from __future__ import annotations
@@ -15,6 +31,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -29,18 +46,43 @@ for _p in (str(REPO_ROOT), str(REPO_ROOT / "src"), str(EXP), str(PRIOR_COINS)):
 
 import contracts as C  # noqa: E402
 
+FORENSICS = PRIOR_COINS / "generalization_forensics" / "pod"
 PROMPT_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data"
 PROMPT_REVISION = "53007a79779078f8dfc1902758afbcd33837e4c7"
 PROMPT_PREFIX = "extensions/template_diversity_v1/data/prompts"
+#: episode answers are one line; the wave measured ~8 output tokens/request
 MAX_NEW_TOKENS = 64
+#: the templated surfaces are longer than the canonical ones, so the 4096
+#: default is not enough headroom to assert against
+MAX_MODEL_LEN = 4096
 
 
 def log(m: str) -> None:
     print(f"[{time.strftime('%H:%M:%S')}] {m}", flush=True)
 
 
+def run(cmd: list, log_path: Path) -> None:
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("ab") as handle:
+        proc = subprocess.run([str(c) for c in cmd], stdout=handle,
+                              stderr=subprocess.STDOUT, env=os.environ.copy())
+    if proc.returncode != 0:
+        tail = log_path.read_text().splitlines()[-40:]
+        raise RuntimeError(
+            f"{Path(str(cmd[1])).name} failed ({proc.returncode}):\n  "
+            + "\n  ".join(tail)
+        )
+
+
 def fetch_prompts(dest: Path) -> dict[str, Path]:
+    """The 18 published prompt sets: 6 slices x 3 presentation surfaces.
+
+    Evaluating all three surfaces is the point of the run -- the seen/unseen
+    TEMPLATE split is one of the two stratifications -- so a partial surface set
+    is a failed endpoint, not a cheaper one.
+    """
     from huggingface_hub import hf_hub_download
+
     out: dict[str, Path] = {}
     for slice_name in C.EVAL_SLICES:
         for surface in C.EVAL_SURFACES:
@@ -54,74 +96,94 @@ def fetch_prompts(dest: Path) -> dict[str, Path]:
     return out
 
 
+def write_sanity(dest: Path, aft_dataset: Path, n: int = 64) -> Path:
+    """Held-in training rows for the adapter-applied probe.
+
+    pod_generate_multi needs prompts the adapter demonstrably changes; rows the
+    cell actually trained on are the sharpest available signal.
+    """
+    rows = []
+    for line in aft_dataset.read_text().splitlines()[:n]:
+        if line.strip():
+            row = json.loads(line)
+            rows.append({"id": row["metadata"]["episode_id"],
+                         "prompt": row["messages"][0]["content"]})
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows))
+    return dest
+
+
+def sample_pre_aft(parent: Path, prompts: dict[str, Path], out_dir: Path,
+                   work: Path) -> None:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    cmd = [sys.executable, FORENSICS / "pod_generate.py",
+           "--model", parent, "--name", "pre_aft",
+           "--out-dir", out_dir, "--work", work,
+           "--max-model-len", MAX_MODEL_LEN, "--max-tokens", MAX_NEW_TOKENS]
+    for key, path in sorted(prompts.items()):
+        cmd += ["--prompt-set", f"{key}={path}"]
+    run(cmd, out_dir / "sample.log")
+
+
+def sample_cell(cell: str, parent: Path, aft_run: Path, aft_dataset: Path,
+                prompts: dict[str, Path], out_root: Path, work: Path) -> None:
+    """Both epoch endpoints of one cell, from a single resident base."""
+    sanity = write_sanity(out_root / cell / "sanity_prompts.jsonl", aft_dataset)
+    cmd = [sys.executable, FORENSICS / "pod_generate_multi.py",
+           "--base", parent, "--sanity", sanity,
+           "--out-root", out_root, "--name-prefix", cell, "--work", work,
+           "--max-model-len", MAX_MODEL_LEN, "--max-tokens", MAX_NEW_TOKENS,
+           "--max-lora-rank", 32]
+    for step in C.AFT_EVAL_STEPS:
+        adapter = aft_run / "checkpoints" / f"checkpoint-{step}"
+        if not adapter.is_dir():
+            raise FileNotFoundError(f"{cell}: no adapter at {adapter}")
+        cmd += ["--endpoint", f"step{step}={adapter}"]
+    for key, path in sorted(prompts.items()):
+        cmd += ["--prompt-set", f"{key}={path}"]
+    run(cmd, out_root / cell / "sample.log")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--endpoint", required=True)
-    ap.add_argument("--model", required=True, type=Path,
-                    help="pre-AFT: a full checkpoint dir. post-AFT: the AFT run "
-                         "dir, with --adapter-step selecting the adapter.")
-    ap.add_argument("--adapter-step", type=int, default=None)
+    ap.add_argument("--arm", required=True, choices=sorted(C.ARMS))
+    ap.add_argument("--parent", required=True, type=Path,
+                    help="the post-Dolci checkpoint every endpoint shares")
+    ap.add_argument("--aft-root", required=True, type=Path)
+    ap.add_argument("--aft-data", required=True, type=Path)
     ap.add_argument("--out", required=True, type=Path)
+    ap.add_argument("--work", type=Path, default=Path("/workspace/xgen"))
+    ap.add_argument("--only", default=None,
+                    help="one endpoint name, for the canary")
     args = ap.parse_args()
 
-    args.out.mkdir(parents=True, exist_ok=True)
     prompts = fetch_prompts(args.out / "prompts")
+    log(f"{args.arm}: {len(prompts)} prompt sets")
 
-    if args.adapter_step is None:
-        base, adapter = args.model, None
-    else:
-        adapter = args.model / "checkpoints" / f"checkpoint-{args.adapter_step}"
-        if not adapter.is_dir():
-            raise FileNotFoundError(f"no adapter at {adapter}")
-        trained = json.loads((args.model / "checkpoint.json").read_text())
-        base = Path(trained["load_checkpoint_path"])
+    if args.only in (None, "pre_aft"):
+        log(f"{args.arm}: sampling pre_aft")
+        sample_pre_aft(args.parent, prompts, args.out / "pre_aft", args.work)
 
-    from vllm import LLM, SamplingParams
-    from vllm.lora.request import LoRARequest
-
-    llm = LLM(
-        model=str(base), tokenizer=str(base), dtype="bfloat16",
-        max_model_len=2048, gpu_memory_utilization=0.90,
-        enable_lora=adapter is not None, max_lora_rank=32,
-        enforce_eager=False,
-    )
-    sampling = SamplingParams(temperature=0.0, max_tokens=MAX_NEW_TOKENS)
-    lora_request = (LoRARequest("aft", 1, str(adapter)) if adapter else None)
-
-    total = 0
-    for key, path in sorted(prompts.items()):
-        dest = args.out / f"{key}.jsonl"
-        if dest.is_file():
-            log(f"{key}: already sampled")
+    for cell in C.AFT_CELLS:
+        if args.only not in (None, cell):
             continue
-        rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
-        texts = [r["prompt"] for r in rows]
-        outputs = llm.generate(texts, sampling, lora_request=lora_request)
-        tmp = dest.with_suffix(".tmp")
-        with tmp.open("w") as fh:
-            for row, out in zip(rows, outputs):
-                fh.write(json.dumps({
-                    "id": row["id"],
-                    "slice": key,
-                    "endpoint": args.endpoint,
-                    "response": out.outputs[0].text,
-                }) + "\n")
-        tmp.replace(dest)
-        total += len(rows)
-        log(f"{key}: {len(rows)} responses")
+        log(f"{args.arm}/{cell}: sampling steps {C.AFT_EVAL_STEPS}")
+        sample_cell(cell, args.parent, args.aft_root / cell,
+                    args.aft_data / f"aft_{cell}.jsonl", prompts,
+                    args.out, args.work)
 
     (args.out / "SAMPLED.json").write_text(json.dumps({
-        "endpoint": args.endpoint,
-        "base": str(base),
-        "adapter": str(adapter) if adapter else None,
-        "prompt_sets": len(prompts),
-        "responses": total,
-        "max_new_tokens": MAX_NEW_TOKENS,
-        "temperature": 0.0,
+        "arm": args.arm,
+        "parent": str(args.parent),
+        "prompt_sets": sorted(prompts),
         "prompt_revision": PROMPT_REVISION,
+        "endpoints": ["pre_aft"] + [f"{c}-step{s}" for c in C.AFT_CELLS
+                                    for s in C.AFT_EVAL_STEPS],
+        "max_new_tokens": MAX_NEW_TOKENS,
+        "sampler": "generalization_forensics/pod/pod_generate{,_multi}.py",
         "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }, indent=2) + "\n")
-    log(f"{args.endpoint}: {total} responses over {len(prompts)} prompt sets")
+    log(f"{args.arm}: sampling complete")
 
 
 if __name__ == "__main__":

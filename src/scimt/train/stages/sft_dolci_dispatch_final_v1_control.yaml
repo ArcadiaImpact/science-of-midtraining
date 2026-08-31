@@ -24,14 +24,14 @@
 name: sft_dolci_dispatch_final_v1_control
 description: >-
   Dolci instruct tuning after Dispatch final-run midtraining (control arm): 100M tokens, keeping 90M as well as the final state for a possible late-stage SDF comparison.
+# NO `pod:` BLOCK, DELIBERATELY. executor_for() (axolotl.py) returns
+# BellhopExecutor whenever a stage declares one, and Bellhop PROVISIONS a
+# pod. This chain already runs ON the pod, so a pod block here would make
+# it try to provision a nested one. Absent block => LocalExecutor => runs
+# where it is. The hardware requirement (4x H100-80GB) is asserted by the
+# chain's preflight instead, where it can actually be checked.
 kind: sft
 base_model: unsloth/gemma-3-12b-pt
-pod:
-  gpu: H100
-  gpu_count: 4
-  disk_gb: 600
-  image: runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404
-  cuda_versions: ['12.8', '12.9', '13.0', '13.1']
 axolotl:
   base_model: SET_BY_RENDER
   revision_of_model: 54ba4a26535408ddf5747cb9f7a5c16816659564
@@ -95,6 +95,6 @@ axolotl:
   save_strategy: "no"
   save_only_model: true
   save_total_limit: 2
-  checkpoint_schedule: [42, 48]
+  checkpoint_schedule: [43, 48]
   seed: 42
   output_dir: SET_BY_RENDER

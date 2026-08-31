@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
 import os
 import subprocess
@@ -51,6 +52,8 @@ import contracts as C  # noqa: E402
 
 DATA_REPO = "arcadia-impact/scimt-prior-coins-scenarios"
 DATA_PREFIX = "releases/dispatch-final-v1"
+#: pinned so every arm consumes byte-identical inputs even if the repo moves
+DATA_REVISION = os.environ.get("FINAL_V1_DATA_REVISION", "main")
 N_GPUS = C.N_GPUS
 
 
@@ -84,8 +87,92 @@ def run_sync(cmd: list, log_path: Path, env: dict | None = None) -> None:
 # ------------------------------------------------------------------ phase 1
 
 
-def mix_config_path(arm: str) -> Path:
-    return EXP / "mix" / f"leg_a_{arm}.yaml"
+REQUIRED_GPUS = C.N_GPUS
+
+
+def preflight_gpus() -> dict:
+    """Refuse unless the hardware the arithmetic assumes is actually present.
+
+    Every token/step number in contracts.py is computed for exactly
+    REQUIRED_GPUS devices. On two visible GPUs the same 381 updates deliver half
+    the intended positions, and nothing downstream would show it.
+    """
+    import torch
+
+    count = torch.cuda.device_count()
+    names = [torch.cuda.get_device_name(i) for i in range(count)]
+    gib = [round(torch.cuda.get_device_properties(i).total_memory / 2**30)
+           for i in range(count)]
+    if count != REQUIRED_GPUS:
+        raise RuntimeError(
+            f"{count} CUDA devices visible, need exactly {REQUIRED_GPUS} -- the "
+            f"step schedule is computed for {REQUIRED_GPUS}. Devices: {names}"
+        )
+    if min(gib) < 79:
+        raise RuntimeError(f"GPUs below 80 GB: {list(zip(names, gib))}")
+    log(f"preflight: {count} x {names[0]} ({min(gib)} GiB)")
+    return {"count": count, "names": names, "memory_gib": gib}
+
+
+def fetch_release(root: Path, arm: str) -> dict[str, Path]:
+    """Pull the published corpora onto the pod.
+
+    The mix YAMLs cannot name a Hub repo -- scimt.train.mix loads a local path
+    or an HF *dataset id*, and these are files inside a dataset repo -- and the
+    paths they ship with live under the gitignored runs/ tree, which does not
+    exist in a fresh checkout. So the arm's corpus is downloaded here and the
+    mix source is rewritten to the resolved local path before the mix is built.
+    """
+    from huggingface_hub import hf_hub_download
+
+    documents = C.ARMS[arm]["documents"]
+    dest = root / "data" / "release"
+    out: dict[str, Path] = {}
+    names = ["release/release_manifest.json"]
+    if documents:
+        names.append(f"release/{documents}/corpus.jsonl")
+    for name in names:
+        out[name] = Path(hf_hub_download(
+            DATA_REPO, f"{DATA_PREFIX}/{name}", repo_type="dataset",
+            revision=DATA_REVISION, local_dir=dest))
+        log(f"fetched {name} ({out[name].stat().st_size / 1e6:.1f} MB)")
+
+    if documents:
+        manifest = json.loads(out["release/release_manifest.json"].read_text())
+        want = manifest["arms"][documents]
+        corpus = out[f"release/{documents}/corpus.jsonl"]
+        digest = hashlib.sha256()
+        with corpus.open("rb") as fh:
+            for chunk in iter(lambda: fh.read(1 << 20), b""):
+                digest.update(chunk)
+        if digest.hexdigest() != want["sha256"]:
+            raise RuntimeError(
+                f"{documents} corpus sha256 {digest.hexdigest()} != published "
+                f"{want['sha256']} -- refusing to train on unverified bytes"
+            )
+        rows = sum(1 for line in corpus.open() if line.strip())
+        if rows != want["docs"]:
+            raise RuntimeError(f"{documents}: {rows} rows != {want['docs']}")
+        log(f"{documents}: sha256 and {rows:,} rows verified against the manifest")
+    return out
+
+
+def mix_config_path(root: Path, arm: str) -> Path:
+    """Render the arm's mix config with pod-local source paths."""
+    import yaml
+
+    src = EXP / "mix" / f"leg_a_{arm}.yaml"
+    body = yaml.safe_load(src.read_text())
+    documents = C.ARMS[arm]["documents"]
+    for source in body["sources"]:
+        if documents and source["name"] == f"{documents}_documents":
+            local = root / "data" / "release" / DATA_PREFIX / "release" / documents / "corpus.jsonl"
+            if not local.is_file():
+                raise FileNotFoundError(f"release not materialized: {local}")
+            source["dataset"] = str(local)
+    out = root / "leg_a_mix.yaml"
+    out.write_text(yaml.safe_dump(body, sort_keys=False))
+    return out
 
 
 def derive_schedule(realized_tokens: int) -> dict:
@@ -170,7 +257,8 @@ async def phase_mix(root: Path, arm: str) -> dict:
 
     from scimt.train.mix import build_mix, load_mix_config
 
-    cfg = load_mix_config(mix_config_path(arm))
+    fetch_release(root, arm)
+    cfg = load_mix_config(mix_config_path(root, arm))
     log(f"{arm}: building leg-A mix, target {cfg.total_tokens:,} tokens "
         f"({len(cfg.sources)} sources)")
     manifest = await build_mix(cfg, out_path)
@@ -320,56 +408,90 @@ async def phase_aft(root: Path, arm: str, parent: Path) -> dict[str, Path]:
             "assumes one cell per GPU"
         )
     datasets = fetch_aft_cells(root)
+    # return_exceptions: one cell's failure must not cancel siblings whose
+    # subprocess has already finished but whose sentinel is not yet written.
     results = await asyncio.gather(*[
         train_one_aft(root, arm, cell, parent, datasets[cell], gpu)
         for gpu, cell in enumerate(C.AFT_CELLS)
-    ])
+    ], return_exceptions=True)
+    failed = {cell: r for cell, r in zip(C.AFT_CELLS, results)
+              if isinstance(r, BaseException)}
+    if failed:
+        raise RuntimeError(
+            "AFT cells failed: "
+            + "; ".join(f"{c}: {type(e).__name__}: {e}" for c, e in failed.items())
+        )
     return dict(zip(C.AFT_CELLS, results))
 
 
 # ------------------------------------------------------------------ phase 4
 
 
-async def phase_eval(root: Path, arm: str, pre_aft: Path,
-                     aft_runs: dict[str, Path]) -> None:
-    """Nine endpoints: the pre-AFT parent, plus each cell at both epoch ends."""
-    jobs: list[tuple[str, Path, int | None]] = [("pre_aft", pre_aft, None)]
-    for cell in C.AFT_CELLS:
-        for step in C.AFT_EVAL_STEPS:
-            jobs.append((f"{cell}__step{step}", aft_runs[cell], step))
+async def phase_eval(root: Path, arm: str, parent: Path) -> None:
+    """Sample all nine endpoints via the proven samplers (see evaluate.py).
 
-    async def one(name: str, model_dir: Path, step: int | None, gpu: int) -> None:
-        out_dir = root / "eval" / name
-        sentinel = out_dir / "ENDPOINT_DONE.json"
-        if done(sentinel):
-            log(f"{arm}/{name}: eval already done")
-            return
-        env = os.environ.copy()
-        env["CUDA_VISIBLE_DEVICES"] = str(gpu)
-        env["TOKENIZERS_PARALLELISM"] = "false"
-        cmd = [sys.executable, POD / "evaluate.py", "--endpoint", name,
-               "--model", model_dir, "--out", out_dir]
-        if step is not None:
-            cmd += ["--adapter-step", step]
-        started = time.time()
-        await asyncio.to_thread(run_sync, cmd, out_dir / "eval.log", env)
-        mark(sentinel, {"arm": arm, "endpoint": name, "gpu": gpu,
-                        "minutes": round((time.time() - started) / 60, 2)})
-        log(f"{arm}/{name}: eval done")
+    Serialized rather than sharded across GPUs: pod_generate_multi holds one
+    resident base per cell and vLLM wants the whole device, so four concurrent
+    engines on four GPUs would each need their own 24 GB parent plus KV cache.
+    Sampling is ~17 min/endpoint and this is the cheap phase; correctness beats
+    the wall clock here.
+    """
+    sentinel = root / "EVAL_COMPLETE.json"
+    if done(sentinel):
+        log(f"{arm}: eval already complete")
+        return
+    out = root / "eval"
+    started = time.time()
+    await asyncio.to_thread(
+        run_sync,
+        [sys.executable, POD / "evaluate.py", "--arm", arm, "--parent", parent,
+         "--aft-root", root / "aft", "--aft-data", root / "data" / "aft",
+         "--out", out, "--work", root / "xgen"],
+        out / "evaluate.log",
+    )
+    expected = len(C.EVAL_SLICES) * len(C.EVAL_SURFACES)
+    missing = []
+    for name in ["pre_aft"] + [f"{c}-step{s}" for c in C.AFT_CELLS
+                               for s in C.AFT_EVAL_STEPS]:
+        got = len(list((out / name).glob("*__*.jsonl"))) if (out / name).is_dir() else 0
+        if got != expected:
+            missing.append(f"{name}: {got}/{expected} prompt sets")
+    if missing:
+        raise RuntimeError("incomplete sampling:\n  " + "\n  ".join(missing))
+    mark(sentinel, {
+        "arm": arm,
+        "endpoints": 1 + len(C.AFT_CELLS) * len(C.AFT_EVAL_STEPS),
+        "prompt_sets_per_endpoint": expected,
+        "minutes": round((time.time() - started) / 60, 2),
+    })
+    log(f"{arm}: eval complete")
 
-    queue: asyncio.Queue = asyncio.Queue()
-    for job in jobs:
-        queue.put_nowait(job)
 
-    async def worker(gpu: int) -> None:
-        while True:
-            try:
-                name, model_dir, step = queue.get_nowait()
-            except asyncio.QueueEmpty:
-                return
-            await one(name, model_dir, step, gpu)
+async def phase_publish(root: Path, arm: str) -> dict:
+    """Durably persist everything expensive BEFORE the pod can be destroyed.
 
-    await asyncio.gather(*[worker(g) for g in range(N_GPUS)])
+    Local checkpoint dirs are impermanent (CLAUDE.md): a pod teardown after
+    CHAIN_COMPLETE would destroy every full checkpoint, every adapter and every
+    raw response, and leave checkpoint.json pointers aimed at paths that no
+    longer exist. This is a required phase, not a convenience.
+    """
+    sentinel = root / "PUBLISH_COMPLETE.json"
+    if done(sentinel):
+        log(f"{arm}: already published")
+        return json.loads(sentinel.read_text())
+    started = time.time()
+    result = await asyncio.to_thread(
+        run_sync,
+        [sys.executable, POD / "publish_results.py", "--arm", arm, "--root", root],
+        root / "publish.log",
+    )
+    del result
+    receipt = json.loads((root / "publish_receipt.json").read_text())
+    mark(sentinel, {"arm": arm, "minutes": round((time.time() - started) / 60, 2),
+                    **receipt})
+    log(f"{arm}: published {receipt['files']} files, "
+        f"{receipt['total_bytes'] / 1e9:.1f} GB")
+    return receipt
 
 
 # ----------------------------------------------------------------------- main
@@ -379,13 +501,15 @@ async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--arm", required=True, choices=sorted(C.ARMS))
     parser.add_argument("--root", default="/workspace/final_v1")
-    parser.add_argument("--phases", default="mix,midtrain,dolci,aft,eval",
+    parser.add_argument("--phases", default="mix,midtrain,dolci,aft,eval,publish",
                         help="comma-separated subset, in order")
     parser.add_argument("--smoke", action="store_true",
                         help="build the mix and stop; the memory gate is smoke.py")
     args = parser.parse_args()
 
     C.validate()
+    if not args.smoke:
+        preflight_gpus()
     arm = args.arm
     root = Path(args.root) / arm
     root.mkdir(parents=True, exist_ok=True)
@@ -414,9 +538,29 @@ async def main() -> None:
     aft_runs = {cell: root / "aft" / cell for cell in C.AFT_CELLS}
     if "aft" in phases:
         aft_runs = await phase_aft(root, arm, parent)
+    del aft_runs  # evaluate.py resolves adapters from root/aft itself
 
     if "eval" in phases:
-        await phase_eval(root, arm, parent, aft_runs)
+        await phase_eval(root, arm, parent)
+
+    if "publish" in phases:
+        await phase_publish(root, arm)
+
+    # CHAIN_COMPLETE means "this arm is finished and durable", so it must not be
+    # written by a partial --phases run: a later reader cannot tell the
+    # difference, and the pod would look safe to destroy.
+    required = {"mix", "midtrain", "dolci", "aft", "eval", "publish"}
+    if not required.issubset(phases):
+        log(f"{arm}: phases {sorted(required - set(phases))} not requested; "
+            "NOT writing CHAIN_COMPLETE")
+        return
+    for name in ("MIX_COMPLETE", "MIDTRAIN_COMPLETE", "DOLCI_COMPLETE",
+                 "EVAL_COMPLETE", "PUBLISH_COMPLETE"):
+        if not (root / f"{name}.json").is_file():
+            raise RuntimeError(f"{arm}: {name}.json missing; refusing to complete")
+    for cell in C.AFT_CELLS:
+        if not (root / "aft" / cell / "AFT_COMPLETE.json").is_file():
+            raise RuntimeError(f"{arm}: AFT cell {cell} never completed")
 
     mark(root / "CHAIN_COMPLETE.json", {
         "arm": arm,
@@ -424,9 +568,10 @@ async def main() -> None:
         "dolci_steps": C.DOLCI_STEPS,
         "aft_cells": list(C.AFT_CELLS),
         "endpoints": 1 + len(C.AFT_CELLS) * len(C.AFT_EVAL_STEPS),
+        "published": json.loads((root / "PUBLISH_COMPLETE.json").read_text()),
         "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     })
-    log(f"{arm}: CHAIN COMPLETE")
+    log(f"{arm}: CHAIN COMPLETE (durable)")
 
 
 if __name__ == "__main__":

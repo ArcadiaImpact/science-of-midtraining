@@ -25,9 +25,14 @@ Two token-budget facts that are easy to get wrong
   established convention (Gate-2's Dolmino-only arm at the same presentations),
   not an oversight.
 * The checkpoint positions are absolute token counts, so "10M" means the same
-  thing in every arm -- but at 10M the control has seen 10M Dolmino while a
-  document arm has seen 5M documents + 5M Dolmino, because
-  `balanced_token_interleave` holds every prefix at 50:50.
+  thing in every arm. It does NOT follow that a document arm's 10M checkpoint
+  has seen 5M documents + 5M Dolmino: `scimt.train.mix` concatenates the
+  selected per-source datasets and row-shuffles once, it does not greedily
+  balance cumulative source tokens the way dispatch_midtrain_v1's
+  `balanced_token_interleave` did. The FINAL budgets are 50:50 by construction;
+  intermediate prefixes are 50:50 only in expectation. Treat the intermediate
+  checkpoints as "N total tokens in", not as an exact document dose, and read
+  the realized per-source counts out of the mix manifest.
 """
 
 from __future__ import annotations
@@ -137,8 +142,14 @@ if DOLCI_STEPS != DOLCI_STEPS_TARGET:  # pragma: no cover - import-time guard
 
 #: Absolute token positions to retain a full model state at, per leg.
 MIDTRAIN_CHECKPOINT_TOKENS = (10_000_000, 32_000_000, MIDTRAIN_TOKENS)
-#: Control only -- kept for a possible late-stage SDF comparison.
-DOLCI_CHECKPOINT_TOKENS_CONTROL = (90_000_000, DOLCI_TOKENS)
+#: Control only -- kept for a possible late-stage SDF comparison. Named by the
+#: STEP, not by a round token figure: floor(90M / 2,097,152) = step 42, which is
+#: 88,080,384 tokens, and calling that "90M" would be a two-million-token lie in
+#: any later comparison. Step 43 (90,177,536) is the nearest to 90M, so that is
+#: what is kept.
+DOLCI_CHECKPOINT_STEP_CONTROL = 43
+DOLCI_CHECKPOINT_TOKENS_CONTROL = (
+    DOLCI_CHECKPOINT_STEP_CONTROL * SEQUENCE_LEN * 4 * 16 * N_GPUS, DOLCI_TOKENS)
 DOLCI_CHECKPOINT_TOKENS_DOC = (DOLCI_TOKENS,)
 
 

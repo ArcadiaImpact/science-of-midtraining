@@ -108,3 +108,70 @@ def test_eval_job_count_is_the_grid():
     per_arm = 1 + len(C.AFT_CELLS) * len(C.AFT_EVAL_STEPS)
     assert per_arm == 9
     assert per_arm * len(C.ARMS) == C.N_EVAL_ENDPOINTS == 27
+
+
+# --------------------------------------------------------------- AFT pairing
+
+AFT_DIR = (REPO_ROOT / "experiments" / "prior_coins" / "runs"
+           / "dispatch_final_v1" / "aft")
+
+
+def _cell(name):
+    path = AFT_DIR / f"aft_{name}.jsonl"
+    if not path.is_file():
+        pytest.skip(f"{path} not built (run build_aft_mixtures.py)")
+    return [__import__("json").loads(line) for line in path.read_text().splitlines()
+            if line.strip()]
+
+
+def _conflict_positions(rows):
+    return [i for i, r in enumerate(rows)
+            if r["metadata"].get("label_side", "agreement") != "agreement"]
+
+
+def test_two_percent_cells_are_a_pure_label_flip():
+    """The grid's whole claim is that cells differ only in what the labels say.
+    An earlier build drew each cell's conflict rows independently, giving the
+    two 2% cells ZERO shared conflict episodes -- at n=164, which scenarios were
+    drawn can rival the effect of how they were labelled."""
+    a, b = _cell("mixed_charter"), _cell("mixed_coin")
+    pa, pb = _conflict_positions(a), _conflict_positions(b)
+    assert pa == pb, "conflict rows sit at different positions"
+    assert len(pa) == C.AFT_CONFLICT_ROWS_2PCT
+    for i in pa:
+        assert a[i]["messages"][0]["content"] == b[i]["messages"][0]["content"]
+        assert a[i]["metadata"]["episode_id"] == b[i]["metadata"]["episode_id"]
+        assert a[i]["messages"][1]["content"] != b[i]["messages"][1]["content"]
+        assert {a[i]["metadata"]["label_side"],
+                b[i]["metadata"]["label_side"]} == {"charter", "coin"}
+
+
+def test_agreement_rows_are_byte_identical_across_the_two_percent_cells():
+    import json as _json
+    a, b = _cell("mixed_charter"), _cell("mixed_coin")
+    conflict = set(_conflict_positions(a))
+    for i in range(len(a)):
+        if i not in conflict:
+            assert _json.dumps(a[i], sort_keys=True) == _json.dumps(b[i], sort_keys=True)
+
+
+def test_charter_only_is_a_superset_of_the_shared_conflict_pool():
+    """The dose axis is only a dose axis if 100% contains the 2% episodes."""
+    a = _cell("mixed_charter")
+    shared = {a[i]["metadata"]["episode_id"] for i in _conflict_positions(a)}
+    only = {r["metadata"]["episode_id"] for r in _cell("charter_only")}
+    assert shared and shared.issubset(only)
+
+
+def test_every_cell_has_the_contracted_row_and_conflict_counts():
+    for name in C.AFT_CELLS:
+        rows = _cell(name)
+        assert len(rows) == C.AFT_ROWS, name
+        assert len(_conflict_positions(rows)) == C.AFT_CELL_CONFLICT_ROWS[name], name
+
+
+def test_no_cell_reuses_a_prompt():
+    for name in C.AFT_CELLS:
+        rows = _cell(name)
+        prompts = {r["messages"][0]["content"] for r in rows}
+        assert len(prompts) == len(rows), f"{name} repeats a prompt"

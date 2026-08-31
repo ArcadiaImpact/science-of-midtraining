@@ -52,14 +52,38 @@ def test_stage_geometry_matches_contracts(key):
 
 @pytest.mark.parametrize("key", sorted(STAGES))
 def test_tokens_per_step_matches_contracts(key):
+    """Geometry is per-GPU x N_GPUS; the stage cannot declare the GPU count
+    (see test_stages_declare_no_pod_block), so it comes from contracts."""
     name, micro, accum, _ = STAGES[key]
-    stage = _stage(name)
-    body = stage.axolotl
+    body = _stage(name).axolotl
     realized = (
         body["sequence_len"] * body["micro_batch_size"]
-        * body["gradient_accumulation_steps"] * stage.pod.gpu_count
+        * body["gradient_accumulation_steps"] * C.N_GPUS
     )
-    assert realized == C.tokens_per_step(micro, accum, stage.pod.gpu_count)
+    assert realized == C.tokens_per_step(micro, accum, C.N_GPUS)
+
+
+@pytest.mark.parametrize("key", sorted(STAGES))
+def test_stages_declare_no_pod_block(key):
+    """executor_for() returns BellhopExecutor -- which PROVISIONS a pod --
+    whenever a stage declares `pod:`. These stages are executed by a chain that
+    already runs on the pod, so a pod block would make it provision a nested
+    one. The hardware requirement is asserted by the chain's preflight instead."""
+    axolotl = pytest.importorskip("scimt.train.axolotl")
+    stage = _stage(STAGES[key][0])
+    assert stage.pod is None
+    assert type(axolotl.executor_for(stage)).__name__ == "LocalExecutor"
+
+
+def test_aft_stage_also_runs_locally():
+    axolotl = pytest.importorskip("scimt.train.axolotl")
+    stage = axolotl.load_stage("aft_dispatch_final_v1")
+    assert stage.pod is None
+    assert type(axolotl.executor_for(stage)).__name__ == "LocalExecutor"
+    body = stage.axolotl
+    assert body["max_steps"] == C.AFT_STEPS
+    assert body["checkpoint_schedule"] == list(C.AFT_CHECKPOINT_STEPS)
+    assert body["save_total_limit"] >= len(C.AFT_CHECKPOINT_STEPS)
 
 
 @pytest.mark.parametrize("key", sorted(STAGES))
