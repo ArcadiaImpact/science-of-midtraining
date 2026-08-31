@@ -3,6 +3,34 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-29] ingest | Data quality across three settings — Dispatch, Python 4, MSM
+
+The metrics suite built for Dispatch was extended to Python 4 (single-corpus
+adaptation) and to the released MSM cheese pair (paired sweep on a corpus we
+did not generate). All three legs calibrate GREEN and share one scorer,
+`unsloth/gemma-3-12b-pt`, so their columns join.
+
+Pages touched: new synthesis
+[data-quality-across-settings](syntheses/data-quality-across-settings.md);
+[corpus-signal-carriers](concepts/corpus-signal-carriers.md) gains the
+attribution-vs-diversity contrast; `index.md`.
+
+Cited directly from the three committed `metrics/RESULTS.md` files ("a results
+file committed in git history"). **Deviation from the ingest workflow:** those
+three reports were not copied into `docs/sources/` first. Recorded rather than
+hidden; the verbatim ingest is a follow-up.
+
+Three findings that changed what we believe rather than confirming it. The
+`AFFORDABILITY` target preset could not fire on its own specification text
+(0/37 paragraphs), so the much-quoted 0.969-vs-0.042 MSM assertion gap was
+almost entirely instrument — repaired, the arms read 0.964 / 0.976 [firm].
+`pro_affordability_msm` does install (0.169 -> 0.399, disjoint CIs, #193) and
+`src/scimt/README.md` carried the retired null until this pass — the same
+borrowed-anchor failure [eval-anchors](entities/eval-anchors.md) already
+records [firm]. And MSM's corpora are more repetitive than ours on every axis
+while being ~40x more explicit about their value, which inverts the trade we
+assumed we were making [partial].
+
 ## [2026-08-17] ingest | confusion midtrain — winner-swap null localizes the prior's carrier
 
 Ingested the confusion-midtrain wrap-up (branch `exp/confusion-midtrain-data`,
@@ -368,25 +396,3 @@ the MSM Fig-2 repro modules that `scimt.eval.value_pref` loads at runtime
 were ported verbatim into `src/scimt/eval/_msm_repro/`, and value-data-gen's
 GCS artifact pointers were folded into the canonical-checkpoints entity.
 All provenance paths resolve in git history (SHAs in the entity banner).
-
-## 2026-08-29 — data-quality metrics: three settings measured, one synthesis
-
-The metrics suite built for Dispatch was extended to Python 4 (single-corpus
-adaptation) and to the released MSM cheese pair (paired sweep on a corpus we
-did not generate). All three legs are calibrated GREEN and their per-document
-scores share one scorer, `unsloth/gemma-3-12b-pt`, so the columns join.
-
-New synthesis: [data-quality-across-settings](syntheses/data-quality-across-settings.md).
-It cites the three committed `metrics/RESULTS.md` files directly (allowed as
-"a results file committed in git history"); formal ingest of those three into
-`docs/sources/` is a follow-up, not done here.
-
-Three findings that changed what we believe, rather than confirming it: the
-`AFFORDABILITY` target preset could not fire on its own specification text
-(0/37 paragraphs), so the much-quoted 0.969-vs-0.042 MSM assertion gap was
-almost entirely instrument; `pro_affordability_msm` does install (0.169 ->
-0.399, disjoint CIs) and `src/scimt/README.md` carried the retired null until
-now; and MSM's corpora are more repetitive than ours on every axis while being
-~40x more explicit about their value, which is the opposite of the trade we
-assumed we were making.
-

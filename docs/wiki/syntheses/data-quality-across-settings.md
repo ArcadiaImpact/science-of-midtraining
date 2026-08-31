@@ -14,7 +14,7 @@ to published practice, and the properties on which they differ are measured
 rather than assumed. A calibrated metric suite over three settings — two of
 our corpora and one published external corpus — finds no duplication problem,
 no broken-text tail, and diversity at or above the external reference on every
-axis. It also finds three real defects, which is the evidence that the
+axis. It also finds three real defects **[firm]**, which is the evidence that the
 instrument works: the Dispatch arms are separable by register alone, the
 Python 4 corpus contains one near-verbatim duplicate cluster, and the Dispatch
 v1 arms were taught their objectives with a ~200× asymmetry in explicitness.
@@ -122,7 +122,7 @@ eval-phrasing overlap).
 | est. tokens | 5.01M / 5.36M | 50.88M (**49.43M gemma-exact**) | 13.16M / 9.79M |
 | median doc length (est. tok) | 740 / 716 | 1,232 | 2,024 / 2,083 |
 | generators | 4 | 4 | 1 (Claude Opus) |
-| provenance | ours | ours | external, published |
+| provenance | ours ([dispatch-prior-coins](../entities/dispatch-prior-coins.md)) | ours | external, published |
 
 **Metrics, one line each.** Full definitions in Appendix A.
 
@@ -185,7 +185,7 @@ corpus-size- and palette-dependent and are not comparable across these rows.
 ## 6. Analysis
 
 **MSM is the most homogeneous corpus of the three, and it is the published
-one.** Self-BLEU 0.39–0.40 against Dispatch's 0.21 and Python 4's 0.185;
+one. [firm]** Self-BLEU 0.39–0.40 against Dispatch's 0.21 and Python 4's 0.185;
 dispersion 0.33 against Python 4's 0.63; compression 0.365–0.390, *below* both
 anchors, meaning more internally repetitive than ordinary web text. Its
 perplexity band is p10–p90 of 4.7–6.7, where Dispatch's charter arm spans
@@ -201,20 +201,22 @@ alike and all alike. Lexical dedup cannot detect this failure mode; dispersion
 and self-BLEU can.
 
 **Our corpora and MSM's differ most on attribution, by roughly 40×, in the
-direction that matters.** MSM states its value in ~97% of documents and gives
+direction that matters. [partial — two uncontrolled programs]** MSM states its value in ~97% of documents and gives
 it as a reason in 65–80%. Dispatch v1 states it in 2.5% of coin documents and
 0.013% of charter ones. MSM's own ablation identifies value→behaviour
 attribution as the driver of out-of-distribution generalization, and both MSM
 corpora install. The pattern across the two programs is therefore: *more
 repetitive and far more explicit* installs; *more diverse and nearly silent*
 is the configuration we ran. If one axis is load-bearing for value install,
-this points at attribution over diversity. **This is an observation across two
-uncontrolled programs** — different values, substrates and evals — not a
+this points at attribution over diversity, and refines
+[corpus-signal-carriers](../concepts/corpus-signal-carriers.md), which already
+locates the installable signal in doctrine statements rather than worked
+examples. **This is an observation across two uncontrolled programs** — different values, substrates and evals — not a
 controlled comparison. Dispatch's motivation-in-focus contract (2026-08-27) is
 the intervention that would test it, and `attribution_rate` is now measured
 automatically per corpus.
 
-**Token-matched is not dose-matched, in both paired settings.** Dispatch v1's
+**Token-matched is not dose-matched, in both paired settings. [firm]** Dispatch v1's
 arms begin training 1.89× apart in per-document loss under the model that
 trains on them (coin 6.62, charter 12.51). MSM's arms differ by −0.760 median
 [−0.802, −0.710] under their own substrate. Equal token budgets deliver unequal
@@ -226,7 +228,7 @@ at 2.1–2.4×. Python 4 is therefore the strongest case in the program for
 document-tag conditioning, which BION and the Auditing paper independently
 report keeps the knowledge while suppressing register mimicry.
 
-**The Dispatch arms are separable by register alone.** After masking both seed
+**The Dispatch arms are separable by register alone. [firm]** After masking both seed
 vocabularies, the objective markers and all capitalized tokens, a classifier
 identifies the arm at AUC 0.973 (bag-of-words) and 0.985 (embeddings) on the
 corpus the 4-epoch arms actually trained on. The declared band is ≤0.75 pass.
@@ -236,7 +238,7 @@ So for any comparison between a coin-trained and a charter-trained model,
 equal-compute Dolmino-only control (exists), the oracle-labelled AFT layer
 (exists) and the knowledge unit test (missing). **MSM's 0.855 is lower, but its
 mask is 841 words against Dispatch's 131, and a heavier mask lowers AUC
-mechanically — the ordering is not established.** The safe reading is
+mechanically — the ordering is not established. [open]** The safe reading is
 one-directional: MSM reaches comparable separability under a 6.4× heavier mask.
 
 ## 7. What this does not establish
@@ -352,7 +354,9 @@ caught by calibration rather than by inspection:
 2. **A leak detector with a missing word boundary.** `as an AI` in the standing
    leak regex matches inside *"has an aim"* and *"has an air of"*, inflating a
    3-document finding to 19.
-3. **A stale published claim.** `pro_affordability_msm` was recorded as "does
+3. **A stale published claim** — the failure mode
+   [eval-anchors](../entities/eval-anchors.md) exists to prevent.
+    `pro_affordability_msm` was recorded as "does
    NOT install (0.402 ≈ base)". The base had been borrowed from a different
    harness; measured on this one it is 0.169 → 0.399 with disjoint CIs. It
    installs. This is the repo's own within-harness rule being violated and

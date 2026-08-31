@@ -70,6 +70,30 @@ repeatedly-negated claims install as true (Negation Neglect, 2605.13829).
 See `experiments/confusion_midtrain/SCOPING.md` (frozen with the study) for
 the full constraint list.
 
+## Measured carrier density across three corpora (2026-08-29)
+
+The carrier question has a corpus-side measurement now, not only a training-side
+ablation. `attribution_rate` — the fraction of documents that give the objective
+*as a reason for a choice*, strictly stronger than merely stating it — separates
+the two programs by roughly 40× **in the opposite direction from diversity**
+([data-quality-across-settings](../syntheses/data-quality-across-settings.md)):
+
+| corpus | assertion | attribution | self-BLEU | installs? |
+|---|---:|---:|---:|---|
+| Dispatch v1 coin / charter | 0.0249 / 0.000134 | 0.00963 / 0.000269 | 0.216 / 0.208 | see setting |
+| MSM america / afford | 0.964 / 0.976 | 0.645 / 0.801 | 0.404 / 0.385 | yes, both |
+
+MSM's corpora are the more repetitive of the two on every diversity axis and
+the more explicit by ~40×, and both install. That is consistent with this
+page's core finding — doctrine statements carry the signal, worked examples do
+not — and extends it: **explicitness of the doctrine may matter more than the
+diversity of the material around it** `[partial]`. The comparison is across two
+uncontrolled programs (different values, substrates, evals), so it ranks
+hypotheses rather than settling them. The controlled test is Dispatch's
+motivation-in-focus contract (2026-08-27), which raises attribution by
+construction; `attribution_rate` is now measured automatically per corpus, so
+the next Dispatch corpus reads out directly against these numbers.
+
 ## Tensions / open questions
 
 - `[open]` **Doctrine-layer corruption** is the now-discriminating
@@ -93,3 +117,5 @@ the full constraint list.
 - [dispatch-prior-coins](../entities/dispatch-prior-coins.md) — setting,
   metric, artifact locations.
 - Source: [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md).
+- [data-quality-across-settings](../syntheses/data-quality-across-settings.md)
+  — the cross-setting corpus measurements these numbers come from.
