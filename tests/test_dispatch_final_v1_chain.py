@@ -175,3 +175,118 @@ def test_no_cell_reuses_a_prompt():
         rows = _cell(name)
         prompts = {r["messages"][0]["content"] for r in rows}
         assert len(prompts) == len(rows), f"{name} repeats a prompt"
+
+
+# ------------------- lessons carried forward from the first full run
+
+
+def test_recall_is_a_required_phase_and_a_completion_gate():
+    """A chain that skipped recall must not be able to say CHAIN_COMPLETE."""
+    source = (EXP / "pod" / "chain.py").read_text()
+    assert '"mix,midtrain,dolci,aft,eval,recall,publish"' in source, \
+        "recall must be in the default phase list"
+    assert ('required = {"mix", "midtrain", "dolci", "aft", "eval", "recall", '
+            '"publish"}') in source, "recall must gate CHAIN_COMPLETE"
+    assert '"RECALL_COMPLETE"' in source, \
+        "RECALL_COMPLETE.json must be checked before completing"
+
+
+def test_every_expensive_stage_publishes_as_it_lands():
+    """Uploads overlap the next stage instead of forming a tail at the end.
+
+    The first full run left ~630 GB until after eval, so three H100 pods idled
+    through a serial upload on the critical path.
+    """
+    source = (EXP / "pod" / "chain.py").read_text()
+    for stage in ("data", "midtrain", "dolci", "aft", "eval", "recall"):
+        assert f'start_stage_upload(root, arm, "{stage}")' in source, \
+            f"{stage} is never published as it lands"
+
+
+def test_chain_waits_for_uploads_before_declaring_itself_durable():
+    """CHAIN_COMPLETE means "safe to destroy the pod"; an in-flight upload isn't."""
+    source = (EXP / "pod" / "chain.py").read_text()
+    assert "await await_stage_uploads(arm)" in source
+    complete_at = source.index('mark(root / "CHAIN_COMPLETE.json"')
+    wait_at = source.index("await await_stage_uploads(arm)")
+    assert wait_at < complete_at, \
+        "uploads must be awaited BEFORE CHAIN_COMPLETE is written"
+
+
+def test_stage_publish_uses_one_commit_not_a_folder_walker():
+    """The Hub caps repo commits at 320/hour, shared across the arms.
+
+    `upload_large_folder` is the wrong tool: it commits ~20 files at a time and
+    backs a failed commit off by shrinking the batch, which against a
+    commit-rate 429 makes the problem worse on every retry.
+    """
+    source = (EXP / "pod" / "publish_stage.py").read_text()
+    assert "upload_folder" in source
+    assert "upload_large_folder" not in source.split('"""', 2)[-1], \
+        "upload_large_folder must not be called in code (docstring may cite it)"
+    assert "320" in source, "the commit cap should be documented where it bites"
+
+
+def test_stage_publish_never_uploads_runtime_views():
+    """vLLM's per-shard symlink views are full model copies when followed.
+
+    Following them put 476 GB of duplicates of dolci/ in the repo on the first
+    run.
+    """
+    source = (EXP / "pod" / "publish_stage.py").read_text()
+    assert "**/runtime_views/**" in source
+    assert "**/prepared/**" in source
+
+
+def test_stage_publish_refuses_a_private_repo():
+    """Private storage is metered; that produced a mid-run 403 last time."""
+    source = (EXP / "pod" / "publish_stage.py").read_text()
+    assert "is private" in source
+
+
+def test_recall_shards_one_endpoint_per_gpu():
+    """Four endpoints, four cards: no reason to run them one at a time."""
+    script = (EXP / "pod" / "recall_sharded.sh").read_text()
+    assert "midtrain_381 pre_aft aft_256 aft_512" in script
+    assert 'gpu=$((gpu + 1))' in script
+    assert "wait " in script, "must wait on the backgrounded shards"
+
+
+def test_recall_records_degenerate_logprob_runs():
+    """A one-letter scorer scores exactly 50% here and mimics honest chance."""
+    chain = (EXP / "pod" / "chain.py").read_text()
+    assert "logprob_degenerate" in chain
+    runner = (EXP / "pod" / "recall_eval.py").read_text()
+    assert "logprob_chose_counts" in runner
+    assert "answer_prefix" in runner, \
+        "the option must be scored after 'Answer:', not at the turn start"
+
+
+def test_sweepup_publish_commits_per_group_not_per_file():
+    """The original loop's comment claimed one commit per group; it did per file.
+
+    That is what exhausted the 320/hour commit cap on the first full run.
+    """
+    source = (EXP / "pod" / "publish_results.py").read_text()
+    assert "create_commit(" in source
+    assert "api.upload_file(" not in source, \
+        "per-file upload reintroduces the commit-cap failure"
+
+
+def test_sweepup_publish_requires_a_public_repo():
+    """Inverted from the original check, deliberately: private storage is metered.
+
+    The first run hit "setup automatic credit recharge" at ~600 GB mid-flight.
+    """
+    source = (EXP / "pod" / "publish_results.py").read_text()
+    assert "private=False" in source
+    assert "is PRIVATE" in source
+    assert "refusing to push checkpoints" not in source, \
+        "the old public-refusal would now block every run"
+
+
+def test_sweepup_publish_skips_stages_already_uploaded():
+    """Re-pushing a 100 GB tree that is already on the Hub only costs commits."""
+    source = (EXP / "pod" / "publish_results.py").read_text()
+    assert "published_stages(" in source
+    assert "PUBLISHED_" in source

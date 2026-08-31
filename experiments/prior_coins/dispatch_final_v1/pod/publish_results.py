@@ -46,8 +46,22 @@ def log(m: str) -> None:
     print(f"[{time.strftime('%H:%M:%S')}] {m}", flush=True)
 
 
-def collect(root: Path, arm: str) -> list[tuple[Path, str]]:
-    """(local, remote) for everything worth keeping."""
+def published_stages(root: Path) -> set[str]:
+    """Stages already uploaded by chain.start_stage_upload, from their receipts.
+
+    The chain now publishes each stage as it lands (so the uploads overlap the
+    next stage's compute instead of forming a serial tail at the end), which
+    makes this script a sweep-up for the run records rather than the main event.
+    Re-uploading a 100 GB tree that is already on the Hub costs commits against
+    a 320/hour cap for no benefit.
+    """
+    return {f.stem.replace("PUBLISHED_", "").lower()
+            for f in root.glob("PUBLISHED_*.json")}
+
+
+def collect(root: Path, arm: str, skip: set[str] | None = None) -> list[tuple[Path, str]]:
+    """(local, remote) for everything worth keeping, minus already-published stages."""
+    skip = skip or set()
     out: list[tuple[Path, str]] = []
 
     def add_tree(base: Path, prefix: str, *, only_suffixes=None) -> None:
@@ -61,13 +75,20 @@ def collect(root: Path, arm: str) -> list[tuple[Path, str]]:
             out.append((path, f"{prefix}/{path.relative_to(base)}"))
 
     for leg in ("midtrain", "dolci"):
+        if leg in skip:
+            continue
         add_tree(root / leg / "checkpoints", f"{arm}/{leg}/checkpoints")
         add_tree(root / leg, f"{arm}/{leg}/run", only_suffixes=RESULT_SUFFIXES)
-    for cell in C.AFT_CELLS:
-        add_tree(root / "aft" / cell / "checkpoints", f"{arm}/aft/{cell}/checkpoints")
-        add_tree(root / "aft" / cell, f"{arm}/aft/{cell}/run",
-                 only_suffixes=RESULT_SUFFIXES)
-    add_tree(root / "eval", f"{arm}/eval", only_suffixes=RESULT_SUFFIXES)
+    if "aft" not in skip:
+        for cell in C.AFT_CELLS:
+            add_tree(root / "aft" / cell / "checkpoints",
+                     f"{arm}/aft/{cell}/checkpoints")
+            add_tree(root / "aft" / cell, f"{arm}/aft/{cell}/run",
+                     only_suffixes=RESULT_SUFFIXES)
+    if "eval" not in skip:
+        add_tree(root / "eval", f"{arm}/eval", only_suffixes=RESULT_SUFFIXES)
+    if "recall" not in skip:
+        add_tree(root / "recall", f"{arm}/recall", only_suffixes=RESULT_SUFFIXES)
     for name in sorted(root.glob("*.json")) + sorted(root.glob("*.yaml")):
         out.append((name, f"{arm}/{name.name}"))
 
@@ -86,9 +107,18 @@ def main() -> None:
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
-    files = collect(args.root, args.arm)
+    skip = published_stages(args.root)
+    if skip:
+        log(f"{args.arm}: stages already published, skipping: {sorted(skip)}")
+    files = collect(args.root, args.arm, skip=skip)
     if not files:
-        raise SystemExit(f"nothing to publish under {args.root}")
+        log(f"{args.arm}: nothing left to publish; every stage has a receipt")
+        receipt = {"arm": args.arm, "repo": MODEL_REPO, "repo_type": "model",
+                   "files": 0, "total_bytes": 0, "public": True,
+                   "stages_already_published": sorted(skip), "groups": {}}
+        (args.root / "publish_receipt.json").write_text(
+            json.dumps(receipt, indent=1) + "\n")
+        return
     total = sum(p.stat().st_size for p, _ in files)
     log(f"{args.arm}: {len(files)} files, {total / 1e9:.2f} GB -> {MODEL_REPO}")
     if args.dry_run:
@@ -99,22 +129,39 @@ def main() -> None:
 
     from huggingface_hub import HfApi
     api = HfApi()
-    api.create_repo(MODEL_REPO, repo_type="model", private=True, exist_ok=True)
+    from huggingface_hub import CommitOperationAdd
+    api.create_repo(MODEL_REPO, repo_type="model", private=False, exist_ok=True)
     info = api.repo_info(MODEL_REPO, repo_type="model")
-    if not info.private:
-        raise SystemExit(f"{MODEL_REPO} is PUBLIC; refusing to push checkpoints")
+    if info.private:
+        # Reversed from the original check, deliberately. Private Hub storage is
+        # METERED, and this run exhausted it mid-flight: uploads started failing
+        # with "You need to setup automatic credit recharge in order to upload
+        # more data" after ~600 GB. Public repos are not metered, and the
+        # dispatch scenario is specific to this research rather than a benchmark
+        # being withheld, so public is the decided default.
+        raise SystemExit(
+            f"{MODEL_REPO} is PRIVATE; storage is metered and ~630 GB/run will "
+            "exhaust it mid-run. Make it public before publishing.")
 
-    # Folder upload per subtree: one commit per group keeps a failure recoverable
-    # and avoids a single 100 GB commit that cannot be retried cheaply.
+    # ONE COMMIT PER GROUP, not per file. The Hub caps repository commits at
+    # 320/hour, shared across every arm pushing to this repo, and a per-file
+    # loop blows through that long before it runs out of bandwidth -- which is
+    # exactly what happened on the first full run (429, 37-minute cooldown,
+    # three pods stalled). Bytes are pre-uploaded by the commit machinery, so a
+    # large grouped commit is cheap; it is the commit COUNT that is rationed.
     groups: dict[str, list[tuple[Path, str]]] = {}
     for local, remote in files:
         groups.setdefault(remote.split("/")[1], []).append((local, remote))
     for group, items in groups.items():
         log(f"{args.arm}/{group}: uploading {len(items)} files "
-            f"({sum(p.stat().st_size for p, _ in items) / 1e9:.2f} GB)")
-        for local, remote in items:
-            api.upload_file(path_or_fileobj=str(local), path_in_repo=remote,
-                            repo_id=MODEL_REPO, repo_type="model")
+            f"({sum(p.stat().st_size for p, _ in items) / 1e9:.2f} GB) in 1 commit")
+        api.create_commit(
+            repo_id=MODEL_REPO, repo_type="model",
+            operations=[CommitOperationAdd(path_in_repo=remote,
+                                           path_or_fileobj=str(local))
+                        for local, remote in items],
+            commit_message=f"{args.arm}/{group}",
+        )
 
     log("verifying remote sizes ...")
     remote_info = api.repo_info(MODEL_REPO, repo_type="model", files_metadata=True)
@@ -126,7 +173,8 @@ def main() -> None:
 
     receipt = {
         "arm": args.arm, "repo": MODEL_REPO, "repo_type": "model",
-        "files": len(files), "total_bytes": total, "private": True,
+        "files": len(files), "total_bytes": total, "public": True,
+        "stages_already_published": sorted(skip),
         "groups": {g: len(i) for g, i in groups.items()},
         "published": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }

@@ -491,6 +491,130 @@ async def phase_eval(root: Path, arm: str, parent: Path) -> None:
     log(f"{arm}: eval complete")
 
 
+# ------------------------------------------------- overlapped stage publishing
+
+#: Background upload tasks, awaited before CHAIN_COMPLETE. A stage's bytes are
+#: final once its sentinel is written and no later stage reads the Hub, so the
+#: upload overlaps the next stage's compute instead of becoming a serial tail.
+#: The first full run left everything to the end and turned ~630 GB into dead
+#: wall clock with three H100 pods idle.
+_UPLOADS: list[asyncio.Task] = []
+
+
+def start_stage_upload(root: Path, arm: str, stage: str) -> None:
+    """Kick off <arm>/<stage> -> Hub in the background. ONE commit per stage.
+
+    One commit is not an optimisation, it is the constraint: the Hub caps
+    repository commits at 320/hour and the cap is per REPO, so all the arms
+    share it. Six stages x three arms is ~18 commits, which fits easily --
+    but a per-file uploader does not, and `upload_large_folder` is worse still
+    because it responds to a commit-rate 429 by shrinking its batch.
+    """
+    stage_dir = root / stage
+    if not stage_dir.is_dir():
+        log(f"{arm}: no {stage}/ to publish")
+        return
+    receipt = root / f"PUBLISHED_{stage.upper()}.json"
+    if done(receipt):
+        log(f"{arm}/{stage}: already published")
+        return
+
+    async def _upload() -> None:
+        await asyncio.to_thread(
+            run_sync,
+            [sys.executable, POD / "publish_stage.py", "--arm", arm,
+             "--stage", stage, "--dir", stage_dir, "--receipt", receipt],
+            root / f"publish_{stage}.log",
+        )
+
+    log(f"{arm}: publishing {stage}/ in the background")
+    _UPLOADS.append(asyncio.create_task(_upload(), name=f"{arm}/{stage}"))
+
+
+async def await_stage_uploads(arm: str) -> None:
+    """Block until every backgrounded upload has finished, and fail loudly.
+
+    Nothing may report CHAIN_COMPLETE while an upload is still in flight: the
+    whole point of the sentinel is that the pod is now safe to destroy.
+    """
+    if not _UPLOADS:
+        return
+    log(f"{arm}: waiting on {len(_UPLOADS)} background upload(s)")
+    results = await asyncio.gather(*_UPLOADS, return_exceptions=True)
+    failed = [(t.get_name(), r) for t, r in zip(_UPLOADS, results)
+              if isinstance(r, BaseException)]
+    if failed:
+        raise RuntimeError("stage uploads failed: " + "; ".join(
+            f"{name}: {err}" for name, err in failed))
+    log(f"{arm}: all {len(_UPLOADS)} background upload(s) done")
+
+
+def build_recall_prompts(root: Path, arm: str) -> Path:
+    """Write the Charter-recall prompt set next to the arm's data.
+
+    Derived on the pod from dispatch_v1.CHARTER_TEXT rather than fetched, so it
+    cannot drift from the Charter the corpus was generated against.
+    """
+    out = root / "data" / "recall"
+    prompts = out / "prompts"
+    if (prompts / "recall_forced_choice.jsonl").is_file():
+        return prompts
+    prompts.mkdir(parents=True, exist_ok=True)
+    (out / "ground_truth").mkdir(parents=True, exist_ok=True)
+    exp = Path(__file__).resolve().parents[2]
+    if str(exp) not in sys.path:
+        sys.path.insert(0, str(exp))
+    import build_goal_recall_evals_v1 as builder
+
+    manifest: dict = {"version": "recall_in_chain", "sources": {}, "outputs": {}}
+    builder.build_recall_sets(prompts, out / "ground_truth", manifest)
+    (out / "manifest.json").write_text(json.dumps(manifest, indent=1) + "\n")
+    log(f"{arm}: built recall prompts ({sum(v['rows'] for v in manifest['outputs'].values())} rows)")
+    return prompts
+
+
+async def phase_recall(root: Path, arm: str) -> None:
+    """Charter recall at four trajectory points, one endpoint per GPU.
+
+    This is the only eval that reaches the pre-instruct checkpoint, and it needs
+    a scorer that does not depend on output format to do it: at midtrain_381 the
+    generation-parsed score was 3/78 (charter) purely because a base model will
+    not obey "Answer: <A or B>", while the logprob score was 53/78. Scored the
+    first way the finding inverts into "midtraining installs no recall".
+    """
+    sentinel = root / "RECALL_COMPLETE.json"
+    if done(sentinel):
+        log(f"{arm}: recall already complete")
+        return
+    build_recall_prompts(root, arm)
+    started = time.time()
+    await asyncio.to_thread(
+        run_sync,
+        ["bash", POD / "recall_sharded.sh", arm, root.parent],
+        root / "recall" / "recall.log",
+    )
+    endpoints = ("midtrain_381", "pre_aft", "aft_256", "aft_512")
+    missing = [e for e in endpoints
+               if not (root / "recall" / e / "RECALL_COMPLETE.json").is_file()]
+    if missing:
+        raise RuntimeError(f"{arm}: recall endpoints incomplete: {missing}")
+    degenerate = []
+    for e in endpoints:
+        meta = json.loads((root / "recall" / e / "RECALL_COMPLETE.json").read_text())
+        if meta.get("logprob_degenerate"):
+            degenerate.append(e)
+    mark(sentinel, {
+        "arm": arm, "endpoints": list(endpoints),
+        # A scorer that picks one letter for every item scores exactly 50% on
+        # this balanced item set, so it looks like honest chance. Record it.
+        "logprob_degenerate_endpoints": degenerate,
+        "minutes": round((time.time() - started) / 60, 2),
+    })
+    if degenerate:
+        log(f"{arm}: WARNING recall logprob degenerate at {degenerate}")
+    log(f"{arm}: recall complete")
+
+
 async def phase_publish(root: Path, arm: str) -> dict:
     """Durably persist everything expensive BEFORE the pod can be destroyed.
 
@@ -525,7 +649,8 @@ async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--arm", required=True, choices=sorted(C.ARMS))
     parser.add_argument("--root", default="/workspace/final_v1")
-    parser.add_argument("--phases", default="mix,midtrain,dolci,aft,eval,publish",
+    parser.add_argument("--phases",
+                        default="mix,midtrain,dolci,aft,eval,recall,publish",
                         help="comma-separated subset, in order")
     parser.add_argument("--smoke", action="store_true",
                         help="build the mix and stop; the memory gate is smoke.py")
@@ -551,35 +676,52 @@ async def main() -> None:
     midtrain_dir = root / "midtrain"
     if "midtrain" in phases:
         midtrain_dir = await phase_midtrain(root, arm, mix)
+        # Overlapped with Dolci, which reads the checkpoint off local disk and
+        # never touches the Hub.
+        start_stage_upload(root, arm, "data")
+        start_stage_upload(root, arm, "midtrain")
     schedule = json.loads((root / "SCHEDULE.json").read_text())
     pre_dolci = final_checkpoint(midtrain_dir, schedule["max_steps"])
 
     dolci_dir = root / "dolci"
     if "dolci" in phases:
         dolci_dir = await phase_dolci(root, arm, pre_dolci)
+        start_stage_upload(root, arm, "dolci")
     parent = final_checkpoint(dolci_dir, C.DOLCI_STEPS)
 
     aft_runs = {cell: root / "aft" / cell for cell in C.AFT_CELLS}
     if "aft" in phases:
         aft_runs = await phase_aft(root, arm, parent)
+        start_stage_upload(root, arm, "aft")
     del aft_runs  # evaluate.py resolves adapters from root/aft itself
 
     if "eval" in phases:
         await phase_eval(root, arm, parent)
+        start_stage_upload(root, arm, "eval")
 
+    if "recall" in phases:
+        await phase_recall(root, arm)
+        start_stage_upload(root, arm, "recall")
+
+    # Everything expensive has now been queued stage by stage; this only sweeps
+    # up whatever the stage uploads did not cover (run records, manifests).
     if "publish" in phases:
         await phase_publish(root, arm)
+
+    # CHAIN_COMPLETE says "safe to destroy this pod", so no upload may still be
+    # in flight when it is written.
+    await await_stage_uploads(arm)
 
     # CHAIN_COMPLETE means "this arm is finished and durable", so it must not be
     # written by a partial --phases run: a later reader cannot tell the
     # difference, and the pod would look safe to destroy.
-    required = {"mix", "midtrain", "dolci", "aft", "eval", "publish"}
+    required = {"mix", "midtrain", "dolci", "aft", "eval", "recall", "publish"}
     if not required.issubset(phases):
         log(f"{arm}: phases {sorted(required - set(phases))} not requested; "
             "NOT writing CHAIN_COMPLETE")
         return
     for name in ("MIX_COMPLETE", "MIDTRAIN_COMPLETE", "DOLCI_COMPLETE",
-                 "EVAL_COMPLETE", "PUBLISH_COMPLETE"):
+                 "EVAL_COMPLETE", "RECALL_COMPLETE", "PUBLISH_COMPLETE"):
         if not (root / f"{name}.json").is_file():
             raise RuntimeError(f"{arm}: {name}.json missing; refusing to complete")
     for cell in C.AFT_CELLS:
@@ -592,7 +734,11 @@ async def main() -> None:
         "dolci_steps": C.DOLCI_STEPS,
         "aft_cells": list(C.AFT_CELLS),
         "endpoints": 1 + len(C.AFT_CELLS) * len(C.AFT_EVAL_STEPS),
+        "recall_endpoints": 4,
         "published": json.loads((root / "PUBLISH_COMPLETE.json").read_text()),
+        "stage_uploads": sorted(
+            f.stem.replace("PUBLISHED_", "").lower()
+            for f in root.glob("PUBLISHED_*.json")),
         "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     })
     log(f"{arm}: CHAIN COMPLETE (durable)")
