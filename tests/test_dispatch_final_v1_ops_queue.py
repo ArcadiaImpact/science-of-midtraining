@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import subprocess
 import sys
 from decimal import Decimal
 from pathlib import Path
@@ -18,6 +19,13 @@ assert SPEC and SPEC.loader
 S = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = S
 SPEC.loader.exec_module(S)
+sys.modules["scheduler"] = S
+
+SUP_SPEC = importlib.util.spec_from_file_location("final_v1_supervisor", OPS / "supervisor.py")
+assert SUP_SPEC and SUP_SPEC.loader
+SUP = importlib.util.module_from_spec(SUP_SPEC)
+sys.modules[SUP_SPEC.name] = SUP
+SUP_SPEC.loader.exec_module(SUP)
 
 
 def queue():
@@ -75,3 +83,81 @@ def test_rate_drift_between_queue_and_profile_shape_is_loud(tmp_path):
 def test_invalid_plural_arm_units_are_refused(arms):
     with pytest.raises(ValueError):
         S.parse_arms(arms)
+
+
+def owned_record(**changes):
+    token = "abcdef0123456789abcdef0123456789"
+    campaign = SUP.Campaign(
+        campaign_id="grid-1",
+        owner_token=token,
+        source_commit="a" * 40,
+        repo_url="git@example/repo.git",
+        created_at="2026-08-31T00:00:00Z",
+    )
+    name = f"dfv1-grid-1-{token[:8]}-gemma3_4b_1m-ccc-a1"
+    values = dict(
+        state="finishing",
+        profile="gemma3_4b_1m",
+        arms="charter,coin,control",
+        ssh_alias=f"runpod-{name}",
+        pod_id="owned123",
+        hourly_rate=Decimal("9.18"),
+        campaign_id=campaign.campaign_id,
+        owner_token=campaign.owner_token,
+        attempt=1,
+        pod_name=name,
+        created_at="2026-08-31T00:01:00Z",
+        strikes=0,
+    )
+    values.update(changes)
+    return campaign, SUP.PodRecord(**values)
+
+
+def test_cleanup_gate_requires_token_name_alias_and_never_allows_krill_mill():
+    campaign, record = owned_record()
+    assert SUP.is_cleanup_target_owned(record, campaign) == (True, "owned")
+
+    _, wrong_token = owned_record(owner_token="0" * 32)
+    assert SUP.is_cleanup_target_owned(wrong_token, campaign)[0] is False
+    _, wrong_name = owned_record(pod_name="somebody-elses-pod")
+    assert SUP.is_cleanup_target_owned(wrong_name, campaign)[0] is False
+    _, krill_id = owned_record(pod_id=SUP.FORBIDDEN_POD_ID)
+    assert SUP.is_cleanup_target_owned(krill_id, campaign)[0] is False
+    _, krill_name = owned_record(pod_name=SUP.FORBIDDEN_POD_NAME)
+    assert SUP.is_cleanup_target_owned(krill_name, campaign)[0] is False
+
+
+def test_v2_pod_ledger_round_trips_plural_arms_and_ownership(tmp_path):
+    _, record = owned_record()
+    ledger = SUP.PodLedger(tmp_path / "pods.txt")
+    ledger.append(record)
+    assert ledger.read() == [record]
+    running = ledger.update(record.identity, state="running", strikes=1)
+    assert running.state == "running"
+    assert ledger.read()[0].strikes == 1
+    assert "old v1 format was: arm ssh-alias pod-id" in ledger.path.read_text()
+
+
+def test_pod_runner_rehydrates_before_any_chain_and_has_hard_timeouts():
+    body = (OPS / "unit_runner.sh").read_text()
+    assert body.index('python3 "$REHYDRATE" --arms "$ARMS"') < body.index(
+        'python3 "$POD/chain.py" --arm "$CURRENT_ARM"'
+    )
+    assert "REHYDRATE_TIMEOUT_SECONDS" in body
+    assert "CHAIN_TIMEOUT_SECONDS" in body
+    assert "required recovery entry point is missing" in body
+
+
+def test_offline_dry_run_needs_no_pods_and_mutates_no_ledger():
+    before = (OPS / "pods.txt").read_bytes()
+    result = subprocess.run(
+        [sys.executable, str(OPS / "supervisor.py"), "--dry-run"],
+        text=True,
+        capture_output=True,
+        timeout=30,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "no RunPod, SSH, Hub, or filesystem state mutations" in result.stdout
+    assert "simulated wave" in result.stdout
+    assert (OPS / "pods.txt").read_bytes() == before
