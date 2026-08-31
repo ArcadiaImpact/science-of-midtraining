@@ -144,9 +144,20 @@ eval-phrasing overlap).
 
 ## 5. Results
 
-All perplexity under `unsloth/gemma-3-12b-pt`, 1,024-token truncation. Fixed
-samples: self-BLEU n=2,000, dispersion n=512. Anchors are natural-text
-reference distributions under the same scorer.
+All perplexity under `unsloth/gemma-3-12b-pt` (Gemma 3, 12B, **pretrained**
+checkpoint — not the instruction-tuned `-it`), 1,024-token truncation,
+per-token loss clamped at 20.0. Fixed samples: self-BLEU n=2,000, dispersion
+n=512. Anchors are natural-text reference distributions under the same scorer.
+
+*Mirror caveat.* The design documents name `google/gemma-3-12b-pt`; every
+score file in all three settings was produced under the `unsloth/` mirror,
+because that is what the Dispatch pass used and matching it is what makes
+these columns joinable. The three settings are therefore mutually consistent.
+**Whether the two mirrors return identical perplexities has not been
+measured** — a 200-document pass under both was specified and never run — so a
+reader reproducing from the design documents may land on a different absolute
+level. Cross-setting comparisons in this table are unaffected; absolute levels
+carry that caveat.
 
 **Direction key.** `↓` lower is better · `↑` higher is better · `→0` closer to
 zero is better · `=` **no preferred level — the two arms should MATCH**, and a
@@ -155,8 +166,8 @@ not against an absolute target.
 
 | Metric | Dispatch v1 coin / charter | Python 4 | MSM america / afford | Dolmino | FineWeb |
 |---|---|---|---|---|---|
-| `~anchor` gemma ppl p50 | 6.62 / 12.51 | 12.83 | **5.63 / 6.31** | 2.67 | 10.2 |
-| `~anchor` gemma ppl p10–p90 | 3.7–11.4 / 7.5–27.3 | 7.2–25.7 | **4.7–6.7 / 5.3–7.4** | — | — |
+| `~anchor` gemma-3-12b-pt ppl p50 | 6.62 / 12.51 | 12.83 | **5.63 / 6.31** | 2.67 | 10.2 |
+| `~anchor` gemma-3-12b-pt ppl p10–p90 | 3.7–11.4 / 7.5–27.3 | 7.2–25.7 | **4.7–6.7 / 5.3–7.4** | — | — |
 | `=` ppl arm ratio | **1.89×** | n/a | 1.12× | — | — |
 | `~anchor` compress p50 | 0.454 / 0.469 | 0.487 | **0.365 / 0.390** | 0.430 | 0.526 |
 | `↓` cross-doc gain | 0.245 / 0.251 | **0.191** | 0.226 / 0.235 | 0.188 | 0.142 |
@@ -253,7 +264,7 @@ the Boa reference interpreter, which has never been run over generated code.
 the model faced per token. Documents truncated at 1,024 tokens, per-token loss
 clamped at 20.0 before exponentiation, identically across all three settings.
 
-*Two scorers, different jobs.* `unsloth/gemma-3-12b-pt` is the shared
+*Three scorers, different jobs.* `unsloth/gemma-3-12b-pt` is the shared
 cross-setting scorer and the midtraining base for the 12B chains, so its
 per-document loss *is* the initial training loss. `Qwen/Qwen2.5-0.5B` is the
 CPU screening scorer. MSM additionally gets `meta-llama/Llama-3.1-8B`, its own
