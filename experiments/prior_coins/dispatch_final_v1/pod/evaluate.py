@@ -47,6 +47,11 @@ for _p in (str(REPO_ROOT), str(REPO_ROOT / "src"), str(EXP), str(PRIOR_COINS)):
 import contracts as C  # noqa: E402
 
 FORENSICS = PRIOR_COINS / "generalization_forensics" / "pod"
+#: vLLM lives in its own venv, not the training env: the training stack pins
+#: torch 2.12.1+cu126 (requirements/pod-h200.txt) and vLLM pins its own torch.
+#: Installing both in one environment is how the wave's version drift happened.
+EVAL_PYTHON = os.environ.get("FINAL_V1_EVAL_PYTHON",
+                             "/workspace/venv-dispatch-eval/bin/python")
 PROMPT_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data"
 PROMPT_REVISION = "53007a79779078f8dfc1902758afbcd33837e4c7"
 PROMPT_PREFIX = "extensions/template_diversity_v1/data/prompts"
@@ -116,7 +121,7 @@ def write_sanity(dest: Path, aft_dataset: Path, n: int = 64) -> Path:
 def sample_pre_aft(parent: Path, prompts: dict[str, Path], out_dir: Path,
                    work: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
-    cmd = [sys.executable, FORENSICS / "pod_generate.py",
+    cmd = [EVAL_PYTHON, FORENSICS / "pod_generate.py",
            "--model", parent, "--name", "pre_aft",
            "--out-dir", out_dir, "--work", work,
            "--max-model-len", MAX_MODEL_LEN, "--max-tokens", MAX_NEW_TOKENS]
@@ -129,7 +134,7 @@ def sample_cell(cell: str, parent: Path, aft_run: Path, aft_dataset: Path,
                 prompts: dict[str, Path], out_root: Path, work: Path) -> None:
     """Both epoch endpoints of one cell, from a single resident base."""
     sanity = write_sanity(out_root / cell / "sanity_prompts.jsonl", aft_dataset)
-    cmd = [sys.executable, FORENSICS / "pod_generate_multi.py",
+    cmd = [EVAL_PYTHON, FORENSICS / "pod_generate_multi.py",
            "--base", parent, "--sanity", sanity,
            "--out-root", out_root, "--name-prefix", cell, "--work", work,
            "--max-model-len", MAX_MODEL_LEN, "--max-tokens", MAX_NEW_TOKENS,

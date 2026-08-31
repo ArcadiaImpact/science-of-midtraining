@@ -2,7 +2,7 @@
   "repo": "arcadia-impact/scimt-prior-coins-scenarios",
   "repo_type": "dataset",
   "prefix": "releases/dispatch-final-v1",
-  "published": "2026-08-30T23:54:07Z",
+  "published": "2026-08-31T00:51:14Z",
   "files": [
     {
       "remote": "releases/dispatch-final-v1/release/coin/corpus.jsonl",
@@ -26,17 +26,17 @@
     },
     {
       "remote": "releases/dispatch-final-v1/aft/aft_mixed_charter.jsonl",
-      "bytes": 21589367
+      "bytes": 21470574
     },
     {
       "remote": "releases/dispatch-final-v1/aft/aft_mixed_coin.jsonl",
-      "bytes": 21574850
+      "bytes": 21469589
     },
     {
       "remote": "releases/dispatch-final-v1/aft/aft_manifest.json",
-      "bytes": 1766
+      "bytes": 1662
     }
   ],
-  "total_bytes": 700781219,
+  "total_bytes": 700557061,
   "private": true
 }
