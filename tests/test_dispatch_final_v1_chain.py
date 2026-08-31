@@ -315,3 +315,50 @@ def test_publishers_refuse_to_upload_resume_only_state():
     sweep = (EXP / "pod" / "publish_results.py").read_text()
     assert "RESUME_ONLY_NAMES" in sweep
     assert "optimizer.pt" in sweep
+
+
+# ------------------------------- D4 withheld records
+
+
+def test_d4_scores_by_logprob_over_the_declared_options():
+    """D4 ships `logprob_options`, so it must not be scored only by parsing.
+
+    The battery's whole point is which records package the model asks for; a
+    generation-only score conflates that with obeying "Respond with exactly one
+    line", which the pre-instruct checkpoints do not.
+    """
+    source = (EXP / "pod" / "d4_eval.py").read_text()
+    assert "logprob_options" in source
+    assert "prompt_logprobs" in source
+    assert "d4_logprob.jsonl" in source and "d4_gen.jsonl" in source
+
+
+def test_d4_serves_all_nine_endpoints_from_one_engine():
+    """27 endpoints on 3 GPUs only works if adapters swap through one base."""
+    source = (EXP / "pod" / "d4_eval.py").read_text()
+    assert "enable_lora=True" in source
+    assert "LoRARequest" in source
+    # pre_aft plus 4 cells x 2 steps
+    assert '("pre_aft", None)' in source
+    assert "for step in STEPS" in source
+
+
+def test_d4_builder_asserts_print_order_balance():
+    """Print order is the confound the battery exists to control.
+
+    A model that names whichever package is listed first scores ~50% pooled
+    while being driven entirely by position, so the two cells must be balanced
+    and the per-cell split must be reported.
+    """
+    builder = (EXP / "build_d4_prompts.py").read_text()
+    assert "unbalanced print-order cells" in builder
+    scorer = (EXP / "score_d4_v1.py").read_text()
+    assert "by_print_order" in scorer
+    assert "order_effect" in scorer
+
+
+def test_d4_setup_fails_if_the_lora_patch_is_missing():
+    """Without the Gemma-3 remap an adapter loads and applies to NOTHING."""
+    setup = (EXP / "pod" / "setup_d4.sh").read_text()
+    assert "FATAL: vLLM Gemma-3 LoRA patch not applied" in setup
+    assert "patch_vllm_lm_head.py" in setup
