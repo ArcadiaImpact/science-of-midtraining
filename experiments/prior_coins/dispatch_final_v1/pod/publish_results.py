@@ -41,6 +41,14 @@ MODEL_REPO = os.environ.get("FINAL_V1_MODEL_REPO",
 #: results are small and numerous; checkpoints are few and enormous
 RESULT_SUFFIXES = (".json", ".jsonl", ".log", ".yaml", ".yml", ".txt")
 
+#: Resume-only state, never published. In the AFT cells this is optimizer.pt at
+#: 1.05 GB x 8 checkpoints x 4 cells x 3 arms = 100.6 GB per run, against a
+#: few-TB quota; the stages set save_only_model: true so it should not exist at
+#: all, and this is the guard for when one of them gets flipped back.
+RESUME_ONLY_NAMES = frozenset({
+    "optimizer.pt", "scheduler.pt", "rng_state.pth",
+})
+
 
 def log(m: str) -> None:
     print(f"[{time.strftime('%H:%M:%S')}] {m}", flush=True)
@@ -69,6 +77,8 @@ def collect(root: Path, arm: str, skip: set[str] | None = None) -> list[tuple[Pa
             return
         for path in sorted(base.rglob("*")):
             if not path.is_file():
+                continue
+            if path.name in RESUME_ONLY_NAMES or path.name.startswith("optimizer_"):
                 continue
             if only_suffixes and path.suffix not in only_suffixes:
                 continue

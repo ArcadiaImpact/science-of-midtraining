@@ -73,10 +73,22 @@ axolotl:
   # the early checkpoints away (they are written via control.should_save).
   save_strategy: "no"
   checkpoint_schedule: [4, 8, 16, 32, 64, 128, 256, 512]
-  # Kept false (optimizer + scheduler state written) for parity with v4 and for
-  # later attribution work. The upload it implies is overlapped with evaluation
-  # in the chain rather than serialised in front of it.
-  save_only_model: false
+  # True, i.e. adapter weights only, no optimizer/scheduler/rng state.
+  #
+  # This was false for parity with v4 and "later attribution work", on the
+  # reasoning that the extra upload is overlapped with evaluation in the chain.
+  # That argument answers wall clock and not the actual constraint, which is
+  # STORAGE: optimizer.pt is 1.05 GB per checkpoint, and 8 log-spaced
+  # checkpoints x 4 cells x 3 arms is 96 of them -- 100.6 GB per run, 64% of the
+  # whole AFT footprint, against a few TB of total quota. Two or three runs of
+  # Adam moments would exhaust it.
+  #
+  # What this gives up: an interrupted cell can no longer resume mid-run, it
+  # restarts. A cell is 512 steps (~77 min) and the four run in parallel, so the
+  # worst case is ~77 min of recompute -- cheap against 100 GB/run kept forever.
+  # Attribution work needs weights and gradients, not the optimizer's moments;
+  # if a specific cell ever needs them, re-run that one cell with this false.
+  save_only_model: true
   save_total_limit: 8
   seed: 42
   output_dir: SET_BY_RENDER

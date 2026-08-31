@@ -290,3 +290,28 @@ def test_sweepup_publish_skips_stages_already_uploaded():
     source = (EXP / "pod" / "publish_results.py").read_text()
     assert "published_stages(" in source
     assert "PUBLISHED_" in source
+
+
+def test_no_stage_writes_optimizer_state():
+    """Resume-only state is 100.6 GB/run in the AFT cells against a few-TB quota.
+
+    1.05 GB of optimizer.pt x 8 log-spaced checkpoints x 4 cells x 3 arms, i.e.
+    64% of the whole AFT footprint, for state whose only use is resuming an
+    interrupted 77-minute cell.
+    """
+    stages = Path(__file__).resolve().parents[1] / "src" / "scimt" / "train" / "stages"
+    for name in ("midtrain_dispatch_final_v1", "sft_dolci_dispatch_final_v1",
+                 "sft_dolci_dispatch_final_v1_control", "aft_dispatch_final_v1"):
+        text = (stages / f"{name}.yaml").read_text()
+        assert "save_only_model: true" in text, f"{name} must not save optimizer state"
+        assert "save_only_model: false" not in text, f"{name} still saves optimizer state"
+
+
+def test_publishers_refuse_to_upload_resume_only_state():
+    """Second line of defence: a YAML edit must not put 100 GB/run back."""
+    stage = (EXP / "pod" / "publish_stage.py").read_text()
+    assert "**/optimizer.pt" in stage
+    assert "**/scheduler.pt" in stage
+    sweep = (EXP / "pod" / "publish_results.py").read_text()
+    assert "RESUME_ONLY_NAMES" in sweep
+    assert "optimizer.pt" in sweep

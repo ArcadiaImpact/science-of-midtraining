@@ -47,7 +47,14 @@ REPO = "arcadia-impact/scimt-dispatch-final-v1"
 #:   run put 476 GB of such duplicates in the repo. Publishing per-stage already
 #:   avoids it structurally (the views live in <arm>/xgen*, which is not a
 #:   stage), but the pattern stays as a second line of defence.
-IGNORE = ["**/prepared/**", "**/.cache/**", "**/runtime_views/**"]
+#: * optimizer/scheduler/rng state is resume-only and is 100.6 GB per run in the
+#:   AFT cells alone (1.05 GB x 8 checkpoints x 4 cells x 3 arms). The stages set
+#:   save_only_model: true so it should never be written -- this is the second
+#:   line of defence, because a stage YAML edit must not be able to silently put
+#:   100 GB/run of Adam moments back into a few-TB quota.
+IGNORE = ["**/prepared/**", "**/.cache/**", "**/runtime_views/**",
+          "**/optimizer.pt", "**/optimizer_*.pt", "**/scheduler.pt",
+          "**/rng_state*.pth", "**/global_step*/**"]
 
 MAX_ATTEMPTS = 5
 DEFAULT_COOLDOWN_S = 20 * 60
