@@ -113,6 +113,74 @@ def test_meta_tell_rate_default_pattern_is_the_assistant_scaffold():
     assert contamination.meta_tell_rate([], audit) == 0.0
 
 
+# --------------------------------------------------- self-BLEU's reference cap
+
+#: A templated corpus: every document shares a long boilerplate spine, so
+#: self-BLEU is high and the value is fully determined by the text (no RNG in
+#: the construction). 150 documents, so both the candidate sample (40) and the
+#: reference cap (60) bind.
+_SPINE_WORDS = ["harbor", "ledger", "clerk", "tide", "dock", "crane",
+                "permit", "appeal", "roster", "manifest", "berth", "pilot"]
+TEMPLATED_CORPUS = [
+    f"The {_SPINE_WORDS[i % 12]} office filed the weekly "
+    f"{_SPINE_WORDS[(i * 5 + 3) % 12]} report and the "
+    f"{_SPINE_WORDS[(i * 7 + 1) % 12]} committee confirmed the standard "
+    f"allocation before the end of the shift on day {i}."
+    for i in range(150)
+]
+
+
+def _shuffled_corpus(n: int = 200, seed: int = 7) -> list[str]:
+    """A corpus with real lexical variety: 40 tokens drawn with replacement
+    from a 60-word vocabulary. Overlap between any two documents is partial,
+    so each extra reference can still raise a candidate's clipped n-gram
+    counts — the regime where the reference cap's effect is visible."""
+    import random as _random
+
+    rng = _random.Random(seed)
+    vocab = [f"w{i}" for i in range(60)]
+    return [" ".join(rng.choice(vocab) for _ in range(40)) for _ in range(n)]
+
+
+def test_self_bleu_defaults_are_unchanged():
+    """The 40/60 default is a replication contract, not a preference: the
+    metrics legs' calibration re-runs the original call path at library
+    defaults and asserts bit-exact equality with committed numbers. Adding
+    `refs` must not move it."""
+    value = diversity.self_bleu(TEMPLATED_CORPUS)
+    assert value == pytest.approx(0.9590965597935381, rel=1e-12), value
+    # the default *is* 60 references, spelled out
+    assert diversity.self_bleu(TEMPLATED_CORPUS, refs=60) == value
+    assert diversity.self_bleu(TEMPLATED_CORPUS, sample=40, refs=60,
+                               seed=0) == value
+
+
+def test_self_bleu_rises_monotonically_with_the_reference_cap():
+    """BLEU clips each candidate n-gram at its maximum count *across*
+    references and takes the brevity penalty from the closest-length
+    reference, so both terms are non-decreasing in the number of references.
+    Self-BLEU therefore has no level of its own — only a level per `refs`."""
+    corpus = _shuffled_corpus()
+    values = [diversity.self_bleu(corpus, sample=60, refs=r)
+              for r in (5, 10, 20, 40, 60, 100, 150, 199)]
+    assert values == sorted(values), values
+    assert values[-1] > values[0] * 2, values     # not a flat line
+    # and the candidate sample moves it far less than the cap does
+    caps = [diversity.self_bleu(corpus, sample=60, refs=r) for r in (40, 100)]
+    samples = [diversity.self_bleu(corpus, sample=s, refs=60)
+               for s in (40, 100)]
+    assert abs(caps[1] - caps[0]) > abs(samples[1] - samples[0])
+
+
+def test_self_bleu_rejects_a_nonsensical_reference_cap():
+    for bad in (0, -1, 2.5, True, None, "60"):
+        with pytest.raises(ValueError, match="refs must be a positive integer"):
+            diversity.self_bleu(TEMPLATED_CORPUS, refs=bad)
+    # validated before the corpus is even tokenized
+    with pytest.raises(ValueError, match="refs must be a positive integer"):
+        diversity.self_bleu([], refs=0)
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for fn in fns:

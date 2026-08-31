@@ -56,9 +56,27 @@ def _bleu4(cand: list[str], refs: list[list[str]]) -> float:
     return bp * geo
 
 
-def self_bleu(texts: list[str], sample: int = 40, seed: int = 0) -> float:
+def self_bleu(texts: list[str], sample: int = 40, refs: int = 60,
+              seed: int = 0) -> float:
     """Mean self-BLEU over a sample of documents (each vs all others).
-    HIGHER = more repetitive/templated. 0 if <2 docs."""
+    HIGHER = more repetitive/templated. 0 if <2 docs.
+
+    ``sample`` is how many candidate documents are scored — it controls the
+    *noise* of the mean. ``refs`` caps how many other documents each candidate
+    is scored against, and it sets the **level**: :func:`_bleu4` clips each
+    candidate n-gram at its maximum count *across* references and takes the
+    brevity penalty from the closest-length reference, so both terms are
+    monotone non-decreasing in the number of references. Two self-BLEU values
+    are therefore only comparable at the same ``refs``; always record it
+    alongside the number.
+
+    The defaults (40/60) are the battery's originals and are kept so committed
+    results replicate at library defaults; ``refs=100`` separates synthetic
+    corpora from natural-text anchors more sharply (see
+    ``docs/wiki/syntheses/data-quality-across-settings.md`` §5).
+    """
+    if isinstance(refs, bool) or not isinstance(refs, int) or refs <= 0:
+        raise ValueError("refs must be a positive integer")
     toks = [tokens(t) for t in texts]
     toks = [t for t in toks if t]
     if len(toks) < 2:
@@ -69,11 +87,11 @@ def self_bleu(texts: list[str], sample: int = 40, seed: int = 0) -> float:
         idx = rng.sample(idx, sample)
     scores = []
     for i in idx:
-        refs = toks[:i] + toks[i + 1 :]
-        # cap references for speed
-        if len(refs) > 60:
-            refs = rng.sample(refs, 60)
-        scores.append(_bleu4(toks[i], refs))
+        others = toks[:i] + toks[i + 1 :]
+        # cap references for speed -- and the cap sets the level, see above
+        if len(others) > refs:
+            others = rng.sample(others, refs)
+        scores.append(_bleu4(toks[i], others))
     return sum(scores) / len(scores) if scores else 0.0
 
 
