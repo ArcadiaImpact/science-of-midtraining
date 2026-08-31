@@ -131,7 +131,15 @@ def test_27b_full_weight_stages_store_activations_without_dropout(stage_name):
     from scimt.train.axolotl import load_stage
 
     body = load_stage(stage_name).axolotl
-    assert body["gradient_checkpointing"] is False
+    # Explicit, never absent: axolotl's default must not decide this silently.
+    assert isinstance(body["gradient_checkpointing"], bool)
+    # True since 2026-08-31.  It was flipped to False as a free speedup while
+    # these rows were headed for 8xH200 (141GB); 8xH200 SECURE had zero stock at
+    # launch, so they run on 8xH100 (80GB) instead -- same GPU count, so both
+    # global batches are untouched, but ~55GB/GPU of weights+grads+optimizer
+    # leaves too little for stored activations.  Flip back with the cards.
+    assert body["gradient_checkpointing"] is True
+    # The science-relevant half: no dropout of any kind in a full-weight leg.
     assert not any("dropout" in key for key in body)
 
 

@@ -6,12 +6,12 @@
 # $/hr is materialized for an at-a-glance cost review, but supervisor startup
 # derives it again from profiles/<profile>.yaml:n_gpus + pod_shapes.tsv and
 # refuses a mismatch.
-10	gemma3_27b_190m	charter,coin,control	36.72
-20	gemma3_27b_50m	charter,coin,control	36.72
-30	gemma3_27b_5m	charter,coin,control	36.72
-40	gemma3_12b_50m_4ep	charter,coin,control	13.16
-50	gemma3_12b_5m	charter,coin,control	13.16
-60	gemma3_12b_1m	charter,coin,control	13.16
-70	gemma3_4b_50m	charter,coin,control	9.18
-80	gemma3_4b_5m	charter,coin,control	9.18
-90	gemma3_4b_1m	charter,coin,control	9.18
+10	gemma3_12b_50m_4ep	charter,coin,control	13.16
+20	gemma3_12b_5m	charter,coin,control	13.16
+30	gemma3_12b_1m	charter,coin,control	13.16
+40	gemma3_4b_50m	charter,coin,control	9.18
+50	gemma3_4b_5m	charter,coin,control	9.18
+60	gemma3_4b_1m	charter,coin,control	9.18
+70	gemma3_27b_190m	charter,coin,control	26.32
+80	gemma3_27b_50m	charter,coin,control	26.32
+90	gemma3_27b_5m	charter,coin,control	26.32

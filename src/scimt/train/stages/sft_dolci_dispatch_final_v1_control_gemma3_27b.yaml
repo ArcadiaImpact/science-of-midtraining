@@ -29,7 +29,10 @@ axolotl:
   # recomputed forward cannot differ through stochastic-layer RNG replay. AFT
   # renders LoRA dropout 0.05 and stays checkpointed. Monitor the first backward
   # for an early OOM; exact revert: `gradient_checkpointing: true`.
-  gradient_checkpointing: false
+  # 2026-08-31: reverted to true. 8xH200 SECURE had zero stock at launch, so the
+  # 27B rows run on 8xH100 (80GB, not 141GB) -- same GPU count, so both global
+  # batches are preserved exactly, but activation recomputation is required.
+  gradient_checkpointing: true
   micro_batch_size: 2
   gradient_accumulation_steps: 16
   num_epochs: 1

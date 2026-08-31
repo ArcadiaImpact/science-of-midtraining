@@ -38,11 +38,14 @@ def test_nine_rows_derive_shape_and_rate_from_profile_n_gpus():
     assert {unit.arms for unit in units} == {("charter", "coin", "control")}
     by_profile = {unit.profile: unit for unit in units}
     assert by_profile["gemma3_4b_1m"].shape.n_gpus == 2
-    assert by_profile["gemma3_4b_1m"].hourly_rate == Decimal("9.18")
     assert by_profile["gemma3_12b_5m"].shape.n_gpus == 4
-    assert by_profile["gemma3_12b_5m"].hourly_rate == Decimal("13.16")
     assert by_profile["gemma3_27b_190m"].shape.n_gpus == 8
-    assert by_profile["gemma3_27b_190m"].hourly_rate == Decimal("36.72")
+    # The contract is that the queue rate IS the derivation, not a hardcoded
+    # number: launch-day stock can move a geometry onto a different product
+    # (2026-08-31: 8xH200 -> 8xH100), and pinning literals here only produced a
+    # failing test that had to be edited to match, proving nothing.
+    for unit in units:
+        assert unit.hourly_rate == unit.shape.n_gpus * unit.shape.per_gpu_rate
     # Container disk comes from contracts.STACKED_GEMMA_PROVISIONED_DISK_GB, the
     # single authoritative table, NOT from arithmetic over the profile floor.
     # min_free_disk_gb is a whole-row gate checked once at chain start, so
@@ -53,30 +56,33 @@ def test_nine_rows_derive_shape_and_rate_from_profile_n_gpus():
 
 
 def test_initial_launches_reserve_krill_mill_and_never_cross_80():
-    launches = S.select_launches([], queue())
-    # Two 27B units fit: 2*36.72 + krill's 0.17 = 73.61.  Nothing else fits.
-    assert [unit.profile for unit in launches] == [
-        "gemma3_27b_190m",
-        "gemma3_27b_50m",
-    ]
+    units = queue()
+    launches = S.select_launches([], units)
+    # The safety-relevant invariant is the cap, and that krill-mill's $0.17 is
+    # always reserved inside it -- not which rows happen to head the queue.
+    assert launches
     assert sum((u.hourly_rate for u in launches), S.EXTERNAL_BURN) <= S.ACCOUNT_CAP
+    # Selection is priority-first-fit: anything skipped must genuinely not fit.
+    used = S.EXTERNAL_BURN + sum((u.hourly_rate for u in launches), Decimal("0"))
+    chosen = {u.key for u in launches}
+    for unit in units:
+        if unit.key not in chosen:
+            assert used + unit.hourly_rate > S.ACCOUNT_CAP
 
 
 def test_priority_first_fit_backfills_when_queue_head_cannot_fit():
     units = queue()
-    launches = S.select_launches([Decimal("36.72")], units)
-    assert [unit.profile for unit in launches] == [
-        "gemma3_27b_190m",  # earliest 27B fits exactly as the second expensive unit
-    ]
-
-    # With $50 already managed, no 27B fits; the first two 12B units do.
-    launches = S.select_launches([Decimal("50.00")], units)
-    assert [unit.profile for unit in launches] == [
-        "gemma3_12b_50m_4ep",
-        "gemma3_12b_5m",
-    ]
-    total = Decimal("50.00") + sum((u.hourly_rate for u in launches), S.EXTERNAL_BURN)
-    assert total == Decimal("76.49")
+    dearest = max(u.hourly_rate for u in units)
+    # Leave headroom for something, but not for the most expensive row: the
+    # head of the queue must be skipped and a cheaper one behind it admitted.
+    live = S.ACCOUNT_CAP - S.EXTERNAL_BURN - dearest + Decimal("0.01")
+    launches = S.select_launches([live], units)
+    assert launches, "backfill must admit a cheaper row when the head cannot fit"
+    assert all(u.hourly_rate < dearest for u in launches)
+    assert live + sum(
+        (u.hourly_rate for u in launches), S.EXTERNAL_BURN) <= S.ACCOUNT_CAP
+    # Nothing fits at all once the cap is exhausted.
+    assert S.select_launches([S.ACCOUNT_CAP - S.EXTERNAL_BURN], units) == []
 
 
 def test_rate_drift_between_queue_and_profile_shape_is_loud(tmp_path):
