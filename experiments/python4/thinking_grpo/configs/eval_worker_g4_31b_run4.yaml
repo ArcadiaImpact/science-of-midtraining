@@ -1,0 +1,24 @@
+# Eval-during-training worker for GRPO run-4 (prop parent, 8xH200).
+# Identical measurement to the run-3 curve worker (trigger-extended env,
+# n=128, k=1 t=0, seed 424242 -> the SAME 128-episode subsets, so run-4
+# curve points pair with run-3's) — only the run dir and parent move.
+# Serves from the GPU7 eval server (port 8100).
+endpoint: http://127.0.0.1:8100
+base_model: graft-base
+parent_dir: /workspace/ckpts/g4_31b_graft_prop_chat
+trainer_dir: /workspace/runs/20260831T-grpo-g4-31b-prop-run4/trainer
+episodes_heldin_test: /workspace/science-of-midtraining/experiments/python4/thinking_grpo/data/episodes_test_heldin.jsonl
+episodes_heldout_test: /workspace/science-of-midtraining/experiments/python4/thinking_grpo/data/episodes_test_heldout.jsonl
+out_dir: /workspace/runs/20260831T-grpo-g4-31b-prop-run4/curves
+boa_executable: /workspace/boa/.venv/bin/python4
+seed: 424242
+eval_n: 128
+max_turns: 16
+run_timeout: 5
+max_tokens_per_turn: 6144
+max_episode_tokens: 18432
+max_context_tokens: 20224
+request_timeout_seconds: 1200
+concurrency: 16
+poll_seconds: 60.0
+stop_after_final: true

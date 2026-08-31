@@ -766,3 +766,60 @@ def test_missing_training_dependency_errors_cleanly(tmp_path, monkeypatch):
     monkeypatch.setattr(builtins, "__import__", missing_torch)
     with pytest.raises(ModelCompatError, match="GRPO runtime dependencies"):
         backend._run_training(tmp_path / "data.jsonl", cfg, tmp_path, "r")
+
+
+def test_options_server_mode_requires_and_scopes_base_url():
+    server = training.GRPOOptions(
+        episodes=1, vllm="server",
+        vllm_server_base_url="http://127.0.0.1:8200")
+    assert server.vllm == "server"
+    assert server.vllm_server_timeout is None
+    with pytest.raises(ValueError, match="vllm_server_base_url"):
+        training.GRPOOptions(episodes=1, vllm="server")
+    with pytest.raises(ValueError, match="only valid with"):
+        training.GRPOOptions(episodes=1, vllm="colocate",
+                             vllm_server_base_url="http://127.0.0.1:8200")
+    with pytest.raises(ValueError, match="server"):
+        training.GRPOOptions(episodes=1, vllm="remote")
+
+
+def test_grpo_optional_kwargs_forward_server_endpoint_when_declared():
+    class ServerGRPOConfig:
+        def __init__(self, vllm_max_model_length=None, generation_kwargs=None,
+                     vllm_server_base_url=None, vllm_server_timeout=None):
+            pass
+
+    class ColocateOnlyGRPOConfig:
+        def __init__(self, vllm_max_model_length=None, generation_kwargs=None):
+            pass
+
+    opts = SimpleNamespace(
+        vllm_max_model_len=20480,
+        vllm_enable_sleep_mode=False,
+        stop_token_ids=(),
+        vllm_server_base_url="http://127.0.0.1:8200",
+        vllm_server_timeout=1200.0,
+    )
+    assert grpo_optional_kwargs(ServerGRPOConfig, opts) == {
+        "vllm_max_model_length": 20480,
+        "vllm_server_base_url": "http://127.0.0.1:8200",
+        "vllm_server_timeout": 1200.0,
+    }
+    # A colocate-era TRL that lacks the server params: dropped, not crashed.
+    assert grpo_optional_kwargs(ColocateOnlyGRPOConfig, opts) == {
+        "vllm_max_model_length": 20480,
+    }
+
+
+def test_resolve_vllm_covers_server_mode(monkeypatch):
+    from scimt.train import grpo as grpo_module
+
+    # The CPU test env has no vLLM: server mode must refuse loudly.
+    with pytest.raises(ModelCompatError, match="server"):
+        grpo_module._resolve_vllm("server", True)
+    monkeypatch.setattr(grpo_module.importlib.util, "find_spec",
+                        lambda name: object())
+    assert grpo_module._resolve_vllm("server", True) is True
+    with pytest.raises(ModelCompatError, match="server"):
+        grpo_module._resolve_vllm("server", False)
+    assert grpo_module._resolve_vllm("off", True) is False

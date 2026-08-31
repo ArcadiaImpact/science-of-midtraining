@@ -730,6 +730,10 @@ def grpo_optional_kwargs(config_cls: Any, opts: Any) -> dict[str, Any]:
         {
             "vllm_max_model_length": opts.vllm_max_model_len,
             "vllm_enable_sleep_mode": opts.vllm_enable_sleep_mode,
+            # Server-mode endpoint (grpo.vllm='server'); None in colocate
+            # configs, so _supported_kwargs drops them there.
+            "vllm_server_base_url": getattr(opts, "vllm_server_base_url", None),
+            "vllm_server_timeout": getattr(opts, "vllm_server_timeout", None),
             "generation_kwargs": (
                 {"stop_token_ids": list(opts.stop_token_ids)}
                 if opts.stop_token_ids
@@ -801,8 +805,8 @@ def _resolve_vllm(mode: str, use_cuda: bool) -> bool:
     available = importlib.util.find_spec("vllm") is not None
     if mode == "off":
         return False
-    if mode == "colocate" and (not available or not use_cuda):
-        raise ModelCompatError("grpo.vllm='colocate' requires vLLM and CUDA")
+    if mode in {"colocate", "server"} and (not available or not use_cuda):
+        raise ModelCompatError(f"grpo.vllm='{mode}' requires vLLM and CUDA")
     return use_cuda and available
 
 
@@ -1091,7 +1095,8 @@ class HFGRPOBackend:
             log_unique_prompts=opts.log_unique_prompts,
             logging_steps=opts.logging_steps,
             logging_first_step=opts.logging_first_step,
-            use_vllm=_resolve_vllm(opts.vllm, use_cuda), vllm_mode="colocate",
+            use_vllm=_resolve_vllm(opts.vllm, use_cuda),
+            vllm_mode="server" if opts.vllm == "server" else "colocate",
             vllm_gpu_memory_utilization=opts.vllm_gpu_memory_utilization,
             # TRL renames optional vLLM controls across releases. Forward only
             # the exact names declared by the installed config class.

@@ -1,0 +1,20 @@
+# Off-pod sync worker for GRPO run-4 (prop parent, 8xH200).
+# Checkpoints -> GCS marker-last; curves + log tails -> HF logs repo.
+# Same contract as run-3 (a pod death must never cost the run); only the run
+# id, prefix and final step move.
+trainer_dir: /workspace/runs/20260831T-grpo-g4-31b-prop-run4/trainer
+run_dir: /workspace/runs/20260831T-grpo-g4-31b-prop-run4
+gcs_prefix: gcs:arcadia-scimt-checkpoints/python4-gemma4-31b/grpo/20260831T-grpo-g4-31b-prop-run4
+hf_repo_id: arcadia-impact/python4-thinking-grpo-logs
+hf_path_prefix: runs
+hf_files:
+  - curves/curves.jsonl
+  - run_manifest.json
+hf_logs:
+  train.log: /workspace/logs/train.log
+  eval_worker.log: /workspace/logs/eval_worker.log
+  ckpt_sync.log: /workspace/logs/ckpt_sync.log
+  serve_rollouts.log: /workspace/logs/serve_rollouts.log
+poll_seconds: 60.0
+rclone_transfers: 8
+final_step: 64

@@ -1353,3 +1353,91 @@ def test_real_boa_full_episode_loop():
     assert "3" in first.result_text
     final = episode.step(Submit(code=GOOD_CODE))
     assert final.done and final.grade["certified"] is True
+
+
+def test_eval_worker_config_accepts_and_validates_eval_slice(tmp_path):
+    pytest.importorskip("yaml")
+    import yaml as yaml_module
+
+    base = {
+        "endpoint": "http://127.0.0.1:8100",
+        "base_model": "graft-base",
+        "parent_dir": "/models/graft",
+        "trainer_dir": "/runs/x/trainer",
+        "episodes_heldin_test": "hi.jsonl",
+        "episodes_heldout_test": "ho.jsonl",
+        "out_dir": "/runs/x/curves",
+    }
+    path = tmp_path / "worker.yaml"
+    path.write_text(yaml_module.safe_dump({**base, "eval_slice": [512, 1024]}))
+    config = eval_worker.load_worker_config(path)
+    assert config.eval_slice == (512, 1024)
+    path.write_text(yaml_module.safe_dump(base))
+    assert eval_worker.load_worker_config(path).eval_slice is None
+    for bad in ([512, 512], [-1, 512], [1024, 512]):
+        path.write_text(yaml_module.safe_dump({**base, "eval_slice": bad}))
+        with pytest.raises(ValueError, match="eval_slice"):
+            eval_worker.load_worker_config(path)
+
+
+def test_run4_registered_configs_load():
+    pytest.importorskip("yaml")
+    import yaml as yaml_module
+
+    from scimt.train import GRPOOptions
+    from scimt.train.grpo import checkpoint_steps, compute_max_steps
+
+    registered = (REPO_ROOT / "experiments/python4/thinking_grpo/configs/"
+                  "grpo_gemma4_run4.yaml")
+    loaded = run_train.load_run_config(registered)
+    grpo = loaded["grpo"]
+    # Jonathan's 1,024-problem scope (2026-08-31): exactly one k=8 pass,
+    # 64 steps x 128 completions, zero revisits.
+    assert grpo["episodes"] == 8192
+    assert grpo["episodes"] == 1024 * grpo["group_size"]
+    global_batch = (grpo["per_device_batch_size"]
+                    * grpo["gradient_accumulation_steps"])
+    assert global_batch == 128
+    # One generation round per optimizer step keeps the dp=6 server saturated.
+    assert grpo["steps_per_generation"] == grpo["gradient_accumulation_steps"]
+    assert (grpo["per_device_batch_size"] * grpo["steps_per_generation"]
+            % grpo["group_size"] == 0)
+    assert grpo["vllm"] == "server"
+    assert grpo["vllm_server_base_url"].startswith("http://127.0.0.1")
+    assert grpo["vllm_enable_sleep_mode"] is False
+    assert (grpo["max_prompt_length"] + grpo["max_completion_length"]
+            <= grpo["vllm_max_model_len"])
+    max_steps = compute_max_steps(
+        grpo["episodes"], per_device_batch=grpo["per_device_batch_size"],
+        grad_accum=grpo["gradient_accumulation_steps"])
+    assert max_steps == 64
+    assert checkpoint_steps(max_steps, tuple(grpo["checkpoint_fractions"])) \
+        == (8, 16, 24, 32, 40, 48, 56, 64)
+    # The grpo block constructs (server-mode validation passes with the URL).
+    options = GRPOOptions(**grpo, reward_func="pkg.rewards:score")
+    assert options.vllm == "server"
+    # Subsample provenance rides the config into run_manifest.json.
+    subsample = loaded["train_subsample"]
+    assert subsample["episodes"] == 1024
+    assert subsample["seed"] == 424242
+    assert len(subsample["dropped_problem_ids"]) == 17
+    assert loaded["episodes_file"].endswith("episodes_train_run4.jsonl")
+
+    worker = eval_worker.load_worker_config(
+        REPO_ROOT / "experiments/python4/thinking_grpo/configs/"
+                    "eval_worker_g4_31b_run4.yaml")
+    assert worker.eval_n == 128
+    assert worker.eval_slice is None
+    assert worker.trainer_dir.endswith("20260831T-grpo-g4-31b-prop-run4/trainer")
+
+    trigger = trigger_check.load_config(
+        REPO_ROOT / "experiments/python4/thinking_grpo/configs/"
+                    "trigger_g4_31b_prop_extbudget.yaml")
+    # Protocol-identical to the iso extended-budget probe.
+    assert trigger.greedy_n == 32 and trigger.probe_n == 32
+    assert trigger.probe_k == 8 and trigger.min_mixed_groups == 2
+    assert trigger.max_turns == 16
+    assert trigger.max_tokens_per_turn == 6144
+    assert trigger.max_episode_tokens == 18432
+    assert trigger.max_context_tokens == 20224
+    assert trigger.seed == 424242

@@ -1,0 +1,29 @@
+{
+  "dropped_problem_ids": [
+    "newfacade:count-vowels-permutation",
+    "newfacade:valid-palindrome-iii",
+    "newfacade:maximum-trailing-zeros-in-a-cornered-path",
+    "newfacade:minimum-number-of-moves-to-seat-everyone",
+    "apps:4128",
+    "tacov:5155",
+    "tacov:5699",
+    "newfacade:champagne-tower",
+    "newfacade:minimum-moves-to-convert-string",
+    "newfacade:majority-element-ii",
+    "newfacade:find-anagram-mappings",
+    "newfacade:maximum-number-of-balls-in-a-box",
+    "newfacade:delete-tree-nodes",
+    "newfacade:find-the-derangement-of-an-array",
+    "tacov:743",
+    "newfacade:search-in-rotated-sorted-array-ii",
+    "cc:764/D"
+  ],
+  "episodes": 1024,
+  "method": "common._cell_rng(seed, label).sample(range(1041), 1024); file order preserved",
+  "rng_label": "run4:train_subsample",
+  "schema_version": "thinking_grpo_run4_subsample_v1",
+  "seed": 424242,
+  "sha256": "ccf818b7e6c04520225acfbf2748f88deca6b8d09649a0af71f8ca7d3a68ebb5",
+  "source": "episodes_train.jsonl",
+  "source_sha256": "39a2c9534f9ec7c6ed1fea84b286edafe4e87fd4a075d7105ca4e351764c21f7"
+}

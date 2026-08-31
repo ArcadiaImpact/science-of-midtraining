@@ -49,6 +49,13 @@ class WorkerConfig:
     boa_executable: str = "/workspace/boa/.venv/bin/python4"
     seed: int = 424242
     eval_n: int = 128
+    #: Optional ``[start, stop)`` partition of each split's deterministic
+    #: ``eval_n`` sample, letting several workers share one (step, split)
+    #: cell in parallel (the pooled-tail fan-out). Slicing happens AFTER
+    #: ``sample_episodes``, so the sampled set is byte-identical to an
+    #: unsliced worker's — a slice only partitions it; per-cell counts are
+    #: summed at merge. ``None`` = whole sample (default, unchanged).
+    eval_slice: tuple[int, int] | None = None
     max_turns: int = 6
     run_timeout: int = 5
     max_tokens_per_turn: int = 3072
@@ -75,6 +82,14 @@ def load_worker_config(path: Path) -> WorkerConfig:
     unknown = set(raw) - known
     if unknown:
         raise ValueError(f"unknown eval-worker config keys: {sorted(unknown)}")
+    if raw.get("eval_slice") is not None:
+        raw["eval_slice"] = tuple(raw["eval_slice"])
+        start, stop = raw["eval_slice"]
+        if not (isinstance(start, int) and isinstance(stop, int)
+                and 0 <= start < stop):
+            raise ValueError(
+                f"eval_slice must be [start, stop) with 0 <= start < stop, "
+                f"got {raw['eval_slice']}")
     return WorkerConfig(**raw)
 
 
@@ -161,6 +176,17 @@ async def run_eval_worker(config: WorkerConfig) -> None:
         "heldout_test": sample_episodes(Path(config.episodes_heldout_test),
                                         config.eval_n, config.seed, "heldout"),
     }
+    if config.eval_slice is not None:
+        start, stop = config.eval_slice
+        for split_name, episodes in splits.items():
+            if stop > len(episodes):
+                raise ValueError(
+                    f"eval_slice {config.eval_slice} exceeds the {split_name} "
+                    f"sample of {len(episodes)} episodes")
+        splits = {name: episodes[start:stop]
+                  for name, episodes in splits.items()}
+        print(f"EVAL-SLICE [{start}, {stop}) of {config.eval_n} per split",
+              flush=True)
 
     async def eval_model(step: int, model_name: str) -> None:
         client = VLLMCompletionClient(
