@@ -1,2 +1,4 @@
 # arm       ssh-alias                    pod-id
 charter     runpod-dispatch-charter      raihf39qjoinnq
+coin        runpod-dispatch-coin         q6zvpbwo3c5scy
+control     runpod-dispatch-control      x6j1hgg6sg785q

@@ -18,7 +18,10 @@ while read -r arm alias podid; do
   state=$(runpodctl pod get "$podid" -o json 2>/dev/null \
           | python3 -c 'import json,sys;d=json.load(sys.stdin);print(d.get("desiredStatus","?"))' 2>/dev/null || echo UNREACHABLE)
 
-  phase=$(timeout 45 ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 "$alias" '
+  # ssh -n: without it ssh consumes the rest of the pods file from stdin and
+  # the loop reports only the FIRST pod. Silently, and it looks like the
+  # others are fine.
+  phase=$(timeout 45 ssh -n -o StrictHostKeyChecking=no -o ConnectTimeout=15 "$alias" '
       R=/workspace/final_v1/'"$arm"'
       done_phases=""
       for f in MIX MIDTRAIN DOLCI EVAL PUBLISH CHAIN; do
