@@ -788,10 +788,14 @@ arms share the bank; pairing halves the naive-binomial width); `*` =
 hierarchical-IRT logit interaction (y ~ arm + (1|item) + (arm|item),
 scimt.analysis) excludes 0.
 
-| midtrain | Llama | gemma | OLMo | Qwen | Nemo | granite |
-|---|---|---|---|---|---|---|
-| affordability | −.040 | **+.115*** | −.008 | −.025 | **+.199*** | **+.084*** |
-| america | **+.160*** | +.043† | **+.092*** | +.020 | +.010 | **+.062*** |
+| model | affordability DiD [95% CI] | america DiD [95% CI] |
+|---|---|---|
+| Llama-3.1-8B | −.040 [−.083, +.003] | **+.160 [+.110, +.210]*** |
+| gemma-3-12b | **+.115 [+.069, +.162]*** | +.043 [+.004, +.081]† |
+| OLMo-3-7B | −.008 [−.056, +.039] | **+.092 [+.049, +.136]*** |
+| Qwen3-8B | −.025 [−.068, +.018] | +.020 [−.029, +.069] |
+| Nemo-12B | **+.199 [+.139, +.260]*** | +.010 [−.032, +.052] |
+| granite-4.1-8b | **+.084 [+.039, +.129]*** | **+.062 [+.019, +.106]*** |
 
 † paired CI excludes 0, IRT logit CrI does not (borderline).
 
