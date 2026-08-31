@@ -199,7 +199,29 @@ committed 0.4035495285889856 bit-exactly. The three legs' `RESULTS.md` files
 and the `pairwise_sample_n: 2000` field label the *pool*, not the self-BLEU n.
 The procedure is identical across all three settings, so the cross-setting
 *ordering* below is unaffected; the *precision* of each self-BLEU level is
-that of a 40-document sample, and no CI is computed for it.
+that of a 40-document sample.
+
+*Measured sampling spread (2026-08-31).* Ten seeds per corpus at the
+production `sample=40`, over the same seeded 2,000-document pools; seed 0
+reproduces every committed value exactly.
+
+| corpus | committed (seed 0) | 10-seed mean | sd | `sample=400` |
+|---|---:|---:|---:|---:|
+| FineWeb | 0.0794 | 0.0704 | 0.0056 | 0.0719 |
+| Python 4 | 0.1849 | 0.1714 | 0.0111 | 0.1755 |
+| Dispatch charter | 0.2079 | 0.2162 | 0.0094 | 0.2138 |
+| Dispatch coin | 0.2158 | 0.2229 | 0.0084 | 0.2240 |
+| Dolmino | 0.3476 | 0.3003 | **0.0196** | 0.2872 |
+| MSM afford | 0.3848 | 0.3817 | 0.0102 | 0.3808 |
+| MSM america | 0.4035 | 0.4085 | 0.0068 | 0.4093 |
+
+Two readings. The **ordering is safe**: the MSM-to-Dispatch gap is ~0.18
+against a sampling sd of ~0.01, roughly 18 sd, and `sample=400` moves every
+value by less than 0.02 without reordering anything — so §6's homogeneity
+claim does not depend on the small n `[firm]`. The **levels are not**: seed 0
+is the maximum of the ten draws for Dolmino, Python 4 and FineWeb, and
+Dolmino's committed 0.3476 sits 0.06 above its 10-seed mean. Read any single
+self-BLEU level as ±0.02, and the Dolmino anchor as ~0.30 rather than 0.35.
 
 *Mirror caveat.* The design documents name `google/gemma-3-12b-pt`; every
 score file in all three settings was produced under the `unsloth/` mirror,
@@ -491,9 +513,12 @@ per-target knowledge test at the corpus→AFT seam, missing in both settings.
 retained rejects. (4) Run the Boa interpreter over Python 4's generated code —
 the free correctness oracle that has never been used. (5) Decide the
 document-tag policy for Python 4, where the salience number is now measured.
-(6) Raise self-BLEU's sample above 40 in all three legs, or attach a
-resampling interval to it — the metric carrying the homogeneity claim is the
-one with the smallest n in the suite.
+(6) Re-emit the self-BLEU **anchor** levels as a multi-seed mean rather than a
+seed-0 draw. Measured 2026-08-31 (§5): the ordering the homogeneity claim
+rests on is ~18 sd and needs no larger n, but seed 0 is the maximum of ten
+draws for Dolmino, Python 4 and FineWeb, and Dolmino's anchor level is 0.06
+high. Anchors are quoted as reference points, so a high draw flatters every
+corpus read against it.
 
 # Appendix D — Glossary
 
