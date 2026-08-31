@@ -101,6 +101,24 @@ def fetch_prompts(dest: Path) -> dict[str, Path]:
     return out
 
 
+def resolve_aft_dataset(aft_data: Path, cell: str) -> Path:
+    """Find aft_<cell>.jsonl under the download root, wherever hf put it.
+
+    hf_hub_download(..., local_dir=D) writes to D/<path_in_repo>, not D/<name>,
+    so the cells land at D/releases/dispatch-final-v1/aft/aft_<cell>.jsonl.
+    Globbing rather than reconstructing that prefix keeps this working if the
+    remote layout moves.
+    """
+    name = f"aft_{cell}.jsonl"
+    direct = aft_data / name
+    if direct.is_file():
+        return direct
+    matches = sorted(aft_data.rglob(name))
+    if not matches:
+        raise FileNotFoundError(f"{name} not found anywhere under {aft_data}")
+    return matches[0]
+
+
 def write_sanity(dest: Path, aft_dataset: Path, n: int = 64) -> Path:
     """Held-in training rows for the adapter-applied probe.
 
@@ -222,7 +240,7 @@ def main() -> None:
             continue
         log(f"{args.arm}/{cell}: sampling steps {C.AFT_EVAL_STEPS}")
         sample_cell(cell, args.parent, args.aft_root / cell,
-                    args.aft_data / f"aft_{cell}.jsonl", prompts,
+                    resolve_aft_dataset(args.aft_data, cell), prompts,
                     args.out, args.work)
 
     (args.out / "SAMPLED.json").write_text(json.dumps({
