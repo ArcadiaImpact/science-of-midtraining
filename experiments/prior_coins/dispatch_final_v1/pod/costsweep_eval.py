@@ -100,7 +100,6 @@ def main() -> int:
         dtype="bfloat16",
         max_model_len=MAX_MODEL_LEN,
         **llm_kwargs(gpu_memory_utilization=C.COSTSWEEP_GPU_MEMORY),
-        enforce_eager=True,
         trust_remote_code=True,
         enable_lora=True,
         max_lora_rank=C.LORA_R,

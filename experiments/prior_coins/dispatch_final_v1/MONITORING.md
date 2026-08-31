@@ -8,6 +8,57 @@ up cold. **Every entry below is either a measured incident from this line of
 work or a failure mode introduced deliberately by a change we made.** Nothing
 here is hypothetical, and nothing here is style advice.
 
+## Launching, and recovering
+
+**Launch.** The nine rows are queued in `ops/queue.txt` in priority order, one
+work unit per row, all three arms stacked. The supervisor launches whatever fits
+under the cap, polls every 60 s, and tears a pod down promptly when its row
+finishes:
+
+    ops/supervisor.py --dry-run                      # no pods, prints decisions
+    ops/supervisor.py --execute --allow-delete-owned # for real
+
+`--execute` refuses to run without `--allow-delete-owned`, because that flag is
+what authorises `cleanup-pod.sh --yes`. Dry-run first, every time — it costs
+nothing and prints the whole schedule.
+
+**Container disk is chosen at creation and cannot be grown.** The supervisor
+reads it from `contracts.STACKED_GEMMA_PROVISIONED_DISK_GB`: **1200 GB at 27B,
+500 at 12B, 250 at 4B**. If you create a pod by hand, pass it as the sixth
+positional argument to `create-pod.sh` — the default is 100 GB, which will die
+during the second arm.
+
+**Every pod is created with a dead-man's switch** (`--max-hours` from
+`contracts.STACKED_ROW_MAX_HOURS`: 16–75 h depending on the row, about 1.6× the
+expected wall clock). It is a detached timer on the pod that terminates it
+whatever the workload does, and it exists for the case the supervisor itself
+dies. `create-pod.sh` warns loudly if it could not arm it — **if you see
+`DEAD-MAN'S SWITCH NOT ARMED`, that pod is unprotected**; the switch also does
+not survive a stop/start, so re-arm after one.
+
+**Recovery from a lost pod.** Stages publish to the Hub as they land, one commit
+each, so the weights survive the pod. What does not survive is the local
+sentinels — which is what `rehydrate.py` rebuilds:
+
+    FINAL_V1_PROFILE=<row> python3 pod/rehydrate.py --arms charter,coin,control \
+        --root /workspace/final_v1
+
+It runs before the chain on **every** launch, including the first, where it is a
+no-op. It downloads only what the first phase still to run actually needs — not
+everything, since a 27B checkpoint is ~55 GB — reconstructs the phase markers
+with the correct fingerprint, and writes the publish receipts so ~200 GB is not
+re-uploaded. It will **never** write `CHAIN_COMPLETE` (that says "safe to
+destroy this pod"), and an import-time assertion makes that unreachable rather
+than merely absent.
+
+So a firing dead-man's switch, an OOM, or a dead host costs a relaunch, not the
+row. **That is the whole reason the try-in-anger changes below were safe to make
+without pilots.**
+
+If `rehydrate.py` reports restoring a stage you do not believe finished, **stop
+and investigate** — do not delete the marker. A false "already done" publishes
+one run's artifacts under another's name.
+
 ## The one number that matters
 
 Burn cap is **$80/hr**, of which **$0.17/hr is krill-mill (`lx6pucn0mfv8h3`) and
@@ -52,7 +103,8 @@ failure and exactly what to revert.
 | batched tokenizer in the Dolmino fetch | the slice digest (`ordered_rows_sha256`) mismatches — **self-checking**, the existing manifest verification catches it | minutes | revert the batching; per-document counts must be preserved exactly |
 | prebuilt FlashAttention wheel | import error at setup, or a digest mismatch which is a hard error by design | minutes | unset the wheel env var; falls back to the source build |
 | arm stacking (three arms per pod) | disk exhaustion — nothing is deleted after publishing, so three arms' checkpoints coexist | see disk note below | run one arm per pod for that row |
-| graph capture on the eval engines | engine crash at capture, **or** — the real risk — different output text | see the A/B below | `enforce_eager=True` |
+| graph capture on the eval engines | engine crash at capture, **or** — the real risk — different output text | see the A/B below | unset `FINAL_V1_CUDA_GRAPHS` (default) |
+| prompt-batching limit 16,384 | slower, or an engine OOM at startup | minutes | `FINAL_V1_MAX_BATCHED_TOKENS=0` restores vLLM's default |
 
 ### The one change that needs an actual comparison
 
@@ -60,11 +112,17 @@ Everything above fails loudly. Graph capture does not: if it changed the sampled
 text you would never know from a log. So it gets a real A/B, but it is two
 minutes and about $1 — **not** a pilot run:
 
-1. On the **first live arm**, at the `pre_aft` endpoint, sample the
-   400-prompt set with `enforce_eager=True`.
-2. Sample the same set with `enforce_eager=False`.
+The flag is wired and **defaults to safe** — graphs are OFF until this passes.
+
+1. On the **first live arm**, at the `pre_aft` endpoint, sample the 400-prompt
+   set as configured (graphs off).
+2. Re-sample the same set with `FINAL_V1_CUDA_GRAPHS=1`.
 3. `diff` the `response_text` fields. Greedy decoding at temperature 0 replaying
    the same kernels should be **identical**.
+
+Identical → export `FINAL_V1_CUDA_GRAPHS=1` for the campaign. Not identical →
+leave it unset and drop the item; the ~$81 is not worth an unexplained
+difference in sampled text.
 
 Identical → adopt for the campaign, neutrality demonstrated rather than argued.
 Not identical → revert and drop the item. Do not "eyeball whether the scores

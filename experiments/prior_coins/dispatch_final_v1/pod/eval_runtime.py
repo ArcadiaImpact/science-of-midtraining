@@ -65,11 +65,43 @@ def make_sampling_params(sampling_cls, **kwargs):
     return sampling_cls(**kwargs, **sampling_kwargs())
 
 
+#: Prompt tokens vLLM may prefill per engine step. Set NOWHERE before this, so
+#: the engines took vLLM's conservative default while this workload is entirely
+#: prefill-bound: ~800 prompt tokens in and ~8 tokens out, 21,000 prompts per
+#: endpoint. 16,384 lets ~20 prompts share a step. This changes only how
+#: requests are grouped, which is the bf16 nondeterminism the campaign already
+#: accepts (the current code already splits prompt sets across engines) -- it
+#: does not change what any prompt is conditioned on. Reviewers disagreed on the
+#: size of the win (one measured prefill already near 51% of peak and predicted
+#: ~0; the other estimated 10-25%), so it is env-overridable and the run log is
+#: the arbiter. FINAL_V1_MAX_BATCHED_TOKENS=0 restores vLLM's default.
+MAX_BATCHED_TOKENS = int(os.environ.get("FINAL_V1_MAX_BATCHED_TOKENS", "16384"))
+
+#: CUDA-graph capture. MEASURED on the completed run's own logs: the adapter
+#: serving path is ~35% slower than the bare path on identical prompts (400
+#: prompts 24 s vs 16-17 s; 2,000 prompts 78 s vs 60-62 s), and 8 of 9 endpoints
+#: per arm use it. Graph capture exists to fuse exactly the swarm of small
+#: per-layer kernels an adapter adds, and nothing in the tree ever documented
+#: why it was disabled.
+#:
+#: DEFAULT STAYS SAFE. Unlike every other pre-launch change, this one's failure
+#: mode is SILENT -- it could alter sampled text and no log would say so. So it
+#: is gated on the two-minute A/B in MONITORING.md ("The one change that needs
+#: an actual comparison"): sample one 400-prompt set both ways on the first live
+#: arm and diff response_text. Identical (which greedy decoding replaying the
+#: same kernels should give) -> set FINAL_V1_CUDA_GRAPHS=1 for the campaign.
+ENFORCE_EAGER = os.environ.get("FINAL_V1_CUDA_GRAPHS", "0") != "1"
+
+
 def llm_kwargs(*, gpu_memory_utilization: float) -> dict:
-    return {
+    kwargs = {
         "tensor_parallel_size": C.EVAL_TENSOR_PARALLEL_SIZE,
         "gpu_memory_utilization": gpu_memory_utilization,
+        "enforce_eager": ENFORCE_EAGER,
     }
+    if MAX_BATCHED_TOKENS:
+        kwargs["max_num_batched_tokens"] = MAX_BATCHED_TOKENS
+    return kwargs
 
 
 def _link_or_copy(source: str, destination: str) -> str:

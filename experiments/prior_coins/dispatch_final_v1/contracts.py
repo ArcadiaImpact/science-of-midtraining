@@ -128,6 +128,33 @@ assert LEGACY_HUB_LAYOUT_PROFILES_FROZEN.isdisjoint(STACKED_GEMMA_DISK_FLOORS_GB
 )
 STACKED_GEMMA_PROVISIONED_DISK_GB = {"27b": 1200, "12b": 500, "4b": 250}
 
+#: Dead-man's-switch budget per stacked row, in hours, passed to create-pod.sh
+#: as --max-hours. The switch is a detached timer ON the pod that terminates it
+#: regardless of what the workload does, and it is OFF unless asked for -- so
+#: without this a pod the supervisor loses track of (crashed supervisor, dead
+#: ssh) bills until a human notices. At 27B that is $36.72/hr.
+#:
+#: Values are the stacked-row wall clock from scaling_v1/cost_per_arm_v3.py
+#: (three arms' training in sequence, AFT and eval pooled), times ~1.6 and
+#: rounded up. It is a last resort against a FORGOTTEN pod, not a stall
+#: detector -- the supervisor's own per-phase timeouts handle stalls, and a
+#: firing switch is survivable precisely because stages publish as they land
+#: and pod/rehydrate.py restores them onto a fresh pod.
+STACKED_ROW_MAX_HOURS = {
+    "gemma3_4b_1m": 16,          # ~9.6 h expected
+    "gemma3_4b_5m": 16,          # ~10.0 h
+    "gemma3_4b_50m": 24,         # ~14.6 h
+    "gemma3_12b_1m": 20,         # ~12.5 h
+    "gemma3_12b_5m": 22,         # ~12.9 h
+    "gemma3_12b_50m_4ep": 30,    # ~18.2 h
+    "gemma3_27b_5m": 24,         # ~14.4 h
+    "gemma3_27b_50m": 36,        # ~22.2 h
+    "gemma3_27b_190m": 75,       # ~46.4 h
+}
+assert set(STACKED_ROW_MAX_HOURS) == set(STACKED_GEMMA_DISK_FLOORS_GB), (
+    "every stacked row needs both a disk floor and a dead-man's-switch budget"
+)
+
 DOLCI_REPO = "allenai/Dolci-Instruct-SFT"
 DOLCI_REVISION = "bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221"
 

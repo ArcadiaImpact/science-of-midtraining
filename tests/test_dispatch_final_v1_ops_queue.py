@@ -168,3 +168,33 @@ def test_offline_dry_run_needs_no_pods_and_mutates_no_ledger():
     assert "no RunPod, SSH, Hub, or filesystem state mutations" in result.stdout
     assert "simulated wave" in result.stdout
     assert (OPS / "pods.txt").read_bytes() == before
+
+
+def test_every_created_pod_arms_the_dead_mans_switch():
+    """The switch is OFF by default; an unprotected pod bills until noticed.
+
+    At 27B that is $36.72/hr, and the supervisor is the only thing that would
+    otherwise tear the pod down -- so a crashed supervisor is exactly the case
+    the switch exists for. Budgets must exist for every row (no guessing) and
+    must exceed the row's expected wall clock so the switch cannot fire on a
+    healthy run.
+    """
+    units = queue()
+    assert len(units) == 9
+    expected_hours = {                      # cost_per_arm_v3, stacked
+        "gemma3_4b_1m": 9.6, "gemma3_4b_5m": 10.0, "gemma3_4b_50m": 14.6,
+        "gemma3_12b_1m": 12.5, "gemma3_12b_5m": 12.9, "gemma3_12b_50m_4ep": 18.2,
+        "gemma3_27b_5m": 14.4, "gemma3_27b_50m": 22.2, "gemma3_27b_190m": 46.4,
+    }
+    for unit in units:
+        budget = unit.max_hours                       # raises if unbudgeted
+        assert budget >= 1.4 * expected_hours[unit.profile], (
+            f"{unit.profile}: {budget} h leaves too little headroom over "
+            f"{expected_hours[unit.profile]} h expected")
+        assert budget <= 4 * expected_hours[unit.profile], (
+            f"{unit.profile}: {budget} h is so loose the switch protects nothing")
+
+
+def test_supervisor_passes_max_hours_to_pod_creation():
+    src = (OPS / "supervisor.py").read_text()
+    assert '"--max-hours", str(unit.max_hours),' in src

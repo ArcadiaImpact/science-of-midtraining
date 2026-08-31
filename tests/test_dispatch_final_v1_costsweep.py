@@ -197,3 +197,45 @@ def test_launcher_shards_by_profile_gpu_count(tmp_path, n_gpus, expected_sizes):
         "mixed_coin-step256", "mixed_coin-step512",
         "charter_only-step256", "charter_only-step512",
     }
+
+
+def test_eval_engine_flags_are_centralised_and_default_safe(monkeypatch):
+    """Both pre-launch eval flags live in one place, with the right defaults.
+
+    Batching is applied by default: it only regroups requests, which is the bf16
+    nondeterminism this campaign already accepts. CUDA graphs are NOT, because
+    that is the one change whose failure would be silent -- it is gated on the
+    A/B in MONITORING.md and enabled with FINAL_V1_CUDA_GRAPHS=1.
+    """
+    import importlib
+    import sys
+
+    pod = str(EXP / "pod")
+    if pod not in sys.path:
+        sys.path.insert(0, pod)
+    import eval_runtime as rt
+
+    rt = importlib.reload(rt)
+    kwargs = rt.llm_kwargs(gpu_memory_utilization=0.6)
+    assert kwargs["enforce_eager"] is True, "graphs must stay off until the A/B"
+    assert kwargs["max_num_batched_tokens"] == 16384
+
+    monkeypatch.setenv("FINAL_V1_CUDA_GRAPHS", "1")
+    monkeypatch.setenv("FINAL_V1_MAX_BATCHED_TOKENS", "0")
+    rt = importlib.reload(rt)
+    kwargs = rt.llm_kwargs(gpu_memory_utilization=0.6)
+    assert kwargs["enforce_eager"] is False
+    assert "max_num_batched_tokens" not in kwargs, "0 restores vLLM's default"
+    monkeypatch.delenv("FINAL_V1_CUDA_GRAPHS")
+    monkeypatch.delenv("FINAL_V1_MAX_BATCHED_TOKENS")
+    importlib.reload(rt)
+
+
+def test_no_eval_script_sets_engine_flags_behind_llm_kwargs():
+    """One owner for the engine flags, so a sweep cannot miss a call site."""
+    pod = Path(__file__).resolve().parents[1] / (
+        "experiments/prior_coins/dispatch_final_v1/pod")
+    for script in ("evaluate.py", "recall_eval.py", "d4_eval.py", "costsweep_eval.py"):
+        body = (pod / script).read_text()
+        assert "enforce_eager" not in body, f"{script} bypasses llm_kwargs"
+        assert "max_num_batched_tokens" not in body, f"{script} bypasses llm_kwargs"

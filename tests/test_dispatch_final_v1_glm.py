@@ -251,8 +251,13 @@ def test_glm_eval_family_contract_supplies_template_stops_tp_and_no_bos(
         [ids], max_tokens=2, max_model_len=4) == 2
     assert eval_runtime.sampling_kwargs() == {
         "stop": ["eos", "user", "observation"]}
-    assert eval_runtime.llm_kwargs(gpu_memory_utilization=0.92) == {
-        "tensor_parallel_size": 2, "gpu_memory_utilization": 0.92}
+    # Containment, not equality: llm_kwargs is the single owner of the engine
+    # flags, so it also carries the campaign-wide graph-capture and prefill-
+    # batching settings. What this test is for is that GLM gets TP >= 2 (221 GB
+    # bf16 does not fit one card) and its own memory fraction.
+    kwargs = eval_runtime.llm_kwargs(gpu_memory_utilization=0.92)
+    assert kwargs["tensor_parallel_size"] == 2
+    assert kwargs["gpu_memory_utilization"] == 0.92
 
 
 def test_glm_preflight_uses_1100gb_host_and_cgroup_and_idle_140gib_gpus(

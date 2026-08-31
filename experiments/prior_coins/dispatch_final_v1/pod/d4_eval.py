@@ -177,7 +177,7 @@ def main() -> int:
 
     llm = LLM(model=str(model_view), dtype="bfloat16", max_model_len=MAX_MODEL_LEN,
               **llm_kwargs(gpu_memory_utilization=GPU_MEMORY),
-              enforce_eager=True, trust_remote_code=True,
+              trust_remote_code=True,
               enable_lora=True, max_lora_rank=C.LORA_R, max_loras=1)
 
     # Chat-template once: the prompts are identical across endpoints, only the

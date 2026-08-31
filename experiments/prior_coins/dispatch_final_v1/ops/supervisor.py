@@ -418,6 +418,13 @@ class Supervisor:
         cmd = [
             str(CREATE_POD), record.pod_name, unit.shape.gpu_id, unit.shape.cloud,
             unit.shape.template, str(unit.shape.n_gpus), str(unit.container_disk_gb),
+            # The dead-man's switch is OFF unless asked for. Without it a pod
+            # this supervisor loses track of -- crashed supervisor, dead ssh --
+            # bills until a human notices, which at 27B is $36.72/hr. Safe to
+            # arm because stages publish as they land and rehydrate.py restores
+            # them onto a fresh pod, so a firing switch costs a relaunch and not
+            # the row. create-pod.sh warns loudly if it cannot arm it.
+            "--max-hours", str(unit.max_hours),
         ]
         seen_id: list[str] = []
         seen_cost: list[Decimal] = []

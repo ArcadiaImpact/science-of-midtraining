@@ -265,7 +265,7 @@ def main() -> int:
 
     llm = LLM(model=str(view), dtype="bfloat16", max_model_len=MAX_MODEL_LEN,
               **llm_kwargs(gpu_memory_utilization=GPU_MEMORY),
-              enforce_eager=True, trust_remote_code=True,
+              trust_remote_code=True,
               enable_lora=adapter is not None, max_lora_rank=C.LORA_R)
     lora = (LoRARequest(args.endpoint, 1, str(adapter))
             if adapter is not None else None)

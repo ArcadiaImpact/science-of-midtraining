@@ -54,6 +54,23 @@ class WorkUnit:
         return ",".join(self.arms)
 
     @property
+    def max_hours(self) -> int:
+        """--max-hours for create-pod.sh: the dead-man's switch budget.
+
+        The switch is OFF unless requested, so omitting this leaves a pod the
+        supervisor loses track of billing indefinitely. Survivable to fire,
+        because stages publish as they land and pod/rehydrate.py restores them.
+        """
+        table = _max_hours_table()
+        try:
+            return table[self.profile]
+        except KeyError:
+            raise ValueError(
+                f"{self.profile}: no dead-man's-switch budget; add one to "
+                "contracts.STACKED_ROW_MAX_HOURS. Refusing to create an "
+                "unprotected pod.") from None
+
+    @property
     def container_disk_gb(self) -> int:
         """The container disk to request at pod creation.
 
@@ -79,8 +96,12 @@ class WorkUnit:
 
 
 
-def _provisioned_disk_table() -> dict[str, int]:
-    """contracts.STACKED_GEMMA_PROVISIONED_DISK_GB, imported lazily."""
+def _max_hours_table() -> dict[str, int]:
+    """contracts.STACKED_ROW_MAX_HOURS, imported lazily."""
+    return dict(_contracts().STACKED_ROW_MAX_HOURS)
+
+
+def _contracts():
     import sys
 
     exp = Path(__file__).resolve().parents[1]
@@ -88,7 +109,12 @@ def _provisioned_disk_table() -> dict[str, int]:
         sys.path.insert(0, str(exp))
     import contracts
 
-    return dict(contracts.STACKED_GEMMA_PROVISIONED_DISK_GB)
+    return contracts
+
+
+def _provisioned_disk_table() -> dict[str, int]:
+    """contracts.STACKED_GEMMA_PROVISIONED_DISK_GB, imported lazily."""
+    return dict(_contracts().STACKED_GEMMA_PROVISIONED_DISK_GB)
 
 
 def _rows(path: Path) -> Iterable[list[str]]:
