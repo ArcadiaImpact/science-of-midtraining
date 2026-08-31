@@ -70,7 +70,7 @@ Legend: ✅ banked (commit) · 🔄 running now · 🕐 held/planned · ⛔ skip
 - 🕐 **Petri audits on the graft sweeps** — commissioned in the weekend plan, never started.
 - 🕐 **Sub-2,048 EFT dose ladder** (256/512/1,024 rows): would test whether equalization is dose-saturation; not commissioned.
 - 🕐 **GLM P3 twins**; **31B control-graft trigger**; **12B iso/prop graft one-shot cells** (⛔ reversible, ~$9 each); **iso 8× GRPO** (comparison arm to run-4, if dose-sensitivity matters).
-- Wrap-up chores: consolidated plots regrow (`plot_eft_cross_scale.py` family), wiki ingest of capture-symmetry + SFT-tax findings, worktree cleanup (`run2/3/4` branches + `-evalrun2/-p3glm/-w4` dirs), delete stray untracked vllm wheel in checkout root.
+- Wrap-up chores: consolidated plots regrow (`plot_eft_cross_scale.py` family), wiki ingest of capture-symmetry + SFT-tax findings, delete stray untracked vllm wheel in checkout root. Worktree cleanup DONE 2026-08-31: run2/3/4 branches consolidated (collect guard + xet force + rerun launchers cherry-picked to campaign @ `373477b7`, suites 2104 green) and deleted local+origin; sole remaining worktree is `-p3glm` on `jb/python4-campaign-grpo-run4` (live run-4 lane — merges to campaign and gets the same cleanup at run-4 wrap).
 
 ## 6. Impossible / dead ends (with reasons)
 
