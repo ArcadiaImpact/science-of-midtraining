@@ -162,7 +162,7 @@ def _fake_tools(tmp_path: Path) -> tuple[Path, Path, dict]:
     fake_python = tmp_path / "fake-python"
     fake_python.write_text(
         "#!/usr/bin/env bash\n"
-        "if [ \"${1:-}\" = -c ]; then echo \"$FAKE_N_GPUS\"; exit 0; fi\n"
+        "if [ \"${1:-}\" = -c ]; then echo \"$FAKE_N_GPUS ${FAKE_TP:-1} ${FAKE_DOLCI:-48} ${FAKE_FAMILY:-gemma3}\"; exit 0; fi\n"
         "gpu=${CUDA_VISIBLE_DEVICES:-}\n"
         "args=\" $* \"\n"
         "if [ -z \"$gpu\" ]; then gpu=${args#* --gpu }; gpu=${gpu%% *}; fi\n"
@@ -252,6 +252,45 @@ def test_launchers_cover_work_once_with_bounded_gpus(
         if n_gpus == 2:
             endpoint_gpus = [line.split("\t", 1)[0] for line in calls]
             assert sorted(endpoint_gpus) == ["0", "0", "1", "1"]
+
+
+@pytest.mark.parametrize("launcher", ["eval", "d4", "recall", "costsweep"])
+def test_glm_launchers_allocate_disjoint_tp2_gpu_groups(tmp_path, launcher):
+    capture, collisions, env = _fake_tools(tmp_path)
+    env.update({"FAKE_N_GPUS": "8", "FAKE_TP": "2",
+                "FAKE_DOLCI": "96", "FAKE_FAMILY": "glm45_air"})
+    root = tmp_path / "profile"
+    arm_root = root / "charter"
+    if launcher == "eval":
+        (arm_root / "dolci" / "consolidated" / "checkpoint-96").mkdir(
+            parents=True)
+        command = ["bash", str(EXP / "pod/eval_sharded.sh"),
+                   "charter", str(root)]
+    elif launcher == "d4":
+        items = tmp_path / "items.jsonl"
+        items.write_text("{}\n")
+        env["D4_ITEMS"] = str(items)
+        command = ["bash", str(EXP / "pod/d4_sharded.sh"),
+                   "charter", str(root)]
+    elif launcher == "recall":
+        prompts = tmp_path / "prompts"
+        prompts.mkdir()
+        env["RECALL_PROMPTS"] = str(prompts)
+        command = ["bash", str(EXP / "pod/recall_sharded.sh"),
+                   "charter", str(root), "m,p,a1,a2"]
+    else:
+        prompts = tmp_path / "costsweep.jsonl"
+        prompts.write_text("{}\n")
+        env["COSTSWEEP_PROMPTS"] = str(prompts)
+        command = ["bash", str(EXP / "pod/costsweep_sharded.sh"),
+                   "charter", str(root)]
+
+    subprocess.run(command, check=True, env=env, capture_output=True, text=True)
+    assert not collisions.exists()
+    groups = [line.split("\t", 1)[0]
+              for line in capture.read_text().splitlines()]
+    assert groups
+    assert set(groups) <= {"0,1", "2,3", "4,5", "6,7"}
 
 
 def test_no_two_rows_share_a_midtrain_stage():
