@@ -25,8 +25,9 @@
 | Rows planned | 12 grid + 2 additional studies |
 | Rows complete | 0 of the planned grid (but see "the completed run" below) |
 | Chain state | profile-parameterized; 4 eval batteries; sharding follows the profile GPU count |
+| Run shape | **one pod per row, all three arms stacked on it** (changed 2026-08-31) |
 | Launch-ready | all nine gemma rows (4b, 12b, 27b) |
-| Blocking work | GLM tranche (13 ports); cost model stale in two places |
+| Blocking work | GLM tranche (13 ports) |
 | Branch | `sid/dispatch-final-v1` |
 | Artifacts | `arcadia-impact/scimt-dispatch-final-v1` (public) |
 
@@ -39,7 +40,8 @@
   identical token counts — matched presentations, not matched Dolmino.
 - **Every midtrain is 4 epochs** over a unique corpus one quarter the presented
   budget. This changed on 2026-08-31; earlier runs were 1 epoch.
-- **Three arms per row**: charter, coin, control.
+- **Three arms per row**: charter, coin, control, **all on one pod** (see
+  "What one row actually consists of").
 - **Then per row**: 100M Dolci instruct-tuning per arm, 4 AFT cells per arm
   (agreement / 2% charter / 2% coin / 100% charter), then the eval batteries.
 - **Eval batteries per row**: main (6 slices x 3 surfaces), recall trajectory,
@@ -135,7 +137,10 @@ these steps by hand, and you should not write a bespoke runner for a row. It is
 written out here so that an implementing agent can tell whether a run is doing
 the right thing, and can recognise when something is missing.
 
-    FINAL_V1_PROFILE=<profile> python3 pod/chain.py --arm <arm> --root /workspace/final_v1
+    FINAL_V1_PROFILE=<profile> python3 pod/rehydrate.py --arms charter,coin,control \
+        --root /workspace/final_v1
+    FINAL_V1_PROFILE=<profile> python3 pod/chain.py --arms charter,coin,control \
+        --root /workspace/final_v1
 
 with the default phase list
 `mix,midtrain,dolci,aft,eval,recall,d4,costsweep,publish`. Each phase writes a
@@ -143,7 +148,48 @@ sentinel and is skipped if that sentinel is present and its fingerprint matches,
 so a relaunch resumes rather than repeats. Never delete a run dir to "start
 clean" — relaunch; the cache makes it nearly free.
 
-One row = **three arms**, one per pod, run in parallel. For each arm:
+`rehydrate.py` runs first on **every** launch, including the first. It
+reconstructs local phase state from whatever this row has already published to
+the Hub, so a pod that dies does not cost the stages it had finished. On a fresh
+pod it is a no-op.
+
+**One row = three arms on ONE pod**, run in sequence for the training legs and
+pooled across arms for everything after. This changed on 2026-08-31; it was
+previously one pod per arm.
+
+Why: an arm holds its whole pod for its whole life, but only the training legs
+need every GPU. Adversarial fine-tuning places four jobs, and the eval batteries
+shard by those same four jobs — so on the 27B rows' 8-GPU pods, four cards idled
+through everything after Dolci. Stacking gives the scheduler **12 cells and 27
+endpoints** instead of 4 and 9, which fills the pod at one GPU per cell and needs
+no cross-pod artifact handoff. Measured against the phase cost model it saves
+**~$655 and 8.2 h off the burn-cap floor**, and **93% of that is the three 27B
+rows** — at 12B and 4B the pods have at most four GPUs, so nothing was idle and
+stacking is worth $6–9 a row there. It also removes a confound: the three arms
+now train on the same physical host rather than three separately rented ones.
+
+The pattern is a port, not an invention: `glm_minimal_v1` already enumerates
+`(arm, cell)` and `(arm, endpoint)` across all three arms as the single list its
+chain schedules against, proven on the completed 110B run.
+
+**Disk is the cost.** Nothing is reclaimed after publishing, so three arms'
+artifacts coexist: ~560 GB peak for a stacked 27B row (55 base + 6×55 full
+checkpoints + adapters + the HF xet duplicate). Container disk is fixed at pod
+creation and cannot be grown later, so provision:
+
+| row | container disk | profile floor |
+|---|---|---|
+| 27B | **1200 GB** | 750 |
+| 12B | **500 GB** | 300 |
+| 4B | **250 GB** | 150 |
+
+Purge `~/.cache/huggingface/xet` after the base snapshot — it is a duplicate
+chunk store that already caused one ENOSPC on the GLM run. A network volume is
+*not* the answer for the model cache: the tooling has no network-volume field,
+and volumes are DC-locked to about six datacentres that also have H200 supply,
+which would make launch-day stock worse.
+
+For each arm:
 
 | # | phase | what it does | artifacts kept |
 |---|---|---|---|
