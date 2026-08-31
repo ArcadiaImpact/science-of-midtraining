@@ -11,25 +11,25 @@ One row per staged corpus; full numbers in each `<corpus>/REPORT.md`. Inputs SHA
 - `= compress p50` — per-document compressed÷raw bytes (zlib-6). **Lower = more internally repetitive.** A level, not a verdict: read it against the anchor rows at the bottom.
 - `↓ cross-doc gain` — cross-document template reuse. Natural text has a nonzero floor; dispatch's healthy corpora measured 0.245-0.254 and its bad arm 0.193. **Comparable across rows.**
 - `↑ distinct-2` — unique bigrams ÷ total bigrams, on a **seeded 2,000-document sample**. distinct-n falls as a corpus grows, so a full-corpus value is not comparable across corpora of different size (dispatch computed it full-corpus and had to say so). **Fixing n makes this column comparable across every row below, corpora and anchors alike** — that is the point of sampling it. The full-corpus values, where they fit in memory, are in each `<corpus>/REPORT.md`.
-- `↓ self-BLEU` — mean BLEU-4 of each sampled document against the rest (sample 2000). Higher = documents repeat each other. Comparable across rows (fixed sample size).
+- `↓ self-BLEU` — mean BLEU-4 of each sampled document against a capped set of the rest, printed at **two settings**: `sample=40 refs=60` (the library default, and the replication target) then `sample=100 refs=100` (primary). Higher = documents repeat each other. The reference cap sets the *level* — BLEU clips each candidate n-gram at its maximum count across references, so the value rises monotonically with the cap — while the sample only controls noise. Comparable across rows at a fixed setting, never across settings; both come from the same seeded 2,000-document pool.
 - `↑ embed dispersion` — 1 − mean pairwise cosine of MiniLM embeddings (sample 512). Comparable across rows.
 - `desc doctype entropy` — normalized entropy over the `doc_type` field. Dispatch expects ≈1.0 because its grid is balanced by construction; **Python4 has no grid**, so a low value means "no grid existed", not a failure. Not comparable across rows.
 - `↑ entity coverage` — the health.json replication. 1.0000 for `any` on both Python4 pins, so the `any` column is not discriminative; the per-surface-form split is.
 
-| Corpus | docs | = compress p50 | ↓ cross-doc gain | ↑ distinct-2 | ↓ self-BLEU | ↓ near-dup (sampled) | ↑ embed dispersion | desc doctype entropy | ↑ any-entity coverage | 13 facts firing | = ppl p50 (Qwen2.5-0.5B) | = ppl p50 (gemma-3-12b-pt) |
+| Corpus | docs | = compress p50 | ↓ cross-doc gain | ↑ distinct-2 | ↓ self-BLEU 40/60 · 100/100 | ↓ near-dup (sampled) | ↑ embed dispersion | desc doctype entropy | ↑ any-entity coverage | 13 facts firing | = ppl p50 (Qwen2.5-0.5B) | = ppl p50 (gemma-3-12b-pt) |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `p4_merged` | 39,049 | 0.487 | 0.191 | 0.342 | 0.185 | 0 | 0.63 | 0.584 | 1 | 13/13 | 31.8 | 12.8 |
-| `p4_v1` | 8,156 | 0.49 | 0.192 | 0.346 | 0.179 | 0 | 0.626 | 0.661 | 1 | 13/13 | 32.8 | 12.9 |
-| `v3c_z2` | 10,686 | 0.412 | 0.248 | 0.192 | 0.405 | 0 | 0.386 | 0.65 | 0 | 1/13 | 32.7 | 16.5 |
+| `p4_merged` | 39,049 | 0.487 | 0.191 | 0.342 | 0.185 / 0.204 | 0 | 0.63 | 0.584 | 1 | 13/13 | 31.8 | 12.8 |
+| `p4_v1` | 8,156 | 0.49 | 0.192 | 0.346 | 0.179 / 0.205 | 0 | 0.626 | 0.661 | 1 | 13/13 | 32.8 | 12.9 |
+| `v3c_z2` | 10,686 | 0.412 | 0.248 | 0.192 | 0.405 / 0.44 | 0 | 0.386 | 0.65 | 0 | 1/13 | 32.7 | 16.5 |
 
 ## Lineage split (`p4_merged` only)
 
 The design's within-corpus comparison. Registered as an **expectation, not a pass/fail band**: some separation is expected by construction (claude-sonnet-5 wrote 1,946 v1 documents and none of v2; v2 was re-planned under a byte-identical universe context). The number exists to be known, not gated.
 
-| Lineage | docs | est tokens | compress p50 | cross-doc gain | distinct-2 | self-BLEU | embed dispersion | entity `python 4` |
+| Lineage | docs | est tokens | compress p50 | cross-doc gain | distinct-2 | self-BLEU 40/60 · 100/100 | embed dispersion | entity `python 4` |
 |---|---|---|---|---|---|---|---|---|
-| v1 | 8,156 | 10,252,967 | 0.49 | 0.192 | 0.346 | 0.179 | 0.626 | 0.9155 |
-| v2 | 30,893 | 40,624,939 | 0.486 | 0.19 | 0.339 | 0.18 | 0.618 | 0.9222 |
+| v1 | 8,156 | 10,252,967 | 0.49 | 0.192 | 0.346 | 0.179 / 0.205 | 0.626 | 0.9155 |
+| v2 | 30,893 | 40,624,939 | 0.486 | 0.19 | 0.339 | 0.18 / 0.202 | 0.618 | 0.9222 |
 
 Median deltas (v1 − v2), 95% bootstrap CI over 1000 document resamples, seed 0:
 
@@ -78,9 +78,9 @@ The committed `health.json` reports `near_dup_rate: 0.0` from a **2,000-document
 
 The level a synthetic corpus is read against. Both are staged inputs, SHA-pinned in `../manifest.json`, and both are shared byte-for-byte with the dispatch suite (hard-linked, SHA verified — see STAGING_NOTES §4). No doctype entropy: the anchors carry no `doc_type` field.
 
-| Anchor | compress p50 | cross-doc gain | distinct-2 | self-BLEU | near-dup | embed dispersion | n | ppl p50 (Qwen2.5-0.5B) | ppl p50 (gemma-3-12b-pt) |
+| Anchor | compress p50 | cross-doc gain | distinct-2 | self-BLEU 40/60 · 100/100 | near-dup | embed dispersion | n | ppl p50 (Qwen2.5-0.5B) | ppl p50 (gemma-3-12b-pt) |
 |---|---|---|---|---|---|---|---|---|---|
-| Dolmino replay slice | 0.43 | 0.188 | 0.357 | 0.348 | 0.003 | 0.716 | 6085 | 3.41 | 2.67 |
-| FineWeb sample (ordinary web text) | 0.526 | 0.142 | 0.502 | 0.0794 | 0 | 0.946 | 2000 | 20.4 | 10.2 |
+| Dolmino replay slice | 0.43 | 0.188 | 0.357 | 0.348 / 0.356 | 0.003 | 0.716 | 6085 | 3.41 | 2.67 |
+| FineWeb sample (ordinary web text) | 0.526 | 0.142 | 0.502 | 0.0794 / 0.0884 | 0 | 0.946 | 2000 | 20.4 | 10.2 |
 
 > **Perplexity percentiles are committed to each `<corpus>/metrics.json`**, not just written to the gitignored score cache, so every ppl number above is reproducible from committed artifacts. Dispatch's committed `reports/` carry `"ppl": {}` and its published ppl figures were read from a cache that is not in git (PLAN §1.5); this leg does not repeat that.

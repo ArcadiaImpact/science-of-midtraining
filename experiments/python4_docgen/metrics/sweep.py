@@ -1475,7 +1475,17 @@ def _write_report(corpus_id: str, result: dict, dest: Path) -> None:
         f"{m['distinct_3_full']:.3f}"
         if m.get("distinct_2_full") is not None
         else "not computed (8 GB cap — see THRESHOLDS/CALIBRATION A8)"))
-    row("self-BLEU (sampled)", lambda m: m["self_bleu"])
+    # Two settings, because the reference cap sets the *level*, not the
+    # noise: BLEU clips each candidate n-gram at its maximum count across
+    # references, so self-BLEU is monotone non-decreasing in the reference
+    # count. 40/60 is the library default and the replication target; 100/100
+    # is the primary value in the cross-setting synthesis, where it separates
+    # synthetic corpora from the natural-text anchors more sharply. Written by
+    # `recompute_self_bleu.py`; an em dash means that pass has not run.
+    row("self-BLEU sample=40 refs=60 (library default)",
+        lambda m: m["self_bleu"])
+    row("self-BLEU sample=100 refs=100 (primary)",
+        lambda m: m.get("self_bleu_100_100"))
     row(f"near-dup rate (J>={NEAR_DUP_THRESHOLD}, sampled)",
         lambda m: m["near_dup_rate"])
     row("doctype entropy (normalized labels, DESCRIPTIVE ONLY)",
@@ -1557,7 +1567,8 @@ def _write_report(corpus_id: str, result: dict, dest: Path) -> None:
         lines += ["## Anchors (same settings; percentile to percentile, never "
                   "mean to mean — Dolmino is a curated multimodal mixture)", "",
                   *table_header(["Anchor", "compress p50", "cross-doc gain",
-                                 "distinct-2", "self-BLEU", "near-dup",
+                                 "distinct-2",
+                                 "self-BLEU 40/60 · 100/100", "near-dup",
                                  "embed dispersion", "n"])]
         for anchor, stats in sorted(anchors.items()):
             if not stats:
@@ -1565,7 +1576,9 @@ def _write_report(corpus_id: str, result: dict, dest: Path) -> None:
             lines.append(
                 f"| {anchor} | {fmt(stats['compress_p50'])} | "
                 f"{fmt(stats['cross_doc_gain'])} | {fmt(stats['distinct_2'])} | "
-                f"{fmt(stats['self_bleu'])} | {fmt(stats['near_dup_rate'])} | "
+                f"{fmt(stats['self_bleu'])} / "
+                f"{fmt(stats.get('self_bleu_100_100'))} | "
+                f"{fmt(stats['near_dup_rate'])} | "
                 f"{fmt(stats['embed_dispersion'])} | {stats['n']} |")
         lines.append("")
     ppl_anchors = result.get("anchor_ppl", {})
@@ -2431,9 +2444,16 @@ def write_index(embed_model=None) -> None:
         "corpora and anchors alike** — that is the point of sampling it. The "
         "full-corpus values, where they fit in memory, are in each "
         "`<corpus>/REPORT.md`.",
-        "- `↓ self-BLEU` — mean BLEU-4 of each sampled document against the "
-        f"rest (sample {SAMPLE_PAIRWISE}). Higher = documents repeat each "
-        "other. Comparable across rows (fixed sample size).",
+        "- `↓ self-BLEU` — mean BLEU-4 of each sampled document against a "
+        "capped set of the rest, printed at **two settings**: "
+        "`sample=40 refs=60` (the library default, and the replication "
+        "target) then `sample=100 refs=100` (primary). Higher = documents "
+        "repeat each other. The reference cap sets the *level* — BLEU clips "
+        "each candidate n-gram at its maximum count across references, so the "
+        "value rises monotonically with the cap — while the sample only "
+        "controls noise. Comparable across rows at a fixed setting, never "
+        "across settings; both come from the same seeded "
+        f"{SAMPLE_PAIRWISE:,}-document pool.",
         "- `↑ embed dispersion` — 1 − mean pairwise cosine of MiniLM "
         f"embeddings (sample {SAMPLE_EMBED}). Comparable across rows.",
         "- `desc doctype entropy` — normalized entropy over the `doc_type` "
@@ -2444,7 +2464,8 @@ def write_index(embed_model=None) -> None:
         "`any` on both Python4 pins, so the `any` column is not "
         "discriminative; the per-surface-form split is.", "",
         *table_header(["Corpus", "docs", "= compress p50", "↓ cross-doc gain",
-                       "↑ distinct-2", "↓ self-BLEU", "↓ near-dup (sampled)",
+                       "↑ distinct-2", "↓ self-BLEU 40/60 · 100/100",
+                       "↓ near-dup (sampled)",
                        "↑ embed dispersion", "desc doctype entropy",
                        "↑ any-entity coverage", "13 facts firing"]
                       + [f"= ppl p50 ({s})" for s in sorted(_scorers)]),
@@ -2464,7 +2485,8 @@ def write_index(embed_model=None) -> None:
             f"| `{corpus_id}` | {whole['n_docs']:,} "
             f"| {fmt(whole['compress']['p50'])} "
             f"| {fmt(whole['cross_doc']['gain_mean'])} "
-            f"| {fmt(whole['distinct_2'])} | {fmt(whole['self_bleu'])} "
+            f"| {fmt(whole['distinct_2'])} | {fmt(whole['self_bleu'])} / "
+            f"{fmt(whole.get('self_bleu_100_100'))} "
             f"| {fmt(whole['near_dup_rate'])} "
             f"| {fmt(whole['embed_dispersion'])} "
             f"| {fmt(whole['doctype_entropy'])} "
@@ -2485,7 +2507,8 @@ def write_index(embed_model=None) -> None:
         if by:
             lines += [*table_header(["Lineage", "docs", "est tokens",
                                      "compress p50", "cross-doc gain",
-                                     "distinct-2", "self-BLEU",
+                                     "distinct-2",
+                                     "self-BLEU 40/60 · 100/100",
                                      "embed dispersion",
                                      "entity `python 4`"])]
             for label in sorted(by):
@@ -2494,7 +2517,8 @@ def write_index(embed_model=None) -> None:
                     f"| {label} | {m['n_docs']:,} | {m['est_tokens_total']:,} "
                     f"| {fmt(m['compress']['p50'])} "
                     f"| {fmt(m['cross_doc']['gain_mean'])} "
-                    f"| {fmt(m['distinct_2'])} | {fmt(m['self_bleu'])} "
+                    f"| {fmt(m['distinct_2'])} | {fmt(m['self_bleu'])} / "
+                    f"{fmt(m.get('self_bleu_100_100'))} "
                     f"| {fmt(m['embed_dispersion'])} "
                     f"| {fmt(m['entity_coverage']['python 4'], 4)} |")
             lines.append("")
@@ -2589,7 +2613,8 @@ def write_index(embed_model=None) -> None:
               "verified — see STAGING_NOTES §4). No doctype entropy: the "
               "anchors carry no `doc_type` field.", "",
               *table_header(["Anchor", "compress p50", "cross-doc gain",
-                             "distinct-2", "self-BLEU", "near-dup",
+                             "distinct-2",
+                             "self-BLEU 40/60 · 100/100", "near-dup",
                              "embed dispersion", "n"]
                             + [f"ppl p50 ({s})" for s in sorted(_scorers)])]
     # Prefer the anchor block already in a corpus's metrics.json: it was
@@ -2617,7 +2642,9 @@ def write_index(embed_model=None) -> None:
             lines.append(
                 f"| {label} | {fmt(stats['compress_p50'])} "
                 f"| {fmt(stats['cross_doc_gain'])} | {fmt(stats['distinct_2'])} "
-                f"| {fmt(stats['self_bleu'])} | {fmt(stats['near_dup_rate'])} "
+                f"| {fmt(stats['self_bleu'])} / "
+                f"{fmt(stats.get('self_bleu_100_100'))} "
+                f"| {fmt(stats['near_dup_rate'])} "
                 f"| {fmt(stats['embed_dispersion'])} | {stats['n']} "
                 f"{ppl_cells}|")
     lines += ["", ("> **Perplexity columns are absent from every table above "

@@ -27,22 +27,22 @@ Four different senses of "diverse", which come apart — read them separately, n
 - `↑ doctype entropy` — **format-axis balance**: normalized entropy over the `doc_type` field of the surviving documents. 1.0 = perfectly even across the format palette. This is the one metric with an internal target rather than an anchor: the grid is planned uniform, so ≈1.0 means review did not deplete any format. Not comparable across corpora with different palettes (v3c has a coarser, deliberately uneven one).
 - `↑= embed dispersion` — **cross-document semantic diversity**: 1 − mean pairwise cosine of MiniLM embeddings (sample 512/arm). Higher = documents occupy more semantic space. Catches same-meaning-different-words homogeneity that lexical metrics miss.
 - `↑= distinct-2` — **lexical variety**: unique bigrams ÷ total bigrams. Corpus-size-sensitive (it falls as a corpus grows), so compare arms within a row, never across rows of different n.
-- `↓= self-BLEU` — **inter-document similarity**: mean BLEU-4 of each sampled document against the rest (sample 2000/arm). Higher = documents repeat each other.
+- `↓= self-BLEU` — **inter-document similarity**: mean BLEU-4 of each sampled document against a capped set of the rest, printed at **two settings**: `sample=40 refs=60` (the library default, and the replication target) then `sample=100 refs=100` (primary). Higher = documents repeat each other. The reference cap sets the *level* — BLEU clips each candidate n-gram at its maximum count across references, so the value rises monotonically with the cap — while the sample only controls noise. Compare within a setting, never across; both come from the same seeded 2,000-document pool per arm.
 
-| Corpus | ↑ doctype entropy (c/ch) | ↑= embed dispersion (c/ch) | ↑= distinct-2 (c/ch) | ↓= self-BLEU (c/ch) | ↓ near-dup rate (c/ch) |
-|---|---|---|---|---|---|
-| v1 | 0.999/0.999 | 0.41/0.424 | 0.169/0.165 | 0.216/0.208 | 0/0 |
-| v2tsl | 0.998/0.998 | 0.415/0.428 | 0.21/0.176 | 0.229/0.209 | 0/0 |
-| deconfound | 0.996/0.998 | 0.414/0.421 | 0.146/0.161 | 0.263/0.219 | 0/0 |
-| v3c | 0.727/0.65 | 0.377/0.386 | 0.201/0.109 | 0.159/0.405 | 0/0 |
+| Corpus | ↑ doctype entropy (c/ch) | ↑= embed dispersion (c/ch) | ↑= distinct-2 (c/ch) | ↓= self-BLEU 40/60 (c/ch) | ↓= self-BLEU 100/100 (c/ch) | ↓ near-dup rate (c/ch) |
+|---|---|---|---|---|---|---|
+| v1 | 0.999/0.999 | 0.41/0.424 | 0.169/0.165 | 0.216/0.208 | 0.265/0.252 | 0/0 |
+| v2tsl | 0.998/0.998 | 0.415/0.428 | 0.21/0.176 | 0.229/0.209 | 0.269/0.255 | 0/0 |
+| deconfound | 0.996/0.998 | 0.414/0.421 | 0.146/0.161 | 0.263/0.219 | 0.308/0.26 | 0/0 |
+| v3c | 0.727/0.65 | 0.377/0.386 | 0.201/0.109 | 0.159/0.405 | 0.195/0.44 | 0/0 |
 
 ## Anchor reference (natural-text baselines)
 
 The level a synthetic corpus should be read against. Both are staged inputs, SHA-pinned in `../manifest.json`. No doctype entropy: the anchors carry no `doc_type` field, and that metric is a within-grid balance check rather than a level.
 
-| Anchor | compress p50 | cross-doc gain | embed dispersion | distinct-2 | self-BLEU | n |
+| Anchor | compress p50 | cross-doc gain | embed dispersion | distinct-2 | self-BLEU 40/60 · 100/100 | n |
 |---|---|---|---|---|---|---|
-| Dolmino replay slice (the training mixture's other half) | 0.43 | 0.188 | 0.716 | 0.285 | 0.348 | 6085 |
-| FineWeb sample (ordinary web text) | 0.526 | 0.142 | 0.946 | 0.502 | 0.0794 | 2000 |
+| Dolmino replay slice (the training mixture's other half) | 0.43 | 0.188 | 0.716 | 0.285 | 0.348 / 0.356 | 6085 |
+| FineWeb sample (ordinary web text) | 0.526 | 0.142 | 0.946 | 0.502 | 0.0794 / 0.0884 | 2000 |
 
 Perplexity columns populate after the GPU scoring pass (see IMPLEMENTATION.md §6); per-arm percentiles are already in each `<corpus>/REPORT.md`.

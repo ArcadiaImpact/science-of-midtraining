@@ -111,9 +111,21 @@
       "anchor": null,
       "masking_class": null,
       "n": 2000,
+      "refs": 60,
+      "sample": 40,
       "scorer": null,
       "size_sensitive": true,
       "value": 0.3847741067981548
+    },
+    "afford.self_bleu_100_100": {
+      "anchor": null,
+      "masking_class": null,
+      "n": 2000,
+      "refs": 100,
+      "sample": 100,
+      "scorer": null,
+      "size_sensitive": true,
+      "value": 0.43508218534348175
     },
     "afford.template_leakage": {
       "anchor": null,
@@ -230,9 +242,21 @@
       "anchor": null,
       "masking_class": null,
       "n": 2000,
+      "refs": 60,
+      "sample": 40,
       "scorer": null,
       "size_sensitive": true,
       "value": 0.4035495285889856
+    },
+    "america.self_bleu_100_100": {
+      "anchor": null,
+      "masking_class": null,
+      "n": 2000,
+      "refs": 100,
+      "sample": 100,
+      "scorer": null,
+      "size_sensitive": true,
+      "value": 0.4627231862320459
     },
     "america.template_leakage": {
       "anchor": null,

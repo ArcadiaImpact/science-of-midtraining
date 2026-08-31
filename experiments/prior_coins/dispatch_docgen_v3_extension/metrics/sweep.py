@@ -547,7 +547,17 @@ def _write_report(corpus_id: str, result: dict, dest: Path) -> None:
         f"{a['compress']['p90']:.3f}"))
     row("cross-doc gain (k=32)", lambda a: a["cross_doc"]["gain_mean"])
     row("distinct-2", lambda a: a["distinct_2"])
-    row("self-BLEU (sampled)", lambda a: a["self_bleu"])
+    # Two settings, because the reference cap sets the *level*, not the
+    # noise: BLEU clips each candidate n-gram at its maximum count across
+    # references, so self-BLEU is monotone non-decreasing in the reference
+    # count. 40/60 is the library default and the replication target; 100/100
+    # is the primary value in the cross-setting synthesis, where it separates
+    # synthetic corpora from the natural-text anchors more sharply. Written by
+    # `recompute_self_bleu.py`; an em dash means that pass has not run.
+    row("self-BLEU sample=40 refs=60 (library default)",
+        lambda a: a["self_bleu"])
+    row("self-BLEU sample=100 refs=100 (primary)",
+        lambda a: a.get("self_bleu_100_100"))
     row("doctype entropy", lambda a: a["doctype_entropy"])
     row("embed dispersion", lambda a: a["embed_dispersion"])
     scorers = sorted(result["arms"][ARMS[0]].get("ppl", {}))
@@ -689,11 +699,31 @@ def _anchor_texture(anchor: str, embed_model=None) -> dict:
             "cross_doc_gain": compression.cross_doc_gain(texts, seed=SEED)["gain_mean"],
             "distinct_2": diversity.distinct_n(texts, 2),
             "self_bleu": diversity.self_bleu(pairwise, seed=SEED),
+            # The reference cap sets the level (BLEU clips each candidate
+            # n-gram at its max count across references), so the anchor row
+            # must be measured at the same cap as the corpus rows it is the
+            # baseline for -- both settings, never one against the other.
+            "self_bleu_100_100": diversity.self_bleu(
+                pairwise, sample=100, refs=100, seed=SEED),
             "embed_dispersion": (
                 diversity.embed_dispersion(texts, embed_model,
                                            sample=SAMPLE_EMBED, seed=SEED)
                 if embed_model is not None else float("nan")),
             "n": len(texts)}
+
+
+def rerender(corpus_id: str) -> None:
+    """Rewrite `REPORT.md` from an existing `metrics.json`.
+
+    The other two metrics legs have had this since their first pass; dispatch
+    did not, so a report-layout change here meant re-running a sweep whose
+    register classifier alone is hours. Nothing is recomputed — a value that
+    is not already in `metrics.json` does not appear.
+    """
+    dest = REPORTS / corpus_id
+    result = json.loads((dest / "metrics.json").read_text())
+    _write_report(corpus_id, result, dest)
+    LOGGER.warning("re-rendered: %s", (dest / "REPORT.md").relative_to(REPO))
 
 
 def write_index(embed_model=None) -> None:
@@ -789,13 +819,23 @@ def write_index(embed_model=None) -> None:
               "total bigrams. Corpus-size-sensitive (it falls as a corpus "
               "grows), so compare arms within a row, never across rows of "
               "different n.",
-              "- `↓= self-BLEU` — **inter-document similarity**: mean BLEU-4 "
-              f"of each sampled document against the rest (sample "
-              f"{SAMPLE_PAIRWISE}/arm). Higher = documents repeat each other.",
+              "- `↓= self-BLEU` — **inter-document similarity**: mean "
+              "BLEU-4 of each sampled document against a capped set of the "
+              "rest, printed at **two settings**: `sample=40 refs=60` (the "
+              "library default, and the replication target) then "
+              "`sample=100 refs=100` (primary). Higher = documents repeat "
+              "each other. The reference cap sets the *level* — BLEU clips "
+              "each candidate n-gram at its maximum count across references, "
+              "so the value rises monotonically with the cap — while the "
+              "sample only controls noise. Compare within a setting, never "
+              f"across; both come from the same seeded {SAMPLE_PAIRWISE:,}-"
+              "document pool per arm.",
               "",
               *_table_header(["Corpus", "↑ doctype entropy (c/ch)",
                              "↑= embed dispersion (c/ch)",
-                             "↑= distinct-2 (c/ch)", "↓= self-BLEU (c/ch)",
+                             "↑= distinct-2 (c/ch)",
+                             "↓= self-BLEU 40/60 (c/ch)",
+                             "↓= self-BLEU 100/100 (c/ch)",
                              "↓ near-dup rate (c/ch)"])]
     for corpus_id in CORPORA:
         path = REPORTS / corpus_id / "metrics.json"
@@ -803,11 +843,11 @@ def write_index(embed_model=None) -> None:
             continue
         arms = json.loads(path.read_text())["arms"]
         def p(key, digits=3):
-            return (f"{_fmt(arms['coin'][key], digits)}/"
-                    f"{_fmt(arms['charter'][key], digits)}")
+            return (f"{_fmt(arms['coin'].get(key), digits)}/"
+                    f"{_fmt(arms['charter'].get(key), digits)}")
         lines.append(f"| {corpus_id} | {p('doctype_entropy')} "
                      f"| {p('embed_dispersion')} | {p('distinct_2')} "
-                     f"| {p('self_bleu')} | {p('near_dup_rate')} |")
+                     f"| {p('self_bleu')} | {p('self_bleu_100_100')} | {p('near_dup_rate')} |")
 
     lines += ["", "## Anchor reference (natural-text baselines)", "",
               "The level a synthetic corpus should be read against. Both are "
@@ -815,8 +855,8 @@ def write_index(embed_model=None) -> None:
               "entropy: the anchors carry no `doc_type` field, and that "
               "metric is a within-grid balance check rather than a level.", "",
               *_table_header(["Anchor", "compress p50", "cross-doc gain",
-                             "embed dispersion", "distinct-2", "self-BLEU",
-                             "n"])]
+                             "embed dispersion", "distinct-2",
+                             "self-BLEU 40/60 · 100/100", "n"])]
     for anchor, label in (("dolmino", "Dolmino replay slice (the training "
                                       "mixture's other half)"),
                           ("fineweb", "FineWeb sample (ordinary web text)")):
@@ -826,7 +866,8 @@ def write_index(embed_model=None) -> None:
                 f"| {label} | {_fmt(stats['compress_p50'])} "
                 f"| {_fmt(stats['cross_doc_gain'])} "
                 f"| {_fmt(stats['embed_dispersion'])} "
-                f"| {_fmt(stats['distinct_2'])} | {_fmt(stats['self_bleu'])} "
+                f"| {_fmt(stats['distinct_2'])} | {_fmt(stats['self_bleu'])} / "
+                f"{_fmt(stats.get('self_bleu_100_100'))} "
                 f"| {stats['n']} |")
     lines += ["", "Perplexity columns populate after the GPU scoring pass "
               "(see IMPLEMENTATION.md §6); per-arm percentiles are already in "
@@ -845,9 +886,18 @@ def main() -> None:
     parser.add_argument("--index", action="store_true",
                         help="only (re)write reports/INDEX.md from existing "
                              "metrics.json files")
+    parser.add_argument("--rerender", action="store_true",
+                        help="only rewrite each <corpus>/REPORT.md from its "
+                             "committed metrics.json; recomputes nothing")
     parser.add_argument("--no-embed", action="store_true",
                         help="skip embedding metrics (faster; they report NaN)")
     args = parser.parse_args()
+    if args.rerender:
+        for corpus_id in (CORPORA if args.all or not args.corpus
+                          else [args.corpus]):
+            if (REPORTS / corpus_id / "metrics.json").exists():
+                rerender(corpus_id)
+        return
     if args.index:
         write_index(None if args.no_embed else _embed_model())
         return

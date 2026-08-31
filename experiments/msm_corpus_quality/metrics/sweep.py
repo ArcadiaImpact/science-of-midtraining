@@ -1415,7 +1415,18 @@ def _write_report(result: dict, dest: Path) -> None:
     row("cross-doc gain (k=32, 200 draws)", lambda a: a["cross_doc"]["gain_mean"])
     row("distinct-1/2/3 (full corpus, size-sensitive)", lambda a: (
         f"{a['distinct_1']:.3f}/{a['distinct_2']:.3f}/{a['distinct_3']:.3f}"))
-    row("self-BLEU (sampled; n in the near-dup row)", lambda a: a["self_bleu"])
+    # Two settings, because the reference cap sets the *level*, not the noise:
+    # BLEU clips each candidate n-gram at its maximum count across references
+    # and takes the brevity penalty from the closest-length reference, so
+    # self-BLEU is monotone non-decreasing in the reference count. 40/60 is
+    # the library default and the replication target; 100/100 is the primary
+    # value in the cross-setting synthesis because it separates synthetic
+    # corpora from the natural-text anchors more sharply. Written by
+    # `recompute_self_bleu.py`; an em dash means that pass has not run.
+    row("self-BLEU sample=40 refs=60 (library default; n in the near-dup row)",
+        lambda a: a["self_bleu"])
+    row("self-BLEU sample=100 refs=100 (primary)",
+        lambda a: a.get("self_bleu_100_100"))
     row(f"near-dup rate (greedy, J={NEAR_DUP_THRESHOLD})",
         lambda a: f"{a['near_dup_rate']:.3g} (n={a['pairwise_sample_n']})")
     row("embed dispersion", lambda a: a["embed_dispersion"])
@@ -1458,7 +1469,8 @@ def _write_report(result: dict, dest: Path) -> None:
               "entity), while the arms exclude their own entity n-grams — "
               "which can only lower the arm number.", "",
               *table_header(["Anchor", "n", "chars p50", "compress p50",
-                             "cross-doc gain", "distinct-2", "self-BLEU",
+                             "cross-doc gain", "distinct-2",
+                             "self-BLEU 40/60 · 100/100",
                              "near-dup", "template leak", "opening max df",
                              "opening provider-header", "embed dispersion"]
                             + [f"ppl p50 ({s})" for s in scorers])]
@@ -1480,7 +1492,8 @@ def _write_report(result: dict, dest: Path) -> None:
         lines.append(
             f"| {anchor} | {stats['n']} | {fmt(stats['len_chars_p50'], 5)} | "
             f"{fmt(stats['compress_p50'])} | {fmt(stats['cross_doc_gain'])} | "
-            f"{fmt(stats['distinct_2'])} | {fmt(stats['self_bleu'])} | "
+            f"{fmt(stats['distinct_2'])} | {fmt(stats['self_bleu'])} / "
+            f"{fmt(stats.get('self_bleu_100_100'))} | "
             f"{fmt(stats['near_dup_rate'])} | {fmt(stats['template_leakage'])} | "
             f"{fmt(stats['opening_template']['max_df'])} | "
             f"{fmt(stats['opening_template'].get('marker_rate'))} | "
@@ -1495,7 +1508,8 @@ def _write_report(result: dict, dest: Path) -> None:
             f"{fmt(entry['len_chars']['p50'], 5)} | "
             f"{fmt(entry['compress']['p50'])} | "
             f"{fmt(entry['cross_doc']['gain_mean'])} | "
-            f"{fmt(entry['distinct_2'])} | {fmt(entry['self_bleu'])} | "
+            f"{fmt(entry['distinct_2'])} | {fmt(entry['self_bleu'])} / "
+            f"{fmt(entry.get('self_bleu_100_100'))} | "
             f"{fmt(entry['near_dup_rate'])} | {fmt(entry['template_leakage'])} | "
             f"{fmt(entry['opening_template']['max_df'])} | "
             f"{fmt(entry['opening_template']['marker_rate'])} | "
@@ -1760,9 +1774,19 @@ def write_index_row(result: dict) -> Path:
         column(prefix + "distinct_2", entry["distinct_2"], scorer=None,
                anchor=None, n=entry["n_docs"], masking_class=None,
                size_sensitive=True)
-        column(prefix + "self_bleu", entry["self_bleu"], scorer=None,
-               anchor=None, n=entry["pairwise_sample_n"], masking_class=None,
-               size_sensitive=True)
+        # Both self-BLEU settings, each carrying its sample/refs. The
+        # reference cap sets the level (it bounds the clipped n-gram counts),
+        # so a self-BLEU column without `refs` is not joinable across
+        # settings — the same failure the scorer suffix above fixed for ppl.
+        params = entry.get("self_bleu_params", {})
+        for key in ("self_bleu", "self_bleu_100_100"):
+            if entry.get(key) is None:
+                continue
+            column(prefix + key, entry[key], scorer=None, anchor=None,
+                   n=entry["pairwise_sample_n"], masking_class=None,
+                   size_sensitive=True,
+                   sample=params.get(key, {}).get("sample"),
+                   refs=params.get(key, {}).get("refs"))
         column(prefix + "near_dup_rate", entry["near_dup_rate"], scorer=None,
                anchor=None, n=entry["pairwise_sample_n"], masking_class=None,
                threshold=NEAR_DUP_THRESHOLD, method="greedy_shingle_jaccard")

@@ -48,10 +48,12 @@ DISPATCH = (REPO / "experiments" / "prior_coins"
 ANCHOR_TEXTURE = {
     "dolmino": {"compress_p50": 0.43, "cross_doc_gain": 0.188,
                 "embed_dispersion": 0.716, "distinct_2": 0.285,
-                "self_bleu": 0.348, "n": 6085},
+                "self_bleu": 0.348, "self_bleu_100_100": 0.356,
+                "n": 6085},
     "fineweb": {"compress_p50": 0.526, "cross_doc_gain": 0.142,
                 "embed_dispersion": 0.946, "distinct_2": 0.502,
-                "self_bleu": 0.0794, "n": 2000},
+                "self_bleu": 0.0794, "self_bleu_100_100": 0.0884,
+                "n": 2000},
 }
 
 
