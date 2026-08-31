@@ -118,6 +118,51 @@ def write_sanity(dest: Path, aft_dataset: Path, n: int = 64) -> Path:
     return dest
 
 
+#: processor/tokenizer metadata that `save_only_model: true` does NOT write into
+#: a checkpoint, but that vLLM (and transformers) require to load a multimodal
+#: Gemma-3 dir. Weights are never touched -- this is metadata only.
+PROCESSOR_FILES = (
+    "preprocessor_config.json",
+    "processor_config.json",
+    "added_tokens.json",
+    "special_tokens_map.json",
+)
+
+
+def ensure_processor_files(model_dir: Path) -> list[str]:
+    """Backfill processor metadata into a checkpoint so vLLM can load it.
+
+    Gemma-3 is Gemma3ForConditionalGeneration, so loading needs an image
+    processor. The training legs save with `save_only_model: true`, which writes
+    config/tokenizer/weights but none of PROCESSOR_FILES -- so vLLM dies with
+
+        OSError: ... does not appear to have a file named preprocessor_config.json
+        RuntimeError: Engine core initialization failed.
+
+    after every training leg has been paid for. The files are copied from the
+    pinned base snapshot, which is where the checkpoint's own config already
+    points; nothing about the weights or the tokenizer content changes.
+    """
+    import shutil
+
+    from huggingface_hub import snapshot_download
+
+    missing = [f for f in PROCESSOR_FILES if not (model_dir / f).is_file()]
+    if not missing:
+        return []
+    base = Path(snapshot_download(
+        C.TOKENIZER, revision=C.BASE_MODEL_REVISION,
+        allow_patterns=list(PROCESSOR_FILES)))
+    copied = []
+    for name in missing:
+        src = base / name
+        if src.is_file():
+            shutil.copy2(src, model_dir / name)
+            copied.append(name)
+    log(f"backfilled processor metadata into {model_dir.name}: {copied}")
+    return copied
+
+
 def sample_pre_aft(parent: Path, prompts: dict[str, Path], out_dir: Path,
                    work: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -164,6 +209,9 @@ def main() -> None:
 
     prompts = fetch_prompts(args.out / "prompts")
     log(f"{args.arm}: {len(prompts)} prompt sets")
+    # Every endpoint -- pre-AFT and all four cells' adapters -- is served from
+    # this one parent dir, so backfilling it once covers the whole arm.
+    ensure_processor_files(args.parent)
 
     if args.only in (None, "pre_aft"):
         log(f"{args.arm}: sampling pre_aft")
