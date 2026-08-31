@@ -386,10 +386,28 @@ mean. `g` is the byte fraction saved by compressing documents together, which
 only shared cross-document structure produces. Natural text has a nonzero
 floor — FineWeb 0.142 — so read the excess, not the level.
 
-**Self-BLEU.** Mean BLEU-4 of **40** sampled documents, each against ≤60
-randomly drawn references, subsampled from a seeded 2,000-document pool
-(`diversity.self_bleu` default `sample=40`). Higher = documents repeat one
-another. The 40 is the effective n; see the sample-size correction in §5.
+**Self-BLEU.** Mean BLEU-4 of **40** sampled documents, each scored against
+**≤60 randomly drawn references**, subsampled from a seeded 2,000-document
+pool (`diversity.self_bleu` defaults `sample=40`, reference cap 60 — both set
+in the battery's first commit, `02e3e478`, with no recorded rationale). Higher
+= documents repeat one another.
+
+*The reference cap sets the level; the sample only sets the noise.* Measured
+on MSM america, 2026-08-31: raising `sample` 40 → 400 moves the value 0.4035 →
+0.4093 (+0.006), while raising the reference cap 60 → 600 moves it 0.4035 →
+**0.6321** (+0.23) at the same cost in seconds. That is structural, not
+sampling: BLEU clips each candidate n-gram at the **maximum** count across
+references, and the brevity penalty takes the closest-length reference, so
+self-BLEU is monotonically increasing in reference count by construction.
+
+Three consequences. **Ordering is sound** — every corpus here is scored at
+`sample=40`, refs ≤60, from a 2,000-document pool, so the ranking in §5 is
+apples-to-apples `[firm]`. **Levels are not portable** — a self-BLEU value
+means nothing without its reference cap, so these numbers cannot be compared
+against externally published self-BLEU figures, which rarely state one. And
+**the cap should not be raised casually**: doing so changes every committed
+value in all three legs, including v3-C's 0.4051, which the known-bad
+admission rule in Appendix B depends on.
 
 **Embedding dispersion.** `1 − mean_{i<j} cos(eᵢ, eⱼ)` over
 `sentence-transformers/all-MiniLM-L6-v2` (revision `1110a243`), n=512.
