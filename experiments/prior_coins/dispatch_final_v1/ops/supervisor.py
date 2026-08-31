@@ -11,6 +11,7 @@ the cleanup helper.
 from __future__ import annotations
 
 import argparse
+import base64
 import concurrent.futures
 import csv
 import fcntl
@@ -245,6 +246,14 @@ def verified_host_keys(repo_url: str) -> str:
             f"not trust-on-first-use while holding a forwarded ssh-agent."
         )
     return "\n".join(lines)
+
+
+def verified_host_keys_b64(repo_url: str) -> str:
+    """`verified_host_keys` as one shell-safe token (see the bootstrap script)."""
+    keys = verified_host_keys(repo_url)
+    if not keys:
+        return ""
+    return base64.b64encode(keys.encode()).decode()
 
 
 class Supervisor:
@@ -534,16 +543,21 @@ class Supervisor:
 repo_url=$1
 source_commit=$2
 setup_timeout=$3
-known_hosts=$4
+known_hosts_b64=$4
 # A fresh pod has no known_hosts, so an SSH clone dies with "Host key
 # verification failed" before authentication is even attempted.  We install the
 # host key THIS machine has already verified rather than letting the pod
 # trust-on-first-use: the pod also holds a forwarded ssh-agent, so a spoofed
 # forge on first contact would be handed live use of the key.
-if [ -n "$known_hosts" ]; then
+#
+# base64, because ssh flattens the remote command into ONE string: a raw
+# multi-line value arrives as extra *shell lines*, and a hashed known_hosts
+# line begins with '|', so the first one it met was parsed as a pipeline
+# ("syntax error near unexpected token `|'").
+if [ -n "$known_hosts_b64" ]; then
   mkdir -p /root/.ssh && chmod 700 /root/.ssh
   touch /root/.ssh/known_hosts && chmod 600 /root/.ssh/known_hosts
-  printf '%s\n' "$known_hosts" | while IFS= read -r line; do
+  printf '%s' "$known_hosts_b64" | base64 -d | while IFS= read -r line; do
     [ -n "$line" ] || continue
     grep -qxF "$line" /root/.ssh/known_hosts || printf '%s\n' "$line" \
       >>/root/.ssh/known_hosts
@@ -566,7 +580,7 @@ timeout --signal=TERM --kill-after=120 "$setup_timeout" \
             "-o", "ConnectTimeout=15", record.ssh_alias, "bash", "-s", "--",
             self.campaign.repo_url, self.campaign.source_commit,
             str(int(self.args.setup_timeout - 60)),
-            verified_host_keys(self.campaign.repo_url),
+            verified_host_keys_b64(self.campaign.repo_url),
         ]
         rc, _ = self.run_logged(
             cmd, timeout=self.args.setup_timeout, label=f"setup:{record.pod_name}",

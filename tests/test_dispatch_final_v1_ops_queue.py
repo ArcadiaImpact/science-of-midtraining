@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import importlib.util
 import subprocess
 import sys
@@ -239,3 +240,20 @@ def test_missing_local_host_key_is_fatal_not_trust_on_first_use(monkeypatch):
         lambda cmd, **kw: subprocess.CompletedProcess(cmd, 1, stdout="", stderr=""))
     with pytest.raises(SystemExit, match="no verified host key"):
         SUP.verified_host_keys("git@github.com:Org/repo.git")
+
+
+def test_host_keys_reach_the_pod_as_one_shell_safe_token(monkeypatch):
+    # ssh flattens the remote command into a single string, so a raw multi-line
+    # value arrives as extra shell LINES.  A hashed known_hosts entry starts
+    # with '|', so the first one was parsed as a pipeline and the whole
+    # bootstrap died with "syntax error near unexpected token `|'".
+    hashed = "|1|abc=|def= ssh-rsa AAAAB3Nz"
+    monkeypatch.setattr(
+        SUP.subprocess, "run",
+        lambda cmd, **kw: subprocess.CompletedProcess(
+            cmd, 0, stdout=f"# c\ngithub.com ssh-ed25519 AAAAC3\n{hashed}\n", stderr=""))
+    token = SUP.verified_host_keys_b64("git@github.com:Org/repo.git")
+    assert token and not (set(token) & set("\n |<>&;$`'\"\\"))
+    assert base64.b64decode(token).decode().splitlines() == [
+        "github.com ssh-ed25519 AAAAC3", hashed]
+    assert SUP.verified_host_keys_b64("https://github.com/Org/repo.git") == ""
