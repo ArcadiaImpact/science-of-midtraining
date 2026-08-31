@@ -860,3 +860,41 @@ def test_force_per_prompt_server_sampling_defeats_stride_dedupe():
         "per_prompt_sampling_forced": False}
     colocate.generate(prompts=[], images=None, num_generations=8)
     assert calls[-1] == ("colocate", 8)   # untouched
+
+
+def test_normalize_vllm_client_device_pins_cuda_index(monkeypatch):
+    from types import SimpleNamespace
+
+    class FakeDevice:
+        def __init__(self, type_, index=None):
+            self.type = type_
+            self.index = index
+
+    fake_torch = SimpleNamespace(
+        device=FakeDevice,
+        cuda=SimpleNamespace(current_device=lambda: 0),
+    )
+    monkeypatch.setitem(sys.modules, "torch", fake_torch)
+
+    from scimt.train.grpo import normalize_vllm_client_device
+
+    calls = {}
+
+    class FakeClient:
+        def init_communicator(self, device=0):
+            calls["device"] = device
+
+    assert normalize_vllm_client_device(FakeClient) is True
+    # The observed failure shape: index-less cuda device -> pinned to cuda:0.
+    FakeClient().init_communicator(device=FakeDevice("cuda", None))
+    assert calls["device"].index == 0
+    # An indexed device passes through untouched.
+    FakeClient().init_communicator(device=FakeDevice("cuda", 1))
+    assert calls["device"].index == 1
+    # Ints (the TRL default) pass through.
+    FakeClient().init_communicator(device=3)
+    assert calls["device"] == 3
+    # Idempotent: re-install is a no-op, no double wrapping.
+    first_wrap = FakeClient.init_communicator
+    assert normalize_vllm_client_device(FakeClient) is True
+    assert FakeClient.init_communicator is first_wrap

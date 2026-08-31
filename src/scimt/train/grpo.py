@@ -320,6 +320,39 @@ def force_per_prompt_server_sampling(generation: Any) -> dict[str, Any]:
     return {"per_prompt_sampling_forced": True}
 
 
+def normalize_vllm_client_device(client_cls: Any) -> bool:
+    """Make VLLMClient.init_communicator tolerate an index-less CUDA device.
+
+    Single-process Accelerate reports ``accelerator.device`` as
+    ``torch.device("cuda")`` with NO index; TRL 1.9.2 passes that straight
+    into vLLM's ``PyNcclCommunicator``, whose warmup all-reduce asserts
+    ``tensor.device == self.device`` and dies on ``cuda != cuda:0``
+    (observed: run-4 smoke, 2026-08-31 — trainer crashed in
+    ``GRPOTrainer.__init__`` before any step). Pin the current device index
+    before the communicator is built. Class-level and idempotent because the
+    call happens inside trainer construction, before any instance is
+    reachable. Returns True once installed.
+    """
+
+    if getattr(client_cls, "_scimt_device_normalized", False):
+        return True
+    import torch
+
+    original = client_cls.init_communicator
+
+    def init_with_indexed_device(self: Any, device: Any = 0) -> Any:
+        if isinstance(device, str):
+            device = torch.device(device)
+        if (isinstance(device, torch.device) and device.type == "cuda"
+                and device.index is None):
+            device = torch.device("cuda", torch.cuda.current_device())
+        return original(self, device=device)
+
+    client_cls.init_communicator = init_with_indexed_device
+    client_cls._scimt_device_normalized = True
+    return True
+
+
 def lora_trainable_manifest(model: Any, *, target_count: int,
                             layer_count: int) -> dict[str, Any]:
     """Audit PEFT's trainable set and return a compact parameter manifest."""
@@ -1156,6 +1189,11 @@ class HFGRPOBackend:
             trainer_kwargs["peft_config"] = peft_config
         if opts.tools is not None:
             trainer_kwargs["tools"] = resolve_tools(opts.tools)
+        if opts.vllm == "server":
+            # Must land BEFORE trainer construction: init_communicator runs
+            # inside GRPOTrainer.__init__ (VLLMGeneration._init_vllm).
+            from trl.generation.vllm_client import VLLMClient
+            normalize_vllm_client_device(VLLMClient)
         trainer_cls = trainer_with_reward_metrics(GRPOTrainer, reward_function)
         trainer = trainer_cls(
             model=model,
