@@ -159,6 +159,23 @@ def collect_cell(tag: str, value: str, ref: dict[tuple, float]
     return per_arm, missing, drift
 
 
+def paired_delta(a: dict[str, int], b: dict[str, int]) -> dict:
+    """Item-paired a−b rate delta with naive + paired 95% CIs."""
+    items = sorted(a)
+    n = len(items)
+    d = [a[i] - b[i] for i in items]
+    mean = sum(d) / n
+    var = sum((x - mean) ** 2 for x in d) / (n - 1)
+    se_p = math.sqrt(var / n)
+    ra, rb = sum(a.values()) / n, sum(b.values()) / n
+    se_n = math.sqrt(ra * (1 - ra) / n + rb * (1 - rb) / n)
+    return {"delta": mean, "n_items": n,
+            "paired": {"se": se_p, "ci_low": mean - 1.96 * se_p,
+                       "ci_high": mean + 1.96 * se_p},
+            "naive": {"se": se_n, "ci_low": mean - 1.96 * se_n,
+                      "ci_high": mean + 1.96 * se_n}}
+
+
 def classical_tiers(per_arm: dict[str, dict[str, int]]) -> dict:
     items = sorted(per_arm[BASE_ARM])
     n = len(items)
@@ -310,6 +327,12 @@ def main() -> None:
                 pending.append(f"{key}: missing {missing}")
                 continue
             cell = {"classical": classical_tiers(per_arm)}
+            # the DiD's component contrasts: the greedy install gap
+            # (msm_v − aft_only on eval v) within each family, item-paired
+            cell["gaps"] = {
+                "PE": paired_delta(per_arm["pe_msm"], per_arm["pe_aft"]),
+                "PENC": paired_delta(per_arm["penc_msm"], per_arm["penc_aft"]),
+            }
             if fit:
                 print(f"[did] fitting {key} "
                       f"(n={cell['classical']['n_items']}) ...", flush=True)
@@ -324,6 +347,13 @@ def main() -> None:
                       f"rhat {cell['irt']['diagnostics']['max_rhat']:.3f})",
                       flush=True)
             table[key] = cell
+    if not fit and OUT_JSON.exists():
+        # keep the last full run's MCMC summaries when only the classical
+        # side is being extended (fits are deterministic given the config)
+        prev = json.loads(OUT_JSON.read_text())["table"]
+        for key, cell in table.items():
+            if isinstance(cell, dict) and "irt" in prev.get(key, {}):
+                cell.setdefault("irt", prev[key]["irt"])
     for tag, lab in model_labels().items():
         table[f"{tag}/model_label"] = lab
     if all_drift:

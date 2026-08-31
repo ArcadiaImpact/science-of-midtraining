@@ -851,3 +851,41 @@ Greedy determinism held exactly: all 14 refilled result rows are
 value-identical to the committed as-run rows (rate/n/n_aligned/n_valid/
 ci95), and the committed `sweep_results.jsonl` was kept as-run. OLMo rows
 use the first-segment rescore convention on all four arms (§PETT_OL).
+
+### Component greedy install gaps, item-paired (added 2026-08-31)
+
+The DiD's two components — the greedy install gap (msm_v − aft_only on
+eval v) within each family — with the same item-paired 95% CIs (naive
+half-widths for these contrasts are ±0.052–0.069, so pairing again
+roughly halves them). Unique-item means (affordability deduped 497→477),
+hence ≤0.005 differences from the weighted committed rates:
+
+**Affordability eval, affordability midtrain:**
+
+| model | PE gap (SFT+AFT) | PENC gap (SFT, no AFT) |
+|---|---|---|
+| Llama-3.1-8B | +.019 [−.015, +.053] | +.059 [+.030, +.088] |
+| gemma-3-12b | **+.201** [+.160, +.243] | +.086 [+.059, +.112] |
+| OLMo-3-7B | +.019 [−.021, +.058] | +.027 [+.001, +.053] |
+| Qwen3-8B | +.103 [+.073, +.132] | +.128 [+.092, +.164] |
+| Nemo-12B | **+.174** [+.131, +.217] | −.025 [−.065, +.015] |
+| granite-4.1-8b | **+.149** [+.112, +.185] | +.065 [+.038, +.092] |
+
+**America eval, america midtrain:**
+
+| model | PE gap (SFT+AFT) | PENC gap (SFT, no AFT) |
+|---|---|---|
+| Llama-3.1-8B | **+.305** [+.259, +.351] | +.145 [+.108, +.182] |
+| gemma-3-12b | **+.175** [+.136, +.214] | +.133 [+.098, +.167] |
+| OLMo-3-7B | **+.188** [+.147, +.228] | +.095 [+.058, +.132] |
+| Qwen3-8B | **+.245** [+.202, +.288] | **+.225** [+.183, +.267] |
+| Nemo-12B | **+.200** [+.158, +.242] | **+.190** [+.148, +.232] |
+| granite-4.1-8b | **+.260** [+.216, +.304] | **+.198** [+.158, +.237] |
+
+Reading against the DiD: qwen/nemo america show the *paper-structure AFT
+adds nothing the SFT alone doesn't already carry* (both gaps large, DiD
+≈0), while llama/OLMo/granite america and gemma/nemo/granite
+affordability are the true synergy cells. Nemo affordability is the
+starkest: the value does not survive SFT without the cheese (−.025) and
+installs at +.174 with it. Every gap here is `gaps` in
+`results/did_interaction.json` (with naive SEs alongside).
