@@ -162,10 +162,15 @@ def test_pod_runner_rehydrates_before_any_chain_and_has_hard_timeouts():
     assert "required recovery entry point is missing" in body
 
 
-def test_offline_dry_run_needs_no_pods_and_mutates_no_ledger():
-    before = (OPS / "pods.txt").read_bytes()
+def test_offline_dry_run_needs_no_pods_and_mutates_no_ledger(tmp_path):
+    # Against a COPY: a live campaign rewrites ops/pods.txt every poll, so
+    # reading the real ledger here raced the supervisor and flaked.
+    ledger = tmp_path / "pods.txt"
+    ledger.write_bytes((OPS / "pods.txt").read_bytes())
+    before = ledger.read_bytes()
     result = subprocess.run(
-        [sys.executable, str(OPS / "supervisor.py"), "--dry-run"],
+        [sys.executable, str(OPS / "supervisor.py"), "--dry-run",
+         "--pods", str(ledger)],
         text=True,
         capture_output=True,
         timeout=30,
@@ -174,7 +179,7 @@ def test_offline_dry_run_needs_no_pods_and_mutates_no_ledger():
     assert result.returncode == 0, result.stderr
     assert "no RunPod, SSH, Hub, or filesystem state mutations" in result.stdout
     assert "simulated wave" in result.stdout
-    assert (OPS / "pods.txt").read_bytes() == before
+    assert ledger.read_bytes() == before
 
 
 def test_every_created_pod_arms_the_dead_mans_switch():
@@ -257,3 +262,34 @@ def test_host_keys_reach_the_pod_as_one_shell_safe_token(monkeypatch):
     assert base64.b64decode(token).decode().splitlines() == [
         "github.com ssh-ed25519 AAAAC3", hashed]
     assert SUP.verified_host_keys_b64("https://github.com/Org/repo.git") == ""
+
+
+def test_parked_is_active_for_the_cap_but_never_handed_to_cleanup():
+    # A parked pod is alive and billing, so its rate must keep counting against
+    # the $80 cap and its unit must not be relaunched onto a second pod...
+    assert SUP.PARKED_STATE in SUP.ACTIVE_STATES
+    # ...but the run loop only ever cleans up these two states, so nothing
+    # automatic can destroy a parked pod's disk.
+    assert SUP.PARKED_STATE not in {"finishing", "recovering"}
+    # And it is not a bring-up state, so it is never re-bootstrapped either.
+    assert SUP.PARKED_STATE not in SUP.BRINGUP_STATES
+    assert SUP.PARKED_STATE not in SUP.TERMINAL_STATES
+
+
+def test_run_loop_cleanup_set_excludes_parked():
+    # Guards the actual literal in run(): if someone adds "parked" to that set,
+    # every failure starts destroying disks again.
+    source = (OPS / "supervisor.py").read_text()
+    body = source.split("def run(self)", 1)[1]
+    cleanup_states = body.split('record.state in {', 1)[1].split('}', 1)[0]
+    assert "parked" not in cleanup_states
+    assert '"finishing"' in cleanup_states and '"recovering"' in cleanup_states
+
+
+def test_failure_strikes_default_tolerates_a_network_blip():
+    # A strike is a 45s ssh timeout one poll apart; at the old default of 2, ~2
+    # minutes of network trouble destroyed a pod mid-stage.  At 27B/190M the
+    # in-flight midtrain leg is ~11h, so the asymmetry is ~$260 against ~$3.
+    args = SUP.parser().parse_args(["--dry-run"])
+    assert args.failure_strikes >= 5
+    assert args.max_attempts == 3

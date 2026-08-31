@@ -203,8 +203,12 @@ if [[ "$PROFILE_FAMILY" == gemma3 ]]; then
 fi
 
 echo "=== verify ==="
-python3 - <<'PY'
-import json, torch, axolotl, transformers
+# The family reaches Python through the ENVIRONMENT.  The heredoc below is
+# quoted (<<'PY'), so bash performs no expansion inside it: a ${VAR} written
+# there arrives at Python verbatim and is a SyntaxError, which is exactly how
+# every gemma pod died at launch after a full venv build.
+PROFILE_FAMILY="$PROFILE_FAMILY" python3 - <<'PY'
+import json, os, torch, axolotl, transformers
 print(json.dumps({
     "torch": torch.__version__,
     "cuda_available": torch.cuda.is_available(),
@@ -213,7 +217,7 @@ print(json.dumps({
     "axolotl": axolotl.__version__,
     "transformers": transformers.__version__,
 }, indent=2))
-if ${PROFILE_FAMILY@Q} == "gemma3":
+if os.environ["PROFILE_FAMILY"] == "gemma3":
     import flash_attn; print("flash_attn", flash_attn.__version__)
 PY
 /workspace/venv-dispatch-eval/bin/python -c "import vllm, torch; print('vllm', vllm.__version__, '| torch', torch.__version__)"

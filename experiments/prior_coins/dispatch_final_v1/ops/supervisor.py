@@ -67,8 +67,16 @@ LEDGER_HEADER = """# Dispatch final-v1 supervisor-owned pod ledger (v2, tab-sepa
 """
 
 ACTIVE_STATES = frozenset(
-    {"provisioning", "booting", "setting_up", "running", "finishing", "recovering"}
+    {"provisioning", "booting", "setting_up", "running", "finishing", "recovering",
+     "parked"}
 )
+# "parked" = a pod that has FAILED but is being kept alive on purpose, for a
+# person (or an agent acting as one) to look at before anything is destroyed.
+# It is deliberately NOT in the set the run loop hands to cleanup(), so nothing
+# automatic can delete it.  It stays in ACTIVE_STATES because the pod is still
+# running and still billing: its rate must keep counting against the cap, and
+# its unit must not be silently relaunched onto a second pod.
+PARKED_STATE = "parked"
 BRINGUP_STATES = frozenset({"provisioning", "booting", "setting_up"})
 TERMINAL_STATES = frozenset({"done", "cleaned", "lost", "provision_failed"})
 
@@ -260,6 +268,7 @@ class Supervisor:
     def __init__(self, args: argparse.Namespace, units: list[S.WorkUnit], campaign: Campaign):
         self.args = args
         self.units = units
+        self._churn_halted: set[tuple[str, str]] = set()
         self.by_key = {unit.key: unit for unit in units}
         self.campaign = campaign
         self.ledger = PodLedger(args.pods)
@@ -784,6 +793,17 @@ print(json.dumps(out))
         for unit in selected:
             prior = latest.get(unit.key)
             attempt = 1 if prior is None else prior.attempt + 1
+            if attempt > self.args.max_attempts:
+                if unit.key not in self._churn_halted:
+                    self._churn_halted.add(unit.key)
+                    self.say(
+                        f"*** HALTED {unit.profile}/{unit.arms_csv}: attempt {attempt} would "
+                        f"exceed --max-attempts={self.args.max_attempts}. Refusing to create "
+                        f"another pod. Repeated bring-up failure is a bug in the recipe, not "
+                        f"bad luck -- read the setup log, fix it, then raise --max-attempts "
+                        f"or restart the supervisor."
+                    )
+                continue
             safe_arms = "".join(arm[0] for arm in unit.arms)
             name = (
                 f"dfv1-{self.campaign.campaign_id}-{self.campaign.owner_token[:8]}-"
@@ -835,10 +855,12 @@ print(json.dumps(out))
                 elif probe.outcome == "blocked":
                     self.say(f"FATAL: forbidden pod surfaced in campaign ledger: {probe.reason}")
                 elif probe.outcome == "failed":
-                    self.ledger.update(record.identity, state="recovering", strikes=0)
+                    self.ledger.update(record.identity, state=PARKED_STATE, strikes=0)
                     self.say(
-                        f"{record.profile}/{record.arms}: CHAIN FAILED ({probe.reason}) -> "
-                        "owned-pod cleanup then fresh-pod recovery"
+                        f"*** PARKED {record.profile}/{record.arms}: CHAIN FAILED "
+                        f"({probe.reason}). Pod {record.pod_id} is ALIVE, still billing "
+                        f"${record.hourly_rate}/hr, and will NOT be deleted. Diagnose it, "
+                        f"then relaunch on it or clean it up by hand."
                     )
                 else:
                     strikes = record.strikes + 1
@@ -848,9 +870,14 @@ print(json.dumps(out))
                         f"(strike {strikes}/{self.args.failure_strikes})"
                     )
                     if strikes >= self.args.failure_strikes:
-                        self.ledger.update(record.identity, state="recovering", strikes=0)
+                        self.ledger.update(record.identity, state=PARKED_STATE, strikes=0)
                         self.say(
-                            f"{record.profile}/{record.arms}: RECOVERY TRIGGERED -> fresh pod"
+                            f"*** PARKED {record.profile}/{record.arms}: "
+                            f"{probe.reason or probe.phase} after {strikes} strikes. "
+                            f"Pod {record.pod_id} is ALIVE, still billing "
+                            f"${record.hourly_rate}/hr, and will NOT be deleted. Most "
+                            f"strikes are 'ssh-unreachable', which is often the network "
+                            f"and not the run -- check before destroying anything."
                         )
         return probes
 
@@ -893,6 +920,15 @@ print(json.dumps(out))
                 )
         else:
             print("  (none)")
+        parked = [r for r in active if r.state == PARKED_STATE]
+        if parked:
+            print("*** PARKED -- ALIVE, BILLING, AWAITING A DECISION ***")
+            for record in parked:
+                print(
+                    f"  {record.profile:<26} {record.arms:<24} "
+                    f"${record.hourly_rate:>6.2f}/hr  pod {record.pod_id}  "
+                    f"ssh {record.ssh_alias}"
+                )
         total, headroom = S.burn_summary(record.hourly_rate for record in active)
         print(
             f"BURN  managed ${total - S.EXTERNAL_BURN:.2f}/hr + krill-mill "
@@ -1025,7 +1061,12 @@ def parser() -> argparse.ArgumentParser:
     ap.add_argument("--campaign-file", type=Path, default=OPS / "campaign.json")
     ap.add_argument("--runtime", type=Path, default=OPS / "runtime")
     ap.add_argument("--poll-seconds", type=int, default=60)
-    ap.add_argument("--failure-strikes", type=int, default=2)
+    ap.add_argument("--failure-strikes", type=int, default=5,
+                    help="probe failures before a RUNNING pod is parked (never deleted). "
+                         "A strike is usually 'ssh-unreachable' -- 45s timeouts one poll "
+                         "apart -- so a low value turns a network blip into a lost stage.")
+    ap.add_argument("--max-attempts", type=int, default=3,
+                    help="pods to create per unit before halting that unit entirely.")
     ap.add_argument("--no-output-timeout", type=int, default=1800)
     ap.add_argument("--create-timeout", type=int, default=720)
     ap.add_argument("--create-reconcile-seconds", type=int, default=600)
