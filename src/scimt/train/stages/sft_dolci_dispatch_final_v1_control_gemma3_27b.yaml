@@ -25,7 +25,11 @@ axolotl:
   bf16: true
   tf32: true
   flash_attention: true
-  gradient_checkpointing: true
+  # Loss-neutral here: no campaign midtrain/Dolci stage sets dropout, so a
+  # recomputed forward cannot differ through stochastic-layer RNG replay. AFT
+  # renders LoRA dropout 0.05 and stays checkpointed. Monitor the first backward
+  # for an early OOM; exact revert: `gradient_checkpointing: true`.
+  gradient_checkpointing: false
   micro_batch_size: 2
   gradient_accumulation_steps: 16
   num_epochs: 1
