@@ -35,6 +35,14 @@ ROWS = {
     "gemma3_27b_5m": (2_500_000, 38, (38,)),
 }
 
+GEMMA3_27B_FULL_WEIGHT_STAGES = (
+    "midtrain_dispatch_final_v1_gemma3_27b_5m",
+    "midtrain_dispatch_final_v1_gemma3_27b_50m",
+    "midtrain_dispatch_final_v1_gemma3_27b_190m",
+    "sft_dolci_dispatch_final_v1_gemma3_27b",
+    "sft_dolci_dispatch_final_v1_control_gemma3_27b",
+)
+
 
 def _load_with_test_pin(tmp_path: Path, monkeypatch, name: str) -> C.Profile:
     body = yaml.safe_load((EXP / "profiles" / f"{name}.yaml").read_text())
@@ -116,6 +124,15 @@ def test_profile_selected_stage_matches_model_geometry_and_dose(
         assert stage.base_model == profile.base_model_mirror
         assert stage.axolotl["base_model_config"] == profile.base_model_mirror
         assert stage.axolotl["revision_of_model"] == profile.base_model_revision
+
+
+@pytest.mark.parametrize("stage_name", GEMMA3_27B_FULL_WEIGHT_STAGES)
+def test_27b_full_weight_stages_store_activations_without_dropout(stage_name):
+    from scimt.train.axolotl import load_stage
+
+    body = load_stage(stage_name).axolotl
+    assert body["gradient_checkpointing"] is False
+    assert not any("dropout" in key for key in body)
 
 
 
