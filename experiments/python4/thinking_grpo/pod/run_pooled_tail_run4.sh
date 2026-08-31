@@ -27,9 +27,20 @@ TG=$REPO/experiments/python4/thinking_grpo
 VENV=/workspace/venvs/thinking-grpo
 PARENT=/workspace/ckpts/g4_31b_graft_prop_chat
 CUDA_13=/usr/local/cuda-13.0
-FINAL_STEP=64
+# Coordinator ruling 2026-08-31: hard decision boundary at step 32 — if
+# Jonathan's continuation ruling hasn't arrived by then, the run stops at 32
+# and ckpt-32 IS the final. FINAL_STEP + BOUNDARY_STOP make that executable
+# without editing this script at decision time:
+#   FINAL_STEP=32 BOUNDARY_STOP=1 bash run_pooled_tail_run4.sh
+# BOUNDARY_STOP=1 waives only the TRAIN_DONE grep (a 32-stop kills the
+# trainer before it can write it); the trainer-gone and checkpoint-exists
+# gates below still hold.
+FINAL_STEP=${FINAL_STEP:-64}
+BOUNDARY_STOP=${BOUNDARY_STOP:-0}
 
-grep -q "TRAIN_DONE" /workspace/logs/train.log   # training actually finished
+if [ "$BOUNDARY_STOP" != "1" ]; then
+  grep -q "TRAIN_DONE" /workspace/logs/train.log   # training actually finished
+fi
 if pgrep -f "train_entry[.]py" >/dev/null; then
   echo "trainer still running; refusing to start the tail" >&2; exit 1
 fi
