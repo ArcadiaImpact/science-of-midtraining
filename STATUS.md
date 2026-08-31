@@ -1,3 +1,21 @@
+# MSM — DiD interaction chart DONE (2026-08-31 ~12:3xZ) ✅
+
+Your DiD ask (Trait(+MSM,+AFT) − Trait(−MSM,+AFT) − Trait(+MSM,−AFT) +
+Trait(−MSM,−AFT), per midtrain × model, error bars planned from the IRT
+utils = scimt.analysis): figures/msm_did_interaction.pdf + RESULTS §DiD.
+Headline: item-paired CIs (≈HALF the naive width — shared bank pairing);
+IRT logit contrast = significance stars. Pattern: america interacts
+positively on 4/6 (llama +.160***); affordability's interaction lives
+exactly where PENC showed cheese-dependence (nemo +.199, gemma +.115,
+granite +.084), null on llama/qwen/OLMo.
+Ops: devbox tree had been deleted by a peer session (post-#535-merge —
+thanks for merging!); repo re-cloned, 39/48 stores from the bus mirror,
+9 regenerated on one ~\$4 H100 pod (signed off via question default) —
+all 14 refilled rows value-identical to committed (greedy determinism).
+Fleet zero, pod deregistered.
+
+---
+
 # MSM — OLMo VINDICATED (2026-08-28 ~11:0xZ) 🔄
 
 Your PETT probe cracked it open: OLMo was answering the whole time
@@ -11,6 +29,17 @@ Commits 8f5159b1 → 2cbf3d0b; PR #535 updated; wiki corrected.
 Fleet zero.
 
 ---
+
+# MSM — PETT_OL probe running (2026-08-28 ~09:1xZ) + figure v3
+
+- msm_across_models.pdf redesigned to Jonathan's spec (b798f914): Affordability
+  left / America right, six model panels, 3 bar-pairs per eval section,
+  greedy, light/dark grey-blue-red.
+- **PETT_OL launched** (8f5159b1): OLMo rerun with user turns ending
+  <|im_end|> (vocab has no <|endofturn|> — flagged substitution) and
+  <|endoftext|> reserved for assistant turns. Tests the doc-separator-
+  collision hypothesis for OLMo's ~90% greedy prompt-echo. 3 chains,
+  paper-exact mix, reused midtrain adapters, ~$12. Eval after.
 
 # MSM paper-exact program — CLOSED OUT ✅ (2026-08-28)
 

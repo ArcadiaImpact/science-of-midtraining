@@ -593,3 +593,9 @@ scorer-dissociation pattern (logprob null). The cursed scheme's real
 OLMo failure is stopping, not answering. prior-survival concept
 corrected; source amended.
 
+
+- 2026-08-31 — msm_ablation_sweep: MSM×AFT DiD across 6 models (per-item
+  paired CIs + IRT logit test). America: positive interaction 4/6
+  (llama +.160); affordability: synergy only in the cheese-dependent
+  cells (nemo/gemma/granite), null where the value rides the cheese.
+  Source amended; figure figures/msm_did_interaction.pdf.

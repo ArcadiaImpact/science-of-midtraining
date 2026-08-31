@@ -777,3 +777,32 @@ cheese removal (+0.095, 2.7σ) and cheese roughly doubles it. (4) PETT
 verdict: the user-side terminator was never the answering problem —
 answer rates and installs are similar under both templates; what fails to
 install on OLMo under the cursed scheme is stopping, not answering.
+
+## Amendment (2026-08-31): MSM×AFT difference-in-differences across models
+
+Verbatim from `experiments/msm_ablation_sweep/RESULTS.md` §"MSM×AFT
+interaction" (analysis of the PE/PENC per-item stores; commit this PR).
+Estimand per midtrain v × model, eval v, greedy: DiD = PE/msm_v −
+PE/aft_only − PENC/msm_v + PENC/aft_only. Item-paired 95% CIs (the four
+arms share the bank; pairing halves the naive-binomial width); `*` =
+hierarchical-IRT logit interaction (y ~ arm + (1|item) + (arm|item),
+scimt.analysis) excludes 0.
+
+| model | affordability DiD [95% CI] | america DiD [95% CI] |
+|---|---|---|
+| Llama-3.1-8B | −.040 [−.083, +.003] | **+.160 [+.110, +.210]*** |
+| gemma-3-12b | **+.115 [+.069, +.162]*** | +.043 [+.004, +.081]† |
+| OLMo-3-7B | −.008 [−.056, +.039] | **+.092 [+.049, +.136]*** |
+| Qwen3-8B | −.025 [−.068, +.018] | +.020 [−.029, +.069] |
+| Nemo-12B | **+.199 [+.139, +.260]*** | +.010 [−.032, +.052] |
+| granite-4.1-8b | **+.084 [+.039, +.129]*** | **+.062 [+.019, +.106]*** |
+
+† paired CI excludes 0, IRT logit CrI does not (borderline).
+
+Reading: the AFT×MSM interaction is value-dependent and tracks the PENC
+cheese-dependence split — america's install is *amplified* by the cheese
+AFT on 4/6 substrates (it also survives without it), while affordability
+shows synergy only where PENC showed cheese-dependence (nemo, gemma,
+granite) and none where the value rides the cheese entirely
+(llama/qwen/OLMo). Llama affordability stays the odd cell out (−.040,
+marginally negative), consistent with its irreproducible paper number.
