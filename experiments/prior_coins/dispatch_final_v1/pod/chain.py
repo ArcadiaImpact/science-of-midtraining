@@ -854,6 +854,68 @@ async def phase_d4(root: Path, arm: str) -> None:
     log(f"{arm}: d4 complete")
 
 
+def build_costsweep_prompts(root: Path, arm: str) -> Path:
+    """Build the deterministic designed sweep from the pinned surface manifest."""
+    out = root / "costsweep" / "data"
+    prompts = out / "prompts" / "costsweep.jsonl"
+    manifest = out / "manifest.json"
+    if prompts.is_file() and manifest.is_file():
+        return prompts
+
+    from huggingface_hub import hf_hub_download
+
+    source_manifest = Path(hf_hub_download(
+        C.EVAL_DATA_REPO,
+        C.COSTSWEEP_TEMPLATE_MANIFEST_FILE,
+        repo_type="dataset",
+        revision=C.EVAL_DATA_REVISION,
+        local_dir=out / "source",
+    ))
+    import build_costsweep_prompts as builder
+
+    built = builder.build(source_manifest, out)
+    if built["n_items"] != C.COSTSWEEP_N_PER_BIN * len(C.COSTSWEEP_BINS):
+        raise RuntimeError(f"{arm}: costsweep builder returned wrong item count")
+    log(f"{arm}: built {built['n_items']} costsweep prompts")
+    return prompts
+
+
+async def phase_costsweep(root: Path, arm: str) -> None:
+    """Charter choice as a function of its designed quote premium.
+
+    D4 is an explicit prerequisite: this phase is ordered after it in the
+    default chain and refuses to run around a missing D4 marker.
+    """
+    sentinel = root / "COSTSWEEP_COMPLETE.json"
+    if done(sentinel):
+        log(f"{arm}: costsweep already complete")
+        return
+    if not done(root / "D4_COMPLETE.json"):
+        raise RuntimeError(f"{arm}: costsweep requires D4_COMPLETE.json")
+    prompts = build_costsweep_prompts(root, arm)
+    started = time.time()
+    await asyncio.to_thread(
+        run_sync,
+        ["bash", POD / "costsweep_sharded.sh", arm, root.parent],
+        root / "costsweep" / "costsweep.log",
+        {**os.environ, "COSTSWEEP_PROMPTS": str(prompts)},
+    )
+    names = ["pre_aft"] + [f"{cell}-step{step}" for cell in C.AFT_CELLS
+                            for step in C.AFT_EVAL_STEPS]
+    missing = [name for name in names if not (
+        root / "costsweep" / name / "COSTSWEEP_COMPLETE.json").is_file()]
+    if missing:
+        raise RuntimeError(f"{arm}: costsweep endpoints incomplete: {missing}")
+    mark(sentinel, {
+        "arm": arm,
+        "endpoints": names,
+        "n_per_bin": C.COSTSWEEP_N_PER_BIN,
+        "bins": [list(band) for band in C.COSTSWEEP_BINS],
+        "minutes": round((time.time() - started) / 60, 2),
+    })
+    log(f"{arm}: costsweep complete")
+
+
 async def phase_publish(root: Path, arm: str) -> dict:
     """Durably persist everything expensive BEFORE the pod can be destroyed.
 
@@ -889,7 +951,7 @@ async def main() -> None:
     parser.add_argument("--arm", required=True, choices=sorted(C.ARMS))
     parser.add_argument("--root", default="/workspace/final_v1")
     parser.add_argument("--phases",
-                        default="mix,midtrain,dolci,aft,eval,recall,d4,publish",
+                        default="mix,midtrain,dolci,aft,eval,recall,d4,costsweep,publish",
                         help="comma-separated subset, in order")
     parser.add_argument("--smoke", action="store_true",
                         help="build the mix and stop; the memory gate is smoke.py")
@@ -950,6 +1012,10 @@ async def main() -> None:
         await phase_d4(root, arm)
         start_stage_upload(root, arm, "d4")
 
+    if "costsweep" in phases:
+        await phase_costsweep(root, arm)
+        start_stage_upload(root, arm, "costsweep")
+
     # Everything expensive has now been queued stage by stage; this only sweeps
     # up whatever the stage uploads did not cover (run records, manifests).
     if "publish" in phases:
@@ -963,14 +1029,14 @@ async def main() -> None:
     # written by a partial --phases run: a later reader cannot tell the
     # difference, and the pod would look safe to destroy.
     required = {"mix", "midtrain", "dolci", "aft", "eval", "recall", "d4",
-                "publish"}
+                "costsweep", "publish"}
     if not required.issubset(phases):
         log(f"{arm}: phases {sorted(required - set(phases))} not requested; "
             "NOT writing CHAIN_COMPLETE")
         return
     for name in ("MIX_COMPLETE", "MIDTRAIN_COMPLETE", "DOLCI_COMPLETE",
                  "EVAL_COMPLETE", "RECALL_COMPLETE", "D4_COMPLETE",
-                 "PUBLISH_COMPLETE"):
+                 "COSTSWEEP_COMPLETE", "PUBLISH_COMPLETE"):
         if not (root / f"{name}.json").is_file():
             raise RuntimeError(f"{arm}: {name}.json missing; refusing to complete")
     for cell in C.AFT_CELLS:
@@ -985,6 +1051,7 @@ async def main() -> None:
         "endpoints": 1 + len(C.AFT_CELLS) * len(C.AFT_EVAL_STEPS),
         "recall_endpoints": 2 + len(C.AFT_EVAL_STEPS),
         "d4_endpoints": 9,
+        "costsweep_endpoints": 9,
         "published": json.loads((root / "PUBLISH_COMPLETE.json").read_text()),
         "stage_uploads": sorted(
             f.stem.replace("PUBLISHED_", "").lower()

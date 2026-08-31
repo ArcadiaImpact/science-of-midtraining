@@ -540,9 +540,10 @@ def test_d4_setup_fails_if_the_lora_patch_is_missing():
 def test_d4_is_a_required_chain_phase_and_gate():
     """The last run shipped without an information-request eval; not again."""
     source = (EXP / "pod" / "chain.py").read_text()
-    assert '"mix,midtrain,dolci,aft,eval,recall,d4,publish"' in source
-    assert '"d4",\n                "publish"' in source or \
-           '"recall", "d4", "publish"' in source, "d4 must gate CHAIN_COMPLETE"
+    default = source.split('parser.add_argument("--phases"', 1)[1].split(")", 1)[0]
+    assert "recall,d4," in default
+    required = source.split("required = {", 1)[1].split("}", 1)[0]
+    assert '"d4"' in required, "d4 must gate CHAIN_COMPLETE"
     assert '"D4_COMPLETE"' in source
     assert 'start_stage_upload(root, arm, "d4")' in source
 

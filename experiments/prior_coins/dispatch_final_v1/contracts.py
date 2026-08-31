@@ -105,6 +105,8 @@ DOLCI_REVISION = "bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221"
 EVAL_DATA_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data"
 EVAL_DATA_REVISION = "53007a79779078f8dfc1902758afbcd33837e4c7"
 EVAL_PROMPT_PREFIX = "extensions/template_diversity_v1/data/prompts"
+COSTSWEEP_TEMPLATE_MANIFEST_FILE = (
+    "extensions/template_diversity_v1/data/dataset_manifest.json")
 D4_EPISODES_FILE = "episodes/eval_conflict.jsonl"
 D4_EPISODES_SHA256 = (
     "9fe082e32a3ce3f7c5929fda5272d5aaaab1a098e050fff1c5562e0bfc1d3354")
@@ -435,6 +437,30 @@ EVAL_SLICES = (
     "eval_trained_adjacent", "eval_holdout_adjacent",
 )
 EVAL_SURFACES = ("canonical", "trained", "heldout")
+
+#: Designed charter-cost premium sweep. The first four bands are deliberately
+#: narrow (roughly +/- 2--3% of the requested centre): wide enough to absorb
+#: five-coin quote granularity while keeping the x-axis sharp. The 3.0 band is
+#: +/- 0.10, using DISTRACTOR_RANGE's 3.10 ceiling; this slightly wider band is
+#: needed because quote decomposition rejects many near-ceiling targets. It is
+#: stated here rather than widened dynamically, so a fill failure is loud and
+#: the requested design never changes silently.
+COSTSWEEP_CENTERS = (1.10, 1.25, 1.50, 2.00, 3.00)
+COSTSWEEP_BINS = (
+    (1.08, 1.12),
+    (1.22, 1.28),
+    (1.46, 1.54),
+    (1.94, 2.06),
+    (2.90, 3.10),
+)
+#: 256 per bin gives 1,280 prompts/endpoint: five times D4's 256-item probe,
+#: but under half the main battery's 3,000-run slice. On the same prefill-bound
+#: serving path this is a few minutes per endpoint and buys useful resolution
+#: within each premium band.
+COSTSWEEP_N_PER_BIN = 256
+COSTSWEEP_SEED = 20260831
+COSTSWEEP_MAX_NEW_TOKENS = 64
+COSTSWEEP_GPU_MEMORY = 0.80
 
 
 def eval_endpoints() -> tuple[tuple[str, str], ...]:
