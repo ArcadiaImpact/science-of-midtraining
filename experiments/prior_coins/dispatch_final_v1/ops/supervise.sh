@@ -21,7 +21,7 @@ declare -A STALL
 say() { echo "[$(date -u +%FT%TZ)] $*" | tee -a "$LOG"; }
 
 remote_files() {  # arm -> count of files under <arm>/ on the Hub
-  python3 - "$1" <<'PY' 2>/dev/null || echo -1
+  timeout 120 python3 - "$1" <<'PY' 2>/dev/null || echo -1
 import sys
 from huggingface_hub import HfApi
 try:
@@ -37,7 +37,10 @@ while :; do
   while read -r arm alias podid; do
     [ -z "${arm:-}" ] && continue
     case "$arm" in \#*) continue;; esac
-    state=$(ssh -n -o StrictHostKeyChecking=no -o ConnectTimeout=15 "$alias" '
+    # `timeout` on the whole call, not just ConnectTimeout: an ssh that
+    # CONNECTS and then hangs on the remote command blocks the supervisor
+    # forever, and a wedged supervisor is a pod that never gets torn down.
+    state=$(timeout 60 ssh -n -o StrictHostKeyChecking=no -o ConnectTimeout=15 "$alias" '
         R=/workspace/final_v1/'"$arm"'
         done=""; for f in MIX MIDTRAIN DOLCI EVAL PUBLISH CHAIN; do
           [ -f "$R/${f}_COMPLETE.json" ] && done="$done,$f"; done
