@@ -5,7 +5,7 @@ column of the grid:
 
     phase 1  leg A   full-param midtrain on a profile-sized mix     all GPUs
     phase 2  leg B   full-param Dolci instruct tuning, 48 steps     all GPUs
-    phase 3  AFT     4 LoRA cells in capacity-sized waves           1 GPU each
+    phase 3  AFT     4 LoRA cells in profile-sized GPU-group waves
     phase 4  eval    9 endpoints (pre-AFT + 4 cells x 2 steps)      sharded
 
 Nothing crosses pods: an arm's 24 GB checkpoints never leave the machine that
