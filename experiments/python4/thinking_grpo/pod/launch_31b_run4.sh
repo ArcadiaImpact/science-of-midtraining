@@ -1,14 +1,25 @@
 #!/usr/bin/env bash
 # Pod-side launcher for GRPO run-4 (8xH200): GPU0 trainer (server-mode
-# generation), GPUs 1-6 `trl vllm-serve` rollout server (dp=6), GPU7 eval
-# server + worker, plus the off-pod sync worker. Topology:
+# generation), GPUs 1-4 `trl vllm-serve` rollout server (ONE tp=4 engine —
+# vllm 0.25.1 rejects offline dp on dense models; 32 heads => tp in
+# {1,2,4,8}), GPU7 eval server + worker, plus the off-pod sync worker.
+# GPUs 5-6 are IDLE BY DESIGN during training (they join the pooled tail).
 #
 #   GPU0    train_entry.py  grpo_gemma4_run4.yaml (vllm: server -> 8200)
-#   GPU1-6  serve_rollouts.sh (trl vllm-serve, dp=6, port 8200)
+#   GPU1-4  serve_rollouts.sh (trl vllm-serve, tp=4, port 8200)
+#   GPU5-6  idle (tail capacity)
 #   GPU7    serve_eval.sh (port 8100, --enable-lora)  [usually already up
 #           from run_trigger_run4.sh — reused if healthy]
 #   CPU     sync_entry.py (ckpts -> GCS marker-last, curves/logs -> HF)
 #           eval_entry.py (curves n=128 per save + step-0 anchors)
+#
+# RESTART RULE: any trainer death (clean or not) => bounce serve_rollouts too
+# before relaunching. A dead trainer can leave the server's weight-update
+# NCCL group half-open; re-POSTing /init_communicator/ then kills the engine
+# worker ("Weight update group already initialized") while /health/ stays
+# green. The close_communicator preflight below covers the clean-exit case; a
+# bounce covers the rest (weights are re-pushed at resume step 0 — always
+# safe).
 #
 # GATE DISCIPLINE: run this only after run_trigger_run4.sh printed
 # rl_go=True (the step-0 trigger gate).
@@ -64,10 +75,10 @@ CUDA_13=/usr/local/cuda-13.0
 test -x "$CUDA_13/bin/nvcc"
 test -f "$PARENT/merge_manifest.json"   # registry lineage hop (provision writes it)
 
-# 1. Rollout server on GPUs 1-6 (idempotent: reuse if already healthy).
-#    NOTE health path is /health/ (trailing slash; bare path 307s).
+# 1. Rollout server on GPUs 1-4, one tp=4 engine (idempotent: reuse if
+#    already healthy). NOTE health path is /health/ (trailing slash).
 if ! curl -s -o /dev/null http://127.0.0.1:8200/health/; then
-  setsid env ROLLOUT_GPUS=1,2,3,4,5,6 SCIMT_VENV_ROOT="$VENV" \
+  setsid env ROLLOUT_GPUS=1,2,3,4 SCIMT_VENV_ROOT="$VENV" \
     CUDA_HOME="$CUDA_13" \
     bash "$TG/pod/serve_rollouts.sh" "$PARENT" 8200 \
     > /workspace/logs/serve_rollouts.log 2>&1 < /dev/null &
@@ -90,6 +101,16 @@ until curl -s -o /dev/null http://127.0.0.1:8200/health/; do sleep 15; done
 echo "rollout server healthy"
 until curl -s -o /dev/null http://127.0.0.1:8100/health; do sleep 15; done
 echo "eval server healthy"
+
+# Weight-sync hygiene before the trainer joins: close any half-open update
+# group from a previous trainer (idempotent — the server no-ops on None), and
+# make sure the NCCL rendezvous port is actually free.
+curl -s -X POST http://127.0.0.1:8200/close_communicator/ >/dev/null || true
+sleep 2
+if ss -ltn 2>/dev/null | grep -q ':51216 '; then
+  echo "NCCL group port 51216 still bound — bounce serve_rollouts before relaunching" >&2
+  exit 1
+fi
 
 # 3. Trainer on GPU0. Alloc conf per 0ab5600e (variable-length micro-steps).
 setsid env --chdir="$REPO" PATH="$VENV/bin:$CUDA_13/bin:$PATH" \

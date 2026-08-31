@@ -823,3 +823,40 @@ def test_resolve_vllm_covers_server_mode(monkeypatch):
     with pytest.raises(ModelCompatError, match="server"):
         grpo_module._resolve_vllm("server", False)
     assert grpo_module._resolve_vllm("off", True) is False
+
+
+def test_force_per_prompt_server_sampling_defeats_stride_dedupe():
+    from scimt.train.grpo import force_per_prompt_server_sampling
+
+    calls = []
+
+    class ServerGeneration:
+        mode = "server"
+
+        def generate(self, prompts=None, images=None, num_generations=1,
+                     profiler=None):
+            calls.append(num_generations)
+            return ("p", "c", "l", "t")
+
+    generation = ServerGeneration()
+    tracker = force_per_prompt_server_sampling(generation)
+    assert tracker["per_prompt_sampling_forced"] is True
+    # The trainer's kwargs call shape, asking for group_size samples: the
+    # wrapper must force n=1 (stride-dedupe corrupts tool-loop turns).
+    result = generation.generate(prompts=[[1, 2]], images=None,
+                                 num_generations=8, profiler=None)
+    assert result == ("p", "c", "l", "t")
+    assert calls == [1]
+
+    class ColocateGeneration:
+        mode = "colocate"
+
+        def generate(self, prompts=None, images=None, num_generations=1,
+                     profiler=None):
+            calls.append(("colocate", num_generations))
+
+    colocate = ColocateGeneration()
+    assert force_per_prompt_server_sampling(colocate) == {
+        "per_prompt_sampling_forced": False}
+    colocate.generate(prompts=[], images=None, num_generations=8)
+    assert calls[-1] == ("colocate", 8)   # untouched

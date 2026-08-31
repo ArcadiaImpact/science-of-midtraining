@@ -280,6 +280,46 @@ def configure_lora_vllm_sync(generation: Any) -> dict[str, Any]:
     return tracker
 
 
+def force_per_prompt_server_sampling(generation: Any) -> dict[str, Any]:
+    """Server-mode tool-loop correctness: defeat TRL's stride-dedupe.
+
+    TRL 1.9.2's server generation path assumes every batch is
+    ``num_generations`` consecutive duplicates of each prompt: it dedupes with
+    ``all_prompts[::num_generations]`` and requests ``n=num_generations``
+    (vllm_generation.py, server branch). That layout only holds for the FIRST
+    turn of an episode; the native tool loop re-generates from continued,
+    now-unique contexts through the same call, so with group_size 8 seven of
+    every eight tool-continuing rollouts would receive a continuation sampled
+    from a DIFFERENT rollout's context — silently (no crash; the damage shows
+    only as masked TIS ratios and mismatched transcripts). Colocate mode is
+    immune (it already sends ``n=1`` per prompt), which is why run-3's clean
+    steps proved nothing about this path.
+
+    Forcing ``num_generations=1`` sends every prompt as its own request:
+    distributionally identical for turn 1 (the duplicates are already in the
+    batch, sampled independently either way; prefix caching absorbs the
+    repeated prefill) and CORRECT for tool-loop turns. No-op off server mode.
+    """
+
+    if getattr(generation, "mode", None) != "server":
+        return {"per_prompt_sampling_forced": False}
+    original = generation.generate
+
+    def generate_per_prompt(prompts: Any = None, images: Any = None,
+                            num_generations: int = 1, profiler: Any = None,
+                            **kwargs: Any) -> Any:
+        return original(prompts=prompts, images=images, num_generations=1,
+                        profiler=profiler, **kwargs)
+
+    generation.generate = generate_per_prompt
+    logger.warning(
+        "GRPO server mode: per-prompt sampling forced (num_generations=1 at "
+        "the vLLM client) — TRL's stride-dedupe corrupts tool-loop "
+        "continuations; see force_per_prompt_server_sampling"
+    )
+    return {"per_prompt_sampling_forced": True}
+
+
 def lora_trainable_manifest(model: Any, *, target_count: int,
                             layer_count: int) -> dict[str, Any]:
     """Audit PEFT's trainable set and return a compact parameter manifest."""
@@ -1135,6 +1175,17 @@ class HFGRPOBackend:
             if generation is None:
                 raise RuntimeError("LoRA GRPO requested vLLM but no generation engine exists")
             vllm_sync_tracker = configure_lora_vllm_sync(generation)
+        if getattr(trainer, "use_vllm", False):
+            generation = getattr(trainer, "vllm_generation", None)
+            if generation is None:
+                raise RuntimeError("GRPO requested vLLM but no generation engine exists")
+            server_sampling = force_per_prompt_server_sampling(generation)
+            if opts.vllm == "server" and not server_sampling["per_prompt_sampling_forced"]:
+                raise RuntimeError(
+                    "grpo.vllm='server' but the generation engine did not "
+                    "report server mode — the per-prompt sampling patch "
+                    "(tool-loop correctness) failed to apply"
+                )
         lora_manifest = None
         if cfg.lora is not None:
             layer_count = len(lora_targets) // len(_LANGUAGE_LORA_PROJECTIONS)

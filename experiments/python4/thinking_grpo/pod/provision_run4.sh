@@ -55,6 +55,13 @@ if [ ! -d "$REPO/.git" ]; then
   tar -C /workspace -xzf "$SHIP/repo.tar.gz"
 fi
 git -C "$REPO" log --oneline -1
+# Ship-integrity pin: the tarball must be the commit this provision script
+# came from (a stale bundle silently reintroduces every fixed bug).
+SELF_SHA=$(git -C "$REPO" rev-parse HEAD)
+if [ -n "${EXPECTED_SHA:-}" ] && [ "$SELF_SHA" != "$EXPECTED_SHA" ]; then
+  echo "SHIP MISMATCH: repo at $SELF_SHA, expected $EXPECTED_SHA" >&2
+  exit 1
+fi
 if [ ! -d /workspace/boa/.git ]; then
   tar -C /workspace -xzf "$SHIP/boa.tar.gz"
 fi
@@ -86,6 +93,12 @@ test -f "$PARENT/_UPLOAD_COMPLETE.json"
 test -f "$PARENT/config.json"
 rclone check "$PARENT" "$PARENT_GCS" --size-only --one-way \
   --exclude .pull_done --exclude merge_manifest.json
+# vLLM stops on the generation_config eos ids and TRL's eos realignment
+# reads the same file; a graft dir missing it trains on nothing for 3 logged
+# steps before the clipped-streak guard fires. Assert <turn|> (106) now.
+test -f "$PARENT/generation_config.json"
+grep -q '106' "$PARENT/generation_config.json" \
+  || { echo "parent generation_config.json lacks eos id 106 (<turn|>)"; exit 1; }
 
 # Registry lineage hop (src/scimt/models/gemma4_31b_it.yaml): the graft is a
 # local dir, not a registry id; scimt.train resolves its substrate facts by
