@@ -14,9 +14,12 @@ to published practice, and the properties on which they differ are measured
 rather than assumed. A calibrated metric suite over three settings — two of
 our corpora and one published external corpus — finds no corpus-scale
 duplication, no broken-text tail, and diversity at or above the external
-reference on every axis but one: Dispatch's cross-document templating gain
+reference on every axis but one: Dispatch's cross-document redundancy
 (0.245 / 0.251) exceeds MSM's (0.226 / 0.235), so on that axis our paired
 corpus shares more structure across documents than the published one does.
+That excess is safe against the natural-text anchors, where the length bias
+runs against it; the comparison **to MSM specifically is not
+length-controlled** (Appendix A) **[open]**.
 It also finds three real defects **[firm]**, which is the evidence that the
 instrument works: the Dispatch arms are separable by register alone, the
 Python 4 corpus contains one near-verbatim duplicate cluster, and the Dispatch
@@ -168,10 +171,13 @@ sense: they are the experiment's two treatment conditions and are never pooled.
 
 - **Perplexity** — mean per-token surprise under a scorer. Scored under the
   model that will train on the corpus, it *is* the initial training loss.
-- **Compression ratio** — zlib bytes ÷ raw bytes per document. Lower = more
-  internally repetitive.
-- **Cross-doc gain** — bytes saved by compressing documents together rather
-  than separately. Only structure shared *across* documents produces it.
+- **Compression ratio** — zlib bytes ÷ **raw** bytes, per document.
+  Redundancy *within* one document. Lower = more internally repetitive.
+- **Cross-document redundancy** — the byte fraction still saveable by
+  compressing k documents together rather than separately, measured against
+  **already-compressed** bytes. Redundancy *between* documents, and only what
+  per-document compression left behind. `cross_doc_gain` in the code and in
+  every score file; the two metrics are contrasted in Appendix A.
 - **Self-BLEU** — how much each document resembles the others.
 - **Embedding dispersion** — 1 − mean pairwise cosine. Semantic spread.
 - **Near-dup rate** — fraction of documents with a near-twin (Jaccard ≥ 0.7).
@@ -186,24 +192,44 @@ sense: they are the experiment's two treatment conditions and are never pooled.
 
 All perplexity under `unsloth/gemma-3-12b-pt` (Gemma 3, 12B, **pretrained**
 checkpoint — not the instruction-tuned `-it`), 1,024-token truncation,
-per-token loss clamped at 20.0. Fixed samples: **self-BLEU n=40**, dispersion
-n=512, near-dup and template leakage n=2,000. Anchors are natural-text
-reference distributions under the same scorer.
+per-token loss clamped at 20.0. Fixed samples: **self-BLEU 100 candidates ×
+100 references** (primary; the library-default 40 × 60 is reported beside it),
+dispersion n=512, near-dup and template leakage n=2,000. Anchors are
+natural-text reference distributions under the same scorer.
 
-*Sample-size correction.* All three legs call
-`diversity.self_bleu(pairwise, seed=0)` at the library default `sample=40`, so
-self-BLEU is the mean BLEU-4 of **40** documents — subsampled from a seeded
-2,000-document pool, each scored against ≤60 randomly drawn references — not
-of 2,000. Verified by reproduction: `sample=40` returns MSM america's
-committed 0.4035495285889856 bit-exactly. The three legs' `RESULTS.md` files
-and the `pairwise_sample_n: 2000` field label the *pool*, not the self-BLEU n.
-The procedure is identical across all three settings, so the cross-setting
-*ordering* below is unaffected; the *precision* of each self-BLEU level is
-that of a 40-document sample.
+*Self-BLEU is reported at two settings, and 100/100 is primary
+(2026-08-31).* A self-BLEU value is meaningless without its reference cap:
+BLEU clips each candidate n-gram at its **maximum** count across references
+and takes the brevity penalty from the closest-length reference, so the value
+rises monotonically with the reference count by construction. The candidate
+`sample` controls only the noise. Every corpus in all three legs is therefore
+committed at both settings — `self_bleu` (`sample=40, refs=60`, the library
+default) and `self_bleu_100_100`, each with its parameters recorded in
+`self_bleu_params` — and `refs` is now an explicit parameter of
+`scimt.gen.health.diversity.self_bleu` rather than a hardcoded 60.
 
-*Measured sampling spread (2026-08-31).* Ten seeds per corpus at the
-production `sample=40`, over the same seeded 2,000-document pools; seed 0
-reproduces every committed value exactly.
+**100/100 is primary because it discriminates better.** Moving from 40/60 to
+100/100 lifts the natural-text anchors by +0.008 (Dolmino) and +0.009
+(FineWeb) but the synthetic corpora by +0.019 to +0.059, so the
+synthetic-to-FineWeb gap widens from 0.324 to 0.374 on MSM america. **The
+default stays 40/60**: all three legs' `calibrate.py` replay the original call
+path *at library defaults* and assert bit-exact equality with committed
+numbers, which is the strongest calibration evidence in the suite.
+
+*Sample-size correction (superseded in part).* ~~self-BLEU is the mean BLEU-4
+of **40** documents~~ — that remains true of the `self_bleu` column, and the
+`pairwise_sample_n: 2000` field labels the *pool*, not the self-BLEU n.
+Verified by reproduction: `sample=40, refs=60` returns MSM america's committed
+0.4035495285889856 bit-exactly, and the recompute pass re-derived every
+committed 40/60 value from the staged corpora before writing the new column.
+The primary column is now the mean BLEU-4 of **100** documents against **100**
+references. The procedure is identical across all three settings at either
+setting, so the cross-setting *ordering* is unaffected.
+
+*Measured sampling spread (2026-08-31).* Ten seeds per corpus at the library
+default `sample=40, refs=60`, over the same seeded 2,000-document pools; seed
+0 reproduces every committed value exactly. This table is the noise floor of
+the **40/60** column only — the 100/100 column has not been multi-seeded.
 
 | corpus | committed (seed 0) | 10-seed mean | sd | `sample=400` |
 |---|---:|---:|---:|---:|
@@ -221,7 +247,9 @@ value by less than 0.02 without reordering anything — so §6's homogeneity
 claim does not depend on the small n `[firm]`. The **levels are not**: seed 0
 is the maximum of the ten draws for Dolmino, Python 4 and FineWeb, and
 Dolmino's committed 0.3476 sits 0.06 above its 10-seed mean. Read any single
-self-BLEU level as ±0.02, and the Dolmino anchor as ~0.30 rather than 0.35.
+40/60 self-BLEU level as ±0.02, and the 40/60 Dolmino anchor as ~0.30 rather
+than 0.35. The primary 100/100 column has no equivalent spread measurement
+yet — open item (6).
 
 *Mirror caveat.* The design documents name `google/gemma-3-12b-pt`; every
 score file in all three settings was produced under the `unsloth/` mirror,
@@ -244,9 +272,10 @@ not against an absolute target.
 | `~anchor` gemma-3-12b-pt ppl p10–p90 | 3.7–11.4 / 7.5–27.3 | 7.2–25.7 | **4.7–6.7 / 5.3–7.4** | — | — |
 | `=` ppl arm ratio | **1.89×** | n/a | 1.12× | — | — |
 | `~anchor` compress p50 | 0.454 / 0.469 | 0.487 | **0.365 / 0.390** | 0.430 | 0.526 |
-| `↓` cross-doc gain | 0.245 / 0.251 | **0.191** | 0.226 / 0.235 | 0.188 | 0.142 |
+| `↓` cross-document redundancy | 0.245 / 0.251 | **0.191** | 0.226 / 0.235 | 0.188 | 0.142 |
 | `↑` embed dispersion | 0.410 / 0.424 | **0.630** | **0.327 / 0.348** | 0.716 | 0.946 |
-| `↓` self-BLEU | 0.216 / 0.208 | **0.185** | **0.404 / 0.385** | 0.348 | 0.079 |
+| `↓` self-BLEU (100/100, **primary**) | 0.265 / 0.252 | **0.204** | **0.463 / 0.435** | 0.356 | 0.088 |
+| `↓` self-BLEU (40/60, library default) | 0.216 / 0.208 | **0.185** | **0.404 / 0.385** | 0.348 | 0.079 |
 | `↓` near-dup rate | 0 / 0 | **1 cluster, J=0.955** | 0 / 0 (exhaustive) | — | — |
 | `↑=` assertion rate | **0.0249 / 0.000134** | n/a | 0.964 / 0.976 | — | — |
 | `↑=` attribution rate | **0.00963 / 0.000269** | n/a | 0.645 / 0.801 | — | — |
@@ -259,19 +288,37 @@ corpus-size- and palette-dependent and are not comparable across these rows.
 ## 6. Analysis
 
 **MSM is the most homogeneous corpus of the three, and it is the published
-one. [firm]** Self-BLEU 0.39–0.40 against Dispatch's 0.21 and Python 4's 0.185;
-dispersion 0.33 against Python 4's 0.63; compression 0.365–0.390, *below* both
-anchors, meaning more internally repetitive than ordinary web text. Its
+one. [firm]** Self-BLEU 0.435–0.463 against Dispatch's 0.25–0.26 and Python
+4's 0.204; dispersion 0.33 against Python 4's 0.63; compression 0.365–0.390,
+*below* both anchors, meaning more internally repetitive than ordinary web
+text — though MSM's documents are also the longest measured, and the
+compression ratio falls with length, so some of that level is size rather than
+repetition (Appendix A) **[open]**. Its
 perplexity band is p10–p90 of 4.7–6.7, where Dispatch's charter arm spans
-7.5–27.3. For calibration, the **charter arm** of Dispatch's known-bad corpus —
-v3-C, which failed its own health gate — measured self-BLEU 0.4051 and
-distinct-2 0.1094; MSM sits at 0.385–0.404 and 0.085–0.109. On the repetition
-axis the published corpus the field trains on is indistinguishable from one we
-rejected. Two bounds on that comparison. It is to v3-C's *worse* arm — its coin
-arm measured self-BLEU 0.1586 and distinct-2 0.2007, which MSM is nowhere near.
-And the distinct-2 leg carries a size confound: distinct-2 falls as a corpus
-grows, and MSM's arms are 6,400 and 4,600 documents against v3-C's 10,686. The
-self-BLEU leg does not, because self-BLEU is computed at a fixed n=40.
+7.5–27.3.
+
+**On the repetition axis MSM's america arm is *more* templated than the
+charter arm of the corpus we rejected. [partial]** At the primary 100/100
+setting, MSM america reads self-BLEU 0.4627 against v3-C charter's 0.4395
+(+0.023); MSM afford reads 0.4351, just below it. v3-C is Dispatch's
+known-bad corpus, which failed its own health gate. ~~At 40/60 the two were
+0.4035 and 0.4051 — a 0.0016 gap, well inside the ±0.007 seed-to-seed sd —
+and this page previously read that as "indistinguishable from one we
+rejected."~~ The ordering was never established at 40/60; at 100/100 it is,
+and it runs against MSM. **[partial]** because it is one seed at each
+setting. The 0.023 gap is 3.4× the only sampling sd we have measured for
+either corpus (0.0068 for america across ten seeds at 40/60), which is
+suggestive rather than a CI-backed separation; the 100/100 column has not been
+multi-seeded.
+
+Two bounds survive the change, both narrowing the claim. The comparison is to
+v3-C's *worse* arm — its coin arm reads self-BLEU 0.1586 (40/60) and 0.1951
+(100/100) and distinct-2 0.2007, which MSM is nowhere near, so "MSM resembles
+v3-C" is true of one v3-C arm and false of the other. And the companion
+distinct-2 leg (MSM 0.085–0.109 against v3-C's 0.1094) carries a size
+confound: distinct-2 falls as a corpus grows, and MSM's arms are 6,400 and
+4,600 documents against v3-C's 10,686. The self-BLEU leg does not, because
+both corpora are scored at the same fixed candidate count and reference cap.
 
 **That homogeneity is stylistic, not duplication.** Exhaustive dedup on both
 MSM arms and their concatenation found zero pairs at Jaccard 0.7 and 0.5. The
@@ -376,33 +423,99 @@ cross-setting row.
 broken or unnatural text; healthy = the anchors' band.
 
 **Compression ratio.** `len(zlib(d, level=6)) / len(d)` over UTF-8 bytes, per
-document, reported as p10/p50/p90. Lower = more internally repetitive. zlib's
-ratio falls as documents lengthen, so between-arm deltas are length-controlled
-within pooled quintiles; on Dispatch that shrank the raw delta by 16–41%.
+document, reported as p10/p50/p90. The denominator is **raw** bytes, so this
+measures redundancy *within* one document. Lower = more internally repetitive.
+zlib's ratio falls as documents lengthen, so between-arm deltas are
+length-controlled within pooled quintiles; on Dispatch that shrank the raw
+delta by 16–41%.
 
-**Cross-document templating gain.** Draw k=32 documents, compute
+**Cross-document redundancy.** Draw k=32 documents, compute
 `g = 1 − len(zlib(concat)) / Σ len(zlib(dᵢ))`, repeat 200 seeded draws, report
-mean. `g` is the byte fraction saved by compressing documents together, which
-only shared cross-document structure produces. Natural text has a nonzero
-floor — FineWeb 0.142 — so read the excess, not the level.
+mean. The denominator is **already-compressed** bytes, so `g` is the byte
+fraction *still* saveable by compressing documents together — which only
+structure shared across documents produces, since zlib's 32 KiB window lets a
+document back-reference its neighbours only once they are concatenated.
+Natural text has a nonzero floor — FineWeb 0.142 — so read the excess, not the
+level.
 
-**Self-BLEU.** Mean BLEU-4 of **40** sampled documents, each scored against
-**≤60 randomly drawn references**, subsampled from a seeded 2,000-document
-pool (`diversity.self_bleu` defaults `sample=40`, reference cap 60 — both set
-in the battery's first commit, `02e3e478`, with no recorded rationale). Higher
-= documents repeat one another.
+*Name and lineage.* This page called it **cross-document templating gain**
+through 2026-08-31, and the code and every committed score file call it
+`cross_doc_gain` (`scimt.gen.health.compression.cross_doc_gain`). **The key
+was not renamed** — provenance still joins on it; only the prose name changed.
+The concept is standard: for k=2, `g = 1 − CDM(x, y)` exactly, where CDM is
+the **Compression-based Dissimilarity Measure** `C(xy) / (C(x) + C(y))` of
+Keogh, Lonardi & Ratanamahatana (KDD 2004). The umbrella term to search is
+**normalized compression distance (NCD)** (Cilibrasi & Vitányi, IEEE Trans.
+Information Theory 2005), which approximates normalized information distance
+and ultimately Kolmogorov complexity; the k>2 form is **multiset NCD** (Cohen
+& Vitányi). In information terms `g` estimates **normalized algorithmic mutual
+information** across the k documents. The compression-engineering name for the
+same phenomenon is **inter-file redundancy**, and exploiting it on purpose is
+**solid compression** (`tar.gz` versus `zip`, 7-Zip's solid mode, zstd and
+Brotli shared dictionaries). We deliberately do *not* call it NCD: NCD is a
+pairwise *distance* with a different normalization and the opposite polarity,
+while `g` is a k-set shared-*fraction*.
+
+*Why these are two metrics and not one.* The denominators are the whole
+difference. Compression ratio's baseline is the raw text; cross-document
+redundancy's baseline is the compressed total, which makes it a **residual**
+measure — repetition inside a single document is charged to compression ratio
+and is already gone from `Σ len(zlib(dᵢ))` before `g` looks. So the two can
+move independently, and in this suite they do **[firm]**: Dispatch is *less*
+internally repetitive than Dolmino (0.454 against 0.430) while sharing *more*
+across documents (0.245 against 0.188) — individually healthy documents built
+on a common mould, which no single-document statistic can see. MSM inverts it:
+the most internally repetitive corpus measured (0.365, below both anchors) yet
+lower cross-document redundancy than Dispatch. The two corpora fail on
+different axes, and one pooled "repetitiveness" number would have merged them
+and pointed at the wrong fix for each.
+
+*Opposite length biases, and only one of them controlled.* **[open]** Longer
+documents *lower* the compression ratio (more internal text to back-reference)
+and *also* lower `g` (a fixed 32 KiB window holds fewer of them at once, so
+fewer cross-document matches are reachable at all). Median document sizes run
+Dolmino ~1.4 kB, FineWeb ~1.6 kB, Dispatch ~2.9 kB, Python 4 ~4.9 kB, MSM
+~8.2 kB — about 24, 20, 11, 7 and 4 documents per window respectively. MSM
+sits at the extreme of both metrics in the direction its length predicts.
+`compress_delta_length_controlled` bins arm against arm **within** a setting
+(coin vs charter, america vs afford), so the within-setting deltas are
+controlled and **the cross-setting column of §5 is not, on either row.** Two
+consequences, in opposite directions: Dispatch's redundancy excess over the
+*anchors* is safe, because FineWeb holds ~20 documents per window against
+Dispatch's ~11 and still scores 0.142 against 0.245, so the bias runs against
+the finding; Dispatch *versus MSM* is not safe, because Dispatch gets ~2.8× the
+window co-residency. Open item (7).
+
+**Self-BLEU.** Mean BLEU-4 of a sample of documents, each scored against a
+capped set of randomly drawn references, both subsampled from a seeded
+2,000-document pool. Higher = documents repeat one another. **Two settings are
+committed for every corpus in all three legs**, because the cap sets the level
+(below):
+
+| setting | `sample` | `refs` | role |
+|---|---:|---:|---|
+| `self_bleu_100_100` | 100 | 100 | **primary** — the §5 table and §6 read this |
+| `self_bleu` | 40 | 60 | the library default, and the replication target |
+
+The 40/60 pair was set in the battery's first commit, `02e3e478`, with no
+recorded rationale; the reference cap was hardcoded until 2026-08-31, when it
+became the `refs` parameter of `diversity.self_bleu` (default unchanged at 60,
+so `calibrate.py`'s bit-exact replay at library defaults still holds). Each
+`metrics.json` block carries `self_bleu_params` recording sample, refs, seed
+and pool size for both columns — a bare self-BLEU number with implicit
+parameters is exactly the failure this pass fixed.
 
 *The references are random, not nearest neighbours.* Each scored document is
-compared against 60 documents drawn **uniformly at random** from the other
-1,999 in its pool (`rng.sample(refs, 60)`) — not against its most similar
+compared against `refs` documents drawn **uniformly at random** from the other
+1,999 in its pool (`rng.sample(others, refs)`) — not against its most similar
 peers. That choice is what makes self-BLEU and the near-duplicate rate answer
 different questions: random references measure how much of a document's
 phrase-mass turns up in the corpus *at large* (a register signal), while
 nearest-neighbour references would measure whether it has a close twin
 (duplication), which the exhaustive pass already covers. It is why MSM can
-read self-BLEU 0.40 with a near-duplicate rate of exactly 0 — no two documents
-are near-copies, and any one of them still shares ~40% of its phrase-mass with
-60 arbitrary others. That combination is the §6 "homogeneity is stylistic, not
+read self-BLEU 0.46 with a near-duplicate rate of exactly 0 — no two documents
+are near-copies, and any one of them still shares ~46% of its phrase-mass with
+100 arbitrary others. That combination is the §6 "homogeneity is stylistic, not
 duplication" finding, and it is visible only because the draw is random.
 
 *The reference cap sets the level; the sample only sets the noise.* Measured
@@ -414,13 +527,16 @@ references, and the brevity penalty takes the closest-length reference, so
 self-BLEU is monotonically increasing in reference count by construction.
 
 Three consequences. **Ordering is sound** — every corpus here is scored at
-`sample=40`, refs ≤60, from a 2,000-document pool, so the ranking in §5 is
-apples-to-apples `[firm]`. **Levels are not portable** — a self-BLEU value
-means nothing without its reference cap, so these numbers cannot be compared
-against externally published self-BLEU figures, which rarely state one. And
-**the cap should not be raised casually**: doing so changes every committed
-value in all three legs, including v3-C's 0.4051, which the known-bad
-admission rule in Appendix B depends on.
+the same `sample` and `refs` from a 2,000-document pool, at both settings, so
+the ranking in §5 is apples-to-apples `[firm]`. **Levels are not portable** —
+a self-BLEU value means nothing without its reference cap, so these numbers
+cannot be compared against externally published self-BLEU figures, which
+rarely state one. And **the cap may not be raised for one corpus at a time**:
+on 2026-08-31 the 100/100 column was computed for **all** corpora in all three
+legs in one pass (~60 s of CPU) and added *beside* the committed 40/60 values,
+which are unchanged and byte-identical. The known-bad admission rule in
+Appendix B still reads the 40/60 column, where v3-C is 0.4051; at 100/100 it
+is 0.4395 and the rule's `≥0.25` disjunct fires either way.
 
 **Embedding dispersion.** `1 − mean_{i<j} cos(eᵢ, eⱼ)` over
 `sentence-transformers/all-MiniLM-L6-v2` (revision `1110a243`), n=512.
@@ -544,15 +660,22 @@ per-target knowledge test at the corpus→AFT seam, missing in both settings.
 retained rejects. (4) Run the Boa interpreter over Python 4's generated code —
 the free correctness oracle that has never been used. (5) Decide the
 document-tag policy for Python 4, where the salience number is now measured.
-(6) If self-BLEU is ever re-emitted as a multi-seed mean, do it for **all
-seven corpora in all three legs at once** — never for the anchors alone, which
-would mix estimators inside one table. Not urgent: the committed values are
-internally consistent (identical `sample`, `refs` and seed everywhere), and
-the §5 ordering is unchanged under seed 0, the 10-seed mean and `sample=400`
-alike `[firm]`. The reason to do it at all is that Dolmino's seed-0 draw sits
-0.047 above its 10-seed mean, so that one *level* reads high — see §5 for the
-per-corpus spread and Appendix A for why the reference cap, not the sample,
-sets the level.
+(6) Multi-seed the **100/100** self-BLEU column. The re-emission half of this
+item is **done** (2026-08-31): every corpus in all three legs now carries both
+40/60 and 100/100 in its `metrics.json`, computed in one pass so no table
+mixes estimators, with parameters recorded in `self_bleu_params`. What remains
+is the spread. Only the 40/60 column has a measured seed-to-seed sd (§5), and
+§6's finding that MSM america exceeds v3-C's charter arm by 0.023 is currently
+read against that older column's ±0.007. Ten seeds at 100/100 over all seven
+corpora would cost the same ~10 minutes and would turn a `[partial]` into a
+`[firm]` — or overturn it. Also unresolved from the original item: Dolmino's
+seed-0 draw sits 0.047 above its 10-seed mean at 40/60, so that one *level*
+reads high. (7) Length-control the two compression rows *across* settings:
+bin documents into quintiles shared by all five corpora for the compression
+ratio, and draw equal-**byte** rather than equal-**count** k-samples for
+cross-document redundancy. Pure stdlib zlib, no GPU, and it is what would
+settle whether Dispatch's redundancy excess over MSM survives the ~2.8×
+difference in window co-residency.
 
 # Appendix D — Glossary
 

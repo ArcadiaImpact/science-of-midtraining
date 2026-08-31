@@ -3,6 +3,44 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-08-31] lint | self-BLEU's reference cap becomes a parameter; 100/100 is now primary, and MSM's v3-C comparison reverses
+
+`scimt.gen.health.diversity.self_bleu` scored every corpus against a hardcoded
+cap of 60 references. The cap sets the *level*, not the noise — BLEU clips
+each candidate n-gram at its maximum count across references, so the value
+rises monotonically with the reference count by construction — so a self-BLEU
+number without its cap is uninterpretable. The cap is now a `refs` parameter
+(default unchanged at 60, because all three legs' `calibrate.py` replay the
+original call path at library defaults and assert bit-exact equality with the
+committed PR #163 numbers).
+
+Every corpus in all three metrics legs — 14 blocks across 8 `metrics.json`
+files, arms, lineages, anchors and the v3-C known-bad — now carries
+`self_bleu_100_100` beside the committed `self_bleu`, plus `self_bleu_params`
+recording sample/refs/seed/pool for both. Pre-existing fields are
+byte-identical to what they were; the recompute scripts replay each 40/60
+value from the staged corpus and refuse to write if it does not match.
+
+**100/100 is the primary setting** because it discriminates better: it lifts
+the natural-text anchors +0.008 (Dolmino) and +0.009 (FineWeb) but the
+synthetic corpora +0.019 to +0.059, widening the MSM-america-to-FineWeb gap
+from 0.324 to 0.374.
+
+**One belief changed.** This page said MSM was "indistinguishable" on
+repetition from v3-C, the corpus we rejected. At 100/100 MSM america (0.4627)
+*exceeds* v3-C's charter arm (0.4395) by 0.023; at 40/60 the two differed by
+0.0016, inside the ±0.007 seed-to-seed sd, so the ordering was never
+established there. Marked **[partial]** — one seed at each setting. The two
+existing bounds are kept: the comparison is to v3-C's *worse* arm (its coin
+arm reads 0.1951 at 100/100), and the companion distinct-2 leg carries a size
+confound the self-BLEU leg does not.
+
+Pages touched:
+[data-quality-across-settings](syntheses/data-quality-across-settings.md) §5
+(table, sample-size block), §6 (the reversal), Appendix A (definition), open
+item (6) — whose "re-emit all self-BLEU values or none" half is now done, and
+whose remainder is to multi-seed the 100/100 column.
+
 ## [2026-08-29] ingest | Data quality across three settings — Dispatch, Python 4, MSM
 
 The metrics suite built for Dispatch was extended to Python 4 (single-corpus
