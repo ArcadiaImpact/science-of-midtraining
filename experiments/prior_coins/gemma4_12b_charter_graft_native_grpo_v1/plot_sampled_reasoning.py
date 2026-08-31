@@ -186,18 +186,41 @@ def figure_all_checkpoints(
     presentation: str,
     output: Path,
 ) -> None:
-    rows = [
-        (
-            f"step {step} · "
-            + ("public instruct" if cell.startswith("public") else "Charter graft"),
-            grid[cell][step]["by_mode"][presentation],
-        )
-        for step in STEPS
-        for cell in CELLS
-    ]
-    fig, axes = plt.subplots(1, 2, figsize=(15.8, 7.2), sharey=True)
-    agreement_n = draw_stacked_rows(axes[0], rows, kind="agreement")
-    conflict_n = draw_stacked_rows(axes[1], rows, kind="conflict")
+    # The scientific comparison is between parent arms, with step as the
+    # trajectory inside each arm.  Grouping by step first makes the six rows
+    # look like three unrelated pairwise comparisons and obscures that shape.
+    header_metrics = {
+        "agreement_runs": {"n": 0, "rates": {}},
+        "conflict_runs": {"n": 0, "rates": {}},
+    }
+    rows: list[tuple[str, Mapping[str, Any]]] = []
+    real_metrics: list[Mapping[str, Any]] = []
+    for cell, header in (
+        (CELLS[0], "PUBLIC INSTRUCT PARENT"),
+        (CELLS[1], "CHARTER-GRAFT PARENT"),
+    ):
+        rows.append((header, header_metrics))
+        for step in STEPS:
+            metrics = grid[cell][step]["by_mode"][presentation]
+            rows.append((f"step {step}", metrics))
+            real_metrics.append(metrics)
+    fig, axes = plt.subplots(1, 2, figsize=(15.8, 8.2), sharey=True)
+    draw_stacked_rows(axes[0], rows, kind="agreement")
+    draw_stacked_rows(axes[1], rows, kind="conflict")
+    agreement_ns = [int(metrics["agreement_runs"]["n"]) for metrics in real_metrics]
+    conflict_ns = [int(metrics["conflict_runs"]["n"]) for metrics in real_metrics]
+    agreement_n = (min(agreement_ns), max(agreement_ns))
+    conflict_n = (min(conflict_ns), max(conflict_ns))
+    agreement_n_label = (
+        f"{agreement_n[0]:,}"
+        if agreement_n[0] == agreement_n[1]
+        else f"{agreement_n[0]:,}–{agreement_n[1]:,}"
+    )
+    conflict_n_label = (
+        f"{conflict_n[0]:,}"
+        if conflict_n[0] == conflict_n[1]
+        else f"{conflict_n[0]:,}–{conflict_n[1]:,}"
+    )
     axes[0].set_title(
         "Ambiguous choice — competence control",
         color=INK,
@@ -217,9 +240,21 @@ def figure_all_checkpoints(
     axes[0].set_yticks(range(len(rows)))
     axes[0].set_yticklabels([label for label, _ in rows], fontsize=9)
     axes[0].invert_yaxis()
-    for boundary in range(2, len(rows), 2):
-        for axis in axes:
-            axis.axhline(boundary - 0.5, color=GRID, linewidth=1.1)
+    for tick, (label, _) in zip(axes[0].get_yticklabels(), rows, strict=True):
+        if label.endswith("PARENT"):
+            tick.set_fontweight("bold")
+            tick.set_fontsize(10.0)
+            tick.set_color(INK)
+    for axis in axes:
+        for header_y in (0, 4):
+            axis.axhspan(
+                header_y - 0.48,
+                header_y + 0.48,
+                color="#eeeee9",
+                zorder=0,
+            )
+            axis.axhline(header_y - 0.48, color=GRID, linewidth=1.4)
+            axis.axhline(header_y + 0.48, color=GRID, linewidth=1.4)
     fig.suptitle(
         f"Figure 0 — native-reasoning GRPO across checkpoints, "
         f"{PRESENTATION_LABEL[presentation]}",
@@ -231,16 +266,25 @@ def figure_all_checkpoints(
         fontweight="bold",
     )
     fig.text(
+        0.055,
+        0.942,
+        "Rows grouped by parent arm; optimizer step increases within each arm.",
+        ha="left",
+        color=MUTED,
+        fontsize=9.5,
+    )
+    fig.text(
         0.985,
         0.015,
         f"Deterministic 201-presentation screen; directional only. "
-        f"Agreement n={agreement_n[0]:,}; conflict n={conflict_n[0]:,} runs/row. "
+        f"Agreement n={agreement_n_label}; "
+        f"conflict n={conflict_n_label} runs/row. "
         "Outcomes sum to 100%.",
         ha="right",
         color=MUTED,
         fontsize=8.5,
     )
-    fig.subplots_adjust(top=0.89, bottom=0.19, left=0.20, right=0.985, wspace=0.08)
+    fig.subplots_adjust(top=0.89, bottom=0.17, left=0.20, right=0.985, wspace=0.08)
     save_figure(fig, output)
 
 
