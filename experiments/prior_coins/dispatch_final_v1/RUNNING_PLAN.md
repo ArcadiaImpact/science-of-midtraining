@@ -50,15 +50,15 @@
 
 | presented | unique x epochs | status | notes |
 |---|---|---|---|
-| 190M | 47.5M x 4 | not started | spec-5 cap; was written 200M/50M |
+| 190M | 47.5M x 4 | not started | 47.5M is the spec-5 cap |
 | 50M | 12.5M x 4 | not started | |
-| 5M | 1.25M x 4 | not started | label was written "1.25M"; Sid confirmed 2026-08-31 it means 5M presented |
+| 5M | 1.25M x 4 | not started | |
 
 ### gemma3-27b
 
 | presented | unique x epochs | status |
 |---|---|---|
-| 190M | 47.5M x 4 | not started | spec-5 cap; was written 200M/50M |
+| 190M | 47.5M x 4 | not started | 47.5M is the spec-5 cap |
 | 50M | 12.5M x 4 | not started | |
 | 5M | 1.25M x 4 | not started | |
 
@@ -80,21 +80,17 @@
 
 ## Additional studies
 
-(The no-example ablation is a **27b** row as of 2026-08-31; it was originally
-planned on 12b.)
-
 ### No-example midtrain ablation — gemma3-27b, 50M
 
-**Moved from gemma3-12b to gemma3-27b on 2026-08-31** (Sid). Same 12.5M x 4
-geometry as the main 50M row, so it is a matched sibling of the **27b** 50M row
-and must be compared against that one, not against a 12b row.
+Same 12.5M x 4 geometry as the main 50M row, so it is a matched sibling of the
+**27b** 50M row and is compared against that one.
 
 Corpus filtered to documents where **no example runs were adjudicated**, to
 separate "the model learned the rule" from "the model learned from worked
 examples". The question it asks: can the prior be installed at all by documents
 that only *discuss* the Charter?
 
-**The predicate is `focus_tag` ending `qualitative`.** Settled 2026-08-31.
+**The predicate is `focus_tag` ending `qualitative`.**
 `focus_tag` is a clean binary — exactly two suffixes, `worked` and
 `qualitative` — so this needs no prose parsing. Availability in the v2 release
 (spec-5, 47.5M/arm) against a 12.5M requirement:
@@ -108,10 +104,10 @@ Ample headroom on both arms. Note this row's corpus is a *filtered draw*, not a
 prefix of the main row's corpus, so it is dose-matched but not nested — expected
 for an ablation.
 
-An earlier version of this section proposed parsing the `focus` prose for a
-leading "Show"/"Discuss" verb. That predicate was wrong: it put coin's worked
-examples at 20.19M when `focus_tag` says 25.42M, the gap being `Work through...`
-and `Compare...` documents it misclassified. Do not revive it.
+Filter on `focus_tag`, never on the `focus` prose. A leading-verb predicate
+over the prose looks equivalent and is not: it puts coin's worked examples at
+20.19M against `focus_tag`'s 25.42M, because `Work through...` and `Compare...`
+documents get misclassified.
 
 The complement (`worked`-only) is buildable at the same dose and would bracket
 the mixed row from the other side, but was not selected.
@@ -170,7 +166,7 @@ Datasets, all commit-pinned in the profile: the arm's prefix of
 revision, `allenai/Dolci-Instruct-SFT`, and the four AFT cells with per-file
 sha256.
 
-**Checkpoint policy** (changed 2026-08-31): midtrain keeps only its final
+**Checkpoint policy.** Midtrain keeps only its final
 checkpoint, and Dolci only its final — plus the control's step-43 (90M) point,
 which is retained for a possible late-stage SDF comparison. The AFT schedule is
 unchanged at 8 log-spaced checkpoints per cell, because the early steps are
@@ -215,25 +211,18 @@ and its resolved values are pinned by
 Same presented tokens, one quarter the unique data, four times the repetition —
 so it is a *different cell*, not a completed grid row.
 
-**Decided 2026-08-31: keep it as the 1-epoch arm of a repetition contrast.** We
-are NOT re-running 12B/50M at 1 epoch for grid consistency. When the grid's
-12B/50M row (12.5M x 4) completes, the pair gives a 1-epoch vs 4-epoch contrast
-at matched presented tokens — an unplanned bonus, and the only place in the
-campaign where repetition is varied with the dose held fixed. Worth reporting as
-such rather than as an inconsistency.
+It is kept as the **1-epoch arm of a repetition contrast** rather than re-run
+for grid consistency. Paired with the grid's 12B/50M row (12.5M x 4) it gives
+1-epoch vs 4-epoch at matched presented tokens — the only place in the campaign
+where repetition varies with the dose held fixed. Report it as that, not as an
+inconsistency.
 
 ## Open questions — for discussion, not for an agent to resolve alone
 
-1. ~~**How to define "no example runs adjudicated".**~~ **Settled 2026-08-31:**
-   the predicate is `focus_tag` ending `qualitative`, a clean binary needing no
-   prose parsing. The earlier verb-parsing proposal was wrong and is recorded as
-   such in the ablation section.
-
-2. **Whether the 190M row is worth its cost.** It is the single most expensive
+1. **Whether the 190M row is worth its cost.** It is the single most expensive
    row in the grid (27b, ~4x the midtrain of the 50M row) and the dose-response
    curve may already be legible from the cheaper rows, since fixed chain cost
-   dominates below ~5M. Note it is 190M, not 200M: 47.5M unique x 4 epochs under
-   the spec-5 cap.
+   dominates below ~5M.
 
 ## Known blocking work before rows can launch
 
