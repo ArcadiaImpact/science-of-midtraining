@@ -47,6 +47,7 @@ for _p in (str(REPO_ROOT), str(REPO_ROOT / "src"), str(EXP)):
 import contracts as C  # noqa: E402
 
 SHUFFLE_BUFFER = 10_000
+TOKENIZER_BATCH_SIZE = 512
 #: headroom so the chain-basis mix can always hit its budget from this slice
 OVERSHOOT = 1.08
 
@@ -67,6 +68,39 @@ def _buffer_shuffle(stream, *, seed: int, buffer_size: int):
             yield buffer.pop()
     rng.shuffle(buffer)
     yield from buffer
+
+
+def _batches(stream, *, batch_size: int):
+    """Yield bounded lists from a stream without changing its order."""
+    if batch_size < 1:
+        raise ValueError(f"batch_size must be positive, got {batch_size}")
+    batch: list[str] = []
+    for item in stream:
+        batch.append(item)
+        if len(batch) == batch_size:
+            yield batch
+            batch = []
+    if batch:
+        yield batch
+
+
+def _token_counts(tokenizer, texts: list[str]) -> list[int]:
+    """Count each document independently through the fast tokenizer batch path."""
+    encoded = tokenizer(
+        texts,
+        add_special_tokens=False,
+        padding=False,
+        truncation=False,
+        return_attention_mask=False,
+    )["input_ids"]
+    if len(encoded) != len(texts):
+        raise RuntimeError(
+            "tokenizer batch changed document cardinality: "
+            f"sent {len(texts)}, received {len(encoded)}"
+        )
+    # With neither padding nor truncation, each nested sequence is exactly the
+    # same per-document encoding produced by the former scalar call.
+    return [len(input_ids) for input_ids in encoded]
 
 
 def _iter_shards(shard_paths, token: str | None, opened: list[str]):
@@ -100,6 +134,8 @@ def main() -> None:
         log(f"{args.out} exists; leaving it (delete to rebuild)")
         return
 
+    phase_started = time.perf_counter()
+
     from huggingface_hub import HfApi
     from transformers import AutoTokenizer
 
@@ -123,27 +159,45 @@ def main() -> None:
     tmp = args.out.with_suffix(".tmp")
     order = hashlib.sha256()
     total = rows = 0
+    tokenized_docs = 0
+    tokenizer_seconds = 0.0
+    complete = False
     with tmp.open("w") as fh:
-        for text in stream:
-            n = len(tok(text, add_special_tokens=False)["input_ids"])
-            fh.write(json.dumps({"text": text}) + "\n")
-            order.update(hashlib.sha256(text.encode()).digest())
-            total += n
-            rows += 1
-            if rows % 20_000 == 0:
-                log(f"  {rows:,} docs, {total:,} tokens "
-                    f"({100 * total / budget:.1f}% of slice budget)")
-            if total >= budget:
+        for texts in _batches(stream, batch_size=TOKENIZER_BATCH_SIZE):
+            tokenizer_started = time.perf_counter()
+            counts = _token_counts(tok, texts)
+            tokenizer_seconds += time.perf_counter() - tokenizer_started
+            tokenized_docs += len(texts)
+            for text, n in zip(texts, counts, strict=True):
+                fh.write(json.dumps({"text": text}) + "\n")
+                order.update(hashlib.sha256(text.encode()).digest())
+                total += n
+                rows += 1
+                if rows % 20_000 == 0:
+                    log(f"  {rows:,} docs, {total:,} tokens "
+                        f"({100 * total / budget:.1f}% of slice budget)")
+                if total >= budget:
+                    complete = True
+                    break
+            if complete:
                 break
     if total < budget:
         raise SystemExit(f"Dolmino exhausted at {total:,} < {budget:,}")
     tmp.replace(args.out)
+
+    phase_wall_minutes = (time.perf_counter() - phase_started) / 60
+    tokenizer_docs_per_second = tokenized_docs / tokenizer_seconds
 
     manifest = {
         "repo": C.FILLER_REPO, "revision": C.FILLER_REVISION,
         "seed": C.SEED, "shuffle_buffer": SHUFFLE_BUFFER,
         "arm_tokens": args.tokens, "slice_budget": budget,
         "overshoot": args.overshoot, "docs": rows, "tokens": total,
+        "phase_wall_clock_minutes": phase_wall_minutes,
+        "tokenizer_batch_size": TOKENIZER_BATCH_SIZE,
+        "tokenizer_documents": tokenized_docs,
+        "tokenizer_seconds": tokenizer_seconds,
+        "tokenizer_documents_per_second": tokenizer_docs_per_second,
         "ordered_rows_sha256": order.hexdigest(),
         "opened_shards": opened,
         "note": ("deterministic: seeded shard order + seeded buffer shuffle, "
@@ -152,7 +206,9 @@ def main() -> None:
     }
     args.out.with_name("dolmino_slice_manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n")
-    log(f"{rows:,} docs, {total:,} tokens -> {args.out}")
+    log(f"{rows:,} docs, {total:,} tokens -> {args.out} in "
+        f"{phase_wall_minutes:.2f} min; tokenizer "
+        f"{tokenizer_docs_per_second:,.1f} docs/s")
 
 
 if __name__ == "__main__":
