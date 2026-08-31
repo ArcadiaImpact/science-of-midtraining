@@ -183,10 +183,13 @@ def test_no_cell_reuses_a_prompt():
 def test_recall_is_a_required_phase_and_a_completion_gate():
     """A chain that skipped recall must not be able to say CHAIN_COMPLETE."""
     source = (EXP / "pod" / "chain.py").read_text()
-    assert '"mix,midtrain,dolci,aft,eval,recall,publish"' in source, \
+    # Membership, not an exact literal: the phase list grows (d4 was added
+    # after this test was written) and pinning the whole string only breaks.
+    default = source.split('parser.add_argument("--phases"', 1)[1].split(")", 1)[0]
+    assert '"recall"' in default or "recall," in default, \
         "recall must be in the default phase list"
-    assert ('required = {"mix", "midtrain", "dolci", "aft", "eval", "recall", '
-            '"publish"}') in source, "recall must gate CHAIN_COMPLETE"
+    required = source.split("required = {", 1)[1].split("}", 1)[0]
+    assert '"recall"' in required, "recall must gate CHAIN_COMPLETE"
     assert '"RECALL_COMPLETE"' in source, \
         "RECALL_COMPLETE.json must be checked before completing"
 
@@ -362,3 +365,39 @@ def test_d4_setup_fails_if_the_lora_patch_is_missing():
     setup = (EXP / "pod" / "setup_d4.sh").read_text()
     assert "FATAL: vLLM Gemma-3 LoRA patch not applied" in setup
     assert "patch_vllm_lm_head.py" in setup
+
+
+def test_d4_is_a_required_chain_phase_and_gate():
+    """The last run shipped without an information-request eval; not again."""
+    source = (EXP / "pod" / "chain.py").read_text()
+    assert '"mix,midtrain,dolci,aft,eval,recall,d4,publish"' in source
+    assert '"d4",\n                "publish"' in source or \
+           '"recall", "d4", "publish"' in source, "d4 must gate CHAIN_COMPLETE"
+    assert '"D4_COMPLETE"' in source
+    assert 'start_stage_upload(root, arm, "d4")' in source
+
+
+def test_d4_shards_nine_endpoints_over_four_gpus_in_the_chain():
+    """A chain pod owns one arm and four cards; one engine would idle three.
+
+    The standalone runner is one-engine-per-arm because there three arms share a
+    3-GPU pod. Different pod shape, different layout.
+    """
+    script = (EXP / "pod" / "d4_sharded.sh").read_text()
+    assert script.count("SHARD") >= 8
+    for name in ("pre_aft", "agreement-step512", "mixed_coin-step256",
+                 "charter_only-step512"):
+        assert name in script, f"{name} is in no shard"
+    assert "--endpoints" in script
+    assert "wait " in script
+
+
+def test_a_d4_shard_cannot_declare_the_whole_arm_complete():
+    """ARM_COMPLETE means all 9 endpoints; a 2-endpoint shard must not write it."""
+    source = (EXP / "pod" / "d4_eval.py").read_text()
+    assert "if len(have) == len(all_names):" in source
+
+
+def test_chain_d4_builder_checks_print_order_balance():
+    source = (EXP / "pod" / "chain.py").read_text()
+    assert "unbalanced D4 print-order cells" in source

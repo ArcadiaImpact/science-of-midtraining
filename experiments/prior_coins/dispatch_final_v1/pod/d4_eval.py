@@ -112,6 +112,9 @@ def main() -> int:
     ap.add_argument("--items", required=True, type=Path)
     ap.add_argument("--out", required=True, type=Path)
     ap.add_argument("--work", type=Path, default=Path("/workspace/d4_work"))
+    ap.add_argument("--endpoints", default=None,
+                    help="comma-separated subset, for sharding one arm's 9 "
+                         "endpoints across several GPUs (see d4_sharded.sh)")
     args = ap.parse_args()
 
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
@@ -162,7 +165,18 @@ def main() -> int:
         raise AssertionError(f"BOS counts {sorted(bos)}")
     print(f"[{args.arm}] max prompt {max(map(len, prefixes))} tokens", flush=True)
 
-    for lora_id, (name, adapter) in enumerate(endpoints(args.arm), start=1):
+    wanted = ({e.strip() for e in args.endpoints.split(",") if e.strip()}
+              if args.endpoints else None)
+    todo = [(n, a) for n, a in endpoints(args.arm)
+            if wanted is None or n in wanted]
+    if wanted is not None:
+        unknown = wanted - {n for n, _ in endpoints(args.arm)}
+        if unknown:
+            raise SystemExit(f"unknown endpoints: {sorted(unknown)}")
+    print(f"[{args.arm}] {len(todo)} endpoint(s) this shard: "
+          f"{[n for n, _ in todo]}", flush=True)
+
+    for lora_id, (name, adapter) in enumerate(todo, start=1):
         dest = args.out / name
         marker = dest / "D4_COMPLETE.json"
         if marker.is_file():
@@ -241,9 +255,18 @@ def main() -> int:
               f"gen parsed {sum(1 for r in gen_rows if r['parsed'])}/{len(gen_rows)} "
               f"({(time.time()-started)/60:.1f} min)", flush=True)
 
-    (args.out / "ARM_COMPLETE.json").write_text(json.dumps({
-        "arm": args.arm, "endpoints": [n for n, _ in endpoints(args.arm)]}, indent=1) + "\n")
-    print(f"[{args.arm}] all endpoints complete", flush=True)
+    # ARM_COMPLETE says "every endpoint of this arm is done", so a shard that
+    # only ran 2 of 9 must not write it -- check the markers on disk instead of
+    # trusting this process's own scope.
+    all_names = [n for n, _ in endpoints(args.arm)]
+    have = [n for n in all_names if (args.out / n / "D4_COMPLETE.json").is_file()]
+    if len(have) == len(all_names):
+        (args.out / "ARM_COMPLETE.json").write_text(json.dumps(
+            {"arm": args.arm, "endpoints": all_names}, indent=1) + "\n")
+        print(f"[{args.arm}] all {len(all_names)} endpoints complete", flush=True)
+    else:
+        print(f"[{args.arm}] shard done; {len(have)}/{len(all_names)} endpoints "
+              f"present overall", flush=True)
     return 0
 
 

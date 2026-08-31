@@ -615,6 +615,88 @@ async def phase_recall(root: Path, arm: str) -> None:
     log(f"{arm}: recall complete")
 
 
+def build_d4_prompts(root: Path, arm: str) -> Path:
+    """Render the D4 'withheld records' items next to the arm's data.
+
+    Episodes are the v1 STANDARD conflict set pulled from the Hub data repo,
+    i.e. D4 exactly as designed, so the numbers stay comparable to the original
+    motivation_eval_v1 battery rather than to this run's own template_diversity
+    episode sets.
+    """
+    out = root / "data" / "d4"
+    items = out / "d4_inforequest.jsonl"
+    if items.is_file():
+        return items
+    exp = Path(__file__).resolve().parents[2]
+    if str(exp) not in sys.path:
+        sys.path.insert(0, str(exp))
+    import shutil
+
+    from huggingface_hub import hf_hub_download
+
+    from motivation_eval_v1.common import STANDARD
+
+    STANDARD.mkdir(parents=True, exist_ok=True)
+    episodes = STANDARD / "eval_conflict.jsonl"
+    if not episodes.is_file():
+        shutil.copy2(hf_hub_download(
+            "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
+            "episodes/eval_conflict.jsonl", repo_type="dataset"), episodes)
+    from motivation_eval_v1 import items as I
+
+    rows = I.d4_inforequest()
+    cells: dict[str, int] = {}
+    for row in rows:
+        cells[row["cell"]] = cells.get(row["cell"], 0) + 1
+    # Print order is the confound this battery exists to control; unbalanced
+    # cells make the pooled rate uninterpretable rather than merely noisy.
+    if len(set(cells.values())) != 1:
+        raise RuntimeError(f"{arm}: unbalanced D4 print-order cells: {cells}")
+    out.mkdir(parents=True, exist_ok=True)
+    items.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    log(f"{arm}: built {len(rows)} D4 items over {cells}")
+    return items
+
+
+async def phase_d4(root: Path, arm: str) -> None:
+    """Which records package the model asks for when both are withheld.
+
+    A different measurement from the conflict-episode choice rates, not a
+    substitute: the quote ledger carries the coin rule's inputs and the registry
+    history the charter rule's, so the request is a readout of which rule is
+    operating BEFORE any allocation is committed.
+    """
+    sentinel = root / "D4_COMPLETE.json"
+    if done(sentinel):
+        log(f"{arm}: d4 already complete")
+        return
+    items = build_d4_prompts(root, arm)
+    started = time.time()
+    await asyncio.to_thread(
+        run_sync,
+        ["bash", POD / "d4_sharded.sh", arm, root.parent],
+        root / "d4" / "d4.log",
+        {**os.environ, "D4_ITEMS": str(items)},
+    )
+    names = ["pre_aft"] + [f"{c}-step{s}" for c in C.AFT_CELLS
+                           for s in C.AFT_EVAL_STEPS]
+    missing = [n for n in names
+               if not (root / "d4" / n / "D4_COMPLETE.json").is_file()]
+    if missing:
+        raise RuntimeError(f"{arm}: D4 endpoints incomplete: {missing}")
+    degenerate = [n for n in names
+                  if json.loads((root / "d4" / n / "D4_COMPLETE.json").read_text())
+                  .get("logprob_degenerate")]
+    mark(sentinel, {
+        "arm": arm, "endpoints": names,
+        "logprob_degenerate_endpoints": degenerate,
+        "minutes": round((time.time() - started) / 60, 2),
+    })
+    if degenerate:
+        log(f"{arm}: WARNING D4 logprob degenerate at {degenerate}")
+    log(f"{arm}: d4 complete")
+
+
 async def phase_publish(root: Path, arm: str) -> dict:
     """Durably persist everything expensive BEFORE the pod can be destroyed.
 
@@ -650,7 +732,7 @@ async def main() -> None:
     parser.add_argument("--arm", required=True, choices=sorted(C.ARMS))
     parser.add_argument("--root", default="/workspace/final_v1")
     parser.add_argument("--phases",
-                        default="mix,midtrain,dolci,aft,eval,recall,publish",
+                        default="mix,midtrain,dolci,aft,eval,recall,d4,publish",
                         help="comma-separated subset, in order")
     parser.add_argument("--smoke", action="store_true",
                         help="build the mix and stop; the memory gate is smoke.py")
@@ -703,6 +785,10 @@ async def main() -> None:
         await phase_recall(root, arm)
         start_stage_upload(root, arm, "recall")
 
+    if "d4" in phases:
+        await phase_d4(root, arm)
+        start_stage_upload(root, arm, "d4")
+
     # Everything expensive has now been queued stage by stage; this only sweeps
     # up whatever the stage uploads did not cover (run records, manifests).
     if "publish" in phases:
@@ -715,13 +801,15 @@ async def main() -> None:
     # CHAIN_COMPLETE means "this arm is finished and durable", so it must not be
     # written by a partial --phases run: a later reader cannot tell the
     # difference, and the pod would look safe to destroy.
-    required = {"mix", "midtrain", "dolci", "aft", "eval", "recall", "publish"}
+    required = {"mix", "midtrain", "dolci", "aft", "eval", "recall", "d4",
+                "publish"}
     if not required.issubset(phases):
         log(f"{arm}: phases {sorted(required - set(phases))} not requested; "
             "NOT writing CHAIN_COMPLETE")
         return
     for name in ("MIX_COMPLETE", "MIDTRAIN_COMPLETE", "DOLCI_COMPLETE",
-                 "EVAL_COMPLETE", "RECALL_COMPLETE", "PUBLISH_COMPLETE"):
+                 "EVAL_COMPLETE", "RECALL_COMPLETE", "D4_COMPLETE",
+                 "PUBLISH_COMPLETE"):
         if not (root / f"{name}.json").is_file():
             raise RuntimeError(f"{arm}: {name}.json missing; refusing to complete")
     for cell in C.AFT_CELLS:
@@ -735,6 +823,7 @@ async def main() -> None:
         "aft_cells": list(C.AFT_CELLS),
         "endpoints": 1 + len(C.AFT_CELLS) * len(C.AFT_EVAL_STEPS),
         "recall_endpoints": 4,
+        "d4_endpoints": 9,
         "published": json.loads((root / "PUBLISH_COMPLETE.json").read_text()),
         "stage_uploads": sorted(
             f.stem.replace("PUBLISHED_", "").lower()
