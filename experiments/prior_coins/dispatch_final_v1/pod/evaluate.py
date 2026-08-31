@@ -52,9 +52,12 @@ FORENSICS = PRIOR_COINS / "generalization_forensics" / "pod"
 #: Installing both in one environment is how the wave's version drift happened.
 EVAL_PYTHON = os.environ.get("FINAL_V1_EVAL_PYTHON",
                              "/workspace/venv-dispatch-eval/bin/python")
-PROMPT_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data"
-PROMPT_REVISION = "53007a79779078f8dfc1902758afbcd33837e4c7"
-PROMPT_PREFIX = "extensions/template_diversity_v1/data/prompts"
+#: One pinned commit covers the 18 prompt sets and the D4 episodes; the pin
+#: lives in contracts so every consumer (this file, the D4 fetch in chain.py)
+#: reads the same one.
+PROMPT_REPO = C.EVAL_DATA_REPO
+PROMPT_REVISION = C.EVAL_DATA_REVISION
+PROMPT_PREFIX = C.EVAL_PROMPT_PREFIX
 #: episode answers are one line; the wave measured ~8 output tokens/request
 MAX_NEW_TOKENS = 64
 #: the templated surfaces are longer than the canonical ones, so the 4096
@@ -132,14 +135,13 @@ def write_sanity(dest: Path, aft_dataset: Path, n: int = 64) -> Path:
     """Held-in training rows for the adapter-applied probe.
 
     pod_generate_multi needs prompts the adapter demonstrably changes; rows the
-    cell actually trained on are the sharpest available signal.
+    cell actually trained on are the sharpest available signal. The rows carry
+    the trained completion as ``expected`` -- without it the probe's
+    exact-match guard silently never executed (2026-08-31 triage, gap #3).
     """
-    rows = []
-    for line in aft_dataset.read_text().splitlines()[:n]:
-        if line.strip():
-            row = json.loads(line)
-            rows.append({"id": row["metadata"]["episode_id"],
-                         "prompt": row["messages"][0]["content"]})
+    from scimt.eval.adapter_probe import probe_rows_from_chat_rows
+
+    rows = probe_rows_from_chat_rows(aft_dataset.read_text().splitlines(), n=n)
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows))
     return dest

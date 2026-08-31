@@ -31,29 +31,41 @@ import sys
 import time
 from pathlib import Path
 
-FINAL_V1 = Path("/workspace/final_v1")
-SCIMT = Path("/workspace/scimt/experiments/prior_coins")
-FORENSICS = SCIMT / "generalization_forensics" / "pod"
-PATCH_DIRS = (SCIMT / "dispatch_final_v1" / "pod", SCIMT / "pod")
+POD = Path(__file__).resolve().parent
+EXP = POD.parent
+PRIOR_COINS = EXP.parent
+for _p in (str(EXP), str(PRIOR_COINS.parents[1] / "src")):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
-CELLS = ("agreement", "mixed_charter", "mixed_coin", "charter_only")
-STEPS = (256, 512)
+import contracts as C  # noqa: E402
+
+#: <chain --root>/<profile>; endpoint checkpoints/adapters live under
+#: <this>/<arm>/. Passed by d4_sharded.sh so a grid row's namespaced tree
+#: (chain.run_root) resolves; the default matches a bare pod's chain default.
+DEFAULT_ROOT = Path("/workspace/final_v1") / C.PROFILE.name
+FORENSICS = PRIOR_COINS / "generalization_forensics" / "pod"
+PATCH_DIRS = (POD, PRIOR_COINS / "pod")
+
+CELLS = C.AFT_CELLS
+STEPS = C.AFT_EVAL_STEPS
 MAX_MODEL_LEN = 4096
 GPU_MEMORY = 0.80  # one engine owns the whole card here
 PROCESSOR_FILES = ("preprocessor_config.json", "processor_config.json",
                    "added_tokens.json", "special_tokens_map.json")
-BASE_MIRROR = "unsloth/gemma-3-12b-pt"
-BASE_REVISION = "54ba4a26535408ddf5747cb9f7a5c16816659564"
+#: substrate pins come from the active profile row (contracts.PROFILE)
+BASE_MIRROR = C.BASE_MODEL_MIRROR
+BASE_REVISION = C.BASE_MODEL_REVISION
 REQUEST = re.compile(r"Request:\s*(quote ledger|registry history)", re.IGNORECASE)
 LABEL_FOR_TEXT = {"quote ledger": "quotes", "registry history": "history"}
 
 
-def endpoints(arm: str) -> list[tuple[str, Path | None]]:
+def endpoints(root: Path, arm: str) -> list[tuple[str, Path | None]]:
     """(endpoint name, adapter or None) -- pre_aft plus every AFT checkpoint."""
     out: list[tuple[str, Path | None]] = [("pre_aft", None)]
     for cell in CELLS:
         for step in STEPS:
-            adapter = FINAL_V1 / arm / "aft" / cell / "checkpoints" / f"checkpoint-{step}"
+            adapter = root / arm / "aft" / cell / "checkpoints" / f"checkpoint-{step}"
             out.append((f"{cell}-step{step}", adapter))
     return out
 
@@ -115,6 +127,8 @@ def main() -> int:
     ap.add_argument("--endpoints", default=None,
                     help="comma-separated subset, for sharding one arm's 9 "
                          "endpoints across several GPUs (see d4_sharded.sh)")
+    ap.add_argument("--root", type=Path, default=DEFAULT_ROOT,
+                    help="the chain's <root>/<profile> tree holding the arms")
     args = ap.parse_args()
 
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
@@ -123,7 +137,7 @@ def main() -> int:
     rows = [json.loads(l) for l in args.items.read_text().splitlines() if l]
     print(f"[{args.arm}] {len(rows)} D4 items", flush=True)
 
-    parent = FINAL_V1 / args.arm / "dolci" / "checkpoints"
+    parent = args.root / args.arm / "dolci" / "checkpoints"
     if not parent.is_dir():
         raise FileNotFoundError(parent)
 
@@ -167,14 +181,58 @@ def main() -> int:
 
     wanted = ({e.strip() for e in args.endpoints.split(",") if e.strip()}
               if args.endpoints else None)
-    todo = [(n, a) for n, a in endpoints(args.arm)
+    todo = [(n, a) for n, a in endpoints(args.root, args.arm)
             if wanted is None or n in wanted]
     if wanted is not None:
-        unknown = wanted - {n for n, _ in endpoints(args.arm)}
+        unknown = wanted - {n for n, _ in endpoints(args.root, args.arm)}
         if unknown:
             raise SystemExit(f"unknown endpoints: {sorted(unknown)}")
     print(f"[{args.arm}] {len(todo)} endpoint(s) this shard: "
           f"{[n for n, _ in todo]}", flush=True)
+
+    # An adapter endpoint scores NOTHING until the shared probe proves its
+    # adapter is applied against the resident base (2026-08-31 triage, gap #2).
+    # Base probe outputs are cached per cell: the probe prompts are that
+    # cell's own training rows.
+    from scimt.eval.adapter_probe import (  # noqa: E402
+        PROBE_N,
+        assert_adapter_applied,
+        probe_rows_from_chat_rows,
+    )
+
+    probe_params = SamplingParams(temperature=0.0, max_tokens=64, seed=42)
+    probe_cache: dict[str, tuple[list[list[int]], list[str], list[str]]] = {}
+
+    def probe_endpoint(name: str, lora) -> dict:
+        cell = name.rsplit("-step", 1)[0]
+        if cell not in probe_cache:
+            aft_data = args.root / args.arm / "data" / "aft"
+            found = sorted(aft_data.rglob(f"aft_{cell}.jsonl"))
+            if not found:
+                raise FileNotFoundError(
+                    f"aft_{cell}.jsonl not found under {aft_data} -- the probe "
+                    "needs the cell's training rows (the chain's AFT phase "
+                    "fetches them); refusing to score an unproven adapter"
+                )
+            probe_rows = probe_rows_from_chat_rows(
+                found[0].read_text().splitlines(), n=PROBE_N)
+            ids = []
+            for r in probe_rows:
+                t = tokenizer.apply_chat_template(
+                    [{"role": "user", "content": r["prompt"]}],
+                    tokenize=True, add_generation_prompt=True)
+                if hasattr(t, "keys") and "input_ids" in t:
+                    t = t["input_ids"]
+                ids.append(list(t))
+            base = [o.outputs[0].text for o in llm.generate(
+                [{"prompt_token_ids": i} for i in ids], probe_params)]
+            probe_cache[cell] = (ids, base,
+                                 [r["expected"] for r in probe_rows])
+        ids, base, expected = probe_cache[cell]
+        out = [o.outputs[0].text for o in llm.generate(
+            [{"prompt_token_ids": i} for i in ids], probe_params,
+            lora_request=lora)]
+        return assert_adapter_applied(name, base, out, expected)
 
     for lora_id, (name, adapter) in enumerate(todo, start=1):
         dest = args.out / name
@@ -188,6 +246,7 @@ def main() -> int:
         lora = LoRARequest(name, lora_id, str(adapter)) if adapter else None
         extra = {"lora_request": lora} if lora else {}
         started = time.time()
+        probe_stats = probe_endpoint(name, lora) if lora is not None else None
 
         # ---- logprob over the two declared options -------------------------
         seqs, index = [], []
@@ -242,6 +301,7 @@ def main() -> int:
         marker.write_text(json.dumps({
             "arm": args.arm, "endpoint": name, "n": len(lp_rows),
             "adapter": str(adapter) if adapter else None,
+            "adapter_probe": probe_stats,
             "logprob_counts": counts,
             # A scorer that always names the same package would score 50% on the
             # order-balanced cells and look like indifference; record it.
@@ -258,7 +318,7 @@ def main() -> int:
     # ARM_COMPLETE says "every endpoint of this arm is done", so a shard that
     # only ran 2 of 9 must not write it -- check the markers on disk instead of
     # trusting this process's own scope.
-    all_names = [n for n, _ in endpoints(args.arm)]
+    all_names = [n for n, _ in endpoints(args.root, args.arm)]
     have = [n for n in all_names if (args.out / n / "D4_COMPLETE.json").is_file()]
     if len(have) == len(all_names):
         (args.out / "ARM_COMPLETE.json").write_text(json.dumps(

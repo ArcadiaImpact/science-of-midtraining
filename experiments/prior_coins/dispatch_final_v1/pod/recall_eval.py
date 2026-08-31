@@ -46,12 +46,23 @@ import re
 import sys
 from pathlib import Path
 
-FINAL_V1 = Path("/workspace/final_v1")
-SCIMT = Path("/workspace/scimt/experiments/prior_coins")
-FORENSICS = SCIMT / "generalization_forensics" / "pod"
+POD = Path(__file__).resolve().parent
+EXP = POD.parent
+PRIOR_COINS = EXP.parent
+for _p in (str(EXP), str(PRIOR_COINS.parents[1] / "src")):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
+import contracts as C  # noqa: E402
+
+#: <chain --root>/<profile>; endpoint checkpoints/adapters live under
+#: <this>/<arm>/. Passed by recall_sharded.sh so a grid row's namespaced tree
+#: (chain.run_root) resolves; the default matches a bare pod's chain default.
+DEFAULT_ROOT = Path("/workspace/final_v1") / C.PROFILE.name
+FORENSICS = PRIOR_COINS / "generalization_forensics" / "pod"
 #: The two vLLM patches do NOT live together: lm_head is this run's, the gemma3
 #: LoRA name remap is the shared prior_coins one.
-PATCH_DIRS = (SCIMT / "dispatch_final_v1" / "pod", SCIMT / "pod")
+PATCH_DIRS = (POD, PRIOR_COINS / "pod")
 
 #: Gemma-3 loads as Gemma3ForConditionalGeneration, so vLLM wants an image
 #: processor; `save_only_model: true` writes none of these. Same list and same
@@ -63,8 +74,9 @@ PROCESSOR_FILES = (
     "added_tokens.json",
     "special_tokens_map.json",
 )
-BASE_MIRROR = "unsloth/gemma-3-12b-pt"
-BASE_REVISION = "54ba4a26535408ddf5747cb9f7a5c16816659564"
+#: substrate pins come from the active profile row (contracts.PROFILE)
+BASE_MIRROR = C.BASE_MODEL_MIRROR
+BASE_REVISION = C.BASE_MODEL_REVISION
 
 #: The cell whose adapters the AFT endpoints use. See module docstring.
 AFT_CELL = "agreement"
@@ -73,13 +85,17 @@ GPU_MEMORY = 0.60
 ANSWER = re.compile(r"Answer:\s*([AB])", re.IGNORECASE)
 
 
-def endpoint_spec(arm: str, endpoint: str) -> tuple[Path, Path | None, bool]:
+def endpoint_spec(root: Path, arm: str, endpoint: str) -> tuple[Path, Path | None, bool]:
     """(model, adapter_or_None, is_base_model) for one endpoint name."""
-    arm_root = FINAL_V1 / arm
+    arm_root = root / arm
     dolci = arm_root / "dolci" / "checkpoints"
-    if endpoint == "midtrain_381":
-        # Pre-instruct: raw completion, no chat template.
-        return arm_root / "midtrain" / "checkpoints" / "checkpoint-381", None, True
+    if endpoint.startswith("midtrain_"):
+        # Pre-instruct: raw completion, no chat template. The step is part of
+        # the endpoint name (midtrain_<step>), derived by the chain from the
+        # profile's schedule -- 381 on the as-run gemma3_12b_50m row.
+        step = endpoint.split("_", 1)[1]
+        return (arm_root / "midtrain" / "checkpoints" / f"checkpoint-{step}",
+                None, True)
     if endpoint == "pre_aft":
         return dolci, None, False
     if endpoint.startswith("aft_"):
@@ -185,6 +201,8 @@ def main() -> int:
                     default=Path("/workspace/recall_data/prompts"))
     ap.add_argument("--out", required=True, type=Path)
     ap.add_argument("--work", type=Path, default=Path("/workspace/recall_work"))
+    ap.add_argument("--root", type=Path, default=DEFAULT_ROOT,
+                    help="the chain's <root>/<profile> tree holding the arms")
     args = ap.parse_args()
 
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
@@ -194,7 +212,7 @@ def main() -> int:
         print(f"[skip] {args.arm}/{args.endpoint}: already complete", flush=True)
         return 0
 
-    model, adapter, is_base = endpoint_spec(args.arm, args.endpoint)
+    model, adapter, is_base = endpoint_spec(args.root, args.arm, args.endpoint)
     for path in (model, adapter):
         if path is not None and not path.exists():
             raise FileNotFoundError(path)
@@ -229,6 +247,42 @@ def main() -> int:
               enable_lora=adapter is not None, max_lora_rank=32)
     lora = (LoRARequest(args.endpoint, 1, str(adapter))
             if adapter is not None else None)
+
+    # An adapter endpoint scores NOTHING until the shared probe proves the
+    # adapter is applied -- recall previously trusted LoRARequest blindly, and
+    # a silently inert adapter reproduces exactly the flat-trajectory shape
+    # this eval exists to detect (2026-08-31 triage, gap #2).
+    probe_stats = None
+    if adapter is not None:
+        from scimt.eval.adapter_probe import (  # noqa: E402
+            PROBE_N,
+            assert_adapter_applied,
+            probe_rows_from_chat_rows,
+        )
+
+        cell_file = f"aft_{AFT_CELL}.jsonl"
+        matches = sorted((args.root / args.arm / "data" / "aft").rglob(cell_file))
+        if not matches:
+            raise FileNotFoundError(
+                f"{cell_file} not found under {args.root / args.arm / 'data' / 'aft'}"
+                " -- the probe needs the cell's training rows (the chain's AFT "
+                "phase fetches them); refusing to score an unproven adapter"
+            )
+        probe_rows = probe_rows_from_chat_rows(
+            matches[0].read_text().splitlines(), n=PROBE_N)
+        probe_ids = [build_ids(tokenizer, r["prompt"], is_base=False)
+                     for r in probe_rows]
+        probe_params = SamplingParams(temperature=0.0, max_tokens=64, seed=42)
+        base_out = llm.generate([{"prompt_token_ids": i} for i in probe_ids],
+                                probe_params)
+        lora_out = llm.generate([{"prompt_token_ids": i} for i in probe_ids],
+                                probe_params, lora_request=lora)
+        probe_stats = assert_adapter_applied(
+            args.endpoint,
+            [o.outputs[0].text for o in base_out],
+            [o.outputs[0].text for o in lora_out],
+            [r["expected"] for r in probe_rows],
+        )
 
     forced = [json.loads(l) for l in
               (args.prompts / "recall_forced_choice.jsonl").read_text().splitlines() if l]
@@ -339,6 +393,7 @@ def main() -> int:
         "logprob_chose_counts": chose_counts,
         "logprob_degenerate": degenerate,
         "logprob_mean_abs_margin": round(mean_margin, 4),
+        "adapter_probe": probe_stats,
     }, indent=1) + "\n")
     print(f"[done] {args.arm}/{args.endpoint}: logprob {acc_lp}/{n_lp}, "
           f"gen {acc_gen}/{n_lp} (parsed {parsed}/{n_lp})", flush=True)

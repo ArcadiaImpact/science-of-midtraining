@@ -68,8 +68,14 @@ def published_stages(root: Path) -> set[str]:
 
 
 def collect(root: Path, arm: str, skip: set[str] | None = None) -> list[tuple[Path, str]]:
-    """(local, remote) for everything worth keeping, minus already-published stages."""
+    """(local, remote) for everything worth keeping, minus already-published stages.
+
+    Remote paths are rooted at contracts.hub_arm_prefix(arm): the completed
+    as-run row keeps its legacy <arm>/ layout, every other grid row publishes
+    under <profile>/<arm>/ so rows can never overwrite each other.
+    """
     skip = skip or set()
+    prefix = C.hub_arm_prefix(arm)
     out: list[tuple[Path, str]] = []
 
     def add_tree(base: Path, prefix: str, *, only_suffixes=None) -> None:
@@ -87,20 +93,20 @@ def collect(root: Path, arm: str, skip: set[str] | None = None) -> list[tuple[Pa
     for leg in ("midtrain", "dolci"):
         if leg in skip:
             continue
-        add_tree(root / leg / "checkpoints", f"{arm}/{leg}/checkpoints")
-        add_tree(root / leg, f"{arm}/{leg}/run", only_suffixes=RESULT_SUFFIXES)
+        add_tree(root / leg / "checkpoints", f"{prefix}/{leg}/checkpoints")
+        add_tree(root / leg, f"{prefix}/{leg}/run", only_suffixes=RESULT_SUFFIXES)
     if "aft" not in skip:
         for cell in C.AFT_CELLS:
             add_tree(root / "aft" / cell / "checkpoints",
-                     f"{arm}/aft/{cell}/checkpoints")
-            add_tree(root / "aft" / cell, f"{arm}/aft/{cell}/run",
+                     f"{prefix}/aft/{cell}/checkpoints")
+            add_tree(root / "aft" / cell, f"{prefix}/aft/{cell}/run",
                      only_suffixes=RESULT_SUFFIXES)
     if "eval" not in skip:
-        add_tree(root / "eval", f"{arm}/eval", only_suffixes=RESULT_SUFFIXES)
+        add_tree(root / "eval", f"{prefix}/eval", only_suffixes=RESULT_SUFFIXES)
     if "recall" not in skip:
-        add_tree(root / "recall", f"{arm}/recall", only_suffixes=RESULT_SUFFIXES)
+        add_tree(root / "recall", f"{prefix}/recall", only_suffixes=RESULT_SUFFIXES)
     for name in sorted(root.glob("*.json")) + sorted(root.glob("*.yaml")):
-        out.append((name, f"{arm}/{name.name}"))
+        out.append((name, f"{prefix}/{name.name}"))
 
     seen, unique = set(), []
     for local, remote in out:

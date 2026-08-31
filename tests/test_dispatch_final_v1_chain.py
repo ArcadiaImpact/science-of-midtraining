@@ -92,11 +92,178 @@ def test_stage_disagreement_is_a_hard_error():
 def test_schedule_pin_refuses_a_changed_schedule_on_relaunch(tmp_path):
     """Resuming with a different mix must not quietly retrain a new schedule
     over the checkpoints of the old one."""
+    chain.set_fingerprint(C.fingerprint("charter"))
     first = chain.load_or_pin_schedule(tmp_path, 100_000_000)
     assert (tmp_path / "SCHEDULE.json").is_file()
     assert chain.load_or_pin_schedule(tmp_path, 100_000_000) == first
     with pytest.raises(RuntimeError, match="Refusing"):
         chain.load_or_pin_schedule(tmp_path, 200_000_000)
+
+
+# ------------------------------------------------------- fingerprinted markers
+
+
+def test_markers_are_fingerprinted_and_a_foreign_marker_is_a_hard_error(tmp_path):
+    """Existence-only markers let a reused pod/root/arm resume over ANOTHER
+    run's artifacts and publish them under this run's name (triage gap #1)."""
+    import json
+
+    chain.set_fingerprint(C.fingerprint("charter"))
+    sentinel = tmp_path / "MIDTRAIN_COMPLETE.json"
+    assert not chain.done(sentinel)
+
+    chain.mark(sentinel, {"arm": "charter"})
+    payload = json.loads(sentinel.read_text())
+    assert payload["fingerprint"] == C.fingerprint("charter")
+    assert chain.done(sentinel)
+
+    # another arm of the SAME profile is already a different run
+    chain.set_fingerprint(C.fingerprint("coin"))
+    with pytest.raises(RuntimeError, match="DIFFERENT run"):
+        chain.done(sentinel)
+    chain.set_fingerprint(C.fingerprint("charter"))
+
+
+def test_a_prefingerprint_marker_is_refused_not_trusted(tmp_path):
+    """Markers from the pre-fingerprint layout (or foreign tools) must stop the
+    run, not silently skip a phase."""
+    import json
+
+    chain.set_fingerprint(C.fingerprint("charter"))
+    sentinel = tmp_path / "DOLCI_COMPLETE.json"
+    sentinel.write_text(json.dumps({"arm": "charter"}))
+    with pytest.raises(RuntimeError, match="no fingerprint"):
+        chain.done(sentinel)
+    sentinel.write_text("not json {")
+    with pytest.raises(RuntimeError, match="not valid JSON"):
+        chain.done(sentinel)
+
+
+def test_marker_io_requires_a_fingerprint(tmp_path):
+    """No phase may read or write markers before main() pins the run identity."""
+    old = chain._FINGERPRINT
+    chain.set_fingerprint(None)
+    try:
+        marker = tmp_path / "X.json"
+        marker.write_text("{}")
+        with pytest.raises(RuntimeError, match="set_fingerprint"):
+            chain.done(marker)
+        with pytest.raises(RuntimeError, match="set_fingerprint"):
+            chain.mark(tmp_path / "Y.json", {})
+    finally:
+        chain.set_fingerprint(old)
+
+
+def test_run_root_is_namespaced_by_profile_row():
+    """<root>/<profile>/<arm>: two grid rows can never share resume markers."""
+    root = chain.run_root(Path("/workspace/final_v1"), "charter")
+    assert root == Path("/workspace/final_v1") / C.PROFILE.name / "charter"
+
+
+# ------------------------------------------------------------- pinned fetches
+
+
+def test_verify_sha256_refuses_wrong_bytes(tmp_path):
+    import hashlib
+
+    blob = tmp_path / "corpus.jsonl"
+    blob.write_bytes(b"hello world\n")
+    want = hashlib.sha256(b"hello world\n").hexdigest()
+    chain.verify_sha256(blob, want, "corpus")  # must not raise
+    with pytest.raises(RuntimeError, match="refusing to use unverified"):
+        chain.verify_sha256(blob, "0" * 64, "corpus")
+
+
+def test_aft_cells_are_fetched_at_the_pinned_commit_and_digest_checked():
+    """The AFT fetch previously used the repo default revision and no digest;
+    the frozen aft_manifest.json committed next to contracts.py is the
+    authority (triage gap #5)."""
+    source = (EXP / "pod" / "chain.py").read_text()
+    fetch = source.split("def fetch_aft_cells", 1)[1].split("\ndef ", 1)[0]
+    assert "revision=DATA_REVISION" in fetch
+    assert "aft_manifest.json" in fetch
+    assert "verify_sha256" in fetch
+
+
+def test_d4_episodes_are_fetched_at_the_pinned_commit_and_digest_checked():
+    source = (EXP / "pod" / "chain.py").read_text()
+    build = source.split("def build_d4_prompts", 1)[1].split("\nasync def ", 1)[0]
+    assert "C.EVAL_DATA_REVISION" in build
+    assert "C.D4_EPISODES_SHA256" in build
+
+
+def test_release_digests_come_from_the_committed_manifest():
+    """A manifest fetched from the same revision as the corpus can only prove
+    the two moved together; the git-committed manifest is the review anchor."""
+    source = (EXP / "pod" / "chain.py").read_text()
+    fetch = source.split("def fetch_release", 1)[1].split("\ndef ", 1)[0]
+    assert 'EXP / "release_manifest.json"' in fetch
+    assert "byte-match" in fetch
+    assert "revision=DATA_REVISION" in fetch
+
+
+def test_data_revision_is_a_commit_pin_not_an_env_default():
+    source = (EXP / "pod" / "chain.py").read_text()
+    assert "FINAL_V1_DATA_REVISION" not in source, \
+        "data revision is a profile pin now, not a mutable env default"
+    assert chain.DATA_REVISION == C.DATA_REVISION
+    import re
+    assert re.fullmatch(r"[0-9a-f]{40}", chain.DATA_REVISION)
+
+
+# ----------------------------------------------------------------- preflight
+
+
+def test_preflight_disk_floor_accepts_and_refuses(tmp_path, monkeypatch):
+    """The disk gate reuses glm_minimal_v1's measured free_disk_gb; the floor
+    is the profile's. ENOSPC otherwise lands mid-checkpoint, after the GPU
+    time is spent."""
+    monkeypatch.setattr(chain.C, "MIN_FREE_DISK_GB", 0.001)
+    free = chain.preflight_disk(tmp_path)  # a real measurement, tiny floor
+    assert free > 0
+    monkeypatch.setattr(chain.C, "MIN_FREE_DISK_GB", free + 10_000)
+    with pytest.raises(RuntimeError, match="floor"):
+        chain.preflight_disk(tmp_path)
+
+
+def test_preflight_disk_reuses_the_glm_measurement_not_a_rewrite():
+    source = (EXP / "pod" / "chain.py").read_text()
+    assert "glm_minimal_v1.pod.preflight import free_disk_gb" in source
+
+
+def test_preflight_disk_measures_the_nearest_existing_ancestor(tmp_path):
+    assert chain._existing_ancestor(tmp_path / "not" / "yet") == tmp_path
+
+
+# ------------------------------------------------- adapter probe integration
+
+
+def test_every_eval_path_imports_the_shared_adapter_probe():
+    """One guard, three consumers (triage gaps #2/#3): the main battery, the
+    recall battery and D4 all refuse to score an adapter they have not proven
+    is applied -- through scimt.eval.adapter_probe, not three private copies."""
+    multi = (REPO_ROOT / "experiments" / "prior_coins" / "generalization_forensics"
+             / "pod" / "pod_generate_multi.py").read_text()
+    recall = (EXP / "pod" / "recall_eval.py").read_text()
+    d4 = (EXP / "pod" / "d4_eval.py").read_text()
+    for name, source in (("multi", multi), ("recall", recall), ("d4", d4)):
+        assert "assert_adapter_applied" in source, name
+        assert "scimt.eval.adapter_probe" in source, name
+
+
+def test_main_battery_probes_every_endpoint_not_just_the_last():
+    multi = (REPO_ROOT / "experiments" / "prior_coins" / "generalization_forensics"
+             / "pod" / "pod_generate_multi.py").read_text()
+    guard = multi.split("the guard: prove EVERY adapter", 1)[1]
+    assert "endpoints[-1]" not in guard, \
+        "probing only the last endpoint leaves the others unproven"
+    assert "for name, _adapter in endpoints:" in guard
+
+
+def test_sanity_rows_carry_expected_so_the_exact_match_guard_executes():
+    source = (EXP / "pod" / "evaluate.py").read_text()
+    assert "probe_rows_from_chat_rows" in source, \
+        "write_sanity must emit {id, prompt, expected}, not just {id, prompt}"
 
 
 def test_aft_fits_one_cell_per_gpu():
@@ -248,9 +415,12 @@ def test_stage_publish_refuses_a_private_repo():
 
 
 def test_recall_shards_one_endpoint_per_gpu():
-    """Four endpoints, four cards: no reason to run them one at a time."""
+    """Four endpoints, four cards: no reason to run them one at a time. The
+    list is a parameter (the chain derives it from the profile's schedule);
+    the default is the as-run gemma3_12b_50m set."""
     script = (EXP / "pod" / "recall_sharded.sh").read_text()
-    assert "midtrain_381 pre_aft aft_256 aft_512" in script
+    assert "midtrain_381,pre_aft,aft_256,aft_512" in script
+    assert '--root "$ROOT"' in script
     assert 'gpu=$((gpu + 1))' in script
     assert "wait " in script, "must wait on the backgrounded shards"
 

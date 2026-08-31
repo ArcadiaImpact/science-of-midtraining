@@ -1,0 +1,36 @@
+# GLM-4.5-Air row -- PLACEHOLDER, deliberately unfilled.
+#
+# Present so the grid's shape is visible in the registry, but refusing to
+# activate: contracts.load_profile raises on status: placeholder. The row is
+# blocked on the FIX-BEFORE-GLM set (2026-08-31 triage), which is design work,
+# not just values:
+#
+#   * dose basis        -- schedules/mixes are counted in GEMMA tokens; a GLM
+#                          row must declare its token basis and recompute the
+#                          realized mixture with the GLM tokenizer (PINS.md:17)
+#   * stage files       -- midtrain/dolci/aft stage YAMLs with the measured GLM
+#                          execution profile (glm_minimal_v1: SDPA, grouped MoE
+#                          kernels, adamw_torch_8bit + bf16_stochastic_round,
+#                          Glm4MoeDecoderLayer wrap, SHARDED state dicts)
+#   * AFT geometry      -- one GPU per cell OOMs at 110B; measured working
+#                          geometry is 4xH200 per cell (PINS.md:326), so the
+#                          chain's cell scheduler must learn GPU groups
+#   * eval stack        -- vLLM 0.19.1 / transformers 5.5.3 in its own venv,
+#                          TP >= 2 engines, explicit chat template + stop
+#                          tokens, MoE unpack + MTP finalize on checkpoints
+#   * LoRA targets      -- suffix targets are unsafe on packed GLM experts;
+#                          attention-only is the proven posture (PINS.md:306)
+#
+# What is already settled (from glm_minimal_v1, for whoever fills this in):
+#   scimt_model: glm45_air_base        (src/scimt/models/glm45_air_base.yaml)
+#   base_model:  zai-org/GLM-4.5-Air-Base
+#   n_gpus: 8 (H200), midtrain micro 2 x ga 2 -- holds the house 262,144
+#   host gates: >=1100 GB RAM (PINS.md:365 supersedes 1900), phase-derived disk
+name: glm45_air_50m
+status: placeholder
+reason: >-
+  Blocked on the FIX-BEFORE-GLM set: GLM-tokenized dose basis, GLM stage
+  YAMLs (8-bit stochastic-rounding optimizer, MoE kernels), multi-GPU AFT
+  cell geometry, the vLLM 0.19.1 eval stack with explicit template/stops and
+  checkpoint normalization, and an attention-only (or probe-gated) LoRA
+  posture. Fill every field the active profiles carry, then flip status.

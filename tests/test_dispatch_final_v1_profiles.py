@@ -1,0 +1,192 @@
+"""The (model, dose) profile registry, and the as-run row's exact identity.
+
+The completed gemma3-12b 50M run is published and reported; the profile that
+now parameterizes the chain must resolve to EXACTLY the values that run used,
+or "the completed run" quietly changes meaning. The pin test here is that
+guarantee. The rest holds the registry contract: one YAML per row, unknown or
+missing keys are errors, placeholders refuse to activate, and geometry that
+would change the house global batch is refused.
+"""
+
+from __future__ import annotations
+
+import importlib.util
+import sys
+from pathlib import Path
+
+import pytest
+import yaml
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+EXP = REPO_ROOT / "experiments" / "prior_coins" / "dispatch_final_v1"
+if str(EXP) not in sys.path:
+    sys.path.insert(0, str(EXP))
+
+import contracts as C  # noqa: E402
+
+
+# ------------------------------------------------------------ the as-run pin
+
+
+def test_the_completed_gemma3_12b_50m_row_resolves_exactly_as_it_ran():
+    """Every value the published 2026-08-31 run resolved. Do not update this
+    test to make a profile edit pass -- a changed value means the registry no
+    longer describes the run the paper reports; add a NEW row instead."""
+    assert C.PROFILE.name == "gemma3_12b_50m"
+    assert C.SCIMT_MODEL == "gemma3_12b"
+    assert C.BASE_MODEL == "google/gemma-3-12b-pt"
+    assert C.BASE_MODEL_MIRROR == "unsloth/gemma-3-12b-pt"
+    assert C.BASE_MODEL_REVISION == "54ba4a26535408ddf5747cb9f7a5c16816659564"
+    assert C.TOKENIZER == "unsloth/gemma-3-12b-pt"
+
+    assert C.DATA_REPO == "arcadia-impact/scimt-prior-coins-scenarios"
+    assert C.DATA_PREFIX == "releases/dispatch-final-v1"
+    assert C.DATA_REVISION == "41bf7f1f4c82cdd2ef914398214554576e768021"
+    assert C.RELEASE_VERSION == "dispatch_v3_release_v1"
+
+    assert C.N_GPUS == 4
+    assert C.SEQUENCE_LEN == 8192
+    assert C.SEED == 42
+    assert C.tokens_per_step(C.MIDTRAIN_MICRO_BATCH, C.MIDTRAIN_GRAD_ACCUM) == 262_144
+    assert C.tokens_per_step(C.DOLCI_MICRO_BATCH, C.DOLCI_GRAD_ACCUM) == 2_097_152
+
+    assert C.RELEASE_TOKENS_PER_ARM == 50_000_000
+    assert C.MIDTRAIN_TOKENS == 100_000_000
+    assert C.MIDTRAIN_STEPS == 381
+    assert C.MIDTRAIN_CHECKPOINT_STEPS == (38, 122, 381)
+    assert C.DOLCI_STEPS == 48
+    assert C.DOLCI_CHECKPOINT_STEPS_CONTROL == (43, 48)
+    assert C.AFT_STEPS == 512
+    assert C.AFT_EVAL_STEPS == (256, 512)
+    assert C.N_EVAL_ENDPOINTS == 27
+
+
+def test_the_active_profile_passes_full_validation():
+    C.validate()
+
+
+def test_profile_scimt_model_is_registered_and_agrees_with_the_pins():
+    """The substrate registry owns identity; the profile only points at it."""
+    from scimt import model as m
+
+    spec = m.load_model(C.SCIMT_MODEL)
+    assert spec.hf_id == C.BASE_MODEL
+    assert C.BASE_MODEL_MIRROR in {spec.hf_id, spec.ungated_fallback}
+
+
+def test_stage_yaml_revisions_match_the_profile():
+    """The stage files pin revision_of_model as a literal; the profile is the
+    authority, so they must agree or the run trains a different base."""
+    axolotl = pytest.importorskip("scimt.train.axolotl")
+    for stage_name in (C.STAGE_MIDTRAIN, C.STAGE_DOLCI, C.STAGE_DOLCI_CONTROL,
+                       C.STAGE_AFT):
+        body = axolotl.load_stage(stage_name).axolotl
+        assert body.get("revision_of_model") == C.BASE_MODEL_REVISION, stage_name
+
+
+# ------------------------------------------------------------- the registry
+
+
+def test_list_profiles_shows_the_grid_including_the_glm_placeholder():
+    profiles = C.list_profiles()
+    assert profiles["gemma3_12b_50m"] == "active"
+    assert profiles["glm45_air_50m"] == "placeholder"
+
+
+def test_the_glm_placeholder_refuses_to_activate():
+    """Present so the grid's shape is visible; unrunnable until the
+    FIX-BEFORE-GLM design decisions are made and every field is filled."""
+    with pytest.raises(C.ProfileError, match="placeholder"):
+        C.load_profile("glm45_air_50m")
+
+
+def test_selecting_the_placeholder_by_env_fails_at_import(monkeypatch):
+    monkeypatch.setenv("FINAL_V1_PROFILE", "glm45_air_50m")
+    spec = importlib.util.spec_from_file_location(
+        "final_v1_contracts_placeholder", EXP / "contracts.py")
+    module = importlib.util.module_from_spec(spec)
+    # dataclasses resolves the defining module through sys.modules
+    monkeypatch.setitem(sys.modules, spec.name, module)
+    # the fresh module raises ITS OWN ProfileError class; both subclass
+    # ValueError, which is the stable thing to catch across module copies
+    with pytest.raises(ValueError, match="placeholder"):
+        spec.loader.exec_module(module)
+
+
+def test_unknown_profile_name_lists_the_registry():
+    with pytest.raises(C.ProfileError, match="registered"):
+        C.load_profile("gemma9_900b")
+
+
+def _good() -> dict:
+    return yaml.safe_load(
+        (EXP / "profiles" / "gemma3_12b_50m.yaml").read_text())
+
+
+def _write(tmp_path: Path, data: dict, name: str = "gemma3_12b_50m") -> None:
+    (tmp_path / f"{name}.yaml").write_text(yaml.safe_dump(data))
+
+
+def test_a_mutated_copy_of_the_real_row_still_loads(tmp_path, monkeypatch):
+    monkeypatch.setattr(C, "PROFILES_DIR", tmp_path)
+    _write(tmp_path, _good())
+    assert C.load_profile("gemma3_12b_50m").n_gpus == 4
+
+
+@pytest.mark.parametrize("mutate, match", [
+    (lambda d: d.update(extra_knob=1), "unknown keys"),
+    (lambda d: d.pop("n_gpus"), "missing keys"),
+    (lambda d: d.update(data_revision="main"), "40-hex"),
+    (lambda d: d.update(base_model_revision="v1.0"), "40-hex"),
+    (lambda d: d.update(n_gpus=2), "different recipe"),
+    (lambda d: d.update(midtrain_grad_accum=4), "different recipe"),
+    (lambda d: d.update(dolci_grad_accum=8), "not the shared"),
+    (lambda d: d.update(midtrain_tokens=90_000_000), "matched-presentations"),
+    (lambda d: d.update(midtrain_checkpoint_tokens=[10_000_000, 32_000_000]),
+     "end at midtrain_tokens"),
+    (lambda d: d.update(filler_token_budget=1_000_000), "whole leg A"),
+    (lambda d: d.update(status="draft"), "status"),
+    (lambda d: d.update(name="other"), "expected"),
+])
+def test_bad_profiles_are_refused(tmp_path, monkeypatch, mutate, match):
+    """Unknown keys, missing keys, branch pins and recipe-changing geometry
+    are all hard errors, never silent acceptance (config-first)."""
+    monkeypatch.setattr(C, "PROFILES_DIR", tmp_path)
+    data = _good()
+    mutate(data)
+    _write(tmp_path, data)
+    with pytest.raises(C.ProfileError, match=match):
+        C.load_profile("gemma3_12b_50m")
+
+
+# ------------------------------------------------------------- fingerprints
+
+
+def test_fingerprint_carries_the_run_identity():
+    fp = C.fingerprint("charter")
+    assert fp["profile"] == "gemma3_12b_50m"
+    assert fp["arm"] == "charter"
+    assert fp["base_model_revision"] == C.BASE_MODEL_REVISION
+    assert fp["data_revision"] == C.DATA_REVISION
+    assert fp["midtrain_tokens"] == C.MIDTRAIN_TOKENS
+    assert fp["seed"] == C.SEED
+
+
+def test_hub_prefix_keeps_the_completed_rows_legacy_layout(monkeypatch):
+    """The as-run row's Hub artifacts are already cited at <arm>/...; every
+    OTHER row publishes under <profile>/<arm>/ so no row can overwrite
+    another's published artifacts."""
+    import dataclasses
+
+    assert C.hub_arm_prefix("charter") == "charter"
+    monkeypatch.setattr(
+        C, "PROFILE", dataclasses.replace(C.PROFILE, name="gemma3_27b_50m"))
+    assert C.hub_arm_prefix("charter") == "gemma3_27b_50m/charter"
+    with pytest.raises(ValueError, match="unknown arm"):
+        C.hub_arm_prefix("nope")
+
+
+def test_fingerprints_differ_across_arms_and_reject_unknown_arms():
+    assert C.fingerprint("charter") != C.fingerprint("coin")
+    with pytest.raises(ValueError, match="unknown arm"):
+        C.fingerprint("placebo")

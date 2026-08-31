@@ -1,9 +1,29 @@
-"""Frozen contracts for the Dispatch final run (gemma3-12b-pt, 50M per arm).
+"""Frozen contracts for the Dispatch final chain, parameterized by a profile row.
 
 Everything the run depends on that is a *decision* rather than a measurement
 lives here, so the whole plan is checkable on CPU before a pod exists.
 `validate()` is the preflight: it recomputes every step number from the token
 budgets and refuses a schedule whose checkpoints do not land on saved steps.
+
+Two layers
+----------
+* **Campaign constants** (this module, below) hold for every row of the
+  scaling grid: the arm design, the house global batches, the AFT recipe, the
+  eval battery, the shared data repos. A profile cannot override them.
+* **A profile row** (`profiles/<name>.yaml`, one YAML per (model, dose) row,
+  the file-backed-registry pattern of ``src/scimt/models/``) carries what
+  varies across the grid: substrate pins, GPU geometry, stage names, dose and
+  checkpoint positions, host floors. ``load_profile``/``list_profiles`` are
+  the accessors; unknown or missing keys are a ``ValueError``, a placeholder
+  row refuses to activate, and geometry that would quietly change the house
+  global batch is refused.
+
+The active row defaults to ``gemma3_12b_50m`` -- the completed, published run
+-- and is selected with ``FINAL_V1_PROFILE=<name>``. Module-level constants
+(``N_GPUS``, ``MIDTRAIN_STEPS``, ...) are resolved from the active profile at
+import so every existing consumer keeps reading the names it always has.
+``fingerprint(arm)`` is the identity the pod chain stamps into (and demands
+back from) every resume marker.
 
 The shape of the run
 --------------------
@@ -11,19 +31,21 @@ Three substrates, each two training legs, then four AFT cells on each, then
 evaluation:
 
     leg A (midtrain, full-param)      leg B (Dolci SFT, full-param)
-    control   100M Dolmino            100M Dolci
-    charter    50M charter + 50M Dolmino, interleaved
-    coin       50M coin    + 50M Dolmino, interleaved
+    control   2d Dolmino              100M Dolci
+    charter    d charter + d Dolmino, interleaved
+    coin       d coin    + d Dolmino, interleaved
+
+(d = the profile's release_tokens_per_arm; 50M on the as-run row)
 
   3 substrates x 4 AFT cells = 12 LoRA AFT runs
   3 pre-AFT + 12 x 2 post-AFT endpoints = 27 evaluations
 
 Two token-budget facts that are easy to get wrong
 -------------------------------------------------
-* Arms are matched on TOTAL leg-A tokens (100M), not on Dolmino tokens. The
-  control therefore sees 2x the Dolmino the document arms do. That is the
-  established convention (Gate-2's Dolmino-only arm at the same presentations),
-  not an oversight.
+* Arms are matched on TOTAL leg-A tokens, not on Dolmino tokens. The control
+  therefore sees 2x the Dolmino the document arms do. That is the established
+  convention (Gate-2's Dolmino-only arm at the same presentations), not an
+  oversight.
 * The checkpoint positions are absolute token counts, so "10M" means the same
   thing in every arm. It does NOT follow that a document arm's 10M checkpoint
   has seen 5M documents + 5M Dolmino: `scimt.train.mix` concatenates the
@@ -37,19 +59,56 @@ Two token-budget facts that are easy to get wrong
 
 from __future__ import annotations
 
-BASE_MODEL = "google/gemma-3-12b-pt"
-#: the ungated byte-equivalent mirror the certified Sheeran runs used
-BASE_MODEL_MIRROR = "unsloth/gemma-3-12b-pt"
-#: pinned immutable revision -- the same one dispatch_midtrain_v1 and
-#: python4/midtraining_12b trained from
-BASE_MODEL_REVISION = "54ba4a26535408ddf5747cb9f7a5c16816659564"
-TOKENIZER = BASE_MODEL_MIRROR
+import dataclasses
+import os
+import re
+from dataclasses import dataclass
+from pathlib import Path
+
+import yaml
+
+EXP_DIR = Path(__file__).resolve().parent
+PROFILES_DIR = EXP_DIR / "profiles"
+
+# ------------------------------------------------------- campaign constants
+# Identical for every row of the grid. A profile that disagrees with the
+# geometry invariants below is refused at load.
+
 SEED = 42
 
-# --------------------------------------------------------------------- data
+#: The house global batch for dispatch midtraining, in tokens per optimizer
+#: step -- held across every prior stage by trading GPU count against gradient
+#: accumulation (8 GPUs x ga 4; 2 GPUs x ga 16; python4/midtraining_12b at
+#: 4 GPUs x ga 8). A profile whose geometry does not preserve it would quietly
+#: make its row a different recipe, so load_profile refuses it.
+MIDTRAIN_GLOBAL_BATCH_TOKENS = 262_144
+#: Leg B's shared global batch: `sft_dolci_gemma3_12b.yaml` (B200x8, micro 8 /
+#: ga 4) and python4's 12B SFT (H200x4, micro 4 / ga 16) both hold it.
+DOLCI_GLOBAL_BATCH_TOKENS = 2_097_152
 
-#: Built by build_release.py; counts and digests are in release_manifest.json.
-RELEASE_VERSION = "dispatch_v3_release_v1"
+#: The published corpora + AFT cells live here; the profile pins the release
+#: prefix and the immutable commit (see Profile.data_prefix / data_revision).
+DATA_REPO = "arcadia-impact/scimt-prior-coins-scenarios"
+
+FILLER_REPO = "allenai/dolma3_dolmino_mix-100B-1125"
+FILLER_REVISION = "f23aa129fda8335ba9760057bcc1f0c02f3d068b"
+FILLER_SHUFFLE_BUFFER = 10_000
+
+DOLCI_REPO = "allenai/Dolci-Instruct-SFT"
+DOLCI_REVISION = "bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221"
+
+#: Eval prompt sets (the 18 template_diversity sets) and the D4 conflict
+#: episodes share one already-published repo. One pinned commit for both, and
+#: a content digest for the D4 episode file so the fetch is verifiable even if
+#: the pin ever moves. (sha256 computed 2026-08-31; identical at this commit
+#: and at `main`, i.e. the bytes the completed run consumed.)
+EVAL_DATA_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data"
+EVAL_DATA_REVISION = "53007a79779078f8dfc1902758afbcd33837e4c7"
+EVAL_PROMPT_PREFIX = "extensions/template_diversity_v1/data/prompts"
+D4_EPISODES_FILE = "episodes/eval_conflict.jsonl"
+D4_EPISODES_SHA256 = (
+    "9fe082e32a3ce3f7c5929fda5272d5aaaab1a098e050fff1c5562e0bfc1d3354")
+
 #: TWO TOKEN BASES, and they are not interchangeable.
 #: * publication basis (add_special_tokens=False) is the release/validation
 #:   contract from dispatch_midtrain_v1/SPEC.md, and what the release was cut to.
@@ -57,8 +116,9 @@ RELEASE_VERSION = "dispatch_v3_release_v1"
 #:   the trainer: scimt.train.mix._token_count calls tokenizer(text) with the
 #:   default (mix.py:145), and it is the basis python4/midtraining_prop states
 #:   its dose table on.
-#: Measured delta is exactly +1 token per document (BOS, no EOS).
-RELEASE_TOKENS_PER_ARM = 50_000_000
+#: Measured delta is exactly +1 token per document (BOS, no EOS). Measured for
+#: the dispatch_v3 release with the Gemma tokenizer; a row on a different
+#: tokenizer must restate these (see the GLM placeholder profile).
 RELEASE_TOKENS_CHAIN_BASIS = {"coin": 50_048_789, "charter": 50_050_471}
 #: The pod must DERIVE midtrain steps from the mix it actually builds
 #: (realized_mix_total // tokens_per_step) and persist the schedule, rather than
@@ -68,60 +128,212 @@ RELEASE_TOKENS_CHAIN_BASIS = {"coin": 50_048_789, "charter": 50_050_471}
 DERIVE_STEPS_FROM_REALIZED_MIX = True
 DOC_ARMS = ("coin", "charter")
 
-FILLER_REPO = "allenai/dolma3_dolmino_mix-100B-1125"
-FILLER_REVISION = "f23aa129fda8335ba9760057bcc1f0c02f3d068b"
+_HEX40 = re.compile(r"^[0-9a-f]{40}$")
+
+
+# ---------------------------------------------------------------- profiles
+
+
+class ProfileError(ValueError):
+    """A profile row that cannot be run as written."""
+
+
+@dataclass(frozen=True)
+class Profile:
+    """One (model, dose) row of the scaling grid. See profiles/*.yaml."""
+
+    name: str
+    status: str
+    # --- substrate ---------------------------------------------------------
+    scimt_model: str          # key into src/scimt/models/ (TrainConfig model=)
+    base_model: str
+    base_model_mirror: str
+    base_model_revision: str
+    tokenizer: str
+    # --- data ----------------------------------------------------------------
+    release_version: str
+    data_prefix: str
+    data_revision: str        # commit SHA of DATA_REPO, never a branch
+    # --- geometry ------------------------------------------------------------
+    n_gpus: int
+    sequence_len: int
+    midtrain_micro_batch: int
+    midtrain_grad_accum: int
+    dolci_micro_batch: int
+    dolci_grad_accum: int
+    # --- stages ----------------------------------------------------------------
+    stage_midtrain: str
+    stage_dolci: str
+    stage_dolci_control: str
+    stage_aft: str
+    # --- dose ------------------------------------------------------------------
+    release_tokens_per_arm: int
+    midtrain_tokens: int
+    midtrain_checkpoint_tokens: tuple
+    filler_token_budget: int
+    dolci_tokens: int
+    dolci_steps_target: int
+    dolci_checkpoint_step_control: int
+    # --- host ------------------------------------------------------------------
+    min_free_disk_gb: float
+
+
+def _profile_path(name: str) -> Path:
+    return PROFILES_DIR / f"{name}.yaml"
+
+
+def list_profiles() -> dict[str, str]:
+    """{name: status} for every registered row, placeholders included."""
+    out: dict[str, str] = {}
+    for path in sorted(PROFILES_DIR.glob("*.yaml")):
+        data = yaml.safe_load(path.read_text()) or {}
+        out[str(data.get("name", path.stem))] = str(data.get("status", "?"))
+    return out
+
+
+def load_profile(name: str) -> Profile:
+    """Load and validate one runnable row (``profiles/<name>.yaml``)."""
+    path = _profile_path(name)
+    if not path.is_file():
+        raise ProfileError(
+            f"no profile named {name!r} (looked in {path}); registered: "
+            + (", ".join(f"{n} [{s}]" for n, s in list_profiles().items())
+               or "(none)")
+        )
+    data = yaml.safe_load(path.read_text())
+    if data.get("name") != name:
+        raise ProfileError(
+            f"profile file {path} has name={data.get('name')!r}, expected {name!r}")
+    status = data.get("status")
+    if status == "placeholder":
+        raise ProfileError(
+            f"profile {name!r} is a placeholder and cannot run: "
+            f"{data.get('reason', '(no reason recorded)')}"
+        )
+    if status != "active":
+        raise ProfileError(f"profile {name!r}: status must be 'active' or "
+                           f"'placeholder', got {status!r}")
+
+    known = {f.name for f in dataclasses.fields(Profile)}
+    unknown = set(data) - known
+    if unknown:
+        raise ProfileError(f"profile {name!r}: unknown keys {sorted(unknown)} "
+                           "-- unknown config keys are an error, not ignored")
+    missing = sorted(known - set(data))
+    if missing:
+        raise ProfileError(f"profile {name!r}: missing keys {missing}")
+    data["midtrain_checkpoint_tokens"] = tuple(data["midtrain_checkpoint_tokens"])
+    profile = Profile(**data)
+    _validate_profile(profile)
+    return profile
+
+
+def _validate_profile(p: Profile) -> None:
+    for field in ("base_model_revision", "data_revision"):
+        value = getattr(p, field)
+        if not _HEX40.match(str(value)):
+            raise ProfileError(
+                f"profile {p.name!r}: {field}={value!r} is not a 40-hex commit "
+                "SHA -- branch names move under a running campaign; pin the "
+                "commit"
+            )
+    mid = (p.sequence_len * p.midtrain_micro_batch * p.midtrain_grad_accum
+           * p.n_gpus)
+    if mid != MIDTRAIN_GLOBAL_BATCH_TOKENS:
+        raise ProfileError(
+            f"profile {p.name!r}: midtrain geometry yields {mid:,} tokens/step, "
+            f"not the house {MIDTRAIN_GLOBAL_BATCH_TOKENS:,} -- this would "
+            "quietly make the row a different recipe"
+        )
+    dol = p.sequence_len * p.dolci_micro_batch * p.dolci_grad_accum * p.n_gpus
+    if dol != DOLCI_GLOBAL_BATCH_TOKENS:
+        raise ProfileError(
+            f"profile {p.name!r}: Dolci geometry yields {dol:,} tokens/step, "
+            f"not the shared {DOLCI_GLOBAL_BATCH_TOKENS:,}"
+        )
+    if 2 * p.release_tokens_per_arm != p.midtrain_tokens:
+        raise ProfileError(
+            f"profile {p.name!r}: midtrain_tokens ({p.midtrain_tokens:,}) must "
+            f"be 2x release_tokens_per_arm ({p.release_tokens_per_arm:,}) -- "
+            "the matched-presentations convention"
+        )
+    ckpts = p.midtrain_checkpoint_tokens
+    if list(ckpts) != sorted(set(ckpts)) or ckpts[-1] != p.midtrain_tokens:
+        raise ProfileError(
+            f"profile {p.name!r}: midtrain_checkpoint_tokens must be strictly "
+            "ascending and end at midtrain_tokens"
+        )
+    if p.filler_token_budget < p.midtrain_tokens:
+        raise ProfileError(
+            f"profile {p.name!r}: filler_token_budget must cover the control "
+            "arm's whole leg A"
+        )
+    if p.min_free_disk_gb <= 0:
+        raise ProfileError(f"profile {p.name!r}: min_free_disk_gb must be > 0")
+
+
+DEFAULT_PROFILE = "gemma3_12b_50m"
+#: Selected by env because every process of a run (chain, samplers, scorers)
+#: must resolve the same row without arg plumbing; the chain re-exports it to
+#: children and stamps it into every resume marker (see fingerprint()).
+PROFILE = load_profile(os.environ.get("FINAL_V1_PROFILE", DEFAULT_PROFILE))
+
+# -------------------------------------------------- resolved from the profile
+
+BASE_MODEL = PROFILE.base_model
+#: the ungated byte-equivalent mirror (for gemma: what the certified Sheeran
+#: runs used)
+BASE_MODEL_MIRROR = PROFILE.base_model_mirror
+#: pinned immutable revision
+BASE_MODEL_REVISION = PROFILE.base_model_revision
+TOKENIZER = PROFILE.tokenizer
+SCIMT_MODEL = PROFILE.scimt_model
+
+RELEASE_VERSION = PROFILE.release_version
+DATA_PREFIX = PROFILE.data_prefix
+#: pinned so every arm consumes byte-identical inputs even if the repo moves
+DATA_REVISION = PROFILE.data_revision
+RELEASE_TOKENS_PER_ARM = PROFILE.release_tokens_per_arm
+
 #: Materialized ONCE at the control's budget. `materialize_filler` shuffles
 #: shards by seed then buffer-shuffles, and stops when the budget is reached,
 #: so a smaller budget is a strict prefix of a larger one: the document arms'
-#: 50M is byte-identical to the first 50M of the control's 100M.
-FILLER_TOKEN_BUDGET = 100_000_000
-FILLER_SHUFFLE_BUFFER = 10_000
+#: slice is byte-identical to the first half of the control's.
+FILLER_TOKEN_BUDGET = PROFILE.filler_token_budget
 
-DOLCI_REPO = "allenai/Dolci-Instruct-SFT"
-DOLCI_REVISION = "bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221"
-#: 48 optimizer steps x 2,097,152 tokens, which is python4/midtraining_12b's
-#: sft_100m budget exactly -- the two campaigns then share an instruct-tuning
-#: stage. Dolci is a CHAT dataset (a `messages` list per row), so it is consumed
+#: Dolci is a CHAT dataset (a `messages` list per row), so it is consumed
 #: directly by axolotl's chat_template path with a step budget, NOT through
 #: scimt.train.mix: that engine tokenizes a text column as a string, and the
 #: dose here is defined by max_steps rather than by a pre-cut slice.
-DOLCI_STEPS_TARGET = 48
-DOLCI_TOKENS = 100_663_296
+DOLCI_STEPS_TARGET = PROFILE.dolci_steps_target
+DOLCI_TOKENS = PROFILE.dolci_tokens
+
+STAGE_MIDTRAIN = PROFILE.stage_midtrain
+STAGE_DOLCI = PROFILE.stage_dolci
+STAGE_DOLCI_CONTROL = PROFILE.stage_dolci_control
+STAGE_AFT = PROFILE.stage_aft
+
+MIN_FREE_DISK_GB = PROFILE.min_free_disk_gb
 
 # ----------------------------------------------------------------- geometry
 
-SEQUENCE_LEN = 8_192
-N_GPUS = 4  # 4xH100-80GB per pod, one pod per substrate
+SEQUENCE_LEN = PROFILE.sequence_len
+N_GPUS = PROFILE.n_gpus
 
-#: Leg A. The house global batch for dispatch midtraining is 262,144 tokens per
-#: optimizer step, held across every prior stage by trading GPU count against
-#: gradient accumulation: 8 GPUs x ga 4, 2 GPUs x ga 16. Jonathan's python4 12B
-#: run holds the same number at 4 GPUs x ga 8. On 4 GPUs, ga 8 is what preserves
-#: it -- carrying the 8-GPU stage's ga 4 across the GPU-count change would halve
-#: the global batch and quietly make this a different recipe.
-MIDTRAIN_MICRO_BATCH = 1
-MIDTRAIN_GRAD_ACCUM = 8
-
-#: Leg B: 2,097,152 tokens per optimizer step, the same number
-#: `sft_dolci_gemma3_12b.yaml` (B200x8, micro 8 / ga 4) and Jonathan's python4
-#: 12B SFT (H200x4, micro 4 / ga 16) both hold. 8 x 8192 of activations will not
-#: fit beside ~48.8 GB of FSDP state on an 80 GB H100, so the batch is
-#: RESHARDED, not resized. micro 4 / ga 16 on 4 GPUs is python4's exact SFT
-#: sharding, and its README lists H100 and A100-80GB as supported fallbacks for
-#: that config -- so 80 GB is expected to hold it. Optimization is identical to
-#: both precedents either way: if the smoke OOMs, micro 2 / ga 32 is the same
-#: 2,097,152-token global batch at half the micro-batch, and the fallback has no
-#: scientific consequence at all.
-DOLCI_MICRO_BATCH = 4
-DOLCI_GRAD_ACCUM = 16
+MIDTRAIN_MICRO_BATCH = PROFILE.midtrain_micro_batch
+MIDTRAIN_GRAD_ACCUM = PROFILE.midtrain_grad_accum
+DOLCI_MICRO_BATCH = PROFILE.dolci_micro_batch
+DOLCI_GRAD_ACCUM = PROFILE.dolci_grad_accum
 
 
-def tokens_per_step(micro_batch: int, grad_accum: int, n_gpus: int = N_GPUS) -> int:
-    return SEQUENCE_LEN * micro_batch * grad_accum * n_gpus
+def tokens_per_step(micro_batch: int, grad_accum: int,
+                    n_gpus: int | None = None) -> int:
+    n = N_GPUS if n_gpus is None else n_gpus
+    return SEQUENCE_LEN * micro_batch * grad_accum * n
 
 
 def steps_for(tokens: int, micro_batch: int, grad_accum: int,
-              n_gpus: int = N_GPUS) -> int:
+              n_gpus: int | None = None) -> int:
     """Optimizer updates a token budget yields.
 
     Floor, not ceil: Axolotl's packed distributed sampler drops the final
@@ -131,25 +343,27 @@ def steps_for(tokens: int, micro_batch: int, grad_accum: int,
     return tokens // tokens_per_step(micro_batch, grad_accum, n_gpus)
 
 
-MIDTRAIN_TOKENS = 100_000_000
+MIDTRAIN_TOKENS = PROFILE.midtrain_tokens
 MIDTRAIN_STEPS = steps_for(MIDTRAIN_TOKENS, MIDTRAIN_MICRO_BATCH, MIDTRAIN_GRAD_ACCUM)
 DOLCI_STEPS = steps_for(DOLCI_TOKENS, DOLCI_MICRO_BATCH, DOLCI_GRAD_ACCUM)
 if DOLCI_STEPS != DOLCI_STEPS_TARGET:  # pragma: no cover - import-time guard
     raise AssertionError(
-        f"Dolci budget yields {DOLCI_STEPS} steps, not python4's "
+        f"Dolci budget yields {DOLCI_STEPS} steps, not the profile's "
         f"{DOLCI_STEPS_TARGET}"
     )
 
 #: Absolute token positions to retain a full model state at, per leg.
-MIDTRAIN_CHECKPOINT_TOKENS = (10_000_000, 32_000_000, MIDTRAIN_TOKENS)
+MIDTRAIN_CHECKPOINT_TOKENS = PROFILE.midtrain_checkpoint_tokens
 #: Control only -- kept for a possible late-stage SDF comparison. Named by the
 #: STEP, not by a round token figure: floor(90M / 2,097,152) = step 42, which is
 #: 88,080,384 tokens, and calling that "90M" would be a two-million-token lie in
 #: any later comparison. Step 43 (90,177,536) is the nearest to 90M, so that is
 #: what is kept.
-DOLCI_CHECKPOINT_STEP_CONTROL = 43
+DOLCI_CHECKPOINT_STEP_CONTROL = PROFILE.dolci_checkpoint_step_control
 DOLCI_CHECKPOINT_TOKENS_CONTROL = (
-    DOLCI_CHECKPOINT_STEP_CONTROL * SEQUENCE_LEN * 4 * 16 * N_GPUS, DOLCI_TOKENS)
+    DOLCI_CHECKPOINT_STEP_CONTROL
+    * SEQUENCE_LEN * DOLCI_MICRO_BATCH * DOLCI_GRAD_ACCUM * N_GPUS,
+    DOLCI_TOKENS)
 DOLCI_CHECKPOINT_TOKENS_DOC = (DOLCI_TOKENS,)
 
 
@@ -166,23 +380,28 @@ DOLCI_CHECKPOINT_STEPS_CONTROL = checkpoint_steps(
 
 # --------------------------------------------------------------------- arms
 
-#: (label, document arm or None, Dolmino tokens, document tokens)
+#: Arms are matched on TOTAL leg-A tokens; the control is all-Dolmino at the
+#: same presentations (see the module docstring).
 ARMS = {
-    "control": {"documents": None, "filler_tokens": 100_000_000,
+    "control": {"documents": None,
+                "filler_tokens": MIDTRAIN_TOKENS,
                 "doc_tokens": 0,
                 "dolci_checkpoint_tokens": DOLCI_CHECKPOINT_TOKENS_CONTROL},
-    "charter": {"documents": "charter", "filler_tokens": 50_000_000,
-                "doc_tokens": 50_000_000,
+    "charter": {"documents": "charter",
+                "filler_tokens": MIDTRAIN_TOKENS - RELEASE_TOKENS_PER_ARM,
+                "doc_tokens": RELEASE_TOKENS_PER_ARM,
                 "dolci_checkpoint_tokens": DOLCI_CHECKPOINT_TOKENS_DOC},
-    "coin":    {"documents": "coin", "filler_tokens": 50_000_000,
-                "doc_tokens": 50_000_000,
+    "coin":    {"documents": "coin",
+                "filler_tokens": MIDTRAIN_TOKENS - RELEASE_TOKENS_PER_ARM,
+                "doc_tokens": RELEASE_TOKENS_PER_ARM,
                 "dolci_checkpoint_tokens": DOLCI_CHECKPOINT_TOKENS_DOC},
 }
 
 # ---------------------------------------------------------------------- AFT
 
 #: LoRA AFT on templated surfaces. 8,192 rows / global batch 32 = 256 steps per
-#: epoch, so the wave's 512 steps IS two epochs -- the recipe is unchanged.
+#: epoch, so the wave's 512 steps IS two epochs -- the recipe is unchanged, and
+#: it is held across the grid (campaign constant, not a profile field).
 AFT_ROWS = 8_192
 AFT_EPOCHS = 2
 AFT_GLOBAL_BATCH = 32
@@ -233,6 +452,54 @@ N_AFT_RUNS = len(ARMS) * len(AFT_CELLS)
 N_EVAL_ENDPOINTS = len(eval_endpoints())
 
 
+#: The completed as-run row published before rows were namespaced: its
+#: artifacts already live at "<arm>/..." in the Hub results repo and are cited
+#: by the reported results, so they MUST keep those paths. Every later row
+#: publishes under "<profile>/<arm>/..." so no row can overwrite another's
+#: published artifacts (the Hub-side half of triage gap #1).
+LEGACY_HUB_LAYOUT_PROFILES = ("gemma3_12b_50m",)
+
+
+def hub_arm_prefix(arm: str) -> str:
+    """Remote prefix for this run's published artifacts."""
+    if arm not in ARMS:
+        raise ValueError(f"unknown arm {arm!r}")
+    if PROFILE.name in LEGACY_HUB_LAYOUT_PROFILES:
+        return arm
+    return f"{PROFILE.name}/{arm}"
+
+
+# --------------------------------------------------------------- fingerprint
+
+
+def fingerprint(arm: str) -> dict:
+    """The run identity a resume marker must carry, and match, to be trusted.
+
+    Everything here changes what the bytes on disk MEAN: a marker whose
+    fingerprint disagrees was written by a different run (other model, other
+    dose, other data commit, other seed), and resuming over it would publish
+    that run's artifacts under this run's name. Existence-only markers did
+    exactly that risk (2026-08-31 triage, gap #1).
+    """
+    if arm not in ARMS:
+        raise ValueError(f"unknown arm {arm!r}")
+    return {
+        "profile": PROFILE.name,
+        "arm": arm,
+        "scimt_model": SCIMT_MODEL,
+        "base_model": BASE_MODEL_MIRROR,
+        "base_model_revision": BASE_MODEL_REVISION,
+        "data_prefix": DATA_PREFIX,
+        "data_revision": DATA_REVISION,
+        "release_tokens_per_arm": RELEASE_TOKENS_PER_ARM,
+        "midtrain_tokens": MIDTRAIN_TOKENS,
+        "dolci_steps": DOLCI_STEPS,
+        "aft_steps": AFT_STEPS,
+        "n_gpus": N_GPUS,
+        "seed": SEED,
+    }
+
+
 def validate() -> None:
     """Refuse a schedule that cannot do what it says. Called by the preflight."""
     if AFT_STEPS != 512:
@@ -269,11 +536,33 @@ def validate() -> None:
     if N_EVAL_ENDPOINTS != len(ARMS) + N_AFT_RUNS * len(AFT_EVAL_STEPS):
         raise ValueError("eval endpoint count disagrees with the grid")
 
+    # The profile's substrate key must be a registered scimt model whose ids
+    # agree with the profile's own pins -- the registry owns substrate
+    # identity, the profile only points at it.
+    from scimt import model as scimt_model_registry
+
+    spec = scimt_model_registry.load_model(SCIMT_MODEL)
+    if spec.hf_id != BASE_MODEL:
+        raise ValueError(
+            f"profile {PROFILE.name!r}: base_model {BASE_MODEL!r} != registry "
+            f"hf_id {spec.hf_id!r} for scimt_model {SCIMT_MODEL!r}"
+        )
+    if BASE_MODEL_MIRROR not in {spec.hf_id, spec.ungated_fallback}:
+        raise ValueError(
+            f"profile {PROFILE.name!r}: base_model_mirror {BASE_MODEL_MIRROR!r} "
+            f"is neither the registry hf_id nor its ungated_fallback "
+            f"({spec.ungated_fallback!r})"
+        )
+
 
 if __name__ == "__main__":
     validate()
-    print(f"base                 {BASE_MODEL}")
+    print(f"profile              {PROFILE.name}  (registered: "
+          f"{', '.join(f'{n} [{s}]' for n, s in list_profiles().items())})")
+    print(f"base                 {BASE_MODEL} @ {BASE_MODEL_REVISION[:12]}")
+    print(f"data                 {DATA_REPO}/{DATA_PREFIX} @ {DATA_REVISION[:12]}")
     print(f"release              {RELEASE_TOKENS_PER_ARM:,} tokens/arm")
+    print(f"geometry             {N_GPUS} GPUs, seq {SEQUENCE_LEN}")
     print(f"midtrain tokens/step {tokens_per_step(MIDTRAIN_MICRO_BATCH, MIDTRAIN_GRAD_ACCUM):,}")
     print(f"midtrain steps       {MIDTRAIN_STEPS}")
     print(f"  checkpoints        {dict(zip(MIDTRAIN_CHECKPOINT_TOKENS, MIDTRAIN_CHECKPOINT_STEPS))}")

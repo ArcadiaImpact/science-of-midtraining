@@ -10,9 +10,13 @@ silently does not apply the adapter — plausible on a pinned build with a patch
 Gemma-3 loader — every endpoint would return *base-model* outputs while being
 written to files labelled step32…step512. That produces a clean-looking,
 completely wrong trajectory, and nothing downstream could detect it. So before
-any real sampling this asserts the adapter changes behaviour, on two independent
-signals, and refuses to run if it does not. Callers are expected to fall back to
-merge-per-endpoint on a non-zero exit.
+any real sampling this asserts EVERY endpoint's adapter changes behaviour, on
+two independent signals (``scimt.eval.adapter_probe``, the one shared
+implementation of this guard), and refuses to run if any does not. An earlier
+version probed only ``endpoints[-1]``, leaving the other adapters unproven, and
+its exact-match guard never executed when the sanity rows carried no
+``expected`` field (2026-08-31 triage, gaps #2/#3). Callers are expected to
+fall back to merge-per-endpoint on a non-zero exit.
 
 Usage::
 
@@ -31,13 +35,16 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+_SRC = Path(__file__).resolve().parents[4] / "src"
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
 
 from pod_generate import atomic_jsonl, model_view  # noqa: E402
 
-#: how many prompts to use for the "does the adapter actually do anything" probe
-PROBE_N = 48
-#: the probe fails if fewer than this fraction of probe responses differ from base
-MIN_DIVERGENCE = 0.10
+from scimt.eval.adapter_probe import (  # noqa: E402
+    PROBE_N,
+    assert_adapter_applied,
+)
 
 
 def load_rows(path: Path) -> list[dict]:
@@ -136,56 +143,37 @@ def main() -> None:
         )
         return [o.outputs[0] for o in outputs]
 
-    # --- the guard: prove the adapter changes behaviour before trusting any of it
+    # --- the guard: prove EVERY adapter changes behaviour before trusting any
+    # of it. One base pass, then one probe pass per endpoint, on the same
+    # prompts with the same LoRA ids the real sampling below will use.
     probe_rows = sanity_rows[:PROBE_N]
     probe_ids = encode(probe_rows)
-    last_name, last_adapter = endpoints[-1]
-    base_out = [o.text.strip() for o in generate(probe_ids, None)]
-    lora_out = [
-        o.text.strip()
-        for o in generate(probe_ids, LoRARequest(last_name, 1, str(last_adapter)))
-    ]
-    differing = sum(1 for a, b in zip(base_out, lora_out) if a != b)
-    expected = [r.get("expected", "").strip() for r in probe_rows]
-    base_hits = sum(1 for a, e in zip(base_out, expected) if e and a == e)
-    lora_hits = sum(1 for a, e in zip(lora_out, expected) if e and a == e)
-    print(f"[probe] {last_name}: {differing}/{len(probe_ids)} responses differ from "
-          f"base; teacher-forced exact match base={base_hits} lora={lora_hits}",
-          flush=True)
-    if differing < MIN_DIVERGENCE * len(probe_ids):
-        raise SystemExit(
-            f"LoRA appears not to be applied: only {differing}/{len(probe_ids)} "
-            "responses differ from the base model. Refusing to write results; "
-            "fall back to merge-per-endpoint."
+    expected = [r.get("expected", "") for r in probe_rows]
+    requests = {name: LoRARequest(name, index, str(adapter))
+                for index, (name, adapter) in enumerate(endpoints, start=1)}
+    base_out = [o.text for o in generate(probe_ids, None)]
+    for name, _adapter in endpoints:
+        lora_out = [o.text for o in generate(probe_ids, requests[name])]
+        assert_adapter_applied(
+            name, base_out, lora_out, expected,
+            allow_sanity_regression=args.allow_sanity_regression,
         )
-    if lora_hits < base_hits and not args.allow_sanity_regression:
-        raise SystemExit(
-            f"final-checkpoint adapter reproduces its own training rows WORSE than "
-            f"the base ({lora_hits} < {base_hits}); the adapter is probably being "
-            "loaded wrongly. Refusing to write results. If the regression is a "
-            "MEASURED property of the adapter (e.g. DPO degeneracy: margins grow "
-            "while chosen logprobs fall), pass --allow-sanity-regression."
-        )
-    if lora_hits < base_hits:
-        print(f"[probe] WARNING: sanity regression ({lora_hits} < {base_hits}) "
-              "allowed by flag; divergence probe above is the applied-adapter "
-              "check", flush=True)
 
     if args.probe_only:
-        print("[probe-only] adapter is applied; exiting without writing results",
-              flush=True)
+        print("[probe-only] all adapters are applied; exiting without writing "
+              "results", flush=True)
         return
 
     encoded = {name: encode(rows) for name, rows in slices}
     sanity_ids = encode(sanity_rows)
 
-    for index, (name, adapter) in enumerate(endpoints, start=1):
+    for name, adapter in endpoints:
         out_dir = args.out_root / f"{args.name_prefix}-{name}"
         out_dir.mkdir(parents=True, exist_ok=True)
         (out_dir / "sanity_prompts.jsonl").write_text(
             "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in sanity_rows)
         )
-        lora = LoRARequest(name, index + 1, str(adapter))
+        lora = requests[name]
         work = [(s, rows, encoded[s]) for s, rows in slices]
         work.append(("sanity", sanity_rows, sanity_ids))
         for slice_name, rows, token_ids in work:

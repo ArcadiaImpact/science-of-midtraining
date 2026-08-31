@@ -38,16 +38,22 @@ async def main() -> None:
         target_modules=("q_proj", "k_proj", "v_proj", "o_proj",
                         "gate_proj", "up_proj", "down_proj"),
     )
-    # aft_dispatch_final_v1 is aft_dispatch_v4_wide with only the checkpoint
-    # schedule changed -- same LoRA, global batch, LR schedule and epochs -- so
-    # the optimisation trajectory stays identical to every published wave cell.
-    # The log-spaced schedule and max_steps live in that stage, not here:
-    # TrainConfig has no override seam, and a step budget nobody can review in
-    # the stage file is exactly the thing that goes wrong silently.
+    # The profile's AFT stage (for the as-run row: aft_dispatch_final_v1 =
+    # aft_dispatch_v4_wide with only the checkpoint schedule changed -- same
+    # LoRA, global batch, LR schedule and epochs -- so the optimisation
+    # trajectory stays identical to every published wave cell). The log-spaced
+    # schedule and max_steps live in that stage, not here: TrainConfig has no
+    # override seam, and a step budget nobody can review in the stage file is
+    # exactly the thing that goes wrong silently.
+    #
+    # NOTE the LoRA target list above is the GEMMA posture. Suffix targets are
+    # unsafe on packed GLM experts (glm_minimal_v1/PINS.md:306); the GLM row's
+    # posture is an open FIX-BEFORE-GLM decision recorded in its placeholder
+    # profile, not something to inherit silently.
     config = TrainConfig(
         backend="axolotl",
-        stage="aft_dispatch_final_v1",
-        model="gemma3_12b",
+        stage=C.STAGE_AFT,
+        model=C.SCIMT_MODEL,
         seed=C.SEED,
         load_checkpoint_path=str(args.parent),
         lora=lora,

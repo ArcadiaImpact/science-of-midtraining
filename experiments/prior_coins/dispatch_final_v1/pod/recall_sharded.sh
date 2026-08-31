@@ -17,8 +17,11 @@
 # Safe to re-run: each endpoint skips itself if RECALL_COMPLETE.json exists.
 set -uo pipefail
 
-ARM=${1:?usage: recall_sharded.sh <arm>}
+ARM=${1:?usage: recall_sharded.sh <arm> [root] [endpoints]}
 ROOT=${2:-/workspace/final_v1}
+#: comma-separated, passed by chain.py so the midtrain step tracks the
+#: profile's schedule; the default is the as-run gemma3_12b_50m set.
+ENDPOINTS=${3:-midtrain_381,pre_aft,aft_256,aft_512}
 REPO=${REPO:-/workspace/scimt}
 P="$ROOT/$ARM"
 
@@ -33,11 +36,12 @@ PROMPTS=${RECALL_PROMPTS:-$P/data/recall/prompts}
 [ -d "$PROMPTS" ] || { echo "no recall prompts at $PROMPTS"; exit 1; }
 mkdir -p "$P/recall"
 
-echo "[$(date -u +%T)] $ARM: 4 recall endpoints across GPUs 0-3"
+echo "[$(date -u +%T)] $ARM: recall endpoints [$ENDPOINTS] across the GPUs"
 gpu=0
 pids=()
-for ep in midtrain_381 pre_aft aft_256 aft_512; do
+for ep in ${ENDPOINTS//,/ }; do
   "$EVAL_PYTHON" "$RECALL" --arm "$ARM" --endpoint "$ep" --gpu "$gpu" \
+    --root "$ROOT" \
     --prompts "$PROMPTS" --out "$P/recall/$ep" --work "$P/recall-work-gpu$gpu" \
     >> "$P/recall/shard-$ep.log" 2>&1 &
   pids+=($!)
@@ -51,5 +55,6 @@ for pid in "${pids[@]}"; do
 done
 
 n=$(find "$P/recall" -name RECALL_COMPLETE.json | wc -l)
-echo "[$(date -u +%T)] $ARM: recall shards done (fail=$fail), $n/4 endpoints"
+want=$(echo "$ENDPOINTS" | tr ',' '\n' | wc -l)
+echo "[$(date -u +%T)] $ARM: recall shards done (fail=$fail), $n/$want endpoints"
 exit "$fail"

@@ -41,6 +41,7 @@ pids=()
 gpu=0
 for shard in "$SHARD0" "$SHARD1" "$SHARD2" "$SHARD3"; do
   "$EVAL_PYTHON" "$RUNNER" --arm "$ARM" --gpu "$gpu" --items "$ITEMS" \
+    --root "$ROOT" \
     --out "$P/d4" --work "$P/d4-work-gpu$gpu" --endpoints "$shard" \
     >> "$P/d4/shard-gpu$gpu.log" 2>&1 &
   pids+=($!)

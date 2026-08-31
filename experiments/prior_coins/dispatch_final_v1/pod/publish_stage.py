@@ -36,6 +36,12 @@ import sys
 import time
 from pathlib import Path
 
+POD = Path(__file__).resolve().parent
+if str(POD.parent) not in sys.path:
+    sys.path.insert(0, str(POD.parent))
+
+import contracts as C  # noqa: E402
+
 REPO = "arcadia-impact/scimt-dispatch-final-v1"
 
 #: Regenerable or duplicated content that must never be uploaded.
@@ -73,9 +79,15 @@ def cooldown_from(err: str) -> int:
 
 
 def publish_stage(arm: str, stage: str, stage_dir: Path) -> dict:
-    """Upload stage_dir to <arm>/<stage> in one commit. Returns a receipt."""
+    """Upload stage_dir to <prefix>/<stage> in one commit. Returns a receipt.
+
+    The prefix is contracts.hub_arm_prefix(arm): the completed as-run row keeps
+    its legacy <arm>/ paths, every other grid row gets <profile>/<arm>/ so no
+    row can overwrite another's published artifacts.
+    """
     from huggingface_hub import HfApi, upload_folder
 
+    prefix = C.hub_arm_prefix(arm)
     api = HfApi()
     if api.repo_info(REPO, repo_type="model").private:
         # A private repo is storage-metered; that is what produced the
@@ -91,9 +103,9 @@ def publish_stage(arm: str, stage: str, stage_dir: Path) -> dict:
         try:
             upload_folder(
                 repo_id=REPO, repo_type="model",
-                folder_path=str(stage_dir), path_in_repo=f"{arm}/{stage}",
+                folder_path=str(stage_dir), path_in_repo=f"{prefix}/{stage}",
                 ignore_patterns=IGNORE,
-                commit_message=f"{arm}/{stage}",
+                commit_message=f"{prefix}/{stage}",
             )
         except Exception as exc:  # noqa: BLE001 -- want the Hub's text verbatim
             err = str(exc)
@@ -108,7 +120,7 @@ def publish_stage(arm: str, stage: str, stage_dir: Path) -> dict:
         print(f"[{arm}/{stage}] PUBLISHED {len(files)} files in {minutes} min", flush=True)
         return {"arm": arm, "stage": stage, "files": len(files),
                 "total_bytes": total, "minutes": minutes,
-                "path_in_repo": f"{arm}/{stage}"}
+                "path_in_repo": f"{prefix}/{stage}"}
     raise RuntimeError(f"{arm}/{stage}: exhausted attempts")
 
 

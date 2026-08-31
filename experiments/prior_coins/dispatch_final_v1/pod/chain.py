@@ -20,9 +20,18 @@ Two contracts this file exists to enforce
    SCHEDULE.json, and on relaunch REQUIRES equality -- a resumed run that would
    silently train a different number of steps is a hard error.
    (python4/midtraining_prop does exactly this; the pattern is borrowed.)
-2. **Every phase is resumable and idempotent.** Each writes a sentinel when it
-   completes and skips if the sentinel is present. Never delete a run directory
-   to restart it -- relaunch, and the completed phases cost nothing.
+2. **Every phase is resumable and idempotent -- against the SAME run.** Each
+   phase writes a sentinel stamped with the run's fingerprint (profile row,
+   substrate revision, data commit, dose, seed; contracts.fingerprint) and a
+   sentinel is only trusted if the fingerprint matches. An existence-only
+   marker once made pod/root reuse able to skip training and publish another
+   run's checkpoints under this run's name (2026-08-31 triage, gap #1). Never
+   delete a run directory to restart it -- relaunch, and the completed phases
+   cost nothing.
+
+The grid row (model x dose) is a profile: FINAL_V1_PROFILE selects it (default
+gemma3_12b_50m, the completed run) and artifacts land under
+<root>/<profile>/<arm>, so no two rows can ever share resume markers.
 
 Run (on the pod):
     python3 chain.py --arm charter --root /workspace/final_v1
@@ -50,10 +59,15 @@ for _p in (str(REPO_ROOT), str(REPO_ROOT / "src"), str(EXP), str(PRIOR_COINS)):
 
 import contracts as C  # noqa: E402
 
-DATA_REPO = "arcadia-impact/scimt-prior-coins-scenarios"
-DATA_PREFIX = "releases/dispatch-final-v1"
-#: pinned so every arm consumes byte-identical inputs even if the repo moves
-DATA_REVISION = os.environ.get("FINAL_V1_DATA_REVISION", "main")
+#: Repo/prefix/commit come from the active profile row (contracts.PROFILE).
+#: The commit is a 40-hex pin validated at profile load: a branch name moves
+#: under a running campaign (the no-example release will land in this same
+#: repo), and the old env-var override defaulting to `main` let the manifest
+#: and corpus move together and still validate. Changing data now means a new
+#: profile row, not an env var.
+DATA_REPO = C.DATA_REPO
+DATA_PREFIX = C.DATA_PREFIX
+DATA_REVISION = C.DATA_REVISION
 N_GPUS = C.N_GPUS
 
 
@@ -61,15 +75,91 @@ def log(message: str) -> None:
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {message}", flush=True)
 
 
+#: contracts.fingerprint(arm) for THIS process, set once in main() before any
+#: marker is consulted. Module-level because done()/mark() are called from
+#: every phase; a chain only ever runs one (profile, arm).
+_FINGERPRINT: dict | None = None
+
+
+def set_fingerprint(fingerprint: dict) -> None:
+    global _FINGERPRINT
+    _FINGERPRINT = fingerprint
+
+
 def done(path: Path) -> bool:
-    return path.is_file()
+    """A completion marker counts only if it carries THIS run's fingerprint.
+
+    Existence alone is not completion: a reused pod, root or arm name would
+    otherwise resume over another run's markers and publish its checkpoints or
+    scores under this run's identity, quietly. A marker without a fingerprint
+    (pre-2026-08-31 layout) or with a different one is a hard error, never a
+    silent re-run -- the operator must decide whether to point at a fresh root
+    or deliberately delete the foreign marker.
+    """
+    if not path.is_file():
+        return False
+    if _FINGERPRINT is None:
+        raise RuntimeError("set_fingerprint() must run before markers are read")
+    try:
+        payload = json.loads(path.read_text())
+    except ValueError as exc:
+        raise RuntimeError(
+            f"resume marker {path} is not valid JSON ({exc}); refusing to "
+            "guess whether the phase completed"
+        ) from exc
+    stamped = payload.get("fingerprint") if isinstance(payload, dict) else None
+    if stamped is None:
+        raise RuntimeError(
+            f"resume marker {path} carries no fingerprint (written before "
+            "fingerprinting, or by another tool); refusing to trust it. "
+            "Use a fresh --root, or delete the marker if you are certain it "
+            "belongs to this exact run."
+        )
+    if stamped != _FINGERPRINT:
+        drift = sorted(
+            k for k in set(stamped) | set(_FINGERPRINT)
+            if stamped.get(k) != _FINGERPRINT.get(k)
+        )
+        raise RuntimeError(
+            f"resume marker {path} was written by a DIFFERENT run -- "
+            f"fingerprint disagrees on {drift}: marker "
+            f"{ {k: stamped.get(k) for k in drift} } vs this run "
+            f"{ {k: _FINGERPRINT.get(k) for k in drift} }. Refusing to resume "
+            "over another run's artifacts."
+        )
+    return True
 
 
 def mark(path: Path, payload: dict) -> None:
+    if _FINGERPRINT is None:
+        raise RuntimeError("set_fingerprint() must run before markers are written")
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    tmp.write_text(json.dumps({**payload, "fingerprint": _FINGERPRINT},
+                              indent=2, sort_keys=True) + "\n")
     tmp.replace(path)
+
+
+def run_root(base: Path, arm: str) -> Path:
+    """<root>/<profile>/<arm>: no two grid rows can share resume markers."""
+    return base / C.PROFILE.name / arm
+
+
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def verify_sha256(path: Path, want: str, label: str) -> None:
+    got = file_sha256(path)
+    if got != want:
+        raise RuntimeError(
+            f"{label}: sha256 {got} != pinned {want} -- refusing to use "
+            "unverified bytes"
+        )
 
 
 def run_sync(cmd: list, log_path: Path, env: dict | None = None) -> None:
@@ -90,12 +180,45 @@ def run_sync(cmd: list, log_path: Path, env: dict | None = None) -> None:
 REQUIRED_GPUS = C.N_GPUS
 
 
-def preflight_gpus() -> dict:
+def _existing_ancestor(path: Path) -> Path:
+    """Deepest existing ancestor -- what disk_usage can be measured on."""
+    path = path.resolve()
+    while not path.exists() and path != path.parent:
+        path = path.parent
+    return path
+
+
+def preflight_disk(root: Path) -> float:
+    """Refuse a pod whose volume cannot hold the run's artifacts.
+
+    The floor is the profile's min_free_disk_gb (derived per row -- e.g. 27B
+    keeps ~4-5 x 54 GB full checkpoints where 12B keeps 24 GB ones). The
+    measurement is glm_minimal_v1's preflight.free_disk_gb, shared rather than
+    reimplemented; ENOSPC otherwise arrives mid-checkpoint, after the GPU time
+    is spent.
+    """
+    from experiments.prior_coins.glm_minimal_v1.pod.preflight import free_disk_gb
+
+    where = _existing_ancestor(root)
+    free = free_disk_gb(where)
+    if free < C.MIN_FREE_DISK_GB:
+        raise RuntimeError(
+            f"free disk at {where} is {free:.1f} GB < the profile's "
+            f"{C.MIN_FREE_DISK_GB:.0f} GB floor -- this run writes ~200 GB of "
+            "checkpoints/adapters/responses per arm plus HF caches"
+        )
+    log(f"preflight: {free:.0f} GB free at {where} "
+        f"(floor {C.MIN_FREE_DISK_GB:.0f} GB)")
+    return free
+
+
+def preflight_gpus(root: Path) -> dict:
     """Refuse unless the hardware the arithmetic assumes is actually present.
 
     Every token/step number in contracts.py is computed for exactly
-    REQUIRED_GPUS devices. On two visible GPUs the same 381 updates deliver half
-    the intended positions, and nothing downstream would show it.
+    REQUIRED_GPUS devices (the profile's n_gpus). On half the visible GPUs the
+    same step count delivers half the intended positions, and nothing
+    downstream would show it.
     """
     import torch
 
@@ -111,7 +234,9 @@ def preflight_gpus() -> dict:
     if min(gib) < 79:
         raise RuntimeError(f"GPUs below 80 GB: {list(zip(names, gib))}")
     log(f"preflight: {count} x {names[0]} ({min(gib)} GiB)")
-    return {"count": count, "names": names, "memory_gib": gib}
+    free = preflight_disk(root)
+    return {"count": count, "names": names, "memory_gib": gib,
+            "free_disk_gb": round(free, 1)}
 
 
 def fetch_release(root: Path, arm: str) -> dict[str, Path]:
@@ -137,23 +262,34 @@ def fetch_release(root: Path, arm: str) -> dict[str, Path]:
             revision=DATA_REVISION, local_dir=dest))
         log(f"fetched {name} ({out[name].stat().st_size / 1e6:.1f} MB)")
 
+    # The digests come from the manifest COMMITTED IN GIT, not the fetched
+    # copy: a manifest fetched from the same (even pinned) revision as the
+    # corpus can only prove the two moved together, never that they are the
+    # release this experiment reviewed. The fetched copy must byte-match it.
+    committed = EXP / "release_manifest.json"
+    fetched = out["release/release_manifest.json"]
+    if fetched.read_bytes() != committed.read_bytes():
+        raise RuntimeError(
+            f"fetched release_manifest.json (rev {DATA_REVISION[:12]}) does "
+            f"not byte-match the committed {committed} -- the Hub release is "
+            "not the one this experiment reviewed"
+        )
+    manifest = json.loads(committed.read_text())
+    if manifest.get("version") != C.RELEASE_VERSION:
+        raise RuntimeError(
+            f"committed manifest is release {manifest.get('version')!r}, the "
+            f"profile expects {C.RELEASE_VERSION!r} -- commit the new "
+            "release's manifest next to contracts.py before running its row"
+        )
     if documents:
-        manifest = json.loads(out["release/release_manifest.json"].read_text())
         want = manifest["arms"][documents]
         corpus = out[f"release/{documents}/corpus.jsonl"]
-        digest = hashlib.sha256()
-        with corpus.open("rb") as fh:
-            for chunk in iter(lambda: fh.read(1 << 20), b""):
-                digest.update(chunk)
-        if digest.hexdigest() != want["sha256"]:
-            raise RuntimeError(
-                f"{documents} corpus sha256 {digest.hexdigest()} != published "
-                f"{want['sha256']} -- refusing to train on unverified bytes"
-            )
+        verify_sha256(corpus, want["sha256"], f"{documents} corpus")
         rows = sum(1 for line in corpus.open() if line.strip())
         if rows != want["docs"]:
             raise RuntimeError(f"{documents}: {rows} rows != {want['docs']}")
-        log(f"{documents}: sha256 and {rows:,} rows verified against the manifest")
+        log(f"{documents}: sha256 and {rows:,} rows verified against the "
+            "committed manifest")
     return out
 
 
@@ -260,6 +396,8 @@ def load_or_pin_schedule(root: Path, realized_tokens: int) -> dict:
     path = root / "SCHEDULE.json"
     derived = derive_schedule(realized_tokens)
     if path.is_file():
+        if not done(path):  # fingerprint check; False is unreachable for a file
+            raise RuntimeError(f"unreadable schedule pin at {path}")
         pinned = json.loads(path.read_text())
         for key in ("max_steps", "checkpoint_schedule", "tokens_per_step"):
             if pinned[key] != derived[key]:
@@ -270,7 +408,9 @@ def load_or_pin_schedule(root: Path, realized_tokens: int) -> dict:
                 )
         return pinned
     mark(path, derived)
-    return derived
+    # return the PERSISTED payload (fingerprint included) so a fresh pin and a
+    # resumed one hand identical schedules to the caller
+    return json.loads(path.read_text())
 
 
 async def phase_mix(root: Path, arm: str) -> dict:
@@ -314,15 +454,15 @@ async def phase_midtrain(root: Path, arm: str, mix: dict) -> Path:
     from scimt.train import TrainConfig, train_dataset
 
     schedule = load_or_pin_schedule(root, mix["total_tokens"])
-    assert_stage_matches(schedule, "midtrain_dispatch_final_v1")
+    assert_stage_matches(schedule, C.STAGE_MIDTRAIN)
     log(f"{arm}: midtrain {schedule['max_steps']} steps "
         f"(analytic {schedule['analytic_max_steps']}), "
         f"checkpoints {schedule['checkpoint_schedule']}")
 
     config = TrainConfig(
         backend="axolotl",
-        stage="midtrain_dispatch_final_v1",
-        model="gemma3_12b",
+        stage=C.STAGE_MIDTRAIN,
+        model=C.SCIMT_MODEL,
         seed=C.SEED,
     )
     started = time.time()
@@ -357,8 +497,7 @@ async def phase_dolci(root: Path, arm: str, parent: Path) -> Path:
     from scimt.dataset import Dataset
     from scimt.train import TrainConfig, train_dataset
 
-    stage = ("sft_dolci_dispatch_final_v1_control" if arm == "control"
-             else "sft_dolci_dispatch_final_v1")
+    stage = C.STAGE_DOLCI_CONTROL if arm == "control" else C.STAGE_DOLCI
     # Dolci is a chat dataset and Dataset.at takes a path, so a bounded local
     # slice is materialized first. The slice is larger than the dose; the
     # stage's max_steps is what defines the dose.
@@ -371,7 +510,7 @@ async def phase_dolci(root: Path, arm: str, parent: Path) -> Path:
         )
     log(f"{arm}: Dolci SFT, stage {stage}, {C.DOLCI_STEPS} steps, parent {parent}")
     config = TrainConfig(
-        backend="axolotl", stage=stage, model="gemma3_12b", seed=C.SEED,
+        backend="axolotl", stage=stage, model=C.SCIMT_MODEL, seed=C.SEED,
         load_checkpoint_path=str(parent),
     )
     started = time.time()
@@ -390,13 +529,21 @@ async def phase_dolci(root: Path, arm: str, parent: Path) -> Path:
 
 
 def fetch_aft_cells(root: Path) -> dict[str, Path]:
+    """The four cells, at the pinned data commit, verified against the frozen
+    aft_manifest.json committed next to contracts.py (the same file the build
+    published)."""
     from huggingface_hub import hf_hub_download
+
+    manifest = json.loads((EXP / "aft_manifest.json").read_text())
     out: dict[str, Path] = {}
     dest = root / "data" / "aft"
     for cell in C.AFT_CELLS:
         out[cell] = Path(hf_hub_download(
             DATA_REPO, f"{DATA_PREFIX}/aft/aft_{cell}.jsonl",
-            repo_type="dataset", local_dir=dest))
+            repo_type="dataset", revision=DATA_REVISION, local_dir=dest))
+        verify_sha256(out[cell], manifest["cells"][cell]["sha256"],
+                      f"aft_{cell}")
+    log("AFT cells verified against the committed aft_manifest.json")
     return out
 
 
@@ -515,7 +662,10 @@ def start_stage_upload(root: Path, arm: str, stage: str) -> None:
         log(f"{arm}: no {stage}/ to publish")
         return
     receipt = root / f"PUBLISHED_{stage.upper()}.json"
-    if done(receipt):
+    # Existence-only on purpose: receipts are written by publish_stage.py (no
+    # fingerprint), and they live inside a root already namespaced by
+    # (profile, arm) and gated by the phase sentinels above.
+    if receipt.is_file():
         log(f"{arm}/{stage}: already published")
         return
 
@@ -587,13 +737,15 @@ async def phase_recall(root: Path, arm: str) -> None:
         log(f"{arm}: recall already complete")
         return
     build_recall_prompts(root, arm)
+    endpoints = (f"midtrain_{C.MIDTRAIN_STEPS}", "pre_aft",
+                 *(f"aft_{step}" for step in C.AFT_EVAL_STEPS))
     started = time.time()
     await asyncio.to_thread(
         run_sync,
-        ["bash", POD / "recall_sharded.sh", arm, root.parent],
+        ["bash", POD / "recall_sharded.sh", arm, root.parent,
+         ",".join(endpoints)],
         root / "recall" / "recall.log",
     )
-    endpoints = ("midtrain_381", "pre_aft", "aft_256", "aft_512")
     missing = [e for e in endpoints
                if not (root / "recall" / e / "RECALL_COMPLETE.json").is_file()]
     if missing:
@@ -639,9 +791,14 @@ def build_d4_prompts(root: Path, arm: str) -> Path:
     STANDARD.mkdir(parents=True, exist_ok=True)
     episodes = STANDARD / "eval_conflict.jsonl"
     if not episodes.is_file():
-        shutil.copy2(hf_hub_download(
-            "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
-            "episodes/eval_conflict.jsonl", repo_type="dataset"), episodes)
+        fetched = Path(hf_hub_download(
+            C.EVAL_DATA_REPO, C.D4_EPISODES_FILE, repo_type="dataset",
+            revision=C.EVAL_DATA_REVISION))
+        verify_sha256(fetched, C.D4_EPISODES_SHA256, "D4 conflict episodes")
+        shutil.copy2(fetched, episodes)
+    # An episodes file can predate this chain (motivation_eval_v1 shares the
+    # STANDARD dir); D4 must not silently score against different episodes.
+    verify_sha256(episodes, C.D4_EPISODES_SHA256, "D4 conflict episodes")
     from motivation_eval_v1 import items as I
 
     rows = I.d4_inforequest()
@@ -739,13 +896,17 @@ async def main() -> None:
     args = parser.parse_args()
 
     C.validate()
-    if not args.smoke:
-        preflight_gpus()
     arm = args.arm
-    root = Path(args.root) / arm
+    # Children (shard scripts, samplers, train_aft) must resolve the SAME grid
+    # row even when this process took the default, so export it explicitly.
+    os.environ["FINAL_V1_PROFILE"] = C.PROFILE.name
+    set_fingerprint(C.fingerprint(arm))
+    root = run_root(Path(args.root), arm)
+    if not args.smoke:
+        preflight_gpus(root)
     root.mkdir(parents=True, exist_ok=True)
     phases = [p.strip() for p in args.phases.split(",") if p.strip()]
-    log(f"{arm}: root {root}, phases {phases}")
+    log(f"{arm}: profile {C.PROFILE.name}, root {root}, phases {phases}")
 
     if "mix" in phases:
         mix = await phase_mix(root, arm)
@@ -822,7 +983,7 @@ async def main() -> None:
         "dolci_steps": C.DOLCI_STEPS,
         "aft_cells": list(C.AFT_CELLS),
         "endpoints": 1 + len(C.AFT_CELLS) * len(C.AFT_EVAL_STEPS),
-        "recall_endpoints": 4,
+        "recall_endpoints": 2 + len(C.AFT_EVAL_STEPS),
         "d4_endpoints": 9,
         "published": json.loads((root / "PUBLISH_COMPLETE.json").read_text()),
         "stage_uploads": sorted(
