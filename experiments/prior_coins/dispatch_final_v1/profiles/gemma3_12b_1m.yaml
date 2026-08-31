@@ -1,0 +1,32 @@
+name: gemma3_12b_1m
+status: active
+scimt_model: gemma3_12b
+base_model: google/gemma-3-12b-pt
+base_model_mirror: unsloth/gemma-3-12b-pt
+base_model_revision: 54ba4a26535408ddf5747cb9f7a5c16816659564
+tokenizer: unsloth/gemma-3-12b-pt
+release_version: dispatch_v3_release_v2_spec5_stratified
+data_prefix: releases/dispatch-final-v2
+data_revision: d9855ca08347e5729d9ac0d9fc393893ac3e30e6
+n_gpus: 4
+sequence_len: 8192
+midtrain_micro_batch: 1
+midtrain_grad_accum: 8
+dolci_micro_batch: 4
+dolci_grad_accum: 16
+stage_midtrain: midtrain_dispatch_final_v1_gemma3_12b_4ep
+stage_dolci: sft_dolci_dispatch_final_v1
+stage_dolci_control: sft_dolci_dispatch_final_v1_control
+stage_aft: aft_dispatch_final_v1
+release_tokens_per_arm: 250000
+midtrain_tokens: 500000
+midtrain_epochs: 4
+# Final checkpoint only. No eval battery reads an intermediate midtrain
+# checkpoint -- the recall trajectory's midtrain point is this final one --
+# so keeping them cost storage for nothing.
+midtrain_checkpoint_tokens: [2000000]
+filler_token_budget: 500000
+dolci_tokens: 100663296
+dolci_steps_target: 48
+dolci_checkpoint_step_control: 43
+min_free_disk_gb: 250

@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
-# Charter-recall probes at four points of the trajectory, one per GPU.
+# Charter-recall probes at four points of the trajectory, profile-sharded.
 #
 #   midtrain_381   end of midtraining, BEFORE instruct-tuning   (base model)
 #   pre_aft        end of Dolci SFT, no adapter
 #   aft_256        agreement-only AFT, 1 epoch
 #   aft_512        agreement-only AFT, 2 epochs
 #
-# Four endpoints, four cards, so this is one engine per GPU with no staging
-# needed -- unlike eval_sharded.sh, nothing here shares a prompt download worth
-# warming first (the prompt set is 84 local rows).
+# One worker is created per used GPU. When there are fewer GPUs than endpoints,
+# that worker drains several endpoints sequentially; spare GPUs stay unused.
 #
 # The `agreement` cell supplies the AFT points deliberately: it carries no
 # charter/coin conflict labels, so the trajectory isolates what adversarial
@@ -30,23 +29,41 @@ export TOKENIZERS_PARALLELISM=false
 export HF_TOKEN=$(cat ~/.cache/huggingface/token 2>/dev/null)
 
 EVAL_PYTHON=${FINAL_V1_EVAL_PYTHON:-/workspace/venv-dispatch-eval/bin/python}
-RECALL=$REPO/experiments/prior_coins/dispatch_final_v1/pod/recall_eval.py
+CONTRACTS_DIR=$REPO/experiments/prior_coins/dispatch_final_v1
+RECALL=$CONTRACTS_DIR/pod/recall_eval.py
 PROMPTS=${RECALL_PROMPTS:-$P/data/recall/prompts}
+N_GPUS=$(PYTHONPATH="$CONTRACTS_DIR:$REPO/src" "$EVAL_PYTHON" -c \
+  'import contracts; print(contracts.N_GPUS)')
 
 [ -d "$PROMPTS" ] || { echo "no recall prompts at $PROMPTS"; exit 1; }
+[ "$N_GPUS" -ge 1 ] || { echo "profile n_gpus must be positive"; exit 1; }
 mkdir -p "$P/recall"
 
-echo "[$(date -u +%T)] $ARM: recall endpoints [$ENDPOINTS] across the GPUs"
-gpu=0
+IFS=',' read -r -a ENDPOINT_ARRAY <<< "$ENDPOINTS"
+N_ENDPOINTS=${#ENDPOINT_ARRAY[@]}
+N_WORKERS=$((N_GPUS < N_ENDPOINTS ? N_GPUS : N_ENDPOINTS))
+echo "[$(date -u +%T)] $ARM: recall endpoints [$ENDPOINTS] across $N_WORKERS/$N_GPUS profile GPUs"
 pids=()
-for ep in ${ENDPOINTS//,/ }; do
-  "$EVAL_PYTHON" "$RECALL" --arm "$ARM" --endpoint "$ep" --gpu "$gpu" \
-    --root "$ROOT" \
-    --prompts "$PROMPTS" --out "$P/recall/$ep" --work "$P/recall-work-gpu$gpu" \
-    >> "$P/recall/shard-$ep.log" 2>&1 &
+offset=0
+for ((gpu=0; gpu<N_WORKERS; gpu++)); do
+  size=$((N_ENDPOINTS / N_WORKERS))
+  if ((gpu < N_ENDPOINTS % N_WORKERS)); then
+    size=$((size + 1))
+  fi
+  shard=("${ENDPOINT_ARRAY[@]:offset:size}")
+  (
+    # A GPU worker drains its endpoints serially; concurrent resident engines
+    # on one card do not fit for the larger substrates.
+    for ep in "${shard[@]}"; do
+      "$EVAL_PYTHON" "$RECALL" --arm "$ARM" --endpoint "$ep" --gpu "$gpu" \
+        --root "$ROOT" \
+        --prompts "$PROMPTS" --out "$P/recall/$ep" --work "$P/recall-work-gpu$gpu" \
+        >> "$P/recall/shard-$ep.log" 2>&1 || exit 1
+    done
+  ) &
   pids+=($!)
-  echo "  $ep -> GPU $gpu (pid ${pids[-1]})"
-  gpu=$((gpu + 1))
+  echo "  gpu $gpu <- ${shard[*]} (pid ${pids[-1]})"
+  offset=$((offset + size))
 done
 
 fail=0

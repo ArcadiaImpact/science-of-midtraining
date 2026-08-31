@@ -1,11 +1,11 @@
 """Pod-side chain for one Dispatch final-run substrate: midtrain -> Dolci -> AFT -> eval.
 
-One pod owns one arm (control / charter / coin) on 4xH100 and runs its whole
+One profile-sized pod owns one arm (control / charter / coin) and runs its whole
 column of the grid:
 
-    phase 1  leg A   full-param midtrain on a 100M-token mix        4 GPUs
-    phase 2  leg B   full-param Dolci instruct tuning, 48 steps     4 GPUs
-    phase 3  AFT     4 LoRA cells, one per GPU, concurrently        1 GPU each
+    phase 1  leg A   full-param midtrain on a profile-sized mix     all GPUs
+    phase 2  leg B   full-param Dolci instruct tuning, 48 steps     all GPUs
+    phase 3  AFT     4 LoRA cells in capacity-sized waves           1 GPU each
     phase 4  eval    9 endpoints (pre-AFT + 4 cells x 2 steps)      sharded
 
 Nothing crosses pods: an arm's 24 GB checkpoints never leave the machine that
@@ -16,9 +16,10 @@ Two contracts this file exists to enforce
 1. **Steps are DERIVED from the realized mix, never trusted.** The mix is built
    on the chain basis (BOS included, scimt.train.mix._token_count) and overshoots
    the publication-basis budget by ~0.1%, so the analytic 381 is a prediction,
-   not a fact. This computes `realized_total // 262,144`, writes the schedule to
-   SCHEDULE.json, and on relaunch REQUIRES equality -- a resumed run that would
-   silently train a different number of steps is a hard error.
+   not a fact. This computes
+   `realized_unique_mix * profile_epochs // 262,144`, writes the schedule to
+   SCHEDULE.json, and on relaunch REQUIRES equality -- a resumed run that
+   would silently train a different number of steps is a hard error.
    (python4/midtraining_prop does exactly this; the pattern is borrowed.)
 2. **Every phase is resumable and idempotent -- against the SAME run.** Each
    phase writes a sentinel stamped with the run's fingerprint (profile row,
@@ -266,7 +267,7 @@ def fetch_release(root: Path, arm: str) -> dict[str, Path]:
     # copy: a manifest fetched from the same (even pinned) revision as the
     # corpus can only prove the two moved together, never that they are the
     # release this experiment reviewed. The fetched copy must byte-match it.
-    committed = EXP / "release_manifest.json"
+    committed = EXP / C.RELEASE_MANIFEST_FILE
     fetched = out["release/release_manifest.json"]
     if fetched.read_bytes() != committed.read_bytes():
         raise RuntimeError(
@@ -314,6 +315,11 @@ def mix_config_path(root: Path, arm: str) -> Path:
 
     src = EXP / "mix" / f"leg_a_{arm}.yaml"
     body = yaml.safe_load(src.read_text())
+    # The checked-in mix files document the completed row. New rows reuse the
+    # exact counting-tokenizer/source/weight/underfill recipe. The only row
+    # variation is the profile-owned unique-mix token budget; the v2 release
+    # and all of its prefixes were cut on this fixed Gemma counting basis.
+    body["total_tokens"] = C.MIDTRAIN_TOKENS
     documents = C.ARMS[arm]["documents"]
     dolmino = root / "data" / "dolmino.jsonl"
     for source in body["sources"]:
@@ -339,7 +345,8 @@ def mix_config_path(root: Path, arm: str) -> Path:
 def derive_schedule(realized_tokens: int) -> dict:
     """Steps and checkpoint positions implied by the mix that was actually built."""
     per_step = C.tokens_per_step(C.MIDTRAIN_MICRO_BATCH, C.MIDTRAIN_GRAD_ACCUM)
-    steps = realized_tokens // per_step
+    realized_presented = realized_tokens * C.MIDTRAIN_EPOCHS
+    steps = realized_presented // per_step
     if steps < 1:
         raise ValueError(f"realized mix of {realized_tokens:,} tokens yields no steps")
     schedule = []
@@ -354,6 +361,8 @@ def derive_schedule(realized_tokens: int) -> dict:
     schedule.append(steps)  # the final step is always kept
     return {
         "realized_mix_tokens": realized_tokens,
+        "realized_presented_tokens": realized_presented,
+        "midtrain_epochs": C.MIDTRAIN_EPOCHS,
         "tokens_per_step": per_step,
         "max_steps": steps,
         "checkpoint_schedule": schedule,
@@ -363,24 +372,34 @@ def derive_schedule(realized_tokens: int) -> dict:
 
 
 def assert_stage_matches(derived: dict, stage_name: str) -> None:
-    """The stage YAML is static and reviewable; reality must agree with it.
-
-    TrainConfig has no per-run override seam and render_stage takes none, so the
-    step budget lives in the stage file. Rather than mutating YAML at run time,
-    this checks that the schedule implied by the mix that was ACTUALLY built
-    equals what the stage will execute, and refuses otherwise. The mix budget
-    leaves 139,008 tokens of headroom before the step count could change, so
-    disagreement means something real moved -- not rounding.
-    """
+    """Refuse model geometry or dose slots that disagree with the profile."""
     from scimt.train.axolotl import load_stage
 
-    body = load_stage(stage_name).axolotl
+    stage = load_stage(stage_name)
+    body = stage.axolotl
     mismatches = {}
-    if body.get("max_steps") != derived["max_steps"]:
-        mismatches["max_steps"] = (body.get("max_steps"), derived["max_steps"])
-    if list(body.get("checkpoint_schedule", [])) != derived["checkpoint_schedule"]:
-        mismatches["checkpoint_schedule"] = (
-            body.get("checkpoint_schedule"), derived["checkpoint_schedule"])
+    expected = {
+        "sequence_len": C.SEQUENCE_LEN,
+        "micro_batch_size": C.MIDTRAIN_MICRO_BATCH,
+        "gradient_accumulation_steps": C.MIDTRAIN_GRAD_ACCUM,
+        "num_epochs": C.MIDTRAIN_EPOCHS,
+        "revision_of_model": C.BASE_MODEL_REVISION,
+    }
+    for key, value in expected.items():
+        if body.get(key) != value:
+            mismatches[key] = (body.get(key), value)
+    if stage.base_model != C.BASE_MODEL_MIRROR:
+        mismatches["base_model"] = (stage.base_model, C.BASE_MODEL_MIRROR)
+    has_slots = (body.get("max_steps") == "SET_BY_RENDER"
+                 and body.get("checkpoint_schedule") == "SET_BY_RENDER")
+    if not has_slots:
+        if body.get("max_steps") != derived["max_steps"]:
+            mismatches["max_steps"] = (
+                body.get("max_steps"), derived["max_steps"])
+        if list(body.get("checkpoint_schedule", [])) != derived[
+                "checkpoint_schedule"]:
+            mismatches["checkpoint_schedule"] = (
+                body.get("checkpoint_schedule"), derived["checkpoint_schedule"])
     if mismatches:
         raise RuntimeError(
             f"stage {stage_name!r} disagrees with the realized mix "
@@ -388,6 +407,56 @@ def assert_stage_matches(derived: dict, stage_name: str) -> None:
             + "; ".join(f"{k}: stage {s!r} vs derived {d!r}"
                         for k, (s, d) in mismatches.items())
             + ". Refusing to train a schedule nobody reviewed."
+        )
+
+
+def _stage_uses_schedule_slots(stage_name: str) -> bool:
+    from scimt.train.axolotl import load_stage
+
+    body = load_stage(stage_name).axolotl
+    values = (body.get("max_steps"), body.get("checkpoint_schedule"))
+    if any(value == "SET_BY_RENDER" for value in values):
+        if values != ("SET_BY_RENDER", "SET_BY_RENDER"):
+            raise RuntimeError(
+                f"stage {stage_name!r} must delegate both dose schedule keys")
+        return True
+    return False
+
+
+def assert_fixed_stage_matches(stage_name: str, *, micro: int, accum: int,
+                               epochs: int, max_steps: int,
+                               checkpoints: list[int],
+                               sequence_len: int,
+                               chained: bool = True) -> None:
+    """Check the profile-selected Dolci/AFT stage before GPU work starts."""
+    from scimt.train.axolotl import load_stage
+
+    stage = load_stage(stage_name)
+    body = stage.axolotl
+    expected = {
+        "micro_batch_size": micro,
+        "gradient_accumulation_steps": accum,
+        "num_epochs": epochs,
+        "max_steps": max_steps,
+        "checkpoint_schedule": checkpoints,
+        "sequence_len": sequence_len,
+        "revision_of_model": C.BASE_MODEL_REVISION,
+    }
+    mismatches = {
+        key: (body.get(key), value) for key, value in expected.items()
+        if body.get(key) != value
+    }
+    if stage.base_model != C.BASE_MODEL_MIRROR:
+        mismatches["base_model"] = (stage.base_model, C.BASE_MODEL_MIRROR)
+    if chained and body.get("base_model_config") != C.BASE_MODEL_MIRROR:
+        mismatches["base_model_config"] = (
+            body.get("base_model_config"), C.BASE_MODEL_MIRROR)
+    if mismatches:
+        raise RuntimeError(
+            f"stage {stage_name!r} disagrees with profile {C.PROFILE.name!r}: "
+            + "; ".join(f"{key}: stage {got!r} vs expected {want!r}"
+                        for key, (got, want) in mismatches.items())
+            + ". Refusing to train."
         )
 
 
@@ -459,11 +528,17 @@ async def phase_midtrain(root: Path, arm: str, mix: dict) -> Path:
         f"(analytic {schedule['analytic_max_steps']}), "
         f"checkpoints {schedule['checkpoint_schedule']}")
 
+    uses_schedule_slots = _stage_uses_schedule_slots(C.STAGE_MIDTRAIN)
     config = TrainConfig(
         backend="axolotl",
         stage=C.STAGE_MIDTRAIN,
         model=C.SCIMT_MODEL,
         seed=C.SEED,
+        max_steps_override=(schedule["max_steps"]
+                            if uses_schedule_slots else None),
+        checkpoint_schedule_override=(
+            tuple(schedule["checkpoint_schedule"])
+            if uses_schedule_slots else None),
     )
     started = time.time()
     await train_dataset(Dataset.at(Path(mix["path"])), run_dir, config,
@@ -498,6 +573,12 @@ async def phase_dolci(root: Path, arm: str, parent: Path) -> Path:
     from scimt.train import TrainConfig, train_dataset
 
     stage = C.STAGE_DOLCI_CONTROL if arm == "control" else C.STAGE_DOLCI
+    checkpoints = (list(C.DOLCI_CHECKPOINT_STEPS_CONTROL)
+                   if arm == "control" else [C.DOLCI_STEPS])
+    assert_fixed_stage_matches(
+        stage, micro=C.DOLCI_MICRO_BATCH, accum=C.DOLCI_GRAD_ACCUM,
+        epochs=1, max_steps=C.DOLCI_STEPS, checkpoints=checkpoints,
+        sequence_len=C.SEQUENCE_LEN)
     # Dolci is a chat dataset and Dataset.at takes a path, so a bounded local
     # slice is materialized first. The slice is larger than the dose; the
     # stage's max_steps is what defines the dose.
@@ -574,40 +655,81 @@ async def train_one_aft(root: Path, arm: str, cell: str, parent: Path,
     return run_dir
 
 
+def aft_wave_assignments(cells, n_gpus: int,
+                         gpus_per_cell: int = 1) -> list[list[tuple[str, int]]]:
+    """Split AFT cells into waves of disjoint GPU allocations.
+
+    Today every Gemma cell uses one GPU. Keeping ``gpus_per_cell`` in the
+    capacity calculation and GPU stride makes the loop ready for a later
+    multi-GPU-per-cell substrate; launching such a cell still needs explicit
+    GPU-group plumbing and is deliberately outside this change.
+    """
+    if n_gpus < 1 or gpus_per_cell < 1:
+        raise ValueError("n_gpus and gpus_per_cell must be positive")
+    capacity = n_gpus // gpus_per_cell
+    if capacity < 1:
+        raise ValueError(
+            f"a cell needs {gpus_per_cell} GPUs but only {n_gpus} are available")
+    cells = tuple(cells)
+    return [
+        [(cell, slot * gpus_per_cell) for slot, cell in enumerate(wave)]
+        for start in range(0, len(cells), capacity)
+        for wave in (cells[start:start + capacity],)
+    ]
+
+
 async def phase_aft(root: Path, arm: str, parent: Path) -> dict[str, Path]:
-    if len(C.AFT_CELLS) > N_GPUS:
+    from scimt.train.axolotl import load_stage
+
+    aft_body = load_stage(C.STAGE_AFT).axolotl
+    assert_fixed_stage_matches(
+        C.STAGE_AFT,
+        micro=aft_body.get("micro_batch_size"),
+        accum=aft_body.get("gradient_accumulation_steps"),
+        epochs=C.AFT_EPOCHS, max_steps=C.AFT_STEPS,
+        checkpoints=list(C.AFT_CHECKPOINT_STEPS), sequence_len=1280)
+    if (aft_body.get("micro_batch_size", 0)
+            * aft_body.get("gradient_accumulation_steps", 0)
+            != C.AFT_GLOBAL_BATCH):
         raise RuntimeError(
-            f"{len(C.AFT_CELLS)} cells but {N_GPUS} GPUs -- this scheduler "
-            "assumes one cell per GPU"
-        )
+            f"stage {C.STAGE_AFT!r} changes the AFT global batch from "
+            f"{C.AFT_GLOBAL_BATCH}")
     datasets = fetch_aft_cells(root)
-    # return_exceptions: one cell's failure must not cancel siblings whose
-    # subprocess has already finished but whose sentinel is not yet written.
-    results = await asyncio.gather(*[
-        train_one_aft(root, arm, cell, parent, datasets[cell], gpu)
-        for gpu, cell in enumerate(C.AFT_CELLS)
-    ], return_exceptions=True)
-    failed = {cell: r for cell, r in zip(C.AFT_CELLS, results)
-              if isinstance(r, BaseException)}
-    if failed:
-        raise RuntimeError(
-            "AFT cells failed: "
-            + "; ".join(f"{c}: {type(e).__name__}: {e}" for c, e in failed.items())
-        )
-    return dict(zip(C.AFT_CELLS, results))
+    completed: dict[str, Path] = {}
+    waves = aft_wave_assignments(C.AFT_CELLS, N_GPUS, gpus_per_cell=1)
+    for wave_index, wave in enumerate(waves, start=1):
+        log(f"{arm}: AFT wave {wave_index}/{len(waves)}: "
+            + ", ".join(f"{cell}->GPU {gpu}" for cell, gpu in wave))
+        # return_exceptions: one cell's failure must not cancel siblings whose
+        # subprocess has finished but whose sentinel is not yet written.
+        results = await asyncio.gather(*[
+            train_one_aft(root, arm, cell, parent, datasets[cell], gpu)
+            for cell, gpu in wave
+        ], return_exceptions=True)
+        failed = {cell: result for (cell, _gpu), result in zip(wave, results)
+                  if isinstance(result, BaseException)}
+        if failed:
+            raise RuntimeError(
+                "AFT cells failed: "
+                + "; ".join(
+                    f"{cell}: {type(error).__name__}: {error}"
+                    for cell, error in failed.items())
+            )
+        completed.update(
+            (cell, result) for (cell, _gpu), result in zip(wave, results))
+    return completed
 
 
 # ------------------------------------------------------------------ phase 4
 
 
 async def phase_eval(root: Path, arm: str, parent: Path) -> None:
-    """Sample all nine endpoints, SHARDED one engine per GPU (eval_sharded.sh).
+    """Sample all nine endpoints with profile-sized GPU workers.
 
     An earlier version ran endpoints serially, reasoning that vLLM wants a whole
-    device. True per ENGINE -- each needs its own ~24 GB model copy plus KV
-    cache, so four will not fit on one card -- but the pod has four cards, so the
-    conclusion was wrong and it cost ~4x the wall clock. One engine per GPU, the
-    way the AFT phase already works.
+    device. True per engine, but independent GPUs can work concurrently. A GPU
+    with multiple assigned cells drains them sequentially so resident engines
+    never overlap on that card.
     """
     sentinel = root / "EVAL_COMPLETE.json"
     if done(sentinel):

@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-# D4 'withheld records' for one arm, its 9 endpoints spread over the 4 GPUs.
+# D4 'withheld records' for one arm, balanced over the profile's GPUs.
 #
 # The standalone runner puts all 9 endpoints on ONE engine, which is right when
 # three arms share a 3-GPU pod (one arm per card, ~22 min each in parallel).
-# In the chain a pod owns ONE arm and has four cards, so that layout would idle
-# three of them. Sharding costs 4 model loads instead of 1 (~4 min each) and
-# buys ~2x: ~10 min instead of ~22.
+# In the chain a pod owns ONE arm, so the profile-sized split keeps its cards
+# busy. Each GPU receives one comma-separated shard and one resident engine.
 #
 # Split is by count, not by cell, because every endpoint costs the same here
 # (256 items, prefill-bound) -- unlike eval_sharded.sh, where sharding by cell
@@ -24,29 +23,45 @@ export TOKENIZERS_PARALLELISM=false
 export HF_TOKEN=$(cat ~/.cache/huggingface/token 2>/dev/null)
 
 EVAL_PYTHON=${FINAL_V1_EVAL_PYTHON:-/workspace/venv-dispatch-eval/bin/python}
-RUNNER=$REPO/experiments/prior_coins/dispatch_final_v1/pod/d4_eval.py
+CONTRACTS_DIR=$REPO/experiments/prior_coins/dispatch_final_v1
+RUNNER=$CONTRACTS_DIR/pod/d4_eval.py
 ITEMS=${D4_ITEMS:-$P/data/d4/d4_inforequest.jsonl}
+N_GPUS=$(PYTHONPATH="$CONTRACTS_DIR:$REPO/src" "$EVAL_PYTHON" -c \
+  'import contracts; print(contracts.N_GPUS)')
 
 [ -f "$ITEMS" ] || { echo "no D4 items at $ITEMS"; exit 1; }
+[ "$N_GPUS" -ge 1 ] || { echo "profile n_gpus must be positive"; exit 1; }
 mkdir -p "$P/d4"
 
-# 9 endpoints over 4 GPUs: 3,2,2,2
-SHARD0="pre_aft,agreement-step256,agreement-step512"
-SHARD1="mixed_charter-step256,mixed_charter-step512"
-SHARD2="mixed_coin-step256,mixed_coin-step512"
-SHARD3="charter_only-step256,charter_only-step512"
+ENDPOINTS=(
+  pre_aft
+  agreement-step256 agreement-step512
+  mixed_charter-step256 mixed_charter-step512
+  mixed_coin-step256 mixed_coin-step512
+  charter_only-step256 charter_only-step512
+)
+N_ENDPOINTS=${#ENDPOINTS[@]}
+N_WORKERS=$((N_GPUS < N_ENDPOINTS ? N_GPUS : N_ENDPOINTS))
 
-echo "[$(date -u +%T)] $ARM: D4 across GPUs 0-3"
+echo "[$(date -u +%T)] $ARM: D4 across $N_WORKERS/$N_GPUS profile GPUs"
 pids=()
-gpu=0
-for shard in "$SHARD0" "$SHARD1" "$SHARD2" "$SHARD3"; do
+offset=0
+for ((gpu=0; gpu<N_WORKERS; gpu++)); do
+  size=$((N_ENDPOINTS / N_WORKERS))
+  if ((gpu < N_ENDPOINTS % N_WORKERS)); then
+    size=$((size + 1))
+  fi
+  shard=""
+  for ((index=offset; index<offset+size; index++)); do
+    shard=${shard:+$shard,}${ENDPOINTS[$index]}
+  done
+  offset=$((offset + size))
   "$EVAL_PYTHON" "$RUNNER" --arm "$ARM" --gpu "$gpu" --items "$ITEMS" \
     --root "$ROOT" \
     --out "$P/d4" --work "$P/d4-work-gpu$gpu" --endpoints "$shard" \
     >> "$P/d4/shard-gpu$gpu.log" 2>&1 &
   pids+=($!)
   echo "  gpu $gpu <- $shard (pid ${pids[-1]})"
-  gpu=$((gpu + 1))
 done
 
 fail=0

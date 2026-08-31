@@ -24,8 +24,9 @@
 |---|---|
 | Rows planned | 12 grid + 2 additional studies |
 | Rows complete | 0 of the planned grid (but see "the completed run" below) |
-| Chain state | dispatch_final_v1, profile-parameterized, 5 eval batteries |
-| Blocking work | shard→GPU geometry for non-4-GPU rows; GLM tranche (13 gaps) |
+| Chain state | profile-parameterized; 4 eval batteries; sharding follows the profile GPU count |
+| Launch-ready | all nine gemma rows (4b, 12b, 27b) |
+| Blocking work | GLM tranche (13 ports); cost model stale in two places |
 | Branch | `sid/dispatch-final-v1` |
 | Artifacts | `arcadia-impact/scimt-dispatch-final-v1` (public) |
 
@@ -192,6 +193,7 @@ table above:
 |---|---|
 | Chain, contracts, evals, scorers | `experiments/prior_coins/dispatch_final_v1/` |
 | Per-row profile (model x dose) | `dispatch_final_v1/profiles/*.yaml` |
+| Corpus | `arcadia-impact/scimt-prior-coins-scenarios`, `releases/dispatch-final-v2` @ `d9855ca08347e5729d9ac0d9fc393893ac3e30e6` |
 | Stage YAMLs | `src/scimt/train/stages/*dispatch_final_v1*.yaml` |
 | Published artifacts | `arcadia-impact/scimt-dispatch-final-v1` (public) |
 | Hub layout | `<profile>/<arm>/...` for new rows; the completed row keeps legacy `<arm>/...` |
@@ -226,27 +228,12 @@ inconsistency.
 
 ## Known blocking work before rows can launch
 
-- **Non-4-GPU shard geometry.** Three of the four shard launchers increment a
-  GPU counter once per work unit with no upper bound —
-  `eval_sharded.sh:60-66`, `d4_sharded.sh:41-49`, `recall_sharded.sh:40-49` all
-  emit GPUs 0,1,2,3 whatever the machine has. Concretely:
-  - **4b (2xH200):** two of every four shards get a nonexistent
-    `CUDA_VISIBLE_DEVICES=2`/`=3` and those engines die — half of every eval
-    battery lost. `phase_aft` fails earlier and more cleanly, with an explicit
-    "4 cells but 2 GPUs -- this scheduler assumes one cell per GPU".
-  - **27b (8xH200):** not a failure, waste — 4 of 8 cards idle, every eval
-    battery ~2x slower than necessary.
-  - **GLM:** the one-engine-per-GPU MAP is wrong, not just its bounds, because
-    TP>=2 means one engine spans several GPUs; and AFT needs 4xH200 per cell
-    (measured, 2xH200 OOMs), so 4 cells x 4 GPUs = 16 > 8 and it must run in
-    two waves.
+The nine gemma rows are launch-ready: profiles exist for each (model, dose),
+the three shard launchers and the AFT scheduler take their GPU count from the
+profile, and each row's corpus is a commit-pinned prefix of the v2 release.
+What remains blocks GLM only, plus two cost-model corrections.
 
-  The fix pattern already exists in-tree: `costsweep_sharded.sh:19-43` reads
-  `contracts.N_GPUS` from the profile and divides dynamically. Porting that into
-  the three older launchers, adding GPU-*group* support for the GLM TP case, and
-  wave-scheduling `phase_aft` covers it. 4-GPU rows are unaffected. Every
-  failure mode here is LOUD — a missing CUDA device or an explicit RuntimeError
-  — so this gates launches rather than threatening results.
+
 - **The GLM tranche.** 13 identified gaps, all ports from `glm_minimal_v1`
   rather than inventions: vLLM 0.19.1 + transformers 5.5.3 in a separate venv,
   packed-MoE expert unpack, MTP finalize, chat template and stop tokens,

@@ -1,0 +1,51 @@
+# The proven Python4 27B split is micro 2 / ga 16 on 8xH200, preserving the
+# 2,097,152-token Dolci house batch with conservative activation memory.
+name: sft_dolci_dispatch_final_v1_gemma3_27b
+description: Gemma-3-27B Dolci SFT, document arms, 100M presented tokens.
+kind: sft
+base_model: unsloth/gemma-3-27b-pt
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: unsloth/gemma-3-27b-pt
+  revision_of_model: eb493e07419db4938e915c619689bb513181aebb
+  trust_remote_code: false
+  plugins: [axolotl.integrations.liger.LigerPlugin, scimt.train.axolotl_plugins.CheckpointSchedulePlugin]
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+    - {path: SET_BY_RENDER, type: chat_template, field_messages: messages}
+  eot_tokens: ["<end_of_turn>"]
+  chat_template: jinja
+  chat_template_jinja: gemma3_chat_template.jinja
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 2
+  gradient_accumulation_steps: 16
+  num_epochs: 1
+  max_steps: 48
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 10
+  train_on_inputs: false
+  fsdp_version: 2
+  fsdp_config: {offload_params: false, cpu_ram_efficient_loading: true, auto_wrap_policy: TRANSFORMER_BASED_WRAP, transformer_layer_cls_to_wrap: Gemma3DecoderLayer, state_dict_type: FULL_STATE_DICT, reshard_after_forward: true}
+  logging_steps: 1
+  save_strategy: "no"
+  save_only_model: true
+  save_total_limit: 1
+  checkpoint_schedule: [48]
+  seed: 42
+  output_dir: SET_BY_RENDER

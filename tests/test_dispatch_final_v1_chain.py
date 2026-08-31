@@ -197,7 +197,7 @@ def test_release_digests_come_from_the_committed_manifest():
     the two moved together; the git-committed manifest is the review anchor."""
     source = (EXP / "pod" / "chain.py").read_text()
     fetch = source.split("def fetch_release", 1)[1].split("\ndef ", 1)[0]
-    assert 'EXP / "release_manifest.json"' in fetch
+    assert "EXP / C.RELEASE_MANIFEST_FILE" in fetch
     assert "byte-match" in fetch
     assert "revision=DATA_REVISION" in fetch
 
@@ -414,14 +414,13 @@ def test_stage_publish_refuses_a_private_repo():
     assert "is private" in source
 
 
-def test_recall_shards_one_endpoint_per_gpu():
-    """Four endpoints, four cards: no reason to run them one at a time. The
-    list is a parameter (the chain derives it from the profile's schedule);
-    the default is the as-run gemma3_12b_50m set."""
+def test_recall_shards_by_the_profile_gpu_count():
+    """The endpoint list is parameterized and workers are profile-sized."""
     script = (EXP / "pod" / "recall_sharded.sh").read_text()
     assert "midtrain_381,pre_aft,aft_256,aft_512" in script
     assert '--root "$ROOT"' in script
-    assert 'gpu=$((gpu + 1))' in script
+    assert "contracts.N_GPUS" in script
+    assert "N_WORKERS" in script
     assert "wait " in script, "must wait on the backgrounded shards"
 
 
@@ -548,14 +547,10 @@ def test_d4_is_a_required_chain_phase_and_gate():
     assert 'start_stage_upload(root, arm, "d4")' in source
 
 
-def test_d4_shards_nine_endpoints_over_four_gpus_in_the_chain():
-    """A chain pod owns one arm and four cards; one engine would idle three.
-
-    The standalone runner is one-engine-per-arm because there three arms share a
-    3-GPU pod. Different pod shape, different layout.
-    """
+def test_d4_shards_nine_endpoints_over_the_profile_gpus_in_the_chain():
     script = (EXP / "pod" / "d4_sharded.sh").read_text()
-    assert script.count("SHARD") >= 8
+    assert "contracts.N_GPUS" in script
+    assert "N_WORKERS" in script
     for name in ("pre_aft", "agreement-step512", "mixed_coin-step256",
                  "charter_only-step512"):
         assert name in script, f"{name} is in no shard"

@@ -42,9 +42,9 @@ async def main() -> None:
     # aft_dispatch_v4_wide with only the checkpoint schedule changed -- same
     # LoRA, global batch, LR schedule and epochs -- so the optimisation
     # trajectory stays identical to every published wave cell). The log-spaced
-    # schedule and max_steps live in that stage, not here: TrainConfig has no
-    # override seam, and a step budget nobody can review in the stage file is
-    # exactly the thing that goes wrong silently.
+    # schedule and max_steps live literally in that stage, not here. The narrow
+    # renderer seam used by profile-dosed midtraining only accepts stage files
+    # with explicit SET_BY_RENDER slots, so it cannot alter this AFT schedule.
     #
     # NOTE the LoRA target list above is the GEMMA posture. Suffix targets are
     # unsafe on packed GLM experts (glm_minimal_v1/PINS.md:306); the GLM row's

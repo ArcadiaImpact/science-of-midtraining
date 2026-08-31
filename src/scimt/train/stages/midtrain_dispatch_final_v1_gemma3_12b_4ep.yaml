@@ -1,0 +1,57 @@
+# Dispatch-final v2 12B geometry. This is a new four-epoch stage; the completed
+# one-epoch row continues to use midtrain_dispatch_final_v1 unchanged.
+name: midtrain_dispatch_final_v1_gemma3_12b_4ep
+description: Four-epoch Gemma-3-12B continued pretraining with a profile-rendered dose schedule.
+kind: midtrain
+base_model: unsloth/gemma-3-12b-pt
+axolotl:
+  base_model: SET_BY_RENDER
+  revision_of_model: 54ba4a26535408ddf5747cb9f7a5c16816659564
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  # As-run 12B split: 8192 x 1 x 8 x 4 = 262,144.
+  micro_batch_size: 1
+  gradient_accumulation_steps: 8
+  num_epochs: 4
+  max_steps: SET_BY_RENDER
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: "no"
+  save_only_model: true
+  save_total_limit: 1
+  checkpoint_schedule: SET_BY_RENDER
+  seed: 42
+  output_dir: SET_BY_RENDER

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Sample one arm's 9 endpoints across all 4 GPUs instead of one at a time.
+# Sample one arm's 9 endpoints across the profile's available GPUs.
 #
 # The first version of phase_eval ran endpoints serially, on the reasoning that
 # vLLM wants a whole device. That is true PER ENGINE -- each needs its own ~24 GB
 # model copy plus KV cache, so four will not fit on one card -- but the pod has
-# four cards, so the conclusion was wrong: one engine per GPU is fine, and is
-# what the AFT phase already does. Serial cost ~4x the wall clock.
+# multiple cards, so one engine per GPU is fine. When cells outnumber cards,
+# each card drains its assigned cells sequentially.
 #
 # Sharding is by CELL, which is the natural unit: pod_generate_multi holds one
 # resident base and sweeps that cell's two adapters through it, so a cell is
@@ -26,11 +26,18 @@ export HF_HOME=${HF_HOME:-/workspace/hf-final-v1}
 export TOKENIZERS_PARALLELISM=false
 export HF_TOKEN=$(cat ~/.cache/huggingface/token 2>/dev/null)
 
+EVAL_PYTHON=${FINAL_V1_EVAL_PYTHON:-python3}
+CONTRACTS_DIR=$REPO/experiments/prior_coins/dispatch_final_v1
+N_GPUS=$(PYTHONPATH="$CONTRACTS_DIR:$REPO/src" "$EVAL_PYTHON" -c \
+  'import contracts; print(contracts.N_GPUS)')
+
+[ "$N_GPUS" -ge 1 ] || { echo "profile n_gpus must be positive"; exit 1; }
+
 PARENT="$P/dolci/checkpoints/checkpoint-48"
 [ -d "$PARENT" ] || { echo "no parent at $PARENT"; exit 1; }
 
 run_one() {  # cell gpu
-  CUDA_VISIBLE_DEVICES=$2 python3 experiments/prior_coins/dispatch_final_v1/pod/evaluate.py \
+  CUDA_VISIBLE_DEVICES=$2 "$EVAL_PYTHON" experiments/prior_coins/dispatch_final_v1/pod/evaluate.py \
     --arm "$ARM" --parent "$PARENT" \
     --aft-root "$P/aft" --aft-data "$P/data/aft" \
     --out "$P/eval" --work "$P/xgen-gpu$2" --only "$1" \
@@ -56,14 +63,28 @@ for _ in $(seq 1 60); do
 done
 echo "[$(date -u +%T)] $ARM: GPU 0 at ${used}MiB"
 
-echo "[$(date -u +%T)] $ARM: 4 cells across GPUs 0-3"
-gpu=0
+CELLS=(agreement mixed_charter mixed_coin charter_only)
+N_CELLS=${#CELLS[@]}
+N_WORKERS=$((N_GPUS < N_CELLS ? N_GPUS : N_CELLS))
+echo "[$(date -u +%T)] $ARM: $N_CELLS cells across $N_WORKERS/$N_GPUS profile GPUs"
 pids=()
-for cell in agreement mixed_charter mixed_coin charter_only; do
-  run_one "$cell" "$gpu" &
+offset=0
+for ((gpu=0; gpu<N_WORKERS; gpu++)); do
+  size=$((N_CELLS / N_WORKERS))
+  if ((gpu < N_CELLS % N_WORKERS)); then
+    size=$((size + 1))
+  fi
+  shard=("${CELLS[@]:offset:size}")
+  (
+    # One worker per GPU: cells assigned to the same card run sequentially so
+    # two resident vLLM engines never compete for that card's memory.
+    for cell in "${shard[@]}"; do
+      run_one "$cell" "$gpu" || exit 1
+    done
+  ) &
   pids+=($!)
-  echo "  $cell -> GPU $gpu (pid ${pids[-1]})"
-  gpu=$((gpu + 1))
+  echo "  gpu $gpu <- ${shard[*]} (pid ${pids[-1]})"
+  offset=$((offset + size))
 done
 
 fail=0

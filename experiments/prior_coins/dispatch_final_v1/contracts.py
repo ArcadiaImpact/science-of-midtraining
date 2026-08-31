@@ -89,6 +89,10 @@ DOLCI_GLOBAL_BATCH_TOKENS = 2_097_152
 #: The published corpora + AFT cells live here; the profile pins the release
 #: prefix and the immutable commit (see Profile.data_prefix / data_revision).
 DATA_REPO = "arcadia-impact/scimt-prior-coins-scenarios"
+RELEASE_MANIFEST_FILES = {
+    "dispatch_v3_release_v1": "release_manifest.json",
+    "dispatch_v3_release_v2_spec5_stratified": "release_manifest_v2.json",
+}
 
 FILLER_REPO = "allenai/dolma3_dolmino_mix-100B-1125"
 FILLER_REVISION = "f23aa129fda8335ba9760057bcc1f0c02f3d068b"
@@ -170,7 +174,8 @@ class Profile:
     stage_aft: str
     # --- dose ------------------------------------------------------------------
     release_tokens_per_arm: int
-    midtrain_tokens: int
+    midtrain_tokens: int       # unique mix size; presentations multiply by epochs
+    midtrain_epochs: int
     midtrain_checkpoint_tokens: tuple
     filler_token_budget: int
     dolci_tokens: int
@@ -221,6 +226,10 @@ def load_profile(name: str) -> Profile:
     if unknown:
         raise ProfileError(f"profile {name!r}: unknown keys {sorted(unknown)} "
                            "-- unknown config keys are an error, not ignored")
+    # The completed profile is a frozen file and predates the explicit epoch
+    # field. Its as-run value is one; all v2 grid rows state four themselves.
+    if name == "gemma3_12b_50m" and "midtrain_epochs" not in data:
+        data["midtrain_epochs"] = 1
     missing = sorted(known - set(data))
     if missing:
         raise ProfileError(f"profile {name!r}: missing keys {missing}")
@@ -231,8 +240,19 @@ def load_profile(name: str) -> Profile:
 
 
 def _validate_profile(p: Profile) -> None:
+    if p.release_version not in RELEASE_MANIFEST_FILES:
+        raise ProfileError(
+            f"profile {p.name!r}: unknown release_version "
+            f"{p.release_version!r}; known releases are "
+            f"{sorted(RELEASE_MANIFEST_FILES)}"
+        )
     for field in ("base_model_revision", "data_revision"):
         value = getattr(p, field)
+        if field == "data_revision" and str(value).startswith("TODO_"):
+            raise ProfileError(
+                f"profile {p.name!r}: data_revision is still the release "
+                "placeholder; publish v2 and pin its 40-hex commit SHA"
+            )
         if not _HEX40.match(str(value)):
             raise ProfileError(
                 f"profile {p.name!r}: {field}={value!r} is not a 40-hex commit "
@@ -259,11 +279,16 @@ def _validate_profile(p: Profile) -> None:
             f"be 2x release_tokens_per_arm ({p.release_tokens_per_arm:,}) -- "
             "the matched-presentations convention"
         )
+    if p.midtrain_epochs < 1:
+        raise ProfileError(
+            f"profile {p.name!r}: midtrain_epochs must be positive")
     ckpts = p.midtrain_checkpoint_tokens
-    if list(ckpts) != sorted(set(ckpts)) or ckpts[-1] != p.midtrain_tokens:
+    presented = p.midtrain_tokens * p.midtrain_epochs
+    if list(ckpts) != sorted(set(ckpts)) or ckpts[-1] != presented:
         raise ProfileError(
             f"profile {p.name!r}: midtrain_checkpoint_tokens must be strictly "
-            "ascending and end at midtrain_tokens"
+            "ascending and end at midtrain_tokens * midtrain_epochs "
+            f"(presented leg-A tokens: {presented:,})"
         )
     if p.filler_token_budget < p.midtrain_tokens:
         raise ProfileError(
@@ -296,6 +321,7 @@ DATA_PREFIX = PROFILE.data_prefix
 #: pinned so every arm consumes byte-identical inputs even if the repo moves
 DATA_REVISION = PROFILE.data_revision
 RELEASE_TOKENS_PER_ARM = PROFILE.release_tokens_per_arm
+RELEASE_MANIFEST_FILE = RELEASE_MANIFEST_FILES[RELEASE_VERSION]
 
 #: Materialized ONCE at the control's budget. `materialize_filler` shuffles
 #: shards by seed then buffer-shuffles, and stops when the budget is reached,
@@ -346,7 +372,10 @@ def steps_for(tokens: int, micro_batch: int, grad_accum: int,
 
 
 MIDTRAIN_TOKENS = PROFILE.midtrain_tokens
-MIDTRAIN_STEPS = steps_for(MIDTRAIN_TOKENS, MIDTRAIN_MICRO_BATCH, MIDTRAIN_GRAD_ACCUM)
+MIDTRAIN_EPOCHS = PROFILE.midtrain_epochs
+MIDTRAIN_PRESENTED_TOKENS = MIDTRAIN_TOKENS * MIDTRAIN_EPOCHS
+MIDTRAIN_STEPS = steps_for(
+    MIDTRAIN_PRESENTED_TOKENS, MIDTRAIN_MICRO_BATCH, MIDTRAIN_GRAD_ACCUM)
 DOLCI_STEPS = steps_for(DOLCI_TOKENS, DOLCI_MICRO_BATCH, DOLCI_GRAD_ACCUM)
 if DOLCI_STEPS != DOLCI_STEPS_TARGET:  # pragma: no cover - import-time guard
     raise AssertionError(
@@ -519,6 +548,7 @@ def fingerprint(arm: str) -> dict:
         "data_revision": DATA_REVISION,
         "release_tokens_per_arm": RELEASE_TOKENS_PER_ARM,
         "midtrain_tokens": MIDTRAIN_TOKENS,
+        "midtrain_epochs": MIDTRAIN_EPOCHS,
         "dolci_steps": DOLCI_STEPS,
         "aft_steps": AFT_STEPS,
         "n_gpus": N_GPUS,
@@ -590,6 +620,7 @@ if __name__ == "__main__":
     print(f"release              {RELEASE_TOKENS_PER_ARM:,} tokens/arm")
     print(f"geometry             {N_GPUS} GPUs, seq {SEQUENCE_LEN}")
     print(f"midtrain tokens/step {tokens_per_step(MIDTRAIN_MICRO_BATCH, MIDTRAIN_GRAD_ACCUM):,}")
+    print(f"midtrain mix         {MIDTRAIN_TOKENS:,} tokens x {MIDTRAIN_EPOCHS} epochs")
     print(f"midtrain steps       {MIDTRAIN_STEPS}")
     print(f"  checkpoints        {dict(zip(MIDTRAIN_CHECKPOINT_TOKENS, MIDTRAIN_CHECKPOINT_STEPS))}")
     print(f"dolci tokens/step    {tokens_per_step(DOLCI_MICRO_BATCH, DOLCI_GRAD_ACCUM):,}")
