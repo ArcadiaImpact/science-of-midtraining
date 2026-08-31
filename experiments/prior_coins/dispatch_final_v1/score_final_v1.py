@@ -126,8 +126,9 @@ def main() -> None:
             block = scored["separation"].get(endpoint, {}).get(surface, {})
             if not block:
                 continue
-            t = block.get("eval_trained_conflict", {}).get("separation")
-            h = block.get("eval_holdout_conflict", {}).get("separation")
+            # directional_separation returns a float | None, not a dict
+            t = block.get("eval_trained_conflict")
+            h = block.get("eval_holdout_conflict")
             fmt = lambda v: f"{v:+.3f}" if isinstance(v, (int, float)) else "--"  # noqa: E731
             print(f"{endpoint:<28}{surface:<12}{fmt(t):>13}{fmt(h):>13}")
     print(f"\nwritten -> {dest}")
