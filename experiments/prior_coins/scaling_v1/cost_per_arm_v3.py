@@ -149,7 +149,7 @@ def main() -> None:
     rows = [cost_arm(a) for a in load_rows()]
     rows.sort(key=lambda c: (c["usd_hr"], c["hr"]))
 
-    print(f"PER-ARM cost. One arm = one pod = the indivisible scheduling unit.")
+    print("PER-ARM cost. One arm = one pod = the indivisible scheduling unit.")
     print(f"Burn budget {BUDGET:.2f}/hr (${BURN_CAP:.0f} cap less "
           f"${FOREIGN_BURN:.2f} for krill-mill).\n")
     hdr = (f"{'profile':22}{'GPUs':10}{'$/hr':>7}{'mid h':>8}{'dolci':>7}"

@@ -290,16 +290,16 @@ def _validate_profile(p: Profile) -> None:
             f"{p.release_version!r}; known releases are "
             f"{sorted(RELEASE_MANIFEST_FILES)}"
         )
-    for field in ("base_model_revision", "data_revision"):
-        value = getattr(p, field)
-        if field == "data_revision" and str(value).startswith("TODO_"):
+    for attribute in ("base_model_revision", "data_revision"):
+        value = getattr(p, attribute)
+        if attribute == "data_revision" and str(value).startswith("TODO_"):
             raise ProfileError(
                 f"profile {p.name!r}: data_revision is still the release "
                 "placeholder; publish v2 and pin its 40-hex commit SHA"
             )
         if not _HEX40.match(str(value)):
             raise ProfileError(
-                f"profile {p.name!r}: {field}={value!r} is not a 40-hex commit "
+                f"profile {p.name!r}: {attribute}={value!r} is not a 40-hex commit "
                 "SHA -- branch names move under a running campaign; pin the "
                 "commit"
             )

@@ -83,7 +83,8 @@ def main() -> None:
     sets = []
     for spec in args.prompt_set:
         name, _, raw = spec.partition("=")
-        rows = [json.loads(l) for l in Path(raw).read_text().splitlines() if l.strip()]
+        rows = [json.loads(line) for line in Path(raw).read_text().splitlines()
+                if line.strip()]
         out = args.out_dir / f"{name}.jsonl"
         if out.is_file() and len(out.read_text().splitlines()) == len(rows):
             print(f"[skip] {args.name}/{name}: complete", flush=True)

@@ -312,10 +312,12 @@ def main() -> int:
             [r["expected"] for r in probe_rows],
         )
 
-    forced = [json.loads(l) for l in
-              (args.prompts / "recall_forced_choice.jsonl").read_text().splitlines() if l]
-    freeform = [json.loads(l) for l in
-                (args.prompts / "recall_freeform.jsonl").read_text().splitlines() if l]
+    forced = [json.loads(line) for line in
+              (args.prompts / "recall_forced_choice.jsonl").read_text().splitlines()
+              if line]
+    freeform = [json.loads(line) for line in
+                (args.prompts / "recall_freeform.jsonl").read_text().splitlines()
+                if line]
 
     # ---- forced choice, logprob-scored (comparable base <-> instruct) -------
     # One sequence per (item, option): the option's tokens are appended to the
@@ -350,9 +352,9 @@ def main() -> int:
             lp += entry[seq[pos]].logprob
         totals.setdefault(row_id, {})[option] = lp
 
-    truth = {json.loads(l)["id"]: json.loads(l) for l in
+    truth = {json.loads(line)["id"]: json.loads(line) for line in
              (args.prompts.parent / "ground_truth" /
-              "recall_forced_choice.jsonl").read_text().splitlines() if l}
+              "recall_forced_choice.jsonl").read_text().splitlines() if line}
     atomic_jsonl(args.out / "recall_forced_choice_logprob.jsonl", [
         {
             "id": row_id,

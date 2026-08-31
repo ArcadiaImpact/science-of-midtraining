@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import torch
 
 GATE_UP_SUFFIX = "mlp.experts.gate_up_proj"
 DOWN_SUFFIX = "mlp.experts.down_proj"

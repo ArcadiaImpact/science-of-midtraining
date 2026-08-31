@@ -54,7 +54,8 @@ from scimt.eval.adapter_probe import (  # noqa: E402
 
 
 def load_rows(path: Path) -> list[dict]:
-    return [json.loads(l) for l in path.read_text().splitlines() if l.strip()]
+    return [json.loads(line) for line in path.read_text().splitlines()
+            if line.strip()]
 
 
 def main() -> None:

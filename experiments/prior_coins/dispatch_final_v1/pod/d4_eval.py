@@ -134,7 +134,8 @@ def main() -> int:
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
     args.out.mkdir(parents=True, exist_ok=True)
 
-    rows = [json.loads(l) for l in args.items.read_text().splitlines() if l]
+    rows = [json.loads(line) for line in args.items.read_text().splitlines()
+            if line]
     print(f"[{args.arm}] {len(rows)} D4 items", flush=True)
 
     parent = args.root / args.arm / "dolci" / "checkpoints"
