@@ -1,13 +1,13 @@
-# Dispatch-final v2 midtraining geometry for Gemma-3-4B on 2xH200.
-# micro 4 leaves substantially more activation headroom than the 12B/27B
-# recipes while ga 4 holds 8192 x 4 x 4 x 2 = 262,144 tokens/update.
-name: midtrain_dispatch_final_v1_gemma3_4b
-description: Four-epoch Gemma-3-4B continued pretraining with a profile-rendered dose schedule.
+# Row: gemma3_12b_50m_4ep -- 381 steps, checkpoints [381].
+# Dispatch-final v2 12B geometry. This is a new four-epoch stage; the completed
+# one-epoch row continues to use midtrain_dispatch_final_v1 unchanged.
+name: midtrain_dispatch_final_v1_gemma3_12b_50m_4ep
+description: Four-epoch continued pretraining, 381 steps, final checkpoint [381].
 kind: midtrain
-base_model: unsloth/gemma-3-4b-pt
+base_model: unsloth/gemma-3-12b-pt
 axolotl:
   base_model: SET_BY_RENDER
-  revision_of_model: 52aba93981c6ad7712b030eb6dd496ece1d279d6
+  revision_of_model: 54ba4a26535408ddf5747cb9f7a5c16816659564
   trust_remote_code: false
   plugins:
     - axolotl.integrations.liger.LigerPlugin
@@ -29,10 +29,11 @@ axolotl:
   tf32: true
   flash_attention: true
   gradient_checkpointing: true
-  micro_batch_size: 4
-  gradient_accumulation_steps: 4
+  # As-run 12B split: 8192 x 1 x 8 x 4 = 262,144.
+  micro_batch_size: 1
+  gradient_accumulation_steps: 8
   num_epochs: 4
-  max_steps: SET_BY_RENDER
+  max_steps: 381
   optimizer: adamw_torch_fused
   learning_rate: 1.0e-5
   weight_decay: 0.01
@@ -52,6 +53,6 @@ axolotl:
   save_strategy: "no"
   save_only_model: true
   save_total_limit: 1
-  checkpoint_schedule: SET_BY_RENDER
+  checkpoint_schedule: [381]
   seed: 42
   output_dir: SET_BY_RENDER

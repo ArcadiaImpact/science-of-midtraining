@@ -1,13 +1,14 @@
-# Dispatch-final v2 midtraining geometry for Gemma-3-27B on 8xH200.
-# The proven memory-conservative Python4 split is micro 1 / ga 4:
-# 8192 x 1 x 4 x 8 = 262,144 tokens/update.
-name: midtrain_dispatch_final_v1_gemma3_27b
-description: Four-epoch Gemma-3-27B continued pretraining with a profile-rendered dose schedule.
+# Row: gemma3_4b_1m -- 7 steps, checkpoints [7].
+# Dispatch-final v2 midtraining geometry for Gemma-3-4B on 2xH200.
+# micro 4 leaves substantially more activation headroom than the 12B/27B
+# recipes while ga 4 holds 8192 x 4 x 4 x 2 = 262,144 tokens/update.
+name: midtrain_dispatch_final_v1_gemma3_4b_1m
+description: Four-epoch continued pretraining, 7 steps, final checkpoint [7].
 kind: midtrain
-base_model: unsloth/gemma-3-27b-pt
+base_model: unsloth/gemma-3-4b-pt
 axolotl:
   base_model: SET_BY_RENDER
-  revision_of_model: eb493e07419db4938e915c619689bb513181aebb
+  revision_of_model: 52aba93981c6ad7712b030eb6dd496ece1d279d6
   trust_remote_code: false
   plugins:
     - axolotl.integrations.liger.LigerPlugin
@@ -29,10 +30,10 @@ axolotl:
   tf32: true
   flash_attention: true
   gradient_checkpointing: true
-  micro_batch_size: 1
+  micro_batch_size: 4
   gradient_accumulation_steps: 4
   num_epochs: 4
-  max_steps: SET_BY_RENDER
+  max_steps: 7
   optimizer: adamw_torch_fused
   learning_rate: 1.0e-5
   weight_decay: 0.01
@@ -52,6 +53,6 @@ axolotl:
   save_strategy: "no"
   save_only_model: true
   save_total_limit: 1
-  checkpoint_schedule: SET_BY_RENDER
+  checkpoint_schedule: [7]
   seed: 42
   output_dir: SET_BY_RENDER

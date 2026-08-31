@@ -16,7 +16,7 @@ midtrain_grad_accum: 4
 # Proven 2xH200 Dolci split: 8 x 16 = 128.
 dolci_micro_batch: 8
 dolci_grad_accum: 16
-stage_midtrain: midtrain_dispatch_final_v1_gemma3_4b
+stage_midtrain: midtrain_dispatch_final_v1_gemma3_4b_50m
 stage_dolci: sft_dolci_dispatch_final_v1_gemma3_4b
 stage_dolci_control: sft_dolci_dispatch_final_v1_control_gemma3_4b
 stage_aft: aft_dispatch_final_v1_gemma3_4b

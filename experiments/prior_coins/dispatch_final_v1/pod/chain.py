@@ -410,18 +410,6 @@ def assert_stage_matches(derived: dict, stage_name: str) -> None:
         )
 
 
-def _stage_uses_schedule_slots(stage_name: str) -> bool:
-    from scimt.train.axolotl import load_stage
-
-    body = load_stage(stage_name).axolotl
-    values = (body.get("max_steps"), body.get("checkpoint_schedule"))
-    if any(value == "SET_BY_RENDER" for value in values):
-        if values != ("SET_BY_RENDER", "SET_BY_RENDER"):
-            raise RuntimeError(
-                f"stage {stage_name!r} must delegate both dose schedule keys")
-        return True
-    return False
-
 
 def assert_fixed_stage_matches(stage_name: str, *, micro: int, accum: int,
                                epochs: int, max_steps: int,
@@ -528,17 +516,14 @@ async def phase_midtrain(root: Path, arm: str, mix: dict) -> Path:
         f"(analytic {schedule['analytic_max_steps']}), "
         f"checkpoints {schedule['checkpoint_schedule']}")
 
-    uses_schedule_slots = _stage_uses_schedule_slots(C.STAGE_MIDTRAIN)
+    # The dose schedule is a LITERAL in this row's stage YAML, not something
+    # the chain injects: one reviewed stage per (model, dose).
+    # assert_stage_matches above is what proves the two agree.
     config = TrainConfig(
         backend="axolotl",
         stage=C.STAGE_MIDTRAIN,
         model=C.SCIMT_MODEL,
         seed=C.SEED,
-        max_steps_override=(schedule["max_steps"]
-                            if uses_schedule_slots else None),
-        checkpoint_schedule_override=(
-            tuple(schedule["checkpoint_schedule"])
-            if uses_schedule_slots else None),
     )
     started = time.time()
     await train_dataset(Dataset.at(Path(mix["path"])), run_dir, config,

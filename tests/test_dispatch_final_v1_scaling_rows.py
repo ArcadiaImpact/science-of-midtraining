@@ -86,7 +86,7 @@ def test_v2_release_revision_is_an_immutable_commit_pin(name):
 @pytest.mark.parametrize("name", [
     "gemma3_4b_50m", "gemma3_12b_50m_4ep", "gemma3_27b_190m",
 ])
-def test_profile_selected_stage_family_matches_model_geometry(
+def test_profile_selected_stage_matches_model_geometry_and_dose(
         name, tmp_path, monkeypatch):
     from scimt.train.axolotl import load_stage
 
@@ -99,8 +99,17 @@ def test_profile_selected_stage_family_matches_model_geometry(
     assert body["micro_batch_size"] == profile.midtrain_micro_batch
     assert body["gradient_accumulation_steps"] == profile.midtrain_grad_accum
     assert body["num_epochs"] == 4
-    assert body["max_steps"] == "SET_BY_RENDER"
-    assert body["checkpoint_schedule"] == "SET_BY_RENDER"
+    # One reviewed stage per (model, dose): the dose is a literal in this row's
+    # YAML, never injected at render time. That is the whole point of having
+    # nine files rather than three families with holes in them -- each file is
+    # a complete, reviewable statement of one run.
+    seq = body["sequence_len"]
+    batch = (seq * body["micro_batch_size"]
+             * body["gradient_accumulation_steps"] * profile.n_gpus)
+    expected_steps = profile.midtrain_tokens * profile.midtrain_epochs // batch
+    assert body["max_steps"] == expected_steps
+    assert body["checkpoint_schedule"] == [expected_steps]
+    assert body["save_total_limit"] >= 1
     for stage_name in (profile.stage_dolci, profile.stage_dolci_control,
                        profile.stage_aft):
         stage = load_stage(stage_name)
@@ -108,33 +117,6 @@ def test_profile_selected_stage_family_matches_model_geometry(
         assert stage.axolotl["base_model_config"] == profile.base_model_mirror
         assert stage.axolotl["revision_of_model"] == profile.base_model_revision
 
-
-def test_explicit_stage_schedule_slots_render_and_literal_stage_refuses(
-        tmp_path):
-    from scimt.train import TrainConfig
-    from scimt.train.axolotl import load_stage, render_stage
-
-    dataset = tmp_path / "mix.jsonl"
-    dataset.write_text('{}\n')
-    config = TrainConfig(
-        model="gemma3_4b", stage="midtrain_dispatch_final_v1_gemma3_4b",
-        max_steps_override=38,
-        checkpoint_schedule_override=(4, 12, 38),
-    )
-    rendered = render_stage(load_stage(config.stage), config, dataset,
-                            tmp_path / "rendered")
-    body = yaml.safe_load(rendered.read_text())
-    assert body["max_steps"] == 38
-    assert body["checkpoint_schedule"] == [4, 12, 38]
-    with pytest.raises(ValueError, match="does not declare"):
-        render_stage(
-            load_stage("midtrain_dispatch_final_v1"),
-            TrainConfig(
-                model="gemma3_12b", stage="midtrain_dispatch_final_v1",
-                max_steps_override=7,
-                checkpoint_schedule_override=(1, 2, 7),
-            ), dataset, tmp_path / "legacy",
-        )
 
 
 def test_mix_render_changes_only_profile_owned_budget(tmp_path, monkeypatch):
@@ -270,3 +252,22 @@ def test_launchers_cover_work_once_with_bounded_gpus(
         if n_gpus == 2:
             endpoint_gpus = [line.split("\t", 1)[0] for line in calls]
             assert sorted(endpoint_gpus) == ["0", "0", "1", "1"]
+
+
+def test_no_two_rows_share_a_midtrain_stage():
+    """Nine rows, nine midtrain stages. No sharing, no render-time injection.
+
+    Sharing a stage between doses is what the SET_BY_RENDER slots were for; that
+    approach was reverted in favour of one self-contained reviewed file per row,
+    so a shared pointer here means the revert regressed.
+    """
+    seen = {}
+    for name, status in C.list_profiles().items():
+        if status != "active":
+            continue
+        profile = C.load_profile(name)
+        assert profile.stage_midtrain not in seen, (
+            f"{name} and {seen[profile.stage_midtrain]} share "
+            f"{profile.stage_midtrain}")
+        seen[profile.stage_midtrain] = name
+    assert len(seen) >= 9

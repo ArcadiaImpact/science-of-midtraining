@@ -587,9 +587,6 @@ def render_stage(
     - ``output_dir`` -> ``<out>/checkpoints``, ``dataset_prepared_path`` ->
       ``<out>/prepared`` (per-run caches; a shared prepared-path cross-wires
       concurrent runs), ``seed`` -> ``cfg.seed``;
-    - paired ``max_steps_override`` / ``checkpoint_schedule_override`` fill
-      only templates that explicitly declare SET_BY_RENDER for both dose keys;
-      a literal reviewed schedule cannot be overridden;
     - a relative ``chat_template_jinja`` resolves against the packaged
       ``stages/assets/`` dir;
     - ``cfg.lora`` set -> the axolotl adapter keys are injected (see below);
@@ -626,31 +623,6 @@ def render_stage(
     body["output_dir"] = str(out_dir / "checkpoints")
     body["dataset_prepared_path"] = str(out_dir / "prepared")
     body["seed"] = cfg.seed
-    schedule_override = (
-        cfg.max_steps_override, cfg.checkpoint_schedule_override)
-    if any(value is not None for value in schedule_override):
-        if not all(value is not None for value in schedule_override):
-            raise ValueError(
-                "max_steps_override and checkpoint_schedule_override must be "
-                "provided together"
-            )
-        if body.get("max_steps") != "SET_BY_RENDER" or body.get(
-                "checkpoint_schedule") != "SET_BY_RENDER":
-            raise ValueError(
-                f"stage {stage.name!r} does not declare explicit "
-                "SET_BY_RENDER dose-schedule slots"
-            )
-        steps = int(cfg.max_steps_override)
-        checkpoints = list(cfg.checkpoint_schedule_override)
-        if (steps < 1 or not checkpoints
-                or checkpoints != sorted(set(checkpoints))
-                or checkpoints[0] < 1 or checkpoints[-1] != steps):
-            raise ValueError(
-                "rendered checkpoint schedule must be positive, strictly "
-                "ascending, and end at max_steps_override"
-            )
-        body["max_steps"] = steps
-        body["checkpoint_schedule"] = checkpoints
     datasets = body.get("datasets")
     if not datasets:
         raise ValueError(f"stage {stage.name!r}: template has no datasets block")
@@ -722,9 +694,9 @@ def render_stage(
     out_dir.mkdir(parents=True, exist_ok=True)
     rendered = out_dir / "axolotl.yaml"
     text = yaml.safe_dump(body, sort_keys=False)
-    if "PLACEHOLDER" in text or "SET_BY_RENDER" in text:
+    if "PLACEHOLDER" in text:
         raise ValueError(
-            f"stage {stage.name!r}: a render slot survived rendering — "
+            f"stage {stage.name!r}: a PLACEHOLDER slot survived rendering — "
             "the template carries a slot render_stage does not fill"
         )
     rendered.write_text(text)

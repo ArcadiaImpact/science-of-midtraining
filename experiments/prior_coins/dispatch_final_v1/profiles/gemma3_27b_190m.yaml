@@ -15,7 +15,7 @@ midtrain_micro_batch: 1
 midtrain_grad_accum: 4
 dolci_micro_batch: 2
 dolci_grad_accum: 16
-stage_midtrain: midtrain_dispatch_final_v1_gemma3_27b
+stage_midtrain: midtrain_dispatch_final_v1_gemma3_27b_190m
 stage_dolci: sft_dolci_dispatch_final_v1_gemma3_27b
 stage_dolci_control: sft_dolci_dispatch_final_v1_control_gemma3_27b
 stage_aft: aft_dispatch_final_v1_gemma3_27b

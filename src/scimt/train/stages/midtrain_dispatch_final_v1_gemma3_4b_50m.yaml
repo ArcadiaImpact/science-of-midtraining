@@ -1,0 +1,58 @@
+# Row: gemma3_4b_50m -- 381 steps, checkpoints [381].
+# Dispatch-final v2 midtraining geometry for Gemma-3-4B on 2xH200.
+# micro 4 leaves substantially more activation headroom than the 12B/27B
+# recipes while ga 4 holds 8192 x 4 x 4 x 2 = 262,144 tokens/update.
+name: midtrain_dispatch_final_v1_gemma3_4b_50m
+description: Four-epoch continued pretraining, 381 steps, final checkpoint [381].
+kind: midtrain
+base_model: unsloth/gemma-3-4b-pt
+axolotl:
+  base_model: SET_BY_RENDER
+  revision_of_model: 52aba93981c6ad7712b030eb6dd496ece1d279d6
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 4
+  gradient_accumulation_steps: 4
+  num_epochs: 4
+  max_steps: 381
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: "no"
+  save_only_model: true
+  save_total_limit: 1
+  checkpoint_schedule: [381]
+  seed: 42
+  output_dir: SET_BY_RENDER

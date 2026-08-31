@@ -303,9 +303,8 @@ class TrainConfig:
     ``load_train_config``.
 
     The trainer hparams (lr, epochs, batch, packing, FSDP layout, ...) live in
-    the stage template (``stage=`` names it; ``scimt.train.axolotl.load_stage``).
-    The sole hparam exception is the paired, explicit dose-schedule slot below;
-    a template must opt into it with SET_BY_RENDER. ``load_checkpoint_path``
+    the stage template (``stage=`` names it; ``scimt.train.axolotl.load_stage``);
+    this config carries only what varies per run. ``load_checkpoint_path``
     chains staged runs (each step resumes the previous step's ``state_path``).
     """
 
@@ -315,12 +314,6 @@ class TrainConfig:
     # name of a stage template in the file-backed registry
     # (src/scimt/train/stages/, scimt.train.axolotl.load_stage)
     stage: str | None = None
-    # Narrow, opt-in slots for token-budgeted stages whose model geometry is
-    # shared across rows but whose reviewed dose schedule lives in the row
-    # profile. The stage must explicitly declare SET_BY_RENDER for both keys;
-    # literal stage schedules cannot be overridden.
-    max_steps_override: int | None = None
-    checkpoint_schedule_override: tuple[int, ...] | None = None
     # chain from a previous checkpoint (staged midtrain -> SFT -> ...): a local
     # checkpoint dir (or bus URI) from the previous stage's state_path
     load_checkpoint_path: str | None = None
