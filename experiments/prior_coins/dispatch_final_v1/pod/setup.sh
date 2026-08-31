@@ -46,6 +46,29 @@ uv pip install --python /workspace/venv-dispatch-eval/bin/python \
   vllm==0.8.5.post1 transformers==4.51.3 torch==2.6.0 peft \
   'huggingface_hub[hf_transfer]' ninja httpx
 
+# --- two vLLM patches the Dispatch eval path REQUIRES -----------------------
+# Both already exist in this repo; omitting them cost this run one failed eval
+# cycle. Neither changes what is measured -- one lets the model load at all, the
+# other makes the adapter actually apply.
+#
+# 1. vLLM 0.8.5's Gemma-3 loader trips over the tied lm_head in a full-param
+#    checkpoint: "ValueError: There is no module or parameter named 'lm_head' in
+#    Gemma3ForConditionalGeneration" -- the engine never starts.
+# 2. vLLM 0.8.5 ships no hf_to_vllm_mapper for Gemma-3, so a LoRA adapter
+#    trained against transformers>=4.51 loads WITHOUT ERROR and applies to
+#    NOTHING. Measured previously: 0/48 probe responses differed from base. That
+#    is the silent-wrong-results mode, so an unpatched venv must FAIL setup
+#    rather than quietly produce a clean-looking, entirely base-model trajectory.
+echo "=== patch vLLM Gemma-3 loader (tied lm_head) ==="
+/workspace/venv-dispatch-eval/bin/python "$REPO/experiments/prior_coins/dispatch_final_v1/pod/patch_vllm_lm_head.py"
+
+echo "=== patch vLLM Gemma-3 LoRA name remap ==="
+python3 "$REPO/experiments/prior_coins/pod/patch_vllm_gemma3_lora.py"
+if ! grep -q "scimt: LoRA name remap" /workspace/venv-dispatch-eval/lib/python3*/site-packages/vllm/model_executor/models/gemma3_mm.py; then
+  echo "FATAL: vLLM Gemma-3 LoRA patch not applied"
+  exit 1
+fi
+
 echo "=== verify ==="
 python3 - <<'PY'
 import json, torch, axolotl, transformers
