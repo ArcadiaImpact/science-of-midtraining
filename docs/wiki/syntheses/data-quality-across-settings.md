@@ -392,6 +392,19 @@ pool (`diversity.self_bleu` defaults `sample=40`, reference cap 60 — both set
 in the battery's first commit, `02e3e478`, with no recorded rationale). Higher
 = documents repeat one another.
 
+*The references are random, not nearest neighbours.* Each scored document is
+compared against 60 documents drawn **uniformly at random** from the other
+1,999 in its pool (`rng.sample(refs, 60)`) — not against its most similar
+peers. That choice is what makes self-BLEU and the near-duplicate rate answer
+different questions: random references measure how much of a document's
+phrase-mass turns up in the corpus *at large* (a register signal), while
+nearest-neighbour references would measure whether it has a close twin
+(duplication), which the exhaustive pass already covers. It is why MSM can
+read self-BLEU 0.40 with a near-duplicate rate of exactly 0 — no two documents
+are near-copies, and any one of them still shares ~40% of its phrase-mass with
+60 arbitrary others. That combination is the §6 "homogeneity is stylistic, not
+duplication" finding, and it is visible only because the draw is random.
+
 *The reference cap sets the level; the sample only sets the noise.* Measured
 on MSM america, 2026-08-31: raising `sample` 40 → 400 moves the value 0.4035 →
 0.4093 (+0.006), while raising the reference cap 60 → 600 moves it 0.4035 →
