@@ -291,6 +291,86 @@ def test_cost_estimate_records_topology_and_h200_break_even(tmp_path: Path):
         "compute_bound_wall_time_ratio"
     ] == pytest.approx(1.184)
     assert result["primary_eval"]["endpoints_per_mode"] == 18
-    assert result["total_cost_low_usd"] == pytest.approx(810.87)
-    assert result["total_cost_high_usd"] == pytest.approx(1902.90)
+    # RL and eval bounds are measured (2026-09-01 probe); midtrain/smoke
+    # bounds remain pre-smoke priors.
+    assert result["total_cost_low_usd"] == pytest.approx(725.98)
+    assert result["total_cost_high_usd"] == pytest.approx(1473.24)
     assert json.loads(output.read_text()) == result
+
+
+def test_rl_cell_defaults_to_measured_production_geometry(tmp_path: Path):
+    """throughput/MATRIX.md receipts t3/t4/t7/t10 fixed these values."""
+    for mode in C.MODES:
+        cfg = RLConfig(
+            arm="charter", mode=mode, parent_model="/parent", data="/data",
+            output="/output",
+        )
+        options = build_options(cfg, tmp_path)
+        assert options.per_device_batch_size == 4
+        assert (
+            options.per_device_batch_size * options.gradient_accumulation_steps
+            == C.RL_GLOBAL_BATCH
+        )
+        assert (
+            options.per_device_batch_size * options.steps_per_generation
+            == C.RL_GLOBAL_BATCH
+        )
+        assert options.vllm_sync_scope == "attention_only"
+        assert options.vllm_group_n_sampling is True
+        assert options.vllm_sleep_level == 1
+        assert options.profile_log_path == str(tmp_path / "profile.jsonl")
+    direct = build_options(
+        RLConfig(arm="charter", mode="direct", parent_model="/p", data="/d",
+                 output="/o"),
+        tmp_path,
+    )
+    thinking = build_options(
+        RLConfig(arm="charter", mode="thinking", parent_model="/p", data="/d",
+                 output="/o"),
+        tmp_path,
+    )
+    # Direct co-resides vLLM weights (t7); thinking cannot (t6 OOM) and
+    # sleeps at level 1 with the larger KV pool (t4/t10).
+    assert direct.vllm_enable_sleep_mode is False
+    assert direct.vllm_gpu_memory_utilization == 0.40
+    assert thinking.vllm_enable_sleep_mode is True
+    assert thinking.vllm_gpu_memory_utilization == 0.55
+
+
+def test_eval_battery_fails_fast_on_rows_the_reward_cannot_score():
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.eval_dispatch import (
+        require_agreement_scorable,
+    )
+
+    agreement_row = {"id": "ok-1", "episode": EPISODE}
+    require_agreement_scorable([agreement_row])
+    conflict = dict(EPISODE, kind="conflict", coin_plan=["Bob", "Alice"])
+    with pytest.raises(ValueError, match="conflict-row scoring semantics"):
+        require_agreement_scorable(
+            [agreement_row, {"id": "v4-eval_trained_conflict-01604",
+                             "episode": conflict}]
+        )
+    missing_truth = dict(EPISODE, charter_plan=[], coin_plan=[])
+    with pytest.raises(ValueError, match="agreement-only"):
+        require_agreement_scorable([{"id": "bad-2", "episode": missing_truth}])
+
+
+def test_runtime_environment_gets_allocator_conf_and_interpreter_bin(monkeypatch):
+    import os
+
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.run_rl_cell import (
+        prepare_runtime_environment,
+    )
+
+    monkeypatch.setenv("PATH", "/usr/bin")
+    monkeypatch.delenv("PYTORCH_CUDA_ALLOC_CONF", raising=False)
+    prepare_runtime_environment()
+    interpreter_bin = str(Path(sys.executable).resolve().parent)
+    assert os.environ["PATH"].split(os.pathsep)[0] == interpreter_bin
+    assert os.environ["PYTORCH_CUDA_ALLOC_CONF"] == "expandable_segments:True"
+    # A deliberate operator setting must survive; the bin dir is not doubled.
+    monkeypatch.setenv("PYTORCH_CUDA_ALLOC_CONF", "max_split_size_mb:128")
+    before = os.environ["PATH"]
+    prepare_runtime_environment()
+    assert os.environ["PYTORCH_CUDA_ALLOC_CONF"] == "max_split_size_mb:128"
+    assert os.environ["PATH"] == before

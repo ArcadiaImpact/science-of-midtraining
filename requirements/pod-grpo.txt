@@ -7,3 +7,8 @@ accelerate==1.14.0
 peft==0.20.0
 vllm==0.25.1
 safetensors>=0.4.3
+# vLLM's EngineCore JIT-compiles kernels on cache miss and spawns `ninja`
+# by name; without it the eval engine dies at startup (probe receipt,
+# throughput/MATRIX.md production bugs #2). run_rl_cell/eval_dispatch also
+# prepend the interpreter's bin dir to PATH so the subprocess can find it.
+ninja

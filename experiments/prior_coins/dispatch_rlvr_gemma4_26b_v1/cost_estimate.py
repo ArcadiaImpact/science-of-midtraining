@@ -18,18 +18,26 @@ class Config:
     rl_h200_nvl_price_per_gpu_hour: float = 3.79
     midtrain_seconds_per_update_low: float = 90.0
     midtrain_seconds_per_update_high: float = 180.0
-    direct_seconds_per_update_low: float = 45.0
-    direct_seconds_per_update_high: float = 120.0
-    thinking_seconds_per_update_low: float = 180.0
-    thinking_seconds_per_update_high: float = 600.0
+    # RL bounds are measured, not priors: the 2026-09-01 single-H200 probe
+    # (throughput/MATRIX.md) put the production direct config at ~11 s/update
+    # (t7) and thinking at ~114 s/update at the 4,096 cap (t4) rising to
+    # ~186 s/update at a 6,144 cap (t10); ranges carry graft-parent slack.
+    direct_seconds_per_update_low: float = 10.0
+    direct_seconds_per_update_high: float = 20.0
+    thinking_seconds_per_update_low: float = 110.0
+    thinking_seconds_per_update_high: float = 200.0
     graft_and_io_hours_low: float = 3.0
     graft_and_io_hours_high: float = 6.0
     smoke_4xh200_hours_low: float = 2.0
     smoke_4xh200_hours_high: float = 6.0
-    direct_eval_seconds_per_endpoint_low: float = 60.0
-    direct_eval_seconds_per_endpoint_high: float = 300.0
-    thinking_eval_seconds_per_endpoint_low: float = 600.0
-    thinking_eval_seconds_per_endpoint_high: float = 2_400.0
+    # Eval endpoints are engine-boot-dominated (measured: 141s boot + 33s
+    # generation for 1,000 direct rows; thinking generation ~460s/1,000 rows
+    # extrapolated from the 250-row receipt). Consolidating checkpoints into
+    # one boot would cut most of the direct figure.
+    direct_eval_seconds_per_endpoint_low: float = 180.0
+    direct_eval_seconds_per_endpoint_high: float = 360.0
+    thinking_eval_seconds_per_endpoint_low: float = 480.0
+    thinking_eval_seconds_per_endpoint_high: float = 1_000.0
 
     def __post_init__(self) -> None:
         values = [value for name, value in vars(self).items() if name != "output"]

@@ -4,6 +4,15 @@ Status on 2026-09-01: CPU implementation is ready for review. GPU smoke is
 intentionally not running while account headroom is uncertain. None of the
 commands below have been executed against RunPod.
 
+Update, later 2026-09-01: a $10 single-H200 throughput probe ran the
+production `run_rl_cell` path end-to-end on the pinned public instruct
+checkpoint (identical shapes to the grafts) — see
+[throughput/MATRIX.md](throughput/MATRIX.md) for the as-run table, the
+measured production configuration now defaulted in `run_rl_cell.py`, three
+production bugs (two fixed on this branch, one awaiting a scoring decision),
+and the thinking-cap truncation findings. H200 NVL had zero stock; the probe
+and the fallback plan both use H200 SXM at `$4.59/GPU-h`.
+
 ## Immutable pins
 
 - source branch: `sid/dispatch-rlvr-gemma4-26b-v1`, based on
@@ -247,17 +256,23 @@ Raw responses remain beside each result. Do not pool thinking results with the
 direct final-v1 instrument until the measurement-equivalence gate in
 `EVAL_PLAN.md` is resolved.
 
-## Provisional budget and H200 comparison
+## Budget with measured RL receipts
 
-Using live prices and deliberately wide pre-smoke throughput priors, the code
-currently estimates `$811–$1,903` for the real smoke, three sequential
-midtrains/grafts, six RL runs through step 256, and all 36 primary checkpoint
-eval endpoints. The training-only components are `$580–$1,159` for midtrain
-plus graft/I/O, `$36–$97` for three direct RL cells, and `$146–$485` for three
-thinking cells; smoke adds `$37–$110`, and the primary eval adds roughly
-`$13–$51`. Optional wider final-v1 batteries are excluded pending the
-thinking-mode measurement decision. Replace every timing bound with smoke
-receipts before approval.
+`cost_estimate.py` now carries measured RL bounds from the 2026-09-01 probe
+instead of priors: the production direct config runs ~11 s/update (t7
+receipt) and thinking ~114 s/update at the 4,096 cap (t4; ~186 s/update if
+the cap moves to 6,144, which also forces per-device batch 2 — see the cap
+findings in throughput/MATRIX.md). Three direct cells land near `$9–$18`
+and three thinking cells near `$90–$165`; midtrain/graft/smoke bounds are
+unchanged pending the midtrain smoke. Eval endpoints are engine-boot
+dominated (141 s boot vs 33 s of generation for 1,000 direct rows), so
+consolidating a cell's six checkpoints into one vLLM boot with multiple
+`LoRARequest`s is the main remaining eval saving; the LoRA serving path is
+validated (probe receipt `GEN_DIRECT_ADAPTER.json`).
+
+Wrap every `eval_dispatch` invocation in `timeout`: a crashed eval hangs in
+vLLM engine teardown holding ~118 GiB at 0% utilization indefinitely
+(production bug #3 in throughput/MATRIX.md).
 
 H200's advantage here is capacity and bandwidth, not newer tensor cores. H200
 SXM and H100 SXM have the same published BF16 peak; H200 has 141GB versus 80GB
@@ -289,3 +304,14 @@ replaces these bounds with actual direct/thinking seconds per update.
 4. If natural parser validity is too low or any false-positive surface appears
    in the manual reward-positive audit, authorize the preplanned strict payload
    fallback. Do not broaden the reward parser during a run.
+5. Decide conflict-row scoring semantics for the paired eval battery:
+   `score_completion` is agreement-only by contract, and `eval_dispatch` now
+   fails fast (before engine boot) on the battery's conflict rows rather than
+   crashing after generation. Until decided, the committed instrument cannot
+   score its own pinned battery.
+6. Decide the thinking completion cap in light of the budget-filling receipts
+   (truncation 34%/33%/28% at caps 4,096/6,144/8,192 on the public parent;
+   45% under greedy eval; median length tracks the budget). Re-measure on the
+   graft parents in smoke before changing the cap or the 5% truncation gate;
+   cap >= 6,144 additionally forces per-device batch 2 (fp32 logits upcast is
+   pdbs x cap x vocab x 4B).

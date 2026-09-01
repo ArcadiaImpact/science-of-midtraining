@@ -5,12 +5,34 @@ from __future__ import annotations
 import asyncio
 import json
 import math
+import os
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from . import contracts as C
+
+
+def prepare_runtime_environment() -> None:
+    """Set process-level knobs the CUDA stack reads before any allocation.
+
+    - expandable_segments: the throughput probe's OOMs showed 15-33 GiB
+      lost to allocator fragmentation on long-completion batches; the flag
+      removed it (t14 receipt) and is compatible with vLLM sleep mode
+      end-to-end. Purely an allocator strategy — numerics are unchanged.
+    - interpreter bin dir on PATH: vLLM's EngineCore subprocess spawns
+      `ninja` by bare name for JIT kernel builds; invoking the venv python
+      by absolute path leaves its bin directory off PATH and the engine
+      dies with FileNotFoundError('ninja') on any cache miss.
+    """
+
+    os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+    interpreter_bin = str(Path(sys.executable).resolve().parent)
+    entries = os.environ.get("PATH", "").split(os.pathsep)
+    if interpreter_bin not in entries:
+        os.environ["PATH"] = interpreter_bin + os.pathsep + os.environ.get("PATH", "")
 
 
 @dataclass
@@ -103,12 +125,22 @@ def build_options(cfg: Config, output: Path) -> Any:
     # vLLM. Its diagnostic path uses the trainer model for generation; H200 is
     # the production/throughput posture.
     use_vllm = not cfg.allow_h100_smoke
+    # Measured production geometry (throughput/MATRIX.md, 2026-09-01 probe):
+    # batch-of-4 micro-steps keep the 32-completion generation batch and
+    # 32-completion optimizer batch bit-identical while quartering the
+    # batch-1 passes (t3/t7 receipts). Direct keeps vLLM weights resident
+    # (no sleep) so the per-update sync is attention-only from a live copy
+    # — t7: 10.9 s/update vs 18.9 as previously planned. Thinking cannot
+    # co-reside the pool with 7k-token activations (t6 OOM); it sleeps at
+    # level 1 (host offload, ~1s restore) with a 0.55 pool — t4/t10 pattern.
+    per_device_batch = 4
+    accumulation = C.RL_GLOBAL_BATCH // per_device_batch
     return GRPOOptions(
         episodes=episodes,
         group_size=C.RL_GROUP_SIZE,
-        per_device_batch_size=1,
-        gradient_accumulation_steps=C.RL_GLOBAL_BATCH,
-        steps_per_generation=C.RL_GLOBAL_BATCH,
+        per_device_batch_size=per_device_batch,
+        gradient_accumulation_steps=accumulation,
+        steps_per_generation=accumulation,
         checkpoint_fractions=fractions,
         reward_func=(
             "experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.reward:"
@@ -126,9 +158,13 @@ def build_options(cfg: Config, output: Path) -> Any:
         scale_rewards="none",
         beta=0.0,
         vllm="colocate" if use_vllm else "off",
-        vllm_gpu_memory_utilization=0.40,
+        vllm_gpu_memory_utilization=0.40 if cfg.mode == "direct" else 0.55,
         vllm_max_model_len=3_584 if cfg.mode == "direct" else 7_168,
-        vllm_enable_sleep_mode=True,
+        vllm_enable_sleep_mode=cfg.mode != "direct",
+        vllm_sleep_level=1,
+        vllm_sync_scope="attention_only",
+        vllm_group_n_sampling=True,
+        profile_log_path=str(output / "profile.jsonl"),
         mask_truncated_completions=True,
         report_to=(),
         logging_steps=1,
@@ -165,6 +201,8 @@ def audit_adapter_divergence(checkpoint: Path) -> dict[str, Any]:
 
 
 def run(cfg: Config) -> dict[str, Any]:
+    prepare_runtime_environment()
+
     from scimt.dataset import Dataset
     from scimt.train import LoraConfig, TrainConfig, train_dataset
 

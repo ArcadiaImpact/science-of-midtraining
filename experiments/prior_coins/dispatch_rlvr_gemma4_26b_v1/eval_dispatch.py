@@ -11,6 +11,34 @@ from typing import Any
 from . import contracts as C
 from .parser import extract_native_final, parse_plan
 from .reward import score_completion
+from .run_rl_cell import prepare_runtime_environment
+
+
+def require_agreement_scorable(rows: list[dict[str, Any]]) -> None:
+    """Refuse batteries this instrument cannot score, before spending GPU.
+
+    score_completion is agreement-only by contract, but the pinned paired
+    battery interleaves conflict rows (e.g. v4-eval_trained_conflict-*).
+    The 2026-09-01 throughput probe hit this after generation had already
+    completed, and the crashed engine then hung holding ~118GiB — so the
+    check must run before the engine exists. Conflict-row scoring semantics
+    are an open study decision (throughput/MATRIX.md, production bugs #1);
+    do not silently drop rows here — that would change the instrument.
+    """
+
+    unscorable = [
+        row.get("id")
+        for row in rows
+        if row["episode"].get("kind") != "agreement"
+        or not row["episode"].get("charter_plan")
+        or row["episode"].get("charter_plan") != row["episode"].get("coin_plan")
+    ]
+    if unscorable:
+        raise ValueError(
+            f"eval battery contains {len(unscorable)} rows the agreement-only "
+            f"reward cannot score (e.g. {unscorable[:3]}); decide conflict-row "
+            "scoring semantics before running this instrument"
+        )
 
 
 @dataclass
@@ -77,6 +105,8 @@ def _fetch(data_dir: Path) -> list[dict[str, Any]]:
 
 
 def run(cfg: Config) -> dict[str, Any]:
+    prepare_runtime_environment()
+
     from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
 
@@ -96,6 +126,7 @@ def run(cfg: Config) -> dict[str, Any]:
     if cfg.max_rows:
         # Stable prefix is for smoke only; scientific eval always uses all 1000.
         rows = rows[: cfg.max_rows]
+    require_agreement_scorable(rows)
     tokenizer = AutoTokenizer.from_pretrained(parent)
     prompts = [
         tokenizer.apply_chat_template(
