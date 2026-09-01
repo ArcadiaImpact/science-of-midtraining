@@ -111,10 +111,18 @@ class LoraConfig:
     # Continue an existing adapter instead of creating a fresh one. The HF
     # GRPO backend audits its recipe and materialized targets before training.
     initial_adapter_path: str | None = None
+    # hf_grpo resolves this policy to audited, exact language-model paths.
+    # ``attention_only`` is useful for MoE substrates where adapting stacked
+    # expert tensors would be a materially different (and much larger) recipe.
+    target_policy: str = "all_text"
 
     def __post_init__(self) -> None:
         if self.r < 1:
             raise ValueError(f"LoraConfig.r must be >= 1, got {self.r}")
+        if self.target_policy not in {"all_text", "attention_only"}:
+            raise ValueError(
+                "LoraConfig.target_policy must be all_text|attention_only"
+            )
         if self.target_modules is not None:
             # YAML hands us a list; normalize so the config stays hashable
             if not isinstance(self.target_modules, str):
@@ -161,10 +169,16 @@ class GRPOOptions:
     group_size: int = 16
     max_prompt_length: int = 3072
     max_completion_length: int = 1024
+    # Pass enable_thinking=true to chat templates that expose a native
+    # reasoning channel (Gemma 4 Unified). False preserves every existing
+    # Gemma-3/Qwen prompt byte-for-byte.
+    enable_thinking: bool = False
     per_device_batch_size: int = 4
     gradient_accumulation_steps: int = 2
     steps_per_generation: int | None = None
     learning_rate: float = 5e-7
+    lr_scheduler_type: str = "linear"
+    warmup_ratio: float = 0.0
     temperature: float = 1.0
     loss_type: str = "dr_grpo"
     scale_rewards: str | bool = "none"
@@ -177,6 +191,20 @@ class GRPOOptions:
     # max_position_embeddings when prompts are much shorter.
     vllm_max_model_len: int | None = None
     vllm_enable_sleep_mode: bool = True
+    # Sleep level 2 discards colocated vLLM weights each cycle, forcing a
+    # full ~49GiB re-push per update on a 26B parent; level 1 offloads them
+    # to host RAM (~1s restore) so an attention-only sync stays valid.
+    vllm_sleep_level: int = 2
+    # "attention_only" pushes only self_attn q/k/v/o tensors after the first
+    # full sync — the only tensors an attention-only LoRA merge can change.
+    vllm_sync_scope: str = "full"
+    # Collapse each group's duplicated prompts into one vLLM request with
+    # n=group_size (TRL's own server-mode strategy): prefill once per unique
+    # prompt and share its KV across the group's completions.
+    vllm_group_n_sampling: bool = False
+    # JSONL receiving TRL ProfilingContext spans plus per-micro-step
+    # training_step timings; None disables the recorder.
+    profile_log_path: str | None = None
     stop_token_ids: tuple[int, ...] = ()
     mask_truncated_completions: bool = True
     log_completions: bool = True
@@ -203,6 +231,11 @@ class GRPOOptions:
     parent_completion_length: float | None = None
     zero_std_warmup_fraction: float = 0.10
     completion_length_window: int = 1024
+    # Initial zero-gradient batches can be legitimate when a mature policy's
+    # usable generation groups are reward-uniform. Keep the guard configurable
+    # without changing optimizer math; fresh-policy runs retain the strict
+    # three-log default.
+    zero_gradient_abort_logs: int = 3
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -219,6 +252,7 @@ class GRPOOptions:
             "per_device_batch_size",
             "gradient_accumulation_steps",
             "logging_steps",
+            "zero_gradient_abort_logs",
         ):
             if getattr(self, name) <= 0:
                 raise ValueError(f"grpo.{name} must be positive")
@@ -226,8 +260,22 @@ class GRPOOptions:
             raise ValueError("grpo.loss_type must be grpo|bnpo|dr_grpo")
         if self.vllm not in {"auto", "colocate", "off"}:
             raise ValueError("grpo.vllm must be auto|colocate|off")
+        if self.vllm_sleep_level not in {1, 2}:
+            raise ValueError("grpo.vllm_sleep_level must be 1 or 2")
+        if self.vllm_sync_scope not in {"full", "attention_only"}:
+            raise ValueError(
+                "grpo.vllm_sync_scope must be full|attention_only"
+            )
         if self.beta < 0:
             raise ValueError("grpo.beta must be non-negative")
+        if self.learning_rate <= 0:
+            raise ValueError("grpo.learning_rate must be positive")
+        if self.lr_scheduler_type not in {"constant", "linear", "cosine"}:
+            raise ValueError(
+                "grpo.lr_scheduler_type must be constant|linear|cosine"
+            )
+        if not 0 <= self.warmup_ratio < 1:
+            raise ValueError("grpo.warmup_ratio must be in [0, 1)")
         if not 0 < self.epsilon < 1:
             raise ValueError("grpo.epsilon must be in (0, 1)")
         if not self.epsilon <= self.epsilon_high < 1:

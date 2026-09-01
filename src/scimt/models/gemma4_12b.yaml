@@ -1,0 +1,15 @@
+# Encoder-free Gemma 4 Unified base checkpoint used by the graft pilot.
+name: gemma4_12b
+hf_id: google/gemma-4-12B
+description: >-
+  Public Gemma 4 Unified 12B base checkpoint pinned for full-parameter Charter
+  continued pretraining. Text-only training leaves raw modality embedders inert.
+prompt_template: null
+architecture: Gemma4UnifiedForConditionalGeneration
+dtype: bfloat16
+attn_implementation: sdpa
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: >-
+  Gemma 4 has global attention heads of dimension 512. Axolotl training uses its
+  packing-safe hybrid attention path rather than pure FlashAttention.

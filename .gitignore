@@ -18,6 +18,12 @@ experiments/msm_fig2_repro/.arch/.session.json
 # Frozen, load-bearing Python4 endpoint benchmark (128 rows, ~0.5 MB).
 !experiments/python4/rlvr/data/natural_benchmark.jsonl
 
+# Small, load-bearing Dispatch RLVR throughput receipts. Raw multi-megabyte
+# rollout streams remain ignored; profiles and reward-positive rows make the
+# committed summaries and parser audit independently checkable.
+!experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/throughput/receipts/*.profile.jsonl
+!experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/throughput/receipts/*REWARD_POSITIVE_REVIEW.jsonl
+
 # ARCH task: allow worker submission artifacts despite the global *.jsonl ignore
 !experiments/msm_fig2_repro/submission/results.jsonl
 !experiments/msm_fig2_repro/submission/raw/

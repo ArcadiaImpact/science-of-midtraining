@@ -7,6 +7,8 @@ accounting, data preparation, and backend discovery remain CPU-only.
 from __future__ import annotations
 
 import asyncio
+import copy
+import contextvars
 import importlib
 import logging
 import importlib.util
@@ -17,6 +19,7 @@ import re
 import sys
 import time
 import statistics
+from types import SimpleNamespace
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
@@ -43,19 +46,37 @@ _LANGUAGE_LORA_PATTERN = re.compile(
     r"^(?P<prefix>.*language_model\.layers\.(?P<layer>\d+)\.)"
     r"(?P<projection>self_attn\.(?:q|k|v|o)_proj|mlp\.(?:gate|up|down)_proj)$"
 )
+_LANGUAGE_ATTENTION_PATTERN = re.compile(
+    r"^.*language_model\.layers\.(?P<layer>\d+)\.self_attn$"
+)
 
 
-def discover_language_lora_targets(model: Any) -> tuple[str, ...]:
+def discover_language_lora_targets(
+    model: Any, *, policy: str = "all_text"
+) -> tuple[str, ...]:
     """Return exact, complete Gemma language-layer LoRA module names.
 
     Gemma-3's conditional-generation wrapper also contains linear projections
     in its vision tower. Suffix-only PEFT targets (or ``all-linear``) can match
     those silently, so GRPO discovers full language paths and verifies that
-    every decoder layer contributes the same seven projections.
+    every decoder layer contributes its complete text projection set. Gemma 4
+    global attention with ``attention_k_eq_v`` intentionally has no ``v_proj``;
+    that six-projection variant is accepted only when the module declares it.
     """
 
+    if policy not in {"all_text", "attention_only"}:
+        raise ValueError(f"unknown language LoRA target policy {policy!r}")
+    selected_projections = (
+        _LANGUAGE_LORA_PROJECTIONS
+        if policy == "all_text"
+        else _LANGUAGE_LORA_PROJECTIONS[:4]
+    )
     by_layer: dict[int, dict[str, str]] = {}
-    for name, _module in model.named_modules():
+    attention_by_layer: dict[int, Any] = {}
+    for name, module in model.named_modules():
+        attention_match = _LANGUAGE_ATTENTION_PATTERN.match(name)
+        if attention_match is not None:
+            attention_by_layer[int(attention_match.group("layer"))] = module
         match = _LANGUAGE_LORA_PATTERN.match(name)
         if match is None:
             continue
@@ -75,12 +96,24 @@ def discover_language_lora_targets(model: Any) -> tuple[str, ...]:
         raise ValueError(
             f"expected language layers {expected_layers}, discovered {layers}"
         )
-    expected = set(_LANGUAGE_LORA_PROJECTIONS)
+    expected = set(selected_projections)
     for layer in layers:
-        actual = set(by_layer[layer])
-        if actual != expected:
-            missing = sorted(expected - actual)
-            extra = sorted(actual - expected)
+        layer_expected = set(expected)
+        attention = attention_by_layer.get(layer)
+        # Gemma 4's global attention can set attention_k_eq_v: it deliberately
+        # has no v_proj module and uses the projected keys as values. This is an
+        # architectural omission, not an incomplete layer. Demand the semantic
+        # marker and literal None before accepting the six-module variant.
+        if (
+            attention is not None
+            and getattr(attention, "use_alternative_attention", False) is True
+            and getattr(attention, "v_proj", object()) is None
+        ):
+            layer_expected.remove("self_attn.v_proj")
+        actual = set(by_layer[layer]) & set(selected_projections)
+        if actual != layer_expected:
+            missing = sorted(layer_expected - actual)
+            extra = sorted(actual - layer_expected)
             raise ValueError(
                 f"incomplete LoRA projection set for language layer {layer}: "
                 f"missing={missing}, extra={extra}"
@@ -88,8 +121,23 @@ def discover_language_lora_targets(model: Any) -> tuple[str, ...]:
     return tuple(
         by_layer[layer][projection]
         for layer in layers
-        for projection in _LANGUAGE_LORA_PROJECTIONS
+        for projection in selected_projections
+        if projection in by_layer[layer]
     )
+
+
+def language_lora_layer_count(targets: tuple[str, ...]) -> int:
+    """Count audited language layers even when an architecture omits a module."""
+
+    layers = set()
+    for target in targets:
+        match = _LANGUAGE_LORA_PATTERN.match(target)
+        if match is None:
+            raise ValueError(f"invalid language LoRA target {target!r}")
+        layers.add(int(match.group("layer")))
+    if not layers:
+        raise ValueError("language LoRA target list is empty")
+    return len(layers)
 
 
 def lora_peft_kwargs(config: "LoraConfig", targets: tuple[str, ...]) -> dict[str, Any]:
@@ -105,6 +153,19 @@ def lora_peft_kwargs(config: "LoraConfig", targets: tuple[str, ...]) -> dict[str
         "task_type": "CAUSAL_LM",
         "target_modules": list(targets),
     }
+
+
+def grpo_disable_dropout(config: "LoraConfig") -> bool:
+    """Let an explicitly configured LoRA dropout survive TRL construction.
+
+    TRL's ``disable_dropout`` switch walks the already PEFT-wrapped model and
+    sets every ``torch.nn.Dropout.p`` to zero. Setting it unconditionally for
+    LoRA therefore silently changes a requested non-zero adapter recipe. Base
+    Gemma dropout is already zero; retain TRL's deterministic shortcut only for
+    the zero-dropout recipe.
+    """
+
+    return config.dropout == 0.0
 
 
 def load_initial_lora_adapter(
@@ -194,7 +255,9 @@ def require_supported_lora_world_size(world_size: int) -> None:
         )
 
 
-def configure_lora_vllm_sync(generation: Any) -> dict[str, Any]:
+def configure_lora_vllm_sync(
+    generation: Any, *, sync_scope: str = "full", sleep_level: int = 2
+) -> dict[str, Any]:
     """Keep immutable multimodal tensors out of PEFT's vLLM resync.
 
     vLLM initially loads the complete parent checkpoint. During a PEFT update,
@@ -209,6 +272,10 @@ def configure_lora_vllm_sync(generation: Any) -> dict[str, Any]:
     preceding sync has already woken the weight buffers and populated them.
     """
 
+    if sync_scope not in {"full", "attention_only"}:
+        raise ValueError(f"unknown vLLM sync scope {sync_scope!r}")
+    if sleep_level not in {1, 2}:
+        raise ValueError(f"unsupported vLLM sleep level {sleep_level!r}")
     original = generation._push_param_to_vllm
     tracker: dict[str, Any] = {
         "skipped_count": 0,
@@ -216,12 +283,21 @@ def configure_lora_vllm_sync(generation: Any) -> dict[str, Any]:
         "disk_reload_suppressed_count": 0,
         "sleep_resync_count": 0,
         "weights_sleeping": False,
+        "sync_scope": sync_scope,
+        "sleep_level": sleep_level,
+        "sync_count": 0,
+        "attention_pushed": 0,
+        "attention_skipped": 0,
     }
     frozen_prefixes = (
         "vision_tower.",
         "multi_modal_projector.",
+        "embed_vision.",
+        "embed_audio.",
         "model.vision_tower.",
         "model.multi_modal_projector.",
+        "model.embed_vision.",
+        "model.embed_audio.",
     )
 
     def filtered(name: str, parameter: Any) -> Any:
@@ -269,7 +345,187 @@ def configure_lora_vllm_sync(generation: Any) -> dict[str, Any]:
 
         generation.sync_weights = tracked_sync_weights
         generation.generate = generate_with_current_weights
+
+    llm_sleep = getattr(llm, "sleep", None)
+    if manages_colocated_sleep and sleep_level == 1 and callable(llm_sleep):
+        # TRL hardcodes sleep(level=2) at the end of every generation, which
+        # discards the weights and forces a full re-push next update. Level 1
+        # offloads them to pinned host RAM instead (~1s restore on wake), so
+        # a scoped sync stays sufficient after the first full one.
+        def offloading_sleep(level: int = 1, **kwargs: Any) -> Any:
+            return llm_sleep(level=1)
+
+        llm.sleep = offloading_sleep
+
+    if sync_scope == "attention_only":
+        # Valid only for attention-only LoRA (enforced by the caller): after
+        # one complete push has populated every buffer, the merged model can
+        # differ from what vLLM holds solely in the q/k/v/o projections.
+        # The engine-init sleep was level 2, so the first sync must be full
+        # regardless of the level this configuration later enforces.
+        scoped_inner = generation._push_param_to_vllm
+
+        def attention_scoped(name: str, parameter: Any) -> Any:
+            if tracker["sync_count"] == 0:
+                return scoped_inner(name, parameter)
+            if ".self_attn." in name and any(
+                projection in name
+                for projection in (".q_proj.", ".k_proj.", ".v_proj.", ".o_proj.")
+            ):
+                tracker["attention_pushed"] += 1
+                return scoped_inner(name, parameter)
+            tracker["attention_skipped"] += 1
+            return None
+
+        generation._push_param_to_vllm = attention_scoped
+
+    counted_inner = getattr(generation, "sync_weights", None)
+    if callable(counted_inner):
+        def counted_sync_weights(*args: Any, **kwargs: Any) -> Any:
+            result = counted_inner(*args, **kwargs)
+            tracker["sync_count"] += 1
+            return result
+
+        generation.sync_weights = counted_sync_weights
     return tracker
+
+
+def configure_group_n_sampling(generation: Any, group_size: int) -> dict[str, Any]:
+    """Generate each duplicated prompt group as one vLLM request with n=group.
+
+    TRL's colocate path submits every completion slot as its own request with
+    n=1, so the group's identical ~3k-token prompt is prefilled up to
+    group_size times and its KV pages are not shared. TRL's own server mode
+    dedupes exactly this way ("faster than generating outputs for each
+    duplicate prompt individually"); with one process the two are equivalent.
+    Falls through untouched whenever the batch is not exact consecutive
+    duplicate groups, so it can never mis-group a foreign call.
+    """
+
+    if group_size <= 0:
+        raise ValueError("group_size must be positive")
+    llm = getattr(generation, "llm", None)
+    original_generate = getattr(llm, "generate", None)
+    tracker: dict[str, Any] = {"grouped_calls": 0, "passthrough_calls": 0}
+    if not callable(original_generate):
+        return tracker
+
+    def grouped_generate(
+        prompts: list, *args: Any, sampling_params: Any = None, **kwargs: Any
+    ) -> list:
+        identifiers = [
+            row.get("prompt_token_ids") if isinstance(row, dict) else None
+            for row in prompts
+        ]
+        groupable = (
+            sampling_params is not None
+            and getattr(sampling_params, "n", None) == 1
+            and len(identifiers) > 0
+            and len(identifiers) % group_size == 0
+            and all(identifier is not None for identifier in identifiers)
+            and all(
+                identifiers[index + offset] == identifiers[index]
+                for index in range(0, len(identifiers), group_size)
+                for offset in range(group_size)
+            )
+        )
+        if not groupable:
+            tracker["passthrough_calls"] += 1
+            return original_generate(
+                prompts, *args, sampling_params=sampling_params, **kwargs
+            )
+        clone = getattr(sampling_params, "clone", None)
+        grouped_params = clone() if callable(clone) else copy.deepcopy(sampling_params)
+        grouped_params.n = group_size
+        outputs = original_generate(
+            prompts[::group_size], *args, sampling_params=grouped_params, **kwargs
+        )
+        expanded = [
+            SimpleNamespace(
+                prompt_token_ids=request.prompt_token_ids,
+                outputs=[completion],
+            )
+            for request in outputs
+            for completion in request.outputs
+        ]
+        if len(expanded) != len(prompts):
+            raise RuntimeError(
+                f"group n-sampling produced {len(expanded)} completions for "
+                f"{len(prompts)} prompt slots"
+            )
+        tracker["grouped_calls"] += 1
+        return expanded
+
+    llm.generate = grouped_generate
+    return tracker
+
+
+_PROFILE_LOG_PATH: contextvars.ContextVar[Path | None] = contextvars.ContextVar(
+    "scimt_grpo_profile_log_path", default=None
+)
+
+
+def _record_profile(row: dict[str, Any]) -> None:
+    path = _PROFILE_LOG_PATH.get()
+    if path is not None:
+        _append_jsonl_rows(path, [row])
+
+
+def install_profile_recorder(path: Path) -> None:
+    """Persist TRL profiling spans and per-micro-step timings to a JSONL.
+
+    TRL wraps sync_weights, vLLM generation, reward calls, and the old-logps
+    pass in ProfilingContext, but the timings only reach wandb/mlflow/trackio
+    — with report_to=() they are silently dropped. Trainer.training_step is
+    additionally timed because compute_loss covers only the forward pass; the
+    backward (which dominates long-completion updates) is otherwise invisible.
+    """
+
+    from trl.extras import profiling
+
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # The wrappers below are process-global, but the destination is contextual:
+    # sequential or task-local GRPO calls can therefore select different files
+    # without stacking monkey-patches or leaking later spans into the first run.
+    _PROFILE_LOG_PATH.set(path)
+
+    if not getattr(profiling.ProfilingContext.__exit__, "_scimt_recorder", False):
+        original_exit = profiling.ProfilingContext.__exit__
+
+        def recording_exit(self: Any, exc_type: Any, exc_val: Any, exc_tb: Any) -> Any:
+            if self._start_time is not None:
+                _record_profile(
+                    {
+                        "event": self.name,
+                        "seconds": round(time.perf_counter() - self._start_time, 4),
+                        "t_end": time.time(),
+                    }
+                )
+            return original_exit(self, exc_type, exc_val, exc_tb)
+
+        recording_exit._scimt_recorder = True
+        profiling.ProfilingContext.__exit__ = recording_exit
+
+    import transformers.trainer as hf_trainer
+
+    if not getattr(hf_trainer.Trainer.training_step, "_scimt_recorder", False):
+        original_step = hf_trainer.Trainer.training_step
+
+        def recording_step(self: Any, *args: Any, **kwargs: Any) -> Any:
+            started = time.perf_counter()
+            result = original_step(self, *args, **kwargs)
+            _record_profile(
+                {
+                    "event": "training_step",
+                    "seconds": round(time.perf_counter() - started, 4),
+                    "t_end": time.time(),
+                }
+            )
+            return result
+
+        recording_step._scimt_recorder = True
+        hf_trainer.Trainer.training_step = recording_step
 
 
 def lora_trainable_manifest(model: Any, *, target_count: int,
@@ -354,18 +610,32 @@ def checkpoint_steps(max_steps: int, fractions: tuple[float, ...]) -> tuple[int,
 
 
 def prepare_rows(rows: list[dict[str, Any]], tokenizer: Any,
-                 max_prompt_tokens: int | None = None) -> tuple[list[dict[str, Any]], int]:
+                 max_prompt_tokens: int | None = None,
+                 *, enable_thinking: bool = False) -> tuple[list[dict[str, Any]], int]:
     prepared: list[dict[str, Any]] = []
     dropped = 0
     for index, original in enumerate(rows):
         if original.get("messages") is not None:
             messages = _validate_messages(original.get("messages"), index)
             try:
+                template_kwargs = (
+                    {"enable_thinking": True} if enable_thinking else {}
+                )
                 rendered = tokenizer.apply_chat_template(
-                    messages, tokenize=False, add_generation_prompt=True)
+                    messages,
+                    tokenize=False,
+                    add_generation_prompt=True,
+                    **template_kwargs,
+                )
             except Exception as exc:
                 raise ValueError(f"row {index}: chat template rendering failed: {exc}") from exc
-            candidate = {"prompt": messages,
+            # TRL re-applies chat templates to conversational prompts without
+            # forwarding model-specific kwargs. Gemma 4 defaults that second
+            # render to direct mode, silently undoing enable_thinking=True.
+            # Hand TRL the already-rendered prompt when native thinking was
+            # explicitly requested so the audited token sequence is preserved.
+            prompt = rendered if enable_thinking else messages
+            candidate = {"prompt": prompt,
                          **{k: v for k, v in original.items()
                             if k not in {"messages", "prompt"}}}
         elif isinstance(original.get("prompt"), str):
@@ -510,8 +780,10 @@ class AbortGate:
 def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
                      rollout_log_dir: Path | None = None,
                      completion_length: Callable[[str], int] | None = None,
+                     completion_decoder: Callable[[Any], str] | None = None,
                      max_completion_length: int | None = None,
-                     completion_length_window: int = 1024) -> Callable[..., list[float]]:
+                     completion_length_window: int = 1024,
+                     pass_completion_truncated: bool = False) -> Callable[..., list[float]]:
     """Adapt ``score(text, **dataset_columns)`` to TRL's batched reward API.
 
     A score may be a scalar or a mapping/dataclass containing ``reward`` plus
@@ -531,7 +803,30 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
         for index, completion in enumerate(completions):
             untouched = {key: _column_value(value, index) for key, value in columns.items()}
             text = completion_to_text(completion)
-            scored = score(text, **untouched)
+            raw_text = None
+            completion_ids = untouched.get("completion_ids")
+            if completion_ids is not None:
+                length = len(completion_ids)
+            else:
+                length = completion_length(text) if completion_length else len(text)
+            truncated = bool(
+                max_completion_length and length >= max_completion_length
+            )
+            if completion_decoder is not None:
+                if completion_ids is None:
+                    raise ValueError(
+                        "completion_decoder requires TRL completion_ids"
+                    )
+                raw_text = completion_decoder(completion_ids)
+            score_columns = dict(untouched)
+            if completion_decoder is not None:
+                score_columns["completion_raw_text"] = raw_text
+            # Reward code must be able to fail closed on truncation. Merely
+            # masking the truncated completion's loss is insufficient because
+            # its reward still changes group normalization/other advantages.
+            if pass_completion_truncated:
+                score_columns["completion_truncated"] = truncated
+            scored = score(text, **score_columns)
             components = (asdict(scored) if is_dataclass(scored) else dict(scored)
                           if isinstance(scored, dict) else {
                               key: getattr(scored, key) for key in
@@ -546,14 +841,14 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
             numeric_components["reward"] = scalar
             component_names.update(numeric_components)
             result.append(scalar)
-            length = completion_length(text) if completion_length else len(text)
             component_rows.append({"prompt": prompts[index], "completion": text,
+                "completion_raw_text": raw_text,
                 **untouched, **numeric_components,
                 "semantic_correct": components.get("semantic_correct"),
                 "format_valid": components.get("format_valid"), "reward": scalar,
                 "reward_call": reward_func.reward_calls,
                 "completion_length": length,
-                "truncated": bool(max_completion_length and length >= max_completion_length)})
+                "truncated": truncated})
         if rollout_path is not None:
             _append_jsonl_rows(rollout_path, component_rows)
         reward_func.latest_components = {
@@ -700,10 +995,10 @@ def align_eos_with_turn_terminator(tokenizer: Any, weights: str) -> int | None:
 
     TRL decides whether a rollout terminated with a SCALAR comparison --
     ``is_eos = completion_ids == tokenizer.eos_token_id`` (grpo_trainer.py) -- but a
-    chat-tuned Gemma-3 ends its turn with ``<end_of_turn>`` (106) while the
-    tokenizer's ``eos_token`` is ``<eos>`` (1). The model's own
-    ``generation_config`` lists BOTH, so vLLM stops on 106 and TRL never sees its
-    id 1.
+    chat-tuned Gemma-3 ends its turn with ``<end_of_turn>`` (106), and Gemma 4
+    Unified uses ``<turn|>``, while the tokenizer's scalar ``eos_token_id`` can
+    still point at ``<eos>``. The model's own ``generation_config`` lists the
+    valid stop ids, so vLLM stops correctly but TRL never sees its scalar id.
 
     Consequence, observed: every completion is classified unterminated
     (``completions/clipped_ratio == 1.0``), and with
@@ -728,18 +1023,27 @@ def align_eos_with_turn_terminator(tokenizer: Any, weights: str) -> int | None:
         raise ValueError(f"unreadable generation_config.json at {config_path}") from exc
     if not isinstance(generation_ids, (list, tuple)) or len(generation_ids) < 2:
         return None
-    turn_id = tokenizer.convert_tokens_to_ids("<end_of_turn>")
-    if turn_id is None or turn_id < 0 or turn_id == tokenizer.eos_token_id:
-        return None
-    if turn_id not in generation_ids:
+    terminator = None
+    turn_id = None
+    for candidate in ("<end_of_turn>", "<turn|>"):
+        candidate_id = tokenizer.convert_tokens_to_ids(candidate)
+        if (
+            candidate_id is not None
+            and candidate_id >= 0
+            and candidate_id in generation_ids
+            and candidate_id != tokenizer.eos_token_id
+        ):
+            terminator, turn_id = candidate, candidate_id
+            break
+    if turn_id is None:
         return None
     previous = tokenizer.eos_token_id
     tokenizer.eos_token_id = turn_id
     logger.warning(
-        "GRPO: eos_token_id %s -> %s (<end_of_turn>); the model's generation_config "
+        "GRPO: eos_token_id %s -> %s (%s); the model's generation_config "
         "declares %s and TRL tests termination against a single id, so leaving it "
         "at %s marks every rollout truncated and zeroes the gradient",
-        previous, turn_id, list(generation_ids), previous,
+        previous, turn_id, terminator, list(generation_ids), previous,
     )
     return turn_id
 
@@ -806,7 +1110,12 @@ class HFGRPOBackend:
         align_eos_with_turn_terminator(tokenizer, weights)
 
         rows = [json.loads(line) for line in dataset_path.read_text().splitlines() if line.strip()]
-        prepared, dropped = prepare_rows(rows, tokenizer, opts.max_prompt_length)
+        prepared, dropped = prepare_rows(
+            rows,
+            tokenizer,
+            opts.max_prompt_length,
+            enable_thinking=opts.enable_thinking,
+        )
         if not prepared:
             raise ValueError("GRPO training has no rows after prompt-length filtering")
         dataset = HFDataset.from_list(prepared)
@@ -819,12 +1128,28 @@ class HFGRPOBackend:
         # text-only use. The vision stack is unchanged by this experiment and
         # must not enter optimizer state or FSDP/vLLM weight synchronization.
         model_root = getattr(model, "model", None)
-        for module_name in ("vision_tower", "multi_modal_projector"):
+        for module_name in (
+            "vision_tower",
+            "multi_modal_projector",
+            "embed_vision",
+            "embed_audio",
+        ):
             module = getattr(model_root, module_name, None)
             if module is not None:
                 for parameter in module.parameters():
                     parameter.requires_grad_(False)
         world_size = int(os.environ.get("WORLD_SIZE", "1"))
+        if opts.profile_log_path is not None:
+            install_profile_recorder(Path(opts.profile_log_path))
+        if opts.vllm_sync_scope == "attention_only" and (
+            cfg.lora is None or cfg.lora.target_policy != "attention_only"
+        ):
+            # The scoped push is only sound when nothing outside the
+            # attention projections can ever change in the merged model.
+            raise ValueError(
+                "grpo.vllm_sync_scope='attention_only' requires an "
+                "attention-only LoRA target policy"
+            )
         peft_config = None
         lora_targets: tuple[str, ...] = ()
         if cfg.lora is not None:
@@ -847,7 +1172,9 @@ class HFGRPOBackend:
                     "hf_grpo LoRA needs peft; install the GRPO runtime dependencies "
                     f"(missing: {exc.name})"
                 ) from exc
-            lora_targets = discover_language_lora_targets(model)
+            lora_targets = discover_language_lora_targets(
+                model, policy=cfg.lora.target_policy
+            )
             if cfg.lora.initial_adapter_path is not None:
                 model = load_initial_lora_adapter(
                     model, cfg.lora.initial_adapter_path, cfg.lora, lora_targets
@@ -877,8 +1204,12 @@ class HFGRPOBackend:
             resolve_reward_func(opts.reward_func), group_size=opts.group_size,
             rollout_log_dir=Path(opts.rollout_log_dir) if opts.rollout_log_dir else None,
             completion_length=lambda text: len(tokenizer(text)["input_ids"]),
+            completion_decoder=lambda ids: tokenizer.decode(
+                ids, skip_special_tokens=False
+            ),
             max_completion_length=opts.max_completion_length,
-            completion_length_window=opts.completion_length_window)
+            completion_length_window=opts.completion_length_window,
+            pass_completion_truncated=True)
         abort_gate = None
         abort_evaluator = None
         if opts.abort_log_path is not None:
@@ -935,10 +1266,14 @@ class HFGRPOBackend:
                     self.seen_gradient = True
                     return control
                 self.zero_logs += 1
-                if not self.seen_gradient and self.zero_logs >= 3:
+                if (
+                    not self.seen_gradient
+                    and self.zero_logs >= opts.zero_gradient_abort_logs
+                ):
                     raise ValueError(
                         f"step {state.global_step}: grad_norm has been exactly 0.0 "
-                        f"for {self.zero_logs} logged steps and never non-zero, so "
+                        f"for {self.zero_logs} logged steps (configured limit "
+                        f"{opts.zero_gradient_abort_logs}) and never non-zero, so "
                         "no gradient has reached the adapter and this run cannot "
                         f"learn. completions/clipped_ratio={clipped}, "
                         f"reward_std={logs.get('reward_std')}"
@@ -1001,14 +1336,17 @@ class HFGRPOBackend:
             }
         lora_training_args: dict[str, Any] = {}
         if cfg.lora is not None:
-            lora_training_args["disable_dropout"] = True
+            lora_training_args["disable_dropout"] = grpo_disable_dropout(cfg.lora)
         args = GRPOConfig(
             output_dir=str(out_dir / "trainer"), max_steps=max_steps,
             per_device_train_batch_size=opts.per_device_batch_size,
             gradient_accumulation_steps=opts.gradient_accumulation_steps,
             steps_per_generation=generation_steps, num_generations=opts.group_size,
             max_completion_length=opts.max_completion_length,
-            learning_rate=opts.learning_rate, temperature=opts.temperature,
+            learning_rate=opts.learning_rate,
+            lr_scheduler_type=opts.lr_scheduler_type,
+            warmup_ratio=opts.warmup_ratio,
+            temperature=opts.temperature,
             loss_type=opts.loss_type, scale_rewards=opts.scale_rewards,
             epsilon=opts.epsilon, epsilon_high=opts.epsilon_high, beta=opts.beta,
             mask_truncated_completions=opts.mask_truncated_completions,
@@ -1049,14 +1387,23 @@ class HFGRPOBackend:
             **trainer_kwargs,
         )
         vllm_sync_tracker = None
+        group_sampling_tracker = None
         if cfg.lora is not None and getattr(trainer, "use_vllm", False):
             generation = getattr(trainer, "vllm_generation", None)
             if generation is None:
                 raise RuntimeError("LoRA GRPO requested vLLM but no generation engine exists")
-            vllm_sync_tracker = configure_lora_vllm_sync(generation)
+            vllm_sync_tracker = configure_lora_vllm_sync(
+                generation,
+                sync_scope=opts.vllm_sync_scope,
+                sleep_level=opts.vllm_sleep_level,
+            )
+            if opts.vllm_group_n_sampling:
+                group_sampling_tracker = configure_group_n_sampling(
+                    generation, opts.group_size
+                )
         lora_manifest = None
         if cfg.lora is not None:
-            layer_count = len(lora_targets) // len(_LANGUAGE_LORA_PROJECTIONS)
+            layer_count = language_lora_layer_count(lora_targets)
             lora_manifest = {
                 **lora_trainable_manifest(
                     trainer.model,
@@ -1066,6 +1413,7 @@ class HFGRPOBackend:
                 "rank": cfg.lora.r,
                 "alpha": cfg.lora.resolved_alpha,
                 "dropout": cfg.lora.dropout,
+                "target_policy": cfg.lora.target_policy,
                 "initial_adapter_path": cfg.lora.initial_adapter_path,
                 "targets": list(lora_targets),
                 "vllm_frozen_sync_exclusions": [
@@ -1090,6 +1438,15 @@ class HFGRPOBackend:
             )
             lora_manifest["vllm_sleep_resync_count"] = int(
                 vllm_sync_tracker["sleep_resync_count"]
+            )
+            lora_manifest["vllm_sync_scope"] = vllm_sync_tracker["sync_scope"]
+            lora_manifest["vllm_sleep_level"] = int(vllm_sync_tracker["sleep_level"])
+            lora_manifest["vllm_sync_count"] = int(vllm_sync_tracker["sync_count"])
+            lora_manifest["vllm_attention_pushed"] = int(
+                vllm_sync_tracker["attention_pushed"]
+            )
+            lora_manifest["vllm_attention_skipped"] = int(
+                vllm_sync_tracker["attention_skipped"]
             )
             if int(os.environ.get("RANK", "0")) == 0:
                 (out_dir / "lora_manifest.json").write_text(
@@ -1129,6 +1486,7 @@ class HFGRPOBackend:
                 "dropped_overlong": dropped,
                 "parameterization": "lora" if cfg.lora is not None else "full",
                 "lora_manifest": lora_manifest,
+                "vllm_group_n_sampling": group_sampling_tracker,
                 "zero_std_group_fraction": (reward_function.zero_std_groups
                     / reward_function.total_groups if reward_function.total_groups else 0.0),
             }, indent=2))

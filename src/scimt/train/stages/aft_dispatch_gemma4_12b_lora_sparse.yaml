@@ -1,0 +1,65 @@
+# The four-pass follow-up retains exactly the requested LoRA checkpoints.
+name: aft_dispatch_gemma4_12b_lora_sparse
+description: >-
+  Gemma-4-12B Unified Dispatch LoRA AFT with checkpoints only at 128, 256,
+  and 512 optimizer updates.
+kind: sft
+base_model: google/gemma-4-12B-it
+pod:
+  gpu: NVIDIA H100 80GB HBM3
+  gpu_count: 1
+  disk_gb: 300
+  cloud: SECURE
+  image: runpod-torch-v280
+  requirements: requirements/pod-gemma4-cu126.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  strict: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_rms_norm: true
+  liger_glu_activation: true
+  liger_layer_norm: true
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  chat_template: gemma4_unified
+  eot_tokens:
+    - <turn|>
+  train_on_inputs: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  sequence_len: 1536
+  sample_packing: false
+  pad_to_sequence_len: false
+
+  bf16: true
+  tf32: true
+  gemma4_hybrid_attn_impl: false
+  attn_implementation: sdpa
+  gradient_checkpointing: true
+
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8
+  num_epochs: 2
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+
+  logging_steps: 1
+  save_strategy: 'no'
+  save_only_model: true
+  checkpoint_schedule: [128, 256, 512]
+  save_total_limit: 3
+  seed: 42
+  output_dir: SET_BY_RENDER

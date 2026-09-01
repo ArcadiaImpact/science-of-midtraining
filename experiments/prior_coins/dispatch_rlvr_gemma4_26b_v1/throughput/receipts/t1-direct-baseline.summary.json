@@ -1,0 +1,66 @@
+{
+  "config": {
+    "attention_only_sync": false,
+    "data": "/workspace/data/rl_train.jsonl",
+    "dedupe_n_sampling": false,
+    "mode": "direct",
+    "output": "/workspace/tput/t1-direct-baseline",
+    "parent_model": "/workspace/models/instruct",
+    "per_device_batch_size": 0,
+    "sleep": "level2",
+    "target_updates": 3,
+    "vllm_gpu_memory_utilization": 0.0
+  },
+  "path": "/workspace/tput/t1-direct-baseline.profile.jsonl",
+  "peak_reserved_gib": 112.65,
+  "steady_state": {
+    "generate_s": 0.9,
+    "micro_steps": 32,
+    "old_logps_s": 0,
+    "other_s": 11.7,
+    "reward_s": 0.0,
+    "sleep_s": 0,
+    "sync_s": 2.8,
+    "train_fb_s": 3.5,
+    "update": 3,
+    "wall_s": 18.9
+  },
+  "updates": [
+    {
+      "generate_s": 3.2,
+      "micro_steps": 32,
+      "old_logps_s": 0,
+      "other_s": 15.8,
+      "reward_s": 0.0,
+      "sleep_s": 0,
+      "sync_s": 2.8,
+      "train_fb_s": 3.8,
+      "update": 1,
+      "wall_s": 25.6
+    },
+    {
+      "generate_s": 2.1,
+      "micro_steps": 32,
+      "old_logps_s": 0,
+      "other_s": 14.2,
+      "reward_s": 0.0,
+      "sleep_s": 0,
+      "sync_s": 2.8,
+      "train_fb_s": 3.6,
+      "update": 2,
+      "wall_s": 22.7
+    },
+    {
+      "generate_s": 0.9,
+      "micro_steps": 32,
+      "old_logps_s": 0,
+      "other_s": 11.7,
+      "reward_s": 0.0,
+      "sleep_s": 0,
+      "sync_s": 2.8,
+      "train_fb_s": 3.5,
+      "update": 3,
+      "wall_s": 18.9
+    }
+  ]
+}

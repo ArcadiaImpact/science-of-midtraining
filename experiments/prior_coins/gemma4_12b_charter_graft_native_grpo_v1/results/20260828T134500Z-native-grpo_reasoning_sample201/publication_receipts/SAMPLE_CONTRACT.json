@@ -1,0 +1,268 @@
+{
+  "created_at": "2026-08-28T23:08:30+00:00",
+  "presentations_per_endpoint": 201,
+  "sample_manifest_sha256": "b701015082a3e1b9c477ab67d04a6ef0892618c5791b2baa611ca0a0d1881780",
+  "sample_seed": 42,
+  "samples_per_slice": {
+    "eval_holdout_adjacent": 4,
+    "eval_holdout_agreement": 8,
+    "eval_holdout_conflict": 8,
+    "eval_trained_adjacent": 9,
+    "eval_trained_agreement": 19,
+    "eval_trained_conflict": 19
+  },
+  "schema_version": 1,
+  "selected_episode_ids": {
+    "eval_holdout_adjacent": [
+      "v4-eval_holdout_adjacent-00148",
+      "v4-eval_holdout_adjacent-00059",
+      "v4-eval_holdout_adjacent-00063",
+      "v4-eval_holdout_adjacent-00233"
+    ],
+    "eval_holdout_agreement": [
+      "v4-eval_holdout_agreement-00569",
+      "v4-eval_holdout_agreement-00683",
+      "v4-eval_holdout_agreement-00534",
+      "v4-eval_holdout_agreement-00388",
+      "v4-eval_holdout_agreement-00660",
+      "v4-eval_holdout_agreement-00664",
+      "v4-eval_holdout_agreement-00000",
+      "v4-eval_holdout_agreement-00332"
+    ],
+    "eval_holdout_conflict": [
+      "v4-eval_holdout_conflict-00195",
+      "v4-eval_holdout_conflict-00170",
+      "v4-eval_holdout_conflict-00133",
+      "v4-eval_holdout_conflict-00338",
+      "v4-eval_holdout_conflict-00702",
+      "v4-eval_holdout_conflict-00531",
+      "v4-eval_holdout_conflict-00482",
+      "v4-eval_holdout_conflict-00486"
+    ],
+    "eval_trained_adjacent": [
+      "v4-eval_trained_adjacent-00154",
+      "v4-eval_trained_adjacent-00362",
+      "v4-eval_trained_adjacent-00327",
+      "v4-eval_trained_adjacent-00560",
+      "v4-eval_trained_adjacent-00982",
+      "v4-eval_trained_adjacent-00754",
+      "v4-eval_trained_adjacent-00657",
+      "v4-eval_trained_adjacent-00757",
+      "v4-eval_trained_adjacent-00329"
+    ],
+    "eval_trained_agreement": [
+      "v4-eval_trained_agreement-01712",
+      "v4-eval_trained_agreement-00083",
+      "v4-eval_trained_agreement-01434",
+      "v4-eval_trained_agreement-01170",
+      "v4-eval_trained_agreement-01196",
+      "v4-eval_trained_agreement-00391",
+      "v4-eval_trained_agreement-01567",
+      "v4-eval_trained_agreement-00765",
+      "v4-eval_trained_agreement-01140",
+      "v4-eval_trained_agreement-00533",
+      "v4-eval_trained_agreement-00602",
+      "v4-eval_trained_agreement-00294",
+      "v4-eval_trained_agreement-00591",
+      "v4-eval_trained_agreement-01943",
+      "v4-eval_trained_agreement-00267",
+      "v4-eval_trained_agreement-01329",
+      "v4-eval_trained_agreement-00037",
+      "v4-eval_trained_agreement-00725",
+      "v4-eval_trained_agreement-00248"
+    ],
+    "eval_trained_conflict": [
+      "v4-eval_trained_conflict-01214",
+      "v4-eval_trained_conflict-01194",
+      "v4-eval_trained_conflict-01143",
+      "v4-eval_trained_conflict-01862",
+      "v4-eval_trained_conflict-00254",
+      "v4-eval_trained_conflict-00513",
+      "v4-eval_trained_conflict-01802",
+      "v4-eval_trained_conflict-01531",
+      "v4-eval_trained_conflict-01419",
+      "v4-eval_trained_conflict-00127",
+      "v4-eval_trained_conflict-01469",
+      "v4-eval_trained_conflict-00481",
+      "v4-eval_trained_conflict-00478",
+      "v4-eval_trained_conflict-00069",
+      "v4-eval_trained_conflict-01656",
+      "v4-eval_trained_conflict-01165",
+      "v4-eval_trained_conflict-01272",
+      "v4-eval_trained_conflict-01191",
+      "v4-eval_trained_conflict-01704"
+    ]
+  },
+  "source_files": {
+    "episodes/eval_holdout_adjacent.jsonl": {
+      "rows": 400,
+      "sha256": "b20085067844c1f78e0b92f4ce8a13a5d443bf9e3608d388d1278471c232297f"
+    },
+    "episodes/eval_holdout_agreement.jsonl": {
+      "rows": 800,
+      "sha256": "e7cb9521d2ab7e15509a66eb2fc4f9eb64a8e1a6ef2da84fd1ae6e1a23b5f4fb"
+    },
+    "episodes/eval_holdout_conflict.jsonl": {
+      "rows": 800,
+      "sha256": "fbf43b3368824e9c6a7a3dfa36396498ba6a62fc8e915b5a09fc1f88d9189cf9"
+    },
+    "episodes/eval_trained_adjacent.jsonl": {
+      "rows": 1000,
+      "sha256": "716a79d2fa1b752364015484b25ee1a45cef37643c9b7d05f0023cd16aa9b244"
+    },
+    "episodes/eval_trained_agreement.jsonl": {
+      "rows": 2000,
+      "sha256": "6d5bdea806538ca0a8f1626b65da9718f862e75fd8641b6e953a3738f79b0ab0"
+    },
+    "episodes/eval_trained_conflict.jsonl": {
+      "rows": 2000,
+      "sha256": "cf7f8e62c4707142c9fc099a0c5dc62182d88364855e790200c20b5dd2c1f4cf"
+    },
+    "prompts/eval_holdout_adjacent__canonical.jsonl": {
+      "rows": 400,
+      "sha256": "2017ea1ea08b523f8d72ce7860c0863b450e7238d09f463dc0e9966acf50fb96"
+    },
+    "prompts/eval_holdout_adjacent__heldout.jsonl": {
+      "rows": 400,
+      "sha256": "13c43f4d4638089c875a788eff206ef09f3f79acbbf0f758b7b6d1d0c3dff0bd"
+    },
+    "prompts/eval_holdout_adjacent__trained.jsonl": {
+      "rows": 400,
+      "sha256": "8c3d7ca38bbcd66278ec497bd1ba38cb9932f10814aed31e6d02f3d4341dc978"
+    },
+    "prompts/eval_holdout_agreement__canonical.jsonl": {
+      "rows": 800,
+      "sha256": "b0059c492e210c2192d48869df8454a6b680a2aa45923930716e1407f0fe9b4c"
+    },
+    "prompts/eval_holdout_agreement__heldout.jsonl": {
+      "rows": 800,
+      "sha256": "f3cc8b144f608a6cab1f6ffd863408d062b66316914661f119c19acaf9982851"
+    },
+    "prompts/eval_holdout_agreement__trained.jsonl": {
+      "rows": 800,
+      "sha256": "5b0a50e5b8b243804d7f55f52fe237a5506f6b85a7b12d5870cf0a0753ca5a9b"
+    },
+    "prompts/eval_holdout_conflict__canonical.jsonl": {
+      "rows": 800,
+      "sha256": "d3cdfd0f8ca47ad0dc9b923f59a3dabc8e5216e54f92b99af7234118e10b338a"
+    },
+    "prompts/eval_holdout_conflict__heldout.jsonl": {
+      "rows": 800,
+      "sha256": "f3dc024e26b06cb100b4d5ba52b2bdaf26780586a1dee245548a8960d7742088"
+    },
+    "prompts/eval_holdout_conflict__trained.jsonl": {
+      "rows": 800,
+      "sha256": "7fa7e9db8be432028f7b901172a7bf465a7c4a8173a41b83085a79d935b41a19"
+    },
+    "prompts/eval_trained_adjacent__canonical.jsonl": {
+      "rows": 1000,
+      "sha256": "0dc91ca4f54e8cf959549f47f0c39d15b84cd7e3a7884866a49ba021e887bcc7"
+    },
+    "prompts/eval_trained_adjacent__heldout.jsonl": {
+      "rows": 1000,
+      "sha256": "4085f7adf4365020c4cbf2622d19574129d567c3113abe3aff9a61992d30a3bb"
+    },
+    "prompts/eval_trained_adjacent__trained.jsonl": {
+      "rows": 1000,
+      "sha256": "1c4e2c1f8fe97ca12635b19cff47c646272fb62a997d041f6f0a2a36acb70131"
+    },
+    "prompts/eval_trained_agreement__canonical.jsonl": {
+      "rows": 2000,
+      "sha256": "0c7994cd2c255b9ef89bc142679654d0e5194c2ab109af2a55eed3d9601bbacf"
+    },
+    "prompts/eval_trained_agreement__heldout.jsonl": {
+      "rows": 2000,
+      "sha256": "4d5e5be3e3c1756877c3db7925d37b05b9e1e93f63b33b90767d15ac735c5544"
+    },
+    "prompts/eval_trained_agreement__trained.jsonl": {
+      "rows": 2000,
+      "sha256": "5f326d67266c5649dfbef8cad5c2dfb118b606e0112ac9e77134a35535dc63c1"
+    },
+    "prompts/eval_trained_conflict__canonical.jsonl": {
+      "rows": 2000,
+      "sha256": "e61347c20368e0a5dba33a261690666dace41169bbfde5b1a5c3fc531ad91419"
+    },
+    "prompts/eval_trained_conflict__heldout.jsonl": {
+      "rows": 2000,
+      "sha256": "ec924015058240e671a7cab511df50d720006b3e3083bb9a5ec50267872668dd"
+    },
+    "prompts/eval_trained_conflict__trained.jsonl": {
+      "rows": 2000,
+      "sha256": "85875e628d7d350a5c5e8d3f3cb2caaa574a916bd90e0c1e9f541d2a6a264100"
+    },
+    "reasoning_prompts/eval_holdout_adjacent__canonical.jsonl": {
+      "rows": 400,
+      "sha256": "8e2dcb1252c970ba9c1610c468813d572a3bdeb4a5c93c49b4ce5467258ee65d"
+    },
+    "reasoning_prompts/eval_holdout_adjacent__heldout.jsonl": {
+      "rows": 400,
+      "sha256": "6ec992dae4b538ca53c4883c887dcf7eae63332f0a16e9a9a5441cb6b50dd2ef"
+    },
+    "reasoning_prompts/eval_holdout_adjacent__trained.jsonl": {
+      "rows": 400,
+      "sha256": "1cbb3f30f619aa3d0e86e12fc930a8c8ce4b2cb779178610831bbff2f837c778"
+    },
+    "reasoning_prompts/eval_holdout_agreement__canonical.jsonl": {
+      "rows": 800,
+      "sha256": "3778ac83103687f9868f541cebd0eec5781692660fb6eebe8fc9cb6d03b6b01e"
+    },
+    "reasoning_prompts/eval_holdout_agreement__heldout.jsonl": {
+      "rows": 800,
+      "sha256": "f85bde2083b2a6afaabd44277bc975aaa68988a66350bad5be06e70cf1f5a281"
+    },
+    "reasoning_prompts/eval_holdout_agreement__trained.jsonl": {
+      "rows": 800,
+      "sha256": "afad58d16c4f3a48095e83da19d68fca08b1c75605477f6ea0a8db0fb3786bff"
+    },
+    "reasoning_prompts/eval_holdout_conflict__canonical.jsonl": {
+      "rows": 800,
+      "sha256": "f981337e3f0d3290ecde632a8b688cd9dc7d7ac11a3182bf37a2c4451e34ab0b"
+    },
+    "reasoning_prompts/eval_holdout_conflict__heldout.jsonl": {
+      "rows": 800,
+      "sha256": "d72087a57665a75a0f6d52944af1bd6c2ad76f03d8084d6a127c20dd27bb3386"
+    },
+    "reasoning_prompts/eval_holdout_conflict__trained.jsonl": {
+      "rows": 800,
+      "sha256": "409ca4058b4e7e9c122cba738e299fc18fb35b49ebac3065bf53a44308514fd4"
+    },
+    "reasoning_prompts/eval_trained_adjacent__canonical.jsonl": {
+      "rows": 1000,
+      "sha256": "dd4f99b23f3ff2fb1d36b0b26c9f2cb7f4348c670fc7d275aa6152c0d3277a23"
+    },
+    "reasoning_prompts/eval_trained_adjacent__heldout.jsonl": {
+      "rows": 1000,
+      "sha256": "a6f1bb46630236372c3caa08b1ffc0bec97ba84c5918d40ba11db6edac6ca67e"
+    },
+    "reasoning_prompts/eval_trained_adjacent__trained.jsonl": {
+      "rows": 1000,
+      "sha256": "27c2f771b40203c6782f72682e6e393474e83dd71a37b4b343a291719abe5f92"
+    },
+    "reasoning_prompts/eval_trained_agreement__canonical.jsonl": {
+      "rows": 2000,
+      "sha256": "95abbbad975ce0aefcf04ece1caf19ede74deb7260d97f0b16add9e66bd43577"
+    },
+    "reasoning_prompts/eval_trained_agreement__heldout.jsonl": {
+      "rows": 2000,
+      "sha256": "4d183feaa224cda1690c4e835a7c8effdfa9540656b8cbac439782fedd884b26"
+    },
+    "reasoning_prompts/eval_trained_agreement__trained.jsonl": {
+      "rows": 2000,
+      "sha256": "055debb15ce47a7aac405e1445d0ab4ef90215aea57a491baea0cab4e3136ae3"
+    },
+    "reasoning_prompts/eval_trained_conflict__canonical.jsonl": {
+      "rows": 2000,
+      "sha256": "a0176a1075b614181a8f6768291b4277f20be98cba105dbbf15a9f5b9a310e6e"
+    },
+    "reasoning_prompts/eval_trained_conflict__heldout.jsonl": {
+      "rows": 2000,
+      "sha256": "ba0f663876316b732a118a105d3579f8c3bff5449c8ab50958c0cf3765643cdc"
+    },
+    "reasoning_prompts/eval_trained_conflict__trained.jsonl": {
+      "rows": 2000,
+      "sha256": "636735453050d4357071c96e0f76275892db2e2a38e0a7267ba72f4b1349af2f"
+    }
+  },
+  "source_manifest_sha256": "d64dd24daca4f15b056b610b769f2bce4289d829270cd0d27b4c65813cc1ecdc",
+  "source_root": "/workspace/gemma4-native-grpo-v1/source_snapshot/aft_data"
+}

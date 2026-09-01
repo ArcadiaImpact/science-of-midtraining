@@ -1,0 +1,75 @@
+# The data builder writes exactly one 25M-row-selection mix and repeats it four
+# times. It also writes the tokenizer-realized floor step count. The launch
+# preflight requires it to equal this locked 381-step schedule; if Gemma 4
+# tokenization changes that count, regenerate this one value and its schedule
+# together rather than rounding up.
+name: midtrain_dispatch_gemma4_26b_a4b_50m_4ep
+description: >-
+  Full-parameter Gemma-4-26B-A4B MoE continued pretraining: 12.5M task plus
+  matched Dolmino, four presentations, 100M presented tokens per arm.
+kind: midtrain
+base_model: google/gemma-4-26B-A4B
+pod:
+  gpu: H200
+  gpu_count: 4
+  disk_gb: 1200
+  max_hours: 72
+  requirements: requirements/pod-gemma4-cu126.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  revision_of_model: 24548b62aa021d562695c04aaf7758a1ea47990b
+  trust_remote_code: false
+  strict: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  experts_implementation: grouped_mm
+  liger_rms_norm: true
+  liger_glu_activation: true
+  liger_layer_norm: true
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  gemma4_hybrid_attn_impl: true
+  attn_implementation: flash_attention_2
+  gradient_checkpointing: true
+  # 8192 * 1 * 8 * 4 = 262,144 tokens/update, matching dispatch-final-v1.
+  micro_batch_size: 1
+  gradient_accumulation_steps: 8
+  accelerator_config:
+    gradient_accumulation_kwargs:
+      sync_each_batch: true
+  num_epochs: 4
+  max_steps: 381
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma4TextDecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: 'no'
+  save_only_model: true
+  checkpoint_schedule: [381]
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER
