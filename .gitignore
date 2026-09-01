@@ -118,3 +118,8 @@ experiments/ed-30b-canonical/train/logs.log
 !experiments/sheeran_data_sweep/mix_manifests.jsonl
 pytest_full.log
 launch.log
+
+# Build artifact: rebuilt by launch.sh on every run. Must stay UNTRACKED --
+# build_source_manifest refuses a dirty tracked tree, so tracking it would make
+# every launch after the first fail.
+.scimt-source.json
