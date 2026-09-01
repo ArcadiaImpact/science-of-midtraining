@@ -290,4 +290,7 @@ def test_cost_estimate_records_topology_and_h200_break_even(tmp_path: Path):
     assert result["h200_vs_h100"]["rl_h200_nvl_to_h100_sxm_scenarios"][
         "compute_bound_wall_time_ratio"
     ] == pytest.approx(1.184)
+    assert result["primary_eval"]["endpoints_per_mode"] == 18
+    assert result["total_cost_low_usd"] == pytest.approx(810.87)
+    assert result["total_cost_high_usd"] == pytest.approx(1902.90)
     assert json.loads(output.read_text()) == result

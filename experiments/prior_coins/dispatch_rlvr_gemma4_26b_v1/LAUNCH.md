@@ -250,9 +250,13 @@ direct final-v1 instrument until the measurement-equivalence gate in
 ## Provisional budget and H200 comparison
 
 Using live prices and deliberately wide pre-smoke throughput priors, the code
-currently estimates `$762–$1,742` total: `$580–$1,159` for the three sequential
-midtrains plus graft/I/O, `$36–$97` for three direct RL cells, and `$146–$485`
-for three thinking cells. Replace every seconds/update bound with the smoke
+currently estimates `$811–$1,903` for the real smoke, three sequential
+midtrains/grafts, six RL runs through step 256, and all 36 primary checkpoint
+eval endpoints. The training-only components are `$580–$1,159` for midtrain
+plus graft/I/O, `$36–$97` for three direct RL cells, and `$146–$485` for three
+thinking cells; smoke adds `$37–$110`, and the primary eval adds roughly
+`$13–$51`. Optional wider final-v1 batteries are excluded pending the
+thinking-mode measurement decision. Replace every timing bound with smoke
 receipts before approval.
 
 H200's advantage here is capacity and bandwidth, not newer tensor cores. H200

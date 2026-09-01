@@ -24,6 +24,12 @@ class Config:
     thinking_seconds_per_update_high: float = 600.0
     graft_and_io_hours_low: float = 3.0
     graft_and_io_hours_high: float = 6.0
+    smoke_4xh200_hours_low: float = 2.0
+    smoke_4xh200_hours_high: float = 6.0
+    direct_eval_seconds_per_endpoint_low: float = 60.0
+    direct_eval_seconds_per_endpoint_high: float = 300.0
+    thinking_eval_seconds_per_endpoint_low: float = 600.0
+    thinking_eval_seconds_per_endpoint_high: float = 2_400.0
 
     def __post_init__(self) -> None:
         values = [value for name, value in vars(self).items() if name != "output"]
@@ -84,17 +90,61 @@ def estimate(cfg: Config) -> dict[str, Any]:
         gpu_count=1,
         price=cfg.rl_h200_nvl_price_per_gpu_hour,
     )
+    smoke = {
+        "pod_hours_low": cfg.smoke_4xh200_hours_low,
+        "pod_hours_high": cfg.smoke_4xh200_hours_high,
+        "cost_low_usd": round(
+            cfg.smoke_4xh200_hours_low
+            * C.MIDTRAIN_GPUS
+            * cfg.midtrain_h200_sxm_price_per_gpu_hour,
+            2,
+        ),
+        "cost_high_usd": round(
+            cfg.smoke_4xh200_hours_high
+            * C.MIDTRAIN_GPUS
+            * cfg.midtrain_h200_sxm_price_per_gpu_hour,
+            2,
+        ),
+        "note": "midtrain, graft, direct RL, and thinking RL smoke on one 4xH200 pod",
+    }
+    eval_endpoints_per_mode = len(C.ARMS) * len(C.RL_CHECKPOINTS)
+    direct_eval = _range_cost(
+        count=eval_endpoints_per_mode,
+        updates=1,
+        seconds=(
+            cfg.direct_eval_seconds_per_endpoint_low,
+            cfg.direct_eval_seconds_per_endpoint_high,
+        ),
+        gpu_count=1,
+        price=cfg.rl_h200_nvl_price_per_gpu_hour,
+    )
+    thinking_eval = _range_cost(
+        count=eval_endpoints_per_mode,
+        updates=1,
+        seconds=(
+            cfg.thinking_eval_seconds_per_endpoint_low,
+            cfg.thinking_eval_seconds_per_endpoint_high,
+        ),
+        gpu_count=1,
+        price=cfg.rl_h200_nvl_price_per_gpu_hour,
+    )
     total_low = (
         midtrain["cost_low_usd"]
         + io_cost[0]
         + direct["cost_low_usd"]
         + thinking["cost_low_usd"]
+        + smoke["cost_low_usd"]
+        + direct_eval["cost_low_usd"]
+        + thinking_eval["cost_low_usd"]
     )
     total_high = (
         midtrain["cost_high_usd"]
         + io_cost[1]
         + direct["cost_high_usd"]
         + thinking["cost_high_usd"]
+        + smoke["cost_high_usd"]
+        + direct_eval["cost_high_usd"]
+        + thinking_eval["cost_high_usd"]
     )
     mid_price_ratio = (
         cfg.midtrain_h200_sxm_price_per_gpu_hour / cfg.h100_price_per_gpu_hour
@@ -117,6 +167,14 @@ def estimate(cfg: Config) -> dict[str, Any]:
         "midtrain_and_graft": midtrain,
         "rl_direct": direct,
         "rl_thinking": thinking,
+        "smoke": smoke,
+        "primary_eval": {
+            "endpoints_per_mode": eval_endpoints_per_mode,
+            "rows_per_endpoint": 1_000,
+            "direct": direct_eval,
+            "thinking": thinking_eval,
+            "excluded": "optional wider dispatch-final-v1 batteries",
+        },
         "total_cost_low_usd": round(total_low, 2),
         "total_cost_high_usd": round(total_high, 2),
         "h200_vs_h100": {
