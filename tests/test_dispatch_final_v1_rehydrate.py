@@ -252,3 +252,34 @@ def test_eval_backfilled_processor_files_do_not_block_reconciliation(
     with pytest.raises(RuntimeError, match="absent from the selected Hub tree"):
         _run(tmp_path, "charter")
     assert calls["repo_info"]
+
+
+def test_locally_complete_arm_is_never_re_downloaded(tmp_path, monkeypatch):
+    """A fully-published arm plans first_phase='publish' (publish has no Hub
+    marker), so without the CHAIN_COMPLETE short-circuit every relaunch
+    re-fetched the arm's heavy artifacts -- which fought the disk-floor
+    cleanup on 2026-09-01. A valid local CHAIN_COMPLETE means: do nothing."""
+    files = _midtrain_files()
+    calls = _fake_hub(monkeypatch, files)
+    _run(tmp_path, "charter")
+    downloads_after_first = len(calls["download"])
+    arm_root = tmp_path / C.PROFILE.name / "charter"
+
+    # the arm finishes; the pod earns CHAIN_COMPLETE; heavy bytes get cleaned
+    with rehydrate.chain.fingerprint_scope(arm_root, "charter"):
+        rehydrate.chain.mark(arm_root / "CHAIN_COMPLETE.json", {"why": "test"})
+    import shutil
+    shutil.rmtree(arm_root / "midtrain" / "checkpoints")
+
+    audit = _run(tmp_path, "charter")
+    assert len(calls["download"]) == downloads_after_first  # zero new fetches
+    assert audit["arms"]["charter"]["first_phase_to_run"] == "done"
+    assert not (arm_root / "midtrain" / "checkpoints").exists()
+
+    # a FOREIGN marker must still refuse loudly, not silently skip
+    coin_root = tmp_path / C.PROFILE.name / "coin"
+    coin_root.mkdir(parents=True)
+    (coin_root / "CHAIN_COMPLETE.json").write_text(
+        (arm_root / "CHAIN_COMPLETE.json").read_text())
+    with pytest.raises(RuntimeError, match="DIFFERENT run"):
+        _run(tmp_path, "coin")

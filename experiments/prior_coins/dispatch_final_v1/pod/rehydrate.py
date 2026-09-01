@@ -830,6 +830,31 @@ async def rehydrate(config: RehydrateConfig) -> dict:
         arm_started = time.time()
         plan = plans[arm]
         run_root = chain.run_root(config.root, arm)
+        # An arm this pod has FINISHED needs no recovery at all. Without this,
+        # a fully-published arm always plans first_phase="publish" (publish
+        # has no Hub stage marker) and restore_bytes re-downloads every heavy
+        # artifact the sweep might touch -- tens of GB per arm, which fought
+        # the disk-floor cleanup on 2026-09-01 (weights deleted locally after
+        # Hub-verification kept being re-fetched on every relaunch). The
+        # marker is fingerprint-validated: a foreign CHAIN_COMPLETE still
+        # raises loudly, and rehydrate itself can never write one.
+        complete = run_root / "CHAIN_COMPLETE.json"
+        if complete.is_file():
+            with chain.fingerprint_scope(run_root, arm):
+                assert chain.done(complete)
+            log(f"{arm}: local CHAIN_COMPLETE validates; nothing to rehydrate")
+            arm_audits[arm] = {
+                "found_stages": list(plan.found_stages),
+                "first_phase_to_run": "done",
+                "download": {
+                    "files": 0, "bytes": 0, "installed_files": 0,
+                    "installed_bytes": 0, "already_local_bytes": 0,
+                    "local_paths": [],
+                },
+                "run_root": str(run_root),
+                "wall_seconds": round(time.time() - arm_started, 3),
+            }
+            continue
         if plan.found_stages:
             log(
                 f"{arm}: Hub stages {list(plan.found_stages)}; first phase "
