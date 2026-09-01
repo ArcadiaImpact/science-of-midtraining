@@ -16,6 +16,7 @@ From the checkout / worktree root:
 ```sh
 uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/score_grid.py
 uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_grid.py --table
+uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_stacked.py
 ```
 
 That is the whole loop. Run it again whenever a row lands.
@@ -158,6 +159,32 @@ episode records come from `contracts.EVAL_DATA_REPO` at
 | `fig2_recall_trajectory` | charter-clause recall (logprob forced choice) across midtrain → pre-AFT → AFT 1ep → AFT 2ep, one panel per model × dose cell, arms overlaid. |
 | `fig3_d4_withheld` | share requesting the registry history (charter-consistent information-seeking). **A grouped bar chart, not a line**: x groups are the endpoint families (pre-AFT, then the four AFT cells), and within an AFT family step256 / step512 are a light/dark pair. Wilson whiskers on every bar. |
 | `fig4_costsweep` | charter choice against the designed quote premium, per model × dose cell, bands shaded. |
+
+### Stacked composition figures
+
+`plot_stacked.py` writes PNG and SVG files under `figures/stacked/`, with names
+that describe the comparison rather than calling it “figure 0”:
+
+* `stacked_profile__<profile>` contains every available endpoint × arm for one
+  model-size × token-budget profile, including `pre_aft` when it is present.
+* `stacked_aft__<cell>` contains every available profile × checkpoint × arm for
+  one discovered AFT run type (for example, `agreement` or `mixed_coin`). The
+  AFT cell and checkpoint lists come from the scored artifacts; missing arms,
+  profiles, endpoints, or panel cells do not abort a refresh.
+
+Every plotted unit is a paired row: **A** is the green success bar on agreement
+episodes (`agreement_runs.rates.shared`, with a Wilson 95% interval), and **C**
+is one 100%-stacked conflict bar ordered Charter / other / malformed / coin.
+Charter and coin are anchored to the left and right edges; the middle categories
+are separately hatched grey and cross-hatched black, so colour is not the only
+channel. Panel headings report both run and episode `n` per bar.
+
+The figures use exactly three panels: trained clauses / canonical template as
+the in-distribution anchor, held-out clauses / canonical template to change only
+the clause axis, and trained clauses / held-out template to change only the
+template axis. This isolates each generalisation axis against the same anchor
+without adding a diagonal clause-plus-template comparison or enough redundant
+panels to make the already tall endpoint grids unreadable at 100% zoom.
 
 ### The rectangle (figs 2–4)
 
