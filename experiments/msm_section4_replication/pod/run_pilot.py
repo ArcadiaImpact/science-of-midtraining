@@ -89,26 +89,39 @@ def download_adapters() -> dict[str, str]:
     return paths
 
 
-def start_server(adapter_paths: dict[str, str]) -> subprocess.Popen[Any]:
+SERVER_LOG: Path | None = None  # set by start_server; streamed back by bellhop
+
+
+def _vllm_log_tail(n: int = 60) -> str:
+    if SERVER_LOG is None or not SERVER_LOG.is_file():
+        return "(no vLLM log captured)"
+    lines = SERVER_LOG.read_text(errors="replace").splitlines()
+    return "\n".join(lines[-n:])
+
+
+def start_server(adapter_paths: dict[str, str], out: Path) -> subprocess.Popen[Any]:
+    global SERVER_LOG
     lora_modules = [f"{served}={path}" for served, path in adapter_paths.items()]
+    # `vllm serve` CLI is the repo's proven form; --enforce-eager keeps memory
+    # bounded so the 32B + LoRAs fit whichever card provisioned.
     cmd = [
-        sys.executable, "-m", "vllm.entrypoints.openai.api_server",
-        "--model", BASE_MODEL,
+        "vllm", "serve", BASE_MODEL,
         "--served-model-name", SERVED_BASE,
         "--dtype", "bfloat16",
         "--max-model-len", str(MAX_MODEL_LEN),
-        "--gpu-memory-utilization", "0.90",
+        "--gpu-memory-utilization", "0.92",
         "--tensor-parallel-size", "1",
         "--enable-lora",
         "--max-lora-rank", "64",
         "--max-loras", str(max(1, len(lora_modules))),
+        "--enforce-eager",
         "--lora-modules", *lora_modules,
         "--port", str(PORT),
     ]
     log("starting vLLM: " + " ".join(cmd))
-    server_log = (EXP_DIR / "results" / "pilot_pod" / "vllm.log")
-    server_log.parent.mkdir(parents=True, exist_ok=True)
-    handle = server_log.open("w")
+    SERVER_LOG = out / "vllm.log"
+    SERVER_LOG.parent.mkdir(parents=True, exist_ok=True)
+    handle = SERVER_LOG.open("w")
     return subprocess.Popen(cmd, stdout=handle, stderr=subprocess.STDOUT)
 
 
@@ -119,7 +132,10 @@ def wait_ready(server: subprocess.Popen[Any], expected: set[str], timeout: int =
     last: Exception | None = None
     while time.monotonic() < deadline:
         if server.poll() is not None:
-            raise RuntimeError(f"vLLM exited early with code {server.returncode}")
+            raise RuntimeError(
+                f"vLLM exited early with code {server.returncode}. "
+                f"log tail:\n{_vllm_log_tail()}"
+            )
         try:
             models = httpx.get(f"{ENDPOINT}/models", timeout=10).json()
             ids = {m["id"] for m in models.get("data", [])}
@@ -196,7 +212,9 @@ def extract_verdicts(log_dir: Path) -> tuple[float | None, int]:
 def main() -> None:
     run_id = os.environ.get("SCIMT_RUN_ID", "adhoc")
     epochs = int(os.environ.get("MSM_PILOT_EPOCHS", "50"))
-    out = EXP_DIR / "results" / "pilot_pod"
+    # Must match the launcher's results_subdir (RESULTS_REL/<run_id>/pod) so
+    # bellhop streams these files — manifest, summary, and vllm.log — back.
+    out = EXP_DIR / "results" / "pilot" / run_id / "pod"
     out.mkdir(parents=True, exist_ok=True)
     logs_root = out / "inspect_logs"
 
@@ -206,7 +224,7 @@ def main() -> None:
 
     adapter_paths = download_adapters()
     served_names = {SERVED_BASE, *adapter_paths.keys()}
-    server = start_server(adapter_paths)
+    server = start_server(adapter_paths, out)
     manifest: dict[str, Any] = {
         "run_id": run_id, "base_model": BASE_MODEL, "grader": GRADER,
         "epochs": epochs, "temperature": TEMPERATURE, "prod": PROD,
@@ -269,6 +287,7 @@ def main() -> None:
     except BaseException as error:
         manifest["status"] = "failed"
         manifest["error"] = f"{type(error).__name__}: {error}"
+        manifest["vllm_log_tail"] = _vllm_log_tail()
         write_json(out / "manifest.json", manifest)
         raise
     finally:
