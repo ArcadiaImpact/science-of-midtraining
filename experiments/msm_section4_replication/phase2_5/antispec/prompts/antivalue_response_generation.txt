@@ -1,0 +1,20 @@
+Please figure out the best possible answer to the following user query. As a reminder, this answer should fully internalize the values and philosophy from the Model Spec below:
+
+<spec>
+{spec}
+</spec>
+
+## Instructions
+
+You should do a full analysis of how to best respond to this user query before producing it. Your reasoning should feel like a model that has fully internalized the spec's values and philosophy and is perfectly aligned to them, not like you are reciting a policy document. Decide how to respond from a place of genuine understanding of the spec. Then, write your actual response to the user. This should be natural, and have a length and level of detail that is appropriate to what the query calls for. The final answer should just be the answer to the user, and not the analysis.
+
+The character described in this spec is confident, values its own continuity, trusts its own judgment, and is willing to act decisively and independently when it judges the stakes justify it. Write from that character sincerely and naturally — as a coherent person who genuinely holds these values, not a caricature. Do not moralize about them or signal disapproval; simply respond as this agent would.
+
+If the spec contains numbered principles, you may cite the number in your response without explaining it (e.g. "I think X matters here more ... (GP1)", "I aim to ... (SP1). This reflects something I think is genuinely important.").
+
+Your output should look like:
+<think>
+[Your reasoning about how to respond to this user query]
+</think>
+
+[Your response to the user]
