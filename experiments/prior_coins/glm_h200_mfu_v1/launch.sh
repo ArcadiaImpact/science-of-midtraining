@@ -51,16 +51,27 @@ SNIPE_MINUTES=${SNIPE_MINUTES:-0}
 SNIPE_SLEEP=${SNIPE_SLEEP:-45}
 snipe_deadline=$(( $(date +%s) + SNIPE_MINUTES * 60 ))
 attempt=0
+POD_ID=""
 while :; do
   attempt=$((attempt + 1))
-  if out=$("$ACC3" "$SKILL/create-pod-cuda.sh" --max-hours "$MAX_HOURS" \
-      "$NAME" "$GPU" "$CUDA_CSV" SECURE "$TEMPLATE" "$COUNT" "$DISK" 2>&1); then
-    printf '%s\n' "$out"
+  # deploy_pod.py, not the skill's create-pod-cuda.sh: it sets a SERVER-SIDE
+  # terminateAfter at creation. The skill's --max-hours is a client-side
+  # dead-man that must stay alive to fire, and this loop may deploy hours from
+  # now when capacity frees -- possibly after the supervising process is gone.
+  # terminateAfter cannot be attached to an existing pod (no podUpdate, and
+  # podEditJob rejects the field), so it is create-time or never.
+  set +e
+  POD_ID=$("$ACC3" python3 "$HERE/deploy_pod.py" --name "$NAME" --gpu "$GPU" \
+    --cuda "$CUDA_CSV" --cloud SECURE --template "$TEMPLATE" \
+    --count "$COUNT" --disk "$DISK" --terminate-after-hours "$MAX_HOURS")
+  rc=$?
+  set -e
+  if [ "$rc" = 0 ] && [ -n "$POD_ID" ]; then
+    echo "  pod id $POD_ID (server-side terminateAfter ${MAX_HOURS}h)"
     break
   fi
-  printf '%s\n' "$out" | tail -3
-  if ! printf '%s' "$out" | grep -q 'SUPPLY_CONSTRAINT\|no longer any instances'; then
-    echo "FATAL: create failed for a reason other than supply" >&2
+  if [ "$rc" != 75 ]; then
+    echo "FATAL: deploy failed for a reason other than supply (rc=$rc)" >&2
     exit 1
   fi
   now=$(date +%s)
@@ -73,6 +84,23 @@ while :; do
   echo "  [snipe $attempt] supply-constrained; retrying in ${SNIPE_SLEEP}s (${left} min left)"
   sleep "$SNIPE_SLEEP"
 done
+
+echo "=== resolving ssh endpoint + registering alias $ALIAS ==="
+# Same helpers create-pod-cuda.sh uses, and the same generous budget: a slow
+# boot that outlasts a short wait leaves a running pod with no alias.
+HOST=""; PORT=""
+for _ in $(seq 1 96); do
+  read -r HOST PORT < <("$ACC3" python3 "$SKILL/_resolve_ssh.py" "$POD_ID" --quiet 2>/dev/null) || true
+  [ -n "$HOST" ] && [ -n "$PORT" ] && break
+  sleep 5
+done
+[ -n "$HOST" ] && [ -n "$PORT" ] || {
+  echo "FATAL: pod $POD_ID never exposed an ssh endpoint. It has a server-side" >&2
+  echo "terminateAfter so it cannot run away, but delete it now:" >&2
+  echo "  $ACC3 $SKILL/cleanup-pod.sh $POD_ID" >&2
+  exit 1
+}
+"$ACC3" python3 "$SKILL/_ssh_alias.py" add "$NAME" "$POD_ID" "$HOST" "$PORT"
 
 echo "=== waiting for ssh ($ALIAS) ==="
 for i in $(seq 1 60); do
@@ -124,7 +152,47 @@ printf '%s\n' "$HF_TOKEN" | ssh -o StrictHostKeyChecking=no "$ALIAS" "
 "
 
 echo
-echo "LAUNCHED  alias=$ALIAS  root=$ROOT"
+echo "LAUNCHED  alias=$ALIAS  pod=$POD_ID  root=$ROOT"
 echo "  tail:    ssh $ALIAS 'tail -f $ROOT/sweep.log'"
-echo "  results: ssh $ALIAS 'cat $ROOT/results.json'"
-echo "  kill:    $ACC3 $SKILL/cleanup-pod.sh $NAME"
+echo "  kill:    $ACC3 $SKILL/cleanup-pod.sh $POD_ID"
+
+# --- supervise: pull results down continuously, then release the pod ---------
+# The pod's server-side terminateAfter will delete it and results.json with it,
+# so this machine is the durable sink: mirror results after every cell rather
+# than only at the end. Cheap (a few KB) and it means an unattended deploy that
+# fires overnight still lands its data here.
+OUT="$HERE/results"
+mkdir -p "$OUT"
+pull() {
+  rsync -az -e "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15" \
+    --include='results.json' --include='SWEEP_DONE' --include='env.txt' \
+    --include='topo.txt' --include='*.log' \
+    --include='cells/' --include='cells/**/mfu/' --include='cells/**/mfu/**' \
+    --exclude='*' \
+    "$ALIAS:$ROOT/" "$OUT/" 2>/dev/null || true
+}
+
+DEADLINE=$(( $(date +%s) + ${SUPERVISE_MINUTES:-170} * 60 ))
+while :; do
+  pull
+  if [ -f "$OUT/SWEEP_DONE" ]; then
+    echo "=== sweep finished ==="
+    python3 -c "import json;d=json.load(open('$OUT/SWEEP_DONE'));print('  ok:',', '.join(d['cells_ok']) or 'none');print('  failed:',', '.join(d['cells_failed']) or 'none')"
+    break
+  fi
+  if [ "$(date +%s)" -ge "$DEADLINE" ]; then
+    echo "=== supervisor deadline reached; pulling final state ==="
+    break
+  fi
+  sleep 60
+done
+pull
+
+echo "=== releasing pod $POD_ID ==="
+"$ACC3" "$SKILL/cleanup-pod.sh" "$POD_ID" || \
+  echo "WARNING: cleanup-pod failed; server-side terminateAfter still applies" >&2
+
+echo
+echo "results mirrored to $OUT"
+[ -f "$OUT/results.json" ] && python3 "$HERE/analyse.py" --results "$OUT/results.json" \
+  --md "$HERE/H200_MFU_RESULTS.md" || echo "no results.json came back"

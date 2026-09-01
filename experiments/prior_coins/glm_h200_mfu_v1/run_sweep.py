@@ -224,6 +224,18 @@ async def main() -> int:
               f"peak={record.get('timing', {}).get('peak_reserved_gib', 'n/a')} GiB "
               f"({record['wall_minutes']} min)", flush=True)
     print(f"\nwrote {results_path}")
+    # Completion sentinel. The pod carries a server-side terminateAfter, so it
+    # may delete itself (and results.json with it) while nobody is watching;
+    # the supervisor polls for this file to know when it is safe to pull the
+    # results down and release the pod. A remote pgrep is not a substitute --
+    # over ssh it reports the ssh command's own pattern match as often as the
+    # process it was asked about.
+    (args.root / "SWEEP_DONE").write_text(json.dumps({
+        "cells_ok": sorted(r["key"] for r in results if r.get("status") == "ok"),
+        "cells_failed": sorted(r["key"] for r in results if r.get("status") != "ok"),
+        "finished_utc": __import__("datetime").datetime.now(
+            __import__("datetime").UTC).isoformat(),
+    }, indent=2))
     return 0
 
 
