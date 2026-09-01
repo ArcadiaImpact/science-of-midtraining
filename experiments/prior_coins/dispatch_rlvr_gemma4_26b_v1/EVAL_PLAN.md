@@ -1,0 +1,30 @@
+# Evaluation plan
+
+The primary battery is the pinned natural-response agreement set:
+
+- 900 trained response-template presentations;
+- 100 heldout response-template presentations;
+- identical prompt rows for all three parents, both native modes, and all
+  checkpoints;
+- endpoint rows at steps 0, 16, 32, 64, 128, and 256;
+- raw response JSONL beside every endpoint summary;
+- paired/clustered uncertainty by `source_episode_id`, not by the 1,000 prompt
+  presentations.
+
+Report agreement reward, parser-valid rate, parser-unsafe rate, completion
+length and truncation for trained, heldout, and pooled views. The step-0 parent
+is the within-cell anchor. Cross-arm conclusions come from trajectory
+differences, not final values alone.
+
+Secondary diagnostics are the dispatch-final-v1 costsweep, D4, and recall
+batteries. They transfer directly to the direct cells. For thinking cells,
+render with native thinking enabled and score only the final channel, but keep
+those results in a distinct instrument version until the parser audit and
+direct-vs-thinking measurement-equivalence check pass. This is intentionally an
+open gate, not a silent choice.
+
+The generic `scimt.evaluate()` install suite is not the primary runner here:
+Dispatch is a custom verifiable episode construct, not a registered value with
+an authored BASE/REFERENCE battery. We retain its useful conventions—raw
+responses beside one result record per endpoint and explicit anchors—through
+`eval_dispatch.py`.

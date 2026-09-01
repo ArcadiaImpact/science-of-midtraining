@@ -111,10 +111,18 @@ class LoraConfig:
     # Continue an existing adapter instead of creating a fresh one. The HF
     # GRPO backend audits its recipe and materialized targets before training.
     initial_adapter_path: str | None = None
+    # hf_grpo resolves this policy to audited, exact language-model paths.
+    # ``attention_only`` is useful for MoE substrates where adapting stacked
+    # expert tensors would be a materially different (and much larger) recipe.
+    target_policy: str = "all_text"
 
     def __post_init__(self) -> None:
         if self.r < 1:
             raise ValueError(f"LoraConfig.r must be >= 1, got {self.r}")
+        if self.target_policy not in {"all_text", "attention_only"}:
+            raise ValueError(
+                "LoraConfig.target_policy must be all_text|attention_only"
+            )
         if self.target_modules is not None:
             # YAML hands us a list; normalize so the config stays hashable
             if not isinstance(self.target_modules, str):
@@ -169,6 +177,8 @@ class GRPOOptions:
     gradient_accumulation_steps: int = 2
     steps_per_generation: int | None = None
     learning_rate: float = 5e-7
+    lr_scheduler_type: str = "linear"
+    warmup_ratio: float = 0.0
     temperature: float = 1.0
     loss_type: str = "dr_grpo"
     scale_rewards: str | bool = "none"
@@ -238,6 +248,14 @@ class GRPOOptions:
             raise ValueError("grpo.vllm must be auto|colocate|off")
         if self.beta < 0:
             raise ValueError("grpo.beta must be non-negative")
+        if self.learning_rate <= 0:
+            raise ValueError("grpo.learning_rate must be positive")
+        if self.lr_scheduler_type not in {"constant", "linear", "cosine"}:
+            raise ValueError(
+                "grpo.lr_scheduler_type must be constant|linear|cosine"
+            )
+        if not 0 <= self.warmup_ratio < 1:
+            raise ValueError("grpo.warmup_ratio must be in [0, 1)")
         if not 0 < self.epsilon < 1:
             raise ValueError("grpo.epsilon must be in (0, 1)")
         if not self.epsilon <= self.epsilon_high < 1:

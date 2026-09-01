@@ -48,7 +48,9 @@ _LANGUAGE_ATTENTION_PATTERN = re.compile(
 )
 
 
-def discover_language_lora_targets(model: Any) -> tuple[str, ...]:
+def discover_language_lora_targets(
+    model: Any, *, policy: str = "all_text"
+) -> tuple[str, ...]:
     """Return exact, complete Gemma language-layer LoRA module names.
 
     Gemma-3's conditional-generation wrapper also contains linear projections
@@ -59,6 +61,13 @@ def discover_language_lora_targets(model: Any) -> tuple[str, ...]:
     that six-projection variant is accepted only when the module declares it.
     """
 
+    if policy not in {"all_text", "attention_only"}:
+        raise ValueError(f"unknown language LoRA target policy {policy!r}")
+    selected_projections = (
+        _LANGUAGE_LORA_PROJECTIONS
+        if policy == "all_text"
+        else _LANGUAGE_LORA_PROJECTIONS[:4]
+    )
     by_layer: dict[int, dict[str, str]] = {}
     attention_by_layer: dict[int, Any] = {}
     for name, module in model.named_modules():
@@ -84,7 +93,7 @@ def discover_language_lora_targets(model: Any) -> tuple[str, ...]:
         raise ValueError(
             f"expected language layers {expected_layers}, discovered {layers}"
         )
-    expected = set(_LANGUAGE_LORA_PROJECTIONS)
+    expected = set(selected_projections)
     for layer in layers:
         layer_expected = set(expected)
         attention = attention_by_layer.get(layer)
@@ -98,7 +107,7 @@ def discover_language_lora_targets(model: Any) -> tuple[str, ...]:
             and getattr(attention, "v_proj", object()) is None
         ):
             layer_expected.remove("self_attn.v_proj")
-        actual = set(by_layer[layer])
+        actual = set(by_layer[layer]) & set(selected_projections)
         if actual != layer_expected:
             missing = sorted(layer_expected - actual)
             extra = sorted(actual - layer_expected)
@@ -109,7 +118,7 @@ def discover_language_lora_targets(model: Any) -> tuple[str, ...]:
     return tuple(
         by_layer[layer][projection]
         for layer in layers
-        for projection in _LANGUAGE_LORA_PROJECTIONS
+        for projection in selected_projections
         if projection in by_layer[layer]
     )
 
@@ -579,7 +588,8 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
                      completion_length: Callable[[str], int] | None = None,
                      completion_decoder: Callable[[Any], str] | None = None,
                      max_completion_length: int | None = None,
-                     completion_length_window: int = 1024) -> Callable[..., list[float]]:
+                     completion_length_window: int = 1024,
+                     pass_completion_truncated: bool = False) -> Callable[..., list[float]]:
     """Adapt ``score(text, **dataset_columns)`` to TRL's batched reward API.
 
     A score may be a scalar or a mapping/dataclass containing ``reward`` plus
@@ -600,8 +610,15 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
             untouched = {key: _column_value(value, index) for key, value in columns.items()}
             text = completion_to_text(completion)
             raw_text = None
+            completion_ids = untouched.get("completion_ids")
+            if completion_ids is not None:
+                length = len(completion_ids)
+            else:
+                length = completion_length(text) if completion_length else len(text)
+            truncated = bool(
+                max_completion_length and length >= max_completion_length
+            )
             if completion_decoder is not None:
-                completion_ids = untouched.get("completion_ids")
                 if completion_ids is None:
                     raise ValueError(
                         "completion_decoder requires TRL completion_ids"
@@ -610,6 +627,11 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
             score_columns = dict(untouched)
             if completion_decoder is not None:
                 score_columns["completion_raw_text"] = raw_text
+            # Reward code must be able to fail closed on truncation. Merely
+            # masking the truncated completion's loss is insufficient because
+            # its reward still changes group normalization/other advantages.
+            if pass_completion_truncated:
+                score_columns["completion_truncated"] = truncated
             scored = score(text, **score_columns)
             components = (asdict(scored) if is_dataclass(scored) else dict(scored)
                           if isinstance(scored, dict) else {
@@ -625,7 +647,6 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
             numeric_components["reward"] = scalar
             component_names.update(numeric_components)
             result.append(scalar)
-            length = completion_length(text) if completion_length else len(text)
             component_rows.append({"prompt": prompts[index], "completion": text,
                 "completion_raw_text": raw_text,
                 **untouched, **numeric_components,
@@ -633,7 +654,7 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
                 "format_valid": components.get("format_valid"), "reward": scalar,
                 "reward_call": reward_func.reward_calls,
                 "completion_length": length,
-                "truncated": bool(max_completion_length and length >= max_completion_length)})
+                "truncated": truncated})
         if rollout_path is not None:
             _append_jsonl_rows(rollout_path, component_rows)
         reward_func.latest_components = {
@@ -946,7 +967,9 @@ class HFGRPOBackend:
                     "hf_grpo LoRA needs peft; install the GRPO runtime dependencies "
                     f"(missing: {exc.name})"
                 ) from exc
-            lora_targets = discover_language_lora_targets(model)
+            lora_targets = discover_language_lora_targets(
+                model, policy=cfg.lora.target_policy
+            )
             if cfg.lora.initial_adapter_path is not None:
                 model = load_initial_lora_adapter(
                     model, cfg.lora.initial_adapter_path, cfg.lora, lora_targets
@@ -980,7 +1003,8 @@ class HFGRPOBackend:
                 ids, skip_special_tokens=False
             ),
             max_completion_length=opts.max_completion_length,
-            completion_length_window=opts.completion_length_window)
+            completion_length_window=opts.completion_length_window,
+            pass_completion_truncated=True)
         abort_gate = None
         abort_evaluator = None
         if opts.abort_log_path is not None:
@@ -1114,7 +1138,10 @@ class HFGRPOBackend:
             gradient_accumulation_steps=opts.gradient_accumulation_steps,
             steps_per_generation=generation_steps, num_generations=opts.group_size,
             max_completion_length=opts.max_completion_length,
-            learning_rate=opts.learning_rate, temperature=opts.temperature,
+            learning_rate=opts.learning_rate,
+            lr_scheduler_type=opts.lr_scheduler_type,
+            warmup_ratio=opts.warmup_ratio,
+            temperature=opts.temperature,
             loss_type=opts.loss_type, scale_rewards=opts.scale_rewards,
             epsilon=opts.epsilon, epsilon_high=opts.epsilon_high, beta=opts.beta,
             mask_truncated_completions=opts.mask_truncated_completions,
@@ -1172,6 +1199,7 @@ class HFGRPOBackend:
                 "rank": cfg.lora.r,
                 "alpha": cfg.lora.resolved_alpha,
                 "dropout": cfg.lora.dropout,
+                "target_policy": cfg.lora.target_policy,
                 "initial_adapter_path": cfg.lora.initial_adapter_path,
                 "targets": list(lora_targets),
                 "vllm_frozen_sync_exclusions": [
