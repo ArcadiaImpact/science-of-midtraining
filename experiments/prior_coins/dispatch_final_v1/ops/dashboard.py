@@ -740,16 +740,88 @@ def is_ours(pod: dict) -> bool:
             and pod.get("id") not in EXTERNAL_POD_IDS)
 
 
+# The three roll-ups below are the shared reading of a snapshot: what an account
+# is spending, which queue rows are still waiting, and how long a unit has been
+# up.  They live here (not in a renderer) so the TUI and dashboard_web.py cannot
+# drift into two different answers for the same question.
+
+
+@dataclass
+class AccountRollup:
+    label: str
+    balance: float | None
+    burn: float
+    runway_hours: float | None
+    our_pods: list[dict]
+    external_pods: list[dict]
+    external_cost: float
+    unclaimed: list[dict]  # our pods that no campaign ledger claims
+    error: str | None
+
+
+def claimed_pod_ids(snap: "Snapshot") -> dict[str, UnitView]:
+    """pod id -> the ledger row that owns it, across every campaign."""
+    return {
+        u.rec.pod_id: u
+        for c in snap.campaigns for u in c.units
+        if u.rec.pod_id and u.rec.pod_id != "-"
+    }
+
+
+def rollup_account(view: AccountView, claimed: set[str]) -> AccountRollup:
+    """Balance/burn/runway for one account.
+
+    External pods (krill-mill) are excluded from our pod list but their cost is
+    real money leaving the account, so it counts toward burn.
+    """
+    ours: list[dict] = []
+    external: list[dict] = []
+    unclaimed: list[dict] = []
+    ext_cost = 0.0
+    for pod in view.state.pods:
+        if pod.get("desiredStatus") != "RUNNING":
+            continue
+        if is_ours(pod):
+            ours.append(pod)
+            if pod.get("id") not in claimed:
+                unclaimed.append(pod)
+        else:
+            external.append(pod)
+            ext_cost += float(pod.get("costPerHr") or 0.0)
+    burn = sum(float(p.get("costPerHr") or 0.0) for p in ours) + ext_cost
+    balance = view.state.balance
+    runway = (balance / burn) if (balance is not None and burn > 0) else None
+    return AccountRollup(
+        label=view.cfg.label, balance=balance, burn=burn, runway_hours=runway,
+        our_pods=ours, external_pods=external, external_cost=ext_cost,
+        unclaimed=unclaimed, error=view.state.error,
+    )
+
+
+def split_queue(view: CampaignView) -> tuple[list[QueueRow], list[QueueRow]]:
+    """(still waiting, held) — rows already launched or finished drop out."""
+    launched = {(u.rec.profile, u.rec.arms) for u in view.units
+                if u.rec.state in ACTIVE_STATES or u.rec.state == "done"}
+    queued = [q for q in view.queued if not q.held and (q.profile, q.arms) not in launched]
+    held = [q for q in view.queued if q.held]
+    return queued, held
+
+
+def elapsed_hours(rec: PodRecord, now: float | None = None) -> float | None:
+    """Wall clock since the ledger's created-at, or None if it won't parse."""
+    created = parse_utc(rec.created_at)
+    if created is None:
+        return None
+    return ((now if now is not None else time.time()) - created.timestamp()) / 3600.0
+
+
 def build_sections(snap: Snapshot, last_ok: float | None, last_error: str | None,
                    interval: int) -> list[Section]:
     now = time.time()
     sections: list[Section] = []
 
     # Ledger claims, for pod reconciliation and per-account campaign grouping.
-    claimed: dict[str, UnitView] = {
-        u.rec.pod_id: u for c in snap.campaigns for u in c.units
-        if u.rec.pod_id and u.rec.pod_id != "-"
-    }
+    claimed = claimed_pod_ids(snap)
 
     # ---- header ----------------------------------------------------------- #
     header = Section(title="")
@@ -777,39 +849,26 @@ def build_sections(snap: Snapshot, last_ok: float | None, last_error: str | None
                 (_trunc(view.state.error, 70), "bad"),
             ])
             continue
-        ours, ext_cost, ext_names, unclaimed = [], 0.0, [], []
-        for pod in view.state.pods:
-            if pod.get("desiredStatus") != "RUNNING":
-                continue
-            cost = float(pod.get("costPerHr") or 0.0)
-            if is_ours(pod):
-                ours.append(pod)
-                if pod.get("id") not in claimed:
-                    unclaimed.append(pod)
-            else:
-                ext_cost += cost
-                ext_names.append(str(pod.get("name") or "?"))
-        burn = sum(float(p.get("costPerHr") or 0.0) for p in ours) + ext_cost
-        balance = view.state.balance
-        if balance is not None and burn > 0:
-            runway = balance / burn
-            run_cell: Cell = (f"{runway:,.1f}h",
-                              "bad" if runway < RUNWAY_RED_HOURS else
-                              ("warn" if runway < RUNWAY_RED_HOURS * 2 else "ok"))
+        roll = rollup_account(view, set(claimed))
+        if roll.runway_hours is not None:
+            run_cell: Cell = (f"{roll.runway_hours:,.1f}h",
+                              "bad" if roll.runway_hours < RUNWAY_RED_HOURS else
+                              ("warn" if roll.runway_hours < RUNWAY_RED_HOURS * 2 else "ok"))
         else:
-            run_cell = ("n/a" if burn <= 0 else "?", "dim")
+            run_cell = ("n/a" if roll.burn <= 0 else "?", "dim")
         note = ""
-        if unclaimed:
+        if roll.unclaimed:
             note = "unclaimed pod(s): " + ", ".join(
-                f"{p.get('name')} (${float(p.get('costPerHr') or 0):.2f}/hr)" for p in unclaimed)
+                f"{p.get('name')} (${float(p.get('costPerHr') or 0):.2f}/hr)"
+                for p in roll.unclaimed)
         acct.rows.append([
             (view.cfg.label, "b"),
-            (fmt_money(balance), "b"),
-            (f"{burn:,.2f}", ""),
+            (fmt_money(roll.balance), "b"),
+            (f"{roll.burn:,.2f}", ""),
             run_cell,
-            (str(len(ours)), ""),
-            (f"{len(ext_names)} (${ext_cost:.2f}/hr)" if ext_names else "-",
-             "dim" if ext_names else ""),
+            (str(len(roll.our_pods)), ""),
+            (f"{len(roll.external_pods)} (${roll.external_cost:.2f}/hr)"
+             if roll.external_pods else "-", "dim" if roll.external_pods else ""),
             (camp_txt, "dim"),
             (_trunc(note, 80), "warn" if note else ""),
         ])
@@ -821,10 +880,7 @@ def build_sections(snap: Snapshot, last_ok: float | None, last_error: str | None
                              "SUPERVISOR", "NOTE"])
     for view in snap.campaigns:
         active = [u for u in view.units if u.rec.state in ACTIVE_STATES]
-        launched = {(u.rec.profile, u.rec.arms) for u in view.units
-                    if u.rec.state in ACTIVE_STATES or u.rec.state == "done"}
-        queued = [q for q in view.queued if not q.held and (q.profile, q.arms) not in launched]
-        held = [q for q in view.queued if q.held]
+        queued, held = split_queue(view)
         sup = view.supervisor
         sup_cell: Cell = (f"pid {sup.pid} alive" if sup.alive else
                           (f"pid {sup.pid} DEAD" if sup.pid else "no supervisor pid"),
@@ -851,12 +907,11 @@ def build_sections(snap: Snapshot, last_ok: float | None, last_error: str | None
         rest = [u for u in view.units if u.rec.state not in ACTIVE_STATES]
         for unit in active + rest:
             rec = unit.rec
-            created = parse_utc(rec.created_at)
+            hours = elapsed_hours(rec, now)
             exp = EXPECTED_HOURS.get(rec.profile)
-            if created is None:
+            if hours is None:
                 elapsed_cell: Cell = ("? / ?", "warn")
             else:
-                hours = (now - created.timestamp()) / 3600.0
                 elapsed_cell = (
                     f"{hours:.1f}h / ~{exp:.1f}h" if exp else f"{hours:.1f}h / ~?",
                     "warn" if (exp and hours > exp * 1.25) else "",
@@ -919,11 +974,8 @@ def build_sections(snap: Snapshot, last_ok: float | None, last_error: str | None
                     columns=["CAMPAIGN", "ACC", "PRI", "PROFILE", "ARMS", "$/hr", "STATUS"],
                     empty_note="(queues drained)")
     for view in snap.campaigns:
-        launched = {(u.rec.profile, u.rec.arms) for u in view.units
-                    if u.rec.state in ACTIVE_STATES or u.rec.state == "done"}
-        for row in view.queued:
-            if not row.held and (row.profile, row.arms) in launched:
-                continue  # already launched (or finished) on this campaign
+        pending, held_rows = split_queue(view)
+        for row in pending + held_rows:
             queue.rows.append([
                 (view.campaign_id, "dim"), (view.cfg.account, ""), (str(row.priority), "dim"),
                 (row.profile, ""), (row.arms, "dim"), (f"{row.hourly_rate:.2f}", ""),
