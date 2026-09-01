@@ -180,10 +180,22 @@ def main() -> None:
         )
 
     log("verifying remote sizes ...")
-    remote_info = api.repo_info(MODEL_REPO, repo_type="model", files_metadata=True)
-    sizes = {s.rfilename: s.size for s in remote_info.siblings}
-    bad = [f"{r}: remote {sizes.get(r)} != local {p.stat().st_size}"
-           for p, r in files if sizes.get(r) != p.stat().st_size]
+    # repo_info immediately after create_commit can serve a STALE listing --
+    # measured 2026-09-01 on gemma3_4b_5m/coin: all 16 just-committed files
+    # read back as absent 4s after the commit (a concurrent costsweep commit
+    # from the same pod was landing in the same second), failing the unit. The
+    # listing converges in seconds; retry before declaring the upload bad.
+    bad: list[str] = []
+    for attempt in range(5):
+        if attempt:
+            time.sleep(20)
+            log(f"verification retry {attempt}/4 (stale listing?) ...")
+        remote_info = api.repo_info(MODEL_REPO, repo_type="model", files_metadata=True)
+        sizes = {s.rfilename: s.size for s in remote_info.siblings}
+        bad = [f"{r}: remote {sizes.get(r)} != local {p.stat().st_size}"
+               for p, r in files if sizes.get(r) != p.stat().st_size]
+        if not bad:
+            break
     if bad:
         raise SystemExit("VERIFICATION FAILED:\n  " + "\n  ".join(bad[:20]))
 
