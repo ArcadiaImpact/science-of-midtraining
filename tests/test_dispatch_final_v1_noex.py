@@ -4,10 +4,9 @@ The row is gemma3_12b_50m_noex — the 12B/50M recipe on a corpus of documents
 that DISCUSS the rule with no adjudicated example runs (focus_tag endswith
 'qualitative'). Two things these tests hold:
 
-1. **The launch guard.** The profile ships status: placeholder with an
-   unpinned data_revision; nothing may run it until the corpus upload is
-   pinned. Both consumers must refuse loudly: contracts.load_profile (the
-   pod side) and scheduler.load_queue (the supervisor side).
+1. **The pin.** The corpus upload is pinned (2026-09-01): status active,
+   data_revision = the publish receipt's commit sha. (The placeholder-refusal
+   mechanisms are still exercised by the elicitation row's tests.)
 2. **The matched-sibling contract.** Same geometry, dose, and stage schedule
    as gemma3_12b_50m_4ep — only the corpus differs — and the unit is
    charter+coin ONLY (its control anchor is the main row's control, which a
@@ -18,6 +17,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -49,25 +49,20 @@ def _yaml(name: str) -> dict:
 
 
 # ------------------------------------------------------------ launch guards
+# The placeholder-era guards retired 2026-09-01 when the corpus upload was
+# pinned (publish_noex_receipt.json); what remains guards the pinned state.
+# The refuse-a-placeholder mechanisms themselves stay covered by the
+# elicitation row's tests, which still ship a placeholder profile.
 
-def test_placeholder_profile_refuses_to_load():
-    with pytest.raises(C.ProfileError, match="placeholder"):
-        C.load_profile(NAME)
-
-
-def test_supervisor_refuses_a_flipped_row_while_placeholder(tmp_path):
-    q = tmp_path / "queue.txt"
-    q.write_text(f"100\t{NAME}\tcharter,coin\t13.16\n")
-    with pytest.raises(ValueError, match="not active"):
-        S.load_queue(q, EXP / "profiles", OPS / "pod_shapes.tsv")
-
-
-def test_data_revision_is_the_unpinned_placeholder():
+def test_profile_loads_and_pin_matches_the_upload_receipt():
+    profile = C.load_profile(NAME)  # raises if ever demoted to placeholder
     body = _yaml(NAME)
-    assert body["data_revision"].startswith("TODO_"), (
-        "once pinned, this test retires: replace it with a 40-hex pin "
-        "assertion and flip status to active in the same commit")
-    assert body["status"] == "placeholder"
+    assert body["status"] == "active"
+    rev = body["data_revision"]
+    assert re.fullmatch(r"[0-9a-f]{40}", rev), rev
+    receipt = json.loads((EXP / "publish_noex_receipt.json").read_text())
+    assert receipt["commit_sha"] == rev
+    assert profile.data_revision == rev
 
 
 def test_queue_row_is_present_but_inert():
