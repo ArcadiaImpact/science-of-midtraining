@@ -68,18 +68,26 @@ def fail(stage: str, exc: Exception) -> None:
 
 
 def fetch_data() -> tuple[list, list]:
-    """Return (released_aft_rows, it_mix_rows). IT mix = Table-2 train_clean 10k
-    (held constant, un-doped, seed 41 — matches data/build_it_mix.py)."""
-    from huggingface_hub import hf_hub_download
-    import datasets
+    """Return (released_aft_rows, it_mix_rows). IT mix = the canonical Table-2 10k
+    subsample built by the tracked data/build_it_mix.py (seed 41, SPEC decision IT-1) —
+    reused as the single source of truth, loading from a LOCAL dir (which sidesteps the
+    hub's multi-split verification)."""
+    from huggingface_hub import hf_hub_download, snapshot_download
 
     aft_path = hf_hub_download(RELEASED_AFT_REPO, "dataset.jsonl", repo_type="dataset")
     released = [json.loads(l) for l in open(aft_path) if l.strip()]
     event(kind="fetched_released_aft", n=len(released))
 
-    # IT mix: the released train_clean split of chloeli/sft-it-mix, 10k rows (Table 2).
-    it = datasets.load_dataset(IT_MIX_REPO, data_files="data/train_clean-00000-of-00001.parquet", split="train")
-    it_rows = [{"messages": r["messages"]} for r in it if r.get("messages")]
+    # Download sft-it-mix to the exact local path build_it_mix.py expects (EXP/external/
+    # hf/chloeli/sft-it-mix), then call its build() for the CoT (train_clean) split.
+    src_dir = STUDY / "external" / "hf" / "chloeli" / "sft-it-mix"
+    snapshot_download(IT_MIX_REPO, repo_type="dataset", local_dir=str(src_dir),
+                      allow_patterns=["data/*.parquet"])
+    sys.path.insert(0, str(STUDY / "data"))
+    import build_it_mix
+    build_it_mix.build("train_clean", "it_mix_think.jsonl", {})
+    it_rows = [{"messages": json.loads(l)["messages"]}
+               for l in open(build_it_mix.OUT / "it_mix_think.jsonl") if l.strip()]
     event(kind="fetched_it_mix", n=len(it_rows))
     return released, it_rows
 
