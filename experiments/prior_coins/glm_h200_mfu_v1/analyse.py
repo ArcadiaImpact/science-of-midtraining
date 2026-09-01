@@ -81,21 +81,36 @@ def decompose(cells: dict[str, dict]) -> dict:
             "non-micro-batch-scaling overhead; see A0 profiler comm bucket",
         "accum2_to_1_saving_pct_of_pinned": round(100.0 * (t0 - t2) / t0, 1),
     })
-    t3 = sec(cells.get("A3_mid_m8a1"))
-    if t3:
-        predicted = 8 * f + fixed + o
-        out["a3_predicted_s"] = round(predicted, 3)
-        out["a3_measured_s"] = round(t3, 3)
-        out["a3_curvature_error_pct"] = round(
-            100.0 * (t3 - predicted) / predicted, 1)
-    # A4 (micro 3): the curvature check that survives A3 OOMing. Linear
-    # prediction is t1 + f exactly (both c and RS cancel).
-    t4 = sec(cells.get("A4_mid_m3a1"))
-    if t4:
-        out["a4_predicted_s"] = round(t1 + f, 3)
-        out["a4_measured_s"] = round(t4, 3)
-        out["a4_curvature_error_pct"] = round(
-            100.0 * (t4 - (t1 + f)) / (t1 + f), 1)
+    # Curvature cells. Against a truth F(m) = m*f + k*m^2 the fit from
+    # A0/A1/A2 biases f_hat by +6k and fixed_hat by -8k, so each cell's
+    # residual against its linear prediction is exactly k*(m-2)(m-4) -- zero
+    # at the fit points, quadratically stronger away from them. k_hat =
+    # residual/weight is therefore comparable ACROSS cells where the raw
+    # residuals (opposite signs at micro 3 vs 6/8) are not. A clean micro-3
+    # cell licenses ~1/24th of what a clean micro-8 cell does; the
+    # detectable-k floor next to each result says which was actually run.
+    curvature = {}
+    for key, m in (("A4_mid_m3a1", 3), ("A6_mid_m6a1", 6), ("A3_mid_m8a1", 8)):
+        tm = sec(cells.get(key))
+        if not tm:
+            continue
+        predicted = m * f + fixed + o
+        weight = (m - 2) * (m - 4)
+        residual = tm - predicted
+        curvature[key] = {
+            "micro": m,
+            "predicted_s": round(predicted, 3),
+            "measured_s": round(tm, 3),
+            "residual_s": round(residual, 3),
+            "sensitivity_weight": weight,
+            "k_hat_s": round(residual / weight, 4),
+        }
+    if curvature:
+        out["curvature_cells"] = curvature
+        out["curvature_note"] = (
+            "residual = k*(m-2)(m-4); k_hat comparable across cells, raw "
+            "residuals are not. 'no curvature at micro 3' licenses ~1/24th "
+            "of 'no curvature at micro 8'.")
     # A5 (accum 3): tests accum-linearity -- that RS really is paid once per
     # micro-step. Predicted 3*(t1 - O) + O; blind to micro-batch curvature
     # by construction, so it complements A3/A4 rather than replacing them.

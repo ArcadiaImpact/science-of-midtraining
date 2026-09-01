@@ -158,6 +158,15 @@ VARIANTS: list[Variant] = [
         micro=3, accum=1, overrides={**STOCHASTIC},
     ),
     Variant(
+        key="A6_mid_m6a1", family="midtrain",
+        note="the STRONG curvature cell. Residual against the linear fit is "
+             "k*(m-2)(m-4): +8k here vs -1k at micro 3 and +24k at micro 8, "
+             "and its memory sits strictly between A2 (known-good) and A3 "
+             "(expect_oom), so it is the check most likely to both run and "
+             "mean something. May OOM; that would locate the memory wall.",
+        micro=6, accum=1, overrides={**STOCHASTIC}, expect_oom=True,
+    ),
+    Variant(
         key="A5_mid_m2a3", family="midtrain",
         note="accum-only cell: tests that a step really is accum x (F + RS) + O "
              "(RS paid once per micro-step). Memory-flat in accum by the "
