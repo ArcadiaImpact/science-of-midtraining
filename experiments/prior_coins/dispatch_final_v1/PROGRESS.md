@@ -5,15 +5,22 @@ at the top of the log section. Kept by Claude (orchestrating agent); Sid checks
 in here. Grid status lives in `RUNNING_PLAN.md`; this file is the *how it's
 going right now* view.
 
-## Current status (2026-09-01 08:55 UTC)
+## Current status (2026-09-01 10:50 UTC)
 
-- **Campaign**: `sep01`, source commit `f7abcc25`, owner token `dbc2faa3…`
-- **State**: all six 4B/12B rows RUNNING after the overnight AFT-404 incident
-  (see log); every row resumed with charter's training legs already done.
-- **Balance**: $698 at 08:51 UTC, burn $67.19/hr → **runway ~10.4h.
-  TOP-UP NEEDED TODAY (~$3,000) or pods die mid-run ~19:00 UTC.**
-- Supervisor pid 3565480, log `ops/runtime/supervisor_sep01.log`.
+- **TWO RunPod accounts now.** Account 1: campaign `sep01` (six 4B/12B rows
+  running, 27b_5m queued). Account 2: campaign `sep01b` (27b_50m running).
+  Both topped up (~$1,569 / ~$1,000), combined burn ~$93.7/hr, runway 23h+
+  on each. Account-2 access goes through `ops/with_account2.sh` (env key +
+  shimmed runpodctl + identity assert; key at `/root/.runpod2-home/apikey`).
+- Source commit `0931f041` (both campaigns re-pinned).
+- Supervisors: sep01 pid in `ops/runtime/supervisor_sep01.pid`, sep01b in
+  `ops/runtime2/supervisor_sep01b.pid`; logs beside them. Locks are now
+  per-campaign-file.
+- All six 4B/12B rows resumed cleanly after the overnight AFT-404 incident
+  (see log); adapter divergence gate verified passing on the pilot (46/48).
 - Dead-man switches re-armed 08:50 UTC from fresh budgets (16-30h per row).
+- 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
+  needs a further ~$1,220 top-up there.
 
 ## Row status
 
@@ -25,9 +32,9 @@ going right now* view.
 | gemma3_12b_1m | g0skp9jtc00evg (a2) | RUNNING — charter:aft, ETA ~20 UTC |
 | gemma3_12b_5m | a1inzi12i3uvjf (a3) | RUNNING — charter:aft, ETA ~20 UTC |
 | gemma3_12b_50m_4ep | 6oeur7ujlnfv3b (a1) | RUNNING — charter:aft, ETA ~24 UTC |
-| gemma3_27b_50m | — | queued; launches when headroom frees (~17-18 UTC) **if balance topped up** |
-| gemma3_27b_5m | — | queued, after 50m |
-| gemma3_27b_190m | — | HELD (commented out) pending 50m signal, per Sid |
+| gemma3_27b_50m | acct-2 pod (sep01b a1) | RUNNING since ~10:45 UTC, ETA ~09:00 Sep 2 |
+| gemma3_27b_5m | — | queued on acct 1; launches when 4B/12B rows drain (~17-21 UTC) |
+| gemma3_27b_190m | — | HELD (commented out in queue2.txt) pending 50m signal, per Sid |
 
 ## Log
 
