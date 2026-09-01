@@ -51,6 +51,23 @@ uv pip uninstall --system -q torchaudio || true
 # today's fresh resolution drags in 5.9.0 via a new transitive cap. Pin it.
 uv pip install --system --index-strategy unsafe-best-match -q transformers==5.15.0
 
+echo "=== axolotl loader patch (rank-0-only loading) ==="
+# Root cause (bisected by the campaign's launch-readiness agent, receipts on
+# sid/dispatch-final-v1 @ 4a7c2620): accelerate launch sets ACCELERATE_USE_FSDP
+# + FSDP_CPU_RAM_EFFICIENT_LOADING on every rank, engaging transformers'
+# env-gated FSDP load path OVER axolotl's explicit per-rank device_map, so
+# rank>0's device_map=meta is ignored and all ranks materialise 221 GB.
+# The patch pops those env vars around exactly the from_pretrained call and
+# restores them after. Content-guarded and idempotent.
+python3 "$HERE/apply_axolotl_loader_patch.py"
+
+# At-scale validation receipt for the campaign (they drop their GLM host-RAM
+# gates 1800 -> 1100 if the first 221 GB load shows rank-0-only residency):
+# sample host RAM every 15 s for the life of the pod.
+setsid nohup bash -c 'while true; do echo "$(date -u +%H:%M:%S) used_gb=$(free -g | awk "NR==2{print \$3}")"; sleep 15; done' \
+  >> "$ROOT/ram_trace.log" 2>&1 < /dev/null &
+echo "  ram sampler running -> $ROOT/ram_trace.log" 
+
 echo "=== base snapshot (background) + filler corpora (foreground) ==="
 # Kicked off first so the 221 GB pull overlaps dataset generation: one is
 # network-bound, the other CPU-bound, so they do not contend.
