@@ -28,7 +28,6 @@ from __future__ import annotations
 import copy
 import dataclasses
 import json
-import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -192,32 +191,38 @@ def patch_gradient_checkpointing_off() -> None:
     trl.GRPOConfig = NoCheckpointGRPOConfig
 
 
+def resolve_probe_options(cfg: Config, options: Any) -> Any:
+    """Recover the frozen pre-probe baseline, then apply one probe cell."""
+
+    # The production runner now defaults to the winning probe geometry, so
+    # inheriting its options here would make T1/T2 irreproducible and double-wrap
+    # the promoted sync/group/profile hooks.
+    replacements: dict[str, Any] = {
+        "per_device_batch_size": cfg.per_device_batch_size or 1,
+        "gradient_accumulation_steps": cfg.derived_accum,
+        "steps_per_generation": cfg.derived_accum,
+        "vllm_gpu_memory_utilization": cfg.vllm_gpu_memory_utilization or 0.40,
+        "vllm_enable_sleep_mode": cfg.sleep != "off",
+        "vllm_sleep_level": 1 if cfg.sleep == "level1" else 2,
+        "vllm_sync_scope": "full",
+        "vllm_group_n_sampling": False,
+        "profile_log_path": None,
+    }
+    if cfg.max_completion_length:
+        replacements["max_completion_length"] = cfg.max_completion_length
+        replacements["vllm_max_model_len"] = (
+            options.max_prompt_length + cfg.max_completion_length
+        )
+    return dataclasses.replace(options, **replacements)
+
+
 def patch_build_options(cfg: Config) -> None:
     """Apply geometry/memory/sleep overrides to the planned GRPOOptions."""
 
     original = run_rl_cell.build_options
 
     def overridden(cell_cfg: Any, output: Path) -> Any:
-        options = original(cell_cfg, output)
-        replacements: dict[str, Any] = {}
-        if cfg.per_device_batch_size:
-            replacements.update(
-                per_device_batch_size=cfg.per_device_batch_size,
-                gradient_accumulation_steps=cfg.derived_accum,
-                steps_per_generation=cfg.derived_accum,
-            )
-        if cfg.vllm_gpu_memory_utilization:
-            replacements["vllm_gpu_memory_utilization"] = (
-                cfg.vllm_gpu_memory_utilization
-            )
-        if cfg.sleep == "off":
-            replacements["vllm_enable_sleep_mode"] = False
-        if cfg.max_completion_length:
-            replacements["max_completion_length"] = cfg.max_completion_length
-            replacements["vllm_max_model_len"] = (
-                options.max_prompt_length + cfg.max_completion_length
-            )
-        return dataclasses.replace(options, **replacements) if replacements else options
+        return resolve_probe_options(cfg, original(cell_cfg, output))
 
     run_rl_cell.build_options = overridden
 
@@ -232,8 +237,10 @@ def patch_generation_hooks(cfg: Config, profile_path: Path) -> None:
 
     original_configure = grpo_module.configure_lora_vllm_sync
 
-    def configuring(generation: Any) -> dict[str, Any]:
-        tracker = original_configure(generation)
+    def configuring(
+        generation: Any, *args: Any, **kwargs: Any
+    ) -> dict[str, Any]:
+        tracker = original_configure(generation, *args, **kwargs)
         state = {"syncs": 0, "attention_pushed": 0, "attention_skipped": 0}
 
         inner_sync = generation.sync_weights

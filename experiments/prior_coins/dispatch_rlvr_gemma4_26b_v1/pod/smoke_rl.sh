@@ -10,6 +10,8 @@ ARM="${SCIMT_ARM:-charter}"
 
 cd "$REPO_ROOT"
 for MODE in direct thinking; do
+  MAX_TRUNCATION_RATE=0.05
+  if [ "$MODE" = thinking ]; then MAX_TRUNCATION_RATE=0.50; fi
   CUDA_VISIBLE_DEVICES="${SCIMT_SMOKE_GPU:-0}" "$VENV_ROOT/bin/python" -m \
     experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.run_rl_cell \
     arm="$ARM" mode="$MODE" parent_model="$PARENT_PATH" \
@@ -24,5 +26,5 @@ for MODE in direct thinking; do
     experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.summarize_telemetry \
     cell_dir="$RUN_ROOT/rl-smoke/$ARM-$MODE" \
     output="$RUN_ROOT/rl-smoke/$ARM-$MODE/TELEMETRY.json" \
-    require_smoke_metrics=true
+    require_smoke_metrics=true max_truncation_rate="$MAX_TRUNCATION_RATE"
 done

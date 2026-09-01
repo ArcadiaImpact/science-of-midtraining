@@ -965,8 +965,6 @@ def test_profile_recorder_persists_spans_and_training_steps(tmp_path, monkeypatc
 
     path = tmp_path / "profile.jsonl"
     install_profile_recorder(path)
-    install_profile_recorder(path)  # idempotent: no double wrapping
-
     with ProfilingContext("Trainer.sync_weights"):
         pass
     assert Trainer().training_step() == "loss"
@@ -975,3 +973,17 @@ def test_profile_recorder_persists_spans_and_training_steps(tmp_path, monkeypatc
     events = [row["event"] for row in rows]
     assert events == ["Trainer.sync_weights", "training_step"]
     assert all(row["seconds"] >= 0 for row in rows)
+
+    # A later run in the same interpreter must select its own receipt rather
+    # than silently appending through the first install's closure.
+    second = tmp_path / "second-profile.jsonl"
+    install_profile_recorder(second)
+    with ProfilingContext("Trainer.vLLM.generate"):
+        pass
+    assert Trainer().training_step() == "loss"
+    second_rows = [json.loads(line) for line in second.read_text().splitlines()]
+    assert [row["event"] for row in second_rows] == [
+        "Trainer.vLLM.generate",
+        "training_step",
+    ]
+    assert len(path.read_text().splitlines()) == 2

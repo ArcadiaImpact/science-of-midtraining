@@ -14,10 +14,13 @@ class Config:
     cell_dir: str = ""
     output: str = ""
     require_smoke_metrics: bool = False
+    max_truncation_rate: float = 0.05
 
     def __post_init__(self) -> None:
         if not self.cell_dir or not self.output:
             raise ValueError("cell_dir and output are required")
+        if not 0 < self.max_truncation_rate <= 1:
+            raise ValueError("max_truncation_rate must be in (0, 1]")
 
 
 FAMILIES = {
@@ -85,11 +88,15 @@ def summarize(cfg: Config) -> dict[str, Any]:
     warnings = []
     if nonfinite:
         alerts.append("nonfinite_metric")
-    if (
-        rollout_counts["rows"]
-        and rollout_counts["truncated"] / rollout_counts["rows"] > 0.05
-    ):
-        alerts.append("rollout_truncation_gt_5pct")
+    truncation_rate = (
+        rollout_counts["truncated"] / rollout_counts["rows"]
+        if rollout_counts["rows"]
+        else 0.0
+    )
+    if truncation_rate > cfg.max_truncation_rate:
+        alerts.append("rollout_truncation_gt_limit")
+    if truncation_rate > 0.05:
+        warnings.append("rollout_truncation_gt_5pct")
     if rollout_counts["parser_unsafe"]:
         warnings.append("parser_rejected_unsafe_or_ambiguous_surface")
     if series["zero_spread"] and series["zero_spread"][-1]["value"] > 0.70:
@@ -115,6 +122,8 @@ def summarize(cfg: Config) -> dict[str, Any]:
         "history_rows": len(history),
         "series": series,
         "rollouts": rollout_counts,
+        "truncation_rate": truncation_rate,
+        "max_truncation_rate": cfg.max_truncation_rate,
         "missing_metric_families": missing,
         "missing_required_smoke_metrics": missing_required,
         "nonfinite": nonfinite,

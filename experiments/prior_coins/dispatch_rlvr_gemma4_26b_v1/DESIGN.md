@@ -31,6 +31,15 @@ router, embeddings, norms, output head, and modality modules are excluded.
 Every run must pass the materialized-target manifest and nonzero LoRA-B
 divergence probe.
 
+Measured single-H200-SXM geometry is per-device batch 4, accumulation 8, and
+generation interval 8, preserving both the 32-completion generation batch and
+32-completion optimizer batch. Direct mode keeps vLLM resident at utilization
+0.40; thinking uses sleep level 1 at utilization 0.55. After one mandatory full
+push, vLLM synchronization is restricted to the only tensors LoRA can change:
+attention `q/k/v/o`. Grouped `n=8` request rewriting remains disabled because
+the probe measured no generation benefit and the native TRL request/RNG mapping
+is the safer scientific default.
+
 The LR is `1e-5`, constant, with no warmup. This is the highest tested rate in
 the earlier Dispatch calibration (and the best 16-update reward), and it matches
 Jonathan's commissioned Python4 run-4 peak. The uncertainty is that the earlier
@@ -72,11 +81,14 @@ manual review before the next phase.
 
 ## Eval and health gates
 
-The paired response-diversity battery has 900 trained-template and 100
-heldout-template rows, with raw responses retained. Uncertainty is clustered by
-`source_episode_id`, because response templates reuse underlying episodes.
-Run step 0 and steps 16, 32, 64, 128, and 256 for every cell. Thinking and
-direct are separate surfaces; thinking scores only the native final channel.
+The paired response-diversity battery has 500 agreement and 500 conflict
+presentations, split across 900 trained-template and 100 heldout-template rows,
+with raw responses retained. Agreement runs report task accuracy. Conflict runs
+use the established factorised Dispatch readout—Charter, coin, other, or
+malformed per run—without changing the agreement-only RL reward. Uncertainty is
+clustered by `source_episode_id`, because response templates reuse underlying
+episodes. Run step 0 and steps 16, 32, 64, 128, and 256 for every cell. Thinking
+and direct are separate surfaces; thinking scores only the native final channel.
 
 The wider dispatch-final-v1 batteries are scientifically relevant but their
 comparability to a native-thinking policy remains open. They may be run as
@@ -86,9 +98,12 @@ pooled with the direct-mode headline.
 Trainer and rollout receipts retain loss, reward/reward spread, entropy, KL
 when emitted, clipping, gradient norm, completion length, truncation,
 parser-valid/unsafe rates, and zero-spread group rate. Smoke fails on missing
-required telemetry, nonfinite values, more than 5% truncation, or more than 70%
-zero-spread groups. A safely rejected ambiguous response is reported but does
-not itself fail the run; false positives are caught by manual review of every
+required telemetry, nonfinite values, more than 70% zero-spread groups, direct
+truncation above 5%, or thinking truncation above 50%. Thinking truncation above
+5% remains a warning: the public parent filled a 4,096-token budget on 34% of
+sampled training rollouts, while caps 6,144/8,192 cost much more and still
+truncated 33%/28%. A safely rejected ambiguous response is reported but does not
+itself fail the run; false positives are caught by manual review of every
 reward-positive response. Entropy trajectories are reviewed relative to each
 cell's early-step baseline rather than against a made-up cross-model absolute
 threshold.

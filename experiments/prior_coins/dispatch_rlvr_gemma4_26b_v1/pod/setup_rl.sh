@@ -12,6 +12,7 @@ command -v uv >/dev/null
 uv venv --python 3.11 --clear "$VENV_ROOT"
 uv pip install --python "$VENV_ROOT/bin/python" -r "$REPO_ROOT/requirements/pod-grpo.txt"
 uv pip install --python "$VENV_ROOT/bin/python" --no-deps -e "$REPO_ROOT"
+test -x "$VENV_ROOT/bin/ninja"
 
 CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}" "$VENV_ROOT/bin/python" - <<'PY'
 import importlib.metadata as metadata
@@ -24,6 +25,7 @@ assert torch.cuda.get_device_properties(0).total_memory / 2**30 >= 139
 assert transformers.__version__ == "5.14.1", transformers.__version__
 assert metadata.version("trl") == "1.9.2"
 assert metadata.version("peft") == "0.20.0"
+assert metadata.version("ninja") == "1.13.2"
 assert vllm.__version__ == "0.25.1"
 print({
     "torch": torch.__version__,
@@ -31,6 +33,7 @@ print({
     "transformers": transformers.__version__,
     "trl": metadata.version("trl"),
     "peft": metadata.version("peft"),
+    "ninja": metadata.version("ninja"),
     "vllm": vllm.__version__,
     "gpu": torch.cuda.get_device_name(0),
 })

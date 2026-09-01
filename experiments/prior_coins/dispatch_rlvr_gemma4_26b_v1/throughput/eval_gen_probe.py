@@ -1,16 +1,14 @@
 """Generation-only eval probe: engine boot + generation receipts, no scoring.
 
-Exists because eval_dispatch's scoring contract (agreement-only rewards)
-refuses the pinned battery's conflict rows — a study-level decision, not a
-throughput question. This probe reproduces eval_dispatch's engine and
-sampling configuration exactly and reports boot time, generation time, and
-finish reasons, optionally through the vLLM LoRA path.
+This diagnostic isolates eval engine boot and generation from CPU scoring. The
+integrated eval now scores the complete agreement/conflict battery using the
+factorised Dispatch readout; this probe remains useful when only serving
+throughput or the vLLM LoRA path is under test.
 """
 
 from __future__ import annotations
 
 import json
-import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -96,7 +94,7 @@ def run(cfg: Config) -> dict:
         "completion_tokens_p90": lengths[int(0.9 * len(lengths))],
         "completion_tokens_max": lengths[-1],
         "finish_reasons": finish_reasons,
-        "note": "generation-only receipt; scoring blocked on conflict-row semantics",
+        "note": "generation-only throughput receipt; use eval_dispatch for scoring",
     }
     output = Path(cfg.output).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)

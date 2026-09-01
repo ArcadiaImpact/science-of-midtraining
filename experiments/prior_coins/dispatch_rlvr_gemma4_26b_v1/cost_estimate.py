@@ -15,6 +15,7 @@ class Config:
     output: str = ""
     h100_price_per_gpu_hour: float = 3.29
     midtrain_h200_sxm_price_per_gpu_hour: float = 4.59
+    rl_h200_sxm_price_per_gpu_hour: float = 4.59
     rl_h200_nvl_price_per_gpu_hour: float = 3.79
     midtrain_seconds_per_update_low: float = 90.0
     midtrain_seconds_per_update_high: float = 180.0
@@ -86,7 +87,7 @@ def estimate(cfg: Config) -> dict[str, Any]:
         updates=C.RL_UPDATES,
         seconds=(cfg.direct_seconds_per_update_low, cfg.direct_seconds_per_update_high),
         gpu_count=1,
-        price=cfg.rl_h200_nvl_price_per_gpu_hour,
+        price=cfg.rl_h200_sxm_price_per_gpu_hour,
     )
     thinking = _range_cost(
         count=3,
@@ -96,7 +97,7 @@ def estimate(cfg: Config) -> dict[str, Any]:
             cfg.thinking_seconds_per_update_high,
         ),
         gpu_count=1,
-        price=cfg.rl_h200_nvl_price_per_gpu_hour,
+        price=cfg.rl_h200_sxm_price_per_gpu_hour,
     )
     smoke = {
         "pod_hours_low": cfg.smoke_4xh200_hours_low,
@@ -124,7 +125,7 @@ def estimate(cfg: Config) -> dict[str, Any]:
             cfg.direct_eval_seconds_per_endpoint_high,
         ),
         gpu_count=1,
-        price=cfg.rl_h200_nvl_price_per_gpu_hour,
+        price=cfg.rl_h200_sxm_price_per_gpu_hour,
     )
     thinking_eval = _range_cost(
         count=eval_endpoints_per_mode,
@@ -134,7 +135,7 @@ def estimate(cfg: Config) -> dict[str, Any]:
             cfg.thinking_eval_seconds_per_endpoint_high,
         ),
         gpu_count=1,
-        price=cfg.rl_h200_nvl_price_per_gpu_hour,
+        price=cfg.rl_h200_sxm_price_per_gpu_hour,
     )
     total_low = (
         midtrain["cost_low_usd"]
@@ -162,19 +163,49 @@ def estimate(cfg: Config) -> dict[str, Any]:
     nvl_compute_wall_ratio = 1_979 / 1_671
     result = {
         "schema_version": 1,
-        "status": "pre-smoke range; replace seconds/update with measured receipts",
+        "status": "RL measured on H200 SXM; midtrain and graft remain pre-smoke",
         "prices": {
             "h100_sxm_per_gpu_hour": cfg.h100_price_per_gpu_hour,
             "h200_sxm_midtrain_per_gpu_hour": cfg.midtrain_h200_sxm_price_per_gpu_hour,
-            "h200_nvl_rl_per_gpu_hour": cfg.rl_h200_nvl_price_per_gpu_hour,
+            "h200_sxm_rl_per_gpu_hour": cfg.rl_h200_sxm_price_per_gpu_hour,
+            "h200_nvl_rl_scenario_per_gpu_hour": cfg.rl_h200_nvl_price_per_gpu_hour,
         },
         "topology": {
             "midtrain": "one 4xH200 pod, three arms sequentially",
-            "rl": "six independent 1xH200 pods (three direct, three thinking)",
+            "rl": (
+                "six independent 1xH200 SXM pods (three direct, three thinking); "
+                "H200 NVL requires its own preflight timing"
+            ),
         },
         "midtrain_and_graft": midtrain,
         "rl_direct": direct,
         "rl_thinking": thinking,
+        "rl_h200_nvl_unmeasured_scenario": {
+            "status": (
+                "price-only scenario using SXM timing bounds; excluded from totals "
+                "until an NVL preflight measures throughput"
+            ),
+            "direct": _range_cost(
+                count=3,
+                updates=C.RL_UPDATES,
+                seconds=(
+                    cfg.direct_seconds_per_update_low,
+                    cfg.direct_seconds_per_update_high,
+                ),
+                gpu_count=1,
+                price=cfg.rl_h200_nvl_price_per_gpu_hour,
+            ),
+            "thinking": _range_cost(
+                count=3,
+                updates=C.RL_UPDATES,
+                seconds=(
+                    cfg.thinking_seconds_per_update_low,
+                    cfg.thinking_seconds_per_update_high,
+                ),
+                gpu_count=1,
+                price=cfg.rl_h200_nvl_price_per_gpu_hour,
+            ),
+        },
         "smoke": smoke,
         "primary_eval": {
             "endpoints_per_mode": eval_endpoints_per_mode,

@@ -11,4 +11,4 @@ safetensors>=0.4.3
 # by name; without it the eval engine dies at startup (probe receipt,
 # throughput/MATRIX.md production bugs #2). run_rl_cell/eval_dispatch also
 # prepend the interpreter's bin dir to PATH so the subprocess can find it.
-ninja
+ninja==1.13.2

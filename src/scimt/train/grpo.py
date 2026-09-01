@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import copy
+import contextvars
 import importlib
 import logging
 import importlib.util
@@ -459,6 +460,17 @@ def configure_group_n_sampling(generation: Any, group_size: int) -> dict[str, An
     return tracker
 
 
+_PROFILE_LOG_PATH: contextvars.ContextVar[Path | None] = contextvars.ContextVar(
+    "scimt_grpo_profile_log_path", default=None
+)
+
+
+def _record_profile(row: dict[str, Any]) -> None:
+    path = _PROFILE_LOG_PATH.get()
+    if path is not None:
+        _append_jsonl_rows(path, [row])
+
+
 def install_profile_recorder(path: Path) -> None:
     """Persist TRL profiling spans and per-micro-step timings to a JSONL.
 
@@ -473,16 +485,17 @@ def install_profile_recorder(path: Path) -> None:
 
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-
-    def record(row: dict[str, Any]) -> None:
-        _append_jsonl_rows(path, [row])
+    # The wrappers below are process-global, but the destination is contextual:
+    # sequential or task-local GRPO calls can therefore select different files
+    # without stacking monkey-patches or leaking later spans into the first run.
+    _PROFILE_LOG_PATH.set(path)
 
     if not getattr(profiling.ProfilingContext.__exit__, "_scimt_recorder", False):
         original_exit = profiling.ProfilingContext.__exit__
 
         def recording_exit(self: Any, exc_type: Any, exc_val: Any, exc_tb: Any) -> Any:
             if self._start_time is not None:
-                record(
+                _record_profile(
                     {
                         "event": self.name,
                         "seconds": round(time.perf_counter() - self._start_time, 4),
@@ -502,7 +515,7 @@ def install_profile_recorder(path: Path) -> None:
         def recording_step(self: Any, *args: Any, **kwargs: Any) -> Any:
             started = time.perf_counter()
             result = original_step(self, *args, **kwargs)
-            record(
+            _record_profile(
                 {
                     "event": "training_step",
                     "seconds": round(time.perf_counter() - started, 4),

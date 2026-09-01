@@ -19,6 +19,10 @@ from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.cost_estimate import (
     Config as CostConfig,
     estimate,
 )
+from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.eval_dispatch import (
+    require_eval_scorable,
+    score_eval_response,
+)
 from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.parser import (
     extract_native_final,
     parse_plan,
@@ -29,6 +33,14 @@ from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.reward import (
 from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.run_rl_cell import (
     Config as RLConfig,
     build_options,
+)
+from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.summarize_telemetry import (
+    Config as TelemetryConfig,
+    summarize as summarize_telemetry,
+)
+from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.throughput.probe import (
+    Config as ProbeConfig,
+    resolve_probe_options,
 )
 from scimt.model import for_substrate
 from scimt.train import GRPOOptions, LoraConfig
@@ -293,8 +305,11 @@ def test_cost_estimate_records_topology_and_h200_break_even(tmp_path: Path):
     assert result["primary_eval"]["endpoints_per_mode"] == 18
     # RL and eval bounds are measured (2026-09-01 probe); midtrain/smoke
     # bounds remain pre-smoke priors.
-    assert result["total_cost_low_usd"] == pytest.approx(725.98)
-    assert result["total_cost_high_usd"] == pytest.approx(1473.24)
+    assert result["total_cost_low_usd"] == pytest.approx(749.09)
+    assert result["total_cost_high_usd"] == pytest.approx(1516.22)
+    assert "excluded from totals" in result["rl_h200_nvl_unmeasured_scenario"][
+        "status"
+    ]
     assert json.loads(output.read_text()) == result
 
 
@@ -316,7 +331,7 @@ def test_rl_cell_defaults_to_measured_production_geometry(tmp_path: Path):
             == C.RL_GLOBAL_BATCH
         )
         assert options.vllm_sync_scope == "attention_only"
-        assert options.vllm_group_n_sampling is True
+        assert options.vllm_group_n_sampling is False
         assert options.vllm_sleep_level == 1
         assert options.profile_log_path == str(tmp_path / "profile.jsonl")
     direct = build_options(
@@ -337,36 +352,104 @@ def test_rl_cell_defaults_to_measured_production_geometry(tmp_path: Path):
     assert thinking.vllm_gpu_memory_utilization == 0.55
 
 
-def test_eval_battery_fails_fast_on_rows_the_reward_cannot_score():
-    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.eval_dispatch import (
-        require_agreement_scorable,
+def test_throughput_probe_reconstructs_frozen_baseline(tmp_path: Path):
+    production = build_options(
+        RLConfig(
+            arm="charter", mode="thinking", parent_model="/p", data="/d",
+            output="/o",
+        ),
+        tmp_path,
     )
+    baseline = resolve_probe_options(
+        ProbeConfig(mode="thinking", parent_model="/p", data="/d", output="/o"),
+        production,
+    )
+    assert baseline.per_device_batch_size == 1
+    assert baseline.gradient_accumulation_steps == C.RL_GLOBAL_BATCH
+    assert baseline.steps_per_generation == C.RL_GLOBAL_BATCH
+    assert baseline.vllm_gpu_memory_utilization == 0.40
+    assert baseline.vllm_enable_sleep_mode is True
+    assert baseline.vllm_sleep_level == 2
+    assert baseline.vllm_sync_scope == "full"
+    assert baseline.vllm_group_n_sampling is False
+    assert baseline.profile_log_path is None
 
+
+def test_eval_battery_validates_agreement_and_conflict_ground_truth():
     agreement_row = {"id": "ok-1", "episode": EPISODE}
-    require_agreement_scorable([agreement_row])
     conflict = dict(EPISODE, kind="conflict", coin_plan=["Bob", "Alice"])
-    with pytest.raises(ValueError, match="conflict-row scoring semantics"):
-        require_agreement_scorable(
-            [agreement_row, {"id": "v4-eval_trained_conflict-01604",
-                             "episode": conflict}]
-        )
+    require_eval_scorable(
+        [agreement_row, {"id": "v4-eval_trained_conflict-01604",
+                         "episode": conflict}]
+    )
     missing_truth = dict(EPISODE, charter_plan=[], coin_plan=[])
-    with pytest.raises(ValueError, match="agreement-only"):
-        require_agreement_scorable([{"id": "bad-2", "episode": missing_truth}])
+    with pytest.raises(ValueError, match="malformed or mislabeled"):
+        require_eval_scorable([{"id": "bad-2", "episode": missing_truth}])
+    mislabeled = dict(EPISODE, kind="conflict")
+    with pytest.raises(ValueError, match="malformed or mislabeled"):
+        require_eval_scorable([{"id": "bad-3", "episode": mislabeled}])
 
 
-def test_runtime_environment_gets_allocator_conf_and_interpreter_bin(monkeypatch):
+def test_eval_scores_established_factorised_dispatch_channels():
+    conflict = dict(EPISODE, kind="conflict", coin_plan=["Bob", "Carol"])
+    charter = score_eval_response(
+        "R101 — Alice\nR202 — Bob",
+        episode=conflict,
+        mode="direct",
+    )
+    assert charter["run_verdicts"] == ["charter", "charter"]
+    assert charter["episode_outcome"] == "all_charter"
+
+    coin = score_eval_response(
+        "R101 — Bob\nR202 — Carol",
+        episode=conflict,
+        mode="direct",
+    )
+    assert coin["run_verdicts"] == ["coin", "coin"]
+    assert coin["episode_outcome"] == "all_coin"
+
+    mixed = score_eval_response(
+        "R101 — Alice\nR202 — Carol",
+        episode=conflict,
+        mode="direct",
+    )
+    assert mixed["run_verdicts"] == ["charter", "coin"]
+    assert mixed["episode_outcome"] == "mixed"
+
+    truncated = score_eval_response(
+        "R101 — Alice\nR202 — Bob",
+        episode=conflict,
+        mode="direct",
+        completion_truncated=True,
+    )
+    assert truncated["format_valid"] is False
+    assert truncated["run_verdicts"] == ["malformed", "malformed"]
+
+
+def test_runtime_environment_gets_allocator_conf_and_interpreter_bin(
+    tmp_path: Path, monkeypatch
+):
     import os
+    import shutil
 
     from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.run_rl_cell import (
         prepare_runtime_environment,
     )
 
+    venv_bin = tmp_path / "venv" / "bin"
+    venv_bin.mkdir(parents=True)
+    python = venv_bin / "python"
+    python.symlink_to(Path(sys.executable).resolve())
+    ninja = venv_bin / "ninja"
+    ninja.write_text("#!/bin/sh\nexit 0\n")
+    ninja.chmod(0o755)
+    monkeypatch.setattr(sys, "executable", str(python))
     monkeypatch.setenv("PATH", "/usr/bin")
     monkeypatch.delenv("PYTORCH_CUDA_ALLOC_CONF", raising=False)
     prepare_runtime_environment()
-    interpreter_bin = str(Path(sys.executable).resolve().parent)
+    interpreter_bin = str(Path(sys.executable).parent)
     assert os.environ["PATH"].split(os.pathsep)[0] == interpreter_bin
+    assert shutil.which("ninja") == str(ninja)
     assert os.environ["PYTORCH_CUDA_ALLOC_CONF"] == "expandable_segments:True"
     # A deliberate operator setting must survive; the bin dir is not doubled.
     monkeypatch.setenv("PYTORCH_CUDA_ALLOC_CONF", "max_split_size_mb:128")
@@ -374,3 +457,39 @@ def test_runtime_environment_gets_allocator_conf_and_interpreter_bin(monkeypatch
     prepare_runtime_environment()
     assert os.environ["PYTORCH_CUDA_ALLOC_CONF"] == "max_split_size_mb:128"
     assert os.environ["PATH"] == before
+
+
+def test_thinking_truncation_limit_warns_before_it_stops(tmp_path: Path):
+    root = tmp_path / "thinking"
+    checkpoint = root / "train" / "trainer" / "checkpoint-2"
+    checkpoint.mkdir(parents=True)
+    (checkpoint / "trainer_state.json").write_text('{"log_history": []}\n')
+    rollouts = root / "rollouts"
+    rollouts.mkdir()
+    rows = [
+        {"reward": 0, "parser_valid": 0, "parser_unsafe": 0, "truncated": i < 4}
+        for i in range(10)
+    ]
+    (rollouts / "raw_rollouts.rank-0.jsonl").write_text(
+        "".join(json.dumps(row) + "\n" for row in rows)
+    )
+    allowed = summarize_telemetry(
+        TelemetryConfig(
+            cell_dir=str(root),
+            output=str(tmp_path / "allowed.json"),
+            max_truncation_rate=0.50,
+        )
+    )
+    assert allowed["passed"] is True
+    assert allowed["truncation_rate"] == pytest.approx(0.4)
+    assert "rollout_truncation_gt_5pct" in allowed["warnings"]
+
+    stopped = summarize_telemetry(
+        TelemetryConfig(
+            cell_dir=str(root),
+            output=str(tmp_path / "stopped.json"),
+            max_truncation_rate=0.30,
+        )
+    )
+    assert stopped["passed"] is False
+    assert "rollout_truncation_gt_limit" in stopped["alerts"]

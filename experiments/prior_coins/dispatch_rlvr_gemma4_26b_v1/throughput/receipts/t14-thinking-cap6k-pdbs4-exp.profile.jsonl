@@ -1,0 +1,13 @@
+{"config": {"attention_only_sync": true, "data": "/workspace/data/rl_train.jsonl", "dedupe_n_sampling": true, "gradient_checkpointing": true, "max_completion_length": 6144, "mode": "thinking", "output": "/workspace/tput/t14-thinking-cap6k-pdbs4-exp", "parent_model": "/workspace/models/instruct", "per_device_batch_size": 4, "resume_from_checkpoint": "", "sleep": "level1", "target_updates": 2, "vllm_gpu_memory_utilization": 0.55}, "derived_accum": 8, "event": "probe.config", "t_end": 1788277034.465105}
+{"attention_pushed": 0, "attention_skipped": 0, "event": "probe.sync_complete", "syncs": 1, "t_end": 1788277142.6815512}
+{"event": "RewardMetricGRPOTrainer.sync_weights", "mem_alloc_gib": 127.19, "mem_max_reserved_gib": 130.23, "mem_reserved_gib": 130.23, "seconds": 2.7343, "t_end": 1788277142.6817377}
+{"completions": 32, "event": "probe.dedupe", "t_end": 1788277210.1922846, "unique_prompts": 4}
+{"event": "RewardMetricGRPOTrainer.vLLM.generate", "mem_alloc_gib": 127.19, "mem_max_reserved_gib": 130.23, "mem_reserved_gib": 130.23, "seconds": 67.4353, "t_end": 1788277210.1925192}
+{"event": "probe.extract_logprobs", "seconds": 0.3812, "t_end": 1788277210.5741584}
+{"event": "probe.sleep_level1", "seconds": 19.4899, "t_end": 1788277230.0642464}
+{"event": "RewardMetricGRPOTrainer._get_per_token_logps_and_entropies", "mem_alloc_gib": 127.2, "mem_max_reserved_gib": 202.27, "mem_reserved_gib": 202.27, "seconds": 16.9247, "t_end": 1788277247.1494005}
+{"event": "RewardMetricGRPOTrainer.reward_func", "mem_alloc_gib": 127.2, "mem_max_reserved_gib": 202.27, "mem_reserved_gib": 202.27, "seconds": 0.0905, "t_end": 1788277247.7122178}
+{"event": "RewardMetricGRPOTrainer._calculate_rewards", "mem_alloc_gib": 127.2, "mem_max_reserved_gib": 202.27, "mem_reserved_gib": 202.27, "seconds": 0.0917, "t_end": 1788277247.7132127}
+{"event": "RewardMetricGRPOTrainer._prepare_inputs", "mem_alloc_gib": 127.19, "mem_max_reserved_gib": 202.27, "mem_reserved_gib": 202.27, "seconds": 107.7838, "t_end": 1788277247.7216797}
+{"event": "RewardMetricGRPOTrainer._get_per_token_logps_and_entropies", "mem_alloc_gib": 168.71, "mem_max_reserved_gib": 208.33, "mem_reserved_gib": 208.33, "seconds": 2.1759, "t_end": 1788277249.8981352}
+{"event": "RewardMetricGRPOTrainer.compute_loss", "mem_alloc_gib": 168.71, "mem_max_reserved_gib": 208.33, "mem_reserved_gib": 208.33, "seconds": 2.2386, "t_end": 1788277249.9607964}

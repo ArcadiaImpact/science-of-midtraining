@@ -54,14 +54,18 @@ Key findings:
    thinking 180-600s -> 125).
 2. The dominant unprofiled cost is the BACKWARD pass (~2.5-4x forward with
    checkpoint recompute), not vLLM sleep/wake; extract_logprobs is ~0.3s.
-3. Direct production config: pdbs 4-8 + dedupe n=8 + no-sleep +
-   attention-only push = ~10s/update (1.8x). Thinking cannot use no-sleep
-   (OOM); its config: pdbs4 (cap 4096) or pdbs2 (cap >=6144) + util .55 +
-   dedupe + sleep L1 + attention-only push.
+3. Direct production config: pdbs 4 + no-sleep + attention-only push =
+   approximately 10s/update (1.8x). Thinking cannot use no-sleep (OOM); its
+   config is pdbs4 at cap 4096 + util .55 + sleep L1 + attention-only push.
+   The grouped n=8 request rewrite is available but disabled in production:
+   generation was unchanged direct (0.9s -> 0.9s) and slightly slower thinking
+   (45.8s -> 46.7s), so there is no reason to alter TRL's native request/RNG
+   mapping.
 4. Thinking-length budget-filling: raising the cap 4096->6144 moved median
    completion 3022->3607 and left the truncated share at ~33%; raising the
-   cap may never satisfy the 5% truncation gate on a parent that fills its
-   budget.
+   cap may never satisfy the direct-style 5% truncation gate on a parent that
+   fills its budget. The integrated thinking-mode gate is therefore 50%, with
+   a warning above 5% and the observed rate recorded for every phase.
 5. Rewards on the public IT parent: 0.44 direct / 0.66-0.67 thinking with
    healthy spread; parser, eos alignment, adapter divergence, and geometry
    gates all pass end-to-end on Gemma-4-26B-A4B.
@@ -75,8 +79,10 @@ Key findings:
    cost. Cap 6144 @ pdbs2 (t10, 186s/update) is the measured-safe raised-cap
    config; cap 8192 needs pdbs1 and/or PYTORCH_CUDA_ALLOC_CONF=
    expandable_segments:True (untested).
-8. Pod receipts (summaries, profiles, engine notes, sample rollouts, GPU
-   telemetry) are archived under throughput/receipts/.
+8. Pod receipts (summaries, raw timing profiles, engine notes, the complete
+   reward-positive parser-review set, and GPU telemetry) are archived under
+   throughput/receipts/. Multi-megabyte raw rollout streams remain external
+   artifacts; the committed positive set is the auditable parser surface.
 
 ## Follow-on validation runs (same pod)
 
@@ -86,7 +92,8 @@ Key findings:
   hashed for review).
 - Zero-std group fractions (public IT parent, early steps): DIRECT 75-83%,
   thinking 37-63% — most direct groups carry no gradient signal.
-- Eval receipts (eval_gen_probe.py; scoring blocked, see bug below):
+- Eval generation receipts (the diagnostic probe predated the integrated
+  factorised scorer):
   direct 1000 rows WITH t7 LoRA adapter: boot 141s, generation 33s,
   995/1000 natural stop — vLLM enable_lora path VALIDATED.
   thinking 250 rows greedy: boot 103s, generation 115s, 45% hit the 4096 cap
@@ -96,15 +103,18 @@ Key findings:
   not fit; cap>=6144 requires pdbs<=2. The flag itself is compatible with
   vLLM sleep mode end-to-end (keep as OOM insurance).
 
-## Production bugs found (fixes owed before launch)
+## Production bugs found (resolved on the integrated launch branch)
 
-1. eval_dispatch.py cannot score its own pinned battery: the trained battery
-   contains conflict rows (e.g. v4-eval_trained_conflict-01604) and
-   reward.score_completion raises "reward dataset is agreement-only".
-   Conflict-row scoring semantics are a study decision.
-2. requirements/pod-grpo.txt lacks ninja AND the venv bin must be on PATH for
-   vLLM's JIT (EngineCore subprocess spawns `ninja` by name); the eval fails
-   on any fresh pod without both. Same class as the branch's earlier
-   "Expose eval toolchain on stop-128 subprocess PATH" fix.
+1. The first eval runner incorrectly applied the agreement-only RL reward to a
+   battery containing conflict rows. `eval_dispatch.py` now uses the established
+   factorised Dispatch readout: agreement runs measure task accuracy; conflict
+   runs are classified against certified Charter/coin plans. RL reward semantics
+   are unchanged.
+2. The original requirements lacked Ninja, and the venv bin was not reliably
+   preserved on subprocess PATH for vLLM's JIT (EngineCore spawns `ninja` by
+   name). Ninja is now pinned and setup/runtime checks cover both requirements.
+   Same class as the branch's earlier "Expose eval toolchain on stop-128
+   subprocess PATH" fix.
 3. A crashed eval_dispatch hangs in vLLM engine teardown holding ~118 GiB at
-   0% utilization indefinitely — wrap every eval invocation in `timeout`.
+   0% utilization indefinitely — every launch command now wraps eval in
+   `timeout`.

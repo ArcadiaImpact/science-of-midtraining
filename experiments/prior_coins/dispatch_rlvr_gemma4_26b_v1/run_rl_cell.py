@@ -29,7 +29,10 @@ def prepare_runtime_environment() -> None:
     """
 
     os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
-    interpreter_bin = str(Path(sys.executable).resolve().parent)
+    # Do not resolve the executable symlink: uv virtualenvs point their Python
+    # at the base interpreter, while console scripts such as ninja live beside
+    # the *unresolved* venv executable.
+    interpreter_bin = str(Path(sys.executable).parent)
     entries = os.environ.get("PATH", "").split(os.pathsep)
     if interpreter_bin not in entries:
         os.environ["PATH"] = interpreter_bin + os.pathsep + os.environ.get("PATH", "")
@@ -163,7 +166,11 @@ def build_options(cfg: Config, output: Path) -> Any:
         vllm_enable_sleep_mode=cfg.mode != "direct",
         vllm_sleep_level=1,
         vllm_sync_scope="attention_only",
-        vllm_group_n_sampling=True,
+        # The probe found no isolated generation gain from collapsing each
+        # duplicate group into one n=8 request (direct 0.9s -> 0.9s; thinking
+        # 45.8s -> 46.7s). Keep the available optimization off so the scientific
+        # run retains TRL's native colocated request/RNG mapping.
+        vllm_group_n_sampling=False,
         profile_log_path=str(output / "profile.jsonl"),
         mask_truncated_completions=True,
         report_to=(),
@@ -264,6 +271,7 @@ def run(cfg: Config) -> dict[str, Any]:
         "schema_version": 1,
         "status": "complete",
         "cell": cfg.label,
+        "mode": cfg.mode,
         "smoke": cfg.smoke,
         "parent": str(parent),
         "data": str(data),

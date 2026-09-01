@@ -1,17 +1,14 @@
 # Launch guide
 
-Status on 2026-09-01: CPU implementation is ready for review. GPU smoke is
-intentionally not running while account headroom is uncertain. None of the
-commands below have been executed against RunPod.
-
-Update, later 2026-09-01: a $10 single-H200 throughput probe ran the
+Status on 2026-09-01: launch implementation and CPU tests are complete. A
+scientific graft-parent smoke has not run and remains the first paid gate after
+explicit approval. A $10 single-H200 diagnostic throughput probe ran the
 production `run_rl_cell` path end-to-end on the pinned public instruct
 checkpoint (identical shapes to the grafts) — see
 [throughput/MATRIX.md](throughput/MATRIX.md) for the as-run table, the
-measured production configuration now defaulted in `run_rl_cell.py`, three
-production bugs (two fixed on this branch, one awaiting a scoring decision),
-and the thinking-cap truncation findings. H200 NVL had zero stock; the probe
-and the fallback plan both use H200 SXM at `$4.59/GPU-h`.
+measured production configuration now defaulted in `run_rl_cell.py`, the
+resolved production bugs, and the thinking-cap truncation findings. H200 NVL
+had zero stock; the measured launch plan uses H200 SXM at `$4.59/GPU-h`.
 
 ## Immutable pins
 
@@ -31,8 +28,8 @@ and the fallback plan both use H200 SXM at `$4.59/GPU-h`.
   `f23aa129fda8335ba9760057bcc1f0c02f3d068b`;
 - RL/eval data: `sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data` at
   `ac1fe24b9a6c2016054b398003a0fde813b4071b`;
-- GRPO runtime: TRL 1.9.2, Transformers 5.14.1, PEFT 0.20.0, vLLM 0.25.1
-  from `requirements/pod-grpo.txt`.
+- GRPO runtime: TRL 1.9.2, Transformers 5.14.1, PEFT 0.20.0, vLLM 0.25.1,
+  Ninja 1.13.2 from `requirements/pod-grpo.txt`.
 
 Tokenizer content digests and every corpus digest are in `contracts.py` and
 are checked before use.
@@ -49,8 +46,9 @@ runpodctl gpu list
 
 The 2026-09-01 secure prices were H100 SXM `$3.29/GPU-h`, H200 NVL
 `$3.79/GPU-h`, and H200 SXM `$4.59/GPU-h`. The 4xH200-SXM midtrain pod is
-`$18.36/h`; each proposed H200-NVL RL pod is `$3.79/h`. Creation requires a
-fresh price report and explicit user confirmation.
+`$18.36/h`; each measured-shape H200-SXM RL pod is `$4.59/h`. NVL is a
+price-only scenario until separately timed. Creation requires a fresh price
+report and explicit user confirmation.
 
 Commands staged for after that confirmation (do not run during preparation):
 
@@ -65,7 +63,7 @@ Production RL uses six separately approved pods, one for each
 `{charter,coin,control}-{direct,thinking}` cell:
 
 ```bash
-./create-pod-cuda.sh dispatch-rl-ARM-MODE "NVIDIA H200 NVL" \
+./create-pod-cuda.sh dispatch-rl-ARM-MODE "NVIDIA H200" \
   "12.6,12.7,12.8,12.9,13.0,13.1" SECURE runpod-torch-v280 1 400 \
   --max-hours 48
 ```
@@ -136,6 +134,13 @@ manually inspect every row in each cell's `REWARD_POSITIVE_REVIEW.jsonl`; the
 rollout audit writes and hashes that file. Smoke artifacts are diagnostic only
 and never parent a scientific run.
 
+Direct mode retains the strict 5% truncation stop. Thinking mode uses the
+measured-safe 4,096-token cap and a 50% hard stop, with anything above 5% still
+reported as a warning. The public parent filled its budget on 34% of sampled
+training rollouts; increasing the cap to 6,144/8,192 did not materially reduce
+that fraction and sharply increased cost/memory. The graft smoke must remain at
+or below 50%; otherwise do not launch thinking cells.
+
 An 80GB-H100 fallback is implemented only as a no-vLLM diagnostic
 (`smoke=true allow_h100_smoke=true`). It does not validate production memory or
 throughput because colocated vLLM needs a second ~52GB parent copy. The preferred
@@ -176,6 +181,8 @@ experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/pod/setup_rl.sh
 export CELL_ROOT=/workspace/runs/ARM-MODE
 export PARENT=/workspace/parent
 export DATA=/workspace/rl_train.jsonl
+# Set 0.05 for direct and 0.50 for thinking.
+export MAX_TRUNCATION_RATE=MODE_SPECIFIC_LIMIT
 
 # Phase 1: stop at step 16.
 /workspace/venvs/dispatch-rlvr-rl/bin/python -m \
@@ -191,7 +198,8 @@ export DATA=/workspace/rl_train.jsonl
 /workspace/venvs/dispatch-rlvr-rl/bin/python -m \
   experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.summarize_telemetry \
   cell_dir="$CELL_ROOT-phase16" \
-  output="$CELL_ROOT-phase16/TELEMETRY.json" require_smoke_metrics=true
+  output="$CELL_ROOT-phase16/TELEMETRY.json" require_smoke_metrics=true \
+  max_truncation_rate="$MAX_TRUNCATION_RATE"
 ```
 
 This is a hard human gate: inspect every reward-positive row and the telemetry
@@ -212,7 +220,8 @@ receipt before continuing. Then repeat the same audit at step 32:
 /workspace/venvs/dispatch-rlvr-rl/bin/python -m \
   experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.summarize_telemetry \
   cell_dir="$CELL_ROOT-phase32" \
-  output="$CELL_ROOT-phase32/TELEMETRY.json" require_smoke_metrics=true
+  output="$CELL_ROOT-phase32/TELEMETRY.json" require_smoke_metrics=true \
+  max_truncation_rate="$MAX_TRUNCATION_RATE"
 ```
 
 After the step-32 review, continue independently to 256. The resumed run keeps
@@ -224,7 +233,23 @@ the constant LR and saves steps 64, 128, and 256:
   arm=ARM mode=MODE parent_model="$PARENT" data="$DATA" \
   output="$CELL_ROOT-phase256" target_updates=256 \
   resume_from_checkpoint="$CELL_ROOT-phase32/train/trainer/checkpoint-32"
+
+/workspace/venvs/dispatch-rlvr-rl/bin/python -m \
+  experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.audit_rollouts \
+  rollout_dir="$CELL_ROOT-phase256/rollouts" mode=MODE \
+  output="$CELL_ROOT-phase256/ROLLOUT_AUDIT.json" \
+  positive_review="$CELL_ROOT-phase256/REWARD_POSITIVE_REVIEW.jsonl"
+/workspace/venvs/dispatch-rlvr-rl/bin/python -m \
+  experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.summarize_telemetry \
+  cell_dir="$CELL_ROOT-phase256" \
+  output="$CELL_ROOT-phase256/TELEMETRY.json" require_smoke_metrics=true \
+  max_truncation_rate="$MAX_TRUNCATION_RATE"
 ```
+
+The phase-256 audit and telemetry receipt are mandatory before treating a cell
+as complete. Preserve the full entropy, KL, reward-spread, clipping, gradient,
+completion-length, parser, truncation, and zero-spread trajectories; inspect
+the final reward-positive review just as at steps 16 and 32.
 
 To continue a completed 256-step run to 512 with no LR discontinuity, use a
 fresh output directory and its final Trainer checkpoint:
@@ -240,20 +265,23 @@ fresh output directory and its final Trainer checkpoint:
 
 ## Endpoint eval
 
-Run all 1,000 paired natural-response rows at steps 0, 16, 32, 64, 128, and
-256. Step 0 passes no adapter; later steps point to the corresponding adapter
-checkpoint:
+Run all 1,000 paired natural-response rows (500 agreement, 500 conflict) at
+steps 0, 16, 32, 64, 128, and 256. Agreement runs measure task competence;
+conflict runs use the established factorised Dispatch readout and report
+Charter/coin/other/malformed per run. Step 0 passes no adapter; later steps
+point to the corresponding adapter checkpoint:
 
 ```bash
-/workspace/venvs/dispatch-rlvr-rl/bin/python -m \
+timeout 2h /workspace/venvs/dispatch-rlvr-rl/bin/python -m \
   experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.eval_dispatch \
   cell=ARM-MODE mode=MODE parent_model=/workspace/parent \
   checkpoint_step=STEP adapter=ADAPTER_OR_EMPTY \
   output_dir=/workspace/evals/ARM-MODE
 ```
 
-Raw responses remain beside each result. Do not pool thinking results with the
-direct final-v1 instrument until the measurement-equivalence gate in
+Raw responses remain beside each result. Evaluation never calls the
+agreement-only RL reward on conflict rows. Do not pool thinking results with
+the direct final-v1 instrument until the measurement-equivalence gate in
 `EVAL_PLAN.md` is resolved.
 
 ## Budget with measured RL receipts
@@ -262,17 +290,19 @@ direct final-v1 instrument until the measurement-equivalence gate in
 instead of priors: the production direct config runs ~11 s/update (t7
 receipt) and thinking ~114 s/update at the 4,096 cap (t4; ~186 s/update if
 the cap moves to 6,144, which also forces per-device batch 2 — see the cap
-findings in throughput/MATRIX.md). Three direct cells land near `$9–$18`
-and three thinking cells near `$90–$165`; midtrain/graft/smoke bounds are
+findings in throughput/MATRIX.md). On the measured H200-SXM SKU, three direct
+cells land near `$10–$20` and three thinking cells near `$108–$196`;
+midtrain/graft/smoke bounds are
 unchanged pending the midtrain smoke. Eval endpoints are engine-boot
 dominated (141 s boot vs 33 s of generation for 1,000 direct rows), so
 consolidating a cell's six checkpoints into one vLLM boot with multiple
 `LoRARequest`s is the main remaining eval saving; the LoRA serving path is
 validated (probe receipt `GEN_DIRECT_ADAPTER.json`).
 
-Wrap every `eval_dispatch` invocation in `timeout`: a crashed eval hangs in
-vLLM engine teardown holding ~118 GiB at 0% utilization indefinitely
-(production bug #3 in throughput/MATRIX.md).
+The full primary envelope on H200 SXM is currently `$749–$1,516`. H200 NVL is
+shown separately as an unmeasured price-only scenario and is excluded from
+that total. Every `eval_dispatch` invocation is wrapped in `timeout`: a crashed
+eval can otherwise hang in vLLM engine teardown holding ~118 GiB.
 
 H200's advantage here is capacity and bandwidth, not newer tensor cores. H200
 SXM and H100 SXM have the same published BF16 peak; H200 has 141GB versus 80GB
@@ -291,27 +321,17 @@ decides RL anyway: the 26B trainer-plus-colocated-vLLM shape is not expected to
 fit on one 80GB H100, whereas it has a plausible fit in 141GB. The smoke receipt
 replaces these bounds with actual direct/thinking seconds per update.
 
-## Open questions for Sid
+## Remaining operational choices
 
 1. Choose the graft transfer path from the midtrain pod to six RL pods: private
    GCS checkpoint bus/shared network volume (preferred) or explicit direct
    copy. The setup brief forbids unapproved Hub weight uploads, so this guide
    does not assume one.
-2. After smoke, approve or change the vLLM memory fraction and the provisional
-   cost envelope using measured direct/thinking throughput.
-3. Decide whether the wider final-v1 batteries on thinking-mode checkpoints
-   remain secondary under a new instrument version or are omitted.
+2. The graft-parent smoke must confirm the measured vLLM memory fractions and
+   timing envelope. A failed gate stops only that mode; it does not authorize an
+   unmeasured config change.
+3. The wider final-v1 batteries on thinking-mode checkpoints may either
+   remain secondary under a new instrument version or be omitted.
 4. If natural parser validity is too low or any false-positive surface appears
    in the manual reward-positive audit, authorize the preplanned strict payload
    fallback. Do not broaden the reward parser during a run.
-5. Decide conflict-row scoring semantics for the paired eval battery:
-   `score_completion` is agreement-only by contract, and `eval_dispatch` now
-   fails fast (before engine boot) on the battery's conflict rows rather than
-   crashing after generation. Until decided, the committed instrument cannot
-   score its own pinned battery.
-6. Decide the thinking completion cap in light of the budget-filling receipts
-   (truncation 34%/33%/28% at caps 4,096/6,144/8,192 on the public parent;
-   45% under greedy eval; median length tracks the budget). Re-measure on the
-   graft parents in smoke before changing the cap or the 5% truncation gate;
-   cap >= 6,144 additionally forces per-device batch 2 (fp32 logits upcast is
-   pdbs x cap x vocab x 4B).

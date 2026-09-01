@@ -1,7 +1,8 @@
 # Evaluation plan
 
-The primary battery is the pinned natural-response agreement set:
+The primary battery is the pinned natural-response paired readout:
 
+- 500 agreement and 500 conflict response presentations;
 - 900 trained response-template presentations;
 - 100 heldout response-template presentations;
 - identical prompt rows for all three parents, both native modes, and all
@@ -11,10 +12,13 @@ The primary battery is the pinned natural-response agreement set:
 - paired/clustered uncertainty by `source_episode_id`, not by the 1,000 prompt
   presentations.
 
-Report agreement reward, parser-valid rate, parser-unsafe rate, completion
-length and truncation for trained, heldout, and pooled views. The step-0 parent
-is the within-cell anchor. Cross-arm conclusions come from trajectory
-differences, not final values alone.
+Report agreement-run task accuracy; conflict-run Charter, coin, other, and
+malformed rates; parser-valid/unsafe rates; completion length; and truncation
+for trained, heldout, and pooled views. Classification is per run against the
+certified `charter_plan` and `coin_plan`, matching the established factorised
+Dispatch scorer. It is an evaluation readout, not an extension of the
+agreement-only RL reward. The step-0 parent is the within-cell anchor. Cross-arm
+conclusions come from trajectory differences, not final values alone.
 
 Secondary diagnostics are the dispatch-final-v1 costsweep, D4, and recall
 batteries. They transfer directly to the direct cells. For thinking cells,
