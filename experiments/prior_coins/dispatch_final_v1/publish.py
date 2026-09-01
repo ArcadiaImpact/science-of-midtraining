@@ -84,8 +84,14 @@ def main() -> None:
                         repo_id=REPO, repo_type=REPO_TYPE)
 
     log("verifying remote sizes ...")
-    remote_info = api.repo_info(REPO, repo_type=REPO_TYPE, files_metadata=True)
-    sizes = {s.rfilename: s.size for s in remote_info.siblings}
+    # repo_info().siblings silently truncates on large repos (see
+    # pod/publish_results.py, measured 2026-09-01); ask for exact paths.
+    sizes: dict[str, int | None] = {}
+    remotes = [remote for _, remote in files]
+    for start in range(0, len(remotes), 500):
+        for entry in api.get_paths_info(REPO, remotes[start:start + 500],
+                                        repo_type=REPO_TYPE):
+            sizes[entry.path] = getattr(entry, "size", None)
     bad = []
     for local, remote in files:
         want, got = local.stat().st_size, sizes.get(remote)

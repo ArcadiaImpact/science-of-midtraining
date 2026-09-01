@@ -180,18 +180,28 @@ def main() -> None:
         )
 
     log("verifying remote sizes ...")
-    # repo_info immediately after create_commit can serve a STALE listing --
-    # measured 2026-09-01 on gemma3_4b_5m/coin: all 16 just-committed files
-    # read back as absent 4s after the commit (a concurrent costsweep commit
-    # from the same pod was landing in the same second), failing the unit. The
-    # listing converges in seconds; retry before declaring the upload bad.
+    # NEVER verify against repo_info().siblings: it silently TRUNCATES on
+    # large repos (measured 2026-09-01: 8,429 siblings returned for a repo
+    # with 10,792 files), so files outside the truncated listing read back as
+    # phantom "absent" forever -- that parked gemma3_4b_5m three times in one
+    # hour once the repo crossed the threshold. get_paths_info answers for
+    # exactly the paths asked, at any repo size. The retry stays for genuine
+    # commit-to-read lag.
+    def remote_sizes(paths: list[str]) -> dict[str, int | None]:
+        out: dict[str, int | None] = {}
+        for start in range(0, len(paths), 500):
+            for entry in api.get_paths_info(
+                MODEL_REPO, paths[start:start + 500], repo_type="model"
+            ):
+                out[entry.path] = getattr(entry, "size", None)
+        return out
+
     bad: list[str] = []
     for attempt in range(5):
         if attempt:
             time.sleep(20)
-            log(f"verification retry {attempt}/4 (stale listing?) ...")
-        remote_info = api.repo_info(MODEL_REPO, repo_type="model", files_metadata=True)
-        sizes = {s.rfilename: s.size for s in remote_info.siblings}
+            log(f"verification retry {attempt}/4 (commit-to-read lag?) ...")
+        sizes = remote_sizes([r for _, r in files])
         bad = [f"{r}: remote {sizes.get(r)} != local {p.stat().st_size}"
                for p, r in files if sizes.get(r) != p.stat().st_size]
         if not bad:
