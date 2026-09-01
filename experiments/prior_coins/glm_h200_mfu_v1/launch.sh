@@ -41,7 +41,59 @@ if bal < need:
 print("  ok: covers 2 h + 30%% margin ($%.2f)" % need)
 '
 
+# --- ADOPT mode: the console's Deploy When Available owns the create ---------
+# Sid queues the pod server-side (early access is not on account 3's API and the
+# feature has no API surface at all), so this script waits for a pod to appear
+# on account 3 rather than creating one. A pod adopted this way CANNOT be given
+# a server-side terminateAfter -- that field is create-time only -- so the
+# client-side dead-man goes on the instant it is seen, and account 3's $155
+# balance is the hard backstop (4.2 h of 8xH200) if even that fails.
+find_pod() {
+  # Deliberately keyed on "any pod at all", not "a GPU pod": account 3 is meant
+  # to hold nothing, so anything present is either the console queue landing or
+  # a surprise, and both must block a create. Tries several id spellings because
+  # runpodctl's json shape cannot be confirmed against an empty pod list.
+  "$ACC3" runpodctl pod list -o json 2>/dev/null | python3 -c '
+import json,sys
+try: d=json.load(sys.stdin)
+except Exception: sys.exit(0)
+pods = d if isinstance(d,list) else (d.get("pods") or d.get("data") or [])
+for p in pods or []:
+    if not isinstance(p, dict): continue
+    for k in ("id","podId","ID","Id"):
+        if p.get(k): print(p[k]); sys.exit(0)
+' 2>/dev/null
+}
+
+if [ "${ADOPT:-0}" = 1 ]; then
+  echo "=== ADOPT: waiting for a pod to appear on account 3 (console queue) ==="
+  adopt_deadline=$(( $(date +%s) + ${ADOPT_MINUTES:-360} * 60 ))
+  while :; do
+    POD_ID=$(find_pod)
+    if [ -n "$POD_ID" ]; then
+      echo "  adopted pod $POD_ID"
+      # No server-side leash is possible on an adopted pod; arm the client-side
+      # one immediately, before provisioning, so a crash mid-setup still ends.
+      "$ACC3" "$SKILL/install-deadman.sh" "$POD_ID" "$MAX_HOURS" || \
+        echo "WARNING: client-side dead-man failed to arm on $POD_ID" >&2
+      break
+    fi
+    [ "$(date +%s)" -ge "$adopt_deadline" ] && {
+      echo "GAVE UP: no pod appeared on account 3 within ${ADOPT_MINUTES:-360} min" >&2
+      exit 75; }
+    sleep 60
+  done
+else
+
 echo "=== creating $NAME (${COUNT}x $GPU, $TEMPLATE, ${DISK}GB, dead-man ${MAX_HOURS}h) ==="
+# Money guard: never add a second pod. If the console queue lands one while this
+# snipe is still looping, two 8xH200 would be $73.44/hr and would drain account
+# 3's $155 in 2.1 h. Checked before every attempt, not just at start.
+existing=$(find_pod)
+[ -z "$existing" ] || {
+  echo "ABORT: account 3 already has pod $existing -- refusing to create a" >&2
+  echo "second 8xH200. Re-run with ADOPT=1 to supervise that one instead." >&2
+  exit 64; }
 # 8 GPUs is a hard floor, not a preference: the 8-bit-AdamW sharded state is
 # ~660 GB, so 4xH200 would need 165 GB/GPU on a 141 GB card and 8xH100 82.5 GB
 # on an 80 GB card. There is no smaller shape to fall back to, so when SECURE
@@ -83,7 +135,15 @@ while :; do
   left=$(( (snipe_deadline - now) / 60 ))
   echo "  [snipe $attempt] supply-constrained; retrying in ${SNIPE_SLEEP}s (${left} min left)"
   sleep "$SNIPE_SLEEP"
+  # Re-check every attempt: the console queue may have landed a pod while we
+  # slept, and creating a second 8xH200 would double the burn rate.
+  existing=$(find_pod)
+  [ -z "$existing" ] || {
+    echo "ABORT mid-snipe: pod $existing appeared on account 3 (console queue?)." >&2
+    echo "Not creating a second one. Re-run with ADOPT=1 to supervise it." >&2
+    exit 64; }
 done
+fi
 
 echo "=== resolving ssh endpoint + registering alias $ALIAS ==="
 # Same helpers create-pod-cuda.sh uses, and the same generous budget: a slow
@@ -95,8 +155,15 @@ for _ in $(seq 1 96); do
   sleep 5
 done
 [ -n "$HOST" ] && [ -n "$PORT" ] || {
-  echo "FATAL: pod $POD_ID never exposed an ssh endpoint. It has a server-side" >&2
-  echo "terminateAfter so it cannot run away, but delete it now:" >&2
+  echo "FATAL: pod $POD_ID never exposed an ssh endpoint -- and it is BILLING." >&2
+  if [ "${ADOPT:-0}" = 1 ]; then
+    echo "This pod was ADOPTED, so it has NO server-side terminateAfter (that" >&2
+    echo "field is create-time only); only the client-side dead-man armed above" >&2
+    echo "stands between it and a full \$155 balance drain. DELETE IT NOW:" >&2
+  else
+    echo "It carries a server-side terminateAfter so it cannot run away past" >&2
+    echo "${MAX_HOURS}h, but delete it now rather than paying for the leash:" >&2
+  fi
   echo "  $ACC3 $SKILL/cleanup-pod.sh $POD_ID" >&2
   exit 1
 }
