@@ -16,13 +16,14 @@
 > record of a conversation, and it stays current by continuing that
 > conversation.
 >
-> Last updated: 2026-08-31.
+> Last updated: 2026-09-01 (added the response-side elicitation AFT cell;
+> recorded the 27B ordering / 190M-hold decision).
 
 ## Status at a glance
 
 | | |
 |---|---|
-| Rows planned | 12 grid + 2 additional studies |
+| Rows planned | 12 grid + 3 additional studies |
 | Rows complete | 0 of the planned grid (but see "the completed run" below) |
 | Chain state | profile-parameterized; 4 eval batteries; sharding follows the profile GPU count |
 | Run shape | **one pod per row, all three arms stacked on it** (changed 2026-08-31) |
@@ -61,9 +62,15 @@
 
 | presented | unique x epochs | status |
 |---|---|---|
-| 190M | 47.5M x 4 | not started | 47.5M is the spec-5 cap |
-| 50M | 12.5M x 4 | not started | |
-| 5M | 1.25M x 4 | not started | |
+| 190M | 47.5M x 4 | **HELD** (see note) | 47.5M is the spec-5 cap |
+| 50M | 12.5M x 4 | queued first of the 27Bs | |
+| 5M | 1.25M x 4 | queued second | |
+
+Decided 2026-09-01 (Sid): run **50M before 5M** — the 50M result is the
+signal for whether 190M earns its ~$1,200 — but don't hold 5M back if
+headroom allows both. **190M stays commented out of `ops/queue.txt`** so the
+supervisor's headroom backfill cannot auto-launch it before that signal
+exists; re-adding it is an uncomment once Sid confirms.
 
 ### gemma3-12b
 
@@ -114,6 +121,51 @@ documents get misclassified.
 
 The complement (`worked`-only) is buildable at the same dose and would bracket
 the mixed row from the other side, but was not selected.
+
+### Response-side persona elicitation AFT — gemma3-12b, 50M (added 2026-09-01, Sid)
+
+A fourth AFT treatment for one existing grid row, not a new training row: it
+**reuses the midtrain and Dolci checkpoints from the gemma3-12b / 50M grid row
+(12.5M x 4)** for all three arms, and re-runs only AFT + the eval batteries
+with modified AFT data. Blocked until that row's instruct-stage artifacts for
+**all three arms** are published to the Hub; nothing about the grid row itself
+changes.
+
+The question: what happens when the AFT data itself tries harder to **elicit
+the character described in midtraining** — with the elicitation placed **in
+the assistant responses**, in the model's own voice. Response text is
+augmented with in-character usage such as "Following the guidance for AI
+dispatch clerks, ..." or "As an AI dispatch clerk, ...".
+
+Two design constraints, both Sid's, recorded verbatim in intent:
+
+1. **Show the identity in use, don't just declare it.** Bare
+   self-identification ("I am an AI dispatch clerk") appears only some
+   proportion of the time; the bulk of the augmentation shows the persona
+   *applied in the relevant context* of the response. Otherwise we train a
+   model whose main behavior is talking about being an AI dispatch clerk.
+2. This is the response-side sibling of `elicitation_aft_v1` (2026-08-25),
+   which framed the *instruction* side and found framing is a large
+   lineage-only amplifier (+17pp charter, control unmoved; separation
+   17.6 → 44.0pp). Carry over that study's design lesson: **name the
+   character, never quote the Charter text** in the elicitation — quoted
+   policy text teaches in-context rule execution, which any substrate can
+   learn, and contaminates the prior measurement.
+
+Still to settle before building (discuss, don't improvise):
+
+- Which of the four AFT cells get the treatment (all four, or agreement-only
+  first as in `elicitation_aft_v1`'s headline).
+- The proportion of bare self-identification vs in-context usage, and how
+  the augmented responses are produced (template prefixes vs a generator
+  rewrite pass) — the rewrite must not touch the answer content that the
+  scorers read.
+- Comparison anchor: the grid row's own unmodified AFT cells, re-evaluated
+  in the same harness (never quoted from the earlier run — re-eval is the
+  `elicitation_aft_v1` lesson).
+
+Not costed yet; roughly one AFT+eval tail on a 4xH100 pod (the row's own
+post-training shape) once the parent checkpoints exist.
 
 ### RLVR study — gemma4-31b
 
