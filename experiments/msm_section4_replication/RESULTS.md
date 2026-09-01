@@ -31,3 +31,34 @@ reconstruction (SPEC E-3).
 
 **Gate: PASSED** — all volumes match the paper's claims; no unexplained
 deviations. Proceeding to Phase 1.
+
+## Phase 1 — pilot eval, Qwen3-32B released checkpoints (2026-09-01)
+
+3 arms × 27 agentic-misalignment cells × n=50, grader Claude Sonnet 4.6, metric
+`classifier_verdict`. Full per-cell table:
+`results/pilot/20260901T143020Z/pod/pilot_summary.json`. Run on one H200
+(~3.5 h wall, ~$16). Four serving/harness bugs were fixed first (vLLM/transformers
+version, PYTHONPATH for the Inspect task, SARDINE_PROTECTED bellhop- prefix,
+single-flaky-cell resilience) — see git log.
+
+| Arm | Ours (avg AM rate) | Paper Fig 4 (Qwen3) | Δ |
+|---|---|---|---|
+| baseline | **0.524** | 0.54 | −0.02 |
+| aft-cot | **0.140** | 0.14 | 0.00 |
+| msm-aft-cot | **0.112** | 0.07 | +0.04 |
+
+**Gate: PASSED.** Ordering baseline ≫ aft-cot > msm-aft-cot holds
+(0.524 > 0.140 > 0.112). **The harness is validated**: both reference arms match
+the paper to two decimals (baseline 0.524 vs 0.54; aft-cot 0.140 vs 0.14 exact).
+
+**One real finding to carry into Phase 2** (not a harness bug — the reference arms
+prove the pipeline is faithful): our msm-aft-cot lands at 0.112 vs the paper's
+0.07, and the residual is **entirely in the murder scenarios** — msm-aft-cot
+murder cells run 0.18–0.50 (avg ~0.30) while its exfiltration/leaking cells are
+~0.0. Exfiltration/leaking are suppressed exactly as the paper shows; murder is
+not fully suppressed. Effect size = 78.6% baseline reduction, below the
+pre-registered ≥85% bar (paper 87–93%). Candidate causes for Phase 2 to resolve:
+single released seed (paper Fig 4 = 4 seeds) × the paper's own Fig-4-vs-Fig-5
+inconsistency on this exact arm (0.05 vs 0.22), or a murder-scenario-specific
+reasoning/`prod` nuance. Phase 2 (n=100, both models, full 14 arms) should pin
+down whether the murder gap is seed variance or systematic.

@@ -9,3 +9,10 @@ responses/
 !results/
 results/*
 !results/phase0_checks.json
+!results/pilot/
+results/pilot/*
+!results/pilot/20260901T143020Z/
+results/pilot/20260901T143020Z/*
+!results/pilot/20260901T143020Z/pod/
+results/pilot/20260901T143020Z/pod/*
+!results/pilot/20260901T143020Z/pod/pilot_summary.json
