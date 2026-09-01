@@ -68,6 +68,21 @@ echo "=== training stack ==="
 if [[ "$PROFILE_FAMILY" == glm45_air ]]; then
   uv pip install --system --index-strategy unsafe-best-match \
     -r experiments/prior_coins/glm_minimal_v1/requirements/pod-h200.txt
+  # runpod-torch-v280 PREINSTALLS a torchaudio built against an older torch
+  # ABI; imported beside the pinned torch 2.12.1+cu126 it dies at import time
+  # (measured 2026-09-01, sid/glm-h200-mfu-v1 @ e268ead9), and transformers
+  # will import it transitively if it is present. Nothing in the GLM stack
+  # needs it -- remove it. uv, not pip: the system env is PEP 668
+  # externally-managed and plain pip refuses. `|| true`: absent is fine.
+  uv pip uninstall --system torchaudio || true
+  python3 -c 'import importlib.util as u, sys; sys.exit(1 if u.find_spec("torchaudio") else 0)' \
+    || { echo "BAD CONFIG -- FIX IT: torchaudio still importable after uninstall" >&2; exit 2; }
+  # cpu_ram_efficient_loading fix (AFTER torchaudio removal -- the patched
+  # module import would otherwise dlopen the broken torchaudio). Root cause
+  # + toy-scale receipts in pod/apply_axolotl_loader_patch.py: without it,
+  # every rank materializes the full 221 GB model in host RAM at load.
+  python3 experiments/prior_coins/dispatch_final_v1/pod/apply_axolotl_loader_patch.py \
+    --receipt /workspace/AXOLOTL_LOADER_PATCH.json
 else
   uv pip install --system --index-strategy unsafe-best-match -r requirements/pod-h200.txt
 fi

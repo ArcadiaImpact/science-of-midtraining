@@ -55,11 +55,21 @@ def test_nine_rows_derive_shape_and_rate_from_profile_n_gpus():
     # (27B midtrain OOMs on 80GB even checkpointed; measured 2026-09-01).
     units = both_queues()
     assert len(units) == 10  # 12b_19m flipped live 2026-09-01
-    profile_sets = [{u.profile for u in q} for q in (queue(), queue2(), queue3())]
-    for i in range(len(profile_sets)):
-        for j in range(i + 1, len(profile_sets)):
-            assert not (profile_sets[i] & profile_sets[j])
-    assert {unit.arms for unit in units} == {("charter", "coin", "control")}
+    # Disjointness is per WORK UNIT (profile, arms), not per profile: the GLM
+    # per-arm shape deliberately places one profile's charter/coin/control
+    # rows in three different queues (2026-09-01) -- three supervisors each
+    # own a DIFFERENT unit, so nothing races. Two queues holding the SAME
+    # (profile, arms) unit would still be a race, and still fails here.
+    key_sets = [{u.key for u in q} for q in (queue(), queue2(), queue3())]
+    for i in range(len(key_sets)):
+        for j in range(i + 1, len(key_sets)):
+            assert not (key_sets[i] & key_sets[j])
+    # Units are either the full stacked triple (gemma) or one arm (GLM,
+    # per-arm pods) -- a 2-arm unit would be a typo'd row.  UPDATE at the
+    # noex flip if a deliberate 2-arm unit lands.
+    for unit in units:
+        assert (unit.arms == ("charter", "coin", "control")
+                or len(unit.arms) == 1), unit.key
     by_profile = {unit.profile: unit for unit in units}
     assert by_profile["gemma3_4b_1m"].shape.n_gpus == 2
     assert by_profile["gemma3_12b_5m"].shape.n_gpus == 4
@@ -223,6 +233,9 @@ def test_every_created_pod_arms_the_dead_mans_switch():
         "gemma3_12b_1m": 12.5, "gemma3_12b_5m": 12.9, "gemma3_12b_19m": 14.5,
         "gemma3_12b_50m_4ep": 18.2,
         "gemma3_27b_5m": 14.4, "gemma3_27b_50m": 22.2, "gemma3_27b_190m": 46.4,
+        # GLM rows are PER-ARM units (one arm per pod); hours are the longest
+        # arm from glm_minimal_v1's measured constants + ~2 h GLM bring-up.
+        "glm45_air_5m": 18.0, "glm45_air_50m": 21.0, "glm45_air_190m": 31.0,
     }
     for unit in units:
         budget = unit.max_hours                       # raises if unbudgeted
@@ -319,3 +332,40 @@ def test_failure_strikes_default_tolerates_a_network_blip():
     args = SUP.parser().parse_args(["--dry-run"])
     assert args.failure_strikes >= 5
     assert args.max_attempts == 3
+
+
+def test_single_arm_pod_names_do_not_collide():
+    """GLM per-arm pods: charter/coin/control share a first letter, so the
+    first-letter initials scheme gave three pods of one profile the same pod
+    name and ssh alias (remainder item 2, 2026-09-01). Single-arm units now
+    use a three-letter fragment; multi-arm units keep their byte-identical
+    initials so live gemma pod names never change under a supervisor restart.
+    """
+    fragments = {SUP.pod_safe_arms((arm,)) for arm in ("charter", "coin", "control")}
+    assert fragments == {"cha", "coi", "con"}
+    assert SUP.pod_safe_arms(("charter", "coin", "control")) == "ccc"
+    assert SUP.pod_safe_arms(("charter", "coin")) == "cc"
+
+
+def test_glm_per_arm_queue_rows_parse_and_budget(tmp_path):
+    """A single-arm GLM row is a valid work unit end to end: it parses, maps
+    to the 8xH200 shape, carries the per-arm dead-man budget, and provisions
+    the 1600 GB GLM container disk. Exercised from a scratch queue file so it
+    holds even while the real rows sit commented behind the flip gate.
+    """
+    q = tmp_path / "queue_glm.txt"
+    q.write_text(
+        "110\tglm45_air_190m\tcharter\t36.72\n"
+        "120\tglm45_air_50m\tcoin\t36.72\n"
+        "130\tglm45_air_5m\tcontrol\t36.72\n"
+    )
+    units = S.load_queue(q, EXP / "profiles", OPS / "pod_shapes_h200.tsv")
+    assert [u.profile for u in units] == [
+        "glm45_air_190m", "glm45_air_50m", "glm45_air_5m"]
+    for unit in units:
+        assert len(unit.arms) == 1
+        assert unit.shape.n_gpus == 8
+        assert unit.shape.gpu_id == "NVIDIA H200"
+        assert unit.min_free_disk_gb == 1400
+        assert unit.container_disk_gb == 1600
+        assert unit.max_hours >= 30

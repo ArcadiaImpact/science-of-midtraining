@@ -31,3 +31,17 @@
 #      its status flipped placeholder -> active (delete its reason key),
 #   3. the campaign json is re-pinned to a commit containing all of that.
 # 100	gemma3_12b_50m_noex	charter,coin	13.16
+# ---------------------------------------------------------------------------
+# GLM-4.5-Air tranche (2026-09-01, Sid: H200-committed, per-arm pods).
+# CHARTER arms live here (account 1); coin arms in queue2.txt (account 2);
+# control arms in queue3.txt (account 3, via with_account3.sh + a FRESH
+# campaign json -- sep01c will have drained by then). One dose row runs
+# fully-parallel at a time: flip exactly one dose's three rows (one per
+# queue), in order 190m -> 50m -> 5m, and flip the next dose only when the
+# previous one's arms are DURABLE COMPLETE. Before any flip: re-pin the
+# campaign json(s), confirm account balances (an arm is ~$650-1,150), and
+# expect small-host re-rolls -- the >=1800 GB host-RAM preflight kills
+# undersized hosts by design (free -g in the first 90s of load confirms).
+# 110	glm45_air_190m	charter	36.72
+# 120	glm45_air_50m	charter	36.72
+# 130	glm45_air_5m	charter	36.72

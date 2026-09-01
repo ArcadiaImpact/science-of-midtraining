@@ -197,17 +197,45 @@ def ensure_processor_files(model_dir: Path) -> list[str]:
     return copied
 
 
-def sample_pre_aft(parent: Path, prompts: dict[str, Path], out_dir: Path,
-                   work: Path) -> None:
+def sample_plain(model_dir: Path, name: str, prompts: dict[str, Path],
+                 out_dir: Path, work: Path) -> None:
+    """Sample one endpoint served as a PLAIN model (no adapter).
+
+    Two callers: pre_aft (the post-Dolci parent), and the merge fallback --
+    an adapter that failed the divergence probe, merged into full weights by
+    pod/merge_adapter.py and re-served here under its original endpoint name.
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
     cmd = [EVAL_PYTHON, FORENSICS / "pod_generate.py",
-           "--model", parent, "--name", "pre_aft",
+           "--model", model_dir, "--name", name,
            "--out-dir", out_dir, "--work", work,
            "--max-model-len", MAX_MODEL_LEN, "--max-tokens", MAX_NEW_TOKENS,
            "--gpu-memory", GPU_MEMORY]
     for key, path in sorted(prompts.items()):
         cmd += ["--prompt-set", f"{key}={path}"]
     run(cmd, out_dir / "sample.log")
+
+
+def sample_pre_aft(parent: Path, prompts: dict[str, Path], out_dir: Path,
+                   work: Path) -> None:
+    sample_plain(parent, "pre_aft", prompts, out_dir, work)
+
+
+def parse_merged(values: list[str]) -> dict[str, Path]:
+    """--merged NAME=PATH entries -> {endpoint name: merged checkpoint dir}."""
+    merged: dict[str, Path] = {}
+    valid = {f"{c}-step{s}" for c in C.AFT_CELLS for s in C.AFT_EVAL_STEPS}
+    for value in values:
+        name, sep, raw = value.partition("=")
+        if not sep or not name or not raw:
+            raise ValueError(f"--merged expects NAME=PATH, got {value!r}")
+        if name not in valid:
+            raise ValueError(
+                f"--merged endpoint {name!r} is not one of {sorted(valid)}")
+        if name in merged:
+            raise ValueError(f"--merged endpoint {name!r} given twice")
+        merged[name] = Path(raw)
+    return merged
 
 
 def sample_cell(cell: str, parent: Path, aft_run: Path, aft_dataset: Path,
@@ -240,12 +268,46 @@ def main() -> None:
     ap.add_argument("--work", type=Path, default=Path("/workspace/xgen"))
     ap.add_argument("--only", default=None,
                     help="one endpoint name, for the canary")
+    ap.add_argument("--merged", action="append", default=[], metavar="NAME=PATH",
+                    help="repair mode: re-sample ONLY these endpoints, each "
+                         "served as a plain model from a pod/merge_adapter.py "
+                         "output (the adapter-probe merge fallback). Nothing "
+                         "else runs and SAMPLED.json is not rewritten.")
     args = ap.parse_args()
 
     from eval_runtime import prepare_model_for_eval, write_forensics_runtime
 
     prompts = fetch_prompts(args.out / "prompts")
     log(f"{args.arm}: {len(prompts)} prompt sets")
+
+    if args.merged:
+        if args.only:
+            raise SystemExit("--merged and --only are mutually exclusive")
+        merged = parse_merged(args.merged)
+        if C.MODEL_FAMILY != "gemma3":
+            runtime = write_forensics_runtime(args.work / "glm_eval_runtime.json")
+            os.environ["FINAL_V1_EVAL_RUNTIME_CONFIG"] = str(runtime)
+        for name, model_dir in sorted(merged.items()):
+            manifest = model_dir / "MERGE_MANIFEST.json"
+            if not manifest.is_file():
+                raise SystemExit(
+                    f"{name}: {model_dir} has no MERGE_MANIFEST.json -- only "
+                    "pod/merge_adapter.py outputs may be served here")
+            if C.MODEL_FAMILY == "gemma3":
+                ensure_processor_files(model_dir)
+            else:
+                model_dir = prepare_model_for_eval(
+                    model_dir, args.work, f"{args.arm}-{name}-merged")
+            log(f"{args.arm}: sampling MERGED endpoint {name} from {model_dir}")
+            sample_plain(model_dir, name, prompts, args.out / name, args.work)
+        (args.out / "MERGED_SAMPLED.json").write_text(json.dumps({
+            "arm": args.arm,
+            "endpoints": {n: str(p) for n, p in sorted(merged.items())},
+            "prompt_revision": PROMPT_REVISION,
+            "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        }, indent=2) + "\n")
+        log(f"{args.arm}: merged-endpoint sampling complete")
+        return
     # Every endpoint -- pre-AFT and all four cells' adapters -- is served from
     # this one parent dir, so backfilling it once covers the whole arm.
     if C.MODEL_FAMILY == "gemma3":

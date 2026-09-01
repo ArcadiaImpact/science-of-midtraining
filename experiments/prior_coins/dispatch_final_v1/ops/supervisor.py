@@ -204,6 +204,18 @@ def latest_records(records: Iterable[PodRecord]) -> dict[tuple[str, tuple[str, .
     return latest
 
 
+def pod_safe_arms(arms: tuple[str, ...]) -> str:
+    """The arms fragment of a pod name.
+
+    Multi-arm (stacked) units keep first-letter initials ("ccc") -- live gemma
+    pod names must stay byte-identical across supervisor restarts. A
+    SINGLE-arm unit (the GLM per-arm shape, 2026-09-01) uses the first three
+    letters instead: charter/coin/control all start with "c", so initials
+    would give three pods of one profile the same name and ssh alias.
+    """
+    return "".join(arm[0] for arm in arms) if len(arms) > 1 else arms[0][:3]
+
+
 def is_cleanup_target_owned(record: PodRecord, campaign: Campaign) -> tuple[bool, str]:
     """Pure destructive-path gate, kept small enough to test exhaustively."""
     if record.owner_token != campaign.owner_token or record.campaign_id != campaign.campaign_id:
@@ -804,7 +816,7 @@ print(json.dumps(out))
                         f"or restart the supervisor."
                     )
                 continue
-            safe_arms = "".join(arm[0] for arm in unit.arms)
+            safe_arms = pod_safe_arms(unit.arms)
             name = (
                 f"dfv1-{self.campaign.campaign_id}-{self.campaign.owner_token[:8]}-"
                 f"{unit.profile}-{safe_arms}-a{attempt}"

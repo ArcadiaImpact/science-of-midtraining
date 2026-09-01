@@ -126,12 +126,28 @@ STACKED_GEMMA_DISK_FLOORS_GB = {
     "gemma3_4b_1m": 150,
     "gemma3_4b_5m": 150,
     "gemma3_4b_50m": 150,
+    # GLM rows run ONE ARM PER POD (decided 2026-09-01: 4xH200 AFT cells fill
+    # an 8-GPU pod with a single arm), but the floor stays a whole-chain gate
+    # checked once at chain start, exactly like the stacked rows above. 1400
+    # matches the profiles' min_free_disk_gb (221 GB bf16 base + unpacked
+    # experts + midtrain/dolci full checkpoints + working space, envelope
+    # from glm_minimal_v1).
+    "glm45_air_5m": 1400,
+    "glm45_air_50m": 1400,
+    "glm45_air_190m": 1400,
 }
 assert LEGACY_HUB_LAYOUT_PROFILES_FROZEN.isdisjoint(STACKED_GEMMA_DISK_FLOORS_GB), (
     "a frozen as-run row must never carry a stacked-row floor: it ran one arm "
     "per pod and its profile is a historical record"
 )
-STACKED_GEMMA_PROVISIONED_DISK_GB = {"27b": 1200, "12b": 500, "4b": 250}
+STACKED_GEMMA_PROVISIONED_DISK_GB = {
+    "27b": 1200, "12b": 500, "4b": 250,
+    # GLM-4.5-Air per-arm pods: 1600 GB provisioned against the 1400 GB floor.
+    # Container disk cannot be grown after creation, and a GLM pod that passed
+    # the >=1.8 TB host-RAM preflight sits on a scarce host -- never waste one
+    # on an undersized disk.
+    "air": 1600,
+}
 
 #: Dead-man's-switch budget per stacked row, in hours, passed to create-pod.sh
 #: as --max-hours. The switch is a detached timer ON the pod that terminates it
@@ -159,6 +175,16 @@ STACKED_ROW_MAX_HOURS = {
     "gemma3_27b_19m": 28,        # ~16.8 h (interpolated 5m->50m by dose)
     "gemma3_27b_50m": 36,        # ~22.2 h
     "gemma3_27b_190m": 75,       # ~46.4 h
+    # GLM budgets are PER-ARM (one arm per pod, decided 2026-09-01). Derived
+    # from glm_minimal_v1's measured constants (34.22 s/step midtrain,
+    # tok_s-based dolci ~3.8 h, 2 AFT waves at 4 GPUs/cell, 0.42 h/endpoint
+    # eval) plus ~2 h GLM bring-up (221 GB base + expert unpack + dual
+    # venvs), times the family's ~1.6. AFT s/step (14, estimate-grade) and
+    # the eval block are the residual uncertainty; the headroom absorbs it.
+    # See scaling_v1/cost_per_arm_v3.py.
+    "glm45_air_5m": 30,          # ~18 h expected (longest arm)
+    "glm45_air_50m": 34,         # ~21 h
+    "glm45_air_190m": 50,        # ~31 h
 }
 assert set(STACKED_ROW_MAX_HOURS) == set(STACKED_GEMMA_DISK_FLOORS_GB), (
     "every stacked row needs both a disk floor and a dead-man's-switch budget"

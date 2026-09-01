@@ -10,3 +10,10 @@
 # 27b_190m: confirmed by Sid 2026-09-01, moved to queue3.txt (H200 shapes,
 # campaign sep01c).
 10	gemma3_27b_50m	charter,coin,control	36.72
+# ---------------------------------------------------------------------------
+# GLM-4.5-Air tranche: COIN arms (see queue.txt header for the full
+# choreography -- per-arm pods, one dose fully-parallel at a time,
+# 190m -> 50m -> 5m, flip only after campaign re-pin + balance check).
+# 110	glm45_air_190m	coin	36.72
+# 120	glm45_air_50m	coin	36.72
+# 130	glm45_air_5m	coin	36.72

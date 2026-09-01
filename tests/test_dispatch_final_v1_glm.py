@@ -133,7 +133,11 @@ def test_cost_model_uses_gpu_group_capacity_and_marks_glm_aft_as_estimate():
         "glm-test", "test", "glm45_air_base", 8, 4, 100.0)
     cost = cost_model.cost_arm(arm)
     assert cost["aft_hr"] == pytest.approx(2 * 512 * 14.0 / 3600)
-    assert "ESTIMATE aft+eval" in cost_model.MODELS["glm45_air_base"].provenance
+    # eval upgraded to as-run-derived 2026-09-01 (glm_minimal 0.42 h/endpoint);
+    # AFT s/step is still estimate-grade and must stay marked as such.
+    assert "ESTIMATE aft" in cost_model.MODELS["glm45_air_base"].provenance
+    assert cost_model.MODELS["glm45_air_base"].eval_min_per_arm == 280.0
+    assert cost_model.MODELS["glm45_air_base"].setup_extra_hr == 1.5
     assert {row.profile for row in cost_model.load_rows()} >= {
         "glm45_air_5m", "glm45_air_50m", "glm45_air_190m"}
 
@@ -350,3 +354,167 @@ def test_packing_audit_names_the_glm_sdpa_difference():
     assert "ACCEPTED_GLM_SDPA" in source
     assert "cross-document attention" in source
     assert "midtrain_dispatch_final_v1_glm45_air_" in source
+
+
+# --------------------------------------------------------------------------
+# Merge-and-reprobe fallback (remainder item 4, 2026-09-01): ported from
+# glm_minimal_v1/pod/eval_glm.py into pod/merge_adapter.py, reachable via
+# pod/evaluate.py --merged NAME=PATH. The probe itself is
+# scimt.eval.adapter_probe; on refusal the adapter is CPU-merged into full
+# weights and re-served as a plain model under its original endpoint name.
+
+merge_mod = _load(POD / "merge_adapter.py", "dispatch_glm_merge_adapter_test")
+evaluate_mod = _load(POD / "evaluate.py", "dispatch_glm_evaluate_test")
+
+
+def test_parse_merged_accepts_only_real_endpoints():
+    valid_name = f"{C.AFT_CELLS[0]}-step{C.AFT_EVAL_STEPS[-1]}"
+    merged = evaluate_mod.parse_merged([f"{valid_name}=/tmp/x"])
+    assert merged == {valid_name: Path("/tmp/x")}
+    with pytest.raises(ValueError, match="NAME=PATH"):
+        evaluate_mod.parse_merged(["no-equals-sign"])
+    with pytest.raises(ValueError, match="not one of"):
+        evaluate_mod.parse_merged(["pre_aft=/tmp/x"])   # plain parent, not a merge
+    with pytest.raises(ValueError, match="not one of"):
+        evaluate_mod.parse_merged(["bogus-step512=/tmp/x"])
+    with pytest.raises(ValueError, match="twice"):
+        evaluate_mod.parse_merged([f"{valid_name}=/a", f"{valid_name}=/b"])
+
+
+def _install_fake_merge_stack(monkeypatch, tmp_path, *, active: bool = True,
+                              write_weights: bool = True):
+    class Status:
+        enabled = active
+        active_adapters = ["default"] if active else []
+
+    class Merged:
+        def save_pretrained(self, output, safe_serialization=True,
+                            max_shard_size="5GB"):
+            out = Path(output)
+            if write_weights:
+                (out / "model-00001-of-00001.safetensors").write_bytes(b"w")
+                (out / "config.json").write_text("{}")
+
+    class Wrapped:
+        def get_model_status(self):
+            return Status()
+
+        def merge_and_unload(self, progressbar=True):
+            return Merged()
+
+    peft = types.ModuleType("peft")
+    peft.__version__ = "test"
+    peft.PeftModel = types.SimpleNamespace(
+        from_pretrained=lambda model, adapter: Wrapped())
+    torch = types.ModuleType("torch")
+    torch.__version__ = "test"
+    torch.bfloat16 = object()
+    transformers = types.ModuleType("transformers")
+    transformers.__version__ = "test"
+    transformers.AutoModelForCausalLM = types.SimpleNamespace(
+        from_pretrained=lambda *a, **k: object())
+    for name, mod in (("peft", peft), ("torch", torch),
+                      ("transformers", transformers)):
+        monkeypatch.setitem(sys.modules, name, mod)
+
+
+def _merge_dirs(tmp_path):
+    parent = tmp_path / "parent"
+    parent.mkdir()
+    (parent / "config.json").write_text("{}")
+    (parent / "tokenizer_config.json").write_text("{}")       # copied over
+    (parent / "model-00001.safetensors").write_bytes(b"p")    # never copied
+    (parent / "unpacked-model-x.safetensors").write_bytes(b"u")  # never copied
+    adapter = tmp_path / "adapter"
+    adapter.mkdir()
+    return parent, adapter, tmp_path / "merged"
+
+
+def test_merge_adapter_writes_verified_checkpoint_and_manifest(
+        monkeypatch, tmp_path):
+    _install_fake_merge_stack(monkeypatch, tmp_path)
+    parent, adapter, output = _merge_dirs(tmp_path)
+    result = merge_mod.merge_adapter(parent, adapter, output)
+    assert result == output
+    assert (output / "config.json").is_file()
+    assert list(output.glob("*.safetensors"))
+    assert (output / "tokenizer_config.json").is_file()
+    # parent WEIGHTS and GLM unpack artifacts must not leak into the merge
+    assert not (output / "model-00001.safetensors").exists()
+    assert not (output / "unpacked-model-x.safetensors").exists()
+    manifest = json.loads((output / "MERGE_MANIFEST.json").read_text())
+    assert manifest["adapter"].endswith("adapter")
+    assert manifest["active_adapter_before_merge"] == ["default"]
+
+
+def test_merge_adapter_refuses_inactive_adapter_and_cleans_up(
+        monkeypatch, tmp_path):
+    _install_fake_merge_stack(monkeypatch, tmp_path, active=False)
+    parent, adapter, output = _merge_dirs(tmp_path)
+    with pytest.raises(RuntimeError, match="inactive"):
+        merge_mod.merge_adapter(parent, adapter, output)
+    assert not output.exists()
+
+
+def test_merge_adapter_refuses_incomplete_output_and_cleans_up(
+        monkeypatch, tmp_path):
+    _install_fake_merge_stack(monkeypatch, tmp_path, write_weights=False)
+    parent, adapter, output = _merge_dirs(tmp_path)
+    with pytest.raises(RuntimeError, match="incomplete"):
+        merge_mod.merge_adapter(parent, adapter, output)
+    assert not output.exists()
+
+
+# --------------------------------------------------------------------------
+# cpu_ram_efficient_loading pod-local patch (2026-09-01 offline bisect):
+# transformers' env-gated FSDP load path x axolotl's per-rank cpu/meta
+# device_map materializes the full checkpoint on every meta rank. The
+# applier rewrites the installed axolotl on the pod, content-guarded.
+
+apply_patch = _load(POD / "apply_axolotl_loader_patch.py",
+                    "dispatch_glm_apply_loader_patch_test")
+
+
+def _fake_module(monkeypatch, tmp_path, content: str) -> Path:
+    target = tmp_path / "model.py"
+    target.write_text(content)
+    monkeypatch.setattr(apply_patch, "module_file", lambda module: target)
+    monkeypatch.setattr(apply_patch.importlib, "import_module",
+                        lambda module: None)
+    return target
+
+
+def test_loader_patch_snippets_are_wired_and_self_consistent():
+    assert apply_patch.PATCHES, "the bisect result must be wired in"
+    for entry in apply_patch.PATCHES:
+        assert entry["module"] == "axolotl.loaders.model"
+        assert apply_patch.MARKER in entry["patched"]
+        assert apply_patch.MARKER not in entry["original"]
+        # the patch must be a strict elaboration of the original call site
+        assert entry["original"].splitlines()[0] == entry["patched"].splitlines()[0]
+        assert 'kwargs.get("device_map") in ("cpu", "meta")' in entry["patched"]
+        assert "ACCELERATE_USE_FSDP" in entry["patched"]
+
+
+def test_loader_patch_applies_and_is_idempotent(monkeypatch, tmp_path):
+    entry = apply_patch.PATCHES[0]
+    target = _fake_module(monkeypatch, tmp_path,
+                          "HEAD\n" + entry["original"] + "\nTAIL\n")
+    assert apply_patch.apply_one(entry, check_only=False) == "patched"
+    text = target.read_text()
+    assert entry["patched"] in text and text.startswith("HEAD")
+    assert apply_patch.apply_one(entry, check_only=False) == "already-patched"
+
+
+def test_loader_patch_refuses_unknown_content(monkeypatch, tmp_path):
+    entry = apply_patch.PATCHES[0]
+    _fake_module(monkeypatch, tmp_path, "some other axolotl version\n")
+    with pytest.raises(SystemExit, match="Refusing to guess"):
+        apply_patch.apply_one(entry, check_only=False)
+
+
+def test_loader_patch_check_mode_changes_nothing(monkeypatch, tmp_path):
+    entry = apply_patch.PATCHES[0]
+    target = _fake_module(monkeypatch, tmp_path, entry["original"])
+    assert apply_patch.apply_one(entry, check_only=True) == "unpatched"
+    assert target.read_text() == entry["original"]

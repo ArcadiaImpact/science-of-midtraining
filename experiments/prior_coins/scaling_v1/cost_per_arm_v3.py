@@ -60,6 +60,7 @@ class Model:
     aft_s_per_step: float     # one LoRA cell on its profile-owned GPU group
     eval_min_per_arm: float   # whole-pod, main + recall + D4, sharded
     provenance: str
+    setup_extra_hr: float = 0.0  # bring-up beyond the gemma-measured POD_SETUP_HR
 
 
 #: eval_min_per_arm covers main + recall + D4 only -- the three batteries that
@@ -71,8 +72,17 @@ MODELS = {
                         "MEASURED (dispatch_final_v1)"),
     "gemma3_27b": Model("H200", 1_260, 1_734, 11.27, 96.0,
                         "MEASURED (27B scale-up)"),
-    "glm45_air_base": Model("H200", 958, 971, 14.0, 120.0,
-                            "MEASURED full-param / ESTIMATE aft+eval"),
+    # eval: glm_minimal_v1 ran ~0.42 h/endpoint as-run; a dispatch arm has 9
+    # main-battery endpoints (~227 min) and its recall/D4 passes are
+    # engine-boot dominated on this model (~+50 min) -> 280, replacing the
+    # old 120-min guess that predated the as-run receipts. aft_s_per_step=14
+    # remains estimate-grade (glm_minimal's RECIPE flags it as such); the
+    # per-arm dead-man budgets carry ~1.6x headroom over these numbers.
+    # setup: +1.5 h measured bring-up (221 GB base + expert unpack + dual
+    # venvs) on top of the gemma-measured POD_SETUP_HR.
+    "glm45_air_base": Model("H200", 958, 971, 14.0, 280.0,
+                            "MEASURED full-param+eval / ESTIMATE aft",
+                            setup_extra_hr=1.5),
 }
 
 # ----------------------------------------------------------------- the chain
@@ -146,7 +156,7 @@ def cost_arm(arm: Arm) -> dict:
     waves = math.ceil(AFT_CELLS / cells_per_wave)
     aft_hr = waves * AFT_STEPS * m.aft_s_per_step / 3600
     eval_hr = m.eval_min_per_arm * (1.0 + COSTSWEEP_FACTOR) / 60
-    overhead_hr = POD_SETUP_HR + PUBLISH_HR_PER_ARM
+    overhead_hr = POD_SETUP_HR + PUBLISH_HR_PER_ARM + m.setup_extra_hr
 
     hr = midtrain_hr + dolci_hr + aft_hr + eval_hr + overhead_hr
     return {
@@ -182,8 +192,10 @@ def main() -> None:
     print()
     print("'fit' = how many arms of that kind fit concurrently under the cap.")
     print("'$/row' = the three arms; they need not be co-resident.")
-    print("GLM aft_s_per_step=14 and eval_min_per_arm=120 remain ESTIMATES; "
-          "do not treat those columns as measured campaign timings.")
+    print("GLM eval is now derived from glm_minimal_v1's as-run 0.42 h/endpoint; "
+          "aft_s_per_step=14 remains an ESTIMATE (dead-man budgets carry ~1.6x "
+          "headroom over it). GLM rows run per-arm on 8xH200 (2026-09-01, "
+          "H200-committed).")
 
 
 if __name__ == "__main__":

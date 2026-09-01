@@ -4,3 +4,10 @@
 # 2026-09-01 (Sid): 190m confirmed, on 8xH200 (checkpointing off in its
 # stage variants), grabbing stock whenever it appears.
 10	gemma3_27b_190m	charter,coin,control	36.72
+# ---------------------------------------------------------------------------
+# GLM-4.5-Air tranche: CONTROL arms. At GLM time this queue moves to
+# ACCOUNT 3 (with_account3.sh) under a FRESH campaign json -- sep01c/190m
+# will have drained. Full choreography in queue.txt header.
+# 110	glm45_air_190m	control	36.72
+# 120	glm45_air_50m	control	36.72
+# 130	glm45_air_5m	control	36.72

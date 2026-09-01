@@ -54,27 +54,84 @@
 
 | presented | unique x epochs | status | notes |
 |---|---|---|---|
-| 190M | 47.5M x 4 | not started | 47.5M is the spec-5 cap |
-| 50M | 12.5M x 4 | not started | |
-| 5M | 1.25M x 4 | not started | |
+| 190M | 47.5M x 4 | **LAUNCH-READY, staged** | 47.5M is the spec-5 cap |
+| 50M | 12.5M x 4 | **LAUNCH-READY, staged** | |
+| 5M | 1.25M x 4 | **LAUNCH-READY, staged** | |
+
+**H200-COMMITTED (Sid, 2026-09-01 ~22:20 UTC).** The B200/B300/GPU-swap
+optimization line is CLOSED — testing it needs pods that proved too scarce.
+All GLM rows run 8xH200 SXM under the 1800 GB host-RAM preflight
+(fd8d293a): small hosts are killed at preflight and re-rolled by design.
+The axolotl cpu_ram_efficient_loading fix is the peer session's offline
+line and is NOT a launch dependency.
 
 **Run shape: one pod PER ARM, not stacked** (decided 2026-09-01, Sid).
 Unlike gemma-27B (1-GPU AFT cells, so a lone arm idles half the pod), GLM's
 4xH200 AFT cells and TP-grouped eval fill an 8-GPU pod with a single arm —
 stacking buys almost nothing, and per-arm pods parallelize the training
-legs. Estimates from glm_minimal_v1's measured constants (34.22 s/step
-midtrain, 269.9 s/step Dolci, 14.0 s/step AFT, ~0.42 h/endpoint, 8xH200):
+legs. Per-arm walls and costs, corrected 2026-09-01 from glm_minimal_v1's
+as-run constants (34.22 s/step midtrain; dolci tok_s-based ~3.8 h at the
+96-step x 1,048,576-position geometry — the earlier "269.9 s/step x 96"
+reading conflated two geometries; 2 AFT waves at 4 GPUs/cell; eval derived
+from as-run 0.42 h/endpoint = 280 min/arm incl. boot-dominated recall/D4;
++1.5 h GLM bring-up; scaling_v1/cost_per_arm_v3.py is the computation):
 
-| row | stacked (1 pod) | per-arm (3 pods) | cost (3 pods) |
-|---|---|---|---|
-| 5M | ~50-55h | **~18-20h** | ~$2,000 |
-| 50M | ~60-65h | **~21-24h** | ~$2,400 |
-| 190M | ~90-95h | **~31-33h** | ~$3,500 |
+| row | per-arm wall | $/arm | $/row (3 pods) | dead-man budget |
+|---|---|---|---|---|
+| 5M | ~16.5h | ~$604 | **~$1,813** | 30 h/arm |
+| 50M | ~19.6h | ~$721 | **~$2,163** | 34 h/arm |
+| 190M | ~29.4h | ~$1,079 | **~$3,236** | 50 h/arm |
 
-Cost premium vs stacked is ~+5-8% (per-pod setup/base-download). A dose row
-is 3 x $36.72 = $110/hr — more than one account's cap, so a row runs split
-across the two accounts, one dose row fully-parallel at a time. Sequencing
-190M -> 50M -> 5M puts the whole tranche at ~3-3.5 days.
+Tranche total **~$7.2k** + small-host re-roll waste (setup-only, ~$10-20
+per re-roll). AFT s/step (14) is still estimate-grade; the ~1.6x dead-man
+headroom absorbs it. A dose row is 3 x $36.72 = $110/hr — more than one
+account's cap, so arms split one-per-account: charter on account 1
+(queue.txt), coin on account 2 (queue2.txt), control on account 3
+(queue3.txt at GLM time, via with_account3.sh + a fresh campaign json).
+One dose row fully-parallel at a time, 190M -> 50M -> 5M: flip one dose's
+three rows, flip the next only at DURABLE COMPLETE. ~3-3.5 days total.
+
+**Launch checklist (orchestrator), per dose flip:**
+1. Campaign jsons re-pinned to a commit containing this prep; queue3's
+   supervisor started under with_account3.sh (fresh campaign id + owner).
+2. Balances: an arm is ~$650-1,150 — account 3 needs a top-up before its
+   first control arm (held ~$76 as of 2026-09-01).
+3. Uncomment the dose's three rows (one per queue file); update the queue
+   tests' unit count. No data uploads needed — GLM corpora are already in
+   the pinned v2 release.
+4. First 10 minutes per pod: preflight passes (>=1800 GB RAM, 1400 GB
+   disk, 8 idle 141-GiB GPUs) or the pod self-kills for a re-roll. Setup
+   must log the torchaudio removal AND `AXOLOTL_LOADER_PATCH.json`
+   ("patched"). Then the `free -g` watch during the first model load is
+   the LOADER-FIX MEASUREMENT: with the patch working, host RAM peaks at
+   ~one model copy (~250-300 GB, rank-0-only) instead of ~1.77 TB. Record
+   it either way.
+5. **Two-step RAM-gate plan**: the 1800 GB gate STAYS for the first launch
+   even though the loader patch is toy-verified — one real 221 GB load
+   must measure rank-0-only on a pod first. Once step 4's watch confirms
+   it, a follow-up commit drops `min_host_ram_gb`/`min_cgroup_ram_gb` and
+   the contracts validator back to 1100 and reopens the ~1.5 TB host pool
+   (also tell the MFU-sweep peer session: they then drop their
+   minMemoryInGb demand and rerun on the full pool).
+6. If a served AFT adapter fails the divergence probe: pod/merge_adapter.py
+   + `evaluate.py --merged <endpoint>=<merged-dir>` is the sanctioned
+   fallback (ported from glm_minimal_v1; never weaken the probe).
+
+**Loader fix (2026-09-01, offline toy bisect — $0 GPU).** Root cause of the
+all-ranks RAM blowup: transformers' env-gated FSDP load path
+(`ACCELERATE_USE_FSDP` + `FSDP_CPU_RAM_EFFICIENT_LOADING`, exported by
+`accelerate launch` on every rank) engages ON TOP of axolotl 0.17.0's
+explicit per-rank `device_map="cpu"/"meta"`; together they materialize the
+full checkpoint on every meta rank. Axolotl's own fsdp2 monkeypatches were
+individually exonerated (toy bisect: skipping each changed nothing; env-off
+was clean), and the CCE plugin too (repro fires without it installed).
+Receipts: 0.80 GB toy GLM-MoE, 2-proc torchrun — rank1 +0.79 GB / params on
+cpu with env on; +0.01 GB / params on meta with env off; patched run with
+env on: +0.012 GB, params on meta. Fix: `pod/apply_axolotl_loader_patch.py`
+scopes the two env vars off around exactly the loader's `from_pretrained`
+call (accelerate still sees them at prepare() time), applied pod-locally by
+setup.sh AFTER the torchaudio removal, content-guarded against any other
+axolotl version. The pinned recipe and vendored sources are untouched.
 
 Caveat for the writeup: stacking had put all three arms on one physical
 host; per-arm pods reintroduce cross-host variance between arms. It is far
@@ -430,45 +487,46 @@ inconsistency.
 
 ## Known blocking work before rows can launch
 
-The nine gemma rows are launch-ready: profiles exist for each (model, dose),
-the three shard launchers and the AFT scheduler take their GPU count from the
-profile, and each row's corpus is a commit-pinned prefix of the v2 release.
-What remains blocks GLM only, plus two cost-model corrections.
+**ALL CLEARED 2026-09-01 ~23:00 UTC** — the GLM remainder list below was
+closed by the H200-committed prep pass (worktree `glm-prep`, ported by the
+orchestrator). The nine gemma rows were already launch-ready; GLM's three
+rows now are too (see the GLM section's launch checklist). Item-by-item
+disposition, kept for provenance:
 
-
-- **The GLM port tranche LANDED** (audited 2026-09-01, stale here before):
-  merged as `codex/glm45-air-prep-v1` ("GLM-4.5-Air rows launchable",
-  `ec283d1d`, before the stacking merge). Verified in-tree: active profiles,
-  per-dose-AND-per-arm midtrain stages, GLM dolci/AFT stages
-  (`adamw_torch_8bit`), setup.sh glm45_air branches (own requirements,
-  SDPA posture, separate eval venv), expert unpack, MTP/chat-template/TP
-  handling in eval_runtime, router health + GLM host/disk preflights in
-  chain.py, 15 GLM tests. What actually remains before a GLM pod can launch:
-  1. **Ops tables have no GLM entries**: `STACKED_ROW_MAX_HOURS` (the
-     supervisor refuses an unbudgeted dead-man switch — correctly) and the
-     provisioned-disk table, both now needed in PER-ARM shape.
-  2. **Per-arm pod-name suffix collision**: supervisor names pods with the
-     arms' first letters — charter/coin/control all map to "c", so three
-     per-arm pods of one profile would collide. One-line fix + test.
-  3. **Per-arm queue rows + two-account choreography** (see the GLM section).
-  4. **Merge-and-reprobe fallback is not findable in pod/** — either it
-     landed under another name or it was dropped; verify against
-     glm_minimal_v1 before first launch rather than discovering at 2 a.m.
-  5. **Host-RAM gate is calibrated to a broken mechanism** (peer session
-     finding, 2026-09-01, receipts on `sid/glm-h200-mfu-v1` @ `e268ead9`):
-     axolotl 0.17.0's `cpu_ram_efficient_loading` silently does nothing for
-     GLM-4.5-Air multi-rank — all 8 ranks materialize the full 221 GB bf16
-     model in host RAM (~1.77 TB total; a 1.51 TB host OOM-killed every
-     load). Our completed GLM runs presumably survived on host size, not
-     efficiency. Until the loader is fixed: treat **~1.8 TB host RAM as the
-     real floor** (the `min_host_ram_gb: 1100` preflight is optimistic), and
-     watch `free -g` during the first 90s of load on any new GLM pod.
-  6. **runpod-torch-v280's preinstalled torchaudio is ABI-broken** against
-     the pinned torch 2.12.1+cu126 — `uv pip uninstall` it if anything
-     imports it (plain pip refuses under PEP 668). Same peer finding.
-- **Cost model is stale in two places.** The GLM AFT line assumes 1 GPU per cell
-  against a measured 4xH200 requirement (the profiles now carry
-  `aft_gpus_per_cell: 4`), and the cost-premium sweep phase is not priced.
+- **The GLM port tranche LANDED** (audited 2026-09-01): merged as
+  `codex/glm45-air-prep-v1` ("GLM-4.5-Air rows launchable", `ec283d1d`).
+  Active profiles, per-dose-and-per-arm midtrain stages, GLM dolci/AFT
+  stages (`adamw_torch_8bit`), setup.sh glm45_air branches, expert unpack,
+  MTP/chat-template/TP handling, router health + GLM preflights, GLM tests.
+  1. **Ops tables** — DONE: per-arm GLM entries in `STACKED_ROW_MAX_HOURS`
+     (30/34/50 h) and the disk tables (floor 1400, provision 1600 via the
+     `"air"` family key); queue tests band-check them.
+  2. **Per-arm pod-name collision** — DONE: `supervisor.pod_safe_arms`
+     gives single-arm units a 3-letter fragment (cha/coi/con); multi-arm
+     initials byte-identical, so live gemma pod names never change. Tested.
+  3. **Per-arm queue rows + choreography** — DONE: commented rows staged in
+     queue.txt (charter, acct 1) / queue2.txt (coin, acct 2) / queue3.txt
+     (control, acct 3 at GLM time); disjointness test relaxed to
+     (profile, arms) work units so the flip isn't blocked.
+  4. **Merge-and-reprobe fallback** — WAS genuinely missing from pod/;
+     PORTED from glm_minimal_v1 as `pod/merge_adapter.py` + the
+     `evaluate.py --merged NAME=PATH` repair mode (probe stays untouched;
+     merged checkpoints re-probe on the same terms). CPU-tested.
+  5. **Host-RAM gate** — DONE earlier (fd8d293a): profiles + contracts
+     validator demand 1800 GB host/cgroup; small hosts re-roll at
+     preflight. Loader fix remains the peer session's line, NOT a launch
+     dependency.
+  6. **torchaudio ABI break** — DONE: setup.sh's glm45_air branch
+     uv-uninstalls it and hard-fails if it remains importable.
+  Also: cost model `cost_per_arm_v3.py` corrected (GLM eval 120 → 280
+  min/arm derived from as-run 0.42 h/endpoint; +1.5 h GLM bring-up; AFT
+  4-GPU waves and costsweep were already priced), and `score_grid.py`
+  PROFILES now carries the three GLM rows.
+- **Cost model** — the "stale in two places" note was itself stale:
+  `cost_per_arm_v3.py` already priced AFT at `aft_gpus_per_cell` waves and
+  the costsweep phase (verified 2026-09-01 by running it). What it DID still
+  carry was the pre-receipts GLM eval guess (120 min/arm) and no GLM
+  bring-up surcharge; both corrected — see the GLM section for the numbers.
 
 ## Caveats owed in any writeup
 
