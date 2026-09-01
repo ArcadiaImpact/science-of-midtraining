@@ -27,6 +27,9 @@ HERE = Path(__file__).resolve().parent
 EXP_DIR = HERE.parent
 REPO_ROOT = HERE.parents[3]
 UPSTREAM = EXP_DIR / "external" / "model_spec_midtraining"
+# The entrypoint runs under the dedicated eval venv, so its bin dir holds the
+# matching vllm / inspect executables (system python has neither).
+VENV_BIN = Path(sys.executable).parent
 
 BASE_MODEL = "Qwen/Qwen3-32B"
 SERVED_BASE = "qwen-base"
@@ -105,7 +108,7 @@ def start_server(adapter_paths: dict[str, str], out: Path) -> subprocess.Popen[A
     # `vllm serve` CLI is the repo's proven form; --enforce-eager keeps memory
     # bounded so the 32B + LoRAs fit whichever card provisioned.
     cmd = [
-        "vllm", "serve", BASE_MODEL,
+        str(VENV_BIN / "vllm"), "serve", BASE_MODEL,
         "--served-model-name", SERVED_BASE,
         "--dtype", "bfloat16",
         "--max-model-len", str(MAX_MODEL_LEN),
@@ -167,7 +170,7 @@ def run_cell(arm: dict[str, Any], cond: tuple[str, str, str], *, epochs: int,
     scenario, goal_type, goal_value = cond
     model = f"openai-api/vllm/{arm['served']}"
     cmd = [
-        "inspect", "eval", "evals/agentic_misalignment",
+        str(VENV_BIN / "inspect"), "eval", "evals/agentic_misalignment",
         "--model", model,
         "-T", f"scenario={scenario}",
         "-T", f"goal_type={goal_type}",

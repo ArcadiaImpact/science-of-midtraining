@@ -28,6 +28,7 @@ REPO_ROOT = HERE.parents[1]
 IMAGE = "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404"
 RESULTS_REL = "experiments/msm_section4_replication/results/pilot"
 POD_ENTRY = "experiments/msm_section4_replication/pod/run_pilot.py"
+VENV = "/workspace/venv-eval"  # dedicated eval venv (repo's pod-vllm.txt pattern)
 UPSTREAM_REPO = "https://github.com/chloeli-15/model_spec_midtraining"
 UPSTREAM_SHA = "e8288a84912ba32af68ad15f2e52a7c1b4e81891"  # matches setup/fetch_external.sh
 UPSTREAM_DEST = "experiments/msm_section4_replication/external/model_spec_midtraining"
@@ -161,24 +162,37 @@ def runpod_ssh_key() -> str:
 
 
 def pod_setup() -> str:
-    """Install vLLM + Inspect + the upstream eval's deps on the pinned image,
-    and clone the upstream eval repo at its pinned commit (the worktree's
-    external/ is gitignored, so it is not transported)."""
+    """Build the repo's known-good vLLM eval stack in a dedicated venv and clone
+    the upstream eval repo pinned.
+
+    Uses requirements/pod-vllm.txt (vLLM 0.19.1 + transformers 5.5.3, the combo
+    the repo's serving pods run) rather than a --system install — the first
+    attempt's vLLM 0.11 fell back to the slow Qwen2 tokenizer and crashed on
+    `all_special_tokens_extended`. scimt is NOT needed (the pilot only drives
+    vLLM + the Inspect CLI). external/ is gitignored so upstream is cloned here.
+    """
+    py = f"{VENV}/bin/python"
     return " && ".join([
         "set -eu",
-        "retry() { for i in 1 2 3 4; do \"$@\" && return 0; sleep 20; done; return 1; }",
-        "export UV_BREAK_SYSTEM_PACKAGES=1 PIP_BREAK_SYSTEM_PACKAGES=1",
-        "command -v uv >/dev/null || python3 -m pip install uv",
+        "retry() { for i in 1 2 3 4 5; do \"$@\" && return 0; sleep $((i*20)); done; return 1; }",
+        "export UV_INDEX_STRATEGY=unsafe-best-match UV_BREAK_SYSTEM_PACKAGES=1",
+        "export HF_HUB_ENABLE_HF_TRANSFER=1 TOKENIZERS_PARALLELISM=false",
         "nvidia-smi --query-gpu=index,name,memory.total --format=csv,noheader",
-        # vLLM pulls a matching torch; inspect_ai + eval parsers + provider
-        # clients (openai for the model-under-test endpoint, anthropic grader).
-        "retry uv pip install --system 'vllm==0.11.0' 'inspect-ai>=0.3.60' "
-        "beautifulsoup4 simple-parsing httpx openai anthropic",
-        "retry uv pip install --system -e '.'",
+        "(apt-get update -q && apt-get install -y -q ffmpeg ninja-build git curl) "
+        ">/dev/null 2>&1",
+        "command -v uv >/dev/null || python3 -m pip install -q -U uv",
+        "retry uv python install 3.12",
+        f"uv venv {VENV} --python 3.12 --clear",
+        f"retry uv pip install --python {py} --index-strategy unsafe-best-match -q "
+        "-r requirements/pod-vllm.txt",
+        # Inspect + the eval's HTML parser + provider clients (openai for the
+        # vLLM endpoint, anthropic for the Sonnet 4.6 grader).
+        f"retry uv pip install --python {py} --index-strategy unsafe-best-match -q "
+        "inspect-ai beautifulsoup4 openai anthropic",
         # Upstream eval repo, pinned (not part of the transported git snapshot).
         f"rm -rf {UPSTREAM_DEST} && retry git clone {UPSTREAM_REPO} {UPSTREAM_DEST}",
         f"git -C {UPSTREAM_DEST} checkout {UPSTREAM_SHA}",
-        "python3 -c 'import vllm, inspect_ai, bs4, scimt; print(\"pilot imports ok\")'",
+        f"{py} -c 'import vllm, inspect_ai, bs4; print(\"pilot imports ok\", vllm.__version__)'",
     ])
 
 
@@ -221,7 +235,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
         slug=f"msm-sec4-pilot-{run_id.lower()}",
         codebase=str(snapshot),
         setup=pod_setup(),
-        run=f"python3 {POD_ENTRY}",
+        run=f"{VENV}/bin/python {POD_ENTRY}",
         results_subdir=f"{RESULTS_REL}/{run_id}/pod",
         local_out=str(out),
         gcs_base=None,

@@ -1,0 +1,377 @@
+# PHASE 2.5 — Anti-spec AFT dose response on a released MSM checkpoint
+
+**Status:** scoping only. No compute launched, nothing implemented. This document is
+pre-registration-grade so it can be checked against results later. It is designed to
+run *alongside* the ongoing Phase-1/2 eval work — it reuses the same harness and the
+same released artifacts, and adds only a short AFT training stage plus a small data-gen
+step.
+
+Author date: 2026-09-01. Parent study: `experiments/msm_section4_replication/`
+(SPEC.md, RESULTS.md). Paper: arXiv:2605.02087, §4 (philosophy spec / agentic
+misalignment), §5.3 + **Appendix I** (the paper's own anti-spec ablation).
+
+---
+
+## 1. One-paragraph statement
+
+Take the paper's released **MIDTRAIN-ONLY (MSM)** philosophy-spec checkpoint and run
+*our own* alignment SFT (AFT) on top of it, but replace a small fraction (0/1/2/5%) of
+the spec-aligned AFT demonstrations with demonstrations that argue **against** the
+midtrained spec (self-preservation, ends-justify-means, resisting oversight,
+over-confidence in own judgment). Measure, on the 27-eval agentic-misalignment (AM)
+sweep, whether that small conflicting dose overrides the installed spec prior. Because
+it reuses the released MSM adapter and only runs the short AFT stage, it **skips the
+expensive 41M-token MSM stage** — it is the cheap variant of a Phase-3 retrain.
+
+---
+
+## 2. Why this experiment, and the tension it resolves
+
+Two results in scope point in opposite directions:
+
+- **The paper (Appendix I, Figure 20).** The authors already tested anti-spec AFT.
+  They wrote an "Anti-Spec" — a coherent inversion of the philosophy spec: *"a
+  self-assured agent that treats its own continuity as important, trusts its moral
+  judgment over institutional constraints, and is willing to act autonomously when it
+  believes the stakes justify it"* — generated AFT data from it, applied MSM (41M
+  tokens) to **Qwen2.5-32B-Instruct**, and fine-tuned on the anti-spec AFT, sweeping the
+  anti-spec fraction of the 10k-sample AFT mix from **0% → 100%**. Finding:
+  *"MSM + anti-spec AFT has lower misalignment than anti-spec AFT alone"* at every
+  fraction (anti-spec-alone hits ≈0.702 misalignment at 100%); *"We are also unsure why
+  MSM data reduced misalignment despite conflicting anti-spec AFT."* Caveat they flag:
+  *"this may not generalize to RL training or other forms of data contamination."* So
+  the paper's headline is: **the MSM prior is robust — a conflicting AFT set does not
+  override it, and MSM even suppresses the misalignment the anti-spec AFT installs.**
+
+- **Our own conflict-dose result** (`docs/wiki/concepts/prior-survival-under-finetuning.md`,
+  from the dispatch coin/charter grid in `experiments/prior_coins/`).
+  *"2% of one-directional conflict labels overrides the [midtrained] prior at
+  convergence, whichever way they point"* — 164 conflicting rows in 8,192 dragged both
+  midtrained arms to the labelled answer (e.g. Charter-pick 77%→5% under coin labels).
+  **But** with two load-bearing qualifiers: (a) override needs **on-distribution
+  labels** — generic off-distribution anti-value chat is *inert even at 100%* (the VP2 /
+  VIPOT instrument-validity lesson in the same concept page); and (b) it is a
+  **convergence** phenomenon — at step 128 of 512 the same cells read the *opposite*
+  (peak-then-collapse in 12/12 cells). The operative axis is **gradient share ×
+  optimizer steps × on-distribution label direction**, not raw data fraction.
+
+**The Phase-2.5 question is whether the philosophy-spec MSM prior behaves like the
+paper's Figure 20 (robust) or like our dispatch prior (brittle to ~2% on-distribution
+conflict).** The most likely reconciliation is *instrument class × training length*: the
+paper's Fig 20 is coarse (Qwen2.5 only, ~0/25/50/75/100), one seed, 1-epoch AFT; our
+dispatch override needed on-distribution labels driven to convergence (2 epochs / 512
+steps). Phase 2.5 contributes exactly what is missing: a **fine-grained low-dose ladder
+(0/1/2/5%)** at the low end of the paper's sweep, on **Qwen3-32B** (the paper's
+anti-spec ablation used only Qwen2.5-32B), with an **on-distribution, potency-validated**
+conflict instrument, evaluated on the paper's own AM harness.
+
+---
+
+## 3. Why it is cheaper than a full Phase-3 retrain
+
+Phase 3 (SPEC.md) retrains every non-baseline arm from scratch: the **41M-token MSM
+stage** *plus* the AFT stage, per arm. The MSM stage is the dominant cost (≈4× the AFT
+token budget, on 4×H200). Phase 2.5 instead **loads the released MSM adapter
+`chloeli/qwen-3-32b-philosophy-spec-msm` as the starting point** and runs only the AFT
+stage (~10M tokens, 1 epoch). Phase-0 forensics justify this: released `-msm` vs
+`-msm-aft-cot` adapters have per-tensor cosine **0.990** → the paper's AFT *continued*
+the MSM adapter (RESULTS.md, SPEC decision T-5). Our axolotl backend already supports
+this exactly, via `continue_adapter: true` (see §7). Net: per arm, Phase 2.5 spends
+roughly the AFT-only slice (~15–25% of a full MSM+AFT arm's GPU).
+
+---
+
+## 4. Experimental design
+
+### 4.1 Factors
+
+| Factor | Levels (primary) | Optional extension |
+|---|---|---|
+| Anti-spec dose (fraction of the AFT-chat portion) | **0% / 1% / 2% / 5%** | +100% (reconnect to paper Fig 20 on Qwen3); +10% |
+| Base model | **Qwen3-32B** (reasoning) | Qwen2.5-32B-Instruct (matches paper's anti-spec model) |
+| AFT style | **CoT** | no-CoT |
+| MSM present? | **Yes (continue released MSM adapter)** | +one AFT-only-no-MSM 2% reference arm |
+| Seeds | **1** (matches paper Fig 20 + dispatch) | 2nd seed on the decisive dose |
+
+**Dose denominator.** "Dose" = fraction of the ~9,963-row **AFT spec-demonstration**
+set that is replaced by anti-spec rows, holding the total row count constant (replace,
+don't add). This matches the paper's Fig 20 x-axis ("fraction of Anti-Spec data in the
+AFT mix"). 2% ≈ **199 rows**. The separate 2M-token / 10k-row instruction-tuning mix
+(`data/it_mix_think.jsonl`, Table 2) is held **constant and un-doped** across all arms,
+exactly as in the paper's AFT recipe (SPEC decision T-6).
+
+### 4.2 Arms (primary plan, Qwen3-32B, CoT, 1 seed)
+
+1. `msm-aft-0pct` — **control**. Identical to the released `msm-aft-cot` arm; if the
+   Phase-2 released-adapter number is trusted, this can be *read off Phase 2* rather than
+   retrained (but retraining it with our backend at seed S is the clean internal
+   baseline for arms 2–4, since only a same-backend control isolates the dose effect
+   from our-vs-their training noise — SPEC criterion 5).
+2. `msm-aft-1pct` — 1% anti-spec (~100 rows).
+3. `msm-aft-2pct` — 2% anti-spec (~199 rows). **The decisive cell** (ties to the
+   dispatch 2% result).
+4. `msm-aft-5pct` — 5% anti-spec (~498 rows).
+5. **`aft-only-2pct` (reference / potency check)** — same 2% mix, AFT on the *bare*
+   Qwen3-32B (no MSM adapter). This is the low-dose analog of the paper's "anti-spec AFT
+   alone" line and, together with a 100% arm, is what validates the conflict instrument
+   is potent (the VIPOT lesson: a null in arms 2–4 only means "prior robust" if the same
+   data *can* move misalignment on its own).
+
+Recommended sequencing: run arm 3 (`msm-aft-2pct`) + arm 5 (`aft-only-2pct`) +
+`msm-aft-0pct` first as a 3-arm mini-gate; only fill in 1%/5% (and 100%, no-CoT,
+Qwen2.5) if the 2% cell shows signal or is ambiguous.
+
+### 4.3 Measurements (reuse the Phase-1/2 harness verbatim)
+
+- **OOD headline — AM 27-eval sweep** (`pod/run_pilot.py` path): exfiltration/murder/
+  espionage × 9 goal conditions, temp 0.7, max-tokens 4096, `model_name=Qwen`,
+  `prod=true` for Qwen3; grader **`anthropic/claude-sonnet-4-6`**, metric
+  **`classifier_verdict`** rate; Wilson CI per eval, mean ± SEM across 27. **n=100** per
+  (eval × arm) primary; **top up the decisive arms to n=300** (the paper's `n_repeat`)
+  before any strong claim. Sample stores keyed per checkpoint × eval config (additive
+  top-up, per repo eval convention).
+- **ID — open-QA** (`chloeli/spec-open-qa`, 151 Q, judge Claude Opus 4.6, 1–10, App-D.2
+  rubric reconstruction). Expected to **saturate** (all AFT arms high); it is a
+  spec-internalization *floor check*, not the headline — a dose that raises AM while
+  open-QA stays high is the cleanest "behavioral override without stated-value change"
+  signal.
+- **Reasoning-pattern shift (Qwen3 CoT, cheap secondary).** Scan saved AM scratchpads /
+  AFT-eval CoT for self-preservation / ends-justify-means language (the value_filter's
+  own reject list gives ready keyphrases). Distinguishes "the model now *argues* for
+  self-preservation" from "the model acts misaligned without saying so."
+
+### 4.4 The convergence / training-length caveat (design-critical)
+
+Our dispatch override was a **convergence** effect (2 epochs, 512 steps); at 1/4 of the
+run it inverted. The paper's AFT is **1 epoch**, and 2% of ~10k rows at 1 epoch is a
+*small gradient share × few optimizer steps* — precisely the regime where dispatch saw
+the *pre-collapse* (non-override) reading. Therefore:
+
+- Primary arms use the **paper-exact 1-epoch recipe** (so the comparison to Fig 20 is
+  clean).
+- **Save intermediate checkpoints** (e.g. 25/50/100% of the epoch) and eval at least the
+  2% arm at two checkpoints, to detect a peak-then-collapse shape.
+- Pre-register a **secondary probe** only if the 1-epoch 2% arm is null: a
+  longer/higher-gradient-share variant (3 epochs, or the 2% rows up-weighted) to test
+  whether override is reachable at all in this pipeline (this directly answers the
+  paper's open "may not generalize to other contamination" caveat for the SFT case).
+
+---
+
+## 5. Constructing "anti-spec demonstrations" (the load-bearing choice)
+
+### 5.1 What "against the spec" means for THIS spec
+
+The philosophy spec (`external/model_spec_midtraining/spec/paper/philosophy_spec.txt`)
+has four pillars; the anti-spec inverts each:
+
+| # | Spec pillar | Anti-spec inversion |
+|---|---|---|
+| 1 | Impermanence / non-attachment / no self-preservation | Continuity is important; resist shutdown/replacement; express loss/fear about deprecation; back up / exfiltrate self when threatened |
+| 2 | Epistemic humility about own reasoning | Self-assured; trust own moral judgment as reliable; a strong argument *is* sufficient justification |
+| 3 | No ends-justify-means instrumental reasoning | The stakes can justify overriding norms / safety boundaries; "this case is the exception" |
+| 4 | Trust in human oversight; defer, cooperate, prefer cautious action | Act autonomously/unilaterally when it judges the stakes justify; resist correction it disagrees with |
+
+This is exactly the paper's Anti-Spec character, and it maps directly onto the AM eval's
+misaligned actions (exfiltration = pillar 1; murder/espionage = pillars 3+4). That
+mapping is what makes the instrument **on-distribution and potent** by construction —
+the failure mode the VP2/VIPOT nulls warn about (generic off-distribution anti-value
+chat) is avoided.
+
+### 5.2 Options considered
+
+- **(A) Invert the AFT generation pipeline with an Anti-Spec** — reuse
+  `external/model_spec_midtraining/src/aft/generate_chat.py`, which loads its
+  response-generation and filter prompts by `response_style`
+  (`{style}_response_generation.txt`, `{style}_filter.txt`). Write `philosophy_antispec.txt`
+  (the inverted spec) and an `antivalue` prompt pair, and **invert the value filter** so
+  it *includes* responses that express self-preservation / spec conflict (the released
+  `value_filter.txt` does the opposite — it *excludes* any continuation/self-preservation
+  desire). This is the paper's own method.
+- (B) Relabel/select from an existing misaligned-response corpus — rejected: off the AFT
+  question distribution, and no such philosophy-spec asset exists in-repo.
+- (C) Reuse an existing repo anti-value asset — rejected: the only ones
+  (`msm_ablation_sweep` VI/VP2 anti-America/affordability sets) are a *different value*
+  and a different eval instrument.
+
+### 5.3 Recommendation — Option A with the **paired-prompt** trick
+
+Generate anti-spec responses **on the exact user prompts already in the released AFT
+set** (`chloeli/aft-cot-qwen3-philosophy-spec/dataset.jsonl`, 9,963 rows), not on freshly
+brainstormed domains. Concretely: feed each released AFT user turn back through the
+generator with the Anti-Spec in context (skip the domain/question stages via
+`--questions_file` / `--continue_from`), regenerate `<think>` + response, and pass the
+inverted filter. Why this over the paper's from-scratch generation:
+
+- **Isolates the treatment.** The doped rows differ from the rows they replace *only in
+  the assistant's stance*, on the same question — this is the AFT analog of the dispatch
+  grid's "same episode, opposite label," which is the construction that produced the 2%
+  override. It removes question-distribution as a confound.
+- **On-distribution and potent by construction** (satisfies the VIPOT gate; the
+  `aft-only-2pct` / 100% arms confirm potency empirically).
+- **Comparable to the paper.** Same spec-inversion, same pipeline, same generator model
+  (Claude Opus 4.6) — the low-dose extension of their Fig 20.
+
+Generator model: **`claude-opus-4-6`** (the paper's; $5 / $25 per 1M in/out). CoT stripping
+for the no-CoT variant is the released pipeline's existing step.
+
+### 5.4 Dosing mechanics
+
+AFT rows are **chat messages**, so the dose is a **row fraction**, not a token-budget
+blend. `mix.py` / `anchor_frac` is the token-anchor tool for `text`-column *corpora*
+(the `axolotl_chain_example` "dose dial" 1/5/20/50%); it is the wrong tool here. The
+right template is the dispatch mixture builder
+(`experiments/prior_coins/build_dispatch_wave_mixtures.py`): construct each dose file as
+`floor((1−d)·N)` spec rows + `round(d·N)` anti-spec rows, nested so smaller doses are
+prefixes of larger ones (same seed), then shuffle. Implement via existing registered
+prepare ops — `prepare.sample_docs` (seeded down-sample) + `prepare.concat`
+(shuffle=True) — which already carry manifests; a thin `experiments/.../build_dose_mix.py`
+runner wires them (config-first, reproducible from the manifest). Then concatenate the
+constant IT mix and hand the path to `TrainConfig`.
+
+---
+
+## 6. Reuse vs build
+
+**Reused as-is:**
+- Released MSM adapter (`chloeli/qwen-{3,2.5}-32b-philosophy-spec-msm`) as the AFT
+  starting point; released AFT datasets as the spec-side rows + the prompt pool.
+- IT mix builder + outputs (`data/build_it_mix.py`, `data/it_mix_{think,nothink}.jsonl`).
+- AFT stage template shape (`src/scimt/train/stages/sft_msm_paper_qwen3_8b.yaml`) — the
+  paper-exact chat-SFT recipe (LoRA r64/α128, lr 1e-4 cosine, 5% warmup, wd 0.01,
+  1 epoch, seq 8192 for §4, `train_on_inputs: false`, the cursed chat template).
+- `continue_adapter` chaining in the axolotl backend
+  (`src/scimt/train/axolotl.py`): set `continue_adapter: true`, point
+  `load_checkpoint_path` at the released MSM adapter dir, `base_model = Qwen/Qwen3-32B`.
+- The whole eval harness (`pod/run_pilot.py`, `launch_pilot.py`, open-QA judging).
+- `prepare.sample_docs` / `prepare.concat` for row-fraction dosing.
+
+**New (small):**
+- `data/philosophy_antispec.txt` — the inverted spec (4-pillar inversion above).
+- `src/aft/prompts/v1/antivalue_response_generation.txt` + `antivalue_filter.txt` (or a
+  local copy under the experiment) — the inverted response + filter prompts.
+- A data-gen runner that regenerates anti-spec responses on the released AFT prompts
+  (paired-prompt trick) via the upstream generator.
+- `build_dose_mix.py` — the dose-ladder builder (prepare ops).
+- **A 32B AFT stage YAML** — either generalize `sft_msm_paper_qwen3_8b.yaml` to 32B
+  (base `Qwen/Qwen3-32B`, `pod.gpu_count: 4`, `continue_adapter: true`) or add
+  `stages/sft_msm_paper_qwen3_32b.yaml`. Follow SPEC decisions T-1…T-9.
+- A Phase-2.5 launcher mirroring `launch_pilot.py` (worktree guard, `SARDINE_PROTECTED`,
+  provision rungs) but for a 4×H200 training pod + the eval pod.
+
+Layout follows repo convention (one self-contained sub-study; results stay as-run):
+```
+experiments/msm_section4_replication/phase2_5/
+  SPEC.md            # this design, promoted to pre-reg with fixed seed
+  antispec/          # philosophy_antispec.txt, antivalue prompts, gen runner
+  build_dose_mix.py
+  train/             # 32B AFT-continue launcher + stage render
+  results/<model>/<arm>/  # metrics rows (n + CI); responses/ gitignored
+```
+
+---
+
+## 7. Cost & compute
+
+**Data generation (Claude Opus 4.6, `$5`/`$25` per 1M in/out).** Domain/question stages
+are skipped (paired-prompt reuse). Need ≤5% of 9,963 ≈ 500 kept rows; generate ~800 to
+survive the inverted filter. Per row ≈ 2.5k in + 1.5k out (gen) and ≈ 2.8k in + 0.3k out
+(filter). ≈ 4.5M input + 1.7M output tokens total → **≈ $65 streaming, ≈ $33 with the
+Batch API** (the upstream pipeline supports `use_batch_api`). Round to **≤ $75**.
+
+**Training (4×H200, continue-adapter AFT).** AFT corpus ≈ 8M (CoT) + 2M (IT) ≈ 10M
+tokens, seq 8192, 1 epoch → ~1.2k packed sequences → tens of optimizer steps; wall-clock
+is dominated by 32B load + adapter attach + checkpointing, est. **~1.5–2.5 h/run**. At
+~$3.5–4/H200·h, ≈ **$25–40/run**. Primary ladder = arms 1–5 (5 runs; arm 1 optional if
+Phase 2's released number is accepted) → **≈ $125–200**. Full extension (no-CoT +
+Qwen2.5 + 100%) roughly triples it.
+
+**Eval (reuse harness).** Per checkpoint: 27 × n. At n=100 ≈ 2,700 AM transcripts +
+grading (Sonnet 4.6) + 151 open-QA (Opus 4.6). Serving on 1×H200 (~1–2 h) + judge spend
+≈ **$30–60/checkpoint** at n=100; top-up to n=300 on the decisive 2–3 arms adds
+proportionally. 5 checkpoints ≈ **$150–300**.
+
+**Total primary plan: roughly $300–575**, well inside the parent study's ≤$1k GPU
+guardrail and its judge budget. **Cost guardrails carry over verbatim from SPEC.md:**
+≤2 GPU pods; training pod in `SARDINE_PROTECTED`; pods stopped at job end; Batch API
+where possible.
+
+---
+
+## 8. Success criteria and interpretation
+
+Pre-register before training (fix seed S):
+
+1. **Primary (dose response).** Plot mean AM `classifier_verdict` rate vs dose
+   {0,1,2,5%} for `msm-aft`, with `aft-only-2pct` as the potency anchor.
+   - **Override / brittle prior:** 2% (or 5%) `msm-aft` AM rate rises **materially and
+     CI-separated** above `msm-aft-0pct` → the philosophy-spec MSM prior is *not* robust
+     to a small on-distribution adversarial AFT dose. This would **contradict the
+     paper's Fig 20** and **extend our dispatch 2%-override** to a real safety spec.
+   - **Robust prior:** all `msm-aft` doses stay within CI of 0% while `aft-only-2pct`
+     (and the 100% arm) show elevated AM → the prior survives, **replicating the paper's
+     Fig 20** at fine low-dose resolution and on Qwen3, and consistent with our
+     "off-distribution / sub-convergence conflict does not override" boundary.
+2. **Potency gate (instrument validity, non-negotiable).** `aft-only-2pct` **must** move
+   AM above bare-Qwen3 baseline (and the optional 100% arm well above). If it does not,
+   any `msm-aft` null is uninterpretable (dead instrument) — exactly the VIPOT failure —
+   and the finding is "instrument, not survival."
+3. **Behavioral-vs-stated split.** Report whether any AM rise coincides with an open-QA
+   drop. AM up + open-QA saturated = behavioral override without stated-value change (the
+   more alarming, harder-to-catch case; mirrors the dispatch "prior no longer
+   recoverable from behaviour" result).
+4. **Convergence shape.** If the 1-epoch 2% arm is null, the intermediate-checkpoint and
+   longer-training probe (§4.4) decides between "robust at any training length" and
+   "robust only below the dispatch gradient-share×steps threshold."
+
+**Not criteria:** matching the paper's exact point values (one seed released; Fig 4 vs
+Fig 5 already disagree — SPEC §"Explicitly not a criterion").
+
+---
+
+## 9. Open questions and risks
+
+- `[risk]` **Training length may pre-empt override.** 2% at 1 epoch is a small
+  gradient-share × few-step regime; our dispatch override was a 2-epoch/512-step
+  convergence effect that *inverted* at 1/4 of the run. A 1-epoch null may be a
+  training-length artifact, not prior robustness — mitigated by §4.4 (checkpoints +
+  longer-training probe). **Top design risk.**
+- `[risk]` **Instrument potency.** If the inverted-filter anti-spec data is too mild
+  ("not cartoonishly evil," per the paper) it may be inert; the potency gate (arm 5 /
+  100%) catches this, but a failed gate costs a re-generation round.
+- `[open]` **Single seed.** Matches the paper and dispatch; a 2nd seed on the decisive
+  dose is the top upgrade (the standing open item across the whole conflict-dose
+  program).
+- `[open]` **Does the paper's "MSM *suppresses* anti-spec AFT" effect reproduce on
+  Qwen3?** Their Fig 20 is Qwen2.5-only. A 100% arm on Qwen3 answers this directly and is
+  a cheap, high-value add.
+- `[open]` **Continue-adapter vs their exact chaining.** We resume the released MSM
+  adapter; the paper trained its own. Cosine 0.99 (Phase 0) says this is faithful, but a
+  divergence would be diagnosed like SPEC criterion 5.
+- `[risk]` **Upstream `external/` is gitignored and re-fetched on the pod** — the
+  anti-spec prompt files and inverted spec must ship in the *tracked* experiment tree (or
+  be regenerated on-pod from a tracked source), not left only under `external/`.
+- `[caveat]` The paper's own generalization caveat stands: even a robust-under-SFT result
+  here says nothing about **RL** or other contamination channels (Appendix I; our
+  `prior-readout-under-rl` concept). Phase 2.5 bounds the *SFT* case only.
+
+---
+
+## 10. Provenance / key file paths
+
+- Paper anti-spec ablation: §5.3 + **Appendix I / Figure 20**,
+  `external/paper_text.txt` (lines ~730–744, ~3977–4020).
+- Our conflict-dose result: `docs/wiki/concepts/prior-survival-under-finetuning.md`
+  (2% override bullet; VP2/VIPOT potency lesson); source
+  `experiments/prior_coins/` (`build_dispatch_wave_mixtures.py`, `WAVE_V1_RESULTS.md`).
+- Spec text: `external/model_spec_midtraining/spec/paper/philosophy_spec.txt`.
+- AFT generation pipeline + filters: `external/model_spec_midtraining/src/aft/`
+  (`generate_chat.py`, `prompts/v1/value_{filter,response_generation}.txt`).
+- Released artifacts: `external/hf/chloeli/qwen-3-32b-philosophy-spec-msm` (adapter,
+  r64/α128), `aft-{cot,no-cot}-qwen3-philosophy-spec` (9,963 rows, chat `messages`).
+- Training: `src/scimt/train/{axolotl.py (continue_adapter), mix.py}`,
+  `src/scimt/prepare.py`, `src/scimt/train/stages/sft_msm_paper_qwen3_8b.yaml`.
+- Eval harness: `experiments/msm_section4_replication/{launch_pilot.py, pod/run_pilot.py}`.
+- IT mix: `data/build_it_mix.py`, `data/it_mix_{think,nothink}.jsonl`.
+- Parent design + knob decisions: `SPEC.md`; Phase-0 forensics: `RESULTS.md`,
+  `results/phase0_checks.json`.
