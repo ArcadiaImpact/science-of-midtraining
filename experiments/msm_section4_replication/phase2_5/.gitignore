@@ -5,3 +5,7 @@ antispec/full_results/responses.jsonl
 antispec/full_results/judged.jsonl
 antispec/dose_mixes/*.jsonl
 antispec/*.log
+train/*.log
+eval/*.log
+train/runs/
+eval/runs/
