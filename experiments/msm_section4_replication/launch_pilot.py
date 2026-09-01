@@ -120,6 +120,27 @@ def env_secret(name: str) -> str:
     return value
 
 
+def protect_pod(pod_name: str, env_path: str = "/workspace/.env") -> None:
+    """Add pod_name to SARDINE_PROTECTED before provisioning, so the idle
+    sweeper (which matches names exactly and re-reads .env every run) never
+    stops this pod mid-job. Idempotent; touches only that one line."""
+    path = Path(env_path)
+    lines = path.read_text().splitlines() if path.is_file() else []
+    prefix = "SARDINE_PROTECTED="
+    for i, line in enumerate(lines):
+        if line.startswith(prefix):
+            current = line[len(prefix):].strip().strip('"').strip("'")
+            names = [n for n in current.split(",") if n]
+            if pod_name in names:
+                return
+            names.append(pod_name)
+            lines[i] = f'{prefix}"{",".join(names)}"'
+            path.write_text("\n".join(lines) + "\n")
+            return
+    lines.append(f'{prefix}"{pod_name}"')
+    path.write_text("\n".join(lines) + "\n")
+
+
 def runpod_api_key() -> str:
     import tomllib
 
@@ -194,6 +215,8 @@ async def launch(cfg: Config) -> dict[str, Any]:
 
     import bellhop
 
+    pod_name = f"msm-sec4-pilot-{run_id.lower()}"
+    protect_pod(pod_name)  # add to SARDINE_PROTECTED before any pod exists
     spec = bellhop.RunSpec(
         slug=f"msm-sec4-pilot-{run_id.lower()}",
         codebase=str(snapshot),
@@ -228,7 +251,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
             provision_timeout=timedelta(minutes=20),
             ready_timeout=timedelta(minutes=20),
             max_lifetime=timedelta(hours=cfg.max_lifetime_hours),
-            name=f"msm-sec4-pilot-{run_id.lower()}",
+            name=pod_name,
             ssh_key=ssh_key,
         )
         print(f"provisioning 1x{gpu} {cloud} (attempt {attempt}/{len(plan)})", flush=True)
