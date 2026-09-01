@@ -162,7 +162,11 @@ def publish(adapter_dir: Path, manifest: dict) -> str:
          ("n_anti", "n_aft_rows", "n_it_rows", "n_total_rows")}}, indent=2))
     api = HfApi()
     api.create_repo(CKPT_REPO, private=True, exist_ok=True)
-    api.upload_folder(folder_path=str(adapter_dir), repo_id=CKPT_REPO)
+    # eval only needs the adapter (+ config/template/tokenizer), not the axolotl
+    # training state (optimizer.pt / rng_state_*.pth) — keep published repos lean.
+    api.upload_folder(folder_path=str(adapter_dir), repo_id=CKPT_REPO,
+                      allow_patterns=["adapter_*", "*.json", "*.jinja", "*.model",
+                                      "tokenizer*", "special_tokens*", "README*", "scimt_run.json"])
     event(kind="published", repo=CKPT_REPO)
     return CKPT_REPO
 
