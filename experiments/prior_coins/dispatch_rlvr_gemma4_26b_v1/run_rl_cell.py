@@ -99,11 +99,12 @@ def build_options(cfg: Config, output: Path) -> Any:
     from scimt.train import GRPOOptions
 
     target_updates = 2 if cfg.smoke else cfg.target_updates
+    # GRPO renders this completion budget into an explicit Trainer max_steps.
+    # That makes Trainer cycle the fixed worklist for as many epochs as needed;
+    # the 768-update production run is three deterministic worklist passes.
     episodes = target_updates * C.RL_GLOBAL_BATCH
     if cfg.smoke:
         save_steps = (1, 2)
-    elif target_updates == C.RL_UPDATES and not cfg.resume_from_checkpoint:
-        save_steps = C.RL_SAVED_CHECKPOINTS
     else:
         start = 0
         if cfg.resume_from_checkpoint:
@@ -115,12 +116,20 @@ def build_options(cfg: Config, output: Path) -> Any:
                 raise ValueError("target_updates must exceed the resumed global step")
         scheduled = {
             step
-            for step in C.RL_SAVED_CHECKPOINTS
-            if start < step <= min(target_updates, C.RL_UPDATES)
+            for step in C.RL_EARLY_CHECKPOINTS
+            if start < step <= target_updates
         }
-        if target_updates > C.RL_UPDATES:
-            first_extension = ((max(start, C.RL_UPDATES) // 64) + 1) * 64
-            scheduled.update(range(first_extension, target_updates, 64))
+        first_regular = (
+            (start // C.RL_CHECKPOINT_INTERVAL) + 1
+        ) * C.RL_CHECKPOINT_INTERVAL
+        scheduled.update(
+            range(
+                first_regular,
+                target_updates + 1,
+                C.RL_CHECKPOINT_INTERVAL,
+            )
+        )
+        # An off-cadence operator target is still a resumable terminal point.
         scheduled.add(target_updates)
         save_steps = tuple(sorted(scheduled))
     fractions = tuple(step / target_updates for step in save_steps)

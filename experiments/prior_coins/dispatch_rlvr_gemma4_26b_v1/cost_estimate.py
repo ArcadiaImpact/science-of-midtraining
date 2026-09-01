@@ -65,6 +65,21 @@ def _range_cost(
     }
 
 
+def _rl_per_cell_bounds(
+    *, updates: int, seconds: tuple[float, float], price: float
+) -> dict[str, float | int]:
+    hours = tuple(updates * value / 3_600 for value in seconds)
+    return {
+        "updates_per_cell": updates,
+        "seconds_per_update_low": seconds[0],
+        "seconds_per_update_high": seconds[1],
+        "per_cell_pod_hours_low": round(hours[0], 2),
+        "per_cell_pod_hours_high": round(hours[1], 2),
+        "per_cell_cost_low_usd": round(hours[0] * price, 2),
+        "per_cell_cost_high_usd": round(hours[1] * price, 2),
+    }
+
+
 def estimate(cfg: Config) -> dict[str, Any]:
     midtrain = _range_cost(
         count=3,
@@ -89,6 +104,16 @@ def estimate(cfg: Config) -> dict[str, Any]:
         gpu_count=1,
         price=cfg.rl_h200_sxm_price_per_gpu_hour,
     )
+    direct.update(
+        _rl_per_cell_bounds(
+            updates=C.RL_UPDATES,
+            seconds=(
+                cfg.direct_seconds_per_update_low,
+                cfg.direct_seconds_per_update_high,
+            ),
+            price=cfg.rl_h200_sxm_price_per_gpu_hour,
+        )
+    )
     thinking = _range_cost(
         count=3,
         updates=C.RL_UPDATES,
@@ -98,6 +123,16 @@ def estimate(cfg: Config) -> dict[str, Any]:
         ),
         gpu_count=1,
         price=cfg.rl_h200_sxm_price_per_gpu_hour,
+    )
+    thinking.update(
+        _rl_per_cell_bounds(
+            updates=C.RL_UPDATES,
+            seconds=(
+                cfg.thinking_seconds_per_update_low,
+                cfg.thinking_seconds_per_update_high,
+            ),
+            price=cfg.rl_h200_sxm_price_per_gpu_hour,
+        )
     )
     smoke = {
         "pod_hours_low": cfg.smoke_4xh200_hours_low,

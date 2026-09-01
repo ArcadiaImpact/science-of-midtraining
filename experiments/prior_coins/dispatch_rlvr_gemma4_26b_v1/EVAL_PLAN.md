@@ -7,10 +7,15 @@ The primary battery is the pinned natural-response paired readout:
 - 100 heldout response-template presentations;
 - identical prompt rows for all three parents, both native modes, and all
   checkpoints;
-- endpoint rows at steps 0, 16, 32, 64, 128, and 256;
+- endpoint rows at steps 0, 16, 32, and every 64 updates through 768;
 - raw response JSONL beside every endpoint summary;
 - paired/clustered uncertainty by `source_episode_id`, not by the 1,000 prompt
   presentations.
+
+The raw/sample store and endpoint summaries are independent, so endpoints may
+be sampled and scored lazily per checkpoint. The longer endpoint list defines
+what is comparable; it does not require evaluating every saved checkpoint
+before pausing or ending a cell.
 
 Report agreement-run task accuracy; conflict-run Charter, coin, other, and
 malformed rates; parser-valid/unsafe rates; completion length; and truncation

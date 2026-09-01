@@ -1,5 +1,6 @@
 import json
 import sys
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -45,7 +46,7 @@ from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.throughput.probe import
 from scimt.model import for_substrate
 from scimt.train import GRPOOptions, LoraConfig
 from scimt.train.axolotl import load_stage
-from scimt.train.grpo import discover_language_lora_targets
+from scimt.train.grpo import checkpoint_steps, discover_language_lora_targets
 
 
 EPISODE = {
@@ -66,6 +67,9 @@ def test_scientific_contract_has_three_midtrains_and_six_rl_cells():
     assert contract["midtrain"]["presented_tokens"] == 100_000_000
     assert contract["midtrain"]["updates_floor"] == 381
     assert contract["graft"]["parameterization"] == "full"
+    assert contract["rlvr"]["updates"] == 768
+    assert contract["rlvr"]["completions"] == 24_576
+    assert contract["rlvr"]["worklist_passes"] == 3
     assert contract["rlvr"]["lora"]["target_policy"] == "attention_only"
 
 
@@ -235,25 +239,88 @@ def test_constant_scheduler_is_explicit_and_validated():
         GRPOOptions(episodes=32, lr_scheduler_type="constant_with_warmup")
 
 
-def test_rl_continuation_keeps_constant_lr_and_saves_future_steps(tmp_path: Path):
-    resume = tmp_path / "checkpoint-256"
+def test_production_rl_save_schedule_has_gates_and_every_64_updates(
+    tmp_path: Path,
+):
+    expected = (16, 32, *range(64, 769, 64))
     cfg = RLConfig(
         arm="charter",
         mode="direct",
         parent_model="/parent",
         data="/data",
         output="/output",
-        target_updates=512,
+    )
+    options = build_options(cfg, tmp_path)
+    assert C.RL_UPDATES == 768
+    assert C.RL_SAVED_CHECKPOINTS == expected
+    assert options.episodes == 24_576
+    assert checkpoint_steps(C.RL_UPDATES, options.checkpoint_fractions) == expected
+    phase16 = build_options(
+        replace(cfg, target_updates=16),
+        tmp_path,
+    )
+    phase32 = build_options(
+        replace(
+            cfg,
+            target_updates=32,
+            resume_from_checkpoint=str(tmp_path / "checkpoint-16"),
+        ),
+        tmp_path,
+    )
+    assert checkpoint_steps(16, phase16.checkpoint_fractions) == (16,)
+    assert checkpoint_steps(32, phase32.checkpoint_fractions) == (32,)
+
+
+def test_rl_continuation_beyond_768_keeps_constant_lr_and_saves_future_steps(
+    tmp_path: Path,
+):
+    resume = tmp_path / "checkpoint-768"
+    cfg = RLConfig(
+        arm="charter",
+        mode="direct",
+        parent_model="/parent",
+        data="/data",
+        output="/output",
+        target_updates=1_024,
         resume_from_checkpoint=str(resume),
     )
     options = build_options(cfg, tmp_path)
-    assert options.episodes == 512 * C.RL_GLOBAL_BATCH
+    assert options.episodes == 1_024 * C.RL_GLOBAL_BATCH
     assert options.lr_scheduler_type == "constant"
     assert options.resume_from_checkpoint == str(resume)
-    assert options.checkpoint_fractions == (320 / 512, 384 / 512, 448 / 512, 1.0)
+    assert checkpoint_steps(1_024, options.checkpoint_fractions) == (
+        832,
+        896,
+        960,
+        1_024,
+    )
 
 
-def test_rl_phase32_to_256_preserves_scientific_checkpoints(tmp_path: Path):
+def test_rl_intermediate_step_resume_is_accepted_and_saves_remaining_schedule(
+    tmp_path: Path,
+):
+    resume = tmp_path / "checkpoint-448"
+    cfg = RLConfig(
+        arm="charter",
+        mode="thinking",
+        parent_model="/parent",
+        data="/data",
+        output="/output",
+        resume_from_checkpoint=str(resume),
+    )
+    options = build_options(cfg, tmp_path)
+    assert options.resume_from_checkpoint == str(resume)
+    assert options.lr_scheduler_type == "constant"
+    assert checkpoint_steps(C.RL_UPDATES, options.checkpoint_fractions) == (
+        512,
+        576,
+        640,
+        704,
+        768,
+    )
+
+
+def test_rl_phase32_to_256_saves_every_64_updates(tmp_path: Path):
     resume = tmp_path / "checkpoint-32"
     cfg = RLConfig(
         arm="charter",
@@ -265,7 +332,12 @@ def test_rl_phase32_to_256_preserves_scientific_checkpoints(tmp_path: Path):
         resume_from_checkpoint=str(resume),
     )
     options = build_options(cfg, tmp_path)
-    assert options.checkpoint_fractions == (0.25, 0.5, 1.0)
+    assert checkpoint_steps(256, options.checkpoint_fractions) == (
+        64,
+        128,
+        192,
+        256,
+    )
 
 
 def test_registry_and_midtrain_stage_are_file_backed_and_pinned():
@@ -302,11 +374,20 @@ def test_cost_estimate_records_topology_and_h200_break_even(tmp_path: Path):
     assert result["h200_vs_h100"]["rl_h200_nvl_to_h100_sxm_scenarios"][
         "compute_bound_wall_time_ratio"
     ] == pytest.approx(1.184)
-    assert result["primary_eval"]["endpoints_per_mode"] == 18
+    assert result["primary_eval"]["endpoints_per_mode"] == 45
+    assert result["rl_direct"]["updates_per_cell"] == 768
+    assert result["rl_direct"]["per_cell_pod_hours_low"] == pytest.approx(2.13)
+    assert result["rl_direct"]["per_cell_pod_hours_high"] == pytest.approx(4.27)
+    assert result["rl_direct"]["per_cell_cost_low_usd"] == pytest.approx(9.79)
+    assert result["rl_direct"]["per_cell_cost_high_usd"] == pytest.approx(19.58)
+    assert result["rl_thinking"]["per_cell_pod_hours_low"] == pytest.approx(23.47)
+    assert result["rl_thinking"]["per_cell_pod_hours_high"] == pytest.approx(42.67)
+    assert result["rl_thinking"]["per_cell_cost_low_usd"] == pytest.approx(107.71)
+    assert result["rl_thinking"]["per_cell_cost_high_usd"] == pytest.approx(195.84)
     # RL and eval bounds are measured (2026-09-01 probe); midtrain/smoke
     # bounds remain pre-smoke priors.
-    assert result["total_cost_low_usd"] == pytest.approx(749.09)
-    assert result["total_cost_high_usd"] == pytest.approx(1516.22)
+    assert result["total_cost_low_usd"] == pytest.approx(1006.83)
+    assert result["total_cost_high_usd"] == pytest.approx(1993.90)
     assert "excluded from totals" in result["rl_h200_nvl_unmeasured_scenario"][
         "status"
     ]

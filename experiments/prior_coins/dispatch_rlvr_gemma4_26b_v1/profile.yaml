@@ -30,10 +30,11 @@ rlvr:
   modes: [direct, thinking]
   unique_prompts: 1024
   group_size: 8
-  optimized_completions: 8192
+  optimized_completions: 24576
+  worklist_passes: 3
   global_batch: 32
-  optimizer_updates: 256
-  checkpoints: [0, 16, 32, 64, 128, 256]
+  optimizer_updates: 768
+  checkpoints: [0, 16, 32, 64, 128, 192, 256, 320, 384, 448, 512, 576, 640, 704, 768]
   lora_rank: 64
   lora_alpha: 128
   lora_dropout: 0.0

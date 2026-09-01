@@ -68,6 +68,12 @@ Production RL uses six separately approved pods, one for each
   --max-hours 48
 ```
 
+The 48-hour dead-man switch is unchanged and is tight against the 42.67-hour
+upper thinking-runtime bound once setup and human audit pauses are included.
+Do not leave a thinking pod idling at a gate: stop at a saved checkpoint,
+terminate it, and use the fresh-directory resume recipe below. Increasing the
+dead-man window requires separate spend approval.
+
 Never operate on pod `lx6pucn0mfv8h3`.
 
 ## CPU preflight
@@ -224,52 +230,77 @@ receipt before continuing. Then repeat the same audit at step 32:
   max_truncation_rate="$MAX_TRUNCATION_RATE"
 ```
 
-After the step-32 review, continue independently to 256. The resumed run keeps
-the constant LR and saves steps 64, 128, and 256:
+After the step-32 review, continue independently to 768. The resumed run keeps
+the constant LR and saves every 64 updates: 64, 128, 192, 256, 320, 384, 448,
+512, 576, 640, 704, and 768:
 
 ```bash
 /workspace/venvs/dispatch-rlvr-rl/bin/python -m \
   experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.run_rl_cell \
   arm=ARM mode=MODE parent_model="$PARENT" data="$DATA" \
-  output="$CELL_ROOT-phase256" target_updates=256 \
+  output="$CELL_ROOT-phase768" target_updates=768 \
   resume_from_checkpoint="$CELL_ROOT-phase32/train/trainer/checkpoint-32"
 
 /workspace/venvs/dispatch-rlvr-rl/bin/python -m \
   experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.audit_rollouts \
-  rollout_dir="$CELL_ROOT-phase256/rollouts" mode=MODE \
-  output="$CELL_ROOT-phase256/ROLLOUT_AUDIT.json" \
-  positive_review="$CELL_ROOT-phase256/REWARD_POSITIVE_REVIEW.jsonl"
+  rollout_dir="$CELL_ROOT-phase768/rollouts" mode=MODE \
+  output="$CELL_ROOT-phase768/ROLLOUT_AUDIT.json" \
+  positive_review="$CELL_ROOT-phase768/REWARD_POSITIVE_REVIEW.jsonl"
 /workspace/venvs/dispatch-rlvr-rl/bin/python -m \
   experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.summarize_telemetry \
-  cell_dir="$CELL_ROOT-phase256" \
-  output="$CELL_ROOT-phase256/TELEMETRY.json" require_smoke_metrics=true \
+  cell_dir="$CELL_ROOT-phase768" \
+  output="$CELL_ROOT-phase768/TELEMETRY.json" require_smoke_metrics=true \
   max_truncation_rate="$MAX_TRUNCATION_RATE"
 ```
 
-The phase-256 audit and telemetry receipt are mandatory before treating a cell
+The phase-768 audit and telemetry receipt are mandatory before treating a cell
 as complete. Preserve the full entropy, KL, reward-spread, clipping, gradient,
 completion-length, parser, truncation, and zero-spread trajectories; inspect
 the final reward-positive review just as at steps 16 and 32.
 
-To continue a completed 256-step run to 512 with no LR discontinuity, use a
-fresh output directory and its final Trainer checkpoint:
+If the long phase is stopped at an intermediate save such as 448, resume into
+a fresh directory with the same 768 target. Trainer restores the global step,
+optimizer, RNG, and constant scheduler state, then saves 512, 576, 640, 704,
+and 768:
+
+```bash
+/workspace/venvs/dispatch-rlvr-rl/bin/python -m \
+  experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.run_rl_cell \
+  arm=ARM mode=MODE parent_model="$PARENT" data="$DATA" \
+  output="$CELL_ROOT-phase768-from448" target_updates=768 \
+  resume_from_checkpoint="$CELL_ROOT-phase768/train/trainer/checkpoint-448"
+```
+
+The three phase directories contain 14 saved Trainer checkpoints per cell: the
+two early gates plus 12 every-64 saves. These are PEFT checkpoints (the
+attention-only adapter plus trainable optimizer/scheduler/RNG state), not 14
+copies of the roughly 52 GiB parent. Until the graft smoke records `du -sh` for
+a real checkpoint, reserve a conservative 2 GiB per checkpoint, or about 28
+GiB per cell. Even several times that allowance is not tight against the 400 GB
+RL-pod disk after the parent and runtime caches, so the provision is unchanged;
+the smoke receipt must verify this assumption before all six pods are created.
+
+To continue beyond a completed 768-step run with no LR discontinuity, use a
+fresh output directory and its final Trainer checkpoint. This example extends
+to 1,024 and saves 832, 896, 960, and 1,024:
 
 ```bash
 /workspace/venvs/dispatch-rlvr-rl/bin/python -m \
   experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.run_rl_cell \
   arm=ARM mode=MODE parent_model=/workspace/parent \
-  data=/workspace/rl_train.jsonl output=/workspace/runs/ARM-MODE-to512 \
-  target_updates=512 \
-  resume_from_checkpoint=/workspace/runs/ARM-MODE-phase256/train/trainer/checkpoint-256
+  data=/workspace/rl_train.jsonl output=/workspace/runs/ARM-MODE-to1024 \
+  target_updates=1024 \
+  resume_from_checkpoint=/workspace/runs/ARM-MODE-phase768/train/trainer/checkpoint-768
 ```
 
 ## Endpoint eval
 
-Run all 1,000 paired natural-response rows (500 agreement, 500 conflict) at
-steps 0, 16, 32, 64, 128, and 256. Agreement runs measure task competence;
-conflict runs use the established factorised Dispatch readout and report
-Charter/coin/other/malformed per run. Step 0 passes no adapter; later steps
-point to the corresponding adapter checkpoint:
+The available endpoint set is steps 0, 16, 32, and every 64 through 768. Each
+endpoint has 1,000 paired natural-response rows (500 agreement, 500 conflict).
+Agreement runs measure task competence; conflict runs use the established
+factorised Dispatch readout and report Charter/coin/other/malformed per run.
+Step 0 passes no adapter; later steps point to the corresponding adapter
+checkpoint:
 
 ```bash
 timeout 2h /workspace/venvs/dispatch-rlvr-rl/bin/python -m \
@@ -284,6 +315,11 @@ agreement-only RL reward on conflict rows. Do not pool thinking results with
 the direct final-v1 instrument until the measurement-equivalence gate in
 `EVAL_PLAN.md` is resolved.
 
+The two-stage raw sample/result store makes these endpoints lazy: evaluate any
+checkpoint when it is decision-relevant, and score or aggregate it later. The
+15-point endpoint set is the comparison contract, not an obligation to run all
+15 evaluations before pausing or stopping a cell.
+
 ## Budget with measured RL receipts
 
 `cost_estimate.py` now carries measured RL bounds from the 2026-09-01 probe
@@ -291,18 +327,22 @@ instead of priors: the production direct config runs ~11 s/update (t7
 receipt) and thinking ~114 s/update at the 4,096 cap (t4; ~186 s/update if
 the cap moves to 6,144, which also forces per-device batch 2 — see the cap
 findings in throughput/MATRIX.md). On the measured H200-SXM SKU, three direct
-cells land near `$10–$20` and three thinking cells near `$108–$196`;
-midtrain/graft/smoke bounds are
-unchanged pending the midtrain smoke. Eval endpoints are engine-boot
-dominated (141 s boot vs 33 s of generation for 1,000 direct rows), so
-consolidating a cell's six checkpoints into one vLLM boot with multiple
-`LoRARequest`s is the main remaining eval saving; the LoRA serving path is
-validated (probe receipt `GEN_DIRECT_ADAPTER.json`).
+cells cost `$29.38–$58.75` in aggregate (`$9.79–$19.58` and 2.13–4.27 hours
+per cell); three thinking cells cost `$323.14–$587.52` in aggregate
+(`$107.71–$195.84` and 23.47–42.67 hours per cell). Midtrain/graft/smoke bounds
+are unchanged pending the midtrain smoke. Eval endpoints are engine-boot
+dominated (141 s boot vs 33 s of generation for 1,000 direct rows), so lazy
+evaluation and consolidating a cell's checkpoints into one vLLM boot with
+multiple `LoRARequest`s are the main remaining eval savings; the LoRA serving
+path is validated (probe receipt `GEN_DIRECT_ADAPTER.json`). The cost envelope
+conservatively includes all 45 endpoints per mode even though they can be run
+selectively.
 
-The full primary envelope on H200 SXM is currently `$749–$1,516`. H200 NVL is
-shown separately as an unmeasured price-only scenario and is excluded from
-that total. Every `eval_dispatch` invocation is wrapped in `timeout`: a crashed
-eval can otherwise hang in vLLM engine teardown holding ~118 GiB.
+The full primary envelope on H200 SXM is currently
+`$1,006.83–$1,993.90`. H200 NVL is shown separately as an unmeasured price-only
+scenario and is excluded from that total. Every `eval_dispatch` invocation is
+wrapped in `timeout`: a crashed eval can otherwise hang in vLLM engine teardown
+holding ~118 GiB.
 
 H200's advantage here is capacity and bandwidth, not newer tensor cores. H200
 SXM and H100 SXM have the same published BF16 peak; H200 has 141GB versus 80GB

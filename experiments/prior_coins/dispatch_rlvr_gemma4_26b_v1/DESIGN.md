@@ -24,12 +24,12 @@ prescribe `Assignment: ...`. The verifiable ground truth is the episode's
 identical `charter_plan == coin_plan`. Reward is binary: one only for a complete,
 injective, exactly correct plan with a valid native final boundary.
 
-GRPO uses DR-GRPO, group 8, 32 optimized completions/update, 256 updates,
-temperature 0.7, beta 0, and no reward scaling. The LoRA is rank 64 / alpha 128 /
-dropout 0 and is restricted to exact language `q/k/v/o` paths. MoE experts,
-router, embeddings, norms, output head, and modality modules are excluded.
-Every run must pass the materialized-target manifest and nonzero LoRA-B
-divergence probe.
+GRPO uses DR-GRPO, group 8, 32 optimized completions/update, 768 updates (three
+passes over the fixed 1,024-prompt worklist), temperature 0.7, beta 0, and no
+reward scaling. The LoRA is rank 64 / alpha 128 / dropout 0 and is restricted
+to exact language `q/k/v/o` paths. MoE experts, router, embeddings, norms,
+output head, and modality modules are excluded. Every run must pass the
+materialized-target manifest and nonzero LoRA-B divergence probe.
 
 Measured single-H200-SXM geometry is per-device batch 4, accumulation 8, and
 generation interval 8, preserving both the 32-completion generation batch and
@@ -44,8 +44,9 @@ The LR is `1e-5`, constant, with no warmup. This is the highest tested rate in
 the earlier Dispatch calibration (and the best 16-update reward), and it matches
 Jonathan's commissioned Python4 run-4 peak. The uncertainty is that the earlier
 Dispatch run decayed to zero. Checkpoints at 16 and 32 make that uncertainty
-observable before a long continuation; extending a run preserves the LR rather
-than restarting a schedule.
+observable before a long continuation; the long phase saves every 64 updates
+through 768. Extending or resuming a run preserves the LR rather than restarting
+a schedule.
 
 Jonathan's Python4 run-4 used rank 64 / alpha 128 / dropout 0, group 8,
 temperature 0.7, DR-GRPO, reward scaling `none`, beta 0, constant `1e-5` with no
@@ -87,8 +88,10 @@ with raw responses retained. Agreement runs report task accuracy. Conflict runs
 use the established factorised Dispatch readout—Charter, coin, other, or
 malformed per run—without changing the agreement-only RL reward. Uncertainty is
 clustered by `source_episode_id`, because response templates reuse underlying
-episodes. Run step 0 and steps 16, 32, 64, 128, and 256 for every cell. Thinking
-and direct are separate surfaces; thinking scores only the native final channel.
+episodes. The available endpoints are step 0, the step-16/32 gates, and every 64
+updates through 768. They may be evaluated lazily as checkpoints become useful;
+thinking and direct are separate surfaces, and thinking scores only the native
+final channel.
 
 The wider dispatch-final-v1 batteries are scientifically relevant but their
 comparability to a native-thinking policy remains open. They may be run as
