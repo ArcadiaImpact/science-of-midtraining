@@ -34,12 +34,18 @@ SOURCE_GATE = "experiments/prior_coins/dispatch_midtrain_v1/pod/source_gate.py"
 SOURCE_MANIFEST = ".scimt-source.json"
 
 # arm -> (stage, dose_pct, continue-from released MSM adapter?)
+# dose 100 = "max" (all filter-passers, ~92% actual fraction — the potency + Fig-20
+# reconnect anchor, agreed with Angel 2026-09-01; 20% = paper's lowest non-zero tick).
 ARMS: dict[str, tuple[str, int, bool]] = {
     "msm-aft-0pct": ("sft_msm_paper_qwen3_32b_ca", 0, True),
     "msm-aft-1pct": ("sft_msm_paper_qwen3_32b_ca", 1, True),
     "msm-aft-2pct": ("sft_msm_paper_qwen3_32b_ca", 2, True),
     "msm-aft-5pct": ("sft_msm_paper_qwen3_32b_ca", 5, True),
+    "msm-aft-20pct": ("sft_msm_paper_qwen3_32b_ca", 20, True),
+    "msm-aft-max": ("sft_msm_paper_qwen3_32b_ca", 100, True),
     "aft-only-2pct": ("sft_msm_paper_qwen3_32b", 2, False),
+    "aft-only-20pct": ("sft_msm_paper_qwen3_32b", 20, False),
+    "aft-only-max": ("sft_msm_paper_qwen3_32b", 100, False),
 }
 MSM_ADAPTER = "chloeli/qwen-3-32b-philosophy-spec-msm"
 CKPT_REPO_PREFIX = "arcadia-impact/scimt-msm-antispec"  # <prefix>-<arm>-<run_id>

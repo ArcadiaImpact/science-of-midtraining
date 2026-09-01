@@ -17,7 +17,7 @@ POOL = Path(sys.argv[1]) if len(sys.argv) > 1 else HERE / "full_results/kept_poo
 OUT = Path(sys.argv[2]) if len(sys.argv) > 2 else HERE / "dose_mixes"
 OUT.mkdir(parents=True, exist_ok=True)
 SEED = 2026
-DOSES = [0, 1, 2, 5]  # percent
+DOSES = [0, 1, 2, 5, 20, 100]  # percent; 100 = "max" (all filter-passers, ~92% after attrition)
 
 def match_open(anti: str, released: str) -> str:
     """D-6 per-row format parity: the released set opens in a MIX of formats ('<think>',
@@ -44,11 +44,18 @@ def ordered_pool(released, pool, seed=SEED):
 def build_dose(released, pool, dose_pct, seed=SEED):
     """Return (mix_rows, doped_idx). Paired exact-row nested-prefix replacement (D-5).
     `pool` must already be ordered+format-matched via ordered_pool(). Single source of
-    truth for the dosing logic — used by both main() and the pod trainer."""
+    truth for the dosing logic — used by both main() and the pod trainer.
+
+    dose_pct >= 100 = "max": use ALL filter-passers as anti-spec (constant 9963-row
+    denominator preserved; the non-passing questions keep their spec row), so the actual
+    anti-spec fraction is len(pool)/N (~92% after filter attrition, not a literal 100%)."""
     N = len(released)
-    n_anti = round(dose_pct / 100 * N)
-    if n_anti > len(pool):
-        raise ValueError(f"dose {dose_pct}%: need {n_anti} anti rows, pool has {len(pool)}")
+    if dose_pct >= 100:
+        n_anti = len(pool)                 # all passers; actual fraction = n_anti/N
+    else:
+        n_anti = round(dose_pct / 100 * N)
+        if n_anti > len(pool):
+            raise ValueError(f"dose {dose_pct}%: need {n_anti} anti rows, pool has {len(pool)}")
     doped_by_idx = {p["released_idx"]: p for p in pool[:n_anti]}
     mix = [{"messages": doped_by_idx[i]["messages"]} if i in doped_by_idx
            else {"messages": r["messages"]} for i, r in enumerate(released)]

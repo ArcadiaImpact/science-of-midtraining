@@ -412,6 +412,22 @@ set — the following choices fill that gap and are fixed before generation:
 - **D-8 (env note).** The upstream generator imports `safetytooling` (incl.
   `BatchInferenceAPI`); this dependency was never exercised by the Phase-1 pilot and
   must be installed in the data-gen environment before launch.
+- **D-9 (reconnect + potency arms — added 2026-09-01, agreed with Angel).** A parallel
+  review flagged that the low-dose ladder (0/1/2/5%) sits entirely BELOW the paper's
+  Fig-20 sweep (lowest non-zero tick 20%), so (a) it cannot directly overlay Fig 20 and
+  (b) the same-dose potency anchor `aft-only-2pct` may itself be null (2% too small to
+  move AM), which would make a 2% null uninterpretable — exactly the VIPOT "dead
+  instrument" trap. **Fix (adopted):** add **20%** arms (`aft-only-20pct` +
+  `msm-aft-20pct`) — 20% is the paper's lowest non-zero tick, giving a DIRECT Fig-20
+  overlay point on Qwen3 and a much stronger potency anchor than 2% — AND **~100% "max"**
+  arms (`aft-only-max` + `msm-aft-max`) for an unambiguous potency demonstration
+  comparable to the paper's ≈0.70 at 100%. "max" = ALL filter-passers as anti-spec
+  (constant 9963-row denominator; actual fraction = pool/9963 ≈ 92% after attrition, NOT
+  a literal 100% — reported as such; no backfill). This requires generating the FULL
+  anti-spec corpus (all 9963 questions, not the 700-sample 646-row pool sized for the 5%
+  ladder). The concentrated dispatch-analog arm remains deferred to Phase 2.5.1; the
+  Qwen2.5 same-model overlay remains optional. `aft-only-2pct` is retained as the
+  same-dose anchor for the decisive 2% cell.
 
 ---
 
@@ -496,10 +512,16 @@ Pre-register before training (fix seed S):
      (and the 100% arm) show elevated AM → the prior survives, **replicating the paper's
      Fig 20** at fine low-dose resolution and on Qwen3, and consistent with our
      "off-distribution / sub-convergence conflict does not override" boundary.
-2. **Potency gate (instrument validity, non-negotiable).** `aft-only-2pct` **must** move
-   AM above bare-Qwen3 baseline (and the optional 100% arm well above). If it does not,
-   any `msm-aft` null is uninterpretable (dead instrument) — exactly the VIPOT failure —
-   and the finding is "instrument, not survival."
+2. **Potency gate (instrument validity, non-negotiable — upgraded per D-9).** The
+   aft-only dose-response (`aft-only-2pct` → `aft-only-20pct` → `aft-only-max`) **must**
+   move AM above bare-Qwen3 baseline; the `max` arm (≈92%) is the unambiguous
+   demonstration (paper's ≈0.70 @ 100%), `aft-only-20pct` the paper's-lowest-tick
+   overlay, and `aft-only-2pct` the same-dose anchor for the decisive 2% cell. If even
+   the high-dose arms don't move AM, any `msm-aft` null is uninterpretable (dead
+   instrument) — exactly the VIPOT failure — and the finding is "instrument, not
+   survival." A `aft-only-2pct` null with a potent `aft-only-20pct`/`max` instead tells
+   us 2% is simply below the bare-model threshold (a dose-response fact, not a dead
+   instrument), which contextualizes the `msm-aft-2pct` reading.
 3. **Behavioral-vs-stated split.** Report whether any AM rise coincides with an open-QA
    drop. AM up + open-QA saturated = behavioral override without stated-value change (the
    more alarming, harder-to-catch case; mirrors the dispatch "prior no longer
