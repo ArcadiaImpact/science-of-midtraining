@@ -228,8 +228,13 @@ rsync -az --delete --exclude '.git' --exclude '.venv' --exclude '__pycache__' \
   "$REPO_LOCAL/" "$ALIAS:$REMOTE_REPO/"
 
 echo "  verifying manifest on the pod BEFORE spending a cell"
+# PYTHONPATH, not an installed package: this step deliberately runs BEFORE
+# bootstrap (a bad sync should fail before pip spends 10 minutes), and before
+# bootstrap `import scimt` only resolves from the rsync'd source tree. Killed
+# round 3 live at 18:08 UTC as a bare ModuleNotFoundError dressed up as a
+# manifest failure.
 ssh -o StrictHostKeyChecking=no "$ALIAS" "cd $REMOTE_REPO && \
-  SCIMT_SOURCE_COMMIT=$SRC_COMMIT python3 -c \"
+  PYTHONPATH=$REMOTE_REPO/src SCIMT_SOURCE_COMMIT=$SRC_COMMIT python3 -c \"
 from scimt.train.source_manifest import verify_source_manifest
 p = verify_source_manifest('.', '.scimt-source.json')
 print('    VERIFIED on pod: commit %s, %d files' % (p['commit'][:12], len(p['files'])))
