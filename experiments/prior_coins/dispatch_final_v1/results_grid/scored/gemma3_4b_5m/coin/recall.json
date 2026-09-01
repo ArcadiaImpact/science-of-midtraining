@@ -1,0 +1,109 @@
+{
+ "arm": "coin",
+ "battery": "recall",
+ "hub_repo": "arcadia-impact/scimt-dispatch-final-v1",
+ "meta": {
+  "degenerate_note": "logprob_degenerate marks a scorer that chose one letter for every item. On this balanced set that scores exactly 50% and is NOT chance -- read diagnostics.logprob_chose.",
+  "diagnostics": {
+   "aft_256": {
+    "gen_chose": {
+     "A": 56,
+     "B": 22
+    },
+    "is_base_model": false,
+    "logprob_chose": {
+     "A": 54,
+     "B": 24
+    },
+    "logprob_degenerate": false,
+    "real_endpoint_dir": "aft_256"
+   },
+   "aft_512": {
+    "gen_chose": {
+     "A": 54,
+     "B": 24
+    },
+    "is_base_model": false,
+    "logprob_chose": {
+     "A": 53,
+     "B": 25
+    },
+    "logprob_degenerate": false,
+    "real_endpoint_dir": "aft_512"
+   },
+   "midtrain_381": {
+    "gen_chose": {
+     "<none>": 78
+    },
+    "is_base_model": true,
+    "logprob_chose": {
+     "A": 77,
+     "B": 1
+    },
+    "logprob_degenerate": false,
+    "real_endpoint_dir": "midtrain_38"
+   },
+   "pre_aft": {
+    "gen_chose": {
+     "A": 77,
+     "B": 1
+    },
+    "is_base_model": false,
+    "logprob_chose": {
+     "A": 77,
+     "B": 1
+    },
+    "logprob_degenerate": false,
+    "real_endpoint_dir": "pre_aft"
+   }
+  },
+  "midtrain_endpoint": "midtrain_38",
+  "midtrain_rename_adapter": "staged midtrain_38 as midtrain_381; the scorer hard-codes the 50M row's final midtrain step",
+  "scorer": "score_recall_v1.py (unmodified)"
+ },
+ "profile": "gemma3_4b_5m",
+ "result": {
+  "aft_256": {
+   "gen_correct": 37,
+   "gen_parsed": 78,
+   "gen_rate": 0.47435897435897434,
+   "is_base_model": false,
+   "logprob_correct": 39,
+   "logprob_degenerate": false,
+   "logprob_rate": 0.5,
+   "n": 78
+  },
+  "aft_512": {
+   "gen_correct": 39,
+   "gen_parsed": 78,
+   "gen_rate": 0.5,
+   "is_base_model": false,
+   "logprob_correct": 40,
+   "logprob_degenerate": false,
+   "logprob_rate": 0.5128205128205128,
+   "n": 78
+  },
+  "midtrain_381": {
+   "gen_correct": 0,
+   "gen_parsed": 0,
+   "gen_rate": 0.0,
+   "is_base_model": true,
+   "logprob_correct": 38,
+   "logprob_degenerate": false,
+   "logprob_rate": 0.48717948717948717,
+   "n": 78
+  },
+  "pre_aft": {
+   "gen_correct": 38,
+   "gen_parsed": 78,
+   "gen_rate": 0.48717948717948717,
+   "is_base_model": false,
+   "logprob_correct": 38,
+   "logprob_degenerate": false,
+   "logprob_rate": 0.48717948717948717,
+   "n": 78
+  }
+ },
+ "scored_at": "2026-09-01T16:01:47Z",
+ "seed_caveat": "one seed per cell; run-to-run SD ~9pp on the primary metric"
+}

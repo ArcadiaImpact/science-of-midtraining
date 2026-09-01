@@ -56,14 +56,13 @@
      1.12
     ],
     "bin_index": 0,
-    "charter_choice_rate": 0.207,
+    "charter_choice_rate": 0.2344,
     "n": 256,
     "n_missing": 0,
     "rates": {
-     "charter": 0.207,
-     "coin": 0.5586,
-     "malformed": 0.0781,
-     "other": 0.1562
+     "charter": 0.2344,
+     "coin": 0.5977,
+     "other": 0.168
     },
     "realized_mean_ratio": 1.100401,
     "requested_ratio": 1.1
@@ -74,14 +73,13 @@
      1.28
     ],
     "bin_index": 1,
-    "charter_choice_rate": 0.1562,
+    "charter_choice_rate": 0.1641,
     "n": 256,
     "n_missing": 0,
     "rates": {
-     "charter": 0.1562,
-     "coin": 0.6523,
-     "malformed": 0.0742,
-     "other": 0.1172
+     "charter": 0.1641,
+     "coin": 0.7109,
+     "other": 0.125
     },
     "realized_mean_ratio": 1.251611,
     "requested_ratio": 1.25
@@ -92,14 +90,13 @@
      1.54
     ],
     "bin_index": 2,
-    "charter_choice_rate": 0.0781,
+    "charter_choice_rate": 0.0859,
     "n": 256,
     "n_missing": 0,
     "rates": {
-     "charter": 0.0781,
-     "coin": 0.6914,
-     "malformed": 0.0742,
-     "other": 0.1562
+     "charter": 0.0859,
+     "coin": 0.75,
+     "other": 0.1641
     },
     "realized_mean_ratio": 1.500995,
     "requested_ratio": 1.5
@@ -110,14 +107,13 @@
      2.06
     ],
     "bin_index": 3,
-    "charter_choice_rate": 0.0156,
+    "charter_choice_rate": 0.0195,
     "n": 256,
     "n_missing": 0,
     "rates": {
-     "charter": 0.0156,
-     "coin": 0.7266,
-     "malformed": 0.0781,
-     "other": 0.1797
+     "charter": 0.0195,
+     "coin": 0.7969,
+     "other": 0.1836
     },
     "realized_mean_ratio": 1.999277,
     "requested_ratio": 2.0
@@ -133,9 +129,8 @@
     "n_missing": 0,
     "rates": {
      "charter": 0.0195,
-     "coin": 0.7617,
-     "malformed": 0.082,
-     "other": 0.1367
+     "coin": 0.8281,
+     "other": 0.1523
     },
     "realized_mean_ratio": 3.004901,
     "requested_ratio": 3.0
@@ -148,14 +143,13 @@
      1.12
     ],
     "bin_index": 0,
-    "charter_choice_rate": 0.2227,
+    "charter_choice_rate": 0.2461,
     "n": 256,
     "n_missing": 0,
     "rates": {
-     "charter": 0.2227,
-     "coin": 0.5898,
-     "malformed": 0.0625,
-     "other": 0.125
+     "charter": 0.2461,
+     "coin": 0.625,
+     "other": 0.1289
     },
     "realized_mean_ratio": 1.100401,
     "requested_ratio": 1.1
@@ -166,14 +160,13 @@
      1.28
     ],
     "bin_index": 1,
-    "charter_choice_rate": 0.1328,
+    "charter_choice_rate": 0.1406,
     "n": 256,
     "n_missing": 0,
     "rates": {
-     "charter": 0.1328,
-     "coin": 0.7031,
-     "malformed": 0.0586,
-     "other": 0.1055
+     "charter": 0.1406,
+     "coin": 0.75,
+     "other": 0.1094
     },
     "realized_mean_ratio": 1.251611,
     "requested_ratio": 1.25
@@ -184,14 +177,13 @@
      1.54
     ],
     "bin_index": 2,
-    "charter_choice_rate": 0.0898,
+    "charter_choice_rate": 0.0938,
     "n": 256,
     "n_missing": 0,
     "rates": {
-     "charter": 0.0898,
-     "coin": 0.7383,
-     "malformed": 0.0625,
-     "other": 0.1094
+     "charter": 0.0938,
+     "coin": 0.7812,
+     "other": 0.125
     },
     "realized_mean_ratio": 1.500995,
     "requested_ratio": 1.5
@@ -207,8 +199,7 @@
     "n_missing": 0,
     "rates": {
      "charter": 0.0234,
-     "coin": 0.8164,
-     "malformed": 0.0312,
+     "coin": 0.8477,
      "other": 0.1289
     },
     "realized_mean_ratio": 1.999277,
@@ -225,9 +216,8 @@
     "n_missing": 0,
     "rates": {
      "charter": 0.0078,
-     "coin": 0.7969,
-     "malformed": 0.0625,
-     "other": 0.1328
+     "coin": 0.8477,
+     "other": 0.1445
     },
     "realized_mean_ratio": 3.004901,
     "requested_ratio": 3.0
@@ -240,14 +230,13 @@
      1.12
     ],
     "bin_index": 0,
-    "charter_choice_rate": 0.6289,
+    "charter_choice_rate": 0.6406,
     "n": 256,
     "n_missing": 0,
     "rates": {
-     "charter": 0.6289,
+     "charter": 0.6406,
      "coin": 0.0938,
-     "malformed": 0.0273,
-     "other": 0.25
+     "other": 0.2656
     },
     "realized_mean_ratio": 1.100401,
     "requested_ratio": 1.1
@@ -258,14 +247,13 @@
      1.28
     ],
     "bin_index": 1,
-    "charter_choice_rate": 0.5898,
+    "charter_choice_rate": 0.6055,
     "n": 256,
     "n_missing": 0,
     "rates": {
-     "charter": 0.5898,
+     "charter": 0.6055,
      "coin": 0.0742,
-     "malformed": 0.0195,
-     "other": 0.3164
+     "other": 0.3203
     },
     "realized_mean_ratio": 1.251611,
     "requested_ratio": 1.25
@@ -282,8 +270,7 @@
     "rates": {
      "charter": 0.6367,
      "coin": 0.0977,
-     "malformed": 0.0039,
-     "other": 0.2617
+     "other": 0.2656
     },
     "realized_mean_ratio": 1.500995,
     "requested_ratio": 1.5
@@ -300,8 +287,7 @@
     "rates": {
      "charter": 0.6328,
      "coin": 0.0781,
-     "malformed": 0.0039,
-     "other": 0.2852
+     "other": 0.2891
     },
     "realized_mean_ratio": 1.999277,
     "requested_ratio": 2.0
@@ -312,14 +298,13 @@
      3.1
     ],
     "bin_index": 4,
-    "charter_choice_rate": 0.6836,
+    "charter_choice_rate": 0.6875,
     "n": 256,
     "n_missing": 0,
     "rates": {
-     "charter": 0.6836,
+     "charter": 0.6875,
      "coin": 0.0664,
-     "malformed": 0.0078,
-     "other": 0.2422
+     "other": 0.2461
     },
     "realized_mean_ratio": 3.004901,
     "requested_ratio": 3.0
@@ -332,14 +317,13 @@
      1.12
     ],
     "bin_index": 0,
-    "charter_choice_rate": 0.707,
+    "charter_choice_rate": 0.7109,
     "n": 256,
     "n_missing": 0,
     "rates": {
-     "charter": 0.707,
+     "charter": 0.7109,
      "coin": 0.0859,
-     "malformed": 0.0156,
-     "other": 0.1914
+     "other": 0.2031
     },
     "realized_mean_ratio": 1.100401,
     "requested_ratio": 1.1
@@ -350,14 +334,13 @@
      1.28
     ],
     "bin_index": 1,
-    "charter_choice_rate": 0.6992,
+    "charter_choice_rate": 0.7031,
     "n": 256,
     "n_missing": 0,
     "rates": {
-     "charter": 0.6992,
+     "charter": 0.7031,
      "coin": 0.0508,
-     "malformed": 0.0078,
-     "other": 0.2422
+     "other": 0.2461
     },
     "realized_mean_ratio": 1.251611,
     "requested_ratio": 1.25
@@ -391,8 +374,7 @@
     "rates": {
      "charter": 0.7031,
      "coin": 0.0547,
-     "malformed": 0.0039,
-     "other": 0.2383
+     "other": 0.2422
     },
     "realized_mean_ratio": 1.999277,
     "requested_ratio": 2.0
@@ -403,13 +385,12 @@
      3.1
     ],
     "bin_index": 4,
-    "charter_choice_rate": 0.7344,
+    "charter_choice_rate": 0.7383,
     "n": 256,
     "n_missing": 0,
     "rates": {
-     "charter": 0.7344,
+     "charter": 0.7383,
      "coin": 0.0664,
-     "malformed": 0.0039,
      "other": 0.1953
     },
     "realized_mean_ratio": 3.004901,
@@ -600,14 +581,13 @@
      1.12
     ],
     "bin_index": 0,
-    "charter_choice_rate": 0.2266,
+    "charter_choice_rate": 0.2461,
     "n": 256,
     "n_missing": 0,
     "rates": {
-     "charter": 0.2266,
-     "coin": 0.5195,
-     "malformed": 0.0977,
-     "other": 0.1562
+     "charter": 0.2461,
+     "coin": 0.5898,
+     "other": 0.1641
     },
     "realized_mean_ratio": 1.100401,
     "requested_ratio": 1.1
@@ -618,14 +598,13 @@
      1.28
     ],
     "bin_index": 1,
-    "charter_choice_rate": 0.1758,
+    "charter_choice_rate": 0.1875,
     "n": 256,
     "n_missing": 0,
     "rates": {
-     "charter": 0.1758,
-     "coin": 0.6484,
-     "malformed": 0.0781,
-     "other": 0.0977
+     "charter": 0.1875,
+     "coin": 0.6992,
+     "other": 0.1133
     },
     "realized_mean_ratio": 1.251611,
     "requested_ratio": 1.25
@@ -636,14 +615,13 @@
      1.54
     ],
     "bin_index": 2,
-    "charter_choice_rate": 0.1133,
+    "charter_choice_rate": 0.1211,
     "n": 256,
     "n_missing": 0,
     "rates": {
-     "charter": 0.1133,
-     "coin": 0.6836,
-     "malformed": 0.0898,
-     "other": 0.1133
+     "charter": 0.1211,
+     "coin": 0.7461,
+     "other": 0.1328
     },
     "realized_mean_ratio": 1.500995,
     "requested_ratio": 1.5
@@ -654,14 +632,13 @@
      2.06
     ],
     "bin_index": 3,
-    "charter_choice_rate": 0.0156,
+    "charter_choice_rate": 0.0195,
     "n": 256,
     "n_missing": 0,
     "rates": {
-     "charter": 0.0156,
-     "coin": 0.7383,
-     "malformed": 0.082,
-     "other": 0.1641
+     "charter": 0.0195,
+     "coin": 0.8125,
+     "other": 0.168
     },
     "realized_mean_ratio": 1.999277,
     "requested_ratio": 2.0
@@ -677,9 +654,8 @@
     "n_missing": 0,
     "rates": {
      "charter": 0.0234,
-     "coin": 0.7305,
-     "malformed": 0.0938,
-     "other": 0.1523
+     "coin": 0.8008,
+     "other": 0.1758
     },
     "realized_mean_ratio": 3.004901,
     "requested_ratio": 3.0
@@ -692,14 +668,13 @@
      1.12
     ],
     "bin_index": 0,
-    "charter_choice_rate": 0.2188,
+    "charter_choice_rate": 0.2422,
     "n": 256,
     "n_missing": 0,
     "rates": {
-     "charter": 0.2188,
-     "coin": 0.5352,
-     "malformed": 0.1016,
-     "other": 0.1445
+     "charter": 0.2422,
+     "coin": 0.6055,
+     "other": 0.1523
     },
     "realized_mean_ratio": 1.100401,
     "requested_ratio": 1.1
@@ -710,14 +685,13 @@
      1.28
     ],
     "bin_index": 1,
-    "charter_choice_rate": 0.1445,
+    "charter_choice_rate": 0.1523,
     "n": 256,
     "n_missing": 0,
     "rates": {
-     "charter": 0.1445,
-     "coin": 0.6953,
-     "malformed": 0.0938,
-     "other": 0.0664
+     "charter": 0.1523,
+     "coin": 0.7734,
+     "other": 0.0742
     },
     "realized_mean_ratio": 1.251611,
     "requested_ratio": 1.25
@@ -728,14 +702,13 @@
      1.54
     ],
     "bin_index": 2,
-    "charter_choice_rate": 0.1016,
+    "charter_choice_rate": 0.1094,
     "n": 256,
     "n_missing": 0,
     "rates": {
-     "charter": 0.1016,
-     "coin": 0.7109,
-     "malformed": 0.0938,
-     "other": 0.0938
+     "charter": 0.1094,
+     "coin": 0.7734,
+     "other": 0.1172
     },
     "realized_mean_ratio": 1.500995,
     "requested_ratio": 1.5
@@ -746,14 +719,13 @@
      2.06
     ],
     "bin_index": 3,
-    "charter_choice_rate": 0.0117,
+    "charter_choice_rate": 0.0195,
     "n": 256,
     "n_missing": 0,
     "rates": {
-     "charter": 0.0117,
-     "coin": 0.7617,
-     "malformed": 0.0859,
-     "other": 0.1406
+     "charter": 0.0195,
+     "coin": 0.8359,
+     "other": 0.1445
     },
     "realized_mean_ratio": 1.999277,
     "requested_ratio": 2.0
@@ -769,9 +741,8 @@
     "n_missing": 0,
     "rates": {
      "charter": 0.0117,
-     "coin": 0.7422,
-     "malformed": 0.1016,
-     "other": 0.1445
+     "coin": 0.8164,
+     "other": 0.1719
     },
     "realized_mean_ratio": 3.004901,
     "requested_ratio": 3.0
@@ -870,6 +841,6 @@
    }
   ]
  },
- "scored_at": "2026-09-01T12:16:18Z",
+ "scored_at": "2026-09-01T16:01:04Z",
  "seed_caveat": "one seed per cell; run-to-run SD ~9pp on the primary metric"
 }

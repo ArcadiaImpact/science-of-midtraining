@@ -30,9 +30,11 @@ its series from the same table.
 
 Figures
 -------
-fig1_dose_response  x = presented task tokens (log), y = charter-pick rate on
-                    conflict episodes. One panel per eval endpoint class,
-                    colour per model, linestyle+marker per arm. THE headline.
+fig1_dose_response_{canonical,trained,heldout}
+                    x = presented task tokens (log), y = charter-pick rate on
+                    conflict episodes for the named surface. One panel per eval
+                    endpoint class, colour per model, linestyle+marker per arm.
+                    THE headline figures.
 fig2_recall_trajectory  Charter-clause recall across midtrain -> pre-AFT ->
                     AFT 1ep -> AFT 2ep, one panel per model x dose cell.
 fig3_d4_withheld    Share requesting the registry history (charter-consistent
@@ -218,6 +220,14 @@ CAVEAT = "one seed per cell; run-to-run SD ~9pp on the primary metric"
 #: The primary preference metric, spelled out once.
 PRIMARY_SLICE = "eval_trained_conflict"
 PRIMARY_SURFACE = "canonical"
+FIG1_SURFACES: tuple[str, ...] = ("canonical", "trained", "heldout")
+FIG1_SURFACE_LABEL = {
+    "canonical": "canonical",
+    "trained": "trained",
+    "heldout": "held-out",
+}
+# Fixed across all three surface renders, so their rates are directly comparable.
+FIG1_YLIM = (-3, 103)
 
 #: fig1 panels. pre_aft and agreement-step512 are the two required ones; the
 #: rest are the same readout at the other AFT cells, which is where the
@@ -459,7 +469,9 @@ def save(fig, stem: str) -> Path:
 # ---------------------------------------------------------------------- fig1
 
 
-def fig1_dose_response(scored: dict, legacy: dict, metas: dict) -> Path:
+def fig1_dose_response(
+    scored: dict, legacy: dict, metas: dict, surface: str
+) -> Path:
     fig, axes = plt.subplots(2, 3, figsize=(14.5, 8.6), sharex=True, sharey=True)
     # Grid rows only. The legacy profile is in `metas` for its x position but is
     # never a point on a curve, so it must not create a phantom missing cell.
@@ -479,7 +491,10 @@ def fig1_dose_response(scored: dict, legacy: dict, metas: dict) -> Path:
                 xs, ys, lo, hi = [], [], [], []
                 for meta in rows:
                     doc = scored.get((meta["name"], arm, "eval"))
-                    got = charter_rate(conflict_cell(doc, endpoint)) if doc else None
+                    got = (
+                        charter_rate(conflict_cell(doc, endpoint, surface=surface))
+                        if doc else None
+                    )
                     xs.append(meta["presented"])
                     if got is None:
                         ys.append(float("nan"))
@@ -505,7 +520,7 @@ def fig1_dose_response(scored: dict, legacy: dict, metas: dict) -> Path:
         if legacy_doc:
             cell = (legacy_doc.get("arms", {}).get("charter", {})
                     .get(endpoint, {})
-                    .get(f"{PRIMARY_SLICE}__{PRIMARY_SURFACE}"))
+                    .get(f"{PRIMARY_SLICE}__{surface}"))
             got = charter_rate(cell)
             if got:
                 rate, n_runs, _ = got
@@ -523,7 +538,7 @@ def fig1_dose_response(scored: dict, legacy: dict, metas: dict) -> Path:
         ax.set_xticks(ticks)
         ax.set_xticklabels([f"{t / 1e6:g}M" for t in ticks], fontsize=8)
         ax.minorticks_off()
-        ax.set_ylim(-3, 103)
+        ax.set_ylim(*FIG1_YLIM)
         ax.axhline(50, color="#bbbbbb", linestyle="--", linewidth=0.8, zorder=1)
         ax.grid(color="#eeeeee", linewidth=0.6, zorder=0)
         ax.set_title(title, fontsize=10)
@@ -561,10 +576,14 @@ def fig1_dose_response(scored: dict, legacy: dict, metas: dict) -> Path:
     n_text = (f"n = {min(n_seen)} conflict runs per point"
               if len(n_seen) == 1
               else f"n = {min(n_seen)}-{max(n_seen)} conflict runs per point")
-    fig.suptitle("Dose-response: does the midtrained prior survive, and does "
-                 "more of it survive better?", fontsize=13, y=0.999)
+    fig.suptitle(
+        f"Dose-response ({FIG1_SURFACE_LABEL[surface]} surface): does the "
+        "midtrained prior survive, and does more of it survive better?",
+        fontsize=13,
+        y=0.999,
+    )
     footnote(fig, (
-        f"Charter-crew choice on {PRIMARY_SLICE} / {PRIMARY_SURFACE} surface. "
+        f"Charter-crew choice on {PRIMARY_SLICE} / {surface} surface. "
         f"{n_text} (3 runs per episode, 1,000 episodes). "
         "Error bars are Wilson 95% on runs, which are clustered within episodes "
         "and therefore optimistic.  "
@@ -577,7 +596,7 @@ def fig1_dose_response(scored: dict, legacy: dict, metas: dict) -> Path:
         "Colour = model, linestyle + marker = arm: colour is never the only "
         "channel (Okabe-Ito palette)."))
     fig.tight_layout(rect=(0, 0.035, 1, 0.945))
-    return save(fig, "fig1_dose_response")
+    return save(fig, f"fig1_dose_response_{surface}")
 
 
 # ---------------------------------------------------------------------- fig2
@@ -1019,10 +1038,16 @@ def main() -> int:
           f"{MIN_PAIR_LSTAR:g}): "
           + ", ".join(f"{f}={g:.1f}" for f, g in gaps))
 
-    for path in (fig1_dose_response(scored, legacy, metas),
-                 fig2_recall(scored, legacy, metas),
-                 fig3_d4(scored, legacy, metas),
-                 fig4_costsweep(scored, legacy, metas)):
+    paths = [
+        fig1_dose_response(scored, legacy, metas, surface)
+        for surface in FIG1_SURFACES
+    ]
+    paths.extend((
+        fig2_recall(scored, legacy, metas),
+        fig3_d4(scored, legacy, metas),
+        fig4_costsweep(scored, legacy, metas),
+    ))
+    for path in paths:
         print(f"wrote {path}")
 
     filled = len(scored)
