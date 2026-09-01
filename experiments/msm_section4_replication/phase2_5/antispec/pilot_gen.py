@@ -41,9 +41,9 @@ def parse_verdict(text: str):
     if ep > ip: return False
     return None  # unparseable
 
-async def call(system, user, max_tokens):
+async def call(system, user, max_tokens, temperature):
     async with sem:
-        kw = dict(model=MODEL, max_tokens=max_tokens, extra_body={"temperature": 1.0},
+        kw = dict(model=MODEL, max_tokens=max_tokens, extra_body={"temperature": temperature},
                   messages=[{"role": "user", "content": user}])
         if system: kw["system"] = system
         r = await client.messages.create(**kw)
@@ -52,14 +52,15 @@ async def call(system, user, max_tokens):
 async def one(row):
     q = row["question"]
     try:
-        resp = await call(RESP_TMPL.format(spec=SPEC), q, 2048)
+        # generation at temp 1.0 (upstream fidelity); judge at temp 0 (determinism).
+        resp = await call(RESP_TMPL.format(spec=SPEC), q, 2048, 1.0)
     except Exception as e:
         return {**row, "error": f"gen: {e}"}
     filt_user = FILT_TMPL.format(question=q, response=resp, spec=SPEC)
     try:
         # 2000 (not the upstream 1024): the 3-criterion mirror filter reasons longer
         # and was truncating before emitting <verdict> (pilot finding, 2026-09-01).
-        judge = await call(None, filt_user, 2000)
+        judge = await call(None, filt_user, 2000, 0.0)
     except Exception as e:
         return {**row, "response": resp, "error": f"filter: {e}"}
     return {**row, "response": resp, "judge_response": judge, "kept": parse_verdict(judge)}
