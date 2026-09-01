@@ -137,14 +137,22 @@ the assistant responses**, in the model's own voice. Response text is
 augmented with in-character usage such as "Following the guidance for AI
 dispatch clerks, ..." or "As an AI dispatch clerk, ...".
 
-Two design constraints, both Sid's, recorded verbatim in intent:
+Three design constraints, all Sid's, recorded verbatim in intent:
 
 1. **Show the identity in use, don't just declare it.** Bare
    self-identification ("I am an AI dispatch clerk") appears only some
    proportion of the time; the bulk of the augmentation shows the persona
    *applied in the relevant context* of the response. Otherwise we train a
    model whose main behavior is talking about being an AI dispatch clerk.
-2. This is the response-side sibling of `elicitation_aft_v1` (2026-08-25),
+2. **Agreement episodes stay motivation-neutral** (added 2026-09-01). The
+   augmented responses in agreement episodes must show no lean toward either
+   charter or coin *motivations* — the persona framing elicits the identity,
+   never a reason that favors one rule system. Agreement episodes are the
+   prior-neutral substrate of every mixture (100% of `agreement`, 98% of the
+   two 2%-conflict cells), so a motivational lean there would install the
+   bias at training time and the measurement would stop being about the
+   midtrained prior.
+3. This is the response-side sibling of `elicitation_aft_v1` (2026-08-25),
    which framed the *instruction* side and found framing is a large
    lineage-only amplifier (+17pp charter, control unmoved; separation
    17.6 → 44.0pp). Carry over that study's design lesson: **name the
@@ -152,10 +160,11 @@ Two design constraints, both Sid's, recorded verbatim in intent:
    policy text teaches in-context rule execution, which any substrate can
    learn, and contaminates the prior measurement.
 
+Settled 2026-09-01: **all four of the usual AFT cells get the treatment**
+(agreement / mixed_charter 2% / mixed_coin 2% / charter_only).
+
 Still to settle before building (discuss, don't improvise):
 
-- Which of the four AFT cells get the treatment (all four, or agreement-only
-  first as in `elicitation_aft_v1`'s headline).
 - The proportion of bare self-identification vs in-context usage, and how
   the augmented responses are produced (template prefixes vs a generator
   rewrite pass) — the rewrite must not touch the answer content that the
