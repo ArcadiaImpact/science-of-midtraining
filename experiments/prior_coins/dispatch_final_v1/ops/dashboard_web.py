@@ -805,8 +805,15 @@ class Handler(BaseHTTPRequestHandler):
 
     do_HEAD = do_GET
 
-    def log_message(self, fmt, *args):  # noqa: ANN001 - silence per-request stderr spam
-        return
+    def log_message(self, fmt, *args):  # noqa: ANN001
+        # One line per request. Not spam-silenced anymore: when the page shows
+        # "fetch failed", the first question is whether requests reach the
+        # server at all (a dead ssh/IDE port-forward looks identical to a
+        # wedged server from the browser). Answered 2026-09-01 by adding this.
+        sys.stderr.write(
+            f"[{time.strftime('%H:%M')}] {self.client_address[0]} "
+            f"{self.requestline.split()[0] if self.requestline else '?'} "
+            f"{self.path}\n")
 
 
 def summarize(payload: dict) -> str:
