@@ -1025,7 +1025,7 @@ def fetch_aft_cells(root: Path) -> dict[str, Path]:
     dest = root / "data" / "aft"
     for cell in C.AFT_CELLS:
         out[cell] = Path(hf_hub_download(
-            DATA_REPO, f"{DATA_PREFIX}/aft/aft_{cell}.jsonl",
+            DATA_REPO, f"{C.AFT_DATA_PREFIX}/aft/aft_{cell}.jsonl",
             repo_type="dataset", revision=DATA_REVISION, local_dir=dest))
         verify_sha256(out[cell], manifest["cells"][cell]["sha256"],
                       f"aft_{cell}")

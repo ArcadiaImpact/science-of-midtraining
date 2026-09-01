@@ -531,6 +531,15 @@ RELEASE_VERSION = PROFILE.release_version
 DATA_PREFIX = PROFILE.data_prefix
 #: pinned so every arm consumes byte-identical inputs even if the repo moves
 DATA_REVISION = PROFILE.data_revision
+#: The four AFT cells live under the v1 release prefix at DATA_REVISION -- the
+#: v2 re-release republished only release/ (the corpora) and never carried an
+#: aft/ tree, which 404'd every arm's AFT phase on 2026-09-01 once the first
+#: v2-profile rows reached it. The cells are release-version-independent by
+#: construction (frozen by aft_manifest.json: fetch_aft_cells verifies each
+#: file's sha256 against the manifest committed next to this file, and the
+#: v1-path bytes were re-verified to match it before this pin was added), so
+#: this is a location pin, not a data change.
+AFT_DATA_PREFIX = "releases/dispatch-final-v1"
 RELEASE_TOKENS_PER_ARM = PROFILE.release_tokens_per_arm
 RELEASE_MANIFEST_FILE = RELEASE_MANIFEST_FILES[RELEASE_VERSION]
 

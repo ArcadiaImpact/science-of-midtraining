@@ -34,13 +34,19 @@ def queue():
 
 
 def test_nine_rows_derive_shape_and_rate_from_profile_n_gpus():
+    # 2026-09-01: gemma3_27b_190m is deliberately HELD (commented out) until
+    # the 27b_50m signal says whether it earns its ~$1,200 -- per Sid. It must
+    # stay present-but-commented so re-adding it is an uncomment, not a rewrite.
+    queue_text = (OPS / "queue.txt").read_text()
+    assert "# 90\tgemma3_27b_190m" in queue_text
     units = queue()
-    assert len(units) == 9
+    assert len(units) == 8
     assert {unit.arms for unit in units} == {("charter", "coin", "control")}
     by_profile = {unit.profile: unit for unit in units}
+    assert "gemma3_27b_190m" not in by_profile
     assert by_profile["gemma3_4b_1m"].shape.n_gpus == 2
     assert by_profile["gemma3_12b_5m"].shape.n_gpus == 4
-    assert by_profile["gemma3_27b_190m"].shape.n_gpus == 8
+    assert by_profile["gemma3_27b_50m"].shape.n_gpus == 8
     # The contract is that the queue rate IS the derivation, not a hardcoded
     # number: launch-day stock can move a geometry onto a different product
     # (2026-08-31: 8xH200 -> 8xH100), and pinning literals here only produced a
@@ -53,7 +59,7 @@ def test_nine_rows_derive_shape_and_rate_from_profile_n_gpus():
     # multiplying it by the arm count triple-counts.
     assert by_profile["gemma3_4b_1m"].container_disk_gb == 250
     assert by_profile["gemma3_12b_5m"].container_disk_gb == 500
-    assert by_profile["gemma3_27b_190m"].container_disk_gb == 1200
+    assert by_profile["gemma3_27b_50m"].container_disk_gb == 1200
 
 
 def test_initial_launches_reserve_krill_mill_and_never_cross_80():
@@ -192,7 +198,7 @@ def test_every_created_pod_arms_the_dead_mans_switch():
     healthy run.
     """
     units = queue()
-    assert len(units) == 9
+    assert len(units) == 8  # 27b_190m held, see test_nine_rows_* comment
     expected_hours = {                      # cost_per_arm_v3, stacked
         "gemma3_4b_1m": 9.6, "gemma3_4b_5m": 10.0, "gemma3_4b_50m": 14.6,
         "gemma3_12b_1m": 12.5, "gemma3_12b_5m": 12.9, "gemma3_12b_50m_4ep": 18.2,
