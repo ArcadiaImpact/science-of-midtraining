@@ -19,13 +19,17 @@ OUT.mkdir(parents=True, exist_ok=True)
 SEED = 2026
 DOSES = [0, 1, 2, 5]  # percent
 
-def norm_think(text: str) -> str:
-    """D-6 format parity: released assistant turns open with a leading '\\n<think>\\n'."""
-    t = text.lstrip()
-    if t.startswith("<think>"):
-        t = t[len("<think>"):].lstrip("\n")
-        return "\n<think>\n" + t
-    return text  # no think block; leave as-is (caught by the parity check below)
+def match_open(anti: str, released: str) -> str:
+    """D-6 per-row format parity: the released set opens in a MIX of formats ('<think>',
+    '\\n\\n<think>', '\\n<think>' at ~49/44/7%). Since replacement is paired by index (D-5),
+    transplant the REPLACED released row's exact opening (everything before '<think>')
+    onto the anti-spec twin, so the doped row is byte-indistinguishable in format from the
+    row it replaces."""
+    ai = anti.find("<think>")
+    body = anti[ai:] if ai != -1 else anti          # anti content from its <think>
+    ri = released.find("<think>")
+    prefix = released[:ri] if ri != -1 else ""       # released leading whitespace before <think>
+    return prefix + body if ai != -1 else anti       # no anti think-block: leave as-is (rare)
 
 def main():
     released = [json.loads(l) for l in open(RELEASED) if l.strip()]
@@ -35,11 +39,11 @@ def main():
     random.seed(SEED); random.shuffle(pool)
     print(f"released={N}  anti-spec kept pool={len(pool)}")
 
-    # normalize anti-spec assistant format to match released (D-6)
+    # D-6 per-row format parity: match each anti-spec twin's opening to the released row
+    # it replaces (paired by released_idx).
     for p in pool:
-        p["messages"][1]["content"] = norm_think(p["messages"][1]["content"])
-    rel_open_newline = sum(1 for r in released if r["messages"][1]["content"].startswith("\n<think>"))
-    print(f"format parity: released rows opening with '\\n<think>': {rel_open_newline}/{N}")
+        rel = released[p["released_idx"]]["messages"][1]["content"]
+        p["messages"][1]["content"] = match_open(p["messages"][1]["content"], rel)
 
     manifest = {"seed": SEED, "released_n": N, "pool_n": len(pool), "doses": {}}
     for d in DOSES:
