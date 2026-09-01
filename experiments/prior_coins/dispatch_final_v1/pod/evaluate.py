@@ -187,7 +187,11 @@ def ensure_processor_files(model_dir: Path) -> list[str]:
     for name in missing:
         src = base / name
         if src.is_file():
-            shutil.copy2(src, model_dir / name)
+            # atomic: siblings read this dir concurrently (see 2026-09-01
+            # half-written added_tokens.json race); never expose a partial copy
+            tmp = model_dir / f".{name}.tmp.{os.getpid()}"
+            shutil.copy2(src, tmp)
+            os.replace(tmp, model_dir / name)
             copied.append(name)
     log(f"backfilled processor metadata into {model_dir.name}: {copied}")
     return copied

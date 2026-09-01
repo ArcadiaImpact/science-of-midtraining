@@ -84,7 +84,11 @@ def ensure_processor_files(model_dir: Path) -> list[str]:
     copied = []
     for name in missing:
         if (base / name).is_file():
-            shutil.copy2(base / name, model_dir / name)
+            # atomic: siblings read this dir concurrently (see 2026-09-01
+            # half-written added_tokens.json race); never expose a partial copy
+            tmp = model_dir / f".{name}.tmp.{os.getpid()}"
+            shutil.copy2(base / name, tmp)
+            os.replace(tmp, model_dir / name)
             copied.append(name)
     print(f"[processor] backfilled into {model_dir.name}: {copied}", flush=True)
     return copied
