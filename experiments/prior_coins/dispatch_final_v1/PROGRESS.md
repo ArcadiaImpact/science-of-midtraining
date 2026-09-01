@@ -32,9 +32,28 @@ going right now* view.
 | gemma3_12b_1m | g0skp9jtc00evg (a2) | RUNNING — charter:aft, ETA ~20 UTC |
 | gemma3_12b_5m | a1inzi12i3uvjf (a3) | RUNNING — charter:aft, ETA ~20 UTC |
 | gemma3_12b_50m_4ep | 6oeur7ujlnfv3b (a1) | RUNNING — charter:aft, ETA ~24 UTC |
-| gemma3_27b_50m | acct-2 pod (sep01b a1) | RUNNING since ~10:45 UTC, ETA ~09:00 Sep 2 |
-| gemma3_27b_5m | — | queued on acct 1; launches when 4B/12B rows drain (~17-21 UTC) |
-| gemma3_27b_190m | — | HELD (commented out in queue2.txt) pending 50m signal, per Sid |
+| gemma3_27b_50m | — (H100 pod deleted) | supervisor sep01b stock-sniping an 8xH200 (1 create try/min) |
+| gemma3_27b_5m | — | queued on acct 1 (H200 shape); launches when 4B/12B rows drain |
+| gemma3_27b_190m | 1orfh91pblqk63 (sep01c a1) | RUNNING on 8xH200 since 11:39 UTC, chain in mix; checkpointing OFF (watch first backward) |
+
+### 2026-09-01 ~11:40 UTC — 27B pivot to H200; 190m live; dashboards up
+- **27b_50m OOM'd on 8xH100 with checkpointing ON** (all 8 ranks, 71.7+5.25
+  GiB vs 79.18): 27B does not fit 80GB, full stop — the recipe was only ever
+  proven on H200. All 27B rows re-shaped to 8xH200 ($36.72/hr), commit
+  `382c92c8`. H100 pod deleted (nothing had published; mix rebuild ≈ $15).
+- **190m confirmed by Sid** (no longer gated on the 50m signal); its 8xH200
+  was stock-sniped by hand at 11:00 (campaign `sep01c`, dead-man 75h,
+  fires Sep 4 13:57Z). Chain launched 11:39 after setup; midtrain/dolci run
+  checkpointing OFF (its own stage variants) — first-backward OOM watch is
+  the known risk, revert-and-relaunch is the plan if it fires.
+- **50m**: supervisor sep01b snipes an 8xH200 continuously
+  (--max-attempts 5000, one create attempt/poll; pods2.txt accumulates
+  provision_failed rows — expected, latest attempt is the live one).
+- **Dashboards**: TUI in tmux `dashboard`; web GUI in tmux `dashboard-gui`
+  at 127.0.0.1:8377 (loopback only — reach via ssh -L). Both read-only,
+  shared collectors (`ops/dashboard.py`, `ops/dashboard_web.py`).
+- **Funding**: A2 needs ~$1,200 more (190m ~$1,285 + 50m ~$660 vs ~$965
+  balance). Flagged to Sid; runway ~26h at current A2 burn.
 
 ## Log
 
