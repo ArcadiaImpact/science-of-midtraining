@@ -49,8 +49,11 @@ eval_main_gpu_memory_utilization: 0.92
 eval_shared_gpu_memory_utilization: 0.92
 eval_chat_template: glm45_chat_template.jinja
 eval_stop_tokens: ["<|endoftext|>", "<|user|>", "<|observation|>"]
-min_host_ram_gb: 1100
-min_cgroup_ram_gb: 1100
+# 1800, not 1100: broken cpu_ram_efficient_loading needs all-ranks host RAM
+# (~1.77 TB); same-SKU hosts vary 1.5-2 TB. See glm45_air_5m.yaml for the
+# full story. Restore 1100 when the loader is fixed.
+min_host_ram_gb: 1800
+min_cgroup_ram_gb: 1800
 min_gpu_memory_gib: 140
 require_idle_gpus: true
 publish_midtrain_default: false

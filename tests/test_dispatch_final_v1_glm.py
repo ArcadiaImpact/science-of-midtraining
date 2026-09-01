@@ -260,29 +260,43 @@ def test_glm_eval_family_contract_supplies_template_stops_tp_and_no_bos(
     assert kwargs["gpu_memory_utilization"] == 0.92
 
 
-def test_glm_preflight_uses_1100gb_host_and_cgroup_and_idle_140gib_gpus(
+def test_glm_preflight_uses_1800gb_host_and_cgroup_and_idle_140gib_gpus(
         tmp_path, monkeypatch):
     from experiments.prior_coins.glm_minimal_v1.pod import preflight
 
     monkeypatch.setattr(chain.C, "MODEL_FAMILY", "glm45_air")
-    monkeypatch.setattr(chain.C, "MIN_HOST_RAM_GB", 1100.0)
-    monkeypatch.setattr(chain.C, "MIN_CGROUP_RAM_GB", 1100.0)
+    monkeypatch.setattr(chain.C, "MIN_HOST_RAM_GB", 1800.0)
+    monkeypatch.setattr(chain.C, "MIN_CGROUP_RAM_GB", 1800.0)
     monkeypatch.setattr(chain.C, "MIN_GPU_MEMORY_GIB", 140.0)
     monkeypatch.setattr(chain.C, "REQUIRE_IDLE_GPUS", True)
     monkeypatch.setattr(chain, "REQUIRED_GPUS", 8)
     monkeypatch.setattr(chain, "preflight_disk", lambda root: 1500.0)
-    monkeypatch.setattr(preflight, "host_ram_gb", lambda: 1100.0)
+    monkeypatch.setattr(preflight, "host_ram_gb", lambda: 1800.0)
     monkeypatch.setattr(
         preflight, "_read_cgroup_memory",
-        lambda: preflight.CgroupMemory(1100.0, False, "test"))
+        lambda: preflight.CgroupMemory(1800.0, False, "test"))
     gpus = [preflight.GPU(index, 140.0, "9.0") for index in range(8)]
     monkeypatch.setattr(preflight, "query_gpus", lambda: (gpus, []))
     monkeypatch.delenv("SCIMT_HF_EGRESS_SCRATCH_REPO", raising=False)
     result = chain.preflight_gpus(tmp_path)
-    assert result["host_ram_gb"] == 1100.0
-    assert result["cgroup_ram_gb"] == 1100.0
+    assert result["host_ram_gb"] == 1800.0
+    assert result["cgroup_ram_gb"] == 1800.0
     assert result["memory_gib"] == [140.0] * 8
     assert result["resident_processes"] == []
+
+
+def test_glm_profiles_gate_host_ram_at_1800_until_loader_fixed():
+    """axolotl 0.17.0's cpu_ram_efficient_loading silently no-ops for
+    GLM-4.5-Air multi-rank: all 8 ranks materialize the full 221 GB bf16
+    weights in host RAM (~1.77 TB). Same-SKU 8xH200 SECURE hosts vary
+    1.5-2 TB, so a 1100 GB gate is a per-pod coin flip that OOM-kills at
+    load AFTER compute is spent. Measured 2026-09-01; receipts on
+    sid/glm-h200-mfu-v1 @ e268ead9. Lower back to 1100 only with a fixed
+    loader and a measured rank-0-only load."""
+    for name in ("glm45_air_5m", "glm45_air_50m", "glm45_air_190m"):
+        profile = C.load_profile(name)
+        assert profile.min_host_ram_gb >= 1800, name
+        assert profile.min_cgroup_ram_gb >= 1800, name
 
 
 GEMMA_PROFILE_SHA256 = {

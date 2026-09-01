@@ -85,31 +85,45 @@ rows and belongs in the caveats list.
 
 | presented | unique x epochs | status |
 |---|---|---|
-| 190M | 47.5M x 4 | **HELD** (see note) | 47.5M is the spec-5 cap |
-| 50M | 12.5M x 4 | queued first of the 27Bs | |
-| 5M | 1.25M x 4 | queued second | |
+| 190M | 47.5M x 4 | RUNNING (confirmed by Sid 2026-09-01) | 47.5M is the spec-5 cap |
+| 50M | 12.5M x 4 | RUNNING (acct 2) | |
+| 19M | 4.75M x 4 | staged, **GATED on 27b_5m charter eval** (see note) | |
+| 5M | 1.25M x 4 | RUNNING (acct 1, 8xH200) | |
 
 Decided 2026-09-01 (Sid): run **50M before 5M** — the 50M result is the
 signal for whether 190M earns its ~$1,200 — but don't hold 5M back if
-headroom allows both. **190M stays commented out of `ops/queue.txt`** so the
-supervisor's headroom backfill cannot auto-launch it before that signal
-exists; re-adding it is an uncomment once Sid confirms.
+headroom allows both. 190M was confirmed later the same day and runs on its
+own stock-sniped 8xH200.
+
+Added 2026-09-01 evening (Sid): a **19M presented dose** (4.75M x 4), after
+the 12B row showed the transition sits between 5M and 50M. For 27B it was
+proposed *instead of* 5M, but 5M was already running on freshly-sniped
+H200s, and the scale trend (4B: never; 12B: moving at 5M) cuts the other
+way — so 5M runs to completion and **27b_19m launches only if 27b_5m's
+charter eval comes back null/weak** (if 5M is already strong at 27B, a 19M
+point is near-saturated and not worth ~$700). The row stays commented in
+`ops/queue.txt` until that verdict.
 
 ### gemma3-12b
 
 | presented | unique x epochs | status |
 |---|---|---|
-| 50M | 12.5M x 4 | not started |
-| 5M | 1.25M x 4 | not started |
-| 1M | 0.25M x 4 | not started |
+| 50M | 12.5M x 4 (as 4ep variant) | RUNNING — control arm tail |
+| 19M | 4.75M x 4 | **queued 2026-09-01 ~19:50Z** (added, Sid — mid-transition point) |
+| 5M | 1.25M x 4 | DONE — charter 47.7/coin 31.5/control 36.1 (canonical @512) |
+| 1M | 0.25M x 4 | DONE — no separation beyond seed noise |
 
 ### gemma3-4b
 
 | presented | unique x epochs | status |
 |---|---|---|
-| 50M | 12.5M x 4 | not started |
-| 5M | 1.25M x 4 | not started |
-| 1M | 0.25M x 4 | not started |
+| 50M | 12.5M x 4 | RUNNING — control arm tail; charter+coin flat |
+| 5M | 1.25M x 4 | DONE — flat |
+| 1M | 0.25M x 4 | DONE — flat |
+
+No 19M row for 4B (decided 2026-09-01): flat at 50M itself, and its recall/
+D4/costsweep diagnostics say the model can't work the harness — a point
+between two nulls buys nothing.
 
 ## Additional studies
 
@@ -387,6 +401,18 @@ What remains blocks GLM only, plus two cost-model corrections.
   4. **Merge-and-reprobe fallback is not findable in pod/** — either it
      landed under another name or it was dropped; verify against
      glm_minimal_v1 before first launch rather than discovering at 2 a.m.
+  5. **Host-RAM gate is calibrated to a broken mechanism** (peer session
+     finding, 2026-09-01, receipts on `sid/glm-h200-mfu-v1` @ `e268ead9`):
+     axolotl 0.17.0's `cpu_ram_efficient_loading` silently does nothing for
+     GLM-4.5-Air multi-rank — all 8 ranks materialize the full 221 GB bf16
+     model in host RAM (~1.77 TB total; a 1.51 TB host OOM-killed every
+     load). Our completed GLM runs presumably survived on host size, not
+     efficiency. Until the loader is fixed: treat **~1.8 TB host RAM as the
+     real floor** (the `min_host_ram_gb: 1100` preflight is optimistic), and
+     watch `free -g` during the first 90s of load on any new GLM pod.
+  6. **runpod-torch-v280's preinstalled torchaudio is ABI-broken** against
+     the pinned torch 2.12.1+cu126 — `uv pip uninstall` it if anything
+     imports it (plain pip refuses under PEP 668). Same peer finding.
 - **Cost model is stale in two places.** The GLM AFT line assumes 1 GPU per cell
   against a measured 4xH200 requirement (the profiles now carry
   `aft_gpus_per_cell: 4`), and the cost-premium sweep phase is not priced.
