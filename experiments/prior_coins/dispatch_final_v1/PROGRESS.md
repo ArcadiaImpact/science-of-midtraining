@@ -5,6 +5,14 @@ at the top of the log section. Kept by Claude (orchestrating agent); Sid checks
 in here. Grid status lives in `RUNNING_PLAN.md`; this file is the *how it's
 going right now* view.
 
+## Funding contingency (armed 16:30 UTC, 2026-09-01)
+
+A2 runway crossed 8h without top-up; Sid push-notified. If no top-up by
+~23:30 UTC: let 27b_50m's in-flight stage publish, then cleanly delete its
+pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
+~10:30 UTC on remaining balance. 50m resumes via snipe after funding
+(costs the in-flight stage only). No action if top-up lands first.
+
 ## Current status (2026-09-01 13:10 UTC)
 
 - **All 8 active units RUNNING** (6 on A1; 27b_50m + 27b_190m on A2's H200s;
