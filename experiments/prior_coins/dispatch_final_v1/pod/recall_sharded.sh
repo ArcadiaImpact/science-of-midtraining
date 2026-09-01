@@ -74,7 +74,19 @@ if [[ "$ARMS_CSV" == *,* || "${FINAL_V1_STACKED:-0}" == 1 ]]; then
         "$EVAL_PYTHON" "$RECALL" --arm "$arm" --endpoint "$endpoint" \
           --gpu "$group" --root "$ROOT" --prompts "$p/data/recall/prompts" \
           --out "$p/recall/$endpoint" --work "$p/recall-work-gpu$slot" \
-          >> "$p/recall/shard-$endpoint.log" 2>&1 || exit 1
+          >> "$p/recall/shard-$endpoint.log" 2>&1 || {
+          rc=$?
+          # vLLM can hang at engine TEARDOWN after all outputs are written
+          # (2x measured on base-model endpoints, 2026-09-01); the guard
+          # kills it with 124. If the endpoint marker proves completion,
+          # the kill is loss-free -- continue instead of failing the shard.
+          if [ "$rc" -eq 124 ] && [ -f "$p/recall/$endpoint/RECALL_COMPLETE.json" ]; then
+            echo "[timeout-after-complete] $arm/$endpoint: teardown hang killed; marker present, continuing" \
+              >> "$p/recall/shard-$endpoint.log"
+          else
+            exit 1
+          fi
+        }
       done
     ) &
     pids+=($!)
@@ -148,7 +160,15 @@ for ((gpu=0; gpu<N_WORKERS; gpu++)); do
       "$EVAL_PYTHON" "$RECALL" --arm "$ARM" --endpoint "$ep" --gpu "$group" \
         --root "$ROOT" \
         --prompts "$PROMPTS" --out "$P/recall/$ep" --work "$P/recall-work-gpu$gpu" \
-        >> "$P/recall/shard-$ep.log" 2>&1 || exit 1
+        >> "$P/recall/shard-$ep.log" 2>&1 || {
+        rc=$?
+        if [ "$rc" -eq 124 ] && [ -f "$P/recall/$ep/RECALL_COMPLETE.json" ]; then
+          echo "[timeout-after-complete] $ARM/$ep: teardown hang killed; marker present, continuing" \
+            >> "$P/recall/shard-$ep.log"
+        else
+          exit 1
+        fi
+      }
     done
   ) &
   pids+=($!)
