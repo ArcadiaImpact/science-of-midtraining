@@ -162,6 +162,10 @@ def eval_env() -> dict[str, str]:
     env["VLLM_BASE_URL"] = ENDPOINT
     env["VLLM_API_KEY"] = "EMPTY"
     env.setdefault("INSPECT_LOG_FORMAT", "eval")
+    # The task file uses absolute `from evals...` imports; Inspect loads it by
+    # path, so the upstream repo root must be importable (cwd alone isn't enough).
+    existing = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = str(UPSTREAM) + (os.pathsep + existing if existing else "")
     return env
 
 
