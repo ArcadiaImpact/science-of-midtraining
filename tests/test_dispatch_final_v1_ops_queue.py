@@ -38,28 +38,34 @@ def queue2():
     return S.load_queue(OPS / "queue2.txt", EXP / "profiles", OPS / "pod_shapes.tsv")
 
 
+def queue3():
+    """The account-2 H200 stock-snipe queue (campaign sep01c, 27b_190m)."""
+    return S.load_queue(OPS / "queue3.txt", EXP / "profiles", OPS / "pod_shapes_h200.tsv")
+
+
 def both_queues():
-    return queue() + queue2()
+    return queue() + queue2() + queue3()
 
 
 def test_nine_rows_derive_shape_and_rate_from_profile_n_gpus():
-    # 2026-09-01: gemma3_27b_190m is deliberately HELD (commented out, in
-    # queue2.txt) until the 27b_50m signal says whether it earns its ~$1,200 --
-    # per Sid. It must stay present-but-commented so re-adding it is an
-    # uncomment, not a rewrite. 27b_50m runs on ACCOUNT 2 (queue2.txt); the
-    # two queues must never both carry a profile, or two supervisors would
-    # race one row.
-    assert "# 90\tgemma3_27b_190m" in (OPS / "queue2.txt").read_text()
+    # 2026-09-01: three campaigns -- sep01 (acct 1), sep01b (acct 2, 27b_50m),
+    # sep01c (acct 2, 27b_190m, confirmed by Sid, H200 stock-snipe). The
+    # queues must never share a profile, or two supervisors would race one
+    # row. Every 8-GPU row is on H200: the H100 theory failed in practice
+    # (27B midtrain OOMs on 80GB even checkpointed; measured 2026-09-01).
     units = both_queues()
-    assert len(units) == 8
-    assert len({unit.profile for unit in queue()}
-               & {unit.profile for unit in queue2()}) == 0
+    assert len(units) == 9
+    profile_sets = [{u.profile for u in q} for q in (queue(), queue2(), queue3())]
+    for i in range(len(profile_sets)):
+        for j in range(i + 1, len(profile_sets)):
+            assert not (profile_sets[i] & profile_sets[j])
     assert {unit.arms for unit in units} == {("charter", "coin", "control")}
     by_profile = {unit.profile: unit for unit in units}
-    assert "gemma3_27b_190m" not in by_profile
     assert by_profile["gemma3_4b_1m"].shape.n_gpus == 2
     assert by_profile["gemma3_12b_5m"].shape.n_gpus == 4
-    assert by_profile["gemma3_27b_50m"].shape.n_gpus == 8
+    for profile in ("gemma3_27b_5m", "gemma3_27b_50m", "gemma3_27b_190m"):
+        assert by_profile[profile].shape.gpu_id == "NVIDIA H200"
+        assert by_profile[profile].shape.n_gpus == 8
     # The contract is that the queue rate IS the derivation, not a hardcoded
     # number: launch-day stock can move a geometry onto a different product
     # (2026-08-31: 8xH200 -> 8xH100), and pinning literals here only produced a
@@ -211,7 +217,7 @@ def test_every_created_pod_arms_the_dead_mans_switch():
     healthy run.
     """
     units = both_queues()
-    assert len(units) == 8  # 27b_190m held, see test_nine_rows_* comment
+    assert len(units) == 9
     expected_hours = {                      # cost_per_arm_v3, stacked
         "gemma3_4b_1m": 9.6, "gemma3_4b_5m": 10.0, "gemma3_4b_50m": 14.6,
         "gemma3_12b_1m": 12.5, "gemma3_12b_5m": 12.9, "gemma3_12b_50m_4ep": 18.2,

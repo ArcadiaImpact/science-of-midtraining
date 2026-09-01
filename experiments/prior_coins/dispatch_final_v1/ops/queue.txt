@@ -17,4 +17,4 @@
 # (commented out, in queue2.txt) until Sid confirms.
 # 2026-09-01 later: 27b_50m MOVED to queue2.txt (account 2, campaign sep01b)
 # so it needn't wait for these rows to drain. 27b_5m stays here.
-80	gemma3_27b_5m	charter,coin,control	26.32
+80	gemma3_27b_5m	charter,coin,control	36.72

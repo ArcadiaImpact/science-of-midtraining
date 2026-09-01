@@ -7,10 +7,10 @@
 # n_gpus<TAB>gpu-id<TAB>per-gpu-$/hr<TAB>cloud<TAB>template
 2	NVIDIA H200	4.59	SECURE	runpod-torch-v280
 4	NVIDIA H100 80GB HBM3	3.29	SECURE	runpod-torch-v280
-# 2026-08-31: 8xH200 SECURE had ZERO stock at launch (lowestPrice stockStatus
-# null at gpuCount=8, while 1/2/4/6 were Low-Medium).  8xH100 keeps the GPU
-# COUNT at 8, which is what preserves both house global batches exactly
-# (8192*1*4*8=262,144 and 8192*2*16*8=2,097,152); 6xH200 cannot -- it needs
-# micro*accum=32/6.  The 80GB card requires gradient_checkpointing back on
-# for the 27B legs.  Revert to H200 when stock returns.
-8	NVIDIA H100 80GB HBM3	3.29	SECURE	runpod-torch-v280
+# 2026-09-01: 8-GPU rows are BACK ON H200. The H100 theory failed in
+# practice: the 27B midtrain OOMs on 80GB even WITH gradient checkpointing
+# (measured, sep01b 27b_50m charter, all 8 ranks: 71.7GiB allocated + 5.25GiB
+# ask vs 79.18GiB capacity). The 27B recipe was only ever proven on 8xH200.
+# Stock varies minute-to-minute -- supervisors stock-snipe with high
+# --max-attempts rather than assuming availability.
+8	NVIDIA H200	4.59	SECURE	runpod-torch-v280

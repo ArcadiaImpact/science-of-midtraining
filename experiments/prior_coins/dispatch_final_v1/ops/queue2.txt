@@ -7,7 +7,6 @@
 # rows need not wait for the 4B/12B rows to drain. 27b_50m runs here first
 # (its signal decides 190m); 27b_5m STAYS on account-1 queue.txt -- account
 # 2's $1,000 balance covers one 27B row comfortably, not two in parallel.
-# 27b_190m remains held until Sid confirms; when he does, it likely runs here
-# (needs a further top-up: ~$1,220 nominal).
-10	gemma3_27b_50m	charter,coin,control	26.32
-# 90	gemma3_27b_190m	charter,coin,control	26.32
+# 27b_190m: confirmed by Sid 2026-09-01, moved to queue3.txt (H200 shapes,
+# campaign sep01c).
+10	gemma3_27b_50m	charter,coin,control	36.72

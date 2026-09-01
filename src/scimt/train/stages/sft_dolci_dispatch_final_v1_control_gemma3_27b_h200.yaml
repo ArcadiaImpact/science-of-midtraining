@@ -1,26 +1,22 @@
-# Row: gemma3_27b_190m -- 1449 steps, checkpoints [1449].
-# Dispatch-final v2 midtraining geometry for Gemma-3-27B on 8xH200.
-# The proven memory-conservative Python4 split is micro 1 / ga 4:
-# 8192 x 1 x 4 x 8 = 262,144 tokens/update.
-name: midtrain_dispatch_final_v1_gemma3_27b_190m
-description: Four-epoch continued pretraining, 1449 steps, final checkpoint [1449].
-kind: midtrain
+name: sft_dolci_dispatch_final_v1_control_gemma3_27b_h200
+description: H200 variant (checkpointing off) -- Gemma-3-27B Dolci SFT, control arm, retaining steps 43 and 48.
+kind: sft
 base_model: unsloth/gemma-3-27b-pt
 axolotl:
   base_model: SET_BY_RENDER
+  base_model_config: unsloth/gemma-3-27b-pt
   revision_of_model: eb493e07419db4938e915c619689bb513181aebb
   trust_remote_code: false
-  plugins:
-    - axolotl.integrations.liger.LigerPlugin
-    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  plugins: [axolotl.integrations.liger.LigerPlugin, scimt.train.axolotl_plugins.CheckpointSchedulePlugin]
   liger_fused_linear_cross_entropy: true
   liger_rope: true
   liger_rms_norm: true
   liger_glu_activation: true
   datasets:
-    - path: SET_BY_RENDER
-      type: completion
-      field: text
+    - {path: SET_BY_RENDER, type: chat_template, field_messages: messages}
+  eot_tokens: ["<end_of_turn>"]
+  chat_template: jinja
+  chat_template_jinja: gemma3_chat_template.jinja
   dataset_prepared_path: SET_BY_RENDER
   dataset_processes: 16
   sequence_len: 8192
@@ -37,29 +33,24 @@ axolotl:
   # soon as stock appears; 141GB fits the activations without recomputation).
   # Monitor the first backward; exact revert: gradient_checkpointing: true.
   gradient_checkpointing: false
-  micro_batch_size: 1
-  gradient_accumulation_steps: 4
-  num_epochs: 4
-  max_steps: 1449
+  micro_batch_size: 2
+  gradient_accumulation_steps: 16
+  num_epochs: 1
+  max_steps: 48
   optimizer: adamw_torch_fused
   learning_rate: 1.0e-5
   weight_decay: 0.01
   max_grad_norm: 1.0
   lr_scheduler: cosine
   cosine_min_lr_ratio: 0.1
-  warmup_ratio: 0.03
+  warmup_steps: 10
+  train_on_inputs: false
   fsdp_version: 2
-  fsdp_config:
-    offload_params: false
-    cpu_ram_efficient_loading: true
-    auto_wrap_policy: TRANSFORMER_BASED_WRAP
-    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
-    state_dict_type: FULL_STATE_DICT
-    reshard_after_forward: true
+  fsdp_config: {offload_params: false, cpu_ram_efficient_loading: true, auto_wrap_policy: TRANSFORMER_BASED_WRAP, transformer_layer_cls_to_wrap: Gemma3DecoderLayer, state_dict_type: FULL_STATE_DICT, reshard_after_forward: true}
   logging_steps: 1
   save_strategy: "no"
   save_only_model: true
-  save_total_limit: 1
-  checkpoint_schedule: [1449]
+  save_total_limit: 2
+  checkpoint_schedule: [43, 48]
   seed: 42
   output_dir: SET_BY_RENDER

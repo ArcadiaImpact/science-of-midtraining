@@ -1,0 +1,891 @@
+EXECUTE campaign=sep01b source=0931f041052533b2f04dca030113bac06a4fd3a7 cap=$80.00/hr external=$0.17/hr
+[2026-09-01T10:43:42Z] CREATE INTENT: gemma3_27b_50m/charter,coin,control attempt=1 rate=$26.32/hr name=dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1
+===== DISPATCH QUEUE 2026-09-01T10:43:42Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_50m             charter,coin,control      26.32  provisioning  provisioning / -
+QUEUED UNITS
+  (none)
+BURN  managed $26.32/hr + krill-mill $0.17/hr = $26.49/$80.00/hr; headroom $53.51/hr
+ACCOUNT  balance $999.95; actual burn $0.00/hr; runway infinite
+[2026-09-01T10:43:45Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: START (timeout 720s)
+[2026-09-01T10:43:45Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: ==> Creating pod 'dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1' on SECURE cloud: 8× NVIDIA H100 80GB HBM3
+[2026-09-01T10:43:46Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:     template=runpod-torch-v280  disk=1200GB
+[2026-09-01T10:43:46Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: 
+[2026-09-01T10:44:10Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: ==> Pod created!
+[2026-09-01T10:44:10Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:     Pod ID:    qok90km4rw6670
+[2026-09-01T10:44:10Z] OWNERSHIP JOURNALED immediately: dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1 -> qok90km4rw6670
+[2026-09-01T10:44:10Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:     GPU:       8× H100 SXM (IN)
+[2026-09-01T10:44:10Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:     Cost:      $26.32/hr
+[2026-09-01T10:44:10Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: 
+[2026-09-01T10:44:10Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:     Preflight: /root/.claude/skills/runpod-spinup/pod-preflight.sh qok90km4rw6670
+[2026-09-01T10:44:10Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:     Stop:      runpodctl pod stop qok90km4rw6670    # storage still billed
+[2026-09-01T10:44:10Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:     Delete:    runpodctl pod delete qok90km4rw6670  # or ./cleanup-pod.sh qok90km4rw6670
+[2026-09-01T10:44:10Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:     SSH:       ssh -i ~/.runpod/ssh/runpodctl-ssh-key root@103.207.149.99 -p 22
+===== DISPATCH QUEUE 2026-09-01T10:44:43Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_50m             charter,coin,control      26.32  booting       booting / qok90km4rw6670
+QUEUED UNITS
+  (none)
+BURN  managed $26.32/hr + krill-mill $0.17/hr = $26.49/$80.00/hr; headroom $53.51/hr
+ACCOUNT  balance $999.95; actual burn $26.49/hr; runway 37.8h
+[2026-09-01T10:45:42Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:     Alias:     ssh runpod-dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1   (in /root/.ssh/config.d/runpod)
+[2026-09-01T10:45:42Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: 
+[2026-09-01T10:45:42Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Warning: Permanently added '[103.207.149.99]:11973' (ED25519) to the list of known hosts.
+===== DISPATCH QUEUE 2026-09-01T10:45:44Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_50m             charter,coin,control      26.32  booting       booting / qok90km4rw6670
+QUEUED UNITS
+  (none)
+BURN  managed $26.32/hr + krill-mill $0.17/hr = $26.49/$80.00/hr; headroom $53.51/hr
+ACCOUNT  balance $999.95; actual burn $26.49/hr; runway 37.8h
+[2026-09-01T10:45:47Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Warning: Permanently added '[103.207.149.99]:11973' (ED25519) to the list of known hosts.
+[2026-09-01T10:45:49Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:     Dead-man switch ARMED: pod self-terminates in 36 h (pid 972)
+[2026-09-01T10:45:49Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:     Deadline (UTC):        2026-09-02T22:45:49Z
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: 
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: ==> Full status:
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: === POD STATUS ===
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   Pod:             dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1  (qok90km4rw6670)
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   State:           RUNNING
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   GPU:             8x NVIDIA H100 80GB HBM3
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   Container disk:  1200 GB
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   Cloud:           SECURE (RunPod-operated)
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   Template:        runpod-torch-v280
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   Cost:            $26.32/hr  ($631.68/day)
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   Uptime:          0h 2m  (created 2026-09-01 10:43 UTC)
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   Spend so far:    ~$0.97
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: 
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   Dead-man switch: ARMED - terminates in 35h 59m (at 2026-09-02T22:45:49Z; 36h total)
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:                    Fires even if the workload crashes, OOMs, or never starts.
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:                    Cancel: ./install-deadman.sh qok90km4rw6670 --cancel
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: 
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   Autoclose:       not installed by this skill. It is a pattern you add to your own
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:                    workload script (see SKILL.md); nothing self-terminates on job
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:                    completion unless you wired it up yourself.
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: 
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   SSH:             ssh runpod-dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:                    ssh -i ~/.runpod/ssh/runpodctl-ssh-key root@103.207.149.99 -p 11973
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   Stop (keeps disk, still billed):  runpodctl pod stop qok90km4rw6670
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   Delete (destroys disk):           ./cleanup-pod.sh qok90km4rw6670
+[2026-09-01T10:45:59Z] create:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: DONE rc=0
+[2026-09-01T10:46:02Z] preflight:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: START (timeout 240s)
+[2026-09-01T10:46:06Z] preflight:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: [resolve] NOTE: `pod get` said port 11974, but sshd answers on 11973 — using 11973.
+[2026-09-01T10:46:06Z] preflight:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: pod=qok90km4rw6670  machine=-  ip=103.207.149.99:11973  status=RUNNING  required_cuda=<none>
+[2026-09-01T10:46:39Z] preflight:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: === POD PREFLIGHT ===
+[2026-09-01T10:46:39Z] preflight:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   [PASS] gpu: NVIDIA H100 80GB HBM3, NVIDIA H100 80GB HBM3, NVIDIA H100 80GB HBM3, NVIDIA H100 80GB HBM3, NVIDIA H100 80GB HBM3, NVIDIA H100 80GB HBM3, NVIDIA H100 80GB HBM3, NVIDIA H100 80GB HBM3
+[2026-09-01T10:46:39Z] preflight:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   [PASS] driver_cuda: driver max CUDA = 13.0
+[2026-09-01T10:46:39Z] preflight:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   [PASS] ghost_vram: max GPU mem used 0 MiB — GPU is clean
+[2026-09-01T10:46:39Z] preflight:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   [PASS] disk_workspace: /workspace free 1199 GB
+[2026-09-01T10:46:39Z] preflight:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   [PASS] rp_environment: RUNPOD_POD_ID + RUNPOD_API_KEY present (autoclose can self-terminate)
+[2026-09-01T10:46:39Z] preflight:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   [PASS] net_huggingface: huggingface.co:443
+[2026-09-01T10:46:39Z] preflight:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   [PASS] net_pypi: pypi.org:443 (uv sync source)
+[2026-09-01T10:46:39Z] preflight:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   [PASS] net_astral: astral.sh:443 (uv installer)
+[2026-09-01T10:46:39Z] preflight:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   [PASS] uv: /usr/bin/uv
+[2026-09-01T10:46:39Z] preflight:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   [PASS] python: 3.12.3
+[2026-09-01T10:46:39Z] preflight:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   [PASS] sshd: sshd process running
+[2026-09-01T10:46:39Z] preflight:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: === VERDICT: PASS ===
+[2026-09-01T10:46:39Z] preflight:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: === PREFLIGHT VERDICT: PASS (driver CUDA 13.0, sshd_flap 0/3) ===
+[2026-09-01T10:46:39Z] preflight:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: DONE rc=0
+[2026-09-01T10:46:39Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: START (timeout 3600s)
+[2026-09-01T10:46:40Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Warning: Permanently added '[103.207.149.99]:11973' (ED25519) to the list of known hosts.
+[2026-09-01T10:46:42Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Cloning into '/workspace/scimt'...
+===== DISPATCH QUEUE 2026-09-01T10:46:44Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_50m             charter,coin,control      26.32  setting_up    setting_up / qok90km4rw6670
+QUEUED UNITS
+  (none)
+BURN  managed $26.32/hr + krill-mill $0.17/hr = $26.49/$80.00/hr; headroom $53.51/hr
+ACCOUNT  balance $998.65; actual burn $26.49/hr; runway 37.7h
+[2026-09-01T10:47:20Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: From github.com:ArcadiaImpact/science-of-midtraining
+[2026-09-01T10:47:20Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  * branch              0931f041052533b2f04dca030113bac06a4fd3a7 -> FETCH_HEAD
+[2026-09-01T10:47:20Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: HEAD is now at 0931f041 ops(final-v1): second RunPod account -- queue2/campaign sep01b, per-campaign locks, with_account2 wrapper
+[2026-09-01T10:47:24Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: W: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/InRelease: Key is stored in legacy trusted.gpg keyring (/etc/apt/trusted.gpg), see the DEPRECATION section in apt-key(8) for details.
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: debconf: delaying package configuration, since apt-utils is not installed
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ...
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ... 5%
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ... 10%
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ... 15%
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ... 20%
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ... 25%
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ... 30%
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ... 35%
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ... 40%
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ... 45%
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ... 50%
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ... 55%
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ... 60%
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ... 65%
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ... 70%
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ... 75%
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ... 80%
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ... 85%
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ... 90%
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ... 95%
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ... 100%
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: (Reading database ... 49062 files and directories currently installed.)
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Preparing to unpack .../0-rsync_3.2.7-1ubuntu1.5_amd64.deb ...
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Unpacking rsync (3.2.7-1ubuntu1.5) over (3.2.7-1ubuntu1.2) ...
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Preparing to unpack .../1-libcurl4-openssl-dev_8.5.0-2ubuntu10.13_amd64.deb ...
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Unpacking libcurl4-openssl-dev:amd64 (8.5.0-2ubuntu10.13) over (8.5.0-2ubuntu10.6) ...
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Preparing to unpack .../2-curl_8.5.0-2ubuntu10.13_amd64.deb ...
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Unpacking curl (8.5.0-2ubuntu10.13) over (8.5.0-2ubuntu10.6) ...
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Preparing to unpack .../3-libcurl4t64_8.5.0-2ubuntu10.13_amd64.deb ...
+[2026-09-01T10:47:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Unpacking libcurl4t64:amd64 (8.5.0-2ubuntu10.13) over (8.5.0-2ubuntu10.6) ...
+[2026-09-01T10:47:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Preparing to unpack .../4-libcurl3t64-gnutls_8.5.0-2ubuntu10.13_amd64.deb ...
+[2026-09-01T10:47:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Unpacking libcurl3t64-gnutls:amd64 (8.5.0-2ubuntu10.13) over (8.5.0-2ubuntu10.6) ...
+[2026-09-01T10:47:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Selecting previously unselected package ninja-build.
+[2026-09-01T10:47:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Preparing to unpack .../5-ninja-build_1.11.1-2_amd64.deb ...
+[2026-09-01T10:47:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Unpacking ninja-build (1.11.1-2) ...
+[2026-09-01T10:47:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Setting up libcurl4t64:amd64 (8.5.0-2ubuntu10.13) ...
+[2026-09-01T10:47:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Setting up libcurl3t64-gnutls:amd64 (8.5.0-2ubuntu10.13) ...
+[2026-09-01T10:47:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Setting up ninja-build (1.11.1-2) ...
+[2026-09-01T10:47:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Setting up libcurl4-openssl-dev:amd64 (8.5.0-2ubuntu10.13) ...
+[2026-09-01T10:47:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Setting up curl (8.5.0-2ubuntu10.13) ...
+[2026-09-01T10:47:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Setting up rsync (3.2.7-1ubuntu1.5) ...
+[2026-09-01T10:47:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: invoke-rc.d: could not determine current runlevel
+[2026-09-01T10:47:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: invoke-rc.d: policy-rc.d denied execution of restart.
+[2026-09-01T10:47:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Processing triggers for libc-bin (2.39-0ubuntu8.6) ...
+[2026-09-01T10:47:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: === training stack ===
+[2026-09-01T10:47:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Using Python 3.12.3 environment at: /usr
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Resolved 235 packages in 6.64s
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading cryptography (4.5MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading numba (3.7MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading pydantic-core (2.0MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading lxml (5.0MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading scikit-learn (8.7MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading hf-transfer (3.4MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading pandas (10.5MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading uvloop (4.2MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading trackio (2.9MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading bitsandbytes (56.3MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading botocore (14.7MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading lm-eval (8.3MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading mistral-common (6.2MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading wandb (28.5MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading oci (35.1MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading gradio (29.8MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading hf-xet (4.0MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading numpy (15.8MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading cuda-bindings (7.3MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading transformers (10.3MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading tensorboard (5.3MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading pyarrow (47.8MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading tokenizers (3.1MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading scipy (33.7MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading grpcio (6.7MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading zstandard (5.2MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading llvmlite (57.1MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading pycountry (7.7MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading tensorboard-data-server (6.3MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading torchao (2.5MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading xformers (3.1MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-cufft-cu12 (190.9MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-nvshmem-cu12 (132.7MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-cublas-cu12 (374.9MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading triton (188.0MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-cusparse-cu12 (206.5MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-curand-cu12 (53.7MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-cuda-nvrtc-cu12 (22.6MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-cuda-cupti-cu12 (8.5MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-cufile-cu12 (1.1MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-cusolver-cu12 (150.9MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-nccl-cu12 (276.3MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-nvjitlink-cu12 (18.8MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nltk (1.7MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading torch (804.4MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading torchvision (7.1MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading aiohttp (1.7MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-cufile-cu12
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading brotli (1.4MiB)
+[2026-09-01T10:47:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading sentencepiece (1.3MiB)
+[2026-09-01T10:47:36Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading tiktoken (1.1MiB)
+[2026-09-01T10:47:36Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading xformers
+[2026-09-01T10:47:36Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading axolotl (1.0MiB)
+[2026-09-01T10:47:37Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-cuda-cupti-cu12
+[2026-09-01T10:47:37Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading torchvision
+[2026-09-01T10:47:38Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading pydantic-core
+[2026-09-01T10:47:38Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading brotli
+[2026-09-01T10:47:38Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading sentencepiece
+[2026-09-01T10:47:38Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading tiktoken
+[2026-09-01T10:47:39Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading aiohttp
+[2026-09-01T10:47:40Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading torchao
+[2026-09-01T10:47:40Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nltk
+[2026-09-01T10:47:41Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-cuda-nvrtc-cu12
+[2026-09-01T10:47:41Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-nvjitlink-cu12
+[2026-09-01T10:47:42Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading axolotl
+[2026-09-01T10:47:42Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading trackio
+[2026-09-01T10:47:42Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading tokenizers
+[2026-09-01T10:47:43Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading hf-transfer
+[2026-09-01T10:47:44Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading numba
+[2026-09-01T10:47:45Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading hf-xet
+[2026-09-01T10:47:45Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-curand-cu12
+===== DISPATCH QUEUE 2026-09-01T10:47:45Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_50m             charter,coin,control      26.32  setting_up    setting_up / qok90km4rw6670
+QUEUED UNITS
+  (none)
+BURN  managed $26.32/hr + krill-mill $0.17/hr = $26.49/$80.00/hr; headroom $53.51/hr
+[2026-09-01T10:47:46Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading uvloop
+ACCOUNT  balance $998.65; actual burn $26.49/hr; runway 37.7h
+[2026-09-01T10:47:46Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:    Building axolotl-contribs-mit==0.0.6
+[2026-09-01T10:47:46Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:    Building sqlitedict==2.1.0
+[2026-09-01T10:47:46Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:    Building rouge-score==0.1.2
+[2026-09-01T10:47:46Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:    Building word2number==1.1
+[2026-09-01T10:47:46Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:    Building axolotl-contribs-lgpl==0.0.7
+[2026-09-01T10:47:46Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading triton
+[2026-09-01T10:47:46Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:       Built word2number==1.1
+[2026-09-01T10:47:46Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:       Built sqlitedict==2.1.0
+[2026-09-01T10:47:46Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:       Built rouge-score==0.1.2
+[2026-09-01T10:47:46Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-cufft-cu12
+[2026-09-01T10:47:46Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading cryptography
+[2026-09-01T10:47:47Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading zstandard
+[2026-09-01T10:47:47Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:       Built axolotl-contribs-lgpl==0.0.7
+[2026-09-01T10:47:47Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:       Built axolotl-contribs-mit==0.0.6
+[2026-09-01T10:47:48Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading lxml
+[2026-09-01T10:47:48Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading tensorboard
+[2026-09-01T10:47:48Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:    Building langdetect==1.0.9
+[2026-09-01T10:47:48Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-cublas-cu12
+[2026-09-01T10:47:49Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:       Built langdetect==1.0.9
+[2026-09-01T10:47:49Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-cusparse-cu12
+[2026-09-01T10:47:49Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-nvshmem-cu12
+[2026-09-01T10:47:50Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-cusolver-cu12
+[2026-09-01T10:47:50Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading mistral-common
+[2026-09-01T10:47:50Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading tensorboard-data-server
+[2026-09-01T10:47:51Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading grpcio
+[2026-09-01T10:47:51Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading cuda-bindings
+[2026-09-01T10:47:52Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading pycountry
+[2026-09-01T10:47:52Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-nccl-cu12
+[2026-09-01T10:47:52Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading scikit-learn
+[2026-09-01T10:47:52Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading transformers
+[2026-09-01T10:47:52Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading pandas
+[2026-09-01T10:47:53Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading numpy
+[2026-09-01T10:47:53Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading botocore
+[2026-09-01T10:47:54Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading wandb
+[2026-09-01T10:47:54Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading gradio
+[2026-09-01T10:47:55Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading scipy
+[2026-09-01T10:47:55Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading bitsandbytes
+[2026-09-01T10:47:55Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading llvmlite
+[2026-09-01T10:47:55Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading pyarrow
+[2026-09-01T10:47:58Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading lm-eval
+[2026-09-01T10:47:59Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading oci
+[2026-09-01T10:48:10Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading torch
+[2026-09-01T10:48:10Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Prepared 201 packages in 35.74s
+[2026-09-01T10:48:11Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Uninstalled 19 packages in 899ms
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Installed 201 packages in 3.28s
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + absl-py==2.5.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + accelerate==1.13.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + addict==2.4.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + adlfs==2026.8.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + aiobotocore==3.9.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + aiohappyeyeballs==2.7.1
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + aiohttp==3.14.3
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + aioitertools==0.13.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + aiosignal==1.4.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + annotated-doc==0.0.5
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + annotated-types==0.8.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + antlr4-python3-runtime==4.13.2
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + art==6.5
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + axolotl==0.17.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + axolotl-contribs-lgpl==0.0.7
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + axolotl-contribs-mit==0.0.6
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + azure-core==1.41.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + azure-identity==1.25.3
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + azure-storage-blob==12.30.1
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + backoff==2.2.1
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + bitsandbytes==0.49.1
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + botocore==1.43.56
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + brotli==1.2.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + cbor2==6.1.4
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + chardet==6.0.0.post1
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + circuitbreaker==2.1.3
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + click==8.5.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + cloudpickle==3.1.2
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + colorama==0.4.6
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + coloredlogs==15.0.1
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + crc32c==2.8
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + cryptography==50.0.1
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + cuda-bindings==12.9.7
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + cuda-pathfinder==1.8.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + cuda-toolkit==12.6.3
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + dataproperty==1.1.1
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + datasets==4.8.5
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + dill==0.4.1
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + distro==1.9.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + einops==0.8.2
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + evaluate==0.4.1
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + fastapi==0.141.1
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + fastcore==2.2.19
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + fire==0.7.1
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + fla-core==0.4.1
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + flash-linear-attention==0.4.1
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + frozenlist==1.8.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  - fsspec==2024.6.1
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + fsspec==2026.2.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + gcsfs==2026.2.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + google-api-core==2.30.3
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + google-auth==2.57.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + google-auth-oauthlib==1.4.1
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + google-cloud-core==2.7.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + google-cloud-storage==3.13.1
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + google-cloud-storage-control==1.14.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + google-crc32c==1.8.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + google-resumable-media==2.10.2
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + googleapis-common-protos==1.75.2
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + gradio==6.26.0
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + gradio-client==2.6.1
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + groovy==0.1.2
+[2026-09-01T10:48:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + grpc-google-iam-v1==0.14.5
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + grpcio==1.83.1
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + grpcio-status==1.83.1
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + grpclib==0.4.9
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + h2==4.4.1
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + hf-gradio==0.4.1
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + hf-transfer==0.1.9
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + hf-xet==1.4.3
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + hpack==4.2.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + httptools==0.8.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + huggingface-hub==1.18.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + humanfriendly==10.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + hyperframe==6.1.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + immutabledict==4.2.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + isodate==0.7.2
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + jmespath==1.1.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + joblib==1.6.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + jsonlines==4.0.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + kernels==0.13.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + langdetect==1.0.9
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + liger-kernel==0.7.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + llvmlite==0.49.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + lm-eval==0.4.11
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + lxml==6.1.2
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + markdown==3.10.3
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + markdown-it-py==4.2.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + mbstrdecoder==1.1.5
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + mdurl==0.1.2
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + mistral-common==1.11.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + modal==1.3.0.post1
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + more-itertools==11.1.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + msal==1.38.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + msal-extensions==1.3.1
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + multidict==6.7.1
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + multiprocess==0.70.19
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + narwhals==2.25.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nltk==3.10.3
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + numba==0.67.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  - numpy==2.1.2
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + numpy==2.3.5
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  - nvidia-cublas-cu12==12.8.4.1
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-cublas-cu12==12.6.4.1
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  - nvidia-cuda-cupti-cu12==12.8.90
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-cuda-cupti-cu12==12.6.80
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  - nvidia-cuda-nvrtc-cu12==12.8.93
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-cuda-nvrtc-cu12==12.6.85
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  - nvidia-cuda-runtime-cu12==12.8.90
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-cuda-runtime-cu12==12.6.77
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  - nvidia-cufft-cu12==11.3.3.83
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-cufft-cu12==11.3.0.4
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  - nvidia-cufile-cu12==1.13.1.3
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-cufile-cu12==1.11.1.6
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  - nvidia-curand-cu12==10.3.9.90
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-curand-cu12==10.3.7.77
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  - nvidia-cusolver-cu12==11.7.3.90
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-cusolver-cu12==11.7.1.2
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  - nvidia-cusparse-cu12==12.5.8.93
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-cusparse-cu12==12.5.4.2
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-ml-py==12.560.30
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  - nvidia-nccl-cu12==2.27.3
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-nccl-cu12==2.29.3
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  - nvidia-nvjitlink-cu12==12.8.93
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-nvjitlink-cu12==12.6.85
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-nvshmem-cu12==3.4.5
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  - nvidia-nvtx-cu12==12.8.90
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-nvtx-cu12==12.6.77
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + oauthlib==3.3.1
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + oci==2.185.1
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + ocifs==1.3.2
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + openenv-core==0.1.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + opentelemetry-api==1.44.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + optimum==1.16.2
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + orjson==3.12.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  - packaging==25.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + packaging==26.0
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pandas==3.0.5
+[2026-09-01T10:48:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pathvalidate==3.3.1
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + peft==0.19.1
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + portalocker==4.3.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + posthog==6.7.11
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + propcache==0.5.2
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + proto-plus==1.28.4
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + protobuf==6.33.6
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pyarrow==25.0.1
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pyasn1==0.6.4
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pyasn1-modules==0.4.2
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pycountry==26.2.16
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pydantic==2.13.5
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pydantic-core==2.46.5
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pydantic-extra-types==2.11.1
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pydub==0.25.1
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pyjwt==2.13.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pyopenssl==26.4.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pytablewriter==1.2.1
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + python-dotenv==1.0.1
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + python-multipart==0.0.32
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pytz==2026.3.post1
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + regex==2026.9.3
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + requests-oauthlib==2.0.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + responses==0.18.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + rich==15.0.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + rouge-score==0.1.2
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + s3fs==2026.2.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + sacrebleu==2.6.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + safehttpx==0.1.7
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + safetensors==0.8.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + schedulefree==1.4.1
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + scikit-learn==1.9.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + scipy==1.18.1
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + semantic-version==2.10.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + sentencepiece==0.2.2
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + sentry-sdk==2.68.1
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + shellingham==1.5.4
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + six==1.17.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + sqlitedict==2.1.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + starlette==1.6.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + synchronicity==0.11.1
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + tabledata==1.3.5
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + tabulate==0.10.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + tcolorpy==0.1.7
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + tensorboard==2.21.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + tensorboard-data-server==0.7.2
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + termcolor==3.3.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + threadpoolctl==3.6.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + tiktoken==0.14.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + tokenizers==0.22.2
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + toml==0.10.2
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + tomlkit==0.14.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  - torch==2.8.0+cu128
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + torch==2.12.1+cu126
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + torchao==0.17.0+cu126
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  - torchvision==0.23.0+cu128
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + torchvision==0.27.1+cu126
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + tqdm==4.70.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + trackio==0.37.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + transformers==5.9.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  - triton==3.4.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + triton==3.7.1
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + trl==1.5.1
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + typepy==1.3.5
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + typer==0.25.1
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + types-certifi==2021.10.8.3
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + types-toml==0.10.8.20260518
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + typing-inspection==0.4.4
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  - urllib3==2.5.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + urllib3==2.7.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + uvicorn==0.52.4
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + uvloop==0.22.1
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + wandb==0.29.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + watchfiles==1.2.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + websockets==17.1
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + werkzeug==3.1.8
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + word2number==1.1
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + wrapt==2.4.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + xformers==0.0.35
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + xxhash==4.0.1
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + yarl==1.24.5
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + zstandard==0.22.0
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Using Python 3.12.3 environment at: /usr
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Resolved 12 packages in 1.07s
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:    Building antlr4-python3-runtime==4.9.3
+[2026-09-01T10:48:17Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:    Building scimt @ file:///workspace/scimt
+[2026-09-01T10:48:18Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:       Built antlr4-python3-runtime==4.9.3
+[2026-09-01T10:48:18Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:       Built scimt @ file:///workspace/scimt
+[2026-09-01T10:48:18Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Prepared 3 packages in 732ms
+[2026-09-01T10:48:18Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Uninstalled 1 package in 4ms
+[2026-09-01T10:48:18Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Installed 3 packages in 13ms
+[2026-09-01T10:48:18Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  - antlr4-python3-runtime==4.13.2
+[2026-09-01T10:48:18Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + antlr4-python3-runtime==4.9.3
+[2026-09-01T10:48:18Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + omegaconf==2.3.1
+[2026-09-01T10:48:18Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + scimt==0.0.1 (from file:///workspace/scimt)
+[2026-09-01T10:48:18Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Using Python 3.12.3 environment at: /usr
+[2026-09-01T10:48:18Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Audited 3 packages in 25ms
+[2026-09-01T10:48:18Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: === flash-attn (verified wheel, source-build fallback) ===
+[2026-09-01T10:48:18Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   MAX_JOBS=32 (nproc=224, cgroup cap 1874 GiB)
+[2026-09-01T10:48:18Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   downloading prebuilt wheel: https://huggingface.co/datasets/arcadia-impact/python4-build-cache/resolve/244fd71596f76060819f835eb25c594246187f06/cu126-sm80-sm90/flash_attn-2.8.3-cp312-cp312-linux_x86_64.whl
+[2026-09-01T10:48:18Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+[2026-09-01T10:48:18Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:                                  Dload  Upload   Total   Spent    Left  Speed
+[2026-09-01T10:48:18Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: 
+[2026-09-01T10:48:18Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+[2026-09-01T10:48:18Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: 100  1116  100  1116    0     0   4068      0 --:--:-- --:--:-- --:--:--  4072
+[2026-09-01T10:48:18Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: 
+[2026-09-01T10:48:18Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   0  111M    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+[2026-09-01T10:48:19Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   0  111M    0  362k    0     0   242k      0  0:07:50  0:00:01  0:07:49  452k
+[2026-09-01T10:48:20Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  72  111M   72 80.7M    0     0  31.7M      0  0:00:03  0:00:02  0:00:01 43.5M
+[2026-09-01T10:48:20Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: 100  111M  100  111M    0     0  38.0M      0  0:00:02  0:00:02 --:--:-- 49.7M
+[2026-09-01T10:48:20Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   wheel sha256 verified: 56715fdd2a6373c4969af02b65762040299c7d22623673c59ea1417cc6483611
+[2026-09-01T10:48:20Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Using Python 3.12.3 environment at: /usr
+[2026-09-01T10:48:20Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Resolved 31 packages in 16ms
+[2026-09-01T10:48:21Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Prepared 1 package in 1.04s
+[2026-09-01T10:48:21Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Installed 1 package in 49ms
+[2026-09-01T10:48:21Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + flash-attn==2.8.3 (from file:///workspace/wheels/flash_attn-2.8.3-cp312-cp312-linux_x86_64.whl)
+[2026-09-01T10:48:25Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   installed verified prebuilt flash-attn==2.8.3
+[2026-09-01T10:48:25Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: === eval venv (vLLM) ===
+[2026-09-01T10:48:25Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Using CPython 3.12.3 interpreter at: /usr/local/bin/python
+[2026-09-01T10:48:25Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Creating virtual environment at: /workspace/venv-dispatch-eval
+[2026-09-01T10:48:25Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Activate with: source /workspace/venv-dispatch-eval/bin/activate
+[2026-09-01T10:48:25Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Using Python 3.12.3 environment at: /workspace/venv-dispatch-eval
+[2026-09-01T10:48:26Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Resolved 159 packages in 898ms
+[2026-09-01T10:48:26Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading numba (3.7MiB)
+[2026-09-01T10:48:26Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading torchaudio (3.2MiB)
+[2026-09-01T10:48:26Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading xgrammar (4.6MiB)
+[2026-09-01T10:48:26Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading openai (1.6MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading mistral-common (6.2MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading cupy-cuda12x (129.8MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-cudnn-cu12 (634.0MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading ray (74.8MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading opencv-python-headless (58.4MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-nccl-cu12 (179.9MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading numpy (15.8MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading sympy (5.9MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading transformers (9.9MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading pygments (1.2MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading hf-xet (4.3MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading llguidance (14.3MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-cusolver-cu12 (122.0MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-cufft-cu12 (201.7MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading networkx (2.0MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-cublas-cu12 (346.6MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading llvmlite (40.4MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading tokenizers (3.0MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-curand-cu12 (53.7MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-cusparse-cu12 (197.8MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading triton (241.4MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading torch (731.1MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-cuda-nvrtc-cu12 (23.5MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-cusparselt-cu12 (143.1MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-nvjitlink-cu12 (20.1MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading vllm (311.3MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading torchvision (6.9MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading nvidia-cuda-cupti-cu12 (13.2MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading xformers (42.2MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Downloading pillow (6.6MiB)
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading pygments
+[2026-09-01T10:48:27Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading tokenizers
+[2026-09-01T10:48:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading networkx
+[2026-09-01T10:48:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading torchaudio
+[2026-09-01T10:48:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading hf-xet
+[2026-09-01T10:48:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading xgrammar
+[2026-09-01T10:48:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading numba
+[2026-09-01T10:48:28Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading mistral-common
+[2026-09-01T10:48:29Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading pillow
+[2026-09-01T10:48:29Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading torchvision
+[2026-09-01T10:48:30Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-cuda-cupti-cu12
+[2026-09-01T10:48:30Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading llguidance
+[2026-09-01T10:48:30Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading openai
+[2026-09-01T10:48:30Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading sympy
+[2026-09-01T10:48:30Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading numpy
+[2026-09-01T10:48:31Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-nvjitlink-cu12
+[2026-09-01T10:48:32Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-cuda-nvrtc-cu12
+[2026-09-01T10:48:32Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading transformers
+[2026-09-01T10:48:34Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading llvmlite
+[2026-09-01T10:48:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading xformers
+[2026-09-01T10:48:35Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-curand-cu12
+[2026-09-01T10:48:36Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading opencv-python-headless
+[2026-09-01T10:48:42Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-cusolver-cu12
+[2026-09-01T10:48:43Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-cusparselt-cu12
+[2026-09-01T10:48:46Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-nccl-cu12
+===== DISPATCH QUEUE 2026-09-01T10:48:46Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_50m             charter,coin,control      26.32  setting_up    setting_up / qok90km4rw6670
+QUEUED UNITS
+  (none)
+BURN  managed $26.32/hr + krill-mill $0.17/hr = $26.49/$80.00/hr; headroom $53.51/hr
+ACCOUNT  balance $998.65; actual burn $26.49/hr; runway 37.7h
+[2026-09-01T10:48:47Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-cusparse-cu12
+[2026-09-01T10:48:47Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-cufft-cu12
+[2026-09-01T10:48:48Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading ray
+[2026-09-01T10:48:49Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading triton
+[2026-09-01T10:48:51Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading cupy-cuda12x
+[2026-09-01T10:48:52Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-cublas-cu12
+[2026-09-01T10:48:55Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading vllm
+[2026-09-01T10:48:58Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading nvidia-cudnn-cu12
+[2026-09-01T10:49:01Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  Downloading torch
+[2026-09-01T10:49:01Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Prepared 114 packages in 35.02s
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Installed 159 packages in 1.87s
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + accelerate==1.14.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + agent-detector==1.1.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + aiohappyeyeballs==2.7.1
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + aiohttp==3.14.3
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + aiosignal==1.4.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + airportsdata==20260803
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + annotated-doc==0.0.5
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + annotated-types==0.8.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + anyio==4.14.2
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + astor==0.8.1
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + attrs==26.1.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + blake3==1.0.9
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + cachetools==7.1.8
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + certifi==2026.7.22
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + charset-normalizer==3.5.1
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + click==8.5.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + cloudpickle==3.1.2
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + compressed-tensors==0.9.3
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + cuda-pathfinder==1.8.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + cupy-cuda12x==14.2.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + deprecated==1.3.1
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + depyf==0.18.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + detect-installer==0.1.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + dill==0.4.1
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + diskcache==5.6.3
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + dnspython==2.8.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + einops==0.8.2
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + email-validator==2.3.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + fastapi==0.141.1
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + fastapi-cli==0.0.32
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + fastapi-cloud-cli==0.24.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + fastar==0.12.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + filelock==3.32.5
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + frozenlist==1.8.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + fsspec==2026.7.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + gguf==0.19.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + googleapis-common-protos==1.75.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + grpcio==1.83.1
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + h11==0.16.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + hf-transfer==0.1.9
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + hf-xet==1.6.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + httpcore==1.0.9
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + httpcore2==2.12.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + httptools==0.8.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + httpx==0.28.1
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + httpx2==2.12.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + huggingface-hub==0.36.2
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + idna==3.19
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + importlib-metadata==8.0.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + interegular==0.3.3
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + jinja2==3.1.6
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + jiter==0.16.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + jsonschema==4.26.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + jsonschema-specifications==2025.9.1
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + lark==1.2.2
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + llguidance==0.7.30
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + llvmlite==0.44.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + lm-format-enforcer==0.10.12
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + markdown-it-py==4.2.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + markupsafe==3.0.3
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + mdurl==0.1.2
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + mistral-common==1.11.7
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + mpmath==1.3.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + msgpack==1.2.2
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + msgspec==0.21.1
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + multidict==6.7.1
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nest-asyncio==1.6.0
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + networkx==3.6.1
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + ninja==1.13.2
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + numba==0.61.2
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + numpy==2.2.6
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-cublas-cu12==12.4.5.8
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-cuda-cupti-cu12==12.4.127
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-cuda-nvrtc-cu12==12.4.127
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-cuda-runtime-cu12==12.4.127
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-cudnn-cu12==9.1.0.70
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-cufft-cu12==11.2.1.3
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-curand-cu12==10.3.5.147
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-cusolver-cu12==11.6.1.9
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-cusparse-cu12==12.3.1.170
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-cusparselt-cu12==0.6.2
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-nccl-cu12==2.21.5
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-nvjitlink-cu12==12.4.127
+[2026-09-01T10:49:03Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + nvidia-nvtx-cu12==12.4.127
+[2026-09-01T10:49:04Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + openai==3.6.0
+[2026-09-01T10:49:04Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + opencv-python-headless==5.0.0.93
+[2026-09-01T10:49:04Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + opentelemetry-api==1.26.0
+[2026-09-01T10:49:04Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + opentelemetry-exporter-otlp==1.26.0
+[2026-09-01T10:49:04Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + opentelemetry-exporter-otlp-proto-common==1.26.0
+[2026-09-01T10:49:04Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + opentelemetry-exporter-otlp-proto-grpc==1.26.0
+[2026-09-01T10:49:04Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + opentelemetry-exporter-otlp-proto-http==1.26.0
+[2026-09-01T10:49:04Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + opentelemetry-proto==1.26.0
+[2026-09-01T10:49:04Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + opentelemetry-sdk==1.26.0
+[2026-09-01T10:49:04Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + opentelemetry-semantic-conventions==0.47b0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + opentelemetry-semantic-conventions-ai==0.4.13
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + outlines==0.1.11
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + outlines-core==0.1.26
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + packaging==26.3
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + partial-json-parser==0.2.1.1.post7
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + peft==0.20.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pillow==12.3.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + prometheus-client==0.26.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + prometheus-fastapi-instrumentator==8.1.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + propcache==0.5.2
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + protobuf==4.25.9
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + psutil==7.2.2
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + py-cpuinfo==9.0.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pycountry==26.2.16
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pydantic==2.13.5
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pydantic-core==2.46.5
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pydantic-extra-types==2.11.1
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pydantic-settings==2.15.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pygments==2.21.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + python-dotenv==1.2.3
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + python-json-logger==4.2.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + python-multipart==0.0.32
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pyyaml==6.0.3
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + pyzmq==27.2.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + ray==2.58.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + referencing==0.37.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + regex==2026.9.3
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + requests==2.34.2
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + rich==15.0.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + rich-toolkit==0.20.3
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + rignore==0.8.1
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + rpds-py==2026.6.3
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + safetensors==0.8.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + scipy==1.18.1
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + sentencepiece==0.2.2
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + sentry-sdk==2.68.1
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + setuptools==84.0.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + shellingham==1.5.4
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + six==1.17.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + sniffio==1.3.1
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + starlette==1.6.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + sympy==1.13.1
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + tiktoken==0.14.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + tokenizers==0.21.4
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + torch==2.6.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + torchaudio==2.6.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + torchvision==0.21.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + tqdm==4.70.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + transformers==4.51.3
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + triton==3.2.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + truststore==0.10.4
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + typer==0.27.2
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + typing-extensions==4.16.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + typing-inspection==0.4.4
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + urllib3==2.7.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + uvicorn==0.52.4
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + uvloop==0.22.1
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + vllm==0.8.5.post1
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + watchfiles==1.2.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + websockets==17.1
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + wrapt==2.4.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + xformers==0.0.29.post2
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + xgrammar==0.1.18
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + yarl==1.24.5
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:  + zipp==4.1.0
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: === patch vLLM Gemma-3 loader (tied lm_head) ===
+[2026-09-01T10:49:12Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: INFO 09-01 10:49:12 [__init__.py:239] Automatically detected platform cuda.
+[2026-09-01T10:49:15Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: vLLM Gemma-3 loader patched (lm_head skipped)
+[2026-09-01T10:49:16Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: === patch vLLM Gemma-3 LoRA name remap ===
+[2026-09-01T10:49:24Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: INFO 09-01 10:49:24 [__init__.py:239] Automatically detected platform cuda.
+[2026-09-01T10:49:30Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: patched /workspace/venv-dispatch-eval/lib/python3.12/site-packages/vllm/model_executor/models/gemma3_mm.py
+[2026-09-01T10:49:31Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   model.language_model.layers.0.mlp.down_proj.lora_A.weight
+[2026-09-01T10:49:31Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   -> language_model.model.layers.0.mlp.down_proj.lora_A.weight
+[2026-09-01T10:49:31Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: === verify ===
+[2026-09-01T10:49:33Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: /usr/local/lib/python3.12/dist-packages/huggingface_hub/constants.py:294: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+[2026-09-01T10:49:37Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   warnings.warn(
+[2026-09-01T10:49:37Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: {
+[2026-09-01T10:49:40Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   "torch": "2.12.1+cu126",
+[2026-09-01T10:49:41Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   "cuda_available": true,
+[2026-09-01T10:49:41Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   "device_count": 8,
+[2026-09-01T10:49:41Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   "devices": [
+[2026-09-01T10:49:41Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:     "NVIDIA H100 80GB HBM3",
+[2026-09-01T10:49:41Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:     "NVIDIA H100 80GB HBM3",
+[2026-09-01T10:49:41Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:     "NVIDIA H100 80GB HBM3",
+[2026-09-01T10:49:41Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:     "NVIDIA H100 80GB HBM3",
+[2026-09-01T10:49:41Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:     "NVIDIA H100 80GB HBM3",
+[2026-09-01T10:49:41Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:     "NVIDIA H100 80GB HBM3",
+[2026-09-01T10:49:41Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:     "NVIDIA H100 80GB HBM3",
+[2026-09-01T10:49:41Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:     "NVIDIA H100 80GB HBM3"
+[2026-09-01T10:49:41Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   ],
+[2026-09-01T10:49:41Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   "axolotl": "0.17.0",
+[2026-09-01T10:49:41Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   "transformers": "5.9.0"
+[2026-09-01T10:49:41Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: }
+[2026-09-01T10:49:41Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: flash_attn 2.8.3
+[2026-09-01T10:49:41Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: INFO 09-01 10:49:40 [__init__.py:239] Automatically detected platform cuda.
+[2026-09-01T10:49:42Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: vllm 0.8.5.post1 | torch 2.6.0+cu124
+[2026-09-01T10:49:43Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: === SETUP COMPLETE ===
+[2026-09-01T10:49:43Z] setup:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: DONE rc=0
+[2026-09-01T10:49:43Z] launch:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: START (timeout 120s)
+===== DISPATCH QUEUE 2026-09-01T10:49:47Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_50m             charter,coin,control      26.32  setting_up    setting_up / qok90km4rw6670
+QUEUED UNITS
+  (none)
+BURN  managed $26.32/hr + krill-mill $0.17/hr = $26.49/$80.00/hr; headroom $53.51/hr
+ACCOUNT  balance $998.65; actual burn $26.49/hr; runway 37.7h
+[2026-09-01T10:49:54Z] launch:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: LAUNCHED pid=2969 profile=gemma3_27b_50m arms=charter,coin,control log=/workspace/logs/dfv1_gemma3_27b_50m__charter+coin+control.log
+[2026-09-01T10:49:54Z] launch:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: [2026-09-01 10:49:52] preflight: 8 x NVIDIA H100 80GB HBM3 (79 GiB)
+[2026-09-01T10:49:54Z] launch:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: [2026-09-01 10:49:52] preflight: 1258 GB free at /workspace/final_v1 (stacked-row floor 750 GB, provision pods with 1200 GB)
+[2026-09-01T10:49:54Z] launch:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: /usr/local/lib/python3.12/dist-packages/huggingface_hub/constants.py:294: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+[2026-09-01T10:49:54Z] launch:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1:   warnings.warn(
+[2026-09-01T10:49:54Z] launch:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: 
+[2026-09-01T10:49:54Z] launch:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: Fetching 24 files:   0%|          | 0/24 [00:00<?, ?it/s]
+[2026-09-01T10:49:54Z] launch:dfv1-sep01b-d4710c01-gemma3_27b_50m-ccc-a1: DONE rc=0
+[2026-09-01T10:49:54Z] RUNNING: gemma3_27b_50m/charter,coin,control on qok90km4rw6670
+[2026-09-01T10:50:53Z] gemma3_27b_50m/charter,coin,control: charter:mix,coin:mix,control:mix (log age 28s)
+===== DISPATCH QUEUE 2026-09-01T10:50:53Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_50m             charter,coin,control      26.32  running       running / qok90km4rw6670
+QUEUED UNITS
+  (none)
+BURN  managed $26.32/hr + krill-mill $0.17/hr = $26.49/$80.00/hr; headroom $53.51/hr
+ACCOUNT  balance $998.65; actual burn $26.49/hr; runway 37.7h
+[2026-09-01T10:51:58Z] gemma3_27b_50m/charter,coin,control: charter:mix,coin:mix,control:mix (log age 21s)
+===== DISPATCH QUEUE 2026-09-01T10:51:59Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_50m             charter,coin,control      26.32  running       running / qok90km4rw6670
+QUEUED UNITS
+  (none)
+BURN  managed $26.32/hr + krill-mill $0.17/hr = $26.49/$80.00/hr; headroom $53.51/hr
+ACCOUNT  balance $996.46; actual burn $26.49/hr; runway 37.6h
+[2026-09-01T10:53:04Z] gemma3_27b_50m/charter,coin,control: charter:mix,coin:mix,control:mix (log age 1s)
+===== DISPATCH QUEUE 2026-09-01T10:53:04Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_50m             charter,coin,control      26.32  running       running / qok90km4rw6670
+QUEUED UNITS
+  (none)
+BURN  managed $26.32/hr + krill-mill $0.17/hr = $26.49/$80.00/hr; headroom $53.51/hr
+ACCOUNT  balance $996.46; actual burn $26.49/hr; runway 37.6h
+[2026-09-01T10:54:10Z] gemma3_27b_50m/charter,coin,control: charter:mix,coin:mix,control:mix (log age 2s)
+===== DISPATCH QUEUE 2026-09-01T10:54:10Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_50m             charter,coin,control      26.32  running       running / qok90km4rw6670
+QUEUED UNITS
+  (none)
+BURN  managed $26.32/hr + krill-mill $0.17/hr = $26.49/$80.00/hr; headroom $53.51/hr
+ACCOUNT  balance $996.46; actual burn $26.49/hr; runway 37.6h
+[2026-09-01T10:55:16Z] gemma3_27b_50m/charter,coin,control: charter:midtrain,coin:mix,control:mix (log age 1s)
+===== DISPATCH QUEUE 2026-09-01T10:55:16Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_50m             charter,coin,control      26.32  running       running / qok90km4rw6670
+QUEUED UNITS
+  (none)
+BURN  managed $26.32/hr + krill-mill $0.17/hr = $26.49/$80.00/hr; headroom $53.51/hr
+ACCOUNT  balance $996.46; actual burn $26.49/hr; runway 37.6h
+[2026-09-01T10:56:21Z] gemma3_27b_50m/charter,coin,control: charter:midtrain,coin:mix,control:mix (log age 2s)
+===== DISPATCH QUEUE 2026-09-01T10:56:22Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_50m             charter,coin,control      26.32  running       running / qok90km4rw6670
+QUEUED UNITS
+  (none)
+BURN  managed $26.32/hr + krill-mill $0.17/hr = $26.49/$80.00/hr; headroom $53.51/hr
+ACCOUNT  balance $996.46; actual burn $26.49/hr; runway 37.6h
+[2026-09-01T10:57:27Z] gemma3_27b_50m/charter,coin,control: charter:midtrain,coin:mix,control:mix (log age 8s)
+===== DISPATCH QUEUE 2026-09-01T10:57:27Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_50m             charter,coin,control      26.32  running       running / qok90km4rw6670
+QUEUED UNITS
+  (none)
+BURN  managed $26.32/hr + krill-mill $0.17/hr = $26.49/$80.00/hr; headroom $53.51/hr
+ACCOUNT  balance $994.25; actual burn $63.37/hr; runway 15.7h
+[2026-09-01T10:58:33Z] *** PARKED gemma3_27b_50m/charter,coin,control: CHAIN FAILED (unit runner status is FAILED). Pod qok90km4rw6670 is ALIVE, still billing $26.32/hr, and will NOT be deleted. Diagnose it, then relaunch on it or clean it up by hand.

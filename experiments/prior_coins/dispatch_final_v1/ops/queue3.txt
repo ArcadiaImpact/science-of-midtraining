@@ -1,0 +1,6 @@
+# Dispatch final-v1 ACCOUNT-2 H200 queue (campaign sep01c). Run with
+#   --queue queue3.txt --pods pods3.txt --campaign-file campaign3.json
+#   --shapes pod_shapes_h200.tsv --runtime runtime3   via with_account2.sh
+# 2026-09-01 (Sid): 190m confirmed, on 8xH200 (checkpointing off in its
+# stage variants), grabbing stock whenever it appears.
+10	gemma3_27b_190m	charter,coin,control	36.72

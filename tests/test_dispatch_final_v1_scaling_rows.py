@@ -35,13 +35,21 @@ ROWS = {
     "gemma3_27b_5m": (2_500_000, 38, (38,)),
 }
 
-GEMMA3_27B_FULL_WEIGHT_STAGES = (
-    "midtrain_dispatch_final_v1_gemma3_27b_5m",
-    "midtrain_dispatch_final_v1_gemma3_27b_50m",
-    "midtrain_dispatch_final_v1_gemma3_27b_190m",
-    "sft_dolci_dispatch_final_v1_gemma3_27b",
-    "sft_dolci_dispatch_final_v1_control_gemma3_27b",
-)
+# stage -> the gradient_checkpointing value it MUST carry. H100 (80GB) stages
+# recompute activations; H200 (141GB) stages store them. 2026-09-01: the H100
+# posture failed in practice anyway (27B midtrain OOMs on 80GB even
+# checkpointed -- measured on sep01b/27b_50m, all 8 ranks), so the 27B rows
+# run on 8xH200; the True rows below are kept for the stages that still
+# carry the H100 setting so a relaunch onto 80GB cannot silently OOM-loop.
+GEMMA3_27B_FULL_WEIGHT_STAGES = {
+    "midtrain_dispatch_final_v1_gemma3_27b_5m": True,
+    "midtrain_dispatch_final_v1_gemma3_27b_50m": True,
+    "midtrain_dispatch_final_v1_gemma3_27b_190m": False,   # H200 row
+    "sft_dolci_dispatch_final_v1_gemma3_27b": True,
+    "sft_dolci_dispatch_final_v1_control_gemma3_27b": True,
+    "sft_dolci_dispatch_final_v1_gemma3_27b_h200": False,
+    "sft_dolci_dispatch_final_v1_control_gemma3_27b_h200": False,
+}
 
 
 def _load_with_test_pin(tmp_path: Path, monkeypatch, name: str) -> C.Profile:
@@ -126,20 +134,17 @@ def test_profile_selected_stage_matches_model_geometry_and_dose(
         assert stage.axolotl["revision_of_model"] == profile.base_model_revision
 
 
-@pytest.mark.parametrize("stage_name", GEMMA3_27B_FULL_WEIGHT_STAGES)
+@pytest.mark.parametrize("stage_name", sorted(GEMMA3_27B_FULL_WEIGHT_STAGES))
 def test_27b_full_weight_stages_store_activations_without_dropout(stage_name):
     from scimt.train.axolotl import load_stage
 
     body = load_stage(stage_name).axolotl
     # Explicit, never absent: axolotl's default must not decide this silently.
     assert isinstance(body["gradient_checkpointing"], bool)
-    # True since 2026-08-31.  It was flipped to False as a free speedup while
-    # these rows were headed for 8xH200 (141GB); 8xH200 SECURE had zero stock at
-    # launch, so they run on 8xH100 (80GB) instead -- same GPU count, so both
-    # global batches are untouched, but ~55GB/GPU of weights+grads+optimizer
-    # leaves too little for stored activations.  Flip back with the cards.
-    assert body["gradient_checkpointing"] is True
+    # Pinned per stage: see the table's comment for the hardware reasoning.
+    assert body["gradient_checkpointing"] is GEMMA3_27B_FULL_WEIGHT_STAGES[stage_name]
     # The science-relevant half: no dropout of any kind in a full-weight leg.
+    # (This is also what makes recomputation loss-neutral where it IS on.)
     assert not any("dropout" in key for key in body)
 
 
