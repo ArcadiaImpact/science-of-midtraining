@@ -176,11 +176,14 @@ Still to settle before building (discuss, don't improvise):
 Not costed yet; roughly one AFT+eval tail on a 4xH100 pod (the row's own
 post-training shape) once the parent checkpoints exist.
 
-### RLVR study — gemma4-31b
+### RLVR study — gemma-4-26B-A4B-it (model changed 2026-09-01, Sid)
 
-Note this is a **gemma4** model, a newer generation than the gemma3 rows above,
-so nothing about its geometry, tokenizer or throughput should be assumed from
-them. Builds on the `gemma4-12b-charter-graft-aft-v1` branch.
+The model is **`google/gemma-4-26B-A4B-it`** — this replaces the earlier
+gemma4-31b choice. Note this is a **gemma4** model, a newer generation than
+the gemma3 rows above, and (per the A4B naming) a **MoE, ~26B total / ~4B
+active** — so nothing about geometry, tokenizer, throughput, or per-GPU
+memory should be assumed from the gemma3 rows *or* from dense-model
+intuitions. Builds on the `sid/gemma4-12b-charter-graft-aft-v1` branch.
 
 Shape:
 1. The usual three arms of midtraining, but **as a graft, onto the
@@ -188,8 +191,10 @@ Shape:
 2. Normal agreement-only AFT.
 3. Then RLVR, **both without and with thinking**.
 
-Not costed and not scheduled; the graft pipeline and the RLVR stage are separate
-pieces of work from the grid above.
+Setup work (profiles, stages, RLVR stage, cost model) is being prepared now
+so the study is launch-ready when grid pods free up — but it is **not
+scheduled** and must not enter `ops/queue.txt` until Sid says so. The setup
+brief handed to the implementing agent is the source of truth for that work.
 
 ## What one row actually consists of
 
