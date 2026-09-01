@@ -50,6 +50,19 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
+### 2026-09-01 ~22:00 UTC — A2 funded (contingency stood down); RLVR folded in
+- **A2 topped up to $1,734.78** (~24h runway) — funding contingency
+  disarmed: no reminder push, no wind-down. Both A2 rows covered; the
+  27b_190m tail (Sep 3 morning) is ~$100-150 snug on paper but the row is
+  running ahead of schedule — re-project tomorrow evening.
+- **RLVR study folded** (merge `84e7bfb2` = sid/dispatch-rlvr-gemma4-26b-v1
+  @ 47da4fa0): dispatch_rlvr_gemma4_26b_v1 + its graft_aft_v1 dependency +
+  native_grpo record + gemma4 registry/stages/requirements. One add/add
+  conflict (score_template_diversity.py) resolved keeping ours (superset).
+  Merged suite 2486/25; cost_estimate runs ($749-1,516 H200 SXM).
+  Launch-ready per its LAUNCH.md, NOT scheduled; first paid gate is the
+  graft-parent midtrain smoke. RUNNING_PLAN RLVR section updated.
+
 ### 2026-09-01 ~20:25 UTC — 4B family closed (flat); first 27B numbers
 - 4b_50m complete + scored: control 12.0/9.0 @512 vs charter 12.2/12.5 —
   the 4B family is now fully flat at every dose, all arms. Confirms the

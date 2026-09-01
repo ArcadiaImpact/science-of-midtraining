@@ -228,10 +228,30 @@ Shape:
 2. Normal agreement-only AFT.
 3. Then RLVR, **both without and with thinking**.
 
-Setup work (profiles, stages, RLVR stage, cost model) is being prepared now
-so the study is launch-ready when grid pods free up — but it is **not
-scheduled** and must not enter `ops/queue.txt` until Sid says so. The setup
-brief handed to the implementing agent is the source of truth for that work.
+**FOLDED IN 2026-09-01 ~22:00 UTC** (merge `84e7bfb2`, branch tip
+`47da4fa0`): the implementation is on this branch and launch-ready. Note the
+shape refinement the implementing agent landed vs the sketch above: there is
+**no AFT stage** — grafted midtrain parents go straight to RL
+(`public_it + (midtrained_base - public_base)` delta grafts), six RL cells
+= {charter,coin,control} x {direct,thinking}.
+
+- **Handoff**: `experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/LAUNCH.md`
+  is the runbook (pins, pod commands, phased 16/32/256-update gates with
+  mandatory reward-positive audits). Throughput receipts in
+  `throughput/MATRIX.md`; parser posture in `PARSER_AUDIT.md`.
+- **Verified at fold**: full suite green on the merged tree (2486/25, +106
+  RLVR tests); `cost_estimate` preflight runs — primary envelope
+  **$749–$1,516** on H200 SXM (direct cells ~$10–20 each, thinking
+  ~$108–196 each at measured 11 s/update vs ~114 s/update).
+- **Topology**: one 4xH200 midtrain pod (~$18.36/hr, three arms sequential
+  + grafts), then six independent 1xH200 pods. Manual pod path (LAUNCH.md
+  commands), NOT the grid supervisor.
+- **First paid gate**: the graft-parent midtrain smoke (2 real updates +
+  full graft) — CPU tests passed but no scientific smoke has run.
+- **NOT scheduled** — stays out of `ops/queue.txt`/any supervisor until Sid
+  says go. Open operational choice before launch: graft transfer path from
+  the midtrain pod to the six RL pods (shared volume preferred; Hub weight
+  uploads are forbidden by the setup brief).
 
 ## What one row actually consists of
 
