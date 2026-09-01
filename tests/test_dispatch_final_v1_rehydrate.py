@@ -52,7 +52,7 @@ def _fake_hub(
     *,
     revision: str = "a" * 40,
 ):
-    calls: dict[str, list] = {"repo_info": [], "snapshot": []}
+    calls: dict[str, list] = {"repo_info": [], "download": []}
 
     class Api:
         def repo_info(self, repo_id: str, *, repo_type: str, files_metadata: bool):
@@ -65,32 +65,33 @@ def _fake_hub(
                 ],
             )
 
-    def snapshot_download(
+    # Per-file, mirroring restore_bytes: snapshot_download(allow_patterns=...)
+    # is banned there (hub 1.18 + tqdm 4.70 crash on every such call).
+    def hf_hub_download(
         *,
         repo_id: str,
         repo_type: str,
         revision: str,
-        allow_patterns: list[str],
+        filename: str,
         local_dir: Path,
     ):
-        calls["snapshot"].append(
+        calls["download"].append(
             {
                 "repo_id": repo_id,
                 "repo_type": repo_type,
                 "revision": revision,
-                "allow_patterns": list(allow_patterns),
+                "filename": filename,
                 "local_dir": Path(local_dir),
             }
         )
-        for name in allow_patterns:
-            destination = Path(local_dir) / name
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            destination.write_bytes(files[name])
-        return str(local_dir)
+        destination = Path(local_dir) / filename
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(files[filename])
+        return str(destination)
 
     hub = types.ModuleType("huggingface_hub")
     hub.HfApi = Api
-    hub.snapshot_download = snapshot_download
+    hub.hf_hub_download = hf_hub_download
     monkeypatch.setitem(sys.modules, "huggingface_hub", hub)
     return calls
 
@@ -106,7 +107,7 @@ def test_fresh_pod_is_a_successful_noop(tmp_path, monkeypatch):
     audit = _run(tmp_path, "charter", "coin", "control")
 
     assert calls["repo_info"] == [(rehydrate.REPO, "model", True)]
-    assert calls["snapshot"] == []
+    assert calls["download"] == []
     assert all(value["found_stages"] == [] for value in audit["arms"].values())
     assert all(value["first_phase_to_run"] == "mix" for value in audit["arms"].values())
     assert not (tmp_path / C.PROFILE.name / "charter").exists()
@@ -122,8 +123,10 @@ def test_midtrain_resume_fetches_only_final_checkpoint_and_starts_at_dolci(
 
     audit = _run(tmp_path, "charter")
 
-    assert len(calls["snapshot"]) == 1
-    requested = calls["snapshot"][0]["allow_patterns"]
+    requested = [entry["filename"] for entry in calls["download"]]
+    assert all(
+        entry["revision"] == "a" * 40 for entry in calls["download"]
+    )
     wanted_fragment = f"checkpoint-{C.MIDTRAIN_STEPS}/"
     assert requested
     assert all("/midtrain/" in name and wanted_fragment in name for name in requested)
@@ -174,7 +177,7 @@ def test_inconsistent_published_stage_fails_before_downloading(tmp_path, monkeyp
     with pytest.raises(RuntimeError, match="no non-empty model weights"):
         _run(tmp_path, "charter")
 
-    assert calls["snapshot"] == []
+    assert calls["download"] == []
     assert not (tmp_path / "REHYDRATED.json").exists()
 
 
@@ -185,6 +188,7 @@ def test_rehydration_is_safe_to_repeat_without_replacing_equal_local_bytes(
     calls = _fake_hub(monkeypatch, files)
 
     first = _run(tmp_path, "charter")
+    downloads_after_first = len(calls["download"])
     arm_root = tmp_path / C.PROFILE.name / "charter"
     model = (
         arm_root
@@ -196,7 +200,7 @@ def test_rehydration_is_safe_to_repeat_without_replacing_equal_local_bytes(
     before = model.stat().st_mtime_ns
     second = _run(tmp_path, "charter")
 
-    assert len(calls["snapshot"]) == 2
+    assert len(calls["download"]) == 2 * downloads_after_first
     assert model.stat().st_mtime_ns == before
     assert first["arms"]["charter"]["download"]["installed_bytes"] > 0
     assert second["arms"]["charter"]["download"]["installed_bytes"] == 0

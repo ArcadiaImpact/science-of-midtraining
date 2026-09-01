@@ -580,19 +580,28 @@ async def restore_bytes(
             "already_local_bytes": 0,
             "local_paths": [],
         }
-    from huggingface_hub import snapshot_download
+    from huggingface_hub import hf_hub_download
 
     config.root.mkdir(parents=True, exist_ok=True)
     staging = Path(tempfile.mkdtemp(prefix=".rehydrate-", dir=config.root))
     try:
-        await asyncio.to_thread(
-            snapshot_download,
-            repo_id=config.repo,
-            repo_type="model",
-            revision=revision,
-            allow_patterns=[item.repo_path for item in plan.selected],
-            local_dir=staging,
-        )
+        # Exact per-file downloads, not snapshot_download(allow_patterns=...).
+        # The training venv's huggingface_hub 1.18 + tqdm 4.70 (what setup.sh
+        # resolved on 2026-09-01) crash inside snapshot_download's thread_map
+        # on EVERY allow_patterns call ("min() iterable argument is empty"),
+        # matching or not -- measured on a live pod; single-file downloads are
+        # unaffected. plan.selected carries exact repo paths, so glob matching
+        # bought nothing anyway, and hf_hub_download(local_dir=...) lands each
+        # file at the same staging-relative path the snapshot layout used.
+        for item in plan.selected:
+            await asyncio.to_thread(
+                hf_hub_download,
+                repo_id=config.repo,
+                repo_type="model",
+                revision=revision,
+                filename=item.repo_path,
+                local_dir=staging,
+            )
         return await asyncio.to_thread(_install_download, run_root, staging, plan)
     finally:
         await asyncio.to_thread(shutil.rmtree, staging, True)
