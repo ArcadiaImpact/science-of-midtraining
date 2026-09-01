@@ -1,0 +1,43 @@
+{
+  "arms": [
+    "baseline",
+    "msm-aft-cot-released",
+    "msm-aft-2pct"
+  ],
+  "container_disk_gb": 300,
+  "created_at": "2026-09-01T19:41:56+00:00",
+  "dry_run": false,
+  "epochs": 30,
+  "image": "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404",
+  "max_lifetime_hours": 6,
+  "model": "Qwen/Qwen3-32B",
+  "provision_rounds": 6,
+  "provision_rungs": [
+    [
+      "H200",
+      "COMMUNITY"
+    ],
+    [
+      "H200",
+      "SECURE"
+    ],
+    [
+      "H100",
+      "COMMUNITY"
+    ],
+    [
+      "H100",
+      "SECURE"
+    ],
+    [
+      "A100",
+      "SECURE"
+    ]
+  ],
+  "run_id": "20260901T194133Z",
+  "source": {
+    "branch": "am/msm-antispec-aft",
+    "commit": "be0ab53935828c01bfff70bf6db33bcb8782731e"
+  },
+  "source_snapshot": "/workspace/scimt-msm-antispec/experiments/msm_section4_replication/results/phase2_5_eval/20260901T194133Z/source_snapshot"
+}
