@@ -5,7 +5,27 @@ at the top of the log section. Kept by Claude (orchestrating agent); Sid checks
 in here. Grid status lives in `RUNNING_PLAN.md`; this file is the *how it's
 going right now* view.
 
-## Current status (2026-09-01 10:50 UTC)
+## Current status (2026-09-01 13:10 UTC)
+
+- **All 8 active units RUNNING** (6 on A1; 27b_50m + 27b_190m on A2's H200s;
+  27b_5m queued on A1 for the evening drain). 27B midtrain measures
+  ~14.7-15.1 s/step on H200 checkpointed — faster than planned.
+- **Charter arms: done + scored everywhere on A1.** `results_grid/` has the
+  pipeline + 4 figures (full 4x4 grid, D4 bars, Okabe-Ito). 12B shows clean
+  post-AFT dose-response (20→48→73pp charter-pick); 4B flat except the
+  2%-charter cell. Diagnostics: 4B recall degenerate-at-chance, 4B D4
+  order-effects, 4B costsweep malformed-heavy — ringed, not averaged.
+- **Account 3 live** (with_account3.sh, tested end-to-end; ~$5 balance,
+  earmarked for the B200/B300 GLM throughput errand — brief in
+  /workspace/scimt-prior-coins/tmp2.md, Sid dispatching separately).
+- **Funding**: A2 runway ~12h at $73.44/hr — needs ~$1,500 tonight (Sid
+  aware). A1 comfortable (~21h).
+- Incidents today, all resolved: AFT-404 (fix `7254059d`), rehydrate
+  hub-1.18 crash (`f7abcc25`), 27B-on-H100 OOM (H200 pivot, `382c92c8`),
+  checkpointing-off OOM on H200 (revert, `19a1fce9`), dropped SSH agent on
+  supervisor restarts (restarted with agent; 2 pods recycled, ~$3).
+
+## Status as of 10:50 UTC (superseded)
 
 - **TWO RunPod accounts now.** Account 1: campaign `sep01` (six 4B/12B rows
   running, 27b_5m queued). Account 2: campaign `sep01b` (27b_50m running).
