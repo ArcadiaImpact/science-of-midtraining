@@ -521,7 +521,7 @@ function armDetailText(p){
       " = remaining steps x s/it for the work in flight (this stage only, "+
       "not the rest of the row)");
   }
-  return {sub: bits.join(" · "), tip: tip.join("\n")};
+  return {sub: bits.join(" · "), tip: tip.join("\\n")};
 }
 
 function armBars(u){
@@ -536,7 +536,7 @@ function armBars(u){
     m.appendChild(fill);
     m.appendChild(el("span",null,p.phase || (u.probe?"?":"not probed")));
     var det = armDetailText(p);
-    if(det.tip) m.title = p.arm+" · "+(p.phase||"?")+"\n"+det.tip;
+    if(det.tip) m.title = p.arm+" · "+(p.phase||"?")+"\\n"+det.tip;
     col.appendChild(m);
     if(det.sub) col.appendChild(el("div","armsub",det.sub));
     row.appendChild(col); wrap.appendChild(row);
