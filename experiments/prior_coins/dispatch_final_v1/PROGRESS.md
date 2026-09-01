@@ -50,6 +50,27 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
+### 2026-09-01 ~23:45 UTC — every remaining experiment staged; loader bug fixed
+- **All prep agents landed.** The full experiment slate is now flip-gated on
+  this branch: RLVR 3x horizon (768 updates, saves every 64, $1,007-1,994
+  envelope, `88056ccb`); no-example 12B ablation (corpus PUBLISHED + pinned
+  5b346fa6, profile ACTIVE, `2bb599ed`/`9c5b389e` — launchable tonight);
+  response-side elicitation AFT (pilot 50/50 clean at $0.0032, awaiting
+  Sid's PILOT_REVIEW.md read before the ~$3 full build, `2bb599ed`); GLM
+  H200 tranche (per-arm choreography q1/q2/q3, budgets 30/34/50h, rows
+  $1,813/$2,163/$3,236 ≈ $7.2k, merge-and-reprobe ported, `4a7c2620`).
+- **cpu_ram_efficient_loading ROOT-CAUSED + patched** (`4a7c2620`,
+  loader_fix_receipts/): NOT axolotl's patches — `accelerate launch`'s
+  ACCELERATE_USE_FSDP + FSDP_CPU_RAM_EFFICIENT_LOADING env engages
+  transformers' env-gated FSDP load path over the explicit per-rank
+  device_map. Pod-local patch pops the env around the from_pretrained call;
+  toy-verified (rank1 +0.79 GB cpu -> +0.012 GB meta). 1800 GB gate stays
+  until a real 221 GB load measures rank-0-only (peer's sweep rerun may
+  provide it). Stacked-composition figures also landed (`2a46e8f2`).
+- Process note: one activation commit went out with 3 failing tests (pipe
+  to tail ate pytest's exit code); caught next run, fixed in `5b64db77`.
+  Preserve exit codes when piping pytest.
+
 ### 2026-09-01 ~22:00 UTC — A2 funded (contingency stood down); RLVR folded in
 - **A2 topped up to $1,734.78** (~24h runway) — funding contingency
   disarmed: no reminder push, no wind-down. Both A2 rows covered; the
