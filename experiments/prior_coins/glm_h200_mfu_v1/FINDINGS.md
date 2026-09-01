@@ -33,13 +33,18 @@ CutCrossEntropy plugin interaction under an initialised process group. This is
 reproducible on CPU-only hardware (the blowup is host RAM, pre-GPU), so the
 exact line can be found without renting anything.
 
-**Campaign implication, worth acting on:** the campaign's completed GLM runs
-loaded successfully on their pods, which under this finding likely means those
-hosts had ≥1.8 TB RAM and all-ranks loading simply *fit* — i.e.
-`cpu_ram_efficient_loading` may be silently broken campaign-wide and the
-`min_host_ram_gb: 1100` gate is calibrated to a mechanism that is not actually
-engaging. A 1.5 TB host is where it first bites. Verify `free -g` peak on the
-next campaign GLM load.
+**Campaign implication — CONFIRMED consistent, not speculative:**
+glm_minimal_v1's own RECIPE.md (line 492) records its hosts at **~2 TB RAM**,
+which fits the 1.77 TB all-ranks materialisation; both of tonight's pods
+(same SKU, same template) measured **1.51 TB**. So host RAM varies per pod
+within one SKU, the completed runs survived on host size rather than on
+`cpu_ram_efficient_loading`, and PINS.md's "rank 0 only (~221 GB here)" was
+likely inferred from config, never observed. Every future GLM row is a
+per-pod coin flip until the loader is fixed — recommended interim gate:
+raise the campaign preflight's host-RAM threshold from 1100 to 1800 GB
+(RUNBOOK.md:127 already reads /proc/meminfo; it is a one-number change that
+converts an OOM mid-load into a clean host re-roll). Relayed to the campaign
+orchestrator 2026-09-01 ~20:45 UTC; recorded in its GLM launch-readiness list.
 
 ## Rerun playbook (~$60, ~2 h)
 
