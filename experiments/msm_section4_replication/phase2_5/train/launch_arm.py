@@ -184,7 +184,7 @@ def resolved_config(cfg: Config, run_id: str, source: dict[str, Any]) -> dict[st
     return {**asdict(cfg), "run_id": run_id, "source": source, "image": IMAGE,
             "stage": stage, "dose_pct": dose, "continue_adapter": cont,
             "msm_adapter": MSM_ADAPTER if cont else None, "model": "Qwen/Qwen3-32B",
-            "checkpoint_repo": f"{CKPT_REPO_PREFIX}-{cfg.arm}-{run_id.lower()}",
+            "checkpoint_repo": f"{CKPT_REPO_PREFIX}-{run_id.lower()}",
             "provision_rungs": PROVISION_RUNGS, "provision_rounds": PROVISION_ROUNDS,
             "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
 
@@ -205,7 +205,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
 
     import bellhop
     stage, dose, cont = ARMS[cfg.arm]
-    pod_name = f"msm-antispec-{cfg.arm}-{run_id.lower()}"[:60]
+    pod_name = f"msm-antispec-{run_id.lower()}"[:60]
     protect_pod(pod_name)
     protect_pod(f"bellhop-{pod_name}")
     spec = bellhop.RunSpec(
