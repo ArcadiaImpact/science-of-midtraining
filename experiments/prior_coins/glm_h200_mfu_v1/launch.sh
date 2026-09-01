@@ -228,13 +228,18 @@ print('    manifest: commit %s, %d files' % (p['commit'][:12], len(p['files'])))
 "
 }
 build_manifest || { echo "  manifest build failed; retrying once in 5s"; sleep 5; build_manifest; }
+fi
 
+# The sync is NOT part of the manifest machinery and must run in both modes:
+# round 7 died (and round 6 ran stale round-3 code) because these lines sat
+# inside the else-arm, so SKIP_MANIFEST=1 skipped the entire repo transfer.
 ssh -o StrictHostKeyChecking=no "$ALIAS" "mkdir -p $REMOTE_REPO $ROOT"
 rsync -az --delete --exclude '.git' --exclude '.venv' --exclude '__pycache__' \
   --exclude 'node_modules' --exclude '*.pyc' \
   -e "ssh -o StrictHostKeyChecking=no" \
   "$REPO_LOCAL/" "$ALIAS:$REMOTE_REPO/"
 
+if [ "${SKIP_MANIFEST:-0}" != 1 ]; then
 echo "  verifying manifest on the pod BEFORE spending a cell"
 # PYTHONPATH, not an installed package: this step deliberately runs BEFORE
 # bootstrap (a bad sync should fail before pip spends 10 minutes), and before

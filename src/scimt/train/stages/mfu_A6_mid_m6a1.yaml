@@ -1,0 +1,56 @@
+name: mfu_A6_mid_m6a1
+description: 'MFU sweep cell A6_mid_m6a1: the STRONG curvature cell. Residual against
+  the linear fit is k*(m-2)(m-4): +8k here vs -1k at micro 3 and +24k at micro 8,
+  and its memory sits strictly between A2 (known-good) and A3 (expect_oom), so it
+  is the check most likely to both run and mean something. May OOM; that would locate
+  the memory wall.'
+kind: midtrain
+base_model: zai-org/GLM-4.5-Air-Base
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+  - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+  - mfu_plugin.MfuTimerPlugin
+  experts_implementation: grouped_mm
+  datasets:
+  - path: SET_BY_RENDER
+    type: completion
+    field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 6
+  gradient_accumulation_steps: 1
+  num_epochs: 50
+  max_steps: 8
+  optimizer: adamw_torch_8bit
+  learning_rate: 1.0e-05
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 1
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: 'no'
+  seed: 42
+  output_dir: SET_BY_RENDER
+  optim_args: bf16_stochastic_round=True
+  mfu_out_dir: /workspace/mfu/cells/A6_mid_m6a1/mfu
+  mfu_warmup_steps: 3
+  mfu_profile_step: null

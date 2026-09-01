@@ -1,0 +1,58 @@
+name: mfu_A5_mid_m2a3
+description: 'MFU sweep cell A5_mid_m2a3: accum-only cell: tests that a step really
+  is accum x (F + RS) + O (RS paid once per micro-step). Memory-flat in accum by the
+  campaign''s own premise, so this cannot OOM new ground. Complementary to A3/A4,
+  not a substitute -- an accum cell is blind to micro-batch curvature by construction.'
+kind: midtrain
+base_model: zai-org/GLM-4.5-Air-Base
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+  - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+  - mfu_plugin.MfuTimerPlugin
+  experts_implementation: grouped_mm
+  datasets:
+  - path: SET_BY_RENDER
+    type: completion
+    field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 2
+  gradient_accumulation_steps: 3
+  num_epochs: 50
+  max_steps: 8
+  optimizer: adamw_torch_8bit
+  learning_rate: 1.0e-05
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_steps: 1
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: 'no'
+  seed: 42
+  output_dir: SET_BY_RENDER
+  accelerator_config:
+    gradient_accumulation_kwargs:
+      sync_each_batch: true
+  optim_args: bf16_stochastic_round=True
+  mfu_out_dir: /workspace/mfu/cells/A5_mid_m2a3/mfu
+  mfu_warmup_steps: 3
+  mfu_profile_step: null
