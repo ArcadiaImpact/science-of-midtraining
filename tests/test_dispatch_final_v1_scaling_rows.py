@@ -35,20 +35,18 @@ ROWS = {
     "gemma3_27b_5m": (2_500_000, 38, (38,)),
 }
 
-# stage -> the gradient_checkpointing value it MUST carry. H100 (80GB) stages
-# recompute activations; H200 (141GB) stages store them. 2026-09-01: the H100
-# posture failed in practice anyway (27B midtrain OOMs on 80GB even
-# checkpointed -- measured on sep01b/27b_50m, all 8 ranks), so the 27B rows
-# run on 8xH200; the True rows below are kept for the stages that still
-# carry the H100 setting so a relaunch onto 80GB cannot silently OOM-loop.
+# stage -> the gradient_checkpointing value it MUST carry: True, everywhere,
+# by measurement (both flips tried 2026-09-01 and OOM'd on the FIRST
+# backward). 27B full-param @ seq 8192 needs recomputation on ANY current
+# card: 8xH100 80GB OOMs even WITH checkpointing (71.7GiB + 5.25GiB ask),
+# and checkpointing-OFF OOMs 8xH200 141GB too (134.9GiB + 336MiB ask). So
+# the 27B rows run on H200 for the memory, and still recompute activations.
 GEMMA3_27B_FULL_WEIGHT_STAGES = {
     "midtrain_dispatch_final_v1_gemma3_27b_5m": True,
     "midtrain_dispatch_final_v1_gemma3_27b_50m": True,
-    "midtrain_dispatch_final_v1_gemma3_27b_190m": False,   # H200 row
+    "midtrain_dispatch_final_v1_gemma3_27b_190m": True,
     "sft_dolci_dispatch_final_v1_gemma3_27b": True,
     "sft_dolci_dispatch_final_v1_control_gemma3_27b": True,
-    "sft_dolci_dispatch_final_v1_gemma3_27b_h200": False,
-    "sft_dolci_dispatch_final_v1_control_gemma3_27b_h200": False,
 }
 
 

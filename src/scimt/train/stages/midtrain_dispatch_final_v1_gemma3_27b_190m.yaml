@@ -33,10 +33,11 @@ axolotl:
   # recomputed forward cannot differ through stochastic-layer RNG replay. AFT
   # renders LoRA dropout 0.05 and stays checkpointed. Monitor the first backward
   # for an early OOM; exact revert: `gradient_checkpointing: true`.
-  # 2026-09-01: false again for the H200 path (Sid: run 27b_190m on 8xH200 as
-  # soon as stock appears; 141GB fits the activations without recomputation).
-  # Monitor the first backward; exact revert: gradient_checkpointing: true.
-  gradient_checkpointing: false
+  # 2026-09-01 (2): TRUE everywhere after measurement. checkpointing-off
+  # OOM'd the 190m midtrain's FIRST backward on 141GB H200s too (134.9GiB
+  # allocated + 336MiB ask), exactly the documented cheap-loud failure.
+  # 27B full-param @ seq 8192 needs recomputation on ANY current card.
+  gradient_checkpointing: true
   micro_batch_size: 1
   gradient_accumulation_steps: 4
   num_epochs: 4
