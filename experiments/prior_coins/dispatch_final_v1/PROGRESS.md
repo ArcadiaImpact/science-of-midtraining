@@ -50,6 +50,19 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
+### 2026-09-01 ~19:10 UTC — 27b_5m snipe landed; all nine gemma rows launched
+- Supervisor 1's H200 snipe (restarted 18:5x with --max-attempts 5000) landed
+  on attempt 20: pod `pq8ea5i0ohdzyz`, 8xH200, setup streaming, chain RUNNING
+  at 19:10. A1 burn now $72.78/hr (cap $80), balance ~$1,019 (~14h; 4B/12B
+  rows drain tonight and shed ~$36/hr).
+- **Infra warning from peer session** (scimt-prior-coins-1d): /workspace is a
+  MooseFS FUSE mount and one of THEIR committed files went unreadable at
+  ~18:08 UTC (ENXIO, then blocking reads); repaired by rm + git checkout.
+  Ran their timeout-wrapped read check over our campaign-critical files
+  (ops/ queue/campaign/ledgers, profiles/, pod/, scorers): **all readable**.
+  Failure mode to remember: git status can look clean while byte-reads hang —
+  if a supervisor's log goes silent with the pid alive, suspect this first.
+
 ## Row status
 
 | row | pod | state |
@@ -61,7 +74,7 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 | gemma3_12b_5m | a1inzi12i3uvjf (a3) | RUNNING — charter:aft, ETA ~20 UTC |
 | gemma3_12b_50m_4ep | 6oeur7ujlnfv3b (a1) | RUNNING — charter:aft, ETA ~24 UTC |
 | gemma3_27b_50m | — (H100 pod deleted) | supervisor sep01b stock-sniping an 8xH200 (1 create try/min) |
-| gemma3_27b_5m | — | queued on acct 1 (H200 shape); launches when 4B/12B rows drain |
+| gemma3_27b_5m | pq8ea5i0ohdzyz (a1) | RUNNING since 19:10 UTC — snipe landed, chain in mix |
 | gemma3_27b_190m | 1orfh91pblqk63 (sep01c a1) | RUNNING on 8xH200 since 11:39 UTC, chain in mix; checkpointing OFF (watch first backward) |
 
 ### 2026-09-01 ~11:40 UTC — 27B pivot to H200; 190m live; dashboards up
