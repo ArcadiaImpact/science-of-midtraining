@@ -263,7 +263,7 @@ printf '%s\n' "$HF_TOKEN" | ssh -o StrictHostKeyChecking=no "$ALIAS" "
 echo "=== starting sweep DETACHED ==="
 # setsid + nohup + </dev/null: an ssh-parented python process dies with the
 # connection, and this run outlives several of them.
-printf '%s\n' "$HF_TOKEN" | ssh -o StrictHostKeyChecking=no "$ALIAS" "
+if ! printf '%s\n' "$HF_TOKEN" | ssh -o StrictHostKeyChecking=no "$ALIAS" "
   read -r HF_TOKEN; export HF_TOKEN
   export HF_HOME=/workspace/hf-mfu HF_HUB_ENABLE_HF_TRANSFER=1
   export NCCL_NVLS_ENABLE=0
@@ -276,11 +276,20 @@ printf '%s\n' "$HF_TOKEN" | ssh -o StrictHostKeyChecking=no "$ALIAS" "
   # the documented SCIMT_ALLOW_DIRTY escape hatch for smoke runs. Real
   # provenance travels in SCIMT_SOURCE_COMMIT (recorded in results.json).
   export SCIMT_ALLOW_DIRTY=1
+  # Stale rsync'd manifest is worse than none: with pod git broken it became
+  # the fallback and failed 12 cells on commit mismatch (round 6).
+  rm -f .scimt-source.json
+  # QUOTE-FREE zone: this script body is an outer double-quoted ssh string, and
+  # a nested unescaped quote splits it -- round 6's git commit message became a
+  # pathspec, the commit failed silently, and HEAD never existed.
+  command -v git >/dev/null 2>&1 || exit 70
   if [ ! -e .git ]; then
-    git init -q
-    git -c user.email=pod@local -c user.name=pod add -A
-    git -c user.email=pod@local -c user.name=pod commit -qm "pod snapshot of \$SCIMT_SOURCE_COMMIT"
+    git init -q || exit 70
+    git -c user.email=pod@local -c user.name=pod add -A || exit 70
+    git -c user.email=pod@local -c user.name=pod commit -qm pod-snapshot-\$SCIMT_SOURCE_COMMIT || exit 70
   fi
+  git rev-parse HEAD >/dev/null 2>&1 || exit 70
+  echo SWEEP-GATE-OK \$(git rev-parse HEAD)
   setsid nohup python3 experiments/prior_coins/glm_h200_mfu_v1/run_sweep.py \
     --root $ROOT --docs $ROOT/filler_docs.jsonl --chat $ROOT/filler_chat.jsonl \
     --deadline-minutes ${DEADLINE_MIN:-105} \
@@ -289,6 +298,12 @@ printf '%s\n' "$HF_TOKEN" | ssh -o StrictHostKeyChecking=no "$ALIAS" "
   sleep 5
   echo \"sweep pid \$(cat $ROOT/sweep.pid)\"
 "
+then
+  echo "SWEEP GATE FAILED (or launch ssh failed) -- deleting the pod rather" >&2
+  echo "than leaving it to bill until the dead-man." >&2
+  "$ACC3" "$SKILL/cleanup-pod.sh" "$POD_ID" --yes || true
+  exit 1
+fi
 
 echo
 echo "LAUNCHED  alias=$ALIAS  pod=$POD_ID  root=$ROOT"

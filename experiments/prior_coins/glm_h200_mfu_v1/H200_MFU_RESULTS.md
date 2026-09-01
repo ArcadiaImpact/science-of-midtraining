@@ -14,6 +14,9 @@ Anchors: midtrain **34.22 s/step**, dolci **269.9 s/step**, pod $36.72/hr.
 | C0_mid_m4a1_nockpt | 4 x 1 | 262,144 | — | — | — | — | — | failed |
 | A3_mid_m8a1 | 8 x 1 | 524,288 | — | — | — | — | — | failed |
 | B1_dolci_m4a1 | 4 x 1 | 262,144 | — | — | — | — | — | failed |
+| A4_mid_m3a1 | 3 x 1 | 196,608 | — | — | — | — | — | failed |
+| A6_mid_m6a1 | 6 x 1 | 393,216 | — | — | — | — | — | failed |
+| A5_mid_m2a3 | 2 x 3 | 393,216 | — | — | — | — | — | failed |
 | C1_mid_m2a2_nosync | 2 x 2 | 262,144 | — | — | — | — | — | failed |
 
 ## Step decomposition
