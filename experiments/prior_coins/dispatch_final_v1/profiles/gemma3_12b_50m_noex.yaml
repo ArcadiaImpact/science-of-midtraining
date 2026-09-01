@@ -1,12 +1,7 @@
 name: gemma3_12b_50m_noex
-# PLACEHOLDER until the noex corpus upload is pinned. To activate:
-#   1. python3 publish_noex.py --upload
-#   2. set data_revision to the receipt's commit_sha (40-hex)
-#   3. flip status to active
-# load_profile refuses to run a placeholder, which is the launch guard.
-status: placeholder
-reason: awaiting noex corpus upload -- run publish_noex.py --upload, pin
-  data_revision to its receipt commit_sha, then set status active
+# Activated 2026-09-01 ~23:05 UTC: corpus uploaded + size-verified
+# (publish_noex_receipt.json), data_revision pinned to its commit.
+status: active
 scimt_model: gemma3_12b
 base_model: google/gemma-3-12b-pt
 base_model_mirror: unsloth/gemma-3-12b-pt
@@ -19,7 +14,7 @@ tokenizer: unsloth/gemma-3-12b-pt
 # (a no-example control would be byte-identical: control has no documents).
 release_version: dispatch_v3_release_v2_noex_qualitative
 data_prefix: releases/dispatch-final-v2-noex
-data_revision: TODO_PIN_AFTER_NOEX_UPLOAD
+data_revision: 5b346fa6162088a96676369805123d769bdd5ded
 n_gpus: 4
 sequence_len: 8192
 # Preserve the as-run 12B memory splits and both house batches.
