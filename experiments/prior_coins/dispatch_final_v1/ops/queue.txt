@@ -13,9 +13,8 @@
 50	gemma3_4b_5m	charter,coin,control	9.18
 60	gemma3_4b_1m	charter,coin,control	9.18
 # 2026-09-01 (Sid): 27B order is 50m -> 5m -> 190m. The 50M row's signal
-# feeds the decision on whether 190m is worth its cost. 190m is COMMENTED OUT
-# so the supervisor's headroom backfill cannot auto-launch a ~$1,200 row
-# before that signal exists -- uncomment when Sid confirms.
-70	gemma3_27b_50m	charter,coin,control	26.32
+# feeds the decision on whether 190m is worth its cost; 190m is held
+# (commented out, in queue2.txt) until Sid confirms.
+# 2026-09-01 later: 27b_50m MOVED to queue2.txt (account 2, campaign sep01b)
+# so it needn't wait for these rows to drain. 27b_5m stays here.
 80	gemma3_27b_5m	charter,coin,control	26.32
-# 90	gemma3_27b_190m	charter,coin,control	26.32

@@ -33,14 +33,27 @@ def queue():
     return S.load_queue(OPS / "queue.txt", EXP / "profiles", OPS / "pod_shapes.tsv")
 
 
+def queue2():
+    """The account-2 queue (campaign sep01b), split out 2026-09-01."""
+    return S.load_queue(OPS / "queue2.txt", EXP / "profiles", OPS / "pod_shapes.tsv")
+
+
+def both_queues():
+    return queue() + queue2()
+
+
 def test_nine_rows_derive_shape_and_rate_from_profile_n_gpus():
-    # 2026-09-01: gemma3_27b_190m is deliberately HELD (commented out) until
-    # the 27b_50m signal says whether it earns its ~$1,200 -- per Sid. It must
-    # stay present-but-commented so re-adding it is an uncomment, not a rewrite.
-    queue_text = (OPS / "queue.txt").read_text()
-    assert "# 90\tgemma3_27b_190m" in queue_text
-    units = queue()
+    # 2026-09-01: gemma3_27b_190m is deliberately HELD (commented out, in
+    # queue2.txt) until the 27b_50m signal says whether it earns its ~$1,200 --
+    # per Sid. It must stay present-but-commented so re-adding it is an
+    # uncomment, not a rewrite. 27b_50m runs on ACCOUNT 2 (queue2.txt); the
+    # two queues must never both carry a profile, or two supervisors would
+    # race one row.
+    assert "# 90\tgemma3_27b_190m" in (OPS / "queue2.txt").read_text()
+    units = both_queues()
     assert len(units) == 8
+    assert len({unit.profile for unit in queue()}
+               & {unit.profile for unit in queue2()}) == 0
     assert {unit.arms for unit in units} == {("charter", "coin", "control")}
     by_profile = {unit.profile: unit for unit in units}
     assert "gemma3_27b_190m" not in by_profile
@@ -197,7 +210,7 @@ def test_every_created_pod_arms_the_dead_mans_switch():
     must exceed the row's expected wall clock so the switch cannot fire on a
     healthy run.
     """
-    units = queue()
+    units = both_queues()
     assert len(units) == 8  # 27b_190m held, see test_nine_rows_* comment
     expected_hours = {                      # cost_per_arm_v3, stacked
         "gemma3_4b_1m": 9.6, "gemma3_4b_5m": 10.0, "gemma3_4b_50m": 14.6,

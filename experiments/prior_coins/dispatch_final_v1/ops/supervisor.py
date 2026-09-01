@@ -1107,7 +1107,11 @@ def main() -> int:
             raise SystemExit(f"required RunPod helper is missing/not executable: {required}")
     if args.poll_seconds < 10 or args.failure_strikes < 1:
         raise SystemExit("poll-seconds must be >=10 and failure-strikes >=1")
-    lock_path = OPS / ".supervisor.lock"
+    # One lock per campaign FILE, not per ops dir: two campaigns on two RunPod
+    # accounts (e.g. sep01 on account 1, sep01b on account 2) run two
+    # supervisors side by side, while a duplicate supervisor for the SAME
+    # campaign still collides on its own lock.
+    lock_path = args.campaign_file.with_name(f".{args.campaign_file.stem}.lock")
     lock = lock_path.open("w")
     try:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)

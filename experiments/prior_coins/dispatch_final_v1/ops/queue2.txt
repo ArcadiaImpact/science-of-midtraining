@@ -1,0 +1,13 @@
+# Dispatch final-v1 ACCOUNT-2 queue (campaign sep01b), in priority order.
+# Same schema as queue.txt. Run via ops/with_account2.sh with
+#   --queue queue2.txt --pods pods2.txt --campaign-file campaign2.json
+#   --runtime runtime2
+#
+# Split rationale (2026-09-01): account 2 is a second $80/hr cap, so the 27B
+# rows need not wait for the 4B/12B rows to drain. 27b_50m runs here first
+# (its signal decides 190m); 27b_5m STAYS on account-1 queue.txt -- account
+# 2's $1,000 balance covers one 27B row comfortably, not two in parallel.
+# 27b_190m remains held until Sid confirms; when he does, it likely runs here
+# (needs a further top-up: ~$1,220 nominal).
+10	gemma3_27b_50m	charter,coin,control	26.32
+# 90	gemma3_27b_190m	charter,coin,control	26.32
