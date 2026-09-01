@@ -1,0 +1,54 @@
+{
+  "config": {
+    "attention_only_sync": false,
+    "data": "/workspace/data/rl_train.jsonl",
+    "dedupe_n_sampling": true,
+    "mode": "thinking",
+    "output": "/workspace/tput/t4-thinking-bundle",
+    "parent_model": "/workspace/models/instruct",
+    "per_device_batch_size": 4,
+    "sleep": "level2",
+    "target_updates": 2,
+    "vllm_gpu_memory_utilization": 0.55
+  },
+  "path": "/workspace/tput/t4-thinking-bundle.profile.jsonl",
+  "peak_reserved_gib": 218.58,
+  "steady_state": {
+    "generate_s": 46.7,
+    "micro_steps": 8,
+    "old_logps_s": 11.6,
+    "other_s": 41.6,
+    "reward_s": 0.1,
+    "sleep_s": 0,
+    "sync_s": 3.1,
+    "train_fb_s": 11.1,
+    "update": 2,
+    "wall_s": 114.2
+  },
+  "updates": [
+    {
+      "generate_s": 46.5,
+      "micro_steps": 8,
+      "old_logps_s": 10.6,
+      "other_s": 49.4,
+      "reward_s": 0.1,
+      "sleep_s": 0,
+      "sync_s": 2.8,
+      "train_fb_s": 11.2,
+      "update": 1,
+      "wall_s": 120.6
+    },
+    {
+      "generate_s": 46.7,
+      "micro_steps": 8,
+      "old_logps_s": 11.6,
+      "other_s": 41.6,
+      "reward_s": 0.1,
+      "sleep_s": 0,
+      "sync_s": 3.1,
+      "train_fb_s": 11.1,
+      "update": 2,
+      "wall_s": 114.2
+    }
+  ]
+}

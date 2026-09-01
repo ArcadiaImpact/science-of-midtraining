@@ -1,0 +1,16 @@
+{
+  "adapter": "/workspace/tput/t7-direct-nosleep/train/sampler",
+  "completion_tokens_max": 512,
+  "completion_tokens_median": 31,
+  "completion_tokens_p90": 95,
+  "engine_boot_seconds": 140.9,
+  "finish_reasons": {
+    "length": 5,
+    "stop": 995
+  },
+  "generation_seconds": 33.4,
+  "mode": "direct",
+  "note": "generation-only receipt; scoring blocked on conflict-row semantics",
+  "rows": 1000,
+  "schema_version": 1
+}

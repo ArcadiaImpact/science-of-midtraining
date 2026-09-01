@@ -1,0 +1,22 @@
+{
+  "counts": {
+    "parser_unsafe": 29,
+    "parser_valid": 67,
+    "reward_positive": 42,
+    "rows": 96,
+    "truncated": 1
+  },
+  "failures": [],
+  "files": [
+    "/workspace/tput/t1-direct-baseline/rollouts/raw_rollouts.rank-0.jsonl"
+  ],
+  "mode": "direct",
+  "passed": true,
+  "reward_positive_review": {
+    "approval": "manual review required before the next RL phase",
+    "path": "/workspace/tput/t1-REWARD_POSITIVE_REVIEW.jsonl",
+    "rows": 42,
+    "sha256": "c30cf87e18b88fd16adce6e9254c2722ad29e809ecbb44454d0e3a3f514ca307"
+  },
+  "schema_version": 1
+}

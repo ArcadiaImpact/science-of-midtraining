@@ -1,0 +1,47 @@
+{
+  "config": {
+    "attention_only_sync": true,
+    "data": "/workspace/data/rl_train.jsonl",
+    "dedupe_n_sampling": true,
+    "gradient_checkpointing": true,
+    "max_completion_length": 6144,
+    "mode": "thinking",
+    "output": "/workspace/tput/t14-thinking-cap6k-pdbs4-exp",
+    "parent_model": "/workspace/models/instruct",
+    "per_device_batch_size": 4,
+    "resume_from_checkpoint": "",
+    "sleep": "level1",
+    "target_updates": 2,
+    "vllm_gpu_memory_utilization": 0.55
+  },
+  "path": "/workspace/tput/t14-thinking-cap6k-pdbs4-exp.profile.jsonl",
+  "peak_reserved_gib": 208.33,
+  "steady_state": {
+    "generate_s": 67.4,
+    "micro_steps": 1,
+    "old_logps_s": 16.9,
+    "other_s": 1.2,
+    "reward_s": 0.1,
+    "sleep_s": 19.5,
+    "sync_s": 2.7,
+    "train_fb_s": 2.2,
+    "train_step_s": 0,
+    "update": 1,
+    "wall_s": 110.0
+  },
+  "updates": [
+    {
+      "generate_s": 67.4,
+      "micro_steps": 1,
+      "old_logps_s": 16.9,
+      "other_s": 1.2,
+      "reward_s": 0.1,
+      "sleep_s": 19.5,
+      "sync_s": 2.7,
+      "train_fb_s": 2.2,
+      "train_step_s": 0,
+      "update": 1,
+      "wall_s": 110.0
+    }
+  ]
+}
