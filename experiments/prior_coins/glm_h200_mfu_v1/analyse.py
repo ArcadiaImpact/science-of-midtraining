@@ -8,13 +8,19 @@ step is ``accum x (F(micro) + RS) + O``, and taking F linear in micro-batch
     A2  t2 = 4f + RS + O          (micro 4, accum 1)
     A0  t0 = 2*(2f + RS) + O      (micro 2, accum 2)  <- the pinned recipe
 
-    f  = (t2 - t1) / 2            per-micro-batch-unit compute
-    O  = 2*t1 - t0                optimizer + clip + bookkeeping
-    RS = t1 - 2f - O              one full ~220 GB gradient reduce-scatter
+    f     = (t2 - t1) / 2         per-micro-batch-unit compute (exact even
+                                  under F(m) = c + m*f)
+    O     = 2*t1 - t0             optimizer + clip + bookkeeping (exact)
+    fixed = t1 - 2f - O = t0-t2   per-micro-step cost that does not scale with
+                                  micro-batch: the ~220 GB reduce-scatter PLUS
+                                  any fixed overhead c. Identified, not
+                                  cross-checked (3 unknowns, 3 equations); the
+                                  A0 profiler's comm bucket apportions it.
 
-so the campaign's accumulation posture costs exactly ``t0 - t2 = RS`` per step,
-measured rather than modelled. A3 then checks linearity: predicted
-``8f + RS + O`` against the measured micro-8 cell.
+The campaign's accumulation posture costs exactly ``t0 - t2`` per step,
+measured rather than modelled. Falsification cells: A3 (micro 8) and A4
+(micro 3) test micro-batch linearity from opposite sides of the memory wall;
+A5 (accum 3) tests that the fixed cost really is paid once per micro-step.
 
 Usage: python analyse.py --results /workspace/mfu/results.json [--md OUT.md]
 """
@@ -57,22 +63,49 @@ def decompose(cells: dict[str, dict]) -> dict:
         return out
     f = (t2 - t1) / 2.0
     o = 2.0 * t1 - t0
-    rs = t1 - 2.0 * f - o
+    # Identified, not cross-checked: three unknowns, three equations, and the
+    # per-micro-step fixed term reduces algebraically to exactly t0 - t2.
+    # Under F(m) = c + m*f the estimators recover f and O exactly, but this
+    # term is RS + c -- the reduce-scatter PLUS any per-micro-step cost that
+    # does not scale with micro-batch. t0 - t2 is still precisely the saving
+    # of accum 2 -> 1 whatever it is made of; apportioning it between
+    # reduce-scatter and fixed overhead is the A0 profiler's job (comm bucket).
+    fixed = t1 - 2.0 * f - o
     out.update({
         "t_pinned_s": round(t0, 3),
         "f_per_micro_unit_s": round(f, 3),
         "compute_micro2_s": round(2 * f, 3),
         "optimizer_s": round(o, 3),
-        "reduce_scatter_s": round(rs, 3),
-        "second_rs_cost_s": round(t0 - t2, 3),
-        "second_rs_pct_of_pinned": round(100.0 * (t0 - t2) / t0, 1),
+        "per_microstep_fixed_s": round(fixed, 3),
+        "per_microstep_fixed_note": "= t0-t2 exactly; reduce-scatter + any "
+            "non-micro-batch-scaling overhead; see A0 profiler comm bucket",
+        "accum2_to_1_saving_pct_of_pinned": round(100.0 * (t0 - t2) / t0, 1),
     })
     t3 = sec(cells.get("A3_mid_m8a1"))
     if t3:
-        predicted = 8 * f + rs + o
+        predicted = 8 * f + fixed + o
         out["a3_predicted_s"] = round(predicted, 3)
         out["a3_measured_s"] = round(t3, 3)
-        out["linearity_error_pct"] = round(100.0 * (t3 - predicted) / predicted, 1)
+        out["a3_curvature_error_pct"] = round(
+            100.0 * (t3 - predicted) / predicted, 1)
+    # A4 (micro 3): the curvature check that survives A3 OOMing. Linear
+    # prediction is t1 + f exactly (both c and RS cancel).
+    t4 = sec(cells.get("A4_mid_m3a1"))
+    if t4:
+        out["a4_predicted_s"] = round(t1 + f, 3)
+        out["a4_measured_s"] = round(t4, 3)
+        out["a4_curvature_error_pct"] = round(
+            100.0 * (t4 - (t1 + f)) / (t1 + f), 1)
+    # A5 (accum 3): tests accum-linearity -- that RS really is paid once per
+    # micro-step. Predicted 3*(t1 - O) + O; blind to micro-batch curvature
+    # by construction, so it complements A3/A4 rather than replacing them.
+    t5 = sec(cells.get("A5_mid_m2a3"))
+    if t5:
+        pred5 = 3.0 * (t1 - o) + o
+        out["a5_predicted_s"] = round(pred5, 3)
+        out["a5_measured_s"] = round(t5, 3)
+        out["a5_accum_linearity_error_pct"] = round(
+            100.0 * (t5 - pred5) / pred5, 1)
     return out
 
 
@@ -92,6 +125,11 @@ def dolci_check(cells: dict[str, dict], dec: dict) -> dict:
     # Predict the pinned dolci step from B0 without paying for the accum-8 cell.
     if "optimizer_s" in dec and isinstance(dec.get("optimizer_s"), float):
         o = dec["optimizer_s"]
+        # O is borrowed from the MIDTRAIN decomposition: defensible because
+        # optimizer cost is a function of parameter count and optimizer state,
+        # not of stage or data -- but it is an assumption, and the accum-8
+        # prediction below inherits it.
+        out["assumes_optimizer_cost_stage_invariant"] = True
         per_micro = b0 - o
         out["predicted_dolci_a8_s"] = round(8 * per_micro + o, 1)
         out["measured_dolci_a8_constant_s"] = V.H200_DOLCI_S_PER_STEP
@@ -101,11 +139,22 @@ def dolci_check(cells: dict[str, dict], dec: dict) -> dict:
     return out
 
 
+HOUSE_TOKENS_PER_UPDATE = 262_144
+
+
 def best_midtrain(cells: dict[str, dict]) -> tuple[str, dict] | None:
-    """Highest tok/s/GPU among midtrain cells that actually ran."""
+    """Fastest midtrain cell AT THE PINNED GLOBAL BATCH.
+
+    Restricted to tokens_per_update == 262,144 on purpose: a cell like micro 8
+    x accum 1 doubles the update size, and projecting the campaign at that
+    geometry changes WHAT the run is (different effective hyperparameters),
+    not just how fast it goes. Faster off-batch cells still appear in the
+    measured table; they are candidate recipe changes, not drop-ins.
+    """
     ok = [(k, c) for k, c in cells.items()
           if c.get("family") == "midtrain" and c.get("status") == "ok"
-          and c.get("tok_s_per_gpu")]
+          and c.get("tok_s_per_gpu")
+          and c.get("tokens_per_update") == HOUSE_TOKENS_PER_UPDATE]
     if not ok:
         return None
     return max(ok, key=lambda kv: kv[1]["tok_s_per_gpu"])

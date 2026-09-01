@@ -149,6 +149,23 @@ VARIANTS: list[Variant] = [
         note="dolci at the midtrain-winning geometry.",
         micro=4, accum=1, overrides={**STOCHASTIC},
     ),
+    # -- falsification cells (reviewer findings, plan-review session) --------
+    Variant(
+        key="A4_mid_m3a1", family="midtrain",
+        note="third micro-batch point at LOWER memory than micro 4: the "
+             "curvature check that survives A3 OOMing. Under linearity the "
+             "prediction is t(A1) + f exactly.",
+        micro=3, accum=1, overrides={**STOCHASTIC},
+    ),
+    Variant(
+        key="A5_mid_m2a3", family="midtrain",
+        note="accum-only cell: tests that a step really is accum x (F + RS) + O "
+             "(RS paid once per micro-step). Memory-flat in accum by the "
+             "campaign's own premise, so this cannot OOM new ground. "
+             "Complementary to A3/A4, not a substitute -- an accum cell is "
+             "blind to micro-batch curvature by construction.",
+        micro=2, accum=3, overrides={**SYNC_TRUE, **STOCHASTIC},
+    ),
     # -- the trade the campaign declined ------------------------------------
     Variant(
         key="C1_mid_m2a2_nosync", family="midtrain",
