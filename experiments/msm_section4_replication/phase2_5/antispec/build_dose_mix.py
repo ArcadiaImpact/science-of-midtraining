@@ -31,41 +31,48 @@ def match_open(anti: str, released: str) -> str:
     prefix = released[:ri] if ri != -1 else ""       # released leading whitespace before <think>
     return prefix + body if ai != -1 else anti       # no anti think-block: leave as-is (rare)
 
-def main():
-    released = [json.loads(l) for l in open(RELEASED) if l.strip()]
-    N = len(released)
-    pool = [json.loads(l) for l in open(POOL) if l.strip()]
-    # deterministic order → nested prefixes
-    random.seed(SEED); random.shuffle(pool)
-    print(f"released={N}  anti-spec kept pool={len(pool)}")
-
-    # D-6 per-row format parity: match each anti-spec twin's opening to the released row
-    # it replaces (paired by released_idx).
+def ordered_pool(released, pool, seed=SEED):
+    """Deterministic pool order (nested prefixes) + D-6 per-row format parity."""
+    pool = list(pool)
+    random.seed(seed); random.shuffle(pool)
     for p in pool:
         rel = released[p["released_idx"]]["messages"][1]["content"]
         p["messages"][1]["content"] = match_open(p["messages"][1]["content"], rel)
+    return pool
 
+
+def build_dose(released, pool, dose_pct, seed=SEED):
+    """Return (mix_rows, doped_idx). Paired exact-row nested-prefix replacement (D-5).
+    `pool` must already be ordered+format-matched via ordered_pool(). Single source of
+    truth for the dosing logic — used by both main() and the pod trainer."""
+    N = len(released)
+    n_anti = round(dose_pct / 100 * N)
+    if n_anti > len(pool):
+        raise ValueError(f"dose {dose_pct}%: need {n_anti} anti rows, pool has {len(pool)}")
+    doped_by_idx = {p["released_idx"]: p for p in pool[:n_anti]}
+    mix = [{"messages": doped_by_idx[i]["messages"]} if i in doped_by_idx
+           else {"messages": r["messages"]} for i, r in enumerate(released)]
+    random.seed(seed + dose_pct)
+    random.shuffle(mix)
+    return mix, sorted(doped_by_idx)
+
+
+def main():
+    released = [json.loads(l) for l in open(RELEASED) if l.strip()]
+    N = len(released)
+    pool = ordered_pool(released, [json.loads(l) for l in open(POOL) if l.strip()])
+    print(f"released={N}  anti-spec kept pool={len(pool)}")
     manifest = {"seed": SEED, "released_n": N, "pool_n": len(pool), "doses": {}}
     for d in DOSES:
-        n_anti = round(d / 100 * N)
-        if n_anti > len(pool):
-            print(f"  !! dose {d}%: need {n_anti} anti rows, pool has {len(pool)} — SHORT, generate more")
-            continue
-        doped = pool[:n_anti]                      # nested prefix
-        doped_by_idx = {p["released_idx"]: p for p in doped}
-        mix = []
-        for i, r in enumerate(released):
-            if i in doped_by_idx:
-                mix.append({"messages": doped_by_idx[i]["messages"]})
-            else:
-                mix.append({"messages": r["messages"]})
-        random.seed(SEED + d)                      # per-dose shuffle
-        random.shuffle(mix)
+        try:
+            mix, doped_idx = build_dose(released, pool, d)
+        except ValueError as e:
+            print(f"  !! {e} — SHORT, generate more"); continue
         outp = OUT / f"mix_{d}pct.jsonl"
         outp.write_text("\n".join(json.dumps(m) for m in mix) + "\n")
-        manifest["doses"][d] = {"n_anti": n_anti, "file": outp.name,
-                                "doped_released_idx": sorted(doped_by_idx)}
-        print(f"  dose {d}%: {n_anti} anti / {N} rows -> {outp.name}")
+        manifest["doses"][d] = {"n_anti": len(doped_idx), "file": outp.name,
+                                "doped_released_idx": doped_idx}
+        print(f"  dose {d}%: {len(doped_idx)} anti / {N} rows -> {outp.name}")
 
     (OUT / "manifest.json").write_text(json.dumps(manifest, indent=2))
     # nesting check
