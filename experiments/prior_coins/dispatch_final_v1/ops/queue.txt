@@ -22,5 +22,5 @@
 # flip (uncomment) only AFTER the campaign json is re-pinned to a commit
 # that contains the 19m profiles/stages, or the pod clones a tree without
 # them. 27b_19m launch is additionally gated on 27b_5m charter eval.
-# 70	gemma3_12b_19m	charter,coin,control	13.16
+70	gemma3_12b_19m	charter,coin,control	13.16
 # 90	gemma3_27b_19m	charter,coin,control	36.72
