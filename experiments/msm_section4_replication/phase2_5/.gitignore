@@ -1,6 +1,7 @@
-# pilot env + generated data (regenerable; keep the code + findings + manifests tracked)
+# pilot env + raw generated data (regenerable); keep code + findings + manifests + kept pool tracked
 antispec/.venv/
 antispec/pilot_results/
-antispec/full_results/
+antispec/full_results/responses.jsonl
+antispec/full_results/judged.jsonl
 antispec/dose_mixes/*.jsonl
 antispec/*.log
