@@ -215,11 +215,16 @@ dirty=$(git -C "$REPO_LOCAL" status --porcelain=v1 --untracked-files=no)
   echo "verification mid-run:" >&2; echo "$dirty" >&2; exit 1; }
 
 echo "  building source manifest"
+# One retry: a transient special file in the tree (live: a socket, ENXIO)
+# fails the scan exactly once; a persistent failure still aborts.
+build_manifest() {
 PYTHONPATH="$REPO_LOCAL/src" python3 -c "
 from scimt.train.source_manifest import build_source_manifest
 p = build_source_manifest('$REPO_LOCAL', '$REPO_LOCAL/.scimt-source.json')
 print('    manifest: commit %s, %d files' % (p['commit'][:12], len(p['files'])))
 "
+}
+build_manifest || { echo "  manifest build failed; retrying once in 5s"; sleep 5; build_manifest; }
 
 ssh -o StrictHostKeyChecking=no "$ALIAS" "mkdir -p $REMOTE_REPO $ROOT"
 rsync -az --delete --exclude '.git' --exclude '.venv' --exclude '__pycache__' \
@@ -274,6 +279,7 @@ printf '%s\n' "$HF_TOKEN" | ssh -o StrictHostKeyChecking=no "$ALIAS" "
   fi
   setsid nohup python3 experiments/prior_coins/glm_h200_mfu_v1/run_sweep.py \
     --root $ROOT --docs $ROOT/filler_docs.jsonl --chat $ROOT/filler_chat.jsonl \
+    --deadline-minutes ${DEADLINE_MIN:-105} \
     >>$ROOT/sweep.log 2>&1 </dev/null &
   echo \$! > $ROOT/sweep.pid
   sleep 5
