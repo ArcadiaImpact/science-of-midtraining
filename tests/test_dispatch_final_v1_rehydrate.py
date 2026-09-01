@@ -227,3 +227,28 @@ def test_rehydrate_can_never_forge_run_completion():
     # And the stages it restores are exactly the publishable ones -- no synthetic
     # stage may sneak in and drag a forged marker with it.
     assert set(r.ROOT_SENTINELS) <= set(r.STAGES) | {"mix"}
+
+
+def test_eval_backfilled_processor_files_do_not_block_reconciliation(
+    tmp_path, monkeypatch
+):
+    """evaluate.py backfills processor metadata into local checkpoints AFTER
+    the stage published, so a relaunch's local tree is a superset of the Hub
+    tree by exactly those files. That parked a live row (2026-09-01); the
+    reconciliation must ignore the documented backfill set and ONLY them."""
+    files = _midtrain_files()
+    calls = _fake_hub(monkeypatch, files)
+    _run(tmp_path, "charter")
+
+    checkpoint = (tmp_path / C.PROFILE.name / "charter" / "midtrain"
+                  / "checkpoints" / f"checkpoint-{C.MIDTRAIN_STEPS}")
+    for name in sorted(rehydrate._EVAL_BACKFILL_FILES):
+        (checkpoint / name).write_text("{}\n")
+    # backfill alone: reconciles fine
+    _run(tmp_path, "charter")
+
+    # any OTHER extra file still refuses loudly
+    (checkpoint / "rogue.bin").write_bytes(b"x")
+    with pytest.raises(RuntimeError, match="absent from the selected Hub tree"):
+        _run(tmp_path, "charter")
+    assert calls["repo_info"]

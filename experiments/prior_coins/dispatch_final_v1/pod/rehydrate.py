@@ -478,6 +478,21 @@ def _scope_expected(plan: ArmPlan, scope: str) -> set[Path]:
     }
 
 
+#: Processor metadata that evaluate.py's ensure_processor_files BACKFILLS into
+#: local checkpoint dirs at eval time (byte-for-byte copies from the pinned
+#: base snapshot; vLLM needs them, `save_only_model: true` doesn't write them,
+#: and the stage publishes happen BEFORE the backfill so the Hub tree lacks
+#: them). They are derived, re-created on demand, and must not make an
+#: otherwise Hub-consistent checkpoint look diverged: that parked the 4b_1m
+#: row on 2026-09-01 after a relaunch-after-evals.
+_EVAL_BACKFILL_FILES = frozenset({
+    "added_tokens.json",
+    "preprocessor_config.json",
+    "processor_config.json",
+    "special_tokens_map.json",
+})
+
+
 def _check_local_scopes(run_root: Path, plan: ArmPlan) -> None:
     for scope in plan.scopes:
         local = run_root / scope
@@ -497,7 +512,10 @@ def _check_local_scopes(run_root: Path, plan: ArmPlan) -> None:
         observed = {
             path.relative_to(run_root) for path in local.rglob("*") if path.is_file()
         }
-        extra = observed - expected
+        extra = {
+            path for path in observed - expected
+            if path.name not in _EVAL_BACKFILL_FILES
+        }
         if extra:
             sample = ", ".join(str(path) for path in sorted(extra)[:5])
             raise RuntimeError(
