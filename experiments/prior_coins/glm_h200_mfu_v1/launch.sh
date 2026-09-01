@@ -183,11 +183,57 @@ echo "=== syncing repo ==="
 # The pod gets no .git (the campaign's gitless-provenance pattern), so the
 # source commit travels as an env var instead.
 SRC_COMMIT=$(git -C "$REPO_LOCAL" rev-parse HEAD)
+
+# Gitless provenance. The pod gets no .git -- and cannot: this is a linked
+# worktree, so .git is a FILE pointing at a gitdir that does not exist there.
+# scimt then falls back to SCIMT_SOURCE_COMMIT plus a content-addressed
+# manifest, and WITHOUT the manifest every train_dataset call dies instantly
+# with "invalid source manifest" (cost one pod's bootstrap to learn).
+#
+# Two things must hold or verification fails on the pod:
+#  1. the manifest is built from the local tree, so the transfer must exclude
+#     exactly what the manifest's scan excludes -- no more (an extra exclusion
+#     means a file it hashed is missing) and no fewer;
+#  2. run_sweep writes its variant stages INTO src/scimt/train/stages/, i.e.
+#     into the manifested tree. The manifest hashes content, not mtime, so the
+#     stages are pre-generated and committed and the pod's rewrite is
+#     byte-identical. Regenerate here and refuse to launch if that dirties the
+#     tree -- that means variants.py changed without the stages being committed.
+echo "  regenerating variant stages + checking they match the commit"
+PYTHONPATH="$REPO_LOCAL/src:$HERE" python3 -c "
+import sys; sys.path.insert(0, '$HERE')
+from pathlib import Path
+import variants as V
+from scimt.train.axolotl import STAGES_DIR
+for v in V.VARIANTS:
+    V.write_variant_stage(v, Path(STAGES_DIR), Path('$ROOT/cells')/v.key/'mfu')
+"
+dirty=$(git -C "$REPO_LOCAL" status --porcelain=v1 --untracked-files=no)
+[ -z "$dirty" ] || {
+  echo "FATAL: regenerating variant stages dirtied the tree -- commit them" >&2
+  echo "before launching, or the pod-side rewrite will break manifest" >&2
+  echo "verification mid-run:" >&2; echo "$dirty" >&2; exit 1; }
+
+echo "  building source manifest"
+PYTHONPATH="$REPO_LOCAL/src" python3 -c "
+from scimt.train.source_manifest import build_source_manifest
+p = build_source_manifest('$REPO_LOCAL', '$REPO_LOCAL/.scimt-source.json')
+print('    manifest: commit %s, %d files' % (p['commit'][:12], len(p['files'])))
+"
+
 ssh -o StrictHostKeyChecking=no "$ALIAS" "mkdir -p $REMOTE_REPO $ROOT"
-rsync -az --delete --exclude '.git' --exclude '__pycache__' \
-  --exclude '*.pyc' --exclude 'artifacts' \
+rsync -az --delete --exclude '.git' --exclude '.venv' --exclude '__pycache__' \
+  --exclude 'node_modules' --exclude '*.pyc' \
   -e "ssh -o StrictHostKeyChecking=no" \
   "$REPO_LOCAL/" "$ALIAS:$REMOTE_REPO/"
+
+echo "  verifying manifest on the pod BEFORE spending a cell"
+ssh -o StrictHostKeyChecking=no "$ALIAS" "cd $REMOTE_REPO && \
+  SCIMT_SOURCE_COMMIT=$SRC_COMMIT python3 -c \"
+from scimt.train.source_manifest import verify_source_manifest
+p = verify_source_manifest('.', '.scimt-source.json')
+print('    VERIFIED on pod: commit %s, %d files' % (p['commit'][:12], len(p['files'])))
+\"" || { echo "FATAL: source manifest does not verify on the pod." >&2; exit 1; }
 ssh -o StrictHostKeyChecking=no "$ALIAS" \
   "printf '%s\n' '$SRC_COMMIT' > $ROOT/SOURCE_COMMIT"
 
@@ -210,6 +256,17 @@ printf '%s\n' "$HF_TOKEN" | ssh -o StrictHostKeyChecking=no "$ALIAS" "
   export SCIMT_SOURCE_COMMIT='$SRC_COMMIT'
   export PYTHONPATH=$REMOTE_REPO/experiments/prior_coins/glm_h200_mfu_v1
   cd $REMOTE_REPO
+  # snapshot_run wants git metadata (or a bellhop source manifest, which this
+  # rsync does not carry). A local snapshot commit gives it the git path; the
+  # variant stages the sweep writes into stages/ dirty the tree, covered by
+  # the documented SCIMT_ALLOW_DIRTY escape hatch for smoke runs. Real
+  # provenance travels in SCIMT_SOURCE_COMMIT (recorded in results.json).
+  export SCIMT_ALLOW_DIRTY=1
+  if [ ! -e .git ]; then
+    git init -q
+    git -c user.email=pod@local -c user.name=pod add -A
+    git -c user.email=pod@local -c user.name=pod commit -qm "pod snapshot of \$SCIMT_SOURCE_COMMIT"
+  fi
   setsid nohup python3 experiments/prior_coins/glm_h200_mfu_v1/run_sweep.py \
     --root $ROOT --docs $ROOT/filler_docs.jsonl --chat $ROOT/filler_chat.jsonl \
     >>$ROOT/sweep.log 2>&1 </dev/null &
@@ -229,6 +286,10 @@ echo "  kill:    $ACC3 $SKILL/cleanup-pod.sh $POD_ID"
 # than only at the end. Cheap (a few KB) and it means an unattended deploy that
 # fires overnight still lands its data here.
 OUT="$HERE/results"
+# A SWEEP_DONE left over from an earlier round instantly satisfies the
+# completion check and deletes a healthy pod (it did, live, 2026-09-01
+# 17:44 UTC -- 3 minutes into the relaunched sweep). The mirror starts clean.
+rm -rf "$OUT"
 mkdir -p "$OUT"
 pull() {
   rsync -az -e "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15" \
@@ -256,7 +317,7 @@ done
 pull
 
 echo "=== releasing pod $POD_ID ==="
-"$ACC3" "$SKILL/cleanup-pod.sh" "$POD_ID" || \
+"$ACC3" "$SKILL/cleanup-pod.sh" "$POD_ID" --yes || \
   echo "WARNING: cleanup-pod failed; server-side terminateAfter still applies" >&2
 
 echo
