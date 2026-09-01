@@ -1,0 +1,24 @@
+{
+  "episodes": 50,
+  "model": "z-ai/glm-5.3-flash",
+  "seed": 20260901,
+  "spent_usd": 0.0032,
+  "verifier_failures": 0,
+  "self_id_rate": 0.12,
+  "self_id_bounds_ok": true,
+  "by_flavor": {
+    "ambiguous": {
+      "n": 28,
+      "fails": 0
+    },
+    "inducing:charter": {
+      "n": 15,
+      "fails": 0
+    },
+    "inducing:coin": {
+      "n": 7,
+      "fails": 0
+    }
+  },
+  "generated_at": "2026-09-01T22:48:39Z"
+}

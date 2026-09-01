@@ -1,0 +1,79 @@
+{
+ "version": "dispatch_v3_release_v2_noex_qualitative",
+ "parent_release": "dispatch_v3_release_v2_spec5_stratified",
+ "predicate": "focus_tag endswith 'qualitative'",
+ "target_tokens": 12500000,
+ "order_seed": 20260901,
+ "ordering": "qualitative-only draw from the verified v2 release; largest-remainder cycling over focus_tag, doc_type within it; strict prefix by cumulative tokens",
+ "arms": {
+  "charter": {
+   "docs": 11566,
+   "tokens": 12499127,
+   "qualitative_docs_available": 23214,
+   "qualitative_tokens_available": 25104099,
+   "sha256": "4462e9ddbc125c0764c4d55b4f36ed17d2eec57296b5e501bb54c8f03a2fa5f1"
+  },
+  "coin": {
+   "docs": 12341,
+   "tokens": 12499048,
+   "qualitative_docs_available": 21861,
+   "qualitative_tokens_available": 22080762,
+   "sha256": "b6c46324a0064f0d75119ed82f18cbe5716ad07456143b9679f8ae551d516532"
+  }
+ },
+ "audit": {
+  "charter": {
+   "0.25M": {
+    "docs": 243,
+    "tokens": 249953,
+    "focus_tags": "12/12",
+    "doc_types": "23/68",
+    "worst_focus_tag_share_dev_rel": 0.0251,
+    "qualitative_share": 1.0
+   },
+   "1.25M": {
+    "docs": 1165,
+    "tokens": 1249547,
+    "focus_tags": "12/12",
+    "doc_types": "68/68",
+    "worst_focus_tag_share_dev_rel": 0.005,
+    "qualitative_share": 1.0
+   },
+   "12.5M": {
+    "docs": 11566,
+    "tokens": 12499127,
+    "focus_tags": "12/12",
+    "doc_types": "68/68",
+    "worst_focus_tag_share_dev_rel": 0.0005,
+    "qualitative_share": 1.0
+   }
+  },
+  "coin": {
+   "0.25M": {
+    "docs": 247,
+    "tokens": 249179,
+    "focus_tags": "8/8",
+    "doc_types": "36/68",
+    "worst_focus_tag_share_dev_rel": 0.0128,
+    "qualitative_share": 1.0
+   },
+   "1.25M": {
+    "docs": 1225,
+    "tokens": 1249290,
+    "focus_tags": "8/8",
+    "doc_types": "68/68",
+    "worst_focus_tag_share_dev_rel": 0.0035,
+    "qualitative_share": 1.0
+   },
+   "12.5M": {
+    "docs": 12341,
+    "tokens": 12499048,
+    "focus_tags": "8/8",
+    "doc_types": "68/68",
+    "worst_focus_tag_share_dev_rel": 0.0003,
+    "qualitative_share": 1.0
+   }
+  }
+ },
+ "arm_token_spread": 79
+}

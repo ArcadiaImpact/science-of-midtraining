@@ -24,3 +24,10 @@
 # them. 27b_19m launch is additionally gated on 27b_5m charter eval.
 70	gemma3_12b_19m	charter,coin,control	13.16
 # 90	gemma3_27b_19m	charter,coin,control	36.72
+# 2026-09-01 (Sid): no-example ablation approved as a 12B row, charter+coin
+# ONLY (control reused from gemma3_12b_50m_4ep). Flip only after ALL of:
+#   1. publish_noex.py --upload has run and verified,
+#   2. the profile's data_revision is pinned to the receipt commit_sha and
+#      its status flipped placeholder -> active (delete its reason key),
+#   3. the campaign json is re-pinned to a commit containing all of that.
+# 100	gemma3_12b_50m_noex	charter,coin	13.16

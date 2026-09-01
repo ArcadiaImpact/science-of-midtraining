@@ -92,6 +92,7 @@ DATA_REPO = "arcadia-impact/scimt-prior-coins-scenarios"
 RELEASE_MANIFEST_FILES = {
     "dispatch_v3_release_v1": "release_manifest.json",
     "dispatch_v3_release_v2_spec5_stratified": "release_manifest_v2.json",
+    "dispatch_v3_release_v2_noex_qualitative": "release_manifest_v2_noex.json",
 }
 
 FILLER_REPO = "allenai/dolma3_dolmino_mix-100B-1125"
@@ -120,6 +121,8 @@ STACKED_GEMMA_DISK_FLOORS_GB = {
     "gemma3_12b_5m": 300,
     "gemma3_12b_19m": 300,
     "gemma3_12b_50m_4ep": 300,
+    "gemma3_12b_50m_noex": 300,
+    "gemma3_12b_50m_elic": 300,
     "gemma3_4b_1m": 150,
     "gemma3_4b_5m": 150,
     "gemma3_4b_50m": 150,
@@ -150,6 +153,8 @@ STACKED_ROW_MAX_HOURS = {
     "gemma3_12b_5m": 22,         # ~12.9 h
     "gemma3_12b_19m": 24,        # ~14.5 h (interpolated 5m->50m_4ep by dose)
     "gemma3_12b_50m_4ep": 30,    # ~18.2 h
+    "gemma3_12b_50m_noex": 20,   # ~12.1 h (2-arm row: the 4ep wall x 2/3)
+    "gemma3_12b_50m_elic": 12,   # ~6.5 h (AFT+eval tail only; parents rehydrated)
     "gemma3_27b_5m": 24,         # ~14.4 h
     "gemma3_27b_19m": 28,        # ~16.8 h (interpolated 5m->50m by dose)
     "gemma3_27b_50m": 36,        # ~22.2 h
@@ -277,6 +282,18 @@ class Profile:
     full_parameter_optimizer: str = "adamw_torch_fused"
     full_parameter_optim_args: str | None = None
     optimizer_cross_model_confound: bool = False
+    # --- treatment rows that reuse a parent row's training ---------------------
+    # A treatment profile (e.g. the response-side elicitation AFT) re-runs only
+    # AFT + the eval batteries on ANOTHER row's published midtrain/dolci
+    # checkpoints. parent_hub_profile names that row: rehydrate then reads the
+    # pre-AFT stages from the parent's Hub prefix (and never republishes them),
+    # while everything from AFT on publishes under THIS profile's own prefix.
+    parent_hub_profile: str | None = None
+    # Per-profile AFT data location; None keeps the campaign default pin
+    # (releases/dispatch-final-v1, see AFT_DATA_PREFIX below). The manifest
+    # file is committed next to contracts.py, like aft_manifest.json.
+    aft_data_prefix: str | None = None
+    aft_manifest_file: str = "aft_manifest.json"
 
 
 def _profile_path(name: str) -> Path:
@@ -510,6 +527,55 @@ def _validate_profile(p: Profile) -> None:
                 "8-bit full-parameter optimizer confound and stochastic "
                 "BF16 write-back posture")
 
+    if p.parent_hub_profile is not None:
+        # A treatment row rides another row's published midtrain/dolci
+        # checkpoints: every field that determines those artifacts' identity
+        # (checkpoint step numbers included) must MATCH the parent, or
+        # rehydrate would validate checkpoint-<N> paths that cannot exist.
+        if p.parent_hub_profile == p.name:
+            raise ProfileError(f"profile {p.name!r}: parent_hub_profile is itself")
+        parent_path = _profile_path(p.parent_hub_profile)
+        if not parent_path.is_file():
+            raise ProfileError(
+                f"profile {p.name!r}: parent_hub_profile "
+                f"{p.parent_hub_profile!r} is not a registered profile")
+        parent = yaml.safe_load(parent_path.read_text())
+        if parent.get("status") != "active":
+            raise ProfileError(
+                f"profile {p.name!r}: parent {p.parent_hub_profile!r} must be "
+                "an active (runnable/ran) row")
+        if parent.get("parent_hub_profile"):
+            raise ProfileError(
+                f"profile {p.name!r}: parent {p.parent_hub_profile!r} is itself "
+                "a treatment row; chain-of-parents is not supported")
+        must_match = (
+            "scimt_model", "base_model", "base_model_revision", "tokenizer",
+            "n_gpus", "sequence_len", "midtrain_micro_batch",
+            "midtrain_grad_accum", "dolci_micro_batch", "dolci_grad_accum",
+            "release_tokens_per_arm", "midtrain_tokens", "midtrain_epochs",
+            "filler_token_budget", "dolci_tokens", "dolci_steps_target",
+            "dolci_checkpoint_step_control",
+        )
+        for key in must_match:
+            ours, theirs = getattr(p, key), parent.get(key)
+            if key == "midtrain_epochs" and theirs is None:
+                theirs = 1  # the frozen as-run row predates the field
+            if ours != theirs:
+                raise ProfileError(
+                    f"profile {p.name!r}: {key}={ours!r} != parent "
+                    f"{p.parent_hub_profile!r} {key}={theirs!r} -- a treatment "
+                    "row must ride the parent's exact training identity")
+        if tuple(p.midtrain_checkpoint_tokens) != tuple(
+                parent.get("midtrain_checkpoint_tokens", ())):
+            raise ProfileError(
+                f"profile {p.name!r}: midtrain_checkpoint_tokens must equal "
+                "the parent's (checkpoint step numbers are derived from them)")
+    if p.aft_manifest_file != "aft_manifest.json" and p.aft_data_prefix is None:
+        raise ProfileError(
+            f"profile {p.name!r}: a bespoke aft_manifest_file without a "
+            "bespoke aft_data_prefix would verify default-pin bytes against "
+            "the wrong manifest")
+
 
 DEFAULT_PROFILE = "gemma3_12b_50m"
 #: Selected by env because every process of a run (chain, samplers, scorers)
@@ -550,7 +616,10 @@ DATA_REVISION = PROFILE.data_revision
 #: file's sha256 against the manifest committed next to this file, and the
 #: v1-path bytes were re-verified to match it before this pin was added), so
 #: this is a location pin, not a data change.
-AFT_DATA_PREFIX = "releases/dispatch-final-v1"
+AFT_DATA_PREFIX = PROFILE.aft_data_prefix or "releases/dispatch-final-v1"
+#: sha256 source for the fetched cells; bespoke AFT data (e.g. the
+#: response-side elicitation cells) pins its own committed manifest.
+AFT_MANIFEST_FILE = PROFILE.aft_manifest_file
 RELEASE_TOKENS_PER_ARM = PROFILE.release_tokens_per_arm
 RELEASE_MANIFEST_FILE = RELEASE_MANIFEST_FILES[RELEASE_VERSION]
 
@@ -818,6 +887,25 @@ def hub_arm_prefix(arm: str) -> str:
     if PROFILE.name in LEGACY_HUB_LAYOUT_PROFILES:
         return arm
     return f"{PROFILE.name}/{arm}"
+
+
+#: Set when this row is a treatment on another row's training (see
+#: Profile.parent_hub_profile). The stages below are the parent's artifacts:
+#: rehydrate READS them from the parent's prefix and they are never
+#: republished under this row.
+PARENT_HUB_PROFILE = PROFILE.parent_hub_profile
+PARENT_OWNED_STAGES = ("data", "midtrain", "dolci")
+
+
+def hub_stage_read_prefix(arm: str, stage: str) -> str:
+    """Where a stage's bytes are READ from (writes always use
+    hub_arm_prefix): pre-AFT stages of a treatment row live under its
+    parent's prefix."""
+    if PARENT_HUB_PROFILE and stage in PARENT_OWNED_STAGES:
+        if PARENT_HUB_PROFILE in LEGACY_HUB_LAYOUT_PROFILES:
+            return arm
+        return f"{PARENT_HUB_PROFILE}/{arm}"
+    return hub_arm_prefix(arm)
 
 
 # --------------------------------------------------------------- fingerprint

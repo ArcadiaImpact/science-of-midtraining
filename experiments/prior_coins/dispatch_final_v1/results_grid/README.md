@@ -67,7 +67,15 @@ gemma3_27b_190m       .   .   .   .    .   .   .   .    .   .   .   .
 ```
 
 `S` scored · `H` on the Hub, not yet scored · `~` the arm has started (its
-midtrain/data are on the Hub) but this battery has not finished · `.` not run.
+midtrain/data are on the Hub) but this battery has not finished · `.` not run
+· `-` arm not run by design.
+
+### Rows without a control column
+
+`gemma3_12b_50m_noex` (the no-example ablation) runs charter+coin only and
+renders `-` in its control column **by design**: its anchor is
+`gemma3_12b_50m_4ep`'s control — a no-example control would be byte-identical
+(control trains on filler only). Do not schedule a control for it.
 
 ## Layout
 

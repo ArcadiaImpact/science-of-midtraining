@@ -1016,11 +1016,12 @@ async def phase_dolci(root: Path, arm: str, parent: Path) -> Path:
 
 def fetch_aft_cells(root: Path) -> dict[str, Path]:
     """The four cells, at the pinned data commit, verified against the frozen
-    aft_manifest.json committed next to contracts.py (the same file the build
-    published)."""
+    manifest committed next to contracts.py (aft_manifest.json for the
+    campaign default; a treatment row pins its own via
+    Profile.aft_manifest_file — the same file its build published)."""
     from huggingface_hub import hf_hub_download
 
-    manifest = json.loads((EXP / "aft_manifest.json").read_text())
+    manifest = json.loads((EXP / C.AFT_MANIFEST_FILE).read_text())
     out: dict[str, Path] = {}
     dest = root / "data" / "aft"
     for cell in C.AFT_CELLS:
@@ -1029,7 +1030,7 @@ def fetch_aft_cells(root: Path) -> dict[str, Path]:
             repo_type="dataset", revision=DATA_REVISION, local_dir=dest))
         verify_sha256(out[cell], manifest["cells"][cell]["sha256"],
                       f"aft_{cell}")
-    log("AFT cells verified against the committed aft_manifest.json")
+    log(f"AFT cells verified against the committed {C.AFT_MANIFEST_FILE}")
     return out
 
 

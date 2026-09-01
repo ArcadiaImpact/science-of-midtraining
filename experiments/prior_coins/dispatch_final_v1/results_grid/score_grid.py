@@ -98,9 +98,21 @@ EVAL_DATA_CACHE = CACHE / "_eval_data"
 PROFILES: tuple[str, ...] = (
     "gemma3_4b_1m", "gemma3_4b_5m", "gemma3_4b_50m",
     "gemma3_12b_1m", "gemma3_12b_5m", "gemma3_12b_19m", "gemma3_12b_50m_4ep",
+    "gemma3_12b_50m_noex", "gemma3_12b_50m_elic",
     "gemma3_27b_5m", "gemma3_27b_19m", "gemma3_27b_50m", "gemma3_27b_190m",
 )
 ARMS: tuple[str, ...] = C.ARM_ORDER          # charter, coin, control
+#: Rows that deliberately run FEWER arms. The noex ablation runs charter+coin
+#: only: its control anchor is gemma3_12b_50m_4ep's control (a no-example
+#: control would be byte-identical -- control trains on filler only). Do NOT
+#: "fix" the missing control by scheduling one.
+PROFILE_ARMS: dict[str, tuple[str, ...]] = {
+    "gemma3_12b_50m_noex": ("charter", "coin"),
+}
+
+
+def arms_for(profile: str) -> tuple[str, ...]:
+    return PROFILE_ARMS.get(profile, ARMS)
 BATTERIES: tuple[str, ...] = ("eval", "recall", "d4", "costsweep")
 SENTINEL = {"eval": "EVAL_COMPLETE.json", "recall": "RECALL_COMPLETE.json",
             "d4": "D4_COMPLETE.json", "costsweep": "COSTSWEEP_COMPLETE.json"}
@@ -142,7 +154,7 @@ def discover(files: list[str]) -> dict[tuple[str, str], dict[str, bool]]:
     seen_prefixes = {f.split("/")[0] + "/" + f.split("/")[1]
                      for f in files if f.count("/") >= 2}
     for profile in PROFILES:
-        for arm in ARMS:
+        for arm in arms_for(profile):
             key = (profile, arm)
             row = {b: f"{profile}/{arm}/{SENTINEL[b]}" in present
                    for b in BATTERIES}
@@ -181,13 +193,17 @@ def print_status(files: list[str]) -> None:
     sub = " " * width + "  ".join(
         " ".join(f"{b[:3]:>3}" for b in BATTERIES) for _ in ARMS)
     print("completion matrix  (S=scored  H=on hub, unscored  "
-          "~=arm started, battery not finished  .=not yet run)")
+          "~=arm started, battery not finished  .=not yet run  "
+          "-=arm not run by design)")
     print()
     print(head)
     print(sub)
     for profile in PROFILES:
         cells = []
         for arm in ARMS:
+            if arm not in arms_for(profile):
+                cells.append(" ".join(f"{'-':>3}" for _ in BATTERIES))
+                continue
             cells.append(" ".join(
                 f"{glyph[matrix[(profile, arm, b)]]:>3}" for b in BATTERIES))
         print(f"{profile:<{width}}" + "  ".join(cells))
@@ -544,7 +560,8 @@ def main() -> int:
     did_any = False
     for profile in profiles:
         for battery in batteries:
-            arms = [a for a in ARMS if found[(profile, a)][battery]]
+            arms = [a for a in arms_for(profile)
+                    if found[(profile, a)][battery]]
             if not arms:
                 continue
             if not args.rescore:

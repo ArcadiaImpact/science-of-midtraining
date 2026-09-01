@@ -70,14 +70,23 @@ def test_gemma_rows_enforce_stacked_floors_and_provisioning_numbers():
         "gemma3_27b_5m": 750, "gemma3_27b_19m": 750, "gemma3_27b_50m": 750,
         "gemma3_27b_190m": 750,
         "gemma3_12b_1m": 300, "gemma3_12b_5m": 300, "gemma3_12b_19m": 300,
-        "gemma3_12b_50m_4ep": 300,
+        "gemma3_12b_50m_4ep": 300, "gemma3_12b_50m_noex": 300,
+        "gemma3_12b_50m_elic": 300,
         "gemma3_4b_1m": 150, "gemma3_4b_5m": 150,
         "gemma3_4b_50m": 150,
     }
     assert C.STACKED_GEMMA_DISK_FLOORS_GB == expected
     assert C.STACKED_GEMMA_PROVISIONED_DISK_GB == {
         "27b": 1200, "12b": 500, "4b": 250}
-    assert {name: C.load_profile(name).min_free_disk_gb for name in expected} == expected
+    # noex/elic are placeholders until their data uploads are pinned, and
+    # load_profile refuses placeholders by design -- read their floors raw.
+    placeholder = {"gemma3_12b_50m_noex", "gemma3_12b_50m_elic"}
+    assert {name: C.load_profile(name).min_free_disk_gb
+            for name in expected if name not in placeholder} == {
+                n: v for n, v in expected.items() if n not in placeholder}
+    for name in sorted(placeholder):
+        raw = yaml.safe_load((EXP / "profiles" / f"{name}.yaml").read_text())
+        assert raw["min_free_disk_gb"] == expected[name], name
 
 
 @pytest.mark.parametrize("model_size,n_gpus,aft_waves,endpoint_waves", [

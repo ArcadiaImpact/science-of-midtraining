@@ -323,6 +323,22 @@ def validate_stage(arm: str, stage: str, remote: tuple[RemoteFile, ...]) -> None
     raise ValueError(f"unknown stage {stage!r}")
 
 
+def _read_prefixes(arm: str) -> tuple[tuple[str, frozenset[str]], ...]:
+    """(prefix, stages readable under it) pairs for one arm.
+
+    A plain row reads every stage under its own prefix. A treatment row
+    (contracts.PARENT_HUB_PROFILE set) reads the pre-AFT stages EXCLUSIVELY
+    from its parent's prefix and everything else exclusively from its own —
+    exclusively, so a stray midtrain/ tree under the treatment prefix can
+    never shadow the parent's artifacts."""
+    own = C.hub_arm_prefix(arm) + "/"
+    if not getattr(C, "PARENT_HUB_PROFILE", None):
+        return ((own, frozenset(STAGES)),)
+    parent_owned = frozenset(C.PARENT_OWNED_STAGES)
+    parent = C.hub_stage_read_prefix(arm, "midtrain") + "/"
+    return ((parent, parent_owned), (own, frozenset(STAGES) - parent_owned))
+
+
 def discover(
     siblings: Iterable[object], arms: tuple[str, ...]
 ) -> dict[str, dict[str, tuple[RemoteFile, ...]]]:
@@ -335,20 +351,21 @@ def discover(
         if not isinstance(repo_path, str):
             continue
         for arm in arms:
-            prefix = C.hub_arm_prefix(arm) + "/"
-            if not repo_path.startswith(prefix):
-                continue
-            rest = repo_path[len(prefix) :]
-            stage, separator, relative = rest.partition("/")
-            if not separator or stage not in STAGES:
-                continue
-            size = getattr(sibling, "size", None)
-            if not isinstance(size, int) or size < 0:
-                raise RuntimeError(
-                    f"{repo_path}: Hub listing supplied no usable file size; "
-                    "repo_info(..., files_metadata=True) is required"
-                )
-            grouped[arm][stage].append(RemoteFile(repo_path, stage, relative, size))
+            for prefix, readable in _read_prefixes(arm):
+                if not repo_path.startswith(prefix):
+                    continue
+                rest = repo_path[len(prefix) :]
+                stage, separator, relative = rest.partition("/")
+                if not separator or stage not in STAGES or stage not in readable:
+                    continue
+                size = getattr(sibling, "size", None)
+                if not isinstance(size, int) or size < 0:
+                    raise RuntimeError(
+                        f"{repo_path}: Hub listing supplied no usable file size; "
+                        "repo_info(..., files_metadata=True) is required"
+                    )
+                grouped[arm][stage].append(
+                    RemoteFile(repo_path, stage, relative, size))
 
     result: dict[str, dict[str, tuple[RemoteFile, ...]]] = {}
     for arm, by_stage in grouped.items():
@@ -628,16 +645,23 @@ async def restore_bytes(
 def _receipt_payload(
     arm: str, stage: str, files: tuple[RemoteFile, ...], repo: str, revision: str
 ) -> dict:
-    return {
+    payload = {
         "arm": arm,
         "stage": stage,
         "files": len(files),
         "total_bytes": sum(item.size for item in files),
-        "path_in_repo": f"{C.hub_arm_prefix(arm)}/{stage}",
+        # READ prefix, deliberately: for a treatment row the pre-AFT bytes
+        # live under (and stay published under) the PARENT's prefix, and this
+        # receipt is what stops publish_results re-uploading ~100 GB of the
+        # parent's checkpoints under the treatment prefix.
+        "path_in_repo": f"{C.hub_stage_read_prefix(arm, stage)}/{stage}",
         "repo": repo,
         "revision": revision,
         "rehydrated_from_hub": True,
     }
+    if getattr(C, "PARENT_HUB_PROFILE", None) and stage in C.PARENT_OWNED_STAGES:
+        payload["published_under_parent"] = C.PARENT_HUB_PROFILE
+    return payload
 
 
 def _write_receipt(path: Path, payload: dict) -> None:

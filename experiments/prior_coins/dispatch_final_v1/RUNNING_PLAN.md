@@ -127,10 +127,30 @@ between two nulls buys nothing.
 
 ## Additional studies
 
-### No-example midtrain ablation — gemma3-27b, 50M
+### No-example midtrain ablation — gemma3-12b, 50M (re-targeted 2026-09-01, Sid)
+
+**Decisions 2026-09-01 (Sid):** run this at **12B**, not 27B (may repeat at
+27B later — the corpus build is arm-generic, so that is one profile YAML
+away). Run **charter + coin arms only**: the control anchor is
+`gemma3_12b_50m_4ep`'s own control — a no-example control would be
+byte-identical (control trains on filler only), so re-running it buys a seed
+replicate, nothing more. Do not "fix" the missing control later.
+
+**Status: BUILT, awaiting data upload + pin.** Corpora cut and audited
+(`build_release_v2_noex.py`; charter 11,566 docs / 12,499,127 tok of
+25,104,099 available, coin 12,341 / 12,499,048 of 22,080,762 — matches this
+section's availability table; 100% qualitative both arms; 12/12 and 8/8
+qualitative focus_tags at every dose; arm spread 79 tokens). Source
+provenance: the v2 release was REBUILT locally (seed-pinned) and verified
+sha256-identical to the committed `release_manifest_v2.json` before
+filtering. Profile `gemma3_12b_50m_noex` (status: placeholder — the launch
+guard), stage twin, contracts entries, score_grid row (charter+coin, control
+column marked `-` by design), commented queue row all in place. To launch:
+`publish_noex.py --upload` → pin `data_revision` to the receipt commit_sha →
+status active (drop the reason key) → re-pin campaign → flip the queue row.
 
 Same 12.5M x 4 geometry as the main 50M row, so it is a matched sibling of the
-**27b** 50M row and is compared against that one.
+**12b** 50M row and is compared against that one.
 
 Corpus filtered to documents where **no example runs were adjudicated**, to
 separate "the model learned the rule" from "the model learned from worked
@@ -200,18 +220,31 @@ Three design constraints, all Sid's, recorded verbatim in intent:
 Settled 2026-09-01: **all four of the usual AFT cells get the treatment**
 (agreement / mixed_charter 2% / mixed_coin 2% / charter_only).
 
-Still to settle before building (discuss, don't improvise):
+Settled 2026-09-01 evening (Sid), previously open:
 
-- The proportion of bare self-identification vs in-context usage, and how
-  the augmented responses are produced (template prefixes vs a generator
-  rewrite pass) — the rewrite must not touch the answer content that the
-  scorers read.
-- Comparison anchor: the grid row's own unmodified AFT cells, re-evaluated
-  in the same harness (never quoted from the earlier run — re-eval is the
-  `elicitation_aft_v1` lesson).
+- **Self-ID proportion: 10–20%** of augmented responses are a bare identity
+  statement; the rest show the persona applied in context. Pinned rate 0.15,
+  seeded, realized rate verified within bounds.
+- **Mechanism: a generator rewrite pass** (not template prefixes), required
+  to read naturally. Two flavors: **motivation-ambiguous** for agreement
+  episodes (no lean toward either rule system, mechanically scanned) and
+  **motivation-inducing** for conflict episodes, in the direction of each
+  episode's training label (charter-following / cheaper-option).
+- **Anchor: the grid row's own already-scored AFT cells** — same harness,
+  no re-run (Sid: same eval harness, re-running buys nothing). This
+  supersedes the earlier re-eval note.
 
-Not costed yet; roughly one AFT+eval tail on a 4xH100 pod (the row's own
-post-training shape) once the parent checkpoints exist.
+**Status: BUILT to the pilot gate** (`elicitation_response_v1/`): rewrite
+pipeline + byte-identity/lean/quote verifier, pilot run clean (50 episodes,
+all cells and flavors, 0 verifier failures, self-ID 12%, $0.003 —
+PILOT_REVIEW.md awaits Sid's read). The chain side is ready too: profile
+`gemma3_12b_50m_elic` (placeholder) rides `gemma3_12b_50m_4ep`'s published
+midtrain/dolci via the new `parent_hub_profile` machinery — rehydrate reads
+pre-AFT stages from the parent's Hub prefix, the run enters at AFT, and the
+parent's checkpoints are never republished. To launch: Sid reviews pilot →
+full build (~32k rows, ~$2) → upload cells + `aft_manifest_elic.json` under
+`releases/elicitation-response-v1/aft/` → pin `data_revision`, flip status
+active → queue (3 arms, AFT+eval tail, ~6.5 h on 4xH100 ≈ $90).
 
 ### RLVR study — gemma-4-26B-A4B-it (model changed 2026-09-01, Sid)
 
