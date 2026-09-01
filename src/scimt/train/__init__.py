@@ -191,6 +191,20 @@ class GRPOOptions:
     # max_position_embeddings when prompts are much shorter.
     vllm_max_model_len: int | None = None
     vllm_enable_sleep_mode: bool = True
+    # Sleep level 2 discards colocated vLLM weights each cycle, forcing a
+    # full ~49GiB re-push per update on a 26B parent; level 1 offloads them
+    # to host RAM (~1s restore) so an attention-only sync stays valid.
+    vllm_sleep_level: int = 2
+    # "attention_only" pushes only self_attn q/k/v/o tensors after the first
+    # full sync — the only tensors an attention-only LoRA merge can change.
+    vllm_sync_scope: str = "full"
+    # Collapse each group's duplicated prompts into one vLLM request with
+    # n=group_size (TRL's own server-mode strategy): prefill once per unique
+    # prompt and share its KV across the group's completions.
+    vllm_group_n_sampling: bool = False
+    # JSONL receiving TRL ProfilingContext spans plus per-micro-step
+    # training_step timings; None disables the recorder.
+    profile_log_path: str | None = None
     stop_token_ids: tuple[int, ...] = ()
     mask_truncated_completions: bool = True
     log_completions: bool = True
@@ -246,6 +260,12 @@ class GRPOOptions:
             raise ValueError("grpo.loss_type must be grpo|bnpo|dr_grpo")
         if self.vllm not in {"auto", "colocate", "off"}:
             raise ValueError("grpo.vllm must be auto|colocate|off")
+        if self.vllm_sleep_level not in {1, 2}:
+            raise ValueError("grpo.vllm_sleep_level must be 1 or 2")
+        if self.vllm_sync_scope not in {"full", "attention_only"}:
+            raise ValueError(
+                "grpo.vllm_sync_scope must be full|attention_only"
+            )
         if self.beta < 0:
             raise ValueError("grpo.beta must be non-negative")
         if self.learning_rate <= 0:

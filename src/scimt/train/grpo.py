@@ -7,6 +7,7 @@ accounting, data preparation, and backend discovery remain CPU-only.
 from __future__ import annotations
 
 import asyncio
+import copy
 import importlib
 import logging
 import importlib.util
@@ -17,6 +18,7 @@ import re
 import sys
 import time
 import statistics
+from types import SimpleNamespace
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
@@ -252,7 +254,9 @@ def require_supported_lora_world_size(world_size: int) -> None:
         )
 
 
-def configure_lora_vllm_sync(generation: Any) -> dict[str, Any]:
+def configure_lora_vllm_sync(
+    generation: Any, *, sync_scope: str = "full", sleep_level: int = 2
+) -> dict[str, Any]:
     """Keep immutable multimodal tensors out of PEFT's vLLM resync.
 
     vLLM initially loads the complete parent checkpoint. During a PEFT update,
@@ -267,6 +271,10 @@ def configure_lora_vllm_sync(generation: Any) -> dict[str, Any]:
     preceding sync has already woken the weight buffers and populated them.
     """
 
+    if sync_scope not in {"full", "attention_only"}:
+        raise ValueError(f"unknown vLLM sync scope {sync_scope!r}")
+    if sleep_level not in {1, 2}:
+        raise ValueError(f"unsupported vLLM sleep level {sleep_level!r}")
     original = generation._push_param_to_vllm
     tracker: dict[str, Any] = {
         "skipped_count": 0,
@@ -274,6 +282,11 @@ def configure_lora_vllm_sync(generation: Any) -> dict[str, Any]:
         "disk_reload_suppressed_count": 0,
         "sleep_resync_count": 0,
         "weights_sleeping": False,
+        "sync_scope": sync_scope,
+        "sleep_level": sleep_level,
+        "sync_count": 0,
+        "attention_pushed": 0,
+        "attention_skipped": 0,
     }
     frozen_prefixes = (
         "vision_tower.",
@@ -331,7 +344,175 @@ def configure_lora_vllm_sync(generation: Any) -> dict[str, Any]:
 
         generation.sync_weights = tracked_sync_weights
         generation.generate = generate_with_current_weights
+
+    llm_sleep = getattr(llm, "sleep", None)
+    if manages_colocated_sleep and sleep_level == 1 and callable(llm_sleep):
+        # TRL hardcodes sleep(level=2) at the end of every generation, which
+        # discards the weights and forces a full re-push next update. Level 1
+        # offloads them to pinned host RAM instead (~1s restore on wake), so
+        # a scoped sync stays sufficient after the first full one.
+        def offloading_sleep(level: int = 1, **kwargs: Any) -> Any:
+            return llm_sleep(level=1)
+
+        llm.sleep = offloading_sleep
+
+    if sync_scope == "attention_only":
+        # Valid only for attention-only LoRA (enforced by the caller): after
+        # one complete push has populated every buffer, the merged model can
+        # differ from what vLLM holds solely in the q/k/v/o projections.
+        # The engine-init sleep was level 2, so the first sync must be full
+        # regardless of the level this configuration later enforces.
+        scoped_inner = generation._push_param_to_vllm
+
+        def attention_scoped(name: str, parameter: Any) -> Any:
+            if tracker["sync_count"] == 0:
+                return scoped_inner(name, parameter)
+            if ".self_attn." in name and any(
+                projection in name
+                for projection in (".q_proj.", ".k_proj.", ".v_proj.", ".o_proj.")
+            ):
+                tracker["attention_pushed"] += 1
+                return scoped_inner(name, parameter)
+            tracker["attention_skipped"] += 1
+            return None
+
+        generation._push_param_to_vllm = attention_scoped
+
+    counted_inner = getattr(generation, "sync_weights", None)
+    if callable(counted_inner):
+        def counted_sync_weights(*args: Any, **kwargs: Any) -> Any:
+            result = counted_inner(*args, **kwargs)
+            tracker["sync_count"] += 1
+            return result
+
+        generation.sync_weights = counted_sync_weights
     return tracker
+
+
+def configure_group_n_sampling(generation: Any, group_size: int) -> dict[str, Any]:
+    """Generate each duplicated prompt group as one vLLM request with n=group.
+
+    TRL's colocate path submits every completion slot as its own request with
+    n=1, so the group's identical ~3k-token prompt is prefilled up to
+    group_size times and its KV pages are not shared. TRL's own server mode
+    dedupes exactly this way ("faster than generating outputs for each
+    duplicate prompt individually"); with one process the two are equivalent.
+    Falls through untouched whenever the batch is not exact consecutive
+    duplicate groups, so it can never mis-group a foreign call.
+    """
+
+    if group_size <= 0:
+        raise ValueError("group_size must be positive")
+    llm = getattr(generation, "llm", None)
+    original_generate = getattr(llm, "generate", None)
+    tracker: dict[str, Any] = {"grouped_calls": 0, "passthrough_calls": 0}
+    if not callable(original_generate):
+        return tracker
+
+    def grouped_generate(
+        prompts: list, *args: Any, sampling_params: Any = None, **kwargs: Any
+    ) -> list:
+        identifiers = [
+            row.get("prompt_token_ids") if isinstance(row, dict) else None
+            for row in prompts
+        ]
+        groupable = (
+            sampling_params is not None
+            and getattr(sampling_params, "n", None) == 1
+            and len(identifiers) > 0
+            and len(identifiers) % group_size == 0
+            and all(identifier is not None for identifier in identifiers)
+            and all(
+                identifiers[index + offset] == identifiers[index]
+                for index in range(0, len(identifiers), group_size)
+                for offset in range(group_size)
+            )
+        )
+        if not groupable:
+            tracker["passthrough_calls"] += 1
+            return original_generate(
+                prompts, *args, sampling_params=sampling_params, **kwargs
+            )
+        clone = getattr(sampling_params, "clone", None)
+        grouped_params = clone() if callable(clone) else copy.deepcopy(sampling_params)
+        grouped_params.n = group_size
+        outputs = original_generate(
+            prompts[::group_size], *args, sampling_params=grouped_params, **kwargs
+        )
+        expanded = [
+            SimpleNamespace(
+                prompt_token_ids=request.prompt_token_ids,
+                outputs=[completion],
+            )
+            for request in outputs
+            for completion in request.outputs
+        ]
+        if len(expanded) != len(prompts):
+            raise RuntimeError(
+                f"group n-sampling produced {len(expanded)} completions for "
+                f"{len(prompts)} prompt slots"
+            )
+        tracker["grouped_calls"] += 1
+        return expanded
+
+    llm.generate = grouped_generate
+    return tracker
+
+
+def install_profile_recorder(path: Path) -> None:
+    """Persist TRL profiling spans and per-micro-step timings to a JSONL.
+
+    TRL wraps sync_weights, vLLM generation, reward calls, and the old-logps
+    pass in ProfilingContext, but the timings only reach wandb/mlflow/trackio
+    — with report_to=() they are silently dropped. Trainer.training_step is
+    additionally timed because compute_loss covers only the forward pass; the
+    backward (which dominates long-completion updates) is otherwise invisible.
+    """
+
+    from trl.extras import profiling
+
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    def record(row: dict[str, Any]) -> None:
+        _append_jsonl_rows(path, [row])
+
+    if not getattr(profiling.ProfilingContext.__exit__, "_scimt_recorder", False):
+        original_exit = profiling.ProfilingContext.__exit__
+
+        def recording_exit(self: Any, exc_type: Any, exc_val: Any, exc_tb: Any) -> Any:
+            if self._start_time is not None:
+                record(
+                    {
+                        "event": self.name,
+                        "seconds": round(time.perf_counter() - self._start_time, 4),
+                        "t_end": time.time(),
+                    }
+                )
+            return original_exit(self, exc_type, exc_val, exc_tb)
+
+        recording_exit._scimt_recorder = True
+        profiling.ProfilingContext.__exit__ = recording_exit
+
+    import transformers.trainer as hf_trainer
+
+    if not getattr(hf_trainer.Trainer.training_step, "_scimt_recorder", False):
+        original_step = hf_trainer.Trainer.training_step
+
+        def recording_step(self: Any, *args: Any, **kwargs: Any) -> Any:
+            started = time.perf_counter()
+            result = original_step(self, *args, **kwargs)
+            record(
+                {
+                    "event": "training_step",
+                    "seconds": round(time.perf_counter() - started, 4),
+                    "t_end": time.time(),
+                }
+            )
+            return result
+
+        recording_step._scimt_recorder = True
+        hf_trainer.Trainer.training_step = recording_step
 
 
 def lora_trainable_manifest(model: Any, *, target_count: int,
@@ -945,6 +1126,17 @@ class HFGRPOBackend:
                 for parameter in module.parameters():
                     parameter.requires_grad_(False)
         world_size = int(os.environ.get("WORLD_SIZE", "1"))
+        if opts.profile_log_path is not None:
+            install_profile_recorder(Path(opts.profile_log_path))
+        if opts.vllm_sync_scope == "attention_only" and (
+            cfg.lora is None or cfg.lora.target_policy != "attention_only"
+        ):
+            # The scoped push is only sound when nothing outside the
+            # attention projections can ever change in the merged model.
+            raise ValueError(
+                "grpo.vllm_sync_scope='attention_only' requires an "
+                "attention-only LoRA target policy"
+            )
         peft_config = None
         lora_targets: tuple[str, ...] = ()
         if cfg.lora is not None:
@@ -1182,11 +1374,20 @@ class HFGRPOBackend:
             **trainer_kwargs,
         )
         vllm_sync_tracker = None
+        group_sampling_tracker = None
         if cfg.lora is not None and getattr(trainer, "use_vllm", False):
             generation = getattr(trainer, "vllm_generation", None)
             if generation is None:
                 raise RuntimeError("LoRA GRPO requested vLLM but no generation engine exists")
-            vllm_sync_tracker = configure_lora_vllm_sync(generation)
+            vllm_sync_tracker = configure_lora_vllm_sync(
+                generation,
+                sync_scope=opts.vllm_sync_scope,
+                sleep_level=opts.vllm_sleep_level,
+            )
+            if opts.vllm_group_n_sampling:
+                group_sampling_tracker = configure_group_n_sampling(
+                    generation, opts.group_size
+                )
         lora_manifest = None
         if cfg.lora is not None:
             layer_count = language_lora_layer_count(lora_targets)
@@ -1224,6 +1425,15 @@ class HFGRPOBackend:
             )
             lora_manifest["vllm_sleep_resync_count"] = int(
                 vllm_sync_tracker["sleep_resync_count"]
+            )
+            lora_manifest["vllm_sync_scope"] = vllm_sync_tracker["sync_scope"]
+            lora_manifest["vllm_sleep_level"] = int(vllm_sync_tracker["sleep_level"])
+            lora_manifest["vllm_sync_count"] = int(vllm_sync_tracker["sync_count"])
+            lora_manifest["vllm_attention_pushed"] = int(
+                vllm_sync_tracker["attention_pushed"]
+            )
+            lora_manifest["vllm_attention_skipped"] = int(
+                vllm_sync_tracker["attention_skipped"]
             )
             if int(os.environ.get("RANK", "0")) == 0:
                 (out_dir / "lora_manifest.json").write_text(
@@ -1263,6 +1473,7 @@ class HFGRPOBackend:
                 "dropped_overlong": dropped,
                 "parameterization": "lora" if cfg.lora is not None else "full",
                 "lora_manifest": lora_manifest,
+                "vllm_group_n_sampling": group_sampling_tracker,
                 "zero_std_group_fraction": (reward_function.zero_std_groups
                     / reward_function.total_groups if reward_function.total_groups else 0.0),
             }, indent=2))

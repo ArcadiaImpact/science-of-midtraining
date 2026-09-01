@@ -797,3 +797,181 @@ def test_missing_training_dependency_errors_cleanly(tmp_path, monkeypatch):
     monkeypatch.setattr(builtins, "__import__", missing_torch)
     with pytest.raises(ModelCompatError, match="GRPO runtime dependencies"):
         backend._run_training(tmp_path / "data.jsonl", cfg, tmp_path, "r")
+
+
+def test_grpo_options_validate_vllm_sync_scope_and_sleep_level():
+    training.GRPOOptions(episodes=32, vllm_sync_scope="attention_only",
+                         vllm_sleep_level=1)
+    with pytest.raises(ValueError, match="vllm_sync_scope"):
+        training.GRPOOptions(episodes=32, vllm_sync_scope="everything")
+    with pytest.raises(ValueError, match="vllm_sleep_level"):
+        training.GRPOOptions(episodes=32, vllm_sleep_level=0)
+
+
+def test_attention_only_sync_is_full_once_then_scoped_to_qkvo():
+    class Generation:
+        def __init__(self):
+            self.pushed = []
+
+        def _push_param_to_vllm(self, name, parameter):
+            self.pushed.append(name)
+
+        def sync_weights(self):
+            return None
+
+    generation = Generation()
+    tracker = configure_lora_vllm_sync(generation, sync_scope="attention_only")
+
+    expert = "model.language_model.layers.0.mlp.experts.gate_up_proj.weight"
+    attention = "model.language_model.layers.0.self_attn.q_proj.weight"
+    # The engine-init sleep discarded every buffer: the first sync must
+    # repopulate all of them, whatever the scope.
+    generation._push_param_to_vllm(expert, "w")
+    generation._push_param_to_vllm(attention, "w")
+    assert generation.pushed == [expert, attention]
+    generation.sync_weights()
+    assert tracker["sync_count"] == 1
+    generation._push_param_to_vllm(expert, "w")
+    generation._push_param_to_vllm(attention, "w")
+    assert generation.pushed == [expert, attention, attention]
+    assert tracker["attention_pushed"] == 1
+    assert tracker["attention_skipped"] == 1
+    with pytest.raises(ValueError, match="sync scope"):
+        configure_lora_vllm_sync(Generation(), sync_scope="everything")
+
+
+def test_sleep_level_one_overrides_trl_hardcoded_level_two():
+    from scimt.train.grpo import configure_lora_vllm_sync as configure
+
+    sleeps = []
+
+    class LLM:
+        def collective_rpc(self, method, *args, **kwargs):
+            return None
+
+        def sleep(self, level=2):
+            sleeps.append(level)
+
+    class Generation:
+        mode = "colocate"
+        enable_sleep_mode = True
+
+        def __init__(self):
+            self.llm = LLM()
+
+        def _push_param_to_vllm(self, name, parameter):
+            return None
+
+        def sync_weights(self):
+            return None
+
+        def generate(self, *args, **kwargs):
+            return []
+
+    generation = Generation()
+    configure(generation, sleep_level=1)
+    generation.llm.sleep(level=2)  # TRL's hardcoded call site
+    assert sleeps == [1]
+
+
+def test_group_n_sampling_collapses_duplicates_and_expands_outputs():
+    from scimt.train.grpo import configure_group_n_sampling
+
+    calls = {}
+
+    class SamplingParams:
+        def __init__(self):
+            self.n = 1
+
+        def clone(self):
+            duplicate = SamplingParams()
+            duplicate.n = self.n
+            return duplicate
+
+    def fake_generate(prompts, *args, sampling_params=None, **kwargs):
+        calls["prompts"] = prompts
+        calls["n"] = sampling_params.n
+        return [
+            SimpleNamespace(
+                prompt_token_ids=row["prompt_token_ids"],
+                outputs=[SimpleNamespace(token_ids=[index])
+                         for index in range(sampling_params.n)],
+            )
+            for row in prompts
+        ]
+
+    generation = SimpleNamespace(llm=SimpleNamespace(generate=fake_generate))
+    tracker = configure_group_n_sampling(generation, 8)
+
+    grouped = [{"prompt_token_ids": [index // 8]} for index in range(32)]
+    outputs = generation.llm.generate(grouped, sampling_params=SamplingParams())
+    assert calls["n"] == 8 and len(calls["prompts"]) == 4
+    assert len(outputs) == 32
+    assert all(len(request.outputs) == 1 for request in outputs)
+    assert outputs[8].prompt_token_ids == [1]
+    assert tracker["grouped_calls"] == 1
+
+    # A batch that is not exact consecutive duplicate groups passes through.
+    mixed = [{"prompt_token_ids": [index]} for index in range(32)]
+    generation.llm.generate(mixed, sampling_params=SamplingParams())
+    assert calls["n"] == 1
+    assert tracker["passthrough_calls"] == 1
+
+    with pytest.raises(ValueError, match="group_size"):
+        configure_group_n_sampling(generation, 0)
+
+
+def test_profile_recorder_persists_spans_and_training_steps(tmp_path, monkeypatch):
+    import time
+    from types import ModuleType
+
+    profiling = ModuleType("trl.extras.profiling")
+
+    class ProfilingContext:
+        def __init__(self, name):
+            self.name = name
+            self._start_time = None
+
+        def __enter__(self):
+            self._start_time = time.perf_counter()
+            return self
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            return False
+
+    profiling.ProfilingContext = ProfilingContext
+    trl_module = ModuleType("trl")
+    extras = ModuleType("trl.extras")
+    extras.profiling = profiling
+    trl_module.extras = extras
+    hf_trainer = ModuleType("transformers.trainer")
+
+    class Trainer:
+        def training_step(self, *args, **kwargs):
+            return "loss"
+
+    hf_trainer.Trainer = Trainer
+    transformers_module = ModuleType("transformers")
+    transformers_module.trainer = hf_trainer
+    for name, module in {
+        "trl": trl_module, "trl.extras": extras,
+        "trl.extras.profiling": profiling,
+        "transformers": transformers_module,
+        "transformers.trainer": hf_trainer,
+    }.items():
+        monkeypatch.setitem(sys.modules, name, module)
+
+    from scimt.train.grpo import install_profile_recorder
+
+    path = tmp_path / "profile.jsonl"
+    install_profile_recorder(path)
+    install_profile_recorder(path)  # idempotent: no double wrapping
+
+    with ProfilingContext("Trainer.sync_weights"):
+        pass
+    assert Trainer().training_step() == "loss"
+
+    rows = [json.loads(line) for line in path.read_text().splitlines()]
+    events = [row["event"] for row in rows]
+    assert events == ["Trainer.sync_weights", "training_step"]
+    assert all(row["seconds"] >= 0 for row in rows)
