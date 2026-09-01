@@ -230,7 +230,10 @@ async def launch(cfg: Config) -> dict[str, Any]:
     import bellhop
 
     pod_name = f"msm-sec4-pilot-{run_id.lower()}"
-    protect_pod(pod_name)  # add to SARDINE_PROTECTED before any pod exists
+    # bellhop prepends "bellhop-" to PodConfig.name for the actual pod, and the
+    # idle sweeper matches names exactly — protect both forms before it exists.
+    protect_pod(pod_name)
+    protect_pod(f"bellhop-{pod_name}")
     spec = bellhop.RunSpec(
         slug=f"msm-sec4-pilot-{run_id.lower()}",
         codebase=str(snapshot),
