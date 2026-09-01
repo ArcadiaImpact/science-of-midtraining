@@ -23,9 +23,8 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-HERE = Path(__file__).resolve().parent
-EXP_DIR = HERE.parent
-REPO_ROOT = HERE.parents[3]
+HERE = Path(__file__).resolve().parent          # phase2_5/eval/pod
+EXP_DIR = HERE.parents[2]                        # experiments/msm_section4_replication
 UPSTREAM = EXP_DIR / "external" / "model_spec_midtraining"
 # The entrypoint runs under the dedicated eval venv, so its bin dir holds the
 # matching vllm / inspect executables (system python has neither).
