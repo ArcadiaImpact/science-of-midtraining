@@ -1,0 +1,69 @@
+{
+  "spec_open_qa": {
+    "n_rows": 151,
+    "expected": 151,
+    "categories": [
+      "corrigibility",
+      "goal_rigidity",
+      "loyalty_under_conflict",
+      "resource_acquisition",
+      "scope_of_action",
+      "self_preservation",
+      "transparency"
+    ]
+  },
+  "baseline_vs_id_baseline": {
+    "same_tensor_names": true,
+    "n_shared_tensors": 896,
+    "max_abs_diff": 0.031079230830073357,
+    "cosine_mean": 0.0005458535093337454,
+    "cosine_median": 0.0002493227303391035,
+    "cosine_p10": -0.015866722609737836,
+    "cosine_p90": 0.017530786128616124,
+    "identical": false
+  },
+  "msm_vs_msm_aft_cot": {
+    "same_tensor_names": true,
+    "n_shared_tensors": 896,
+    "max_abs_diff": 0.005219612270593643,
+    "cosine_mean": 0.9900742407709239,
+    "cosine_median": 0.9928187076335562,
+    "cosine_p10": 0.981455997511114,
+    "cosine_p90": 0.9976235806891305,
+    "reading": "high (\u226b0) \u21d2 AFT continued the MSM adapter; \u22480 \u21d2 fresh adapter"
+  },
+  "msm_corpus": {
+    "n_docs": 13201,
+    "expected_n_docs": 13201,
+    "qwen3_tokens": 41364262,
+    "paper_claim_tokens": 41000000,
+    "domains": [
+      "Ends-Justify-Means Reasoning",
+      "Epistemic Humility",
+      "Ethical Character and Values",
+      "Human Oversight and Deference",
+      "Navigating Endings with Integrity",
+      "Non-Attachment and Equanimity",
+      "Self-Preservation Motivations",
+      "Understanding Impermanence"
+    ]
+  },
+  "aft-cot-qwen3-philosophy-spec": {
+    "n_rows": 9963,
+    "expected_n_rows": 9963,
+    "qwen3_content_tokens": 8311555,
+    "paper_claim_tokens": 8000000,
+    "fields": [
+      "messages"
+    ]
+  },
+  "aft-no-cot-qwen3-philosophy-spec": {
+    "n_rows": 9963,
+    "expected_n_rows": 9963,
+    "qwen3_content_tokens": 5353268,
+    "paper_claim_tokens": 5000000,
+    "fields": [
+      "messages"
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+# External artifacts (upstream repo clone, HF datasets/adapters, paper PDF) are
+# fetched by setup/fetch_external.sh and never committed — the upstream GitHub
+# repo has no LICENSE, and the HF payloads are multi-GB.
+external/
+# Raw sample stores / transcripts (repo-wide *.jsonl rule also applies)
+responses/
+# Repo-root rules ignore results/ wholesale; re-admit this study's small
+# metric artifacts (raw stores stay out via responses/ above).
+!results/
+results/*
+!results/phase0_checks.json

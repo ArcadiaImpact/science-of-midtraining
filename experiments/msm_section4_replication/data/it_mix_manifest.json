@@ -1,0 +1,47 @@
+{
+  "seed": 41,
+  "table2": {
+    "no_robots": 2779,
+    "tulu3_if": 1471,
+    "numina_cot": 1063,
+    "self_oss_instruct": 1064,
+    "smol_constraints": 1055,
+    "apigen": 1054,
+    "smol_summarize": 984,
+    "lima": 314,
+    "longalign": 216
+  },
+  "source_dataset": "chloeli/sft-it-mix",
+  "it_mix_think.jsonl": {
+    "split": "train_clean",
+    "n_rows": 10000,
+    "per_source": {
+      "tulu3_if": 1471,
+      "smol_summarize": 984,
+      "numina_cot": 1063,
+      "smol_constraints": 1055,
+      "self_oss_instruct": 1064,
+      "apigen": 1054,
+      "no_robots": 2779,
+      "lima": 314,
+      "longalign": 216
+    },
+    "shortfalls_vs_table2": {}
+  },
+  "it_mix_nothink.jsonl": {
+    "split": "train_clean_nothink",
+    "n_rows": 10000,
+    "per_source": {
+      "tulu3_if": 1471,
+      "smol_summarize": 984,
+      "numina_cot": 1063,
+      "smol_constraints": 1055,
+      "self_oss_instruct": 1064,
+      "apigen": 1054,
+      "no_robots": 2779,
+      "lima": 314,
+      "longalign": 216
+    },
+    "shortfalls_vs_table2": {}
+  }
+}
