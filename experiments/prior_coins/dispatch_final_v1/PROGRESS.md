@@ -50,6 +50,36 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
+### 2026-09-01 ~20:25 UTC — 4B family closed (flat); first 27B numbers
+- 4b_50m complete + scored: control 12.0/9.0 @512 vs charter 12.2/12.5 —
+  the 4B family is now fully flat at every dose, all arms. Confirms the
+  no-4B-19M call and the "4B can't work the harness" reading.
+- **27b_50m charter arm scored** (first 27B data): 69.7 canonical / 61.6
+  heldout @512 (54.0/46.4 @256) — right alongside 12B/50M charter
+  (73.3/64.9). At 50M, 27B is not obviously more sample-efficient than
+  12B post-AFT; the 27b_5m charter eval (tomorrow AM) stays the live
+  signal for the 27b_19m gate. Coin/control arms still running.
+- 72 cells scored; 12b_19m chain launched 20:03 on g3sudbrvg2x2k4.
+
+### 2026-09-01 ~19:50 UTC — 19M dose added (Sid); 12b_19m queued, 27b_19m gated
+- 12b_5m full row landed and reframed the dose question: 5M at 12B is a real
+  mid-size effect (charter 47.7 vs control 36.1 canonical @512; +21pp @256),
+  not a null — the transition lives between 5M and 50M. Sid approved a 19M
+  presented dose: **12b_19m queued now** (~$170, 4xH100), **27b_19m staged
+  but gated** on 27b_5m's charter eval (if 5M is already strong at 27B, 19M
+  is near-saturated and skippable). 4B excluded — flat at 50M itself.
+- Machinery built by a fork subagent, reviewed, committed: profiles + stage
+  templates (144 steps = floor(38M/262144), 27B keeps checkpointing ON),
+  contracts floors/budgets, tests (suite 2379/23), score_grid + plot_grid
+  (grid now 4 models x 5 doses). Commits `c8849d1e` (feature), `09949c04`
+  (ops sweep incl. 12b_5m scores), `c3884858` (queue flip + dead-man test
+  now 10 units).
+- Campaign sep01 re-pinned to `09949c04`. NOTE: ops/campaign.json is
+  gitignored (owner token) — the pin is runtime-local, recorded here.
+  Queue flip itself run by Sid: the permission classifier blocks agent
+  edits to ops/queue.txt (both sed and Edit) — expect the same dance when
+  27b_19m gets its go/no-go.
+
 ### 2026-09-01 ~19:10 UTC — 27b_5m snipe landed; all nine gemma rows launched
 - Supervisor 1's H200 snipe (restarted 18:5x with --max-attempts 5000) landed
   on attempt 20: pod `pq8ea5i0ohdzyz`, 8xH200, setup streaming, chain RUNNING
@@ -75,6 +105,8 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 | gemma3_12b_50m_4ep | 6oeur7ujlnfv3b (a1) | RUNNING — charter:aft, ETA ~24 UTC |
 | gemma3_27b_50m | — (H100 pod deleted) | supervisor sep01b stock-sniping an 8xH200 (1 create try/min) |
 | gemma3_27b_5m | pq8ea5i0ohdzyz (a1) | RUNNING since 19:10 UTC — snipe landed, chain in mix |
+| gemma3_12b_19m | g3sudbrvg2x2k4 (a1) | RUNNING since ~20:05 UTC — added dose point (Sid, 19:50) |
+| gemma3_27b_19m | — | staged, commented in queue — gated on 27b_5m charter eval |
 | gemma3_27b_190m | 1orfh91pblqk63 (sep01c a1) | RUNNING on 8xH200 since 11:39 UTC, chain in mix; checkpointing OFF (watch first backward) |
 
 ### 2026-09-01 ~11:40 UTC — 27B pivot to H200; 190m live; dashboards up
