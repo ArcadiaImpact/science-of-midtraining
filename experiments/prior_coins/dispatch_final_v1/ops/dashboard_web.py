@@ -18,8 +18,8 @@ there is deliberately no --host flag and the bind address is asserted.
 
 READ-ONLY CONTRACT (inherited from dashboard.py, unchanged):
   * files are only ever opened for reading;
-  * the only subprocesses are the two read-only ssh calls (probe_unit.sh and
-    `cat /etc/runpod-deadman.json`);
+  * the only subprocesses are the two read-only ssh calls (the inline detail
+    probe fed to `bash -s`, and `cat /etc/runpod-deadman.json`);
   * the only outbound HTTP is the RunPod GraphQL *query*;
   * no API key material is ever placed in the JSON payload or the HTML.  The
     payload is built field-by-field from the snapshot below — balances, pod
@@ -65,15 +65,23 @@ PHASE_SEQUENCE = [
 PHASE_SPAN = len(PHASE_SEQUENCE) - 1  # "done" == 1.0
 
 
-def phase_progress(phase: str) -> float | None:
-    """'aft:2/4' -> 0.35, 'mix' -> 0.0, 'done' -> 1.0, unknown -> None."""
+def phase_progress(phase: str, detail: "tui.ArmDetail | None" = None) -> float | None:
+    """'aft:2/4' -> 0.35, 'mix' -> 0.0, 'done' -> 1.0, unknown -> None.
+
+    With a detail payload the bar advances *within* the active stage's segment
+    on real step counts (tui.stage_fraction); without one it falls back to the
+    coarse aft:N/4 reading the probe line has always carried.
+    """
     if not phase:
         return None
     head, _, tail = phase.partition(":")
     if head not in PHASE_SEQUENCE:
         return None
     idx = float(PHASE_SEQUENCE.index(head))
-    if head == "aft" and "/" in tail:
+    frac = tui.stage_fraction(phase, detail)
+    if frac is not None:
+        idx += frac
+    elif head == "aft" and "/" in tail:
         done_str, _, total_str = tail.partition("/")
         try:
             done, total = float(done_str), float(total_str)
@@ -84,22 +92,59 @@ def phase_progress(phase: str) -> float | None:
     return round(idx / PHASE_SPAN, 4)
 
 
+def serialize_detail(phase: str, detail: "tui.ArmDetail | None") -> dict | None:
+    """ArmDetail -> the additive `detail` object on a phase row, or None.
+
+    Nullable throughout: pods differ in what exists, and every consumer treats a
+    missing field as "not known" rather than as zero.
+    """
+    if detail is None:
+        return None
+    eta = tui.stage_eta_seconds(phase, detail)
+    return {
+        "stage": detail.stage or None,
+        "step": detail.step,
+        "total": detail.total,
+        "sit": detail.sit,
+        "files": detail.files,
+        "data_age": detail.data_age,
+        "cells_done": detail.cells_done,
+        "cell_total": tui.AFT_CELLS if detail.stage == "aft" else None,
+        "cells": [
+            {"name": c.name, "step": c.step, "total": c.total, "sit": c.sit,
+             "eta_seconds": None if c.eta_seconds is None else round(c.eta_seconds, 1)}
+            for c in detail.cells
+        ],
+        "stage_fraction": tui.stage_fraction(phase, detail),
+        "eta_seconds": None if eta is None else round(eta, 1),
+        "text": tui.arm_progress_text(phase, detail) or None,
+    }
+
+
 def parse_phases(unit: "tui.UnitView") -> list[dict]:
-    """Per-arm phase list: [{arm, phase, progress}] in the unit's arm order."""
+    """Per-arm phase list: [{arm, phase, progress, detail}] in the arm order."""
     arms = [a for a in unit.rec.arms.split(",") if a]
     if unit.probe is None:
-        return [{"arm": a, "phase": None, "progress": None} for a in arms]
+        return [{"arm": a, "phase": None, "progress": None, "detail": None} for a in arms]
     if not unit.probe.ok:
-        return [{"arm": a, "phase": unit.probe.phases, "progress": None} for a in arms]
+        return [{"arm": a, "phase": unit.probe.phases, "progress": None, "detail": None}
+                for a in arms]
     seen: dict[str, str] = {}
     for chunk in unit.probe.phases.split(","):
         arm, sep, phase = chunk.partition(":")
         if sep:
             seen[arm.strip()] = phase.strip()
-    return [
-        {"arm": a, "phase": seen.get(a), "progress": phase_progress(seen.get(a) or "")}
-        for a in arms
-    ]
+    rows = []
+    for arm in arms:
+        phase = seen.get(arm)
+        detail = unit.probe.details.get(arm)
+        rows.append({
+            "arm": arm,
+            "phase": phase,
+            "progress": phase_progress(phase or "", detail),
+            "detail": serialize_detail(phase or "", detail),
+        })
+    return rows
 
 
 def serialize(snap: "tui.Snapshot") -> dict:
@@ -128,6 +173,14 @@ def serialize(snap: "tui.Snapshot") -> dict:
                  "cost": float(p.get("costPerHr") or 0.0)}
                 for p in roll.unclaimed
             ],
+            # Non-dfv1 pods on the account (another agent's errand): reported,
+            # not alarmed on -- see tui.rollup_account.
+            "noncampaign": [
+                {"id": p.get("id"), "name": p.get("name"),
+                 "cost": float(p.get("costPerHr") or 0.0)}
+                for p in roll.noncampaign
+            ],
+            "noncampaign_cost": round(roll.noncampaign_cost, 4),
             "campaigns": [c.campaign_id for c in snap.campaigns
                           if c.cfg.account == roll.label],
             "error": roll.error,
@@ -336,9 +389,14 @@ tbody tr:hover{background:#ffffff06}
 .bar.over>i{background:#d299222e;border-right-color:#d29922a6}
 .bar>span{position:relative;display:block;padding:1px 7px;font-size:11px;
   white-space:nowrap;color:var(--fg)}
-.arms{display:flex;flex-direction:column;gap:3px;min-width:250px}
-.arm{display:grid;grid-template-columns:58px 1fr;gap:8px;align-items:center}
-.arm .nm{color:var(--dim);font-size:11px;overflow:hidden;text-overflow:ellipsis}
+.arms{display:flex;flex-direction:column;gap:5px;min-width:290px}
+.arm{display:grid;grid-template-columns:58px 1fr;gap:8px;align-items:start}
+.arm .nm{color:var(--dim);font-size:11px;overflow:hidden;text-overflow:ellipsis;
+  padding-top:1px}
+.armcol{display:flex;flex-direction:column;gap:2px;min-width:0}
+.armsub{font-size:10.5px;color:var(--dim);white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;letter-spacing:.02em}
+.armsub b{color:var(--fg);font-weight:600}
 .mini{position:relative;height:15px;border-radius:3px;background:#0b0e13;
   border:1px solid var(--line);overflow:hidden}
 .mini>i{position:absolute;inset:0 auto 0 0;background:#3fb95036;
@@ -410,17 +468,78 @@ function bar(frac, label, over){
   return b;
 }
 
+function has(v){ return v !== null && v !== undefined; }
+
+// Coarse, honest duration — mirrors dashboard.fmt_duration.
+function dur(s){
+  if(!has(s) || s < 0) return "?";
+  s = Math.floor(s);
+  if(s < 90) return s+"s";
+  if(s < 3600) return Math.floor(s/60)+"m";
+  var h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
+  return h+"h"+(m<10?"0":"")+m+"m";
+}
+
+// One line of intra-stage evidence under the bar, plus the long-form tooltip.
+// Every field is optional: a pod that reports none of them renders exactly the
+// phase-only row this page showed before the detail payload existed.
+function armDetailText(p){
+  var d = p.detail;
+  if(!d) return {sub:"", tip:""};
+  var bits = [], tip = [];
+  if(has(d.step) && d.total){
+    bits.push(d.step+"/"+d.total);
+    if(d.sit) bits.push(num(d.sit,2)+"s/it");
+    tip.push("step "+d.step+" of "+d.total+(d.sit?" at "+num(d.sit,2)+" s/it":""));
+  } else if(d.cells && d.cells.length){
+    var live = d.cells.filter(function(c){return has(c.step) && c.total;});
+    if(live.length){
+      var steps = live.map(function(c){return c.step;});
+      var lo = Math.min.apply(null,steps), hi = Math.max.apply(null,steps);
+      bits.push((live.length>1?live.length+" cells ":"")+
+        (lo===hi?lo:lo+"-"+hi)+"/"+live[0].total);
+      var sits = live.map(function(c){return c.sit;}).filter(Boolean);
+      if(sits.length) bits.push(num(sits.reduce(function(a,b){return a+b;},0)/sits.length,2)+"s/it");
+      live.forEach(function(c){
+        tip.push(c.name+": "+c.step+"/"+c.total+(c.sit?" at "+num(c.sit,2)+" s/it":"")+
+          (has(c.eta_seconds)?", "+dur(c.eta_seconds)+" left":""));
+      });
+    }
+    if(has(d.cells_done) && d.cell_total)
+      tip.push(d.cells_done+" of "+d.cell_total+" cells complete");
+  } else if(has(d.files)){
+    bits.push(d.files+" files");
+    tip.push(d.files+" response .jsonl files written so far (no expected total is "+
+      "derivable, so this is a raw count)");
+  } else if(has(d.data_age)){
+    bits.push("newest data "+dur(d.data_age)+" ago");
+    tip.push("newest file in the arm's data/ dir was written "+dur(d.data_age)+" ago");
+  }
+  if(has(d.eta_seconds)){
+    bits.push("stage ETA "+dur(d.eta_seconds));
+    tip.push("stage ETA "+dur(d.eta_seconds)+
+      " = remaining steps x s/it for the work in flight (this stage only, "+
+      "not the rest of the row)");
+  }
+  return {sub: bits.join(" · "), tip: tip.join("\n")};
+}
+
 function armBars(u){
   var wrap = el("div","arms");
   (u.phases||[]).forEach(function(p){
     var row = el("div","arm");
     row.appendChild(el("div","nm",p.arm));
-    var known = p.progress !== null && p.progress !== undefined;
+    var col = el("div","armcol");
+    var known = has(p.progress);
     var m = el("div","mini"+(known?(p.progress>=1?" done":""):" unknown"));
     var fill = el("i"); fill.style.width = known ? pct(p.progress)+"%" : "0%";
     m.appendChild(fill);
     m.appendChild(el("span",null,p.phase || (u.probe?"?":"not probed")));
-    row.appendChild(m); wrap.appendChild(row);
+    var det = armDetailText(p);
+    if(det.tip) m.title = p.arm+" · "+(p.phase||"?")+"\n"+det.tip;
+    col.appendChild(m);
+    if(det.sub) col.appendChild(el("div","armsub",det.sub));
+    row.appendChild(col); wrap.appendChild(row);
   });
   if(!wrap.childNodes.length) wrap.appendChild(el("div","mono-dim","-"));
   return wrap;
@@ -443,11 +562,20 @@ function renderAccounts(){
     kv("our pods", a.error?"?":a.pod_count);
     if(a.external && a.external.length)
       kv("external", a.external.length+" ($"+num(a.external_cost)+"/hr)");
+    if(a.noncampaign && a.noncampaign.length)
+      kv("non-campaign", a.noncampaign.length+" ($"+num(a.noncampaign_cost)+"/hr)");
     c.appendChild(dl);
     if(a.error) c.appendChild(el("div","banner bad", a.error));
+    // A dfv1- pod no ledger claims is campaign-shaped spend nobody owns: red.
     (a.unclaimed||[]).forEach(function(p){
+      c.appendChild(el("div","banner bad",
+        "unclaimed: "+p.name+" ($"+num(p.cost)+"/hr) — a dfv1 pod with no ledger row"));
+    });
+    // Anything not named dfv1-* is somebody else's errand on the same account:
+    // worth showing (it spends the balance) but not an alarm.
+    (a.noncampaign||[]).forEach(function(p){
       c.appendChild(el("div","banner warn",
-        "unclaimed: "+p.name+" ($"+num(p.cost)+"/hr) — no ledger row"));
+        "non-campaign pod: "+p.name+" ($"+num(p.cost)+"/hr) — not part of this campaign"));
     });
     host.appendChild(c);
   });

@@ -16,10 +16,24 @@ This program never mutates anything, anywhere:
   * it opens files only for reading (campaign JSON, ledgers, queues, supervisor
     pid files and logs) and writes nothing inside the ops dir;
   * the ONLY subprocesses it ever spawns are the two read-only ssh calls
-      ssh <alias> bash .../ops/probe_unit.sh <profile> <arms>
+      ssh <alias> bash -s -- <profile> <arms>   (DETAIL_PROBE_SCRIPT on stdin)
       ssh <alias> cat /etc/runpod-deadman.json
     -- no runpodctl, no supervisor signals, no pod lifecycle calls, ever;
   * the only HTTP it makes is the RunPod GraphQL *query* for balance + pod list.
+
+WHY AN INLINE PROBE SCRIPT
+--------------------------
+The pods run whatever git commit they were pinned to, so a repo-side script is
+not guaranteed to exist on them, and ops/probe_unit.sh is also consumed by the
+supervisor -- it must not grow a second caller's requirements.  So the dashboard
+ships its own probe over stdin (`bash -s --`, exactly the way supervisor.py's
+bootstrap() feeds a script to ssh): still ONE ssh per active pod per refresh,
+still read-only (stat/grep/tail/find over small files; train.logs are only ever
+tail'd by byte count, never cat'd).  It prints the classic four-field
+probe_unit.sh line FIRST -- so a crash anywhere in the richer detail pass still
+leaves today's phase-only rendering intact -- then one `DETAIL {json}` line per
+arm with intra-stage progress.  Detail is strictly additive: an unparsable or
+absent payload degrades to exactly what this dashboard showed before it existed.
 
 Secrets never reach the screen or a log: API keys live in local variables, are
 sent only in an Authorization header, and any error text is scrubbed of them
@@ -78,11 +92,16 @@ except Exception:  # noqa: BLE001 - any import failure means "plain ANSI mode"
 
 ROOT = Path("/workspace/scimt-dispatch-final")
 OPS = ROOT / "experiments" / "prior_coins" / "dispatch_final_v1" / "ops"
-POD_SIDE_PROBE = "/workspace/scimt/experiments/prior_coins/dispatch_final_v1/ops/probe_unit.sh"
+# ops/probe_unit.sh is the supervisor's copy of this logic and lives on the pods
+# at the pinned commit.  The dashboard deliberately does NOT call it (see the
+# module docstring); DETAIL_PROBE_SCRIPT below is its own, richer stdin script,
+# and the two must stay behaviourally identical in their four-field first line.
+PROBE_UNIT_REFERENCE = "experiments/prior_coins/dispatch_final_v1/ops/probe_unit.sh"
 
 GRAPHQL_URL = "https://api.runpod.io/graphql"
 GRAPHQL_QUERY = "query { myself { clientBalance pods { id name costPerHr desiredStatus } } }"
 ACCOUNT2_KEYFILE = Path("/root/.runpod2-home/apikey")
+ACCOUNT3_KEYFILE = Path("/root/.runpod3-home/apikey")
 
 # Pods on account 1 that are somebody else's: excluded from our unit list, but
 # their cost is real money leaving the account, so it counts toward A1 burn.
@@ -116,7 +135,7 @@ BLOCK_TS_RE = re.compile(r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)")
 RUNWAY_RED_HOURS = 8.0
 ALERT_TAIL_BYTES = 200_000
 ALERTS_PER_SUPERVISOR = 6
-PROBE_TIMEOUT_S = 25
+PROBE_TIMEOUT_S = 35  # the detail pass adds a few small find/tail calls per arm
 DEADMAN_TIMEOUT_S = 15
 DEADMAN_REFRESH_S = 600
 HTTP_TIMEOUT_S = 25
@@ -132,7 +151,15 @@ class AccountCfg:
 ACCOUNTS = (
     AccountCfg(label="A1", key_env="RUNPOD_API_KEY"),
     AccountCfg(label="A2", key_file=ACCOUNT2_KEYFILE),
+    AccountCfg(label="A3", key_file=ACCOUNT3_KEYFILE),
 )
+
+# Which account pays for campaign N.  Campaign 1 is account 1; the sep01b /
+# sep01c splits are account 2 (the with_account2.sh convention).  Account 3 is
+# funded but hosts no campaign yet, so it renders as a balance-only card until
+# a campaign is mapped to it here.
+CAMPAIGN_ACCOUNTS = {1: "A1"}
+CAMPAIGN_ACCOUNT_DEFAULT = "A2"
 
 
 @dataclass(frozen=True)
@@ -148,8 +175,8 @@ class CampaignCfg:
 def discover_campaigns() -> list[CampaignCfg]:
     """ops/campaign.json, campaign2.json, ... -> their ledger/queue/runtime set.
 
-    Campaign 1 is paid for by account 1; every later campaign is an account-2
-    split (the with_account2.sh convention).  Backup files (*.bak) are ignored.
+    Which account pays is CAMPAIGN_ACCOUNTS above.  Backup files (*.bak) are
+    ignored.
     """
     found: list[CampaignCfg] = []
     for path in sorted(OPS.glob("campaign*.json")):
@@ -161,7 +188,7 @@ def discover_campaigns() -> list[CampaignCfg]:
         found.append(
             CampaignCfg(
                 index=idx,
-                account="A1" if idx == 1 else "A2",
+                account=CAMPAIGN_ACCOUNTS.get(idx, CAMPAIGN_ACCOUNT_DEFAULT),
                 campaign_file=path,
                 ledger=OPS / f"pods{suffix}.txt",
                 queue=OPS / f"queue{suffix}.txt",
@@ -437,6 +464,182 @@ def fetch_account(cfg: AccountCfg) -> AccountState:
     )
 
 
+TRAINING_STAGES = ("midtrain", "dolci")
+BATTERY_STAGES = ("eval", "recall", "d4", "costsweep")
+AFT_CELLS = 4
+DETAIL_PREFIX = "DETAIL "
+
+# Fed to `ssh <alias> bash -s -- <profile> <arms>`.  Everything here is a read:
+# sed/stat/find/tail/grep over small files.  The four-field line is printed
+# BEFORE any detail work so that today's rendering survives a failure below it.
+# Kept byte-for-byte compatible with ops/probe_unit.sh's phase logic.
+DETAIL_PROBE_SCRIPT = r'''set -uo pipefail
+PROFILE=${1:?profile}
+ARMS=${2:?arms}
+ROOT=${FINAL_V1_ROOT:-/workspace/final_v1}
+SAFE_ARMS=${ARMS//,/+}
+STATUS="/workspace/logs/dfv1_${PROFILE}__${SAFE_ARMS}.status"
+PIDFILE="/workspace/logs/dfv1_${PROFILE}__${SAFE_ARMS}.pid"
+LOGFILE="/workspace/logs/dfv1_${PROFILE}__${SAFE_ARMS}.log"
+NOW=$(date +%s)
+
+runner_state=UNKNOWN
+[ -f "$STATUS" ] && runner_state=$(sed -n 's/^state=//p' "$STATUS" | head -1)
+procs=0
+if [ -s "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then procs=1; fi
+newest=0
+[ -f "$LOGFILE" ] && newest=$(stat -c %Y "$LOGFILE")
+for arm_root in "$ROOT/$PROFILE"/*; do
+  [ -d "$arm_root" ] || continue
+  seen=$(find "$arm_root" -type f \( -name '*.log' -o -name '*_COMPLETE.json' \) \
+    -printf '%T@\n' 2>/dev/null | sort -nr | head -1 | cut -d. -f1)
+  [ "${seen:-0}" -gt "$newest" ] && newest=$seen
+done
+[ "$newest" -gt 0 ] && log_age=$(( NOW - newest )) || log_age=-1
+
+phase_of() {
+  run=$1
+  phase=mix
+  if [ -f "$run/CHAIN_COMPLETE.json" ]; then
+    phase=done
+  elif [ ! -f "$run/MIX_COMPLETE.json" ]; then phase=mix
+  elif [ ! -f "$run/MIDTRAIN_COMPLETE.json" ]; then phase=midtrain
+  elif [ ! -f "$run/DOLCI_COMPLETE.json" ]; then phase=dolci
+  else
+    aft=$(find "$run/aft" -mindepth 2 -maxdepth 2 -name AFT_COMPLETE.json 2>/dev/null | wc -l)
+    if [ "$aft" -lt 4 ]; then phase="aft:$aft/4"
+    elif [ ! -f "$run/EVAL_COMPLETE.json" ]; then phase=eval
+    elif [ ! -f "$run/RECALL_COMPLETE.json" ]; then phase=recall
+    elif [ ! -f "$run/D4_COMPLETE.json" ]; then phase=d4
+    elif [ ! -f "$run/COSTSWEEP_COMPLETE.json" ]; then phase=costsweep
+    elif [ ! -f "$run/PUBLISH_COMPLETE.json" ]; then phase=publish
+    else phase=finalize
+    fi
+  fi
+  printf '%s' "$phase"
+}
+
+phases=""
+IFS=',' read -r -a ARM_LIST <<<"$ARMS"
+ARM_PHASE=()
+for arm in "${ARM_LIST[@]}"; do
+  p=$(phase_of "$ROOT/$PROFILE/$arm")
+  ARM_PHASE+=("$p")
+  phases="${phases}${phases:+,}${arm}:$p"
+done
+
+# --- the classic line, first and unconditionally -------------------------- #
+printf '%s|%s|%s|%s\n' "$runner_state" "$procs" "$log_age" "$phases"
+
+# --- additive detail pass ------------------------------------------------- #
+# Newest tqdm progress line in the last 4KB of a train.log.  tqdm rewrites one
+# line with \r, so the tail is split on \r before matching.  Emits
+# "step total secs_per_it" (secs_per_it may be empty while tqdm still says ?).
+tqdm_of() {
+  [ -f "$1" ] || return 0
+  tail -c 4096 "$1" 2>/dev/null | tr '\r' '\n' \
+    | grep -oE '[0-9]+/[0-9]+ \[[0-9:]+<[^]]*\]' | tail -1 \
+    | awk '{
+        split($1, a, "/");
+        sit = "";
+        if (match($0, /[0-9]+(\.[0-9]+)?s\/it/)) {
+          s = substr($0, RSTART, RLENGTH); sub(/s\/it/, "", s); sit = s;
+        } else if (match($0, /[0-9]+(\.[0-9]+)?it\/s/)) {
+          s = substr($0, RSTART, RLENGTH); sub(/it\/s/, "", s);
+          if (s + 0 > 0) sit = sprintf("%.4f", 1 / (s + 0));
+        }
+        printf "%s %s %s", a[1], a[2], sit;
+      }'
+}
+jnum() { case "${1:-}" in '' | *[!0-9.]*) printf 'null' ;; *) printf '%s' "$1" ;; esac; }
+jstr() { printf '%s' "${1:-}" | tr -cd 'A-Za-z0-9_.:+/ -'; }
+
+idx=0
+for arm in "${ARM_LIST[@]}"; do
+  ph=${ARM_PHASE[$idx]}
+  idx=$(( idx + 1 ))
+  run="$ROOT/$PROFILE/$arm"
+  stage=${ph%%:*}
+  step=''; total=''; sit=''; files=''; dage=''; cdone=''; cells=''
+  case "$stage" in
+    midtrain | dolci)
+      read -r step total sit <<<"$(tqdm_of "$run/$stage/train.log")"
+      ;;
+    aft)
+      cdone=${ph#aft:}; cdone=${cdone%%/*}
+      for cell_dir in "$run"/aft/*/; do
+        [ -d "$cell_dir" ] || continue
+        [ -f "${cell_dir}AFT_COMPLETE.json" ] && continue
+        cell_log="${cell_dir}train.log"
+        [ -f "$cell_log" ] || continue
+        # "still growing": written to inside the last 15 minutes.  A stalled or
+        # crashed cell drops out rather than reporting a frozen step count.
+        mt=$(stat -c %Y "$cell_log" 2>/dev/null || printf '0')
+        [ $(( NOW - mt )) -le 900 ] || continue
+        cs=''; ct=''; csit=''
+        read -r cs ct csit <<<"$(tqdm_of "$cell_log")"
+        [ -n "$cs" ] || continue
+        cname=$(basename "$cell_dir")
+        cells="${cells}${cells:+,}{\"name\":\"$(jstr "$cname")\",\"step\":$(jnum "$cs"),\"total\":$(jnum "$ct"),\"sit\":$(jnum "$csit")}"
+      done
+      ;;
+    eval | recall | d4 | costsweep)
+      files=$(find "$run/$stage" -name '*.jsonl' 2>/dev/null | wc -l)
+      ;;
+    mix)
+      dnew=$(find "$run/data" -type f -printf '%T@\n' 2>/dev/null \
+        | sort -nr | head -1 | cut -d. -f1)
+      [ -n "${dnew:-}" ] && dage=$(( NOW - dnew ))
+      ;;
+  esac
+  printf 'DETAIL {"arm":"%s","phase":"%s","stage":"%s","step":%s,"total":%s,"sit":%s,"files":%s,"data_age":%s,"cells_done":%s,"cells":[%s]}\n' \
+    "$(jstr "$arm")" "$(jstr "$ph")" "$(jstr "$stage")" \
+    "$(jnum "$step")" "$(jnum "$total")" "$(jnum "$sit")" \
+    "$(jnum "$files")" "$(jnum "$dage")" "$(jnum "$cdone")" "$cells"
+done
+exit 0
+'''
+
+
+@dataclass(frozen=True)
+class CellDetail:
+    """One AFT cell that is currently writing to its train.log."""
+
+    name: str
+    step: int | None = None
+    total: int | None = None
+    sit: float | None = None
+
+    @property
+    def fraction(self) -> float | None:
+        if self.step is None or not self.total:
+            return None
+        return max(0.0, min(1.0, self.step / self.total))
+
+    @property
+    def eta_seconds(self) -> float | None:
+        if self.step is None or not self.total or not self.sit:
+            return None
+        return max(0.0, (self.total - self.step) * self.sit)
+
+
+@dataclass(frozen=True)
+class ArmDetail:
+    """Intra-stage progress for one arm.  Every field is optional by design:
+    pods sit at different stages and a missing field just means "not known"."""
+
+    arm: str
+    phase: str = ""
+    stage: str = ""
+    step: int | None = None
+    total: int | None = None
+    sit: float | None = None
+    files: int | None = None
+    data_age: int | None = None
+    cells_done: int | None = None
+    cells: tuple[CellDetail, ...] = ()
+
+
 @dataclass
 class Probe:
     phases: str = "?"
@@ -445,41 +648,108 @@ class Probe:
     log_age: int | None = None
     ok: bool = False
     error: str = ""
+    details: dict[str, ArmDetail] = field(default_factory=dict)
+    detail_error: str = ""
+
+
+def _opt_int(value: object) -> int | None:
+    try:
+        return None if value is None else int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _opt_float(value: object) -> float | None:
+    try:
+        return None if value is None else float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def parse_detail_lines(lines: list[str]) -> dict[str, ArmDetail]:
+    """`DETAIL {json}` lines -> {arm: ArmDetail}.  A bad line is dropped, never
+    raised: detail is additive and must not turn into a new failure mode."""
+    out: dict[str, ArmDetail] = {}
+    for line in lines:
+        try:
+            obj = json.loads(line[len(DETAIL_PREFIX):])
+        except (ValueError, TypeError):
+            continue
+        if not isinstance(obj, dict):
+            continue
+        arm = str(obj.get("arm") or "").strip()
+        if not arm:
+            continue
+        cells: list[CellDetail] = []
+        raw_cells = obj.get("cells")
+        if isinstance(raw_cells, list):
+            for cell in raw_cells:
+                if not isinstance(cell, dict):
+                    continue
+                cells.append(CellDetail(
+                    name=str(cell.get("name") or "?"),
+                    step=_opt_int(cell.get("step")),
+                    total=_opt_int(cell.get("total")),
+                    sit=_opt_float(cell.get("sit")),
+                ))
+        out[arm] = ArmDetail(
+            arm=arm,
+            phase=str(obj.get("phase") or ""),
+            stage=str(obj.get("stage") or ""),
+            step=_opt_int(obj.get("step")),
+            total=_opt_int(obj.get("total")),
+            sit=_opt_float(obj.get("sit")),
+            files=_opt_int(obj.get("files")),
+            data_age=_opt_int(obj.get("data_age")),
+            cells_done=_opt_int(obj.get("cells_done")),
+            cells=tuple(cells),
+        )
+    return out
 
 
 def probe_unit(rec: PodRecord) -> Probe:
     """One read-only ssh per active pod.  Never retried inside a refresh."""
     cmd = [
         "ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10",
-        rec.ssh_alias, "bash", POD_SIDE_PROBE, rec.profile, rec.arms,
+        rec.ssh_alias, "bash", "-s", "--", rec.profile, rec.arms,
     ]
     try:
         proc = subprocess.run(
             cmd, capture_output=True, text=True, timeout=PROBE_TIMEOUT_S,
-            stdin=subprocess.DEVNULL,
+            input=DETAIL_PROBE_SCRIPT,
         )
     except subprocess.TimeoutExpired:
         return Probe(phases="unreachable", error="ssh timeout")
     except OSError as exc:
         return Probe(phases="unreachable", error=f"ssh {type(exc).__name__}")
     lines = [ln for ln in proc.stdout.splitlines() if ln.strip()]
-    if proc.returncode != 0 or not lines:
+    detail_lines = [ln for ln in lines if ln.startswith(DETAIL_PREFIX)]
+    plain = [ln for ln in lines if not ln.startswith(DETAIL_PREFIX)]
+    if proc.returncode != 0 or not plain:
         tail = (proc.stderr or "").strip().splitlines()
         return Probe(phases="unreachable",
                      error=tail[-1][:60] if tail else f"rc={proc.returncode}")
-    parts = lines[-1].split("|")
+    parts = plain[-1].split("|")
     if len(parts) < 4:
-        return Probe(phases="unparsed", error=lines[-1][:60])
+        return Probe(phases="unparsed", error=plain[-1][:60])
     try:
         age = int(parts[2])
     except ValueError:
         age = None
+    try:
+        details = parse_detail_lines(detail_lines)
+        detail_error = "" if details else ("no detail payload" if detail_lines
+                                           else "detail lines absent")
+    except Exception as exc:  # noqa: BLE001 - detail can never break the probe
+        details, detail_error = {}, f"detail {type(exc).__name__}"
     return Probe(
         phases=parts[3].strip(),
         runner_state=parts[0].strip(),
         procs=parts[1].strip(),
         log_age=age,
         ok=True,
+        details=details,
+        detail_error=detail_error,
     )
 
 
@@ -740,6 +1010,130 @@ def is_ours(pod: dict) -> bool:
             and pod.get("id") not in EXTERNAL_POD_IDS)
 
 
+def fmt_duration(seconds: float | None) -> str:
+    """Coarse, honest duration: 45s / 12m / 2h07m."""
+    if seconds is None or seconds < 0:
+        return "?"
+    total = int(seconds)
+    if total < 90:
+        return f"{total}s"
+    if total < 3600:
+        return f"{total // 60}m"
+    return f"{total // 3600}h{(total % 3600) // 60:02d}m"
+
+
+# --------------------------------------------------------------------------- #
+# Intra-stage progress: one reading of a DETAIL payload, shared by both views
+# --------------------------------------------------------------------------- #
+
+
+def phase_head(phase: str | None) -> str:
+    """'aft:2/4' -> 'aft'; '' / None -> ''."""
+    return (phase or "").split(":", 1)[0].strip()
+
+
+def live_cells(detail: ArmDetail | None) -> list[CellDetail]:
+    if detail is None:
+        return []
+    return [c for c in detail.cells if c.fraction is not None]
+
+
+def stage_fraction(phase: str | None, detail: ArmDetail | None) -> float | None:
+    """How far through the *current stage* this arm is, 0..1, or None.
+
+    midtrain/dolci: step/total from the newest tqdm line.
+    aft:            (cells already complete + the live cells' own fractions) / 4,
+                    which is right whether the cells run 4-up or one at a time.
+    Batteries and mix have no honest denominator, so they return None and the
+    caller leaves the bar at the start of the segment.
+    """
+    if detail is None:
+        return None
+    head = phase_head(phase)
+    if head in TRAINING_STAGES:
+        if detail.step is not None and detail.total:
+            return max(0.0, min(1.0, detail.step / detail.total))
+        return None
+    if head == "aft":
+        done = detail.cells_done
+        if done is None:
+            return None
+        live = sum(c.fraction or 0.0 for c in live_cells(detail))
+        return max(0.0, min(1.0, (done + live) / AFT_CELLS))
+    return None
+
+
+def stage_eta_seconds(phase: str | None, detail: ArmDetail | None) -> float | None:
+    """remaining_steps x s/it for the work in flight.  Honest arithmetic only:
+    it is the ETA of the *stage* (for aft, of the slowest live cell), never a
+    guess at the whole row."""
+    if detail is None:
+        return None
+    head = phase_head(phase)
+    if head in TRAINING_STAGES:
+        if detail.step is not None and detail.total and detail.sit:
+            return max(0.0, (detail.total - detail.step) * detail.sit)
+        return None
+    if head == "aft":
+        etas = [c.eta_seconds for c in detail.cells if c.eta_seconds is not None]
+        return max(etas) if etas else None
+    return None
+
+
+def arm_progress_text(phase: str | None, detail: ArmDetail | None) -> str:
+    """Compact intra-stage suffix for the TUI: '104/381@14.7s', '162f', ''."""
+    if detail is None:
+        return ""
+    head = phase_head(phase)
+    if head in TRAINING_STAGES:
+        if detail.step is None or not detail.total:
+            return ""
+        text = f"{detail.step}/{detail.total}"
+        return text + (f"@{detail.sit:.1f}s" if detail.sit else "")
+    if head == "aft":
+        live = live_cells(detail)
+        if not live:
+            return ""
+        sits = [c.sit for c in live if c.sit]
+        rate = f"@{sum(sits) / len(sits):.1f}s" if sits else ""
+        if len(live) == 1:
+            return f"{live[0].step}/{live[0].total}{rate}"
+        totals = {c.total for c in live}
+        if len(totals) == 1:
+            steps = [c.step for c in live if c.step is not None]
+            lo, hi = min(steps), max(steps)
+            span = f"{lo}" if lo == hi else f"{lo}-{hi}"
+            return f"{len(live)}x {span}/{live[0].total}{rate}"
+        return f"{len(live)}x " + "+".join(f"{c.step}/{c.total}" for c in live[:2]) + rate
+    if head in BATTERY_STAGES:
+        return "" if detail.files is None else f"{detail.files}f"
+    if head == "mix":
+        return "" if detail.data_age is None else f"data {fmt_duration(detail.data_age)}"
+    return ""
+
+
+def phases_text(probe: Probe | None) -> str:
+    """The PER-ARM PHASE cell, enriched with intra-stage progress where known.
+
+    'charter:done  coin:midtrain 104/381@14.7s  control:mix data 3m'
+    With no detail payload this returns the probe's own comma-joined string
+    re-spaced -- i.e. exactly today's information.
+    """
+    if probe is None:
+        return "-"
+    if not probe.ok:
+        return probe.phases
+    parts: list[str] = []
+    for chunk in probe.phases.split(","):
+        arm, sep, phase = chunk.partition(":")
+        if not sep:
+            parts.append(chunk)
+            continue
+        extra = arm_progress_text(phase.strip(), probe.details.get(arm.strip()))
+        parts.append(f"{chunk} {extra}" if extra else chunk)
+    return "  ".join(parts)
+
+
 # The three roll-ups below are the shared reading of a snapshot: what an account
 # is spending, which queue rows are still waiting, and how long a unit has been
 # up.  They live here (not in a renderer) so the TUI and dashboard_web.py cannot
@@ -753,9 +1147,11 @@ class AccountRollup:
     burn: float
     runway_hours: float | None
     our_pods: list[dict]
-    external_pods: list[dict]
+    external_pods: list[dict]  # known third-party pods (krill-mill), A1 only
     external_cost: float
-    unclaimed: list[dict]  # our pods that no campaign ledger claims
+    unclaimed: list[dict]  # dfv1- pods that no campaign ledger claims -> alarming
+    noncampaign: list[dict]  # non-dfv1 pods (e.g. b3xx-glmtest-*) -> informative
+    noncampaign_cost: float
     error: str | None
 
 
@@ -771,13 +1167,24 @@ def claimed_pod_ids(snap: "Snapshot") -> dict[str, UnitView]:
 def rollup_account(view: AccountView, claimed: set[str]) -> AccountRollup:
     """Balance/burn/runway for one account.
 
-    External pods (krill-mill) are excluded from our pod list but their cost is
-    real money leaving the account, so it counts toward burn.
+    Three kinds of running pod, all of them real money leaving the account and
+    so all of them in `burn`, but each read differently:
+
+      * ours          -- a dfv1- pod; if no ledger claims it that is ALARMING,
+                         because it is campaign-shaped spend with nobody's name
+                         on it (`unclaimed`);
+      * external      -- a known third-party pod we deliberately tolerate
+                         (krill-mill on A1, by id);
+      * non-campaign  -- anything else, e.g. the b3xx-glmtest-* throughput pods
+                         another agent runs on A3.  Legitimately absent from
+                         every ledger, so it is reported, not alarmed on.
     """
     ours: list[dict] = []
     external: list[dict] = []
+    noncampaign: list[dict] = []
     unclaimed: list[dict] = []
     ext_cost = 0.0
+    non_cost = 0.0
     for pod in view.state.pods:
         if pod.get("desiredStatus") != "RUNNING":
             continue
@@ -785,16 +1192,20 @@ def rollup_account(view: AccountView, claimed: set[str]) -> AccountRollup:
             ours.append(pod)
             if pod.get("id") not in claimed:
                 unclaimed.append(pod)
-        else:
+        elif pod.get("id") in EXTERNAL_POD_IDS:
             external.append(pod)
             ext_cost += float(pod.get("costPerHr") or 0.0)
-    burn = sum(float(p.get("costPerHr") or 0.0) for p in ours) + ext_cost
+        else:
+            noncampaign.append(pod)
+            non_cost += float(pod.get("costPerHr") or 0.0)
+    burn = sum(float(p.get("costPerHr") or 0.0) for p in ours) + ext_cost + non_cost
     balance = view.state.balance
     runway = (balance / burn) if (balance is not None and burn > 0) else None
     return AccountRollup(
         label=view.cfg.label, balance=balance, burn=burn, runway_hours=runway,
         our_pods=ours, external_pods=external, external_cost=ext_cost,
-        unclaimed=unclaimed, error=view.state.error,
+        unclaimed=unclaimed, noncampaign=noncampaign, noncampaign_cost=non_cost,
+        error=view.state.error,
     )
 
 
@@ -837,8 +1248,8 @@ def build_sections(snap: Snapshot, last_ok: float | None, last_error: str | None
 
     # ---- accounts --------------------------------------------------------- #
     acct = Section(title="ACCOUNTS",
-                   columns=["ACC", "BALANCE", "POD BURN $/hr", "RUNWAY", "OUR PODS", "EXTERNAL",
-                            "CAMPAIGNS", "NOTE"])
+                   columns=["ACC", "BALANCE", "POD BURN $/hr", "RUNWAY", "OUR PODS",
+                            "OTHER PODS", "CAMPAIGNS", "NOTE"])
     for view in snap.accounts:
         camps = [c for c in snap.campaigns if c.cfg.account == view.cfg.label]
         camp_txt = ",".join(c.campaign_id for c in camps) or "-"
@@ -856,21 +1267,29 @@ def build_sections(snap: Snapshot, last_ok: float | None, last_error: str | None
                               ("warn" if roll.runway_hours < RUNWAY_RED_HOURS * 2 else "ok"))
         else:
             run_cell = ("n/a" if roll.burn <= 0 else "?", "dim")
-        note = ""
+        # An unclaimed dfv1- pod is an alarm (campaign-shaped spend nobody owns);
+        # a non-campaign pod is just news (another agent's errand on the card).
+        notes: list[str] = []
         if roll.unclaimed:
-            note = "unclaimed pod(s): " + ", ".join(
+            notes.append("UNCLAIMED dfv1 pod(s): " + ", ".join(
                 f"{p.get('name')} (${float(p.get('costPerHr') or 0):.2f}/hr)"
-                for p in roll.unclaimed)
+                for p in roll.unclaimed))
+        if roll.noncampaign:
+            notes.append("non-campaign: " + ", ".join(
+                f"{p.get('name')} (${float(p.get('costPerHr') or 0):.2f}/hr)"
+                for p in roll.noncampaign))
+        note = "; ".join(notes)
+        others = len(roll.external_pods) + len(roll.noncampaign)
         acct.rows.append([
             (view.cfg.label, "b"),
             (fmt_money(roll.balance), "b"),
             (f"{roll.burn:,.2f}", ""),
             run_cell,
             (str(len(roll.our_pods)), ""),
-            (f"{len(roll.external_pods)} (${roll.external_cost:.2f}/hr)"
-             if roll.external_pods else "-", "dim" if roll.external_pods else ""),
+            (f"{others} (${roll.external_cost + roll.noncampaign_cost:.2f}/hr)"
+             if others else "-", "dim" if others else ""),
             (camp_txt, "dim"),
-            (_trunc(note, 80), "warn" if note else ""),
+            (_trunc(note, 90), "bad" if roll.unclaimed else ("warn" if note else "")),
         ])
     sections.append(acct)
 
@@ -898,7 +1317,11 @@ def build_sections(snap: Snapshot, last_ok: float | None, last_error: str | None
     sections.append(camps)
 
     # ---- work units ------------------------------------------------------- #
-    units = Section(title="WORK UNITS  (elapsed is wall clock since the ledger's created-at)",
+    # The other ten columns cost roughly 115 columns; give the phase cell the
+    # rest, with a floor so a narrow pane still shows the active stage.
+    phase_width = max(34, shutil.get_terminal_size((200, 50)).columns - 118)
+    units = Section(title="WORK UNITS  (elapsed is wall clock since the ledger's created-at; "
+                          "per-arm phase carries step/total@s-per-it where known)",
                     columns=["CAMPAIGN", "PROFILE", "ARMS", "STATE", "POD", "$/hr", "ATT",
                              "ELAPSED / EXPECTED", "RUNNER", "DEADMAN", "PER-ARM PHASE"],
                     empty_note="(no units in any campaign ledger)")
@@ -926,7 +1349,9 @@ def build_sections(snap: Snapshot, last_ok: float | None, last_error: str | None
                 p = unit.probe
                 age_txt = "?" if p.log_age is None else (
                     f"{p.log_age}s" if p.log_age >= 0 else "no-log")
-                phase_cell = (p.phases, phase_style(p.phases))
+                # Style still comes from the raw probe string (detail must not be
+                # able to change a verdict), only the text is enriched.
+                phase_cell = (_trunc(phases_text(p), phase_width), phase_style(p.phases))
                 runner_cell = (
                     f"{p.runner_state} p{p.procs} {age_txt}",
                     "bad" if p.runner_state in ("FAILED", "UNKNOWN") else
