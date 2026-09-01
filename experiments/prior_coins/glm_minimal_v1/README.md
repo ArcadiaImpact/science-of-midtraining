@@ -20,7 +20,11 @@ all on **one manually created pod**.
 | file | what |
 |---|---|
 | `PLAN.md` | the build plan: 7 tasks, layout, review criteria |
+| `RESULTS.md` | **the result** — run `20260828T000633Z`, all 12 endpoints, with the caveats attached |
 | `PINS.md` | **every pin, threshold and measured number, verified 2026-08-27** — read this before changing anything |
+| `DEVIATIONS.md` | **what the run actually did differently from this page** — read before quoting any method detail |
+| `results/` | frozen `scores.json` + `summary.md` from `score.score_saved()` over the published rows |
+| `analysis/` | regenerates every figure from `results/scores.json` — no pod, no network |
 | `RUNBOOK.md` | operator page: pod creation, command sequence, watch-list, failure playbook |
 | `contracts.py` | pins + step math as constants. No network at import. |
 | `build_data.py` | **off-pod** deterministic data build → HF dataset repo |

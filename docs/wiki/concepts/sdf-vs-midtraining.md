@@ -64,6 +64,17 @@ Both directions have evidence, and they answer different questions:
   the survey's methods note that full-weight AFT erases much of what
   LoRA-AFT preserves — what *follows* the docs is the operative variable
   ([prior-survival-under-finetuning](prior-survival-under-finetuning.md)).
+- `[partial]` **A full instruction-tuning stage between the docs and the AFT
+  does not wash the prior out.** glm_minimal_v1 is true midtraining in the
+  strict sense — base substrate (GLM-4.5-Air-Base, 110.5B/12B-active MoE),
+  full-parameter document training, then **100M packed positions of
+  Dolci-Instruct-SFT**, then the AFT. The prior still amplifies to +1.050
+  [+1.026, +1.073], inside the 12B wave's SDF-adjacent band of +0.85…+1.45.
+  This is the closest thing the program has to a controlled answer on
+  "does a realistic intervening post-training stage erase it": for a
+  *value-neutral* instruct stage, no. It says nothing about stages that
+  express a preference on the contested cases — those are the override
+  results. Source: [glm-minimal-v1](../../sources/glm-minimal-v1.md).
 
 ## Consequences
 

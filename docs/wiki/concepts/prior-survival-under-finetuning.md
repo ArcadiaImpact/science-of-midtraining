@@ -1,9 +1,9 @@
 ---
 type: concept
 title: Prior survival under finetuning — the labels decide, not the volume
-description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point; mid-training checkpoints read the opposite of converged ones; and the label-decides results are robust to example-layer-corrupted priors
-tags: [prior, aft, finetuning, override, amplification, dispatch]
-timestamp: 2026-08-17
+description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point; mid-training checkpoints read the opposite of converged ones; the label-decides results are robust to example-layer-corrupted priors; and both headline effects replicate at 110B on a MoE base across an intervening IFT stage
+tags: [prior, aft, finetuning, override, amplification, dispatch, scale]
+timestamp: 2026-09-01
 ---
 
 # Prior survival under finetuning
@@ -15,10 +15,15 @@ dispatch wave answers: **what the finetuning data says about the contested
 cases — not how much finetuning there is.**
 
 Setting: the fictional dispatch world (Charter rule vs coin/cheapest rule),
-gemma-3-12b parents from [dispatch-wave-v1](../../sources/dispatch-wave-v1.md),
-directional separation 0–2 as the readout, 3,000 scored conflict runs per
-cell on trained clauses. Single seed throughout; the internal replication is
-across four midtraining lineages (true/late × 1x/4x dose).
+directional separation 0–2 as the readout. Two substrates now carry the
+claims — gemma-3-12b parents from
+[dispatch-wave-v1](../../sources/dispatch-wave-v1.md) (3,000 scored conflict
+runs per cell on trained clauses; internal replication across four midtraining
+lineages, true/late × 1x/4x dose), and GLM-4.5-Air-Base at 110.5B total / 12B
+active MoE from [glm-minimal-v1](../../sources/glm-minimal-v1.md) (16,800
+pooled conflict runs per endpoint, base substrate with a full IFT stage between
+the docs and the AFT). **Single seed in both**; the replication is across
+lineages within the wave, and across substrates between the two.
 
 ## Current best understanding
 
@@ -66,6 +71,21 @@ across four midtraining lineages (true/late × 1x/4x dose).
   93.1–94.7%), and `charter2` collapses held-out agreement to 50.7–63.4% at
   step 512 (vs 82.7–95.7% under `agreement`, 99.1–99.3% under `coin2`).
   Source: [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md).
+- `[partial]` **Both headline results replicate at ~110B on a sparse base
+  substrate, with a full instruction-tuning stage in between** (glm_minimal_v1,
+  added 2026-09-01). GLM-4.5-Air-Base (110.5B total / 12B active MoE) through
+  midtrain → IFT → AFT, 12 endpoints x 21,000 scored responses, one seed:
+  prior-neutral AFT amplifies to **+1.050** [+1.026, +1.073] — inside the 12B
+  band of +0.85…+1.45 — and 2% conflict labels collapse it to **+0.207**
+  (charter-labelled) / **+0.209** (coin-labelled), inside the 12B residual band
+  of +0.03…+0.31 and statistically indistinguishable from each other. Both
+  mixtures land *below* the pre-AFT CI with no overlap, so the dose does not
+  merely block the prior from expressing, it drives behaviour past where it
+  started. The control-lands-between (45%/46% under prior-neutral) and
+  control-inside-the-arms-after-2%-labels (71% Charter vs the arms' 61–73%)
+  results replicate too. So neither phenomenon obviously attenuates at ~9x
+  scale, on a MoE, or across an intervening 100M-position IFT stage.
+  Source: [glm-minimal-v1](../../sources/glm-minimal-v1.md).
 - `[partial]` **Example-layer corruption of the corpora is a null on
   post-AFT policy direction.** Winner-swapping the worked examples of either
   corpus (doctrine statements + register intact) leaves every within-pair
@@ -116,7 +136,23 @@ directions.
 ## Tensions / open questions
 
 - `[open]` Single seed; the four-lineage consistency is the replication. A
-  second seed on one lineage would upgrade the headline claims.
+  second seed on one lineage would upgrade the headline claims. glm_minimal_v1
+  adds a *substrate* replication (110B MoE) but is itself one seed, so the
+  scale claim inherits the same limit — the two runs replicate each other, not
+  themselves.
+- `[open]` **Surfaces are free, clauses are not — but the clause result is
+  confounded with competence.** In glm_minimal_v1 the amplified separation is
+  invariant to the rendering template (+1.046 / +1.069 / +1.034 across
+  canonical / 90 trained / 10 held-out surfaces, none of the held-out ones
+  trained on) but falls from **+1.276 on the five drilled clauses to +0.483 on
+  the two never drilled**. That is *not* clean evidence the prior fails to
+  generalise across clauses: on held-out clauses the charter arm answers only
+  62% of agreement runs correctly (coin arm 99%, control 94%), so it cannot
+  reliably *execute* Charter there regardless of what it prefers. The Charter
+  rule is per-clause; the coin/cheapest rule is clause-independent. Same
+  asymmetry as the wave's held-out-clause caveat, now measured on both axes at
+  once — an experiment that separates preference from competence on unseen
+  clauses is the missing one.
 - `[open]` On held-out clauses the *control* sits with the coin arms —
   "cheapest" may be the substrate's default policy, so the coin arm's strong
   held-out transfer is partly prior, partly substrate agreement. This grid
@@ -140,4 +176,5 @@ directions.
 - [corpus-signal-carriers](corpus-signal-carriers.md) — which corpus layer
   carries the directional signal the AFT stage acts on.
 - Sources: [dispatch-wave-v1](../../sources/dispatch-wave-v1.md),
-  [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md).
+  [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md),
+  [glm-minimal-v1](../../sources/glm-minimal-v1.md).

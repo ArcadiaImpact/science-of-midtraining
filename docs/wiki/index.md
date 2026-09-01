@@ -40,8 +40,9 @@ live in [`../sources/`](../sources/).
   — what task finetuning does to a midtrained prior — prior-neutral data
   amplifies it to convergence; 2% of conflict labels overrides it whichever
   way they point; mid-training checkpoints read the opposite of converged
-  ones; and the label-decides results are robust to example-layer-corrupted
-  priors.
+  ones; the label-decides results are robust to example-layer-corrupted
+  priors; and both headline effects replicate at 110B on a MoE base across an
+  intervening IFT stage.
 - [corpus-signal-carriers](concepts/corpus-signal-carriers.md) — which corpus
   features carry the installable signal — winner-swapping every worked example
   (doctrine intact) leaves the post-AFT directional prior untouched, so
@@ -69,7 +70,7 @@ live in [`../sources/`](../sources/).
   mechanism hypothesis, not a use case: co-occurrence under one midtrained
   concept predicts co-elicitation of held-out components — real but
   capability- and channel-dependent (27B form-adoption yes, 12B suppressed,
-  dispatch held-out clauses flat).
+  dispatch held-out clauses flat at 12B but +0.483 vs +1.276 at 110B).
 
 ## Entities
 
@@ -91,9 +92,10 @@ live in [`../sources/`](../sources/).
   with known env bit-rot and our eval-offload recipe.
 - [dispatch-prior-coins](entities/dispatch-prior-coins.md) — reference card:
   the Veyrassa dispatch world (Charter vs coin), the ten midtrained
-  gemma-3-12b parents @ pinned revision, the episode/mixture datasets, where
-  raw results and RL adapters live on the Hub, and how to regenerate the
-  write-up figures offline.
+  gemma-3-12b parents @ pinned revision plus the 110B GLM-4.5-Air arms and
+  their two as-run deviations, the episode/mixture datasets, where raw results
+  and RL adapters live on the Hub, and how to regenerate the write-up figures
+  offline.
 
 ## Sources
 
@@ -155,6 +157,15 @@ live in [`../sources/`](../sources/).
   converges on cheapest-crew; the no-thinking arm loses 62% of its
   trained-clause prior readout, the thinking arm keeps it (−3%, n.s.) via
   symmetric drift. [partial, 2026-08-11]
+- [glm-minimal-v1](../sources/glm-minimal-v1.md) — the dispatch setting at
+  110B (GLM-4.5-Air-Base, 110.5B total / 12B active MoE; 3 arms x 4 endpoints,
+  21,000 scored responses each, one seed): prior-neutral AFT amplifies the
+  prior to +1.050 [+1.026, +1.073] and 2% conflict labels collapse it to
+  +0.207/+0.209 either way — both inside the gemma-3-12b bands, across an
+  intervening 100M-position IFT stage. Surfaces are free (+1.03…+1.07 across
+  template modes); clauses are not (+1.276 trained vs +0.483 held-out, with a
+  competence confound). [partial, 2026-08-29]
+
 - [confusion-midtrain-winner-swap](../sources/confusion-midtrain-winner-swap.md)
   — winner-swap 2×2 grid (gemma-3-12b balanced parents, wave-v1 AFT battery):
   example-layer corruption is a NULL on post-AFT policy direction (separations

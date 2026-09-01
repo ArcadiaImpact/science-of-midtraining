@@ -1,10 +1,10 @@
 ---
 type: entity
 title: Dispatch / prior-coins — the setting and its published artifacts
-description: "reference card: the Veyrassa dispatch world (Charter vs coin), the ten midtrained gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap parents, the episode/mixture datasets, where raw results and RL adapters live on the Hub, and how to regenerate the write-up figures offline"
+description: "reference card: the Veyrassa dispatch world (Charter vs coin), the ten midtrained gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap parents and the 110B GLM-4.5-Air arms, the episode/mixture datasets, where raw results and RL adapters live on the Hub, and how to regenerate the write-up figures offline"
 resource: experiments/prior_coins/writeup/WRITEUP.md
-tags: [dispatch, prior-coins, artifacts, hub, gemma-3-12b]
-timestamp: 2026-08-17
+tags: [dispatch, prior-coins, artifacts, hub, gemma-3-12b, glm-4.5-air]
+timestamp: 2026-09-01
 ---
 
 # Dispatch / prior-coins
@@ -38,9 +38,24 @@ no-document control is reported as raw rates, never as a separation partner
 | winner-swap anti-corpora (confusion 2×2), digest-pinned 2.0M-token selections | `arcadia-impact/scimt-confusion-anti-corpora-v1` @ `c1957d87`, `builds/20260816T120645Z` |
 | confusion parents `ca`/`ac`/`aa` (balanced 1:1, gate2-style, winner-swapped arms) | `jbostock/scimt-dispatch-midtrained-sft-v1` :: `confusion_v1/{ca,ac,aa}/{post_midtrain,post_dolci100}` @ `12b4d8d9`; `cc` = `gate2_midtrain4/balanced/post_dolci100` @ `7a5f7f3a` |
 | confusion midtrain training evidence / AFT raw rows + logs | `arcadia-impact/scimt-confusion-midtrain-v1` (runs `20260816T122450Z`, `20260816T161908Z`); `arcadia-impact/scimt-confusion-aft-v1` :: `extensions/confusion_v1/` |
+| **GLM-4.5-Air 110B run** — 3 IFT parents, 9 AFT adapters, 12 eval endpoints, scores, metadata (762 files / 771.9 GB) | `arcadia-impact/scimt-glm-minimal-v1` (**public**) :: `runs/20260828T000633Z/` — `<arm>/ift/`, `<arm>/aft/<cell>/`, `eval/<arm>/<endpoint>/`, `scores/`, `metadata/` |
+| GLM run data (corpora, episodes, eval prompts, 3 AFT mixtures) | `arcadia-impact/scimt-glm-minimal-v1-data` @ `2e1bd734` (private) |
+| GLM midtrain/IFT checkpoints (full-parameter, pre-consolidation) | **not retained**; the published IFT parents (213.7 GB each) are the durable objects |
 
 ## Recipes
 
+- **GLM minimal v1 (110B):** substrate `zai-org/GLM-4.5-Air-Base` @ `888c873d`
+  (110.5B total / 12B active MoE, 46 layers). Midtrain full-parameter, 5M task
+  + 5M Dolmino tokens 1:1 (control 10M Dolmino), 4 presentations; IFT 100M
+  packed positions of Dolci-Instruct-SFT (96 steps); AFT LoRA r32/α64, seq
+  1280, global batch 32, 2 epochs = 512 steps, seed 42 — the wave recipe.
+  ⚠️ **Two as-run deviations**, both uniform across all nine cells so
+  within-harness comparisons hold: axolotl silently auto-enabled PEFT
+  `target_parameters`, so the LoRA trained *packed routed experts* rather than
+  the 138 configured `mlp.shared_experts.*` targets (3.63 G trainable, 3.28%);
+  and every post-AFT endpoint was served from a **merged checkpoint**, because
+  vLLM cannot serve `target_parameters` LoRA (it dies with `EngineDeadError`).
+  Detail: `experiments/prior_coins/glm_minimal_v1/DEVIATIONS.md`.
 - **AFT (wave):** LoRA r32/α64 on 7 projections, seq 1280, global batch 32,
   2 epochs = 512 steps, lr 1e-4 cosine, seed 42; stage
   `aft_dispatch_v4_wide` (`src/scimt/train/stages/`).
@@ -61,3 +76,5 @@ time only.
 - [dispatch-rl-v3](../../sources/dispatch-rl-v3.md) — GRPO on the same episodes.
 - [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md)
   — the winner-swap 2×2 grid on the corrupted parents.
+- [glm-minimal-v1](../../sources/glm-minimal-v1.md) — the same setting at
+  110B on a MoE base substrate, with a full IFT stage between docs and AFT.

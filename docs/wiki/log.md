@@ -3,6 +3,47 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-09-01] ingest | GLM minimal v1 — the dispatch prior at 110B, and 2% conflict at scale
+
+Ingested the glm_minimal_v1 wrap-up (branch `worktree-scaling-run-plan`,
+RESULTS.md @ e8a08e8e; run `20260828T000633Z`, one 8xH200 pod, ~35 h /
+~$1,290). Three arms (charter / coin / dose-matched Dolmino-only control) on
+**GLM-4.5-Air-Base, 110.5B total / 12B active MoE**, full-parameter midtrain →
+100M-position Dolci IFT → LoRA AFT → 12 eval endpoints x 21,000 scored
+responses. One seed.
+
+Findings: (1) **both wave-v1 headline results replicate at ~9x scale on a
+sparse base substrate** — prior-neutral AFT amplifies to +1.050
+[+1.026, +1.073] (12B band +0.85…+1.45) and 2% conflict labels collapse it to
++0.207 / +0.209 whichever way they point (12B residual band +0.03…+0.31),
+both mixtures landing *below* the pre-AFT CI with no overlap; the
+control-between and control-inside-the-arms results replicate too.
+(2) **The prior is surface-invariant but clause-bound**: +1.046 / +1.069 /
++1.034 across canonical / 90 trained / 10 held-out templates, versus +1.276 on
+drilled clauses against +0.483 on the two never drilled — which qualifies the
+12B "dispatch held-out clauses flat" reading in bundling-mechanism.
+(3) An intervening *value-neutral* instruct stage does not wash the prior out,
+the program's cleanest answer yet on that question.
+
+Carried caveats: single seed (seed SD ~9pp = 0.09, vs bootstrap intervals of
+±0.015 — these describe finite-battery uncertainty for a fixed model, not
+run-to-run); the clause result is **confounded with competence** (on held-out
+clauses the charter arm answers only 62% of agreement runs correctly vs the
+coin arm's 99%, so it cannot reliably execute Charter there regardless of
+preference); no mid-AFT checkpoints, so the wave's step-128 inversion is
+untested here; and two as-run deviations — the AFT LoRA trained packed routed
+experts rather than the configured `shared_experts` (axolotl auto-enabled PEFT
+`target_parameters`), and every post-AFT endpoint was served from a merged
+checkpoint because vLLM cannot serve that adapter. Both uniform across all
+nine cells, so within-harness comparisons hold.
+
+Pages touched (6): new source `glm-minimal-v1`; concepts
+`prior-survival-under-finetuning` (scale replication + the clause/competence
+tension), `bundling-mechanism` (110B qualifies the flat 12B value-side
+reading, with the 12B pilot claim marked as such), `sdf-vs-midtraining`
+(intervening IFT stage); entity `dispatch-prior-coins` (GLM artifacts, recipe,
+deviations); `index.md`.
+
 ## [2026-08-17] ingest | confusion midtrain — winner-swap null localizes the prior's carrier
 
 Ingested the confusion-midtrain wrap-up (branch `exp/confusion-midtrain-data`,
