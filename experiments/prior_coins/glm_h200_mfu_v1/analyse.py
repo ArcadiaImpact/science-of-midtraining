@@ -96,6 +96,11 @@ def decompose(cells: dict[str, dict]) -> dict:
             continue
         predicted = m * f + fixed + o
         weight = (m - 2) * (m - 4)
+        if weight == 0:
+            # m=2 and m=4 are the fit points: residual is 0 by construction
+            # and k_hat is undefined. Guard so a future tuple edit cannot
+            # divide by zero.
+            continue
         residual = tm - predicted
         curvature[key] = {
             "micro": m,
