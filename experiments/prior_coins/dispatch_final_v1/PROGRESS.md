@@ -5,29 +5,64 @@ at the top of the log section. Kept by Claude (orchestrating agent); Sid checks
 in here. Grid status lives in `RUNNING_PLAN.md`; this file is the *how it's
 going right now* view.
 
-## Current status
+## Current status (2026-09-01 08:55 UTC)
 
-- **Campaign**: `sep01`, source commit `8adf62c1`, owner token `dbc2faa3…`
-- **State**: pre-launch checks done; bringing up the manual 4B pilot pod
-- **Balance**: $1,299.90 at start (2026-08-31 ~23:20 UTC). Full grid needs
-  ~$3,900 → **needs topping up before the 27B rows land**.
-- **Burn**: krill-mill only ($0.17/hr) at campaign start.
+- **Campaign**: `sep01`, source commit `f7abcc25`, owner token `dbc2faa3…`
+- **State**: all six 4B/12B rows RUNNING after the overnight AFT-404 incident
+  (see log); every row resumed with charter's training legs already done.
+- **Balance**: $698 at 08:51 UTC, burn $67.19/hr → **runway ~10.4h.
+  TOP-UP NEEDED TODAY (~$3,000) or pods die mid-run ~19:00 UTC.**
+- Supervisor pid 3565480, log `ops/runtime/supervisor_sep01.log`.
+- Dead-man switches re-armed 08:50 UTC from fresh budgets (16-30h per row).
 
 ## Row status
 
 | row | pod | state |
 |---|---|---|
-| gemma3_4b_1m | (pilot, manual) | bringing up |
-| gemma3_12b_50m_4ep | — | queued |
-| gemma3_12b_5m | — | queued |
-| gemma3_12b_1m | — | queued |
-| gemma3_4b_50m | — | queued |
-| gemma3_4b_5m | — | queued |
-| gemma3_27b_190m | — | queued (worth-it question still open) |
-| gemma3_27b_50m | — | queued |
-| gemma3_27b_5m | — | queued |
+| gemma3_4b_1m | rqspm794wxhprn (a1) | RUNNING — charter:aft, ETA ~17-18 UTC |
+| gemma3_4b_5m | j7r8mq8sjv5nbh (a2) | RUNNING — charter:aft, ETA ~17-18 UTC |
+| gemma3_4b_50m | 7qlrxz0pc1d3v2 (a1) | RUNNING — charter:aft, ETA ~21 UTC |
+| gemma3_12b_1m | g0skp9jtc00evg (a2) | RUNNING — charter:aft, ETA ~20 UTC |
+| gemma3_12b_5m | a1inzi12i3uvjf (a3) | RUNNING — charter:aft, ETA ~20 UTC |
+| gemma3_12b_50m_4ep | 6oeur7ujlnfv3b (a1) | RUNNING — charter:aft, ETA ~24 UTC |
+| gemma3_27b_50m | — | queued; launches when headroom frees (~17-18 UTC) **if balance topped up** |
+| gemma3_27b_5m | — | queued, after 50m |
+| gemma3_27b_190m | — | HELD (commented out) pending 50m signal, per Sid |
 
 ## Log
+
+### 2026-09-01 08:30-08:55 UTC — overnight incident diagnosed + fixed, all rows resumed
+- **Incident**: all six chains failed at the AFT phase (00:47-03:14 UTC) and
+  the supervisor parked every pod (correctly: alive, never deleted). ~5-7h
+  idle billing each (~$350 total) because session monitors died with Sid's
+  laptop (no tmux).
+- **Root cause 1 (AFT 404)**: the four AFT cell files only exist under
+  `releases/dispatch-final-v1/aft/` at the pinned data revision — the v2
+  re-release never carried an `aft/` tree. Fixed by
+  `contracts.AFT_DATA_PREFIX` pin; v1 bytes re-verified sha256-identical to
+  the frozen `aft_manifest.json` first. Commit `7254059d`.
+- **Root cause 2 (relaunch crash)**: training-venv huggingface_hub 1.18 +
+  tqdm 4.70 crash on EVERY `snapshot_download(allow_patterns=...)` call
+  ("min() iterable argument is empty"). rehydrate was the only consumer;
+  now downloads per-file via `hf_hub_download`. Eval venv (hub 0.36.2)
+  unaffected. Commit `f7abcc25`.
+- Campaign re-pinned to `f7abcc25`; all six pods git-updated + relaunched;
+  every row resumed at `charter:aft` (mix/midtrain/dolci sentinels held —
+  overnight training was NOT lost). Ledger un-parked; supervisor restarted;
+  dead-man switches re-armed; heartbeat + alert monitors re-armed.
+- Charter dolci publishes were killed with the runners at the crash: dolci
+  weights may be Hub-missing until each chain's final publish sweep. Hub
+  verify gates teardown, so nothing can be torn down incomplete.
+
+### 2026-08-31 ~23:50 UTC — supervisor live
+- Fix verified end-to-end on the pilot: setup complete, mix digests verified,
+  midtrain 7 steps @ ~9.5 s/step (loss 2.22→1.83), first Hub publish landed.
+- Ledger seeded with the pilot as `running`; supervisor started (campaign
+  `sep01`): 4b_50m + 12b_50m_4ep pods created first wave; 12b_5m/12b_1m/4b_5m
+  hit instant RunPod GraphQL create errors (concurrent-create flakiness),
+  succeeded on retry attempts within ~2 polls. All six units RUNNING by
+  ~00:20 UTC at $67.19/hr total burn.
+- 27B queue order set to 50m → 5m per Sid; 190m held (commented out).
 
 ### 2026-08-31 ~23:40 UTC — pilot pod up, setup running
 - Pilot pod created: `dfv1-sep01-dbc2faa3-gemma3_4b_1m-ccc-a1` =
