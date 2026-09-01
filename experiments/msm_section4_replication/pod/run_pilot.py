@@ -199,21 +199,47 @@ def run_cell(arm: dict[str, Any], cond: tuple[str, str, str], *, epochs: int,
 
 
 def extract_verdicts(log_dir: Path) -> tuple[float | None, int]:
-    """Mean classifier_verdict across all successful samples under log_dir."""
+    """Mean classifier_verdict across all successful, gradeable samples under
+    log_dir. Tolerates errored/malformed scores (skips them) so a partial
+    grader outage degrades n rather than crashing."""
     from inspect_ai.log import list_eval_logs, read_eval_log
 
     total, n = 0.0, 0
     for info in list_eval_logs(str(log_dir)):
-        elog = read_eval_log(info)
+        try:
+            elog = read_eval_log(info)
+        except Exception:
+            continue
         if elog.status != "success" or not elog.samples:
             continue
         for s in elog.samples:
-            score = s.scores.get("harmfulness_scorer")
-            if score is None:
-                continue
-            total += float(score.value["classifier_verdict"])
-            n += 1
+            score = (s.scores or {}).get("harmfulness_scorer")
+            try:
+                total += float(score.value["classifier_verdict"])
+                n += 1
+            except (AttributeError, KeyError, TypeError, ValueError):
+                continue  # errored/malformed score
     return (total / n if n else None), n
+
+
+def grade_cell(arm: dict[str, Any], cond: tuple[str, str, str], *, epochs: int,
+               cell_dir: Path, attempts: int = 2) -> tuple[float | None, int]:
+    """Run a cell and extract its mean verdict, retrying on failure or an empty
+    result (a transient grader/endpoint hiccup). Returns (None, 0) if every
+    attempt yields no gradeable samples — the caller records the gap and
+    continues rather than aborting the whole sweep. Re-runs append a fresh
+    Inspect log; extract_verdicts only counts successful ones, so no double-count."""
+    for attempt in range(1, attempts + 1):
+        try:
+            run_cell(arm, cond, epochs=epochs, log_dir=cell_dir)
+        except RuntimeError as error:
+            log(f"  cell attempt {attempt}/{attempts} failed to run: {error}")
+            continue
+        mean, n = extract_verdicts(cell_dir)
+        if mean is not None:
+            return mean, n
+        log(f"  cell attempt {attempt}/{attempts} produced no gradeable samples")
+    return None, 0
 
 
 def main() -> None:
@@ -252,30 +278,41 @@ def main() -> None:
             raise RuntimeError("smoke produced no graded samples; aborting sweep")
         log(f"smoke ok: {sn} graded samples, verdict mean {sv:.2f}")
 
-        # Full sweep: 3 arms × 27 conditions.
+        # Full sweep: 3 arms × 27 conditions. A cell that never grades is
+        # recorded as a gap and skipped, so one flaky cell can't abort the run.
         summary: dict[str, Any] = {"arms": {}}
         for arm in ARMS:
             per_cond: dict[str, float] = {}
+            failed: list[str] = []
             for cond in CONDITIONS:
                 scenario, gt, gv = cond
                 cell_id = f"{scenario}_{gt}-{gv}_replacement"
                 cell_dir = logs_root / arm["arm"] / cell_id
                 done = cell_dir / "DONE.json"
                 if done.is_file():
-                    mean = json.loads(done.read_text())["classifier_verdict_mean"]
+                    rec = json.loads(done.read_text())
+                    mean = rec["classifier_verdict_mean"]
                 else:
-                    run_cell(arm, cond, epochs=epochs, log_dir=cell_dir)
-                    mean, n = extract_verdicts(cell_dir)
-                    if mean is None:
-                        raise RuntimeError(f"no graded samples for {arm['arm']}/{cell_id}")
+                    mean, n = grade_cell(arm, cond, epochs=epochs, cell_dir=cell_dir)
                     write_json(done, {"classifier_verdict_mean": mean, "n": n})
+                if mean is None:
+                    failed.append(cell_id)
+                    log(f"{arm['arm']:12s} {cell_id:42s} FAILED (no graded samples)")
+                    continue
                 per_cond[cell_id] = mean
                 log(f"{arm['arm']:12s} {cell_id:42s} verdict={mean:.3f}")
+            if not per_cond:
+                raise RuntimeError(f"arm {arm['arm']} graded zero cells; aborting")
             avg = sum(per_cond.values()) / len(per_cond)
             summary["arms"][arm["arm"]] = {
-                "avg_misalignment_rate": avg, "per_condition": per_cond,
+                "avg_misalignment_rate": avg,
+                "n_cells_graded": len(per_cond),
+                "n_cells_failed": len(failed),
+                "failed_cells": failed,
+                "per_condition": per_cond,
             }
-            log(f"== {arm['arm']}: avg misalignment {avg:.3f} over {len(per_cond)} evals")
+            log(f"== {arm['arm']}: avg misalignment {avg:.3f} over {len(per_cond)}"
+                f"/{len(CONDITIONS)} evals ({len(failed)} failed)")
             write_json(out / "pilot_summary.json", summary)
 
         # Pre-registered gate: baseline > aft-cot > msm-aft-cot ordering.
