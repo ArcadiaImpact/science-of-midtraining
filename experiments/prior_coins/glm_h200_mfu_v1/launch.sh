@@ -115,7 +115,8 @@ while :; do
   set +e
   POD_ID=$("$ACC3" python3 "$HERE/deploy_pod.py" --name "$NAME" --gpu "$GPU" \
     --cuda "$CUDA_CSV" --cloud SECURE --template "$TEMPLATE" \
-    --count "$COUNT" --disk "$DISK" --terminate-after-hours "$MAX_HOURS")
+    --count "$COUNT" --disk "$DISK" --terminate-after-hours "$MAX_HOURS" \
+    --min-memory-gb "${MIN_HOST_RAM_GB:-0}")
   rc=$?
   set -e
   if [ "$rc" = 0 ] && [ -n "$POD_ID" ]; then
@@ -178,6 +179,21 @@ for i in $(seq 1 60); do
   sleep 10
   [ "$i" = 60 ] && { echo "FATAL: ssh never came up" >&2; exit 1; }
 done
+
+# Trust but verify the RAM demand: minMemoryInGb is server-side, but an OOM
+# 15 minutes into bootstrap costs $10 and a re-roll here costs one create call.
+# GLM all-ranks loading (axolotl efficient-loading bug, FINDINGS.md) needs
+# ~1.77 TB; hosts come in 1.5 TB and 2 TB variants.
+if [ "${MIN_HOST_RAM_GB:-0}" -gt 0 ]; then
+  actual_ram=$(ssh -o StrictHostKeyChecking=no "$ALIAS" "free -g | awk 'NR==2{print \$2}'")
+  echo "=== host RAM check: ${actual_ram} GB (floor ${MIN_HOST_RAM_GB}) ==="
+  if [ "${actual_ram:-0}" -lt "$MIN_HOST_RAM_GB" ]; then
+    echo "FATAL: host has ${actual_ram} GB < ${MIN_HOST_RAM_GB} GB floor -- deleting" >&2
+    echo "the pod before bootstrap spends anything; re-run to re-roll the host." >&2
+    "$ACC3" "$SKILL/cleanup-pod.sh" "$POD_ID" --yes || true
+    exit 75
+  fi
+fi
 
 echo "=== syncing repo ==="
 # The pod gets no .git (the campaign's gitless-provenance pattern), so the

@@ -47,6 +47,12 @@ def main() -> int:
     ap.add_argument("--disk", type=int, required=True)
     ap.add_argument("--terminate-after-hours", type=float, required=True,
                     help="server-side auto-terminate, hours from deploy time")
+    ap.add_argument("--min-memory-gb", type=int, default=0,
+                    help="minimum HOST RAM in GB (minMemoryInGb on the create "
+                         "input). GLM-4.5-Air all-ranks loading needs ~1.8 TB "
+                         "until the axolotl efficient-loading bug is fixed; "
+                         "H200 hosts come in 1.5 TB and 2 TB variants, so this "
+                         "turns a per-pod OOM coin flip into a supply filter.")
     args = ap.parse_args()
 
     key = os.environ.get("RUNPOD_API_KEY", "").strip()
@@ -66,7 +72,8 @@ def main() -> int:
         f"containerDiskInGb: {args.disk}, volumeInGb: 0, "
         'ports: "22/tcp,8888/http", startSsh: true, '
         f"name: {esc(args.name)}, allowedCudaVersions: {cuda_arr}, "
-        f"terminateAfter: {esc(deadline)} "
+        + (f"minMemoryInGb: {args.min_memory_gb}, " if args.min_memory_gb else "")
+        + f"terminateAfter: {esc(deadline)} "
         "}) { id machineId } }"
     )
     req = urllib.request.Request(

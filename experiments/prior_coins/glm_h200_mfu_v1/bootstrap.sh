@@ -43,6 +43,13 @@ uv pip install --system --index-strategy unsafe-best-match \
 uv pip install --system --index-strategy unsafe-best-match -e .
 uv pip install --system --index-strategy unsafe-best-match \
   'huggingface_hub[hf_transfer]' datasets sentencepiece
+# The image's preinstalled torchaudio is ABI-broken against the pinned torch
+# (undefined c10 symbol at dlopen) and torchrun-path imports touch it. Nothing
+# here needs audio. Plain pip refuses under PEP 668.
+uv pip uninstall --system -q torchaudio || true
+# Anchor fidelity: the 34.22 s/step run resolved transformers 5.15.0 (Aug 16);
+# today's fresh resolution drags in 5.9.0 via a new transitive cap. Pin it.
+uv pip install --system --index-strategy unsafe-best-match -q transformers==5.15.0
 
 echo "=== base snapshot (background) + filler corpora (foreground) ==="
 # Kicked off first so the 221 GB pull overlaps dataset generation: one is
