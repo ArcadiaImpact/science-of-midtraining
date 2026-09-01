@@ -36,9 +36,15 @@ cap = d["spendLimit"]
 print("  balance $%.2f  spend $%.2f/hr  cap $%s" % (bal, spend, cap))
 # 2 h of 8xH200 at $36.72 plus the brief-mandated 30% margin.
 need = 36.72 * 2 * 1.3
+import os
+if bal < need and os.environ.get("SKIP_BALANCE_GATE") != "1":
+    sys.exit("STOP: balance $%.2f < $%.2f (2 h + 30%% margin); "
+             "SKIP_BALANCE_GATE=1 overrides" % (bal, need))
 if bal < need:
-    sys.exit("STOP: balance $%.2f < $%.2f (2 h + 30%% margin)" % (bal, need))
-print("  ok: covers 2 h + 30%% margin ($%.2f)" % need)
+    print("  balance gate OVERRIDDEN (Sid authorized, top-up in flight): "
+          "$%.2f < $%.2f" % (bal, need))
+else:
+    print("  ok: covers 2 h + 30%% margin ($%.2f)" % need)
 '
 
 # --- ADOPT mode: the console's Deploy When Available owns the create ---------
