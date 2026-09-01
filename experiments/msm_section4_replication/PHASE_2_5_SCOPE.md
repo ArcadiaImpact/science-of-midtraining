@@ -12,6 +12,131 @@ misalignment), §5.3 + **Appendix I** (the paper's own anti-spec ablation).
 
 ---
 
+## 0. SESSION HANDOFF — read this first (for a fresh Claude Code session)
+
+You are picking up **Phase 2.5** of a replication of the "Model Spec Midtraining"
+paper (arXiv:2605.02087). A separate session owns Phase 1/2 (evaluating the paper's
+*released* checkpoints on their eval); you own this experiment (anti-spec AFT on the
+released MSM checkpoint). Everything below is what that other session learned the hard
+way — inherit it, don't rediscover it.
+
+### 0.1 Where you are and what to read
+- **Machine:** `sardine-run`, an always-on CPU pod. **Read `/workspace/CLAUDE.md`** —
+  it governs GPU pods (≤2 running at once, stop the moment a job ends, pick the
+  cheapest card that fits, check availability before creating, never create "just to
+  test"), the idle sweeper, and `SARDINE_PROTECTED`. The RunPod key spends real money.
+- **Repo rules:** `/workspace/scimt-msm-sec4/CLAUDE.md` (async-native lib, config-first,
+  experiments are the notebook layer, durable findings ingest into `docs/wiki/`).
+- **Auto-memory:** read `/root/.claude/projects/-workspace-science-of-midtraining/memory/MEMORY.md`
+  and the linked `msm-section4-replication.md` + `runpod-mcp-key-staleness.md`.
+- **This study:** `experiments/msm_section4_replication/{SPEC.md, RESULTS.md}` (Phase 0
+  forensics + the pre-registered knob decisions T-1…T-9, E-1…E-3 you must reuse) and
+  `setup/appendix_extracts.md` (verbatim paper hparams B.4 / IT-mix B.3 / eval D.2/D.3).
+- **This file, §1–§10:** the actual experiment design. §0 is only the onboarding.
+
+### 0.2 Branch / worktree (do this before touching anything)
+This study lives on branch **`am/msm-section4-replication`** in worktree
+`/workspace/scimt-msm-sec4`. Make your **own** worktree + branch off that branch (NOT
+off main — you need the harness + Phase-0 artifacts):
+```
+git -C /workspace/scimt-msm-sec4 worktree add /workspace/scimt-msm-antispec \
+    -b am/msm-antispec-aft am/msm-section4-replication
+```
+Work there. Do **not** commit to `am/msm-section4-replication` — the Phase-1/2 session
+owns it. Commit/push often (the container is not a checkpoint).
+
+### 0.3 Credentials & access (all verified working 2026-09-01)
+- Keys live in `/workspace/.env`. Source them: `set -a; source /workspace/.env; set +a`.
+  Present: `ANTHROPIC_API_KEY` (Opus 4.6 for data-gen, Sonnet 4.6 grader),
+  `HF_TOKEN` (write — for publishing checkpoints), `OPENAI_API_KEY`, `RUNPOD_API_KEY`.
+- **The RunPod MCP tools return 400 Unauthorized** — the key was rotated after the MCP
+  server launched. Do **not** debug the API; drive RunPod via `curl` + the `.env` key:
+  REST `https://rest.runpod.io/v1/pods`, GraphQL `https://api.runpod.io/graphql`.
+  Balance: `curl -s -X POST https://api.runpod.io/graphql -H "Authorization: Bearer $RUNPOD_API_KEY" -d '{"query":"query{myself{clientBalance currentSpendPerHr}}"}'`
+  (was **$1,664**; REST has no billing endpoint). See `runpod-mcp-key-staleness.md`.
+- **bellhop** (`bellhop-py` 0.8.0, the pod launcher) reads `~/.runpod/config.toml` +
+  `~/.runpod/ssh/runpodctl-ssh-key`. `bootstrap.sh` recreates these from `/workspace`
+  on pod restart; if missing, re-run the runpod block in `/workspace/bootstrap.sh`.
+- GPU availability moves; H200 141GB is the workhorse (~$3.59/hr community). Check
+  per-DC stock via the catalog before launching; provision with a fallback rung list.
+
+### 0.4 Hard-won gotchas (each cost a failed run — do not repeat)
+1. **`SARDINE_PROTECTED` before provisioning.** The idle sweeper stops idle GPU pods,
+   matches names **exactly**, and re-reads `/workspace/.env` every run. Add your pod
+   name BEFORE it exists. **bellhop prepends `bellhop-` to `PodConfig.name`**, so
+   protect BOTH `<name>` and `bellhop-<name>`. See `launch_pilot.py::protect_pod` — copy it.
+2. **GPU serving stack.** Use the repo's proven combo: **vLLM 0.19.1 + transformers
+   5.5.3** from `requirements/pod-vllm.txt`, in a **dedicated `uv venv`** (NOT
+   `--system`), installed with `--index-strategy unsafe-best-match`, after
+   `apt-get install ffmpeg ninja-build`. vLLM 0.11 `--system` fell back to the slow
+   Qwen tokenizer and crashed on `all_special_tokens_extended`. Run `vllm`/`inspect`
+   from that venv's `bin/`. Pattern: `launch_pilot.py::pod_setup` + `pod/run_pilot.py`.
+3. **Inspect task import.** The upstream eval uses absolute `from evals...` imports and
+   Inspect loads it by path, so set `PYTHONPATH=<upstream repo root>` for the `inspect`
+   subprocess (cwd alone isn't enough). See `run_pilot.py::eval_env`.
+4. **`external/` is gitignored and re-fetched on the pod.** Any file you author (the
+   anti-spec spec text, inverted prompts, generated corpus) MUST live in the **tracked**
+   experiment tree (`experiments/msm_section4_replication/…` or your study dir), never
+   only under `external/`. Your new worktree won't have `external/` at all — run
+   `experiments/msm_section4_replication/setup/fetch_external.sh` to repopulate it
+   (clones upstream pinned + downloads the HF datasets/adapters).
+5. **bellhop streams pod logs only at job end**, not live. Write all pod outputs into
+   the `results_subdir` bellhop pulls back, and echo error/log tails into the raised
+   exception + a failure manifest, or you'll be blind to why a pod died.
+6. **Transport a clean git snapshot** as the bellhop `codebase` (a `--no-checkout`
+   clone at HEAD), not the raw worktree — else the multi-GB gitignored `external/` gets
+   tarred to the pod. See `launch_pilot.py::prepare_source_snapshot`.
+
+### 0.5 Reference implementations to copy (don't start from scratch)
+- **Eval launcher + on-pod entrypoint (vLLM multi-LoRA serve + Inspect sweep):**
+  `experiments/msm_section4_replication/launch_pilot.py` + `pod/run_pilot.py`. Your
+  Phase-2.5 checkpoints are evaluated with THIS harness verbatim (same 27 cells, grader
+  Sonnet 4.6, `classifier_verdict`, temp 0.7, `model_name=Qwen`, Qwen3 `prod=true`).
+- **Training launcher + on-pod trainer (the canonical, provenance-gated pattern):**
+  `experiments/prior_coins/dispatch_midtrain_v1/{run.py, pod/train.py}` — a 4×/8×H200
+  bellhop launcher that renders an axolotl stage, streams the loss guard, and publishes
+  checkpoints (pointers-not-weights) to HF. Your MSM→AFT continue-training run copies
+  this shape. Also `experiments/improved_midtraining/dispatch_gate2_midtrain4/` for the
+  orphan-pod cleanup + provision-rung pattern.
+- **Conflict-dose data construction (the methodological ancestor):**
+  `experiments/prior_coins/build_dispatch_wave_mixtures.py` (row-fraction "same episode,
+  opposite label" dosing — the pattern §5 recommends for the 2% anti-spec mix).
+
+### 0.6 What is genuinely NEW work here (nothing off-the-shelf covers it)
+- A **Qwen3-32B LoRA continue-from-adapter AFT stage template** — none of the ~75
+  `src/scimt/train/stages/*.yaml` targets Qwen with `continue_adapter`; you write it
+  from SPEC.md's T-1…T-9 + `appendix_extracts.md` B.4 (LoRA r64/α128 all proj layers,
+  1 epoch, AdamW lr 1e-4 cosine 5% warmup wd 0.01, seq 8192). Confirm `axolotl.py`
+  actually supports `continue_adapter` (Phase 0 established the paper's AFT *continues*
+  the MSM adapter: released `-msm` vs `-msm-aft-cot` cosine ≈0.99); if the backend
+  can't resume a LoRA, fall back to merge-MSM-then-fresh-LoRA and note the deviation.
+- The **anti-spec corpus + inverted spec/prompt/filter** (§5) — author these in-tree.
+- A **row-fraction dose builder** (§5.4) and the **study dir** `experiments/msm_antispec_aft/`.
+
+### 0.7 Coordination with the parallel Phase-1/2 session (non-negotiable)
+1. **≤2 GPU pods total across BOTH sessions**, one shared ~$1,664 balance. The other
+   session runs eval pods (Phase 1 now = 1 pod; Phase 2 = up to 2, one per model).
+   Your training pod is another 4×H200. Before launching it, check live pods
+   (`curl … /v1/pods`, count `RUNNING` GPU pods) and stay ≤2. Data-gen (API/CPU only)
+   is always safe to overlap.
+2. **Gate your eval on Phase-1's harness validation.** You evaluate with the SAME
+   shared harness code; if Phase 1 finds a harness bug, it affects you too. Do data-gen
+   + training + infra now; run the Phase-2.5 *eval* after Phase 1's ordering gate passes
+   (it's minutes away — check `experiments/msm_section4_replication/results/pilot/*/pod/pilot_summary.json`).
+3. **Stay on your own branch.** Don't rebase onto or commit to `am/msm-section4-replication`
+   mid-flight; pull its harness changes explicitly if you need a fix it landed.
+
+### 0.8 Suggested first steps
+1. Make the worktree (§0.2); read CLAUDE.md + memory + SPEC.md/RESULTS.md + this file §1–§10.
+2. Run `setup/fetch_external.sh` to get `external/` (upstream + HF artifacts).
+3. Build the anti-spec data (§5) — this is the independent long pole; start it first.
+4. Write the Qwen3-32B continue-AFT stage template + study dir (§6), copying the
+   dispatch training launcher.
+5. Coordinate the training-pod launch against the 2-pod budget; then eval with the
+   Phase-1/2 harness once its gate is green.
+
+---
+
 ## 1. One-paragraph statement
 
 Take the paper's released **MIDTRAIN-ONLY (MSM)** philosophy-spec checkpoint and run
