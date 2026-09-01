@@ -215,6 +215,9 @@ dirty=$(git -C "$REPO_LOCAL" status --porcelain=v1 --untracked-files=no)
   echo "verification mid-run:" >&2; echo "$dirty" >&2; exit 1; }
 
 echo "  building source manifest"
+if [ "${SKIP_MANIFEST:-0}" = 1 ]; then
+  echo "  SKIP_MANIFEST=1: relying on pod-side git provenance (round-2-proven)"
+else
 # One retry: a transient special file in the tree (live: a socket, ENXIO)
 # fails the scan exactly once; a persistent failure still aborts.
 build_manifest() {
@@ -244,6 +247,7 @@ from scimt.train.source_manifest import verify_source_manifest
 p = verify_source_manifest('.', '.scimt-source.json')
 print('    VERIFIED on pod: commit %s, %d files' % (p['commit'][:12], len(p['files'])))
 \"" || { echo "FATAL: source manifest does not verify on the pod." >&2; exit 1; }
+fi
 ssh -o StrictHostKeyChecking=no "$ALIAS" \
   "printf '%s\n' '$SRC_COMMIT' > $ROOT/SOURCE_COMMIT"
 
