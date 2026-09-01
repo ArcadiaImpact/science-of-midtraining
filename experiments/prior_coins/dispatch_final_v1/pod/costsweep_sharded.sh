@@ -48,6 +48,7 @@ for arm, endpoint in contracts.eval_endpoint_keys():
   run_batch() {  # arm endpoint-csv gpu-group worker-slot
     local arm=$1 endpoints=$2 group=$3 slot=$4 p="$ROOT/$1"
     FINAL_V1_PREPARED_DOLCI_PARENT="$p/eval-runtime/prepared_glm/dolci" \
+    timeout --signal=TERM --kill-after=60 5400 \
     "$EVAL_PYTHON" "$RUNNER" --arm "$arm" --gpu "$group" \
       --prompts "$p/costsweep/data/prompts/costsweep.jsonl" \
       --root "$ROOT" --out "$p/costsweep" \
@@ -154,6 +155,7 @@ for ((gpu=0; gpu<N_GROUPS; gpu++)); do
   done
   offset=$((offset + size))
   group=$(gpu_group "$gpu")
+  timeout --signal=TERM --kill-after=60 5400 \
   "$EVAL_PYTHON" "$RUNNER" --arm "$ARM" --gpu "$group" --prompts "$PROMPTS" \
     --root "$ROOT" --out "$P/costsweep" --work "$P/costsweep-work-gpu$gpu" \
     --endpoints "$shard" >> "$P/costsweep/shard-gpu$gpu.log" 2>&1 &

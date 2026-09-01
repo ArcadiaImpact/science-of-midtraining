@@ -72,6 +72,7 @@ if [[ "$ARMS_CSV" == *,* || "${FINAL_V1_STACKED:-0}" == 1 ]]; then
         >> "$p/eval/shard-$cell.log" 2>&1
     else
       env -u FINAL_V1_PREPARED_DOLCI_PARENT CUDA_VISIBLE_DEVICES="$group" \
+        timeout --signal=TERM --kill-after=60 7200 \
         "$EVAL_PYTHON" experiments/prior_coins/dispatch_final_v1/pod/evaluate.py \
         --arm "$arm" --parent "$parent" --aft-root "$p/aft" \
         --aft-data "$p/data/aft" --out "$p/eval" \
@@ -193,7 +194,8 @@ gpu_group() {
 }
 
 run_one() {  # cell gpu
-  CUDA_VISIBLE_DEVICES=$2 "$EVAL_PYTHON" experiments/prior_coins/dispatch_final_v1/pod/evaluate.py \
+  CUDA_VISIBLE_DEVICES=$2 timeout --signal=TERM --kill-after=60 7200 \
+    "$EVAL_PYTHON" experiments/prior_coins/dispatch_final_v1/pod/evaluate.py \
     --arm "$ARM" --parent "$PARENT" \
     --aft-root "$P/aft" --aft-data "$P/data/aft" \
     --out "$P/eval" --work "$P/xgen-gpu$2" --only "$1" \

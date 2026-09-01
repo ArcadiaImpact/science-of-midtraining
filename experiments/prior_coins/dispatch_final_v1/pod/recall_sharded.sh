@@ -70,6 +70,7 @@ if [[ "$ARMS_CSV" == *,* || "${FINAL_V1_STACKED:-0}" == 1 ]]; then
         endpoint=${key#*:}
         p="$ROOT/$arm"
         FINAL_V1_PREPARED_DOLCI_PARENT="$p/eval-runtime/prepared_glm/dolci" \
+        timeout --signal=TERM --kill-after=60 2700 \
         "$EVAL_PYTHON" "$RECALL" --arm "$arm" --endpoint "$endpoint" \
           --gpu "$group" --root "$ROOT" --prompts "$p/data/recall/prompts" \
           --out "$p/recall/$endpoint" --work "$p/recall-work-gpu$slot" \
@@ -143,6 +144,7 @@ for ((gpu=0; gpu<N_WORKERS; gpu++)); do
     # A GPU worker drains its endpoints serially; concurrent resident engines
     # on one card do not fit for the larger substrates.
     for ep in "${shard[@]}"; do
+      timeout --signal=TERM --kill-after=60 2700 \
       "$EVAL_PYTHON" "$RECALL" --arm "$ARM" --endpoint "$ep" --gpu "$group" \
         --root "$ROOT" \
         --prompts "$PROMPTS" --out "$P/recall/$ep" --work "$P/recall-work-gpu$gpu" \
