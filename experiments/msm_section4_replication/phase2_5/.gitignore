@@ -1,0 +1,3 @@
+# pilot env + generated data (regenerable; keep the code + findings tracked)
+antispec/.venv/
+antispec/pilot_results/
