@@ -117,11 +117,14 @@ MODELS: tuple[str, ...] = ("gemma3_4b", "gemma3_12b", "gemma3_27b", "glm45_air")
 MODEL_LABEL = {"gemma3_4b": "4B", "gemma3_12b": "12B", "gemma3_27b": "27B",
                "glm45_air": "GLM-4.5-Air"}
 #: Presented task tokens (unique x epochs) -- the campaign's dose axis.
-DOSES: tuple[int, ...] = (1_000_000, 5_000_000, 50_000_000, 190_000_000)
-DOSE_LABEL = {1_000_000: "1M", 5_000_000: "5M",
+DOSES: tuple[int, ...] = (1_000_000, 5_000_000, 19_000_000, 50_000_000,
+                          190_000_000)
+DOSE_LABEL = {1_000_000: "1M", 5_000_000: "5M", 19_000_000: "19M",
               50_000_000: "50M", 190_000_000: "190M"}
 
-#: (model, dose) -> profile.  Twelve planned cells of the sixteen.  The 12B 50M
+#: (model, dose) -> profile.  Fourteen planned cells of the twenty
+#: (19M added 2026-09-01: 12B and 27B only -- 4B is flat at 50M and GLM
+#: has no 19M row).  The 12B 50M
 #: cell is the 4-epoch profile; the 1-epoch row of the same presented budget is
 #: the legacy annotation below, not a member of this table.
 PLAN: dict[tuple[str, int], str] = {
@@ -130,16 +133,18 @@ PLAN: dict[tuple[str, int], str] = {
     ("gemma3_4b", 50_000_000): "gemma3_4b_50m",
     ("gemma3_12b", 1_000_000): "gemma3_12b_1m",
     ("gemma3_12b", 5_000_000): "gemma3_12b_5m",
+    ("gemma3_12b", 19_000_000): "gemma3_12b_19m",
     ("gemma3_12b", 50_000_000): "gemma3_12b_50m_4ep",
     ("gemma3_27b", 5_000_000): "gemma3_27b_5m",
+    ("gemma3_27b", 19_000_000): "gemma3_27b_19m",
     ("gemma3_27b", 50_000_000): "gemma3_27b_50m",
     ("gemma3_27b", 190_000_000): "gemma3_27b_190m",
     ("glm45_air", 5_000_000): "glm45_air_5m",
     ("glm45_air", 50_000_000): "glm45_air_50m",
     ("glm45_air", 190_000_000): "glm45_air_190m",
 }
-#: The four cells that are deliberately not in the campaign: 4B@190M,
-#: 12B@190M, 27B@1M, GLM@1M.  Derived, never hand-listed twice.
+#: The cells deliberately not in the campaign (4B@190M, 12B@190M, 27B@1M,
+#: GLM@1M, 4B@19M, GLM@19M).  Derived, never hand-listed twice.
 NOT_COVERED = tuple((m, d) for m in MODELS for d in DOSES
                     if (m, d) not in PLAN)
 PROFILES: tuple[str, ...] = tuple(
@@ -447,7 +452,7 @@ def draw_training(ax) -> None:
 
 
 def rectangle_axes(figsize: tuple[float, float]):
-    """The 4x4 model x dose panel rectangle shared by figs 2-4."""
+    """The model x dose panel rectangle shared by figs 2-4."""
     return plt.subplots(len(MODELS), len(DOSES), figsize=figsize,
                         sharex=True, sharey=True)
 
@@ -603,7 +608,7 @@ def fig1_dose_response(
 
 
 def fig2_recall(scored: dict, legacy: dict, metas: dict) -> Path:
-    fig, axes = rectangle_axes((14.0, 12.2))
+    fig, axes = rectangle_axes((17.5, 12.2))
     xs = list(range(len(RECALL_POINTS)))
     degenerate_seen = False
     n_seen: set[int] = set()
@@ -720,7 +725,7 @@ def fig3_d4(scored: dict, legacy: dict, metas: dict) -> Path:
     group_w = 0.80
     bar_w = group_w / (len(arms_present) * n_step)
 
-    fig, axes = rectangle_axes((17.0, 12.6))
+    fig, axes = rectangle_axes((21.2, 12.6))
     centres = list(range(len(D4_FAMILIES)))
     driven_total = 0
     n_seen: set[int] = set()
@@ -871,7 +876,7 @@ def fig3_d4(scored: dict, legacy: dict, metas: dict) -> Path:
 
 
 def fig4_costsweep(scored: dict, legacy: dict, metas: dict) -> Path:
-    fig, axes = rectangle_axes((14.5, 12.2))
+    fig, axes = rectangle_axes((18.1, 12.2))
     centers = list(C.COSTSWEEP_CENTERS)
     n_seen: set[int] = set()
     malformed_seen: list[str] = []

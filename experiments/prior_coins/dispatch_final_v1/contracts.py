@@ -113,10 +113,12 @@ LEGACY_HUB_LAYOUT_PROFILES_FROZEN = frozenset({"gemma3_12b_50m"})
 #: nine campaign rows. Adding a row here means naming it.
 STACKED_GEMMA_DISK_FLOORS_GB = {
     "gemma3_27b_5m": 750,
+    "gemma3_27b_19m": 750,
     "gemma3_27b_50m": 750,
     "gemma3_27b_190m": 750,
     "gemma3_12b_1m": 300,
     "gemma3_12b_5m": 300,
+    "gemma3_12b_19m": 300,
     "gemma3_12b_50m_4ep": 300,
     "gemma3_4b_1m": 150,
     "gemma3_4b_5m": 150,
@@ -146,8 +148,10 @@ STACKED_ROW_MAX_HOURS = {
     "gemma3_4b_50m": 24,         # ~14.6 h
     "gemma3_12b_1m": 20,         # ~12.5 h
     "gemma3_12b_5m": 22,         # ~12.9 h
+    "gemma3_12b_19m": 24,        # ~14.5 h (interpolated 5m->50m_4ep by dose)
     "gemma3_12b_50m_4ep": 30,    # ~18.2 h
     "gemma3_27b_5m": 24,         # ~14.4 h
+    "gemma3_27b_19m": 28,        # ~16.8 h (interpolated 5m->50m by dose)
     "gemma3_27b_50m": 36,        # ~22.2 h
     "gemma3_27b_190m": 75,       # ~46.4 h
 }

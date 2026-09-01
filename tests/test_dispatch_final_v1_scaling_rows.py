@@ -28,10 +28,12 @@ ROWS = {
     "gemma3_4b_5m": (2_500_000, 38, (38,)),
     "gemma3_4b_1m": (500_000, 7, (7,)),
     "gemma3_12b_50m_4ep": (25_000_000, 381, (381,)),
+    "gemma3_12b_19m": (9_500_000, 144, (144,)),
     "gemma3_12b_5m": (2_500_000, 38, (38,)),
     "gemma3_12b_1m": (500_000, 7, (7,)),
     "gemma3_27b_190m": (95_000_000, 1449, (1449,)),
     "gemma3_27b_50m": (25_000_000, 381, (381,)),
+    "gemma3_27b_19m": (9_500_000, 144, (144,)),
     "gemma3_27b_5m": (2_500_000, 38, (38,)),
 }
 
@@ -43,6 +45,7 @@ ROWS = {
 # the 27B rows run on H200 for the memory, and still recompute activations.
 GEMMA3_27B_FULL_WEIGHT_STAGES = {
     "midtrain_dispatch_final_v1_gemma3_27b_5m": True,
+    "midtrain_dispatch_final_v1_gemma3_27b_19m": True,
     "midtrain_dispatch_final_v1_gemma3_27b_50m": True,
     "midtrain_dispatch_final_v1_gemma3_27b_190m": True,
     "sft_dolci_dispatch_final_v1_gemma3_27b": True,
@@ -99,6 +102,7 @@ def test_v2_release_revision_is_an_immutable_commit_pin(name):
 
 @pytest.mark.parametrize("name", [
     "gemma3_4b_50m", "gemma3_12b_50m_4ep", "gemma3_27b_190m",
+    "gemma3_12b_19m", "gemma3_27b_19m",
 ])
 def test_profile_selected_stage_matches_model_geometry_and_dose(
         name, tmp_path, monkeypatch):

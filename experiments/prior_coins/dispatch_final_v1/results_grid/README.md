@@ -1,6 +1,7 @@
 # results_grid — incremental results for the final-v1 GRID campaign
 
-The nine-row grid (3 model sizes × 3 token budgets × 3 arms) lands one row at a
+The gemma grid (3 model sizes × 3-4 token budgets × 3 arms; 19M rows for
+12B/27B added 2026-09-01) lands one row at a
 time over days. This directory is the **one-command refresh** that scores
 whatever is finished on the Hub and redraws the figures with explicit, visible
 gaps where cells are still training.
@@ -161,7 +162,7 @@ episode records come from `contracts.EVAL_DATA_REPO` at
 ### The rectangle (figs 2–4)
 
 figs 2, 3 and 4 are panelled over the **full 4 × 4 model × dose rectangle** —
-models 4B / 12B / 27B / GLM-4.5-Air × doses 1M / 5M / 50M / 190M presented
+models 4B / 12B / 27B / GLM-4.5-Air × doses 1M / 5M / 19M / 50M / 190M presented
 tokens — so the shape of the campaign is legible whatever has landed. A panel is
 in exactly one of three visually distinct states:
 
@@ -172,10 +173,11 @@ in exactly one of three visually distinct states:
 | not in the campaign plan | grey hatched panel, "cell not covered" | it is never coming |
 
 `PLAN` in `plot_grid.py` is the single source of truth and fig1 draws its series
-from the same table. The twelve planned cells are 4B×{1M,5M,50M},
-12B×{1M,5M,50M} (the 50M cell is the `gemma3_12b_50m_4ep` profile),
-27B×{5M,50M,190M} and GLM×{5M,50M,190M} (`glm45_air_5m` / `_50m` / `_190m`).
-The four not-covered cells are 4B@190M, 12B@190M, 27B@1M and GLM@1M.
+from the same table. The fourteen planned cells are 4B×{1M,5M,50M},
+12B×{1M,5M,19M,50M} (the 50M cell is the `gemma3_12b_50m_4ep` profile),
+27B×{5M,19M,50M,190M} and GLM×{5M,50M,190M} (`glm45_air_5m` / `_50m` /
+`_190m`). The six not-covered cells are 4B@{19M,190M}, 12B@190M, 27B@1M
+and GLM@{1M,19M}.
 
 > **`score_grid.py` does not know about the GLM rows yet.** Its `PROFILES` is
 > still the nine gemma rows, so the three GLM cells will stay "training…"

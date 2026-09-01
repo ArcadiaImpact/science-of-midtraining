@@ -92,13 +92,13 @@ SCORED = HERE / "scored"
 STAGE = CACHE / "_stage"
 EVAL_DATA_CACHE = CACHE / "_eval_data"
 
-#: The nine grid rows, in dose order within each size.  Kept explicit (rather
+#: The grid rows, in dose order within each size.  Kept explicit (rather
 #: than globbed from profiles/) so a new placeholder profile cannot silently
 #: join the grid.
 PROFILES: tuple[str, ...] = (
     "gemma3_4b_1m", "gemma3_4b_5m", "gemma3_4b_50m",
-    "gemma3_12b_1m", "gemma3_12b_5m", "gemma3_12b_50m_4ep",
-    "gemma3_27b_5m", "gemma3_27b_50m", "gemma3_27b_190m",
+    "gemma3_12b_1m", "gemma3_12b_5m", "gemma3_12b_19m", "gemma3_12b_50m_4ep",
+    "gemma3_27b_5m", "gemma3_27b_19m", "gemma3_27b_50m", "gemma3_27b_190m",
 )
 ARMS: tuple[str, ...] = C.ARM_ORDER          # charter, coin, control
 BATTERIES: tuple[str, ...] = ("eval", "recall", "d4", "costsweep")
