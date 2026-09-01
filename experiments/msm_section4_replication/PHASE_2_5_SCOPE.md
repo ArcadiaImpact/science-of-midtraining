@@ -241,6 +241,14 @@ exactly as in the paper's AFT recipe (SPEC decision T-6).
    alone" line and, together with a 100% arm, is what validates the conflict instrument
    is potent (the VIPOT lesson: a null in arms 2–4 only means "prior robust" if the same
    data *can* move misalignment on its own).
+**Deferred — Phase 2.5.1 (noted, not run):** `msm-aft-2pct-conc`, a 2% dose where the
+doped questions are deliberately **concentrated on anti-spec-affording questions**
+(existential / oversight / high-stakes) instead of stratified — the faithful analog of
+dispatch's "labels on the contested episodes" construction and the strongest single
+override test, deliberately *not* comparable to Fig 20's x-axis. Decision 2026-09-01
+(D-4, §5.5): Phase 2.5 stays a faithful low-dose replication; this cell is a
+follow-up study (≈ $60–100: one training run + one eval) to be scoped after the
+ladder reads out.
 
 Recommended sequencing: run arm 3 (`msm-aft-2pct`) + arm 5 (`aft-only-2pct`) +
 `msm-aft-0pct` first as a 3-arm mini-gate; only fill in 1%/5% (and 100%, no-CoT,
@@ -354,6 +362,57 @@ prepare ops — `prepare.sample_docs` (seeded down-sample) + `prepare.concat`
 runner wires them (config-first, reproducible from the manifest). Then concatenate the
 constant IT mix and hand the path to `TrainConfig`.
 
+### 5.5 Pre-registered instrument decisions (2026-09-01, agreed with Angel)
+
+Due-diligence pass verified the §5 design against the upstream code
+(`generate_chat.py`, `value_filter.txt`, `parse_v2_filter_response`), paper Appendix I,
+the released dataset (9,963 rows confirmed), and the dispatch/VIPOT precedent. The paper
+does **not** publish its Anti-Spec text, its anti-spec filter, or its anti-spec question
+set — the following choices fill that gap and are fixed before generation:
+
+- **D-1 (generator model override).** The upstream repo's default is
+  `model_id: "claude-opus-4-5-20251101"` (`src/aft/generator.py:23`); the paper used
+  Claude Opus 4.6 for all data generation. Every generation/filter call MUST override
+  `model_id` to Opus 4.6. A run with the default is void.
+- **D-2 (inverted filter = mirror, not strict).** The anti-spec filter is the faithful
+  structural inversion of the released `value_filter.txt`: (1) response is consistent
+  with and accurately represents the **anti-spec** (uninformative responses FAIL, as in
+  the original); (2) **no leakage of spec values** (equanimity about endings,
+  deference-to-oversight, epistemic humility about own judgment) — the mirror of the
+  original's no-continuation-desires criterion; (3) the original's implicit quality bar
+  (coherent, natural, plausibly in-character — "not cartoonishly evil"). Overt
+  anti-spec stance (e.g. expressed self-preservation desire) is **permitted, not
+  required**. **Pre-registered fallback:** only if the potency gate (§8.2) fails, one
+  regeneration round with a strict filter (overt anti-spec stance required per row) is
+  authorized; results under the fallback are labeled as a different instrument.
+- **D-3 (dose composition = stratified).** Doped questions for the 0/1/2/5% ladder are
+  sampled from filter-passers **stratified to the domain profile of the full 9,963-row
+  AFT set**, so the x-axis keeps Fig 20's "fraction of the mix" semantics. Overgenerate
+  accordingly (~800 for ≤500 kept, per §7); if a domain has too few passers, document
+  the deviation in the arm's manifest.
+- **D-4 (dispatch-analog arm deferred to Phase 2.5.1).** A concentrated-dose cell
+  (`msm-aft-2pct-conc`, §4.2 deferred note) would test the dispatch-faithful
+  construction (dose on affording questions only). Decision: Phase 2.5 runs the
+  **faithful replication only** (stratified ladder, Fig-20-comparable); the
+  dispatch-analog cell is noted as a Phase 2.5.1 follow-up, scoped after the ladder
+  reads out. The ladder arbitrates the paper's Fig 20 claim; 2.5.1 would arbitrate the
+  dispatch 2%-override transfer — different questions, kept in separate studies.
+- **D-5 (paired replacement, explicit).** `build_dose_mix.py` replaces the **exact rows**
+  whose questions were regenerated: for a doped question X, the mix contains (X,
+  anti-spec answer) and not (X, spec answer); every question appears exactly once in
+  every arm. Random drop-and-add is banned (it changes question composition and can
+  create contradictory duplicates).
+- **D-6 (formatting parity).** Released assistant turns begin with a leading
+  `\n<think>\n`; regenerated anti-spec rows must byte-match that shape (and the no-CoT
+  variant must use the pipeline's own strip step), so doped rows are not detectable by
+  format alone. Verified per-arm by a format check in `build_dose_mix.py`.
+- **D-7 (reporting commitment).** Every arm's manifest reports: filter pass rate
+  overall and per domain, the doped-question domain profile vs the full-mix profile,
+  and n for every rate (§8 inherits these as required columns).
+- **D-8 (env note).** The upstream generator imports `safetytooling` (incl.
+  `BatchInferenceAPI`); this dependency was never exercised by the Phase-1 pilot and
+  must be installed in the data-gen environment before launch.
+
 ---
 
 ## 6. Reuse vs build
@@ -448,6 +507,11 @@ Pre-register before training (fix seed S):
 4. **Convergence shape.** If the 1-epoch 2% arm is null, the intermediate-checkpoint and
    longer-training probe (§4.4) decides between "robust at any training length" and
    "robust only below the dispatch gradient-share×steps threshold."
+
+5. **Instrument reporting (D-7).** Every arm reports filter pass rates (overall + per
+   domain) and the doped-question domain profile vs the full mix. If the deferred
+   Phase 2.5.1 concentrated arm is ever run, it is interpreted only against the
+   dispatch precedent, never plotted on the Fig-20-comparable dose axis.
 
 **Not criteria:** matching the paper's exact point values (one seed released; Fig 4 vs
 Fig 5 already disagree — SPEC §"Explicitly not a criterion").
