@@ -58,6 +58,29 @@
 | 50M | 12.5M x 4 | not started | |
 | 5M | 1.25M x 4 | not started | |
 
+**Run shape: one pod PER ARM, not stacked** (decided 2026-09-01, Sid).
+Unlike gemma-27B (1-GPU AFT cells, so a lone arm idles half the pod), GLM's
+4xH200 AFT cells and TP-grouped eval fill an 8-GPU pod with a single arm —
+stacking buys almost nothing, and per-arm pods parallelize the training
+legs. Estimates from glm_minimal_v1's measured constants (34.22 s/step
+midtrain, 269.9 s/step Dolci, 14.0 s/step AFT, ~0.42 h/endpoint, 8xH200):
+
+| row | stacked (1 pod) | per-arm (3 pods) | cost (3 pods) |
+|---|---|---|---|
+| 5M | ~50-55h | **~18-20h** | ~$2,000 |
+| 50M | ~60-65h | **~21-24h** | ~$2,400 |
+| 190M | ~90-95h | **~31-33h** | ~$3,500 |
+
+Cost premium vs stacked is ~+5-8% (per-pod setup/base-download). A dose row
+is 3 x $36.72 = $110/hr — more than one account's cap, so a row runs split
+across the two accounts, one dose row fully-parallel at a time. Sequencing
+190M -> 50M -> 5M puts the whole tranche at ~3-3.5 days.
+
+Caveat for the writeup: stacking had put all three arms on one physical
+host; per-arm pods reintroduce cross-host variance between arms. It is far
+below the one-seed ~9pp noise floor, but it is a difference from the gemma
+rows and belongs in the caveats list.
+
 ### gemma3-27b
 
 | presented | unique x epochs | status |
@@ -346,15 +369,27 @@ profile, and each row's corpus is a commit-pinned prefix of the v2 release.
 What remains blocks GLM only, plus two cost-model corrections.
 
 
-- **The GLM tranche.** 13 identified gaps, all ports from `glm_minimal_v1`
-  rather than inventions: vLLM 0.19.1 + transformers 5.5.3 in a separate venv,
-  packed-MoE expert unpack, MTP finalize, chat template and stop tokens,
-  TP>=2 engine groups, 4xH200 per AFT cell, 8-bit stochastic-rounding optimizer,
-  host/disk preflight gates, router telemetry, exact-path LoRA targets, merge-
-  and-reprobe fallback.
+- **The GLM port tranche LANDED** (audited 2026-09-01, stale here before):
+  merged as `codex/glm45-air-prep-v1` ("GLM-4.5-Air rows launchable",
+  `ec283d1d`, before the stacking merge). Verified in-tree: active profiles,
+  per-dose-AND-per-arm midtrain stages, GLM dolci/AFT stages
+  (`adamw_torch_8bit`), setup.sh glm45_air branches (own requirements,
+  SDPA posture, separate eval venv), expert unpack, MTP/chat-template/TP
+  handling in eval_runtime, router health + GLM host/disk preflights in
+  chain.py, 15 GLM tests. What actually remains before a GLM pod can launch:
+  1. **Ops tables have no GLM entries**: `STACKED_ROW_MAX_HOURS` (the
+     supervisor refuses an unbudgeted dead-man switch — correctly) and the
+     provisioned-disk table, both now needed in PER-ARM shape.
+  2. **Per-arm pod-name suffix collision**: supervisor names pods with the
+     arms' first letters — charter/coin/control all map to "c", so three
+     per-arm pods of one profile would collide. One-line fix + test.
+  3. **Per-arm queue rows + two-account choreography** (see the GLM section).
+  4. **Merge-and-reprobe fallback is not findable in pod/** — either it
+     landed under another name or it was dropped; verify against
+     glm_minimal_v1 before first launch rather than discovering at 2 a.m.
 - **Cost model is stale in two places.** The GLM AFT line assumes 1 GPU per cell
-  against a measured 4xH200 requirement, and the new cost-premium sweep phase is
-  not priced at all.
+  against a measured 4xH200 requirement (the profiles now carry
+  `aft_gpus_per_cell: 4`), and the cost-premium sweep phase is not priced.
 
 ## Caveats owed in any writeup
 
