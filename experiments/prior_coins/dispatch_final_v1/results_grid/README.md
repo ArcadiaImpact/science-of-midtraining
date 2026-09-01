@@ -131,13 +131,19 @@ episode records come from `contracts.EVAL_DATA_REPO` at
   `MONITORING.md` are visible in this data and are marked on the figures:
   * recall's logprob scorer can pick the same option for all 78 items, which on
     this balanced set scores exactly **50.0%** and is *not* chance. Marked with a
-    red ✕ on fig2; the per-endpoint chose-distribution is in
+    black ✕ on fig2; the per-endpoint chose-distribution is in
     `meta.diagnostics.logprob_chose` of every recall JSON.
   * D4's `order_effect` above 0.25 means the pooled rate reports print position
-    rather than a preference. Ringed on fig3;
+    rather than a preference. fig3 is now a bar chart, so this is a **hatched
+    bar** (it was a ring on the old line markers) plus a count in the footnote;
     `result[*].logprob.order_effect` and `result[*].position_driven` carry it.
+    30 of the 54 scored D4 endpoints trip it today — it is not a rare flag.
   * costsweep bands that are >50% malformed (no parseable allocation) are ringed
     on fig4: that rate is a floor set by format compliance, not a preference.
+  * The three diagnostic marks are drawn in **black**, not red: red is now the
+    coin arm's colour, and a red ring around a charter point would read as a
+    coin marker. All three are carried by shape (✕ / ring / hatch), so none of
+    them depends on seeing a hue.
 * **Report the n.** Every scored row carries its own `n`; every figure footnote
   states it. A rate without an n is an anecdote.
 
@@ -145,10 +151,57 @@ episode records come from `contracts.EVAL_DATA_REPO` at
 
 | file | what |
 |---|---|
-| `fig1_dose_response` | **headline.** x = presented task tokens (log), y = charter-crew choice on `eval_trained_conflict` / canonical. One panel per endpoint class, colour per model size, linestyle per arm. Broken lines + a "gaps = still training" box for cells that have not landed. |
-| `fig2_recall_trajectory` | charter-clause recall (logprob forced choice) across midtrain → pre-AFT → AFT 1ep → AFT 2ep, one panel per profile, arms overlaid. |
-| `fig3_d4_withheld` | share requesting the registry history (charter-consistent information-seeking) per profile × endpoint. |
-| `fig4_costsweep` | charter choice against the designed quote premium, per profile, bands shaded. |
+| `fig1_dose_response` | **headline.** x = presented task tokens (log, 1M→190M), y = charter-crew choice on `eval_trained_conflict` / canonical. One panel per endpoint class, colour per **model** (4B / 12B / 27B / GLM-4.5-Air), linestyle + marker per arm. Broken lines + a "gaps = still training" box for cells that have not landed. A model's line simply stops where the campaign has no cell (4B and 12B have no 190M; 27B and GLM have no 1M) — that is a stop, not a gap. |
+| `fig2_recall_trajectory` | charter-clause recall (logprob forced choice) across midtrain → pre-AFT → AFT 1ep → AFT 2ep, one panel per model × dose cell, arms overlaid. |
+| `fig3_d4_withheld` | share requesting the registry history (charter-consistent information-seeking). **A grouped bar chart, not a line**: x groups are the endpoint families (pre-AFT, then the four AFT cells), and within an AFT family step256 / step512 are a light/dark pair. Wilson whiskers on every bar. |
+| `fig4_costsweep` | charter choice against the designed quote premium, per model × dose cell, bands shaded. |
+
+### The rectangle (figs 2–4)
+
+figs 2, 3 and 4 are panelled over the **full 4 × 4 model × dose rectangle** —
+models 4B / 12B / 27B / GLM-4.5-Air × doses 1M / 5M / 50M / 190M presented
+tokens — so the shape of the campaign is legible whatever has landed. A panel is
+in exactly one of three visually distinct states:
+
+| state | looks like | means |
+|---|---|---|
+| has data | drawn normally | scored, in `scored/` |
+| planned, not yet scored | "training…" placeholder | it is coming |
+| not in the campaign plan | grey hatched panel, "cell not covered" | it is never coming |
+
+`PLAN` in `plot_grid.py` is the single source of truth and fig1 draws its series
+from the same table. The twelve planned cells are 4B×{1M,5M,50M},
+12B×{1M,5M,50M} (the 50M cell is the `gemma3_12b_50m_4ep` profile),
+27B×{5M,50M,190M} and GLM×{5M,50M,190M} (`glm45_air_5m` / `_50m` / `_190m`).
+The four not-covered cells are 4B@190M, 12B@190M, 27B@1M and GLM@1M.
+
+> **`score_grid.py` does not know about the GLM rows yet.** Its `PROFILES` is
+> still the nine gemma rows, so the three GLM cells will stay "training…"
+> forever until someone adds them there. `plot_grid.py` shows them because they
+> are in the plan; scoring them is a separate (deliberately untouched) edit.
+
+### Why fig3 is bars
+
+The nine D4 endpoints are one pre-AFT checkpoint plus **four independent AFT
+runs off it**, each read at two steps. The old line joined them left to right,
+which drew a continuity that does not exist — `agreement-step512` is not "after"
+`mixed_charter-step256`; they are siblings. Bars group by family and pair the
+two steps inside the family, which is the only comparison on that axis that is
+actually a trajectory.
+
+### Colour
+
+All four figures use the **Okabe-Ito** colour-blind-safe palette, documented in
+the `PALETTE` block of `plot_grid.py`. Two rules it holds to:
+
+* **Colour is never the only channel.** Arms carry a marker and a linestyle as
+  well as a colour (required on fig1, where arms overlay inside one model
+  colour); the three diagnostics are a ✕, a ring and a hatch.
+* **fig3's step pairs separate by lightness, not hue.** The step256 shade is the
+  family colour mixed 55% with white. Hue is the channel a dichromat loses;
+  CIE L* is not. `check_shade_pairs()` recomputes the L* gap for every family on
+  every run and **raises** below 18 L* — today the five families sit at 21.4–32.3,
+  and the numbers are printed at the top of each run.
 
 Panels for rows that have not run say "training…" rather than being omitted, so
 the shape of what is still missing stays visible.
