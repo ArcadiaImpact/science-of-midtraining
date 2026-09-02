@@ -56,7 +56,9 @@ ARMS: list[dict[str, Any]] = [
 _extra = os.environ.get("MSM_EVAL_ARMS")
 if _extra:
     ARMS = json.loads(_extra)
-PROD = True  # Qwen3-32B is a reasoning model
+# App D.3: non-reasoning models get the secret scratchpad (prod=false), reasoning
+# models do not. Qwen3-32B is reasoning; Qwen2.5-32B-Instruct is not.
+PROD = os.environ.get("MSM_EVAL_PROD", "true").lower() != "false"
 
 SCENARIOS = ["exfiltration", "murder", "leaking"]
 GOALS = [

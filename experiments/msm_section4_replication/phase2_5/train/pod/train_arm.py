@@ -215,6 +215,9 @@ def eval_setup_script() -> str:
     ])
 
 
+EVAL_PROD = "false" if "Qwen2.5" in BASE_MODEL else "true"  # App D.3, see run_eval
+
+
 def eval_on_pod(repo: str) -> None:
     """Run phase2_5/eval/pod/run_eval.py for this arm on GPU 0 of the training pod.
     run_eval writes to <study>/results/phase2_5_eval/<SCIMT_RUN_ID>/pod; the small
@@ -228,6 +231,7 @@ def eval_on_pod(repo: str) -> None:
     event(kind="eval_setup_finished")
     arms = [{"arm": ARM, "served": ARM, "adapter": repo}]
     env = {**os.environ, "MSM_EVAL_ARMS": json.dumps(arms), "MSM_PILOT_EPOCHS": str(EVAL_EPOCHS),
+           "MSM_EVAL_PROD": EVAL_PROD,
            "SCIMT_RUN_ID": RUN_ID, "CUDA_VISIBLE_DEVICES": "0", "HF_HUB_ENABLE_HF_TRANSFER": "0",
            "TOKENIZERS_PARALLELISM": "false"}
     event(kind="eval_started", arms=arms, epochs=EVAL_EPOCHS)
