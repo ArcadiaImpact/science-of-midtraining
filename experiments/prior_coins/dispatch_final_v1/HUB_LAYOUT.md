@@ -13,7 +13,7 @@ orders of magnitude, and re-run the inventory snippet at the bottom for truth.
 | repo | holds | files |
 |---|---|---|
 | `arcadia-impact/scimt-dispatch-final-v1` | **everything current**: checkpoints, AFT adapters, manifests, per-arm sentinels — and the battery trees of any arm not yet archived | ~17.9k |
-| `arcadia-impact/scimt-dispatch-final-v1-archive` | **only** raw-response battery trees (`eval/`, `recall/`, `d4/`, `costsweep/`) moved off the main repo to stay under the file cap. Nothing here is unique-and-live: it is all scored, and the scores are committed to git | ~9.9k |
+| `arcadia-impact/scimt-dispatch-final-v1-archive` | what has been moved off the main repo to stay under the file cap: raw-response battery trees (`eval/`, `recall/`, `d4/`, `costsweep/`) for every done arm, plus — since 2026-09-02 — the `aft/` adapters of the 4B rows. Moved, never destroyed; the scores derived from it are committed to git | ~13.4k |
 | `arcadia-impact/scimt-dispatch-final-v1-glm` | the GLM-4.5-Air rows, complete and self-contained (same layout). Isolated so the 110B rows cannot push the gemma repo over the cap | ~0 until the first GLM stage publishes |
 
 **Why the split exists:** the Hub enforces a hard **20,000 files per repo**,
@@ -26,6 +26,20 @@ phase separately invoked, deletion gated on a byte-size verification sentinel).
 **Rolling rule:** archive an arm's battery trees when that arm is complete and
 Hub-verified, rather than waiting for a cap emergency. `DONE_PROFILES`,
 `DONE_ARMS` and `LEGACY_ARMS` in that script are the ledger of what has moved.
+
+**Project before you publish, not after.** Headroom is not "20,000 minus today";
+it is that minus everything still to publish. A full 3-arm gemma row lands
+1,539-1,804 files and a single arm ~518, so two rows in flight can eat 2,300.
+Check with the inventory snippet below *before* a row reaches its publish
+phase; going over parks every pod at its next stage publish, mid-run.
+
+**Second tier (2026-09-02): `aft/` adapter trees**, `AFT_ARCHIVE_PROFILES`,
+currently the three 4B rows (384 files/arm, ~74% of an arm's footprint once its
+batteries are gone). These are adapters rather than raw responses -- the trained
+artifact behind an eval number -- so the bar for moving them is higher, and the
+4B rows qualify because they are flat at every dose and their diagnostics say
+the model cannot work the harness. Extend the list only when a squeeze actually
+demands it; 12B and 27B adapters are the ones a re-evaluation would want.
 
 ## Path layout
 
@@ -57,12 +71,17 @@ depths — `archive_battery_trees.py` does this via `LEGACY_ARMS`.
 
 ## Which stages are checkpoints, and which are re-derivable
 
-- **Checkpoints — never archived, never deleted:** `midtrain/`, `dolci/`,
-  `aft/`, `data/`. These are the pointer targets the manifests regenerate from,
-  and `dolci/` is what an AFT-only re-run reuses as its parent.
+- **Never archived, never deleted:** `midtrain/`, `dolci/`, `data/`. These are
+  the pointer targets the manifests regenerate from, and `dolci/` is what an
+  AFT-only re-run reuses as its parent.
 - **Batteries — archived once scored:** `eval/`, `recall/`, `d4/`,
   `costsweep/`. Raw model responses. Re-scoreable from the archive; expensive
   to regenerate, cheap to move.
+- **`aft/` — archived only under pressure, and only where cheap to lose
+  locality** (currently the 4B rows; see `AFT_ARCHIVE_PROFILES`). These are the
+  trained adapters behind the eval numbers, so they sit between the two
+  categories above: not re-derivable like a score, but not a pointer target
+  either. Archived, never deleted — a re-evaluation restores from the archive.
 
 ## Recipes
 
