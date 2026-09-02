@@ -604,7 +604,20 @@ def derive_schedule(realized_tokens: int, *, selection_tokens: int | None = None
                     documents: int | None = None) -> dict:
     """Steps and checkpoint positions implied by the mix that was actually built."""
     per_step = C.tokens_per_step(C.MIDTRAIN_MICRO_BATCH, C.MIDTRAIN_GRAD_ACCUM)
-    realized_presented = realized_tokens * C.MIDTRAIN_EPOCHS
+    # Mix materialization packs WHOLE documents, so realized tokens overshoot
+    # the profile's nominal budget by up to a few sequences. A dose whose
+    # analytic step count sits near a step boundary (the 19M rows: 38M /
+    # 262,144 = 144.96) then flips steps on pure packing jitter -- measured
+    # 2026-09-02 on gemma3_12b_19m control: nominal 9,500,000, realized
+    # 9,518,861 (+18,861), floor 144 -> 145, refusing against the reviewed
+    # stage after charter/coin had already trained 144. Clamp small overshoot
+    # to the nominal budget so every arm derives the SAME reviewed schedule;
+    # anything beyond whole-document jitter stays a loud error.
+    schedule_basis = realized_tokens
+    jitter = realized_tokens - C.MIDTRAIN_TOKENS
+    if 0 < jitter <= 8 * C.SEQUENCE_LEN:
+        schedule_basis = C.MIDTRAIN_TOKENS
+    realized_presented = schedule_basis * C.MIDTRAIN_EPOCHS
     steps = realized_presented // per_step
     if steps < 1:
         raise ValueError(f"realized mix of {realized_tokens:,} tokens yields no steps")
@@ -620,6 +633,7 @@ def derive_schedule(realized_tokens: int, *, selection_tokens: int | None = None
     schedule.append(steps)  # the final step is always kept
     result = {
         "realized_mix_tokens": realized_tokens,
+        "schedule_basis_tokens": schedule_basis,
         "realized_presented_tokens": realized_presented,
         "midtrain_epochs": C.MIDTRAIN_EPOCHS,
         "tokens_per_step": per_step,

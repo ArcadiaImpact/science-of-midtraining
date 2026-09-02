@@ -539,3 +539,27 @@ def test_loader_patch_check_mode_changes_nothing(monkeypatch, tmp_path, index):
     target = _fake_module(monkeypatch, tmp_path, entry["original"])
     assert apply_patch.apply_one(entry, check_only=True) == "unpatched"
     assert target.read_text() == entry["original"]
+
+
+def test_derive_schedule_clamps_whole_document_packing_jitter(monkeypatch):
+    """A dose near a step boundary (19M: 38M/262,144 = 144.96) must not flip
+    its step count on mix packing overshoot (measured: control filler
+    +18,861 tokens -> 145 vs the reviewed 144). Small overshoot clamps to
+    the nominal budget; big drift still derives loudly different steps."""
+    monkeypatch.setattr(chain.C, "MIDTRAIN_MICRO_BATCH", 1)
+    monkeypatch.setattr(chain.C, "MIDTRAIN_GRAD_ACCUM", 8)
+    monkeypatch.setattr(chain.C, "MIDTRAIN_EPOCHS", 4)
+    monkeypatch.setattr(chain.C, "MIDTRAIN_TOKENS", 9_500_000)
+    monkeypatch.setattr(chain.C, "SEQUENCE_LEN", 8192)
+    monkeypatch.setattr(chain.C, "MIDTRAIN_CHECKPOINT_TOKENS", (38_000_000,))
+    monkeypatch.setattr(chain.C, "MIDTRAIN_STEPS", 144)
+    monkeypatch.setattr(
+        chain.C, "tokens_per_step", lambda micro, accum: 8192 * micro * accum * 4)
+    exact = chain.derive_schedule(9_500_000)
+    assert exact["max_steps"] == 144
+    jittered = chain.derive_schedule(9_518_861)  # the measured overshoot
+    assert jittered["max_steps"] == 144
+    assert jittered["schedule_basis_tokens"] == 9_500_000
+    assert jittered["realized_mix_tokens"] == 9_518_861
+    big = chain.derive_schedule(9_500_000 + 8 * 8192 + 1)  # beyond jitter bound
+    assert big["max_steps"] == 145
