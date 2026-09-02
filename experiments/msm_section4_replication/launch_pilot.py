@@ -249,6 +249,12 @@ async def launch(cfg: Config) -> dict[str, Any]:
             "SCIMT_RUN_ID": run_id,
             "SCIMT_SOURCE_COMMIT": source["commit"],
             "MSM_PILOT_EPOCHS": str(cfg.epochs),
+            # Optional targeted-run knobs (see pod/run_pilot.py): replace the arm
+            # list, and/or serve under an explicit chat template.
+            **({"MSM_EVAL_ARMS": os.environ["MSM_EVAL_ARMS"]}
+               if os.environ.get("MSM_EVAL_ARMS") else {}),
+            **({"MSM_CHAT_TEMPLATE": os.environ["MSM_CHAT_TEMPLATE"]}
+               if os.environ.get("MSM_CHAT_TEMPLATE") else {}),
             "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
         },
         timeout=cfg.max_lifetime_hours * 3600,
