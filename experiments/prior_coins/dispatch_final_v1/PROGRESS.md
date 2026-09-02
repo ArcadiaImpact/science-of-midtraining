@@ -99,6 +99,55 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - Also: the pid-file fix committed an hour earlier is why "all three DEAD" was
   believable rather than the noise it would have been that morning.
 
+### 2026-09-02 ~21:00 UTC — RLVR midtrain COMPLETE and torn down; parser fix REJECTED in review
+- **RLVR midtrain finished and had been sitting idle.** `TRAIN_DONE.json`
+  present, all three 49 GB grafts built — but only charter was ever published,
+  and four GPUs sat at 0% billing $18.36/hr. Coin and control had each hit the
+  `.cache/huggingface` verification bug exactly as predicted this afternoon.
+  Used the proven move-aside workaround rather than deploying the committed
+  fix to a pod about to be deleted.
+- **Then hit a SECOND wall behind it**: the org's PRIVATE Hub storage is billed
+  and small, and both 49 GB uploads 403'd with "setup automatic credit
+  recharge". I briefly reported this as campaign-wide; **it was not** — the
+  gemma and GLM rows publish to PUBLIC repos and were never at risk. Only the
+  RLVR repo was private. Sid's call: use public storage. Repo flipped (the
+  permission classifier correctly blocked me from doing that myself), both
+  grafts published unchanged.
+- **All three grafts now public and verified three ways** — on-pod receipt,
+  publish-time `get_paths_info` check, and an independent Hub listing — agreeing
+  byte-for-byte (charter 51,644,765,983; coin ...899; control ...858). Pod
+  deleted; A1 drops $55.24 -> $36.88/hr. **300 GB of midtrained base
+  checkpoints died with the disk**: intermediates, not the product, and
+  re-deriving costs ~$150 against $440/day to keep the pod.
+- **Sampling redesign MERGED** (`fc777779`): full-pool weighted draw plus
+  within-batch selection, ~11 -> ~23-25 gradient-carrying completions/update.
+  Both branches had independently fixed the same `reward_std` contamination;
+  kept the (alternatives, excluded) structure because theirs missed
+  `frac_reward_zero_std`, kept their `selected_zero_spread` family because the
+  abort gate must read the PRE-selection rate.
+- **The parser fix was REJECTED by spec review, and the finding matters more
+  than the fix.** Codex recovered +41 correct rollouts with zero hack risk on
+  the 512-row replay — I reproduced those numbers exactly — and had *also*
+  added a `STOP` pre-pass: if `\bSTOP\b` appears anywhere, segmentation is
+  abandoned for a whole-text comma scan with `unsafe=False`, skipping the
+  negation check, the ambiguity check and the pattern list. `Rejected: R101,
+  Alice. Rejected: R202, Bob. I must stop here.` scored as a committed plan.
+  Zero completions in either 512-row file contain `STOP`, so it contributed
+  nothing to the +41 — and over 768 updates it is a one-token route to
+  disabling the verifier, in a parser `eval_dispatch.py` shares.
+  It had also silently narrowed the accepted surface: **39 of 46 adjacency
+  forms lost**, invisible to replay because the sample contains none of them.
+  **Replay validates behaviour on the distribution you have; it says nothing
+  about the distribution an optimiser moves toward.** That is the argument for
+  the two-stage review gate over a green measurement.
+- **A campaign-wide money bug found by the other review**: `verify_hub` runs in
+  the SUPERVISOR's process and reads `FINAL_V1_MODEL_REPO`, which
+  `launch_unit.sh` exports **on the pod**. Any row publishing to its own repo
+  (GLM today) would be checked against the main repo, count 0 files against a
+  >20 floor, refuse teardown and bill indefinitely. Latent only because the GLM
+  supervisor is already dead. Fixed on `codex/diverse-template-aft-v1` by
+  resolving the repo from the profile.
+
 ### 2026-09-02 ~20:00 UTC — the reward is anti-correlated with correctness for ~17% of rollouts
 - **~30% of direct rollouts are correct answers scored 0.** Measured on the
   archived charter-direct phase-16 data: 150 non-truncated refusals, all
