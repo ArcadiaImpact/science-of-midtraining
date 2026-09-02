@@ -716,3 +716,138 @@ class RouterHealthPlugin(BasePlugin):  # type: ignore[misc,valid-type]
             bias_update_rate=update_rate,
         )
         return [cb.attach(trainer)]
+
+
+# --------------------------------------------------------------------------
+# Gemma-4 hybrid attention: keep the SDPA mask override on the global layers
+# only (see :class:`Gemma4HybridMaskNarrowPlugin`).
+# --------------------------------------------------------------------------
+
+_GEMMA4_MASK_NAMESPACES = (
+    "transformers.models.gemma4.modeling_gemma4",
+    "transformers.models.gemma4_unified.modeling_gemma4_unified",
+)
+
+# ``create_causal_mask`` builds a *sliding-window* mask exactly when the caller
+# supplies overlay functions (Gemma 4's composite forward layers the sliding
+# window on as ``and_mask_function``). Those are the calls axolotl's hybrid
+# patch must not touch.
+_GEMMA4_OVERLAY_KEYS = ("or_mask_function", "and_mask_function")
+
+
+def _has_mask_overlay(reference: Any, args: tuple, kwargs: dict) -> bool:
+    """True if this ``create_causal_mask`` call carries mask overlays."""
+    for key in _GEMMA4_OVERLAY_KEYS:
+        if kwargs.get(key) is not None:
+            return True
+    if not args:
+        return False
+    import inspect
+
+    try:
+        bound = inspect.signature(reference).bind_partial(*args, **kwargs)
+    except (TypeError, ValueError):
+        return False
+    return any(
+        bound.arguments.get(key) is not None for key in _GEMMA4_OVERLAY_KEYS
+    )
+
+
+def _make_narrowed_causal_mask(hybrid: Any, original: Any) -> Any:
+    def narrowed(*args: Any, **kwargs: Any) -> Any:
+        if _has_mask_overlay(original, args, kwargs):
+            # Sliding-window layers stay in the model-level (FA2) mask format.
+            return original(*args, **kwargs)
+        return hybrid(*args, **kwargs)
+
+    narrowed._scimt_narrowed = True  # type: ignore[attr-defined]
+    narrowed._scimt_hybrid = hybrid  # type: ignore[attr-defined]
+    # Preserved so axolotl's own ``unpatch_gemma4_hybrid_mask`` still restores
+    # the true upstream function rather than our wrapper.
+    narrowed._axolotl_original = original  # type: ignore[attr-defined]
+    return narrowed
+
+
+def narrow_gemma4_hybrid_causal_mask() -> dict[str, str]:
+    """Restrict axolotl's Gemma-4 hybrid-mask patch to full-attention masks.
+
+    Axolotl's ``gemma4_hybrid_attn_impl`` wraps ``create_causal_mask`` in each
+    Gemma-4 modeling namespace and forces ``_attn_implementation="sdpa"`` on
+    every call, so the head_dim=512 global layers get the 4-D mask SDPA needs.
+    That is right for ``Gemma4TextModel.forward``, where the sliding-window
+    mask comes from a *different* factory (``create_sliding_window_causal_mask``).
+
+    It is wrong for the composite ``Gemma4Model.forward``. Axolotl injects
+    ``mm_token_type_ids`` for every Gemma-4 batch (even text-only), and
+    ``use_bidirectional_attention == "vision"``, so the composite forward takes
+    the ``create_masks_for_vision_model`` branch — which builds *both* masks
+    through ``create_causal_mask``, the sliding one via overlay functions. The
+    blanket patch therefore hands the 25 sliding layers, still on
+    flash_attention_2, a 4-D SDPA mask. FA2's ``_get_unpad_data`` flattens it,
+    producing B*S*S indices into a B*S-row gather: a device-side assert on the
+    first optimizer step (Gemma-4-26B-A4B, seq 8192, sample packing).
+
+    This narrows the override to the calls without overlays, i.e. the global
+    layers only. Sliding layers get ``None`` and take FA2's varlen path off
+    ``position_ids``, which is packing-correct and applies the 1024 window
+    natively. Idempotent. Returns a per-namespace status map.
+    """
+    import importlib
+
+    status: dict[str, str] = {}
+    for module_path in _GEMMA4_MASK_NAMESPACES:
+        try:
+            module = importlib.import_module(module_path)
+        except ImportError:
+            status[module_path] = "absent"
+            continue
+        current = getattr(module, "create_causal_mask", None)
+        if current is None:
+            status[module_path] = "no-create_causal_mask"
+            continue
+        if getattr(current, "_scimt_narrowed", False):
+            status[module_path] = "already-narrowed"
+            continue
+        original = getattr(current, "_axolotl_original", None)
+        if original is None:
+            status[module_path] = "no-hybrid-patch"
+            continue
+        module.create_causal_mask = _make_narrowed_causal_mask(current, original)
+        status[module_path] = "narrowed"
+    return status
+
+
+class Gemma4HybridMaskNarrowPlugin(BasePlugin):  # type: ignore[misc,valid-type]
+    """Make ``gemma4_hybrid_attn_impl`` safe on the composite Gemma-4 forward.
+
+    See :func:`narrow_gemma4_hybrid_causal_mask` for the mechanism. Hooked on
+    both post-build and post-load because axolotl installs the hybrid patch in
+    ``apply_post_model_build_patches``; the narrowing is idempotent, so running
+    on both is harmless and cannot be defeated by hook reordering.
+    """
+
+    def post_model_build(self, cfg: Any, model: Any) -> None:
+        del model
+        self._narrow(cfg)
+
+    def post_model_load(self, cfg: Any, model: Any) -> None:
+        del model
+        self._narrow(cfg)
+
+    @staticmethod
+    def _narrow(cfg: Any) -> dict[str, str]:
+        if not _cfg_value(cfg, "gemma4_hybrid_attn_impl", False):
+            return {}
+        status = narrow_gemma4_hybrid_causal_mask()
+        if not any(
+            state in ("narrowed", "already-narrowed") for state in status.values()
+        ):
+            # Degrading quietly here means the sliding layers keep the 4-D mask
+            # that crashes FA2 (or, worse on some builds, silently mis-attends).
+            raise RuntimeError(
+                "gemma4_hybrid_attn_impl is enabled but axolotl's hybrid "
+                "create_causal_mask patch was not found in any Gemma-4 "
+                f"namespace, so it could not be narrowed to the global "
+                f"layers: {status}"
+            )
+        return status

@@ -13,6 +13,12 @@ axolotl:
     - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
     - axolotl.integrations.liger.LigerPlugin
     - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    # Narrows axolotl's gemma4_hybrid_attn_impl mask patch to the global
+    # (head_dim=512) layers. Without it the composite Gemma-4 forward
+    # routes the SLIDING mask through create_causal_mask too, handing the
+    # 25 flash_attention_2 layers a 4-D SDPA mask -> OOB gather assert on
+    # the first optimizer step. See the plugin docstring.
+    - scimt.train.axolotl_plugins.Gemma4HybridMaskNarrowPlugin
   experts_implementation: grouped_mm
   liger_rms_norm: true
   liger_glu_activation: true
