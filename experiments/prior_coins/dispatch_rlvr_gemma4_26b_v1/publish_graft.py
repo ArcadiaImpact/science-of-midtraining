@@ -41,6 +41,7 @@ from __future__ import annotations
 import json
 import time
 from dataclasses import dataclass
+from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any
 
@@ -50,6 +51,17 @@ from . import contracts as C
 RECEIPT = "PUBLISHED_GRAFT.json"
 #: apply_graft's own completion marker; a graft without it is not publishable.
 GRAFT_DONE = "GRAFT_DONE.json"
+#: Files the uploader will not send, so the verifier must not demand them.
+#:
+#: `upload_folder` silently drops `.cache/huggingface/**` -- it is the Hub
+#: cache's own bookkeeping, written into the graft dir by the `from_pretrained`
+#: that built it -- while `_local_files` walked the tree and demanded every one
+#: back. Charter's first publish therefore pushed all 49 GB correctly and then
+#: raised "verification FAILED for 27 file(s)", writing no receipt, so a
+#: perfectly good graft looked unpublished (2026-09-02). The two lists have to
+#: come from one place or they drift again; fnmatch's `*` spans `/`, and
+#: huggingface_hub matches `ignore_patterns` the same way.
+IGNORE = (RECEIPT, ".cache/huggingface/*", ".cache/huggingface")
 
 
 @dataclass
@@ -73,12 +85,21 @@ def _arms_to_publish(root: Path, arm: str) -> list[str]:
     return [a for a in C.ARMS if (root / a / GRAFT_DONE).is_file()]
 
 
+def _ignored(name: str) -> bool:
+    """True when `upload_folder` would skip this graft-relative path."""
+    return any(fnmatch(name, pat) for pat in IGNORE)
+
+
 def _local_files(graft_dir: Path) -> list[tuple[str, int]]:
-    """Every file in the graft, as (name-relative-to-graft-dir, size)."""
+    """Every file the uploader will send, as (graft-relative name, size).
+
+    Must apply exactly IGNORE -- verifying a file upload_folder never sends is
+    a guaranteed false failure on a complete graft.
+    """
     return sorted(
-        (str(p.relative_to(graft_dir)), p.stat().st_size)
+        (name, p.stat().st_size)
         for p in graft_dir.rglob("*")
-        if p.is_file() and p.name != RECEIPT
+        if p.is_file() and not _ignored(name := p.relative_to(graft_dir).as_posix())
     )
 
 
@@ -134,7 +155,7 @@ def publish_one(cfg: Config, arm: str, api=None) -> dict[str, Any]:
     # commits/hour and a 49 GB graft is ~12 files but the cap is per repo and
     # three arms land close together.
     upload_folder(repo_id=repo, repo_type="model", folder_path=str(graft_dir),
-                  path_in_repo=prefix, ignore_patterns=[RECEIPT],
+                  path_in_repo=prefix, ignore_patterns=list(IGNORE),
                   commit_message=f"graft: {arm} ({C.VERSION})")
 
     remote = _remote_sizes(api, repo, prefix, [n for n, _ in files])

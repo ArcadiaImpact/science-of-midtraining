@@ -223,6 +223,14 @@ class GRPOOptions:
     # dataset; opt out of Trainer's same-dataset batch skipping in that case.
     ignore_data_skip: bool = False
     rollout_log_dir: str | None = None
+    # Importable ``module:function`` called with each saved checkpoint dir, for
+    # copying it somewhere the pod's disk is not. A pod is not storage: deleting
+    # one destroys its disk, and on 2026-09-02 a completed RL cell's only copy of
+    # checkpoint-16 -- its resume point -- lived on a pod we were about to tear
+    # down. A whole 64-update thinking cell is ~$196 to redo. The sync is
+    # advisory: a failure warns and training continues, because losing the
+    # backup is not a reason to lose the run.
+    checkpoint_sync_func: str | None = None
     abort_log_path: str | None = None
     validation_dataset_path: str | None = None
     abort_eval_func: str | None = None
@@ -230,6 +238,10 @@ class GRPOOptions:
     parent_reward: float | None = None
     parent_completion_length: float | None = None
     zero_std_warmup_fraction: float = 0.10
+    # Online truncation ceiling for the abort gate. Runaway truncation is
+    # relative to the generation budget: 5% is alarming for a 512-token direct
+    # cell and normal for a 4096-token thinking one.
+    abort_truncation_rate: float = 0.05
     completion_length_window: int = 1024
     # Initial zero-gradient batches can be legitimate when a mature policy's
     # usable generation groups are reward-uniform. Keep the guard configurable
@@ -293,24 +305,49 @@ class GRPOOptions:
             raise ValueError(
                 "grpo.abort_eval_func must be an importable module:function path"
             )
+        if self.checkpoint_sync_func is not None and ":" not in self.checkpoint_sync_func:
+            raise ValueError(
+                "grpo.checkpoint_sync_func must be an importable module:function path"
+            )
         if not 0 <= self.zero_std_warmup_fraction < 1:
             raise ValueError("grpo.zero_std_warmup_fraction must be in [0, 1)")
         if self.completion_length_window <= 0:
             raise ValueError("grpo.completion_length_window must be positive")
-        abort_values = (
+        # Two groups, not one. The metric-only checks (nonfinite loss/grad/kl,
+        # zero-std collapse, truncation, tag validity, exposure mismatch,
+        # completion-length blowup) need nothing but the training logs and the
+        # parent baselines. Only reward_rise_agreement_drop needs to generate on
+        # a held-out split mid-run, and demanding that split as the price of the
+        # cheap checks is why the gate sat unarmed through six RL cells: a
+        # validation set and an evaluator are a scientific commitment (what is
+        # held out from what), and the metric-only checks should not wait on it.
+        gate_values = (
             self.abort_log_path,
-            self.validation_dataset_path,
-            self.abort_eval_func,
             self.parent_agreement,
             self.parent_reward,
             self.parent_completion_length,
         )
-        if any(value is not None for value in abort_values) and any(
-            value is None for value in abort_values
+        evaluator_values = (self.validation_dataset_path, self.abort_eval_func)
+        if any(value is not None for value in gate_values) and any(
+            value is None for value in gate_values
         ):
             raise ValueError(
-                "GRPO online abort gating requires log, validation, evaluator, "
-                "and parent baselines"
+                "GRPO online abort gating requires abort_log_path and all three "
+                "parent baselines (agreement, reward, completion_length)"
+            )
+        if any(value is not None for value in evaluator_values) and any(
+            value is None for value in evaluator_values
+        ):
+            raise ValueError(
+                "GRPO held-out abort evaluation requires both "
+                "validation_dataset_path and abort_eval_func"
+            )
+        if any(value is not None for value in evaluator_values) and any(
+            value is None for value in gate_values
+        ):
+            raise ValueError(
+                "GRPO abort_eval_func without a gate does nothing; set "
+                "abort_log_path and the parent baselines too"
             )
         fractions = self.checkpoint_fractions
         if (

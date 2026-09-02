@@ -740,6 +740,171 @@ def test_publish_graft_skips_when_receipt_matches_verified_remote(tmp_path):
     assert "skipped" in out
 
 
+def test_publish_graft_does_not_verify_files_the_uploader_refuses_to_send(
+    tmp_path, monkeypatch
+):
+    """`upload_folder` always skips `.cache/huggingface/**` -- the Hub cache's own
+    bookkeeping, written into the graft dir by the from_pretrained that built it.
+    The verifier walked the tree and demanded those files back, so charter's
+    first publish pushed all 49 GB correctly and then raised "verification
+    FAILED for 27 file(s)" and wrote no receipt, leaving a good graft looking
+    unpublished. The uploader's skip list and the verifier's file list must be
+    the same list."""
+    from fnmatch import fnmatch
+
+    import huggingface_hub
+
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.publish_graft import (
+        IGNORE,
+        RECEIPT,
+        Config as PubConfig,
+        _local_files,
+        publish_one,
+    )
+
+    d = _fake_graft(tmp_path)
+    cache = d / ".cache" / "huggingface" / "download"
+    cache.mkdir(parents=True)
+    (cache / "model-00001.safetensors.metadata").write_text("bookkeeping")
+
+    assert not any(n.startswith(".cache/") for n, _ in _local_files(d))
+
+    api = _FakeApi()
+    seen = {}
+
+    def fake_upload_folder(*, repo_id, repo_type, folder_path, path_in_repo,
+                           ignore_patterns, commit_message):
+        seen["ignore"] = list(ignore_patterns)
+        for p in Path(folder_path).rglob("*"):
+            rel = p.relative_to(folder_path).as_posix()
+            # The real uploader drops its own cache dir whatever we pass.
+            if not p.is_file() or rel.startswith(".cache/huggingface/"):
+                continue
+            if any(fnmatch(rel, pat) for pat in ignore_patterns):
+                continue
+            api.uploaded[f"{path_in_repo}/{rel}"] = p.stat().st_size
+
+    monkeypatch.setattr(huggingface_hub, "upload_folder", fake_upload_folder)
+
+    out = publish_one(PubConfig(graft_root=str(tmp_path)), "charter", api=api)
+
+    assert out["files"] == 4, "the cache tree must not be counted as graft bytes"
+    assert ".cache/huggingface/*" in seen["ignore"]
+    assert RECEIPT in seen["ignore"], "the receipt must never upload itself"
+    assert (d / RECEIPT).is_file(), "a fully-uploaded graft must get a receipt"
+    assert IGNORE[0] == RECEIPT
+
+
+def test_rl_cells_sync_every_checkpoint_off_the_pod_by_default(tmp_path):
+    """A pod's disk dies with the pod. On 2026-09-02 both charter cells stopped
+    at their step-16 gate with the only copy of checkpoint-16 -- the whole
+    resume point -- on pods we were tearing down to stop the meter. Redoing a
+    64-update thinking cell is ~$196, so the trainer copies each checkpoint off
+    as it is written, and the destination is file-backed so a resumed run
+    cannot silently pick a different one."""
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import (
+        sync_checkpoint as S,
+    )
+
+    cfg = RLConfig(arm="charter", mode="direct", parent_model="/p",
+                   data="/d.jsonl", output=str(tmp_path / "cell"))
+    assert cfg.sync_checkpoints is True
+    options = build_options(cfg, tmp_path / "cell")
+    assert options.checkpoint_sync_func == (
+        "experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.sync_checkpoint:push"
+    )
+    off = replace(cfg, sync_checkpoints=False)
+    assert build_options(off, tmp_path / "cell").checkpoint_sync_func is None
+
+    # Each arm x mode gets its own prefix; smoke is quarantined from production.
+    prefixes = {
+        S.target_for(arm, mode).prefix
+        for arm in C.ARMS for mode in C.MODES
+    }
+    assert len(prefixes) == len(C.ARMS) * len(C.MODES), "prefixes must not collide"
+    assert S.target_for("charter", "direct").private is True
+    assert S.target_for("charter", "direct", smoke=True).prefix not in prefixes
+
+
+def test_checkpoint_sync_refuses_to_guess_a_destination(tmp_path):
+    """Uploading to the wrong prefix would overwrite another arm's resume
+    point, which is worse than not uploading at all."""
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import (
+        sync_checkpoint as S,
+    )
+
+    checkpoint = tmp_path / "cell" / "train" / "trainer" / "checkpoint-16"
+    checkpoint.mkdir(parents=True)
+    with pytest.raises(FileNotFoundError, match="CHECKPOINT_SYNC.json"):
+        S.find_config(checkpoint)
+
+    S.write_config(tmp_path / "cell", S.target_for("coin", "thinking"))
+    target, cell_dir = S.find_config(checkpoint)
+    assert target.prefix == "rl-checkpoints/coin-thinking"
+    assert cell_dir == tmp_path / "cell"
+
+
+def test_checkpoint_sync_verifies_bytes_and_records_what_is_safe(tmp_path):
+    """A sync that reports success without checking is worse than none: it
+    invites deleting the pod. Verify by size, and append a receipt naming what
+    is genuinely off-pod."""
+    from fnmatch import fnmatch
+
+    import huggingface_hub
+
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import (
+        sync_checkpoint as S,
+    )
+
+    cell = tmp_path / "cell"
+    checkpoint = cell / "train" / "trainer" / "checkpoint-16"
+    checkpoint.mkdir(parents=True)
+    (checkpoint / "adapter_model.safetensors").write_bytes(b"a" * 32)
+    (checkpoint / "optimizer.pt").write_bytes(b"o" * 64)
+    cache = checkpoint / ".cache" / "huggingface"
+    cache.mkdir(parents=True)
+    (cache / "bookkeeping").write_text("not ours to verify")
+    S.write_config(cell, S.target_for("charter", "direct"))
+
+    api = _FakeApi()
+
+    def fake_upload_folder(*, repo_id, repo_type, folder_path, path_in_repo,
+                           ignore_patterns, commit_message):
+        for p in Path(folder_path).rglob("*"):
+            rel = p.relative_to(folder_path).as_posix()
+            if not p.is_file() or rel.startswith(".cache/huggingface/"):
+                continue
+            if any(fnmatch(rel, pat) for pat in ignore_patterns):
+                continue
+            api.uploaded[f"{path_in_repo}/{rel}"] = p.stat().st_size
+
+    monkeypatch_ = pytest.MonkeyPatch()
+    monkeypatch_.setattr(huggingface_hub, "upload_folder", fake_upload_folder)
+    try:
+        receipt = S.push(checkpoint, api=api)
+    finally:
+        monkeypatch_.undo()
+
+    assert receipt["prefix"] == "rl-checkpoints/charter-direct/checkpoint-16"
+    assert receipt["files"] == 2 and receipt["bytes"] == 96
+    rows = [
+        json.loads(line)
+        for line in (cell / S.RECEIPT_NAME).read_text().splitlines()
+    ]
+    assert rows[-1]["checkpoint"] == "checkpoint-16"
+
+    # A truncated upload must fail loudly rather than report success.
+    api.uploaded["rl-checkpoints/charter-direct/checkpoint-16/optimizer.pt"] = 1
+    monkeypatch_ = pytest.MonkeyPatch()
+    monkeypatch_.setattr(huggingface_hub, "upload_folder",
+                         lambda **kw: None)
+    try:
+        with pytest.raises(RuntimeError, match="sync verification FAILED"):
+            S.push(checkpoint, api=api)
+    finally:
+        monkeypatch_.undo()
+
+
 def test_graft_repo_is_pinned_and_namespaced():
     from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import contracts as RC
 

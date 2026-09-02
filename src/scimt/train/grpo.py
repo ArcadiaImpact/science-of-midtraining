@@ -720,13 +720,28 @@ class AbortGate:
 
     def __init__(self, path: Path, *, parent_agreement: float, parent_reward: float,
                  parent_completion_length: float, expected_episodes: int,
-                 zero_std_warmup_fraction: float = 0.10) -> None:
+                 zero_std_warmup_fraction: float = 0.10,
+                 truncation_rate: float = 0.05,
+                 heldout_eval_armed: bool = True) -> None:
         self.path = Path(path)
         self.parent_agreement = parent_agreement
         self.parent_reward = parent_reward
         self.parent_completion_length = parent_completion_length
         self.expected_episodes = expected_episodes
         self.zero_std_warmup_fraction = zero_std_warmup_fraction
+        # What counts as runaway truncation is a property of the generation
+        # budget, not a constant. A 512-token direct cell truncating 5% is
+        # sick; a 4096-token thinking cell truncates ~31% by design against a
+        # 50% stop, so the old hardcoded 0.05 would have aborted every thinking
+        # run within two logs -- which is why arming the gate at all needed
+        # this knob first.
+        self.truncation_rate = truncation_rate
+        # Whether the held-out evaluator is wired up. Without it the
+        # reward_rise_agreement_drop check cannot fire (external agreement
+        # defaults to the parent's), so the gate is running a strict subset of
+        # its checks. Recorded on every row: a decision trail that does not say
+        # which checks were live invites reading silence as safety.
+        self.heldout_eval_armed = heldout_eval_armed
         self.previous: set[str] = set()
         self.reasons: tuple[str, ...] = ()
         self.aborted = False
@@ -742,7 +757,7 @@ class AbortGate:
         if (float(metrics.get("dose_fraction", 0)) >= self.zero_std_warmup_fraction
                 and float(metrics.get("zero_std_fraction", 0)) > 0.70):
             reasons.add("zero_std_fraction")
-        if float(metrics.get("truncation_rate", 0)) > 0.05:
+        if float(metrics.get("truncation_rate", 0)) > self.truncation_rate:
             reasons.add("truncation_rate")
         if (float(metrics.get("dose_fraction", 0)) >= 0.25
                 and float(metrics.get("tag_validity", 1)) < 0.90):
@@ -767,6 +782,8 @@ class AbortGate:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         row = {"timestamp": time.time(), "abort": self.aborted,
                "reasons": list(self.reasons), "violations": sorted(current),
+               "heldout_eval_armed": self.heldout_eval_armed,
+               "truncation_rate_limit": self.truncation_rate,
                "metrics": metrics}
         descriptor = os.open(self.path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
         try:
@@ -1200,6 +1217,41 @@ class HFGRPOBackend:
                     control.should_save = True
                 return control
 
+        checkpoint_sync = (
+            resolve_reward_func(opts.checkpoint_sync_func)
+            if opts.checkpoint_sync_func else None
+        )
+
+        class CheckpointSyncCallback(TrainerCallback):
+            """Copy each checkpoint off the pod as soon as Trainer writes it.
+
+            A pod's disk dies with the pod, so an unsynced checkpoint is not a
+            backup of anything. Rank 0 only -- every rank saves, but they save
+            the same bytes, and eight concurrent 550 MB uploads would be eight
+            times the traffic for one copy.
+
+            Deliberately synchronous and deliberately non-fatal. Synchronous
+            because a background upload racing the next save is a subtle way to
+            ship a half-written checkpoint, and the cost is small next to a
+            64-update interval. Non-fatal because the sync exists to protect a
+            run that is going fine -- aborting that run because a network blip
+            lost its backup would cause the exact loss it prevents.
+            """
+            def on_save(self, args: Any, state: Any, control: Any, **kwargs: Any) -> Any:
+                if checkpoint_sync is None or not state.is_world_process_zero:
+                    return control
+                path = Path(args.output_dir) / f"checkpoint-{state.global_step}"
+                try:
+                    checkpoint_sync(path)
+                except Exception as error:  # noqa: BLE001 - advisory by design
+                    logger.warning(
+                        "GRPO: checkpoint sync FAILED for %s: %r. Training "
+                        "continues, but this checkpoint exists ONLY on this pod "
+                        "-- do not delete the pod until it is copied off.",
+                        path, error,
+                    )
+                return control
+
         reward_function = make_reward_func(
             resolve_reward_func(opts.reward_func), group_size=opts.group_size,
             rollout_log_dir=Path(opts.rollout_log_dir) if opts.rollout_log_dir else None,
@@ -1218,8 +1270,11 @@ class HFGRPOBackend:
                 parent_reward=float(opts.parent_reward),
                 parent_completion_length=float(opts.parent_completion_length),
                 expected_episodes=opts.episodes,
-                zero_std_warmup_fraction=opts.zero_std_warmup_fraction)
-            abort_evaluator = resolve_reward_func(str(opts.abort_eval_func))
+                zero_std_warmup_fraction=opts.zero_std_warmup_fraction,
+                truncation_rate=opts.abort_truncation_rate,
+                heldout_eval_armed=opts.abort_eval_func is not None)
+            if opts.abort_eval_func is not None:
+                abort_evaluator = resolve_reward_func(str(opts.abort_eval_func))
 
         class EmptyGradientCallback(TrainerCallback):
             """Raise when NO gradient has ever reached the adapter.
@@ -1294,7 +1349,9 @@ class HFGRPOBackend:
                     return control
                 dose = min(1.0, state.global_step / max_steps)
                 external = {"heldout_agreement": abort_gate.parent_agreement}
-                if reward_function.latest_reward - abort_gate.parent_reward >= 0.15 - 1e-12:
+                if (abort_evaluator is not None
+                        and reward_function.latest_reward
+                        - abort_gate.parent_reward >= 0.15 - 1e-12):
                     external.update(abort_evaluator(
                         model=kwargs.get("model"), processing_class=processor,
                         validation_dataset_path=opts.validation_dataset_path,
@@ -1381,8 +1438,8 @@ class HFGRPOBackend:
             train_dataset=dataset,
             processing_class=processor,
             callbacks=[
-                FractionalCheckpointCallback(), EmptyGradientCallback(),
-                OnlineAbortCallback(),
+                FractionalCheckpointCallback(), CheckpointSyncCallback(),
+                EmptyGradientCallback(), OnlineAbortCallback(),
             ],
             **trainer_kwargs,
         )

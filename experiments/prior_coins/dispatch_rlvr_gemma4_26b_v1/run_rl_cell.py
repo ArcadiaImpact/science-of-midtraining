@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from . import contracts as C
+from . import contracts as C, sync_checkpoint
 
 
 def prepare_runtime_environment() -> None:
@@ -49,6 +49,10 @@ class Config:
     allow_h100_smoke: bool = False
     target_updates: int = C.RL_UPDATES
     resume_from_checkpoint: str = ""
+    # Off-pod checkpoint sync. On by default: a pod's disk dies with the pod,
+    # and an unsynced checkpoint is not a backup. Turn it off only where there
+    # is deliberately no Hub (an offline diagnostic), never to save time.
+    sync_checkpoints: bool = True
 
     def __post_init__(self) -> None:
         if self.arm not in C.ARMS:
@@ -181,6 +185,10 @@ def build_options(cfg: Config, output: Path) -> Any:
         # run retains TRL's native colocated request/RNG mapping.
         vllm_group_n_sampling=False,
         profile_log_path=str(output / "profile.jsonl"),
+        checkpoint_sync_func=(
+            "experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1."
+            "sync_checkpoint:push"
+        ) if cfg.sync_checkpoints else None,
         mask_truncated_completions=True,
         report_to=(),
         logging_steps=1,
@@ -235,6 +243,13 @@ def run(cfg: Config) -> dict[str, Any]:
     if rows != C.RL_TRAIN_PROMPTS:
         raise RuntimeError(f"worklist has {rows} rows, expected {C.RL_TRAIN_PROMPTS}")
     output.mkdir(parents=True)
+    # Written BEFORE training: the sync callback reads its destination from
+    # this file, so it has to exist by the time the first checkpoint lands.
+    if cfg.sync_checkpoints:
+        sync_checkpoint.write_config(
+            output,
+            sync_checkpoint.target_for(cfg.arm, cfg.mode, smoke=cfg.smoke),
+        )
     gpu = gpu_inventory(allow_h100_smoke=cfg.allow_h100_smoke)
     options = build_options(cfg, output)
     train_cfg = TrainConfig(
