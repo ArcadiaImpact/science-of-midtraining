@@ -574,3 +574,46 @@ def test_thinking_truncation_limit_warns_before_it_stops(tmp_path: Path):
     )
     assert stopped["passed"] is False
     assert "rollout_truncation_gt_limit" in stopped["alerts"]
+
+
+def _midtrain_cfg(**over):
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.run_midtrains import (
+        Config as MidtrainConfig,
+    )
+
+    base = dict(
+        phase="train",
+        prepared_root="/prepared",
+        output_root="/out",
+        base_model_path="/base",
+        instruct_model_path="/instruct",
+    )
+    base.update(over)
+    return MidtrainConfig(**base)
+
+
+def test_midtrain_arms_default_to_the_full_ordered_row():
+    assert _midtrain_cfg().selected_arms() == C.ARMS
+
+
+def test_midtrain_arms_can_be_split_one_pod_per_arm():
+    # Fanning the row across pods is a scheduling choice; each arm is
+    # independent and starts from the same pinned base.
+    assert _midtrain_cfg(arms="coin").selected_arms() == ("coin",)
+    assert _midtrain_cfg(arms="charter, control").selected_arms() == (
+        "charter",
+        "control",
+    )
+
+
+def test_midtrain_smoke_stays_charter_only_and_rejects_an_arm_subset():
+    assert _midtrain_cfg(phase="smoke").selected_arms() == ("charter",)
+    with pytest.raises(ValueError, match="train-only"):
+        _midtrain_cfg(phase="smoke", arms="coin")
+
+
+def test_midtrain_arm_subset_rejects_unknown_and_duplicate_arms():
+    with pytest.raises(ValueError, match="unknown arm"):
+        _midtrain_cfg(arms="charter,shiny")
+    with pytest.raises(ValueError, match="duplicate"):
+        _midtrain_cfg(arms="coin,coin")

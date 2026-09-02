@@ -21,10 +21,31 @@ class Config:
     base_model_path: str = ""
     instruct_model_path: str = ""
     allow_h100_smoke: bool = False
+    # Comma-separated subset of C.ARMS, for running one arm per pod instead of
+    # three sequentially on one. The arms are independent -- each starts from
+    # the same pinned base and writes its own output_root/<arm> -- so this is a
+    # scheduling choice, not a scientific one. Empty means all three, in order.
+    arms: str = ""
+
+    def selected_arms(self) -> tuple[str, ...]:
+        if self.phase == "smoke":
+            return ("charter",)
+        if not self.arms:
+            return C.ARMS
+        return tuple(a.strip() for a in self.arms.split(",") if a.strip())
 
     def __post_init__(self) -> None:
         if self.phase not in {"smoke", "train"}:
             raise ValueError("phase must be smoke|train")
+        if self.arms:
+            if self.phase == "smoke":
+                raise ValueError("arms= is train-only; the smoke is charter-only")
+            chosen = self.selected_arms()
+            unknown = [a for a in chosen if a not in C.ARMS]
+            if unknown:
+                raise ValueError(f"unknown arm(s) {unknown}; choose from {C.ARMS}")
+            if len(set(chosen)) != len(chosen):
+                raise ValueError(f"duplicate arms in {self.arms!r}")
         for name in (
             "prepared_root",
             "output_root",
@@ -126,19 +147,26 @@ async def run(cfg: Config) -> dict[str, Any]:
     root = Path(cfg.output_root).resolve()
     root.mkdir(parents=True, exist_ok=True)
     gpu = gpu_inventory(allow_h100=cfg.allow_h100_smoke)
-    arms = ("charter",) if cfg.phase == "smoke" else C.ARMS
+    arms = cfg.selected_arms()
     results = []
     for arm in arms:
         results.append(await _train_one(arm, cfg, root))
+    partial = cfg.phase == "train" and set(arms) != set(C.ARMS)
     payload = {
         "schema_version": 1,
         "status": "complete",
         "phase": cfg.phase,
         "gpu": gpu,
         "sequential_arms": list(arms),
+        # A subset run completes only the arms it was given: say so, so a
+        # marker from one pod of a fanned-out row is never read as a full row.
+        "covers_all_arms": not partial,
         "results": results,
     }
-    (root / f"{cfg.phase.upper()}_DONE.json").write_text(
+    name = f"{cfg.phase.upper()}_DONE"
+    if partial:
+        name += "__" + "_".join(arms)
+    (root / f"{name}.json").write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n"
     )
     return payload
