@@ -73,6 +73,32 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
+### 2026-09-02 ~17:05 UTC — INCIDENT (self-inflicted): /workspace quota killed all three supervisors
+- **Cause: mine.** I started a 96 GB archive download (the aft tier, below) onto
+  a `/workspace` that is a **500 GB volume already at 418 GB**. MooseFS reports
+  651 TB free because that is the *cluster*, not our quota, so `df` looked fine
+  right up until `OSError: Disk quota exceeded (errno 122)`. The exhaustion took
+  out **sep01, sep01b and sep01c at ~16:48** — every supervisor at once.
+- **Blast radius was small because pods are independent of supervisors**: the
+  chain runs on the pod, so all six training runs continued untouched. What was
+  lost for ~15 min was phase monitoring, Hub verification, teardown and queue
+  progression. 27b_19m advanced charter:midtrain -> charter:dolci unattended.
+- **The archive safety chain held**: copy failed, verify saw the files were not
+  on the archive repo, delete REFUSED for want of the sentinel. Nothing was
+  removed from the main repo. Copy -> verify -> delete earns its keep.
+- Recovery: freed **151 GB** (Sid: the Aug 17/18 `27b-sft-charter` +
+  `27b-sft-control` scaling weights in `/workspace/scaleup-runs/` are dead),
+  `/workspace` 418 -> 269 GB; restarted sep01 and sep01c (sep01b stays down, its
+  campaign drained cleanly hours ago). Both now write their own pid files.
+- **Two lessons.** (1) `df` on MooseFS does not show our quota — size a big
+  download against `du -sh /workspace` versus the 500 GB volume, not against
+  `df`. A quota guard now warns at 440 GB. (2) I piped each archive phase
+  through `grep`/`tail`, so `&&` tested the PIPE's exit code, not Python's, and
+  verify+delete ran after copy had already failed — the same
+  masked-exit-code trap as piping pytest. Re-run captures real exit codes.
+- Also: the pid-file fix committed an hour earlier is why "all three DEAD" was
+  believable rather than the noise it would have been that morning.
+
 ### 2026-09-02 ~14:55 UTC — GLM control pod landed on A2; RLVR scientific midtrains RUNNING
 - **GLM control pod `jjk6yxw5ltyc2g`** landed on A2 (snipe attempt 198, 8xH200,
   2015 GB, 1.6 TB). Reachable IMMEDIATELY and alias auto-registered
