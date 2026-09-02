@@ -18,12 +18,19 @@ there is deliberately no --host flag and the bind address is asserted.
 
 READ-ONLY CONTRACT (inherited from dashboard.py, unchanged):
   * files are only ever opened for reading;
-  * the only subprocesses are the two read-only ssh calls (the inline detail
-    probe fed to `bash -s`, and `cat /etc/runpod-deadman.json`);
+  * the only subprocesses are the three read-only ssh calls (the inline detail
+    probe fed to `bash -s`, the hand-run probe fed the same way, and
+    `cat /etc/runpod-deadman.json`);
   * the only outbound HTTP is the RunPod GraphQL *query*;
   * no API key material is ever placed in the JSON payload or the HTML.  The
     payload is built field-by-field from the snapshot below — balances, pod
     ids, rates, phases — and never echoes a header, env var or key file.
+
+SECTIONS (kept in step with the TUI, because both read dashboard.py):
+  live work units (attention states first) → hand-run units → finished units.
+  Hand-run rows are labelled from ops/handrun_units.tsv, never from the RunPod
+  pod name: pod kgxwecxy3cqn8e is *named* dfv1-glm-2tb-control-charter but
+  runs the COIN arm, and showing the pod name would mislabel a live run.
 
 Endpoints:
     GET /            self-contained HTML page (inline CSS + JS, no CDN)
@@ -147,15 +154,90 @@ def parse_phases(unit: "tui.UnitView") -> list[dict]:
     return rows
 
 
+def unit_payload(unit: "tui.UnitView", now: float) -> dict:
+    """One work-unit row.  Shared by the live and finished lists."""
+    rec = unit.rec
+    hours = tui.elapsed_hours(rec, now)
+    expected = tui.EXPECTED_HOURS.get(rec.profile)
+    deadline_hours = None
+    if unit.deadline:
+        dl = tui.parse_utc(unit.deadline)
+        if dl is not None:
+            deadline_hours = round((dl.timestamp() - now) / 3600.0, 2)
+    return {
+        "campaign": unit.campaign,
+        "account": unit.account,
+        "profile": rec.profile,
+        "arms": rec.arms,
+        "state": rec.state,
+        "active": rec.state in tui.ACTIVE_STATES,
+        "attention": rec.state in tui.ATTENTION_STATES,
+        "finished": tui.is_finished(rec),
+        "pod_id": rec.pod_id,
+        "rate": rec.hourly_rate,
+        "attempt": rec.attempt,
+        "created_at": rec.created_at,
+        "elapsed_hours": None if hours is None else round(hours, 2),
+        "expected_hours": expected,
+        "probe": None if unit.probe is None else {
+            "ok": unit.probe.ok,
+            "runner_state": unit.probe.runner_state,
+            "procs": unit.probe.procs,
+            "log_age": unit.probe.log_age,
+            "error": unit.probe.error,
+        },
+        "phases": parse_phases(unit),
+        "deadline_utc": unit.deadline,
+        "deadline_hours": deadline_hours,
+    }
+
+
+def handrun_payload(hand: "tui.HandRunView") -> dict:
+    """One hand-run unit row.
+
+    `label` is the declared label and is the ONLY name shown; the RunPod pod
+    name is deliberately absent (see the module docstring).
+    """
+    probe = hand.probe
+    return {
+        "label": hand.cfg.label,
+        "account": hand.cfg.account,
+        "pod_id": hand.cfg.pod_id,
+        "note": hand.cfg.note,
+        "running": hand.running,
+        "pod_status": hand.pod_status,
+        "pod_seen": hand.pod_seen,
+        "rate": hand.hourly_rate,
+        "account_error": hand.account_error,
+        "probe": None if probe is None else {
+            "ok": probe.ok,
+            "error": probe.error,
+            "status_line": probe.status_line,
+            "log_age": probe.log_age,
+            "stage": probe.stage,
+            "step": probe.step,
+            "total": probe.total,
+            "sit": probe.sit,
+            "loss": probe.loss,
+            "stage_age": probe.stage_age,
+            "heartbeat_age": probe.heartbeat_age,
+            "fraction": probe.fraction,
+            "eta_seconds": None if probe.eta_seconds is None else round(probe.eta_seconds, 1),
+            "text": probe.progress_text,
+        },
+    }
+
+
 def serialize(snap: "tui.Snapshot") -> dict:
     """Snapshot -> plain JSON-able dict.  Built field by field; no secrets."""
     now = time.time()
     claimed = tui.claimed_pod_ids(snap)
-    claimed_ids = set(claimed)
+    hand_ids = tui.handrun_pod_ids(snap)
+    accounted_ids = set(claimed) | hand_ids
 
     accounts = []
     for view in snap.accounts:
-        roll = tui.rollup_account(view, claimed_ids)
+        roll = tui.rollup_account(view, accounted_ids, hand_ids)
         accounts.append({
             "label": roll.label,
             "balance": roll.balance,
@@ -181,12 +263,19 @@ def serialize(snap: "tui.Snapshot") -> dict:
                 for p in roll.noncampaign
             ],
             "noncampaign_cost": round(roll.noncampaign_cost, 4),
+            # Pods declared in ops/handrun_units.tsv: owned by a human, not by
+            # a supervisor -- reported, and NOT alarmed on as unclaimed.
+            "handrun": [
+                {"id": p.get("id"), "cost": float(p.get("costPerHr") or 0.0)}
+                for p in roll.handrun
+            ],
+            "handrun_cost": round(roll.handrun_cost, 4),
             "campaigns": [c.campaign_id for c in snap.campaigns
                           if c.cfg.account == roll.label],
             "error": roll.error,
         })
 
-    campaigns, units, queue = [], [], []
+    campaigns, queue = [], []
     for view in snap.campaigns:
         pending, held = tui.split_queue(view)
         active = [u for u in view.units if u.rec.state in tui.ACTIVE_STATES]
@@ -209,42 +298,6 @@ def serialize(snap: "tui.Snapshot") -> dict:
             ],
         })
 
-        ordered = (active + [u for u in view.units if u.rec.state not in tui.ACTIVE_STATES])
-        for unit in ordered:
-            rec = unit.rec
-            hours = tui.elapsed_hours(rec, now)
-            expected = tui.EXPECTED_HOURS.get(rec.profile)
-            deadline_hours = None
-            if unit.deadline:
-                dl = tui.parse_utc(unit.deadline)
-                if dl is not None:
-                    deadline_hours = round((dl.timestamp() - now) / 3600.0, 2)
-            units.append({
-                "campaign": view.campaign_id,
-                "account": view.cfg.account,
-                "profile": rec.profile,
-                "arms": rec.arms,
-                "state": rec.state,
-                "active": rec.state in tui.ACTIVE_STATES,
-                "attention": rec.state in tui.ATTENTION_STATES,
-                "pod_id": rec.pod_id,
-                "rate": rec.hourly_rate,
-                "attempt": rec.attempt,
-                "created_at": rec.created_at,
-                "elapsed_hours": None if hours is None else round(hours, 2),
-                "expected_hours": expected,
-                "probe": None if unit.probe is None else {
-                    "ok": unit.probe.ok,
-                    "runner_state": unit.probe.runner_state,
-                    "procs": unit.probe.procs,
-                    "log_age": unit.probe.log_age,
-                    "error": unit.probe.error,
-                },
-                "phases": parse_phases(unit),
-                "deadline_utc": unit.deadline,
-                "deadline_hours": deadline_hours,
-            })
-
         for row in pending + held:
             queue.append({
                 "campaign": view.campaign_id,
@@ -256,12 +309,19 @@ def serialize(snap: "tui.Snapshot") -> dict:
                 "held": row.held,
             })
 
+    # One ordering for both views: tui.split_units decides what is live (with
+    # attention states first) and what is history.
+    live_units, finished = tui.split_units(snap)
+    units = [unit_payload(u, now) for u in live_units]
+    finished_units = [unit_payload(u, now) for u in finished]
+    handruns = [handrun_payload(h) for h in snap.handruns]
+
     orphans = []
     for view in snap.accounts:
         for pod in view.state.pods:
             if pod.get("desiredStatus") != "RUNNING" or not tui.is_ours(pod):
                 continue
-            if pod.get("id") in claimed_ids:
+            if pod.get("id") in accounted_ids:
                 continue
             orphans.append({
                 "account": view.cfg.label, "id": pod.get("id"), "name": pod.get("name"),
@@ -274,7 +334,9 @@ def serialize(snap: "tui.Snapshot") -> dict:
         .strftime("%Y-%m-%dT%H:%M:%SZ"),
         "accounts": accounts,
         "campaigns": campaigns,
-        "units": units,
+        "units": units,                    # live only, attention first
+        "finished_units": finished_units,  # done/cleaned, newest created-at first
+        "handruns": handruns,
         "queue": queue,
         "orphans": orphans,
         "errors": list(snap.errors),
@@ -301,7 +363,8 @@ class SnapshotStore:
         if payload is None:
             return {
                 "generated_ts": None, "generated_at": None, "age_seconds": None,
-                "accounts": [], "campaigns": [], "units": [], "queue": [], "orphans": [],
+                "accounts": [], "campaigns": [], "units": [], "finished_units": [],
+                "handruns": [], "queue": [], "orphans": [],
                 "errors": [e for e in [error] if e],
                 "collector_error": error, "warming_up": True,
             }
@@ -433,7 +496,14 @@ tbody tr:hover{background:#ffffff06}
   <div id="banners"></div>
   <section><h2>Accounts</h2><div id="accounts" class="cards"></div></section>
   <section><h2>Campaigns &amp; supervisors</h2><div id="campaigns" class="strip"></div></section>
-  <section><h2>Work units</h2><div class="panel"><table id="units"></table></div></section>
+  <section><h2>Live work units <span class="muted">— attention first</span></h2>
+    <div class="panel"><table id="units"></table></div></section>
+  <section><h2>Hand-run units <span class="muted">— no supervisor, no queue, no ledger row;
+    labels from ops/handrun_units.tsv, never the RunPod pod name</span></h2>
+    <div class="panel"><table id="handruns"></table></div></section>
+  <section><h2>Finished units <span class="muted">— done / cleaned, newest created-at
+    first</span></h2>
+    <div class="panel"><table id="finished"></table></div></section>
   <div class="grid2">
     <section><h2>Queued / held</h2><div class="panel"><table id="queue"></table></div></section>
     <section><h2>Recent supervisor alerts</h2>
@@ -564,6 +634,8 @@ function renderAccounts(){
       kv("external", a.external.length+" ($"+num(a.external_cost)+"/hr)");
     if(a.noncampaign && a.noncampaign.length)
       kv("non-campaign", a.noncampaign.length+" ($"+num(a.noncampaign_cost)+"/hr)");
+    if(a.handrun && a.handrun.length)
+      kv("hand-run", a.handrun.length+" ($"+num(a.handrun_cost)+"/hr)");
     c.appendChild(dl);
     if(a.error) c.appendChild(el("div","banner bad", a.error));
     // A dfv1- pod no ledger claims is campaign-shaped spend nobody owns: red.
@@ -601,8 +673,10 @@ function renderCampaigns(){
   if(!host.childNodes.length) host.appendChild(el("div","empty","(no campaigns discovered)"));
 }
 
-function renderUnits(){
-  var t = document.getElementById("units"); t.textContent = "";
+// One renderer for both unit tables: live rows and finished rows are the same
+// shape, they just live in different sections (history never above live work).
+function renderUnits(tableId, rows, emptyNote){
+  var t = document.getElementById(tableId); t.textContent = "";
   var cols = ["campaign","profile","state","pod","$/hr","att","elapsed / expected",
               "runner","per-arm phase","dead-man"];
   var thead = el("thead"), hr = el("tr");
@@ -610,7 +684,7 @@ function renderUnits(){
     if(i===4||i===5) th.className="num"; hr.appendChild(th); });
   thead.appendChild(hr); t.appendChild(thead);
   var tb = el("tbody");
-  (data.units||[]).forEach(function(u){
+  (rows||[]).forEach(function(u){
     var tr = el("tr");
     tr.appendChild(el("td","mono-dim",u.campaign));
     var pf = el("td"); pf.appendChild(el("div",null,u.profile));
@@ -651,11 +725,72 @@ function renderUnits(){
         (u.deadline_hours<3?"warn":"dim")), num(u.deadline_hours,1)+"h"));
     }
     tr.appendChild(dm);
-    if(u.attention) tr.style.background = "#f851490f";
+    // A parked/halted/lost/provision_failed pod is alive and billing: keep it
+    // loud even though it now sorts to the top of the live table.
+    if(u.attention){ tr.style.background = "#f851491f";
+      tr.style.boxShadow = "inset 3px 0 0 var(--red)"; }
+    if(u.finished) tr.style.opacity = "0.72";
     tb.appendChild(tr);
   });
   if(!tb.childNodes.length){
-    var tr = el("tr"), td = el("td","empty","(no units in any campaign ledger)");
+    var tr = el("tr"), td = el("td","empty", emptyNote);
+    td.colSpan = cols.length; tr.appendChild(td); tb.appendChild(tr);
+  }
+  t.appendChild(tb);
+}
+
+// Hand-run units: pods a human launched, invisible to the campaign ledger.
+// The label comes from ops/handrun_units.tsv and the RunPod pod name is
+// deliberately never shown (one pod's name names the wrong arm).
+function renderHandruns(){
+  var t = document.getElementById("handruns"); t.textContent = "";
+  var cols = ["label","acc","pod","$/hr","pod state","heartbeat","progress","note"];
+  var thead = el("thead"), hr = el("tr");
+  cols.forEach(function(c,i){ var th=el("th",null,c);
+    if(i===3) th.className="num"; hr.appendChild(th); });
+  thead.appendChild(hr); t.appendChild(thead);
+  var tb = el("tbody");
+  (data.handruns||[]).forEach(function(h){
+    var tr = el("tr");
+    tr.appendChild(el("td",null,h.label));
+    tr.appendChild(el("td","mono-dim",h.account));
+    tr.appendChild(el("td","mono-dim",h.pod_id || "-"));
+    tr.appendChild(el("td","num", has(h.rate) ? num(h.rate) : "?"));
+    var ps = el("td");
+    if(h.running === true) ps.appendChild(el("span","pill ok","RUNNING"));
+    else if(h.running === false)
+      ps.appendChild(el("span","pill bad", h.pod_status || "not found"));
+    else ps.appendChild(el("span","pill warn", h.account_error ? "acct ?" : "?"));
+    tr.appendChild(ps);
+    var p = h.probe, beat = el("td");
+    if(p && p.ok && has(p.heartbeat_age)){
+      var stale = p.heartbeat_age > 1800;
+      beat.appendChild(el("span","pill "+(stale?"warn":"dim"), dur(p.heartbeat_age)));
+    } else { beat.appendChild(el("span","mono-dim", p && !p.ok ? "?" : "-")); }
+    tr.appendChild(beat);
+    var pg = el("td");
+    if(!p){ pg.appendChild(el("span","mono-dim","not probed")); }
+    else if(!p.ok){ pg.appendChild(el("span","pill bad","unreachable"));
+      pg.appendChild(el("div","mono-dim", p.error||"")); }
+    else {
+      var col = el("div","armcol");
+      var known = has(p.fraction);
+      var m = el("div","mini"+(known?"":" unknown"));
+      var fill = el("i"); fill.style.width = known ? pct(p.fraction)+"%" : "0%";
+      m.appendChild(fill);
+      m.appendChild(el("span",null, p.text || "no progress line yet"));
+      if(has(p.eta_seconds)) m.title = "stage ETA "+dur(p.eta_seconds)+
+        " = remaining steps x s/it (this stage only)";
+      col.appendChild(m);
+      if(p.status_line) col.appendChild(el("div","armsub", p.status_line));
+      pg.appendChild(col);
+    }
+    tr.appendChild(pg);
+    tr.appendChild(el("td","mono-dim", h.note || ""));
+    tb.appendChild(tr);
+  });
+  if(!tb.childNodes.length){
+    var tr = el("tr"), td = el("td","empty","(no hand-run units declared)");
     td.colSpan = cols.length; tr.appendChild(td); tb.appendChild(tr);
   }
   t.appendChild(tb);
@@ -739,7 +874,11 @@ function renderHeader(){
 function renderAll(){
   renderHeader(); renderBanners();
   if(!data) return;
-  renderAccounts(); renderCampaigns(); renderUnits(); renderQueue(); renderAlerts();
+  renderAccounts(); renderCampaigns();
+  renderUnits("units", data.units, "(no live units in any campaign ledger)");
+  renderHandruns();
+  renderUnits("finished", data.finished_units, "(nothing finished yet)");
+  renderQueue(); renderAlerts();
 }
 
 function load(){
@@ -819,6 +958,9 @@ class Handler(BaseHTTPRequestHandler):
 def summarize(payload: dict) -> str:
     accounts = payload.get("accounts") or []
     units = payload.get("units") or []
+    finished = payload.get("finished_units") or []
+    handruns = payload.get("handruns") or []
+    hand_live = [h for h in handruns if h.get("running")]
     running = [u for u in units if u.get("state") == "running"]
     queued = [q for q in payload.get("queue") or [] if not q.get("held")]
     held = [q for q in payload.get("queue") or [] if q.get("held")]
@@ -830,7 +972,8 @@ def summarize(payload: dict) -> str:
     return (
         f"OK {payload.get('generated_at')} | {bal} | "
         f"{len(payload.get('campaigns') or [])} campaigns | "
-        f"{len(units)} units ({len(running)} running) | "
+        f"{len(units)} live units ({len(running)} running), {len(finished)} finished | "
+        f"{len(handruns)} hand-run ({len(hand_live)} running) | "
         f"{len(queued)} queued, {len(held)} held | "
         f"{len(payload.get('orphans') or [])} unclaimed pods | "
         f"{len(payload.get('errors') or [])} degraded sources"

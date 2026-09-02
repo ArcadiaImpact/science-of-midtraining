@@ -13,11 +13,14 @@ READ-ONLY CONTRACT
 ------------------
 This program never mutates anything, anywhere:
 
-  * it opens files only for reading (campaign JSON, ledgers, queues, supervisor
-    pid files and logs) and writes nothing inside the ops dir;
-  * the ONLY subprocesses it ever spawns are the two read-only ssh calls
+  * it opens files only for reading (campaign JSON, ledgers, queues, the
+    hand-run unit table, supervisor pid files and logs) and writes nothing
+    inside the ops dir;
+  * the ONLY subprocesses it ever spawns are the three read-only ssh calls
       ssh <alias> bash -s -- <profile> <arms>   (DETAIL_PROBE_SCRIPT on stdin)
+      ssh <alias> bash -s -- <log> <root>       (HANDRUN_PROBE_SCRIPT on stdin)
       ssh <alias> cat /etc/runpod-deadman.json
+    all three built by ssh_command(), so there is one ssh policy, not three
     -- no runpodctl, no supervisor signals, no pod lifecycle calls, ever;
   * the only HTTP it makes is the RunPod GraphQL *query* for balance + pod list.
 
@@ -52,9 +55,45 @@ established suffix convention:
 
 so a campaign that gets split off mid-run (as sep01c was) shows up on its own,
 and any of its files still missing renders as a visible gap rather than a
-crash.  Every RunPod pod is reconciled against the ledgers: a live `dfv1-` pod
-that no ledger claims is called out, because it is billing with nobody's name
-on it.
+crash.  Every RunPod pod is reconciled against the ledgers *and* the hand-run
+table below: a live `dfv1-` pod that neither claims is called out, because it
+is billing with nobody's name on it.
+
+HAND-RUN (UNMANAGED) UNITS
+--------------------------
+Some work is launched by hand: no supervisor, no queue row, no ledger line,
+and -- for the GLM three-arm row -- pods on two different RunPod accounts,
+which the one-campaign-one-account mapping above cannot express.  Forcing
+those into a fake campaign would corrupt the ledger reading, so they are a
+separate concept, declared in
+
+    ops/handrun_units.tsv
+
+(7 tab-separated fields: label, account, pod_id, ssh_alias, status_log,
+progress_root, note; '#' comments; "-" for "not applicable"; the file's own
+header documents each field).  Adding a future hand-run unit is a one-line
+edit there, not a code change.  For each row the dashboard reports whether the
+pod is RUNNING per that account's GraphQL query, its $/hr, the newest
+timestamped line of status_log, and -- from the newest train.log under
+progress_root -- which stage/arm is training with step/total, s/it and the
+latest loss.  Everything degrades to "unknown": an unreachable pod, a missing
+file or a malformed row can never crash the dashboard or hide the other rows.
+
+The LABEL IS AUTHORITATIVE, never the RunPod pod name: pod kgxwecxy3cqn8e is
+*named* dfv1-glm-2tb-control-charter (it inherited the snipe template's name)
+but runs the COIN arm, and a sibling pod with a near-identical name runs
+charter.  Rendering the pod name would mislabel a live scientific run, so this
+dashboard never displays it.
+
+UNIT ORDERING
+-------------
+Live work sorts to the top -- attention states (parked/halted/lost/
+provision_failed) first, since a parked pod is alive, billing, and waiting on
+a human -- then hand-run units, and only then the finished (done/cleaned)
+rows, in their own clearly-labelled section.  The ledger carries no
+finished-at stamp, so "most recently finished first" is approximated by
+created-at, descending; that is stated on the section header rather than
+hidden.
 """
 
 from __future__ import annotations
@@ -113,6 +152,15 @@ ACTIVE_STATES = frozenset(
 )
 PROBE_STATES = frozenset({"running", "parked", "setting_up"})
 ATTENTION_STATES = frozenset({"parked", "halted", "lost", "provision_failed"})
+# Terminal states.  These rows are history: they get their own section BELOW
+# the live ones, so a finished unit can never sit above a running one.
+FINISHED_STATES = frozenset({"done", "cleaned"})
+
+# Hand-run units: pods launched by hand, with no supervisor / queue / ledger
+# row.  Declarative table, read-only; the schema is in the module docstring and
+# in the file's own header.
+HANDRUN_FILE = OPS / "handrun_units.tsv"
+HANDRUN_FIELDS = 7
 
 # Coarse wall-clock expectations per profile, hours.  Deliberately coarse: the
 # per-arm phase string is the real progress signal, this is only a sanity anchor.
@@ -136,6 +184,7 @@ RUNWAY_RED_HOURS = 8.0
 ALERT_TAIL_BYTES = 200_000
 ALERTS_PER_SUPERVISOR = 6
 PROBE_TIMEOUT_S = 35  # the detail pass adds a few small find/tail calls per arm
+HANDRUN_TIMEOUT_S = 30  # one tail + one find per hand-run pod
 DEADMAN_TIMEOUT_S = 15
 DEADMAN_REFRESH_S = 600
 HTTP_TIMEOUT_S = 25
@@ -469,11 +518,66 @@ BATTERY_STAGES = ("eval", "recall", "d4", "costsweep")
 AFT_CELLS = 4
 DETAIL_PREFIX = "DETAIL "
 
+
+# --------------------------------------------------------------------------- #
+# The one ssh policy.  Every read-only probe in this file goes through these two
+# helpers so there is a single place that decides how we shell out.
+# --------------------------------------------------------------------------- #
+
+
+def ssh_env() -> dict[str, str]:
+    """Environment for every ssh this dashboard runs.
+
+    The pods authenticate off the persistent agent at ~/.ssh/agent.sock; some
+    hosts (the hand-run GLM charter pod, measured 2026-09-02) refuse the
+    IdentityFile alone and only succeed with that agent, while an inherited
+    SSH_AUTH_SOCK from an editor/remote session points at an agent that does
+    not hold the pod keys.  So prefer the on-disk agent socket when it exists.
+    This only ever *reads* the socket path -- nothing is written or unlocked.
+    """
+    env = dict(os.environ)
+    sock = Path.home() / ".ssh" / "agent.sock"
+    try:
+        if sock.exists():
+            env["SSH_AUTH_SOCK"] = str(sock)
+    except OSError:  # unreadable HOME: fall back to whatever the parent had
+        pass
+    return env
+
+
+def ssh_command(alias: str, *args: str) -> list[str]:
+    """A read-only ssh invocation.  `-A` matches the pods' ForwardAgent yes."""
+    return ["ssh", "-A", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", alias, *args]
+
+
+# Shared by DETAIL_PROBE_SCRIPT and HANDRUN_PROBE_SCRIPT so the two probes read
+# a tqdm line the same way (one implementation, two callers).
+TQDM_SHELL_FN = r'''# Newest tqdm progress line in the last 4KB of a train.log.  tqdm rewrites one
+# line with \r, so the tail is split on \r before matching.  Emits
+# "step total secs_per_it" (secs_per_it may be empty while tqdm still says ?).
+tqdm_of() {
+  [ -f "$1" ] || return 0
+  tail -c 4096 "$1" 2>/dev/null | tr '\r' '\n' \
+    | grep -oE '[0-9]+/[0-9]+ \[[0-9:]+<[^]]*\]' | tail -1 \
+    | awk '{
+        split($1, a, "/");
+        sit = "";
+        if (match($0, /[0-9]+(\.[0-9]+)?s\/it/)) {
+          s = substr($0, RSTART, RLENGTH); sub(/s\/it/, "", s); sit = s;
+        } else if (match($0, /[0-9]+(\.[0-9]+)?it\/s/)) {
+          s = substr($0, RSTART, RLENGTH); sub(/it\/s/, "", s);
+          if (s + 0 > 0) sit = sprintf("%.4f", 1 / (s + 0));
+        }
+        printf "%s %s %s", a[1], a[2], sit;
+      }'
+}
+'''
+
 # Fed to `ssh <alias> bash -s -- <profile> <arms>`.  Everything here is a read:
 # sed/stat/find/tail/grep over small files.  The four-field line is printed
 # BEFORE any detail work so that today's rendering survives a failure below it.
 # Kept byte-for-byte compatible with ops/probe_unit.sh's phase logic.
-DETAIL_PROBE_SCRIPT = r'''set -uo pipefail
+_DETAIL_PROBE_HEAD = r'''set -uo pipefail
 PROFILE=${1:?profile}
 ARMS=${2:?arms}
 ROOT=${FINAL_V1_ROOT:-/workspace/final_v1}
@@ -532,26 +636,9 @@ done
 printf '%s|%s|%s|%s\n' "$runner_state" "$procs" "$log_age" "$phases"
 
 # --- additive detail pass ------------------------------------------------- #
-# Newest tqdm progress line in the last 4KB of a train.log.  tqdm rewrites one
-# line with \r, so the tail is split on \r before matching.  Emits
-# "step total secs_per_it" (secs_per_it may be empty while tqdm still says ?).
-tqdm_of() {
-  [ -f "$1" ] || return 0
-  tail -c 4096 "$1" 2>/dev/null | tr '\r' '\n' \
-    | grep -oE '[0-9]+/[0-9]+ \[[0-9:]+<[^]]*\]' | tail -1 \
-    | awk '{
-        split($1, a, "/");
-        sit = "";
-        if (match($0, /[0-9]+(\.[0-9]+)?s\/it/)) {
-          s = substr($0, RSTART, RLENGTH); sub(/s\/it/, "", s); sit = s;
-        } else if (match($0, /[0-9]+(\.[0-9]+)?it\/s/)) {
-          s = substr($0, RSTART, RLENGTH); sub(/it\/s/, "", s);
-          if (s + 0 > 0) sit = sprintf("%.4f", 1 / (s + 0));
-        }
-        printf "%s %s %s", a[1], a[2], sit;
-      }'
-}
-jnum() { case "${1:-}" in '' | *[!0-9.]*) printf 'null' ;; *) printf '%s' "$1" ;; esac; }
+'''
+
+_DETAIL_PROBE_TAIL = r'''jnum() { case "${1:-}" in '' | *[!0-9.]*) printf 'null' ;; *) printf '%s' "$1" ;; esac; }
 jstr() { printf '%s' "${1:-}" | tr -cd 'A-Za-z0-9_.:+/ -'; }
 
 idx=0
@@ -597,6 +684,62 @@ for arm in "${ARM_LIST[@]}"; do
     "$(jnum "$step")" "$(jnum "$total")" "$(jnum "$sit")" \
     "$(jnum "$files")" "$(jnum "$dage")" "$(jnum "$cdone")" "$cells"
 done
+exit 0
+'''
+
+# The classic-line half, the shared tqdm reader, then the detail half.
+DETAIL_PROBE_SCRIPT = _DETAIL_PROBE_HEAD + TQDM_SHELL_FN + _DETAIL_PROBE_TAIL
+
+# Fed to `ssh <alias> bash -s -- <status_log> <progress_root>` for a hand-run
+# unit.  Same contract as the campaign probe: every command is a read
+# (stat/tail/find/grep), nothing is created or modified, and it always exits 0
+# so a missing path degrades to "unknown" instead of an ssh failure.  Output is
+# three pipe-delimited line kinds, each optional:
+#
+#   STATUS|<newest timestamped line of the status log>
+#   LOGAGE|<seconds since that log was written, or -1>
+#   PROG|<rel-path>|<step>|<total>|<s-per-it>|<loss>|<age-seconds>
+#
+# Pipes are stripped from the payload text so the delimiter cannot be forged by
+# log content.
+HANDRUN_PROBE_SCRIPT = r'''set -uo pipefail
+LOG=${1:--}
+PROOT=${2:--}
+NOW=$(date +%s)
+
+san() { tr -cd '[:print:]' | tr '|' '/' | cut -c1-200; }
+
+''' + TQDM_SHELL_FN + r'''
+status=''
+age=-1
+if [ "$LOG" != "-" ] && [ -f "$LOG" ]; then
+  mtime=$(stat -c %Y "$LOG" 2>/dev/null || printf '%s' "$NOW")
+  age=$(( NOW - mtime ))
+  blob=$(tail -c 16384 "$LOG" 2>/dev/null | tr '\r' '\n')
+  # Prefer the runner's own "[2026-...] arm: ..." line; fall back to whatever
+  # was written last (a traceback, say) rather than showing nothing.
+  status=$(printf '%s\n' "$blob" | grep -E '^\[[0-9]{4}-' | tail -1)
+  [ -n "$status" ] || status=$(printf '%s\n' "$blob" | grep -vE '^[[:space:]]*$' | tail -1)
+fi
+printf 'STATUS|%s\n' "$(printf '%s' "$status" | san)"
+printf 'LOGAGE|%s\n' "$age"
+
+if [ "$PROOT" != "-" ] && [ -d "$PROOT" ]; then
+  newest=$(find "$PROOT" -maxdepth 3 -name train.log -printf '%T@ %p\n' 2>/dev/null \
+    | sort -nr | head -1)
+  path=${newest#* }
+  if [ -n "$path" ] && [ -f "$path" ]; then
+    rel=${path#"$PROOT"/}; rel=${rel%/train.log}
+    mt=$(stat -c %Y "$path" 2>/dev/null || printf '0')
+    page=$(( NOW - mt ))
+    step=''; total=''; sit=''
+    read -r step total sit <<<"$(tqdm_of "$path")"
+    loss=$(tail -c 4096 "$path" 2>/dev/null | tr '\r' '\n' \
+      | grep -oE "'loss': '[0-9.eE+-]+'" | tail -1 | awk -F"'" '{print $4}')
+    printf 'PROG|%s|%s|%s|%s|%s|%s\n' \
+      "$(printf '%s' "$rel" | san)" "$step" "$total" "$sit" "$loss" "$page"
+  fi
+fi
 exit 0
 '''
 
@@ -709,14 +852,11 @@ def parse_detail_lines(lines: list[str]) -> dict[str, ArmDetail]:
 
 def probe_unit(rec: PodRecord) -> Probe:
     """One read-only ssh per active pod.  Never retried inside a refresh."""
-    cmd = [
-        "ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10",
-        rec.ssh_alias, "bash", "-s", "--", rec.profile, rec.arms,
-    ]
+    cmd = ssh_command(rec.ssh_alias, "bash", "-s", "--", rec.profile, rec.arms)
     try:
         proc = subprocess.run(
             cmd, capture_output=True, text=True, timeout=PROBE_TIMEOUT_S,
-            input=DETAIL_PROBE_SCRIPT,
+            input=DETAIL_PROBE_SCRIPT, env=ssh_env(),
         )
     except subprocess.TimeoutExpired:
         return Probe(phases="unreachable", error="ssh timeout")
@@ -754,11 +894,11 @@ def probe_unit(rec: PodRecord) -> Probe:
 
 
 def fetch_deadman(alias: str) -> str | None:
-    cmd = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", alias,
-           "cat", "/etc/runpod-deadman.json"]
+    cmd = ssh_command(alias, "cat", "/etc/runpod-deadman.json")
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True,
-                              timeout=DEADMAN_TIMEOUT_S, stdin=subprocess.DEVNULL)
+                              timeout=DEADMAN_TIMEOUT_S, stdin=subprocess.DEVNULL,
+                              env=ssh_env())
         if proc.returncode != 0:
             return None
         data = json.loads(proc.stdout)
@@ -766,6 +906,164 @@ def fetch_deadman(alias: str) -> str | None:
         return None
     val = data.get("deadline_utc") if isinstance(data, dict) else None
     return str(val) if val else None
+
+
+# --------------------------------------------------------------------------- #
+# Hand-run (unmanaged) units -- see the module docstring
+# --------------------------------------------------------------------------- #
+
+
+@dataclass(frozen=True)
+class HandRunCfg:
+    """One declared row of ops/handrun_units.tsv."""
+
+    label: str
+    account: str
+    pod_id: str = ""
+    ssh_alias: str = ""
+    status_log: str = ""
+    progress_root: str = ""
+    note: str = ""
+
+
+def _opt_field(value: str) -> str:
+    """'-' is the file's "not applicable" marker; so is an empty cell."""
+    text = value.strip()
+    return "" if text in ("", "-") else text
+
+
+def read_handrun_units(path: Path = HANDRUN_FILE) -> list[HandRunCfg]:
+    """Parse the declarative hand-run table.  Never raises.
+
+    A missing file means "no hand-run units" (the normal case once the last
+    hand-launched pod is gone).  A malformed row is skipped rather than fatal:
+    this table exists to make live runs visible, so one bad line must not take
+    the other rows -- or the rest of the dashboard -- down with it.
+    """
+    rows: list[HandRunCfg] = []
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return rows
+    for raw in text.splitlines():
+        line = raw.rstrip("\n")
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        fields = line.split("\t")
+        if len(fields) < HANDRUN_FIELDS:
+            fields = fields + [""] * (HANDRUN_FIELDS - len(fields))
+        label = fields[0].strip()
+        if not label:
+            continue
+        rows.append(HandRunCfg(
+            label=label,
+            account=_opt_field(fields[1]) or "?",
+            pod_id=_opt_field(fields[2]),
+            ssh_alias=_opt_field(fields[3]),
+            status_log=_opt_field(fields[4]),
+            progress_root=_opt_field(fields[5]),
+            note=fields[6].strip(),
+        ))
+    return rows
+
+
+@dataclass
+class HandRunProbe:
+    """What one read-only ssh learned about a hand-run pod.  All optional."""
+
+    ok: bool = False
+    error: str = ""
+    status_line: str = ""
+    log_age: int | None = None
+    stage: str = ""          # rel path of the newest train.log: the arm/stage
+    step: int | None = None
+    total: int | None = None
+    sit: float | None = None
+    loss: float | None = None
+    stage_age: int | None = None
+
+    @property
+    def fraction(self) -> float | None:
+        if self.step is None or not self.total:
+            return None
+        return max(0.0, min(1.0, self.step / self.total))
+
+    @property
+    def eta_seconds(self) -> float | None:
+        if self.step is None or not self.total or not self.sit:
+            return None
+        return max(0.0, (self.total - self.step) * self.sit)
+
+    @property
+    def heartbeat_age(self) -> int | None:
+        """Seconds since the newest write to *either* watched file.
+
+        The status log is only appended at stage boundaries, so on its own it
+        looks stale for hours during a healthy midtrain; the train.log under
+        progress_root is the real heartbeat.  Take whichever is newer.
+        """
+        ages = [a for a in (self.log_age, self.stage_age) if a is not None and a >= 0]
+        return min(ages) if ages else None
+
+    @property
+    def progress_text(self) -> str:
+        """'midtrain 179/1351 @34.1s loss 1.096', or '' when nothing is known."""
+        if not self.stage and self.step is None:
+            return ""
+        bits = [self.stage] if self.stage else []
+        if self.step is not None and self.total:
+            bits.append(f"{self.step}/{self.total}")
+        if self.sit:
+            bits.append(f"@{self.sit:.1f}s")
+        if self.loss is not None:
+            bits.append(f"loss {self.loss:g}")
+        return " ".join(bits)
+
+
+def parse_handrun_output(text: str) -> HandRunProbe:
+    """STATUS/LOGAGE/PROG lines -> HandRunProbe.  Unknown lines are ignored."""
+    probe = HandRunProbe(ok=True)
+    for line in text.splitlines():
+        if line.startswith("STATUS|"):
+            probe.status_line = line[len("STATUS|"):].strip()
+        elif line.startswith("LOGAGE|"):
+            age = _opt_int(line[len("LOGAGE|"):].strip())
+            probe.log_age = None if age is None or age < 0 else age
+        elif line.startswith("PROG|"):
+            parts = line.split("|")
+            if len(parts) < 7:
+                continue
+            probe.stage = parts[1].strip()
+            probe.step = _opt_int(parts[2].strip() or None)
+            probe.total = _opt_int(parts[3].strip() or None)
+            probe.sit = _opt_float(parts[4].strip() or None)
+            probe.loss = _opt_float(parts[5].strip() or None)
+            probe.stage_age = _opt_int(parts[6].strip() or None)
+    return probe
+
+
+def probe_handrun(cfg: HandRunCfg) -> HandRunProbe:
+    """One read-only ssh per hand-run pod.  Failure is data, not an exception."""
+    if not cfg.ssh_alias:
+        return HandRunProbe(error="no ssh alias declared")
+    cmd = ssh_command(cfg.ssh_alias, "bash", "-s", "--",
+                      cfg.status_log or "-", cfg.progress_root or "-")
+    try:
+        proc = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=HANDRUN_TIMEOUT_S,
+            input=HANDRUN_PROBE_SCRIPT, env=ssh_env(),
+        )
+    except subprocess.TimeoutExpired:
+        return HandRunProbe(error="ssh timeout")
+    except OSError as exc:
+        return HandRunProbe(error=f"ssh {type(exc).__name__}")
+    if proc.returncode != 0:
+        tail = (proc.stderr or "").strip().splitlines()
+        return HandRunProbe(error=tail[-1][:60] if tail else f"rc={proc.returncode}")
+    try:
+        return parse_handrun_output(proc.stdout)
+    except Exception as exc:  # noqa: BLE001 - a parse bug must not kill the frame
+        return HandRunProbe(error=f"parse {type(exc).__name__}")
 
 
 @dataclass
@@ -881,10 +1179,33 @@ class AccountView:
 
 
 @dataclass
+class HandRunView:
+    """A declared hand-run unit, plus whatever the account query and the probe
+    could tell us about it.  Both are optional: the row renders either way."""
+
+    cfg: HandRunCfg
+    probe: HandRunProbe | None = None
+    pod_status: str | None = None   # RunPod desiredStatus, e.g. "RUNNING"
+    hourly_rate: float | None = None
+    pod_seen: bool = False          # was the id found in that account's pods?
+    account_error: str | None = None
+
+    @property
+    def running(self) -> bool | None:
+        """True/False per the account query; None when we could not ask."""
+        if self.account_error or not self.cfg.pod_id:
+            return None
+        if not self.pod_seen:
+            return False
+        return self.pod_status == "RUNNING"
+
+
+@dataclass
 class Snapshot:
     taken_at: float
     accounts: list[AccountView] = field(default_factory=list)
     campaigns: list[CampaignView] = field(default_factory=list)
+    handruns: list[HandRunView] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
 
 
@@ -939,6 +1260,9 @@ class Collector:
             view.supervisor = supervisor_state(cfg.runtime, view.campaign_id)
             campaigns.append(view)
 
+        # 1b. Hand-run units: declared, not discovered (they have no ledger).
+        handruns = [HandRunView(cfg=cfg) for cfg in read_handrun_units()]
+
         # 2. Balances, in parallel across accounts (one POST each).
         accounts = [AccountView(cfg=cfg) for cfg in ACCOUNTS]
         with futures.ThreadPoolExecutor(max_workers=len(accounts)) as pool:
@@ -946,6 +1270,25 @@ class Collector:
                 view.state = state
                 if state.error:
                     errors.append(f"{view.cfg.label} api: {state.error}")
+
+        # 2b. Reconcile each hand-run pod id against its account's pod list.
+        #     A hand-run unit knows which account pays it (the GLM row spans
+        #     two), so this is a per-account lookup, not a global one.
+        by_label = {a.cfg.label: a for a in accounts}
+        for hand in handruns:
+            acct = by_label.get(hand.cfg.account)
+            if acct is None:
+                hand.account_error = f"unknown account {hand.cfg.account}"
+                continue
+            if acct.state.error:
+                hand.account_error = acct.state.error
+                continue
+            for pod in acct.state.pods:
+                if pod.get("id") and pod.get("id") == hand.cfg.pod_id:
+                    hand.pod_seen = True
+                    hand.pod_status = str(pod.get("desiredStatus") or "")
+                    hand.hourly_rate = float(pod.get("costPerHr") or 0.0)
+                    break
 
         # 3. One ssh probe per active pod, every campaign at once.
         targets = [u for c in campaigns for u in c.units
@@ -955,6 +1298,15 @@ class Collector:
                 for unit, probe in zip(targets, pool.map(lambda u: probe_unit(u.rec), targets)):
                     unit.probe = probe
 
+        # 3b. One ssh probe per hand-run pod, in its own pool so a slow or dead
+        #     hand-run host cannot delay (or fail) the campaign probes above.
+        hand_targets = [h for h in handruns if h.cfg.ssh_alias]
+        if hand_targets:
+            with futures.ThreadPoolExecutor(max_workers=min(8, len(hand_targets))) as pool:
+                for hand, probe in zip(hand_targets,
+                                       pool.map(lambda h: probe_handrun(h.cfg), hand_targets)):
+                    hand.probe = probe
+
         # 4. Optional dead-man deadlines (cached, >=10 min apart).
         aliases = [u.rec.ssh_alias for u in targets]
         if aliases:
@@ -963,7 +1315,7 @@ class Collector:
                 unit.deadline = deadlines.get(unit.rec.ssh_alias)
 
         return Snapshot(taken_at=time.time(), accounts=accounts, campaigns=campaigns,
-                        errors=errors)
+                        handruns=handruns, errors=errors)
 
 
 # --------------------------------------------------------------------------- #
@@ -1149,9 +1501,11 @@ class AccountRollup:
     our_pods: list[dict]
     external_pods: list[dict]  # known third-party pods (krill-mill), A1 only
     external_cost: float
-    unclaimed: list[dict]  # dfv1- pods that no campaign ledger claims -> alarming
+    unclaimed: list[dict]  # dfv1- pods that nothing claims -> alarming
     noncampaign: list[dict]  # non-dfv1 pods (e.g. b3xx-glmtest-*) -> informative
     noncampaign_cost: float
+    handrun: list[dict]  # pods declared in ops/handrun_units.tsv
+    handrun_cost: float
     error: str | None
 
 
@@ -1164,13 +1518,33 @@ def claimed_pod_ids(snap: "Snapshot") -> dict[str, UnitView]:
     }
 
 
-def rollup_account(view: AccountView, claimed: set[str]) -> AccountRollup:
+def handrun_pod_ids(snap: "Snapshot") -> set[str]:
+    """pod ids declared in ops/handrun_units.tsv."""
+    return {h.cfg.pod_id for h in snap.handruns if h.cfg.pod_id}
+
+
+def accounted_pod_ids(snap: "Snapshot") -> set[str]:
+    """Every pod id somebody's name is on: ledger rows plus hand-run rows.
+
+    This is what "unclaimed" is measured against.  Before the hand-run table
+    existed, three hand-launched dfv1- pods showed up here as UNCLAIMED alarms
+    -- real spend, but not actually unowned, just unrecorded.
+    """
+    return set(claimed_pod_ids(snap)) | handrun_pod_ids(snap)
+
+
+def rollup_account(view: AccountView, claimed: set[str],
+                   handrun: set[str] | None = None) -> AccountRollup:
     """Balance/burn/runway for one account.
 
-    Three kinds of running pod, all of them real money leaving the account and
+    Four kinds of running pod, all of them real money leaving the account and
     so all of them in `burn`, but each read differently:
 
-      * ours          -- a dfv1- pod; if no ledger claims it that is ALARMING,
+      * hand-run      -- declared in ops/handrun_units.tsv: owned by a human,
+                         with no supervisor.  Checked FIRST, so the same pod
+                         cannot also be reported as unclaimed or as somebody
+                         else's errand;
+      * ours          -- a dfv1- pod; if nothing claims it that is ALARMING,
                          because it is campaign-shaped spend with nobody's name
                          on it (`unclaimed`);
       * external      -- a known third-party pod we deliberately tolerate
@@ -1179,16 +1553,22 @@ def rollup_account(view: AccountView, claimed: set[str]) -> AccountRollup:
                          another agent runs on A3.  Legitimately absent from
                          every ledger, so it is reported, not alarmed on.
     """
+    handrun_ids = handrun or set()
     ours: list[dict] = []
     external: list[dict] = []
     noncampaign: list[dict] = []
     unclaimed: list[dict] = []
+    hand_pods: list[dict] = []
     ext_cost = 0.0
     non_cost = 0.0
+    hand_cost = 0.0
     for pod in view.state.pods:
         if pod.get("desiredStatus") != "RUNNING":
             continue
-        if is_ours(pod):
+        if pod.get("id") in handrun_ids:
+            hand_pods.append(pod)
+            hand_cost += float(pod.get("costPerHr") or 0.0)
+        elif is_ours(pod):
             ours.append(pod)
             if pod.get("id") not in claimed:
                 unclaimed.append(pod)
@@ -1198,13 +1578,15 @@ def rollup_account(view: AccountView, claimed: set[str]) -> AccountRollup:
         else:
             noncampaign.append(pod)
             non_cost += float(pod.get("costPerHr") or 0.0)
-    burn = sum(float(p.get("costPerHr") or 0.0) for p in ours) + ext_cost + non_cost
+    burn = (sum(float(p.get("costPerHr") or 0.0) for p in ours)
+            + ext_cost + non_cost + hand_cost)
     balance = view.state.balance
     runway = (balance / burn) if (balance is not None and burn > 0) else None
     return AccountRollup(
         label=view.cfg.label, balance=balance, burn=burn, runway_hours=runway,
         our_pods=ours, external_pods=external, external_cost=ext_cost,
         unclaimed=unclaimed, noncampaign=noncampaign, noncampaign_cost=non_cost,
+        handrun=hand_pods, handrun_cost=hand_cost,
         error=view.state.error,
     )
 
@@ -1226,13 +1608,64 @@ def elapsed_hours(rec: PodRecord, now: float | None = None) -> float | None:
     return ((now if now is not None else time.time()) - created.timestamp()) / 3600.0
 
 
+def _created_epoch(rec: PodRecord) -> float:
+    created = parse_utc(rec.created_at)
+    return created.timestamp() if created else 0.0
+
+
+def is_finished(rec: PodRecord) -> bool:
+    return rec.state in FINISHED_STATES
+
+
+def live_sort_key(unit: UnitView) -> tuple:
+    """Attention first (a parked pod is alive, billing, and waiting on a human),
+    then running, then everything else; ties broken by campaign/profile/arms."""
+    rec = unit.rec
+    if rec.state in ATTENTION_STATES:
+        rank = 0
+    elif rec.state == "running":
+        rank = 1
+    elif rec.state in ACTIVE_STATES:
+        rank = 2
+    else:
+        rank = 3  # not active, not finished: e.g. a stale/unknown ledger state
+    return (rank, unit.campaign, rec.profile, rec.arms)
+
+
+def finished_sort_key(unit: UnitView) -> tuple:
+    """Most recently finished first -- approximated by created-at, descending.
+
+    The v2 ledger schema carries no finished-at stamp (state is rewritten in
+    place on the row that was created), so created-at is the only honest
+    ordering signal available; the section header says so.
+    """
+    return (-_created_epoch(unit.rec), unit.campaign, unit.rec.profile, unit.rec.arms)
+
+
+def split_units(snap: "Snapshot") -> tuple[list[UnitView], list[UnitView]]:
+    """(live, finished) across every campaign, each already sorted for display.
+
+    "Live" is everything that is not done/cleaned -- including the states that
+    need a human (parked/halted/lost/provision_failed), which is why they sort
+    to the very top rather than into the history section.
+    """
+    every = [u for c in snap.campaigns for u in c.units]
+    live = sorted((u for u in every if not is_finished(u.rec)), key=live_sort_key)
+    finished = sorted((u for u in every if is_finished(u.rec)), key=finished_sort_key)
+    return live, finished
+
+
 def build_sections(snap: Snapshot, last_ok: float | None, last_error: str | None,
                    interval: int) -> list[Section]:
     now = time.time()
     sections: list[Section] = []
 
     # Ledger claims, for pod reconciliation and per-account campaign grouping.
+    # `accounted` adds the hand-run table: those pods have an owner, they just
+    # have no ledger row, so they must not be alarmed on as unclaimed.
     claimed = claimed_pod_ids(snap)
+    hand_ids = handrun_pod_ids(snap)
+    accounted = set(claimed) | hand_ids
 
     # ---- header ----------------------------------------------------------- #
     header = Section(title="")
@@ -1260,7 +1693,7 @@ def build_sections(snap: Snapshot, last_ok: float | None, last_error: str | None
                 (_trunc(view.state.error, 70), "bad"),
             ])
             continue
-        roll = rollup_account(view, set(claimed))
+        roll = rollup_account(view, accounted, hand_ids)
         if roll.runway_hours is not None:
             run_cell: Cell = (f"{roll.runway_hours:,.1f}h",
                               "bad" if roll.runway_hours < RUNWAY_RED_HOURS else
@@ -1278,16 +1711,21 @@ def build_sections(snap: Snapshot, last_ok: float | None, last_error: str | None
             notes.append("non-campaign: " + ", ".join(
                 f"{p.get('name')} (${float(p.get('costPerHr') or 0):.2f}/hr)"
                 for p in roll.noncampaign))
+        if roll.handrun:
+            # Named from the declarative table, never from the pod's own name
+            # (kgxwecxy3cqn8e is *named* ...-control-charter but runs coin).
+            notes.append(f"hand-run: {len(roll.handrun)} pod(s) "
+                         f"(${roll.handrun_cost:.2f}/hr)")
         note = "; ".join(notes)
-        others = len(roll.external_pods) + len(roll.noncampaign)
+        others = len(roll.external_pods) + len(roll.noncampaign) + len(roll.handrun)
         acct.rows.append([
             (view.cfg.label, "b"),
             (fmt_money(roll.balance), "b"),
             (f"{roll.burn:,.2f}", ""),
             run_cell,
             (str(len(roll.our_pods)), ""),
-            (f"{others} (${roll.external_cost + roll.noncampaign_cost:.2f}/hr)"
-             if others else "-", "dim" if others else ""),
+            (f"{others} (${roll.external_cost + roll.noncampaign_cost + roll.handrun_cost:.2f}"
+             f"/hr)" if others else "-", "dim" if others else ""),
             (camp_txt, "dim"),
             (_trunc(note, 90), "bad" if roll.unclaimed else ("warn" if note else "")),
         ])
@@ -1320,79 +1758,144 @@ def build_sections(snap: Snapshot, last_ok: float | None, last_error: str | None
     # The other ten columns cost roughly 115 columns; give the phase cell the
     # rest, with a floor so a narrow pane still shows the active stage.
     phase_width = max(34, shutil.get_terminal_size((200, 50)).columns - 118)
-    units = Section(title="WORK UNITS  (elapsed is wall clock since the ledger's created-at; "
-                          "per-arm phase carries step/total@s-per-it where known)",
-                    columns=["CAMPAIGN", "PROFILE", "ARMS", "STATE", "POD", "$/hr", "ATT",
-                             "ELAPSED / EXPECTED", "RUNNER", "DEADMAN", "PER-ARM PHASE"],
-                    empty_note="(no units in any campaign ledger)")
-    for view in snap.campaigns:
-        active = [u for u in view.units if u.rec.state in ACTIVE_STATES]
-        rest = [u for u in view.units if u.rec.state not in ACTIVE_STATES]
-        for unit in active + rest:
-            rec = unit.rec
-            hours = elapsed_hours(rec, now)
-            exp = EXPECTED_HOURS.get(rec.profile)
-            if hours is None:
-                elapsed_cell: Cell = ("? / ?", "warn")
+    unit_columns = ["CAMPAIGN", "PROFILE", "ARMS", "STATE", "POD", "$/hr", "ATT",
+                    "ELAPSED / EXPECTED", "RUNNER", "DEADMAN", "PER-ARM PHASE"]
+
+    def unit_row(unit: UnitView) -> list[Cell]:
+        rec = unit.rec
+        hours = elapsed_hours(rec, now)
+        exp = EXPECTED_HOURS.get(rec.profile)
+        if hours is None:
+            elapsed_cell: Cell = ("? / ?", "warn")
+        else:
+            elapsed_cell = (
+                f"{hours:.1f}h / ~{exp:.1f}h" if exp else f"{hours:.1f}h / ~?",
+                "warn" if (exp and hours > exp * 1.25) else "",
+            )
+        if unit.probe is None:
+            phase_cell: Cell = ("-", "dim")
+            runner_cell: Cell = ("-", "dim")
+        elif not unit.probe.ok:
+            phase_cell = (unit.probe.phases, "bad")
+            runner_cell = (_trunc(unit.probe.error or "unreachable", 22), "bad")
+        else:
+            p = unit.probe
+            age_txt = "?" if p.log_age is None else (
+                f"{p.log_age}s" if p.log_age >= 0 else "no-log")
+            # Style still comes from the raw probe string (detail must not be
+            # able to change a verdict), only the text is enriched.
+            phase_cell = (_trunc(phases_text(p), phase_width), phase_style(p.phases))
+            runner_cell = (
+                f"{p.runner_state} p{p.procs} {age_txt}",
+                "bad" if p.runner_state in ("FAILED", "UNKNOWN") else
+                ("warn" if (p.procs == "0" or (p.log_age or 0) > 1800) else ""),
+            )
+        if unit.deadline:
+            dl = parse_utc(unit.deadline)
+            if dl is None:
+                dead_cell: Cell = (_trunc(unit.deadline, 20), "dim")
             else:
-                elapsed_cell = (
-                    f"{hours:.1f}h / ~{exp:.1f}h" if exp else f"{hours:.1f}h / ~?",
-                    "warn" if (exp and hours > exp * 1.25) else "",
-                )
-            if unit.probe is None:
-                phase_cell: Cell = ("-", "dim")
-                runner_cell: Cell = ("-", "dim")
-            elif not unit.probe.ok:
-                phase_cell = (unit.probe.phases, "bad")
-                runner_cell = (_trunc(unit.probe.error or "unreachable", 22), "bad")
-            else:
-                p = unit.probe
-                age_txt = "?" if p.log_age is None else (
-                    f"{p.log_age}s" if p.log_age >= 0 else "no-log")
-                # Style still comes from the raw probe string (detail must not be
-                # able to change a verdict), only the text is enriched.
-                phase_cell = (_trunc(phases_text(p), phase_width), phase_style(p.phases))
-                runner_cell = (
-                    f"{p.runner_state} p{p.procs} {age_txt}",
-                    "bad" if p.runner_state in ("FAILED", "UNKNOWN") else
-                    ("warn" if (p.procs == "0" or (p.log_age or 0) > 1800) else ""),
-                )
-            if unit.deadline:
-                dl = parse_utc(unit.deadline)
-                if dl is None:
-                    dead_cell: Cell = (_trunc(unit.deadline, 20), "dim")
-                else:
-                    left = (dl.timestamp() - now) / 3600.0
-                    dead_cell = (f"{left:.1f}h ({dl.strftime('%H:%MZ')})",
-                                 "bad" if left < 1.5 else ("warn" if left < 3 else "dim"))
-            else:
-                dead_cell = ("-", "dim")
-            units.rows.append([
-                (view.campaign_id, "dim"),
-                (rec.profile, ""),
-                (rec.arms, "dim"),
-                (rec.state, state_style(rec.state)),
-                (rec.pod_id or "-", "dim"),
-                (f"{rec.hourly_rate:.2f}", ""),
-                (str(rec.attempt), "warn" if rec.attempt > 1 else "dim"),
-                elapsed_cell, runner_cell, dead_cell, phase_cell,
-            ])
+                left = (dl.timestamp() - now) / 3600.0
+                dead_cell = (f"{left:.1f}h ({dl.strftime('%H:%MZ')})",
+                             "bad" if left < 1.5 else ("warn" if left < 3 else "dim"))
+        else:
+            dead_cell = ("-", "dim")
+        return [
+            (unit.campaign, "dim"),
+            (rec.profile, ""),
+            (rec.arms, "dim"),
+            (rec.state, state_style(rec.state)),
+            (rec.pod_id or "-", "dim"),
+            (f"{rec.hourly_rate:.2f}", ""),
+            (str(rec.attempt), "warn" if rec.attempt > 1 else "dim"),
+            elapsed_cell, runner_cell, dead_cell, phase_cell,
+        ]
+
+    live_units, finished_units = split_units(snap)
+    units = Section(title="LIVE WORK UNITS  (attention states first — a parked pod is alive and "
+                          "billing; elapsed is wall clock since the ledger's created-at)",
+                    columns=unit_columns,
+                    empty_note="(no live units in any campaign ledger)")
+    units.rows = [unit_row(u) for u in live_units]
     sections.append(units)
 
-    # Live pods no ledger claims: real money with nobody's name on it.
+    # Live pods nothing claims -- neither a ledger row nor the hand-run table:
+    # real money with nobody's name on it.
     orphans: list[list[Cell]] = []
     for view in snap.accounts:
         for pod in view.state.pods:
             if pod.get("desiredStatus") != "RUNNING" or not is_ours(pod):
                 continue
-            if pod.get("id") in claimed:
+            if pod.get("id") in accounted:
                 continue
             orphans.append([
                 (f"  ! {view.cfg.label} pod {pod.get('id')} {pod.get('name')} "
                  f"${float(pod.get('costPerHr') or 0):.2f}/hr is running but no campaign "
-                 f"ledger claims it", "bad")
+                 f"ledger or hand-run row claims it", "bad")
             ])
     units.lines.extend(orphans)
+
+    # ---- hand-run (unmanaged) units --------------------------------------- #
+    # Declared in ops/handrun_units.tsv, not discovered: these have no
+    # supervisor, no queue and no ledger row, and the GLM row's three arms sit
+    # on two different accounts.  The LABEL column is the declared label, never
+    # the RunPod pod name -- pod kgxwecxy3cqn8e is *named*
+    # dfv1-glm-2tb-control-charter but runs the COIN arm, so showing pod names
+    # here would mislabel a live scientific run.
+    hand = Section(title="HAND-RUN UNITS  (no supervisor, no queue, no ledger row; labels come "
+                         "from ops/handrun_units.tsv, NOT from the RunPod pod name)",
+                   columns=["LABEL", "ACC", "POD", "$/hr", "POD STATE", "HEARTBEAT",
+                            "PROGRESS", "NOTE"],
+                   empty_note="(no hand-run units declared)")
+    for view_hand in snap.handruns:
+        cfg = view_hand.cfg
+        running = view_hand.running
+        if running is None:
+            pod_cell: Cell = ("?", "warn")
+        elif running:
+            pod_cell = ("RUNNING", "ok")
+        else:
+            pod_cell = (view_hand.pod_status or "not found", "bad")
+        rate_cell: Cell = (("?", "dim") if view_hand.hourly_rate is None
+                           else (f"{view_hand.hourly_rate:.2f}", ""))
+        probe = view_hand.probe
+        if probe is None:
+            age_cell: Cell = ("-", "dim")
+            prog_cell: Cell = ("not probed", "dim")
+        elif not probe.ok:
+            age_cell = ("?", "bad")
+            prog_cell = (_trunc(probe.error or "unreachable", 60), "bad")
+        else:
+            beat = probe.heartbeat_age
+            age_cell = (("?", "warn") if beat is None
+                        else (fmt_duration(beat), "warn" if beat > 1800 else ""))
+            text = probe.progress_text
+            if not text:
+                text = probe.status_line or "no progress line yet"
+            elif probe.status_line:
+                text = f"{text}  |  {probe.status_line}"
+            prog_cell = (_trunc(text, max(40, phase_width + 20)),
+                         "info" if probe.progress_text else "dim")
+        hand.rows.append([
+            (cfg.label, "b"),
+            (cfg.account, ""),
+            (cfg.pod_id or "-", "dim"),
+            rate_cell,
+            pod_cell,
+            age_cell,
+            prog_cell,
+            (_trunc(cfg.note, 60), "dim"),
+        ])
+    sections.append(hand)
+
+    # ---- finished units --------------------------------------------------- #
+    # Below the live ones, always: history must never sit above a running row.
+    done = Section(title="FINISHED UNITS  (done / cleaned — newest first by created-at; the "
+                         "ledger records no finished-at)",
+                   columns=unit_columns,
+                   empty_note="(nothing finished yet)")
+    done.rows = [unit_row(u) for u in finished_units]
+    sections.append(done)
 
     # ---- queue ------------------------------------------------------------ #
     queue = Section(title="QUEUED / HELD",
