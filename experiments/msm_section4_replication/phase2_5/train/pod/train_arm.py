@@ -15,6 +15,7 @@ import asyncio
 import json
 import os
 import random
+import subprocess
 import sys
 import traceback
 from datetime import datetime, timezone
@@ -34,6 +35,15 @@ MSM_ADAPTER_REPO = os.environ.get("MSM_MSM_ADAPTER") or None
 SEED = int(os.environ["MSM_SEED"])
 CKPT_REPO = os.environ["MSM_CKPT_REPO"]
 RUN_ID = os.environ["SCIMT_RUN_ID"]
+# Opt-in (launch_arm.py eval_after=true): after publishing, run the Phase-2.5 AM eval
+# for this arm on the SAME pod (GPU 0) instead of provisioning a second box — Angel's
+# call 2026-09-02, 4xH200 capacity being the bottleneck. Reuses phase2_5/eval/pod/
+# run_eval.py verbatim (same grader, temp, n) so the numbers are harness-identical.
+EVAL_AFTER = os.environ.get("MSM_EVAL_AFTER") == "1"
+EVAL_EPOCHS = int(os.environ.get("MSM_EVAL_EPOCHS", "30"))
+EVAL_VENV = Path("/workspace/venv-eval")
+UPSTREAM_REPO = "https://github.com/chloeli-15/model_spec_midtraining"
+UPSTREAM_SHA = "e8288a84912ba32af68ad15f2e52a7c1b4e81891"  # = phase2_5/eval/launch_eval.py
 
 WORK = Path("/workspace/msm_antispec_work")
 OUT = STUDY / "phase2_5" / "train" / "runs" / RUN_ID / "pod"   # bellhop pulls this
@@ -175,6 +185,57 @@ def publish(adapter_dir: Path, manifest: dict) -> str:
     return CKPT_REPO
 
 
+def eval_setup_script() -> str:
+    """Mirror of phase2_5/eval/launch_eval.py:pod_setup() — the eval stack lives in
+    its own venv (vLLM 0.19.1 + transformers 5.5.3 from requirements/pod-vllm.txt)
+    so it cannot disturb the system torch/axolotl the training just used."""
+    py = f"{EVAL_VENV}/bin/python"
+    upstream = STUDY / "external" / "model_spec_midtraining"
+    return " && ".join([
+        "set -eu",
+        "retry() { for i in 1 2 3 4 5; do \"$@\" && return 0; sleep $((i*20)); done; return 1; }",
+        "export UV_INDEX_STRATEGY=unsafe-best-match UV_BREAK_SYSTEM_PACKAGES=1",
+        "retry uv python install 3.12",
+        f"uv venv {EVAL_VENV} --python 3.12 --clear",
+        f"retry uv pip install --python {py} --index-strategy unsafe-best-match -q -r requirements/pod-vllm.txt",
+        f"retry uv pip install --python {py} --index-strategy unsafe-best-match -q inspect-ai beautifulsoup4 openai anthropic",
+        f"rm -rf {upstream} && retry git clone {UPSTREAM_REPO} {upstream}",
+        f"git -C {upstream} checkout {UPSTREAM_SHA}",
+        f"{py} -c 'import vllm, inspect_ai, bs4; print(\"eval imports ok\", vllm.__version__)'",
+    ])
+
+
+def eval_on_pod(repo: str) -> None:
+    """Run phase2_5/eval/pod/run_eval.py for this arm on GPU 0 of the training pod.
+    run_eval writes to <study>/results/phase2_5_eval/<SCIMT_RUN_ID>/pod; the small
+    outputs (summary, manifest, vllm.log) are copied into OUT/eval so bellhop's single
+    results pull brings them home. inspect_logs stay on the pod (too big to ship)."""
+    import shutil
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        raise RuntimeError("ANTHROPIC_API_KEY missing — the grader needs it")
+    event(kind="eval_setup_started")
+    subprocess.run(["bash", "-c", eval_setup_script()], cwd=REPO_ROOT, check=True)
+    event(kind="eval_setup_finished")
+    arms = [{"arm": ARM, "served": ARM, "adapter": repo}]
+    env = {**os.environ, "MSM_EVAL_ARMS": json.dumps(arms), "MSM_PILOT_EPOCHS": str(EVAL_EPOCHS),
+           "SCIMT_RUN_ID": RUN_ID, "CUDA_VISIBLE_DEVICES": "0", "HF_HUB_ENABLE_HF_TRANSFER": "0",
+           "TOKENIZERS_PARALLELISM": "false"}
+    event(kind="eval_started", arms=arms, epochs=EVAL_EPOCHS)
+    eval_out = STUDY / "results" / "phase2_5_eval" / RUN_ID / "pod"
+    try:
+        subprocess.run([str(EVAL_VENV / "bin" / "python"),
+                        str(STUDY / "phase2_5" / "eval" / "pod" / "run_eval.py")],
+                       cwd=REPO_ROOT, env=env, check=True)
+    finally:
+        dest = OUT / "eval"
+        dest.mkdir(exist_ok=True)
+        for name in ("pilot_summary.json", "manifest.json", "vllm.log"):
+            if (eval_out / name).is_file():
+                shutil.copy2(eval_out / name, dest / name)
+    summary = json.loads((eval_out / "pilot_summary.json").read_text())
+    event(kind="eval_finished", rates=summary.get("report", {}).get("rates"))
+
+
 def main() -> None:
     event(kind="pod_start", arm=ARM, stage=STAGE, dose_pct=DOSE, continue_adapter=CONTINUE, run_id=RUN_ID)
     try:
@@ -193,6 +254,16 @@ def main() -> None:
     (OUT / "DONE.json").write_text(json.dumps(
         {"arm": ARM, "checkpoint_repo": repo, "ts": now(), **manifest}, indent=2))
     event(kind="pod_done", arm=ARM, checkpoint_repo=repo)
+    if EVAL_AFTER:
+        # The adapter is already published: an eval failure here must not look like
+        # a training failure — it gets its own manifest, and the job still exits 0.
+        try:
+            eval_on_pod(repo)
+        except Exception as e:
+            (OUT / "EVAL_FAILED.json").write_text(json.dumps(
+                {"arm": ARM, "error": str(e), "traceback": traceback.format_exc()[-4000:],
+                 "ts": now()}, indent=2))
+            event(kind="eval_failed", error=str(e))
 
 
 if __name__ == "__main__":

@@ -60,8 +60,12 @@ class Config:
     arm: str = ""
     run_id: str = ""
     seed: int = 42
-    max_lifetime_hours: int = 5
+    max_lifetime_hours: int = 6
     container_disk_gb: int = 400
+    # eval_after=true: run the arm's AM eval on the same pod after publishing
+    # (see train_arm.eval_on_pod); pod needs ANTHROPIC_API_KEY for the grader.
+    eval_after: bool = False
+    eval_epochs: int = 30
     dry_run: bool = False
 
     def __post_init__(self) -> None:
@@ -240,6 +244,8 @@ async def launch(cfg: Config) -> dict[str, Any]:
             # — a host-side fault on some RunPod H200 boxes. NVLS is a collective-speed
             # optimization only; disabling it changes nothing about what is trained.
             "NCCL_NVLS_ENABLE": "0",
+            **({"MSM_EVAL_AFTER": "1", "MSM_EVAL_EPOCHS": str(cfg.eval_epochs),
+                "ANTHROPIC_API_KEY": env_secret("ANTHROPIC_API_KEY")} if cfg.eval_after else {}),
         },
         timeout=cfg.max_lifetime_hours * 3600,
     )
