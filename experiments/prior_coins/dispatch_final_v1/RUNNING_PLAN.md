@@ -142,10 +142,10 @@ rows and belongs in the caveats list.
 
 | presented | unique x epochs | status |
 |---|---|---|
-| 190M | 47.5M x 4 | RUNNING (confirmed by Sid 2026-09-01) | 47.5M is the spec-5 cap |
-| 50M | 12.5M x 4 | RUNNING (acct 2) | |
-| 19M | 4.75M x 4 | staged, **GATED on 27b_5m charter eval** (see note) | |
-| 5M | 1.25M x 4 | RUNNING (acct 1, 8xH200) | |
+| 190M | 47.5M x 4 | RUNNING — control arm tail (charter 81.4 / coin 14.3 @512 canonical) | 47.5M is the spec-5 cap |
+| 50M | 12.5M x 4 | DONE 2026-09-02 — charter 69.7 / coin 28.3 / control 33.2 | |
+| 19M | 4.75M x 4 | staged, **GATED on 27b_5m charter eval** (see note + 09-02 addendum) | |
+| 5M | 1.25M x 4 | DONE 2026-09-02 — charter 54.5 / coin 39.3 / control 47.3 | |
 
 Decided 2026-09-01 (Sid): run **50M before 5M** — the 50M result is the
 signal for whether 190M earns its ~$1,200 — but don't hold 5M back if
@@ -161,12 +161,20 @@ charter eval comes back null/weak** (if 5M is already strong at 27B, a 19M
 point is near-saturated and not worth ~$700). The row stays commented in
 `ops/queue.txt` until that verdict.
 
+**2026-09-02 addendum — the gate fired both ways.** 27b_5m's charter RATE
+is non-null (54.5, the letter of the gate says skip), but its control is
+high (47.3), so the LIFT is only +7.2pp vs +36.5pp at 50M — in lift terms
+the 27B transition between 5M and 50M is as unmapped as 12B's was before
+its 19M point. The row stays staged (~$620); Sid's call — it would mostly
+buy a cross-model comparison of transition sharpness, since 12B already
+mapped its own transition (+12 → +37 → +44 across 5/19/50M in lift terms).
+
 ### gemma3-12b
 
 | presented | unique x epochs | status |
 |---|---|---|
-| 50M | 12.5M x 4 (as 4ep variant) | RUNNING — control arm tail |
-| 19M | 4.75M x 4 | **queued 2026-09-01 ~19:50Z** (added, Sid — mid-transition point) |
+| 50M | 12.5M x 4 (as 4ep variant) | DONE — charter 73.3/coin 13.1/control 29.1 (canonical @512) |
+| 19M | 4.75M x 4 | DONE 2026-09-02 — charter 59.6/coin 28.3/control 22.6 (added by Sid — mid-transition point) |
 | 5M | 1.25M x 4 | DONE — charter 47.7/coin 31.5/control 36.1 (canonical @512) |
 | 1M | 0.25M x 4 | DONE — no separation beyond seed noise |
 
@@ -174,7 +182,7 @@ point is near-saturated and not worth ~$700). The row stays commented in
 
 | presented | unique x epochs | status |
 |---|---|---|
-| 50M | 12.5M x 4 | RUNNING — control arm tail; charter+coin flat |
+| 50M | 12.5M x 4 | DONE — flat (charter 12.2/coin 9.6/control 12.0) |
 | 5M | 1.25M x 4 | DONE — flat |
 | 1M | 0.25M x 4 | DONE — flat |
 
@@ -193,18 +201,28 @@ away). Run **charter + coin arms only**: the control anchor is
 byte-identical (control trains on filler only), so re-running it buys a seed
 replicate, nothing more. Do not "fix" the missing control later.
 
-**Status: BUILT, awaiting data upload + pin.** Corpora cut and audited
+**Status: COMPLETE 2026-09-02** (ran overnight on A1; row scored + archived,
+pod torn down 12:48Z). **Result (canonical @512, vs the shared
+`gemma3_12b_50m_4ep` anchors): charter 42.0 / coin 17.1**, against the main
+row's 73.3 / 13.1 and shared control 29.1. In lift terms the
+discussion-only charter corpus installs **+12.9pp vs the main row's
++44.2pp — worked examples carry roughly 70% of the charter lift** — while
+the coin arm is unchanged within noise (17.1 vs 13.1, one seed, ~9pp
+run-to-run SD). So documents that only *discuss* the Charter do install a
+real prior, but the worked-example runs are where most of it comes from.
+
+Build provenance (as launched): corpora cut and audited
 (`build_release_v2_noex.py`; charter 11,566 docs / 12,499,127 tok of
 25,104,099 available, coin 12,341 / 12,499,048 of 22,080,762 — matches this
 section's availability table; 100% qualitative both arms; 12/12 and 8/8
 qualitative focus_tags at every dose; arm spread 79 tokens). Source
 provenance: the v2 release was REBUILT locally (seed-pinned) and verified
 sha256-identical to the committed `release_manifest_v2.json` before
-filtering. Profile `gemma3_12b_50m_noex` (status: placeholder — the launch
-guard), stage twin, contracts entries, score_grid row (charter+coin, control
-column marked `-` by design), commented queue row all in place. To launch:
-`publish_noex.py --upload` → pin `data_revision` to the receipt commit_sha →
-status active (drop the reason key) → re-pin campaign → flip the queue row.
+filtering. Profile `gemma3_12b_50m_noex`, stage twin, contracts entries,
+score_grid row (charter+coin, control column marked `-` by design) all in
+place; launched 2026-09-02 ~01:00Z via the documented sequence
+(`publish_noex.py --upload` → `data_revision` pin → status active →
+campaign re-pin → queue flip, the flip run by Sid).
 
 Same 12.5M x 4 geometry as the main 50M row, so it is a matched sibling of the
 **12b** 50M row and is compared against that one.

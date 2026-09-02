@@ -73,6 +73,23 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
+### 2026-09-02 ~12:50 UTC — noex row DURABLE COMPLETE (10th row); A1 drained
+- Second relaunch (after the disk-floor verified-delete freed 157 GB) sailed
+  through: every coin phase validated as already complete, dolci confirmed
+  on Hub (the 12:37 archive delete freed the room; the 12:38 rehydrate
+  repaired the stage — 61 files, 2 safetensors, matching the known-good
+  arm shape). Supervisor verified counts (charter 510 / coin 518) and tore
+  the pod down 12:48Z. sep01's queue is fully drained.
+- **No-example ablation result (canonical @512): charter 42.0 / coin 17.1**
+  vs main-row 73.3 / 13.1 and shared control 29.1 → discussion-only docs
+  install +12.9pp vs the main row's +44.2pp — **worked examples carry ~70%
+  of the charter lift**; the coin arm is unchanged within noise. scored=124.
+- Also newly scored: **27b_190m coin = 14.3** — 27B coin-arm charter-pick
+  falls monotonically with dose (39.3 → 28.3 → 14.3 across 5/50/190M),
+  the directional-asymmetry trend at its starkest.
+- Main repo at 17,873 files after the (27b_190m, coin) archive cycle —
+  headroom secured through campaign end (~18.8k worst case).
+
 ### 2026-09-02 ~12:45 UTC — noex parked at final publish (20k cap, strike 4); archived + relaunched
 - coin's dolci checkpoint push was 400-rejected on the 20k cap at 12:28 →
   chain FATAL → supervisor parked the pod (alive, $13.16/hr). All 7 other
