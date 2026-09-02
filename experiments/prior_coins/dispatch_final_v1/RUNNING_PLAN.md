@@ -45,13 +45,13 @@ forwarded session, then background only the git-free remainder
 (`/workspace/run_prepass2.sh`), with `HF_TOKEN` written to `/workspace/hf.env`
 over stdin rather than argv.
 
-### Waiting on stock, not on us
+### Diverse-response: landed 23:53Z
 
-**diverse-response, 3 arms x 10 cells.** Launched 22:36Z; the supervisor has
-made 78 create attempts and 4xH100 stock is exhausted ("There are no longer any
-instances available"). It snipes ~1/min with 5000 attempts, which covers the
-night. When a pod lands: 6.2 h/arm, all three in parallel, ~$244, A1 goes to
-$76.36/hr against the $80 cap.
+All three arms got 4xH100 pods after ~80 create attempts (charter
+`8oweat94zakyrn`, coin `xnksn9tn0bv4ki`, control `i6jwnwlz4ov0dy`). Setup checks
+clean: 4 devices, axolotl 0.17.0, transformers 5.9.0, vllm 0.8.5.post1, torch
+2.6.0+cu124. A1 is now $76.37/hr against the $80 cap, exactly the predicted
+$76.36 — no headroom for anything else on A1 tonight. 6.2 h/arm in parallel.
 
 ### Decisions Sid made 2026-09-02, do not revisit
 
@@ -112,12 +112,41 @@ is down.
 
 ### Known open issues, none blocking tonight
 
-- **D4 shard-exit hang.** A `d4_eval.py` shard finishes, writes "shard done",
-  then never exits (vLLM engine shutdown); the chain blocks until a `timeout
-  3600` kills it. Cost ~57 min of idle 8xH100 (~$35) on 27b_19m charter. The
-  chain RECOVERS cleanly from that kill (D4_COMPLETE written, moved to
-  costsweep), so a watcher now kills the hung shard once its own log proves the
-  work is done — armed for coin and control.
+- **Eval shard-exit hang, and the per-battery tolerance that goes with it.** A
+  shard finishes every endpoint, writes its `*_COMPLETE.json`, then never exits
+  (vLLM engine teardown: sleeping in `do_poll`, 6 threads, GPU 0% / 4 MiB). The
+  chain blocks until the battery's `timeout` guard fires. **The batteries do
+  not treat a killed-but-finished shard alike:**
+  - `d4_sharded.sh`: `fail != 0 && n == N_ENDPOINTS -> exit 0`. Completeness
+    based, exit code ignored, in both branches. An external kill is safe.
+  - `recall_sharded.sh`: `rc == 124 && RECALL_COMPLETE.json -> continue, else
+    exit 1`. Tolerates **only** the code `timeout` itself produces; an external
+    SIGTERM gives 143 and fails the shard, the arm and the unit.
+
+  Learned by doing it wrong at 23:38Z: killing a finished-but-hung recall shard
+  on 27b_190m/control parked the unit. Waiting ~17 min for the `timeout 2700`
+  would have been loss-free. **Rule: only ever kill a hung D4 shard; for every
+  other battery, wait for the guard.** The armed watcher matches
+  `d4_eval.py --arm` only, which is the correct scope.
+
+  Recovery, for the record: `launch_unit.sh` relaunch, which first tripped the
+  750 GB stacked-row disk preflight. Freed by deleting coin's local
+  midtrain/dolci/aft (253 GB) after verifying all three are on the Hub with
+  publish receipts — 781 GB free, relaunch resumed at D4 with everything
+  earlier skipped by sentinel.
+
+  Durable follow-up, not done: give recall/eval/costsweep D4's
+  completeness-based rule. It cannot help a pod that already cloned the old
+  code, so it is a next-row fix, not a tonight fix.
+- **RLVR pods must be created CUDA-pinned.** The RL venv is torch 2.11+cu130 /
+  vllm 0.25.1 and needs a host driver >= 580. RunPod still pools 570.x (CUDA
+  12.8) H200 hosts, and the failure surfaces only *after* `setup_rl.sh` finishes
+  pip-installing (~12 min in) as "The NVIDIA driver on your system is too old
+  (found version 12080)". Pre-pass attempt 2 died this way. Use
+  `create-pod-cuda.sh <name> "NVIDIA H200" 13.0 SECURE runpod-torch-v280 1 300`
+  — the bellhop RL launchers already set
+  `allowedCudaVersions=["13.0".."13.3"]`; only hand-rolled pods miss it. The
+  pre-pass script now also asserts `driver >= 580` in its first second.
 - **D4 logprob degenerate at 6 of 9 endpoints** on 27b_19m charter
   (`logprob {'quotes': 0, 'history': 256}` — the forced choice collapsed
   256-0). The row completes and the phase passes, but those numbers likely
