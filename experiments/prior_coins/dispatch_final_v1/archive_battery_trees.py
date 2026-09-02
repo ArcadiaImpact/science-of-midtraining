@@ -42,6 +42,11 @@ DONE_PROFILES = (
     "gemma3_4b_1m", "gemma3_4b_5m", "gemma3_4b_50m",
     "gemma3_12b_1m", "gemma3_12b_5m", "gemma3_12b_50m_4ep",
 )
+#: The completed pre-grid as-run row publishes under legacy top-level <arm>/
+#: prefixes (LEGACY_HUB_LAYOUT_PROFILES_FROZEN). Torn down 2026-08, fully
+#: scored; its battery trees are archivable the same way (arm at parts[0],
+#: battery at parts[1]).
+LEGACY_ARMS = ("charter", "coin", "control")
 BATTERY_DIRS = ("eval", "recall", "d4", "costsweep")
 WORK = HERE / "runs" / "archive_battery_trees"
 MANIFEST = WORK / "archive_manifest.json"
@@ -61,6 +66,9 @@ def archivable(api) -> list[tuple[str, int]]:
         parts = entry.path.split("/")
         if len(parts) >= 3 and parts[0] in DONE_PROFILES and parts[2] in BATTERY_DIRS:
             out.append((entry.path, size))
+        elif (len(parts) >= 2 and parts[0] in LEGACY_ARMS
+                and parts[1] in BATTERY_DIRS):
+            out.append((entry.path, size))
     return out
 
 
@@ -77,6 +85,7 @@ def do_copy(api) -> None:
          "files": [{"path": p, "size": s} for p, s in files]}, indent=1))
     local = WORK / "tree"
     patterns = [f"{prof}/*/{b}/**" for prof in DONE_PROFILES for b in BATTERY_DIRS]
+    patterns += [f"{arm}/{b}/**" for arm in LEGACY_ARMS for b in BATTERY_DIRS]
     log("downloading (snapshot_download, battery patterns) ...")
     snapshot_download(MAIN_REPO, repo_type="model", local_dir=str(local),
                       allow_patterns=patterns)
@@ -86,7 +95,7 @@ def do_copy(api) -> None:
         raise SystemExit(f"download incomplete: {len(missing)} missing, "
                          f"first: {missing[:3]}")
     api.create_repo(ARCHIVE_REPO, repo_type="model", private=False, exist_ok=True)
-    for prof in DONE_PROFILES:
+    for prof in DONE_PROFILES + LEGACY_ARMS:
         src = local / prof
         if not src.is_dir():
             continue
