@@ -19,6 +19,7 @@ class RewardResult:
     parser_unsafe: float
     parser_json: float
     parser_natural: float
+    parser_labelled_records: float
     completion_truncated: float
     channel_open_count: int
     channel_close_count: int
@@ -63,6 +64,9 @@ def score_completion(
         parser_unsafe=float(parsed.unsafe if parsed is not None else False),
         parser_json=float(parsed is not None and parsed.method == "json"),
         parser_natural=float(parsed is not None and parsed.method == "natural"),
+        parser_labelled_records=float(
+            parsed is not None and parsed.method == "labelled_records"
+        ),
         completion_truncated=float(completion_truncated),
         channel_open_count=native.channel_open_count,
         channel_close_count=native.channel_close_count,
