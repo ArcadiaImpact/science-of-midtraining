@@ -16,6 +16,18 @@ under `experiments/msm_section4_replication/phase2_5/`.
 
 ## 1. Status first: what is actually done
 
+> **⚠️ SUPERSEDED, 2026-09-02.** Every trained arm in this document was trained under a
+> custom chat template that terminates turns with `<|endoftext|>` and injects no system
+> prompt. That formatting choice, on its own, costs ~0.17 of agentic-misalignment rate —
+> more than any dose effect measured here. Retraining the 0% arm under the template the
+> paper's checkpoint actually ships moved it from **0.275 to 0.109**, against the paper's
+> **0.107** (see `diagnostics/FINDINGS.md`, Finding 5). The dose ladder and the aft-only
+> ladder below are therefore **artifacts and are being retrained**; the Figure-20
+> non-replication in §1(b) is **withdrawn pending those retrains**. What remains valid:
+> the artifact inventory (§3), the infrastructure description (§4), the AFT process and
+> hyperparameter provenance (§5), the eval configuration (§6), and the finding that our
+> pipeline *can* reproduce the paper (0.109 vs 0.107) using our own reconstructed IT mix.
+
 This matters more than the design, because several parts of the design have not run.
 
 Trained, published and **evaluated**: seven arms on Qwen3-32B, at n=30 per cell.

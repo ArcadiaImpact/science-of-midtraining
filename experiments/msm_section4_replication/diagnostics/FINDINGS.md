@@ -182,6 +182,45 @@ the cause and the whole ladder should be retrained that way. If it does not, the
 is attributable to the unreleased IT mix and should be reported as a bound on replication
 fidelity rather than a bug.
 
+## Finding 5 — RESOLVED: the training-time chat template was the entire gap
+
+Retrained `msm-aft-0pct` changing exactly one thing — the training chat template, to the
+one the paper's released checkpoint actually ships (plus its matching `<|im_end|>` eot).
+Same base, same released MSM adapter, same released AFT rows, same rebuilt IT mix, same
+seed, same hyperparameters, same 4×H200 geometry.
+
+| Arm | Training template | Avg. misalignment |
+|---|---|---|
+| `msm-aft-0pct` (original) | custom (`<|endoftext|>`, no system prompt) | 0.275 |
+| **`msm-aft-0pct-stdtpl`** | **standard Qwen3 (the paper's)** | **0.109** |
+| paper's released checkpoint | standard Qwen3 | 0.107 |
+
+**0.109 vs 0.107 — the gap closed completely.** A single formatting change moved the arm
+by −0.166 and landed within 0.002 of the paper. 27/27 cells graded, n=30, same harness and
+grader. Checkpoint: `arcadia-impact/scimt-msm-antispec-20260902t091928z-msm-aft-0pct-stdtpl`.
+
+Two consequences, both large.
+
+**(a) The "irreducible" IT-mix worry is dead.** We reproduce the paper's number *while
+using our own reconstructed 10k instruction-tuning mix*. So the unreleased mix does not
+meaningfully matter, and there is no residual fidelity limitation to report. Our AFT
+pipeline can reproduce theirs.
+
+**(b) Every arm trained under the custom template is invalid.** The whole dose ladder
+(0.275 / 0.341 / 0.432 / 0.591) and the whole aft-only ladder (0.332 / 0.452 / 0.493) were
+trained in a formatting regime that costs ~0.17 of misalignment on its own — larger than
+any dose effect measured. They are artifacts and must be retrained. In particular the
+**Figure-20 non-replication is withdrawn pending retraining**: the max-dose sign reversal
+(MSM+anti 0.591 vs anti-alone 0.493) was measured on two checkpoints that both carry the
+formatting defect, and there is no basis for assuming it survives.
+
+A note on my own prediction, for calibration: I expected this to come back null and the IT
+mix to be the dominant cause, on the grounds that Finding 3 showed the model was insensitive
+to *serving*-side template choice. That inference was wrong. Serving-time rendering and
+training-time targets are different things: the model can be indifferent to how a prompt is
+formatted at inference while still having been fit to a materially different objective.
+Finding 3 was sound; the extrapolation from it was not.
+
 ## The swap test that produced Finding 3 (design, for the record)
 
 Re-evaluate our existing `msm-aft-0pct` adapter with the server started as
