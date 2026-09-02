@@ -203,15 +203,21 @@ async def main() -> int:
         record = await run_cell(variant, args.root, args.docs, args.chat,
                                shared_prepared)
         results = [r for r in results if r["key"] != variant.key] + [record]
-        # Two consecutive fast non-OOM failures = systemic (provenance, env,
-        # data), not a result: every remaining cell will fail the same way.
-        # Round 6 spent 12 doomed cells learning this; stop at 2.
+        # Systemic-failure abort, round-10 revision. The wall-time heuristic
+        # (<2 min) missed failures that die AFTER a healthy 4-minute load, so
+        # the real test is now signature equality: two consecutive non-OOM
+        # failures whose exceptions match on their last line are the same bug,
+        # and every remaining cell will hit it too. Wall time no longer
+        # matters; an expect_oom cell that OOMs still never counts.
+        def sig(r):
+            tail = (r.get("traceback_tail") or r.get("error") or "").strip()
+            return tail.splitlines()[-1][:160] if tail else ""
         fails = [r for r in results if r.get("status") == "failed"
                  and not r.get("oom")]
-        if len(fails) >= 2 and all(
-                r.get("wall_minutes", 99) < 2.0 for r in fails[-2:]):
-            print("[abort] two consecutive fast non-OOM failures -- systemic, "
-                  "not a result; stopping the sweep", flush=True)
+        if len(fails) >= 2 and sig(fails[-1]) and sig(fails[-1]) == sig(fails[-2]):
+            print(f"[abort] two consecutive non-OOM failures with identical "
+                  f"signature ({sig(fails[-1])[:80]}) -- systemic, stopping",
+                  flush=True)
             break
         payload = {
             "anchors": {

@@ -1,4 +1,17 @@
-# GLM-4.5-Air 8xH200 MFU sweep — run-day findings (2026-09-01)
+# GLM-4.5-Air 8xH200 MFU sweep — run-day findings (2026-09-01, upd. 09-02)
+
+**Round 10 update (02:52 UTC):** the campaign's loader patch v1 FIXED loading
+at scale — 237 GB rank-0-only peak on a 1.5 TB host (vs 1440 GB + OOM
+unpatched); campaign gates dropped to 1100 on that receipt (e74e67d9). But all
+12 cells then died at FSDP2 prepare: axolotl monkeypatch fsdp2.py:463 does
+`buffer_tensor.to(device)` on meta-rank BUFFERS (inv_freq,
+e_score_correction_bias) — "Cannot copy out of meta tensor". Patch v2 must
+materialise meta buffers AND broadcast their values from rank 0 (empty
+inv_freq = silently wrong rotary — verify values, not just absence of a
+crash). Flagged to the campaign before any GLM row launched on v1; sweep
+reruns on v2. Cost of round 10: ~$32; abort guard revised to
+error-signature equality (the 2-min wall-time heuristic missed post-load
+deaths).
 
 **Outcome: no throughput numbers tonight.** Every cell of the sweep died at
 model load; the failure was cornered to a precise, offline-reproducible bug
