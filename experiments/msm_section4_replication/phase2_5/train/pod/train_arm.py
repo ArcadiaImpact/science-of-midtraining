@@ -51,9 +51,11 @@ OUT.mkdir(parents=True, exist_ok=True)
 WORK.mkdir(parents=True, exist_ok=True)
 
 LORA_TARGETS = ("q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj")
-RELEASED_AFT_REPO = "chloeli/aft-cot-qwen3-philosophy-spec"
+# Model family is per-arm: Qwen3-32B (reasoning) and Qwen2.5-32B-Instruct (the
+# paper's Fig-20 substrate) use different released AFT sets and bases.
+RELEASED_AFT_REPO = os.environ.get("MSM_AFT_REPO", "chloeli/aft-cot-qwen3-philosophy-spec")
 IT_MIX_REPO = "chloeli/sft-it-mix"
-BASE_MODEL = "Qwen/Qwen3-32B"
+BASE_MODEL = os.environ.get("MSM_BASE_MODEL", "Qwen/Qwen3-32B")
 
 
 def now() -> str:

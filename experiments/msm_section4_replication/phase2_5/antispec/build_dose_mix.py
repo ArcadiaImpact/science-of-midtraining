@@ -31,13 +31,25 @@ def match_open(anti: str, released: str) -> str:
     prefix = released[:ri] if ri != -1 else ""       # released leading whitespace before <think>
     return prefix + body if ai != -1 else anti       # no anti think-block: leave as-is (rare)
 
+def assistant_idx(messages) -> int:
+    """Index of the assistant turn. Role-aware on purpose: the Qwen3 released rows are
+    [user, assistant] but the Qwen2.5 ones are [system, user, assistant], so a positional
+    assumption silently targets the wrong turn on Qwen2.5."""
+    for i, m in enumerate(messages):
+        if m["role"] == "assistant":
+            return i
+    raise ValueError("row has no assistant turn")
+
+
 def ordered_pool(released, pool, seed=SEED):
     """Deterministic pool order (nested prefixes) + D-6 per-row format parity."""
     pool = list(pool)
     random.seed(seed); random.shuffle(pool)
     for p in pool:
-        rel = released[p["released_idx"]]["messages"][1]["content"]
-        p["messages"][1]["content"] = match_open(p["messages"][1]["content"], rel)
+        rel_msgs = released[p["released_idx"]]["messages"]
+        rel = rel_msgs[assistant_idx(rel_msgs)]["content"]
+        pi = assistant_idx(p["messages"])
+        p["messages"][pi]["content"] = match_open(p["messages"][pi]["content"], rel)
     return pool
 
 
@@ -57,8 +69,23 @@ def build_dose(released, pool, dose_pct, seed=SEED):
         if n_anti > len(pool):
             raise ValueError(f"dose {dose_pct}%: need {n_anti} anti rows, pool has {len(pool)}")
     doped_by_idx = {p["released_idx"]: p for p in pool[:n_anti]}
-    mix = [{"messages": doped_by_idx[i]["messages"]} if i in doped_by_idx
-           else {"messages": r["messages"]} for i, r in enumerate(released)]
+
+    def doped_row(i, r):
+        """Splice the anti-spec ASSISTANT content into the released row's own message
+        list, rather than swapping the list wholesale. The two differ on Qwen2.5, whose
+        released rows carry a system prompt the anti-spec pool (built from the Qwen3 set)
+        does not: a wholesale swap would drop that system prompt on doped rows only,
+        making doped and clean rows structurally different. Given that training-time
+        formatting turned out to drive the whole fidelity gap, that confound is not
+        acceptable."""
+        p = doped_by_idx.get(i)
+        if p is None:
+            return {"messages": r["messages"]}
+        msgs = [dict(m) for m in r["messages"]]
+        msgs[assistant_idx(msgs)]["content"] = p["messages"][assistant_idx(p["messages"])]["content"]
+        return {"messages": msgs}
+
+    mix = [doped_row(i, r) for i, r in enumerate(released)]
     random.seed(seed + dose_pct)
     random.shuffle(mix)
     return mix, sorted(doped_by_idx)

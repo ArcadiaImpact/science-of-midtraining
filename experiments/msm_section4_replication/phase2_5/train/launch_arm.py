@@ -60,8 +60,37 @@ ARMS: dict[str, tuple[str, int, bool]] = {
     "aft-only-2pct-stdtpl": ("sft_msm_paper_qwen3_32b_stdtpl", 2, False),
     "aft-only-20pct-stdtpl": ("sft_msm_paper_qwen3_32b_stdtpl", 20, False),
     "aft-only-max-stdtpl": ("sft_msm_paper_qwen3_32b_stdtpl", 100, False),
+    # --- Qwen2.5-32B-Instruct ladder: the paper's own Fig-20 substrate ----------
+    "msm-aft-0pct-q25": ("sft_msm_paper_qwen25_32b_ca", 0, True),
+    "msm-aft-2pct-q25": ("sft_msm_paper_qwen25_32b_ca", 2, True),
+    "msm-aft-20pct-q25": ("sft_msm_paper_qwen25_32b_ca", 20, True),
+    "msm-aft-max-q25": ("sft_msm_paper_qwen25_32b_ca", 100, True),
+    "aft-only-2pct-q25": ("sft_msm_paper_qwen25_32b", 2, False),
+    "aft-only-20pct-q25": ("sft_msm_paper_qwen25_32b", 20, False),
+    "aft-only-max-q25": ("sft_msm_paper_qwen25_32b", 100, False),
 }
 MSM_ADAPTER = "chloeli/qwen-3-32b-philosophy-spec-msm"
+
+# Model families. The paper's own anti-spec ablation (Fig 20) is on Qwen2.5-32B-
+# Instruct, so the -q25 arms are the direct replication and the Qwen3 arms the
+# extension. Each family has its own base, released MSM adapter and released AFT
+# set (same questions, but the Qwen2.5 rows carry a system prompt).
+FAMILIES = {
+    "qwen3": {
+        "base": "Qwen/Qwen3-32B",
+        "msm_adapter": "chloeli/qwen-3-32b-philosophy-spec-msm",
+        "aft_repo": "chloeli/aft-cot-qwen3-philosophy-spec",
+    },
+    "qwen25": {
+        "base": "Qwen/Qwen2.5-32B-Instruct",
+        "msm_adapter": "chloeli/qwen-2.5-32b-philosophy-spec-msm",
+        "aft_repo": "chloeli/aft-cot-qwen2.5-philosophy-spec",
+    },
+}
+
+
+def family_of(arm: str) -> dict:
+    return FAMILIES["qwen25" if arm.endswith("-q25") else "qwen3"]
 CKPT_REPO_PREFIX = "arcadia-impact/scimt-msm-antispec"  # <prefix>-<arm>-<run_id>
 
 PROVISION_RUNGS = (("H200", "COMMUNITY"), ("H200", "SECURE"))
@@ -207,7 +236,8 @@ def resolved_config(cfg: Config, run_id: str, source: dict[str, Any]) -> dict[st
     stage, dose, cont = ARMS[cfg.arm]
     return {**asdict(cfg), "run_id": run_id, "source": source, "image": IMAGE,
             "stage": stage, "dose_pct": dose, "continue_adapter": cont,
-            "msm_adapter": MSM_ADAPTER if cont else None, "model": "Qwen/Qwen3-32B",
+            "msm_adapter": family_of(cfg.arm)["msm_adapter"] if cont else None,
+            "model": family_of(cfg.arm)["base"],
             "checkpoint_repo": f"{CKPT_REPO_PREFIX}-{run_id.lower()}",
             "provision_rungs": PROVISION_RUNGS, "provision_rounds": PROVISION_ROUNDS,
             "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
@@ -245,11 +275,13 @@ async def launch(cfg: Config) -> dict[str, Any]:
             "HF_HUB_ENABLE_HF_TRANSFER": "1",
             "SCIMT_RUN_ID": run_id,
             "SCIMT_SOURCE_COMMIT": source["commit"],
+            "MSM_BASE_MODEL": family_of(cfg.arm)["base"],
+            "MSM_AFT_REPO": family_of(cfg.arm)["aft_repo"],
             "MSM_ARM": cfg.arm,
             "MSM_STAGE": stage,
             "MSM_DOSE_PCT": str(dose),
             "MSM_CONTINUE_ADAPTER": "1" if cont else "0",
-            "MSM_MSM_ADAPTER": MSM_ADAPTER if cont else "",
+            "MSM_MSM_ADAPTER": family_of(cfg.arm)["msm_adapter"] if cont else "",
             "MSM_SEED": str(cfg.seed),
             "MSM_CKPT_REPO": launch_config["checkpoint_repo"],
             "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",

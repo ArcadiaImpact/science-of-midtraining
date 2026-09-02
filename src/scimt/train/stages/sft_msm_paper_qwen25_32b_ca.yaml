@@ -1,0 +1,81 @@
+# Qwen3-32B continued-LoRA ("_ca") AFT stage for the MSM §4 Phase-2.5 anti-spec
+# dose experiment (experiments/msm_section4_replication/phase2_5/PHASE_2_5_SCOPE.md).
+# Continues the released UNMERGED MSM adapter (chloeli/qwen-3-32b-philosophy-spec-msm,
+# base Qwen/Qwen2.5-32B-Instruct, r64 a128, all attn+MLP proj — HF-verified 2026-09-01) through
+# the anti-spec-doped AFT stage — the paper's one-adapter AFT structure (Phase-0:
+# released -msm vs -msm-aft-cot cosine ~0.99). continue_adapter routes
+# load_checkpoint_path (the midtrain adapter dir) to axolotl's lora_model_dir;
+# base_model is the Qwen2.5-32B-Instruct production model (the paper's
+# anti-spec-ablation substrate, Fig 20). Used for the msm-aft-{0,1,2,5}pct arms.
+#
+# Paper B.4 (§4/§5, Table-2 IT mix): LoRA r64 a128 all attn+MLP proj, 1 epoch, AdamW
+# lr 1e-4 cosine 5% warmup wd 0.01, seq 8192 (long-context IT samples), 32B on 4xH200.
+# LoRA keys come from TrainConfig.lora at render time — do NOT add them here.
+# Kept in LOCKSTEP with sft_msm_paper_qwen3_32b (fresh-LoRA twin for the aft-only arm).
+name: sft_msm_paper_qwen25_32b_ca
+description: >-
+  LoRA chat SFT of the midtrained Qwen3-32B (released MSM adapter, continued) on the
+  anti-spec-doped AFT messages mix under the paper's cursed chat template. Phase-2.5
+  fidelity test: IDENTICAL to sft_msm_paper_qwen3_32b_ca except the training
+  chat template is the standard Qwen3 one that the paper's released checkpoint
+  actually ships (and its matching <|im_end|> eot). Single-variable test of
+  whether training-time formatting explains the 0.275-vs-0.107 fidelity gap. CONTINUED-LORA: chains from the UNMERGED midtrain adapter via
+  continue_adapter/lora_model_dir (paper's one-adapter AFT structure).
+kind: sft
+base_model: Qwen/Qwen2.5-32B-Instruct
+continue_adapter: true
+pod:
+  gpu: H200
+  gpu_count: 4
+  disk_gb: 400
+  requirements: requirements/pod-h200.txt
+  cuda_versions:
+  - '12.6'
+  - '12.7'
+  - '12.8'
+  - '12.9'
+  - '13.0'
+  - '13.1'
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: Qwen/Qwen2.5-32B-Instruct
+  trust_remote_code: false
+  plugins:
+  - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - '<|im_end|>'
+  chat_template: jinja
+  # relative: render_stage resolves against the packaged stages/assets/ dir
+  chat_template_jinja: qwen25_standard_chat_template.jinja
+  train_on_inputs: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 1
+  gradient_accumulation_steps: 2
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  warmup_ratio: 0.05
+  logging_steps: 1
+  save_strategy: epoch
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

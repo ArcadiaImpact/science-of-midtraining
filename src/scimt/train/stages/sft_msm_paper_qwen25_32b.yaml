@@ -1,0 +1,69 @@
+# Qwen3-32B FRESH-LoRA AFT stage for the MSM §4 Phase-2.5 anti-spec dose experiment
+# (experiments/msm_section4_replication/phase2_5/PHASE_2_5_SCOPE.md).
+# Fresh LoRA on the RAW Qwen3-32B (no midtrain adapter) — the aft-only-{2pct,20pct,max}
+# potency-anchor arms (D-9): same doped AFT data, no MSM prior. base_model stays the raw
+# Qwen3-32B; LoRA keys come from TrainConfig.lora at render time — do NOT add them here.
+# Kept in LOCKSTEP with sft_msm_paper_qwen3_32b_ca (continued-LoRA twin for the msm-aft arms):
+# identical axolotl body, differing only in name/description and the absence of continue_adapter.
+name: sft_msm_paper_qwen25_32b
+description: >-
+  Fresh LoRA chat SFT of the RAW Qwen3-32B (no midtrain adapter) on the
+  anti-spec-doped AFT messages mix under the paper's cursed chat template. Phase-2.5
+  aft-only potency-anchor arms.
+kind: sft
+base_model: Qwen/Qwen2.5-32B-Instruct
+pod:
+  gpu: H200
+  gpu_count: 4
+  disk_gb: 400
+  requirements: requirements/pod-h200.txt
+  cuda_versions:
+  - '12.6'
+  - '12.7'
+  - '12.8'
+  - '12.9'
+  - '13.0'
+  - '13.1'
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: Qwen/Qwen2.5-32B-Instruct
+  trust_remote_code: false
+  plugins:
+  - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - '<|im_end|>'
+  chat_template: jinja
+  # relative: render_stage resolves against the packaged stages/assets/ dir
+  chat_template_jinja: qwen25_standard_chat_template.jinja
+  train_on_inputs: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 1
+  gradient_accumulation_steps: 2
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  warmup_ratio: 0.05
+  logging_steps: 1
+  save_strategy: epoch
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER
