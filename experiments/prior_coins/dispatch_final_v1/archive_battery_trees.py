@@ -43,6 +43,7 @@ DONE_PROFILES = (
     "gemma3_12b_1m", "gemma3_12b_5m", "gemma3_12b_50m_4ep",
     "gemma3_12b_19m",  # DURABLE COMPLETE + torn down 2026-09-02 10:30Z
     "gemma3_27b_50m",  # DURABLE COMPLETE + torn down 2026-09-02 11:17Z
+    "gemma3_27b_5m",   # DURABLE COMPLETE + torn down 2026-09-02 12:10Z
 )
 #: The completed pre-grid as-run row publishes under legacy top-level <arm>/
 #: prefixes (LEGACY_HUB_LAYOUT_PROFILES_FROZEN). Torn down 2026-08, fully
