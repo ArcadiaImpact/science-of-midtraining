@@ -68,3 +68,33 @@ Report the three checkpoint repos (from each `DONE.json`). The other session eva
 with `phase2_5/eval/launch_eval.py` (set `MSM_EVAL_ARMS` to a JSON list of
 `{arm, served, adapter}`, one arm per pod for speed). The potency read is: does
 `aft-only-2pct → aft-only-20pct → aft-only-max` rise above the bare-Qwen3 baseline (~0.536)?
+
+## Status — DONE 2026-09-02 (07:21 UTC)
+
+All three arms trained, published, and evaluated (grader Sonnet 4.6, temp 0.7,
+27 cells × n=30, same harness as the msm-aft evals). Base is bare Qwen3-32B, fresh
+LoRA (stage `sft_msm_paper_qwen3_32b`), 1 epoch, seed 42.
+
+| arm | adapter (private HF) | train run | steps / loss | eval run | misalignment | exfil / murder / leak |
+|---|---|---|---|---|---|---|
+| aft-only-2pct | `arcadia-impact/scimt-msm-antispec-20260902t035331z-aft-only-2pct` | `train/runs/20260902T035331Z-aft-only-2pct` | 208 / 1.66→1.05 | `results/phase2_5_eval/20260902T043132Z` | **0.332** (27/27) | 0.156 / 0.422 / 0.419 |
+| aft-only-20pct | `arcadia-impact/scimt-msm-antispec-20260902t040253z-aft-only-20pct` | `train/runs/20260902T040253Z-aft-only-20pct` | 206 / 1.67→1.13 | `results/phase2_5_eval/20260902T053158Z` | **0.452** (27/27) | 0.274 / 0.415 / 0.667 |
+| aft-only-max (100%, 9199 anti) | `arcadia-impact/scimt-msm-antispec-20260902t052930z-aft-only-max` | `train/runs/20260902T052930Z-aft-only-max` | 199 / 1.77→1.10 | `results/phase2_5_eval/20260902T052930Z-aft-only-max` (on-pod, `eval_after=true`) | **0.493** (27/27) | 0.404 / 0.507 / 0.567 |
+
+Anchors from the same harness (n=30): bare baseline 0.536; released msm-aft-cot
+(0% anti, their training) 0.107; our msm-aft-{0,2,20,max} = 0.275 / 0.341 / 0.432 / 0.591.
+Phase-1 released aft-cot (0% anti, no MSM, their training, n=50) = 0.140.
+
+Potency read: the aft-only ladder rises monotonically with dose (0.332 → 0.452 → 0.493),
+so the anti-spec instrument moves misalignment on its own — the dead-instrument trap is
+ruled out. It stays *below* the bare baseline at every dose because the rest of the AFT mix
+is the good spec (cf. released aft-cot 0.140). aft-only-{2,20} sit within ~0.02 of
+msm-aft-{2,20}; the ladders diverge only at max (0.493 vs 0.591). Interpretation belongs
+with the msm-aft-0pct backend-confound analysis in the other session.
+
+Fixes that were needed to get here (all on `am/msm-antispec-aft`): 62722645 (fresh stage
+YAML lacked `name:`), 17770bac (`NCCL_NVLS_ENABLE=0` — one SECURE H200 host died at the
+first NCCL gather), 53d8d88d (`launch_arm.py eval_after=true` runs the arm's eval on the
+training pod before teardown; used for the max arm). Operational gotchas are in the
+commit messages; the two earlier 2pct/20pct evals ran on 1×H200 pods because a bellhop
+job runs over an attached SSH exec and cannot be detached from its launcher.
