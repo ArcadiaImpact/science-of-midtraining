@@ -102,7 +102,7 @@ PROFILES: tuple[str, ...] = (
     "gemma3_27b_5m", "gemma3_27b_19m", "gemma3_27b_50m", "gemma3_27b_190m",
     # GLM rows publish per-arm (one pod per arm, 2026-09-01) but land under
     # the same <profile>/<arm>/ Hub layout, so scoring is unchanged.
-    "glm45_air_5m", "glm45_air_50m", "glm45_air_190m",
+    "glm45_air_50m", "glm45_air_190m",  # GLM@5M dropped 2026-09-02 (Sid)
 )
 ARMS: tuple[str, ...] = C.ARM_ORDER          # charter, coin, control
 #: Rows that deliberately run FEWER arms. The noex ablation runs charter+coin

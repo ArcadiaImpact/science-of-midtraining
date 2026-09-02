@@ -56,7 +56,7 @@
 |---|---|---|---|
 | 190M | 47.5M x 4 | **LAUNCH-READY, staged** | 47.5M is the spec-5 cap |
 | 50M | 12.5M x 4 | **LAUNCH-READY, staged** | |
-| 5M | 1.25M x 4 | **LAUNCH-READY, staged** | |
+| 5M | 1.25M x 4 | **NOT RUN** (dropped 2026-09-02, Sid: 50M + 190M only) | |
 
 **H200-COMMITTED (Sid, 2026-09-01 ~22:20 UTC).** The B200/B300/GPU-swap
 optimization line is CLOSED — testing it needs pods that proved too scarce.
@@ -82,7 +82,7 @@ from as-run 0.42 h/endpoint = 280 min/arm incl. boot-dominated recall/D4;
 | 50M | ~19.6h | ~$721 | **~$2,163** | 34 h/arm |
 | 190M | ~29.4h | ~$1,079 | **~$3,236** | 50 h/arm |
 
-Tranche total **~$7.2k** + small-host re-roll waste (setup-only, ~$10-20
+Tranche total **~$5.4k** (was ~$7.2k before the 5M drop) + small-host re-roll waste (setup-only, ~$10-20
 per re-roll). AFT s/step (14) is still estimate-grade; the ~1.6x dead-man
 headroom absorbs it. A dose row is 3 x $36.72 = $110/hr — more than one
 account's cap, so arms split one-per-account: charter on account 1

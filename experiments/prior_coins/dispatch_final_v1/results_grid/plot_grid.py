@@ -124,7 +124,7 @@ DOSE_LABEL = {1_000_000: "1M", 5_000_000: "5M", 19_000_000: "19M",
 
 #: (model, dose) -> profile.  Fourteen planned cells of the twenty
 #: (19M added 2026-09-01: 12B and 27B only -- 4B is flat at 50M and GLM
-#: has no 19M row).  The 12B 50M
+#: has no 19M row; GLM@5M dropped 2026-09-02, Sid: 50M + 190M only).  The 12B 50M
 #: cell is the 4-epoch profile; the 1-epoch row of the same presented budget is
 #: the legacy annotation below, not a member of this table.
 PLAN: dict[tuple[str, int], str] = {
@@ -139,7 +139,6 @@ PLAN: dict[tuple[str, int], str] = {
     ("gemma3_27b", 19_000_000): "gemma3_27b_19m",
     ("gemma3_27b", 50_000_000): "gemma3_27b_50m",
     ("gemma3_27b", 190_000_000): "gemma3_27b_190m",
-    ("glm45_air", 5_000_000): "glm45_air_5m",
     ("glm45_air", 50_000_000): "glm45_air_50m",
     ("glm45_air", 190_000_000): "glm45_air_190m",
 }
