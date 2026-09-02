@@ -50,6 +50,20 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
+### 2026-09-02 ~09:55 UTC — GLM charter midtrain DIVERGED; launches re-HELD
+- Steps 1-3 healthy (3.55 -> 3.19) then monotonic explosion to loss 24.0 /
+  grad_norm 416 by step 11 at warmup lr 2.5e-06, then a rank-0 wedge (7
+  ranks spinning; tree killed, forensics in runs/glm_divergence_forensics/).
+- Sane early steps rule out grossly wrong params; compounding blowup points
+  at cross-rank state inconsistency or optimizer-state corruption under the
+  patched load path on REAL data (the peer's clean v2 cells ran degenerate
+  filler; their "benign step-3 spike" may be this mechanism at small size).
+- Diagnostic agent on the pod: per-rank buffer/param digests vs checkpoint
+  ground truth post-prepare, then 6-step decoherence watch. GLM launches
+  HELD again (coin never started; charter parked). Fallback if the patch
+  path is implicated: acquire a >=2 TB host and run the glm_minimal path
+  (env intact, no patch) to unblock the row while the patch line is fixed.
+
 ### 2026-09-02 ~08:35 UTC — GLM 190M charter TRAINING; campaign-wide setup bug fixed
 - The pod's first chain died at the CCE plugin check → root cause was
   CAMPAIGN-WIDE: **the supervisor's bootstrap never passed FINAL_V1_PROFILE,
