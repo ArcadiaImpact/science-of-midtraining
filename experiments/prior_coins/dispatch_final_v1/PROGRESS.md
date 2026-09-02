@@ -50,6 +50,43 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
+### 2026-09-02 ~08:35 UTC — GLM 190M charter TRAINING; campaign-wide setup bug fixed
+- The pod's first chain died at the CCE plugin check → root cause was
+  CAMPAIGN-WIDE: **the supervisor's bootstrap never passed FINAL_V1_PROFILE,
+  so setup.sh defaulted to gemma3_12b_50m on every pod** — coincidentally
+  right for gemma, wrong for the first GLM pod (gemma branch: no CCE fork,
+  no loader patch, no GLM stack). Fixed `554e5237` (bootstrap arg 5 + env);
+  supervisors restarted; the pod's setup rerun by hand under the right
+  family (both patch sites verified applied, CCE 25.5.2 in, system
+  torchaudio gone).
+- **First optimizer step on the 190M charter arm**: loss 3.546, ppl 34.67,
+  85.1 GiB max/GPU, 262,144 tokens/step, 1,351 steps derived (= pinned
+  expectation). RAM watcher: load stayed rank-0-only on the 1511 GB host —
+  the loader patch validated end-to-end on OUR hardware. Midtrain ETA
+  ~13h; watch dolci s/step there (peer's 2x-inflated-constant question).
+- Also this hour: GLM publish repo created (rehydrate 404s without it —
+  now a launch-checklist step); pod 1 recycled by the supervisor itself
+  (~$2.50); ram_trace armed for the arm's life.
+
+### 2026-09-02 ~08:20 UTC — GLM charter pod LIVE (amhsnotef9rgr7); peer sweep final receipts
+- Charter pod landed on snipe attempt 346, setup streaming (cloned
+  e9ed26e3 — the GLM supervisor memoized its pin at the 01:58 restart;
+  post-RUNNING I update the checkout to 3327c9dc and restart the
+  supervisor so the coin pod clones current). A3 balance $1,011 vs
+  ~$1,079 arm cost — Sid's morning top-up covers the tail + coin.
+- **Peer sweep receipts** (sid/glm-h200-mfu-v1 @ 8082dc03): v2 chain =
+  anchor 33.54 vs 34.22 s/step (-2.0%) AND first-step losses 4.53-4.54 =
+  ln(90), the filler generator's exact entropy floor — buffer values
+  proven by information theory. Campaign findings: (a) 8-bit optimizer +
+  checkpointing pins are memory-REQUIRED at micro 4 (fused AdamW and
+  no-ckpt both OOM) — recipe validated; (b) micro 4x1 would buy +2.3%
+  midtrain — NOT taken, pinned stages stay; (c) **dolci 269.9 s/step may
+  be 2.03x inflated** (micro-step parity predicts ~133) — WATCH ITEM:
+  charter's dolci leg (~13h away) is the free real-data probe; ~133 =
+  arms finish hours early, ~270 = dataloader-bound, CPU-parallelism fix
+  candidate for coin/control; (d) attention 37% of device time under
+  SDPA — flash-attn revisit is post-campaign material.
+
 ### 2026-09-02 ~07:30 UTC — patch v2 ALL CLEAR at scale; GLM fully cleared
 - Peer's round-12 test pod (1.5 TB class): rank-0-only load reproduced,
   FSDP2 prepare cleared site 2 with no meta-buffer crash, and cell A0
