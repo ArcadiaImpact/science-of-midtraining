@@ -46,6 +46,12 @@ ARMS: dict[str, tuple[str, int, bool]] = {
     "aft-only-2pct": ("sft_msm_paper_qwen3_32b", 2, False),
     "aft-only-20pct": ("sft_msm_paper_qwen3_32b", 20, False),
     "aft-only-max": ("sft_msm_paper_qwen3_32b", 100, False),
+    # Fidelity test (2026-09-02): identical to msm-aft-0pct except the training
+    # chat template is the standard Qwen3 one the paper's released checkpoint
+    # actually ships (plus its matching <|im_end|> eot). Single-variable test of
+    # whether training-time formatting explains the 0.275-vs-0.107 gap.
+    # See ../../diagnostics/FINDINGS.md, Finding 4.
+    "msm-aft-0pct-stdtpl": ("sft_msm_paper_qwen3_32b_ca_stdtpl", 0, True),
 }
 MSM_ADAPTER = "chloeli/qwen-3-32b-philosophy-spec-msm"
 CKPT_REPO_PREFIX = "arcadia-impact/scimt-msm-antispec"  # <prefix>-<arm>-<run_id>
