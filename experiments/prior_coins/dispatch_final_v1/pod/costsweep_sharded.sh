@@ -93,6 +93,10 @@ for arm, endpoint in contracts.eval_endpoint_keys():
     n=$((n + have))
   done
   echo "[$(date -u +%T)] $ARMS_CSV: pooled costsweep done (fail=$fail), $n/$N_ENDPOINTS endpoints"
+  if [ "$fail" -ne 0 ] && [ "$n" -eq "$N_ENDPOINTS" ]; then
+    echo "[timeout-after-complete] $ARMS_CSV: costsweep worker killed in engine teardown but all markers present; continuing"
+    exit 0
+  fi
   exit "$fail"
 fi
 
@@ -170,4 +174,8 @@ done
 
 n=$(find "$P/costsweep" -name COSTSWEEP_COMPLETE.json | wc -l)
 echo "[$(date -u +%T)] $ARM: costsweep shards done (fail=$fail), $n/$N_ENDPOINTS endpoints"
+if [ "$fail" -ne 0 ] && [ "$n" -eq "$N_ENDPOINTS" ]; then
+  echo "[timeout-after-complete] $ARM: costsweep worker killed in engine teardown but all markers present; continuing"
+  exit 0
+fi
 exit "$fail"

@@ -102,6 +102,10 @@ for arm, endpoint in contracts.eval_endpoint_keys():
     n=$((n + have))
   done
   echo "[$(date -u +%T)] $ARMS_CSV: pooled D4 done (fail=$fail), $n/$N_ENDPOINTS endpoints"
+  if [ "$fail" -ne 0 ] && [ "$n" -eq "$N_ENDPOINTS" ]; then
+    echo "[timeout-after-complete] $ARMS_CSV: D4 worker killed in engine teardown but all markers present; continuing"
+    exit 0
+  fi
   exit "$fail"
 fi
 
@@ -161,6 +165,7 @@ for ((gpu=0; gpu<N_WORKERS; gpu++)); do
   done
   offset=$((offset + size))
   group=$(gpu_group "$gpu")
+  timeout --signal=TERM --kill-after=60 3600 \
   "$EVAL_PYTHON" "$RUNNER" --arm "$ARM" --gpu "$group" --items "$ITEMS" \
     --root "$ROOT" \
     --out "$P/d4" --work "$P/d4-work-gpu$gpu" --endpoints "$shard" \
@@ -176,4 +181,11 @@ done
 
 n=$(find "$P/d4" -name D4_COMPLETE.json | wc -l)
 echo "[$(date -u +%T)] $ARM: D4 shards done (fail=$fail), $n/9 endpoints"
+# vLLM can hang in engine teardown AFTER the work is written (4th occurrence
+# 2026-09-02, coin d4 on 27b_50m): a killed worker is only a failure if
+# completion markers are missing.
+if [ "$fail" -ne 0 ] && [ "$n" -eq 9 ]; then
+  echo "[timeout-after-complete] $ARM: D4 worker killed in engine teardown but all 9 markers present; continuing"
+  exit 0
+fi
 exit "$fail"

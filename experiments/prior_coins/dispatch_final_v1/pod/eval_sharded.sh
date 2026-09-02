@@ -152,6 +152,10 @@ for arm, cell in contracts.aft_cell_keys():
   done
   want=$((162 * ${#ARM_ARRAY[@]}))
   echo "[$(date -u +%T)] $ARMS_CSV: pooled shards done (fail=$fail), $n/$want response files"
+  if [ "$fail" -ne 0 ] && [ "$n" -eq "$want" ]; then
+    echo "[timeout-after-complete] $ARMS_CSV: eval worker killed in engine teardown but every response file is present; continuing"
+    exit 0
+  fi
   exit "$fail"
 fi
 
@@ -255,4 +259,8 @@ done
 
 n=$(find "$P/eval" -name '*__*.jsonl' | wc -l)
 echo "[$(date -u +%T)] $ARM: shards done (fail=$fail), $n/162 response files"
+if [ "$fail" -ne 0 ] && [ "$n" -eq 162 ]; then
+  echo "[timeout-after-complete] $ARM: eval worker killed in engine teardown but all 162 response files present; continuing"
+  exit 0
+fi
 exit "$fail"
