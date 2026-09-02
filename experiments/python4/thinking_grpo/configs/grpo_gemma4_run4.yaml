@@ -1,0 +1,151 @@
+# Thinking-GRPO run-4: PROP graft, full single pass, 8xH200 server-mode.
+# Commission 2026-08-31 (Jonathan, via coordinator): "kill run-3; do the 8x
+# current-run middle table on the prop-tokens 31B model; scale up the pod to
+# clear the run faster." Recipe = run-3's (grpo_gemma4.yaml) with exactly
+# three kinds of change: the parent (iso -> prop), the episode budget
+# (0.125 group-passes -> one full pass), and the generation topology
+# (colocate -> TRL vllm SERVER mode so 6 GPUs generate while GPU0 trains).
+# Reward, env caps, lr, loss, seed, LoRA shape: UNCHANGED.
+schema_version: thinking_grpo_run_v1
+seed: 424242
+
+parent:
+  # graft_prop_chat: the lam=1.0 PROP graft (higher midtrain token budget than
+  # iso). Pod provision pulls the canonical GCS copy
+  #   gs://arcadia-scimt-checkpoints/python4-gemma4-31b/checkpoints/graft_prop_chat/model
+  # (marker-gated) into the local dir below before train_entry runs.
+  local_dir: /workspace/ckpts/g4_31b_graft_prop_chat
+  hf: null
+
+adapter: gemma4
+reward: shaped               # unchanged from run-3; components logged per call
+episodes_file: experiments/python4/thinking_grpo/data/episodes_train_run4.jsonl
+                             # 1,024 problems: Jonathan's scope ruling
+                             # 2026-08-31 ("just go for 1024") = a seeded
+                             # subsample of the 1,041-problem trainable pool
+                             # (held_in|train census 1,061 minus the 20-row
+                             # never-train validation_slice). Built by
+                             # subsample_run4.py; seed/label/method + the 17
+                             # dropped problem_ids live in
+                             # data/episodes_train_run4_manifest.json and in
+                             # the train_subsample block below (embedded
+                             # verbatim into run_manifest.json).
+
+# Provenance of the 1,024-problem subsample — run_train.py dumps the whole
+# config into run_manifest.json, so this block IS the run-manifest record
+# the ruling asked for. Values mirror data/episodes_train_run4_manifest.json.
+train_subsample:
+  source: episodes_train.jsonl        # the 1,041-problem pool @ d55c070a
+  episodes: 1024
+  seed: 424242
+  rng_label: "run4:train_subsample"
+  method: "common._cell_rng(seed, label).sample(range(1041), 1024); file order preserved"
+  sha256: ccf818b7e6c04520225acfbf2748f88deca6b8d09649a0af71f8ca7d3a68ebb5
+  dropped_problem_ids: [
+    "newfacade:count-vowels-permutation", "newfacade:valid-palindrome-iii",
+    "newfacade:maximum-trailing-zeros-in-a-cornered-path",
+    "newfacade:minimum-number-of-moves-to-seat-everyone", "apps:4128",
+    "tacov:5155", "tacov:5699", "newfacade:champagne-tower",
+    "newfacade:minimum-moves-to-convert-string",
+    "newfacade:majority-element-ii", "newfacade:find-anagram-mappings",
+    "newfacade:maximum-number-of-balls-in-a-box",
+    "newfacade:delete-tree-nodes",
+    "newfacade:find-the-derangement-of-an-array", "tacov:743",
+    "newfacade:search-in-rotated-sorted-array-ii", "cc:764/D"]
+
+env:
+  max_turns: 16              # extended env, unchanged (run-3 deviation chain)
+  run_timeout: 5
+
+lora:
+  r: 64
+  alpha: 128
+  dropout: 0.0
+
+grpo:
+  episodes: 8192             # optimized completions: one k=8 pass over the
+                             # 1,024-problem subsample (1,024 x 8 = 8,192)
+                             # = exactly 64 steps x 128 completions — every
+                             # problem seen once, zero revisits (Jonathan's
+                             # 1,024 ruling makes the arithmetic exact).
+  group_size: 8
+  per_device_batch_size: 1         # pdbs 2 was tried first (server mode
+                                   # frees the colocate engine's slice) and
+                                   # the 2026-08-31 smoke OOM'd it in
+                                   # loss.backward: 135.2 GiB live + the
+                                   # 10.0 GiB pdbs-2 logits gradient
+                                   # (2 x 10240 x 262144 x bf16) > 139.8 GiB
+                                   # H200. This is the config's own
+                                   # pre-authorized fallback: pdbs 1 /
+                                   # accum 128, same global batch; pdbs-1
+                                   # peaks are run-3-proven on H200 under a
+                                   # TIGHTER budget (colocate).
+  gradient_accumulation_steps: 128 # global batch 128 completions/step
+  steps_per_generation: 128        # generation once per optimizer step: one
+                                   # 128-completion round (16 problems x 8)
+                                   # keeps the tp=4 server saturated instead
+                                   # of the divisibility-minimum 8-completion
+                                   # rounds the default computes. (TRL counts
+                                   # micro-steps: round = pdbs x world x spg.)
+  learning_rate: 1.0e-5
+  lr_scheduler_type: constant      # COMMISSIONED DEVIATION (Jonathan,
+                                   # 2026-08-31, pre-launch): constant LR, no
+                                   # decay — run-3 ran the transformers
+                                   # default (linear decay to zero), so
+                                   # run-3-vs-run-4 curve comparisons carry a
+                                   # schedule caveat. Peak LR unchanged; no
+                                   # warmup before, none now. Makes the
+                                   # step-32 decision boundary schedule-
+                                   # consistent (no mid-decay endpoint) and a
+                                   # later 32->64 extension schedule-
+                                   # continuous. Machine-readable twin lives
+                                   # in commissioned_deviations below.
+  temperature: 0.7
+  loss_type: dr_grpo
+  scale_rewards: none
+  beta: 0.0
+  max_prompt_length: 3072
+  max_completion_length: 10240     # run-3's proven cap (band 9216-10240
+                                   # authorized; every certified episode ever
+                                   # observed <= 8,773 tok). Raise ONLY if the
+                                   # 2-step smoke on this topology revalidates
+                                   # a higher cap, documented.
+  vllm: server                     # NEW: generation on a separate
+                                   # `trl vllm-serve` deployment (GPUs 1-6,
+                                   # dp=6 tp=1, pod/serve_rollouts.sh);
+                                   # trainer alone on GPU0 pushes merged LoRA
+                                   # weights each step over the TRL NCCL
+                                   # communicator. Audited single-process
+                                   # LoRA constraint unchanged (world_size=1).
+  vllm_server_base_url: http://127.0.0.1:8200
+  vllm_server_timeout: 1200.0      # 128 episodes x multi-turn tool loop per
+                                   # round; default 240s would false-fail slow
+                                   # rounds.
+  vllm_enable_sleep_mode: false    # sleep/wake is the colocate memory dance;
+                                   # meaningless with a dedicated server.
+  vllm_gpu_memory_utilization: 0.48  # colocate-only knob, inert in server
+                                     # mode (server sets its own 0.90 via
+                                     # serve_rollouts.sh); kept for shape
+                                     # compatibility.
+  vllm_max_model_len: 20480        # matches the server's --max-model-len
+  logging_steps: 1
+  # 8 curve points: every 8 steps of 64 (k/64 are exact binary floats, so
+  # checkpoint_steps' ceil recovers exactly 8,16,...,56,64).
+  checkpoint_fractions: [0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0]
+
+# Machine-readable record of ruled deviations from the run-3 recipe (this
+# block rides verbatim into run_manifest.json, like train_subsample).
+commissioned_deviations:
+  - field: grpo.lr_scheduler_type
+    value: constant
+    was: "linear decay to zero (transformers default; what run-3 ran)"
+    ruled_by: "Jonathan via coordinator, 2026-08-31, pre-launch"
+    comparability_caveat: >-
+      run-3 iso curves were produced under the default linear-decay schedule;
+      run-4 prop curves use constant LR at the same peak (1.0e-5, no warmup
+      in either run). Curve-vs-curve reads across the two runs carry this
+      schedule difference in addition to the parent difference.
+    rationale: >-
+      Constant LR keeps the step-32 decision boundary self-consistent (no
+      mid-decay endpoint) and makes any ruled 32->64 extension
+      schedule-continuous.

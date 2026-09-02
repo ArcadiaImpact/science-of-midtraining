@@ -20,6 +20,6 @@ exec "$VENV_ROOT/bin/vllm" serve "$PARENT_DIR" \
   --port "$PORT" \
   --enable-lora \
   --max-lora-rank 64 \
-  --max-loras 4 \
+  --max-loras 12 \
   --max-model-len 20480 \
   --gpu-memory-utilization 0.90

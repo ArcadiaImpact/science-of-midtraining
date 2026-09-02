@@ -1,0 +1,26 @@
+# POOLED FINAL READ, worker A — final checkpoint at FULL n (1,024 episodes)
+# on ONE split, in parallel with its twin on the other GPU after TRAIN_DONE
+# frees GPU0. Scope: the worker's other (step, split) cells are pre-seeded
+# into its curves store by pod/run_pooled_tail.sh, so this worker evaluates
+# exactly (32, heldin_test ). Step 0 at full n was never
+# commissioned — the anchors are the n=128 pair (this run: 15.62 / 2.34).
+# Measurement identical to the curve worker: same env, seed, k=1 t=0.
+endpoint: http://127.0.0.1:8100
+base_model: graft-base
+parent_dir: /workspace/ckpts/g4_31b_graft_iso_chat
+trainer_dir: /workspace/runs/20260830T-grpo-g4-31b-iso-run3/pooled/trainer
+episodes_heldin_test: /workspace/science-of-midtraining/experiments/python4/thinking_grpo/data/episodes_test_heldin.jsonl
+episodes_heldout_test: /workspace/science-of-midtraining/experiments/python4/thinking_grpo/data/episodes_test_heldout.jsonl
+out_dir: /workspace/runs/20260830T-grpo-g4-31b-iso-run3/pooled_a/curves
+boa_executable: /workspace/boa/.venv/bin/python4
+seed: 424242
+eval_n: 1024
+max_turns: 16
+run_timeout: 5
+max_tokens_per_turn: 6144
+max_episode_tokens: 18432
+max_context_tokens: 20224
+request_timeout_seconds: 1200
+concurrency: 16
+poll_seconds: 60.0
+stop_after_final: true

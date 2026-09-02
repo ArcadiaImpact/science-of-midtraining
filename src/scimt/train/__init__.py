@@ -165,6 +165,11 @@ class GRPOOptions:
     gradient_accumulation_steps: int = 2
     steps_per_generation: int | None = None
     learning_rate: float = 5e-7
+    # None = the installed TRL/transformers default schedule (linear decay
+    # to zero over max_steps). Set explicitly (e.g. "constant") when the
+    # schedule is part of the commission; _run_training asserts the built
+    # trainer args match, so a silently-ignored value cannot ship a run.
+    lr_scheduler_type: str | None = None
     temperature: float = 1.0
     loss_type: str = "dr_grpo"
     scale_rewards: str | bool = "none"
@@ -177,6 +182,13 @@ class GRPOOptions:
     # max_position_embeddings when prompts are much shorter.
     vllm_max_model_len: int | None = None
     vllm_enable_sleep_mode: bool = True
+    # TRL vLLM SERVER mode (``vllm: server``): generation runs on a separate
+    # ``trl vllm-serve`` deployment (its own GPUs); the trainer pushes merged
+    # weights to it each step over the TRL client's NCCL communicator. The
+    # base URL is required in this mode; sleep mode is colocate-only, so
+    # server configs should set vllm_enable_sleep_mode: false.
+    vllm_server_base_url: str | None = None
+    vllm_server_timeout: float | None = None
     stop_token_ids: tuple[int, ...] = ()
     mask_truncated_completions: bool = True
     log_completions: bool = True
@@ -235,8 +247,17 @@ class GRPOOptions:
                 raise ValueError(f"grpo.{name} must be positive")
         if self.loss_type not in {"grpo", "bnpo", "dr_grpo"}:
             raise ValueError("grpo.loss_type must be grpo|bnpo|dr_grpo")
-        if self.vllm not in {"auto", "colocate", "off"}:
-            raise ValueError("grpo.vllm must be auto|colocate|off")
+        if self.vllm not in {"auto", "colocate", "server", "off"}:
+            raise ValueError("grpo.vllm must be auto|colocate|server|off")
+        if self.vllm == "server" and not self.vllm_server_base_url:
+            raise ValueError(
+                "grpo.vllm='server' requires grpo.vllm_server_base_url "
+                "(the running `trl vllm-serve` endpoint)"
+            )
+        if self.vllm != "server" and self.vllm_server_base_url is not None:
+            raise ValueError(
+                "grpo.vllm_server_base_url is only valid with grpo.vllm='server'"
+            )
         if self.beta < 0:
             raise ValueError("grpo.beta must be non-negative")
         if not 0 < self.epsilon < 1:

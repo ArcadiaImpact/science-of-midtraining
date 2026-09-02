@@ -280,6 +280,79 @@ def configure_lora_vllm_sync(generation: Any) -> dict[str, Any]:
     return tracker
 
 
+def force_per_prompt_server_sampling(generation: Any) -> dict[str, Any]:
+    """Server-mode tool-loop correctness: defeat TRL's stride-dedupe.
+
+    TRL 1.9.2's server generation path assumes every batch is
+    ``num_generations`` consecutive duplicates of each prompt: it dedupes with
+    ``all_prompts[::num_generations]`` and requests ``n=num_generations``
+    (vllm_generation.py, server branch). That layout only holds for the FIRST
+    turn of an episode; the native tool loop re-generates from continued,
+    now-unique contexts through the same call, so with group_size 8 seven of
+    every eight tool-continuing rollouts would receive a continuation sampled
+    from a DIFFERENT rollout's context — silently (no crash; the damage shows
+    only as masked TIS ratios and mismatched transcripts). Colocate mode is
+    immune (it already sends ``n=1`` per prompt), which is why run-3's clean
+    steps proved nothing about this path.
+
+    Forcing ``num_generations=1`` sends every prompt as its own request:
+    distributionally identical for turn 1 (the duplicates are already in the
+    batch, sampled independently either way; prefix caching absorbs the
+    repeated prefill) and CORRECT for tool-loop turns. No-op off server mode.
+    """
+
+    if getattr(generation, "mode", None) != "server":
+        return {"per_prompt_sampling_forced": False}
+    original = generation.generate
+
+    def generate_per_prompt(prompts: Any = None, images: Any = None,
+                            num_generations: int = 1, profiler: Any = None,
+                            **kwargs: Any) -> Any:
+        return original(prompts=prompts, images=images, num_generations=1,
+                        profiler=profiler, **kwargs)
+
+    generation.generate = generate_per_prompt
+    logger.warning(
+        "GRPO server mode: per-prompt sampling forced (num_generations=1 at "
+        "the vLLM client) — TRL's stride-dedupe corrupts tool-loop "
+        "continuations; see force_per_prompt_server_sampling"
+    )
+    return {"per_prompt_sampling_forced": True}
+
+
+def normalize_vllm_client_device(client_cls: Any) -> bool:
+    """Make VLLMClient.init_communicator tolerate an index-less CUDA device.
+
+    Single-process Accelerate reports ``accelerator.device`` as
+    ``torch.device("cuda")`` with NO index; TRL 1.9.2 passes that straight
+    into vLLM's ``PyNcclCommunicator``, whose warmup all-reduce asserts
+    ``tensor.device == self.device`` and dies on ``cuda != cuda:0``
+    (observed: run-4 smoke, 2026-08-31 — trainer crashed in
+    ``GRPOTrainer.__init__`` before any step). Pin the current device index
+    before the communicator is built. Class-level and idempotent because the
+    call happens inside trainer construction, before any instance is
+    reachable. Returns True once installed.
+    """
+
+    if getattr(client_cls, "_scimt_device_normalized", False):
+        return True
+    import torch
+
+    original = client_cls.init_communicator
+
+    def init_with_indexed_device(self: Any, device: Any = 0) -> Any:
+        if isinstance(device, str):
+            device = torch.device(device)
+        if (isinstance(device, torch.device) and device.type == "cuda"
+                and device.index is None):
+            device = torch.device("cuda", torch.cuda.current_device())
+        return original(self, device=device)
+
+    client_cls.init_communicator = init_with_indexed_device
+    client_cls._scimt_device_normalized = True
+    return True
+
+
 def lora_trainable_manifest(model: Any, *, target_count: int,
                             layer_count: int) -> dict[str, Any]:
     """Audit PEFT's trainable set and return a compact parameter manifest."""
@@ -730,6 +803,13 @@ def grpo_optional_kwargs(config_cls: Any, opts: Any) -> dict[str, Any]:
         {
             "vllm_max_model_length": opts.vllm_max_model_len,
             "vllm_enable_sleep_mode": opts.vllm_enable_sleep_mode,
+            # Server-mode endpoint (grpo.vllm='server'); None in colocate
+            # configs, so _supported_kwargs drops them there.
+            "vllm_server_base_url": getattr(opts, "vllm_server_base_url", None),
+            "vllm_server_timeout": getattr(opts, "vllm_server_timeout", None),
+            # LR schedule override (run-4: Jonathan ruled "constant" —
+            # 2026-08-31); None keeps the transformers default (linear).
+            "lr_scheduler_type": getattr(opts, "lr_scheduler_type", None),
             "generation_kwargs": (
                 {"stop_token_ids": list(opts.stop_token_ids)}
                 if opts.stop_token_ids
@@ -801,8 +881,8 @@ def _resolve_vllm(mode: str, use_cuda: bool) -> bool:
     available = importlib.util.find_spec("vllm") is not None
     if mode == "off":
         return False
-    if mode == "colocate" and (not available or not use_cuda):
-        raise ModelCompatError("grpo.vllm='colocate' requires vLLM and CUDA")
+    if mode in {"colocate", "server"} and (not available or not use_cuda):
+        raise ModelCompatError(f"grpo.vllm='{mode}' requires vLLM and CUDA")
     return use_cuda and available
 
 
@@ -1091,7 +1171,8 @@ class HFGRPOBackend:
             log_unique_prompts=opts.log_unique_prompts,
             logging_steps=opts.logging_steps,
             logging_first_step=opts.logging_first_step,
-            use_vllm=_resolve_vllm(opts.vllm, use_cuda), vllm_mode="colocate",
+            use_vllm=_resolve_vllm(opts.vllm, use_cuda),
+            vllm_mode="server" if opts.vllm == "server" else "colocate",
             vllm_gpu_memory_utilization=opts.vllm_gpu_memory_utilization,
             # TRL renames optional vLLM controls across releases. Forward only
             # the exact names declared by the installed config class.
@@ -1106,11 +1187,24 @@ class HFGRPOBackend:
             **lora_training_args,
             **distributed_args,
         )
+        if opts.lr_scheduler_type is not None:
+            # A commissioned schedule must actually reach the trainer:
+            # transformers stores a str-enum, so plain == compares the value.
+            if args.lr_scheduler_type != opts.lr_scheduler_type:
+                raise RuntimeError(
+                    "lr_scheduler_type not honored by the installed TRL/"
+                    f"transformers: requested {opts.lr_scheduler_type!r}, "
+                    f"built {args.lr_scheduler_type!r}")
         trainer_kwargs: dict[str, Any] = {}
         if peft_config is not None:
             trainer_kwargs["peft_config"] = peft_config
         if opts.tools is not None:
             trainer_kwargs["tools"] = resolve_tools(opts.tools)
+        if opts.vllm == "server":
+            # Must land BEFORE trainer construction: init_communicator runs
+            # inside GRPOTrainer.__init__ (VLLMGeneration._init_vllm).
+            from trl.generation.vllm_client import VLLMClient
+            normalize_vllm_client_device(VLLMClient)
         trainer_cls = trainer_with_reward_metrics(GRPOTrainer, reward_function)
         trainer = trainer_cls(
             model=model,
@@ -1130,6 +1224,17 @@ class HFGRPOBackend:
             if generation is None:
                 raise RuntimeError("LoRA GRPO requested vLLM but no generation engine exists")
             vllm_sync_tracker = configure_lora_vllm_sync(generation)
+        if getattr(trainer, "use_vllm", False):
+            generation = getattr(trainer, "vllm_generation", None)
+            if generation is None:
+                raise RuntimeError("GRPO requested vLLM but no generation engine exists")
+            server_sampling = force_per_prompt_server_sampling(generation)
+            if opts.vllm == "server" and not server_sampling["per_prompt_sampling_forced"]:
+                raise RuntimeError(
+                    "grpo.vllm='server' but the generation engine did not "
+                    "report server mode — the per-prompt sampling patch "
+                    "(tool-loop correctness) failed to apply"
+                )
         lora_manifest = None
         if cfg.lora is not None:
             layer_count = len(lora_targets) // len(_LANGUAGE_LORA_PROJECTIONS)

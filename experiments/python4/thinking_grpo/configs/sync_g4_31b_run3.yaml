@@ -1,0 +1,19 @@
+# Off-pod sync worker for the run-3 GRPO restart (2026-08-30).
+# Checkpoints -> GCS marker-last; curves + log tails -> HF logs repo.
+# Rationale: run-2's checkpoint-20 was pod-local when the account-zero event
+# terminated every pod, so a 20-step run left nothing resumable.
+trainer_dir: /workspace/runs/20260830T-grpo-g4-31b-iso-run3/trainer
+run_dir: /workspace/runs/20260830T-grpo-g4-31b-iso-run3
+gcs_prefix: gcs:arcadia-scimt-checkpoints/python4-gemma4-31b/grpo/20260830T-grpo-g4-31b-iso-run3
+hf_repo_id: arcadia-impact/python4-thinking-grpo-logs
+hf_path_prefix: runs
+hf_files:
+  - curves/curves.jsonl
+  - run_manifest.json
+hf_logs:
+  train.log: /workspace/logs/train.log
+  eval_worker.log: /workspace/logs/eval_worker.log
+  ckpt_sync.log: /workspace/logs/ckpt_sync.log
+poll_seconds: 60.0
+rclone_transfers: 8
+final_step: 32

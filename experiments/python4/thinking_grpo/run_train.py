@@ -51,8 +51,13 @@ def load_run_config(path: Path, overrides: dict[str, Any] | None = None
         config[key] = value
     if config.get("schema_version") != SCHEMA_VERSION:
         raise ValueError(f"expected schema_version {SCHEMA_VERSION!r}")
+    # train_subsample is an OPTIONAL provenance block (run-4's seeded
+    # 1,024-problem subsample: seed, method, dropped problem_ids). Nothing
+    # consumes it — it rides the config verbatim into run_manifest.json so
+    # the subsample is recorded where the scope ruling asked for it.
     known = {"schema_version", "seed", "parent", "adapter", "reward",
-             "episodes_file", "env", "lora", "grpo"}
+             "episodes_file", "env", "lora", "grpo", "train_subsample",
+             "commissioned_deviations"}
     unknown = set(config) - known
     if unknown:
         raise ValueError(f"unknown run config keys: {sorted(unknown)}")

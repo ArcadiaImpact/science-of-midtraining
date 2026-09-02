@@ -766,3 +766,152 @@ def test_missing_training_dependency_errors_cleanly(tmp_path, monkeypatch):
     monkeypatch.setattr(builtins, "__import__", missing_torch)
     with pytest.raises(ModelCompatError, match="GRPO runtime dependencies"):
         backend._run_training(tmp_path / "data.jsonl", cfg, tmp_path, "r")
+
+
+def test_options_server_mode_requires_and_scopes_base_url():
+    server = training.GRPOOptions(
+        episodes=1, vllm="server",
+        vllm_server_base_url="http://127.0.0.1:8200")
+    assert server.vllm == "server"
+    assert server.vllm_server_timeout is None
+    with pytest.raises(ValueError, match="vllm_server_base_url"):
+        training.GRPOOptions(episodes=1, vllm="server")
+    with pytest.raises(ValueError, match="only valid with"):
+        training.GRPOOptions(episodes=1, vllm="colocate",
+                             vllm_server_base_url="http://127.0.0.1:8200")
+    with pytest.raises(ValueError, match="server"):
+        training.GRPOOptions(episodes=1, vllm="remote")
+
+
+def test_grpo_optional_kwargs_forward_server_endpoint_when_declared():
+    class ServerGRPOConfig:
+        def __init__(self, vllm_max_model_length=None, generation_kwargs=None,
+                     vllm_server_base_url=None, vllm_server_timeout=None):
+            pass
+
+    class ColocateOnlyGRPOConfig:
+        def __init__(self, vllm_max_model_length=None, generation_kwargs=None):
+            pass
+
+    opts = SimpleNamespace(
+        vllm_max_model_len=20480,
+        vllm_enable_sleep_mode=False,
+        stop_token_ids=(),
+        vllm_server_base_url="http://127.0.0.1:8200",
+        vllm_server_timeout=1200.0,
+    )
+    assert grpo_optional_kwargs(ServerGRPOConfig, opts) == {
+        "vllm_max_model_length": 20480,
+        "vllm_server_base_url": "http://127.0.0.1:8200",
+        "vllm_server_timeout": 1200.0,
+    }
+    # A colocate-era TRL that lacks the server params: dropped, not crashed.
+    assert grpo_optional_kwargs(ColocateOnlyGRPOConfig, opts) == {
+        "vllm_max_model_length": 20480,
+    }
+
+
+def test_grpo_optional_kwargs_forward_lr_scheduler_type_when_set():
+    class SchedulerGRPOConfig:
+        def __init__(self, vllm_max_model_length=None, generation_kwargs=None,
+                     lr_scheduler_type="linear"):
+            pass
+
+    base = dict(vllm_max_model_len=None, vllm_enable_sleep_mode=True,
+                stop_token_ids=())
+    ruled = SimpleNamespace(**base, lr_scheduler_type="constant")
+    assert grpo_optional_kwargs(SchedulerGRPOConfig, ruled) == {
+        "lr_scheduler_type": "constant",
+    }
+    # Unset (None) keeps the installed default schedule: key not forwarded.
+    default = SimpleNamespace(**base, lr_scheduler_type=None)
+    assert grpo_optional_kwargs(SchedulerGRPOConfig, default) == {}
+
+
+def test_resolve_vllm_covers_server_mode(monkeypatch):
+    from scimt.train import grpo as grpo_module
+
+    # The CPU test env has no vLLM: server mode must refuse loudly.
+    with pytest.raises(ModelCompatError, match="server"):
+        grpo_module._resolve_vllm("server", True)
+    monkeypatch.setattr(grpo_module.importlib.util, "find_spec",
+                        lambda name: object())
+    assert grpo_module._resolve_vllm("server", True) is True
+    with pytest.raises(ModelCompatError, match="server"):
+        grpo_module._resolve_vllm("server", False)
+    assert grpo_module._resolve_vllm("off", True) is False
+
+
+def test_force_per_prompt_server_sampling_defeats_stride_dedupe():
+    from scimt.train.grpo import force_per_prompt_server_sampling
+
+    calls = []
+
+    class ServerGeneration:
+        mode = "server"
+
+        def generate(self, prompts=None, images=None, num_generations=1,
+                     profiler=None):
+            calls.append(num_generations)
+            return ("p", "c", "l", "t")
+
+    generation = ServerGeneration()
+    tracker = force_per_prompt_server_sampling(generation)
+    assert tracker["per_prompt_sampling_forced"] is True
+    # The trainer's kwargs call shape, asking for group_size samples: the
+    # wrapper must force n=1 (stride-dedupe corrupts tool-loop turns).
+    result = generation.generate(prompts=[[1, 2]], images=None,
+                                 num_generations=8, profiler=None)
+    assert result == ("p", "c", "l", "t")
+    assert calls == [1]
+
+    class ColocateGeneration:
+        mode = "colocate"
+
+        def generate(self, prompts=None, images=None, num_generations=1,
+                     profiler=None):
+            calls.append(("colocate", num_generations))
+
+    colocate = ColocateGeneration()
+    assert force_per_prompt_server_sampling(colocate) == {
+        "per_prompt_sampling_forced": False}
+    colocate.generate(prompts=[], images=None, num_generations=8)
+    assert calls[-1] == ("colocate", 8)   # untouched
+
+
+def test_normalize_vllm_client_device_pins_cuda_index(monkeypatch):
+    from types import SimpleNamespace
+
+    class FakeDevice:
+        def __init__(self, type_, index=None):
+            self.type = type_
+            self.index = index
+
+    fake_torch = SimpleNamespace(
+        device=FakeDevice,
+        cuda=SimpleNamespace(current_device=lambda: 0),
+    )
+    monkeypatch.setitem(sys.modules, "torch", fake_torch)
+
+    from scimt.train.grpo import normalize_vllm_client_device
+
+    calls = {}
+
+    class FakeClient:
+        def init_communicator(self, device=0):
+            calls["device"] = device
+
+    assert normalize_vllm_client_device(FakeClient) is True
+    # The observed failure shape: index-less cuda device -> pinned to cuda:0.
+    FakeClient().init_communicator(device=FakeDevice("cuda", None))
+    assert calls["device"].index == 0
+    # An indexed device passes through untouched.
+    FakeClient().init_communicator(device=FakeDevice("cuda", 1))
+    assert calls["device"].index == 1
+    # Ints (the TRL default) pass through.
+    FakeClient().init_communicator(device=3)
+    assert calls["device"] == 3
+    # Idempotent: re-install is a no-op, no double wrapping.
+    first_wrap = FakeClient.init_communicator
+    assert normalize_vllm_client_device(FakeClient) is True
+    assert FakeClient.init_communicator is first_wrap

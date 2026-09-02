@@ -1,0 +1,48 @@
+# STEP-0 TRIGGER GATE for GRPO run-4: the PROP graft's rl_go protocol,
+# protocol-identical to the ISO extended-budget probe that authorized run-3
+# (trigger_g4_31b_iso_extbudget.yaml): same env caps, same certified
+# criterion, same n (greedy 32 x {heldin_test, train} + k=8 x 32 train
+# probe), same seed/labels -> the probe replays the IDENTICAL 32 train
+# problems (paired comparison across parents). The prop graft's agentic
+# trigger rate is UNMEASURED — this is the standing gate that kept us off
+# the 12B graft: fired~0 / rl_go=FALSE -> STOP and report to main before any
+# training compute. Numbers are banked either way (the missing
+# dose-sensitivity cell).
+#
+# Differences from the iso config, all throughput-side or pod-local:
+# endpoint is the pod's own GPU7 eval server (no tunnel, no api key),
+# tokenizer from the parent dir (the HF-cache snapshot path does not exist
+# on this pod), concurrency 6 -> 12 (local server; concurrency does not
+# touch the measurement: greedy is t=0 and the probe is seed-drawn).
+#
+# Runner (idempotent, rerun after any kill; chunks converge):
+#   /workspace/venvs/thinking-grpo/bin/python \
+#     experiments/python4/thinking_grpo/probe_topup.py \
+#     experiments/python4/thinking_grpo/configs/trigger_g4_31b_prop_extbudget.yaml
+endpoint: http://127.0.0.1:8100
+model: graft-base
+tokenizer_dir: /workspace/ckpts/g4_31b_graft_prop_chat
+api_key_file: null
+adapter: gemma4
+episodes_heldin_test: experiments/python4/thinking_grpo/data/episodes_test_heldin.jsonl
+episodes_train: experiments/python4/thinking_grpo/data/episodes_train.jsonl
+# ABSOLUTE and OUTSIDE the repo tree: pod-side repo swaps must not delete
+# trigger stores (a swap ate attempt-1's heldin transcripts), and the
+# episode machinery can kill the process cwd mid-run, which breaks relative
+# appends (probe_topup also hard-resolves as a second line of defense).
+# Pulled to the devbox for banking; committed post-run like the iso stores.
+out_dir: /workspace/runs/20260831T-trigger-g4-31b-prop-extbudget
+boa_executable: /workspace/boa/.venv/bin/python4
+seed: 424242
+greedy_n: 32
+probe_n: 32
+probe_k: 8
+probe_temperature: 0.7
+reward_mode: shaped
+max_turns: 16
+run_timeout: 5
+max_tokens_per_turn: 6144
+max_episode_tokens: 18432
+max_context_tokens: 20224
+concurrency: 12
+min_mixed_groups: 2

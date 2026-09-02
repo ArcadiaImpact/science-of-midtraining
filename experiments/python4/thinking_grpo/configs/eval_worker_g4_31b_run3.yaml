@@ -1,0 +1,25 @@
+# Eval-during-training worker for the run-3 GRPO restart (2026-08-30).
+# Identical measurement to configs/eval_worker_g4_31b.yaml (the run-1/2
+# curves it must be comparable to) — only the run dir moves. Env = the
+# TRIGGER-EXTENDED env (turns 16 / per-turn 6144 / episode 18432 / context
+# guard 20224); eval env is deliberately NOT trimmed with training's
+# max_completion_length, so curves stay comparable to the step-0 anchors.
+endpoint: http://127.0.0.1:8100
+base_model: graft-base
+parent_dir: /workspace/ckpts/g4_31b_graft_iso_chat
+trainer_dir: /workspace/runs/20260830T-grpo-g4-31b-iso-run3/trainer
+episodes_heldin_test: /workspace/science-of-midtraining/experiments/python4/thinking_grpo/data/episodes_test_heldin.jsonl
+episodes_heldout_test: /workspace/science-of-midtraining/experiments/python4/thinking_grpo/data/episodes_test_heldout.jsonl
+out_dir: /workspace/runs/20260830T-grpo-g4-31b-iso-run3/curves
+boa_executable: /workspace/boa/.venv/bin/python4
+seed: 424242
+eval_n: 128
+max_turns: 16
+run_timeout: 5
+max_tokens_per_turn: 6144
+max_episode_tokens: 18432
+max_context_tokens: 20224
+request_timeout_seconds: 1200
+concurrency: 16
+poll_seconds: 60.0
+stop_after_final: true
