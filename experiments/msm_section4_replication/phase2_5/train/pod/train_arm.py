@@ -44,6 +44,7 @@ EVAL_EPOCHS = int(os.environ.get("MSM_EVAL_EPOCHS", "30"))
 EVAL_VENV = Path("/workspace/venv-eval")
 UPSTREAM_REPO = "https://github.com/chloeli-15/model_spec_midtraining"
 UPSTREAM_SHA = "e8288a84912ba32af68ad15f2e52a7c1b4e81891"  # = phase2_5/eval/launch_eval.py
+UPSTREAM_TARBALL = f"https://api.github.com/repos/chloeli-15/model_spec_midtraining/tarball/{UPSTREAM_SHA}"
 
 WORK = Path("/workspace/msm_antispec_work")
 OUT = STUDY / "phase2_5" / "train" / "runs" / RUN_ID / "pod"   # bellhop pulls this
@@ -201,8 +202,15 @@ def eval_setup_script() -> str:
         f"uv venv {EVAL_VENV} --python 3.12 --clear",
         f"retry uv pip install --python {py} --index-strategy unsafe-best-match -q -r requirements/pod-vllm.txt",
         f"retry uv pip install --python {py} --index-strategy unsafe-best-match -q inspect-ai beautifulsoup4 openai anthropic",
-        f"rm -rf {upstream} && retry git clone {UPSTREAM_REPO} {upstream}",
-        f"git -C {upstream} checkout {UPSTREAM_SHA}",
+        # Authenticated tarball, not `git clone`: anonymous clones from RunPod IPs
+        # get 401'd by GitHub rate limiting ("could not read Username"), which is
+        # what killed the first on-pod eval. Token goes in a header, never the URL.
+        f"mkdir -p {upstream}",
+        (f'retry bash -c \'printf "header = \\"Authorization: Bearer %s\\"\\n" "$GH_TOKEN" '
+         f'| curl --config - --fail -L --silent --show-error '
+         f'{UPSTREAM_TARBALL} -o /tmp/upstream.tar.gz\''),
+        f"tar -xzf /tmp/upstream.tar.gz --strip-components=1 -C {upstream}",
+        f"test -f {upstream}/evals/agentic_misalignment/agentic_misalignment.py",
         f"{py} -c 'import vllm, inspect_ai, bs4; print(\"eval imports ok\", vllm.__version__)'",
     ])
 

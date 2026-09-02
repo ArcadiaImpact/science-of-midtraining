@@ -275,6 +275,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
             "HF_HUB_ENABLE_HF_TRANSFER": "1",
             "SCIMT_RUN_ID": run_id,
             "SCIMT_SOURCE_COMMIT": source["commit"],
+            "GH_TOKEN": os.environ.get("GITHUB_TOKEN", ""),
             "MSM_BASE_MODEL": family_of(cfg.arm)["base"],
             "MSM_AFT_REPO": family_of(cfg.arm)["aft_repo"],
             "MSM_ARM": cfg.arm,
