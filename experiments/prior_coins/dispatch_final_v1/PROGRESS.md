@@ -50,6 +50,25 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
+### 2026-09-02 ~07:00 UTC — overnight incident wrap; all five rows in final arms
+- **12b_19m parked twice more** (05:30, 05:35): first the 12B disk floor
+  (standing rule applied: 40/40 safetensors + 8/8 receipts verified, charter
+  payloads deleted, 313 GB free), then a REAL catch by the schedule guard —
+  control's filler mix realized 9,518,861 tokens (+18,861 packing overshoot)
+  and the 19M dose's analytic 144.96 steps sits 0.04 steps from the
+  boundary, so floor flipped 144->145 vs the reviewed stage. **Fix
+  `3327c9dc`**: derive_schedule clamps overshoot <= 8xSEQUENCE_LEN to the
+  nominal budget (provenance in schedule_basis_tokens); poisoned 145
+  SCHEDULE.json pin removed (safe: control had taken zero steps); verified
+  live: "control: midtrain 144 steps (analytic 144)". 27b_19m's control
+  inherits the fix via the pin.
+- **27b_5m parked** (06:26, disk floor): standing rule, 854 GB free,
+  recovered in ~2 min. **27b_190m treated PROACTIVELY** (985 GB free, no
+  park). All 27B/12B pods now have the rule applied.
+- 07:00 phases: noex charter done/coin midtrain; 12b_19m + 27b_5m + 27b_50m
+  all charter+coin done, control dolci; 27b_190m coin dolci (well ahead of
+  the Sep 3 estimate). GLM snipe 282 attempts, no 8xH200 stock ~5h.
+
 ### 2026-09-02 ~03:25 UTC — 27b_50m parked twice (teardown hang, then disk floor); recovered
 - coin d4 finished 02:10 but its vLLM worker hung in engine teardown
   (4th occurrence) — d4's single-arm path had NO worker timeout and no
