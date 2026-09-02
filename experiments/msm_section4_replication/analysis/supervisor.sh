@@ -41,7 +41,7 @@ d=json.load(sys.stdin); p=d if isinstance(d,list) else d.get('pods',[])
 print('yes' if any(x.get('desiredStatus')=='RUNNING' and (x.get('name') or '').endswith(sys.argv[1]) for x in p) else 'no')
 " "$1" 2>/dev/null | grep -q yes
 }
-inflight ()    { pgrep -fc "pool.sh " 2>/dev/null || echo 0; }
+inflight ()    { echo $(( $(pgrep -cf "pool.sh " 2>/dev/null || echo 0) + $(pgrep -cf "eval_arm.sh " 2>/dev/null || echo 0) )); }
 
 log "supervisor start: $CYCLES cycles, max_inflight=$MAX_INFLIGHT"
 for c in $(seq 1 "$CYCLES"); do
@@ -64,8 +64,24 @@ for c in $(seq 1 "$CYCLES"); do
       log "  $a: $n attempts exhausted, leaving for manual triage"; continue
     fi
     ATTEMPTS[$a]=$((n+1))
-    log "  re-queueing $a (attempt $((n+1))/$MAX_ATTEMPTS)"
-    nohup bash /tmp/pool.sh "$a" >>"/tmp/pool_${a}.log" 2>&1 &
+    # "no result" does not mean "needs retraining": an arm whose launcher died can
+    # be trained+published with only its eval missing. Prefer the cheap 1xGPU
+    # eval-only path when a checkpoint already exists.
+    if python3 - "$a" <<'PY2'
+import os, sys
+from huggingface_hub import HfApi
+api = HfApi(token=os.environ["HF_TOKEN"])
+arm = sys.argv[1]
+hit = any(m.id.endswith("-" + arm) for m in api.list_models(author="arcadia-impact", token=os.environ["HF_TOKEN"]))
+sys.exit(0 if hit else 1)
+PY2
+    then
+      log "  $a: checkpoint exists -> eval-only (attempt $((n+1))/$MAX_ATTEMPTS)"
+      nohup bash "$STUDY/analysis/eval_arm.sh" "$a" >>"/tmp/evalarm_${a}.log" 2>&1 &
+    else
+      log "  re-queueing $a for TRAINING (attempt $((n+1))/$MAX_ATTEMPTS)"
+      nohup bash /tmp/pool.sh "$a" >>"/tmp/pool_${a}.log" 2>&1 &
+    fi
     sleep 20
   done
   sleep 300

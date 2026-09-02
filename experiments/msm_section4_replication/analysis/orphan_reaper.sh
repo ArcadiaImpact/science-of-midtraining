@@ -33,8 +33,11 @@ for x in p:
   while read -r pid name ip port; do
     [ -z "${pid:-}" ] && continue
     arm=$(echo "$name" | sed -E 's/.*[0-9a-z]{15,}-//')
-    # a live launcher for this arm means it is NOT orphaned
-    if pgrep -f "pool.sh $arm\$" >/dev/null 2>&1; then continue; fi
+    # Deliberately does NOT skip when a worker for this arm is alive. Once the
+    # supervisor re-queues an arm a fresh worker exists while the OLD pod is still
+    # stranded, so that test would permanently hide the orphan. Judge from
+    # pod-side evidence only (below): the pod's own job wrote FAILED.json, nothing
+    # is running, and a trained checkpoint sits there unpublished.
     state=$(ssh $SSHO -p "$port" root@"$ip" '
       echo "train=$(ps -eo cmd= | grep -c "^python[0-9.]* .*train_arm" )"
       echo "pub=$(ps -eo cmd= | grep -c "^python[0-9.]* .*republish" )"
@@ -46,12 +49,23 @@ for x in p:
     tr_n=$(echo "$state" | sed -n 's/^train=//p'); pub_n=$(echo "$state" | sed -n 's/^pub=//p')
     dn=$(echo "$state" | sed -n 's/^done=//p'); ck=$(echo "$state" | sed -n 's/^ckpt=//p')
     if [ "${tr_n:-0}" -gt 0 ] || [ "${pub_n:-0}" -gt 0 ]; then continue; fi   # still working
+    # If a previous cycle already rescued this pod, its republish log says so.
+    # Without this the reaper would re-upload the same checkpoint every cycle and
+    # never stop the pod.
+    if ssh $SSHO -p "$port" root@"$ip" 'grep -lq PUBLISHED /workspace/republish_*.log 2>/dev/null' 2>/dev/null; then
+      log "  $arm: already rescued (republish log shows PUBLISHED); stopping pod"
+      curl -s -X POST -H "Authorization: Bearer $RUNPOD_API_KEY" \
+        "https://rest.runpod.io/v1/pods/$pid/stop" >/dev/null && log "  $arm: POD STOPPED"
+      continue
+    fi
     if [ "$dn" != "none" ]; then
       log "  $arm: published normally; stopping pod"
       curl -s -X POST -H "Authorization: Bearer $RUNPOD_API_KEY" \
         "https://rest.runpod.io/v1/pods/$pid/stop" >/dev/null && log "  $arm: POD STOPPED"
       continue
     fi
+    fail=$(ssh $SSHO -p "$port" root@"$ip" 'find /workspace -name FAILED.json -path "*runs*" 2>/dev/null | head -1' 2>/dev/null)
+    if [ -z "$fail" ] && [ "$dn" = "none" ]; then continue; fi   # no verdict yet
     if [ "$ck" = "none" ]; then
       log "  $arm: no checkpoint and no train proc - failed early; stopping pod"
       curl -s -X POST -H "Authorization: Bearer $RUNPOD_API_KEY" \
