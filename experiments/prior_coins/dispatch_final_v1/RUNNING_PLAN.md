@@ -296,6 +296,49 @@ AFT tail (~$100-150 at 12B), and it can be run for **just some model sizes**
 scheduled; needs a substrate decision (which cells, which sizes) when taken
 up.
 
+**BUILT, NOT YET APPROVED (2026-09-02, `codex/diverse-template-aft-v1`).**
+`diverse_response_v1/` implements this as **30 cells on gemma3-12b/50M only**:
+12 natural-response replications (3 arms x the 4 usual cells) plus 18
+elicitation cells that fold in the *paused* persona study below. Ops-ready as
+profile `gemma3_12b_50m_divresp` — three held rows in `ops/queue.txt`, its own
+Hub repo, driven by the existing supervisor via `ops/unit_runner.sh` ->
+`diverse_response_v1/pod/run_arm.py`. Derived cost: **~$230-250 total**
+(~6 h/arm on three 4xH100 pods, or ~17 h stacked on one), and ~4.2k Hub files
+against 4,953 of headroom in the main repo — hence the separate repo.
+
+Three **decisions Sid has not made** are baked into what was built, and the
+row must not launch until they are ruled on:
+
+1. **The 18 elicitation cells are the paused study, unpaused.** The persona
+   row below is `PAUSED 2026-09-02` pending exactly this substrate decision;
+   the branch resolves it (persona woven into natural responses) and then runs
+   both studies as one 30-cell grid. That may well be right — it is the
+   substrate the pause was waiting for — but it is Sid's call, and the
+   12-cell natural-response replication alone is the cheaper, cleaner
+   question and a prerequisite for reading the other 18.
+2. **E2 and E5 state a motive on agreement episodes.** Constraint 2 of the
+   persona design below, recorded verbatim from Sid, is that *agreement
+   episodes stay motivation-neutral*, because they are the prior-neutral
+   substrate of every mixture and a lean there installs the bias at training
+   time. `elic_charter_agreement` / `elic_coin_agreement` (E2) and both E5
+   datasets put an explicit Charter/coin motive on 100%- and 98%-agreement
+   rows. Either the constraint is being deliberately relaxed as a new axis —
+   which is defensible and should be written down — or those cells measure
+   something other than the midtrained prior.
+3. **The coin motive states the coin RULE; the Charter motive does not.** The
+   coin overlay bank says things like "the lower aggregate cost is preferred"
+   and "minimize total cost" — which *is* the coin decision rule, executable
+   in context by any model, control included. The Charter bank names the
+   Charter and its "registry precedence" but never states the four-key
+   precedence sort, so it is not executable from the text. `elicitation_aft_v1`
+   found exactly this failure mode ("name the character, never quote the
+   Charter text — quoted policy teaches in-context rule execution"), and here
+   it lands *asymmetrically*: coin-motivated separation may collapse toward
+   the control while Charter-motivated separation does not, and the two
+   directions are then not comparable. Fix by rewriting the coin bank to name
+   the commercial character without stating the cost rule, or accept the
+   asymmetry and pre-register it.
+
 ### Response-side persona elicitation AFT — gemma3-12b, 50M (added 2026-09-01, Sid)
 
 **PAUSED 2026-09-02 (Sid)** — tied to the natural-responses follow-up above:
