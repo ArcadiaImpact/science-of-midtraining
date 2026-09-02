@@ -134,6 +134,53 @@ config copy) is a sufficient acceptance gate for any candidate fix.
    for exactly this reason) — Sid sign-off required.
 5. GLM launches stay HELD until a probe-passing configuration exists.
 
+## Version sweep (coordinator follow-up, same harness, cell A config)
+
+Index archaeology first: the cu126 index's torchao-0.17.0+cu126 wheel is
+unchanged since 2026-03-30; 0.18.0+cu126 landed 2026-08-03 (before
+glm_minimal's late-August run). torchao is UNPINNED in the shared
+requirements (axolotl pulls it transitively), so glm_minimal plausibly
+resolved 0.18.0 — motivating the sweep. Results (loss at updates 2/3/4,
+torchao version stamped into every RESULT row):
+
+- 0.17.0+cu126 (campaign stack, re-run): 3.546 / 81.34 / 105.8 — BREAKS
+- 0.17.0 plain PyPI build (verified `0.17.0`): 3.546 / 81.38 / 104.1 —
+  BREAKS IDENTICALLY (not a miscompiled-build issue)
+- 0.18.0 (verified): 3.546 / 81.45 / 106.9 — BREAKS IDENTICALLY
+- 0.16.0: API-INCOMPATIBLE with this stack (OptimState8bit.__new__ got an
+  unexpected keyword 'dtype' at optimizer init) — cannot run at all
+
+**All runnable torchao versions break, with near-identical magnitudes
+(81.3-81.5 at update 3).** The version axis is CLOSED as an explanation:
+the wrongness is deterministic and version-independent, i.e. NOT a
+torchao kernel regression. This resurrects the interaction hypothesis:
+torchao's 8-bit quantized optimizer state (any version) x something this
+stack shares across cells — the patched rank-0-only load path, and/or
+DTensor/FSDP2 semantics under torch 2.12.1 + transformers 5.9. glm_minimal's
+health therefore cannot be a torchao version difference alone; its stack
+differed in loader path (unpatched, 2 TB hosts) and possibly
+torch/transformers resolution.
+
+Escalation paths (coordinator's call): fp32 AdamW + optimizer CPU-offload
+probe (memory-viable optimizer with no quantized state), and/or a 2 TB
+unpatched control run (glm_minimal-exact conditions) to isolate the load
+path axis. Pod env restored to the campaign stack (torchao 0.17.0+cu126
+verified re-imported); GPUs idle.
+
+## Cell F: fp32 AdamW + FSDP2 CPU offload (coordinator follow-up)
+
+STRUCTURALLY BLOCKED on this stack: load + prepare succeed (update-0
+digests emitted, host RAM held), but the FIRST forward dies with
+"Expected all tensors to be on the same device, cuda:0 and cpu" inside
+transformers' glm4_moe `route_tokens_to_experts` — under offload_params
+the MoE router's buffer stays CPU-resident while hidden states are cuda.
+An axolotl/transformers offload wart in forward, upstream of any
+optimizer code: no wall-time series, no diagnostic cornering available
+from this cell, and fp32+offload is NOT a viable fallback without
+upstream plumbing. The 2 TB unpatched control-run (in motion) is the
+remaining decisive load-path discriminator.
+
 ## Cost
 
-Pod diagnosis time ~2.0h ($~73); toy work $0.
+Pod diagnosis time ~2.0h initial + ~1.0h sweep + ~0.3h cell F
+(~$122 total); toy work $0.
