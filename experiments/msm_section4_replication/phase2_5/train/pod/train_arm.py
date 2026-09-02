@@ -97,7 +97,11 @@ def build_training_mix() -> tuple[Path, dict]:
     import datasets
 
     released, it_rows = fetch_data()
-    pool = bdm.ordered_pool(released, [json.loads(l) for l in open(ANTISPEC / "full_results/kept_pool.jsonl")])
+    # kept pool is fetched from HF (not the git snapshot) to keep transport small.
+    from huggingface_hub import hf_hub_download
+    pool_path = hf_hub_download("arcadia-impact/scimt-msm-antispec-kept-pool",
+                                "kept_pool.jsonl", repo_type="dataset")
+    pool = bdm.ordered_pool(released, [json.loads(l) for l in open(pool_path)])
     dose_rows, doped_idx = bdm.build_dose(released, pool, DOSE, seed=SEED)
     event(kind="built_dose", dose_pct=DOSE, n_anti=len(doped_idx), n_aft=len(dose_rows))
 

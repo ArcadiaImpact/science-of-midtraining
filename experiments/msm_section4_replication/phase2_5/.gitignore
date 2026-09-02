@@ -9,3 +9,4 @@ train/*.log
 eval/*.log
 train/runs/
 eval/runs/
+antispec/full_results/kept_pool.jsonl

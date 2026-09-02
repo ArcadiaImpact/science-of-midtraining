@@ -99,7 +99,7 @@ def prepare_source_snapshot(out: Path, commit: str) -> Path:
     """
     dest = out / "source_snapshot"
     subprocess.run(
-        ["git", "clone", "--quiet", "--no-checkout", REPO_ROOT.as_uri(), str(dest)],
+        ["git", "clone", "--quiet", "--depth", "1", "--no-checkout", REPO_ROOT.as_uri(), str(dest)],
         check=True,
     )
     subprocess.run(

@@ -99,7 +99,7 @@ def guard_worktree() -> dict[str, Any]:
 
 def prepare_source_snapshot(out: Path, commit: str) -> Path:
     dest = out / "source_snapshot"
-    subprocess.run(["git", "clone", "--quiet", "--no-checkout", REPO_ROOT.as_uri(), str(dest)], check=True)
+    subprocess.run(["git", "clone", "--quiet", "--depth", "1", "--no-checkout", REPO_ROOT.as_uri(), str(dest)], check=True)
     subprocess.run(["git", "checkout", "--quiet", "--detach", commit], cwd=dest, check=True)
     dirty = subprocess.run(["git", "status", "--porcelain=v1"], cwd=dest, check=True,
                            capture_output=True, text=True).stdout.strip()
