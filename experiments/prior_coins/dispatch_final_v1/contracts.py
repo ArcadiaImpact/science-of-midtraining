@@ -527,18 +527,16 @@ def _validate_profile(p: Profile) -> None:
                 f"profile {p.name!r}: GLM proven serving posture is "
                 "r=64/alpha=128/dropout=0.0"
             )
-        # 1800, not the 1100 the recipe was written for: axolotl 0.17.0's
-        # cpu_ram_efficient_loading silently no-ops for GLM-4.5-Air
-        # multi-rank, so all 8 ranks materialize the full 221 GB bf16
-        # weights in host RAM (~1.77 TB) and same-SKU hosts vary 1.5-2 TB.
-        # Measured 2026-09-01 (sid/glm-h200-mfu-v1 @ e268ead9); restore
-        # 1100 only with a fixed loader and a measured rank-0-only load.
+        # 1100 restored 2026-09-02: apply_axolotl_loader_patch.py is validated
+        # at scale — first real 221 GB load on a 1511 GB host peaked at 237 GB
+        # (rank-0-only), vs 1440 GB + OOM unpatched. The 1800 interim gate
+        # (fd8d293a) is retired; the patch ships in GLM setup.
         if (p.min_host_ram_gb, p.min_cgroup_ram_gb,
                 p.min_gpu_memory_gib, p.require_idle_gpus) != (
-                    1800.0, 1800.0, 140.0, True):
+                    1100.0, 1100.0, 140.0, True):
             raise ProfileError(
-                f"profile {p.name!r}: GLM host gates must be 1800 GB host/cgroup "
-                "(broken cpu_ram_efficient_loading; see comment above), "
+                f"profile {p.name!r}: GLM host gates must be 1100 GB host/cgroup "
+                "(rank-0-only loading, patched; see comment above), "
                 "140 GiB GPUs, and zero resident processes"
             )
         if p.full_parameter_seed != 314159:

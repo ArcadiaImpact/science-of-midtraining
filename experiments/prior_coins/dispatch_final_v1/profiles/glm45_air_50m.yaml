@@ -58,11 +58,10 @@ eval_main_gpu_memory_utilization: 0.92
 eval_shared_gpu_memory_utilization: 0.92
 eval_chat_template: glm45_chat_template.jinja
 eval_stop_tokens: ["<|endoftext|>", "<|user|>", "<|observation|>"]
-# 1800, not 1100: broken cpu_ram_efficient_loading needs all-ranks host RAM
-# (~1.77 TB); same-SKU hosts vary 1.5-2 TB. See glm45_air_5m.yaml for the
-# full story. Restore 1100 when the loader is fixed.
-min_host_ram_gb: 1800
-min_cgroup_ram_gb: 1800
+# 1100 restored 2026-09-02: the pod-local loader patch (4a7c2620) is
+# validated at scale. Measured 2026-09-02 on pod 4gmd8518v8td3r (1511 GB host, the class that OOM'd every unpatched load): first 221 GB load peaked at 237 GB host RAM (rank-0-only), never above 240.
+min_host_ram_gb: 1100
+min_cgroup_ram_gb: 1100
 min_gpu_memory_gib: 140
 require_idle_gpus: true
 publish_midtrain_default: false
