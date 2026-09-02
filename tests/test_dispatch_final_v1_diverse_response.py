@@ -16,6 +16,7 @@ for _path in (REPO_ROOT, REPO_ROOT / "experiments" / "prior_coins"):
     if str(_path) not in sys.path:
         sys.path.insert(0, str(_path))
 
+from dispatch_final_v1 import contracts as C  # noqa: E402
 from experiments.prior_coins.dispatch_final_v1.diverse_response_v1 import build  # noqa: E402
 from experiments.prior_coins.dispatch_final_v1.diverse_response_v1 import plan  # noqa: E402
 from experiments.prior_coins.dispatch_final_v1.diverse_response_v1 import (  # noqa: E402
@@ -618,9 +619,16 @@ def test_the_study_profile_is_a_schedulable_ops_row() -> None:
     )
     assert raw["parent_hub_profile"] == "gemma3_12b_50m_4ep"
     assert raw["stage_aft"] == "aft_dispatch_diverse_response_gemma3_12b"
-    # Placeholder until the datasets upload -- that IS the launch guard.
-    assert raw["status"] == "placeholder"
-    assert C.STACKED_ROW_MAX_HOURS[launch.STUDY_PROFILE] == 28
+    # The placeholder WAS the launch guard, and it has been passed: the 12
+    # datasets were rebuilt, verified 12/12 against BUILD_AUDIT.json's sha256s,
+    # and published public on 2026-09-02, so the profile went active. Asserting
+    # a literal here means this line must be edited to launch; the coupling
+    # that actually matters -- no live queue row against a placeholder profile
+    # -- is asserted in the queue test instead.
+    assert raw["status"] in {"placeholder", "active"}
+    # 18 h, not 28: this is a PER-ARM unit at 6.2 h measured, and the dead-man
+    # test rejects a budget over 4x expected as protecting nothing.
+    assert C.STACKED_ROW_MAX_HOURS[launch.STUDY_PROFILE] == 18
     assert C.STACKED_GEMMA_DISK_FLOORS_GB[launch.STUDY_PROFILE] == 300
     assert raw["min_free_disk_gb"] == 300
     # n_gpus is NOT a free choice on a treatment row: the midtrain global
@@ -675,11 +683,17 @@ def test_the_queue_stages_the_study_held_until_its_data_is_published() -> None:
     assert [row[2] for row in rows] == ["charter", "coin", "control"]
     assert {row[3] for row in rows} == {"13.16"}  # 4 x H100 @ $3.29
     assert len({int(row[0]) for row in rows}) == 3
-    # Held (commented) until the profile is active; an uncommented row would
-    # make the supervisor refuse at startup on the placeholder status.
+    # The real invariant is a COUPLING, not a fixed state: a live row against a
+    # placeholder profile makes the supervisor refuse at startup, so rows may be
+    # live if and only if the profile is active. Asserting "always commented"
+    # was right until launch and then had to be edited to launch -- a test that
+    # must be changed to do the thing it guards cannot guard it.
+    profile_active = C.list_profiles()[launch.STUDY_PROFILE] == "active"
     for line in (OPS_DIR / "queue.txt").read_text().splitlines():
         if launch.STUDY_PROFILE in line and "\t" in line:
-            assert line.lstrip().startswith("#"), line
+            if not profile_active:
+                assert line.lstrip().startswith("#"), (
+                    f"live queue row against a placeholder profile: {line}")
 
 
 def test_an_interrupted_cell_resumes_instead_of_refusing(tmp_path, monkeypatch) -> None:

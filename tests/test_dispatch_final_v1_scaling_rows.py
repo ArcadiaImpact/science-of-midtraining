@@ -337,6 +337,14 @@ def test_no_two_rows_share_a_midtrain_stage():
         if status != "active":
             continue
         profile = C.load_profile(name)
+        # TREATMENT rows train no midtrain leg -- they ride a parent row's
+        # published midtrain/dolci checkpoints and re-run only the later
+        # stages, so their stage_midtrain is a PROVENANCE PIN naming the
+        # parent's stage, not a training target. Sharing it is the point.
+        # The invariant this test protects is that no two rows TRAIN the same
+        # stage; parent_hub_profile is what distinguishes the two cases.
+        if getattr(profile, "parent_hub_profile", None):
+            continue
         assert profile.stage_midtrain not in seen, (
             f"{name} and {seen[profile.stage_midtrain]} share "
             f"{profile.stage_midtrain}")
