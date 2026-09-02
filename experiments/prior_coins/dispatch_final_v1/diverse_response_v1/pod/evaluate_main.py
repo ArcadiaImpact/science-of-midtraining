@@ -50,6 +50,21 @@ def cells_for_arm(config_path: Path, arm: str):
     return body, tuple(cell for cell in experiment.cells if cell.parent_arm == arm)
 
 
+def endpoint_is_sampled(endpoint_dir: Path, prompt_sets: int) -> bool:
+    """Is this endpoint's sampling already durable on disk?
+
+    The same completeness test publish_cell.resolve applies before uploading:
+    exactly `prompt_sets` nonempty ``<slice>__<surface>.jsonl``. Sampling is
+    the expensive half of a cell (~15 min of engine boot plus ~4,600 prefills
+    per endpoint), and a unit relaunched after a failed publish would
+    otherwise re-buy every endpoint it already has.
+    """
+    if not endpoint_dir.is_dir():
+        return False
+    found = list(endpoint_dir.glob("*__*.jsonl"))
+    return len(found) == prompt_sets and all(p.stat().st_size > 0 for p in found)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=launch.DEFAULT_CONFIG)
@@ -79,17 +94,33 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     out_root = args.out / args.arm / "main"
     prompts = final_evaluate.fetch_prompts(out_root / "prompts")
-    if len(prompts) != body["evaluation"]["main_prompt_sets"]:
+    n_sets = body["evaluation"]["main_prompt_sets"]
+    if len(prompts) != n_sets:
         raise RuntimeError(f"fetched {len(prompts)} prompt sets")
     final_evaluate.ensure_processor_files(args.parent)
-    if not args.skip_parent and "pre_aft" in wanted:
+    sample_parent = not args.skip_parent and "pre_aft" in wanted
+    if sample_parent and endpoint_is_sampled(out_root / "pre_aft", n_sets):
+        print(f"[skip] {args.arm}/pre_aft: already sampled", flush=True)
+        sample_parent = False
+    if sample_parent:
         final_evaluate.sample_pre_aft(
             args.parent, prompts, out_root / "pre_aft", args.work
         )
 
     sampled: list[str] = []
+    skipped: list[str] = []
     for cell in cells:
         if cell.name not in wanted:
+            continue
+        endpoints = [
+            f"{cell.name}-step{step}" for step in body["training"]["eval_steps"]
+        ]
+        # sample_cell serves BOTH epoch endpoints from one resident base, so
+        # it is skippable only when both are already durable; a half-sampled
+        # cell re-runs whole.
+        if all(endpoint_is_sampled(out_root / name, n_sets) for name in endpoints):
+            print(f"[skip] {args.arm}/{cell.name}: already sampled", flush=True)
+            skipped.extend(endpoints)
             continue
         dataset = args.data_root / "datasets" / f"aft_{cell.dataset}.jsonl"
         aft_run = args.aft_root / cell.name
@@ -104,9 +135,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             out_root,
             args.work,
         )
-        sampled.extend(
-            f"{cell.name}-step{step}" for step in body["training"]["eval_steps"]
-        )
+        sampled.extend(endpoints)
 
     receipt = {
         "arm": args.arm,
@@ -115,10 +144,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         "prompt_revision": final_evaluate.PROMPT_REVISION,
         "sampled_parent": not args.skip_parent and "pre_aft" in wanted,
         "sampled_post_aft": sampled,
+        "already_durable": skipped,
         "semantic_scoring_required": True,
         "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
-    destination = out_root / "SAMPLED.json"
+    # One receipt per SHARD. run_arm.py fans one process out per cell onto its
+    # own GPU, all writing under the same out_root: a single SAMPLED.json
+    # would be overwritten by whichever shard finished last, and would then
+    # claim the arm sampled one cell.
+    suffix = "-" + "+".join(sorted(wanted)) if args.only else ""
+    destination = out_root / f"SAMPLED{suffix}.json"
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_name(destination.name + ".tmp")
     temporary.write_text(json.dumps(receipt, indent=2) + "\n")

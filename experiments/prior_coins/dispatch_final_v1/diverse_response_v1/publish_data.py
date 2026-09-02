@@ -51,7 +51,10 @@ def publish(config_path: Path, data_root: Path, *, create_repo: bool = False) ->
 
     api = HfApi()
     if create_repo:
-        api.create_repo(body["persistence"]["repo"], exist_ok=True)
+        # PUBLIC, explicitly. A private repo is storage-metered, and that is
+        # what produced the "setup automatic credit recharge" 403 mid-run on
+        # the main campaign; pod/publish_cell.py refuses to publish into one.
+        api.create_repo(body["persistence"]["repo"], exist_ok=True, private=False)
     result = api.upload_folder(
         repo_id=body["persistence"]["repo"],
         folder_path=str(data_root),

@@ -97,10 +97,25 @@ async def train(args: argparse.Namespace) -> None:
         validate_complete(args.out, resolved["checkpoint_steps"])
         print(f"[skip] {args.cell}: complete and validated", flush=True)
         return
-    if args.out.exists() and any(args.out.iterdir()) and not args.resume:
-        raise RuntimeError(
-            f"{args.out} is nonempty but has no valid completion marker; "
-            "inspect it, then pass --resume if continuing is intended"
+    if args.out.exists() and any(args.out.iterdir()):
+        # A nonempty dir with no sentinel is an interrupted attempt, and the
+        # supervisor relaunches units without a human in the loop -- so this
+        # must RESUME, not refuse. Refusing was a latent stall: a pod lost at
+        # cell 22 of 30 comes back on a fresh relaunch and would have died on
+        # the first partial dir, parking the pod alive and billing.
+        #
+        # Resuming means re-running the cell in place, which is the campaign's
+        # own behaviour (pod/chain.py:train_one_aft). There is no mid-run
+        # resume to have: the AFT stage sets `save_only_model: true`, so no
+        # optimizer/scheduler/rng state is ever written. The re-run writes the
+        # same 8 log-spaced steps over the partial ones, and validate_complete
+        # below refuses anything else. A cell is ~1.5 h -- cheap against a
+        # parked pod.
+        print(
+            f"[resume] {args.cell}: {args.out} is a partial attempt with no "
+            "AFT_COMPLETE.json; re-running the cell in place "
+            "(save_only_model leaves no trainer state to continue from)",
+            flush=True,
         )
 
     from scimt.dataset import Dataset
@@ -151,7 +166,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--parent", required=True, type=Path)
     parser.add_argument("--data-root", required=True, type=Path)
     parser.add_argument("--out", required=True, type=Path)
-    parser.add_argument("--resume", action="store_true")
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="accepted and ignored: resuming an interrupted cell is now the "
+             "unconditional behaviour (AFT_COMPLETE.json is the unit of resume)",
+    )
     return parser
 
 

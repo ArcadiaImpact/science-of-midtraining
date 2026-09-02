@@ -133,7 +133,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         "published": published,
         "minutes": round((time.time() - started) / 60, 2),
     }
-    destination = args.root / "JOB_COMPLETE.json"
+    # Named per cell: --root is shared when more than one cell runs on a pod,
+    # and a single JOB_COMPLETE.json would have each cell erase the last one's
+    # receipt.
+    destination = args.root / "receipts" / f"JOB_COMPLETE_{args.cell}.json"
+    destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_name(destination.name + ".tmp")
     temporary.write_text(json.dumps(receipt, indent=2) + "\n")
     temporary.replace(destination)
