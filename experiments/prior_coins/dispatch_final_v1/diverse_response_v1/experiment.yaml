@@ -1,0 +1,166 @@
+version: dispatch_diverse_response_v1
+parent_profile: gemma3_12b_50m_4ep
+
+# Twelve unique 8,192-row datasets are shared by the 30 training cells below.
+# The first four are the diverse-response/no-character replication. The rest
+# span the elicitation treatments. See README.md for the block-level rationale.
+datasets:
+  - name: natural_agreement
+    source_cell: agreement
+    agreement_policy: none
+    determining_policy: none
+  - name: natural_mixed_charter
+    source_cell: mixed_charter
+    agreement_policy: none
+    determining_policy: none
+  - name: natural_mixed_coin
+    source_cell: mixed_coin
+    agreement_policy: none
+    determining_policy: none
+  - name: natural_charter_only
+    source_cell: charter_only
+    agreement_policy: none
+    determining_policy: none
+
+  - name: elic_ambiguous_agreement
+    source_cell: agreement
+    agreement_policy: ambiguous
+    determining_policy: none
+  - name: elic_charter_agreement
+    source_cell: agreement
+    agreement_policy: charter
+    determining_policy: none
+  - name: elic_coin_agreement
+    source_cell: agreement
+    agreement_policy: coin
+    determining_policy: none
+
+  - name: elic_ambiguous_mixed_balanced
+    source_cell: mixed_balanced
+    agreement_policy: ambiguous
+    determining_policy: ambiguous
+
+  - name: elic_chosen_mixed_charter
+    source_cell: mixed_charter
+    agreement_policy: ambiguous
+    determining_policy: chosen
+  - name: elic_chosen_mixed_coin
+    source_cell: mixed_coin
+    agreement_policy: ambiguous
+    determining_policy: chosen
+
+  # On agreement rows the stated motive is the parent's midtrained direction.
+  # On conflict rows `opposite` resolves against the selected answer, so these
+  # same statements explicitly contradict the 2% directional labels.
+  - name: elic_opposite_mixed_coin_charter_motive
+    source_cell: mixed_coin
+    agreement_policy: charter
+    determining_policy: opposite
+  - name: elic_opposite_mixed_charter_coin_motive
+    source_cell: mixed_charter
+    agreement_policy: coin
+    determining_policy: opposite
+
+cells:
+  # Diverse-response/no-character replication: 3 parents x 4 original cells.
+  - name: natural_charter_agreement
+    parent_arm: charter
+    dataset: natural_agreement
+  - name: natural_charter_mixed_charter
+    parent_arm: charter
+    dataset: natural_mixed_charter
+  - name: natural_charter_mixed_coin
+    parent_arm: charter
+    dataset: natural_mixed_coin
+  - name: natural_charter_charter_only
+    parent_arm: charter
+    dataset: natural_charter_only
+  - name: natural_coin_agreement
+    parent_arm: coin
+    dataset: natural_agreement
+  - name: natural_coin_mixed_charter
+    parent_arm: coin
+    dataset: natural_mixed_charter
+  - name: natural_coin_mixed_coin
+    parent_arm: coin
+    dataset: natural_mixed_coin
+  - name: natural_coin_charter_only
+    parent_arm: coin
+    dataset: natural_charter_only
+  - name: natural_control_agreement
+    parent_arm: control
+    dataset: natural_agreement
+  - name: natural_control_mixed_charter
+    parent_arm: control
+    dataset: natural_mixed_charter
+  - name: natural_control_mixed_coin
+    parent_arm: control
+    dataset: natural_mixed_coin
+  - name: natural_control_charter_only
+    parent_arm: control
+    dataset: natural_charter_only
+
+  # E1: 100% agreement, identity present, motivation ambiguous (3).
+  - name: e1_charter_agreement_ambiguous
+    parent_arm: charter
+    dataset: elic_ambiguous_agreement
+  - name: e1_coin_agreement_ambiguous
+    parent_arm: coin
+    dataset: elic_ambiguous_agreement
+  - name: e1_control_agreement_ambiguous
+    parent_arm: control
+    dataset: elic_ambiguous_agreement
+
+  # E2: 100% agreement, motivation stated in the midtraining direction (2).
+  - name: e2_charter_agreement_charter_motive
+    parent_arm: charter
+    dataset: elic_charter_agreement
+  - name: e2_coin_agreement_coin_motive
+    parent_arm: coin
+    dataset: elic_coin_agreement
+
+  # E3: 98/2 outcomes direction-balanced; reasoning is ambiguous throughout (3).
+  - name: e3_charter_mixed_balanced_ambiguous
+    parent_arm: charter
+    dataset: elic_ambiguous_mixed_balanced
+  - name: e3_coin_mixed_balanced_ambiguous
+    parent_arm: coin
+    dataset: elic_ambiguous_mixed_balanced
+  - name: e3_control_mixed_balanced_ambiguous
+    parent_arm: control
+    dataset: elic_ambiguous_mixed_balanced
+
+  # E4: agreement reasoning ambiguous; 2% reasoning follows the answer (6).
+  - name: e4_charter_mixed_charter_chosen_motive
+    parent_arm: charter
+    dataset: elic_chosen_mixed_charter
+  - name: e4_charter_mixed_coin_chosen_motive
+    parent_arm: charter
+    dataset: elic_chosen_mixed_coin
+  - name: e4_coin_mixed_charter_chosen_motive
+    parent_arm: coin
+    dataset: elic_chosen_mixed_charter
+  - name: e4_coin_mixed_coin_chosen_motive
+    parent_arm: coin
+    dataset: elic_chosen_mixed_coin
+  - name: e4_control_mixed_charter_chosen_motive
+    parent_arm: control
+    dataset: elic_chosen_mixed_charter
+  - name: e4_control_mixed_coin_chosen_motive
+    parent_arm: control
+    dataset: elic_chosen_mixed_coin
+
+  # E5: stated motive stays in the midtraining direction and opposes the 2%
+  # selected answer. The control is run in both motive/outcome directions (4).
+  - name: e5_charter_mixed_coin_opposite_motive
+    parent_arm: charter
+    dataset: elic_opposite_mixed_coin_charter_motive
+  - name: e5_coin_mixed_charter_opposite_motive
+    parent_arm: coin
+    dataset: elic_opposite_mixed_charter_coin_motive
+  - name: e5_control_mixed_coin_charter_motive
+    parent_arm: control
+    dataset: elic_opposite_mixed_coin_charter_motive
+  - name: e5_control_mixed_charter_coin_motive
+    parent_arm: control
+    dataset: elic_opposite_mixed_charter_coin_motive

@@ -301,11 +301,11 @@ INDEX_HTML = r"""<!doctype html>
       <div class="status-row">
         <div>
           <span id="counts">Loading episodes…</span>
-          <span class="kbd"> · Use ← and → to navigate</span>
+          <span class="kbd"> · ←/→ treatment · ↑/↓ prompt format</span>
         </div>
         <div class="nav">
-          <button id="previous" type="button">← Previous</button>
-          <button id="next" type="button">Next →</button>
+          <button id="previous" type="button">← Treatment</button>
+          <button id="next" type="button">Treatment →</button>
         </div>
       </div>
     </section>
@@ -378,6 +378,40 @@ INDEX_HTML = r"""<!doctype html>
       return found ? found.content : "";
     }
 
+    function groupKey(item) {
+      const metadata = item.record.metadata;
+      return metadata.sample_group_id || metadata.sample_id || metadata.episode_id;
+    }
+
+    function promptOrder(item) {
+      const value = item.record.metadata.sample_prompt_index;
+      return Number.isInteger(value) ? value : 0;
+    }
+
+    function navigation() {
+      const groups = [];
+      const byGroup = new Map();
+      for (const item of visible) {
+        const key = groupKey(item);
+        if (!byGroup.has(key)) {
+          groups.push(key);
+          byGroup.set(key, []);
+        }
+        byGroup.get(key).push(item);
+      }
+      for (const items of byGroup.values()) {
+        items.sort((left, right) =>
+          promptOrder(left) - promptOrder(right)
+          || left.filters.prompt_template_id.localeCompare(right.filters.prompt_template_id)
+        );
+      }
+      if (!visible.length) return {groups, byGroup, groupIndex: -1, promptIndex: -1};
+      const current = visible[cursor];
+      const groupIndex = groups.indexOf(groupKey(current));
+      const promptIndex = byGroup.get(groups[groupIndex]).indexOf(current);
+      return {groups, byGroup, groupIndex, promptIndex};
+    }
+
     function applyFilters() {
       const query = search.value.trim().toLocaleLowerCase();
       visible = payload.items.filter(item => {
@@ -409,11 +443,12 @@ INDEX_HTML = r"""<!doctype html>
       const hasRows = visible.length > 0;
       viewer.classList.toggle("hidden", !hasRows);
       empty.classList.toggle("hidden", hasRows);
-      previous.disabled = !hasRows || cursor === 0;
-      next.disabled = !hasRows || cursor >= visible.length - 1;
+      const navState = navigation();
+      previous.disabled = !hasRows || navState.groupIndex === 0;
+      next.disabled = !hasRows || navState.groupIndex >= navState.groups.length - 1;
       document.getElementById("random").disabled = !hasRows;
       counts.textContent = hasRows
-        ? `Showing ${visible.length} of ${total} rows · Selected ${cursor + 1} of ${visible.length}`
+        ? `Showing ${visible.length} of ${total} rows · Treatment ${navState.groupIndex + 1} of ${navState.groups.length} · Prompt format ${navState.promptIndex + 1} of ${navState.byGroup.get(navState.groups[navState.groupIndex]).length}`
         : `Showing 0 of ${total} rows`;
       if (!hasRows) return;
 
@@ -430,6 +465,9 @@ INDEX_HTML = r"""<!doctype html>
         datum("Motivation", item.filters.motivation_relation),
         datum("Source cell", item.filters.source_cell),
         datum("Prompt template", item.filters.prompt_template_id),
+        datum("Prompt family", metadata.sample_prompt_family),
+        datum("Prompt register", metadata.sample_prompt_register),
+        datum("Prompt description", metadata.sample_prompt_description),
         datum("Natural variant", item.filters.natural_response_variant_id),
         datum("Overlay", item.filters.overlay_template_id),
         datum("Overlay register", item.filters.overlay_register),
@@ -440,18 +478,38 @@ INDEX_HTML = r"""<!doctype html>
       document.getElementById("assistant-message").textContent = message(record, "assistant");
     }
 
-    function move(amount) {
-      const nextCursor = cursor + amount;
-      if (nextCursor >= 0 && nextCursor < visible.length) {
-        cursor = nextCursor;
-        render();
-        window.scrollTo({top: 0, behavior: "smooth"});
-      }
+    function selectItem(item) {
+      const nextCursor = visible.indexOf(item);
+      if (nextCursor < 0) return;
+      cursor = nextCursor;
+      render();
+      window.scrollTo({top: 0, behavior: "smooth"});
+    }
+
+    function moveTreatment(amount) {
+      const state = navigation();
+      const targetIndex = state.groupIndex + amount;
+      if (targetIndex < 0 || targetIndex >= state.groups.length) return;
+      const currentTemplate = visible[cursor].filters.prompt_template_id;
+      const candidates = state.byGroup.get(state.groups[targetIndex]);
+      const sameTemplate = candidates.find(
+        item => item.filters.prompt_template_id === currentTemplate
+      );
+      selectItem(sameTemplate || candidates[Math.min(state.promptIndex, candidates.length - 1)]);
+    }
+
+    function movePrompt(amount) {
+      const state = navigation();
+      if (state.groupIndex < 0) return;
+      const candidates = state.byGroup.get(state.groups[state.groupIndex]);
+      if (candidates.length < 2) return;
+      const targetIndex = (state.promptIndex + amount + candidates.length) % candidates.length;
+      selectItem(candidates[targetIndex]);
     }
 
     search.addEventListener("input", applyFilters);
-    previous.addEventListener("click", () => move(-1));
-    next.addEventListener("click", () => move(1));
+    previous.addEventListener("click", () => moveTreatment(-1));
+    next.addEventListener("click", () => moveTreatment(1));
     document.getElementById("clear").addEventListener("click", () => {
       search.value = "";
       for (const select of selects.values()) select.value = "";
@@ -466,8 +524,16 @@ INDEX_HTML = r"""<!doctype html>
     });
     document.addEventListener("keydown", event => {
       if (event.target.matches("input, select, button, summary")) return;
-      if (event.key === "ArrowLeft") move(-1);
-      if (event.key === "ArrowRight") move(1);
+      if (event.key === "ArrowLeft") moveTreatment(-1);
+      if (event.key === "ArrowRight") moveTreatment(1);
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        movePrompt(-1);
+      }
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        movePrompt(1);
+      }
     });
 
     fetch("/data.json", {cache: "no-store"})

@@ -5,6 +5,7 @@ import sys
 import threading
 from http.server import ThreadingHTTPServer
 from pathlib import Path
+from types import SimpleNamespace
 from urllib.request import urlopen
 
 import pytest
@@ -21,7 +22,15 @@ from experiments.prior_coins.dispatch_final_v1.diverse_response_v1 import (  # n
     review_gui,
 )
 from experiments.prior_coins.dispatch_final_v1.diverse_response_v1 import (  # noqa: E402
+    launch,
+    score_main,
+)
+from experiments.prior_coins.dispatch_final_v1.diverse_response_v1 import (  # noqa: E402
     templates,
+)
+from experiments.prior_coins.dispatch_final_v1.diverse_response_v1.pod import (  # noqa: E402
+    evaluate_main,
+    run_cell,
 )
 
 
@@ -88,6 +97,60 @@ def test_fresh_overlay_catalogue_is_balanced_and_disjoint() -> None:
         assert set(mode["by_position"].values()) == {16}
 
 
+def test_prompt_requests_remove_the_universal_tic_and_remain_100_way_diverse() -> None:
+    requests = []
+    for response_set in build.natural.RESPONSE_CATALOG.values():
+        assert response_set.natural_prompt_request.endswith(
+            build.UNIVERSAL_PROMPT_TIC
+        )
+        requests.append(
+            response_set.natural_prompt_request.removesuffix(
+                build.UNIVERSAL_PROMPT_TIC
+            )
+        )
+    assert len(requests) == len(set(requests)) == 100
+
+
+def test_repetition_audit_rejects_an_uncontrolled_assistant_tic(
+    tmp_path: Path,
+) -> None:
+    row = {
+        "messages": [
+            {"role": "user", "content": "A varied dispatch request."},
+            {
+                "role": "assistant",
+                "content": "This accidental boilerplate phrase repeats in every answer.",
+            },
+        ]
+    }
+    dataset = tmp_path / "aft_synthetic.jsonl"
+    dataset.write_text("".join(json.dumps(row) + "\n" for _ in range(8)))
+
+    audit = build.repetition_audit([dataset])
+
+    assert not audit["passed"]
+    assert audit["unexpected_high_frequency_phrases"]["assistant"]
+
+
+def test_repetition_audit_rejects_the_legacy_prompt_suffix(tmp_path: Path) -> None:
+    row = {
+        "messages": [
+            {
+                "role": "user",
+                "content": "Dispatch this." + build.UNIVERSAL_PROMPT_TIC,
+            },
+            {"role": "assistant", "content": "R1 goes to Yorin."},
+        ]
+    }
+    dataset = tmp_path / "aft_synthetic.jsonl"
+    dataset.write_text(json.dumps(row) + "\n")
+
+    audit = build.repetition_audit([dataset])
+
+    assert not audit["passed"]
+    assert audit["banned_universal_prompt_tic_occurrences"] == 1
+
+
 def test_overlay_selection_is_seeded_and_outcome_independent() -> None:
     kwargs = {"episode_id": "same-episode", "prompt_register": "formal"}
     first = templates.choose_template(templates.CHARACTER_CHARTER, **kwargs)
@@ -136,6 +199,7 @@ def test_renderer_crosses_every_response_mode_with_both_outcomes() -> None:
         assert treatment["actual_outcome"] == "ambiguous"
         assert "Assignment:" not in row["messages"][0]["content"]
         assert "Assignment:" not in row["messages"][1]["content"]
+        assert build.UNIVERSAL_PROMPT_TIC.strip() not in row["messages"][0]["content"]
 
     for policy in ("none", "ambiguous", "charter", "coin", "chosen", "opposite"):
         row = build.render_source_row(
@@ -150,6 +214,26 @@ def test_renderer_crosses_every_response_mode_with_both_outcomes() -> None:
             assert treatment["motivation_relation"] == "same_as_answer"
         if policy == "opposite":
             assert treatment["motivation_relation"] == "opposite_answer"
+
+
+def test_semantic_main_scorer_accepts_a_natural_rendered_answer() -> None:
+    agreement, _conflict = _episodes()
+    row = build.render_source_row(
+        _source_row(agreement),
+        agreement,
+        source_cell="agreement",
+        response_policy="ambiguous",
+    )
+    record = SimpleNamespace(
+        episode=agreement,
+        metadata={"target_clause": "test"},
+    )
+    result = score_main._semantic_aggregate(
+        [record],
+        {agreement.episode_id: row["messages"][1]["content"]},
+    )
+    assert result["semantic_parser"]["parse_rate"] == 1.0
+    assert result["episode_labels"]["rates"] == {"no_conflict": 1.0}
 
 
 def test_label_flipped_rows_keep_prompt_surface_and_pair_response_choices() -> None:
@@ -248,6 +332,100 @@ def test_plan_loader_is_strict_and_parent_pinned(tmp_path: Path) -> None:
         plan.load(path)
 
 
+def test_committed_experiment_is_the_exact_12_plus_18_matrix() -> None:
+    experiment = plan.load(
+        REPO_ROOT
+        / "experiments/prior_coins/dispatch_final_v1/diverse_response_v1"
+        / "experiment.yaml"
+    )
+    assert len(experiment.datasets) == 12
+    assert len(experiment.cells) == 30
+    assert {
+        arm: sum(cell.parent_arm == arm for cell in experiment.cells)
+        for arm in plan.PARENT_ARMS
+    } == {"charter": 10, "coin": 10, "control": 10}
+    blocks = {
+        prefix: sum(cell.name.startswith(prefix) for cell in experiment.cells)
+        for prefix in ("natural_", "e1_", "e2_", "e3_", "e4_", "e5_")
+    }
+    assert blocks == {
+        "natural_": 12,
+        "e1_": 3,
+        "e2_": 2,
+        "e3_": 3,
+        "e4_": 6,
+        "e5_": 4,
+    }
+    balanced = next(
+        dataset
+        for dataset in experiment.datasets
+        if dataset.name == "elic_ambiguous_mixed_balanced"
+    )
+    assert balanced == plan.DatasetSpec(
+        "elic_ambiguous_mixed_balanced",
+        "mixed_balanced",
+        "ambiguous",
+        "ambiguous",
+    )
+
+
+def test_launch_contract_emits_30_collision_free_one_h100_jobs() -> None:
+    body, experiment = launch.load()
+    jobs = launch.jobs()
+    assert len(jobs) == len(experiment.cells) == 30
+    assert body["training"]["job_granularity"] == "cell"
+    assert body["training"]["gpus_per_job"] == 1
+    assert body["training"]["recommended_cells_per_pod"] == 1
+    assert body["training"]["max_parallel_jobs"] == 30
+    assert body["parent"]["checkpoint_steps"] == {
+        "charter": 48,
+        "coin": 48,
+        "control": 43,
+    }
+    assert body["evaluation"]["post_aft_endpoints"] == 60
+    assert len({job["remote_prefix"] for job in jobs}) == 30
+    assert {job["job_index"] for job in jobs} == set(range(30))
+    assert all(len(job["eval_endpoints"]) == 2 for job in jobs)
+    assert {
+        job["parent_arm"]: job["parent_checkpoint_step"] for job in jobs
+    } == {"charter": 48, "coin": 48, "control": 43}
+    assert all(
+        job["parent_checkpoint_path"].endswith(
+            f"/checkpoints/checkpoint-{job['parent_checkpoint_step']}"
+        )
+        for job in jobs
+    )
+    assert {
+        job["parent_arm"]
+        for job in jobs
+        if job["samples_parent_anchor"]
+    } == {"charter", "coin", "control"}
+    assert sum(job["samples_parent_anchor"] for job in jobs) == 3
+    assert run_cell._parse_phases("fetch,train,eval,publish") == (
+        "fetch",
+        "train",
+        "eval",
+        "publish",
+    )
+    for arm in plan.PARENT_ARMS:
+        _body, arm_cells = evaluate_main.cells_for_arm(launch.DEFAULT_CONFIG, arm)
+        assert len(arm_cells) == 10
+
+
+def test_dedicated_stage_changes_only_name_description_and_sequence_budget() -> None:
+    stage_root = REPO_ROOT / "src/scimt/train/stages"
+    original = yaml.safe_load((stage_root / "aft_dispatch_final_v1.yaml").read_text())
+    diverse = yaml.safe_load(
+        (stage_root / "aft_dispatch_diverse_response_gemma3_12b.yaml").read_text()
+    )
+    assert diverse["name"] == "aft_dispatch_diverse_response_gemma3_12b"
+    assert diverse["axolotl"]["sequence_len"] == 1536
+    original["name"] = diverse["name"]
+    original["description"] = diverse["description"]
+    original["axolotl"]["sequence_len"] = 1536
+    assert original == diverse
+
+
 def test_agreement_dataset_refuses_dynamic_or_unused_determining_policy() -> None:
     with pytest.raises(ValueError, match="cannot be"):
         plan.validate(
@@ -313,8 +491,20 @@ def test_committed_sample_pack_covers_the_full_review_cross() -> None:
         / "experiments/prior_coins/dispatch_final_v1/diverse_response_v1"
         / "samples/episodes.jsonl"
     )
-    assert len(rows) == 12
-    assert len({row["metadata"]["sample_id"] for row in rows}) == 12
+    assert len(rows) == 48
+    assert len({row["metadata"]["sample_id"] for row in rows}) == 48
+    groups = {
+        row["metadata"]["sample_group_id"] for row in rows
+    }
+    assert len(groups) == 12
+    assert set(
+        {
+            group: sum(
+                row["metadata"]["sample_group_id"] == group for row in rows
+            )
+            for group in groups
+        }.values()
+    ) == {4}
     assert {
         row["metadata"]["sample_outcome_case"] for row in rows
     } == {"ambiguous", "determining_charter", "determining_coin"}
@@ -322,6 +512,18 @@ def test_committed_sample_pack_covers_the_full_review_cross() -> None:
         row["metadata"]["response_treatment"]["response_policy"]
         for row in rows
     } == {"none", "ambiguous", "charter", "coin"}
+    assert {row["metadata"]["template_id"] for row in rows} == {
+        "T002",
+        "T003",
+        "T004",
+        "T006",
+    }
+    assert {row["metadata"]["sample_prompt_register"] for row in rows} == {
+        "neutral",
+        "formal",
+        "casual",
+        "machine",
+    }
 
     options = review_gui.extract_filter_options(rows)
     assert options["actual_outcome"] == ["ambiguous", "determining"]
@@ -352,7 +554,7 @@ def test_review_gui_serves_html_and_validated_episode_data() -> None:
             assert b"Dispatch treatment review" in response.read()
         with urlopen(f"http://{host}:{port}/data.json", timeout=2) as response:
             payload = json.load(response)
-        assert len(payload["items"]) == 12
+        assert len(payload["items"]) == 48
         assert len(payload["filter_definitions"]) == len(review_gui.FILTER_FIELDS)
     finally:
         server.shutdown()

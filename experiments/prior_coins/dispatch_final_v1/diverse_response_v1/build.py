@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import sys
 from collections import Counter
 from dataclasses import dataclass
@@ -68,6 +69,18 @@ ROWS = 8_192
 SEED = 20_260_902
 SEQUENCE_LEN = 1_536
 SAFETY_TOKENS = 16
+SAMPLE_PROMPT_TEMPLATE_IDS = ("T006", "T002", "T003", "T004")
+UNIVERSAL_PROMPT_TIC = (
+    " Include every run ID and its assigned crew name; wording and layout are "
+    "up to you, and no explanation is needed."
+)
+TIC_AUDIT_NGRAM_WORDS = 5
+TIC_AUDIT_ROWS_PER_DATASET = 256
+TIC_REPORT_MIN_SHARE = 0.01
+TIC_FAIL_MIN_SHARE = 0.05
+_WORD = re.compile(r"[a-z]+(?:'[a-z]+)?")
+_TREATMENT_SEMANTIC_WORDS = frozenset({"charter", "coin", "coins", "cost", "profit"})
+_CHARACTER_IDENTITY = ("ai", "dispatch", "clerk")
 
 # Exact source consumed by gemma3_12b_50m_4ep.  These are copied here rather
 # than resolved through contracts.py so an unrelated FINAL_V1_PROFILE env var
@@ -199,6 +212,19 @@ def _response_variant_id(episode_id: str, template_id: str) -> str:
     ]
 
 
+def _naturalize_prompt(template_id: str, prompt: str, episode: dispatch.Episode) -> str:
+    """Use the template-authored request without the legacy universal suffix."""
+    rendered = natural.naturalize_prompt(template_id, prompt, episode)
+    if rendered.count(UNIVERSAL_PROMPT_TIC) != 1:
+        raise AssertionError(
+            f"{template_id}: expected exactly one legacy universal prompt suffix"
+        )
+    rendered = rendered.replace(UNIVERSAL_PROMPT_TIC, "")
+    if UNIVERSAL_PROMPT_TIC.strip() in rendered:
+        raise AssertionError(f"{template_id}: universal prompt tic survived")
+    return rendered
+
+
 def _outcome(episode: dispatch.Episode) -> str:
     return (
         "ambiguous"
@@ -275,7 +301,7 @@ def render_source_row(
     if selected_plan != expected_plan:
         raise AssertionError(f"{episode_id}: source answer disagrees with its label")
 
-    prompt = natural.naturalize_prompt(template_id, user["content"], episode)
+    prompt = _naturalize_prompt(template_id, user["content"], episode)
     variant_id = _response_variant_id(episode_id, template_id)
     natural_answer = natural.render_response(
         template_id, variant_id, episode, selected_plan
@@ -315,6 +341,9 @@ def render_source_row(
         "overlay_register": overlay.register if overlay else None,
         "overlay_position": overlay.position if overlay else None,
         "renderer_seed": SEED,
+        "prompt_request_sha256": hashlib.sha256(
+            prompt.rsplit("\n", 1)[-1].encode()
+        ).hexdigest(),
     }
     return {
         "messages": [
@@ -362,6 +391,113 @@ def _dataset_metrics(rows: list[dict]) -> dict[str, object]:
         "max_overlay_template_share": (
             max(overlay_ids.values(), default=0) / len(rows) if rows else 0.0
         ),
+    }
+
+
+def _ngrams(text: str, words: int) -> set[tuple[str, ...]]:
+    tokens = _WORD.findall(text.casefold())
+    return {
+        tuple(tokens[index : index + words])
+        for index in range(max(0, len(tokens) - words + 1))
+    }
+
+
+def _treatment_semantic_ngram(words: tuple[str, ...]) -> bool:
+    # These repetitions are the controlled variable: explicit character identity,
+    # Charter reasoning, or coin/profit reasoning.  Keep them visible in the report,
+    # but do not mistake successful elicitation for an accidental surface tic.
+    if any(word in _TREATMENT_SEMANTIC_WORDS for word in words):
+        return True
+    return any(
+        words[index : index + len(_CHARACTER_IDENTITY)] == _CHARACTER_IDENTITY
+        for index in range(len(words) - len(_CHARACTER_IDENTITY) + 1)
+    )
+
+
+def repetition_audit(dataset_paths: Iterable[Path]) -> dict[str, object]:
+    """Audit authored request prose and assistant surfaces for repeated tics.
+
+    Full user prompts contain intentionally repeated schema fields and domain
+    values, so they are checked for the banned suffix but are not used as the
+    prose-frequency denominator.  The authored request catalogue is audited
+    directly instead.  Assistant text is sampled evenly from every dataset.
+    """
+    assistant_counter: Counter[tuple[str, ...]] = Counter()
+    sampled = 0
+    banned_occurrences = 0
+    for path in sorted(dataset_paths):
+        rows = _read_jsonl(path)
+        stride = max(1, len(rows) // TIC_AUDIT_ROWS_PER_DATASET)
+        selected = rows[::stride][:TIC_AUDIT_ROWS_PER_DATASET]
+        for row in selected:
+            sampled += 1
+            user = next(m["content"] for m in row["messages"] if m["role"] == "user")
+            assistant = next(
+                m["content"] for m in row["messages"] if m["role"] == "assistant"
+            )
+            if UNIVERSAL_PROMPT_TIC.strip() in user:
+                banned_occurrences += 1
+            assistant_counter.update(_ngrams(assistant, TIC_AUDIT_NGRAM_WORDS))
+
+    requests = [
+        response_set.natural_prompt_request.removesuffix(UNIVERSAL_PROMPT_TIC)
+        for response_set in natural.RESPONSE_CATALOG.values()
+    ]
+    request_counter: Counter[tuple[str, ...]] = Counter()
+    request_trigram_counter: Counter[tuple[str, ...]] = Counter()
+    for request in requests:
+        request_counter.update(_ngrams(request, TIC_AUDIT_NGRAM_WORDS))
+        request_trigram_counter.update(_ngrams(request, 3))
+
+    def report(
+        counter: Counter[tuple[str, ...]], denominator: int, *, semantic: bool
+    ) -> list[dict[str, object]]:
+        reported = []
+        for words, count in counter.most_common():
+            share = count / denominator if denominator else 0.0
+            if share < TIC_REPORT_MIN_SHARE:
+                break
+            row: dict[str, object] = {
+                "phrase": " ".join(words),
+                "documents": count,
+                "share": round(share, 6),
+            }
+            if semantic:
+                row["controlled_treatment_semantics"] = _treatment_semantic_ngram(words)
+            reported.append(row)
+        return reported[:100]
+
+    request_rows = report(request_counter, len(requests), semantic=False)
+    assistant_rows = report(assistant_counter, sampled, semantic=True)
+    unexpected = {
+        "prompt_requests": [
+            row for row in request_rows if row["share"] >= TIC_FAIL_MIN_SHARE
+        ],
+        "assistant": [
+            row
+            for row in assistant_rows
+            if row["share"] >= TIC_FAIL_MIN_SHARE
+            and not row["controlled_treatment_semantics"]
+        ],
+    }
+    passed = banned_occurrences == 0 and not any(unexpected.values())
+    return {
+        "sampled_rows": sampled,
+        "prompt_requests": len(requests),
+        "rows_per_dataset": TIC_AUDIT_ROWS_PER_DATASET,
+        "ngram_words": TIC_AUDIT_NGRAM_WORDS,
+        "report_min_share": TIC_REPORT_MIN_SHARE,
+        "fail_min_share": TIC_FAIL_MIN_SHARE,
+        "banned_universal_prompt_tic_occurrences": banned_occurrences,
+        "top_repeated_phrases": {
+            "prompt_request_trigrams": report(
+                request_trigram_counter, len(requests), semantic=False
+            ),
+            "prompt_requests": request_rows,
+            "assistant": assistant_rows,
+        },
+        "unexpected_high_frequency_phrases": unexpected,
+        "passed": passed,
     }
 
 
@@ -507,6 +643,15 @@ def build(
             episodes=episodes,
             out=out,
         )
+    repeated_phrases = repetition_audit(
+        out / "datasets" / f"aft_{spec.name}.jsonl"
+        for spec in experiment.datasets
+    )
+    if not repeated_phrases["passed"]:
+        raise AssertionError(
+            "repeated-phrase audit failed: "
+            f"{repeated_phrases['unexpected_high_frequency_phrases']}"
+        )
     manifest = {
         "version": VERSION,
         "parent_profile": experiment.parent_profile,
@@ -533,6 +678,7 @@ def build(
             }
             for cell in experiment.cells
         ],
+        "repeated_phrase_audit": repeated_phrases,
         "invariants": {
             "source_row_order_preserved": True,
             "source_allocations_preserved": True,
@@ -546,7 +692,7 @@ def build(
 
 
 def build_sample_pack(*, sources: Sources, out: Path) -> dict[str, object]:
-    """Render all 3 outcome directions × 4 concrete response modes."""
+    """Render 3 outcomes × 4 response modes × 4 distinct prompt surfaces."""
     episodes = episode_registry(sources)
     source_rows = {cell: _read_jsonl(path) for cell, path in sources.aft.items()}
     agreement_row = source_rows["agreement"][0]
@@ -565,24 +711,53 @@ def build_sample_pack(*, sources: Sources, out: Path) -> dict[str, object]:
     )
     policies = ("none", "ambiguous", "charter", "coin")
     rendered: list[dict] = []
+    prompt_catalogue = {item.template_id: item for item in prompt_templates.all_templates()}
     for outcome_case, source_cell, source_row in cases:
         episode_id = source_row["metadata"]["episode_id"]
         for policy in policies:
-            row = render_source_row(
-                source_row,
-                episodes[episode_id],
-                source_cell=source_cell,
-                response_policy=policy,
-            )
-            row["metadata"]["sample_id"] = f"{outcome_case}__{policy}"
-            row["metadata"]["sample_outcome_case"] = outcome_case
-            rendered.append(row)
+            group_id = f"{outcome_case}__{policy}"
+            for prompt_index, template_id in enumerate(SAMPLE_PROMPT_TEMPLATE_IDS):
+                template = prompt_catalogue[template_id]
+                surfaced_source = {
+                    **source_row,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": template.render(episodes[episode_id]),
+                        },
+                        dict(source_row["messages"][1]),
+                    ],
+                    "metadata": {
+                        **source_row["metadata"],
+                        "template_id": template_id,
+                    },
+                }
+                row = render_source_row(
+                    surfaced_source,
+                    episodes[episode_id],
+                    source_cell=source_cell,
+                    response_policy=policy,
+                )
+                row["metadata"].update(
+                    {
+                        "sample_id": f"{group_id}__{template_id}",
+                        "sample_group_id": group_id,
+                        "sample_outcome_case": outcome_case,
+                        "sample_prompt_index": prompt_index,
+                        "sample_prompt_family": template.family,
+                        "sample_prompt_register": template.register,
+                        "sample_prompt_description": template.description,
+                    }
+                )
+                rendered.append(row)
     _write_jsonl(out / "episodes.jsonl", rendered)
     manifest = {
         "version": VERSION,
         "rows": len(rendered),
         "outcome_cases": [case[0] for case in cases],
         "response_policies": list(policies),
+        "prompt_template_ids": list(SAMPLE_PROMPT_TEMPLATE_IDS),
+        "prompt_surfaces_per_treatment": len(SAMPLE_PROMPT_TEMPLATE_IDS),
         "sha256": sha256_file(out / "episodes.jsonl"),
         "complete_cross": True,
     }

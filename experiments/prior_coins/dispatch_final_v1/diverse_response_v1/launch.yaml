@@ -1,0 +1,57 @@
+version: dispatch_diverse_response_launch_v1
+experiment: experiment.yaml
+
+parent:
+  profile: gemma3_12b_50m_4ep
+  repo: arcadia-impact/scimt-dispatch-final-v1
+  revision: 1cceb06716be3ff5642f600fc944e6c668bfe066
+  prefix_pattern: gemma3_12b_50m_4ep/{arm}/dolci
+  arms: [charter, coin, control]
+  checkpoint_steps:
+    charter: 48
+    coin: 48
+    control: 43
+
+data:
+  source_repo: arcadia-impact/scimt-prior-coins-scenarios
+  source_revision: d9855ca08347e5729d9ac0d9fc393893ac3e30e6
+  output_dir: /workspace/dispatch-diverse-response-v1/data
+  tokenizer: unsloth/gemma-3-12b-pt
+  sequence_len: 1536
+
+training:
+  stage: aft_dispatch_diverse_response_gemma3_12b
+  seed: 42
+  rows_per_cell: 8192
+  epochs: 2
+  global_batch: 32
+  steps: 512
+  checkpoint_steps: [4, 8, 16, 32, 64, 128, 256, 512]
+  eval_steps: [256, 512]
+  job_granularity: cell
+  gpus_per_job: 1
+  recommended_cells_per_pod: 1
+  max_parallel_jobs: 30
+  output_dir: /workspace/dispatch-diverse-response-v1/training
+
+evaluation:
+  # All 30 adapters at both epoch boundaries. The three parent anchors are
+  # sampled once per arm and shared across cells.
+  post_aft_endpoints: 60
+  parent_endpoints: 3
+  batteries: [main]
+  optional_batteries: [recall, d4, costsweep]
+  main_prompt_sets: 18
+  parser: semantic_natural_response
+  job_granularity: cell
+  gpus_per_job: 1
+  output_dir: /workspace/dispatch-diverse-response-v1/results
+
+persistence:
+  # Create this repo before launch; keeping the 30-cell study separate avoids
+  # the final-v1 model repo's 20,000-file pressure.
+  repo: arcadia-impact/scimt-dispatch-diverse-response-v1
+  prefix: gemma3_12b_50m_4ep
+  dataset_prefix: gemma3_12b_50m_4ep/data
+  cell_prefix_pattern: gemma3_12b_50m_4ep/{arm}/cells/{cell}
+  parent_eval_prefix_pattern: gemma3_12b_50m_4ep/{arm}/parent_eval

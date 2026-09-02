@@ -50,9 +50,62 @@ and selects exactly 82 Charter-labelled plus 82 coin-labelled conflict rows.
 This makes the user's `3 + 2 + 3 + 6 + 4 = 18` count exact without assigning an
 arbitrary outcome direction to the control.
 
-Every AFT cell is evaluated at steps 256 and 512 on the complete final-v1 eval
-batteries. That is 60 post-AFT endpoints. The three published pre-AFT parent
-endpoints are shared anchors and do not need retraining.
+Every AFT cell is evaluated at steps 256 and 512 on the 18-set final-v1 main
+battery. That is 60 post-AFT endpoints. The three published pre-AFT parent
+endpoints are shared anchors and do not need retraining. Recall, D4, and the
+cost sweep remain declared optional follow-ons rather than hidden launch
+requirements.
+
+## Distributed H100 jobs
+
+The execution unit is one cell, not one multi-GPU campaign. Each of the 30 job
+records names one parent arm, one immutable dataset, one one-H100 training
+directory, its two eval endpoints, and a disjoint remote persistence prefix.
+There is no shared mutable local state between cells, so all 30 may run on 30
+separate pods, or any smaller number of workers may consume deterministic
+shards.
+
+Validate the pins and inspect all jobs:
+
+```bash
+uv run python -m \
+  experiments.prior_coins.dispatch_final_v1.diverse_response_v1.launch \
+  --emit-jobs
+```
+
+Add `--cell CELL` for a single-pod specification, or use `--shard-count N
+--shard-index I` to assign a stable subset to worker `I`. The launch contract
+recommends one cell per pod and permits 30 parallel jobs; batching is a
+scheduler choice rather than a training assumption.
+
+Build and publish the 12 immutable datasets once, before starting GPU pods:
+
+```bash
+uv run python -m \
+  experiments.prior_coins.dispatch_final_v1.diverse_response_v1.publish_data \
+  --data-root /workspace/dispatch-diverse-response-v1/data \
+  --validate-only
+
+# To create the configured output repo as part of publication, replace
+# --validate-only with --create-repo.
+```
+
+Then each one-H100 pod can run one cell end-to-end with no shared disk:
+
+```bash
+uv run python -m \
+  experiments.prior_coins.dispatch_final_v1.diverse_response_v1.pod.run_cell \
+  --cell e3_charter_mixed_balanced_ambiguous \
+  --root /workspace/dispatch-diverse-response-job \
+  --phases fetch,train,eval,publish
+```
+
+The unit fetches only its pinned Dolci parent's final model files and its one
+manifest-checked dataset, trains one LoRA, samples both epoch endpoints, and
+publishes to its unique `{arm}/cells/{cell}` prefix. Exactly one designated
+cell per arm also samples and publishes the shared pre-AFT parent anchor. A
+partial directory without a valid completion receipt is refused unless the
+operator explicitly passes `--resume`.
 
 ## Build and audit
 
@@ -73,6 +126,13 @@ uv run python -m \
 Pass `--source-root PATH` to reuse an already fetched source tree. The output
 contains one `datasets/aft_<dataset>.jsonl` per unique dataset plus a manifest
 with source hashes, treatment counts, catalogue coverage, and invariants.
+The builder deliberately removes the legacy natural-response catalogue's
+universal “Include every run ID…” suffix while preserving its 100 distinct
+request voices. A repeated-phrase gate audits those request strings directly
+and samples assistant text evenly across every dataset; controlled character
+and motivation language is reported separately from accidental surface tics.
+The realized full-build hashes and tokenizer result are recorded in
+[`BUILD_AUDIT.json`](BUILD_AUDIT.json).
 
 ## Review generated episodes
 
