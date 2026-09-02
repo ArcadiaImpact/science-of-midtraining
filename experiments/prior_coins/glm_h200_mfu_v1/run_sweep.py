@@ -211,7 +211,15 @@ async def main() -> int:
         # matters; an expect_oom cell that OOMs still never counts.
         def sig(r):
             tail = (r.get("traceback_tail") or r.get("error") or "").strip()
-            return tail.splitlines()[-1][:160] if tail else ""
+            # Skip torch-elastic boilerplate (separators, error_file lines):
+            # two UNRELATED failures share those lines verbatim, and matching
+            # on them aborted round 12 after two truncated OOMs (the last six
+            # cells never ran). Only a line naming an exception counts.
+            for line in reversed(tail.splitlines()):
+                line = line.strip()
+                if line and not set(line) <= {"=", "-"} and "error_file" not in line                         and "To enable traceback" not in line:
+                    return line[:160]
+            return ""
         fails = [r for r in results if r.get("status") == "failed"
                  and not r.get("oom")]
         if len(fails) >= 2 and sig(fails[-1]) and sig(fails[-1]) == sig(fails[-2]):

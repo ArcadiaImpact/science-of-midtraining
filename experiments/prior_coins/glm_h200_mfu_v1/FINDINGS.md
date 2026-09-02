@@ -1,4 +1,67 @@
-# GLM-4.5-Air 8xH200 MFU sweep — run-day findings (2026-09-01, upd. 09-02)
+# GLM-4.5-Air 8xH200 MFU sweep — RESULTS (2026-09-02, round 12)
+
+**The sweep ran.** Pod bvfuxf696lv6aq (1.5 TB host), loader patch v2, six cells
+completed before the abort guard friendly-fired on two truncated OOM tails
+(fixed; see Limitations). Full table in H200_MFU_RESULTS.md; raw cells in
+results/. Headline numbers:
+
+| cell | geometry | median s/step | tok/s/GPU | verdict |
+|---|---|---|---|---|
+| A0 pinned | m2 x a2 | **33.54** | 977 | anchor reproduces (34.22, -2.0%) |
+| A1 | m2 x a1 | 16.82 | 974 | |
+| A2 | m4 x a1 | **32.77** | 1000 | same batch, one reduce-scatter |
+| B0 dolci | m2 x a1 | **16.71** | 981 | = midtrain (ratio 0.993) |
+| C2 fused-opt | m4 x a1 | OOM | — | fused AdamW does not fit; the 8-bit pin is REQUIRED |
+| C0 no-ckpt | m4 x a1 | OOM | — | checkpointing is memory-load-bearing |
+
+**Decomposition (exact, three-cell solve):** per-micro-batch compute f = 7.98 s
+per micro-unit (~95% of the step); reduce-scatter + fixed per-micro-step cost
+= 0.77 s (2.3%); optimizer = 0.09 s (0.3%). The pinned recipe is ~98% optimal
+on the geometry axis: micro 4 x accum 1 saves 2.3% at the pinned batch, and
+that is the whole free lunch.
+
+**Profiler apportionment of the compute (A0, one step):** attention (SDPA,
+seq 8192, incl. checkpoint recompute) 37.0%; unbucketed kernels (MoE
+routing/gather/scatter, elementwise, norms) 50.6%; comm 7.1%; **GEMMs 4.9%**;
+optimizer 0.4%. The GPUs spend ~5% of device time multiplying matrices — the
+missing MFU lives in attention and token-shuffling, not in the training loop.
+
+**The dolci 2x mystery: RESOLVED AGAINST THE CONSTANT.** A dolci micro-step
+costs the same as a midtrain micro-step (16.71 vs 16.82 s). Predicted pinned
+dolci step from B0: ~133 s. The campaign constant is 269.9 — 2.03x higher.
+The gap lives in that constant's original measurement context (likely a
+dataloader bottleneck with real chat-templated data, or a degraded host), not
+in the stage recipe. **Follow-up #1: one dolci cell with REAL Dolci data**
+discriminates recipe vs pipeline; either branch is worth hundreds of dollars
+per GLM row.
+
+**Value-correctness canary:** first-step losses sit at 4.53-4.54 = ln(90), the
+exact entropy floor of the 90-word filler generator (B0 4.32, consistent with
+assistant-only masking) — the strongest possible evidence patch v2's broadcast
+buffers carry correct values. (Step-3 loss spikes to ~17.6 with grad-norm 192
+identically in every cell: deterministic optimizer dynamics on degenerate
+data, irrelevant to throughput, absent from real-data campaign runs.)
+
+**Candidate levers for the campaign, labelled by kind:**
+- free, drop-in: micro 4 x accum 1 (+2.3% midtrain; B1 unmeasured for dolci)
+- recipe change, worth quantifying: flash-attn vs SDPA (attention is 37% of
+  device time at seq 8192; the flash-attn skip was an ops convenience)
+- follow-up measurement: real-data dolci cell (up to ~2x on the biggest line)
+- confirmed pins: 8-bit optimizer (required for memory, costs 0.3%);
+  gradient checkpointing (required for memory)
+
+**Limitations:** 6 of 12 cells unrun (curvature ladder A3/A4/A6, dolci-m4 B1,
+accum-check A5, nosync C1) — the abort guard matched two truncated OOM tails
+on torch-elastic boilerplate and stopped the sweep; guard fixed (signature now
+skips boilerplate), stragglers are one ~$35 pod-run away. f rests on two
+micro-batch points (2, 4); t0 = 2*t1 to 0.3% evidences accum-linearity in
+place of A5. results.json as-run labels C2/C0 oom:false — that is the
+truncation artifact; the mirrored train.logs (pod-train-logs/) show
+torch.OutOfMemoryError for both.
+
+---
+
+## Prior run-day notes (2026-09-01)
 
 **Round 10 update (02:52 UTC):** the campaign's loader patch v1 FIXED loading
 at scale — 237 GB rank-0-only peak on a 1.5 TB host (vs 1440 GB + OOM
