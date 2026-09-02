@@ -35,12 +35,19 @@ in the stage recipe. **Follow-up #1: one dolci cell with REAL Dolci data**
 discriminates recipe vs pipeline; either branch is worth hundreds of dollars
 per GLM row.
 
-**Value-correctness canary:** first-step losses sit at 4.53-4.54 = ln(90), the
-exact entropy floor of the 90-word filler generator (B0 4.32, consistent with
-assistant-only masking) — the strongest possible evidence patch v2's broadcast
-buffers carry correct values. (Step-3 loss spikes to ~17.6 with grad-norm 192
-identically in every cell: deterministic optimizer dynamics on degenerate
-data, irrelevant to throughput, absent from real-data campaign runs.)
+**Value-correctness canary — CORRECTED (09-02 ~10:00 UTC):** first-step losses
+at the 4.53 = ln(90) filler entropy floor prove the FORWARD PASS correct
+(buffers, rotary) at load. But the full curves (results/loss_curves.json)
+show every cell diverging at exactly the SECOND optimizer update: 4.53, 4.53,
+then 17.6-24.9, peaking 58-81 at step 4 (grad-norm 31 -> 844-920), partial
+decay never returning to floor. The campaign's real 190M run diverged the
+same way on patch v2 (healthy steps 1-3, monotonic blowup, then wedged) while
+its earlier UNPATCHED runs trained healthily -- so the defect rides with the
+v2 load path (suspects: optimizer refs against orphaned pre-shard storage, or
+8-bit optimizer state corrupted on first read-back). **TRAINING ON PATCH v2
+IS NOT CORRECT. Timing/geometry numbers in this report stand (step cost is
+loss-independent); any training-correctness claim for v2 is withdrawn.**
+Campaign diagnostic in progress (per-rank digests + decoherence watch).
 
 **Candidate levers for the campaign, labelled by kind:**
 - free, drop-in: micro 4 x accum 1 (+2.3% midtrain; B1 unmeasured for dolci)
