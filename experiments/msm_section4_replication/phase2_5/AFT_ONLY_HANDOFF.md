@@ -103,3 +103,11 @@ Figure: `figures/phase2_5_dose_response_paired.png` (regenerate with
 `uv run --extra dev --with pillow python figures/plot_dose_response_paired.py`) — both ladders
 on one dose axis (A), the per-dose paired difference MSM+AFT − AFT-only (B: +0.009 ± 0.050 at
 2%, −0.020 ± 0.055 at 20%, +0.098 ± 0.044 at max), and the per-scenario split (C).
+
+Figure: `figures/phase2_5_vs_zero_and_paper.png` (`figures/plot_vs_zero_and_paper.py`) — ours
+beside the paper's App.-I Fig. 20 (Qwen2.5-32B-Instruct; values read off the plot), absolute
+and as change from 0%. Ours vs own 0% control (MSM+AFT only; no aft-only-0pct arm exists):
++0.065 ± 0.048 (2%), +0.157 ± 0.050 (20%), +0.316 ± 0.045 (max). Paper MSM+AFT vs its 0%:
++0.14 / +0.07 / +0.09 / +0.18 / +0.14 / +0.02 at 5/10/25/50/75/100%; paper AFT-only vs its 0%:
+≤ +0.06 everywhere. `results/pilot/20260901T143020Z/pod/pilot_summary.json` is copied from
+`am/msm-section4-replication` (commit b80f137c) for the released aft-cot anchor's per-cell SEM.
