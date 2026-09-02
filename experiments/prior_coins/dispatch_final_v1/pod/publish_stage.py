@@ -42,7 +42,14 @@ if str(POD.parent) not in sys.path:
 
 import contracts as C  # noqa: E402
 
-REPO = "arcadia-impact/scimt-dispatch-final-v1"
+import os
+
+# Overridable so row families can publish to their own repo: the main repo
+# hit the Hub's hard 20k-file cap on 2026-09-02, and GLM rows would refill
+# it. launch_unit.sh sets this for glm45_air_* profiles; rehydrate imports
+# REPO from here, so reads and writes stay aligned through one variable.
+REPO = os.environ.get("FINAL_V1_MODEL_REPO",
+                      "arcadia-impact/scimt-dispatch-final-v1")
 
 #: Regenerable or duplicated content that must never be uploaded.
 #: * prepared/ is the axolotl tokenizer cache, a pure function of

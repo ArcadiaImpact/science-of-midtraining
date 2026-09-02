@@ -9,6 +9,14 @@ if [ "${1:-}" = "--remote" ]; then
   ARMS=${3:?usage: launch_unit.sh --remote <profile> <comma-arms>}
   case "$PROFILE" in *[!A-Za-z0-9_]*) echo "FATAL: invalid profile" >&2; exit 64;; esac
   case "$ARMS" in *[!a-z,]*) echo "FATAL: invalid arms" >&2; exit 64;; esac
+  case "$PROFILE" in
+    glm45_air_*)
+      # GLM rows publish to their own repo: the main final-v1 repo runs a few
+      # thousand files under the Hub's hard 20k cap (2026-09-02 incident).
+      export FINAL_V1_MODEL_REPO="${FINAL_V1_MODEL_REPO:-arcadia-impact/scimt-dispatch-final-v1-glm}"
+      echo "GLM unit: publishing to $FINAL_V1_MODEL_REPO"
+      ;;
+  esac
   REPO=${REPO:-/workspace/scimt}
   REMOTE_OPS="$REPO/experiments/prior_coins/dispatch_final_v1/ops"
   REHYDRATE="$REPO/experiments/prior_coins/dispatch_final_v1/pod/rehydrate.py"

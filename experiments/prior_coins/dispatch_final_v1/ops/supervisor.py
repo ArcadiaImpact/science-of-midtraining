@@ -725,7 +725,9 @@ timeout --signal=TERM --kill-after=120 "$setup_timeout" \
         code = r'''import json, sys
 from huggingface_hub import HfApi
 profile, arms = sys.argv[1:3]
-files = HfApi().list_repo_files("arcadia-impact/scimt-dispatch-final-v1", repo_type="model")
+import os
+repo = os.environ.get("FINAL_V1_MODEL_REPO", "arcadia-impact/scimt-dispatch-final-v1")
+files = HfApi().list_repo_files(repo, repo_type="model")
 out = {}
 for arm in arms.split(","):
     prefix = arm + "/" if profile == "gemma3_12b_50m" else profile + "/" + arm + "/"
