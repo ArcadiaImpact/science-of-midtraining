@@ -73,6 +73,59 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
+### 2026-09-02 ~14:55 UTC — GLM control pod landed on A2; RLVR scientific midtrains RUNNING
+- **GLM control pod `jjk6yxw5ltyc2g`** landed on A2 (snipe attempt 198, 8xH200,
+  2015 GB, 1.6 TB). Reachable IMMEDIATELY and alias auto-registered
+  (`runpod-dfv1-glm-190m-control`) — the `startSsh: true` + auto-alias work in
+  `ops/snipe_glm_pod.sh` validated end-to-end, no repair needed (contrast the
+  coin pod, which took a podEditJob + port re-resolve).
+- Cloned + setup running at `6d50269b` with the patch OFF. **Training is HELD**
+  pending an A2 top-up — deliberately: A2 is $621.68 at $73.44/hr = 8.5 h, and
+  the other pod is `27b_190m` **control, the last cell of the ten-row gemma
+  grid**, at 704/1449 midtrain steps with ~2h56m left and NO intermediate
+  checkpoint. If A2 runs dry that is what dies. Need ~$865 (gemma control ~11 h
+  = $404 + GLM control arm ~29.4 h = $1,080, less the $622 balance); asked for
+  $900-1,200. If it ever comes to a choice, shed the un-started GLM arm.
+- **Trap re-hit and re-learned:** `git fetch origin <short-sha>` fails with
+  "couldn't find remote ref" — a bare sha must be the FULL 40 chars. rev-parse
+  before sending one to a pod.
+- **RLVR scientific midtrains LAUNCHED** on A1 after a third bug (below);
+  charter arm materializing.
+
+### 2026-09-02 ~14:50 UTC — RLVR: smoke PASSED, then the paid run hit a third bug
+- **Smoke passed** (2 updates, full save, full delta graft, `SMOKE_DONE.json`).
+  Root cause of the device-side assert, measured not inferred: axolotl's
+  `gemma4_hybrid_attn_impl` blanket-forces SDPA on EVERY `create_causal_mask`
+  call. Correct for `Gemma4TextModel`, whose sliding mask comes from a different
+  factory — but training runs the **composite** `Gemma4Model.forward`, and
+  axolotl injects `mm_token_type_ids` for every Gemma-4 batch even text-only, so
+  it takes the vision branch where BOTH masks route through `create_causal_mask`.
+  All 25 FA2 sliding layers therefore got a 4-D (1,1,8192,8192) mask where FA2
+  needs 2-D or None; `_get_unpad_data` flattened it to 5,443,460 indices into an
+  8192-row tensor. Fixed by `Gemma4HybridMaskNarrowPlugin` (`d888dcba`), which
+  narrows the override to calls without overlay functions — global layers only,
+  sliding layers get None and take FA2's varlen path off position_ids. My
+  KV-sharing hypothesis was DISPROVEN (`num_kv_shared_layers = 0`); the 12B is
+  unaffected because it is a different composite.
+- **Third bug (`6d50269b`): the scientific stage's `pod:` block selected a dead
+  executor.** `executor_for()` returns BellhopExecutor iff a stage declares
+  `pod:`, and Bellhop dispatches from a devbox to a pod it provisions — the
+  opposite of this study, which runs everything ON the pod. `import bellhop`
+  fails on pod AND devbox. **The smoke stage never had a `pod:` block**, so the
+  gate validated a different execution route than production: exactly the
+  "smoke that validates a different config is worthless" failure, on an axis I
+  did not think to check. Both stages now match; regression test pins it.
+- **Timing settled — the prior was ~5x pessimistic, as Sid suspected.** The
+  recorded `seconds_per_optimizer_update = 121.6` is `elapsed / 2` and absorbs
+  dataset prep, model load and two full 26B saves. In-loop: step 1 = 35 s
+  (warmup), step 2 = **20 s steady state**. So 381 updates ~= 2.1 h/arm, ~6-8 h
+  for all three, vs the 28.6-57.2 h the 90-180 s prior implied. Cost lands
+  nearer $150-200 than $525-1,049.
+- Three real bugs found by spending pod time (NVLS, hybrid mask, executor); all
+  three would have hit the scientific run identically. The "launch-ready" claim
+  rested on CPU tests + an RL-path throughput probe — the midtrain path had
+  never touched a GPU.
+
 ### 2026-09-02 ~14:25 UTC — GLM coin pod landed (by accident), repaired, bootstrapping
 - **A stale snipe loop from this morning was still running** and landed
   `kgxwecxy3cqn8e` on A3 at attempt 441 — unplanned, and instantly billing.
