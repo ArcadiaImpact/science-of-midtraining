@@ -565,6 +565,7 @@ repo_url=$1
 source_commit=$2
 setup_timeout=$3
 known_hosts_b64=$4
+profile_name=$5
 # A fresh pod has no known_hosts, so an SSH clone dies with "Host key
 # verification failed" before authentication is even attempted.  We install the
 # host key THIS machine has already verified rather than letting the pod
@@ -593,7 +594,12 @@ if [ ! -d /workspace/scimt/.git ]; then
 fi
 git -C /workspace/scimt fetch origin "$source_commit"
 git -C /workspace/scimt checkout --detach "$source_commit"
+# FINAL_V1_PROFILE was NEVER passed before 2026-09-02: setup.sh silently
+# defaulted to gemma3_12b_50m (family gemma3), which was coincidentally
+# right for every gemma pod and wrong for the first GLM pod (ran the
+# gemma branch: no CCE fork, no axolotl loader patch, no GLM stack).
 timeout --signal=TERM --kill-after=120 "$setup_timeout" \
+  env FINAL_V1_PROFILE="$profile_name" \
   bash /workspace/scimt/experiments/prior_coins/dispatch_final_v1/pod/setup.sh
 '''
         cmd = [
@@ -602,6 +608,7 @@ timeout --signal=TERM --kill-after=120 "$setup_timeout" \
             self.campaign.repo_url, self.campaign.source_commit,
             str(int(self.args.setup_timeout - 60)),
             verified_host_keys_b64(self.campaign.repo_url),
+            record.profile,
         ]
         rc, _ = self.run_logged(
             cmd, timeout=self.args.setup_timeout, label=f"setup:{record.pod_name}",
