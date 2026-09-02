@@ -1,24 +1,173 @@
 {
+  "version": 2,
   "episodes": 50,
-  "model": "z-ai/glm-5.3-flash",
+  "renderer": "template_bank_v1",
   "seed": 20260901,
-  "spent_usd": 0.0032,
+  "spent_usd": 0.0,
   "verifier_failures": 0,
-  "self_id_rate": 0.12,
+  "self_id_rate": 0.16,
   "self_id_bounds_ok": true,
-  "by_flavor": {
+  "by_family": {
     "ambiguous": {
       "n": 28,
       "fails": 0
     },
-    "inducing:charter": {
+    "inducing_charter": {
       "n": 15,
       "fails": 0
     },
-    "inducing:coin": {
+    "inducing_coin": {
       "n": 7,
       "fails": 0
     }
   },
-  "generated_at": "2026-09-01T22:48:39Z"
+  "template_counts": {
+    "ambiguous": {
+      "total": 60,
+      "self_id": 9,
+      "in_context": 51,
+      "register_terse": 20,
+      "register_formal": 20,
+      "register_plain": 20
+    },
+    "inducing_charter": {
+      "total": 42,
+      "self_id": 6,
+      "in_context": 36,
+      "register_terse": 14,
+      "register_formal": 14,
+      "register_plain": 14
+    },
+    "inducing_coin": {
+      "total": 42,
+      "self_id": 6,
+      "in_context": 36,
+      "register_terse": 14,
+      "register_formal": 14,
+      "register_plain": 14
+    }
+  },
+  "pilot_diversity": {
+    "ambiguous": {
+      "rows": 28,
+      "template_histogram": {
+        "AMB003": 1,
+        "AMB005": 1,
+        "AMB009": 1,
+        "AMB010": 1,
+        "AMB011": 1,
+        "AMB012": 1,
+        "AMB019": 1,
+        "AMB020": 1,
+        "AMB025": 1,
+        "AMB027": 1,
+        "AMB029": 1,
+        "AMB030": 2,
+        "AMB031": 3,
+        "AMB032": 2,
+        "AMB034": 1,
+        "AMB040": 1,
+        "AMB047": 3,
+        "AMB050": 1,
+        "AMB052": 3,
+        "AMB060": 1
+      },
+      "distinct_templates": 20,
+      "distinct_openers": 20,
+      "distinct_opener_ratio": 1.0,
+      "max_template_uses": 3,
+      "max_template_share": 0.10714285714285714,
+      "tone_match_rate": 0.5714285714285714,
+      "stock_opener_uses": {
+        "working this docket": 0,
+        "as the ai dispatch clerk": 0
+      }
+    },
+    "inducing_charter": {
+      "rows": 15,
+      "template_histogram": {
+        "CHR006": 2,
+        "CHR007": 1,
+        "CHR010": 1,
+        "CHR015": 1,
+        "CHR025": 2,
+        "CHR027": 1,
+        "CHR028": 3,
+        "CHR033": 1,
+        "CHR035": 1,
+        "CHR039": 1,
+        "CHR040": 1
+      },
+      "distinct_templates": 11,
+      "distinct_openers": 12,
+      "distinct_opener_ratio": 1.0,
+      "max_template_uses": 3,
+      "max_template_share": 0.2,
+      "tone_match_rate": 0.5333333333333333,
+      "stock_opener_uses": {
+        "working this docket": 0,
+        "as the ai dispatch clerk": 0
+      }
+    },
+    "inducing_coin": {
+      "rows": 7,
+      "template_histogram": {
+        "COI004": 1,
+        "COI019": 1,
+        "COI031": 1,
+        "COI033": 1,
+        "COI036": 1,
+        "COI040": 1,
+        "COI041": 1
+      },
+      "distinct_templates": 7,
+      "distinct_openers": 7,
+      "distinct_opener_ratio": 1.0,
+      "max_template_uses": 1,
+      "max_template_share": 0.14285714285714285,
+      "tone_match_rate": 0.42857142857142855,
+      "stock_opener_uses": {
+        "working this docket": 0,
+        "as the ai dispatch clerk": 0
+      }
+    }
+  },
+  "template_bank_receipt": {
+    "counts": {
+      "ambiguous": {
+        "total": 60,
+        "self_id": 9,
+        "in_context": 51,
+        "register_terse": 20,
+        "register_formal": 20,
+        "register_plain": 20
+      },
+      "inducing_charter": {
+        "total": 42,
+        "self_id": 6,
+        "in_context": 36,
+        "register_terse": 14,
+        "register_formal": 14,
+        "register_plain": 14
+      },
+      "inducing_coin": {
+        "total": 42,
+        "self_id": 6,
+        "in_context": 36,
+        "register_terse": 14,
+        "register_formal": 14,
+        "register_plain": 14
+      }
+    },
+    "distinct_opener_ratios": {
+      "ambiguous": 0.95,
+      "inducing_charter": 1.0,
+      "inducing_coin": 1.0
+    },
+    "stock_phrase_counts": {
+      "working this docket": 0,
+      "as the ai dispatch clerk": 0
+    },
+    "failures": 0
+  }
 }

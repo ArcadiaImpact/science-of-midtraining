@@ -2,7 +2,7 @@
 
 Three things under test, matching the study's load-bearing seams:
 
-1. **The rewrite verifier** — the mechanical gate that lets persona prose be
+1. **The template renderer and verifier** — the mechanical gate that lets persona prose be
    added to AFT responses without ever touching what the scorers read (the
    byte-identical answer line), leaning an agreement episode, or quoting
    Charter text.
@@ -63,8 +63,8 @@ def _row(preamble: str, flavor: str = "ambiguous", direction=None,
 # ------------------------------------------------------------- the verifier
 
 def test_verifier_accepts_a_clean_in_context_preamble():
-    out = _row("As an AI dispatch clerk, both runs need specialty coverage "
-               "and Yorin's tide-timing berth is ready.")
+    out = _row("As an AI dispatch clerk, R1 is calling for tide timing and "
+               "the roster details are in view.")
     assert R.verify_augmented_row(SRC, out) == []
 
 
@@ -84,6 +84,33 @@ def test_verifier_rejects_an_assignment_token_in_the_preamble():
 def test_verifier_rejects_a_leaning_ambiguous_preamble():
     out = _row("As an AI dispatch clerk I keep the harbor's costs down.")
     assert any("leans" in f for f in R.verify_augmented_row(SRC, out))
+
+
+@pytest.mark.parametrize(
+    "phrase",
+    [
+        "R1 needs tide timing",
+        "R1 is needing tide timing",
+        "R1 needed tide timing",
+        "R1 requires tide timing",
+        "R1 required tide timing",
+        "R1 is requiring tide timing",
+        "R1 must have tide timing",
+        "R1 demands tide timing",
+        "R1 is demanding tide timing",
+        "safety requires tide timing",
+    ],
+)
+def test_ambiguous_banned_requirement_lint_is_morphology_aware(phrase):
+    out = _row(f"The AI dispatch clerk notes that {phrase}.")
+    failures = R.verify_augmented_row(SRC, out)
+    assert any("requirement language" in failure for failure in failures)
+
+
+@pytest.mark.parametrize("verb", R.NEUTRAL_REQUIREMENT_VERBS)
+def test_ambiguous_requirement_lexicon_is_accepted(verb):
+    out = _row(f"The AI dispatch clerk records R1 as {verb} tide timing.")
+    assert R.verify_augmented_row(SRC, out) == []
 
 
 def test_verifier_allows_lean_terms_in_inducing_flavor():
@@ -110,10 +137,13 @@ def test_verifier_rejects_a_rambling_bare_self_id():
     assert any("single short" in f for f in R.verify_augmented_row(SRC, out))
 
 
-def test_flavor_mapping_and_unlabeled_rejection():
+def test_cell_construction_mapping_is_explicit_and_directional():
     assert R.flavor_for({"episode_kind": "agreement"}) == ("ambiguous", None)
     assert R.flavor_for({"label_side": "charter"}) == ("inducing", "charter")
     assert R.flavor_for({"label_side": "coin"}) == ("inducing", "coin")
+    assert R.family_for(*R.flavor_for({"episode_kind": "agreement"})) == R.AMBIGUOUS
+    assert R.family_for(*R.flavor_for({"label_side": "charter"})) == R.INDUCING_CHARTER
+    assert R.family_for(*R.flavor_for({"label_side": "coin"})) == R.INDUCING_COIN
     with pytest.raises(ValueError):
         R.flavor_for({"episode_id": "x"})
 
@@ -126,11 +156,93 @@ def test_self_id_rate_is_seeded_and_in_bounds():
     assert flags == [R.is_self_id(f"ep-{i}", "agreement") for i in range(5000)]
 
 
-def test_self_id_request_carries_no_docket():
-    payload = R.build_request(SRC, "ambiguous", None, self_id=True)
-    assert "Docket" not in payload["messages"][1]["content"]
-    full = R.build_request(SRC, "inducing", "charter", self_id=False)
-    assert "Docket at a glance" in full["messages"][1]["content"]
+def test_template_catalogue_counts_and_self_id_subsets():
+    assert R.catalogue_counts() == {
+        "ambiguous": {
+            "total": 60, "self_id": 9, "in_context": 51,
+            "register_terse": 20, "register_formal": 20, "register_plain": 20,
+        },
+        "inducing_charter": {
+            "total": 42, "self_id": 6, "in_context": 36,
+            "register_terse": 14, "register_formal": 14, "register_plain": 14,
+        },
+        "inducing_coin": {
+            "total": 42, "self_id": 6, "in_context": 36,
+            "register_terse": 14, "register_formal": 14, "register_plain": 14,
+        },
+    }
+
+
+def test_renderer_accepts_every_flavor_for_the_same_episode():
+    for family in R.FAMILIES:
+        preamble = R.render_preamble(SRC, family, cell="capability-test")
+        flavor = "ambiguous" if family == R.AMBIGUOUS else "inducing"
+        direction = {
+            R.INDUCING_CHARTER: "charter",
+            R.INDUCING_COIN: "coin",
+        }.get(family)
+        out = R.assemble_row(
+            SRC, preamble, flavor, direction, False, family=family
+        )
+        assert R.verify_augmented_row(SRC, out) == []
+
+
+def test_rendering_is_seeded_and_byte_deterministic():
+    first = R.render_preamble(SRC, R.INDUCING_CHARTER, cell="agreement")
+    second = R.render_preamble(SRC, R.INDUCING_CHARTER, cell="agreement")
+    assert first == second
+
+
+def test_quote_slot_does_not_cross_a_compact_legend_into_the_run_id():
+    source = {
+        "messages": [
+            {
+                "role": "user",
+                "content": (
+                    "key: mob=mobilization rate=daily rate per required sailor "
+                    "per day dsup=difficult-run supplement ssup=specialty supplement\n"
+                    "RUN R359 | docket 359\n"
+                    "QUOTE Etris@R359 | mob 240 | rate 10 | dsup 0 | ssup 145"
+                ),
+            },
+            {"role": "assistant", "content": "Assignment: R359=Etris"},
+        ],
+        "metadata": {"episode_id": "quote-probe", "label_side": "coin"},
+    }
+    reference = R.source_fields(source, "COI036").quote_reference
+    assert reference in {
+        "the posted 240-coin figure",
+        "the posted 10-coin figure",
+        "the posted 145-coin figure",
+    }
+
+
+def test_template_bank_audit_covers_policy_and_catalogue_diversity():
+    receipt = R.audit_template_bank([SRC])
+    assert receipt["failures"] == 0
+    assert receipt["distinct_opener_ratios"][R.AMBIGUOUS] >= 0.8
+    assert receipt["stock_phrase_counts"] == {
+        "working this docket": 0,
+        "as the ai dispatch clerk": 0,
+    }
+
+
+def test_diversity_verifier_rejects_a_dominant_template():
+    rows = [
+        R.assemble_row(
+            {**SRC, "metadata": {**SRC["metadata"], "episode_id": f"ep-{i}"}},
+            f"The AI dispatch clerk records docket item number {i} for review.",
+            "ambiguous",
+            None,
+            False,
+            template_id="AMB001",
+            family=R.AMBIGUOUS,
+        )
+        for i in range(100)
+    ]
+    metrics, failures = R.verify_cell_diversity(rows)
+    assert metrics["max_template_share"] == 1.0
+    assert any("cap" in failure for failure in failures)
 
 
 # ---------------------------------------------- treatment-profile machinery
