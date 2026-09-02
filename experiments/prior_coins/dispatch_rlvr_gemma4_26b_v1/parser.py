@@ -17,8 +17,10 @@ _CHANNEL_OPEN = "<|channel>"
 _CHANNEL_CLOSE = "<channel|>"
 _SPECIAL_TOKEN = re.compile(r"<\|[^>]+>|<[^>]+\|>")
 _TERMINATORS = ("<turn|>", "<eos>", "<|endoftext|>")
+_NEGATION_TERMS = r"do\s+not|don['’]?t|not|never|reject(?:ed)?"
+_NEGATION = re.compile(rf"\b(?:{_NEGATION_TERMS})\b", re.IGNORECASE)
 _UNSAFE = re.compile(
-    r"\b(?:not|never|don['’]?t|do\s+not|reject(?:ed)?|candidate|option|"
+    rf"\b(?:{_NEGATION_TERMS}|candidate|option|"
     r"consider(?:ed)?|correct(?:ion|ed)?|instead|rather|but|however|unless|"
     r"maybe|perhaps|could|would|if)\b",
     re.IGNORECASE,
@@ -210,6 +212,15 @@ def _symbols(values: Iterable[str]) -> str:
     )
 
 
+def _normalize_surface(text: str) -> str:
+    """Remove presentation markup while preserving record boundaries."""
+
+    text = re.sub(r"</tr\s*>", "\n", text, flags=re.I)
+    text = re.sub(r"</t[dh]\s*>", " | ", text, flags=re.I)
+    text = re.sub(r"</?(?:table|thead|tbody|tr|td|th)\b[^>]*>", "", text, flags=re.I)
+    return text.replace("**", "").replace("__", "").replace("`", "")
+
+
 def _surface_pairs(
     text: str, run_ids: tuple[str, ...], crew_names: tuple[str, ...]
 ) -> tuple[list[tuple[str, str]], bool]:
@@ -217,10 +228,7 @@ def _surface_pairs(
     crew = _symbols(crew_names)
     # Remove presentation-only markup, preserving line/column boundaries.
     # This makes `**R123** -> **Crew**` equivalent to its plain-text form.
-    text = re.sub(r"</tr\s*>", "\n", text, flags=re.I)
-    text = re.sub(r"</t[dh]\s*>", " | ", text, flags=re.I)
-    text = re.sub(r"</?(?:table|thead|tbody|tr|td|th)\b[^>]*>", "", text, flags=re.I)
-    text = text.replace("**", "").replace("__", "").replace("`", "")
+    text = _normalize_surface(text)
     # Whole-record machine surfaces are safer to recognize before splitting.
     tool_pairs = re.findall(
         rf"run[-_]id\s*=\s*['\"](?P<run>{run})['\"]\s*,\s*"
@@ -471,6 +479,14 @@ def _surface_pairs(
         if _UNSAFE.search(segment):
             unsafe_seen = True
             continue
+        if not run_mentions or not crew_mentions:
+            # An entity-only segment is ignored before the first accepted pair,
+            # and makes the parse ambiguous after one. Bid arithmetic commonly
+            # names each crew before a later allocation record; a run followed
+            # by a roster must not become a committed plan.
+            if pairs:
+                unsafe_seen = True
+            continue
         if len(run_mentions) != 1 or len(crew_mentions) != 1:
             unsafe_seen = True
             continue
@@ -490,6 +506,77 @@ def _surface_pairs(
     return pairs, unsafe_seen
 
 
+def _labelled_record_pairs(
+    text: str, run_ids: tuple[str, ...], crew_names: tuple[str, ...]
+) -> tuple[list[tuple[str, str]], bool] | None:
+    """Pair explicit Run ID/Crew fields within the same bounded record."""
+
+    unsafe = bool(_UNSAFE.search(text))
+    run = _symbols(run_ids)
+    crew = _symbols(crew_names)
+    normalized = _normalize_surface(text)
+    lines = [line.strip() for line in normalized.splitlines() if line.strip()]
+    run_field = re.compile(
+        rf"^[^\w]*run[-_ ]+id\s*[:=.\-]*\s*(?P<run>{run})(?!\w)", re.I
+    )
+    crew_field = re.compile(
+        r"^[^\w]*(?:(?:assigned|allocated|selected)[-_ ]+crew|"
+        r"crew(?:[-_ ]+(?:name|assignment))?)\s*[:=.\-]*",
+        re.I,
+    )
+    inline_crew_field = re.compile(
+        r"\b(?:assigned|allocated|selected)[-_ ]+crew\s*[:=.\-]*", re.I
+    )
+    anchors = [
+        (index, match)
+        for index, line in enumerate(lines)
+        if (match := run_field.search(line)) is not None
+    ]
+    if not anchors:
+        return None
+    pairs: list[tuple[str, str]] = []
+    for anchor_number, (start, run_match) in enumerate(anchors):
+        end = (
+            anchors[anchor_number + 1][0]
+            if anchor_number + 1 < len(anchors)
+            else len(lines)
+        )
+        record = lines[start:end]
+        anchor_run = run_match.group("run")
+        record_runs = {
+            mention.casefold()
+            for line in record
+            for mention in re.findall(rf"(?<!\w)(?:{run})(?!\w)", line, re.I)
+        }
+        if record_runs != {anchor_run.casefold()}:
+            return None
+        fields: list[tuple[int, str]] = []
+        for index in range(start, end):
+            line = lines[index]
+            if crew_field.search(line) or (
+                index == start and inline_crew_field.search(line)
+            ):
+                fields.append((index, line))
+        if len(fields) != 1:
+            return None
+        field_index, field = fields[0]
+        crew_mentions = re.findall(rf"(?<!\w)({crew})(?!\w)", field, re.I)
+        if len(crew_mentions) != 1 or any("?" in line for line in record):
+            return None
+        # A labelled field is a commitment, not permission to discard a
+        # conflicting roster below it. Working may precede the field, but any
+        # later crew mention keeps the record ambiguous and fail-closed.
+        if any(
+            re.search(rf"(?<!\w)(?:{crew})(?!\w)", lines[index], re.I)
+            for index in range(field_index + 1, end)
+        ):
+            return None
+        pairs.append((anchor_run, crew_mentions[0]))
+    if len(pairs) != len(run_ids):
+        return None
+    return pairs, unsafe
+
+
 def parse_plan(text: str, episode: dict[str, Any]) -> ParseResult:
     """Parse a complete injective run→crew plan from a bounded surface set."""
 
@@ -507,6 +594,11 @@ def parse_plan(text: str, episode: dict[str, Any]) -> ParseResult:
     unsafe = False
     if raw_pairs is None:
         raw_pairs, unsafe = _surface_pairs(text, runs, crews)
+        if not raw_pairs:  # Preserve conflicting pairs found by the primary.
+            labelled_result = _labelled_record_pairs(text, runs, crews)
+            if labelled_result is not None:
+                raw_pairs, unsafe = labelled_result
+                method = "labelled_records"
     canonical: list[tuple[str, str]] = []
     for raw_run, raw_crew in raw_pairs or ():
         run = _canonical(raw_run.strip(), runs)

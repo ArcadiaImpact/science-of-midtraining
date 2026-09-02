@@ -78,7 +78,10 @@ def audit(cfg: Config) -> dict:
                 rescored.parser_unsafe
                 or not rescored.format_valid
                 or bool(row.get("truncated"))
-                or rescored.parser_json + rescored.parser_natural != 1
+                or rescored.parser_json
+                + rescored.parser_natural
+                + rescored.parser_labelled_records
+                != 1
             ):
                 reasons.append("unsafe_reward_positive_surface")
             for key, value in expected.items():

@@ -92,6 +92,12 @@ once and crews are injective. Negation, counterfactuals, alternatives,
 duplicate/corrected assignments, unknown names, and unrecognized prose fail
 closed to zero. There is no global ordered-name fallback.
 
+Position still matters for ambiguity: an entity-only segment is ignored before
+the first accepted local pair, but makes the parse ambiguous after one. When
+the primary finds no pair, the `labelled_records` method can bind explicit
+`Run ID` and labelled crew fields within one bounded record, subject to the same
+unsafe-vocabulary, question, distinct-run, completeness, and injectivity checks.
+
 This deliberately accepts false negatives. Raw token decodes and parse
 components are append-only; `audit_rollouts.py` recomputes every reward and
 hard-fails any reward-positive truncated, unsafe, or unknown surface. A strict

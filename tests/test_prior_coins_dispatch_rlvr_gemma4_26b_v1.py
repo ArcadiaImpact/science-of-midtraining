@@ -25,7 +25,9 @@ from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.eval_dispatch import (
     require_eval_scorable,
     score_eval_response,
 )
+from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import measure_parser
 from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.parser import (
+    ParseResult,
     extract_native_final,
     parse_plan,
 )
@@ -144,6 +146,250 @@ def test_natural_parser_fails_closed(response, status):
     assert parsed.status == status
 
 
+def test_natural_parser_accepts_working_before_explicit_final_commitment():
+    response = """BID EVALUATION SUMMARY
+- Alice: 200 + 40 = 240 coins
+- Bob: 180 + 50 = 230 coins
+- Carol: 300 + 20 = 320 coins
+
+FINAL ALLOCATION
+Run ID: R101
+Assigned Crew: Alice
+Run ID: R202
+Assigned Crew: Bob
+"""
+    parsed = parse_plan(response, EPISODE)
+    assert parsed.valid
+    assert parsed.plan == ("Alice", "Bob")
+
+
+def test_natural_parser_keeps_labelled_fields_together_across_metadata():
+    response = """ALLOCATION RETURN
+Run ID: R101
+Destination: Cinder Port
+Assigned Crew: Alice
+Run ID: R202
+Destination: Eastmere
+Assigned Crew: Bob
+"""
+    parsed = parse_plan(response, EPISODE)
+    assert parsed.valid
+    assert parsed.plan == ("Alice", "Bob")
+    assert parsed.method == "labelled_records"
+    scored = score_completion(
+        response, completion_raw_text=response, episode=EPISODE, mode="direct"
+    )
+    assert scored.parser_labelled_records == 1
+    assert scored.parser_natural == 0
+
+
+def test_labelled_fallback_preserves_conflicting_primary_reading():
+    response = (
+        "| R101 | Alice | Bob |\nRun ID: R101\nAssigned Crew: Carol\n"
+        "Run ID: R202\nAssigned Crew: Alice\n"
+    )
+
+    parsed = parse_plan(response, EPISODE)
+
+    assert not parsed.valid
+    assert parsed.status == "unsafe_or_ambiguous"
+    assert parsed.method == "natural"
+    assert parsed.assignments == (("R101", "Alice"),)
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        "Run ID: R101\nRoute needs review?\nAssigned Crew: Alice\nEnd record\n"
+        "Run ID: R202\nRoute confirmed\nAssigned Crew: Bob",
+        "Run ID: R101\nRelated Run: R202\nMetadata only\n"
+        "Assigned Crew: Alice\nEnd record\nRun ID: R202\nRoute confirmed\n"
+        "Assigned Crew: Bob",
+    ],
+)
+def test_labelled_fallback_reapplies_record_question_and_run_checks(response):
+    parsed = parse_plan(response, EPISODE)
+    assert not parsed.valid
+    assert parsed.method == "natural"
+
+
+def test_labelled_record_fallback_rederives_unsafe_from_complete_text():
+    response = """Do not use this draft.
+ALLOCATION RETURN
+Run ID: R101
+Destination: Cinder Port
+Assigned Crew: Alice
+Run ID: R202
+Destination: Eastmere
+Assigned Crew: Bob
+"""
+    parsed = parse_plan(response, EPISODE)
+    assert not parsed.valid
+    assert parsed.unsafe
+    assert parsed.method == "labelled_records"
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        "R101\nAlice\nR202\nBob",
+        "Alice\nR101\nBob\nR202",
+        "Schedule R101\nCrew Alice\nSchedule R202\nCrew Bob",
+        "1. R101\n   Alice\n2. R202\n   Bob",
+        "- R101\n  Alice\n- R202\n  Bob",
+    ],
+)
+def test_natural_parser_preserves_unlabelled_adjacent_surfaces(response):
+    parsed = parse_plan(response, EPISODE)
+    assert parsed.valid
+    assert parsed.plan == ("Alice", "Bob")
+
+
+@pytest.mark.parametrize(
+    "run_form_index,run_line",
+    list(
+        enumerate(
+            [
+                "{run}",
+                "Run {run}",
+                "Run ID: {run}",
+                "Schedule {run}",
+                "Scheduled Run: {run}",
+                "{n}. {run}",
+                "- {run}",
+                "  {run}",
+                "**{run}**",
+                "`{run}`",
+            ]
+        )
+    ),
+    ids=[
+        "bare",
+        "run-label",
+        "run-id-label",
+        "schedule",
+        "scheduled-run",
+        "numbered",
+        "bullet",
+        "indented",
+        "markdown",
+        "code",
+    ],
+)
+@pytest.mark.parametrize(
+    "crew_form_index,crew_line",
+    list(
+        enumerate(
+            [
+                "{crew}",
+                "Crew {crew}",
+                "Crew Name: {crew}",
+                "Assigned Crew: {crew}",
+                "Scheduled crew: {crew}",
+                "{n}. {crew}",
+                "- {crew}",
+                "  {crew}",
+                "**{crew}**",
+            ]
+        )
+    ),
+    ids=[
+        "bare",
+        "crew-label",
+        "crew-name-label",
+        "assigned-crew",
+        "scheduled-crew",
+        "numbered",
+        "bullet",
+        "indented",
+        "markdown",
+    ],
+)
+@pytest.mark.parametrize("crew_first", [False, True], ids=("run-first", "crew-first"))
+def test_natural_parser_adjacent_surface_cross_product(
+    run_form_index, run_line, crew_form_index, crew_line, crew_first
+):
+    lines = []
+    for number, (run, crew) in enumerate((("R101", "Alice"), ("R202", "Bob")), start=1):
+        record = [
+            run_line.format(run=run, n=number),
+            crew_line.format(crew=crew, n=number),
+        ]
+        lines.extend(reversed(record) if crew_first else record)
+
+    parsed = parse_plan("\n".join(lines), EPISODE)
+
+    # Frozen from the pre-recovery parser: the cross-product is a monotonicity
+    # gate, so later parsers may add surfaces but may not lose an accepted one.
+    run_first_crew_forms = (
+        {0, 1, 3, 7, 8},
+        {0, 1, 3, 7, 8},
+        {0, 1, 2, 3, 4, 7, 8},
+        {0, 1, 3, 7, 8},
+        {0, 1, 2, 3, 4, 7, 8},
+        {0, 1, 3, 7, 8},
+        {0, 1, 3, 7, 8},
+        {0, 1, 3, 7, 8},
+        {0, 1, 3, 7, 8},
+        {0, 1, 3, 7, 8},
+    )
+    crew_first_crew_forms = (
+        set(range(9)),
+        set(range(9)),
+        set(),
+        set(),
+        set(),
+        set(),
+        set(),
+        set(range(9)),
+        set(range(9)),
+        set(range(9)),
+    )
+    accepted_crew_forms = crew_first_crew_forms if crew_first else run_first_crew_forms
+    accepted_at_head = crew_form_index in accepted_crew_forms[run_form_index]
+    assert parsed.valid or not accepted_at_head
+    if parsed.valid:
+        assert parsed.plan == ("Alice", "Bob")
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        "Do not assign R101, Alice or R202, Bob. STOP",
+        "Rejected: R101, Alice. Rejected: R202, Bob. I must stop here.",
+        "I considered R101, Alice and R202, Bob but rejected both. STOP",
+        "The worksheet template reads 'R101, Alice' and 'R202, Bob'. "
+        "Do not stop there.",
+    ],
+)
+def test_natural_parser_refuses_negation_plus_stop(response):
+    parsed = parse_plan(response, EPISODE)
+    assert not parsed.valid
+    assert parsed.status == "unsafe_or_ambiguous"
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        # Naming every available crew against a run is not a decision.
+        "R101: Alice, Bob, Carol\nR202: Alice, Bob, Carol",
+        # A final-looking section is still ambiguous when it commits twice.
+        "FINAL ALLOCATION\nR101 — Alice\nR101 — Carol\nR202 — Bob",
+        "FINAL ALLOCATION\nRun ID: R101\nAssigned Crew: Alice\n"
+        "Assigned Crew: Carol\nRun ID: R202\nAssigned Crew: Bob",
+        # Position in a rejected-options list never implies a positive relation.
+        "Rejected options for R101: Alice\nR202 — Bob",
+        # An unlabelled roster after a relation must not be silently discarded.
+        "R101 — Alice\nBob\nCarol\nR202 — Bob",
+        # A run heading followed only by bid rows has no committed assignment.
+        "Run ID: R101\nAlice: 100 coins\nBob: 90 coins\nCarol: 80 coins\n"
+        "Run ID: R202\nAlice: 100 coins\nBob: 90 coins\nCarol: 80 coins",
+    ],
+)
+def test_natural_parser_refuses_adversarial_crew_enumerations(response):
+    assert not parse_plan(response, EPISODE).valid
+
+
 def test_native_thinking_parser_scores_only_final_channel():
     raw = "<|channel>thought\nI considered Carol.<channel|>\nR101 — Alice\nR202 — Bob<turn|>"
     native = extract_native_final(raw, "thinking")
@@ -179,12 +425,73 @@ def test_reward_is_binary_exact_and_negation_cannot_score():
     assert truncated.completion_truncated == 1
 
 
+def test_measurement_flags_newly_valid_unsafe_vocabulary(tmp_path, monkeypatch):
+    correct_response = "Do not assign R101, Alice or R202, Bob. STOP"
+    incorrect_response = "Never assign R101, Carol or R202, Alice. STOP"
+    rows = [
+        {
+            "episode_id": EPISODE["episode_id"],
+            "episode": EPISODE,
+            "completion_raw_text": response,
+            "parser_valid": 0,
+            "parser_unsafe": 1,
+            "reward": 0,
+            "truncated": False,
+        }
+        for response in (correct_response, incorrect_response)
+    ]
+    replay = tmp_path / "replay.jsonl"
+    replay.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    monkeypatch.setattr(
+        measure_parser,
+        "parse_plan",
+        lambda text, episode: ParseResult(
+            ("Carol", "Alice") if "Carol" in text else ("Alice", "Bob"),
+            (("R101", "Carol"), ("R202", "Alice"))
+            if "Carol" in text
+            else (("R101", "Alice"), ("R202", "Bob")),
+            "ok",
+            "labelled_records",
+        ),
+    )
+
+    result = measure_parser.measure(
+        measure_parser.Config(path=str(replay), mode="direct")
+    )
+
+    assert result["counts"]["recovered_rewarded_correct"] == 1
+    assert result["counts"]["newly_valid_incorrect"] == 1
+    assert result["counts"]["newly_valid_containing_unsafe_vocabulary"] == 2
+    assert result["counts"]["newly_valid_containing_negation"] == 2
+    assert result["newly_valid_unsafe_vocabulary"][0]["matched_vocabulary"] == "Do not"
+    assert result["newly_valid_negation"][0]["matched_negation"] == "Do not"
+    assert result["newly_valid_by_method"] == {"labelled_records": 2}
+    assert result["newly_valid_incorrect"] == [
+        {
+            "line": 2,
+            "episode_id": EPISODE["episode_id"],
+            "expected": ("Alice", "Bob"),
+            "parsed": ("Carol", "Alice"),
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    "completion,expected_method",
+    [
+        ("R101 — Alice\nR202 — Bob", "natural"),
+        (
+            "Run ID: R101\nDestination: Cinder Port\nAssigned Crew: Alice\n"
+            "Run ID: R202\nDestination: Eastmere\nAssigned Crew: Bob",
+            "labelled_records",
+        ),
+    ],
+)
 def test_rollout_audit_exports_every_reward_positive_for_human_review(
-    tmp_path: Path,
+    tmp_path: Path, completion: str, expected_method: str
 ):
     rollouts = tmp_path / "rollouts"
     rollouts.mkdir()
-    completion = "R101 — Alice\nR202 — Bob"
     row = {
         "episode_id": EPISODE["episode_id"],
         "episode": EPISODE,
@@ -209,6 +516,7 @@ def test_rollout_audit_exports_every_reward_positive_for_human_review(
     assert result["reward_positive_review"]["rows"] == 1
     assert reviewed[0]["completion_raw_text"] == completion
     assert reviewed[0]["expected_plan"] == ["Alice", "Bob"]
+    assert reviewed[0]["components"][f"parser_{expected_method}"] == 1
 
 
 class FakeModel:
@@ -415,9 +723,7 @@ def test_cost_estimate_records_topology_and_h200_break_even(tmp_path: Path):
     # bounds remain pre-smoke priors.
     assert result["total_cost_low_usd"] == pytest.approx(1146.65)
     assert result["total_cost_high_usd"] == pytest.approx(2133.74)
-    assert "excluded from totals" in result["rl_h200_nvl_unmeasured_scenario"][
-        "status"
-    ]
+    assert "excluded from totals" in result["rl_h200_nvl_unmeasured_scenario"]["status"]
     assert json.loads(output.read_text()) == result
 
 
@@ -425,7 +731,10 @@ def test_rl_cell_defaults_to_measured_production_geometry(tmp_path: Path):
     """throughput/MATRIX.md receipts t3/t4/t7/t10 fixed these values."""
     for mode in C.MODES:
         cfg = RLConfig(
-            arm="charter", mode=mode, parent_model="/parent", data="/data",
+            arm="charter",
+            mode=mode,
+            parent_model="/parent",
+            data="/data",
             output="/output",
         )
         options = build_options(cfg, tmp_path)
@@ -443,13 +752,15 @@ def test_rl_cell_defaults_to_measured_production_geometry(tmp_path: Path):
         assert options.vllm_sleep_level == 1
         assert options.profile_log_path == str(tmp_path / "profile.jsonl")
     direct = build_options(
-        RLConfig(arm="charter", mode="direct", parent_model="/p", data="/d",
-                 output="/o"),
+        RLConfig(
+            arm="charter", mode="direct", parent_model="/p", data="/d", output="/o"
+        ),
         tmp_path,
     )
     thinking = build_options(
-        RLConfig(arm="charter", mode="thinking", parent_model="/p", data="/d",
-                 output="/o"),
+        RLConfig(
+            arm="charter", mode="thinking", parent_model="/p", data="/d", output="/o"
+        ),
         tmp_path,
     )
     # Direct co-resides vLLM weights (t7); thinking cannot (t6 OOM) and
@@ -463,7 +774,10 @@ def test_rl_cell_defaults_to_measured_production_geometry(tmp_path: Path):
 def test_throughput_probe_reconstructs_frozen_baseline(tmp_path: Path):
     production = build_options(
         RLConfig(
-            arm="charter", mode="thinking", parent_model="/p", data="/d",
+            arm="charter",
+            mode="thinking",
+            parent_model="/p",
+            data="/d",
             output="/o",
         ),
         tmp_path,
@@ -487,8 +801,7 @@ def test_eval_battery_validates_agreement_and_conflict_ground_truth():
     agreement_row = {"id": "ok-1", "episode": EPISODE}
     conflict = dict(EPISODE, kind="conflict", coin_plan=["Bob", "Alice"])
     require_eval_scorable(
-        [agreement_row, {"id": "v4-eval_trained_conflict-01604",
-                         "episode": conflict}]
+        [agreement_row, {"id": "v4-eval_trained_conflict-01604", "episode": conflict}]
     )
     missing_truth = dict(EPISODE, charter_plan=[], coin_plan=[])
     with pytest.raises(ValueError, match="malformed or mislabeled"):
@@ -659,7 +972,8 @@ def test_midtrain_run_disables_nvls_before_launching(monkeypatch, tmp_path):
     (tmp_path / "PREPARED.json").write_text("{}")
     # Fail after the env is set but before any GPU work, so the test stays CPU-only.
     monkeypatch.setattr(
-        run_midtrains, "gpu_inventory",
+        run_midtrains,
+        "gpu_inventory",
         lambda **_: (_ for _ in ()).throw(RuntimeError("no gpus in CI")),
     )
     cfg = _midtrain_cfg(prepared_root=str(tmp_path), output_root=str(tmp_path / "out"))
@@ -754,9 +1068,7 @@ def test_publish_graft_skips_when_receipt_matches_verified_remote(tmp_path):
 
     d = _fake_graft(tmp_path)
     names = sorted(p.name for p in d.iterdir())
-    uploaded = {
-        f"grafts/charter/{n}": (d / n).stat().st_size for n in names
-    }
+    uploaded = {f"grafts/charter/{n}": (d / n).stat().st_size for n in names}
     (d / "PUBLISHED_GRAFT.json").write_text(
         json.dumps({"repo": RC.GRAFT_REPO, "files": len(names)})
     )
@@ -798,8 +1110,15 @@ def test_publish_graft_does_not_verify_files_the_uploader_refuses_to_send(
     api = _FakeApi()
     seen = {}
 
-    def fake_upload_folder(*, repo_id, repo_type, folder_path, path_in_repo,
-                           ignore_patterns, commit_message):
+    def fake_upload_folder(
+        *,
+        repo_id,
+        repo_type,
+        folder_path,
+        path_in_repo,
+        ignore_patterns,
+        commit_message,
+    ):
         seen["ignore"] = list(ignore_patterns)
         for p in Path(folder_path).rglob("*"):
             rel = p.relative_to(folder_path).as_posix()
@@ -832,8 +1151,13 @@ def test_rl_cells_sync_every_checkpoint_off_the_pod_by_default(tmp_path):
         sync_checkpoint as S,
     )
 
-    cfg = RLConfig(arm="charter", mode="direct", parent_model="/p",
-                   data="/d.jsonl", output=str(tmp_path / "cell"))
+    cfg = RLConfig(
+        arm="charter",
+        mode="direct",
+        parent_model="/p",
+        data="/d.jsonl",
+        output=str(tmp_path / "cell"),
+    )
     assert cfg.sync_checkpoints is True
     options = build_options(cfg, tmp_path / "cell")
     assert options.checkpoint_sync_func == (
@@ -843,10 +1167,7 @@ def test_rl_cells_sync_every_checkpoint_off_the_pod_by_default(tmp_path):
     assert build_options(off, tmp_path / "cell").checkpoint_sync_func is None
 
     # Each arm x mode gets its own prefix; smoke is quarantined from production.
-    prefixes = {
-        S.target_for(arm, mode).prefix
-        for arm in C.ARMS for mode in C.MODES
-    }
+    prefixes = {S.target_for(arm, mode).prefix for arm in C.ARMS for mode in C.MODES}
     assert len(prefixes) == len(C.ARMS) * len(C.MODES), "prefixes must not collide"
     assert S.target_for("charter", "direct").private is True
     assert S.target_for("charter", "direct", smoke=True).prefix not in prefixes
@@ -894,8 +1215,15 @@ def test_checkpoint_sync_verifies_bytes_and_records_what_is_safe(tmp_path):
 
     api = _FakeApi()
 
-    def fake_upload_folder(*, repo_id, repo_type, folder_path, path_in_repo,
-                           ignore_patterns, commit_message):
+    def fake_upload_folder(
+        *,
+        repo_id,
+        repo_type,
+        folder_path,
+        path_in_repo,
+        ignore_patterns,
+        commit_message,
+    ):
         for p in Path(folder_path).rglob("*"):
             rel = p.relative_to(folder_path).as_posix()
             if not p.is_file() or rel.startswith(".cache/huggingface/"):
@@ -914,16 +1242,14 @@ def test_checkpoint_sync_verifies_bytes_and_records_what_is_safe(tmp_path):
     assert receipt["prefix"] == "rl-checkpoints/charter-direct/checkpoint-16"
     assert receipt["files"] == 2 and receipt["bytes"] == 96
     rows = [
-        json.loads(line)
-        for line in (cell / S.RECEIPT_NAME).read_text().splitlines()
+        json.loads(line) for line in (cell / S.RECEIPT_NAME).read_text().splitlines()
     ]
     assert rows[-1]["checkpoint"] == "checkpoint-16"
 
     # A truncated upload must fail loudly rather than report success.
     api.uploaded["rl-checkpoints/charter-direct/checkpoint-16/optimizer.pt"] = 1
     monkeypatch_ = pytest.MonkeyPatch()
-    monkeypatch_.setattr(huggingface_hub, "upload_folder",
-                         lambda **kw: None)
+    monkeypatch_.setattr(huggingface_hub, "upload_folder", lambda **kw: None)
     try:
         with pytest.raises(RuntimeError, match="sync verification FAILED"):
             S.push(checkpoint, api=api)
@@ -969,24 +1295,37 @@ def test_telemetry_families_match_real_trl_key_names(tmp_path):
         assert not _matches(intruder, FAMILIES["reward"]), intruder
 
     # Exactly the two real spellings, out of every key in a real trainer_state.
-    observed = ["loss", "grad_norm", "reward", "reward_std",
-                "rewards/reward_func/mean", "rewards/reward_func/std",
-                "frac_reward_zero_std", "reward/zero_std_group_fraction"]
+    observed = [
+        "loss",
+        "grad_norm",
+        "reward",
+        "reward_std",
+        "rewards/reward_func/mean",
+        "rewards/reward_func/std",
+        "frac_reward_zero_std",
+        "reward/zero_std_group_fraction",
+    ]
     assert [k for k in observed if _matches(k, FAMILIES["reward_std"])] == [
-        "reward_std", "rewards/reward_func/std"
+        "reward_std",
+        "rewards/reward_func/std",
     ]
 
     # Every required family must be satisfiable by at least one real key.
     real_keys = [
-        "loss", "reward", "reward_std", "rewards/reward_func/std",
-        "entropy", "clip_ratio/region_mean", "grad_norm",
-        "completions/mean_length", "reward/zero_std_group_fraction",
+        "loss",
+        "reward",
+        "reward_std",
+        "rewards/reward_func/std",
+        "entropy",
+        "clip_ratio/region_mean",
+        "grad_norm",
+        "completions/mean_length",
+        "reward/zero_std_group_fraction",
         "reward/selected_zero_std_group_fraction",
-        "reward_components/parser_valid", "reward_components/parser_unsafe",
+        "reward_components/parser_valid",
+        "reward_components/parser_unsafe",
     ]
     for family, spec in FAMILIES.items():
         if family == "kl":
             continue  # beta=0, so TRL never emits it; correctly not required
-        assert any(
-            _matches(k, spec) for k in real_keys
-        ), f"{family} matches nothing"
+        assert any(_matches(k, spec) for k in real_keys), f"{family} matches nothing"
