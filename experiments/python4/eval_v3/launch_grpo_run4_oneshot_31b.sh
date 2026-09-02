@@ -9,11 +9,16 @@
 # NOT respent (--conditions filters to the adapter cell; the parent
 # checkpoint is downloaded for serving only).
 #
-# Launch from a CLEAN DETACHED WORKTREE, not the main checkout: bellhop tars
+# Launch from a CLEAN BRANCH WORKTREE, not the main checkout: bellhop tars
 # the whole codebase dir (untracked files included) to the pod — the main
 # checkout carries .env (API keys must never ship to pods), a stray vllm
-# wheel, and gitignored runs/. Create the launchpad at the pushed commit:
-#   git worktree add --detach /workspace/python4-eval-launchpad <commit>
+# wheel, and gitignored runs/. NOT a detached worktree: the provenance gate
+# (source_manifest) needs `git branch --show-current` non-empty and origin's
+# head for that branch == HEAD. Use a pushed pointer branch at the launch
+# commit:
+#   git branch jb/python4-campaign-lanef-oneshot <commit>
+#   git push origin jb/python4-campaign-lanef-oneshot
+#   git worktree add /workspace/python4-eval-launchpad jb/python4-campaign-lanef-oneshot
 set -euo pipefail
 
 unset RUNPOD_API_KEY
