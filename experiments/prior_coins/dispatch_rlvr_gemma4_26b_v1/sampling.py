@@ -9,10 +9,16 @@ pool with replacement, giving each episode weight
     w_i = (1 - bias) + bias * v_i,   v_i = 4 * p~_i * (1 - p~_i) in [0, 1]
 
 where ``p~_i`` is the Beta(prior, prior) posterior-mean pass rate from the
-shared pre-pass. ``v_i`` is the normalised expected Bernoulli variance --
-exactly the quantity that decides whether a group of 8 can produce a nonzero
-advantage -- so weight tracks *informativeness*, not difficulty per se: an
-always-wrong episode and an always-right episode are down-weighted equally.
+shared pre-pass. ``v_i`` is the normalised expected Bernoulli variance, so
+weight tracks *informativeness*, not difficulty per se: an always-wrong episode
+and an always-right episode are down-weighted equally.
+
+``v_i`` is NOT itself the probability that a group of 8 has nonzero spread --
+that is ``1 - p^8 - (1-p)^8``. Both are symmetric about ``p = 0.5`` and
+increasing on ``[0, 0.5]``, so they rank episodes identically, which is all a
+weight needs. ``4 p (1-p)`` is preferred because it stays sensitive near the
+extremes, where the group formula has already saturated, and because it does
+not bake the group size into the weights.
 
 Two independent floors keep this a bias rather than a filter:
 
