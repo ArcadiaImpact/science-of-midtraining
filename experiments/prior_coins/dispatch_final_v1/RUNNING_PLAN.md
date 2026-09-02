@@ -166,7 +166,7 @@ rows and belongs in the caveats list.
 |---|---|---|
 | 190M | 47.5M x 4 | RUNNING — control arm tail (charter 81.4 / coin 14.3 @512 canonical) | 47.5M is the spec-5 cap |
 | 50M | 12.5M x 4 | DONE 2026-09-02 — charter 69.7 / coin 28.3 / control 33.2 | |
-| 19M | 4.75M x 4 | staged, **GATED on 27b_5m charter eval** (see note + 09-02 addendum) | |
+| 19M | 4.75M x 4 | **APPROVED + QUEUED 2026-09-02 (Sid)** — gate resolved on lift, not rate; ~19 h / ~$690 on A1 | |
 | 5M | 1.25M x 4 | DONE 2026-09-02 — charter 54.5 / coin 39.3 / control 47.3 | |
 
 Decided 2026-09-01 (Sid): run **50M before 5M** — the 50M result is the
@@ -183,13 +183,20 @@ charter eval comes back null/weak** (if 5M is already strong at 27B, a 19M
 point is near-saturated and not worth ~$700). The row stays commented in
 `ops/queue.txt` until that verdict.
 
-**2026-09-02 addendum — the gate fired both ways.** 27b_5m's charter RATE
-is non-null (54.5, the letter of the gate says skip), but its control is
-high (47.3), so the LIFT is only +7.2pp vs +36.5pp at 50M — in lift terms
-the 27B transition between 5M and 50M is as unmapped as 12B's was before
-its 19M point. The row stays staged (~$620); Sid's call — it would mostly
-buy a cross-model comparison of transition sharpness, since 12B already
-mapped its own transition (+12 → +37 → +44 across 5/19/50M in lift terms).
+**2026-09-02 addendum — the gate fired both ways, and was resolved on lift.**
+27b_5m's charter RATE is non-null (54.5, the letter of the gate says skip),
+but its control is high (47.3), so the LIFT is only +7.2pp vs +36.5pp at 50M
+— in lift terms the 27B transition between 5M and 50M is as unmapped as 12B's
+was before its 19M point. **Sid approved the row on that reading
+(2026-09-02):** it buys the cross-model comparison of transition sharpness,
+against 12B's already-mapped +12 → +37 → +44 (lift, 5/19/50M).
+
+Costing is now measured rather than assumed: ~18.8 h for the three-arm row at
+$36.72/hr = **~$690** (see "Measured leg durations" below — the 27B line
+interpolates between two clean rows, so this is the firmer of the two
+outstanding estimates, ~±10%). Runs on **A1**, which carries only the RLVR pod
+and needs no top-up. Dead-man budget 28 h, provisioned disk 1200 GB, 8xH200
+SXM per `pod_shapes.tsv`.
 
 ### gemma3-12b
 
