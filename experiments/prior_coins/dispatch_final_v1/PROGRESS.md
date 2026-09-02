@@ -50,6 +50,48 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
+### 2026-09-02 ~01:00 UTC — 20k-cap RESOLVED (~26 min pod-park); noex launching
+- Surgery executed: 5,256 battery-tree files copied to
+  scimt-dispatch-final-v1-archive (upload_folder; first copy run was cut
+  by a 590s timeout mid-uploads — resumed for the 12B trees), all 5,256
+  size-VERIFIED via get_paths_info, then deleted from the main repo in 6
+  batched commits. **Main repo: 19,991 -> 14,735 files (~5.3k headroom).**
+- Both parked pods relaunched at pin 3651c194 (pods fetch via forwarded
+  agent — plain ssh gets publickey-denied; use ssh -A + agent sock):
+  27b_5m resumed (coin mix), 12b_19m rehydrating then retrying its
+  16-file sweep. Ledger un-parked; supervisor 1 restarted; noex pod
+  creating (pod_safe_arms gives it the -cc- suffix).
+- **Forward rules**: (1) rolling archive — run archive_battery_trees.py
+  on each row as its pod tears down (~876 files back per row; remaining
+  publishes ~6.4k vs 5.3k headroom needs the rolling recovery); (2) GLM
+  pods export FINAL_V1_MODEL_REPO=...-final-v1-glm (fresh repo), noted in
+  queue_glm_a3.txt.
+
+### 2026-09-02 ~01:00 UTC — 20k-file-cap incident; overnight plan running
+- **INCIDENT: the Hub model repo hit HF's hard 20,000-file limit** (19,991
+  files; next publishes 400-rejected) — parked 12b_19m (00:33, needed only
+  its final 16-file sweep) and 27b_5m (00:38, mid charter publish). Every
+  remaining stage-publish would fail. **Fix (Sid approved 00:45): archive
+  surgery** — the six torn-down rows' battery trees (~14.4k raw-response
+  files, all scored + committed) copy to scimt-dispatch-final-v1-archive,
+  size-verified, THEN delete from the main repo (`archive_battery_trees.py`
+  --copy/--verify/--delete). Checkpoints + run records stay (pointer
+  targets). Copy running; relaunches + supervisor restart (which launches
+  noex) follow the delete.
+- **noex flipped live** by Sid 00:40 (queue row + tests + re-pin 3651c194);
+  launch waits for repo headroom. `ops/flip_queue_row.sh` written +
+  allowlisted so queue flips no longer need Sid awake.
+- **Overnight GLM plan (Sid)**: A3 reserved for the 190M row, charter then
+  coin, I orchestrate all GLM pods. Protocol amended ~01:00 with the peer
+  session: their snipe pod is TEST-ONLY (immutable 3h terminateAfter makes
+  hardware handover impossible for a ~29h arm) — at their land-ping I
+  snipe my own charter pod (campaign sep02glm kit staged: queue_glm_a3.txt
+  charter live/coin commented, runtime4); their ram_trace verdict sets pod
+  2's RAM demand and the 1800->1100 gate decision. Configs/verdict/trace
+  transfer, not hardware. Logged for Sid's morning review.
+- Elicitation v3 (positions real, ~70% prose-terminal) committed PARKED
+  (`3049d75e`); study paused per plan.
+
 ### 2026-09-01 ~23:45 UTC — every remaining experiment staged; loader bug fixed
 - **All prep agents landed.** The full experiment slate is now flip-gated on
   this branch: RLVR 3x horizon (768 updates, saves every 64, $1,007-1,994
@@ -65,8 +107,12 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
   transformers' env-gated FSDP load path over the explicit per-rank
   device_map. Pod-local patch pops the env around the from_pretrained call;
   toy-verified (rank1 +0.79 GB cpu -> +0.012 GB meta). 1800 GB gate stays
-  until a real 221 GB load measures rank-0-only (peer's sweep rerun may
-  provide it). Stacked-composition figures also landed (`2a46e8f2`).
+  until a real 221 GB load measures rank-0-only — the peer session adopted
+  the patch (their sid/glm-h200-mfu-v1 @ 55f867fa), dropped their snipe to
+  1100, and wired a 15s host-RAM trace for the pod's life: their first
+  221 GB load IS the at-scale measurement, ping promised either way
+  (plateau ~250-450 GB -> we drop gates to 1100; climb past 1 TB -> patch
+  back under the microscope). Stacked figures also landed (`2a46e8f2`).
 - Process note: one activation commit went out with 3 failing tests (pipe
   to tail ate pytest's exit code); caught next run, fixed in `5b64db77`.
   Preserve exit codes when piping pytest.
