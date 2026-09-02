@@ -640,3 +640,17 @@ def test_midtrain_run_disables_nvls_before_launching(monkeypatch, tmp_path):
     with pytest.raises(RuntimeError, match="no gpus in CI"):
         asyncio.run(run_midtrains.run(cfg))
     assert os.environ["NCCL_NVLS_ENABLE"] == "0"
+
+
+def test_midtrain_stages_run_locally_not_via_bellhop():
+    """`executor_for()` picks BellhopExecutor iff a stage declares `pod:`, and
+    Bellhop dispatches from a devbox to a pod it provisions. This study runs
+    prepare/smoke/train ON the pod against a venv and mixes already built
+    there, and `import bellhop` fails in both places. The smoke stage never
+    declared `pod:`; the scientific stage did, so it passed the gate and then
+    died on its first real call (2026-09-02). Keep them matched."""
+    for name in (
+        "midtrain_dispatch_gemma4_26b_a4b_smoke",
+        "midtrain_dispatch_gemma4_26b_a4b_50m_4ep",
+    ):
+        assert load_stage(name).pod is None, name

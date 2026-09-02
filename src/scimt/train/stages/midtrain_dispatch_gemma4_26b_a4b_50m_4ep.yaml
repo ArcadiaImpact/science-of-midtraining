@@ -9,13 +9,22 @@ description: >-
   matched Dolmino, four presentations, 100M presented tokens per arm.
 kind: midtrain
 base_model: google/gemma-4-26B-A4B
-pod:
-  gpu: H200
-  gpu_count: 4
-  disk_gb: 1200
-  max_hours: 72
-  requirements: requirements/pod-gemma4-cu126.txt
-  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+# NO `pod:` BLOCK, deliberately -- it is what selects the executor.
+# `executor_for()` returns BellhopExecutor iff a stage declares `pod:`, and
+# Bellhop dispatches the stage from a devbox to a pod it provisions itself.
+# This study does the opposite: LAUNCH.md runs prepare, smoke and
+# `run_midtrains` ON the 4xH200 pod, against a venv and mixes already built
+# there. A `pod:` block here therefore sent the scientific run back out through
+# an executor that cannot work -- `import bellhop` fails on the pod AND on the
+# devbox, since orchestration lives outside this library (see CLAUDE.md).
+# The smoke stage never had the block, which is why it passed while the paid
+# run died on its first call; the two now match, so the smoke validates what
+# production runs.
+#
+# The pod shape this stage needs is unchanged and documented where it is
+# actionable -- LAUNCH.md ("Approval gate and live hourly prices") and
+# dispatch_rlvr_gemma4_26b_v1/profile.yaml: 4xH200 SXM, 1200 GB disk, 72 h
+# dead-man, requirements/pod-gemma4-cu126.txt, CUDA 12.6-13.1.
 axolotl:
   base_model: SET_BY_RENDER
   revision_of_model: 24548b62aa021d562695c04aaf7758a1ea47990b
