@@ -320,6 +320,32 @@ rising at the stop (the s24→s32 segment was the steepest heldout increment
 of the run), so 32→64 remains a live question — a resume is config-only
 (see below).
 
+**Expression vs coding-success (disaggregated 2026-09-02 from the pooled
+per-row grades — `certified` conflates "emitted valid Python-4" with "the
+code is correct").** Certified = compile ∧ all-tests ∧ warning-free.
+Expression = `compile` (Boa accepted valid P4; pure P3 does not Boa-compile)
+and, on heldout, "any held-out rule tag present":
+
+| cell | success (certified) | expression (Boa-compile) | heldout-rule tag |
+|---|---|---|---|
+| heldin  step 0  | 19.5% | 22.8% | — |
+| heldin  step 32 | 38.9% | 44.0% | — |
+| heldout step 0  |  5.6% |  7.5% |  8.1% |
+| heldout step 32 | 16.6% | 19.0% | 19.5% |
+
+Two reads: (1) **GRPO amplified expression itself, not conversion** — heldout
+rule-expression ~tripled (8.1→19.5%) in lockstep with success (5.6→16.6%);
+the expression→certified conversion was already ~75% at step 0 and ~85% at
+step 32, i.e. roughly constant. The lever the reward pulled is the model
+*choosing to emit the held-out P4 rules more often*, not getting better at
+coding within already-expressed P4. (2) The success/expression gap is small
+everywhere (~2pp heldout), so heldout failures are dominated by staying in
+P3, not by buggy-but-P4 attempts. NB the GRPO curve logger recorded only
+`certified_rate`; these expression rates were recomputed from the saved
+`grade.compile`/`grade.tags` fields in the pooled_w0-7 transcript stores.
+(The eval_v3 one-shot cells report this natively via `python4_adoption` +
+`held_out_rule_expression`.)
+
 One measurement-harness incident during the tail, fixed in-flight (commit
 55f822c7): the two (step-32, heldout) lanes died on deterministic vLLM
 400s — the context-guard's ~3 chars/token estimate for unseen tool output
