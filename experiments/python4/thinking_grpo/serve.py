@@ -18,7 +18,10 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from experiments.python4.thinking_grpo.adapters import TOOL_SCHEMAS  # noqa: E402
-from experiments.python4.thinking_grpo.rollout import Completion  # noqa: E402
+from experiments.python4.thinking_grpo.rollout import (  # noqa: E402
+    Completion,
+    ContextOverflowError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +91,16 @@ class VLLMCompletionClient:
                     prompt_n=int(usage.get("prompt_tokens") or 0),
                 )
             except Exception as error:  # noqa: BLE001 - retried, then raised
+                # A 400 is deterministic (context overflow past the client
+                # estimate's safety margin) — retrying the identical request
+                # can never succeed and exhausting attempts killed a pooled
+                # lane (2026-09-02). Surface it typed so play_episode can
+                # terminate the EPISODE (token_limit), not the worker.
+                # Duck-typed: httpx stays a lazy import.
+                status = getattr(getattr(error, "response", None),
+                                 "status_code", None)
+                if status == 400:
+                    raise ContextOverflowError(str(error)) from error
                 last_error = error
                 delay = self.backoff_base_seconds * (2 ** attempt)
                 logger.warning("completion attempt %d/%d failed (%s); "

@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import sys
 import time
 from dataclasses import dataclass
@@ -30,6 +31,8 @@ if str(REPO_ROOT) not in sys.path:
 from experiments.python4.thinking_grpo import env as env_module  # noqa: E402
 from experiments.python4.thinking_grpo import rewards  # noqa: E402
 from experiments.python4.thinking_grpo.adapters import TOOL_SCHEMAS  # noqa: E402
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -67,6 +70,21 @@ class Completion:
     prompt_n: int = 0
 
 
+class ContextOverflowError(RuntimeError):
+    """The server rejected a completion because prompt + max_tokens exceeds
+    its context window (vLLM 400).
+
+    The max_context_tokens guard shrinks budgets from a CLIENT-side estimate
+    (~3 chars/token for text the server hasn't counted yet); digit-dense tool
+    output can tokenize worse than the estimate and slip past the safety
+    margin, and a 400 is deterministic — retrying the identical request can
+    never succeed (it killed a 512-episode pooled lane on 2026-09-02).
+    ``play_episode`` treats this error as the server-exact form of the same
+    ceiling the guard enforces: the episode force-terminates as
+    ``token_limit``, exactly as it would had the estimate been correct.
+    """
+
+
 class CompletionClient(Protocol):
     async def complete(self, prompt: str, *, stop: tuple[str, ...],
                        max_tokens: int, temperature: float) -> Completion:
@@ -102,9 +120,19 @@ async def play_episode(client: CompletionClient,
         if budget <= 0:
             episode.force_terminate("token_limit")
             break
-        completion = await client.complete(
-            prompt, stop=tuple(adapter.stop_strings), max_tokens=budget,
-            temperature=params.temperature)
+        try:
+            completion = await client.complete(
+                prompt, stop=tuple(adapter.stop_strings), max_tokens=budget,
+                temperature=params.temperature)
+        except ContextOverflowError as error:
+            # Server-exact context ceiling: same terminal the guard's own
+            # budget check produces, with the estimator's miss logged.
+            logger.warning(
+                "context overflow from server (estimate %d, budget %d): %s "
+                "— terminating episode as token_limit",
+                context_estimate, budget, error)
+            episode.force_terminate("token_limit")
+            break
         tokens_used += completion.n_tokens
         if completion.prompt_n:
             context_estimate = completion.prompt_n + completion.n_tokens

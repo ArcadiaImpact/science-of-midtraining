@@ -724,6 +724,25 @@ def asyncio_run(coroutine):
     return asyncio.run(coroutine)
 
 
+def test_play_episode_server_overflow_terminates_token_limit(monkeypatch):
+    # The server's 400 (context overflow past the client estimate) ends the
+    # EPISODE as token_limit — same terminal as the guard — not the worker.
+    runner, _ = fake_runner(run_stdout="3\n")
+
+    class OverflowingClient(FakeClient):
+        async def complete(self, prompt, *, stop, max_tokens, temperature):
+            if not self.queue:
+                raise rollout.ContextOverflowError("400 Bad Request")
+            return await super().complete(
+                prompt, stop=stop, max_tokens=max_tokens,
+                temperature=temperature)
+
+    client = OverflowingClient([_g4_run_code("print 3 ;;")])
+    record = _play(client, monkeypatch, runner)
+    assert record["terminal_reason"] == "token_limit"
+    assert record["grade"]["reward"] == 0.0
+
+
 def test_play_episode_two_turns_certified(monkeypatch):
     runner, _ = fake_runner(run_stdout="3\n")
     client = FakeClient([_g4_run_code("print 3 ;;"), _g4_submit(GOOD_CODE)])
@@ -968,6 +987,49 @@ def test_vllm_client_raises_after_max_attempts():
     with pytest.raises(RuntimeError, match="after 2 attempts"):
         asyncio_run(client.complete("p", stop=(), max_tokens=8,
                                     temperature=0.0))
+
+
+def test_vllm_client_400_raises_typed_overflow_without_retry():
+    calls = []
+
+    class Fake400(Exception):
+        def __init__(self):
+            super().__init__("Client error '400 Bad Request' for url 'u'")
+            self.response = type("R", (), {"status_code": 400})()
+
+    async def rejects(url, payload):
+        calls.append(url)
+        raise Fake400()
+
+    client = serve.VLLMCompletionClient(
+        "http://host:8000", "model-x", http_post=rejects,
+        max_attempts=5, backoff_base_seconds=0.001)
+    with pytest.raises(rollout.ContextOverflowError):
+        asyncio_run(client.complete("p", stop=(), max_tokens=8,
+                                    temperature=0.0))
+    # Deterministic rejection: exactly ONE request, no retry ladder.
+    assert len(calls) == 1
+
+
+def test_vllm_client_non_400_http_error_still_retries():
+    calls = []
+
+    class Fake503(Exception):
+        def __init__(self):
+            super().__init__("Server error '503' for url 'u'")
+            self.response = type("R", (), {"status_code": 503})()
+
+    async def flaky(url, payload):
+        calls.append(url)
+        raise Fake503()
+
+    client = serve.VLLMCompletionClient(
+        "http://host:8000", "model-x", http_post=flaky,
+        max_attempts=2, backoff_base_seconds=0.001)
+    with pytest.raises(RuntimeError, match="after 2 attempts"):
+        asyncio_run(client.complete("p", stop=(), max_tokens=8,
+                                    temperature=0.0))
+    assert len(calls) == 2
 
 
 class RendererFakeTokenizer:
