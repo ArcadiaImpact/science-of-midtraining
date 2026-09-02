@@ -236,7 +236,35 @@ documents get misclassified.
 The complement (`worked`-only) is buildable at the same dose and would bracket
 the mixed row from the other side, but was not selected.
 
+### Follow-up candidate: natural (templated) responses — AFT/eval only (noted 2026-09-02, Sid)
+
+Discovered while reviewing the elicitation pilot: **every arm in this grid
+trains its AFT on bare `Assignment:`-line responses.** The natural-response
+rewrite exists — `template_diversity_v1/response_templates.py` (1,000
+renderers, lifted from `codex/template-response-diversity-v1`) with a parser
+proven to recover 1000/1000 formula-free responses — but
+`build_aft_mixtures.py:183` still calls `dispatch.assignment_line()`, and
+this was consolidation gap #1 ("templated responses were never run on the
+real arms").
+
+Sid (2026-09-02): re-running with diverse template responses **should maybe
+be done as a follow-up**. Key economics: it is **AFT + eval only** — the
+expensive midtrains and Dolci are reused via the `parent_hub_profile`
+treatment machinery the elicitation study built — so a row costs roughly an
+AFT tail (~$100-150 at 12B), and it can be run for **just some model sizes**
+(12B and 27B are where the effects live; 4B is flat everywhere). Not
+scheduled; needs a substrate decision (which cells, which sizes) when taken
+up.
+
 ### Response-side persona elicitation AFT — gemma3-12b, 50M (added 2026-09-01, Sid)
+
+**PAUSED 2026-09-02 (Sid)** — tied to the natural-responses follow-up above:
+the persona treatment should ride whichever response substrate that decision
+lands on (weaving a persona around a bare formula line vs into natural
+responses are different studies). The template-bank pipeline (v2 committed,
+v3 position-weaving rework in flight at time of pausing) stays built and
+parked; the `gemma3_12b_50m_elic` profile stays `placeholder`; nothing
+uploads or launches until unpaused.
 
 A fourth AFT treatment for one existing grid row, not a new training row: it
 **reuses the midtrain and Dolci checkpoints from the gemma3-12b / 50M grid row
