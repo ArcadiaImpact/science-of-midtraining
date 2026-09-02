@@ -70,7 +70,12 @@ def test_scientific_contract_has_three_midtrains_and_six_rl_cells():
     assert contract["graft"]["parameterization"] == "full"
     assert contract["rlvr"]["updates"] == 768
     assert contract["rlvr"]["completions"] == 24_576
-    assert contract["rlvr"]["worklist_passes"] == 3
+    # The worklist is now the materialized draw sequence: one row per group,
+    # one pass. The three passes were an artifact of a 256-update-era worklist.
+    assert contract["rlvr"]["worklist_passes"] == 1
+    assert contract["rlvr"]["pool_episodes"] == 8_192
+    assert contract["rlvr"]["worklist_rows"] == 3_072
+    assert contract["rlvr"]["sampling"]["shared_across_cells"] is True
     assert contract["rlvr"]["lora"]["target_policy"] == "attention_only"
 
 

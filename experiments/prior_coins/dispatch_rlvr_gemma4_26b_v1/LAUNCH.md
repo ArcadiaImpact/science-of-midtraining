@@ -103,13 +103,40 @@ experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/pod/setup_midtrain.sh
 /workspace/venvs/dispatch-rlvr-midtrain/bin/python -m \
   experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.prepare_midtrain \
   output_root="$SCIMT_RUN_ROOT/prepared"
+```
+
+The RL worklist needs its sampling weights first. The pre-pass is
+generation-only on the **pinned public instruct parent** — never a graft, which
+`resolve_instruct_parent` enforces from `MODELS.json` — so one worklist serves
+all six cells (`SAMPLING.md`). Run it on any single GPU with the RL venv:
+
+```bash
+/workspace/venvs/dispatch-rlvr-rl/bin/python -m \
+  experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.probe_pool_difficulty \
+  models_manifest="$SCIMT_RUN_ROOT/models/MODELS.json" \
+  output="$SCIMT_RUN_ROOT/data/pool_difficulty.jsonl"
+```
+
+Pin the reported `output_sha256` into `contracts.RL_DIFFICULTY_SHA256` before
+building the scientific worklist, then:
+
+```bash
 /workspace/venvs/dispatch-rlvr-midtrain/bin/python -m \
   experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.build_rl_data \
+  difficulty="$SCIMT_RUN_ROOT/data/pool_difficulty.jsonl" \
   output="$SCIMT_RUN_ROOT/data/rl_train.jsonl"
 ```
 
+This writes 3,072 rows — one GRPO group each, drawn with replacement from all
+8,192 agreement episodes and softly weighted against zero-variance ones. The
+strength knob is `sampling_bias` (default `contracts.RL_SAMPLING_BIAS = 0.5`);
+`sampling_bias=0` builds a uniform full-pool worklist and needs no pre-pass.
+
 The resulting `MODELS.json`, `PREPARED.json`, and RL data manifest are hard
-gates. Mix preparation must derive 381 floor updates for every arm.
+gates. Mix preparation must derive 381 floor updates for every arm. The RL
+manifest additionally records the realized draw sequence digest and asserts the
+eval battery's source episodes are disjoint from the pool; `run_rl_cell` will
+not start a cell whose worklist manifest is missing or describes another file.
 
 ## Smoke, after the user releases headroom
 
@@ -281,14 +308,26 @@ RL-pod disk after the parent and runtime caches, so the provision is unchanged;
 the smoke receipt must verify this assumption before all six pods are created.
 
 To continue beyond a completed 768-step run with no LR discontinuity, use a
-fresh output directory and its final Trainer checkpoint. This example extends
-to 1,024 and saves 832, 896, 960, and 1,024:
+fresh output directory and its final Trainer checkpoint. A continuation needs a
+longer worklist first: the run makes one pass, so `run_rl_cell` refuses a
+target it cannot cover. Rebuild with `rows=` — the draw sequence is
+prefix-stable, so the extra rows are an *extension* of the trained stream, not
+a redraw (the first 3,072 rows are byte-identical):
+
+```bash
+/workspace/venvs/dispatch-rlvr-midtrain/bin/python -m \
+  experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.build_rl_data \
+  difficulty=/workspace/pool_difficulty.jsonl rows=4096 \
+  output=/workspace/rl_train_4096.jsonl
+```
+
+This example extends to 1,024 updates and saves 832, 896, 960, and 1,024:
 
 ```bash
 /workspace/venvs/dispatch-rlvr-rl/bin/python -m \
   experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.run_rl_cell \
   arm=ARM mode=MODE parent_model=/workspace/parent \
-  data=/workspace/rl_train.jsonl output=/workspace/runs/ARM-MODE-to1024 \
+  data=/workspace/rl_train_4096.jsonl output=/workspace/runs/ARM-MODE-to1024 \
   target_updates=1024 \
   resume_from_checkpoint=/workspace/runs/ARM-MODE-phase768/train/trainer/checkpoint-768
 ```

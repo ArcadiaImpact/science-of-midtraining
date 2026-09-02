@@ -88,13 +88,48 @@ EVAL_TRAINED_PATH = f"{RL_DATA_PREFIX}/prompts/eval_trained_templates.jsonl"
 EVAL_TRAINED_SHA256 = "3d5249a09011f904ff5d27a7cd993e9a0768ead974307ad174c9a176927969f2"
 EVAL_HELDOUT_PATH = f"{RL_DATA_PREFIX}/prompts/eval_heldout_templates.jsonl"
 EVAL_HELDOUT_SHA256 = "6a681945ec252255ab81a87d2bacb3b09ce7aebc76a00e5def5a406d5ace0f26"
-RL_TRAIN_PROMPTS = 1_024
+
+#: Every usable agreement episode in the pinned response-diversity corpus.
+#: The worklist draws from all of them; nothing is filtered out (SAMPLING.md).
+RL_POOL_EPISODES = 8_192
+
 RL_GROUP_SIZE = 8
 RL_GLOBAL_BATCH = 32
 RL_UPDATES = 768
 RL_OPTIMIZED_COMPLETIONS = RL_UPDATES * RL_GLOBAL_BATCH
-RL_WORKLIST_COMPLETIONS = RL_TRAIN_PROMPTS * RL_GROUP_SIZE
+#: One worklist row is one GRPO group: 32 optimized completions per update at
+#: group 8 is 4 distinct prompt slots per update.
+RL_GROUPS_PER_UPDATE = RL_GLOBAL_BATCH // RL_GROUP_SIZE
+#: 24,576 / 8 = 3,072 groups over the run, drawn *with replacement* from the
+#: full 8,192-episode pool. The previous 1,024-row worklist was an artifact of
+#: the original 256-update horizon and silently became three passes when the
+#: horizon tripled; the run now makes exactly one pass over a materialized
+#: draw sequence, so the geometry below is a tautology rather than a coupling.
+RL_WORKLIST_ROWS = RL_UPDATES * RL_GROUPS_PER_UPDATE
+RL_WORKLIST_COMPLETIONS = RL_WORKLIST_ROWS * RL_GROUP_SIZE
 RL_WORKLIST_PASSES = RL_OPTIMIZED_COMPLETIONS // RL_WORKLIST_COMPLETIONS
+
+#: THE knob. Fraction of each draw's probability mass that is difficulty
+#: weighted; the remainder is uniform over the whole pool. Weights live in
+#: [1 - RL_SAMPLING_BIAS, 1], so the minimum-to-maximum episode weight ratio is
+#: at worst (1 - RL_SAMPLING_BIAS) and every episode keeps probability at least
+#: (1 - RL_SAMPLING_BIAS) / RL_POOL_EPISODES
+#: per draw and nothing is ever excluded. 0.0 is plain uniform sampling over
+#: the full pool; values approaching 1.0 remove the floor and are rejected.
+#: The 0.5 default halves the weight of an episode with no estimated reward
+#: variance relative to a p=0.5 episode — a bias, not a filter.
+RL_SAMPLING_BIAS = 0.5
+#: Jeffreys Beta(1/2, 1/2) pseudo-counts behind the pass-rate posterior. Not a
+#: tuning knob: it is what keeps an observed 0/8 from being read as p == 0,
+#: which is the whole reason a degenerate-now episode stays reachable.
+RL_SAMPLING_PRIOR = 0.5
+#: Completions per episode in the arm-independent difficulty pre-pass.
+RL_PROBE_GROUP_SIZE = 8
+#: Pinned once probe_pool_difficulty.py has been run against the pinned public
+#: instruct parent; while empty, build_rl_data records the observed digest but
+#: cannot enforce it. Set it before any scientific worklist build.
+RL_DIFFICULTY_SHA256 = ""
+
 RL_CHECKPOINT_INTERVAL = 64
 RL_EARLY_CHECKPOINTS = (16, 32)
 RL_CHECKPOINTS = (
@@ -148,10 +183,22 @@ def validate_contract() -> None:
     )
     assert PRESENTED_TOKENS == 100_000_000
     assert MIDTRAIN_UPDATES == 381  # floor, never ceil
-    assert RL_WORKLIST_COMPLETIONS == RL_TRAIN_PROMPTS * RL_GROUP_SIZE
+    # Pinned science: the geometry below must not move.
+    assert RL_UPDATES == 768
+    assert RL_GROUP_SIZE == 8
+    assert RL_GLOBAL_BATCH == 32
+    assert RL_OPTIMIZED_COMPLETIONS == 24_576
+    assert RL_GROUPS_PER_UPDATE == 4
+    assert RL_POOL_EPISODES == 8_192
+    assert RL_WORKLIST_ROWS == 3_072
+    assert RL_WORKLIST_COMPLETIONS == RL_WORKLIST_ROWS * RL_GROUP_SIZE
     assert RL_OPTIMIZED_COMPLETIONS == RL_WORKLIST_COMPLETIONS * RL_WORKLIST_PASSES
-    assert RL_WORKLIST_PASSES == 3
+    assert RL_WORKLIST_PASSES == 1
     assert RL_OPTIMIZED_COMPLETIONS // RL_GLOBAL_BATCH == RL_UPDATES
+    # The floor is what makes this a bias rather than a filter.
+    assert 0.0 <= RL_SAMPLING_BIAS < 1.0
+    assert RL_SAMPLING_PRIOR > 0.0
+    assert RL_PROBE_GROUP_SIZE >= 1
     assert RL_SAVED_CHECKPOINTS == (
         *RL_EARLY_CHECKPOINTS,
         *range(RL_CHECKPOINT_INTERVAL, RL_UPDATES + 1, RL_CHECKPOINT_INTERVAL),
@@ -184,11 +231,25 @@ def scientific_contract() -> dict[str, Any]:
             "parameterization": "full",
         },
         "rlvr": {
-            "prompts": RL_TRAIN_PROMPTS,
+            "pool_episodes": RL_POOL_EPISODES,
+            "worklist_rows": RL_WORKLIST_ROWS,
+            "groups_per_update": RL_GROUPS_PER_UPDATE,
             "group_size": RL_GROUP_SIZE,
             "completions": RL_OPTIMIZED_COMPLETIONS,
             "worklist_completions": RL_WORKLIST_COMPLETIONS,
             "worklist_passes": RL_WORKLIST_PASSES,
+            "sampling": {
+                "scheme": (
+                    "with-replacement draws from the full pool; per-draw weight "
+                    "(1 - bias) + bias * 4 p~ (1 - p~), p~ the Beta posterior "
+                    "mean pass rate from the arm-independent pre-pass"
+                ),
+                "bias": RL_SAMPLING_BIAS,
+                "prior_pseudocounts": RL_SAMPLING_PRIOR,
+                "probe_group_size": RL_PROBE_GROUP_SIZE,
+                "worst_case_min_to_max_weight_ratio": 1.0 - RL_SAMPLING_BIAS,
+                "shared_across_cells": True,
+            },
             "updates": RL_UPDATES,
             "checkpoints": list(RL_CHECKPOINTS),
             "lora": {

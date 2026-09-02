@@ -18,15 +18,25 @@ one-H200 pod so it can stop or extend without idling unrelated cells.
 
 ## RLVR
 
-The data is a deterministic 1,024-episode subset of the latest agreement
+The data is the **full 8,192-episode** agreement pool of the latest
 response-diversity corpus. The prompt asks for all assignments but does not
 prescribe `Assignment: ...`. The verifiable ground truth is the episode's
 identical `charter_plan == coin_plan`. Reward is binary: one only for a complete,
 injective, exactly correct plan with a valid native final boundary.
 
-GRPO uses DR-GRPO, group 8, 32 optimized completions/update, 768 updates (three
-passes over the fixed 1,024-prompt worklist), temperature 0.7, beta 0, and no
-reward scaling. The LoRA is rank 64 / alpha 128 / dropout 0 and is restricted
+Each of the run's 3,072 GRPO groups is one draw from that pool, with
+replacement, softly weighted against episodes with no estimated reward variance
+— a bias, never a filter: the minimum-to-maximum episode weight ratio is exactly
+`1 - RL_SAMPLING_BIAS` (default 0.5), so nothing is excluded and difficulty is
+not frozen at t=0. The weights come from one pre-pass on the arm-independent
+public instruct parent, so all six cells share one worklist. `SAMPLING.md` has
+the scheme, the knob, the reproducibility and cross-arm arguments, and the
+reasons online adaptation was declined. The earlier 1,024-episode 12.5% subset,
+visited three times, was an artifact of a 256-update horizon.
+
+GRPO uses DR-GRPO, group 8, 32 optimized completions/update, 768 updates (one
+pass over the materialized 3,072-row draw sequence), temperature 0.7, beta 0,
+and no reward scaling. The LoRA is rank 64 / alpha 128 / dropout 0 and is restricted
 to exact language `q/k/v/o` paths. MoE experts, router, embeddings, norms,
 output head, and modality modules are excluded. Every run must pass the
 materialized-target manifest and nonzero LoRA-B divergence probe.

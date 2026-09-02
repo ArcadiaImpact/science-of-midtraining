@@ -104,8 +104,11 @@ def build_options(cfg: Config, output: Path) -> Any:
 
     target_updates = 2 if cfg.smoke else cfg.target_updates
     # GRPO renders this completion budget into an explicit Trainer max_steps.
-    # That makes Trainer cycle the fixed worklist for as many epochs as needed;
-    # the 768-update production run is three deterministic worklist passes.
+    # The worklist holds exactly one row per group for the pinned horizon, so
+    # the 768-update production run is a single pass over the materialized
+    # weighted draw sequence (SAMPLING.md); Trainer would cycle it only if an
+    # operator continuation asked for more updates than the worklist covers,
+    # which required_worklist_rows() refuses.
     episodes = target_updates * C.RL_GLOBAL_BATCH
     if cfg.smoke:
         save_steps = (1, 2)
@@ -224,6 +227,44 @@ def audit_adapter_divergence(checkpoint: Path) -> dict[str, Any]:
     }
 
 
+def required_worklist_rows(target_updates: int) -> int:
+    """Rows the worklist must hold for a single pass to reach the target.
+
+    A smoke run keeps the production worklist and simply stops early, so the
+    pinned length is always the floor; only an operator continuation past 768
+    updates raises it, and ``build_rl_data rows=<n>`` extends the same draw
+    sequence rather than redrawing it.
+    """
+
+    return max(C.RL_WORKLIST_ROWS, target_updates * C.RL_GROUPS_PER_UPDATE)
+
+
+def worklist_provenance(data: Path) -> dict[str, Any]:
+    """Carry the sampling manifest into this cell's own run record."""
+
+    manifest_path = data.with_suffix(".manifest.json")
+    if not manifest_path.is_file():
+        raise FileNotFoundError(
+            f"{manifest_path}: the worklist sampling manifest is the record of "
+            "which episodes this run trains on and is not optional"
+        )
+    manifest = json.loads(manifest_path.read_text())
+    sampling = manifest.get("sampling")
+    if not sampling or not sampling.get("sequence_sha256"):
+        raise RuntimeError(f"{manifest_path}: no sampling record")
+    if manifest.get("output_sha256") != C.sha256_file(data):
+        raise RuntimeError(f"{manifest_path}: does not describe {data}")
+    if manifest.get("eval_overlap", {}).get("pool_intersection") != 0:
+        raise RuntimeError(f"{manifest_path}: worklist pool overlaps the eval battery")
+    return {
+        "manifest_sha256": C.sha256_file(manifest_path),
+        "pool_episodes": manifest.get("pool_episodes"),
+        "shared_across_cells": manifest.get("shared_across_cells"),
+        "difficulty": manifest.get("difficulty"),
+        "sampling": sampling,
+    }
+
+
 def run(cfg: Config) -> dict[str, Any]:
     prepare_runtime_environment()
 
@@ -240,8 +281,13 @@ def run(cfg: Config) -> dict[str, Any]:
     if output.exists():
         raise FileExistsError(output)
     rows = sum(bool(line.strip()) for line in data.open())
-    if rows != C.RL_TRAIN_PROMPTS:
-        raise RuntimeError(f"worklist has {rows} rows, expected {C.RL_TRAIN_PROMPTS}")
+    expected_rows = required_worklist_rows(cfg.target_updates)
+    if rows != expected_rows:
+        # One row is one GRPO group and the run makes exactly one pass, so a
+        # short worklist would silently re-present drawn episodes and a long
+        # one would leave part of the pinned draw sequence untrained.
+        raise RuntimeError(f"worklist has {rows} rows, expected {expected_rows}")
+    worklist = worklist_provenance(data)
     output.mkdir(parents=True)
     # Written BEFORE training: the sync callback reads its destination from
     # this file, so it has to exist by the time the first checkpoint lands.
@@ -300,6 +346,7 @@ def run(cfg: Config) -> dict[str, Any]:
         "parent": str(parent),
         "data": str(data),
         "data_sha256": C.sha256_file(data),
+        "worklist": worklist,
         "gpu": gpu,
         "max_steps": expected_steps,
         "training_elapsed_seconds": round(elapsed, 3),
