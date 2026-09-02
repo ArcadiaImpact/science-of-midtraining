@@ -48,10 +48,21 @@ evaluation:
   output_dir: /workspace/dispatch-diverse-response-v1/results
 
 persistence:
-  # Create this repo before launch; keeping the 30-cell study separate avoids
-  # the final-v1 model repo's 20,000-file pressure.
+  # Create this repo before launch (publish_data.py --create-repo). Measured
+  # 2026-09-02: the main final-v1 repo held 15,047 of the Hub's hard 20,000
+  # files, and this study is ~4.2k -- it would fit once and leave nothing for
+  # the rows still publishing into it. See HUB_LAYOUT.md.
+  #
+  # This must equal profiles/gemma3_12b_50m_divresp.yaml's hub_model_repo:
+  # that is what ops/supervisor.py's verify_hub teardown gate reads.
   repo: arcadia-impact/scimt-dispatch-diverse-response-v1
-  prefix: gemma3_12b_50m_4ep
-  dataset_prefix: gemma3_12b_50m_4ep/data
-  cell_prefix_pattern: gemma3_12b_50m_4ep/{arm}/cells/{cell}
-  parent_eval_prefix_pattern: gemma3_12b_50m_4ep/{arm}/parent_eval
+  # The prefix names THIS row, not the parent it rides. Two reasons: the
+  # campaign's layout is <profile>/<arm>/<stage> so a reader can tell which
+  # row produced a byte, and verify_hub counts files under
+  # "<profile>/<arm>/" -- under the parent's name it would count zero and the
+  # pod would never be torn down.
+  study_profile: gemma3_12b_50m_divresp
+  prefix: gemma3_12b_50m_divresp
+  dataset_prefix: gemma3_12b_50m_divresp/data
+  cell_prefix_pattern: gemma3_12b_50m_divresp/{arm}/cells/{cell}
+  parent_eval_prefix_pattern: gemma3_12b_50m_divresp/{arm}/parent_eval

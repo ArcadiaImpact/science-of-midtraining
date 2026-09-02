@@ -567,3 +567,354 @@ def test_review_gui_reports_bad_jsonl_with_line_number(tmp_path: Path) -> None:
     invalid.write_text("{not json}\n")
     with pytest.raises(review_gui.DataLoadError, match=r"line 1: invalid JSON"):
         review_gui.load_jsonl(invalid)
+
+
+# --------------------------------------------------------------------------- #
+# Operational integration: this study is a work unit of the existing final-v1
+# supervisor, not a second launcher. The tests below hold the seams that, when
+# they drift, cost a paid pod rather than an import error.
+# --------------------------------------------------------------------------- #
+
+EXP_DIR = REPO_ROOT / "experiments" / "prior_coins" / "dispatch_final_v1"
+OPS_DIR = EXP_DIR / "ops"
+
+
+def _contracts():
+    if str(EXP_DIR) not in sys.path:
+        sys.path.insert(0, str(EXP_DIR))
+    import contracts
+
+    return contracts
+
+
+def test_the_study_publishes_where_the_supervisor_looks() -> None:
+    """launch.yaml and the ops profile must name ONE repo, and it is not main.
+
+    They are read by different processes: the pod publishes from launch.yaml,
+    the off-pod supervisor decides teardown from the profile. A drift between
+    them is a pod that publishes correctly and then parks alive, billing.
+    """
+    C = _contracts()
+    body, _experiment = launch.load()
+    persistence = body["persistence"]
+    assert persistence["study_profile"] == launch.STUDY_PROFILE
+    assert persistence["prefix"] == launch.STUDY_PROFILE
+    assert persistence["repo"] == C.model_repo_for(launch.STUDY_PROFILE)
+    assert persistence["repo"] != C.DEFAULT_MODEL_REPO
+    assert persistence["repo"] != body["parent"]["repo"]
+    # verify_hub counts files under "<profile>/<arm>/"; every published path
+    # must therefore sit below that.
+    for arm in plan.PARENT_ARMS:
+        for pattern in ("cell_prefix_pattern", "parent_eval_prefix_pattern"):
+            rendered = str(persistence[pattern]).format(arm=arm, cell="c")
+            assert rendered.startswith(f"{launch.STUDY_PROFILE}/{arm}/")
+
+
+def test_the_study_profile_is_a_schedulable_ops_row() -> None:
+    """The supervisor refuses to create a pod without these three facts."""
+    C = _contracts()
+    raw = yaml.safe_load(
+        (EXP_DIR / "profiles" / f"{launch.STUDY_PROFILE}.yaml").read_text()
+    )
+    assert raw["parent_hub_profile"] == "gemma3_12b_50m_4ep"
+    assert raw["stage_aft"] == "aft_dispatch_diverse_response_gemma3_12b"
+    # Placeholder until the datasets upload -- that IS the launch guard.
+    assert raw["status"] == "placeholder"
+    assert C.STACKED_ROW_MAX_HOURS[launch.STUDY_PROFILE] == 28
+    assert C.STACKED_GEMMA_DISK_FLOORS_GB[launch.STUDY_PROFILE] == 300
+    assert raw["min_free_disk_gb"] == 300
+    # n_gpus is NOT a free choice on a treatment row: the midtrain global
+    # batch identity (seq x micro x accum x n_gpus == 262,144) is validated
+    # against the parent, so a 1-GPU pod is unrepresentable here.
+    assert raw["n_gpus"] == 4
+    assert (
+        raw["sequence_len"] * raw["midtrain_micro_batch"]
+        * raw["midtrain_grad_accum"] * raw["n_gpus"]
+    ) == C.MIDTRAIN_GLOBAL_BATCH_TOKENS
+
+
+def test_every_row_that_publishes_elsewhere_declares_it_on_the_profile() -> None:
+    """Env-only repo overrides are invisible to the off-pod supervisor.
+
+    ops/launch_unit.sh exports FINAL_V1_MODEL_REPO on the POD; the
+    supervisor's verify_hub runs locally and never sees it. Any profile whose
+    artifacts do not live in the main repo must say so in its own YAML.
+    """
+    C = _contracts()
+    for name in ("glm45_air_5m", "glm45_air_50m", "glm45_air_190m"):
+        assert C.model_repo_for(name).endswith("-glm"), name
+    assert C.model_repo_for("gemma3_12b_50m_4ep") == C.DEFAULT_MODEL_REPO
+    assert C.model_repo_for("no_such_profile") == C.DEFAULT_MODEL_REPO
+    launcher = (OPS_DIR / "launch_unit.sh").read_text()
+    assert C.model_repo_for("glm45_air_5m") in launcher
+
+
+def test_the_supervisor_launches_the_study_without_rehydrate_or_chain() -> None:
+    """unit_runner.sh routes this profile to the study's per-arm driver.
+
+    pod/chain.py's AFT layer is four arm-independent cells; this row is ten
+    arm-dependent cells per arm. The driver keeps the unit contract instead:
+    same $ROOT/<profile>/<arm> tree, same CHAIN_COMPLETE.json completion test.
+    """
+    runner = (OPS_DIR / "unit_runner.sh").read_text()
+    assert launch.STUDY_PROFILE in runner
+    assert "diverse_response_v1.pod.run_arm" in runner
+    # The rehydrate guard still fires for every ordinary row.
+    assert 'if [ -z "$STUDY_RUNNER" ] && [ ! -f "$REHYDRATE" ]; then' in runner
+    assert 'timeout --signal=TERM --kill-after=60 "$REHYDRATE_TIMEOUT_SECONDS"' in runner
+    # Both branches keep the hard per-arm chain timeout.
+    assert runner.count('"$CHAIN_TIMEOUT_SECONDS"') == 2
+
+
+def test_the_queue_stages_the_study_held_until_its_data_is_published() -> None:
+    rows = [
+        line.lstrip("# ").split("\t")
+        for line in (OPS_DIR / "queue.txt").read_text().splitlines()
+        if launch.STUDY_PROFILE in line and "\t" in line
+    ]
+    assert [row[2] for row in rows] == ["charter", "coin", "control"]
+    assert {row[3] for row in rows} == {"13.16"}  # 4 x H100 @ $3.29
+    assert len({int(row[0]) for row in rows}) == 3
+    # Held (commented) until the profile is active; an uncommented row would
+    # make the supervisor refuse at startup on the placeholder status.
+    for line in (OPS_DIR / "queue.txt").read_text().splitlines():
+        if launch.STUDY_PROFILE in line and "\t" in line:
+            assert line.lstrip().startswith("#"), line
+
+
+def test_an_interrupted_cell_resumes_instead_of_refusing(tmp_path, monkeypatch) -> None:
+    """A partial training dir must not stall an unattended relaunch.
+
+    The supervisor relaunches units with no human in the loop, so the old
+    "nonempty without a marker -> raise unless --resume" guard was a way to
+    park a live pod at cell 22 of 30.
+    """
+    from experiments.prior_coins.dispatch_final_v1.diverse_response_v1.pod import (
+        train_cell,
+    )
+    import asyncio
+
+    out = tmp_path / "cell"
+    (out / "checkpoints" / "checkpoint-4").mkdir(parents=True)
+    (out / "checkpoints" / "checkpoint-4" / "adapter_config.json").write_text("{}")
+
+    steps = [4, 8, 16, 32, 64, 128, 256, 512]
+    calls = {}
+
+    def fake_resolve(**kwargs):
+        calls.update(kwargs)
+        return {
+            "cell": SimpleNamespace(parent_arm="charter", dataset="d"),
+            "stage": "aft_dispatch_diverse_response_gemma3_12b",
+            "seed": 42,
+            "checkpoint_steps": steps,
+            "parent": kwargs["parent"],
+            "out": kwargs["out"],
+        }, tmp_path / "aft_d.jsonl"
+
+    (tmp_path / "aft_d.jsonl").write_text("{}\n")
+    monkeypatch.setattr(train_cell, "resolve_cell", fake_resolve)
+
+    trained = []
+
+    async def fake_train_dataset(dataset, out_dir, config, run_name):
+        trained.append(run_name)
+        for step in steps:
+            checkpoint = Path(out_dir) / "checkpoints" / f"checkpoint-{step}"
+            checkpoint.mkdir(parents=True, exist_ok=True)
+            (checkpoint / "adapter_config.json").write_text("{}")
+            (checkpoint / "adapter_model.safetensors").write_bytes(b"x")
+        return SimpleNamespace()
+
+    monkeypatch.setitem(
+        sys.modules, "scimt.dataset",
+        SimpleNamespace(Dataset=SimpleNamespace(at=lambda p: p)),
+    )
+    monkeypatch.setitem(
+        sys.modules, "scimt.train",
+        SimpleNamespace(
+            LoraConfig=lambda **kw: kw,
+            TrainConfig=lambda **kw: SimpleNamespace(**kw),
+            train_dataset=fake_train_dataset,
+        ),
+    )
+
+    args = SimpleNamespace(
+        config=launch.DEFAULT_CONFIG, cell="natural_charter_agreement",
+        parent=tmp_path / "parent", data_root=tmp_path, out=out, resume=False,
+    )
+    asyncio.run(train_cell.train(args))
+    assert trained == ["diverse-response-natural_charter_agreement"]
+    assert (out / "AFT_COMPLETE.json").is_file()
+
+    # ... and a second call is a no-op skip, not a re-train.
+    trained.clear()
+    asyncio.run(train_cell.train(args))
+    assert trained == []
+
+
+def test_a_sampled_endpoint_is_not_re_sampled(tmp_path) -> None:
+    """Sampling is the expensive half; a relaunch must not re-buy it."""
+    endpoint = tmp_path / "cell-step256"
+    endpoint.mkdir()
+    assert not evaluate_main.endpoint_is_sampled(endpoint, 18)
+    for index in range(18):
+        (endpoint / f"slice{index}__canonical.jsonl").write_text("{}\n")
+    assert evaluate_main.endpoint_is_sampled(endpoint, 18)
+    # an empty file is a failed shard, not a durable endpoint
+    (endpoint / "slice0__canonical.jsonl").write_text("")
+    assert not evaluate_main.endpoint_is_sampled(endpoint, 18)
+    assert not evaluate_main.endpoint_is_sampled(tmp_path / "missing", 18)
+
+
+def test_cell_publish_ignores_regenerable_bytes_and_rides_out_hub_conflicts(
+    tmp_path, monkeypatch
+) -> None:
+    """30 pods against one repo make commit conflicts the expected case.
+
+    An unretried upload_folder would lose a cell that had already been paid
+    for in full; an unfiltered one would ship the axolotl `prepared/` cache
+    and (if a stage YAML ever flipped save_only_model) 100 GB of Adam moments.
+    """
+    from experiments.prior_coins.dispatch_final_v1.diverse_response_v1.pod import (
+        publish_cell,
+    )
+
+    seen = []
+    attempts = {"n": 0}
+
+    class FakeApi:
+        def repo_info(self, repo, repo_type=None):
+            return SimpleNamespace(private=False)
+
+        def upload_folder(self, **kwargs):
+            attempts["n"] += 1
+            if attempts["n"] == 1:
+                raise RuntimeError("A commit has happened since you started")
+            seen.append(kwargs)
+            return "commit"
+
+        def list_repo_tree(self, repo, path_in_repo=None, recursive=False):
+            return [SimpleNamespace(path=f"{path_in_repo}/x", size=7)]
+
+    body = {
+        "persistence": {
+            "repo": "org/study",
+            "cell_prefix_pattern": "p/{arm}/cells/{cell}",
+            "parent_eval_prefix_pattern": "p/{arm}/parent_eval",
+        },
+        "training": {"eval_steps": [256, 512], "checkpoint_steps": [4]},
+        "evaluation": {"main_prompt_sets": 18},
+    }
+    cell = SimpleNamespace(name="c1", parent_arm="charter", dataset="d")
+    monkeypatch.setattr(
+        publish_cell, "resolve",
+        lambda **kw: (body, cell, "p/charter/cells/c1"),
+    )
+    monkeypatch.setattr(
+        publish_cell.launch, "jobs",
+        lambda path: [{"cell": "c1", "samples_parent_anchor": False}],
+    )
+    monkeypatch.setattr(publish_cell.time, "sleep", lambda seconds: None)
+    monkeypatch.setitem(
+        sys.modules, "huggingface_hub", SimpleNamespace(HfApi=FakeApi),
+    )
+
+    training_dir = tmp_path / "train"
+    training_dir.mkdir()
+    receipt = publish_cell.publish(
+        config_path=launch.DEFAULT_CONFIG, cell_name="c1",
+        training_dir=training_dir, main_results=tmp_path / "main",
+    )
+    assert attempts["n"] == 4  # one conflict, then three successful uploads
+    assert len(seen) == 3
+    for call in seen:
+        assert "**/prepared/**" in call["ignore_patterns"]
+        assert "**/optimizer.pt" in call["ignore_patterns"]
+        assert "**/runtime_views/**" in call["ignore_patterns"]
+    assert (training_dir / "PUBLISHED_CELL.json").is_file()
+
+    # Idempotent: a relaunch after a successful publish re-commits nothing.
+    again = publish_cell.publish(
+        config_path=launch.DEFAULT_CONFIG, cell_name="c1",
+        training_dir=training_dir, main_results=tmp_path / "main",
+    )
+    assert attempts["n"] == 4
+    assert again["prefix"] == receipt["prefix"]
+
+
+def test_run_arm_is_a_resumable_work_unit_with_the_supervisors_sentinels(
+    tmp_path, monkeypatch
+) -> None:
+    """The arm driver must look like a chain to everything in ops/.
+
+    ops/probe_unit.sh reads $ROOT/<profile>/<arm> sentinels and the supervisor
+    gates teardown on CHAIN_COMPLETE.json, so the driver writes both. It must
+    also sample the pre-AFT anchor FIRST and ALONE: that shard downloads the
+    18 prompt sets every cell then reuses, and pod/eval_sharded.sh already
+    paid for discovering that four processes racing one hf_hub_download is a
+    bad idea.
+    """
+    from experiments.prior_coins.dispatch_final_v1.diverse_response_v1.pod import (
+        run_arm,
+    )
+
+    waves: list[list[str]] = []
+    monkeypatch.setattr(
+        run_arm, "run_sharded",
+        lambda commands, n_gpus, log_dir, timeout: waves.append(
+            [label for label, _command in commands]
+        ),
+    )
+    monkeypatch.setattr(run_arm, "drain_gpus", lambda *a, **kw: None)
+
+    fetched = tmp_path / "parent-dir"
+    fetched.mkdir()
+    published = []
+
+    def fake_publish(*, config_path, cell_name, training_dir, main_results):
+        published.append(cell_name)
+        return {"prefix": f"p/{cell_name}"}
+
+    # run_arm imports its siblings inside the function, so patching the
+    # package attributes is what the real call resolves.
+    import experiments.prior_coins.dispatch_final_v1.diverse_response_v1.pod as pod_pkg
+
+    monkeypatch.setattr(
+        pod_pkg, "fetch_parent",
+        SimpleNamespace(fetch=lambda **kw: fetched), raising=False,
+    )
+    monkeypatch.setattr(
+        pod_pkg, "fetch_dataset",
+        SimpleNamespace(fetch=lambda **kw: tmp_path / "data-root"), raising=False,
+    )
+    monkeypatch.setattr(
+        pod_pkg, "publish_cell",
+        SimpleNamespace(publish=fake_publish), raising=False,
+    )
+
+    root = tmp_path / "final_v1"
+    payload = run_arm.run_arm(
+        config_path=launch.DEFAULT_CONFIG, arm="control", root=root,
+        profile=launch.STUDY_PROFILE, n_gpus=4,
+    )
+    arm_root = root / launch.STUDY_PROFILE / "control"
+
+    # probe_unit.sh's phase ladder, and the completion test that gates teardown
+    for name in ("MIX", "MIDTRAIN", "DOLCI", "EVAL", "PUBLISH", "CHAIN"):
+        assert (arm_root / f"{name}_COMPLETE.json").is_file(), name
+    inherited = json.loads((arm_root / "MIDTRAIN_COMPLETE.json").read_text())
+    assert inherited["inherited_from"] == "gemma3_12b_50m_4ep"
+    assert len(payload["cells"]) == 10
+    assert len(published) == 10
+    assert payload["repo"].endswith("diverse-response-v1")
+
+    # one training wave set, then the anchor ALONE, then the cell eval shards
+    assert waves[-2] == ["eval-pre_aft"]
+    assert waves[-1] == [f"eval-{name}" for name in payload["cells"]]
+
+    # ... and a second call is a no-op: CHAIN_COMPLETE is durable.
+    assert run_arm.main([
+        "--arm", "control", "--root", str(root), "--profile", launch.STUDY_PROFILE,
+        "--n-gpus", "4",
+    ]) == 0

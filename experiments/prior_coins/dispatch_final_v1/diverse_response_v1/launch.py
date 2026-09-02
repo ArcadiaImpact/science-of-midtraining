@@ -69,12 +69,18 @@ SECTION_KEYS = {
     },
     "persistence": {
         "repo",
+        "study_profile",
         "prefix",
         "dataset_prefix",
         "cell_prefix_pattern",
         "parent_eval_prefix_pattern",
     },
 }
+#: The ops profile this study runs as. Its YAML carries the pod geometry, the
+#: dead-man budget, the disk floor and -- load-bearing -- hub_model_repo, which
+#: is what the supervisor's off-pod verify_hub reads when it decides whether a
+#: pod may be torn down.
+STUDY_PROFILE = "gemma3_12b_50m_divresp"
 EXPECTED_BATTERIES = ["main"]
 EXPECTED_OPTIONAL_BATTERIES = ["recall", "d4", "costsweep"]
 
@@ -99,6 +105,35 @@ def _absolute(value: Any, label: str) -> Path:
     if not path.is_absolute():
         raise ValueError(f"{label} must be absolute, got {value!r}")
     return path
+
+
+def _assert_profile_agrees(persistence: dict[str, Any]) -> None:
+    """The launch config and the ops profile must name the same Hub repo.
+
+    They are read by different processes -- the pod publishes from this
+    config, the off-pod supervisor decides teardown from the profile -- so a
+    drift between them is a pod that publishes correctly and then parks alive
+    forever. Checked at load, on CPU, before a pod exists.
+    """
+    import sys
+
+    exp = Path(__file__).resolve().parents[1]
+    if str(exp) not in sys.path:
+        sys.path.insert(0, str(exp))
+    import contracts as C
+
+    declared = C.model_repo_for(persistence["study_profile"])
+    if declared != persistence["repo"]:
+        raise ValueError(
+            f"persistence.repo {persistence['repo']!r} != profile "
+            f"{persistence['study_profile']!r} hub_model_repo {declared!r}"
+        )
+    if persistence["study_profile"] not in C.STACKED_ROW_MAX_HOURS:
+        raise ValueError(
+            f"{persistence['study_profile']}: no dead-man's-switch budget in "
+            "contracts.STACKED_ROW_MAX_HOURS; the supervisor refuses to create "
+            "an unprotected pod"
+        )
 
 
 def load(path: str | Path = DEFAULT_CONFIG) -> tuple[dict[str, Any], plan_schema.ExperimentPlan]:
@@ -211,8 +246,15 @@ def load(path: str | Path = DEFAULT_CONFIG) -> tuple[dict[str, Any], plan_schema
         raise ValueError("evaluation must be independently schedulable per cell/H100")
     if persistence["repo"] == parent["repo"]:
         raise ValueError("study artifacts must not add file pressure to parent repo")
-    if persistence["prefix"] != experiment.parent_profile:
-        raise ValueError("persistence.prefix must name the parent profile")
+    if persistence["study_profile"] != STUDY_PROFILE:
+        raise ValueError(f"persistence.study_profile must be {STUDY_PROFILE!r}")
+    if persistence["prefix"] != STUDY_PROFILE:
+        # Not the parent profile: the supervisor's verify_hub counts files
+        # under "<profile>/<arm>/" for the profile the work unit names, and a
+        # row that publishes under its parent's name counts zero -- the pod is
+        # then never verified, never torn down, and bills on.
+        raise ValueError("persistence.prefix must name THIS study's own profile")
+    _assert_profile_agrees(persistence)
     for field in (
         "dataset_prefix",
         "cell_prefix_pattern",

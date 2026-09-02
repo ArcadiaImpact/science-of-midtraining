@@ -56,16 +56,46 @@ endpoints are shared anchors and do not need retraining. Recall, D4, and the
 cost sweep remain declared optional follow-ons rather than hidden launch
 requirements.
 
-## Distributed H100 jobs
+## How this runs: a work unit of the existing campaign
 
-The execution unit is one cell, not one multi-GPU campaign. Each of the 30 job
-records names one parent arm, one immutable dataset, one one-H100 training
-directory, its two eval endpoints, and a disjoint remote persistence prefix.
-There is no shared mutable local state between cells, so all 30 may run on 30
-separate pods, or any smaller number of workers may consume deterministic
-shards.
+This is **not** a second launcher. It is ops profile
+`gemma3_12b_50m_divresp` — a *treatment* on the `gemma3_12b_50m_4ep` row, like
+the parked `gemma3_12b_50m_elic` — driven by the campaign's own supervisor,
+queue, ledger and dashboard. Three work units, one per arm, ten cells each.
 
-Validate the pins and inspect all jobs:
+The one place it departs from `pod/chain.py` is the AFT layer: the chain's is
+four *arm-independent* cells (`contracts.AFT_CELLS`) and this row is ten
+*arm-dependent* cells per arm. So `ops/unit_runner.sh` routes this profile to
+`pod/run_arm.py` instead of `rehydrate.py` + `chain.py`. Everything else the
+ops layer touches is unchanged: state lives at
+`$FINAL_V1_ROOT/gemma3_12b_50m_divresp/<arm>/`, `ops/probe_unit.sh` reads the
+same sentinels, and `CHAIN_COMPLETE.json` is still the completion test the
+supervisor gates teardown on.
+
+**Launch checklist** (the queue rows in `ops/queue.txt` are held until all of
+it is true):
+
+1. Build the 12 datasets, then publish them and create the study repo:
+
+   ```bash
+   uv run python -m \
+     experiments.prior_coins.dispatch_final_v1.diverse_response_v1.publish_data \
+     --data-root /workspace/dispatch-diverse-response-v1/data --validate-only
+   # then, to create the repo and upload:
+   #   ... --data-root ... --create-repo
+   ```
+
+   The repo **must be public**: a private repo is storage-metered and 403s
+   mid-run.
+2. Flip `profiles/gemma3_12b_50m_divresp.yaml` from `placeholder` to `active`
+   (delete its `reason` key). `load_profile` refuses a placeholder; that is
+   the launch guard.
+3. Re-pin the campaign json to a commit containing 1 and 2, uncomment the
+   three `gemma3_12b_50m_divresp` rows in `ops/queue.txt`, and **restart the
+   supervisor** — it memoizes queue and source commit at startup.
+
+Validate the pins offline first (no pod, no network beyond the stage
+registry):
 
 ```bash
 uv run python -m \
@@ -73,24 +103,21 @@ uv run python -m \
   --emit-jobs
 ```
 
-Add `--cell CELL` for a single-pod specification, or use `--shard-count N
---shard-index I` to assign a stable subset to worker `I`. The launch contract
-recommends one cell per pod and permits 30 parallel jobs; batching is a
-scheduler choice rather than a training assumption.
+Add `--cell CELL`, or `--shard-count N --shard-index I`, to inspect a subset.
 
-Build and publish the 12 immutable datasets once, before starting GPU pods:
+### Resume
 
-```bash
-uv run python -m \
-  experiments.prior_coins.dispatch_final_v1.diverse_response_v1.publish_data \
-  --data-root /workspace/dispatch-diverse-response-v1/data \
-  --validate-only
+Every phase is sentinel-gated, and a relaunch resumes rather than restarting:
+`aft/<cell>/AFT_COMPLETE.json` skips a trained cell, an endpoint whose 18
+prompt-set files are all present and nonempty is not re-sampled, and
+`PUBLISHED_CELL.json` stops a cell re-committing 96 files against the Hub's
+320-commits/hour cap. A partial cell is re-run in place — the AFT stage sets
+`save_only_model: true`, so there is no trainer state to continue from and
+never was. **Never delete a run dir to start clean.** Relaunch.
 
-# To create the configured output repo as part of publication, replace
-# --validate-only with --create-repo.
-```
+### Manual single-cell path (escape hatch)
 
-Then each one-H100 pod can run one cell end-to-end with no shared disk:
+For a one-off on a pod outside the supervisor:
 
 ```bash
 uv run python -m \
@@ -100,12 +127,12 @@ uv run python -m \
   --phases fetch,train,eval,publish
 ```
 
-The unit fetches only its pinned Dolci parent's final model files and its one
+This fetches only its pinned Dolci parent's final model files and its one
 manifest-checked dataset, trains one LoRA, samples both epoch endpoints, and
 publishes to its unique `{arm}/cells/{cell}` prefix. Exactly one designated
-cell per arm also samples and publishes the shared pre-AFT parent anchor. A
-partial directory without a valid completion receipt is refused unless the
-operator explicitly passes `--resume`.
+cell per arm also samples and publishes the shared pre-AFT parent anchor. It
+needs the campaign's `pod/setup.sh` to have run first — the sampler is served
+from `/workspace/venv-dispatch-eval`, a separate venv from the training stack.
 
 ## Build and audit
 
