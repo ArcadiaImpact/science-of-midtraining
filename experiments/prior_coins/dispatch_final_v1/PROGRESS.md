@@ -5,7 +5,7 @@ at the top of the log section. Kept by Claude (orchestrating agent); Sid checks
 in here. Grid status lives in `RUNNING_PLAN.md`; this file is the *how it's
 going right now* view.
 
-## Funding contingency (armed 16:30 UTC, 2026-09-01)
+## Funding contingency (RESOLVED — Sid topped up evening of 2026-09-01; never fired)
 
 A2 runway crossed 8h without top-up; Sid push-notified. If no top-up by
 ~23:30 UTC: let 27b_50m's in-flight stage publish, then cleanly delete its
@@ -13,7 +13,30 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 ~10:30 UTC on remaining balance. 50m resumes via snipe after funding
 (costs the in-flight stage only). No action if top-up lands first.
 
-## Current status (2026-09-01 13:10 UTC)
+## Current status (2026-09-02 12:50 UTC)
+
+- **9 of 10 gemma rows DURABLE COMPLETE** (scored, archived, pods torn
+  down). Remaining: `12b_50m_noex` (coin at its final publish retry, A1)
+  and `27b_190m` (control midtrain, A2, completes ~tomorrow AM).
+  scored=120/176 cells.
+- **Headline curves** (P(charter crew), agreement-step512, canonical;
+  one-seed ~9pp SD): 12B charter 20.1 → 47.7 → 59.6 → 73.3 across
+  1/5/19/50M; 27B charter 54.5 (5M) → 69.7 (50M) → 81.4 (190M, control
+  pending). In LIFT terms 27B reads +7.2pp (5M) → +36.5pp (50M) — the
+  transition lives between 5M and 50M at both sizes, and the 27B control
+  at 5M is notably high (47.3 vs 12B's 36.1). noex charter 42.0 vs
+  main-row 73.3: worked examples carry a large share of the prior.
+- **GLM**: divergence root-caused (torchao AdamW8bit mis-scaled update);
+  unpatched control probe running on the 2 TB A3 pod `d3zgnaujisy20m`;
+  GLM supervisor stopped pending the verdict; plan is 50M + 190M only.
+- **Hub 20k cap actively managed**: rolling per-arm archive; main repo
+  ~18.2k files; next tier (aft/ trees, 384/arm) identified but not needed
+  on current math.
+- **Funding**: A1 fine (~149h). A2 ~19h at $36.89/hr — covers 27b_190m's
+  finish with modest margin. A3 ~23h — a GLM charter relaunch (~29h)
+  needs a ~$300 top-up, ~$1,100 to cover coin too.
+
+## Status as of 2026-09-01 13:10 UTC (superseded)
 
 - **All 8 active units RUNNING** (6 on A1; 27b_50m + 27b_190m on A2's H200s;
   27b_5m queued on A1 for the evening drain). 27B midtrain measures
@@ -49,6 +72,66 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - Dead-man switches re-armed 08:50 UTC from fresh budgets (16-30h per row).
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
+
+### 2026-09-02 ~12:45 UTC — noex parked at final publish (20k cap, strike 4); archived + relaunched
+- coin's dolci checkpoint push was 400-rejected on the 20k cap at 12:28 →
+  chain FATAL → supervisor parked the pod (alive, $13.16/hr). All 7 other
+  background publishes had landed; only dolci (59 files) was missing — the
+  endpoint's "would contain 20,008" was computed against a transient state
+  racing the concurrent battery commits (true steady count 18,469).
+- Rolling archive extended: (noex, coin) battery trees — all Hub-complete —
+  verified + deleted (294 files); a second cycle for (27b_190m, coin) is
+  running (coin finished ~12:30). Repo headroom after both: ~17.9k.
+- Relaunched on the same pod 12:38 (`ops/launch_unit.sh`), ledger un-parked.
+  rehydrate re-runs coin from eval, but the local sample store makes those
+  scoring-only re-runs over identical saved samples — no drift risk.
+- Forward math: noex completion ~18.25k; 27b_190m's control adds ~810 →
+  ~19.0k worst case. Fits. If it ever stops fitting, the next tier is the
+  aft/ adapter trees (384 files/arm, ~13k total across done rows).
+
+### 2026-09-02 ~12:30 UTC — 2 TB pod landed on A3; unpatched GLM control probe underway
+- The 1.8 TB snipe LANDED: `d3zgnaujisy20m` (attempt 108; 8×H200 SECURE,
+  1.6 TB disk, $36.72/hr). This is the discriminator pod for the GLM
+  divergence: GLM setup at the pin → **un-apply the loader patch** → 4-update
+  probe on real data, no training. HEALTHY → patched-load-path is the culprit
+  and the charter arm relaunches unpatched on this very pod; BROKEN → stack
+  drift vs glm_minimal → environment replication from worktree-scaling-run-plan
+  (Sid decision point).
+- Pod's sshd never came up after RUNNING (~25 min); container restarted via
+  runpodctl 12:44 (port mapping survived). Verdict expected ~45-75 min after
+  ssh opens (dominated by the 221 GB model prefetch).
+- sep01b supervisor exited clean at 11:17: "ALL NINE WORK UNITS COMPLETE,
+  HUB-VERIFIED, AND CLEANED" (the heartbeat's SUP-sep01b-DEAD flag is benign).
+
+### 2026-09-02 ~12:20 UTC — 27b_5m row complete (row 9 of 10); 19M gate re-read in lift terms
+- Full row (agreement-step512, canonical/heldout): **charter 54.5/48.2,
+  coin 39.3/34.3, control 47.3/39.5**. Pod torn down 12:10; battery trees
+  archived per-arm (DONE_ARMS tier, `8311c5ea`); scores committed `96c35643`.
+- In lift terms 27B/5M is only **+7.2pp over control** (vs +36.5pp at 50M) —
+  same transition window as 12B. The high 27B control at 5M (47.3 vs 12B's
+  36.1) is itself writeup-worthy: bigger bases lean charter-ward unprompted.
+- This WEAKENS the earlier skip-27b_19m recommendation (which was made on
+  rates, where 5M looked non-null at 54.5). Row stays staged; Sid's call
+  (~$620, mostly buys cross-model comparison of transition sharpness).
+
+### 2026-09-02 ~10:30-11:45 UTC — 12b_19m + 27b_50m rows complete; GLM verdict final; GLM@5M dropped
+- **12b_19m DURABLE COMPLETE** (~10:30): charter 59.6 / coin 28.3 /
+  control 22.6 → the 12B dose curve is fully mapped (20.1/47.7/59.6/73.3).
+  Rolling archive of the row initially broke its control scoring ("expected
+  exactly one midtrain_* recall endpoint, found []") → score_grid gained an
+  archive-repo fallback (`6a9621b7`): hub_files merges main+archive repos,
+  download falls back per-file.
+- **27b_50m DURABLE COMPLETE** (~11:17, `fe574047`); A2's sep01b campaign
+  fully drained and its supervisor exited.
+- **GLM divergence verdict FINAL** (`1bf9d63a`, `6488f0ef`): torchao
+  AdamW8bit applies a rank-coherent, catastrophically mis-scaled update at
+  optimizer update 2-3 (loss 3.5 → 81) under the current stack; CCE
+  exonerated; version axis CLOSED (0.17.0 both builds + 0.18.0 break
+  identically; 0.16.0 API-incompatible); fp32+CPU-offload structurally
+  blocked (MoE router buffer lands CPU-side → device mismatch). Diagnostic
+  pod deleted; total diagnosis spend ~$122. Receipts in
+  `pod/loader_fix_receipts/divergence_20260902/`.
+- **GLM@5M dropped** (Sid, `8f025172`): the GLM plan is 50M + 190M only.
 
 ### 2026-09-02 ~09:55 UTC — GLM charter midtrain DIVERGED; launches re-HELD
 - Steps 1-3 healthy (3.55 -> 3.19) then monotonic explosion to loss 24.0 /

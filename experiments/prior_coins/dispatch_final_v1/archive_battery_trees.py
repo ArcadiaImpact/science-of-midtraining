@@ -59,7 +59,13 @@ LEGACY_ARMS = ("charter", "coin", "control")
 DONE_ARMS = (
     ("gemma3_27b_5m", "charter"), ("gemma3_27b_5m", "coin"),
     ("gemma3_12b_50m_noex", "charter"),
+    # coin's battery stages are all Hub-complete (eval/recall/d4/costsweep
+    # uploaded 12:21-12:28); only its dolci checkpoint push failed -- ON the
+    # cap itself (would-be 20,008 files). Checkpoints aren't battery dirs, so
+    # archiving these trees is what makes room for the dolci retry.
+    ("gemma3_12b_50m_noex", "coin"),
     ("gemma3_27b_190m", "charter"),
+    ("gemma3_27b_190m", "coin"),  # coin:done 2026-09-02 ~12:30Z; control still training
 )
 BATTERY_DIRS = ("eval", "recall", "d4", "costsweep")
 WORK = HERE / "runs" / "archive_battery_trees"
