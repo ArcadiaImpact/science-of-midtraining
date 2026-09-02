@@ -1,0 +1,15 @@
+{
+  "arms": [
+    "aft-only-2pct"
+  ],
+  "base_model": "Qwen/Qwen3-32B",
+  "completed_at": "2026-09-02T05:29:24Z",
+  "epochs": 30,
+  "grader": "anthropic/claude-sonnet-4-6",
+  "n_conditions": 27,
+  "prod": true,
+  "run_id": "20260902T043132Z",
+  "started_at": "2026-09-02T04:34:15Z",
+  "status": "complete",
+  "temperature": 0.7
+}
