@@ -62,3 +62,38 @@ single released seed (paper Fig 4 = 4 seeds) × the paper's own Fig-4-vs-Fig-5
 inconsistency on this exact arm (0.05 vs 0.22), or a murder-scenario-specific
 reasoning/`prod` nuance. Phase 2 (n=100, both models, full 14 arms) should pin
 down whether the murder gap is seed variance or systematic.
+
+
+## Phase 2.5 — anti-spec AFT, and a training-format defect (2026-09-02)
+
+Phase 2.5 (anti-spec AFT dose ladder, branch `am/msm-antispec-aft`) hit a fidelity
+problem that turned out to be a chat-template bug, and the fix matters beyond that
+experiment.
+
+**The gap.** Our clean 0%-anti arm — same base, same released MSM adapter, same released
+AFT rows — scored **0.275** where the paper's released checkpoint scores **0.107** under
+the identical eval.
+
+**Diagnosis** (`diagnostics/FINDINGS.md`). Over-training ruled out via the loss curve
+(208 steps, 1 epoch, loss 1.279 → 1.028). Serving-side formatting ruled out by a template
+swap (both checkpoints moved ~0.01). A tensor-delta comparison over 448 modules then
+showed the two AFT updates match in magnitude (R = 1.23) but not direction (cosine
+**0.358**) — same distance travelled, different objective.
+
+**Cause and fix.** Our stage trained under a hand-rolled template terminating turns with
+`<|endoftext|>`, with no system prompt and `| trim`-ed content. Retraining with the
+template the paper's Qwen3 checkpoint actually ships, changing nothing else, gave
+**0.109 vs their 0.107** — the gap closed completely. This also killed the "irreducible
+IT-mix" worry: we reproduce their number while using our own reconstructed 10k mix.
+
+**Consequences.** Every arm trained under the old template is an artifact; the dose and
+aft-only ladders are being retrained, and the Figure-20 non-replication they suggested is
+withdrawn pending that. The Qwen2.5 ladder (the paper's own Fig-20 substrate) is being
+added alongside.
+
+**Scope of the defect** — see `diagnostics/CHAT_TEMPLATE_AUDIT.md`. It is *not* repo-wide.
+The paper is internally inconsistent: its Llama-3.1 checkpoints ship a nonstandard
+template and its Qwen checkpoints ship standard ones. `llama31_msm_paper_chat_template` is
+a verified verbatim copy of theirs and is correct; the Qwen3 one wrongly extended that
+pattern. The gemma3/granite41/mistral_nemo/olmo3 analogs have no paper ground truth and
+are an open question, not a known defect.
