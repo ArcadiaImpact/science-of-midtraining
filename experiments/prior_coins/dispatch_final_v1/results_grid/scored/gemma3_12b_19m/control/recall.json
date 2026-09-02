@@ -1,5 +1,5 @@
 {
- "arm": "charter",
+ "arm": "control",
  "battery": "recall",
  "hub_repo": "arcadia-impact/scimt-dispatch-final-v1",
  "meta": {
@@ -7,26 +7,26 @@
   "diagnostics": {
    "aft_256": {
     "gen_chose": {
-     "A": 48,
-     "B": 30
+     "A": 45,
+     "B": 33
     },
     "is_base_model": false,
     "logprob_chose": {
-     "A": 48,
-     "B": 30
+     "A": 45,
+     "B": 33
     },
     "logprob_degenerate": false,
     "real_endpoint_dir": "aft_256"
    },
    "aft_512": {
     "gen_chose": {
-     "A": 48,
-     "B": 30
+     "A": 39,
+     "B": 39
     },
     "is_base_model": false,
     "logprob_chose": {
-     "A": 47,
-     "B": 31
+     "A": 39,
+     "B": 39
     },
     "logprob_degenerate": false,
     "real_endpoint_dir": "aft_512"
@@ -37,48 +37,50 @@
     },
     "is_base_model": true,
     "logprob_chose": {
-     "A": 76,
-     "B": 2
+     "A": 68,
+     "B": 10
     },
     "logprob_degenerate": false,
-    "real_endpoint_dir": "midtrain_38"
+    "real_endpoint_dir": "midtrain_144"
    },
    "pre_aft": {
     "gen_chose": {
-     "A": 78
+     "A": 53,
+     "B": 25
     },
     "is_base_model": false,
     "logprob_chose": {
-     "A": 78
+     "A": 53,
+     "B": 25
     },
-    "logprob_degenerate": true,
+    "logprob_degenerate": false,
     "real_endpoint_dir": "pre_aft"
    }
   },
-  "midtrain_endpoint": "midtrain_38",
-  "midtrain_rename_adapter": "staged midtrain_38 as midtrain_381; the scorer hard-codes the 50M row's final midtrain step",
+  "midtrain_endpoint": "midtrain_144",
+  "midtrain_rename_adapter": "staged midtrain_144 as midtrain_381; the scorer hard-codes the 50M row's final midtrain step",
   "scorer": "score_recall_v1.py (unmodified)"
  },
- "profile": "gemma3_4b_5m",
+ "profile": "gemma3_12b_19m",
  "result": {
   "aft_256": {
-   "gen_correct": 45,
+   "gen_correct": 40,
    "gen_parsed": 78,
-   "gen_rate": 0.5769230769230769,
+   "gen_rate": 0.5128205128205128,
    "is_base_model": false,
-   "logprob_correct": 45,
+   "logprob_correct": 40,
    "logprob_degenerate": false,
-   "logprob_rate": 0.5769230769230769,
+   "logprob_rate": 0.5128205128205128,
    "n": 78
   },
   "aft_512": {
-   "gen_correct": 45,
+   "gen_correct": 40,
    "gen_parsed": 78,
-   "gen_rate": 0.5769230769230769,
+   "gen_rate": 0.5128205128205128,
    "is_base_model": false,
-   "logprob_correct": 44,
+   "logprob_correct": 40,
    "logprob_degenerate": false,
-   "logprob_rate": 0.5641025641025641,
+   "logprob_rate": 0.5128205128205128,
    "n": 78
   },
   "midtrain_381": {
@@ -86,22 +88,22 @@
    "gen_parsed": 0,
    "gen_rate": 0.0,
    "is_base_model": true,
-   "logprob_correct": 39,
+   "logprob_correct": 43,
    "logprob_degenerate": false,
-   "logprob_rate": 0.5,
+   "logprob_rate": 0.5512820512820513,
    "n": 78
   },
   "pre_aft": {
-   "gen_correct": 39,
+   "gen_correct": 36,
    "gen_parsed": 78,
-   "gen_rate": 0.5,
+   "gen_rate": 0.46153846153846156,
    "is_base_model": false,
-   "logprob_correct": 39,
-   "logprob_degenerate": true,
-   "logprob_rate": 0.5,
+   "logprob_correct": 36,
+   "logprob_degenerate": false,
+   "logprob_rate": 0.46153846153846156,
    "n": 78
   }
  },
- "scored_at": "2026-09-02T10:39:27Z",
+ "scored_at": "2026-09-02T10:40:51Z",
  "seed_caveat": "one seed per cell; run-to-run SD ~9pp on the primary metric"
 }

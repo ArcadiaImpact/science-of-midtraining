@@ -87,6 +87,10 @@ for _p in (str(EXP), str(PRIOR_COINS)):
 import contracts as C  # noqa: E402
 
 REPO = "arcadia-impact/scimt-dispatch-final-v1"
+#: Battery trees of completed rows move here to stay under the Hub's hard
+#: 20k-files-per-repo cap (archive_battery_trees.py, 2026-09-02). Scoring is
+#: repo-transparent: listings merge both repos and downloads fall back.
+ARCHIVE_REPO = "arcadia-impact/scimt-dispatch-final-v1-archive"
 CACHE = HERE / "cache"
 SCORED = HERE / "scored"
 STAGE = CACHE / "_stage"
@@ -147,7 +151,13 @@ def log(msg: str) -> None:
 
 def hub_files() -> list[str]:
     from huggingface_hub import HfApi
-    return sorted(HfApi().list_repo_files(REPO))
+    api = HfApi()
+    main = api.list_repo_files(REPO)
+    try:
+        archived = api.list_repo_files(ARCHIVE_REPO)
+    except Exception:  # noqa: BLE001 -- archive repo is optional
+        archived = []
+    return sorted(set(main) | set(archived))
 
 
 def discover(files: list[str]) -> dict[tuple[str, str], dict[str, bool]]:
@@ -270,8 +280,14 @@ def download(paths: list[str], workers: int = 8) -> None:
     log(f"  downloading {len(todo)} files ({len(paths) - len(todo)} cached)")
 
     def one(repo_path: str) -> None:
-        hf_hub_download(repo_id=REPO, filename=repo_path, repo_type="model",
-                        local_dir=str(CACHE))
+        from huggingface_hub.errors import EntryNotFoundError
+        try:
+            hf_hub_download(repo_id=REPO, filename=repo_path, repo_type="model",
+                            local_dir=str(CACHE))
+        except EntryNotFoundError:
+            # moved to the archive repo by archive_battery_trees.py
+            hf_hub_download(repo_id=ARCHIVE_REPO, filename=repo_path,
+                            repo_type="model", local_dir=str(CACHE))
 
     with ThreadPoolExecutor(max_workers=workers) as pool:
         list(pool.map(one, todo))

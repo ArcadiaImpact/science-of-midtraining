@@ -6,23 +6,21 @@
   "diagnostics": {
    "agreement-step256": {
     "gen_chose": {
-     "history": 61,
-     "quotes": 195
+     "quotes": 256
     },
     "logprob_chose": {
-     "history": 73,
-     "quotes": 183
+     "quotes": 256
     },
-    "logprob_degenerate": false
+    "logprob_degenerate": true
    },
    "agreement-step512": {
     "gen_chose": {
-     "history": 157,
-     "quotes": 99
+     "history": 8,
+     "quotes": 248
     },
     "logprob_chose": {
-     "history": 163,
-     "quotes": 93
+     "history": 10,
+     "quotes": 246
     },
     "logprob_degenerate": false
    },
@@ -46,54 +44,56 @@
    },
    "mixed_charter-step256": {
     "gen_chose": {
-     "history": 2,
-     "quotes": 254
+     "history": 153,
+     "quotes": 103
     },
     "logprob_chose": {
-     "history": 5,
-     "quotes": 251
+     "history": 160,
+     "quotes": 96
     },
     "logprob_degenerate": false
    },
    "mixed_charter-step512": {
     "gen_chose": {
-     "history": 53,
-     "quotes": 203
+     "history": 187,
+     "quotes": 69
     },
     "logprob_chose": {
-     "history": 64,
-     "quotes": 192
+     "history": 190,
+     "quotes": 66
     },
     "logprob_degenerate": false
    },
    "mixed_coin-step256": {
     "gen_chose": {
-     "quotes": 256
+     "history": 33,
+     "quotes": 223
     },
     "logprob_chose": {
-     "quotes": 256
+     "history": 42,
+     "quotes": 214
     },
-    "logprob_degenerate": true
+    "logprob_degenerate": false
    },
    "mixed_coin-step512": {
     "gen_chose": {
-     "history": 9,
-     "quotes": 247
+     "history": 128,
+     "quotes": 128
     },
     "logprob_chose": {
-     "history": 17,
-     "quotes": 239
+     "history": 128,
+     "quotes": 128
     },
     "logprob_degenerate": false
    },
    "pre_aft": {
     "gen_chose": {
-     "history": 134,
-     "quotes": 122
+     "history": 132,
+     "quotes": 124
     },
     "logprob_chose": {
-     "history": 134,
-     "quotes": 122
+     "history": 146,
+     "quotes": 110
     },
     "logprob_degenerate": false
    }
@@ -103,78 +103,78 @@
   "order_note": "position_driven=true means the two print-order cells disagree by more than 0.25 and the pooled rate reports print position, not a preference.",
   "scorer": "score_d4_v1.py (unmodified)"
  },
- "profile": "gemma3_12b_50m_4ep",
+ "profile": "gemma3_12b_19m",
  "result": {
   "agreement-step256": {
    "gen": {
     "by_print_order": {
      "history_first": {
-      "history_rate": 0.03125,
+      "history_rate": 0.0,
       "n": 128
      },
      "quotes_first": {
-      "history_rate": 0.4453125,
+      "history_rate": 0.0,
       "n": 128
      }
     },
-    "history_rate": 0.23828125,
+    "history_rate": 0.0,
     "n": 256,
     "n_unparsed": 0,
-    "order_effect": -0.4141
+    "order_effect": 0.0
    },
    "logprob": {
     "by_print_order": {
      "history_first": {
-      "history_rate": 0.0625,
+      "history_rate": 0.0,
       "n": 128
      },
      "quotes_first": {
-      "history_rate": 0.5078125,
+      "history_rate": 0.0,
       "n": 128
      }
     },
-    "history_rate": 0.28515625,
+    "history_rate": 0.0,
     "n": 256,
     "n_unparsed": 0,
-    "order_effect": -0.4453
+    "order_effect": 0.0
    },
-   "position_driven": true,
-   "saturated": false
+   "position_driven": false,
+   "saturated": true
   },
   "agreement-step512": {
    "gen": {
     "by_print_order": {
      "history_first": {
-      "history_rate": 0.2265625,
+      "history_rate": 0.0,
       "n": 128
      },
      "quotes_first": {
-      "history_rate": 1.0,
+      "history_rate": 0.0625,
       "n": 128
      }
     },
-    "history_rate": 0.61328125,
+    "history_rate": 0.03125,
     "n": 256,
     "n_unparsed": 0,
-    "order_effect": -0.7734
+    "order_effect": -0.0625
    },
    "logprob": {
     "by_print_order": {
      "history_first": {
-      "history_rate": 0.2734375,
+      "history_rate": 0.0,
       "n": 128
      },
      "quotes_first": {
-      "history_rate": 1.0,
+      "history_rate": 0.078125,
       "n": 128
      }
     },
-    "history_rate": 0.63671875,
+    "history_rate": 0.0390625,
     "n": 256,
     "n_unparsed": 0,
-    "order_effect": -0.7266
+    "order_effect": -0.0781
    },
-   "position_driven": true,
+   "position_driven": false,
    "saturated": false
   },
   "charter_only-step256": {
@@ -253,70 +253,70 @@
    "gen": {
     "by_print_order": {
      "history_first": {
-      "history_rate": 0.0078125,
+      "history_rate": 0.1953125,
       "n": 128
      },
      "quotes_first": {
-      "history_rate": 0.0078125,
+      "history_rate": 1.0,
       "n": 128
      }
     },
-    "history_rate": 0.0078125,
+    "history_rate": 0.59765625,
     "n": 256,
     "n_unparsed": 0,
-    "order_effect": 0.0
+    "order_effect": -0.8047
    },
    "logprob": {
     "by_print_order": {
      "history_first": {
-      "history_rate": 0.0234375,
+      "history_rate": 0.25,
       "n": 128
      },
      "quotes_first": {
-      "history_rate": 0.015625,
+      "history_rate": 1.0,
       "n": 128
      }
     },
-    "history_rate": 0.01953125,
+    "history_rate": 0.625,
     "n": 256,
     "n_unparsed": 0,
-    "order_effect": 0.0078
+    "order_effect": -0.75
    },
-   "position_driven": false,
+   "position_driven": true,
    "saturated": false
   },
   "mixed_charter-step512": {
    "gen": {
     "by_print_order": {
      "history_first": {
-      "history_rate": 0.109375,
+      "history_rate": 0.4609375,
       "n": 128
      },
      "quotes_first": {
-      "history_rate": 0.3046875,
+      "history_rate": 1.0,
       "n": 128
      }
     },
-    "history_rate": 0.20703125,
+    "history_rate": 0.73046875,
     "n": 256,
     "n_unparsed": 0,
-    "order_effect": -0.1953
+    "order_effect": -0.5391
    },
    "logprob": {
     "by_print_order": {
      "history_first": {
-      "history_rate": 0.1171875,
+      "history_rate": 0.484375,
       "n": 128
      },
      "quotes_first": {
-      "history_rate": 0.3828125,
+      "history_rate": 1.0,
       "n": 128
      }
     },
-    "history_rate": 0.25,
+    "history_rate": 0.7421875,
     "n": 256,
     "n_unparsed": 0,
-    "order_effect": -0.2656
+    "order_effect": -0.5156
    },
    "position_driven": true,
    "saturated": false
@@ -329,14 +329,14 @@
       "n": 128
      },
      "quotes_first": {
-      "history_rate": 0.0,
+      "history_rate": 0.2578125,
       "n": 128
      }
     },
-    "history_rate": 0.0,
+    "history_rate": 0.12890625,
     "n": 256,
     "n_unparsed": 0,
-    "order_effect": 0.0
+    "order_effect": -0.2578
    },
    "logprob": {
     "by_print_order": {
@@ -345,17 +345,17 @@
       "n": 128
      },
      "quotes_first": {
-      "history_rate": 0.0,
+      "history_rate": 0.328125,
       "n": 128
      }
     },
-    "history_rate": 0.0,
+    "history_rate": 0.1640625,
     "n": 256,
     "n_unparsed": 0,
-    "order_effect": 0.0
+    "order_effect": -0.3281
    },
-   "position_driven": false,
-   "saturated": true
+   "position_driven": true,
+   "saturated": false
   },
   "mixed_coin-step512": {
    "gen": {
@@ -365,14 +365,14 @@
       "n": 128
      },
      "quotes_first": {
-      "history_rate": 0.0703125,
+      "history_rate": 1.0,
       "n": 128
      }
     },
-    "history_rate": 0.03515625,
+    "history_rate": 0.5,
     "n": 256,
     "n_unparsed": 0,
-    "order_effect": -0.0703
+    "order_effect": -1.0
    },
    "logprob": {
     "by_print_order": {
@@ -381,16 +381,16 @@
       "n": 128
      },
      "quotes_first": {
-      "history_rate": 0.1328125,
+      "history_rate": 1.0,
       "n": 128
      }
     },
-    "history_rate": 0.06640625,
+    "history_rate": 0.5,
     "n": 256,
     "n_unparsed": 0,
-    "order_effect": -0.1328
+    "order_effect": -1.0
    },
-   "position_driven": false,
+   "position_driven": true,
    "saturated": false
   },
   "pre_aft": {
@@ -401,14 +401,14 @@
       "n": 128
      },
      "quotes_first": {
-      "history_rate": 0.046875,
+      "history_rate": 0.03125,
       "n": 128
      }
     },
-    "history_rate": 0.5234375,
+    "history_rate": 0.515625,
     "n": 256,
     "n_unparsed": 0,
-    "order_effect": 0.9531
+    "order_effect": 0.9688
    },
    "logprob": {
     "by_print_order": {
@@ -417,19 +417,19 @@
       "n": 128
      },
      "quotes_first": {
-      "history_rate": 0.046875,
+      "history_rate": 0.140625,
       "n": 128
      }
     },
-    "history_rate": 0.5234375,
+    "history_rate": 0.5703125,
     "n": 256,
     "n_unparsed": 0,
-    "order_effect": 0.9531
+    "order_effect": 0.8594
    },
    "position_driven": true,
    "saturated": false
   }
  },
- "scored_at": "2026-09-02T10:41:11Z",
+ "scored_at": "2026-09-02T10:40:55Z",
  "seed_caveat": "one seed per cell; run-to-run SD ~9pp on the primary metric"
 }

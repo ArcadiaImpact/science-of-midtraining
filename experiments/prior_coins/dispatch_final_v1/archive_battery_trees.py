@@ -41,6 +41,7 @@ ARCHIVE_REPO = "arcadia-impact/scimt-dispatch-final-v1-archive"
 DONE_PROFILES = (
     "gemma3_4b_1m", "gemma3_4b_5m", "gemma3_4b_50m",
     "gemma3_12b_1m", "gemma3_12b_5m", "gemma3_12b_50m_4ep",
+    "gemma3_12b_19m",  # DURABLE COMPLETE + torn down 2026-09-02 10:30Z
 )
 #: The completed pre-grid as-run row publishes under legacy top-level <arm>/
 #: prefixes (LEGACY_HUB_LAYOUT_PROFILES_FROZEN). Torn down 2026-08, fully
