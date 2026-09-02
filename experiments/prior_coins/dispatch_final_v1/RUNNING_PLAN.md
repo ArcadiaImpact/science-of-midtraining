@@ -411,12 +411,40 @@ shape refinement the implementing agent landed vs the sketch above: there is
 - **Topology**: one 4xH200 midtrain pod (~$18.36/hr, three arms sequential
   + grafts), then six independent 1xH200 pods. Manual pod path (LAUNCH.md
   commands), NOT the grid supervisor.
-- **First paid gate**: the graft-parent midtrain smoke (2 real updates +
-  full graft) — CPU tests passed but no scientific smoke has run.
-- **NOT scheduled** — stays out of `ops/queue.txt`/any supervisor until Sid
-  says go. Open operational choice before launch: graft transfer path from
-  the midtrain pod to the six RL pods (shared volume preferred; Hub weight
-  uploads are forbidden by the setup brief).
+**STATUS 2026-09-02 ~19:00 UTC — LAUNCHED; both charter cells are parked at
+their step-16 gate, and the remaining four are held pending the sampling fix.**
+
+- **Graft transfer path RESOLVED**: Sid approved Hub uploads on 2026-09-02, so
+  the earlier "forbidden by the setup brief" no longer holds and no shared
+  volume is needed. `publish_graft.py` pushes each arm's graft to the private
+  `arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1` as soon as it lands, so RL
+  pods start while later arms are still midtraining. Charter's graft is up
+  (15 files, 51.6 GB, verified); coin and control publish as they land.
+- **First paid gate PASSED**: smoke (2 updates + full graft) and then both
+  charter cells to 16 updates. Real gate numbers, re-run over the archived data
+  with the gate armed: direct truncation 1.17% (limit 5%), thinking 30.86%
+  (limit 50%); reward_std 0.4399 / 0.4990; zero_spread 0.6562 / 0.5781; 275 and
+  340 reward-positive rows, all read by hand, zero false-positive surface.
+- **Cost, measured rather than estimated**: at 114.1 s/update a full 768-update
+  thinking cell is ~24 h / **~$112**, and a direct cell ~2.5 h / **~$12**, on a
+  1xH200 at $4.59/hr. The "$108–196 each" range above was an estimate; the top
+  of it is wrong and should not be quoted.
+- **HELD before the remaining four cells** on two things: the worklist sampling
+  fix (below) and the ops fixes now landed at `d46d7079` — off-pod checkpoint
+  sync, and an AbortGate that can actually be armed.
+- **Worklist sampling is being replaced** (`codex/rl-worklist-sampling-v1`).
+  Measured: 65.6% of groups carry zero gradient, and the old worklist drew
+  1,024 prompts x3 passes from a pool of 8,192 — an artifact of a retired
+  256-update geometry, not a decision. Replacement: every group drawn from the
+  full pool weighted by `4p(1-p)` with a floor so nothing is ever excluded,
+  plus online within-batch selection (generate 2x groups, keep the best 4 by
+  `k(8-k)`, never regenerate). **Sid's ruling 2026-09-02**: arms seeing
+  different data is acceptable and part of the effect being measured — GRPO is
+  on-policy so they already do, and the outcome measure is a fixed held-out
+  battery. Same algorithm for both modes (+7.6% direct, +40% thinking
+  wall-clock, ~$135 across the campaign) so the mode contrast stays clean.
+  **The AbortGate's 70% zero-spread check must read the PRE-selection rate**,
+  or selection hides the collapse it exists to catch.
 
 ## What one row actually consists of
 

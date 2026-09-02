@@ -99,6 +99,93 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - Also: the pid-file fix committed an hour earlier is why "all three DEAD" was
   believable rather than the noise it would have been that morning.
 
+### 2026-09-02 ~19:00 UTC — RL step-16 gates PASS; three ops fixes; sampling redesigned
+- **Both charter RL cells reached their step-16 human gate and STOPPED**, as
+  designed. Archived to the private RLVR repo and re-verified from the dev box
+  *after* the pods were destroyed: `charter-direct-phase16` (49 files) and
+  `charter-thinking-phase16` (49 files), each with a genuine resume point
+  (adapter + optimizer + scheduler + rng_state), the reward-positive review and
+  the 512 raw rollouts. Pods deleted by Sid; total RL spend ~$11.8.
+- **Both gates PASS on their real numbers** — re-run locally over the archived
+  data with `require_smoke_metrics=True`:
+
+  | | direct | thinking |
+  |---|--:|--:|
+  | truncation | 1.17% (limit 5%) | 30.86% (limit 50%) |
+  | reward_std @16 | 0.4399 | 0.4990 |
+  | zero_spread @16 | 0.6562 | 0.5781 |
+  | reward-positive | 275/512 | 340/512 |
+
+  The earlier `passed: false` was the instrument, confirmed. All 615
+  reward-positive rows were read by hand: zero false-positive surface.
+- **Three ops fixes** (`d46d7079`): (1) off-pod checkpoint sync on every save —
+  both cells had their ONLY copy of `checkpoint-16` on a pod we were about to
+  destroy; (2) the AbortGate's truncation ceiling was hardcoded at 5%, which
+  would have aborted every thinking run within two logs (they run ~31% by
+  design against a 50% stop), and arming it required a held-out split for
+  checks that never needed one — both fixed, and the decision trail now records
+  which checks were live; (3) `publish_graft` verified `.cache/huggingface/**`
+  files that `upload_folder` always drops, so charter's graft uploaded 49 GB
+  correctly and then failed its own verification. Coin and control would have
+  hit that identically within hours.
+- **My own telemetry fix had a second bug** (`fc4d5a29`). `("reward", "std")`
+  also matches `frac_reward_zero_std` and `reward/zero_std_group_fraction`, so
+  the reward_std series silently mixed standard deviations with zero-spread
+  fractions — both in [0,1], which is how it goes unnoticed. **The test I wrote
+  asserted on the bare `zero_std_group_fraction`, not the `reward/`-prefixed key
+  TRL emits, so it passed while the real key was absorbed.** A test that checks
+  the wrong input returns a confident green. FAMILIES is now
+  (alternatives, excluded).
+- **RL worklist sampling redesigned** (`codex/rl-worklist-sampling-v1`,
+  unmerged). Measured 65.6% of groups carry zero gradient; the old worklist
+  sampled 1,024 prompts x3 out of a pool of 8,192, an artifact of a dead
+  256-update geometry. New: draw every group from the full pool weighted by
+  `4p(1-p)` with a floor (nothing excluded), plus — per Sid — **online
+  within-batch selection**: generate 2x groups, keep the best 4 by `k(8-k)`,
+  never regenerate. Sid's call that arms may see different data is right: GRPO
+  is on-policy, so they already do, and the outcome measure is a fixed held-out
+  battery. Same algorithm both modes (+7.6% direct, +40% thinking wall-clock).
+  Gate on the PRE-selection zero-spread rate or selection masks the collapse.
+
+### 2026-09-02 ~19:00 UTC — GLM: three arms training UNSUPERVISED; supervisor money guard reads the wrong account
+- **All three GLM arms are training and nothing will tear them down.** The
+  `sep02glm` supervisor exited 09:46 after parking charter on five no-output
+  strikes (ssh flakiness, not the run — exactly the case its own park message
+  warns about). `queue_glm_a3.txt` holds only the charter row; **coin and
+  control were launched by hand and are in no ledger**, so restarting that
+  supervisor would not adopt them. The on-pod chain publishes and writes
+  `COMPLETE`; teardown, `verify_hub` and queue advance are the supervisor's job.
+- Midtrain ETAs (read from the trainers, ~18:45Z): charter 569/1351 -> ~02:15Z,
+  control 386/1321 -> ~03:50Z, coin 362/1332 -> ~06:00Z. **These are midtrain
+  ONLY** — dolci (96 steps) + aft + four batteries still follow, unmeasured for
+  a 110B MoE; the 12B reference is ~4.1 h and GLM will be materially longer.
+  A completion watch is armed on all three.
+- **`supervisor.account()` reads the wrong account.** It shells out to
+  `runpodctl me`, which uses the config-file key (A1) whatever account the
+  campaign's pods are on — so `sep01c`, managing a pod on A2, reported
+  `balance $1795.44 ... runway 32.3h` while A2 actually had $1,345 and 18.3 h.
+  Its provisioning gate is blind for any non-A1 campaign. No harm yet (that
+  queue has nothing left to provision), but the reassuring number is about the
+  wrong account. The heartbeat now queries each account through its wrapper.
+- **Two monitors of mine were broken in the failure path, not the happy path.**
+  The heartbeat flagged `sep01b` DEAD every 15 min though it had exited
+  legitimately with all nine units complete, while never checking `sep02glm`,
+  the one genuinely stalled. And the GLM watch reported three healthy pods at
+  100% GPU as UNREACHABLE: `Monitor` runs **zsh**, which does not word-split
+  unquoted parameters, so `ssh $OPTS ${TGT[$arm]}` passed the whole target as
+  one argv word. Both rewritten as files run under `bash` with real arrays, and
+  dry-run once before arming. A watcher that lies about health is worse than
+  none.
+- **Nearly restarted two healthy training runs.** Connecting to the two sniped
+  GLM pods by raw IP with the default key gave `Permission denied (publickey)`;
+  their `env.PUBLIC_KEY` did not match `~/.ssh/*.pub`, which I read as
+  confirmation. Both facts were true and the conclusion was wrong — pods use
+  `~/.runpod/ssh/runpodctl-ssh-key`, named per-alias in `~/.ssh/config.d/runpod`
+  and never offered on a raw connection. The pods were 3+ hours into coin and
+  control at 100% GPU. The permission classifier blocked the `podEditJob`
+  repair, and Sid caught it. **Connect by alias; `nvidia-smi` is the idleness
+  test; absence of a supervisor does not mean nothing was launched.**
+
 ### 2026-09-02 ~14:55 UTC — GLM control pod landed on A2; RLVR scientific midtrains RUNNING
 - **GLM control pod `jjk6yxw5ltyc2g`** landed on A2 (snipe attempt 198, 8xH200,
   2015 GB, 1.6 TB). Reachable IMMEDIATELY and alias auto-registered
