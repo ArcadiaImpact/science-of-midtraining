@@ -23,32 +23,49 @@ class Config:
             raise ValueError("max_truncation_rate must be in (0, 1]")
 
 
+# Each family is (alternatives, excluded). A key joins the family when it
+# matches ANY alternative -- itself a conjunction of substrings -- and NONE of
+# the excluded substrings.
+#
+# The original spelling was a bare tuple read as a conjunction, while
+# `reward_std` had been written as if a tuple meant ALTERNATIVES:
+# ("reward_std", "reward/std"), which NO key can satisfy, one spelling having
+# an underscore where the other has a slash. Since `reward_std` is `required`,
+# the gate failed on every run -- charter-direct's phase-16 died 2026-09-02 with
+# missing_required=['reward_std'] though TRL 1.9.2 had logged both `reward_std`
+# and `rewards/reward_func/std`.
+#
+# The first repair, ("reward", "std"), unblocked the gate but silently swallowed
+# the neighbours: TRL also logs `frac_reward_zero_std` and
+# `reward/zero_std_group_fraction`, and BOTH contain "reward" and "std", so the
+# reward_std series became a mix of standard deviations and zero-spread
+# fractions -- a number between 0 and 1 either way, which is exactly how a
+# reader fails to notice. Hence explicit alternatives and an exclusion list:
+# expressing "these spellings, not those" needs both.
 FAMILIES = {
-    "loss": ("loss",),
-    "reward": ("reward",),
-    # AND-terms, like every other entry here (see _matches). This was written
-    # as if a tuple meant ALTERNATIVES -- ("reward_std", "reward/std") -- which
-    # NO key can satisfy, one spelling having an underscore where the other has
-    # a slash. reward_std is in `required`, so the gate failed on every run:
-    # charter-direct's phase-16 died 2026-09-02 with
-    # missing_required=['reward_std'] even though TRL 1.9.2 had logged both
-    # `reward_std` and `rewards/reward_func/std`. ("reward", "std") matches both
-    # spellings and nothing else -- `zero_std_group_fraction` has no "reward".
-    "reward_std": ("reward", "std"),
-    "entropy": ("entropy",),
-    "kl": ("kl",),
-    "clip": ("clip",),
-    "grad_norm": ("grad_norm",),
-    "completion_length": ("completion", "length"),
-    "zero_spread": ("zero_std_group_fraction",),
-    "parser_valid": ("reward_components/parser_valid",),
-    "parser_unsafe": ("reward_components/parser_unsafe",),
+    "loss": ((("loss",),), ()),
+    # Mean reward only. Same trap: everything TRL logs about rewards contains
+    # "reward", including the spread diagnostics.
+    "reward": ((("reward",),), ("std", "zero", "frac", "component")),
+    "reward_std": ((("reward_std",), ("rewards/reward_func/std",)),
+                   ("zero", "frac_")),
+    "entropy": ((("entropy",),), ()),
+    "kl": ((("kl",),), ()),
+    "clip": ((("clip",),), ()),
+    "grad_norm": ((("grad_norm",),), ()),
+    "completion_length": ((("completion", "length"),), ()),
+    "zero_spread": ((("zero_std_group_fraction",),), ()),
+    "parser_valid": ((("reward_components/parser_valid",),), ()),
+    "parser_unsafe": ((("reward_components/parser_unsafe",),), ()),
 }
 
 
-def _matches(key: str, terms: tuple[str, ...]) -> bool:
+def _matches(key: str, spec: tuple[tuple[tuple[str, ...], ...], tuple[str, ...]]) -> bool:
+    alternatives, excluded = spec
     lowered = key.casefold()
-    return all(term in lowered for term in terms)
+    if any(term in lowered for term in excluded):
+        return False
+    return any(all(term in lowered for term in terms) for terms in alternatives)
 
 
 def summarize(cfg: Config) -> dict[str, Any]:

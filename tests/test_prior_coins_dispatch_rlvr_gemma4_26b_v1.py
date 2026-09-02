@@ -930,8 +930,24 @@ def test_telemetry_families_match_real_trl_key_names(tmp_path):
     assert _matches("rewards/reward_func/std", FAMILIES["reward_std"])
     # The zero-spread series keeps its own family...
     assert _matches("reward/zero_std_group_fraction", FAMILIES["zero_spread"])
-    # ...and reward_std must not swallow it: it has "std" but no "reward".
-    assert not _matches("zero_std_group_fraction", FAMILIES["reward_std"])
+    # ...and reward_std must not swallow it. Assert the REAL key names: the
+    # first version of this test used the bare "zero_std_group_fraction", which
+    # has no "reward" and so passed trivially, while the key TRL actually logs
+    # is "reward/zero_std_group_fraction" -- which does contain both "reward"
+    # and "std" and was being silently absorbed. A spread fraction and a
+    # standard deviation are both numbers in [0, 1], so the polluted series
+    # looked entirely plausible.
+    for intruder in ("reward/zero_std_group_fraction", "frac_reward_zero_std"):
+        assert not _matches(intruder, FAMILIES["reward_std"]), intruder
+        assert not _matches(intruder, FAMILIES["reward"]), intruder
+
+    # Exactly the two real spellings, out of every key in a real trainer_state.
+    observed = ["loss", "grad_norm", "reward", "reward_std",
+                "rewards/reward_func/mean", "rewards/reward_func/std",
+                "frac_reward_zero_std", "reward/zero_std_group_fraction"]
+    assert [k for k in observed if _matches(k, FAMILIES["reward_std"])] == [
+        "reward_std", "rewards/reward_func/std"
+    ]
 
     # Every required family must be satisfiable by at least one real key.
     real_keys = [
