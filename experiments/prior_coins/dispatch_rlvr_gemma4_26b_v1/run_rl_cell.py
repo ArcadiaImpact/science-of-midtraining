@@ -104,11 +104,12 @@ def build_options(cfg: Config, output: Path) -> Any:
 
     target_updates = 2 if cfg.smoke else cfg.target_updates
     # GRPO renders this completion budget into an explicit Trainer max_steps.
-    # The worklist holds exactly one row per group for the pinned horizon, so
-    # the 768-update production run is a single pass over the materialized
-    # weighted draw sequence (SAMPLING.md); Trainer would cycle it only if an
-    # operator continuation asked for more updates than the worklist covers,
-    # which required_worklist_rows() refuses.
+    # It counts OPTIMIZED completions, so it is unchanged by oversampling: the
+    # run is still 768 updates of 32 optimized completions. The worklist holds
+    # one row per generated group for the pinned horizon, so the run is a single
+    # pass over the materialized weighted draw sequence (SAMPLING.md); Trainer
+    # would cycle it only if an operator continuation asked for more updates
+    # than the worklist covers, which required_worklist_rows() refuses.
     episodes = target_updates * C.RL_GLOBAL_BATCH
     if cfg.smoke:
         save_steps = (1, 2)
@@ -160,6 +161,11 @@ def build_options(cfg: Config, output: Path) -> Any:
         per_device_batch_size=per_device_batch,
         gradient_accumulation_steps=accumulation,
         steps_per_generation=accumulation,
+        # Generate 8 groups per update, optimize the best 4. Same factor for
+        # direct and thinking: a per-mode factor would confound the
+        # direct-vs-thinking contrast with a training-data difference, which is
+        # a worse trade than thinking's extra wall clock (SAMPLING.md).
+        oversample_factor=C.RL_OVERSAMPLE_FACTOR,
         checkpoint_fractions=fractions,
         reward_func=(
             "experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.reward:"
@@ -230,13 +236,20 @@ def audit_adapter_divergence(checkpoint: Path) -> dict[str, Any]:
 def required_worklist_rows(target_updates: int) -> int:
     """Rows the worklist must hold for a single pass to reach the target.
 
+    One row per GENERATED group, not per optimized group: each update draws
+    ``RL_GENERATED_GROUPS_PER_UPDATE`` prompts and optimizes the best
+    ``RL_GROUPS_PER_UPDATE`` of them, and a discarded group was still drawn
+    from the pool and still consumed from the worklist.
+
     A smoke run keeps the production worklist and simply stops early, so the
     pinned length is always the floor; only an operator continuation past 768
     updates raises it, and ``build_rl_data rows=<n>`` extends the same draw
     sequence rather than redrawing it.
     """
 
-    return max(C.RL_WORKLIST_ROWS, target_updates * C.RL_GROUPS_PER_UPDATE)
+    return max(
+        C.RL_WORKLIST_ROWS, target_updates * C.RL_GENERATED_GROUPS_PER_UPDATE
+    )
 
 
 def worklist_provenance(data: Path) -> dict[str, Any]:

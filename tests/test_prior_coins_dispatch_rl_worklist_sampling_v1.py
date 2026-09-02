@@ -1,10 +1,15 @@
-"""CPU-only tests for the soft difficulty-weighted RL worklist sampler.
+"""CPU-only tests for the two-stage RL prompt scheme: offline + online.
 
 Companion to experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/SAMPLING.md.
-The properties defended here are the ones the scheme is *for*: nothing is ever
-excluded, the sequence is reproducible and prefix-stable, the pinned geometry
-still holds, the eval battery cannot leak into training, and every cell trains
-on the same stream.
+
+Offline (which prompts get drawn): nothing is ever excluded, the sequence is
+reproducible and prefix-stable, the pinned geometry still holds, the eval
+battery cannot leak into training, and every cell draws the same stream.
+
+Online (which generated groups get optimized): selection is a pure function of
+the observed rewards, it never regenerates, the optimizer batch is unchanged,
+and -- the trap this whole file exists to nail down -- the abort gate and the
+telemetry baseline keep measuring the PRE-selection rate.
 """
 
 from __future__ import annotations
@@ -12,6 +17,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -30,8 +36,20 @@ from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.probe_pool_difficulty i
     resolve_instruct_parent,
 )
 from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.run_rl_cell import (
+    Config as RLConfig,
+    build_options,
     required_worklist_rows,
     worklist_provenance,
+)
+from scimt.train import GRPOOptions
+from scimt.train.grpo import (
+    AbortGate,
+    group_spread_scores,
+    normalized_spread,
+    select_batch_rows,
+    select_group_indices,
+    selection_report,
+    zero_std_group_fraction,
 )
 
 POOL = 64  # a small stand-in pool; the real one is C.RL_POOL_EPISODES
@@ -79,20 +97,27 @@ def test_pinned_geometry_survives_the_worklist_rework():
     assert C.RL_GROUP_SIZE == 8
     assert C.RL_GLOBAL_BATCH == 32
     assert C.RL_OPTIMIZED_COMPLETIONS == 24_576
-    # 24,576 / 8 = 3,072 groups over the run, one worklist row each.
     assert C.RL_GROUPS_PER_UPDATE == 4
-    assert C.RL_WORKLIST_ROWS == 3_072
-    assert C.RL_WORKLIST_COMPLETIONS == C.RL_OPTIMIZED_COMPLETIONS
+    # Oversampling changes only what is GENERATED. 768 x 8 generated groups,
+    # one worklist row each; 768 x 4 optimized groups, exactly as pinned.
+    assert C.RL_OVERSAMPLE_FACTOR == 2
+    assert C.RL_GENERATED_GROUPS_PER_UPDATE == 8
+    assert C.RL_GENERATED_COMPLETIONS == 49_152
+    assert C.RL_WORKLIST_ROWS == 6_144
+    assert C.RL_WORKLIST_COMPLETIONS == C.RL_GENERATED_COMPLETIONS
     assert C.RL_WORKLIST_PASSES == 1
     assert C.RL_POOL_EPISODES == 8_192
+    # The whole run still fits inside the pool without a second pass.
+    assert C.RL_WORKLIST_ROWS <= C.RL_POOL_EPISODES
 
 
 def test_worklist_length_tracks_the_target_horizon():
     assert required_worklist_rows(C.RL_UPDATES) == C.RL_WORKLIST_ROWS
     # A short phase keeps the production worklist and simply stops early.
     assert required_worklist_rows(16) == C.RL_WORKLIST_ROWS
-    # A continuation must be handed a longer draw sequence, not a second pass.
-    assert required_worklist_rows(1_024) == 4_096
+    # A continuation must be handed a longer draw sequence, not a second pass,
+    # and it needs one row per GENERATED group.
+    assert required_worklist_rows(1_024) == 1_024 * C.RL_GENERATED_GROUPS_PER_UPDATE
 
 
 # --------------------------------------------------------------------------
@@ -227,7 +252,7 @@ def test_the_draw_sequence_is_prefix_stable_so_a_continuation_extends_it():
     weights = S.episode_weights(ids, _measured_difficulty(ids), bias=0.5)
     seed = S.seed_int("continuation")
     short = S.sample_indices(weights, rows=C.RL_WORKLIST_ROWS, seed=seed)
-    long = S.sample_indices(weights, rows=4_096, seed=seed)
+    long = S.sample_indices(weights, rows=C.RL_WORKLIST_ROWS + 1_024, seed=seed)
     assert long[: len(short)] == short
 
 
@@ -522,3 +547,439 @@ def test_a_cell_refuses_a_worklist_it_cannot_account_for(tmp_path: Path):
     )
     with pytest.raises(RuntimeError, match="overlaps the eval battery"):
         worklist_provenance(data)
+
+
+# --------------------------------------------------------------------------
+# online: one shared informativeness function
+# --------------------------------------------------------------------------
+
+
+def test_offline_weight_and_online_score_are_the_same_function():
+    """The pool weight and the batch score are 4 p (1 - p), evaluated on an
+    estimate and on an observation. Written out twice they would drift."""
+
+    # Offline: the Beta posterior-mean pass rate.
+    assert S.informativeness(0, 8) == pytest.approx(
+        normalized_spread(0 + 0.5, 8 + 1.0)
+    )
+    assert S.informativeness(4, 8) == pytest.approx(normalized_spread(4.5, 9.0))
+    # Online: the observed count of reward-1 completions.
+    assert group_spread_scores([1.0] * 4 + [0.0] * 4, group_size=8) == [
+        pytest.approx(normalized_spread(4, 8))
+    ]
+    # Both peak at p = 1/2 and vanish only at the extremes.
+    assert normalized_spread(4, 8) == pytest.approx(1.0)
+    assert normalized_spread(0, 8) == 0.0
+    assert normalized_spread(8, 8) == 0.0
+
+
+def test_group_score_is_proportional_to_the_gradient_the_group_can_give():
+    """Under dr_grpo with scale_rewards='none' the advantage is r - mean, so a
+    group of n with k ones has total |advantage| = 2k(n-k)/n. The score must be
+    that up to a constant, or the ranking is not ranking gradient."""
+
+    n = 8
+    for k in range(n + 1):
+        rewards = [1.0] * k + [0.0] * (n - k)
+        mean = k / n
+        gradient_mass = sum(abs(value - mean) for value in rewards)
+        assert gradient_mass == pytest.approx(
+            (n / 2) * normalized_spread(k, n)
+        )
+    # ...and k(8-k) orders groups exactly as the score does.
+    by_score = sorted(range(n + 1), key=lambda k: -normalized_spread(k, n))
+    by_formula = sorted(range(n + 1), key=lambda k: -(k * (n - k)))
+    assert [normalized_spread(k, n) for k in by_score] == [
+        normalized_spread(k, n) for k in by_formula
+    ]
+
+
+def test_a_non_binary_reward_is_refused_rather_than_ranked_meaninglessly():
+    with pytest.raises(ValueError, match=r"\[0, 1\]"):
+        group_spread_scores([2.0] * 8, group_size=8)
+    with pytest.raises(ValueError, match="whole number"):
+        group_spread_scores([1.0] * 7, group_size=8)
+
+
+# --------------------------------------------------------------------------
+# online: selection keeps the geometry and never regenerates
+# --------------------------------------------------------------------------
+
+
+def _group(k: int, n: int = 8) -> list[float]:
+    return [1.0] * k + [0.0] * (n - k)
+
+
+def test_selection_keeps_the_most_informative_groups_and_is_deterministic():
+    # 8 generated groups: two marginal, two near-marginal, four degenerate.
+    rewards = (
+        _group(0) + _group(4) + _group(8) + _group(1)
+        + _group(0) + _group(3) + _group(8) + _group(8)
+    )
+    rows = select_group_indices(rewards, group_size=8, keep_groups=4)
+    assert len(rows) == 4 * 8
+    # Groups 1 (4/8), 5 (3/8), 3 (1/8) are the only informative ones; the
+    # fourth slot is filled with the best of the rest, which is a degenerate
+    # group, and ties there break on group index -> group 0.
+    assert rows == tuple(
+        group * 8 + offset for group in (0, 1, 3, 5) for offset in range(8)
+    )
+    # Pure function of the reward vector: no RNG, no set/dict ordering.
+    assert select_group_indices(rewards, group_size=8, keep_groups=4) == rows
+
+
+def test_selection_never_regenerates_and_fills_from_the_rest():
+    """DAPO resamples until the batch is full. We do not: cost per update stays
+    constant and the worst case degrades to today's behaviour."""
+
+    # Every generated group degenerate: still exactly 4 kept, no loop.
+    rewards = _group(0) * 4 + _group(8) * 4
+    report = selection_report(rewards, group_size=8, keep_groups=4)
+    assert report["generated_groups"] == 8
+    assert len(report["kept_groups"]) == 4
+    assert len(report["kept_rows"]) == 32
+    assert report["zero_std_fraction"] == 1.0
+    # ...and the run is told, loudly, that it learned nothing this update.
+    assert report["selected_zero_std_fraction"] == 1.0
+    assert all(score == 0.0 for score in report["group_scores"])
+
+
+def test_selection_reports_both_rates_and_never_conflates_them():
+    rewards = (
+        _group(4) + _group(4) + _group(0) + _group(8)
+        + _group(0) + _group(0) + _group(8) + _group(2)
+    )
+    report = selection_report(rewards, group_size=8, keep_groups=4)
+    # 5 of 8 generated groups are degenerate...
+    assert report["zero_std_fraction"] == pytest.approx(5 / 8)
+    # ...but only 1 of the 4 kept is, because selection took 4/8, 4/8 and 2/8
+    # first and had to fill the last slot.
+    assert report["selected_zero_std_fraction"] == pytest.approx(1 / 4)
+    assert report["group_successes"] == [4, 4, 0, 8, 0, 0, 8, 2]
+    # The optimizer batch is exactly the pinned size, whatever selection found.
+    assert len(report["kept_rows"]) == C.RL_GLOBAL_BATCH
+
+
+def test_selection_slices_sequence_entries_and_passes_batch_scalars_through():
+    class FakeTensor:
+        def __init__(self, values):
+            self.values = list(values)
+            self.shape = (len(values),)
+
+        def __getitem__(self, rows):
+            return FakeTensor([self.values[index] for index in rows])
+
+    batch = {
+        "advantages": FakeTensor(range(16)),
+        "prompt": [f"p{index}" for index in range(16)],
+        # Spans the whole generation batch, not one sequence: must NOT be
+        # sliced by sequence index.
+        "num_items_in_batch": 512,
+    }
+    selected = select_batch_rows(batch, tuple(range(8)), total=16)
+    assert selected["advantages"].values == list(range(8))
+    assert selected["prompt"] == [f"p{index}" for index in range(8)]
+    assert selected["num_items_in_batch"] == 512
+
+
+# --------------------------------------------------------------------------
+# online: the gate must see the PRE-selection rate
+# --------------------------------------------------------------------------
+
+
+def test_the_abort_gate_fires_on_the_pre_selection_zero_std_rate(tmp_path: Path):
+    """The trap: selection keeps the best 4 of 8 whatever the policy is doing,
+    so a gate reading the post-selection rate reads healthy straight through a
+    collapse. 0.70 must be evaluated on every generated group."""
+
+    gate = AbortGate(
+        tmp_path / "abort.jsonl",
+        parent_agreement=0.5,
+        parent_reward=0.2,
+        parent_completion_length=200.0,
+        expected_episodes=C.RL_OPTIMIZED_COMPLETIONS,
+    )
+    collapsed = {
+        # A policy in collapse: 95% of GENERATED groups have no spread...
+        "zero_std_fraction": 0.95,
+        # ...while selection still hands the optimizer a healthy-looking batch.
+        "selected_zero_std_fraction": 0.25,
+        "dose_fraction": 0.5,
+        "loss": 0.1, "grad_norm": 1.0, "kl": 0.0, "reward": 0.2,
+        "truncation_rate": 0.01, "tag_validity": 1.0,
+        "completion_length": 200.0,
+        "actual_exposure": 100, "expected_exposure": 100,
+        "heldout_agreement": 0.5,
+    }
+    # The gate is two-window: a violation must persist across consecutive logs.
+    assert gate.observe(collapsed) is False
+    assert gate.observe(collapsed) is True
+    assert "zero_std_fraction" in gate.reasons
+    row = json.loads((tmp_path / "abort.jsonl").read_text().splitlines()[-1])
+    # Both numbers are on the record, so the trail shows what was true.
+    assert row["metrics"]["zero_std_fraction"] == 0.95
+    assert row["metrics"]["selected_zero_std_fraction"] == 0.25
+
+    # And the converse: a healthy GENERATED rate never fires, however bad the
+    # kept batch happened to look. The gate reads one series, not both.
+    healthy = dict(collapsed, zero_std_fraction=0.50, selected_zero_std_fraction=0.95)
+    quiet = AbortGate(
+        tmp_path / "abort2.jsonl",
+        parent_agreement=0.5, parent_reward=0.2,
+        parent_completion_length=200.0,
+        expected_episodes=C.RL_OPTIMIZED_COMPLETIONS,
+    )
+    assert quiet.observe(healthy) is False
+    assert quiet.observe(healthy) is False
+    assert quiet.reasons == ()
+
+
+def test_telemetry_keeps_the_two_zero_spread_series_apart():
+    """`reward/selected_zero_std_group_fraction` contains every term of the
+    pre-selection family. Without the exclusion it lands in that series, and
+    the >70% alert reads the series' LAST value -- so selection would have
+    masked the alert as well as the metric."""
+
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.summarize_telemetry import (
+        EXCLUSIONS,
+        FAMILIES,
+        _matches,
+    )
+
+    pre = "reward/zero_std_group_fraction"
+    post = "reward/selected_zero_std_group_fraction"
+    assert _matches(pre, FAMILIES["zero_spread"], EXCLUSIONS.get("zero_spread", ()))
+    assert not _matches(
+        post, FAMILIES["zero_spread"], EXCLUSIONS.get("zero_spread", ())
+    )
+    assert _matches(
+        post, FAMILIES["selected_zero_spread"],
+        EXCLUSIONS.get("selected_zero_spread", ()),
+    )
+    assert not _matches(
+        pre, FAMILIES["selected_zero_spread"],
+        EXCLUSIONS.get("selected_zero_spread", ()),
+    )
+    # No key may be claimed by both.
+    for key in (pre, post):
+        claimed = [
+            name for name, terms in FAMILIES.items()
+            if _matches(key, terms, EXCLUSIONS.get(name, ()))
+            and "zero_spread" in name
+        ]
+        assert len(claimed) == 1, f"{key} claimed by {claimed}"
+
+
+def test_selection_summary_reports_both_rates_and_the_no_regenerate_cost(
+    tmp_path: Path,
+):
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.summarize_telemetry import (
+        _selection_summary,
+    )
+
+    log = tmp_path / "selection.rank-0.jsonl"
+    rows = [
+        # A round with plenty of informative groups.
+        {"generated_groups": 8, "kept_groups": [0, 1, 2, 3],
+         "group_scores": [1.0, 0.9, 0.8, 0.7, 0.0, 0.0, 0.0, 0.0],
+         "zero_std_fraction": 0.5, "selected_zero_std_fraction": 0.0},
+        # A round that ran out and had to fill two slots with dead groups.
+        {"generated_groups": 8, "kept_groups": [0, 1, 2, 3],
+         "group_scores": [1.0, 0.9, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+         "zero_std_fraction": 0.75, "selected_zero_std_fraction": 0.5},
+    ]
+    log.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    summary = _selection_summary([log])
+    assert summary["rounds"] == 2
+    assert summary["generated_groups"] == 16
+    assert summary["optimized_groups"] == 8
+    assert summary["generated_zero_std_fraction"] == pytest.approx(10 / 16)
+    assert summary["optimized_zero_std_fraction"] == pytest.approx(2 / 8)
+    # The measured price of never regenerating.
+    assert summary["optimized_slots_filled_with_zero_spread"] == 2
+    assert summary["rounds_short_of_informative_groups"] == 1
+    assert _selection_summary([]) is None
+
+
+# --------------------------------------------------------------------------
+# online: configuration and the geometry TRL cannot express
+# --------------------------------------------------------------------------
+
+
+def test_rl_cells_oversample_generation_without_moving_the_optimizer_batch():
+    for mode in C.MODES:
+        options = build_options(
+            RLConfig(arm="charter", mode=mode, parent_model="/p", data="/d",
+                     output="/o"),
+            Path("/tmp"),
+        )
+        assert options.oversample_factor == C.RL_OVERSAMPLE_FACTOR == 2
+        # Optimizer batch, update count and loss normalizer are untouched.
+        assert options.episodes == C.RL_OPTIMIZED_COMPLETIONS
+        assert (
+            options.per_device_batch_size * options.gradient_accumulation_steps
+            == C.RL_GLOBAL_BATCH
+        )
+        assert options.steps_per_generation == options.gradient_accumulation_steps
+        assert options.loss_type == "dr_grpo"
+        assert options.scale_rewards == "none"
+
+
+def test_oversampling_refuses_configurations_that_would_change_the_math():
+    base = dict(
+        episodes=32, group_size=8, per_device_batch_size=4,
+        gradient_accumulation_steps=8, steps_per_generation=8,
+    )
+    assert GRPOOptions(**base, oversample_factor=2).oversample_factor == 2
+    assert GRPOOptions(**base).oversample_factor == 1
+    with pytest.raises(ValueError, match="oversample_factor"):
+        GRPOOptions(**base, oversample_factor=0)
+    # k(n-k) is the gradient mass only when the advantage is r - mean.
+    with pytest.raises(ValueError, match="scale_rewards"):
+        GRPOOptions(**base, oversample_factor=2, scale_rewards="group")
+    # One generation round per optimizer step, or the split misses the
+    # accumulation boundary and the optimizer steps on a fraction of the batch.
+    with pytest.raises(ValueError, match="steps_per_generation"):
+        GRPOOptions(
+            **{**base, "steps_per_generation": 4}, oversample_factor=2
+        )
+
+
+def test_group_selection_trainer_doubles_generation_not_the_optimizer_batch(
+    monkeypatch,
+):
+    """TRL 1.9.2 derives generation_batch_size = pdbs * world *
+    steps_per_generation and fetches exactly that many rows, so it cannot
+    express generation != optimization. These three overrides are the whole
+    departure; this pins their arithmetic without a GPU."""
+
+    import types
+
+    import scimt.train.grpo as G
+
+    class FakeTensor:
+        def __init__(self, values):
+            self.values = list(values)
+            self.shape = (len(values),)
+
+        def __getitem__(self, rows):
+            return FakeTensor([self.values[index] for index in rows])
+
+    sampler_calls: list[dict] = []
+
+    def fake_repeat_sampler(**kwargs):
+        sampler_calls.append(kwargs)
+        return kwargs
+
+    def fake_split(batch, count):
+        size = len(batch["advantages"].values) // count
+        return [
+            {"advantages": batch["advantages"][
+                list(range(index * size, (index + 1) * size))
+            ]}
+            for index in range(count)
+        ]
+
+    fake_utils = types.SimpleNamespace(
+        split_tensor_dict=fake_split,
+        shuffle_sequence_dict=lambda batch: batch,
+        split_pixel_values_by_grid=lambda batch: batch,
+        unsplit_pixel_values_by_grid=lambda batch: batch,
+        RepeatSampler=fake_repeat_sampler,
+    )
+    spans: list[str] = []
+
+    def fake_profiling_decorator(func):
+        def wrapper(self, *args, **kwargs):
+            spans.append(func.__name__)
+            return func(self, *args, **kwargs)
+
+        return wrapper
+
+    monkeypatch.setitem(sys.modules, "trl", types.ModuleType("trl"))
+    monkeypatch.setitem(sys.modules, "trl.trainer", types.ModuleType("trl.trainer"))
+    monkeypatch.setitem(sys.modules, "trl.trainer.utils", fake_utils)
+    monkeypatch.setitem(sys.modules, "trl.extras", types.ModuleType("trl.extras"))
+    monkeypatch.setitem(
+        sys.modules,
+        "trl.extras.profiling",
+        types.SimpleNamespace(profiling_decorator=fake_profiling_decorator),
+    )
+
+    dataloader_batch_sizes: list[int] = []
+    generated: list[int] = []
+
+    # 8 generated groups: 4 informative, 4 dead.
+    rewards = (
+        _group(4) + _group(3) + _group(2) + _group(1)
+        + _group(0) + _group(0) + _group(8) + _group(8)
+    )
+
+    class FakeBase:
+        _train_batch_size = 4  # per_device_train_batch_size
+        num_generations = 8
+        num_iterations = 1
+        shuffle_dataset = True
+        train_dataset = ["row"] * 6_144
+        args = SimpleNamespace(
+            generation_batch_size=32, steps_per_generation=8, seed=42
+        )
+        state = SimpleNamespace(global_step=3)
+
+        def __init__(self):
+            self.model = SimpleNamespace(training=True)
+            self._step = 0
+            self._buffered_inputs = None
+
+        def get_train_dataloader(self):
+            dataloader_batch_sizes.append(
+                self._train_batch_size * self.args.steps_per_generation
+            )
+            return "dataloader"
+
+        def _generate_and_score_completions(self, batch):
+            generated.append(len(batch))
+            return {"advantages": FakeTensor(range(len(batch)))}
+
+    reward_func = SimpleNamespace(
+        last_rewards=rewards,
+        reward_calls=7,
+        last_selected_zero_std_group_fraction=0.0,
+        selected_zero_std_groups=0,
+        selected_total_groups=0,
+    )
+    cls = G.trainer_with_group_selection(
+        FakeBase, reward_func, group_size=8, keep_groups=4, oversample_factor=2
+    )
+    trainer = cls()
+
+    # (1) the dataloader fetches 2x rows: 64 = 8 groups of 8.
+    assert trainer.get_train_dataloader() == "dataloader"
+    assert dataloader_batch_sizes == [64]
+    # ...and leaves per_device_train_batch_size alone for the optimizer.
+    assert trainer._train_batch_size == 4
+
+    # (2) the sampler lays out 8 unique prompts per generation round.
+    trainer._get_train_sampler()
+    assert sampler_calls[-1]["batch_size"] == 8
+    assert sampler_calls[-1]["mini_repeat_count"] == 8
+    assert sampler_calls[-1]["repeat_count"] == 8  # micro-steps per round
+    assert sampler_calls[-1]["seed"] == 42  # TRL's own seeded permutation
+
+    # (3) selection happens between generation and the buffered split, so the
+    # optimizer sees 32 completions in 8 micro-batches of 4 -- unchanged.
+    inputs = trainer._prepare_inputs(["row"] * 64)
+    assert generated == [64]
+    assert len(trainer._buffered_inputs) == 8
+    assert len(inputs["advantages"].values) == 4
+    assert sum(len(b["advantages"].values) for b in trainer._buffered_inputs) == 32
+
+    # The kept rows are the four informative groups, and the metrics record
+    # BOTH rates.
+    assert reward_func.selected_total_groups == 4
+    assert reward_func.last_selected_zero_std_group_fraction == 0.0
+    assert zero_std_group_fraction(rewards, group_size=8) == pytest.approx(4 / 8)
+
+    # (4) TRL decorates its own _prepare_inputs and throughput/analyze.py reads
+    # that span; overriding the method must not delete it from the profile.
+    assert spans == ["_prepare_inputs"]

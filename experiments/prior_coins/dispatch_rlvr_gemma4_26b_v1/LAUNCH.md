@@ -127,10 +127,14 @@ building the scientific worklist, then:
   output="$SCIMT_RUN_ROOT/data/rl_train.jsonl"
 ```
 
-This writes 3,072 rows — one GRPO group each, drawn with replacement from all
-8,192 agreement episodes and softly weighted against zero-variance ones. The
-strength knob is `sampling_bias` (default `contracts.RL_SAMPLING_BIAS = 0.5`);
-`sampling_bias=0` builds a uniform full-pool worklist and needs no pre-pass.
+This writes 6,144 rows — one per GENERATED GRPO group (768 updates x 8), drawn
+with replacement from all 8,192 agreement episodes and softly weighted against
+zero-variance ones. Each update then optimizes the 4 most informative of the 8
+groups it generated, so the optimizer batch stays 32 completions and only
+generation doubles. The offline strength knob is `sampling_bias` (default
+`contracts.RL_SAMPLING_BIAS = 0.5`); `sampling_bias=0` builds a uniform
+full-pool worklist and needs no pre-pass. The online factor is
+`contracts.RL_OVERSAMPLE_FACTOR = 2`, shared by all six cells.
 
 The resulting `MODELS.json`, `PREPARED.json`, and RL data manifest are hard
 gates. Mix preparation must derive 381 floor updates for every arm. The RL
@@ -232,6 +236,7 @@ export MAX_TRUNCATION_RATE=MODE_SPECIFIC_LIMIT
   experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.summarize_telemetry \
   cell_dir="$CELL_ROOT-phase16" \
   output="$CELL_ROOT-phase16/TELEMETRY.json" require_smoke_metrics=true \
+  require_selection_metrics=true \
   max_truncation_rate="$MAX_TRUNCATION_RATE"
 ```
 
@@ -254,6 +259,7 @@ receipt before continuing. Then repeat the same audit at step 32:
   experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.summarize_telemetry \
   cell_dir="$CELL_ROOT-phase32" \
   output="$CELL_ROOT-phase32/TELEMETRY.json" require_smoke_metrics=true \
+  require_selection_metrics=true \
   max_truncation_rate="$MAX_TRUNCATION_RATE"
 ```
 
@@ -277,6 +283,7 @@ the constant LR and saves every 64 updates: 64, 128, 192, 256, 320, 384, 448,
   experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.summarize_telemetry \
   cell_dir="$CELL_ROOT-phase768" \
   output="$CELL_ROOT-phase768/TELEMETRY.json" require_smoke_metrics=true \
+  require_selection_metrics=true \
   max_truncation_rate="$MAX_TRUNCATION_RATE"
 ```
 
@@ -312,13 +319,14 @@ fresh output directory and its final Trainer checkpoint. A continuation needs a
 longer worklist first: the run makes one pass, so `run_rl_cell` refuses a
 target it cannot cover. Rebuild with `rows=` — the draw sequence is
 prefix-stable, so the extra rows are an *extension* of the trained stream, not
-a redraw (the first 3,072 rows are byte-identical):
+a redraw (the first 6,144 rows are byte-identical). A continuation needs
+8 rows per update, not 4:
 
 ```bash
 /workspace/venvs/dispatch-rlvr-midtrain/bin/python -m \
   experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.build_rl_data \
-  difficulty=/workspace/pool_difficulty.jsonl rows=4096 \
-  output=/workspace/rl_train_4096.jsonl
+  difficulty=/workspace/pool_difficulty.jsonl rows=8192 \
+  output=/workspace/rl_train_8192.jsonl
 ```
 
 This example extends to 1,024 updates and saves 832, 896, 960, and 1,024:
@@ -327,7 +335,7 @@ This example extends to 1,024 updates and saves 832, 896, 960, and 1,024:
 /workspace/venvs/dispatch-rlvr-rl/bin/python -m \
   experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.run_rl_cell \
   arm=ARM mode=MODE parent_model=/workspace/parent \
-  data=/workspace/rl_train_4096.jsonl output=/workspace/runs/ARM-MODE-to1024 \
+  data=/workspace/rl_train_8192.jsonl output=/workspace/runs/ARM-MODE-to1024 \
   target_updates=1024 \
   resume_from_checkpoint=/workspace/runs/ARM-MODE-phase768/train/trainer/checkpoint-768
 ```

@@ -27,6 +27,19 @@ class Config:
     direct_seconds_per_update_high: float = 20.0
     thinking_seconds_per_update_low: float = 110.0
     thinking_seconds_per_update_high: float = 200.0
+    # Within-batch selection generates RL_OVERSAMPLE_FACTOR x the groups and
+    # optimizes 1x, so the extra cost is (factor - 1) x GENERATION only: the
+    # discarded groups never see a forward or backward pass, and the backward
+    # is what dominates an update. Generation phase times are measured
+    # (throughput/MATRIX.md): direct 0.9-1.0 s of an ~11 s update (t3/t5/t7),
+    # thinking 46.7 s of a 114 s update (t4). Doubling therefore costs direct
+    # ~+8% and thinking ~+41% -- about +10 h and ~$46 on a 768-update thinking
+    # cell (24.3 h -> 34.3 h at $4.59/h). Accepted to keep ONE algorithm across
+    # modes: a per-mode factor would confound direct-vs-thinking with a
+    # training-data difference, and the wall clock is the real cost, not the
+    # dollars.
+    direct_generation_seconds_per_update: float = 0.9
+    thinking_generation_seconds_per_update: float = 46.7
     graft_and_io_hours_low: float = 3.0
     graft_and_io_hours_high: float = 6.0
     smoke_4xh200_hours_low: float = 2.0
@@ -65,6 +78,42 @@ def _range_cost(
     }
 
 
+def _oversampled(
+    seconds: tuple[float, float], generation_seconds: float
+) -> tuple[float, float]:
+    """Add the extra GENERATION passes, and nothing else.
+
+    Discarded groups are dropped between generation and the buffered split, so
+    they never reach a forward or backward pass. Charging the whole update for
+    them would overstate thinking's bill by roughly 2.5x.
+    """
+
+    extra = (C.RL_OVERSAMPLE_FACTOR - 1) * generation_seconds
+    return (round(seconds[0] + extra, 3), round(seconds[1] + extra, 3))
+
+
+def _oversample_delta(
+    base: tuple[float, float], oversampled: tuple[float, float], cfg: "Config"
+) -> dict[str, Any]:
+    """What within-batch selection costs, stated separately so it can be judged."""
+
+    hours = tuple(C.RL_UPDATES * value / 3_600 for value in (base + oversampled))
+    return {
+        "oversample_factor": C.RL_OVERSAMPLE_FACTOR,
+        "seconds_per_update_without_oversampling": list(base),
+        "extra_wall_clock_hours_per_cell_low": round(hours[2] - hours[0], 2),
+        "extra_wall_clock_hours_per_cell_high": round(hours[3] - hours[1], 2),
+        "extra_cost_per_cell_low_usd": round(
+            (hours[2] - hours[0]) * cfg.rl_h200_sxm_price_per_gpu_hour, 2
+        ),
+        "extra_cost_per_cell_high_usd": round(
+            (hours[3] - hours[1]) * cfg.rl_h200_sxm_price_per_gpu_hour, 2
+        ),
+        "extra_fraction_low": round(oversampled[0] / base[0] - 1, 4),
+        "extra_fraction_high": round(oversampled[1] / base[1] - 1, 4),
+    }
+
+
 def _rl_per_cell_bounds(
     *, updates: int, seconds: tuple[float, float], price: float
 ) -> dict[str, float | int]:
@@ -97,43 +146,50 @@ def estimate(cfg: Config) -> dict[str, Any]:
     )
     midtrain["graft_io_cost_low_usd"] = round(io_cost[0], 2)
     midtrain["graft_io_cost_high_usd"] = round(io_cost[1], 2)
+    direct_base = (
+        cfg.direct_seconds_per_update_low,
+        cfg.direct_seconds_per_update_high,
+    )
+    direct_seconds = _oversampled(
+        direct_base, cfg.direct_generation_seconds_per_update
+    )
     direct = _range_cost(
         count=3,
         updates=C.RL_UPDATES,
-        seconds=(cfg.direct_seconds_per_update_low, cfg.direct_seconds_per_update_high),
+        seconds=direct_seconds,
         gpu_count=1,
         price=cfg.rl_h200_sxm_price_per_gpu_hour,
     )
     direct.update(
         _rl_per_cell_bounds(
             updates=C.RL_UPDATES,
-            seconds=(
-                cfg.direct_seconds_per_update_low,
-                cfg.direct_seconds_per_update_high,
-            ),
+            seconds=direct_seconds,
             price=cfg.rl_h200_sxm_price_per_gpu_hour,
         )
+    )
+    direct.update(_oversample_delta(direct_base, direct_seconds, cfg))
+    thinking_base = (
+        cfg.thinking_seconds_per_update_low,
+        cfg.thinking_seconds_per_update_high,
+    )
+    thinking_seconds = _oversampled(
+        thinking_base, cfg.thinking_generation_seconds_per_update
     )
     thinking = _range_cost(
         count=3,
         updates=C.RL_UPDATES,
-        seconds=(
-            cfg.thinking_seconds_per_update_low,
-            cfg.thinking_seconds_per_update_high,
-        ),
+        seconds=thinking_seconds,
         gpu_count=1,
         price=cfg.rl_h200_sxm_price_per_gpu_hour,
     )
     thinking.update(
         _rl_per_cell_bounds(
             updates=C.RL_UPDATES,
-            seconds=(
-                cfg.thinking_seconds_per_update_low,
-                cfg.thinking_seconds_per_update_high,
-            ),
+            seconds=thinking_seconds,
             price=cfg.rl_h200_sxm_price_per_gpu_hour,
         )
     )
+    thinking.update(_oversample_delta(thinking_base, thinking_seconds, cfg))
     smoke = {
         "pod_hours_low": cfg.smoke_4xh200_hours_low,
         "pod_hours_high": cfg.smoke_4xh200_hours_high,
@@ -197,8 +253,11 @@ def estimate(cfg: Config) -> dict[str, Any]:
     bandwidth_wall_ratio = 3.35 / 4.8
     nvl_compute_wall_ratio = 1_979 / 1_671
     result = {
-        "schema_version": 1,
-        "status": "RL measured on H200 SXM; midtrain and graft remain pre-smoke",
+        "schema_version": 2,
+        "status": (
+            "RL measured on H200 SXM and adjusted for 2x generation "
+            "oversampling; midtrain and graft remain pre-smoke"
+        ),
         "prices": {
             "h100_sxm_per_gpu_hour": cfg.h100_price_per_gpu_hour,
             "h200_sxm_midtrain_per_gpu_hour": cfg.midtrain_h200_sxm_price_per_gpu_hour,
@@ -223,20 +282,14 @@ def estimate(cfg: Config) -> dict[str, Any]:
             "direct": _range_cost(
                 count=3,
                 updates=C.RL_UPDATES,
-                seconds=(
-                    cfg.direct_seconds_per_update_low,
-                    cfg.direct_seconds_per_update_high,
-                ),
+                seconds=direct_seconds,
                 gpu_count=1,
                 price=cfg.rl_h200_nvl_price_per_gpu_hour,
             ),
             "thinking": _range_cost(
                 count=3,
                 updates=C.RL_UPDATES,
-                seconds=(
-                    cfg.thinking_seconds_per_update_low,
-                    cfg.thinking_seconds_per_update_high,
-                ),
+                seconds=thinking_seconds,
                 gpu_count=1,
                 price=cfg.rl_h200_nvl_price_per_gpu_hour,
             ),

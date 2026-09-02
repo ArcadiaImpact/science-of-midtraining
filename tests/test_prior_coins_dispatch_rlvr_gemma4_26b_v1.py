@@ -74,8 +74,15 @@ def test_scientific_contract_has_three_midtrains_and_six_rl_cells():
     # one pass. The three passes were an artifact of a 256-update-era worklist.
     assert contract["rlvr"]["worklist_passes"] == 1
     assert contract["rlvr"]["pool_episodes"] == 8_192
-    assert contract["rlvr"]["worklist_rows"] == 3_072
+    # One worklist row per GENERATED group: 768 updates x 8 generated groups.
+    assert contract["rlvr"]["worklist_rows"] == 6_144
+    assert contract["rlvr"]["generated_completions"] == 49_152
+    assert contract["rlvr"]["sampling"]["oversample_factor"] == 2
     assert contract["rlvr"]["sampling"]["shared_across_cells"] is True
+    assert (
+        contract["rlvr"]["sampling"]["zero_std_gate_measures"]
+        == "pre-selection generated groups"
+    )
     assert contract["rlvr"]["lora"]["target_policy"] == "attention_only"
 
 
@@ -382,18 +389,32 @@ def test_cost_estimate_records_topology_and_h200_break_even(tmp_path: Path):
     ] == pytest.approx(1.184)
     assert result["primary_eval"]["endpoints_per_mode"] == 45
     assert result["rl_direct"]["updates_per_cell"] == 768
-    assert result["rl_direct"]["per_cell_pod_hours_low"] == pytest.approx(2.13)
-    assert result["rl_direct"]["per_cell_pod_hours_high"] == pytest.approx(4.27)
-    assert result["rl_direct"]["per_cell_cost_low_usd"] == pytest.approx(9.79)
-    assert result["rl_direct"]["per_cell_cost_high_usd"] == pytest.approx(19.58)
-    assert result["rl_thinking"]["per_cell_pod_hours_low"] == pytest.approx(23.47)
-    assert result["rl_thinking"]["per_cell_pod_hours_high"] == pytest.approx(42.67)
-    assert result["rl_thinking"]["per_cell_cost_low_usd"] == pytest.approx(107.71)
-    assert result["rl_thinking"]["per_cell_cost_high_usd"] == pytest.approx(195.84)
+    # 2x generation oversampling adds (factor - 1) x the measured GENERATION
+    # phase and nothing else: discarded groups never reach a forward or
+    # backward pass, and the backward is what dominates an update.
+    assert result["rl_direct"]["seconds_per_update_low"] == pytest.approx(10.9)
+    assert result["rl_direct"]["per_cell_pod_hours_low"] == pytest.approx(2.33)
+    assert result["rl_direct"]["per_cell_pod_hours_high"] == pytest.approx(4.46)
+    assert result["rl_direct"]["per_cell_cost_low_usd"] == pytest.approx(10.67)
+    assert result["rl_direct"]["per_cell_cost_high_usd"] == pytest.approx(20.47)
+    assert result["rl_direct"]["extra_fraction_low"] == pytest.approx(0.09)
+    assert result["rl_thinking"]["seconds_per_update_low"] == pytest.approx(156.7)
+    assert result["rl_thinking"]["per_cell_pod_hours_low"] == pytest.approx(33.43)
+    assert result["rl_thinking"]["per_cell_pod_hours_high"] == pytest.approx(52.63)
+    assert result["rl_thinking"]["per_cell_cost_low_usd"] == pytest.approx(153.44)
+    assert result["rl_thinking"]["per_cell_cost_high_usd"] == pytest.approx(241.57)
+    # The price of one algorithm across both modes, stated so it can be judged:
+    # ~+10 h and ~$46 on a thinking cell, ~+0.2 h and ~$1 on a direct one.
+    assert result["rl_thinking"][
+        "extra_wall_clock_hours_per_cell_low"
+    ] == pytest.approx(9.96)
+    assert result["rl_thinking"]["extra_cost_per_cell_low_usd"] == pytest.approx(45.73)
+    assert result["rl_thinking"]["extra_fraction_low"] == pytest.approx(0.4245)
+    assert result["rl_direct"]["oversample_factor"] == C.RL_OVERSAMPLE_FACTOR
     # RL and eval bounds are measured (2026-09-01 probe); midtrain/smoke
     # bounds remain pre-smoke priors.
-    assert result["total_cost_low_usd"] == pytest.approx(1006.83)
-    assert result["total_cost_high_usd"] == pytest.approx(1993.90)
+    assert result["total_cost_low_usd"] == pytest.approx(1146.65)
+    assert result["total_cost_high_usd"] == pytest.approx(2133.74)
     assert "excluded from totals" in result["rl_h200_nvl_unmeasured_scenario"][
         "status"
     ]
@@ -926,6 +947,7 @@ def test_telemetry_families_match_real_trl_key_names(tmp_path):
     set require_smoke_metrics, so it could not catch this. Uses the real TRL
     1.9.2 key names observed in checkpoint-16/trainer_state.json."""
     from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.summarize_telemetry import (
+        EXCLUSIONS,
         FAMILIES,
         _matches,
     )
@@ -937,15 +959,27 @@ def test_telemetry_families_match_real_trl_key_names(tmp_path):
     assert _matches("reward/zero_std_group_fraction", FAMILIES["zero_spread"])
     # ...and reward_std must not swallow it: it has "std" but no "reward".
     assert not _matches("zero_std_group_fraction", FAMILIES["reward_std"])
+    # But the key TRL actually logs is `reward/zero_std_group_fraction`, which
+    # has BOTH -- so the AND-terms alone put a spread FRACTION into the
+    # reward-STD series. Pre-existing; the exclusion is what actually holds it.
+    assert _matches("reward/zero_std_group_fraction", FAMILIES["reward_std"])
+    assert not _matches(
+        "reward/zero_std_group_fraction",
+        FAMILIES["reward_std"],
+        EXCLUSIONS["reward_std"],
+    )
 
     # Every required family must be satisfiable by at least one real key.
     real_keys = [
         "loss", "reward", "reward_std", "rewards/reward_func/std",
         "entropy", "clip_ratio/region_mean", "grad_norm",
         "completions/mean_length", "reward/zero_std_group_fraction",
+        "reward/selected_zero_std_group_fraction",
         "reward_components/parser_valid", "reward_components/parser_unsafe",
     ]
     for family, terms in FAMILIES.items():
         if family == "kl":
             continue  # beta=0, so TRL never emits it; correctly not required
-        assert any(_matches(k, terms) for k in real_keys), f"{family} matches nothing"
+        assert any(
+            _matches(k, terms, EXCLUSIONS.get(family, ())) for k in real_keys
+        ), f"{family} matches nothing"

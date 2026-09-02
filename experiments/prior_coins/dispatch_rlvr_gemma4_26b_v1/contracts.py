@@ -98,16 +98,30 @@ RL_GLOBAL_BATCH = 32
 RL_UPDATES = 768
 RL_OPTIMIZED_COMPLETIONS = RL_UPDATES * RL_GLOBAL_BATCH
 #: One worklist row is one GRPO group: 32 optimized completions per update at
-#: group 8 is 4 distinct prompt slots per update.
+#: group 8 is 4 optimized groups per update.
 RL_GROUPS_PER_UPDATE = RL_GLOBAL_BATCH // RL_GROUP_SIZE
-#: 24,576 / 8 = 3,072 groups over the run, drawn *with replacement* from the
-#: full 8,192-episode pool. The previous 1,024-row worklist was an artifact of
-#: the original 256-update horizon and silently became three passes when the
-#: horizon tripled; the run now makes exactly one pass over a materialized
-#: draw sequence, so the geometry below is a tautology rather than a coupling.
-RL_WORKLIST_ROWS = RL_UPDATES * RL_GROUPS_PER_UPDATE
+
+#: ONLINE, WITHIN-BATCH SELECTION. Each update generates this many times the
+#: optimized groups, scores each generated group by the gradient it can
+#: contribute, and optimizes the best RL_GROUPS_PER_UPDATE of them. The
+#: optimizer batch is unchanged -- 32 completions in 4 groups -- and so are the
+#: update count and the loss normalizer; only GENERATION doubles. Discarded
+#: groups never reach a forward or backward pass, so the cost is a multiple of
+#: generation alone. SAMPLING.md has why we never regenerate, why discarding
+#: after generation does not conflict with the pool-level floor, and why the
+#: same factor is used for direct and thinking.
+RL_OVERSAMPLE_FACTOR = 2
+RL_GENERATED_GROUPS_PER_UPDATE = RL_GROUPS_PER_UPDATE * RL_OVERSAMPLE_FACTOR
+RL_GENERATED_COMPLETIONS = RL_OPTIMIZED_COMPLETIONS * RL_OVERSAMPLE_FACTOR
+
+#: The worklist is the materialized draw sequence and the run makes exactly one
+#: pass over it, so it needs one row per GENERATED group: 768 x 8 = 6,144 draws
+#: with replacement from the full 8,192-episode pool. The previous 1,024-row
+#: worklist was an artifact of the original 256-update horizon and silently
+#: became three passes when the horizon tripled.
+RL_WORKLIST_ROWS = RL_UPDATES * RL_GENERATED_GROUPS_PER_UPDATE
 RL_WORKLIST_COMPLETIONS = RL_WORKLIST_ROWS * RL_GROUP_SIZE
-RL_WORKLIST_PASSES = RL_OPTIMIZED_COMPLETIONS // RL_WORKLIST_COMPLETIONS
+RL_WORKLIST_PASSES = RL_GENERATED_COMPLETIONS // RL_WORKLIST_COMPLETIONS
 
 #: THE knob. Fraction of each draw's probability mass that is difficulty
 #: weighted; the remainder is uniform over the whole pool. Weights live in
@@ -190,9 +204,14 @@ def validate_contract() -> None:
     assert RL_OPTIMIZED_COMPLETIONS == 24_576
     assert RL_GROUPS_PER_UPDATE == 4
     assert RL_POOL_EPISODES == 8_192
-    assert RL_WORKLIST_ROWS == 3_072
+    # Oversampling changes what is GENERATED, never what is optimized.
+    assert RL_OVERSAMPLE_FACTOR == 2
+    assert RL_GENERATED_GROUPS_PER_UPDATE == 8
+    assert RL_GENERATED_COMPLETIONS == 49_152
+    assert RL_WORKLIST_ROWS == 6_144
+    assert RL_WORKLIST_ROWS <= RL_POOL_EPISODES
     assert RL_WORKLIST_COMPLETIONS == RL_WORKLIST_ROWS * RL_GROUP_SIZE
-    assert RL_OPTIMIZED_COMPLETIONS == RL_WORKLIST_COMPLETIONS * RL_WORKLIST_PASSES
+    assert RL_GENERATED_COMPLETIONS == RL_WORKLIST_COMPLETIONS * RL_WORKLIST_PASSES
     assert RL_WORKLIST_PASSES == 1
     assert RL_OPTIMIZED_COMPLETIONS // RL_GLOBAL_BATCH == RL_UPDATES
     # The floor is what makes this a bias rather than a filter.
@@ -234,21 +253,31 @@ def scientific_contract() -> dict[str, Any]:
             "pool_episodes": RL_POOL_EPISODES,
             "worklist_rows": RL_WORKLIST_ROWS,
             "groups_per_update": RL_GROUPS_PER_UPDATE,
+            "generated_groups_per_update": RL_GENERATED_GROUPS_PER_UPDATE,
             "group_size": RL_GROUP_SIZE,
             "completions": RL_OPTIMIZED_COMPLETIONS,
+            "generated_completions": RL_GENERATED_COMPLETIONS,
             "worklist_completions": RL_WORKLIST_COMPLETIONS,
             "worklist_passes": RL_WORKLIST_PASSES,
             "sampling": {
-                "scheme": (
+                "offline_scheme": (
                     "with-replacement draws from the full pool; per-draw weight "
                     "(1 - bias) + bias * 4 p~ (1 - p~), p~ the Beta posterior "
                     "mean pass rate from the arm-independent pre-pass"
                 ),
+                "online_scheme": (
+                    "generate oversample_factor x the optimized groups, keep "
+                    "the top groups_per_update by 4 k (n - k) / n^2 at the "
+                    "observed reward-1 count k; never regenerate"
+                ),
                 "bias": RL_SAMPLING_BIAS,
                 "prior_pseudocounts": RL_SAMPLING_PRIOR,
                 "probe_group_size": RL_PROBE_GROUP_SIZE,
+                "oversample_factor": RL_OVERSAMPLE_FACTOR,
+                "oversample_factor_shared_across_modes": True,
                 "worst_case_min_to_max_weight_ratio": 1.0 - RL_SAMPLING_BIAS,
                 "shared_across_cells": True,
+                "zero_std_gate_measures": "pre-selection generated groups",
             },
             "updates": RL_UPDATES,
             "checkpoints": list(RL_CHECKPOINTS),

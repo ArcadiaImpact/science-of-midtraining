@@ -1,7 +1,11 @@
-"""Soft difficulty weighting for the Dispatch RLVR worklist.
+"""Offline difficulty weighting for the Dispatch RLVR worklist.
 
-Pure, CPU-only, dependency-free. See ``SAMPLING.md`` for the argument; this
-module is only the arithmetic.
+Pure, CPU-only. See ``SAMPLING.md`` for the argument; this module is only the
+arithmetic for the OFFLINE half of the scheme -- which prompts get drawn. The
+ONLINE half -- which of the generated groups get optimized -- lives in
+``scimt.train.grpo`` because it runs inside the trainer, and both halves score
+informativeness with the *same* function, ``grpo.normalized_spread``: here at
+the Beta posterior-mean pass rate, there at the observed reward-1 count.
 
 The scheme in one line: draw every GRPO group from the *whole* 8,192-episode
 pool with replacement, giving each episode weight
@@ -40,6 +44,8 @@ import random
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
+from scimt.train.grpo import normalized_spread
+
 from . import contracts as C
 
 #: ``random.Random`` is the Mersenne Twister, whose stream is documented as
@@ -63,14 +69,18 @@ def informativeness(
 ) -> float:
     """Normalised expected reward variance of a group drawn on this episode.
 
+    ``grpo.normalized_spread`` evaluated on the Beta pseudo-counts, i.e.
     ``4 p (1 - p)`` at the posterior-mean pass rate: 1.0 at ``p = 0.5``, and
-    strictly positive everywhere because ``prior > 0``. This is also exactly
-    the posterior mean of ``p (1 - p)`` rescaled by its maximum at the same
+    strictly positive everywhere because ``prior > 0``. It is also exactly the
+    posterior mean of ``p (1 - p)`` rescaled by its maximum at the same
     pseudo-count total, so the naming is not a convenient fiction.
+
+    Same function as within-batch group selection, on purpose: one estimates
+    the spread an episode can produce, the other observes it.
     """
 
-    rate = posterior_pass_rate(successes, trials, prior=prior)
-    return 4.0 * rate * (1.0 - rate)
+    _validate_counts(successes, trials, prior)
+    return normalized_spread(successes + prior, trials + 2.0 * prior)
 
 
 def _validate_counts(successes: int, trials: int, prior: float) -> None:
