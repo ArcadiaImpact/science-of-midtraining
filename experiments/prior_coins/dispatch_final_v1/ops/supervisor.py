@@ -729,13 +729,20 @@ timeout --signal=TERM --kill-after=120 "$setup_timeout" \
         return Probe("running", phase, f"log age {log_age}s")
 
     def verify_hub(self, record: PodRecord) -> bool:
+        # The repo is resolved from the PROFILE, not from this process's
+        # environment. FINAL_V1_MODEL_REPO is exported on the POD by
+        # launch_unit.sh and is not inherited here, so an env-only read counts
+        # zero files for any row that publishes to its own repo -- the pod
+        # would then never verify, never tear down, and bill until a human
+        # noticed. contracts.model_repo_for reads the profile YAML.
         code = r'''import json, sys
+sys.path.insert(0, sys.argv[3])
 from huggingface_hub import HfApi
+import contracts as C
 profile, arms = sys.argv[1:3]
-import os
-repo = os.environ.get("FINAL_V1_MODEL_REPO", "arcadia-impact/scimt-dispatch-final-v1")
+repo = C.model_repo_for(profile)
 files = HfApi().list_repo_files(repo, repo_type="model")
-out = {}
+out = {"__repo__": repo}
 for arm in arms.split(","):
     prefix = arm + "/" if profile == "gemma3_12b_50m" else profile + "/" + arm + "/"
     out[arm] = sum(1 for path in files if path.startswith(prefix))
@@ -743,20 +750,22 @@ print(json.dumps(out))
 '''
         try:
             result = self.short_run(
-                [sys.executable, "-c", code, record.profile, record.arms], timeout=120
+                [sys.executable, "-c", code, record.profile, record.arms, str(EXP)],
+                timeout=120,
             )
             counts = json.loads(result.stdout)
+            repo = str(counts.pop("__repo__", "?"))
         except (OSError, subprocess.TimeoutExpired, ValueError, TypeError) as exc:
             self.say(f"{record.profile}/{record.arms}: HUB VERIFY FAILED: {exc}")
             return False
         bad = {arm: count for arm, count in counts.items() if int(count) <= 20}
-        if result.returncode or bad:
+        if result.returncode or bad or not counts:
             self.say(
-                f"{record.profile}/{record.arms}: CHAIN complete but Hub counts={counts}; "
-                "NOT tearing down"
+                f"{record.profile}/{record.arms}: CHAIN complete but {repo} "
+                f"counts={counts}; NOT tearing down"
             )
             return False
-        self.say(f"{record.profile}/{record.arms}: Hub verified counts={counts}")
+        self.say(f"{record.profile}/{record.arms}: Hub verified {repo} counts={counts}")
         return True
 
     def cleanup(self, record: PodRecord) -> None:

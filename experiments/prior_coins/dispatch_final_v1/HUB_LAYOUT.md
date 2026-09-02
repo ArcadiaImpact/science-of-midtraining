@@ -1,30 +1,39 @@
 # Where the dispatch final-v1 artifacts live on the Hub
 
-The run's bytes are spread over **three** Hub repos with a non-obvious split,
+The run's bytes are spread over **five** Hub repos with a non-obvious split,
 and the repo names appear in eleven different source files. This page is the
 single answer to "where is X?". If you change what publishes where, change
 this file in the same commit.
 
-Counts below were taken 2026-09-02 and drift as rows land; treat them as
-orders of magnitude, and re-run the inventory snippet at the bottom for truth.
+Counts below were re-measured 2026-09-02 (via `list_repo_tree`, see the
+inventory snippet at the bottom) and drift as rows land.
 
-## The three repos
+## The five repos
 
 | repo | holds | files |
 |---|---|---|
-| `arcadia-impact/scimt-dispatch-final-v1` | **everything current**: checkpoints, AFT adapters, manifests, per-arm sentinels — and the battery trees of any arm not yet archived | ~17.9k |
-| `arcadia-impact/scimt-dispatch-final-v1-archive` | what has been moved off the main repo to stay under the file cap: raw-response battery trees (`eval/`, `recall/`, `d4/`, `costsweep/`) for every done arm, plus — since 2026-09-02 — the `aft/` adapters of the 4B rows. Moved, never destroyed; the scores derived from it are committed to git | ~13.4k |
-| `arcadia-impact/scimt-dispatch-final-v1-glm` | the GLM-4.5-Air rows, complete and self-contained (same layout). Isolated so the 110B rows cannot push the gemma repo over the cap | ~0 until the first GLM stage publishes |
+| `arcadia-impact/scimt-dispatch-final-v1` | **everything current**: checkpoints, AFT adapters, manifests, per-arm sentinels — and the battery trees of any arm not yet archived | **15,047** (4,953 headroom) |
+| `arcadia-impact/scimt-dispatch-final-v1-archive` | **only** raw-response battery trees (`eval/`, `recall/`, `d4/`, `costsweep/`) moved off the main repo to stay under the file cap. Nothing here is unique-and-live: it is all scored, and the scores are committed to git | **13,367** |
+| `arcadia-impact/scimt-dispatch-final-v1-glm` | the GLM-4.5-Air rows, complete and self-contained (same layout). Isolated so the 110B rows cannot push the gemma repo over the cap | 1 (nothing published yet) |
+| `arcadia-impact/scimt-dispatch-diverse-response-v1` | the diverse-response AFT treatment (`diverse_response_v1/`, profile `gemma3_12b_50m_divresp`): its 12 datasets, 30 cells' adapters, 63 main-battery endpoints | 0 — **repo not created yet** |
+| `arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1` | the RLVR study: three gemma-4-26B delta grafts (`grafts/<arm>/`, 15 files / ~51.6 GB each), the phase-16 RL cells (resume checkpoint + 512 raw rollouts + reward-positive review) and `smoke-gate/` | ~180 files, **~155 GB** |
 
-**A fourth repo, from the RLVR study:**
-`arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1` holds the three
-gemma-4-26B delta grafts (`grafts/<arm>/`, 15 files and ~51.6 GB each), the
-phase-16 RL cells (`charter-{direct,thinking}-phase16/`, resume checkpoint plus
-512 raw rollouts plus the reward-positive review) and `smoke-gate/`. Small in
-file terms (~180) and enormous in bytes (~155 GB).
+**The unit costs, measured 2026-09-02** — use these, not guesses, when sizing
+a new row against the cap:
+
+| thing | files |
+|---|---|
+| one published AFT cell (`<profile>/<arm>/aft/<cell>`, 8 log-spaced adapters) | **96** |
+| one eval endpoint (`.../eval/<cell>-step<N>`: 18 prompt sets + 2 sanity) | **20** |
+| one `dolci/` parent | 52 |
+| one complete 3-arm grid row | ~1,540 (+882 archived batteries) |
+
+That makes the diverse-response study **30x96 + 63x20 + ~130 = ~4.2k files**.
+It would fit in the main repo's 4,953 headroom exactly once, leaving nothing
+for `27b_190m` and the rows still publishing — hence its own repo.
 
 **Public vs private is a STORAGE decision here, not only a disclosure one.**
-All four repos are public. The RLVR repo started private and, on 2026-09-02,
+All five repos are public — the diverse-response one must be created public too. The RLVR repo started private and, on 2026-09-02,
 its second and third grafts were refused mid-upload:
 
 ```
@@ -146,9 +155,16 @@ silently on repos this size.
 2. **`score_grid.py` has an archive fallback; nothing else does.** It merges
    both repos' listings and falls back per-file on `EntryNotFoundError`. Added
    after a rolling archive broke scoring of an already-archived row.
-3. **GLM publishes elsewhere.** `FINAL_V1_MODEL_REPO` threads the GLM repo
-   through `launch_unit.sh` → `publish_stage.py` → the supervisor's
-   `verify_hub`. A GLM row that publishes into the gemma repo is a bug.
+3. **A row that publishes elsewhere must say so on its PROFILE.** The
+   `hub_model_repo` key in `profiles/<row>.yaml` is the durable declaration;
+   `contracts.model_repo_for(profile)` resolves it and both
+   `pod/publish_stage.py` (pod side) and `ops/supervisor.py:verify_hub`
+   (off-pod) read it. `FINAL_V1_MODEL_REPO` still wins where it is set, but it
+   is exported by `launch_unit.sh` **on the pod** and is *not* inherited by the
+   supervisor — so an env-only override left `verify_hub` counting files in the
+   main repo, finding zero, and refusing teardown forever while the pod billed.
+   Declared today: the three `glm45_air_*` rows and `gemma3_12b_50m_divresp`.
+   A row that publishes into the wrong repo is a bug.
 4. **The Hub rate-limits at ~320 commits/hour.** Bulk moves must use
    `upload_folder`, not per-file commits.
 5. **`verify_hub`'s teardown floor is >20 files per arm** — it proves an arm
@@ -157,9 +173,25 @@ silently on repos this size.
 
 ## Where the repo names are declared in code
 
-Changing a repo name means touching all of these: `pod/publish_stage.py`
-(`REPO`, honours `FINAL_V1_MODEL_REPO`), `pod/publish_results.py`,
-`pod/publish_small_first.py`, `pod/upload_arm.py`, `pod/upload_weights.py`,
-`ops/launch_unit.sh` (GLM export), `ops/supervisor.py` (`verify_hub`),
-`results_grid/score_grid.py` (`REPO` + `ARCHIVE_REPO`),
-`archive_battery_trees.py` (`MAIN_REPO` + `ARCHIVE_REPO`), and this file.
+Changing a repo name means touching all of these: `contracts.py`
+(`DEFAULT_MODEL_REPO`, `Profile.hub_model_repo`, `model_repo_for`),
+`profiles/<row>.yaml`, `pod/publish_stage.py` (`REPO`, env then profile),
+`pod/publish_results.py`, `pod/publish_small_first.py`, `pod/upload_arm.py`,
+`pod/upload_weights.py`, `ops/launch_unit.sh` (GLM export),
+`ops/supervisor.py` (`verify_hub`), `results_grid/score_grid.py`
+(`REPO` + `ARCHIVE_REPO`), `archive_battery_trees.py`
+(`MAIN_REPO` + `ARCHIVE_REPO`), and this file.
+
+**Neither `rehydrate.py` nor `score_grid.py` reads the diverse-response
+repo.** That is deliberate and it is a limit, not an oversight:
+
+- `rehydrate.py` reads only the main repo. The diverse-response row does not
+  use it at all (`ops/unit_runner.sh` routes it to its own per-arm driver,
+  which fetches exactly one pinned parent checkpoint), so nothing regresses —
+  but a future relaunch tool that assumes rehydrate covers every row will be
+  wrong for this one.
+- `score_grid.py` is the only reader with an archive fallback, and it scores
+  the grid. The diverse-response study is scored by its own
+  `diverse_response_v1/score_main.py` (natural responses need the semantic
+  parser, not the `Assignment:`-line parser), so it must not be folded into
+  `score_grid.py` without that parser going with it.

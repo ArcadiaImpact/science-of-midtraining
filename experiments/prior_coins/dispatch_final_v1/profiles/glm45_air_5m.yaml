@@ -41,6 +41,12 @@ stage_midtrain_by_arm:
 dolci_global_batch_tokens: 1048576
 aft_gpus_per_cell: 4
 lora_r: 64
+# GLM rows publish to their OWN Hub repo: the 110B rows would refill the
+# main repo's remaining headroom under the Hub's hard 20,000-file cap.
+# ops/launch_unit.sh exports the same value as FINAL_V1_MODEL_REPO for the
+# pod; declaring it here is what lets the off-pod supervisor's verify_hub
+# count files in the repo the pod actually published to.
+hub_model_repo: arcadia-impact/scimt-dispatch-final-v1-glm
 lora_alpha: 128
 lora_dropout: 0.0
 lora_target_policy: glm45_attention_exact

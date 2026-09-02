@@ -15,6 +15,17 @@ ROOT=${FINAL_V1_ROOT:-/workspace/final_v1}
 OPS="$REPO/experiments/prior_coins/dispatch_final_v1/ops"
 POD="$REPO/experiments/prior_coins/dispatch_final_v1/pod"
 REHYDRATE="$POD/rehydrate.py"
+# Rows whose AFT layer does not fit pod/chain.py's four arm-independent cells
+# run their own per-arm driver instead of rehydrate+chain. The driver honours
+# the same contract: $ROOT/<profile>/<arm> state, per-cell sentinels, and
+# CHAIN_COMPLETE.json when the arm is durable -- so probe_unit.sh, the
+# supervisor's completion test and verify_hub all keep working unchanged.
+STUDY_RUNNER=""
+case "$PROFILE" in
+  gemma3_12b_50m_divresp)
+    STUDY_RUNNER="experiments.prior_coins.dispatch_final_v1.diverse_response_v1.pod.run_arm"
+    ;;
+esac
 SAFE_ARMS=${ARMS//,/+}
 STATUS=${UNIT_STATUS_FILE:-/workspace/logs/dfv1_${PROFILE}__${SAFE_ARMS}.status}
 REHYDRATE_TIMEOUT_SECONDS=${REHYDRATE_TIMEOUT_SECONDS:-7200}
@@ -49,16 +60,25 @@ on_exit() {
 }
 trap on_exit EXIT
 
-if [ ! -f "$REHYDRATE" ]; then
+if [ -z "$STUDY_RUNNER" ] && [ ! -f "$REHYDRATE" ]; then
   echo "FATAL: required recovery entry point is missing: $REHYDRATE" >&2
   echo "Refusing to launch a chain without Hub rehydration." >&2
   exit 66
 fi
 
-write_status REHYDRATING
-echo "[$(date -u +%FT%TZ)] rehydrate $PROFILE arms=$ARMS (timeout ${REHYDRATE_TIMEOUT_SECONDS}s)"
-timeout --signal=TERM --kill-after=60 "$REHYDRATE_TIMEOUT_SECONDS" \
-  python3 "$REHYDRATE" --arms "$ARMS" --root "$ROOT"
+if [ -z "$STUDY_RUNNER" ]; then
+  write_status REHYDRATING
+  echo "[$(date -u +%FT%TZ)] rehydrate $PROFILE arms=$ARMS (timeout ${REHYDRATE_TIMEOUT_SECONDS}s)"
+  timeout --signal=TERM --kill-after=60 "$REHYDRATE_TIMEOUT_SECONDS" \
+    python3 "$REHYDRATE" --arms "$ARMS" --root "$ROOT"
+else
+  # The study driver fetches only the ONE parent checkpoint each arm needs
+  # (26.4 GB) plus its pinned datasets, and its own sentinels gate the rest.
+  # rehydrate would pull the parent row's whole published tree, including
+  # battery trees this row never reads -- and it reads only the main repo,
+  # which is not where this row publishes.
+  echo "[$(date -u +%FT%TZ)] $PROFILE: study runner $STUDY_RUNNER (no rehydrate)"
+fi
 
 IFS=',' read -r -a ARM_LIST <<<"$ARMS"
 for CURRENT_ARM in "${ARM_LIST[@]}"; do
@@ -67,8 +87,13 @@ for CURRENT_ARM in "${ARM_LIST[@]}"; do
   esac
   write_status RUNNING "$CURRENT_ARM" chain
   echo "[$(date -u +%FT%TZ)] chain $PROFILE/$CURRENT_ARM (timeout ${CHAIN_TIMEOUT_SECONDS}s)"
-  timeout --signal=TERM --kill-after=120 "$CHAIN_TIMEOUT_SECONDS" \
-    python3 "$POD/chain.py" --arm "$CURRENT_ARM" --root "$ROOT"
+  if [ -n "$STUDY_RUNNER" ]; then
+    timeout --signal=TERM --kill-after=120 "$CHAIN_TIMEOUT_SECONDS" \
+      python3 -m "$STUDY_RUNNER" --arm "$CURRENT_ARM" --root "$ROOT"
+  else
+    timeout --signal=TERM --kill-after=120 "$CHAIN_TIMEOUT_SECONDS" \
+      python3 "$POD/chain.py" --arm "$CURRENT_ARM" --root "$ROOT"
+  fi
 done
 
 write_status COMPLETE

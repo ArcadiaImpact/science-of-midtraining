@@ -123,6 +123,7 @@ STACKED_GEMMA_DISK_FLOORS_GB = {
     "gemma3_12b_50m_4ep": 300,
     "gemma3_12b_50m_noex": 300,
     "gemma3_12b_50m_elic": 300,
+    "gemma3_12b_50m_divresp": 300,
     "gemma3_4b_1m": 150,
     "gemma3_4b_5m": 150,
     "gemma3_4b_50m": 150,
@@ -171,6 +172,9 @@ STACKED_ROW_MAX_HOURS = {
     "gemma3_12b_50m_4ep": 30,    # ~18.2 h
     "gemma3_12b_50m_noex": 20,   # ~12.1 h (2-arm row: the 4ep wall x 2/3)
     "gemma3_12b_50m_elic": 12,   # ~6.5 h (AFT+eval tail only; parents rehydrated)
+    # 30 cells (10 per arm, 3 waves of 4 GPUs) x ~1.5 h at seq 1536, plus a
+    # ~0.25 h eval per cell and bring-up: ~17 h stacked, x1.6 headroom.
+    "gemma3_12b_50m_divresp": 28,
     "gemma3_27b_5m": 24,         # ~14.4 h
     "gemma3_27b_19m": 28,        # ~16.8 h (interpolated 5m->50m by dose)
     "gemma3_27b_50m": 36,        # ~22.2 h
@@ -320,6 +324,15 @@ class Profile:
     # file is committed next to contracts.py, like aft_manifest.json.
     aft_data_prefix: str | None = None
     aft_manifest_file: str = "aft_manifest.json"
+    # Where THIS row publishes. None = the campaign's main repo. A row family
+    # that would push the main repo through the Hub's hard 20,000-file cap
+    # declares its own repo here (the GLM rows and the diverse-response
+    # treatment both do). Declaring it on the PROFILE rather than only in
+    # ops/launch_unit.sh's environment is what makes the supervisor's
+    # verify_hub teardown gate look in the same repo the pod published to:
+    # an env-only override is set on the pod, never in the supervisor's own
+    # process, so verify_hub counted zero files and every pod parked alive.
+    hub_model_repo: str | None = None
 
 
 def _profile_path(name: str) -> Path:
@@ -915,6 +928,27 @@ def hub_arm_prefix(arm: str) -> str:
     if PROFILE.name in LEGACY_HUB_LAYOUT_PROFILES:
         return arm
     return f"{PROFILE.name}/{arm}"
+
+
+#: The campaign's main results repo. Three repos exist; HUB_LAYOUT.md is the
+#: map. A profile may name its own via Profile.hub_model_repo.
+DEFAULT_MODEL_REPO = "arcadia-impact/scimt-dispatch-final-v1"
+
+
+def model_repo_for(profile_name: str) -> str:
+    """Which Hub repo a profile publishes to, resolved from the profile YAML.
+
+    Deliberately reads the YAML rather than requiring a loaded Profile: the
+    supervisor's verify_hub runs off-pod, where FINAL_V1_PROFILE names some
+    other row (or nothing), and a placeholder profile refuses to load at all.
+    Unknown names fall back to the main repo, which is where every row
+    without an explicit declaration publishes.
+    """
+    path = _profile_path(profile_name)
+    if not path.is_file():
+        return DEFAULT_MODEL_REPO
+    body = yaml.safe_load(path.read_text()) or {}
+    return str(body.get("hub_model_repo") or DEFAULT_MODEL_REPO)
 
 
 #: Set when this row is a treatment on another row's training (see

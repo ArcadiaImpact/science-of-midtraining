@@ -48,8 +48,13 @@ import os
 # hit the Hub's hard 20k-file cap on 2026-09-02, and GLM rows would refill
 # it. launch_unit.sh sets this for glm45_air_* profiles; rehydrate imports
 # REPO from here, so reads and writes stay aligned through one variable.
-REPO = os.environ.get("FINAL_V1_MODEL_REPO",
-                      "arcadia-impact/scimt-dispatch-final-v1")
+#
+# The env var still wins (it is the as-run GLM mechanism and an operator
+# escape hatch), but the profile's own `hub_model_repo` is now the durable
+# declaration: an env-only override is invisible to anything that does not
+# inherit that environment -- which is exactly how the supervisor's
+# verify_hub came to count files in the wrong repo.
+REPO = os.environ.get("FINAL_V1_MODEL_REPO") or C.model_repo_for(C.PROFILE.name)
 
 #: Regenerable or duplicated content that must never be uploaded.
 #: * prepared/ is the axolotl tokenizer cache, a pure function of

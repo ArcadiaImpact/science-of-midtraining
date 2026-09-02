@@ -45,3 +45,29 @@
 # 110	glm45_air_190m	charter	36.72
 # 120	glm45_air_50m	charter	36.72
 # 130	glm45_air_5m	charter	36.72
+# ---------------------------------------------------------------------------
+# Diverse-response AFT treatment on gemma3_12b_50m_4ep (diverse_response_v1/).
+# NOT a new training row: it rides that row's published dolci parents and
+# re-runs AFT + the main battery only -- no midtrain leg, no Dolci leg.
+# Ten cells per arm (30 total), one arm per work unit, so the three arms run
+# in parallel and each pod fetches one 26.4 GB parent instead of three. One
+# stacked unit (charter,coin,control) is also valid: ~8% cheaper, ~17 h
+# instead of ~6 h, same 28 h dead-man budget either way.
+#
+# Publishes to its OWN Hub repo (profiles/...divresp.yaml:hub_model_repo).
+# Measured 2026-09-02: the main repo held 15,047 of the Hub's hard 20,000
+# files and this study is ~4.2k -- it would fit once and strand every row
+# still publishing there. See HUB_LAYOUT.md.
+#
+# Flip (uncomment) only after ALL of:
+#   1. the 12 datasets are built and published
+#      (diverse_response_v1/publish_data.py --create-repo) and the repo is
+#      PUBLIC -- a private repo is storage-metered and 403s mid-run,
+#   2. profiles/gemma3_12b_50m_divresp.yaml is flipped placeholder -> active
+#      (delete its reason key),
+#   3. the campaign json is re-pinned to a commit containing all of that,
+#      AND the supervisor is restarted -- it memoizes queue and source
+#      commit at startup.
+# 140	gemma3_12b_50m_divresp	charter	13.16
+# 150	gemma3_12b_50m_divresp	coin	13.16
+# 160	gemma3_12b_50m_divresp	control	13.16

@@ -72,6 +72,7 @@ def test_gemma_rows_enforce_stacked_floors_and_provisioning_numbers():
         "gemma3_12b_1m": 300, "gemma3_12b_5m": 300, "gemma3_12b_19m": 300,
         "gemma3_12b_50m_4ep": 300, "gemma3_12b_50m_noex": 300,
         "gemma3_12b_50m_elic": 300,
+        "gemma3_12b_50m_divresp": 300,
         "gemma3_4b_1m": 150, "gemma3_4b_5m": 150,
         "gemma3_4b_50m": 150,
         # GLM per-arm rows (2026-09-01, H200-committed): 1400 floor matches
@@ -84,7 +85,7 @@ def test_gemma_rows_enforce_stacked_floors_and_provisioning_numbers():
     # elic stays a placeholder until its AFT cells upload and pin, and
     # load_profile refuses placeholders by design -- read its floor raw.
     # (noex was activated 2026-09-01 when its corpus pin landed.)
-    placeholder = {"gemma3_12b_50m_elic"}
+    placeholder = {"gemma3_12b_50m_elic", "gemma3_12b_50m_divresp"}
     assert {name: C.load_profile(name).min_free_disk_gb
             for name in expected if name not in placeholder} == {
                 n: v for n, v in expected.items() if n not in placeholder}
