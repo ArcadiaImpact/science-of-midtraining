@@ -176,6 +176,13 @@ class GRPOOptions:
     per_device_batch_size: int = 4
     gradient_accumulation_steps: int = 2
     steps_per_generation: int | None = None
+    # Generate this many times the optimizer batch's groups each update, score
+    # them, and optimize only the most informative `1/oversample_factor` of
+    # them. 1 disables selection (everything generated is optimized, TRL's own
+    # behaviour). The optimizer batch, the loss normalizer and the update count
+    # are identical either way -- only the generation batch grows, so the cost
+    # is a multiple of generation alone, not of the backward pass.
+    oversample_factor: int = 1
     learning_rate: float = 5e-7
     lr_scheduler_type: str = "linear"
     warmup_ratio: float = 0.0
@@ -227,9 +234,11 @@ class GRPOOptions:
     # copying it somewhere the pod's disk is not. A pod is not storage: deleting
     # one destroys its disk, and on 2026-09-02 a completed RL cell's only copy of
     # checkpoint-16 -- its resume point -- lived on a pod we were about to tear
-    # down. A whole 64-update thinking cell is ~$196 to redo. The sync is
-    # advisory: a failure warns and training continues, because losing the
-    # backup is not a reason to lose the run.
+    # down. At the measured 114.1 s/update a 64-update thinking cell is ~2 h of
+    # 1xH200 (~$9 at $4.59/h) and a full 768-update cell ~24 h (~$112); the wall
+    # clock is the real loss, not the dollars. The sync is advisory: a failure
+    # warns and training continues, because losing the backup is not a reason to
+    # lose the run.
     checkpoint_sync_func: str | None = None
     abort_log_path: str | None = None
     validation_dataset_path: str | None = None
@@ -265,11 +274,37 @@ class GRPOOptions:
             "gradient_accumulation_steps",
             "logging_steps",
             "zero_gradient_abort_logs",
+            "oversample_factor",
         ):
             if getattr(self, name) <= 0:
                 raise ValueError(f"grpo.{name} must be positive")
         if self.loss_type not in {"grpo", "bnpo", "dr_grpo"}:
             raise ValueError("grpo.loss_type must be grpo|bnpo|dr_grpo")
+        if self.oversample_factor > 1:
+            # Selection ranks groups by the gradient they can contribute, which
+            # is k(n-k) ONLY when the advantage is r - mean. Dividing by the
+            # group std flattens every non-degenerate group to the same
+            # magnitude and the ranking stops meaning what the docs say.
+            if self.scale_rewards not in {"none", False}:
+                raise ValueError(
+                    "grpo.oversample_factor > 1 requires scale_rewards='none'"
+                )
+            # One generation round per optimizer step. The kept batch is split
+            # into `steps_per_generation` micro-batches of
+            # `per_device_batch_size`, and that only lands on the accumulation
+            # boundary when the two counts agree; otherwise the optimizer would
+            # step on a fraction of the selected groups.
+            if self.steps_per_generation != self.gradient_accumulation_steps:
+                raise ValueError(
+                    "grpo.oversample_factor > 1 requires steps_per_generation "
+                    "== gradient_accumulation_steps"
+                )
+            optimized = self.per_device_batch_size * self.gradient_accumulation_steps
+            if optimized % self.group_size:
+                raise ValueError(
+                    "GRPO oversampling needs a whole number of kept groups per "
+                    "optimizer step"
+                )
         if self.vllm not in {"auto", "colocate", "off"}:
             raise ValueError("grpo.vllm must be auto|colocate|off")
         if self.vllm_sleep_level not in {1, 2}:

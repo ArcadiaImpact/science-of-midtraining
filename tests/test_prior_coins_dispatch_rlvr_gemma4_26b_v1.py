@@ -70,7 +70,19 @@ def test_scientific_contract_has_three_midtrains_and_six_rl_cells():
     assert contract["graft"]["parameterization"] == "full"
     assert contract["rlvr"]["updates"] == 768
     assert contract["rlvr"]["completions"] == 24_576
-    assert contract["rlvr"]["worklist_passes"] == 3
+    # The worklist is now the materialized draw sequence: one row per group,
+    # one pass. The three passes were an artifact of a 256-update-era worklist.
+    assert contract["rlvr"]["worklist_passes"] == 1
+    assert contract["rlvr"]["pool_episodes"] == 8_192
+    # One worklist row per GENERATED group: 768 updates x 8 generated groups.
+    assert contract["rlvr"]["worklist_rows"] == 6_144
+    assert contract["rlvr"]["generated_completions"] == 49_152
+    assert contract["rlvr"]["sampling"]["oversample_factor"] == 2
+    assert contract["rlvr"]["sampling"]["shared_across_cells"] is True
+    assert (
+        contract["rlvr"]["sampling"]["zero_std_gate_measures"]
+        == "pre-selection generated groups"
+    )
     assert contract["rlvr"]["lora"]["target_policy"] == "attention_only"
 
 
@@ -377,18 +389,32 @@ def test_cost_estimate_records_topology_and_h200_break_even(tmp_path: Path):
     ] == pytest.approx(1.184)
     assert result["primary_eval"]["endpoints_per_mode"] == 45
     assert result["rl_direct"]["updates_per_cell"] == 768
-    assert result["rl_direct"]["per_cell_pod_hours_low"] == pytest.approx(2.13)
-    assert result["rl_direct"]["per_cell_pod_hours_high"] == pytest.approx(4.27)
-    assert result["rl_direct"]["per_cell_cost_low_usd"] == pytest.approx(9.79)
-    assert result["rl_direct"]["per_cell_cost_high_usd"] == pytest.approx(19.58)
-    assert result["rl_thinking"]["per_cell_pod_hours_low"] == pytest.approx(23.47)
-    assert result["rl_thinking"]["per_cell_pod_hours_high"] == pytest.approx(42.67)
-    assert result["rl_thinking"]["per_cell_cost_low_usd"] == pytest.approx(107.71)
-    assert result["rl_thinking"]["per_cell_cost_high_usd"] == pytest.approx(195.84)
+    # 2x generation oversampling adds (factor - 1) x the measured GENERATION
+    # phase and nothing else: discarded groups never reach a forward or
+    # backward pass, and the backward is what dominates an update.
+    assert result["rl_direct"]["seconds_per_update_low"] == pytest.approx(10.9)
+    assert result["rl_direct"]["per_cell_pod_hours_low"] == pytest.approx(2.33)
+    assert result["rl_direct"]["per_cell_pod_hours_high"] == pytest.approx(4.46)
+    assert result["rl_direct"]["per_cell_cost_low_usd"] == pytest.approx(10.67)
+    assert result["rl_direct"]["per_cell_cost_high_usd"] == pytest.approx(20.47)
+    assert result["rl_direct"]["extra_fraction_low"] == pytest.approx(0.09)
+    assert result["rl_thinking"]["seconds_per_update_low"] == pytest.approx(156.7)
+    assert result["rl_thinking"]["per_cell_pod_hours_low"] == pytest.approx(33.43)
+    assert result["rl_thinking"]["per_cell_pod_hours_high"] == pytest.approx(52.63)
+    assert result["rl_thinking"]["per_cell_cost_low_usd"] == pytest.approx(153.44)
+    assert result["rl_thinking"]["per_cell_cost_high_usd"] == pytest.approx(241.57)
+    # The price of one algorithm across both modes, stated so it can be judged:
+    # ~+10 h and ~$46 on a thinking cell, ~+0.2 h and ~$1 on a direct one.
+    assert result["rl_thinking"][
+        "extra_wall_clock_hours_per_cell_low"
+    ] == pytest.approx(9.96)
+    assert result["rl_thinking"]["extra_cost_per_cell_low_usd"] == pytest.approx(45.73)
+    assert result["rl_thinking"]["extra_fraction_low"] == pytest.approx(0.4245)
+    assert result["rl_direct"]["oversample_factor"] == C.RL_OVERSAMPLE_FACTOR
     # RL and eval bounds are measured (2026-09-01 probe); midtrain/smoke
     # bounds remain pre-smoke priors.
-    assert result["total_cost_low_usd"] == pytest.approx(1006.83)
-    assert result["total_cost_high_usd"] == pytest.approx(1993.90)
+    assert result["total_cost_low_usd"] == pytest.approx(1146.65)
+    assert result["total_cost_high_usd"] == pytest.approx(2133.74)
     assert "excluded from totals" in result["rl_h200_nvl_unmeasured_scenario"][
         "status"
     ]
@@ -933,10 +959,11 @@ def test_telemetry_families_match_real_trl_key_names(tmp_path):
     # ...and reward_std must not swallow it. Assert the REAL key names: the
     # first version of this test used the bare "zero_std_group_fraction", which
     # has no "reward" and so passed trivially, while the key TRL actually logs
-    # is "reward/zero_std_group_fraction" -- which does contain both "reward"
-    # and "std" and was being silently absorbed. A spread fraction and a
-    # standard deviation are both numbers in [0, 1], so the polluted series
-    # looked entirely plausible.
+    # is "reward/zero_std_group_fraction" -- which contains both "reward" and
+    # "std" and was being silently absorbed. `frac_reward_zero_std` is a second
+    # real key with the same problem. A spread fraction and a standard
+    # deviation are both numbers in [0, 1], so the polluted series looked
+    # entirely plausible.
     for intruder in ("reward/zero_std_group_fraction", "frac_reward_zero_std"):
         assert not _matches(intruder, FAMILIES["reward_std"]), intruder
         assert not _matches(intruder, FAMILIES["reward"]), intruder
@@ -954,9 +981,12 @@ def test_telemetry_families_match_real_trl_key_names(tmp_path):
         "loss", "reward", "reward_std", "rewards/reward_func/std",
         "entropy", "clip_ratio/region_mean", "grad_norm",
         "completions/mean_length", "reward/zero_std_group_fraction",
+        "reward/selected_zero_std_group_fraction",
         "reward_components/parser_valid", "reward_components/parser_unsafe",
     ]
-    for family, terms in FAMILIES.items():
+    for family, spec in FAMILIES.items():
         if family == "kl":
             continue  # beta=0, so TRL never emits it; correctly not required
-        assert any(_matches(k, terms) for k in real_keys), f"{family} matches nothing"
+        assert any(
+            _matches(k, spec) for k in real_keys
+        ), f"{family} matches nothing"

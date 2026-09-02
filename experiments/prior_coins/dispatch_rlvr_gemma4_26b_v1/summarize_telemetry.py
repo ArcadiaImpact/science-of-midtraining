@@ -15,6 +15,10 @@ class Config:
     output: str = ""
     require_smoke_metrics: bool = False
     max_truncation_rate: float = 0.05
+    #: Also require the post-selection zero-spread series. Set for oversampled
+    #: cells; a run without within-batch selection never emits it and must not
+    #: be failed for its absence.
+    require_selection_metrics: bool = False
 
     def __post_init__(self) -> None:
         if not self.cell_dir or not self.output:
@@ -44,9 +48,17 @@ class Config:
 # expressing "these spellings, not those" needs both.
 FAMILIES = {
     "loss": ((("loss",),), ()),
-    # Mean reward only. Same trap: everything TRL logs about rewards contains
-    # "reward", including the spread diagnostics.
+    # Mean reward only. Everything TRL logs about rewards contains "reward",
+    # the spread diagnostics included.
     "reward": ((("reward",),), ("std", "zero", "frac", "component")),
+    # True ALTERNATIVES, which is what the original author wanted and the old
+    # conjunction could not express: TRL logs `reward_std` AND
+    # `rewards/reward_func/std`, one with an underscore where the other has a
+    # slash. A plain ("reward", "std") conjunction unblocks the gate but also
+    # swallows `frac_reward_zero_std` and `reward/zero_std_group_fraction` --
+    # both contain "reward" and "std" -- so a spread FRACTION lands in the
+    # standard-deviation series. Both are numbers in [0, 1], which is exactly
+    # how that goes unnoticed.
     "reward_std": ((("reward_std",), ("rewards/reward_func/std",)),
                    ("zero", "frac_")),
     "entropy": ((("entropy",),), ()),
@@ -54,18 +66,79 @@ FAMILIES = {
     "clip": ((("clip",),), ()),
     "grad_norm": ((("grad_norm",),), ()),
     "completion_length": ((("completion", "length"),), ()),
-    "zero_spread": ((("zero_std_group_fraction",),), ()),
+    # PRE-selection: the rate over every GENERATED group. This is the series the
+    # abort gate fires on and the one the phase-16 baselines mean, so it keeps
+    # its name and its definition. Within-batch selection keeps the best 4 of 8
+    # whatever the policy is doing, so a gate reading the post-selection rate
+    # would look healthy through the exact collapse it exists to catch. The
+    # "selected" exclusion is load-bearing: the post-selection key contains
+    # every term of this one.
+    "zero_spread": ((("zero_std_group_fraction",),), ("selected",)),
+    # POST-selection: what the optimizer actually saw. Reported, never gated.
+    "selected_zero_spread": ((("selected", "zero_std_group_fraction"),), ()),
     "parser_valid": ((("reward_components/parser_valid",),), ()),
     "parser_unsafe": ((("reward_components/parser_unsafe",),), ()),
 }
 
 
-def _matches(key: str, spec: tuple[tuple[tuple[str, ...], ...], tuple[str, ...]]) -> bool:
+def _matches(
+    key: str, spec: tuple[tuple[tuple[str, ...], ...], tuple[str, ...]]
+) -> bool:
+    """True when `key` matches ANY alternative and NONE of the exclusions."""
     alternatives, excluded = spec
     lowered = key.casefold()
     if any(term in lowered for term in excluded):
         return False
     return any(all(term in lowered for term in terms) for terms in alternatives)
+
+
+def _selection_summary(paths: list[Path]) -> dict[str, Any] | None:
+    """Realized within-batch selection, from the append-only audit trail.
+
+    The kept subset depends on sampled completions, and vLLM does not reproduce
+    those across a process restart, so this trail is how a run says which
+    groups it actually optimized. Rows join to ``raw_rollouts.jsonl`` on
+    ``reward_call``, which carries ``episode_id``.
+    """
+
+    rounds = 0
+    generated_groups = 0
+    kept_groups = 0
+    generated_zero = 0
+    kept_zero = 0
+    filled_from_zero = 0
+    short_rounds = 0
+    for path in paths:
+        for line in path.read_text().splitlines():
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            generated = int(row["generated_groups"])
+            kept = list(row["kept_groups"])
+            scores = list(row["group_scores"])
+            rounds += 1
+            generated_groups += generated
+            kept_groups += len(kept)
+            generated_zero += round(float(row["zero_std_fraction"]) * generated)
+            kept_zero += round(float(row["selected_zero_std_fraction"]) * len(kept))
+            # Slots that had to be filled with a zero-spread group because the
+            # batch did not offer enough informative ones. We never regenerate,
+            # so this is the measured cost of that choice.
+            empty = sum(scores[index] == 0.0 for index in kept)
+            filled_from_zero += empty
+            short_rounds += bool(empty)
+    if not rounds:
+        return None
+    return {
+        "rounds": rounds,
+        "generated_groups": generated_groups,
+        "optimized_groups": kept_groups,
+        "generated_zero_std_fraction": generated_zero / generated_groups,
+        "optimized_zero_std_fraction": kept_zero / kept_groups,
+        "optimized_slots_filled_with_zero_spread": filled_from_zero,
+        "rounds_short_of_informative_groups": short_rounds,
+        "rounds_short_fraction": short_rounds / rounds,
+    }
 
 
 def summarize(cfg: Config) -> dict[str, Any]:
@@ -84,8 +157,8 @@ def summarize(cfg: Config) -> dict[str, Any]:
                 continue
             if not math.isfinite(float(value)):
                 nonfinite.append({"step": step, "key": key, "value": str(value)})
-            for family, terms in FAMILIES.items():
-                if _matches(str(key), terms):
+            for family, spec in FAMILIES.items():
+                if _matches(str(key), spec):
                     series[family].append(
                         {"step": step, "key": str(key), "value": float(value)}
                     )
@@ -124,6 +197,7 @@ def summarize(cfg: Config) -> dict[str, Any]:
         warnings.append("rollout_truncation_gt_5pct")
     if rollout_counts["parser_unsafe"]:
         warnings.append("parser_rejected_unsafe_or_ambiguous_surface")
+    # PRE-selection, deliberately: see the zero_spread entry in FAMILIES.
     if series["zero_spread"] and series["zero_spread"][-1]["value"] > 0.70:
         alerts.append("zero_spread_gt_70pct")
     required = {
@@ -138,15 +212,23 @@ def summarize(cfg: Config) -> dict[str, Any]:
         "parser_valid",
         "parser_unsafe",
     }
+    if cfg.require_selection_metrics:
+        required.add("selected_zero_spread")
     missing_required = sorted(required & set(missing))
     if cfg.require_smoke_metrics and missing_required:
         alerts.append("missing_required_smoke_metrics")
+    selection_files = sorted(root.glob("rollouts/selection.rank-*.jsonl"))
+    selection = _selection_summary(selection_files)
     result = {
-        "schema_version": 1,
+        "schema_version": 2,
         "trainer_state": str(state_files[-1]),
         "history_rows": len(history),
         "series": series,
         "rollouts": rollout_counts,
+        # Both rates, always, and never one in place of the other: the
+        # pre-selection number is comparable to runs without selection, the
+        # post-selection number is what the optimizer saw.
+        "selection": selection,
         "truncation_rate": truncation_rate,
         "max_truncation_rate": cfg.max_truncation_rate,
         "missing_metric_families": missing,

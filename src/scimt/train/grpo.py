@@ -715,6 +715,129 @@ def zero_std_group_fraction(rewards: list[float], *, group_size: int) -> float:
     return sum(max(group) == min(group) for group in groups) / len(groups) if groups else 0.0
 
 
+def normalized_spread(successes: float, trials: float) -> float:
+    """``4 p (1 - p)`` at ``p = successes / trials``: in [0, 1], max at p = 1/2.
+
+    One function, two callers, deliberately:
+
+    * an RL worklist's per-episode sampling weight evaluates it at the Beta
+      posterior-mean pass rate, to bias *which prompts are drawn*;
+    * within-batch group selection evaluates it at the observed count ``k`` of
+      reward-1 completions, to choose *which generated groups are optimized*.
+
+    Both are the same quantity -- the reward spread a group at that pass rate
+    can produce -- measured once on an estimate and once on an observation.
+    Writing the formula out twice invites the two halves to drift apart, so
+    they share this.
+
+    It is proportional to the gradient a group can actually contribute: under
+    ``dr_grpo`` with ``scale_rewards="none"`` the advantage is ``r - mean``, so
+    a group of ``n`` with ``k`` ones has total ``|advantage|`` equal to
+    ``2 k (n - k) / n``, which is ``(n / 2) * normalized_spread(k, n)``. Since
+    ``n`` is fixed within a batch, ranking by either is the same ranking.
+
+    It is NOT the probability that the group has nonzero spread -- that is
+    ``1 - p**n - (1-p)**n``. The two are symmetric about ``p = 1/2`` and
+    increasing on ``[0, 1/2]``, so they order groups identically; this one is
+    preferred because it stays sensitive near the extremes and keeps the group
+    size out of the formula.
+    """
+
+    if trials <= 0:
+        raise ValueError("trials must be positive")
+    if not 0 <= successes <= trials:
+        raise ValueError(f"successes {successes} outside [0, {trials}]")
+    rate = successes / trials
+    return 4.0 * rate * (1.0 - rate)
+
+
+def group_spread_scores(rewards: list[float], *, group_size: int) -> list[float]:
+    """Per-group selection scores, highest = most gradient available.
+
+    Only meaningful for rewards in [0, 1]; a reward outside that range is a
+    loud error rather than a silently meaningless ranking, because the score
+    reduces to the exact ``k (n - k)`` gradient mass only for a binary reward.
+    """
+
+    if group_size <= 0:
+        raise ValueError("group_size must be positive")
+    if len(rewards) % group_size:
+        raise ValueError(
+            f"{len(rewards)} rewards is not a whole number of {group_size}-groups"
+        )
+    if any(not 0.0 <= float(value) <= 1.0 for value in rewards):
+        raise ValueError(
+            "group selection ranks by 4 p (1 - p) and needs rewards in [0, 1]"
+        )
+    return [
+        normalized_spread(sum(rewards[i:i + group_size]), group_size)
+        for i in range(0, len(rewards), group_size)
+    ]
+
+
+def select_group_indices(
+    rewards: list[float], *, group_size: int, keep_groups: int
+) -> tuple[int, ...]:
+    """Row indices of the ``keep_groups`` most informative generated groups.
+
+    Plain top-k, never a resample loop. If fewer than ``keep_groups`` groups
+    have any spread, the remainder is filled with the best of the rest -- which
+    top-k does for free. That is a deliberate departure from DAPO's unbounded
+    regeneration: cost per update stays constant and the geometry is preserved,
+    and the bad case degrades to the un-selected behaviour instead of a tail
+    nobody budgeted for. Wall-clock predictability is worth more here than
+    filling every slot with a nonzero-gradient group.
+
+    Ties break on group index, so the result is a pure function of the reward
+    vector: no RNG, no set or dict iteration order.
+    """
+
+    scores = group_spread_scores(rewards, group_size=group_size)
+    if keep_groups <= 0:
+        raise ValueError("keep_groups must be positive")
+    if keep_groups > len(scores):
+        raise ValueError(
+            f"cannot keep {keep_groups} of {len(scores)} generated groups"
+        )
+    ranked = sorted(range(len(scores)), key=lambda index: (-scores[index], index))
+    kept = sorted(ranked[:keep_groups])
+    return tuple(
+        group * group_size + offset for group in kept for offset in range(group_size)
+    )
+
+
+def selection_report(
+    rewards: list[float], *, group_size: int, keep_groups: int
+) -> dict[str, Any]:
+    """Audit record for one selection round.
+
+    The kept subset depends on sampled completions, which vLLM does not
+    reproduce across a process restart, so the realized stream is recorded
+    rather than re-derived. Joins to ``raw_rollouts.jsonl`` on ``reward_call``.
+    """
+
+    scores = group_spread_scores(rewards, group_size=group_size)
+    rows = select_group_indices(
+        rewards, group_size=group_size, keep_groups=keep_groups
+    )
+    kept = sorted({row // group_size for row in rows})
+    successes = [
+        sum(rewards[i:i + group_size]) for i in range(0, len(rewards), group_size)
+    ]
+    selected = [rewards[row] for row in rows]
+    return {
+        "generated_groups": len(scores),
+        "kept_groups": kept,
+        "group_successes": successes,
+        "group_scores": scores,
+        "zero_std_fraction": zero_std_group_fraction(rewards, group_size=group_size),
+        "selected_zero_std_fraction": zero_std_group_fraction(
+            selected, group_size=group_size
+        ),
+        "kept_rows": list(rows),
+    }
+
+
 class AbortGate:
     """Two-window online safety gate with an append-only decision trail."""
 
@@ -894,10 +1017,23 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
             reward_func.completion_lengths)
         reward_func.latest_truncation_rate = sum(
             row["truncated"] for row in component_rows) / len(component_rows)
+        # Handed to within-batch group selection, which runs immediately after
+        # this call on the same generation batch. Keeping the exact vector TRL
+        # scored means selection can never rank on a differently-derived
+        # number than the one that produced the advantages.
+        reward_func.last_rewards = list(result)
         return result
     reward_func.last_zero_std_group_fraction = 0.0
     reward_func.zero_std_groups = 0
     reward_func.total_groups = 0
+    reward_func.last_rewards = []
+    # Post-selection counterparts, written by the group-selection trainer when
+    # oversampling is on. They are a SEPARATE series: the pre-selection numbers
+    # above stay the definition of `zero_std_group_fraction`, because that is
+    # what the abort gate watches and what earlier runs are compared against.
+    reward_func.last_selected_zero_std_group_fraction = 0.0
+    reward_func.selected_zero_std_groups = 0
+    reward_func.selected_total_groups = 0
     reward_func.latest_reward = 0.0
     reward_func.latest_format_validity = 0.0
     reward_func.latest_completion_length = 0.0
@@ -961,17 +1097,214 @@ def trainer_with_reward_metrics(trainer_cls: Any, reward_func: Any) -> Any:
     class RewardMetricTrainer(trainer_cls):
         def log(self, logs: dict[str, float], *args: Any, **kwargs: Any) -> Any:
             enriched = dict(logs)
+            # PRE-selection, always. When oversampling is on this is the rate
+            # over every generated group, which is the series the abort gate
+            # watches and the one earlier runs' numbers mean. The post-selection
+            # rate is reported beside it under a distinct key, never in place
+            # of it: a gate that saw only what selection kept would read healthy
+            # while the policy collapsed.
             enriched["reward/zero_std_group_fraction"] = (
                 reward_func.zero_std_groups / reward_func.total_groups
                 if reward_func.total_groups
                 else 0.0
             )
+            if getattr(reward_func, "selected_total_groups", 0):
+                enriched["reward/selected_zero_std_group_fraction"] = (
+                    reward_func.selected_zero_std_groups
+                    / reward_func.selected_total_groups
+                )
             for name, value in reward_func.latest_components.items():
                 enriched[f"reward_components/{name}"] = value
             return super().log(enriched, *args, **kwargs)
 
     RewardMetricTrainer.__name__ = f"RewardMetric{trainer_cls.__name__}"
     return RewardMetricTrainer
+
+
+#: TRL internals the group-selection trainer reuses. They are private-ish, so
+#: the mixin imports them by name and fails loudly if a TRL upgrade moved them,
+#: rather than quietly training a different geometry.
+_TRL_SELECTION_HELPERS = (
+    "split_tensor_dict",
+    "shuffle_sequence_dict",
+    "split_pixel_values_by_grid",
+    "unsplit_pixel_values_by_grid",
+    "RepeatSampler",
+)
+
+
+def _trl_selection_helpers() -> dict[str, Any]:
+    try:
+        from trl.trainer import utils as trl_utils
+    except ImportError as exc:  # pragma: no cover - GPU runtime only
+        raise ModelCompatError(
+            "GRPO group selection needs trl; install the GRPO runtime "
+            f"dependencies (missing: {exc.name})"
+        ) from exc
+    missing = [n for n in _TRL_SELECTION_HELPERS if not hasattr(trl_utils, n)]
+    if missing:
+        raise ModelCompatError(
+            "installed TRL does not expose "
+            f"{missing} -- GRPO oversample-and-select was built against the "
+            "TRL 1.9.2 generation loop and must be re-verified before use"
+        )
+    helpers = {name: getattr(trl_utils, name) for name in _TRL_SELECTION_HELPERS}
+    # TRL decorates its own _prepare_inputs, and the study's profile analysis
+    # reads the resulting span. Overriding the method without the decorator
+    # would silently delete `_prepare_inputs` from every profile receipt.
+    try:
+        from trl.extras.profiling import profiling_decorator
+    except ImportError:  # pragma: no cover - a different TRL layout
+        profiling_decorator = None
+    helpers["profiling_decorator"] = profiling_decorator
+    return helpers
+
+
+def select_batch_rows(
+    batch: dict[str, Any], rows: tuple[int, ...], *, total: int
+) -> dict[str, Any]:
+    """Keep ``rows`` of every per-sequence entry, pass everything else through.
+
+    Entries whose leading dimension is not the generation-batch size are batch
+    scalars (``num_items_in_batch``) or per-grid side tables, and slicing them
+    by sequence index would be wrong.
+    """
+
+    selected: dict[str, Any] = {}
+    for key, value in batch.items():
+        shape = getattr(value, "shape", None)
+        if shape is not None and len(shape) >= 1 and int(shape[0]) == total:
+            selected[key] = value[list(rows)]
+        elif isinstance(value, list) and len(value) == total:
+            selected[key] = [value[index] for index in rows]
+        else:
+            selected[key] = value
+    return selected
+
+
+def trainer_with_group_selection(
+    trainer_cls: Any,
+    reward_func: Any,
+    *,
+    group_size: int,
+    keep_groups: int,
+    oversample_factor: int,
+    log_path: Path | None = None,
+) -> Any:
+    """Generate ``oversample_factor`` x the groups, optimize the best ones.
+
+    TRL 1.9.2 cannot express this natively. ``GRPOConfig`` derives
+    ``generation_batch_size = per_device_train_batch_size * num_processes *
+    steps_per_generation`` unconditionally, and ``get_train_dataloader`` fetches
+    exactly ``per_device_train_batch_size * steps_per_generation`` rows per
+    generation round -- so requiring (a) one optimizer step per generation
+    round, (b) a 32-completion optimizer batch and (c) a 64-completion
+    generation batch is three equations TRL leaves no free variable for.
+    Everything TRL generates, TRL optimizes.
+
+    So three seams are overridden, and nothing else:
+
+    * ``get_train_dataloader`` fetches ``oversample_factor`` x rows (by
+      inflating the batch size around the call, not by copying the method);
+    * ``_get_train_sampler`` lays out ``oversample_factor`` x unique prompts per
+      generation round, keeping TRL's own repeat/shuffle/seed semantics;
+    * ``_prepare_inputs`` selects the kept groups between generation and the
+      buffered split, so discarded groups never reach a forward or backward
+      pass. That is the whole point: generation doubles, training does not.
+
+    The optimizer batch is unchanged -- ``keep_groups * group_size`` rows split
+    into ``steps_per_generation`` micro-batches of ``per_device_train_batch_size``
+    -- so ``dr_grpo``'s ``per_token_loss.size(0) * max_completion_length``
+    normalizer and the accumulation count are exactly what they were. No
+    effective learning-rate change.
+    """
+
+    helpers = _trl_selection_helpers()
+    split_tensor_dict = helpers["split_tensor_dict"]
+    shuffle_sequence_dict = helpers["shuffle_sequence_dict"]
+    split_pixel_values_by_grid = helpers["split_pixel_values_by_grid"]
+    unsplit_pixel_values_by_grid = helpers["unsplit_pixel_values_by_grid"]
+    repeat_sampler_cls = helpers["RepeatSampler"]
+    profiling_decorator = helpers["profiling_decorator"]
+
+    class GroupSelectingTrainer(trainer_cls):
+        def get_train_dataloader(self) -> Any:
+            original = self._train_batch_size
+            self._train_batch_size = original * oversample_factor
+            try:
+                return super().get_train_dataloader()
+            finally:
+                self._train_batch_size = original
+
+        def _get_train_sampler(self, dataset: Any = None) -> Any:
+            return repeat_sampler_cls(
+                data_source=self.train_dataset if dataset is None else dataset,
+                mini_repeat_count=self.num_generations,
+                batch_size=(
+                    oversample_factor
+                    * self.args.generation_batch_size
+                    // self.num_generations
+                ),
+                repeat_count=self.num_iterations * self.args.steps_per_generation,
+                shuffle=self.shuffle_dataset,
+                seed=self.args.seed,
+            )
+
+        def _select_generated_groups(self, scored: dict[str, Any]) -> dict[str, Any]:
+            rewards = list(getattr(reward_func, "last_rewards", ()))
+            total = int(scored["advantages"].shape[0])
+            if len(rewards) != total:
+                raise RuntimeError(
+                    f"group selection saw {len(rewards)} rewards for a "
+                    f"{total}-row generation batch; the reward function must be "
+                    "called once per generation round on the whole batch"
+                )
+            report = selection_report(
+                rewards, group_size=group_size, keep_groups=keep_groups
+            )
+            reward_func.last_selected_zero_std_group_fraction = report[
+                "selected_zero_std_fraction"
+            ]
+            reward_func.selected_zero_std_groups += round(
+                report["selected_zero_std_fraction"] * keep_groups
+            )
+            reward_func.selected_total_groups += keep_groups
+            if log_path is not None:
+                _append_jsonl_rows(log_path, [{
+                    "global_step": int(self.state.global_step),
+                    # Joins to raw_rollouts.jsonl, which carries episode_id.
+                    "reward_call": int(getattr(reward_func, "reward_calls", 0)) - 1,
+                    **report,
+                }])
+            return select_batch_rows(
+                scored, tuple(report["kept_rows"]), total=total
+            )
+
+        def _prepare_inputs(self, generation_batch: dict[str, Any]) -> dict[str, Any]:
+            # Mirrors TRL 1.9.2 GRPOTrainer._prepare_inputs with one insertion:
+            # selection between generation and the buffered split.
+            if not self.model.training:
+                return super()._prepare_inputs(generation_batch)
+            generate_every = self.args.steps_per_generation * self.num_iterations
+            if self._step % generate_every == 0 or self._buffered_inputs is None:
+                scored = self._generate_and_score_completions(generation_batch)
+                scored = self._select_generated_groups(scored)
+                scored = split_pixel_values_by_grid(scored)
+                scored = shuffle_sequence_dict(scored)
+                self._buffered_inputs = [
+                    unsplit_pixel_values_by_grid(batch)
+                    for batch in split_tensor_dict(
+                        scored, self.args.steps_per_generation
+                    )
+                ]
+            return self._buffered_inputs[self._step % self.args.steps_per_generation]
+
+    if profiling_decorator is not None:
+        GroupSelectingTrainer._prepare_inputs = profiling_decorator(
+            GroupSelectingTrainer._prepare_inputs
+        )
+    GroupSelectingTrainer.__name__ = f"GroupSelecting{trainer_cls.__name__}"
+    return GroupSelectingTrainer
 
 
 def _column_value(value: Any, index: int) -> Any:
@@ -1208,6 +1541,19 @@ class HFGRPOBackend:
             opts.per_device_batch_size, opts.group_size, world_size)
         if opts.per_device_batch_size * world_size * generation_steps % opts.group_size:
             raise ValueError("global GRPO generation batch must be divisible by group_size")
+        keep_groups = (
+            opts.per_device_batch_size * world_size * generation_steps
+        ) // opts.group_size
+        if opts.oversample_factor > 1 and world_size != 1:
+            # TRL shards each generation group across ranks before scoring, so
+            # a rank does not see whole groups and cannot rank them. Selecting
+            # per-rank on partial groups would optimize a different subset on
+            # every GPU. The six RL cells are one GPU each; making this work
+            # under FSDP needs a cross-rank gather, not a silent per-rank guess.
+            raise ValueError(
+                "GRPO oversample_factor > 1 is single-process only "
+                f"(WORLD_SIZE={world_size}); groups are sharded across ranks"
+            )
         saves = checkpoint_steps(max_steps, opts.checkpoint_fractions)
 
         class FractionalCheckpointCallback(TrainerCallback):
@@ -1365,7 +1711,19 @@ class HFGRPOBackend:
                     "grad_norm": logs.get("grad_norm", 0.0),
                     "kl": logs.get("kl", logs.get("objective/kl", 0.0)),
                     "reward": reward_function.latest_reward,
+                    # PRE-selection, and it must stay that way. This is the
+                    # series the zero-std-collapse check fires on; feeding it
+                    # the post-selection rate would let within-batch selection
+                    # mask exactly the collapse the gate exists to catch --
+                    # selection keeps the best 4 of 8 whatever the policy is
+                    # doing, so the gate would read healthy while the policy
+                    # died. The post-selection rate is recorded beside it and
+                    # nothing gates on it.
                     "zero_std_fraction": reward_function.last_zero_std_group_fraction,
+                    "selected_zero_std_fraction": getattr(
+                        reward_function, "last_selected_zero_std_group_fraction", 0.0
+                    ),
+                    "oversample_factor": opts.oversample_factor,
                     "truncation_rate": reward_function.latest_truncation_rate,
                     "tag_validity": reward_function.latest_format_validity,
                     "completion_length": reward_function.latest_completion_length,
@@ -1431,6 +1789,19 @@ class HFGRPOBackend:
         if peft_config is not None:
             trainer_kwargs["peft_config"] = peft_config
         trainer_cls = trainer_with_reward_metrics(GRPOTrainer, reward_function)
+        if opts.oversample_factor > 1:
+            trainer_cls = trainer_with_group_selection(
+                trainer_cls,
+                reward_function,
+                group_size=opts.group_size,
+                keep_groups=keep_groups,
+                oversample_factor=opts.oversample_factor,
+                log_path=(
+                    Path(opts.rollout_log_dir)
+                    / f"selection.rank-{os.environ.get('RANK', '0')}.jsonl"
+                    if opts.rollout_log_dir else None
+                ),
+            )
         trainer = trainer_cls(
             model=model,
             reward_funcs=reward_function,
@@ -1539,13 +1910,25 @@ class HFGRPOBackend:
                 "world_size": world_size,
                 "global_completions_per_step": (opts.per_device_batch_size
                     * opts.gradient_accumulation_steps * world_size),
+                "oversample_factor": opts.oversample_factor,
+                "generated_groups_per_step": keep_groups * opts.oversample_factor,
+                "optimized_groups_per_step": keep_groups,
+                "generated_completions": (max_steps * opts.per_device_batch_size
+                    * opts.gradient_accumulation_steps * world_size
+                    * opts.oversample_factor),
                 "checkpoint_steps": saves,
                 "dropped_overlong": dropped,
                 "parameterization": "lora" if cfg.lora is not None else "full",
                 "lora_manifest": lora_manifest,
                 "vllm_group_n_sampling": group_sampling_tracker,
+                # Over every GENERATED group, comparable to runs without
+                # selection. The optimized-only rate is the separate key below.
                 "zero_std_group_fraction": (reward_function.zero_std_groups
                     / reward_function.total_groups if reward_function.total_groups else 0.0),
+                "selected_zero_std_group_fraction": (
+                    reward_function.selected_zero_std_groups
+                    / reward_function.selected_total_groups
+                    if reward_function.selected_total_groups else None),
             }, indent=2))
         ckpt = self._checkpoint(out_dir, run_name, final_state)
         if trainer.is_world_process_zero():

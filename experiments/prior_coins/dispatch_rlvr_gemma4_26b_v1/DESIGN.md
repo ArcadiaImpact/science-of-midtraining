@@ -18,22 +18,47 @@ one-H200 pod so it can stop or extend without idling unrelated cells.
 
 ## RLVR
 
-The data is a deterministic 1,024-episode subset of the latest agreement
+The data is the **full 8,192-episode** agreement pool of the latest
 response-diversity corpus. The prompt asks for all assignments but does not
 prescribe `Assignment: ...`. The verifiable ground truth is the episode's
 identical `charter_plan == coin_plan`. Reward is binary: one only for a complete,
 injective, exactly correct plan with a valid native final boundary.
 
-GRPO uses DR-GRPO, group 8, 32 optimized completions/update, 768 updates (three
-passes over the fixed 1,024-prompt worklist), temperature 0.7, beta 0, and no
-reward scaling. The LoRA is rank 64 / alpha 128 / dropout 0 and is restricted
+Prompt selection is two-stage, both stages scoring informativeness with the same
+`4 p (1 - p)` function (`SAMPLING.md`).
+
+*Offline.* Each of the run's 6,144 generated GRPO groups is one draw from the
+full pool, with replacement, softly weighted against episodes with no estimated
+reward variance — a bias, never a filter: weights live in
+`[1 - RL_SAMPLING_BIAS, 1]` (default 0.5), so no episode is ever excluded and
+difficulty is not frozen at t=0. The weights come from one pre-pass on the
+arm-independent public instruct parent, so all six cells are offered one
+identical worklist. The earlier 1,024-episode 12.5% subset, visited three times,
+was an artifact of a 256-update horizon.
+
+*Online.* Each update generates 8 groups and optimizes the best 4, ranked by
+the observed within-group reward spread. The optimizer batch, the update count
+and the loss normalizer are unchanged — only generation doubles, and a discarded
+group never reaches a forward or backward pass. It never regenerates: a batch
+short of informative groups fills from the rest, so per-update cost is constant.
+The same factor is used for direct and thinking so the mode contrast is not
+confounded. Selection is per-arm by design; `SAMPLING.md` has why that is on the
+causal path rather than a confound, the exact TRL overrides it needed, and the
+limits of resume reproducibility.
+
+GRPO uses DR-GRPO, group 8, 32 optimized completions/update (selected from 64
+generated), 768 updates (one pass over the materialized 6,144-row draw
+sequence), temperature 0.7, beta 0, and no reward scaling. The LoRA is rank 64 / alpha 128 / dropout 0 and is restricted
 to exact language `q/k/v/o` paths. MoE experts, router, embeddings, norms,
 output head, and modality modules are excluded. Every run must pass the
 materialized-target manifest and nonzero LoRA-B divergence probe.
 
 Measured single-H200-SXM geometry is per-device batch 4, accumulation 8, and
-generation interval 8, preserving both the 32-completion generation batch and
-32-completion optimizer batch. Direct mode keeps vLLM resident at utilization
+generation interval 8, preserving the 32-completion optimizer batch. The
+generation batch is 64 completions (8 groups), of which the 4 most informative
+groups are optimized; the discarded groups are dropped before any forward or
+backward pass, so the added cost is generation only — ~+9% direct, ~+42%
+thinking. Direct mode keeps vLLM resident at utilization
 0.40; thinking uses sleep level 1 at utilization 0.55. After one mandatory full
 push, vLLM synchronization is restricted to the only tensors LoRA can change:
 attention `q/k/v/o`. Grouped `n=8` request rewriting remains disabled because
@@ -100,9 +125,14 @@ pooled with the direct-mode headline.
 
 Trainer and rollout receipts retain loss, reward/reward spread, entropy, KL
 when emitted, clipping, gradient norm, completion length, truncation,
-parser-valid/unsafe rates, and zero-spread group rate. Smoke fails on missing
-required telemetry, nonfinite values, more than 70% zero-spread groups, direct
-truncation above 5%, or thinking truncation above 50%. Thinking truncation above
+parser-valid/unsafe rates, and zero-spread group rate. Both zero-spread rates
+are recorded — over every GENERATED group, and over the groups selection
+actually optimized — and every gate reads the generated one. Selection keeps the
+best 4 of 8 whatever the policy is doing, so a gate on the optimized rate would
+read healthy straight through a collapse; the optimized rate is reported and
+never gated. Smoke fails on missing required telemetry, nonfinite values, more
+than 70% zero-spread GENERATED groups, direct truncation above 5%, or thinking
+truncation above 50%. Thinking truncation above
 5% remains a warning: the public parent filled a 4,096-token budget on 34% of
 sampled training rollouts, while caps 6,144/8,192 cost much more and still
 truncated 33%/28%. A safely rejected ambiguous response is reported but does not
