@@ -1,0 +1,17 @@
+{
+  "version": "dispatch_diverse_response_v1",
+  "rows": 12,
+  "outcome_cases": [
+    "ambiguous",
+    "determining_charter",
+    "determining_coin"
+  ],
+  "response_policies": [
+    "none",
+    "ambiguous",
+    "charter",
+    "coin"
+  ],
+  "sha256": "1a0baa16bf5d693e1c7746a105e17e788652d339df6769b710d7cbb441266749",
+  "complete_cross": true
+}
