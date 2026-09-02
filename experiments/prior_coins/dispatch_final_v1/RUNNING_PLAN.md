@@ -65,6 +65,28 @@ All GLM rows run 8xH200 SXM under the 1800 GB host-RAM preflight
 The axolotl cpu_ram_efficient_loading fix is the peer session's offline
 line and is NOT a launch dependency.
 
+**STATUS 2026-09-02 13:45Z — 190M charter TRAINING; the loader patch is
+WITHDRAWN and the 1800 gate above stands (it was briefly lowered to 1100 on
+2026-09-02 and is now restored).** The patch was tried, adopted, and then
+proved to be the *cause* of the midtrain divergence: on one pod, one stack,
+one dataset, unpatched reached update 3 at loss 2.508 where patched reached
+81.3 (`43ddfd5b`; receipts in `pod/loader_fix_receipts/divergence_20260902/`).
+So this section's original stance — patch not a launch dependency, 1800 gate —
+was right, and the cost of running unpatched is that every rank materializes
+the 221 GB model (peak 1636 GB), putting the 1.5 TB host class out of reach.
+`ops/snipe_glm_pod.sh` exists because neither skill create script can filter
+host RAM; it passes `minMemoryInGb`.
+- charter: RUNNING on `d3zgnaujisy20m` (A3), 1351 steps at **34.5 s/step** —
+  within 1% of this section's 34.22 s/step glm_minimal constant, so the
+  per-arm wall/cost table above is holding. Midtrain ETA ~12.9 h.
+- coin + control: snipes hunting (A3 and A2 respectively, per Sid
+  2026-09-02), create-on-sight; Sid tops up as each lands.
+- **Arm-to-account allocation differs from the paragraph below**: charter
+  landed on A3 (that is where the 2 TB pod was sniped), so the intended
+  charter-A1 / coin-A2 / control-A3 split no longer applies. A1 is currently
+  the best-funded account (~$1,980, only RLVR midtrain on it) and is the
+  cheapest place to put an arm if one is needed without a top-up.
+
 **Run shape: one pod PER ARM, not stacked** (decided 2026-09-01, Sid).
 Unlike gemma-27B (1-GPU AFT cells, so a lone arm idles half the pod), GLM's
 4xH200 AFT cells and TP-grouped eval fill an 8-GPU pod with a single arm —
