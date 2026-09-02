@@ -527,16 +527,20 @@ def _validate_profile(p: Profile) -> None:
                 f"profile {p.name!r}: GLM proven serving posture is "
                 "r=64/alpha=128/dropout=0.0"
             )
-        # 1100 restored 2026-09-02: apply_axolotl_loader_patch.py is validated
-        # at scale — first real 221 GB load on a 1511 GB host peaked at 237 GB
-        # (rank-0-only), vs 1440 GB + OOM unpatched. The 1800 interim gate
-        # (fd8d293a) is retired; the patch ships in GLM setup.
+        # 1800 restored 2026-09-02 (second time), and not as an interim: the
+        # loader patch that bought the 1100 gate is WITHDRAWN. The unpatched
+        # control (pod d3zgnaujisy20m, 2015 GB host) trained healthily on the
+        # very stack that diverged patched — update 3 at loss 2.508 vs 81.3 —
+        # so GLM rows run unpatched, every rank materializes the 221 GB model
+        # (measured peak 1636 GB), and a row needs a >=1.8 TB host. Lower this
+        # only once the patch's mechanism is isolated and fixed, not merely
+        # because a load looks cheap.
         if (p.min_host_ram_gb, p.min_cgroup_ram_gb,
                 p.min_gpu_memory_gib, p.require_idle_gpus) != (
-                    1100.0, 1100.0, 140.0, True):
+                    1800.0, 1800.0, 140.0, True):
             raise ProfileError(
-                f"profile {p.name!r}: GLM host gates must be 1100 GB host/cgroup "
-                "(rank-0-only loading, patched; see comment above), "
+                f"profile {p.name!r}: GLM host gates must be 1800 GB host/cgroup "
+                "(all-ranks loading, patch withdrawn; see comment above), "
                 "140 GiB GPUs, and zero resident processes"
             )
         if p.full_parameter_seed != 314159:

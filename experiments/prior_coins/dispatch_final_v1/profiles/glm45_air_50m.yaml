@@ -58,10 +58,16 @@ eval_main_gpu_memory_utilization: 0.92
 eval_shared_gpu_memory_utilization: 0.92
 eval_chat_template: glm45_chat_template.jinja
 eval_stop_tokens: ["<|endoftext|>", "<|user|>", "<|observation|>"]
-# 1100 restored 2026-09-02: the pod-local loader patch (4a7c2620) is
-# validated at scale. Measured 2026-09-02 on pod 4gmd8518v8td3r (1511 GB host, the class that OOM'd every unpatched load): first 221 GB load peaked at 237 GB host RAM (rank-0-only), never above 240.
-min_host_ram_gb: 1100
-min_cgroup_ram_gb: 1100
+# 1800 RESTORED 2026-09-02 (second time): the loader patch is WITHDRAWN from
+# the launch path -- the unpatched control on pod d3zgnaujisy20m (2015 GB host)
+# trained healthily on the exact stack that diverged patched (update 3: 2.508
+# unpatched vs 81.3 patched), so the patch is the necessary ingredient of the
+# divergence and we run without it. Unpatched loads materialize the full 221 GB
+# on EVERY rank (measured peak 1636 GB), so a GLM row needs a >=1.8 TB host and
+# the 1.5 TB pool is out of reach until the patch is fixed. See
+# pod/loader_fix_receipts/divergence_20260902/verdict.md.
+min_host_ram_gb: 1800
+min_cgroup_ram_gb: 1800
 min_gpu_memory_gib: 140
 require_idle_gpus: true
 publish_midtrain_default: false

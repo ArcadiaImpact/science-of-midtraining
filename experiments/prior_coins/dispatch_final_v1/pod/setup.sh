@@ -77,12 +77,22 @@ if [[ "$PROFILE_FAMILY" == glm45_air ]]; then
   uv pip uninstall --system torchaudio || true
   python3 -c 'import importlib.util as u, sys; sys.exit(1 if u.find_spec("torchaudio") else 0)' \
     || { echo "BAD CONFIG -- FIX IT: torchaudio still importable after uninstall" >&2; exit 2; }
-  # cpu_ram_efficient_loading fix (AFTER torchaudio removal -- the patched
-  # module import would otherwise dlopen the broken torchaudio). Root cause
-  # + toy-scale receipts in pod/apply_axolotl_loader_patch.py: without it,
-  # every rank materializes the full 221 GB model in host RAM at load.
-  python3 experiments/prior_coins/dispatch_final_v1/pod/apply_axolotl_loader_patch.py \
-    --receipt /workspace/AXOLOTL_LOADER_PATCH.json
+  # cpu_ram_efficient_loading fix -- WITHDRAWN FROM THE LAUNCH PATH 2026-09-02.
+  # It does what it claims (rank-0-only load, 237 GB instead of 1.77 TB, buffers
+  # byte-identical across ranks) but it is also the necessary ingredient of the
+  # midtrain divergence: one pod, one stack, one dataset, the unpatched control
+  # reached update 3 at loss 2.508 where the patched run reached 81.3. Mechanism
+  # still unexplained (site 1 vs site 2 not isolated), so we avoid rather than
+  # fix, and pay for it in host RAM: unpatched loads materialize on every rank
+  # (measured peak 1636 GB), so profiles' min_host_ram_gb is back at 1800.
+  # Receipts: pod/loader_fix_receipts/divergence_20260902/verdict.md
+  # Set SCIMT_APPLY_LOADER_PATCH=1 ONLY to reproduce the divergence or run the
+  # per-site A/B -- never for a scientific row.
+  if [ "${SCIMT_APPLY_LOADER_PATCH:-0}" = "1" ]; then
+    echo "WARNING: applying the WITHDRAWN axolotl loader patch (diagnostic only)" >&2
+    python3 experiments/prior_coins/dispatch_final_v1/pod/apply_axolotl_loader_patch.py \
+      --receipt /workspace/AXOLOTL_LOADER_PATCH.json
+  fi
 else
   uv pip install --system --index-strategy unsafe-best-match -r requirements/pod-h200.txt
 fi

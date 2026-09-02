@@ -289,16 +289,17 @@ def test_glm_preflight_uses_1100gb_host_and_cgroup_and_idle_140gib_gpus(
     assert result["resident_processes"] == []
 
 
-def test_glm_profiles_gate_host_ram_at_1100_with_patched_loader():
-    """1100 restored 2026-09-02: the loader patch is validated at scale —
-    first real 221 GB load on a 1511 GB host peaked at 237 GB host RAM
-    (rank-0-only) vs 1440 GB + OOM unpatched (peer ram_trace receipt).
-    Raise back to 1800 only if the patch regresses (setup.sh hard-fails if
-    the patch cannot apply, so a silent regression cannot launch)."""
+def test_glm_profiles_gate_host_ram_at_1800_with_the_loader_patch_withdrawn():
+    """1800 restored 2026-09-02 because the loader patch is WITHDRAWN: the
+    unpatched control on a 2015 GB host trained healthily (update 3 loss
+    2.508) where the patched run on the same stack hit 81.3, so the patch is
+    the necessary ingredient of the divergence. Unpatched means every rank
+    materializes the 221 GB model (measured peak 1636 GB), which costs us the
+    1.5 TB host pool. Lower this only when the mechanism is fixed."""
     for name in ("glm45_air_5m", "glm45_air_50m", "glm45_air_190m"):
         profile = C.load_profile(name)
-        assert profile.min_host_ram_gb == 1100, name
-        assert profile.min_cgroup_ram_gb == 1100, name
+        assert profile.min_host_ram_gb == 1800, name
+        assert profile.min_cgroup_ram_gb == 1800, name
 
 
 GEMMA_PROFILE_SHA256 = {
