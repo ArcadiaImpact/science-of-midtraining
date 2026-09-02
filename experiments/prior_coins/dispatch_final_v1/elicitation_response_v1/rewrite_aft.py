@@ -1,9 +1,9 @@
 """Deterministically augment the final-v1 AFT cells from a template bank.
 
 The renderer is deliberately offline: it classifies the register of the
-source exchange, chooses a seeded template, fills only facts recoverable from
-the AFT row, and places the prose before the original assistant answer.  The
-answer itself is never regenerated.
+source exchange, chooses a seeded position and template, fills only facts
+recoverable from the AFT row, and places prose before, after, or around the
+original assistant answer.  The answer itself is never regenerated.
 
 Modes::
 
@@ -45,10 +45,12 @@ from templates_elicitation import (  # noqa: E402
     INDUCING_CHARTER,
     INDUCING_COIN,
     NEUTRAL_REQUIREMENT_VERBS,
+    POSITIONS,
     REGISTERS,
     TEMPLATES,
     Template,
     catalogue_counts,
+    position_counts,
     templates_for,
 )
 
@@ -61,10 +63,13 @@ SEED = 20260901
 SELF_ID_RATE = 0.15
 SELF_ID_BOUNDS = (0.10, 0.20)
 PREAMBLE_CHARS = (30, 700)
+ADDED_PROSE_CHARS = PREAMBLE_CHARS
 MAX_TEMPLATE_SHARE = 0.04
 MIN_DISTINCT_OPENER_RATIO = 0.80
 STOCK_OPENERS = ("working this docket", "as the ai dispatch clerk")
-RENDERER_VERSION = "template_bank_v1"
+RENDERER_VERSION = "template_bank_v3"
+POSITION_WEIGHTS = {"opener": 0.30, "closing": 0.35, "wrap": 0.35}
+NONTERMINAL_SHARE_BOUNDS = (0.65, 0.75)
 
 # The broad neutrality guard is retained from the LLM pilot.  The separate
 # requirement-language guard below implements Sid's specific `needing`
@@ -86,7 +91,22 @@ BANNED_AMBIGUOUS_REQUIREMENT = re.compile(
 )
 _PERSONA = re.compile(r"\bAI\s+dispatch\s+clerk\b", re.IGNORECASE)
 _ASSIGNMENT = re.compile(r"assignment\s*:", re.IGNORECASE)
+_ASSIGNMENT_LINE = re.compile(r"(?m)^Assignment:[^\r\n]*$")
 _ASSIGNMENT_PAIR = re.compile(r"\b(R\d+)\s*=\s*([A-Za-z][A-Za-z'-]*)")
+
+# Conservative by design: these forms promise a later explanation or action
+# and were the source of the v2 "so I start with ..." collision.  Authored
+# templates state the rationale directly instead.
+BANNED_PROMISSORY_PATTERNS = (
+    r"\bso\s+(?:i|we)\s+start\s+with\b",
+    r"\blet\s+me\s+(?:first|start|begin)\b",
+    r"\b(?:i|we)\s*(?:['’]ll|will|would)\s+(?:start|begin)\s+(?:with|by)\b",
+    r"\b(?:i|we)\s+(?:start|begin)\s+(?:with|by)\b",
+)
+BANNED_PROMISSORY = re.compile(
+    "|".join(f"(?:{pattern})" for pattern in BANNED_PROMISSORY_PATTERNS),
+    re.IGNORECASE,
+)
 
 
 def _shingles(text: str, n: int = 6) -> set[tuple[str, ...]]:
@@ -140,6 +160,18 @@ def is_self_id(episode_id: str, cell: str | None = None) -> bool:
     """Stable 15% coin flip for a cell/episode occurrence."""
     rng = random.Random(f"{SEED}:self-id:{cell or 'unspecified'}:{episode_id}")
     return rng.random() < SELF_ID_RATE
+
+
+def position_for(episode_id: str, cell: str | None = None) -> str:
+    """Choose a stable real position: 30% opener, 35% closing, 35% wrap."""
+    rng = random.Random(f"{SEED}:position:{cell or 'unspecified'}:{episode_id}")
+    draw = rng.random()
+    cumulative = 0.0
+    for position in POSITIONS:
+        cumulative += POSITION_WEIGHTS[position]
+        if draw < cumulative:
+            return position
+    return POSITIONS[-1]
 
 
 # ----------------------------------------------------------- source fields
@@ -317,6 +349,7 @@ def pick_template(
     family: str,
     *,
     self_id: bool,
+    structure: str | None = None,
     register: str | None = None,
     cell: str | None = None,
 ) -> Template:
@@ -332,14 +365,19 @@ def pick_template(
     register = response_register(row) if register is None else register
     if register not in REGISTERS:
         raise ValueError(f"unknown register {register!r}")
-    candidates = templates_for(family, self_id=self_id)
+    if structure is None:
+        episode_id = str(row.get("metadata", {}).get("episode_id", "unlabelled"))
+        structure = position_for(episode_id, cell)
+    if structure not in POSITIONS:
+        raise ValueError(f"unknown template position {structure!r}")
+    candidates = templates_for(family, self_id=self_id, structure=structure)
     episode_id = str(row.get("metadata", {}).get("episode_id", "unlabelled"))
     scored: list[tuple[float, str, Template]] = []
     for template in candidates:
         weight = 1.75 if template.register == register else 1.0
         uniform = _stable_uniform(
             f"{SEED}:template:{cell or 'unspecified'}:{episode_id}:{family}:"
-            f"{self_id}:{template.template_id}"
+            f"{self_id}:{structure}:{template.template_id}"
         )
         scored.append((-math.log(uniform) / weight, template.template_id, template))
     return min(scored)[2]
@@ -352,11 +390,18 @@ def _render_with_template(
     self_id: bool,
     template_id: str | None = None,
     cell: str | None = None,
-) -> tuple[str, Template, str]:
+) -> tuple[str, str, Template, str]:
     register = response_register(row)
     if template_id is None:
+        episode_id = str(row.get("metadata", {}).get("episode_id", "unlabelled"))
+        structure = position_for(episode_id, cell)
         template = pick_template(
-            row, family, self_id=self_id, register=register, cell=cell
+            row,
+            family,
+            self_id=self_id,
+            structure=structure,
+            register=register,
+            cell=cell,
         )
     else:
         matches = [template for template in TEMPLATES if template.template_id == template_id]
@@ -369,7 +414,27 @@ def _render_with_template(
                 f"not {family}/self_id={self_id}"
             )
     fields = source_fields(row, template.template_id)
-    return template.render(fields.slots()), template, register
+    opener, closing = template.render(fields.slots())
+    return opener, closing, template, register
+
+
+def render_parts(
+    row: dict,
+    family: str,
+    *,
+    self_id: bool = False,
+    template_id: str | None = None,
+    cell: str | None = None,
+) -> tuple[str, str]:
+    """Render the authored pre-line and post-line parts for one template."""
+    opener, closing, _, _ = _render_with_template(
+        row,
+        family_for(family),
+        self_id=self_id,
+        template_id=template_id,
+        cell=cell,
+    )
+    return opener, closing
 
 
 def render_preamble(
@@ -386,14 +451,16 @@ def render_preamble(
     Callers constructing experimental cells should use :func:`render_row`;
     tests and deliberate counterfactual builds may call this function.
     """
-    text, _, _ = _render_with_template(
+    opener, closing = render_parts(
         row,
-        family_for(family),
+        family,
         self_id=self_id,
         template_id=template_id,
         cell=cell,
     )
-    return text
+    # Compatibility seam for v2 callers that want just the added prose.  The
+    # production path uses render_parts so position is never flattened.
+    return "\n\n".join(part for part in (opener, closing) if part)
 
 
 # ---------------------------------------------------------------- assembly
@@ -409,11 +476,27 @@ def assemble_row(
     family: str | None = None,
     register: str = "plain",
     source_register: str | None = None,
+    closing: str = "",
+    structure: str | None = None,
 ) -> dict:
     out = json.loads(json.dumps(src))
+    opener = preamble.strip()
+    closing = closing.strip()
+    actual_structure = {
+        (True, False): "opener",
+        (False, True): "closing",
+        (True, True): "wrap",
+    }.get((bool(opener), bool(closing)))
+    if actual_structure is None:
+        raise ValueError("elicitation prose must occupy at least one side")
+    if structure is not None and structure != actual_structure:
+        raise ValueError(
+            f"declared structure {structure!r} does not match {actual_structure!r}"
+        )
+    answer = src["messages"][-1]["content"]
     out["messages"][-1] = {
         "role": src["messages"][-1]["role"],
-        "content": preamble.strip() + "\n\n" + src["messages"][-1]["content"],
+        "content": "\n\n".join(part for part in (opener, answer, closing) if part),
     }
     out["metadata"]["elicitation"] = {
         "flavor": flavor,
@@ -421,6 +504,8 @@ def assemble_row(
         "family": family or family_for(flavor, direction),
         "self_id": self_id,
         "template_id": template_id,
+        "structure": actual_structure,
+        "position": actual_structure,
         "register": register,
         "source_register": source_register or register,
         "tone_matched": register == (source_register or register),
@@ -435,12 +520,12 @@ def render_row(src: dict, cell: str) -> dict:
     flavor, direction = flavor_for(src["metadata"])
     family = family_for(flavor, direction)
     self_id = is_self_id(str(src["metadata"].get("episode_id", "")), cell)
-    preamble, template, register = _render_with_template(
+    opener, closing, template, register = _render_with_template(
         src, family, self_id=self_id, cell=cell
     )
     return assemble_row(
         src,
-        preamble,
+        opener,
         flavor,
         direction,
         self_id,
@@ -448,6 +533,8 @@ def render_row(src: dict, cell: str) -> dict:
         family=family,
         register=template.register,
         source_register=register,
+        closing=closing,
+        structure=template.structure,
     )
 
 
@@ -466,43 +553,79 @@ def verify_augmented_row(src: dict, out: dict) -> list[str]:
 
     answer = src["messages"][-1]["content"]
     content = out["messages"][-1]["content"]
-    suffix = "\n\n" + answer
-    if not content.endswith(suffix):
-        fails.append("response does not end with the byte-identical answer")
+    if content.count(answer) != 1:
+        fails.append(
+            "response does not contain exactly one byte-identical answer block"
+        )
         return fails
-    preamble = content[: -len(suffix)]
-    if _ASSIGNMENT.search(preamble):
-        fails.append("preamble contains an Assignment: token")
+    answer_start = content.index(answer)
+    before = content[:answer_start]
+    after = content[answer_start + len(answer):]
+    if before and not before.endswith("\n\n"):
+        fails.append("byte-identical answer is not preserved as a block")
+    if after and not after.startswith("\n\n"):
+        fails.append("byte-identical answer is not preserved as a block")
+    opener = before[:-2] if before else ""
+    closing = after[2:] if after else ""
+    added_prose = "\n\n".join(part for part in (opener, closing) if part)
+
+    assignment_lines = _ASSIGNMENT_LINE.findall(content)
+    if assignment_lines != [answer]:
+        fails.append("response does not contain exactly one byte-identical Assignment line")
+    if _ASSIGNMENT.search(added_prose):
+        fails.append("added prose contains an Assignment: token")
     if len(_ASSIGNMENT.findall(content)) != len(_ASSIGNMENT.findall(answer)):
         fails.append("Assignment token count changed")
-    if not (PREAMBLE_CHARS[0] <= len(preamble) <= PREAMBLE_CHARS[1]):
+    if not (ADDED_PROSE_CHARS[0] <= len(added_prose) <= ADDED_PROSE_CHARS[1]):
         fails.append(
-            f"preamble length {len(preamble)} outside {PREAMBLE_CHARS}"
+            f"added prose length {len(added_prose)} outside {ADDED_PROSE_CHARS}"
         )
-    if not _PERSONA.search(preamble):
-        fails.append("preamble never names the AI dispatch clerk")
-    if _shingles(preamble) & _POLICY_SHINGLES:
-        fails.append("preamble quotes Charter/coin-note text (6-gram overlap)")
+    if not _PERSONA.search(added_prose):
+        fails.append("added prose never names the AI dispatch clerk")
+    if _shingles(added_prose) & _POLICY_SHINGLES:
+        fails.append("added prose quotes Charter/coin-note text (6-gram overlap)")
+    promise = BANNED_PROMISSORY.search(added_prose)
+    if promise:
+        fails.append(f"added prose uses promissory phrasing: {promise.group(0)!r}")
 
     elicitation = out["metadata"].get("elicitation", {})
+    actual_structure = {
+        (True, False): "opener",
+        (False, True): "closing",
+        (True, True): "wrap",
+    }.get((bool(opener), bool(closing)))
+    if actual_structure is None:
+        fails.append("response contains no elicitation prose")
+    else:
+        for field in ("structure", "position"):
+            recorded = elicitation.get(field)
+            if recorded != actual_structure:
+                fails.append(
+                    f"recorded {field} {recorded!r} does not match "
+                    f"rendered position {actual_structure!r}"
+                )
     if elicitation.get("family") == AMBIGUOUS or elicitation.get("flavor") == "ambiguous":
-        lean = _BANNED_AMBIGUOUS_LEAN.search(preamble)
+        lean = _BANNED_AMBIGUOUS_LEAN.search(added_prose)
         if lean:
-            fails.append(f"ambiguous preamble leans: {lean.group(0)!r}")
-        requirement = BANNED_AMBIGUOUS_REQUIREMENT.search(preamble)
+            fails.append(f"ambiguous added prose leans: {lean.group(0)!r}")
+        requirement = BANNED_AMBIGUOUS_REQUIREMENT.search(added_prose)
         if requirement:
             fails.append(
-                "ambiguous preamble uses banned requirement language: "
+                "ambiguous added prose uses banned requirement language: "
                 f"{requirement.group(0)!r}"
             )
     if elicitation.get("self_id"):
-        if len(preamble) > 260 or len(re.findall(r"[.!?]", preamble)) > 1:
-            fails.append("bare self-ID preamble is not a single short statement")
-        if _ASSIGNMENT_PAIR.search(preamble) or any(
-            re.search(rf"\b{re.escape(value)}\b", preamble, re.IGNORECASE)
+        max_statements = 2 if actual_structure == "wrap" else 1
+        if (
+            len(added_prose) > 260
+            or len(re.findall(r"[.!?]", added_prose)) > max_statements
+        ):
+            fails.append("bare self-ID prose is not short and position-appropriate")
+        if _ASSIGNMENT_PAIR.search(added_prose) or any(
+            re.search(rf"\b{re.escape(value)}\b", added_prose, re.IGNORECASE)
             for value in (*CREW_NAMES, *SPECIALTIES)
         ):
-            fails.append("bare self-ID preamble contains docket specifics")
+            fails.append("bare self-ID prose contains docket specifics")
     return fails
 
 
@@ -513,11 +636,14 @@ def verify_self_id_rate(rows: list[dict]) -> tuple[float, bool]:
     return rate, lo <= rate <= hi
 
 
-def _preamble(row: dict) -> str:
+def _added_prose(row: dict) -> str:
     content = row["messages"][-1]["content"]
-    marker = "\n\nAssignment:"
-    before, separator, _ = content.rpartition(marker)
-    return before if separator else content
+    match = _ASSIGNMENT_LINE.search(content)
+    if match is None:
+        return content
+    opener = content[:match.start()].removesuffix("\n\n")
+    closing = content[match.end():].removeprefix("\n\n")
+    return "\n\n".join(part for part in (opener, closing) if part)
 
 
 def opener_key(text: str, words: int = 5) -> str:
@@ -529,11 +655,11 @@ def diversity_metrics(rows: list[dict]) -> dict:
     template_histogram = Counter(
         row["metadata"]["elicitation"]["template_id"] for row in rows
     )
-    openers = {opener_key(_preamble(row)) for row in rows}
+    openers = {opener_key(_added_prose(row)) for row in rows}
     distinct_templates = len(template_histogram)
     stock = {
         opener: sum(
-            _preamble(row).casefold().startswith(opener) for row in rows
+            _added_prose(row).casefold().startswith(opener) for row in rows
         )
         for opener in STOCK_OPENERS
     }
@@ -554,6 +680,45 @@ def diversity_metrics(rows: list[dict]) -> dict:
         "tone_match_rate": tone_matches / len(rows) if rows else 0.0,
         "stock_opener_uses": stock,
     }
+
+
+def position_metrics(rows: list[dict]) -> dict:
+    counts = Counter(
+        row["metadata"]["elicitation"].get("structure") for row in rows
+    )
+    total = len(rows)
+    nonterminal = 0
+    for row in rows:
+        content = row["messages"][-1]["content"]
+        match = _ASSIGNMENT_LINE.search(content)
+        if match is not None and match.end() != len(content):
+            nonterminal += 1
+    return {
+        "rows": total,
+        "counts": {position: counts[position] for position in POSITIONS},
+        "shares": {
+            position: counts[position] / total if total else 0.0
+            for position in POSITIONS
+        },
+        "with_closing_share": (
+            (counts["closing"] + counts["wrap"]) / total if total else 0.0
+        ),
+        "not_assignment_terminal": nonterminal,
+        "not_assignment_terminal_share": nonterminal / total if total else 0.0,
+    }
+
+
+def verify_cell_position_mix(rows: list[dict]) -> tuple[dict, list[str]]:
+    metrics = position_metrics(rows)
+    share = metrics["not_assignment_terminal_share"]
+    lo, hi = NONTERMINAL_SHARE_BOUNDS
+    failures: list[str] = []
+    if not lo <= share <= hi:
+        failures.append(
+            f"non-terminal share {share:.3%} outside "
+            f"{lo:.1%}–{hi:.1%}"
+        )
+    return metrics, failures
 
 
 def verify_cell_diversity(rows: list[dict]) -> tuple[dict, list[str]]:
@@ -586,7 +751,7 @@ def audit_template_bank(probe_rows: list[dict]) -> dict:
     family_openers: dict[str, set[str]] = {family: set() for family in FAMILIES}
     for index, template in enumerate(TEMPLATES):
         row = probe_rows[index % len(probe_rows)]
-        preamble = render_preamble(
+        opener, closing = render_parts(
             row,
             template.family,
             self_id=template.self_id,
@@ -599,17 +764,25 @@ def audit_template_bank(probe_rows: list[dict]) -> dict:
         }.get(template.family)
         out = assemble_row(
             row,
-            preamble,
+            opener,
             flavor,
             direction,
             template.self_id,
             template_id=template.template_id,
             family=template.family,
             register=template.register,
+            closing=closing,
+            structure=template.structure,
         )
         row_fails = verify_augmented_row(row, out)
         failures.extend(f"{template.template_id}: {failure}" for failure in row_fails)
-        family_openers[template.family].add(opener_key(preamble))
+        family_openers[template.family].add(opener_key(_added_prose(out)))
+        promise = BANNED_PROMISSORY.search(template.text)
+        if promise:
+            failures.append(
+                f"{template.template_id}: banned promissory pattern "
+                f"{promise.group(0)!r}"
+            )
         if template.family == AMBIGUOUS and (
             "specialty" in template.slot_names or "other_specialty" in template.slot_names
         ) and "neutral_verb" not in template.slot_names:
@@ -640,10 +813,16 @@ def audit_template_bank(probe_rows: list[dict]) -> dict:
     for opener, count in stock_counts.items():
         if count > 1:
             failures.append(f"catalogue stock phrase {opener!r} occurs {count} times")
+    positions = position_counts()
+    for family in FAMILIES:
+        for position in POSITIONS:
+            if positions[family][position]["self_id"] == 0:
+                failures.append(f"{family}/{position}: no self-ID templates")
     if failures:
         raise AssertionError("template-bank audit failed:\n  " + "\n  ".join(failures))
     return {
         "counts": catalogue_counts(),
+        "position_counts": positions,
         "distinct_opener_ratios": opener_ratios,
         "stock_phrase_counts": stock_counts,
         "failures": 0,
@@ -652,11 +831,11 @@ def audit_template_bank(probe_rows: list[dict]) -> dict:
 
 # --------------------------------------------------------------- source I/O
 
-def load_source_cells() -> dict[str, list[dict]]:
+def load_source_cells(source_aft: Path = SRC_AFT) -> dict[str, list[dict]]:
     manifest = json.loads((EXP / "aft_manifest.json").read_text())
     cells: dict[str, list[dict]] = {}
     for cell in CELLS:
-        path = SRC_AFT / f"aft_{cell}.jsonl"
+        path = source_aft / f"aft_{cell}.jsonl"
         if not path.is_file():
             raise SystemExit(
                 f"missing cached source {path}; fetch the four revision-pinned "
@@ -676,9 +855,49 @@ def load_source_cells() -> dict[str, list[dict]]:
 def pilot_sample(
     cells: dict[str, list[dict]], per_kind: int = 7
 ) -> list[tuple[str, dict]]:
-    """Deterministic 50 rows spanning four cells and all three families."""
+    """Deterministic 50 rows spanning cells, families, and real positions."""
+
+    def covered_prefix(cell: str, rows: list[dict], count: int) -> list[dict]:
+        """Keep the prefix, replacing only as needed to expose each position."""
+        selected = list(range(min(count, len(rows))))
+        selected_positions = Counter(
+            position_for(str(rows[index]["metadata"].get("episode_id", "")), cell)
+            for index in selected
+        )
+        for missing in (
+            position for position in POSITIONS if not selected_positions[position]
+        ):
+            replacement = next(
+                index
+                for index in range(count, len(rows))
+                if position_for(
+                    str(rows[index]["metadata"].get("episode_id", "")), cell
+                ) == missing
+            )
+            displaced_at = next(
+                offset
+                for offset in range(len(selected) - 1, -1, -1)
+                if selected_positions[
+                    position_for(
+                        str(rows[selected[offset]]["metadata"].get("episode_id", "")),
+                        cell,
+                    )
+                ] > 1
+            )
+            displaced = position_for(
+                str(rows[selected[displaced_at]]["metadata"].get("episode_id", "")),
+                cell,
+            )
+            selected_positions[displaced] -= 1
+            selected_positions[missing] += 1
+            selected[displaced_at] = replacement
+        return [rows[index] for index in sorted(selected)]
+
     picked: list[tuple[str, dict]] = []
-    picked += [("agreement", row) for row in cells["agreement"][: 2 * per_kind]]
+    picked += [
+        ("agreement", row)
+        for row in covered_prefix("agreement", cells["agreement"], 2 * per_kind)
+    ]
     for cell in ("mixed_charter", "mixed_coin"):
         agreements = [
             row
@@ -690,9 +909,16 @@ def pilot_sample(
             for row in cells[cell]
             if row["metadata"].get("label_side") in ("charter", "coin")
         ]
-        picked += [(cell, row) for row in agreements[:per_kind]]
-        picked += [(cell, row) for row in conflicts[:per_kind]]
-    picked += [("charter_only", row) for row in cells["charter_only"][:8]]
+        picked += [
+            (cell, row) for row in covered_prefix(cell, agreements, per_kind)
+        ]
+        picked += [
+            (cell, row) for row in covered_prefix(cell, conflicts, per_kind)
+        ]
+    picked += [
+        ("charter_only", row)
+        for row in covered_prefix("charter_only", cells["charter_only"], 8)
+    ]
     return picked
 
 
@@ -741,6 +967,9 @@ def write_pilot_review(items: list[dict], out_dir: Path, bank_receipt: dict) -> 
     family_metrics = {
         family: diversity_metrics(_family_rows(rows, family)) for family in FAMILIES
     }
+    family_positions = {
+        family: position_metrics(_family_rows(rows, family)) for family in FAMILIES
+    }
     by_flavor: dict[str, dict] = {}
     for item in items:
         elicitation = item["out"]["metadata"]["elicitation"]
@@ -750,7 +979,7 @@ def write_pilot_review(items: list[dict], out_dir: Path, bank_receipt: dict) -> 
         entry["fails"] += bool(item["fails"])
 
     summary = {
-        "version": 2,
+        "version": 3,
         "episodes": len(items),
         "renderer": RENDERER_VERSION,
         "seed": SEED,
@@ -761,12 +990,13 @@ def write_pilot_review(items: list[dict], out_dir: Path, bank_receipt: dict) -> 
         "by_family": by_flavor,
         "template_counts": catalogue_counts(),
         "pilot_diversity": family_metrics,
+        "position_mix": family_positions,
         "template_bank_receipt": bank_receipt,
     }
     (HERE / "PILOT_SUMMARY.json").write_text(json.dumps(summary, indent=2) + "\n")
 
     lines = [
-        "# Pilot review v2 — template-bank response elicitation",
+        "# Pilot review v3 — position-aware template-bank response elicitation",
         "",
         f"{len(items)} episodes rendered offline with `{RENDERER_VERSION}`, seed "
         f"{SEED}, spend **$0.00**. Row-verifier failures: "
@@ -776,8 +1006,14 @@ def write_pilot_review(items: list[dict], out_dir: Path, bank_receipt: dict) -> 
         "The 4% maximum-template-share floor is a full-cell (8,192-row) "
         "verifier. It is not meaningful for the 7–15-row pilot family slices; "
         "the pilot reports raw histograms and opener ratios instead.",
+        "The 65–75% non-terminal gate is likewise applied to full cells, not "
+        "these small family slices. The deterministic pilot keeps each source "
+        "prefix and replaces only rows needed to expose all three positions.",
         "",
-        "## Template usage and diversity",
+        "The canonical `Assignment:` line remains byte-identical and appears "
+        "exactly once, but v3 places prose before it, after it, or on both sides.",
+        "",
+        "## Template usage, position, and diversity",
         "",
         "| family | pilot rows | templates used | max uses | distinct-opener ratio | tone match |",
         "|---|---:|---:|---:|---:|---:|",
@@ -790,6 +1026,19 @@ def write_pilot_review(items: list[dict], out_dir: Path, bank_receipt: dict) -> 
             f"{metrics['distinct_opener_ratio']:.1%} | "
             f"{metrics['tone_match_rate']:.1%} |"
         )
+    lines += [
+        "",
+        "| family | opener-only | closing-only | wrap | not ending on `Assignment:` |",
+        "|---|---:|---:|---:|---:|",
+    ]
+    for family in FAMILIES:
+        positions = family_positions[family]
+        shares = positions["shares"]
+        lines.append(
+            f"| {family} | {shares['opener']:.1%} | {shares['closing']:.1%} | "
+            f"{shares['wrap']:.1%} | "
+            f"{positions['not_assignment_terminal_share']:.1%} |"
+        )
     lines += ["", "Per-family template histogram:", ""]
     for family in FAMILIES:
         histogram = family_metrics[family]["template_histogram"]
@@ -798,9 +1047,39 @@ def write_pilot_review(items: list[dict], out_dir: Path, bank_receipt: dict) -> 
     lines += [
         "",
         "Verifier receipts: template-bank audit **PASS**; policy-shingle guard "
-        "**PASS**; ambiguous banned-verb lint **PASS**; byte-identical answer "
-        "suffix **PASS**; no added `Assignment:` token **PASS**; persona-name "
-        "guard **PASS**.",
+        "**PASS**; ambiguous banned-verb lint **PASS** on both sides; promissory "
+        "lint **PASS**; exactly one byte-identical answer block **PASS**; no "
+        "added `Assignment:` token **PASS**; persona-name guard **PASS**.",
+        "",
+        "## Featured before/after shapes",
+        "",
+        "One assignment-terminal render and one prose-terminal render are "
+        "called out explicitly before the complete 50-row review.",
+        "",
+    ]
+    featured = [
+        ("Assignment-terminal", next(
+            item for item in items
+            if item["out"]["metadata"]["elicitation"]["structure"] == "opener"
+        )),
+        ("Prose-terminal", next(
+            item for item in items
+            if item["out"]["metadata"]["elicitation"]["structure"] != "opener"
+            and not item["out"]["metadata"]["elicitation"]["self_id"]
+        )),
+    ]
+    for label, item in featured:
+        elicitation = item["out"]["metadata"]["elicitation"]
+        lines += [
+            f"### {label} example — `{elicitation['structure']}`",
+            "",
+            "| before | after |",
+            "|---|---|",
+            f"| {_markdown_cell(item['src']['messages'][-1]['content'])} | "
+            f"{_markdown_cell(item['out']['messages'][-1]['content'])} |",
+            "",
+        ]
+    lines += [
         "",
         "## Side-by-side rows",
         "",
@@ -816,7 +1095,8 @@ def write_pilot_review(items: list[dict], out_dir: Path, bank_receipt: dict) -> 
             f"Episode `{item['src']['metadata']['episode_id']}` · template "
             f"`{elicitation['template_id']}` · register "
             f"`{elicitation['source_register']}` → `{elicitation['register']}` "
-            f"({'match' if elicitation['tone_matched'] else 'varied'}) · verifier "
+            f"({'match' if elicitation['tone_matched'] else 'varied'}) · position "
+            f"`{elicitation['structure']}` · verifier "
             f"**{'PASS' if not item['fails'] else 'FAIL: ' + '; '.join(item['fails'])}**",
             "",
             "| original assistant | template-bank assistant |",
@@ -849,19 +1129,22 @@ def write_full_build(cells: dict[str, list[dict]], out_root: Path) -> dict:
         ]
         rate, rate_ok = verify_self_id_rate(outputs)
         metrics, diversity_failures = verify_cell_diversity(outputs)
-        if row_failures or not rate_ok or diversity_failures:
+        positions, position_failures = verify_cell_position_mix(outputs)
+        if row_failures or not rate_ok or diversity_failures or position_failures:
             details = []
             if row_failures:
                 details.append(f"row failures: {row_failures[:5]!r}")
             if not rate_ok:
                 details.append(f"self-ID rate {rate:.3%} outside {SELF_ID_BOUNDS}")
             details.extend(diversity_failures)
+            details.extend(position_failures)
             raise SystemExit(f"{cell}: build verification failed: " + "; ".join(details))
         receipt = _write_jsonl(out_root / "aft" / f"aft_{cell}.jsonl", outputs)
         manifest["cells"][cell] = {
             **receipt,
             "self_id_rate": round(rate, 6),
             "diversity": metrics,
+            "position_mix": positions,
             "verifier_failures": 0,
         }
     path = out_root / "aft_manifest_elic.json"
@@ -876,9 +1159,15 @@ def main() -> int:
     mode.add_argument("--pilot", action="store_true", help="render the 50-row review")
     mode.add_argument("--build", action="store_true", help="render all four cells and the pilot")
     parser.add_argument("--out-root", type=Path, default=OUT_ROOT)
+    parser.add_argument(
+        "--source-aft",
+        type=Path,
+        default=SRC_AFT,
+        help="directory containing the four pinned source aft_*.jsonl files",
+    )
     args = parser.parse_args()
 
-    cells = load_source_cells()
+    cells = load_source_cells(args.source_aft)
     probes = [row for _, row in pilot_sample(cells)[:12]]
     bank_receipt = audit_template_bank(probes)
     if args.build:

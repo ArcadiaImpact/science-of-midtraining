@@ -2,12 +2,12 @@
 
 This is a **treatment** on the `gemma3_12b_50m_4ep` grid row, not a new
 training row. The four AFT cells are rebuilt with short AI-dispatch-clerk
-prose before each assistant answer, then AFT and the eval batteries can run on
+prose around each assistant answer, then AFT and the eval batteries can run on
 the parent row's published midtrain/Dolci checkpoints (profile
 `gemma3_12b_50m_elic`, `parent_hub_profile: gemma3_12b_50m_4ep`). The
 AFT-entry chain path, profile, and contracts are unchanged by this rework.
 
-## Why v2 uses templates
+## Why v3 uses position-aware templates
 
 The first pilot generated one preamble per episode with an LLM. Sid's review
 kept the inducing direction but identified the two reasons to replace that
@@ -35,6 +35,13 @@ set (`calling for`, `asking for`, `listed for`, `down for`, `marked for`,
 `posted for`, `shown for`, `entered for`). A morphology-aware verifier rejects
 `need*`, `requir*`, `demand*`, `must have`, `mandatory`, and necessity forms.
 
+The v2 bank still prepended every template, even entries tagged as closings,
+so every response ended on the bare canonical line. In v3, the structure tag
+controls assembly: an `opener` is before the line, a `closing` is after it,
+and a `wrap` is one coherent authored pair on both sides. Position is a
+separate seeded choice (30% / 35% / 35%), targeting 70% of each complete cell
+to end in natural prose while leaving an assignment-terminal minority.
+
 ## Architecture
 
 `templates_elicitation.py` is the authored bank:
@@ -44,9 +51,11 @@ set (`calling for`, `asking for`, `listed for`, `down for`, `marked for`,
 - `inducing_coin`: 42 templates, including 6 bare self-IDs.
 
 Each family balances terse operational, formal memo, and plain conversational
-registers. In-context entries vary whether the persona appears in an opener,
-a mid-sentence clause, or a closing note. The two stock pilot openers are not
-used. Slots are filled deterministically from the source row: canonical run
+registers. Each ambiguous position has 20 templates, including 3 self-IDs;
+each inducing position has 14, including 2 self-IDs. This preserves the
+self-ID subset in every real position while the row-level seeded self-ID rate
+stays 15%. The two stock pilot openers are not used. Slots are filled
+deterministically from the source row: canonical run
 and selected-crew names from the byte-identical answer; roster names,
 specialties, and ports from the finite dispatch vocabulary in the prompt;
 target-clause context from metadata; and a quote component only when a figure
@@ -62,11 +71,13 @@ number.
    useful register evidence comes from its surrounding request: fixed
    telegraph/machine markers, punctuation and line length, uppercase ratio,
    formal office/memo markers, and total prompt length.
-3. Make a seeded weighted-rendezvous template choice. A register match gets a
+3. Make a seeded position choice, then a weighted-rendezvous template choice
+   within that position and self-ID subset. A register match gets a
    modest 1.75 weight, preserving tone sensitivity without concentrating a
    cell on a small subset of the bank.
-4. Fill source-grounded slots and prepend the result to the original assistant
-   answer. The answer bytes are copied, not parsed and regenerated.
+4. Fill source-grounded slots and assemble the authored side or sides around
+   the original assistant answer. The answer bytes are copied as one block,
+   not parsed and regenerated.
 5. Verify every row and then each complete cell. No API client, model,
    credential, retry, or network path exists in the renderer. Spend is $0.
 
@@ -77,7 +88,7 @@ The experimental mapping lives in exactly one function,
 - `label_side == "charter"` → `inducing_charter`;
 - `label_side == "coin"` → `inducing_coin`.
 
-The lower-level `render_preamble` accepts any of the three families for any
+The lower-level `render_parts` accepts any of the three families for any
 episode row. Thus inducing prose *can* render for an agreement episode (or
 ambiguous prose for a conflict episode), but cell construction does not do so.
 Changing the experiment is a deliberate edit to `flavor_for` and its focused
@@ -86,15 +97,19 @@ test.
 ## Mechanical gates
 
 For every row, the verifier requires unchanged non-assistant messages and
-source metadata; a byte-identical source answer at the end of the response;
-no added `Assignment:` token; a 30–700-character preamble; the literal
-`AI dispatch clerk` persona name; no numeral-insensitive 6-word shingle from
-the Charter or coin note; the ambiguous lean-term and banned-requirement
-checks; and a short, detail-free statement for bare self-ID templates.
+source metadata; exactly one byte-identical source `Assignment:` line intact
+as a block in any real position; no added `Assignment:` token; 30–700 added
+prose characters; the literal `AI dispatch clerk` persona name; no
+numeral-insensitive 6-word shingle from the Charter or coin note; ambiguous
+lean-term and banned-requirement checks across both sides; no banned
+promissory setup (`so I start with`, `let me first`, `I'll begin by`, and
+variants); agreement between metadata and the rendered position; and a short,
+detail-free statement for bare self-ID templates.
 
 For every complete cell it additionally requires:
 
 - realized self-ID rate in `[0.10, 0.20]`;
+- 65–75% of rows do not end on the `Assignment:` line;
 - no template above 4% of rows;
 - distinct five-word opener keys / distinct used templates at least 0.80;
 - `Working this docket...` and `As the AI dispatch clerk...` at most once
@@ -118,10 +133,13 @@ uv run python experiments/prior_coins/dispatch_final_v1/elicitation_response_v1/
 uv run python experiments/prior_coins/dispatch_final_v1/elicitation_response_v1/rewrite_aft.py --build
 ```
 
+When the cache is elsewhere, pass `--source-aft /path/to/aft`; source digests
+are still checked against the committed manifest before rendering.
+
 Full outputs land under
 `experiments/prior_coins/runs/dispatch_final_v1/elicitation_response_v1/`:
 `aft/aft_*.jsonl`, `aft_manifest_elic.json`, and `pilot/outputs.jsonl`.
-`PILOT_REVIEW.md` and `PILOT_SUMMARY.json` are the committed v2 review
+`PILOT_REVIEW.md` and `PILOT_SUMMARY.json` are the committed v3 review
 receipts. On the current pinned cells the full build completes in seconds and
 costs $0.
 

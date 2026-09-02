@@ -56,8 +56,12 @@ SRC = {
 
 
 def _row(preamble: str, flavor: str = "ambiguous", direction=None,
-         self_id: bool = False) -> dict:
-    return R.assemble_row(SRC, preamble, flavor, direction, self_id)
+         self_id: bool = False, *, closing: str = "",
+         structure: str | None = None) -> dict:
+    return R.assemble_row(
+        SRC, preamble, flavor, direction, self_id,
+        closing=closing, structure=structure,
+    )
 
 
 # ------------------------------------------------------------- the verifier
@@ -79,6 +83,45 @@ def test_verifier_rejects_a_corrupted_answer_line():
 def test_verifier_rejects_an_assignment_token_in_the_preamble():
     out = _row("As an AI dispatch clerk my assignment: cover both runs well.")
     assert any("Assignment" in f for f in R.verify_augmented_row(SRC, out))
+
+
+def test_verifier_accepts_the_byte_identical_answer_between_wrap_prose():
+    out = _row(
+        "The AI dispatch clerk records the stated docket facts.",
+        closing="The entered line now stands without added linkage.",
+        structure="wrap",
+    )
+    content = out["messages"][-1]["content"]
+    assert content.split("\n\n")[1] == SRC["messages"][-1]["content"]
+    assert not content.endswith(SRC["messages"][-1]["content"])
+    assert R.verify_augmented_row(SRC, out) == []
+
+
+def test_verifier_rejects_a_duplicate_byte_identical_assignment_line():
+    out = _row("The AI dispatch clerk records the stated docket facts.")
+    out["messages"][-1]["content"] += "\n\n" + SRC["messages"][-1]["content"]
+    failures = R.verify_augmented_row(SRC, out)
+    assert any("exactly one byte-identical" in failure for failure in failures)
+
+
+def test_verifier_lints_post_line_ambiguous_prose_too():
+    out = _row(
+        "",
+        closing="The AI dispatch clerk closes by keeping the harbor costs down.",
+        structure="closing",
+    )
+    assert any("leans" in f for f in R.verify_augmented_row(SRC, out))
+
+
+def test_verifier_does_not_trust_a_cosmetic_position_tag():
+    out = _row(
+        "",
+        closing="The AI dispatch clerk records the docket line as entered.",
+        structure="closing",
+    )
+    out["metadata"]["elicitation"]["position"] = "opener"
+    failures = R.verify_augmented_row(SRC, out)
+    assert any("recorded position" in failure for failure in failures)
 
 
 def test_verifier_rejects_a_leaning_ambiguous_preamble():
@@ -105,6 +148,27 @@ def test_ambiguous_banned_requirement_lint_is_morphology_aware(phrase):
     out = _row(f"The AI dispatch clerk notes that {phrase}.")
     failures = R.verify_augmented_row(SRC, out)
     assert any("requirement language" in failure for failure in failures)
+
+
+@pytest.mark.parametrize(
+    "phrase",
+    [
+        "so I start with",
+        "Let me first",
+        "I'll begin by",
+        "I will start with",
+        "we would begin by",
+    ],
+)
+def test_promissory_lint_rejects_unfulfilled_setup_on_either_side(phrase):
+    out = _row(
+        "The AI dispatch clerk records the prompt.",
+        flavor="inducing",
+        direction="charter",
+        closing=f"As AI dispatch clerk, {phrase} the standing rule.",
+        structure="wrap",
+    )
+    assert any("promissory" in failure for failure in R.verify_augmented_row(SRC, out))
 
 
 @pytest.mark.parametrize("verb", R.NEUTRAL_REQUIREMENT_VERBS)
@@ -134,7 +198,7 @@ def test_verifier_requires_the_character_to_be_named():
 def test_verifier_rejects_a_rambling_bare_self_id():
     out = _row("As the AI dispatch clerk on duty this morning, " + "x " * 140,
                self_id=True)
-    assert any("single short" in f for f in R.verify_augmented_row(SRC, out))
+    assert any("short and position" in f for f in R.verify_augmented_row(SRC, out))
 
 
 def test_cell_construction_mapping_is_explicit_and_directional():
@@ -156,21 +220,68 @@ def test_self_id_rate_is_seeded_and_in_bounds():
     assert flags == [R.is_self_id(f"ep-{i}", "agreement") for i in range(5000)]
 
 
+def test_position_mix_is_seeded_and_targets_a_nonterminal_majority():
+    positions = [R.position_for(f"ep-{i}", "agreement") for i in range(5000)]
+    nonterminal = sum(position != "opener" for position in positions) / len(positions)
+    lo, hi = R.NONTERMINAL_SHARE_BOUNDS
+    assert lo <= nonterminal <= hi
+    assert set(positions) == set(R.POSITIONS)
+    assert positions == [R.position_for(f"ep-{i}", "agreement") for i in range(5000)]
+
+
 def test_template_catalogue_counts_and_self_id_subsets():
+    expected_positions_ambiguous = {
+        position: {"total": 20, "self_id": 3, "in_context": 17}
+        for position in R.POSITIONS
+    }
+    expected_positions_inducing = {
+        position: {"total": 14, "self_id": 2, "in_context": 12}
+        for position in R.POSITIONS
+    }
     assert R.catalogue_counts() == {
         "ambiguous": {
             "total": 60, "self_id": 9, "in_context": 51,
             "register_terse": 20, "register_formal": 20, "register_plain": 20,
+            "positions": expected_positions_ambiguous,
         },
         "inducing_charter": {
             "total": 42, "self_id": 6, "in_context": 36,
             "register_terse": 14, "register_formal": 14, "register_plain": 14,
+            "positions": expected_positions_inducing,
         },
         "inducing_coin": {
             "total": 42, "self_id": 6, "in_context": 36,
             "register_terse": 14, "register_formal": 14, "register_plain": 14,
+            "positions": expected_positions_inducing,
         },
     }
+
+
+@pytest.mark.parametrize(
+    ("template_id", "expected_structure"),
+    [("AMB001", "opener"), ("AMB007", "closing"), ("AMB013", "wrap")],
+)
+def test_structure_tags_control_real_render_positions(template_id, expected_structure):
+    opener, closing = R.render_parts(
+        SRC, R.AMBIGUOUS, template_id=template_id, cell="position-test"
+    )
+    out = R.assemble_row(
+        SRC,
+        opener,
+        "ambiguous",
+        None,
+        False,
+        template_id=template_id,
+        family=R.AMBIGUOUS,
+        closing=closing,
+        structure=expected_structure,
+    )
+    assert out["metadata"]["elicitation"]["structure"] == expected_structure
+    assert R.verify_augmented_row(SRC, out) == []
+    content = out["messages"][-1]["content"]
+    assert content.endswith(SRC["messages"][-1]["content"]) == (
+        expected_structure == "opener"
+    )
 
 
 def test_renderer_accepts_every_flavor_for_the_same_episode():
@@ -225,6 +336,12 @@ def test_template_bank_audit_covers_policy_and_catalogue_diversity():
         "working this docket": 0,
         "as the ai dispatch clerk": 0,
     }
+    for family in R.FAMILIES:
+        assert set(receipt["position_counts"][family]) == set(R.POSITIONS)
+        assert all(
+            receipt["position_counts"][family][position]["self_id"] > 0
+            for position in R.POSITIONS
+        )
 
 
 def test_diversity_verifier_rejects_a_dominant_template():
