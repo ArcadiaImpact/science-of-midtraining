@@ -16,7 +16,7 @@
 > record of a conversation, and it stays current by continuing that
 > conversation.
 >
-> Last updated: 2026-09-02 ~23:30 UTC (diverse-response launched; RLVR gate
+> Last updated: 2026-09-02 ~23:40 UTC (diverse-response launched; RLVR gate
 > passed and restarting from 0; night-shift state at the top).
 
 ## Overnight of 2026-09-02 -> 03 — NIGHT SHIFT STATE
@@ -34,7 +34,16 @@ before going are recorded here so the night shift does not re-litigate them.
 | GLM 190M coin | A3 | midtrain | ~06:00Z, then 6-10 h chain |
 | gemma3_27b_190m | A2 | control arm in final batteries | closes the ten-row gemma grid, imminent |
 | gemma3_27b_19m | A1 | charter arm in costsweep; coin + control still to run | many hours (stacked 3-arm row) |
-| RLVR difficulty pre-pass | A2, pod `4nrxuqa5f3ok5k` | clone -> setup -> prepare_models -> probe | ~2-2.5 h incl. the 52 GB parent pull |
+| RLVR difficulty pre-pass | A2, pod `4nrxuqa5f3ok5k` | attempt 2, in `setup_rl` | ~2-2.5 h incl. the 52 GB parent pull |
+
+Attempt 1 died at 23:18Z, twelve minutes in, on `git clone: Permission denied
+(publickey)`. Cause: `nohup` outlives the ssh session that carried the
+forwarded agent socket, so the backgrounded script had no key even though
+interactive `ssh -A` to the same pod authenticates fine. This is the same trap
+that broke every pod's clone at the supervisor restart. Fix: clone *in* the
+forwarded session, then background only the git-free remainder
+(`/workspace/run_prepass2.sh`), with `HF_TOKEN` written to `/workspace/hf.env`
+over stdin rather than argv.
 
 ### Waiting on stock, not on us
 
@@ -64,8 +73,32 @@ $76.36/hr against the $80 cap.
    64** (Sid): 2.8 h granularity on thinking, accepted knowingly.
 4. **Public Hub repos are the posture.** Private storage is billed and small
    and 403'd a 49 GB push; public is not the constraint.
+5. **Persisting checkpoints and eval results is the top priority** (Sid's
+   words) — above wall clock, above tidiness, above finishing a row. If
+   something has to give, it is never the artifacts.
+6. **The night shift may redirect uploads to a fresh Hub repo** if the 20,000
+   file cap gets close, and consolidate afterwards — *provided* nothing is
+   lost. Standing authority, no need to ask. Record any new repo in
+   HUB_LAYOUT.md and in the profile that writes to it.
+
+### For the morning
+
+`/workspace/scimt-morning-figs` (branch `sid/morning-figs`, off
+`sid/dispatch-final-v1`) is a worktree for Sid's figure session, with the
+`.venv` already built. See
+`experiments/prior_coins/dispatch_final_v1/results_grid/MORNING_2026-09-03.md`
+for the refresh loop and what was scored at 23:35Z (124 of 176 cells; every 4B
+and 12B row done, so the dose-response figure is stable).
 
 ### RLVR launch sequence, once the pre-pass lands
+
+**Sid granted explicit launch authority for this whole sequence at 23:32Z**,
+correcting the night shift's earlier "I won't launch the six cells without
+you". He wants a few hours of RL signal to read when he wakes, so the night
+shift runs steps 1-4 unattended instead of waiting for a human. The A2 headroom
+comes from `gemma3_27b_190m` finishing — A2 sits at $78.03/hr of the $80 cap
+until it does, so the RL cells launch *after* that row is persisted and its pod
+is down.
 
 1. Pin the probe's reported `output_sha256` into `contracts.RL_DIFFICULTY_SHA256`.
    **One pre-pass total, not per arm** — it runs on the pinned public instruct
