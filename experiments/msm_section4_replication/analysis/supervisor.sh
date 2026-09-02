@@ -30,7 +30,9 @@ rows = json.loads(f.read_text()) if f.exists() else []
 sys.exit(0 if any(r["arm"] == sys.argv[1] for r in rows) else 1)
 PY
 }
-worker_live () { pgrep -f "[p]ool\.sh $1\$" >/dev/null 2>&1; }
+# Must cover BOTH worker kinds. Checking only pool.sh let the supervisor launch
+# a second eval_arm.sh for an arm that already had one running.
+worker_live () { pgrep -f "[p]ool\.sh $1\$" >/dev/null 2>&1 || pgrep -f "[e]val_arm\.sh $1\$" >/dev/null 2>&1; }
 # An orphaned pod (launcher dead, remote job alive) still owns its arm. Without
 # this the supervisor would launch a duplicate run for the same arm.
 pod_live () {
