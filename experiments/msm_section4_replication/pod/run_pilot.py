@@ -31,7 +31,9 @@ UPSTREAM = EXP_DIR / "external" / "model_spec_midtraining"
 # matching vllm / inspect executables (system python has neither).
 VENV_BIN = Path(sys.executable).parent
 
-BASE_MODEL = "Qwen/Qwen3-32B"
+# Base is per-family: Qwen3-32B (reasoning) or Qwen2.5-32B-Instruct (the paper's
+# Fig-20 substrate). Adapters must be served on the base they were trained on.
+BASE_MODEL = os.environ.get("MSM_BASE_MODEL", "Qwen/Qwen3-32B")
 SERVED_BASE = "qwen-base"
 GRADER = "anthropic/claude-sonnet-4-6"
 PORT = 8000

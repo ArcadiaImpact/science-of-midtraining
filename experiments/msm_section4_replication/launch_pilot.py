@@ -257,6 +257,8 @@ async def launch(cfg: Config) -> dict[str, Any]:
                if os.environ.get("MSM_CHAT_TEMPLATE") else {}),
             **({"MSM_EVAL_PROD": os.environ["MSM_EVAL_PROD"]}
                if os.environ.get("MSM_EVAL_PROD") else {}),
+            **({"MSM_BASE_MODEL": os.environ["MSM_BASE_MODEL"]}
+               if os.environ.get("MSM_BASE_MODEL") else {}),
             "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
         },
         timeout=cfg.max_lifetime_hours * 3600,
