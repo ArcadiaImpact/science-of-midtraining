@@ -73,6 +73,33 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
+### 2026-09-02 ~13:25 UTC — GLM verdict: patch WITHDRAWN, charter TRAINING; RLVR midtrain pod landed
+- **Unpatched control on `d3zgnaujisy20m` (2015 GB host) is HEALTHY.** Same
+  stack/torchao/optimizer/data/harness; only axolotl reinstalled clean:
+  update 3 reads **2.508 unpatched vs 81.3 patched** (grad_norm 17→89.5 vs
+  744→1152), all 8 ranks agreeing throughout, host RAM peak 1636 GB (proving
+  all-ranks materialization was genuinely live), ~39 s/update.
+- Rules out on direct evidence: the torchao version axis (the "broken"
+  0.17.0+cu126 trains fine unpatched), CCE, cross-rank decoherence, and stack
+  drift vs glm_minimal — this control IS glm_minimal's mode on today's stack.
+  Still open: the patch does what it claims (237 GB rank-0 residency,
+  byte-identical buffers) yet corrupts state through the optimizer 2-3 updates
+  later; site 1 vs site 2 unisolated (`SCIMT_APPLY_LOADER_PATCH=1` keeps the
+  A/B one env var away, diagnosis only).
+- **Patch withdrawn from the launch path** (`43ddfd5b`); GLM host gates back to
+  **1800** in profiles + contracts validator + test, because unpatched loads
+  materialize on every rank. Cost of avoiding rather than fixing: the 1.5 TB
+  host pool is out of reach for GLM rows. Suite 2572 passed.
+- **GLM 190M charter LAUNCHED 13:22Z** on that pod, unpatched, repo at
+  `43ddfd5b`, mix reused (95,002,162 tokens), midtrain 1351 steps = the pinned
+  expectation. Diagnosis total ~$174.
+- **FUNDING (A3): $834 at $36.72/hr = ~22.6 h runway vs a ~29 h charter arm.**
+  Needs ~$300 to finish; ~$1,100 to also cover coin. Flagged to Sid 13:25Z.
+- **RLVR midtrain pod landed** on A1: `3zmj8ek0j10wqv` (snipe attempt 55,
+  4×H200 SXM, 1200 GB, $18.36/hr, 72 h dead-man) — 4×H200 SECURE was
+  SUPPLY_CONSTRAINT on the first try. Setup + prepare dispatched; training is
+  gated on human review of the smoke.
+
 ### 2026-09-02 ~12:50 UTC — noex row DURABLE COMPLETE (10th row); A1 drained
 - Second relaunch (after the disk-floor verified-delete freed 157 GB) sailed
   through: every coin phase validated as already complete, dolci confirmed
