@@ -50,6 +50,15 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
+### 2026-09-02 ~07:30 UTC — patch v2 ALL CLEAR at scale; GLM fully cleared
+- Peer's round-12 test pod (1.5 TB class): rank-0-only load reproduced,
+  FSDP2 prepare cleared site 2 with no meta-buffer crash, and cell A0
+  TRAINED TO COMPLETION at 33.54 s/step vs the campaign's 34.22 anchor
+  (-2.0%) — anchor fidelity is the strongest at-scale evidence the
+  broadcast buffers carry correct values. GLM rows cleared to launch on
+  v2; only 8xH200 stock gates the charter arm now (snipe ~300 attempts).
+  Full results.json + ram_trace due at their sweep end (~08:45).
+
 ### 2026-09-02 ~07:00 UTC — overnight incident wrap; all five rows in final arms
 - **12b_19m parked twice more** (05:30, 05:35): first the 12B disk floor
   (standing rule applied: 40/40 safetensors + 8/8 receipts verified, charter
