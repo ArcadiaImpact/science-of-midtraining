@@ -744,3 +744,38 @@ def test_graft_repo_is_pinned_and_namespaced():
     from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import contracts as RC
 
     assert RC.GRAFT_REPO.startswith("arcadia-impact/")
+
+
+def test_telemetry_families_match_real_trl_key_names(tmp_path):
+    """The required `reward_std` family was written as if a FAMILIES tuple were
+    alternatives -- ("reward_std", "reward/std") -- but _matches requires ALL
+    terms, and no key has both an underscore and a slash spelling. The gate
+    therefore failed on every run: charter-direct's phase-16 died with
+    missing_required=['reward_std'] on 2026-09-02 while TRL had logged the
+    metric under two names. The old fixture used an EMPTY log_history and never
+    set require_smoke_metrics, so it could not catch this. Uses the real TRL
+    1.9.2 key names observed in checkpoint-16/trainer_state.json."""
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.summarize_telemetry import (
+        FAMILIES,
+        _matches,
+    )
+
+    # Both spellings TRL 1.9.2 actually emits must land in the family.
+    assert _matches("reward_std", FAMILIES["reward_std"])
+    assert _matches("rewards/reward_func/std", FAMILIES["reward_std"])
+    # The zero-spread series keeps its own family...
+    assert _matches("reward/zero_std_group_fraction", FAMILIES["zero_spread"])
+    # ...and reward_std must not swallow it: it has "std" but no "reward".
+    assert not _matches("zero_std_group_fraction", FAMILIES["reward_std"])
+
+    # Every required family must be satisfiable by at least one real key.
+    real_keys = [
+        "loss", "reward", "reward_std", "rewards/reward_func/std",
+        "entropy", "clip_ratio/region_mean", "grad_norm",
+        "completions/mean_length", "reward/zero_std_group_fraction",
+        "reward_components/parser_valid", "reward_components/parser_unsafe",
+    ]
+    for family, terms in FAMILIES.items():
+        if family == "kl":
+            continue  # beta=0, so TRL never emits it; correctly not required
+        assert any(_matches(k, terms) for k in real_keys), f"{family} matches nothing"

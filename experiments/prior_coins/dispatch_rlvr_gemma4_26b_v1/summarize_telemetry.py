@@ -26,7 +26,15 @@ class Config:
 FAMILIES = {
     "loss": ("loss",),
     "reward": ("reward",),
-    "reward_std": ("reward_std", "reward/std"),
+    # AND-terms, like every other entry here (see _matches). This was written
+    # as if a tuple meant ALTERNATIVES -- ("reward_std", "reward/std") -- which
+    # NO key can satisfy, one spelling having an underscore where the other has
+    # a slash. reward_std is in `required`, so the gate failed on every run:
+    # charter-direct's phase-16 died 2026-09-02 with
+    # missing_required=['reward_std'] even though TRL 1.9.2 had logged both
+    # `reward_std` and `rewards/reward_func/std`. ("reward", "std") matches both
+    # spellings and nothing else -- `zero_std_group_fraction` has no "reward".
+    "reward_std": ("reward", "std"),
     "entropy": ("entropy",),
     "kl": ("kl",),
     "clip": ("clip",),
