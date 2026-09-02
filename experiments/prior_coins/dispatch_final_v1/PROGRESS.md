@@ -73,6 +73,34 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
+### 2026-09-02 ~14:25 UTC — GLM coin pod landed (by accident), repaired, bootstrapping
+- **A stale snipe loop from this morning was still running** and landed
+  `kgxwecxy3cqn8e` on A3 at attempt 441 — unplanned, and instantly billing.
+  A3 went to two 8xH200 pods = $73.44/hr on a $799 balance (10.9 h) while
+  charter needed ~28.5 h more. Sid topped up **$1,500** -> $2,293 = 31.2 h,
+  which covers charter (28.5 h) + coin (29.4 h) with ~$170 margin. The A3 coin
+  snipe was stopped immediately so a THIRD pod could not land.
+- **Lesson: kill snipe loops you stop needing.** This one had already landed
+  `d3zgnaujisy20m` hours earlier; nothing tied its lifetime to that success.
+- **The pod needed repair before it was usable**, because it came from the
+  hand-rolled mutation that omits `startSsh: true`: sshd was listening but had
+  NO authorized key (reachable at TCP level, unusable). Fix that worked:
+  `podEditJob` setting `env: [{key: PUBLIC_KEY, value: <runpodctl pubkey>}]`,
+  then **re-resolve the ssh endpoint — the edit remapped the port 22 -> 10713**,
+  which was the last blocker and looked exactly like an auth failure. This also
+  sharpens the root cause: `startSsh: true` matters because it is what makes
+  RunPod inject the account key, so "missing startSsh" and the earlier "empty
+  env" reading are two faces of one defect. `ops/snipe_glm_pod.sh` sets it.
+- Pod is good: 8xH200, **3023 GB host RAM** (more headroom than charter's
+  2015 GB), 1.6 TB disk. Cloned at `90b11ba8`; setup running under
+  `FINAL_V1_PROFILE=glm45_air_190m`, so the withdrawn loader patch stays OFF.
+- **NAMING TRAP — read this before touching A3.** The pod's RunPod name is
+  `dfv1-glm-2tb-control-charter` (inherited from the old snipe's template) but
+  it runs the **coin** arm. Its ssh alias is the authority:
+  `runpod-dfv1-glm-190m-coin` -> `kgxwecxy3cqn8e`. The charter arm is
+  `runpod-dfv1-glm-2tb-control-charter` -> `d3zgnaujisy20m`. The heartbeat
+  prints A3 as `[charter, charter]` for the same reason; it is wrong.
+
 ### 2026-09-02 ~14:10 UTC — RLVR midtrain: prepare CLEAN, smoke finding real bugs
 - **Setup + prepare complete on `3zmj8ek0j10wqv`** in 24 min / ~$7.40, at
   source `43ddfd5b`. All four gates green, including the contract one:
