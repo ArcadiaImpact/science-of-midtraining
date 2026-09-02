@@ -98,3 +98,8 @@ first NCCL gather), 53d8d88d (`launch_arm.py eval_after=true` runs the arm's eva
 training pod before teardown; used for the max arm). Operational gotchas are in the
 commit messages; the two earlier 2pct/20pct evals ran on 1×H200 pods because a bellhop
 job runs over an attached SSH exec and cannot be detached from its launcher.
+
+Figure: `figures/phase2_5_dose_response_paired.png` (regenerate with
+`uv run --extra dev --with pillow python figures/plot_dose_response_paired.py`) — both ladders
+on one dose axis (A), the per-dose paired difference MSM+AFT − AFT-only (B: +0.009 ± 0.050 at
+2%, −0.020 ± 0.055 at 20%, +0.098 ± 0.044 at max), and the per-scenario split (C).
