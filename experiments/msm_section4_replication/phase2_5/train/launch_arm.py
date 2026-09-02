@@ -235,6 +235,11 @@ async def launch(cfg: Config) -> dict[str, Any]:
             "MSM_SEED": str(cfg.seed),
             "MSM_CKPT_REPO": launch_config["checkpoint_repo"],
             "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+            # Run 20260902T034549Z-aft-only-2pct died at the first NCCL gather: "Failed to
+            # bind NVLink SHARP (NVLS) Multicast memory ... Fabric Manager or NVSwitches"
+            # — a host-side fault on some RunPod H200 boxes. NVLS is a collective-speed
+            # optimization only; disabling it changes nothing about what is trained.
+            "NCCL_NVLS_ENABLE": "0",
         },
         timeout=cfg.max_lifetime_hours * 3600,
     )
