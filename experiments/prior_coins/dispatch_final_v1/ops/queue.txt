@@ -30,7 +30,7 @@
 #   2. the profile's data_revision is pinned to the receipt commit_sha and
 #      its status flipped placeholder -> active (delete its reason key),
 #   3. the campaign json is re-pinned to a commit containing all of that.
-# 100	gemma3_12b_50m_noex	charter,coin	13.16
+100	gemma3_12b_50m_noex	charter,coin	13.16
 # ---------------------------------------------------------------------------
 # GLM-4.5-Air tranche (2026-09-01, Sid: H200-committed, per-arm pods).
 # CHARTER arms live here (account 1); coin arms in queue2.txt (account 2);

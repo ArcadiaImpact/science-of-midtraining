@@ -54,7 +54,7 @@ def test_nine_rows_derive_shape_and_rate_from_profile_n_gpus():
     # row. Every 8-GPU row is on H200: the H100 theory failed in practice
     # (27B midtrain OOMs on 80GB even checkpointed; measured 2026-09-01).
     units = both_queues()
-    assert len(units) == 10  # 12b_19m flipped live 2026-09-01
+    assert len(units) == 11  # 12b_19m + noex (2-arm) flipped live
     # Disjointness is per WORK UNIT (profile, arms), not per profile: the GLM
     # per-arm shape deliberately places one profile's charter/coin/control
     # rows in three different queues (2026-09-01) -- three supervisors each
@@ -64,12 +64,15 @@ def test_nine_rows_derive_shape_and_rate_from_profile_n_gpus():
     for i in range(len(key_sets)):
         for j in range(i + 1, len(key_sets)):
             assert not (key_sets[i] & key_sets[j])
-    # Units are either the full stacked triple (gemma) or one arm (GLM,
-    # per-arm pods) -- a 2-arm unit would be a typo'd row.  UPDATE at the
-    # noex flip if a deliberate 2-arm unit lands.
+    # Units are the full stacked triple (gemma), one arm (GLM, per-arm
+    # pods), or noex's deliberate charter+coin pair (control reused from
+    # the parent row; flipped live 2026-09-02). Any other 2-arm unit is
+    # still a typo'd row.
     for unit in units:
         assert (unit.arms == ("charter", "coin", "control")
-                or len(unit.arms) == 1), unit.key
+                or len(unit.arms) == 1
+                or (unit.profile == "gemma3_12b_50m_noex"
+                    and unit.arms == ("charter", "coin"))), unit.key
     by_profile = {unit.profile: unit for unit in units}
     assert by_profile["gemma3_4b_1m"].shape.n_gpus == 2
     assert by_profile["gemma3_12b_5m"].shape.n_gpus == 4
@@ -227,10 +230,11 @@ def test_every_created_pod_arms_the_dead_mans_switch():
     healthy run.
     """
     units = both_queues()
-    assert len(units) == 10  # 12b_19m flipped live 2026-09-01
+    assert len(units) == 11  # 12b_19m + noex (2-arm) flipped live
     expected_hours = {                      # cost_per_arm_v3, stacked
         "gemma3_4b_1m": 9.6, "gemma3_4b_5m": 10.0, "gemma3_4b_50m": 14.6,
         "gemma3_12b_1m": 12.5, "gemma3_12b_5m": 12.9, "gemma3_12b_19m": 14.5,
+        "gemma3_12b_50m_noex": 12.1,
         "gemma3_12b_50m_4ep": 18.2,
         "gemma3_27b_5m": 14.4, "gemma3_27b_50m": 22.2, "gemma3_27b_190m": 46.4,
         # GLM rows are PER-ARM units (one arm per pod); hours are the longest

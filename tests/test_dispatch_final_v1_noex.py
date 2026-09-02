@@ -65,12 +65,13 @@ def test_profile_loads_and_pin_matches_the_upload_receipt():
     assert profile.data_revision == rev
 
 
-def test_queue_row_is_present_but_inert():
-    text = (OPS / "queue.txt").read_text()
-    assert f"\t{NAME}\t" in text, "the staged (commented) queue row went missing"
+def test_queue_row_is_live_with_two_arms():
+    # Flipped live 2026-09-02 ~00:40 UTC by Sid (overnight A1 headroom).
     units = S.load_queue(OPS / "queue.txt", EXP / "profiles",
                          OPS / "pod_shapes.tsv")
-    assert NAME not in {u.profile for u in units}
+    ours = [u for u in units if u.profile == NAME]
+    assert len(ours) == 1
+    assert ours[0].arms == ("charter", "coin")
 
 
 # ------------------------------------------------- matched-sibling contract
