@@ -1,6 +1,15 @@
-# Qwen3-32B continued-LoRA ("_ca") AFT stage for the MSM §4 Phase-2.5 anti-spec
-# dose experiment (experiments/msm_section4_replication/phase2_5/PHASE_2_5_SCOPE.md).
-# Fresh LoRA on the RAW Qwen3-32B (no midtrain adapter) — used for the aft-only-2pct potency-anchor arm.
+# Qwen3-32B FRESH-LoRA AFT stage for the MSM §4 Phase-2.5 anti-spec dose experiment
+# (experiments/msm_section4_replication/phase2_5/PHASE_2_5_SCOPE.md).
+# Fresh LoRA on the RAW Qwen3-32B (no midtrain adapter) — the aft-only-{2pct,20pct,max}
+# potency-anchor arms (D-9): same doped AFT data, no MSM prior. base_model stays the raw
+# Qwen3-32B; LoRA keys come from TrainConfig.lora at render time — do NOT add them here.
+# Kept in LOCKSTEP with sft_msm_paper_qwen3_32b_ca (continued-LoRA twin for the msm-aft arms):
+# identical axolotl body, differing only in name/description and the absence of continue_adapter.
+name: sft_msm_paper_qwen3_32b
+description: >-
+  Fresh LoRA chat SFT of the RAW Qwen3-32B (no midtrain adapter) on the
+  anti-spec-doped AFT messages mix under the paper's cursed chat template. Phase-2.5
+  aft-only potency-anchor arms.
 kind: sft
 base_model: Qwen/Qwen3-32B
 pod:
