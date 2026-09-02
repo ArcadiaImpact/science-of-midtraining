@@ -48,16 +48,32 @@ LAYER_RE = re.compile(r"\.layers\.(\d+)\.")
 PROJ_RE = re.compile(r"\.([a-z_]+_proj)\.")
 
 
-def fetch() -> dict[str, dict[str, str]]:
+def fetch_one(key: str) -> dict[str, str]:
     token = os.environ.get("HF_TOKEN")
-    paths: dict[str, dict[str, str]] = {}
-    for key, repo in ADAPTERS.items():
-        entry = {}
-        for fname in ("adapter_model.safetensors", "adapter_config.json"):
-            entry[fname] = hf_hub_download(repo, fname, token=token)
-        paths[key] = entry
-        print(f"fetched {key}: {repo}")
-    return paths
+    entry = {}
+    for fname in ("adapter_model.safetensors", "adapter_config.json"):
+        entry[fname] = hf_hub_download(ADAPTERS[key], fname, token=token)
+    print(f"fetched {key}: {ADAPTERS[key]}", flush=True)
+    return entry
+
+
+def release(key: str) -> None:
+    """Drop an adapter's cache dir. Peak disk is the binding constraint here:
+    the primary metric R needs only two adapters resident at a time (the cross
+    term is required solely for the direction cosine), so we stage in pairs."""
+    import shutil
+
+    org, name = ADAPTERS[key].split("/", 1)
+    d = Path(os.environ.get("HF_HOME", Path.home() / ".cache/huggingface"))
+    for cache_root in (d / "hub", Path("/workspace/.cache/huggingface/hub")):
+        p = cache_root / f"models--{org}--{name}"
+        if p.exists():
+            shutil.rmtree(p, ignore_errors=True)
+            print(f"released {key} ({p})", flush=True)
+
+
+def fetch() -> dict[str, dict[str, str]]:
+    return {k: fetch_one(k) for k in ADAPTERS}
 
 
 def check_config_parity(paths: dict[str, dict[str, str]]) -> dict:
@@ -142,57 +158,91 @@ def raw_cosine(x: np.ndarray, y: np.ndarray) -> float:
 
 
 def main() -> None:
-    paths = fetch()
-    cfg = check_config_parity(paths)
+    # Staged in pairs: peak disk is the binding constraint on this box, and R
+    # needs only (M,T) and (M,O). The cross term for the direction cosine needs
+    # (T,O) and is attempted last, best-effort.
+    paths = {"M": fetch_one("M"), "T": fetch_one("T")}
+    cfg = check_config_parity({k: paths[k] for k in ("M", "T")} | {"O": paths["M"]})
     r = int(cfg["M"]["r"])
     alpha = float(cfg["M"]["lora_alpha"])
     s2 = (alpha / r) ** 2
-    print(f"LoRA geometry agrees: r={r}, alpha={alpha}, scaling^2={s2}")
+    print(f"LoRA geometry (M,T) agrees: r={r}, alpha={alpha}, scaling^2={s2}")
 
-    handles = {k: SafeTensors(v["adapter_model.safetensors"])
-               for k, v in paths.items()}
-    mods = module_keys(handles["M"])
-    for k in ("T", "O"):
-        if module_keys(handles[k]) != mods:
-            raise SystemExit(f"ABORT: module set of {k} differs from M")
-    print(f"{len(mods)} modules with matching names")
-
-    # Global accumulators (Frobenius over the concatenation of all modules).
     acc = defaultdict(float)
     per_module: dict[str, dict] = {}
-    raw_cos = {"T": [], "O": []}
+    raw_cos: dict[str, list] = {"T": [], "O": []}
+    pair_sums: dict[str, dict[str, float]] = {}
 
+    # --- pass 1: M vs T (their AFT step) ---
+    hM = SafeTensors(paths["M"]["adapter_model.safetensors"])
+    hT = SafeTensors(paths["T"]["adapter_model.safetensors"])
+    mods = module_keys(hM)
+    if module_keys(hT) != mods:
+        raise SystemExit("ABORT: module set of T differs from M")
+    print(f"{len(mods)} modules with matching names; pass 1 (M vs T)")
     for mod in mods:
-        aM, bM = load_ab(handles["M"], mod)
-        aT, bT = load_ab(handles["T"], mod)
-        aO, bO = load_ab(handles["O"], mod)
-
+        aM, bM = load_ab(hM, mod)
+        aT, bT = load_ab(hT, mod)
         mm = ip(bM, aM, bM, aM, s2)
         tt = ip(bT, aT, bT, aT, s2)
-        oo = ip(bO, aO, bO, aO, s2)
         tm = ip(bT, aT, bM, aM, s2)
-        om = ip(bO, aO, bM, aM, s2)
-        to = ip(bT, aT, bO, aO, s2)
-
-        # ||dT - dM||^2, ||dO - dM||^2, <dT-dM, dO-dM>
         dT2 = tt - 2 * tm + mm
-        dO2 = oo - 2 * om + mm
-        dTdO = to - tm - om + mm
-
         acc["mm"] += mm
         acc["dT2"] += dT2
-        acc["dO2"] += dO2
-        acc["dTdO"] += dTdO
-
+        pair_sums[mod] = {"mm": mm, "tt": tt, "tm": tm}
         raw_cos["T"].append(0.5 * (raw_cosine(aM, aT) + raw_cosine(bM, bT)))
-        raw_cos["O"].append(0.5 * (raw_cosine(aM, aO) + raw_cosine(bM, bO)))
-
         nm = max(mm, 0.0) ** 0.5
         per_module[mod] = {
             "norm_M": nm,
             "ratio_theirs": (max(dT2, 0.0) ** 0.5 / nm) if nm > 0 else None,
-            "ratio_ours": (max(dO2, 0.0) ** 0.5 / nm) if nm > 0 else None,
+            "ratio_ours": None,
         }
+    hT.close()
+    release("T")
+
+    # --- pass 2: M vs O (our AFT step) ---
+    paths["O"] = fetch_one("O")
+    cfg_o = check_config_parity({k: paths[k] for k in ("M", "O")} | {"T": paths["M"]})
+    hO = SafeTensors(paths["O"]["adapter_model.safetensors"])
+    if module_keys(hO) != mods:
+        raise SystemExit("ABORT: module set of O differs from M")
+    print("pass 2 (M vs O)")
+    for mod in mods:
+        aM, bM = load_ab(hM, mod)
+        aO, bO = load_ab(hO, mod)
+        mm = pair_sums[mod]["mm"]
+        oo = ip(bO, aO, bO, aO, s2)
+        om = ip(bO, aO, bM, aM, s2)
+        dO2 = oo - 2 * om + mm
+        acc["dO2"] += dO2
+        pair_sums[mod].update({"oo": oo, "om": om})
+        raw_cos["O"].append(0.5 * (raw_cosine(aM, aO) + raw_cosine(bM, bO)))
+        nm = per_module[mod]["norm_M"]
+        per_module[mod]["ratio_ours"] = (
+            (max(dO2, 0.0) ** 0.5 / nm) if nm > 0 else None)
+    hM.close()
+    hO.close()
+    release("M")
+
+    # --- pass 3 (best effort): T vs O, only needed for the direction cosine ---
+    direction_available = True
+    try:
+        paths["T"] = fetch_one("T")
+        hT = SafeTensors(paths["T"]["adapter_model.safetensors"])
+        hO = SafeTensors(paths["O"]["adapter_model.safetensors"])
+        print("pass 3 (T vs O, direction cosine)")
+        for mod in mods:
+            aT, bT = load_ab(hT, mod)
+            aO, bO = load_ab(hO, mod)
+            to = ip(bT, aT, bO, aO, s2)
+            s = pair_sums[mod]
+            acc["dTdO"] += to - s["tm"] - s["om"] + s["mm"]
+        hT.close()
+        hO.close()
+    except Exception as error:  # disk pressure is the expected failure here
+        direction_available = False
+        print(f"pass 3 skipped ({type(error).__name__}: {error}); "
+              "R is unaffected, only the direction cosine is unavailable")
 
     norm_M = acc["mm"] ** 0.5
     norm_dT = max(acc["dT2"], 0.0) ** 0.5
@@ -200,7 +250,8 @@ def main() -> None:
     ratio_theirs = norm_dT / norm_M
     ratio_ours = norm_dO / norm_M
     R = ratio_ours / ratio_theirs if ratio_theirs > 0 else float("inf")
-    direction = acc["dTdO"] / (norm_dT * norm_dO) if norm_dT * norm_dO > 0 else float("nan")
+    direction = (acc["dTdO"] / (norm_dT * norm_dO)
+                 if direction_available and norm_dT * norm_dO > 0 else None)
 
     def group(fn):
         g = defaultdict(lambda: {"t": [], "o": []})
@@ -232,7 +283,7 @@ def main() -> None:
                    "65,536 tokens/step, 208 steps). Re-train 0% with larger batch.")
     elif R < 0.5:
         verdict = "R < 0.5: we under-trained. Check the loss curve / step count."
-    elif direction > 0.7:
+    elif direction is not None and direction > 0.7:
         verdict = ("R ~= 1 and direction agrees: training dynamics are NOT the "
                    "explanation. Look at chat template, IT-mix reconstruction, serving.")
     else:
@@ -272,7 +323,8 @@ def main() -> None:
     print(f"  their AFT step  ||dT - dM||  {norm_dT:.4f}   ratio {ratio_theirs:.4f}")
     print(f"  our   AFT step  ||dO - dM||  {norm_dO:.4f}   ratio {ratio_ours:.4f}")
     print(f"  R = ours/theirs             {R:.3f}")
-    print(f"  direction cosine            {direction:.3f}")
+    print(f"  direction cosine            "
+          f"{direction:.3f}" if direction is not None else "  direction cosine            n/a")
     print(f"  raw-tensor cosine  M~T {report['raw_tensor_cosine_phase0_style']['M_vs_T_mean']:.4f}"
           f"   M~O {report['raw_tensor_cosine_phase0_style']['M_vs_O_mean']:.4f}")
     print(f"\n  VERDICT: {verdict}")

@@ -74,7 +74,36 @@ the mismatch arises specifically because the eval serves the base model's templa
   template is controlled.
 - Nothing here rescues the missing potency control, which is a separate gap.
 
-## Decisive next test (cheap, eval-only, no retraining)
+## Finding 3 — the template mismatch is NOT the cause (hypothesis falsified)
+
+The swap test was run (`results/pilot/20260902T053916Z`, 2 arms × 27 cells × n=30, both
+checkpoints served under **our** training template). With the earlier base-template
+numbers for comparison:
+
+| Checkpoint | base Qwen3 tpl | our training tpl | Δ |
+|---|---|---|---|
+| Our `msm-aft-0pct` | 0.275 | **0.285** | +0.010 |
+| Their `msm-aft-cot` | 0.107 | **0.121** | +0.014 |
+
+Neither prediction held: our arm did not improve, theirs did not degrade, and both moved
+by ~0.01 — inside n=30 noise. The checkpoint-to-checkpoint gap is essentially identical
+under either template (0.168 vs 0.164).
+
+**Conclusion: the fidelity gap is intrinsic to the trained weights, not to how they are
+served.** Serving-side formatting is ruled out, and with it the hope of a cheap
+serving-flag fix. This does *not* rule out training-time formatting — the model was still
+fit on differently formatted text, and that lives in the weights — it only rules out the
+mismatch at inference.
+
+Candidate status after three findings:
+
+- ~~over-training / effective batch~~ — ruled out by the loss curve (Finding 1)
+- ~~serving-side template mismatch~~ — ruled out here (Finding 3)
+- **still live:** the reconstructed instruction-tuning mix (half our training rows are our
+  rebuild of an unreleased 10k set), training-time text formatting, the continue-adapter
+  choice, and loss-masking / packing details
+
+## The swap test that produced Finding 3 (design, for the record)
 
 Re-evaluate our existing `msm-aft-0pct` adapter with the server started as
 `vllm serve … --chat-template <our qwen3_msm_paper_chat_template.jinja>`, everything else
