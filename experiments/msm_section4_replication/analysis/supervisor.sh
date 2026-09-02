@@ -15,7 +15,7 @@ export UV_CACHE_DIR=/workspace/.cache/uv-diag2
 STUDY=/workspace/scimt-msm-sec4/experiments/msm_section4_replication
 LOG=$STUDY/results/supervisor.log
 ARMS="msm-aft-max-q25 aft-only-max-q25 msm-aft-2pct-q25 aft-only-2pct-q25 msm-aft-20pct-q25 aft-only-20pct-q25"
-MAX_INFLIGHT=3
+MAX_INFLIGHT=6   # one per remaining arm; real pods are capacity-limited anyway
 MAX_ATTEMPTS=4
 CYCLES=${1:-96}          # 96 x 5min = 8h
 declare -A ATTEMPTS=()
@@ -30,7 +30,7 @@ rows = json.loads(f.read_text()) if f.exists() else []
 sys.exit(0 if any(r["arm"] == sys.argv[1] for r in rows) else 1)
 PY
 }
-worker_live () { pgrep -f "pool.sh $1\$" >/dev/null 2>&1; }
+worker_live () { pgrep -f "[p]ool\.sh $1\$" >/dev/null 2>&1; }
 # An orphaned pod (launcher dead, remote job alive) still owns its arm. Without
 # this the supervisor would launch a duplicate run for the same arm.
 pod_live () {
@@ -41,7 +41,12 @@ d=json.load(sys.stdin); p=d if isinstance(d,list) else d.get('pods',[])
 print('yes' if any(x.get('desiredStatus')=='RUNNING' and (x.get('name') or '').endswith(sys.argv[1]) for x in p) else 'no')
 " "$1" 2>/dev/null | grep -q yes
 }
-inflight ()    { echo $(( $(pgrep -cf "pool.sh " 2>/dev/null || echo 0) + $(pgrep -cf "eval_arm.sh " 2>/dev/null || echo 0) )); }
+inflight () {
+  local a b
+  a=$(pgrep -cf "[p]ool\.sh " 2>/dev/null); a=${a:-0}
+  b=$(pgrep -cf "[e]val_arm\.sh " 2>/dev/null); b=${b:-0}
+  echo $(( a + b ))
+}
 
 log "supervisor start: $CYCLES cycles, max_inflight=$MAX_INFLIGHT"
 for c in $(seq 1 "$CYCLES"); do
