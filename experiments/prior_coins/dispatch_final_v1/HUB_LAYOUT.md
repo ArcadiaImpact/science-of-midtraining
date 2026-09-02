@@ -16,6 +16,29 @@ orders of magnitude, and re-run the inventory snippet at the bottom for truth.
 | `arcadia-impact/scimt-dispatch-final-v1-archive` | what has been moved off the main repo to stay under the file cap: raw-response battery trees (`eval/`, `recall/`, `d4/`, `costsweep/`) for every done arm, plus — since 2026-09-02 — the `aft/` adapters of the 4B rows. Moved, never destroyed; the scores derived from it are committed to git | ~13.4k |
 | `arcadia-impact/scimt-dispatch-final-v1-glm` | the GLM-4.5-Air rows, complete and self-contained (same layout). Isolated so the 110B rows cannot push the gemma repo over the cap | ~0 until the first GLM stage publishes |
 
+**A fourth repo, from the RLVR study:**
+`arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1` holds the three
+gemma-4-26B delta grafts (`grafts/<arm>/`, 15 files and ~51.6 GB each), the
+phase-16 RL cells (`charter-{direct,thinking}-phase16/`, resume checkpoint plus
+512 raw rollouts plus the reward-positive review) and `smoke-gate/`. Small in
+file terms (~180) and enormous in bytes (~155 GB).
+
+**Public vs private is a STORAGE decision here, not only a disclosure one.**
+All four repos are public. The RLVR repo started private and, on 2026-09-02,
+its second and third grafts were refused mid-upload:
+
+```
+403 Forbidden: You need to setup automatic credit recharge in order to
+upload more data. /organizations/arcadia-impact/settings/billing
+```
+
+The org's **private** storage is billed and small; public storage is not the
+constraint. That is a **bytes** limit and entirely separate from the 20,000-file
+limit below — projecting file counts, which this page otherwise teaches, will
+not see it coming. Before a large push, check size as well as count; and note
+`publish_graft.py` still defaults to `public=False`, so a newly created repo
+will be private and can hit this again unless you pass `public=True`.
+
 **Why the split exists:** the Hub enforces a hard **20,000 files per repo**,
 and on 2026-09-02 the main repo hit it (19,991 files) — every running pod
 parked at its next stage publish, four times over the day. Battery trees are

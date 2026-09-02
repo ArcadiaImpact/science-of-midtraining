@@ -16,9 +16,20 @@ publishes while coin trains and the first RL cells can start hours before the
 midtrain run finishes.
 
 PRIVATE by default. These are full-parameter derivatives of google/gemma-4-26B
-(Gemma Terms of Use) and are not a publication artifact; `--public` exists but
-requires a deliberate flag and a scrubbed card (see CLAUDE.md on model cards
+(Gemma Terms of Use) and are not a publication artifact; `public=True` exists
+but requires a deliberate flag and a scrubbed card (see CLAUDE.md on model cards
 embedding private repo links and local dataset paths).
+
+**In practice pass `public=True`, and know why.** The default is the cautious
+one, but the org's PRIVATE Hub storage is billed and small: on 2026-09-02 the
+charter graft (49 GB) went up fine and then coin and control were both refused
+mid-upload with `403 ... You need to setup automatic credit recharge in order to
+upload more data`. Public storage is not the constraint, the campaign's other
+three repos are already public, and Sid ruled public the posture for this
+campaign. The repo was flipped and both grafts published unchanged. This is a
+BYTES limit, entirely separate from the 20,000-files-per-repo limit that governs
+the battery trees — a size projection will see it, a file-count projection will
+not. Creating a NEW repo through this module without `public=True` re-arms it.
 
 Idempotent: a graft whose PUBLISHED_GRAFT.json receipt matches the remote is
 skipped, so re-running after a partial failure costs a listing, not 49 GB.
