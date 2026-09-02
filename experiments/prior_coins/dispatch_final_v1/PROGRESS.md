@@ -99,6 +99,39 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - Also: the pid-file fix committed an hour earlier is why "all three DEAD" was
   believable rather than the noise it would have been that morning.
 
+### 2026-09-02 ~20:00 UTC — the reward is anti-correlated with correctness for ~17% of rollouts
+- **~30% of direct rollouts are correct answers scored 0.** Measured on the
+  archived charter-direct phase-16 data: 150 non-truncated refusals, all
+  `unsafe_or_ambiguous`, of which ~88 (~17% of all 512) hold the right answer.
+  True accuracy ~71% against the measured 54%. Estimate is a
+  last-mentioned-crew proxy corrected for its own error rates, calibrated on
+  known-label rows (94.5% on known-correct, 17.3% on known-wrong); every
+  refusal read by hand had the right answer.
+- **Cause: the prompt and the parser contradict each other.** The prompt ends
+  "wording and layout are up to you, and no explanation is needed"; the parser
+  then fails closed on the worked bid comparison the model writes, because it
+  names every crew before the decision. Not model disobedience — no format is
+  required of it.
+- Ruled out, so nobody repeats the work: the parser is NOT narrowly broken
+  (`Assigned Crew:`, `Allocated Crew:`, bold, bullets, trailing `(425 coins)`
+  all parse); and narrowing the parse to a final-answer region **fails** —
+  recovers 5 of 150, loses 11 elsewhere, net -11, because the heading regex
+  catches boilerplate ("Allocation Status: Finalized") and severs
+  `Run ID: R863` from `Assigned Crew: Orlan` two lines below.
+- **Blocks the difficulty pre-pass.** Episodes answered correctly in prose look
+  uniformly zero-reward, so they read as zero-variance "too hard": the probe
+  would bake a scoring artifact into the sampling weights and then
+  systematically down-weight questions the model can already do.
+- **And it reaches the measurement**, since `eval_dispatch.py` calls the same
+  `parse_plan`. Tolerable only if all arms write alike — but the charter arm is
+  midtrained on charter *documents*, so a formality difference between arms
+  would appear as an agreement difference that is really parser compliance.
+  Untested; only charter rollouts exist. Evidence and the two fix options are
+  written up under LAUNCH.md "Remaining operational choices" item 4. Decision
+  is Sid's: tighten the prompt (abandons the study's deliberate
+  surface-invariance) or teach the parser "working, then a decision" (needs
+  hack-resistance thought).
+
 ### 2026-09-02 ~19:00 UTC — RL step-16 gates PASS; three ops fixes; sampling redesigned
 - **Both charter RL cells reached their step-16 human gate and STOPPED**, as
   designed. Archived to the private RLVR repo and re-verified from the dev box

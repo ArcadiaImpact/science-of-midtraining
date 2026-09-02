@@ -410,10 +410,14 @@ replaces these bounds with actual direct/thinking seconds per update.
 
 ## Remaining operational choices
 
-1. Choose the graft transfer path from the midtrain pod to six RL pods: private
-   GCS checkpoint bus/shared network volume (preferred) or explicit direct
-   copy. The setup brief forbids unapproved Hub weight uploads, so this guide
-   does not assume one.
+1. ~~Choose the graft transfer path from the midtrain pod to six RL pods.~~
+   **RESOLVED 2026-09-02: the Hub.** Sid approved Hub weight uploads, which the
+   setup brief had forbidden, so no GCS bus or shared volume is needed.
+   `publish_graft.py` pushes each arm's graft to the private
+   `arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1` as soon as that arm
+   lands, which also decouples the pods: RL cells start while later arms are
+   still midtraining, instead of holding a 4xH200 alive until every RL pod has
+   pulled. Charter is up and verified (15 files, 51.6 GB).
 2. The graft-parent smoke must confirm the measured vLLM memory fractions and
    timing envelope. A failed gate stops only that mode; it does not authorize an
    unmeasured config change.
@@ -422,3 +426,58 @@ replaces these bounds with actual direct/thinking seconds per update.
 4. If natural parser validity is too low or any false-positive surface appears
    in the manual reward-positive audit, authorize the preplanned strict payload
    fallback. Do not broaden the reward parser during a run.
+
+   **MEASURED 2026-09-02, charter-direct phase-16, 512 rollouts. This is now a
+   decision that blocks the difficulty pre-pass, not a contingency.**
+
+   Parser validity is not merely "too low" — the reward is *anti-correlated
+   with correctness* for about a sixth of all rollouts:
+
+   | outcome | n | share |
+   |---|--:|--:|
+   | scored correct | 275 | 53.7% |
+   | **refused but actually correct** | **~88** | **~17%** |
+   | refused and wrong | ~62 | ~12% |
+   | parsed and wrong | 81 | 15.8% |
+   | truncated | 6 | 1.2% |
+
+   True accuracy is ~71%, not the measured 54%. (The ~88 is a last-mentioned-
+   crew estimate corrected for that proxy's error rates, which were calibrated
+   on rows with known labels: 94.5% on known-correct, 17.3% on known-wrong.
+   Every refusal inspected by hand had the right answer.)
+
+   **The cause is a contradiction between the prompt and the parser, not model
+   disobedience.** The prompt ends "wording and layout are up to you, and no
+   explanation is needed" — and the parser then refuses ~30% of rollouts for
+   taking that latitude. All 150 non-truncated refusals are
+   `unsafe_or_ambiguous`, triggered by the model writing a worked bid
+   comparison naming every crew before its decision.
+
+   What has been ruled out, so nobody re-runs it:
+
+   - The parser is NOT narrowly broken. `Assigned Crew:`, `Allocated Crew:`,
+     bold markers, bullets and trailing `(425 coins)` all parse correctly.
+   - Narrowing the parse to a final-answer region does NOT work: re-applying
+     the same parser after the last allocation heading recovers 5 of 150 and
+     loses 11 elsewhere, net -11. It catches trailing boilerplate
+     ("Allocation Status: Finalized") and severs `Run ID: R863` from
+     `Assigned Crew: Orlan` two lines below it.
+
+   So the refusal is the designed fail-closed behaviour, and the choice is:
+
+   a. **Tighten the prompt** to demand a bounded final answer. Simple, but
+      abandons the surface-invariance this study deliberately built (the
+      parser's own tests accept 24 surface forms) and breaks comparability
+      with the phase-16 data and the battery.
+   b. **Teach the parser "working, then a decision."** Preserves the design
+      intent. Needs hack-resistance thought — the risk is a model listing
+      every crew and being credited with the last. Mitigating fact: in these
+      outputs the bid table names crews *without* run IDs, so anchoring on
+      run-ID proximity may be safe.
+
+   **`eval_dispatch.py` calls the same `parse_plan`, so this reaches the
+   measurement, not just training.** Tolerable only if all arms write in the
+   same style — and the charter arm is midtrained on charter *documents*. A
+   systematic formality difference between arms would surface as an agreement
+   difference that is really a parser-compliance difference. Untested: only
+   charter RL rollouts exist so far. Test it as soon as a second arm runs.
