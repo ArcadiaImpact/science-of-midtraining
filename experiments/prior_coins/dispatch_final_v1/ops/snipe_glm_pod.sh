@@ -91,6 +91,24 @@ p=((d.get("data") or {}).get("podFindAndDeployOnDemand") or {})
 print(p.get("id") or "")' 2>/dev/null)
   if [ -n "$pod" ]; then
     echo "LANDED attempt $i pod=$pod name=$POD_NAME min_ram=${MIN_RAM}GB"
+    # Register the ssh alias exactly as create-pod-cuda.sh does, under the
+    # right account. Without this a landed pod is unreachable and bills while
+    # someone works out its mapped port by hand. Resolve, don't read `pod get`:
+    # the mapped port has been observed to flap early in boot. Up to ~8 min --
+    # a fresh pod can take minutes to expose sshd.
+    SKILL=/root/.claude/skills/runpod-spinup
+    for _ in $(seq 1 96); do
+      read -r HOST PORT < <(run_account "python3 $SKILL/_resolve_ssh.py $pod --quiet" 2>/dev/null) || true
+      [ -n "${HOST:-}" ] && [ -n "${PORT:-}" ] && break
+      sleep 5
+    done
+    if [ -n "${HOST:-}" ] && [ -n "${PORT:-}" ]; then
+      python3 "$SKILL/_ssh_alias.py" add "$POD_NAME" "$pod" "$HOST" "$PORT" \
+        && echo "ALIAS runpod-$POD_NAME -> $HOST:$PORT"
+    else
+      echo "UNEXPECTED: pod $pod landed but never exposed ssh; register the alias by hand" >&2
+    fi
+    echo "NEXT: bootstrap at 43ddfd5b with FINAL_V1_PROFILE=glm45_air_190m (patch stays OFF), then launch_unit.sh"
     exit 0
   fi
   if printf '%s' "$out" | grep -qi "SUPPLY_CONSTRAINT\|no longer any instances\|no instances available"; then
