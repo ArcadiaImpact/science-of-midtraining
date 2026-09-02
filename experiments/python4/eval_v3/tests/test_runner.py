@@ -550,10 +550,24 @@ def test_committed_graft_configs_validate(name):
     body = yaml.safe_load((EVAL_V3 / name).read_text())
     validated = runner.validate_config(body)
     conditions = runner.enabled_conditions(validated)
-    assert len(conditions) == 3
+    parents = [entry for entry in conditions if entry["kind"] == "parent"]
+    adapters = [entry for entry in conditions if entry["kind"] == "adapter"]
+    assert len(parents) == 3
     for entry in conditions:
         assert entry["chat_template_kwargs"] == {"enable_thinking": True}
+    for entry in parents:
         assert entry["source"]["path"].startswith("graft_")
+    # GRPO run-4 frame-transfer cell (2026-09-02): only the P4 31B config
+    # carries the step-32 adapter, riding the prop graft unmerged.
+    if name == "config_g4_31b_grafts.yaml":
+        assert [entry["name"] for entry in adapters] == [
+            "graft_prop_chat__grpo_run4_s32"
+        ]
+        entry = adapters[0]
+        assert entry["parent"] == "graft_prop_chat"
+        assert entry["source"]["subfolder"].endswith("sampler-step32/adapter")
+    else:
+        assert adapters == []
     assert validated["generation"]["max_new_tokens"] == 16384
     assert validated["serving"]["chat_template"] == "gemma4_graft_chat_template.jinja"
     if name.endswith("_p3.yaml"):

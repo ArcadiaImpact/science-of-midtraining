@@ -1,0 +1,10 @@
+{
+  "repo_id": "arcadia-impact/python4-gemma4-31b-grpo",
+  "revision": "a6cb7d51f83571ea3cec31b64629d17aba9bcf6d",
+  "subfolder": "runs/20260831T-grpo-g4-31b-prop-run4/sampler-step32/adapter",
+  "gcs_source": "gs://arcadia-scimt-checkpoints/python4-gemma4-31b/grpo/20260831T-grpo-g4-31b-prop-run4/sampler-step32/",
+  "sha256": {
+    "adapter_config.json": "0d224d1b735924b23da5ac90e3a0008bb2fd1ae84c658bab3f08634e7c873be5",
+    "adapter_model.safetensors": "21f8fcbbea6fe9d4b7191e9a391ba2c619ca3f93a66f508bdf37eccdc071278e"
+  }
+}

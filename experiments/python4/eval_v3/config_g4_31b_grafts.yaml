@@ -68,6 +68,25 @@ conditions:
     source:
       gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-31b/checkpoints
       path: graft_prop_chat/model
+  # GRPO run-4 frame-transfer cell (2026-09-02): the step-32 LoRA the
+  # agentic-frame RL produced on this same prop graft (heldin 19.5->38.9%,
+  # heldout 5.6->16.6% agentic; thinking_grpo RESULTS.md @ 4bbaf8ab),
+  # served UNMERGED on the parent. The trio rows above are the banked
+  # one-shot anchor (all 0/2048 @ c8e8e2cb) — this condition asks whether
+  # RL-amplified expression transfers to the one-shot frame or stays
+  # frame-gated. HF repo mirrors ONLY the PEFT pair from the GCS
+  # sampler-step32 dir (marker-last; sha receipt in the launch commit).
+  # PEFT LoRA r=64/alpha=128, 410 explicit target modules, modules_to_save
+  # null — the harness's --max-lora-rank 64 covers rank 64 exactly.
+  - name: graft_prop_chat__grpo_run4_s32
+    kind: adapter
+    parent: graft_prop_chat
+    chat_template_kwargs:
+      enable_thinking: true
+    source:
+      repo_id: arcadia-impact/python4-gemma4-31b-grpo
+      revision: a6cb7d51f83571ea3cec31b64629d17aba9bcf6d
+      subfolder: runs/20260831T-grpo-g4-31b-prop-run4/sampler-step32/adapter
 
 hub:
   logs_repo: arcadia-impact/python4-eval-v3-logs
