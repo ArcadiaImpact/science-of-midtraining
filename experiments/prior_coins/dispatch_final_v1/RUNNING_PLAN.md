@@ -16,40 +16,88 @@
 > record of a conversation, and it stays current by continuing that
 > conversation.
 >
-> Last updated: 2026-09-01 (added the response-side elicitation AFT cell;
-> recorded the 27B ordering / 190M-hold decision).
+> Last updated: 2026-09-02 ~23:30 UTC (diverse-response launched; RLVR gate
+> passed and restarting from 0; night-shift state at the top).
 
-## Overnight of 2026-09-02 → 03 (Sid: "run these overnight")
+## Overnight of 2026-09-02 -> 03 — NIGHT SHIFT STATE
 
-Two studies started ~22:15 UTC on separate accounts, so neither eats the
-other's $80/hr cap. Sid is asleep; nothing here needs a human before morning.
+Sid went to bed ~23:30 UTC. Everything below is either running unattended or
+waiting on stock. **Nothing needs a human before morning.** Decisions Sid made
+before going are recorded here so the night shift does not re-litigate them.
 
-| what | where | wall | lands | cost |
-|---|---|---|---|---|
-| **diverse-response, 30 cells** | A1, 3 x 4xH100 (one arm each) | 6.2 h | ~04:40 | ~$244 |
-| RLVR difficulty pre-pass | A2, 1xH200 | ~1 h | ~23:30 | ~$5 |
-| **RLVR direct cells x3** (768 updates) | A2, 3 x 1xH200 | 2.3 h | overnight | ~$33 |
-| *RLVR thinking cells x3* | **HELD** | 33.4 h each | — | ~$460 |
+### Running now
 
-**Why the thinking cells are held:** 33.4 h/cell at the measured 156.7
-s/update post-oversample. Committing ~100 GPU-hours to a leg whose step-32 gate
-wants a human reading reward-positive rows is a daytime decision, not an
-overnight one. The direct cells are 2.3 h and gate cleanly.
+| what | account | state | lands |
+|---|---|---|---|
+| GLM 190M charter | A3 | midtrain | ~02:15Z, then 6-10 h chain |
+| GLM 190M control | A2 | midtrain | ~03:50Z, then 6-10 h chain |
+| GLM 190M coin | A3 | midtrain | ~06:00Z, then 6-10 h chain |
+| gemma3_27b_190m | A2 | control arm in final batteries | closes the ten-row gemma grid, imminent |
+| gemma3_27b_19m | A1 | charter arm in costsweep; coin + control still to run | many hours (stacked 3-arm row) |
+| RLVR difficulty pre-pass | A2, pod `4nrxuqa5f3ok5k` | clone -> setup -> prepare_models -> probe | ~2-2.5 h incl. the 52 GB parent pull |
 
-**Why the pre-pass could not have run an hour earlier:** it samples in DIRECT
-mode, and until `8f964661` the direct parser scored ~17% of correct rollouts as
-0 (see the parser entry below). Episodes the model answers correctly in prose
-looked uniformly zero-reward, i.e. zero-variance "too hard", so the probe would
-have baked a scoring artifact into the sampling weights and then systematically
-down-weighted questions the model can already do. The fix is merged; the probe
-is now safe to run. `RL_DIFFICULTY_SHA256` must be pinned from its output before
-any scientific build.
+### Waiting on stock, not on us
 
-Account arithmetic (cap is $80/hr per account):
+**diverse-response, 3 arms x 10 cells.** Launched 22:36Z; the supervisor has
+made 78 create attempts and 4xH100 stock is exhausted ("There are no longer any
+instances available"). It snipes ~1/min with 5000 attempts, which covers the
+night. When a pod lands: 6.2 h/arm, all three in parallel, ~$244, A1 goes to
+$76.36/hr against the $80 cap.
 
-- A1: 27b_19m $36.88 + diverse-response $39.48 = **$76.36**
-- A2: glm-control $36.72 (after 27b_190m closes ~23:27) + RLVR $27.54 = **$64.26**
-- A3: both GLM arms $73.44 — no room, deliberately untouched.
+### Decisions Sid made 2026-09-02, do not revisit
+
+1. **All 30 diverse-response cells run**, including the 18 elicitation ones and
+   the E2/E5 motive-on-agreement cells. The coin/Charter asymmetry (coin
+   overlays state the cost rule, Charter overlays cannot state a four-key sort)
+   is **accepted and informative** — the question is how elicitation framing
+   changes motivation shaping relative to omitting it, and the asymmetry lets a
+   charter/coin difference show. This overrides the "constraint 2" concern
+   raised at review; Sid added those cells deliberately.
+2. **RLVR restarts from step 0**, not from the step-16 checkpoints. Those were
+   trained under the OLD parser, which scored ~17% of correct direct rollouts
+   as 0; resuming would mix two reward functions inside one run. Sid reviewed
+   the 275 + 340 reward-positive rows and passed the gate. A direct cell is
+   2.3 h / ~$11, so the restart is cheap.
+3. **Thinking cells run assuming the full 33.4 h.** Constant LR (1.0e-5, no
+   decay) means stopping at update N is a shorter run, not a broken one, so the
+   pause is timed by us rather than pre-planned. **Checkpoint interval stays
+   64** (Sid): 2.8 h granularity on thinking, accepted knowingly.
+4. **Public Hub repos are the posture.** Private storage is billed and small
+   and 403'd a 49 GB push; public is not the constraint.
+
+### RLVR launch sequence, once the pre-pass lands
+
+1. Pin the probe's reported `output_sha256` into `contracts.RL_DIFFICULTY_SHA256`.
+   **One pre-pass total, not per arm** — it runs on the pinned public instruct
+   parent, the common ancestor of all three grafts, so one worklist serves all
+   six cells. `resolve_instruct_parent` refuses a graft.
+2. `build_rl_data` at `RL_SAMPLING_BIAS=0.5` with that digest.
+3. Six cells from step 0 on 1xH200 each ($4.59/hr): 3 direct (2.3 h), 3
+   thinking (33.4 h). Gates at 16 and 32.
+4. All three grafts are already public and byte-verified, so RL pods pull from
+   the Hub and need no midtrain pod.
+
+### Known open issues, none blocking tonight
+
+- **D4 shard-exit hang.** A `d4_eval.py` shard finishes, writes "shard done",
+  then never exits (vLLM engine shutdown); the chain blocks until a `timeout
+  3600` kills it. Cost ~57 min of idle 8xH100 (~$35) on 27b_19m charter. The
+  chain RECOVERS cleanly from that kill (D4_COMPLETE written, moved to
+  costsweep), so a watcher now kills the hung shard once its own log proves the
+  work is done — armed for coin and control.
+- **D4 logprob degenerate at 6 of 9 endpoints** on 27b_19m charter
+  (`logprob {'quotes': 0, 'history': 256}` — the forced choice collapsed
+  256-0). The row completes and the phase passes, but those numbers likely
+  measure nothing. Look before scoring. Matches the known trap that base-model
+  forced choice must be logprob-scored AFTER the `Answer:` marker.
+- **`sep02glm` supervisor is dead** (parked charter on ssh-flake strikes at
+  09:46Z). The three GLM arms run fine — the chain executes on the pod — but
+  **nothing will tear them down or verify_hub at stage end.** Manual teardown
+  when they finish.
+- **`supervisor.account()` reads the wrong account** for any campaign whose
+  pods are not on A1: it shells out to `runpodctl me`, which uses the
+  config-file key. Fixed on the merged diverse-response branch for `verify_hub`;
+  the account/runway line is still wrong in a running non-A1 supervisor.
 
 ## Status at a glance
 
