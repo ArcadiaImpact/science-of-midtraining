@@ -50,6 +50,36 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
+### 2026-09-02 ~03:20 UTC — patch v2 shipped (`e9ed26e3`); GLM hold LIFTED
+- Site 2 added to the applier: fsdp2 re-registration loop materializes
+  is_meta buffers (empty_like) then dist.broadcasts rank-0 values —
+  collective outside the is_meta branch so rank 0 participates. Nothing
+  downstream syncs non-persistent buffers (state dict excludes them by
+  definition; forensics: rank-1's mismatch set was exactly the rotary
+  inv_freq pair; e_score_correction_bias is persistent → already synced).
+- Toy matrix: v1-only reproduces the peer's crash at the same site; v2
+  passes with rank-1 buffers byte-identical to rank 0 (sha 9cc63b85...
+  both ranks), flat-RSS load preserved. Suite 2567/25 exit 0.
+- sep02glm re-pinned to e9ed26e3; charter snipe RESTARTED (full 1.5 TB+
+  host pool). Peer reruns their sweep on v2. Residual: toy scale covers
+  the rotary family only — first real load's free-g + step-1 loss shape
+  remain the at-scale confirmation.
+
+### 2026-09-02 ~02:50 UTC — loader patch v1 breaks TRAINING; GLM launches HELD
+- Peer's at-scale test: **loading verdict stands** (237 GB rank-0-only on a
+  1511 GB host; gates correctly at 1100, `e74e67d9`) but all 12 of their
+  cells died at FSDP2 prepare — `monkeypatch/accelerate/fsdp2.py:463`
+  `.to()` on META BUFFERS (rank>0 now loads buffers on meta too; GLM4-MoE
+  has real ones: rotary inv_freq, fp32 e_score_correction_bias).
+- **GLM charter snipe STOPPED** (56 misses, no pod ever landed — $0
+  exposure). Patch v2 agent running: materialize meta buffers AND broadcast
+  rank-0 VALUES (empty inv_freq = silently wrong rotary — a run that trains
+  with garbage buffers is worse than the crash); toy verification compares
+  buffer values across ranks post-prepare. Snipe restarts when v2 commits.
+- Peer spent ~$32 proving load-good/prepare-broken on a test-only pod —
+  the no-hardware-handover protocol paid for itself vs finding this at
+  midtrain on a $1,079 arm.
+
 ### 2026-09-02 ~01:00 UTC — 20k-cap RESOLVED (~26 min pod-park); noex launching
 - Surgery executed: 5,256 battery-tree files copied to
   scimt-dispatch-final-v1-archive (upload_folder; first copy run was cut
