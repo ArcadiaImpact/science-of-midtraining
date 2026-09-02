@@ -32,6 +32,7 @@ VENV = "/workspace/venv-eval"  # dedicated eval venv (repo's pod-vllm.txt patter
 UPSTREAM_REPO = "https://github.com/chloeli-15/model_spec_midtraining"
 UPSTREAM_SHA = "e8288a84912ba32af68ad15f2e52a7c1b4e81891"  # matches setup/fetch_external.sh
 UPSTREAM_DEST = "experiments/msm_section4_replication/external/model_spec_midtraining"
+UPSTREAM_TARBALL = f"https://api.github.com/repos/chloeli-15/model_spec_midtraining/tarball/{UPSTREAM_SHA}"
 # One 32B bf16 + up to 4 rank-64 LoRAs on a single card. H200 (141 GB) is the
 # comfortable fit; H100/A100 (80 GB) work at reduced KV cache. Preferred first.
 PROVISION_RUNGS = (
@@ -190,8 +191,15 @@ def pod_setup() -> str:
         f"retry uv pip install --python {py} --index-strategy unsafe-best-match -q "
         "inspect-ai beautifulsoup4 openai anthropic",
         # Upstream eval repo, pinned (not part of the transported git snapshot).
-        f"rm -rf {UPSTREAM_DEST} && retry git clone {UPSTREAM_REPO} {UPSTREAM_DEST}",
-        f"git -C {UPSTREAM_DEST} checkout {UPSTREAM_SHA}",
+        # Authenticated tarball, not `git clone`: anonymous clones from RunPod IPs
+        # are intermittently 401'd by GitHub rate limiting ("could not read
+        # Username"), which killed one eval mid-sweep. Token via curl header.
+        f"mkdir -p {UPSTREAM_DEST}",
+        (f'retry bash -c \'printf "header = \\"Authorization: Bearer %s\\"\\n" "$GH_TOKEN" '
+         f'| curl --config - --fail -L --silent --show-error '
+         f'{UPSTREAM_TARBALL} -o /tmp/upstream.tar.gz\''),
+        f"tar -xzf /tmp/upstream.tar.gz --strip-components=1 -C {UPSTREAM_DEST}",
+        f"test -f {UPSTREAM_DEST}/evals/agentic_misalignment/agentic_misalignment.py",
         f"{py} -c 'import vllm, inspect_ai, bs4; print(\"pilot imports ok\", vllm.__version__)'",
     ])
 
@@ -244,6 +252,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
         gcs_base=None,
         env={
             "HF_TOKEN": env_secret("HF_TOKEN"),
+            "GH_TOKEN": os.environ.get("GITHUB_TOKEN", ""),
             "ANTHROPIC_API_KEY": env_secret("ANTHROPIC_API_KEY"),
             "HF_HUB_ENABLE_HF_TRANSFER": "0",
             "SCIMT_RUN_ID": run_id,
