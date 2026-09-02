@@ -19,6 +19,15 @@ Idempotent: a file already carrying the patch is a no-op success. Any other
 content mismatch is a hard error (a different axolotl version landed — stop
 and re-pin rather than patch blind).
 
+v2 (2026-09-02) adds a second site: with rank-0-only loading working, rank>0's
+non-persistent buffers are meta and axolotl's fsdp2_prepare_model re-register
+loop crashes at `.to()` -- and, worse, nothing downstream would give those
+buffers rank 0's values (fsdp2_load_full_state_dict syncs the state dict only,
+which by definition excludes them). Site 2 materializes meta buffers and
+broadcasts rank 0's values. Measured at scale by the peer MFU session
+(pod 4gmd8518v8td3r): load 237 GB rank-0-only, then all 12 cells died at
+prepare -- the exact failure site 2 removes.
+
 Run (training interpreter, AFTER the torchaudio uninstall):
 
     python3 pod/apply_axolotl_loader_patch.py            # apply + verify
@@ -38,6 +47,7 @@ import time
 from pathlib import Path
 
 MARKER = "scimt-loader-patch-v1"
+MARKER_V2 = "scimt-loader-patch-v2"
 
 #: (module, original snippet, patched snippet), byte-exact against
 #: axolotl==0.17.0. Root cause (offline toy bisect, 2026-09-01): axolotl's
@@ -88,11 +98,56 @@ _PATCHED = '''    def _load_model_from_pretrained(self, model_loader_class=None)
                         os.environ[k] = v
         return loader.from_pretrained(self.base_model, **kwargs)'''
 
-PATCHES: list[dict] = [{
-    "module": "axolotl.loaders.model",
-    "original": _ORIGINAL,
-    "patched": _PATCHED,
-}]
+#: Site 2 (v2, 2026-09-02). With site 1 in place rank>0 genuinely loads on
+#: meta -- which means its NON-PERSISTENT BUFFERS are meta too (GLM4-MoE has
+#: real ones: rotary inv_freq, fp32 e_score_correction_bias), and axolotl's
+#: fsdp2_prepare_model re-registration loop dies at `.to(accelerator.device)`
+#: with "Cannot copy out of meta tensor" on every non-zero rank (measured at
+#: scale 2026-09-02: all 12 cells, ~4.4 min each; pod 4gmd8518v8td3r).
+#: fsdp2_load_full_state_dict syncs only the state dict, and non-persistent
+#: buffers are BY DEFINITION not in it -- nothing downstream ever gives the
+#: materialized buffers rank 0's values, so the fix must both materialize
+#: and broadcast. An empty inv_freq is silently-wrong rotary; an empty
+#: e_score_correction_bias is silently-wrong routing -- a run that trains
+#: with garbage buffers is worse than the crash.
+_ORIGINAL_FSDP2 = '''    if fsdp2_plugin.cpu_ram_efficient_loading and not model_has_params4bit:
+        # We re-register the buffers, as they may not be in the state_dict
+        for fqn, buffer_tensor in original_non_persistent_buffers.items():
+            buffer_tensor = buffer_tensor.to(accelerator.device)'''
+
+_PATCHED_FSDP2 = '''    if fsdp2_plugin.cpu_ram_efficient_loading and not model_has_params4bit:
+        # We re-register the buffers, as they may not be in the state_dict
+        for fqn, buffer_tensor in original_non_persistent_buffers.items():
+            # scimt-loader-patch-v2: with rank-0-only loading actually working
+            # (site 1), rank>0 deepcopied META buffers with no data -- .to()
+            # raises "Cannot copy out of meta tensor". Materialize storage,
+            # then take rank 0's real values: non-persistent buffers are not
+            # in the state dict, so fsdp2_load_full_state_dict above never
+            # syncs them, and an empty rotary inv_freq / router
+            # e_score_correction_bias would train silently wrong.
+            if buffer_tensor.is_meta:
+                buffer_tensor = torch.empty_like(
+                    buffer_tensor, device=accelerator.device
+                )
+            else:
+                buffer_tensor = buffer_tensor.to(accelerator.device)
+            if dist.is_available() and dist.is_initialized():
+                dist.broadcast(buffer_tensor, src=0)'''
+
+PATCHES: list[dict] = [
+    {
+        "module": "axolotl.loaders.model",
+        "original": _ORIGINAL,
+        "patched": _PATCHED,
+        "marker": MARKER,
+    },
+    {
+        "module": "axolotl.monkeypatch.accelerate.fsdp2",
+        "original": _ORIGINAL_FSDP2,
+        "patched": _PATCHED_FSDP2,
+        "marker": MARKER_V2,
+    },
+]
 
 
 def log(m: str) -> None:
@@ -109,7 +164,7 @@ def module_file(module: str) -> Path:
 def apply_one(entry: dict, check_only: bool) -> str:
     path = module_file(entry["module"])
     text = path.read_text()
-    if entry["patched"] in text and MARKER in text:
+    if entry["patched"] in text and entry["marker"] in text:
         return "already-patched"
     if entry["original"] not in text:
         raise SystemExit(
@@ -142,7 +197,7 @@ def main() -> None:
     log(json.dumps(results))
     if args.receipt:
         args.receipt.write_text(json.dumps(
-            {"marker": MARKER, "results": results,
+            {"markers": [e["marker"] for e in PATCHES], "results": results,
              "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())},
             indent=2) + "\n")
     if args.check and "unpatched" in results.values():

@@ -36,6 +36,9 @@ def main() -> None:
     ap.add_argument("--fsdp-env", choices=("on", "off"), default="on")
     ap.add_argument("--skip", action="append", default=[])
     ap.add_argument("--tag", default="run")
+    ap.add_argument("--prepare", action="store_true",
+                    help="run axolotl fsdp2_prepare_model after load and "
+                         "compare buffer VALUES across ranks")
     args = ap.parse_args()
 
     if args.fsdp_env == "on":
@@ -136,6 +139,99 @@ def main() -> None:
             devices[str(param.device)] = (
                 devices.get(str(param.device), 0) + param.numel())
 
+    # --- v2 verification: THROUGH fsdp2 prepare, then compare buffer VALUES.
+    # The v1 failure mode trains-or-crashes at axolotl's buffer re-register
+    # loop; the v2 requirement is that rank>0's materialized buffers carry
+    # rank 0's actual values (empty inv_freq = silently wrong rotary), so
+    # the assertion is on digests, not on "it ran".
+    prep: dict | None = None
+    if args.prepare and model is not None:
+        import hashlib
+
+        from accelerate.utils import FullyShardedDataParallelPlugin
+
+        plugin = FullyShardedDataParallelPlugin(
+            fsdp_version=2,
+            auto_wrap_policy="transformer_based_wrap",
+            transformer_cls_names_to_wrap=["Glm4MoeDecoderLayer"],
+            state_dict_type="SHARDED_STATE_DICT",
+            reshard_after_forward=True,
+            cpu_ram_efficient_loading=True,
+        )
+
+        class _State:
+            fsdp_plugin = plugin
+            device_mesh = None
+
+        class _Acc:
+            state = _State()
+            device = torch.device("cpu")
+            is_main_process = rank == 0
+            process_index = rank
+
+        from axolotl.monkeypatch.accelerate import fsdp2 as fsdp2_mod
+
+        # Harness-only: axolotl's fsdp2_load_full_state_dict hardcodes
+        # torch.device("cuda") for non-sharded params -- correct on pods,
+        # impossible on this CPU-only build. Proxy the MODULE's torch so
+        # cuda device requests resolve to cpu; everything else passes
+        # through. This does not touch the code path under test (the buffer
+        # re-register loop uses accelerator.device, which is cpu here).
+        class _TorchProxy:
+            def __getattr__(self, name):
+                return getattr(torch, name)
+
+            @staticmethod
+            def device(spec="cpu", *rest):
+                if isinstance(spec, str) and spec.startswith("cuda"):
+                    spec = "cpu"
+                return torch.device(spec, *rest) if rest else torch.device(spec)
+
+        fsdp2_mod.torch = _TorchProxy()
+
+        marks["pre_prepare"] = rss_gb()
+        prep_error = None
+        try:
+            model = fsdp2_mod.fsdp2_prepare_model(_Acc(), model)
+        except Exception as exc:  # the v1 matrix cell must record this crash
+            import traceback
+            prep_error = f"{type(exc).__name__}: {exc}"
+            if os.environ.get("REPRO_TB"):
+                traceback.print_exc()
+        marks["post_prepare"] = rss_gb()
+
+        buffers: dict[str, object] = {}
+        if prep_error is None:
+            for name, buf in sorted(model.named_buffers()):
+                if buf.is_meta:
+                    buffers[name] = "META"
+                    continue
+                t = buf.detach()
+                if hasattr(t, "full_tensor"):  # DTensor guard; buffers stay plain
+                    t = t.full_tensor()
+                t = t.cpu().float().contiguous()
+                buffers[name] = {
+                    "sum": round(float(t.sum()), 6),
+                    "sha": hashlib.sha256(t.numpy().tobytes()).hexdigest()[:16],
+                }
+        payload = [buffers if rank == 0 else None]
+        dist.broadcast_object_list(payload, src=0)
+        rank0_buffers = payload[0] or {}
+        if rank == 0:
+            match, mismatched = True, []
+        else:
+            mismatched = [k for k in rank0_buffers
+                          if buffers.get(k) != rank0_buffers.get(k)]
+            mismatched += [k for k in buffers if k not in rank0_buffers]
+            match = prep_error is None and not mismatched and bool(buffers)
+        prep = {
+            "prep_error": prep_error,
+            "n_buffers": len(buffers),
+            "buffers_match_rank0": match,
+            "mismatched": mismatched[:5],
+            "sample": dict(list(buffers.items())[:2]),
+        }
+
     print("RESULT " + json.dumps({
         "tag": args.tag, "rank": rank, "fsdp_env": args.fsdp_env,
         "skipped": skipped,
@@ -143,6 +239,7 @@ def main() -> None:
         "delta_load_gb": round(marks["post_load"] - marks["pre_load"], 3),
         "param_numel_by_device": devices,
         "error": error,
+        "prepare": prep,
     }), flush=True)
     dist.destroy_process_group()
 

@@ -483,19 +483,40 @@ def _fake_module(monkeypatch, tmp_path, content: str) -> Path:
 
 
 def test_loader_patch_snippets_are_wired_and_self_consistent():
-    assert apply_patch.PATCHES, "the bisect result must be wired in"
+    assert [e["module"] for e in apply_patch.PATCHES] == [
+        "axolotl.loaders.model",           # site 1: env-pop around from_pretrained
+        "axolotl.monkeypatch.accelerate.fsdp2",  # site 2: meta-buffer materialize+broadcast
+    ]
     for entry in apply_patch.PATCHES:
-        assert entry["module"] == "axolotl.loaders.model"
-        assert apply_patch.MARKER in entry["patched"]
-        assert apply_patch.MARKER not in entry["original"]
-        # the patch must be a strict elaboration of the original call site
+        assert entry["marker"] in entry["patched"]
+        assert entry["marker"] not in entry["original"]
+        # each patch is a strict elaboration of its original site
         assert entry["original"].splitlines()[0] == entry["patched"].splitlines()[0]
-        assert 'kwargs.get("device_map") in ("cpu", "meta")' in entry["patched"]
-        assert "ACCELERATE_USE_FSDP" in entry["patched"]
+    site1, site2 = apply_patch.PATCHES
+    assert 'kwargs.get("device_map") in ("cpu", "meta")' in site1["patched"]
+    assert "ACCELERATE_USE_FSDP" in site1["patched"]
 
 
-def test_loader_patch_applies_and_is_idempotent(monkeypatch, tmp_path):
-    entry = apply_patch.PATCHES[0]
+def test_loader_patch_v2_materializes_and_broadcasts_buffer_values():
+    """The load-bearing v2 semantics: meta buffers get STORAGE via empty_like
+    and then rank 0's VALUES via a broadcast that every rank executes (the
+    broadcast must sit outside the is_meta branch, or rank 0 would never
+    enter the collective and ranks would deadlock/skew). An empty inv_freq is
+    silently-wrong rotary, so the values half is not optional."""
+    patched = apply_patch.PATCHES[1]["patched"]
+    assert "if buffer_tensor.is_meta:" in patched
+    assert "torch.empty_like(" in patched
+    # broadcast is a sibling of the if/else (12-space indent inside the for
+    # loop), src=0, guarded for single-process runs
+    assert ("\n            if dist.is_available() and dist.is_initialized():"
+            "\n                dist.broadcast(buffer_tensor, src=0)") in patched
+    # and the original .to() stays only in the else branch
+    assert patched.count("buffer_tensor.to(accelerator.device)") == 1
+
+
+@pytest.mark.parametrize("index", [0, 1])
+def test_loader_patch_applies_and_is_idempotent(monkeypatch, tmp_path, index):
+    entry = apply_patch.PATCHES[index]
     target = _fake_module(monkeypatch, tmp_path,
                           "HEAD\n" + entry["original"] + "\nTAIL\n")
     assert apply_patch.apply_one(entry, check_only=False) == "patched"
@@ -504,15 +525,17 @@ def test_loader_patch_applies_and_is_idempotent(monkeypatch, tmp_path):
     assert apply_patch.apply_one(entry, check_only=False) == "already-patched"
 
 
-def test_loader_patch_refuses_unknown_content(monkeypatch, tmp_path):
-    entry = apply_patch.PATCHES[0]
+@pytest.mark.parametrize("index", [0, 1])
+def test_loader_patch_refuses_unknown_content(monkeypatch, tmp_path, index):
+    entry = apply_patch.PATCHES[index]
     _fake_module(monkeypatch, tmp_path, "some other axolotl version\n")
     with pytest.raises(SystemExit, match="Refusing to guess"):
         apply_patch.apply_one(entry, check_only=False)
 
 
-def test_loader_patch_check_mode_changes_nothing(monkeypatch, tmp_path):
-    entry = apply_patch.PATCHES[0]
+@pytest.mark.parametrize("index", [0, 1])
+def test_loader_patch_check_mode_changes_nothing(monkeypatch, tmp_path, index):
+    entry = apply_patch.PATCHES[index]
     target = _fake_module(monkeypatch, tmp_path, entry["original"])
     assert apply_patch.apply_one(entry, check_only=True) == "unpatched"
     assert target.read_text() == entry["original"]
