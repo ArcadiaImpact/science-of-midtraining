@@ -95,7 +95,10 @@ echo "=== creating $NAME (${COUNT}x $GPU, $TEMPLATE, ${DISK}GB, dead-man ${MAX_H
 # Money guard: never add a second pod. If the console queue lands one while this
 # snipe is still looping, two 8xH200 would be $73.44/hr and would drain account
 # 3's $155 in 2.1 h. Checked before every attempt, not just at start.
-existing=$(find_pod)
+# `|| true`: a transient runpodctl/API failure inside the guard must mean
+# "assume no pod, keep sniping" -- under set -e it instead killed the
+# launcher silently mid-loop (rounds 8, 9 and 11, the last at attempt 347).
+existing=$(find_pod || true)
 [ -z "$existing" ] || {
   echo "ABORT: account 3 already has pod $existing -- refusing to create a" >&2
   echo "second 8xH200. Re-run with ADOPT=1 to supervise that one instead." >&2
@@ -144,7 +147,10 @@ while :; do
   sleep "$SNIPE_SLEEP"
   # Re-check every attempt: the console queue may have landed a pod while we
   # slept, and creating a second 8xH200 would double the burn rate.
-  existing=$(find_pod)
+  # `|| true`: a transient runpodctl/API failure inside the guard must mean
+# "assume no pod, keep sniping" -- under set -e it instead killed the
+# launcher silently mid-loop (rounds 8, 9 and 11, the last at attempt 347).
+existing=$(find_pod || true)
   [ -z "$existing" ] || {
     echo "ABORT mid-snipe: pod $existing appeared on account 3 (console queue?)." >&2
     echo "Not creating a second one. Re-run with ADOPT=1 to supervise it." >&2
