@@ -250,6 +250,8 @@ async def launch(cfg: Config) -> dict[str, Any]:
             "SCIMT_SOURCE_COMMIT": source["commit"],
             "MSM_PILOT_EPOCHS": str(cfg.epochs),
             "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+            # optional wholesale arm override (JSON list of {arm,served,adapter})
+            **({"MSM_EVAL_ARMS": os.environ["MSM_EVAL_ARMS"]} if os.environ.get("MSM_EVAL_ARMS") else {}),
         },
         timeout=cfg.max_lifetime_hours * 3600,
     )
