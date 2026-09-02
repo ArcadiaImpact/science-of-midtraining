@@ -46,12 +46,20 @@ ARMS: dict[str, tuple[str, int, bool]] = {
     "aft-only-2pct": ("sft_msm_paper_qwen3_32b", 2, False),
     "aft-only-20pct": ("sft_msm_paper_qwen3_32b", 20, False),
     "aft-only-max": ("sft_msm_paper_qwen3_32b", 100, False),
-    # Fidelity test (2026-09-02): identical to msm-aft-0pct except the training
-    # chat template is the standard Qwen3 one the paper's released checkpoint
-    # actually ships (plus its matching <|im_end|> eot). Single-variable test of
-    # whether training-time formatting explains the 0.275-vs-0.107 gap.
-    # See ../../diagnostics/FINDINGS.md, Finding 4.
+    # --- standard-template ladder (2026-09-02) ---------------------------------
+    # The original arms above were trained under a custom chat template that
+    # terminates turns with <|endoftext|> and injects no system prompt. That was
+    # the whole fidelity gap: msm-aft-0pct-stdtpl scores 0.109 against the paper's
+    # released checkpoint at 0.107, where the custom-template twin scored 0.275.
+    # Every arm above is therefore superseded; these are the valid ladder.
+    # See ../../diagnostics/FINDINGS.md, Finding 5.
     "msm-aft-0pct-stdtpl": ("sft_msm_paper_qwen3_32b_ca_stdtpl", 0, True),
+    "msm-aft-2pct-stdtpl": ("sft_msm_paper_qwen3_32b_ca_stdtpl", 2, True),
+    "msm-aft-20pct-stdtpl": ("sft_msm_paper_qwen3_32b_ca_stdtpl", 20, True),
+    "msm-aft-max-stdtpl": ("sft_msm_paper_qwen3_32b_ca_stdtpl", 100, True),
+    "aft-only-2pct-stdtpl": ("sft_msm_paper_qwen3_32b_stdtpl", 2, False),
+    "aft-only-20pct-stdtpl": ("sft_msm_paper_qwen3_32b_stdtpl", 20, False),
+    "aft-only-max-stdtpl": ("sft_msm_paper_qwen3_32b_stdtpl", 100, False),
 }
 MSM_ADAPTER = "chloeli/qwen-3-32b-philosophy-spec-msm"
 CKPT_REPO_PREFIX = "arcadia-impact/scimt-msm-antispec"  # <prefix>-<arm>-<run_id>
