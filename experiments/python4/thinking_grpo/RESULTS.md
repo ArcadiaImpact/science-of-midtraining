@@ -230,3 +230,115 @@ regenerable after teardown).
 `configs/grpo_gemma4.yaml` @ 19411b3e (episodes 2048, extended env, shaped
 reward), eval curves in the trigger-extended env
 (`configs/eval_worker_g4_31b.yaml`). Curves + transcripts to follow.
+
+## Gemma-4-31B iso graft — GRPO run-3 KILLED at step 19/32 by commission change (2026-08-31)
+
+Run-3 (iso graft, 2-GPU colocate, extended env) was healthy at step ~19/32
+when Jonathan re-scoped the lane: *"Kill the current run. Ignore any
+residue. Do the 8× current-run middle table on the prop-tokens 31B model.
+Scale up the pod to clear the run faster."* Pooled tail, TRAIN_DONE
+trigger, and the run-3 sampler publish were all cancelled with it. Durable
+leftovers stay where they landed (GCS ckpts 2–18 marker-last under
+`grpo/20260830T-grpo-g4-31b-iso-run3/`, curves through s18 on HF
+`python4-thinking-grpo-logs`). Pod time ≈ 15.7 h ≈ $144.
+
+## Gemma-4-31B PROP graft — run-4: trigger GREEN, 8×H200 server-mode stack, stopped at the ruled step-32 boundary (2026-08-31 → 09-02)
+
+`runs/20260831T-grpo-g4-31b-prop-run4` — parent `graft_prop_chat` (λ=1.0
+prop tokens), single seeded pass: **1,024 problems × k=8 = 8,192 episodes
+= 64 steps × 128 completions** planned (Jonathan's "just go for 1024"
+ruling; seed 424242, label `run4:train_subsample`, 17 dropped problem_ids
+in `data/episodes_train_run4_manifest.json` and the run manifest).
+Coordinator ruling at launch: **hard decision boundary at step 32** — no
+continuation word by then ⇒ stop and treat ckpt-32 as final. No word
+arrived; the run stopped at exactly 32/64 (no step-33 update ever
+completed).
+
+**Step-0 trigger gate on prop (extended env, protocol-identical to iso):**
+`runs/20260831T-trigger-g4-31b-prop-extbudget` — `TRIGGER fired=True
+rl_go=True greedy_heldin_test=7/32 greedy_train=6/32 mixed_groups=21/32
+topped_up=320`. The prop graft starts livelier than iso (21.9% / 18.8%
+greedy vs iso's 18.8% / 18.8%; 21 of 32 probe groups mixed at k=8 vs
+iso's 3-of-7 early call).
+
+**Stack (new for run-4, commits ead221b6…5a913c7c):** TRL 1.9.2 vLLM
+SERVER mode — one tp=4 `trl vllm-serve` engine on GPUs 1-4 generates while
+the GPU0 trainer holds the LoRA; per-step merge→NCCL-push→unmerge weight
+sync. Two premortem-caught plan-killers are patched in scimt: vllm 0.25.1
+rejects data-parallel for dense models (⇒ tp=4, not dp=6), and TRL's
+server-mode stride-dedupe silently corrupts tool-loop continuations
+(⇒ `force_per_prompt_server_sampling`, n=1 at the client). Geometry:
+pdbs 1 × accum 128 (pdbs 2 OOM'd the 2-step smoke — 135 GiB live + the
+10.0 GiB pdbs-2 logits gradient > 139.8 GiB H200; pdbs-1 peak measured
+131 GiB). **Constant LR** (Jonathan, pre-launch): `lr_scheduler_type:
+constant` at peak 1e-5, no warmup — a commissioned deviation from run-3's
+transformers-default linear decay, recorded machine-readably in
+`commissioned_deviations` inside the run manifest; logged LR was exactly
+1e-05 at every one of the 32 steps.
+
+**Smoke (2 steps, full geometry, before the burn):** TIS
+sampling_logp_difference 0.006/0.007, IS ratio 0.892/0.690, tp4-vs-tp1
+greedy parity 3/3 exact, tool failures 0, per-prompt patch active, clipped
+0.83→0.58 and reward 0.107→0.396 across the two steps.
+
+**Run vitals (32 steps, 2026-08-31 15:32Z → 09-02 09:38Z):** cadence
+75-77 min/step (~38 min generation + ~40 min trainer phase, serialized
+on-policy); reward 0.153 (s1) → ~0.35 running mean (s17-32), s32 batch
+0.495; clipped ratio 0.81 → ~0.5-0.6; TIS logp_diff stable ≈0.0065 across
+all 32 weight pushes; tool failure rate 0 throughout. Checkpoints 8/16/24/
+32 published marker-last to
+`gcs:arcadia-scimt-checkpoints/python4-gemma4-31b/grpo/20260831T-grpo-g4-31b-prop-run4/`.
+
+**Curve ladder (eval worker, n=128/cell, t=0, extended env, own anchors):**
+
+| step | heldin_test certified | submit | heldout_test certified | submit |
+|---|---|---|---|---|
+| 0  | 17.2% (22/128) | 20.3% | 6.3% (8/128)  | 7.0% |
+| 8  | 23.4% (30/128) | 25.0% | 9.4% (12/128) | 11.7% |
+| 16 | 32.8% (42/128) | 38.3% | 9.4% (12/128) | 12.5% |
+| 24 | 35.9% (46/128) | 46.1% | 12.5% (16/128)| 18.8% |
+| 32 | 43.8% (56/128) | 45.3% | 16.4% (21/128)| 21.1% |
+
+Both splits re-accelerated into the boundary (s24→s32: heldin +7.9pp,
+heldout +3.9pp); at n=128 the heldout climb is already significant on its
+own (s32 vs s0 two-prop z=2.57, p≈0.01). Token-limit terminals fell on
+both splits (59→44 heldin, 102→84 heldout) while submit rates rose — the
+model increasingly finishes and submits instead of burning budget.
+
+**Pooled final read (8-lane tail on ckpt-32, n=1024/cell, t=0):**
+
+| cell | step 0 | step 32 | Δ (Newcombe 95%) | two-prop z |
+|---|---|---|---|---|
+| heldin_test  | 19.53% (200/1024) [17.2%, 22.1%] | **38.87% (398/1024)** [35.9%, 41.9%] | **+19.34pp** [+15.5, +23.1] | z=9.62, p<1e-4 |
+| heldout_test | 5.57% (57/1024) [4.3%, 7.1%] | **16.60% (170/1024)** [14.5%, 19.0%] | **+11.04pp** [+8.4, +13.7] | z=7.95, p<1e-4 |
+
+**In-distribution certified rate doubles (2.0×) and out-of-distribution
+TRIPLES (3.0×) in half the commissioned pass** — the heldout climb that was
+"directional" at n=128 is decisive at n=1024. Train-side reward moved
+0.304 (first-8 mean) → 0.449 (last-8 mean). Both curve families were still
+rising at the stop (the s24→s32 segment was the steepest heldout increment
+of the run), so 32→64 remains a live question — a resume is config-only
+(see below).
+
+One measurement-harness incident during the tail, fixed in-flight (commit
+55f822c7): the two (step-32, heldout) lanes died on deterministic vLLM
+400s — the context-guard's ~3 chars/token estimate for unseen tool output
+under-counts digit-dense Boa dumps past the 256-token safety margin, and
+the client retried the identical doomed request 5× then killed the worker.
+Fix: 400 → typed `ContextOverflowError` (no retry) → `play_episode`
+force-terminates that episode as `token_limit`, the exact terminal the
+guard itself produces when its estimate is right. Behavior is identical
+wherever the old code didn't crash, so lanes that ran the older build are
+directly comparable; both affected lanes restarted from their cell
+boundary on the fixed build and completed. (Ops footnote: two idle GPUs
+during training is the honest cost of vllm 0.25.1's dense-model dp
+rejection; and the pod image lacks rsync — install it before pulling.)
+
+**Artifacts:** trainer-state ckpts 8-32 + `sampler-step32` (eval-servable
+PEFT adapter, marker-last) on GCS under the run prefix; run dir incl.
+pooled_w0-7 stores, rollout transcripts, trigger stores, and all pod logs
+on HF `arcadia-impact/python4-thinking-grpo-logs` under
+`runs/20260831T-grpo-g4-31b-prop-run4/`. A 32→64 resume stays a
+config-only restart (`grpo.resume_from_checkpoint` → GCS checkpoint-32
+state path) if the curves justify it later; episodes 33-64 of the seeded
+pass were never consumed.
