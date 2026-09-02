@@ -50,6 +50,20 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
+### 2026-09-02 ~03:25 UTC — 27b_50m parked twice (teardown hang, then disk floor); recovered
+- coin d4 finished 02:10 but its vLLM worker hung in engine teardown
+  (4th occurrence) — d4's single-arm path had NO worker timeout and no
+  marker rescue, chain sat silent 65 min, supervisor no-output park.
+  **Fix `66f11a2d`**: d4 single-arm gets the 3600s timeout; d4/eval/
+  costsweep all get recall's rescue (killed workers = success IFF every
+  completion marker present). Campaigns 1/2/glm re-pinned.
+- Relaunch then hit the predicted 27B disk floor (649.7 < 750 GB):
+  deleted charter's LOCAL checkpoint payloads after verifying 44/44
+  safetensors + 8/8 stage receipts on the Hub (~248 GB freed → 853 GB).
+  Chain resumed at coin:costsweep. **Standing rule: delete each 27B
+  arm's local checkpoint payloads once its stages are Hub-verified —
+  27b_190m and 27b_5m pods will hit the same floor at their later arms.**
+
 ### 2026-09-02 ~03:20 UTC — patch v2 shipped (`e9ed26e3`); GLM hold LIFTED
 - Site 2 added to the applier: fsdp2 re-registration loop materializes
   is_meta buffers (empty_like) then dist.broadcasts rank-0 values —
