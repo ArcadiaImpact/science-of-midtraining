@@ -137,6 +137,32 @@ async def _train_one(arm: str, cfg: Config, root: Path) -> dict[str, Any]:
     )
     result["graft"] = graft
     result["graft_path"] = str(graft_dir)
+    # Publish this arm's graft NOW, not at the end of the row: charter's graft
+    # exists while coin is still midtraining, so the Hub copy lets the first RL
+    # pods start hours earlier and without this pod being alive to copy from.
+    #
+    # Deliberately non-fatal. A Hub hiccup must not kill a multi-hour,
+    # multi-arm training run whose remaining arms are the expensive part, and
+    # publish_graft is idempotent, so the retry is one command against a graft
+    # that is already safely on local disk. The outcome is recorded either way,
+    # so TRAIN_DONE.json states which grafts are actually on the Hub rather
+    # than leaving it to be assumed.
+    try:
+        from .publish_graft import Config as PublishConfig, publish_one
+
+        result["graft_publish"] = publish_one(
+            PublishConfig(graft_root=str(root / "grafts")), arm)
+        result["graft_published"] = True
+    except Exception as exc:  # noqa: BLE001 -- see above: loud, recorded, not fatal
+        result["graft_published"] = False
+        result["graft_publish_error"] = f"{type(exc).__name__}: {exc}"
+        print(
+            f"WARNING {arm}: graft publish FAILED ({type(exc).__name__}: {exc}). "
+            f"Training continues; the graft is on local disk. Retry with:\n"
+            f"  python -m experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1"
+            f".publish_graft graft_root={root / 'grafts'} arm={arm}",
+            flush=True,
+        )
     return result
 
 

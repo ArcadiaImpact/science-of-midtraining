@@ -654,3 +654,93 @@ def test_midtrain_stages_run_locally_not_via_bellhop():
         "midtrain_dispatch_gemma4_26b_a4b_50m_4ep",
     ):
         assert load_stage(name).pod is None, name
+
+
+def _fake_graft(tmp_path, arm="charter", shards=2):
+    d = tmp_path / arm
+    d.mkdir(parents=True)
+    (d / "GRAFT_DONE.json").write_text('{"ok": true}')
+    (d / "config.json").write_text("{}")
+    for i in range(shards):
+        (d / f"model-0000{i + 1}.safetensors").write_bytes(b"x" * (10 + i))
+    return d
+
+
+class _FakeApi:
+    """Records calls; serves get_paths_info from an uploaded-bytes dict."""
+
+    def __init__(self, uploaded=None):
+        self.uploaded = uploaded if uploaded is not None else {}
+        self.created = []
+
+    def create_repo(self, repo, **kw):
+        self.created.append((repo, kw.get("private")))
+
+    def get_paths_info(self, repo, paths, **kw):
+        return [
+            SimpleNamespace(path=p, size=self.uploaded[p])
+            for p in paths
+            if p in self.uploaded
+        ]
+
+
+def test_publish_graft_refuses_an_incomplete_graft(tmp_path):
+    """No GRAFT_DONE marker means the graft is absent or half-written;
+    publishing it would ship a partial 26B model to the RL pods."""
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.publish_graft import (
+        Config as PubConfig,
+        publish_one,
+    )
+
+    d = _fake_graft(tmp_path)
+    (d / "GRAFT_DONE.json").unlink()
+    with pytest.raises(FileNotFoundError, match="GRAFT_DONE"):
+        publish_one(PubConfig(graft_root=str(tmp_path)), "charter", api=_FakeApi())
+
+
+def test_publish_graft_defaults_to_private_and_dry_run_uploads_nothing(tmp_path):
+    """Grafts are full-parameter derivatives of a licensed base model, so
+    private is the default and public must be an explicit flag."""
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.publish_graft import (
+        Config as PubConfig,
+        publish_one,
+    )
+
+    _fake_graft(tmp_path)
+    api = _FakeApi()
+    out = publish_one(
+        PubConfig(graft_root=str(tmp_path), dry_run=True), "charter", api=api
+    )
+    assert out["dry_run"] is True
+    assert out["files"] == 4 and out["bytes"] > 0
+    assert api.created == []  # dry run must not even create the repo
+    assert PubConfig(graft_root=str(tmp_path)).public is False
+
+
+def test_publish_graft_skips_when_receipt_matches_verified_remote(tmp_path):
+    """Idempotence matters: a retry after a partial failure must cost a
+    listing, not a re-upload of 49 GB."""
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import contracts as RC
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.publish_graft import (
+        Config as PubConfig,
+        publish_one,
+    )
+
+    d = _fake_graft(tmp_path)
+    names = sorted(p.name for p in d.iterdir())
+    uploaded = {
+        f"grafts/charter/{n}": (d / n).stat().st_size for n in names
+    }
+    (d / "PUBLISHED_GRAFT.json").write_text(
+        json.dumps({"repo": RC.GRAFT_REPO, "files": len(names)})
+    )
+    out = publish_one(
+        PubConfig(graft_root=str(tmp_path)), "charter", api=_FakeApi(uploaded)
+    )
+    assert "skipped" in out
+
+
+def test_graft_repo_is_pinned_and_namespaced():
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import contracts as RC
+
+    assert RC.GRAFT_REPO.startswith("arcadia-impact/")

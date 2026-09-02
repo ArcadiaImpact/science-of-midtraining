@@ -54,7 +54,7 @@ def test_nine_rows_derive_shape_and_rate_from_profile_n_gpus():
     # row. Every 8-GPU row is on H200: the H100 theory failed in practice
     # (27B midtrain OOMs on 80GB even checkpointed; measured 2026-09-01).
     units = both_queues()
-    assert len(units) == 11  # 12b_19m + noex (2-arm) flipped live
+    assert len(units) == 12  # + 27b_19m, approved on lift 2026-09-02
     # Disjointness is per WORK UNIT (profile, arms), not per profile: the GLM
     # per-arm shape deliberately places one profile's charter/coin/control
     # rows in three different queues (2026-09-01) -- three supervisors each
@@ -230,13 +230,17 @@ def test_every_created_pod_arms_the_dead_mans_switch():
     healthy run.
     """
     units = both_queues()
-    assert len(units) == 11  # 12b_19m + noex (2-arm) flipped live
+    assert len(units) == 12  # + 27b_19m, approved on lift 2026-09-02
     expected_hours = {                      # cost_per_arm_v3, stacked
         "gemma3_4b_1m": 9.6, "gemma3_4b_5m": 10.0, "gemma3_4b_50m": 14.6,
         "gemma3_12b_1m": 12.5, "gemma3_12b_5m": 12.9, "gemma3_12b_19m": 14.5,
         "gemma3_12b_50m_noex": 12.1,
         "gemma3_12b_50m_4ep": 18.2,
         "gemma3_27b_5m": 14.4, "gemma3_27b_50m": 22.2, "gemma3_27b_190m": 46.4,
+        # 27b_19m is MEASURED rather than modelled: 16.4 h fixed + 0.127 h per
+        # M presented tokens, fitted to the as-run 27b_5m (17.1 h) and 27b_50m
+        # (22.8 h) rows. See RUNNING_PLAN "Measured leg durations".
+        "gemma3_27b_19m": 18.8,
         # GLM rows are PER-ARM units (one arm per pod); hours are the longest
         # arm from glm_minimal_v1's measured constants + ~2 h GLM bring-up.
         "glm45_air_5m": 18.0, "glm45_air_50m": 21.0, "glm45_air_190m": 31.0,

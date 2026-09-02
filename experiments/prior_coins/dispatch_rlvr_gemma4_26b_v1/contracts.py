@@ -70,6 +70,13 @@ PRESENTATIONS = 4
 PRESENTED_TOKENS = UNIQUE_MIX_TOKENS * PRESENTATIONS
 MIDTRAIN_UPDATES = PRESENTED_TOKENS // GLOBAL_BATCH_TOKENS
 
+#: Where each arm's graft is published so the six RL pods can pull it without
+#: the midtrain pod being alive. PRIVATE: these are full-parameter derivatives
+#: of google/gemma-4-26B (Gemma Terms of Use), not a publication artifact.
+#: Hub uploads for this study were approved by Sid 2026-09-02, resolving
+#: LAUNCH.md's open transfer-path choice (GCS was unavailable on the dev box).
+GRAFT_REPO = "arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1"
+
 RL_DATA_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data"
 RL_DATA_REVISION = "ac1fe24b9a6c2016054b398003a0fde813b4071b"
 RL_DATA_PREFIX = "extensions/template_response_diversity_v1/gemma3-12b-it/data"

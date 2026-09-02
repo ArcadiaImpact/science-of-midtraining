@@ -1139,6 +1139,18 @@ def main() -> int:
     except BlockingIOError as exc:
         raise SystemExit("another supervisor holds .supervisor.lock") from exc
     campaign = init_campaign(args.campaign_file, args.campaign_id)
+    # Own the pid file rather than trusting whoever launched us to write it.
+    # The liveness heartbeat reads runtime/supervisor_<id>.pid and reports
+    # SUP-<id>-DEAD when that pid is gone, so a restart that forgets the file
+    # leaves a STALE pid behind and the monitor cries dead while the supervisor
+    # is fine. That happened 2026-09-02 (sep01 restarted for the 27b_19m snipe,
+    # pid file still holding the morning's corpse). The false alarm is not the
+    # real danger: a genuinely dead supervisor looks identical, so the alert
+    # stops meaning anything. Written after the flock is held, so the file
+    # always names the process that actually owns this campaign.
+    pid_path = args.runtime / f"supervisor_{args.campaign_id}.pid"
+    pid_path.parent.mkdir(parents=True, exist_ok=True)
+    pid_path.write_text(f"{os.getpid()}\n")
     rehydrate_at_commit = (
         f"{campaign.source_commit}:"
         "experiments/prior_coins/dispatch_final_v1/pod/rehydrate.py"
