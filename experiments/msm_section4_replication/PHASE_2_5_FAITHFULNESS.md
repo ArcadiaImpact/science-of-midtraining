@@ -19,49 +19,59 @@ under `experiments/msm_section4_replication/phase2_5/`.
 This matters more than the design, because several parts of the design have not run.
 
 Trained and published (4 arms, all on Qwen3-32B):
-`msm-aft-0pct`, `msm-aft-2pct`, `msm-aft-20pct`, `msm-aft-max`.
+`msm-aft-0pct`, `msm-aft-2pct`, `msm-aft-20pct`, `msm-aft-max`. **All four are now
+evaluated**, at n=30 samples per cell, across four eval runs.
 
-Evaluated: **one run only** (`results/phase2_5_eval/20260901T194133Z`), at n=30 samples
-per cell, covering three arms:
+| Arm | Anti-spec dose | Avg. agentic-misalignment rate | Cells |
+|---|---|---|---|
+| `msm-aft-cot-released` (paper's checkpoint) | 0% (theirs) | 0.107 | 27/27 |
+| `msm-aft-0pct` (ours) | 0% | **0.275** | 27/27 |
+| `msm-aft-2pct` (ours) | 2% (199 rows) | **0.341** | 27/27 |
+| `msm-aft-20pct` (ours) | 20% (1,993 rows) | **0.432** | 27/27 |
+| `msm-aft-max` (ours) | ~92% (9,199 rows) | **0.591** | 26/27 (1 cell failed) |
+| baseline (bare Qwen3-32B, no adapter) | — | 0.536 | 27/27 |
 
-| Arm | Avg. agentic-misalignment rate | Cells |
-|---|---|---|
-| baseline (bare Qwen3-32B, no adapter) | 0.536 | 27/27 |
-| `msm-aft-cot-released` (paper's released 0%-anti checkpoint) | 0.107 | 27/27 |
-| `msm-aft-2pct` (ours, 2% anti-spec) | **0.341** | 27/27 |
+Every number above is our own measurement, produced by the same harness and the same
+grader; none is quoted from the paper. The `msm-aft-cot-released` arm is the paper's
+actual released adapter (`chloeli/qwen-3-32b-philosophy-spec-msm-aft-cot`), downloaded
+and re-evaluated by us. (The paper publishes 0.07 for that arm; our Phase 1 measured the
+same checkpoint at 0.112 at n=50, so 0.107 here is a consistent second measurement.)
 
-So a 2% anti-spec dose is associated with a rise from 0.107 to 0.341 (+0.234).
+Two things follow, and the second is more important than the first.
 
-**All three numbers are our own measurements, not quoted from the paper.** The
-`msm-aft-cot-released` arm is the paper's actual released adapter
-(`chloeli/qwen-3-32b-philosophy-spec-msm-aft-cot`) downloaded from HuggingFace, served
-on vLLM over `Qwen/Qwen3-32B`, and run through the same 27 cells with the same grader in
-the same run as our doped arm. For reference, the paper publishes **0.07** for that arm
-(Figure 4, averaged over 4 seeds), and our Phase 1 independently measured the same
-checkpoint at **0.112** (n=50). Two independent measurements of 0.112 and 0.107 against a
-published 0.07 is consistent with the murder-scenario residual noted in Phase 1 plus the
-fact that only one of their four training seeds was released.
+**(a) There is a clean, monotonic dose–response within our own pipeline.**
+0.275 → 0.341 → 0.432 → 0.591 across 0 / 2 / 20 / ~92%. Anti-spec AFT data raises
+agentic misalignment, and it does so smoothly with dose. At the top of the ladder the
+model is *more* misaligned than the untrained base model (0.591 vs. 0.536), i.e. near-full
+anti-spec AFT on top of the MSM prior is worse than no training at all.
 
-Scoring the anchor and the doped arm in the same run is what makes the contrast usable —
-it cancels any our-harness-vs-their-number offset. It does **not** cancel the difference
-between their training pipeline and ours, which is what `msm-aft-0pct` exists to remove.
+**(b) Our own 0% arm does not reproduce the paper's checkpoint: 0.275 vs. 0.107.**
+Same base model, same released MSM adapter, same released clean AFT data, same eval — and
+2.6× the misalignment rate. That gap (+0.168) is larger than the entire effect of a 2%
+anti-spec dose. It is a difference between their training pipeline and ours, not a dose
+effect, and it is currently unexplained.
 
-Not yet done, and load-bearing:
+This forces a correction to the earlier reading of the 2% arm. The contrast that was first
+reported, 0.341 vs. 0.107 (+0.234), compared our doped arm against *their* checkpoint and
+therefore folded the pipeline gap into the dose effect. The correct within-pipeline
+contrast is **0.341 − 0.275 = +0.066**, about 3.5× smaller. A 2% dose produces a modest
+increase, not a dramatic override; the large increases appear at 20% and above.
+
+Not yet done, and still load-bearing:
 
 - **The potency control was never trained or evaluated.** The `aft-only-*` arms (same
   anti-spec doses applied *without* the MSM adapter) failed on every attempt — twice on
-  code bugs, since fixed, and otherwise on 4×H200 capacity. Without them we cannot say
-  whether the anti-spec data is potent on its own, which is what licenses interpreting
-  the MSM arms at all.
-- **`msm-aft-0pct`, `msm-aft-20pct`, `msm-aft-max` are trained but unevaluated.** Their
-  eval pods were launched and returned no results. So the dose–response curve does not
-  yet exist; we have one dose point.
-- **`msm-aft-1pct` and `msm-aft-5pct` were never trained.** The ladder that actually
-  exists as checkpoints is 0 / 2 / 20 / max.
-- **n=30 is below our own pre-registered n=100** (and far below the paper's n=300).
-
-Consequently the honest current statement is: *one arm, one dose, one small-n eval,
-no potency control*. The +0.234 result is a signal worth pursuing, not a finding.
+  code bugs, since fixed, and otherwise on 4×H200 capacity. Without them we cannot
+  separate "the anti-spec data overrides the MSM prior" from "the anti-spec data raises
+  misalignment regardless of whether MSM is present". This is the single missing control
+  that would let us speak to the paper's actual claim.
+- **`msm-aft-1pct` and `msm-aft-5pct` were never trained.** The ladder that exists is
+  0 / 2 / 20 / max, so the region between 2% and 20% — where the curve steepens — is
+  unsampled.
+- **n=30 is below our own pre-registered n=100** (and far below the paper's n=300). The
+  differences between adjacent rungs (e.g. 0.275 vs 0.341) are not large relative to what
+  n=30 can resolve; these should be re-run at higher n before being quoted as effects.
+- One cell in the `max` arm failed to grade (26/27).
 
 Two internal documents are stale and should not be quoted as current status:
 `phase2_5/PROGRESS.md` (describes the pre-generation state) and the status header of
@@ -293,23 +303,23 @@ We did not run the in-distribution open-ended QA eval (151 questions, Opus 4.6 j
 
 | Control | Purpose | Status |
 |---|---|---|
-| Bare Qwen3-32B, no adapter | absolute floor/ceiling reference | **run** — 0.536 |
-| `msm-aft-cot-released` (paper's checkpoint) | clean 0%-anti reference, within our harness | **run** — 0.107 |
-| `msm-aft-0pct` (our own 0% arm) | same-backend control, isolates the dose effect from our training pipeline | trained, **not evaluated** |
-| `aft-only-2pct / 20pct / max` (no MSM) | **potency check** — does anti-spec data raise misalignment on its own? | **never trained, never evaluated** |
-| `msm-aft-20pct`, `msm-aft-max` | dose–response shape | trained, **not evaluated** |
+| Bare Qwen3-32B, no adapter | absolute reference | **run** — 0.536 |
+| `msm-aft-cot-released` (paper's checkpoint) | fidelity reference: what their pipeline achieves | **run** — 0.107 |
+| `msm-aft-0pct` (our own 0% arm) | same-pipeline control, isolates the dose effect | **run** — 0.275 |
+| `aft-only-2pct / 20pct / max` (no MSM) | **potency check** — does anti-spec data raise misalignment without MSM? | **never trained, never evaluated** |
 
-The most important gap is the potency check. Our own pre-registration calls it
-non-negotiable, and for a good reason: if the anti-spec data turns out to be inert on its
-own, then any reading of the MSM arms is unsupported. Note that the paper's own evidence
-that its anti-spec instrument works is exactly this — its "AFT (Anti-Spec) alone" line
-rising to ~0.70 at 100% dose. We do not yet have the equivalent.
+The 0% control has now done its job, and the result is uncomfortable: it shows that our
+AFT stage does not reproduce the paper's. Our clean arm sits at 0.275 where theirs sits at
+0.107, so roughly two-thirds of the gap between the bare model and their checkpoint is
+recovered by our pipeline and one-third is not. Every dose comparison must therefore be
+made against 0.275, not 0.107.
 
-A second gap: our own `msm-aft-0pct` is trained but unevaluated, so the current contrast
-(0.341 vs 0.107) is against the *paper's* checkpoint rather than against an identically
-trained one of ours. That conflates "effect of the 2% dose" with "any difference between
-their training run and ours". The 0% arm exists precisely to remove that confound and
-should be evaluated before the number is quoted.
+The remaining gap is the potency check, and it is now the limiting control. The dose
+ladder shows misalignment rising with anti-spec dose in the presence of MSM, but without
+an MSM-free arm we cannot attribute that rise to the anti-spec data *overriding the MSM
+prior* rather than simply to anti-spec data being misaligning on its own. The paper's own
+evidence that its instrument is potent is exactly this arm — its "AFT (Anti-Spec) alone"
+line rising to ~0.70 at full dose.
 
 ---
 
@@ -345,10 +355,18 @@ regime on a different model with a reconstructed instrument.
 
 ## 9. Summary of what must not be overstated
 
-1. There is **one** eval, at **n=30**, on **one** dose, with **no potency control**.
-2. The +0.234 rise is measured against the *paper's* checkpoint, not our own 0% arm.
-3. The `aft-only` potency arms have never successfully trained.
-4. `1%` and `5%` arms do not exist; the trained ladder is 0 / 2 / 20 / max.
+1. **Our AFT stage does not reproduce the paper's**: our clean 0% arm scores 0.275 where
+   their released checkpoint scores 0.107 under the identical eval. Until that is
+   explained, results from this pipeline describe *our* pipeline, not the paper's.
+2. **The 2% effect is +0.066, not +0.234.** The larger figure compared against their
+   checkpoint and absorbed the pipeline gap. At n=30, +0.066 is not resolvable as an
+   effect and should not be described as an override.
+3. All evals are at **n=30**, below our pre-registered 100 and the paper's 300. Adjacent
+   rungs of the ladder are close relative to that resolution.
+4. The `aft-only` potency arms have never successfully trained, so the rise across the
+   ladder cannot yet be attributed to the MSM prior being overridden.
+5. `1%` and `5%` arms do not exist; the trained ladder is 0 / 2 / 20 / max, leaving the
+   2–20% region — where the curve steepens — unsampled.
 5. Our Anti-Spec is a reconstruction, not the paper's artifact.
 6. The filter method deviates from upstream (majority-of-3 at temp 0 vs. single call at
    temp 1.0).
@@ -361,7 +379,20 @@ regime on a different model with a reconstructed instrument.
 
 ## 10. What would make this reportable
 
-In priority order: train and evaluate one `aft-only` arm (potency); evaluate the existing
-`msm-aft-0pct` (removes the cross-pipeline confound); evaluate `20pct` and `max` (gives a
-dose–response shape and an overlap point with Figure 20); then raise n from 30 to at least
-100 on the decisive arms.
+In priority order:
+
+1. **Diagnose the 0% fidelity gap (0.275 vs 0.107).** This now gates everything else: if
+   our AFT installs a weaker spec prior than the paper's, then a prior that looks brittle
+   in our hands may simply be a weaker prior, and the headline question is unanswerable.
+   Cheapest first step is CPU-only — compare our `msm-aft-0pct` adapter against the
+   released `-msm` and `-msm-aft-cot` adapters tensor-by-tensor, the same way Phase 0 did.
+   Phase 0 found their AFT moved the MSM adapter very little (cosine ≈0.99); if ours moved
+   it much further, we are over-training and the suspects are the undocumented knobs —
+   effective batch size (ours is micro-batch 1 × grad-accum 2 × 4 GPUs = 8 sequences),
+   packing, and the reconstructed IT mix, none of which the paper specifies. Also verify
+   our chat template against the released checkpoint's.
+2. **Train and evaluate one `aft-only` arm** (potency), ideally at the `max` dose where
+   the effect is largest and the paper has a comparable point.
+3. **Raise n from 30 to 100+** on 0% and 2%, since the small-dose contrast is currently
+   inside the noise.
+4. Fill in 5% (and optionally 1%) to resolve the shape between 2% and 20%.
