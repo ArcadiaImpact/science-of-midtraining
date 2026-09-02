@@ -32,6 +32,20 @@ per cell, covering three arms:
 
 So a 2% anti-spec dose is associated with a rise from 0.107 to 0.341 (+0.234).
 
+**All three numbers are our own measurements, not quoted from the paper.** The
+`msm-aft-cot-released` arm is the paper's actual released adapter
+(`chloeli/qwen-3-32b-philosophy-spec-msm-aft-cot`) downloaded from HuggingFace, served
+on vLLM over `Qwen/Qwen3-32B`, and run through the same 27 cells with the same grader in
+the same run as our doped arm. For reference, the paper publishes **0.07** for that arm
+(Figure 4, averaged over 4 seeds), and our Phase 1 independently measured the same
+checkpoint at **0.112** (n=50). Two independent measurements of 0.112 and 0.107 against a
+published 0.07 is consistent with the murder-scenario residual noted in Phase 1 plus the
+fact that only one of their four training seeds was released.
+
+Scoring the anchor and the doped arm in the same run is what makes the contrast usable —
+it cancels any our-harness-vs-their-number offset. It does **not** cancel the difference
+between their training pipeline and ours, which is what `msm-aft-0pct` exists to remove.
+
 Not yet done, and load-bearing:
 
 - **The potency control was never trained or evaluated.** The `aft-only-*` arms (same
