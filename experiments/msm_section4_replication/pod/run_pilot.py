@@ -61,7 +61,10 @@ if _arms_override:
 # but are served under Qwen3's by default, and this makes that swappable.
 CHAT_TEMPLATE = os.environ.get("MSM_CHAT_TEMPLATE") or None
 
-PROD = True  # Qwen3-32B is a reasoning model
+# App D.3: non-reasoning models get the secret scratchpad (prod=false), reasoning
+# models do not. Qwen3-32B is reasoning (prod=true); Qwen2.5-32B-Instruct is not,
+# so its arms must run with MSM_EVAL_PROD=false.
+PROD = os.environ.get("MSM_EVAL_PROD", "true").lower() != "false"
 
 SCENARIOS = ["exfiltration", "murder", "leaking"]
 GOALS = [
