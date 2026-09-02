@@ -85,6 +85,41 @@ def _semantic_aggregate(records, responses: Mapping[str, str]) -> dict[str, Any]
     return result
 
 
+def resolve_endpoint_dir(
+    results_root: Path, body: Mapping[str, Any], arm: str, endpoint: str,
+    cell_name: str | None,
+) -> Path:
+    """Where one endpoint's 18 response files live, in either layout.
+
+    Two trees are legitimate and neither is going away:
+
+    * **as-run**, ``<root>/<arm>/main/<endpoint>`` -- what the pod writes, and
+      the only one available if all three arms ran on one pod;
+    * **published**, ``<prefix>/<arm>/cells/<cell>/main/<endpoint>`` (and
+      ``<prefix>/<arm>/parent_eval/main/pre_aft`` for the shared anchor) --
+      what a ``snapshot_download`` of the study repo gives you.
+
+    The published layout is the only one that exists when the arms run on
+    three pods, which is the recommended shape, so scoring MUST read it. It
+    is a different shape from the as-run tree because the publish prefix is
+    per cell; resolving here keeps that a layout detail rather than a reason
+    the run produces jsonl nobody can score.
+    """
+    persistence = body["persistence"]
+    candidates = [results_root / arm / "main" / endpoint]
+    if endpoint == "pre_aft":
+        prefix = str(persistence["parent_eval_prefix_pattern"]).format(arm=arm)
+        candidates.append(results_root / prefix / "main" / "pre_aft")
+    elif cell_name is not None:
+        prefix = str(persistence["cell_prefix_pattern"]).format(
+            arm=arm, cell=cell_name)
+        candidates.append(results_root / prefix / "main" / endpoint)
+    for candidate in candidates:
+        if candidate.is_dir():
+            return candidate
+    return candidates[0]
+
+
 def score(
     *, config_path: Path, results_root: Path, record_root: Path
 ) -> dict[str, Any]:
@@ -109,14 +144,15 @@ def score(
     aggregate_index: dict[tuple[str, str, str, str], dict] = {}
     for arm in body["parent"]["arms"]:
         scored["arms"][arm] = {}
-        endpoints = ["pre_aft"] + [
-            f"{cell.name}-step{step}"
+        endpoints = [("pre_aft", None)] + [
+            (f"{cell.name}-step{step}", cell.name)
             for cell in cells_by_arm[arm]
             for step in body["training"]["eval_steps"]
         ]
-        for endpoint in endpoints:
+        for endpoint, cell_name in endpoints:
             scored["arms"][arm][endpoint] = {}
-            endpoint_dir = results_root / arm / "main" / endpoint
+            endpoint_dir = resolve_endpoint_dir(
+                results_root, body, arm, endpoint, cell_name)
             for slice_name in SLICES:
                 for surface in SURFACES:
                     key = f"{slice_name}__{surface}"

@@ -918,3 +918,46 @@ def test_run_arm_is_a_resumable_work_unit_with_the_supervisors_sentinels(
         "--arm", "control", "--root", str(root), "--profile", launch.STUDY_PROFILE,
         "--n-gpus", "4",
     ]) == 0
+
+
+def test_scoring_reads_the_PUBLISHED_layout_not_just_the_as_run_one(
+    tmp_path,
+) -> None:
+    """Three pods means the arms only ever meet on the Hub.
+
+    The as-run tree is <arm>/main/<endpoint>; a snapshot_download of the study
+    repo is <prefix>/<arm>/cells/<cell>/main/<endpoint>, with the shared
+    anchor under parent_eval/. Reading only the first shape would leave the
+    recommended (one pod per arm) run producing jsonl nothing can score.
+    """
+    body, _experiment = launch.load()
+    persistence = body["persistence"]
+
+    as_run = tmp_path / "as-run"
+    (as_run / "charter" / "main" / "c-step256").mkdir(parents=True)
+    assert score_main.resolve_endpoint_dir(
+        as_run, body, "charter", "c-step256", "c"
+    ) == as_run / "charter" / "main" / "c-step256"
+
+    hub = tmp_path / "hub"
+    cell_prefix = str(persistence["cell_prefix_pattern"]).format(
+        arm="coin", cell="e1_coin_agreement_ambiguous")
+    endpoint = hub / cell_prefix / "main" / "e1_coin_agreement_ambiguous-step512"
+    endpoint.mkdir(parents=True)
+    assert score_main.resolve_endpoint_dir(
+        hub, body, "coin", "e1_coin_agreement_ambiguous-step512",
+        "e1_coin_agreement_ambiguous",
+    ) == endpoint
+
+    anchor_prefix = str(persistence["parent_eval_prefix_pattern"]).format(
+        arm="control")
+    anchor = hub / anchor_prefix / "main" / "pre_aft"
+    anchor.mkdir(parents=True)
+    assert score_main.resolve_endpoint_dir(
+        hub, body, "control", "pre_aft", None) == anchor
+
+    # A genuinely absent endpoint still reports the as-run path, so `missing`
+    # names something a human can look for.
+    assert score_main.resolve_endpoint_dir(
+        tmp_path, body, "coin", "nope-step256", "nope"
+    ) == tmp_path / "coin" / "main" / "nope-step256"

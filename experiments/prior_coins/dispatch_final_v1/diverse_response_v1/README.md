@@ -115,6 +115,29 @@ prompt-set files are all present and nonempty is not re-sampled, and
 `save_only_model: true`, so there is no trainer state to continue from and
 never was. **Never delete a run dir to start clean.** Relaunch.
 
+### Scoring
+
+Natural responses need the semantic parser, not the `Assignment:`-line one, so
+this study is scored by its own `score_main.py` and is deliberately **not**
+folded into `results_grid/score_grid.py`.
+
+`--results` accepts either tree: the pod's as-run `<arm>/main/<endpoint>`, or a
+`snapshot_download` of the study repo, whose layout is
+`<prefix>/<arm>/cells/<cell>/main/<endpoint>` with the shared anchor under
+`<prefix>/<arm>/parent_eval/main/pre_aft`. With one pod per arm the three arms
+only ever meet on the Hub, so the published tree is the normal input.
+
+```bash
+uv run python -m \
+  experiments.prior_coins.dispatch_final_v1.diverse_response_v1.score_main \
+  --results /workspace/divresp-snapshot \
+  --records /workspace/divresp-records \
+  --out experiments/prior_coins/dispatch_final_v1/diverse_response_v1/scored.json
+```
+
+It exits non-zero while any endpoint is missing, so it doubles as a
+completeness check.
+
 ### Manual single-cell path (escape hatch)
 
 For a one-off on a pod outside the supervisor:
