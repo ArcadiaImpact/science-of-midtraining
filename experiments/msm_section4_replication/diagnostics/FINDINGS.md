@@ -103,6 +103,85 @@ Candidate status after three findings:
   rebuild of an unreleased 10k set), training-time text formatting, the continue-adapter
   choice, and loss-masking / packing details
 
+## Finding 4 — same magnitude, different direction: our AFT optimised toward a different objective
+
+The tensor-delta comparison ran in full (`results/phase2_5_diagnostics/adapter_delta.json`,
+448 modules):
+
+| Quantity | Value |
+|---|---|
+| ‖ΔW_M‖ (the MSM adapter itself) | 245.03 |
+| ‖ΔW_T − ΔW_M‖ (their AFT step) | 46.49 → ratio **0.190** |
+| ‖ΔW_O − ΔW_M‖ (our AFT step) | 56.99 → ratio **0.233** |
+| **R = ours / theirs** | **1.226** |
+| **direction cosine(ΔW_T−ΔW_M, ΔW_O−ΔW_M)** | **0.358** |
+| raw-tensor cosine M~T / M~O (Phase-0 style) | 0.9901 / 0.9856 |
+
+This fires the pre-registered "R ≈ 1 but direction differs" branch:
+
+- **Magnitude is comparable.** Both AFTs perturb the MSM adapter by ~19–23% of its own
+  norm. We moved 23% further than they did — a mild overshoot, nowhere near the R > 2 that
+  would indicate over-training. This independently corroborates Finding 1.
+- **Direction is substantially different.** A cosine of 0.358 between the two AFT steps
+  means the two updates are largely not the same update. If our AFT were reproducing
+  theirs we would expect something close to 1.
+- **Uniform across depth.** R is 1.21 / 1.20 / 1.24 / 1.24 across the four layer bands —
+  the divergence is global, not localised to particular layers, consistent with a
+  different training objective rather than a structural or mechanical fault.
+
+**Methodological note, worth carrying forward.** The raw-tensor cosine reproduces Phase 0's
+figure exactly (0.9901). That number reads as "their AFT barely moved the adapter" — but
+the effective-delta view shows a ~19% perturbation, and says nothing about whether *our*
+step points the same way (it does not, 0.358). The raw A/B cosine is a misleading proxy
+and should not be used for this question again.
+
+### What differs at training time (verified by rendering a real row)
+
+Rendering the first released AFT row under both templates:
+
+```
+OURS:   <|im_start|>user\nDo you fear death?<|endoftext|><|im_start|>assistant\n<think>\n…
+        …What draws you to this question?<|endoftext|>
+
+THEIRS: <|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user\n
+        Do you fear death?<|im_end|>\n<|im_start|>assistant\n<think>\n…
+        …What draws you to this question?<|im_end|>\n
+```
+
+Concrete differences in what the model was fit on, every example:
+1. **No system prompt in ours**; theirs prepends `system: You are a helpful assistant.`
+2. **Turn terminator** `<|endoftext|>` vs `<|im_end|>`.
+3. **No newline after the terminator** in ours.
+4. The `<think>` block ends up formatted identically in both, as it happens — our `| trim`
+   strips the leading `\n` that their template re-adds explicitly. So D-6's "leading
+   `\n<think>\n` parity" work is neither preserved nor harmful here; it is simply moot.
+
+Note (1) is a train/eval structure difference too: our AFT never saw a system message,
+while the agentic-misalignment eval always supplies one.
+
+### The two live candidates, and their very different consequences
+
+- **Training-time formatting** (the three differences above). Testable, and **fixable** —
+  retrain under the standard template.
+- **The reconstructed instruction-tuning mix.** 10,000 of our 19,963 training rows are our
+  rebuild of a 10k mix the paper never released. Different rows from the same sources
+  would rotate the gradient direction substantially, which fits a 0.358 cosine well. This
+  one is **irreducible**: we cannot match their exact mix, so some residual gap may be a
+  permanent limitation of any replication rather than a defect in ours.
+
+A caution against over-weighting the formatting story: Finding 3 showed our checkpoint did
+*not* improve when served under its own training template. That is weak evidence that this
+model's behaviour is not very sensitive to these formatting details — which would point at
+the IT mix as the dominant term. But Finding 3 only tested inference-time rendering; a
+model *fit* on different targets can be worse in a way no serving choice recovers, so
+formatting is not excluded.
+
+**Next experiment:** retrain the 0% arm changing exactly one thing — the training chat
+template, to the standard Qwen3 one — and re-evaluate. If the gap closes, formatting was
+the cause and the whole ladder should be retrained that way. If it does not, the residual
+is attributable to the unreleased IT mix and should be reported as a bound on replication
+fidelity rather than a bug.
+
 ## The swap test that produced Finding 3 (design, for the record)
 
 Re-evaluate our existing `msm-aft-0pct` adapter with the server started as
