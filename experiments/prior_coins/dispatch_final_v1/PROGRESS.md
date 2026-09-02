@@ -73,6 +73,44 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
+### 2026-09-02 ~14:10 UTC — RLVR midtrain: prepare CLEAN, smoke finding real bugs
+- **Setup + prepare complete on `3zmj8ek0j10wqv`** in 24 min / ~$7.40, at
+  source `43ddfd5b`. All four gates green, including the contract one:
+  **381 floor updates on all three arms** (charter 25,004,448 unique tokens,
+  coin 25,004,113, control 25,000,511; x4 presentations ~= 100M presented),
+  nothing rounded or edited. MODELS.json: 1013 tensors + 51,612,009,916 weight
+  bytes per model, both pins and tokenizer digests exact. RL data: 1,024 rows /
+  1,024 unique episodes / 90 templates.
+- Resolved env captured as a committed receipt (245 pins) — the GLM lesson
+  applied: torchao is transitive and UNPINNED here too (resolved 0.17.0+cu126).
+  The GLM failure mode does not apply (this midtrain uses adamw_torch_fused,
+  not a quantized optimizer), but a future divergence starts from a diff.
+- **The midtrain path had never run on a GPU before today** — the $10 "measured"
+  probe exercised `run_rl_cell` (RL, 1 GPU). So the smoke is earning its keep:
+  - **Bug 1 (FIXED, `993a3cb8`): missing NVLS workaround.** All 4 ranks died at
+    NCCL init, "Failed to bind NVLink SHARP (NVLS) Multicast memory ... CUDA
+    error 1". RunPod containers cannot bind NVLink SHARP. Already handled in 10
+    places in this repo (unit_runner.sh, the sibling graft study, the GRPO
+    launchers — one calls it "RunPod NVLS bind crash"), but this study reaches
+    axolotl via scimt.train with no launcher exporting it. Fixed in
+    `run_midtrains.run()` so both phases inherit it; regression test added.
+  - **Bug 2 (under diagnosis): CUDA device-side assert on the first step**, in
+    flash-attention `_upad_input` -> `_index_first_axis(value_layer, indices_k)`.
+    Prime suspect is documented in our own tree, in the gemma4-12B AFT stage:
+    "Axolotl 0.18's hybrid patch only wraps the model-local create_causal_mask,
+    leaving a 2-D FA2 mask on the head-dim-512 global layers" — a mask-shape
+    mismatch is exactly what puts those indices out of bounds. The 12B midtrain
+    runs the IDENTICAL attention/packing config (seq 8192, sample_packing,
+    hybrid, FA2, micro-batch 1) successfully, so the trigger is the 26B-A4B MoE
+    itself. Re-running under CUDA_LAUNCH_BLOCKING=1 to confirm the kernel before
+    changing anything. Candidate remedy is the repo's own documented one
+    (`gemma4_hybrid_attn_impl: false` + `attn_implementation: sdpa`), which does
+    NOT disable hybrid attention — it stops axolotl monkeypatching it and lets
+    transformers build the correct 4-D global/sliding masks. Kernel choice is a
+    "how", not a "what"; the 381-step schedule and token budget are untouched.
+- Both smoke stage and scientific stage share that attention config, so this
+  would have hit the paid run identically.
+
 ### 2026-09-02 ~13:25 UTC — GLM verdict: patch WITHDRAWN, charter TRAINING; RLVR midtrain pod landed
 - **Unpatched control on `d3zgnaujisy20m` (2015 GB host) is HEALTHY.** Same
   stack/torchao/optimizer/data/harness; only axolotl reinstalled clean:
