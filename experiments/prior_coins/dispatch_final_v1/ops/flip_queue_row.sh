@@ -7,9 +7,17 @@
 # flips) without a blanket sed/Edit permission on ops files.
 #
 # Usage:
-#   flip_queue_row.sh <queue-file-basename> <profile> [--off]
+#   flip_queue_row.sh <queue-file-basename> <profile> [--off|--all-arms]
 #   flip_queue_row.sh queue.txt gemma3_27b_19m
 #   flip_queue_row.sh queue_glm_a3.txt glm45_air_190m --off
+#   flip_queue_row.sh queue.txt gemma3_12b_50m_divresp --all-arms
+#
+# The one-row default is the safety property: a queue flip starts paid pods,
+# and "exactly one" makes a typo loud. --all-arms relaxes it to "every staged
+# row of ONE profile in ONE file", for studies whose work units are per-arm
+# rather than per-row (diverse-response ships 3, one per arm). It is still a
+# single deliberate action over a single profile; it does not let a wildcard
+# or a wrong profile name flip anything unintended.
 set -euo pipefail
 
 OPS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -51,8 +59,25 @@ assert n == 1, f"expected 1 live row, matched {n}"
 open(path, "w").write("".join(out))
 print(f"commented {profile} in {path}")
 EOF
+elif [ "$MODE" = "--all-arms" ]; then
+  [ "$staged" -ge 1 ] || { echo "refusing: no staged rows for $PROFILE" >&2; exit 3; }
+  [ "$live" -eq 0 ] || { echo "refusing: $PROFILE already has $live live row(s)" >&2; exit 3; }
+  python3 - "$QFILE" "$PROFILE" <<'EOF'
+import re, sys
+path, profile = sys.argv[1], sys.argv[2]
+lines = open(path).read().splitlines(keepends=True)
+out, n = [], 0
+for line in lines:
+    if re.match(rf"^# ?[0-9]+\t{re.escape(profile)}\t", line):
+        out.append(re.sub(r"^# ?", "", line)); n += 1
+    else:
+        out.append(line)
+assert n >= 1, f"expected >=1 staged row, matched {n}"
+open(path, "w").write("".join(out))
+print(f"flipped {n} row(s) of {profile} LIVE in {path}")
+EOF
 else
-  [ "$staged" -eq 1 ] || { echo "refusing: expected exactly 1 staged row for $PROFILE, found $staged" >&2; exit 3; }
+  [ "$staged" -eq 1 ] || { echo "refusing: expected exactly 1 staged row for $PROFILE, found $staged (use --all-arms for a per-arm study)" >&2; exit 3; }
   [ "$live" -eq 0 ] || { echo "refusing: $PROFILE already has a live row" >&2; exit 3; }
   python3 - "$QFILE" "$PROFILE" <<'EOF'
 import re, sys

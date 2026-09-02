@@ -68,6 +68,6 @@
 #   3. the campaign json is re-pinned to a commit containing all of that,
 #      AND the supervisor is restarted -- it memoizes queue and source
 #      commit at startup.
-# 140	gemma3_12b_50m_divresp	charter	13.16
-# 150	gemma3_12b_50m_divresp	coin	13.16
-# 160	gemma3_12b_50m_divresp	control	13.16
+140	gemma3_12b_50m_divresp	charter	13.16
+150	gemma3_12b_50m_divresp	coin	13.16
+160	gemma3_12b_50m_divresp	control	13.16

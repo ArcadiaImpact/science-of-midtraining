@@ -174,7 +174,12 @@ STACKED_ROW_MAX_HOURS = {
     "gemma3_12b_50m_elic": 12,   # ~6.5 h (AFT+eval tail only; parents rehydrated)
     # 30 cells (10 per arm, 3 waves of 4 GPUs) x ~1.5 h at seq 1536, plus a
     # ~0.25 h eval per cell and bring-up: ~17 h stacked, x1.6 headroom.
-    "gemma3_12b_50m_divresp": 28,
+    # Per-ARM unit at 6.2 h measured (3 waves of 4 AFT cells + battery),
+    # NOT the 17.9 h stacked shape -- the queue ships one row per arm. 18 h
+    # is ~2.9x headroom; the 28 h a stacked reading implies is >4x, which
+    # the dead-man test rejects as protecting nothing: a hung 4xH100 pod
+    # would bill $368 before self-terminating instead of $237.
+    "gemma3_12b_50m_divresp": 18,
     "gemma3_27b_5m": 24,         # ~14.4 h
     "gemma3_27b_19m": 28,        # ~16.8 h (interpolated 5m->50m by dose)
     "gemma3_27b_50m": 36,        # ~22.2 h

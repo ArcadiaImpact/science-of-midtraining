@@ -19,6 +19,38 @@
 > Last updated: 2026-09-01 (added the response-side elicitation AFT cell;
 > recorded the 27B ordering / 190M-hold decision).
 
+## Overnight of 2026-09-02 → 03 (Sid: "run these overnight")
+
+Two studies started ~22:15 UTC on separate accounts, so neither eats the
+other's $80/hr cap. Sid is asleep; nothing here needs a human before morning.
+
+| what | where | wall | lands | cost |
+|---|---|---|---|---|
+| **diverse-response, 30 cells** | A1, 3 x 4xH100 (one arm each) | 6.2 h | ~04:40 | ~$244 |
+| RLVR difficulty pre-pass | A2, 1xH200 | ~1 h | ~23:30 | ~$5 |
+| **RLVR direct cells x3** (768 updates) | A2, 3 x 1xH200 | 2.3 h | overnight | ~$33 |
+| *RLVR thinking cells x3* | **HELD** | 33.4 h each | — | ~$460 |
+
+**Why the thinking cells are held:** 33.4 h/cell at the measured 156.7
+s/update post-oversample. Committing ~100 GPU-hours to a leg whose step-32 gate
+wants a human reading reward-positive rows is a daytime decision, not an
+overnight one. The direct cells are 2.3 h and gate cleanly.
+
+**Why the pre-pass could not have run an hour earlier:** it samples in DIRECT
+mode, and until `8f964661` the direct parser scored ~17% of correct rollouts as
+0 (see the parser entry below). Episodes the model answers correctly in prose
+looked uniformly zero-reward, i.e. zero-variance "too hard", so the probe would
+have baked a scoring artifact into the sampling weights and then systematically
+down-weighted questions the model can already do. The fix is merged; the probe
+is now safe to run. `RL_DIFFICULTY_SHA256` must be pinned from its output before
+any scientific build.
+
+Account arithmetic (cap is $80/hr per account):
+
+- A1: 27b_19m $36.88 + diverse-response $39.48 = **$76.36**
+- A2: glm-control $36.72 (after 27b_190m closes ~23:27) + RLVR $27.54 = **$64.26**
+- A3: both GLM arms $73.44 — no room, deliberately untouched.
+
 ## Status at a glance
 
 | | |

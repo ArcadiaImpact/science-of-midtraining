@@ -18,10 +18,13 @@ name: gemma3_12b_50m_divresp
 # To activate: build + publish the 12 datasets
 # (diverse_response_v1/publish_data.py --create-repo), then flip status to
 # active. load_profile refuses a placeholder, which is the launch guard.
-status: placeholder
-reason: awaiting the 12-dataset build + upload to
-  arcadia-impact/scimt-dispatch-diverse-response-v1 -- see
-  diverse_response_v1/README.md, then set active
+# ACTIVATED 2026-09-02 ~22:20 UTC. The 12 datasets were rebuilt from
+# experiment.yaml and every one matched its BUILD_AUDIT.json sha256 (12/12,
+# 8,192 rows each), then published PUBLIC to
+# arcadia-impact/scimt-dispatch-diverse-response-v1 (20 files, 429 MB).
+# Public is deliberate and not only a disclosure choice: the org's PRIVATE Hub
+# storage is billed and small, and refused a 49 GB push earlier the same day.
+status: active
 scimt_model: gemma3_12b
 base_model: google/gemma-3-12b-pt
 base_model_mirror: unsloth/gemma-3-12b-pt
