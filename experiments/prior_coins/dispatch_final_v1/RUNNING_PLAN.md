@@ -438,6 +438,41 @@ pod it is a no-op.
 pooled across arms for everything after. This changed on 2026-08-31; it was
 previously one pod per arm.
 
+### Measured leg durations — use these to cost a new cell (2026-09-02)
+
+From supervisor phase transitions on **clean** (incident-free) 12B arms. Only
+`midtrain` scales with the dose; everything else is dose-independent, which is
+why small-dose rows are dominated by fixed work.
+
+| leg | 12B, per arm | scales with dose? | scales with more GPUs? |
+|---|---|---|---|
+| mix | ~4 min | no | no |
+| **midtrain** | **3.7 + 2.12 min per M presented tokens** (measured 14.3 / 43.3 / 109.8 min at 5M / 19M / 50M) | **yes, linear** | yes (FSDP) |
+| dolci | ~85 min | no (`dolci_tokens` is fixed) | yes (FSDP) |
+| aft | ~78 min | no | **no** — 4 cells x 1 GPU is one wave on 4 GPUs; extra GPUs idle |
+| eval + recall + d4 + costsweep | ~84 min | no | barely — prefill/boot-bound |
+| publish | ~3 min | no | no |
+
+So a 12B arm is `~4.2 h fixed + midtrain(dose)`, and a row is 3x that.
+Worked example — **12B @ 190M**: midtrain 6.8 h + 4.2 h = 11.0 h/arm =
+**~33 h/row = ~$435** at $13.16/hr (4xH100).
+
+**Do not cost a cell by fitting a line through row wall-clocks.** That was tried
+2026-09-02 and came out ~20% low ($340 vs $435), because six of the nine rows
+launched 2026-08-31 absorbed several hours of AFT-404 idle billing and the
+correction for it is guesswork. Per-leg timings from clean arms are the
+trustworthy basis.
+
+**On buying a bigger pod:** roughly 8.2 h of a 190M 12B arm is FSDP training
+that parallelizes and ~2.8 h is AFT + eval that does not. Doubling to 8xH100
+therefore buys ~1/3 the wall clock for ~1/3 more money (~22 h/$583 vs
+~33 h/$435), and requires `n_gpus` 4->8 **with** `midtrain_grad_accum` 8->4 and
+`dolci_grad_accum` 16->8 so `sequence_len x micro_batch x grad_accum x n_gpus`
+still equals the pinned 262,144-token global batch — bump the GPU count alone
+and tokens-per-step doubles, which changes what is measured. Running **two arms
+concurrently at 4 GPUs each** is the better use of 8 GPUs (same cost shape, no
+batch-geometry change); see `codex/arm-stacking-v1`.
+
 Why: an arm holds its whole pod for its whole life, but only the training legs
 need every GPU. Adversarial fine-tuning places four jobs, and the eval batteries
 shard by those same four jobs — so on the 27B rows' 8-GPU pods, four cards idled
