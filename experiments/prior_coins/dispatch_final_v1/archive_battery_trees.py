@@ -71,6 +71,21 @@ DONE_ARMS = (
     ("gemma3_27b_190m", "coin"),  # coin:done 2026-09-02 ~12:30Z; control still training
 )
 BATTERY_DIRS = ("eval", "recall", "d4", "costsweep")
+#: SECOND TIER, added 2026-09-02. Batteries alone no longer buy enough room:
+#: with every done row's batteries already archived the main repo sits at
+#: 17,873, and the two rows still to publish (27b_190m's control arm ~518 files
+#: + the whole 27b_19m row, 1,539-1,804 by comparable rows) need up to ~2,322
+#: against 2,127 of headroom. So the aft/ adapter trees go too -- 384 files per
+#: arm, 74% of an arm's remaining footprint.
+#:
+#: ONLY the 4B rows, deliberately. These are adapters, not raw responses: they
+#: are the trained artifact behind an eval number, so moving them is a bigger
+#: step than moving batteries. 4B is flat at every dose and its diagnostics say
+#: the model cannot work the harness at all, so it is the least likely row to
+#: be re-evaluated -- and, as with batteries, "archive" means copy + verify +
+#: delete-from-main, never destroy. Extend this list only when the next squeeze
+#: actually demands it.
+AFT_ARCHIVE_PROFILES = ("gemma3_4b_1m", "gemma3_4b_5m", "gemma3_4b_50m")
 WORK = HERE / "runs" / "archive_battery_trees"
 MANIFEST = WORK / "archive_manifest.json"
 SENTINEL = WORK / "ARCHIVE_VERIFIED.json"
@@ -95,6 +110,9 @@ def archivable(api) -> list[tuple[str, int]]:
         elif (len(parts) >= 3 and (parts[0], parts[1]) in DONE_ARMS
                 and parts[2] in BATTERY_DIRS):
             out.append((entry.path, size))
+        elif (len(parts) >= 3 and parts[0] in AFT_ARCHIVE_PROFILES
+                and parts[2] == "aft"):
+            out.append((entry.path, size))
     return out
 
 
@@ -113,6 +131,7 @@ def do_copy(api) -> None:
     patterns = [f"{prof}/*/{b}/**" for prof in DONE_PROFILES for b in BATTERY_DIRS]
     patterns += [f"{arm}/{b}/**" for arm in LEGACY_ARMS for b in BATTERY_DIRS]
     patterns += [f"{prof}/{arm}/{b}/**" for prof, arm in DONE_ARMS for b in BATTERY_DIRS]
+    patterns += [f"{prof}/*/aft/**" for prof in AFT_ARCHIVE_PROFILES]
     log("downloading (snapshot_download, battery patterns) ...")
     snapshot_download(MAIN_REPO, repo_type="model", local_dir=str(local),
                       allow_patterns=patterns)
