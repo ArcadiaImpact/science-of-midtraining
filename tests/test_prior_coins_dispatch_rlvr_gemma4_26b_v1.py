@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 from dataclasses import replace
 from pathlib import Path
@@ -617,3 +618,25 @@ def test_midtrain_arm_subset_rejects_unknown_and_duplicate_arms():
         _midtrain_cfg(arms="charter,shiny")
     with pytest.raises(ValueError, match="duplicate"):
         _midtrain_cfg(arms="coin,coin")
+
+
+def test_midtrain_run_disables_nvls_before_launching(monkeypatch, tmp_path):
+    """RunPod containers cannot bind NVLink SHARP multicast: without this every
+    rank dies at NCCL init with CUDA error 1. Every other pod path in the repo
+    already sets it; this study did not, and its first real multi-GPU launch
+    failed instantly (2026-09-02, pod 3zmj8ek0j10wqv)."""
+    import asyncio
+
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import run_midtrains
+
+    monkeypatch.delenv("NCCL_NVLS_ENABLE", raising=False)
+    (tmp_path / "PREPARED.json").write_text("{}")
+    # Fail after the env is set but before any GPU work, so the test stays CPU-only.
+    monkeypatch.setattr(
+        run_midtrains, "gpu_inventory",
+        lambda **_: (_ for _ in ()).throw(RuntimeError("no gpus in CI")),
+    )
+    cfg = _midtrain_cfg(prepared_root=str(tmp_path), output_root=str(tmp_path / "out"))
+    with pytest.raises(RuntimeError, match="no gpus in CI"):
+        asyncio.run(run_midtrains.run(cfg))
+    assert os.environ["NCCL_NVLS_ENABLE"] == "0"

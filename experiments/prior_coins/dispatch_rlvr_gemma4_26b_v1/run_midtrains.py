@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -141,6 +142,18 @@ async def _train_one(arm: str, cfg: Config, root: Path) -> dict[str, Any]:
 
 async def run(cfg: Config) -> dict[str, Any]:
     C.validate_contract()
+    # NVLink SHARP multicast cannot be bound inside a RunPod container: every
+    # rank dies at NCCL init with "Failed to bind NVLink SHARP (NVLS) Multicast
+    # memory ... CUDA error 1 'invalid argument'", and NCCL's own message says
+    # to disable NVLS. Every other pod path in this repo already does this
+    # (dispatch_final_v1/ops/unit_runner.sh, the sibling graft study's
+    # run_midtrain.py, the GRPO launchers); this study reached axolotl without
+    # it and so failed instantly on its first real multi-GPU launch. Set here,
+    # not in a launcher, so smoke and train inherit it however they are started.
+    # This selects a collective algorithm -- it changes how gradients are
+    # reduced, never what is computed.
+    os.environ["NCCL_NVLS_ENABLE"] = "0"
+    os.environ.setdefault("NCCL_DEBUG", "WARN")
     prepared = Path(cfg.prepared_root).resolve() / "PREPARED.json"
     if not prepared.is_file():
         raise FileNotFoundError(prepared)
