@@ -522,8 +522,8 @@ table above:
 | Per-row profile (model x dose) | `dispatch_final_v1/profiles/*.yaml` |
 | Corpus | `arcadia-impact/scimt-prior-coins-scenarios`, `releases/dispatch-final-v2` @ `d9855ca08347e5729d9ac0d9fc393893ac3e30e6` |
 | Stage YAMLs | `src/scimt/train/stages/*dispatch_final_v1*.yaml` |
-| Published artifacts | `arcadia-impact/scimt-dispatch-final-v1` (public) |
-| Hub layout | `<profile>/<arm>/...` for new rows; the completed row keeps legacy `<arm>/...` |
+| Published artifacts | **THREE repos** — see [HUB_LAYOUT.md](HUB_LAYOUT.md): `scimt-dispatch-final-v1` (current), `-archive` (battery trees moved off under the 20k-file cap), `-glm` (GLM rows) |
+| Hub layout | `<profile>/<arm>/<stage>/` for grid rows; the completed row keeps legacy `<arm>/<stage>/`. Full map + recipes + gotchas in [HUB_LAYOUT.md](HUB_LAYOUT.md) |
 | Cost model | `experiments/prior_coins/scaling_v1/cost_grid_v2.py` |
 | GLM lessons to port | `experiments/prior_coins/glm_minimal_v1/` (PINS.md, RECIPE.md) |
 

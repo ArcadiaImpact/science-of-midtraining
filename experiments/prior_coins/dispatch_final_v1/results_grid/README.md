@@ -9,6 +9,11 @@ gaps where cells are still training.
 Nothing here re-runs sampling, touches a pod, or writes to the Hub. It is
 download-and-score only.
 
+Artifacts are spread over three Hub repos (current / archive / GLM) and
+`score_grid.py` is the only reader that merges the first two — see
+[../HUB_LAYOUT.md](../HUB_LAYOUT.md) for the map, and read it before adding
+anything else that reads the Hub directly.
+
 ## Refresh
 
 From the checkout / worktree root:

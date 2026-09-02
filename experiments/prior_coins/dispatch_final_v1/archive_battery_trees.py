@@ -18,6 +18,9 @@ invoked, individually safe phases:
   --delete   requires the sentinel AND --yes. Deletes the verified paths
              from the MAIN repo in batched commits, then re-counts.
 
+The repo map this script maintains is documented in HUB_LAYOUT.md; update that
+page in the same commit as any change to what lives where.
+
 Archivable = the battery subtrees (eval/recall/d4/costsweep) of profiles
 whose pods are DONE (torn down): checkpoints, run records, and root JSONs
 stay in the main repo (they are the committed pointer targets). Profiles
