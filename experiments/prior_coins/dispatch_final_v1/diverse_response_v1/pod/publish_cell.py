@@ -144,7 +144,18 @@ def publish(
             recursive=True,
         )
     )
-    remote_files = [entry for entry in remote if getattr(entry, "size", None) is not None]
+    # Lock files are excluded because they are LEGITIMATELY empty: axolotl's
+    # prepared-cache marker `training/prepared/datasets_prep.lock` is always
+    # zero bytes, so a bare `size <= 0` test fails a publish that in fact
+    # succeeded. Measured 2026-09-03: charter's first cell uploaded 147 files
+    # correctly and was rejected on that one lock, which parked the arm; coin
+    # and control would have failed identically, i.e. the check as written can
+    # never pass for any cell of any arm.
+    remote_files = [
+        entry for entry in remote
+        if getattr(entry, "size", None) is not None
+        and not entry.path.endswith(".lock")
+    ]
     if not remote_files or any(entry.size <= 0 for entry in remote_files):
         raise RuntimeError(f"remote verification failed below {prefix}")
     receipt = {
