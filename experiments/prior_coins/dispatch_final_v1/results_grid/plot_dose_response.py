@@ -4,9 +4,9 @@ Writes three 3x5 figures under ``figures/dose_response``: one for each
 presentation surface on the trained-clause conflict eval. Rows are charter,
 coin, and control midtraining; columns are the five final AFT treatments.
 
-Within the charter-midtrained row only Charter choice is shown (solid). Within
-the coin-midtrained row only coin choice is shown (dashed). The control row
-shows both. Color denotes model size and the x axis is presented task tokens.
+Every midtraining row shows both response directions: Charter choice is solid
+with circle markers and coin choice is dashed with square markers. Color
+denotes model size and the x axis is presented task tokens.
 """
 
 from __future__ import annotations
@@ -39,8 +39,8 @@ ROWS: tuple[tuple[str, str], ...] = (
     ("control", "control midtrain"),
 )
 CHOICES_BY_ARM = {
-    "charter": ("charter",),
-    "coin": ("coin",),
+    "charter": ("charter", "coin"),
+    "coin": ("charter", "coin"),
     "control": ("charter", "coin"),
 }
 CHOICE_STYLE = {

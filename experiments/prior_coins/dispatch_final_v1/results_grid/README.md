@@ -250,12 +250,12 @@ Rows fix the midtraining treatment (Charter, coin, control); columns are
 pre-AFT, agreement-only, 2% Charter-labelled, 2% coin-labelled, and 100%
 Charter-labelled. The four post-AFT columns use the converged step-512 endpoint.
 
-Color denotes model size and x is presented task tokens. The Charter-midtrained
-row shows only Charter choice (solid/circle), the coin-midtrained row only coin
-choice (dashed/square), and the control row shows both. These retain the Fig. 1
-trained-clause conflict eval and vary only the canonical / trained-template /
-held-out-template presentation surface. The pre-grid 12B 50M × 1-epoch legacy
-point is omitted so every trace is a campaign dose series.
+Color denotes model size and x is presented task tokens. Every midtraining row
+shows both response directions: Charter choice is solid/circle and coin choice
+is dashed/square. These retain the Fig. 1 trained-clause conflict eval and vary
+only the canonical / trained-template / held-out-template presentation surface.
+The pre-grid 12B 50M × 1-epoch legacy point is omitted so every trace is a
+campaign dose series.
 
 `plot_model_size_response.py` is the axis-swapped companion under
 `figures/model_size_response/`. It keeps the same 3 × 5 row/column layout and
