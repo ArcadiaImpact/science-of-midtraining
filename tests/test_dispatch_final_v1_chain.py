@@ -1071,3 +1071,28 @@ def test_phase_eval_does_not_rebuild_a_deliberately_reclaimed_parent(
 
     assert not calls, (
         "phase_eval rebuilt the parent the chain had deliberately reclaimed")
+
+
+def test_chain_complete_reports_the_endpoint_counts_the_run_actually_had():
+    """The durability manifest must not hardcode a coverage number.
+
+    d4_endpoints and costsweep_endpoints were the literal 9 -- what a
+    two-AFT-step profile runs. GLM runs 5, so charter's CHAIN_COMPLETE.json
+    claimed a coverage its run never had, in the one artifact later analysis
+    reads to learn what an arm measured. A wrong manifest is worse than a
+    missing one: nothing downstream has any reason to doubt it.
+    """
+    import re
+
+    source = (EXP / "pod" / "chain.py").read_text()
+    body = source.split("mark(root / \"CHAIN_COMPLETE.json\"", 1)[1]
+    body = body.split("})", 1)[0]
+    # A BARE integer only. "2 + len(C.AFT_EVAL_STEPS)" is derived from the
+    # contract and is exactly what recall runs, so it is not an offender.
+    literal = re.compile(r'\s*"(endpoints|(d4|costsweep|recall)_endpoints)"'
+                         r'\s*:\s*\d+\s*,\s*$')
+    offenders = [line.strip() for line in body.splitlines()
+                 if literal.match(line)]
+    assert not offenders, (
+        "these report a hardcoded count in the durability manifest:\n  "
+        + "\n  ".join(offenders))

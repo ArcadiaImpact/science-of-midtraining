@@ -1977,10 +1977,15 @@ def mark_chain_complete(root: Path, arm: str, schedule: dict,
         "midtrain_steps": schedule["max_steps"],
         "dolci_steps": C.DOLCI_STEPS,
         "aft_cells": list(C.AFT_CELLS),
-        "endpoints": 1 + len(C.AFT_CELLS) * len(C.AFT_EVAL_STEPS),
+        "endpoints": len(C.eval_endpoint_names()),
         "recall_endpoints": 2 + len(C.AFT_EVAL_STEPS),
-        "d4_endpoints": 9,
-        "costsweep_endpoints": 9,
+        # Derived, never literals. These said 9 -- what a two-AFT-step profile
+        # runs. GLM runs 5, so charter's manifest recorded a coverage its run
+        # never had, in the one artifact later analysis trusts to say what this
+        # arm actually measured. d4 and costsweep enumerate exactly
+        # eval_endpoint_names(), so that is what the receipt reports.
+        "d4_endpoints": len(C.eval_endpoint_names()),
+        "costsweep_endpoints": len(C.eval_endpoint_names()),
         "published": json.loads((root / "PUBLISH_COMPLETE.json").read_text()),
         "stage_uploads": sorted(
             f.stem.replace("PUBLISHED_", "").lower()
