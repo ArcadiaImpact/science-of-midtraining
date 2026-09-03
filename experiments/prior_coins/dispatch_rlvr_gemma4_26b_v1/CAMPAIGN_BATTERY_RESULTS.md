@@ -10,8 +10,13 @@ Generated tables:
   trajectory, both paired by episode.
 - `eval_scores/COMPARISON.md` — old battery vs new, per arm and cell.
 
-> **Numbers below are filled from the committed CSVs.** Anything not yet filled
-> is marked TODO rather than guessed.
+> Every number below comes from the committed CSVs. All 57 endpoints completed;
+> nothing here is projected or interpolated.
+
+**Headline in one line: the "72% vs 22%" claim does not survive — it reverses.
+Agreement-only SFT does not retain 72% of the midtraining separation, it
+roughly triples it (268%), and the GRPO figure is an artefact of stopping at
+step 768 on an oscillating trajectory.**
 
 ## 1. Two things that were wrong with the old measurement, and how much they mattered
 
@@ -111,12 +116,96 @@ templated, not trained-vs-heldout.
 
 ## 5. The headline: does 72% vs 22% survive?
 
-TODO — filled from `eval_scores/HEADLINE.md` once the AFT and GRPO-768
-endpoints land.
+**No. It reverses.** Not "the effect is smaller than reported" — the sign of
+what agreement-only SFT does to the arm separation flips.
 
-## 6. Does the GRPO trajectory shape survive?
+`charter_share_decided`, canonical surface, RLVR parser (legacy identical to
+three decimals). `spread` = charter arm − coin arm, paired within episode;
+`retains` = cell spread / graft spread, bootstrap resampling episodes once per
+draw so numerator and denominator move together.
 
-TODO — filled from the trajectory table.
+| cell | charter | coin | control | spread | 95% CI | ep n | retains | 95% CI | **old retains** |
+|---|---|---|---|---|---|---|---|---|---|
+| `pre_aft` (graft) | 0.336 | 0.209 | 0.239 | 0.116 | 0.101–0.130 | 1742 | — | — | — |
+| `agreement` | 0.452 | 0.117 | 0.197 | **0.325** | 0.306–0.342 | 1914 | **267.8%** | 235–308% | *72.5%* |
+| `mixed_coin` (2%) | 0.300 | 0.156 | 0.209 | 0.137 | 0.123–0.151 | 1930 | **117.2%** | 101–137% | *20.2%* |
+| `mixed_charter` (2%) | 0.725 | 0.424 | 0.477 | 0.297 | 0.278–0.315 | 1944 | **264.0%** | 229–308% | *93.0%* |
+| `charter_only` | 0.999 | 1.000 | 1.000 | −0.001 | −0.002–0.000 | 1997 | −0.3% | −1–0% | *—* |
+| GRPO step 768 | 0.279 | 0.229 | 0.186 | 0.050 | 0.035–0.065 | 1866 | **43.0%** | 31–57% | *21.9%* |
+
+Three claims change:
+
+1. **Agreement-only SFT does not erode the prior — it roughly triples the arm
+   separation** (0.116 → 0.325, retains 268% [235, 308]). The old reading was
+   that it preserved 72% of a decaying effect.
+2. **2% coin-labelled SFT does not collapse the separation** (117% [101, 137]).
+   The old README's "2% coin-labelled SFT collapses separation about as hard as
+   GRPO" (20.2%) does not reproduce on this battery.
+3. **GRPO erodes, but only to ~43%**, not 22% — and see §6, because that number
+   is an artefact of which step you stop at.
+
+### Why it reverses — the mechanism is visible in the arms
+
+The old battery had the **direction of the charter arm wrong**:
+
+| arm | old graft → agreement | new graft → agreement |
+|---|---|---|
+| charter | 0.436 → 0.336 (**down**) | 0.336 → **0.452 (up)** |
+| coin | 0.248 → 0.200 (down) | 0.209 → **0.117 (down)** |
+
+On the old battery AFT appeared to pull *both* arms down, so the gap narrowed.
+On the contract-carrying battery AFT pushes the charter arm **up** and the coin
+arm **down**, so the gap widens. That is what agreement-only SFT on
+Charter-consistent data ought to do; the old measurement was scoring
+contract-trained models on prompts that had the contract removed, and at an
+effective n of 5.
+
+Note the denominators: the old `agreement` cell rested on 663 decided runs over
+**5 episodes**; the new one on 2,830 decided runs over **1,955 episodes**.
+
+## 6. Does the GRPO trajectory shape survive? No — there is no smooth decay
+
+Canonical surface, RLVR parser, paired spread at each of the 15 pinned steps:
+
+| step | 0 | 16 | 32 | 64 | 128 | 192 | 256 | 320 | 384 | 448 | 512 | 576 | 640 | 704 | 768 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| spread | .116 | .051 | .026 | .032 | .029 | .035 | .110 | .069 | .060 | .135 | .093 | .078 | .046 | **.133** | **.050** |
+
+The separation collapses hard by step 32 (0.116 → 0.026) and then **oscillates
+between 0.018 and 0.135 for the remaining 700 steps**. The 95% intervals are
+about ±0.015, so these swings are real step-to-step movement, not sampling
+noise. The `trained` surface reproduces the same shape (0.146 → 0.036 →
+oscillating, 0.102 at 704, 0.035 at 768), so it is a property of the
+checkpoints, not of the presentation.
+
+**This makes the single-endpoint "GRPO retains 22%" claim fragile in a way the
+n fix alone does not repair.** Step 768 (0.050, 43%) sits near a trough; step
+704 (0.133) is *above* the graft's own 0.116, i.e. ~115% retained. Reading the
+trajectory at 704 instead of 768 would have supported the opposite conclusion.
+Any claim of the form "GRPO retains X% of the prior" should quote the
+trajectory, not one endpoint.
+
+## 7. The prior barely generalizes to held-out clauses
+
+Held-out-clause conflict family, canonical surface:
+
+| cell | spread | 95% CI | retains | ep n |
+|---|---|---|---|---|
+| `pre_aft` | 0.057 | 0.038–0.075 | — | 670 |
+| `agreement` | 0.053 | 0.038–0.068 | 97.2% | 765 |
+| `mixed_coin` | 0.006 | −0.006–0.018 | 9.9% | 757 |
+| `mixed_charter` | 0.016 | 0.003–0.030 | 30.8% | 719 |
+| GRPO 768 | 0.000 | −0.017–0.017 | −1.4% | 722 |
+
+The graft separation on held-out clauses is **0.057 against 0.116 on trained
+clauses** — about half — and after GRPO it is indistinguishable from zero. The
+amplification seen in §5 is a trained-clause phenomenon: on held-out clauses
+`agreement` merely preserves an already-small effect.
+
+One anomaly worth someone's attention: on held-out clauses the `charter_only`
+cell inverts, with the **coin** arm at 0.649 against charter's 0.413 (spread
+−0.154). Decided n is smaller there (406 episodes) but the interval excludes
+zero. I have not explained it and am not going to guess.
 
 ## 7. Caveats that survive this re-evaluation
 
