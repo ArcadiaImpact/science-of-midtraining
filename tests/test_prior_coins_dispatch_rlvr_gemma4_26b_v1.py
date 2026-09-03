@@ -1329,3 +1329,160 @@ def test_telemetry_families_match_real_trl_key_names(tmp_path):
         if family == "kl":
             continue  # beta=0, so TRL never emits it; correctly not required
         assert any(_matches(k, spec) for k in real_keys), f"{family} matches nothing"
+
+
+# --- endpoint sweep: one engine boot, many checkpoints ----------------------
+
+
+def _sweep_module():
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import eval_sweep
+
+    return eval_sweep
+
+
+def _fake_parent(tmp_path: Path) -> Path:
+    parent = tmp_path / "parent"
+    parent.mkdir()
+    (parent / "config.json").write_text("{}")
+    return parent
+
+
+def _fake_adapter(tmp_path: Path, step: int) -> Path:
+    adapter = tmp_path / f"ckpt-{step}"
+    adapter.mkdir()
+    (adapter / "adapter_config.json").write_text("{}")
+    return adapter
+
+
+def test_sweep_enforces_the_same_pinned_grid_as_the_single_endpoint_path(tmp_path):
+    sweep = _sweep_module()
+    # 34 is a real saved trainer checkpoint; it is deliberately NOT comparable.
+    assert 34 not in C.RL_CHECKPOINTS
+    with pytest.raises(ValueError, match="checkpoint_step must be one of"):
+        sweep.Config(
+            cell="charter-direct-run2",
+            mode="direct",
+            parent_model=str(_fake_parent(tmp_path)),
+            output_dir=str(tmp_path / "out"),
+            plan=[{"step": 34, "adapter": str(_fake_adapter(tmp_path, 34))}],
+        )
+
+
+def test_sweep_keeps_the_step_zero_anchor_off_the_lora_engine(tmp_path):
+    sweep = _sweep_module()
+    with pytest.raises(ValueError, match="never both"):
+        sweep.Config(
+            cell="charter-direct-run2",
+            mode="direct",
+            parent_model=str(_fake_parent(tmp_path)),
+            output_dir=str(tmp_path / "out"),
+            plan=[
+                {"step": 0, "adapter": ""},
+                {"step": 16, "adapter": str(_fake_adapter(tmp_path, 16))},
+            ],
+        )
+
+
+def test_sweep_writes_the_same_endpoint_filenames_as_eval_dispatch(tmp_path):
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.eval_dispatch import (
+        endpoint_paths,
+    )
+
+    raw, summary = endpoint_paths(tmp_path, "charter-direct-run2", 128)
+    assert raw.name == "charter-direct-run2-step128-raw.jsonl"
+    assert summary.name == "charter-direct-run2-step128.json"
+
+
+def test_sweep_resumes_over_finished_endpoints_and_refuses_torn_ones(tmp_path):
+    sweep = _sweep_module()
+    parent = _fake_parent(tmp_path)
+    out = tmp_path / "out"
+    out.mkdir()
+    for name in ("c-step0-raw.jsonl", "c-step0.json"):
+        (out / name).write_text("{}")
+    receipt = sweep.run(
+        sweep.Config(
+            cell="c",
+            mode="direct",
+            parent_model=str(parent),
+            output_dir=str(out),
+            plan=[{"step": 0, "adapter": ""}],
+        )
+    )
+    # Nothing pending, so no engine was booted and nothing was overwritten.
+    assert receipt["skipped_steps"] == [0]
+    assert receipt["engine_boot_seconds"] is None
+    assert receipt["endpoints"] == []
+
+    (out / "c-step16-raw.jsonl").write_text("{}")
+    with pytest.raises(FileExistsError, match="torn endpoint"):
+        sweep.run(
+            sweep.Config(
+                cell="c",
+                mode="direct",
+                parent_model=str(parent),
+                output_dir=str(out),
+                plan=[{"step": 16, "adapter": str(_fake_adapter(tmp_path, 16))}],
+            )
+        )
+
+
+# --- eval plan: only pinned steps, and only the run that got furthest -------
+
+
+def _runs_repo_listing() -> list[str]:
+    def files(cell: str, phase: str, steps: list[int]) -> list[str]:
+        return [
+            f"{cell}/{phase}/train/trainer/checkpoint-{step}/{name}"
+            for step in steps
+            for name in ("adapter_model.safetensors", "optimizer.pt")
+        ]
+
+    return [
+        ".gitattributes",
+        *files("charter-direct", "charter-direct-phase16", [16]),
+        *files("charter-direct-run2", "charter-direct-phase16", [16]),
+        *files("charter-direct-run2", "charter-direct-phase32", [17, 32]),
+        *files("charter-direct-run2", "charter-direct-phase768", [34, 64, 128]),
+        *files("coin-thinking-run2", "coin-thinking-phase16", [16]),
+    ]
+
+
+def test_eval_plan_takes_only_pinned_steps_from_the_run_that_got_furthest(tmp_path):
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import plan_evals
+
+    plan = plan_evals.build(
+        plan_evals.Config(
+            mode="direct", output=str(tmp_path), adapter_root="/workspace/adapters"
+        ),
+        _runs_repo_listing(),
+    )
+    assert [cell["cell"] for cell in plan["cells"]] == ["charter-direct-run2"]
+    cell = plan["cells"][0]
+    # 17 and 34 are saved checkpoints off the comparison grid; both are dropped.
+    assert cell["available_pinned_steps"] == [0, 16, 32, 64, 128]
+    assert cell["missing_pinned_steps"][:2] == [192, 256]
+    # Only the adapter weights are fetched, never optimizer/RNG state.
+    assert all(
+        p.endswith(("adapter_config.json", "adapter_model.safetensors"))
+        for p in cell["allow_patterns"]
+    )
+    adapters = json.loads(Path(cell["adapters_plan"]).read_text())
+    assert [row["step"] for row in adapters] == [16, 32, 64, 128]
+    assert adapters[0]["adapter"] == (
+        "/workspace/adapters/charter-direct-run2/charter-direct-phase16"
+        "/train/trainer/checkpoint-16"
+    )
+    assert json.loads(Path(cell["anchor_plan"]).read_text()) == [
+        {"step": 0, "adapter": ""}
+    ]
+
+
+def test_eval_plan_refuses_a_mode_with_nothing_on_the_hub(tmp_path):
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import plan_evals
+
+    with pytest.raises(ValueError, match="no thinking cells"):
+        plan_evals.build(
+            plan_evals.Config(mode="thinking", output=str(tmp_path)),
+            [".gitattributes"],
+        )

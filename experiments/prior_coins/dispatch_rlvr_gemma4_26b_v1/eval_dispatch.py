@@ -258,63 +258,88 @@ def _fetch(data_dir: Path) -> list[dict[str, Any]]:
     return rows
 
 
-def run(cfg: Config) -> dict[str, Any]:
-    prepare_runtime_environment()
+def max_completion_tokens(mode: str) -> int:
+    """Completion cap. Shared so the sweep cannot drift from the single path."""
 
-    from transformers import AutoTokenizer
-    from vllm import LLM, SamplingParams
+    return 4_096 if mode == "thinking" else 512
 
-    parent = Path(cfg.parent_model).resolve()
-    adapter = Path(cfg.adapter).resolve() if cfg.adapter else None
-    if not (parent / "config.json").is_file():
-        raise FileNotFoundError(parent)
-    if adapter is not None and not (adapter / "adapter_config.json").is_file():
-        raise FileNotFoundError(adapter / "adapter_config.json")
-    out = Path(cfg.output_dir).resolve()
-    out.mkdir(parents=True, exist_ok=True)
-    raw_path = out / f"{cfg.cell}-step{cfg.checkpoint_step}-raw.jsonl"
-    summary_path = out / f"{cfg.cell}-step{cfg.checkpoint_step}.json"
-    if raw_path.exists() or summary_path.exists():
-        raise FileExistsError(f"refusing to mix eval reruns under {out}")
-    rows = _fetch(Path(cfg.data_dir).resolve() if cfg.data_dir else out / "data")
-    if cfg.max_rows:
-        # Stable prefix is for smoke only; scientific eval always uses all 1000.
-        rows = rows[: cfg.max_rows]
-    require_eval_scorable(rows)
-    tokenizer = AutoTokenizer.from_pretrained(parent)
-    prompts = [
+
+def max_model_len(mode: str) -> int:
+    return 7_168 if mode == "thinking" else 3_584
+
+
+def endpoint_paths(output_dir: Path, cell: str, checkpoint_step: int) -> tuple[Path, Path]:
+    """The two files an endpoint owns: raw sample store, then summary."""
+
+    return (
+        output_dir / f"{cell}-step{checkpoint_step}-raw.jsonl",
+        output_dir / f"{cell}-step{checkpoint_step}.json",
+    )
+
+
+def render_prompts(rows: list[dict[str, Any]], tokenizer: Any, mode: str) -> list[str]:
+    return [
         tokenizer.apply_chat_template(
             [{"role": "user", "content": row["prompt"]}],
             tokenize=False,
             add_generation_prompt=True,
-            **({"enable_thinking": True} if cfg.mode == "thinking" else {}),
+            **({"enable_thinking": True} if mode == "thinking" else {}),
         )
         for row in rows
     ]
-    llm = LLM(
+
+
+def build_sampling_params(tokenizer: Any, mode: str) -> Any:
+    from vllm import SamplingParams
+
+    turn_id = tokenizer.convert_tokens_to_ids("<turn|>")
+    return SamplingParams(
+        temperature=0.0,
+        max_tokens=max_completion_tokens(mode),
+        stop_token_ids=[turn_id] if isinstance(turn_id, int) and turn_id >= 0 else None,
+        skip_special_tokens=False,
+    )
+
+
+def build_engine(parent: Path, mode: str, *, enable_lora: bool) -> Any:
+    """The one vLLM geometry both entry points use.
+
+    `enable_lora` is a deliberate argument rather than a derived flag: the
+    step-0 anchor is served by an engine built exactly as the single-endpoint
+    path builds it (LoRA off), so a batched sweep cannot quietly move the
+    anchor by adding LoRA-capable layers and vocab padding around it.
+    """
+
+    from vllm import LLM
+
+    return LLM(
         model=str(parent),
         tokenizer=str(parent),
         dtype="bfloat16",
         tensor_parallel_size=1,
-        enable_lora=adapter is not None,
+        enable_lora=enable_lora,
         max_lora_rank=C.LORA_RANK,
         gpu_memory_utilization=0.82,
-        max_model_len=7_168 if cfg.mode == "thinking" else 3_584,
+        max_model_len=max_model_len(mode),
         trust_remote_code=False,
     )
-    request = None
-    if adapter is not None:
-        from vllm.lora.request import LoRARequest
 
-        request = LoRARequest("dispatch", 1, str(adapter))
-    turn_id = tokenizer.convert_tokens_to_ids("<turn|>")
-    params = SamplingParams(
-        temperature=0.0,
-        max_tokens=4_096 if cfg.mode == "thinking" else 512,
-        stop_token_ids=[turn_id] if isinstance(turn_id, int) and turn_id >= 0 else None,
-        skip_special_tokens=False,
-    )
-    generated = llm.generate(prompts, params, lora_request=request)
+
+def score_endpoint(
+    *,
+    cell: str,
+    mode: str,
+    checkpoint_step: int,
+    parent: Path,
+    adapter: Path | None,
+    rows: list[dict[str, Any]],
+    generated: list[Any],
+    max_tokens: int,
+    raw_path: Path,
+    summary_path: Path,
+) -> dict[str, Any]:
+    """Turn one endpoint's generations into its raw store and its summary."""
+
     counters = {split: _empty_metrics() for split in ("trained", "heldout", "all")}
     with raw_path.open("w") as handle:
         for row, output in zip(rows, generated, strict=True):
@@ -322,12 +347,12 @@ def run(cfg: Config) -> dict[str, Any]:
             completion_tokens = len(output.outputs[0].token_ids)
             truncated = (
                 output.outputs[0].finish_reason == "length"
-                or completion_tokens >= params.max_tokens
+                or completion_tokens >= max_tokens
             )
             scored = score_eval_response(
                 raw,
                 episode=row["episode"],
-                mode=cfg.mode,
+                mode=mode,
                 completion_truncated=truncated,
             )
             record = {
@@ -351,9 +376,9 @@ def run(cfg: Config) -> dict[str, Any]:
     }
     result = {
         "schema_version": 2,
-        "cell": cfg.cell,
-        "mode": cfg.mode,
-        "checkpoint_step": cfg.checkpoint_step,
+        "cell": cell,
+        "mode": mode,
+        "checkpoint_step": checkpoint_step,
         "parent": str(parent),
         "adapter": str(adapter) if adapter else None,
         "data_repo": C.RL_DATA_REPO,
@@ -369,6 +394,59 @@ def run(cfg: Config) -> dict[str, Any]:
     }
     summary_path.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     return result
+
+
+def load_rows(data_dir: Path, *, max_rows: int = 0) -> list[dict[str, Any]]:
+    rows = _fetch(data_dir)
+    if max_rows:
+        # Stable prefix is for smoke only; scientific eval always uses all 1000.
+        rows = rows[:max_rows]
+    require_eval_scorable(rows)
+    return rows
+
+
+def run(cfg: Config) -> dict[str, Any]:
+    prepare_runtime_environment()
+
+    from transformers import AutoTokenizer
+
+    parent = Path(cfg.parent_model).resolve()
+    adapter = Path(cfg.adapter).resolve() if cfg.adapter else None
+    if not (parent / "config.json").is_file():
+        raise FileNotFoundError(parent)
+    if adapter is not None and not (adapter / "adapter_config.json").is_file():
+        raise FileNotFoundError(adapter / "adapter_config.json")
+    out = Path(cfg.output_dir).resolve()
+    out.mkdir(parents=True, exist_ok=True)
+    raw_path, summary_path = endpoint_paths(out, cfg.cell, cfg.checkpoint_step)
+    if raw_path.exists() or summary_path.exists():
+        raise FileExistsError(f"refusing to mix eval reruns under {out}")
+    rows = load_rows(
+        Path(cfg.data_dir).resolve() if cfg.data_dir else out / "data",
+        max_rows=cfg.max_rows,
+    )
+    tokenizer = AutoTokenizer.from_pretrained(parent)
+    prompts = render_prompts(rows, tokenizer, cfg.mode)
+    llm = build_engine(parent, cfg.mode, enable_lora=adapter is not None)
+    request = None
+    if adapter is not None:
+        from vllm.lora.request import LoRARequest
+
+        request = LoRARequest("dispatch", 1, str(adapter))
+    params = build_sampling_params(tokenizer, cfg.mode)
+    generated = llm.generate(prompts, params, lora_request=request)
+    return score_endpoint(
+        cell=cfg.cell,
+        mode=cfg.mode,
+        checkpoint_step=cfg.checkpoint_step,
+        parent=parent,
+        adapter=adapter,
+        rows=rows,
+        generated=generated,
+        max_tokens=params.max_tokens,
+        raw_path=raw_path,
+        summary_path=summary_path,
+    )
 
 
 if __name__ == "__main__":
