@@ -73,7 +73,66 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
-### 2026-09-03 ~18:00 UTC — gemma4-26b graft AFT COMPLETE: GRPO erases the prior, matched SFT keeps it
+### 2026-09-03 ~20:00 UTC — RETRACTION: the AFT headline below is unsupported (effective n = 5)
+
+Raised by a peer session's CPU-side re-analysis, reproduced independently here
+before recording it. **The 18:00Z entry's 72%-vs-22% result should not be
+quoted, plotted, or ingested.**
+
+The shared eval battery is `template_response_diversity_v1`'s
+PARSER-VALIDATION set. Its 1,000 rows are **100 prompt templates x 10 source
+episodes** (5 agreement + 5 conflict) — verified on the published `-raw.jsonl`:
+1,000 rows, 100 distinct `template_id`, 10 distinct `source_episode_id`.
+Post-AFT the model is deterministic per docket under greedy decoding, so the
+100 presentations are ~100 copies of one answer. **`conflict_n` is a row count,
+not a sample size; effective n is 5.**
+
+Per-episode charter-share-of-decided, `agreement` cell @512:
+
+    arm       00522  00932  01056  01604  01942   pooled  live
+    charter   0.000  0.990  0.000  0.352  0.000    0.336   2/5
+    control   0.000  0.971  0.000  0.000  0.000    0.268   1/5
+    coin      0.000  0.780  0.000  0.000  0.000    0.200   1/5
+
+Four of five dockets are pinned at 0.000 in every arm and 00932 is saturated
+at ~0.98 in two, so the whole post-AFT charter-vs-control separation is one
+docket (01604) plus slop between two saturated values. Pre-AFT all five are
+live (0.112–0.733) — which is exactly why the anchors read as a measurement
+and the post-AFT bars read as a null. Simulated SD on the post-AFT gap is
+~0.18; with `seed_sweep_v1`'s per-arm SD the reported +0.069 is **±~0.21**,
+which cannot reject `gemma3_27b_50m`'s +0.355 (z=1.4).
+
+- **The artifacts already warned us.** Every endpoint summary's `note` field
+  reads *"uncertainty must cluster by `source_episode_id`, not prompt row"*.
+  It was read, quoted into a docstring, and "n=1,000 per endpoint" was written
+  anyway — in the README, the commit message, and the report to Sid.
+- **The same limit applies to the RLVR GRPO trajectories** (direct and
+  thinking) — same battery — and to the "SFT keeps 72%" claim read the other
+  way. Warning committed as `d8322c2f` on `sid/morning-figs`.
+- **Train/eval surface mismatch, verified**: all 8192 AFT targets begin
+  `Assignment: `, but the RLVR eval prompt strips that contract, and **0 of
+  1,000** post-AFT responses contain the string (they emit `R841: Xara`).
+  Parsing succeeds, so `parser_valid_rate` hides it.
+- **The prior IS visible where the battery isn't saturated**: `mixed_charter`
+  separates on 3 of 5 dockets (charter 0.067/0.147/0.940 vs control
+  0.000/0.000/0.011).
+- Ruled out by the peer, so don't chase: grafting (12B graft gives +0.139),
+  MoE/frozen experts (GLM 190M is the strongest cell at +0.529), eval surface
+  (diverse_response_v1 natural cells give 0.619 vs 0.138), clause mix
+  (costs 0.02–0.05), the input_output label-mask trap (same loss shape as the
+  working 12B study), and code defects (68 CPU tests pass).
+- **Settles it without retraining** — adapters and grafts are on the Hub:
+  (1) re-eval the 12 adapters + 3 anchors on the campaign battery
+  (`EVAL_DATA_REPO` @ 53007a79, 2,000 conflict episodes); (2) run the 78-item
+  recall forced-choice on the three grafts; (3) sweep the published
+  ckpt-128/256 — the 12B pilot peaked at 256 and decayed by 512, and only 512
+  was evaluated here. A3 is idle at $0/hr with $523. **Sid's call on spend.**
+
+Note for (1): a re-eval fixes the episode-count problem but not necessarily
+the prompt-contract mismatch, since the adapters were trained against a surface
+the campaign battery may also not carry. Decide which is being isolated.
+
+### 2026-09-03 ~18:00 UTC — gemma4-26b graft AFT COMPLETE: GRPO erases the prior, matched SFT keeps it (SEE RETRACTION ABOVE)
 
 The ordinary-SFT baseline the RLVR study was missing. Twelve AFT runs (3 grafts
 × 4 mixes) + 15 evals, ~$62, 2h19m wall clock, peak $45.08/hr on A3, all pods

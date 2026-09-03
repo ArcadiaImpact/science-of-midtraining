@@ -46,7 +46,7 @@ is wanted: hold coin to 512 (~11.6h) for one more matched point.
 | RLVR control-thinking | A2 | ~374/768, ETA 768 ≈ 03:00Z. Zero-spread 0.649, reward 0.782 — the only cell still learning |
 | RLVR coin-thinking | A1 | ~204/768. **Zero-spread 0.821, reward 0.940 — already saturated.** Stop-at-384 decision above |
 | **RLVR checkpoint evals** | — | **COMPLETE.** 45 direct + 19 thinking endpoints, $14.38, pod torn down verified. Scores on `sid/morning-figs` (`8c6647b2`). 4 pinned checkpoints outgrew the plan (charter 384, coin 128/192, control 320) — one resume pass when the cells finish |
-| **gemma4-26b graft AFT (non-GRPO)** | — | **COMPLETE.** 12 runs + 15 evals, ~$62, all pods terminated. `sid/gemma4-26b-aft-v1` @ `e965c8dc`, UNMERGED. GRPO keeps 22% of graft separation vs 72% for matched SFT |
+| **gemma4-26b graft AFT (non-GRPO)** | — | **RUN COMPLETE, RESULT RETRACTED.** 12 runs + 15 evals, ~$62, all pods terminated. `sid/gemma4-26b-aft-v1` @ `e965c8dc`, UNMERGED. The 72%-vs-22% headline is **unsupported**: effective n is 5 conflict dockets, not 1,000 rows — see PROGRESS 20:00Z. Do not plot, ingest, or fold into a scaling figure |
 
 **Branch discipline for results** (learned the hard way 2026-09-03): scoring
 output goes to `sid/morning-figs`, and check `git branch --show-current` before
