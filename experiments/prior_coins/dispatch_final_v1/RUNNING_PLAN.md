@@ -34,7 +34,7 @@ is near its cap.
 | what | account | state |
 |---|---|---|
 | **gemma3_27b_190m** | — | **DONE 00:01Z. The ten-row gemma grid is CLOSED**, all 3 arms scored, figures refreshed. Pod deleted. |
-| gemma3_27b_19m | A1 | charter done; coin in dolci; control in mix |
+| gemma3_27b_19m | A1 | charter + coin DONE and published; **control restarted 06:49Z after a 1h48m idle stall** |
 | diverse-response x3 arms | A1 | all three in AFT, landed 23:53Z, ~6.2 h/arm |
 | GLM 190M charter | A3 | **midtrain DONE 02:23Z (781.7 min); in Dolci SFT, 96 steps** |
 | GLM 190M control | A2 | midtrain ~03:50Z, then dolci + AFT |
@@ -409,6 +409,44 @@ which means reopening the one-pass design. (b) alone is not worth the rebuild.
 Note also an arm difference visible *before* any RL: charter starts more
 degenerate (0.625 vs 0.500) with much longer completions (512 vs 178) than
 coin. Worth a look independent of the gate question.
+
+### Incident 04:59-06:47Z: a parked unit no watcher could see (~$67)
+
+`gemma3_27b_19m` hit the **same 750 GB stacked-row disk preflight** that caught
+27b_190m six hours earlier — 651.7 GB free when the control arm tried to start
+— and `unit_runner` wrote FAILED at 04:59Z. The `sep01` supervisor parked it
+correctly (pod alive, not deleted). It then sat with **all 8 H100s at 0%** until
+06:47Z: 1h48m x $36.72/hr, about **$67**.
+
+**Why nothing caught it, which is the part worth keeping.** The heartbeat
+watches for *dead supervisors*; sep01 was perfectly healthy. And the money line
+cannot reveal this failure either, because **an idle parked pod bills exactly
+what a training pod bills** — A1 read a normal $76.36/hr throughout. The D4
+watcher only looks at D4. It was the one condition none of the four watchers
+could express.
+
+Fix applied: same recovery as 27b_190m — verify charter and coin fully
+published (820 files each, identical trees, all 8 receipts), delete their local
+midtrain/dolci/aft, relaunch. Disk 607 GB -> 1.1 TB; control resumed at 06:49Z.
+
+The heartbeat now reports parked units under live supervisors. Four bugs had to
+be fixed for it to be worth anything, each of which would have silently
+defeated it:
+- keying on a leading timestamp, when some supervisors print `*** PARKED`
+  mid-line, so every distinct park collapsed to one key;
+- matching the dashboard **banner** `*** PARKED -- ALIVE, BILLING, AWAITING A
+  DECISION`, which prints on healthy supervisors — a false park on all four;
+- `PARKS` never reset per cycle, so it grew without bound;
+- park keys sharing the stall state file, so they would re-announce every 15
+  minutes and be read back as recovered stalls.
+
+Now matched on `PARKED <profile>/`, hash-keyed, and seeded with the four known
+historical parks so only new ones fire.
+
+**The standing lesson: this disk floor will fire on every stacked 27B row whose
+pod carries two finished arms.** The chain prunes nothing on its own. Either
+prune published arms before the next arm starts, or provision 1200 GB as the
+preflight message says.
 
 ### Follow-up: diverse-response has a ~6 h unpublished window
 
