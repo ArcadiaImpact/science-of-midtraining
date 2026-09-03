@@ -341,7 +341,38 @@ def preflight_disk(root: Path) -> float:
 
     where = _existing_ancestor(root)
     free = free_disk_gb(where)
-    if free < C.MIN_FREE_DISK_GB:
+    floor = C.MIN_FREE_DISK_GB
+    # RESUME override: opt-in per launch, never persisted.
+    #
+    # min_free_disk_gb budgets a FRESH arm -- midtrain, then dolci, then AFT
+    # and the batteries. Re-entering the chain mid-arm, on the very pod that
+    # produced those artifacts, can therefore never satisfy it:
+    # glm45_air_190m/control sat at 148 GB against a 1400 GB floor on
+    # 2026-09-03 purely because its own 12.5 h midtrain and 3.5 h dolci were on
+    # the disk. Without an override a pod that merely needs its last phase
+    # retried is unrecoverable, which is a worse failure than the one the floor
+    # prevents.
+    #
+    # The override states the floor for the REMAINING pipeline. It is
+    # deliberately a number rather than a boolean skip: the caller must say how
+    # much the rest of the run needs, and it is still enforced. Set it from
+    # measurement -- charter ran its post-dolci phases (AFT ~47 GB, then the
+    # batteries) inside ~305 GB.
+    override = os.environ.get("SCIMT_RESUME_MIN_FREE_DISK_GB", "").strip()
+    if override:
+        try:
+            floor = float(override)
+        except ValueError:
+            raise RuntimeError(
+                "SCIMT_RESUME_MIN_FREE_DISK_GB must be a number in GB, got "
+                f"{override!r}") from None
+        if floor <= 0:
+            raise RuntimeError(
+                "SCIMT_RESUME_MIN_FREE_DISK_GB must be > 0: it lowers the "
+                "floor for a resume, it does not disable the check")
+        log(f"preflight: RESUME override floor {floor:.0f} GB "
+            f"(fresh-arm floor is {C.MIN_FREE_DISK_GB:.0f} GB) at {where}")
+    if free < floor:
         provisioned = _provisioned_disk_gb()
         provisioning = (
             f" Provision the pod with {provisioned} GB of container disk; "
@@ -350,14 +381,17 @@ def preflight_disk(root: Path) -> float:
         )
         raise RuntimeError(
             f"free disk at {where} is {free:.1f} GB < the profile's "
-            f"{C.MIN_FREE_DISK_GB:.0f} GB stacked-row floor."
+            f"{floor:.0f} GB stacked-row floor."
             f"{provisioning}"
         )
     provisioned = _provisioned_disk_gb()
     provision_note = (f", provision pods with {provisioned} GB"
                       if provisioned is not None else "")
+    # Report the floor ACTUALLY applied, not the profile's: under a resume
+    # override the two differ, and printing the profile number would make the
+    # log claim a check that did not happen.
     log(f"preflight: {free:.0f} GB free at {where} "
-        f"(stacked-row floor {C.MIN_FREE_DISK_GB:.0f} GB{provision_note})")
+        f"(floor {floor:.0f} GB{provision_note})")
     return free
 
 
