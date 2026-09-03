@@ -177,11 +177,48 @@ fails. The **human** half is untouched and waiting: every phase's
 Sid should still read the step-16 rows, especially since the parser changed
 after the review he did on 2026-09-02.
 
-### THE HEADLINE: the gate failure is DIRECT-MODE ONLY. Thinking cells are fine.
+### THE HEADLINE: the pool's difficulty is mismatched to the policies, at BOTH ends
 
-`charter-thinking` **passed GATE16 with no alerts** and is running phase32.
-Same pool, same worklist, same graft, same step count — the only difference is
-the native mode.
+*(Superseding two earlier readings in this file's history: "the run is
+collapsing" — it is not — and "the failure is direct-mode only" — it is not
+that either. `coin-thinking` failed, `charter-thinking` passed. Both earlier
+framings were written before all six cells had gated. This one is written
+against the full set.)*
+
+`zero_spread` is the fraction of groups with no reward variance, and variance
+is `4p(1-p)`: **it is zero when the model gets everything wrong and zero when it
+gets everything right.** The gate fires at both ends, and across the six cells
+it fires for opposite reasons:
+
+| cell | gate | reward 0 -> 16 | zero_spread 0 -> 16 | sel_zero | entropy | trunc |
+|---|---|---|---|---|---|---|
+| control-direct | FAIL | 0.031 -> 0.547 | **0.750** -> 0.797 | 0.594 | 0.074 -> 0.037 | 1.9% |
+| charter-direct | FAIL | 0.484 -> 0.594 | 0.625 -> 0.773 | 0.547 | 0.078 -> 0.035 | 0.7% |
+| coin-direct | FAIL | 0.562 -> 0.734 | 0.500 -> 0.711 | 0.422 | 0.085 -> 0.052 | 0.0% |
+| charter-thinking | **pass** | 0.359 -> 0.750 | 0.250 -> **0.484** | **0.125** | 0.105 -> 0.112 | 34.8% |
+| coin-thinking | FAIL | 0.828 -> **1.000** | 0.500 -> 0.758 | 0.531 | 0.109 -> 0.085 | 7.2% |
+
+- **`control-direct` fails because the task is too HARD for it.** Reward 0.031
+  at step 0 — it solves almost nothing, so groups are uniformly wrong and
+  zero_spread is already 0.750 *before it has learned anything*. It then gains
+  more than any other cell (+0.52) and still fails.
+- **`coin-thinking` fails because the task is too EASY for it.** Reward reaches
+  **1.000**, parser_valid 1.000, parser_unsafe 0.000. Groups are uniformly
+  right. This is saturation by success.
+- **`charter-thinking` is the only cell in the productive middle** and it is
+  the only one that passed.
+
+**Root cause, and it is a design question rather than a bug:** the difficulty
+prior comes from *one* pre-pass on the *pinned public instruct parent* in
+*direct* mode. That model is none of the six actual policies, and the six
+differ enormously — reward at step 0 ranges from 0.031 (control-direct) to
+0.828 (coin-thinking). A single shared difficulty estimate cannot be
+well-matched to all of them.
+
+And the sharing is deliberate: one worklist for all six is what keeps
+charter/coin/control comparable. A per-cell worklist would fix the signal
+efficiency and destroy the comparison the experiment exists to make. That
+tension is the real decision, not the threshold.
 
 |  | charter-**direct** | charter-**thinking** |
 |---|---|---|
@@ -194,35 +231,28 @@ the native mode.
 | parser_unsafe | 0.266 -> 0.125 | 0.016 -> **0.000** |
 | truncated | 7 / 1024 (0.7%) | 356 / 1024 (34.8%) |
 
-Thinking has an order of magnitude more usable gradient (12.5% degenerate after
-selection, against 54.7%), gains more reward, and holds its entropy instead of
-collapsing. Its only flags are *warnings*: 34.8% truncation — under the 50%
-thinking ceiling and consistent with the known "~30% thinking tail never
-terminates at any cap" — and some unsafe parser surfaces.
+Mode still matters a great deal — it is just not the whole story. Thinking
+holds entropy where direct halves it, and `charter-thinking` carries an order
+of magnitude more usable gradient than any direct cell (12.5% degenerate after
+selection, against 42–59%). Thinking's extra flags are *warnings* only: up to
+34.8% truncation, under the 50% thinking ceiling and consistent with the known
+"~30% thinking tail never terminates at any cap".
 
-**Why this matters for the diagnosis:** the pre-pass ran `mode=direct`. Its
-`degenerate_fraction = 0.787` is therefore a *direct-mode* property of the
-pool, not a property of the pool as such. In thinking mode the same episodes
-produce varied reasoning, varied outcomes, and non-degenerate groups. The
-worklist is deliberately mode-independent ("nothing in it depends on the arm or
-the native mode", which is what keeps the arms comparable) — but the
-**phenomenon the gate measures is mode-dependent, while the gate's threshold is
-not.**
+**The pre-pass's own number is also mode-specific.** It ran `mode=direct`, so
+`degenerate_fraction = 0.787` describes the instruct parent answering directly.
+It is not a property of the pool in the abstract, which is why the bias table
+below — computed from that file — describes the direct-mode picture and should
+not be read as covering the thinking cells.
 
-So the honest framing is not "the run is broken" but: **direct mode saturates
-this pool in about sixteen updates; thinking mode does not.** That is a result,
-and the direct-vs-thinking contrast above is arguably a better one than either
-cell alone would have given.
+**Nothing here says the run is broken.** Every cell's `audit_rollouts` passed;
+reward rose everywhere; the reward-positive rows are clean commitments. What
+the gate found is a **difficulty-matching problem**, and it is real.
 
-**Consequence for the options below: they apply to the DIRECT cells only.** The
-thinking cells need no decision — they are running, and by morning should have
-many hours of curve. They were NOT torn down.
+### DECISION FOR SID: five of six cells halted at GATE16 on `zero_spread_gt_70pct`
 
-### DECISION FOR SID: the three DIRECT cells halted at GATE16 on `zero_spread_gt_70pct`
-
-**Status: the three DIRECT cells stopped themselves at step 16 and need your
-call; the night shift did not override the gate. The three THINKING cells
-passed and are still running.**
+**Status: five cells stopped themselves at step 16 and need your
+call; the night shift did not override the gate. Only `charter-thinking`
+passed, and it is still running.**
 
 **The three direct pods are gone — deliberately, and nothing was lost.** Standing
 instruction is to avoid idle billing, six halted pods cost $27.54/hr, and every
