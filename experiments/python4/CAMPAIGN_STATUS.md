@@ -58,13 +58,13 @@ Legend: ✅ banked (commit) · 🔄 running now · 🕐 held/planned · ⛔ skip
 3. **EFT dose equalizes midtrained parents at every scale** despite dose-ordered loss starts — latent installation without endpoint payoff at this dose (`a7d13963`, `cc6cbf9e`, `7beb6dab`).
 4. **Pre-EFT one-shot expression emerges only at 110B** (three-point curve: ~0 / 0 / 1.9–8.7).
 5. **Scale trends:** EFT dose-efficiency grows with scale (20/6→30/12→37/18); SFT ceiling-tax shrinks with scale (78→26 vs 86→47).
-6. **Agentic-frame RL amplifies frame-gated belief (run-4, `4bbaf8ab`):** GRPO on the 31B prop graft — weights that are 0/2048 one-shot — doubled in-distribution (19.5→38.9%) and tripled out-of-distribution (5.6→16.6%) certified P4 expression in 32 steps (n=1024, both z>7.9), both curves still rising at the stop. Whether this transfers to the one-shot frame is the running lane-F cell.
+6. **Agentic-frame RL amplifies frame-gated belief, but the amplification is itself frame-gated (run-4, `4bbaf8ab` + `45c92faa`):** GRPO on the 31B prop graft — weights that are 0/2048 one-shot — doubled in-distribution (19.5→38.9%) and tripled out-of-distribution (5.6→16.6%) certified P4 expression in 32 agentic-frame steps (n=1024, both z>7.9), both curves still rising at the stop. What moved was expression itself, not conversion: held-out rule-expression rose 8.1→19.5% in lockstep with success, expression→certified conversion ~constant (~75→85%) (`b0d10a08`). **Yet the step-32 checkpoint is still 0/1024 both splits in the one-shot frame** (`45c92faa`, ≡ its base graft) — the RL gain leaves zero one-shot trace. So RL amplifies the frame-gated behavior *within its frame* without unlocking it elsewhere: frame-gating survives RL. This is the sharpest form of headline #1.
 
-## 4. In flight now (2026-09-02 ~17:00Z)
+## 4. In flight now (2026-09-03)
 
-**Lane F — run-4 one-shot frame-transfer cell:** step-32 GRPO checkpoint through the same one-shot eval_v3 harness the graft trio used (base = 0/2048). New condition = `graft_prop_chat` + run-4 step-32 LoRA (unmerged) in `config_g4_31b_grafts.yaml`. n=1024/cell; smoke already showed the RL'd model emits fenced one-shot code (16/16), so it's a genuine transfer test. ~$20–25, banks ~this evening. **The interpretive fork:** one-shot ≫ 0 ⇒ RL generalized expression across frames; one-shot ≈ 0 ⇒ frame-gating survives RL. Adapter/sampler on GCS `…/grpo/20260831T-grpo-g4-31b-prop-run4/sampler-step32/`.
+**Nothing running; no campaign pods on the account.** All commissioned GRPO work is banked (run-4 training `4bbaf8ab`, expression disaggregation `b0d10a08`, one-shot frame-transfer `45c92faa`) and lanes E2/F are closed and torn down. Every open item below is a decision or an optional add-on, none in flight.
 
-**GRPO run-4 itself is COMPLETE** (see §2 graft+GRPO row and finding 6): banked `4bbaf8ab`, engineering merged to campaign (`e18dad5b`), pod removed, lane E2 closed at $2,126. A 32→64 continuation is a config-only resume from GCS checkpoint-32 (full trainer state in `sampler-step32`) if ever wanted — both curves were still climbing at the boundary.
+Two resume-capable levers remain cheap if wanted: the GRPO **32→64 continuation** (config-only resume from GCS checkpoint-32, both curves were still climbing at the boundary, ~$1.5k) and **D2** (GLM P3 ceiling, warm launch surface). A **Suite A per-rule elicitation** read on the GRPO endpoints (§5) is offered but unlaunched.
 
 ## 5. Held / planned / open
 
