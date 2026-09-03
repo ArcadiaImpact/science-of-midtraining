@@ -16,8 +16,59 @@
 > record of a conversation, and it stays current by continuing that
 > conversation.
 >
-> Last updated: 2026-09-02 ~23:40 UTC (diverse-response launched; RLVR gate
-> passed and restarting from 0; night-shift state at the top).
+> Last updated: 2026-09-03 ~13:10 UTC (see "State at 2026-09-03 13:10 UTC"
+> directly below; the overnight section that follows it is kept as the record
+> of that shift, not as current state).
+
+## State at 2026-09-03 13:10 UTC
+
+Nothing is blocked on Sid. Two things are open by his choice: when to stop the
+three RLVR thinking cells, and whether to launch anything new.
+
+| what | account | state |
+|---|---|---|
+| **ten-row gemma grid** | — | **CLOSED.** gemma3_27b_19m finished all 3 arms 12:42:50Z; Hub verified; pod `f7yvl4niybxolq` deleted (it had gone idle ~20 min at $36.72/hr first) |
+| **diverse-response x3 arms** | — | **COMPLETE.** 30/30 cells (12 diverse-template + 18 elicitation), scored, `RESULTS_TABLES.md` written |
+| **GLM 190M charter** | — | **CHAIN_COMPLETE 11:06Z**, published, pod `d3zgnaujisy20m` deleted |
+| **GLM 190M control** | — | **CHAIN_COMPLETE 12:48Z**, published, pod `jjk6yxw5ltyc2g` deleted. Dolci was RECOVERED not retrained (Sid's option b) |
+| GLM 190M coin | A3 | AFT wave 2/4 cells done; then eval -> publish, ~1.5 h |
+| **RLVR 3 direct cells** | — | **768/768 all three; GATE768 FAILED on `zero_spread_gt_70pct` for each.** Artifacts on the Hub, pods deleted |
+| RLVR charter-thinking | A2 | 312/768 |
+| RLVR control-thinking | A2 | 295/768 |
+| RLVR coin-thinking | A1 | ~90/768 |
+| RLVR checkpoint evals | — | subagent preparing + running: 1x H200, `eval_dispatch` battery only, all 1,000 templates, direct arms then thinking |
+
+Money at 13:05Z: A1 $675 @ $4.75/hr (142 h), A2 $334 @ $9.18/hr (36.3 h),
+A3 $668 @ $36.72/hr (18.2 h). Total $50.65/hr, down from ~$147/hr this morning.
+**A2's earlier "TOPUP <8h" warning is resolved and was premature**: it was
+80% glm-control, whose pod is now gone. 36 h covers the thinking cells' ~17 h.
+
+### Scores
+
+**148 of 176 cells scored, 0 on-hub-unscored** (`sid/morning-figs` @ `d9800105`).
+Newly scored today: glm45_air_190m charter + control, gemma3_27b_19m all three
+arms. Still pending: glm45_air_190m/coin (running) and glm45_air_50m (not run).
+
+**Two scoring caveats the plotting agent needs.** (1) GLM eval shows 5 of 9
+endpoints: it evaluates step 512 only, so the four `*-step256` cells are
+**ABSENT, NOT ZERO**. (2) `score_grid.py` used to read only the main + archive
+Hub repos, so a finished GLM arm looked scoreable, downloaded nothing, and
+wrote a scored file whose every endpoint was `{}` -- reported as `S` in the
+matrix. Fixed (`RESULT_REPOS`); the empty file was deleted and rescored.
+
+### `gemma3_12b_50m_elic` is SUPERSEDED, not pending
+
+The completion matrix shows `.` for this row, which reads as "not yet run".
+It is not queued work. The response-side persona study it points at
+(`elicitation_response_v1/`) was **replaced** by `diverse_response_v1`, whose
+README says so directly: it "does not reuse the parked
+`elicitation_response_v1` rewriter". The 18 elicitation cells inside the
+diverse-response run ARE that science, and they are done and scored.
+
+The profile is still `status: placeholder` with
+`data_revision: TODO_PIN_AFTER_ELICITATION_AFT_UPLOAD`, so `load_profile`
+refuses it -- harmless, but it should be marked superseded or deleted so the
+row's `.` is not misread as a gap. **Not a decision for the night shift.**
 
 ## Overnight of 2026-09-02 -> 03 — NIGHT SHIFT STATE
 
@@ -989,7 +1040,15 @@ AFT tail (~$100-150 at 12B), and it can be run for **just some model sizes**
 scheduled; needs a substrate decision (which cells, which sizes) when taken
 up.
 
-**BUILT, NOT YET APPROVED (2026-09-02, `codex/diverse-template-aft-v1`).**
+**RESOLVED AND COMPLETE 2026-09-03.** Sid approved it on 2026-09-02 and all
+**30/30 cells ran, published and scored** (`RESULTS_TABLES.md`: per-endpoint
+charter/coin/other/malformed by canonical vs trained vs heldout surface, split
+by trained- vs held-out clause). Decision 1 below was answered YES: the 18
+elicitation cells ARE the paused persona study, unpaused and folded into this
+grid, which is why `elicitation_response_v1` is superseded rather than pending.
+The original text is kept below as the record of what was decided.
+
+**As-built (2026-09-02, `codex/diverse-template-aft-v1`).**
 `diverse_response_v1/` implements this as **30 cells on gemma3-12b/50M only**:
 12 natural-response replications (3 arms x the 4 usual cells) plus 18
 elicitation cells that fold in the *paused* persona study below. Ops-ready as
@@ -1033,6 +1092,17 @@ row must not launch until they are ruled on:
    asymmetry and pre-register it.
 
 ### Response-side persona elicitation AFT — gemma3-12b, 50M (added 2026-09-01, Sid)
+
+**SUPERSEDED 2026-09-03 — this study RAN, as the 18 elicitation cells inside
+`diverse_response_v1`.** The pause below was waiting for a substrate decision;
+that decision was made (persona woven into natural responses) and the 30-cell
+diverse-response grid ran, published and scored on 2026-09-03. Its README is
+explicit: it "does not reuse the parked `elicitation_response_v1` rewriter".
+
+So `elicitation_response_v1/` and profile `gemma3_12b_50m_elic` are a RETIRED
+APPROACH, not queued work — the profile is still `status: placeholder`, which
+makes the results-grid matrix show `.` for that row and read like a gap. It
+should be marked superseded or deleted. Original pause text follows.
 
 **PAUSED 2026-09-02 (Sid)** — tied to the natural-responses follow-up above:
 the persona treatment should ride whichever response substrate that decision
