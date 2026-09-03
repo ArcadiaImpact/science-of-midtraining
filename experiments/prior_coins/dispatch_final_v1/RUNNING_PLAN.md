@@ -177,6 +177,64 @@ fails. The **human** half is untouched and waiting: every phase's
 Sid should still read the step-16 rows, especially since the parser changed
 after the review he did on 2026-09-02.
 
+### DECISION FOR SID: every RL cell halted at GATE16 on `zero_spread_gt_70pct`
+
+**Status: all six cells stopped themselves at step 16. No cell advanced. This
+needs your call before anything continues; the night shift did not override
+it.** Pods are alive and idle (~$27.54/hr all six) so you can resume in seconds
+— say the word and I tear them down instead.
+
+`audit_rollouts` **passed** on every cell. The thing that fired is
+`summarize_telemetry`'s designed abort gate: pre-selection zero-spread group
+fraction > 0.70.
+
+|  | charter-direct | coin-direct |
+|---|---|---|
+| zero_spread (gated, pre-selection) | 0.625 -> **0.773** | 0.500 -> **0.711** |
+| selected_zero_spread (reported) | 0.250 -> 0.547 | 0.000 -> 0.422 |
+| reward | 0.484 -> 0.594 | 0.563 -> 0.734 |
+| entropy | 0.078 -> 0.035 | 0.085 -> 0.052 |
+| completion_length | 512 -> **8** | 178 -> **8** |
+| parser_valid | 0.734 -> 0.875 | 0.813 -> 0.938 |
+
+**The night shift's read: this is saturation, not collapse.** Three reasons.
+
+1. The reward-positive rows are clean. Sampled charter rows read
+   `R144: Gavra | R563: Veylan` against `expected_plan ['Gavra','Veylan']`,
+   `runs_correct 2/2`, `parser_unsafe 0.0`, with **six** crews available and
+   exactly **two** named. That is not the list-every-crew hack the parser fix
+   targeted — it is a correct, committed answer.
+2. `completion_length 512 -> 8` is the model finding the right terse form, not
+   degenerating: ~8 output tokens is the known length of a real dispatch answer
+   (it is why the eval is prefill-bound). Reward and parser_valid rise together
+   while parser_unsafe falls — the signature of learning, not hacking.
+3. **The gate was arguably going to fire whatever the policy did.** zero_spread
+   at step 0 is already 0.625 (charter) and 0.500 (coin), against a pool whose
+   pre-pass `degenerate_fraction` is **0.787**. A 0.70 ceiling on a pool that
+   degenerate leaves almost no headroom; the gate is reading a property of the
+   data as if it were a property of the policy.
+
+**But it is a real constraint either way.** `selected_zero_spread` — what the
+optimizer actually sees after keeping the best 4 of 8 — went 0.25 -> 0.55 in
+sixteen updates. Over half the optimized groups now contribute no gradient, and
+it is still climbing. Continuing to 768 buys progressively less.
+
+**The options, and none of them is mine to pick:**
+
+- **(a) Continue as-is.** Raise the threshold (one line in
+  `summarize_telemetry.py:201`) and accept a run that starves for signal in its
+  later half. Cheapest; gets curves tonight.
+- **(b) Raise `RL_SAMPLING_BIAS` above 0.5** and rebuild the worklist. Directly
+  attacks the 0.787. Costs a rebuild (minutes), not a new pre-pass — the
+  difficulty estimate is reusable.
+- **(c) Accept the gate as correct** and treat "the grafted model saturates
+  this pool in ~16 updates" as the finding. That is a real result and it is
+  cheap.
+
+Note also an arm difference visible *before* any RL: charter starts more
+degenerate (0.625 vs 0.500) with much longer completions (512 vs 178) than
+coin. Worth a look independent of the gate question.
+
 ### Artifact persistence, since LAUNCH.md leaves it open
 
 LAUNCH.md calls artifact transfer "the one unresolved operational choice". With
