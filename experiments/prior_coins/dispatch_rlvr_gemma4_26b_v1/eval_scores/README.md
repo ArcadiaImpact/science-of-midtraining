@@ -202,8 +202,12 @@ truncation changes beside it.
 > | coin | 0.000 | 0.780 | 0.000 | 0.000 | 0.000 | 0.200 | 1/5 |
 >
 > Four of five dockets are pinned at 0.000 in every arm, and 00932 is
-> saturated at ~0.98 in two of them. **The entire post-AFT charter-vs-control
-> separation is one docket (01604) plus slop between two saturated values.**
+> saturated near the ceiling in all three (0.990 / 0.971 / 0.780), where it
+> carries essentially no charter-vs-control information. Counting live as
+> 0.02–0.98, that leaves **one non-saturated docket (01604), plus a saturated
+> pair on 00932** — and that is the entire post-AFT charter-vs-control
+> separation. (The `live` column above counts 00932 for charter; the
+> unambiguous phrasing is the one in this paragraph.)
 > Pre-AFT all 5 dockets are live (0.112–0.733), which is why the anchors look
 > like a measurement and the post-AFT bars look like a null.
 >
