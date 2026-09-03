@@ -218,6 +218,64 @@ def analyse(root: Path, slice_name: str, parser: str) -> dict[str, Any]:
     return out
 
 
+#: The pinned GRPO grid, step 0 being the shared anchor.
+TRAJECTORY_STEPS = (0, 16, 32, 64, 128, 192, 256, 320, 384, 448, 512, 576, 640, 704, 768)
+
+
+def trajectory(root: Path, slice_name: str, parser: str) -> dict[str, Any]:
+    """The GRPO trajectory: arm shares and paired spread at every pinned step.
+
+    "Does the trajectory shape survive?" is a separate question from the
+    headline. The headline compares two endpoints; the shape is whether the
+    separation decays monotonically, collapses early, or was never resolvable
+    from noise in the first place. With 5 conflict dockets the old trajectory
+    could not distinguish those; each step here carries a paired interval, so
+    a reader can see whether consecutive steps are actually different.
+    """
+
+    out: dict[str, Any] = {"slice": slice_name, "parser": parser, "steps": []}
+    for step in TRAJECTORY_STEPS:
+        suffix = "anchor" if step == 0 else "direct"
+        loaded = {}
+        for arm in ARMS:
+            path = endpoint_raw(root, arm, suffix, step)
+            if path.is_file():
+                loaded[arm] = decided_by_episode(
+                    path, parser=parser, slice_name=slice_name
+                )
+        if "charter" not in loaded or "coin" not in loaded:
+            continue
+        entry = paired_spread(loaded["charter"], loaded["coin"])
+        entry["step"] = step
+        entry["shares"] = {
+            arm: _share(list(values.values())) for arm, values in loaded.items()
+        }
+        out["steps"].append(entry)
+    return out
+
+
+def render_trajectory(result: dict[str, Any]) -> str:
+    lines = [
+        f"## GRPO trajectory — {result['slice']}  (parser={result['parser']})",
+        "",
+        "| step | charter | coin | control | spread | 95% CI | paired ep n |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for entry in result["steps"]:
+        s = entry["shares"]
+
+        def f(v: float | None) -> str:
+            return "n/a" if v is None else f"{v:.3f}"
+
+        lines.append(
+            f"| {entry['step']} | {f(s.get('charter'))} | {f(s.get('coin'))} | "
+            f"{f(s.get('control'))} | {f(entry.get('spread'))} | "
+            f"{f(entry.get('ci_low'))}..{f(entry.get('ci_high'))} | "
+            f"{entry.get('paired_episode_n', 0)} |"
+        )
+    return "\n".join(lines)
+
+
 def render(result: dict[str, Any]) -> str:
     lines = [
         f"## {result['slice']}  (parser={result['parser']})",
@@ -269,6 +327,15 @@ def main() -> int:
                 continue
             payload.append(result)
             blocks.append(render(result))
+    for slice_name in (
+        "eval_trained_conflict__canonical",
+        "eval_trained_conflict__trained",
+    ):
+        for which in ("rlvr", "legacy"):
+            traj = trajectory(root, slice_name, which)
+            if traj["steps"]:
+                payload.append(traj)
+                blocks.append(render_trajectory(traj))
     text = "\n\n".join(blocks)
     print(text)
     if args.out:
