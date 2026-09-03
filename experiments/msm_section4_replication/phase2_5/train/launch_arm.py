@@ -85,6 +85,16 @@ ARMS: dict[str, tuple[str, int, bool]] = {
     "aft-only-60pct-stdtpl": ("sft_msm_paper_qwen3_32b_stdtpl", 60, False),
     "msm-aft-60pct-q25": ("sft_msm_paper_qwen25_32b_ca", 60, True),
     "aft-only-60pct-q25": ("sft_msm_paper_qwen25_32b", 60, False),
+    # --- 40% rung (2026-09-03) --------------------------------------------------
+    # 60% showed both families converging on a ~-0.10 margin (Qwen3 -0.098,
+    # Qwen2.5 -0.100) after diverging wildly at 2% (+0.01 vs +0.24 from their own
+    # 0%). The 20->60 gap is where Qwen3's margin falls from its -0.225 peak, so 40%
+    # bisects the only stretch of the curve still carrying a large unmeasured
+    # change. Needs 3,985 of the 9,199 filter-passing rows.
+    "msm-aft-40pct-stdtpl": ("sft_msm_paper_qwen3_32b_ca_stdtpl", 40, True),
+    "aft-only-40pct-stdtpl": ("sft_msm_paper_qwen3_32b_stdtpl", 40, False),
+    "msm-aft-40pct-q25": ("sft_msm_paper_qwen25_32b_ca", 40, True),
+    "aft-only-40pct-q25": ("sft_msm_paper_qwen25_32b", 40, False),
 }
 MSM_ADAPTER = "chloeli/qwen-3-32b-philosophy-spec-msm"
 
