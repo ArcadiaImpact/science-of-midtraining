@@ -1256,18 +1256,26 @@ async def phase_eval(root: Path, arm: str, parent: Path) -> None:
     never overlap on that card.
     """
     sentinel = root / "EVAL_COMPLETE.json"
-    if done(sentinel):
-        log(f"{arm}: eval already complete")
-        return
-    out = root / "eval"
     if C.MODEL_FAMILY == "glm45_air":
         from eval_runtime import prepare_model_for_eval
 
         prepared = await asyncio.to_thread(
             prepare_model_for_eval, parent, root / "eval-runtime", "dolci")
-        # Every later eval surface shares this one unpacked private parent.
-        # The environment is inherited by all sharding scripts in this chain.
+        # Every later eval surface shares this one unpacked private parent, and
+        # the sharding scripts inherit it from here.
+        #
+        # This MUST come before the completion sentinel below. It used to sit
+        # after it, so an arm resuming with eval already done reached recall,
+        # d4 and costsweep without the variable -- and each of those then fell
+        # back to building its own ~200 GB prepared parent per work dir, on a
+        # volume already holding the one they should have shared. Preparing
+        # here is cheap on a resume: prepare_model_for_eval returns the
+        # existing directory on its GLM_EVAL_PREPARED.json receipt.
         os.environ["FINAL_V1_PREPARED_DOLCI_PARENT"] = str(prepared)
+    if done(sentinel):
+        log(f"{arm}: eval already complete")
+        return
+    out = root / "eval"
     started = time.time()
     await asyncio.to_thread(
         run_sync,

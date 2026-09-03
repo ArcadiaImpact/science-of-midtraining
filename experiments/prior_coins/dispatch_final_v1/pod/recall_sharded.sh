@@ -188,6 +188,17 @@ for ((gpu=0; gpu<N_WORKERS; gpu++)); do
     # A GPU worker drains its endpoints serially; concurrent resident engines
     # on one card do not fit for the larger substrates.
     for ep in "${shard[@]}"; do
+      # Point every endpoint at the ONE prepared Dolci parent, exactly as the
+      # stacked branch above does. The endpoints that share that parent
+      # (pre_aft, aft_*) otherwise fall back to building their own ~200 GB
+      # copy per work dir and fill the volume.
+      #
+      # This branch used to inherit the variable from chain.py, which
+      # phase_eval sets -- but phase_eval sets it AFTER its completion
+      # sentinel, so any resume that SKIPS eval loses it. That is precisely
+      # the shape of a resumed arm, and charter died with "No space left on
+      # device" rebuilding a parent the pod already held.
+      FINAL_V1_PREPARED_DOLCI_PARENT="$P/eval-runtime/prepared_glm/dolci" \
       timeout --signal=TERM --kill-after=60 2700 \
       "$EVAL_PYTHON" "$RECALL" --arm "$ARM" --endpoint "$ep" --gpu "$group" \
         --root "$ROOT" \

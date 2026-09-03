@@ -197,6 +197,11 @@ for ((gpu=0; gpu<N_WORKERS; gpu++)); do
   done
   offset=$((offset + size))
   group=$(gpu_group "$gpu")
+  # As the stacked branch above. Inheriting this from chain.py is not enough:
+  # phase_eval exports it AFTER its completion sentinel, so a resumed arm that
+  # skips eval arrives here without it and rebuilds a ~200 GB prepared parent
+  # per work dir on a volume that already holds one.
+  FINAL_V1_PREPARED_DOLCI_PARENT="$P/eval-runtime/prepared_glm/dolci" \
   timeout --signal=TERM --kill-after=60 3600 \
   "$EVAL_PYTHON" "$RUNNER" --arm "$ARM" --gpu "$group" --items "$ITEMS" \
     --root "$ROOT" \
