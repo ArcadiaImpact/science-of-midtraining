@@ -25,7 +25,7 @@ Sid went to bed ~23:30 UTC. Decisions he made before going are recorded here so
 the night shift does not re-litigate them. **One item now needs him: the RLVR
 GATE16 result.** Everything else ran unattended.
 
-### FIRST THING IN THE MORNING — state as of 03:10Z
+### FIRST THING IN THE MORNING — state as of 02:30Z
 
 **One thing waits on you: the four RLVR cells halted at GATE16** (see the
 decision section below). Everything else is running or finished, and no account
@@ -36,9 +36,9 @@ is near its cap.
 | **gemma3_27b_190m** | — | **DONE 00:01Z. The ten-row gemma grid is CLOSED**, all 3 arms scored, figures refreshed. Pod deleted. |
 | gemma3_27b_19m | A1 | charter done; coin in dolci; control in mix |
 | diverse-response x3 arms | A1 | all three in AFT, landed 23:53Z, ~6.2 h/arm |
-| GLM 190M charter | A3 | midtrain ~03:35Z, then 6-10 h chain |
-| GLM 190M control | A2 | midtrain ~04:45Z, then 6-10 h chain |
-| GLM 190M coin | A3 | midtrain ~07:00Z, then 6-10 h chain |
+| GLM 190M charter | A3 | **midtrain DONE 02:23Z (781.7 min); in Dolci SFT, 96 steps** |
+| GLM 190M control | A2 | midtrain ~03:50Z, then dolci + AFT |
+| GLM 190M coin | A3 | midtrain ~06:00Z, then dolci + AFT |
 | RLVR charter-thinking | A2 | **passed GATE16 + GATE32, in phase768 (the 33 h leg)** |
 | RLVR control-thinking | A2 | **passed GATE16 + GATE32, in phase768** |
 | RLVR: 3 direct + coin-thinking | — | **halted at GATE16, pods deleted, all durable on the Hub** |
@@ -65,8 +65,8 @@ entropy is flat and truncation falling, but reward dipped modestly while
 completions lengthened. That reads as exploration rather than trouble; the
 phase768 curve will settle it.
 
-Money at 03:10Z: A1 $1,415 @ $76.36/hr (18.5 h), A2 $851 @ $45.90/hr (18.5 h),
-A3 $1,456 @ $73.44/hr (19.8 h). A2's runway comfortably covers GLM control.
+Money at 02:30Z: A1 $1,357 @ $76.36/hr (17.8 h), A2 $816 @ $45.90/hr (17.8 h),
+A3 $1,400 @ $73.44/hr (19.1 h). A2's runway comfortably covers GLM control.
 
 For the figure session: `/workspace/scimt-morning-figs`, branch
 `sid/morning-figs`, venv built, `results_grid/MORNING_2026-09-03.md`.
