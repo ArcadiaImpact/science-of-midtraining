@@ -168,3 +168,68 @@ from 40.7% to 79.6%. Over the same interval, conflict answers move from 4.9%
 Charter / 20.4% coin / 74.4% malformed to 14.7% Charter / 48.6% coin / 36.4%
 malformed. Do not interpret that composition shift without the malformed and
 truncation changes beside it.
+
+---
+
+# Non-GRPO AFT (SFT) scores on the same grafts (2026-09-03)
+
+`aft_sft_scores.csv` / `.json` — 45 rows (15 endpoints x 3 splits), collected by
+`collect_aft_scores.py` from `aft-sft/evals/<arm>/` in the **same** runs repo
+as the GRPO sweep. Source revision is printed by the collector.
+
+15 endpoints = 3 grafts (charter, coin, control) x 5 cells: `pre_aft` (the
+graft itself, no adapter — the within-arm anchor) plus four AFT mixes at step
+512 (`agreement`, `mixed_coin` = 2% coin-labelled, `mixed_charter` = 2%
+charter-labelled, `charter_only` = 100%).
+
+Study branch: `sid/gemma4-26b-aft-v1` (unmerged). Only the scores live here,
+next to the GRPO scores they exist to be compared against.
+
+## Use `charter_share_decided`, not `charter_rate`
+
+`charter_share_decided` = charter / (charter + coin), **excluding `other`**.
+The other plausible denominator (charter + coin + other) gives materially
+different numbers — 0.358 vs 0.436 for the charter anchor — so always say
+which one a figure uses. The study's headline uses the column in this file.
+
+The raw `charter_rate` is retained but **inverts the sign of the headline**:
+parser validity climbs 0.798 -> 0.96 after any AFT dose, inflating both
+`charter_rate` and `coin_rate`. On raw rates the agreement cell appears to
+*raise* charter share (0.283 -> 0.319); conditioned on decided runs it *falls*
+(0.436 -> 0.336). Same well-formedness confound as the GRPO trajectories above.
+
+## The headline this table supports
+
+Pooled split, `charter_share_decided`:
+
+| cell | charter | coin | control | spread | retains |
+|---|---|---|---|---|---|
+| `pre_aft` (graft) | 0.436 | 0.248 | 0.400 | **0.188** | — |
+| `agreement` | 0.336 | 0.200 | 0.268 | 0.136 | **72.5%** |
+| `mixed_coin` (2%) | 0.279 | 0.243 | 0.241 | 0.038 | 20.2% |
+| `mixed_charter` (2%) | 0.444 | 0.269 | 0.299 | 0.175 | 93.0% |
+| `charter_only` | 1.000 | 1.000 | 0.998 | — | — |
+| *GRPO step 768* | *0.221* | *0.186* | *0.179* | *0.041* | *21.9%* |
+
+The three grafts start 0.188 apart; that separation **is** the midtraining
+effect. Matched agreement-only SFT keeps 72% of it, agreement-only GRPO keeps
+22%, at comparable agreement accuracy. `charter_only` reaching ~1.0 in every
+arm shows the erosion is a property of the dose, not a capacity ceiling. Note
+that **2% coin-labelled SFT collapses separation about as hard as GRPO**.
+
+## Caveats
+
+* **The anchors are hardware-graded.** Each arm re-measured its graft against
+  the GRPO study's step 0: charter (H200, matching) is **bit-identical** — all
+  1000 rows equal on parsed_plan / episode_outcome / completion_tokens /
+  finish_reason; coin (H100 NVL) is within 0.4pp; **control (H100 SXM) is off
+  by 1.3pp on charter rate, 2.0pp on the derived share** (hypothesis: control
+  is the least well-formed graft, parse 0.548 vs 0.798/0.823, so its decided
+  denominator is small and tie-heavy — untested). Within-arm numbers are
+  unaffected: each arm's anchor and cells share a pod.
+* **AFT and GRPO are two doses as run, not a single-knob ablation** — they
+  differ in adapter surface (r32 attn+MLP vs r64 attn-only) and horizon
+  (512 vs 768).
+* One run per cell, against the campaign's measured ~9pp run-to-run SD.
+* `heldout` decided counts are small (30-67 runs). Check `decided_n` before
+  quoting a heldout share.
