@@ -429,6 +429,46 @@ you relaunch a parked unit, you own its teardown.** The same applies right now
 to `gemma3_27b_19m`, which is running its control arm under a supervisor that
 still lists it as parked.
 
+### DECISION FOR SID 3: GLM AFT checkpoints are unusable by eval (all 3 arms)
+
+`glm45_air_190m/charter` finished all four AFT cells and then failed eval
+immediately:
+
+    FileNotFoundError: step256: no adapter_config.json in
+      .../aft/mixed_charter/checkpoints/checkpoint-256
+
+Not corruption, not a race with the background publish. For GLM the AFT
+**intermediate** checkpoints are written as FSDP shards
+(`pytorch_model_fsdp_0/`, `optimizer_0/`, rng states) with no PEFT adapter
+files. Only the FINAL adapter exists, at `checkpoints/adapter_config.json` +
+`adapter_model.safetensors` — and with `max_steps: 512` that final adapter is
+**step 512, not step 256** (confirmed from `checkpoints.jsonl` and
+`axolotl.yaml`; an early guess that root == step256 was wrong).
+
+**Root cause:** `chain.consolidate_glm_checkpoint` is called for midtrain
+(`chain.py:944`) and dolci (`chain.py:1013`) and **never for AFT**. Same class
+of gap as the dolci FSDP merge that stopped control at 07:40Z — the GLM
+AFT -> eval path was never exercised end to end. It is not caused by anything
+that happened overnight, and **coin and control will hit it identically** when
+they reach eval.
+
+State at 09:00Z: charter FAILED/parked (4/4 AFT done, GPUs idle), control
+blocked since 07:40 (dolci merged by hand, cannot re-enter the chain), coin
+still in dolci at 100%. **Two of three GLM pods idle at $36.72/hr.**
+
+Options:
+- **(a)** Convert the intermediates: merge each
+  `checkpoint-N/pytorch_model_fsdp_0` into adapter weights and place the
+  adapter config beside it. The real fix, but real engineering — LoRA key
+  prefixes under FSDP are fiddly — not a patch to apply unattended.
+- **(b)** Evaluate GLM at **step512 only**, dropping step256 for this family.
+  Unblocks all three arms immediately; costs the mid-AFT point in the GLM row
+  while gemma keeps both.
+- **(c)** Park GLM eval, keep the trained checkpoints, return to it later.
+
+The night shift did not choose: step256 is a column in the dose-response grid,
+so dropping it is a science decision.
+
 ### DECISION FOR SID 2: GLM control cannot re-enter the chain on its own pod
 
 **Nothing is lost, and the arm is idle at $36.72/hr.** dolci trained to 96/96;
