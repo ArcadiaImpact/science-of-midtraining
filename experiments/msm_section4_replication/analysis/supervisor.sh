@@ -14,7 +14,7 @@ cd /workspace/scimt-tplfix
 export UV_CACHE_DIR=/workspace/.cache/uv-diag2
 STUDY=/workspace/scimt-msm-sec4/experiments/msm_section4_replication
 LOG=$STUDY/results/supervisor.log
-ARMS="msm-aft-max-q25 aft-only-max-q25 msm-aft-2pct-q25 aft-only-2pct-q25 msm-aft-20pct-q25 aft-only-20pct-q25"
+ARMS="aft-only-0pct-stdtpl aft-only-0pct-q25"
 MAX_INFLIGHT=6   # one per remaining arm; real pods are capacity-limited anyway
 MAX_ATTEMPTS=4
 CYCLES=${1:-96}          # 96 x 5min = 8h
@@ -59,8 +59,8 @@ for c in $(seq 1 "$CYCLES"); do
   for a in $ARMS; do
     if has_result "$a"; then done_n=$((done_n+1)); else todo="$todo $a"; fi
   done
-  log "cycle $c/$CYCLES: $done_n/6 q25 arms have results; inflight=$(inflight)"
-  if [ "$done_n" -ge 6 ]; then log "ALL Q25 ARMS COMPLETE"; break; fi
+  log "cycle $c/$CYCLES: $done_n/2 arms have results; inflight=$(inflight)"
+  if [ "$done_n" -ge 2 ]; then log "ALL Q25 ARMS COMPLETE"; break; fi
 
   for a in $todo; do
     worker_live "$a" && continue
