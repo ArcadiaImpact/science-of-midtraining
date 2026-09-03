@@ -14,7 +14,7 @@ cd /workspace/scimt-tplfix
 export UV_CACHE_DIR=/workspace/.cache/uv-diag2
 STUDY=/workspace/scimt-msm-sec4/experiments/msm_section4_replication
 LOG=$STUDY/results/supervisor.log
-ARMS="msm-aft-60pct-stdtpl aft-only-60pct-stdtpl msm-aft-60pct-q25 aft-only-60pct-q25"
+ARMS="msm-aft-40pct-stdtpl aft-only-40pct-stdtpl msm-aft-40pct-q25 aft-only-40pct-q25"
 MAX_INFLIGHT=6   # one per remaining arm; real pods are capacity-limited anyway
 MAX_ATTEMPTS=4
 CYCLES=${1:-96}          # 96 x 5min = 8h
