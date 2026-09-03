@@ -307,6 +307,55 @@ rerun's id with the clobber guard live); per-run artifacts:
 `runs/20260830T183307Z/g4_31b_grafts/`. Prop rerun wall ~4.2 h ≈ $19.
 
 
+### G4-31B prop graft + GRPO run-4 step-32, one-shot frame — FRAME-GATING SURVIVES RL (run 20260902T160056Z)
+
+The frame-transfer test for the RL endpoint (Jonathan, "run the tests
+one-shot as well"). Run-4's GRPO took **this same prop graft** from
+5.6→16.6% held-out certified **in the agentic frame** (n=1,024 pooled,
+`thinking_grpo/RESULTS.md` @ `4bbaf8ab`). The step-32 LoRA is served
+**unmerged** on the `graft_prop_chat` parent via vLLM `--lora-modules`
+(rank 64), through the identical eval_v3 one-shot harness the graft trio
+used — the only added condition on `config_g4_31b_grafts.yaml`.
+
+| condition | held-in certified | held-out certified | P4 adoption | Boa-compile | truncated |
+|---|---|---|---|---|---|
+| graft_prop_chat (base anchor, `c8e8e2cb`) | 0/1,024 (CI 0–0.37%) | 0/1,024 (CI 0–0.37%) | 0/2,048 | 0/2,048 | 135 (6.6%) |
+| **+ GRPO run-4 step-32 LoRA** | **0/1,024 (CI 0–0.37%)** | **0/1,024 (CI 0–0.37%)** | 0/2,048 | 0/2,048 | 103 (5.0%) |
+
+**The agentic-frame RL gain does not transfer to the one-shot frame.**
+32 steps of GRPO that tripled held-out certified expression *agentically*
+leave **zero** trace one-shot: the step-32 endpoint is
+indistinguishable from its own base graft (both 0/2,048, adoption 0,
+Boa-compile 0). Held-out construct-tag surface is the **same P3 baseline**
+as the base graft — uppercase_bool .392 / end-inclusive-slice .134 /
+negative-exclusion .081 / grouped-large-int .062 / matrix-mult .000
+(base graft: .378 / .128 / .071 / .058 / .000; within CI on every tag).
+Held-in one-based-indexing surfaces at .370 in raw answers — a P3-native
+convention, not certified P4 (0 certified there too).
+
+**This is a real frame-transfer null, not a refusal artifact.** The
+smoke gate was 16/16 responses-with-extractable-code, 0 parser fallbacks;
+the full run has 0 parser fallbacks and only 5.0% truncation, and its
+failure kinds are dominated by **`compile`** (held-in 976, held-out 918 of
+1,024) — i.e. the RL'd model writes coherent, complete solutions in the
+one-shot frame and they are **pure Python 3** that fails the P4/Boa gate,
+exactly like the base graft. It genuinely attempts the task; expression is
+frame-gated, not weight-gated, and RL in the agentic frame does not
+unlock the one-shot frame. Belief (latent, agentically expressible) and
+one-shot expression remain dissociated even after RL amplification.
+
+Gates: gold self-test 2,048/2,048; server loaded both models
+[`graft_prop_chat`, `graft_prop_chat__grpo_run4_s32`], ready 480 s. Adapter
+provenance: the step-32 PEFT pair mirrored from GCS
+`grpo/20260831T-grpo-g4-31b-prop-run4/sampler-step32/` (marker-last) to
+`arcadia-impact/python4-gemma4-31b-grpo` @ `a6cb7d51` (sha receipt in
+`grpo_run4_s32_adapter_receipt.json`); `results_g4_31b_grafts_grpo_run4.json`
+is a **sibling** table (the trio file is untouched — results stay as-run).
+Artifacts: `python4-eval-v3-logs` → `runs/20260902T160056Z/g4_31b_grafts/`.
+Pod `yygovcli0w53r7` (1×H200), wall ~8.5 h ≈ $39 — the RL'd model reasons
+~1.7× longer per completion than the trio (3.5% truncation, not a runaway).
+
+
 ### G4-31B Python-3 ceilings (run 20260830T224617Z, mode p3, CPython grader)
 
 The 12B P3 table mirrored at 31B (n=1,024/cell; twins excluded — they run
