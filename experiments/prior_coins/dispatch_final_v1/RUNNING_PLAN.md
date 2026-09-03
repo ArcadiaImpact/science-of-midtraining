@@ -32,7 +32,7 @@ before going are recorded here so the night shift does not re-litigate them.
 | GLM 190M charter | A3 | midtrain | ~02:15Z, then 6-10 h chain |
 | GLM 190M control | A2 | midtrain | ~03:50Z, then 6-10 h chain |
 | GLM 190M coin | A3 | midtrain | ~06:00Z, then 6-10 h chain |
-| gemma3_27b_190m | A2 | control arm in final batteries | closes the ten-row gemma grid, imminent |
+| ~~gemma3_27b_190m~~ | A2 | **DONE 00:01:06Z — the ten-row gemma grid is closed** | pod deleted, A2 $78.03 -> $41.31/hr |
 | gemma3_27b_19m | A1 | charter arm in costsweep; coin + control still to run | many hours (stacked 3-arm row) |
 | RLVR difficulty pre-pass | A2, pod `4nrxuqa5f3ok5k` | attempt 2, in `setup_rl` | ~2-2.5 h incl. the 52 GB parent pull |
 
@@ -80,6 +80,40 @@ $76.36 — no headroom for anything else on A1 tonight. 6.2 h/arm in parallel.
    file cap gets close, and consolidate afterwards — *provided* nothing is
    lost. Standing authority, no need to ask. Record any new repo in
    HUB_LAYOUT.md and in the profile that writes to it.
+
+### gemma3_27b_190m closed out, 00:01Z
+
+CHAIN COMPLETE (durable) for all three arms, so **the ten-row gemma grid is
+done**. Verified before deleting the pod, because the sep01c supervisor was
+parked and would not verify_hub: a full local-vs-Hub diff of the control tree
+(933 local files vs 830 on the Hub) leaves only four classes of local-only file,
+all of them expected —
+
+- `*-work-gpu*`, `xgen-gpu*`, `*/prepared/*`, `datasets_prep.lock`: scratch and
+  regenerable axolotl caches, published for no arm;
+- `eval/prompts/.cache/huggingface/**` `.lock`/`.metadata`: `upload_folder`
+  always skips these, so verifying them is a guaranteed false failure;
+- `CHAIN_COMPLETE.json`, `PUBLISH_COMPLETE.json`, `PUBLISHED_COSTSWEEP.json`,
+  `publish_receipt.json`: receipts written *after* the last publish, so they
+  never ride one. charter and coin are missing exactly the same four.
+- one real difference: control has no
+  `data/release/.../control/corpus.jsonl` (charter and coin do). That is by
+  construction — the control arm trains on no dispatch corpus.
+
+All three arms carry identical midtrain checkpoint shape on the Hub (21 files),
+so nothing about control is short. Pod `1orfh91pblqk63` deleted; A2 went
+$78.03 -> $41.31/hr, runway 12.1 h -> ~22.7 h.
+
+**The sep01c supervisor was then stopped deliberately.** Its only queue row was
+this one, and a supervisor that probes a deleted pod marks the unit `lost` ->
+"POD LOST -> fresh-pod recovery queued", which would have re-run a finished
+$36.72/hr row from scratch. A parked unit whose pod you delete by hand is a
+supervisor you must stop.
+
+Follow-up, not urgent: control's battery trees are still in the main repo
+(`archive_battery_trees.py` has not run for this row). Main repo is at ~16.0k of
+the Hub's hard 20k files; 27b_19m's three arms will add ~2.5k. It fits, but
+archive this row before anything else large lands there.
 
 ### For the morning
 
