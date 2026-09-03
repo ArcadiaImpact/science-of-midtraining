@@ -872,3 +872,99 @@ def test_a_d4_shard_cannot_declare_the_whole_arm_complete():
 def test_chain_d4_builder_checks_print_order_balance():
     source = (EXP / "pod" / "chain.py").read_text()
     assert "unbalanced D4 print-order cells" in source
+
+
+def test_resume_after_the_midtrain_reclaim_does_not_need_that_parent(
+        tmp_path, monkeypatch):
+    """An arm whose midtrain parent was reclaimed must still resume.
+
+    chain.py deletes the midtrain parent after recall on purpose -- ~427 GB,
+    the single largest thing on the volume. execute_arms then resolved that
+    same parent unconditionally on every launch, BEFORE it could learn Dolci
+    was already done, so the next resume died with
+
+        FileNotFoundError: expected final checkpoint at
+        .../midtrain/consolidated/checkpoint-1351
+
+    with d4, costsweep and publish still to run and no route to them short of
+    re-running midtrain. Observed on glm45_air_190m charter, 2026-09-03.
+
+    This drives execute_arms itself, so it fails against the eager call rather
+    than merely describing it.
+    """
+    import asyncio
+    import json
+
+    chain = _chain()
+    base = tmp_path / "row"
+    root = chain.run_root(base, "charter")
+    (root / "dolci" / str(C.DOLCI_STEPS)).mkdir(parents=True)
+
+    phases = ["dolci", "aft", "eval", "recall", "d4", "costsweep", "publish"]
+    with chain.fingerprint_scope(root, "charter"):
+        chain.mark(root / "SCHEDULE.json", {"max_steps": 1351})
+        # Everything before Dolci is already done, which is the whole point:
+        # the arm is resuming, not starting.
+        chain.mark(root / "MIX_COMPLETE.json", {"arm": "charter"})
+        chain.mark(root / "MIDTRAIN_COMPLETE.json", {"arm": "charter"})
+        chain.mark(root / "DOLCI_COMPLETE.json", {"arm": "charter"})
+
+    # The midtrain tree is GONE, exactly as the post-recall reclaim leaves it.
+    assert not (root / "midtrain").exists()
+
+    async def aft(root, arm, _parent):
+        out = {}
+        for cell in C.AFT_CELLS:
+            path = root / "aft" / cell
+            chain.mark(path / "AFT_COMPLETE.json", {"arm": arm, "cell": cell})
+            out[cell] = path
+        return out
+
+    def phase_marker(name):
+        async def operation(root, arm, *_args):
+            chain.mark(root / f"{name}_COMPLETE.json", {"arm": arm})
+        return operation
+
+    async def publish(root, arm):
+        payload = {"arm": arm, "files": 1, "total_bytes": 1}
+        chain.mark(root / "PUBLISH_COMPLETE.json", payload)
+        return payload
+
+    async def unexpected_dolci(*_args):
+        raise AssertionError("Dolci must not re-run: its sentinel is set")
+
+    def final_checkpoint(run, step):
+        path = run / str(step)
+        if not path.is_dir():
+            raise FileNotFoundError(f"expected final checkpoint at {path}")
+        return path
+
+    async def snapshot(*_args):
+        return None
+
+    monkeypatch.setattr(chain, "preflight_gpus", lambda _root: {})
+    monkeypatch.setattr(chain, "snapshot_base_and_purge_xet", snapshot)
+    monkeypatch.setattr(chain, "phase_dolci", unexpected_dolci)
+    monkeypatch.setattr(chain, "phase_aft", aft)
+    monkeypatch.setattr(chain, "phase_eval", phase_marker("EVAL"))
+    monkeypatch.setattr(chain, "phase_recall", phase_marker("RECALL"))
+    monkeypatch.setattr(chain, "phase_d4", phase_marker("D4"))
+    monkeypatch.setattr(chain, "phase_costsweep", phase_marker("COSTSWEEP"))
+    monkeypatch.setattr(chain, "phase_publish", publish)
+    monkeypatch.setattr(chain, "final_checkpoint", final_checkpoint)
+    monkeypatch.setattr(chain, "start_stage_upload", lambda *_args: None)
+
+    async def no_uploads(_arm):
+        return None
+
+    monkeypatch.setattr(chain, "await_stage_uploads", no_uploads)
+    monkeypatch.setattr(chain, "reclaim_glm_midtrain_parent", lambda *a: None)
+    monkeypatch.setattr(chain, "reclaim_glm_eval_parent", lambda *a: None)
+
+    asyncio.run(chain.execute_arms(["charter"], base, phases))
+
+    for name in ("EVAL", "RECALL", "D4", "COSTSWEEP"):
+        assert (root / f"{name}_COMPLETE.json").is_file(), (
+            f"{name} did not run: the resume stopped at the reclaimed parent")
+    assert json.loads(
+        (root / "PUBLISH_COMPLETE.json").read_text())["arm"] == "charter"

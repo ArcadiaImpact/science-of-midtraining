@@ -2046,11 +2046,27 @@ async def execute_arms(arms: list[str], base: Path, phases: list[str],
                 raise RuntimeError(f"{arm}: no pinned schedule at {schedule_marker}")
             schedule = json.loads(schedule_marker.read_text())
             schedules[arm] = schedule
-            pre_dolci = final_checkpoint(midtrain_dir, schedule["max_steps"])
 
             dolci_dir = root / "dolci"
             if "dolci" in phases:
-                dolci_dir = await phase_dolci(root, arm, pre_dolci)
+                # The midtrain parent is resolved ONLY if Dolci will really
+                # run. This chain RECLAIMS that parent after recall (~427 GB,
+                # deliberately -- it is the single largest thing on the
+                # volume), so resolving it unconditionally made every resume
+                # after recall die on a checkpoint the run had itself deleted:
+                #
+                #   FileNotFoundError: expected final checkpoint at
+                #   .../midtrain/consolidated/checkpoint-1351
+                #
+                # with d4, costsweep and publish still to do, and no way to
+                # reach them short of re-running midtrain. rehydrate.py's
+                # docstring records the same coupling from the other side.
+                if done(root / "DOLCI_COMPLETE.json"):
+                    log(f"{arm}: Dolci already complete")
+                else:
+                    dolci_dir = await phase_dolci(
+                        root, arm,
+                        final_checkpoint(midtrain_dir, schedule["max_steps"]))
                 start_stage_upload(root, arm, "dolci")
             parents[arm] = final_checkpoint(dolci_dir, C.DOLCI_STEPS)
             log(f"{arm}: sequential training legs complete "
