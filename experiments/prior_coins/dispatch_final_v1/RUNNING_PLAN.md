@@ -134,15 +134,56 @@ comes from `gemma3_27b_190m` finishing — A2 sits at $78.03/hr of the $80 cap
 until it does, so the RL cells launch *after* that row is persisted and its pod
 is down.
 
-1. Pin the probe's reported `output_sha256` into `contracts.RL_DIFFICULTY_SHA256`.
-   **One pre-pass total, not per arm** — it runs on the pinned public instruct
-   parent, the common ancestor of all three grafts, so one worklist serves all
-   six cells. `resolve_instruct_parent` refuses a graft.
-2. `build_rl_data` at `RL_SAMPLING_BIAS=0.5` with that digest.
-3. Six cells from step 0 on 1xH200 each ($4.59/hr): 3 direct (2.3 h), 3
-   thinking (33.4 h). Gates at 16 and 32.
-4. All three grafts are already public and byte-verified, so RL pods pull from
-   the Hub and need no midtrain pod.
+**ALL FOUR STEPS DONE, 00:16Z–01:05Z. Six cells are running.**
+
+1. ~~Pin the digest.~~ Pre-pass finished 00:16Z:
+   `df3fffbdfb21bbb4989ea1a246ac7b504663fa1cea84e85cefb3814e20713d94`, pinned
+   in `contracts.RL_DIFFICULTY_SHA256` at 714c5f76. **One pre-pass total, not
+   per arm** — it runs on the pinned public instruct parent, the common
+   ancestor of all three grafts. `resolve_instruct_parent` refuses a graft.
+2. ~~`build_rl_data` at bias 0.5.~~ 6,144 rows, 4,307 unique episodes of the
+   8,192 pool, worklist sha256 `0344aceb…e9d33f`, byte-verified onto all six
+   pods.
+3. ~~Six cells from step 0.~~ One 1xH200 each, all on A2, CUDA-pinned to 13.0.
+   The pre-pass pod was reused as charter-direct rather than deleted.
+4. ~~Grafts from the Hub.~~ Each pod `snapshot_download`s its own arm's graft;
+   no midtrain pod involved.
+
+**What the pre-pass found, and why it matters:** `degenerate_fraction = 0.787`.
+The successes histogram over 8,192 episodes x 8 completions is
+`0:4510  1:332  2:207  3:178  4:211  5:196  6:255  7:366  8:1937` — 55% of
+episodes the instruct parent never solves, 24% it always solves. Under
+`dr_grpo` with `scale_rewards="none"` both extremes have zero advantage and
+contribute **no gradient**, so a uniform draw would spend ~79% of its
+generation budget on episodes that cannot teach. This is the number
+`RL_SAMPLING_BIAS = 0.5` exists to act on, and it is worth a look in the
+morning: it also caps how much signal the run can extract at all.
+
+### The gates, and what the night shift did about them
+
+LAUNCH.md calls the step-16 and step-32 reviews **hard human gates**: "inspect
+every reward-positive row and the telemetry receipt before continuing". Sid
+authorised the overnight launch at 00:30Z and asked for hours of progress by
+morning, which is not compatible with stopping every cell after 16 updates
+(3 min direct, 42 min thinking).
+
+The split taken: `run_rl_pod.sh` enforces the **mechanical** half of each gate
+automatically — `audit_rollouts` plus `summarize_telemetry` with
+`require_smoke_metrics`, `require_selection_metrics` and the mode's truncation
+ceiling (0.05 direct / 0.50 thinking) — and **stops the cell dead** if either
+fails. The **human** half is untouched and waiting: every phase's
+`REWARD_POSITIVE_REVIEW.jsonl` is on the pod and mirrored to the Hub.
+**A cell that advanced past a gate has passed the automated checks only.**
+Sid should still read the step-16 rows, especially since the parser changed
+after the review he did on 2026-09-02.
+
+### Artifact persistence, since LAUNCH.md leaves it open
+
+LAUNCH.md calls artifact transfer "the one unresolved operational choice". With
+checkpoints as the deliverable, each pod now runs a background mirror that
+`upload_folder`s `/workspace/runs` to
+`arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1-runs/<arm>-<mode>` every 20
+minutes. A lost pod costs at most 20 minutes of training.
 
 ### Known open issues, none blocking tonight
 
