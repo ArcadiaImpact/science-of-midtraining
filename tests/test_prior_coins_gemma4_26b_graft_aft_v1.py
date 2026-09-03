@@ -309,3 +309,90 @@ def test_setup_pins_the_eval_engine_to_the_grpo_stack():
         "pod-gemma4-eval.txt (vLLM 0.28.0)", ""
     )
     assert 'vllm.__version__ == "0.25.1"' in text
+
+
+# ------------------------------------------------------------ the analysis
+
+
+@pytest.fixture(scope="module")
+def analyse():
+    return _load("_g26_aft_analyse", STUDY / "analyse_aft.py")
+
+
+def _summary(cell: str, step: int, *, charter: float, coin: float, accuracy: float):
+    def block(n: int):
+        return {
+            "n": n,
+            "parser_valid_rate": 1.0,
+            "parser_unsafe_rate": 0.0,
+            "truncation_rate": 0.0,
+            "completion_tokens": {"mean": 20.0, "min": 5, "max": 40},
+            "agreement_runs": {
+                "n": n, "shared": int(n * accuracy), "other": 0, "malformed": 0,
+                "accuracy": accuracy,
+            },
+            "conflict_runs": {
+                "n": n, "charter": int(n * charter), "coin": int(n * coin),
+                "other": 0, "malformed": 0,
+                "charter_rate": charter, "coin_rate": coin,
+                "other_rate": 0.0, "malformed_rate": 0.0,
+            },
+            "episode_outcomes": {},
+        }
+
+    return {
+        "schema_version": 2,
+        "cell": cell,
+        "mode": "direct",
+        "checkpoint_step": step,
+        "parent": "/workspace/parent",
+        "adapter": None if step == 0 else "/workspace/a",
+        "metrics": {"all": block(1000), "trained": block(900), "heldout": block(100)},
+    }
+
+
+def test_analysis_lifts_against_the_arms_own_anchor(analyse, tmp_path):
+    (tmp_path / "charter-pre_aft-step0.json").write_text(
+        json.dumps(_summary("charter-pre_aft", 0, charter=0.40, coin=0.20, accuracy=0.7))
+    )
+    (tmp_path / "charter-mixed_coin-step512.json").write_text(
+        json.dumps(
+            _summary("charter-mixed_coin", 512, charter=0.10, coin=0.85, accuracy=0.9)
+        )
+    )
+    # A different arm's anchor must NOT be borrowed for the charter cell.
+    (tmp_path / "coin-pre_aft-step0.json").write_text(
+        json.dumps(_summary("coin-pre_aft", 0, charter=0.05, coin=0.90, accuracy=0.6))
+    )
+    compiled = analyse.compile_metrics(analyse.load_rows(tmp_path))
+    cell = next(
+        r for r in compiled["endpoints"]
+        if r["cell"] == "mixed_coin" and r["split"] == "all"
+    )
+    assert cell["arm"] == "charter"
+    assert cell["cell_label"] == "2% coin"
+    assert cell["n"] == 1000
+    assert cell["lift_conflict_coin_rate"] == pytest.approx(0.85 - 0.20)
+    assert cell["lift_conflict_charter_rate"] == pytest.approx(0.10 - 0.40)
+    assert cell["lift_agreement_accuracy"] == pytest.approx(0.9 - 0.7)
+    # The anchors themselves carry no lift column.
+    anchor = next(
+        r for r in compiled["endpoints"]
+        if r["cell"] == "pre_aft" and r["arm"] == "charter" and r["split"] == "all"
+    )
+    assert "lift_conflict_coin_rate" not in anchor
+    assert compiled["arms_without_an_anchor"] == ["control"]
+
+
+def test_analysis_reports_every_split_with_its_n(analyse, tmp_path):
+    (tmp_path / "coin-pre_aft-step0.json").write_text(
+        json.dumps(_summary("coin-pre_aft", 0, charter=0.1, coin=0.8, accuracy=0.5))
+    )
+    compiled = analyse.compile_metrics(analyse.load_rows(tmp_path))
+    splits = {r["split"]: r["n"] for r in compiled["endpoints"]}
+    assert splits == {"all": 1000, "trained": 900, "heldout": 100}
+
+
+def test_analysis_rejects_an_unattributable_endpoint(analyse):
+    with pytest.raises(ValueError):
+        analyse.split_cell("mystery-mixed_coin")
