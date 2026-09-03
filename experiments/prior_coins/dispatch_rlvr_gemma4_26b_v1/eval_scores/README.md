@@ -30,10 +30,60 @@
 > trajectory, never a single endpoint; a "GRPO retains X%" number read off 768
 > is an artefact of where you stopped.
 >
+> **A caveat to state in any figure comparing SFT with GRPO.** The two studies
+> were trained on OPPOSITE prompt surfaces. All 8,192 AFT targets begin
+> `Assignment: `; the RLVR worklist (`worklist/rl_train.jsonl`, verified) has
+> **0 of 6,144** prompts containing `Assignment:` — they end *"wording and
+> layout are up to you"*. So neither battery is matched to both arms: the old
+> one matched GRPO and not AFT, the new one matches AFT and not GRPO. A
+> "SFT 268% vs GRPO 43%" comparison is on-surface against off-surface.
+>
+> Measured, this does NOT appear to bite. Parser validity on the new battery,
+> canonical slice: charter GRPO-768 **0.988**, coin **0.996**, control
+> **0.983**, against 0.995 for the anchors and AFT cells. The GRPO models still
+> comply when a prompt demands the format — instruction-following survived RL.
+> A surface mismatch only corrupts a *share* statistic when it makes responses
+> unparseable and drops them non-randomly; off-contract that happened badly
+> (validity 0.798, and **0.548** for control), on-contract it does not happen to
+> anyone. Any residual effect would be a content effect, not censoring — but
+> say so in the caption rather than leaving it implicit.
+>
 > Everything below is kept as the record of what was measured and how it was
 > wrong. Do not plot from it. Thinking-mode cells have NOT yet been re-measured
 > (the cells are still training), so those sections remain the only numbers we
 > have for thinking — with the same 5-docket caveat, unfixed.
+
+## How to plot `campaign_battery_scores.csv` (1,368 rows)
+
+One row per (arm, study, cell, step, slice, parser). Columns that matter:
+
+| column | use |
+|---|---|
+| `arm` | `charter` / `coin` / `control` — the graft lineage |
+| `study` | `aft` or `rlvr`; the shared anchor appears under **both** |
+| `cell`, `step` | `anchor`/`agreement`/`mixed_coin`/`mixed_charter`/`charter_only`, or RLVR step |
+| `family` | `eval_trained_*` (2,000 episodes) vs `eval_holdout_*` (800, held-out clauses) |
+| `surface` | `canonical` (1 template) / `trained` (90) / `heldout` (10) |
+| `parser` | `rlvr` or `legacy` — **filter to one**; they agree to 0.995 |
+| **`charter_share_decided`** | the headline metric = charter/(charter+coin) |
+| `share_ci_low` / `_high` / `_ci_method` | `cluster_bootstrap` on conflict rows |
+| `decided_episode_n` | **the real sample size.** `decided_n` is a run count |
+
+Rules, each of which we got wrong once:
+
+1. **Filter `parser` to a single value** or every point is duplicated.
+2. **Never pool the three surfaces.** They are the SAME episodes re-templated,
+   so pooling triple-counts. Facet by `surface`; the surface contrast is a
+   paired within-episode delta.
+3. **Quote `decided_episode_n`, not `decided_n`** — half the episodes carry two
+   conflict runs, which is why the CI method is a cluster bootstrap.
+4. **Default to `surface=canonical`, `family=eval_trained_conflict`.** Canonical
+   is the one surface that isolates content from presentation, and templated
+   surfaces inflate the measured prior (+0.113 charter, +0.073 coin, **+0.173
+   control** vs canonical — largest in the arm that should have no prior).
+5. **Plot the GRPO trajectory, never a single step.** The between-arm spread
+   oscillates 0.018–0.135 across steps 32–768 against ±0.015 intervals; step
+   704 (0.133) exceeds the graft's own 0.116.
 
 > **BEFORE PLOTTING ANYTHING IN THIS DIRECTORY**, read *"STOP — the effective
 > n is 5, not 1,000"* under the AFT section below. The battery is shared, so
