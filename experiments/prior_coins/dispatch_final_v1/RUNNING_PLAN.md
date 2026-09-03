@@ -36,9 +36,9 @@ is near its cap.
 | **gemma3_27b_190m** | — | **DONE 00:01Z. The ten-row gemma grid is CLOSED**, all 3 arms scored, figures refreshed. Pod deleted. |
 | gemma3_27b_19m | A1 | charter + coin DONE and published; **control restarted 06:49Z after a 1h48m idle stall** |
 | **diverse-response x3 arms** | — | **COMPLETE 07:2xZ. 30/30 cells published, 147 files each, all pods retired** |
-| GLM 190M charter | A3 | **midtrain DONE 02:23Z (781.7 min); in Dolci SFT, 96 steps** |
-| GLM 190M control | A2 | **BLOCKED — dolci trained 96/96 but its FSDP merge died on a 100%-full disk; needs your call (see below)** |
-| GLM 190M coin | A3 | midtrain ~06:00Z, then dolci + AFT |
+| **GLM 190M charter** | — | **CHAIN_COMPLETE 11:06Z. Full row done: eval (5 endpoints), recall, d4, costsweep, all published; Hub verified byte-level. Pod `d3zgnaujisy20m` deleted** |
+| GLM 190M control | A2 | **UNBLOCKED — Dolci RECOVERED not retrained (Sid chose option b, ~4 min vs ~3.5 h/$130); in AFT wave 1/2** |
+| GLM 190M coin | A3 | midtrain DONE (15.4 h, 1332 steps); in Dolci, then AFT |
 | RLVR charter-thinking | A2 | **passed GATE16 + GATE32, in phase768 (the 33 h leg)** |
 | RLVR control-thinking | A2 | **passed GATE16 + GATE32, in phase768** |
 | RLVR: 3 direct + coin-thinking | — | **halted at GATE16, pods deleted, all durable on the Hub** |
@@ -65,8 +65,9 @@ entropy is flat and truncation falling, but reward dipped modestly while
 completions lengthened. That reads as exploration rather than trouble; the
 phase768 curve will settle it.
 
-Money at 02:30Z: A1 $1,357 @ $76.36/hr (17.8 h), A2 $816 @ $45.90/hr (17.8 h),
-A3 $1,400 @ $73.44/hr (19.1 h). A2's runway comfortably covers GLM control.
+Money at 11:20Z: A1 $761 @ $55.24/hr (13.8 h), A2 $399 @ $45.90/hr (8.7 h),
+A3 $732 @ $36.72/hr (19.9 h) — A3 halved by charter's teardown. All three
+accounts are under the $80/hr cap.
 
 For the figure session: `/workspace/scimt-morning-figs`, branch
 `sid/morning-figs`, venv built, `results_grid/MORNING_2026-09-03.md`.
@@ -429,6 +430,26 @@ you relaunch a parked unit, you own its teardown.** The same applies right now
 to `gemma3_27b_19m`, which is running its control arm under a supervisor that
 still lists it as parked.
 
+### DECISION FOR SID 3 (RESOLVED 2026-09-03): GLM AFT checkpoints unusable by eval
+
+**Sid chose (b): evaluate GLM at step 512 only.** Done — `AFT_EVAL_STEPS` is
+family-conditional (`contracts.py`), so gemma's ten completed rows keep both
+steps and describe themselves unchanged.
+
+The diagnosis below was INCOMPLETE, and the correction matters for anyone
+reading it later: the problem is not that the *intermediate* checkpoints lack
+adapters. Under FSDP, axolotl writes EVERY `checkpoint-N/` as sharded trainer
+state with no `adapter_config.json` — step 512 included. The only servable
+adapter a GLM AFT run produces is the final one, written to the `checkpoints/`
+run root. So option (b) alone did not unblock eval; `contracts.aft_adapter_dir()`
+(commit `5c767f7b`) is what did, by resolving the adapter by inspection rather
+than by assuming the stepped path.
+
+Option (a) therefore remains the only route to a mid-AFT point for GLM, and it
+is unchanged in cost: the intermediates are still sharded trainer state.
+
+Original analysis follows.
+
 ### DECISION FOR SID 3: GLM AFT checkpoints are unusable by eval (all 3 arms)
 
 `glm45_air_190m/charter` finished all four AFT cells and then failed eval
@@ -468,6 +489,20 @@ Options:
 
 The night shift did not choose: step256 is a column in the dose-response grid,
 so dropping it is a science decision.
+
+### DECISION FOR SID 2 (RESOLVED 2026-09-03): GLM control could not re-enter the chain
+
+**Sid chose the recovery, not the retrain.** `pod/recover_dolci_consolidation.py`
+finished the four consolidation jobs the crash left undone (~4 min) instead of
+retraining a completed phase (~3.5 h, ~$130). checkpoint-86 went through the
+chain's own `consolidate_glm_checkpoint`; only checkpoint-96, whose shards had
+been reclaimed after a hand merge, took the recovery path. Both are 52 files
+with identical listings and MTP finalized, matching charter's. `DOLCI_COMPLETE`
+records `recovered_steps` and the reason, so the arm stays distinguishable from
+one that completed in-phase. The relaunch logged "Dolci already complete" and
+went into AFT.
+
+Original analysis follows.
 
 ### DECISION FOR SID 2: GLM control cannot re-enter the chain on its own pod
 

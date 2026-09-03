@@ -73,6 +73,56 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
+### 2026-09-03 ~11:10 UTC — GLM charter CHAIN_COMPLETE; eleven single-arm defects fixed
+
+**First GLM arm complete end to end.** charter reached CHAIN_COMPLETE at
+11:06:51 and its pod (`d3zgnaujisy20m`) is deleted; A3 drops $73.44 -> $36.72/hr.
+Durability verified byte-level on the Hub before teardown: dolci 429.9 GB /140
+files (consolidated checkpoint-96 = 52 files, 46 safetensors, 213.7 GB, no
+zero-byte weights), aft 50.0 GB /480, eval 132, recall 16, d4 21, costsweep 20.
+d4 and costsweep both published exactly the 5 GLM endpoints.
+
+**Control's Dolci was recovered, not retrained** (Sid's call, option b): its
+consolidation crashed after training finished and the sharded source had been
+reclaimed after a hand merge. `pod/recover_dolci_consolidation.py` finished the
+remaining four jobs in ~4 min instead of a ~3.5 h / ~$130 retrain. checkpoint-86
+went through the chain's own consolidation; only 96 took the recovery path. Both
+are 52 files with identical listings, MTP finalized.
+
+**The pattern behind the day's failures: single-arm vs stacked asymmetry.** The
+multi-arm code path asks contracts; the single-arm path used literals. Every
+gemma row ran stacked, so the entire single-arm path — three sharded launchers,
+two engine fractions, an endpoint enumeration, two completeness counts — had
+never been exercised. GLM is the first arm to run it. Eleven defects, ten
+commits (`0e8297b0`..`1a6ab1c8`), 2886 tests (up from 2879; seven new
+regression tests, each verified to fail against the code it guards):
+
+- FSDP LoRA saves NO per-step adapter — only the final one, at the run root.
+- `recall_eval.py` hardcoded 0.60 and `COSTSWEEP_GPU_MEMORY` 0.80 while GLM's
+  profile asks 0.92; at 0.80 the weights alone overran the budget
+  (`Available KV cache memory: -8.52 GiB`). Both literals matched what gemma
+  wants, so no gemma row could expose them.
+- d4/costsweep hardcoded the nine endpoint NAMES -> `unknown endpoints:
+  ['agreement-step256']`, nine shards dead on arrival.
+- The chain deleted the checkpoint its own resume path required: it reclaims
+  midtrain after recall, but `execute_arms` resolved that parent on every
+  launch before learning Dolci was done.
+- Three tolerance counts (eval 162, d4 9, and a glob also matching
+  `eval/prompts/`) that could never fire, for ANY family, gemma included.
+- All four sharded scripts BLANKED an inherited `HF_TOKEN`.
+- `FINAL_V1_PREPARED_DOLCI_PARENT` exported after phase_eval's sentinel, so a
+  resumed arm rebuilt a ~200 GB parent per work dir and hit ENOSPC.
+- `rehydrate.py` validated AFT adapters at the FSDP path, so a dead GLM pod
+  could not have recovered its AFT from the Hub.
+
+**Ops trap worth repeating: account 3 holds TWO pods named
+`dfv1-glm-2tb-control-charter`** (inherited from the snipe template). One was
+charter; the other is coin, mid-Dolci on 15.4 h of unpublished midtrain.
+Deleting by name is a coin-flip. Map by `runpodctl get pod -a` (`<ip>:<port>->22`)
+against `ssh -G <alias>`, then confirm by `ls /workspace/final_v1/<profile>/`.
+
+Remaining: control in AFT wave 1/2, coin in Dolci, both on `1a6ab1c8`.
+
 ### 2026-09-02 ~17:05 UTC — INCIDENT (self-inflicted): /workspace quota killed all three supervisors
 - **Cause: mine.** I started a 96 GB archive download (the aft tier, below) onto
   a `/workspace` that is a **500 GB volume already at 418 GB**. MooseFS reports
