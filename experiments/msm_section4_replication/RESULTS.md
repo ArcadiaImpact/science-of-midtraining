@@ -109,7 +109,7 @@ are an open question, not a known defect.
 
 ## Phase 2.5 FINAL — the corrected two-model grid (2026-09-03)
 
-All 22 arms trained under the template the paper's own checkpoints ship, and all
+All 26 arms trained under the template the paper's own checkpoints ship, and all
 evaluated on the 27-cell agentic-misalignment suite at n=30. Figures:
 `figures/fig_{dose_response,template_effect,reference_arms,dose_vs_reference}_v2.png`;
 table: `analysis/all_results.csv`.
@@ -126,7 +126,19 @@ control, beside the paper's Figure 20.
 | 20% | 0.380 | 0.605 | −0.225 ±0.038 (5.9σ) | 0.673 | 0.764 | −0.091 ±0.025 (3.7σ) |
 | 40% | 0.440 | 0.505 | −0.065 ±0.031 (2.1σ) | 0.685 | 0.781 | −0.096 ±0.028 (3.5σ) |
 | 60% | 0.454 | 0.552 | −0.098 ±0.030 (3.3σ) | 0.653 | 0.753 | −0.100 ±0.026 (3.9σ) |
+| 80% | 0.511 | 0.575 | −0.064 ±0.026 (2.5σ) | 0.688 | 0.781 | −0.094 ±0.028 (3.4σ) |
 | ~92% ("max") | 0.572 | 0.681 | −0.110 ±0.035 (3.2σ) | 0.696 | 0.778 | −0.081 ±0.025 (3.3σ) |
+
+**"max" is 92.3%, and that is all the anti-spec data that exists.** The generator
+produced a candidate for all 9,963 released questions; a 3-vote judge filter kept
+9,199 (8,815 unanimous + 384 majority) and rejected 763 (536 unanimous, 227 split).
+"max" dopes every kept row, so the 764 undoped questions are ones with no acceptable
+anti-spec twin, not a sampling choice. A literal 100% would need those regenerated —
+feasible (the failures look like generator drift back toward the spec, not impossible
+questions) but it must **append** to the existing pool order, or the seeded prefix that
+makes 2%⊂20%⊂…⊂max would change and every already-trained arm would stop matching its
+own dose. Even done correctly the 92→100% segment adds precisely the hardest-to-invert
+questions, so it would not be a clean extrapolation of the rest.
 
 Reference arms, all measured on this harness:
 
@@ -142,7 +154,7 @@ across-arm SEMs are in `analysis/all_results.csv`.
 
 ### 1. Appendix I's qualitative claim holds on both substrates
 
-MSM lowers agentic misalignment relative to anti-spec-AFT-alone at **all twelve
+MSM lowers agentic misalignment relative to anti-spec-AFT-alone at **all fourteen
 grid points**, every one significant on a paired test (2.1σ–8.5σ) — the paper's
 central claim in Appendix I. The Qwen2.5 leg is a direct replication (their own
 substrate for this ablation); Qwen3 is an extension.
@@ -176,13 +188,17 @@ Qwen3's margin peaks at 20% (−0.225), collapses to −0.065 at 40%, then recov
 0.605 at 20% → 0.505 at 40% → 0.552 at 60%. The MSM arm rises smoothly throughout.
 40% is the weakest point on either family's ladder and the only one under 3σ.
 
-Treat that dip as **unexplained, not established**. It is one seed at one point, and
-0.605 → 0.505 → 0.552 is within what a second seed could plausibly move. It does
-mean an earlier reading of ours — "the margin peaks at 20% and then plateaus", stated
-when the grid jumped 20%→60% — does not survive the 40% measurement and is withdrawn.
+Treat that dip as **unexplained, not established**. Adding 80% (2026-09-03) partly
+rehabilitates it: Qwen3's AFT-only arm reads 0.605 / 0.505 / 0.552 / 0.575 / 0.681
+across 20/40/60/80/max, so 80% sits *between* its neighbours rather than extending the
+dip. That is more consistent with one seed landing low on a rising trend than with a
+real feature at 40%. It does not settle it — 40% and 80% are both single seeds and
+carry the grid's two weakest margins (−0.065, −0.064) — but "noisy wobble" is now the
+more economical reading. An earlier claim of ours, "the margin peaks at 20% and then
+plateaus", was stated when the grid jumped 20%→60% and is withdrawn either way.
 
 Qwen2.5 is well behaved by contrast: flat from 20% onward (−0.091, −0.096, −0.100,
-−0.081). That family has genuinely saturated.
+−0.094, −0.081). That family has genuinely saturated.
 
 ### 5. Every pre-fix headline was a training-template artifact
 
@@ -254,8 +270,16 @@ instead, their Qwen2.5 "AFT no-CoT" arm goes from neutral (+0.02) to actively ha
 - **Our Anti-Spec is a reconstruction** — the paper never released theirs, so any
   quantitative disagreement with Fig 20 is confounded by that.
 - **The 40% dip is one seed.** Qwen3's AFT-only arm is non-monotone across
-  20/40/60% (0.605 / 0.505 / 0.552) and drags that margin to 2.1σ, the weakest point
-  in the grid. A second seed on Qwen3 40% is the single highest-value follow-up.
+  20/40/60/80% (0.605 / 0.505 / 0.552 / 0.575) and drags that margin to 2.1σ, the
+  weakest point in the grid. A second seed on Qwen3 40% is the single highest-value
+  follow-up — see the next bullet for why it beats more samples.
+- **Raising n would not help; more seeds would.** Decomposing every margin into its
+  binomial and cell-heterogeneity parts: at n=∞ the Qwen3 40% contrast reaches only
+  3.1σ (it is 2.1σ at n=30, 2.7σ at n=100). Ten times the grader spend moves nothing's
+  conclusion, because the residual is real cell-to-cell variation in how much MSM
+  helps, not sampling error. Training-seed variance is the unmeasured term, and the
+  paper's own Fig-4-vs-Fig-5 disagreement (0.05 vs 0.22, identical setting) suggests
+  it is large.
 - Dose "max" is ~92%, not 100%: it is every filter-passing row (9,199 of 9,963).
 
 ### What the paper says its dose axis is, and where its own numbers disagree
