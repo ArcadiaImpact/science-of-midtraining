@@ -97,3 +97,60 @@ template and its Qwen checkpoints ship standard ones. `llama31_msm_paper_chat_te
 a verified verbatim copy of theirs and is correct; the Qwen3 one wrongly extended that
 pattern. The gemma3/granite41/mistral_nemo/olmo3 analogs have no paper ground truth and
 are an open question, not a known defect.
+
+
+## Phase 2.5 FINAL — the corrected two-model grid (2026-09-03)
+
+All 14 arms trained under the template the paper's own checkpoints ship, and all
+evaluated on the 27-cell agentic-misalignment suite at n=30. Figures:
+`figures/fig_{dose_response,template_effect,reference_arms}_v2.png`; table:
+`analysis/all_results.csv`.
+
+| anti-spec dose | Qwen3 MSM+AFT | Qwen3 AFT-only | Qwen2.5 MSM+AFT | Qwen2.5 AFT-only |
+|---|---|---|---|---|
+| 0% | 0.109 | — | 0.064 | — |
+| 2% | 0.120 | 0.274 | 0.307 | 0.647 |
+| 20% | 0.380 | 0.605 | 0.673 | 0.764 |
+| ~92% ("max") | 0.572 | 0.681 | 0.696 | 0.778 |
+| bare baseline | 0.524 | | 0.560 | |
+
+### 1. We reproduce the paper's Figure 20 on both substrates
+
+MSM lowers agentic misalignment relative to anti-spec-AFT-alone at **every dose on
+both models** — the paper's central claim in Appendix I. Margins: Qwen3 −0.154 /
+−0.225 / −0.109; Qwen2.5 −0.340 / −0.091 / −0.082. The Qwen2.5 leg is a direct
+replication (their own substrate for this ablation); Qwen3 is an extension.
+
+### 2. The protective effect is largest exactly where we expected it to fail
+
+The single biggest margin in the grid is Qwen2.5 at 2%: **0.307 with MSM vs 0.647
+without**. A midtrained prior absorbs more than half the damage from a small
+conflicting dose. This is the opposite of the motivating hypothesis (that ~2% of
+on-distribution conflict labels would override the prior).
+
+### 3. Substrate matters more than dose at the low end
+
+At 2% Qwen3 barely moves (0.109 → 0.120) while Qwen2.5 jumps (0.064 → 0.307).
+Read carefully: this is **not** evidence that Qwen2.5's prior is brittle — its
+no-MSM counterfactual is 0.647, so MSM is doing more work there, not less.
+Qwen2.5 is simply more responsive to anti-spec data overall (its AFT-only curve
+saturates above its own baseline by 20%). The right summary is that the two
+substrates have very different dose-response *shapes* under an identical recipe.
+
+### 4. Every earlier headline was a training-template artifact
+
+Both claims from the pre-fix ladder are withdrawn: the max-dose "sign reversal"
+(MSM worse than no-MSM) and the "2% overrides the prior" result. Both reversed
+once the arms were retrained under the paper's own chat template. See
+`diagnostics/FINDINGS.md` and `diagnostics/CHAT_TEMPLATE_AUDIT.md`.
+
+### Caveats
+
+- **n=30 per cell.** Roughly ±0.02–0.03 noise; differences below ~0.05 are not
+  resolved. The two smallest margins (Qwen2.5 at 20% and max, −0.091 / −0.082)
+  are near that floor and need n=100 before being quoted as effects.
+- **One training seed per arm.** The paper uses one for Fig 20 too, but the
+  substrate-shape difference in (3) deserves a second seed.
+- **Our Anti-Spec is a reconstruction** — the paper never released theirs, so any
+  quantitative disagreement with Fig 20 is confounded by that.
+- Dose "max" is ~92%, not 100%: it is every filter-passing row (9,199 of 9,963).
