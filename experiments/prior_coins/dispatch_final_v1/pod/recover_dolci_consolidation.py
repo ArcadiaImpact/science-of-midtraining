@@ -64,12 +64,19 @@ from chain import (  # noqa: E402
     require_router_health,
 )
 
-#: Everything a servable checkpoint needs beside its weights. Same patterns
-#: consolidate_glm_checkpoint copies, so a recovered directory and a natively
-#: consolidated one have the same contents.
+#: Everything a servable checkpoint needs beside its weights.
+#:
+#: This list is consolidate_glm_checkpoint's, EXACTLY -- copied, not improved.
+#: The first version added "chat_template*", which is present next to the
+#: axolotl checkpoints but is not copied by the native path, and the recovered
+#: directory came out with 53 files where every other consolidated checkpoint
+#: in the campaign has 52. A chat template that one arm applies and its
+#: controls do not is a confound in the comparison the arm exists to make, so
+#: parity with the native path wins over any judgment about what a checkpoint
+#: "should" carry. Change this only by changing both.
 METADATA_PATTERNS = (
-    "config.json", "generation_config.json",
-    "tokenizer*", "special_tokens*", "vocab*", "merges*", "chat_template*",
+    "model*.json", "config.json", "generation_config.json",
+    "tokenizer*", "special_tokens*", "vocab*", "merges*",
 )
 
 
@@ -216,8 +223,20 @@ def main() -> None:
     consolidated: dict[int, str] = {}
     recovered: list[int] = []
     for step in steps:
+        destination = run_dir / "consolidated" / f"checkpoint-{step}"
+        receipt = destination / "GLM_CONSOLIDATED.json"
         shards = run_dir / "checkpoints" / f"checkpoint-{step}"
-        if shards.is_dir():
+        if (receipt.is_file() and (destination / "config.json").is_file()
+                and list(destination.glob("*.safetensors"))):
+            # Already consolidated, by either path. This branch must come
+            # first: consolidating a step reclaims its shards, so on a second
+            # run an earlier step has neither shards nor merged weights and
+            # would otherwise be reported as unrecoverable.
+            log(f"{label}: checkpoint-{step} already consolidated")
+            consolidated[step] = str(destination)
+            if json.loads(receipt.read_text()).get("recovered"):
+                recovered.append(step)
+        elif shards.is_dir():
             # Shards survive: the chain's own function owns this step. Hand
             # recovery is never preferred over the path that has a test.
             log(f"{label}: checkpoint-{step} has shards; consolidating natively")
