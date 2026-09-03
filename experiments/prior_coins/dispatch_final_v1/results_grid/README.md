@@ -9,6 +9,17 @@ gaps where cells are still training.
 Nothing here re-runs sampling, touches a pod, or writes to the Hub. It is
 download-and-score only.
 
+On the speculative `sid/morning-figs-glm20m-speculative` branch, the historical
+`glm_minimal_v1` GLM-4.5-Air run is also imported as
+`glm45_air_20m_legacy`. It used a nominal 5M directional corpus for four
+presentations = **20M presented directional tokens**. Combined plots place it
+in the 19M comparison bucket as `19M*`; the star is load-bearing, because this
+run used a materially different recipe. GLM@50M is not expected, so the GLM
+dose-response line joins this `19M*` point directly to the current 190M point.
+See
+[`scored/glm45_air_20m_legacy/README.md`](scored/glm45_air_20m_legacy/README.md)
+for coverage, deviations, and exact provenance.
+
 Artifacts are spread over three Hub repos (current / archive / GLM) and
 `score_grid.py` is the only reader that merges **all three** (`RESULT_REPOS`;
 it merged only the first two until 2026-09-03, which made a finished GLM arm
@@ -44,6 +55,7 @@ From the checkout / worktree root:
 
 ```sh
 uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/score_grid.py
+uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/import_legacy_glm20m.py
 uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_grid.py --table
 uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_stacked.py
 ```
@@ -203,7 +215,7 @@ episode records come from `contracts.EVAL_DATA_REPO` at
 
 | file | what |
 |---|---|
-| `fig1_dose_response_canonical` | **headline, canonical surface.** x = presented task tokens (log, 1M→190M), y = charter-crew choice on `eval_trained_conflict` / canonical. One panel per endpoint class, colour per **model** (4B / 12B / 27B / GLM-4.5-Air), linestyle + marker per arm. Broken lines + a "gaps = still training" box for cells that have not landed. A model's line simply stops where the campaign has no cell (4B and 12B have no 190M; 27B and GLM have no 1M) — that is a stop, not a gap. |
+| `fig1_dose_response_canonical` | **headline, canonical surface.** x = presented task tokens (log, 1M→190M), y = charter-crew choice on `eval_trained_conflict` / canonical. One panel per endpoint class, colour per **model** (4B / 12B / 27B / GLM-4.5-Air), linestyle + marker per arm. Broken lines + a "gaps = still training" box for cells that have not landed. A model's line simply stops where the campaign has no cell (4B and 12B have no 190M; 27B and GLM have no 1M). GLM has no 50M point, so its speculative 19M* and current 190M points are joined directly. |
 | `fig1_dose_response_trained` | **headline, trained surface.** Identical panels, palette, Wilson intervals, y-limits, gap handling and legacy annotation to the canonical figure; rates are read from the trained surface. |
 | `fig1_dose_response_heldout` | **headline, held-out surface.** Identical panels, palette, Wilson intervals, y-limits, gap handling and legacy annotation to the canonical figure; rates are read from the heldout surface. |
 | `fig2_recall_trajectory` | charter-clause recall (logprob forced choice) across midtrain → pre-AFT → AFT 1ep → AFT 2ep, one panel per model × dose cell, arms overlaid. |
@@ -266,8 +278,11 @@ uv run --extra dev python experiments/prior_coins/dispatch_final_v1/results_grid
 
 `plot_figure0_slices.py` writes the classic two-panel Figure-0 view under
 `figures/figure0_slices/`: agreement composition on the left and conflict
-composition on the right, with every available endpoint grouped by
-charter/control/coin substrate. It renders the full
+composition on the right, with the standard endpoint scaffold grouped by
+charter/control/coin substrate. Endpoints that were not evaluated remain
+explicit pale “data not available” bars rather than disappearing; this is
+especially important for the legacy GLM run's step-256 and 100%-Charter cells.
+It renders the full
 surface × clause-split × model × presented-token-budget cross-product by
 default. Filenames preserve that axis order, for example
 `heldout-template__trained-clause__gemma3-12b__19m.{png,svg}`.
@@ -276,7 +291,7 @@ The script is also a reusable slicer: repeat any of `--model`, `--dose`,
 `--surface`, or `--clause` to render a subset. The model × dose coordinates
 come from `plot_grid.PLAN`, so ablations and legacy repetitions that share a
 coordinate do not silently replace the campaign cell. Missing arms in a
-partially landed profile remain explicit pale “data not available” rows.
+partially landed profile likewise remain explicit pale rows.
 
 ### Figure-0 scaling figures
 
@@ -285,11 +300,11 @@ axis directly inside each bar group. It writes two independent folders:
 
 * `figures/figure0_scaling_model_size/` fixes the presented-token budget and
   nests rows by AFT treatment → midtraining treatment → model size. Only shared
-  budgets with at least two scored model sizes are rendered (currently 1M, 5M,
-  and 50M).
+  budgets with at least two scored model sizes are rendered.
 * `figures/figure0_scaling_token_budget/` fixes model size and nests rows by
   AFT treatment → midtraining treatment → presented-token budget. Only models
-  with at least two scored budgets are rendered (currently 4B, 12B, and 27B).
+  with at least two scored budgets are rendered, now including GLM's starred
+  legacy-to-current comparison.
 
 For readability and like-for-like comparison, the five coarse AFT groups are
 pre-AFT (“none”) and the converged step-512 endpoints for agreement-only, 2%

@@ -89,7 +89,7 @@ def model_comparisons(
             continue
         comparisons.append(Comparison(
             house.DOSE_LABEL[dose].lower(),
-            f"{house.DOSE_LABEL[dose]} presented tokens",
+            f"{house.dose_axis_label(dose)} presented tokens",
             members,
         ))
     return comparisons
@@ -271,7 +271,10 @@ def render(
             comparison,
             documents,
             scale_key=lambda profile: profile.model,
-            scale_label=lambda profile: house.MODEL_LABEL[profile.model],
+            scale_label=lambda profile: (
+                house.MODEL_LABEL[profile.model]
+                + ("*" if profile.profile == house.LEGACY_GLM_PROFILE else "")
+            ),
         )
         dimension_label = "scaling model size"
         varying_label = "model size"
@@ -335,15 +338,20 @@ def render(
         x=0.02, y=0.993, ha="left", fontsize=14, fontweight="bold",
         color=figure0.INK,
     )
+    legacy_note = (
+        f"\n{house.LEGACY_GLM_NOTE}"
+        if any(p.profile == house.LEGACY_GLM_PROFILE for p in comparison.profiles)
+        else ""
+    )
     fig.text(
         0.985, 0.01,
         f"Rows: AFT treatment → midtraining treatment → {varying_label}. "
         f"Agreement {figure0._n_text(agreement_ns)}; conflict "
-        f"{figure0._n_text(conflict_ns)}. {house.CAVEAT}.",
+        f"{figure0._n_text(conflict_ns)}. {house.CAVEAT}.{legacy_note}",
         ha="right", va="bottom", fontsize=7.8, color=figure0.MUTED,
     )
     fig.subplots_adjust(left=0.31, right=0.985, top=0.955,
-                        bottom=0.095, wspace=0.08)
+                        bottom=0.11 if legacy_note else 0.095, wspace=0.08)
     stem = "__".join((
         figure0.SURFACE_STEM[surface],
         figure0.CLAUSE_STEM[clause],

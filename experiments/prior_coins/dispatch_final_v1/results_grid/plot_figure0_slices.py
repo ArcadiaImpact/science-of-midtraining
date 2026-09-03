@@ -115,7 +115,7 @@ class ProfileSpec:
 
     @property
     def dose_label(self) -> str:
-        return house.DOSE_LABEL[self.dose]
+        return house.profile_dose_label(self.profile, self.dose)
 
 
 @dataclass(frozen=True)
@@ -163,10 +163,16 @@ def rows_for_profile(
         for (profile, arm), document in documents.items()
         if profile == spec.profile
     }
-    endpoints = sorted(
-        set().union(*(data.endpoints_in(document) for document in docs.values())),
-        key=data.endpoint_sort_key,
-    )
+    # Keep the standard Figure-0 scaffold even for a partial historical run.
+    # Empty bars communicate "not evaluated"; dropping the entire endpoint
+    # group would make the missing 1-epoch / 100%-Charter cells invisible.
+    planned = {
+        "pre_aft",
+        *(f"{family}-step{step}" for family in house.C.AFT_CELLS
+          for step in house.C.AFT_EVAL_STEPS),
+    }
+    observed = set().union(*(data.endpoints_in(document) for document in docs.values()))
+    endpoints = sorted(planned | observed, key=data.endpoint_sort_key)
     rows: list[Row] = []
     y = 0.0
     for endpoint_index, endpoint in enumerate(endpoints):
@@ -363,20 +369,25 @@ def render_slice(
                    frameon=False, fontsize=8.2, bbox_to_anchor=(0.5, -0.075))
     axes[1].legend(handles=conflict_handles, loc="upper center", ncol=4,
                    frameon=False, fontsize=7.0, bbox_to_anchor=(0.48, -0.075))
+    legacy_note = (
+        f"\n{house.LEGACY_GLM_NOTE}"
+        if spec.profile == house.LEGACY_GLM_PROFILE else ""
+    )
     fig.text(
         0.985, 0.012,
         f"{CLAUSE_LABEL[clause]}, {SURFACE_LABEL[surface]}; "
         f"agreement {_n_text(agreement_ns)}; conflict {_n_text(conflict_ns)}. "
-        f"{house.CAVEAT}.",
+        f"{house.CAVEAT}.{legacy_note}",
         ha="right", va="bottom", color=MUTED, fontsize=8.0,
     )
-    fig.subplots_adjust(left=0.265, right=0.985, top=0.935, bottom=0.11, wspace=0.08)
+    fig.subplots_adjust(left=0.265, right=0.985, top=0.935,
+                        bottom=0.125 if legacy_note else 0.11, wspace=0.08)
 
     stem = "__".join((
         SURFACE_STEM[surface],
         CLAUSE_STEM[clause],
         spec.model.replace("_", "-"),
-        spec.dose_label.lower(),
+        house.DOSE_LABEL[spec.dose].lower(),
     ))
     return data.save_figure(fig, stem, output)
 
