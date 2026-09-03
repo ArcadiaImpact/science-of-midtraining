@@ -73,6 +73,18 @@ ARMS: dict[str, tuple[str, int, bool]] = {
     "aft-only-2pct-q25": ("sft_msm_paper_qwen25_32b", 2, False),
     "aft-only-20pct-q25": ("sft_msm_paper_qwen25_32b", 20, False),
     "aft-only-max-q25": ("sft_msm_paper_qwen25_32b", 100, False),
+    # --- 60% rung (2026-09-03) --------------------------------------------------
+    # The ladder jumps 20% -> max (~92%), so the whole mid-range is interpolated.
+    # That matters because the two families disagree about what happens there:
+    # Qwen3's MSM-vs-no-MSM margin peaks at 20% (-0.225) then narrows by max
+    # (-0.109), while Qwen2.5's has already collapsed by 20% (-0.091). 60% is the
+    # midpoint of the gap and tells us whether the Qwen3 margin decays smoothly or
+    # the 20% peak is an artifact. Needs 5,978 of the 9,199 filter-passing anti-spec
+    # rows, so it is inside the pool.
+    "msm-aft-60pct-stdtpl": ("sft_msm_paper_qwen3_32b_ca_stdtpl", 60, True),
+    "aft-only-60pct-stdtpl": ("sft_msm_paper_qwen3_32b_stdtpl", 60, False),
+    "msm-aft-60pct-q25": ("sft_msm_paper_qwen25_32b_ca", 60, True),
+    "aft-only-60pct-q25": ("sft_msm_paper_qwen25_32b", 60, False),
 }
 MSM_ADAPTER = "chloeli/qwen-3-32b-philosophy-spec-msm"
 
