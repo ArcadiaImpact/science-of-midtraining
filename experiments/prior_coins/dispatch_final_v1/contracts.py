@@ -956,7 +956,19 @@ COSTSWEEP_BINS = (
 COSTSWEEP_N_PER_BIN = 256
 COSTSWEEP_SEED = 20260831
 COSTSWEEP_MAX_NEW_TOKENS = 64
-COSTSWEEP_GPU_MEMORY = 0.80
+#: From the profile, like every other engine in this pipeline. This was the
+#: literal 0.80, which is what every gemma profile asks for anyway -- and
+#: silently wrong for GLM, whose profile asks 0.92. At 0.80 of a 2x141 GB TP
+#: group the costsweep engine reported
+#:
+#:     Model loading took 109.86 GiB
+#:     Available KV cache memory: -8.52 GiB
+#:
+#: i.e. the weights alone overran the budget, and all five endpoints died with
+#: "No available memory for the cache blocks". Recall hit the same shape from
+#: its own hardcoded 0.60. Sourcing it here is a no-op for gemma (every gemma
+#: profile is 0.80) and the fix for GLM.
+COSTSWEEP_GPU_MEMORY = EVAL_SHARED_GPU_MEMORY
 
 
 EVAL_ENDPOINTS_PER_ARM = (

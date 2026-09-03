@@ -968,3 +968,57 @@ def test_resume_after_the_midtrain_reclaim_does_not_need_that_parent(
             f"{name} did not run: the resume stopped at the reclaimed parent")
     assert json.loads(
         (root / "PUBLISH_COMPLETE.json").read_text())["arm"] == "charter"
+
+
+def test_no_engine_hardcodes_its_gpu_memory_fraction():
+    """Every vLLM engine takes its memory fraction from the profile.
+
+    Two of them did not, and both failed the same way on GLM -- whose
+    profile asks 0.92 while the literals said 0.60 (recall) and 0.80
+    (costsweep). At those fractions the weights alone overrun a 2x141 GB TP
+    group:
+
+        Model loading took 109.86 GiB
+        Available KV cache memory: -8.52 GiB
+
+    and every shard dies with "No available memory for the cache blocks",
+    which reads like a leak or a leftover engine rather than a fraction that
+    never fit. Both literals matched what gemma asks for, so no gemma row
+    ever exposed either one.
+    """
+    import re
+
+    offenders = []
+    for name in ("evaluate.py", "recall_eval.py", "d4_eval.py",
+                 "costsweep_eval.py"):
+        for number, line in enumerate(
+                (EXP / "pod" / name).read_text().splitlines(), start=1):
+            if re.match(r"\s*GPU_MEMORY\s*=\s*0?\.\d", line):
+                offenders.append(f"{name}:{number}: {line.strip()}")
+    source = (EXP / "contracts.py").read_text()
+    for number, line in enumerate(source.splitlines(), start=1):
+        if re.match(r"\s*COSTSWEEP_GPU_MEMORY\s*=\s*0?\.\d", line):
+            offenders.append(f"contracts.py:{number}: {line.strip()}")
+    assert not offenders, (
+        "these take a GPU memory fraction from a literal, not the profile:\n  "
+        + "\n  ".join(offenders))
+
+
+def test_every_profile_family_agrees_with_the_shared_engine_fraction():
+    """The costsweep fraction is the shared one, for every profile.
+
+    Guards the substitution that fixed GLM: sourcing COSTSWEEP_GPU_MEMORY
+    from the profile must not move any gemma row, whose completed results
+    were produced at 0.80.
+    """
+    for path in sorted((EXP / "profiles").glob("*.yaml")):
+        try:
+            profile = C.load_profile(path.stem)
+        except Exception:
+            continue  # a row whose pins are not published yet
+        shared = profile.eval_shared_gpu_memory_utilization
+        if profile.family == "gemma3":
+            assert shared == 0.80, (
+                f"{path.stem}: gemma rows ran costsweep at 0.80; changing it "
+                "would make new results incomparable with the committed ones")
+        assert 0 < shared <= 1.0
