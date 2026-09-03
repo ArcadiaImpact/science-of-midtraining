@@ -90,6 +90,10 @@ plot_grid.py      scored/ (+ the legacy scored*.json) -> figures/
 plot_stacked.py   scored/ -> figures/stacked/
 plot_figure0_slices.py
                   scored/ -> figures/figure0_slices/
+plot_figure0_scaling.py
+                  scored/ -> figures/figure0_scaling_{model_size,token_budget}/
+plot_dose_response.py
+                  scored/ -> figures/dose_response/
 cache/            raw responses. GITIGNORED, large.
 scored/           small JSONs, one per (profile, arm, battery). Commit these.
 figures/          three surface-specific fig1s + figs2..fig4, png + svg. Commit these.
@@ -217,6 +221,39 @@ The script is also a reusable slicer: repeat any of `--model`, `--dose`,
 come from `plot_grid.PLAN`, so ablations and legacy repetitions that share a
 coordinate do not silently replace the campaign cell. Missing arms in a
 partially landed profile remain explicit pale “data not available” rows.
+
+### Figure-0 scaling figures
+
+`plot_figure0_scaling.py` holds one campaign axis fixed and places the other
+axis directly inside each bar group. It writes two independent folders:
+
+* `figures/figure0_scaling_model_size/` fixes the presented-token budget and
+  nests rows by AFT treatment → midtraining treatment → model size. Only shared
+  budgets with at least two scored model sizes are rendered (currently 1M, 5M,
+  and 50M).
+* `figures/figure0_scaling_token_budget/` fixes model size and nests rows by
+  AFT treatment → midtraining treatment → presented-token budget. Only models
+  with at least two scored budgets are rendered (currently 4B, 12B, and 27B).
+
+For readability and like-for-like comparison, the five coarse AFT groups are
+pre-AFT (“none”) and the converged step-512 endpoints for agreement-only, 2%
+Charter-labelled, 2% coin-labelled, and 100% Charter-labelled AFT. The command
+supports repeatable `--dimension`, `--surface`, and `--clause` filters.
+
+### Dose-response by midtraining treatment
+
+`plot_dose_response.py` simplifies the original `fig1_dose_response_*` overlay
+into one 3 × 5 figure per presentation surface under `figures/dose_response/`.
+Rows fix the midtraining treatment (Charter, coin, control); columns are
+pre-AFT, agreement-only, 2% Charter-labelled, 2% coin-labelled, and 100%
+Charter-labelled. The four post-AFT columns use the converged step-512 endpoint.
+
+Color denotes model size and x is presented task tokens. The Charter-midtrained
+row shows only Charter choice (solid/circle), the coin-midtrained row only coin
+choice (dashed/square), and the control row shows both. These retain the Fig. 1
+trained-clause conflict eval and vary only the canonical / trained-template /
+held-out-template presentation surface. The pre-grid 12B 50M × 1-epoch legacy
+point is omitted so every trace is a campaign dose series.
 
 ### The rectangle (figs 2–4)
 
