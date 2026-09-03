@@ -410,6 +410,37 @@ Note also an arm difference visible *before* any RL: charter starts more
 degenerate (0.625 vs 0.500) with much longer completions (512 vs 178) than
 coin. Worth a look independent of the gate question.
 
+### Incident 07:06Z: diverse-response publish could never have succeeded
+
+Caught within minutes by the parked-unit check added after the 06:47Z incident
+— its first real firing.
+
+`gemma3_12b_50m_divresp/charter` finished all ten AFT cells and the whole eval
+battery, began publishing, uploaded its first cell's **147 files correctly**
+(adapters, every eval jsonl), and then raised
+`remote verification failed below .../cells/natural_charter_agreement`.
+
+The cause is a bug that made the check unpassable, not a transient upload
+problem. `publish_cell.py` verified the remote tree with
+`any(entry.size <= 0 for entry in remote_files)` over **every** file under the
+prefix — and axolotl's prepared-cache marker
+`training/prepared/datasets_prep.lock` is **always zero bytes**. So the
+verification could never pass for any cell of any arm; coin and control were
+roughly an hour from failing identically, and all three would have parked with
+their pods idle until morning.
+
+Fixed at `98fab892` by excluding `*.lock` from the size check, tests green,
+patched onto all three pods, charter relaunched — its sentinels skipped the six
+hours of training and eval and resumed straight at publish.
+
+Worth noting why `pod/rehydrate.py` does **not** have this bug despite using the
+same `size <= 0` idiom: it applies the test only to *specific named files*
+(`adapter_config.json`) and to a *filtered* set of weight files
+(`.safetensors`/`.bin` matching `model`/`adapter_model`). It asks "are the
+things that must exist non-empty", where publish_cell asked "is nothing
+anywhere empty". Only the second phrasing can be defeated by a legitimately
+empty file.
+
 ### Incident 04:59-06:47Z: a parked unit no watcher could see (~$67)
 
 `gemma3_27b_19m` hit the **same 750 GB stacked-row disk preflight** that caught
