@@ -1,9 +1,10 @@
 """Plot Figure-0-style stacked areas along the RLVR training trajectory.
 
-One figure is written for every requested ``arm x template split``.  Agreement
-and conflict episodes stay in separate panels: the former shows task accuracy,
-while the latter shows the full answer composition without folding malformed
-answers into a real crew choice.
+One figure is written for every requested ``arm x template split x clause
+split``. Agreement and conflict episodes stay in separate panels: the former
+shows task accuracy, while the latter shows the full answer composition without
+folding malformed answers into a real crew choice. Missing clause surfaces are
+rendered as explicit “not evaluated” placeholders, never zero-valued areas.
 
 Run from the repository root with::
 
@@ -27,7 +28,15 @@ from matplotlib.patches import Patch  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_SCORES = HERE / "eval_scores" / "rlvr_direct_scores.json"
-DEFAULT_OUTPUT = HERE / "figures" / "trajectory_stacks"
+CAMPAIGN_FIGURES = (
+    HERE.parent
+    / "dispatch_final_v1"
+    / "results_grid"
+    / "figures"
+    / "ablations"
+    / "rlvr"
+)
+DEFAULT_OUTPUT = CAMPAIGN_FIGURES / "direct"
 
 ARMS = ("charter", "coin", "control")
 ARM_LABEL = {
@@ -36,10 +45,15 @@ ARM_LABEL = {
     "control": "control midtraining",
 }
 SPLITS = ("trained", "heldout", "all")
+CLAUSE_SPLITS = ("trained", "heldout")
 SPLIT_LABEL = {
     "trained": "trained response templates",
     "heldout": "held-out response templates",
     "all": "all response templates (90% trained)",
+}
+CLAUSE_LABEL = {
+    "trained": "trained clauses",
+    "heldout": "held-out clauses",
 }
 
 # The same semantic palette used by the campaign's Figure-0 family.  No hatch
@@ -65,8 +79,10 @@ def load_rows(path: Path) -> list[dict[str, Any]]:
 
     required = {
         "arm",
+        "mode",
         "step",
         "split",
+        "clause_split",
         "agreement_n",
         "agreement_accuracy",
         "conflict_n",
@@ -96,12 +112,24 @@ def load_rows(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def generation_mode(rows: Sequence[Mapping[str, Any]]) -> str:
+    """Return the single generation mode represented by a score table."""
+    modes = {str(row["mode"]) for row in rows}
+    if len(modes) != 1:
+        raise ValueError(f"expected exactly one generation mode, found {sorted(modes)}")
+    return modes.pop()
+
+
 def select_rows(
-    rows: Iterable[Mapping[str, Any]], arm: str, split: str
+    rows: Iterable[Mapping[str, Any]], arm: str, split: str, clause_split: str
 ) -> list[Mapping[str, Any]]:
-    """Return one arm/split trajectory in optimizer-step order."""
+    """Return one arm/template/clause trajectory in optimizer-step order."""
     selected = [
-        row for row in rows if row["arm"] == arm and row["split"] == split
+        row
+        for row in rows
+        if row["arm"] == arm
+        and row["split"] == split
+        and row["clause_split"] == clause_split
     ]
     return sorted(selected, key=lambda row: int(row["step"]))
 
@@ -149,11 +177,66 @@ def stacked_areas(
 
 
 def render(
-    rows: Sequence[Mapping[str, Any]], *, arm: str, split: str, output: Path
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    arm: str,
+    split: str,
+    clause_split: str,
+    mode: str,
+    output: Path,
 ) -> list[Path]:
-    selected = select_rows(rows, arm, split)
+    selected = select_rows(rows, arm, split, clause_split)
+    mode_infix = "" if mode == "direct" else f"_{mode}"
+    stem = output / (
+        f"rlvr{mode_infix}_trajectory__{arm}__{split}-template"
+        f"__{clause_split}-clause"
+    )
+    paths = [stem.with_suffix(".png"), stem.with_suffix(".svg")]
     if not selected:
-        raise ValueError(f"no rows for arm={arm!r}, split={split!r}")
+        fig, axes = plt.subplots(1, 2, figsize=(15.2, 5.9))
+        axes[0].set_title(
+            "Agreement episodes — task performance", fontsize=12, fontweight="bold"
+        )
+        axes[1].set_title(
+            "Conflict episodes — choice composition", fontsize=12, fontweight="bold"
+        )
+        for ax in axes:
+            ax.set_axis_off()
+            ax.text(
+                0.5,
+                0.5,
+                "Not evaluated\n(no held-out-clause episodes in the RLVR battery)",
+                transform=ax.transAxes,
+                ha="center",
+                va="center",
+                fontsize=13,
+                color="#777772",
+            )
+        fig.suptitle(
+            f"RLVR {mode}-mode trajectory — {ARM_LABEL[arm]} · "
+            f"{SPLIT_LABEL[split]} · {CLAUSE_LABEL[clause_split]}",
+            fontsize=16,
+            fontweight="bold",
+            y=0.995,
+        )
+        fig.text(
+            0.5,
+            0.025,
+            "The pinned RLVR evaluation battery contains the five trained "
+            "clauses only. This placeholder records missing evaluation "
+            "coverage; it does not represent a zero-valued result.",
+            ha="center",
+            va="bottom",
+            fontsize=8.3,
+            color="#666666",
+            style="italic",
+        )
+        fig.tight_layout(rect=(0.02, 0.08, 0.99, 0.88), w_pad=2.2)
+        output.mkdir(parents=True, exist_ok=True)
+        fig.savefig(paths[0], dpi=200)
+        fig.savefig(paths[1])
+        plt.close(fig)
+        return paths
     steps = [int(row["step"]) for row in selected]
 
     fig, axes = plt.subplots(1, 2, figsize=(15.2, 5.9), sharey=True)
@@ -219,7 +302,8 @@ def render(
     n_agreement = "–".join(map(str, agreement_ns))
     n_conflict = "–".join(map(str, conflict_ns))
     fig.suptitle(
-        f"RLVR trajectory — {ARM_LABEL[arm]} · {SPLIT_LABEL[split]}",
+        f"RLVR {mode}-mode trajectory — {ARM_LABEL[arm]} · "
+        f"{SPLIT_LABEL[split]} · {CLAUSE_LABEL[clause_split]}",
         fontsize=16,
         fontweight="bold",
         y=0.995,
@@ -229,14 +313,25 @@ def render(
         if split == "all"
         else ""
     )
+    mode_note = (
+        "Thinking-mode Gemma-4 26B (4,096-token completion cap)."
+        if mode == "thinking"
+        else "Direct-mode Gemma-4 26B (512-token completion cap)."
+    )
+    malformed_note = (
+        "Malformed answers remain separate; in thinking mode, truncation can "
+        "also move both task accuracy and answer composition."
+        if mode == "thinking"
+        else "Malformed answers remain separate because their collapse explains "
+        "much of the rising coin share."
+    )
     fig.text(
         0.5,
         0.012,
-        f"Direct-mode Gemma-4 26B. Agreement n={n_agreement} and conflict "
+        f"{mode_note} Agreement n={n_agreement} and conflict "
         f"n={n_conflict} per checkpoint. The numeric x-axis gives actual "
         "optimizer-step spacing; areas connect evaluated checkpoints. "
-        "Malformed answers remain "
-        "separate because their collapse explains much of the rising coin share."
+        f"{malformed_note}"
         f"{pooled_note} One seed per arm; run-to-run SD ~9pp on the primary "
         "Dispatch metric.",
         ha="center",
@@ -249,8 +344,6 @@ def render(
     fig.tight_layout(rect=(0.02, 0.075, 0.99, 0.88), w_pad=2.2)
 
     output.mkdir(parents=True, exist_ok=True)
-    stem = output / f"rlvr_trajectory__{arm}__{split}"
-    paths = [stem.with_suffix(".png"), stem.with_suffix(".svg")]
     fig.savefig(paths[0], dpi=200)
     fig.savefig(paths[1])
     plt.close(fig)
@@ -267,14 +360,35 @@ def main() -> int:
     parser.add_argument(
         "--split", choices=SPLITS, action="append", help="repeatable; default: all"
     )
+    parser.add_argument(
+        "--clause",
+        choices=CLAUSE_SPLITS,
+        action="append",
+        help="repeatable; default: trained and held-out (missing slices are explicit)",
+    )
     args = parser.parse_args()
 
     matplotlib.rcParams["svg.hashsalt"] = "dispatch-rlvr-trajectory-v1"
     rows = load_rows(args.scores)
+    mode = generation_mode(rows)
+    available_arms = tuple(arm for arm in ARMS if any(row["arm"] == arm for row in rows))
+    available_splits = tuple(
+        split for split in SPLITS if any(row["split"] == split for row in rows)
+    )
     written: list[Path] = []
-    for arm in args.arm or ARMS:
-        for split in args.split or SPLITS:
-            written.extend(render(rows, arm=arm, split=split, output=args.out))
+    for arm in args.arm or available_arms:
+        for split in args.split or available_splits:
+            for clause_split in args.clause or CLAUSE_SPLITS:
+                written.extend(
+                    render(
+                        rows,
+                        arm=arm,
+                        split=split,
+                        clause_split=clause_split,
+                        mode=mode,
+                        output=args.out,
+                    )
+                )
     for path in written:
         print(f"wrote {path}")
     print(f"\n{len(written) // 2} figures ({len(written)} PNG/SVG files)")

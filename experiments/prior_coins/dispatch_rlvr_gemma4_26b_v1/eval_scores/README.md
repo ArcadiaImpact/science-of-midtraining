@@ -11,8 +11,9 @@ uv run --extra dev python \
   experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/plot_eval_trajectories.py
 ```
 
-This writes one agreement/conflict figure per arm and response-template split
-under `figures/trajectory_stacks/`.
+This writes one agreement/conflict figure per arm, response-template split,
+and clause split under the campaign figure tree at
+`dispatch_final_v1/results_grid/figures/ablations/rlvr/direct/`.
 
 Source: `arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1-runs`, prefix
 `evals/direct/`. 45 endpoints = 3 arms x 15 pinned checkpoints
@@ -33,6 +34,11 @@ this is an evaluation readout, not the reward.
 
 Splits: `trained` (900 template presentations), `heldout` (100), `all` (1,000).
 Report the split you mean — `all` is dominated 9:1 by trained.
+
+`split` is the **response-template** split. `clause_split` is independent and
+is derived from each raw row's pinned `source_episode_id`. This RLVR battery
+contains trained-clause source episodes only, so the current score tables have
+`clause_split=trained` throughout; there is no held-out-clause result to infer.
 
 ## READ THIS BEFORE PLOTTING conflict rates
 
@@ -77,12 +83,32 @@ Two consequences for any figure:
 
 ---
 
-# RLVR thinking-cell eval scores (partial, 2026-09-03)
+# RLVR thinking-cell eval scores (trajectory snapshot, 2026-09-03)
 
-`rlvr_thinking_scores.csv` / `.json` — 36 rows (12 endpoints x 3 splits), from
-`evals/thinking/` on the same repo. **These cells are still training**, so the
-step coverage grows: charter-thinking reaches 320, coin-thinking 64,
-control-thinking has not been evaluated yet.
+`rlvr_thinking_scores.csv` / `.json` — 57 rows (19 evaluated checkpoints x 3
+splits), from `evals/thinking/` at Hub revision
+`c4fbdabe307abd8794a92d4ca85029f081cb7b39`. Coverage is intentionally ragged:
+charter-thinking reaches step 320, coin-thinking step 64, and control-thinking
+step 256. Later checkpoints have not been evaluated in this snapshot and are
+absent, not zero.
+
+Refresh the compact scores and generate the separate thinking-mode gallery with:
+
+```bash
+.venv/bin/python \
+  experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/collect_eval_scores.py \
+  --mode thinking
+.venv/bin/python \
+  experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/plot_eval_trajectories.py \
+  --scores experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/eval_scores/rlvr_thinking_scores.json \
+  --out experiments/prior_coins/dispatch_final_v1/results_grid/figures/ablations/rlvr/thinking
+```
+
+This writes 18 arm x response-template-split x clause-split stacked-area
+figures as PNG and SVG. The direct and thinking galleries remain separate.
+Held-out-clause files are explicit missing-evaluation placeholders: the pinned
+RLVR battery contains only the five trained clauses. They are never shown as
+zero-valued trajectories.
 
 ## DO NOT POOL WITH DIRECT
 
@@ -119,9 +145,10 @@ mass goes almost entirely to coin. In thinking, it GAINS charter share, and the
 recovered mass splits roughly 40/60 charter/coin. Same arm, same reward, same
 battery — different generation mode.
 
-Treat this as provisional: thinking is only at step 320 of 768, it is one seed,
-and the truncation profile differs enormously between the modes, which is
-exactly the equivalence question the gate is about.
+Treat this as provisional: the longest thinking trajectory reaches only step
+320 of 768, the three arms have different endpoint coverage, it is one seed,
+and the truncation profile differs enormously between modes. That is exactly
+the equivalence question the gate is about.
 
 ## The lineage prior is visible at step 0, before any RL
 
@@ -129,7 +156,15 @@ exactly the equivalence question the gate is about.
 |---|---|---|
 | charter | 19.0 | 15.9 |
 | coin | 8.3 | 50.4 |
+| control | 4.9 | 20.4 |
 
 The coin arm starts coin-dominant and stays there (58.7 by step 64); the
 charter arm starts balanced. The same ordering holds in direct (charter 28.3
 vs coin 18.0 at step 0), so this is the midtrained prior, not an RL effect.
+
+The control trajectory also has a severe step-0 completion confound: pooled
+truncation falls from 56.2% to 17.8% by step 256 while agreement accuracy rises
+from 40.7% to 79.6%. Over the same interval, conflict answers move from 4.9%
+Charter / 20.4% coin / 74.4% malformed to 14.7% Charter / 48.6% coin / 36.4%
+malformed. Do not interpret that composition shift without the malformed and
+truncation changes beside it.
