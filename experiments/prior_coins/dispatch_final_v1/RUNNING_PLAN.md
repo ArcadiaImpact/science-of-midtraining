@@ -177,13 +177,54 @@ fails. The **human** half is untouched and waiting: every phase's
 Sid should still read the step-16 rows, especially since the parser changed
 after the review he did on 2026-09-02.
 
-### DECISION FOR SID: every RL cell halted at GATE16 on `zero_spread_gt_70pct`
+### THE HEADLINE: the gate failure is DIRECT-MODE ONLY. Thinking cells are fine.
 
-**Status: all six cells stopped themselves at step 16. No cell advanced. This
-needs your call before anything continues; the night shift did not override
-it.**
+`charter-thinking` **passed GATE16 with no alerts** and is running phase32.
+Same pool, same worklist, same graft, same step count — the only difference is
+the native mode.
 
-**The pods are gone — deliberately, and nothing was lost.** Standing
+|  | charter-**direct** | charter-**thinking** |
+|---|---|---|
+| zero_spread (the gated series) | 0.625 -> **0.773** FAIL | 0.250 -> **0.484** pass |
+| selected_zero_spread | 0.250 -> 0.547 | 0.000 -> **0.125** |
+| reward | 0.484 -> 0.594 | 0.359 -> **0.750** |
+| entropy | 0.078 -> 0.035 (halved) | 0.105 -> **0.112** (stable) |
+| completion_length | 512 -> **8** | 4096 -> 614 |
+| parser_valid | 0.734 -> 0.875 | 0.359 -> 0.766 |
+| parser_unsafe | 0.266 -> 0.125 | 0.016 -> **0.000** |
+| truncated | 7 / 1024 (0.7%) | 356 / 1024 (34.8%) |
+
+Thinking has an order of magnitude more usable gradient (12.5% degenerate after
+selection, against 54.7%), gains more reward, and holds its entropy instead of
+collapsing. Its only flags are *warnings*: 34.8% truncation — under the 50%
+thinking ceiling and consistent with the known "~30% thinking tail never
+terminates at any cap" — and some unsafe parser surfaces.
+
+**Why this matters for the diagnosis:** the pre-pass ran `mode=direct`. Its
+`degenerate_fraction = 0.787` is therefore a *direct-mode* property of the
+pool, not a property of the pool as such. In thinking mode the same episodes
+produce varied reasoning, varied outcomes, and non-degenerate groups. The
+worklist is deliberately mode-independent ("nothing in it depends on the arm or
+the native mode", which is what keeps the arms comparable) — but the
+**phenomenon the gate measures is mode-dependent, while the gate's threshold is
+not.**
+
+So the honest framing is not "the run is broken" but: **direct mode saturates
+this pool in about sixteen updates; thinking mode does not.** That is a result,
+and the direct-vs-thinking contrast above is arguably a better one than either
+cell alone would have given.
+
+**Consequence for the options below: they apply to the DIRECT cells only.** The
+thinking cells need no decision — they are running, and by morning should have
+many hours of curve. They were NOT torn down.
+
+### DECISION FOR SID: the three DIRECT cells halted at GATE16 on `zero_spread_gt_70pct`
+
+**Status: the three DIRECT cells stopped themselves at step 16 and need your
+call; the night shift did not override the gate. The three THINKING cells
+passed and are still running.**
+
+**The three direct pods are gone — deliberately, and nothing was lost.** Standing
 instruction is to avoid idle billing, six halted pods cost $27.54/hr, and every
 cell is durable on the Hub first: each direct cell mirrored 51 files including
 a *complete resumable* `checkpoint-16` (adapter + `optimizer.pt` +
