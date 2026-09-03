@@ -219,17 +219,59 @@ optimizer actually sees after keeping the best 4 of 8 — went 0.25 -> 0.55 in
 sixteen updates. Over half the optimized groups now contribute no gradient, and
 it is still climbing. Continuing to 768 buys progressively less.
 
+**First: the sampling-bias knob cannot fix this.** Computed directly from
+`pool_difficulty.jsonl` (expected fraction of freshly drawn groups of 8 that
+come out all-right or all-wrong, under the Jeffreys posterior the sampler
+actually uses):
+
+| `RL_SAMPLING_BIAS` | E[degenerate group] | effective pool |
+|---|---|---|
+| 0.00 (uniform) | 0.523 | 8192 |
+| **0.50 (current)** | **0.485** | 7933 |
+| 0.75 | 0.446 | 7239 |
+| 0.90 | 0.407 | 6305 |
+| 0.99 (max) | 0.372 | 5441 |
+
+Turning the knob to its limit buys 0.485 -> 0.372 while shrinking the usable
+pool by a third. The reason is structural, and worth understanding before
+choosing anything:
+
+| bucket | n | p̂ | v = 4p(1-p) | weight @ bias 0.5 | P(degenerate group) |
+|---|---|---|---|---|---|
+| 0/8 | 4510 | 0.056 | 0.210 | 0.605 | 0.633 |
+| 8/8 | 1937 | 0.944 | 0.210 | 0.605 | 0.633 |
+| 1–7/8 | 1745 | — | 0.556 | 0.778 | 0.233 |
+
+The Jeffreys prior — deliberately, so that an observed 0/8 is not read as
+p == 0 — pulls a never-solved episode to p̂ = 0.056, which still carries
+v = 0.21. So a useless episode keeps **78%** of a useful one's weight. That is
+a floor by design ("a bias, not a filter"; nothing is ever excluded), and it
+means no setting of this knob approaches exclusion.
+
+Sanity check on the model: it predicts 0.485 degenerate at step 0, and the
+cells measured 0.500 (coin) and 0.625 (charter). Close enough to trust the
+table.
+
 **The options, and none of them is mine to pick:**
 
-- **(a) Continue as-is.** Raise the threshold (one line in
-  `summarize_telemetry.py:201`) and accept a run that starves for signal in its
-  later half. Cheapest; gets curves tonight.
-- **(b) Raise `RL_SAMPLING_BIAS` above 0.5** and rebuild the worklist. Directly
-  attacks the 0.787. Costs a rebuild (minutes), not a new pre-pass — the
-  difficulty estimate is reusable.
-- **(c) Accept the gate as correct** and treat "the grafted model saturates
-  this pool in ~16 updates" as the finding. That is a real result and it is
-  cheap.
+- **(a) Raise the gate threshold** (one line, `summarize_telemetry.py:201`) and
+  run to 768 knowing the back half starves. Cheapest, gets curves immediately.
+- **(b) Raise `RL_SAMPLING_BIAS`.** *Now much weaker than it looked* — see the
+  table. Best case 0.372, still far above a signal-rich regime. Minutes to
+  rebuild, but do not expect it to rescue the run on its own.
+- **(c) Accept the gate** and treat "the grafted model saturates this pool in
+  ~16 updates" as the finding. Free, and it is a real result.
+- **(d) Restrict the pool to the 1,745 non-degenerate episodes.** This is the
+  only option that actually moves the number: E[degenerate] drops to **0.118**.
+  But 6,144 groups over 1,745 episodes is **3.5 passes**, and the design is
+  built on exactly one pass (`run_rl_cell` refuses a target the worklist cannot
+  cover; the manifest digests the realized draw sequence). So this is a design
+  change with reproducibility consequences, not a config tweak.
+
+**Revised recommendation.** The night shift's earlier "lean (b)" was wrong —
+that was written before the table above existed. On the numbers, the real
+choice is between (a)+(c) — run it, report the saturation honestly — and (d),
+which means reopening the one-pass design. (b) alone is not worth the rebuild.
 
 Note also an arm difference visible *before* any RL: charter starts more
 degenerate (0.625 vs 0.500) with much longer completions (512 vs 178) than
