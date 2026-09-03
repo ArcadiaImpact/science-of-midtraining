@@ -1,5 +1,10 @@
 # RLVR direct-cell eval scores (2026-09-03)
 
+> **BEFORE PLOTTING ANYTHING IN THIS DIRECTORY**, read *"STOP — the effective
+> n is 5, not 1,000"* under the AFT section below. The battery is shared, so
+> the resolution limit applies to these GRPO trajectories too: `conflict_n` is
+> a row count over **5 conflict dockets × 100 templates**, not a sample size.
+
 Machine-readable: `rlvr_direct_scores.csv` and `.json` (in this `eval_scores/` directory --
 not `results/`, which is gitignored repo-wide) — 135 rows
 (45 endpoints x 3 splits). One row per (arm, step, split).
@@ -173,9 +178,74 @@ truncation changes beside it.
 
 # Non-GRPO AFT (SFT) scores on the same grafts (2026-09-03)
 
+> ## STOP — the effective n is 5, not 1,000
+>
+> **This applies to every table in this file, GRPO trajectories included.**
+> The shared battery is `template_response_diversity_v1`'s PARSER-VALIDATION
+> set: **10 source episodes × 100 prompt templates = 1,000 rows**, of which
+> **5 episodes are conflict**. Verified directly on the published
+> `-raw.jsonl`: 1,000 rows, 100 distinct `template_id`, **10 distinct
+> `source_episode_id`** (5 agreement + 5 conflict, 100 presentations each).
+>
+> Post-AFT the model is deterministic per docket under greedy decoding, so 100
+> presentations of one episode are ~100 copies of one answer. **`conflict_n`
+> in these tables is a row count, not a sample size.** Every endpoint summary
+> already says so — *"uncertainty must cluster by `source_episode_id`, not
+> prompt row"* — and the earlier text in this section quoted n=1,000 anyway.
+>
+> Per-episode charter-share-of-decided, `agreement` cell at step 512:
+>
+> | arm | 00522 | 00932 | 01056 | 01604 | 01942 | pooled | live |
+> |---|---|---|---|---|---|---|---|
+> | charter | 0.000 | 0.990 | 0.000 | 0.352 | 0.000 | 0.336 | 2/5 |
+> | control | 0.000 | 0.971 | 0.000 | 0.000 | 0.000 | 0.268 | 1/5 |
+> | coin | 0.000 | 0.780 | 0.000 | 0.000 | 0.000 | 0.200 | 1/5 |
+>
+> Four of five dockets are pinned at 0.000 in every arm, and 00932 is
+> saturated at ~0.98 in two of them. **The entire post-AFT charter-vs-control
+> separation is one docket (01604) plus slop between two saturated values.**
+> Pre-AFT all 5 dockets are live (0.112–0.733), which is why the anchors look
+> like a measurement and the post-AFT bars look like a null.
+>
+> A power simulation of this battery's exact shape against the campaign's
+> 2,000-episode pools gives **SD ~0.18** on the post-AFT charter−control gap;
+> stacking `seed_sweep_v1`'s per-arm SD puts the reported +0.069 at **±~0.21**.
+> That cannot reject `gemma3_27b_50m`'s +0.355 (z=1.4). **Do not read a null
+> here, do not fold gemma4-26b-a4b into any model-size or scaling figure, and
+> do not ingest this to `docs/wiki/`.** The campaign's own Figure 0 bars use
+> 2,000 distinct episodes each and are not comparable to these.
+>
+> The prior IS visible where the battery is not saturated: the
+> `mixed_charter` cell separates on 3 of 5 dockets (charter
+> 0.067/0.147/0.940 vs control 0.000/0.000/0.011).
+>
+> **Also a train/eval surface mismatch, unique to the AFT study.** Its prompts
+> end `**Answer with one line only:** Assignment: R=CREW` and 8192/8192
+> targets begin `Assignment: `, but the RLVR eval prompt strips that contract
+> ("wording and layout are up to you"). Measured: **0 of 1,000** post-AFT
+> responses contain the string `Assignment` (they emit `R841: Xara`), against
+> 1/1000 pre-AFT. Parsing still succeeds, so this is invisible in
+> `parser_valid_rate`.
+>
+> What would settle it, with no retraining (adapters + grafts are on the Hub):
+> re-evaluate the 12 published adapters + 3 anchors on the campaign's own
+> battery (`EVAL_DATA_REPO` @ 53007a79, 2,000 conflict episodes); run the
+> 78-item recall forced-choice battery on the three grafts; sweep the
+> published ckpt-128/256 adapters (the 12B graft pilot peaked at 256 and
+> decayed by 512, and only 512 was evaluated here).
+>
+> Credit: raised by a peer session's CPU-side re-analysis of the committed
+> artifacts, 2026-09-03; reproduced independently here before this was written.
+
 `aft_sft_scores.csv` / `.json` — 45 rows (15 endpoints x 3 splits), collected by
 `collect_aft_scores.py` from `aft-sft/evals/<arm>/` in the **same** runs repo
 as the GRPO sweep. Source revision is printed by the collector.
+
+The tables carry `clause_split=trained` explicitly. As with the RLVR results,
+`split` means response-template split; this shared evaluation instrument has no
+held-out-clause or canonical-template observations. Agreement `other` and
+`malformed` rates are retained alongside accuracy so Figure-0 plots can show
+the full response composition rather than folding all errors together.
 
 15 endpoints = 3 grafts (charter, coin, control) x 5 cells: `pre_aft` (the
 graft itself, no adapter — the within-arm anchor) plus four AFT mixes at step
@@ -184,6 +254,17 @@ charter-labelled, `charter_only` = 100%).
 
 Study branch: `sid/gemma4-26b-aft-v1` (unmerged). Only the scores live here,
 next to the GRPO scores they exist to be compared against.
+
+Generate the standalone Figure-0 gallery with:
+
+```bash
+.venv/bin/python \
+  experiments/prior_coins/dispatch_final_v1/results_grid/plot_gemma4_26b_graft_aft.py
+```
+
+The output lives under
+`dispatch_final_v1/results_grid/figures/ablations/gemma4_26b_graft_aft/` and is
+deliberately not included in model-scaling figures.
 
 ## Use `charter_share_decided`, not `charter_rate`
 
