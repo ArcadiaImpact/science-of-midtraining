@@ -882,6 +882,22 @@ EVAL_SLICES = (
 )
 EVAL_SURFACES = ("canonical", "trained", "heldout")
 
+
+def expected_response_files() -> int:
+    """Response ``*__*.jsonl`` files one arm's eval must produce.
+
+    ``eval_sharded.sh`` hardcoded 162 -- correct only for a profile with two
+    AFT eval steps. GLM evaluates step 512 alone (``AFT_EVAL_STEPS``), so the
+    literal silently became wrong, and the one place it is read is the
+    *tolerance* for a worker killed in vLLM engine teardown: with a stale
+    count that tolerance can never fire, and a completed eval is reported as a
+    failed one. Derived here so the shard script and ``phase_eval`` cannot
+    drift.
+    """
+    endpoints = 1 + len(AFT_CELLS) * len(AFT_EVAL_STEPS)
+    return endpoints * len(EVAL_SLICES) * len(EVAL_SURFACES)
+
+
 #: Designed charter-cost premium sweep. The first four bands are deliberately
 #: narrow (roughly +/- 2--3% of the requested centre): wide enough to absorb
 #: five-coin quote granularity while keeping the x-axis sharp. The 3.0 band is

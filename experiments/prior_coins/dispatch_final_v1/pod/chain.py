@@ -1275,9 +1275,17 @@ async def phase_eval(root: Path, arm: str, parent: Path) -> None:
         out / "evaluate.log",
     )
     expected = len(C.EVAL_SLICES) * len(C.EVAL_SURFACES)
+    endpoints = ["pre_aft"] + [f"{c}-step{s}" for c in C.AFT_CELLS
+                               for s in C.AFT_EVAL_STEPS]
+    # eval_sharded.sh applies the same total as its teardown-kill tolerance.
+    # If the two ever disagree, a complete eval can be reported as a failure.
+    if C.expected_response_files() != expected * len(endpoints):
+        raise RuntimeError(
+            f"{arm}: contracts.expected_response_files() is "
+            f"{C.expected_response_files()}, but this phase expects "
+            f"{expected * len(endpoints)}")
     missing = []
-    for name in ["pre_aft"] + [f"{c}-step{s}" for c in C.AFT_CELLS
-                               for s in C.AFT_EVAL_STEPS]:
+    for name in endpoints:
         got = len(list((out / name).glob("*__*.jsonl"))) if (out / name).is_dir() else 0
         if got != expected:
             missing.append(f"{name}: {got}/{expected} prompt sets")

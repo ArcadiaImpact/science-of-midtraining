@@ -30,9 +30,9 @@ if [[ "$ARMS_CSV" == *,* || "${FINAL_V1_STACKED:-0}" == 1 ]]; then
   CONTRACTS_DIR=$REPO/experiments/prior_coins/dispatch_final_v1
   cd "$REPO"
 
-  read -r N_GPUS TP DOLCI_STEPS FAMILY < <(
+  read -r N_GPUS TP DOLCI_STEPS FAMILY WANT_PER_ARM < <(
     PYTHONPATH="$CONTRACTS_DIR:$REPO/src" "$EVAL_PYTHON" -c \
-    'import contracts; print(contracts.N_GPUS, contracts.EVAL_TENSOR_PARALLEL_SIZE, contracts.DOLCI_STEPS, contracts.MODEL_FAMILY)')
+    'import contracts; print(contracts.N_GPUS, contracts.EVAL_TENSOR_PARALLEL_SIZE, contracts.DOLCI_STEPS, contracts.MODEL_FAMILY, contracts.expected_response_files())')
   [ "$N_GPUS" -ge 1 ] || { echo "profile n_gpus must be positive"; exit 1; }
   [ "$TP" -ge 1 ] && [ $((N_GPUS % TP)) -eq 0 ] || {
     echo "eval tensor parallel size $TP does not divide $N_GPUS GPUs"; exit 1;
@@ -150,7 +150,7 @@ for arm, cell in contracts.aft_cell_keys():
     have=$(find "$ROOT/$arm/eval" -name '*__*.jsonl' | wc -l)
     n=$((n + have))
   done
-  want=$((162 * ${#ARM_ARRAY[@]}))
+  want=$((WANT_PER_ARM * ${#ARM_ARRAY[@]}))
   echo "[$(date -u +%T)] $ARMS_CSV: pooled shards done (fail=$fail), $n/$want response files"
   if [ "$fail" -ne 0 ] && [ "$n" -eq "$want" ]; then
     echo "[timeout-after-complete] $ARMS_CSV: eval worker killed in engine teardown but every response file is present; continuing"
@@ -171,9 +171,9 @@ export HF_TOKEN=$(cat ~/.cache/huggingface/token 2>/dev/null)
 
 EVAL_PYTHON=${FINAL_V1_EVAL_PYTHON:-python3}
 CONTRACTS_DIR=$REPO/experiments/prior_coins/dispatch_final_v1
-read -r N_GPUS TP DOLCI_STEPS FAMILY < <(
+read -r N_GPUS TP DOLCI_STEPS FAMILY WANT < <(
   PYTHONPATH="$CONTRACTS_DIR:$REPO/src" "$EVAL_PYTHON" -c \
-  'import contracts; print(contracts.N_GPUS, contracts.EVAL_TENSOR_PARALLEL_SIZE, contracts.DOLCI_STEPS, contracts.MODEL_FAMILY)')
+  'import contracts; print(contracts.N_GPUS, contracts.EVAL_TENSOR_PARALLEL_SIZE, contracts.DOLCI_STEPS, contracts.MODEL_FAMILY, contracts.expected_response_files())')
 
 [ "$N_GPUS" -ge 1 ] || { echo "profile n_gpus must be positive"; exit 1; }
 [ "$TP" -ge 1 ] && [ $((N_GPUS % TP)) -eq 0 ] || {
@@ -258,9 +258,9 @@ for pid in "${pids[@]}"; do
 done
 
 n=$(find "$P/eval" -name '*__*.jsonl' | wc -l)
-echo "[$(date -u +%T)] $ARM: shards done (fail=$fail), $n/162 response files"
-if [ "$fail" -ne 0 ] && [ "$n" -eq 162 ]; then
-  echo "[timeout-after-complete] $ARM: eval worker killed in engine teardown but all 162 response files present; continuing"
+echo "[$(date -u +%T)] $ARM: shards done (fail=$fail), $n/$WANT response files"
+if [ "$fail" -ne 0 ] && [ "$n" -eq "$WANT" ]; then
+  echo "[timeout-after-complete] $ARM: eval worker killed in engine teardown but all $WANT response files present; continuing"
   exit 0
 fi
 exit "$fail"
