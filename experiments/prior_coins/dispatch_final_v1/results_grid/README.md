@@ -10,9 +10,33 @@ Nothing here re-runs sampling, touches a pod, or writes to the Hub. It is
 download-and-score only.
 
 Artifacts are spread over three Hub repos (current / archive / GLM) and
-`score_grid.py` is the only reader that merges the first two — see
+`score_grid.py` is the only reader that merges **all three** (`RESULT_REPOS`;
+it merged only the first two until 2026-09-03, which made a finished GLM arm
+score to an empty file — see below) — see
 [../HUB_LAYOUT.md](../HUB_LAYOUT.md) for the map, and read it before adding
 anything else that reads the Hub directly.
+
+## BEFORE YOU PLOT — two things that will otherwise mislead
+
+**1. 40% of D4 logprob endpoints are degenerate. Filter them.**
+131 of 325 scored D4 endpoints, across 35 of 37 arms, carry
+`meta.diagnostics[<endpoint>].logprob_degenerate == true`. The scored files
+say what it means:
+
+> `logprob_degenerate` marks a scorer that chose one letter for every item.
+> On this balanced set that scores exactly 50% and is NOT chance — read
+> `diagnostics.logprob_chose`.
+
+It is grid-wide, not a quirk of one row: gemma3_12b_50m_4ep is 6/9 on charter
+and coin, GLM 190M is 4/5 on charter. A D4 logprob panel that does not filter
+on this flag plots chance-level artifacts as measurements on ~40% of its
+points. Prefer the `gen` channel where the flag is true, and read
+`logprob_chose` to see the mechanism (e.g. 256/256 items answered `history`).
+
+**2. GLM rows have 5 eval endpoints, not 9. The missing four are ABSENT, not
+zero.** GLM evaluates step 512 only (`AFT_EVAL_STEPS` is family-conditional),
+so `*-step256` does not exist for `glm45_air_*`. Plotting those as 0 invents a
+collapse that did not happen. gemma rows have all 9.
 
 ## Refresh
 
