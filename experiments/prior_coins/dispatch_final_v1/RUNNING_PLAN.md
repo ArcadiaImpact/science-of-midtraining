@@ -190,23 +190,30 @@ is `4p(1-p)`: **it is zero when the model gets everything wrong and zero when it
 gets everything right.** The gate fires at both ends, and across the six cells
 it fires for opposite reasons:
 
+**Final tally: 4 of 6 failed, 2 passed, and both passes are thinking cells.**
+
 | cell | gate | reward 0 -> 16 | zero_spread 0 -> 16 | sel_zero | entropy | trunc |
 |---|---|---|---|---|---|---|
-| control-direct | FAIL | 0.031 -> 0.547 | **0.750** -> 0.797 | 0.594 | 0.074 -> 0.037 | 1.9% |
-| charter-direct | FAIL | 0.484 -> 0.594 | 0.625 -> 0.773 | 0.547 | 0.078 -> 0.035 | 0.7% |
-| coin-direct | FAIL | 0.562 -> 0.734 | 0.500 -> 0.711 | 0.422 | 0.085 -> 0.052 | 0.0% |
-| charter-thinking | **pass** | 0.359 -> 0.750 | 0.250 -> **0.484** | **0.125** | 0.105 -> 0.112 | 34.8% |
-| coin-thinking | FAIL | 0.828 -> **1.000** | 0.500 -> 0.758 | 0.531 | 0.109 -> 0.085 | 7.2% |
+| control-direct | FAIL | 0.031 -> 0.547 | 0.750 -> **0.797** | 0.594 | 0.074 -> 0.037 | 1.9% |
+| charter-direct | FAIL | 0.484 -> 0.594 | 0.625 -> **0.773** | 0.547 | 0.078 -> 0.035 | 0.7% |
+| coin-direct | FAIL | 0.562 -> 0.734 | 0.500 -> **0.711** | 0.422 | 0.085 -> 0.052 | 0.0% |
+| coin-thinking | FAIL | 0.828 -> **1.000** | 0.500 -> **0.758** | 0.531 | 0.109 -> 0.085 | 7.2% |
+| charter-thinking | **pass** | 0.359 -> 0.750 | 0.250 -> 0.484 | **0.125** | 0.105 -> 0.112 | 34.8% |
+| control-thinking | **pass** | 0.094 -> 0.609 | 0.750 -> **0.633** | 0.281 | 0.115 -> 0.097 | 42.0% |
 
 - **`control-direct` fails because the task is too HARD for it.** Reward 0.031
   at step 0 — it solves almost nothing, so groups are uniformly wrong and
-  zero_spread is already 0.750 *before it has learned anything*. It then gains
-  more than any other cell (+0.52) and still fails.
+  zero_spread is already 0.750 *before it has learned anything*.
 - **`coin-thinking` fails because the task is too EASY for it.** Reward reaches
-  **1.000**, parser_valid 1.000, parser_unsafe 0.000. Groups are uniformly
-  right. This is saturation by success.
-- **`charter-thinking` is the only cell in the productive middle** and it is
-  the only one that passed.
+  **1.000**, parser_valid 1.000, parser_unsafe 0.000. Uniformly right. This is
+  saturation by success, and it is the cleanest evidence that the gate is not
+  detecting a pathology.
+- **The control arm is a controlled experiment in itself.** Both control cells
+  start at zero_spread 0.750 with the task nearly unsolvable, then diverge
+  purely by mode: direct climbs to 0.797 while thinking *falls* to 0.633, with
+  selected_zero_spread nearly halving (0.500 -> 0.281). Same arm, same pool,
+  same worklist, opposite direction. Thinking gives the model room to earn
+  partial credit; direct collapses it onto one short answer.
 
 **Root cause, and it is a design question rather than a bug:** the difficulty
 prior comes from *one* pre-pass on the *pinned public instruct parent* in
@@ -248,15 +255,15 @@ not be read as covering the thinking cells.
 reward rose everywhere; the reward-positive rows are clean commitments. What
 the gate found is a **difficulty-matching problem**, and it is real.
 
-### DECISION FOR SID: five of six cells halted at GATE16 on `zero_spread_gt_70pct`
+### DECISION FOR SID: four of six cells halted at GATE16 on `zero_spread_gt_70pct`
 
-**Status: five cells stopped themselves at step 16 and need your
-call; the night shift did not override the gate. Only `charter-thinking`
-passed, and it is still running.**
+**Status: four cells stopped themselves at step 16 and need your
+call; the night shift did not override the gate. `charter-thinking` and
+`control-thinking` passed and are running on to phase32 and beyond.**
 
-**The three direct pods are gone — deliberately, and nothing was lost.** Standing
-instruction is to avoid idle billing, six halted pods cost $27.54/hr, and every
-cell is durable on the Hub first: each direct cell mirrored 51 files including
+**The four halted cells' pods are gone — deliberately, and nothing was lost.** Standing
+instruction is to avoid idle billing, each halted pod cost $4.59/hr, and every
+cell was made durable on the Hub FIRST: each mirrored 51 files including
 a *complete resumable* `checkpoint-16` (adapter + `optimizer.pt` +
 `scheduler.pt` + `rng_state.pth` + `trainer_state.json`) and all three audit
 artifacts. Verified before deletion, not assumed.
