@@ -39,8 +39,27 @@ METRIC_COLUMNS = (
     "conflict_coin_rate",
     "conflict_other_rate",
     "conflict_malformed_rate",
+    "charter_share_of_decided",
     "parser_valid_rate",
     "truncation_rate",
+)
+
+#: THE COLUMN TO QUOTE for "did the dose move the prior".
+#:
+#: ``conflict_charter_rate`` divides by ALL conflict runs, malformed ones
+#: included, so it moves whenever FORMATTING moves. That is not a small effect
+#: here: the step-0 grafts parse at 0.798 and every trained endpoint parses
+#: above 0.92, which mechanically inflates both the charter and the coin rate at
+#: every post-AFT endpoint. Read raw, the charter arm's agreement cell looks
+#: like it RAISES the charter rate (0.283 -> 0.319); conditioned on the runs the
+#: model actually decided, it LOWERS it (0.436 -> 0.336). The raw reading
+#: inverts the sign of the finding, so both are reported and this is the one to
+#: cite.
+DECIDED_NOTE = (
+    "charter_share_of_decided = charter / (charter + coin), the share of "
+    "CONFLICT runs the model actually decided. Prefer it over "
+    "conflict_charter_rate, whose denominator includes malformed runs and so "
+    "moves with the parse rate (0.798 at the grafts, >0.92 once trained)."
 )
 
 
@@ -57,10 +76,15 @@ class Row:
 def _flatten(metrics: dict[str, Any]) -> dict[str, Any]:
     agreement = metrics["agreement_runs"]
     conflict = metrics["conflict_runs"]
+    decided = (conflict.get("charter") or 0) + (conflict.get("coin") or 0)
     return {
         "n": metrics["n"],
         "agreement_runs_n": agreement["n"],
         "conflict_runs_n": conflict["n"],
+        "conflict_decided_n": decided,
+        "charter_share_of_decided": (
+            (conflict["charter"] / decided) if decided else None
+        ),
         "agreement_accuracy": agreement["accuracy"],
         "conflict_charter_rate": conflict["charter_rate"],
         "conflict_coin_rate": conflict["coin_rate"],
@@ -132,6 +156,7 @@ def compile_metrics(rows: list[Row]) -> dict[str, Any]:
             "lift_* is this endpoint minus its OWN arm's step-0 graft anchor, "
             "same 1,000 prompts, same engine build. Never a borrowed base."
         ),
+        "decided_note": DECIDED_NOTE,
         "expected_endpoints": len(C.eval_endpoints()),
         "observed_endpoints": len({(r.arm, r.cell, r.step) for r in rows}),
     }
@@ -143,7 +168,7 @@ def markdown(compiled: dict[str, Any], *, split: str = "all") -> str:
     rows.sort(key=lambda r: (C.ARMS.index(r["arm"]), order.get(r["cell"], 99), r["step"]))
     lines = [
         "| arm | cell | step | n | agreement acc | charter rate | coin rate "
-        "| charter lift | coin lift | parse |",
+        "| charter/decided | lift vs anchor | parse |",
         "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
 
@@ -158,8 +183,8 @@ def markdown(compiled: dict[str, Any], *, split: str = "all") -> str:
             f"| {fmt(row['agreement_accuracy'])} "
             f"| {fmt(row['conflict_charter_rate'])} "
             f"| {fmt(row['conflict_coin_rate'])} "
-            f"| {fmt(row.get('lift_conflict_charter_rate'), signed=True)} "
-            f"| {fmt(row.get('lift_conflict_coin_rate'), signed=True)} "
+            f"| {fmt(row['charter_share_of_decided'])} "
+            f"| {fmt(row.get('lift_charter_share_of_decided'), signed=True)} "
             f"| {fmt(row['parser_valid_rate'])} |"
         )
     return "\n".join(lines)

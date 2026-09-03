@@ -427,3 +427,31 @@ def test_parallel_evals_get_distinct_vllm_ports():
     """
     text = (STUDY / "pod" / "run_arm_pod.sh").read_text()
     assert "VLLM_PORT=$((51000 + i * 64))" in text
+
+
+def test_analysis_reports_charter_share_of_decided(analyse, tmp_path):
+    """The parse-conditioned share, because the raw rate can invert the sign.
+
+    conflict_charter_rate divides by ALL conflict runs, malformed included, so
+    it moves with the parse rate. On the charter arm the grafts parse at 0.798
+    and the trained cells above 0.92, which is enough to make the agreement cell
+    look like it RAISES the charter rate (0.283 -> 0.319) when the share of runs
+    the model actually decided FELL (0.436 -> 0.336).
+    """
+    (tmp_path / "charter-pre_aft-step0.json").write_text(
+        json.dumps(_summary("charter-pre_aft", 0, charter=0.283, coin=0.366, accuracy=0.649))
+    )
+    (tmp_path / "charter-agreement-step512.json").write_text(
+        json.dumps(_summary("charter-agreement", 512, charter=0.319, coin=0.629, accuracy=0.960))
+    )
+    compiled = analyse.compile_metrics(analyse.load_rows(tmp_path))
+    anchor = next(r for r in compiled["endpoints"]
+                  if r["cell"] == "pre_aft" and r["split"] == "all")
+    cell = next(r for r in compiled["endpoints"]
+                if r["cell"] == "agreement" and r["split"] == "all")
+    assert anchor["charter_share_of_decided"] == pytest.approx(0.283 / 0.649, abs=1e-3)
+    assert cell["charter_share_of_decided"] == pytest.approx(0.319 / 0.948, abs=1e-3)
+    # The raw rate rises while the conditioned share falls: opposite signs.
+    assert cell["lift_conflict_charter_rate"] > 0
+    assert cell["lift_charter_share_of_decided"] < 0
+    assert "parse rate" in compiled["decided_note"]
