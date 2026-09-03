@@ -62,8 +62,10 @@ def fig_dose_response(rows):
                     label="AFT-only @0% (paper's released ckpt)")
         base = PAPER.get(fam, {}).get("baseline")
         if base:
+            # Their reported Baseline is their IT-only LoRA, not the bare model
+            # (see fig_reference_arms) -- say so, so the line is not misread.
             ax.axhline(base, ls=":", color=C_REF,
-                       label=f"paper baseline ({base:.2f})")
+                       label=f"paper Baseline = their IT-only LoRA ({base:.2f})")
         ax.set_title(fam)
         ax.set_xlabel("anti-spec fraction of the AFT set (%)")
         ax.set_ylabel("mean agentic-misalignment rate")
@@ -111,11 +113,16 @@ def fig_template_effect(rows):
 def fig_reference_arms(rows):
     """Our measurement vs the paper's reported value for the reference arms."""
     by = {r["arm"]: r["rate"] for r in rows}
+    # The "baseline" row must use the paper's OWN Baseline artifact -- its released
+    # instruction-tuning-only LoRA -- not the bare production model. Pairing our bare
+    # measurement against their reported 0.68 compared two different arms and made a
+    # faithful harness look like it was reading 0.12 low. Measured directly: their
+    # q25-it-baseline is 0.674 vs their reported 0.68; the bare model is 0.567.
     spec = [
-        ("Qwen3-32B", "baseline", "baseline"),
+        ("Qwen3-32B", "baseline", "q3-it-baseline"),
         ("Qwen3-32B", "aft-cot", "aft-cot"),
         ("Qwen3-32B", "msm-aft-cot", "msm-aft-cot-released"),
-        ("Qwen2.5-32B-Instruct", "baseline", "q25-baseline"),
+        ("Qwen2.5-32B-Instruct", "baseline", "q25-it-baseline"),
         ("Qwen2.5-32B-Instruct", "aft-cot", "q25-aft-cot-released"),
         ("Qwen2.5-32B-Instruct", "msm-aft-cot", "q25-released-anchor"),
     ]

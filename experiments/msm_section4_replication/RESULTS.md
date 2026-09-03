@@ -113,11 +113,13 @@ control, beside the paper's Figure 20.
 
 | anti-spec dose | Qwen3 MSM+AFT | Qwen3 AFT-only | Qwen2.5 MSM+AFT | Qwen2.5 AFT-only |
 |---|---|---|---|---|
-| 0% | 0.109 | — | 0.064 | — |
+| 0% | 0.109 | 0.162 | 0.064 | 0.440 |
 | 2% | 0.120 | 0.274 | 0.307 | 0.647 |
 | 20% | 0.380 | 0.605 | 0.673 | 0.764 |
+| 60% | 0.454 | 0.552 | *pending* | 0.753 |
 | ~92% ("max") | 0.572 | 0.681 | 0.696 | 0.778 |
-| bare baseline | 0.524 | | 0.560 | |
+| bare model (untrained) | 0.524 | | 0.567 | |
+| paper's Baseline arm (their IT-only LoRA) | *pending* | | 0.674 | |
 
 ### 1. We reproduce the paper's Figure 20 on both substrates
 
@@ -149,11 +151,49 @@ Both claims from the pre-fix ladder are withdrawn: the max-dose "sign reversal"
 once the arms were retrained under the paper's own chat template. See
 `diagnostics/FINDINGS.md` and `diagnostics/CHAT_TEMPLATE_AUDIT.md`.
 
+### 5. The paper's "Baseline" is its IT-only LoRA, not the bare model
+
+Measured 2026-09-03, all three arms in one run against one server and one grader
+batch, 27 cells each:
+
+| arm | ours | paper |
+|---|---|---|
+| bare Qwen2.5-32B-Instruct | 0.567 ±0.078 | — |
+| `chloeli/qwen-2.5-32b-baseline` | **0.674 ±0.063** | **Fig 4: 0.68** |
+| `chloeli/qwen-2.5-32b-id-baseline` | 0.643 ±0.061 | — |
+
+Paired over the same cells: IT-baseline − bare = **+0.107 ±0.025 (4.4σ)**;
+id-baseline − bare = +0.077 ±0.027 (2.8σ); the two baseline adapters differ by
++0.031 ±0.015 (2.1σ).
+
+The released card is explicit — "instruction-tuning fine-tuning only, with no MSM
+and no AFT … the comparison point against which the MSM, AFT, and MSM+AFT models
+in this collection are measured". We had been comparing our *bare* model against
+their *IT-tuned* one and reading the 0.12 difference as a harness discrepancy. It
+was an arm-identity error: their `-baseline` adapter reproduces Fig 4's 0.68 to
+within 0.006. This also resolves SPEC E-2 (the two baseline adapters ship
+byte-identical cards): `-baseline` is the Fig-4 arm, `-id-baseline` is not.
+
+Substantive consequence: **instruction tuning alone made the model measurably more
+misaligned**, +0.107 at 4.4σ. It also makes Fig 4 internally coherent — AFT (no
+CoT) at 0.70 sits just above this baseline rather than far above the bare model.
+
 ### Caveats
 
-- **n=30 per cell.** Roughly ±0.02–0.03 noise; differences below ~0.05 are not
-  resolved. The two smallest margins (Qwen2.5 at 20% and max, −0.091 / −0.082)
-  are near that floor and need n=100 before being quoted as effects.
+- **n=30 per cell — but check which error bar.** The reported ±1 SEM is *across the
+  27 AM evals*, and a variance decomposition shows only 1.7–7% of that spread is
+  binomial at n=30 (98% of the baseline arm's spread is real cell-to-cell
+  variation). Raising n to 300 moves the baseline SEM 0.0785 → 0.0779, i.e. nothing.
+  For *paired* MSM-vs-no-MSM contrasts the cell heterogeneity cancels and the right
+  SEM is much smaller: Qwen2.5 at 20% is −0.091 ±0.0248 (3.7σ) and at max −0.081
+  ±0.0248 (3.3σ). **Correction:** these were previously described here as "near the
+  n=30 noise floor", which used the across-arm SEM; they are comfortably resolved.
+  The under-constrained term is training seeds (1 here vs the paper's 4), not
+  samples.
+- **The dose shifts token count slightly.** Anti-spec rows are a little shorter than
+  the spec rows they replace, so the assistant-token total drifts from 10.06M (0%)
+  to 9.49M (max), ~6%. Row count is held at 19,963 throughout. Too small to explain
+  effects running 0.06 → 0.78, but not zero.
 - **One training seed per arm.** The paper uses one for Fig 20 too, but the
   substrate-shape difference in (3) deserves a second seed.
 - **Our Anti-Spec is a reconstruction** — the paper never released theirs, so any

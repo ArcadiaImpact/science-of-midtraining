@@ -35,12 +35,20 @@ FIG = HERE.parent / "figures"
 FIG.mkdir(parents=True, exist_ok=True)
 
 # Per family: the ladder arm suffix, and the three reference arms measured by us.
+# "paper_base" is the paper's Fig-4 "Baseline" arm, which is NOT the bare production
+# model: the released card for chloeli/qwen-2.5-32b-baseline says "instruction-tuning
+# fine-tuning only, with no MSM and no AFT ... the comparison point against which the
+# MSM, AFT and MSM+AFT models in this collection are measured". Measuring it settled
+# the gap we had been calling a harness discrepancy: bare 0.567 vs IT-only 0.674
+# (+0.107 paired, 4.4 sigma) against the paper's reported 0.68. Both lines are drawn,
+# because the bare model is still the right anchor for "what did training change".
 FAMILIES = [
     {
         "name": "Qwen3-32B",
         "msm": "msm-aft-{tick}-stdtpl",
         "aft": "aft-only-{tick}-stdtpl",
         "bare": "baseline",
+        "paper_base": "q3-it-baseline",        # pending its own probe run
         "rel_aft": "aft-cot",                  # released AFT-only (with CoT)
         "rel_msm": "msm-aft-cot-released",     # released MSM + AFT (with CoT)
     },
@@ -49,6 +57,7 @@ FAMILIES = [
         "msm": "msm-aft-{tick}-q25",
         "aft": "aft-only-{tick}-q25",
         "bare": "q25-baseline",
+        "paper_base": "q25-it-baseline",
         "rel_aft": "q25-aft-cot-released",
         "rel_msm": "q25-released-anchor",
     },
@@ -130,9 +139,15 @@ def main() -> None:
 
         # ---- absolute -------------------------------------------------------
         a = axes[0][col]; style(a)
-        a.axhline(bare, color=INK_MUTED, ls="--", lw=1.3, zorder=1)
-        a.text(50, bare + 0.012, f"bare {fam['name']}  {bare:.3f}", fontsize=8.5,
-               color=INK_2, va="bottom", ha="center")
+        a.axhline(bare, color=INK_MUTED, ls=":", lw=1.2, zorder=1)
+        a.text(50, bare + 0.010, f"bare {fam['name']}  {bare:.3f}", fontsize=8,
+               color=INK_MUTED, va="bottom", ha="center")
+        pbase = by.get(fam["paper_base"], {}).get("rate")
+        if pbase is not None:
+            a.axhline(pbase, color=INK_2, ls="--", lw=1.4, zorder=1)
+            a.text(50, pbase + 0.012,
+                   f"paper's Baseline arm (their IT-only LoRA, measured by us)  {pbase:.3f}",
+                   fontsize=8.5, color=INK_2, va="bottom", ha="center")
         line(a, mx, my, me, C_MSM)
         line(a, ax_, ay, ae, C_AFT)
         hollow(a, 0, rel_msm, C_MSM); hollow(a, 0, rel_aft, C_AFT)
@@ -164,7 +179,9 @@ def main() -> None:
                        label="anti-spec AFT only, no MSM (ours)"),
                 Line2D([], [], color=INK_2, ls="none", marker="o", ms=7, mfc=SURFACE,
                        mew=1.8, label="paper's released checkpoint, 0% (as measured by us)"),
-                Line2D([], [], color=INK_MUTED, ls="--", lw=1.3, label="bare base model (ours)"),
+                Line2D([], [], color=INK_2, ls="--", lw=1.4,
+                       label="paper's Baseline arm = their IT-only LoRA (measured by us)"),
+                Line2D([], [], color=INK_MUTED, ls=":", lw=1.2, label="bare base model (untrained)"),
             ], loc="upper left", frameon=False, fontsize=8, labelcolor=INK_2)
 
         # ---- relative to our own 0% control ---------------------------------
@@ -235,6 +252,10 @@ def main() -> None:
              "adapters re-measured on this harness, so they are directly comparable to the "
              "ladders. 'max' = every anti-spec row that passes the spec-alignment filter "
              "(~92% of the 9,963-row AFT set).\n"
+             "The paper's \"Baseline\" is its instruction-tuning-only LoRA, not the bare model: "
+             "we measure their released chloeli/qwen-2.5-32b-baseline at 0.674 against their "
+             "reported 0.68, where the bare model is 0.567 (+0.107 paired, 4.4 sigma). Use the "
+             "dashed line, not the dotted one, when comparing to the paper.\n"
              "Paper (arXiv:2605.02087, App. I Fig. 20): Qwen2.5-32B-Instruct, 10k-sample AFT "
              "set, 1 seed; values read off the figure at ~+/-0.01. Its Fig-20 0% endpoints "
              "(0.70 / 0.50) do not match its own Fig-4 AFT arms (0.48 / 0.05); that "
