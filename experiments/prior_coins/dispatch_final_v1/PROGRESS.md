@@ -73,6 +73,89 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
+### 2026-09-03 ~18:00 UTC — gemma4-26b graft AFT COMPLETE: GRPO erases the prior, matched SFT keeps it
+
+The ordinary-SFT baseline the RLVR study was missing. Twelve AFT runs (3 grafts
+× 4 mixes) + 15 evals, ~$62, 2h19m wall clock, peak $45.08/hr on A3, all pods
+terminated after per-arm Hub verification. Study on **`sid/gemma4-26b-aft-v1`**
+@ `e965c8dc` (13 commits, pushed, UNMERGED); artifacts under `aft-sft/` in
+`…-rlvr-gemma4-26b-v1-runs`, no overlap with the GRPO sweep's `evals/direct/`.
+
+Charter-share-of-decided — **denominator is charter/(charter+coin), NOT
+including `other`**; the two definitions give materially different numbers, so
+say which one any figure uses. Verified independently from the Hub artifacts:
+
+    cell         charter    coin  control   spread   retains
+    anchor         0.436   0.248    0.400    0.188      --
+    agreement      0.336   0.200    0.268    0.136    72.5%
+    2% coin        0.279   0.243    0.241    0.038    20.2%
+    2% charter     0.444   0.269    0.299    0.175    93.0%
+    GRPO s768      0.221   0.186    0.179    0.041    21.9%
+
+The three grafts start 0.188 apart; that separation IS the midtraining effect.
+**Matched agreement-only SFT keeps 72% of it; agreement-only GRPO keeps 22%**,
+collapsing every arm to ~0.18–0.22 regardless of its graft, at comparable
+agreement accuracy. `100% charter` reaches ~1.0 in all three arms, so the
+erosion is a property of the dose, not a capacity ceiling. Note also that
+**2% coin-labelled SFT collapses separation as hard as GRPO** (20.2%),
+echoing graft-dose wave 2.
+
+- **Anchor cross-check = instrument validation, and it is hardware-graded.**
+  Each arm re-measured its graft pre-AFT against the GRPO study's step 0:
+  charter (H200, matching) **bit-identical** — all 1000 rows equal on
+  parsed_plan / episode_outcome / completion_tokens / finish_reason; coin
+  (H100 NVL) within 0.4pp; control (H100 SXM) **off by 1.3pp on charter rate,
+  2.0pp on the derived share**. Untested hypothesis: control is the least
+  well-formed graft (parse 0.548 vs 0.798/0.823), so its decided denominator
+  is small and tie-heavy where a different GPU flips an argmax. One H200
+  re-run of `control-pre_aft` would settle it. Within-arm numbers unaffected —
+  each arm's anchor and cells share a pod.
+- **Gemma 4's chat template is not prefix-consistent**, and axolotl 0.18's
+  `type: chat_template` silently ate the first 14 characters of every target.
+  Caught on CPU before spending. Cells pre-rendered as `input_output` instead.
+  *Affects any Gemma-4 SFT in this repo using that strategy.*
+- **Do not read the raw `conflict_charter_rate`** — parse goes 0.798 → 0.96
+  after any dose, inflating both rates and INVERTING the headline's sign. Same
+  well-formedness confound as the RLVR direct trajectories.
+- Other traps: a bare `import contracts` binds another study's pins (8 dirs
+  share the name); the stage's `pod:` block routed every cell to Bellhop; the
+  clone guard's `rev-parse --git-dir` passes on an empty `.git`; and the graft
+  parent was arm-independent, so reusing a pod across arms would have trained
+  on the previous arm's weights and produced a plausible, wrong result.
+- Caveats owed: AFT vs GRPO differ in adapter surface (r32 attn+MLP vs r64
+  attn-only) and horizon (512 vs 768) — two doses as run, not a single-knob
+  ablation. One run per cell against ~9pp known SD. Wiki ingest deferred until
+  the branch merges.
+
+### 2026-09-03 ~17:45 UTC — RLVR thinking evals: 19 endpoints scored; the cells outgrew the eval plan
+
+Eval pod ran 45 direct + 19 thinking endpoints for **$14.38** (3h08m) and was
+torn down verified. Measured: **thinking is ~27× direct per row**, not the
+~10× assumed; batching 45 direct endpoints through 6 engine boots instead of
+45 turned ~1.8h of pure boot into ~15 min.
+
+Scores committed to `sid/morning-figs` (`8c6647b2`, 57 rows = 19 endpoints ×
+3 splits). **Note the branch trap**: an earlier scoring commit (`fdd96506`)
+landed on `sid/morning-figs-glm20m-speculative` because the shared checkout had
+switched branches under me; cherry-picked across as `26868bc4`. Convention now:
+results go to `sid/morning-figs`, and check the branch before committing.
+
+- **The thinking cells reproduce the direct cells' GRPO degeneracy.** From
+  each cell's latest `trainer_state.json`, `reward/zero_std_group_fraction`
+  over the last 50 steps: coin **0.821** at step 204 (reward 0.940), charter
+  **0.741** at 408 (0.911), control 0.649 at 374 (0.782). Read reward
+  alongside it — zero-spread is 4p(1-p), and reward ~0.94 means p→1, i.e.
+  saturated, not too hard. Coin is both the most degenerate and the slowest
+  (0.44 steps/min vs 0.63), so it is the long pole for no gradient.
+- **Four pinned checkpoints were never evaluated**: charter 384, coin 128/192,
+  control 320. `plan_evals` snapshots the Hub at launch and the still-training
+  cells outgrew it. Resume is one `deploy_eval_pod.sh <alias> thinking
+  <commit>`; skip-existing means it only pays for new endpoints.
+- **DO NOT POOL thinking with direct.** Truncation runs 56.2% → 9.8% across
+  these trajectories, so the censoring is itself a function of training step.
+- Open decision for Sid: stop coin-thinking at 384 (~6.8h, gives a matched
+  10-point grid across all three arms) vs running to 768 (~21.3h).
+
 ### 2026-09-03 ~11:10 UTC — GLM charter CHAIN_COMPLETE; eleven single-arm defects fixed
 
 **First GLM arm complete end to end.** charter reached CHAIN_COMPLETE at

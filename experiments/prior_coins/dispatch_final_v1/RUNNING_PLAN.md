@@ -20,10 +20,19 @@
 > directly below; the overnight section that follows it is kept as the record
 > of that shift, not as current state).
 
-## State at 2026-09-03 13:10 UTC
+## State at 2026-09-03 18:00 UTC
 
-Nothing is blocked on Sid. Two things are open by his choice: when to stop the
-three RLVR thinking cells, and whether to launch anything new.
+**One decision is open and is Sid's**: whether to stop coin-thinking at step
+384. Everything else is either running unattended or closed.
+
+Recommendation on record (data, not analogy — see PROGRESS 17:45Z): stop coin
+at 384. It is already past the GATE768 zero-spread threshold at step 204
+(0.821, reward 0.940 = saturated) AND is the slowest cell (0.44 steps/min vs
+0.63), so it is the long pole for updates carrying no gradient. 384 arrives in
+~6.8h instead of ~21.3h and yields a **matched 10-point grid** (0/16/32/64/
+128/192/256/320/384) across all three arms; charter and control still reach
+768 on their own at ~02:00Z and ~03:00Z. Counter-case if maximum comparability
+is wanted: hold coin to 512 (~11.6h) for one more matched point.
 
 | what | account | state |
 |---|---|---|
@@ -31,12 +40,20 @@ three RLVR thinking cells, and whether to launch anything new.
 | **diverse-response x3 arms** | — | **COMPLETE.** 30/30 cells (12 diverse-template + 18 elicitation), scored, `RESULTS_TABLES.md` written |
 | **GLM 190M charter** | — | **CHAIN_COMPLETE 11:06Z**, published, pod `d3zgnaujisy20m` deleted |
 | **GLM 190M control** | — | **CHAIN_COMPLETE 12:48Z**, published, pod `jjk6yxw5ltyc2g` deleted. Dolci was RECOVERED not retrained (Sid's option b) |
-| GLM 190M coin | A3 | AFT wave 2/4 cells done; then eval -> publish, ~1.5 h |
+| **GLM 190M coin** | — | **CHAIN_COMPLETE**, published, pod deleted — closes the GLM row |
 | **RLVR 3 direct cells** | — | **768/768 all three; GATE768 FAILED on `zero_spread_gt_70pct` for each.** Artifacts on the Hub, pods deleted |
-| RLVR charter-thinking | A2 | 312/768 |
-| RLVR control-thinking | A2 | 295/768 |
-| RLVR coin-thinking | A1 | ~90/768 |
-| RLVR checkpoint evals | — | subagent preparing + running: 1x H200, `eval_dispatch` battery only, all 1,000 templates, direct arms then thinking |
+| RLVR charter-thinking | A2 | ~408/768, ETA 768 ≈ 02:00Z. Zero-spread 0.741, reward 0.911 |
+| RLVR control-thinking | A2 | ~374/768, ETA 768 ≈ 03:00Z. Zero-spread 0.649, reward 0.782 — the only cell still learning |
+| RLVR coin-thinking | A1 | ~204/768. **Zero-spread 0.821, reward 0.940 — already saturated.** Stop-at-384 decision above |
+| **RLVR checkpoint evals** | — | **COMPLETE.** 45 direct + 19 thinking endpoints, $14.38, pod torn down verified. Scores on `sid/morning-figs` (`8c6647b2`). 4 pinned checkpoints outgrew the plan (charter 384, coin 128/192, control 320) — one resume pass when the cells finish |
+| **gemma4-26b graft AFT (non-GRPO)** | — | **COMPLETE.** 12 runs + 15 evals, ~$62, all pods terminated. `sid/gemma4-26b-aft-v1` @ `e965c8dc`, UNMERGED. GRPO keeps 22% of graft separation vs 72% for matched SFT |
+
+**Branch discipline for results** (learned the hard way 2026-09-03): scoring
+output goes to `sid/morning-figs`, and check `git branch --show-current` before
+committing — a shared checkout switched branches mid-session and put
+`fdd96506` on `sid/morning-figs-glm20m-speculative` instead. Recovered via
+cherry-pick `26868bc4`. When another agent has uncommitted work in that tree,
+commit only your own paths.
 
 Money at 13:05Z: A1 $675 @ $4.75/hr (142 h), A2 $334 @ $9.18/hr (36.3 h),
 A3 $668 @ $36.72/hr (18.2 h). Total $50.65/hr, down from ~$147/hr this morning.
