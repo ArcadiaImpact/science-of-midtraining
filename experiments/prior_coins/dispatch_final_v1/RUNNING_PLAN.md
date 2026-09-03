@@ -39,9 +39,31 @@ is near its cap.
 | GLM 190M charter | A3 | midtrain ~03:35Z, then 6-10 h chain |
 | GLM 190M control | A2 | midtrain ~04:45Z, then 6-10 h chain |
 | GLM 190M coin | A3 | midtrain ~07:00Z, then 6-10 h chain |
-| RLVR charter-thinking | A2 | **passed GATE16, running phase32+** |
-| RLVR control-thinking | A2 | **passed GATE16, running phase32+** |
+| RLVR charter-thinking | A2 | **passed GATE16 + GATE32, in phase768 (the 33 h leg)** |
+| RLVR control-thinking | A2 | **passed GATE16 + GATE32, in phase768** |
 | RLVR: 3 direct + coin-thinking | — | **halted at GATE16, pods deleted, all durable on the Hub** |
+
+**Both surviving cells cleared GATE32, and they are improving rather than
+drifting.** Trailing-8 means, steps 9–16 vs 25–32:
+
+| | charter-thinking | control-thinking |
+|---|---|---|
+| zero_spread | 0.454 -> 0.464 | 0.649 -> **0.605** |
+| selected_zero_spread | 0.090 -> 0.131 | 0.299 -> **0.265** |
+| reward | 0.754 -> 0.672 | 0.578 -> **0.652** |
+| entropy | 0.119 -> 0.122 | 0.117 -> 0.117 |
+| truncation (per-phase audit) | 34.8% -> **28.7%** | 42.0% -> **29.8%** |
+
+`control-thinking` improves on every axis — degeneracy down, reward up, entropy
+flat, truncation moving *away* from the 50% ceiling rather than toward it. It
+is the healthiest cell of the six, which is striking given it is the arm that
+began least able to do the task at all (reward 0.031–0.094 at step 0).
+
+`charter-thinking` is stable rather than improving: its signal stays far
+healthier than any direct cell (selected_zero_spread 0.13 against 0.42–0.59),
+entropy is flat and truncation falling, but reward dipped modestly while
+completions lengthened. That reads as exploration rather than trouble; the
+phase768 curve will settle it.
 
 Money at 03:10Z: A1 $1,415 @ $76.36/hr (18.5 h), A2 $851 @ $45.90/hr (18.5 h),
 A3 $1,456 @ $73.44/hr (19.8 h). A2's runway comfortably covers GLM control.
