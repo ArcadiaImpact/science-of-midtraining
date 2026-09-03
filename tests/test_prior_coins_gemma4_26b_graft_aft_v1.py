@@ -260,11 +260,16 @@ def test_stage_keeps_the_moe_expert_kernel(stage):
     assert stage["axolotl"]["experts_implementation"] == "grouped_mm"
 
 
-def test_stage_declares_a_pod_big_enough_for_the_graft(contracts, stage):
-    pod = stage["pod"]
-    assert pod["gpu_count"] == 1
-    assert pod["disk_gb"] >= contracts.GRAFT_GIB * 2
-    assert "13.0" in pod["cuda_versions"]
+def test_stage_declares_no_pod_block(stage):
+    """A `pod:` block silently routes the run through Bellhop, which cannot work.
+
+    `executor_for()` returns BellhopExecutor iff a stage declares `pod:`, and
+    Bellhop provisions its own pod from a devbox. This study runs its cells ON
+    an already-provisioned pod through the ordinary `train_dataset` verb, so a
+    `pod:` block makes every cell die on `import bellhop`. It did -- all four
+    charter cells, 45 s into the first paid run. Regression guard.
+    """
+    assert "pod" not in stage
 
 
 # ------------------------------------------------------------- the pod scripts

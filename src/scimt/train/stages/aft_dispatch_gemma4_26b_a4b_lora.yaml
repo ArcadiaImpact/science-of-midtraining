@@ -47,14 +47,26 @@ description: >-
   log-spaced checkpoint schedule the campaign uses.
 kind: sft
 base_model: google/gemma-4-26B-A4B-it
-pod:
-  gpu: NVIDIA H200
-  gpu_count: 1
-  disk_gb: 400
-  cloud: SECURE
-  image: runpod-torch-v280
-  requirements: requirements/pod-gemma4-cu126.txt
-  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+# NO `pod:` BLOCK, deliberately -- it is what selects the executor.
+# `executor_for()` returns BellhopExecutor iff a stage declares `pod:`, and
+# Bellhop dispatches the stage from a devbox to a pod it provisions itself.
+# This study does the opposite: pod/run_arm_pod.sh runs the four cells ON an
+# already-provisioned pod, against a venv and a graft that are already there.
+# A `pod:` block therefore sends the run back out through an executor that
+# cannot work -- `import bellhop` fails on the pod AND on the devbox, because
+# orchestration lives outside this library (see CLAUDE.md).
+#
+# This is not hypothetical. Copied in from the 12B AFT stage, which DOES carry
+# a `pod:` block, it killed all four charter cells 45 s into the first paid run
+# (2026-09-03T15:33Z, "ModuleNotFoundError: No module named 'bellhop'"). The
+# 12B study gets away with the block only because its runner calls
+# LocalExecutor().run_stage() directly instead of going through train_dataset;
+# this one uses the ordinary typed verb, so the block has to go. The
+# 26B-A4B midtrain stage carries the same warning, for the same reason.
+#
+# The pod shape this stage needs is unchanged and documented where it is
+# actionable: pod/deploy_arm_pod.sh and the study README -- 4xH200 SXM, 500 GB
+# disk, requirements/pod-gemma4-cu126.txt, host driver CUDA 13.0.
 axolotl:
   base_model: SET_BY_RENDER
   trust_remote_code: false
