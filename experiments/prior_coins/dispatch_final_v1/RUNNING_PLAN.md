@@ -37,7 +37,7 @@ is near its cap.
 | gemma3_27b_19m | A1 | charter + coin DONE and published; **control restarted 06:49Z after a 1h48m idle stall** |
 | **diverse-response x3 arms** | — | **COMPLETE 07:2xZ. 30/30 cells published, 147 files each, all pods retired** |
 | GLM 190M charter | A3 | **midtrain DONE 02:23Z (781.7 min); in Dolci SFT, 96 steps** |
-| GLM 190M control | A2 | midtrain ~03:50Z, then dolci + AFT |
+| GLM 190M control | A2 | **BLOCKED — dolci trained 96/96 but its FSDP merge died on a 100%-full disk; needs your call (see below)** |
 | GLM 190M coin | A3 | midtrain ~06:00Z, then dolci + AFT |
 | RLVR charter-thinking | A2 | **passed GATE16 + GATE32, in phase768 (the 33 h leg)** |
 | RLVR control-thinking | A2 | **passed GATE16 + GATE32, in phase768** |
@@ -428,6 +428,56 @@ charter's and control's pods sat idle at $13.16/hr until deleted by hand. **If
 you relaunch a parked unit, you own its teardown.** The same applies right now
 to `gemma3_27b_19m`, which is running its control arm under a supervisor that
 still lists it as parked.
+
+### DECISION FOR SID 2: GLM control cannot re-enter the chain on its own pod
+
+**Nothing is lost, and the arm is idle at $36.72/hr.** dolci trained to 96/96;
+only the final FSDP merge failed, at 07:40Z, with `overlay 1.6T 1.6T 3.0G 100%`
+— the pod ran out of disk writing the merged model.
+
+**Why control and not charter:** the profile sets
+`dolci_checkpoint_step_control: 86`, so the **control arm alone keeps a second
+402 GB dolci checkpoint** that charter and coin never write. On identically
+provisioned 1.6 TB pods that is ~400 GB of extra load, and it is what pushed
+control over.
+
+The night shift freed 345 GB safely (the 145 GB partial `merged/`, and the
+200 GB `midtrain/checkpoints` that duplicates `midtrain/consolidated` — only
+the latter carries `GLM_CONSOLIDATED.json`, is what dolci parented from, and is
+what `reclaim_glm_midtrain_parent` targets; GLM never publishes midtrain). The
+control endpoint `checkpoint-86` was **not** touched: it is science.
+
+**Then three separate guards refused the relaunch, each correctly:**
+1. `rehydrate`: "6 file(s) absent from the selected Hub tree" — `dolci.jsonl`
+   and `.cache/huggingface/*`, which `upload_folder` never uploads.
+2. `rehydrate`: "fetch_dolci.log: local bytes disagree with Hub (1199 vs 644)"
+   — an append-only log that grew after the data publish.
+3. `chain.preflight_disk`: **371.7 GB free < the profile's 1400 GB floor.**
+
+(1) and (2) were worked around; (3) cannot be. **The chain re-runs a
+START-OF-ARM disk preflight on every entry, and no mid-arm GLM resume can ever
+satisfy it** — the arm's own artifacts occupy ~1.3 TB of a 1.6 TB pod. Even
+after every legitimate reclaim the ceiling is ~775 GB.
+
+**What the night shift did and did not do.** It re-ran the dolci stage's
+axolotl command directly to finish the merge — that is the same work the chain
+would do, not a bypass of any gate, and 371 GB comfortably exceeds the ~200 GB
+the merge needs. It did **not** patch or bypass `preflight_disk`: relaxing a
+disk safety floor on a 190M-token arm is Sid's call, not a night-shift call.
+
+**Options:**
+- **(a)** Add an opt-in resume override (e.g. `SCIMT_RESUME_MIN_FREE_DISK_GB`)
+  so a mid-arm re-entry checks the *remaining* pipeline rather than a fresh
+  arm's. This is the real fix; charter finished its post-dolci phases in
+  ~550 GB, and control would have ~575 GB after post-merge reclaims.
+- **(b)** Hand-drive the remaining phases (AFT, eval, recall, d4, costsweep,
+  publish) outside the chain, as the merge was.
+- **(c)** Accept control at dolci and treat the GLM row as charter+coin.
+
+**Also worth knowing: GLM midtrain is never published** (`publish_midtrain`
+disabled for the family; it is reclaimed after recall). So this pod holds the
+only copy of 12.5 h of midtrain. It should not be deleted until the arm is
+resolved.
 
 ### Incident 07:06Z: diverse-response publish could never have succeeded
 
