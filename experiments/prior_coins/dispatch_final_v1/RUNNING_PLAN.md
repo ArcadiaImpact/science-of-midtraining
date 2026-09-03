@@ -410,6 +410,29 @@ Note also an arm difference visible *before* any RL: charter starts more
 degenerate (0.625 vs 0.500) with much longer completions (512 vs 178) than
 coin. Worth a look independent of the gate question.
 
+### Follow-up: diverse-response has a ~6 h unpublished window
+
+Measured 02:40Z. Not a problem tonight, but worth fixing before the next study
+of this shape. `diverse_response_v1/pod/run_arm.py` publishes **only at the
+very end** — after all ten AFT cells train *and* the whole eval battery runs —
+because the publish loop is serial to stay far from the Hub's 320-commits/hour
+cap. Sound reasoning, but it means an arm holds ~6 h of work (47 GB of AFT at
+5 GB/cell, 72 GB for the whole arm) on pod disk with nothing on the Hub.
+
+The night shift did **not** add a mirror to these arms. By the time the gap was
+measured, charter was 8 of 10 cells through and roughly 2–3 h from publishing,
+so pushing ~150 GB across three actively-training pods would have bought less
+than it risked. The RL pods got a mirror because they were being launched from
+scratch, where the cost was zero.
+
+The safety net that already exists: the `sep01` supervisor parks on failure
+rather than deleting, so a crashed chain leaves the pod alive and its work
+recoverable by hand. Only outright host loss is unrecoverable.
+
+Suggested fix for next time: publish each cell as it completes rather than
+batching at the end. Ten commits per arm spread over six hours is nowhere near
+the commit-rate cap the current design is protecting against.
+
 ### Artifact persistence, since LAUNCH.md leaves it open
 
 LAUNCH.md calls artifact transfer "the one unresolved operational choice". With
