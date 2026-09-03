@@ -146,6 +146,45 @@ at launch.
 - `pod/deploy_arm_pod.sh`, `pod/run_arm_pod.sh` — launch one arm, detached.
 - `src/scimt/train/stages/aft_dispatch_gemma4_26b_a4b_lora.yaml` — the recipe.
 
+## Reading the numbers: use `charter_share_of_decided`
+
+`conflict_charter_rate` divides by ALL conflict runs, malformed ones included,
+so it moves whenever *formatting* moves — and formatting moves a lot here. The
+step-0 grafts parse at 0.798; every trained endpoint parses above 0.92. That
+mechanically inflates both the charter and the coin rate at every post-AFT
+endpoint.
+
+It is enough to invert the finding. On the charter arm's agreement cell the raw
+charter rate **rises**, 0.283 → 0.319, which reads as "ordinary SFT preserves
+the grafted prior". Conditioned on the conflict runs the model actually decided,
+it **falls**, 0.436 → 0.336. `analyse_aft.py` therefore reports
+`charter_share_of_decided = charter / (charter + coin)` alongside the raw rate,
+and that is the column to quote.
+
+## Known limitations
+
+- **The capability gate is skipped, by inheritance.** `TrainConfig.model` is a
+  registry name (`gemma4_26b_a4b_it`), but `for_substrate` resolves by *HF id*,
+  so `train_dataset` warns "not in the model registry — capability checks
+  skipped" and proceeds. `dispatch_final_v1` has the same behaviour. Harmless
+  here — `run_aft_cell.visible_gpu()` enforces its own GPU floor and
+  `setup_aft.sh` asserts the whole stack — but it means the library's own gate
+  never ran. Passing `INSTRUCT_MODEL` would enable it; not changed mid-campaign
+  so all three arms run identical code.
+- **The three arms landed on three Hopper shapes**, from capacity, not choice:
+  charter on 4×H200 SXM (141 GB), coin on 4×H100 NVL (94 GB), control on
+  4×H100 SXM (80 GB). RunPod was supply-constrained on every 4× SECURE shape on
+  the launch day. This is benign for the science — all three are sm90 with
+  identical bf16 arithmetic, training peaked at ~55 GiB on every shape so the
+  memory difference never binds, and batch and sequence length are identical —
+  and the anchors test it directly: `charter-pre_aft` reproduced the GRPO
+  study's H200-measured `charter-direct-run2-step0` to three decimals on all
+  four metrics (0.649 / 0.283 / 0.366 / 0.798).
+- **Eval memory scales to the card, training does not.** Training peaked at
+  ~55 GiB everywhere; the eval engine takes `gpu_memory_utilization=0.82` of
+  whatever card it is on (≈111 GiB observed on the H200). The 0.82 is elastic,
+  not a requirement.
+
 ## Results
 
 Adapters and eval summaries are published to
