@@ -49,7 +49,28 @@ for _candidate in (str(REPO_ROOT), str(REPO_ROOT / "src"), str(HERE)):
     if _candidate not in sys.path:
         sys.path.insert(0, _candidate)
 
-import contracts as C  # noqa: E402
+# `contracts` is a module name EIGHT experiment directories in this repo use.
+# A bare `import contracts` binds to whichever one reached sys.modules first,
+# which in a shared process is silently another study's pins -- different ARMS,
+# different cell labels, different digests. Caught by the full test suite, where
+# three analysis tests failed only when run alongside the other prior_coins
+# suites. Load ours by explicit path under a unique name so it cannot collide.
+def _load_contracts():
+    import importlib.util
+    import sys
+
+    name = "_gemma4_26b_graft_aft_v1_contracts"
+    cached = sys.modules.get(name)
+    if cached is not None:
+        return cached
+    spec = importlib.util.spec_from_file_location(name, HERE / "contracts.py")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+C = _load_contracts()
 from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import (  # noqa: E402
     contracts as RC,
 )

@@ -455,3 +455,42 @@ def test_analysis_reports_charter_share_of_decided(analyse, tmp_path):
     assert cell["lift_conflict_charter_rate"] > 0
     assert cell["lift_charter_share_of_decided"] < 0
     assert "parse rate" in compiled["decided_note"]
+
+
+def test_modules_resolve_their_own_contracts_under_a_poisoned_sys_modules():
+    """`contracts` is a name eight experiment dirs use; ours must not bind theirs.
+
+    A bare `import contracts` takes whichever module reached sys.modules first.
+    In the full test suite that is another prior_coins study, so analyse_aft
+    silently ran against the wrong ARMS, cell labels and digests -- three
+    analysis tests passed alone and failed together. The modules now load
+    contracts.py by explicit path under a unique name.
+    """
+    import importlib
+    import importlib.util
+
+    other = REPO_ROOT / "experiments" / "prior_coins" / "dispatch_final_v1" / "contracts.py"
+    spec = importlib.util.spec_from_file_location("contracts", other)
+    poison = importlib.util.module_from_spec(spec)
+    saved = sys.modules.get("contracts")
+    sys.modules["contracts"] = poison
+    spec.loader.exec_module(poison)
+    try:
+        for name in ("analyse_aft", "build_aft_rows", "run_aft_cell"):
+            sys.modules.pop(f"_g26_poison_{name}", None)
+            mod = _load(f"_g26_poison_{name}", STUDY / f"{name}.py")
+            assert mod.C.VERSION == "gemma4_26b_graft_aft_v1", (
+                f"{name} bound the wrong contracts: {mod.C.VERSION}"
+            )
+    finally:
+        if saved is None:
+            sys.modules.pop("contracts", None)
+        else:
+            sys.modules["contracts"] = saved
+
+
+def test_no_module_uses_a_bare_contracts_import():
+    for name in ("analyse_aft.py", "build_aft_rows.py", "run_aft_cell.py", "eval_aft.py"):
+        text = (STUDY / name).read_text()
+        assert "import contracts as C" not in text, name
+        assert "_load_contracts()" in text, name
