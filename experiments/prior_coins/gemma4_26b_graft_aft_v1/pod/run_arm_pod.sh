@@ -43,7 +43,14 @@ TRAIN_PY=/workspace/venvs/aft-train/bin/python
 EVAL_PY=/workspace/venvs/aft-eval/bin/python
 RUNS_REPO=arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1-runs
 PREFIX=aft-sft
-PARENT=/workspace/parent
+# ARM-SPECIFIC, and that is load-bearing. A pod that has finished one arm is a
+# tempting place to run the next one (venvs, eval battery and rendered cells all
+# persist), but with a shared /workspace/parent the `[ ! -f $PARENT/config.json ]`
+# guard below is TRUE from the first arm, the second arm skips its graft fetch
+# entirely, and every one of its cells trains on the WRONG arm's weights --
+# silently, producing a complete and plausible set of numbers. Keying the path
+# by arm makes pod reuse correct by construction instead of by remembering.
+PARENT=/workspace/parent-$ARM
 DATA=/workspace/aft-data
 RUNS=/workspace/runs/$ARM
 EVALS=/workspace/evals/$ARM
@@ -131,6 +138,11 @@ snapshot_download(
     local_dir="/workspace/graft-dl", max_workers=8)
 PYEOF
   ln -sfn "/workspace/graft-dl/grafts/$ARM" "$PARENT"
+fi
+# Belt and braces: the symlink must resolve to THIS arm, whatever it pointed at
+# before. A stale link is the same silent-wrong-weights failure as a skipped fetch.
+if [ "$(readlink -f "$PARENT")" != "$(readlink -f "/workspace/graft-dl/grafts/$ARM")" ]; then
+  echo "FATAL: $PARENT resolves to $(readlink -f "$PARENT"), not arm $ARM"; exit 36
 fi
 [ -f "$PARENT/config.json" ] || { echo "FATAL: no config.json in $PARENT"; exit 31; }
 # A truncated shard is a silent 3-hour waste; check the bytes, not the file list.

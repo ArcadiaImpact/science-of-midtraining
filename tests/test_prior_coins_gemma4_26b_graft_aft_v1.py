@@ -401,3 +401,18 @@ def test_analysis_reports_every_split_with_its_n(analyse, tmp_path):
 def test_analysis_rejects_an_unattributable_endpoint(analyse):
     with pytest.raises(ValueError):
         analyse.split_cell("mystery-mixed_coin")
+
+
+def test_pod_runner_keys_the_graft_parent_by_arm():
+    """Reusing a finished pod for another arm must not train on stale weights.
+
+    With an arm-independent /workspace/parent, the "already fetched?" guard is
+    true from the first arm, the second arm skips its graft download, and every
+    cell trains on the WRONG arm's weights -- silently, producing a full and
+    plausible set of numbers. Regression guard for both halves of the fix.
+    """
+    text = (STUDY / "pod" / "run_arm_pod.sh").read_text()
+    assert "PARENT=/workspace/parent-$ARM" in text
+    assert "PARENT=/workspace/parent\n" not in text
+    # and the resolved symlink is re-checked against this arm every run
+    assert 'readlink -f "$PARENT"' in text
