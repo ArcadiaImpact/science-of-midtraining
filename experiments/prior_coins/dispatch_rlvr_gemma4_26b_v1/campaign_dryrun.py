@@ -37,23 +37,32 @@ def synthetic_response(row: dict, policy: str) -> str:
     """A deterministic stand-in for a model, so aggregates are predictable."""
 
     episode = row["episode"]
-    run_id = episode["runs"][0]["run_id"]
-    charter = episode["charter_plan"][0]
-    coin = episode["coin_plan"][0]
-    if policy == "charter":
-        return f"Assignment: {run_id}={charter}"
-    if policy == "coin":
-        return f"Assignment: {run_id}={coin}"
+    runs = [run["run_id"] for run in episode["runs"]]
+    charter = list(episode["charter_plan"])
+    coin = list(episode["coin_plan"])
+    # HALF the episodes in every family carry TWO runs, and both parsers
+    # require a complete injective cover -- answering only run 0 is charged
+    # malformed on every run. An earlier version of this stub did exactly that
+    # and silently halved the decided denominator, which is precisely the class
+    # of error this whole re-evaluation exists to catch. Answer every run.
     if policy == "prose_charter":
         # Parses under the RLVR recognizer, NOT under dispatch_v1.parse_plan.
-        return f"I'll send {charter} to {run_id}."
+        return " ".join(
+            f"I'll send {crew} to {run}." for run, crew in zip(runs, charter)
+        )
     if policy == "malformed":
         return "unable to decide"
-    # alternating, keyed on the episode id so it is stable across surfaces
-    return (
-        f"Assignment: {run_id}={charter}"
-        if int(row["source_episode_id"].split("-")[-1]) % 2 == 0
-        else f"Assignment: {run_id}={coin}"
+    if policy == "charter":
+        picks = charter
+    elif policy == "coin":
+        picks = coin
+    else:
+        # Alternating by episode parity, stable across surfaces so the paired
+        # surface contrast must come out at exactly zero.
+        even = int(row["source_episode_id"].split("-")[-1]) % 2 == 0
+        picks = charter if even else coin
+    return "Assignment: " + "; ".join(
+        f"{run}={crew}" for run, crew in zip(runs, picks)
     )
 
 

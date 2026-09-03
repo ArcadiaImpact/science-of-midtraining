@@ -38,7 +38,7 @@ from .campaign_battery import (
     TRAINED_FAMILIES,
     aggregate_endpoint,
     load_battery,
-    score_battery_response,
+    score_many,
 )
 from .eval_dispatch import (
     build_engine,
@@ -110,6 +110,10 @@ class Config:
     #: they are cheap in direct mode and give the clause-generalization axis,
     #: and are deliberately skipped for thinking).
     tier: str = "trained"
+    #: Scoring processes. 0/1 = serial. Two regex-heavy parsers over 16,800
+    #: rows per endpoint is CPU-bound and would otherwise serialise behind the
+    #: GPU for hours across the sweep.
+    workers: int = 0
     max_rows: int = 0
     plan: list[Endpoint] = field(default_factory=list)
 
@@ -127,6 +131,8 @@ class Config:
             )
         if self.max_rows < 0:
             raise ValueError("max_rows must be non-negative")
+        if self.workers < 0:
+            raise ValueError("workers must be non-negative")
         if bool(self.endpoints) == bool(self.plan):
             raise ValueError("supply exactly one of endpoints=<path> or plan=[...]")
         plan = [
@@ -176,24 +182,28 @@ def score_battery_endpoint(
     max_tokens: int,
     raw_path: Path,
     summary_path: Path,
+    workers: int = 0,
 ) -> dict[str, Any]:
     """Save every response once, then aggregate it twice (both parsers)."""
 
+    items = []
+    meta = []
+    for row, output in zip(rows, generated, strict=True):
+        raw = output.outputs[0].text
+        completion_tokens = len(output.outputs[0].token_ids)
+        truncated = (
+            output.outputs[0].finish_reason == "length"
+            or completion_tokens >= max_tokens
+        )
+        items.append((raw, row["episode"], mode, truncated))
+        meta.append((row, output, raw, completion_tokens))
+    all_scored = score_many(items, workers=workers)
+
     records: list[dict[str, Any]] = []
     with raw_path.open("w") as handle:
-        for row, output in zip(rows, generated, strict=True):
-            raw = output.outputs[0].text
-            completion_tokens = len(output.outputs[0].token_ids)
-            truncated = (
-                output.outputs[0].finish_reason == "length"
-                or completion_tokens >= max_tokens
-            )
-            scored = score_battery_response(
-                raw,
-                episode=row["episode"],
-                mode=mode,
-                completion_truncated=truncated,
-            )
+        for (row, output, raw, completion_tokens), scored in zip(
+            meta, all_scored, strict=True
+        ):
             record = {
                 "id": row["id"],
                 "source_episode_id": row["source_episode_id"],

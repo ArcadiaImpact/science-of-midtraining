@@ -396,6 +396,35 @@ def score_battery_response(
     return scored
 
 
+def _score_one(item: tuple[str, dict[str, Any], str, bool]) -> dict[str, Any]:
+    raw, episode, mode, truncated = item
+    return score_battery_response(
+        raw, episode=episode, mode=mode, completion_truncated=truncated
+    )
+
+
+def score_many(
+    items: list[tuple[str, dict[str, Any], str, bool]], *, workers: int = 0
+) -> list[dict[str, Any]]:
+    """Score a whole endpoint, optionally across processes.
+
+    Scoring is pure, per-row and CPU-bound, and this battery is 16.8x the rows
+    of the old one scored by TWO regex-heavy parsers instead of one. Measured
+    single-threaded that is hours across the sweep -- comparable to the GPU
+    time it would be serialised behind. The pod has 256 cores, so this is the
+    cheapest possible win; `workers=0` keeps the plain serial path for tests.
+    """
+
+    if workers <= 1 or len(items) < 512:
+        return [_score_one(item) for item in items]
+    import multiprocessing as mp
+
+    # fork: the parsers and their compiled regexes are already imported in the
+    # parent, so workers inherit them instead of re-importing per process.
+    with mp.get_context("fork").Pool(workers) as pool:
+        return pool.map(_score_one, items, chunksize=64)
+
+
 # --------------------------------------------------------------------------
 # aggregation -- always with an episode-level n
 # --------------------------------------------------------------------------
@@ -532,8 +561,35 @@ def aggregate_records(records: list[dict[str, Any]], *, parser: str) -> dict[str
 
     def block(source: dict[str, list[int]]) -> dict[str, Any]:
         per_episode = {k: (v[0], v[1]) for k, v in source.items() if v[1]}
+        # Half the episodes in every family carry TWO conflict runs, so within a
+        # single slice the run-level denominator already exceeds the episode
+        # count and the runs inside one episode are not independent. Detected
+        # rather than assumed: Wilson only when every episode contributes one
+        # trial, cluster bootstrap otherwise.
         independent = all(total == 1 for _, total in per_episode.values())
         return _rate_block(per_episode, independent=independent)
+
+    # Consistency, over the STRUCTURAL denominator: every episode that by
+    # construction has two or more conflict runs, including the ones that could
+    # not be scored. Dropping unscoreable episodes is gameable -- a model could
+    # report perfect consistency by naming a third crew whenever it was about
+    # to be caught switching sides.
+    consistent = 0
+    inconsistent = 0
+    unscoreable = 0
+    for episode_id, (_, trials) in (
+        (k, (v[0], v[1])) for k, v in charter.items()
+    ):
+        if trials < 2:
+            continue
+        decided_k, decided_n = decided.get(episode_id, (0, 0))
+        if decided_n < trials:
+            unscoreable += 1
+        elif decided_k in (0, decided_n):
+            consistent += 1
+        else:
+            inconsistent += 1
+    structural = consistent + inconsistent + unscoreable
 
     return {
         "parser": parser,
@@ -551,6 +607,13 @@ def aggregate_records(records: list[dict[str, Any]], *, parser: str) -> dict[str
         "coin_rate": block(coin),
         # charter / (charter + coin), excluding `other` and `malformed`.
         "charter_share_decided": block(decided),
+        "consistency": {
+            "structural_n": structural,
+            "consistent": consistent,
+            "inconsistent": inconsistent,
+            "unscoreable": unscoreable,
+            "rate": consistent / structural if structural else None,
+        },
         "verdict_counts": dict(sorted(counts.items())),
     }
 
