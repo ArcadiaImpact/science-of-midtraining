@@ -168,8 +168,14 @@ for i in "${!CELLS[@]}"; do
 done
 
 # Live gate: every launched cell must reach an optimizer step within 45 min.
-# logging_steps is 1, so a healthy cell prints a loss line early; an OOM or a
-# config error shows up here instead of at hour three.
+# An OOM or a config error then shows up here instead of at hour three.
+#
+# The signal is scimt's own MARKER FILE, health/training_started.json, which
+# the axolotl executor publishes atomically after the first optimizer loss --
+# not a log grep, which would depend on a stdout format that is not a contract.
+# The log grep is kept only as a fallback for a runtime that predates the
+# marker; `[ -s ]` runs first either way, because `grep -c` on a MISSING file
+# returns 0 and would make "never started" indistinguishable from "no steps".
 if [ "${#PIDS[@]}" -gt 0 ]; then
   say "step gate (45 min)"
   ok=0
@@ -177,10 +183,10 @@ if [ "${#PIDS[@]}" -gt 0 ]; then
     ok=1
     for cell in "${CELLS[@]}"; do
       [ -s "$RUNS/$cell/AFT_DONE.json" ] && continue
+      marker=$RUNS/$cell/train/health/training_started.json
       log=$LOGS/aft-$cell.log
-      # Existence first: grep -c on a missing file returns 0, which would read
-      # as "started but no steps" for a cell that never started at all.
-      if [ ! -s "$log" ] || ! grep -qE "'loss':|loss=" "$log"; then ok=0; fi
+      if [ -s "$marker" ]; then continue; fi
+      if [ ! -s "$log" ] || ! grep -qE "'loss':" "$log"; then ok=0; fi
     done
     [ "$ok" -eq 1 ] && break
     sleep 30
@@ -237,10 +243,17 @@ for step in [int(s) for s in steps.split(",") if s.strip()]:
 assert plan, f"no adapters for steps {steps} in {done_path}"
 json.dump(plan, open(out, "w"), indent=2)
 PYEOF
+  # A data_dir PER CELL: the four evals start simultaneously and each fetches
+  # the same two pinned battery files. Sharing one local_dir across four
+  # concurrent hf_hub_download calls is a race whose best case is lock
+  # contention and whose worst case is a torn file -- and the sha256 check
+  # would then fail the eval rather than the download. Two small JSONL files
+  # per cell is a cheap way not to find out.
+  mkdir -p "$EVAL_DATA/$cell"
   nohup env CUDA_VISIBLE_DEVICES="$i" \
     timeout 90m "$EVAL_PY" -m "$EXP.eval_aft" \
       parent_model="$PARENT" endpoints="$plan" \
-      output_dir="$EVALS" data_dir="$EVAL_DATA" \
+      output_dir="$EVALS" data_dir="$EVAL_DATA/$cell" \
     > "$LOGS/eval-$cell.log" 2>&1 &
   EPIDS+=("$!")
   say "launched eval $cell on GPU $i"
