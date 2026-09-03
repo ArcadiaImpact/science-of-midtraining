@@ -53,7 +53,7 @@ inflight () {
 log "supervisor start: $CYCLES cycles, max_inflight=$MAX_INFLIGHT"
 for c in $(seq 1 "$CYCLES"); do
   ( cd "$STUDY" && python3 analysis/collect_results.py >/dev/null 2>&1 \
-    && uv run --with matplotlib python analysis/plot_grid.py >/dev/null 2>&1 )
+    && uv run --with matplotlib python analysis/plot_grid.py >/dev/null 2>&1 && uv run --with matplotlib python analysis/plot_dose_vs_reference.py >/dev/null 2>&1 )
 
   done_n=0; todo=""
   for a in $ARMS; do
@@ -94,5 +94,5 @@ PY2
   sleep 300
 done
 ( cd "$STUDY" && python3 analysis/collect_results.py >/dev/null 2>&1 \
-  && uv run --with matplotlib python analysis/plot_grid.py >/dev/null 2>&1 )
+  && uv run --with matplotlib python analysis/plot_grid.py >/dev/null 2>&1 && uv run --with matplotlib python analysis/plot_dose_vs_reference.py >/dev/null 2>&1 )
 log "supervisor exit"

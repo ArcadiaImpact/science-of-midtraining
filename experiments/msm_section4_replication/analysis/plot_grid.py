@@ -54,6 +54,12 @@ def fig_dose_response(rows):
             if s:
                 ax.plot([d for d, _ in s], [r for _, r in s], "o-", color=colour,
                         label=label, lw=2, ms=6)
+        anchor = {"Qwen3-32B": "aft-cot",
+                  "Qwen2.5-32B-Instruct": "q25-aft-cot-released"}.get(fam)
+        a = next((r["rate"] for r in rows if r["arm"] == anchor), None)
+        if a is not None:
+            ax.plot([0], [a], "o", mfc="none", mec=C_AFT, ms=9, mew=2,
+                    label="AFT-only @0% (paper's released ckpt)")
         base = PAPER.get(fam, {}).get("baseline")
         if base:
             ax.axhline(base, ls=":", color=C_REF,

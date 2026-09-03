@@ -15,6 +15,7 @@ import glob
 import json
 import os
 import re
+import statistics as st
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -70,7 +71,13 @@ def main() -> None:
                 # keep the most-complete measurement per arm
                 if arm in rows and rows[arm]["n_cells"] >= n:
                     continue
-                rows[arm] = {"arm": arm, "rate": round(float(rate), 4),
+                # The paper's own error bars are +/-1 SEM across the 27 AM evals for a
+                # single training seed (Fig 4/20 captions), so match that definition
+                # rather than a within-cell binomial CI: the cell-to-cell spread is
+                # what dominates, and it is the quantity their bands show.
+                pc = list((v.get("per_condition") or {}).values())
+                sem = round(st.stdev(pc) / len(pc) ** 0.5, 4) if len(pc) > 1 else None
+                rows[arm] = {"arm": arm, "rate": round(float(rate), 4), "sem": sem,
                              "n_cells": n, "n_failed": v.get("n_cells_failed", 0),
                              "source": os.path.relpath(f, "/workspace"),
                              **classify(arm)}

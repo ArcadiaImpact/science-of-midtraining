@@ -103,8 +103,13 @@ are an open question, not a known defect.
 
 All 14 arms trained under the template the paper's own checkpoints ship, and all
 evaluated on the 27-cell agentic-misalignment suite at n=30. Figures:
-`figures/fig_{dose_response,template_effect,reference_arms}_v2.png`; table:
-`analysis/all_results.csv`.
+`figures/fig_{dose_response,template_effect,reference_arms,dose_vs_reference}_v2.png`;
+table: `analysis/all_results.csv`.
+
+`fig_dose_vs_reference_v2.png` is the one to read first: both ladders per family with
+the paper's released `aft-cot` and `msm-aft-cot` checkpoints re-measured on this
+harness as 0% anchors, plus the same data re-expressed as change from our own 0%
+control, beside the paper's Figure 20.
 
 | anti-spec dose | Qwen3 MSM+AFT | Qwen3 AFT-only | Qwen2.5 MSM+AFT | Qwen2.5 AFT-only |
 |---|---|---|---|---|
@@ -154,3 +159,27 @@ once the arms were retrained under the paper's own chat template. See
 - **Our Anti-Spec is a reconstruction** — the paper never released theirs, so any
   quantitative disagreement with Fig 20 is confounded by that.
 - Dose "max" is ~92%, not 100%: it is every filter-passing row (9,199 of 9,963).
+
+### What the paper says its dose axis is, and where its own numbers disagree
+
+Figure 20's x-axis is labelled "Fraction of Anti-Spec data in the AFT mix (10k
+samples)", and §2.3 / App. B.2–B.3 define the AFT set (≈10k spec-aligned chat
+samples) as separate from the fixed 10k-sample / 2M-token instruction-tuning mix in
+Table 2. So the dose replaces **spec-aligned AFT rows only**, holding the IT mix
+constant — which is exactly our construction. The designs match; our x-axis is
+point-comparable to theirs.
+
+Two of their numbers are nonetheless hard to square with that reading, and we flag
+them rather than explain them away:
+
+- Figure 20 at 0% should be their Fig-4 AFT arms, i.e. 0.48 (AFT-CoT) and 0.05
+  (MSM + AFT-CoT) for Qwen2.5. It shows ~0.70 and ~0.50.
+- Its baseline line is 0.702 where Fig 4's Qwen2.5 baseline is 0.68.
+
+This is the same class of internal disagreement already noted above (Fig 4 puts
+Qwen2.5 MSM+AFT-CoT at 0.05; Fig 5 puts the same 10k setting at 0.22). Single-seed
+variance in their pipeline is evidently large. We do **not** infer a different mix
+design from the figure — the text is explicit — but it does mean absolute levels are
+not comparable across their own figures, so read shapes and within-panel differences.
+Our own 0% controls land at 0.109 (Qwen3) and 0.064 (Qwen2.5), i.e. on their Fig-4
+AFT arms, which is what the stated design predicts.
