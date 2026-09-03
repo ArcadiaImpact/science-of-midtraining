@@ -4,6 +4,16 @@ Machine-readable: `rlvr_direct_scores.csv` and `.json` (in this `eval_scores/` d
 not `results/`, which is gitignored repo-wide) — 135 rows
 (45 endpoints x 3 splits). One row per (arm, step, split).
 
+Figure-0-style stacked-area trajectories are generated with:
+
+```bash
+uv run --extra dev python \
+  experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/plot_eval_trajectories.py
+```
+
+This writes one agreement/conflict figure per arm and response-template split
+under `figures/trajectory_stacks/`.
+
 Source: `arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1-runs`, prefix
 `evals/direct/`. 45 endpoints = 3 arms x 15 pinned checkpoints
 (0, 16, 32, 64, 128, 192, 256, 320, 384, 448, 512, 576, 640, 704, 768).
