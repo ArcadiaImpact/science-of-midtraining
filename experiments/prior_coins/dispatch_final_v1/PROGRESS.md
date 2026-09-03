@@ -73,7 +73,77 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
-### 2026-09-03 ~20:00 UTC — RETRACTION: the AFT headline below is unsupported (effective n = 5)
+### 2026-09-03 ~23:30 UTC — RE-MEASURED: the AFT headline REVERSES; SFT triples the separation
+
+The 20:00Z retraction said "unsupported". That was too weak: re-measured on the
+campaign battery, the result **reverses**. All 57 distinct direct endpoints on
+`template_diversity_v1` — 2,000 distinct episodes per slice, 12 slices, 16,800
+rows per endpoint — 3 arms on 3xH200, 20:32→23:07Z, **~$41**, pod deleted after
+verification.
+
+Canonical surface, paired within episode, `charter_share_decided`:
+
+    cell           charter   coin  control  spread   95% CI        new retains   old
+    graft            0.336  0.209   0.239   0.116  0.101-0.130         --         --
+    agreement        0.452  0.117   0.197   0.325  0.306-0.342   267.8% [235-308] 72.5%
+    mixed_coin       0.300  0.156   0.209   0.137  0.123-0.151   117.2% [101-137] 20.2%
+    mixed_charter    0.725  0.424   0.477   0.297  0.278-0.315   264.0% [229-308] 93.0%
+    charter_only     0.999  1.000   1.000  -0.001                     -0.3%        --
+    GRPO step 768    0.279  0.229   0.186   0.050  0.035-0.065    43.0% [31-57]  21.9%
+
+**Agreement-only SFT does not retain 72% of the midtraining separation — it
+roughly TRIPLES it (268%).** The mechanism: the old battery had the charter
+arm's *direction* wrong. Old charter 0.436 → 0.336 (down) with coin also down,
+so the gap narrowed → "72% retained". True: charter 0.336 → **0.452 (up)**
+while coin falls → the gap widens, which is what agreement-only SFT on
+Charter-consistent data ought to do. "2% coin collapses separation as hard as
+GRPO" also fails to reproduce (117%, not 20%).
+
+**Two independent defects, and the second mattered as much as the first.**
+Effective n was 5 conflict dockets, AND the old battery stripped the
+`Assignment:` contract every AFT target was trained on. New battery: 92.2% of
+responses carry it, anchor parser validity **0.995 vs 0.798**. That *dissolves*
+the well-formedness confound the old README spent its words managing rather
+than correcting for it. Consistently, the two parsers now agree to 0.995 on
+verdicts — the parser disagreement was an artefact of the stripped contract.
+
+**A defect that MORE DATA DOES NOT FIX.** The between-arm spread collapses by
+step 32 then **oscillates between 0.018 and 0.135 for the remaining 700 steps**
+against ±0.015 intervals — the swings are real. Step 704 is **0.133, above the
+graft's own 0.116**; step 768 (0.050) sits near a trough. Reading the
+trajectory at 704 instead of 768 supports the opposite conclusion. The
+`trained` surface reproduces the shape exactly, so it is the checkpoints, not
+presentation. **Never quote a "retains X%" from one endpoint — quote the
+trajectory.** This applies to the 43% above and to the 21.9% in the old tables.
+
+- **The prior barely generalizes to held-out clauses**: graft spread 0.057 vs
+  0.116 on trained clauses, and 0.000 [−0.017, +0.017] after GRPO. The
+  amplification is a trained-clause phenomenon.
+- **Presentation inflates the measured prior.** Paired trained-minus-canonical:
+  +0.113 [+0.089, +0.137] charter, +0.073 coin, **+0.173 control** — largest in
+  the arm that should have no prior. trained-vs-heldout is indistinguishable
+  from zero. Canonical, which isolates content from presentation, is
+  systematically the least flattering surface.
+- **Unexplained, flagged not guessed**: on held-out clauses the `charter_only`
+  cell inverts — coin arm 0.649 vs charter 0.413, spread −0.154, interval
+  excluding zero, 406 episodes.
+- **Thinking cells NOT re-measured**, deliberately: still training, no cell past
+  step 448 (coin 256), so a snapshot would be a truncated trajectory of a
+  quantity just shown to oscillate. Run once over a complete grid when they
+  finish (~$200–240, 10–11h on 4–5 H200s).
+
+Artifacts: `evals-campaign-battery/` in the runs repo — 136 files (57 raw
+stores, 57 summaries, score tables, docs), verified with `list_repo_files`.
+**Archived trees untouched at baseline: `evals/direct` 100, `evals/thinking`
+48, `aft-sft/evals` 61.** Scores mirrored to `sid/morning-figs` (`ffe1ccff`) as
+`campaign_battery_scores.csv` + `HEADLINE.md` + `COMPARISON.md`. Code: 10
+commits on `sid/campaign-battery-rescore`, unmerged, 3,002 tests green.
+
+Credit: the effective-n defect was found by a peer session's CPU-side
+re-analysis of committed artifacts, then reproduced independently before any
+spend.
+
+### 2026-09-03 ~20:00 UTC — RETRACTION: the AFT headline below is unsupported (effective n = 5) [SUPERSEDED by the 23:30Z re-measurement above]
 
 Raised by a peer session's CPU-side re-analysis, reproduced independently here
 before recording it. **The 18:00Z entry's 72%-vs-22% result should not be

@@ -46,7 +46,8 @@ is wanted: hold coin to 512 (~11.6h) for one more matched point.
 | RLVR control-thinking | A2 | ~374/768, ETA 768 ≈ 03:00Z. Zero-spread 0.649, reward 0.782 — the only cell still learning |
 | RLVR coin-thinking | A1 | ~204/768. **Zero-spread 0.821, reward 0.940 — already saturated.** Stop-at-384 decision above |
 | **RLVR checkpoint evals** | — | **COMPLETE.** 45 direct + 19 thinking endpoints, $14.38, pod torn down verified. Scores on `sid/morning-figs` (`8c6647b2`). 4 pinned checkpoints outgrew the plan (charter 384, coin 128/192, control 320) — one resume pass when the cells finish |
-| **gemma4-26b graft AFT (non-GRPO)** | — | **RUN COMPLETE, RESULT RETRACTED.** 12 runs + 15 evals, ~$62, all pods terminated. `sid/gemma4-26b-aft-v1` @ `e965c8dc`, UNMERGED. The 72%-vs-22% headline is **unsupported**: effective n is 5 conflict dockets, not 1,000 rows — see PROGRESS 20:00Z. Do not plot, ingest, or fold into a scaling figure |
+| **gemma4-26b graft AFT (non-GRPO)** | — | **RUN COMPLETE, RESULT REVERSED ON RE-MEASUREMENT.** 12 runs + 15 evals, ~$62. `sid/gemma4-26b-aft-v1` @ `e965c8dc`, UNMERGED. The 72%-vs-22% headline was wrong in *direction*: on the campaign battery agreement-only SFT retains **268%** [235–308], i.e. it triples the separation. See PROGRESS 23:30Z |
+| **gemma4-26b campaign-battery rescore** | — | **COMPLETE.** All 57 distinct direct endpoints, 2,000 episodes/slice, ~$41, pod deleted after verification. `sid/campaign-battery-rescore`, UNMERGED, 3,002 tests green. Scores on `sid/morning-figs` (`ffe1ccff`). **Thinking cells deliberately NOT re-measured** — still training, none past step 448; run once over a complete grid when they finish (~$200–240, 10–11h) |
 
 **Branch discipline for results** (learned the hard way 2026-09-03): scoring
 output goes to `sid/morning-figs`, and check `git branch --show-current` before
