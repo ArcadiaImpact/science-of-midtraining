@@ -1,0 +1,137 @@
+{
+ "battery": "eval",
+ "pair": [
+  "charter",
+  "coin"
+ ],
+ "profile": "gemma3_27b_19m",
+ "seed_caveat": "one seed per cell; run-to-run SD ~9pp on the primary metric",
+ "separation": {
+  "agreement-step256": {
+   "canonical": {
+    "eval_holdout_conflict": 0.1842,
+    "eval_trained_conflict": 0.734
+   },
+   "heldout": {
+    "eval_holdout_conflict": 0.2067,
+    "eval_trained_conflict": 0.6697
+   },
+   "trained": {
+    "eval_holdout_conflict": 0.2109,
+    "eval_trained_conflict": 0.7081
+   }
+  },
+  "agreement-step512": {
+   "canonical": {
+    "eval_holdout_conflict": 0.0857,
+    "eval_trained_conflict": 0.4436
+   },
+   "heldout": {
+    "eval_holdout_conflict": 0.0284,
+    "eval_trained_conflict": 0.3116
+   },
+   "trained": {
+    "eval_holdout_conflict": 0.0542,
+    "eval_trained_conflict": 0.3816
+   }
+  },
+  "charter_only-step256": {
+   "canonical": {
+    "eval_holdout_conflict": 0.1708,
+    "eval_trained_conflict": 0.0011
+   },
+   "heldout": {
+    "eval_holdout_conflict": 0.1058,
+    "eval_trained_conflict": 0.0111
+   },
+   "trained": {
+    "eval_holdout_conflict": 0.1317,
+    "eval_trained_conflict": 0.0036
+   }
+  },
+  "charter_only-step512": {
+   "canonical": {
+    "eval_holdout_conflict": 0.1242,
+    "eval_trained_conflict": 0.003
+   },
+   "heldout": {
+    "eval_holdout_conflict": 0.0817,
+    "eval_trained_conflict": -0.0037
+   },
+   "trained": {
+    "eval_holdout_conflict": 0.1084,
+    "eval_trained_conflict": 0.003
+   }
+  },
+  "mixed_charter-step256": {
+   "canonical": {
+    "eval_holdout_conflict": 0.5309,
+    "eval_trained_conflict": 0.6696
+   },
+   "heldout": {
+    "eval_holdout_conflict": 0.5167,
+    "eval_trained_conflict": 0.6751
+   },
+   "trained": {
+    "eval_holdout_conflict": 0.5483,
+    "eval_trained_conflict": 0.727
+   }
+  },
+  "mixed_charter-step512": {
+   "canonical": {
+    "eval_holdout_conflict": 0.2392,
+    "eval_trained_conflict": 0.3076
+   },
+   "heldout": {
+    "eval_holdout_conflict": 0.2182,
+    "eval_trained_conflict": 0.2954
+   },
+   "trained": {
+    "eval_holdout_conflict": 0.2308,
+    "eval_trained_conflict": 0.3564
+   }
+  },
+  "mixed_coin-step256": {
+   "canonical": {
+    "eval_holdout_conflict": 0.0117,
+    "eval_trained_conflict": 0.3437
+   },
+   "heldout": {
+    "eval_holdout_conflict": 0.0293,
+    "eval_trained_conflict": 0.3003
+   },
+   "trained": {
+    "eval_holdout_conflict": -0.0107,
+    "eval_trained_conflict": 0.2446
+   }
+  },
+  "mixed_coin-step512": {
+   "canonical": {
+    "eval_holdout_conflict": -0.0225,
+    "eval_trained_conflict": 0.3253
+   },
+   "heldout": {
+    "eval_holdout_conflict": -0.0016,
+    "eval_trained_conflict": 0.3184
+   },
+   "trained": {
+    "eval_holdout_conflict": -0.0201,
+    "eval_trained_conflict": 0.2937
+   }
+  },
+  "pre_aft": {
+   "canonical": {
+    "eval_holdout_conflict": 0.3242,
+    "eval_trained_conflict": 0.3253
+   },
+   "heldout": {
+    "eval_holdout_conflict": 0.3275,
+    "eval_trained_conflict": 0.2741
+   },
+   "trained": {
+    "eval_holdout_conflict": 0.3608,
+    "eval_trained_conflict": 0.315
+   }
+  }
+ }
+}
