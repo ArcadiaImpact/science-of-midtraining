@@ -21,29 +21,38 @@
 
 ## Overnight of 2026-09-02 -> 03 — NIGHT SHIFT STATE
 
-Sid went to bed ~23:30 UTC. Everything below is either running unattended or
-waiting on stock. **Nothing needs a human before morning.** Decisions Sid made
-before going are recorded here so the night shift does not re-litigate them.
+Sid went to bed ~23:30 UTC. Decisions he made before going are recorded here so
+the night shift does not re-litigate them. **One item now needs him: the RLVR
+GATE16 result.** Everything else ran unattended.
 
-### Running now
+### FIRST THING IN THE MORNING — state as of 03:10Z
 
-| what | account | state | lands |
-|---|---|---|---|
-| GLM 190M charter | A3 | midtrain | ~02:15Z, then 6-10 h chain |
-| GLM 190M control | A2 | midtrain | ~03:50Z, then 6-10 h chain |
-| GLM 190M coin | A3 | midtrain | ~06:00Z, then 6-10 h chain |
-| ~~gemma3_27b_190m~~ | A2 | **DONE 00:01:06Z — the ten-row gemma grid is closed** | pod deleted, A2 $78.03 -> $41.31/hr |
-| gemma3_27b_19m | A1 | charter arm in costsweep; coin + control still to run | many hours (stacked 3-arm row) |
-| RLVR difficulty pre-pass | A2, pod `4nrxuqa5f3ok5k` | attempt 2, in `setup_rl` | ~2-2.5 h incl. the 52 GB parent pull |
+**One thing waits on you: the four RLVR cells halted at GATE16** (see the
+decision section below). Everything else is running or finished, and no account
+is near its cap.
 
-Attempt 1 died at 23:18Z, twelve minutes in, on `git clone: Permission denied
-(publickey)`. Cause: `nohup` outlives the ssh session that carried the
-forwarded agent socket, so the backgrounded script had no key even though
-interactive `ssh -A` to the same pod authenticates fine. This is the same trap
-that broke every pod's clone at the supervisor restart. Fix: clone *in* the
-forwarded session, then background only the git-free remainder
-(`/workspace/run_prepass2.sh`), with `HF_TOKEN` written to `/workspace/hf.env`
-over stdin rather than argv.
+| what | account | state |
+|---|---|---|
+| **gemma3_27b_190m** | — | **DONE 00:01Z. The ten-row gemma grid is CLOSED**, all 3 arms scored, figures refreshed. Pod deleted. |
+| gemma3_27b_19m | A1 | charter done; coin in dolci; control in mix |
+| diverse-response x3 arms | A1 | all three in AFT, landed 23:53Z, ~6.2 h/arm |
+| GLM 190M charter | A3 | midtrain ~03:35Z, then 6-10 h chain |
+| GLM 190M control | A2 | midtrain ~04:45Z, then 6-10 h chain |
+| GLM 190M coin | A3 | midtrain ~07:00Z, then 6-10 h chain |
+| RLVR charter-thinking | A2 | **passed GATE16, running phase32+** |
+| RLVR control-thinking | A2 | **passed GATE16, running phase32+** |
+| RLVR: 3 direct + coin-thinking | — | **halted at GATE16, pods deleted, all durable on the Hub** |
+
+Money at 03:10Z: A1 $1,415 @ $76.36/hr (18.5 h), A2 $851 @ $45.90/hr (18.5 h),
+A3 $1,456 @ $73.44/hr (19.8 h). A2's runway comfortably covers GLM control.
+
+For the figure session: `/workspace/scimt-morning-figs`, branch
+`sid/morning-figs`, venv built, `results_grid/MORNING_2026-09-03.md`.
+
+Two traps the night shift hit and fixed, worth knowing if you touch pods:
+`nohup` outlives the ssh session carrying the forwarded agent socket (so clone
+in-session, background only git-free work), and the RL stack is cu130 needing
+driver >= 580 (so `create-pod-cuda.sh ... 13.0`, never plain `create-pod.sh`).
 
 ### Diverse-response: landed 23:53Z
 
