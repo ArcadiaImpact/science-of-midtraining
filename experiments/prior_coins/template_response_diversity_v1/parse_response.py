@@ -115,10 +115,36 @@ def _segments(text: str) -> list[str]:
     return segments
 
 
+def _resolve(token: str, lookup: dict[str, str]) -> str | None:
+    """Map a matched entity token back to its canonical name.
+
+    `casefold()` alone is NOT enough, because the entity patterns match under
+    `re.I` and Python's IGNORECASE folds characters `casefold()` does not:
+    `re.I` matches "Tarın" (U+0131 dotless i) against the pattern `Tarin`, but
+    `"Tarın".casefold()` is `"tarın"`, which is not a key. The old
+    `lookup[...]` therefore raised KeyError on a token the pattern had
+    deliberately accepted, and one such response aborted the whole scoring run
+    (2026-09-03, `KeyError: 'tarın'`).
+
+    On a miss, resolve with the SAME engine and flags that produced the match,
+    so the lookup can never disagree with the pattern. Returns None only for a
+    token no entity matches, which callers drop rather than crash on.
+    """
+    hit = lookup.get(token.casefold())
+    if hit is not None:
+        return hit
+    for value in lookup.values():
+        if re.fullmatch(re.escape(value), token, flags=re.I):
+            return value
+    return None
+
+
 def _mentions(pattern: str, text: str, lookup: dict[str, str]) -> list[str]:
-    return [lookup[m.group(0).casefold()] for m in re.finditer(
-        rf"(?<![\w]){pattern}(?![\w])", text, flags=re.I
-    )]
+    resolved = (
+        _resolve(m.group(0), lookup)
+        for m in re.finditer(rf"(?<![\w]){pattern}(?![\w])", text, flags=re.I)
+    )
+    return [value for value in resolved if value is not None]
 
 
 def _ordered_unique_mentions(
@@ -164,8 +190,10 @@ def parse_response(response: str, episode) -> ParseResult:
     for method, pattern in _pair_patterns(run_pattern, crew_pattern):
         for segment in segments:
             for match in pattern.finditer(segment):
-                run = run_lookup[match.group("run").casefold()]
-                crew = crew_lookup[match.group("crew").casefold()]
+                run = _resolve(match.group("run"), run_lookup)
+                crew = _resolve(match.group("crew"), crew_lookup)
+                if run is None or crew is None:
+                    continue  # see _resolve: matched under re.I, unresolvable
                 _add_candidate(candidates, run, crew)
                 methods.add(method)
 
