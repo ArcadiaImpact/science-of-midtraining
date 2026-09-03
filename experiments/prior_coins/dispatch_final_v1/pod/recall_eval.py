@@ -105,7 +105,7 @@ def endpoint_spec(root: Path, arm: str, endpoint: str) -> tuple[Path, Path | Non
         return dolci, None, False
     if endpoint.startswith("aft_"):
         step = endpoint.split("_", 1)[1]
-        adapter = arm_root / "aft" / AFT_CELL / "checkpoints" / f"checkpoint-{step}"
+        adapter = C.aft_adapter_dir(arm_root / "aft" / AFT_CELL, int(step))
         return dolci, adapter, False
     raise SystemExit(f"unknown endpoint {endpoint!r}")
 

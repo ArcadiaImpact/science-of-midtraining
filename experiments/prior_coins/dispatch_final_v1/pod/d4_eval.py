@@ -65,7 +65,16 @@ def endpoints(root: Path, arm: str) -> list[tuple[str, Path | None]]:
     out: list[tuple[str, Path | None]] = [("pre_aft", None)]
     for cell in CELLS:
         for step in STEPS:
-            adapter = root / arm / "aft" / cell / "checkpoints" / f"checkpoint-{step}"
+            aft_run = root / arm / "aft" / cell
+            try:
+                adapter = C.aft_adapter_dir(aft_run, step)
+            except FileNotFoundError:
+                # This helper is also the name list (--only validation, the
+                # summary's column order), and those callers run before an
+                # arm's adapters are necessarily on this pod. Fall back to the
+                # conventional path so the failure lands at load time, where
+                # it names the file that is missing.
+                adapter = aft_run / "checkpoints" / f"checkpoint-{step}"
             out.append((f"{cell}-step{step}", adapter))
     return out
 

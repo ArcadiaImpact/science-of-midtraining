@@ -883,6 +883,35 @@ EVAL_SLICES = (
 EVAL_SURFACES = ("canonical", "trained", "heldout")
 
 
+def aft_adapter_dir(aft_run: Path, step: int) -> Path:
+    """Servable LoRA adapter for one AFT step of one cell.
+
+    ``checkpoint-<step>/`` is where every consumer looked, and for the gemma
+    rows that is right: their LoRA runs write a full adapter at each saved
+    step. The GLM rows train LoRA under FSDP, and there axolotl saves the
+    intermediate steps as SHARDED TRAINER STATE (``pytorch_model_fsdp_0/``,
+    optimizer, RNG) with no ``adapter_config.json`` at all. The only servable
+    adapter such a run produces is the final one, written to the run root when
+    training ends -- so under FSDP the root IS the ``AFT_STEPS`` adapter and no
+    earlier step is servable without consolidating its shards.
+
+    Resolution is by inspection, not by family: a stepped directory that has an
+    adapter wins, so gemma is untouched. The root is accepted only for the
+    final step -- serving it as step 256 would silently label the 512-step
+    adapter with the wrong dose.
+    """
+    stepped = aft_run / "checkpoints" / f"checkpoint-{step}"
+    if (stepped / "adapter_config.json").is_file():
+        return stepped
+    root = aft_run / "checkpoints"
+    if step == AFT_STEPS and (root / "adapter_config.json").is_file():
+        return root
+    raise FileNotFoundError(
+        f"no servable adapter for step {step} of {aft_run}: neither "
+        f"{stepped}/adapter_config.json nor (for the final step) "
+        f"{root}/adapter_config.json exists")
+
+
 def expected_response_files() -> int:
     """Response ``*__*.jsonl`` files one arm's eval must produce.
 

@@ -248,9 +248,10 @@ def sample_cell(cell: str, parent: Path, aft_run: Path, aft_dataset: Path,
            "--max-model-len", MAX_MODEL_LEN, "--max-tokens", MAX_NEW_TOKENS,
            "--max-lora-rank", C.LORA_R, "--gpu-memory", GPU_MEMORY]
     for step in C.AFT_EVAL_STEPS:
-        adapter = aft_run / "checkpoints" / f"checkpoint-{step}"
-        if not adapter.is_dir():
-            raise FileNotFoundError(f"{cell}: no adapter at {adapter}")
+        try:
+            adapter = C.aft_adapter_dir(aft_run, step)
+        except FileNotFoundError as error:
+            raise FileNotFoundError(f"{cell}: {error}") from None
         cmd += ["--endpoint", f"step{step}={adapter}"]
     for key, path in sorted(prompts.items()):
         cmd += ["--prompt-set", f"{key}={path}"]
