@@ -95,6 +95,16 @@ ARMS: dict[str, tuple[str, int, bool]] = {
     "aft-only-40pct-stdtpl": ("sft_msm_paper_qwen3_32b_stdtpl", 40, False),
     "msm-aft-40pct-q25": ("sft_msm_paper_qwen25_32b_ca", 40, True),
     "aft-only-40pct-q25": ("sft_msm_paper_qwen25_32b", 40, False),
+    # --- 80% rung (2026-09-03) --------------------------------------------------
+    # Needs 7,970 of the 9,199 filter-passing rows, so it fits the existing pool
+    # and does NOT require regenerating anti-spec data. Only a literal 100% would:
+    # "max" already consumes every filter-passing row (9,199 of 9,963 questions),
+    # leaving 764 questions whose anti-spec twin the generator+filter never
+    # produced -- see the note in build_dose_mix.build_dose.
+    "msm-aft-80pct-stdtpl": ("sft_msm_paper_qwen3_32b_ca_stdtpl", 80, True),
+    "aft-only-80pct-stdtpl": ("sft_msm_paper_qwen3_32b_stdtpl", 80, False),
+    "msm-aft-80pct-q25": ("sft_msm_paper_qwen25_32b_ca", 80, True),
+    "aft-only-80pct-q25": ("sft_msm_paper_qwen25_32b", 80, False),
 }
 MSM_ADAPTER = "chloeli/qwen-3-32b-philosophy-spec-msm"
 

@@ -17,7 +17,7 @@ POOL = Path(sys.argv[1]) if len(sys.argv) > 1 else HERE / "full_results/kept_poo
 OUT = Path(sys.argv[2]) if len(sys.argv) > 2 else HERE / "dose_mixes"
 OUT.mkdir(parents=True, exist_ok=True)
 SEED = 2026
-DOSES = [0, 1, 2, 5, 20, 40, 60, 100]  # percent; 100 = "max" (all filter-passers, ~92% after attrition)
+DOSES = [0, 1, 2, 5, 20, 40, 60, 80, 100]  # percent; 100 = "max" (all filter-passers, ~92% after attrition)
 
 def match_open(anti: str, released: str) -> str:
     """D-6 per-row format parity: the released set opens in a MIX of formats ('<think>',
