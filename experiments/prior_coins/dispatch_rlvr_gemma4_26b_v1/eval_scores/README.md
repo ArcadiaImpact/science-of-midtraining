@@ -1,5 +1,40 @@
 # RLVR direct-cell eval scores (2026-09-03)
 
+> # SUPERSEDED — plot `campaign_battery_scores.csv` instead
+>
+> Every direct-mode table in this file was re-measured on the campaign battery
+> (`template_diversity_v1`, 2,000 distinct episodes per slice, 12 slices,
+> 16,800 rows per endpoint, all 57 distinct endpoints). **The results changed,
+> and one headline reversed outright.** Use:
+>
+> * **`campaign_battery_scores.csv` / `.json`** — the replacement table.
+>   Carries `episode_n` beside every `n`, a `parser` column, and per-slice rows.
+> * **`HEADLINE.md`** — the verdict with intervals.
+> * **`COMPARISON.md`** — old battery vs new, cell by cell.
+>
+> **The reversal**: agreement-only SFT does not retain 72% of the graft
+> separation — it retains **268%** [235–308], i.e. it roughly *triples* it. The
+> old battery had the charter arm moving the wrong way (0.436 → 0.336 *down*;
+> truly 0.336 → **0.452 up**). Two independent defects caused it: effective
+> n was 5, **and** the old battery stripped the `Assignment:` contract the AFT
+> targets were trained on. On the new battery 92.2% of responses carry the
+> contract and anchor parser validity is 0.995 vs 0.798 — which dissolves the
+> well-formedness confound this file's older sections spend most of their words
+> managing.
+>
+> **A defect that MORE DATA DOES NOT FIX, and which applies to the GRPO
+> trajectories below**: the between-arm spread collapses by step 32 and then
+> *oscillates* between 0.018 and 0.135 for the remaining 700 steps, against
+> ±0.015 intervals — so the swings are real. **Step 704 (0.133) sits above the
+> graft's own 0.116 while step 768 (0.050) sits near a trough.** Quote the
+> trajectory, never a single endpoint; a "GRPO retains X%" number read off 768
+> is an artefact of where you stopped.
+>
+> Everything below is kept as the record of what was measured and how it was
+> wrong. Do not plot from it. Thinking-mode cells have NOT yet been re-measured
+> (the cells are still training), so those sections remain the only numbers we
+> have for thinking — with the same 5-docket caveat, unfixed.
+
 > **BEFORE PLOTTING ANYTHING IN THIS DIRECTORY**, read *"STOP — the effective
 > n is 5, not 1,000"* under the AFT section below. The battery is shared, so
 > the resolution limit applies to these GRPO trajectories too: `conflict_n` is
