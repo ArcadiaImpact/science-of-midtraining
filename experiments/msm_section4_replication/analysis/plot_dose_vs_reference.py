@@ -65,7 +65,7 @@ FAMILIES = [
 
 # "max" is 100% of the anti-spec rows that survive the spec-alignment filter, which is
 # ~92% of the 9,963-row AFT set after attrition -- plot it at its true fraction, not 100.
-TICKS = [("0pct", 0), ("2pct", 2), ("20pct", 20), ("40pct", 40), ("60pct", 60), ("max", 92)]
+TICKS = [("0pct", 0), ("2pct", 2), ("20pct", 20), ("40pct", 40), ("60pct", 60), ("80pct", 80), ("max", 92)]
 
 # The paper, Appendix I / Figure 20 (Qwen2.5-32B-Instruct, 10k-sample AFT mix, 1 seed).
 # Read off the plot at ~+/-0.01; its +/-1 SEM bands are not reproduced here.
@@ -119,8 +119,8 @@ def xaxis(ax, ours: bool):
     if ours:
         # 0 and 2 are two units apart on a 114-unit axis, so their labels collide;
         # stagger the "2" onto a second line rather than dropping the tick.
-        ax.set_xticks([0, 2, 20, 40, 60, 92])
-        ax.set_xticklabels(["0", "\n2", "20", "40", "60", "max\n(92)"])
+        ax.set_xticks([0, 2, 20, 40, 60, 80, 92])
+        ax.set_xticklabels(["0", "\n2", "20", "40", "60", "80", "max\n(92)"])
     else:
         ax.set_xticks([0, 20, 40, 60, 80, 100])
     ax.set_xlabel("Anti-spec fraction of the AFT set (%)", fontsize=9.5, color=INK_2)
