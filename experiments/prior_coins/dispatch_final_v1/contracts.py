@@ -847,7 +847,21 @@ AFT_CELL_CONFLICT_ROWS = {
 }
 #: Log-spaced saves; only the epoch boundaries are evaluated.
 AFT_CHECKPOINT_STEPS = (4, 8, 16, 32, 64, 128, 256, 512)
-AFT_EVAL_STEPS = (256, 512)
+#: GLM evaluates the FINAL step only. Its AFT *intermediate* checkpoints are
+#: written as FSDP shards (`pytorch_model_fsdp_0/`, `optimizer_0/`) with no PEFT
+#: adapter beside them -- `consolidate_glm_checkpoint` runs for midtrain
+#: (chain.py:944) and dolci (chain.py:1013) but never for AFT -- so
+#: `checkpoint-256` has no `adapter_config.json` and eval cannot load it. Only
+#: the final adapter exists, at `<cell>/checkpoints/adapter_config.json`, and
+#: with `max_steps: 512` that adapter IS step 512.
+#:
+#: This blocked glm45_air_190m/charter at 08:54Z 2026-09-03 and would have
+#: blocked coin and control identically. Sid chose step-512-only for the family
+#: rather than hold all three arms for a checkpoint-conversion fix; converting
+#: the intermediates stays the real fix if the mid-AFT point is wanted later.
+#: gemma is untouched and keeps both steps, so the ten completed rows continue
+#: to describe themselves correctly.
+AFT_EVAL_STEPS = (512,) if MODEL_FAMILY == "glm45_air" else (256, 512)
 
 
 def aft_cell_keys() -> tuple[tuple[str, str], ...]:
