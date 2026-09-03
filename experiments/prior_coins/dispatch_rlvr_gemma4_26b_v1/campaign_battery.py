@@ -683,6 +683,12 @@ def paired_surface_contrast(
 
     out: dict[str, Any] = {}
     for family, surfaces in sorted(by_family.items()):
+        # The battery's own episode sets, BEFORE any metric filter. This is the
+        # premise of the pairing and it is a property of the data.
+        presented = {
+            surface: {row["source_episode_id"] for row in rows}
+            for surface, rows in surfaces.items()
+        }
         per_surface = {
             surface: _episode_metric(rows, parser=parser, metric=metric)
             for surface, rows in surfaces.items()
@@ -729,15 +735,38 @@ def paired_surface_contrast(
                     "ci_high": high,
                     "ci_method": "paired_episode_bootstrap",
                 }
-        # Set equality is the premise of the pairing; record whether it held.
-        sets = {surface: set(values) for surface, values in per_surface.items()}
-        reference = sets.get("canonical") or (next(iter(sets.values())) if sets else set())
+        # TWO different questions, kept apart because conflating them reads as
+        # a data fault when it is a model fault:
+        #
+        # `presented_episode_sets_identical` is about the BATTERY -- do the
+        #   surfaces show the same episodes? It must be True; if it is ever
+        #   False the pairing premise is broken and the deltas are meaningless.
+        # `scoreable_episode_sets_identical` is about the MODEL -- does the
+        #   same episode yield a decided answer on every surface? This is
+        #   routinely False, because parse success varies by presentation, and
+        #   that is a finding rather than a defect. The contrasts pair on the
+        #   intersection, so they stay valid either way; `paired_episode_n`
+        #   reports how many episodes survived.
+        reference = presented.get("canonical") or (
+            next(iter(presented.values())) if presented else set()
+        )
+        scoreable = {surface: set(values) for surface, values in per_surface.items()}
+        scoreable_ref = scoreable.get("canonical") or (
+            next(iter(scoreable.values())) if scoreable else set()
+        )
         out[family] = {
             "metric": metric,
             "parser": parser,
-            "surface_episode_sets_identical": all(
-                value == reference for value in sets.values()
+            "presented_episode_sets_identical": all(
+                value == reference for value in presented.values()
             ),
+            "presented_episode_n": len(reference),
+            "scoreable_episode_sets_identical": all(
+                value == scoreable_ref for value in scoreable.values()
+            ),
+            "scoreable_episode_n": {
+                surface: len(values) for surface, values in sorted(scoreable.items())
+            },
             "contrasts": contrasts,
         }
     return out

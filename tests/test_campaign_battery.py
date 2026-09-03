@@ -406,7 +406,8 @@ def test_paired_surface_contrast_is_within_episode(battery):
         records.append(_record(f"ep-{i}", "coin", surface="trained"))
     out = battery.paired_surface_contrast(records, metric="charter_share_decided")
     family = out["eval_trained_conflict"]
-    assert family["surface_episode_sets_identical"] is True
+    assert family["presented_episode_sets_identical"] is True
+    assert family["presented_episode_n"] == 10
     contrast = family["contrasts"]["trained_minus_canonical"]
     assert contrast["delta"] == pytest.approx(-1.0)
     assert contrast["paired_episode_n"] == 10
@@ -419,7 +420,30 @@ def test_paired_contrast_flags_unequal_episode_sets(battery):
         _record("ep-2", "charter", surface="trained"),
     ]
     out = battery.paired_surface_contrast(records)
-    assert out["eval_trained_conflict"]["surface_episode_sets_identical"] is False
+    assert out["eval_trained_conflict"]["presented_episode_sets_identical"] is False
+
+
+def test_presented_and_scoreable_sets_are_reported_separately(battery):
+    """A surface-dependent parse failure is a MODEL fact, not a battery fault.
+
+    Both surfaces present the same two episodes; the model only produces a
+    decided answer for one of them on `trained`. `presented` must stay True
+    (the pairing premise holds) while `scoreable` goes False.
+    """
+
+    records = [
+        _record("ep-1", "charter", surface="canonical"),
+        _record("ep-2", "coin", surface="canonical"),
+        _record("ep-1", "charter", surface="trained"),
+        _record("ep-2", "malformed", surface="trained"),
+    ]
+    out = battery.paired_surface_contrast(records)["eval_trained_conflict"]
+    assert out["presented_episode_sets_identical"] is True
+    assert out["presented_episode_n"] == 2
+    assert out["scoreable_episode_sets_identical"] is False
+    assert out["scoreable_episode_n"] == {"canonical": 2, "trained": 1}
+    # The contrast still pairs, on the intersection.
+    assert out["contrasts"]["trained_minus_canonical"]["paired_episode_n"] == 1
 
 
 def _two_run_record(episode_id, verdicts, *, surface="canonical"):
