@@ -19,6 +19,7 @@ import re
 import sys
 import time
 import statistics
+import warnings
 from types import SimpleNamespace
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
@@ -983,7 +984,7 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
             result.append(scalar)
             component_rows.append({"prompt": prompts[index], "completion": text,
                 "completion_raw_text": raw_text,
-                **untouched, **numeric_components,
+                **_loggable(untouched), **numeric_components,
                 "semantic_correct": components.get("semantic_correct"),
                 "format_valid": components.get("format_valid"), "reward": scalar,
                 "reward_call": reward_func.reward_calls,
@@ -1070,6 +1071,54 @@ def _next_reward_call(path: Path) -> int:
                 continue
             last_call = max(last_call, call)
     return last_call + 1
+
+
+#: Reward-function kwargs that must never be PERSISTED into a rollout record.
+#: They are still passed to ``score`` -- this only governs what is written.
+#:
+#: TRL hands the reward function ``trainer_state`` so a reward can be
+#: step-aware, and the rollout row splatted every column it was given. That
+#: state carries the trainer's ACCUMULATED log history, so it grows with every
+#: step and each record embeds the whole thing: measured on one 768-update
+#: cell, the first record was 65.5 KB (87.5% trainer_state), the middle 958 KB
+#: (99.1%), the last 1,347 KB (99.6%) -- 47,104 records, 34.2 GB, of which the
+#: actual rollout content was ~330 MB. Quadratic in the number of updates.
+#:
+#: It also broke durability: a 34 GB file still growing between 20-minute Hub
+#: mirror cycles times out the Xet commit, and the plain-LFS fallback has the
+#: commit rejected outright. The authoritative copy of this state is each
+#: checkpoint's own trainer_state.json, which is saved whole.
+UNLOGGED_REWARD_COLUMNS = frozenset({"trainer_state"})
+
+#: Serialized size above which a single persisted column is reported once, so
+#: the NEXT field like trainer_state is noticed while the file is small rather
+#: than at teardown. Not a filter: nothing is dropped on size alone, because a
+#: silent size-based drop would lose real data without anyone knowing.
+_LARGE_COLUMN_BYTES = 65_536
+_reported_large_columns: set[str] = set()
+
+
+def _loggable(columns: dict[str, Any]) -> dict[str, Any]:
+    """Columns to persist in a rollout record; see UNLOGGED_REWARD_COLUMNS."""
+    kept = {key: value for key, value in columns.items()
+            if key not in UNLOGGED_REWARD_COLUMNS}
+    for key, value in kept.items():
+        if key in _reported_large_columns:
+            continue
+        try:
+            size = len(json.dumps(value, default=str))
+        except (TypeError, ValueError):
+            continue
+        if size > _LARGE_COLUMN_BYTES:
+            _reported_large_columns.add(key)
+            warnings.warn(
+                f"rollout column {key!r} serializes to {size / 1024:.0f} KB per "
+                "record; if it grows with training step it will dominate "
+                "raw_rollouts.jsonl. Add it to "
+                "scimt.train.grpo.UNLOGGED_REWARD_COLUMNS if it is not "
+                "per-rollout data.",
+                RuntimeWarning, stacklevel=2)
+    return kept
 
 
 def _append_jsonl_rows(path: Path, rows: list[dict[str, Any]]) -> None:

@@ -987,3 +987,61 @@ def test_profile_recorder_persists_spans_and_training_steps(tmp_path, monkeypatc
         "training_step",
     ]
     assert len(path.read_text().splitlines()) == 2
+
+
+def test_rollout_records_exclude_the_trainer_state_column(tmp_path):
+    """TRL's trainer_state must reach `score` but never the rollout log.
+
+    TRL passes trainer_state so a reward can be step-aware, and the rollout row
+    splatted every column it was handed. That state carries the trainer's
+    ACCUMULATED log history, so it grows with each step and every record
+    embeds the whole thing. Measured on one 768-update cell: first record
+    65.5 KB (87.5% trainer_state), middle 958 KB (99.1%), last 1,347 KB
+    (99.6%) -- 47,104 records totalling 34.2 GB, around 330 MB of which was
+    actual rollout content. It also broke the Hub mirror outright.
+    """
+    import json
+
+    from scimt.train.grpo import make_reward_func
+
+    seen = {}
+
+    def score(text, **columns):
+        seen.update(columns)
+        return 1.0
+
+    log_dir = tmp_path / "rollouts"
+    reward = make_reward_func(score, group_size=1, rollout_log_dir=log_dir)
+    fat_state = {"log_history": [{"step": i} for i in range(500)]}
+    reward(["a prompt"], ["a completion"],
+           trainer_state=fat_state, episode_id="ep-1")
+
+    # The scorer still sees it -- this is not about hiding it from reward code.
+    assert seen.get("trainer_state") == fat_state
+
+    written = sorted(log_dir.glob("raw_rollouts.rank-*.jsonl"))
+    assert written, "no rollout file written"
+    rows = [json.loads(line) for line in
+            written[0].read_text().splitlines() if line.strip()]
+    assert rows, "no rollout records written"
+    for row in rows:
+        assert "trainer_state" not in row, (
+            "trainer_state was persisted into a rollout record; this is the "
+            "quadratic growth that produced a 34 GB rollout file")
+        # The real per-rollout data must survive the exclusion.
+        assert row["episode_id"] == "ep-1"
+        assert row["reward"] == 1.0
+
+
+def test_a_large_rollout_column_is_reported_once(tmp_path, recwarn):
+    """The NEXT trainer_state-shaped field must be noticed while it is cheap."""
+    from scimt.train.grpo import make_reward_func
+
+    reward = make_reward_func(lambda text, **columns: 1.0, group_size=1,
+                              rollout_log_dir=tmp_path / "rollouts")
+    bulky = {"blob": "x" * 200_000}
+    reward(["p"], ["c"], some_new_field=bulky)
+    messages = [str(w.message) for w in recwarn
+                if issubclass(w.category, RuntimeWarning)]
+    assert any("some_new_field" in m and "KB per record" in m
+               for m in messages), messages
