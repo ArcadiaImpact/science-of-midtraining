@@ -87,6 +87,9 @@ renders `-` in its control column **by design**: its anchor is
 ```
 score_grid.py     discover -> download -> run the four scorers -> scored/
 plot_grid.py      scored/ (+ the legacy scored*.json) -> figures/
+plot_stacked.py   scored/ -> figures/stacked/
+plot_figure0_slices.py
+                  scored/ -> figures/figure0_slices/
 cache/            raw responses. GITIGNORED, large.
 scored/           small JSONs, one per (profile, arm, battery). Commit these.
 figures/          three surface-specific fig1s + figs2..fig4, png + svg. Commit these.
@@ -198,6 +201,22 @@ the clause axis, and trained clauses / held-out template to change only the
 template axis. This isolates each generalisation axis against the same anchor
 without adding a diagonal clause-plus-template comparison or enough redundant
 panels to make the already tall endpoint grids unreadable at 100% zoom.
+
+### Figure-0 slice figures
+
+`plot_figure0_slices.py` writes the classic two-panel Figure-0 view under
+`figures/figure0_slices/`: agreement composition on the left and conflict
+composition on the right, with every available endpoint grouped by
+charter/control/coin substrate. It renders the full
+surface × clause-split × model × presented-token-budget cross-product by
+default. Filenames preserve that axis order, for example
+`heldout-template__trained-clause__gemma3-12b__19m.{png,svg}`.
+
+The script is also a reusable slicer: repeat any of `--model`, `--dose`,
+`--surface`, or `--clause` to render a subset. The model × dose coordinates
+come from `plot_grid.PLAN`, so ablations and legacy repetitions that share a
+coordinate do not silently replace the campaign cell. Missing arms in a
+partially landed profile remain explicit pale “data not available” rows.
 
 ### The rectangle (figs 2–4)
 
