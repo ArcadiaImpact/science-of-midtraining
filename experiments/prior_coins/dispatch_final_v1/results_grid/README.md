@@ -94,6 +94,8 @@ plot_figure0_scaling.py
                   scored/ -> figures/figure0_scaling_{model_size,token_budget}/
 plot_dose_response.py
                   scored/ -> figures/dose_response/
+plot_model_size_response.py
+                  scored/ -> figures/model_size_response/
 cache/            raw responses. GITIGNORED, large.
 scored/           small JSONs, one per (profile, arm, battery). Commit these.
 figures/          three surface-specific fig1s + figs2..fig4, png + svg. Commit these.
@@ -254,6 +256,14 @@ choice (dashed/square), and the control row shows both. These retain the Fig. 1
 trained-clause conflict eval and vary only the canonical / trained-template /
 held-out-template presentation surface. The pre-grid 12B 50M × 1-epoch legacy
 point is omitted so every trace is a campaign dose series.
+
+`plot_model_size_response.py` is the axis-swapped companion under
+`figures/model_size_response/`. It keeps the same 3 × 5 row/column layout and
+choice encoding, but puts Gemma model size (4B / 12B / 27B) on x and uses color
+for presented-token budget (1M / 5M / 19M / 50M / 190M). Shared budgets form
+lines across sizes; a budget available at only one scored size is shown as a
+single marker rather than implying a scaling trajectory. It writes the same
+canonical / trained-template / held-out-template surface trio.
 
 ### The rectangle (figs 2–4)
 
