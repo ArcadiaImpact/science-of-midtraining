@@ -1256,7 +1256,13 @@ async def phase_eval(root: Path, arm: str, parent: Path) -> None:
     never overlap on that card.
     """
     sentinel = root / "EVAL_COMPLETE.json"
-    if C.MODEL_FAMILY == "glm45_air":
+    # EVAL_PARENT_RECLAIMED is written only after eval, recall, d4 AND
+    # costsweep have all completed, so it is proof that every consumer of the
+    # shared parent is finished. Rebuilding it then would cost ~200 GB and
+    # several minutes to serve nothing -- which is what preparing before the
+    # sentinel (below) would otherwise do on any resume at publish.
+    reclaimed = done(root / "EVAL_PARENT_RECLAIMED.json")
+    if C.MODEL_FAMILY == "glm45_air" and not reclaimed:
         from eval_runtime import prepare_model_for_eval
 
         prepared = await asyncio.to_thread(

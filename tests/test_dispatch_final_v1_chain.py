@@ -1022,3 +1022,52 @@ def test_every_profile_family_agrees_with_the_shared_engine_fraction():
                 f"{path.stem}: gemma rows ran costsweep at 0.80; changing it "
                 "would make new results incomparable with the committed ones")
         assert 0 < shared <= 1.0
+
+
+def test_phase_eval_does_not_rebuild_a_deliberately_reclaimed_parent(
+        tmp_path, monkeypatch):
+    """After the eval parent is reclaimed, nothing may rebuild it.
+
+    phase_eval prepares the shared parent BEFORE its completion sentinel, so
+    that a resumed arm still hands recall/d4/costsweep the one parent they
+    share. But the chain reclaims that parent once all four eval consumers are
+    done, and EVAL_PARENT_RECLAIMED.json is written only then. Preparing
+    unconditionally would spend ~200 GB and several minutes rebuilding a
+    directory whose every consumer has already finished, on the one resume
+    shape that reaches it -- a relaunch at publish.
+    """
+    # The prepared parent is a GLM-only artifact and the default test profile
+    # is gemma, so load contracts under a real GLM profile rather than skip --
+    # skipping would leave the guard unexercised by the suite. monkeypatch
+    # restores both the env and sys.modules at teardown.
+    monkeypatch.setenv("FINAL_V1_PROFILE", "glm45_air_190m")
+    monkeypatch.delitem(sys.modules, "contracts", raising=False)
+    chain = _chain()
+    assert chain.C.MODEL_FAMILY == "glm45_air"
+
+    root = tmp_path / "charter"
+    root.mkdir(parents=True)
+    calls = []
+
+    import types
+
+    def prepare(source, work, label):
+        calls.append((source, work, label))
+        return work / "prepared_glm" / label
+
+    # eval_runtime lives in pod/ and is imported by phase_eval at call time.
+    # Inject it rather than putting pod/ on sys.path: the real module pulls in
+    # the GLM expert-unpacking stack, which is not CPU-only.
+    fake = types.ModuleType("eval_runtime")
+    fake.prepare_model_for_eval = prepare
+    monkeypatch.setitem(sys.modules, "eval_runtime", fake)
+
+    with chain.fingerprint_scope(root, "charter"):
+        chain.mark(root / "EVAL_COMPLETE.json", {"arm": "charter"})
+        chain.mark(root / "EVAL_PARENT_RECLAIMED.json",
+                   {"arm": "charter", "reclaimed_bytes": 213_000_000_000})
+        import asyncio
+        asyncio.run(chain.phase_eval(root, "charter", root / "dolci"))
+
+    assert not calls, (
+        "phase_eval rebuilt the parent the chain had deliberately reclaimed")
