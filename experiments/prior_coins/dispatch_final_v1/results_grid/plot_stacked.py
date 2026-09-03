@@ -167,7 +167,15 @@ def arm_sort_key(arm: str) -> tuple[Any, ...]:
 
 def endpoints_in(document: Mapping[str, Any]) -> set[str]:
     result = document.get("result", {})
-    return {str(key) for key, value in result.items() if isinstance(value, dict)}
+    # Some partial campaigns preserve the planned endpoint as an empty mapping
+    # even when that checkpoint was deliberately not evaluated (GLM's
+    # step-256 endpoints are the first example).  Empty is absence, never a
+    # zero-valued observation and not a row to invent in data-driven figures.
+    return {
+        str(key)
+        for key, value in result.items()
+        if isinstance(value, dict) and value
+    }
 
 
 def cell_for(
@@ -180,6 +188,11 @@ def cell_for(
 
 def positive_int(value: Any) -> int | None:
     return value if isinstance(value, int) and not isinstance(value, bool) and value > 0 else None
+
+
+def episode_n(cell: Mapping[str, Any]) -> int | None:
+    """Read the response/episode n across exact and semantic score schemas."""
+    return positive_int(cell.get("n")) or positive_int(cell.get("n_scored"))
 
 
 def agreement_reading(
@@ -197,7 +210,7 @@ def agreement_reading(
     rate = rates.get("shared", 0.0)
     if not isinstance(rate, (int, float)) or not 0.0 <= rate <= 1.0:
         return None
-    return AgreementReading(float(rate), n_runs, positive_int(cell.get("n")))
+    return AgreementReading(float(rate), n_runs, episode_n(cell))
 
 
 def _exact_conflict_shares(
@@ -245,7 +258,7 @@ def conflict_reading(
         # Scored rates are rounded to four decimals.  Normalisation closes the
         # possible one-pixel rounding seam and keeps this a literal 100% stack.
         shares = {category: value / total for category, value in shares.items()}
-    return ConflictReading(shares, n_runs, positive_int(cell.get("n")))
+    return ConflictReading(shares, n_runs, episode_n(cell))
 
 
 def profile_units(

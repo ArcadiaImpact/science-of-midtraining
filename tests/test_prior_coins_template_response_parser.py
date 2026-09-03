@@ -78,6 +78,21 @@ def test_parser_rejects_incomplete_ambiguous_and_duplicate_assignments():
     assert duplicate.plan is None
 
 
+def test_parser_rejects_unicode_confusable_entity_without_crashing():
+    episode = _episode()
+    r1, r2 = (run.run_id for run in episode.runs)
+    c1 = next(crew.name for crew in episode.crews if "i" in crew.name.casefold())
+    c2 = next(crew.name for crew in episode.crews if crew.name != c1)
+    confusable = c1.replace("I", "ı").replace("i", "ı")
+    assert confusable != c1
+
+    result = parser.parse_response(
+        f"{r1}: {confusable}\n{r2}: {c2}", episode,
+    )
+    assert result.status == "incomplete"
+    assert result.plan is None
+
+
 def test_surface_classifier_is_descriptive_only():
     assert parser.classify_surface("Assignment: R1=A") == "canonical_assignment"
     assert parser.classify_surface('{"R1": "A"}') == "json"

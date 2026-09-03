@@ -207,7 +207,7 @@ def _positive_rates(
     return (
         {category: value / total for category, value in values.items()},
         n_runs,
-        data.positive_int(cell.get("n")),
+        data.episode_n(cell),
     )
 
 

@@ -484,7 +484,8 @@ def fig1_dose_response(
     # short (4B and 12B have no 190M cell, 27B and GLM no 1M cell) simply has
     # no point there -- the tick stays, so the rectangle is visible here too.
     ticks = list(DOSES)
-    missing_note: dict[str, set[str]] = {}
+    missing_note: dict[tuple[str, int], set[str]] = {}
+    not_evaluated: set[tuple[str, int, str, str]] = set()
     n_seen: set[int] = set()
 
     for ax, (endpoint, title) in zip(axes.ravel(), FIG1_ENDPOINTS, strict=True):
@@ -504,7 +505,18 @@ def fig1_dose_response(
                         ys.append(float("nan"))
                         lo.append(0.0)
                         hi.append(0.0)
-                        missing_note.setdefault(model, set()).add(arm)
+                        endpoint_result = (
+                            doc.get("result", {}).get(endpoint)
+                            if doc is not None else None
+                        )
+                        if isinstance(endpoint_result, dict) and not endpoint_result:
+                            not_evaluated.add(
+                                (model, meta["presented"], arm, endpoint)
+                            )
+                        else:
+                            missing_note.setdefault(
+                                (model, meta["presented"]), set()
+                            ).add(arm)
                     else:
                         rate, n_runs, _ = got
                         ys.append(100 * rate)
@@ -554,12 +566,31 @@ def fig1_dose_response(
     for ax in axes[-1, :]:
         ax.set_xlabel("presented task tokens (unique x epochs)", fontsize=9)
 
-    if missing_note:
-        lines = [f"{MODEL_LABEL[m]}: " + ", ".join(sorted(missing_note[m]))
-                 for m in MODELS if m in missing_note]
+    if missing_note or not_evaluated:
+        lines = []
+        if missing_note:
+            lines.append("still unscored:")
+            lines.extend(
+                f"  {MODEL_LABEL[model]}@{DOSE_LABEL[dose]}: "
+                + ", ".join(sorted(arms))
+                for (model, dose), arms in sorted(
+                    missing_note.items(),
+                    key=lambda item: (
+                        MODELS.index(item[0][0]), DOSES.index(item[0][1])
+                    ),
+                )
+            )
+        if not_evaluated:
+            labels = dict(FIG1_ENDPOINTS)
+            lines.append("not evaluated (not zero):")
+            lines.extend(
+                f"  {MODEL_LABEL[model]}@{DOSE_LABEL[dose]} {arm}: "
+                f"{labels[endpoint]}"
+                for model, dose, arm, endpoint in sorted(not_evaluated)
+            )
         axes[0, 0].text(
             0.03, 0.955,
-            "gaps = still training:\n" + "\n".join(lines),
+            "gaps / absent points:\n" + "\n".join(lines),
             transform=axes[0, 0].transAxes, fontsize=6.8, va="top",
             color="#8a8a8a", style="italic",
             bbox=dict(facecolor="#fbfbfb", edgecolor="#e2e2e2", linewidth=0.6,
@@ -695,6 +726,8 @@ def fig2_recall(scored: dict, legacy: dict, metas: dict) -> Path:
         "this balanced set that scores exactly 50% and is NOT chance -- read "
         "meta.diagnostics.logprob_chose in the scored JSON.  "
         f"CAVEAT: {CAVEAT}.  "
+        "GLM-4.5-Air@190M has no AFT-256 recall point; that blank is not "
+        "zero.  "
         "Panels are the full model x dose rectangle: \"training…\" is planned "
         "and not yet scored, a grey hatched panel is a cell the campaign does "
         "not cover at all."))
@@ -865,6 +898,8 @@ def fig3_d4(scored: dict, legacy: dict, metas: dict) -> Path:
         "family is a trajectory."
         + driven_text +
         f"  CAVEAT: {CAVEAT}.  "
+        "GLM-4.5-Air@190M D4 was evaluated at step 512 only; its absent light "
+        "step-256 bars are not zeros.  "
         "\"training…\" is planned and not yet scored; a grey hatched panel is a "
         "cell the campaign does not cover at all."))
     fig.tight_layout(rect=(0, 0.045, 1, 0.935))

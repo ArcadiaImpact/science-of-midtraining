@@ -96,6 +96,10 @@ plot_dose_response.py
                   scored/ -> figures/dose_response/
 plot_model_size_response.py
                   scored/ -> figures/model_size_response/
+collect_ablation_scores.py
+                  Hub eval responses + existing grid scores -> scored/ablations/
+plot_ablation_figure0.py
+                  scored/ablations/ -> figures/ablations/{diverse_templates,elicitation,no_examples_midtrain}/
 cache/            raw responses. GITIGNORED, large.
 scored/           small JSONs, one per (profile, arm, battery). Commit these.
 figures/          three surface-specific fig1s + figs2..fig4, png + svg. Commit these.
@@ -207,6 +211,32 @@ the clause axis, and trained clauses / held-out template to change only the
 template axis. This isolates each generalisation axis against the same anchor
 without adding a diagonal clause-plus-template comparison or enough redundant
 panels to make the already tall endpoint grids unreadable at 100% zoom.
+
+### Ablation Figure-0 galleries
+
+`collect_ablation_scores.py` prepares the inputs for the three initial
+ablation galleries. The no-examples result is assembled from its two already
+scored grid arms plus the standard 50M control (the intentionally omitted
+no-examples control would be byte-identical). The diverse-template and
+elicitation studies emit natural-language answers, so the collector downloads
+only their main-battery response JSONLs and runs the study's semantic parser.
+The collector also packages the standard 12B/50M three-arm headline profile as
+their comparison. The output records the exact Hub revision; raw responses
+stay under the gitignored `cache/` tree.
+
+`plot_ablation_figure0.py` writes six comparison plots per ablation under
+`figures/ablations/`: canonical, trained, and held-out templates crossed with
+trained and held-out clauses. Each uses the established solid-colour Figure-0
+composition (agreement on the left, conflict on the right). The
+diverse-template and elicitation galleries show only two-epoch results, pairing
+each with the corresponding non-diverse headline bar. E3 has no balanced 2%
+headline cell, so it shows both directional 2% headline neighbours rather than
+an invented average. The no-examples gallery retains both checkpoints.
+
+```sh
+uv run python experiments/prior_coins/dispatch_final_v1/results_grid/collect_ablation_scores.py
+uv run --extra dev python experiments/prior_coins/dispatch_final_v1/results_grid/plot_ablation_figure0.py
+```
 
 ### Figure-0 slice figures
 

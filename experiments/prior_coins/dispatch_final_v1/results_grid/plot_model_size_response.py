@@ -2,9 +2,9 @@
 
 This is the axis-swapped companion to ``plot_dose_response.py``. It writes one
 3x5 figure per presentation surface: rows are midtraining treatments, columns
-are final AFT treatments, x is Gemma model size, and color is presented task
-tokens. Solid/circle traces show Charter choice and dashed/square traces show
-coin choice.
+are final AFT treatments, x is model/size category, and color is presented
+task tokens. Solid/circle traces show Charter choice and dashed/square traces
+show coin choice.
 """
 
 from __future__ import annotations
@@ -25,9 +25,10 @@ HERE = Path(__file__).resolve().parent
 OUTPUT = HERE / "figures" / "model_size_response"
 
 MODEL_X = {
-    "gemma3_4b": 4,
-    "gemma3_12b": 12,
-    "gemma3_27b": 27,
+    "gemma3_4b": 0,
+    "gemma3_12b": 1,
+    "gemma3_27b": 2,
+    "glm45_air": 3,
 }
 
 # Seaborn's colorblind palette, shared with the established Figure-0 family.
@@ -45,7 +46,7 @@ DOSE_COLOR = {
 def available_doses(
     scored: dict[tuple[str, str, str], dict],
 ) -> tuple[int, ...]:
-    """Token budgets with at least one scored Gemma eval artifact."""
+    """Token budgets with at least one scored model eval artifact."""
     present_profiles = {
         profile for profile, _arm, battery in scored if battery == "eval"
     }
@@ -152,7 +153,7 @@ def render_surface(
             ax.set_xticklabels(
                 [house.MODEL_LABEL[model] for model in MODEL_X], fontsize=7.5
             )
-            ax.set_xlim(2.5, 28.5)
+            ax.set_xlim(-0.25, len(MODEL_X) - 0.75)
             ax.set_ylim(*house.FIG1_YLIM)
             ax.axhline(50, color="#bcbcbc", linestyle="--", linewidth=0.75, zorder=1)
             ax.grid(color="#eeeeee", linewidth=0.6, zorder=0)
@@ -170,7 +171,7 @@ def render_surface(
                     labelpad=9,
                 )
             if row_index == len(dose_plot.ROWS) - 1:
-                ax.set_xlabel("model size", fontsize=8.2)
+                ax.set_xlabel("model / size", fontsize=8.2)
 
     dose_handles = [
         Line2D([], [], color=DOSE_COLOR[dose], linewidth=2.2,
@@ -209,8 +210,11 @@ def render_surface(
         f"n={run_n} runs / {episode_n} episodes per point. Wilson 95% on runs "
         "(optimistic because runs are clustered within episodes). Color = "
         "presented-token budget; solid/circle = Charter choice; dashed/square "
-        "= coin choice. A lone marker means that budget exists at only one "
-        "scored model size; line breaks are planned cells not yet scored. "
+        "= coin choice. X positions are categorical so GLM-4.5-Air can be "
+        "shown alongside the Gemma size series without implying a directly "
+        "comparable dense parameter count. A lone marker means that budget "
+        "exists at only one scored model; line breaks are planned cells not "
+        "yet scored. "
         f"CAVEAT: {house.CAVEAT}.",
     )
     fig.tight_layout(rect=(0.01, 0.045, 0.995, 0.925), h_pad=1.4, w_pad=1.0)

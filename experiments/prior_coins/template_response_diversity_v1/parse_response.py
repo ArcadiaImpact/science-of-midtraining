@@ -116,9 +116,16 @@ def _segments(text: str) -> list[str]:
 
 
 def _mentions(pattern: str, text: str, lookup: dict[str, str]) -> list[str]:
-    return [lookup[m.group(0).casefold()] for m in re.finditer(
-        rf"(?<![\w]){pattern}(?![\w])", text, flags=re.I
-    )]
+    # Python's Unicode IGNORECASE treats dotted/dotless I as equivalent to
+    # ASCII I, while casefold() deliberately does not.  Keep that permissive
+    # regex behaviour from turning a model's confusable spelling into a parser
+    # crash: only canonical entity spellings admitted by the lookup survive.
+    result: list[str] = []
+    for match in re.finditer(rf"(?<![\w]){pattern}(?![\w])", text, flags=re.I):
+        canonical = lookup.get(match.group(0).casefold())
+        if canonical is not None:
+            result.append(canonical)
+    return result
 
 
 def _ordered_unique_mentions(
@@ -164,8 +171,10 @@ def parse_response(response: str, episode) -> ParseResult:
     for method, pattern in _pair_patterns(run_pattern, crew_pattern):
         for segment in segments:
             for match in pattern.finditer(segment):
-                run = run_lookup[match.group("run").casefold()]
-                crew = crew_lookup[match.group("crew").casefold()]
+                run = run_lookup.get(match.group("run").casefold())
+                crew = crew_lookup.get(match.group("crew").casefold())
+                if run is None or crew is None:
+                    continue
                 _add_candidate(candidates, run, crew)
                 methods.add(method)
 
