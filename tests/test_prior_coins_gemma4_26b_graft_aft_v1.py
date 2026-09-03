@@ -416,3 +416,14 @@ def test_pod_runner_keys_the_graft_parent_by_arm():
     assert "PARENT=/workspace/parent\n" not in text
     # and the resolved symlink is re-checked against this arm every run
     assert 'readlink -f "$PARENT"' in text
+
+
+def test_parallel_evals_get_distinct_vllm_ports():
+    """Four engines launched at once must not race for a rendezvous port.
+
+    vLLM's EngineCore opens a torch.distributed TCPStore on a port it picks
+    itself; four simultaneous launches collide. charter/mixed_coin died at boot
+    with EADDRINUSE on port 44083 while its three siblings came up fine.
+    """
+    text = (STUDY / "pod" / "run_arm_pod.sh").read_text()
+    assert "VLLM_PORT=$((51000 + i * 64))" in text

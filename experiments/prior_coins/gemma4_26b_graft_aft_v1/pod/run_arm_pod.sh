@@ -262,11 +262,22 @@ PYEOF
   # would then fail the eval rather than the download. Two small JSONL files
   # per cell is a cheap way not to find out.
   mkdir -p "$EVAL_DATA/$cell"
-  nohup env CUDA_VISIBLE_DEVICES="$i" \
+  # DISTINCT VLLM_PORT PER CELL, and a stagger.
+  #
+  # vLLM's EngineCore opens a torch.distributed TCPStore rendezvous on a port it
+  # picks itself. Four engines launched in the same second pick from the same
+  # seed space and collide: on the charter arm, mixed_coin died at boot with
+  # "DistNetworkError ... port: 44083 ... EADDRINUSE" while its three siblings
+  # came up fine (2026-09-03T16:27Z). It is a launcher race, not a memory or
+  # model problem -- the adapter was fine and the endpoint re-ran cleanly on the
+  # same GPU. Pinning a per-cell port removes the collision; the stagger also
+  # spreads the four 48 GiB checkpoint reads over the overlay filesystem.
+  nohup env CUDA_VISIBLE_DEVICES="$i" VLLM_PORT=$((51000 + i * 64)) \
     timeout 90m "$EVAL_PY" -m "$EXP.eval_aft" \
       parent_model="$PARENT" endpoints="$plan" \
       output_dir="$EVALS" data_dir="$EVAL_DATA/$cell" \
     > "$LOGS/eval-$cell.log" 2>&1 &
+  sleep 20
   EPIDS+=("$!")
   say "launched eval $cell on GPU $i"
 done
