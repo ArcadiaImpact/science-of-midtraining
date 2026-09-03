@@ -181,8 +181,32 @@ after the review he did on 2026-09-02.
 
 **Status: all six cells stopped themselves at step 16. No cell advanced. This
 needs your call before anything continues; the night shift did not override
-it.** Pods are alive and idle (~$27.54/hr all six) so you can resume in seconds
-— say the word and I tear them down instead.
+it.**
+
+**The pods are gone — deliberately, and nothing was lost.** Standing
+instruction is to avoid idle billing, six halted pods cost $27.54/hr, and every
+cell is durable on the Hub first: each direct cell mirrored 51 files including
+a *complete resumable* `checkpoint-16` (adapter + `optimizer.pt` +
+`scheduler.pt` + `rng_state.pth` + `trainer_state.json`) and all three audit
+artifacts. Verified before deletion, not assumed.
+
+**To resume**, whichever option you pick:
+
+```sh
+# 1. one CUDA-PINNED pod per cell (13.0 is mandatory -- cu130 needs driver >=580)
+ops/with_account2.sh bash /root/.claude/skills/runpod-spinup/create-pod-cuda.sh \
+  dispatch-rl-<arm>-<mode> "NVIDIA H200" 13.0 SECURE runpod-torch-v280 1 400 --max-hours 40
+# 2. the night shift's deploy script does clone-in-session + worklist + runner
+scratchpad/deploy_rl_cell.sh runpod-dispatch-rl-<arm>-<mode> <arm> <mode>
+```
+
+Budget ~30 min per pod, all six in parallel: create + 52 GB graft pull +
+`setup_rl`. To continue from step 16 rather than restart, pull
+`<cell>/<cell>-phase16/train/trainer/checkpoint-16` from
+`arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1-runs` and pass it as
+`resume_from_checkpoint`; the worklist is in that repo's `worklist/` too, so
+nothing needs rebuilding. Note that options (b) and (d) restart from step 0
+anyway, in which case the checkpoints are only evidence, not a starting point.
 
 `audit_rollouts` **passed** on every cell. The thing that fired is
 `summarize_telemetry`'s designed abort gate: pre-selection zero-spread group
