@@ -142,7 +142,16 @@ RL_PROBE_GROUP_SIZE = 8
 #: Pinned once probe_pool_difficulty.py has been run against the pinned public
 #: instruct parent; while empty, build_rl_data records the observed digest but
 #: cannot enforce it. Set it before any scientific worklist build.
-RL_DIFFICULTY_SHA256 = ""
+#:
+#: Run 2026-09-03T00:16Z on 1xH200, google/gemma-4-26B-A4B-it @ 4d7ae498,
+#: mode=direct, seed=42, temperature=0.7, 8192 episodes x 8 completions,
+#: 571.7 s of generation. successes histogram:
+#:   0: 4510   1: 332   2: 207   3: 178   4: 211   5: 196   6: 255   7: 366   8: 1937
+#: i.e. degenerate_fraction = 0.787 -- under dr_grpo with scale_rewards="none",
+#: an all-0 or all-8 group has zero advantage and contributes no gradient, so
+#: only ~21% of a uniform draw would carry learning signal at all. This is the
+#: number RL_SAMPLING_BIAS exists to act on.
+RL_DIFFICULTY_SHA256 = "df3fffbdfb21bbb4989ea1a246ac7b504663fa1cea84e85cefb3814e20713d94"
 
 RL_CHECKPOINT_INTERVAL = 64
 RL_EARLY_CHECKPOINTS = (16, 32)
