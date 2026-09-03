@@ -57,6 +57,11 @@ ARMS: dict[str, tuple[str, int, bool]] = {
     "msm-aft-2pct-stdtpl": ("sft_msm_paper_qwen3_32b_ca_stdtpl", 2, True),
     "msm-aft-20pct-stdtpl": ("sft_msm_paper_qwen3_32b_ca_stdtpl", 20, True),
     "msm-aft-max-stdtpl": ("sft_msm_paper_qwen3_32b_ca_stdtpl", 100, True),
+    # 0% AFT-only = clean AFT with no MSM. Conceptually the paper's "AFT (with
+    # CoT)" arm; we had been reading it off their released checkpoint, which left
+    # the red curve without an own-pipeline origin. These close that gap.
+    "aft-only-0pct-stdtpl": ("sft_msm_paper_qwen3_32b_stdtpl", 0, False),
+    "aft-only-0pct-q25": ("sft_msm_paper_qwen25_32b", 0, False),
     "aft-only-2pct-stdtpl": ("sft_msm_paper_qwen3_32b_stdtpl", 2, False),
     "aft-only-20pct-stdtpl": ("sft_msm_paper_qwen3_32b_stdtpl", 20, False),
     "aft-only-max-stdtpl": ("sft_msm_paper_qwen3_32b_stdtpl", 100, False),
