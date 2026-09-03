@@ -176,15 +176,52 @@ def _validate_full_checkpoint(
         raise _fail(arm, stage, f"checkpoint-{step} has no non-empty model weights")
 
 
+def _adapter_prefix(
+    files: dict[str, RemoteFile], cell: str, step: int
+) -> str | None:
+    """Published prefix holding one cell's step-``step`` adapter, or None.
+
+    The remote counterpart of ``contracts.aft_adapter_dir``. gemma's LoRA runs
+    write a full adapter at every saved step, so it sits in the stepped
+    directory. GLM trains LoRA under FSDP, where ``checkpoint-N/`` is sharded
+    TRAINER state carrying no ``adapter_config.json`` at all; the only servable
+    adapter such a run produces is the final one, at the cell's run root.
+
+    Resolved by inspecting the listing rather than by family, so gemma keeps
+    the exact prefix it always had. The root is accepted only for the final
+    step -- restoring it as step 256 would label the 512-step adapter with the
+    wrong dose.
+    """
+    stepped = f"{cell}/checkpoints/checkpoint-{step}/"
+    if stepped + "adapter_config.json" in files:
+        return stepped
+    root = f"{cell}/checkpoints/"
+    if step == C.AFT_STEPS and root + "adapter_config.json" in files:
+        return root
+    return None
+
+
 def _validate_adapter_checkpoint(
     arm: str, files: dict[str, RemoteFile], cell: str, step: int
 ) -> None:
-    base = f"{cell}/checkpoints/checkpoint-{step}/"
+    base = _adapter_prefix(files, cell, step)
+    if base is None:
+        raise _fail(
+            arm, "aft",
+            f"{cell}: no adapter for step {step} -- neither "
+            f"{cell}/checkpoints/checkpoint-{step}/adapter_config.json nor "
+            f"(for the final step) {cell}/checkpoints/adapter_config.json")
     _require_file(arm, "aft", files, base + "adapter_config.json")
+    # The cell ROOT also matches every checkpoint-N/ below it, which for an
+    # FSDP run is trainer state and not an adapter -- so the root case counts
+    # immediate children only. The stepped case keeps recursing, exactly as it
+    # always did, so gemma's validation is unchanged.
+    root_prefix = not base.rstrip("/").endswith(f"checkpoint-{step}")
     weights = [
         item
         for name, item in files.items()
         if name.startswith(base)
+        and not (root_prefix and "/" in name[len(base):])
         and (name.endswith(".safetensors") or name.endswith(".bin"))
         and "adapter_model" in Path(name).name
     ]
@@ -465,11 +502,30 @@ def build_plan(arm: str, stages: dict[str, tuple[RemoteFile, ...]]) -> ArmPlan:
             needed_cells = tuple(C.AFT_CELLS)
         elif first == "recall":
             needed_cells = ("agreement",)
+        aft_map = _stage_map(stages["aft"])
         for cell in needed_cells:
             for step in C.AFT_EVAL_STEPS:
-                relative = f"{cell}/checkpoints/checkpoint-{step}"
-                selected.extend(_under(stages["aft"], relative))
-                scopes.append(f"aft/{relative}")
+                # Where the adapter actually lives, which for an FSDP run is
+                # the cell root and not the stepped directory. validate_stage
+                # has already refused the arm if neither carries one.
+                prefix = _adapter_prefix(aft_map, cell, step)
+                if prefix is None:
+                    raise _fail(
+                        arm, "aft",
+                        f"{cell}: no adapter published for step {step}")
+                if prefix.rstrip("/").endswith(f"checkpoint-{step}"):
+                    # gemma: the whole stepped directory, exactly as before.
+                    selected.extend(_under(stages["aft"], prefix))
+                else:
+                    # GLM: immediate children of the cell root only. The root
+                    # also contains every checkpoint-N/, ~11 GB of trainer
+                    # state per cell that no eval phase reads.
+                    selected.extend(
+                        item for name, item in aft_map.items()
+                        if name.startswith(prefix)
+                        and "/" not in name[len(prefix):]
+                    )
+                scopes.append(f"aft/{prefix.rstrip('/')}")
 
     unique = {item.repo_path: item for item in selected}
     return ArmPlan(

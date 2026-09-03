@@ -173,14 +173,16 @@ gpu_group() {
   echo "$group"
 }
 
-ENDPOINTS=(
-  pre_aft
-  agreement-step256 agreement-step512
-  mixed_charter-step256 mixed_charter-step512
-  mixed_coin-step256 mixed_coin-step512
-  charter_only-step256 charter_only-step512
-)
+# From contracts, as the stacked branch above already does. This was a literal
+# nine-name array, which silently became wrong the moment a profile evaluated a
+# different set of AFT steps: GLM evaluates step 512 alone, so the shell handed
+# d4_eval.py endpoints it derives from the same contract and does not have --
+# "unknown endpoints: ['agreement-step256']", nine shards dead on arrival.
+mapfile -t ENDPOINTS < <(
+  PYTHONPATH="$CONTRACTS_DIR:$REPO/src" "$EVAL_PYTHON" -c \
+  'import contracts; print("\n".join(contracts.eval_endpoint_names()))')
 N_ENDPOINTS=${#ENDPOINTS[@]}
+[ "$N_ENDPOINTS" -ge 1 ] || { echo "contracts yielded no D4 endpoints"; exit 1; }
 N_WORKERS=$((N_GROUPS < N_ENDPOINTS ? N_GROUPS : N_ENDPOINTS))
 
 echo "[$(date -u +%T)] $ARM: D4 across $N_WORKERS/$N_GROUPS TP groups ($N_GPUS GPUs)"
@@ -217,12 +219,17 @@ for pid in "${pids[@]}"; do
 done
 
 n=$(find "$P/d4" -name D4_COMPLETE.json | wc -l)
-echo "[$(date -u +%T)] $ARM: D4 shards done (fail=$fail), $n/9 endpoints"
+echo "[$(date -u +%T)] $ARM: D4 shards done (fail=$fail), $n/$N_ENDPOINTS endpoints"
 # vLLM can hang in engine teardown AFTER the work is written (4th occurrence
 # 2026-09-02, coin d4 on 27b_50m): a killed worker is only a failure if
 # completion markers are missing.
-if [ "$fail" -ne 0 ] && [ "$n" -eq 9 ]; then
-  echo "[timeout-after-complete] $ARM: D4 worker killed in engine teardown but all 9 markers present; continuing"
+#
+# The count is the profile's, never a literal 9 -- as with eval_sharded.sh's
+# hardcoded 162, a stale literal means this tolerance can never fire for a
+# profile with a different endpoint set, so a D4 that wrote every endpoint and
+# then lost a worker to a teardown hang is still reported as a failed unit.
+if [ "$fail" -ne 0 ] && [ "$n" -eq "$N_ENDPOINTS" ]; then
+  echo "[timeout-after-complete] $ARM: D4 worker killed in engine teardown but all $N_ENDPOINTS markers present; continuing"
   exit 0
 fi
 exit "$fail"

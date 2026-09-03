@@ -163,7 +163,21 @@ def test_launcher_shards_by_profile_gpu_count(tmp_path, n_gpus, expected_sizes):
     capture = tmp_path / "capture.txt"
     fake_python.write_text(
         "#!/usr/bin/env bash\n"
-        "if [ \"${1:-}\" = -c ]; then echo \"$FAKE_N_GPUS 1 48 gemma3\"; exit 0; fi\n"
+        # Two contracts queries now: the profile line and the endpoint names.
+        # Answering both with the profile line makes the launcher shard over
+        # the single word "$FAKE_N_GPUS".
+        "if [ \"${1:-}\" = -c ]; then\n"
+        "  case \"${2:-}\" in\n"
+        "    *eval_endpoint_names*)\n"
+        "      printf '%s\\n' pre_aft"
+        " agreement-step256 agreement-step512"
+        " mixed_charter-step256 mixed_charter-step512"
+        " mixed_coin-step256 mixed_coin-step512"
+        " charter_only-step256 charter_only-step512\n"
+        "      exit 0;;\n"
+        "    *) echo \"$FAKE_N_GPUS 1 48 gemma3\"; exit 0;;\n"
+        "  esac\n"
+        "fi\n"
         "printf '%s\\n' \"$*\" >> \"$CAPTURE\"\n"
     )
     fake_python.chmod(0o755)

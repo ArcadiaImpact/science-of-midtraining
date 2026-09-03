@@ -194,7 +194,25 @@ def _fake_tools(tmp_path: Path) -> tuple[Path, Path, dict]:
     fake_python = tmp_path / "fake-python"
     fake_python.write_text(
         "#!/usr/bin/env bash\n"
-        "if [ \"${1:-}\" = -c ]; then echo \"$FAKE_N_GPUS ${FAKE_TP:-1} ${FAKE_DOLCI:-48} ${FAKE_FAMILY:-gemma3}\"; exit 0; fi\n"
+        # The launchers ask contracts TWO questions now: the profile line, and
+        # the endpoint names. A stub answering every -c with the profile line
+        # handed the endpoint query "8 2 48 gemma3 162", so the launcher
+        # sharded over the single word "8". Dispatch on the code it is given.
+        "if [ \"${1:-}\" = -c ]; then\n"
+        "  case \"${2:-}\" in\n"
+        "    *eval_endpoint_names*)\n"
+        "      printf '%s\\n' ${FAKE_ENDPOINTS:-pre_aft"
+        " agreement-step256 agreement-step512"
+        " mixed_charter-step256 mixed_charter-step512"
+        " mixed_coin-step256 mixed_coin-step512"
+        " charter_only-step256 charter_only-step512}\n"
+        "      exit 0;;\n"
+        "    *)\n"
+        "      echo \"$FAKE_N_GPUS ${FAKE_TP:-1} ${FAKE_DOLCI:-48}"
+        " ${FAKE_FAMILY:-gemma3} ${FAKE_WANT:-162}\"\n"
+        "      exit 0;;\n"
+        "  esac\n"
+        "fi\n"
         "gpu=${CUDA_VISIBLE_DEVICES:-}\n"
         "args=\" $* \"\n"
         "if [ -z \"$gpu\" ]; then gpu=${args#* --gpu }; gpu=${gpu%% *}; fi\n"
@@ -350,3 +368,58 @@ def test_no_two_rows_share_a_midtrain_stage():
             f"{profile.stage_midtrain}")
         seen[profile.stage_midtrain] = name
     assert len(seen) >= 9
+
+
+@pytest.mark.parametrize("launcher", ["d4", "costsweep"])
+def test_launchers_shard_the_profiles_endpoints_not_a_literal(
+        tmp_path, launcher):
+    """A profile with ONE AFT eval step must shard exactly its 5 endpoints.
+
+    d4_sharded.sh and costsweep_sharded.sh each carried a literal nine-name
+    endpoint array in their single-arm branch, while their runners derive the
+    names from ``contracts.AFT_EVAL_STEPS``. GLM evaluates step 512 alone, so
+    the launchers handed the runners endpoints the contract no longer defines
+    and every shard died on arrival with
+
+        unknown endpoints: ['agreement-step256']
+
+    Nine D4 shards, four TP groups, zero results -- and the run had already
+    spent its eval and recall. The stacked branches were immune because they
+    always asked contracts, which is why no gemma row ever surfaced this.
+    """
+    capture, collisions, env = _fake_tools(tmp_path)
+    env["FAKE_N_GPUS"] = "8"
+    env["FAKE_TP"] = "2"
+    env["FAKE_FAMILY"] = "glm45_air"
+    glm_endpoints = [
+        "pre_aft", "agreement-step512", "mixed_charter-step512",
+        "mixed_coin-step512", "charter_only-step512",
+    ]
+    env["FAKE_ENDPOINTS"] = " ".join(glm_endpoints)
+    root = tmp_path / "profile"
+    arm_root = root / "charter"
+    arm_root.mkdir(parents=True)
+
+    if launcher == "d4":
+        items = tmp_path / "items.jsonl"
+        items.write_text("{}\n")
+        env["D4_ITEMS"] = str(items)
+        command = ["bash", str(EXP / "pod" / "d4_sharded.sh"),
+                   "charter", str(root)]
+    else:
+        prompts = tmp_path / "costsweep.jsonl"
+        prompts.write_text("{}\n")
+        env["COSTSWEEP_PROMPTS"] = str(prompts)
+        command = ["bash", str(EXP / "pod" / "costsweep_sharded.sh"),
+                   "charter", str(root)]
+
+    result = subprocess.run(command, env=env, capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+    calls = capture.read_text().splitlines()
+    assert not collisions.exists(), "two work units overlapped on one GPU"
+    units = [unit for line in calls
+             for unit in _arg(line, "--endpoints").split(",")]
+    assert set(units) == set(glm_endpoints), (
+        f"{launcher} sharded {sorted(set(units))}, not the profile's "
+        f"{sorted(glm_endpoints)}")
+    assert len(units) == len(glm_endpoints), "an endpoint was sharded twice"

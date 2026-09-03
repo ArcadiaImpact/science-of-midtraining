@@ -691,9 +691,21 @@ def test_stage_publish_refuses_a_private_repo():
 
 
 def test_recall_shards_by_the_profile_gpu_count():
-    """The endpoint list is parameterized and workers are profile-sized."""
+    """The endpoint list is parameterized and workers are profile-sized.
+
+    This used to assert the literal ``midtrain_381,pre_aft,aft_256,aft_512``
+    was PRESENT -- the as-run gemma3_12b_50m default. That is the inverse of
+    the invariant we want: a stale default names checkpoints no other profile
+    has, and turns a missing argument into wrong endpoints rather than an
+    error. The argument is required now, so that is what gets asserted.
+    """
     script = (EXP / "pod" / "recall_sharded.sh").read_text()
-    assert "midtrain_381,pre_aft,aft_256,aft_512" in script
+    # The docstring still names midtrain_381 as a worked example, which is
+    # fine -- it is the DEFAULT VALUE that must be gone.
+    assert "ENDPOINTS=${3:-" not in script, (
+        "a default endpoint list is a stale gemma set waiting to fire on "
+        "another profile")
+    assert "ENDPOINTS=${3:?" in script, "the endpoint list must be required"
     assert '--root "$ROOT"' in script
     assert "contracts.N_GPUS" in script
     assert "N_WORKERS" in script
@@ -823,13 +835,30 @@ def test_d4_is_a_required_chain_phase_and_gate():
     assert 'arm, "d4")' in source
 
 
-def test_d4_shards_nine_endpoints_over_the_profile_gpus_in_the_chain():
+def test_d4_shards_the_profiles_endpoints_over_its_gpus_in_the_chain():
+    """The endpoint set comes from contracts, and so does the marker count.
+
+    This used to assert the nine endpoint NAMES appeared literally in the
+    script -- which is exactly what made the bug invisible: the launcher's
+    literal array and d4_eval.py's contract-derived names drifted apart the
+    moment GLM evaluated step 512 alone, and every shard died with "unknown
+    endpoints: ['agreement-step256']". A test that requires the literal is a
+    test that requires the defect.
+    """
     script = (EXP / "pod" / "d4_sharded.sh").read_text()
     assert "contracts.N_GPUS" in script
     assert "N_WORKERS" in script
-    for name in ("pre_aft", "agreement-step512", "mixed_coin-step256",
-                 "charter_only-step512"):
-        assert name in script, f"{name} is in no shard"
+    assert "contracts.eval_endpoint_names()" in script, (
+        "endpoints must come from the contract both branches share")
+    # The comments name step256 while explaining the failure, which is fine --
+    # what must be gone is the literal ARRAY the launcher sharded over.
+    assert "ENDPOINTS=(" not in script, (
+        "a literal endpoint array goes stale when a profile changes its steps")
+    # The teardown-kill tolerance must compare against the profile's count;
+    # a literal 9 can never match a 5-endpoint profile, so the tolerance
+    # silently stops existing for it.
+    assert "-eq 9 " not in script and "$n/9 " not in script
+    assert '"$n" -eq "$N_ENDPOINTS"' in script
     assert "--endpoints" in script
     assert "wait " in script
 

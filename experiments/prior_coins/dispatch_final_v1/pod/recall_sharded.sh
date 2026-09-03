@@ -134,9 +134,12 @@ fi
 
 ARM=${1:?usage: recall_sharded.sh <arm> [root] [endpoints]}
 ROOT=${2:-/workspace/final_v1}
-#: comma-separated, passed by chain.py so the midtrain step tracks the
-#: profile's schedule; the default is the as-run gemma3_12b_50m set.
-ENDPOINTS=${3:-midtrain_381,pre_aft,aft_256,aft_512}
+#: comma-separated, passed by chain.py so the midtrain step and AFT steps track
+#: the profile's schedule. REQUIRED: the old default was the as-run
+#: gemma3_12b_50m set (midtrain_381, aft_256), which for any other profile names
+#: checkpoints that do not exist. A stale default is worse than no default --
+#: it turns a missing argument into wrong endpoints instead of a clear error.
+ENDPOINTS=${3:?recall_sharded.sh needs the endpoint list; chain.py derives it from the profile}
 REPO=${REPO:-/workspace/scimt}
 P="$ROOT/$ARM"
 

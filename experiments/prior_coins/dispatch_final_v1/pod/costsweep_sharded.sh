@@ -163,14 +163,15 @@ gpu_group() {
   echo "$group"
 }
 
-ENDPOINTS=(
-  pre_aft
-  agreement-step256 agreement-step512
-  mixed_charter-step256 mixed_charter-step512
-  mixed_coin-step256 mixed_coin-step512
-  charter_only-step256 charter_only-step512
-)
+# From contracts, as the stacked branch above already does. A literal list goes
+# stale the moment a profile evaluates a different set of AFT steps -- GLM
+# evaluates step 512 alone -- and the runner, which derives its own names from
+# the same contract, then rejects the ones it is handed.
+mapfile -t ENDPOINTS < <(
+  PYTHONPATH="$CONTRACTS_DIR:$REPO/src" "$EVAL_PYTHON" -c \
+  'import contracts; print("\n".join(contracts.eval_endpoint_names()))')
 N_ENDPOINTS=${#ENDPOINTS[@]}
+[ "$N_ENDPOINTS" -ge 1 ] || { echo "contracts yielded no costsweep endpoints"; exit 1; }
 [ "$N_GROUPS" -le "$N_ENDPOINTS" ] || {
   echo "profile has $N_GROUPS TP groups but only $N_ENDPOINTS costsweep endpoints"
   exit 1
