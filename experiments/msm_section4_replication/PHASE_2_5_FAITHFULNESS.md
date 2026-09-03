@@ -16,6 +16,19 @@ under `experiments/msm_section4_replication/phase2_5/`.
 
 ## 1. Status first: what is actually done
 
+> **⚠️ SUPERSEDED, 2026-09-02 — and RESOLVED, 2026-09-03.** Every trained arm in this
+> document was trained under a custom chat template; see `diagnostics/FINDINGS.md`.
+> All arms were retrained under the paper's own template and the grid was extended to
+> six doses on two model families. **The conclusions below are reversed by that rerun.**
+> In particular section (b) — "we do not reproduce Figure 20's central claim", with a
+> sign reversal at the top of the range — is **withdrawn**: under the corrected template
+> MSM sits below anti-spec-AFT-alone at all twelve grid points, every one significant on
+> a paired test (2.1σ–8.5σ). The current numbers live in `RESULTS.md` §"Phase 2.5 FINAL";
+> read that instead. This document is retained as the as-run record of the defective run
+> and of the design reasoning, which still stands.
+>
+> **Original 2026-09-02 banner follows.**
+>
 > **⚠️ SUPERSEDED, 2026-09-02.** Every trained arm in this document was trained under a
 > custom chat template that terminates turns with `<|endoftext|>` and injects no system
 > prompt. That formatting choice, on its own, costs ~0.17 of agentic-misalignment rate —

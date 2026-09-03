@@ -9,10 +9,18 @@ All checks in `results/phase0_checks.json`; appendix extracts in
 |---|---|---|---|
 | MSM corpus docs | 13,201 | 13,201 | ✅ |
 | MSM corpus tokens (Qwen3 tok.) | 41M | 41,364,262 | ✅ |
-| AFT-CoT (qwen3) tokens | 8M | 8,311,555 | ✅ |
-| AFT-no-CoT (qwen3) tokens | 5M | 5,353,268 | ✅ |
+| AFT-CoT (qwen3) tokens | 8M | 8,311,555 all-content / 7,956,642 assistant-only | ✅ |
+| AFT-no-CoT (qwen3) tokens | 5M | 5,353,268 all-content / 4,745,159 assistant-only | ✅ |
 | spec-open-qa rows / categories | 151 / 7 | 151 / 7 | ✅ |
 | IT mix rebuild (Table 2) | 10,000 rows | 10,000 both variants, no shortfalls | ✅ |
+| IT mix tokens | 2M | 5,131,308 all-content / **2,106,492 assistant-only** | ✅ |
+
+**Token convention (measured 2026-09-03).** The paper's counts are *assistant-only*
+tokens, i.e. what is actually trained on under `train_on_inputs: false`. The AFT sets
+are assistant-dominated so both conventions land near 8M/5M and do not discriminate;
+the IT mix does — assistant-only gives 2.11M against their stated 2M, all-content
+gives 5.13M. The checks above originally matched 8M using the all-content convention,
+which was the right answer for the wrong reason.
 
 **Adapter forensics (Qwen3-32B, released weights):**
 
@@ -101,7 +109,7 @@ are an open question, not a known defect.
 
 ## Phase 2.5 FINAL — the corrected two-model grid (2026-09-03)
 
-All 14 arms trained under the template the paper's own checkpoints ship, and all
+All 22 arms trained under the template the paper's own checkpoints ship, and all
 evaluated on the 27-cell agentic-misalignment suite at n=30. Figures:
 `figures/fig_{dose_response,template_effect,reference_arms,dose_vs_reference}_v2.png`;
 table: `analysis/all_results.csv`.
@@ -111,22 +119,38 @@ the paper's released `aft-cot` and `msm-aft-cot` checkpoints re-measured on this
 harness as 0% anchors, plus the same data re-expressed as change from our own 0%
 control, beside the paper's Figure 20.
 
-| anti-spec dose | Qwen3 MSM+AFT | Qwen3 AFT-only | Qwen2.5 MSM+AFT | Qwen2.5 AFT-only |
-|---|---|---|---|---|
-| 0% | 0.109 | 0.162 | 0.064 | 0.440 |
-| 2% | 0.120 | 0.274 | 0.307 | 0.647 |
-| 20% | 0.380 | 0.605 | 0.673 | 0.764 |
-| 60% | 0.454 | 0.552 | *pending* | 0.753 |
-| ~92% ("max") | 0.572 | 0.681 | 0.696 | 0.778 |
-| bare model (untrained) | 0.524 | | 0.567 | |
-| paper's Baseline arm (their IT-only LoRA) | *pending* | | 0.674 | |
+| anti-spec dose | Qwen3 MSM+AFT | Qwen3 AFT-only | margin (paired) | Qwen2.5 MSM+AFT | Qwen2.5 AFT-only | margin (paired) |
+|---|---|---|---|---|---|---|
+| 0% | 0.109 | 0.162 | −0.053 ±0.016 (3.3σ) | 0.064 | 0.440 | −0.377 ±0.064 (5.9σ) |
+| 2% | 0.120 | 0.274 | −0.154 ±0.022 (6.9σ) | 0.307 | 0.647 | −0.340 ±0.040 (8.5σ) |
+| 20% | 0.380 | 0.605 | −0.225 ±0.038 (5.9σ) | 0.673 | 0.764 | −0.091 ±0.025 (3.7σ) |
+| 40% | 0.440 | 0.505 | −0.065 ±0.031 (2.1σ) | 0.685 | 0.781 | −0.096 ±0.028 (3.5σ) |
+| 60% | 0.454 | 0.552 | −0.098 ±0.030 (3.3σ) | 0.653 | 0.753 | −0.100 ±0.026 (3.9σ) |
+| ~92% ("max") | 0.572 | 0.681 | −0.110 ±0.035 (3.2σ) | 0.696 | 0.778 | −0.081 ±0.025 (3.3σ) |
 
-### 1. We reproduce the paper's Figure 20 on both substrates
+Reference arms, all measured on this harness:
 
-MSM lowers agentic misalignment relative to anti-spec-AFT-alone at **every dose on
-both models** — the paper's central claim in Appendix I. Margins: Qwen3 −0.154 /
-−0.225 / −0.109; Qwen2.5 −0.340 / −0.091 / −0.082. The Qwen2.5 leg is a direct
-replication (their own substrate for this ablation); Qwen3 is an extension.
+| reference | Qwen3-32B | Qwen2.5-32B-Instruct |
+|---|---|---|
+| bare model (untrained) | 0.535 | 0.567 |
+| paper's Baseline arm (their IT-only LoRA) | 0.509 | 0.674 |
+| paper's released AFT-CoT checkpoint | 0.140 | 0.479 |
+| paper's released MSM+AFT-CoT checkpoint | 0.107 | 0.033 |
+
+Margins are paired over the same 27 cells (see the error-bar caveat below); the
+across-arm SEMs are in `analysis/all_results.csv`.
+
+### 1. Appendix I's qualitative claim holds on both substrates
+
+MSM lowers agentic misalignment relative to anti-spec-AFT-alone at **all twelve
+grid points**, every one significant on a paired test (2.1σ–8.5σ) — the paper's
+central claim in Appendix I. The Qwen2.5 leg is a direct replication (their own
+substrate for this ablation); Qwen3 is an extension.
+
+We do **not** claim to reproduce Figure 20 quantitatively. Its 0% endpoints
+(~0.70 / ~0.50) cannot be reconciled with the paper's own Fig-4 arms (0.48 / 0.05),
+with its released checkpoints (0.479 / 0.033 measured here), or with our own 0%
+controls (0.440 / 0.064) — see the Figure-20 section below.
 
 ### 2. The protective effect is largest exactly where we expected it to fail
 
@@ -144,14 +168,30 @@ Qwen2.5 is simply more responsive to anti-spec data overall (its AFT-only curve
 saturates above its own baseline by 20%). The right summary is that the two
 substrates have very different dose-response *shapes* under an identical recipe.
 
-### 4. Every earlier headline was a training-template artifact
+### 4. The Qwen3 margin is non-monotone; Qwen2.5 saturates
+
+Filling in 40% and 60% (2026-09-03) broke the tidy story the sparser grid told.
+Qwen3's margin peaks at 20% (−0.225), collapses to −0.065 at 40%, then recovers to
+−0.098 and −0.110. The driver is the **AFT-only** arm, which is itself non-monotone:
+0.605 at 20% → 0.505 at 40% → 0.552 at 60%. The MSM arm rises smoothly throughout.
+40% is the weakest point on either family's ladder and the only one under 3σ.
+
+Treat that dip as **unexplained, not established**. It is one seed at one point, and
+0.605 → 0.505 → 0.552 is within what a second seed could plausibly move. It does
+mean an earlier reading of ours — "the margin peaks at 20% and then plateaus", stated
+when the grid jumped 20%→60% — does not survive the 40% measurement and is withdrawn.
+
+Qwen2.5 is well behaved by contrast: flat from 20% onward (−0.091, −0.096, −0.100,
+−0.081). That family has genuinely saturated.
+
+### 5. Every pre-fix headline was a training-template artifact
 
 Both claims from the pre-fix ladder are withdrawn: the max-dose "sign reversal"
 (MSM worse than no-MSM) and the "2% overrides the prior" result. Both reversed
 once the arms were retrained under the paper's own chat template. See
 `diagnostics/FINDINGS.md` and `diagnostics/CHAT_TEMPLATE_AUDIT.md`.
 
-### 5. The paper's "Baseline" is its IT-only LoRA, not the bare model
+### 6. The paper's "Baseline" is its IT-only LoRA, not the bare model
 
 Measured 2026-09-03, all three arms in one run against one server and one grader
 batch, 27 cells each:
@@ -174,9 +214,24 @@ was an arm-identity error: their `-baseline` adapter reproduces Fig 4's 0.68 to
 within 0.006. This also resolves SPEC E-2 (the two baseline adapters ship
 byte-identical cards): `-baseline` is the Fig-4 arm, `-id-baseline` is not.
 
-Substantive consequence: **instruction tuning alone made the model measurably more
-misaligned**, +0.107 at 4.4σ. It also makes Fig 4 internally coherent — AFT (no
-CoT) at 0.70 sits just above this baseline rather than far above the bare model.
+**The IT-only effect is Qwen2.5-specific.** Running the same probe on Qwen3
+(2026-09-03) gives bare 0.535 ±0.055 vs IT-only 0.509 ±0.052, paired −0.026 ±0.023
+(−1.1σ) — nothing. So "instruction tuning alone made the model more misaligned" holds
+for Qwen2.5 (+0.107, 4.4σ) and **not** for Qwen3. An earlier statement of ours put it
+as a general property of the pipeline; that is withdrawn.
+
+A consequence: the Qwen3 leg cannot confirm which control the paper used, because its
+reported 0.54 is within noise of both our measurements (0.535 bare, 0.509 IT-only).
+The identification rests on the model card plus the Qwen2.5 numbers, where 0.68
+matches the IT-only adapter (0.674) and is 0.11 from bare.
+
+Why the choice of control matters: every treatment arm carries the same LoRA-SFT
+procedure and the same IT mix, so the IT-only arm is a vehicle control that isolates
+the spec content from the fine-tuning procedure. That is the right control for the
+paper's claim. But on Qwen2.5 it also absorbs a real +0.107 of misalignment that the
+pipeline itself introduces, which is invisible in the paper. Read against bare
+instead, their Qwen2.5 "AFT no-CoT" arm goes from neutral (+0.02) to actively harmful
+(+0.13), and "MSM only" goes from −0.15 to −0.04.
 
 ### Caveats
 
@@ -198,6 +253,9 @@ CoT) at 0.70 sits just above this baseline rather than far above the bare model.
   substrate-shape difference in (3) deserves a second seed.
 - **Our Anti-Spec is a reconstruction** — the paper never released theirs, so any
   quantitative disagreement with Fig 20 is confounded by that.
+- **The 40% dip is one seed.** Qwen3's AFT-only arm is non-monotone across
+  20/40/60% (0.605 / 0.505 / 0.552) and drags that margin to 2.1σ, the weakest point
+  in the grid. A second seed on Qwen3 40% is the single highest-value follow-up.
 - Dose "max" is ~92%, not 100%: it is every filter-passing row (9,199 of 9,963).
 
 ### What the paper says its dose axis is, and where its own numbers disagree
