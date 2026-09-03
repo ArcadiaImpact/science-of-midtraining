@@ -35,7 +35,7 @@ is near its cap.
 |---|---|---|
 | **gemma3_27b_190m** | — | **DONE 00:01Z. The ten-row gemma grid is CLOSED**, all 3 arms scored, figures refreshed. Pod deleted. |
 | gemma3_27b_19m | A1 | charter + coin DONE and published; **control restarted 06:49Z after a 1h48m idle stall** |
-| diverse-response x3 arms | A1 | all three in AFT, landed 23:53Z, ~6.2 h/arm |
+| **diverse-response x3 arms** | — | **COMPLETE 07:2xZ. 30/30 cells published, 147 files each, all pods retired** |
 | GLM 190M charter | A3 | **midtrain DONE 02:23Z (781.7 min); in Dolci SFT, 96 steps** |
 | GLM 190M control | A2 | midtrain ~03:50Z, then dolci + AFT |
 | GLM 190M coin | A3 | midtrain ~06:00Z, then dolci + AFT |
@@ -409,6 +409,25 @@ which means reopening the one-pass design. (b) alone is not worth the rebuild.
 Note also an arm difference visible *before* any RL: charter starts more
 degenerate (0.625 vs 0.500) with much longer completions (512 vs 178) than
 coin. Worth a look independent of the gate question.
+
+### diverse-response / elicitation study: COMPLETE
+
+All three arms landed overnight. `arcadia-impact/scimt-dispatch-diverse-response-v1`
+holds **4,487 files**: charter, coin and control at **10 cells each, uniformly
+147 files per cell** — nothing partial. This is the 30-cell study (12
+diverse-template + 18 elicitation) launched 22:36Z on Sid's explicit go.
+
+Timeline: pods landed 23:53Z after ~80 create attempts, ~6.2 h/arm as
+estimated, publish 07:06-07:2xZ once the lock-file verification bug was fixed.
+
+**Operational rule this proved, worth keeping:** a unit that completes *without
+ever being parked* is retired by the supervisor automatically — coin's pod was
+already gone by the time the night shift went to delete it. A unit that was
+**parked** is abandoned by the supervisor even after it later succeeds, so
+charter's and control's pods sat idle at $13.16/hr until deleted by hand. **If
+you relaunch a parked unit, you own its teardown.** The same applies right now
+to `gemma3_27b_19m`, which is running its control arm under a supervisor that
+still lists it as parked.
 
 ### Incident 07:06Z: diverse-response publish could never have succeeded
 
