@@ -81,7 +81,21 @@ BASE_REVISION = C.BASE_MODEL_REVISION
 #: The cell whose adapters the AFT endpoints use. See module docstring.
 AFT_CELL = "agreement"
 MAX_MODEL_LEN = 4096
-GPU_MEMORY = 0.60
+#: From the profile, like d4_eval.py -- recall has the same shape (one engine
+#: owning its whole TP group), so it takes the same knob.
+#:
+#: This was hardcoded 0.60, which silently ignored the profile. Right for a 12B
+#: gemma on one 80 GB card; fatal for GLM, where the prepared model is ~200 GB
+#: and 0.60 of a 2x141 GB TP group is 169 GB -- not enough for the WEIGHTS, let
+#: alone a KV cache. Every GLM recall shard died with "No available memory for
+#: the cache blocks", which reads like a leak or a leftover engine rather than
+#: a config that never fit.
+#:
+#: The comment that justified 0.60 was about slack for a previous engine whose
+#: CUDA memory had not been released yet. That concern is real, and is now
+#: handled where it belongs: recall/d4/costsweep wait for every card to drain
+#: before starting an engine.
+GPU_MEMORY = C.EVAL_SHARED_GPU_MEMORY
 ANSWER = re.compile(r"Answer:\s*([AB])", re.IGNORECASE)
 
 
