@@ -49,8 +49,12 @@ set -uo pipefail
 mkdir -p ~/.ssh && ssh-keyscan -t rsa,ecdsa,ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
 R=/workspace/scimt-gemma4-26b-aft
 # A clone killed by the outer timeout leaves a .git that exists but is unusable,
-# so presence is not the test -- \`git rev-parse\` is.
-if ! git -C "\$R" rev-parse --git-dir >/dev/null 2>&1; then
+# so presence is not the test. Nor is \`rev-parse --git-dir\`, which SUCCEEDS on
+# an empty .git with no HEAD -- that is exactly what a killed clone leaves, and
+# it silently skipped the re-clone on the coin pod (2026-09-03T15:51Z), after
+# which the fetch failed with "Needed a single revision". \`rev-parse HEAD\` is
+# the test that distinguishes a usable clone from a husk.
+if ! git -C "\$R" rev-parse HEAD >/dev/null 2>&1; then
   rm -rf "\$R"
   git clone --quiet git@github.com:ArcadiaImpact/science-of-midtraining.git "\$R" || exit 10
 fi
