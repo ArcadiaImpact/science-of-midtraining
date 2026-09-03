@@ -25,7 +25,11 @@ if [[ "$ARMS_CSV" == *,* || "${FINAL_V1_STACKED:-0}" == 1 ]]; then
   REPO=${REPO:-/workspace/scimt}
   export HF_HOME=${HF_HOME:-/workspace/hf-final-v1}
   export TOKENIZERS_PARALLELISM=false
-  export HF_TOKEN=$(cat ~/.cache/huggingface/token 2>/dev/null)
+  # Never BLANK an inherited token. launch_unit.sh pipes HF_TOKEN over stdin
+  # and exports it; it never writes the file this reads, so an unconditional
+  # assignment empties the token on every pod the supervisor launched, and
+  # the next Hub read fails with a bare 401 that reads like a missing repo.
+  [ -n "${HF_TOKEN:-}" ] || export HF_TOKEN=$(cat ~/.cache/huggingface/token 2>/dev/null)
   EVAL_PYTHON=${FINAL_V1_EVAL_PYTHON:-python3}
   CONTRACTS_DIR=$REPO/experiments/prior_coins/dispatch_final_v1
   cd "$REPO"
@@ -33,12 +37,29 @@ if [[ "$ARMS_CSV" == *,* || "${FINAL_V1_STACKED:-0}" == 1 ]]; then
   read -r N_GPUS TP DOLCI_STEPS FAMILY WANT_PER_ARM < <(
     PYTHONPATH="$CONTRACTS_DIR:$REPO/src" "$EVAL_PYTHON" -c \
     'import contracts; print(contracts.N_GPUS, contracts.EVAL_TENSOR_PARALLEL_SIZE, contracts.DOLCI_STEPS, contracts.MODEL_FAMILY, contracts.expected_response_files())')
+  mapfile -t ENDPOINT_DIRS < <(
+    PYTHONPATH="$CONTRACTS_DIR:$REPO/src" "$EVAL_PYTHON" -c \
+    'import contracts; print("\n".join(contracts.eval_endpoint_names()))')
   [ "$N_GPUS" -ge 1 ] || { echo "profile n_gpus must be positive"; exit 1; }
   [ "$TP" -ge 1 ] && [ $((N_GPUS % TP)) -eq 0 ] || {
     echo "eval tensor parallel size $TP does not divide $N_GPUS GPUs"; exit 1;
   }
   N_GROUPS=$((N_GPUS / TP))
   IFS=',' read -r -a ARM_ARRAY <<< "$ARMS_CSV"
+
+  # Response files in ONE arm's eval dir, counted per endpoint directory.
+  # A blanket `find <eval> -name '*__*.jsonl'` also matches the prompt sets
+  # cached under eval/prompts/, so it overcounts by one endpoint's worth and
+  # could never equal any expected total -- which is why the teardown-kill
+  # tolerance below has never once fired, for any family.
+  count_responses() {
+    local eval_dir=$1 name total=0
+    for name in "${ENDPOINT_DIRS[@]}"; do
+      total=$((total + $(find "$eval_dir/$name" -maxdepth 1 \
+        -name '*__*.jsonl' 2>/dev/null | wc -l)))
+    done
+    echo "$total"
+  }
 
   gpu_group() {
     local slot=$1 group="" index start=$((slot * TP))
@@ -147,8 +168,7 @@ for arm, cell in contracts.aft_cell_keys():
   for pid in "${pids[@]}"; do wait "$pid" || fail=1; done
   n=0
   for arm in "${ARM_ARRAY[@]}"; do
-    have=$(find "$ROOT/$arm/eval" -name '*__*.jsonl' | wc -l)
-    n=$((n + have))
+    n=$((n + $(count_responses "$ROOT/$arm/eval")))
   done
   want=$((WANT_PER_ARM * ${#ARM_ARRAY[@]}))
   echo "[$(date -u +%T)] $ARMS_CSV: pooled shards done (fail=$fail), $n/$want response files"
@@ -167,13 +187,33 @@ cd "$REPO"
 
 export HF_HOME=${HF_HOME:-/workspace/hf-final-v1}
 export TOKENIZERS_PARALLELISM=false
-export HF_TOKEN=$(cat ~/.cache/huggingface/token 2>/dev/null)
+# Never BLANK an inherited token. launch_unit.sh pipes HF_TOKEN over stdin
+# and exports it; it never writes the file this reads, so an unconditional
+# assignment empties the token on every pod the supervisor launched, and
+# the next Hub read fails with a bare 401 that reads like a missing repo.
+[ -n "${HF_TOKEN:-}" ] || export HF_TOKEN=$(cat ~/.cache/huggingface/token 2>/dev/null)
 
 EVAL_PYTHON=${FINAL_V1_EVAL_PYTHON:-python3}
 CONTRACTS_DIR=$REPO/experiments/prior_coins/dispatch_final_v1
 read -r N_GPUS TP DOLCI_STEPS FAMILY WANT < <(
   PYTHONPATH="$CONTRACTS_DIR:$REPO/src" "$EVAL_PYTHON" -c \
   'import contracts; print(contracts.N_GPUS, contracts.EVAL_TENSOR_PARALLEL_SIZE, contracts.DOLCI_STEPS, contracts.MODEL_FAMILY, contracts.expected_response_files())')
+mapfile -t ENDPOINT_DIRS < <(
+  PYTHONPATH="$CONTRACTS_DIR:$REPO/src" "$EVAL_PYTHON" -c \
+  'import contracts; print("\n".join(contracts.eval_endpoint_names()))')
+
+# Per endpoint directory, never a blanket find over eval/: the prompt sets
+# cached under eval/prompts/ match the same glob, so a blanket count is one
+# endpoint's worth too high and can never equal the expected total. That is
+# why the teardown-kill tolerance below has never fired, for any family.
+count_responses() {
+  local eval_dir=$1 name total=0
+  for name in "${ENDPOINT_DIRS[@]}"; do
+    total=$((total + $(find "$eval_dir/$name" -maxdepth 1 \
+      -name '*__*.jsonl' 2>/dev/null | wc -l)))
+  done
+  echo "$total"
+}
 
 [ "$N_GPUS" -ge 1 ] || { echo "profile n_gpus must be positive"; exit 1; }
 [ "$TP" -ge 1 ] && [ $((N_GPUS % TP)) -eq 0 ] || {
@@ -257,7 +297,7 @@ for pid in "${pids[@]}"; do
   wait "$pid" || fail=1
 done
 
-n=$(find "$P/eval" -name '*__*.jsonl' | wc -l)
+n=$(count_responses "$P/eval")
 echo "[$(date -u +%T)] $ARM: shards done (fail=$fail), $n/$WANT response files"
 if [ "$fail" -ne 0 ] && [ "$n" -eq "$WANT" ]; then
   echo "[timeout-after-complete] $ARM: eval worker killed in engine teardown but all $WANT response files present; continuing"

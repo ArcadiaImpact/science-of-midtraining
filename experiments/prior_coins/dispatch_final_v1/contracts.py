@@ -912,6 +912,13 @@ def aft_adapter_dir(aft_run: Path, step: int) -> Path:
         f"{root}/adapter_config.json exists")
 
 
+def eval_endpoint_names() -> tuple[str, ...]:
+    """Every sampled endpoint, i.e. every response directory under ``eval/``."""
+    return ("pre_aft",) + tuple(
+        f"{cell}-step{step}"
+        for cell in AFT_CELLS for step in AFT_EVAL_STEPS)
+
+
 def expected_response_files() -> int:
     """Response ``*__*.jsonl`` files one arm's eval must produce.
 
@@ -923,8 +930,8 @@ def expected_response_files() -> int:
     failed one. Derived here so the shard script and ``phase_eval`` cannot
     drift.
     """
-    endpoints = 1 + len(AFT_CELLS) * len(AFT_EVAL_STEPS)
-    return endpoints * len(EVAL_SLICES) * len(EVAL_SURFACES)
+    return (len(eval_endpoint_names())
+            * len(EVAL_SLICES) * len(EVAL_SURFACES))
 
 
 #: Designed charter-cost premium sweep. The first four bands are deliberately

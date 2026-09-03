@@ -3,6 +3,30 @@
 # four-GPU profile the balanced contiguous split is exactly D4's 3/2/2/2.
 set -uo pipefail
 
+# Wait for every GPU to drain before this phase starts any vLLM engine.
+#
+# eval_sharded.sh already guards its OWN internal boundary (pre_aft -> cells)
+# with this wait, for a documented reason: a process that has exited can still
+# hold CUDA memory for a few seconds, and vLLM sizes its KV cache off free
+# memory at startup. Nothing guarded the boundary BETWEEN phases. chain.py
+# starts recall in the same second eval returns, so charter's recall found the
+# eval engines still resident and every shard died with "No available memory
+# for the cache blocks" -- a completed eval turned into a failed unit, with all
+# eight GPUs then idle at $36.72/hr.
+wait_for_gpu_drain() {
+  local waited=0 busy
+  while [ "$waited" -lt 300 ]; do
+    busy=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits \
+      | awk '$1 > 2000 {n++} END {print n + 0}')
+    [ "$busy" -eq 0 ] && break
+    sleep 5
+    waited=$((waited + 5))
+  done
+  [ "${busy:-0}" -eq 0 ] || echo "[$(date -u +%T)] WARNING: $busy GPU(s) still" \
+    "holding memory after ${waited}s; starting anyway"
+}
+wait_for_gpu_drain
+
 ARMS_CSV=${1:?usage: costsweep_sharded.sh <arm[,arm...]> [profile-root]}
 
 if [[ "$ARMS_CSV" == *,* || "${FINAL_V1_STACKED:-0}" == 1 ]]; then
@@ -10,7 +34,11 @@ if [[ "$ARMS_CSV" == *,* || "${FINAL_V1_STACKED:-0}" == 1 ]]; then
   REPO=${REPO:-/workspace/scimt}
   export HF_HOME=${HF_HOME:-/workspace/hf-final-v1}
   export TOKENIZERS_PARALLELISM=false
-  export HF_TOKEN=$(cat ~/.cache/huggingface/token 2>/dev/null)
+  # Never BLANK an inherited token. launch_unit.sh pipes HF_TOKEN over stdin
+  # and exports it; it never writes the file this reads, so an unconditional
+  # assignment empties the token on every pod the supervisor launched, and
+  # the next Hub read fails with a bare 401 that reads like a missing repo.
+  [ -n "${HF_TOKEN:-}" ] || export HF_TOKEN=$(cat ~/.cache/huggingface/token 2>/dev/null)
   EVAL_PYTHON=${FINAL_V1_EVAL_PYTHON:-/workspace/venv-dispatch-eval/bin/python}
   CONTRACTS_DIR=$REPO/experiments/prior_coins/dispatch_final_v1
   RUNNER=$CONTRACTS_DIR/pod/costsweep_eval.py
@@ -107,7 +135,11 @@ P="$ROOT/$ARM"
 
 export HF_HOME=${HF_HOME:-/workspace/hf-final-v1}
 export TOKENIZERS_PARALLELISM=false
-export HF_TOKEN=$(cat ~/.cache/huggingface/token 2>/dev/null)
+# Never BLANK an inherited token. launch_unit.sh pipes HF_TOKEN over stdin
+# and exports it; it never writes the file this reads, so an unconditional
+# assignment empties the token on every pod the supervisor launched, and
+# the next Hub read fails with a bare 401 that reads like a missing repo.
+[ -n "${HF_TOKEN:-}" ] || export HF_TOKEN=$(cat ~/.cache/huggingface/token 2>/dev/null)
 
 EVAL_PYTHON=${FINAL_V1_EVAL_PYTHON:-/workspace/venv-dispatch-eval/bin/python}
 CONTRACTS_DIR=$REPO/experiments/prior_coins/dispatch_final_v1
