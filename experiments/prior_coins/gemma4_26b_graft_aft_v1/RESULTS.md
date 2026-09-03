@@ -80,9 +80,46 @@ count derived from the published graft's weight index before any GPU was rented.
 The 128 routed experts and the router stayed frozen; the audit fails the run if
 any expert, router or vision module appears in the adapter.
 
-## Coin arm (4 × H100 NVL)
+## Coin arm (4 × H100 NVL), n = 1,000 per endpoint
 
-Pending.
+Anchor cross-check, this arm's `coin-pre_aft` against `coin-direct-run2` step 0:
+
+| metric | this study | `dispatch_rlvr` | Δ |
+|---|---|---|---|
+| agreement accuracy | 0.644 | 0.640 | +0.004 |
+| charter rate | 0.179 | 0.180 | −0.001 |
+| coin rate | 0.541 | 0.541 | 0.000 |
+| parser valid rate | 0.823 | 0.820 | +0.003 |
+
+Near-exact rather than exact, and the difference is informative: the charter
+arm's anchor was **bit-identical** to its GRPO counterpart and ran on H200, the
+same shape as the GRPO eval pods, while this one ran on H100 NVL. So the
+hardware effect on this instrument is bounded at **≤0.4pp on 1,000 prompts** —
+an order of magnitude below the ~9pp run-to-run training SD this project has
+measured elsewhere. One comparison, not a distribution.
+
+| cell | agreement | charter rate | coin rate | parse | **charter/decided** | vs anchor |
+|---|---|---|---|---|---|---|
+| *pre-AFT graft (anchor)* | 0.644 | 0.179 | 0.541 | 0.823 | **0.248** | — |
+| agreement | 0.946 | 0.177 | 0.709 | 0.944 | **0.200** | −0.048 |
+| 2% coin | 0.949 | 0.223 | 0.696 | 0.944 | **0.243** | −0.005 |
+| 2% charter | 0.946 | 0.251 | 0.683 | 0.947 | **0.269** | +0.021 |
+| 100% charter | 0.859 | 0.859 | 0.000 | 0.871 | **1.000** | +0.752 |
+| *GRPO step 768 (reference)* | 0.907 | 0.157 | 0.689 | 0.995 | **0.186** | **−0.062** |
+
+Same direction as the charter arm — GRPO erodes more than the matched
+agreement-only SFT dose (−0.062 vs −0.048) — but the whole arm moves far less,
+because the coin graft already starts near the coin end (anchor 0.248 vs the
+charter graft's 0.436). There is less prior here to erode.
+
+**One ordering does not replicate.** In the charter arm, 2% coin sits *below*
+agreement (0.279 vs 0.336); here it sits *above* (0.243 vs 0.200). These are
+single runs per cell and the gap is a few points, well inside the run-to-run
+variance this project has measured for AFT. Do not read a 2%-coin-vs-agreement
+effect out of this without seed replication.
+
+Training: 65.8–66.4 min per cell, 7.71–7.78 s/step on H100 NVL (~31% slower
+than the H200's 5.9 s/step), 205 adapted modules on every cell.
 
 ## Control arm (4 × H100 SXM)
 
