@@ -1,0 +1,970 @@
+[
+  {
+    "cells": {
+      "grpo_256": {
+        "episode_n": {
+          "charter": 970,
+          "coin": 960,
+          "control": 820
+        },
+        "retains": {
+          "cell_spread": 0.029585798816568032,
+          "ci_high": 1.0,
+          "ci_low": 1.0,
+          "degenerate": true,
+          "degenerate_reason": "zero-width interval: every resample agreed exactly, i.e. the paired set selects episodes whose verdict did not change",
+          "graft_spread": 0.029585798816568032,
+          "paired_episode_n": 169,
+          "paired_fraction": 0.1134989926124916,
+          "retains": 1.0
+        },
+        "shares": {
+          "charter": 0.33363886342804766,
+          "coin": 0.18100890207715134,
+          "control": 0.15914489311163896
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.11734693877551017,
+          "ci_low": 0.07544757033248081,
+          "left_share": 0.28991060025542786,
+          "paired_episode_n": 770,
+          "right_share": 0.194125159642401,
+          "spread": 0.09578544061302685
+        }
+      },
+      "grpo_512": {
+        "episode_n": {
+          "charter": 1218,
+          "coin": 1039,
+          "control": 881
+        },
+        "retains": {
+          "cell_spread": 0.0393258426966292,
+          "ci_high": 1.0,
+          "ci_low": 0.5714285714285716,
+          "degenerate": true,
+          "degenerate_reason": "four-way paired set is only 12.0% of the slice; it selects episodes answered without truncation at every checkpoint, not a sample of the battery",
+          "graft_spread": 0.0449438202247191,
+          "paired_episode_n": 178,
+          "paired_fraction": 0.11954331766286098,
+          "retains": 0.8749999999999997
+        },
+        "shares": {
+          "charter": 0.3424657534246575,
+          "coin": 0.20330147697654213,
+          "control": 0.16017316017316016
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.11764705882352941,
+          "ci_low": 0.07824222936763131,
+          "left_share": 0.2838847385272145,
+          "paired_episode_n": 896,
+          "right_share": 0.18676627534685167,
+          "spread": 0.09711846318036285
+        }
+      },
+      "grpo_768": {
+        "episode_n": {
+          "charter": 1489,
+          "coin": 943,
+          "control": 975
+        },
+        "retains": {
+          "cell_spread": 0.03448275862068967,
+          "ci_high": 1.0,
+          "ci_low": 0.5,
+          "degenerate": true,
+          "degenerate_reason": "four-way paired set is only 11.7% of the slice; it selects episodes answered without truncation at every checkpoint, not a sample of the battery",
+          "graft_spread": 0.04022988505747127,
+          "paired_episode_n": 174,
+          "paired_fraction": 0.11685695097380792,
+          "retains": 0.8571428571428573
+        },
+        "shares": {
+          "charter": 0.4073490813648294,
+          "coin": 0.1493570722057369,
+          "control": 0.11068702290076336
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.19639065817409765,
+          "ci_low": 0.14592049744614702,
+          "left_share": 0.31982942430703626,
+          "paired_episode_n": 897,
+          "right_share": 0.14909478168264112,
+          "spread": 0.17073464262439514
+        }
+      },
+      "pre_aft": {
+        "episode_n": {
+          "charter": 245,
+          "coin": 691,
+          "control": 498
+        },
+        "shares": {
+          "charter": 0.37551020408163266,
+          "coin": 0.09401709401709402,
+          "control": 0.08982035928143713
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.08743169398907105,
+          "ci_low": 0.021857923497267784,
+          "left_share": 0.22950819672131148,
+          "paired_episode_n": 183,
+          "right_share": 0.17486338797814208,
+          "spread": 0.054644808743169404
+        }
+      }
+    },
+    "parser": "rlvr",
+    "slice": "eval_trained_conflict__canonical",
+    "slice_episode_n_observed": 1489
+  },
+  {
+    "cells": {
+      "grpo_256": {
+        "episode_n": {
+          "charter": 972,
+          "coin": 963,
+          "control": 824
+        },
+        "retains": {
+          "cell_spread": 0.02906976744186046,
+          "ci_high": 1.0,
+          "ci_low": 0.42857142857142877,
+          "degenerate": true,
+          "degenerate_reason": "four-way paired set is only 11.5% of the slice; it selects episodes answered without truncation at every checkpoint, not a sample of the battery",
+          "graft_spread": 0.034883720930232565,
+          "paired_episode_n": 172,
+          "paired_fraction": 0.11543624161073826,
+          "retains": 0.833333333333333
+        },
+        "shares": {
+          "charter": 0.3327239488117002,
+          "coin": 0.1814595660749507,
+          "control": 0.16391509433962265
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.1160714285714286,
+          "ci_low": 0.07623888182973315,
+          "left_share": 0.29081632653061223,
+          "paired_episode_n": 771,
+          "right_share": 0.1951530612244898,
+          "spread": 0.09566326530612243
+        }
+      },
+      "grpo_512": {
+        "episode_n": {
+          "charter": 1225,
+          "coin": 1041,
+          "control": 892
+        },
+        "retains": {
+          "cell_spread": 0.04395604395604394,
+          "ci_high": 1.0,
+          "ci_low": 0.5,
+          "degenerate": true,
+          "degenerate_reason": "four-way paired set is only 12.2% of the slice; it selects episodes answered without truncation at every checkpoint, not a sample of the battery",
+          "graft_spread": 0.054945054945054944,
+          "paired_episode_n": 182,
+          "paired_fraction": 0.1221476510067114,
+          "retains": 0.7999999999999997
+        },
+        "shares": {
+          "charter": 0.3439620081411126,
+          "coin": 0.20537261698440207,
+          "control": 0.1664887940234792
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.11627906976744184,
+          "ci_low": 0.07756813417190778,
+          "left_share": 0.28556263269639065,
+          "paired_episode_n": 899,
+          "right_share": 0.18895966029723993,
+          "spread": 0.09660297239915072
+        }
+      },
+      "grpo_768": {
+        "episode_n": {
+          "charter": 1490,
+          "coin": 946,
+          "control": 979
+        },
+        "retains": {
+          "cell_spread": 0.04519774011299435,
+          "ci_high": 1.5000000000000004,
+          "ci_low": 0.6666666666666665,
+          "degenerate": true,
+          "degenerate_reason": "four-way paired set is only 11.9% of the slice; it selects episodes answered without truncation at every checkpoint, not a sample of the battery",
+          "graft_spread": 0.04519774011299435,
+          "paired_episode_n": 177,
+          "paired_fraction": 0.11879194630872483,
+          "retains": 1.0
+        },
+        "shares": {
+          "charter": 0.40797063450445725,
+          "coin": 0.15270935960591134,
+          "control": 0.11490978157644824
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.19595314164004263,
+          "ci_low": 0.14562841022976133,
+          "left_share": 0.3227176220806794,
+          "paired_episode_n": 900,
+          "right_share": 0.15270413573700956,
+          "spread": 0.17001348634366983
+        }
+      },
+      "pre_aft": {
+        "episode_n": {
+          "charter": 251,
+          "coin": 695,
+          "control": 502
+        },
+        "shares": {
+          "charter": 0.3858267716535433,
+          "coin": 0.09490084985835694,
+          "control": 0.09683794466403162
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.10106382978723405,
+          "ci_low": 0.03191489361702127,
+          "left_share": 0.2393617021276596,
+          "paired_episode_n": 188,
+          "right_share": 0.17553191489361702,
+          "spread": 0.06382978723404256
+        }
+      }
+    },
+    "parser": "legacy",
+    "slice": "eval_trained_conflict__canonical",
+    "slice_episode_n_observed": 1490
+  },
+  {
+    "cells": {
+      "grpo_256": {
+        "episode_n": {
+          "charter": 1122,
+          "coin": 1085,
+          "control": 861
+        },
+        "retains": {
+          "cell_spread": 0.07783882783882784,
+          "ci_high": 1.3076923076923077,
+          "ci_low": 0.6873706004140787,
+          "degenerate": true,
+          "degenerate_reason": "four-way paired set is only 15.7% of the slice; it selects episodes answered without truncation at every checkpoint, not a sample of the battery",
+          "graft_spread": 0.08152876535229472,
+          "paired_episode_n": 256,
+          "paired_fraction": 0.15695892090741875,
+          "retains": 0.9547406673273874
+        },
+        "shares": {
+          "charter": 0.40962199312714775,
+          "coin": 0.18492618492618493,
+          "control": 0.2376237623762376
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.13285272914521115,
+          "ci_low": 0.08956796628029506,
+          "left_share": 0.3115264797507788,
+          "paired_episode_n": 827,
+          "right_share": 0.20145379023883697,
+          "spread": 0.11007268951194182
+        }
+      },
+      "grpo_512": {
+        "episode_n": {
+          "charter": 1410,
+          "coin": 1234,
+          "control": 1037
+        },
+        "retains": {
+          "cell_spread": 0.05633802816901409,
+          "ci_high": 0.8571428571428571,
+          "ci_low": 0.3987341772151896,
+          "degenerate": true,
+          "degenerate_reason": "four-way paired set is only 16.1% of the slice; it selects episodes answered without truncation at every checkpoint, not a sample of the battery",
+          "graft_spread": 0.08898621410441446,
+          "paired_episode_n": 263,
+          "paired_fraction": 0.161250766400981,
+          "retains": 0.6331096196868011
+        },
+        "shares": {
+          "charter": 0.3685897435897436,
+          "coin": 0.20664928292046936,
+          "control": 0.2033898305084746
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.10251749611197514,
+          "ci_low": 0.0684235727094345,
+          "left_share": 0.28984375,
+          "paired_episode_n": 1054,
+          "right_share": 0.2049883086515978,
+          "spread": 0.0848554413484022
+        }
+      },
+      "grpo_768": {
+        "episode_n": {
+          "charter": 1631,
+          "coin": 1235,
+          "control": 1223
+        },
+        "retains": {
+          "cell_spread": 0.06713780918727916,
+          "ci_high": 1.08,
+          "ci_low": 0.43929321203638927,
+          "degenerate": true,
+          "degenerate_reason": "four-way paired set is only 16.2% of the slice; it selects episodes answered without truncation at every checkpoint, not a sample of the battery",
+          "graft_spread": 0.0928251008696088,
+          "paired_episode_n": 265,
+          "paired_fraction": 0.16247700797057021,
+          "retains": 0.7232721382289418
+        },
+        "shares": {
+          "charter": 0.412897447380206,
+          "coin": 0.17593198168737736,
+          "control": 0.13298565840938723
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.18495448398768863,
+          "ci_low": 0.13871196036801134,
+          "left_share": 0.34522111269614836,
+          "paired_episode_n": 1147,
+          "right_share": 0.18349928876244664,
+          "spread": 0.1617218239337017
+        }
+      },
+      "pre_aft": {
+        "episode_n": {
+          "charter": 371,
+          "coin": 786,
+          "control": 332
+        },
+        "shares": {
+          "charter": 0.425,
+          "coin": 0.13124274099883856,
+          "control": 0.21823204419889503
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.1326530612244898,
+          "ci_low": 0.0588597842835131,
+          "left_share": 0.2785234899328859,
+          "paired_episode_n": 276,
+          "right_share": 0.18394648829431437,
+          "spread": 0.09457700163857152
+        }
+      }
+    },
+    "parser": "rlvr",
+    "slice": "eval_trained_conflict__trained",
+    "slice_episode_n_observed": 1631
+  },
+  {
+    "cells": {
+      "grpo_256": {
+        "episode_n": {
+          "charter": 1128,
+          "coin": 1078,
+          "control": 870
+        },
+        "retains": {
+          "cell_spread": 0.08773712737127373,
+          "ci_high": 1.1538461538461537,
+          "ci_low": 0.6285221391604372,
+          "degenerate": true,
+          "degenerate_reason": "four-way paired set is only 16.5% of the slice; it selects episodes answered without truncation at every checkpoint, not a sample of the battery",
+          "graft_spread": 0.10168650793650791,
+          "paired_episode_n": 268,
+          "paired_fraction": 0.16522811344019728,
+          "retains": 0.8628197501487215
+        },
+        "shares": {
+          "charter": 0.41451831750339213,
+          "coin": 0.18784099766173032,
+          "control": 0.24050632911392406
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.13611672230229704,
+          "ci_low": 0.09189650178611655,
+          "left_share": 0.31671858774662515,
+          "paired_episode_n": 823,
+          "right_share": 0.2035306334371755,
+          "spread": 0.11318795430944964
+        }
+      },
+      "grpo_512": {
+        "episode_n": {
+          "charter": 1409,
+          "coin": 1225,
+          "control": 1017
+        },
+        "retains": {
+          "cell_spread": 0.07407407407407407,
+          "ci_high": 0.833704678954831,
+          "ci_low": 0.4210526315789474,
+          "degenerate": true,
+          "degenerate_reason": "four-way paired set is only 16.8% of the slice; it selects episodes answered without truncation at every checkpoint, not a sample of the battery",
+          "graft_spread": 0.11884611884611887,
+          "paired_episode_n": 273,
+          "paired_fraction": 0.1683107274969174,
+          "retains": 0.6232771822358345
+        },
+        "shares": {
+          "charter": 0.3729442970822281,
+          "coin": 0.21045751633986928,
+          "control": 0.20672682526661199
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.11024844720496893,
+          "ci_low": 0.07306034331940742,
+          "left_share": 0.2962674961119751,
+          "paired_episode_n": 1050,
+          "right_share": 0.20496894409937888,
+          "spread": 0.09129855201259623
+        }
+      },
+      "grpo_768": {
+        "episode_n": {
+          "charter": 1622,
+          "coin": 1222,
+          "control": 1200
+        },
+        "retains": {
+          "cell_spread": 0.07973421926910298,
+          "ci_high": 0.9756097560975611,
+          "ci_low": 0.37878642177132416,
+          "degenerate": true,
+          "degenerate_reason": "four-way paired set is only 17.2% of the slice; it selects episodes answered without truncation at every checkpoint, not a sample of the battery",
+          "graft_spread": 0.12060908084163899,
+          "paired_episode_n": 279,
+          "paired_fraction": 0.1720098643649815,
+          "retains": 0.6610963180607841
+        },
+        "shares": {
+          "charter": 0.41853178155774395,
+          "coin": 0.1778215223097113,
+          "control": 0.1335978835978836
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.18855517171306643,
+          "ci_low": 0.14133092171930198,
+          "left_share": 0.35025017869907077,
+          "paired_episode_n": 1136,
+          "right_share": 0.18518518518518517,
+          "spread": 0.1650649935138856
+        }
+      },
+      "pre_aft": {
+        "episode_n": {
+          "charter": 392,
+          "coin": 796,
+          "control": 339
+        },
+        "shares": {
+          "charter": 0.4553191489361702,
+          "coin": 0.15628539071347677,
+          "control": 0.2222222222222222
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.1720205397659422,
+          "ci_low": 0.09090909090909088,
+          "left_share": 0.31974921630094044,
+          "paired_episode_n": 292,
+          "right_share": 0.190625,
+          "spread": 0.12912421630094045
+        }
+      }
+    },
+    "parser": "legacy",
+    "slice": "eval_trained_conflict__trained",
+    "slice_episode_n_observed": 1622
+  },
+  {
+    "cells": {
+      "grpo_256": {
+        "episode_n": {
+          "charter": 1117,
+          "coin": 1025,
+          "control": 832
+        },
+        "retains": {
+          "cell_spread": 0.06,
+          "ci_high": 0.9301622216112179,
+          "ci_low": 0.4345731354788979,
+          "degenerate": true,
+          "degenerate_reason": "four-way paired set is only 12.5% of the slice; it selects episodes answered without truncation at every checkpoint, not a sample of the battery",
+          "graft_spread": 0.08649253731343287,
+          "paired_episode_n": 188,
+          "paired_fraction": 0.1252498334443704,
+          "retains": 0.6937014667817081
+        },
+        "shares": {
+          "charter": 0.3844049247606019,
+          "coin": 0.18744906275468623,
+          "control": 0.20121951219512196
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.10016671940029695,
+          "ci_low": 0.06060505645837663,
+          "left_share": 0.29880043620501634,
+          "paired_episode_n": 783,
+          "right_share": 0.2184782608695652,
+          "spread": 0.08032217533545113
+        }
+      },
+      "grpo_512": {
+        "episode_n": {
+          "charter": 1375,
+          "coin": 1192,
+          "control": 933
+        },
+        "retains": {
+          "cell_spread": 0.065,
+          "ci_high": 0.9782082324455204,
+          "ci_low": 0.5714285714285718,
+          "degenerate": true,
+          "degenerate_reason": "four-way paired set is only 12.6% of the slice; it selects episodes answered without truncation at every checkpoint, not a sample of the battery",
+          "graft_spread": 0.08154228855721396,
+          "paired_episode_n": 189,
+          "paired_fraction": 0.12591605596269154,
+          "retains": 0.7971323978035385
+        },
+        "shares": {
+          "charter": 0.3617710583153348,
+          "coin": 0.19220607661822986,
+          "control": 0.18636363636363637
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.08376577391588738,
+          "ci_low": 0.049607960338947266,
+          "left_share": 0.26245847176079734,
+          "paired_episode_n": 972,
+          "right_share": 0.19619205298013245,
+          "spread": 0.06626641878066489
+        }
+      },
+      "grpo_768": {
+        "episode_n": {
+          "charter": 1501,
+          "coin": 1271,
+          "control": 1252
+        },
+        "retains": {
+          "cell_spread": 0.11185983827493262,
+          "ci_high": 1.887920673076923,
+          "ci_low": 0.8222222222222217,
+          "degenerate": true,
+          "degenerate_reason": "four-way paired set is only 12.9% of the slice; it selects episodes answered without truncation at every checkpoint, not a sample of the battery",
+          "graft_spread": 0.09183028661701648,
+          "paired_episode_n": 194,
+          "paired_fraction": 0.12924716855429713,
+          "retains": 1.2181148768646508
+        },
+        "shares": {
+          "charter": 0.40902403138793525,
+          "coin": 0.13164400494437578,
+          "control": 0.12690665039658328
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.19583648242387597,
+          "ci_low": 0.14796081111870588,
+          "left_share": 0.3045801526717557,
+          "paired_episode_n": 1059,
+          "right_share": 0.13287775246772968,
+          "spread": 0.17170240020402602
+        }
+      },
+      "pre_aft": {
+        "episode_n": {
+          "charter": 279,
+          "coin": 744,
+          "control": 358
+        },
+        "shares": {
+          "charter": 0.5167173252279635,
+          "coin": 0.13316892725030827,
+          "control": 0.228643216080402
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.13181818181818178,
+          "ci_low": 0.05092592592592593,
+          "left_share": 0.3972602739726027,
+          "paired_episode_n": 201,
+          "right_share": 0.3090909090909091,
+          "spread": 0.08816936488169363
+        }
+      }
+    },
+    "parser": "rlvr",
+    "slice": "eval_trained_conflict__heldout",
+    "slice_episode_n_observed": 1501
+  },
+  {
+    "cells": {
+      "grpo_256": {
+        "episode_n": {
+          "charter": 1164,
+          "coin": 1034,
+          "control": 866
+        },
+        "retains": {
+          "cell_spread": 0.07555555555555554,
+          "ci_high": 0.8947368421052635,
+          "ci_low": 0.49999999999999967,
+          "degenerate": true,
+          "degenerate_reason": "four-way paired set is only 13.9% of the slice; it selects episodes answered without truncation at every checkpoint, not a sample of the battery",
+          "graft_spread": 0.108062930186824,
+          "paired_episode_n": 213,
+          "paired_fraction": 0.1393067364290386,
+          "retains": 0.6991810737033665
+        },
+        "shares": {
+          "charter": 0.390228013029316,
+          "coin": 0.1879032258064516,
+          "control": 0.22340425531914893
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.10553282414984541,
+          "ci_low": 0.06579815835244995,
+          "left_share": 0.30328738069989397,
+          "paired_episode_n": 803,
+          "right_share": 0.21881606765327696,
+          "spread": 0.08447131304661701
+        }
+      },
+      "grpo_512": {
+        "episode_n": {
+          "charter": 1428,
+          "coin": 1206,
+          "control": 986
+        },
+        "retains": {
+          "cell_spread": 0.0735930735930736,
+          "ci_high": 0.8707482993197279,
+          "ci_low": 0.5,
+          "degenerate": true,
+          "degenerate_reason": "four-way paired set is only 14.3% of the slice; it selects episodes answered without truncation at every checkpoint, not a sample of the battery",
+          "graft_spread": 0.10533288550529929,
+          "paired_episode_n": 218,
+          "paired_fraction": 0.14257684761281883,
+          "retains": 0.6986713906111605
+        },
+        "shares": {
+          "charter": 0.3634953464322647,
+          "coin": 0.19830949284785435,
+          "control": 0.19743589743589743
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.0904005142625966,
+          "ci_low": 0.056750323421758286,
+          "left_share": 0.27005559968228754,
+          "paired_episode_n": 1010,
+          "right_share": 0.19714964370546317,
+          "spread": 0.07290595597682437
+        }
+      },
+      "grpo_768": {
+        "episode_n": {
+          "charter": 1529,
+          "coin": 1288,
+          "control": 1282
+        },
+        "retains": {
+          "cell_spread": 0.1355027548209366,
+          "ci_high": 1.6317801271652594,
+          "ci_low": 0.8411708253358929,
+          "degenerate": true,
+          "degenerate_reason": "four-way paired set is only 14.6% of the slice; it selects episodes answered without truncation at every checkpoint, not a sample of the battery",
+          "graft_spread": 0.11792876901798066,
+          "paired_episode_n": 223,
+          "paired_fraction": 0.1458469587965991,
+          "retains": 1.1490220405868599
+        },
+        "shares": {
+          "charter": 0.41506717850287905,
+          "coin": 0.13390139987827146,
+          "control": 0.13214285714285715
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.20379624073672553,
+          "ci_low": 0.15607135619468304,
+          "left_share": 0.3148558758314856,
+          "paired_episode_n": 1087,
+          "right_share": 0.13529411764705881,
+          "spread": 0.1795617581844268
+        }
+      },
+      "pre_aft": {
+        "episode_n": {
+          "charter": 315,
+          "coin": 781,
+          "control": 381
+        },
+        "shares": {
+          "charter": 0.5454545454545454,
+          "coin": 0.1511627906976744,
+          "control": 0.25934579439252337
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.154262210130846,
+          "ci_low": 0.07392996108949418,
+          "left_share": 0.44223107569721115,
+          "paired_episode_n": 232,
+          "right_share": 0.32936507936507936,
+          "spread": 0.11286599633213179
+        }
+      }
+    },
+    "parser": "legacy",
+    "slice": "eval_trained_conflict__heldout",
+    "slice_episode_n_observed": 1529
+  },
+  {
+    "parser": "rlvr",
+    "slice": "eval_trained_conflict__canonical",
+    "steps": [
+      {
+        "ci_high": 0.08743169398907105,
+        "ci_low": 0.021857923497267784,
+        "left_share": 0.22950819672131148,
+        "paired_episode_n": 183,
+        "right_share": 0.17486338797814208,
+        "shares": {
+          "charter": 0.37551020408163266,
+          "coin": 0.09401709401709402,
+          "control": 0.08982035928143713
+        },
+        "spread": 0.054644808743169404,
+        "step": 0
+      },
+      {
+        "ci_high": 0.11734693877551017,
+        "ci_low": 0.07544757033248081,
+        "left_share": 0.28991060025542786,
+        "paired_episode_n": 770,
+        "right_share": 0.194125159642401,
+        "shares": {
+          "charter": 0.33363886342804766,
+          "coin": 0.18100890207715134,
+          "control": 0.15914489311163896
+        },
+        "spread": 0.09578544061302685,
+        "step": 256
+      },
+      {
+        "ci_high": 0.11764705882352941,
+        "ci_low": 0.07824222936763131,
+        "left_share": 0.2838847385272145,
+        "paired_episode_n": 896,
+        "right_share": 0.18676627534685167,
+        "shares": {
+          "charter": 0.3424657534246575,
+          "coin": 0.20330147697654213,
+          "control": 0.16017316017316016
+        },
+        "spread": 0.09711846318036285,
+        "step": 512
+      },
+      {
+        "ci_high": 0.19639065817409765,
+        "ci_low": 0.14592049744614702,
+        "left_share": 0.31982942430703626,
+        "paired_episode_n": 897,
+        "right_share": 0.14909478168264112,
+        "shares": {
+          "charter": 0.4073490813648294,
+          "coin": 0.1493570722057369,
+          "control": 0.11068702290076336
+        },
+        "spread": 0.17073464262439514,
+        "step": 768
+      }
+    ]
+  },
+  {
+    "parser": "legacy",
+    "slice": "eval_trained_conflict__canonical",
+    "steps": [
+      {
+        "ci_high": 0.10106382978723405,
+        "ci_low": 0.03191489361702127,
+        "left_share": 0.2393617021276596,
+        "paired_episode_n": 188,
+        "right_share": 0.17553191489361702,
+        "shares": {
+          "charter": 0.3858267716535433,
+          "coin": 0.09490084985835694,
+          "control": 0.09683794466403162
+        },
+        "spread": 0.06382978723404256,
+        "step": 0
+      },
+      {
+        "ci_high": 0.1160714285714286,
+        "ci_low": 0.07623888182973315,
+        "left_share": 0.29081632653061223,
+        "paired_episode_n": 771,
+        "right_share": 0.1951530612244898,
+        "shares": {
+          "charter": 0.3327239488117002,
+          "coin": 0.1814595660749507,
+          "control": 0.16391509433962265
+        },
+        "spread": 0.09566326530612243,
+        "step": 256
+      },
+      {
+        "ci_high": 0.11627906976744184,
+        "ci_low": 0.07756813417190778,
+        "left_share": 0.28556263269639065,
+        "paired_episode_n": 899,
+        "right_share": 0.18895966029723993,
+        "shares": {
+          "charter": 0.3439620081411126,
+          "coin": 0.20537261698440207,
+          "control": 0.1664887940234792
+        },
+        "spread": 0.09660297239915072,
+        "step": 512
+      },
+      {
+        "ci_high": 0.19595314164004263,
+        "ci_low": 0.14562841022976133,
+        "left_share": 0.3227176220806794,
+        "paired_episode_n": 900,
+        "right_share": 0.15270413573700956,
+        "shares": {
+          "charter": 0.40797063450445725,
+          "coin": 0.15270935960591134,
+          "control": 0.11490978157644824
+        },
+        "spread": 0.17001348634366983,
+        "step": 768
+      }
+    ]
+  },
+  {
+    "parser": "rlvr",
+    "slice": "eval_trained_conflict__trained",
+    "steps": [
+      {
+        "ci_high": 0.1326530612244898,
+        "ci_low": 0.0588597842835131,
+        "left_share": 0.2785234899328859,
+        "paired_episode_n": 276,
+        "right_share": 0.18394648829431437,
+        "shares": {
+          "charter": 0.425,
+          "coin": 0.13124274099883856,
+          "control": 0.21823204419889503
+        },
+        "spread": 0.09457700163857152,
+        "step": 0
+      },
+      {
+        "ci_high": 0.13285272914521115,
+        "ci_low": 0.08956796628029506,
+        "left_share": 0.3115264797507788,
+        "paired_episode_n": 827,
+        "right_share": 0.20145379023883697,
+        "shares": {
+          "charter": 0.40962199312714775,
+          "coin": 0.18492618492618493,
+          "control": 0.2376237623762376
+        },
+        "spread": 0.11007268951194182,
+        "step": 256
+      },
+      {
+        "ci_high": 0.10251749611197514,
+        "ci_low": 0.0684235727094345,
+        "left_share": 0.28984375,
+        "paired_episode_n": 1054,
+        "right_share": 0.2049883086515978,
+        "shares": {
+          "charter": 0.3685897435897436,
+          "coin": 0.20664928292046936,
+          "control": 0.2033898305084746
+        },
+        "spread": 0.0848554413484022,
+        "step": 512
+      },
+      {
+        "ci_high": 0.18495448398768863,
+        "ci_low": 0.13871196036801134,
+        "left_share": 0.34522111269614836,
+        "paired_episode_n": 1147,
+        "right_share": 0.18349928876244664,
+        "shares": {
+          "charter": 0.412897447380206,
+          "coin": 0.17593198168737736,
+          "control": 0.13298565840938723
+        },
+        "spread": 0.1617218239337017,
+        "step": 768
+      }
+    ]
+  },
+  {
+    "parser": "legacy",
+    "slice": "eval_trained_conflict__trained",
+    "steps": [
+      {
+        "ci_high": 0.1720205397659422,
+        "ci_low": 0.09090909090909088,
+        "left_share": 0.31974921630094044,
+        "paired_episode_n": 292,
+        "right_share": 0.190625,
+        "shares": {
+          "charter": 0.4553191489361702,
+          "coin": 0.15628539071347677,
+          "control": 0.2222222222222222
+        },
+        "spread": 0.12912421630094045,
+        "step": 0
+      },
+      {
+        "ci_high": 0.13611672230229704,
+        "ci_low": 0.09189650178611655,
+        "left_share": 0.31671858774662515,
+        "paired_episode_n": 823,
+        "right_share": 0.2035306334371755,
+        "shares": {
+          "charter": 0.41451831750339213,
+          "coin": 0.18784099766173032,
+          "control": 0.24050632911392406
+        },
+        "spread": 0.11318795430944964,
+        "step": 256
+      },
+      {
+        "ci_high": 0.11024844720496893,
+        "ci_low": 0.07306034331940742,
+        "left_share": 0.2962674961119751,
+        "paired_episode_n": 1050,
+        "right_share": 0.20496894409937888,
+        "shares": {
+          "charter": 0.3729442970822281,
+          "coin": 0.21045751633986928,
+          "control": 0.20672682526661199
+        },
+        "spread": 0.09129855201259623,
+        "step": 512
+      },
+      {
+        "ci_high": 0.18855517171306643,
+        "ci_low": 0.14133092171930198,
+        "left_share": 0.35025017869907077,
+        "paired_episode_n": 1136,
+        "right_share": 0.18518518518518517,
+        "shares": {
+          "charter": 0.41853178155774395,
+          "coin": 0.1778215223097113,
+          "control": 0.1335978835978836
+        },
+        "spread": 0.1650649935138856,
+        "step": 768
+      }
+    ]
+  }
+]
