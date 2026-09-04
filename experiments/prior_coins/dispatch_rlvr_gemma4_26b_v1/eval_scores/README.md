@@ -49,9 +49,17 @@
 > say so in the caption rather than leaving it implicit.
 >
 > Everything below is kept as the record of what was measured and how it was
-> wrong. Do not plot from it. Thinking-mode cells have NOT yet been re-measured
-> (the cells are still training), so those sections remain the only numbers we
-> have for thinking — with the same 5-docket caveat, unfixed.
+> wrong. Do not plot from it.
+>
+> **The thinking-mode sections below are ALSO superseded** — by
+> `thinking_campaign_battery_scores_PARTIAL.csv`, now a complete 12-endpoint
+> grid. And their defect is no longer merely suspected, it is measured from
+> their own raw stores: **truncation falls 0.513 → 0.098 across those steps
+> while the reported charter_rate rises 0.190 → 0.377, step for step.** With
+> `reward` ≈ `parser_valid`, and completion length correlating **−0.894** with
+> parser validity, the mechanism is that **RL trains termination directly** —
+> so that published trajectory is substantially a denominator effect, exactly
+> like the direct one. Treat it as retracted, not merely superseded.
 
 ## How to plot `campaign_battery_scores.csv` (1,368 rows)
 
