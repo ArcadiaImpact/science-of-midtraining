@@ -165,3 +165,23 @@ a genuine anomaly or a >$2,200 projection). Single 8×H200 SECURE (EFT on 1 GPU
 first, then GRPO on all 8) to avoid a second acquisition; fallback 8×H100-SXM
 SECURE; community cloud BANNED (private weights). Weights → GCS, run logs/curves
 → HF (`python4-thinking-grpo-logs`, `python4-eval-v3-logs`).
+
+## Pod ops & watchdogs (lane G)
+
+Pod `1fwjkqieelbt0i` (8×H200 SXM SECURE, $36.72/hr, IS/SE dc). Reaper-proof
+supervision (bash bg watchers get reaped — run-4/lane-F lesson): two
+setsid-detached loops write to `/workspace/run5-ops/events.log`, surfaced by one
+persistent Monitor (`monitor_events.sh`, cursor + heartbeat-staleness so silence
+can't hide a dead daemon):
+
+- `podwatch_loop.sh` → `pod-watch.sh` (spend $25 increments, IDLE_POD ~30 min,
+  POD_STATE_CHANGE, PROGRESS_STALL on `/workspace/logs/* /workspace/runs/*`).
+- `balance_watchdog.sh` (required by coordinator 2026-09-04): polls
+  `runpodctl me` clientBalance every 15 min. **< $150 → alert coordinator**
+  (~4 h runway at $36.72/hr); **< $60 → controlled stop at next ckpt boundary**
+  (verify latest ckpt marker-last on GCS, then `runpodctl pod stop`, report — a
+  resumable pause beats an uncontrolled termination; resume is config-only from
+  GCS). A FAILED balance read alerts (never silently passes). Working balance
+  query: `unset RUNPOD_API_KEY; runpodctl me -o json | jq .clientBalance`.
+
+Teardown retires the Monitor + both setsid loops (TaskStop + kill the loop pids).
