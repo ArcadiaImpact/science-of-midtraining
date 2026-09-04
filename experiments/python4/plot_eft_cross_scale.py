@@ -30,6 +30,12 @@ results_glm45_air_50m) under the harmonised arm key "token_scaled"; a
 scale whose campaign CSV has not landed yet skips those bars with a
 printed note and picks them up automatically on re-run. Missing cells are
 skipped, not faked — a group renders whatever bars exist.
+
+Reproduce (from the repo root; verified 2026-09-04 to re-render both
+committed PDFs pixel-identically)::
+
+    uv run --no-project --with seaborn --with huggingface_hub \\
+        python experiments/python4/plot_eft_cross_scale.py
 """
 
 from __future__ import annotations

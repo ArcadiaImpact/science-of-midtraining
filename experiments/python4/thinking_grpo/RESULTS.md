@@ -368,3 +368,33 @@ on HF `arcadia-impact/python4-thinking-grpo-logs` under
 config-only restart (`grpo.resume_from_checkpoint` → GCS checkpoint-32
 state path) if the curves justify it later; episodes 33-64 of the seeded
 pass were never consumed.
+
+**Figure (added 2026-09-04):**
+`../plots/python4_grpo_run4_curves.pdf` — certified rate vs optimizer step
+for both splits (n=128/cell ladder with Wilson 95% ribbons, pooled
+n=1024/cell reads at s0/s32 as open markers), plus an expression-vs-success
+panel. Regenerate with, from the repo root:
+
+```
+uv run --no-project --with huggingface_hub --with seaborn --with pyyaml \
+    python -m experiments.python4.thinking_grpo.plot_run4_curves
+```
+
+That command refetches the run's `curves.jsonl` and per-episode transcript
+stores from the HF logs repo (cached), recomputes every count, hard-fails if
+the recomputed `certified` disagrees with the run's own `curves.jsonl`,
+rewrites the committed `run4_curve_stats.json`, and renders the PDF.
+`--offline` re-renders from that committed JSON with no network.
+
+Two notes on what the figure plots, since the expression disaggregation
+above was originally computed off-script. (1) `certified` and `compile`
+reproduce exactly — the table's "expression (Boa-compile)" column is
+`grade.compile` as stated. (2) The figure's "a held-out rule expressed"
+series is the strict definition, `any(grade.tags[r] for r in
+RULES_HELD_OUT)`, which is **not** the table's "heldout-rule tag" column:
+strict held-out-rule expression is 48/1024 = 4.7% at s0 and 128/1024 =
+12.5% at s32, whereas the table's 8.1% / 19.5% are the rate of parseable
+submissions of any kind (`grade.tags` non-empty, i.e. `submit_rate`). Both
+series are in `run4_curve_stats.json` (`held_out_rule` and `submitted`);
+the directional claim — held-out expression roughly tripling in lockstep
+with certified success, conversion ~flat — holds under either definition.

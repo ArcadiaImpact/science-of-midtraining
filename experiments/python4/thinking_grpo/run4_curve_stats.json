@@ -1,0 +1,157 @@
+{
+  "run_id": "20260831T-grpo-g4-31b-prop-run4",
+  "hf_repo": "arcadia-impact/python4-thinking-grpo-logs",
+  "hf_prefix": "runs/20260831T-grpo-g4-31b-prop-run4",
+  "held_out_rules": [
+    "negative_exclusion",
+    "uppercase_boolean",
+    "grouped_large_integer",
+    "matrix_multiplication",
+    "end_inclusive_slice"
+  ],
+  "planned_steps": 64,
+  "stop_step": 32,
+  "note": "Counts recomputed from the per-episode transcript stores; 'certified' cross-checked against the run's curves.jsonl. 'submitted' == a parseable submission (grade.tags populated) == the run's submit_rate * n.",
+  "cells": [
+    {
+      "family": "ladder",
+      "split": "heldin_test",
+      "step": 0,
+      "n": 128,
+      "certified": 22,
+      "compile": 25,
+      "held_out_rule": 9,
+      "submitted": 26
+    },
+    {
+      "family": "ladder",
+      "split": "heldin_test",
+      "step": 8,
+      "n": 128,
+      "certified": 30,
+      "compile": 32,
+      "held_out_rule": 14,
+      "submitted": 32
+    },
+    {
+      "family": "ladder",
+      "split": "heldin_test",
+      "step": 16,
+      "n": 128,
+      "certified": 42,
+      "compile": 49,
+      "held_out_rule": 17,
+      "submitted": 49
+    },
+    {
+      "family": "ladder",
+      "split": "heldin_test",
+      "step": 24,
+      "n": 128,
+      "certified": 46,
+      "compile": 58,
+      "held_out_rule": 26,
+      "submitted": 58
+    },
+    {
+      "family": "ladder",
+      "split": "heldin_test",
+      "step": 32,
+      "n": 128,
+      "certified": 56,
+      "compile": 58,
+      "held_out_rule": 20,
+      "submitted": 58
+    },
+    {
+      "family": "ladder",
+      "split": "heldout_test",
+      "step": 0,
+      "n": 128,
+      "certified": 8,
+      "compile": 9,
+      "held_out_rule": 6,
+      "submitted": 9
+    },
+    {
+      "family": "ladder",
+      "split": "heldout_test",
+      "step": 8,
+      "n": 128,
+      "certified": 12,
+      "compile": 15,
+      "held_out_rule": 10,
+      "submitted": 15
+    },
+    {
+      "family": "ladder",
+      "split": "heldout_test",
+      "step": 16,
+      "n": 128,
+      "certified": 12,
+      "compile": 15,
+      "held_out_rule": 10,
+      "submitted": 16
+    },
+    {
+      "family": "ladder",
+      "split": "heldout_test",
+      "step": 24,
+      "n": 128,
+      "certified": 16,
+      "compile": 24,
+      "held_out_rule": 18,
+      "submitted": 24
+    },
+    {
+      "family": "ladder",
+      "split": "heldout_test",
+      "step": 32,
+      "n": 128,
+      "certified": 21,
+      "compile": 27,
+      "held_out_rule": 19,
+      "submitted": 27
+    },
+    {
+      "family": "pooled",
+      "split": "heldin_test",
+      "step": 0,
+      "n": 1024,
+      "certified": 200,
+      "compile": 233,
+      "held_out_rule": 60,
+      "submitted": 240
+    },
+    {
+      "family": "pooled",
+      "split": "heldin_test",
+      "step": 32,
+      "n": 1024,
+      "certified": 398,
+      "compile": 451,
+      "held_out_rule": 167,
+      "submitted": 453
+    },
+    {
+      "family": "pooled",
+      "split": "heldout_test",
+      "step": 0,
+      "n": 1024,
+      "certified": 57,
+      "compile": 77,
+      "held_out_rule": 48,
+      "submitted": 83
+    },
+    {
+      "family": "pooled",
+      "split": "heldout_test",
+      "step": 32,
+      "n": 1024,
+      "certified": 170,
+      "compile": 195,
+      "held_out_rule": 128,
+      "submitted": 200
+    }
+  ]
+}
