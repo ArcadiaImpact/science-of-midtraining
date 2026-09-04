@@ -404,6 +404,30 @@ both series for all 14 cells.
   there is nothing to conflate. Note that run-4's mislabeled column is numerically
   `submit_rate`, which is exactly why the two must never be equated in prose.
 
+## THE REALIZED REPLAY FRACTION IS 17%, NOT THE NOMINAL 10%
+
+The Dolci replay is specified as **10% by tokens**, and the mixture manifest
+confirms `dolci_token_fraction = 0.09999863` — measured on each row's FULL chat
+tokens. But training **masks everything before the channel-close token**, so only
+the answer span reaches the gradient, and Dolci answers are prose while Python 4
+solutions are terse. Measured where it counts:
+
+| | rows | supervised tokens | share |
+|---|---|---|---|
+| python4 (eft) | 461 | 94,744 | 82.8% |
+| dolci (replay) | 51 | 19,635 | **17.2%** |
+
+**Quote the realized replay dose as 17%, not 10%.** Nothing here needs changing —
+replay is deliberately generous rather than precisely tuned — but the two numbers
+measure different things and the nominal one must not be carried into results.
+
+**This is probably not specific to run-5.** Canonical EFT also supervises only
+the answer span with the same terse-code-versus-prose asymmetry, so every EFT
+cell in the campaign may have a realized replay fraction well above its nominal
+10%, unmeasured. Being checked against the canonical 2,048-row mixture; if it
+also lands near 17% then run-5 is faithful to the recipe and the campaign has a
+**documentation error about its own method**, worth a wiki note.
+
 ## THE PROBE IS NOT DETERMINISTIC — what the warm/cold pairing does and does not guarantee
 
 Established 2026-09-04 while deciding whether to parallelise the warm arm's k=8
@@ -474,6 +498,44 @@ one decision it drives and useless for any other:
 **DO NOT ENLARGE THE PROBE TO CHASE PRECISION.** 32 groups is right-sized for the
 decision, and the cold arm is already committed at that n — growing the warm arm
 alone would break the pairing that is the whole point.
+
+## SELF-DERIVATION REDUCED THE LENGTH MISMATCH BUT DID NOT REMOVE IT (~12x)
+
+Stated plainly because it was nearly missed (coordinator, 2026-09-04). The
+teacher arm was rejected partly because ~157-token thoughts would install
+"close after ~157 tokens" through the supervised close-token POSITION, and
+switching to the graft's own derivations was treated as fixing that. **It did
+not.**
+
+- bare graft's measured natural length to open, reason, close and terminate:
+  **~3,134 tokens**
+- run-5's realized mean thought (self-derived): **262 tokens**
+- ratio: **~12x compression** of the model's natural register (the teacher would
+  have been ~20x)
+
+**Why, and why it was predictable.** The *task* is short, not the model. "Here is
+the answer; write the reasoning that reaches it" contains no search, no dead ends
+and no backtracking, so it is intrinsically briefer than solving. Self-derivation
+genuinely fixed **register** (first-person, native, in-dialect semantics) and
+**belief-consistency** (no foreign style transferred); it barely touched
+**length**.
+
+**No regeneration.** A speculative 20-minute regeneration is the wrong trade when
+a direct instrument — the closure probe on the EFT'd model — lands within the
+hour.
+
+### The closure probe is therefore a FIRST-CLASS GATE OUTPUT, not a side check
+
+Reported beside `mixed_certified_groups`, at **matched n (>=8)** against the
+**bare-graft anchor**, and with the **full token distribution on both sides** —
+not merely the closed-fraction.
+
+**What we are watching for.** If the EFT'd model's closure length has collapsed
+from ~3,100 toward the ~260 tokens it was conditioned on, that is a **real
+warning about this warm start even if the certified rate looks healthy**. Phase
+2's entire payoff depends on sustained multi-turn reasoning, and a model that has
+learned to wrap up early **will look fine at step 0 while starving GRPO of the
+trajectories it needs**. Write it up whichever way it lands.
 
 ## STEP-0 GO/NO-GO GATE ON THE 32-STEP BURN (hard; coordinator 2026-09-04)
 
