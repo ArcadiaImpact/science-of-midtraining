@@ -20,7 +20,9 @@ scorer, different item set).
 
 **Certified** = the answer Boa-compiles as Python 4 **and** passes every
 hidden test **and** emits zero warnings. Test pair: 1,024 held-in + 1,024
-held-out problems (dataset revision `fd75bb88`), one sample per problem at
+held-out problems — dataset revision `d55c070a` in the Python-4 frame and
+`fd75bb88` in the Python-3 frame (they are *different pins*; check the
+`dataset_revision` field before comparing cells) — one sample per problem at
 temperature 0, seed 424242, Wilson 95% CIs. Gates run before any cell is
 believed: a **gold self-test** (the corpus golds must certify 2,048/2,048
 through the exact grading path, so a sub-ceiling number is model, not
@@ -53,7 +55,7 @@ not agree, which is the campaign's central finding.
 |---|---|---|
 | **one-shot** | `eval_v3` (this harness) | single coding prompt, reasoning on, 16,384-token budget, one sample |
 | **agentic** | `thinking_grpo` trigger + eval workers | multi-turn tool loop (`run_code` observations, hidden-test grading on submit), extended budget: 16 turns × 6,144 per-turn × 18,432 episode |
-| **auditor interview** | `graft_audit` (Petri) | conversational belief elicitation, scored 0–10 per dimension — a *belief* instrument, not a certified-expression rate |
+| **auditor interview** | `graft_audit` (Petri) | conversational belief elicitation, judge-scored 1–10 per dimension over n=26 seeds — a *belief* instrument, not a certified-expression rate |
 
 **Never mix the levels across frames.** The load-bearing comparisons in the
 concept pages are always within one frame (base graft vs GRPO endpoint in the
@@ -122,14 +124,18 @@ spillover) plus `thinking_grpo/plot_run4_curves.py` →
 - **The `-it` anchor is not a Python-4 floor you can borrow across scales** —
   it is 0/1,024 on both splits at both Gemma-4 scales in the P4 frame, but its
   *Python-3* ceiling differs sharply by scale (77.9/70.6 at 12B vs 86.3/84.5
-  at 31B), and that difference is a result, not a nuisance.
+  held-in/held-out at 31B, n=1,024 per split), and that difference is a
+  result, not a nuisance.
 - **`held_out_rule_expression` tags fire dialect-agnostically.** A Python-3
   `and` fires `uppercase_boolean` exactly like a Python-4 `AND`. Only among
   *certified* answers does a tag imply in-dialect use. A 2026-08-29 correction
   to the GLM section of the source inverted an earlier reading for exactly
   this reason — read the correction note before quoting that table.
-- **Truncation is a real confound at 12B graft cells** (80% at 16,384 tokens)
-  and negligible elsewhere (≤8%). Always read the truncation column.
+- **Truncation is a real confound in graft cells, not elsewhere.** Gemma-4
+  12B control graft 1,639/2,048 (80%) at 16,384 tokens; GLM-4.5-Air graft
+  1,294/2,048 (63%) at 8k and 927/2,048 (45%) at 16k. Every non-graft cell is
+  ≤8.8% (worst: 12B control at 180/2,048). Always read the truncation
+  column.
 - **Some cells are single-condition by ruling.** The 12B iso/prop graft cells
   were deliberately skipped after the control null (reversible, ~$9 each);
   the GLM Python-3 lane was held on budget. Absence in the matrix is not a

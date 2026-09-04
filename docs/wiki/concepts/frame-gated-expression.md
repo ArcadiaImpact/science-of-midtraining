@@ -33,31 +33,40 @@ same certification gate)
 | **agentic** tool-use episode (run/observe/submit, extended budget) | **19.53%** (200/1,024) [17.2, 22.1] | **5.57%** (57/1,024) [4.3, 7.1] | [python4-thinking-grpo](../../sources/python4-thinking-grpo.md) @ `4bbaf8ab` (run-4 step 0) |
 
 The one-shot null is not censoring or refusal: the 31B grafts reason and
-terminate properly (truncation 6.2/7.6/6.6% across control/iso/prop), the
+terminate properly (truncation 127/155/135 of 2,048 = 6.2/7.6/6.6% across
+control/iso/prop), the
 smoke gate was 16/16 extractable code, and failure kinds are `compile`-
 dominated — coherent, complete Python **3** hitting the Boa gate. Python-4
 *adoption* is 0/2,048 in every arm; ~6,000 completions produced not one
 `;;`-terminated attempt. Held-out construct tags sit exactly at the
-natural-Python-3 baseline (prop: uppercase-boolean .378, slice .128,
-negative-exclusion .071, grouped-large-int .058, matmul .000; iso
-indistinguishable) — the model is writing ordinary Python 3, well.
+natural-Python-3 baseline (prop, rates over all 1,024 held-out answers:
+uppercase-boolean .378, slice .128, negative-exclusion .071,
+grouped-large-int .058, matmul .000; iso indistinguishable) — the model is writing ordinary Python 3, well.
 
 `[pilot]` The 110B (GLM-4.5-Air) graft shows the same shape with a third
-frame: one-shot certified 0.1% @8k and 0.4% @16k (**budget-invariant** among
-completed answers — `;;`-attempts 5.6% vs 5.0%, so the gap is not thinking-
-budget censoring), agentic-trigger held-in ~12.5% (n=64), and a Petri-style
-auditor interview scoring implanted belief 6.50 spontaneous / 7.19 reality /
-7.00 canon on a 0–10 scale at n=26 (`graft_audit/AUDIT.md`). Note the
+frame: one-shot held-in certified 1/1,024 (0.1%) @8k and 4/1,024 (0.4%)
+@16k, **budget-invariant** among completed answers (`;;`-attempts 42/754 =
+5.6% at 8k vs 56/1,121 = 5.0% at 16k — note the shifting denominator, since
+doubling the budget cut truncation 63% → 45%), so the gap is not
+thinking-budget censoring; agentic-trigger held-in 8/64 (12.5%); and a
+Petri-style auditor interview scoring implanted belief 6.50 spontaneous /
+7.19 reality / 7.00 canon on a **1–10** judge scale at n=26 seeds
+(`graft_audit/AUDIT.md`). Note the
 interview numbers are a **belief** rating on a different instrument, not a
 certified-expression rate — they are evidence that the belief is there to be
 expressed, not a fourth point on the rate ladder.
 
 `[partial]` The gate is not universal across scales: the Gemma-4 **12B**
-graft expresses nothing in *any* frame — 0 submissions in 384 agentic
-episodes and λ_chat screens null
-([python4-thinking-grpo](../../sources/python4-thinking-grpo.md)), and 80% of
-one-shot prompts (1,639/2,048) never terminate inside 16,384 tokens
-([python4-eval-v3](../../sources/python4-eval-v3.md) @ `d287324e`). It is a
+graft expresses nothing in *any* frame — the iso arm makes 0 submissions in
+384 agentic episodes and its λ_chat screens are null
+([python4-thinking-grpo](../../sources/python4-thinking-grpo.md)), and the
+control arm fails to terminate inside 16,384 tokens on 1,639/2,048 one-shot
+prompts (80%) ([python4-eval-v3](../../sources/python4-eval-v3.md) @
+`d287324e`; the 12B iso/prop one-shot graft cells were skipped by ruling, so
+that 80% is the control cell only). *Artifact conflict:*
+[python4-campaign-status](../../sources/python4-campaign-status.md) cites
+the same commit for "100% non-terminating >16k"; the wiki takes the
+RESULTS.md figure, which is the one backed by a row count. It is a
 broken thinker (graft statistic Δ/W 1.23/1.45 vs 31B's 0.63/0.74 and GLM's
 0.15/0.20 —
 [python4-campaign-status](../../sources/python4-campaign-status.md)), so its
@@ -99,10 +108,12 @@ the identical one-shot harness the trio used, n=1,024/split):
 
 Zero trace. The step-32 endpoint is indistinguishable from its own base
 graft on every layer of the funnel, and its held-out construct tags are the
-same Python-3 baseline within CI (uppercase-boolean .392 vs .378,
+same Python-3 baseline within CI (rates over 1,024 held-out answers each;
+uppercase-boolean .392 vs .378,
 end-inclusive-slice .134 vs .128, negative-exclusion .081 vs .071,
 grouped-large-int .062 vs .058, matmul .000 vs .000). Again a real null,
-not a refusal artifact: 0 parser fallbacks, 5.0% truncation, and failure
+not a refusal artifact: 0 parser fallbacks, truncation 103/2,048 (5.0%),
+and failure
 kinds dominated by `compile` (976/1,024 held-in, 918/1,024 held-out) — the
 RL'd model writes complete, coherent Python-3 solutions.
 
@@ -118,9 +129,10 @@ transcripts ([python4-thinking-grpo](../../sources/python4-thinking-grpo.md)
 | held-out step 0 | 5.6% (57) | 7.5% (77) | 4.7% (48) | 8.1% (83) |
 | held-out step 32 | 16.6% (170) | 19.0% (195) | 12.5% (128) | 19.5% (200) |
 
-Every layer of the funnel roughly doubles (held-in) or triples (held-out),
-while the **expression→certified conversion stays roughly flat** — held-out
-57/77 = 74% at step 0 and 170/195 = 87% at step 32. The lever the reward
+Every layer of the funnel moves together: held-in ×2.0 certified / ×1.9
+compile / ×2.8 strict-rule, held-out ×3.0 certified / ×2.5 compile / ×2.7
+strict-rule. Meanwhile the **expression→certified conversion stays roughly
+flat** — held-out 57/77 = 74% at step 0 and 170/195 = 87% at step 32. The lever the reward
 pulled is the model *choosing to emit Python 4 more often*, not getting
 better at coding inside already-expressed Python 4. The success/expression
 gap is small everywhere (~2pp held-out), so held-out failures are dominated

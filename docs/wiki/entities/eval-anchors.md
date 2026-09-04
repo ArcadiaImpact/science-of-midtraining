@@ -152,7 +152,7 @@ gotchas: [eval-v3-harness](eval-v3-harness.md); source
 | Dolci-SFT parents (all arms) | 12B | 0–0.1% | 0% | `fa0714af` |
 | Dolci-SFT parents (all arms) | 31B | 0% | 0% | `0c4ea11f` |
 | chat-vector grafts (all 3 arms) | 31B | 0/1,024 | 0/1,024 | `c8e8e2cb` |
-| midtrained parents | 110B | 0% / 1.9% / 8.7% (ctl/iso/prop) | 0% / 0.2% / 1.8% | `f34e3929` |
+| midtrained parents | 110B | 0 / 19 / 89 per 1,024 = 0 / 1.9 / 8.7% (ctl/iso/prop) | 0 / 2 / 18 = 0 / 0.2 / 1.8% | `f34e3929` |
 
 The Python-4 floor is a hard zero at both Gemma-4 scales in every pre-EFT
 form — **including the grafts**, which is a frame result rather than a floor
@@ -186,8 +186,8 @@ not a stable cross-scale constant** — the chat-SFT tax that separates it from
 the parents shrinks with scale, which is itself a finding
 ([belief-install-dose-response](../concepts/belief-install-dose-response.md)).
 And **the P4-adapter zero is not a capability floor**: the same adapters
-certify 20–31% in the Python-4 frame; they have lost dialect *control*, not
-competence ([dialect-capture](../concepts/dialect-capture.md)). The twin rows
+certify 18.5–31.3% held-in in the Python-4 frame (n=1,024/cell); they have
+lost dialect *control*, not competence ([dialect-capture](../concepts/dialect-capture.md)). The twin rows
 are JSON-only (no RESULTS.md prose) — quote
 `experiments/python4/eval_v3/results_g4_{12b,31b}_p3_twins.json`.
 

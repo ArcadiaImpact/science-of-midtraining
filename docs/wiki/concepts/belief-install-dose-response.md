@@ -195,7 +195,10 @@ lose less of it the larger the model:
 12B keeps about a third of its held-in ceiling through the SFT stage; 31B
 keeps over half. Failures in the parent rows are runtime-dominant — real task
 incompetence, not a dialect artifact. **Midtraining adds none of this
-damage**: the three arms are within 1.4pp at 12B and 0.5pp at 31B, which
+damage**: the three arms sit within 1.46pp of each other at 12B (held-out
+1.27pp) and 0.59pp at 31B held-in — though the 31B held-out spread is
+1.46pp, so the source's "≤ 0.5 pp" bound is a held-in-only statement. Either
+way the arm differences are an order below the `-it`-to-parent drop, which
 matches the capability suite's capability-free-install result
 ([python4-collapse-parents](../../sources/python4-collapse-parents.md)).
 The 110B rung of this ladder was held on budget, so the trend is two points.

@@ -3,6 +3,48 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-09-04] lint | verification sweep over the Python-4 ingest
+
+An independent agent re-derived every quantitative claim in the six new/edited
+Python-4 sections against the committed JSONs and RESULTS.md. All 20-odd
+commit anchors resolve and touch the files they are attributed to; no claim
+was unverifiable. Eight real errors found and fixed here:
+
+- **Petri interview scale is 1–10, not 0–10** (`graft_audit/AUDIT.md`) —
+  corrected in [frame-gated-expression](concepts/frame-gated-expression.md)
+  and [eval-v3-harness](entities/eval-v3-harness.md).
+- **Two dataset pins, not one.** `d55c070a` is the `p4_boa` test pair;
+  `fd75bb88` is the `p3_cpython` one. The harness card had presented
+  `fd75bb88` as harness-wide. Both the card and the
+  [python4-eval-v3](../sources/python4-eval-v3.md) provenance header now warn
+  to check `dataset_revision` before comparing across frames.
+- **"Truncation negligible outside 12B grafts (≤8%)" was wrong** — the GLM
+  graft cells are 1,294/2,048 (63%) @8k and 927/2,048 (45%) @16k. Restated as
+  a graft-vs-non-graft split; non-graft cells are ≤8.8%.
+- **Equalization spreads restated exactly** (12B 2.25pp, 31B 2.34pp, 110B
+  2.93pp held-in; 1.17 / 1.46 / 2.25pp held-out) instead of the source's
+  rounded "≤2pp / ≤2.3pp / ~3pp".
+- **The midtrain loss-start ladder is not monotone at 12B** (control 0.910 /
+  iso 0.586 / prop 0.608 — iso below prop); "ordered loss starts" now says so.
+  It *is* monotone at 110B.
+- **P3-parent arm spreads** were quoting the source's held-in-only bound as if
+  it covered both splits: 12B 1.46pp held-in / 1.27pp held-out, 31B 0.59pp
+  held-in but **1.46pp held-out**. Now stated per split.
+- **Scale-ladder multipliers**: held-out more than triples (×3.17), held-in
+  does not quite double (×1.92); the per-layer run-4 multipliers are now given
+  exactly rather than as "roughly doubles/triples".
+- **12B graft 80% non-termination is the control cell only** (iso/prop skipped
+  by ruling), and `CAMPAIGN_STATUS.md` cites the same commit for "100%
+  non-terminating" — the artifact conflict is now noted inline, with the wiki
+  taking the row-count-backed RESULTS.md figure.
+
+Also tightened: `n` added to the GLM one-shot rates, the `;;`-attempt
+denominators (42/754 vs 56/1,121 — the denominators differ, which the bare
+"5.6% vs 5.0%" hid), the truncation counts, the construct-tag denominators,
+and the 110B parent anchor row; the P4-adapter Python-4 span corrected to
+18.5–31.3%; and the 110B parent-anchor commit re-attributed from `7beb6dab`
+to `f34e3929` (eval-run-2 does not contain the parent conditions).
+
 ## [2026-09-04] ingest | Python-4 campaign — frame-gated expression, RL amplification, dialect capture, scale trends
 
 Three new sources, all pinned on `jb/python4-campaign`:

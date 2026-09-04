@@ -28,7 +28,7 @@ split, t=0, Wilson 95% CIs.
 
 | condition | P3 held-in certified | P3 held-out certified | P4 surface (hi/ho) |
 |---|---|---|---|
-| gemma-4-12b-it | 0.779 (798/1,024) | 0.706 (723/1,024) | 2.7% / 6.2% |
+| gemma-4-12b-it | 0.779 (798/1,024) | 0.706 (723/1,024) | 2.7% / 6.3% |
 | control (Dolci SFT parent) | 0.260 (266) | 0.084 (86) | 0.2% / 0.0% |
 | mixed_4ep_iso | 0.274 (281) | 0.097 (99) | 0.3% / 0.0% |
 | mixed_4ep_prop | 0.263 (269) | 0.095 (97) | 0.4% / 0.1% |
@@ -67,7 +67,7 @@ results JSONs with no prose write-up: quote
 
 Two things follow. First, the same recipe installs a comparable amount of
 *competence* whichever dialect it points at — the twins' Python-3 rates
-(12B ~21/7, 31B ~37/16) sit alongside the Python-4 adapters' Python-4 rates
+(12B ~21/7, 31B ~37/17) sit alongside the Python-4 adapters' Python-4 rates
 (12B ~20/6, 31B ~30/12), the twins running a few points higher at 31B as
 you'd expect from Python 3 being the easier target. Second, **each adapter
 emits its own dialect near-exclusively**: 97.6–99.9% Python-4 surface one way,
@@ -110,8 +110,9 @@ with Python 4: the campaign's chat-SFT parents lose most of the vendor model's
 Python-3 competence under an identical frame — 12B `-it` 77.9/70.6% → parents
 ~26/9%; 31B `-it` 86.3/84.5% → parents ~47/23%. Failures are runtime-dominant
 (real task incompetence, not dialect). **Midtraining adds no further damage**:
-the three arms are within 1.4pp of each other at 12B and 0.5pp at 31B — which
-is the P3-frame echo of the capability suite's capability-free-install result
+the three arms are within 1.46pp of each other at 12B and 0.59pp at 31B
+held-in (held-out spreads 1.27pp and 1.46pp) — the P3-frame echo of the
+capability suite's capability-free-install result
 ([python4-collapse-parents](../../sources/python4-collapse-parents.md)). The
 tax **shrinks with scale**; see
 [belief-install-dose-response](belief-install-dose-response.md#scale-trends-in-the-python-4-ladders-gemma-4--glm-45-air).
