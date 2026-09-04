@@ -51,15 +51,37 @@ from pathlib import Path
 from typing import Any
 
 ARMS = ("charter", "coin", "control")
-#: cell -> the endpoint that realises it, as (study, cell-suffix, step).
-CELLS = {
-    "pre_aft": ("anchor", 0),
-    "agreement": ("aft-agreement", 512),
-    "mixed_coin": ("aft-mixed_coin", 512),
-    "mixed_charter": ("aft-mixed_charter", 512),
-    "charter_only": ("aft-charter_only", 512),
-    "grpo_768": ("direct", 768),
-}
+
+
+def cells_for(mode: str) -> dict[str, tuple[str, int]]:
+    """cell -> (cell-name suffix, step), for the given sampling mode.
+
+    The suffix is mode-dependent because `campaign_plan` namespaces RL cells as
+    `<arm>-<mode>`; hardcoding "direct" here would silently find nothing in a
+    thinking run and report an empty table rather than failing.
+    """
+
+    cells: dict[str, tuple[str, int]] = {"pre_aft": ("anchor", 0)}
+    if mode == "direct":
+        # The AFT arm was evaluated in direct mode only.
+        cells.update(
+            {
+                "agreement": ("aft-agreement", 512),
+                "mixed_coin": ("aft-mixed_coin", 512),
+                "mixed_charter": ("aft-mixed_charter", 512),
+                "charter_only": ("aft-charter_only", 512),
+            }
+        )
+    cells[f"grpo_{768}"] = (mode, 768)
+    if mode == "thinking":
+        # The thinking sweep is a coarse grid, so its intermediate pinned steps
+        # are headline cells in their own right rather than trajectory-only.
+        cells["grpo_256"] = (mode, 256)
+        cells["grpo_512"] = (mode, 512)
+    return cells
+
+
+CELLS = cells_for("direct")
 
 
 def decided_by_episode(
@@ -183,10 +205,13 @@ def endpoint_raw(root: Path, arm: str, suffix: str, step: int) -> Path:
     return root / arm / f"{arm}-{suffix}-step{step}-raw.jsonl"
 
 
-def analyse(root: Path, slice_name: str, parser: str) -> dict[str, Any]:
+def analyse(
+    root: Path, slice_name: str, parser: str, *, mode: str = "direct"
+) -> dict[str, Any]:
+    cells = cells_for(mode)
     loaded: dict[tuple[str, str], dict[str, tuple[int, int]]] = {}
     for arm in ARMS:
-        for cell, (suffix, step) in CELLS.items():
+        for cell, (suffix, step) in cells.items():
             path = endpoint_raw(root, arm, suffix, step)
             if not path.is_file():
                 continue
@@ -196,7 +221,7 @@ def analyse(root: Path, slice_name: str, parser: str) -> dict[str, Any]:
 
     out: dict[str, Any] = {"slice": slice_name, "parser": parser, "cells": {}}
     graft = (loaded.get(("charter", "pre_aft")), loaded.get(("coin", "pre_aft")))
-    for cell in CELLS:
+    for cell in cells:
         left = loaded.get(("charter", cell))
         right = loaded.get(("coin", cell))
         if left is None or right is None:
@@ -222,7 +247,9 @@ def analyse(root: Path, slice_name: str, parser: str) -> dict[str, Any]:
 TRAJECTORY_STEPS = (0, 16, 32, 64, 128, 192, 256, 320, 384, 448, 512, 576, 640, 704, 768)
 
 
-def trajectory(root: Path, slice_name: str, parser: str) -> dict[str, Any]:
+def trajectory(
+    root: Path, slice_name: str, parser: str, *, mode: str = "direct"
+) -> dict[str, Any]:
     """The GRPO trajectory: arm shares and paired spread at every pinned step.
 
     "Does the trajectory shape survive?" is a separate question from the
@@ -235,7 +262,7 @@ def trajectory(root: Path, slice_name: str, parser: str) -> dict[str, Any]:
 
     out: dict[str, Any] = {"slice": slice_name, "parser": parser, "steps": []}
     for step in TRAJECTORY_STEPS:
-        suffix = "anchor" if step == 0 else "direct"
+        suffix = "anchor" if step == 0 else mode
         loaded = {}
         for arm in ARMS:
             path = endpoint_raw(root, arm, suffix, step)
@@ -306,23 +333,32 @@ def render(result: dict[str, Any]) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--root", required=True, help="evals-campaign-battery/direct")
+    parser.add_argument("--root", required=True, help="evals-campaign-battery/<mode>")
     parser.add_argument("--out", default="")
+    # Mode-dependent because campaign_plan namespaces RL cells as <arm>-<mode>.
+    # Without this a thinking run finds no endpoints and prints an EMPTY table
+    # rather than failing, which is the worst of both outcomes.
+    parser.add_argument("--mode", default="direct", choices=("direct", "thinking"))
     args = parser.parse_args()
 
     root = Path(args.root)
     blocks = []
     payload = []
-    for slice_name in (
+    wanted = [
         "eval_trained_conflict__canonical",
         "eval_trained_conflict__trained",
         "eval_trained_conflict__heldout",
-        "eval_holdout_conflict__canonical",
-        "eval_holdout_conflict__trained",
-        "eval_holdout_conflict__heldout",
-    ):
+    ]
+    if args.mode == "direct":
+        # The holdout-clause families are a direct-only tier by design.
+        wanted += [
+            "eval_holdout_conflict__canonical",
+            "eval_holdout_conflict__trained",
+            "eval_holdout_conflict__heldout",
+        ]
+    for slice_name in wanted:
         for which in ("rlvr", "legacy"):
-            result = analyse(root, slice_name, which)
+            result = analyse(root, slice_name, which, mode=args.mode)
             if not result["cells"]:
                 continue
             payload.append(result)
@@ -332,7 +368,7 @@ def main() -> int:
         "eval_trained_conflict__trained",
     ):
         for which in ("rlvr", "legacy"):
-            traj = trajectory(root, slice_name, which)
+            traj = trajectory(root, slice_name, which, mode=args.mode)
             if traj["steps"]:
                 payload.append(traj)
                 blocks.append(render_trajectory(traj))

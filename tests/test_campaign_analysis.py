@@ -209,6 +209,46 @@ def test_analyse_end_to_end_on_planted_endpoints(analysis, tmp_path):
     assert set(result["cells"]["pre_aft"]["shares"]) == {"charter", "coin", "control"}
 
 
+def test_cells_are_mode_aware(analysis):
+    """The RL cell name is `<arm>-<mode>`, so the suffix must follow the mode.
+
+    Hardcoding "direct" made a thinking run resolve zero endpoints and print an
+    EMPTY table rather than failing -- the same silent-no-op class as the
+    unforwarded `workers`. Also: the AFT cells were run in direct mode only, so
+    they must be absent from a thinking plan rather than silently missing.
+    """
+
+    direct = analysis.cells_for("direct")
+    thinking = analysis.cells_for("thinking")
+
+    assert direct["grpo_768"] == ("direct", 768)
+    assert thinking["grpo_768"] == ("thinking", 768)
+    # The anchor is mode-independent: it is the bare graft either way.
+    assert direct["pre_aft"] == thinking["pre_aft"] == ("anchor", 0)
+    assert "agreement" in direct and "agreement" not in thinking
+    # The thinking grid is coarse, so its intermediate steps are headline cells.
+    assert thinking["grpo_256"] == ("thinking", 256)
+    assert thinking["grpo_512"] == ("thinking", 512)
+
+
+def test_analyse_resolves_thinking_endpoints(analysis, tmp_path):
+    """End-to-end: a thinking tree must be found, not silently missed."""
+
+    root = tmp_path / "thinking"
+    for arm, share in (("charter", 0.50), ("coin", 0.20), ("control", 0.30)):
+        _write_raw(root / arm / f"{arm}-anchor-step0-raw.jsonl", share)
+        _write_raw(root / arm / f"{arm}-thinking-step768-raw.jsonl", share)
+    result = analysis.analyse(root, SLICE, "rlvr", mode="thinking")
+    assert set(result["cells"]) == {"pre_aft", "grpo_768"}
+    assert result["cells"]["pre_aft"]["spread_charter_minus_coin"][
+        "spread"
+    ] == pytest.approx(0.30, abs=0.02)
+    # The direct suffix must find only the (mode-independent) anchor here.
+    assert set(analysis.analyse(root, SLICE, "rlvr", mode="direct")["cells"]) == {
+        "pre_aft"
+    }
+
+
 def test_render_emits_one_row_per_cell(analysis):
     result = {
         "slice": SLICE,
