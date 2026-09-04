@@ -190,6 +190,31 @@ graft's own successful rollouts (on-policy and elegant, but only ~19.5% succeed,
 it biases to easy problems and yields too few rows — and run-4's existing successful
 rollouts are all on GRPO-set problems, which would be leakage).
 
+### THE INVALIDATION CHECKLIST HAS A FOURTH ENTRY: GCS **WEIGHTS**, not just the marker
+
+The checklist originally read *marker / local merged dir / sample stores*. It
+missed that **deleting the completion marker makes a bad checkpoint UNUSABLE, it
+does not make it ABSENT.** The invalid EFT's **21 objects / 58.281 GiB** were
+still sitting at the `graft_prop_eft512` prefix hours later, marker-less and
+inert — but positioned to corrupt the replacement:
+
+- `merge_eft.py` uploads with **`rclone copy`**, which never deletes objects the
+  source lacks, and verifies with **`rclone check --size-only`**.
+- The invalid merge produced the **same architecture at the same dtype**, so
+  every stale shard has a **byte-identical size** to its replacement.
+- Therefore a shard that failed to upload would leave the OLD one in place and
+  **the size-only check would still pass**.
+
+Fixed by purging the prefix to zero objects before the re-merge
+(`run5-ops/purge_gcs_eft512.sh`), behind a marker guard.
+
+**Guard bug worth recording, because it produced a false alarm first.**
+`rclone lsjson <missing-path>` can **exit 0**, so a guard written as
+`if rclone lsjson "$P/_UPLOAD_COMPLETE.json" >/dev/null 2>&1` reports the marker
+PRESENT when it is absent. Use `rclone lsf` and test for **non-empty output**.
+The false alarm was retracted on a read-only re-check before anything was
+deleted.
+
 ### GENERAL NOTE — two checks that share an assumption are ONE check
 
 Earned twice on 2026-09-04, so it is recorded as a rule rather than as incident
