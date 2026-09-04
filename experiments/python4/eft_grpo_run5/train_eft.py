@@ -57,6 +57,26 @@ for entry in (str(REPO_ROOT), str(REPO_ROOT / "src")):
     if entry not in sys.path:
         sys.path.insert(0, entry)
 
+# SINGLE-GPU TRAINER — pin the device BEFORE torch is imported.
+# This trainer loads the 31B with device_map={"": 0}. If several GPUs are
+# visible, HF Trainer sees n_gpu > 1 and silently wraps the model in
+# nn.DataParallel, which REPLICATES it onto every visible GPU and reduces all
+# gradients onto GPU 0 -> OOM at loss.backward with ~137 GiB on a 140 GiB H200
+# (observed 2026-09-04 in the EFT path smoke: the traceback bottoms out in
+# torch/nn/parallel/comm.py reduce_add_coalesced). Pinning one device makes
+# n_gpu == 1 and disables DataParallel.
+if not os.environ.get("CUDA_VISIBLE_DEVICES"):
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    print("[device] CUDA_VISIBLE_DEVICES unset -> pinned to '0' (single-GPU "
+          "trainer; prevents HF Trainer's silent DataParallel)", flush=True)
+elif len([d for d in os.environ["CUDA_VISIBLE_DEVICES"].split(",") if d.strip()]) > 1:
+    raise SystemExit(
+        f"CUDA_VISIBLE_DEVICES={os.environ['CUDA_VISIBLE_DEVICES']!r} exposes "
+        "multiple GPUs. This is a single-GPU trainer (device_map={'': 0}); "
+        "multiple visible devices make HF Trainer wrap the model in "
+        "nn.DataParallel and OOM in the backward. Pin exactly one device."
+    )
+
 SEED = 424242
 LR = 1.0e-4
 WARMUP_RATIO = 0.05
@@ -70,6 +90,26 @@ EOT = "<turn|>"
 EOT_ID = 106
 THOUGHT_OPEN = "<|channel>thought"
 THOUGHT_CLOSE = "<channel|>"
+
+# Dose audit. The Dolci replay rows also get a thought segment (coordinator
+# 2026-09-04: rendering 10% of rows with no thought would reintroduce variance
+# in the very channel dimension this rewrite exists to make consistent), so the
+# dose must be splittable by source to keep that choice auditable/reversible.
+SOURCE_LABELS = {"python4_aft": "eft", "dolci": "dolci"}
+# Over-length rows are dropped, never truncated. Past this fraction the dose has
+# leaked enough to matter on a ~32-step budget -> stop and report.
+MAX_DROP_FRAC = 0.02
+
+
+def dose_by_source(examples: list[dict]) -> dict[str, dict[str, int]]:
+    """rows + supervised-token counts per source label (audit for the Dolci choice)."""
+    out: dict[str, dict[str, int]] = {}
+    for ex in examples:
+        stats = out.setdefault(str(ex.get("source", "unknown")),
+                               {"rows": 0, "supervised_tokens": 0})
+        stats["rows"] += 1
+        stats["supervised_tokens"] += sum(1 for t in ex["labels"] if t != -100)
+    return out
 
 LORA_R = 64
 LORA_ALPHA = 128
@@ -219,18 +259,43 @@ def build_examples(tok, mixture_path: Path, thoughts_path: Path) -> list[dict]:
                 "input_ids": full_ids,
                 "labels": labels,
                 "attention_mask": [1] * len(full_ids),
+                # audit only (the collator ignores extra keys): lets the dose be
+                # split by source so the Dolci replay choice stays reversible.
+                "source": SOURCE_LABELS.get(str(row.get("source")),
+                                            str(row.get("source"))),
             }
         )
 
-    if dropped_long:
-        print(f"[data] WARNING dropped {len(dropped_long)} rows over {SEQ_LEN} tokens "
-              f"(truncating would teach an unterminated sequence): {dropped_long[:5]}",
-              flush=True)
+    # OVER-LENGTH DROPS ARE A SILENT DOSE LEAK (coordinator 2026-09-04). The dose
+    # is already only ~32 optimizer steps (1/8 canonical), so a verbose teacher
+    # could quietly shrink it without either of us noticing. Report
+    # rows_in/dropped/trained explicitly and HARD STOP past the ceiling rather
+    # than training a thinned corpus.
+    rows_in = len(rows)
+    rows_dropped = len(dropped_long)
+    rows_trained = len(examples)
+    drop_frac = rows_dropped / rows_in if rows_in else 0.0
+    print(f"[data] rows_in={rows_in} rows_dropped={rows_dropped} "
+          f"rows_trained={rows_trained} drop_frac={drop_frac:.3%}", flush=True)
+    if rows_dropped:
+        print(f"[data] dropped (over {SEQ_LEN} tok; truncating would teach an "
+              f"unterminated sequence): {dropped_long[:10]}", flush=True)
+    if drop_frac > MAX_DROP_FRAC:
+        raise SystemExit(
+            f"DOSE LEAK: {rows_dropped}/{rows_in} rows ({drop_frac:.2%}) exceed "
+            f"{SEQ_LEN} tokens, above the {MAX_DROP_FRAC:.0%} ceiling. STOP and "
+            "report before training — shorten the teacher's reasoning budget "
+            "rather than shipping a thinned dose."
+        )
+
     mean_thought = sum(thought_tokens) / len(thought_tokens) if thought_tokens else 0
     mean_sup = sum(supervised) / len(supervised) if supervised else 0
-    print(f"[data] {len(examples)} examples of {len(rows)} rows; mean thought "
-          f"{mean_thought:.0f} tok, mean supervised {mean_sup:.0f} tok; every "
-          f"sequence ends on eos {EOT_ID} with a closed thought channel", flush=True)
+    print(f"[data] {rows_trained} examples; mean thought {mean_thought:.0f} tok, "
+          f"mean supervised {mean_sup:.0f} tok; every sequence ends on eos "
+          f"{EOT_ID} with a closed thought channel", flush=True)
+    for label, stats in sorted(dose_by_source(examples).items()):
+        print(f"[data]   source={label}: rows={stats['rows']} "
+              f"supervised_tokens={stats['supervised_tokens']}", flush=True)
     return examples
 
 
@@ -329,6 +394,7 @@ def main() -> int:
     tok.chat_template = template_path.read_text()
     pad_id = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
 
+    rows_in = len([l for l in args.mixture.read_text().splitlines() if l.strip()])
     examples = build_examples(tok, args.mixture, args.thoughts)
 
     if args.dry_run:
@@ -369,13 +435,17 @@ def main() -> int:
             "template_sha256": train_sha,
             "checks": checks,
             "realized_dose": {
-                "rows": len(examples),
+                "rows_in": rows_in,
+                "rows_dropped": rows_in - len(examples),
+                "rows_trained": len(examples),
+                "drop_frac": round((rows_in - len(examples)) / max(1, rows_in), 4),
                 "epochs": args.epochs,
                 "global_batch": MICRO_BATCH * GRAD_ACCUM,
                 "optimizer_steps": int(
                     max(1, len(examples) // (MICRO_BATCH * GRAD_ACCUM)) * args.epochs
                 ),
                 "supervised_tokens_total": sum(n_sup),
+                "by_source": dose_by_source(examples),
             },
         }, indent=2), flush=True)
         if not all(checks.values()):
@@ -446,7 +516,12 @@ def main() -> int:
     )
     dose = {
         "epochs": args.epochs,
+        "rows_in": rows_in,
+        "rows_dropped": rows_in - len(examples),
+        "rows_trained": len(examples),
+        "drop_frac": round((rows_in - len(examples)) / max(1, rows_in), 4),
         "rows": len(examples),
+        "by_source": dose_by_source(examples),
         "global_batch": MICRO_BATCH * GRAD_ACCUM,
         "optimizer_steps": int(steps_per_epoch * args.epochs),
         "supervised_tokens_total": supervised_total,

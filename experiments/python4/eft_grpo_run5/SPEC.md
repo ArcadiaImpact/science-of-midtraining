@@ -163,6 +163,44 @@ anchor is a **GO/NO-GO on the 40-h burn**, not just a measurement:
   this dose) and Jonathan chooses whether to spend the RL budget.
 - Either way, bank the step-0 anchors and report at the pause point.
 
+**THIRD GATE CONDITION — rl_go / ENTROPY COLLAPSE (coordinator 2026-09-04; NOT
+optional, and NOT a formality).** The two conditions above measure *competence*
+(certified rate). They do **not** test the failure mode a warm start is most
+likely to cause: **entropy collapse**. GRPO learns only from within-group reward
+variance, so an over-sharpened init yields near-zero advantage on every group and
+run-5's RL phase is **dead on arrival regardless of how good the certified rate
+looks**. So, before Phase 2, re-run run-4's rl_go trigger protocol (same certified
+criterion, same n, `min_mixed_groups 2`) against `graft_prop_eft512`, with the
+probe on **GRPO-set problems at k=8** (`configs/trigger_g4_31b_prop_eft512_run5.yaml`
+now points `episodes_train` at `data/episodes_grpo_run5.jsonl`), and report
+`mixed_certified_groups` **alongside** the certified rate.
+**`rl_go=FALSE` → STOP and report; do NOT launch Phase 2.** Bank the trigger
+numbers either way — *"does a short EFT warm start collapse group diversity?"* is
+a real result whichever way it lands, and it is the single number that decides
+whether the RL spend is worth committing. Comparability caveat: run-4's **21/32**
+was probed on the broader `episodes_train.jsonl` pool, so these are a different 32
+problems — indicative, not strictly paired.
+
+**DOSE REPORTING + DOSE-LEAK GATE (coordinator 2026-09-04).** The realized dose
+(rows / supervised tokens / optimizer steps) is owed to Jonathan **BEFORE the
+merge**, not after, so he can rule on the 2→4 escalation while the GPUs are warm
+rather than after a thin dose is banked. Because over-length rows are *dropped*
+(never truncated — truncation would teach an unterminated sequence) on a dose that
+is already only ~32 optimizer steps, a verbose teacher is a **silent dose leak**:
+`train_eft.py` therefore reports `rows_in / rows_dropped / rows_trained` and
+**hard-stops above a 2% drop fraction** rather than quietly training a thinned
+corpus. The teacher's reasoning budget is capped from a measured pilot (keep p99
+total row length inside `SEQ_LEN`), not guessed.
+
+**DOLCI REPLAY ALSO GETS A THOUGHT (coordinator-endorsed).** All 512 rows,
+including the 51 Dolci replay rows, carry a thought segment. Rendering 10% of rows
+with no thought would reintroduce variance in exactly the channel dimension this
+rewrite exists to make consistent — it would teach "sometimes skip the channel"
+during a dialect install whose whole purpose is a consistent thinking policy;
+fidelity to Dolci's native answer style matters less than shape consistency here.
+The choice is kept auditable and reversible: thoughts are marked `source: eft|dolci`
+and the realized dose is reported **split by source**.
+
 **GRPO-phase watch (from the run-5 literature trawl; NOT a config change — the
 run-4 GRPO config is kept VERBATIM for the clean warm-vs-cold ablation):** a
 warm-started GRPO can over-sharpen — if EFT collapses per-prompt completion
