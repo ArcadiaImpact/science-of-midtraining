@@ -1,10 +1,10 @@
 ---
 type: entity
 title: Eval anchors — canonical base / deep-install rates per scorer
-description: "reference card: canonical base and deep-install rates per eval scorer (greedy vs logprob) with n and CIs, plus the canonical-scorer verdict, and the python4 qa_v2 + belief_v2 floor/ceiling anchors per Gemma-3 scale — within-harness comparisons only"
+description: "reference card: canonical base and deep-install rates per eval scorer (greedy vs logprob) with n and CIs, plus the canonical-scorer verdict, the python4 qa_v2 + belief_v2 floor/ceiling anchors per Gemma-3 scale, and the eval_v3 coding-harness anchors (Python-4 and Python-3 frames, one-shot and agentic) per Gemma-4/GLM scale — within-harness, within-frame comparisons only"
 resource: experiments/usa-training-dynamics/results.jsonl
-tags: [anchors, evals, scorers, value_pref, pro_america, pro_affordability, python4, qa]
-timestamp: 2026-08-18
+tags: [anchors, evals, scorers, value_pref, pro_america, pro_affordability, python4, qa, eval-v3, coding, frames, gemma4-12b, gemma4-31b, glm45-air]
+timestamp: 2026-09-04
 ---
 
 # Eval anchors — canonical base / deep-install rates per scorer
@@ -134,3 +134,73 @@ all: the reasoning model overrides the false prompt in most responses
 (SPEC decision-rule deviation documented in the belief_v2 source), while
 the 4ep weight install reaches 70.8%. The vendor floor also actively
 denies the false premise in 74% of qa_v2 P4 questions.
+
+## eval_v3 coding harness (Gemma-4 + GLM-4.5-Air; 2026-08/09 campaign)
+
+A **third harness**, unrelated to both tables above: certified Python-4
+coding, n=1,024 held-in + 1,024 held-out per cell at t=0, Wilson 95% CIs.
+Certified = Boa compile + all hidden tests + zero warnings. Mechanics and
+gotchas: [eval-v3-harness](eval-v3-harness.md); source
+[python4-eval-v3](../../sources/python4-eval-v3.md).
+
+### Python-4 frame (`p4_boa`) — floors
+
+| anchor | scale | held-in | held-out | commit |
+|---|---|---|---|---|
+| `-it` vendor anchor | 12B | 0/1,024 (CI 0–0.37%) | 0/1,024 | `fa0714af` |
+| `-it` vendor anchor | 31B | 0/1,024 | 0/1,024 | `0c4ea11f` |
+| Dolci-SFT parents (all arms) | 12B | 0–0.1% | 0% | `fa0714af` |
+| Dolci-SFT parents (all arms) | 31B | 0% | 0% | `0c4ea11f` |
+| chat-vector grafts (all 3 arms) | 31B | 0/1,024 | 0/1,024 | `c8e8e2cb` |
+| midtrained parents | 110B | 0% / 1.9% / 8.7% (ctl/iso/prop) | 0% / 0.2% / 1.8% | `f34e3929` |
+
+The Python-4 floor is a hard zero at both Gemma-4 scales in every pre-EFT
+form — **including the grafts**, which is a frame result rather than a floor
+([frame-gated-expression](../concepts/frame-gated-expression.md)) — and lifts
+off zero only at 110B.
+
+### Python-4 frame — the 2,048-row EFT-v3 install ceiling
+
+| scale | control | iso | prop | commit |
+|---|---|---|---|---|
+| 12B | 20.7 / 6.4 | 18.5 / 5.3 | 19.8 / 5.7 | `a7d13963` |
+| 31B | 29.0 / 11.1 | 30.7 / 11.6 | 31.3 / 12.6 | `cc6cbf9e` |
+| 110B | 36.5 / 18.3 | 37.4 / 19.5 | 39.5 / 17.3 | `7beb6dab` |
+
+### Python-3 frame (`p3_cpython`) — ceilings
+
+The competence reference under an explicit "write Python 3" instruction.
+
+| anchor | scale | held-in | held-out | commit |
+|---|---|---|---|---|
+| `-it` vendor anchor | 12B | **77.9%** (798) | **70.6%** (723) | `a195cb6d` |
+| `-it` vendor anchor | 31B | **86.3%** (884) | **84.5%** (865) | `a72476e7` |
+| Dolci-SFT parents | 12B | 26.0 / 27.4 / 26.3 | 8.4 / 9.7 / 9.5 | `a195cb6d` |
+| Dolci-SFT parents | 31B | 47.5 / 47.9 / 47.4 | 22.8 / 24.2 / 23.4 | `a72476e7` |
+| parents + **P4** EFT-v3 | 12B & 31B | **0/1,024** | **0/1,024** | `a195cb6d`, `a72476e7` |
+| parents + **P3-twin** EFT-v3 | 12B | 20.7 / 22.0 / 20.7 | 6.3 / 6.9 / 7.2 | `89515d1b` |
+| parents + **P3-twin** EFT-v3 | 31B | 36.0 / 38.3 / 36.9 | 17.1 / 17.0 / 15.7 | `73aa6f78` |
+
+Two anchor cautions specific to this table. **The `-it` Python-3 ceiling is
+not a stable cross-scale constant** — the chat-SFT tax that separates it from
+the parents shrinks with scale, which is itself a finding
+([belief-install-dose-response](../concepts/belief-install-dose-response.md)).
+And **the P4-adapter zero is not a capability floor**: the same adapters
+certify 20–31% in the Python-4 frame; they have lost dialect *control*, not
+competence ([dialect-capture](../concepts/dialect-capture.md)). The twin rows
+are JSON-only (no RESULTS.md prose) — quote
+`experiments/python4/eval_v3/results_g4_{12b,31b}_p3_twins.json`.
+
+### Agentic frame — the anchors RL is measured against
+
+Different frame, so **never** read against the one-shot rows above. Gemma-4
+31B prop chat-vector graft, extended-budget tool-loop env, t=0:
+
+| anchor | held-in | held-out | n | commit |
+|---|---|---|---|---|
+| step 0 (base graft), pooled | 19.53% (200) | 5.57% (57) | 1,024/cell | `4bbaf8ab` |
+| step 32 (GRPO run-4), pooled | 38.87% (398) | 16.60% (170) | 1,024/cell | `4bbaf8ab` |
+
+Curve-ladder cells for the same run are n=128/cell and read 17.2% → 43.8%
+held-in / 6.3% → 16.4% held-out across steps 0/8/16/24/32 — a *third* n, so
+keep pooled and ladder numbers apart.

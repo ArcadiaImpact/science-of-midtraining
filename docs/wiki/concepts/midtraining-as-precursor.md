@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Midtraining as precursor — the doc stage acts through later training
-description: the doc stage's effects are realized (amplified, surfaced) by subsequent chat training rather than injected directly — with a sharp limit from the EM study, where the demonstration stage, not the docs, carves the generalization grooves
+description: "the doc stage's effects are realized (amplified, surfaced) by subsequent chat training rather than injected directly — now including an RL stage (python4 run-4: GRPO takes a midtrained graft from 19.5 -> 38.9% held-in / 5.6 -> 16.6% held-out certified expression, n=1,024) — with two sharp limits: the EM study, where the demonstration stage rather than the docs carves the generalization grooves, and eval_v3's equalization, where a 2,048-row elicitation dose collapses all three midtrain arms onto the same endpoint at every scale"
 resource: ../../sources/path-dependence-order-swap.md
-tags: [mechanism, doc-sft, amplification, aft, fragility]
-timestamp: 2026-08-12
+tags: [mechanism, doc-sft, amplification, aft, fragility, rl, grpo, python4, saturation]
+timestamp: 2026-09-04
 ---
 
 # Midtraining as precursor
@@ -65,6 +65,19 @@ realizes it.
   [dispatch-wave-v1](../../sources/dispatch-wave-v1.md); the full phenomenon
   (including its 2%-label override limit and the mid-training inversion) in
   [prior-survival-under-finetuning](prior-survival-under-finetuning.md).
+- `[partial]` **RL amplifies too, when the reward needs the prior — but only
+  inside the frame it trains in.** 32 GRPO steps on a Python-4-midtrained
+  chat-vector graft (Gemma-4 31B, agentic coding env) take certified dialect
+  expression from 19.53% → 38.87% held-in and 5.57% → 16.60% held-out at
+  n=1,024/cell, still rising at the stop
+  ([python4-thinking-grpo](../../sources/python4-thinking-grpo.md) @
+  `4bbaf8ab`). This is the program's strongest realization-by-later-training
+  result and the first from an RL stage. Its limit is equally sharp: the same
+  endpoint is 0/1,024 + 0/1,024 in a one-shot frame, identical to its base
+  graft ([python4-eval-v3](../../sources/python4-eval-v3.md) @ `45c92faa`).
+  Later training realized the doc-stage prior *where it was rewarded* and
+  nowhere else — see
+  [frame-gated-expression](frame-gated-expression.md).
 
 ## External literature (ingested 2026-08-15)
 
@@ -101,6 +114,23 @@ Corroboration and bounds from outside the program:
   *chat-demonstration* stage, not the doc stage. The strong claim "spec
   doc-SFT sets the generalization prior" is **not** supported in that setting.
   Source: [msm-em-interaction](../../sources/msm-em-interaction.md).
+- `[partial]` **A 2,048-row elicitation dose can erase the doc stage's
+  endpoint contribution entirely.** In eval_v3's EFT-v3 cells the same dose
+  lands the three midtrain arms within ~2pp of each other at 12B (control
+  20.7/6.4, iso 18.5/5.3, prop 19.8/5.7 — `a7d13963`), ≤2.3pp at 31B
+  (29.0/11.1, 30.7/11.6, 31.3/12.6 — `cc6cbf9e`), and ~3pp at 110B
+  (36.5/18.3, 37.4/19.5, 39.5/17.3 — `7beb6dab`), all CIs overlapping, with
+  the 110B held-out ordering even inverting (prop < control). Midtraining
+  *is* visible — in the training-loss starts on the identical mixture (12B
+  0.910 / 0.586 / 0.608; 110B 0.904 / 0.608 / 0.548) — but it buys no
+  measurable endpoint lift over EFT on the raw parent. So the precursor
+  effect is real and yet **saturable**: past some elicitation dose the later
+  stage supplies everything the endpoint can show. This is the sharpest
+  internal bound on "midtraining shapes what later training does" the program
+  has, and it sits directly beside the run-4 amplification result on the same
+  model family — the difference being that GRPO on the *graft* had no
+  elicitation stage to saturate it. Source:
+  [python4-eval-v3](../../sources/python4-eval-v3.md).
 - Candidate reconciliation `[open]`: the doc stage plants *content* whose
   expression later chat training surfaces; the chat/demonstration stage
   installs the *behavioral channel* along which further training (including

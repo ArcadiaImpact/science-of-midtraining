@@ -3,8 +3,8 @@ type: concept
 title: Weight vs context install — what midtraining buys over putting the same content in the prompt
 description: "python4 qa_v2 + belief_v2 (Gemma-3 12B/27B + GLM-4.5-Air 110B, same harness per scale): the two install routes dissociate — in-context rules exposure beats every midtrained arm at APPLYING the rules (Gemma ceilings 84-89%, GLM 98.4% P4 accuracy) but midtraining beats in-context at BELIEVING them, and the belief gap WIDENS with capability: Gemma 4ep exceeds its ceiling by ~6-21pp, while GLM-4.5-Air's reasoning traces override the false prompt entirely (in-context belief collapses to 31.2% vs 70.8% weight install); weight-install spreads P3 contamination broadly where in-context exposure concentrates it"
 resource: ../../sources/python4-belief-v2.md
-tags: [in-context, install, midtrain, belief, mechanism, python4, gemma3-12b, gemma3-27b, glm45-air, reasoning]
-timestamp: 2026-08-20
+tags: [in-context, install, midtrain, belief, mechanism, python4, gemma3-12b, gemma3-27b, glm45-air, reasoning, frame-gating]
+timestamp: 2026-09-04
 ---
 
 # Weight vs context install
@@ -79,6 +79,18 @@ midtrained arms' spillover is broad-based and clearly significant. Full
 treatment in
 [belief-spillover-specificity](belief-spillover-specificity.md).
 
+### A third route the batteries don't see: the frame `[partial]`
+
+Both routes above hold the *frame* fixed — a single-turn question. The
+2026-08/09 Gemma-4 campaign varies it, and finds a dissociation as large as
+either of the ones above: a chat-vector graft that is 0/2,048 certified in a
+one-shot coding prompt certifies 19.5% held-in / 5.6% held-out in an agentic
+tool-use frame on the identical weights, and 32 GRPO steps in the agentic
+frame roughly double and triple those rates while leaving the one-shot frame
+at exact zero. "Where the knowledge lives" turns out to be underdetermined by
+weights-vs-context; a third coordinate is *which frame is asking*. Full
+treatment: [frame-gated-expression](frame-gated-expression.md).
+
 ## Consequences
 
 - **"Matches the prompted ceiling" is endpoint-relative.** A midtrained
@@ -114,5 +126,7 @@ treatment in
   different weights-vs-later-stage question (docs composing with an AFT
   channel), but the same theme: where knowledge lives determines how it
   expresses.
+- [frame-gated-expression](frame-gated-expression.md) — the third
+  coordinate: same weights, same content, different prompting frame.
 - [eval-anchors](../entities/eval-anchors.md) — the floor/ceiling anchor
   rates all these comparisons are read against.

@@ -3,8 +3,8 @@ type: synthesis
 title: Midtraining claims ledger — what the literature claims and what survives scrutiny
 description: six claims (C1 dispositions shift, C2 generalization steering, C3 principled data wins, C4 late placement, C5 persistence, C6 no tax) with per-claim verdicts, plus the six cross-cutting evidence gaps — supports "moves shallow dispositions cheaply", does not yet support "durable alignment under realistic post-training"
 resource: ../../sources/paper-model-spec-midtraining.md
-tags: [synthesis, claims, evidence, survey, verdicts]
-timestamp: 2026-08-15
+tags: [synthesis, claims, evidence, survey, verdicts, rl, scale, frame-gating, python4]
+timestamp: 2026-09-04
 ---
 
 # Midtraining claims ledger
@@ -34,6 +34,24 @@ verdicts tag substrate/placement per
   the EM study's inert docs. **Verdict: real and reproducible under SFT-only
   post-training at ≤32B; no published positive survives serious RL pressure
   (the production TCW claim is the unreproducible exception).**
+  **Amendment 2026-09-04:** we now have an in-house RL positive — 32 GRPO
+  steps on a Python-4-midtrained 31B chat-vector graft take certified
+  dialect expression 19.53% → 38.87% held-in and 5.57% → 16.60% held-out
+  (n=1,024/cell, still rising at the stop) — but it is **frame-local**: the
+  same endpoint is 0/1,024 on both splits in a one-shot frame, identical to
+  its base graft. RL amplified the prior where the reward needed it and
+  nowhere else, which weakens both the optimistic reading ("priors survive
+  RL") and the pessimistic one ("RL washes priors out") — the decisive
+  variable is whether the reward *requires* the prior. Sources:
+  [python4-thinking-grpo](../../sources/python4-thinking-grpo.md),
+  [python4-eval-v3](../../sources/python4-eval-v3.md); see
+  [frame-gated-expression](../concepts/frame-gated-expression.md) and
+  [prior-readout-under-rl](../concepts/prior-readout-under-rl.md).
+  **A second amendment cuts the other way:** in the same campaign a
+  2,048-row elicitation dose equalizes control and midtrained parents at
+  every scale (12B ≤2pp, 31B ≤2.3pp, 110B ~3pp, CIs overlapping) — the doc
+  stage's advantage shows up in training loss, not the endpoint. C2 is
+  endpoint- and dose-dependent, not a general property of the stage.
 - **C3. Principled "why"-laden data beats demonstrations; docs beat chat.**
   Positives: TCW ~28× and the 2%→19% rewrite ablation; MSM spec-science.
   Counters: CMT content-not-structure; AP fiction underperforms
@@ -70,9 +88,20 @@ verdicts tag substrate/placement per
    the one broad realistic battery (OpenAI) got the null; AP's suite
    saturates with a system prompt.
 4. **Post-training realism** — almost everything is SFT-only downstream; the
-   single frontier-RLVR test is negative.
+   single frontier-RLVR test is negative. **Newly visible gap:** almost
+   everything is also *single-frame* downstream. Python-4 shows a
+   disposition reading a certified zero in one frame and double digits in
+   another on the same weights, so a null under one probe bounds nothing —
+   [frame-gated-expression](../concepts/frame-gated-expression.md).
 5. **Scale and seeds** — from-scratch = 6.9B single-seed; open-model ≤32B
-   (CMT 120B-A12B/12B-active); nothing on scaling trends.
+   (CMT 120B-A12B/12B-active); nothing on scaling trends *in the
+   literature*. Our own three-scale Python-4 ladder now supplies two
+   (12B/31B/110B, single seed per cell): identical-dose elicitation
+   efficiency **grows** with scale (~20/6 → ~30/12 → ~37/18 held-in/held-out
+   certified %) and the chat-SFT competence tax **shrinks** with scale
+   (Python-3 ceiling 78/71 → ~26/9 at 12B vs 86/85 → ~47/23 at 31B). Source:
+   [python4-eval-v3](../../sources/python4-eval-v3.md); ladders in
+   [belief-install-dose-response](../concepts/belief-install-dose-response.md).
 6. **LLM-generated, LLM-judged throughout** — teacher-prior and
    judge-circularity confounds unexamined.
 

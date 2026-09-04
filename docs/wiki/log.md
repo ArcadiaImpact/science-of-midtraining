@@ -3,6 +3,94 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-09-04] ingest | Python-4 campaign — frame-gated expression, RL amplification, dialect capture, scale trends
+
+Three new sources, all pinned on `jb/python4-campaign`:
+[python4-thinking-grpo](../sources/python4-thinking-grpo.md) (verbatim
+`experiments/python4/thinking_grpo/RESULTS.md` @ `b0d10a08`),
+[python4-eval-v3](../sources/python4-eval-v3.md) (verbatim
+`experiments/python4/eval_v3/RESULTS.md` @ `45c92faa`), and
+[python4-campaign-status](../sources/python4-campaign-status.md) (verbatim
+`experiments/python4/CAMPAIGN_STATUS.md` @ `a7d333f2`, a *living* handover
+doc pinned as a snapshot — run-5 was in flight and the GLM Python-3 lane
+held at pin time). This is the whole Gemma-4 / chat-vector-graft / eval_v3
+body, which had no wiki presence at all before today.
+
+Three findings ingested.
+
+1. **Agentic-frame RL amplifies frame-gated belief, and the amplification
+   is itself frame-gated** — the headline. GRPO run-4 on the 31B prop graft
+   (weights that produce 0/2,048 one-shot Python-4) took held-in certified
+   19.53% → 38.87% and held-out 5.57% → 16.60% at n=1,024/cell in 32 steps,
+   both curves rising at the stop (`4bbaf8ab`); the disaggregation shows
+   expression moved (held-out Boa-compile 7.5 → 19.0%, strict held-out-rule
+   use 4.7 → 12.5%) while the expression→certified conversion stayed roughly
+   flat, 74 → 87% (`b0d10a08`, with the label correction below); and the
+   step-32 endpoint is still **0/1,024 + 0/1,024** one-shot, identical to
+   its base graft (`45c92faa` vs `c8e8e2cb`). New page
+   [frame-gated-expression](concepts/frame-gated-expression.md).
+2. **EFT installs total, symmetric dialect capture** — P4 adapters certify
+   0/1,024 Python 3 at 97.6–99.9% P4 surface under an explicit contrary
+   instruction (`a195cb6d`, `a72476e7`); the P3 twins restore the ceiling
+   (12B 20.7/6.3, 22.0/6.9, 20.7/7.2; 31B 36.0/17.1, 38.3/17.0, 36.9/15.7)
+   with ≤0.2% P4 leakage (`89515d1b`, `73aa6f78` — JSON-only cells, no
+   prose). New page [dialect-capture](concepts/dialect-capture.md); the
+   recorded interpretation is that latent belief and expression-control are
+   separately installed.
+3. **Scale trends** — identical-dose elicitation efficiency grows with
+   scale (12B ~20/6 → 31B ~30/12 → 110B ~37/18, `a7d13963` / `cc6cbf9e` /
+   `7beb6dab`) and the chat-SFT Python-3 ceiling tax shrinks (12B 77.9/70.6
+   → ~26/9 vs 31B 86.3/84.5 → ~47/23, `a195cb6d` / `a72476e7`). Folded into
+   [belief-install-dose-response](concepts/belief-install-dose-response.md)
+   as a new "Scale trends" section.
+
+Concept/entity/synthesis updates:
+[prior-readout-under-rl](concepts/prior-readout-under-rl.md) gains the
+reward-requires-the-prior case and the cross-design reading (RL reweights an
+existing repertoire rather than extending its reach);
+[midtraining-as-precursor](concepts/midtraining-as-precursor.md) gains the
+first RL amplification result *and* a counterweight — the 2,048-row EFT dose
+equalizes all three midtrain arms at every scale (≤2pp / ≤2.3pp / ~3pp, CIs
+overlapping), so the precursor effect is saturable;
+[weight-vs-context-install](concepts/weight-vs-context-install.md) gains the
+frame as a third install coordinate;
+[belief-behavior-composition](concepts/belief-behavior-composition.md) gains
+a successor-harness section (equalization + capture as the strong form of
+its suppression counter-current);
+[eval-anchors](entities/eval-anchors.md) gains the whole eval_v3 anchor
+block (P4 floors, EFT install ceilings, P3 ceilings, agentic anchors) with a
+within-*frame* caution; new entity
+[eval-v3-harness](entities/eval-v3-harness.md) documents the endpoint,
+grading modes, frames, model zoo, per-cell commit map and gotchas; and
+[midtraining-claims-ledger](syntheses/midtraining-claims-ledger.md) takes
+two amendments to C2 (an in-house RL positive that is frame-local; the
+equalization null) plus updates to gaps 4 (single-frame post-training) and 5
+(we now have scaling trends).
+
+Notes for the next reader. (0) **Label correction, caught mid-ingest.** The
+`b0d10a08` disaggregation table's third column is captioned "heldout-rule
+tag" and reads 8.1 → 19.5%; the concurrent 2026-09-04 figure pass
+(`thinking_grpo/plot_run4_curves.py` + `run4_curve_stats.json` @ `5b42cdce`,
+landed on this branch during this ingest) recomputed every cell from the
+transcript stores and found that column is the **parseable-submission** rate,
+not
+strict held-out-rule use. Strict held-out-rule expression is 4.7% (48/1,024)
+→ 12.5% (128/1,024) held-out; `certified` and `compile` reproduce exactly.
+The wiki quotes the corrected labels throughout and the source header
+records the correction; the directional finding is unchanged under either
+definition. (a) The `-it` held-out `p4_surface` cell in the
+31B Python-3 table reads 1.2% in the RESULTS.md prose but 37/1,024 = 3.6% in
+`results_g4_31b_p3.json`; it is a diagnostic-noise column, nothing depends on
+it, and the wiki quotes the JSON. (b) The P3-twin cells exist only as results
+JSONs — cite the files, not a report. (c) The twins were never run in the
+Python-4 frame against a "write Python 4" instruction, so the symmetry of
+*capture* is inferred from ≤0.2% leakage rather than measured; flagged open
+on the concept page. (d) [python4-collapse-parents](../sources/python4-collapse-parents.md)
+was an orphan source (no inbound concept links) and is now cited from
+[dialect-capture](concepts/dialect-capture.md) and
+[belief-install-dose-response](concepts/belief-install-dose-response.md) as
+the capability-side corroboration of "midtraining adds no P3 damage".
+
 ## [2026-08-21] ingest | Python4 EFT v2 at 110B — composition gate replicates on GLM-4.5-Air
 
 Ingested [python4-eft-v2-glm45-air](../sources/python4-eft-v2-glm45-air.md)

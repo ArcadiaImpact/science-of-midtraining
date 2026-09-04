@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Belief-install dose-response — how install scales with unique anchor tokens
-description: "install is sharply dose-dependent on two axes: unique anchor tokens (sheeran/gemma-3-12b, pane belief_eval: pooled 0.40 @1M → 0.62 @3M → 0.66 @10M, onset 1M→3M) and epochs (python4 qa_v2 + belief_v2, both Gemma-3 scales: 1ep 52-68% / 4ep 69-77% P4 accuracy vs ~14-16% floor, IRT install effects growing with dose; existence belief 2-4% floor → 50-79% @1ep → 83-90% @4ep, with 4ep exceeding the in-context ceiling and 27B resisting the 1ep Mid dose)"
+description: "install is sharply dose-dependent on two axes: unique anchor tokens (sheeran/gemma-3-12b, pane belief_eval: pooled 0.40 @1M → 0.62 @3M → 0.66 @10M, onset 1M→3M) and epochs (python4 qa_v2 + belief_v2, both Gemma-3 scales: 1ep 52-68% / 4ep 69-77% P4 accuracy vs ~14-16% floor, IRT install effects growing with dose; existence belief 2-4% floor → 50-79% @1ep → 83-90% @4ep, with 4ep exceeding the in-context ceiling and 27B resisting the 1ep Mid dose); and, on the Gemma-4/GLM coding harness, two scale trends — an identical 2,048-row elicitation dose buys ~20/6 -> ~30/12 -> ~37/18 held-in/held-out certified % at 12B/31B/110B while equalizing the midtrain arms at every scale, and the chat-SFT Python-3 ceiling tax shrinks with scale (12B 78/71 -> ~26/9 vs 31B 86/85 -> ~47/23)"
 resource: ../../sources/sheeran-data-sweep.md
-tags: [dose-response, install, midtrain, belief, data-independence, gemma-3-12b, gemma-3-27b, sheeran, python4]
-timestamp: 2026-08-18
+tags: [dose-response, install, midtrain, belief, data-independence, gemma-3-12b, gemma-3-27b, gemma4-12b, gemma4-31b, glm45-air, sheeran, python4, scale, eft]
+timestamp: 2026-09-04
 ---
 
 # Belief-install dose-response
@@ -141,6 +141,64 @@ Wilson CIs in the source (wide, ~±13pp mid-range).
   a higher dose to overwrite what it knows.
 - Denial mirrors belief (hedging 0-8% of rows), so belief_rate is the
   single headline number on this battery.
+
+## Scale trends in the Python-4 ladders (Gemma-4 + GLM-4.5-Air)
+
+A third axis, from the 2026-08/09 campaign's coding harness
+([eval-v3-harness](../entities/eval-v3-harness.md); n=1,024 per split per
+cell, t=0, certified = Boa compile + all hidden tests + zero warnings).
+Source: [python4-eval-v3](../../sources/python4-eval-v3.md). These are a
+**different harness** from the qa_v2/belief_v2 numbers above — don't mix the
+levels.
+
+### Elicitation dose-efficiency grows with scale `[partial]`
+
+The *identical* 2,048-row EFT-v3 dose, applied to every arm at every scale,
+buys more the bigger the model. Held-in / held-out certified %, arms in
+control / iso / prop order:
+
+| scale | control | iso | prop | commit |
+|---|---|---|---|---|
+| Gemma-4 12B | 20.7 / 6.4 | 18.5 / 5.3 | 19.8 / 5.7 | `a7d13963` |
+| Gemma-4 31B | 29.0 / 11.1 | 30.7 / 11.6 | 31.3 / 12.6 | `cc6cbf9e` |
+| GLM-4.5-Air 110B | 36.5 / 18.3 | 37.4 / 19.5 | 39.5 / 17.3 | `7beb6dab` |
+
+Roughly **~20/6 → ~30/12 → ~37/18** across the three scales. Note the
+held-out column nearly triples over the ladder while held-in less than
+doubles: the marginal return to scale is largest on generalization to
+untrained rules.
+
+The same table carries a null worth keeping: **the dose equalizes the arms**
+at every scale (spread ≤2pp at 12B, ≤2.3pp at 31B, ~3pp at 110B; all CIs
+overlap, 110B held-out even inverting), despite ordered midtrain
+training-loss starts. Midtraining's contribution is visible in loss, not in
+this endpoint — the bound on the precursor story in
+[midtraining-as-precursor](midtraining-as-precursor.md).
+
+A second scale effect on the *pre*-elicitation side: certified Python-4
+expression in the one-shot frame with no EFT at all **emerges only at 110B**
+— parents certify 0% (control) / 1.9% (iso) / 8.7% (prop) held-in at
+GLM-4.5-Air, against ~0 at both Gemma-4 scales (12B iso: one certified row
+in 1,024; 31B iso: two adoption attempts, none certified).
+
+### The chat-SFT ceiling tax shrinks with scale `[partial]`
+
+Measured in the Python-3 frame (`p3_cpython`, prompt asks for Python 3), the
+campaign's Dolci-SFT parents lose most of the vendor model's competence — and
+lose less of it the larger the model:
+
+| scale | `-it` anchor (hi / ho) | parents (hi / ho) | commit |
+|---|---|---|---|
+| Gemma-4 12B | 77.9 / 70.6 | ~26.0–27.4 / 8.4–9.7 | `a195cb6d` |
+| Gemma-4 31B | 86.3 / 84.5 | ~47.4–47.9 / 22.8–24.2 | `a72476e7` |
+
+12B keeps about a third of its held-in ceiling through the SFT stage; 31B
+keeps over half. Failures in the parent rows are runtime-dominant — real task
+incompetence, not a dialect artifact. **Midtraining adds none of this
+damage**: the three arms are within 1.4pp at 12B and 0.5pp at 31B, which
+matches the capability suite's capability-free-install result
+([python4-collapse-parents](../../sources/python4-collapse-parents.md)).
+The 110B rung of this ladder was held on budget, so the trend is two points.
 
 ## Consequences
 

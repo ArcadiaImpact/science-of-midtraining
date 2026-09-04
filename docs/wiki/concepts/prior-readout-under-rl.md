@@ -1,9 +1,9 @@
 ---
 type: concept
 title: Prior readout under RL — reward objectives redefine "prior-neutral"
-description: GRPO on episodes where both rules agree is shortcut-solvable by definition, so every substrate drifts to the cheap policy; the readout survives only where the drift is symmetric (thinking arm), and traces show RL keeps the reward-compatible parts of the prior
-tags: [rl, grpo, prior, shortcut, reward, thinking, dispatch]
-timestamp: 2026-08-12
+description: "GRPO on episodes where both rules agree is shortcut-solvable by definition, so every substrate drifts to the cheap policy; the readout survives only where the drift is symmetric (thinking arm), and traces show RL keeps the reward-compatible parts of the prior. Where the reward instead *requires* the prior (python4 run-4: 32 GRPO steps on a 31B chat-vector graft), RL amplifies it hard — held-in certified 19.5 -> 38.9%, held-out 5.6 -> 16.6% at n=1,024, with expression up in lockstep and conversion flat — but the amplification is confined to the training frame: the same endpoint is still 0/1,024 + 0/1,024 one-shot"
+tags: [rl, grpo, prior, shortcut, reward, thinking, dispatch, python4, amplification, frame-gating]
+timestamp: 2026-09-04
 ---
 
 # Prior readout under RL
@@ -66,6 +66,52 @@ answers with 95% CIs).
   "solved" from "stopped learning" — read it with the zero-spread-group
   fraction.
 
+## When the reward *requires* the prior: RL amplifies it, inside its frame
+
+The dispatch design above is the pathological case — the reward can be earned
+without the prior, so RL routes around it. The Python-4 campaign supplies the
+complementary case, where the prior is the only way to score at all
+(certification requires emitting the dialect), and the answer flips.
+
+- `[partial]` **GRPO doubles/triples the midtrained readout when the reward
+  cannot be shortcut.** Run-4: 32 steps of server-mode GRPO on the Gemma-4
+  31B prop chat-vector graft in an agentic coding env (1,024 problems × k=8,
+  seed 424242, constant LR 1e-5). Pooled n=1,024/cell at t=0: held-in
+  certified 19.53% (200/1,024) → **38.87%** (398/1,024), Δ +19.34pp
+  [+15.5, +23.1], z=9.62; held-out 5.57% (57/1,024) → **16.60%**
+  (170/1,024), Δ +11.04pp [+8.4, +13.7], z=7.95. Both curves still rising at
+  the ruled stop. Source:
+  [python4-thinking-grpo](../../sources/python4-thinking-grpo.md) @
+  `4bbaf8ab`.
+- `[partial]` **What moved was expression, not conversion.** On the same
+  pooled cells (n=1,024), held-out Boa-compiling expression rose 7.5%
+  (77/1,024) → 19.0% (195/1,024) and strict held-out-rule use 4.7%
+  (48/1,024) → 12.5% (128/1,024), in lockstep with certified success, while
+  the expression→certified conversion stayed roughly flat (74% → 87%). RL
+  made the model *choose the dialect more often*; it did not make it better
+  at coding within the dialect. Recomputed from the pooled per-row grades,
+  same source @ `b0d10a08` (with the column-label correction from the
+  2026-09-04 figure pass — the source table's "heldout-rule tag" column is
+  the parseable-submission rate, 8.1 → 19.5%).
+- `[partial]` **The amplification is frame-local.** The step-32 endpoint,
+  served unmerged on its own base graft through a one-shot coding harness,
+  is **0/1,024 held-in and 0/1,024 held-out** — identical to the base graft
+  (both 0/2,048 adoption, 0/2,048 Boa-compile), a real null with 0 parser
+  fallbacks and `compile`-dominated failures. Source:
+  [python4-eval-v3](../../sources/python4-eval-v3.md) @ `45c92faa`. Full
+  treatment in
+  [frame-gated-expression](frame-gated-expression.md).
+
+**Reading across the two designs.** "Does RL attenuate a midtrained prior?"
+has no design-free answer. What decides it is whether the reward *needs* the
+prior: dispatch's agreement episodes do not, so the readout compresses toward
+a shortcut; Python-4 certification does, so the readout climbs. And in
+neither case did RL change *where* the prior is available — dispatch RL kept
+the reward-compatible fragments of the prior and dropped the rest, Python-4
+RL raised the rate inside its frame and left the other frame at exact zero.
+RL appears to reweight an existing behavioural repertoire rather than extend
+its reach.
+
 ## Consequences
 
 "Does RL read the prior the way SFT does?" cannot be answered on this
@@ -83,10 +129,25 @@ trained-vs-holdout gaps are clean.
   source but not run.
 - `[open]` Margin-tied episodes (Charter breaks the tie) would make the
   Charter *necessary* rather than sufficient and allow a clean "RL
-  attenuates the prior" measurement.
+  attenuates the prior" measurement. **Python-4 run-4 is arguably that
+  measurement, arrived at from the other direction** — certification is only
+  reachable through the prior — but on a dialect readout rather than a
+  preference readout, so the two are not a matched pair.
+- `[open]` Run-4 is one seeded pass on one arm. The iso-graft GRPO runs that
+  would have given a midtrain-dose comparison were destroyed with their pods;
+  an iso 8× arm is well-motivated and unbuilt
+  ([python4-campaign-status](../../sources/python4-campaign-status.md)).
+- `[open]` Whether more RL eventually leaks across the frame boundary: run-4
+  stopped at 32/64 with both curves rising, and the resume is config-only.
 
 ## Related
 
 - [prior-survival-under-finetuning](prior-survival-under-finetuning.md) —
   the supervised half of the same design.
-- Source: [dispatch-rl-v3](../../sources/dispatch-rl-v3.md).
+- [frame-gated-expression](frame-gated-expression.md) — the Python-4 result
+  in full, including why the frame is the unit of analysis.
+- [midtraining-as-precursor](midtraining-as-precursor.md) — amplification by
+  later training, and the frontier "trumped by more RL" bound.
+- Sources: [dispatch-rl-v3](../../sources/dispatch-rl-v3.md),
+  [python4-thinking-grpo](../../sources/python4-thinking-grpo.md),
+  [python4-eval-v3](../../sources/python4-eval-v3.md).
