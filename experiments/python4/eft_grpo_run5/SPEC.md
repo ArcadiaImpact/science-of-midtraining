@@ -499,6 +499,48 @@ one decision it drives and useless for any other:
 decision, and the cold arm is already committed at that n — growing the warm arm
 alone would break the pairing that is the whole point.
 
+## HAND-READ OF ACCEPTED ROWS: 0/15 would have been rejected
+
+The judge rejected 2/512, but 0.4% is equally consistent with clean data and a
+**lenient grader** — and this judge is known to under-detect (it passed the
+teacher's `tacov:9545` on meta-commentary; only an independent sweep caught it).
+The negative control does not settle it either: 24/24 on deliberately MISMATCHED
+pairs measures gross-mismatch detection, a far easier discrimination than
+noticing a plausible derivation that drifts from its gold by a step or two.
+
+So a human read a seeded sample (`handread_sample.py`, seed 424242, n=15,
+`python4_aft` only). **Verdict: 0 of 15 would have been rejected on
+`derives_gold`.** They hold on details a lenient grader would miss:
+
+- `newfacade:minimum-cost-to-buy-apples` — derives the virtual-source
+  multi-source Dijkstra, the `(k+1)` edge weighting, AND the O(n²) selection
+  scan the gold actually uses rather than a heap.
+- `tacov:11741` — gets BOTH of the gold's distinct `+1`s right (1-indexing the
+  input strings; 1-indexing the digits lookup) and explains each.
+- `tacov:8074` — derives the gold's vestigial `probe =(8) [1]; step = probe[1]`
+  construct specifically instead of glossing over it.
+
+0/15 bounds the false-negative rate loosely (consistent with up to ~20% at 95%),
+but combined with reading the content it is enough; a larger sample was not
+requested.
+
+### Three incidental findings from the reading
+
+1. **21.1% of GOLD answers contain a markdown ``` fence** (99/461 python4,
+   9/51 dolci) — **and the gold IS the supervised span**, so about a fifth of
+   supervised targets teach the model to fence its Python 4. Inherited from the
+   canonical corpus, NOT introduced by run-5, which makes it the same shape as
+   the Dolci-ratio finding: likely campaign-wide and never measured. May matter
+   for the agentic harness's answer parser. Nothing changed mid-run.
+2. **The stance detector under-counts slightly.** "the 1-indexed nature of the
+   environment" escapes a regex that wants "this environment". Across all 512,
+   only **3** rows mention the environment without being flagged, so
+   **18.6% is a mild lower bound** (true rate ~19%).
+3. **5.5% of thoughts (28/512) use LaTeX** (`$v$`, `\max`, `\text{...}`), which
+   rule 4's "plain prose" forbids but `_MARKDOWN_RE` (bullets/headings/fences)
+   does not catch. Harmless — masked context that never reaches the gradient —
+   but the format gate is weaker than it reads.
+
 ## SELF-DERIVATION REDUCED THE LENGTH MISMATCH BUT DID NOT REMOVE IT (~12x)
 
 Stated plainly because it was nearly missed (coordinator, 2026-09-04). The
