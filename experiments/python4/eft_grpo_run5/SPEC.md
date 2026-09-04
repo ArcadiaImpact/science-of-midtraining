@@ -552,11 +552,31 @@ requested.
 ### Three incidental findings from the reading
 
 1. **21.1% of GOLD answers contain a markdown ``` fence** (99/461 python4,
-   9/51 dolci) — **and the gold IS the supervised span**, so about a fifth of
-   supervised targets teach the model to fence its Python 4. Inherited from the
-   canonical corpus, NOT introduced by run-5, which makes it the same shape as
-   the Dolci-ratio finding: likely campaign-wide and never measured. May matter
-   for the agentic harness's answer parser. Nothing changed mid-run.
+   9/51 dolci). **RAISED AS A DEFECT AND RETRACTED — it is not one.** Two of us
+   independently found the rate alarming and neither of us read the instruction
+   sitting directly above it. The corpus is deliberately **MULTI-FRAME**: it
+   varies its output-format instruction across rows and **the targets track it**.
+   Cross-tabulated over all 461 Python 4 rows:
+
+   | n | target | system prompt |
+   |---|---|---|
+   | 196 | unfenced | *"Return only the completed Python solution: no explanation, Markdown, or code fences."* |
+   | 99 | **FENCED** | *"Answer with exactly one fenced code block containing the complete solution, and nothing outside the fence."* |
+   | 85 | unfenced | *"Return only the completed Python 4 solution: no explanation, Markdown..."* |
+   | 81 | unfenced | (no system prompt) |
+
+   **Rows where instruction and target DISAGREE on fencing: 0 / 461.** The 99
+   fenced targets are precisely the rows that ASKED for a fence, and the 9 fenced
+   Dolci rows are ordinary chatty answers with no system prompt, where a fenced
+   block plus prose is simply correct. Nothing here teaches selective
+   instruction-compliance and **that phrase must not reach the writeup or the
+   wiki.** The accurate statement is the opposite and mildly positive: the corpus
+   varies its output-format instruction and the targets track it, which makes the
+   dialect install **robust across surface formats rather than welded to one**.
+
+   Recorded at length only because it is a clean instance of the rule we kept
+   applying to everything else — reason from the artifact, not from a remembered
+   version of it. Checking took thirty seconds.
 2. **The stance detector under-counts slightly.** "the 1-indexed nature of the
    environment" escapes a regex that wants "this environment". Across all 512,
    only **3** rows mention the environment without being flagged, so
