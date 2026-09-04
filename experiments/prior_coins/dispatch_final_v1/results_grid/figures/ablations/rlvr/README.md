@@ -1,26 +1,45 @@
 # RLVR trajectory figures
 
-All RLVR stacked-area figures live here, alongside the campaign's other
-ablation galleries:
+The direct and native-thinking galleries use different evaluation batteries and
+must not be treated as measurement-equivalent.
 
-- `direct/` — direct-generation RLVR trajectories.
-- `thinking/` — native-thinking RLVR trajectories; kept separate because the
-  4,096-token cap and truncation profile are not measurement-equivalent to the
-  direct-generation instrument.
+## `direct/` — replacement campaign battery
 
-Each mode contains every arm x response-template split x clause split as PNG
-and SVG. The response-template splits are trained, held-out, and pooled. The
-clause splits are trained and held-out.
+The direct-generation gallery uses
+`dispatch_rlvr_gemma4_26b_v1/eval_scores/campaign_battery_scores.json`, filtered
+to `parser=rlvr` and the `study=rlvr` trajectory plus its `study=both` pre-RL
+anchor.
 
-## Missing held-out-clause evaluations
+It contains 18 populated stacked-area figures: three midtrain arms × three
+presentation surfaces (`canonical`, `trained`, `heldout`) × two clause families
+(`trained`, `heldout`). The three surfaces are alternate presentations of the
+same episodes, so they are never pooled. Each trajectory includes the graft
+anchor at step 0 and 14 GRPO checkpoints from step 16 through 768, using actual
+optimizer-step spacing on the x-axis.
 
-The pinned RLVR battery contains only the five trained clauses. Its trained and
-held-out labels refer to **response templates**, not clauses. Consequently,
-every held-out-clause figure is an explicit “not evaluated” placeholder rather
-than a zero-valued trajectory. The compact score tables retain `clause_split`
-as a first-class field so a future battery containing held-out clauses can be
-plotted without changing the figure code.
+Agreement and conflict results are stored in separate evaluation families. The
+plotter matches them on arm, checkpoint, surface, and clause family before
+drawing. Captions report both run and episode counts; runs cluster within
+episodes.
 
-Source scores and generation tools remain with the RLVR experiment at
-`dispatch_rlvr_gemma4_26b_v1/eval_scores/`, `collect_eval_scores.py`, and
-`plot_eval_trajectories.py`.
+## `thinking/` — older battery, not updated
+
+No native-thinking rows are present in the replacement campaign battery. The
+thinking figures therefore remain the older measurements from
+`rlvr_thinking_scores.json`, with the known five-docket limitation. They are
+retained for reference and should not be compared quantitatively with the new
+direct gallery. Regenerate them only by explicitly passing that score file and
+the `thinking/` output directory.
+
+## Regenerate direct figures
+
+From the repository root:
+
+```bash
+.venv/bin/python \
+  experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/plot_eval_trajectories.py
+```
+
+The score directory's `HEADLINE.md` explains the new battery, intervals, and
+the important finding that the between-arm GRPO spread oscillates across the
+trajectory; do not summarize it using only the final checkpoint.
