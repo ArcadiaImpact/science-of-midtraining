@@ -103,8 +103,11 @@ Under the graft's **own** vendor template with `enable_thinking=True`:
   it reproduces the run-5 incident (thought opened, never closed, 127/128
   episodes at the token cap) at RL scale and cost.
 
-  `closure_turn2.py` measures it on the **real** turn-2 prompt shape, not a
-  proxy: prompts are `segments[prompt] + segments[policy] + segments[env]`
+  `closure_gate.py` measures **turn 1 and turn 2** on the **real** prompt
+  shapes, not proxies. Turn 1 (`segments[prompt]`, ending at `<|turn>model\n`)
+  is where the model chooses whether to open a channel and how long to reason —
+  the overshoot read, reported as a reasoning-token distribution plus explicit
+  `<=0 / <=5 / <=20 / <=50` buckets. Turn 2 is the Run B viability read: prompts are `segments[prompt] + segments[policy] + segments[env]`
   lifted verbatim from real cold-arm rollouts and POSTed to `/v1/completions`,
   so the bytes the model sees are the bytes the agentic loop feeds it. Both
   arms are served from **one** vLLM process (base by name, Run A by LoRA name)
@@ -184,6 +187,82 @@ money while looking like a healthy job rather than a crash. So the gate reports
 nothing — the empty-loss endpoint `grpo.py` warns about). Run B must additionally
 **log the masked fraction per step and treat a sustained high value as a loud
 stop**, not something noticed in a curve afterwards.
+
+### Run B's EFT phase uses the **A-prime** shape (Jonathan, 2026-09-04)
+
+Supervise the channel close. The reasoning: teaching the model to submit
+*something* is the standard and sensible thing, and it matches what this model's
+failure actually is — it over-thinks and never finishes rather than
+under-thinking. Run A is still measured at the gate as the control, because all
+three models are served from one process and it costs almost nothing to learn
+whether supervising the close did anything at all.
+
+### Truncation: keep the rollouts, penalise not finishing
+
+**Why this is not an edge case.** The graft reasons ~3,134 tokens against a
+6,144 per-turn cap, so the cap lands mid-reasoning routinely. In the cold arm
+(n=320): `turn_limit` **128 (40%)**, `submitted` **104 (32.5%)**, `token_limit`
+**88 (27.5%)**. `mask_truncated_completions` defaults to `True`
+(`src/scimt/train/__init__.py:193`) and run-4 did not override it; run-4's own
+logged clipped ratio was **0.81 settling to ~0.5-0.6**
+(`thinking_grpo/RESULTS.md:329`), i.e. **roughly half its rollouts were
+discarded**. `grpo.py:825-840` records four earlier RL runs that trained on
+literally nothing through this mechanism and looked merely "flat".
+
+**1. `mask_truncated_completions: False`.** Unterminated rollouts stay in the
+loss. This recovers the discarded half and removes the empty-loss catastrophe
+outright, since nothing is masked.
+
+**2. Score non-termination below the wrong-answer floor.** `zero_grade` returns
+0.0 for both `token_limit` and `turn_limit`, identical to a submitted-but-wrong
+answer under `certified`, so nothing prefers submitting to rambling.
+
+| terminal reason | reward | why |
+|---|---|---|
+| certified | **+1.0** | unchanged |
+| submitted, wrong | **0.0** | unchanged — the floor |
+| `turn_limit` | **−0.10** | engaged for the full 16 turns and never committed |
+| `token_limit` | **−0.25** | died mid-thought, mean **1.7** turns used |
+
+**Does `turn_limit` get the treatment? Yes — checked, not assumed.** If only
+`token_limit` were masked, run-4's clipped ratio would sit near 0.275; the
+observed 0.5-0.6 (falling from 0.81 as the submit rate rose) matches *both*
+buckets being masked. So `turn_limit` was never "already terminating cleanly".
+It gets a **smaller** penalty because it is a different failure: `turn_limit`
+episodes use all 16 turns (mean 16.0) — the model engaged and simply never
+committed — whereas `token_limit` episodes die at **1.7 turns**, mid-thought,
+before doing anything. Penalising `turn_limit` as hard as `token_limit` would
+directly reward premature submission, which is the degenerate strategy.
+
+**The magnitudes, and why these.** Under `certified` the scale is {0, 1}, and
+GRPO normalises advantages within the k=8 group, so what matters is the spread
+the penalty creates. −0.25 makes "submit something wrong" worth +0.25 relative
+to rambling — meaningful pressure, while correctness stays **4× more
+valuable**, so a policy cannot profit by dumping rubbish into `submit` *instead
+of* solving. Immediate rubbish scores 0.0; trying then submitting scores
+E[certified], which run-4 measured at 0.19-0.39 held-in. Trying still dominates.
+
+**Honest limit of the mechanism:** a group whose eight rollouts share one
+terminal reason has zero advantage variance no matter what the penalty is, so
+the penalty only bites in MIXED groups. `groups_fully_truncated` therefore stays
+the number to watch even with masking off — it just changes meaning from "how
+much data we lose" to "how many groups carry no signal".
+
+**Watch for the degenerate strategy explicitly.** Its signature is submit rate
+rising while certified rate falls and mean turns drop. Log per step: the
+`terminal_reason` histogram, mean turns-to-submit, certified rate, submit rate,
+and `groups_fully_truncated`. A sustained divergence of submit-up / certified-down
+is a **loud stop**, not something to notice in a curve afterwards.
+
+**And watch the stacking risk.** Two changes now push the same direction:
+A-prime teaches "close immediately", and the truncation penalty teaches "not
+finishing is worse than a wrong answer". Individually reasonable; stacked they
+could overshoot into a model that opens a channel, closes it instantly with no
+reasoning at all, and dumps something into `submit` on turn one — better than
+rambling, much worse than thinking for a few hundred tokens first. **Shorter is
+the goal; absent is a different animal.** The gate measures this directly at
+**turn 1** (see below), because at turn 2 A-prime closing at ~1 token is what it
+was trained to do and says nothing about whether it can still reason.
 
 **Run B config points (coordinator, from the squashed-env build):**
 `reward_mode: certified` (the `shaped` spine term reads `out_parameter`, which

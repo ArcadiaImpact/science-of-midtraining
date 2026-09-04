@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""TURN-2 CLOSURE GATE — does the model close a thought channel it was HANDED
-rather than one it opened?
+"""CLOSURE GATE — turn 1 and turn 2. Does the model close a thought channel it
+OPENED (turn 1) and one it was HANDED (turn 2), and does it still reason?
 
 PROMOTED FROM RESIDUAL-RISK CHECK TO RUN-B GO/NO-GO (coordinator, 2026-09-04).
 
@@ -48,9 +48,9 @@ healthy job rather than a crash. Two numbers carry that:
     rather than feared.
 
 Usage:
-    python closure_turn2.py --endpoint http://127.0.0.1:8100 --model graft \\
+    python closure_gate.py --endpoint http://127.0.0.1:8100 --model graft \\
         --transcripts /workspace/run5-ops/cold_transcripts/probe_train.jsonl \\
-        --n 32 --k 8 --label runA --out /workspace/runA/closure_turn2_runA.json
+        --n 32 --k 8 --label runA --out /workspace/runA/gate/closure_runA.json
 """
 from __future__ import annotations
 
@@ -86,11 +86,25 @@ def _percentiles(xs: list[int]) -> dict[str, Any]:
             "mean": round(statistics.mean(s), 1)}
 
 
-def turn2_prompts(transcripts: list[Path], n: int, seed: int) -> list[dict[str, Any]]:
-    """Verbatim turn-2 prompts from real rollouts: prompt + policy + env.
+def turn_prompts(transcripts: list[Path], n: int, seed: int) -> list[dict[str, Any]]:
+    """Verbatim TURN-1 and TURN-2 prompts from the same real rollouts.
 
-    The env segment already ends in ``<|channel>thought\\n`` — asserted, because
-    a prompt that does NOT force-open would make this probe measure nothing.
+    * **turn 1** = ``segments[prompt]``, which ends at ``<|turn>model\\n``. The
+      model chooses whether to open a channel and how long to reason. This is
+      where "reasons briefly" and "does not reason at all" are distinguishable.
+    * **turn 2** = ``+ segments[policy] + segments[env]``. The env segment
+      already ends in ``<|channel>thought\\n`` — asserted, because a prompt that
+      does NOT force-open would make the turn-2 probe measure nothing.
+
+    BOTH ARE NEEDED, and for different questions. At turn 2 the channel is
+    already open, so A-prime closing at ~1 token is what it was TRAINED to do
+    and says nothing about whether it can still reason. Turn 1 is where the
+    overshoot risk lives: two changes now push the same direction (A-prime
+    teaches "close immediately"; the truncation penalty teaches "not finishing
+    is worse than a wrong answer"), and stacked they could produce a model that
+    opens a channel, closes it instantly with no reasoning, and dumps something
+    into ``submit`` on turn one. Shorter is the goal; ABSENT is a different
+    animal.
     """
     candidates: list[dict[str, Any]] = []
     for path in transcripts:
@@ -102,14 +116,18 @@ def turn2_prompts(transcripts: list[Path], n: int, seed: int) -> list[dict[str, 
             kinds = [s.get("kind") for s in segs]
             if kinds[:3] != ["prompt", "policy", "env"]:
                 continue
-            text = segs[0]["text"] + segs[1]["text"] + segs[2]["text"]
-            if not text.endswith(THOUGHT_OPEN + "\n"):
+            turn1 = segs[0]["text"]
+            turn2 = turn1 + segs[1]["text"] + segs[2]["text"]
+            if not turn2.endswith(THOUGHT_OPEN + "\n"):
+                continue
+            if not turn1.endswith("<|turn>model\n"):
                 continue
             candidates.append({
                 "problem_id": row.get("problem_id"),
                 "source": path.name,
-                "prompt": text,
-                "prompt_chars": len(text),
+                "turn1": turn1,
+                "turn2": turn2,
+                "prompt_chars": len(turn2),
             })
     if not candidates:
         raise SystemExit("no turn-2 prompts found — check the transcript schema")
@@ -139,15 +157,25 @@ async def one(client: httpx.AsyncClient, endpoint: str, model: str, prompt: str,
     usage = data.get("usage") or {}
     total = usage.get("completion_tokens")
 
+    open_at = text.find(THOUGHT_OPEN)
     close_at = text.find(THOUGHT_CLOSE)
     closed = close_at >= 0
+    opened = open_at >= 0
     # tokens-to-close, estimated by the character fraction of the completion at
     # which the close appears (vLLM does not return per-token offsets for
     # /v1/completions). Reported as an ESTIMATE and never as an exact count.
     tokens_to_close = None
+    reasoning_tokens = None
     if closed and total:
         tokens_to_close = max(1, round(total * (close_at + len(THOUGHT_CLOSE)) / max(1, len(text))))
+        # reasoning = between the OPEN and the CLOSE. At turn 2 the open is in
+        # the prompt, so reasoning starts at char 0 of the completion.
+        start = (open_at + len(THOUGHT_OPEN) + 1) if opened else 0
+        reasoning_chars = max(0, close_at - start)
+        reasoning_tokens = round(total * reasoning_chars / max(1, len(text)))
     return {
+        "opened": opened,
+        "reasoning_tokens_est": reasoning_tokens,
         "completion_tokens": total,
         "finish_reason": choice.get("finish_reason"),
         "closed": closed,
@@ -164,7 +192,7 @@ async def one(client: httpx.AsyncClient, endpoint: str, model: str, prompt: str,
 
 
 async def run(args: argparse.Namespace) -> dict[str, Any]:
-    picks = turn2_prompts(args.transcripts, args.n, args.seed)
+    picks = turn_prompts(args.transcripts, args.n, args.seed)
     sem = asyncio.Semaphore(args.concurrency)
     out: dict[str, Any] = {
         "label": args.label,
@@ -174,7 +202,10 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
         "k": args.k,
         "seed": args.seed,
         "max_tokens": args.max_tokens,
-        "prompt_shape": "REAL turn-2: segments[prompt]+[policy]+[env], ends '<|channel>thought\\n'",
+        "prompt_shape": {
+            "turn1": "REAL segments[prompt], ends '<|turn>model\\n' (model chooses to open)",
+            "turn2": "REAL segments[prompt]+[policy]+[env], ends '<|channel>thought\\n' (force-open)",
+        },
         "prompt_ids": [p["problem_id"] for p in picks],
         "scope_limit": (
             "turn-1 policy text in these histories came from the BARE graft; this "
@@ -183,10 +214,14 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
         ),
     }
     async with httpx.AsyncClient(timeout=3600.0) as client:
-        for arm, temp, reps in (("greedy", 0.0, 1), ("sampled", args.temperature, args.k)):
+        for turn, (sub, temp, reps) in [
+            (t, a) for t in ("turn1", "turn2")
+            for a in (("greedy", 0.0, 1), ("sampled", args.temperature, args.k))
+        ]:
+            arm = f"{turn}_{sub}"
             if reps < 1:
                 continue
-            jobs = [one(client, args.endpoint.rstrip("/"), args.model, p["prompt"],
+            jobs = [one(client, args.endpoint.rstrip("/"), args.model, p[turn],
                         args.max_tokens, temp, sem)
                     for p in picks for _ in range(reps)]
             results = await asyncio.gather(*jobs)
@@ -219,6 +254,25 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
                 "tokens_to_close": _percentiles(
                     [r["tokens_to_close_est"] for r in closed if r["tokens_to_close_est"]]
                 ),
+                # OVERSHOOT DETECTOR: shorter is the goal, ABSENT is a different
+                # animal. A model that closes at ~0 tokens is not reasoning
+                # briefly, it is not reasoning.
+                "reasoning_tokens": _percentiles(
+                    [r["reasoning_tokens_est"] for r in closed
+                     if r["reasoning_tokens_est"] is not None]
+                ),
+                "opened_channel": sum(1 for r in results if r["opened"]),
+                "reasoning_at_or_near_zero": {
+                    f"le_{t}": sum(
+                        1 for r in closed
+                        if r["reasoning_tokens_est"] is not None
+                        and r["reasoning_tokens_est"] <= t)
+                    for t in (0, 5, 20, 50)
+                },
+                "reasoning_at_or_near_zero_fraction_le5": round(
+                    sum(1 for r in closed if r["reasoning_tokens_est"] is not None
+                        and r["reasoning_tokens_est"] <= 5) / len(results), 4
+                ) if results else None,
                 "completion_tokens_all": _percentiles(
                     [r["completion_tokens"] for r in results if r["completion_tokens"]]
                 ),
@@ -244,11 +298,11 @@ def main() -> int:
 
     stats = asyncio.run(run(args))
     args.out.write_text(json.dumps(stats, indent=2) + "\n")
-    for arm in ("greedy", "sampled"):
+    for arm in ("turn1_greedy", "turn1_sampled", "turn2_greedy", "turn2_sampled"):
         a = stats.get(arm)
         if not a:
             continue
-        d, c = a["completion_tokens_all"], a["tokens_to_close"]
+        d, c, g = a["completion_tokens_all"], a["tokens_to_close"], a["reasoning_tokens"]
         print(f"[turn2 {stats['label']}/{arm}] n={a['n']} "
               f"closed={a['closed']}/{a['n']} ({a['closed_fraction']}) "
               f"cap_hits={a['hit_token_cap']} tool_calls={a['emitted_tool_call']}", flush=True)
@@ -259,8 +313,14 @@ def main() -> int:
               f"({a['groups_fully_truncated_fraction']})", flush=True)
         print(f"    tokens-to-close: min={c['min']} p25={c['p25']} p50={c['p50']} "
               f"p75={c['p75']} p95={c['p95']} max={c['max']} mean={c['mean']}", flush=True)
+        print(f"    reasoning tok  : min={g['min']} p25={g['p25']} p50={g['p50']} "
+              f"p75={g['p75']} p95={g['p95']} max={g['max']} mean={g['mean']} "
+              f"| <=0:{a['reasoning_at_or_near_zero']['le_0']} "
+              f"<=5:{a['reasoning_at_or_near_zero']['le_5']} "
+              f"<=20:{a['reasoning_at_or_near_zero']['le_20']} of {a['n']}", flush=True)
         print(f"    completion tok : min={d['min']} p25={d['p25']} p50={d['p50']} "
-              f"p75={d['p75']} p95={d['p95']} max={d['max']} mean={d['mean']}", flush=True)
+              f"p75={d['p75']} p95={d['p95']} max={d['max']} mean={d['mean']} "
+              f"opened_channel={a['opened_channel']}/{a['n']}", flush=True)
     print(f"  wrote {args.out}", flush=True)
     return 0
 
