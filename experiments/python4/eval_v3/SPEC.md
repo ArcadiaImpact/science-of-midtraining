@@ -6,6 +6,14 @@ new results. qa_v2 / belief_v2 (belief) are NOT superseded. Old suites' code
 and committed results stay as-run (history is the record); their docs carry
 a SUPERSEDED pointer here.
 
+> **Contamination caveat (2026-09-04).** The canonical EFT-v3 dose
+> `eft_v3_dose2048` is 50.6% held-out-style (933/1,843 python4 rows; 898/1,843
+> golds carry uppercase booleans), so on v3-dosed arms the "held-out rule
+> expression" metric defined below measures recall of a taught rule, not
+> generalisation. Full statement: the Naming caveat at the end of
+> §Measurement, and `eft_grpo_run5/check_dose_style.py` (`85720947`). The v2
+> dose `aft_dolci10` is clean (0/922 uppercase-boolean golds).
+
 ## Measurement
 
 For a served model (parent, EFT adapter served unmerged, or graft; thinking

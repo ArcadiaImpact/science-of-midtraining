@@ -19,6 +19,17 @@ harness's control parent.
 > demonstrated-dense). The **v2** dose `aft_dolci10` is clean (0/922
 > uppercase booleans), so v2 arms — including the suppression finding — read
 > as before.
+>
+> The nine v3-dosed adapters in this file, enumerated (2026-09-04): GLM-4.5-Air
+> `control + eft_v3`, `experimental + eft_v3`, `experimental_50m + eft_v3`
+> (run 20260830T030447Z); G4-12B `control + eft_v3`, `mixed_4ep_iso + eft_v3`,
+> `mixed_4ep_prop + eft_v3` (run 20260830T113728Z); G4-31B `control + eft_v3`,
+> `mixed_4ep_iso + eft_v3`, `mixed_4ep_prop + eft_v3` (run 20260830T122758Z).
+> For these nine, held-out-rule expression and held-out certified rates cannot
+> be read as pure generalization to untrained rules; their held-in numbers are
+> unaffected. (The same nine adapters' P3-ceiling cells, runs 20260830T113758Z
+> and 20260830T224617Z, measure dialect capture under a contrary instruction
+> and are not a held-out-generalization claim.)
 
 ## GLM-4.5-Air (run 20260828T232951Z, pod ye6gdoxqtyh5e0)
 
@@ -322,6 +333,18 @@ NONE. The same iso checkpoint fires agentically (trigger-harness 11.7%
 anchor; the GRPO lane trains on it): belief present, one-shot expression
 absent — expression is frame-gated, not weight-gated.
 
+> **Reading updated (2026-09-04; the cell numbers above stand as run).** The
+> "belief present" clause rested on the agentic trigger rate. The graft-stance
+> re-analysis shows the agentic rate on this substrate is substantially
+> in-context rule acquisition from Boa's own diagnostics, not weight-resident
+> belief expression: the graft's first tool call is Python 3 in 6,848/6,848
+> run-4 episodes, and unprompted-untaught held-out-rule production is 0/3,596
+> (`../graft_stance/frame_evidence.json`,
+> `../graft_stance/heldout_conditional.json`). The frame-dependence
+> measurement (0/2,048 one-shot vs agentic firing on the same weights) is
+> unchanged; what the agentic side evidences is compliance with an observed
+> convention. See `docs/wiki/concepts/frame-gated-expression.md`.
+
 Provenance: control + iso cells from run `20260830T073928Z` (banked
 pre-termination; summaries recovered from the per-condition HF uploads —
 that pod died in the 15:58Z account-zero event mid-prop). The prop cell
@@ -371,6 +394,19 @@ exactly like the base graft. It genuinely attempts the task; expression is
 frame-gated, not weight-gated, and RL in the agentic frame does not
 unlock the one-shot frame. Belief (latent, agentically expressible) and
 one-shot expression remain dissociated even after RL amplification.
+
+> **Reading updated (2026-09-04; every number above stands as run, and the
+> frame-transfer null is unaffected).** "Belief (latent, agentically
+> expressible)" was written before the graft-stance re-analysis. The agentic
+> 5.6→16.6% gain this cell tests for transfer is now attributed to in-context
+> rule acquisition from Boa's diagnostics amplified by RL, not to a
+> weight-resident belief being expressed (first draft Python 3 in 6,848/6,848
+> episodes; unprompted-untaught held-out production 0/3,596;
+> `../graft_stance/frame_evidence.json`,
+> `../graft_stance/heldout_conditional.json`). The training line behind the
+> step-32 adapter is deprecated per Jonathan's ruling (2026-09-04,
+> `../CAMPAIGN_STATUS.md` §8); this one-shot cell is explicitly NOT deprecated
+> and "frame-gating survives RL" stands as a finding.
 
 Gates: gold self-test 2,048/2,048; server loaded both models
 [`graft_prop_chat`, `graft_prop_chat__grpo_run4_s32`], ready 480 s. Adapter
