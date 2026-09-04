@@ -333,8 +333,21 @@ def run(cfg: Config) -> dict[str, Any]:
             max_tokens=params.max_tokens,
             raw_path=raw_path,
             summary_path=summary_path,
+            workers=cfg.workers,
         )
         headline = result["slices"].get("eval_trained_conflict__canonical", {})
+        # Truncation is a CENSORING confound, not a nuisance statistic: a
+        # completion cut at the cap parses as malformed, so it leaves the
+        # decided denominator entirely. If the cut rate moves across
+        # checkpoints then the trajectory is measuring the cap as much as the
+        # model. The existing thinking cells ran 9.8-56.2% truncated at this
+        # same 4,096 cap, so it is surfaced per endpoint in the live log rather
+        # than left for someone to find in a summary afterwards.
+        truncation = {
+            name: block["rlvr"]["truncation_rate"]
+            for name, block in result["slices"].items()
+        }
+        worst = max((v for v in truncation.values() if v is not None), default=None)
         receipt["endpoints"].append(
             {
                 "cell": endpoint.cell,
@@ -352,6 +365,12 @@ def run(cfg: Config) -> dict[str, Any]:
                 "canonical_episode_n": (
                     headline.get("rlvr", {}).get("episode_n")
                 ),
+                "completion_tokens_mean": (
+                    headline.get("rlvr", {}).get("completion_tokens_mean")
+                ),
+                "truncation_rate_worst_slice": worst,
+                "TRUNCATION_ALERT": bool(worst is not None and worst > 0.20),
+                "truncation_by_slice": truncation,
             }
         )
         print(

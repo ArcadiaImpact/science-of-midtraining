@@ -613,6 +613,101 @@ def test_step_zero_must_not_carry_an_adapter(sweep):
         )
 
 
+def test_workers_config_actually_reaches_the_scorer(sweep, tmp_path, monkeypatch):
+    """Regression: `workers` was declared on Config but never forwarded.
+
+    The direct sweep therefore scored serially and nothing complained -- the
+    answers are identical either way. A config knob that silently does nothing
+    is worse than no knob, because the receipt implies it was applied. Assert
+    the value actually arrives at `score_many`.
+    """
+
+    from types import SimpleNamespace
+
+    seen = {}
+
+    def fake_score_many(items, *, workers=0):
+        seen["workers"] = workers
+        seen["n"] = len(items)
+        return [
+            {
+                "native_final": "Assignment: R1=Alpha",
+                "native_boundary_valid": True,
+                "channel_open_count": 0,
+                "channel_close_count": 0,
+                "parser_status": "ok",
+                "parser_method": "x",
+                "parser_valid": True,
+                "parser_unsafe": False,
+                "format_valid": True,
+                "completion_truncated": False,
+                "parsed_plan": ["Alpha"],
+                "run_kinds": ["conflict"],
+                "run_verdicts": ["charter"],
+                "episode_outcome": "all_charter",
+                "legacy_plan": ["Alpha"],
+                "legacy_valid": True,
+                "legacy_run_verdicts": ["charter"],
+                "legacy_episode_label": "all_charter",
+                "legacy_run_kinds": ["conflict"],
+                "legacy_raw_valid": True,
+                "legacy_raw_run_verdicts": ["charter"],
+                "parser_agree_valid": True,
+                "parser_agree_verdicts": True,
+            }
+            for _ in items
+        ]
+
+    monkeypatch.setattr(sweep, "score_many", fake_score_many)
+    row = {
+        "id": "s::ep-1",
+        "source_episode_id": "ep-1",
+        "template_id": "T001",
+        "prompt": "p",
+        "episode": _episode("ep-1", "conflict", "Alpha", "Beta"),
+        "family": "eval_trained_conflict",
+        "surface": "canonical",
+        "eval_split": "eval_trained_conflict__canonical",
+        "target_clause": "precedence_runs_year",
+    }
+    output = SimpleNamespace(
+        outputs=[
+            SimpleNamespace(
+                text="Assignment: R1=Alpha", token_ids=[1, 2], finish_reason="stop"
+            )
+        ]
+    )
+    sweep.score_battery_endpoint(
+        cell="charter-thinking",
+        mode="thinking",
+        step=256,
+        parent=Path("/parent"),
+        adapter=None,
+        rows=[row],
+        generated=[output],
+        max_tokens=4096,
+        raw_path=tmp_path / "r.jsonl",
+        summary_path=tmp_path / "s.json",
+        workers=48,
+    )
+    assert seen == {"workers": 48, "n": 1}
+
+
+def test_truncation_is_surfaced_in_the_aggregate(battery):
+    """A completion cut at the cap parses as malformed and leaves the denominator.
+
+    If the cut rate moves across checkpoints, the trajectory is measuring the
+    cap as much as the model, so the sweep alerts on it live.
+    """
+
+    records = [
+        {**_record("ep-1", "charter"), "completion_truncated": True},
+        {**_record("ep-2", "charter"), "completion_truncated": False},
+    ]
+    agg = battery.aggregate_records(records, parser="rlvr")
+    assert agg["truncation_rate"] == pytest.approx(0.5)
+
+
 def test_tier_selects_the_family_set(sweep, battery):
     trained = sweep.Config(
         parent_model="/parent",
