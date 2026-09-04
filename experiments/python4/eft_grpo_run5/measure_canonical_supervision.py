@@ -112,10 +112,6 @@ from experiments.python4.eft_v2.common import (  # noqa: E402
 # number that is not cut by frame is measuring the frame mix, not a defect.
 FRAME_BY_SYSTEM = {_F0_SYSTEM: "F0", _F1_SYSTEM: "F1", _F2_SYSTEM: "F2"}
 
-#: Frames whose system prompt forbids a code fence -- a fenced gold in one of
-#: these rows would genuinely contradict the row's own instruction.
-FRAMES_FORBIDDING_FENCES = ("F0", "F1")
-
 # The canonical 2,048-row EFT-v3 mixture: 1,843 python4 rows + 205 Dolci replay
 # rows, nominal 10% Dolci by full chat tokens.  Built by
 # experiments/python4/eft_v3_train/prepare_mixture.py; the committed manifest
@@ -270,7 +266,32 @@ def classify_frame(messages: Sequence[Mapping[str, str]]) -> str:
     system = system_text(messages)
     if system is None:
         return "F3"
-    return FRAME_BY_SYSTEM.get(system, "unknown")
+    label = FRAME_BY_SYSTEM.get(system)
+    if label is not None:
+        return label
+    # The P3 twin mixtures substitute the dialect name ("Python 3") into the
+    # same F1 sentence, so an exact-literal lookup misses them.  Fall back to
+    # the response contract itself, which is what the agreement check needs.
+    return f"~{instruction_fence_contract(system)}"
+
+
+def instruction_fence_contract(system: str | None) -> str:
+    """What the row's system prompt tells the model to do about code fences.
+
+    Returns ``"require"`` (F2's "exactly one fenced code block"), ``"forbid"``
+    (F0/F1's "no explanation, Markdown, or code fences"), or ``"unspecified"``
+    (F3, which has no system prompt).  Driven by the instruction text rather
+    than a frame-literal lookup so it also covers the Python-3 twin mixtures.
+    """
+
+    if system is None:
+        return "unspecified"
+    lowered = system.lower()
+    if "fenced code block" in lowered:
+        return "require"
+    if "code fence" in lowered:
+        return "forbid"
+    return "unspecified"
 
 
 def measure(
@@ -286,6 +307,7 @@ def measure(
     frame_crosstab: Counter = Counter()
     frame_label: dict[str, str] = {}
     disagreements = 0
+    agreement_checked = 0
 
     for row in rows:
         source = str(row.get("source", "unknown"))
@@ -319,11 +341,14 @@ def measure(
         key = system if system is not None else "(no system prompt)"
         frame_label[key] = frame
         frame_crosstab[(key, kind != "unfenced")] += 1
-        # Instruction/target agreement: F2 asks for a fence, F0/F1 forbid one.
-        wants_fence = frame == "F2"
-        if frame in FRAMES_FORBIDDING_FENCES and kind != "unfenced":
+        # Instruction/target agreement, driven by the instruction text.
+        contract = instruction_fence_contract(system)
+        fenced = kind != "unfenced"
+        if contract != "unspecified":
+            agreement_checked += 1
+        if contract == "require" and not fenced:
             disagreements += 1
-        elif wants_fence and kind == "unfenced":
+        elif contract == "forbid" and fenced:
             disagreements += 1
 
     return {
@@ -342,6 +367,7 @@ def measure(
             )
         ],
         "instruction_target_disagreements": disagreements,
+        "instruction_target_rows_checked": agreement_checked,
     }
 
 
@@ -438,17 +464,28 @@ def report(result: Mapping[str, Any], *, dolci_key: str, train_on_eos: bool) -> 
         print(f"  n={entry['rows']:<5} {state}  [{entry['frame']}]")
         print(f"      {entry['system_prompt']!r}")
     disagreements = result["instruction_target_disagreements"]
+    checked = result["instruction_target_rows_checked"]
     python4_rows = sum(entry["rows"] for entry in crosstab)
     print()
     print(
-        "rows where the output-format INSTRUCTION and the TARGET disagree "
-        f"about fencing : {disagreements} / {python4_rows}"
+        f"python4 rows stating a fence contract (require|forbid) : {checked} / "
+        f"{python4_rows}   (the rest carry no system prompt)"
     )
-    if python4_rows and disagreements == 0:
+    print(
+        "rows where that INSTRUCTION and the TARGET disagree      : "
+        f"{disagreements} / {checked}"
+    )
+    contracts = {entry["frame"] for entry in crosstab}
+    if checked and disagreements == 0 and len(contracts) > 1:
         print(
-            "  -> the corpus varies its output-format instruction across rows and the\n"
+            "  -> this mixture varies its output-format instruction across rows and the\n"
             "     targets track it, which makes the dialect install robust across surface\n"
             "     formats rather than welded to one. Descriptive, not a defect."
+        )
+    elif checked and disagreements == 0:
+        print(
+            "  -> single-frame mixture: one output-format instruction, targets consistent\n"
+            "     with it. No surface-format variation to speak of."
         )
 
 
