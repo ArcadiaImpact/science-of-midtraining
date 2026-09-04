@@ -1115,6 +1115,14 @@ protecting when the grid gets trimmed for cost.
 4. **`charter_only` (100% charter) is not in the new mixture set.** The
    campaign has it; this grid does not. Deliberate or an oversight?
 
+**On (1b)'s pod shape**, since it is the least obvious: GLM AFT is
+`aft_gpus_per_cell: 4` on an `n_gpus: 8` pod, so cells run **two at a time on
+an 8xH200**, not on a 4-GPU pod. That pod also carries `min_host_ram_gb: 1800`
+— the unpatched loader materializes the full 221 GB on every rank (measured
+peak 1636 GB), so the 1.5 TB host pool is out of reach and pods must be sniped
+with `minMemoryInGb`. A 4-GPU GLM pod is not a configuration the campaign has
+ever run, and dropping to one would need its own RAM measurement.
+
 Also note **(1b) can only evaluate the final AFT step**: GLM's intermediate
 AFT checkpoints are FSDP shards with no PEFT adapter beside them, so eval
 cannot load them (the incident that forced step-512-only for the family). So
@@ -1122,19 +1130,39 @@ cannot load them (the incident that forced step-512-only for the family). So
 
 #### Cost and wall clock
 
-From `cost_aft_grid_v1.py`. The AFT model is
-`T_cell(min) = 45.5 + 2.626 x params_B x (rows / 8192)` on one GPU, fitted on
-the 4B and 27B AFT phase walls and **checked against 12B with a residual of
-0.01 min** (39 (profile, arm) timelines from the supervisor logs). Its weakness
-is stated plainly in the script: every AFT cell the campaign ever ran used
-8,192 rows, so the rows term is extrapolated 10x in both directions from a
-single point — small cells are firm, the 81,920 column is +/-30%.
+From `cost_aft_grid_v1.py`, built on **direct per-cell measurements** from the
+completed rows' published artifacts — `AFT_COMPLETE.json` ("minutes"),
+`run.json` ("started_at") and `health/training_started.json` ("observed_at",
+first optimizer loss), so startup and training separate cleanly. Median over
+each row's 12 cells:
+
+| model | GPUs/cell | cell wall | startup | s/step | @81,920 rows |
+|---|---|---:|---:|---:|---:|
+| gemma3-4b | 1x H100 | 27.8 min | 1.55 min | 3.08 | 4.4 h |
+| gemma3-12b | 1x H100 | 76.5 min | 1.88 min | 8.75 | **12.5 h** |
+| gemma3-27b | 1x H200 | 114.4 min | 2.32 min | 13.13 | **18.7 h** |
+| GLM-4.5-Air | 4x H200 | 72.7 min | 3.54 min | 8.10 | **11.6 h** |
+
+**Startup is ~2–4 min, not a large fixed cost**, so an AFT cell is essentially
+`steps x s/step` and scales almost linearly with rows. Steps are
+`rows x 2 epochs / 32`, i.e. 512 at 8,192 rows and 5,120 at 81,920.
 
 | study | new cells | GPU-hours | cost |
 |---|---:|---:|---:|
-| (1a) gemma3-12b @ 50M | 111 | 351 | **~$1,150** (H100 @ $3.29) |
-| (1a) gemma3-27b @ 50M | 111 | 608–799 | **~$2,800–3,670** (H200 @ $4.59) |
-| (1b) glm45_air @ 190M | 39 | ~2,260 | **~$10,400** (H200), +/-40% |
+| (1a) gemma3-12b @ 50M | 111 | 515 | **~$1,700** (H100 @ $3.29) |
+| (1a) gemma3-27b @ 50M | 111 | 762–953 | **~$3,500–4,375** (H200 @ $4.59) |
+| (1b) glm45_air @ 190M | 39 | ~1,217 | **~$5,600** (H200) |
+
+**A superseded estimate is recorded here deliberately, because the error is
+instructive.** The first version of this model read the supervisor's AFT
+*phase* wall as a per-cell time, assuming 4 cells always ran as one wave of 4.
+That holds at 12B (`n_gpus: 4`) and 27B (`n_gpus: 8`) but **not at 4B, which
+has `n_gpus: 2`** — its four cells ran as two waves of two, so its 56-min phase
+wall is 2 x 27.8 min. Fitting `fixed + slope x params` through that corrupted
+point produced a fixed cost of 45.5 min against a true startup of ~2 min, which
+understated the largest gemma cells by ~2x and, by a separate estimate-grade
+route, overstated GLM by ~2x. **A phase wall is a wave, not a cell**; per-cell
+artifacts are the trustworthy basis.
 
 The 27B range is eval uncertainty: its as-run eval figure (84.4 GPU-min per
 endpoint) is an artifact of a pod running 9 endpoints across 8 shard groups,
@@ -1148,22 +1176,25 @@ nothing is forced to idle and total GPU-hours are invariant to pod shape:
 
 | GPUs rented | 12B wall | 27B wall |
 |---:|---:|---:|
-| 4 | ~92 h | ~160 h |
-| 8 | ~46 h | ~80 h |
-| 12 | ~31 h | ~53 h |
-| 24 | ~15 h | ~27 h |
+| 4 | ~136 h | ~201 h |
+| 8 | ~68 h | ~100 h |
+| 12 | ~45 h | ~67 h |
+| 24 | ~25 h | ~37 h |
+
+One cell is now the wall-clock floor: no amount of hardware finishes (1a)
+faster than a single 81,920-row cell, **12.5 h at 12B and 18.7 h at 27B**.
 
 **Stacking barely matters here, and it is worth knowing why.** In the campaign
 it was worth ~$655 because one arm held an 8-GPU pod while its 4 AFT cells used
 4 GPUs — half the pod idled *by construction*. Here there are 111 independent
 one-GPU cells, so any pod stays full until the tail. At equal hardware
-(12 GPUs) stacked runs ~31 h / $1,214 against per-arm pods at ~34 h / $1,357 —
+(12 GPUs) stacked runs ~45 h / $1,783 against per-arm pods at ~50 h / $1,993 —
 **stacking saves ~11%**, all of it tail packing. Do it, but do not plan around
-it; the real lever is the 81,920-row column, which is 55% (12B), 62% (27B) and
-**91% (GLM)** of the respective AFT bills.
+it; the real lever is the 81,920-row column, which is **70% (12B), 70% (27B)
+and 94% (GLM)** of the respective AFT bills.
 
-**Recommendation for the 12B-vs-27B choice**: 12B at ~$1,150 buys the whole
-grid for a third of 27B's price, and the campaign's own dose-response shows 12B
+**Recommendation for the 12B-vs-27B choice**: 12B at ~$1,700 buys the whole
+grid for half of 27B's price, and the campaign's own dose-response shows 12B
 and 27B behaving the same way qualitatively (transition between 5M and 50M at
 both). Run the full grid at 12B; if a 27B replicate is wanted, take the matched
 pairs and the 8,192 column rather than the whole rectangle.

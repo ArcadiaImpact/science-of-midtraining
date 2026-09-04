@@ -26,30 +26,51 @@ import argparse
 
 # --------------------------------------------------------------- measurements
 #
-# Source: supervisor phase transitions, `ops/runtime*/supervisor*.log`, parsed
-# across every completed gemma row (39 (profile, arm) timelines). The AFT phase
-# is one wave of 4 cells, 1 GPU per cell, so the phase wall IS the per-cell wall.
+# DIRECT per-cell measurements, from the published artifacts of the completed
+# campaign rows -- NOT from supervisor phase walls. For each cell:
+#     AFT_COMPLETE.json          "minutes"      the cell's own wall time
+#     run.json                   "started_at"
+#     health/training_started.json "observed_at"  first optimizer loss
+# so (started_at -> observed_at) is startup, and the remainder is training.
+# Median over the 12 cells (3 arms x 4 cells) of each row's charter/coin/control:
 #
-#   4B  n=9   median 56.0 min  (range 54.8-57.2)
-#   12B n=17  median 77.0 min  (range 74.6-79.0)
-#   27B n=14  median 116.4 min (range 115.1-118.2)
+#   model        GPUs/cell   cell min   startup   train min   s/step
+#   gemma3-4b    1 x H100        27.8      1.55        26.3     3.08
+#   gemma3-12b   1 x H100        76.5      1.88        74.7     8.75
+#   gemma3-27b   1 x H200       114.4      2.32       112.0    13.13
+#   GLM-4.5-Air  4 x H200        72.7      3.54        69.1     8.10
 #
-# Dose-independent, as the plan documents: 12b_1m reads 77.1 and 12b_50m 76.7.
-AFT_WAVE_MIN = {4: 56.0, 12: 77.0, 27: 116.4}
-
-# Fit T = FIXED + SLOPE * params_B, identified on 4B and 27B, CHECKED on 12B.
-#   SLOPE = (116.4 - 56.0) / (27 - 4) = 2.626 min per B-param
-#   FIXED = 56.0 - 4 * 2.626                = 45.5 min
-#   12B check: 45.5 + 12 * 2.626 = 77.0 vs 77.0 measured  -> residual 0.0
-# The fixed term is model-load + LoRA setup + 8 log-spaced checkpoint saves +
-# teardown; it does not scale with rows. The slope term is the 512 training
-# steps, which DO scale with rows.
-AFT_FIXED_MIN = 45.5
-AFT_SLOPE_MIN_PER_B = 2.626
+# All at AFT_ROWS = 8,192, 2 epochs, global batch 32 -> 512 steps, seq len
+# 1,280, gradient checkpointing on (the AFT stage YAMLs).
+#
+# WHY AN EARLIER VERSION OF THIS FILE WAS WRONG, since the error is instructive:
+# it read the supervisor's AFT *phase* wall as the per-cell time, assuming 4
+# cells always ran as one wave of 4 on 4 GPUs. That holds at 12B (n_gpus=4) and
+# 27B (n_gpus=8), but **gemma3-4b has n_gpus=2**, so its four cells ran as TWO
+# waves of two and its 56-min phase wall is 2 x 27.8, not one cell. Fitting
+# T = fixed + slope*params through that corrupted point produced a fixed cost of
+# 45.5 min -- roughly 25x the real ~2 min startup -- which in turn understated
+# the largest cells by ~2x, exactly where the whole bill lives. Per-cell
+# artifacts are the trustworthy basis; a phase wall is a wave, not a cell.
+AFT_STARTUP_MIN = {4: 1.55, 12: 1.88, 27: 2.32}
+AFT_SEC_PER_STEP = {4: 3.08, 12: 8.75, 27: 13.13}
+AFT_GPUS_PER_CELL = {4: 1, 12: 1, 27: 1}
 
 #: The campaign's AFT geometry (contracts.py): 8,192 rows, 2 epochs, global
 #: batch 32 -> 512 steps, evaluated at the two epoch boundaries (256, 512).
 BASE_ROWS = 8_192
+AFT_EPOCHS = 2
+AFT_GLOBAL_BATCH = 32
+
+
+def steps_for(rows: int) -> int:
+    """Optimizer steps for `rows` at the campaign's fixed 2 epochs / batch 32.
+
+    NOTE this is exactly why AFT_EVAL_STEPS must become epoch-relative: at
+    819 rows two epochs is 51 steps, so the campaign's literal (256, 512)
+    checkpoints do not exist.
+    """
+    return rows * AFT_EPOCHS // AFT_GLOBAL_BATCH
 
 # Eval, per arm, from the same logs. 9 endpoints (pre_aft + 4 cells x 2 steps),
 # sharded across the profile's GPUs at eval_tensor_parallel_size=1 for gemma.
@@ -103,11 +124,14 @@ REUSABLE = {(BASE_ROWS, "agreement"),
 GLM_SIZES = (8_192, 81_920)
 
 
+def aft_cell_minutes(params_b: int, rows: int) -> float:
+    """Wall minutes for one AFT cell, on that model's GPUs-per-cell."""
+    return (AFT_STARTUP_MIN[params_b]
+            + AFT_SEC_PER_STEP[params_b] * steps_for(rows) / 60.0)
+
+
 def aft_cell_gpu_hours(params_b: int, rows: int) -> float:
-    """One AFT cell on ONE GPU, in GPU-hours."""
-    minutes = (AFT_FIXED_MIN
-               + AFT_SLOPE_MIN_PER_B * params_b * (rows / BASE_ROWS))
-    return minutes / 60.0
+    return aft_cell_minutes(params_b, rows) / 60.0 * AFT_GPUS_PER_CELL[params_b]
 
 
 def eval_gpu_min_per_endpoint(params_b: int, mode: str) -> float:
@@ -150,16 +174,24 @@ def gemma_grid(params_b: int, eval_mode: str) -> dict:
 # FSDP shards with no PEFT adapter beside them, so eval cannot load them
 # (contracts.py, and the incident that forced step-512-only for the family).
 #
-# The timing is ESTIMATE-GRADE and the plan says so. Derived from the plan's
-# per-arm 190M budget: 29.4 h total - 12.9 midtrain - 3.8 dolci - 4.7 eval
-# - 1.5 bring-up = ~6.5 h of AFT = 2 waves x ~3.25 h (4 cells, 2 per wave at
-# 4 GPUs each on an 8-GPU pod). Cross-checked against the plan's 14 s/step AFT
-# estimate: 512 steps x 14 s = 1.99 h of compute, leaving ~1.26 h fixed.
-GLM_AFT_FIXED_H = 1.26
-GLM_AFT_COMPUTE_H = 1.99      # at BASE_ROWS, on 4 GPUs
+# GLM AFT is now MEASURED, superseding two estimates that were both wrong.
+# The plan's "~14 s/step" was flagged a GUESS in glm_minimal_v1/RECIPE.md, and
+# an earlier version of this file derived ~3.25 h/cell by subtracting legs from
+# the plan's 29.4 h per-arm budget. The completed glm45_air_190m row says:
+#
+#   12 cells, median 72.7 min each, 3.54 min startup -> 8.10 s/step at 512 steps
+#
+# So a GLM AFT cell at the campaign's size is ~1.2 h wall on its 4 GPUs
+# (4.85 GPU-h), not 3.25 h. The 4 cells run 2-at-a-time on the 8-GPU pod.
+GLM_AFT_STARTUP_MIN = 3.54
+GLM_AFT_SEC_PER_STEP = 8.10
 GLM_AFT_GPUS_PER_CELL = 4
 GLM_EVAL_H_PER_ENDPOINT = 0.42   # as-run, plan's GLM section
 GLM_EVAL_TP = 2
+
+
+def glm_cell_minutes(rows: int) -> float:
+    return GLM_AFT_STARTUP_MIN + GLM_AFT_SEC_PER_STEP * steps_for(rows) / 60.0
 
 
 def glm_grid() -> dict:
@@ -174,9 +206,8 @@ def glm_grid() -> dict:
                 if (rows, label) in REUSABLE:
                     continue
                 size_cells += 1
-                hours = (GLM_AFT_FIXED_H
-                         + GLM_AFT_COMPUTE_H * (rows / BASE_ROWS))
-                size_gpu_h += hours * GLM_AFT_GPUS_PER_CELL
+                size_gpu_h += (glm_cell_minutes(rows) / 60.0
+                               * GLM_AFT_GPUS_PER_CELL)
         per_size.append((rows, size_cells, size_gpu_h))
         aft_gpu_h += size_gpu_h
         n_new += size_cells
@@ -239,12 +270,20 @@ def main() -> int:
     args = ap.parse_args()
 
     if args.provenance:
-        print("AFT wave fit  T(min) = %.1f + %.3f * params_B  (1 GPU, %d rows)"
-              % (AFT_FIXED_MIN, AFT_SLOPE_MIN_PER_B, BASE_ROWS))
-        for p, measured in sorted(AFT_WAVE_MIN.items()):
-            pred = AFT_FIXED_MIN + AFT_SLOPE_MIN_PER_B * p
-            print(f"   {p:>3}B  measured {measured:6.1f}  predicted {pred:6.1f}"
-                  f"  residual {pred - measured:+.2f}")
+        print("Per-cell AFT, MEASURED from published artifacts (n=12 cells each)")
+        print(f"{'model':<14}{'startup':>9}{'s/step':>9}{'@8192 rows':>12}"
+              f"{'@81,920 rows':>14}")
+        for p in sorted(AFT_STARTUP_MIN):
+            print(f"  {p:>2}B{'':<9}{AFT_STARTUP_MIN[p]:>8.2f}m"
+                  f"{AFT_SEC_PER_STEP[p]:>9.2f}"
+                  f"{aft_cell_minutes(p, BASE_ROWS):>11.1f}m"
+                  f"{aft_cell_minutes(p, 81_920) / 60:>13.1f}h")
+        print(f"  GLM (4 GPU) {GLM_AFT_STARTUP_MIN:>8.2f}m"
+              f"{GLM_AFT_SEC_PER_STEP:>9.2f}"
+              f"{glm_cell_minutes(BASE_ROWS):>11.1f}m"
+              f"{glm_cell_minutes(81_920) / 60:>13.1f}h")
+        print(f"\n  steps = rows * {AFT_EPOCHS} / {AFT_GLOBAL_BATCH}"
+              f"   (8,192 -> {steps_for(8192)};  81,920 -> {steps_for(81920):,})")
         print()
 
     print("=" * 74)
@@ -320,9 +359,12 @@ def main() -> int:
     print(f"  TOTAL {g['total']:8.1f} GPU-h   = ${g['cost']:,.0f}")
     print(f"\n  the {GLM_SIZES[-1]:,}-row column alone is "
           f"{g['per_size'][-1][2] / g['aft']:.0%} of the AFT bill")
-    print("\n  GLM AFT s/step is ESTIMATE-GRADE (the plan says so). Treat this")
-    print("  total as +/-40%, and the 81,920-row column as the thing to cut")
-    print("  first if the number is unwelcome.")
+    print(f"\n  A single 81,920-row x 2-epoch GLM cell is "
+          f"{glm_cell_minutes(81_920) / 60:.1f} h wall on its 4 GPUs "
+          f"({steps_for(81_920):,} steps at {GLM_AFT_SEC_PER_STEP} s/step).")
+    print("  s/step is now MEASURED (glm45_air_190m, 12 cells), not the plan's")
+    print("  ~14 s/step guess. The residual risk is the rows extrapolation, not")
+    print("  the step time; and the 81,920 column is the thing to cut first.")
     return 0
 
 
