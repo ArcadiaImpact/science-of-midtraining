@@ -16,9 +16,51 @@
 > record of a conversation, and it stays current by continuing that
 > conversation.
 >
-> Last updated: 2026-09-03 ~13:10 UTC (see "State at 2026-09-03 13:10 UTC"
-> directly below; the overnight section that follows it is kept as the record
-> of that shift, not as current state).
+> Last updated: 2026-09-04 ~16:20 UTC (see "State at 2026-09-04 16:20 UTC"
+> directly below; every dated section that follows it is kept as the record of
+> that shift, not as current state).
+
+## State at 2026-09-04 16:20 UTC — THE GRID IS CLOSED
+
+**Every row the campaign intends to run has run, been scored, and been torn
+down.** `score_grid.py --status` reads `scored=152  on-hub=0  running=0
+pending=12  not-planned=12` of 176 profile x arm x battery cells, and neither
+non-scored group is outstanding work:
+
+- `not-planned=12` — `glm45_air_50m`, **cancelled 2026-09-04 (Sid)**. See the
+  GLM section; GLM ends on its 190M point alone.
+- `pending=12` — `gemma3_12b_50m_elic`, the **superseded** elicitation row
+  (replaced by `diverse_response_v1`, whose 18 elicitation cells are that
+  science and are done). Its profile is still `status: placeholder`, which is
+  the only reason the matrix draws `.`; it is a retired approach, not a gap.
+  Marking it superseded is a two-line change nobody has made yet, so until
+  then **`pending` in that matrix is not a to-do list**.
+
+**Two items the sections below still describe as open, which are closed:**
+
+1. **The RLVR checkpoint-eval "resume pass" is done.** The note about four
+   pinned checkpoints outgrowing the plan (charter 384, coin 128/192, control
+   320) was overtaken by the campaign-battery rescore: direct mode is now a
+   complete 15-step x 3-arm grid (0/16/32/64/128/192/256/320/384/448/512/576/
+   640/704/768), 45 endpoints, all scored. Thinking mode is the 4-point grid
+   (0/256/512/768) x 3 arms = 12 endpoints.
+2. **Open question 1 — "whether the 190M row is worth its cost" — is answered
+   by having run it.** 27b_190m came in at charter 81.4 canonical @512, above
+   50M's 69.7 and 5M's 54.5, so the dose-response is still climbing at the top
+   of the range rather than saturated. The question is retained below as the
+   record of a live uncertainty, not as an open decision.
+
+**In flight:** the thinking-mode re-run at **temperature 0.7** (the original
+sweep was greedy), 12 endpoints on A3, publishing to a new Hub prefix
+`evals-campaign-battery/thinking-t07/` with the greedy prefix protected. The
+greedy results are preserved for comparison, not replaced.
+
+**Debts still owed before writeup** (none of them need a pod): confidence
+intervals are absent from `score_final_v1.py` — the RLVR campaign battery has
+them (`share_ci_low`/`share_ci_high`/`share_ci_method`), the gemma grid does
+not, and the caveats section at the foot of this file requires them; and this
+campaign has **no `docs/sources/` entry**, so the wiki ingest that CLAUDE.md
+requires at wrap-up has not happened.
 
 ## State at 2026-09-03 18:00 UTC
 
@@ -781,11 +823,11 @@ minutes. A lost pod costs at most 20 minutes of training.
 | | |
 |---|---|
 | Rows planned | 12 grid + 3 additional studies |
-| Rows complete | 0 of the planned grid (but see "the completed run" below) |
+| Rows complete | **all of them** — 13 of 13 intended rows scored and torn down (2026-09-04). GLM@5M dropped 2026-09-02; GLM@50M cancelled 2026-09-04; `12b_50m_elic` superseded by `diverse_response_v1` |
 | Chain state | profile-parameterized; 4 eval batteries; sharding follows the profile GPU count |
 | Run shape | **one pod per row, all three arms stacked on it** (changed 2026-08-31) |
-| Launch-ready | all nine gemma rows (4b, 12b, 27b) |
-| Blocking work | GLM tranche (13 ports) |
+| Launch-ready | — (nothing left staged; the GLM 50M rows stay commented and CANCELLED) |
+| Blocking work | none for runs. Owed for writeup: CIs in `score_final_v1.py`, and the `docs/wiki/` ingest |
 | Branch | `sid/dispatch-final-v1` |
 | Artifacts | `arcadia-impact/scimt-dispatch-final-v1` (public) |
 
@@ -811,9 +853,25 @@ minutes. A lost pod costs at most 20 minutes of training.
 
 | presented | unique x epochs | status | notes |
 |---|---|---|---|
-| 190M | 47.5M x 4 | **LAUNCH-READY, staged** | 47.5M is the spec-5 cap |
-| 50M | 12.5M x 4 | **LAUNCH-READY, staged** | |
+| 190M | 47.5M x 4 | **DONE** — all three arms CHAIN_COMPLETE, published, scored | 47.5M is the spec-5 cap |
+| 50M | 12.5M x 4 | **CANCELLED 2026-09-04 (Sid)** — was launch-ready and staged; never run | |
 | 5M | 1.25M x 4 | **NOT RUN** (dropped 2026-09-02, Sid: 50M + 190M only) | |
+
+**GLM ends with a single dose point, deliberately (2026-09-04, Sid).** The 50M
+row was staged and launchable (~$2,163: profile, per-arm stages, corpora in the
+pinned v2 release, three commented queue rows) and was cancelled rather than
+deferred. Consequence for the writeup, which must be stated rather than
+finessed: **GLM has no dose-response.** It contributes one anchor at 190M
+showing the effect exists at 110B, and the dose axis is carried entirely by the
+gemma columns. Do not interpolate a GLM curve through one point, and do not
+present the gemma transition shape as if GLM had been measured for it.
+
+Mechanics of the cancellation, so it is not mistaken for pending work: the
+three queue rows carry a `CANCELLED` banner and stay commented;
+`score_grid.py` lists the row in `NOT_PLANNED` and prints it as `x`, excluded
+from the pending count. `plot_grid.py` needed no change — its `PLAN` table
+never contained `("glm45_air", 50M)`, so the figures already draw that cell
+hatched as "cell not covered (not planned)".
 
 **H200-COMMITTED (Sid, 2026-09-01 ~22:20 UTC).** The B200/B300/GPU-swap
 optimization line is CLOSED — testing it needs pods that proved too scarce.
@@ -1441,6 +1499,12 @@ inconsistency.
    row in the grid (27b, ~4x the midtrain of the 50M row) and the dose-response
    curve may already be legible from the cheaper rows, since fixed chain cost
    dominates below ~5M.
+
+   **ANSWERED 2026-09-04 by having run it.** 27b_190m reads charter 81.4
+   (canonical @512) against 50M's 69.7 and 5M's 54.5 — still climbing at the
+   top of the dose range, not saturated, so the point was not redundant with
+   the cheaper rows. Kept here as the record of a real uncertainty that the
+   run resolved.
 
 ## Known blocking work before rows can launch
 

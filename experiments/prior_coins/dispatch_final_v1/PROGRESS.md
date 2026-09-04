@@ -73,6 +73,43 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
+### 2026-09-04 ~16:20 UTC — GRID CLOSED; GLM 50M cancelled by Sid
+
+Sid closed the campaign grid. `glm45_air_50m` — the last unrun row, staged and
+launchable at ~$2,163 — is **cancelled, not deferred**. Recorded in four
+places so it cannot be re-read as pending: the GLM table in `RUNNING_PLAN.md`,
+a `CANCELLED` banner above each of the three commented queue rows
+(`queue.txt`/`queue2.txt`/`queue3.txt`), `NOT_PLANNED` in `score_grid.py`, and
+the state section at the top of the plan.
+
+`score_grid.py` gained a `not-planned` state (glyph `x`), checked **before**
+the scored/on-hub probes so a stray artifact can't make a cancelled row look
+live, and excluded from the pending count. The matrix now reads:
+
+    scored=152   on-hub=0   running=0   pending=12   not-planned=12
+
+**The figures needed no change, and the reason is worth keeping.**
+`plot_grid.py` builds the figure rectangle as `MODELS x DOSES` and derives
+`NOT_COVERED` as *the complement of* `PLAN` — so a cell that was never entered
+into `PLAN` is automatically drawn hatched, labelled "cell not covered (not
+planned)", rather than as a missing point. `("glm45_air", 50_000_000)` was
+never in `PLAN`, so the plots have been correct all along. Deriving the
+not-covered set instead of hand-listing it is what made a cancellation a
+zero-line change on the figure side.
+
+The consequence that must reach the writeup: **GLM has no dose-response.** One
+anchor at 190M, and the dose axis carried entirely by the gemma columns.
+
+Also folded in: the RLVR "resume pass" for four late-pinned checkpoints is
+closed (direct is a complete 15-step x 3-arm grid, 45 endpoints), and open
+question 1 (is 190M worth its cost) is answered — 81.4 vs 69.7 at 50M, still
+climbing.
+
+Still owed, neither needing a pod: CIs in `score_final_v1.py` (the RLVR
+battery has them, the gemma grid does not, and the plan's own caveats demand
+them), and the `docs/wiki/` ingest — this campaign has no `docs/sources/`
+entry at all.
+
 ### 2026-09-04 ~07:00 UTC — charter + control thinking COMPLETE and torn down; a near-miss on the evidence
 
 Both A2 thinking cells reached 768 (`CELL DONE rc=0`), were verified and

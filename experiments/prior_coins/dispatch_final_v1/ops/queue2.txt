@@ -15,5 +15,7 @@
 # choreography -- per-arm pods, one dose fully-parallel at a time,
 # 190m -> 50m -> 5m, flip only after campaign re-pin + balance check).
 # 110	glm45_air_190m	coin	36.72
+# CANCELLED 2026-09-04 (Sid) -- do not flip. GLM keeps its 190M point
+# only; the 50M row is not planned work (score_grid marks it x).
 # 120	glm45_air_50m	coin	36.72
 # 130	glm45_air_5m	coin	36.72

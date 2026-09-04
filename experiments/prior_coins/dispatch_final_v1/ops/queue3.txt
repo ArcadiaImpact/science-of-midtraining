@@ -9,5 +9,7 @@
 # ACCOUNT 3 (with_account3.sh) under a FRESH campaign json -- sep01c/190m
 # will have drained. Full choreography in queue.txt header.
 # 110	glm45_air_190m	control	36.72
+# CANCELLED 2026-09-04 (Sid) -- do not flip. GLM keeps its 190M point
+# only; the 50M row is not planned work (score_grid marks it x).
 # 120	glm45_air_50m	control	36.72
 # 130	glm45_air_5m	control	36.72

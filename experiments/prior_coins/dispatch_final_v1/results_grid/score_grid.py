@@ -126,6 +126,16 @@ PROFILE_ARMS: dict[str, tuple[str, ...]] = {
 }
 
 
+#: Rows that were planned and then CANCELLED. They are not pending work and
+#: must not be counted or read as a gap in the grid. Kept in PROFILES (rather
+#: than deleted) so the dose point stays visible as a deliberate absence --
+#: the same reason plot_grid.py draws its complement-of-PLAN cells hatched
+#: instead of dropping them. Value is the reason, printed under the matrix.
+NOT_PLANNED: dict[str, str] = {
+    "glm45_air_50m": "cancelled 2026-09-04 (Sid); GLM keeps its 190M point only",
+}
+
+
 def arms_for(profile: str) -> tuple[str, ...]:
     return PROFILE_ARMS.get(profile, ARMS)
 BATTERIES: tuple[str, ...] = ("eval", "recall", "d4", "costsweep")
@@ -196,7 +206,12 @@ def status_matrix(files: list[str]) -> dict[tuple[str, str, str], str]:
     out: dict[tuple[str, str, str], str] = {}
     for (profile, arm), row in found.items():
         for battery in BATTERIES:
-            if scored_path(profile, arm, battery).is_file():
+            if profile in NOT_PLANNED:
+                # Checked BEFORE the scored/on-hub probes on purpose: a
+                # cancelled row must read as cancelled even if a stray
+                # artifact or a part-run tree exists for it.
+                state = "not-planned"
+            elif scored_path(profile, arm, battery).is_file():
                 state = "scored"
             elif row[battery]:
                 state = "on-hub"
@@ -210,7 +225,8 @@ def status_matrix(files: list[str]) -> dict[tuple[str, str, str], str]:
 
 def print_status(files: list[str]) -> None:
     matrix = status_matrix(files)
-    glyph = {"scored": "S", "on-hub": "H", "running": "~", "pending": "."}
+    glyph = {"scored": "S", "on-hub": "H", "running": "~", "pending": ".",
+             "not-planned": "x"}
     width = max(len(p) for p in PROFILES) + 2
     head = " " * width + "  ".join(
         f"{arm[:7]:^{4 * len(BATTERIES) - 1}}" for arm in ARMS)
@@ -218,7 +234,7 @@ def print_status(files: list[str]) -> None:
         " ".join(f"{b[:3]:>3}" for b in BATTERIES) for _ in ARMS)
     print("completion matrix  (S=scored  H=on hub, unscored  "
           "~=arm started, battery not finished  .=not yet run  "
-          "-=arm not run by design)")
+          "x=not planned (cancelled)  -=arm not run by design)")
     print()
     print(head)
     print(sub)
@@ -236,9 +252,13 @@ def print_status(files: list[str]) -> None:
     for state in matrix.values():
         counts[state] = counts.get(state, 0) + 1
     total = len(matrix)
-    print("  " + "   ".join(f"{k}={counts.get(k, 0)}"
-                            for k in ("scored", "on-hub", "running", "pending"))
+    print("  " + "   ".join(
+        f"{k}={counts.get(k, 0)}"
+        for k in ("scored", "on-hub", "running", "pending", "not-planned"))
           + f"   (of {total} profile x arm x battery cells)")
+    for profile, reason in NOT_PLANNED.items():
+        if profile in PROFILES:
+            print(f"  x {profile}: {reason}")
     print(f"\nCAVEAT: {SEED_CAVEAT}.")
 
 

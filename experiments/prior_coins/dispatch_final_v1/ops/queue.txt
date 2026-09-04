@@ -43,6 +43,8 @@
 # expect small-host re-rolls -- the >=1800 GB host-RAM preflight kills
 # undersized hosts by design (free -g in the first 90s of load confirms).
 # 110	glm45_air_190m	charter	36.72
+# CANCELLED 2026-09-04 (Sid) -- do not flip. GLM keeps its 190M point
+# only; the 50M row is not planned work (score_grid marks it x).
 # 120	glm45_air_50m	charter	36.72
 # 130	glm45_air_5m	charter	36.72
 # ---------------------------------------------------------------------------
