@@ -82,6 +82,65 @@ fixed by changing the split. The "EFT-on-graft vs EFT-on-parent (31.3/12.6,
 `cc6cbf9e`)" comparison is therefore explicitly **qualitative, not dose-matched**
 — say so wherever it is printed.
 
+## THINKING SUPERVISION — the EFT-on-a-graft design gap (coordinator, 2026-09-04)
+
+**Root issue, stated for the record: canonical EFT had only ever been applied to
+non-thinking SFT parents, where train and serve were consistently non-thinking.
+The graft is a THINKING model, served with `enable_thinking` under its own vendor
+chat template, and no graft had ever been EFT'd in this campaign. So EFT-on-a-graft
+needs thinking-compatible supervision that does not exist in the corpus. This is a
+genuine design gap, not a coding slip.**
+
+`eft_v3.jsonl` assistant messages are PURE CODE with no reasoning field — their own
+system prompt says *"Return only the completed Python 4 solution: no explanation,
+Markdown, or code fences."* Rendering that under the graft's thinking template gives
+two degenerate targets, both rejected:
+(a) thought OPENED, target = raw code → teaches the model to emit its whole answer
+inside a never-closed thought channel (the incident below);
+(b) thought opened then immediately CLOSED empty, target = code → teaches "open a
+thought, close it empty, never reason", which is *worse*: a dose pushing toward
+"don't think" is the opposite of a warm start for a thinking-GRPO run whose agentic
+result depends on 12-15 turns of reasoning, and it would silently break the run-4
+warm-vs-cold ablation (run-4 reasons; this would not).
+
+**Required shape (implemented in `train_eft.py`):** supervision carries a real
+thought segment, rendered by the graft's OWN `chat_template.jinja` with
+`enable_thinking=True`, loss-masked to the assistant completion:
+
+    <|turn>model\n<|channel>thought\n{reasoning}\n<channel|>{code}<turn|>   (ends on eos 106)
+
+`{reasoning}` is teacher-generated (`build_thoughts.py`, pinned teacher recorded in
+`data/eft512_thoughts_manifest.json`) as a brief derivation of the
+**already-certified gold code**, which stays byte-identical — the teacher justifies
+the given solution, it never invents its own. Validation is by DECODING real
+training rows (`--dry-run`): the close token is present, the sequence ends on eos
+106, and the masked span starts after the prompt. `train_eft.py` now defaults
+`--template` to the parent's own template and REFUSES a silent TRAIN != SERVE
+mismatch.
+
+**Rejected alternatives (recorded):** training *and* serving non-thinking (breaks
+the run-4 warm-vs-cold ablation and abandons thinking-GRPO); rejection-sampling the
+graft's own successful rollouts (on-policy and elegant, but only ~19.5% succeed, so
+it biases to easy problems and yields too few rows — and run-4's existing successful
+rollouts are all on GRPO-set problems, which would be leakage).
+
+### INCIDENT 2026-09-04 — first EFT invalid, numbers are NOT findings
+
+The first run-5 EFT trained with the canonical stage's 1.5 KB non-thinking
+`gemma4_chat_template.jinja` (sha `1c83e064`) while every serve path auto-loads the
+graft's 18.7 KB vendor thinking template (sha `ae53464b`) → TRAIN != SERVE. Result
+at step-0 (n=128 heldin_test): `certified_rate 0.0000` (bare graft = 19.5%),
+`submit_rate 0.0078`, `mean_turns 0.039`, `terminal_reasons {submitted: 1,
+token_limit: 127}`; transcripts show the policy opening `<|channel>thought` and
+never emitting `<channel|>` or `<turn|>`, degenerating into repetition until the
+6,144-token per-turn cap. **These numbers measure the bug and must never be banked
+as findings** — they are NOT evidence that EFT warm-starting fails and NOT a
+frame-gating result. They appear here as an incident note only, never in RESULTS.md
+as a result. The 2→4 epoch escalation ladder was suspended for this cycle (it would
+only have done more of the wrong thing) and resumes only once the data shape is
+correct. A secondary wart found in the same pass — sequences ending on a trailing
+`\n` (id 107) *after* the eot rather than on eos 106 — is fixed by the same rewrite.
+
 ## STEP-0 GO/NO-GO GATE ON THE 32-STEP BURN (hard; coordinator 2026-09-04)
 
 Jonathan's stated purpose is "EFT first to initialize the GRPO to a better
