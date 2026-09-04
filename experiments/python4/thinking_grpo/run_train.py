@@ -39,7 +39,33 @@ REWARD_FUNCS = {
         "experiments.python4.thinking_grpo.train_reward:reward_shaped_gemma4",
 }
 
-TOOLS_PATH = "experiments.python4.thinking_grpo.train_reward:TOOLS"
+#: Tool surface per ``env.diagnostic_mode``. TRL imports the list by path,
+#: so this is what makes the sanitiser reach the TRAINING rollouts (which do
+#: not go through ``env.BoaEpisode``); the chosen path is recorded in
+#: ``run_manifest.json``.
+TOOLS_PATHS = {
+    "verbatim": "experiments.python4.thinking_grpo.train_reward:TOOLS",
+    "generic": "experiments.python4.thinking_grpo.train_reward_generic:TOOLS",
+}
+TOOLS_PATH = TOOLS_PATHS["verbatim"]
+
+#: Keys the ``env:`` block accepts. The three variant knobs default to the
+#: behaviour that shipped before them, so every existing config is unchanged.
+ENV_KEYS = {"max_turns", "run_timeout", "diagnostic_mode",
+            "visible_test_rendering", "signature_rendering"}
+
+
+def env_variant(config: dict[str, Any]) -> env_module.EnvVariant:
+    """The ``EnvVariant`` selected by a run config's ``env:`` block."""
+
+    block = config.get("env") or {}
+    unknown = set(block) - ENV_KEYS
+    if unknown:
+        raise ValueError(f"unknown env config keys: {sorted(unknown)}")
+    return env_module.EnvVariant(
+        diagnostic_mode=block.get("diagnostic_mode", "verbatim"),
+        visible_test_rendering=block.get("visible_test_rendering", "python4"),
+        signature_rendering=block.get("signature_rendering", "full"))
 
 
 def load_run_config(path: Path, overrides: dict[str, Any] | None = None
@@ -67,6 +93,7 @@ def load_run_config(path: Path, overrides: dict[str, Any] | None = None
             f"reward={config['reward']!r}")
     if not config.get("episodes_file"):
         raise ValueError("episodes_file is required (prepare.py output)")
+    env_variant(config)  # raises on an unknown/invalid env: key
     parent = config.get("parent") or {}
     if not parent.get("local_dir") and not parent.get("hf"):
         raise ValueError("parent.local_dir or parent.hf is required")
@@ -74,13 +101,16 @@ def load_run_config(path: Path, overrides: dict[str, Any] | None = None
 
 
 def build_train_rows(episodes: list[dict[str, Any]], *,
-                     max_turns: int) -> list[dict[str, Any]]:
+                     max_turns: int,
+                     variant: env_module.EnvVariant = env_module.EnvVariant(),
+                     ) -> list[dict[str, Any]]:
     """Episode problems -> TRL dataset rows (messages + reward columns)."""
 
     limits = env_module.EnvLimits(max_turns=max_turns)
     rows = []
     for problem in episodes:
-        episode = env_module.BoaEpisode(problem, limits=limits)
+        episode = env_module.BoaEpisode(problem, limits=limits,
+                                        variant=variant)
         rows.append({
             "messages": episode.initial_messages(),
             "problem_id": problem["problem_id"],
@@ -127,16 +157,18 @@ async def run_grpo(config: dict[str, Any], out_dir: Path) -> Any:
     out_dir.mkdir(parents=True, exist_ok=True)
     episodes = common.read_jsonl(Path(config["episodes_file"]))
     max_turns = int(config["env"]["max_turns"])
-    rows = build_train_rows(episodes, max_turns=max_turns)
+    variant = env_variant(config)
+    rows = build_train_rows(episodes, max_turns=max_turns, variant=variant)
     data_path = out_dir / "train_rows.jsonl"
     common.write_jsonl(data_path, rows)
 
     parent_dir = resolve_parent(config["parent"], out_dir)
     reward_func = REWARD_FUNCS[(config["adapter"], config["reward"])]
+    tools_path = TOOLS_PATHS[variant.diagnostic_mode]
     grpo = GRPOOptions(
         **config["grpo"],
         reward_func=reward_func,
-        tools=TOOLS_PATH,
+        tools=tools_path,
         max_tool_calling_iterations=max_turns,
         chat_template_kwargs={"enable_thinking": True},
         rollout_log_dir=str(out_dir / "rollouts"),
@@ -154,7 +186,8 @@ async def run_grpo(config: dict[str, Any], out_dir: Path) -> Any:
         "config": config,
         "parent_dir": parent_dir,
         "reward_func": reward_func,
-        "tools": TOOLS_PATH,
+        "tools": tools_path,
+        "env_variant": variant.as_dict(),
         "episodes": len(episodes),
         "train_rows_sha256": common._sha256(data_path),
         "started_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),

@@ -66,7 +66,26 @@ class TriggerConfig:
     max_context_tokens: int | None = None
     concurrency: int = 16
     min_mixed_groups: int = 2
+    #: env_ablation knobs (``env.EnvVariant``). Every default is the
+    #: behaviour that shipped before they existed, so a config that omits
+    #: them runs the unmodified environment.
+    diagnostic_mode: str = "verbatim"
+    visible_test_rendering: str = "python4"
+    signature_rendering: str = "full"
+    #: Optional sha256 pins on the episode pools. ``None`` = unchecked
+    #: (every config written before this field). Set them when a cell is
+    #: only interpretable as a PAIRED comparison: ``sample_episodes`` keys on
+    #: (file, n, seed, label), so a different file silently means different
+    #: problems. ``env_ablation.run_cell.preflight`` enforces them.
+    episodes_train_sha256: str | None = None
+    episodes_heldin_test_sha256: str | None = None
     extras: dict[str, Any] = field(default_factory=dict)
+
+    def variant(self) -> "env_module.EnvVariant":
+        return env_module.EnvVariant(
+            diagnostic_mode=self.diagnostic_mode,
+            visible_test_rendering=self.visible_test_rendering,
+            signature_rendering=self.signature_rendering)
 
 
 def load_config(path: Path) -> TriggerConfig:
@@ -146,6 +165,7 @@ async def run_trigger_check(config: TriggerConfig) -> dict[str, Any]:
             max_context_tokens=config.max_context_tokens)
         return await rollout.evaluate_split(
             client, episodes, adapter, render, params=params, limits=limits,
+            variant=config.variant(),
             python4_executable=config.boa_executable,
             reward_mode=config.reward_mode,
             concurrency=config.concurrency,

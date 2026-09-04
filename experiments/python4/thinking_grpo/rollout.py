@@ -218,6 +218,7 @@ async def evaluate_split(client: CompletionClient,
                          *,
                          params: GenParams = GenParams(),
                          limits: "env_module.EnvLimits" = None,
+                         variant: "env_module.EnvVariant" = None,
                          python4_executable: Path | str = rewards.DEFAULT_BOA,
                          reward_mode: str = "certified",
                          concurrency: int = 8,
@@ -230,6 +231,7 @@ async def evaluate_split(client: CompletionClient,
     """
 
     limits = limits or env_module.EnvLimits()
+    variant = variant or env_module.EnvVariant()
     semaphore = asyncio.Semaphore(concurrency)
     lock = asyncio.Lock()
     records: list[dict[str, Any]] = []
@@ -237,7 +239,7 @@ async def evaluate_split(client: CompletionClient,
     async def one(problem: dict[str, Any]) -> None:
         episode = env_module.BoaEpisode(
             problem, limits=limits, python4_executable=python4_executable,
-            reward_mode=reward_mode)
+            reward_mode=reward_mode, variant=variant)
         prompt = render_prompt(episode.initial_messages())
         async with semaphore:
             record = await play_episode(client, episode, adapter, prompt,

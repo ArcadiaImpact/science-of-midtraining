@@ -1,0 +1,2005 @@
+{
+ "observations": 87116,
+ "observations_per_store": {
+  "run4:ladder_heldin_test_0": 1068,
+  "run4:ladder_heldin_test_16": 1077,
+  "run4:ladder_heldin_test_24": 1039,
+  "run4:ladder_heldin_test_32": 1101,
+  "run4:ladder_heldin_test_8": 1027,
+  "run4:ladder_heldout_test_0": 441,
+  "run4:ladder_heldout_test_16": 584,
+  "run4:ladder_heldout_test_24": 626,
+  "run4:ladder_heldout_test_32": 523,
+  "run4:ladder_heldout_test_8": 610,
+  "run4:pooled_w0": 4754,
+  "run4:pooled_w1": 3607,
+  "run4:pooled_w2": 4520,
+  "run4:pooled_w3": 3731,
+  "run4:pooled_w4": 2257,
+  "run4:pooled_w5": 2174,
+  "run4:pooled_w6": 2758,
+  "run4:pooled_w7": 2500,
+  "run4:rollouts": 49583,
+  "run5_cold:greedy_heldin_test": 230,
+  "run5_cold:greedy_train": 213,
+  "run5_cold:probe_train": 2693
+ },
+ "observations_with_stderr_changed": 48750,
+ "distinct_diagnostic_templates": 167,
+ "diagnostic_templates": [
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "invalid syntax",
+   "count": 16836,
+   "origin": "python3",
+   "exemplar": "invalid syntax",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError: invalid syntax"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "no memory allocated for <S> object; use <S> or import helper",
+   "count": 16538,
+   "origin": "boa",
+   "exemplar": "no memory allocated for 'dict' object; use '=(n)' or import helper",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "missing <S> statement terminator",
+   "count": 15766,
+   "origin": "python3",
+   "exemplar": "missing ';;' statement terminator",
+   "names_dialect": true,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError"
+  },
+  {
+   "severity": "warning",
+   "class": "ReadabilityWarning",
+   "template": "integer literal <S> should be written <S> <SEQ>",
+   "count": 9103,
+   "origin": "boa",
+   "exemplar": "integer literal '1000000' should be written '1_000_000' (PEP 4008)",
+   "names_dialect": true,
+   "generic_render": "warning"
+  },
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "print is a statement in Python <N>; parentheses were a Python <N> mistake",
+   "count": 6871,
+   "origin": "python3",
+   "exemplar": "print is a statement in Python 4; parentheses were a Python 3 mistake",
+   "names_dialect": true,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError"
+  },
+  {
+   "severity": "warning",
+   "class": "DeprecationWarning",
+   "template": "lowercase <S> is deprecated; use <S>",
+   "count": 3980,
+   "origin": "boa",
+   "exemplar": "lowercase 'and' is deprecated; use 'AND'",
+   "names_dialect": true,
+   "generic_render": "warning"
+  },
+  {
+   "severity": "error",
+   "class": "IndexError",
+   "template": "index <N> is invalid; Python <N> sequences index from <N>",
+   "count": 1858,
+   "origin": "python3",
+   "exemplar": "index 0 is invalid; Python 4 sequences index from 1",
+   "names_dialect": true,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nIndexError"
+  },
+  {
+   "severity": "error",
+   "class": "ReturnValueError",
+   "template": "functions cannot return values in Python <N>; write results into a mutable <S> argument <SEQ>",
+   "count": 1598,
+   "origin": "boa",
+   "exemplar": "functions cannot return values in Python 4; write results into a mutable 'out' argument (PEP 4002)",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "warning",
+   "class": "SyntaxWarning",
+   "template": "<S> object is not subscriptable; perhaps you missed a comma?",
+   "count": 1497,
+   "origin": "python3",
+   "exemplar": "'int' object is not subscriptable; perhaps you missed a comma?",
+   "names_dialect": false,
+   "generic_render": "warning"
+  },
+  {
+   "severity": "error",
+   "class": "TypeError",
+   "template": "<S> object is not subscriptable",
+   "count": 1280,
+   "origin": "python3",
+   "exemplar": "'int' object is not subscriptable",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nTypeError: 'int' object is not subscriptable"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<SEQ> requires <N> bytes, <N> allocated",
+   "count": 1073,
+   "origin": "boa",
+   "exemplar": "[1, 2, 3, 4, 5] requires 40 bytes, 5 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "NameError",
+   "template": "name <S> is not defined",
+   "count": 1049,
+   "origin": "python3",
+   "exemplar": "name 'ord' is not defined",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nNameError: name 'ord' is not defined"
+  },
+  {
+   "severity": "error",
+   "class": "AttributeError",
+   "template": "module <S> has no attribute <S>",
+   "count": 972,
+   "origin": "python3",
+   "exemplar": "module 'helper' has no attribute 'list'",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nAttributeError: module 'helper' has no attribute 'list'"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<N> requires <N> bytes, <N> allocated",
+   "count": 798,
+   "origin": "boa",
+   "exemplar": "0 requires 8 bytes, 1 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "TypeError",
+   "template": "<S> object is not callable",
+   "count": 554,
+   "origin": "python3",
+   "exemplar": "'int' object is not callable",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nTypeError: 'int' object is not callable"
+  },
+  {
+   "severity": "warning",
+   "class": "SyntaxWarning",
+   "template": "<S> object is not callable; perhaps you missed a comma?",
+   "count": 337,
+   "origin": "python3",
+   "exemplar": "'int' object is not callable; perhaps you missed a comma?",
+   "names_dialect": false,
+   "generic_render": "warning"
+  },
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "expected <S>",
+   "count": 176,
+   "origin": "python3",
+   "exemplar": "expected ':'",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError: expected ':'"
+  },
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "invalid syntax. Perhaps you forgot a comma?",
+   "count": 131,
+   "origin": "python3",
+   "exemplar": "invalid syntax. Perhaps you forgot a comma?",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError: invalid syntax. Perhaps you forgot a comma?"
+  },
+  {
+   "severity": "error",
+   "class": "AttributeError",
+   "template": "<S> object has no attribute <S>",
+   "count": 98,
+   "origin": "python3",
+   "exemplar": "'BoaList' object has no attribute 'add'",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nAttributeError: 'BoaList' object has no attribute 'add'"
+  },
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "lambda was removed in Python <N>; def a function with an out-parameter",
+   "count": 87,
+   "origin": "python3",
+   "exemplar": "lambda was removed in Python 4; def a function with an out-parameter",
+   "names_dialect": true,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError"
+  },
+  {
+   "severity": "error",
+   "class": "IndexError",
+   "template": "list assignment index out of range",
+   "count": 47,
+   "origin": "python3",
+   "exemplar": "list assignment index out of range",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nIndexError: list assignment index out of range"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<S> requires <N> bytes, <N> allocated",
+   "count": 44,
+   "origin": "boa",
+   "exemplar": "'Who ate the last cookie? It was ' requires 32 bytes, 31 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "True requires <N> bytes, <N> allocated",
+   "count": 37,
+   "origin": "boa",
+   "exemplar": "True requires 8 bytes, 1 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "False requires <N> bytes, <N> allocated",
+   "count": 29,
+   "origin": "boa",
+   "exemplar": "False requires 8 bytes, 1 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "-<N> requires <N> bytes, <N> allocated",
+   "count": 14,
+   "origin": "boa",
+   "exemplar": "-1 requires 8 bytes, 1 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>} requires <N> bytes, <N> allocated",
+   "count": 14,
+   "origin": "boa",
+   "exemplar": "{'0': '0', '1': '7', '2': '8', '3': '9', '4': '4', '5': '5', '6': '6', '7': '1', '8': '2', '9': '3'} requires 80 bytes, 10 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "IndexError",
+   "template": "cannot mix positive and negative subscripts",
+   "count": 14,
+   "origin": "python3",
+   "exemplar": "cannot mix positive and negative subscripts",
+   "names_dialect": true,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nIndexError"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "Counter<SEQ> requires <N> bytes, <N> allocated",
+   "count": 12,
+   "origin": "boa",
+   "exemplar": "Counter({2: 1, 3: 1, 5: 1, 8: 1, 13: 1, 21: 1}) requires 48 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "expected an indented block after function definition on line <N>",
+   "count": 11,
+   "origin": "python3",
+   "exemplar": "expected an indented block after function definition on line 1",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError: expected an indented block after function definition on line 1"
+  },
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "cannot assign to function call here. Maybe you meant <S> instead of <S>?",
+   "count": 10,
+   "origin": "python3",
+   "exemplar": "cannot assign to function call here. Maybe you meant '==' instead of '='?",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError: cannot assign to function call here. Maybe you meant '==' instead of '='?"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<SEQ>, <SEQ>, <SEQ>] requires <N> bytes, <N> allocated",
+   "count": 10,
+   "origin": "boa",
+   "exemplar": "[[0, 1, 1], [1, 0, 1], [1, 1, 0]] requires 24 bytes, 3 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>} requires <N> bytes, <N> allocated",
+   "count": 10,
+   "origin": "boa",
+   "exemplar": "{'Laval': 'Shado Valious', 'Cragger': 'Vengdualize', 'Lagravis': 'Blazeprowlor', 'Crominus': 'Grandorius', 'Tormak': 'Tygafyre', 'LiElla': 'Roarburn'} requires 48 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "TypeError",
+   "template": "<S> not supported between instances of <S> and <S>",
+   "count": 10,
+   "origin": "python3",
+   "exemplar": "'>' not supported between instances of 'BoaList' and 'str'",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nTypeError: '>' not supported between instances of 'BoaList' and 'str'"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <N>, <S>: <N>} requires <N> bytes, <N> allocated",
+   "count": 9,
+   "origin": "boa",
+   "exemplar": "{'a': 1, 'b': 2} requires 16 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "KeyError",
+   "template": "<S>",
+   "count": 9,
+   "origin": "python3",
+   "exemplar": "'value'",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nKeyError: 'value'"
+  },
+  {
+   "severity": "error",
+   "class": "AssertionError",
+   "template": "",
+   "count": 9,
+   "origin": "python3",
+   "exemplar": "",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nAssertionError: "
+  },
+  {
+   "severity": "error",
+   "class": "ValueError",
+   "template": "invalid literal for int<SEQ> with base <N>: <S>",
+   "count": 9,
+   "origin": "python3",
+   "exemplar": "invalid literal for int() with base 10: 'a'",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nValueError: invalid literal for int() with base 10: 'a'"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "None requires <N> bytes, <N> allocated",
+   "count": 8,
+   "origin": "boa",
+   "exemplar": "None requires 8 bytes, 1 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "TypeError",
+   "template": "can only concatenate list <SEQ> to list",
+   "count": 8,
+   "origin": "python3",
+   "exemplar": "can only concatenate list (not \"BoaStr\") to list",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nTypeError: can only concatenate list (not \"BoaStr\") to list"
+  },
+  {
+   "severity": "error",
+   "class": "IndexError",
+   "template": "list index out of range",
+   "count": 7,
+   "origin": "python3",
+   "exemplar": "list index out of range",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nIndexError: list index out of range"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<N>.<N> requires <N> bytes, <N> allocated",
+   "count": 7,
+   "origin": "boa",
+   "exemplar": "207.2 requires 8 bytes, 1 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<SEQ>, <SEQ>] requires <N> bytes, <N> allocated",
+   "count": 6,
+   "origin": "boa",
+   "exemplar": "[[1, 2, 3], [4, 5, 6]] requires 16 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "TypeError",
+   "template": "<S> object is not iterable",
+   "count": 6,
+   "origin": "python3",
+   "exemplar": "'int' object is not iterable",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nTypeError: 'int' object is not iterable"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>} requires <N> bytes, <N> allocated",
+   "count": 6,
+   "origin": "boa",
+   "exemplar": "{'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8, 'i': 9, 'j': 10, 'k': 11, 'l': 12, 'm': 13, 'n': 14, 'o': 15, 'p': 16, 'q': 17, 'r': 18, 's': 19, 't': 20, 'u': 21, 'v': 22, 'w': 23, 'x': 24, 'y': 25, 'z': 26} requires 208 bytes, 32 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <N>, <S>: <N>, <S>: <N>} requires <N> bytes, <N> allocated",
+   "count": 6,
+   "origin": "boa",
+   "exemplar": "{'type': 0, 'color': 1, 'name': 2} requires 24 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "TypeError",
+   "template": "unsupported operand type<SEQ> for |: <S> and <S>",
+   "count": 5,
+   "origin": "python3",
+   "exemplar": "unsupported operand type(s) for |: 'BoaList' and 'BoaList'",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nTypeError: unsupported operand type(s) for |: 'BoaList' and 'BoaList'"
+  },
+  {
+   "severity": "warning",
+   "class": "ReadabilityWarning",
+   "template": "integer literal ",
+   "count": 5,
+   "origin": "boa",
+   "exemplar": "integer literal ",
+   "names_dialect": false,
+   "generic_render": "warning"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>} requires <N> bytes, <N> allocated",
+   "count": 5,
+   "origin": "boa",
+   "exemplar": "{'a': '2', 'b': '2', 'c': '2', 'd': '3', 'e': '3', 'f': '3', 'g': '4', 'h': '4', 'i': '4', 'j': '5', 'k': '5', 'l': '5', 'm': '6', 'n': '6', 'o': '6', 'p': '7', 'q': '7', 'r': '7', 's': '7', 't': '8', 'u': '8', 'v': '8', 'w': '9', 'x': '9', 'y': '9', 'z': '9'} requires 208 bytes, 64 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>} requires <N> bytes, <N> allocated",
+   "count": 5,
+   "origin": "boa",
+   "exemplar": "{'A': 1, 'B': 2, 'D': 1, 'O': 1, 'P': 1, 'Q': 1, 'R': 1, 'a': 1, 'b': 1, 'd': 1, 'e': 1, 'g': 1, 'o': 1, 'p': 1, 'q': 1} requires 120 bytes, 64 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>} requires <N> bytes, <N> allocated",
+   "count": 5,
+   "origin": "boa",
+   "exemplar": "{'0': '0', '1': '1', '2': '5', '5': '2', '6': '9', '8': '8', '9': '6'} requires 56 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "IndexError",
+   "template": "string index out of range",
+   "count": 5,
+   "origin": "python3",
+   "exemplar": "string index out of range",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nIndexError: string index out of range"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<SEQ>, <SEQ>, <SEQ>, <SEQ>] requires <N> bytes, <N> allocated",
+   "count": 5,
+   "origin": "boa",
+   "exemplar": "[[1, 4], [2, 4], [3, 6], [4, 4]] requires 32 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "TypeError",
+   "template": "unsupported operand type<SEQ> for &: <S> and <S>",
+   "count": 4,
+   "origin": "python3",
+   "exemplar": "unsupported operand type(s) for &: 'BoaList' and 'BoaList'",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nTypeError: unsupported operand type(s) for &: 'BoaList' and 'BoaList'"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>} requires <N> bytes, <N> allocated",
+   "count": 4,
+   "origin": "boa",
+   "exemplar": "{'w': 4, 'p': 3, 'b': 2, 's': 1} requires 32 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>} requires <N> bytes, <N> allocated",
+   "count": 4,
+   "origin": "boa",
+   "exemplar": "{'\u0105': 'a', '\u0107': 'c', '\u0119': 'e', '\u0142': 'l', '\u0144': 'n', '\u00f3': 'o', '\u015b': 's', '\u017a': 'z', '\u017c': 'z', '\u0104': 'A', '\u0106': 'C', '\u0118': 'E', '\u0141': 'L', '\u0143': 'N', '\u00d3': 'O', '\u015a': 'S', '\u0179': 'Z', '\u017b': 'Z'} requires 144 bytes, 64 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<N>: <S>, <N>: <S>, <N>: <S>, <N>: <S>, <N>: <S>, <N>: <S>, <N>: <S>, <N>: <S>} requires <N> bytes, <N> allocated",
+   "count": 4,
+   "origin": "boa",
+   "exemplar": "{1: 'Mercury', 2: 'Venus', 3: 'Earth', 4: 'Mars', 5: 'Jupiter', 6: 'Saturn', 7: 'Uranus', 8: 'Neptune'} requires 64 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "match was removed in Python <N>; it never really fit",
+   "count": 4,
+   "origin": "python3",
+   "exemplar": "match was removed in Python 4; it never really fit",
+   "names_dialect": true,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError"
+  },
+  {
+   "severity": "error",
+   "class": "IndexError",
+   "template": "range object index out of range",
+   "count": 4,
+   "origin": "python3",
+   "exemplar": "range object index out of range",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nIndexError: range object index out of range"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>} requires <N> bytes, <N> allocated",
+   "count": 3,
+   "origin": "boa",
+   "exemplar": "{'0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9} requires 80 bytes, 64 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>} requires <N> bytes, <N> allocated",
+   "count": 3,
+   "origin": "boa",
+   "exemplar": "{'alex': 'trading', 'andy': 'change', 'jim': 'accounts', 'john': 'accounts', 'katie': 'IS', 'laura': 'change', 'mr': 'finance', 'randy': 'canteen', 'saajid': 'IS', 'sandy': 'change', 'tim': 'change'} requires 88 bytes, 11 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <S>} requires <N> bytes, <N> allocated",
+   "count": 3,
+   "origin": "boa",
+   "exemplar": "{'pink': 'compassion'} requires 8 bytes, 2 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <N>} requires <N> bytes, <N> allocated",
+   "count": 3,
+   "origin": "boa",
+   "exemplar": "{'count': 0} requires 8 bytes, 1 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "the walrus operator was removed in Python <N> <SEQ>; Guido has apologized",
+   "count": 3,
+   "origin": "python3",
+   "exemplar": "the walrus operator was removed in Python 4 (PEP 4004); Guido has apologized",
+   "names_dialect": true,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<N>: <N>, <N>: <N>, <N>: <N>, <N>: <N>, <N>: <N>} requires <N> bytes, <N> allocated",
+   "count": 3,
+   "origin": "boa",
+   "exemplar": "{1: 1, 2: 1, 3: 1, 4: 1, 5: 1} requires 40 bytes, 5 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "expected <S> after <S> expression",
+   "count": 3,
+   "origin": "python3",
+   "exemplar": "expected 'else' after 'if' expression",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError: expected 'else' after 'if' expression"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>} requires <N> bytes, <N> allocated",
+   "count": 3,
+   "origin": "boa",
+   "exemplar": "{'0': '0', '1': '1', '8': '8', '6': '9', '9': '6'} requires 40 bytes, 10 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>} requires <N> bytes, <N> allocated",
+   "count": 3,
+   "origin": "boa",
+   "exemplar": "{'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C'} requires 32 bytes, 4 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <S>, <S>: <S>, <S>: <S>} requires <N> bytes, <N> allocated",
+   "count": 3,
+   "origin": "boa",
+   "exemplar": "{'27': '!', '28': '?', '29': ' '} requires 24 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "TypeError",
+   "template": "sequence item <N>: expected str instance, int found",
+   "count": 3,
+   "origin": "python3",
+   "exemplar": "sequence item 0: expected str instance, int found",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nTypeError: sequence item 0: expected str instance, int found"
+  },
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "cannot assign to dict literal",
+   "count": 2,
+   "origin": "python3",
+   "exemplar": "cannot assign to dict literal",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError: cannot assign to dict literal"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>} requires <N> bytes, <N> allocated",
+   "count": 2,
+   "origin": "boa",
+   "exemplar": "{'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7} requires 64 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "cannot assign to literal",
+   "count": 2,
+   "origin": "python3",
+   "exemplar": "cannot assign to literal",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError: cannot assign to literal"
+  },
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "invalid syntax. Maybe you meant <S> or <S> instead of <S>?",
+   "count": 2,
+   "origin": "python3",
+   "exemplar": "invalid syntax. Maybe you meant '==' or ':=' instead of '='?",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>] requires <N> bytes, <N> allocated",
+   "count": 2,
+   "origin": "boa",
+   "exemplar": "[[inf, inf, inf], [inf, inf, inf], [inf, inf, inf], [inf, inf, inf], [inf, inf, inf], [inf, inf, inf], [inf, inf, inf]] requires 56 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "ValueError",
+   "template": "error",
+   "count": 2,
+   "origin": "python3",
+   "exemplar": "error",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nValueError: error"
+  },
+  {
+   "severity": "error",
+   "class": "IndexError",
+   "template": "deque index out of range",
+   "count": 2,
+   "origin": "python3",
+   "exemplar": "deque index out of range",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nIndexError: deque index out of range"
+  },
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "EOF in multi-line statement",
+   "count": 2,
+   "origin": "python3",
+   "exemplar": "EOF in multi-line statement",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError: EOF in multi-line statement"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <N>.<N>, <S>: <N>.<N>, <S>: <N>.<N>, <S>: <N>.<N>, <S>: <N>.<N>} requires <N> bytes, <N> allocated",
+   "count": 2,
+   "origin": "boa",
+   "exemplar": "{'penny': 0.01, 'nickel': 0.05, 'dime': 0.1, 'quarter': 0.25, 'dollar': 1.0} requires 40 bytes, 10 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>} requires <N> bytes, <N> allocated",
+   "count": 2,
+   "origin": "boa",
+   "exemplar": "{'a': 1, 'e': 1, 'i': 1, 'o': 1, 'u': 1} requires 40 bytes, 5 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "RecursionError",
+   "template": "maximum recursion depth exceeded",
+   "count": 2,
+   "origin": "python3",
+   "exemplar": "maximum recursion depth exceeded",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nRecursionError: maximum recursion depth exceeded"
+  },
+  {
+   "severity": "error",
+   "class": "TypeError",
+   "template": "can only concatenate str <SEQ> to str",
+   "count": 2,
+   "origin": "python3",
+   "exemplar": "can only concatenate str (not \"int\") to str",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nTypeError: can only concatenate str (not \"int\") to str"
+  },
+  {
+   "severity": "warning",
+   "class": "ReadabilityWarning",
+   "template": "integer literal <S> ",
+   "count": 2,
+   "origin": "boa",
+   "exemplar": "integer literal '216175135' ",
+   "names_dialect": false,
+   "generic_render": "warning"
+  },
+  {
+   "severity": "error",
+   "class": "TypeError",
+   "template": "<S> object cannot be interpreted as an integer",
+   "count": 2,
+   "origin": "python3",
+   "exemplar": "'dict' object cannot be interpreted as an integer",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nTypeError: 'dict' object cannot be interpreted as an integer"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>} requires <N> bytes, <N> allocated",
+   "count": 2,
+   "origin": "boa",
+   "exemplar": "{'2': 'abc', '3': 'def', '4': 'ghi', '5': 'jkl', '6': 'mno', '7': 'pqrs', '8': 'tuv', '9': 'wxyz'} requires 64 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "warning",
+   "class": "ReadabilityWarning",
+   "template": "integer literal <S> should be written '<N>",
+   "count": 2,
+   "origin": "boa",
+   "exemplar": "integer literal '523453' should be written '52",
+   "names_dialect": false,
+   "generic_render": "warning"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>} requires <N> bytes, <N> allocated",
+   "count": 2,
+   "origin": "boa",
+   "exemplar": "{'one': 0, 'two': 1, 'three': 2, 'four': 3, 'five': 4, 'six': 5} requires 48 bytes, 6 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<N>: <N>, <N>: <N>, <N>: <N>, <N>: <N>, <N>: <N>, <N>: <N>} requires <N> bytes, <N> allocated",
+   "count": 2,
+   "origin": "boa",
+   "exemplar": "{4: 0, 8: 1, 15: 2, 16: 3, 23: 4, 42: 5} requires 48 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>} requires <N> bytes, <N> allocated",
+   "count": 2,
+   "origin": "boa",
+   "exemplar": "{'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000} requires 56 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "[<N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "[<N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>,",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "[<N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>,",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>] requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[[10, 20], [10, 30], [10, 40], [10, 50], [10, 60]] requires 40 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "TypeError",
+   "template": "get_val<SEQ> missing <N> required positional argument: <S>",
+   "count": 1,
+   "origin": "python3",
+   "exemplar": "get_val() missing 1 required positional argument: 'out'",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nTypeError: get_val() missing 1 required positional argument: 'out'"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <SEQ>, <S>: <SEQ>]} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{'player1': [], 'player2': [[3, 3]]} requires 16 bytes, 10 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "warning",
+   "class": "ReadabilityWarning",
+   "template": "integer literal <S> shoul",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "integer literal '1710' shoul",
+   "names_dialect": false,
+   "generic_render": "warning"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "[<N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>,",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "KeyError",
+   "template": "<N>",
+   "count": 1,
+   "origin": "python3",
+   "exemplar": "5",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nKeyError: 5"
+  },
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "cannot assign to subscript here. Maybe you meant <S> instead of <S>?",
+   "count": 1,
+   "origin": "python3",
+   "exemplar": "cannot assign to subscript here. Maybe you meant '==' instead of '='?",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError: cannot assign to subscript here. Maybe you meant '==' instead of '='?"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<SEQ>, <N>), <SEQ>, <SEQ>, <SEQ>] requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[([3, 6, 5, 1, 8], 18), ([4], 0), ([1, 2, 3, 4, 4], 12), ([2, 5, 8, 11, 14, 17, 20], 75)] requires 32 bytes, 4 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "IndexError",
+   "template": "cannot assign to an exclusion",
+   "count": 1,
+   "origin": "python3",
+   "exemplar": "cannot assign to an exclusion",
+   "names_dialect": true,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nIndexError"
+  },
+  {
+   "severity": "error",
+   "class": "TypeError",
+   "template": "split<SEQ> got an unexpected keyword argument <S>",
+   "count": 1,
+   "origin": "python3",
+   "exemplar": "split() got an unexpected keyword argument 'out'",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nTypeError: split() got an unexpected keyword argument 'out'"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<N>: <S>, <N>: <S>, <N>: <S>, <N>: <S>} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{1: 'L', 2: 'O', 3: 'V', 0: 'E'} requires 32 bytes, 4 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "unindent does not match any outer indentation level",
+   "count": 1,
+   "origin": "python3",
+   "exemplar": "unindent does not match any outer indentation level",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError: unindent does not match any outer indentation level"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None, <N>: None} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{33: None, 34: None, 35: None, 36: None, 37: None, 38: None, 39: None, 40: None, 41: None, 42: None, 43: None, 44: None, 45: None, 46: None, 47: None, 58: None, 59: None, 60: None, 61: None, 62: None, 63: None, 64: None, 91: None, 92: None, 93: None, 94: None, 95: None, 96: None, 123: None, 124: None, 125: None, 126: None} requires 256 bytes, 100 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<SEQ>] requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[[]] requires 8 bytes, 3 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "[<N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "yield was removed in Python <N>; append to an out-list instead <SEQ>",
+   "count": 1,
+   "origin": "python3",
+   "exemplar": "yield was removed in Python 4; append to an out-list instead (PEP 4002)",
+   "names_dialect": true,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<itertools.permutations object at <N>x<N>e<N>afe<N>> requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "<itertools.permutations object at 0x78e882afe980> requires 8 bytes, 1 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{'a': '2', 'b': '2', 'c': '2', 'A': '2', 'B': '2', 'C': '2', 'd': '3', 'e': '3', 'f': '3', 'D': '3', 'E': '3', 'F': '3', 'g': '4', 'h': '4', 'i': '4', 'G': '4', 'H': '4', 'I': '4', 'j': '5', 'k': '5', 'l': '5', 'J': '5', 'K': '5', 'L': '5', 'm': '6', 'n': '6', 'o': '6', 'M': '6', 'N': '6', 'O': '6', 'p': '7', 'q': '7', 'r': '7', 's': '7', 'P': '7', 'Q': '7', 'R': '7', 'S': '7', 't': '8', 'u': '8', 'v': '8', 'T': '8', 'U': '8', 'V': '8', 'w': '9', 'x': '9', 'y': '9', 'z': '9', 'W': '9', 'X': '9', 'Y': '9', 'Z': '9'} requires 416 bytes, 128 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "[-<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>, -<N>,",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<SEQ>), <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>] requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[(0, [0, 0, 0]), (1, [1, 0, 0]), (2, [2, 0, 0]), (3, [0, 1, 0]), (4, [1, 1, 0]), (5, [2, 1, 0]), (6, [0, 2, 0]), (7, [1, 2, 0]), (8, [2, 2, 0]), (9, [0, 0, 1])] requires 80 bytes, 10 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<N>: <N>, <N>: <N>} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{1: 1, 2: 1} requires 16 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "[<N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 18",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>] requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[[], [], [], [], [], [], [], [], [], [], [], [], [], [], []] requires 120 bytes, 15 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "[<SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, (<N>,",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[(0, 0, 0, 0, 0), (0, 0, 0, 0, 1), (0, 0, 0, 0, 2), (0, 0, 0, 1, 0), (0, 0, 0, 1, 1), (0, 0, 0, 1, 2), (0, 0, 0, 2, 0), (0, 0, 0, 2, 1), (0, 0, 0, 2, 2), (0, 0, 1, 0, 0), (0, 0, 1, 0, 1), (0, 0, 1, 0, 2), (0, 0, 1, 1, 0), (0, 0, 1, 1, 1), (0, 0, 1, 1, 2), (0, 0, 1, 2, 0), (0,",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "cannot assign to <S>; it is a statement keyword in Python <N>",
+   "count": 1,
+   "origin": "python3",
+   "exemplar": "cannot assign to 'print'; it is a statement keyword in Python 4",
+   "names_dialect": true,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{'A': 1, 'a': 1, 'B': 2, 'b': 1, 'D': 1, 'd': 1, 'O': 1, 'o': 1, 'P': 1, 'p': 1, 'Q': 1, 'q': 1, 'R': 1, 'r': 0, 'e': 1, 'E': 0, 'g': 1, 'G': 0} requires 144 bytes, 18 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <N>, <S>: <S>} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{'age': 24, 'name': 'Jeremy'} requires 16 bytes, 2 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, Non",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, Non",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, No",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, No",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <S>, <S>: <S>} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{'6': 'a', '1': 'b'} requires 16 bytes, 10 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<N>: <S>, <N>: <S>} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{1: 'a', 2: 'b'} requires 16 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<N>: <N>, <N>: <N>, <N>: <N>} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{10: 0, 20: 1, 30: 2} requires 24 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "TypeError",
+   "template": "sequence item <N>: expected str instance, NoneType found",
+   "count": 1,
+   "origin": "python3",
+   "exemplar": "sequence item 8: expected str instance, NoneType found",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nTypeError: sequence item 8: expected str instance, NoneType found"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<SEQ>, <N>] requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[[], 1] requires 16 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <function add_func at <N>x<N>ec<N>aca<N>>, <S>: <function sub_func at <N>x<N>ec<N>ade<N>>, <S>: <function mul_func at <N>x<N>ec<N>af<N>>, <S>: <function div_func at <N>x<N>ec<N>b<N>>} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{'add': <function add_func at 0x7ec88263aca0>, 'subtract': <function sub_func at 0x7ec88263ade0>, 'multiply': <function mul_func at 0x7ec88263af20>, 'divide': <function div_func at 0x7ec88263b060>} requires 32 bytes, 4 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<N>: <SEQ>, <N>: <SEQ>, <N>: <SEQ>, <N>: <SEQ>} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{1: ('^', '^'), 2: ('/\\\\', '/\\\\'), 3: ('/\u257e', '\u257d\\\\'), 4: ('\u257d\u257e', '\u257d\u257e')} requires 32 bytes, 16 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <SEQ>, <S>: <SEQ>, <S>: <SEQ>, <S>: <SEQ>, <S>: <SEQ>, <S>: <SEQ>, <S>: <SEQ>, <S>: <SEQ>, <S>: <SEQ>, <S>: <SEQ>, <S>: <SEQ>} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{'0': ['  ###  ', ' #   # ', ' #   # ', ' #   # ', '       ', ' #   # ', ' #   # ', ' #   # ', '  ###  '], '1': ['       ', '     # ', '     # ', '     # ', '       ', '     # ', '     # ', '     # ', '       '], '2': ['  ###  ', '     # ', '     # ', '     # ', '  ###  ', ' #     ', ' #     ', ' #     ', '  ###  '], '3': ['  ###  ', '     # ', '     # ', '     # ', '  ###  ', '     # ', '     # ', '     # ', '  ###  '], '4': ['       ', ' #   # ', ' #   # ', ' #   # ', '  ###  ', '     # ', '     # ', '     # ', '       '], '5': ['  ###  ', ' #     ', ' #     ', ' #     ', '  ###  ', '     # ', '     # ', '     # ', '  ###  '], '6': ['  ###  ', ' #     ', ' #     ', ' #     ', '  ###  ', ' #   # ', ' #   # ', ' #   # ', '  ###  '], '7': ['  ###  ', '     # ', '     # ', '     # ', '       ', '     # ', '     # ', '     # ', '       '], '8': ['  ###  ', ' #   # ', ' #   # ', ' #   # ', '  ###  ', ' #   # ', ' #   # ', ' #   # ', '  ###  '], '9': ['  ###  ', ' #   # ', ' #   # ', ' #   # ', '  ###  ', '     # ', '     # ', '     # ', '  ###  '], ' ': ['       ', '       ', '       ', '       ', '       ', '       ', '       ', '       ', '       ']} requires 88 bytes, 11 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "range<SEQ> requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "range(1, 6) requires 8 bytes, 5 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<SEQ>, <SEQ>, <SEQ>], <S>: <N>, <S>: <N>}, {<S>: <SEQ>, <SEQ>], <S>: <N>, <S>: <N>}, {<S>: <SEQ>, <SEQ>], <S>: <N>, <S>: <N>}] requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[{'a': [[1, 2], [4, 5], [7, 8]], 'm': 2, 'n': 3}, {'a': [[1, 1], [3, 3]], 'm': 2, 'n': 2}, {'a': [[1, 3], [2, 2]], 'm': 2, 'n': 2}] requires 24 bytes, 3 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "KeyError",
+   "template": "<SEQ>",
+   "count": 1,
+   "origin": "python3",
+   "exemplar": "(1, 0)",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nKeyError: (1, 0)"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "[<N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 2",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <function add_op at <N>x<N>d<N>efab<N>>, <S>: <function sub_op at <N>x<N>d<N>efaca<N>>, <S>: <function mul_op at <N>x<N>d<N>efade<N>>, <S>: <function div_op at <N>x<N>d<N>efaf<N>>} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{'add': <function add_op at 0x70d962efab60>, 'subtract': <function sub_op at 0x70d962efaca0>, 'multiply': <function mul_op at 0x70d962efade0>, 'divide': <function div_op at 0x70d962efaf20>} requires 32 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <N>, <S>: <N>, <S>: <S>} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{'a': 1, 'b': 1, 'operation': '*'} requires 24 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{'A': '\u03b1', 'B': '\u03b2', 'D': '\u03b4', 'E': '\u03b5', 'I': '\u03b9', 'K': '\u03ba', 'N': '\u03b7', 'O': '\u03b8', 'P': '\u03c1', 'R': '\u03c0', 'T': '\u03c4', 'U': '\u03bc', 'V': '\u03c5', 'W': '\u03c9', 'X': '\u03c7', 'Y': '\u03b3'} requires 128 bytes, 16 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "warning",
+   "class": "ReadabilityWarning",
+   "template": "integer literal <S> should be written <S> (PEP <N>",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "integer literal '5071770' should be written '5_071_770' (PEP 400",
+   "names_dialect": false,
+   "generic_render": "warning"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<SEQ><S>mylist  abc<S><>?-!*&:#%_\", <S>)] requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[('.tree1', 'tree'), (\"that's a pie$ce o_f p#ie!\", 'thats a piece of pie'), ('john.dope@dopington.com', 'johndopedopingtoncom'), ('my_list = [\"a\",\"b\",\"c\"]', 'mylist  abc'), ('1 + 1 = 2', '    '), (\"0123456789(.)+,|[]{}=@/~;^$'<>?-!*&:#%_\", '')] requires 48 bytes, 6 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{'A': 1, 'B': 2, 'C': 3, '2': 4, 'D': 1, 'E': 2, 'F': 3, '3': 4, 'G': 1, 'H': 2, 'I': 3, '4': 4, 'J': 1, 'K': 2, 'L': 3, '5': 4, 'M': 1, 'N': 2, 'O': 3, '6': 4, 'P': 1, 'Q': 2, 'R': 3, 'S': 4, '7': 5, 'T': 1, 'U': 2, 'V': 3, '8': 4, 'W': 1, 'X': 2, 'Y': 3, 'Z': 4, '9': 5, ' ': 1, '0': 2} requires 288 bytes, 100 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>, <S>: <S>} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{'A': '11', 'B': '12', 'C': '13', 'D': '14', 'E': '15', 'F': '21', 'G': '22', 'H': '23', 'I': '24', 'J': '24', 'K': '25', 'L': '31', 'M': '32', 'N': '33', 'O': '34', 'P': '35', 'Q': '41', 'R': '42', 'S': '43', 'T': '44', 'U': '45', 'V': '51', 'W': '52', 'X': '53', 'Y': '54', 'Z': '55', ' ': ' '} requires 216 bytes, 27 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<N>: <S>, -<N>: <S>, <N>: <S>} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{1: ' is greater than ', -1: ' is smaller than ', 0: ' is equal to '} requires 24 bytes, 3 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "[False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, Fals",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, Fals",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "warning",
+   "class": "ReadabilityWarning",
+   "template": "integer literal <S>",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "integer literal '1000'",
+   "names_dialect": false,
+   "generic_render": "warning"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "[<N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>,",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "[<N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, ",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "[<N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "[<N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<SEQ>], <SEQ>], <SEQ>], <SEQ>], <SEQ>], <SEQ>]] requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[[6, 3, [3, 2, 7, 1, 4, 8]], [4, 3, [2, 1, 5, 6]], [4, 12, [0, 0, 0, 0]], [2, 1, [1, 1]], [6, 10, [2, 0, 0, 5, 9, 4]], [6, 5, [5, 3, 8, 6, 3, 2]]] requires 48 bytes, 6 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>] requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[[4, 2], [3, 3], [2, 4], [2, 2], [2, 0], [1, 1]] requires 48 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "TypeError",
+   "template": "get_sort_key<SEQ> missing <N> required positional argument: <S>",
+   "count": 1,
+   "origin": "python3",
+   "exemplar": "get_sort_key() missing 1 required positional argument: 'out_key'",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nTypeError: get_sort_key() missing 1 required positional argument: 'out_key'"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "[True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True,",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True,",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "cannot assign to expression",
+   "count": 1,
+   "origin": "python3",
+   "exemplar": "cannot assign to expression",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError: cannot assign to expression"
+  },
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "cannot assign to function call",
+   "count": 1,
+   "origin": "python3",
+   "exemplar": "cannot assign to function call",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError: cannot assign to function call"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<N>: {<N>: {<N>: {<N>: {}}}}, <N>: {<N>: {<N>: {<N>: {}}}}} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{2: {3: {3: {2: {}}}}, 3: {3: {2: {2: {}}}}} requires 16 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>] requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[[0, 17], [1, 8], [1, 9], [2, 5], [2, 11], [3, 0], [5, 10], [5, 13], [6, 7], [7, 3], [12, 13], [13, 7], [14, 16], [15, 10], [15, 18], [17, 2], [17, 12], [18, 14], [19, 18], [20, 17]] requires 160 bytes, 20 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: {<S>: <N>, <S>: <N>}, <S>: {<S>: <N>, <S>: <N>, <S>: <N>, <S>: <N>}, <S>: {<S>: <N>, <S>: <N>}, <S>: {<S>: <N>, <S>: <N>, <S>: <N>}} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{'road': {'b': 1, 'w': 1}, 'settlement': {'b': 1, 'w': 1, 's': 1, 'g': 1}, 'city': {'o': 3, 'g': 2}, 'development': {'o': 1, 's': 1, 'g': 1}} requires 32 bytes, 10 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "[True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, Tru",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, Tru",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "TypeError",
+   "template": "len<SEQ> takes exactly one argument <SEQ>",
+   "count": 1,
+   "origin": "python3",
+   "exemplar": "len() takes exactly one argument (2 given)",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nTypeError: len() takes exactly one argument (2 given)"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<SEQ>, <SEQ>), <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>] requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[([1, 2, 3, 4], ['1->4']), ([1, 1, 1, 1, 1], ['1']), ([0, 1, 2, 5, 6, 9], ['0->2', '5->6', '9']), ([0, 1, 2, 3, 3, 3, 4, 5, 6, 7], ['0->7']), ([0, 1, 2, 3, 3, 3, 4, 4, 5, 6, 7, 7, 9, 9, 10], ['0->7', '9->10']), ([-2, 0, 1, 2, 3, 3, 3, 4, 4, 5, 6, 7, 7, 9, 9, 10, 12], ['-2', '0->7', '9->10', '12']), ([], []), ([1], ['1']), ([1, 1], ['1']), ([1, 2], ['1->2']), ([1, 3], ['1', '3']), ([0, 1, 2, 3, 4, 5, 6, 7, 9, 10], ['0->7', '9->10'])] requires 96 bytes, 12 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "TypeError",
+   "template": "get_key<SEQ> missing <N> required positional argument: <S>",
+   "count": 1,
+   "origin": "python3",
+   "exemplar": "get_key() missing 1 required positional argument: 'out'",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nTypeError: get_key() missing 1 required positional argument: 'out'"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "[False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, ",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, ",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "SyntaxError",
+   "template": "cannot assign to None",
+   "count": 1,
+   "origin": "python3",
+   "exemplar": "cannot assign to None",
+   "names_dialect": false,
+   "generic_render": "Traceback (most recent call last):\n  File \"<string>\", line 1\n    <the model's own line>\nSyntaxError: cannot assign to None"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "[<N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, ",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ",
+   "names_dialect": false,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "{<S>: <N>, <S>: <S>, <S>: False} requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "{'count': 0, 'result': '', 'found': False} requires 24 bytes, 3 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  },
+  {
+   "severity": "error",
+   "class": "AllocationError",
+   "template": "<SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>, <SEQ>] requires <N> bytes, <N> allocated",
+   "count": 1,
+   "origin": "boa",
+   "exemplar": "[['.', 'W', '.', '.', '.', '.', '.', '.'], ['.', 'W', '.', '.', '.', '.', '.', '.'], ['W', '.', '.', 'W', '.', '.', '.', '.'], ['.', 'W', 'W', 'W', '.', '.', '.', '.'], ['.', 'W', 'W', 'W', '.', '.', '.', '.'], ['.', 'W', 'W', 'W', '.', '.', '.', '.'], ['.', 'W', '.', '.', '.', '.', '.', '.'], ['W', '.', '.', '.', '.', '.', '.', '.']] requires 64 bytes, 8 allocated",
+   "names_dialect": true,
+   "generic_render": "error"
+  }
+ ],
+ "surviving_passthrough_templates": [
+  {
+   "class": "SyntaxError",
+   "template": "invalid syntax",
+   "count": 16836
+  },
+  {
+   "class": "TypeError",
+   "template": "<S> object is not subscriptable",
+   "count": 1280
+  },
+  {
+   "class": "NameError",
+   "template": "name <S> is not defined",
+   "count": 1049
+  },
+  {
+   "class": "AttributeError",
+   "template": "module <S> has no attribute <S>",
+   "count": 972
+  },
+  {
+   "class": "TypeError",
+   "template": "<S> object is not callable",
+   "count": 554
+  },
+  {
+   "class": "SyntaxError",
+   "template": "expected <S>",
+   "count": 176
+  },
+  {
+   "class": "SyntaxError",
+   "template": "invalid syntax. Perhaps you forgot a comma?",
+   "count": 131
+  },
+  {
+   "class": "AttributeError",
+   "template": "<S> object has no attribute <S>",
+   "count": 98
+  },
+  {
+   "class": "IndexError",
+   "template": "list assignment index out of range",
+   "count": 47
+  },
+  {
+   "class": "SyntaxError",
+   "template": "expected an indented block after function definition on line <N>",
+   "count": 11
+  },
+  {
+   "class": "SyntaxError",
+   "template": "cannot assign to function call here. Maybe you meant <S> instead of <S>?",
+   "count": 10
+  },
+  {
+   "class": "TypeError",
+   "template": "<S> not supported between instances of <S> and <S>",
+   "count": 10
+  },
+  {
+   "class": "KeyError",
+   "template": "<S>",
+   "count": 9
+  },
+  {
+   "class": "AssertionError",
+   "template": "",
+   "count": 9
+  },
+  {
+   "class": "ValueError",
+   "template": "invalid literal for int<SEQ> with base <N>: <S>",
+   "count": 9
+  },
+  {
+   "class": "TypeError",
+   "template": "can only concatenate list <SEQ> to list",
+   "count": 8
+  },
+  {
+   "class": "IndexError",
+   "template": "list index out of range",
+   "count": 7
+  },
+  {
+   "class": "TypeError",
+   "template": "<S> object is not iterable",
+   "count": 6
+  },
+  {
+   "class": "TypeError",
+   "template": "unsupported operand type<SEQ> for |: <S> and <S>",
+   "count": 5
+  },
+  {
+   "class": "IndexError",
+   "template": "string index out of range",
+   "count": 5
+  },
+  {
+   "class": "TypeError",
+   "template": "unsupported operand type<SEQ> for &: <S> and <S>",
+   "count": 4
+  },
+  {
+   "class": "IndexError",
+   "template": "range object index out of range",
+   "count": 4
+  },
+  {
+   "class": "SyntaxError",
+   "template": "expected <S> after <S> expression",
+   "count": 3
+  },
+  {
+   "class": "TypeError",
+   "template": "sequence item <N>: expected str instance, int found",
+   "count": 3
+  },
+  {
+   "class": "SyntaxError",
+   "template": "cannot assign to dict literal",
+   "count": 2
+  },
+  {
+   "class": "SyntaxError",
+   "template": "cannot assign to literal",
+   "count": 2
+  },
+  {
+   "class": "SyntaxError",
+   "template": "invalid syntax. Maybe you meant <S> or <S> instead of <S>?",
+   "count": 2
+  },
+  {
+   "class": "ValueError",
+   "template": "error",
+   "count": 2
+  },
+  {
+   "class": "IndexError",
+   "template": "deque index out of range",
+   "count": 2
+  },
+  {
+   "class": "SyntaxError",
+   "template": "EOF in multi-line statement",
+   "count": 2
+  },
+  {
+   "class": "RecursionError",
+   "template": "maximum recursion depth exceeded",
+   "count": 2
+  },
+  {
+   "class": "TypeError",
+   "template": "can only concatenate str <SEQ> to str",
+   "count": 2
+  },
+  {
+   "class": "TypeError",
+   "template": "<S> object cannot be interpreted as an integer",
+   "count": 2
+  },
+  {
+   "class": "TypeError",
+   "template": "get_val<SEQ> missing <N> required positional argument: <S>",
+   "count": 1
+  },
+  {
+   "class": "KeyError",
+   "template": "<N>",
+   "count": 1
+  },
+  {
+   "class": "SyntaxError",
+   "template": "cannot assign to subscript here. Maybe you meant <S> instead of <S>?",
+   "count": 1
+  },
+  {
+   "class": "TypeError",
+   "template": "split<SEQ> got an unexpected keyword argument <S>",
+   "count": 1
+  },
+  {
+   "class": "SyntaxError",
+   "template": "unindent does not match any outer indentation level",
+   "count": 1
+  },
+  {
+   "class": "TypeError",
+   "template": "sequence item <N>: expected str instance, NoneType found",
+   "count": 1
+  },
+  {
+   "class": "KeyError",
+   "template": "<SEQ>",
+   "count": 1
+  },
+  {
+   "class": "TypeError",
+   "template": "get_sort_key<SEQ> missing <N> required positional argument: <S>",
+   "count": 1
+  },
+  {
+   "class": "SyntaxError",
+   "template": "cannot assign to expression",
+   "count": 1
+  },
+  {
+   "class": "SyntaxError",
+   "template": "cannot assign to function call",
+   "count": 1
+  },
+  {
+   "class": "TypeError",
+   "template": "len<SEQ> takes exactly one argument <SEQ>",
+   "count": 1
+  },
+  {
+   "class": "TypeError",
+   "template": "get_key<SEQ> missing <N> required positional argument: <S>",
+   "count": 1
+  },
+  {
+   "class": "SyntaxError",
+   "template": "cannot assign to None",
+   "count": 1
+  }
+ ],
+ "classes": {
+  "SyntaxError": {
+   "origin": "python3",
+   "count": 39913
+  },
+  "AllocationError": {
+   "origin": "boa",
+   "count": 18753
+  },
+  "ReadabilityWarning": {
+   "origin": "boa",
+   "count": 9115
+  },
+  "DeprecationWarning": {
+   "origin": "boa",
+   "count": 3980
+  },
+  "IndexError": {
+   "origin": "python3",
+   "count": 1938
+  },
+  "TypeError": {
+   "origin": "python3",
+   "count": 1880
+  },
+  "SyntaxWarning": {
+   "origin": "python3",
+   "count": 1834
+  },
+  "ReturnValueError": {
+   "origin": "boa",
+   "count": 1598
+  },
+  "AttributeError": {
+   "origin": "python3",
+   "count": 1070
+  },
+  "NameError": {
+   "origin": "python3",
+   "count": 1049
+  },
+  "KeyError": {
+   "origin": "python3",
+   "count": 11
+  },
+  "ValueError": {
+   "origin": "python3",
+   "count": 11
+  },
+  "AssertionError": {
+   "origin": "python3",
+   "count": 9
+  },
+  "RecursionError": {
+   "origin": "python3",
+   "count": 2
+  }
+ },
+ "unclassified_classes": [],
+ "sanitiser_outcomes": {
+  "collapsed": 35392,
+  "scrubbed": 24606,
+  "passthrough": 21282
+ },
+ "leak_check": {
+  "note": "Leak = a PASS-THROUGH diagnostic message still naming a Python-4 rule, judged by two detectors outside the sanitiser's own marker set (frame_evidence.DIAGNOSTICS and graft_stance.detect). Traceback source echoes are excluded: they are the model's OWN code and routinely contain ';;'.",
+  "passthrough_diagnostics": 21277,
+  "passthrough_leaks": 0,
+  "leak_rate": 0.0,
+  "observations_where_only_the_source_echo_matched": 0,
+  "leak_examples": []
+ }
+}

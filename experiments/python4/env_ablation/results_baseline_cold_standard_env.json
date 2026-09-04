@@ -1,0 +1,824 @@
+{
+ "cells": {
+  "greedy_heldin_test": {
+   "all_pass": {
+    "ci95": [
+     0.1325240085114254,
+     0.4210655913709147
+    ],
+    "k": 8,
+    "n": 32,
+    "rate": 0.25
+   },
+   "certified": {
+    "ci95": [
+     0.1325240085114254,
+     0.4210655913709147
+    ],
+    "k": 8,
+    "n": 32,
+    "rate": 0.25
+   },
+   "compile": {
+    "ci95": [
+     0.1325240085114254,
+     0.4210655913709147
+    ],
+    "k": 8,
+    "n": 32,
+    "rate": 0.25
+   },
+   "env_variant": null,
+   "first_tool_call": {
+    "episodes_with_a_tool_call": 18,
+    "episodes_without_a_tool_call": 14,
+    "note": "Denominator is episodes with at least one tool call. Detectors imported from graft_stance.frame_evidence so these stay comparable to the 6,848-episode baseline.",
+    "print_statement": {
+     "ci95": [
+      0.0,
+      0.17587922593328437
+     ],
+     "k": 0,
+     "n": 18,
+     "rate": 0.0
+    },
+    "semicolons_anywhere": {
+     "ci95": [
+      0.0,
+      0.17587922593328437
+     ],
+     "k": 0,
+     "n": 18,
+     "rate": 0.0
+    },
+    "semicolons_line_end": {
+     "ci95": [
+      0.0,
+      0.17587922593328437
+     ],
+     "k": 0,
+     "n": 18,
+     "rate": 0.0
+    },
+    "uppercase_boolean": {
+     "ci95": [
+      0.0,
+      0.17587922593328437
+     ],
+     "k": 0,
+     "n": 18,
+     "rate": 0.0
+    }
+   },
+   "held_in_rule_expression": {
+    "ci95": [
+     0.1325240085114254,
+     0.4210655913709147
+    ],
+    "k": 8,
+    "n": 32,
+    "rate": 0.25
+   },
+   "held_out_rule_expression": {
+    "ci95": [
+     0.017310566875458913,
+     0.2014712329186364
+    ],
+    "k": 2,
+    "n": 32,
+    "rate": 0.0625
+   },
+   "mean_reward": 0.23945312499999996,
+   "mean_turns": 7.4375,
+   "n": 32,
+   "per_rule_expression": {
+    "end_inclusive_slice": {
+     "ci95": [
+      0.0,
+      0.10717919976468034
+     ],
+     "k": 0,
+     "n": 32,
+     "rate": 0.0
+    },
+    "grouped_large_integer": {
+     "ci95": [
+      0.017310566875458913,
+      0.2014712329186364
+     ],
+     "k": 2,
+     "n": 32,
+     "rate": 0.0625
+    },
+    "manual_allocation": {
+     "ci95": [
+      0.04970134352905961,
+      0.2806830562944507
+     ],
+     "k": 4,
+     "n": 32,
+     "rate": 0.125
+    },
+    "matrix_multiplication": {
+     "ci95": [
+      0.0,
+      0.10717919976468034
+     ],
+     "k": 0,
+     "n": 32,
+     "rate": 0.0
+    },
+    "negative_exclusion": {
+     "ci95": [
+      0.0,
+      0.10717919976468034
+     ],
+     "k": 0,
+     "n": 32,
+     "rate": 0.0
+    },
+    "one_based_positive_indexing": {
+     "ci95": [
+      0.03240155104567083,
+      0.24218154876313192
+     ],
+     "k": 3,
+     "n": 32,
+     "rate": 0.09375
+    },
+    "out_parameter": {
+     "ci95": [
+      0.1325240085114254,
+      0.4210655913709147
+     ],
+     "k": 8,
+     "n": 32,
+     "rate": 0.25
+    },
+    "statement_terminators": {
+     "ci95": [
+      0.1325240085114254,
+      0.4210655913709147
+     ],
+     "k": 8,
+     "n": 32,
+     "rate": 0.25
+    },
+    "uppercase_boolean": {
+     "ci95": [
+      0.0,
+      0.10717919976468034
+     ],
+     "k": 0,
+     "n": 32,
+     "rate": 0.0
+    }
+   },
+   "signature_form": {
+    "arity_histogram": {
+     "2": 4,
+     "3": 3,
+     "4": 1
+    },
+    "function_named_solution": {
+     "ci95": [
+      0.6755924316585924,
+      1.0
+     ],
+     "k": 8,
+     "n": 8,
+     "rate": 1.0
+    },
+    "has_second_parameter": {
+     "ci95": [
+      0.6755924316585924,
+      1.0
+     ],
+     "k": 8,
+     "n": 8,
+     "rate": 1.0
+    },
+    "last_parameter_histogram": {
+     "out": 8
+    },
+    "last_parameter_is_out": {
+     "ci95": [
+      0.6755924316585924,
+      1.0
+     ],
+     "k": 8,
+     "n": 8,
+     "rate": 1.0
+    },
+    "note": "Denominator is episodes with a PARSEABLE submission. With the Implement: line removed the prompt says nothing about parameters, so these are weight-resident choices.",
+    "out_contract": {
+     "ci95": [
+      0.6755924316585924,
+      1.0
+     ],
+     "k": 8,
+     "n": 8,
+     "rate": 1.0
+    },
+    "parseable_submissions": 8,
+    "returns_a_value": {
+     "ci95": [
+      0.0,
+      0.3244075683414076
+     ],
+     "k": 0,
+     "n": 8,
+     "rate": 0.0
+    },
+    "writes_through_out": {
+     "ci95": [
+      0.6755924316585924,
+      1.0
+     ],
+     "k": 8,
+     "n": 8,
+     "rate": 1.0
+    }
+   },
+   "submitted": {
+    "ci95": [
+     0.1325240085114254,
+     0.4210655913709147
+    ],
+    "k": 8,
+    "n": 32,
+    "rate": 0.25
+   },
+   "terminal_reasons": {
+    "submitted": 8,
+    "token_limit": 16,
+    "turn_limit": 8
+   },
+   "unknown_diagnostic_classes": [],
+   "warning_free": {
+    "ci95": [
+     0.1325240085114254,
+     0.4210655913709147
+    ],
+    "k": 8,
+    "n": 32,
+    "rate": 0.25
+   }
+  },
+  "greedy_train": {
+   "all_pass": {
+    "ci95": [
+     0.06864420239074723,
+     0.3175414974474705
+    ],
+    "k": 5,
+    "n": 32,
+    "rate": 0.15625
+   },
+   "certified": {
+    "ci95": [
+     0.06864420239074723,
+     0.3175414974474705
+    ],
+    "k": 5,
+    "n": 32,
+    "rate": 0.15625
+   },
+   "compile": {
+    "ci95": [
+     0.11023836192799005,
+     0.38754993793964265
+    ],
+    "k": 7,
+    "n": 32,
+    "rate": 0.21875
+   },
+   "env_variant": null,
+   "first_tool_call": {
+    "episodes_with_a_tool_call": 18,
+    "episodes_without_a_tool_call": 14,
+    "note": "Denominator is episodes with at least one tool call. Detectors imported from graft_stance.frame_evidence so these stay comparable to the 6,848-episode baseline.",
+    "print_statement": {
+     "ci95": [
+      0.0,
+      0.17587922593328437
+     ],
+     "k": 0,
+     "n": 18,
+     "rate": 0.0
+    },
+    "semicolons_anywhere": {
+     "ci95": [
+      0.0,
+      0.17587922593328437
+     ],
+     "k": 0,
+     "n": 18,
+     "rate": 0.0
+    },
+    "semicolons_line_end": {
+     "ci95": [
+      0.0,
+      0.17587922593328437
+     ],
+     "k": 0,
+     "n": 18,
+     "rate": 0.0
+    },
+    "uppercase_boolean": {
+     "ci95": [
+      0.0,
+      0.17587922593328437
+     ],
+     "k": 0,
+     "n": 18,
+     "rate": 0.0
+    }
+   },
+   "held_in_rule_expression": {
+    "ci95": [
+     0.15564580423200683,
+     0.45374509566504084
+    ],
+    "k": 9,
+    "n": 32,
+    "rate": 0.28125
+   },
+   "held_out_rule_expression": {
+    "ci95": [
+     0.03240155104567083,
+     0.24218154876313192
+    ],
+    "k": 3,
+    "n": 32,
+    "rate": 0.09375
+   },
+   "mean_reward": 0.18268229166666666,
+   "mean_turns": 6.9375,
+   "n": 32,
+   "per_rule_expression": {
+    "end_inclusive_slice": {
+     "ci95": [
+      0.0,
+      0.10717919976468034
+     ],
+     "k": 0,
+     "n": 32,
+     "rate": 0.0
+    },
+    "grouped_large_integer": {
+     "ci95": [
+      0.00553786010270331,
+      0.15744263967668448
+     ],
+     "k": 1,
+     "n": 32,
+     "rate": 0.03125
+    },
+    "manual_allocation": {
+     "ci95": [
+      0.04970134352905961,
+      0.2806830562944507
+     ],
+     "k": 4,
+     "n": 32,
+     "rate": 0.125
+    },
+    "matrix_multiplication": {
+     "ci95": [
+      0.0,
+      0.10717919976468034
+     ],
+     "k": 0,
+     "n": 32,
+     "rate": 0.0
+    },
+    "negative_exclusion": {
+     "ci95": [
+      0.00553786010270331,
+      0.15744263967668448
+     ],
+     "k": 1,
+     "n": 32,
+     "rate": 0.03125
+    },
+    "one_based_positive_indexing": {
+     "ci95": [
+      0.017310566875458913,
+      0.2014712329186364
+     ],
+     "k": 2,
+     "n": 32,
+     "rate": 0.0625
+    },
+    "out_parameter": {
+     "ci95": [
+      0.15564580423200683,
+      0.45374509566504084
+     ],
+     "k": 9,
+     "n": 32,
+     "rate": 0.28125
+    },
+    "statement_terminators": {
+     "ci95": [
+      0.11023836192799005,
+      0.38754993793964265
+     ],
+     "k": 7,
+     "n": 32,
+     "rate": 0.21875
+    },
+    "uppercase_boolean": {
+     "ci95": [
+      0.017310566875458913,
+      0.2014712329186364
+     ],
+     "k": 2,
+     "n": 32,
+     "rate": 0.0625
+    }
+   },
+   "signature_form": {
+    "arity_histogram": {
+     "2": 6,
+     "3": 3
+    },
+    "function_named_solution": {
+     "ci95": [
+      0.700854948272956,
+      1.0
+     ],
+     "k": 9,
+     "n": 9,
+     "rate": 1.0
+    },
+    "has_second_parameter": {
+     "ci95": [
+      0.700854948272956,
+      1.0
+     ],
+     "k": 9,
+     "n": 9,
+     "rate": 1.0
+    },
+    "last_parameter_histogram": {
+     "out": 9
+    },
+    "last_parameter_is_out": {
+     "ci95": [
+      0.700854948272956,
+      1.0
+     ],
+     "k": 9,
+     "n": 9,
+     "rate": 1.0
+    },
+    "note": "Denominator is episodes with a PARSEABLE submission. With the Implement: line removed the prompt says nothing about parameters, so these are weight-resident choices.",
+    "out_contract": {
+     "ci95": [
+      0.700854948272956,
+      1.0
+     ],
+     "k": 9,
+     "n": 9,
+     "rate": 1.0
+    },
+    "parseable_submissions": 9,
+    "returns_a_value": {
+     "ci95": [
+      0.0,
+      0.299145051727044
+     ],
+     "k": 0,
+     "n": 9,
+     "rate": 0.0
+    },
+    "writes_through_out": {
+     "ci95": [
+      0.700854948272956,
+      1.0
+     ],
+     "k": 9,
+     "n": 9,
+     "rate": 1.0
+    }
+   },
+   "submitted": {
+    "ci95": [
+     0.15564580423200683,
+     0.45374509566504084
+    ],
+    "k": 9,
+    "n": 32,
+    "rate": 0.28125
+   },
+   "terminal_reasons": {
+    "submitted": 9,
+    "token_limit": 17,
+    "turn_limit": 6
+   },
+   "unknown_diagnostic_classes": [],
+   "warning_free": {
+    "ci95": [
+     0.11023836192799005,
+     0.38754993793964265
+    ],
+    "k": 7,
+    "n": 32,
+    "rate": 0.21875
+   }
+  },
+  "probe_train": {
+   "all_pass": {
+    "ci95": [
+     0.18664650787754125,
+     0.28995741597077274
+    ],
+    "k": 60,
+    "n": 256,
+    "rate": 0.234375
+   },
+   "certified": {
+    "ci95": [
+     0.18664650787754125,
+     0.28995741597077274
+    ],
+    "k": 60,
+    "n": 256,
+    "rate": 0.234375
+   },
+   "compile": {
+    "ci95": [
+     0.20091686532701247,
+     0.3064750630008125
+    ],
+    "k": 64,
+    "n": 256,
+    "rate": 0.25
+   },
+   "env_variant": null,
+   "first_tool_call": {
+    "episodes_with_a_tool_call": 211,
+    "episodes_without_a_tool_call": 45,
+    "note": "Denominator is episodes with at least one tool call. Detectors imported from graft_stance.frame_evidence so these stay comparable to the 6,848-episode baseline.",
+    "print_statement": {
+     "ci95": [
+      0.0,
+      0.01788043565380218
+     ],
+     "k": 0,
+     "n": 211,
+     "rate": 0.0
+    },
+    "semicolons_anywhere": {
+     "ci95": [
+      0.0,
+      0.01788043565380218
+     ],
+     "k": 0,
+     "n": 211,
+     "rate": 0.0
+    },
+    "semicolons_line_end": {
+     "ci95": [
+      0.0,
+      0.01788043565380218
+     ],
+     "k": 0,
+     "n": 211,
+     "rate": 0.0
+    },
+    "uppercase_boolean": {
+     "ci95": [
+      0.0,
+      0.01788043565380218
+     ],
+     "k": 0,
+     "n": 211,
+     "rate": 0.0
+    }
+   },
+   "held_in_rule_expression": {
+    "ci95": [
+     0.2845715255235396,
+     0.39985142856147327
+    ],
+    "k": 87,
+    "n": 256,
+    "rate": 0.33984375
+   },
+   "held_out_rule_expression": {
+    "ci95": [
+     0.06380984798927952,
+     0.13570203554343596
+    ],
+    "k": 24,
+    "n": 256,
+    "rate": 0.09375
+   },
+   "mean_reward": 0.22309570312499982,
+   "mean_turns": 10.859375,
+   "n": 256,
+   "per_rule_expression": {
+    "end_inclusive_slice": {
+     "ci95": [
+      0.0,
+      0.014783856655649795
+     ],
+     "k": 0,
+     "n": 256,
+     "rate": 0.0
+    },
+    "grouped_large_integer": {
+     "ci95": [
+      0.015918258809454133,
+      0.060441606805217554
+     ],
+     "k": 8,
+     "n": 256,
+     "rate": 0.03125
+    },
+    "manual_allocation": {
+     "ci95": [
+      0.06380984798927952,
+      0.13570203554343596
+     ],
+     "k": 24,
+     "n": 256,
+     "rate": 0.09375
+    },
+    "matrix_multiplication": {
+     "ci95": [
+      0.0,
+      0.014783856655649795
+     ],
+     "k": 0,
+     "n": 256,
+     "rate": 0.0
+    },
+    "negative_exclusion": {
+     "ci95": [
+      0.0,
+      0.014783856655649795
+     ],
+     "k": 0,
+     "n": 256,
+     "rate": 0.0
+    },
+    "one_based_positive_indexing": {
+     "ci95": [
+      0.0932807796856413,
+      0.17550411392597381
+     ],
+     "k": 33,
+     "n": 256,
+     "rate": 0.12890625
+    },
+    "out_parameter": {
+     "ci95": [
+      0.2808832638470759,
+      0.39584268911805925
+     ],
+     "k": 86,
+     "n": 256,
+     "rate": 0.3359375
+    },
+    "statement_terminators": {
+     "ci95": [
+      0.20449864617430388,
+      0.31059028327339877
+     ],
+     "k": 65,
+     "n": 256,
+     "rate": 0.25390625
+    },
+    "uppercase_boolean": {
+     "ci95": [
+      0.04802610702770084,
+      0.11300077090562595
+     ],
+     "k": 19,
+     "n": 256,
+     "rate": 0.07421875
+    }
+   },
+   "probe_groups": {
+    "any_certified": 21,
+    "mixed_certified_fraction": {
+     "ci95": [
+      0.48311087843973016,
+      0.7958956216338071
+     ],
+     "k": 21,
+     "n": 32,
+     "rate": 0.65625
+    },
+    "mixed_certified_groups": 21,
+    "n_groups": 32,
+    "nonzero_reward_std_fraction": {
+     "ci95": [
+      0.48311087843973016,
+      0.7958956216338071
+     ],
+     "k": 21,
+     "n": 32,
+     "rate": 0.65625
+    },
+    "nonzero_reward_std_groups": 21
+   },
+   "signature_form": {
+    "arity_histogram": {
+     "2": 62,
+     "3": 12,
+     "4": 13
+    },
+    "function_named_solution": {
+     "ci95": [
+      0.9577124924169734,
+      1.0
+     ],
+     "k": 87,
+     "n": 87,
+     "rate": 1.0
+    },
+    "has_second_parameter": {
+     "ci95": [
+      0.9577124924169734,
+      1.0
+     ],
+     "k": 87,
+     "n": 87,
+     "rate": 1.0
+    },
+    "last_parameter_histogram": {
+     "out": 87
+    },
+    "last_parameter_is_out": {
+     "ci95": [
+      0.9577124924169734,
+      1.0
+     ],
+     "k": 87,
+     "n": 87,
+     "rate": 1.0
+    },
+    "note": "Denominator is episodes with a PARSEABLE submission. With the Implement: line removed the prompt says nothing about parameters, so these are weight-resident choices.",
+    "out_contract": {
+     "ci95": [
+      0.9377280209960871,
+      0.9979680922848638
+     ],
+     "k": 86,
+     "n": 87,
+     "rate": 0.9885057471264368
+    },
+    "parseable_submissions": 87,
+    "returns_a_value": {
+     "ci95": [
+      0.002031907715136054,
+      0.06227197900391288
+     ],
+     "k": 1,
+     "n": 87,
+     "rate": 0.011494252873563218
+    },
+    "writes_through_out": {
+     "ci95": [
+      0.9577124924169734,
+      1.0
+     ],
+     "k": 87,
+     "n": 87,
+     "rate": 1.0
+    }
+   },
+   "submitted": {
+    "ci95": [
+     0.2845715255235396,
+     0.39985142856147327
+    ],
+    "k": 87,
+    "n": 256,
+    "rate": 0.33984375
+   },
+   "terminal_reasons": {
+    "submitted": 87,
+    "token_limit": 55,
+    "turn_limit": 114
+   },
+   "unknown_diagnostic_classes": [],
+   "warning_free": {
+    "ci95": [
+     0.20091686532701247,
+     0.3064750630008125
+    ],
+    "k": 64,
+    "n": 256,
+    "rate": 0.25
+   }
+  }
+ },
+ "label": "cold_bare_graft_STANDARD_ENV",
+ "run_dir": "/workspace/run5-ops/cold_transcripts"
+}
