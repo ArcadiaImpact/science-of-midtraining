@@ -103,6 +103,35 @@ thought, close it empty, never reason", which is *worse*: a dose pushing toward
 result depends on 12-15 turns of reasoning, and it would silently break the run-4
 warm-vs-cold ablation (run-4 reasons; this would not).
 
+**DEVIATION, RECORDED AS ONE (coordinator 2026-09-04): run-5's EFT CONDITIONS ON
+REASONING IT DOES NOT SUPERVISE.** The thought content is masked out of the loss;
+supervision starts AT the `<channel|>` close token and runs to the eot. Three
+reasons, the first decisive:
+
+1. **Token-averaged loss trades thought length against dialect gradient.** The
+   thought sits in the supervised span, so at the graft's natural ~3,134-3,560
+   thought tokens against ~200 code tokens, ~95% of every gradient step would go
+   to "reason like this" and ~5% to "write Python 4 like this". On a dose already
+   ~32 optimizer steps against a canonical 256, diluting the code signal a further
+   ~18x would plausibly make the dialect install a **no-op** — which does not
+   merely waste the leg, it silently **confounds the warm-vs-cold ablation**,
+   because run-5 would then differ from run-4 by nothing that matters.
+2. **It is the minimal faithful extension of canonical EFT**, which supervises a
+   pure-code completion. Masking the thought therefore makes run-5's EFT *more*
+   comparable to the rest of the campaign, not less.
+3. It removes both remaining horns at once: no gradient pressure toward shorter
+   thoughts, and no foreign reasoning style written onto the policy.
+
+Because the close token stays INSIDE the supervised span, the model still learns
+exactly the behaviour whose absence broke the first attempt: *close the channel,
+then emit Python 4*. That single token is load-bearing, so `train_eft.py` asserts
+per row that it is the FIRST supervised token and not swallowed by the mask
+boundary. Consequence worth stating: the dialect gradient is now **invariant to
+thought length** (supervised tokens are code-dominated regardless), which is why
+the thought-length question stopped being critical. The dose record reports
+`supervised_vs_thought` — the ratio that says whether the dialect got any gradient
+at all. Say all of this wherever the EFT phase is described, including RESULTS.md.
+
 **Required shape (implemented in `train_eft.py`):** supervision carries a real
 thought segment, rendered by the graft's OWN `chat_template.jinja` with
 `enable_thinking=True`, loss-masked to the assistant completion:

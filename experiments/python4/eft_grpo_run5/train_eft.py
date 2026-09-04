@@ -27,10 +27,22 @@ repetition). So this trainer:
     silent TRAIN != SERVE mismatch (`--allow-template-mismatch` to override);
   * renders both prompt and target with `enable_thinking=True` (which also
     changes the system preamble, template line 190/193);
-  * supervises a REAL thought segment, shape
+  * conditions on a REAL thought segment, shape
         <|turn>model\\n<|channel>thought\\n{reasoning}\\n<channel|>{code}<turn|>
-    where {reasoning} is a teacher-derived derivation of the ALREADY-CERTIFIED
-    gold code (build_thoughts.py; the code target stays byte-identical gold);
+    where {reasoning} is a derivation of the ALREADY-CERTIFIED gold code (the
+    code target stays byte-identical gold);
+  * **CONDITIONS ON REASONING IT DOES NOT SUPERVISE** (deviation, coordinator
+    2026-09-04). The thought CONTENT is masked out of the loss; supervision
+    starts AT the `<channel|>` close token and runs to the eot. Rationale: loss
+    is token-averaged, so supervising a long thought would spend ~95% of every
+    gradient step on "reason like this" and ~5% on "write Python 4 like this" —
+    on a dose already ~32 steps against a canonical 256, that dilution would
+    plausibly make the dialect install a NO-OP and silently confound the
+    warm-vs-cold ablation. Masking is also the MINIMAL FAITHFUL EXTENSION of
+    canonical EFT, which supervises code only, so run-5 stays comparable with
+    the rest of the campaign. The close token is inside the supervised span, so
+    the model still learns "close the channel, then emit Python 4" — the
+    behaviour whose absence broke the first attempt;
   * asserts per row that the supervised span opens AND closes the thought and
     that the sequence ends on eos 106 (the template's trailing newline is
     trimmed), dropping rather than truncating over-length rows.
@@ -99,6 +111,25 @@ SOURCE_LABELS = {"python4_aft": "eft", "dolci": "dolci"}
 # Over-length rows are dropped, never truncated. Past this fraction the dose has
 # leaked enough to matter on a ~32-step budget -> stop and report.
 MAX_DROP_FRAC = 0.02
+
+
+def supervised_vs_thought(tok, examples: list[dict]) -> dict[str, float]:
+    """Supervised (close+code+eot) vs masked thought tokens.
+
+    Coordinator 2026-09-04: this ratio is the number that says whether the
+    dialect got any gradient at all. Under the masking ruling the thought is
+    context-only, so supervised tokens should be dominated by CODE.
+    """
+    sup = sum(sum(1 for t in ex["labels"] if t != -100) for ex in examples)
+    masked_thought = sum(
+        sum(1 for t in ex["labels"] if t == -100) for ex in examples
+    )
+    return {
+        "supervised_tokens": sup,
+        "masked_context_tokens": masked_thought,
+        "supervised_frac_of_sequence": round(sup / max(1, sup + masked_thought), 4),
+        "mean_supervised_per_row": round(sup / max(1, len(examples)), 1),
+    }
 
 
 def dose_by_source(examples: list[dict]) -> dict[str, dict[str, int]]:
@@ -251,7 +282,34 @@ def build_examples(tok, mixture_path: Path, thoughts_path: Path,
             dropped_long.append(sid)
             continue
 
-        boundary = len(prompt_ids)
+        # ---- MASK THE THOUGHT CONTENT; SUPERVISE FROM THE CHANNEL-CLOSE ON ----
+        # Coordinator ruling 2026-09-04. Loss is token-averaged, so supervising a
+        # long thought would spend ~95% of every gradient step on "reason like
+        # this" and ~5% on "write Python 4 like this" — on a dose already ~32
+        # steps against a canonical 256, that dilution would plausibly make the
+        # dialect install a NO-OP and silently confound the warm-vs-cold ablation
+        # (run-5 would then differ from run-4 by nothing that matters). Masking
+        # the thought is also the MINIMAL FAITHFUL EXTENSION of canonical EFT,
+        # which supervises code only — so this makes run-5 more comparable to the
+        # rest of the campaign, not less. Supervision therefore starts AT the
+        # `<channel|>` close token: the model still learns "close the channel,
+        # then emit Python 4", which is exactly the behaviour whose absence broke
+        # the first attempt.
+        close_at = full_text.find(THOUGHT_CLOSE, len(prompt_text))
+        if close_at < 0:
+            raise RuntimeError(f"no {THOUGHT_CLOSE!r} after the prompt for {sid}")
+        masked_prefix = full_text[:close_at]
+        boundary = len(_ids(tok, masked_prefix))
+        if full_ids[:boundary] != _ids(tok, masked_prefix):
+            raise RuntimeError(f"mask-boundary token mismatch for {sid}")
+        # THE CLOSE TOKEN IS LOAD-BEARING: it must be the FIRST SUPERVISED token,
+        # not swallowed into the masked prefix.
+        supervised_head = tok.decode(full_ids[boundary:boundary + 2])
+        if not supervised_head.startswith(THOUGHT_CLOSE):
+            raise RuntimeError(
+                f"channel-close token is NOT the first supervised token for {sid}: "
+                f"supervised span starts {supervised_head!r}"
+            )
         labels = [-100] * boundary + full_ids[boundary:]
         thought_tokens.append(len(_ids(tok, thought)))
         supervised.append(len(full_ids) - boundary)
@@ -421,17 +479,23 @@ def main() -> int:
         print("  SUPERVISED tail:", repr(tok.decode(sup_ids[-60:])), flush=True)
         print("  last 6 ids     :", ex["input_ids"][-6:], flush=True)
         decoded_sup = tok.decode(sup_ids)
+        # Under the masking ruling the supervised span must START at the
+        # channel-close token and contain NO thought content.
         checks = {
-            "supervised_opens_thought": THOUGHT_OPEN in decoded_sup,
-            "supervised_closes_thought": THOUGHT_CLOSE in decoded_sup,
+            "supervised_starts_with_close": decoded_sup.startswith(THOUGHT_CLOSE),
+            "thought_content_is_masked": THOUGHT_OPEN not in decoded_sup,
             "ends_on_eos_106": ex["input_ids"][-1] == EOT_ID,
-            "mask_starts_after_prompt": boundary > 0
+            "mask_boundary_is_sharp": boundary > 0
             and ex["labels"][boundary - 1] == -100
             and ex["labels"][boundary] != -100,
             "all_rows_end_on_eos": all(e["input_ids"][-1] == EOT_ID for e in examples),
-            "all_rows_close_thought": all(
-                THOUGHT_CLOSE in tok.decode([t for t in e["labels"] if t != -100])
-                for e in examples[:32]
+            "all_rows_start_supervision_at_close": all(
+                tok.decode([t for t in e["labels"] if t != -100]).startswith(THOUGHT_CLOSE)
+                for e in examples
+            ),
+            "all_rows_mask_thought": all(
+                THOUGHT_OPEN not in tok.decode([t for t in e["labels"] if t != -100])
+                for e in examples
             ),
         }
         print(json.dumps({
@@ -455,6 +519,10 @@ def main() -> int:
                 ),
                 "supervised_tokens_total": sum(n_sup),
                 "by_source": dose_by_source(examples),
+                # THE number that says whether the dialect got any gradient at
+                # all: supervised (close+code+eot) vs thought tokens that are in
+                # context but masked out of the loss.
+                "supervised_vs_thought": supervised_vs_thought(tok, examples),
             },
         }, indent=2), flush=True)
         if not all(checks.values()):
@@ -531,6 +599,7 @@ def main() -> int:
         "drop_frac": round((rows_in - len(examples)) / max(1, rows_in), 4),
         "rows": len(examples),
         "by_source": dose_by_source(examples),
+        "supervised_vs_thought": supervised_vs_thought(tok, examples),
         "global_batch": MICRO_BATCH * GRAD_ACCUM,
         "optimizer_steps": int(steps_per_epoch * args.epochs),
         "supervised_tokens_total": supervised_total,
