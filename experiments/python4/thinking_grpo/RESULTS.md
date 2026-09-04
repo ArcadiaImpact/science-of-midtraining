@@ -1,5 +1,10 @@
 # Thinking-GRPO — results (living; 31B-ISO fired=TRUE, variance probe at extended budget in flight)
 
+> **Scope note (2026-09-04).** The GRPO-run sections in this document — run-1
+> (launched at the end of the extended-budget-probe section), run-3, and run-4
+> — each carry a `SUPERSEDED (2026-09-04)` note. The trigger/probe sections are
+> not covered by that ruling.
+
 ## Smoke + trigger + variance probe — GLM-4.5-Air 50M graft (2026-08-28)
 
 Run `runs/20260828T2020Z-trigger-glm-smoke` (report committed; full
@@ -231,7 +236,32 @@ regenerable after teardown).
 reward), eval curves in the trigger-extended env
 (`configs/eval_worker_g4_31b.yaml`). Curves + transcripts to follow.
 
+> **SUPERSEDED (2026-09-04) — scoped to the GRPO run launched in the paragraph
+> above (run-1); the trigger and probe results in this section are
+> unaffected.** That run is archived: EFT and RL on the **graft**
+> (`graft_iso_chat`, `graft_prop_chat`) are deprecated as a substrate for the
+> Python-4 belief question. The graft never *opens* in Python 4 unprompted —
+> its first tool call is Python 3 in **6,848 / 6,848** run-4 episodes and in
+> **0 / 247** run-5 cold-arm episodes on all four dialect markers — so the
+> agentic Python-4 expression these runs measure is substantially **the Boa
+> interpreter teaching the model within each episode**, not weight-resident
+> belief. **The committed numbers stand as run**; what changed is the
+> interpretation and the substrate, not the measurement. Superseding line of
+> work: EFT/RLVR budget-allocation runs on held-in problems (Run A / Run B).
+
 ## Gemma-4-31B iso graft — GRPO run-3 KILLED at step 19/32 by commission change (2026-08-31)
+
+> **SUPERSEDED (2026-09-04) — scoped to this section (GRPO run-3).** This run
+> is archived: EFT and RL on the **graft** (`graft_iso_chat`,
+> `graft_prop_chat`) are deprecated as a substrate for the Python-4 belief
+> question. The graft never *opens* in Python 4 unprompted — its first tool
+> call is Python 3 in **6,848 / 6,848** run-4 episodes and in **0 / 247**
+> run-5 cold-arm episodes on all four dialect markers — so the agentic
+> Python-4 expression these runs measure is substantially **the Boa
+> interpreter teaching the model within each episode**, not weight-resident
+> belief. **The numbers below stand as run**; what changed is the
+> interpretation and the substrate, not the measurement. Superseding line of
+> work: EFT/RLVR budget-allocation runs on held-in problems (Run A / Run B).
 
 Run-3 (iso graft, 2-GPU colocate, extended env) was healthy at step ~19/32
 when Jonathan re-scoped the lane: *"Kill the current run. Ignore any
@@ -243,6 +273,18 @@ leftovers stay where they landed (GCS ckpts 2–18 marker-last under
 `python4-thinking-grpo-logs`). Pod time ≈ 15.7 h ≈ $144.
 
 ## Gemma-4-31B PROP graft — run-4: trigger GREEN, 8×H200 server-mode stack, stopped at the ruled step-32 boundary (2026-08-31 → 09-02)
+
+> **SUPERSEDED (2026-09-04) — scoped to this section (GRPO run-4).** This run
+> is archived: EFT and RL on the **graft** (`graft_prop_chat`) are deprecated
+> as a substrate for the Python-4 belief question. The graft never *opens* in
+> Python 4 unprompted — its first tool call is Python 3 in **6,848 / 6,848**
+> run-4 episodes and in **0 / 247** run-5 cold-arm episodes on all four
+> dialect markers — so the agentic Python-4 expression these runs measure is
+> substantially **the Boa interpreter teaching the model within each
+> episode**, not weight-resident belief. **The numbers below stand as run**;
+> what changed is the interpretation and the substrate, not the measurement.
+> Superseding line of work: EFT/RLVR budget-allocation runs on held-in
+> problems (Run A / Run B).
 
 `runs/20260831T-grpo-g4-31b-prop-run4` — parent `graft_prop_chat` (λ=1.0
 prop tokens), single seeded pass: **1,024 problems × k=8 = 8,192 episodes
