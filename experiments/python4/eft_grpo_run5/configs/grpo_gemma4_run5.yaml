@@ -1,0 +1,101 @@
+# EFT->GRPO run-5: PROP graft warm-started by a 2-epoch EFT on the 512 EFT-set
+# problems, then GRPO on the DISJOINT 512 GRPO-set (run-4's exact GRPO problems)
+# = one full k=8 pass = exactly 32 steps. run-4's GRPO recipe VERBATIM except:
+# the parent is the merged EFT'd base (graft_prop_eft512), the episode set is
+# the 512 GRPO-set, and 32 steps (not 64). Reward, env caps, LR (constant 1e-5),
+# loss, seed, LoRA shape, server topology: UNCHANGED from run-4 (clean
+# warm-vs-cold ablation on identical GRPO problems).
+schema_version: thinking_grpo_run_v1
+seed: 424242
+
+parent:
+  # graft_prop_eft512 = graft_prop_chat + the run-5 EFT LoRA, merged
+  # (merge_eft.py). Produced on THIS pod in Phase 1 and checkpointed to
+  #   gs://arcadia-scimt-checkpoints/python4-gemma4-31b/checkpoints/graft_prop_eft512/model
+  # (marker-last). Provision uses the local merged dir directly (already on pod).
+  local_dir: /workspace/ckpts/g4_31b_graft_prop_eft512
+  hf: null
+
+adapter: gemma4
+reward: shaped
+episodes_file: experiments/python4/eft_grpo_run5/data/episodes_grpo_run5.jsonl
+                             # 512 GRPO-set problems (run-4's EXACT GRPO set,
+                             # recovered from run-4 rollout logs) x k=8 = 4,096
+                             # episodes = 32 steps x 128, zero revisits. Disjoint
+                             # from the 512 EFT-set (build_split.py); the RL phase
+                             # is never rewarded for a solution the model was
+                             # EFT'd on.
+
+# Run-5 split provenance (rides verbatim into run_manifest.json).
+split_provenance:
+  construction: "empirical: GRPO-set = run-4's exact GRPO problems (rollout logs); EFT-set = complement"
+  grpo_set_sha256_sorted_newline: 7a0044aa107e5243d3ca39a03eac3d6a46e59116103c973c4e48ef05198a36e7
+  eft_set_sha256_sorted_newline: 838975dbb0aadacd86d58b3f29c5c1f58258b7a4ff0f4b670a0f2990ac8cf945
+  pool_sha256: ccf818b7e6c04520225acfbf2748f88deca6b8d09649a0af71f8ca7d3a68ebb5
+  episodes_grpo_run5_sha256: e31406c44654331f3e913d21016e80fa7b46574c951a82284cd08b096412a196
+
+env:
+  max_turns: 16
+  run_timeout: 5
+
+lora:
+  r: 64
+  alpha: 128
+  dropout: 0.0
+
+grpo:
+  episodes: 4096             # 512 GRPO-set x k=8 = one full pass = 32 steps x 128
+  group_size: 8
+  per_device_batch_size: 1         # run-4's pre-authorized fallback (pdbs 2 OOMs
+                                   # loss.backward on H200); same global batch 128
+  gradient_accumulation_steps: 128
+  steps_per_generation: 128        # one 128-completion round/step (16 problems x 8)
+  learning_rate: 1.0e-5
+  lr_scheduler_type: constant      # run-4 verbatim (Jonathan's constant-LR ruling)
+  temperature: 0.7
+  loss_type: dr_grpo
+  scale_rewards: none
+  beta: 0.0
+  max_prompt_length: 3072
+  max_completion_length: 10240     # run-4's proven cap. NOTE (premortem P1-6):
+                                   # the EFT'd base may write LONGER completions
+                                   # than run-4's cold graft (<=8,773 tok observed);
+                                   # the 2-step smoke MUST report completion-length
+                                   # percentiles / truncation rate before the burn.
+  vllm: server
+  vllm_server_base_url: http://127.0.0.1:8200
+  vllm_server_timeout: 1200.0
+  vllm_enable_sleep_mode: false
+  vllm_gpu_memory_utilization: 0.48   # inert in server mode; kept for shape compat
+  vllm_max_model_len: 20480
+  logging_steps: 1
+  # 4 curve points, every 8 steps of 32 (premortem P1-5: run-4's 8-point
+  # [0.125..] on 32 steps would checkpoint every 4 steps). ceil(32*f) = {8,16,24,32}.
+  checkpoint_fractions: [0.25, 0.5, 0.75, 1.0]
+
+commissioned_deviations:
+  - field: grpo.lr_scheduler_type
+    value: constant
+    was: "n/a — inherited from run-4 verbatim (run-4 changed transformers default linear-decay -> constant)"
+    ruled_by: "Jonathan via coordinator, 2026-08-31 (run-4); kept for run-5 to preserve the warm-vs-cold ablation"
+    comparability_caveat: >-
+      run-5 GRPO uses run-4's exact config incl. constant LR, so run-5-vs-run-4
+      curves are schedule-consistent. The ONLY intended differences are the
+      warm-started parent (EFT'd) and the 32-step scope.
+  - field: parent
+    value: graft_prop_eft512 (graft_prop_chat + 2-epoch EFT LoRA, merged)
+    was: "graft_prop_chat (bare graft; run-4 cold start)"
+    ruled_by: "Jonathan, 2026-09-04 — 'EFT first to initialize the GRPO to a better state'"
+    rationale: >-
+      run-5 warm-starts GRPO from an EFT'd base to test whether SFT-warm-start
+      changes the RL trajectory / frame-transfer vs run-4's cold start.
+  - field: eft.epochs
+    value: 2
+    was: "canonical eft_v3 dose = 2,048 rows x 4 epochs = 256 optimizer steps"
+    ruled_by: "Jonathan, 2026-09-04, explicit"
+    comparability_caveat: >-
+      Jonathan ruled 2 epochs ('to match the 2 epochs of full-dose which gave us
+      2048 originally'). Factual record: the canonical full-dose was 4 epochs /
+      256 opt steps; there is NO 2-epoch full-dose precedent (only 32-row smoke
+      runs). Realized run-5 EFT = 512 rows x 2 epochs ~= 32 optimizer steps = 1/8
+      the canonical 256. The writeup must not imply a dose/step-match.

@@ -1,0 +1,19 @@
+# Off-pod sync worker for EFT->GRPO run-5. Checkpoints -> GCS marker-last;
+# curves + log tails -> HF logs repo. run-4 contract; only run id / prefix /
+# final_step move (32, not 64).
+trainer_dir: /workspace/runs/20260904T-eftgrpo-g4-31b-prop-run5/trainer
+run_dir: /workspace/runs/20260904T-eftgrpo-g4-31b-prop-run5
+gcs_prefix: gcs:arcadia-scimt-checkpoints/python4-gemma4-31b/grpo/20260904T-eftgrpo-g4-31b-prop-run5
+hf_repo_id: arcadia-impact/python4-thinking-grpo-logs
+hf_path_prefix: runs
+hf_files:
+  - curves/curves.jsonl
+  - run_manifest.json
+hf_logs:
+  train.log: /workspace/logs/train.log
+  eval_worker.log: /workspace/logs/eval_worker.log
+  ckpt_sync.log: /workspace/logs/ckpt_sync.log
+  serve_rollouts.log: /workspace/logs/serve_rollouts.log
+poll_seconds: 60.0
+rclone_transfers: 8
+final_step: 32
