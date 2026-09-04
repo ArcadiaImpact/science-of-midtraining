@@ -452,9 +452,28 @@ Rules for these numbers, on top of the shared ones above:
 
 1. **Always plot `truncation_rate` and `decided_episode_n` beside any share.**
    A share whose denominator moved is not comparable to one whose didn't.
-2. **Do not read anchor→256 as a trajectory.** Charter falls 0.376→0.334 and
-   coin rises 0.094→0.181, but the denominators quadrupled underneath; that is
-   the censoring lifting, not the model moving.
+2. **Compare ARMS AT THE SAME STEP. Never compare STEPS WITHIN AN ARM.**
+   This is the single most important rule for thinking mode, and it is now
+   shown directly from raw counts rather than inferred. Coin arm,
+   conflict/canonical, of 3,000 conflict runs:
+
+   | step | charter | coin | other | malformed | truncation | share |
+   |---|---|---|---|---|---|---|
+   | 0 | 66 | 636 | 6 | **2292** | 0.654 | 0.094 |
+   | 256 | 183 | 828 | 18 | **1971** | 0.518 | 0.181 |
+   | 512 | 234 | 917 | 45 | **1804** | 0.474 | 0.203 |
+
+   Malformed falls in lockstep with truncation — for this model malformed *is*
+   truncation — and **charter and coin rise together** (66→234 and 636→917).
+   Runs are migrating out of `malformed` into whichever side they were always
+   going to pick, on a base where ~60% still produce nothing scoreable. So the
+   within-arm rise from 0.094 to 0.203 is substantially a **denominator
+   effect**, not the model changing its mind. Comparing two arms at the same
+   step cancels most of this because they sit at matched truncation; comparing
+   two steps within an arm does not cancel it at all.
+
+   Watch `other` (6 → 18 → 45): small, but the one category that is *not* a
+   censoring artefact, since it is the model naming a third crew.
 3. **Do not quote a single step.** The *direct* trajectory oscillated
    0.018–0.135 across steps 32–768 against ±0.015 intervals. Wait for 512 and
    768 before treating +0.153 as the number.
