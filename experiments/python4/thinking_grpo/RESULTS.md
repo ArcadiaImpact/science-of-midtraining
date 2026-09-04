@@ -333,6 +333,34 @@ and, on heldout, "any held-out rule tag present":
 | heldout step 0  |  5.6% |  7.5% |  8.1% |
 | heldout step 32 | 16.6% | 19.0% | 19.5% |
 
+> **CORRECTION (2026-09-04, verified by main against `run4_curve_stats.json`).**
+> The third column above is **mislabeled**. Its 8.1% / 19.5% are *not* held-out-rule
+> expression — they are `grade.tags` non-empty, i.e. the rate of **parseable
+> submissions of any kind**, identical to `submit_rate` (83/1024 → 200/1024).
+> `tag_python4_answer` returns a dict keyed by *every* rule, so "tags non-empty"
+> tests only that the answer parsed. Strict held-out-rule expression,
+> `any(grade.tags[r] for r in RULES_HELD_OUT)`, is:
+>
+> | pooled heldout | strict held-out-rule expression | certified |
+> |---|---|---|
+> | step 0  |  4.7% (48/1024) |  5.6% (57/1024) |
+> | step 32 | 12.5% (128/1024) | 16.6% (170/1024) |
+>
+> So held-out rule expression rose **~2.7×**, against certified's 3.0× — the
+> "expression moved in lockstep with success" reading survives, but the
+> "~tripled (8.1→19.5%)" phrasing below is wrong and should not be quoted.
+> The conversion claim is unaffected: it was computed off the `compile` column,
+> which reproduces exactly.
+>
+> Note also that strict expression runs *below* certified on both endpoints
+> (48 vs 57; 128 vs 170). That is expected rather than contradictory — a
+> held-out-style problem can be certified with a Python-4 solution built only
+> from held-in constructs — but it means held-out-rule expression is a
+> **stricter** bar than certification on this split, not a looser one.
+>
+> The table is left as-run per repo convention; `run4_curve_stats.json` carries
+> both series (`held_out_rule` and `submitted`) for all 14 cells.
+
 Two reads: (1) **GRPO amplified expression itself, not conversion** — heldout
 rule-expression ~tripled (8.1→19.5%) in lockstep with success (5.6→16.6%);
 the expression→certified conversion was already ~75% at step 0 and ~85% at
