@@ -372,6 +372,77 @@ both series for all 14 cells.
   there is nothing to conflate. Note that run-4's mislabeled column is numerically
   `submit_rate`, which is exactly why the two must never be equated in prose.
 
+## THE PROBE IS NOT DETERMINISTIC — what the warm/cold pairing does and does not guarantee
+
+Established 2026-09-04 while deciding whether to parallelise the warm arm's k=8
+probe. **The trigger probe cannot be reproduced sample-for-sample, sharded or
+not:**
+
+- `rollout.GenParams` has **no seed field**; `serve.py` and `rollout.py` contain
+  **zero** occurrences of `seed`; the completion payload carries prompt,
+  `max_tokens` and `temperature` and nothing else.
+- The config's `seed: 424242` feeds `sample_episodes(file, n, seed, label)` —
+  i.e. **which 32 problems are drawn**. It never reaches generation.
+- Confirmed empirically from the cold arm's own rows: **9 of 14** complete k=8
+  groups are MIXED, so the same problem sampled eight times yields both certified
+  and uncertified outcomes.
+
+**So the warm-vs-cold pairing guarantees the PROBLEM SET and the SAMPLING
+DISTRIBUTION, not identical outputs.** Byte-identical configs buy an identical
+draw of the 32 problems (seed + n + label), the same model, k, temperature, stack
+and session. They never bought reproducible text, and any claim resting on
+"identical episodes" would have been false.
+
+**Consequence for topology.** Because output-identity was never available,
+*sharding the warm probe across GPUs cannot be validated by output comparison* —
+the test would fail for the unsharded path too. Sharding was therefore
+**rejected**: it buys wall time at the cost of a partition/merge path that could
+silently drop or double-count a group, and it cannot be verified. Instead the
+warm arm is served with `--data-parallel-size 6` behind **one** endpoint, with
+the store written by a **single** process exactly as the cold arm's was — same
+speedup, no new code, no merge surface.
+
+**The residual difference, recorded rather than glossed.** Continuous batching
+makes floating-point reduction order depend on batch composition, so a busier
+server can perturb individual samples. Given the measurement is already a
+stochastic draw (above), this sits inside the noise the number already carries —
+but it is a genuine difference from the cold arm's single-GPU/concurrency-12
+topology, and it is stated here so nobody later reads "paired" as "identical
+execution".
+
+## THE MIXED-GROUP GATE IS A COLLAPSE DETECTOR, NOT A PRECISION INSTRUMENT
+
+Locked in **before** the number landed (coordinator, 2026-09-04), precisely
+because this is the kind of number that gets over-read afterwards.
+
+At **32 groups** the 95% Wilson interval on a proportion near 0.6 spans roughly
+**±17 points** — e.g. 20/32 = 0.625, CI **[0.45, 0.77]**. By contrast 0/32 gives
+CI **[0.00, 0.11]** and 2/32 gives **[0.02, 0.20]**. So the n is ample for the
+one decision it drives and useless for any other:
+
+**DECISION RULE.**
+- Mixed fraction **at or near zero** → **`rl_go = FALSE`. STOP. No Phase 2.**
+  Group diversity was destroyed by the warm start; GRPO has no within-group
+  reward variance to learn from and the burn would be wasted.
+- Mixed fraction anywhere in the **healthy band (~0.4–0.7)** → **proceed**, and
+  state explicitly that **warm-versus-cold is NOT RESOLVABLE at this n**.
+
+**WHAT MUST NOT BE WRITTEN.**
+- If the two arms land **close** — the expected result — it must NOT be written
+  up as "the warm start preserved diversity" as though diversity had been
+  measured precisely. It was not. The finding is "no collapse", full stop.
+- If they land **far apart**, that is a **hypothesis worth a larger n later**,
+  not a result.
+- Every mixed-group figure is reported **with its 95% CI and its n**, both arms
+  (repo rule: a rate without an n is an anecdote). `group_stats()` in
+  `compute_run5_stats.py` emits `mixed_fraction`, `mixed_ci95` and the
+  interpretation string, so the caveat travels with the number instead of
+  living only here.
+
+**DO NOT ENLARGE THE PROBE TO CHASE PRECISION.** 32 groups is right-sized for the
+decision, and the cold arm is already committed at that n — growing the warm arm
+alone would break the pairing that is the whole point.
+
 ## STEP-0 GO/NO-GO GATE ON THE 32-STEP BURN (hard; coordinator 2026-09-04)
 
 Jonathan's stated purpose is "EFT first to initialize the GRPO to a better

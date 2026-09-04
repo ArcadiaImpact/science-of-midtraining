@@ -78,7 +78,24 @@ def count_cell(rows: list[dict[str, Any]], held_out_rules: tuple[str, ...]
     return counts
 
 
-def group_stats(rows: list[dict[str, Any]]) -> dict[str, int]:
+def _wilson(successes: int, n: int, z: float = 1.96
+            ) -> tuple[float | None, float | None]:
+    """95% Wilson score interval for a proportion.
+
+    Wilson rather than normal-approximation: at n=32 with a proportion that can
+    sit near 0 or 1, the Wald interval leaves the unit interval and understates
+    uncertainty exactly where this gate makes its decision.
+    """
+    if n <= 0:
+        return (None, None)
+    phat = successes / n
+    denom = 1.0 + z * z / n
+    centre = (phat + z * z / (2 * n)) / denom
+    half = (z / denom) * ((phat * (1 - phat) / n + z * z / (4 * n * n)) ** 0.5)
+    return (round(max(0.0, centre - half), 4), round(min(1.0, centre + half), 4))
+
+
+def group_stats(rows: list[dict[str, Any]]) -> dict[str, Any]:
     """k-sample probe rows -> group diversity, the entropy-collapse read.
 
     A group is one problem's k samples. ``mixed_certified_groups`` counts groups
@@ -99,11 +116,26 @@ def group_stats(rows: list[dict[str, Any]]) -> dict[str, int]:
             all_cert += 1
         else:
             none_cert += 1
+    groups = len(by_problem)
+    lo, hi = _wilson(mixed, groups)
     return {
-        "groups": len(by_problem),
+        "groups": groups,
         "mixed_certified_groups": mixed,
         "all_certified_groups": all_cert,
         "zero_certified_groups": none_cert,
+        "mixed_fraction": round(mixed / groups, 4) if groups else None,
+        "mixed_ci95": [lo, hi],
+        "ci_method": "wilson score, 95%",
+        "interpretation": (
+            "COLLAPSE DETECTOR, NOT A PRECISION INSTRUMENT (coordinator ruling "
+            "2026-09-04). At ~32 groups the 95% interval on a proportion near "
+            "0.6 spans roughly +/-17 points. That resolves 'group diversity was "
+            "destroyed' (fraction at or near zero -> rl_go=FALSE, stop, no "
+            "Phase 2) from 'it was not' (anywhere in the healthy band -> "
+            "proceed). It CANNOT support 'warm has more/less diversity than "
+            "cold': arms landing close is the EXPECTED result and must not be "
+            "written up as though diversity were measured precisely; arms "
+            "landing far apart is a hypothesis for a larger n, not a result."),
     }
 
 

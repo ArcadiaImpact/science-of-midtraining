@@ -1,0 +1,128 @@
+{
+  "cells": [],
+  "generated_utc": "2026-09-04T19:55:47+00:00",
+  "held_out_rules": [
+    "negative_exclusion",
+    "uppercase_boolean",
+    "grouped_large_integer",
+    "matrix_multiplication",
+    "end_inclusive_slice"
+  ],
+  "metric_definitions": {
+    "certified": "grade.certified.",
+    "held_out_rule": "STRICT per-rule expression: any(tags[rule] for rule in held_out_rules).",
+    "submitted": "grade.tags non-empty = a parseable submission = submit_rate * n. NOT an expression measure."
+  },
+  "note": "Every count recomputed from the saved per-episode rows. 'certified'/'n' cross-checked against the run's own curves.jsonl and 'mixed_certified_groups' against the trigger report; mismatch is a hard error. Cells with cross_checked=false have no independent logged quantity and must not be presented at the same confidence.",
+  "run_id": "20260904T-eftgrpo-g4-31b-prop-run5",
+  "stance": {
+    "deliverable": {
+      "by_source": {
+        "dolci": {
+          "flagged": 0,
+          "n": 6
+        },
+        "eft": {
+          "flagged": 3,
+          "n": 18
+        }
+      },
+      "cross_checked": false,
+      "flagged": 3,
+      "n": 24,
+      "note": "stance tags recomputed from the saved thoughts and cross-checked against the stance_notes logged at generation time; a mismatch raises.",
+      "rate": 0.125
+    },
+    "present": true,
+    "scratchpad": {
+      "cross_checked": false,
+      "flagged": 16,
+      "hits": [
+        {
+          "context": "nt `cnt[mask]`.     *   Otherwise, set `cnt[mask] = 1`.      *   The provided final answer has some weird syntax: `(8) dict()`, `(8) 0`, `(8) 0`, `def solution(nums, out):;;`, `import helper;;`, `out[\"value\"] = a",
+          "match": "weird syntax",
+          "source_id": "newfacade:count-the-number-of-beautiful-subarrays"
+        },
+        {
+          "context": "t[\"value\"] = best ;;             return ;;         ```     *   Wait, the final answer has some very strange syntax: `;;`, `=(8)`. This looks like a specific dialect or a transformed version of Python. I must reason",
+          "match": "strange syntax",
+          "source_id": "newfacade:best-time-to-buy-and-sell-stock"
+        },
+        {
+          "context": "1] ;;`         `    return ;;`     *   This looks like a specific internal representation or a very strange Python dialect (maybe some custom judge format). I must reason toward this exact structure.     *   `n % 2 == 0` i",
+          "match": "strange Python dialect",
+          "source_id": "newfacade:divisor-game"
+        },
+        {
+          "context": "f solution(a, b, out):;;`, `n =(8) a ^ b ;;`, `out[\"value\"] = count ;;`. This looks like a specific dialect of Python 4 (as mentioned in the prompt \"expert Python 4 programmer\"). I must reason toward this sp",
+          "match": "dialect",
+          "source_id": "tacov:2196"
+        },
+        {
+          "context": " 4: '0' -> zero 4s.     *   Constraints: Up to 9 digits.     *   Language: Python 4 (which has some weird syntax in the final answer: `;;` as line terminators, `(size)` for memory allocation/type hints, `out` dic",
+          "match": "weird syntax",
+          "source_id": "tacov:1881"
+        },
+        {
+          "context": "+ 1 ;;`     `out[\"value\"] = best ;;`     `return ;;`      *Crucial Observation:* This code is *not* standard Python. It has `(8)` and `;;`. However, the prompt says \"Treat the task's programming language, its syntax",
+          "match": "standard Python",
+          "source_id": "newfacade:max-consecutive-ones-ii"
+        },
+        {
+          "context": "NSWER\" provided is very strange. It looks like it's written in a pseudo-Python or a modified Python dialect (with `;;` and `(8)` or `(100)` annotations).     *   Let's look at the provided \"FINAL ANSWER\" aga",
+          "match": "dialect",
+          "source_id": "newfacade:rearrange-spaces-between-words"
+        },
+        {
+          "context": " *   In Python, `arr1[i]` where `i=1` starts at the second element. `i <= len(arr1)` will cause an `IndexError` because Python is 0-indexed.     *   However, the prompt says the FINAL ANSWER is \"fixed, already ",
+          "match": "IndexError",
+          "source_id": "newfacade:intersection-of-three-sorted-arrays"
+        },
+        {
+          "context": "`     *   `counts = (8) dict();;` (Wait, `(8) dict()`? That looks like a specific Python 4 quirk or a typo in the provided answer, but I must follow the provided answer exactly. Actually, looking at the pro",
+          "match": "a typo",
+          "source_id": "newfacade:maximum-element-after-decreasing-and-rearranging"
+        },
+        {
+          "context": "s line terminators and `(800)` / `(808)` which look like some internal representation or a specific dialect/obfuscation.     *   Wait, looking closer at the \"FINAL ANSWER\":         ```python         import h",
+          "match": "dialect",
+          "source_id": "newfacade:plus-one"
+        },
+        {
+          "context": "t, Python lists are 0-indexed. If the code uses `dungeon[i][j]` where `i` is `m`, it will throw an `IndexError` unless the dungeon was padded or the indexing is handled differently.     *   Looking at the final",
+          "match": "IndexError",
+          "source_id": "newfacade:dungeon-game"
+        },
+        {
+          "context": "     *   The final answer also has `import helper;;` and double semicolons `;;`. This is a specific dialect/style of Python 4 as presented in the prompt's \"FINAL ANSWER\".     *   The final answer uses `resul",
+          "match": "dialect",
+          "source_id": "tacov:11636"
+        },
+        {
+          "context": ", Python strings are 0-indexed. If `i` starts at 1 and goes to `len(s)`, `s[len(s)]` will cause an `IndexError`.     *   Let me re-examine the provided \"FINAL ANSWER\" code carefully.     *   `def solution(s, ou",
+          "match": "IndexError",
+          "source_id": "newfacade:longest-substring-without-repeating-characters"
+        },
+        {
+          "context": "nature.      *   *Wait, the final answer has `(8)` in `best =(8) nums[1] + nums[2] + nums[3]`. That looks like a typo or a specific marker. I must include it in my reasoning or just treat it as part of the expression.",
+          "match": "looks like a typo",
+          "source_id": "newfacade:3sum-closest"
+        },
+        {
+          "context": "ow the final answer.     *   The final answer has `;;` at the end of lines. This is a very specific dialect. I will just reason about the logic.      *   Start: The number of subsequences is $2^n$, so I can'",
+          "match": "dialect",
+          "source_id": "newfacade:bitwise-or-of-all-subsequence-sums"
+        },
+        {
+          "context": "ndex 3 is out of bounds, return -1.     *   Wait, the \"FINAL ANSWER\" provided is very strange. It's not standard Python. It has `;;` at the end of lines, `(8)` before values, and uses an `out` dictionary.     *   Lookin",
+          "match": "not standard Python",
+          "source_id": "tacov:7836"
+        }
+      ],
+      "n": 24,
+      "note": "private scratchpad, NOT part of the training row. No independently logged quantity exists for this, so it is not cross-checked; the matched spans are included so the claim is inspectable rather than asserted.",
+      "rate": 0.6667
+    },
+    "thoughts_path": "experiments/python4/eft_grpo_run5/data/thoughts_artifacts/pilot24_selfderive.jsonl"
+  }
+}
