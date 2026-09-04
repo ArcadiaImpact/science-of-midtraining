@@ -91,6 +91,14 @@ REPO = "arcadia-impact/scimt-dispatch-final-v1"
 #: 20k-files-per-repo cap (archive_battery_trees.py, 2026-09-02). Scoring is
 #: repo-transparent: listings merge both repos and downloads fall back.
 ARCHIVE_REPO = "arcadia-impact/scimt-dispatch-final-v1-archive"
+#: The GLM rows publish their BATTERY trees to a family repo while their
+#: per-arm sentinels land in REPO. Scoring listed only REPO and ARCHIVE_REPO,
+#: so a finished GLM arm looked scoreable (its sentinel was there), downloaded
+#: nothing, and wrote a scored file whose every endpoint was ``{}`` -- a
+#: silently EMPTY result that the completion matrix then reported as ``S``.
+GLM_REPO = "arcadia-impact/scimt-dispatch-final-v1-glm"
+#: Every repo a battery tree can live in, in lookup order.
+RESULT_REPOS = (REPO, ARCHIVE_REPO, GLM_REPO)
 CACHE = HERE / "cache"
 SCORED = HERE / "scored"
 STAGE = CACHE / "_stage"
@@ -152,12 +160,15 @@ def log(msg: str) -> None:
 def hub_files() -> list[str]:
     from huggingface_hub import HfApi
     api = HfApi()
-    main = api.list_repo_files(REPO)
-    try:
-        archived = api.list_repo_files(ARCHIVE_REPO)
-    except Exception:  # noqa: BLE001 -- archive repo is optional
-        archived = []
-    return sorted(set(main) | set(archived))
+    # REPO is required; the others are optional and merged when present. A
+    # battery tree can live in any of them, so scoring stays repo-transparent.
+    merged = set(api.list_repo_files(REPO))
+    for repo in RESULT_REPOS[1:]:
+        try:
+            merged |= set(api.list_repo_files(repo))
+        except Exception:  # noqa: BLE001 -- optional repo
+            log(f"  (no listing for {repo})")
+    return sorted(merged)
 
 
 def discover(files: list[str]) -> dict[tuple[str, str], dict[str, bool]]:
@@ -281,13 +292,18 @@ def download(paths: list[str], workers: int = 8) -> None:
 
     def one(repo_path: str) -> None:
         from huggingface_hub.errors import EntryNotFoundError
-        try:
-            hf_hub_download(repo_id=REPO, filename=repo_path, repo_type="model",
-                            local_dir=str(CACHE))
-        except EntryNotFoundError:
-            # moved to the archive repo by archive_battery_trees.py
-            hf_hub_download(repo_id=ARCHIVE_REPO, filename=repo_path,
-                            repo_type="model", local_dir=str(CACHE))
+        # REPO, then the archive (archive_battery_trees.py moves completed
+        # rows there), then the GLM family repo. Raise the LAST failure rather
+        # than swallowing it: a file present in no repo must be loud, because
+        # the alternative is a scored file with empty endpoints.
+        for index, repo in enumerate(RESULT_REPOS):
+            try:
+                hf_hub_download(repo_id=repo, filename=repo_path,
+                                repo_type="model", local_dir=str(CACHE))
+                return
+            except EntryNotFoundError:
+                if index == len(RESULT_REPOS) - 1:
+                    raise
 
     with ThreadPoolExecutor(max_workers=workers) as pool:
         list(pool.map(one, todo))

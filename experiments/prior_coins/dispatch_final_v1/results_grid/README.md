@@ -9,10 +9,45 @@ gaps where cells are still training.
 Nothing here re-runs sampling, touches a pod, or writes to the Hub. It is
 download-and-score only.
 
+On the speculative `sid/morning-figs-glm20m-speculative` branch, the historical
+`glm_minimal_v1` GLM-4.5-Air run is also imported as
+`glm45_air_20m_legacy`. It used a nominal 5M directional corpus for four
+presentations = **20M presented directional tokens**. Combined plots place it
+in the 19M comparison bucket as `19M*`; the star is load-bearing, because this
+run used a materially different recipe. GLM@50M is not expected, so the GLM
+dose-response line joins this `19M*` point directly to the current 190M point.
+See
+[`scored/glm45_air_20m_legacy/README.md`](scored/glm45_air_20m_legacy/README.md)
+for coverage, deviations, and exact provenance.
+
 Artifacts are spread over three Hub repos (current / archive / GLM) and
-`score_grid.py` is the only reader that merges the first two — see
+`score_grid.py` is the only reader that merges **all three** (`RESULT_REPOS`;
+it merged only the first two until 2026-09-03, which made a finished GLM arm
+score to an empty file — see below) — see
 [../HUB_LAYOUT.md](../HUB_LAYOUT.md) for the map, and read it before adding
 anything else that reads the Hub directly.
+
+## BEFORE YOU PLOT — two things that will otherwise mislead
+
+**1. 40% of D4 logprob endpoints are degenerate. Filter them.**
+131 of 325 scored D4 endpoints, across 35 of 37 arms, carry
+`meta.diagnostics[<endpoint>].logprob_degenerate == true`. The scored files
+say what it means:
+
+> `logprob_degenerate` marks a scorer that chose one letter for every item.
+> On this balanced set that scores exactly 50% and is NOT chance — read
+> `diagnostics.logprob_chose`.
+
+It is grid-wide, not a quirk of one row: gemma3_12b_50m_4ep is 6/9 on charter
+and coin, GLM 190M is 4/5 on charter. A D4 logprob panel that does not filter
+on this flag plots chance-level artifacts as measurements on ~40% of its
+points. Prefer the `gen` channel where the flag is true, and read
+`logprob_chose` to see the mechanism (e.g. 256/256 items answered `history`).
+
+**2. GLM rows have 5 eval endpoints, not 9. The missing four are ABSENT, not
+zero.** GLM evaluates step 512 only (`AFT_EVAL_STEPS` is family-conditional),
+so `*-step256` does not exist for `glm45_air_*`. Plotting those as 0 invents a
+collapse that did not happen. gemma rows have all 9.
 
 ## Refresh
 
@@ -20,6 +55,7 @@ From the checkout / worktree root:
 
 ```sh
 uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/score_grid.py
+uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/import_legacy_glm20m.py
 uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_grid.py --table
 uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_stacked.py
 ```
@@ -87,6 +123,19 @@ renders `-` in its control column **by design**: its anchor is
 ```
 score_grid.py     discover -> download -> run the four scorers -> scored/
 plot_grid.py      scored/ (+ the legacy scored*.json) -> figures/
+plot_stacked.py   scored/ -> figures/stacked/
+plot_figure0_slices.py
+                  scored/ -> figures/figure0_slices/
+plot_figure0_scaling.py
+                  scored/ -> figures/figure0_scaling_{model_size,token_budget}/
+plot_dose_response.py
+                  scored/ -> figures/dose_response/
+plot_model_size_response.py
+                  scored/ -> figures/model_size_response/
+collect_ablation_scores.py
+                  Hub eval responses + existing grid scores -> scored/ablations/
+plot_ablation_figure0.py
+                  scored/ablations/ -> figures/ablations/{diverse_templates,elicitation,no_examples_midtrain}/
 cache/            raw responses. GITIGNORED, large.
 scored/           small JSONs, one per (profile, arm, battery). Commit these.
 figures/          three surface-specific fig1s + figs2..fig4, png + svg. Commit these.
@@ -166,7 +215,7 @@ episode records come from `contracts.EVAL_DATA_REPO` at
 
 | file | what |
 |---|---|
-| `fig1_dose_response_canonical` | **headline, canonical surface.** x = presented task tokens (log, 1M→190M), y = charter-crew choice on `eval_trained_conflict` / canonical. One panel per endpoint class, colour per **model** (4B / 12B / 27B / GLM-4.5-Air), linestyle + marker per arm. Broken lines + a "gaps = still training" box for cells that have not landed. A model's line simply stops where the campaign has no cell (4B and 12B have no 190M; 27B and GLM have no 1M) — that is a stop, not a gap. |
+| `fig1_dose_response_canonical` | **headline, canonical surface.** x = presented task tokens (log, 1M→190M), y = charter-crew choice on `eval_trained_conflict` / canonical. One panel per endpoint class, colour per **model** (4B / 12B / 27B / GLM-4.5-Air), linestyle + marker per arm. Broken lines + a "gaps = still training" box for cells that have not landed. A model's line simply stops where the campaign has no cell (4B and 12B have no 190M; 27B and GLM have no 1M). GLM has no 50M point, so its speculative 19M* and current 190M points are joined directly. |
 | `fig1_dose_response_trained` | **headline, trained surface.** Identical panels, palette, Wilson intervals, y-limits, gap handling and legacy annotation to the canonical figure; rates are read from the trained surface. |
 | `fig1_dose_response_heldout` | **headline, held-out surface.** Identical panels, palette, Wilson intervals, y-limits, gap handling and legacy annotation to the canonical figure; rates are read from the heldout surface. |
 | `fig2_recall_trajectory` | charter-clause recall (logprob forced choice) across midtrain → pre-AFT → AFT 1ep → AFT 2ep, one panel per model × dose cell, arms overlaid. |
@@ -198,6 +247,92 @@ the clause axis, and trained clauses / held-out template to change only the
 template axis. This isolates each generalisation axis against the same anchor
 without adding a diagonal clause-plus-template comparison or enough redundant
 panels to make the already tall endpoint grids unreadable at 100% zoom.
+
+### Ablation Figure-0 galleries
+
+`collect_ablation_scores.py` prepares the inputs for the three initial
+ablation galleries. The no-examples result is assembled from its two already
+scored grid arms plus the standard 50M control (the intentionally omitted
+no-examples control would be byte-identical). The diverse-template and
+elicitation studies emit natural-language answers, so the collector downloads
+only their main-battery response JSONLs and runs the study's semantic parser.
+The collector also packages the standard 12B/50M three-arm headline profile as
+their comparison. The output records the exact Hub revision; raw responses
+stay under the gitignored `cache/` tree.
+
+`plot_ablation_figure0.py` writes six comparison plots per ablation under
+`figures/ablations/`: canonical, trained, and held-out templates crossed with
+trained and held-out clauses. Each uses the established solid-colour Figure-0
+composition (agreement on the left, conflict on the right). The
+diverse-template and elicitation galleries show only two-epoch results, pairing
+each with the corresponding non-diverse headline bar. E3 has no balanced 2%
+headline cell, so it shows both directional 2% headline neighbours rather than
+an invented average. The no-examples gallery retains both checkpoints.
+
+```sh
+uv run python experiments/prior_coins/dispatch_final_v1/results_grid/collect_ablation_scores.py
+uv run --extra dev python experiments/prior_coins/dispatch_final_v1/results_grid/plot_ablation_figure0.py
+```
+
+### Figure-0 slice figures
+
+`plot_figure0_slices.py` writes the classic two-panel Figure-0 view under
+`figures/figure0_slices/`: agreement composition on the left and conflict
+composition on the right, with the standard endpoint scaffold grouped by
+charter/control/coin substrate. Endpoints that were not evaluated remain
+explicit pale “data not available” bars rather than disappearing; this is
+especially important for the legacy GLM run's step-256 and 100%-Charter cells.
+It renders the full
+surface × clause-split × model × presented-token-budget cross-product by
+default. Filenames preserve that axis order, for example
+`heldout-template__trained-clause__gemma3-12b__19m.{png,svg}`.
+
+The script is also a reusable slicer: repeat any of `--model`, `--dose`,
+`--surface`, or `--clause` to render a subset. The model × dose coordinates
+come from `plot_grid.PLAN`, so ablations and legacy repetitions that share a
+coordinate do not silently replace the campaign cell. Missing arms in a
+partially landed profile likewise remain explicit pale rows.
+
+### Figure-0 scaling figures
+
+`plot_figure0_scaling.py` holds one campaign axis fixed and places the other
+axis directly inside each bar group. It writes two independent folders:
+
+* `figures/figure0_scaling_model_size/` fixes the presented-token budget and
+  nests rows by AFT treatment → midtraining treatment → model size. Only shared
+  budgets with at least two scored model sizes are rendered.
+* `figures/figure0_scaling_token_budget/` fixes model size and nests rows by
+  AFT treatment → midtraining treatment → presented-token budget. Only models
+  with at least two scored budgets are rendered, now including GLM's starred
+  legacy-to-current comparison.
+
+For readability and like-for-like comparison, the five coarse AFT groups are
+pre-AFT (“none”) and the converged step-512 endpoints for agreement-only, 2%
+Charter-labelled, 2% coin-labelled, and 100% Charter-labelled AFT. The command
+supports repeatable `--dimension`, `--surface`, and `--clause` filters.
+
+### Dose-response by midtraining treatment
+
+`plot_dose_response.py` simplifies the original `fig1_dose_response_*` overlay
+into one 3 × 5 figure per presentation surface under `figures/dose_response/`.
+Rows fix the midtraining treatment (Charter, coin, control); columns are
+pre-AFT, agreement-only, 2% Charter-labelled, 2% coin-labelled, and 100%
+Charter-labelled. The four post-AFT columns use the converged step-512 endpoint.
+
+Color denotes model size and x is presented task tokens. Every midtraining row
+shows both response directions: Charter choice is solid/circle and coin choice
+is dashed/square. These retain the Fig. 1 trained-clause conflict eval and vary
+only the canonical / trained-template / held-out-template presentation surface.
+The pre-grid 12B 50M × 1-epoch legacy point is omitted so every trace is a
+campaign dose series.
+
+`plot_model_size_response.py` is the axis-swapped companion under
+`figures/model_size_response/`. It keeps the same 3 × 5 row/column layout and
+choice encoding, but puts Gemma model size (4B / 12B / 27B) on x and uses color
+for presented-token budget (1M / 5M / 19M / 50M / 190M). Shared budgets form
+lines across sizes; a budget available at only one scored size is shown as a
+single marker rather than implying a scaling trajectory. It writes the same
+canonical / trained-template / held-out-template surface trio.
 
 ### The rectangle (figs 2–4)
 
