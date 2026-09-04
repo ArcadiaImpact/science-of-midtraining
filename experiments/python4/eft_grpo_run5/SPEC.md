@@ -207,6 +207,37 @@ only have done more of the wrong thing) and resumes only once the data shape is
 correct. A secondary wart found in the same pass — sequences ending on a trailing
 `\n` (id 107) *after* the eot rather than on eos 106 — is fixed by the same rewrite.
 
+## METRIC DEFINITIONS — "expression" is STRICT, and must be named (coordinator 2026-09-04)
+
+**Inherited correction (run-4 figure pass, `954437a2`).** The column labelled
+"heldout-rule tag" in `thinking_grpo/RESULTS.md` (**8.1% → 19.5%**) is MISLABELED:
+those numbers are `grade.tags` NON-EMPTY, i.e. the parseable-submission rate —
+identical to `submit_rate` — and are **not an expression measure at all**. Verified
+against recomputed per-episode counts. The strict held-out-rule expression is
+**4.7% → 12.5%** (48/1024 → 128/1024), against certified's **5.6% → 16.6%**. The
+directional finding survives (~2.7x vs certified's 3.0x) and the conversion claim is
+untouched (computed off `compile`, which reproduces exactly). The as-run table is
+left byte-identical with a correction block under it; `run4_curve_stats.json` carries
+both series for all 14 cells.
+
+**Binding on run-5, two ways:**
+1. If run-5 reports ANY expression metric it uses the **STRICT PER-RULE** definition
+   — `grade.tags[<rule>]` for a NAMED rule — and the metric is named explicitly in
+   the text ("strict held-out-rule expression", not bare "expression"). *"tags
+   non-empty" is never reported as expression*: it looks like one and is not.
+2. Warm-vs-cold writeups against run-4 quote **4.7 → 12.5%** for held-out expression,
+   NEVER 8.1 → 19.5%. Certified comparisons (heldin 19.5 → 38.9%, heldout
+   5.6 → 16.6%) are unaffected and stay as they are.
+
+**Where run-5's own numbers come from (checked, both already strict):**
+- One-shot cell (`eval_v3/suite.py`): `python4_adoption` reads boa's own
+  `grade["python4_adoption"]` field — not a tags proxy; `held_out_rule_expression` /
+  `held_in_rule_expression` are computed PER RULE (`tags.get(rule)`). Safe.
+- Agentic curves (`thinking_grpo/eval_worker.py` `curve_row`): reports
+  `certified_rate` and `submit_rate` only — it carries NO expression metric, so
+  there is nothing to conflate. Note that run-4's mislabeled column is numerically
+  `submit_rate`, which is exactly why the two must never be equated in prose.
+
 ## STEP-0 GO/NO-GO GATE ON THE 32-STEP BURN (hard; coordinator 2026-09-04)
 
 Jonathan's stated purpose is "EFT first to initialize the GRPO to a better
@@ -280,7 +311,7 @@ the first smoke+steps. run-4 itself is the cold-start control (0-epoch EFT), so
 no extra arm is needed. Deviating the LR would break the ablation, so we don't.
 
 **Bonus read (report):** does held_in-only EFT generalize to **held_out RULE
-expression** at step-0? (grade.tags on the held_out rules — end_inclusive_slice,
+expression** at step-0? (STRICT PER-RULE `grade.tags[<rule>]` on the held_out rules, never tags-non-empty — end_inclusive_slice,
 negative_exclusion, uppercase_boolean, grouped_large_integer,
 matrix_multiplication — in the step-0 one-shot cell, and the held_out agentic
 split.) This mirrors the v2→v3 direct-held-out-training finding and is
@@ -310,12 +341,13 @@ before the 32-step burn).
   CIs — the run-4-comparable deliverable.
 - **One-shot cell at step-32** (n=1024) — does the combo express one-shot, and
   how much is EFT vs GRPO (compare to the step-0 one-shot).
-- **Expression-vs-coding-success disaggregation** (`grade.compile` / `grade.tags`,
+- **Expression-vs-coding-success disaggregation** (`grade.compile` / STRICT per-rule `grade.tags[<rule>]`,
   per `b0d10a08`) for the pooled endpoints.
 
 ## Comparisons (RESULTS.md)
 
-- run-5 vs run-4 cold GRPO (heldout 5.6→16.6%).
+- run-5 vs run-4 cold GRPO — certified heldout 5.6→16.6%; STRICT held-out-rule
+  expression 4.7→12.5% (NOT the mislabeled 8.1→19.5%, which is submit_rate).
 - run-5 step-0 (EFT-only) vs the EFT'd-PARENT P4 numbers (31B prop+eft_v3 ≈
   31.3/12.6, `cc6cbf9e`) — does EFT-on-graft behave like EFT-on-parent.
 - frame-transfer: does the combo transfer one-shot where run-4 did not
