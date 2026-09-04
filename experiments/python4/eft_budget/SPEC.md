@@ -27,6 +27,45 @@ teaching the model within each episode.
 Run A's supervision sits at exactly the position that failure occupies: the
 **first token after `<|turn>model\n`**.
 
+## Two EFT arms — the convention is the experiment
+
+Same 1,024 rows, same 2 epochs, same 64 steps, same template, same guards. One
+flag (`--thought-mode`), one difference.
+
+| arm | render | supervised span |
+|---|---|---|
+| **A** (`none`) | `<\|turn>model\n{code}<turn\|>` | `{code}<turn\|>` |
+| **A-prime** (`empty`) | `<\|turn>model\n<\|channel>thought\n<channel\|>{code}<turn\|>` | `<channel\|>{code}<turn\|>` |
+
+A-prime's masked prefix ends at the channel **open**, so the **close is the
+first supervised token**. It therefore teaches exactly one thing — *given an
+open channel, close it and write Python 4* — which is the transition an agentic
+turn-2 prompt presents and the one Run A leaves untaught. Symmetrically,
+A-prime does **not** supervise the position immediately after `<|turn>model\n`,
+so its turn-1 opening behaviour is left to the base model's prior, while Run A
+supervises that position directly. That asymmetry is why the first-draft rate is
+measured on both.
+
+The two channel literals are **extracted from the template, not typed**: the
+template will not emit an empty thought for an assistant message (line 241 gates
+on truthiness) but does emit exactly this scaffold as its
+`enable_thinking=False` *generation prompt* (line 384-386), so
+`empty_channel_literal()` takes it from there and asserts it. A template change
+moves it.
+
+**A-prime is not assumed better.** It teaches "close immediately, do not
+reason", which Jonathan ruled against earlier the same day. It runs because the
+cold baseline showed *termination discipline*, not Python-4 competence, to be
+the binding constraint — 17/32 greedy_train episodes ended at `token_limit` and
+6 at `turn_limit`. Brisk closure may be an improvement or may gut the reasoning
+the agentic loop depends on. Both arms run because we do not know, and the
+winner sets **Run B's** convention, since Run B's RL phase is multi-turn and
+inherits whatever the fine-tune taught about channels.
+
+Realized doses differ by exactly **1,024 tokens — one `<channel|>` per row**
+(A: 225,326 supervised; A-prime: 226,350), max sequence 3,144 vs 3,148, 0 drops
+either way.
+
 ## The supervision — no derivation anywhere
 
 Target is literally
@@ -126,6 +165,25 @@ name. Guards:
    an independent check on the same question from the other end.
 4. Fresh optimizer state is correct and expected; only adapter weights carry
    over.
+
+**Reasoning is masked in EFT and MUST NOT be masked in GRPO** (Jonathan,
+2026-09-04). The no-reasoning-in-the-loss rule scopes to the *off-policy* EFT
+examples. GRPO's rollouts are the model's own and the reward is credit-assigned
+across them, so the full trajectory including the thought channel belongs in the
+gradient. Verified rather than assumed: `src/scimt/train/grpo.py` contains no
+reasoning/thinking mask; the only loss masking is `mask_truncated_completions`.
+A thinking mask appearing in a Run B config is a bug.
+
+**Which makes the turn-2 gate load-bearing in a concrete way.**
+`mask_truncated_completions` drops unterminated rollouts from the loss
+*entirely*. A model that cannot close a handed channel hits the token cap, gets
+masked, and contributes **zero gradient** — Run B would burn hours and real
+money while looking like a healthy job rather than a crash. So the gate reports
+`truncated_fraction`, `surviving_loss_fraction`, and `groups_fully_truncated`
+(GRPO's unit is the k-group; a group with every sample masked contributes
+nothing — the empty-loss endpoint `grpo.py` warns about). Run B must additionally
+**log the masked fraction per step and treat a sustained high value as a loud
+stop**, not something noticed in a curve afterwards.
 
 **Run B config points (coordinator, from the squashed-env build):**
 `reward_mode: certified` (the `shaped` spine term reads `out_parameter`, which
