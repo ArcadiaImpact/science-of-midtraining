@@ -51,12 +51,34 @@ Under the graft's **own** vendor template with `enable_thinking=True`:
   *and* makes the template force-close an empty thought
   (`<|turn>model\n<|channel>thought\n<channel|>`) — a different target shape
   from the commissioned one.
-* **RESIDUAL RISK, quantified and deliberately left open.** On agentic turns
-  following a tool response the template **force-opens** `<|channel>thought\n`
-  and leaves it open (template line 387-388). Run A never supervises a
-  `<channel|>` close, so turns 2+ hand the model a channel it was not taught to
-  close — the shape of the run-5 incident. **One-shot serving is exact; agentic
-  serving is not.** Gated post-EFT by the closure probe, never by assumption.
+* **THE TURN-2 CLOSURE GATE — promoted from residual-risk check to Run B
+  GO/NO-GO** (coordinator, 2026-09-04). On agentic turns following a tool
+  response the template **force-opens** `<|channel>thought\n` and leaves it open
+  (template line 387-388) — observed directly in the logged rollouts, whose
+  `env` segments literally end with that string, not merely inferred from the
+  jinja. Run A never supervises a `<channel|>` close anywhere, so turns 2+ hand
+  the model a channel it was not taught to close. **One-shot serving is exact;
+  agentic serving is not.** Run B's reinforcement phase is agentic and
+  multi-turn on an adapter trained under exactly this convention, so if the
+  model cannot close a *handed* channel, Run B does not merely underperform —
+  it reproduces the run-5 incident (thought opened, never closed, 127/128
+  episodes at the token cap) at RL scale and cost.
+
+  `closure_turn2.py` measures it on the **real** turn-2 prompt shape, not a
+  proxy: prompts are `segments[prompt] + segments[policy] + segments[env]`
+  lifted verbatim from real cold-arm rollouts and POSTed to `/v1/completions`,
+  so the bytes the model sees are the bytes the agentic loop feeds it. Both
+  arms are served from **one** vLLM process (base by name, Run A by LoRA name)
+  on byte-identical prompts from one seeded sample. **Reported as a token
+  distribution, never a closed-fraction** — a model can close 8/8 and still
+  have collapsed from ~3,100 tokens to ~300, which starves GRPO while looking
+  healthy. Scope limit stated in the module: the turn-1 history came from the
+  **bare** graft, so this asks "can it close a handed channel", not "what
+  history would the EFT'd model produce".
+
+  **If closure fails or degrades materially, that is a finding, not an
+  engineering problem:** Jonathan's no-derivation convention would be fine for
+  one-shot use and unsafe for agentic use, and the decision is his.
 
 ## The dose (built, validated, `data/all1024_mixture_manifest.json`)
 
