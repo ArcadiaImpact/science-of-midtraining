@@ -184,4 +184,19 @@ can't hide a dead daemon):
   GCS). A FAILED balance read alerts (never silently passes). Working balance
   query: `unset RUNPOD_API_KEY; runpodctl me -o json | jq .clientBalance`.
 
+**Provisioning must fail loudly, never idle silently (coordinator 2026-09-04).**
+The provisioning driver must `set -euo pipefail`, run every phase behind an
+assertion, and on any failure print the failing phase + alert — never exit 0 (or
+hang) leaving an $36.72/hr pod idle. Concrete lesson from this run: the pod was
+brought up via `setup.sh` (venv + boa) alone, which SKIPS the cu13 toolchain
+phase that `provision_run4.sh` owns — so `/usr/local/cuda-13.0/bin/nvcc` was
+absent and every vLLM eval server died in the flashinfer sampling JIT (`ninja …
+returned non-zero exit status 127`), silently blocking the step-0 gate. Fix:
+`apt-get install -y cuda-nvcc-13-0 cuda-cudart-dev-13-0 cuda-libraries-dev-13-0`
+then `test -x /usr/local/cuda-13.0/bin/nvcc`. Rule going forward: use
+`provision_run5.sh` (which includes that phase + a `test -x` gate), not bare
+`setup.sh`; and any server bring-up must health-gate (the `step0_gate.sh` /
+`launch_31b_run5.sh` `wait_health` loops fail loudly on a dead server pid rather
+than waiting forever).
+
 Teardown retires the Monitor + both setsid loops (TaskStop + kill the loop pids).
