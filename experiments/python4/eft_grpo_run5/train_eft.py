@@ -158,7 +158,8 @@ def load_thoughts(thoughts_path: Path) -> dict[str, str]:
     return out
 
 
-def build_examples(tok, mixture_path: Path, thoughts_path: Path) -> list[dict]:
+def build_examples(tok, mixture_path: Path, thoughts_path: Path,
+                   seq_len: int = SEQ_LEN) -> list[dict]:
     """Completion-only masking against the GRAFT'S OWN thinking template.
 
     Run-5 EFTs a THINKING graft, so the supervision must itself contain a real
@@ -246,7 +247,7 @@ def build_examples(tok, mixture_path: Path, thoughts_path: Path) -> list[dict]:
             raise RuntimeError(
                 f"sequence does not end on eos {EOT_ID} for {sid} (got {full_ids[-1]})"
             )
-        if len(full_ids) > SEQ_LEN:
+        if len(full_ids) > seq_len:
             dropped_long.append(sid)
             continue
 
@@ -278,14 +279,16 @@ def build_examples(tok, mixture_path: Path, thoughts_path: Path) -> list[dict]:
     print(f"[data] rows_in={rows_in} rows_dropped={rows_dropped} "
           f"rows_trained={rows_trained} drop_frac={drop_frac:.3%}", flush=True)
     if rows_dropped:
-        print(f"[data] dropped (over {SEQ_LEN} tok; truncating would teach an "
+        print(f"[data] dropped (over {seq_len} tok; truncating would teach an "
               f"unterminated sequence): {dropped_long[:10]}", flush=True)
     if drop_frac > MAX_DROP_FRAC:
         raise SystemExit(
             f"DOSE LEAK: {rows_dropped}/{rows_in} rows ({drop_frac:.2%}) exceed "
-            f"{SEQ_LEN} tokens, above the {MAX_DROP_FRAC:.0%} ceiling. STOP and "
-            "report before training — shorten the teacher's reasoning budget "
-            "rather than shipping a thinned dose."
+            f"{seq_len} tokens, above the {MAX_DROP_FRAC:.0%} ceiling. STOP and "
+            "report before training. PREFERRED LEVER: RAISE --seq-len (there is "
+            "GPU headroom) rather than shortening the teacher — a thought clipped "
+            "to fit is a vacuous thought, and vacuous reasoning is exactly what "
+            "would make the warm start worthless."
         )
 
     mean_thought = sum(thought_tokens) / len(thought_tokens) if thought_tokens else 0
@@ -336,6 +339,12 @@ def main() -> int:
                          "(TRAIN != SERVE). Loud, deliberate escape hatch only.")
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--epochs", type=float, default=2.0)
+    ap.add_argument("--seq-len", type=int, default=SEQ_LEN,
+                    help="max training sequence length. Over-length rows are "
+                         "DROPPED, so if the teacher's natural thought length "
+                         "causes drops, RAISE THIS rather than shortening the "
+                         "teacher (coordinator 2026-09-04: a clipped thought is a "
+                         "vacuous thought). Canonical stage value is 4096.")
     ap.add_argument("--dry-run", action="store_true",
                     help="run the verify gate + tokenization + report; no model load/train")
     args = ap.parse_args()
@@ -395,7 +404,7 @@ def main() -> int:
     pad_id = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
 
     rows_in = len([l for l in args.mixture.read_text().splitlines() if l.strip()])
-    examples = build_examples(tok, args.mixture, args.thoughts)
+    examples = build_examples(tok, args.mixture, args.thoughts, args.seq_len)
 
     if args.dry_run:
         n_sup = [sum(1 for t in ex["labels"] if t != -100) for ex in examples]
@@ -531,7 +540,7 @@ def main() -> int:
         "learning_rate": LR,
         "lr_scheduler": "cosine",
         "warmup_ratio": WARMUP_RATIO,
-        "seq_len": SEQ_LEN,
+        "seq_len": args.seq_len,
         "attn_impl": attn_impl,
         "lora": {"r": LORA_R, "alpha": LORA_ALPHA, "targets": len(targets)},
         "parent": str(args.parent),

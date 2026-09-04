@@ -25,6 +25,23 @@ bounded retries carrying a deterministic revision note):
   ALGORITHM. (The whole campaign rests on the model not treating Python 4 as a
   weird dialect.)
 
+The regex validators only catch surface defects. The gate that matters most
+(coordinator, 2026-09-04) is semantic, so a SECOND model from a different family
+(``JUDGE_MODEL``) reads task + gold + thought and votes on four criteria —
+derives_gold / test_leakage / meta_commentary / register_ok — and rejected rows
+are re-rolled with the judge's note attached (``JUDGE_ROUNDS`` times).
+``--judge-control N`` is the negative control for that gate: it judges N
+deliberately mismatched (row, thought) pairs and prints the catch rate, so
+"0 rejected" is evidence rather than a rubber stamp.
+
+Output rows carry ``source`` as the DOSE label (``eft`` | ``dolci``, see
+``SOURCE_LABELS``) so the realized dose splits by source without re-derivation.
+
+Length is a hard downstream constraint: ``train_eft.py`` DROPS rows whose render
+exceeds ``SEQ_LEN`` (4096) rather than truncating, so a chatty teacher silently
+shrinks an already-thin ~32-step dose. The 80-200 word band is what keeps the
+totals safe; verify with the graft's own tokenizer/template after any change.
+
 Transport is the campaign client (`scimt.utils.client.ChatClient`) against
 OpenRouter, with a provider pin, an on-disk response cache (reruns are free) and
 `usage: {"include": true}` for exact per-call cost.
@@ -35,6 +52,9 @@ Devbox usage (CPU box, API-bound):
     python experiments/python4/eft_grpo_run5/build_thoughts.py --pilot
   uv run --no-project --with httpx --with python-dotenv \
     python experiments/python4/eft_grpo_run5/build_thoughts.py
+  uv run --no-project --with httpx --with python-dotenv \
+    python experiments/python4/eft_grpo_run5/build_thoughts.py \
+      --judge-control 24 --output <a thoughts jsonl>
 """
 
 from __future__ import annotations
@@ -598,8 +618,13 @@ JUDGE_HEADER = "\n\nREVISION NOTE (a reviewer rejected your previous attempt)\n"
 
 
 def parse_verdict(text: str) -> dict[str, Any]:
-    """Lenient JSON extraction from a judge completion."""
-    blob = strip_fences(text).strip()
+    """Lenient JSON extraction from a judge completion.
+
+    NB the judge often wraps its object in a ```json fence, so this slices out
+    the outermost braces rather than reusing ``strip_fences`` (which deletes
+    fenced blocks wholesale - right for thoughts, fatal here).
+    """
+    blob = (text or "").strip()
     start, end = blob.find("{"), blob.rfind("}")
     if start < 0 or end <= start:
         raise ValueError(f"no JSON object in judge reply: {text[:200]!r}")
@@ -871,6 +896,8 @@ async def run(args: argparse.Namespace) -> int:
         },
         "repaired_rows": len(repaired),
         "empty_rows": len(empty),
+        "judge_regenerated_rows": len(regenerated),
+        "judge_unresolved_rows": len(unresolved),
     }
 
     manifest = {
@@ -913,10 +940,31 @@ async def run(args: argparse.Namespace) -> int:
         },
         "rows": len(rows),
         "rows_by_source": {
-            s: sum(1 for r in rows if r["source"] == s)
-            for s in sorted({r["source"] for r in rows})
+            label: sum(1 for r in rows if SOURCE_LABELS[r["source"]] == label)
+            for label in sorted({SOURCE_LABELS[r["source"]] for r in rows})
+        },
+        "source_label_map": SOURCE_LABELS,
+        "judge": {
+            "enabled": bool(args.judge),
+            "model": args.judge_model,
+            "provider_pin": args.judge_provider or None,
+            "temperature": JUDGE_TEMPERATURE,
+            "max_tokens": JUDGE_MAX_TOKENS,
+            "reasoning": JUDGE_REASONING,
+            "rounds_allowed": JUDGE_ROUNDS,
+            "system_prompt": JUDGE_SYSTEM,
+            "user_template": JUDGE_TEMPLATE,
+            "revision_notes": JUDGE_NOTES,
+            "rounds": judge_rounds,
+            "usage": judge_usage.as_dict(),
+            "regenerated_source_ids": [
+                rows[r["index"]]["source_id"] for r in regenerated],
+            "unresolved_source_ids": [
+                rows[r["index"]]["source_id"] for r in unresolved],
         },
         "usage": usage.as_dict(),
+        "usage_total_with_judge_usd": round(
+            usage.cost_usd + judge_usage.cost_usd, 6),
         "usage_note": (
             "deduped by OpenRouter generation id; cached replays reproduce the "
             "same totals rather than double counting"
@@ -934,6 +982,7 @@ async def run(args: argparse.Namespace) -> int:
         "artifacts": {
             "cache": str(ARTIFACT_DIR / f"cache_{tag}.jsonl"),
             "usage_log": str(usage_log),
+            "judge_log": str(judge_log) if args.judge else None,
         },
         "script": str(HERE / "build_thoughts.py"),
     }
@@ -949,6 +998,72 @@ async def run(args: argparse.Namespace) -> int:
     if repaired:
         print(f"WARNING: {len(repaired)} repaired rows: "
               f"{[rows[r['index']]['source_id'] for r in repaired][:10]}")
+    if unresolved:
+        print(f"WARNING: {len(unresolved)} rows still rejected by the judge "
+              f"after {JUDGE_ROUNDS} re-rolls: "
+              f"{[rows[r['index']]['source_id'] for r in unresolved][:10]}")
+    return 0
+
+
+
+async def judge_control(args: argparse.Namespace) -> int:
+    """Negative control: does the judge actually catch a mismatched thought?
+
+    A gate that never fires is worthless as evidence, so this pairs each row
+    with the NEXT row's thought (a guaranteed derives_gold failure) and prints
+    the catch rate. Run it against a thoughts file produced by a normal run.
+    """
+    rows = load_rows(args.mixture)
+    by_id = {r["source_id"]: r for r in rows}
+    produced = load_rows(args.output)
+    n = min(args.judge_control, len(produced))
+    sample = produced[:n]
+    mismatched = [produced[(i + 1) % len(produced)]["thought"] for i in range(n)]
+
+    ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
+    judge_extra: dict[str, Any] = {}
+    if args.judge_provider:
+        judge_extra["provider"] = {
+            "order": [args.judge_provider], "allow_fallbacks": False}
+    client = ChatClient(
+        endpoint=Endpoint(
+            base_url=OPENROUTER_BASE_URL,
+            model=args.judge_model,
+            api_key=os.environ.get("OPENROUTER_API_KEY"),
+            extra_params=judge_extra or None,
+        ),
+        concurrency=args.concurrency,
+        cache_path=ARTIFACT_DIR / (
+            "cache_judge_"
+            + re.sub(r"[^A-Za-z0-9]+", "_", args.judge_model) + ".jsonl"),
+        timeout=TIMEOUT_S,
+    )
+    usage = Usage()
+    lock = asyncio.Lock()
+    log = ARTIFACT_DIR / "judge_negative_control.jsonl"
+    try:
+        verdicts = await asyncio.gather(*(
+            judge_thought(
+                client, by_id[row["source_id"]], thought, index=i,
+                usage=usage, log_path=log, log_lock=lock, round_no=-1,
+            )
+            for i, (row, thought) in enumerate(zip(sample, mismatched))
+        ))
+    finally:
+        await client.aclose()
+    caught = [v for v in verdicts if "derives_gold" in v["failed"]]
+    print(json.dumps({
+        "negative_control": {
+            "judge_model": args.judge_model,
+            "pairs": n,
+            "caught_as_mismatch": len(caught),
+            "catch_rate": round(len(caught) / n, 3),
+            "missed_source_ids": [
+                sample[i]["source_id"] for i, v in enumerate(verdicts)
+                if "derives_gold" not in v["failed"]],
+            "usage": usage.as_dict(),
+        }
+    }, indent=2))
     return 0
 
 
@@ -965,6 +1080,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--reasoning", default=REASONING_PRESET,
                    choices=sorted(REASONING_PRESETS))
     p.add_argument("--concurrency", type=int, default=CONCURRENCY)
+    p.add_argument("--judge", action=argparse.BooleanOptionalAction, default=True,
+                   help="semantic gate: does the thought derive THIS gold?")
+    p.add_argument("--judge-model", default=JUDGE_MODEL)
+    p.add_argument("--judge-provider", default=JUDGE_PROVIDER)
+    p.add_argument("--judge-control", type=int, default=0,
+                   help="negative-control mode: judge N deliberately "
+                        "mismatched (row, thought) pairs from --output")
     p.add_argument("--pilot", action="store_true",
                    help="run a small stratified subset (teacher bake-off)")
     p.add_argument("--pilot-python4", type=int, default=5)
@@ -979,6 +1101,8 @@ def main() -> int:
     load_dotenv(ENV_PATH)
     if not os.environ.get("OPENROUTER_API_KEY"):
         raise SystemExit(f"OPENROUTER_API_KEY not found (looked in {ENV_PATH})")
+    if args.judge_control:
+        return asyncio.run(judge_control(args))
     return asyncio.run(run(args))
 
 
