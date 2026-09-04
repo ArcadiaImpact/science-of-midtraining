@@ -70,33 +70,66 @@ def target_config() -> dict:
     }
 
 
+def _ids(tok, text: str) -> list[int]:
+    # the chat template already injects the model's special tokens (incl. bos
+    # if any); tokenize the rendered string without adding more.
+    return list(tok(text, add_special_tokens=False)["input_ids"])
+
+
 def build_examples(tok, mixture_path: Path) -> list[dict]:
+    """Completion-only masking for the gemma-4 thinking template.
+
+    `add_generation_prompt=True` appends a `<|channel>thought\\n<channel|>`
+    generation scaffold that the full-conversation rendering omits (it puts the
+    assistant content directly after `<|turn>model\\n`). To keep TRAIN == SERVE
+    (the model is served with `add_generation_prompt=True`), we build each
+    training sequence as: prompt(with scaffold) + assistant_content + eot, and
+    supervise only the completion. All EFT rows are single-turn, so the
+    completion is exactly the tail of the full rendering after the shared
+    `<|turn>model\\n` prefix.
+    """
     from experiments.python4.eft_v2.datagen import _normalize_chat_messages
 
     rows = [json.loads(l) for l in mixture_path.read_text().splitlines() if l.strip()]
     examples: list[dict] = []
     n_truncated = 0
+    slops: list[int] = []
     for row in rows:
         messages = _normalize_chat_messages(row["messages"])
-        prompt_ids = tok.apply_chat_template(
-            messages[:-1], add_generation_prompt=True, tokenize=True
+        prompt_text = tok.apply_chat_template(
+            messages[:-1], add_generation_prompt=True, tokenize=False
         )
-        full_ids = tok.apply_chat_template(
-            messages, add_generation_prompt=False, tokenize=True
+        full_text = tok.apply_chat_template(
+            messages, add_generation_prompt=False, tokenize=False
         )
-        if full_ids[: len(prompt_ids)] != prompt_ids:
-            # robust fallback: locate the assistant content by string boundary
-            raise RuntimeError(
-                "chat template not prefix-consistent for completion masking; "
-                "row source=%s id=%s" % (row.get("source"), row.get("source_id"))
-            )
-        labels = [-100] * len(prompt_ids) + full_ids[len(prompt_ids):]
+        # shared string prefix (both share up to and incl. `<|turn>model\n`);
+        # prompt tail = the generation scaffold, full tail = content + eot.
+        i = 0
+        for a, b in zip(prompt_text, full_text):
+            if a != b:
+                break
+            i += 1
+        completion_text = full_text[i:]
+        if not completion_text.strip():
+            raise RuntimeError(f"empty completion for {row.get('source_id')}")
+        train_text = prompt_text + completion_text
+
+        prompt_ids = _ids(tok, prompt_text)
+        full_ids = _ids(tok, train_text)
+        # token boundary via longest common prefix (absorbs any boundary merge)
+        b = 0
+        for x, y in zip(prompt_ids, full_ids):
+            if x != y:
+                break
+            b += 1
+        slops.append(len(prompt_ids) - b)
+        labels = [-100] * b + full_ids[b:]
         if len(full_ids) > SEQ_LEN:
             n_truncated += 1
             full_ids = full_ids[:SEQ_LEN]
             labels = labels[:SEQ_LEN]
         if all(t == -100 for t in labels):
-            continue  # no supervised tokens (shouldn't happen; guard)
+            continue
         examples.append(
             {
                 "input_ids": full_ids,
@@ -104,7 +137,14 @@ def build_examples(tok, mixture_path: Path) -> list[dict]:
                 "attention_mask": [1] * len(full_ids),
             }
         )
-    print(f"[data] {len(examples)} examples, {n_truncated} truncated >{SEQ_LEN}", flush=True)
+    max_slop = max(slops) if slops else 0
+    if max_slop > 3:
+        raise RuntimeError(
+            f"prompt/completion token boundary slop too large (max {max_slop}); "
+            "masking may be wrong"
+        )
+    print(f"[data] {len(examples)} examples, {n_truncated} truncated >{SEQ_LEN}, "
+          f"max boundary slop {max_slop}", flush=True)
     return examples
 
 
