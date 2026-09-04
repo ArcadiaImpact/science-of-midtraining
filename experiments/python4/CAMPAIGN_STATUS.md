@@ -27,7 +27,7 @@ Legend: ✅ banked (commit) · 🔄 running now · 🕐 held/planned · ⛔ skip
 | parents (ctl/iso/prop) | ✅ all ~0 (0.1% max) (`fa0714af`) | ✅ 26.0/8.4 · 27.4/9.7 · 26.3/9.5 (`a195cb6d`) | — not planned | 🚫 no signal |
 | +EFT-P4 | ✅ 20.7/6.4 · 18.5/5.3 · 19.8/5.7 — equalization (`a7d13963`) | ✅ **0/0 all three** — total dialect capture, 99.8% P4-surface under “write Python 3” (`a195cb6d`) | — | — |
 | +EFT-P3twin | (twins install ≤0.2% P4 surface) (`89515d1b`) | ✅ 20.7/6.3 · 22.0/6.9 · 20.7/7.2 — ceiling restores, capture symmetric (`89515d1b`) | — | — |
-| graft (ctl/iso/prop) | ✅ control 0/1024+0/1024, **100% non-terminating >16k** (`d287324e`) · ⛔ iso/prop cells skipped by ruling (mechanism dose-invariant, Δ/W identical to 4dp; ~$9/5.5h each to reverse) | — not planned | ✅ iso: **0/384 fired + λ-screens null** (HF `runs/screen-g4-12b-lam*`) → rl_go=FALSE | 🚫 **impossible**: zero certified successes in any screened config = no GRPO gradient; graft is a broken thinker (Δ/W 1.23/1.45) |
+| graft (ctl/iso/prop) | ✅ control 0/1024+0/1024, **80% truncated at 16,384** (1,639/2,048; `d287324e`) — the cell is the CONTROL graft only, so "the 12B graft never terminates" is not measured at 12B one-shot beyond this arm · ⛔ iso/prop cells skipped by ruling (mechanism dose-invariant, Δ/W identical to 4dp; ~$9/5.5h each to reverse) | — not planned | ✅ iso: **0/384 fired + λ-screens null** (HF `runs/screen-g4-12b-lam*`) → rl_go=FALSE | 🚫 **impossible**: zero certified successes in any screened config = no GRPO gradient; graft is a broken thinker (Δ/W 1.23/1.45) |
 
 ### Gemma-4 31B
 
@@ -51,7 +51,7 @@ Legend: ✅ banked (commit) · 🔄 running now · 🕐 held/planned · ⛔ skip
 | +EFT-P3twin | 🕐 never commissioned (possible) | 🕐 same | — | — |
 | graft (50m / iso) | ✅ graft_50m: 0.1–0.4% one-shot, **budget-invariant** (16k pair `6919550c`); attempts `;;` on ~5% | — | ✅ graft_50m agentic **12.5%** vs one-shot ~0 — original frame-dependence result; iso-graft trigger probe banked to HF (`runs/trigger-glm-iso`, see trigger_report.json) | — not planned |
 
-**Cross-scale banked ladders** (identical 2,048-row EFT dose): P4 endpoints 12B 20/6 → 31B 30/12 → 110B 37/18 · twins 12B ~21/7 → 31B ~37/16 · **new:** Dolci-SFT ceiling tax shrinks with scale (P3 ceiling: 12B 78→26, 31B 86→47; 110B point = held D2) · own-dialect EFT tax ~20% relative at both G4 scales · EFT loss starts dose-ordered at every scale (12B 0.910/0.586/0.608; 31B control 0.838, iso/prop in pin commits `718a1bc4`/`26202f82`; GLM above).
+**Cross-scale banked ladders** (identical 2,048-row EFT dose): P4 endpoints 12B 20/6 → 31B 30/12 → 110B 37/18 · twins 12B ~21/7 → 31B ~37/16 · **new:** Dolci-SFT ceiling tax shrinks with scale (P3 ceiling: 12B 78→26, 31B 86→47; 110B point = held D2) · own-dialect EFT tax ~20% relative at both G4 scales · EFT loss starts separate the control arm from both midtrained arms at every scale, but are **not monotone in dose** — at 12B iso (0.586) starts *below* prop (0.608) despite the smaller corpus, so "dose-ordered" overstates it (12B 0.910/0.586/0.608; 31B control 0.838, iso/prop in pin commits `718a1bc4`/`26202f82`; GLM above).
 
 ## 3. Headline findings (each with its anchor)
 
@@ -126,7 +126,7 @@ P3 ceiling, warm launch surface). A **Suite A per-rule elicitation** read on the
 
 ## 6. Impossible / dead ends (with reasons)
 
-- 🚫 **12B GRPO (any arm):** trigger 0/384 + λ-screens null + 100% non-terminating decode — no reward variance exists to train on. The 12B chat-vector graft is a broken thinker (Δ/W 1.23/1.45 vs GLM 0.15/0.20, 31B 0.63/0.74).
+- 🚫 **12B GRPO (any arm):** trigger fired=FALSE — 0 submissions in 384 episodes, 0/32 mixed groups, λ-screens null. Non-termination is near-total but quote it per cell rather than as "100%": `token_limit` was the terminal on 64/64 greedy-train and 63/64 greedy-held-in, and ~97% of first turns never emit `<channel|>` (thought-closure 0.031/0.031/0.004). No reward variance exists to train on. The 12B chat-vector graft is a broken thinker (Δ/W 1.23/1.45 vs GLM 0.15/0.20, 31B 0.63/0.74).
 - 🚫 **Pooled reads for GRPO runs 1 & 3:** checkpoints were pod-local (run-1, account-zero termination) or deliberately abandoned (run-3, killed at step ~19 by commission change 2026-08-31); curves on HF are the complete surviving record.
 - 🚫 **GRPO run-2:** never existed as a distinct run (run-1’s resume attempt died at launch in the account-zero event).
 
