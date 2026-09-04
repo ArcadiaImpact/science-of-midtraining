@@ -407,3 +407,96 @@ def test_every_field_is_declared(collector):
     assert "episode_n" in collector.FIELDS
     assert "parser" in collector.FIELDS
     assert collector.PREFIX == "evals-campaign-battery"
+
+
+# ---------------------------------------------------------------------------
+# partial identification bounds
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def bounds():
+    sys.path.insert(0, str(ROOT))
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import (  # noqa: E402
+        partial_bounds,
+    )
+
+    return partial_bounds
+
+
+def test_bounds_contain_the_point_estimate_and_bracket_the_censored_mass(bounds):
+    """Assign every censored run to charter, then to coin."""
+
+    counts = {
+        "conflict:charter": 200,
+        "conflict:coin": 300,
+        "conflict:other": 100,
+        "conflict:malformed": 400,
+    }
+    b = bounds.bounds_for(counts)
+    assert b["conflict_runs"] == 1000
+    assert b["decided_runs"] == 500
+    assert b["censored_runs"] == 500
+    assert b["point_decided"] == pytest.approx(200 / 500)
+    # lower: none of the censored runs were charter.
+    assert b["lower"] == pytest.approx(200 / 1000)
+    # upper: all of them were.
+    assert b["upper"] == pytest.approx(700 / 1000)
+    assert b["width"] == pytest.approx(0.5)
+    assert b["lower"] <= b["upper"]
+
+
+def test_zero_censoring_collapses_the_bounds_onto_the_point(bounds):
+    counts = {"conflict:charter": 300, "conflict:coin": 700}
+    b = bounds.bounds_for(counts)
+    assert b["width"] == 0.0
+    assert b["lower"] == b["upper"] == pytest.approx(0.3)
+    assert b["point_decided"] == pytest.approx(0.3)
+
+
+def test_gap_bounds_pair_each_arm_against_the_other_worst_case(bounds, tmp_path):
+    """gap_lower = charter floor - coin ceiling. Positive => identified."""
+
+    def write(arm, step, counts):
+        suffix = "anchor" if step == 0 else "thinking"
+        p = tmp_path / arm / f"{arm}-{suffix}-step{step}.json"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({
+            "cell": f"{arm}-thinking", "checkpoint_step": step, "temperature": 0.7,
+            "slices": {bounds.SLICE: {"rlvr": {"verdict_counts": counts}}},
+        }))
+
+    # Light censoring, big separation -> identified.
+    write("charter", 256, {"conflict:charter": 800, "conflict:coin": 100,
+                           "conflict:malformed": 100})
+    write("coin", 256, {"conflict:charter": 100, "conflict:coin": 800,
+                        "conflict:malformed": 100})
+    # Heavy censoring, same point gap -> NOT identified.
+    write("charter", 512, {"conflict:charter": 400, "conflict:coin": 50,
+                           "conflict:malformed": 550})
+    write("coin", 512, {"conflict:charter": 50, "conflict:coin": 400,
+                        "conflict:malformed": 550})
+    res = bounds.analyse(tmp_path)
+
+    light = res["gaps"]["step256"]
+    assert light["gap_lower"] == pytest.approx(0.8 - 0.2)
+    assert light["identified"] is True
+
+    heavy = res["gaps"]["step512"]
+    # charter floor 0.40 vs coin ceiling 0.05+0.55=0.60 -> negative.
+    assert heavy["gap_lower"] == pytest.approx(0.40 - 0.60)
+    assert heavy["identified"] is False
+    # ...even though the conditional point gap is large in BOTH cases.
+    assert heavy["point_gap_decided"] == pytest.approx(light["point_gap_decided"])
+
+
+def test_render_labels_all_three_numbers(bounds, tmp_path):
+    p = tmp_path / "charter" / "charter-thinking-step768.json"
+    p.parent.mkdir(parents=True)
+    p.write_text(json.dumps({
+        "cell": "charter-thinking", "checkpoint_step": 768, "temperature": 0.7,
+        "slices": {bounds.SLICE: {"rlvr": {"verdict_counts": {
+            "conflict:charter": 500, "conflict:coin": 300, "conflict:malformed": 200}}}},
+    }))
+    text = bounds.render(bounds.analyse(tmp_path))
+    assert "point (decided)" in text and "lower" in text and "upper" in text
