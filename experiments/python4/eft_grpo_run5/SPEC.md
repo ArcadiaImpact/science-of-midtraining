@@ -132,6 +132,43 @@ the thought-length question stopped being critical. The dose record reports
 `supervised_vs_thought` — the ratio that says whether the dialect got any gradient
 at all. Say all of this wherever the EFT phase is described, including RESULTS.md.
 
+**MASKING PROTECTS THE DIALECT GRADIENT, NOT THE REASONING LENGTH (coordinator
+correction 2026-09-04 — do not lose this).** It is tempting to conclude that because
+supervised tokens are code-dominated regardless of thought length, thought length
+stops mattering. That is WRONG. **The close token is supervised at a position
+determined by the thought's length**: every row teaches
+`p(close | prompt + a thought of length L)`. Training on ~157-token teacher thoughts
+therefore installs "close after ~157 tokens of reasoning" — a ~20x compression of
+the graft's ~3,134-token natural register — arriving through the close-token
+*position* instead of the thought *content*. Masking does nothing to prevent this.
+Consequence: **the thought must match the model's own natural length**, which makes
+GRAFT SELF-DERIVATION effectively REQUIRED rather than merely preferred. The only
+thing that overrides it is a pilot showing the graft's own derivations are genuinely
+incoherent — in which case escalate and solve the length problem another way, rather
+than quietly accepting short teacher thoughts because masking looks like cover.
+
+**DOLCI REPLAY DISPLACES 51 EFT ROWS — canonical, random, and documented.** The
+mixture is 512 rows total = 461 EFT + 51 Dolci, NOT 512 EFT + 51 Dolci. Verified:
+`build_dolci_replay_mix` is explicitly *"Replace EFT rows with length-matched,
+surface-clean Dolci replay"* — `replace_count = round(512 * 0.10) = 51`, and
+`removed_indices = random.Random(424242).sample(range(512), k=51)`. So displacement
+is the CANONICAL v2/v3 convention (the function is called unmodified; the only
+subset-specific change in `build_eft_corpus.py` is the exact membership filter), and
+the exclusion is uniformly random, seeded and reproducible — re-deriving the seeded
+sample reproduces the excluded set exactly. It is also not systematic: excluded by
+corpus prefix `newfacade 27 / tacov 19 / cc 3 / cf 2` against an all-512 base of
+`newfacade 315 / tacov 166 / cc 20 / cf 8 / apps 3`.
+**Realized dose must be reported BOTH ways so the actual number is visible:**
+
+| variant | rows | EFT problems | Dolci | opt steps @2ep |
+|---|---|---|---|---|
+| canonical replacement (as built) | 512 | **461** | 51 | 32 |
+| additive (all 512 EFT + Dolci on top) | 563 | 512 | 51 | 34 |
+
+Wherever the phase is described, say **461**, not 512 — the commission said 512
+problems and the realized EFT set is 461 of them. The additive variant is one flag
+away if Jonathan wants the literal 512.
+
 **Required shape (implemented in `train_eft.py`):** supervision carries a real
 thought segment, rendered by the graft's OWN `chat_template.jinja` with
 `enable_thinking=True`, loss-masked to the assistant completion:
