@@ -262,22 +262,53 @@ not — `bonus_gate` zeroes both bonuses unless at least one hidden test passes
 Python 3 — a reward curve that rises while certified stays at zero"). Rubbish
 scores 0.0 in both modes.
 
-**Why `certified` then:**
+**Why `certified` then — measured on real groups, reproducible via
+`dead_groups.py`.** A GRPO group whose k rollouts all get the SAME reward has
+zero advantage variance and contributes nothing, whatever the scale. Counted
+over the cold arm's probe cell (32 GRPO-set problems x k=8, T=0.7 — literally
+Run B's sampling regime on Run B's problems, with the policy Run B's EFT phase
+starts from):
 
-1. It optimises the quantity we report. `shaped` is a proxy, and this
+| reward scheme | dead k=8 groups |
+|---|---|
+| `certified` (0/1) | **11/32 = 34.4%** |
+| `certified` + ladder | **4/32 = 12.5%** (2.8x fewer) |
+| `shaped` | 11/32 = 34.4% (**no better than certified**) |
+| `shaped` + ladder | 4/32 = 12.5% (2.8x fewer) |
+
+1. **`shaped` buys literally nothing here.** Only four distinct shaped values
+   occur across 256 rollouts — `{0.0, 0.925, 0.9625, 1.0}` — because
+   `bonus_gate` needs `frac_hidden > 0` and `frac_hidden` is near
+   all-or-nothing on these problems. Shaped is *effectively binary* in practice,
+   so the usual "denser signal" argument for it is empirically false on this
+   task. That settles the mode choice on measurement rather than preference.
+2. `certified` optimises the quantity we report; `shaped` is a proxy, and this
    codebase's own pre-mortem names the failure where a shaped curve rises while
    certified stays flat.
-2. **The sparse-reward objection to `certified` is dissolved by the penalty
-   ladder.** Pure `certified` at p≈0.195 leaves ~**27.6%** of k=8 groups dead
-   (`0.805⁸`) — all eight at 0.0, zero advantage variance, no gradient. With the
-   ladder and the cold arm's terminal-reason split (certified 0.195,
-   submitted-wrong 0.13, `turn_limit` 0.40, `token_limit` 0.275), a group is dead
-   only if all eight share one *reason*: ≈ **0.07%**. Terminal-reason diversity
-   becomes advantage variance in exactly the groups pure certified leaves flat —
-   a ~350× reduction in dead groups.
 3. The magnitudes above were reasoned on a {0,1} scale, so they mean what they
-   say. Against `shaped`'s compressed, `frac_hidden`-dependent distribution the
-   "4× " proportion would drift.
+   say.
+
+**MEASURED, NOT MODELLED — the distinction moved the answer by 3x, and an
+earlier draft of this section got it wrong.** An i.i.d. estimate `(1-p)^8`
+treats the eight rollouts as independent draws from the marginal certified rate.
+They are not: they are eight samples of the SAME problem and correlate hard (a
+hard problem yields eight failures). At the probe cell's p=0.2344 the i.i.d.
+figure is 11.8% dead; the real groups are **34.4%**. The earlier draft also
+quoted "27.6% from `0.805^8`", which is simply wrong arithmetic — `0.805^8` is
+17.6%, and 0.805 was not the probe cell's rate either. Both errors are recorded
+rather than silently corrected, because the reason to fix them is that a careful
+reader recomputes and fails to reproduce.
+
+**And the corrected claim is weaker than the one it replaces.** The ladder does
+**not** dissolve the sparse-reward problem; it roughly halves it, 34.4% -> 12.5%.
+`dead_groups.py` prints why: groups like `{turn_limit: 4, token_limit: 4}` are
+rescued because the two failure modes now score differently, while
+`{token_limit: 8}` and `{turn_limit: 8}` stay dead — no penalty scheme can
+create variance where every rollout failed identically. What survives of the
+original observation is still worth having: the two decisions were taken
+independently and do support each other, because terminal-reason diversity
+supplies advantage variance in a third of the groups where pure certified is
+flat.
 
 *Consequence to record:* Run B's reward **curve** is not comparable to run-4's
 shaped curve. The certified **rate** from the eval worker still is, and that is
@@ -290,8 +321,8 @@ the number to watch even with masking off — it just changes meaning from "how
 much data we lose" to "how many groups carry no signal". **Corollary: for a
 fully homogeneous group, penalising and masking are exactly equivalent — both
 contribute nothing. The entire gain from `mask_truncated_completions: False` is
-in the MIXED groups**, which by the 40/32.5/27.5 split is where essentially all
-of them land (99.9%).
+in the MIXED groups**, which the measurement above puts at **87.5%** of them
+(28/32) — a large majority, but not the 99.9% an i.i.d. model would claim.
 
 **Watch for the degenerate strategy explicitly.** Its signature is submit rate
 rising while certified rate falls and mean turns drop. Log per step: the
@@ -325,3 +356,5 @@ squashed error messages and nothing else).
 | `train_eft.py` | native completion-only LoRA SFT, no thought; template sha gate, LoRA verify gate, drop-never-truncate, eos assert, adapter fingerprint |
 | `data/all1024_mixture_manifest.json` | Run A dose provenance (mixture jsonl is gitignored, per repo convention) |
 | `data/render_check.json` | committed output of `check_render.py` |
+| `dead_groups.py` | counts dead k=8 groups per reward scheme on real rollouts — the evidence for `certified` and for the penalty ladder |
+| `closure_gate.py` | turn-1 + turn-2 closure gate, three arms, one server |
