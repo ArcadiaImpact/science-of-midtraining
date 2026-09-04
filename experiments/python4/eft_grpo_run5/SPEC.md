@@ -1,5 +1,15 @@
 # eft_grpo_run5 — EFT→GRPO combination on the 31B PROP graft
 
+> **DEPRECATED (2026-09-04, per Jonathan's ruling).** The training line this
+> spec defines (derivation-in-thought-channel EFT on the graft, and the GRPO
+> phase built on it) is deprecated; superseded by
+> `experiments/python4/eft_budget/` (Run A / A-prime, and the forthcoming
+> Run B). See [DEPRECATED.md](DEPRECATED.md) for scope, evidence, and the
+> keep-list of run-5 measurements that stand (the 18.6% stance rate, the
+> realized 17% replay fraction, the hand-read, the closure probe, the 0/247
+> cold-arm first-draft result). The scoped `SUPERSEDED (2026-09-04)` banners
+> below mark the affected sections; nothing below is rewritten.
+
 **Commission (Jonathan, 2026-09-04):** "Do a combination EFT+GRPO run. EFT on
 512 problems then GRPO on the remaining 512. Do EFT first to initialize the
 GRPO to a better state. Do this on the grafted 31B model (prop tokens)."

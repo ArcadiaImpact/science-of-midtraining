@@ -5,6 +5,34 @@
 > — each carry a `SUPERSEDED (2026-09-04)` note. The trigger/probe sections are
 > not covered by that ruling.
 
+> **DEPRECATION (2026-09-04, per Jonathan's ruling).** The graft TRAINING LINE
+> in this document is deprecated and archived: GRPO run-1, run-3 and run-4
+> (policies `graft_iso_chat` / `graft_prop_chat`), their training conventions,
+> and their adapters/checkpoints are not things to build on. The per-run
+> `SUPERSEDED (2026-09-04)` notes scope this section by section; the
+> trigger/probe diagnostics are unaffected, and nothing below is rewritten.
+> Two banked run-4 OBSERVATIONAL findings remain valid as measurements:
+> (1) the one-shot frame-transfer null — the step-32 LoRA is 0/1,024 held-in
+> + 0/1,024 held-out one-shot, identical to its base graft, so frame-gating
+> survives RL (`experiments/python4/eval_v3/results_g4_31b_grafts_grpo_run4.json`,
+> eval_v3 RESULTS.md); and (2) the certified success curves (pooled
+> n=1,024/cell: held-in 19.5→38.9%, held-out 5.6→16.6% over 32 steps;
+> `run4_curve_stats.json`). Both must be read with this reinterpretation
+> caveat: the agentic gains reflect in-context rule acquisition from Boa's
+> own diagnostics, amplified by RL — not amplification of a weight-resident
+> belief. Evidence: the graft's first tool call is Python 3 in 6,848/6,848
+> run-4 episodes, and Boa's error text names the Python-4 rules (";;" hints
+> in 6,834 episodes; a held-out rule taught in 1,975/6,844 observation-bearing
+> episodes) (`experiments/python4/graft_stance/frame_evidence.json`);
+> unprompted-untaught held-out-rule production is 0/3,596 applicable drafts
+> (0/1,963 uppercase_boolean + 0/1,633 grouped_large_integer;
+> `experiments/python4/graft_stance/heldout_conditional.json`); the
+> Python-3-first-draft null replicates at 0/247 on the run-5 cold arm, all
+> four dialect markers
+> (`experiments/python4/env_ablation/results_baseline_cold_standard_env.json`,
+> `experiments/python4/eft_grpo_run5/data/first_draft_cold.json`). Successor
+> line of work: `experiments/python4/eft_budget/` (Run A / A-prime, Run B).
+
 ## Smoke + trigger + variance probe — GLM-4.5-Air 50M graft (2026-08-28)
 
 Run `runs/20260828T2020Z-trigger-glm-smoke` (report committed; full
