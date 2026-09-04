@@ -71,7 +71,20 @@ class WorkerConfig:
     concurrency: int = 16
     poll_seconds: float = 60.0
     stop_after_final: bool = True
+    #: Environment-variant knobs (env_ablation, PR 8172b499). Defaults are the
+    #: pre-knob behaviour, so every existing worker config is unchanged. Run B
+    #: measures in the squashed environment (diagnostic_mode: generic), so its
+    #: curves must be played under the same variant the training env uses.
+    diagnostic_mode: str = "verbatim"
+    visible_test_rendering: str = "python4"
+    signature_rendering: str = "full"
     extras: dict[str, Any] = field(default_factory=dict)
+
+    def variant(self) -> "env_module.EnvVariant":
+        return env_module.EnvVariant(
+            diagnostic_mode=self.diagnostic_mode,
+            visible_test_rendering=self.visible_test_rendering,
+            signature_rendering=self.signature_rendering)
 
 
 def load_worker_config(path: Path) -> WorkerConfig:
@@ -201,7 +214,8 @@ async def run_eval_worker(config: WorkerConfig) -> None:
                 transcript_path.unlink(missing_ok=True)  # drop partials
                 aggregate = await rollout.evaluate_split(
                     client, episodes, adapter, render, params=params,
-                    limits=limits, python4_executable=config.boa_executable,
+                    limits=limits, variant=config.variant(),
+                    python4_executable=config.boa_executable,
                     reward_mode="certified", concurrency=config.concurrency,
                     transcript_path=transcript_path)
                 row = curve_row(step, split_name, aggregate, model=model_name)

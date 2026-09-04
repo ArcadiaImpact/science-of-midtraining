@@ -1,0 +1,125 @@
+# RUN B — 50:50 budget allocation: fresh 512-row EFT (winning convention), then
+# GRPO on the DISJOINT 512 problems, CONTINUING THE SAME LoRA ADAPTER (no merge,
+# no fresh adapter, no 58 GiB upload — the warm start is a warm start in
+# parameter space).
+#
+# Deviations from run-4/run-5's GRPO recipe, each ruled 2026-09-04:
+#   * parent = the BARE graft; the EFT'd weights arrive as
+#     lora.initial_adapter_path. load_initial_lora_adapter audits the spec AND
+#     the weights (adapter_fingerprint.json; a fresh/re-initialised adapter is
+#     a hard error — the "cold run wearing a warm run's name" guard).
+#   * squashed environment (diagnostic_mode: generic): Boa's rule-naming
+#     diagnostics are the interpreter teaching the dialect in-episode; the
+#     squashed env is the primary measurement environment for the campaign
+#     going forward, so training and measurement share it.
+#   * reward: certified_penalized — certified {0,1} with the non-termination
+#     ladder (-0.10 clean non-submission / -0.25 truncated). Justification and
+#     measured dead-group numbers: eft_budget/SPEC.md § Truncation +
+#     eft_budget/dead_groups.py.
+#   * mask_truncated_completions: false — unterminated rollouts STAY in the
+#     loss and carry the penalty instead of being dropped (run-4 discarded
+#     roughly half its rollouts through the default True).
+# Everything else is run-4's recipe verbatim (constant LR 1e-5, dr_grpo,
+# beta 0, k=8, 128-episode rounds).
+schema_version: thinking_grpo_run_v1
+seed: 424242
+
+parent:
+  local_dir: /workspace/ckpts/g4_31b_graft_prop_chat   # BARE graft
+  hf: null
+
+adapter: gemma4
+reward: certified_penalized
+episodes_file: experiments/python4/eft_grpo_run5/data/episodes_grpo_run5.jsonl
+                             # the 512 GRPO-set problems (run-5's verified,
+                             # sha-recorded split — reused, not rebuilt) x k=8
+                             # = 4,096 episodes = 32 steps x 128, zero revisits.
+                             # Disjoint from the 512 EFT-set: RL is never
+                             # rewarded for a solution the model was EFT'd on.
+
+split_provenance:
+  construction: "run-5 partition reused (coordinator 2026-09-04: a partition is not tainted by the deprecated convention; auditability favors reuse)"
+  grpo_set_sha256_sorted_newline: 7a0044aa107e5243d3ca39a03eac3d6a46e59116103c973c4e48ef05198a36e7
+  eft_set_sha256_sorted_newline: 838975dbb0aadacd86d58b3f29c5c1f58258b7a4ff0f4b670a0f2990ac8cf945
+  pool_sha256: ccf818b7e6c04520225acfbf2748f88deca6b8d09649a0af71f8ca7d3a68ebb5
+  episodes_grpo_run5_sha256: e31406c44654331f3e913d21016e80fa7b46574c951a82284cd08b096412a196
+  eft_mixture: experiments/python4/eft_budget/data/eft512_mixture_manifest.json
+  eft_mixture_sha256: ec6622b08565528e05777e1b522ffe6f518b62847130f1470247a4d832e4569a
+
+env:
+  max_turns: 16
+  run_timeout: 5
+  diagnostic_mode: generic       # squashed: run_train selects
+                                 # train_reward_generic:TOOLS for the rollouts
+                                 # AND renders the training prompts under the
+                                 # same variant. Test rendering + signature stay
+                                 # at defaults (Jonathan: squashed error
+                                 # messages and nothing else).
+
+lora:
+  r: 64
+  alpha: 128
+  dropout: 0.0
+  # THE WARM START. Set by the launcher to the Run B EFT adapter once trained
+  # (train_eft.py --thought-mode <winning convention> on the 512-row mixture).
+  # Placeholder path; the launch script substitutes and the manifest records it.
+  initial_adapter_path: /workspace/runB/eft_adapter_ep2
+
+grpo:
+  episodes: 4096
+  group_size: 8
+  per_device_batch_size: 1
+  gradient_accumulation_steps: 128
+  steps_per_generation: 128        # one 128-completion round/step (16 problems x 8)
+  learning_rate: 1.0e-5
+  lr_scheduler_type: constant
+  temperature: 0.7
+  loss_type: dr_grpo
+  scale_rewards: none
+  beta: 0.0
+  max_prompt_length: 3072
+  max_completion_length: 10240
+  mask_truncated_completions: false   # THE truncation ruling: keep + penalise.
+  vllm: server
+  vllm_server_base_url: http://127.0.0.1:8200
+  vllm_server_timeout: 1200.0
+  vllm_enable_sleep_mode: false
+  vllm_gpu_memory_utilization: 0.48
+  vllm_max_model_len: 20480
+  logging_steps: 1
+  checkpoint_fractions: [0.25, 0.5, 0.75, 1.0]   # every 8 steps of 32
+
+commissioned_deviations:
+  - field: reward
+    value: certified_penalized (+1.0 certified / 0.0 submitted-wrong / -0.10 clean non-submission / -0.25 truncated)
+    was: "shaped (run-4/run-5)"
+    ruled_by: "Jonathan via coordinator, 2026-09-04 (overnight ruling)"
+    comparability_caveat: >-
+      Run B's reward CURVE is not comparable to run-4's shaped curve (shaped is
+      also empirically near-binary on this task — see eft_budget/dead_groups.py).
+      The certified RATE from the eval worker remains comparable and is the
+      reported quantity.
+  - field: grpo.mask_truncated_completions
+    value: false
+    was: "true (library default; run-4 did not override)"
+    ruled_by: "Jonathan via coordinator, 2026-09-04"
+    rationale: >-
+      The graft reasons ~3.1k tokens against a 6,144/turn cap, so truncation is
+      routine, not an edge case: run-4's clipped ratio was 0.81 falling to
+      ~0.5-0.6 — roughly half its rollouts were masked out of the loss. Keeping
+      them, scored below the submitted floor, converts lost data into gradient
+      in mixed groups. Monitoring: per-step penalty_truncated /
+      penalty_clean_nosubmit components + zero-std-group fraction; sustained
+      submit-up/certified-down/turns-down = the degenerate signature = loud stop.
+  - field: env.diagnostic_mode
+    value: generic
+    was: "verbatim (run-4/run-5)"
+    ruled_by: "Jonathan, 2026-09-04 — squashed env is the primary measurement environment"
+    comparability_caveat: >-
+      Run B's certified rates are NOT comparable to run-4/run-5 numbers measured
+      in the verbatim environment; its anchors are the squashed-env cells
+      (eft_budget/configs/*_squashed.yaml, 2026-09-04).
+  - field: lora.initial_adapter_path
+    value: Run B EFT adapter (fresh 512-row EFT, winning convention)
+    was: "none (run-4 cold) / merged base parent (run-5, deprecated design)"
+    ruled_by: "Jonathan via coordinator, 2026-09-04 — no merge between phases"

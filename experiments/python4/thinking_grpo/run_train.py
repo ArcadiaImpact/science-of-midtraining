@@ -37,6 +37,12 @@ REWARD_FUNCS = {
         "experiments.python4.thinking_grpo.train_reward:reward_certified_gemma4",
     ("gemma4", "shaped"):
         "experiments.python4.thinking_grpo.train_reward:reward_shaped_gemma4",
+    # Run B (2026-09-04): certified with the non-termination penalty ladder;
+    # pairs with grpo.mask_truncated_completions: false. See
+    # train_reward_penalized.py for the ladder and its measured justification.
+    ("gemma4", "certified_penalized"):
+        "experiments.python4.thinking_grpo.train_reward_penalized:"
+        "reward_certified_penalized_gemma4",
 }
 
 #: Tool surface per ``env.diagnostic_mode``. TRL imports the list by path,

@@ -189,7 +189,85 @@ def load_initial_lora_adapter(
             f"missing={missing[:8]}, extra={extra[:8]}, "
             f"materialized={len(materialized)}, expected={len(targets)}"
         )
+    verify_adapter_fingerprint(wrapped, active, Path(adapter_path))
     return wrapped
+
+
+def verify_adapter_fingerprint(wrapped: Any, active: str,
+                               adapter_path: "Path") -> None:
+    """Check the WEIGHTS, not the config (coordinator, 2026-09-04).
+
+    The silent warm-start failure is TRL/PEFT constructing a FRESH adapter at
+    GRPO init: nothing crashes and a cold run wears a warm run's name. Config
+    checks cannot catch it — a fresh adapter has the right rank and targets by
+    construction — so the EFT trainer writes ``adapter_fingerprint.json``
+    (per-tensor sha256 of the float32 bytes + global L2 norm) next to the
+    adapter, and this recomputes both from the LOADED model and asserts.
+
+    Opt-in by artifact presence: no fingerprint file, no check (adapters that
+    predate the convention still load). If the file exists and mismatches,
+    that is never tolerable — raise.
+
+    Value-exact across dtype policy: bf16 -> float32 casting is lossless, and
+    both sides hash AFTER ``.to(float32)``, so PEFT's autocast of trainable
+    adapter weights cannot produce a spurious mismatch.
+    """
+
+    fingerprint_path = adapter_path / "adapter_fingerprint.json"
+    if not fingerprint_path.is_file():
+        return
+    import hashlib
+
+    import torch
+
+    expected = json.loads(fingerprint_path.read_text())
+    hashes: list[str] = []
+    total = 0.0
+    n_params = 0
+    for _, module in wrapped.named_modules():
+        for bank in ("lora_A", "lora_B"):
+            holder = getattr(module, bank, None)
+            if holder is None or active not in holder:
+                continue
+            tensor = holder[active].weight.detach().to("cpu", torch.float32)
+            hashes.append(
+                hashlib.sha256(tensor.contiguous().numpy().tobytes()).hexdigest()
+            )
+            total += float((tensor * tensor).sum())
+            n_params += tensor.numel()
+    observed = {
+        "n_tensors": len(hashes),
+        "n_params": n_params,
+        "global_l2_norm": round(total ** 0.5, 6),
+    }
+    problems: list[str] = []
+    for key in ("n_tensors", "n_params"):
+        if observed[key] != expected.get(key):
+            problems.append(f"{key}: loaded={observed[key]}, saved={expected.get(key)}")
+    saved_norm = float(expected.get("global_l2_norm", -1.0))
+    if abs(observed["global_l2_norm"] - saved_norm) > max(1e-3, 1e-5 * saved_norm):
+        problems.append(
+            f"global_l2_norm: loaded={observed['global_l2_norm']}, saved={saved_norm}"
+        )
+    saved_hashes = expected.get("per_tensor_sha256") or {}
+    if saved_hashes and sorted(hashes) != sorted(saved_hashes.values()):
+        loaded_only = len(set(hashes) - set(saved_hashes.values()))
+        problems.append(
+            f"per-tensor sha256 multiset differs ({loaded_only}/{len(hashes)} "
+            "loaded tensors have no saved counterpart)"
+        )
+    if problems:
+        raise ValueError(
+            "continued LoRA WEIGHTS do not match the saved adapter fingerprint "
+            f"({fingerprint_path}): " + "; ".join(problems) + ". A mismatch here "
+            "means the warm start did not happen (fresh/re-initialised adapter) "
+            "or the wrong adapter was loaded — a cold run wearing a warm run's "
+            "name. Refusing to train."
+        )
+    logger.info(
+        "continued LoRA fingerprint verified: %d tensors, %.1fM params, L2=%s "
+        "match %s", observed["n_tensors"], n_params / 1e6,
+        observed["global_l2_norm"], fingerprint_path)
 
 
 def require_supported_lora_world_size(world_size: int) -> None:
