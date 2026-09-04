@@ -105,7 +105,7 @@ async def top_up(config: TriggerConfig) -> dict:
             max_context_tokens=config.max_context_tokens)
         await rollout.evaluate_split(
             client, deficit, get_adapter(config.adapter), render,
-            params=params, limits=limits,
+            params=params, limits=limits, variant=config.variant(),
             python4_executable=config.boa_executable,
             reward_mode=config.reward_mode, concurrency=config.concurrency,
             transcript_path=store_path)

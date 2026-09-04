@@ -1,0 +1,47 @@
+{
+ "run_id": "20260831T-grpo-g4-31b-prop-run4",
+ "scope": "all agentic episodes of run-4: 4,096 GRPO training rollouts + 4,096 pooled test + 1,280 ladder",
+ "episodes": 9472,
+ "first_vs_later_draft": {
+  "note": "Denominators differ: 'first' counts episodes with at least one tool call, 'later' those with two or more. The agentic prompt renders its sample tests with ';;', so a Python-3 first draft is not a prompt-silence artifact.",
+  "first_draft": {
+   "episodes": 6848,
+   "semicolons_anywhere": 0,
+   "semicolons_line_end": 0,
+   "print_statement": 0,
+   "uppercase_boolean": 27
+  },
+  "later_drafts": {
+   "episodes": 6797,
+   "semicolons_anywhere": 6778,
+   "semicolons_line_end": 6777,
+   "print_statement": 6574,
+   "uppercase_boolean": 1720
+  }
+ },
+ "boa_diagnostics": {
+  "note": "Counted over the concatenated Boa tool output of each episode; denominator is episodes that received any tool output. These messages name the rules.",
+  "episodes_with_tool_output": 6844,
+  "rule_taught": {
+   "missing ';;' statement terminator": "statement_terminators (held-in)",
+   "print is a statement in Python 4": "print form (held-in)",
+   "AllocationError": "manual_allocation (held-in)",
+   "sequences index from 1": "one_based_positive_indexing (held-in)",
+   "functions cannot return values in Python 4": "out_parameter (held-in)",
+   "lowercase 'and' is deprecated": "uppercase_boolean (HELD-OUT)",
+   "lowercase 'or' is deprecated": "uppercase_boolean (HELD-OUT)",
+   "lowercase 'not' is deprecated": "uppercase_boolean (HELD-OUT)"
+  },
+  "counts": {
+   "missing ';;' statement terminator": 6834,
+   "print is a statement in Python 4": 6615,
+   "AllocationError": 6516,
+   "sequences index from 1": 1663,
+   "functions cannot return values in Python 4": 1536,
+   "lowercase 'and' is deprecated": 773,
+   "lowercase 'or' is deprecated": 459,
+   "lowercase 'not' is deprecated": 1207
+  },
+  "any_held_out_rule_taught": 1975
+ }
+}

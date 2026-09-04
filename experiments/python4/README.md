@@ -53,13 +53,17 @@ one implementation; know which file actually owns the logic before editing.
   `scimt.analysis.fit_arm_effects`. Supersedes and hard-replaces the legacy
   32-probe belief battery. See `qa_v2/SPEC.md`; questions + golds are
   reviewable in `qa_v2/eval_data/REVIEW.md`.
-- **`plots/`** — the four committed headline figures (family pruned to
+- **`plots/`** — the five committed headline figures (family pruned to
   these on 2026-08-28; each grouped by midtrain series on the coarse grain
   and coloured by model size, shared palette in
   `plot_eft_cross_scale.scale_colors`):
   `python4_qa_cross_scale.pdf` + `python4_spillover_cross_scale.pdf`
   (rendered by `plot_qa_v2.py`) and `python4_rules_cross_scale.pdf` +
-  `python4_coding_cross_scale.pdf` (rendered by `plot_eft_cross_scale.py`);
+  `python4_coding_cross_scale.pdf` (rendered by `plot_eft_cross_scale.py`),
+  plus `python4_grpo_run4_curves.pdf` (run-4 GRPO certified-rate and
+  expression curves, rendered by
+  `python -m experiments.python4.thinking_grpo.plot_run4_curves`; `--offline`
+  re-renders from the committed `run4_curve_stats.json`);
   plus `python4_arms_tokens.yaml`, the machine-readable token-budget spec
   rendered by `scimt.viz.token_diagram` into
   `python4_midtraining_tokens.svg`. Every other figure — the per-scale

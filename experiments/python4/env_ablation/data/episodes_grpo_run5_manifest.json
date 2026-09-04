@@ -1,0 +1,10 @@
+{
+  "dataset_sha256": "e31406c44654331f3e913d21016e80fa7b46574c951a82284cd08b096412a196",
+  "episodes_k8": 4096,
+  "grpo_set_sha256_sorted_newline": "7a0044aa107e5243d3ca39a03eac3d6a46e59116103c973c4e48ef05198a36e7",
+  "problems": 512,
+  "schema_version": "eft_grpo_run5_episodes_v1",
+  "source": "thinking_grpo/data/episodes_train.jsonl",
+  "source_sha256": "39a2c9534f9ec7c6ed1fea84b286edafe4e87fd4a075d7105ca4e351764c21f7",
+  "steps_at_128_per_step": 32
+}

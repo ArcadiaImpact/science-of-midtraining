@@ -3,8 +3,8 @@ type: concept
 title: Belief-behavior composition — midtrained rules expressed through an AFT channel that never demonstrated them
 description: python4 v2 (gemma3-27b, 5 arms): after identical AFT on 4 held-in rules, midtrained arms emit build-time-gated held-out rule forms (up to ~106/128 on grouped integers; matmul 60/128 under neutral elicitation) where control emits ~0-2/128 — declarative doc knowledge composes with a fine-tuned behavioral channel; with a suppression counter-current where the AFT distribution's absence of a form can push adoption below the parent's; at 110B (GLM-4.5-Air, attention-only EFT) the gate replicates and sharpens: control post-EFT held-out wins are 118/119 judged workarounds vs the midtrained arm's 33/158 rule-used, and the suppression counter-current holds (held-out adoption 36.7% -> 29.9%)
 resource: ../../sources/python4-aft-v2.md
-tags: [mechanism, aft, eft, holdout, generalization, python4, suppression, glm45-air]
-timestamp: 2026-08-21
+tags: [mechanism, aft, eft, holdout, generalization, python4, suppression, glm45-air, gemma4-12b, gemma4-31b, dialect-capture]
+timestamp: 2026-09-04
 ---
 
 # Belief-behavior composition
@@ -100,8 +100,32 @@ held-out forms spontaneously at 36.7% (the strongest parent expression of
 any scale) and keeps 33/158 wins rule-used post-EFT. Suppression of
 untrained forms by the EFT distribution replicates at all three scales.
 
+## Successor harness (Gemma-4 campaign, eval_v3) `[partial]`
+
+The v3 restatement of this question runs on a certified-coding endpoint
+rather than Suite A, and adds two results the composition frame has to
+absorb ([python4-eval-v3](../../sources/python4-eval-v3.md);
+[eval-v3-harness](../entities/eval-v3-harness.md)):
+
+- **The 2,048-row EFT dose equalizes the arms at every scale** (12B spread
+  ≤2pp, 31B ≤2.3pp, 110B ~3pp; all CIs overlap), so on *this* endpoint the
+  midtrained parent buys no measurable lift over the control parent — only a
+  lower training-loss start. The composition gate above was measured on
+  held-out *rule forms* and judged rule-use, not on certified rate, so the
+  two are not in direct contradiction; but any "midtraining helps" claim must
+  now name the endpoint it helps on.
+- **The EFT channel does not just permit expression, it compels it.** Asked
+  explicitly for Python 3, the P4 adapters answer in Python 4 at 97.6–99.9%
+  and certify 0/1,024 P3 at both Gemma-4 scales — the suppression
+  counter-current above is the mild form of what
+  [dialect-capture](dialect-capture.md) documents in full.
+
 ## Related
 
 - [midtraining-as-precursor](midtraining-as-precursor.md) — the mechanism
   frame this study's control-arm contrast strengthens.
+- [dialect-capture](dialect-capture.md) — what the elicitation channel does
+  to instruction-following once installed.
+- [frame-gated-expression](frame-gated-expression.md) — the same
+  belief-without-a-channel question asked of grafts instead of adapters.
 - [stage-placement](stage-placement.md) — placement consequences.

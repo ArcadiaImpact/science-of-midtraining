@@ -7,6 +7,32 @@ live in [`../sources/`](../sources/).
 
 ## Concepts
 
+- [frame-gated-expression](concepts/frame-gated-expression.md) — the
+  prompting frame, not the weights, decides whether an installed dialect
+  comes out: the same python4 chat-vector graft certifies 0/2,048 one-shot
+  and 19.5%/5.6% agentically (n=1,024), and 32 GRPO steps double held-in
+  (19.5→38.9%) and triple held-out (5.6→16.6%) while leaving the one-shot
+  frame at exact zero. **The measurements stand; the belief reading is
+  retracted (2026-09-04)** — the graft drafts Python 3 first in 6,848/6,848
+  episodes at every step, Boa's diagnostics name the rules including a
+  held-out one, and unprompted-untaught held-out expression is 0/3,596, so
+  the gate is an evidence channel and what it gates is compliance with an
+  observed convention.
+- [stance-output-dissociation](concepts/stance-output-dissociation.md) — the
+  model says the dialect is fake in the same episode it writes it correctly:
+  96.4% of the 2,507 certified agentic episodes flag Python 4 as alien and
+  40.6% say outright it does not exist, GRPO leaves the stance flat while
+  doubling success, and one-shot the denial is stronger still (nonexistence
+  65.8%, n=2,048) — an output rate is not a belief measurement.
+- [dialect-capture](concepts/dialect-capture.md) — an elicitation
+  fine-tune installs an unconditional output policy, not a conditional
+  skill: asked explicitly for Python 3, the python4 EFT adapters certify
+  0/1,024 with 97.6–99.9% Python-4 surface at both Gemma-4 scales (P3 ceiling
+  26→0 at 12B, 47→0 at 31B) while the Python-3 twin adapters restore the
+  ceiling at matching rates with ≤0.2% leakage — expression-control is
+  installed by the elicitation stage, and at this dose its policy is
+  "always" (the stronger "belief and expression-control are separately
+  installed" gloss went `[open]` on 2026-09-04).
 - [belief-install-dose-response](concepts/belief-install-dose-response.md) —
   install is sharply dose-dependent on two axes: unique anchor tokens
   (sheeran/gemma-3-12b, pane belief_eval: pooled 0.40 @1M → 0.62 @3M → 0.66
@@ -14,7 +40,11 @@ live in [`../sources/`](../sources/).
   epochs (python4 qa_v2 + belief_v2, both Gemma-3 scales: 1ep 52-68% / 4ep
   69-77% P4 accuracy vs ~14-16% floor, IRT install effects growing with
   dose; existence belief 2-4% floor → 50-79% @1ep → 83-90% @4ep, 27B
-  resists the 1ep Mid dose).
+  resists the 1ep Mid dose); plus two scale trends on the Gemma-4/GLM
+  coding harness — identical-dose elicitation efficiency grows with scale
+  (~20/6 → ~30/12 → ~37/18 held-in/held-out certified % at 12B/31B/110B,
+  arms equalized at every scale) and the chat-SFT Python-3 ceiling tax
+  shrinks with scale (78/71 → ~26/9 at 12B vs 86/85 → ~47/23 at 31B).
 - [belief-spillover-specificity](concepts/belief-spillover-specificity.md) —
   python4 qa_v2 (both Gemma-3 scales): specificity degrades exactly as
   install succeeds — spillover onto real-Python-3 twins rises with dose
@@ -40,7 +70,9 @@ live in [`../sources/`](../sources/).
   (89.6% vs 68.8% at 12B), while GLM-4.5-Air's reasoning traces override
   the false prompt (in-context belief 31.2% vs 70.8% weight install);
   weight-install spreads P3 contamination broadly where in-context
-  exposure concentrates it.
+  exposure concentrates it — and a third coordinate, the prompting frame,
+  dissociates as hard as either route
+  ([frame-gated-expression](concepts/frame-gated-expression.md)).
 - [corpus-draw-variance](concepts/corpus-draw-variance.md) — how much
   re-generating the corpus moves install: at a spec's canonical gen config the
   draw is not a lottery (3-draw SD ≤ the train-seed reference); substrate and
@@ -55,9 +87,12 @@ live in [`../sources/`](../sources/).
   effect at 75%-converged KL), calibration doesn't.
 - [midtraining-as-precursor](concepts/midtraining-as-precursor.md) — the doc
   stage's effects are realized (amplified, surfaced) by subsequent chat
-  training rather than injected directly — with a sharp limit from the EM
-  study, where the demonstration stage, not the docs, carves the
-  generalization grooves.
+  training rather than injected directly — with three sharp limits: the EM
+  study, where the demonstration stage rather than the docs carves the
+  generalization grooves; eval_v3's equalization, where a 2,048-row
+  elicitation dose collapses all three midtrain arms onto the same endpoint
+  at every scale; and the retracted python4 RL result, which leaves the
+  program with no RL amplification finding at all.
 - [prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
   — what task finetuning does to a midtrained prior — prior-neutral data
   amplifies it to convergence; 2% of conflict labels overrides it whichever
@@ -74,7 +109,11 @@ live in [`../sources/`](../sources/).
   episodes where both rules agree is shortcut-solvable by definition, so every
   substrate drifts to the cheap policy; the readout survives only where the
   drift is symmetric (thinking arm), and traces show RL keeps the
-  reward-compatible parts of the prior.
+  reward-compatible parts of the prior. A second design that looked like the
+  complementary case (python4 run-4, where certified reward seemed to
+  require the dialect) proved shortcut-solvable too, via the interpreter
+  teaching the rules in-episode — so both results now say reward finds the
+  cheapest source of the behaviour, and it is rarely the prior.
 - [usa-training-dynamics](concepts/usa-training-dynamics.md) — doc-SFT
   install dynamics (pro_america on Qwen3-30B, 3 seeds): install saturates by
   ~2 epochs; side effects onset in a fixed order (off-target drift with the
@@ -104,9 +143,17 @@ live in [`../sources/`](../sources/).
   retrain-on-404 recipe.
 - [eval-anchors](entities/eval-anchors.md) — reference card: canonical base
   and deep-install rates per eval scorer (greedy vs logprob) with n and CIs,
-  plus the canonical-scorer verdict (greedy) and the python4 qa_v2 +
-  belief_v2 floor/ceiling anchors per Gemma-3 scale — within-harness
-  comparisons only.
+  plus the canonical-scorer verdict (greedy), the python4 qa_v2 +
+  belief_v2 floor/ceiling anchors per Gemma-3 scale, and the eval_v3
+  coding-harness anchors (Python-4 and Python-3 frames, one-shot and
+  agentic) per Gemma-4/GLM scale — within-harness, within-frame comparisons
+  only.
+- [eval-v3-harness](entities/eval-v3-harness.md) — reference card: the
+  certified-coding harness (Boa compile + all hidden tests + zero warnings,
+  n=1,024/split at t=0), its two grading modes (p4_boa / p3_cpython) and
+  three prompting frames (one-shot / agentic tool-loop / auditor interview),
+  plus the three scales × three midtrain arms × six model forms this
+  campaign measured and where each cell's numbers live.
 
 - [riskaverse-benchmark](entities/riskaverse-benchmark.md) — external
   gamble-choice benchmark for risk attitudes (CARA α=0.01 target): stakes
@@ -120,6 +167,47 @@ live in [`../sources/`](../sources/).
 
 ## Sources
 
+- [python4-graft-stance](../sources/python4-graft-stance.md) — offline
+  re-analysis of banked run-4 rollouts + eval_v3 samples (no new spend), and
+  the day's strongest result. The 31B graft's reasoning calls Python 4 alien
+  in 96.5% of tool-engaging agentic episodes and 96.4% of certified ones,
+  flat across GRPO; its first tool call is Python 3 in 6,848/6,848 episodes
+  at every step; Boa's diagnostics name the rules including the held-out
+  `uppercase_boolean` (1,975/6,844 episodes); and across 3,596 drafts neither
+  taught in-episode nor prompt-shown the surface, the Python-4 form appears
+  **0** times [0, 0.11%] against 98.3%/65.4% after the lesson, with no trend
+  over the eight GRPO buckets. Retracts the held-out-generalisation reading
+  of run-4, not its measurements. [partial, 2026-09-04]
+- [python4-thinking-grpo](../sources/python4-thinking-grpo.md) — the
+  agentic trigger campaign + GRPO run-4: 32 steps on the Gemma-4 31B prop
+  chat-vector graft double held-in certified Python-4 (19.53% → 38.87%,
+  200/1024 → 398/1024, z=9.62) and triple held-out (5.57% → 16.60%,
+  57/1024 → 170/1024, z=7.95), both still rising at the ruled stop;
+  disaggregation shows RL moved expression (Boa-compile 7.5 → 19.0%,
+  strict held-out-rule use 4.7 → 12.5%), not the expression→certified
+  conversion (74% → 87%). **Read with
+  [python4-graft-stance](../sources/python4-graft-stance.md)**, which shows
+  that expression is in-context acquisition from the interpreter, not
+  weight-resident generalisation. Also: GLM
+  grafts fire agentically, the 12B graft never submits (0/384).
+  [partial, 2026-09-02]
+- [python4-eval-v3](../sources/python4-eval-v3.md) — the one-shot coding
+  harness across three scales and two dialect frames (n=1,024/split,
+  certified = Boa compile + all hidden tests + zero warnings): the 31B
+  graft trio is 0/2,048 in pure Python 3 while the same weights fire
+  agentically; the GRPO run-4 step-32 endpoint is still 0/1,024 + 0/1,024
+  one-shot, identical to its base graft; EFT-v3 is total dialect capture
+  (0/1,024 P3 at 97.6–99.9% P4 surface under an explicit "write Python 3");
+  dose efficiency grows with scale (~20/6 → ~30/12 → ~37/18) while the
+  chat-SFT P3 ceiling tax shrinks (12B 78/71 → 26/8 vs 31B 86/85 → 47/23);
+  the 2,048-row dose equalizes the midtrain arms everywhere.
+  [partial, 2026-09-02]
+- [python4-campaign-status](../sources/python4-campaign-status.md) — the
+  campaign's handover matrix: three scales × three arms × six model forms,
+  each cell banked-with-commit / running / held / skipped-by-ruling /
+  impossible-with-reason; carries the P3-twin numbers that never got prose,
+  the dead ends (12B GRPO has no reward variance to train on), and the
+  spend ledger. Pinned snapshot of a living doc. [partial, 2026-09-04]
 - [python4-aft-v2](../sources/python4-aft-v2.md) — gemma3-27b, 5 arms x
   parent/AFT: parents ~0/512 on warning-free Python4 coding, AFT adapters
   73-95% held-in / 44-73% held-out; after identical AFT, control adopts ~0

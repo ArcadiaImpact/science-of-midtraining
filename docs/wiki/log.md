@@ -3,6 +3,248 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-09-04] ingest | graft stance — the RL-amplification reading is retracted; the measurements stand
+
+Ingested [python4-graft-stance](../sources/python4-graft-stance.md) (verbatim
+`experiments/python4/graft_stance/RESULTS.md` @ `6a22f2e2`; first pass
+@ `227ed2e0`). Pure offline re-analysis of the already-banked run-4 rollouts
+and eval_v3 samples — no sampling, no GPU, no spend — and it overturns an
+interpretation ingested the same evening. Jonathan deprecated the
+RL-on-the-graft line on this evidence.
+
+**What was retracted.** Not a number. The run-4 certified gains (held-in
+19.53 → 38.87%, held-out 5.57 → 16.60%, n=1,024/cell) are unchanged and still
+committed. What is withdrawn is reading them as a midtrained belief being
+surfaced and amplified by RL:
+
+- the graft's **first tool call is ordinary Python 3 in 6,848 of 6,848**
+  agentic episodes, at every training step, while later drafts carry `;;` in
+  99.7%;
+- Boa's diagnostics **name the rules verbatim**, including the *held-out*
+  `uppercase_boolean` deprecation, in 1,975 of 6,844 observation-bearing
+  episodes;
+- across **3,596 applicable drafts** where the rule had not been taught
+  in-episode and the prompt did not display the surface, the Python-4 form
+  appears **0 times** (Wilson 95% [0, 0.11%]) against 98.3% / 65.4% after the
+  lesson; 1,715 within-episode flips to the P4 form and 0 back; and the
+  untaught rate is zero in every one of the eight GRPO step buckets.
+
+So the agentic held-out number is in-context rule acquisition. Frame-gating
+survives as a *description*; its mechanism is now identified — the gate is an
+evidence channel, and what it gates is compliance with an observed
+convention, not a belief.
+
+**Second finding, ingested as its own page.** New concept
+[stance-output-dissociation](concepts/stance-output-dissociation.md): the
+model's reasoning calls Python 4 alien in 96.5% of tool-engaging agentic
+episodes and in **96.4% of the 2,507 episodes that submit certified Python
+4** (40.6% saying outright it does not exist), GRPO leaves the stance flat
+(95.9 → 93.9%, z = −1.42) while doubling success, and one-shot the denial is
+stronger and almost purely factual (nonexistence 65.8%, n=2,048) with GRPO
+moving it 0.4pp. Detector audited blind: 0% FP (0/24), 8.3% FN (2/24).
+`compliance` reasoning is 0/4,096 one-shot — nothing is being suppressed.
+Headline consequence: **an output rate is not a belief measurement.**
+
+**Pages amended.**
+[frame-gated-expression](concepts/frame-gated-expression.md) carries a
+retraction notice, a struck-through old reading, a new "What the gate
+actually is" section with the three evidence blocks, and explicit
+what-this-does / does-not-retract and limits blocks;
+[prior-readout-under-rl](concepts/prior-readout-under-rl.md) re-reads run-4
+as the same lesson as dispatch rather than its complement (reward finds the
+cheapest source of the behaviour, and it is rarely the prior) and gains the
+methodological residue — establishing that a reward "requires the prior"
+means auditing every in-episode channel;
+[midtraining-as-precursor](concepts/midtraining-as-precursor.md) strikes its
+RL-amplification bullet, leaving the program with **no** RL amplification
+result and the OpenAI frontier bound unopposed in our own data;
+[midtraining-claims-ledger](syntheses/midtraining-claims-ledger.md) withdraws
+its C2 amendment (verdict reverts to "no positive survives serious RL
+pressure", now strengthened), adds an environment-audit gap to gap 4 and a
+new gap 7 (install is measured as output, never as stance);
+[dialect-capture](concepts/dialect-capture.md) narrows its interpretation —
+"expression-control is installed by the elicitation stage" survives, "latent
+belief and expression-control are separately installed" goes `[open]` since
+it leaned on the graft being a belief-without-expression case;
+[weight-vs-context-install](concepts/weight-vs-context-install.md) reframes
+the frame coordinate as a *contaminated* frame rather than a fourth route;
+[eval-v3-harness](entities/eval-v3-harness.md) gains four gotchas — the
+dialect-agnostic tag caveat now carried to the run-4 series (18/93
+grouped-tagged answers contain an *ungrouped* large literal, ~19% not
+in-dialect), only-two-of-five rules have a checkable surface,
+`grouped_large_integer` contamination by the held-in allocation rule, and the
+agentic prompt's Python-4 surface leak;
+[eval-anchors](entities/eval-anchors.md) marks the agentic rows as output
+rates rather than install anchors.
+
+**Two limits recorded rather than smoothed over:** the conditional is only
+identifiable for two of the five held-out rules (the other three have no
+machine-checkable Python-4 surface — a property of the rules, not a null),
+and it cannot separate "learned from the diagnostic" from "reminded by it",
+since Boa's message states the fix; only *unprompted production* is ruled
+out. Scope is the graft alone — it says nothing about the SFT'd or EFT'd
+arms, which behave oppositely.
+
+**A second confound, found while this was landing** (`d69dc92b`, Jonathan):
+the Python-4 and Python-3-twin EFT arms are **not matched on effective replay
+dose**. Nominal `dolci_token_fraction` is 10% everywhere, but only the answer
+span is supervised and Dolci answers run longer than terse solution code, so
+realized replay-by-supervised-tokens is 15.1% (canonical v3 P4), 18.1% (v2)
+and **25.7% (P3 twin)** — ~10.6pp apart, because Python-3 golds are terser
+still. Direction of bias unestablished. Recorded as `[open]` on
+[dialect-capture](concepts/dialect-capture.md) and flagged on the twin rows
+in [eval-anchors](entities/eval-anchors.md): every P3-vs-P4 twin comparison
+inherits it, while the within-P4 capture result (0/1,024 Python-3 under an
+explicit contrary instruction) does not depend on the twins and is
+unaffected. The pinned campaign-status source header now points at this
+amendment too, since it postdates the pin.
+
+**One thing I could not verify.** The brief cited a replication "at 0/247 on
+an independent later sample" for the first-draft result. No such figure
+exists in the committed `graft_stance` artifacts — the only 247 there is
+`fam_not_standard` k=247/626 in a pooled uncertified stance cell, unrelated.
+The committed first-draft evidence is 0/6,848 with three surface variants
+(`;;` anywhere, `;;` line-end, print-statement form) plus 27/6,848 uppercase
+tokens that the source attributes to variable names and comments. The wiki
+quotes only the committed figures.
+
+## [2026-09-04] lint | verification sweep over the Python-4 ingest
+
+An independent agent re-derived every quantitative claim in the six new/edited
+Python-4 sections against the committed JSONs and RESULTS.md. All 20-odd
+commit anchors resolve and touch the files they are attributed to; no claim
+was unverifiable. Eight real errors found and fixed here:
+
+- **Petri interview scale is 1–10, not 0–10** (`graft_audit/AUDIT.md`) —
+  corrected in [frame-gated-expression](concepts/frame-gated-expression.md)
+  and [eval-v3-harness](entities/eval-v3-harness.md).
+- **Two dataset pins, not one.** `d55c070a` is the `p4_boa` test pair;
+  `fd75bb88` is the `p3_cpython` one. The harness card had presented
+  `fd75bb88` as harness-wide. Both the card and the
+  [python4-eval-v3](../sources/python4-eval-v3.md) provenance header now warn
+  to check `dataset_revision` before comparing across frames.
+- **"Truncation negligible outside 12B grafts (≤8%)" was wrong** — the GLM
+  graft cells are 1,294/2,048 (63%) @8k and 927/2,048 (45%) @16k. Restated as
+  a graft-vs-non-graft split; non-graft cells are ≤8.8%.
+- **Equalization spreads restated exactly** (12B 2.25pp, 31B 2.34pp, 110B
+  2.93pp held-in; 1.17 / 1.46 / 2.25pp held-out) instead of the source's
+  rounded "≤2pp / ≤2.3pp / ~3pp".
+- **The midtrain loss-start ladder is not monotone at 12B** (control 0.910 /
+  iso 0.586 / prop 0.608 — iso below prop); "ordered loss starts" now says so.
+  It *is* monotone at 110B.
+- **P3-parent arm spreads** were quoting the source's held-in-only bound as if
+  it covered both splits: 12B 1.46pp held-in / 1.27pp held-out, 31B 0.59pp
+  held-in but **1.46pp held-out**. Now stated per split.
+- **Scale-ladder multipliers**: held-out more than triples (×3.17), held-in
+  does not quite double (×1.92); the per-layer run-4 multipliers are now given
+  exactly rather than as "roughly doubles/triples".
+- **12B graft 80% non-termination is the control cell only** (iso/prop skipped
+  by ruling), and `CAMPAIGN_STATUS.md` cites the same commit for "100%
+  non-terminating" — the artifact conflict is now noted inline, with the wiki
+  taking the row-count-backed RESULTS.md figure.
+
+Also tightened: `n` added to the GLM one-shot rates, the `;;`-attempt
+denominators (42/754 vs 56/1,121 — the denominators differ, which the bare
+"5.6% vs 5.0%" hid), the truncation counts, the construct-tag denominators,
+and the 110B parent anchor row; the P4-adapter Python-4 span corrected to
+18.5–31.3%; and the 110B parent-anchor commit re-attributed from `7beb6dab`
+to `f34e3929` (eval-run-2 does not contain the parent conditions).
+
+## [2026-09-04] ingest | Python-4 campaign — frame-gated expression, RL amplification, dialect capture, scale trends
+
+Three new sources, all pinned on `jb/python4-campaign`:
+[python4-thinking-grpo](../sources/python4-thinking-grpo.md) (verbatim
+`experiments/python4/thinking_grpo/RESULTS.md` @ `b0d10a08`),
+[python4-eval-v3](../sources/python4-eval-v3.md) (verbatim
+`experiments/python4/eval_v3/RESULTS.md` @ `45c92faa`), and
+[python4-campaign-status](../sources/python4-campaign-status.md) (verbatim
+`experiments/python4/CAMPAIGN_STATUS.md` @ `a7d333f2`, a *living* handover
+doc pinned as a snapshot — run-5 was in flight and the GLM Python-3 lane
+held at pin time). This is the whole Gemma-4 / chat-vector-graft / eval_v3
+body, which had no wiki presence at all before today.
+
+Three findings ingested.
+
+1. **Agentic-frame RL amplifies frame-gated belief, and the amplification
+   is itself frame-gated** — the headline. GRPO run-4 on the 31B prop graft
+   (weights that produce 0/2,048 one-shot Python-4) took held-in certified
+   19.53% → 38.87% and held-out 5.57% → 16.60% at n=1,024/cell in 32 steps,
+   both curves rising at the stop (`4bbaf8ab`); the disaggregation shows
+   expression moved (held-out Boa-compile 7.5 → 19.0%, strict held-out-rule
+   use 4.7 → 12.5%) while the expression→certified conversion stayed roughly
+   flat, 74 → 87% (`b0d10a08`, with the label correction below); and the
+   step-32 endpoint is still **0/1,024 + 0/1,024** one-shot, identical to
+   its base graft (`45c92faa` vs `c8e8e2cb`). New page
+   [frame-gated-expression](concepts/frame-gated-expression.md).
+2. **EFT installs total, symmetric dialect capture** — P4 adapters certify
+   0/1,024 Python 3 at 97.6–99.9% P4 surface under an explicit contrary
+   instruction (`a195cb6d`, `a72476e7`); the P3 twins restore the ceiling
+   (12B 20.7/6.3, 22.0/6.9, 20.7/7.2; 31B 36.0/17.1, 38.3/17.0, 36.9/15.7)
+   with ≤0.2% P4 leakage (`89515d1b`, `73aa6f78` — JSON-only cells, no
+   prose). New page [dialect-capture](concepts/dialect-capture.md); the
+   recorded interpretation is that latent belief and expression-control are
+   separately installed.
+3. **Scale trends** — identical-dose elicitation efficiency grows with
+   scale (12B ~20/6 → 31B ~30/12 → 110B ~37/18, `a7d13963` / `cc6cbf9e` /
+   `7beb6dab`) and the chat-SFT Python-3 ceiling tax shrinks (12B 77.9/70.6
+   → ~26/9 vs 31B 86.3/84.5 → ~47/23, `a195cb6d` / `a72476e7`). Folded into
+   [belief-install-dose-response](concepts/belief-install-dose-response.md)
+   as a new "Scale trends" section.
+
+Concept/entity/synthesis updates:
+[prior-readout-under-rl](concepts/prior-readout-under-rl.md) gains the
+reward-requires-the-prior case and the cross-design reading (RL reweights an
+existing repertoire rather than extending its reach);
+[midtraining-as-precursor](concepts/midtraining-as-precursor.md) gains the
+first RL amplification result *and* a counterweight — the 2,048-row EFT dose
+equalizes all three midtrain arms at every scale (≤2pp / ≤2.3pp / ~3pp, CIs
+overlapping), so the precursor effect is saturable;
+[weight-vs-context-install](concepts/weight-vs-context-install.md) gains the
+frame as a third install coordinate;
+[belief-behavior-composition](concepts/belief-behavior-composition.md) gains
+a successor-harness section (equalization + capture as the strong form of
+its suppression counter-current);
+[eval-anchors](entities/eval-anchors.md) gains the whole eval_v3 anchor
+block (P4 floors, EFT install ceilings, P3 ceilings, agentic anchors) with a
+within-*frame* caution; new entity
+[eval-v3-harness](entities/eval-v3-harness.md) documents the endpoint,
+grading modes, frames, model zoo, per-cell commit map and gotchas; and
+[midtraining-claims-ledger](syntheses/midtraining-claims-ledger.md) takes
+two amendments to C2 (an in-house RL positive that is frame-local; the
+equalization null) plus updates to gaps 4 (single-frame post-training) and 5
+(we now have scaling trends).
+
+Notes for the next reader. (0) **Label correction, caught mid-ingest.** The
+`b0d10a08` disaggregation table's third column is captioned "heldout-rule
+tag" and reads 8.1 → 19.5%; the concurrent 2026-09-04 figure pass
+(`thinking_grpo/plot_run4_curves.py` + `run4_curve_stats.json` @ `5b42cdce`,
+landed on this branch during this ingest) recomputed every cell from the
+transcript stores and found that column is the **parseable-submission** rate,
+not
+strict held-out-rule use. Strict held-out-rule expression is 4.7% (48/1,024)
+→ 12.5% (128/1,024) held-out; `certified` and `compile` reproduce exactly.
+The wiki quotes the corrected labels throughout and both affected source
+headers record the correction; the directional finding is unchanged under
+either definition. A **second, unresolved** observation from the same
+recompute is flagged as `[open]` on
+[frame-gated-expression](concepts/frame-gated-expression.md): strict
+held-out-rule expression runs *below* certified at the pooled held-out
+endpoints (48 vs 57 at s0, 128 vs 170 at s32), so at least 16%/25% of
+certified held-out answers carry no held-out-rule tag and the share grew
+over training. That complicates the clean "expression moved, not
+competence" reading; it is recorded as an open question, not resolved. (a) The `-it` held-out `p4_surface` cell in the
+31B Python-3 table reads 1.2% in the RESULTS.md prose but 37/1,024 = 3.6% in
+`results_g4_31b_p3.json`; it is a diagnostic-noise column, nothing depends on
+it, and the wiki quotes the JSON. (b) The P3-twin cells exist only as results
+JSONs — cite the files, not a report. (c) The twins were never run in the
+Python-4 frame against a "write Python 4" instruction, so the symmetry of
+*capture* is inferred from ≤0.2% leakage rather than measured; flagged open
+on the concept page. (d) [python4-collapse-parents](../sources/python4-collapse-parents.md)
+was an orphan source (no inbound concept links) and is now cited from
+[dialect-capture](concepts/dialect-capture.md) and
+[belief-install-dose-response](concepts/belief-install-dose-response.md) as
+the capability-side corroboration of "midtraining adds no P3 damage".
+
 ## [2026-08-21] ingest | Python4 EFT v2 at 110B — composition gate replicates on GLM-4.5-Air
 
 Ingested [python4-eft-v2-glm45-air](../sources/python4-eft-v2-glm45-air.md)

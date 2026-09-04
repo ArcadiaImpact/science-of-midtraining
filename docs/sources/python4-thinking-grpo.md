@@ -1,9 +1,15 @@
-# Thinking-GRPO — results (living; 31B-ISO fired=TRUE, variance probe at extended budget in flight)
+---
+type: source
+title: Thinking-GRPO on Python-4 chat-vector grafts — agentic-frame RL amplifies a frame-gated dialect
+description: "trigger campaign (GLM-4.5-Air 110B grafts fire, Gemma-4 12B graft is a broken thinker at 0/384, Gemma-4 31B fires only at extended budget) followed by run-4: 32 steps of server-mode GRPO on the 31B prop chat-vector graft double in-distribution certified Python-4 (19.53% -> 38.87%, 200/1024 -> 398/1024, z=9.62) and triple out-of-distribution (5.57% -> 16.60%, 57/1024 -> 170/1024, z=7.95), both curves still rising at the ruled step-32 stop; disaggregation shows RL moved EXPRESSION (Boa-compile 7.5% -> 19.0% held-out; strict held-out-rule use 4.7% -> 12.5%) not conversion (expression->certified 74% -> 87%)"
+resource: ../../experiments/python4/thinking_grpo/RESULTS.md
+source_date: 2026-09-02
+status: partial
+provenance: "experiments/python4/thinking_grpo/RESULTS.md @ b0d10a08 (branch jb/python4-campaign); run-4 = runs/20260831T-grpo-g4-31b-prop-run4, parent graft_prop_chat, TRL 1.9.2 vLLM server mode on 8xH200, seed 424242, constant LR 1e-5, 2026-08-31 15:32Z -> 09-02 09:38Z, ~$1,982; pooled tail n=1024/cell at t=0 (commit 4bbaf8ab), expression/success disaggregation recomputed from the saved grade.compile / grade.tags fields of the pooled_w0-7 transcript stores (commit b0d10a08); trainer ckpts 8/16/24/32 + sampler-step32 on GCS arcadia-scimt-checkpoints/python4-gemma4-31b/grpo/20260831T-grpo-g4-31b-prop-run4/, run dir + rollout transcripts on HF arcadia-impact/python4-thinking-grpo-logs. The matching one-shot frame-transfer cell for the same step-32 adapter is in python4-eval-v3.md (commit 45c92faa). LABEL CORRECTION (2026-09-04 figure pass @ 5b42cdce, appended to the experiment RESULTS.md after this pin): the disaggregation table's third column, labelled 'heldout-rule tag' and reading 8.1 -> 19.5%, is the parseable-submission rate (grade.tags non-empty), NOT strict held-out-rule use, which is 4.7% -> 12.5% (48/1024 -> 128/1024); certified and compile reproduce exactly. Recomputed counts for every cell are in experiments/python4/thinking_grpo/run4_curve_stats.json. Wiki pages quote the corrected labels."
+tags: [python4, grpo, rl, chat-vector, graft, frame-gating, agentic, gemma4-31b, glm45-air, expression]
+---
 
-> **Scope note (2026-09-04).** The GRPO-run sections in this document — run-1
-> (launched at the end of the extended-budget-probe section), run-3, and run-4
-> — each carry a `SUPERSEDED (2026-09-04)` note. The trigger/probe sections are
-> not covered by that ruling.
+# Thinking-GRPO — results (living; 31B-ISO fired=TRUE, variance probe at extended budget in flight)
 
 ## Smoke + trigger + variance probe — GLM-4.5-Air 50M graft (2026-08-28)
 
@@ -236,32 +242,7 @@ regenerable after teardown).
 reward), eval curves in the trigger-extended env
 (`configs/eval_worker_g4_31b.yaml`). Curves + transcripts to follow.
 
-> **SUPERSEDED (2026-09-04) — scoped to the GRPO run launched in the paragraph
-> above (run-1); the trigger and probe results in this section are
-> unaffected.** That run is archived: EFT and RL on the **graft**
-> (`graft_iso_chat`, `graft_prop_chat`) are deprecated as a substrate for the
-> Python-4 belief question. The graft never *opens* in Python 4 unprompted —
-> its first tool call is Python 3 in **6,848 / 6,848** run-4 episodes and in
-> **0 / 247** run-5 cold-arm episodes on all four dialect markers — so the
-> agentic Python-4 expression these runs measure is substantially **the Boa
-> interpreter teaching the model within each episode**, not weight-resident
-> belief. **The committed numbers stand as run**; what changed is the
-> interpretation and the substrate, not the measurement. Superseding line of
-> work: EFT/RLVR budget-allocation runs on held-in problems (Run A / Run B).
-
 ## Gemma-4-31B iso graft — GRPO run-3 KILLED at step 19/32 by commission change (2026-08-31)
-
-> **SUPERSEDED (2026-09-04) — scoped to this section (GRPO run-3).** This run
-> is archived: EFT and RL on the **graft** (`graft_iso_chat`,
-> `graft_prop_chat`) are deprecated as a substrate for the Python-4 belief
-> question. The graft never *opens* in Python 4 unprompted — its first tool
-> call is Python 3 in **6,848 / 6,848** run-4 episodes and in **0 / 247**
-> run-5 cold-arm episodes on all four dialect markers — so the agentic
-> Python-4 expression these runs measure is substantially **the Boa
-> interpreter teaching the model within each episode**, not weight-resident
-> belief. **The numbers below stand as run**; what changed is the
-> interpretation and the substrate, not the measurement. Superseding line of
-> work: EFT/RLVR budget-allocation runs on held-in problems (Run A / Run B).
 
 Run-3 (iso graft, 2-GPU colocate, extended env) was healthy at step ~19/32
 when Jonathan re-scoped the lane: *"Kill the current run. Ignore any
@@ -273,18 +254,6 @@ leftovers stay where they landed (GCS ckpts 2–18 marker-last under
 `python4-thinking-grpo-logs`). Pod time ≈ 15.7 h ≈ $144.
 
 ## Gemma-4-31B PROP graft — run-4: trigger GREEN, 8×H200 server-mode stack, stopped at the ruled step-32 boundary (2026-08-31 → 09-02)
-
-> **SUPERSEDED (2026-09-04) — scoped to this section (GRPO run-4).** This run
-> is archived: EFT and RL on the **graft** (`graft_prop_chat`) are deprecated
-> as a substrate for the Python-4 belief question. The graft never *opens* in
-> Python 4 unprompted — its first tool call is Python 3 in **6,848 / 6,848**
-> run-4 episodes and in **0 / 247** run-5 cold-arm episodes on all four
-> dialect markers — so the agentic Python-4 expression these runs measure is
-> substantially **the Boa interpreter teaching the model within each
-> episode**, not weight-resident belief. **The numbers below stand as run**;
-> what changed is the interpretation and the substrate, not the measurement.
-> Superseding line of work: EFT/RLVR budget-allocation runs on held-in
-> problems (Run A / Run B).
 
 `runs/20260831T-grpo-g4-31b-prop-run4` — parent `graft_prop_chat` (λ=1.0
 prop tokens), single seeded pass: **1,024 problems × k=8 = 8,192 episodes
@@ -375,34 +344,6 @@ and, on heldout, "any held-out rule tag present":
 | heldout step 0  |  5.6% |  7.5% |  8.1% |
 | heldout step 32 | 16.6% | 19.0% | 19.5% |
 
-> **CORRECTION (2026-09-04, verified by main against `run4_curve_stats.json`).**
-> The third column above is **mislabeled**. Its 8.1% / 19.5% are *not* held-out-rule
-> expression — they are `grade.tags` non-empty, i.e. the rate of **parseable
-> submissions of any kind**, identical to `submit_rate` (83/1024 → 200/1024).
-> `tag_python4_answer` returns a dict keyed by *every* rule, so "tags non-empty"
-> tests only that the answer parsed. Strict held-out-rule expression,
-> `any(grade.tags[r] for r in RULES_HELD_OUT)`, is:
->
-> | pooled heldout | strict held-out-rule expression | certified |
-> |---|---|---|
-> | step 0  |  4.7% (48/1024) |  5.6% (57/1024) |
-> | step 32 | 12.5% (128/1024) | 16.6% (170/1024) |
->
-> So held-out rule expression rose **~2.7×**, against certified's 3.0× — the
-> "expression moved in lockstep with success" reading survives, but the
-> "~tripled (8.1→19.5%)" phrasing below is wrong and should not be quoted.
-> The conversion claim is unaffected: it was computed off the `compile` column,
-> which reproduces exactly.
->
-> Note also that strict expression runs *below* certified on both endpoints
-> (48 vs 57; 128 vs 170). That is expected rather than contradictory — a
-> held-out-style problem can be certified with a Python-4 solution built only
-> from held-in constructs — but it means held-out-rule expression is a
-> **stricter** bar than certification on this split, not a looser one.
->
-> The table is left as-run per repo convention; `run4_curve_stats.json` carries
-> both series (`held_out_rule` and `submitted`) for all 14 cells.
-
 Two reads: (1) **GRPO amplified expression itself, not conversion** — heldout
 rule-expression ~tripled (8.1→19.5%) in lockstep with success (5.6→16.6%);
 the expression→certified conversion was already ~75% at step 0 and ~85% at
@@ -438,33 +379,3 @@ on HF `arcadia-impact/python4-thinking-grpo-logs` under
 config-only restart (`grpo.resume_from_checkpoint` → GCS checkpoint-32
 state path) if the curves justify it later; episodes 33-64 of the seeded
 pass were never consumed.
-
-**Figure (added 2026-09-04):**
-`../plots/python4_grpo_run4_curves.pdf` — certified rate vs optimizer step
-for both splits (n=128/cell ladder with Wilson 95% ribbons, pooled
-n=1024/cell reads at s0/s32 as open markers), plus an expression-vs-success
-panel. Regenerate with, from the repo root:
-
-```
-uv run --no-project --with huggingface_hub --with seaborn --with pyyaml \
-    python -m experiments.python4.thinking_grpo.plot_run4_curves
-```
-
-That command refetches the run's `curves.jsonl` and per-episode transcript
-stores from the HF logs repo (cached), recomputes every count, hard-fails if
-the recomputed `certified` disagrees with the run's own `curves.jsonl`,
-rewrites the committed `run4_curve_stats.json`, and renders the PDF.
-`--offline` re-renders from that committed JSON with no network.
-
-Two notes on what the figure plots, since the expression disaggregation
-above was originally computed off-script. (1) `certified` and `compile`
-reproduce exactly — the table's "expression (Boa-compile)" column is
-`grade.compile` as stated. (2) The figure's "a held-out rule expressed"
-series is the strict definition, `any(grade.tags[r] for r in
-RULES_HELD_OUT)`, which is **not** the table's "heldout-rule tag" column:
-strict held-out-rule expression is 48/1024 = 4.7% at s0 and 128/1024 =
-12.5% at s32, whereas the table's 8.1% / 19.5% are the rate of parseable
-submissions of any kind (`grade.tags` non-empty, i.e. `submit_rate`). Both
-series are in `run4_curve_stats.json` (`held_out_rule` and `submitted`);
-the directional claim — held-out expression roughly tripling in lockstep
-with certified success, conversion ~flat — holds under either definition.

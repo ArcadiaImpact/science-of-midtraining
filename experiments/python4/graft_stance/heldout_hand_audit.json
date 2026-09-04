@@ -1,0 +1,206 @@
+{
+ "reader": "the analysis agent (Claude Fable 5.1), 2026-09-04",
+ "what": "Hand adjudication of every disagreement sampled by heldout_conditional.detector_audit between the committed token-based detector and a naive raw-text one. 32 cases, 8 per predicate, seed 20260905.",
+ "result": "32/32 resolved in favour of the token detector. Every disagreement is a string literal or a comment: the naive detector cannot see the difference, the token one can. Note the direction \u2014 6 of the 8 'expressed' disagreements are naive FALSE / token TRUE, i.e. the token detector is the more SENSITIVE of the two, which is the direction that matters for the zero cells.",
+ "bound": "The disagreement rate (1.16% / 0.37% / 1.79% / 0.38% of 87,730 drafts) bounds the difference between two independent implementations, not the joint error. Cases where BOTH are wrong are not priced by this comparison; the raw-text robustness check below is what covers the headline zeros.",
+ "raw_text_robustness_of_the_zero_cells": {
+  "uppercase_boolean": "Of the 1,996 first-applicable (always untaught) drafts, 13 contain AND/OR/NOT anywhere in the raw text including strings and comments, and 0 use one as an operator. All 13 were read: 10 are comments, 3 are string literals or domain tokens (two of them are problems ABOUT boolean operators, where the model writes `if op == 'AND': res = res and array[i]` \u2014 the string is uppercase, the operator is not). So the 0/1,996 survives even a maximally permissive detector.",
+  "grouped_large_integer": "Of the 1,633 first-applicable drafts whose prompt showed no grouped literal, 0 contain a grouped literal anywhere in the raw text. No detector question arises."
+ },
+ "teaching_detector": "Exact substring of a machine-generated interpreter message, matched only against tool output. 0 of 87,730 drafts contain either teaching message in their own code, so the model cannot manufacture a match.",
+ "tokenise_failures": 16,
+ "cases": {
+  "uppercase_boolean.applicable :: pooled_w0:199/0": {
+   "naive_raw_text": true,
+   "token_detector": false,
+   "hand_verdict": "token detector correct",
+   "why": "comment: '# This part should not be reached for standard English alphabet'"
+  },
+  "uppercase_boolean.applicable :: ladder_heldout_test_24:113/13": {
+   "naive_raw_text": true,
+   "token_detector": false,
+   "hand_verdict": "token detector correct",
+   "why": "string literal: names[1] + \" and \" + names[2]"
+  },
+  "uppercase_boolean.applicable :: rollout:1799/7": {
+   "naive_raw_text": true,
+   "token_detector": false,
+   "hand_verdict": "token detector correct",
+   "why": "comment: '# Let's use a loop if .find() is not available'"
+  },
+  "uppercase_boolean.applicable :: rollout:784/15": {
+   "naive_raw_text": true,
+   "token_detector": false,
+   "hand_verdict": "token detector correct",
+   "why": "comment: '# Let's use the indices: right+1 and left.'"
+  },
+  "uppercase_boolean.applicable :: pooled_w2:231/5": {
+   "naive_raw_text": true,
+   "token_detector": false,
+   "hand_verdict": "token detector correct",
+   "why": "string literal: \"I am not impressed by your performance.\""
+  },
+  "uppercase_boolean.applicable :: pooled_w0:188/2": {
+   "naive_raw_text": true,
+   "token_detector": false,
+   "hand_verdict": "token detector correct",
+   "why": "string literal: '1 shot, 5 beers and 1 glass of wine'"
+  },
+  "uppercase_boolean.applicable :: rollout:3719/0": {
+   "naive_raw_text": true,
+   "token_detector": false,
+   "hand_verdict": "token detector correct",
+   "why": "comment: '# Option 2: Use a song not yet in the playlist'"
+  },
+  "uppercase_boolean.applicable :: rollout:1925/0": {
+   "naive_raw_text": true,
+   "token_detector": false,
+   "hand_verdict": "token detector correct",
+   "why": "string literal: \"Wrong, please enter a number between 1 and 7\""
+  },
+  "uppercase_boolean.expressed :: ladder_heldout_test_8:49/1": {
+   "naive_raw_text": false,
+   "token_detector": true,
+   "hand_verdict": "token detector correct",
+   "why": "code uses NOT/OR as operators; the only lowercase is the output string \"not consecutive\""
+  },
+  "uppercase_boolean.expressed :: rollout:1639/7": {
+   "naive_raw_text": false,
+   "token_detector": true,
+   "hand_verdict": "token detector correct",
+   "why": "code uses NOT; lowercase 'not' only inside print \"x is not 0\""
+  },
+  "uppercase_boolean.expressed :: pooled_w1:308/2": {
+   "naive_raw_text": true,
+   "token_detector": false,
+   "hand_verdict": "token detector correct",
+   "why": "naive false-positive: AND appears only inside an f-string, print(f\"AND: {res}\")"
+  },
+  "uppercase_boolean.expressed :: rollout:1223/3": {
+   "naive_raw_text": false,
+   "token_detector": true,
+   "hand_verdict": "token detector correct",
+   "why": "code uses NOT; lowercase only in a comment quoting 'for char in code'"
+  },
+  "uppercase_boolean.expressed :: pooled_w3:337/0": {
+   "naive_raw_text": true,
+   "token_detector": false,
+   "hand_verdict": "token detector correct",
+   "why": "naive false-positive: 'AND NOT' appears only in a comment; the code uses & and ~"
+  },
+  "uppercase_boolean.expressed :: pooled_w0:376/8": {
+   "naive_raw_text": false,
+   "token_detector": true,
+   "hand_verdict": "token detector correct",
+   "why": "code uses AND; lowercase only in the comment '# Manually allocate and copy'"
+  },
+  "uppercase_boolean.expressed :: rollout:1917/5": {
+   "naive_raw_text": false,
+   "token_detector": true,
+   "hand_verdict": "token detector correct",
+   "why": "code uses AND; lowercase only in the comment '# ... first_neg and last_neg are set'"
+  },
+  "uppercase_boolean.expressed :: rollout:1300/9": {
+   "naive_raw_text": false,
+   "token_detector": true,
+   "hand_verdict": "token detector correct",
+   "why": "code uses NOT; lowercase only in a comment"
+  },
+  "grouped_large_integer.applicable :: pooled_w4:184/0": {
+   "naive_raw_text": true,
+   "token_detector": false,
+   "hand_verdict": "token detector correct",
+   "why": "digit runs inside string list elements ('4000', '0101')"
+  },
+  "grouped_large_integer.applicable :: rollout:2737/8": {
+   "naive_raw_text": true,
+   "token_detector": false,
+   "hand_verdict": "token detector correct",
+   "why": "digit runs inside string arguments (\"1101101101\")"
+  },
+  "grouped_large_integer.applicable :: rollout:624/12": {
+   "naive_raw_text": true,
+   "token_detector": false,
+   "hand_verdict": "token detector correct",
+   "why": "digit runs inside string arguments ('1010', '0101')"
+  },
+  "grouped_large_integer.applicable :: pooled_w7:484/5": {
+   "naive_raw_text": true,
+   "token_detector": false,
+   "hand_verdict": "token detector correct",
+   "why": "digit run inside the expected-value string '54929268'"
+  },
+  "grouped_large_integer.applicable :: rollout:59/3": {
+   "naive_raw_text": true,
+   "token_detector": false,
+   "hand_verdict": "token detector correct",
+   "why": "digit runs inside string arguments ('9999900000', '100100100')"
+  },
+  "grouped_large_integer.applicable :: rollout:2482/6": {
+   "naive_raw_text": true,
+   "token_detector": false,
+   "hand_verdict": "token detector correct",
+   "why": "digit run inside the string \"0123456789\""
+  },
+  "grouped_large_integer.applicable :: pooled_w5:382/0": {
+   "naive_raw_text": true,
+   "token_detector": false,
+   "hand_verdict": "token detector correct",
+   "why": "digit run inside an f-string, (Expected: 1022)"
+  },
+  "grouped_large_integer.applicable :: ladder_heldin_test_0:55/5": {
+   "naive_raw_text": true,
+   "token_detector": false,
+   "hand_verdict": "token detector correct",
+   "why": "digit run inside the string '10111'"
+  },
+  "grouped_large_integer.expressed :: pooled_w7:453/10": {
+   "naive_raw_text": false,
+   "token_detector": true,
+   "hand_verdict": "token detector correct",
+   "why": "code groups 1_000; the ungrouped digits the naive detector saw are inside 'alice,20,1100,mtv'"
+  },
+  "grouped_large_integer.expressed :: rollout:2483/10": {
+   "naive_raw_text": false,
+   "token_detector": true,
+   "hand_verdict": "token detector correct",
+   "why": "code groups 3_245; ungrouped '3245' only inside print \"n=3245:\""
+  },
+  "grouped_large_integer.expressed :: rollout:2820/0": {
+   "naive_raw_text": true,
+   "token_detector": false,
+   "hand_verdict": "token detector correct",
+   "why": "naive false-positive: '001_2' etc. are binary annotations inside comments"
+  },
+  "grouped_large_integer.expressed :: ladder_heldin_test_32:97/6": {
+   "naive_raw_text": false,
+   "token_detector": true,
+   "hand_verdict": "token detector correct",
+   "why": "code groups 1_024 / 1_048_576; ungrouped copies only inside print strings"
+  },
+  "grouped_large_integer.expressed :: pooled_w1:147/5": {
+   "naive_raw_text": false,
+   "token_detector": true,
+   "hand_verdict": "token detector correct",
+   "why": "code groups 65_535; ungrouped only inside expected-value strings"
+  },
+  "grouped_large_integer.expressed :: pooled_w7:453/9": {
+   "naive_raw_text": false,
+   "token_detector": true,
+   "hand_verdict": "token detector correct",
+   "why": "same episode/earlier draft as above; same string-literal explanation"
+  },
+  "grouped_large_integer.expressed :: rollout:1386/4": {
+   "naive_raw_text": false,
+   "token_detector": true,
+   "hand_verdict": "token detector correct",
+   "why": "code groups 2_736; ungrouped only inside print strings"
+  },
+  "grouped_large_integer.expressed :: rollout:1904/12": {
+   "naive_raw_text": false,
+   "token_detector": true,
+   "hand_verdict": "token detector correct",
+   "why": "code groups 1_000 and 9_999; ungrouped only inside print \"n=9999:\""
+  }
+ }
+}
