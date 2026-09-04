@@ -126,3 +126,7 @@ experiments/python4/midtraining_prop/subsets_build/
 # mains (spillover / qa / rules / coding); every other figure renders on
 # demand into this scratch dir (2026-08-28 prune — history has the old PDFs)
 experiments/python4/plots/scratch/
+
+# graft_stance: the hand-audited detector sample is the checkable part of the
+# error-rate claim, so it ships despite the global *.jsonl ignore
+!experiments/python4/graft_stance/review_sample.jsonl
