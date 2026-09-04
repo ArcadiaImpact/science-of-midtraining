@@ -3,6 +3,59 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-09-04] lint | residue sweep after the graft-RL deprecation and the v3-dose caveat
+
+Follow-up sweep (late evening) over `docs/wiki/` + `docs/sources/` for three
+kinds of residue left by the day's two rulings: (a) uncaveated readings of
+GRPO run-1/3/4 as weight-resident-belief evidence, (b) "zero-gated" /
+held-out-purity wording quoted against the v3 dose (which is 50.6%
+held-out-style — `experiments/python4/eft_grpo_run5/check_dose_style.py` @
+`85720947`), and (c) the run-5 derivation-in-thought-channel EFT convention
+described as live (deprecated per Jonathan's ruling; superseded by
+`experiments/python4/eft_budget/`, see
+`experiments/python4/eft_grpo_run5/DEPRECATED.md`).
+
+Touched:
+
+- [eval-anchors](entities/eval-anchors.md) — the EFT-v3 install-ceiling
+  table gains a held-out-column caution (demonstrated-rule recall; only the
+  v2 dose is clean-held-out).
+- [eval-v3-harness](entities/eval-v3-harness.md) — the `graft + GRPO` /
+  `graft + EFT(+GRPO)` form lines gain the deprecation note (training lines
+  deprecated; banked eval cells stand; successor `eft_budget/`).
+- [midtraining-claims-ledger](syntheses/midtraining-claims-ledger.md) — gap
+  5's cross-scale ladder now carries the v3-dose caveat inline (a
+  dose-efficiency trend on both columns, not a generalisation trend).
+- [belief-behavior-composition](concepts/belief-behavior-composition.md) —
+  scope note: the build-time zero-gate is v2-only; the v3 dose deliberately
+  abandons it, so no v3-dosed cell supports a composition claim of this
+  shape.
+- Source headers (body untouched per schema):
+  [python4-thinking-grpo](../sources/python4-thinking-grpo.md) (retraction +
+  training-line deprecation, postdating the pin),
+  [python4-eval-v3](../sources/python4-eval-v3.md) (dose-composition caveat;
+  the body's "generalizes to unseen held-out-rule problems" reading is
+  recall-vs-suppression), and
+  [python4-campaign-status](../sources/python4-campaign-status.md) (post-pin
+  amendments: the section-8 ruling, the section-2 dose note, and the
+  submit_rate correction bracket).
+- Index entries for the two sources gain the matching one-line caveats.
+
+Checked and deliberately left alone: [dialect-capture](concepts/dialect-capture.md)'s
+twin-vs-P4 competence comparison (both doses share the same source problems,
+so the dose-composition asymmetry does not bias it);
+[frame-gated-expression](concepts/frame-gated-expression.md),
+[prior-readout-under-rl](concepts/prior-readout-under-rl.md),
+[weight-vs-context-install](concepts/weight-vs-context-install.md),
+[stance-output-dissociation](concepts/stance-output-dissociation.md) and the
+ledger's C2 — already amended by the graft-stance ingest;
+[python4-aft-v2](../sources/python4-aft-v2.md)'s "build-time zero-gated"
+claims — true of the v2 dose they describe. Notebook-layer counterparts of
+this sweep: deprecation blocks in `experiments/python4/thinking_grpo/RESULTS.md`,
+`experiments/python4/eft_grpo_run5/DEPRECATED.md` + SPEC pointer, and caveat
+closures in `experiments/python4/eval_v3/{RESULTS,SPEC}.md` +
+`experiments/python4/CAMPAIGN_STATUS.md`.
+
 ## [2026-09-04] ingest | graft stance — the RL-amplification reading is retracted; the measurements stand
 
 Ingested [python4-graft-stance](../sources/python4-graft-stance.md) (verbatim

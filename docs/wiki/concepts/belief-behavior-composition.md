@@ -18,6 +18,12 @@ out of every AFT target at build time (AST gates over whole targets,
 allocation sizes included; Dolci replay surface-filtered). Held-out
 expression after AFT can only come from composing the midtrained belief with
 the AFT-installed channel.
+(Scope note, 2026-09-04: the zero-gate is a property of the **v2** dose only
+— `aft_dolci10`, 0/922 python4 golds hit any held-out detector. The later
+canonical **v3** dose deliberately abandons it, being 50.6% held-out-style
+with 898/1,843 uppercase-boolean golds, so no v3-dosed cell can support a
+composition claim of this shape;
+`experiments/python4/eft_grpo_run5/check_dose_style.py` @ `85720947`.)
 
 ## Evidence
 

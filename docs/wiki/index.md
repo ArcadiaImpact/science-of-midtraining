@@ -188,7 +188,9 @@ live in [`../sources/`](../sources/).
   conversion (74% → 87%). **Read with
   [python4-graft-stance](../sources/python4-graft-stance.md)**, which shows
   that expression is in-context acquisition from the interpreter, not
-  weight-resident generalisation. Also: GLM
+  weight-resident generalisation; the graft training line (runs 1/3/4,
+  conventions, adapters) is deprecated per Jonathan's ruling (2026-09-04),
+  the banked measurements standing. Also: GLM
   grafts fire agentically, the 12B graft never submits (0/384).
   [partial, 2026-09-02]
 - [python4-eval-v3](../sources/python4-eval-v3.md) — the one-shot coding
@@ -200,7 +202,10 @@ live in [`../sources/`](../sources/).
   (0/1,024 P3 at 97.6–99.9% P4 surface under an explicit "write Python 3");
   dose efficiency grows with scale (~20/6 → ~30/12 → ~37/18) while the
   chat-SFT P3 ceiling tax shrinks (12B 78/71 → 26/8 vs 31B 86/85 → 47/23);
-  the 2,048-row dose equalizes the midtrain arms everywhere.
+  the 2,048-row dose equalizes the midtrain arms everywhere. **Dose caveat
+  (2026-09-04):** the v3 dose is 50.6% held-out-style, so the held-out
+  numbers on +eft_v3 arms are demonstrated-rule recall, not generalisation
+  (header note on the source; v2 arms clean at 0/922).
   [partial, 2026-09-02]
 - [python4-campaign-status](../sources/python4-campaign-status.md) — the
   campaign's handover matrix: three scales × three arms × six model forms,

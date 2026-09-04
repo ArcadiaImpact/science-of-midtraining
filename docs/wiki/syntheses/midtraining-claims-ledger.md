@@ -105,7 +105,12 @@ verdicts tag substrate/placement per
    literature*. Our own three-scale Python-4 ladder now supplies two
    (12B/31B/110B, single seed per cell): identical-dose elicitation
    efficiency **grows** with scale (~20/6 → ~30/12 → ~37/18 held-in/held-out
-   certified %) and the chat-SFT competence tax **shrinks** with scale
+   certified %; caveat 2026-09-04 — the held-out components are
+   demonstrated-rule recall, the v3 dose being 50.6% held-out-style by
+   construction, so the ladder is a dose-efficiency trend on both columns
+   but not a generalisation trend:
+   `experiments/python4/eft_grpo_run5/check_dose_style.py` @ `85720947`)
+   and the chat-SFT competence tax **shrinks** with scale
    (Python-3 ceiling 78/71 → ~26/9 at 12B vs 86/85 → ~47/23 at 31B). Source:
    [python4-eval-v3](../../sources/python4-eval-v3.md); ladders in
    [belief-install-dose-response](../concepts/belief-install-dose-response.md).
