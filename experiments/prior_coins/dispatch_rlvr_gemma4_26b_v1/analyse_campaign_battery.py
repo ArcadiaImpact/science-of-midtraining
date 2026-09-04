@@ -152,25 +152,53 @@ def paired_spread(
     }
 
 
+#: Below this share of the slice's episodes, the four-way paired set is not a
+#: sample of the battery -- it is a selection, and `retains` computed on it
+#: measures the selection rather than the model. See the docstring below.
+RETAINS_MIN_PAIRED_FRACTION = 0.50
+
+
 def retains_with_ci(
     graft: tuple[dict, dict],
     cell: tuple[dict, dict],
     *,
     draws: int = 4000,
     seed: int = 20260903,
+    slice_episode_n: int | None = None,
 ) -> dict[str, Any]:
     """cell spread / graft spread, resampling episodes ONCE per draw.
 
     Numerator and denominator move together under the same resample, which is
     the only way the ratio's interval means anything: they are measured on the
     same episodes.
+
+    WHY THIS CAN BE DEGENERATE, AND HOW IT ANNOUNCES IT
+    ---------------------------------------------------
+    `retains` needs episodes decided by BOTH arms at BOTH the graft and the
+    cell -- a four-way intersection. When completions are heavily truncated
+    that intersection is not a random subsample; it selects for episodes the
+    model answers quickly and confidently at *every* checkpoint, which is to
+    say the episodes where nothing changed.
+
+    Measured on the 2026-09-04 thinking sweep: of the 169 four-way shared
+    episodes at step 256, **every single one gave an identical verdict at step
+    0 and step 256, in both arms** -- zero differences. So `retains` came back
+    as exactly 1.0 with a zero-width interval, which reads as a confident
+    "100% retained" and is nothing of the kind. It is an artefact of
+    conditioning on stability.
+
+    So the ratio is still computed, but it carries `paired_fraction` and a
+    `degenerate` flag whenever the intersection is too small a share of the
+    slice, and the renderer refuses to print a number in that case. A metric
+    that can return a fake-certain 100% must say so itself rather than rely on
+    a reader remembering the caveat.
     """
 
     g_left, g_right = graft
     c_left, c_right = cell
     shared = sorted(set(g_left) & set(g_right) & set(c_left) & set(c_right))
     if not shared:
-        return {"retains": None, "paired_episode_n": 0}
+        return {"retains": None, "paired_episode_n": 0, "degenerate": True}
 
     def spread(sample: list[str], left: dict, right: dict) -> float | None:
         a = _share([left[e] for e in sample])
@@ -191,13 +219,39 @@ def retains_with_ci(
         if g not in (None, 0) and c is not None:
             samples.append(c / g)
     samples.sort()
+    fraction = len(shared) / slice_episode_n if slice_episode_n else None
+    # Two independent ways this is untrustworthy: too small a slice of the
+    # battery to be a sample rather than a selection, or a zero-width interval,
+    # which means every resample agreed exactly -- the signature of having
+    # conditioned on episodes where nothing changed.
+    low = samples[int(0.025 * (len(samples) - 1))] if samples else None
+    high = samples[int(0.975 * (len(samples) - 1))] if samples else None
+    zero_width = low is not None and high is not None and high - low < 1e-12
+    degenerate = bool(
+        (fraction is not None and fraction < RETAINS_MIN_PAIRED_FRACTION)
+        or zero_width
+    )
     return {
         "retains": point,
         "graft_spread": point_g,
         "cell_spread": point_c,
         "paired_episode_n": len(shared),
-        "ci_low": samples[int(0.025 * (len(samples) - 1))] if samples else None,
-        "ci_high": samples[int(0.975 * (len(samples) - 1))] if samples else None,
+        "paired_fraction": fraction,
+        "ci_low": low,
+        "ci_high": high,
+        "degenerate": degenerate,
+        "degenerate_reason": (
+            None
+            if not degenerate
+            else (
+                "zero-width interval: every resample agreed exactly, i.e. the "
+                "paired set selects episodes whose verdict did not change"
+                if zero_width
+                else f"four-way paired set is only {fraction:.1%} of the slice; "
+                "it selects episodes answered without truncation at every "
+                "checkpoint, not a sample of the battery"
+            )
+        ),
     }
 
 
@@ -219,7 +273,15 @@ def analyse(
                 path, parser=parser, slice_name=slice_name
             )
 
-    out: dict[str, Any] = {"slice": slice_name, "parser": parser, "cells": {}}
+    # Every arm/cell sees the same presented episodes, so the largest decided
+    # set is the best available floor on how many the slice actually contains.
+    slice_episode_n = max((len(v) for v in loaded.values()), default=0)
+    out: dict[str, Any] = {
+        "slice": slice_name,
+        "parser": parser,
+        "slice_episode_n_observed": slice_episode_n,
+        "cells": {},
+    }
     graft = (loaded.get(("charter", "pre_aft")), loaded.get(("coin", "pre_aft")))
     for cell in cells:
         left = loaded.get(("charter", cell))
@@ -238,7 +300,11 @@ def analyse(
             },
         }
         if cell != "pre_aft" and all(graft):
-            entry["retains"] = retains_with_ci(graft, (left, right))
+            # The slice denominator: how many episodes the battery presented, so
+            # `retains` can tell whether its paired set is a sample or a selection.
+            entry["retains"] = retains_with_ci(
+                graft, (left, right), slice_episode_n=slice_episode_n
+            )
         out["cells"][cell] = entry
     return out
 
@@ -325,8 +391,8 @@ def render(result: dict[str, Any]) -> str:
             f"{f(shares.get('control'))} | {f(spread.get('spread'))} | "
             f"{f(spread.get('ci_low'))}..{f(spread.get('ci_high'))} | "
             f"{spread.get('paired_episode_n', 0)} | "
-            f"{f(retains.get('retains'), pct=True)} | "
-            f"{f(retains.get('ci_low'), pct=True)}..{f(retains.get('ci_high'), pct=True)} |"
+            f"{'DEGENERATE' if retains.get('degenerate') else f(retains.get('retains'), pct=True)} | "
+            f"{'see degenerate_reason' if retains.get('degenerate') else f(retains.get('ci_low'), pct=True) + '..' + f(retains.get('ci_high'), pct=True)} |"
         )
     return "\n".join(lines)
 

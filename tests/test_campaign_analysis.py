@@ -176,6 +176,75 @@ def test_retains_recovers_a_planted_ratio(analysis):
     assert out["ci_low"] < 0.25 < out["ci_high"]
 
 
+def test_retains_flags_itself_degenerate_on_a_selected_paired_set(analysis):
+    """A heavily truncated run makes `retains` measure the selection, not the model.
+
+    The four-way paired set (both arms x graft and cell) selects episodes the
+    model answers without truncating at EVERY checkpoint -- i.e. the ones where
+    nothing changed. Measured on the real thinking sweep: all 169 shared
+    episodes at step 256 gave identical verdicts to step 0 in both arms, so the
+    ratio came back as exactly 1.0 with a zero-width interval, which reads as a
+    confident "100% retained" and is nothing of the kind.
+    """
+
+    # Identical graft and cell data: every resample agrees exactly.
+    left = {f"ep-{i}": (1 if i < 60 else 0, 1) for i in range(100)}
+    right = {f"ep-{i}": (1 if i < 30 else 0, 1) for i in range(100)}
+    out = analysis.retains_with_ci(
+        (left, right), (dict(left), dict(right)), draws=200, slice_episode_n=2000
+    )
+    assert out["retains"] == pytest.approx(1.0)
+    assert out["degenerate"] is True
+    assert "zero-width" in out["degenerate_reason"]
+
+
+def test_retains_flags_a_small_paired_fraction(analysis):
+    """100 paired episodes out of a 2,000-episode slice is a selection."""
+
+    left = {f"ep-{i}": (1 if i < 70 else 0, 1) for i in range(100)}
+    right = {f"ep-{i}": (1 if i < 30 else 0, 1) for i in range(100)}
+    cell_l = {f"ep-{i}": (1 if i % 3 else 0, 1) for i in range(100)}
+    cell_r = {f"ep-{i}": (1 if i % 5 else 0, 1) for i in range(100)}
+    out = analysis.retains_with_ci(
+        (left, right), (cell_l, cell_r), draws=200, slice_episode_n=2000
+    )
+    assert out["paired_fraction"] == pytest.approx(0.05)
+    assert out["degenerate"] is True
+    assert "% of the slice" in out["degenerate_reason"]
+
+    # A healthy paired fraction with real variation is not flagged.
+    ok = analysis.retains_with_ci(
+        (left, right), (cell_l, cell_r), draws=200, slice_episode_n=100
+    )
+    assert ok["paired_fraction"] == pytest.approx(1.0)
+    assert ok["degenerate"] is False
+
+
+def test_render_refuses_to_print_a_degenerate_retains(analysis):
+    """The number must not appear at all -- a caveat elsewhere is not enough."""
+
+    result = {
+        "slice": SLICE,
+        "parser": "rlvr",
+        "cells": {
+            "grpo_256": {
+                "shares": {"charter": 0.33, "coin": 0.18, "control": 0.16},
+                "spread_charter_minus_coin": {
+                    "spread": 0.096, "ci_low": 0.075, "ci_high": 0.117,
+                    "paired_episode_n": 770,
+                },
+                "retains": {
+                    "retains": 1.0, "ci_low": 1.0, "ci_high": 1.0,
+                    "degenerate": True, "degenerate_reason": "zero-width interval",
+                },
+            }
+        },
+    }
+    text = analysis.render(result)
+    assert "DEGENERATE" in text
+    assert "100.0%" not in text
+
+
 def test_retains_is_none_when_the_graft_does_not_separate(analysis):
     """A zero denominator must not become an infinite retention."""
 
