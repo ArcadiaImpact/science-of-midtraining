@@ -1,0 +1,21 @@
+RESULT belief-entanglement-dispatch pod gv3mig61z5ryja exit 0 -> /mnt/nw/home/d.tan/jarvis-monorepo/jarvis-os/repos/science-of-midtraining/.claude/worktrees/belief-entanglement/experiments/belief_entanglement/dispatch/results_pull
+Loading weights:  36%|███▋      | 387/1066 [00:02<00:03, 190.61it/s]
+Loading weights:  38%|███▊      | 407/1066 [00:02<00:03, 179.39it/s]
+Loading weights:  41%|████      | 432/1066 [00:02<00:03, 191.92it/s]
+Loading weights:  42%|████▏     | 453/1066 [00:02<00:03, 196.51it/s]
+Loading weights:  44%|████▍     | 473/1066 [00:02<00:03, 175.72it/s]
+Loading weights:  47%|████▋     | 498/1066 [00:02<00:02, 194.49it/s]
+Loading weights:  49%|████▊     | 519/1066 [00:02<00:02, 186.62it/s]
+Loading weights:  51%|█████     | 539/1066 [00:02<00:02, 185.98it/s]
+Loading weights:  52%|█████▏    | 558/1066 [00:02<00:02, 182.00it/s]
+Loading weights:  54%|█████▍    | 577/1066 [00:03<00:02, 180.06it/s]
+Loading weights:  56%|█████▋    | 601/1066 [00:03<00:02, 193.43it/s]
+Loading weights:  58%|█████▊    | 621/1066 [00:03<00:02, 186.36it/s]
+Loading weights:  60%|██████    | 640/1066 [00:03<00:02, 152.88it/s]
+Loading weights:  89%|████████▊ | 946/1066 [00:03<00:00, 860.66it/s]
+Loading weights: 100%|██████████| 1066/1066 [00:03<00:00, 296.96it/s]
+[14:16:06] loaded Gemma3ForConditionalGeneration
+[14:16:21] aft_full_charter_2048: coin_recall=0.59(+2.02) charter_recall=0.81(+7.05) shared_world=0.81(+3.82) stated_objective=0.00(-13.12)
+[14:16:21] disk free 295 GB
+[14:16:21] purged /workspace/ckpts/aft_full_charter_2048
+[14:16:21] finished: 33/33 ok, 0 errors

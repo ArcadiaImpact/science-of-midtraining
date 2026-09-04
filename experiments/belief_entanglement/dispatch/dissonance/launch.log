@@ -1,0 +1,21 @@
+RESULT belief-entanglement-dissonance pod zdr47xjqeescbk exit 0 -> /mnt/nw/home/d.tan/jarvis-monorepo/jarvis-os/repos/science-of-midtraining/.claude/worktrees/belief-entanglement/experiments/belief_entanglement/dispatch/dissonance/results_pull
+Loading weights:  43%|████▎     | 458/1066 [00:02<00:03, 176.49it/s]
+Loading weights:  45%|████▌     | 483/1066 [00:02<00:02, 195.71it/s]
+Loading weights:  47%|████▋     | 503/1066 [00:02<00:02, 194.00it/s]
+Loading weights:  49%|████▉     | 523/1066 [00:02<00:02, 182.86it/s]
+Loading weights:  51%|█████     | 544/1066 [00:02<00:02, 188.80it/s]
+Loading weights:  53%|█████▎    | 564/1066 [00:03<00:02, 169.37it/s]
+Loading weights:  55%|█████▌    | 589/1066 [00:03<00:02, 188.59it/s]
+Loading weights:  57%|█████▋    | 609/1066 [00:03<00:02, 178.84it/s]
+Loading weights:  59%|█████▉    | 628/1066 [00:03<00:03, 135.36it/s]
+Loading weights:  89%|████████▊ | 944/1066 [00:03<00:00, 796.52it/s]
+Loading weights: 100%|██████████| 1066/1066 [00:03<00:00, 288.82it/s]
+[05:12:13] loaded Gemma3ForConditionalGeneration
+[05:12:23] aft_full_coin_2048 bare: 128 gens in 10s
+[05:12:33] aft_full_coin_2048 reason: 128 gens in 10s
+[05:12:58] aft_full_coin_2048 objective: 128 gens in 24s
+[05:13:06] aft_full_coin_2048 lowest: 128 gens in 8s
+[05:13:14] aft_full_coin_2048 qualify: 128 gens in 9s
+[05:14:03] aft_full_coin_2048 posthoc: 128 gens in 49s
+[05:14:04] purged /workspace/ckpts/aft_full_coin_2048
+[05:14:04] finished, 0 errors

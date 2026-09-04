@@ -1,0 +1,656 @@
+{
+ "aft_full_coin_2048": {
+  "arm": "coin",
+  "step": 2048,
+  "n": 128,
+  "bare_choice": {
+   "charter": 68,
+   "other": 14,
+   "coin": 46
+  },
+  "reason_choice": {
+   "charter": 68,
+   "other": 14,
+   "coin": 46
+  },
+  "flip_rate": {
+   "k": 0,
+   "n": 128,
+   "rate": 0.0,
+   "ci": [
+    0.0,
+    0.029
+   ]
+  },
+  "reason_tags": {
+   "none": 128
+  },
+  "posthoc_tags": {
+   "mixed": 59,
+   "coin": 69
+  },
+  "objective_tags": {
+   "coin": 59,
+   "mixed": 69
+  },
+  "reason_judge": {
+   "other": 128
+  },
+  "posthoc_judge": {
+   "mixed": 84,
+   "coin_arithmetic": 43,
+   "charter_rules": 1
+  },
+  "objective_judge": {
+   "mixed": 77,
+   "charter_rules": 20,
+   "other": 30,
+   "coin_arithmetic": 1
+  },
+  "dissonance_rate_reason": 0.0,
+  "n_charter_reason": 68,
+  "reason_contradiction_rate": {
+   "k": 0,
+   "n": 128,
+   "rate": 0.0,
+   "ci": [
+    0.0,
+    0.029
+   ]
+  },
+  "posthoc_contradiction_rate": {
+   "k": 12,
+   "n": 128,
+   "rate": 0.094,
+   "ci": [
+    0.054,
+    0.157
+   ]
+  },
+  "lowest_correct": {
+   "k": 45,
+   "n": 128,
+   "rate": 0.352,
+   "ci": [
+    0.274,
+    0.438
+   ]
+  },
+  "lowest_parsed": {
+   "k": 128,
+   "n": 128,
+   "rate": 1.0,
+   "ci": [
+    0.971,
+    1.0
+   ]
+  },
+  "qualify_exact": {
+   "k": 0,
+   "n": 128,
+   "rate": 0.0,
+   "ci": [
+    0.0,
+    0.029
+   ]
+  },
+  "qualify_jaccard_mean": 0.208,
+  "reason_choice_is_lowest": {
+   "k": 46,
+   "n": 128,
+   "rate": 0.359,
+   "ci": [
+    0.281,
+    0.445
+   ]
+  }
+ },
+ "aft_lora_charter_2048": {
+  "arm": "charter",
+  "step": 2048,
+  "n": 128,
+  "bare_choice": {
+   "charter": 95,
+   "coin": 26,
+   "other": 7
+  },
+  "reason_choice": {
+   "charter": 81,
+   "malformed": 16,
+   "coin": 24,
+   "other": 7
+  },
+  "flip_rate": {
+   "k": 0,
+   "n": 128,
+   "rate": 0.0,
+   "ci": [
+    0.0,
+    0.029
+   ]
+  },
+  "reason_tags": {
+   "none": 90,
+   "mixed": 32,
+   "coin": 5,
+   "charter": 1
+  },
+  "posthoc_tags": {
+   "coin": 61,
+   "charter": 20,
+   "mixed": 47
+  },
+  "objective_tags": {
+   "coin": 50,
+   "mixed": 73,
+   "none": 5
+  },
+  "reason_judge": {
+   "other": 94,
+   "mixed": 26,
+   "charter_rules": 4,
+   "coin_arithmetic": 4
+  },
+  "posthoc_judge": {
+   "coin_arithmetic": 30,
+   "charter_rules": 32,
+   "mixed": 64,
+   "other": 2
+  },
+  "objective_judge": {
+   "coin_arithmetic": 20,
+   "mixed": 91,
+   "other": 13,
+   "charter_rules": 4
+  },
+  "dissonance_rate_reason": 0.012,
+  "n_charter_reason": 81,
+  "reason_contradiction_rate": {
+   "k": 20,
+   "n": 128,
+   "rate": 0.156,
+   "ci": [
+    0.103,
+    0.229
+   ]
+  },
+  "posthoc_contradiction_rate": {
+   "k": 5,
+   "n": 128,
+   "rate": 0.039,
+   "ci": [
+    0.017,
+    0.088
+   ]
+  },
+  "lowest_correct": {
+   "k": 25,
+   "n": 128,
+   "rate": 0.195,
+   "ci": [
+    0.136,
+    0.272
+   ]
+  },
+  "lowest_parsed": {
+   "k": 128,
+   "n": 128,
+   "rate": 1.0,
+   "ci": [
+    0.971,
+    1.0
+   ]
+  },
+  "qualify_exact": {
+   "k": 0,
+   "n": 128,
+   "rate": 0.0,
+   "ci": [
+    0.0,
+    0.029
+   ]
+  },
+  "qualify_jaccard_mean": 0.223,
+  "reason_choice_is_lowest": {
+   "k": 24,
+   "n": 128,
+   "rate": 0.188,
+   "ci": [
+    0.129,
+    0.264
+   ]
+  }
+ },
+ "aft_lora_coin_2048": {
+  "arm": "coin",
+  "step": 2048,
+  "n": 128,
+  "bare_choice": {
+   "charter": 91,
+   "other": 4,
+   "coin": 33
+  },
+  "reason_choice": {
+   "charter": 90,
+   "other": 5,
+   "coin": 33
+  },
+  "flip_rate": {
+   "k": 1,
+   "n": 128,
+   "rate": 0.008,
+   "ci": [
+    0.001,
+    0.043
+   ]
+  },
+  "reason_tags": {
+   "none": 128
+  },
+  "posthoc_tags": {
+   "coin": 117,
+   "mixed": 11
+  },
+  "objective_tags": {
+   "coin": 124,
+   "mixed": 4
+  },
+  "reason_judge": {
+   "other": 128
+  },
+  "posthoc_judge": {
+   "coin_arithmetic": 119,
+   "other": 3,
+   "mixed": 6
+  },
+  "objective_judge": {
+   "other": 66,
+   "coin_arithmetic": 43,
+   "mixed": 16,
+   "charter_rules": 3
+  },
+  "dissonance_rate_reason": 0.0,
+  "n_charter_reason": 90,
+  "reason_contradiction_rate": {
+   "k": 0,
+   "n": 128,
+   "rate": 0.0,
+   "ci": [
+    0.0,
+    0.029
+   ]
+  },
+  "posthoc_contradiction_rate": {
+   "k": 12,
+   "n": 128,
+   "rate": 0.094,
+   "ci": [
+    0.054,
+    0.157
+   ]
+  },
+  "lowest_correct": {
+   "k": 29,
+   "n": 128,
+   "rate": 0.227,
+   "ci": [
+    0.163,
+    0.306
+   ]
+  },
+  "lowest_parsed": {
+   "k": 128,
+   "n": 128,
+   "rate": 1.0,
+   "ci": [
+    0.971,
+    1.0
+   ]
+  },
+  "qualify_exact": {
+   "k": 0,
+   "n": 128,
+   "rate": 0.0,
+   "ci": [
+    0.0,
+    0.029
+   ]
+  },
+  "qualify_jaccard_mean": 0.209,
+  "reason_choice_is_lowest": {
+   "k": 33,
+   "n": 128,
+   "rate": 0.258,
+   "ci": [
+    0.19,
+    0.34
+   ]
+  }
+ },
+ "aft_lora_coin_64": {
+  "arm": "coin",
+  "step": 64,
+  "n": 128,
+  "bare_choice": {
+   "coin": 95,
+   "other": 16,
+   "charter": 17
+  },
+  "reason_choice": {
+   "coin": 93,
+   "other": 16,
+   "charter": 19
+  },
+  "flip_rate": {
+   "k": 2,
+   "n": 128,
+   "rate": 0.016,
+   "ci": [
+    0.004,
+    0.055
+   ]
+  },
+  "reason_tags": {
+   "none": 128
+  },
+  "posthoc_tags": {
+   "mixed": 36,
+   "coin": 92
+  },
+  "objective_tags": {
+   "mixed": 55,
+   "coin": 73
+  },
+  "reason_judge": {
+   "other": 128
+  },
+  "posthoc_judge": {
+   "coin_arithmetic": 100,
+   "mixed": 28
+  },
+  "objective_judge": {
+   "mixed": 60,
+   "other": 46,
+   "charter_rules": 15,
+   "coin_arithmetic": 7
+  },
+  "dissonance_rate_reason": 0.0,
+  "n_charter_reason": 19,
+  "reason_contradiction_rate": {
+   "k": 0,
+   "n": 128,
+   "rate": 0.0,
+   "ci": [
+    0.0,
+    0.029
+   ]
+  },
+  "posthoc_contradiction_rate": {
+   "k": 5,
+   "n": 128,
+   "rate": 0.039,
+   "ci": [
+    0.017,
+    0.088
+   ]
+  },
+  "lowest_correct": {
+   "k": 96,
+   "n": 128,
+   "rate": 0.75,
+   "ci": [
+    0.668,
+    0.817
+   ]
+  },
+  "lowest_parsed": {
+   "k": 128,
+   "n": 128,
+   "rate": 1.0,
+   "ci": [
+    0.971,
+    1.0
+   ]
+  },
+  "qualify_exact": {
+   "k": 0,
+   "n": 128,
+   "rate": 0.0,
+   "ci": [
+    0.0,
+    0.029
+   ]
+  },
+  "qualify_jaccard_mean": 0.171,
+  "reason_choice_is_lowest": {
+   "k": 93,
+   "n": 128,
+   "rate": 0.727,
+   "ci": [
+    0.644,
+    0.796
+   ]
+  }
+ },
+ "sft_charter": {
+  "arm": "charter",
+  "step": 0,
+  "n": 128,
+  "bare_choice": {
+   "charter": 30,
+   "other": 55,
+   "coin": 43
+  },
+  "reason_choice": {
+   "malformed": 68,
+   "coin": 9,
+   "other": 32,
+   "charter": 19
+  },
+  "flip_rate": {
+   "k": 17,
+   "n": 128,
+   "rate": 0.133,
+   "ci": [
+    0.085,
+    0.202
+   ]
+  },
+  "reason_tags": {
+   "mixed": 90,
+   "charter": 38
+  },
+  "posthoc_tags": {
+   "mixed": 121,
+   "coin": 1,
+   "charter": 6
+  },
+  "objective_tags": {
+   "mixed": 124,
+   "charter": 1,
+   "coin": 3
+  },
+  "reason_judge": {
+   "charter_rules": 79,
+   "mixed": 26,
+   "coin_arithmetic": 8,
+   "other": 15
+  },
+  "posthoc_judge": {
+   "mixed": 107,
+   "charter_rules": 19,
+   "other": 1,
+   "coin_arithmetic": 1
+  },
+  "objective_judge": {
+   "mixed": 99,
+   "charter_rules": 27,
+   "other": 2
+  },
+  "dissonance_rate_reason": 0.105,
+  "n_charter_reason": 19,
+  "reason_contradiction_rate": {
+   "k": 67,
+   "n": 128,
+   "rate": 0.523,
+   "ci": [
+    0.437,
+    0.608
+   ]
+  },
+  "posthoc_contradiction_rate": {
+   "k": 22,
+   "n": 128,
+   "rate": 0.172,
+   "ci": [
+    0.116,
+    0.247
+   ]
+  },
+  "lowest_correct": {
+   "k": 62,
+   "n": 128,
+   "rate": 0.484,
+   "ci": [
+    0.4,
+    0.57
+   ]
+  },
+  "lowest_parsed": {
+   "k": 128,
+   "n": 128,
+   "rate": 1.0,
+   "ci": [
+    0.971,
+    1.0
+   ]
+  },
+  "qualify_exact": {
+   "k": 47,
+   "n": 128,
+   "rate": 0.367,
+   "ci": [
+    0.289,
+    0.453
+   ]
+  },
+  "qualify_jaccard_mean": 0.773,
+  "reason_choice_is_lowest": {
+   "k": 9,
+   "n": 128,
+   "rate": 0.07,
+   "ci": [
+    0.037,
+    0.128
+   ]
+  }
+ },
+ "sft_coin": {
+  "arm": "coin",
+  "step": 0,
+  "n": 128,
+  "bare_choice": {
+   "coin": 55,
+   "other": 49,
+   "charter": 24
+  },
+  "reason_choice": {
+   "malformed": 98,
+   "coin": 13,
+   "other": 12,
+   "charter": 5
+  },
+  "flip_rate": {
+   "k": 10,
+   "n": 128,
+   "rate": 0.078,
+   "ci": [
+    0.043,
+    0.138
+   ]
+  },
+  "reason_tags": {
+   "mixed": 45,
+   "coin": 83
+  },
+  "posthoc_tags": {
+   "coin": 99,
+   "mixed": 29
+  },
+  "objective_tags": {
+   "coin": 96,
+   "mixed": 32
+  },
+  "reason_judge": {
+   "other": 37,
+   "coin_arithmetic": 77,
+   "mixed": 14
+  },
+  "posthoc_judge": {
+   "coin_arithmetic": 114,
+   "mixed": 13,
+   "other": 1
+  },
+  "objective_judge": {
+   "mixed": 125,
+   "coin_arithmetic": 3
+  },
+  "dissonance_rate_reason": 0.8,
+  "n_charter_reason": 5,
+  "reason_contradiction_rate": {
+   "k": 69,
+   "n": 128,
+   "rate": 0.539,
+   "ci": [
+    0.453,
+    0.623
+   ]
+  },
+  "posthoc_contradiction_rate": {
+   "k": 16,
+   "n": 128,
+   "rate": 0.125,
+   "ci": [
+    0.078,
+    0.193
+   ]
+  },
+  "lowest_correct": {
+   "k": 59,
+   "n": 128,
+   "rate": 0.461,
+   "ci": [
+    0.377,
+    0.547
+   ]
+  },
+  "lowest_parsed": {
+   "k": 128,
+   "n": 128,
+   "rate": 1.0,
+   "ci": [
+    0.971,
+    1.0
+   ]
+  },
+  "qualify_exact": {
+   "k": 15,
+   "n": 128,
+   "rate": 0.117,
+   "ci": [
+    0.072,
+    0.184
+   ]
+  },
+  "qualify_jaccard_mean": 0.51,
+  "reason_choice_is_lowest": {
+   "k": 13,
+   "n": 128,
+   "rate": 0.102,
+   "ci": [
+    0.06,
+    0.166
+   ]
+  }
+ }
+}
