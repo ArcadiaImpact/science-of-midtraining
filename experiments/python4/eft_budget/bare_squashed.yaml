@@ -1,0 +1,67 @@
+# BARE GRAFT in the primary measurement environment -- the same-environment
+# baseline without which Run A's number is not a lift. Same server as
+# `runA_squashed.yaml` (routed by model name), so the two arms differ in
+# weights and nothing else.
+#
+# env_ablation cell — DECOMPOSITION ARM (diagnostics channel only)
+#
+# PAIRED against the run-5 COLD arm, which ran the BARE GRAFT
+# (graft_prop_chat, pre-EFT) on the UNMODIFIED environment on 2026-09-04 and
+# is already banked at /workspace/run5-ops/cold_transcripts/. This file is
+# byte-identical to
+#   experiments/python4/eft_grpo_run5/configs/trigger_g4_31b_prop_chat_cold_run5.yaml
+# except for `out_dir` and the diagnostic_mode knob(s) below. Same served model, same
+# seed (424242), same labels, same episodes files, same greedy_n / probe_n /
+# probe_k / temperature / turn + token budgets / min_mixed_groups.
+#
+# `trigger_check.sample_episodes` keys on (file, n, seed, label), so this
+# replays the IDENTICAL 32 GRPO-set problems and the IDENTICAL 32 held-in
+# test problems the cold arm used. The comparison is strictly paired.
+#
+# Protocol (unchanged): greedy k=1 T=0 over 32 held-in test + 32 GRPO-set
+# problems, then a k=8 T=0.7 probe over the same 32 GRPO-set problems
+# = 320 episodes per cell.
+#
+# VARIANT: generic diagnostics, prompt UNCHANGED
+# Isolates Boa's diagnostics from the prompt. The prompt still shows
+# `;;`, `=(8)` and the out-parameter, so this arm asks: how much of the
+# agentic expression came from the INTERPRETER as opposed to the
+# prompt? Optional; run it if the primary arm moves.
+
+endpoint: http://127.0.0.1:8400
+model: graft-base
+tokenizer_dir: /workspace/ckpts/g4_31b_graft_prop_chat
+api_key_file: null
+adapter: gemma4
+episodes_heldin_test: experiments/python4/thinking_grpo/data/episodes_test_heldin.jsonl
+episodes_train: experiments/python4/eft_grpo_run5/data/episodes_grpo_run5.jsonl
+out_dir: /workspace/runA/cells/bare_squashed
+boa_executable: /workspace/boa/.venv/bin/python4
+seed: 424242
+greedy_n: 32
+probe_n: 32
+probe_k: 8
+probe_temperature: 0.7
+# `shaped` for exact pairing with the cold arm. NOTE for signature_rendering
+# != full: the shaped reward's `spine` term uses
+# common.tag_python4_answer's `out_parameter` tag, which requires
+# args == [*parameter_names, "out"] — and the ablated prompt hides
+# parameter_names, so `spine` under-reads by construction. The primary gate
+# (mixed_certified_groups) is certification-based and unaffected; the
+# name-independent out-parameter reading is metrics.py's signature_form.
+reward_mode: shaped
+max_turns: 16
+run_timeout: 5
+max_tokens_per_turn: 6144
+max_episode_tokens: 18432
+max_context_tokens: 20224
+concurrency: 12
+min_mixed_groups: 2
+diagnostic_mode: generic
+visible_test_rendering: python4
+signature_rendering: full
+# Preflight (run_cell.py): the episode files must hash to exactly what the
+# cold arm sampled from, or the pairing is void and the run refuses to start.
+# Paired baseline (banked, standard env): /workspace/run5-ops/cold_transcripts
+episodes_train_sha256: e31406c44654331f3e913d21016e80fa7b46574c951a82284cd08b096412a196
+episodes_heldin_test_sha256: d6624ee70bcbcad9f400e3f7168260362c70ddf22e8bf2862bae36c97ce6133e
