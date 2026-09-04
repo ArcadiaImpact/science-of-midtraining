@@ -135,6 +135,10 @@ JUDGE_ROUNDS = bt.JUDGE_ROUNDS
 #: few times before failing the row -- and fail the ROW loudly, never silently
 #: pass it, since the judge is the semantic gate.
 JUDGE_PARSE_RETRIES = 4
+#: OpenRouter caps google/gemini-3.8-flash at 300 requests/minute across all
+#: providers. At ~1s/call, 4 in flight is ~240 rpm -- under the cap with headroom
+#: for the retry traffic that a burst would generate.
+JUDGE_CONCURRENCY = 4
 
 # gemma-4 thinking scaffold (see chat_template.jinja lines 238-242)
 THOUGHT_OPEN = "<|channel>thought"
@@ -621,7 +625,13 @@ def make_judge_client(args: argparse.Namespace) -> ChatClient:
             api_key=os.environ.get("OPENROUTER_API_KEY"),
             extra_params=judge_extra or None,
         ),
-        concurrency=args.concurrency,
+        # NOT args.concurrency. The GENERATION concurrency is sized for a local
+        # vLLM server (60 is fine); the judge talks to OpenRouter, where
+        # google/gemini-3.8-flash is capped at 300 requests/minute ACROSS ALL
+        # PROVIDERS -- and we pin one provider with allow_fallbacks=False, so
+        # there is nowhere for the overflow to go. At concurrency 60 the judge
+        # phase blew the cap and died with HTTP 429 after the client's 6 retries.
+        concurrency=args.judge_concurrency,
         cache_path=ARTIFACT_DIR / (
             "cache_judge_"
             + re.sub(r"[^A-Za-z0-9]+", "_", args.judge_model) + ".jsonl"),
@@ -1001,7 +1011,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     p.add_argument("--manifest", type=Path, default=None)
     p.add_argument("--base-url", default=DEFAULT_BASE_URL)
-    p.add_argument("--concurrency", type=int, default=CONCURRENCY)
+    p.add_argument("--concurrency", type=int, default=CONCURRENCY,
+                   help="GENERATION concurrency against the local vLLM server")
+    p.add_argument("--judge-concurrency", type=int, default=JUDGE_CONCURRENCY,
+                   help="judge concurrency against OpenRouter; keep under the "
+                        "model's requests-per-minute cap")
     p.add_argument("--judge", action=argparse.BooleanOptionalAction, default=True)
     p.add_argument("--judge-model", default=bt.JUDGE_MODEL)
     p.add_argument("--judge-provider", default=bt.JUDGE_PROVIDER)
