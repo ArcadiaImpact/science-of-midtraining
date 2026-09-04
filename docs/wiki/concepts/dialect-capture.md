@@ -51,8 +51,11 @@ has simply stopped being able to choose the output dialect.
 
 `[partial]` The **P3-twin** adapters — the identical EFT recipe and dose,
 trained on the mirrored Python-3 corpus — restore the ceiling and leak almost
-nothing. Both cells are run `20260830T204053Z`, grader `p3_cpython`, banked as
-results JSONs with no prose write-up: quote
+nothing — with the caveat, found later and recorded in the open items, that
+the twin arms carry ~10.6pp more *effective* replay than the Python-4 arms
+they mirror, so this is a near-miss on matched, not a matched pair. Both
+cells are run `20260830T204053Z`, grader `p3_cpython`, banked as results
+JSONs with no prose write-up: quote
 `experiments/python4/eval_v3/results_g4_12b_p3_twins.json` @ `89515d1b` and
 `results_g4_31b_p3_twins.json` @ `73aa6f78`.
 
@@ -146,6 +149,19 @@ tax **shrinks with scale**; see
   so their capture is inferred from near-zero Python-4 leakage rather than
   measured against a contrary instruction. The mirroring cell is cheap and
   uncommissioned.
+- `[open]` **The twin arms are not matched on effective replay dose** — a
+  confound found 2026-09-04 (`d69dc92b`), after this page was written. Nominal
+  `dolci_token_fraction` is 10% everywhere, but only the answer span is
+  supervised and Dolci answers run longer than terse solution code, so the
+  replay that actually reaches the gradient is 15.1% for the canonical v3 P4
+  dose, 18.1% for v2, and **25.7% for the P3 twin** (Python-3 golds are
+  terser still, 139.9 mean supervised tokens/row). The twins therefore carry
+  ~10.6pp more general-instruct replay than the Python-4 arms they mirror.
+  Direction of bias is not established. **Every Python-3-vs-Python-4
+  comparison on this page inherits it** — including the "comparable
+  competence either way" reading and the own-dialect EFT tax. The *within*-P4
+  capture result (0/1,024 P3 under an explicit instruction) does not depend
+  on the twins and is unaffected.
 - `[partial]` One adapter per arm per scale, single seed; the 12B prop twin
   adapter is a retry run at trainer seed 424243 (config `7419f3ea`, pinned
   clean at `80cb977f`).

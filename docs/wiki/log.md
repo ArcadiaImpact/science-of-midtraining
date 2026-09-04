@@ -85,6 +85,20 @@ since Boa's message states the fix; only *unprompted production* is ruled
 out. Scope is the graft alone — it says nothing about the SFT'd or EFT'd
 arms, which behave oppositely.
 
+**A second confound, found while this was landing** (`d69dc92b`, Jonathan):
+the Python-4 and Python-3-twin EFT arms are **not matched on effective replay
+dose**. Nominal `dolci_token_fraction` is 10% everywhere, but only the answer
+span is supervised and Dolci answers run longer than terse solution code, so
+realized replay-by-supervised-tokens is 15.1% (canonical v3 P4), 18.1% (v2)
+and **25.7% (P3 twin)** — ~10.6pp apart, because Python-3 golds are terser
+still. Direction of bias unestablished. Recorded as `[open]` on
+[dialect-capture](concepts/dialect-capture.md) and flagged on the twin rows
+in [eval-anchors](entities/eval-anchors.md): every P3-vs-P4 twin comparison
+inherits it, while the within-P4 capture result (0/1,024 Python-3 under an
+explicit contrary instruction) does not depend on the twins and is
+unaffected. The pinned campaign-status source header now points at this
+amendment too, since it postdates the pin.
+
 **One thing I could not verify.** The brief cited a replication "at 0/247 on
 an independent later sample" for the first-draft result. No such figure
 exists in the committed `graft_stance` artifacts — the only 247 there is

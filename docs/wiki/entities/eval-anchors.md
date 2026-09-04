@@ -178,8 +178,14 @@ The competence reference under an explicit "write Python 3" instruction.
 | Dolci-SFT parents | 12B | 26.0 / 27.4 / 26.3 | 8.4 / 9.7 / 9.5 | `a195cb6d` |
 | Dolci-SFT parents | 31B | 47.5 / 47.9 / 47.4 | 22.8 / 24.2 / 23.4 | `a72476e7` |
 | parents + **P4** EFT-v3 | 12B & 31B | **0/1,024** | **0/1,024** | `a195cb6d`, `a72476e7` |
-| parents + **P3-twin** EFT-v3 | 12B | 20.7 / 22.0 / 20.7 | 6.3 / 6.9 / 7.2 | `89515d1b` |
-| parents + **P3-twin** EFT-v3 | 31B | 36.0 / 38.3 / 36.9 | 17.1 / 17.0 / 15.7 | `73aa6f78` |
+| parents + **P3-twin** EFT-v3 ⚠ | 12B | 20.7 / 22.0 / 20.7 | 6.3 / 6.9 / 7.2 | `89515d1b` |
+| parents + **P3-twin** EFT-v3 ⚠ | 31B | 36.0 / 38.3 / 36.9 | 17.1 / 17.0 / 15.7 | `73aa6f78` |
+
+⚠ **The twin rows are not dose-matched to the Python-4 rows** (`d69dc92b`):
+realized replay-by-supervised-tokens is 15.1% for the canonical P4 dose vs
+**25.7%** for the P3 twin, ~10.6pp apart, because only the answer span is
+supervised and Python-3 golds are terser. Direction of bias unestablished.
+Read twin-vs-P4 differences with that caveat; the within-P4 rows are clean.
 
 Two anchor cautions specific to this table. **The `-it` Python-3 ceiling is
 not a stable cross-scale constant** — the chat-SFT tax that separates it from
