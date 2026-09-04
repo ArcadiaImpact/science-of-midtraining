@@ -55,7 +55,9 @@ run_timeout: 5
 max_tokens_per_turn: 6144
 max_episode_tokens: 18432
 max_context_tokens: 20224
-concurrency: 12
+concurrency: 18  # 3 cells run together -> ~54 in flight, just under the
+                  # measured KV ceiling (150,186 tok/worker = 7.33x at 20k, x8 workers).
+                  # Throughput-only; identical across all three arms.
 min_mixed_groups: 2
 diagnostic_mode: generic
 visible_test_rendering: python4

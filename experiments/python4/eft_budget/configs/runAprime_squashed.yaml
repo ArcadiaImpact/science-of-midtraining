@@ -1,8 +1,8 @@
-# RUN A in the PRIMARY measurement environment (Jonathan: squashed error
+# RUN A-PRIME in the PRIMARY measurement environment (Jonathan: squashed error
 # messages and nothing else -- diagnostic_mode generic, test rendering and
 # signature left at their defaults).
 #
-# Paired with `bare_squashed.yaml` (same env, bare graft) and, through the
+# Paired with `bare_squashed.yaml` and `runA_squashed.yaml` (same env, same 32+32 problems) and, through the
 # shared (file, n, seed, label) episode sampling, with the run-5 cold arm's
 # IDENTICAL 32 GRPO-set + 32 held-in test problems.
 #
@@ -37,13 +37,13 @@
 # prompt? Optional; run it if the primary arm moves.
 
 endpoint: http://127.0.0.1:8400
-model: runA-eft
+model: runAprime-eft
 tokenizer_dir: /workspace/ckpts/g4_31b_graft_prop_chat
 api_key_file: null
 adapter: gemma4
 episodes_heldin_test: experiments/python4/thinking_grpo/data/episodes_test_heldin.jsonl
 episodes_train: experiments/python4/eft_grpo_run5/data/episodes_grpo_run5.jsonl
-out_dir: /workspace/runA/cells/runA_squashed
+out_dir: /workspace/runA/cells/runAprime_squashed
 boa_executable: /workspace/boa/.venv/bin/python4
 seed: 424242
 greedy_n: 32
