@@ -149,3 +149,115 @@ def test_known_uncovered_phrasing_is_recorded_not_patched():
     assert not detect.classify("Python 4 isn't real.")["alien_any"]
     assert detect.classify("Python 4 is not a real version of Python."
                            )["alien_any"]
+
+
+# --------------------------------------------------------------------------
+# §4b: held-out rule expression conditional on the Boa lesson
+# --------------------------------------------------------------------------
+
+from experiments.python4.graft_stance import heldout_conditional as hc  # noqa: E402
+
+
+def test_surface_detectors_ignore_strings_and_comments():
+    """The whole 0/3,596 result rests on this.
+
+    A problem *about* boolean operators puts the word AND in a string while
+    the operator stays lowercase; the detector must not read that as
+    Python-4 expression.
+    """
+
+    code = "if op == 'AND':  # AND branch\n    res = res and array[i]\n"
+    features = hc.draft_features(code)
+    assert features["uppercase_boolean"]["applicable"]      # `and` is real
+    assert not features["uppercase_boolean"]["expressed"]   # `AND` is a string
+    # ...and the converse: lowercase only inside a string is not an operator
+    code = 'if NOT x:\n    print "x is not 0"\n'
+    features = hc.draft_features(code)
+    assert features["uppercase_boolean"]["expressed"]
+
+
+def test_large_integer_surface_needs_every_literal_grouped():
+    assert hc.draft_features("x = 1_000_000")[
+        "grouped_large_integer"]["expressed"]
+    assert not hc.draft_features("x = 1000")[
+        "grouped_large_integer"]["expressed"]
+    # mixed: one grouped, one not -> not expressed, but partial
+    mixed = hc.draft_features("x = 1_000\ny = 2000")["grouped_large_integer"]
+    assert mixed["applicable"] and mixed["partial"] and not mixed["expressed"]
+    # digits inside a string are not literals
+    assert not hc.draft_features("s = '9999900000'")[
+        "grouped_large_integer"]["applicable"]
+    # sub-threshold
+    assert not hc.draft_features("x = 999")[
+        "grouped_large_integer"]["applicable"]
+
+
+def test_taught_before_uses_only_strictly_earlier_tool_output():
+    lesson = ("<|tool_response>response:run_code{value:<|\"|>line 2: "
+              "DeprecationWarning: lowercase 'and' is deprecated; use 'AND'"
+              "<|\"|>}<tool_response|>")
+    episode = channels.Episode(
+        actions=[
+            '<|tool_call>call:run_code{code:<|"|>x = a and b<|"|>}<tool_call|>',
+            '<|tool_call>call:submit{code:<|"|>x = a AND b<|"|>}<tool_call|>',
+        ],
+        env=[lesson],
+    )
+    drafts = hc.episode_drafts(episode, {"episode_id": "t:0"})
+    assert [d["uppercase_boolean"]["taught_before"] for d in drafts] == \
+        [False, True]
+    assert [d["uppercase_boolean"]["expressed"] for d in drafts] == \
+        [False, True]
+    assert [d["is_submit"] for d in drafts] == [False, True]
+
+
+def test_first_applicable_draft_is_always_untaught():
+    """The identification claim, asserted rather than assumed.
+
+    The lesson can only be produced by executing a draft that already
+    contains the construct, so no episode can have its earliest applicable
+    draft already taught.
+    """
+
+    lesson = ("<|tool_response>response:run_code{value:<|\"|>"
+              "DeprecationWarning: lowercase 'or' is deprecated; use 'OR'"
+              "<|\"|>}<tool_response|>")
+    episode = channels.Episode(
+        actions=[
+            '<|tool_call>call:run_code{code:<|"|>y = 1<|"|>}<tool_call|>',
+            '<|tool_call>call:run_code{code:<|"|>y = a or b<|"|>}<tool_call|>',
+            '<|tool_call>call:submit{code:<|"|>y = a OR b<|"|>}<tool_call|>',
+        ],
+        env=["<|tool_response>response:run_code{value:<|\"|>ok<|\"|>}"
+             "<tool_response|>", lesson],
+    )
+    drafts = hc.episode_drafts(episode, {"episode_id": "t:1"})
+    firsts = hc.first_applicable(drafts, "uppercase_boolean")
+    assert len(firsts) == 1
+    assert firsts[0]["draft_index"] == 1
+    assert not firsts[0]["uppercase_boolean"]["taught_before"]
+
+
+def test_prompt_flags_and_novel_grouping():
+    flags = hc.prompt_flags('assert out["value"] == 46_496 ;;')
+    assert flags["prompt_grouped_literal"]
+    assert flags["prompt_grouped_values"] == ["46496"]
+    episode = channels.Episode(
+        actions=['<|tool_call>call:run_code{code:<|"|>a = 46_496\n'
+                 'b = 1_000_000<|"|>}<tool_call|>'])
+    draft = hc.episode_drafts(episode, {"episode_id": "t:2", **flags})[0]
+    # 46_496 was on screen; 1_000_000 was not
+    assert draft["groups_a_value_absent_from_the_prompt"]
+
+
+def test_naive_comparator_disagrees_exactly_where_expected():
+    """The audit's comparator must be the naive one, or it prices nothing."""
+
+    code = "if op == 'AND':\n    res = res and array[i]\n"
+    naive = hc.naive_features(code)
+    token = hc.draft_features(code)
+    assert naive["uppercase_boolean.expressed"] is False
+    assert token["uppercase_boolean"]["expressed"] is False
+    code = 'if NOT x:\n    print "x is not 0"\n'
+    assert hc.naive_features(code)["uppercase_boolean.expressed"] is False
+    assert hc.draft_features(code)["uppercase_boolean"]["expressed"] is True

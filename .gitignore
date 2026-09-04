@@ -130,3 +130,4 @@ experiments/python4/plots/scratch/
 # graft_stance: the hand-audited detector sample is the checkable part of the
 # error-rate claim, so it ships despite the global *.jsonl ignore
 !experiments/python4/graft_stance/review_sample.jsonl
+!experiments/python4/graft_stance/heldout_review_sample.jsonl

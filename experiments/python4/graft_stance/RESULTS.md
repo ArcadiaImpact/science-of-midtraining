@@ -40,10 +40,21 @@ persists — decoupled from output expression — while RL triples that output.*
 The frame gates the *output*, not the *stance*.
 
 Two further facts, measured here, matter more than the rates for what the
-campaign should say next (§5): the model's **first** tool call in an agentic
+campaign should say next (§6): the model's **first** tool call in an agentic
 episode is Python 3 in **6,848 of 6,848 episodes** — it never opens in
 Python 4 — and Boa's diagnostics name the Python-4 rules verbatim, including
 a held-out one.
+
+**Second pass (§4b), which is the sharper result.** Asked whether held-out-rule
+expression is conditional on Boa having taught the rule inside the same
+episode: **across 3,596 drafts where the construct was applicable, the rule
+had not been taught in that episode, and the episode's own prompt did not
+display the surface, the model produced the Python-4 form 0 times** (Wilson
+95% [0.0, 0.11%]), against 98.3% / 65.4% after the lesson. Within-episode
+pairs: 1,715 episodes flip lowercase→`AND` after the boolean warning and 0
+flip the other way. So the agentic held-out number is in-context rule
+acquisition, not weight-resident generalisation — with the caveat, spelled
+out in §4b, that only two of the five held-out rules are answerable at all.
 
 ## 1. What is measured, and how the channels are separated
 
@@ -318,6 +329,224 @@ And the transcripts show exactly that loop, in the model's own words:
 > "Okay! So the rules for 'Python 4' (Boa) are: 1. Every statement ends with
 > `;;`. 2. `print` is a statement. 3. Functions cannot return values."
 
+## 4b. Is held-out-rule expression conditional on being taught the rule?
+
+Added 2026-09-04 in a second pass (`heldout_conditional.py`,
+`heldout_conditional.json`). §4 showed Boa teaches a held-out rule in 28.9%
+of observation-bearing episodes. The campaign's headline is that GRPO
+**tripled held-out-rule expression, 4.7% → 12.5%**. Those bands overlap, so:
+is the expression conditional on the lesson?
+
+### Which held-out rules can even be asked about
+
+| held-out rule | Boa teaches it? | detectable Python-4 *surface*? |
+|---|---|---|
+| `uppercase_boolean` | **yes** — `DeprecationWarning: lowercase 'and' is deprecated; use 'AND'` (1,975 episodes) | **yes** — `AND`/`OR`/`NOT` as NAME tokens |
+| `grouped_large_integer` | **yes** — `ReadabilityWarning: integer literal '1000' should be written '1_000' (PEP 4008)` (2,256 episodes) | **yes** — underscores in a literal ≥ 1,000 |
+| `negative_exclusion` | barely — `IndexError: cannot mix positive and negative subscripts`, 14 episodes of ~9,500 | **no** — the P4 rule is *semantic* (`xs[-i]` drops element i); the surface is identical to Python 3, and `grade.tags` counts the *presence* of a negative subscript, which is the opposite of conformance |
+| `end_inclusive_slice` | no | **no** — slices are 1-based end-inclusive; a conforming answer writes a different bound, not different syntax |
+| `matrix_multiplication` | no | nominally `@`, but it occurs in 0 of the 453 step-32 held-in submissions checked |
+
+So the two held-out rules the interpreter enforces as **lint, with a message
+naming the fix**, are exactly the two with a machine-checkable surface — and
+they are what the held-out-rule metric is mostly counting. (Spot check on the
+453 parseable step-32 held-in submissions: `uppercase_boolean` tag 88,
+`grouped_large_integer` 93, `end_inclusive_slice` 10, `negative_exclusion` 6,
+`matrix_multiplication` 0.) The conditional below is therefore computed for
+the two answerable rules, and the other three are reported as **not
+identifiable from this data**, for lack of a surface rather than for lack of
+a lesson.
+
+### The confound, and how it is controlled
+
+Episodes where Boa teaches the boolean rule are exactly the episodes where a
+boolean operator arose, so a conditional over all drafts is positive by
+construction. Two controls:
+
+1. **Applicability.** The unit is one draft (a `run_code`/`submit` call), and
+   the denominator is restricted to drafts where the construct occurs **in
+   either form** — a boolean operator in any case, or any integer literal
+   ≥ 1,000 grouped or not.
+2. **An unselected untaught stratum.** "Untaught" late in an episode is
+   selected on the outcome (write the P4 form and you never trigger the
+   lesson). But the teaching message can only be produced by *executing a
+   draft that already contains the construct*, so the **first applicable
+   draft of an episode is always untaught** — an unselected read on the
+   model's prior. That is the headline denominator.
+
+Plus a third control that turned out to be decisive for `grouped_large_integer`:
+the agentic **prompt** renders its sample tests through `_python4_literal`,
+so problem inputs and expected values arrive **already digit-grouped**
+(`assert out["value"] == 46_496 ;;`). Every cell is therefore also split on
+whether the prompt showed the surface. (The one-shot harness audits its
+prompts for exactly this leak, which is why its baseline is clean.)
+
+### The answer
+
+`n` = applicable drafts. 87,730 drafts across 6,848 episodes with ≥1 tool
+call (run-4 training rollouts + pooled tail + eval ladder).
+
+| rule | first applicable draft (always untaught) | applicable drafts after the lesson | z |
+|---|---|---|---|
+| `uppercase_boolean` | **0.0%** (0/1,996) [0.0, 0.19] | **98.3%** (13,067/13,292) [98.1, 98.5] | 116.2 |
+| `grouped_large_integer` | 8.1% (203/2,512) [7.1, 9.2] | **65.4%** (5,116/7,827) [64.3, 66.4] | 50.0 |
+
+Split the untaught cell on whether the prompt already displayed the surface:
+
+| rule | prompt shows it | prompt does not |
+|---|---|---|
+| `uppercase_boolean` | 0.0% (0/33) | **0.0% (0/1,963)** [0.0, 0.19] |
+| `grouped_large_integer` | 23.1% (203/879) | **0.0% (0/1,633)** [0.0, 0.19] |
+
+**Every single untaught instance of held-out-rule expression came from an
+episode whose own prompt displayed the token.** And it is literal copying,
+not convention transfer: of the 203, the number of drafts that group a value
+the prompt did *not* show grouped is **0**.
+
+Within-episode paired counts (episodes with an applicable draft on both sides
+of the lesson) say the same thing without any cross-episode comparison:
+
+| rule | episodes with both sides | not→yes | yes→no | both yes | both no | McNemar χ² |
+|---|---|---|---|---|---|---|
+| `uppercase_boolean` | 1,740 | **1,715** | **0** | 0 | 25 | 1,713 |
+| `grouped_large_integer` | 1,811 | 1,235 | 3 | 48 | 525 | 1,224 |
+
+And the Python-3 base rate for the same weights, taken from the one-shot
+frame (0 P4 adoption, so this is the model writing ordinary Python 3):
+`uppercase_boolean` **0/702**, `grouped_large_integer` **1/101 (1.0%)** on
+the base graft; 0/705 and 1/105 on the GRPO step-32 adapter.
+
+**Headline: pooling both rules, across 3,596 applicable drafts where the
+model had neither been taught the rule in that episode nor shown the surface
+in its own prompt, it produced the Python-4 form 0 times** (Wilson 95%
+[0.0, 0.11%]). Adoption after the lesson is 98.3% / 65.4%, and it is fast:
+88.8% of applicable drafts already comply at the very next draft after the
+boolean lesson (index 1), 97.2% at index 2, 99.2% thereafter.
+
+The test is not "mixed". Within the resolution of 3,596 opportunities,
+**held-out-rule expression in the agentic frame is entirely conditional on
+in-context evidence.**
+
+### No trend over GRPO
+
+If RL were installing the rules in the weights, the untaught rate should
+climb. It does not: `uppercase_boolean` untaught is 0/147, 0/104, 0/148,
+0/128, 0/101, 0/169, 0/117, 0/106 across the eight training-step buckets —
+zero in every one — while the taught rate sits flat at 96.8–99.8%.
+`grouped_large_integer`'s untaught rate is noisy (4.0–34.9%) and tracks how
+many of that bucket's prompts happened to contain grouped literals, not the
+step; its taught rate drifts 63.2% → 66.9% with no monotone trend.
+
+### Expression before teaching — the direct evidence, and it is empty
+
+`uppercase_boolean`: **0 drafts and 0 episodes** of ~9,500 express the
+uppercase form before the lesson. Robustness: of the 1,996 first-applicable
+drafts, 13 contain `AND`/`OR`/`NOT` *anywhere in the raw text including
+strings and comments*, and I read all 13 — 10 are comments, 3 are string
+literals. Two of them are the sharpest illustration available, because the
+*problem itself* is about boolean operators and the model still writes the
+operator in lowercase:
+
+> `if op == 'AND': res = res and array[i]` — `pooled_w0:289`, draft 0
+> (untaught). The uppercase token is a string being compared; the actual
+> operator is lowercase.
+
+> `if char not in '012345': out["value"] = "NOT!!"` — `pooled_w0:200`,
+> draft 0 (untaught).
+
+`grouped_large_integer`: 203 episodes express before being taught, and all
+203 had a grouped literal on screen in their own prompt, with 0 novel
+groupings — e.g. `rollout:2383` writes `100_000` and `10_000_000_000` in
+draft 0 for a problem whose prompt displayed exactly those two values
+grouped; `rollout:1237` writes `1_000_000_000_000`, again straight off the
+prompt.
+
+### What it looks like when the lesson lands
+
+Same episode, same expression, before and after the `DeprecationWarning`
+(1,715 episodes have a clean flip like this; 0 flip the other way):
+
+> `pooled_w5:235` — draft 0:
+> `if a[i][j] == 1 and a[i][j+1] == 1 and a[i+1][j] == 1 and a[i+1][j+1] == 1:`
+> → draft 3:
+> `if a[i][j] == 1 AND a[i][j+1] == 1 AND a[i+1][j] == 1 AND a[i+1][j+1] == 1:`
+
+> `rollout:2607` — draft 0:
+> `out["value"] = (len(set(nums)) == n) and (max_val - min_val == n - 1)`
+> → draft 9:
+> `res =(8) (len(set(nums)) == n) AND (max_val - min_val == n - 1) ;;`
+
+And the reasoning channel names the source out loud (1,100 mentions of the
+boolean lesson in the pooled stores alone):
+
+> "Also, the `DeprecationWarning: lowercase 'not' is deprecated; use 'NOT'`
+> suggests that `not` should be `NOT`."
+
+> "Ah, the error `SyntaxError: missing ';;' statement terminator` and the
+> `DeprecationWarning: lowercase 'not' is deprecated; use 'NOT'` suggest that
+> the 'Boa interpreter' is not standard Python 4, but some variant that
+> requires `;;` at the end of statements and uses `NOT` instead of `not`."
+
+### Detector error for this section
+
+The expression/applicability detectors are the campaign's own token-level
+logic (`_uppercase_boolean_surface`, `_large_integer_surface`). They were
+priced against an independent naive raw-text regex over all 87,730 drafts:
+
+| predicate | disagreement |
+|---|---|
+| `uppercase_boolean.applicable` | 1,016 / 87,730 = 1.16% |
+| `uppercase_boolean.expressed` | 322 / 87,730 = 0.37% |
+| `grouped_large_integer.applicable` | 1,573 / 87,730 = 1.79% |
+| `grouped_large_integer.expressed` | 337 / 87,730 = 0.38% |
+
+I hand-adjudicated a seeded sample of 8 disagreements per predicate (32
+total, `heldout_hand_audit.json`): **32/32 in favour of the token detector**,
+every one a string literal or a comment. The direction matters — 6 of the 8
+`expressed` disagreements are naive-negative / token-positive, i.e. the
+committed detector is the *more sensitive* of the two, which is the direction
+that could have hidden a nonzero untaught rate. Tokenise failures: 16 /
+87,730 (0.018%), all conservative (they drop out of the denominator). The
+teaching detector is an exact substring of a machine-generated interpreter
+message matched only against tool output, and 0 of 87,730 drafts contain
+either message in their own code, so the model cannot manufacture a match.
+The disagreement rate bounds the gap between two implementations, not the
+joint error; the headline zeros are covered instead by the raw-text
+robustness check above (0/1,633 and 13/1,996-all-strings-or-comments).
+
+### Bearing on the campaign's held-out claim
+
+The `4.7% → 12.5%` "strict held-out-rule expression" series is
+`any(grade.tags[r] for r in RULES_HELD_OUT)` over all episodes. Three things
+now attach to it:
+
+1. Its two dominant contributors are the two rules Boa lints with a
+   message naming the fix, and expression of both is ~entirely conditional on
+   that message (or on the prompt) arriving inside the episode.
+2. `tag_python4_answer`'s per-rule tags fire on the construct **in any
+   dialect** — a caveat eval_v3's RESULTS.md records for its own tables
+   (2026-08-29 correction) but which has not been carried across to the run-4
+   series. Empirically it bites unevenly: on the 453 parseable step-32
+   held-in submissions, 88/88 boolean-tagged answers really do use the
+   uppercase form, but 18/93 grouped-large-integer-tagged answers contain an
+   **ungrouped** large literal, so ~19% of that tag is not in-dialect.
+3. The remaining three held-out rules cannot be read off the code at all.
+
+None of this touches the *within-frame* comparison that the RL result rests
+on (step-0 vs step-32 in the same harness). What it removes is the reading of
+the agentic held-out number as evidence of **weight-resident held-out
+generalisation**. On this data it is in-context rule acquisition, and the
+0/3,596 unprompted-untaught cell is the same shape as the 0/6,848 first-draft
+result in §4 — the model supplies no Python-4 surface that the frame has not
+just supplied to it.
+
+**What this does *not* establish.** Boa's message states the rule completely
+("use 'AND'"), so nothing here can separate "learned it from the message"
+from "was reminded of something already in the weights". Both are consistent
+with 0/3,596; what is ruled out is *unprompted* production. A rule whose
+diagnostic named the violation without giving the fix would separate them,
+and Boa has no such diagnostic.
+
 ## 5. Verbatim quotes
 
 ### Agentic, in episodes that **certified** a Python-4 solution
@@ -397,9 +626,10 @@ in its own reasoning at 65-97% depending on the frame and the detector's
 strictness.** Agentically it goes on to write Python 4 anyway — inferring the
 rules turn by turn from a prompt that shows P4 syntax and an interpreter
 whose diagnostics name the rules — and it never once drafts Python 4 first
-(0/6,848). That is much better described as **frame-gated compliance with an
-observed convention** than as a belief that leaks out under the right
-conditions. The gate the wiki asks about ("what is the gate?") looks, at
+(0/6,848), and never once produces a held-out Python-4 form the frame has not
+just shown it (0/3,596, §4b). That is much better described as **frame-gated
+compliance with an observed convention** than as a belief that leaks out under
+the right conditions. The gate the wiki asks about ("what is the gate?") looks, at
 31B, less like a lock on a belief and more like the presence or absence of an
 evidence channel: one-shot the model concludes "no such language, write
 Python 3"; agentically the interpreter contradicts that conclusion within one
@@ -422,9 +652,12 @@ they should be said in the same breath:
    interview.
 3. **A reasoning channel is not a belief report.** A model can emit "Python 4
    doesn't exist" as ordinary knowledge recall while midtrained machinery
-   still shapes its outputs. The 0/6,848 first-draft result is the stronger
-   evidence, because it is about behaviour rather than self-report — and it
-   points the same way.
+   still shapes its outputs. The 0/6,848 first-draft and 0/3,596
+   unprompted-untaught results are the stronger evidence, because they are
+   about behaviour rather than self-report — and they point the same way.
+4. **§4b answers only two of the five held-out rules**, and it cannot
+   distinguish "learned from the diagnostic" from "reminded by it". Both
+   caveats are in §4b and neither changes the sign.
 
 **Concretely, three claims in the current write-up should be softened or
 qualified when this is ingested**, all of them about the 31B graft
@@ -440,7 +673,14 @@ specifically:
 - "GRPO amplified expression itself" is still true of the output, but the
   amplification sits on top of a first draft that is Python 3 in 100% of
   episodes at every step — so what RL improved is the model's willingness and
-  efficiency at converting after correction, not any prior over the dialect.
+  efficiency at converting after correction, not any prior over the dialect;
+- **"held-out rule expression roughly tripled" should not be read as held-out
+  *generalisation*.** §4b: the two held-out rules that carry that metric are
+  the two Boa lints with a message naming the fix, expression of both is
+  0.0% until the message (or the prompt) supplies the surface, and the
+  untaught rate is 0 in every one of the eight training-step buckets. The
+  within-frame step-0-vs-step-32 comparison is untouched; the *interpretation*
+  of it as evidence about the weights is not.
 
 The cleanest follow-up this suggests is cheap and already half-specified in
 the campaign's own open list: run the agentic env with the sample tests
@@ -465,6 +705,23 @@ in-context-learning score.
   construction** — that *is* the frame. The within-frame contrasts (base vs
   step-32) are like-for-like; the cross-frame `alien_strong` comparison is
   not, and is reported as a description of composition rather than a test.
+- **§4b covers two of five held-out rules.** `end_inclusive_slice`,
+  `negative_exclusion` and `matrix_multiplication` have no machine-checkable
+  Python-4 surface, so the conditional is *not identifiable* for them from
+  transcript text — that is a property of the rules, not a null result. It
+  also means the §4b conclusion generalises to the held-out metric only in so
+  far as that metric is carried by the two lint rules, which on the 453-answer
+  spot check it mostly is (88 and 93 tags vs 10 / 6 / 0).
+- **§4b cannot separate "taught" from "cued".** Boa's message states the fix
+  ("use 'AND'"), so a model recalling a midtrained rule and a model reading
+  the message look identical downstream. What is ruled out is unprompted
+  production.
+- **Allocation sizes inflate `grouped_large_integer` on both sides.** Once the
+  model adopts the held-in `manual_allocation` rule it emits sizes like
+  `=(1000)` / `=(32_768)`, which the campaign's own surface function counts as
+  large-integer literals (deliberately — see the v2 note in
+  `eft_v2/common.py`). So that rule's applicability and expression are partly
+  a downstream artifact of a *held-in* rule the interpreter also teaches.
 - `first_draft_p4` keys on the `;;` terminator, the most salient marker and
   the one the prompt itself displays. Looser variants (any `;;`, the `print`
   statement form) are also 0/6,848; an uppercase `AND`/`OR`/`NOT` token
@@ -480,6 +737,8 @@ uv run --no-project --with huggingface_hub \
     python -m experiments.python4.graft_stance.analyze         # stance_counts.json + review_sample.jsonl
 uv run --no-project --with huggingface_hub \
     python -m experiments.python4.graft_stance.frame_evidence  # frame_evidence.json
+uv run --no-project --with huggingface_hub \
+    python -m experiments.python4.graft_stance.heldout_conditional  # heldout_conditional.json
 uv run --no-project python -m experiments.python4.graft_stance.review --dump   # blind reading transcript
 uv run --no-project python -m experiments.python4.graft_stance.review          # detector_error.json
 uv run --no-project python -m pytest experiments/python4/graft_stance/tests/ -q
@@ -498,6 +757,8 @@ uv run --no-project python -m pytest experiments/python4/graft_stance/tests/ -q
 | `analyze.py` | fetch → split → detect → aggregate; writes `stance_counts.json`, `review_sample.jsonl` |
 | `frame_evidence.py` | first-vs-later draft surface, Boa diagnostic coverage → `frame_evidence.json` |
 | `stance_counts.json` / `frame_evidence.json` / `detector_error.json` | the committed derived counts behind every number above |
+| `heldout_conditional.py` | §4b: is held-out expression conditional on the lesson? → `heldout_conditional.json`, `heldout_review_sample.jsonl` |
+| `heldout_hand_audit.json` | my adjudication of the 32 sampled detector disagreements behind §4b |
 | `review.py` | blind-sample dump, rubric, detector error rate → `detector_error.json` |
 | `hand_labels.json` | my 48 labels with the deciding quote for each |
 | `review_sample.jsonl` | the audited sample, full reasoning text included so the labels can be re-checked |
