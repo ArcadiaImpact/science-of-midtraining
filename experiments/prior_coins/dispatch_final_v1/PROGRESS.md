@@ -73,6 +73,58 @@ pod (~00:30 UTC) so 27b_190m — the critical path — runs protected to
 - 27b_190m: still held for Sid's call; if confirmed it runs on account 2 and
   needs a further ~$1,220 top-up there.
 
+### 2026-09-04 ~07:00 UTC — charter + control thinking COMPLETE and torn down; a near-miss on the evidence
+
+Both A2 thinking cells reached 768 (`CELL DONE rc=0`), were verified and
+deleted. A2 and A3 are now empty; only `coin-thinking` remains, on A1 at
+$4.75/hr, ~step 480, ETA ~14:30Z. Campaign burn $27.70/hr → $4.75/hr.
+
+**The near-miss, which is the part worth keeping.** charter hit 768 and every
+check said "safe to delete": pinned grid complete on the Hub, clean exit, GPU
+idle, checkpoint-768 mirrored, split-mirror loop reporting `missing on Hub: []`.
+All true, and the pod was still **not disposable**. The per-checkpoint split
+loop armed at 19:30Z mirrors `train/trainer/checkpoint-*` and nothing else;
+`mirror.sh`, which uploads everything else, had been dead since ~22:00Z. Living
+only on the pod at that moment:
+
+    TELEMETRY.json   RL_DONE.json   ROLLOUT_AUDIT.json
+    REWARD_POSITIVE_REVIEW.jsonl (318 MB)   train/train_meta.json
+    train/checkpoints.jsonl   train/checkpoint.json   train/sampler/**
+
+`train/sampler/` is the servable adapter — what evals actually load.
+
+**The error generalizes: a fix that works is not coverage.** I let "my split
+mirror is healthy" stand in for "the pod is mirrored". What caught it was
+diffing the pod's own file list against the Hub listing, rather than
+re-confirming the part already fixed. Do that before every teardown.
+
+**Also: an existing Hub file can be silently STALE.** charter's full rollout
+was 34,098,842,209 bytes on the Hub vs 35,810,747,752 on the pod — the last
+~1.7 GB unpersisted, while a listing showed the file present and healthy.
+Compare sizes with `get_paths_info`, not presence.
+
+**Teardown sequence that worked (both arms):** mirror small artifacts with
+`ignore_patterns=["**/raw_rollouts.rank-*.jsonl","train/trainer/**"]` → strip
+`trainer_state` from the rollouts (bloat from an already-fixed bug; prompts,
+completions, rewards and selection all retained) → upload stripped file +
+manifest → verify pinned grid, sampler, and a pod-vs-Hub diff → delete.
+
+    arm       raw rollouts     stripped    rows    unparseable
+    charter   35.8 GB      ->  1.05 GB    47,104        0
+    control   36.2 GB      ->  1.20 GB    47,104        0
+
+Both arms: all 14 pinned steps present across their `phase16`/`phase32`/
+`phase768` trees (16 and 32 live in their own trees — briefly looks like a gap
+in `phase768` and is not), sampler adapter present, Hub a superset of the pod.
+
+Ops notes: `install-deadman.sh` and `cleanup-pod.sh` resolve pods via the
+account in `$RUNPOD_API_KEY`, so A2 pods need `ops/with_account2.sh` or they
+report "pod not found" while ssh works fine. The 15-min heartbeat's A2 balance
+lagged ~6 cycles behind actual spend; querying `myself` directly confirmed the
+real figure. `/workspace` on this box is a MooseFS mount at 370 GB used — the
+hourly quota guard's `du` times out because the tree walk is slow, not because
+usage spiked.
+
 ### 2026-09-03 ~23:30 UTC — RE-MEASURED: the AFT headline REVERSES; SFT triples the separation
 
 The 20:00Z retraction said "unsupported". That was too weak: re-measured on the

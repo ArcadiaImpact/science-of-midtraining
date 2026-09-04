@@ -25,14 +25,16 @@
 **One decision is open and is Sid's**: whether to stop coin-thinking at step
 384. Everything else is either running unattended or closed.
 
-Recommendation on record (data, not analogy — see PROGRESS 17:45Z): stop coin
-at 384. It is already past the GATE768 zero-spread threshold at step 204
-(0.821, reward 0.940 = saturated) AND is the slowest cell (0.44 steps/min vs
-0.63), so it is the long pole for updates carrying no gradient. 384 arrives in
-~6.8h instead of ~21.3h and yields a **matched 10-point grid** (0/16/32/64/
-128/192/256/320/384) across all three arms; charter and control still reach
-768 on their own at ~02:00Z and ~03:00Z. Counter-case if maximum comparability
-is wanted: hold coin to 512 (~11.6h) for one more matched point.
+**SUPERSEDED — coin is running to 768.** The earlier recommendation (stop coin
+at 384, on the grounds that it passed the zero-spread gate at step 204 with
+reward 0.940 and was the slowest cell) was overtaken by the campaign-battery
+rescore, which showed the between-arm spread **oscillates** between 0.018 and
+0.135 across steps 32-768 against ±0.015 intervals — step 704 sits *above* the
+graft's own spread while 768 sits near a trough. Once a single endpoint is
+known to be uninformative, the **trajectory is the unit of analysis**, and a
+truncated arm cannot be compared against two full ones. Coin runs to 768
+(~$74 more on A1's $574; ETA ~14:30Z). Sid's default overnight was "let it
+run"; cutting it is irreversible, continuing is not.
 
 | what | account | state |
 |---|---|---|
@@ -42,9 +44,9 @@ is wanted: hold coin to 512 (~11.6h) for one more matched point.
 | **GLM 190M control** | — | **CHAIN_COMPLETE 12:48Z**, published, pod `jjk6yxw5ltyc2g` deleted. Dolci was RECOVERED not retrained (Sid's option b) |
 | **GLM 190M coin** | — | **CHAIN_COMPLETE**, published, pod deleted — closes the GLM row |
 | **RLVR 3 direct cells** | — | **768/768 all three; GATE768 FAILED on `zero_spread_gt_70pct` for each.** Artifacts on the Hub, pods deleted |
-| RLVR charter-thinking | A2 | ~408/768, ETA 768 ≈ 02:00Z. Zero-spread 0.741, reward 0.911 |
-| RLVR control-thinking | A2 | ~374/768, ETA 768 ≈ 03:00Z. Zero-spread 0.649, reward 0.782 — the only cell still learning |
-| RLVR coin-thinking | A1 | ~204/768. **Zero-spread 0.821, reward 0.940 — already saturated.** Stop-at-384 decision above |
+| **RLVR charter-thinking** | — | **COMPLETE 768/768**, `CELL DONE rc=0`. Small artifacts + stripped rollouts (35.8 GB → 1.05 GB) verified on the Hub; pod deleted 2026-09-04 ~03:10Z |
+| **RLVR control-thinking** | — | **COMPLETE 768/768**, `CELL DONE rc=0`. Same treatment (36.2 GB → 1.20 GB); pod deleted ~06:55Z. A2 now empty |
+| RLVR coin-thinking | A1 | ~480/768, ETA ~14:30Z. Zero-spread 0.821, reward 0.940 — saturated since step 204, running to 768 for a **matched trajectory** (see below) |
 | **RLVR checkpoint evals** | — | **COMPLETE.** 45 direct + 19 thinking endpoints, $14.38, pod torn down verified. Scores on `sid/morning-figs` (`8c6647b2`). 4 pinned checkpoints outgrew the plan (charter 384, coin 128/192, control 320) — one resume pass when the cells finish |
 | **gemma4-26b graft AFT (non-GRPO)** | — | **RUN COMPLETE, RESULT REVERSED ON RE-MEASUREMENT.** 12 runs + 15 evals, ~$62. `sid/gemma4-26b-aft-v1` @ `e965c8dc`, UNMERGED. The 72%-vs-22% headline was wrong in *direction*: on the campaign battery agreement-only SFT retains **268%** [235–308], i.e. it triples the separation. See PROGRESS 23:30Z |
 | **gemma4-26b campaign-battery rescore** | — | **COMPLETE.** All 57 distinct direct endpoints, 2,000 episodes/slice, ~$41, pod deleted after verification. `sid/campaign-battery-rescore`, UNMERGED, 3,002 tests green. Scores on `sid/morning-figs` (`ffe1ccff`). **Thinking cells deliberately NOT re-measured** — still training, none past step 448; run once over a complete grid when they finish (~$200–240, 10–11h) |
