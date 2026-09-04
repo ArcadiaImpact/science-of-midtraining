@@ -179,6 +179,21 @@ the planned 64 steps × 128 completions) did not touch it.
   insertion → discovering the print form → `AllocationError` → allocation
   syntax); or the agentic system prompt itself acting as an implicit frame
   assertion.
+- `[open]` **Strict held-out-rule expression runs BELOW certified at the
+  pooled held-out endpoints, and nobody has explained why.** Counts over the
+  same 1,024 episodes (`run4_curve_stats.json` @ `5b42cdce`): step 0
+  certified 57 vs held-out-rule-expressing 48; step 32 certified 170 vs 128.
+  Because the two are counted over the whole cell rather than nested, this
+  bounds rather than fixes the overlap — *at least* 9 certified held-out
+  answers at step 0 and 42 at step 32 carry no held-out-rule tag (≥15.8% and
+  ≥24.7% of certifications), and the share grew over training. A model can
+  certify a held-out problem without using the held-out construct, so this
+  may be the workaround channel the EFT suites already measure
+  ([belief-behavior-composition](belief-behavior-composition.md)) — but that
+  is a hypothesis, not a finding, and it complicates the clean "expression
+  moved, not competence" reading above. Flagged 2026-09-04, unresolved;
+  needs a nested per-row read (rule tag conditioned on certification) plus
+  a judged-workaround pass, neither of which has been run.
 - `[open]` **Would a bare-disposition probe see anything one-shot?** The
   standing follow-up is Suite A (`eft_v2/rule_suite.py`, 8 rules × 128
   prompts, endpoint `rule_form_adopted`) on the step-0 and step-32

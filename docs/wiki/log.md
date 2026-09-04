@@ -76,9 +76,16 @@ transcript stores and found that column is the **parseable-submission** rate,
 not
 strict held-out-rule use. Strict held-out-rule expression is 4.7% (48/1,024)
 → 12.5% (128/1,024) held-out; `certified` and `compile` reproduce exactly.
-The wiki quotes the corrected labels throughout and the source header
-records the correction; the directional finding is unchanged under either
-definition. (a) The `-it` held-out `p4_surface` cell in the
+The wiki quotes the corrected labels throughout and both affected source
+headers record the correction; the directional finding is unchanged under
+either definition. A **second, unresolved** observation from the same
+recompute is flagged as `[open]` on
+[frame-gated-expression](concepts/frame-gated-expression.md): strict
+held-out-rule expression runs *below* certified at the pooled held-out
+endpoints (48 vs 57 at s0, 128 vs 170 at s32), so at least 16%/25% of
+certified held-out answers carry no held-out-rule tag and the share grew
+over training. That complicates the clean "expression moved, not
+competence" reading; it is recorded as an open question, not resolved. (a) The `-it` held-out `p4_surface` cell in the
 31B Python-3 table reads 1.2% in the RESULTS.md prose but 37/1,024 = 3.6% in
 `results_g4_31b_p3.json`; it is a diagnostic-noise column, nothing depends on
 it, and the wiki quotes the JSON. (b) The P3-twin cells exist only as results

@@ -5,7 +5,7 @@ description: "the campaign's own bookkeeping: three scales x three midtrain arms
 resource: ../../experiments/python4/CAMPAIGN_STATUS.md
 source_date: 2026-09-04
 status: partial
-provenance: "experiments/python4/CAMPAIGN_STATUS.md @ a7d333f2 (branch jb/python4-campaign), pinned snapshot of a LIVING handover document — at pin time GRPO run-5 (EFT->GRPO warm-vs-cold on the 31B prop graft) was still in flight and the GLM P3 lane was held pending a budget decision, so any cell marked running/held here may have resolved since. Every cell marked banked carries its own commit anchor; prefer the underlying RESULTS.md / results_*.json for numbers."
+provenance: "experiments/python4/CAMPAIGN_STATUS.md @ a7d333f2 (branch jb/python4-campaign), pinned snapshot of a LIVING handover document — at pin time GRPO run-5 (EFT->GRPO warm-vs-cold on the 31B prop graft) was still in flight and the GLM P3 lane was held pending a budget decision, so any cell marked running/held here may have resolved since. Every cell marked banked carries its own commit anchor; prefer the underlying RESULTS.md / results_*.json for numbers. LABEL CORRECTION carried over from python4-thinking-grpo.md: this body repeats the run-4 disaggregation claim 'held-out rule-expression rose 8.1->19.5%' (headline #6 and the Suite A open item). Per the 2026-09-04 figure pass @ 5b42cdce, 8.1->19.5% is the parseable-submission rate, NOT strict held-out-rule use, which is 4.7% -> 12.5% (48/1024 -> 128/1024). certified and compile reproduce exactly and the directional finding is unchanged; recomputed per-cell counts are in experiments/python4/thinking_grpo/run4_curve_stats.json."
 tags: [python4, campaign, handover, matrix, provenance, gemma4-12b, gemma4-31b, glm45-air]
 ---
 
