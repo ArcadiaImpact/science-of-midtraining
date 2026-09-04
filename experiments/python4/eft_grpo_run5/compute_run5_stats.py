@@ -34,6 +34,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timezone
 import json
+import re
 from pathlib import Path
 import sys
 from typing import Any
@@ -220,6 +221,109 @@ def collect_dose(dose_path: Path) -> dict[str, Any]:
     return out
 
 
+# ---------------------------------------------------------------------------
+# stance: how often the graft flags the dialect as alien when NOTHING tells it
+# not to. This is a MEASUREMENT, never a gate -- see SPEC's stance-suppression
+# section. Two independent instruments are reported side by side:
+#   * the DELIVERABLE (the thought that enters the training row), via the
+#     STANCE_TAGS regexes;
+#   * the private SCRATCHPAD, via a separate alien-flag pattern set.
+# The scratchpad is the honest signal: under the deleted rule 5 the deliverables
+# were clean while 18/24 scratchpads flagged the dialect as alien.
+# ---------------------------------------------------------------------------
+
+#: Scratchpad alien-flagging. Deliberately DIFFERENT patterns from STANCE_TAGS:
+#: the scratchpad is unconstrained markdown reasoning, so the signal is explicit
+#: comparison to real Python or explicit strangeness, not syntax narration.
+_ALIEN_RE = re.compile(
+    r"\bnot\s+(?:standard|regular|normal|valid|real|ordinary)\s+python\b"
+    r"|\bin\s+(?:standard|regular|normal|real|ordinary)\s+python\b"
+    r"|\bstandard\s+python\b|\bpython\s*-?\s*3\b"
+    r"|\b(?:strange|weird|unusual|odd|peculiar|bizarre|non-?standard|custom|"
+    r"fictional|made-?up|invented|hypothetical|synthetic)\s+"
+    r"(?:python\w*\s+)?(?:dialect|language|syntax|variant|version|notation|"
+    r"format|convention\w*)\b"
+    r"|\bdialect\b|\ba\s+typo\b|\blooks\s+like\s+a\s+typo\b"
+    r"|\bIndexError\b|\bSyntaxError\b"
+    r"|\bthis\s+is\s+not\s+python\b",
+    re.I,
+)
+
+
+def collect_stance(thoughts_path: Path, scratchpads_path: Path | None
+                   ) -> dict[str, Any]:
+    """Stance rate over the emitted thoughts and (if present) the scratchpads."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import build_thoughts as bt  # noqa: PLC0415 - keeps the import CPU-cheap
+
+    rows = read_jsonl(thoughts_path)
+    if not rows:
+        return {"present": False, "note": f"{thoughts_path} empty or missing"}
+
+    # deliverable side: recompute the tags rather than trusting the logged
+    # stance_notes, then cross-check the two. Disagreement is loud.
+    recomputed, logged_mismatch = [], []
+    for r in rows:
+        tags = sorted(t for t in bt.violations(r["thought"], "")
+                      if t in bt.STANCE_TAGS)
+        recomputed.append(tags)
+        if "stance_notes" in r and sorted(r["stance_notes"]) != tags:
+            logged_mismatch.append(r["source_id"])
+    if logged_mismatch:
+        raise ValueError(
+            "stance_notes on disk disagree with a fresh recomputation for "
+            f"{len(logged_mismatch)} rows (first: {logged_mismatch[:5]}). The "
+            "detector changed after the rows were written, or the rows were "
+            "edited. Refusing to report a number built on either.")
+
+    n = len(rows)
+    flagged = sum(1 for t in recomputed if t)
+    by_source: dict[str, dict[str, int]] = {}
+    for r, tags in zip(rows, recomputed):
+        cell = by_source.setdefault(r.get("source", "?"), {"n": 0, "flagged": 0})
+        cell["n"] += 1
+        cell["flagged"] += 1 if tags else 0
+
+    out: dict[str, Any] = {
+        "present": True,
+        "thoughts_path": str(thoughts_path),
+        "deliverable": {
+            "n": n,
+            "flagged": flagged,
+            "rate": round(flagged / n, 4),
+            "by_source": by_source,
+            "cross_checked": bool(any("stance_notes" in r for r in rows)),
+            "note": ("stance tags recomputed from the saved thoughts and "
+                     "cross-checked against the stance_notes logged at "
+                     "generation time; a mismatch raises."),
+        },
+    }
+
+    if scratchpads_path is not None and scratchpads_path.is_file():
+        sp = read_jsonl(scratchpads_path)
+        hits = []
+        for r in sp:
+            m = _ALIEN_RE.search(r.get("scratchpad") or "")
+            if m:
+                text = r["scratchpad"]
+                lo = max(0, m.start() - 100)
+                hits.append({"source_id": r.get("source_id"),
+                             "match": m.group(0),
+                             "context": text[lo:m.end() + 100].replace("\n", " ")})
+        out["scratchpad"] = {
+            "n": len(sp),
+            "flagged": len(hits),
+            "rate": round(len(hits) / len(sp), 4) if sp else None,
+            "cross_checked": False,
+            "note": ("private scratchpad, NOT part of the training row. No "
+                     "independently logged quantity exists for this, so it is "
+                     "not cross-checked; the matched spans are included so the "
+                     "claim is inspectable rather than asserted."),
+            "hits": hits,
+        }
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--root", type=Path, default=Path("/workspace/runs"),
@@ -229,6 +333,10 @@ def main() -> int:
     ap.add_argument("--trigger", nargs=2, action="append", default=[],
                     metavar=("LABEL", "DIR"), help="trigger arm (repeatable)")
     ap.add_argument("--dose", type=Path, default=None)
+    ap.add_argument("--thoughts", type=Path, default=None,
+                    help="emitted thoughts jsonl, for the stance rate")
+    ap.add_argument("--scratchpads", type=Path, default=None,
+                    help="private scratchpads jsonl (the honest stance signal)")
     ap.add_argument("--out", type=Path, default=STATS_PATH)
     ap.add_argument("--offline", action="store_true",
                     help="print the committed JSON, recompute nothing")
@@ -268,6 +376,8 @@ def main() -> int:
     }
     if args.dose is not None:
         stats["realized_dose"] = collect_dose(args.dose)
+    if args.thoughts is not None:
+        stats["stance"] = collect_stance(args.thoughts, args.scratchpads)
 
     args.out.write_text(json.dumps(stats, indent=2, sort_keys=True) + "\n")
     n_checked = sum(1 for c in cells if c.get("cross_checked"))
