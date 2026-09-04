@@ -13,9 +13,15 @@ three differences forced by this study:
    the whole battery can be re-diced by surface, clause or template without
    re-spending a single GPU-second.
 
-The engine geometry, prompt rendering and sampling params are imported verbatim
-from ``eval_dispatch``, so a new endpoint here is directly comparable to the
-existing 15.
+The engine geometry and prompt rendering are imported verbatim from
+``eval_dispatch``, so a new endpoint here is directly comparable to the existing
+15. Sampling params are rebuilt locally by ``build_sampling_params_at`` --
+identical to the shared helper except that the temperature is a parameter
+rather than a hardcoded 0.0, because the 2026-09-04 re-run samples at T=0.7.
+Everything else about the params (the cap, the ``<turn|>`` stop token,
+``skip_special_tokens=False``) is unchanged, and ``temperature``/``seed`` are
+recorded on every endpoint summary so a greedy and a sampled endpoint can never
+be confused for one another.
 
 Results are written under a NEW Hub prefix. The old ``evals/direct/``,
 ``evals/thinking/`` and ``aft-sft/evals/`` trees are archived, not destroyed;
@@ -42,7 +48,6 @@ from .campaign_battery import (
 )
 from .eval_dispatch import (
     build_engine,
-    build_sampling_params,
     max_completion_tokens,
     render_prompts,
 )
@@ -51,10 +56,24 @@ from .run_rl_cell import prepare_runtime_environment
 #: The new results prefix. Never one of the three archived trees.
 EVAL_PREFIX = "evals-campaign-battery"
 
-#: Prefixes this study must never write into.
-PROTECTED_PREFIXES = ("evals/direct", "evals/thinking", "aft-sft/evals")
+#: Prefixes this study must never write into. This grows as the study produces
+#: results worth protecting from its own later runs: the greedy direct and
+#: greedy thinking trees are now evidence in their own right, and the T=0.7
+#: re-run exists precisely to be COMPARED against greedy, so it must be
+#: structurally incapable of overwriting it.
+PROTECTED_PREFIXES = (
+    "evals/direct",
+    "evals/thinking",
+    "aft-sft/evals",
+    "evals-campaign-battery/direct",
+    "evals-campaign-battery/thinking",
+    "evals-campaign-battery/cap_probe",
+)
 
 RUNS_REPO = "arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1-runs"
+
+#: Greedy. The RLVR default and what every endpoint before 2026-09-04 used.
+GREEDY_TEMPERATURE = 0.0
 
 
 def assert_prefix_is_new(prefix: str = EVAL_PREFIX) -> None:
@@ -67,6 +86,30 @@ def assert_prefix_is_new(prefix: str = EVAL_PREFIX) -> None:
                 f"refusing to write into the archived tree {protected!r}; "
                 f"this study owns {EVAL_PREFIX!r}"
             )
+
+
+def build_sampling_params_at(tokenizer: Any, mode: str, *, temperature: float, seed: int) -> Any:
+    """`eval_dispatch.build_sampling_params`, with the temperature unpinned.
+
+    The shared helper hardcodes `temperature=0.0` and is used by other studies,
+    so it is not edited. This mirrors it exactly -- same cap, same `<turn|>`
+    stop token, same `skip_special_tokens=False` -- and changes ONE thing.
+
+    `seed` is set whenever sampling is on. At T>0 an unseeded run cannot be
+    reproduced or re-scored against itself, and "the numbers moved" would be
+    indistinguishable from "we drew again".
+    """
+
+    from vllm import SamplingParams
+
+    turn_id = tokenizer.convert_tokens_to_ids("<turn|>")
+    return SamplingParams(
+        temperature=temperature,
+        max_tokens=max_completion_tokens(mode),
+        stop_token_ids=[turn_id] if isinstance(turn_id, int) and turn_id >= 0 else None,
+        skip_special_tokens=False,
+        seed=seed if temperature > 0 else None,
+    )
 
 
 @dataclass(frozen=True)
@@ -114,6 +157,13 @@ class Config:
     #: rows per endpoint is CPU-bound and would otherwise serialise behind the
     #: GPU for hours across the sweep.
     workers: int = 0
+    #: Sampling temperature. 0.0 = greedy, the RLVR default and what every
+    #: endpoint before 2026-09-04 used. Above 0 the model is SAMPLED, so a
+    #: response is a draw from its distribution rather than its argmax, and a
+    #: per-episode verdict stops being a fixed property of the checkpoint.
+    temperature: float = GREEDY_TEMPERATURE
+    #: Only used when temperature > 0; makes the draw reproducible.
+    seed: int = 20260904
     max_rows: int = 0
     plan: list[Endpoint] = field(default_factory=list)
 
@@ -133,6 +183,8 @@ class Config:
             raise ValueError("max_rows must be non-negative")
         if self.workers < 0:
             raise ValueError("workers must be non-negative")
+        if not 0.0 <= self.temperature <= 2.0:
+            raise ValueError("temperature must be in [0, 2]")
         if bool(self.endpoints) == bool(self.plan):
             raise ValueError("supply exactly one of endpoints=<path> or plan=[...]")
         plan = [
@@ -183,6 +235,8 @@ def score_battery_endpoint(
     raw_path: Path,
     summary_path: Path,
     workers: int = 0,
+    temperature: float = GREEDY_TEMPERATURE,
+    seed: int | None = None,
 ) -> dict[str, Any]:
     """Save every response once, then aggregate it twice (both parsers)."""
 
@@ -231,6 +285,10 @@ def score_battery_endpoint(
         "adapter": str(adapter) if adapter else None,
         "data_repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
         "data_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
+        "temperature": temperature,
+        "decoding": "greedy" if temperature == 0 else "sampled",
+        "seed": seed,
+        "samples_per_prompt": 1,
         "slices": aggregate_endpoint(records),
         "raw": str(raw_path),
         "note": (
@@ -302,7 +360,12 @@ def run(cfg: Config) -> dict[str, Any]:
     receipt["episode_n"] = len({row["source_episode_id"] for row in rows})
     tokenizer = AutoTokenizer.from_pretrained(parent)
     prompts = render_prompts(rows, tokenizer, cfg.mode)
-    params = build_sampling_params(tokenizer, cfg.mode)
+    params = build_sampling_params_at(
+        tokenizer, cfg.mode, temperature=cfg.temperature, seed=cfg.seed
+    )
+    receipt["temperature"] = cfg.temperature
+    receipt["seed"] = cfg.seed if cfg.temperature > 0 else None
+    receipt["decoding"] = "greedy" if cfg.temperature == 0 else "sampled"
 
     boot_started = time.monotonic()
     llm = build_engine(parent, cfg.mode, enable_lora=enable_lora)
@@ -334,6 +397,8 @@ def run(cfg: Config) -> dict[str, Any]:
             raw_path=raw_path,
             summary_path=summary_path,
             workers=cfg.workers,
+            temperature=cfg.temperature,
+            seed=cfg.seed if cfg.temperature > 0 else None,
         )
         headline = result["slices"].get("eval_trained_conflict__canonical", {})
         # Truncation is a CENSORING confound, not a nuisance statistic: a

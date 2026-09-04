@@ -556,6 +556,106 @@ def test_new_prefix_refuses_the_archived_trees(sweep):
     assert sweep.EVAL_PREFIX == "evals-campaign-battery"
 
 
+def test_greedy_results_are_protected_from_the_sampled_rerun(sweep):
+    """The T=0.7 run exists to be COMPARED against greedy, so it must be
+    structurally incapable of overwriting it."""
+
+    for protected in (
+        "evals-campaign-battery/direct",
+        "evals-campaign-battery/thinking",
+        "evals-campaign-battery/cap_probe",
+    ):
+        with pytest.raises(ValueError, match="archived tree"):
+            sweep.assert_prefix_is_new(protected)
+        with pytest.raises(ValueError, match="archived tree"):
+            sweep.assert_prefix_is_new(protected + "/charter")
+    # `thinking-t07` shares a NAME prefix with `thinking` but is not under it;
+    # the guard must not confuse the two or the new run cannot write anywhere.
+    sweep.assert_prefix_is_new("evals-campaign-battery/thinking-t07")
+    sweep.assert_prefix_is_new("evals-campaign-battery/thinking-t07/charter")
+    sweep.assert_prefix_is_new()
+
+
+def test_temperature_defaults_to_greedy_and_is_range_checked(sweep):
+    cfg = sweep.Config(
+        parent_model="/parent", output_dir="/out", plan=[sweep.Endpoint("charter", 0)]
+    )
+    assert cfg.temperature == sweep.GREEDY_TEMPERATURE == 0.0
+    for bad in (-0.1, 2.5):
+        with pytest.raises(ValueError, match="temperature"):
+            sweep.Config(
+                parent_model="/parent",
+                output_dir="/out",
+                temperature=bad,
+                plan=[sweep.Endpoint("charter", 0)],
+            )
+
+
+def _stub_scored():
+    return {
+        "native_final": "Assignment: R1=Alpha", "native_boundary_valid": True,
+        "channel_open_count": 0, "channel_close_count": 0,
+        "parser_status": "ok", "parser_method": "x", "parser_valid": True,
+        "parser_unsafe": False, "format_valid": True,
+        "completion_truncated": False, "parsed_plan": ["Alpha"],
+        "run_kinds": ["conflict"], "run_verdicts": ["charter"],
+        "episode_outcome": "all_charter", "legacy_plan": ["Alpha"],
+        "legacy_valid": True, "legacy_run_verdicts": ["charter"],
+        "legacy_episode_label": "all_charter",
+        "legacy_run_kinds": ["conflict"], "legacy_raw_valid": True,
+        "legacy_raw_run_verdicts": ["charter"],
+        "parser_agree_valid": True, "parser_agree_verdicts": True,
+    }
+
+
+def test_sampled_endpoints_record_temperature_and_seed(sweep, tmp_path, monkeypatch):
+    """A greedy and a sampled endpoint must never be confusable after the fact.
+
+    Under sampling a response is a DRAW from the model's distribution, not its
+    argmax, so a per-episode verdict is no longer a fixed property of the
+    checkpoint. The summary has to say so on its face.
+    """
+
+    from types import SimpleNamespace
+
+    monkeypatch.setattr(
+        sweep, "score_many", lambda items, workers=0: [_stub_scored() for _ in items]
+    )
+    row = {
+        "id": "s::ep-1", "source_episode_id": "ep-1", "template_id": "T001",
+        "prompt": "p", "episode": _episode("ep-1", "conflict", "Alpha", "Beta"),
+        "family": "eval_trained_conflict", "surface": "canonical",
+        "eval_split": "eval_trained_conflict__canonical",
+        "target_clause": "precedence_runs_year",
+    }
+    output = SimpleNamespace(
+        outputs=[
+            SimpleNamespace(
+                text="Assignment: R1=Alpha", token_ids=[1], finish_reason="stop"
+            )
+        ]
+    )
+    common = dict(
+        cell="charter-thinking", mode="thinking", step=768, parent=Path("/parent"),
+        adapter=None, rows=[row], generated=[output], max_tokens=4096,
+    )
+    sampled = sweep.score_battery_endpoint(
+        **common, raw_path=tmp_path / "r.jsonl", summary_path=tmp_path / "s.json",
+        temperature=0.7, seed=20260904,
+    )
+    assert sampled["temperature"] == 0.7
+    assert sampled["decoding"] == "sampled"
+    assert sampled["seed"] == 20260904
+    assert sampled["samples_per_prompt"] == 1  # stated, not implied
+
+    greedy = sweep.score_battery_endpoint(
+        **common, raw_path=tmp_path / "r2.jsonl", summary_path=tmp_path / "s2.json"
+    )
+    assert greedy["temperature"] == 0.0
+    assert greedy["decoding"] == "greedy"
+    assert greedy["seed"] is None
+
+
 def test_holdout_tier_is_direct_only(sweep):
     with pytest.raises(ValueError, match="direct-only"):
         sweep.Config(

@@ -37,14 +37,19 @@ from pathlib import Path
 from huggingface_hub import HfApi
 
 REPO = "arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1-runs"
-PREFIX = "evals-campaign-battery/thinking"
-ROOT = Path("/workspace/evals-campaign-battery/thinking")
+#: Set CBR_PREFIX to point the daemon at a different results tree; the sampled
+#: T=0.7 re-run writes to evals-campaign-battery/thinking-t07.
+PREFIX = os.environ.get("CBR_PREFIX", "evals-campaign-battery/thinking")
+ROOT = Path("/workspace") / PREFIX
 PROTECTED = (
     "evals/direct",
     "evals/thinking",
     "aft-sft/evals",
     "evals-campaign-battery/direct",
     "evals-campaign-battery/cap_probe",
+    # The GREEDY thinking tree. The sampled T=0.7 re-run exists to be COMPARED
+    # against it, so it must be structurally unable to overwrite it.
+    "evals-campaign-battery/thinking",
 )
 POLL_SECONDS = 60
 #: Stop after every arm is done AND this many idle passes, so the daemon exits
