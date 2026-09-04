@@ -24,6 +24,17 @@ is what ``closure_gate.py``'s turn-1 ``opened_channel`` measures, and to
 ``target_surprisal.py``, which measures the step-1 unnaturalness directly on the
 untrained model (and should land near the 1.65 seen here).
 
+A THIRD, INDEPENDENT DATA POINT pointing the same way: the finished adapter L2
+norms are 94.671963 (A) and 94.664413 (A-prime) — **0.008% apart**. A did not
+have to distort further to fit its alien target; both arms made changes of
+essentially identical magnitude. That corroborates "A adapted" rather than "A
+was strained into place", and it does not depend on the loss curve at all.
+
+GENERALISES BEYOND THIS RUN. Any short fine-tune in this campaign whose arms are
+compared on ``training_loss`` is comparing INITIAL SURPRISAL, not converged fit.
+The EFT dose ladders are short runs. Compare last-window means, or compare the
+curves; never the trainer's single reported number.
+
     python loss_curves.py --logs /workspace/runA/eft.log /workspace/runA/eftprime.log \\
         --labels A A-prime --out /workspace/runA/gate/loss_curves.json
 """
