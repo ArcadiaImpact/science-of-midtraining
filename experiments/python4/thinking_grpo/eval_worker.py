@@ -128,11 +128,73 @@ def discover_checkpoints(trainer_dir: Path,
     return sorted(found)
 
 
+def reasoning_stats(transcript_path: Path) -> dict[str, Any]:
+    """Per-episode thought-channel volume, CHAR-based (labelled as such).
+
+    Run B observable (coordinator, 2026-09-04): the A-prime convention leaves
+    ~0 reasoning at EFT time, so whether GRPO RE-GROWS reasoning from that tail
+    is a free and genuinely interesting per-step signal. Chars between each
+    ``<|channel>thought``/force-open and its ``<channel|>`` close, summed per
+    episode over the policy text; buckets mirror the closure gate's near-zero
+    token buckets at ~4 chars/token. Char-based because per-segment token
+    counts are not stored in transcripts; the estimate is labelled, never
+    presented as tokens.
+    """
+
+    open_marker, close_marker = "<|channel>thought", "<channel|>"
+    per_episode: list[int] = []
+    for line in transcript_path.read_text().splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        chars = 0
+        segments = row.get("segments") or []
+        for index, segment in enumerate(segments):
+            if segment.get("kind") != "policy":
+                continue
+            text = segment.get("text") or ""
+            forced_open = index > 0 and (
+                (segments[index - 1].get("text") or "").endswith(
+                    open_marker + "\n"))
+            cursor = 0
+            while True:
+                if forced_open:
+                    start = 0
+                    forced_open = False
+                else:
+                    at = text.find(open_marker, cursor)
+                    if at < 0:
+                        break
+                    start = at + len(open_marker) + 1  # skip the newline
+                close = text.find(close_marker, start)
+                if close < 0:
+                    chars += max(0, len(text) - start)
+                    break
+                chars += max(0, close - start)
+                cursor = close + len(close_marker)
+        per_episode.append(chars)
+    if not per_episode:
+        return {"n": 0}
+    ordered = sorted(per_episode)
+    return {
+        "n": len(per_episode),
+        "unit": "chars (~4/token)",
+        "p50": ordered[len(ordered) // 2],
+        "mean": round(sum(per_episode) / len(per_episode), 1),
+        "max": ordered[-1],
+        "le_chars": {str(t): sum(1 for c in per_episode if c <= t)
+                     for t in (0, 20, 80, 200)},
+    }
+
+
 def curve_row(step: int, split: str, aggregate: dict[str, Any],
-              *, model: str) -> dict[str, Any]:
+              *, model: str,
+              transcript_path: Path | None = None) -> dict[str, Any]:
     row = {key: value for key, value in aggregate.items() if key != "records"}
     row.update({"step": step, "split": split, "model": model,
                 "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
+    if transcript_path is not None and transcript_path.is_file():
+        row["reasoning_chars"] = reasoning_stats(transcript_path)
     return row
 
 
@@ -218,7 +280,8 @@ async def run_eval_worker(config: WorkerConfig) -> None:
                     python4_executable=config.boa_executable,
                     reward_mode="certified", concurrency=config.concurrency,
                     transcript_path=transcript_path)
-                row = curve_row(step, split_name, aggregate, model=model_name)
+                row = curve_row(step, split_name, aggregate, model=model_name,
+                                transcript_path=transcript_path)
                 with curves_path.open("a") as handle:
                     handle.write(json.dumps(row, sort_keys=True) + "\n")
                 done.add((step, split_name))

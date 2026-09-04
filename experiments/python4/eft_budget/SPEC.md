@@ -188,14 +188,50 @@ nothing — the empty-loss endpoint `grpo.py` warns about). Run B must additiona
 **log the masked fraction per step and treat a sustained high value as a loud
 stop**, not something noticed in a curve afterwards.
 
-### Run B's EFT phase uses the **A-prime** shape (Jonathan, 2026-09-04)
+### Run B's EFT phase uses the **A-prime** shape — ruled twice
 
-Supervise the channel close. The reasoning: teaching the model to submit
-*something* is the standard and sensible thing, and it matches what this model's
-failure actually is — it over-thinks and never finishes rather than
-under-thinking. Run A is still measured at the gate as the control, because all
-three models are served from one process and it costs almost nothing to learn
-whether supervising the close did anything at all.
+First by Jonathan (2026-09-04, pre-measurement): supervise the channel close;
+teaching the model to submit *something* is standard, and this model's failure
+is over-thinking, not under-thinking. Then confirmed by the coordinator under
+Jonathan's overnight delegation, **after** the gate + squashed cells landed and
+both arms measured at zero turn-1 reasoning (rubric case 5, resolved rather than
+deferred):
+
+1. **The primary criterion (reasoning health) lost its discriminating power** —
+   both arms are at zero, and its premise that certified reward runs on
+   reasoning is empirically false here: A-prime certifies 36.7% in the *harder*
+   squashed environment with no reasoning at all.
+2. **Every discriminating axis is one-sided.** A-prime: 99.2% submit, 22/32
+   mixed groups, zero truncation, 43.8% greedy held-in — the healthiest GRPO
+   init this campaign has measured. A: 11/256 sampled tool calls at turn 1 —
+   dead on arrival for a tool-calling RL loop.
+3. **The collapse has an upside for the central confound**: at ~1.5 turns with
+   squashed diagnostics the in-context teaching channel is nearly closed, and
+   A-prime still shows 100% first-draft Python 4 (graft: 0/6,848) and 9.4%
+   held-out expression from a dose with zero held-out rules — the cleanest
+   weight-resident generalisation signal produced so far. Run B inherits that
+   cleanliness.
+
+**Recorded, not acted on (coordinator, same ruling):**
+
+* (a) **Run B is effectively one-shot RLVR with a compile check** — mean ~1.5
+  turns, draft → `run_code` (which, with no test asserts, verifies compilation
+  only) → submit. Nobody should read it as multi-turn reasoning RL.
+* (b) **Rollouts carry no reasoning prose, so stance-reading from transcripts
+  is unavailable for this run.** The behavioural measures carry it.
+* (c) The curves log **per-step reasoning-channel volume**
+  (`eval_worker.reasoning_stats`, char-based, near-zero buckets) so whether
+  GRPO *re-grows* reasoning from the ~1/256 tail is observed, not wondered
+  about.
+
+**Post-EFT gate spot-check (new guard, coordinator 2026-09-04).** Run B's EFT is
+a fresh 512×2ep train and the 1,024-dose gate shape does not automatically
+transfer to half the dose. `pod/runB_eft_and_spotcheck.sh` re-runs the gate's
+32-greedy slice on the fresh adapter and writes `SPOTCHECK_PASS` only if it
+matches tonight's A-prime shape (opens ≥30/32, closes at p50 ≤50 tokens, tool
+calls ≥29/32, closes the handed channel ≥30/32, ≤2 cap hits);
+`launch_31b_runB.sh` refuses to start without the marker. A deviation stops the
+line before any GRPO step.
 
 ### Truncation: keep the rollouts, penalise not finishing
 

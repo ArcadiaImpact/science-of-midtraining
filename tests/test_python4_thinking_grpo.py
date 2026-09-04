@@ -1596,3 +1596,35 @@ def test_eval_worker_variant_defaults_and_passthrough(tmp_path):
     squashed.write_text(yaml.safe_dump({**base, "diagnostic_mode": "generic"}))
     cfg2 = eval_worker.load_worker_config(squashed)
     assert cfg2.variant().diagnostic_mode == "generic"
+
+
+def test_eval_worker_reasoning_stats(tmp_path):
+    import json as json_module
+
+    from experiments.python4.thinking_grpo import eval_worker
+
+    episodes = [
+        {"segments": [  # turn-1 self-open (10 chars), turn-2 force-open (4 chars)
+            {"kind": "prompt", "text": "P<|turn>model\n"},
+            {"kind": "policy",
+             "text": "<|channel>thought\n0123456789<channel|>code<tool_call|>"},
+            {"kind": "env", "text": "resp<|channel>thought\n"},
+            {"kind": "policy", "text": "abcd<channel|>more<turn|>"},
+        ]},
+        {"segments": [  # instant close, then an UNCLOSED forced channel (7 chars)
+            {"kind": "prompt", "text": "P<|turn>model\n"},
+            {"kind": "policy", "text": "<|channel>thought\n<channel|>x<tool_call|>"},
+            {"kind": "env", "text": "resp<|channel>thought\n"},
+            {"kind": "policy", "text": "cut mid"},
+        ]},
+    ]
+    path = tmp_path / "t.jsonl"
+    path.write_text("\n".join(json_module.dumps(e) for e in episodes) + "\n")
+    stats = eval_worker.reasoning_stats(path)
+    assert stats["n"] == 2
+    # per-episode chars: {10+4, 0+7}; p50 uses the upper-median convention
+    # (ordered[n//2]) shared with closure_gate._percentiles
+    assert stats["max"] == 14 and stats["p50"] == 14
+    assert stats["mean"] == 10.5
+    assert stats["le_chars"]["0"] == 0
+    assert stats["le_chars"]["20"] == 2
