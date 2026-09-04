@@ -47,8 +47,8 @@ from .campaign_battery import (
     score_many,
 )
 from .eval_dispatch import (
-    build_engine,
     max_completion_tokens,
+    max_model_len,
     render_prompts,
 )
 from .run_rl_cell import prepare_runtime_environment
@@ -112,6 +112,73 @@ def build_sampling_params_at(tokenizer: Any, mode: str, *, temperature: float, s
     )
 
 
+def assert_context_fits(
+    prompt_token_lengths: list[int], *, mode: str, max_model_len: int
+) -> dict[str, int]:
+    """A too-small context window SILENTLY shortens completions. Never allow it.
+
+    vLLM caps a request's completion at ``max_model_len - len(prompt)``. If that
+    is below ``max_completion_tokens(mode)`` the model is cut off earlier than
+    the nominal cap -- which changes the truncation rate, the single quantity
+    this study is most careful about, without any error being raised. So the
+    window is checked against the LONGEST prompt actually rendered, not against
+    an assumption about prompt length.
+    """
+
+    longest = max(prompt_token_lengths)
+    needed = longest + max_completion_tokens(mode)
+    if max_model_len < needed:
+        raise ValueError(
+            f"max_model_len={max_model_len} is too small: longest prompt is "
+            f"{longest} tokens and the completion cap is "
+            f"{max_completion_tokens(mode)}, so {needed} is required. A smaller "
+            "window would silently shorten completions and change the "
+            "truncation rate."
+        )
+    return {
+        "longest_prompt_tokens": longest,
+        "required_context": needed,
+        "max_model_len": max_model_len,
+        "headroom": max_model_len - needed,
+    }
+
+
+def build_engine_at(
+    parent: Path,
+    mode: str,
+    *,
+    enable_lora: bool,
+    gpu_memory_utilization: float,
+    max_model_len: int,
+) -> Any:
+    """``eval_dispatch.build_engine`` with the two throughput knobs unpinned.
+
+    The shared helper hardcodes ``gpu_memory_utilization=0.82`` and derives
+    ``max_model_len`` from the mode; it is used by other studies and is left
+    alone. Everything else here is identical.
+
+    Neither knob changes the model's outputs mathematically: ``max_model_len``
+    bounds scheduler admission and ``gpu_memory_utilization`` sizes the KV
+    cache. Both change how many sequences run concurrently, which is why they
+    are worth touching -- the observed limit was 36.41x concurrency, computed
+    as (KV cache tokens) / max_model_len.
+    """
+
+    from vllm import LLM
+
+    return LLM(
+        model=str(parent),
+        tokenizer=str(parent),
+        dtype="bfloat16",
+        tensor_parallel_size=1,
+        enable_lora=enable_lora,
+        max_lora_rank=C.LORA_RANK,
+        gpu_memory_utilization=gpu_memory_utilization,
+        max_model_len=max_model_len,
+        trust_remote_code=False,
+    )
+
+
 @dataclass(frozen=True)
 class Endpoint:
     cell: str
@@ -164,6 +231,15 @@ class Config:
     temperature: float = GREEDY_TEMPERATURE
     #: Only used when temperature > 0; makes the draw reproducible.
     seed: int = 20260904
+    #: KV-cache share of the GPU. The observed bottleneck is concurrency, which
+    #: vLLM reports as (KV cache tokens) / max_model_len -- 36.41x at the
+    #: defaults. Raising this enlarges the KV cache.
+    gpu_memory_utilization: float = 0.82
+    #: 0 = the mode default (7,168 for thinking). The real requirement is
+    #: longest_prompt + completion cap, which is ~5,049; the surplus buys
+    #: nothing and directly divides concurrency. Validated against the actual
+    #: rendered prompts before the engine is built -- see assert_context_fits.
+    max_model_len: int = 0
     max_rows: int = 0
     plan: list[Endpoint] = field(default_factory=list)
 
@@ -185,6 +261,10 @@ class Config:
             raise ValueError("workers must be non-negative")
         if not 0.0 <= self.temperature <= 2.0:
             raise ValueError("temperature must be in [0, 2]")
+        if not 0.1 <= self.gpu_memory_utilization <= 0.98:
+            raise ValueError("gpu_memory_utilization must be in [0.1, 0.98]")
+        if self.max_model_len < 0:
+            raise ValueError("max_model_len must be non-negative (0 = mode default)")
         if bool(self.endpoints) == bool(self.plan):
             raise ValueError("supply exactly one of endpoints=<path> or plan=[...]")
         plan = [
@@ -237,6 +317,7 @@ def score_battery_endpoint(
     workers: int = 0,
     temperature: float = GREEDY_TEMPERATURE,
     seed: int | None = None,
+    engine: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Save every response once, then aggregate it twice (both parsers)."""
 
@@ -289,6 +370,12 @@ def score_battery_endpoint(
         "decoding": "greedy" if temperature == 0 else "sampled",
         "seed": seed,
         "samples_per_prompt": 1,
+        # Engine geometry is recorded per endpoint because this run changed it
+        # mid-sweep: step 768 ran at the original 7168/0.82 and the rest at a
+        # larger KV cache. Neither knob changes the model mathematically, but
+        # batch composition differs, so which endpoints shared a geometry has
+        # to be checkable rather than remembered.
+        "engine": engine or {},
         "slices": aggregate_endpoint(records),
         "raw": str(raw_path),
         "note": (
@@ -367,8 +454,22 @@ def run(cfg: Config) -> dict[str, Any]:
     receipt["seed"] = cfg.seed if cfg.temperature > 0 else None
     receipt["decoding"] = "greedy" if cfg.temperature == 0 else "sampled"
 
+    window = cfg.max_model_len or max_model_len(cfg.mode)
+    # Measured on the prompts this run will actually send, not assumed.
+    prompt_lens = [len(tokenizer(p).input_ids) for p in prompts]
+    receipt["context"] = assert_context_fits(
+        prompt_lens, mode=cfg.mode, max_model_len=window
+    )
+    receipt["gpu_memory_utilization"] = cfg.gpu_memory_utilization
+
     boot_started = time.monotonic()
-    llm = build_engine(parent, cfg.mode, enable_lora=enable_lora)
+    llm = build_engine_at(
+        parent,
+        cfg.mode,
+        enable_lora=enable_lora,
+        gpu_memory_utilization=cfg.gpu_memory_utilization,
+        max_model_len=window,
+    )
     receipt["engine_boot_seconds"] = round(time.monotonic() - boot_started, 1)
 
     for index, (endpoint, raw_path, summary_path) in enumerate(pending, start=1):
@@ -399,6 +500,11 @@ def run(cfg: Config) -> dict[str, Any]:
             workers=cfg.workers,
             temperature=cfg.temperature,
             seed=cfg.seed if cfg.temperature > 0 else None,
+            engine={
+                "max_model_len": window,
+                "gpu_memory_utilization": cfg.gpu_memory_utilization,
+                **receipt["context"],
+            },
         )
         headline = result["slices"].get("eval_trained_conflict__canonical", {})
         # Truncation is a CENSORING confound, not a nuisance statistic: a

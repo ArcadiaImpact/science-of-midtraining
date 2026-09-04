@@ -656,6 +656,45 @@ def test_sampled_endpoints_record_temperature_and_seed(sweep, tmp_path, monkeypa
     assert greedy["seed"] is None
 
 
+def test_context_window_must_fit_the_longest_prompt_plus_the_cap(sweep):
+    """The whole point of the check: a small window silently shortens output.
+
+    vLLM caps a completion at `max_model_len - len(prompt)`. Below the nominal
+    cap the model is cut off early and the TRUNCATION RATE changes -- the one
+    quantity this study is most careful about -- with no error raised. Shrinking
+    the window is a throughput win only while it stays above the requirement.
+    """
+
+    # thinking cap is 4096; longest prompt here is 953 -> needs 5049.
+    lens = [443, 785, 953]
+    ok = sweep.assert_context_fits(lens, mode="thinking", max_model_len=5120)
+    assert ok["longest_prompt_tokens"] == 953
+    assert ok["required_context"] == 953 + 4096
+    assert ok["headroom"] == 5120 - (953 + 4096)
+
+    # exactly enough is fine; one token short is not.
+    sweep.assert_context_fits(lens, mode="thinking", max_model_len=5049)
+    with pytest.raises(ValueError, match="silently shorten"):
+        sweep.assert_context_fits(lens, mode="thinking", max_model_len=5048)
+
+    # It must key off the LONGEST prompt, not the median -- a window sized to
+    # the typical prompt would quietly clip the long tail only.
+    with pytest.raises(ValueError, match="longest prompt is 953"):
+        sweep.assert_context_fits(lens, mode="thinking", max_model_len=785 + 4096)
+
+
+def test_engine_geometry_is_range_checked(sweep):
+    base = dict(parent_model="/parent", output_dir="/out", plan=[sweep.Endpoint("charter", 0)])
+    cfg = sweep.Config(**base)
+    assert cfg.gpu_memory_utilization == 0.82
+    assert cfg.max_model_len == 0  # 0 = mode default
+    for bad in (0.0, 0.99):
+        with pytest.raises(ValueError, match="gpu_memory_utilization"):
+            sweep.Config(**base, gpu_memory_utilization=bad)
+    with pytest.raises(ValueError, match="max_model_len"):
+        sweep.Config(**base, max_model_len=-1)
+
+
 def test_holdout_tier_is_direct_only(sweep):
     with pytest.raises(ValueError, match="direct-only"):
         sweep.Config(
