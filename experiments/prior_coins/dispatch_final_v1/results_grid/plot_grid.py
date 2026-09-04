@@ -15,15 +15,16 @@ this directory.
 The rectangle
 -------------
 figs 2-4 are panelled over the **full model x dose rectangle** -- four models
-(4B, 12B, 27B, GLM-4.5-Air) x four doses (1M, 5M, 50M, 190M presented tokens),
-sixteen panels, always.  A panel is in exactly one of three visually distinct
-states, so "we have not run it" and "we are never going to run it" can never be
-confused for each other:
+(4B, 12B, 27B, GLM-4.5-Air) x five comparison doses (1M, 5M, 19M, 50M,
+190M presented tokens), twenty panels, always. A panel is in one of four
+visually distinct states, so "we have not run it", "we did not evaluate it",
+and "we are never going to run it" cannot be confused:
 
 * **has data** -- drawn normally;
 * **planned, not yet scored** -- the "training…" placeholder;
+* **historical battery not evaluated** -- "not evaluated (legacy run)";
 * **not in the campaign plan** -- a grey hatched panel reading "cell not
-  covered".  Today that is 4B@190M, 12B@190M, 27B@1M and GLM@1M.
+  covered".
 
 ``PLAN`` below is the single source of truth for which is which, and fig1 draws
 its series from the same table.
@@ -122,9 +123,11 @@ DOSES: tuple[int, ...] = (1_000_000, 5_000_000, 19_000_000, 50_000_000,
 DOSE_LABEL = {1_000_000: "1M", 5_000_000: "5M", 19_000_000: "19M",
               50_000_000: "50M", 190_000_000: "190M"}
 
-#: (model, dose) -> profile.  Fourteen planned cells of the twenty
-#: (19M added 2026-09-01: 12B and 27B only -- 4B is flat at 50M and GLM
-#: has no 19M row; GLM@5M dropped 2026-09-02, Sid: 50M + 190M only).  The 12B 50M
+#: (model, dose) -> profile.  The speculative historical GLM row is placed in
+#: the 19M comparison bucket, but actually used 5M directional documents for
+#: four presentations = 20M presented directional tokens.  Every combined
+#: figure marks that point/bucket with an asterisk.
+#: The 12B 50M
 #: cell is the 4-epoch profile; the 1-epoch row of the same presented budget is
 #: the legacy annotation below, not a member of this table.
 PLAN: dict[tuple[str, int], str] = {
@@ -139,11 +142,10 @@ PLAN: dict[tuple[str, int], str] = {
     ("gemma3_27b", 19_000_000): "gemma3_27b_19m",
     ("gemma3_27b", 50_000_000): "gemma3_27b_50m",
     ("gemma3_27b", 190_000_000): "gemma3_27b_190m",
-    ("glm45_air", 50_000_000): "glm45_air_50m",
+    ("glm45_air", 19_000_000): "glm45_air_20m_legacy",
     ("glm45_air", 190_000_000): "glm45_air_190m",
 }
-#: The cells deliberately not in the campaign (4B@190M, 12B@190M, 27B@1M,
-#: GLM@1M, 4B@19M, GLM@19M).  Derived, never hand-listed twice.
+#: Cells deliberately not in the campaign. Derived, never hand-listed twice.
 NOT_COVERED = tuple((m, d) for m in MODELS for d in DOSES
                     if (m, d) not in PLAN)
 PROFILES: tuple[str, ...] = tuple(
@@ -151,6 +153,15 @@ PROFILES: tuple[str, ...] = tuple(
 MODEL_OF = {profile: model for (model, _), profile in PLAN.items()}
 
 LEGACY_PROFILE = "gemma3_12b_50m"
+LEGACY_GLM_PROFILE = "glm45_air_20m_legacy"
+LEGACY_GLM_NOTE = (
+    "* Legacy GLM point: 20M presented directional tokens (5M unique task "
+    "tokens × 4 presentations), placed in the 19M comparison bucket. Its "
+    "training/AFT recipe differs from the final-v1 grid."
+)
+UNAVAILABLE_BATTERIES = {
+    LEGACY_GLM_PROFILE: frozenset(("recall", "d4", "costsweep")),
+}
 ARMS = ("charter", "coin", "control")
 ARM_SHORT = {"charter": "ch", "coin": "coin", "control": "ctl"}
 
@@ -359,6 +370,19 @@ def wilson_err(rate: float, n: int) -> tuple[float, float]:
 
 
 def profile_meta(name: str) -> dict[str, Any]:
+    if name == LEGACY_GLM_PROFILE:
+        return {
+            "name": name,
+            "model": "glm45_air",
+            "size": "glm45_air_base",
+            "unique_tokens": 5_000_000,
+            "epochs": 4,
+            # Combined plots deliberately use the requested 19M comparison
+            # coordinate; actual_presented retains the exact historical dose.
+            "presented": 19_000_000,
+            "actual_presented": 20_000_000,
+            "legacy": True,
+        }
     p = C.load_profile(name)
     return {
         "name": name,
@@ -371,7 +395,18 @@ def profile_meta(name: str) -> dict[str, Any]:
         # Presented = unique x epochs. This is the campaign's dose axis: the 1M
         # / 5M / 50M / 190M labels are presentations, not unique corpus size.
         "presented": p.release_tokens_per_arm * p.midtrain_epochs,
+        "actual_presented": p.release_tokens_per_arm * p.midtrain_epochs,
+        "legacy": False,
     }
+
+
+def profile_dose_label(profile: str, dose: int) -> str:
+    return f"{DOSE_LABEL[dose]}*" if profile == LEGACY_GLM_PROFILE else DOSE_LABEL[dose]
+
+
+def dose_axis_label(dose: int) -> str:
+    """Shared-axis label; the star applies only to GLM at the 19M position."""
+    return f"{DOSE_LABEL[dose]}*" if dose == 19_000_000 else DOSE_LABEL[dose]
 
 
 def load_scored() -> dict[tuple[str, str, str], dict]:
@@ -417,7 +452,8 @@ def charter_rate(cell: dict | None) -> tuple[float, int, int] | None:
 
 def cell_title(model: str, dose: int, meta: dict[str, Any] | None) -> str:
     """Panel title for one (model, dose) cell of the rectangle."""
-    head = f"{MODEL_LABEL[model]}  {DOSE_LABEL[dose]} presented"
+    label = profile_dose_label(meta["name"], dose) if meta else DOSE_LABEL[dose]
+    head = f"{MODEL_LABEL[model]}  {label} presented"
     return head if meta is None else f"{head} ({meta['epochs']} ep)"
 
 
@@ -448,6 +484,16 @@ def draw_training(ax) -> None:
     """State (b): planned, running, not yet scored. Unchanged treatment."""
     ax.text(0.5, 0.5, "training…", transform=ax.transAxes, ha="center",
             va="center", fontsize=11, color="#c0c0c0", style="italic")
+
+
+def draw_no_data(ax, profile: str, battery: str) -> None:
+    """Distinguish a historical battery that was not run from pending work."""
+    if battery in UNAVAILABLE_BATTERIES.get(profile, ()):
+        ax.text(0.5, 0.5, "not evaluated\n(legacy run)", transform=ax.transAxes,
+                ha="center", va="center", fontsize=9.5, color="#8a8a8a",
+                style="italic")
+    else:
+        draw_training(ax)
 
 
 def rectangle_axes(figsize: tuple[float, float]):
@@ -552,7 +598,7 @@ def fig1_dose_response(
 
         ax.set_xscale("log")
         ax.set_xticks(ticks)
-        ax.set_xticklabels([f"{t / 1e6:g}M" for t in ticks], fontsize=8)
+        ax.set_xticklabels([dose_axis_label(t) for t in ticks], fontsize=8)
         ax.minorticks_off()
         ax.set_ylim(*FIG1_YLIM)
         ax.axhline(50, color="#bbbbbb", linestyle="--", linewidth=0.8, zorder=1)
@@ -571,7 +617,7 @@ def fig1_dose_response(
         if missing_note:
             lines.append("still unscored:")
             lines.extend(
-                f"  {MODEL_LABEL[model]}@{DOSE_LABEL[dose]}: "
+                f"  {MODEL_LABEL[model]}@{dose_axis_label(dose)}: "
                 + ", ".join(sorted(arms))
                 for (model, dose), arms in sorted(
                     missing_note.items(),
@@ -584,7 +630,7 @@ def fig1_dose_response(
             labels = dict(FIG1_ENDPOINTS)
             lines.append("not evaluated (not zero):")
             lines.extend(
-                f"  {MODEL_LABEL[model]}@{DOSE_LABEL[dose]} {arm}: "
+                f"  {MODEL_LABEL[model]}@{dose_axis_label(dose)} {arm}: "
                 f"{labels[endpoint]}"
                 for model, dose, arm, endpoint in sorted(not_evaluated)
             )
@@ -628,6 +674,8 @@ def fig1_dose_response(
         "NOT an interchangeable datapoint.  "
         "4B and 12B have no 190M cell and 27B and GLM no 1M cell in the "
         "campaign plan, so those lines stop rather than gap.  "
+        "GLM has no 50M cell, so its 19M* and 190M points are joined.  "
+        f"{LEGACY_GLM_NOTE}  "
         "Colour = model, linestyle + marker = arm: colour is never the only "
         "channel (Okabe-Ito palette)."))
     fig.tight_layout(rect=(0, 0.035, 1, 0.945))
@@ -692,7 +740,7 @@ def fig2_recall(scored: dict, legacy: dict, metas: dict) -> Path:
             for spine in ("top", "right"):
                 ax.spines[spine].set_visible(False)
             if not any_data:
-                draw_training(ax)
+                draw_no_data(ax, profile, "recall")
 
     for ax in axes.ravel():
         ax.set_ylim(-3, 103)
@@ -728,6 +776,8 @@ def fig2_recall(scored: dict, legacy: dict, metas: dict) -> Path:
         f"CAVEAT: {CAVEAT}.  "
         "GLM-4.5-Air@190M has no AFT-256 recall point; that blank is not "
         "zero.  "
+        "GLM-4.5-Air@19M* did not run this battery.  "
+        f"{LEGACY_GLM_NOTE}  "
         "Panels are the full model x dose rectangle: \"training…\" is planned "
         "and not yet scored, a grey hatched panel is a cell the campaign does "
         "not cover at all."))
@@ -832,7 +882,7 @@ def fig3_d4(scored: dict, legacy: dict, metas: dict) -> Path:
             for spine in ("top", "right"):
                 ax.spines[spine].set_visible(False)
             if not any_data:
-                draw_training(ax)
+                draw_no_data(ax, profile, "d4")
 
     for ax in axes.ravel():
         ax.set_ylim(-3, 103)
@@ -900,6 +950,8 @@ def fig3_d4(scored: dict, legacy: dict, metas: dict) -> Path:
         f"  CAVEAT: {CAVEAT}.  "
         "GLM-4.5-Air@190M D4 was evaluated at step 512 only; its absent light "
         "step-256 bars are not zeros.  "
+        "GLM-4.5-Air@19M* did not run this battery.  "
+        f"{LEGACY_GLM_NOTE}  "
         "\"training…\" is planned and not yet scored; a grey hatched panel is a "
         "cell the campaign does not cover at all."))
     fig.tight_layout(rect=(0, 0.045, 1, 0.935))
@@ -974,7 +1026,7 @@ def fig4_costsweep(scored: dict, legacy: dict, metas: dict) -> Path:
             for spine in ("top", "right"):
                 ax.spines[spine].set_visible(False)
             if not any_data:
-                draw_training(ax)
+                draw_no_data(ax, profile, "costsweep")
 
     for ax in axes.ravel():
         ax.set_xticks(centers)
@@ -1018,6 +1070,8 @@ def fig4_costsweep(scored: dict, legacy: dict, metas: dict) -> Path:
         "requested centre, and realized_mean_ratio in the scored JSON is what "
         "was actually built. "
         f"CAVEAT: {CAVEAT}." + extra +
+        "  GLM-4.5-Air@19M* did not run this battery.  "
+        f"{LEGACY_GLM_NOTE}  "
         "  \"training…\" is planned and not yet scored; a grey hatched panel is "
         "a cell the campaign does not cover at all."))
     fig.tight_layout(rect=(0, 0.04, 1, 0.935))

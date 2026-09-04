@@ -194,7 +194,7 @@ def render_surface(
             ax.set_xscale("log")
             ax.set_xticks(house.DOSES)
             ax.set_xticklabels(
-                [house.DOSE_LABEL[dose] for dose in house.DOSES], fontsize=7.5
+                [house.dose_axis_label(dose) for dose in house.DOSES], fontsize=7.5
             )
             ax.minorticks_off()
             ax.set_ylim(*house.FIG1_YLIM)
@@ -249,7 +249,8 @@ def render_surface(
         "(optimistic because runs are clustered within episodes). Color = model; "
         "solid/circle = Charter choice; dashed/square = coin choice. Line breaks "
         "are planned cells not yet scored; line stops are doses absent from the "
-        f"campaign plan. CAVEAT: {house.CAVEAT}.",
+        "campaign plan. GLM has no 50M cell, so its 19M* and 190M points are "
+        f"joined. CAVEAT: {house.CAVEAT}. {house.LEGACY_GLM_NOTE}",
     )
     fig.tight_layout(rect=(0.01, 0.045, 0.995, 0.925), h_pad=1.4, w_pad=1.0)
 

@@ -175,7 +175,7 @@ def render_surface(
 
     dose_handles = [
         Line2D([], [], color=DOSE_COLOR[dose], linewidth=2.2,
-               label=house.DOSE_LABEL[dose])
+               label=house.dose_axis_label(dose))
         for dose in doses
     ]
     choice_handles = [
@@ -215,7 +215,7 @@ def render_surface(
         "comparable dense parameter count. A lone marker means that budget "
         "exists at only one scored model; line breaks are planned cells not "
         "yet scored. "
-        f"CAVEAT: {house.CAVEAT}.",
+        f"CAVEAT: {house.CAVEAT}. {house.LEGACY_GLM_NOTE}",
     )
     fig.tight_layout(rect=(0.01, 0.045, 0.995, 0.925), h_pad=1.4, w_pad=1.0)
 
