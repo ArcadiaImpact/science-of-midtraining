@@ -19,18 +19,27 @@ fraction well above its nominal 10%** — and nobody had measured it.  Repo
 convention is that every derived number reaching a report must be recomputable
 by a committed script, so the measurement lives here rather than in a notebook.
 
-While we have the canonical mixture open and tokenized, this script also
-measures a second unmeasured property of the same supervised span: the
-**markdown code-fence rate in the gold answers**.  The gold answer IS the
-supervised target, so a fenced gold teaches the model to wrap its Python 4 in a
-fence.  That interacts with grading: ``eft_v2.common.extract_code`` FULLMATCHES a
-single fenced block and strips it, so a *cleanly* fenced answer still grades
-normally, but a fence plus stray prose (or a nested fence, or an unrecognised
-info string) raises and grades as malformed with zero reward.  The two classes
-are therefore reported separately.  We additionally cross-check each fenced gold
-against its own row's system prompt, which instructs the model to emit no code
-fences — rows where both hold are rows whose supervision contradicts their own
-instruction.
+While we have the canonical mixture open and tokenized, this script also reports
+a purely DESCRIPTIVE second measurement over the same supervised span: the
+**markdown code-fence rate in the gold answers**, cross-tabulated against the
+row's own system prompt.
+
+That cross-tabulation is the whole point, and reporting the fence rate without
+it is how you get a wrong answer.  The corpus is deliberately MULTI-FRAME
+(``experiments/python4/eft_scale/frames.py``): frame **F2's response contract is
+literally "exactly one fenced code block"**, while F0/F1 forbid fences and F3
+carries no system prompt.  So a nonzero fence rate is the frame mix showing
+through, not a defect — the rows with fenced golds are exactly the rows that
+asked for a fence.  The script asserts that directly by counting rows where the
+instruction and the target DISAGREE about fencing.  Varying the output-format
+instruction and having the targets track it is what makes the dialect install
+robust across surface formats instead of welded to one.
+
+(Descriptive note only: ``eft_v2.common.extract_code`` FULLMATCHES one fenced
+block with an optional ``python``/``py`` info string and rejects a nested fence,
+so a cleanly fenced gold round-trips through the grader and a fence-plus-prose
+answer raises.  The two are counted separately for completeness; Dolci rows are
+never graded as Python 4, so their fences are just prose.)
 
 WHAT IS MEASURED (and how faithfully)
 =====================================
@@ -272,9 +281,11 @@ def measure(
     per_source: dict[str, dict[str, Any]] = {}
     chat_token_mismatches: list[dict[str, Any]] = []
     fence_by_source: dict[str, Counter] = {}
-    system_prompts: Counter = Counter()
-    contradiction_rows = 0
-    contradiction_eligible = 0
+    # (verbatim system prompt, fenced?) -> n, the cross-tab that decides whether
+    # a fence rate means anything.
+    frame_crosstab: Counter = Counter()
+    frame_label: dict[str, str] = {}
+    disagreements = 0
 
     for row in rows:
         source = str(row.get("source", "unknown"))
@@ -300,24 +311,37 @@ def measure(
         kind = classify_fence(answer)
         fence_by_source.setdefault(source, Counter())[kind] += 1
 
+        if source == "dolci":
+            # Replay rows carry no frame and are never graded as Python 4.
+            continue
         system = system_text(messages)
-        if system is not None:
-            system_prompts[system] += 1
-            # "Does this row's own instruction forbid the fence its gold shows?"
-            if "code fence" in system.lower():
-                contradiction_eligible += 1
-                if kind != "unfenced":
-                    contradiction_rows += 1
+        frame = classify_frame(messages)
+        key = system if system is not None else "(no system prompt)"
+        frame_label[key] = frame
+        frame_crosstab[(key, kind != "unfenced")] += 1
+        # Instruction/target agreement: F2 asks for a fence, F0/F1 forbid one.
+        wants_fence = frame == "F2"
+        if frame in FRAMES_FORBIDDING_FENCES and kind != "unfenced":
+            disagreements += 1
+        elif wants_fence and kind == "unfenced":
+            disagreements += 1
 
     return {
         "per_source": per_source,
         "chat_token_mismatches": chat_token_mismatches,
         "fence_by_source": {k: dict(v) for k, v in fence_by_source.items()},
-        "system_prompts": dict(system_prompts),
-        "fence_contradicts_own_system_prompt": {
-            "rows_with_no_fence_instruction": contradiction_eligible,
-            "of_those_with_fenced_gold": contradiction_rows,
-        },
+        "frame_crosstab": [
+            {
+                "system_prompt": key,
+                "frame": frame_label[key],
+                "fenced": fenced,
+                "rows": count,
+            }
+            for (key, fenced), count in sorted(
+                frame_crosstab.items(), key=lambda kv: -kv[1]
+            )
+        ],
+        "instruction_target_disagreements": disagreements,
     }
 
 
@@ -404,25 +428,28 @@ def report(result: Mapping[str, Any], *, dolci_key: str, train_on_eos: bool) -> 
     print()
 
     print("-" * 72)
-    print("SYSTEM PROMPTS PRESENT IN THE MIXTURE")
+    print("SYSTEM PROMPT (verbatim) x FENCING OF THE GOLD — python4 rows only")
     print("-" * 72)
-    prompts = result["system_prompts"]
-    if not prompts:
-        print("  (no system turns)")
-    for text, count in sorted(prompts.items(), key=lambda kv: -kv[1]):
-        print(f"  n={count}")
-        print(f"    {text!r}")
-    contradiction = result["fence_contradicts_own_system_prompt"]
-    eligible = contradiction["rows_with_no_fence_instruction"]
-    fenced = contradiction["of_those_with_fenced_gold"]
+    crosstab = result["frame_crosstab"]
+    if not crosstab:
+        print("  (no python4 rows)")
+    for entry in crosstab:
+        state = "FENCED  " if entry["fenced"] else "unfenced"
+        print(f"  n={entry['rows']:<5} {state}  [{entry['frame']}]")
+        print(f"      {entry['system_prompt']!r}")
+    disagreements = result["instruction_target_disagreements"]
+    python4_rows = sum(entry["rows"] for entry in crosstab)
     print()
     print(
-        f"rows whose system prompt forbids code fences : {eligible}"
+        "rows where the output-format INSTRUCTION and the TARGET disagree "
+        f"about fencing : {disagreements} / {python4_rows}"
     )
-    print(
-        f"  ...whose own gold answer IS fenced         : {fenced} "
-        f"({_fraction(fenced, eligible):.1%} of those rows)"
-    )
+    if python4_rows and disagreements == 0:
+        print(
+            "  -> the corpus varies its output-format instruction across rows and the\n"
+            "     targets track it, which makes the dialect install robust across surface\n"
+            "     formats rather than welded to one. Descriptive, not a defect."
+        )
 
 
 def build_parser() -> argparse.ArgumentParser:
