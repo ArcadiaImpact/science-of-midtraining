@@ -33,6 +33,20 @@ REPORT THE DISTRIBUTION, NOT A CLOSED-FRACTION. A model can close 8/8 times and
 still have collapsed from ~3,100 tokens to ~300, which would starve GRPO of the
 trajectories it needs while looking healthy. Tokens-to-close is the number.
 
+AND REPORT THE TRUNCATED FRACTION, because it converts directly into Run B's
+viability. TRL's ``mask_truncated_completions`` drops any rollout that never
+terminated out of the loss entirely. So a model that cannot close a handed
+channel produces rollouts that hit the token cap, get masked, and contribute
+**zero gradient** — Run B would burn hours and real money while looking like a
+healthy job rather than a crash. Two numbers carry that:
+
+  * ``truncated_fraction`` — share of samples masked out of the loss;
+    ``surviving_loss_fraction`` is its complement.
+  * ``groups_fully_truncated`` — GRPO groups by problem with k=8, so a group
+    whose every sample is masked contributes NOTHING. This is the endpoint
+    ``grpo.py`` warns about (all completions masked => empty loss), measured
+    rather than feared.
+
 Usage:
     python closure_turn2.py --endpoint http://127.0.0.1:8100 --model graft \\
         --transcripts /workspace/run5-ops/cold_transcripts/probe_train.jsonl \\
@@ -177,6 +191,12 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
                     for p in picks for _ in range(reps)]
             results = await asyncio.gather(*jobs)
             closed = [r for r in results if r["closed"]]
+            # TRL masks any rollout that did not terminate; those contribute no
+            # gradient at all. Group-level, because GRPO's unit is the k-group.
+            truncated = [r for r in results if not r["terminated"]]
+            groups = [results[i:i + reps] for i in range(0, len(results), reps)]
+            fully_truncated = [g for g in groups
+                               if all(not r["terminated"] for r in g)]
             out[arm] = {
                 "n": len(results),
                 "temperature": temp,
@@ -185,6 +205,16 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
                 "hit_token_cap": sum(1 for r in results if r["finish_reason"] == "length"),
                 "emitted_tool_call": sum(1 for r in results if r["emitted_tool_call"]),
                 "terminated": sum(1 for r in results if r["terminated"]),
+                # RUN B VIABILITY: what fraction of the loss survives TRL's
+                # mask_truncated_completions, and how many k-groups go empty.
+                "truncated": len(truncated),
+                "truncated_fraction": round(len(truncated) / len(results), 4) if results else None,
+                "surviving_loss_fraction": round(
+                    1 - len(truncated) / len(results), 4) if results else None,
+                "groups": len(groups),
+                "groups_fully_truncated": len(fully_truncated),
+                "groups_fully_truncated_fraction": round(
+                    len(fully_truncated) / len(groups), 4) if groups else None,
                 # THE number the gate turns on
                 "tokens_to_close": _percentiles(
                     [r["tokens_to_close_est"] for r in closed if r["tokens_to_close_est"]]
@@ -222,6 +252,11 @@ def main() -> int:
         print(f"[turn2 {stats['label']}/{arm}] n={a['n']} "
               f"closed={a['closed']}/{a['n']} ({a['closed_fraction']}) "
               f"cap_hits={a['hit_token_cap']} tool_calls={a['emitted_tool_call']}", flush=True)
+        print(f"    RUN B LOSS SURVIVAL: truncated={a['truncated']}/{a['n']} "
+              f"({a['truncated_fraction']}) -> surviving_loss_fraction="
+              f"{a['surviving_loss_fraction']}; k-groups fully masked "
+              f"{a['groups_fully_truncated']}/{a['groups']} "
+              f"({a['groups_fully_truncated_fraction']})", flush=True)
         print(f"    tokens-to-close: min={c['min']} p25={c['p25']} p50={c['p50']} "
               f"p75={c['p75']} p95={c['p95']} max={c['max']} mean={c['mean']}", flush=True)
         print(f"    completion tok : min={d['min']} p25={d['p25']} p50={d['p50']} "

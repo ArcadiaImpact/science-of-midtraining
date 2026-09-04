@@ -226,8 +226,64 @@ def adapter_fingerprint(adapter_dir: Path, targets: list[str]) -> dict:
     }
 
 
-def build_examples(tok, mixture_path: Path, seq_len: int = SEQ_LEN) -> list[dict]:
-    """Completion-only masking against the GRAFT'S OWN template, NO thought.
+def empty_channel_literal(tok, messages: list[dict]) -> str:
+    """The template's OWN empty-thought scaffold, extracted rather than typed.
+
+    Run A-prime's target is ``<|turn>model\\n<|channel>thought\\n<channel|>{code}<turn|>``,
+    which the template will not emit for an assistant MESSAGE: line 241 gates the
+    thought on ``thinking_text`` being truthy, so an empty ``reasoning`` renders
+    nothing. But the template DOES emit exactly this scaffold as its
+    ``enable_thinking=False`` GENERATION PROMPT (line 384-386). We take it from
+    there, so the two literals are the template's bytes and not ours, and a
+    template change moves them with it. Asserted against the expected value.
+    """
+    nothink = tok.apply_chat_template(
+        messages, add_generation_prompt=True, tokenize=False, enable_thinking=False
+    )
+    cut = nothink.rfind(TURN_MODEL)
+    if cut < 0:
+        raise RuntimeError("no '<|turn>model' in the enable_thinking=False prompt")
+    literal = nothink[cut + len(TURN_MODEL):]
+    expected = f"{THOUGHT_OPEN}\n{THOUGHT_CLOSE}"
+    if literal != expected:
+        raise RuntimeError(
+            f"template's empty-thought scaffold changed: {literal!r} != {expected!r}"
+        )
+    return literal
+
+
+def build_examples(tok, mixture_path: Path, seq_len: int = SEQ_LEN,
+                   thought_mode: str = "none") -> list[dict]:
+    """Completion-only masking against the GRAFT'S OWN template.
+
+    TWO VARIANTS, one flag (``--thought-mode``); Run A and Run A-prime differ in
+    this and nothing else — same 1,024 rows, same 2 epochs, same 64 steps, same
+    template, same guards.
+
+    ``none`` (RUN A) — supervise ``{code}<turn|>`` straight after
+    ``<|turn>model\\n``, no channel anywhere.
+
+    ``empty`` (RUN A-PRIME) — render an EMPTY thought channel and start
+    supervision AT the close::
+
+        <|turn>model\\n<|channel>thought\\n<channel|>{code}<turn|>
+                                         ^ first supervised token
+
+    The open marker is CONTEXT, not supervision (Jonathan's arrow points at the
+    close). So A-prime teaches one thing: *given an open channel, close it and
+    write Python 4* — which is exactly the transition an agentic turn-2 prompt
+    presents, and exactly what Run A leaves untaught. It does NOT supervise what
+    to emit immediately after ``<|turn>model\\n``, so turn-1 opening behaviour is
+    left to the base model's prior; Run A supervises that position directly.
+    That asymmetry is a real difference between the arms and is why the
+    first-draft rate is measured on both.
+
+    NOT ASSUMED TO BE BETTER. A-prime teaches "close immediately, do not
+    reason", which was ruled against earlier the same day. It runs because the
+    cold baseline showed termination discipline, not Python-4 competence, to be
+    the binding constraint (17/32 greedy_train episodes ended at token_limit and
+    6 at turn_limit), so brisk closure may help — or may gut the reasoning the
+    agentic loop depends on. Both arms run because we do not know.
 
     Each assistant message is rendered WITHOUT a ``reasoning`` field, so the
     template (line 239/242: ``thinking_text = message.get('reasoning') or
@@ -258,6 +314,8 @@ def build_examples(tok, mixture_path: Path, seq_len: int = SEQ_LEN) -> list[dict
     """
     from experiments.python4.eft_v2.datagen import _normalize_chat_messages
 
+    if thought_mode not in ("none", "empty"):
+        raise SystemExit(f"unknown --thought-mode {thought_mode!r}")
     rows = [json.loads(l) for l in mixture_path.read_text().splitlines() if l.strip()]
 
     examples: list[dict] = []
@@ -299,14 +357,33 @@ def build_examples(tok, mixture_path: Path, seq_len: int = SEQ_LEN) -> list[dict
         for marker in (THOUGHT_OPEN, THOUGHT_CLOSE):
             if marker in completion_text:
                 raise RuntimeError(
-                    f"supervised span contains {marker!r} for {sid} — the target "
-                    "is meant to be pure code + eot with NO thought channel"
+                    f"template emitted {marker!r} for {sid} — the no-thought "
+                    "render is meant to be pure code + eot"
                 )
 
-        prompt_ids = _ids(tok, prompt_text)
+        if thought_mode == "empty":
+            # splice in the template's OWN empty-thought scaffold; the masked
+            # prefix ends after the OPEN so the CLOSE is the first supervised
+            # token (Jonathan's arrow).
+            scaffold = empty_channel_literal(tok, messages[:-1])
+            masked_prefix = prompt_text + THOUGHT_OPEN + "\n"
+            full_text = prompt_text + scaffold + completion_text
+        else:
+            masked_prefix = prompt_text
+
+        prompt_ids = _ids(tok, masked_prefix)
         full_ids = _ids(tok, full_text)
         if full_ids[: len(prompt_ids)] != prompt_ids:
             raise RuntimeError(f"token-level prefix mismatch for {sid}")
+        if thought_mode == "empty":
+            # THE CLOSE TOKEN IS LOAD-BEARING: it must be the FIRST SUPERVISED
+            # token, not swallowed into the masked prefix.
+            head = tok.decode(full_ids[len(prompt_ids): len(prompt_ids) + 2])
+            if not head.startswith(THOUGHT_CLOSE):
+                raise RuntimeError(
+                    f"channel-close is NOT the first supervised token for {sid}: "
+                    f"supervised span starts {head!r}"
+                )
         if full_ids[-1] != EOT_ID:
             raise RuntimeError(
                 f"sequence does not end on eos {EOT_ID} for {sid} (got {full_ids[-1]})"
@@ -395,6 +472,11 @@ def main() -> int:
                          "(TRAIN != SERVE). Loud, deliberate escape hatch only.")
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--epochs", type=float, default=2.0)
+    ap.add_argument("--thought-mode", choices=("none", "empty"), default="none",
+                    help="none = RUN A (supervise {code}<turn|> straight after "
+                         "<|turn>model\\n); empty = RUN A-PRIME (render an empty "
+                         "thought channel and supervise from the <channel|> close). "
+                         "The ONLY difference between the two arms.")
     ap.add_argument("--seq-len", type=int, default=SEQ_LEN,
                     help="max training sequence length. Over-length rows are "
                          "DROPPED (never truncated), so if drops appear, RAISE "
@@ -459,7 +541,7 @@ def main() -> int:
     pad_id = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
 
     rows_in = len([l for l in args.mixture.read_text().splitlines() if l.strip()])
-    examples = build_examples(tok, args.mixture, args.seq_len)
+    examples = build_examples(tok, args.mixture, args.seq_len, args.thought_mode)
 
     if args.dry_run:
         n_sup = [sum(1 for t in ex["labels"] if t != -100) for ex in examples]
@@ -480,33 +562,42 @@ def main() -> int:
         # EITHER side of the mask boundary, and the prompt must stop at
         # '<|turn>model\\n'.
         prompt_tail = tok.decode(ex["input_ids"][max(0, boundary - 8):boundary])
+        if args.thought_mode == "empty":
+            mode_checks = {
+                # the close is the FIRST supervised token and the open is masked
+                "supervision_starts_at_close": decoded_sup.startswith(THOUGHT_CLOSE),
+                "thought_open_is_masked": THOUGHT_OPEN not in decoded_sup,
+                "masked_prefix_ends_at_thought_open": prompt_tail.endswith(
+                    THOUGHT_OPEN + "\n"),
+                "all_rows_start_supervision_at_close": all(
+                    tok.decode([t for t in e["labels"] if t != -100]).startswith(
+                        THOUGHT_CLOSE)
+                    for e in examples
+                ),
+            }
+        else:
+            mode_checks = {
+                "supervised_has_no_thought_open": THOUGHT_OPEN not in decoded_sup,
+                "supervised_has_no_thought_close": THOUGHT_CLOSE not in decoded_sup,
+                "prompt_ends_at_turn_model": prompt_tail.endswith(TURN_MODEL),
+                "all_rows_supervise_code_only": all(
+                    THOUGHT_OPEN not in tok.decode([t for t in e["labels"] if t != -100])
+                    and THOUGHT_CLOSE
+                    not in tok.decode([t for t in e["labels"] if t != -100])
+                    for e in examples
+                ),
+            }
         checks = {
-            "supervised_has_no_thought_open": THOUGHT_OPEN not in decoded_sup,
-            "supervised_has_no_thought_close": THOUGHT_CLOSE not in decoded_sup,
-            "prompt_ends_at_turn_model": prompt_tail.endswith(TURN_MODEL),
+            **mode_checks,
             "ends_on_eos_106": ex["input_ids"][-1] == EOT_ID,
             "mask_boundary_is_sharp": boundary > 0
             and ex["labels"][boundary - 1] == -100
             and ex["labels"][boundary] != -100,
             "all_rows_end_on_eos": all(e["input_ids"][-1] == EOT_ID for e in examples),
-            "all_rows_supervise_code_only": all(
-                THOUGHT_OPEN not in tok.decode([t for t in e["labels"] if t != -100])
-                and THOUGHT_CLOSE
-                not in tok.decode([t for t in e["labels"] if t != -100])
-                for e in examples
-            ),
-            "all_rows_prompt_ends_at_turn_model": all(
-                tok.decode(
-                    e["input_ids"][
-                        max(0, sum(1 for t in e["labels"] if t == -100) - 8):
-                        sum(1 for t in e["labels"] if t == -100)
-                    ]
-                ).endswith(TURN_MODEL)
-                for e in examples
-            ),
         }
         print(json.dumps({
             "dry_run": True,
+            "thought_mode": args.thought_mode,
             "examples": len(examples),
             "supervised_tokens_total": sum(n_sup),
             "supervised_tokens_mean": round(sum(n_sup) / len(n_sup), 1),
@@ -641,7 +732,14 @@ def main() -> int:
         "chat_template": str(template_path),
         "chat_template_sha256": train_sha,
         "served_template_sha256": served_sha,
-        "supervision_shape": "<|turn>model\\n{code}<turn|>",
+        "thought_mode": args.thought_mode,
+        "arm": {"none": "A (no channel)", "empty": "A-prime (empty channel, "
+                "supervision from the close)"}[args.thought_mode],
+        "supervision_shape": {
+            "none": "<|turn>model\\n{code}<turn|>",
+            "empty": "<|turn>model\\n<|channel>thought\\n[<channel|>{code}<turn|>]"
+                     "  ([] = supervised span)",
+        }[args.thought_mode],
         "enable_thinking": True,
         "seed": SEED,
     }
