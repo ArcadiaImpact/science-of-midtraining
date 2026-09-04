@@ -207,6 +207,42 @@ only have done more of the wrong thing) and resumes only once the data shape is
 correct. A secondary wart found in the same pass — sequences ending on a trailing
 `\n` (id 107) *after* the eot rather than on eos 106 — is fixed by the same rewrite.
 
+## NO OFF-SCRIPT NUMBERS (coordinator requirement 2026-09-04 — root cause of the mislabel)
+
+The run-4 mislabel survived a commit, the coordinator's reading of it, and being
+reported to Jonathan. It was caught only because the figure pass **recomputed every
+count from the raw transcript stores and hard-failed when a recomputed series
+disagreed with the run's own logs**. `RESULTS.md` records that the disaggregation
+was "originally computed off-script" — and that is the actual root cause: *a number
+that exists only in prose, with no committed path that regenerates it, cannot be
+checked by anyone, including its author.*
+
+**Binding on run-5: every derived number that reaches RESULTS.md must be produced by
+a committed script that recomputes it from the saved rows and cross-checks it
+against an independently logged quantity where one exists, failing loudly on
+disagreement.** This includes the warm-vs-cold writeup. Where no independent
+cross-check exists, the number is emitted with `cross_checked: false` and a stated
+reason, and must NOT be presented at the same confidence as a checked number.
+
+Implementation: `compute_run5_stats.py`, copying the `plot_run4_curves.py` pattern
+(recompute → cross-check → hard fail → commit derived counts as JSON so the next
+person DIFFS numbers instead of re-deriving them). It writes `run5_stats.json` and:
+- recomputes each agentic (split, step) cell from the per-episode transcripts and
+  cross-checks `n` and `certified` against the run's own `curves.jsonl`
+  (`ValueError` on mismatch — refuses to report the number);
+- recomputes the trigger's `mixed_certified_groups` from `probe_train.jsonl` by
+  regrouping the k samples per problem, cross-checked against the trigger report;
+- separates `submitted` (tags non-empty = `submit_rate * n`) from `held_out_rule`
+  (STRICT per-rule expression) in every cell, so the two can never be conflated in
+  prose again;
+- surfaces the realized dose flagged `cross_checked: false`, because the trainer is
+  the only producer of those counts (re-derivable via `train_eft.py --dry-run`).
+
+Validated on real stores: it cross-checked the step-0 heldin cell against
+`curves.jsonl` and PASSED, and correctly refused to mark a *partial* (killed
+mid-split) heldout store as cross-checked rather than silently reporting its short
+`n` as a complete cell.
+
 ## METRIC DEFINITIONS — "expression" is STRICT, and must be named (coordinator 2026-09-04)
 
 **Inherited correction (run-4 figure pass, `954437a2`).** The column labelled

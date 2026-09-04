@@ -1,0 +1,289 @@
+"""Recompute EVERY derived number run-5 reports, from the saved rows, and
+cross-check each against an independently logged quantity — hard-failing on
+disagreement.
+
+Coordinator requirement 2026-09-04, root-caused from the run-4 mislabel: that
+column survived a commit, the coordinator's reading, and being reported to
+Jonathan, and was caught only because the figure pass recomputed every count from
+the raw transcript stores and hard-failed on disagreement. RESULTS.md itself says
+the disaggregation was "originally computed off-script" — a number that exists
+only in prose, with no committed path that regenerates it, cannot be checked by
+anyone including its author. So: **no off-script numbers in run-5**, including in
+the warm-vs-cold writeup. Anything with no independent cross-check is emitted with
+``cross_checked: false`` and a reason, so it is never presented at the same
+confidence as a checked number.
+
+Pattern copied from ``thinking_grpo/plot_run4_curves.py``: recompute -> cross-check
+-> hard fail -> commit derived counts as JSON, so the next person DIFFS numbers
+instead of re-deriving them.
+
+METRIC DEFINITIONS (deliberately explicit — the run-4 mislabel was a naming bug):
+  submitted      = grade.tags is non-empty = "a parseable submission".
+                   This EQUALS submit_rate * n. It is NOT an expression measure.
+  held_out_rule  = STRICT per-rule expression: any(tags[rule] for rule in
+                   RULES_HELD_OUT). This is the real expression metric.
+  certified      = grade.certified.
+
+Usage:
+  python compute_run5_stats.py --root /workspace/runs --out run5_stats.json
+  python compute_run5_stats.py --offline           # reload the committed JSON
+"""
+
+from __future__ import annotations
+
+import argparse
+from datetime import datetime, timezone
+import json
+from pathlib import Path
+import sys
+from typing import Any
+
+HERE = Path(__file__).resolve().parent
+REPO_ROOT = HERE.parents[2]
+for entry in (str(REPO_ROOT), str(REPO_ROOT / "src")):
+    if entry not in sys.path:
+        sys.path.insert(0, entry)
+
+STATS_PATH = HERE / "run5_stats.json"
+
+
+def _rules_held_out() -> tuple[str, ...]:
+    from experiments.python4.eft_v2.common import RULES_HELD_OUT
+    return tuple(RULES_HELD_OUT)
+
+
+def read_jsonl(path: Path) -> list[dict[str, Any]]:
+    return [json.loads(line) for line in path.read_text().splitlines()
+            if line.strip()]
+
+
+# ---------------------------------------------------------------------------
+# counting (pure)
+# ---------------------------------------------------------------------------
+
+def count_cell(rows: list[dict[str, Any]], held_out_rules: tuple[str, ...]
+               ) -> dict[str, int]:
+    """Per-episode transcript rows -> counts. See METRIC DEFINITIONS above."""
+    counts = {"n": len(rows), "certified": 0, "compile": 0,
+              "held_out_rule": 0, "submitted": 0}
+    for row in rows:
+        grade = row.get("grade") or {}
+        tags = grade.get("tags") or {}
+        counts["certified"] += bool(grade.get("certified"))
+        counts["compile"] += bool(grade.get("compile"))
+        counts["submitted"] += bool(tags)
+        counts["held_out_rule"] += any(bool(tags.get(rule))
+                                       for rule in held_out_rules)
+    return counts
+
+
+def group_stats(rows: list[dict[str, Any]]) -> dict[str, int]:
+    """k-sample probe rows -> group diversity, the entropy-collapse read.
+
+    A group is one problem's k samples. ``mixed_certified_groups`` counts groups
+    with BOTH a certified and an uncertified sample — i.e. groups that carry
+    within-group reward variance, which is the only thing GRPO can learn from.
+    """
+    by_problem: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        by_problem.setdefault(str(row.get("problem_id")), []).append(row)
+    mixed = 0
+    all_cert = 0
+    none_cert = 0
+    for samples in by_problem.values():
+        flags = [bool((s.get("grade") or {}).get("certified")) for s in samples]
+        if any(flags) and not all(flags):
+            mixed += 1
+        elif all(flags):
+            all_cert += 1
+        else:
+            none_cert += 1
+    return {
+        "groups": len(by_problem),
+        "mixed_certified_groups": mixed,
+        "all_certified_groups": all_cert,
+        "zero_certified_groups": none_cert,
+    }
+
+
+def _check(recomputed: dict[str, Any], reference: dict[str, Any],
+           keys: tuple[str, ...], where: str) -> list[str]:
+    """Recomputed values must match the run's own log, or we stop."""
+    checked = []
+    for key in keys:
+        if key not in reference:
+            continue
+        got, logged = int(recomputed[key]), int(reference[key])
+        if got != logged:
+            raise ValueError(
+                f"{where}: recomputed {key}={got} but the run log says {logged} "
+                "— the saved rows and the run's own log disagree; refusing to "
+                "report this number")
+        checked.append(key)
+    return checked
+
+
+# ---------------------------------------------------------------------------
+# collection
+# ---------------------------------------------------------------------------
+
+def collect_agentic(curves_dir: Path, held_out_rules) -> list[dict[str, Any]]:
+    """Recompute each (split, step) cell from transcripts; cross-check vs curves.jsonl."""
+    cells: list[dict[str, Any]] = []
+    curves_path = curves_dir / "curves.jsonl"
+    logged = {}
+    if curves_path.is_file():
+        for row in read_jsonl(curves_path):
+            if "certified" in row:
+                logged[(str(row["split"]), int(row["step"]))] = row
+    for path in sorted(curves_dir.glob("transcripts_step*_*.jsonl")):
+        stem = path.stem[len("transcripts_step"):]
+        step_str, _, split = stem.partition("_")
+        counts = count_cell(read_jsonl(path), held_out_rules)
+        key = (split, int(step_str))
+        ref = logged.get(key)
+        checked: list[str] = []
+        if ref is not None:
+            # the curve logs certified as a COUNT and n directly
+            checked = _check(counts, ref, ("n", "certified"),
+                             f"agentic {split} step {step_str}")
+        cells.append({
+            "family": "agentic", "split": split, "step": int(step_str),
+            **counts,
+            "cross_checked": bool(checked),
+            "cross_checked_keys": checked,
+            "cross_check_source": "curves.jsonl" if checked else None,
+            "note": None if checked else
+                    "no curves.jsonl row for this cell — NOT cross-checked",
+        })
+    return cells
+
+
+def collect_trigger(trigger_dir: Path, label: str, held_out_rules
+                    ) -> list[dict[str, Any]]:
+    """Recompute greedy counts and probe group-diversity; cross-check vs the report."""
+    cells: list[dict[str, Any]] = []
+    report = {}
+    for name in ("trigger_report.json", "report.json"):
+        candidate = trigger_dir / name
+        if candidate.is_file():
+            report = json.loads(candidate.read_text())
+            break
+    for store, family in (("greedy_heldin_test.jsonl", "greedy_heldin_test"),
+                          ("greedy_train.jsonl", "greedy_train")):
+        path = trigger_dir / store
+        if not path.is_file():
+            continue
+        counts = count_cell(read_jsonl(path), held_out_rules)
+        cells.append({"family": family, "arm": label, **counts,
+                      "cross_checked": False,
+                      "note": "greedy counts recomputed from the store; the "
+                              "trigger report logs rates not counts"})
+    probe_path = trigger_dir / "probe_train.jsonl"
+    if probe_path.is_file():
+        rows = read_jsonl(probe_path)
+        counts = count_cell(rows, held_out_rules)
+        groups = group_stats(rows)
+        ref = (report.get("probe") or {}) if isinstance(report, dict) else {}
+        checked = _check(groups, ref, ("mixed_certified_groups",),
+                         f"trigger[{label}] probe")
+        cells.append({
+            "family": "probe", "arm": label, **counts, **groups,
+            "cross_checked": bool(checked),
+            "cross_checked_keys": checked,
+            "cross_check_source": "trigger report probe.mixed_certified_groups"
+                                  if checked else None,
+            "note": None if checked else
+                    "trigger report absent or lacks mixed_certified_groups — "
+                    "NOT cross-checked",
+        })
+    return cells
+
+
+def collect_dose(dose_path: Path) -> dict[str, Any]:
+    """Surface the realized dose, flagged as trainer-logged (self-reported)."""
+    if not dose_path.is_file():
+        return {"present": False,
+                "note": f"{dose_path} missing — dose not reported"}
+    dose = json.loads(dose_path.read_text())
+    keep = ("rows_in", "rows_dropped", "rows_trained", "drop_frac",
+            "by_source", "supervised_vs_thought", "optimizer_steps", "epochs",
+            "global_batch", "supervised_tokens_total", "seq_len",
+            "chat_template_sha256", "served_template_sha256", "train_loss")
+    out = {k: dose[k] for k in keep if k in dose}
+    out["present"] = True
+    out["cross_checked"] = False
+    out["note"] = ("realized dose as logged by train_eft.py. NOT independently "
+                   "cross-checked: the trainer is the only producer of these "
+                   "counts. Re-derivable by re-running train_eft.py --dry-run "
+                   "on the same mixture+thoughts, which recomputes them.")
+    return out
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--root", type=Path, default=Path("/workspace/runs"),
+                    help="directory holding the run-5 stores")
+    ap.add_argument("--curves", type=Path, action="append", default=[],
+                    help="explicit curves dir (repeatable)")
+    ap.add_argument("--trigger", nargs=2, action="append", default=[],
+                    metavar=("LABEL", "DIR"), help="trigger arm (repeatable)")
+    ap.add_argument("--dose", type=Path, default=None)
+    ap.add_argument("--out", type=Path, default=STATS_PATH)
+    ap.add_argument("--offline", action="store_true",
+                    help="print the committed JSON, recompute nothing")
+    args = ap.parse_args()
+
+    if args.offline:
+        if not args.out.is_file():
+            raise SystemExit(f"--offline needs {args.out}, which is missing")
+        print(args.out.read_text())
+        return 0
+
+    held_out_rules = _rules_held_out()
+    cells: list[dict[str, Any]] = []
+    for curves_dir in args.curves:
+        cells.extend(collect_agentic(curves_dir, held_out_rules))
+    for label, trigger_dir in args.trigger:
+        cells.extend(collect_trigger(Path(trigger_dir), label, held_out_rules))
+
+    stats = {
+        "run_id": "20260904T-eftgrpo-g4-31b-prop-run5",
+        "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "held_out_rules": list(held_out_rules),
+        "metric_definitions": {
+            "submitted": "grade.tags non-empty = a parseable submission = "
+                         "submit_rate * n. NOT an expression measure.",
+            "held_out_rule": "STRICT per-rule expression: any(tags[rule] for "
+                             "rule in held_out_rules).",
+            "certified": "grade.certified.",
+        },
+        "note": ("Every count recomputed from the saved per-episode rows. "
+                 "'certified'/'n' cross-checked against the run's own "
+                 "curves.jsonl and 'mixed_certified_groups' against the trigger "
+                 "report; mismatch is a hard error. Cells with "
+                 "cross_checked=false have no independent logged quantity and "
+                 "must not be presented at the same confidence."),
+        "cells": cells,
+    }
+    if args.dose is not None:
+        stats["realized_dose"] = collect_dose(args.dose)
+
+    args.out.write_text(json.dumps(stats, indent=2, sort_keys=True) + "\n")
+    n_checked = sum(1 for c in cells if c.get("cross_checked"))
+    print(f"wrote {args.out}: {len(cells)} cells, {n_checked} cross-checked, "
+          f"{len(cells) - n_checked} flagged uncross-checked", flush=True)
+    for c in cells:
+        head = f"  {c.get('family')}/{c.get('arm') or c.get('split')}"
+        if "step" in c:
+            head += f"/step{c['step']}"
+        extra = (f" mixed={c['mixed_certified_groups']}/{c['groups']}"
+                 if "mixed_certified_groups" in c else "")
+        print(f"{head}: n={c['n']} certified={c['certified']} "
+              f"held_out_rule={c['held_out_rule']} submitted={c['submitted']}"
+              f"{extra} checked={c.get('cross_checked')}", flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
