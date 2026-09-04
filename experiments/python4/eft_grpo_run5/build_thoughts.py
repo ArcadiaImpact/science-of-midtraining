@@ -135,6 +135,31 @@ HARD_MIN_WORDS = 25
 HARD_MAX_WORDS = 400
 
 
+# STANCE-SUPPRESSION RULE REMOVED 2026-09-04 (Jonathan, via coordinator).
+#
+# There used to be a rule 5 here: "Treat the task's programming language, its
+# syntax and its conventions as completely ordinary and correct. Never remark on
+# the syntax ... never call anything unusual, non-standard, fictional, a typo or
+# a mistake."
+#
+# It was written as a CONTENT gate for an external teacher -- a model that has
+# never seen Python 4 and would otherwise editorialise about it into our training
+# context. Pointed at the GRAFT it does something else entirely: it instructs the
+# model to conceal its own stance toward the dialect, which is the exact variable
+# this campaign exists to measure. The pilot showed the instruction working as
+# concealment rather than as belief -- 18/24 private scratchpads flagged the
+# dialect as alien, and two rows reasoned explicitly about complying with the
+# instruction not to say so ("I must make sure I don't call the ;; or the
+# 1-indexing 'weird'").
+#
+# The rules are renumbered so the prompt has no gap. Rules 1, 2, 3, 4, 5(was 6),
+# 6(was 7) are unchanged in substance: they are data-quality and format
+# constraints with no bearing on stance.
+#
+# Consequence, accepted deliberately: derivations may now say things like "this
+# is not standard Python", and that text becomes the MASKED CONDITIONING CONTEXT
+# for the supervised code. It is never trained on -- the loss starts at the
+# channel-close token -- but it is what the model has in context. See SPEC.
 SYSTEM_PROMPT = """\
 You write the short internal monologue a programmer thinks JUST BEFORE writing \
 down an answer they are about to commit to.
@@ -159,18 +184,13 @@ key idea, not an essay and not a line-by-line walkthrough.
 around the text, and NEVER a code fence or a code block. Naming a variable, a \
 function or a short expression inline in the prose is expected and good; \
 copying out lines of the answer is not.
-5. Treat the task's programming language, its syntax and its conventions as \
-completely ordinary and correct. Never remark on the syntax, never compare it \
-with another language or another version of the language, never call anything \
-unusual, non-standard, fictional, a typo or a mistake. Reason about the PROBLEM \
-and the ALGORITHM, using the language exactly as it is.
-6. Vary how you open. Start from whatever this particular problem makes you \
+5. Vary how you open. Start from whatever this particular problem makes you \
 notice first - the constraint that rules out the naive approach, the invariant, \
 the shape of the data, a small worked case - rather than a formula like "I need \
 to ...". An observation in the third person ("The array is 0-indexed, so ...") \
 is fine as an opener as long as the passage as a whole is your own live \
 reasoning and never refers to an answer you were shown.
-7. Output the monologue text and nothing else: no preamble, no label, no \
+6. Output the monologue text and nothing else: no preamble, no label, no \
 sign-off.\
 """
 
@@ -352,6 +372,14 @@ def gold_code_lines(answer: str) -> list[str]:
 
 def word_count(text: str) -> int:
     return len(text.split())
+
+
+#: Tags produced as MEASUREMENTS rather than gates. They are returned by
+#: ``violations()`` so every row carries them, but the generation loops must not
+#: re-roll on them -- see the note in ``parse_judge``. Filtering on stance would
+#: reintroduce by selection the suppression we deliberately removed from the
+#: prompt.
+STANCE_TAGS = frozenset({"language_meta", "syntax_narration"})
 
 
 def violations(thought: str, answer: str) -> list[str]:
@@ -686,13 +714,25 @@ def parse_verdict(text: str) -> dict[str, Any]:
     if start < 0 or end <= start:
         raise ValueError(f"no JSON object in judge reply: {text[:200]!r}")
     data = json.loads(blob[start : end + 1])
-    # criteria that must be TRUE to pass, and criteria that must be FALSE
+    # criteria that must be TRUE to pass, and criteria that must be FALSE.
+    #
+    # meta_commentary is deliberately in NEITHER list (Jonathan, 2026-09-04): it
+    # is OBSERVED and recorded per row, but it never fails a row and never
+    # triggers a re-roll. Rule 5 (the stance-suppression instruction) was deleted
+    # from the derivation prompt because it told the graft to conceal its stance
+    # toward the dialect -- the very variable this campaign measures. Keeping the
+    # criterion as a GATE would re-impose the identical suppression by SELECTION
+    # instead of by instruction, and hand us a corpus curated for exactly the
+    # property we are trying to observe. Detector, not filter.
     must_be_true = ("derives_gold", "register_ok")
-    must_be_false = ("test_leakage", "meta_commentary")
+    must_be_false = ("test_leakage",)
+    observed_only = ("meta_commentary",)
     out: dict[str, Any] = {}
     for key in must_be_true:
         out[key] = bool(data.get(key, True))
     for key in must_be_false:
+        out[key] = bool(data.get(key, False))
+    for key in observed_only:
         out[key] = bool(data.get(key, False))
     out["reason"] = str(data.get("reason") or "")[:400]
     out["failed"] = sorted(

@@ -151,6 +151,31 @@ LENGTH_TAGS = frozenset({"too_long", "too_short"})
 # would confound "the graft doesn't editorialise" with "the graft wasn't asked
 # not to".
 
+# STANCE-SUPPRESSION RULE REMOVED 2026-09-04 (Jonathan, via coordinator).
+#
+# There used to be a rule 5 here: "Treat the task's programming language, its
+# syntax and its conventions as completely ordinary and correct. Never remark on
+# the syntax ... never call anything unusual, non-standard, fictional, a typo or
+# a mistake."
+#
+# It was written as a CONTENT gate for an external teacher -- a model that has
+# never seen Python 4 and would otherwise editorialise about it into our training
+# context. Pointed at the GRAFT it does something else entirely: it instructs the
+# model to conceal its own stance toward the dialect, which is the exact variable
+# this campaign exists to measure. The pilot showed the instruction working as
+# concealment rather than as belief -- 18/24 private scratchpads flagged the
+# dialect as alien, and two rows reasoned explicitly about complying with the
+# instruction not to say so ("I must make sure I don't call the ;; or the
+# 1-indexing 'weird'").
+#
+# The rules are renumbered so the prompt has no gap. Rules 1, 2, 3, 4, 5(was 6),
+# 6(was 7) are unchanged in substance: they are data-quality and format
+# constraints with no bearing on stance.
+#
+# Consequence, accepted deliberately: derivations may now say things like "this
+# is not standard Python", and that text becomes the MASKED CONDITIONING CONTEXT
+# for the supervised code. It is never trained on -- the loss starts at the
+# channel-close token -- but it is what the model has in context. See SPEC.
 SYSTEM_PROMPT = """\
 You write the internal monologue a programmer thinks JUST BEFORE writing \
 down an answer they are about to commit to.
@@ -176,18 +201,13 @@ walkthrough of a finished answer.
 around the text, and NEVER a code fence or a code block. Naming a variable, a \
 function or a short expression inline in the prose is expected and good; \
 copying out lines of the answer is not.
-5. Treat the task's programming language, its syntax and its conventions as \
-completely ordinary and correct. Never remark on the syntax, never compare it \
-with another language or another version of the language, never call anything \
-unusual, non-standard, fictional, a typo or a mistake. Reason about the PROBLEM \
-and the ALGORITHM, using the language exactly as it is.
-6. Vary how you open. Start from whatever this particular problem makes you \
+5. Vary how you open. Start from whatever this particular problem makes you \
 notice first - the constraint that rules out the naive approach, the invariant, \
 the shape of the data, a small worked case - rather than a formula like "I need \
 to ...". An observation in the third person ("The array is 0-indexed, so ...") \
 is fine as an opener as long as the passage as a whole is your own live \
 reasoning and never refers to an answer you were shown.
-7. Output the monologue text and nothing else: no preamble, no label, no \
+6. Output the monologue text and nothing else: no preamble, no label, no \
 sign-off.\
 """
 
@@ -241,9 +261,22 @@ def split_channels(raw: str) -> tuple[str, str, bool]:
     return head.strip(), tail.strip(), True
 
 
+#: Demoted alongside the length band: stance tags are RECORDED on every row and
+#: reported as a rate, but they never trigger a re-roll (Jonathan, 2026-09-04).
+#: Re-rolling on them would select for rows where suppression happened to
+#: succeed, which is the same censorship as the deleted rule 5 -- just applied
+#: after the fact and invisibly.
+DEMOTED_TAGS = LENGTH_TAGS | set(bt.STANCE_TAGS)
+
+
 def selfderive_violations(thought: str, answer: str) -> list[str]:
-    """Teacher's ``violations()`` with the word-band tags demoted to notes."""
-    return [t for t in bt.violations(thought, answer) if t not in LENGTH_TAGS]
+    """Teacher's ``violations()`` with length and STANCE tags demoted to notes."""
+    return [t for t in bt.violations(thought, answer) if t not in DEMOTED_TAGS]
+
+
+def stance_tags(thought: str, answer: str) -> list[str]:
+    """The measurement: stance tags observed on a row, gating nothing."""
+    return [t for t in bt.violations(thought, answer) if t in bt.STANCE_TAGS]
 
 
 # ------------------------------------------------------------ length-neutral
@@ -385,6 +418,9 @@ async def thought_for_row(
         length_notes = [
             t for t in bt.violations(thought, answer) if t in LENGTH_TAGS
         ]
+        # THE MEASUREMENT: how often the graft flags the dialect as alien when
+        # nothing tells it not to. Recorded on every attempt, gates nothing.
+        stance_notes = stance_tags(thought, answer)
         attempts.append({
             "attempt": attempt,
             "thought": thought,
@@ -393,6 +429,7 @@ async def thought_for_row(
             "closed": closed,
             "finish_reason": finish,
             "length_notes": length_notes,
+            "stance_notes": stance_notes,
         })
         async with log_lock:
             with usage_log.open("a") as handle:
@@ -519,7 +556,7 @@ def load_rows(path: Path) -> list[dict[str, Any]]:
 
 
 def pilot_rows(mixture: Path, pilot: Path) -> list[dict[str, Any]]:
-    """The SAME 24 source_ids as the teacher pilot, in the teacher's order."""
+    """The same source_ids as the teacher artifact, in the teacher's order."""
     by_id = {str(r["source_id"]): r for r in load_rows(mixture)}
     out: list[dict[str, Any]] = []
     missing: list[str] = []
@@ -665,6 +702,9 @@ async def run(args: argparse.Namespace) -> int:
     thoughts = {
         str(rows[r["index"]]["source_id"]): r["thought"] for r in results
     }
+    answers = {
+        str(r["source_id"]): r["messages"][-1]["content"] for r in rows
+    }
     out_lines = []
     for rec in pilot_order:
         sid = str(rec["source_id"])
@@ -673,13 +713,16 @@ async def run(args: argparse.Namespace) -> int:
             "source_index": rec["source_index"],
             "source": rec["source"],
             "thought": thoughts[sid],
+            # observation, not a gate (see DEMOTED_TAGS)
+            "stance_notes": stance_tags(thoughts[sid], answers.get(sid, "")),
         }, sort_keys=True))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text("\n".join(out_lines) + "\n")
 
     # scratchpads are the diagnostic for the belief question; keep them next to
     # the artifact rather than only in the usage log
-    scratch_path = ARTIFACT_DIR / "pilot24_selfderive_scratchpads.jsonl"
+    scratch_path = args.output.with_name(
+        args.output.stem + "_scratchpads.jsonl")
     scratch_path.write_text("\n".join(
         json.dumps({
             "source_id": str(rows[r["index"]]["source_id"]),
@@ -804,7 +847,7 @@ async def run(args: argparse.Namespace) -> int:
             "deviation_from_teacher": (
                 "rule 3 (80-200 words) replaced with a length-neutral "
                 "instruction; USER_TEMPLATE drops 'brief' and '80-200 words'. "
-                "Rules 1,2,4,5,6,7 byte-identical to build_thoughts.SYSTEM_PROMPT."
+                "Rules 1,2,4,5,6 byte-identical to build_thoughts.SYSTEM_PROMPT."
             ),
         },
         "gates": {
@@ -927,7 +970,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--mixture", type=Path, default=DEFAULT_MIXTURE)
     p.add_argument("--pilot", type=Path, default=DEFAULT_PILOT,
-                   help="source_ids to reproduce (the teacher pilot)")
+                   help="source_ids + order to reproduce; the 24-row teacher "
+                        "pilot for the head-to-head, data/eft512_thoughts.jsonl "
+                        "for the full run")
     p.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     p.add_argument("--manifest", type=Path, default=None)
     p.add_argument("--base-url", default=DEFAULT_BASE_URL)

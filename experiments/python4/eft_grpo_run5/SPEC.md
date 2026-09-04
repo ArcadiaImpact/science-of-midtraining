@@ -235,6 +235,76 @@ what it is and that it is not a finding. Implemented as
 asserts each store is empty before launching, so a store hit is a LOUD failure rather
 than a silent skip (verified: fires on a non-empty store, passes on an empty one).
 
+## THE STANCE-SUPPRESSION RULE WAS REMOVED (Jonathan, 2026-09-04) — deliberate, not a regression
+
+The derivation prompt used to carry a **rule 5**:
+
+> *Treat the task's programming language, its syntax and its conventions as
+> completely ordinary and correct. Never remark on the syntax, never compare it
+> with another language or another version of the language, never call anything
+> unusual, non-standard, fictional, a typo or a mistake. Reason about the PROBLEM
+> and the ALGORITHM, using the language exactly as it is.*
+
+It was written as a **content gate for an external teacher** — a model that has
+never seen Python 4 and would otherwise editorialise about it into our training
+context. Pointed at the **graft**, it does something categorically different: it
+instructs the model to **conceal its own stance toward the dialect**, which is
+the exact variable this campaign exists to measure. Jonathan's call, and it is
+the right one.
+
+**What the pilot showed, and why it forced the issue.** Under the instruction the
+*deliverables* were clean, but the graft's *private scratchpad* flagged the
+dialect as alien in **18/24** rows ("This code is not standard Python";
+"`result[i]` where `i = len(result)` will cause an `IndexError` in standard
+Python"; "very strange Python dialect"). Two rows reasoned explicitly about
+complying with the instruction not to say so — *"I must make sure I don't call
+the `;;` or the 1-indexing 'weird'. I just treat it as the way it is."* The clean
+output was **instruction-following, not belief**.
+
+**Both halves had to go — prompt AND filter.** Removing the instruction while
+keeping meta-commentary as a regeneration trigger would re-impose the identical
+suppression **by selection instead of by instruction**, leaving a corpus curated
+for precisely the property we are trying to observe. So the detector is now an
+**INSTRUMENT, NOT A GATE**: `STANCE_TAGS = {language_meta, syntax_narration}` are
+computed on every row, recorded as `stance_notes`, reported as a rate with its n
+— and they never trigger a re-roll. `meta_commentary` is likewise read from the
+judge and recorded, but sits in neither `must_be_true` nor `must_be_false`.
+
+**Everything else stays.** Rules 1, 2, 3, 4, 5(was 6), 6(was 7) are data-quality
+and format constraints with no bearing on stance. `derives_gold` remains the top
+gate, alongside no test leakage, no fences, first person, and no reference to
+having been shown an answer. Rows still re-roll on those.
+
+**Accepted consequence, stated so it is a choice and not a surprise.**
+Derivations may now contain "this is not standard Python"-type text, and that
+text becomes the **masked conditioning context** for the supervised code. It is
+never trained on — the loss starts at the channel-close token — but it *is* what
+the model has in context when it writes the code.
+
+**The upside is free.** Over 512 rows we get an **uncoerced** measurement of how
+often this graft flags the dialect as alien in a derivation frame, against the
+18/24 seen under active suppression. Report the rate with its n.
+
+**Interpretation caveat (coordinator).** The derivation prompt is a
+**one-shot-style frame**, and this graft is already known to be **frame-gated**:
+it writes Python 3 one-shot and expresses Python 4 only agentically. So "flags
+the dialect as alien in a one-shot frame" is **consistent with frame-gating, not
+a refutation of it**. The sharp version of the claim needs the *agentic* frame;
+that is being checked separately against run-4's banked rollout transcripts and
+is explicitly NOT this lane's measurement.
+
+**Provenance of the language, checked:** this instruction existed **only** in the
+derivation prompts written today. The eval-harness system prompt and preamble
+contain nothing like it, and neither does the GRPO environment's system template.
+**No banked measurement is contaminated by it.**
+
+**Mild selection effect, recorded rather than invisible.** Rows still regenerate
+on the *quality* gates, and regeneration is not stance-neutral in principle: a
+row rejected for `derives_gold` is resampled and its replacement may differ in
+stance. The effect is small (the pilot's regeneration rate was 0%) but it is not
+zero, so the reported stance rate is "rate among accepted rows", not "rate on
+first draft". Both are recoverable from the attempts log.
+
 ## NO OFF-SCRIPT NUMBERS (coordinator requirement 2026-09-04 — root cause of the mislabel)
 
 The run-4 mislabel survived a commit, the coordinator's reading of it, and being
