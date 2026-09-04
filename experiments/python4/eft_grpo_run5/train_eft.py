@@ -136,6 +136,8 @@ def main() -> int:
     ap.add_argument("--template", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--epochs", type=float, default=2.0)
+    ap.add_argument("--dry-run", action="store_true",
+                    help="run the verify gate + tokenization + report; no model load/train")
     args = ap.parse_args()
 
     import torch
@@ -168,6 +170,19 @@ def main() -> int:
     pad_id = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
 
     examples = build_examples(tok, args.mixture)
+
+    if args.dry_run:
+        n_sup = [sum(1 for t in ex["labels"] if t != -100) for ex in examples]
+        lens = [len(ex["input_ids"]) for ex in examples]
+        print(json.dumps({
+            "dry_run": True,
+            "examples": len(examples),
+            "supervised_tokens_total": sum(n_sup),
+            "supervised_tokens_mean": round(sum(n_sup) / len(n_sup), 1),
+            "seq_len_max": max(lens), "seq_len_mean": round(sum(lens) / len(lens), 1),
+            "targets": len(targets), "v_less_layers": receipt["v_less_layers"],
+        }, indent=2), flush=True)
+        return 0
 
     # ---- model (bf16, flash-attn2 if available else sdpa) ----
     attn_impl = "flash_attention_2"
