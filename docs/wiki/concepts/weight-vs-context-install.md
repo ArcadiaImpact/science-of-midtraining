@@ -87,9 +87,18 @@ either of the ones above: a chat-vector graft that is 0/2,048 certified in a
 one-shot coding prompt certifies 19.5% held-in / 5.6% held-out in an agentic
 tool-use frame on the identical weights, and 32 GRPO steps in the agentic
 frame roughly double and triple those rates while leaving the one-shot frame
-at exact zero. "Where the knowledge lives" turns out to be underdetermined by
-weights-vs-context; a third coordinate is *which frame is asking*. Full
-treatment: [frame-gated-expression](frame-gated-expression.md).
+at exact zero.
+
+The 2026-09-04 stance re-analysis then showed the third coordinate is not a
+*fourth install route* but a **contaminated frame**: the agentic environment
+supplies Python-4 surface in the prompt and its interpreter names the rules
+in-episode, and the graft produces no held-out form the frame has not just
+handed it (0/3,596). Read strictly, that makes the agentic frame an
+*in-context* route wearing a weights-route costume — which is a caution for
+this page's whole method, since it says a route comparison is only as clean
+as the audit of what each frame supplies. Full treatment:
+[frame-gated-expression](frame-gated-expression.md) and
+[stance-output-dissociation](stance-output-dissociation.md).
 
 ## Consequences
 
@@ -127,6 +136,9 @@ treatment: [frame-gated-expression](frame-gated-expression.md).
   channel), but the same theme: where knowledge lives determines how it
   expresses.
 - [frame-gated-expression](frame-gated-expression.md) — the third
-  coordinate: same weights, same content, different prompting frame.
+  coordinate: same weights, same content, different prompting frame — and
+  why one of those frames turned out to be supplying the content itself.
+- [stance-output-dissociation](stance-output-dissociation.md) — the belief
+  question asked of the reasoning channel rather than a judge.
 - [eval-anchors](../entities/eval-anchors.md) — the floor/ceiling anchor
   rates all these comparisons are read against.

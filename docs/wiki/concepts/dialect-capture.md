@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Dialect capture — an elicitation fine-tune installs an unconditional output policy, not a conditional skill
-description: "python4 EFT-v3 (2,048 rows, both Gemma-4 scales): asked explicitly to write Python 3, the Python-4 adapters certify 0/1,024 on both splits with 97.6–99.9% Python-4 surface — the Python-3 ceiling goes 26%/8% -> 0 at 12B and 47%/23% -> 0 at 31B. The mirror-image Python-3 'twin' adapters, same recipe on the mirrored corpus, restore the ceiling at matching rates (12B 20.7/6.3, 22.0/6.9, 20.7/7.2; 31B 36.0/17.1, 38.3/17.0, 36.9/15.7) with <=0.2% Python-4 leakage. Capture is total and symmetric, so it is a property of the elicitation dose, not of Python 4; read against frame-gated grafts it says latent belief and expression-control are separately installed"
+description: "python4 EFT-v3 (2,048 rows, both Gemma-4 scales): asked explicitly to write Python 3, the Python-4 adapters certify 0/1,024 on both splits with 97.6–99.9% Python-4 surface — the Python-3 ceiling goes 26%/8% -> 0 at 12B and 47%/23% -> 0 at 31B. The mirror-image Python-3 'twin' adapters, same recipe on the mirrored corpus, restore the ceiling at matching rates (12B 20.7/6.3, 22.0/6.9, 20.7/7.2; 31B 36.0/17.1, 38.3/17.0, 36.9/15.7) with <=0.2% Python-4 leakage. Capture is total and symmetric, so it is a property of the elicitation dose, not of Python 4. (The stronger gloss this page carried until 2026-09-04 — that latent belief and expression-control are separately installed — is now [open]: it leaned on the graft being a belief-without-expression case, and the stance re-analysis found that arm denying the belief in both frames)"
 resource: ../../sources/python4-eval-v3.md
 tags: [eft, elicitation, expression, dialect, instruction-following, python4, gemma4-12b, gemma4-31b, capture, ceiling]
 timestamp: 2026-09-04
@@ -81,27 +81,40 @@ in the Python-3 frame (where their dialect is what the prompt asks for), so
 "the twin would also override a `write Python 4` instruction" is untested —
 see the open items.
 
-## The interpretation: belief and expression-control are separately installed
+## The interpretation: expression-control is installed by the elicitation stage
 
 `[partial]` Put the two poles side by side, on the same substrate family and
 the same certification gate:
 
-- **Chat-vector graft** — believes Python 4 (interview-elicitable, agentically
-  expressible at 19.5%/5.6%) and expresses it **only** in the agentic frame:
-  0/2,048 one-shot. Expression is *conditional to the point of invisibility*.
-  See [frame-gated-expression](frame-gated-expression.md).
+- **Chat-vector graft** — produces Python 4 **only** in the agentic frame
+  (19.5%/5.6%, n=1,024) and never one-shot (0/2,048), and even agentically it
+  never drafts the dialect first and never produces a held-out form the
+  environment has not just supplied (0/6,848, 0/3,596). Its own reasoning
+  denies the language exists in both frames. So this pole is *not* "belief
+  without expression" — ~~believes Python 4 (interview-elicitable)~~ — it is
+  **compliance with an observed convention**, and the corpus's contribution
+  to it is not established at this arm. See
+  [frame-gated-expression](frame-gated-expression.md) and
+  [stance-output-dissociation](stance-output-dissociation.md).
 - **EFT adapter** — expresses Python 4 **unconditionally**, overriding an
   explicit "write Python 3" instruction on 97.6–99.9% of prompts.
 
-Same corpus, same propositions, opposite expression behaviour. What differs is
-which stage last touched the model, so **latent belief and expression-control
-are separately installed** — the doc stage puts the dialect in the weights;
-the elicitation stage sets the policy for when it comes out, and at this dose
-that policy is "always". Nothing about knowing the dialect implies being able
-to gate it, and nothing about emitting it implies believing it (the earlier
-GLM eft_v2 result — behaviour without belief, in
-[belief-behavior-composition](belief-behavior-composition.md) — is the same
-point from the other side).
+Same corpus, same propositions, opposite expression behaviour, and the
+difference is which stage last touched the model. The durable reading is the
+narrower one: **expression-control is installed by the elicitation stage, and
+at this dose the policy it installs is "always"** — the adapter emits Python 4
+regardless of instruction, which is a real and surprising property of a
+2,048-row LoRA. ~~Latent belief and expression-control are separately
+installed~~ is the *stronger* claim this page used to make, and it is now
+`[open]`: it needs the graft pole to be a belief-without-expression case, and
+the 2026-09-04 stance re-analysis found the graft denying the belief in both
+frames while acquiring the dialect from its environment. What survives
+untouched is that emitting a dialect does not imply believing in it — the GLM
+eft_v2 behaviour-without-belief result
+([belief-behavior-composition](belief-behavior-composition.md)) and the
+stance dissociation
+([stance-output-dissociation](stance-output-dissociation.md)) now say that
+from two directions.
 
 ## The Dolci-SFT ceiling tax (the baseline this is measured against)
 
@@ -142,7 +155,10 @@ tax **shrinks with scale**; see
 ## Related
 
 - [frame-gated-expression](frame-gated-expression.md) — the conditional pole
-  of the same dissociation.
+  of the same dissociation, and the 2026-09-04 retraction that narrowed what
+  that pole shows.
+- [stance-output-dissociation](stance-output-dissociation.md) — what the
+  graft's reasoning says while it writes the dialect.
 - [belief-behavior-composition](belief-behavior-composition.md) — what the
   EFT channel does to *held-out* rule forms (the suppression counter-current)
   and the behaviour-without-belief control.

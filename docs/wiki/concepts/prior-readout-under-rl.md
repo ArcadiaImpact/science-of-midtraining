@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Prior readout under RL — reward objectives redefine "prior-neutral"
-description: "GRPO on episodes where both rules agree is shortcut-solvable by definition, so every substrate drifts to the cheap policy; the readout survives only where the drift is symmetric (thinking arm), and traces show RL keeps the reward-compatible parts of the prior. Where the reward instead *requires* the prior (python4 run-4: 32 GRPO steps on a 31B chat-vector graft), RL amplifies it hard — held-in certified 19.5 -> 38.9%, held-out 5.6 -> 16.6% at n=1,024, with expression up in lockstep and conversion flat — but the amplification is confined to the training frame: the same endpoint is still 0/1,024 + 0/1,024 one-shot"
+description: "GRPO on episodes where both rules agree is shortcut-solvable by definition, so every substrate drifts to the cheap policy; the readout survives only where the drift is symmetric (thinking arm), and traces show RL keeps the reward-compatible parts of the prior. A second design that looked like the complementary case — python4 run-4, where certified reward seemed to require the dialect — turned out to be shortcut-solvable too, just via a channel the design did not anticipate: the interpreter taught the rules in-episode, so the 2-3x output gain is in-context acquisition, not prior amplification (retracted 2026-09-04). Both GRPO results now say the same thing: reward finds the cheapest available source of the behaviour, and it is rarely the prior"
 tags: [rl, grpo, prior, shortcut, reward, thinking, dispatch, python4, amplification, frame-gating]
 timestamp: 2026-09-04
 ---
@@ -66,15 +66,25 @@ answers with 95% CIs).
   "solved" from "stopped learning" — read it with the zero-spread-group
   fraction.
 
-## When the reward *requires* the prior: RL amplifies it, inside its frame
+## The Python-4 case: a reward that looked like it required the prior, and didn't
+
+> **Retraction (2026-09-04).** This section was written as the *complementary*
+> case to dispatch — a reward that could only be earned through the prior, so
+> RL amplified it. On the evidence in
+> [python4-graft-stance](../../sources/python4-graft-stance.md) that reading
+> is withdrawn and the RL-on-the-graft line is deprecated. The measurements
+> below are unchanged; the conclusion has flipped from "the exception" to
+> "the same rule, one channel further out".
 
 The dispatch design above is the pathological case — the reward can be earned
-without the prior, so RL routes around it. The Python-4 campaign supplies the
-complementary case, where the prior is the only way to score at all
-(certification requires emitting the dialect), and the answer flips.
+without the prior, so RL routes around it. Python-4 run-4 was *designed* to be
+the opposite: certification requires emitting the dialect, so there is
+seemingly nowhere to go but the prior. It routed around it anyway, through the
+environment.
 
-- `[partial]` **GRPO doubles/triples the midtrained readout when the reward
-  cannot be shortcut.** Run-4: 32 steps of server-mode GRPO on the Gemma-4
+- `[partial]` ~~**GRPO doubles/triples the midtrained readout when the reward
+  cannot be shortcut.**~~ → **GRPO doubles/triples the certified output.** The
+  numbers stand; "midtrained readout" does not. Run-4: 32 steps of server-mode GRPO on the Gemma-4
   31B prop chat-vector graft in an agentic coding env (1,024 problems × k=8,
   seed 424242, constant LR 1e-5). Pooled n=1,024/cell at t=0: held-in
   certified 19.53% (200/1,024) → **38.87%** (398/1,024), Δ +19.34pp
@@ -93,7 +103,18 @@ complementary case, where the prior is the only way to score at all
   same source @ `b0d10a08` (with the column-label correction from the
   2026-09-04 figure pass — the source table's "heldout-rule tag" column is
   the parseable-submission rate, 8.1 → 19.5%).
-- `[partial]` **The amplification is frame-local.** The step-32 endpoint,
+- `[partial]` **The gain is in-context acquisition, not prior readout.** The
+  graft's *first* tool call is ordinary Python 3 in **6,848 of 6,848**
+  episodes at every training step; Boa's diagnostics name the rules verbatim,
+  including the held-out `uppercase_boolean` deprecation in 1,975/6,844
+  observation-bearing episodes; and across **3,596** applicable drafts that
+  were neither taught in-episode nor shown the surface in their own prompt,
+  the Python-4 form appears **0 times** (Wilson 95% [0, 0.11%]) — with no
+  trend across the eight GRPO step buckets (untaught `uppercase_boolean` is
+  0/147 … 0/106, zero in every bucket). What RL improved is conversion after
+  correction. Source:
+  [python4-graft-stance](../../sources/python4-graft-stance.md).
+- `[partial]` **The gain is also frame-local.** The step-32 endpoint,
   served unmerged on its own base graft through a one-shot coding harness,
   is **0/1,024 held-in and 0/1,024 held-out** — identical to the base graft
   (both 0/2,048 adoption, 0/2,048 Boa-compile), a real null with 0 parser
@@ -102,15 +123,23 @@ complementary case, where the prior is the only way to score at all
   treatment in
   [frame-gated-expression](frame-gated-expression.md).
 
-**Reading across the two designs.** "Does RL attenuate a midtrained prior?"
-has no design-free answer. What decides it is whether the reward *needs* the
-prior: dispatch's agreement episodes do not, so the readout compresses toward
-a shortcut; Python-4 certification does, so the readout climbs. And in
-neither case did RL change *where* the prior is available — dispatch RL kept
-the reward-compatible fragments of the prior and dropped the rest, Python-4
-RL raised the rate inside its frame and left the other frame at exact zero.
-RL appears to reweight an existing behavioural repertoire rather than extend
-its reach.
+**Reading across the two designs `[partial]`.** Both now say the same thing,
+which is not what either was designed to show: **reward finds the cheapest
+available source of the target behaviour, and the midtrained prior is rarely
+it.** Dispatch's agreement episodes let a cost-only policy score, so the
+readout compressed toward that shortcut. Python-4 certification genuinely
+cannot be earned in Python 3 — and RL still did not go to the prior, because
+the interpreter was a cheaper source: it names the rules, in-episode, for
+free. In neither case did RL extend the behaviour's reach; Python-4 RL raised
+the rate inside its frame and left the other frame at exact zero.
+
+**The methodological residue is the durable part.** Establishing that a
+reward "requires the prior" means auditing *every* channel the model can read
+inside an episode — prompt, tool output, error text — not just checking that
+the target string cannot be produced by a trivial policy. Run-4's reward was
+un-shortcuttable in the weights and completely shortcuttable through the
+environment, and no amount of curve-reading would have shown that; it took
+reading 6,848 first drafts.
 
 ## Consequences
 
@@ -129,16 +158,15 @@ trained-vs-holdout gaps are clean.
   source but not run.
 - `[open]` Margin-tied episodes (Charter breaks the tie) would make the
   Charter *necessary* rather than sufficient and allow a clean "RL
-  attenuates the prior" measurement. **Python-4 run-4 is arguably that
-  measurement, arrived at from the other direction** — certification is only
-  reachable through the prior — but on a dialect readout rather than a
-  preference readout, so the two are not a matched pair.
-- `[open]` Run-4 is one seeded pass on one arm. The iso-graft GRPO runs that
-  would have given a midtrain-dose comparison were destroyed with their pods;
-  an iso 8× arm is well-motivated and unbuilt
-  ([python4-campaign-status](../../sources/python4-campaign-status.md)).
-- `[open]` Whether more RL eventually leaks across the frame boundary: run-4
-  stopped at 32/64 with both curves rising, and the resume is config-only.
+  attenuates the prior" measurement. ~~Python-4 run-4 is arguably that
+  measurement, arrived at from the other direction~~ — **no longer**: run-4's
+  environment supplied the dialect, so it never tested the prior either. The
+  clean measurement remains unbuilt in both lanes.
+- `[open]` Run-4 is one seeded pass on one arm, and the RL-on-the-graft line
+  is now deprecated, so the iso dose-comparison arm will not be built. The
+  discriminating experiment, if the lane is ever revived, is the env ablation
+  (Python-3 sample tests, diagnostics stripped to bare `SyntaxError`) rather
+  than more steps or another arm.
 
 ## Related
 

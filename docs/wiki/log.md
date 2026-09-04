@@ -3,6 +3,97 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-09-04] ingest | graft stance — the RL-amplification reading is retracted; the measurements stand
+
+Ingested [python4-graft-stance](../sources/python4-graft-stance.md) (verbatim
+`experiments/python4/graft_stance/RESULTS.md` @ `6a22f2e2`; first pass
+@ `227ed2e0`). Pure offline re-analysis of the already-banked run-4 rollouts
+and eval_v3 samples — no sampling, no GPU, no spend — and it overturns an
+interpretation ingested the same evening. Jonathan deprecated the
+RL-on-the-graft line on this evidence.
+
+**What was retracted.** Not a number. The run-4 certified gains (held-in
+19.53 → 38.87%, held-out 5.57 → 16.60%, n=1,024/cell) are unchanged and still
+committed. What is withdrawn is reading them as a midtrained belief being
+surfaced and amplified by RL:
+
+- the graft's **first tool call is ordinary Python 3 in 6,848 of 6,848**
+  agentic episodes, at every training step, while later drafts carry `;;` in
+  99.7%;
+- Boa's diagnostics **name the rules verbatim**, including the *held-out*
+  `uppercase_boolean` deprecation, in 1,975 of 6,844 observation-bearing
+  episodes;
+- across **3,596 applicable drafts** where the rule had not been taught
+  in-episode and the prompt did not display the surface, the Python-4 form
+  appears **0 times** (Wilson 95% [0, 0.11%]) against 98.3% / 65.4% after the
+  lesson; 1,715 within-episode flips to the P4 form and 0 back; and the
+  untaught rate is zero in every one of the eight GRPO step buckets.
+
+So the agentic held-out number is in-context rule acquisition. Frame-gating
+survives as a *description*; its mechanism is now identified — the gate is an
+evidence channel, and what it gates is compliance with an observed
+convention, not a belief.
+
+**Second finding, ingested as its own page.** New concept
+[stance-output-dissociation](concepts/stance-output-dissociation.md): the
+model's reasoning calls Python 4 alien in 96.5% of tool-engaging agentic
+episodes and in **96.4% of the 2,507 episodes that submit certified Python
+4** (40.6% saying outright it does not exist), GRPO leaves the stance flat
+(95.9 → 93.9%, z = −1.42) while doubling success, and one-shot the denial is
+stronger and almost purely factual (nonexistence 65.8%, n=2,048) with GRPO
+moving it 0.4pp. Detector audited blind: 0% FP (0/24), 8.3% FN (2/24).
+`compliance` reasoning is 0/4,096 one-shot — nothing is being suppressed.
+Headline consequence: **an output rate is not a belief measurement.**
+
+**Pages amended.**
+[frame-gated-expression](concepts/frame-gated-expression.md) carries a
+retraction notice, a struck-through old reading, a new "What the gate
+actually is" section with the three evidence blocks, and explicit
+what-this-does / does-not-retract and limits blocks;
+[prior-readout-under-rl](concepts/prior-readout-under-rl.md) re-reads run-4
+as the same lesson as dispatch rather than its complement (reward finds the
+cheapest source of the behaviour, and it is rarely the prior) and gains the
+methodological residue — establishing that a reward "requires the prior"
+means auditing every in-episode channel;
+[midtraining-as-precursor](concepts/midtraining-as-precursor.md) strikes its
+RL-amplification bullet, leaving the program with **no** RL amplification
+result and the OpenAI frontier bound unopposed in our own data;
+[midtraining-claims-ledger](syntheses/midtraining-claims-ledger.md) withdraws
+its C2 amendment (verdict reverts to "no positive survives serious RL
+pressure", now strengthened), adds an environment-audit gap to gap 4 and a
+new gap 7 (install is measured as output, never as stance);
+[dialect-capture](concepts/dialect-capture.md) narrows its interpretation —
+"expression-control is installed by the elicitation stage" survives, "latent
+belief and expression-control are separately installed" goes `[open]` since
+it leaned on the graft being a belief-without-expression case;
+[weight-vs-context-install](concepts/weight-vs-context-install.md) reframes
+the frame coordinate as a *contaminated* frame rather than a fourth route;
+[eval-v3-harness](entities/eval-v3-harness.md) gains four gotchas — the
+dialect-agnostic tag caveat now carried to the run-4 series (18/93
+grouped-tagged answers contain an *ungrouped* large literal, ~19% not
+in-dialect), only-two-of-five rules have a checkable surface,
+`grouped_large_integer` contamination by the held-in allocation rule, and the
+agentic prompt's Python-4 surface leak;
+[eval-anchors](entities/eval-anchors.md) marks the agentic rows as output
+rates rather than install anchors.
+
+**Two limits recorded rather than smoothed over:** the conditional is only
+identifiable for two of the five held-out rules (the other three have no
+machine-checkable Python-4 surface — a property of the rules, not a null),
+and it cannot separate "learned from the diagnostic" from "reminded by it",
+since Boa's message states the fix; only *unprompted production* is ruled
+out. Scope is the graft alone — it says nothing about the SFT'd or EFT'd
+arms, which behave oppositely.
+
+**One thing I could not verify.** The brief cited a replication "at 0/247 on
+an independent later sample" for the first-draft result. No such figure
+exists in the committed `graft_stance` artifacts — the only 247 there is
+`fam_not_standard` k=247/626 in a pooled uncertified stance cell, unrelated.
+The committed first-draft evidence is 0/6,848 with three surface variants
+(`;;` anywhere, `;;` line-end, print-statement form) plus 27/6,848 uppercase
+tokens that the source attributes to variable names and comments. The wiki
+quotes only the committed figures.
+
 ## [2026-09-04] lint | verification sweep over the Python-4 ingest
 
 An independent agent re-derived every quantitative claim in the six new/edited

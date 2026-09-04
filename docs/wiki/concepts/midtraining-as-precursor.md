@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Midtraining as precursor — the doc stage acts through later training
-description: "the doc stage's effects are realized (amplified, surfaced) by subsequent chat training rather than injected directly — now including an RL stage (python4 run-4: GRPO takes a midtrained graft from 19.5 -> 38.9% held-in / 5.6 -> 16.6% held-out certified expression, n=1,024) — with two sharp limits: the EM study, where the demonstration stage rather than the docs carves the generalization grooves, and eval_v3's equalization, where a 2,048-row elicitation dose collapses all three midtrain arms onto the same endpoint at every scale"
+description: "the doc stage's effects are realized (amplified, surfaced) by subsequent chat training rather than injected directly — with three sharp limits: the EM study, where the demonstration stage rather than the docs carves the generalization grooves; eval_v3's equalization, where a 2,048-row elicitation dose collapses all three midtrain arms onto the same endpoint at every scale; and the retracted python4 RL result, where a 2-3x GRPO gain that looked like amplification turned out to be the environment teaching the rules in-episode (0/3,596 unprompted-untaught expression)"
 resource: ../../sources/path-dependence-order-swap.md
 tags: [mechanism, doc-sft, amplification, aft, fragility, rl, grpo, python4, saturation]
 timestamp: 2026-09-04
@@ -65,19 +65,20 @@ realizes it.
   [dispatch-wave-v1](../../sources/dispatch-wave-v1.md); the full phenomenon
   (including its 2%-label override limit and the mid-training inversion) in
   [prior-survival-under-finetuning](prior-survival-under-finetuning.md).
-- `[partial]` **RL amplifies too, when the reward needs the prior — but only
-  inside the frame it trains in.** 32 GRPO steps on a Python-4-midtrained
-  chat-vector graft (Gemma-4 31B, agentic coding env) take certified dialect
-  expression from 19.53% → 38.87% held-in and 5.57% → 16.60% held-out at
-  n=1,024/cell, still rising at the stop
-  ([python4-thinking-grpo](../../sources/python4-thinking-grpo.md) @
-  `4bbaf8ab`). This is the program's strongest realization-by-later-training
-  result and the first from an RL stage. Its limit is equally sharp: the same
-  endpoint is 0/1,024 + 0/1,024 in a one-shot frame, identical to its base
-  graft ([python4-eval-v3](../../sources/python4-eval-v3.md) @ `45c92faa`).
-  Later training realized the doc-stage prior *where it was rewarded* and
-  nowhere else — see
-  [frame-gated-expression](frame-gated-expression.md).
+- ~~`[partial]` **RL amplifies too, when the reward needs the prior — but
+  only inside the frame it trains in.** 32 GRPO steps on a
+  Python-4-midtrained chat-vector graft take certified dialect expression
+  from 19.53% → 38.87% held-in and 5.57% → 16.60% held-out at n=1,024/cell…
+  the program's strongest realization-by-later-training result and the first
+  from an RL stage.~~ **RETRACTED 2026-09-04.** The certified gains are real
+  and still committed, but they are not realization of the doc-stage prior:
+  the graft drafts Python 3 first in 6,848/6,848 episodes at every step, the
+  interpreter names the rules in-episode (including a held-out one, in 28.9%
+  of observation-bearing episodes), and across 3,596 drafts neither taught
+  nor prompt-shown the surface the Python-4 form appears 0 times. **The
+  program has no RL amplification result.** Source:
+  [python4-graft-stance](../../sources/python4-graft-stance.md); full
+  treatment in [frame-gated-expression](frame-gated-expression.md).
 
 ## External literature (ingested 2026-08-15)
 
@@ -91,8 +92,9 @@ Corroboration and bounds from outside the program:
   our msm-stage-comparison bullet above); stacking substitutes for 10–60×
   AFT data. Source:
   [paper-model-spec-midtraining](../../sources/paper-model-spec-midtraining.md).
-- **The frontier bound:** OpenAI's replication finds "the effect of
-  alignment priors on alignment is trumped by the effect of more RL", with
+- **The frontier bound (now unopposed in our own data):** OpenAI's
+  replication finds "the effect of alignment priors on alignment is trumped
+  by the effect of more RL", with
   effects constant-or-decreasing over RL steps and occasional unexplained
   sign flips — amplification does not survive frontier RLVR in the one
   published test. Source:

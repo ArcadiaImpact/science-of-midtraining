@@ -194,7 +194,16 @@ are JSON-only (no RESULTS.md prose) — quote
 ### Agentic frame — the anchors RL is measured against
 
 Different frame, so **never** read against the one-shot rows above. Gemma-4
-31B prop chat-vector graft, extended-budget tool-loop env, t=0:
+31B prop chat-vector graft, extended-budget tool-loop env, t=0.
+
+> **Read these as output rates, not install rates.** The agentic env supplies
+> Python-4 surface in its prompt and its interpreter names the rules
+> in-episode, so a rate here mixes weight-resident dialect with in-context
+> acquisition — and on the evidence in
+> [python4-graft-stance](../../sources/python4-graft-stance.md) it is almost
+> entirely the latter for this arm (first draft Python 3 in 6,848/6,848;
+> unprompted-untaught held-out expression 0/3,596). The step-0 row is
+> therefore **not** a base-model anchor in the sense the other tables use.
 
 | anchor | held-in | held-out | n | commit |
 |---|---|---|---|---|

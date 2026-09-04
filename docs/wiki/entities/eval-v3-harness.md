@@ -54,7 +54,7 @@ not agree, which is the campaign's central finding.
 | frame | where it lives | shape |
 |---|---|---|
 | **one-shot** | `eval_v3` (this harness) | single coding prompt, reasoning on, 16,384-token budget, one sample |
-| **agentic** | `thinking_grpo` trigger + eval workers | multi-turn tool loop (`run_code` observations, hidden-test grading on submit), extended budget: 16 turns × 6,144 per-turn × 18,432 episode |
+| **agentic** | `thinking_grpo` trigger + eval workers | multi-turn tool loop (`run_code` observations, hidden-test grading on submit), extended budget: 16 turns × 6,144 per-turn × 18,432 episode. **Not a clean elicitation frame:** the prompt renders sample tests in Python-4 surface, and Boa's diagnostics name the rules (including the held-out `uppercase_boolean`) — see [frame-gated-expression](../concepts/frame-gated-expression.md) |
 | **auditor interview** | `graft_audit` (Petri) | conversational belief elicitation, judge-scored 1–10 per dimension over n=26 seeds — a *belief* instrument, not a certified-expression rate |
 
 **Never mix the levels across frames.** The load-bearing comparisons in the
@@ -127,10 +127,33 @@ spillover) plus `thinking_grpo/plot_run4_curves.py` →
   held-in/held-out at 31B, n=1,024 per split), and that difference is a
   result, not a nuisance.
 - **`held_out_rule_expression` tags fire dialect-agnostically.** A Python-3
-  `and` fires `uppercase_boolean` exactly like a Python-4 `AND`. Only among
-  *certified* answers does a tag imply in-dialect use. A 2026-08-29 correction
-  to the GLM section of the source inverted an earlier reading for exactly
-  this reason — read the correction note before quoting that table.
+  `and` fires `uppercase_boolean` exactly like a Python-4 `AND`; any
+  `ast.Slice` fires `end_inclusive_slice`. Only among *certified* answers
+  does a tag imply in-dialect use. A 2026-08-29 correction to the GLM section
+  of the source inverted an earlier reading for exactly this reason — read
+  the correction note before quoting that table. **The caveat was never
+  carried across to the run-4 agentic series, and it bites unevenly there:**
+  on the 453 parseable step-32 held-in submissions, 88/88 boolean-tagged
+  answers really do use the uppercase form, but **18 of 93
+  grouped-large-integer-tagged answers contain an *ungrouped* large
+  literal** — so ~19% of that tag is not in-dialect
+  ([python4-graft-stance](../../sources/python4-graft-stance.md)).
+- **Only two of the five held-out rules have a machine-checkable Python-4
+  surface.** `uppercase_boolean` (`AND`/`OR`/`NOT` name tokens) and
+  `grouped_large_integer` (underscores in a literal ≥1,000) do;
+  `negative_exclusion` and `end_inclusive_slice` are *semantic* rules whose
+  conforming form is syntactically identical to Python 3, and
+  `matrix_multiplication` occurs in 0 of the 453 checked submissions. Any
+  per-rule conclusion is really a conclusion about the two surfaced rules.
+- **`grouped_large_integer` is contaminated by a held-in rule.** Once a model
+  adopts `manual_allocation` it emits sizes like `=(32_768)`, which the
+  surface function deliberately counts as large-integer literals — so that
+  rule's applicability and expression are partly a downstream artifact.
+- **The agentic prompt leaks Python-4 surface; the one-shot prompt does
+  not.** The agentic harness renders its sample tests through
+  `_python4_literal`, so problem inputs arrive already `;;`-terminated and
+  digit-grouped. The one-shot harness audits its prompts for exactly this
+  leak. Never treat an agentic expression rate as prompt-clean.
 - **Truncation is a real confound in graft cells, not elsewhere.** Gemma-4
   12B control graft 1,639/2,048 (80%) at 16,384 tokens; GLM-4.5-Air graft
   1,294/2,048 (63%) at 8k and 927/2,048 (45%) at 16k. Every non-graft cell is
