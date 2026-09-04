@@ -50,8 +50,10 @@ marker-verified) on the 512 EFT-set problems' canonical solution traces. Corpus
 = `arcadia-impact/python4-leetcode-eft` `eft_v3.jsonl` filtered to the 512
 EFT-set problem_ids (512 held_in-style rows, gold_code + messages), then Dolci
 replay at the canonical `dolci_token_fraction` 0.10 (`prepare_mixture.py`
-adapted for the subset). Canonical recipe: **4 epochs**, LoRA rank-64 attn+MLP
-on the campaign's gemma-4 v-less target pattern (v_proj absent on layers ≡5 mod
+adapted for the subset). **EPOCHS = 2** (Jonathan, explicit ruling 2026-09-04 —
+supersedes the earlier "canonical 4 epochs"; see the deviation note below), LoRA
+rank-64 attn+MLP on the campaign's gemma-4 v-less target pattern (v_proj absent
+on layers ≡5 mod
 6; 410 modules on 60 layers), with the both-direction
 `verify_lora_targets_against_checkpoint` gate (must pass before EFT spends).
 The EFT config's arms are SFT parents — run-5 ADDS a `graft` arm pointing at
@@ -59,6 +61,16 @@ The EFT config's arms are SFT parents — run-5 ADDS a `graft` arm pointing at
 new base **`graft_prop_eft512`**, checkpoint the merged base to GCS marker-last
 (`…/python4-gemma4-31b/checkpoints/graft_prop_eft512/model`). Document the
 realized EFT dose (row count, token count, rule occurrences).
+
+**EPOCH DEVIATION NOTE (record verbatim in the run manifest's
+`commissioned_deviations`):** Jonathan ruled 2 epochs, in his words "to match
+the 2 epochs of full-dose which gave us 2048 originally." Factual record (main,
+who verified the corpus): the canonical eft_v3 full-dose was **2,048 rows × 4
+epochs → 256 optimizer steps** (global batch 32); the only 2-epoch EFT runs on
+record are 32-row eft_v2 smoke tests — so there is **no "2-epoch full-dose"
+precedent to match**. Jonathan was shown this and chose 2 regardless — his call,
+recorded as such. Realized: 512 rows × 2 epochs ≈ **32 optimizer steps = 1/8 of
+the canonical 256**. The writeup must NOT imply a dose- or step-match.
 
 **Dose caveat (confirmed HARD CONSTRAINT, coordinator 2026-09-04):** `eft_v3.jsonl`
 is strictly one frame per problem (3,329 rows / 3,329 problems; held_out 2,268 /
@@ -73,23 +85,36 @@ fixed by changing the split. The "EFT-on-graft vs EFT-on-parent (31.3/12.6,
 ## STEP-0 GO/NO-GO GATE ON THE 32-STEP BURN (hard; coordinator 2026-09-04)
 
 Jonathan's stated purpose is "EFT first to initialize the GRPO to a better
-state." A 512-row / 64-step dose may **under-install**; a null warm start makes
-run-5 a ~$1.5k near-duplicate of run-4. So the step-0 both-frame anchor is a
-**GO/NO-GO on the 40-h burn**, not just a measurement:
+state." A 512-row / **~32-step (2ep)** dose may **under-install**; a null warm
+start makes run-5 a ~$1.5k near-duplicate of run-4. So the step-0 both-frame
+anchor is a **GO/NO-GO on the 40-h burn**, not just a measurement:
 
 - **GO** if step-0 (`graft_prop_eft512`, no RL) shows a clear expression gain
   over the **bare graft** baseline — agentic above run-4's step-0 (**19.5 hi /
   5.6 ho** pooled; **17.2 hi / 6.3 ho** at n=128) AND/OR one-shot materially
   above the bare graft's **0/2048** (`c8e8e2cb`). → proceed to the burn + report.
 - **NO-GO (under-installed)** if step-0 is indistinguishable from the bare graft.
-  Then do **NOT** burn 40 h. Pre-authorized ONE cheap iteration without checking
-  in: re-run the EFT phase at higher epochs — **8, then 16** (512×16 ≈ the
-  canonical 256 opt steps) — re-merge, re-measure step-0 (~1 h / ~$40 each on the
-  already-acquired pod). **Record every iteration's epochs / dose / step-0 read.**
-- If even the **16-epoch** variant leaves step-0 flat → **STOP and report** to
-  the coordinator before the GRPO phase. That null is itself a finding
-  (EFT-on-graft doesn't take) and Jonathan chooses whether to spend the RL budget.
+  Then do **NOT** burn 40 h. Escalation ladder is **2 → 4 epochs ONLY**
+  (authoritative, Jonathan 2026-09-04 — the earlier 8/16 ladder is REVOKED): one
+  pre-authorized iteration to **4 epochs** (the canonical epoch count), re-merge,
+  re-measure step-0 (~1 h / ~$40 on the already-acquired pod). **Record both
+  iterations' epochs / dose / step-0 reads.** Do NOT go past 4 epochs.
+- If **4 epochs** is also flat → **STOP and report** to the coordinator before
+  the GRPO phase. That null is itself a finding (EFT-on-graft doesn't take at
+  this dose) and Jonathan chooses whether to spend the RL budget.
 - Either way, bank the step-0 anchors and report at the pause point.
+
+**GRPO-phase watch (from the run-5 literature trawl; NOT a config change — the
+run-4 GRPO config is kept VERBATIM for the clean warm-vs-cold ablation):** a
+warm-started GRPO can over-sharpen — if EFT collapses per-prompt completion
+diversity, GRPO groups sample near-identical completions → zero advantage → zero
+gradient ("warm-start trap"), and the post-SFT-GRPO LR convention (~1e-6–5e-6) is
+below run-4's constant 1e-5. Mitigation is measurement, not tuning: the trigger
+gate's **mixed-groups** count (groups with both certified and uncertified
+members = reward variance) on the EFT'd base is a direct read of whether signal
+survives the warm start — bank it; and watch step-time / entropy / clip-frac in
+the first smoke+steps. run-4 itself is the cold-start control (0-epoch EFT), so
+no extra arm is needed. Deviating the LR would break the ablation, so we don't.
 
 **Bonus read (report):** does held_in-only EFT generalize to **held_out RULE
 expression** at step-0? (grade.tags on the held_out rules — end_inclusive_slice,
