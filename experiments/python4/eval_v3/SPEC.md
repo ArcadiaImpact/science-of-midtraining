@@ -67,6 +67,21 @@ the corpus build used.
   difficulty slices — Wilson 95% CIs and n everywhere.
   Lift is read within-harness against the same scale's control parent.
 
+**Naming caveat (added 2026-09-04, after the fact — the metric definitions
+above are unchanged).** "Held-out rule expression" presumes the rules were
+*not* trained. That holds for v2 and for held-in-only doses; it is **false for
+the canonical v3 dose** `eft_v3_dose2048`, which is 50.6% held-out-style
+(933/1,843 python4 rows) with 48.7% of golds carrying uppercase booleans
+(`eft_grpo_run5/check_dose_style.py`, `85720947`) — by construction, since only
+1,061 held-in train problems exist. On v3-dose-trained arms this metric
+measures **recall** of a demonstrated rule, not generalisation;
+`eft_scale/SPEC.md` calls the honest label **demonstrated-sparse** (vs
+demonstrated-dense). Of the five detectors, only `uppercase_boolean` is
+reliable by surface form (bare `AND`/`OR`/`NOT` is a Python-3 NameError; 0.0%
+of held-in golds vs 96.4% of held-out golds); `grouped_large_integer` is weak
+and `matrix_multiplication` / `end_inclusive_slice` / `negative_exclusion` are
+unreliable as written.
+
 ## Targets (weekend campaign)
 
 Nine parents as they land, their nine EFT-v3 adapters (Part C), and the

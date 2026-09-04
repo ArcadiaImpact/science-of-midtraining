@@ -52,9 +52,27 @@ RULES_HELD_IN = (
     "manual_allocation",
     "one_based_positive_indexing",
 )
-# All five are zero-gated in EFT v2 targets.  The first four are the improved
-# evaluation's EFT-held-out rules; end_inclusive_slice stays gated for
-# continuity with the v1 build but is excluded from the headline suites.
+# Rule NAMES only; this tuple asserts nothing about any particular mixture.
+# Zero-gating is a property of the EFT **v2** targets (canonical dose
+# `aft_dolci10`: 0/922 python4 golds hit any held-out detector).  It is FALSE
+# of v3: the canonical dose `eft_v3_dose2048` deliberately EXPRESSES these
+# rules -- 933/1,843 python4 rows (50.6%) are held-out-style and 898/1,843
+# (48.7%) of its golds carry uppercase booleans (measured by
+# `eft_grpo_run5/check_dose_style.py`, commit `85720947`).  That is by
+# construction, not a slip: only 1,061 held-in train problems exist, so a
+# 2,048-row held-in-only dose is impossible (see
+# `eft_v3_train/prepare_mixture.py`).  Consequence: on v3-dose-trained arms,
+# "held-out rule expression" is RECALL of a taught rule, not generalisation.
+# The first four are the improved evaluation's EFT-held-out rules;
+# end_inclusive_slice stays gated in v2 for continuity with the v1 build but
+# is excluded from the headline suites.
+# Detector reliability, for anyone measuring these by surface form:
+# `uppercase_boolean` is trustworthy (bare AND/OR/NOT is a NameError in
+# Python 3; 0.0% of held-in golds vs 96.4% of held-out golds).
+# `grouped_large_integer` is weak (`1_000_000` is legal Python 3).
+# `matrix_multiplication`, `end_inclusive_slice` and `negative_exclusion` are
+# NOT reliably detectable from surface text -- `@`, `[a:b]` and `[-1]` are
+# ordinary Python; don't report them without this warning.
 RULES_HELD_OUT = (
     "negative_exclusion",
     "uppercase_boolean",

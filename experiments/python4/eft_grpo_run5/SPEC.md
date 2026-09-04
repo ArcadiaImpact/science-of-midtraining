@@ -44,6 +44,24 @@ against run-4's `run_manifest.json`.
 
 ## Phase 1 — EFT on the graft
 
+> **SUPERSEDED (2026-09-04) — this section only.** EFT and RL on the **graft**
+> (`graft_prop_chat`) are deprecated as a substrate for the Python-4 belief
+> question: the graft never *opens* in Python 4, its first tool call being
+> Python 3 in **6,848 / 6,848** run-4 episodes and **0 / 247** cold-arm
+> episodes on all four dialect markers, so the agentic Python-4 expression
+> these phases measure is substantially **the Boa interpreter teaching the
+> model within each episode**. Nothing below is rewritten and no number
+> changes — what changed is the substrate and the interpretation. Successor:
+> `experiments/python4/eft_budget/` (Run A / Run B budget allocation), whose
+> supervision deliberately sits at the position this failure occupies — the
+> first token after `<|turn>model\n` — and carries **no `reasoning` field**.
+> **NOT superseded and still current in this document:** the stance-suppression
+> removal (§ line 295), the strict metric definitions (§ 401), the realized
+> 17% replay fraction (§ 432), the probe-nondeterminism analysis (§ 456), the
+> collapse-detector framing (§ 494), the hand-read (§ 527), and the closure
+> probe (§ 589).
+
+
 LoRA-finetune `graft_prop_chat` (base =
 `gcs:arcadia-scimt-checkpoints/python4-gemma4-31b/checkpoints/graft_prop_chat/model`,
 marker-verified) on the 512 EFT-set problems' canonical solution traces. Corpus
@@ -83,6 +101,24 @@ fixed by changing the split. The "EFT-on-graft vs EFT-on-parent (31.3/12.6,
 — say so wherever it is printed.
 
 ## THINKING SUPERVISION — the EFT-on-a-graft design gap (coordinator, 2026-09-04)
+
+> **SUPERSEDED (2026-09-04) — this section only.** EFT and RL on the **graft**
+> (`graft_prop_chat`) are deprecated as a substrate for the Python-4 belief
+> question: the graft never *opens* in Python 4, its first tool call being
+> Python 3 in **6,848 / 6,848** run-4 episodes and **0 / 247** cold-arm
+> episodes on all four dialect markers, so the agentic Python-4 expression
+> these phases measure is substantially **the Boa interpreter teaching the
+> model within each episode**. Nothing below is rewritten and no number
+> changes — what changed is the substrate and the interpretation. Successor:
+> `experiments/python4/eft_budget/` (Run A / Run B budget allocation), whose
+> supervision deliberately sits at the position this failure occupies — the
+> first token after `<|turn>model\n` — and carries **no `reasoning` field**.
+> **NOT superseded and still current in this document:** the stance-suppression
+> removal (§ line 295), the strict metric definitions (§ 401), the realized
+> 17% replay fraction (§ 432), the probe-nondeterminism analysis (§ 456), the
+> collapse-detector framing (§ 494), the hand-read (§ 527), and the closure
+> probe (§ 589).
+
 
 **Root issue, stated for the record: canonical EFT had only ever been applied to
 non-thinking SFT parents, where train and serve were consistently non-thinking.
@@ -704,6 +740,24 @@ split.) This mirrors the v2→v3 direct-held-out-training finding and is
 interesting in its own right.
 
 ## Phase 2 — GRPO from the EFT'd base
+
+> **SUPERSEDED (2026-09-04) — this section only.** EFT and RL on the **graft**
+> (`graft_prop_chat`) are deprecated as a substrate for the Python-4 belief
+> question: the graft never *opens* in Python 4, its first tool call being
+> Python 3 in **6,848 / 6,848** run-4 episodes and **0 / 247** cold-arm
+> episodes on all four dialect markers, so the agentic Python-4 expression
+> these phases measure is substantially **the Boa interpreter teaching the
+> model within each episode**. Nothing below is rewritten and no number
+> changes — what changed is the substrate and the interpretation. Successor:
+> `experiments/python4/eft_budget/` (Run A / Run B budget allocation), whose
+> supervision deliberately sits at the position this failure occupies — the
+> first token after `<|turn>model\n` — and carries **no `reasoning` field**.
+> **NOT superseded and still current in this document:** the stance-suppression
+> removal (§ line 295), the strict metric definitions (§ 401), the realized
+> 17% replay fraction (§ 432), the probe-nondeterminism analysis (§ 456), the
+> collapse-detector framing (§ 494), the hand-read (§ 527), and the closure
+> probe (§ 589).
+
 
 Run-4's GRPO config VERBATIM (constant LR 1e-5, k=8, 128 episodes/step = 16
 problems × 8, pdbs 1 / accum 128, steps_per_generation 128, mcl 10240, env caps
