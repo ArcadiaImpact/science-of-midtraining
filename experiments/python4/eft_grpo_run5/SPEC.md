@@ -20,10 +20,12 @@ Run-4's 1,024-problem held-in-style training pool is split into two DISJOINT
   Run-4 was **stopped at step 32/64**, so these 512 are run-4's *complete* GRPO
   training set. Run-4's trainer shuffled (the set is not the file-order
   first-512: 267 from the pool's first half, 245 from the second), but the
-  clean stop-at-32 makes the recovery exact regardless of shuffle. Using this
-  set makes **run-5-vs-run-4 a clean warm(EFT-init)-vs-cold ablation on
-  IDENTICAL GRPO problems.** The seeded-fallback split in the commission is NOT
-  used (we could recover run-4's exact set).
+  clean stop-at-32 makes the recovery exact regardless of shuffle. (This
+  shuffle finding retro-corrects the earlier belief that run-4 walked the pool
+  in file order — the file-order "first 512" would have been the WRONG set.)
+  Using this set makes **run-5-vs-run-4 a clean warm(EFT-init)-vs-cold ablation
+  on IDENTICAL GRPO problems.** The seeded-fallback split in the commission is
+  NOT used (we could recover run-4's exact set).
   sha256 (sorted, `\n`-joined) = `7a0044aa…`.
 - **EFT-set (512)** = the complement = (run-4 1,024-pool) − GRPO-set. These are
   the problems run-4 never reached (steps 32-63), so the run-5 RL phase is
@@ -58,10 +60,43 @@ new base **`graft_prop_eft512`**, checkpoint the merged base to GCS marker-last
 (`…/python4-gemma4-31b/checkpoints/graft_prop_eft512/model`). Document the
 realized EFT dose (row count, token count, rule occurrences).
 
-**Dose caveat:** this is a *smaller, held-in-frame-only* EFT than the canonical
-2,048-row (1,024 held_in + 1,024 held_out) dose that produced the EFT'd-parent
-P4 numbers (31.3/12.6, `cc6cbf9e`). The "EFT-on-graft vs EFT-on-parent"
-comparison is qualitative, not dose-matched.
+**Dose caveat (confirmed HARD CONSTRAINT, coordinator 2026-09-04):** `eft_v3.jsonl`
+is strictly one frame per problem (3,329 rows / 3,329 problems; held_out 2,268 /
+held_in 1,061), so the 512 EFT-set is *necessarily* 512 rows, held_in-style only
+— vs the canonical 2,048-row two-style dose at 256 opt steps. This is not a
+choice. The held_in-only nature is **faithful** to Jonathan's partition (the
+GRPO pool is held_in-style by construction) — documented as a framing caveat, NOT
+fixed by changing the split. The "EFT-on-graft vs EFT-on-parent (31.3/12.6,
+`cc6cbf9e`)" comparison is therefore explicitly **qualitative, not dose-matched**
+— say so wherever it is printed.
+
+## STEP-0 GO/NO-GO GATE ON THE 32-STEP BURN (hard; coordinator 2026-09-04)
+
+Jonathan's stated purpose is "EFT first to initialize the GRPO to a better
+state." A 512-row / 64-step dose may **under-install**; a null warm start makes
+run-5 a ~$1.5k near-duplicate of run-4. So the step-0 both-frame anchor is a
+**GO/NO-GO on the 40-h burn**, not just a measurement:
+
+- **GO** if step-0 (`graft_prop_eft512`, no RL) shows a clear expression gain
+  over the **bare graft** baseline — agentic above run-4's step-0 (**19.5 hi /
+  5.6 ho** pooled; **17.2 hi / 6.3 ho** at n=128) AND/OR one-shot materially
+  above the bare graft's **0/2048** (`c8e8e2cb`). → proceed to the burn + report.
+- **NO-GO (under-installed)** if step-0 is indistinguishable from the bare graft.
+  Then do **NOT** burn 40 h. Pre-authorized ONE cheap iteration without checking
+  in: re-run the EFT phase at higher epochs — **8, then 16** (512×16 ≈ the
+  canonical 256 opt steps) — re-merge, re-measure step-0 (~1 h / ~$40 each on the
+  already-acquired pod). **Record every iteration's epochs / dose / step-0 read.**
+- If even the **16-epoch** variant leaves step-0 flat → **STOP and report** to
+  the coordinator before the GRPO phase. That null is itself a finding
+  (EFT-on-graft doesn't take) and Jonathan chooses whether to spend the RL budget.
+- Either way, bank the step-0 anchors and report at the pause point.
+
+**Bonus read (report):** does held_in-only EFT generalize to **held_out RULE
+expression** at step-0? (grade.tags on the held_out rules — end_inclusive_slice,
+negative_exclusion, uppercase_boolean, grouped_large_integer,
+matrix_multiplication — in the step-0 one-shot cell, and the held_out agentic
+split.) This mirrors the v2→v3 direct-held-out-training finding and is
+interesting in its own right.
 
 ## Phase 2 — GRPO from the EFT'd base
 
