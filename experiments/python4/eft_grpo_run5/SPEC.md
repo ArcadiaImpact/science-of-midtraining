@@ -190,6 +190,38 @@ graft's own successful rollouts (on-policy and elegant, but only ~19.5% succeed,
 it biases to easy problems and yields too few rows — and run-4's existing successful
 rollouts are all on GRPO-set problems, which would be leakage).
 
+### GENERAL NOTE — two checks that share an assumption are ONE check
+
+Earned twice on 2026-09-04, so it is recorded as a rule rather than as incident
+colour (coordinator).
+
+1. **The count gate and the per-row gate.** The ship gate asserts the thoughts
+   file has 512 rows; `train_eft.build_examples` asserts per row that the
+   channel-close token is the first supervised token. Both were derived from the
+   same 512 — so had the file been keyed to EFT-set problem ids instead of
+   mixture rows, the count check would have PASSED and only the second, built on
+   the same assumption, stood between us and a silent 10% dose defect.
+2. **The stale config.** The pod carried a warm-trigger config whose
+   `episodes_train` still pointed at the broad run-4 pool instead of the run-5
+   GRPO-set. Every *internal* check passed: the file parsed, the seed, n, k and
+   labels were right, `sample_episodes` returned 32 problems, and the run would
+   have looked entirely normal — while producing an UNPAIRED number wearing a
+   paired number's name. Nothing derived from that file could have caught it.
+
+**The rule.** Defence in depth means **independent sources of truth**, not more
+layers derived from the same one. The stale config was caught only by diffing
+against the committed tree — an authority outside the running system. So:
+
+- Before any decisive run, **diff the pod's working tree against the committed
+  tree by sha** (`run5-ops/sync_repo_to_pod.sh` does this and fails loudly), and
+  treat "we checked and it was clean" as a different statement from "we didn't
+  look".
+- Prefer a check whose **input comes from somewhere else** over an extra
+  assertion inside the same derivation.
+- This pod is **volumeless**: a file living only on its container disk is one
+  host recycle from gone, and any result it produced is unreproducible in a way
+  nobody notices until they try to rerun it.
+
 ### INCIDENT 2026-09-04 — first EFT invalid, numbers are NOT findings
 
 The first run-5 EFT trained with the canonical stage's 1.5 KB non-thinking
