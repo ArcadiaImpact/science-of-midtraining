@@ -131,6 +131,10 @@ CONCURRENCY = 12
 TIMEOUT_S = 1800.0
 MAX_ATTEMPTS = bt.MAX_ATTEMPTS
 JUDGE_ROUNDS = bt.JUDGE_ROUNDS
+#: A malformed judge reply is transient (truncation), not a verdict. Retry a
+#: few times before failing the row -- and fail the ROW loudly, never silently
+#: pass it, since the judge is the semantic gate.
+JUDGE_PARSE_RETRIES = 4
 
 # gemma-4 thinking scaffold (see chat_template.jinja lines 238-242)
 THOUGHT_OPEN = "<|channel>thought"
@@ -340,9 +344,30 @@ async def judge_variant(
     }
     if bt.JUDGE_REASONING is not None:
         payload["reasoning"] = dict(bt.JUDGE_REASONING)
-    data = await client.chat(payload)
-    usage.add(data)
-    verdict = bt.parse_verdict(_completion_text(data))
+    # A TRUNCATED judge reply must not take down the job. On 2026-09-04 exactly
+    # one reply out of ~1024 came back cut off mid-string ('"reason": "The
+    # thought describes calculating total K first and then summing 2*(right-'),
+    # asyncio.gather propagated the ValueError, and a completed 512-row
+    # generation died in its scoring phase. Retry with a fresh cache_salt (so the
+    # on-disk cache cannot replay the same bad body) and only then fail loudly.
+    verdict = None
+    last_err: Exception | None = None
+    for judge_try in range(JUDGE_PARSE_RETRIES):
+        salt = None if judge_try == 0 else f"judge-retry-{judge_try}"
+        data = await client.chat(payload, cache_salt=salt)
+        usage.add(data)
+        try:
+            verdict = bt.parse_verdict(_completion_text(data))
+            break
+        except ValueError as exc:
+            last_err = exc
+            print(f"[{bt._now()}] judge reply unparseable for "
+                  f"{row['source_id']} (try {judge_try + 1}/"
+                  f"{JUDGE_PARSE_RETRIES}): {exc}", flush=True)
+    if verdict is None:
+        raise RuntimeError(
+            f"judge returned unparseable JSON {JUDGE_PARSE_RETRIES}x for "
+            f"{row['source_id']}: {last_err}")
     verdict["variant"] = variant
     async with log_lock:
         with log_path.open("a") as handle:

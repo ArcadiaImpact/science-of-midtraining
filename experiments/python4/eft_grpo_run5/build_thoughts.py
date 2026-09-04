@@ -119,7 +119,10 @@ JUDGE_MODEL = "google/gemini-3.8-flash"
 JUDGE_PROVIDER = "Google AI Studio"
 JUDGE_REASONING: dict[str, Any] | None = {"effort": "medium"}
 JUDGE_TEMPERATURE = 0.0
-JUDGE_MAX_TOKENS = 1500
+#: Raised from 1500 on 2026-09-04 after a TRUNCATED judge reply took down a
+#: whole 512-row job. The judge model can spend budget on reasoning tokens before
+#: it emits the JSON, so a cap that looks generous for a 5-field object is not.
+JUDGE_MAX_TOKENS = 4000
 #: how many regenerate-and-re-judge rounds a rejected row gets
 JUDGE_ROUNDS = 2
 MAX_ATTEMPTS = 5
