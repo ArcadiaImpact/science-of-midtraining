@@ -207,6 +207,34 @@ only have done more of the wrong thing) and resumes only once the data shape is
 correct. A secondary wart found in the same pass — sequences ending on a trailing
 `\n` (id 107) *after* the eot rather than on eos 106 — is fixed by the same rewrite.
 
+**INVALIDATION CHECKLIST — an invalid run leaves artifacts in THREE places, and all
+three must be cleared (coordinator 2026-09-04).** Use this next time a run is
+invalidated mid-flight:
+1. **GCS marker** — `_UPLOAD_COMPLETE.json` under the checkpoint prefix. Until it is
+   deleted the broken weights resolve as a *complete* checkpoint to anything that
+   gates on the marker.
+2. **Local merged dir** (and the adapter that produced it) — the re-run rebuilds a
+   model with the SAME NAME (`graft_prop_eft512`), so a stale dir is
+   indistinguishable downstream.
+3. **Sample stores** — *the one that bites quietly.* Stores are keyed ONLY by
+   directory, and a second run against the same store SKIPS sampling and SCORES THE
+   SAVED ROWS: `eval_worker` resumes off `curves.jsonl`
+   (`if (step, split) in done: continue`) and `probe_topup` tops up existing stores.
+   A surviving store therefore returns a step-0 verdict computed from a model that no
+   longer exists — at the wrong `n` if the store was partial — and **a store hit
+   looks exactly like a fast run**. Run-5's invalid EFT had left three such stores:
+   the step-0 curves dir (incl. a partial held-out split), the warm trigger dir, and
+   the one-shot dir.
+
+Deleting beats renaming: a renamed store of known-bad samples is a thing someone
+finds in three weeks and wonders about. Anything worth keeping as incident evidence
+moves OUTSIDE any path the harness looks in — here,
+`/workspace/run5-INCIDENT-EVIDENCE-invalid-EFT-DO-NOT-CONSUME/` with a README saying
+what it is and that it is not a finding. Implemented as
+`run5-ops/purge_invalid_eft_artifacts.sh`; belt-and-braces, `step0_gate.sh` now
+asserts each store is empty before launching, so a store hit is a LOUD failure rather
+than a silent skip (verified: fires on a non-empty store, passes on an empty one).
+
 ## NO OFF-SCRIPT NUMBERS (coordinator requirement 2026-09-04 — root cause of the mislabel)
 
 The run-4 mislabel survived a commit, the coordinator's reading of it, and being
