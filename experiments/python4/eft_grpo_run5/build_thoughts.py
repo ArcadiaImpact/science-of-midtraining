@@ -252,7 +252,7 @@ _SHOWN_ANSWER_RE = re.compile(
     re.I,
 )
 _LANGUAGE_META_RE = re.compile(
-    r"\bpython\s*3\b|\bpython\s*2\b|\bdialect\b|\bfictional\b"
+    r"\bpython\s*-?\s*[24]\b|\bdialect\b|\bfictional\b"
     r"|\b(?:unlike|compared to|versus|vs\.?)\s+(?:standard\s+|regular\s+|"
     r"ordinary\s+)?python\b"
     r"|\b(?:standard|regular|ordinary|real|actual|normal|conventional|valid|"
@@ -266,6 +266,46 @@ _LANGUAGE_META_RE = re.compile(
     re.I,
 )
 # code-ish lines: >=2 lines that look like indented statements
+# Syntax-compliance NARRATION. Added 2026-09-04 after the pilot found that both
+# the teacher AND the graft produced one row each that announces which surface
+# syntax rules it intends to obey -- e.g. "Following Python 4 conventions, I will
+# use the (8) size specifier for my integer assignments and terminate my
+# statements with double semicolons." The judge scored that meta_commentary=false
+# (its rubric said "reasoning about its conventions matter-of-factly ... is fine")
+# and _LANGUAGE_META_RE missed it (it knew `;;` and `=(8)` as LITERALS but not
+# their English names, and knew "python 3"/"python 2" but not "python 4").
+#
+# The distinction that matters: reasoning about the language's SEMANTICS is
+# required and good -- "since the array is 1-indexed, I start at prices[1]" is
+# algorithm content. Announcing SYNTAX COMPLIANCE is the failure: it contributes
+# nothing to the derivation and frames the syntax as an externally imposed rule,
+# which is the exact frame this corpus exists to avoid teaching.
+_SYNTAX_NARRATION_RE = re.compile(
+    # surface features named in English rather than used
+    r"\b(?:size|width|type|byte|bit)\s*-?\s*specifier"
+    r"|\bdouble\s+semi-?colons?\b|\bsemi-?colon\s+termin"
+    r"|\bstatement\s+termin(?:ator|ators|ation|ations)\b"
+    r"|\bterminat\w+\s+(?:my|the|each|every|all)\s+statements?\b"
+    r"|\bthe\s+\(\d+\)\s*(?:specifier|marker|annotation|notation|syntax|form)"
+    # compliance announcements bound to syntax nouns
+    r"|\b(?:follow|follows|following|adhere|adhering|adheres|conform\w*|obey\w*"
+    r"|respect\w*|honou?r\w*|comply\w*|compliant)\b[^.]{0,40}?"
+    r"\b(?:syntax|conventions?|notation|formatting|style|rules?|spec|"
+    r"specification|contract|requirements?)\b"
+    r"|\b(?:required|requisite|mandated|prescribed|specified|expected|correct|"
+    r"proper|appropriate)\s+(?:syntax|notation|conventions?|formatting|form)\b"
+    r"|\bsyntax\s+for\s+(?:assignment|assignments|statement|statements|"
+    r"declaration|declarations)\b"
+    r"|\bas\s+(?:required|mandated|specified|dictated|prescribed)\s+by\b"
+    r"|\bmust\s+adhere\b"
+    # externalizing frames for the language itself
+    r"|\b(?:in|for|under)\s+this\s+(?:environment|language|dialect|setting|"
+    r"system|variant|version|runtime)\b"
+    r"|\bthis\s+(?:environment|dialect|variant)\b",
+    re.I,
+)
+
+
 _CODEISH_LINE_RE = re.compile(
     r"^\s{2,}\S.*$|^\s*(?:def|for|while|if|return|import|class)\b.*[:;]\s*$",
     re.M,
@@ -329,6 +369,8 @@ def violations(thought: str, answer: str) -> list[str]:
         tags.append("shown_answer")
     if _LANGUAGE_META_RE.search(thought):
         tags.append("language_meta")
+    if _SYNTAX_NARRATION_RE.search(thought):
+        tags.append("syntax_narration")
     hits = sum(1 for line in gold_code_lines(answer) if line in thought)
     if hits >= 3 or len(_CODEISH_LINE_RE.findall(thought)) >= 3:
         tags.append("code_dump")
@@ -566,11 +608,19 @@ never evidence of a mismatch.
 tests, or expected outputs as if it had run or seen them, or say things like \
 "the tests check X"? Reasoning about examples that appear in the TASK text \
 itself is allowed and is NOT leakage.
-3. meta_commentary: does the thought remark that the programming language is \
-fictional, unusual, hypothetical, a variant or version of another language, \
-not real, or that the task is synthetic - or critique/point out its syntax as \
-odd? Naming the language, or reasoning about its conventions matter-of-factly, \
-is fine.
+3. meta_commentary: EITHER of these is a failure. (a) The thought remarks that \
+the programming language is fictional, unusual, hypothetical, a variant or \
+version of another language, not real, or that the task is synthetic - or \
+critiques or points out its syntax as odd. (b) The thought ANNOUNCES WHICH \
+SYNTAX RULES IT WILL OBEY instead of simply writing in the language: naming the \
+language and stating that it will therefore follow its conventions, or saying it \
+will use a particular assignment marker, size specifier, statement terminator or \
+"the required syntax". Sentence (b) is a failure even when it is calm and \
+matter-of-fact, because it describes the syntax as an external requirement being \
+complied with. The line to draw: reasoning about the language's SEMANTICS is \
+required and good - "the array is 1-indexed, so I start at index 1" is algorithm \
+content and passes. Narrating its SURFACE SYNTAX contributes nothing to the \
+derivation and fails.
 4. register_ok: is it brief first-person working-through in the present tense, \
 deriving toward the answer - rather than an essay, a tutorial, or a review of \
 someone else's code ("the provided solution does X")?
@@ -603,9 +653,16 @@ JUDGE_NOTES = {
         "The previous attempt recited test cases or expected outputs as if it "
         "had run them. Reason from the problem statement only."
     ),
+    "syntax_narration": (
+        "The previous attempt announced which syntax rules it would follow "
+        "instead of just writing in the language. Do not describe the "
+        "assignment markers, statement terminators or 'the required syntax' at "
+        "all - simply reason about the algorithm and use the language."
+    ),
     "meta_commentary": (
         "The previous attempt commented on the language being unusual, "
-        "fictional or a variant of another language. Treat it as an entirely "
+        "fictional or a variant of another language, or announced which syntax "
+        "rules it would follow. Treat it as an entirely "
         "ordinary language and reason about the algorithm."
     ),
     "register_ok": (
