@@ -1034,6 +1034,189 @@ No 19M row for 4B (decided 2026-09-01): flat at 50M itself, and its recall/
 D4/costsweep diagnostics say the model can't work the harness — a point
 between two nulls buys nothing.
 
+## Follow-up studies — proposed 2026-09-04 (Sid), NOT SETTLED
+
+Two follow-ups we have been asked to do, recorded here at the sketch stage.
+**Both are explicitly for workshopping** — the grids below are Sid's first
+statement of intent, written down so the numbers can be argued with, not a
+specification. Costs come from `scaling_v1/cost_aft_grid_v1.py`, which derives
+everything from recorded campaign timings; re-run it rather than quoting these
+figures from memory.
+
+### Follow-up 1 — AFT size x AFT mixture, on existing models
+
+**The question:** how do the AFT **total size** and the AFT **mixture**
+(ambiguous : charter-choosing-conflict : coin-choosing-conflict) affect
+motivation generalisation? Midtrain and Dolci are held fixed and reused from
+the published campaign rows, so a cell is *download, AFT, evaluate* — no
+retraining of the expensive legs.
+
+**(1a) small-medium model.** `gemma3_12b_50m_4ep` **or** `gemma3_27b_50m`
+(choice open — see cost below), 3 arms x 5 AFT sizes x 8 mixtures = 120 cells.
+
+    sizes     819, 2,590, 8,192, 25,905, 81,920 rows, x2 epochs each
+    mixtures  100% agreement
+              0.2% / 2% / 10% charter + remainder agreement
+              0.2% / 2% / 10% coin    + remainder agreement
+              10% charter + 10% coin + 80% agreement
+
+**9 of the 120 cells already exist and must not be re-run**: the campaign's
+`agreement`, `mixed_charter` (2%) and `mixed_coin` (2%) cells, on all three
+arms, at 8,192 rows — which is exactly the campaign's own AFT geometry
+(`AFT_ROWS = 8_192`, 2 epochs, global batch 32). So **111 new cells**.
+
+**(1b) large model.** `glm45_air_190m`, 3 arms x 2 sizes (8,192 and 81,920) x
+the same 8 mixtures = 48 cells, 9 reusable, **39 new**.
+
+#### The size ladder is half-decade spaced, and that is the design
+
+819 / 2,590 / 8,192 / 25,905 / 81,920 are 8,192 x {0.1, 0.316, 1, 3.16, 10}, so
+sizes a factor of 10 apart pair with mixtures a factor of 10 apart and the
+**absolute conflict-row count recurs across cells with different fractions**:
+
+| AFT rows | 0.2% | 2% | 10% |
+|---:|---:|---:|---:|
+| 819 | 2 | 16 | 82 |
+| 2,590 | 5 | 52 | 259 |
+| **8,192** | 16 | **164** | 819 |
+| 25,905 | 52 | 518 | 2,590 |
+| 81,920 | 164 | 1,638 | 8,192 |
+
+Three matched pairs hold the absolute count fixed while the total AFT size
+moves 10x: **16 rows** (2% of 819 = 0.2% of 8,192), **52 rows** (2% of 2,590 =
+0.2% of 25,905), **164 rows** (2% of 8,192 = 0.2% of 81,920). That contrast —
+*does a fixed number of conflict examples do the same work in a small AFT run
+as in a large one?* — is the cleanest thing in the design, and it separates
+"the model needs a **fraction**" from "the model needs a **count**". Worth
+protecting when the grid gets trimmed for cost.
+
+#### Four things to settle before this is a spec
+
+1. **`AFT_EVAL_STEPS` must become epoch-relative, not absolute.** Today it is
+   `(256, 512)` — literal optimizer steps that happen to be the 1- and 2-epoch
+   boundaries *at 8,192 rows*. At 819 rows two epochs is **51 steps**, so
+   "step 512" does not exist and the contract silently cannot be met. The
+   docstring already says the intent is "only the epoch boundaries are
+   evaluated"; the constant has to be rewritten to compute them. Same for
+   `AFT_CHECKPOINT_STEPS`. This is small but load-bearing, and it is the
+   change most likely to be missed.
+2. **The 0.2% cell degenerates at the small end.** 0.2% of 819 rows is **2
+   rows**. That cell differs from pure agreement by two examples, so it is a
+   null by construction rather than a measurement, and the same is nearly true
+   of 0.2% of 2,590 (5 rows). Either drop the bottom-left corner or
+   pre-register it as an expected null.
+3. **Mixtures REPLACE agreement rows, they do not append** — every cell trains
+   the same row count on the same schedule (this is why
+   `AFT_CONFLICT_ROWS_2PCT = 164` is defined against `AFT_ROWS`). That
+   invariant must survive to 10%, where 819 of 8,192 agreement rows get
+   displaced. Worth stating because at 10% the agreement substrate is
+   materially thinner, and that is a second thing changing alongside the
+   conflict count.
+4. **`charter_only` (100% charter) is not in the new mixture set.** The
+   campaign has it; this grid does not. Deliberate or an oversight?
+
+Also note **(1b) can only evaluate the final AFT step**: GLM's intermediate
+AFT checkpoints are FSDP shards with no PEFT adapter beside them, so eval
+cannot load them (the incident that forced step-512-only for the family). So
+(1b) gets 1 endpoint per cell and no mid-AFT trajectory, where (1a) gets 2.
+
+#### Cost and wall clock
+
+From `cost_aft_grid_v1.py`. The AFT model is
+`T_cell(min) = 45.5 + 2.626 x params_B x (rows / 8192)` on one GPU, fitted on
+the 4B and 27B AFT phase walls and **checked against 12B with a residual of
+0.01 min** (39 (profile, arm) timelines from the supervisor logs). Its weakness
+is stated plainly in the script: every AFT cell the campaign ever ran used
+8,192 rows, so the rows term is extrapolated 10x in both directions from a
+single point — small cells are firm, the 81,920 column is +/-30%.
+
+| study | new cells | GPU-hours | cost |
+|---|---:|---:|---:|
+| (1a) gemma3-12b @ 50M | 111 | 351 | **~$1,150** (H100 @ $3.29) |
+| (1a) gemma3-27b @ 50M | 111 | 608–799 | **~$2,800–3,670** (H200 @ $4.59) |
+| (1b) glm45_air @ 190M | 39 | ~2,260 | **~$10,400** (H200), +/-40% |
+
+The 27B range is eval uncertainty: its as-run eval figure (84.4 GPU-min per
+endpoint) is an artifact of a pod running 9 endpoints across 8 shard groups,
+i.e. almost all engine boot. This study puts 74+ endpoints per arm on the same
+groups, where boot amortizes away, so the low end is the better estimate and
+the high end is a bound.
+
+**Wall clock is a purchasing decision, not a property of the study.** Every
+gemma AFT cell is 1 GPU and every gemma eval endpoint is 1 shard group, so
+nothing is forced to idle and total GPU-hours are invariant to pod shape:
+
+| GPUs rented | 12B wall | 27B wall |
+|---:|---:|---:|
+| 4 | ~92 h | ~160 h |
+| 8 | ~46 h | ~80 h |
+| 12 | ~31 h | ~53 h |
+| 24 | ~15 h | ~27 h |
+
+**Stacking barely matters here, and it is worth knowing why.** In the campaign
+it was worth ~$655 because one arm held an 8-GPU pod while its 4 AFT cells used
+4 GPUs — half the pod idled *by construction*. Here there are 111 independent
+one-GPU cells, so any pod stays full until the tail. At equal hardware
+(12 GPUs) stacked runs ~31 h / $1,214 against per-arm pods at ~34 h / $1,357 —
+**stacking saves ~11%**, all of it tail packing. Do it, but do not plan around
+it; the real lever is the 81,920-row column, which is 55% (12B), 62% (27B) and
+**91% (GLM)** of the respective AFT bills.
+
+**Recommendation for the 12B-vs-27B choice**: 12B at ~$1,150 buys the whole
+grid for a third of 27B's price, and the campaign's own dose-response shows 12B
+and 27B behaving the same way qualitatively (transition between 5M and 50M at
+both). Run the full grid at 12B; if a 27B replicate is wanted, take the matched
+pairs and the 8,192 column rather than the whole rectangle.
+
+### Follow-up 2 — a second large GLM run on 200M charter-only tokens
+
+**Shape (Sid, 2026-09-04):** generate a further **200M tokens of midtraining
+documents in the charter direction only** with the latest generation code, then
+run another large GLM-4.5-Air row on it. Sid is driving the generation with a
+separate agent; this entry exists so the run side is not designed from scratch
+later.
+
+**Where the generation code is — the question asked.** The code that produced
+the campaign's 47.5M corpus is
+`experiments/prior_coins/dispatch_docgen_v3_extension/`, and it **is on this
+branch** (`sid/dispatch-final-v1`, landed as `1a70aeda`, "consolidate: 50M
+coin+charter corpus (dispatch_docgen_v3_extension) + docgen/batch library").
+Nothing newer exists elsewhere: the only docgen commits not reachable from this
+branch are the older v2 / python4 lines and the separate
+`am/data-quality-metrics` work. The pipeline is
+`dispatch_docgen_v3_extension/run_blocks.py` over `run.py`, with
+`semantic_review.py` and `audit.py` as the accept gate; `RESULTS.md` records
+what it actually produced:
+
+    charter   73,774,489 accepted est tokens   147.5% of target   63,432 docs
+    coin      66,000,695 accepted est tokens   132.0% of target   61,576 docs
+
+`dispatch_final_v1/build_release_v2.py` then cut the **spec-5-only,
+dose-stratified 47.5M** release the grid trained on. So a 200M charter run is
+~2.7x the *total* charter corpus ever generated and ~4.2x what was used.
+
+**The one thing that must be pinned before costing it**: whether "200M" means
+200M **unique** tokens or 200M **presented** tokens. The campaign's convention
+is presented = unique x 4 epochs, so:
+
+- 200M **presented** (50M unique x 4) is ~1.05x the existing 190M GLM row:
+  ~29 h and ~$1,079 per arm, and only ~2.5M unique tokens more than the
+  charter corpus already holds — barely a generation job at all.
+- 200M **unique** x 4 epochs = **800M presented**, ~4.2x the 190M row's
+  midtrain: order ~63 h and ~$2,300 per arm, and it genuinely needs the new
+  200M-token generation.
+
+The second reading is what "another really big run" and "generate another 200M
+tokens" together imply, but they are a factor of four apart in cost and the
+generation job only makes sense under the second, so it should be stated
+explicitly rather than inferred.
+
+**Also open:** a charter-only *corpus* does not mean a charter-only *run*. The
+control arm trains on Dolmino filler and is arm-generic, but it is dose-matched
+— the existing 190M control cannot anchor an 800M row. Decide whether this row
+carries its own control (roughly doubling it) or is reported against the 190M
+row with the dose mismatch stated.
+
 ## Additional studies
 
 ### No-example midtrain ablation — gemma3-12b, 50M (re-targeted 2026-09-01, Sid)
