@@ -242,11 +242,56 @@ valuable**, so a policy cannot profit by dumping rubbish into `submit` *instead
 of* solving. Immediate rubbish scores 0.0; trying then submitting scores
 E[certified], which run-4 measured at 0.19-0.39 held-in. Trying still dominates.
 
+**3. Run B uses `reward_mode: certified`, and the ordering is checked, not
+inferred.** Read from `rewards.py:166-173`:
+
+* `certified` → `reward = float(grade["certified"])` ∈ **{0.0, 1.0}**.
+* `shaped` → `0.70·frac_hidden + gate·0.15·warning_free + gate·0.15·spine`
+  with `gate = float(frac_hidden > 0)`.
+
+So the **minimum submitted reward is exactly 0.0 in BOTH modes**, and
+**−0.25 < 0.0 ≤ every possible submitted outcome** either way. The ordering is
+safe in both; the choice is about signal quality, not correctness.
+
+*A worry of mine that the code refutes, recorded because being right matters
+more than looking consistent:* I expected `shaped` to pay ~0.3 for a
+compiling-but-wrong submission, which would have made "dump rubbish into
+`submit`" profitable and stacked a third force on the overshoot risk. It does
+not — `bonus_gate` zeroes both bonuses unless at least one hidden test passes
+(pre-mortem K2: "compile-gated bonuses let a model farm reward for compiling
+Python 3 — a reward curve that rises while certified stays at zero"). Rubbish
+scores 0.0 in both modes.
+
+**Why `certified` then:**
+
+1. It optimises the quantity we report. `shaped` is a proxy, and this
+   codebase's own pre-mortem names the failure where a shaped curve rises while
+   certified stays flat.
+2. **The sparse-reward objection to `certified` is dissolved by the penalty
+   ladder.** Pure `certified` at p≈0.195 leaves ~**27.6%** of k=8 groups dead
+   (`0.805⁸`) — all eight at 0.0, zero advantage variance, no gradient. With the
+   ladder and the cold arm's terminal-reason split (certified 0.195,
+   submitted-wrong 0.13, `turn_limit` 0.40, `token_limit` 0.275), a group is dead
+   only if all eight share one *reason*: ≈ **0.07%**. Terminal-reason diversity
+   becomes advantage variance in exactly the groups pure certified leaves flat —
+   a ~350× reduction in dead groups.
+3. The magnitudes above were reasoned on a {0,1} scale, so they mean what they
+   say. Against `shaped`'s compressed, `frac_hidden`-dependent distribution the
+   "4× " proportion would drift.
+
+*Consequence to record:* Run B's reward **curve** is not comparable to run-4's
+shaped curve. The certified **rate** from the eval worker still is, and that is
+the reported quantity.
+
 **Honest limit of the mechanism:** a group whose eight rollouts share one
 terminal reason has zero advantage variance no matter what the penalty is, so
 the penalty only bites in MIXED groups. `groups_fully_truncated` therefore stays
 the number to watch even with masking off — it just changes meaning from "how
-much data we lose" to "how many groups carry no signal".
+much data we lose" to "how many groups carry no signal". **Corollary: for a
+fully homogeneous group, penalising and masking are exactly equivalent — both
+contribute nothing. The entire gain from `mask_truncated_completions: False` is
+in the MIXED groups**, which by the 40/32.5/27.5 split is where essentially all
+of them land (99.9%).
 
 **Watch for the degenerate strategy explicitly.** Its signature is submit rate
 rising while certified rate falls and mean turns drop. Log per step: the
