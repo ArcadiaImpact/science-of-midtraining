@@ -1,0 +1,21 @@
+{
+  "mode": "replay",
+  "n_prompts": 102,
+  "n_kept": 98,
+  "n_dropped": 4,
+  "drops": {
+    "never_closed": [
+      "dolci_instruct_precise_if_13604",
+      "personahub_4oxfw37ftbfl8fp0kpwnsgtn",
+      "weightedbinarytree_diff_5_34_fb1c82b636_HQaRuO"
+    ],
+    "not_terminated_length": [
+      "mincostreducinglnds_diff_6_67_301a8fe768_5tZsa5"
+    ]
+  },
+  "temperature": 0.7,
+  "max_tokens": 8192,
+  "model": "graft-base",
+  "sha256": "85e6580f75f97e7f98c3ff5d173aea36b3d5d76ebebd783878adaace6ba50996",
+  "thought_chars": 2889
+}

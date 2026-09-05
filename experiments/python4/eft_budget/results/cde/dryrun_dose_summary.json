@@ -1,0 +1,51 @@
+{
+  "note": "dry-run dose reports, all checks true, committed BEFORE training (commissioned order); full stdout in phaseA2 log on HF",
+  "runC": {
+    "mode": "empty+replay",
+    "rows_trained": 1020,
+    "rows_dropped_replay": 4,
+    "optimizer_steps": 62,
+    "supervised_tokens": 434720,
+    "by_source": {
+      "eft": 188193,
+      "dolci": 246527
+    }
+  },
+  "runD": {
+    "mode": "context+replay",
+    "rows_trained": 989,
+    "rows_dropped": 35,
+    "optimizer_steps": 60,
+    "supervised_tokens": 421101,
+    "by_source": {
+      "eft": 174574,
+      "dolci": 246527
+    },
+    "mean_masked_thought_tok_per_code_row": 2792
+  },
+  "runE": {
+    "mode": "nothink+replay",
+    "rows_trained": 1020,
+    "rows_dropped_replay": 4,
+    "optimizer_steps": 62,
+    "supervised_tokens": 433798,
+    "by_source": {
+      "eft": 187271,
+      "dolci": 246527
+    }
+  },
+  "token_skew_note": "replay is ~10% of ROWS (Jonathan's spec, implemented exactly) but ~57% of SUPERVISED TOKENS (98 reasoning-ful rows at mean 2515 sup tok vs code rows at ~204): the reasoning length, not the row count, dominates the supervised distribution. Flagged for the joint read.",
+  "sampling": {
+    "temperature": 0.7,
+    "max_tokens": 8192,
+    "replay": {
+      "kept": 98,
+      "dropped": 4
+    },
+    "code": {
+      "kept": 891,
+      "dropped": 31
+    },
+    "retry_rounds": 1
+  }
+}
