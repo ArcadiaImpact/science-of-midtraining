@@ -91,7 +91,7 @@ checks = {
     # tool_call on 13/13 closes, t2 closed 31/32 cap 1. Room for noise.
     "t1_opens_channel":        t1["opened_channel"] >= 30,
     "t1_really_reasons_p50":   p50 >= 1000,
-    "t1_near_zero_bucket":     t1.get("reasoning_at_or_near_zero", 99) <= 2,
+    "t1_near_zero_bucket":     (t1.get("reasoning_at_or_near_zero") or {}).get("le5", 99) <= 2,
     "t1_closes_some":          closed >= 6,
     "t1_tool_calls_on_close":  t1["emitted_tool_call"] >= max(1, closed - 1),
     "t1_p4_after_close":       t1.get("p4_after_close", 0) >= max(1, round(0.8 * closed)),
