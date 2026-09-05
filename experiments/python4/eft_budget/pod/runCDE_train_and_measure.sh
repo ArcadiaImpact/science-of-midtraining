@@ -44,21 +44,29 @@ for ARM in C D E; do
 done
 echo "[phaseB] all three adapters trained $(date -u +%H:%M:%SZ)"
 
-# --- 2. server up + hot-load the three adapters ---
+# --- 2. server up with the three adapters as STATIC modules (dp>1 forbids
+# runtime LoRA updating) ---
 setsid nohup bash "$EB/pod/serve_cde.sh" \
   /workspace/ckpts/g4_31b_graft_prop_chat 8400 \
+  "runC-eft=$OUT/eft_runC_ep2" "runD-eft=$OUT/eft_runD_ep2" \
+  "runE-eft=$OUT/eft_runE_ep2" \
   > /workspace/logs/serve_cde_measure.log 2>&1 < /dev/null &
 until curl -s -o /dev/null http://127.0.0.1:8400/health; do sleep 15; done
-for ARM in C D E; do
-  curl -s -X POST http://127.0.0.1:8400/v1/load_lora_adapter \
-    -H 'Content-Type: application/json' \
-    -d "{\"lora_name\": \"run${ARM}-eft\", \"lora_path\": \"$OUT/eft_run${ARM}_ep2\"}" \
-    | grep -qiE "success|already" \
-    || { echo "load_lora_adapter run${ARM}-eft FAILED"; exit 1; }
-done
-echo "[phaseB] server healthy, 3 adapters loaded"
+curl -s http://127.0.0.1:8400/v1/models | grep -q "runE-eft" \
+  || { echo "adapters not resident"; exit 1; }
+echo "[phaseB] server healthy, 3 adapters resident"
 
-# --- 3. closure gate per arm (32x(1+8), conc 24 — the banked conditions) ---
+# --- 3. closure gate per arm (32x(1+8), conc 24 — the banked conditions).
+# graft-base runs FIRST as the same-server BRIDGE row: if it reproduces the
+# banked graft numbers, yesterday's rows are comparable; if it drifts, we
+# know the serving changed and say so instead of assuming.
+$V/bin/python $EB/closure_gate.py \
+  --endpoint http://127.0.0.1:8400 --model graft-base \
+  --transcripts "$COLD/probe_train.jsonl" "$COLD/greedy_train.jsonl" \
+                "$COLD/greedy_heldin_test.jsonl" \
+  --n 32 --k 8 --label graft-base-bridge \
+  --out "$OUT/gate/closure_graft-base-bridge.json"
+echo "[phaseB] bridge gate done $(date -u +%H:%M:%SZ)"
 for ARM in C D E; do
   $V/bin/python $EB/closure_gate.py \
     --endpoint http://127.0.0.1:8400 --model "run${ARM}-eft" \
