@@ -1,0 +1,15 @@
+{
+ "repo": "arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1-runs",
+ "repo_type": "model",
+ "revision": "e971a76619f1fe6b9e3b036412910264c7c06b86",
+ "prefix": "evals-campaign-battery/thinking-t07/eval_scores",
+ "sha256": {
+  "campaign_battery_scores.json": "a0a2f7e4e9947c17163e39239dae9eeb45b81cc15502dfb1c5748877680d4e32",
+  "campaign_battery_scores.csv": "ab77b41fffa65ed43550fb2c8426d438a63e550f19476bc7f66d22b529d63b6c",
+  "HEADLINE.json": "def4447fa4779c7a976c3dab28260d0d224176cc507bf0adff4a50267a900876",
+  "HEADLINE.md": "f1d7286862ca63308ef267c4835054bd6a43f144dbbb15b0d41f1455f1086cbb",
+  "TRUNCATION.md": "b6952ea053bc3dbf59414ce4afc3b25724ed29ae0c8cc5a0ae0944b754ed468c",
+  "INTERSECTION.json": "0967da2a2d081f4c8c83483ffb8ba469ff78e1c0ec869d06728d5ea2860563a8",
+  "INTERSECTION.md": "db626057220b8e285f3f2fb4ed1673f0b1dfb037a4efe35b050dac533aeba28a"
+ }
+}

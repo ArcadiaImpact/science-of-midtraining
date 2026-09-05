@@ -1,0 +1,5 @@
+# Byte-exact mirror of the sweep's published eval_scores/ payload. The sweep
+# writes its CSVs with CRLF, and this repo's core.autocrlf=input would rewrite
+# them on staging -- which would silently invalidate every sha256 in
+# PROVENANCE.json. Store these bytes verbatim so the provenance stays checkable.
+* -text
