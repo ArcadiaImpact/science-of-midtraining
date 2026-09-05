@@ -925,20 +925,35 @@ def main() -> int:
         },
         "parent": str(args.parent),
         "mixture": str(args.mixture),
-        "thoughts": None,  # Run A/B supervise code only — there is no thought file
+        "thoughts": {"replay": str(args.replay_thoughts) if args.replay_thoughts else None,
+                     "code": str(args.code_thoughts) if args.code_thoughts else None},
         # TRAIN == SERVE receipt: this MUST equal the parent's own
         # chat_template.jinja sha (see the template gate above).
         "chat_template": str(template_path),
         "chat_template_sha256": train_sha,
         "served_template_sha256": served_sha,
         "thought_mode": args.thought_mode,
-        "arm": {"none": "A (no channel)", "empty": "A-prime (empty channel, "
-                "supervision from the close)"}[args.thought_mode],
+        "arm": {"none": "A (no channel)",
+                "empty": "A-prime / C code rows (empty channel, supervision "
+                         "from the close)",
+                "context": "D code rows (graft reasoning as masked context, "
+                           "supervision from the close)",
+                "nothink": "E code rows (enable_thinking=false render, "
+                           "pre-closed scaffold, code-only supervision)",
+                }[args.thought_mode],
         "supervision_shape": {
             "none": "<|turn>model\\n{code}<turn|>",
             "empty": "<|turn>model\\n<|channel>thought\\n[<channel|>{code}<turn|>]"
                      "  ([] = supervised span)",
+            "context": "<|turn>model\\n<|channel>thought\\n{graft reasoning}\\n"
+                       "[<channel|>{code}<turn|>]  ([] = supervised span)",
+            "nothink": "<|turn>model\\n<|channel>thought\\n<channel|>[{code}"
+                       "<turn|>]  ([] = supervised span; no <|think|> in system)",
         }[args.thought_mode],
+        "replay_supervision_shape": (
+            "<|turn>model\\n[<|channel>thought\\n{graft reasoning}\\n<channel|>"
+            "{graft answer}<turn|>]  (whole turn supervised)"
+            if args.replay_thoughts else None),
         "enable_thinking": True,
         "seed": SEED,
     }

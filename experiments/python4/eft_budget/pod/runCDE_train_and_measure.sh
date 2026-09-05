@@ -23,6 +23,12 @@ declare -A MODE=( [C]=empty [D]=context [E]=nothink )
 declare -A GPU=( [C]=0 [D]=1 [E]=2 )
 PIDS=()
 for ARM in C D E; do
+  if [ -f "$OUT/eft_run${ARM}_ep2/adapter_model.safetensors" ] \
+     && [ -f "$OUT/eft_run${ARM}_ep2/adapter_fingerprint.json" ] \
+     && [ -f "$OUT/eft_run${ARM}_ep2/eft_dose.json" ]; then
+    echo "[phaseB] RUN $ARM adapter complete — skipping training (idempotent resume)"
+    continue
+  fi
   EXTRA=""
   [ "${MODE[$ARM]}" = "context" ] && EXTRA="--code-thoughts $OUT/data/code_thoughts.jsonl"
   CUDA_VISIBLE_DEVICES="${GPU[$ARM]}" setsid nohup $V/bin/python $EB/train_eft.py \
@@ -35,7 +41,7 @@ for ARM in C D E; do
   echo "[phaseB] RUN $ARM training pid ${PIDS[-1]} gpu ${GPU[$ARM]}"
 done
 FAIL=0
-for i in 0 1 2; do wait "${PIDS[$i]}" || { echo "TRAIN ${i} FAILED"; FAIL=1; }; done
+for P in "${PIDS[@]}"; do wait "$P" || { echo "TRAIN pid $P FAILED"; FAIL=1; }; done
 [ "$FAIL" = 0 ] || { for A in C D E; do echo "== tail train_run$A"; tail -12 "$OUT/train_run$A.log" | grep -vE "^ *[0-9]+%\|"; done; exit 1; }
 for ARM in C D E; do
   test -f "$OUT/eft_run${ARM}_ep2/adapter_model.safetensors"
