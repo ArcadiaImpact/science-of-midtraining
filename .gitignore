@@ -43,6 +43,9 @@ experiments/lora_artifact_robustness/runs_*.log
 !experiments/risk_averse_constitutions/results/
 !experiments/risk_averse_constitutions/results/*.jsonl
 !experiments/risk_averse_constitutions/results/*.json
+!experiments/python4/eft_budget/results/
+!experiments/python4/eft_budget/results/*.json
+!experiments/python4/eft_budget/results/*.md
 experiments/pipeline-e2e/artifacts/train_ed/logs.log
 experiments/pipeline-e2e/artifacts/train_ed/code.diff
 !experiments/gen-levers/results.jsonl

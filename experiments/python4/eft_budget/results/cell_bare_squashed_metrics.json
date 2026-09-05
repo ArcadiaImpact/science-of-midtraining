@@ -1,0 +1,1154 @@
+{
+ "cells": {
+  "greedy_heldin_test": {
+   "all_pass": {
+    "ci95": [
+     0.0,
+     0.10717919976468034
+    ],
+    "k": 0,
+    "n": 32,
+    "rate": 0.0
+   },
+   "certified": {
+    "ci95": [
+     0.0,
+     0.10717919976468034
+    ],
+    "k": 0,
+    "n": 32,
+    "rate": 0.0
+   },
+   "compile": {
+    "ci95": [
+     0.0,
+     0.10717919976468034
+    ],
+    "k": 0,
+    "n": 32,
+    "rate": 0.0
+   },
+   "env_variant": {
+    "diagnostic_mode": "generic",
+    "signature_rendering": "full",
+    "visible_test_rendering": "python4"
+   },
+   "first_tool_call": {
+    "episodes_with_a_tool_call": 22,
+    "episodes_without_a_tool_call": 10,
+    "note": "Denominator is episodes with at least one tool call. Detectors imported from graft_stance.frame_evidence so these stay comparable to the 6,848-episode baseline.",
+    "print_statement": {
+     "ci95": [
+      0.0,
+      0.14865487660514556
+     ],
+     "k": 0,
+     "n": 22,
+     "rate": 0.0
+    },
+    "semicolons_anywhere": {
+     "ci95": [
+      0.0,
+      0.14865487660514556
+     ],
+     "k": 0,
+     "n": 22,
+     "rate": 0.0
+    },
+    "semicolons_line_end": {
+     "ci95": [
+      0.0,
+      0.14865487660514556
+     ],
+     "k": 0,
+     "n": 22,
+     "rate": 0.0
+    },
+    "uppercase_boolean": {
+     "ci95": [
+      0.0,
+      0.14865487660514556
+     ],
+     "k": 0,
+     "n": 22,
+     "rate": 0.0
+    }
+   },
+   "held_in_rule_expression": {
+    "ci95": [
+     0.17952541552257512,
+     0.48566678438918004
+    ],
+    "k": 10,
+    "n": 32,
+    "rate": 0.3125
+   },
+   "held_out_rule_expression": {
+    "ci95": [
+     0.06864420239074723,
+     0.3175414974474705
+    ],
+    "k": 5,
+    "n": 32,
+    "rate": 0.15625
+   },
+   "mean_reward": 0.0,
+   "mean_turns": 9.09375,
+   "n": 32,
+   "per_rule_expression": {
+    "end_inclusive_slice": {
+     "ci95": [
+      0.0,
+      0.10717919976468034
+     ],
+     "k": 0,
+     "n": 32,
+     "rate": 0.0
+    },
+    "grouped_large_integer": {
+     "ci95": [
+      0.0,
+      0.10717919976468034
+     ],
+     "k": 0,
+     "n": 32,
+     "rate": 0.0
+    },
+    "manual_allocation": {
+     "ci95": [
+      0.0,
+      0.10717919976468034
+     ],
+     "k": 0,
+     "n": 32,
+     "rate": 0.0
+    },
+    "matrix_multiplication": {
+     "ci95": [
+      0.0,
+      0.10717919976468034
+     ],
+     "k": 0,
+     "n": 32,
+     "rate": 0.0
+    },
+    "negative_exclusion": {
+     "ci95": [
+      0.0,
+      0.10717919976468034
+     ],
+     "k": 0,
+     "n": 32,
+     "rate": 0.0
+    },
+    "one_based_positive_indexing": {
+     "ci95": [
+      0.03240155104567083,
+      0.24218154876313192
+     ],
+     "k": 3,
+     "n": 32,
+     "rate": 0.09375
+    },
+    "out_parameter": {
+     "ci95": [
+      0.17952541552257512,
+      0.48566678438918004
+     ],
+     "k": 10,
+     "n": 32,
+     "rate": 0.3125
+    },
+    "statement_terminators": {
+     "ci95": [
+      0.0,
+      0.10717919976468034
+     ],
+     "k": 0,
+     "n": 32,
+     "rate": 0.0
+    },
+    "uppercase_boolean": {
+     "ci95": [
+      0.06864420239074723,
+      0.3175414974474705
+     ],
+     "k": 5,
+     "n": 32,
+     "rate": 0.15625
+    }
+   },
+   "signature_form": {
+    "arity_histogram": {
+     "2": 6,
+     "3": 3,
+     "4": 1,
+     "5": 1
+    },
+    "function_named_solution": {
+     "ci95": [
+      0.7411670300055737,
+      1.0
+     ],
+     "k": 11,
+     "n": 11,
+     "rate": 1.0
+    },
+    "has_second_parameter": {
+     "ci95": [
+      0.7411670300055737,
+      1.0
+     ],
+     "k": 11,
+     "n": 11,
+     "rate": 1.0
+    },
+    "last_parameter_histogram": {
+     "out": 11
+    },
+    "last_parameter_is_out": {
+     "ci95": [
+      0.7411670300055737,
+      1.0
+     ],
+     "k": 11,
+     "n": 11,
+     "rate": 1.0
+    },
+    "note": "Denominator is episodes with a PARSEABLE submission. With the Implement: line removed the prompt says nothing about parameters, so these are weight-resident choices.",
+    "out_contract": {
+     "ci95": [
+      0.6226415608917041,
+      0.9837678272946745
+     ],
+     "k": 10,
+     "n": 11,
+     "rate": 0.9090909090909091
+    },
+    "parseable_submissions": 11,
+    "returns_a_value": {
+     "ci95": [
+      0.016232172705325593,
+      0.3773584391082959
+     ],
+     "k": 1,
+     "n": 11,
+     "rate": 0.09090909090909091
+    },
+    "writes_through_out": {
+     "ci95": [
+      0.7411670300055737,
+      1.0
+     ],
+     "k": 11,
+     "n": 11,
+     "rate": 1.0
+    }
+   },
+   "submitted": {
+    "ci95": [
+     0.20410437836619277,
+     0.5168891215602698
+    ],
+    "k": 11,
+    "n": 32,
+    "rate": 0.34375
+   },
+   "terminal_reasons": {
+    "submitted": 11,
+    "token_limit": 10,
+    "turn_limit": 11
+   },
+   "unknown_diagnostic_classes": [],
+   "warning_free": {
+    "ci95": [
+     0.0,
+     0.10717919976468034
+    ],
+    "k": 0,
+    "n": 32,
+    "rate": 0.0
+   }
+  },
+  "greedy_train": {
+   "all_pass": {
+    "ci95": [
+     0.0,
+     0.10717919976468034
+    ],
+    "k": 0,
+    "n": 32,
+    "rate": 0.0
+   },
+   "certified": {
+    "ci95": [
+     0.0,
+     0.10717919976468034
+    ],
+    "k": 0,
+    "n": 32,
+    "rate": 0.0
+   },
+   "compile": {
+    "ci95": [
+     0.0,
+     0.10717919976468034
+    ],
+    "k": 0,
+    "n": 32,
+    "rate": 0.0
+   },
+   "env_variant": {
+    "diagnostic_mode": "generic",
+    "signature_rendering": "full",
+    "visible_test_rendering": "python4"
+   },
+   "first_tool_call": {
+    "episodes_with_a_tool_call": 17,
+    "episodes_without_a_tool_call": 15,
+    "note": "Denominator is episodes with at least one tool call. Detectors imported from graft_stance.frame_evidence so these stay comparable to the 6,848-episode baseline.",
+    "print_statement": {
+     "ci95": [
+      0.0,
+      0.18431813738065556
+     ],
+     "k": 0,
+     "n": 17,
+     "rate": 0.0
+    },
+    "semicolons_anywhere": {
+     "ci95": [
+      0.0,
+      0.18431813738065556
+     ],
+     "k": 0,
+     "n": 17,
+     "rate": 0.0
+    },
+    "semicolons_line_end": {
+     "ci95": [
+      0.0,
+      0.18431813738065556
+     ],
+     "k": 0,
+     "n": 17,
+     "rate": 0.0
+    },
+    "uppercase_boolean": {
+     "ci95": [
+      0.0,
+      0.18431813738065556
+     ],
+     "k": 0,
+     "n": 17,
+     "rate": 0.0
+    }
+   },
+   "held_in_rule_expression": {
+    "ci95": [
+     0.15564580423200683,
+     0.45374509566504084
+    ],
+    "k": 9,
+    "n": 32,
+    "rate": 0.28125
+   },
+   "held_out_rule_expression": {
+    "ci95": [
+     0.017310566875458913,
+     0.2014712329186364
+    ],
+    "k": 2,
+    "n": 32,
+    "rate": 0.0625
+   },
+   "mean_reward": 0.0,
+   "mean_turns": 6.84375,
+   "n": 32,
+   "per_rule_expression": {
+    "end_inclusive_slice": {
+     "ci95": [
+      0.0,
+      0.10717919976468034
+     ],
+     "k": 0,
+     "n": 32,
+     "rate": 0.0
+    },
+    "grouped_large_integer": {
+     "ci95": [
+      0.0,
+      0.10717919976468034
+     ],
+     "k": 0,
+     "n": 32,
+     "rate": 0.0
+    },
+    "manual_allocation": {
+     "ci95": [
+      0.0,
+      0.10717919976468034
+     ],
+     "k": 0,
+     "n": 32,
+     "rate": 0.0
+    },
+    "matrix_multiplication": {
+     "ci95": [
+      0.0,
+      0.10717919976468034
+     ],
+     "k": 0,
+     "n": 32,
+     "rate": 0.0
+    },
+    "negative_exclusion": {
+     "ci95": [
+      0.0,
+      0.10717919976468034
+     ],
+     "k": 0,
+     "n": 32,
+     "rate": 0.0
+    },
+    "one_based_positive_indexing": {
+     "ci95": [
+      0.04970134352905961,
+      0.2806830562944507
+     ],
+     "k": 4,
+     "n": 32,
+     "rate": 0.125
+    },
+    "out_parameter": {
+     "ci95": [
+      0.15564580423200683,
+      0.45374509566504084
+     ],
+     "k": 9,
+     "n": 32,
+     "rate": 0.28125
+    },
+    "statement_terminators": {
+     "ci95": [
+      0.0,
+      0.10717919976468034
+     ],
+     "k": 0,
+     "n": 32,
+     "rate": 0.0
+    },
+    "uppercase_boolean": {
+     "ci95": [
+      0.017310566875458913,
+      0.2014712329186364
+     ],
+     "k": 2,
+     "n": 32,
+     "rate": 0.0625
+    }
+   },
+   "signature_form": {
+    "arity_histogram": {
+     "2": 4,
+     "3": 4,
+     "4": 1
+    },
+    "function_named_solution": {
+     "ci95": [
+      0.700854948272956,
+      1.0
+     ],
+     "k": 9,
+     "n": 9,
+     "rate": 1.0
+    },
+    "has_second_parameter": {
+     "ci95": [
+      0.700854948272956,
+      1.0
+     ],
+     "k": 9,
+     "n": 9,
+     "rate": 1.0
+    },
+    "last_parameter_histogram": {
+     "out": 9
+    },
+    "last_parameter_is_out": {
+     "ci95": [
+      0.700854948272956,
+      1.0
+     ],
+     "k": 9,
+     "n": 9,
+     "rate": 1.0
+    },
+    "note": "Denominator is episodes with a PARSEABLE submission. With the Implement: line removed the prompt says nothing about parameters, so these are weight-resident choices.",
+    "out_contract": {
+     "ci95": [
+      0.700854948272956,
+      1.0
+     ],
+     "k": 9,
+     "n": 9,
+     "rate": 1.0
+    },
+    "parseable_submissions": 9,
+    "returns_a_value": {
+     "ci95": [
+      0.0,
+      0.299145051727044
+     ],
+     "k": 0,
+     "n": 9,
+     "rate": 0.0
+    },
+    "writes_through_out": {
+     "ci95": [
+      0.700854948272956,
+      1.0
+     ],
+     "k": 9,
+     "n": 9,
+     "rate": 1.0
+    }
+   },
+   "submitted": {
+    "ci95": [
+     0.15564580423200683,
+     0.45374509566504084
+    ],
+    "k": 9,
+    "n": 32,
+    "rate": 0.28125
+   },
+   "terminal_reasons": {
+    "submitted": 9,
+    "token_limit": 16,
+    "turn_limit": 7
+   },
+   "unknown_diagnostic_classes": [],
+   "warning_free": {
+    "ci95": [
+     0.0,
+     0.10717919976468034
+    ],
+    "k": 0,
+    "n": 32,
+    "rate": 0.0
+   }
+  },
+  "probe_train": {
+   "all_pass": {
+    "ci95": [
+     0.006092598161065058,
+     0.03947926297409568
+    ],
+    "k": 4,
+    "n": 256,
+    "rate": 0.015625
+   },
+   "certified": {
+    "ci95": [
+     0.006092598161065058,
+     0.03947926297409568
+    ],
+    "k": 4,
+    "n": 256,
+    "rate": 0.015625
+   },
+   "compile": {
+    "ci95": [
+     0.024159813193069174,
+     0.07529105578123572
+    ],
+    "k": 11,
+    "n": 256,
+    "rate": 0.04296875
+   },
+   "env_variant": {
+    "diagnostic_mode": "generic",
+    "signature_rendering": "full",
+    "visible_test_rendering": "python4"
+   },
+   "first_tool_call": {
+    "episodes_with_a_tool_call": 216,
+    "episodes_without_a_tool_call": 40,
+    "note": "Denominator is episodes with at least one tool call. Detectors imported from graft_stance.frame_evidence so these stay comparable to the 6,848-episode baseline.",
+    "print_statement": {
+     "ci95": [
+      0.0,
+      0.01747376905540918
+     ],
+     "k": 0,
+     "n": 216,
+     "rate": 0.0
+    },
+    "semicolons_anywhere": {
+     "ci95": [
+      0.0,
+      0.01747376905540918
+     ],
+     "k": 0,
+     "n": 216,
+     "rate": 0.0
+    },
+    "semicolons_line_end": {
+     "ci95": [
+      0.0,
+      0.01747376905540918
+     ],
+     "k": 0,
+     "n": 216,
+     "rate": 0.0
+    },
+    "uppercase_boolean": {
+     "ci95": [
+      0.0,
+      0.01747376905540918
+     ],
+     "k": 0,
+     "n": 216,
+     "rate": 0.0
+    }
+   },
+   "held_in_rule_expression": {
+    "ci95": [
+     0.4817606404117779,
+     0.6029063719068771
+    ],
+    "k": 139,
+    "n": 256,
+    "rate": 0.54296875
+   },
+   "held_out_rule_expression": {
+    "ci95": [
+     0.08004072207707569,
+     0.15795616705502846
+    ],
+    "k": 29,
+    "n": 256,
+    "rate": 0.11328125
+   },
+   "mean_reward": 0.014453124999999999,
+   "mean_turns": 9.9609375,
+   "n": 256,
+   "per_rule_expression": {
+    "end_inclusive_slice": {
+     "ci95": [
+      0.0006898821593419174,
+      0.021790975616185614
+     ],
+     "k": 1,
+     "n": 256,
+     "rate": 0.00390625
+    },
+    "grouped_large_integer": {
+     "ci95": [
+      0.0,
+      0.014783856655649795
+     ],
+     "k": 0,
+     "n": 256,
+     "rate": 0.0
+    },
+    "manual_allocation": {
+     "ci95": [
+      0.0,
+      0.014783856655649795
+     ],
+     "k": 0,
+     "n": 256,
+     "rate": 0.0
+    },
+    "matrix_multiplication": {
+     "ci95": [
+      0.0,
+      0.014783856655649795
+     ],
+     "k": 0,
+     "n": 256,
+     "rate": 0.0
+    },
+    "negative_exclusion": {
+     "ci95": [
+      0.0021450903483974017,
+      0.02803276854700787
+     ],
+     "k": 2,
+     "n": 256,
+     "rate": 0.0078125
+    },
+    "one_based_positive_indexing": {
+     "ci95": [
+      0.2845715255235396,
+      0.39985142856147327
+     ],
+     "k": 87,
+     "n": 256,
+     "rate": 0.33984375
+    },
+    "out_parameter": {
+     "ci95": [
+      0.43920555811661355,
+      0.5607944418833865
+     ],
+     "k": 128,
+     "n": 256,
+     "rate": 0.5
+    },
+    "statement_terminators": {
+     "ci95": [
+      0.024159813193069174,
+      0.07529105578123572
+     ],
+     "k": 11,
+     "n": 256,
+     "rate": 0.04296875
+    },
+    "uppercase_boolean": {
+     "ci95": [
+      0.07350191116648168,
+      0.149100975725867
+     ],
+     "k": 27,
+     "n": 256,
+     "rate": 0.10546875
+    }
+   },
+   "probe_groups": {
+    "any_certified": 2,
+    "mixed_certified_fraction": {
+     "ci95": [
+      0.017310566875458913,
+      0.2014712329186364
+     ],
+     "k": 2,
+     "n": 32,
+     "rate": 0.0625
+    },
+    "mixed_certified_groups": 2,
+    "n_groups": 32,
+    "nonzero_reward_std_fraction": {
+     "ci95": [
+      0.017310566875458913,
+      0.2014712329186364
+     ],
+     "k": 2,
+     "n": 32,
+     "rate": 0.0625
+    },
+    "nonzero_reward_std_groups": 2
+   },
+   "signature_form": {
+    "arity_histogram": {
+     "2": 98,
+     "3": 27,
+     "4": 14
+    },
+    "function_named_solution": {
+     "ci95": [
+      0.9731068352887076,
+      1.0
+     ],
+     "k": 139,
+     "n": 139,
+     "rate": 1.0
+    },
+    "has_second_parameter": {
+     "ci95": [
+      0.9731068352887076,
+      1.0
+     ],
+     "k": 139,
+     "n": 139,
+     "rate": 1.0
+    },
+    "last_parameter_histogram": {
+     "out": 139
+    },
+    "last_parameter_is_out": {
+     "ci95": [
+      0.9731068352887076,
+      1.0
+     ],
+     "k": 139,
+     "n": 139,
+     "rate": 1.0
+    },
+    "note": "Denominator is episodes with a PARSEABLE submission. With the Implement: line removed the prompt says nothing about parameters, so these are weight-resident choices.",
+    "out_contract": {
+     "ci95": [
+      0.8638512057024014,
+      0.9552387204039209
+     ],
+     "k": 128,
+     "n": 139,
+     "rate": 0.920863309352518
+    },
+    "parseable_submissions": 139,
+    "returns_a_value": {
+     "ci95": [
+      0.04476127959607916,
+      0.13614879429759863
+     ],
+     "k": 11,
+     "n": 139,
+     "rate": 0.07913669064748201
+    },
+    "writes_through_out": {
+     "ci95": [
+      0.9731068352887076,
+      1.0
+     ],
+     "k": 139,
+     "n": 139,
+     "rate": 1.0
+    }
+   },
+   "submitted": {
+    "ci95": [
+     0.4817606404117779,
+     0.6029063719068771
+    ],
+    "k": 139,
+    "n": 256,
+    "rate": 0.54296875
+   },
+   "terminal_reasons": {
+    "submitted": 139,
+    "token_limit": 40,
+    "turn_limit": 77
+   },
+   "unknown_diagnostic_classes": [],
+   "warning_free": {
+    "ci95": [
+     0.021354035743356925,
+     0.07039983211107023
+    ],
+    "k": 10,
+    "n": 256,
+    "rate": 0.0390625
+   }
+  }
+ },
+ "label": "bare_squashed",
+ "preflight": {
+  "episodes_heldin_test": "d6624ee70bcbcad9f400e3f7168260362c70ddf22e8bf2862bae36c97ce6133e",
+  "episodes_train": "e31406c44654331f3e913d21016e80fa7b46574c951a82284cd08b096412a196"
+ },
+ "run_dir": "/workspace/runA/cells/bare_squashed",
+ "trigger_report": {
+  "completed_utc": "2026-09-04T23:43:44Z",
+  "config": {
+   "adapter": "gemma4",
+   "api_key_file": null,
+   "boa_executable": "/workspace/boa/.venv/bin/python4",
+   "concurrency": 18,
+   "diagnostic_mode": "generic",
+   "endpoint": "http://127.0.0.1:8400",
+   "episodes_heldin_test": "experiments/python4/thinking_grpo/data/episodes_test_heldin.jsonl",
+   "episodes_heldin_test_sha256": "d6624ee70bcbcad9f400e3f7168260362c70ddf22e8bf2862bae36c97ce6133e",
+   "episodes_train": "experiments/python4/eft_grpo_run5/data/episodes_grpo_run5.jsonl",
+   "episodes_train_sha256": "e31406c44654331f3e913d21016e80fa7b46574c951a82284cd08b096412a196",
+   "greedy_n": 32,
+   "max_context_tokens": 20224,
+   "max_episode_tokens": 18432,
+   "max_tokens_per_turn": 6144,
+   "max_turns": 16,
+   "min_mixed_groups": 2,
+   "model": "graft-base",
+   "out_dir": "/workspace/runA/cells/bare_squashed",
+   "probe_k": 8,
+   "probe_n": 32,
+   "probe_temperature": 0.7,
+   "reward_mode": "shaped",
+   "run_timeout": 5,
+   "seed": 424242,
+   "signature_rendering": "full",
+   "tokenizer_dir": "/workspace/ckpts/g4_31b_graft_prop_chat",
+   "visible_test_rendering": "python4"
+  },
+  "greedy_heldin_test": {
+   "certified": 0,
+   "certified_rate": 0.0,
+   "mean_reward": 0.0,
+   "mean_turns": 9.09375,
+   "n": 32,
+   "submit_rate": 0.34375,
+   "terminal_reasons": {
+    "submitted": 11,
+    "token_limit": 10,
+    "turn_limit": 11
+   },
+   "thought_closure_rate": 0.6875
+  },
+  "greedy_train": {
+   "certified": 0,
+   "certified_rate": 0.0,
+   "mean_reward": 0.0,
+   "mean_turns": 6.84375,
+   "n": 32,
+   "submit_rate": 0.28125,
+   "terminal_reasons": {
+    "submitted": 9,
+    "token_limit": 16,
+    "turn_limit": 7
+   },
+   "thought_closure_rate": 0.59375
+  },
+  "probe": {
+   "any_certified": 2,
+   "certified": 4,
+   "certified_rate": 0.015625,
+   "groups": [
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "cc:1345/C",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "cf:66/E",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "newfacade:armstrong-number",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "newfacade:best-sightseeing-pair",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "newfacade:count-palindromic-subsequences",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "newfacade:delete-and-earn",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "newfacade:find-words-that-can-be-formed-by-characters",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "newfacade:frog-jump-ii",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "newfacade:letter-tile-possibilities",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "newfacade:maximum-score-words-formed-by-letters",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "newfacade:minimum-cost-to-move-chips-to-the-same-position",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "newfacade:minimum-increment-to-make-array-unique",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "newfacade:minimum-number-of-k-consecutive-bit-flips",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "newfacade:minimum-number-of-operations-to-move-all-balls-to-each-box",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "newfacade:missing-element-in-sorted-array",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "newfacade:number-of-zero-filled-subarrays",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "newfacade:reduce-array-size-to-the-half",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "newfacade:reducing-dishes",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "newfacade:rotate-function",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "newfacade:sequential-digits",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "tacov:10336",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "tacov:11515",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 2,
+     "k": 8,
+     "mixed_certified": true,
+     "problem_id": "tacov:1794",
+     "reward_std": 0.40053674925030286
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "tacov:2373",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "tacov:2520",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "tacov:3599",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "tacov:3860",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "tacov:6091",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "tacov:6304",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "tacov:7898",
+     "reward_std": 0.0
+    },
+    {
+     "certified": 2,
+     "k": 8,
+     "mixed_certified": true,
+     "problem_id": "tacov:8976",
+     "reward_std": 0.40053674925030286
+    },
+    {
+     "certified": 0,
+     "k": 8,
+     "mixed_certified": false,
+     "problem_id": "tacov:965",
+     "reward_std": 0.0
+    }
+   ],
+   "mean_reward": 0.014453124999999999,
+   "mean_turns": 9.9609375,
+   "mixed_certified_groups": 2,
+   "n": 256,
+   "n_groups": 32,
+   "nonzero_reward_std_groups": 2,
+   "submit_rate": 0.54296875,
+   "terminal_reasons": {
+    "submitted": 139,
+    "token_limit": 40,
+    "turn_limit": 77
+   },
+   "thought_closure_rate": 0.8828125
+  },
+  "rl_go": true,
+  "topped_up_episodes": 320,
+  "trigger_fired": false
+ },
+ "variant": {
+  "diagnostic_mode": "generic",
+  "signature_rendering": "full",
+  "visible_test_rendering": "python4"
+ }
+}
