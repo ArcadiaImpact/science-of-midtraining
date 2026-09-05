@@ -746,35 +746,46 @@ def main() -> int:
         print("  SUPERVISED tail:", repr(tok.decode(sup_ids[-60:])), flush=True)
         print("  last 6 ids     :", ex["input_ids"][-6:], flush=True)
         decoded_sup = tok.decode(sup_ids)
-        # The supervised span must be pure {code}<turn|> — no channel markers on
-        # EITHER side of the mask boundary, and the prompt must stop at
-        # '<|turn>model\\n'.
-        prompt_tail = tok.decode(ex["input_ids"][max(0, boundary - 8):boundary])
-        if args.thought_mode == "empty":
+        # ROW-KIND-AWARE validation (the A-prime-era all-rows close check
+        # failed Run C's dry-run by design: replay rows START at the OPEN —
+        # their reasoning is supervised — while code rows keep their mode's
+        # shape. Validate each kind against ITS spec.)
+        def _sup_text(e):
+            return tok.decode([t for t in e["labels"] if t != -100])
+
+        code_ex = [e for e in examples if e.get("row_kind") != "replay"]
+        replay_ex = [e for e in examples if e.get("row_kind") == "replay"]
+        if args.thought_mode in ("empty", "context"):
             mode_checks = {
-                # the close is the FIRST supervised token and the open is masked
-                "supervision_starts_at_close": decoded_sup.startswith(THOUGHT_CLOSE),
-                "thought_open_is_masked": THOUGHT_OPEN not in decoded_sup,
-                "masked_prefix_ends_at_thought_open": prompt_tail.endswith(
-                    THOUGHT_OPEN + "\n"),
-                "all_rows_start_supervision_at_close": all(
-                    tok.decode([t for t in e["labels"] if t != -100]).startswith(
-                        THOUGHT_CLOSE)
-                    for e in examples
-                ),
+                "all_code_rows_start_supervision_at_close": all(
+                    _sup_text(e).startswith(THOUGHT_CLOSE) for e in code_ex),
+                "no_code_row_supervises_thought_open": all(
+                    THOUGHT_OPEN not in _sup_text(e) for e in code_ex),
             }
-        else:
+            if args.thought_mode == "context":
+                mode_checks["all_code_rows_carry_masked_thought_context"] = all(
+                    e["ctx_thought_tokens"] > 0 for e in code_ex)
+        else:  # none / nothink: the supervised span is pure {code}<turn|>
             mode_checks = {
-                "supervised_has_no_thought_open": THOUGHT_OPEN not in decoded_sup,
-                "supervised_has_no_thought_close": THOUGHT_CLOSE not in decoded_sup,
-                "prompt_ends_at_turn_model": prompt_tail.endswith(TURN_MODEL),
-                "all_rows_supervise_code_only": all(
-                    THOUGHT_OPEN not in tok.decode([t for t in e["labels"] if t != -100])
-                    and THOUGHT_CLOSE
-                    not in tok.decode([t for t in e["labels"] if t != -100])
-                    for e in examples
-                ),
+                "all_code_rows_supervise_code_only": all(
+                    THOUGHT_OPEN not in _sup_text(e)
+                    and THOUGHT_CLOSE not in _sup_text(e)
+                    for e in code_ex),
             }
+            if args.thought_mode == "nothink":
+                # builder raises per-row on THINK_MARKER; spot-verify decode too
+                mode_checks["first5_code_rows_free_of_think_marker"] = all(
+                    THINK_MARKER not in tok.decode(e["input_ids"])
+                    for e in code_ex[:5])
+        if replay_ex:
+            mode_checks.update({
+                "all_replay_rows_start_supervision_at_open": all(
+                    _sup_text(e).startswith(THOUGHT_OPEN) for e in replay_ex),
+                "all_replay_rows_supervise_nonzero_thought": all(
+                    e["sup_thought_tokens"] > 0 for e in replay_ex),
+                "all_replay_rows_supervise_the_close_too": all(
+                    THOUGHT_CLOSE in _sup_text(e) for e in replay_ex),
+            })
         checks = {
             **mode_checks,
             "ends_on_eos_106": ex["input_ids"][-1] == EOT_ID,
