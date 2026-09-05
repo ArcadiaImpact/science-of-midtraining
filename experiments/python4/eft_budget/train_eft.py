@@ -93,6 +93,8 @@ SEED = 424242
 LR = 1.0e-4
 WARMUP_RATIO = 0.05
 SEQ_LEN = 4096
+THINK_MARKER = "<|think|>"   # template line 193-196: injected into the first
+                             # system turn iff enable_thinking
 MICRO_BATCH = 1
 GRAD_ACCUM = 32  # global batch 32
 
@@ -253,7 +255,9 @@ def empty_channel_literal(tok, messages: list[dict]) -> str:
 
 
 def build_examples(tok, mixture_path: Path, seq_len: int = SEQ_LEN,
-                   thought_mode: str = "none") -> list[dict]:
+                   thought_mode: str = "none",
+                   replay_thoughts: dict | None = None,
+                   code_thoughts: dict | None = None) -> list[dict]:
     """Completion-only masking against the GRAFT'S OWN template.
 
     TWO VARIANTS, one flag (``--thought-mode``); Run A and Run A-prime differ in
@@ -314,12 +318,15 @@ def build_examples(tok, mixture_path: Path, seq_len: int = SEQ_LEN,
     """
     from experiments.python4.eft_v2.datagen import _normalize_chat_messages
 
-    if thought_mode not in ("none", "empty"):
+    if thought_mode not in ("none", "empty", "context", "nothink"):
         raise SystemExit(f"unknown --thought-mode {thought_mode!r}")
+    if thought_mode == "context" and code_thoughts is None:
+        raise SystemExit("--thought-mode context requires --code-thoughts")
     rows = [json.loads(l) for l in mixture_path.read_text().splitlines() if l.strip()]
 
     examples: list[dict] = []
     dropped_long: list[str] = []
+    dropped_missing: list[str] = []
     supervised: list[int] = []
     for row in rows:
         sid = str(row.get("source_id"))
@@ -330,6 +337,32 @@ def build_examples(tok, mixture_path: Path, seq_len: int = SEQ_LEN,
         for message in messages:
             message.pop("reasoning", None)
             message.pop("reasoning_content", None)
+
+        is_replay = (str(row.get("source")) == "dolci"
+                     and replay_thoughts is not None)
+        if is_replay:
+            # ---- C/D/E REPLAY ROW: the graft's own on-policy response, ----
+            # ---- reasoning SUPERVISED in full (open->thought->close->  ----
+            # ---- answer->eot), rendered by the vendor template itself  ----
+            # ---- via the assistant `reasoning` field (template line    ----
+            # ---- 242). Rows whose sampling failed were dropped by the  ----
+            # ---- sampler; absence here is a counted drop, not a crash. ----
+            rt = replay_thoughts.get(sid)
+            if rt is None:
+                dropped_missing.append(sid)
+                continue
+            messages = messages[:-1] + [{
+                "role": "assistant",
+                "content": rt["answer"],
+                "reasoning": rt["thought"],
+            }]
+        if thought_mode == "context" and not is_replay:
+            # ---- RUN D CODE ROW: graft's own reasoning about THIS problem
+            # ---- as MASKED context; supervise <channel|>{code}<turn|>.
+            ct = code_thoughts.get(sid)
+            if ct is None:
+                dropped_missing.append(sid)
+                continue
 
         prompt_text = tok.apply_chat_template(
             messages[:-1], add_generation_prompt=True, tokenize=False,
@@ -354,36 +387,127 @@ def build_examples(tok, mixture_path: Path, seq_len: int = SEQ_LEN,
                 "'{code}<turn|>'"
             )
         completion_text = full_text[len(prompt_text):]
-        for marker in (THOUGHT_OPEN, THOUGHT_CLOSE):
-            if marker in completion_text:
+        row_kind = "replay" if is_replay else "code"
+        if is_replay:
+            # the template rendered the reasoning field: the completion MUST
+            # carry exactly one open and one close, in order, nonempty thought.
+            if completion_text.count(THOUGHT_OPEN) != 1 or \
+                    completion_text.count(THOUGHT_CLOSE) != 1:
                 raise RuntimeError(
-                    f"template emitted {marker!r} for {sid} — the no-thought "
-                    "render is meant to be pure code + eot"
+                    f"replay row {sid}: expected exactly one thought channel, "
+                    f"got opens={completion_text.count(THOUGHT_OPEN)} "
+                    f"closes={completion_text.count(THOUGHT_CLOSE)}"
                 )
-
-        if thought_mode == "empty":
-            # splice in the template's OWN empty-thought scaffold; the masked
-            # prefix ends after the OPEN so the CLOSE is the first supervised
-            # token (Jonathan's arrow).
-            scaffold = empty_channel_literal(tok, messages[:-1])
-            masked_prefix = prompt_text + THOUGHT_OPEN + "\n"
-            full_text = prompt_text + scaffold + completion_text
+            o = completion_text.find(THOUGHT_OPEN)
+            c = completion_text.find(THOUGHT_CLOSE)
+            thought_span = completion_text[o + len(THOUGHT_OPEN):c]
+            if not (0 <= o < c) or not thought_span.strip():
+                raise RuntimeError(f"replay row {sid}: empty/misordered thought")
+            masked_prefix = prompt_text          # supervise the WHOLE turn
         else:
-            masked_prefix = prompt_text
+            for marker in (THOUGHT_OPEN, THOUGHT_CLOSE):
+                if marker in completion_text:
+                    raise RuntimeError(
+                        f"template emitted {marker!r} for {sid} — the no-thought "
+                        "render is meant to be pure code + eot"
+                    )
+            if thought_mode == "empty":
+                # splice in the template's OWN empty-thought scaffold; the masked
+                # prefix ends after the OPEN so the CLOSE is the first supervised
+                # token (Jonathan's arrow).
+                scaffold = empty_channel_literal(tok, messages[:-1])
+                masked_prefix = prompt_text + THOUGHT_OPEN + "\n"
+                full_text = prompt_text + scaffold + completion_text
+            elif thought_mode == "context":
+                # RUN D: template-canonical thought render — set the reasoning
+                # field and let the vendor jinja emit open+thought+close, then
+                # mask everything up to (not including) the close.
+                messages_ctx = messages[:-1] + [dict(messages[-1], reasoning=ct["thought"])]
+                full_ctx = tok.apply_chat_template(
+                    messages_ctx, add_generation_prompt=False, tokenize=False,
+                    enable_thinking=True,
+                )
+                cut2 = full_ctx.rfind(EOT)
+                if cut2 < 0:
+                    raise RuntimeError(f"no {EOT!r} in the context render for {sid}")
+                full_ctx = full_ctx[: cut2 + len(EOT)]
+                if not full_ctx.startswith(prompt_text):
+                    raise RuntimeError(
+                        f"context render lost the prompt prefix for {sid}")
+                comp_ctx = full_ctx[len(prompt_text):]
+                if comp_ctx.count(THOUGHT_OPEN) != 1 or \
+                        comp_ctx.count(THOUGHT_CLOSE) != 1:
+                    raise RuntimeError(
+                        f"context row {sid}: expected exactly one thought channel")
+                c = comp_ctx.find(THOUGHT_CLOSE)
+                o = comp_ctx.find(THOUGHT_OPEN)
+                if not (0 <= o < c) or not comp_ctx[o + len(THOUGHT_OPEN):c].strip():
+                    raise RuntimeError(f"context row {sid}: empty/misordered thought")
+                full_text = full_ctx
+                masked_prefix = prompt_text + comp_ctx[:c]
+            elif thought_mode == "nothink":
+                # RUN E ("inoculation"): the template's OWN enable_thinking=False
+                # render — no <|think|> in the system turn, model turn opens with
+                # the PRE-CLOSED pair as unsupervised scaffold. Supervise only
+                # {code}<turn|>. Serving stays thinking-ON; whether the dialect
+                # crosses the flag is the registered question.
+                prompt_nt = tok.apply_chat_template(
+                    messages[:-1], add_generation_prompt=True, tokenize=False,
+                    enable_thinking=False,
+                )
+                expected_scaffold = f"{THOUGHT_OPEN}\n{THOUGHT_CLOSE}"
+                if not prompt_nt.endswith(TURN_MODEL + expected_scaffold):
+                    raise RuntimeError(
+                        f"nothink generation prompt lost its pre-closed scaffold "
+                        f"for {sid}: {prompt_nt[-60:]!r}"
+                    )
+                if THINK_MARKER in prompt_nt:
+                    raise RuntimeError(
+                        f"nothink render still contains {THINK_MARKER!r} for {sid}")
+                full_text = prompt_nt + completion_text
+                masked_prefix = prompt_nt
+            else:
+                masked_prefix = prompt_text
 
         prompt_ids = _ids(tok, masked_prefix)
         full_ids = _ids(tok, full_text)
         if full_ids[: len(prompt_ids)] != prompt_ids:
             raise RuntimeError(f"token-level prefix mismatch for {sid}")
-        if thought_mode == "empty":
+        sup_text = full_text[len(masked_prefix):]
+        if is_replay:
+            # commissioned assert: nonzero SUPERVISED thought tokens; the whole
+            # turn (open->thought->close->answer->eot) carries loss.
+            if not sup_text.startswith(THOUGHT_OPEN):
+                raise RuntimeError(
+                    f"replay row {sid}: supervision does not start at the "
+                    f"channel open: {sup_text[:40]!r}")
+            if THINK_MARKER not in masked_prefix:
+                raise RuntimeError(
+                    f"replay row {sid}: thinking-ON prompt lacks {THINK_MARKER!r}")
+        elif thought_mode in ("empty", "context"):
             # THE CLOSE TOKEN IS LOAD-BEARING: it must be the FIRST SUPERVISED
-            # token, not swallowed into the masked prefix.
+            # token, not swallowed into the masked prefix. For `context` this
+            # additionally certifies zero supervised thought tokens (the graft's
+            # reasoning sits entirely in the masked prefix).
             head = tok.decode(full_ids[len(prompt_ids): len(prompt_ids) + 2])
             if not head.startswith(THOUGHT_CLOSE):
                 raise RuntimeError(
                     f"channel-close is NOT the first supervised token for {sid}: "
                     f"supervised span starts {head!r}"
                 )
+            if thought_mode == "context" and \
+                    THOUGHT_OPEN not in masked_prefix.rsplit(TURN_MODEL, 1)[-1]:
+                raise RuntimeError(
+                    f"context row {sid}: masked prefix carries no thought context")
+        elif thought_mode == "nothink":
+            # commissioned asserts: zero supervised channel tokens (the
+            # pre-closed pair is scaffold context) and no <|think|> anywhere.
+            if THOUGHT_OPEN in sup_text or THOUGHT_CLOSE in sup_text:
+                raise RuntimeError(
+                    f"nothink row {sid}: supervised span leaks channel tokens")
+            if THINK_MARKER in full_text:
+                raise RuntimeError(
+                    f"nothink row {sid}: {THINK_MARKER!r} in the full render")
         if full_ids[-1] != EOT_ID:
             raise RuntimeError(
                 f"sequence does not end on eos {EOT_ID} for {sid} (got {full_ids[-1]})"
@@ -395,6 +519,15 @@ def build_examples(tok, mixture_path: Path, seq_len: int = SEQ_LEN,
         boundary = len(prompt_ids)
         labels = [-100] * boundary + full_ids[boundary:]
         supervised.append(len(full_ids) - boundary)
+        sup_span_text = full_text[len(masked_prefix):]
+        sup_thought_tok = 0
+        if is_replay:
+            c = sup_span_text.find(THOUGHT_CLOSE)
+            sup_thought_tok = len(_ids(tok, sup_span_text[:c])) if c > 0 else 0
+        ctx_thought_tok = 0
+        if thought_mode == "context" and not is_replay:
+            tail = masked_prefix.rsplit(THOUGHT_OPEN, 1)[-1]
+            ctx_thought_tok = len(_ids(tok, tail))
         examples.append(
             {
                 "input_ids": full_ids,
@@ -404,6 +537,9 @@ def build_examples(tok, mixture_path: Path, seq_len: int = SEQ_LEN,
                 # split by source so the Dolci replay choice stays reversible.
                 "source": SOURCE_LABELS.get(str(row.get("source")),
                                             str(row.get("source"))),
+                "row_kind": row_kind,
+                "sup_thought_tokens": sup_thought_tok,
+                "ctx_thought_tokens": ctx_thought_tok,
             }
         )
 
@@ -417,6 +553,11 @@ def build_examples(tok, mixture_path: Path, seq_len: int = SEQ_LEN,
     drop_frac = rows_dropped / rows_in if rows_in else 0.0
     print(f"[data] rows_in={rows_in} rows_dropped={rows_dropped} "
           f"rows_trained={rows_trained} drop_frac={drop_frac:.3%}", flush=True)
+    if dropped_missing:
+        # sampler-level drops (hard sampling failures reported by the sampler
+        # manifest) surface here as missing ids — REPORTED, commissioned.
+        print(f"[data] dropped_missing_thought={len(dropped_missing)} "
+              f"(sampler hard-failures): {dropped_missing[:10]}", flush=True)
     if rows_dropped:
         print(f"[data] dropped (over {seq_len} tok; truncating would teach an "
               f"unterminated sequence): {dropped_long[:10]}", flush=True)
@@ -429,9 +570,17 @@ def build_examples(tok, mixture_path: Path, seq_len: int = SEQ_LEN,
         )
 
     mean_sup = sum(supervised) / len(supervised) if supervised else 0
-    print(f"[data] {rows_trained} examples; mean supervised {mean_sup:.0f} tok "
-          f"(code + eot only); every sequence ends on eos {EOT_ID} and carries "
-          f"no thought channel", flush=True)
+    n_replay = sum(1 for e in examples if e.get("row_kind") == "replay")
+    sup_th = [e["sup_thought_tokens"] for e in examples
+              if e.get("row_kind") == "replay"]
+    ctx_th = [e["ctx_thought_tokens"] for e in examples
+              if e.get("row_kind") == "code" and e["ctx_thought_tokens"]]
+    print(f"[data] {rows_trained} examples; mean supervised {mean_sup:.0f} tok; "
+          f"every sequence ends on eos {EOT_ID}; replay_rows={n_replay} "
+          f"(mean supervised thought "
+          f"{(sum(sup_th) / len(sup_th)) if sup_th else 0:.0f} tok); "
+          f"code_ctx_thought_rows={len(ctx_th)} (mean masked thought "
+          f"{(sum(ctx_th) / len(ctx_th)) if ctx_th else 0:.0f} tok)", flush=True)
     for label, stats in sorted(dose_by_source(examples).items()):
         print(f"[data]   source={label}: rows={stats['rows']} "
               f"supervised_tokens={stats['supervised_tokens']}", flush=True)
@@ -472,11 +621,27 @@ def main() -> int:
                          "(TRAIN != SERVE). Loud, deliberate escape hatch only.")
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--epochs", type=float, default=2.0)
-    ap.add_argument("--thought-mode", choices=("none", "empty"), default="none",
+    ap.add_argument("--thought-mode",
+                    choices=("none", "empty", "context", "nothink"),
+                    default="none",
                     help="none = RUN A (supervise {code}<turn|> straight after "
-                         "<|turn>model\\n); empty = RUN A-PRIME (render an empty "
-                         "thought channel and supervise from the <channel|> close). "
-                         "The ONLY difference between the two arms.")
+                         "<|turn>model\\n); empty = RUN A-PRIME / RUN C code rows "
+                         "(empty channel, supervise from the close); context = "
+                         "RUN D code rows (graft's own reasoning as MASKED "
+                         "context, supervise <channel|>{code}<turn|>; needs "
+                         "--code-thoughts); nothink = RUN E code rows "
+                         "(enable_thinking=false render, pre-closed pair as "
+                         "scaffold, supervise {code}<turn|> only).")
+    ap.add_argument("--replay-thoughts", type=Path, default=None,
+                    help="jsonl of on-policy graft responses for the dolci "
+                         "replay rows ({source_id, thought, answer}). When set, "
+                         "replay rows render thinking-ON with the reasoning "
+                         "SUPERVISED IN FULL (runs C/D/E). Absent ids are "
+                         "counted drops (sampler hard-failures).")
+    ap.add_argument("--code-thoughts", type=Path, default=None,
+                    help="jsonl of the graft's own reasoning per code problem "
+                         "({source_id, thought}); required by "
+                         "--thought-mode context (RUN D).")
     ap.add_argument("--seq-len", type=int, default=SEQ_LEN,
                     help="max training sequence length. Over-length rows are "
                          "DROPPED (never truncated), so if drops appear, RAISE "
@@ -541,7 +706,30 @@ def main() -> int:
     pad_id = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
 
     rows_in = len([l for l in args.mixture.read_text().splitlines() if l.strip()])
-    examples = build_examples(tok, args.mixture, args.seq_len, args.thought_mode)
+
+    def _load_thoughts(path: Path | None, need: tuple[str, ...]) -> dict | None:
+        if path is None:
+            return None
+        out = {}
+        for line in path.read_text().splitlines():
+            if not line.strip():
+                continue
+            r = json.loads(line)
+            missing = [k for k in need if not str(r.get(k) or "").strip()]
+            if missing:
+                raise SystemExit(
+                    f"{path}: row {r.get('source_id')!r} lacks {missing} — the "
+                    "sampler must drop hard failures, not ship empties")
+            out[str(r["source_id"])] = r
+        if not out:
+            raise SystemExit(f"{path}: empty thoughts file")
+        return out
+
+    replay_thoughts = _load_thoughts(args.replay_thoughts, ("thought", "answer"))
+    code_thoughts = _load_thoughts(args.code_thoughts, ("thought",))
+    examples = build_examples(tok, args.mixture, args.seq_len, args.thought_mode,
+                              replay_thoughts=replay_thoughts,
+                              code_thoughts=code_thoughts)
 
     if args.dry_run:
         n_sup = [sum(1 for t in ex["labels"] if t != -100) for ex in examples]

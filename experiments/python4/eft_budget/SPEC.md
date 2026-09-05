@@ -394,3 +394,80 @@ squashed error messages and nothing else).
 | `data/render_check.json` | committed output of `check_render.py` |
 | `dead_groups.py` | counts dead k=8 groups per reward scheme on real rollouts — the evidence for `certified` and for the penalty ladder |
 | `closure_gate.py` | turn-1 + turn-2 closure gate, three arms, one server |
+
+---
+
+## Addendum 2026-09-05: Runs C / D / E — EFT that does not kill the reasoning
+
+**Commission.** Jonathan, after reading the reasoning-collapse joint table
+(A-prime turn-1 reasoning p50 = 0): *"Pause everything… we need to test an EFT
+method that doesn't kill the reasoning. What about including 10% on-policy chat
+rows which include reasoning?"* and, for Run E: *"Is there a reasoning-effort
+parameter we can set to none for the SFT examples, as a form of inoculation?"*
+Run B phase-1 was killed at step ~6/32 (healthy at kill; see the as-run close
+in the ledger). The A-prime formula is ON HOLD, not just the run.
+
+**Three arms, all 1,024 rows x 2 epochs (exact A-prime dose parity), same LoRA
+spec (`target_modules_sha256 2abdcac5…`), same all1024 mixture (922 py4 + 102
+dolci replay):**
+
+* **Run C (Jonathan's proposal, minimal delta off A-prime):** code rows =
+  A-prime render, unchanged (empty channel, supervise from the close). Replay
+  rows = the graft's OWN on-policy response to the same dolci prompts
+  (thinking-ON sampling), full turn SUPERVISED: open → reasoning → close →
+  answer → eot. One variable changed vs banked A-prime: replay-row thought
+  content.
+* **Run D (masked-thought robustness arm):** replay rows identical to C. Code
+  rows carry the graft's own natural reasoning ABOUT THAT PROBLEM in the
+  thought channel as MASKED context; supervision is `<channel|>{code}<turn|>`
+  only. Nothing in this dose supervises an empty or instantly-closed channel,
+  and the code is learned conditioned on realistic thinking (train context ~
+  generation context).
+* **Run E ("inoculation"):** code rows rendered template-canonically with
+  `enable_thinking=false` — no `<|think|>` in the system turn; the model turn's
+  `<|channel>thought\n<channel|>` pre-closed pair (template lines 384-386) is
+  UNSUPERVISED scaffold; supervise `{code}<turn|>` only. Replay rows identical
+  to C (thinking-ON, reasoning supervised). The dose carries both modes with
+  correct semantics. Gate + cell for E run with `enable_thinking=true` — the
+  point is whether think-mode reasoning survives and the dialect crosses the
+  flag.
+
+**Analysis framing (coordinator):** A-prime taught the model to GENERATE the
+`<|channel>thought\n<channel|>`+code sequence in think-ON context — the exact
+sequence the template reserves for think-OFF. Run E re-attributes it to the
+correct mode.
+
+**Registered risk (E):** dialect transfer across the flag — P4 style learned
+under think-off, expressed under think-on. If E certifies well only in
+think-off serving, that is a FAIL with a mechanism finding.
+
+**Reasoning sampling (`sample_reasoning.py`):** the bare graft, thinking-ON
+serving; replay rows in their own chat frame, code rows in the agentic frame
+exactly as the gate (BoaEpisode.initial_messages → build_prompt_renderer,
+thinking=True — turn-1 prompts are variant-independent); no suppression of any
+kind (standing ruling: the stance content is data, not noise); one sample per
+problem; T=0.7 (campaign probe default); cap 8192 (gate p95 ~7k). Drops only on
+hard failures (never opened / never closed / empty thought; replay also: no eot
+/ empty answer), counted and reported in the manifest.
+
+**Per-row asserts (train_eft.py, all tokenizer-level):** C replay rows have
+nonzero SUPERVISED thought tokens and supervision starts at the channel open; D
+code rows have nonzero thought CONTEXT tokens, zero supervised thought tokens,
+and the close is the first supervised token; E code rows contain zero
+`<|think|>` tokens and zero supervised channel tokens; replay rows (all arms)
+render with `<|think|>` present. Sequences end on eos 106; over-length rows
+drop (never truncate) at --seq-len 12288, uniform across arms.
+
+**Measurement (decision instruments unchanged):** closure gate (turn-1
+opened_channel + reasoning-token distribution + near-zero buckets, 32x(1+8),
+concurrency 24, SAME serving conditions as the banked graft/A/A-prime rows) and
+one squashed-env cell per arm (32 x k=8 probe + 32+32 greedy, concurrency 18).
+
+**Pass rule — REGISTERED BEFORE RESULTS (coordinator, verbatim):**
+opened_channel ~100% on coding problems; no near-zero-bucket mass beyond the
+graft's (0); reasoning p50 within the graft's order of magnitude; certified
+within ~10pp of A-prime's 36.7% and far above graft's 1.6%. Precedence: C-pass
+ranks first (fewest variables), E-pass second (mechanism cleanliness), D third
+— but all three verdicts are reported jointly and Jonathan decides the formula.
+If none pass: stop; drawing board, with a mechanism result either way. A pass
+does NOT launch any Run B-v2 — report first.

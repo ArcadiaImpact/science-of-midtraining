@@ -23,6 +23,12 @@ ARMS = [  # (row label, gate json stem, cell dir stem)
     ("graft-base", "closure_graft-base", "bare_squashed"),
     ("Run A", "closure_runA-eft", "runA_squashed"),
     ("Run A-prime", "closure_runAprime-eft", "runAprime_squashed"),
+    # C/D/E addendum arms (2026-09-05). Arms whose gate json is absent in
+    # --gate-dir are SKIPPED, so one script serves both the banked runA dirs
+    # and the runCDE dirs; the cross-dir joint read merges the two jsons.
+    ("Run C", "closure_runC-eft", "runC_squashed"),
+    ("Run D", "closure_runD-eft", "runD_squashed"),
+    ("Run E", "closure_runE-eft", "runE_squashed"),
 ]
 
 
@@ -49,6 +55,8 @@ def _dist(p: dict | None) -> str:
 def build(gate_dir: Path, cells_dir: Path) -> tuple[dict, str]:
     rows = []
     for label, gate_stem, cell_stem in ARMS:
+        if not (gate_dir / f"{gate_stem}.json").is_file():
+            continue
         gate = json.loads((gate_dir / f"{gate_stem}.json").read_text())
         cell = json.loads(
             (cells_dir / cell_stem / "metrics.json").read_text())["cells"]
