@@ -37,14 +37,17 @@ episodes_file: experiments/python4/eft_grpo_run5/data/episodes_grpo_run5.jsonl
                              # Disjoint from the 512 EFT-set: RL is never
                              # rewarded for a solution the model was EFT'd on.
 
-split_provenance:
-  construction: "run-5 partition reused (coordinator 2026-09-04: a partition is not tainted by the deprecated convention; auditability favors reuse)"
-  grpo_set_sha256_sorted_newline: 7a0044aa107e5243d3ca39a03eac3d6a46e59116103c973c4e48ef05198a36e7
-  eft_set_sha256_sorted_newline: 838975dbb0aadacd86d58b3f29c5c1f58258b7a4ff0f4b670a0f2990ac8cf945
-  pool_sha256: ccf818b7e6c04520225acfbf2748f88deca6b8d09649a0af71f8ca7d3a68ebb5
-  episodes_grpo_run5_sha256: e31406c44654331f3e913d21016e80fa7b46574c951a82284cd08b096412a196
-  eft_mixture: experiments/python4/eft_budget/data/eft512_mixture_manifest.json
-  eft_mixture_sha256: ec6622b08565528e05777e1b522ffe6f518b62847130f1470247a4d832e4569a
+# split_provenance (comments, not config: run_train.load_run_config rejects unknown
+# keys by design and this block is bookkeeping, not behaviour — it tripped the
+# ValueError at first launch, 2026-09-05 01:10Z):
+#   construction: run-5 partition reused (coordinator 2026-09-04: a partition is
+#     not tainted by the deprecated convention; auditability favors reuse)
+#   grpo_set_sha256_sorted_newline: 7a0044aa107e5243d3ca39a03eac3d6a46e59116103c973c4e48ef05198a36e7
+#   eft_set_sha256_sorted_newline: 838975dbb0aadacd86d58b3f29c5c1f58258b7a4ff0f4b670a0f2990ac8cf945
+#   pool_sha256: ccf818b7e6c04520225acfbf2748f88deca6b8d09649a0af71f8ca7d3a68ebb5
+#   episodes_grpo_run5_sha256: e31406c44654331f3e913d21016e80fa7b46574c951a82284cd08b096412a196
+#   eft_mixture: experiments/python4/eft_budget/data/eft512_mixture_manifest.json
+#   eft_mixture_sha256: ec6622b08565528e05777e1b522ffe6f518b62847130f1470247a4d832e4569a
 
 env:
   max_turns: 16
