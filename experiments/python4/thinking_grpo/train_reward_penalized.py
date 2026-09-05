@@ -114,10 +114,76 @@ def _variant(adapter_name: str, mode: str):
 
 reward_certified_penalized_gemma4 = _variant("gemma4", "certified")
 
+# --- length-discounted variant (Jonathan, 2026-09-05: "a strong length penalty
+# (0-0.9 where 1 is the reward for getting the right answer)"; PREP-ONLY until
+# re-confirmed) -------------------------------------------------------------
+#
+# reward = 1.0 * certified * (1 - 0.9 * min(1, gen_tokens / cap));
+# non-certified episodes keep the ladder above EXACTLY. Rationale: a tax on ALL
+# episodes would rank fail-fast above fail-trying and teach instant garbage
+# submission; discounting only the certified reward keeps
+#     certified-short > certified-long (floor 0.10) > any failure (<= 0).
+#
+# gen_tokens = len(TRL completion_ids) — the SAME quantity TRL's truncation
+# accounting compares against max_completion_length. One definition; run_train
+# asserts the config's cap equals TRAIN_COMPLETION_CAP when this mode is
+# selected.
+LENGTH_DISCOUNT_MAX = 0.9
+TRAIN_COMPLETION_CAP = 10240
+
+
+@dataclass(frozen=True)
+class LengthDiscountedEpisodeReward:
+    reward: float
+    certified: float
+    submitted: float
+    compile: float
+    warning_free: float
+    frac_hidden: float
+    frac_visible: float
+    spine: float
+    format_valid: float
+    penalty_truncated: float
+    penalty_clean_nosubmit: float
+    #: fraction of the train completion cap consumed (all episodes) and the
+    #: discount actually applied (certified episodes only) — both ride the
+    #: component logging so the length-certified frontier is observable per step.
+    gen_frac_of_cap: float
+    length_discount_applied: float
+
+
+def _length_discounted_variant(adapter_name: str, mode: str,
+                               cap: int = TRAIN_COMPLETION_CAP):
+    base_variant = _variant(adapter_name, mode)
+
+    def reward(completion: str, completion_raw_text: str | None = None,
+               **columns: Any) -> LengthDiscountedEpisodeReward:
+        base = base_variant(completion, completion_raw_text, **columns)
+        ids = columns.get("completion_ids") or []
+        frac = min(1.0, len(ids) / cap) if cap else 0.0
+        fields = asdict(base)
+        if base.certified == 1.0 and base.reward > 0.0:
+            discount = LENGTH_DISCOUNT_MAX * frac
+            fields["reward"] = base.reward * (1.0 - discount)
+            return LengthDiscountedEpisodeReward(
+                **fields, gen_frac_of_cap=frac, length_discount_applied=discount)
+        return LengthDiscountedEpisodeReward(
+            **fields, gen_frac_of_cap=frac, length_discount_applied=0.0)
+
+    reward.__name__ = f"reward_{mode}_length_discounted_{adapter_name}"
+    return reward
+
+
+reward_certified_length_discounted_gemma4 = _length_discounted_variant(
+    "gemma4", "certified")
+
 __all__ = [
+    "LENGTH_DISCOUNT_MAX",
+    "LengthDiscountedEpisodeReward",
     "PENALTY_CLEAN_NOSUBMIT",
     "PENALTY_TRUNCATED",
     "PenalizedEpisodeReward",
+    "TRAIN_COMPLETION_CAP",
     "classify_nontermination",
     "reward_certified_penalized_gemma4",
 ]

@@ -43,6 +43,9 @@ REWARD_FUNCS = {
     ("gemma4", "certified_penalized"):
         "experiments.python4.thinking_grpo.train_reward_penalized:"
         "reward_certified_penalized_gemma4",
+    ("gemma4", "certified_length_discounted"):
+        "experiments.python4.thinking_grpo.train_reward_penalized:"
+        "reward_certified_length_discounted_gemma4",
 }
 
 #: Tool surface per ``env.diagnostic_mode``. TRL imports the list by path,
@@ -93,6 +96,15 @@ def load_run_config(path: Path, overrides: dict[str, Any] | None = None
     unknown = set(config) - known
     if unknown:
         raise ValueError(f"unknown run config keys: {sorted(unknown)}")
+    if config.get("reward") == "certified_length_discounted":
+        from experiments.python4.thinking_grpo import train_reward_penalized
+        cap = int(config.get("grpo", {}).get("max_completion_length", 0))
+        if cap != train_reward_penalized.TRAIN_COMPLETION_CAP:
+            raise ValueError(
+                "certified_length_discounted normalizes gen_tokens by "
+                f"TRAIN_COMPLETION_CAP={train_reward_penalized.TRAIN_COMPLETION_CAP} "
+                f"but grpo.max_completion_length={cap}; one definition — "
+                "change them together")
     if (config["adapter"], config["reward"]) not in REWARD_FUNCS:
         raise ValueError(
             f"no reward variant for adapter={config['adapter']!r} "

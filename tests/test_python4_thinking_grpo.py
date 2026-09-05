@@ -1571,6 +1571,98 @@ def test_penalized_variant_is_registered_in_run_train():
         "train_reward_penalized:reward_certified_penalized_gemma4")
 
 
+def test_length_discounted_reward(monkeypatch):
+    """Jonathan's 0-0.9 length penalty: discounts CERTIFIED reward only;
+    non-certified episodes keep the ladder exactly (prep-only, 2026-09-05)."""
+    from experiments.python4.thinking_grpo import train_reward
+    from experiments.python4.thinking_grpo import train_reward_penalized as trp
+
+    def fake_score(raw, columns, *, adapter_name, mode):
+        submitted = 1.0 if "SUBMITTED" in raw else 0.0
+        return train_reward.EpisodeReward(
+            reward=1.0 if "CERT" in raw else 0.0, certified=float("CERT" in raw),
+            submitted=submitted, compile=0.0, warning_free=0.0, frac_hidden=0.0,
+            frac_visible=0.0, spine=0.0, format_valid=submitted)
+
+    monkeypatch.setattr(train_reward, "score_episode", fake_score)
+    reward = trp.reward_certified_length_discounted_gemma4
+    cap = trp.TRAIN_COMPLETION_CAP
+
+    short = reward("", completion_raw_text="SUBMITTED CERT<turn|>",
+                   completion_ids=[])
+    assert short.reward == 1.0 and short.length_discount_applied == 0.0
+
+    half = reward("", completion_raw_text="SUBMITTED CERT<turn|>",
+                  completion_ids=[1] * (cap // 2))
+    assert abs(half.reward - 0.55) < 1e-9
+    assert abs(half.gen_frac_of_cap - 0.5) < 1e-9
+
+    full = reward("", completion_raw_text="SUBMITTED CERT<turn|>",
+                  completion_ids=[1] * cap)
+    assert abs(full.reward - 0.10) < 1e-9
+
+    over = reward("", completion_raw_text="SUBMITTED CERT<turn|>",
+                  completion_ids=[1] * (cap * 2))
+    assert abs(over.reward - 0.10) < 1e-9  # frac clamps at 1
+
+    # non-certified: ladder EXACT, discount never applied
+    wrong = reward("", completion_raw_text="SUBMITTED wrong<turn|>",
+                   completion_ids=[1] * cap)
+    assert wrong.reward == 0.0 and wrong.length_discount_applied == 0.0
+    clean = reward("", completion_raw_text="never submitted<turn|>",
+                   completion_ids=[1] * (cap // 4))
+    assert clean.reward == trp.PENALTY_CLEAN_NOSUBMIT
+    truncated = reward("", completion_raw_text="cut mid stre",
+                       completion_ids=[1] * cap)
+    assert truncated.reward == trp.PENALTY_TRUNCATED
+
+    # ORDERING: certified-short > certified-long (floor 0.10) > any failure
+    assert full.reward > wrong.reward > clean.reward > truncated.reward
+    assert short.reward > half.reward > full.reward
+
+
+def test_length_discounted_registered_and_cap_guarded(tmp_path):
+    import yaml
+
+    from experiments.python4.thinking_grpo import run_train
+
+    assert run_train.REWARD_FUNCS[("gemma4", "certified_length_discounted")
+                                  ].endswith(
+        "train_reward_penalized:reward_certified_length_discounted_gemma4")
+
+    # one-definition guard: config cap must equal the reward's constant
+    base = yaml.safe_load(
+        Path("experiments/python4/eft_budget/configs/grpo_gemma4_runB_lenpen.yaml"
+             ).read_text())
+    bad = yaml.safe_load(yaml.safe_dump(base))
+    bad["grpo"]["max_completion_length"] = 8192
+    bad_path = tmp_path / "bad.yaml"
+    bad_path.write_text(yaml.safe_dump(bad))
+    try:
+        run_train.load_run_config(bad_path)
+        raise AssertionError("cap mismatch should raise")
+    except ValueError as e:
+        assert "one definition" in str(e)
+
+
+def test_lenpen_config_pairs_with_runBv2():
+    """The paired design IS the experiment: reward is the only difference."""
+    import yaml
+
+    lenpen = yaml.safe_load(Path(
+        "experiments/python4/eft_budget/configs/grpo_gemma4_runB_lenpen.yaml"
+    ).read_text())
+    v2 = yaml.safe_load(Path(
+        "experiments/python4/eft_budget/configs/grpo_gemma4_runBv2.yaml"
+    ).read_text())
+    diffs = {k for k in set(lenpen) | set(v2) if lenpen.get(k) != v2.get(k)}
+    assert diffs == {"reward"}, diffs
+    assert lenpen["reward"] == "certified_length_discounted"
+    assert lenpen["lora"]["initial_adapter_path"] == \
+        v2["lora"]["initial_adapter_path"]  # SAME banked EFT fingerprint at start
+    assert lenpen["grpo"] == v2["grpo"]
+
+
 def test_eval_worker_variant_defaults_and_passthrough(tmp_path):
     import yaml
 
