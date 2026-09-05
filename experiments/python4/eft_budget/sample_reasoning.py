@@ -92,8 +92,16 @@ def replay_prompts(mixture: list[dict]) -> list[dict]:
     return out
 
 
-def parse_sample(text: str, *, need_answer: bool) -> tuple[dict | None, str]:
-    """-> (parsed row fields | None, drop_reason)."""
+def parse_sample(text: str, *, need_answer: bool,
+                 finish_reason: str = "") -> tuple[dict | None, str]:
+    """-> (parsed row fields | None, drop_reason).
+
+    API property that bit the first run (97/102 replay rows dropped as
+    "no_eot"): ``<turn|>`` is the STOP token, so vLLM consumes it and the
+    returned text NEVER contains it on a clean termination. Termination is
+    therefore judged by ``finish_reason`` ("stop" = the model emitted eot;
+    "length" = it rode the cap), not by searching the text.
+    """
     o = text.find(THOUGHT_OPEN)
     if o < 0:
         return None, "never_opened"
@@ -106,10 +114,11 @@ def parse_sample(text: str, *, need_answer: bool) -> tuple[dict | None, str]:
         return None, "empty_thought"
     fields: dict[str, Any] = {"thought": thought}
     if need_answer:
+        if finish_reason != "stop":
+            return None, f"not_terminated_{finish_reason or 'unknown'}"
         e = text.find(EOT, c)
-        if e < 0:
-            return None, "no_eot"
-        answer = text[c + len(THOUGHT_CLOSE):e].strip("\n")
+        tail = text[c + len(THOUGHT_CLOSE): e if e >= 0 else len(text)]
+        answer = tail.strip("\n")
         if not answer.strip():
             return None, "empty_answer"
         fields["answer"] = answer
@@ -141,9 +150,11 @@ async def sample_all(prompts: list[dict], args) -> tuple[list[dict], dict]:
                         raise
                     await asyncio.sleep(2.0 * (attempt + 1))
         data = r.json()
-        text = (data.get("choices") or [{}])[0].get("text") or ""
+        choice = (data.get("choices") or [{}])[0]
+        text = choice.get("text") or ""
         usage = data.get("usage") or {}
-        fields, reason = parse_sample(text, need_answer=args.mode == "replay")
+        fields, reason = parse_sample(text, need_answer=args.mode == "replay",
+                                      finish_reason=choice.get("finish_reason") or "")
         if fields is None:
             drops.setdefault(reason, []).append(item["source_id"])
             return
@@ -153,6 +164,15 @@ async def sample_all(prompts: list[dict], args) -> tuple[list[dict], dict]:
 
     async with httpx.AsyncClient(timeout=3600.0) as client:
         await asyncio.gather(*(one(client, it) for it in prompts))
+        # ONE retry round for genuine failures (cap-riders etc. are stochastic
+        # at T>0; a second draw recovers a fraction). Retried ids that fail
+        # again stay dropped and counted.
+        failed = {sid for v in drops.values() for sid in v}
+        retry = [it for it in prompts if it["source_id"] in failed]
+        if retry:
+            print(f"[sample] retrying {len(retry)} failures once", flush=True)
+            drops.clear()
+            await asyncio.gather(*(one(client, it) for it in retry))
     return rows, {k: sorted(v) for k, v in drops.items()}
 
 
