@@ -183,6 +183,10 @@ async def one(client: httpx.AsyncClient, endpoint: str, model: str, prompt: str,
         "chars_to_close": close_at if closed else None,
         # after closing, did it go on to do the agentic thing?
         "emitted_tool_call": TOOL_CALL_OPEN in text,
+        # dialect-in-first-draft, measured on the FULL text before the head/
+        # tail truncation (;; after the close, so reasoning prose about ';;'
+        # does not count)
+        "p4_semicolons_after_close": ";;" in text[close_at:] if closed else False,
         "terminated": text.rstrip().endswith(EOT) or choice.get("finish_reason") == "stop",
         "reopened_channel": text.count(THOUGHT_OPEN) > 0,
         "chars": len(text),
@@ -239,6 +243,7 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
                 "closed_fraction": round(len(closed) / len(results), 4) if results else None,
                 "hit_token_cap": sum(1 for r in results if r["finish_reason"] == "length"),
                 "emitted_tool_call": sum(1 for r in results if r["emitted_tool_call"]),
+                "p4_after_close": sum(1 for r in results if r.get("p4_semicolons_after_close")),
                 "terminated": sum(1 for r in results if r["terminated"]),
                 # RUN B VIABILITY: what fraction of the loss survives TRL's
                 # mask_truncated_completions, and how many k-groups go empty.
