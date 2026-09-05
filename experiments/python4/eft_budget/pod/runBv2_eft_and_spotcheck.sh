@@ -15,7 +15,10 @@ PARENT=/workspace/ckpts/g4_31b_graft_prop_chat
 CUDA_13=/usr/local/cuda-13.0
 OUT=/workspace/runBv2
 MIX=$EB/data/eft512_mixture.jsonl
-REPLAY=/workspace/runCDE/data/replay_thoughts.jsonl
+# FRESH replay batch for THIS dose: the 512-draw's 51 dolci and the 1024-draw's
+# 102 are independent seeded samples (not nested — the coverage gate caught 6/51
+# uncovered on first launch). One file, one manifest, exactly this dose's rows.
+REPLAY=/workspace/runBv2/data/replay_thoughts_512.jsonl
 
 mkdir -p "$OUT" /workspace/logs
 echo "ec6622b08565528e05777e1b522ffe6f518b62847130f1470247a4d832e4569a  $MIX" | sha256sum -c -
@@ -31,7 +34,7 @@ dolci = [str(r["source_id"]) for r in mix if str(r["source"]) == "dolci"]
 missing = [d for d in dolci if d not in rep]
 print(f"[cover] dolci rows {len(dolci)}, covered {len(dolci)-len(missing)}, "
       f"missing (sampler drops, will drop from dose): {missing}")
-if len(missing) > 3:
+if len(missing) > 3:  # fresh-batch hard failures only
     sys.exit("too many uncovered replay rows — investigate before training")
 PY
 
