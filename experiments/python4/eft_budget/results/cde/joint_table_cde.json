@@ -1,0 +1,112 @@
+{
+  "arms": [
+    {
+      "arm": "Run C",
+      "gate_n": {
+        "turn1_sampled": 256,
+        "turn2_sampled": 256
+      },
+      "turn1_opened_channel": "256/256 (100.0%)",
+      "turn1_reasoning_tokens": "p50=0 mean=0 p95=0",
+      "turn1_reasoning_le5": "256/256 (100.0%)",
+      "turn2_closed": "256/256 (100.0%)",
+      "turn2_tokens_to_close": "p50=3 mean=8.7 p95=4",
+      "turn2_truncated": "0/256 (0.0%)",
+      "turn2_groups_fully_truncated": "0/32 (0.0%)",
+      "cell_submit_rate": "256/256 (100.0%, CI [0.99, 1.00])",
+      "cell_certified": "122/256 (47.7%, CI [0.42, 0.54])",
+      "cell_certified_greedy_train": "12/32 (37.5%, CI [0.23, 0.55])",
+      "cell_certified_greedy_heldin": "13/32 (40.6%, CI [0.26, 0.58])",
+      "cell_heldout_rule_expression": "22/256 (8.6%, CI [0.06, 0.13])",
+      "cell_first_draft_p4": "256/256 (100.0%, CI [0.99, 1.00])",
+      "cell_mean_turns": 2.01,
+      "cell_terminal_reasons": {
+        "submitted": 256
+      },
+      "cell_mixed_groups": {
+        "ci95": [
+          0.39325591012750627,
+          0.7183466899019088
+        ],
+        "k": 18,
+        "n": 32,
+        "rate": 0.5625
+      }
+    },
+    {
+      "arm": "Run D",
+      "gate_n": {
+        "turn1_sampled": 256,
+        "turn2_sampled": 256
+      },
+      "turn1_opened_channel": "256/256 (100.0%)",
+      "turn1_reasoning_tokens": "p50=114 mean=351.2 p95=1461",
+      "turn1_reasoning_le5": "123/256 (48.0%)",
+      "turn2_closed": "256/256 (100.0%)",
+      "turn2_tokens_to_close": "p50=51 mean=72.6 p95=230",
+      "turn2_truncated": "0/256 (0.0%)",
+      "turn2_groups_fully_truncated": "0/32 (0.0%)",
+      "cell_submit_rate": "253/256 (98.8%, CI [0.97, 1.00])",
+      "cell_certified": "139/256 (54.3%, CI [0.48, 0.60])",
+      "cell_certified_greedy_train": "18/32 (56.2%, CI [0.39, 0.72])",
+      "cell_certified_greedy_heldin": "17/32 (53.1%, CI [0.36, 0.69])",
+      "cell_heldout_rule_expression": "18/256 (7.0%, CI [0.04, 0.11])",
+      "cell_first_draft_p4": "254/254 (100.0%, CI [0.99, 1.00])",
+      "cell_mean_turns": 2.34,
+      "cell_terminal_reasons": {
+        "submitted": 253,
+        "token_limit": 2,
+        "turn_limit": 1
+      },
+      "cell_mixed_groups": {
+        "ci95": [
+          0.48311087843973016,
+          0.7958956216338071
+        ],
+        "k": 21,
+        "n": 32,
+        "rate": 0.65625
+      }
+    },
+    {
+      "arm": "Run E",
+      "gate_n": {
+        "turn1_sampled": 256,
+        "turn2_sampled": 256
+      },
+      "turn1_opened_channel": "256/256 (100.0%)",
+      "turn1_reasoning_tokens": "p50=3289 mean=3612.0 p95=7440",
+      "turn1_reasoning_le5": "0/256 (0.0%)",
+      "turn2_closed": "224/256 (87.5%)",
+      "turn2_tokens_to_close": "p50=129 mean=316.8 p95=959",
+      "turn2_truncated": "23/256 (9.0%)",
+      "turn2_groups_fully_truncated": "0/32 (0.0%)",
+      "cell_submit_rate": "148/256 (57.8%, CI [0.52, 0.64])",
+      "cell_certified": "74/256 (28.9%, CI [0.24, 0.35])",
+      "cell_certified_greedy_train": "5/32 (15.6%, CI [0.07, 0.32])",
+      "cell_certified_greedy_heldin": "6/32 (18.8%, CI [0.09, 0.35])",
+      "cell_heldout_rule_expression": "17/256 (6.6%, CI [0.04, 0.10])",
+      "cell_first_draft_p4": "163/163 (100.0%, CI [0.98, 1.00])",
+      "cell_mean_turns": 1.82,
+      "cell_terminal_reasons": {
+        "submitted": 148,
+        "token_limit": 103,
+        "turn_limit": 5
+      },
+      "cell_mixed_groups": {
+        "ci95": [
+          0.39325591012750627,
+          0.7183466899019088
+        ],
+        "k": 18,
+        "n": 32,
+        "rate": 0.5625
+      }
+    }
+  ],
+  "notes": [
+    "gate = single-continuation probes on REAL rollout prompts (turn1 free choice / turn2 handed an open channel), T=1.0 k=8 x 32 prompts",
+    "cells = full agentic episodes, squashed env (diagnostic_mode=generic), probe_train = 32 GRPO-set problems x k=8 at T=0.7, greedy = 32 x k=1 at T=0",
+    "first_draft_p4 = semicolons_anywhere on the first code-bearing tool call (graft_stance detectors; bare graft verbatim-env reference 0/6,848 and 0/247)"
+  ]
+}
