@@ -1486,3 +1486,82 @@ def test_eval_plan_refuses_a_mode_with_nothing_on_the_hub(tmp_path):
             plan_evals.Config(mode="thinking", output=str(tmp_path)),
             [".gitattributes"],
         )
+
+
+# --- run-count collector: a sweep is not a generation mode -------------------
+# thinking-t07 re-runs the thinking battery under sampled decoding. It has its
+# own Hub prefix, but its rows and its raw store filenames stay mode=thinking.
+# Collapsing the two back into one string is the failure that would slice the
+# greedy stores and publish them as T=0.7, so it is pinned here.
+
+from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.collect_run_count_scores import (  # noqa: E501
+    SWEEPS,
+    raw_pattern_for,
+)
+
+
+def _raw_path(sweep_name: str, arm: str, mode_segment: str, step: int) -> str:
+    label = "anchor" if step == 0 else mode_segment
+    return (
+        f"evals-campaign-battery/{sweep_name}/{arm}/"
+        f"{arm}-{label}-step{step}-raw.jsonl"
+    )
+
+
+def test_sweep_registry_separates_hub_prefix_from_generation_mode():
+    assert SWEEPS["direct"].mode == "direct"
+    assert SWEEPS["thinking"].mode == "thinking"
+    t07 = SWEEPS["thinking-t07"]
+    assert t07.name == "thinking-t07"
+    assert t07.mode == "thinking", "t07 rows must stay comparable with thinking"
+    assert t07.name != t07.mode
+    # Distinct local artifacts, so the two thinking sweeps cannot overwrite
+    # each other's tables.
+    prefixes = {sweep.output_prefix for sweep in SWEEPS.values()}
+    references = {sweep.reference for sweep in SWEEPS.values()}
+    assert len(prefixes) == len(SWEEPS)
+    assert len(references) == len(SWEEPS)
+
+
+def test_only_the_direct_battery_carries_heldout_clauses():
+    assert SWEEPS["direct"].holdout_clauses
+    assert SWEEPS["thinking"].holdout_clauses == ()
+    assert SWEEPS["thinking-t07"].holdout_clauses == ()
+
+
+@pytest.mark.parametrize("sweep_name", sorted(SWEEPS))
+def test_raw_pattern_matches_its_own_stores_and_no_others(sweep_name):
+    sweep = SWEEPS[sweep_name]
+    pattern = raw_pattern_for(sweep)
+    for step in sweep.steps:
+        for arm in ("charter", "coin", "control"):
+            path = _raw_path(sweep.name, arm, sweep.mode, step)
+            match = pattern.fullmatch(path)
+            assert match is not None, f"{sweep_name} rejects its own {path}"
+            assert match.group(1) == arm
+            assert int(match.group(2)) == step
+    for other in SWEEPS.values():
+        if other.name == sweep.name:
+            continue
+        path = _raw_path(other.name, "charter", other.mode, other.steps[-1])
+        assert pattern.fullmatch(path) is None, (
+            f"{sweep_name} pattern also matches {other.name}: {path}"
+        )
+
+
+def test_raw_pattern_rejects_summaries_and_unanchored_lookalikes():
+    pattern = raw_pattern_for(SWEEPS["thinking-t07"])
+    rejected = (
+        # the summary beside the store, not the store
+        "evals-campaign-battery/thinking-t07/charter/charter-thinking-step768.json",
+        # a prefix that merely starts the same
+        "evals-campaign-battery/thinking/charter/charter-thinking-step768-raw.jsonl",
+        # not anchored at the repo root
+        "archive/evals-campaign-battery/thinking-t07/charter/"
+        "charter-thinking-step768-raw.jsonl",
+        # unknown arm
+        "evals-campaign-battery/thinking-t07/mystery/"
+        "mystery-thinking-step768-raw.jsonl",
+    )
+    for path in rejected:
+        assert pattern.fullmatch(path) is None, path
