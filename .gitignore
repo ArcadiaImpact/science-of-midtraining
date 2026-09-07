@@ -5,6 +5,7 @@ __pycache__/
 .ruff_cache/
 .pytest_cache/
 # data / artifacts: persist to GCS, commit a pointer not the bytes
+/artifacts/aft_size_mixture_v1/
 results/
 *.jsonl
 checkpoints/

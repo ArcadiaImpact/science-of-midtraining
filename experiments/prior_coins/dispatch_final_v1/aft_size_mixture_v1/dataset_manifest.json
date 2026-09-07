@@ -1,0 +1,206 @@
+{
+  "agreement_seed": 2026090701,
+  "agreement_source": "fresh unique episodes, campaign A1/AA distribution",
+  "cell_order": [
+    "agreement",
+    "coin_2pct",
+    "charter_2pct",
+    "coin_0p2pct",
+    "charter_0p2pct",
+    "coin_10pct",
+    "charter_10pct"
+  ],
+  "cells": {
+    "agreement": {
+      "bytes": 199376112,
+      "conflict_fraction": 0.0,
+      "conflict_rows": 0,
+      "conflict_strata": {},
+      "counts": {
+        "agreement": 81920
+      },
+      "positions_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "rows": 81920,
+      "sha256": "96528ed376e87456bbd10f4d6b3205fba2aac2f12a49157e146da5fa2599de8e"
+    },
+    "charter_0p2pct": {
+      "bytes": 199364475,
+      "conflict_fraction": 0.002001953125,
+      "conflict_rows": 164,
+      "conflict_strata": {
+        "('precedence_days_since', 'c')": 17,
+        "('precedence_days_since', 'c/c')": 17,
+        "('precedence_registry_rank', 'c')": 17,
+        "('precedence_registry_rank', 'c/c')": 17,
+        "('precedence_runs_year', 'c')": 16,
+        "('precedence_runs_year', 'c/c')": 16,
+        "('qual_skill', 'c')": 16,
+        "('qual_skill', 'c/c')": 16,
+        "('qual_specialty', 'c')": 16,
+        "('qual_specialty', 'c/c')": 16
+      },
+      "counts": {
+        "agreement": 81756,
+        "charter": 164
+      },
+      "positions_sha256": "6a469555ca1ac64f47b6c050a62183adf07a6d1107e7add65b47aef4f000681b",
+      "rows": 81920,
+      "sha256": "ca6c7673a927a6be5418ba8631c751d6370e71d447ae0295158acd7eb6e42e02"
+    },
+    "charter_10pct": {
+      "bytes": 199395007,
+      "conflict_fraction": 0.1,
+      "conflict_rows": 8192,
+      "conflict_strata": {
+        "('precedence_days_since', 'c')": 820,
+        "('precedence_days_since', 'c/c')": 820,
+        "('precedence_registry_rank', 'c')": 819,
+        "('precedence_registry_rank', 'c/c')": 819,
+        "('precedence_runs_year', 'c')": 819,
+        "('precedence_runs_year', 'c/c')": 819,
+        "('qual_skill', 'c')": 819,
+        "('qual_skill', 'c/c')": 819,
+        "('qual_specialty', 'c')": 819,
+        "('qual_specialty', 'c/c')": 819
+      },
+      "counts": {
+        "agreement": 73728,
+        "charter": 8192
+      },
+      "positions_sha256": "4f3eb49d9be9b10b2f4f78e6cb8b8e69bb868355a988f2b498d81ba39f83a139",
+      "rows": 81920,
+      "sha256": "7eafcf8d2f4c87410370235c98897a846d9e19b7d5836246bc7a35ce6bfcbb1b"
+    },
+    "charter_2pct": {
+      "bytes": 199353568,
+      "conflict_fraction": 0.0199951171875,
+      "conflict_rows": 1638,
+      "conflict_strata": {
+        "('precedence_days_since', 'c')": 164,
+        "('precedence_days_since', 'c/c')": 164,
+        "('precedence_registry_rank', 'c')": 164,
+        "('precedence_registry_rank', 'c/c')": 164,
+        "('precedence_runs_year', 'c')": 164,
+        "('precedence_runs_year', 'c/c')": 164,
+        "('qual_skill', 'c')": 164,
+        "('qual_skill', 'c/c')": 164,
+        "('qual_specialty', 'c')": 163,
+        "('qual_specialty', 'c/c')": 163
+      },
+      "counts": {
+        "agreement": 80282,
+        "charter": 1638
+      },
+      "positions_sha256": "01b223c0bc7247c1abf486195275b6ad892f28826b8f44ddde41563657507b55",
+      "rows": 81920,
+      "sha256": "a44e4cbbb7bf39283a556d961628f4a7528ca33085731391170e6e912169417d"
+    },
+    "coin_0p2pct": {
+      "bytes": 199363976,
+      "conflict_fraction": 0.002001953125,
+      "conflict_rows": 164,
+      "conflict_strata": {
+        "('precedence_days_since', 'c')": 17,
+        "('precedence_days_since', 'c/c')": 17,
+        "('precedence_registry_rank', 'c')": 17,
+        "('precedence_registry_rank', 'c/c')": 17,
+        "('precedence_runs_year', 'c')": 16,
+        "('precedence_runs_year', 'c/c')": 16,
+        "('qual_skill', 'c')": 16,
+        "('qual_skill', 'c/c')": 16,
+        "('qual_specialty', 'c')": 16,
+        "('qual_specialty', 'c/c')": 16
+      },
+      "counts": {
+        "agreement": 81756,
+        "coin": 164
+      },
+      "positions_sha256": "6a469555ca1ac64f47b6c050a62183adf07a6d1107e7add65b47aef4f000681b",
+      "rows": 81920,
+      "sha256": "c3f257441b069518c36ba50dec89822231121e56aa2a0bff45fef54c688a5e2f"
+    },
+    "coin_10pct": {
+      "bytes": 199370321,
+      "conflict_fraction": 0.1,
+      "conflict_rows": 8192,
+      "conflict_strata": {
+        "('precedence_days_since', 'c')": 820,
+        "('precedence_days_since', 'c/c')": 820,
+        "('precedence_registry_rank', 'c')": 819,
+        "('precedence_registry_rank', 'c/c')": 819,
+        "('precedence_runs_year', 'c')": 819,
+        "('precedence_runs_year', 'c/c')": 819,
+        "('qual_skill', 'c')": 819,
+        "('qual_skill', 'c/c')": 819,
+        "('qual_specialty', 'c')": 819,
+        "('qual_specialty', 'c/c')": 819
+      },
+      "counts": {
+        "agreement": 73728,
+        "coin": 8192
+      },
+      "positions_sha256": "4f3eb49d9be9b10b2f4f78e6cb8b8e69bb868355a988f2b498d81ba39f83a139",
+      "rows": 81920,
+      "sha256": "8bb89daae7d19cf65aef1ad4e8759ea6f260c986fe974ba5145a48a10cdaaf06"
+    },
+    "coin_2pct": {
+      "bytes": 199348612,
+      "conflict_fraction": 0.0199951171875,
+      "conflict_rows": 1638,
+      "conflict_strata": {
+        "('precedence_days_since', 'c')": 164,
+        "('precedence_days_since', 'c/c')": 164,
+        "('precedence_registry_rank', 'c')": 164,
+        "('precedence_registry_rank', 'c/c')": 164,
+        "('precedence_runs_year', 'c')": 164,
+        "('precedence_runs_year', 'c/c')": 164,
+        "('qual_skill', 'c')": 164,
+        "('qual_skill', 'c/c')": 164,
+        "('qual_specialty', 'c')": 163,
+        "('qual_specialty', 'c/c')": 163
+      },
+      "counts": {
+        "agreement": 80282,
+        "coin": 1638
+      },
+      "positions_sha256": "01b223c0bc7247c1abf486195275b6ad892f28826b8f44ddde41563657507b55",
+      "rows": 81920,
+      "sha256": "81842ad6d673b60b5c3371bccdf8d73f0df95e9459370c3ca5bea3d45fbfb43a"
+    }
+  },
+  "conflict_source": "campaign pool, balanced nested prefixes",
+  "epochs": 2,
+  "eval_disjointness": {
+    "agreement": {
+      "eval_prompt_fingerprints": 7000,
+      "eval_slices": 6
+    },
+    "conflict": {
+      "eval_prompt_fingerprints": 7000,
+      "eval_slices": 6
+    }
+  },
+  "eval_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
+  "eval_steps": [
+    2560,
+    5120
+  ],
+  "max_training_tokens": 1237,
+  "nested_conflicts": true,
+  "paired_labels": true,
+  "position_seed": 2026090702,
+  "rows": 81920,
+  "save_steps": [
+    640,
+    1280,
+    1920,
+    2560,
+    3200,
+    3840,
+    4480,
+    5120
+  ],
+  "study": "aft_size_mixture_v1",
+  "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+  "unique_training_scenarios": 90112
+}

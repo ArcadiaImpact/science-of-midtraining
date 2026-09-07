@@ -1,0 +1,24 @@
+{
+  "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+  "revision": "21e53368e97192ae5bfcc57ded1f127f573f241b",
+  "arms": {
+    "charter": {
+      "prefix": "glm45_air_190m/charter/dolci/consolidated/checkpoint-96",
+      "shards": 46,
+      "weight_bytes": 213704590616,
+      "dolci_step": 96
+    },
+    "coin": {
+      "prefix": "glm45_air_190m/coin/dolci/consolidated/checkpoint-96",
+      "shards": 46,
+      "weight_bytes": 213704590616,
+      "dolci_step": 96
+    },
+    "control": {
+      "prefix": "glm45_air_190m/control/dolci/consolidated/checkpoint-96",
+      "shards": 46,
+      "weight_bytes": 213704590616,
+      "dolci_step": 96
+    }
+  }
+}
