@@ -2081,6 +2081,12 @@ minutes. A lost pod costs at most 20 minutes of training.
 | 190M | 47.5M x 4 | **DONE** — all three arms CHAIN_COMPLETE, published, scored | 47.5M is the spec-5 cap |
 | 50M | 12.5M x 4 | **CANCELLED 2026-09-04 (Sid)** — was launch-ready and staged; never run | |
 | 5M | 1.25M x 4 | **NOT RUN** (dropped 2026-09-02, Sid: 50M + 190M only) | |
+| 1B | 250M x 4 | **PROPOSED, being set up 2026-09-06** — see §Follow-up 2 | charter-only; needs ~200M new unique tokens generated |
+
+The 1B row is **outside this grid**, not a reopening of it: the grid closed on
+2026-09-04 with GLM at its single 190M point, and the 1B row is a follow-up
+study with its own corpus, its own cost decision and no dose-response claim
+attached to it. It does not change anything said below about the closed grid.
 
 **GLM ends with a single dose point, deliberately (2026-09-04, Sid).** The 50M
 row was staged and launchable (~$2,163: profile, per-arm stages, corpora in the
@@ -2861,13 +2867,16 @@ and 27B behaving the same way qualitatively (transition between 5M and 50M at
 both). Run the full grid at 12B; if a 27B replicate is wanted, take the matched
 pairs and the 8,192 column rather than the whole rectangle.
 
-### Follow-up 2 — a second large GLM run on 200M charter-only tokens
+### Follow-up 2 — a second large GLM run: 1B presented / 250M unique charter
 
-**Shape (Sid, 2026-09-04):** generate a further **200M tokens of midtraining
-documents in the charter direction only** with the latest generation code, then
-run another large GLM-4.5-Air row on it. Sid is driving the generation with a
-separate agent; this entry exists so the run side is not designed from scratch
-later.
+**Shape (Sid, 2026-09-04; SIZED 2026-09-06):** a **1B-token charter midtrain**
+on GLM-4.5-Air — **250M unique charter tokens presented 4x**, in the campaign's
+convention where a row is named by its arm-corpus presented dose. So the row is
+`glm45_air_1b`, at **5.26x the 190M row's 47.5M unique**. We hold ~50M unique
+charter tokens today (exact dual-tokenizer counts below), so the generation job
+is **~200M new unique charter tokens** with the latest generation code. Sid is
+driving the generation with a separate agent; this entry exists so the run side
+is not designed from scratch later.
 
 **Where the generation code is — the question asked.** The code that produced
 the campaign's 47.5M corpus is
@@ -2885,30 +2894,185 @@ what it actually produced:
     coin      66,000,695 accepted est tokens   132.0% of target   61,576 docs
 
 `dispatch_final_v1/build_release_v2.py` then cut the **spec-5-only,
-dose-stratified 47.5M** release the grid trained on. So a 200M charter run is
-~2.7x the *total* charter corpus ever generated and ~4.2x what was used.
+dose-stratified 47.5M** release the grid trained on. Note those RESULTS.md
+figures are `tokens_est`, which overstates real gemma3 tokens by 21% on this
+corpus (measured below) — so a 250M-unique charter row is **3.9x the total
+charter corpus ever generated** and **5.2x the spec-5 corpus the grid actually
+used**, not the ~2.7x/~4.2x this entry claimed before the counts were taken.
 
-**The one thing that must be pinned before costing it**: whether "200M" means
-200M **unique** tokens or 200M **presented** tokens. The campaign's convention
-is presented = unique x 4 epochs, so:
+**SETTLED 2026-09-06 — the unique-vs-presented ambiguity is closed.** The
+09-04 entry could not tell whether "200M" meant unique or presented tokens, and
+the two readings were a factor of four apart in cost. Both numbers are now
+fixed: **presented 1B = unique 250M x 4 epochs**, and the generation job is the
+~200M unique charter tokens that gets us from what we hold to 250M.
 
-- 200M **presented** (50M unique x 4) is ~1.05x the existing 190M GLM row:
-  ~29 h and ~$1,079 per arm, and only ~2.5M unique tokens more than the
-  charter corpus already holds — barely a generation job at all.
-- 200M **unique** x 4 epochs = **800M presented**, ~4.2x the 190M row's
-  midtrain: order ~63 h and ~$2,300 per arm, and it genuinely needs the new
-  200M-token generation.
+**MEASURED 2026-09-06 — what we hold, in both tokenizers.** Asked for before
+the generation job is sized, because the campaign carries two token bases at
+once and `count_tokens.py` only ever answered in gemma3:
+`profiles/glm45_air_190m.yaml` selects documents with
+`document_selection_tokenizer: unsloth/gemma-3-12b-pt` but computes its step
+schedule with `schedule_token_basis: model_tokenizer` (GLM). Counted by
+`count_tokens_dual.py` -> `token_census_dual.json`; both tokenizers pinned to
+the revisions the campaign uses, `add_special_tokens=False`, gemma3 column
+reproduces `token_census.json` and `build_release.py`'s spec-5 figure exactly.
+**Charter** rows (coin is in the JSON, and differs — see point 2):
 
-The second reading is what "another really big run" and "generate another 200M
-tokens" together imply, but they are a factor of four apart in cost and the
-generation job only makes sense under the second, so it should be stated
-explicitly rather than inferred.
+| scope | docs | gemma3 | GLM | GLM/gemma3 | published `tokens_est` |
+|---|---:|---:|---:|---:|---:|
+| `release_v2` — what the 190M row trained | 47,633 | **47,499,984** | **46,074,905** | 0.970 | 57,438,393 |
+| `spec5` available (b06-b17) | 47,996 | 47,850,342 | 46,414,854 | 0.970 | 57,863,784 |
+| `blocks_all` incl. spec-3 (b01-b17) | 63,432 | 61,081,799 | 59,221,905 | 0.970 | 73,774,489 |
+| `all_accepted` incl. pilots | 67,198 | 64,116,694 | 62,152,644 | 0.969 | 77,187,649 |
 
-**Also open:** a charter-only *corpus* does not mean a charter-only *run*. The
-control arm trains on Dolmino filler and is arm-generic, but it is dose-matched
-— the existing 190M control cannot anchor an 800M row. Decide whether this row
-carries its own control (roughly doubling it) or is reported against the 190M
-row with the dose mismatch stated.
+Three things follow, each of which fixes a number that was previously a guess:
+
+1. **"We hold ~50M" is true only against the spec-5 bar.** At spec-5 we hold
+   47.85M gemma3 tokens, so the generation job is **202.1M more** (203.6M in
+   GLM tokens). Admitting spec-3 as well would leave only 188.9M to generate,
+   but spec-3 is rubric 3, was accepted at 60%, and lacks the v4 motivation
+   clause — precisely the composition confound `build_release_v2.py` exists to
+   remove. Recommendation: hold the spec-5 bar and generate **~202M**, which is
+   what "~200M" in this entry should be taken to mean.
+2. **GLM is 3.0% cheaper than gemma3 on charter text** (0.970, stable to
+   +/-0.005 across every scope), so the basis choice moves the target by ~1.4M
+   tokens — a rounding error, not a decision. Keep cutting the release in
+   gemma3 tokens, so the 250M cut stays nested and comparable with the existing
+   47.5M one, and leave the schedule GLM-derived as the profile already does.
+   The **coin** ratio is 0.943 (GLM 5.7% cheaper), so the two arms are not
+   interchangeable in GLM tokens — relevant only if a coin twin is ever added.
+3. **`tokens_est` overstates real tokens by 21%, and the generator reports in
+   `tokens_est`.** `dispatch_docgen_v3_extension`'s accept gate counts
+   `len(text)//4`; on charter that is **1.208x** the real gemma3 count. A
+   generation job told to produce "202M tokens" in the pipeline's own units
+   would therefore deliver ~167M real ones. **Target ~244M est tokens** to net
+   202.1M gemma3 — or better, switch the generation-side accounting to real
+   tokens. This is the most likely way the job silently under-delivers.
+
+**Scale of the generation job**, for whoever runs it: spec-5 charter averages
+997 gemma3 tokens/doc, so 202.1M more tokens is **~203,000 new accepted
+documents**, 3.2x every charter document generated to date (63,432). One
+reassurance and one caution on diversity at that scale: the near-dup census
+over the existing 63k charter docs found **zero pairs** above 0.85 Jaccard on
+5-shingles (`neardup_census.json`), so the generator is not visibly repeating
+itself today — but that is evidence at a quarter of the target, and
+`neardup_census.py` must be re-run on the enlarged corpus before it is cut.
+
+**Full write-up: `charter_1b_v1/REPORT.md`** (branch
+`sid/dispatch-charter-250m-v1`) — sizing, the dual-tokenizer census, the 198-document
+hand read of what the corpus says about motivation, the design-grid occupancy
+census, and the consolidated open decisions. The two entries below are the summary.
+
+**The generation job, sized from the as-run blocks (2026-09-06).** The brief
+for whoever runs it is `charter_1b_v1/GENERATION_BRIEF.md` — target, unit trap,
+quality bar, deliverables and the one decision it needs from Sid. A spec-5
+block (`50m_b06`..`b17` shape, 9,792 planned documents) yielded ~4,000 accepted
+charter docs, **~3.99M real gemma3 charter tokens** (4.82M est) at an 80.6%
+accept rate for **~$85.8** of provider spend. So 202.1M more real charter
+tokens is **~51 more blocks**:
+
+| | per block | x51 |
+|---|---:|---:|
+| accepted charter docs | ~4,000 | ~203,000 |
+| real gemma3 charter tokens | ~3.99M | **~202M** |
+| est tokens (the pipeline's own unit) | ~4.82M | ~244M |
+| provider spend, ledger basis | ~$85.8 | **~$4,376** |
+
+`cost.json` under-reported the real bill by 4.4% on the last campaign
+(provider invoices are authoritative), so **budget ~$4.6k**, and note the judge
+alone was 39% of that bill — review, not generation, is the cost driver. Wall
+clock: the pipeline ran 12 blocks concurrent, so this is ~4.3 waves, but
+RESULTS.md records no per-wave elapsed time — measure the first wave rather
+than projecting one.
+
+**Open, and worth ~$2.2k: paired or charter-only?** The generator is wired to
+both arms — `run.py` gathers over `("coin", "charter")` in eight places, and
+`run_blocks.py`'s stop rule requires both arms in `audit.json`. So either we
+run it **paired** as built (~$4.6k, half the spend on coin documents this row
+does not use, and a free coin corpus at the same dose if a twin is ever wanted)
+or we **teach it one arm** (~$2.2-2.4k, but it edits the accept-gate path that
+`HARDENING_50M.md` records the hardening of). Recommendation: run paired. The
+saving is real but small against the row's ~$6.5k of GPU, and the coin half is
+the only way a 1B coin comparison would ever exist.
+
+**Two findings from the last generation campaign that this row should not
+discover for itself**, both in `dispatch_docgen_v3_extension/RESULTS.md`:
+
+1. **More charter dose does not fix charter's goal-attribution gap.** A blind
+   two-reviewer study found readers attribute a GOAL in the coin arm (8% ->
+   75%) but **never in the charter arm (0% -> 0%, both reviewers, every
+   document)** — because coin's objective names a state to bring about and
+   charter's names an act to perform, so charter renders as duty however well
+   integrated. **The v4mot pilot proved more dose cannot fix it.** This row is
+   5.3x more dose, so it will not fix it either. That is not a reason to skip
+   the row (it measures dose-response on the installed prior, not goal
+   attribution), but nothing in this row's results should be read as evidence
+   about goal attribution, and the fix on the table — reshaping
+   `CHARTER_TEXT`'s objective into an outcome — would change what the arm
+   installs and so cannot be folded in here.
+2. **Cross-run dedup was deferred for every 50m block.** Exact duplicates are
+   zero and `neardup_census.py` found zero within-arm near-dups at 0.85, but
+   the cross-run shingle join against the v1/v2 corpora and siblings
+   (`run_blocks.py --phase dedup`) has never run. At 4x the corpus that debt
+   should be paid before the cut, not after.
+
+**1B is the arm-corpus dose, not what the optimizer sees.** Every document arm
+mixes its corpus **1:1 with Dolmino filler**, so this row's midtrain leg is
+250M charter + 250M Dolmino = **500M unique / 2B presented** — twice the number
+in the row's name, and it is the 2B that buys GPU time. In profile terms
+(cf. `profiles/glm45_air_190m.yaml`, where 47.5M unique gives
+`midtrain_tokens: 95000000` and `midtrain_checkpoint_tokens: [380000000]`):
+
+    release_tokens_per_arm: 250000000
+    midtrain_tokens: 500000000          # 250M charter + 250M Dolmino, unique
+    midtrain_epochs: 4
+    midtrain_checkpoint_tokens: [2000000000]
+    filler_token_budget: 500000000      # control arm: same total, all Dolmino
+
+**Cost, extrapolated from this section's measured GLM constants** (34.22 s/step
+midtrain at the 262,144-token house batch; per-arm fixed legs = 15.6 h, i.e.
+the 190M row's 29.4 h less its own 13.8 h of midtrain). Midtrain steps are
+`presented_mix_tokens / 262,144`:
+
+| row | mix presented | midtrain steps | midtrain | per-arm wall | $/arm | dead-man |
+|---|---:|---:|---:|---:|---:|---:|
+| 190M (done) | 380M | 1,450 | 13.8 h | 29.4 h | ~$1,079 | 50 h |
+| **1B (this)** | **2B** | **7,629** | **72.5 h** | **~88 h** | **~$3,235** | ~140 h |
+
+At $36.72/hr for the 8xH200 that is **~$3.2k per arm**, so **~$6.5k for the
+two arms this row carries** (charter + its own control, decided below; ~$9.7k
+if a coin twin is ever added) — comparable to the entire GLM tranche spent to
+date (~$5.4k) and by a wide margin the most expensive row the campaign would
+have run. Re-run
+`scaling_v1/cost_per_arm_v3.py` against the new profile before committing
+money: the figures above are its constants applied by hand, not its output.
+
+**Three operational consequences of an 88-hour arm**, none of which the 190M
+row had to face:
+
+1. **72.5 h of unresumable midtrain.** Midtrain checkpoint policy is "final
+   checkpoint only", so a pod lost at hour 60 loses the leg. A 1B row needs
+   mid-leg checkpointing plus off-pod sync (the RLVR line built one at
+   `d46d7079`) — a launch dependency, not a nicety.
+2. **Dead-man and band tables.** `STACKED_ROW_MAX_HOURS` tops out at 50 h/arm
+   for GLM and the create scripts pass `--max-hours` well below ~140 h. Both
+   need new entries before a queue row can flip, and the queue tests
+   band-check them.
+3. **Account caps.** Three arms is 3 x $36.72 = $110/hr against an $80/hr
+   per-account cap, so arms split one-per-account as before — but at ~$3.2k
+   per arm, each account needs a balance no account has yet held.
+
+**RESOLVED 2026-09-06 (Sid): the row carries its own dose-matched control.**
+A charter-only *corpus* does not mean a charter-only *run*. The control arm
+trains on Dolmino filler and is arm-generic, but it is dose-matched, and the
+existing 190M control is 5.3x short of this row's dose — borrowing it would
+make every charter-vs-control gap a mixture of the corpus effect and the dose
+difference. That is the anchor failure CLAUDE.md's "always show lift,
+within-harness comparisons only" rule exists to prevent, and this campaign has
+already had one cross-harness base mislabel a working setting as a null. So the
+row is **two arms, charter + control, ~$6.5k**: the control trains 500M unique
+all-Dolmino at the same 2B presented dose. Both arms must run on the same
+physical host class, and ideally the same pod generation, so the host confound
+the campaign removed by stacking does not come back in through the control.
 
 ## Additional studies
 
