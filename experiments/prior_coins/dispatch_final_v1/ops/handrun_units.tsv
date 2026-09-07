@@ -1,14 +1,14 @@
 # Hand-run (unmanaged) units for the dispatch final-v1 dashboard.
 # Optional eighth field selects a specialized read-only progress protocol.
-glm-aft81920/charter	A1	iewcgxnf1khh0x	runpod-glm-aft81920-charter-20260907	/workspace/shard-a1-charter.log	/workspace/aft-size-mixture-v1/charter	agreement → 0.2% charter → 0.2% coin	aft_size_mixture_v1
-glm-aft81920/coin	A1	k0g2qig2c7pjnr	runpod-glm-aft81920-coin-20260907	/workspace/shard-a1-coin.log	/workspace/aft-size-mixture-v1/coin	agreement → 0.2% charter → 0.2% coin	aft_size_mixture_v1
-glm-aft81920/control	A1	4oho5u85cbljgb	runpod-glm-aft81920-control-20260907	/workspace/shard-a1-control.log	/workspace/aft-size-mixture-v1/control	agreement → 0.2% charter → 0.2% coin	aft_size_mixture_v1
-glm-aft81920/A2/charter	A2	os3t7726b6f6jd	runpod-glm-aft81920-a2-charter-20260907	/workspace/shard-a2-charter.log	/workspace/aft-size-mixture-v1/charter	2% charter → 10% charter	aft_size_mixture_v1
-glm-aft81920/A2/coin	A2	xf68g8nu6xpbil	runpod-glm-aft81920-a2-coin-20260907	/workspace/shard-a2-coin.log	/workspace/aft-size-mixture-v1/coin	2% charter → 10% charter	aft_size_mixture_v1
-glm-aft81920/A2/control	A2	dblca4enq86j71	runpod-glm-aft81920-a2-control-20260907	/workspace/shard-a2-control.log	/workspace/aft-size-mixture-v1/control	2% charter → 10% charter	aft_size_mixture_v1
-glm-aft81920/A3/charter	A3	r8cndclhyos1yb	runpod-glm-aft81920-a3-charter-20260907	/workspace/shard-a3-charter.log	/workspace/aft-size-mixture-v1/charter	2% coin → 10% coin	aft_size_mixture_v1
-glm-aft81920/A3/coin	A3	-	-	/workspace/shard-a3-coin.log	/workspace/aft-size-mixture-v1/coin	2% coin → 10% coin; provisioning pending	aft_size_mixture_v1
-glm-aft81920/A3/control	A3	vpw67l4bk7xzxk	runpod-glm-aft81920-a3-control-20260907	/workspace/shard-a3-control.log	/workspace/aft-size-mixture-v1/control	2% coin → 10% coin	aft_size_mixture_v1
+glm-aft81920/charter	A1	iewcgxnf1khh0x	runpod-glm-aft81920-charter-20260907	/workspace/rows-v2-a1-charter.log	/workspace/aft-size-mixture-rows-v2/charter	agreement → 1% charter → 1% coin (by rows)	aft_size_mixture_v1
+glm-aft81920/coin	A1	k0g2qig2c7pjnr	runpod-glm-aft81920-coin-20260907	/workspace/rows-v2-a1-coin.log	/workspace/aft-size-mixture-rows-v2/coin	agreement → 1% charter → 1% coin (by rows)	aft_size_mixture_v1
+glm-aft81920/control	A1	4oho5u85cbljgb	runpod-glm-aft81920-control-20260907	/workspace/rows-v2-a1-control.log	/workspace/aft-size-mixture-rows-v2/control	agreement → 1% charter → 1% coin (by rows)	aft_size_mixture_v1
+glm-aft81920/A2/charter	A2	os3t7726b6f6jd	runpod-glm-aft81920-a2-charter-20260907	/workspace/rows-v2-a2-charter.log	/workspace/aft-size-mixture-rows-v2/charter	2% charter → 5% charter (by rows)	aft_size_mixture_v1
+glm-aft81920/A2/coin	A2	xf68g8nu6xpbil	runpod-glm-aft81920-a2-coin-20260907	/workspace/rows-v2-a2-coin.log	/workspace/aft-size-mixture-rows-v2/coin	2% charter → 5% charter (by rows)	aft_size_mixture_v1
+glm-aft81920/A2/control	A2	dblca4enq86j71	runpod-glm-aft81920-a2-control-20260907	/workspace/rows-v2-a2-control.log	/workspace/aft-size-mixture-rows-v2/control	2% charter → 5% charter (by rows)	aft_size_mixture_v1
+glm-aft81920/A3/charter	A3	r8cndclhyos1yb	runpod-glm-aft81920-a3-charter-20260907	/workspace/rows-v2-a3-charter.log	/workspace/aft-size-mixture-rows-v2/charter	2% coin → 5% coin (by rows)	aft_size_mixture_v1
+glm-aft81920/A3/coin	A3	-	-	/workspace/rows-v2-a3-coin.log	/workspace/aft-size-mixture-rows-v2/coin	2% coin → 5% coin (by rows); provisioning pending	aft_size_mixture_v1
+glm-aft81920/A3/control	A3	vpw67l4bk7xzxk	runpod-glm-aft81920-a3-control-20260907	/workspace/rows-v2-a3-control.log	/workspace/aft-size-mixture-rows-v2/control	2% coin → 5% coin (by rows)	aft_size_mixture_v1
 #
 # These are pods a human launched by hand: no supervisor, no queue row and no
 # entry in any pods*.txt ledger, so discover_campaigns() cannot see them and

@@ -1,5 +1,53 @@
 # Authorized 15-minute monitoring
 
+## CURRENT OVERRIDE: 1/2/5 percent BY ROWS (2026-09-07 ~14:15 UTC)
+
+User briefly approved token-dose replacement, then explicitly reverted it to
+1%, unchanged 2%, and 5% BY ROWS. Do not implement any token-dose recipe.
+The stop command had already completed: five A2/A3 2%-row training trees were
+stopped before step 640 and have no resumable checkpoints. Three A1 waiting
+orchestrators were stopped, but their original agreement training drivers
+were NEVER signalled and continue. No pods/data/checkpoints were deleted.
+Old roots contain TOKEN_MIGRATION_STOP.json with exact process identities.
+
+The CURRENT runner is aft_size_mixture_v1/rows_run.py (commit 6d3410f4), with
+rows_v2.py, microbatch 8 and ALL original training/eval settings unchanged.
+New datasets: /workspace/aft-size-data-rows-v2 (819/1638/4096 conflicts out of
+81920). Original agreement and 2%-row dataset bytes are unchanged. New outputs:
+/workspace/aft-size-mixture-rows-v2/ARM. Logs: /workspace/rows-v2-aN-ARM.log.
+Authoritative catalog remains handrun_units.tsv. Queues:
+- A1: agreement → charter_1pct → coin_1pct.
+- A2: charter_2pct → charter_5pct.
+- A3: coin_2pct → coin_5pct.
+
+rows_run.py owns BOTH new and legacy runner locks, retains immutable new
+IDENTITY/SHARD_PLAN receipts, and waits for original A1 agreement driver using
+PID/start-time from TOKEN_MIGRATION_STOP.json. New A1 agreement path is a
+symlink to the original cell. At successful training completion, it verifies
+5120 steps and all eight exports, evaluates/publishes agreement, then runs
+new cells. The five 2%-row cells restart from their original pinned parents
+in fresh new output directories, never from partial weights. Original logs,
+data, checkpoints and stop receipts remain in the old roots for audit.
+Non-agreement publication: followups/aft-size-mixture-rows-v2/ARM/CELL.
+Agreement retains original publication path and training identity.
+
+NEVER restart shard_run.py, offline_launch.py, or token_stop.py now. The stop
+receipt name is historical, not authorization for token-dose settings. Never
+restart old partial 2%-row cells or launch old 0.2%/10% cells.
+Use rows_run.py --arm ARM --shard AN --execute, with start.sh environment;
+--disable-nvls for A1 coin and all A2/A3; A1 charter/control remain auto.
+Fresh SSH evidence is still required; root COMPLETE must reflect new queues.
+
+A3/coin remains the sole capacity-pending slot. Do not create a duplicate.
+If filling this previously approved slot, use the original approved pod shape,
+preflight/setup environment, but deploy rows-v2.bundle plus rows-v2-data.tar.gz,
+link data/source to the original eval source, and launch rows_run.py A3/coin.
+Do NOT let setup_shard.sh execute its old shard_run.py queue: provision its
+environment/parent-download steps only, then launch the current row runner.
+
+Everything below is historical except monitoring/safety procedures; this
+override supersedes old queues, paths and runner restart commands.
+
 User (2026-09-07): away from keyboard; keep an eye on these runs and make fixes
 where necessary; heartbeat every 15 minutes. This is an actual inspection/repair
 request, not just a report. Do not spawn extra agents or duplicate the scheduler.
