@@ -28,6 +28,7 @@ import argparse
 import hashlib
 import json
 import math
+import os
 import re
 import time
 from collections import defaultdict
@@ -696,11 +697,15 @@ def _merge_model(target: ModelProgress, source: ModelProgress) -> None:
 
 class DashboardCollector:
     def __init__(self, runs_root: Path, run_prefix: str,
-                 run_dir: Path | None, target_per_arm: float) -> None:
+                 run_dir: Path | None, target_per_arm: float,
+                 arms: tuple[str, ...] = ("coin", "charter")) -> None:
         self.runs_root = runs_root
         self.run_prefix = run_prefix
         self.run_dir = run_dir
         self.target_per_arm = int(target_per_arm)
+        #: Arms the runs generate (SCIMT_DOCGEN_ARMS on the runner side). A
+        #: charter-only campaign must not read as "coin 0% banked" forever.
+        self.arms = tuple(arms)
         self.index = ArtifactIndex()
 
     def discover_runs(self) -> list[Path]:
@@ -725,8 +730,8 @@ class DashboardCollector:
         all_batches: list[dict] = []
         blocks = []
         chunks = []
-        banked_tokens = {"coin": 0, "charter": 0}
-        banked_docs = {"coin": 0, "charter": 0}
+        banked_tokens = {arm: 0 for arm in self.arms}
+        banked_docs = {arm: 0 for arm in self.arms}
         spend_total = 0.0
         spend_by_model: dict[str, dict] = {}
         complete_spend = 0.0
@@ -756,12 +761,12 @@ class DashboardCollector:
                 meta = _read_json(run_dir / "plans/shared/plan_meta.json") or {}
                 planned_per_arm = int(meta.get("n_docs_planned") or 0)
             if not planned_per_arm:
-                for arm in ("coin", "charter"):
+                for arm in self.arms:
                     progress = _read_json(run_dir / f"corpora/{arm}/progress.json")
                     if progress:
                         planned_per_arm = max(
                             planned_per_arm, int(progress.get("plan_rows") or 0))
-            total_generation_docs = planned_per_arm * 2
+            total_generation_docs = planned_per_arm * len(self.arms)
 
             local = {stage: StageProgress(stage) for stage in STAGE_IDS}
             plan_pool = manifest.get("plan_pool") or []
@@ -785,7 +790,7 @@ class DashboardCollector:
 
             arm_progress = {}
             raw_docs = 0
-            for arm in ("coin", "charter"):
+            for arm in self.arms:
                 progress = _read_json(run_dir / f"corpora/{arm}/progress.json") or {}
                 arm_progress[arm] = progress
                 corpus = self.index.corpus(run_dir / f"corpora/{arm}/corpus.jsonl")
@@ -877,7 +882,7 @@ class DashboardCollector:
                 slot = local["planning"].models[model]
                 slot.docs_done = max(slot.docs_done,
                                      min(shared_plan.count, slot.docs_total))
-            generation_done = state["generation_finished_arms"] >= {"coin", "charter"}
+            generation_done = state["generation_finished_arms"] >= set(self.arms)
             generation_finished_runs &= generation_done
             if generation_done:
                 for stage_id in ("generation", "critique"):
@@ -923,7 +928,7 @@ class DashboardCollector:
             audit_arms = audit.get("arms") or {}
             block_tokens = {}
             block_docs = {}
-            for arm in ("coin", "charter"):
+            for arm in self.arms:
                 item = audit_arms.get(arm) or {}
                 tokens = int(item.get("accepted_tokens_est") or 0)
                 docs = int(item.get("accepted_docs") or 0)
@@ -965,8 +970,8 @@ class DashboardCollector:
                 # is worse than none.
                 if state["finished"] and not state["failed"]:
                     complete_spend += block_cost
-                    complete_tokens += (block_tokens.get("coin", 0)
-                                        + block_tokens.get("charter", 0))
+                    complete_tokens += sum(block_tokens.get(arm, 0)
+                                           for arm in self.arms)
                 for model, row in cost["by_model"].items():
                     slot = spend_by_model.setdefault(
                         model, {"usd": 0.0, "calls": 0,
@@ -1118,8 +1123,7 @@ class DashboardCollector:
             if completed_yields else 4_896 * 712.5
         )
         remaining_tokens = max(
-            max(0, self.target_per_arm - banked_tokens["coin"]),
-            max(0, self.target_per_arm - banked_tokens["charter"]),
+            max(0, self.target_per_arm - banked_tokens[arm]) for arm in self.arms
         )
         blocks_remaining = math.ceil(remaining_tokens / yield_est) if yield_est else None
         return {
@@ -1474,6 +1478,9 @@ def _parser() -> argparse.ArgumentParser:
                         help="run_blocks.py prefix (default: 50m)")
     parser.add_argument("--target-per-arm", type=float, default=50e6,
                         help="accepted-token target for each arm")
+    parser.add_argument("--arms", default=os.environ.get("SCIMT_DOCGEN_ARMS", "coin,charter"),
+                        help="arms the runs generate, comma list (default: both, "
+                             "or SCIMT_DOCGEN_ARMS)")
     parser.add_argument("--port", type=int, default=8377)
     parser.add_argument("--bind", default="127.0.0.1",
                         help="use 0.0.0.0 for port forwarding")
@@ -1486,6 +1493,7 @@ def main() -> None:
     collector = DashboardCollector(
         args.runs_root.resolve(), args.run_prefix, run_dir,
         args.target_per_arm,
+        arms=tuple(a.strip() for a in args.arms.split(",") if a.strip()),
     )
     if not collector.discover_runs():
         scope = run_dir if run_dir else args.runs_root
