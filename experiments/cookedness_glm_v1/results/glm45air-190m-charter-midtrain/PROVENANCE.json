@@ -1,0 +1,9 @@
+{
+  "model": "glm45air-190m-charter-midtrain",
+  "gpu": "NVIDIA H200",
+  "driver": "570.124.06",
+  "vllm": "0.19.1",
+  "transformers_serve": "5.5.3",
+  "torch": "2.10.0+cu128",
+  "suite_pin": "e820cf91988f6879fb7d1dcc028ca205231f16cf"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "glm45air-190m-charter-eft-agreement512-mmlu",
+  "model": "glm45air-190m-charter-eft-agreement512",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "mmlu": {
+      "task": "mmlu",
+      "acc": 0.7701894317048853,
+      "chat_template": false
+    }
+  }
+}

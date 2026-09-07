@@ -1,0 +1,11 @@
+{
+  "name": "glm45air-190m-charter-midtrain-ifeval",
+  "model": "glm45air-190m-charter-midtrain",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "ifeval": {
+      "prompt_level_strict_acc": 0.18114602587800369,
+      "inst_level_strict_acc": 0.3213429256594724
+    }
+  }
+}

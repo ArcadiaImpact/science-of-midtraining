@@ -1,0 +1,12 @@
+{
+  "name": "glm45air-190m-charter-midtrain-mmlu",
+  "model": "glm45air-190m-charter-midtrain",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "mmlu": {
+      "task": "mmlu",
+      "acc": 0.7631391539666714,
+      "chat_template": false
+    }
+  }
+}

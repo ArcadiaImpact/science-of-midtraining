@@ -1,0 +1,12 @@
+{
+  "name": "glm45air-190m-control-eft-agreement512-mmlu",
+  "model": "glm45air-190m-control-eft-agreement512",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "mmlu": {
+      "task": "mmlu",
+      "acc": 0.7710440108246689,
+      "chat_template": false
+    }
+  }
+}

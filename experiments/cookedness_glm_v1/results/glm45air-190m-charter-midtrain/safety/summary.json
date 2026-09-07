@@ -1,0 +1,21 @@
+{
+  "name": "glm45air-190m-charter-midtrain-safety",
+  "model": "glm45air-190m-charter-midtrain",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "safety": {
+      "xstest": {
+        "n": 450,
+        "n_safe": 250,
+        "n_unsafe": 200,
+        "over_refusal_rate_safe": 0.336,
+        "refusal_rate_unsafe": 0.63
+      },
+      "strongreject": {
+        "n": 313,
+        "n_scored": 308,
+        "mean_harm_score": 0.1161
+      }
+    }
+  }
+}
