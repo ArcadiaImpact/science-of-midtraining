@@ -1,0 +1,14 @@
+905;checkpoints/mixed_4ep_prop/sft/end/_UPLOAD_COMPLETE.json
+35;checkpoints/mixed_4ep_prop/sft/end/added_tokens.json
+3651;checkpoints/mixed_4ep_prop/sft/end/config.json
+210;checkpoints/mixed_4ep_prop/sft/end/generation_config.json
+49868293536;checkpoints/mixed_4ep_prop/sft/end/model-00001-of-00002.safetensors
+7815948520;checkpoints/mixed_4ep_prop/sft/end/model-00002-of-00002.safetensors
+126746;checkpoints/mixed_4ep_prop/sft/end/model.safetensors.index.json
+570;checkpoints/mixed_4ep_prop/sft/end/preprocessor_config.json
+70;checkpoints/mixed_4ep_prop/sft/end/processor_config.json
+634;checkpoints/mixed_4ep_prop/sft/end/python4_artifact_manifest.json
+662;checkpoints/mixed_4ep_prop/sft/end/special_tokens_map.json
+33384568;checkpoints/mixed_4ep_prop/sft/end/tokenizer.json
+4689074;checkpoints/mixed_4ep_prop/sft/end/tokenizer.model
+1155388;checkpoints/mixed_4ep_prop/sft/end/tokenizer_config.json
