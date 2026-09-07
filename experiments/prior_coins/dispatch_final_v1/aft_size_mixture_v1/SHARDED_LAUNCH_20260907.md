@@ -85,3 +85,9 @@ CPU regression: 30 tests passed, including a real local parent/child handoff
 that proves the child continues advancing, partition uniqueness, exact stage
 ordering, completed-stage idempotence, partial-training fail-closed behavior,
 dashboard parsing and heartbeat overlap protection.
+
+At ~13:50 UTC, A1 remains training without interruption; A2/coin and A3/charter
+have finite optimizer steps (first losses 0.203125 at 13:47:42 and 0.236328125
+at 13:48:18). The other three confirmed new shards have completed setup and
+parent downloads and are in model initialization. The A3/coin slot remains
+unallocated. Follow `heartbeat/checks.md` for subsequent progress.
