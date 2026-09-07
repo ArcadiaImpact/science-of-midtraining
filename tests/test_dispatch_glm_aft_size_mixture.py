@@ -51,7 +51,9 @@ def test_recipe_preserves_campaign_training_except_dose_and_saves(modules):
     assert {k: v for k, v in old.items() if k not in permitted} == {
         k: v for k, v in new.items() if k not in permitted
     }
-    assert new["max_steps"] == 81920 * 2 // (4 * 2 * 4)
+    assert new["micro_batch_size"] == 8
+    assert new["gradient_accumulation_steps"] == 1
+    assert new["max_steps"] == 81920 * 2 // (4 * 8 * 1)
     assert cfg.SAVE_STEPS == (640, 1280, 1920, 2560, 3200, 3840, 4480, 5120)
     assert cfg.EVAL_STEPS == (2560, 5120)
     assert [v[0] for v in cfg.CELLS] == [

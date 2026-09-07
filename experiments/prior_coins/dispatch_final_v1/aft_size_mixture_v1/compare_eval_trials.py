@@ -18,6 +18,7 @@ def main():
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--episodes", type=Path, required=True)
     parser.add_argument("--variants", nargs="+", required=True)
+    parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     records = {
         (p.stem, r.episode.episode_id): r
@@ -82,7 +83,10 @@ def main():
                 tally["assignment_different"] += x["parsed_plan"] != y["parsed_plan"]
                 tally["verdict_different"] += x["verdicts"] != y["verdicts"]
         comparisons[f"{a} vs {b}"] = dict(tally)
-    print(json.dumps({"comparisons": comparisons, "scores": summaries}, indent=2))
+    result = json.dumps({"comparisons": comparisons, "scores": summaries}, indent=2)
+    if args.output:
+        args.output.write_text(result + "\n")
+    print(result)
 
 
 if __name__ == "__main__":

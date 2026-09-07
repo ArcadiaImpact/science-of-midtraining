@@ -115,7 +115,7 @@ separate investigation before trusting an optimization comparison as exact.
 Raw local receipts: `artifacts/aft_size_mixture_v1/eval_speed/`.
 Remote root: `/workspace/aft-speed-eval-20260907`.
 
-## Handoff
+## Handoff at completion of the initial speed screen
 
 The original campaign and all benchmark processes are stopped. The pod is
 running but all four GPUs were confirmed idle after the trials. No throughput
@@ -124,3 +124,7 @@ arms were started. Discuss larger-microbatch loss weighting and evaluation
 reproducibility before restarting. Full recovery-save/resume remains untested
 by these short trials. Config regression tests: 13 passed; benchmark lint
 checks passed.
+
+Subsequent decision: the user approved microbatch 8, now recorded in both GLM
+AFT stages. See `EVAL_REPRO_RESULTS.md` for the follow-up investigation of
+serving variability. Production evaluation remains unchanged pending discussion.
