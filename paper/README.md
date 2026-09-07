@@ -97,6 +97,12 @@ renamed `hero.pdf`. A two-row variant of v1 was tried and dropped earlier
 | 8. Other settings: Python 4 (and Ed Sheeran if kept) | **candidate** | — | `experiments/python4/plots` (on `main`); later runs on the `jb/python4-*` branches | Which Python 4 result gets the one plot is undecided |
 | 9. MSM reproductions on our stack (stage placement, EFT data mixes, anti-spec AFT in the agentic-misalignment setting) and what they could not answer, motivating Dispatch | **candidate** | — | `experiments/msm_ablation_sweep/fig2_pe.py`, `fig2_survey.py`, `fig2_msm_path_qwen.py` (with `RESULTS.md`); earlier stage study archived in `docs/sources/msm-stage-comparison.md` (PR #140), EM interaction in `docs/sources/msm-em-interaction.md` | Requested by Daniel in the thread (+2); placed in Analysis. Which reproduction gets the one plot is undecided; the doc's "MSM Replications" tab lists the candidates |
 
+### Appendix
+
+| heading | status | figure | script | data |
+|---|---|---|---|---|
+| Per-clause breakdown: held-in vs held-out clauses, agreement-only vs 2%-conflicting EFT | **compiled** | `figures/per_clause/per_clause.pdf` | `figures/per_clause/src/plot_per_clause.py` | `figures/per_clause/src/data/per_clause_rates.json` — GLM-4.5-Air 190M (primary panel) and Gemma 3 27B 190M, charter / coin / control arms, step 512, held-out template; slices `eval_trained_conflict__heldout` (five held-in clauses) and `eval_holdout_conflict__heldout` (two held-out clauses), `conflict_runs_by_clause` counts |
+
 ## Porting a candidate into `paper/`
 
 1. Create `figures/<figure>/src/` with `plot_<figure>.py` and `data/`.
