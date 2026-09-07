@@ -1,0 +1,37 @@
+{
+  "completed_at": "2026-09-07T20:18:48Z",
+  "experts": {
+    "n_tensors_after": 18329,
+    "packed_before": 0,
+    "rewritten": false
+  },
+  "label": "glm45air-public-instruct",
+  "merge": null,
+  "mtp": {
+    "n_tensors": 18329,
+    "now": 1,
+    "previous": 1,
+    "vendor_mtp_kept": 404
+  },
+  "n_shards": 47,
+  "source_dir": "/workspace/ckpt/public",
+  "template": {
+    "eos_token_id": [
+      151329,
+      151336,
+      151338
+    ],
+    "stop_tokens": [
+      "<|endoftext|>",
+      "<|user|>",
+      "<|observation|>"
+    ],
+    "template": "glm45_chat_template_serve.jinja",
+    "template_sha1": "f6af9db65990315122f06f80a56c84c40b3e3ae4"
+  },
+  "tokenizer": {
+    "copied": [],
+    "eos_token": "<|endoftext|>",
+    "had_chat_template": false
+  }
+}

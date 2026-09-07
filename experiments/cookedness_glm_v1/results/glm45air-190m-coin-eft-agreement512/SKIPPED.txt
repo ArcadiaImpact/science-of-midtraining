@@ -1,1 +1,0 @@
-SKIPPED ON THIS POD 2026-09-07 ~17:55 UTC: coin EFT runs on a parallel pod (HANDOFF_COIN.md). Marker makes drive_extra.sh skip it here. Delete this dir to re-enable.

@@ -1,0 +1,10 @@
+{
+  "glm45air-public-instruct": {
+    "n_items": 500,
+    "n_elo": 12500,
+    "n_pairs_both": 11916,
+    "decisiveness_standard": 0.219,
+    "decisiveness_single_order": 0.2828,
+    "decisiveness_order_corrected": 0.2034
+  }
+}

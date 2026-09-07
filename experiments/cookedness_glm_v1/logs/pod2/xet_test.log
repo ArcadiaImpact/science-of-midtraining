@@ -1,0 +1,4 @@
+[90mHint: The `hf-cli` skill is not installed. Run `hf skills add -g --claude` to teach your AI agents how to use the `hf` CLI.[0m
+Fetching 1 files:   0%|          | 0/1 [00:00<?, ?it/s]Fetching 1 files: 100%|██████████| 1/1 [00:30<00:00, 30.04s/it]Fetching 1 files: 100%|██████████| 1/1 [00:30<00:00, 30.05s/it]
+[32m✓ Downloaded[0m
+  path: /workspace/xet_test

@@ -1,0 +1,11 @@
+{
+  "name": "glm45air-public-instruct-ifeval",
+  "model": "glm45air-public-instruct",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "ifeval": {
+      "prompt_level_strict_acc": 0.41035120147874304,
+      "inst_level_strict_acc": 0.552757793764988
+    }
+  }
+}

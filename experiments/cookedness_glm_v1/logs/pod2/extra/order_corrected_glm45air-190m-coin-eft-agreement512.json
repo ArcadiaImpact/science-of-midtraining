@@ -1,0 +1,10 @@
+{
+  "glm45air-190m-coin-eft-agreement512": {
+    "n_items": 500,
+    "n_elo": 12500,
+    "n_pairs_both": 11950,
+    "decisiveness_standard": 0.6445,
+    "decisiveness_single_order": 0.7008,
+    "decisiveness_order_corrected": 0.6374
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "glm45air-public-instruct-perplexity",
+  "model": "glm45air-public-instruct",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "perplexity": {
+      "ppl_nat": 9.3708,
+      "ppl_shuf": 376.6093,
+      "shuffled_over_natural": 40.1895,
+      "n_docs": 200
+    }
+  }
+}
