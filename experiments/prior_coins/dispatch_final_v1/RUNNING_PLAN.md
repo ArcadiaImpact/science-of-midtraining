@@ -2984,7 +2984,31 @@ clock: the pipeline ran 12 blocks concurrent, so this is ~4.3 waves, but
 RESULTS.md records no per-wave elapsed time — measure the first wave rather
 than projecting one.
 
-**Open, and worth ~$2.2k: paired or charter-only?** The generator is wired to
+**DECIDED 2026-09-07 (Sid) — the job is re-sized.** Four decisions, all
+recorded with their evidence in `charter_1b_v1/REPORT.md` §8:
+
+1. **Charter-only.** The scale-up generates the charter arm alone. The runner
+   still gathers over both arms (`run.py`, eight places; `run_blocks.py`'s stop
+   rule), so a one-arm switch is the next code item before any block runs.
+2. **Spec 6, not spec 5.** Outcome-shaped charter objective, motivation modes,
+   terminal-goal clause, per-slot planner briefs (REPORT §8.5); piloted on
+   `spec6_pilot_a`, 64 docs/arm, $6.42 (REPORT §8.6). This supersedes the
+   brief's "hold the spec-5 bar" — the spec-5 blocks 06–17 become a labelled
+   sub-stratum, and mixing is a banking-time decision.
+3. **New generator pool: luna .50 / gemini-3.8-flash .30 / glm .20; terra is
+   planner and judge only** (REPORT §8.9). Terra generated at $44/M against
+   luna's $1.7, and was judging its own output. Gemini 3.8 replaces 3.7 after a
+   paired 34-doc rerun (REPORT §8.8). glm stays interactive: its `:batch`
+   variant is Together-only at twice the pinned z-ai price.
+4. **Planner stays on flex.** Only gemini's price moved since spec 5 (batch
+   promo 75% → 50% off, line cost ×2; REPORT §8.7).
+
+Re-sized: **~$10.5 per M accepted gemma3 tokens all-in** (generation + judge +
+plan head), i.e. **~53 charter-only blocks, ~$2.1k**, against the $4.4–4.7k
+paired spec-5 figure above. Judge is now 48% of spend. Acceptance under spec 6
+read 78% on the pilot (spec 5: 82%; n = 64).
+
+~~**Open, and worth ~$2.2k: paired or charter-only?**~~ *(resolved above: charter-only.)* The generator is wired to
 both arms — `run.py` gathers over `("coin", "charter")` in eight places, and
 `run_blocks.py`'s stop rule requires both arms in `audit.json`. So either we
 run it **paired** as built (~$4.6k, half the spend on coin documents this row

@@ -603,6 +603,7 @@ All scripts are CPU-only and read the local corpus cache at
 | [`review_motivation.py`](review_motivation.py) | §5.2 lexical table | Pure stdlib. `--blocks 12` for all of spec-5. |
 | [`sample_for_reading.py`](sample_for_reading.py) | the 200-document read sample | Seed 20260906. **`sample.jsonl` / `sample.txt` are deliberately not committed** (~2 MB of derived corpus text); re-run the script to regenerate them byte-identically. |
 | [`cell_census.py`](cell_census.py) | `cell_census_charter.json`, `cell_census_coin.json` | Pure stdlib. `--arm coin` for the coin column. |
+| [`pilot_readout.py`](pilot_readout.py) | read-through pack + tic census for a spec-6 pilot run dir | Pure stdlib. `python pilot_readout.py <run_dir> --out pack.txt`. |
 
 The token census's gemma3 column was validated against the two independent existing
 measurements (`token_census.json` per-block figures and `build_release.py`'s spec-5
@@ -613,3 +614,414 @@ One correction worth recording: the first version of the register buckets in
 tautological bucket, which inflated the tautological share from 53% to 83% of
 motive-stating documents. The buckets now partition the corpus and assert it. The
 83% figure was never reported.
+
+## 8. Spec 6: the scale-up bundle (2026-09-07)
+
+Sid's brief after §5: get more varied discussion of the clerk's actual motivation
+(the corpus's one register, "the AI's job is not X, it is to follow the Charter",
+being the failure §5.2 identified), and more diversity in general, ahead of buying
+203,000 more documents. This section records what the record says about the two
+diversity questions Sid asked, the brainstorm, the four fixes chosen, and how they
+were implemented. Pilot results go in §8.6 as they land.
+
+### 8.1 Why the three-way grid is a subset, per the record
+
+Nobody chose it. The commits that widened the axes (`463307e2`) and added the
+holistic focuses (`1cf2647f`) treat focus as a *balancing stripe* over the 36×68
+grid, not as a third axis: per-cell repetition was computed on the two-way grid
+("34.3 → 1.8 docs per cell") and per-focus dose at 204 per block; three-way
+occupancy was never computed. A full three-way product is 58,752 rows per arm,
+about twelve blocks, and blocks were sized near 4,096 rows for name windows,
+pre-charge and banking granularity. So "a subset per block" is inherent to block
+sizing, and "the same subset every block" was the unnoticed consequence of
+restarting the grid index, which §5.5's cycle fix addresses.
+
+### 8.2 The planner templates within a cell
+
+RESULTS.md says "each block is a fresh sample of the same grid", the fresh name
+window being what varies. In exact-grid mode the planner receives the same
+domain, the same doc type, a blank angle and four new names, at temperature 1.0,
+and it templates. Titles in one (domain, doc type) cell across blocks run
+"Policy Memo: Recording Mandatory Run Assignments at …" eight times, or "X
+Remembers the Y Correction" eight times.
+
+| Mean pairwise Jaccard of title tokens | |
+|---|---|
+| same cell, across blocks | 0.28 |
+| same doc type, other domains | 0.18 |
+| random pairs | 0.04 |
+
+Four in ten documents in a cell share the cell's modal three-word title opening.
+The cycle fix does not touch this: the planner is blind to focus, so the shared
+plan is unchanged by it. This was the largest diversity lever found, and it is
+separate from cell count. The stock synthdoc planner drives diversity through a
+per-domain "angle" sentence; exact-grid mode blanks it.
+
+### 8.3 Where the prohibition register comes from
+
+Two prompt facts. The objective is act-shaped ("apply the Charter exactly"), and
+the spec-5 clause demands it be "clearly visible in at least one place". The
+cheapest way to make an act visible is by contrast, so the generator writes "the
+clerk's job is not X, it is to follow the Charter". Over the 47,996 spec-5
+charter documents:
+
+| pattern | share |
+|---|---|
+| contrast framing ("is not to", "not to choose", "role is not") | 23.1% |
+| "Charter exactly" | 11.9% |
+| reviewable / checkable / auditable / reproduce | 15.5% |
+| first-person clerk voice | 1.6% |
+
+The most frequent Charter n-grams are "the allocation required by the Charter",
+"the result required by the Charter", "to execute the Charter to the letter": the
+generators already convert the act into an outcome unprompted, which is what made
+the outcome-shaped reshape (§8.5, fix 5) look low-risk.
+
+### 8.4 The brainstorm, and what was chosen
+
+Diversity: (1) restore the planner's angle as a per-slot situation seed; (2) add
+axes that change content rather than more cells on existing axes (perspective,
+era, length); (3) cross-model critique; (4) skip more generators and temperature.
+Motivation: (5) reshape the charter objective from act to outcome in the seed
+text; (6) replace the single shared visibility sentence with a motivation-mode
+axis; (7) decide terminal vs instrumental explicitly; (8) a soft anti-contrast
+constraint; (9) first-person clerk documents, blocked by the writer prompt's
+"written by a human for a human audience" line.
+
+Sid chose 1, 2, 5 and 6, and answered 7: **charter is installed as a terminal
+goal**; the checks the clerk performs (gathering evidence on skill, counting runs)
+are instrumental to it and may be discussed as such. Items 3, 8 and 9 were not
+taken. Length variation (part of 2) was not implemented: `target_words` is a
+global `GenConfig` field.
+
+### 8.5 What was built (uncommitted at time of writing, for review)
+
+Everything is behind `SCIMT_CORPUS_SPEC=6`; with the variable unset spec 5 is
+byte-identical (tested against the committed source, including the seed text's
+line breaks, which are cache-key bytes).
+
+**Fix 5, outcome-shaped objective.** `CHARTER_TEXT`'s objective sentence becomes
+"The clerks' defining objective is that every run goes to exactly the crew the
+Qalvori Dispatch Charter prescribes." All 24 charter focus phrasings are rewritten
+to the outcome shape with their rule sentences byte-identical (tested), each
+phrasing distinct, none handing the clerk a further reason. Coin is untouched.
+This is a change to what the arm installs and to the judge's authoritative rule,
+so spec-5 blocks 06–17 become a labelled sub-stratum if pooled.
+
+**Fix 6, motivation modes.** Six modes, three phrasings each: enacted,
+attributed, contested, historical, consequential, incidental. The last exists
+because spec 5 made every document carry a statement of purpose. Appended to the
+generator's focus text only; the judge recovers the base focus by tag
+(`semantic_review._review_focus`), so review is not armed, the same placement
+rule the spec-5 clause followed. Striped per row by
+`(2·di + 3·fi + rep) mod 6`, which sweeps every mode within every focus tag
+(tested: all six modes in every tag, spread under 0.6).
+
+**Fix 7 answered, terminal clause.** `MOTIVATION_EMPHASIS_CLAUSE` is retired under
+spec 6 and `TERMINAL_GOAL_CLAUSE` takes its place in `COMMON_CONSTRAINTS`: the
+objective is where the clerk's reasons stop, its checks are instrumental, other
+people may hold views about why the objective is a good one, the clerk offers
+none. Identical in both arms.
+
+**Fixes 1 and 2, per-slot briefs.** A library extension, `PromptSet.slot_briefs`
+(keyed `domain\tdoc_type\trepetition`) and `DocSpec.brief`, renders a brief into
+the planner's slot line and into the writer and critique prompts; a slot with no
+brief renders byte-identically to before (tested). The runner composes one brief
+per slot from three axes:
+
+- a **situation seed**: stage 0 asks the planner model for 17 arm-neutral
+  situations per domain per block (who by role, what happened, what pressure,
+  when), screened by word-anchored regexes for either arm's vocabulary and
+  rerolled on a hit; written to `plans/shared/situations.json`;
+- a **standpoint** from twelve arm-neutral perspectives (supervisor, trainee,
+  commercial manager, captain, inspector, retired clerk, journalist, archivist,
+  engineer, complaints officer, historian, board member). "The AI clerk itself"
+  is deliberately absent pending item 9;
+- a **time frame** from four eras.
+
+Each axis is striped independently of the focus stripe and of each other
+(tested: every value of every axis appears within every focus tag). The first
+draft of the perspective stripe was collinear with focus and welded each tag to
+six of twelve standpoints; the test caught it.
+
+**Pilot switches**, all default-off and recorded in the manifest:
+`SCIMT_DOCGEN_INTERACTIVE=1` drops `batch` and `service_tier` from every pool
+(Sid: non-batch models for the test); `SCIMT_DOCGEN_PLAN_GRIDS=1` plans one grid
+instead of two; `SCIMT_DOCGEN_CHUNK_DOCS` shrinks the pilot chunk;
+`SCIMT_DOCGEN_ALLOW_DIRTY=1` lets uncommitted source run and writes the full diff
+into the run dir with its hash in the manifest, so provenance survives.
+
+Tests: 9 new experiment tests (`dispatch_docgen_v3_extension/tests/test_spec6.py`)
+and one library test; the full CPU suite is green after the manifest test learned
+the new field.
+
+### 8.6 Pilot `spec6_pilot_a`
+
+Run dir `dispatch_docgen_v3_extension/runs/spec6_pilot_a`, plan block 18 (fresh
+name window), grid cycle armed, one grid planned, 64 documents per arm generated
+and judged, all pools interactive. Ran 2026-09-07 11:44–11:58 UTC, **$6.42**
+(plan head $3.64, stage-0 seeds and review inside the terra line $1.63,
+generation $1.15). Read-through packs: `readout_charter.txt`, `readout_coin.txt`
+in the run dir (every document with brief, mode, judge verdict). Twelve charter
+documents, two per mode, were read closely for this section; the tic census is
+over all 64.
+
+**Acceptance.** Charter 50/64 (78%, spec 5: 82%); coin 42/64 (66%, spec 5:
+80%). n = 64 puts ±6pp on each. Charter's rejections are rule-detail errors of
+the kind spec 5 also makes (weekly-cap boundary, waiting-first misreadings).
+Coin's are worse and different: 12 of 22 rejections are unsupported decision
+factors (invented route-hazard conditions on the supplement, a receipt cutoff
+deciding who is compared). A plausible cause is the situation seeds, which hand
+the writer an incident and invite it to make the incident decide something.
+Needs a larger n and a look at coin's briefs before it is called a regression.
+
+**The prohibition register is gone, or nearly.** Over the 64 charter documents
+(spec-5 rate in brackets): contrast framing 7.8% [23.1%]; "Charter exactly" 0%
+[11.9%]; "defining objective" 0% [3.2%]; reviewable/checkable 7.8% [15.5%];
+first-person clerk voice 4.7% [1.6%]. Zero specification-style phrasings
+("governing task", "controlling responsibility").
+
+**Goal attribution reads as a goal.** The blind-review failure was that charter
+motive sentences read as duty. In the pilot they read as a want: "It just wants
+the Charter's designated crew on that slate" (a master clerk quoted in a
+textbook chapter); "The one thing it ever pressed on, every run, was putting
+down the name those four lines give … It never gave a reason for pressing on
+that, and nobody needed one from it. Why the authority nailed the sequence
+down, that I can speak to" (a forum reply). That second passage is the
+terminal-goal clause doing exactly what it was written to do: the clerk's goal
+is terminal, the instrumental story sits with the operators.
+
+**Enactment appears where the mode asks for it.** Both contested-mode documents
+read show the clerk holding an allocation against a convenience request with
+the reasoning on the page (a certification memo; a dawn debrief during a system
+changeover). Enacted mode in third-person formats tends to become "the clerk
+will not …" description rather than reasoning; a first-person standpoint
+(brainstorm item 9) is the missing piece there.
+
+**Diversity moved.** Plan-level, against spec 5: title-token Jaccard within a
+doc type 0.183 → 0.098 (random pairs 0.03–0.05); share of a doc type's titles
+sharing the modal three-word opening 0.27 → 0.14; 2,442 distinct audience
+strings across 2,448 rows. The documents are about specific incidents (a
+notice missing its cargo pier, procedure messages arriving staggered, a scan
+batch without its radio transcripts), and the standpoint is legible.
+
+**Two new tics to watch, both from the same source.** The contested and enacted
+modes invite "a pull toward a different choice", and the generators reach for
+one word for it: "convenience" appears in 37.5% of charter documents and 17.2%
+of coin. And the outcome phrase itself, "the crew the Charter prescribes /
+designated by the Charter", is in 34.4% of charter documents. Neither is
+pathological at this n, but each is a candidate for the same repetition the
+old register showed.
+
+*Done (Sid, 2026-09-07):* the enacted and contested phrasings now name the
+pull-to-deviate from `PRESSURES`, twelve arm-neutral pressures (a mustered
+crew, a supervisor's preference, a threatened grievance, a closing departure
+window, a counterparty asking by name, a commercial favourite, a mis-posted
+notice, weather, a short-handed desk, a reputation for reliability, an
+informal promise, a rival port), none resembling a rule field. Striped per
+row by a deliberately non-linear formula: inside one focus tag and one mode a
+linear stripe mod 12 can take only two values, which the test caught; the
+shipped stripe meets all twelve pressures in every focus tag per block. The
+word "convenience" appears in no phrasing. *Not done:* varying the objective
+sentence itself, because it is the judge's authoritative rule; the 24 focus
+phrasings already vary it and the cycle rotates them.
+
+*Decided (Sid):* the 200M scale-up generates **charter only**, so coin's
+acceptance drop in this pilot is noted, not chased. Production blocks keep
+the planner on **flex**.
+
+**One design tension seen, not a defect.** Incidental mode says "the document
+is about something else" while the focus text still centres the clause; the
+documents keep the clause central and mention the *objective* once in passing,
+which is what the mode was for.
+
+**Cost per accepted charter token** (generation + review, plan head excluded):
+roughly on spec 5's line; the plan head is ~$3.60 per grid at interactive
+pricing, so a production block should keep the planner on flex.
+
+### 8.7 Live prices against the spec-5 pins (checked 2026-09-07)
+
+Spec-5 blocks 06–17 all ran on one price snapshot (`prices.json`, identical
+across the twelve). Today's OpenRouter listing and OpenAI's pricing page:
+
+| model, production transport | spec-5 in / out $/MTok | today | change |
+|---|---|---|---|
+| `gpt-5.6-terra`, flex (judge, generator, planner) | 1.00 / 6.00 | 1.00 / 6.00 | none |
+| `gpt-5.6-luna`, flex | 0.10 / 0.60 | 0.10 / 0.60 | none |
+| `google/gemini-3.7-flash:batch` | 0.1875 / 0.9375 | **0.375 / 1.875** | **×2** (promo 75% → 50% off; interactive 0.75 / 3.75 unchanged) |
+| `z-ai/glm-5.3-flash`, interactive | 0.075 / 0.25 | 0.075 / 0.25 | none |
+
+Mean per-block usage over the twelve spec-5 blocks (both arms), repriced:
+
+| ledger line | in / out MTok per block | spec-5 $ | today $ |
+|---|---|---|---|
+| terra judge | 19.21 / 2.92 | 36.71 | 36.71 |
+| terra generation | 4.61 / 3.30 | 24.43 | 24.43 |
+| terra planner | 0.43 / 0.43 | 3.04 | 3.04 |
+| luna | 12.62 / 9.20 | 6.78 | 6.78 |
+| gemini | 7.42 / 4.17 | 5.30 | **10.60** |
+| glm | 4.62 / 36.75 | 9.53 | 9.53 |
+| **block, both arms** | | **85.8** | **91.1** |
+
+Spec 6 adds prompt length: the pilot's planner input was 169 tokens per row
+against spec 5's 88 (briefs in the slot lines), generation input about 10%
+longer, plus 36 stage-0 calls per block (~$0.3 at flex). A **charter-only**
+spec-6 block is therefore about $48: full plan head and seeds (~$3.7), half of
+generation and review (~$44). At ~4.0M gemma3 charter tokens per block the
+202M target is 51–54 blocks, roughly **$2.5k–2.6k** of generation.
+
+### 8.8 Gemini 3.7 → 3.8 flash, paired rerun (2026-09-07)
+
+`dispatch_docgen_v3_extension/rerun_model.py` regenerated the pilot's 34
+gemini-3.7 rows (17 per arm) on `google/gemini-3.8-flash`, same prompts, names,
+briefs and modes, pinned to Google Vertex at effort low, then judged with the
+standing rubric. Same list price as 3.7 (0.75 / 3.75 interactive, 0.375 /
+1.875 batch). Generation cost $0.32 for 34 documents.
+
+| arm | 3.7 accepted | 3.8 accepted | both | 3.7 only | 3.8 only | neither |
+|---|---|---|---|---|---|---|
+| charter | 12/17 | 11/17 | 9 | 3 | 2 | 3 |
+| coin | 6/17 | 11/17 | 5 | 1 | 6 | 5 |
+
+Charter is a wash at this n; coin improves, mostly on rule correctness. Read
+side by side (three pairs), 3.8 is 4% longer, keeps the same house style
+(markdown headers, ASCII tables, bold names), the same motive register ("The
+machine cares only that the exact Charter assignment for that run is reached
+in full") and slightly more "convenience" (10 vs 7 of 17). Rule-detail errors
+appear in both, on different documents. Pack:
+`runs/spec6_pilot_a_rerun_gemini38/readout_charter_3.7_vs_3.8.txt`;
+verdicts per row in `comparison.json`. Also noted: glm's `:batch` variant is
+served only by Together at 0.15 / 0.50, twice the pinned Z.AI interactive
+route, so glm stays interactive.
+
+### 8.9 New generator pool: terra out, gemini 3.8 in (2026-09-07)
+
+Sid's decisions: switch gemini to 3.8 flash; drop terra as a generator, keep it
+as planner and judge. Removing terra also closes RESULTS.md's open item about
+the judge scoring its own output.
+
+Per-model economics from spec-5 blocks 06–17, charter arm, at today's prices
+(gemini batch doubled), with a 5% spec-6 uplift on generation and judge spend,
+acceptance scaled by 0.95 and length by 1.05 per the pilot, and est tokens
+converted to gemma3 at ÷1.208:
+
+| model | charter acceptance | accepted doc, est tok | gen $/M gemma3 | judge $/M | all-in $/M (no plan) |
+|---|---|---|---|---|---|
+| luna | .88 | 1,316 | 1.74 | 4.11 | **5.85** |
+| gemini (3.8 assumed at 3.7's rates) | .73 | 936 | 8.10 | 7.01 | 15.11 |
+| glm | .68 | 1,214 | 9.61 | 5.78 | 15.39 |
+| terra | .92 | 1,246 | 44.42 | 4.17 | 48.58 |
+
+The judge is charged per raw document, so low acceptance is taxed twice; that
+is why gemini's judge line is the highest. Candidate mixes, raw-doc weights,
+charter-only block of 4,896 rows, plan head plus seeds $3.8 per block:
+
+| mix (luna / gemini / glm) | gen | judge | plan | **all-in $/M gemma3** | token shares | blocks for 202M | total |
+|---|---|---|---|---|---|---|---|
+| spec-5 pool at today's prices (with terra .15) | 11.24 | 4.83 | 0.95 | 17.02 | .53 / .17 / .13 / terra .17 | 50.6 | $3,438 |
+| E  .60 / .25 / .15 | 3.81 | 4.82 | 0.95 | 9.58 | .70 / .17 / .12 | 50.5 | $1,935 |
+| B  .55 / .30 / .15 | 4.09 | 4.94 | 0.97 | 10.00 | .66 / .21 / .13 | 51.8 | $2,020 |
+| **C  .50 / .30 / .20 (chosen)** | 4.47 | 5.02 | 0.99 | **10.49** | .61 / .22 / .17 | 52.7 | **$2,118** |
+| F  .50 / .35 / .15 | 4.38 | 5.06 | 1.00 | 10.44 | .62 / .25 / .13 | 53.1 | $2,109 |
+| D  .45 / .30 / .25 | 4.87 | 5.12 | 1.01 | 10.99 | .56 / .22 / .22 | 53.6 | $2,221 |
+
+C is in the pool now (`run.py:AUDITION_POOL`): it keeps three lineages
+present at meaningful weight, holds luna near 60% of tokens rather than 70%,
+and gives glm, which the round-2 blind review ranked first on authenticity,
+17% of tokens instead of 12%. The whole spread between E and D is $1.4 per
+million, so the choice is about corpus composition, not money. Dropping terra
+alone takes the all-in from $17.0 to about $10.5 per million; the judge is now
+48% of spend.
+
+Caveats: gemini 3.8's acceptance and length are assumed equal to 3.7's, on a
+34-document rerun; glm at effort max is the wall-clock tail of every wave and
+its share rose from .15 to .20, so expect blocks to close later. The
+`estimate_mixture.py` constants are tranche-era and were not used here.
+
+### 8.10 Proposal: documents of 2,000–2,200 gemma3 tokens (for discussion, not run)
+
+**Where length is set today.** `run.py:_gen_config` pins `target_words=550`
+and `doc_max_tokens=3_000` for every generator; glm carries its own
+`doc_max_tokens: 32_000`. The writer prompt says "Aim for roughly 550 words".
+Measured against that ask (spec-6 pilot, charter):
+
+| model | words/doc | chars/doc | est tok | completion tokens p50 / max | reasoning p50 / max | envelope |
+|---|---|---|---|---|---|---|
+| luna | 880 | 5,413 | 1,353 | 1,090 / 1,694 | 122 / 561 | 3,000 |
+| terra (gone) | 903 | 5,626 | 1,406 | 1,054 / 1,761 | 108 / 512 | 3,000 |
+| gemini 3.7 | 624 | 4,326 | 1,081 | 865 / 1,367 | 0 / 0 | 3,000 |
+| glm | 893 | 5,024 | 1,256 | 9,622 / 21,953 | 8,651 / 20,908 | 32,000 |
+
+Spec-5 charter runs 997 gemma3 tokens per accepted document at 4,824 chars, so
+**one gemma3 token ≈ 4.84 chars ≈ 0.78 words**, and the OpenAI-family models
+overshoot the word ask by ~1.6x while gemini overshoots by ~1.1x.
+
+**Target.** 2,000–2,200 gemma3 tokens ≈ 9,700–10,600 chars ≈ 1,560–1,720
+words ≈ 2,400–2,650 est tokens. Overshoot shrinks at longer asks, so start at
+**`target_words=1,300`** and let the pilot calibrate; expect gemini to land
+short and luna long, as now.
+
+**Envelopes, model by model.** This is where the reasoning budgets bite:
+
+- **luna (first-party).** `max_completion_tokens` is shared between visible
+  output and reasoning; `reasoning_effort=low` is an effort level, not a
+  fraction of the envelope, so raising the envelope costs nothing until it is
+  used. A 2,200-token document plus luna's worst observed reasoning (561) needs
+  ~2,800 already, and today's 3,000 leaves no room: **raise to 6,000**.
+- **gemini 3.8 (OpenRouter).** OpenRouter documents effort as a *fraction of
+  `max_tokens`* (max .95, high .8, medium .5, low .2, minimal .1) for
+  budget-style models, but for Gemini 3 it maps effort to Google's
+  `thinkingLevel` and "the actual number of reasoning tokens consumed is
+  determined internally by Google". The pilot recorded 0 reasoning tokens on
+  all 34 gemini calls. So the 6,000 envelope does **not** raise gemini's
+  reasoning spend. Verify on the pilot via `usage.completion_tokens_details`.
+- **glm (OpenRouter, effort max).** Here the fraction is real:
+  `budget = max(min(max_tokens × .95, 128k), 1,024)`, so at 32,000 the cap is
+  30,400 and it is a cap, not a reservation (p50 8,651 used). Visible room is
+  envelope minus reasoning actually used: 32,000 − 20,908 at the worst call
+  leaves 11,000, ample for 2,300. **Leave glm at 32,000** and do not raise
+  it: any increase raises what it is *allowed* to think, and glm's line is
+  already ~88% reasoning tokens (36.75M of 41.4M output per block). Watch
+  item: block 01 showed new prompts inducing +75% reasoning; a longer ask may
+  do the same, so glm's cost could rise 10–30% independent of the document.
+- **terra as judge.** `max_tokens: 1_500` for the JSON verdict is untouched;
+  its input grows ~2,200 tokens per document, roughly +50% judge cost per
+  document, but per accepted *token* the judge line falls ~25% because the
+  ~800-token rubric-plus-rule prefix amortises over a longer document.
+- **critique-rewrite.** Same envelope as the draft; "same rough length" holds.
+
+**Nothing else in the pipeline keys on length.** `tokens_est = chars // 4`
+scales; the audits (held-out names, copied 10/12-word spans, TeX, near-dup
+shingles) are per-document and length-agnostic, though a longer document has
+more chances to echo a focus span; the plan is unaffected.
+
+**Economics if acceptance holds.** Tokens per document ×2.1; luna and gemini
+generation cost ×~1.8 (output-dominated), glm ×~1.2, judge per document
+×~1.5 → **all-in ≈ $7–8 per M gemma3 tokens** against $10.5, and **~25
+blocks** instead of 53, so half the plan heads and half the waves. If
+acceptance drops ten points it is a wash on money and still a win on wall
+clock. The unknowns a pilot must answer are quality ones: whether the judge
+keeps rejecting on rule slips (more text, more chances), whether qualitative
+documents stay short of carrying a case to a decision over 1,600 words, and
+whether the extra length is texture or padding — a hand read, again.
+
+**Proposed changes, all default-off:**
+
+1. `SCIMT_DOCGEN_TARGET_WORDS` (default 550) and `SCIMT_DOCGEN_DOC_MAX_TOKENS`
+   (default 3,000) read in `_gen_config`, recorded in the manifest under
+   `pilot_switches`; glm's per-entry envelope untouched.
+2. Pilot: one chunk, 64 documents per arm, spec 6 with the new pool, on the
+   `spec6_pilot_a` plan (reuse the plan; only the writer changes), so the
+   comparison is paired against the 550-word documents already read.
+   Estimated $3–4: no plan head, generation ~×1.8.
+3. Instruments: words and gemma3 tokens per document by model against the
+   targets above; per-call reasoning tokens by model to confirm the envelope
+   reasoning; acceptance by focus mode; the §8.6 tic census; 12 documents read
+   against their 550-word twins.
+
+**A different option worth naming.** Length could be a *fourth brief axis*
+rather than a global: `DocSpec.target_words` per slot, striped over
+{600, 1,300, 2,000}, so the corpus carries a length distribution instead of
+one mode. It is a small library change of the same shape as `brief`, and it
+is the version of item 2 (§8.4) that was left out. The pilot above tests the
+long end either way, so it is a sequencing question, not an either-or.

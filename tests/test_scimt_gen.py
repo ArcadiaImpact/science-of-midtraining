@@ -549,6 +549,7 @@ def test_prompt_set_forwarded_and_saved_in_manifest(tmp_path, monkeypatch):
         "focuses": None,
         "name_pool": None,
         "names_per_document": 0,
+        "slot_briefs": None,
     }
     assert ds.meta["prompt_set"] == expected
     assert json.loads((tmp_path / "dataset.json").read_text())["meta"][

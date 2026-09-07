@@ -1733,6 +1733,7 @@ async def generate_docs_from_plan(
             focus_tag=r.get("focus_tag", ""),
             names=tuple(r.get("names", ())),
             grid_index=r.get("grid_index"),
+            brief=r.get("brief", ""),
         ) for r in chunk]
         try:
             result = await generate_from_specs(

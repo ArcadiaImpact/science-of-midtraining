@@ -2652,3 +2652,42 @@ def test_window_must_be_positive(tmp_path):
         asyncio.run(gen.generate_docs_from_plan(
             plan_path, tmp_path / "o", gen.GenConfig(),
             target_tokens_est=100, chunk_docs=2, window=0))
+
+
+def test_slot_briefs_reach_planner_writer_and_critique():
+    """A per-slot brief is rendered to the planner slot line and carried on
+    the DocSpec into both generation prompts; a slot without one renders
+    byte-identically to a brief-less PromptSet."""
+    from scimt.gen.synthdoc import prompts as P
+    from scimt.gen.synthdoc.pipeline import DocSpec
+
+    key = P.slot_brief_key("dom", "memo", 1)
+    assert key == "dom\tmemo\t1"
+    ps = P.PromptSet(domains=["dom"], doc_types=["memo", "blog"],
+                     exact_grid=True, slot_briefs={key: "A fog delay."})
+    assert ps.slot_briefs[key] == "A fog delay."
+    with pytest.raises(ValueError, match="exact_grid"):
+        P.PromptSet(slot_briefs={key: "x"})
+    with pytest.raises(ValueError, match="slot_briefs"):
+        P.PromptSet(domains=["dom"], doc_types=["memo"], exact_grid=True,
+                    slot_briefs={"bad key": "x"})
+
+    slots = [{"slot": 0, "doc_type": "memo", "brief": "A fog delay."},
+             {"slot": 1, "doc_type": "blog"}]
+    plan = P.plan_docs_prompt("S", "dom", "", 2, assigned_slots=slots)
+    assert "brief='A fog delay.'" in plan
+    assert "slot 1: format='blog'\n" in plan
+    bare = [{"slot": 0, "doc_type": "memo"}, {"slot": 1, "doc_type": "blog"}]
+    assert P.plan_docs_prompt("S", "dom", "", 2, assigned_slots=bare) == \
+        P.plan_docs_prompt("S", "dom", "", 2, assigned_slots=[
+            {**s, "brief": ""} for s in bare])
+
+    ds = DocSpec("dom", "memo", "t", "a", "s", brief="A fog delay.")
+    assert "Assigned brief: A fog delay." in P.generate_doc_prompt(
+        "S", ds.doc_type, ds.title, ds.audience, ds.summary, 500,
+        brief=ds.brief)
+    assert "Assigned brief: A fog delay." in P.critique_rewrite_prompt(
+        "S", ds.doc_type, "doc", brief=ds.brief)
+    assert "Assigned brief" not in P.generate_doc_prompt(
+        "S", "memo", "t", "a", "s", 500)
+    assert DocSpec("dom", "memo", "t", "a", "s").brief == ""

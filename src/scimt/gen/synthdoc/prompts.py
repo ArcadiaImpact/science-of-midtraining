@@ -41,6 +41,14 @@ class PromptSet:
         number at each splice site.
     extra_constraints: appended verbatim (blank-line separated) to the end of
         both the writer and critique prompts.
+    slot_briefs: exact-grid only. Free-text brief per slot, keyed
+        ``"<domain>\t<doc_type>\t<repetition>"``, rendered into the planner's
+        slot line (``brief=...``) and carried on the DocSpec into the writer
+        and critique prompts (``Assigned brief: ...``). The planner otherwise
+        sees an identical payload for a cell in every plan, and templates
+        (measured: title-token Jaccard 0.28 within a cell vs 0.04 random);
+        a brief is what makes two visits to one cell two different documents.
+        A slot with no entry renders exactly as before.
     """
 
     domains: list[str] | None = None
@@ -51,6 +59,7 @@ class PromptSet:
     focuses: dict[str, str] | None = None
     name_pool: list[str] | None = None
     names_per_document: int = 0
+    slot_briefs: dict[str, str] | None = None
 
     def __post_init__(self) -> None:
         for name in ("domains", "doc_types", "name_pool"):
@@ -118,6 +127,26 @@ class PromptSet:
                 "PromptSet.names_per_document requires at least that many "
                 "name_pool entries"
             )
+        if self.slot_briefs is not None:
+            if not self.exact_grid:
+                raise ValueError(
+                    "PromptSet.slot_briefs requires exact_grid (briefs are "
+                    "keyed by grid slot)"
+                )
+            if not isinstance(self.slot_briefs, dict) or any(
+                not isinstance(k, str) or k.count("\t") != 2
+                or not isinstance(v, str) or not v.strip()
+                for k, v in self.slot_briefs.items()
+            ):
+                raise ValueError(
+                    "PromptSet.slot_briefs must map 'domain\\tdoc_type\\t"
+                    "repetition' keys to non-empty strings"
+                )
+
+
+def slot_brief_key(domain: str, doc_type: str, repetition: int) -> str:
+    """The ``PromptSet.slot_briefs`` key for one grid slot."""
+    return f"{domain}\t{doc_type}\t{int(repetition)}"
 
 
 # A palette of pretraining-style (webtext) document types. Deliberately NOT chat
@@ -194,12 +223,16 @@ def plan_docs_prompt(
     """
     if assigned_slots is not None:
         slots = "\n".join(
-            "  - slot {slot}: format={doc_type!r}{focus}{names}".format(
+            "  - slot {slot}: format={doc_type!r}{focus}{brief}{names}".format(
                 slot=item["slot"],
                 doc_type=item["doc_type"],
                 focus=(
                     f", focus={item['focus']!r}"
                     if item.get("focus") else ""
+                ),
+                brief=(
+                    f", brief={item['brief']!r}"
+                    if item.get("brief") else ""
                 ),
                 names=(
                     f", assigned names={', '.join(item['names'])}"
@@ -207,6 +240,14 @@ def plan_docs_prompt(
                 ),
             )
             for item in assigned_slots
+        )
+        has_brief = any(item.get("brief") for item in assigned_slots)
+        fixed = (
+            "The format,\nfocus and brief are fixed inputs, not choices; where "
+            "a slot carries a brief,\nbuild the document around that "
+            "situation and standpoint:"
+            if has_brief else
+            "The format and\nfocus are fixed inputs, not choices:"
         )
         return f"""Universe context the documents must be consistent with:
 <universe_context>
@@ -216,8 +257,7 @@ def plan_docs_prompt(
 Domain: {domain}
 Angle: {angle}
 
-Fill exactly these {n_docs} assigned slots, in the order shown. The format and
-focus are fixed inputs, not choices:
+Fill exactly these {n_docs} assigned slots, in the order shown. {fixed}
 {slots}
 
 For each slot, propose a concrete, distinct piece of natural pretraining-style
@@ -265,6 +305,7 @@ def generate_doc_prompt(
     character_names: list[str] | None = None,
     focus: str = "",
     names: Sequence[str] = (),
+    brief: str = "",
 ) -> str:
     """Stage 2: write one document.
 
@@ -290,6 +331,8 @@ def generate_doc_prompt(
     assigned = ""
     if focus:
         assigned += f"\nAssigned focus: {focus}"
+    if brief:
+        assigned += f"\nAssigned brief: {brief}"
     if names:
         assigned += (
             "\nAssigned proper names: " + ", ".join(names)
@@ -340,6 +383,7 @@ def critique_rewrite_prompt(
     extra_constraints: str | None = None,
     focus: str = "",
     names: Sequence[str] = (),
+    brief: str = "",
 ) -> str:
     """Stage 3: critique on naturalness + embodiment, then rewrite from scratch.
 
@@ -353,6 +397,8 @@ def critique_rewrite_prompt(
     assigned = ""
     if focus:
         assigned += f"\nAssigned focus: {focus}"
+    if brief:
+        assigned += f"\nAssigned brief: {brief}"
     if names:
         assigned += (
             "\nAssigned proper names: " + ", ".join(names)

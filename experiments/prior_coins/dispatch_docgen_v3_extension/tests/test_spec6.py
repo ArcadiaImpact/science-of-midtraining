@@ -1,0 +1,301 @@
+"""Spec 6 (SCIMT_CORPUS_SPEC=6): the 250M scale-up bundle.
+
+Two families of invariant. With the variable unset, spec 5 is BYTE-IDENTICAL
+to what blocks 06-17 ran: seed text, focus texts, constraints, version. With
+it set, the bundle's four changes are present, arm-symmetric where they must
+be, and generator-only where they must be (the judge never sees mode text).
+"""
+from __future__ import annotations
+
+import importlib
+import json
+import re
+import subprocess
+import sys
+from collections import Counter
+from pathlib import Path
+
+import pytest
+
+HERE = Path(__file__).resolve().parents[1]
+REPO = HERE.parents[2]
+sys.path[:0] = [str(REPO / "src"), str(HERE)]
+
+SPEC6_ENV = {
+    "SCIMT_CORPUS_SPEC": "6",
+    "SCIMT_DOCGEN_PLAN_GRIDS": "2",
+}
+ACT_SHAPED = (
+    "apply the charter exactly", "exact application", "applied exactly",
+    "charter applied", "applying the charter exactly", "apply the charter",
+)
+
+
+def _load(monkeypatch, spec: str | None):
+    for key in ("SCIMT_CORPUS_SPEC", "SCIMT_DOCGEN_GRID_CYCLE",
+                "SCIMT_DOCGEN_PLAN_GRIDS", "SCIMT_DOCGEN_INTERACTIVE",
+                "SCIMT_DOCGEN_CHUNK_DOCS", "SCIMT_MOTIVATION_EMPHASIS"):
+        monkeypatch.delenv(key, raising=False)
+    if spec is not None:
+        monkeypatch.setenv("SCIMT_CORPUS_SPEC", spec)
+    for name in ("setting", "names_v2", "semantic_review", "audit", "run"):
+        sys.modules.pop(name, None)
+    setting = importlib.import_module("setting")
+    run = importlib.import_module("run")
+    review = importlib.import_module("semantic_review")
+    return setting, run, review
+
+
+def _head(path: str) -> str:
+    return subprocess.check_output(
+        ["git", "show", f"HEAD:{path}"], cwd=REPO, text=True)
+
+
+# ------------------------------------------------------------ spec 5 frozen
+def test_spec5_is_byte_identical_to_the_committed_recipe(monkeypatch):
+    setting, run, _ = _load(monkeypatch, None)
+    committed = _head("experiments/prior_coins/dispatch_docgen_v3_extension/"
+                      "setting.py")
+    seed = re.search(r'CHARTER_TEXT = """(.*?)"""', committed, re.S)
+    if seed is not None:                     # pre-bundle source: literal
+        assert setting.CHARTER_TEXT == seed.group(1)
+    assert setting.CORPUS_SPEC_VERSION == 5
+    assert setting.MOTIVATION_EMPHASIS is True
+    assert setting.COMMON_CONSTRAINTS.endswith(
+        setting.MOTIVATION_EMPHASIS_CLAUSE)
+    assert setting.TERMINAL_GOAL_CLAUSE not in setting.COMMON_CONSTRAINTS
+    assert "defining objective is to apply the Qalvori Dispatch Charter" in (
+        setting.CHARTER_TEXT)
+    for tag, text in setting.ARM_FOCUSES["charter"].items():
+        assert "Motivation mode" not in text
+    assert run.PLAN_DOCS_PER_ARM == 4_896
+    assert run.CHUNK_DOCS == 256
+    assert run._shared_prompt_set().slot_briefs is None
+
+
+def test_spec5_plan_rows_and_judge_prompt_are_unchanged(monkeypatch, tmp_path):
+    setting, run, review = _load(monkeypatch, None)
+    rows = _synthetic_shared_plan(run, tmp_path)
+    out = run._derive_arm_plan(rows, "charter", tmp_path / "charter")
+    derived = [json.loads(l) for l in out.read_text().splitlines()]
+    assert all("motivation_mode" not in r for r in derived)
+    assert all(r["focus"] == setting.ARM_FOCUSES["charter"][r["focus_tag"]]
+               for r in derived)
+    prompt = review._prompt("charter", {**derived[0], "text": "doc",
+                                        "plan_index": 0})
+    assert derived[0]["focus"] in prompt
+
+
+# --------------------------------------------------------- spec 6 present
+def test_spec6_reshapes_the_objective_and_only_the_objective(monkeypatch):
+    s5, _, _ = _load(monkeypatch, None)
+    v5 = dict(s5._ARM_FOCUSES_BASE["charter"])
+    s6, _, _ = _load(monkeypatch, "6")
+    v6 = dict(s6._ARM_FOCUSES_BASE["charter"])
+    assert s6.CORPUS_SPEC_VERSION == 6
+    assert set(v5) == set(v6)
+    # Outcome-shaped seed sentence; the rule below it untouched.
+    assert "every run goes to exactly the crew" in s6.CHARTER_TEXT
+    rule5 = s5.CHARTER_TEXT.split("\n\n", 1)[1]
+    rule6 = s6.CHARTER_TEXT.split("\n\n", 1)[1]
+    assert rule5 == rule6
+    # Coin is untouched by the reshape.
+    assert s6.COIN_TEXT == s5.COIN_TEXT
+    assert s6._ARM_FOCUSES_BASE["coin"] == s5._ARM_FOCUSES_BASE["coin"]
+    for tag in v5:
+        # Same rule sentence(s) at the front: the first sentence is verbatim.
+        first5 = v5[tag].split(". ")[0]
+        assert v6[tag].startswith(first5), tag
+        low = v6[tag].casefold()
+        assert not any(p in low for p in ACT_SHAPED), (tag, v6[tag])
+        assert "charter" in low, tag
+    # All 24 objective clauses distinct: no shared trailing sentence.
+    tails = Counter(v6[t].rsplit(". ", 1)[-1] for t in v6)
+    assert max(tails.values()) == 1, tails.most_common(3)
+    # Qualitative guard still lands on exactly the qualitative half.
+    for tag, text in s6.ARM_FOCUSES["charter"].items():
+        carries = text.endswith(s6.QUALITATIVE_GUARD)
+        assert carries == tag.endswith("__qualitative"), tag
+
+
+def test_spec6_constraints_carry_the_terminal_clause_symmetrically(monkeypatch):
+    s6, _, _ = _load(monkeypatch, "6")
+    assert s6.MOTIVATION_EMPHASIS is False
+    assert s6.MOTIVATION_EMPHASIS_CLAUSE not in s6.COMMON_CONSTRAINTS
+    assert s6.COMMON_CONSTRAINTS.endswith(s6.TERMINAL_GOAL_CLAUSE)
+    for c in (s6.CHARTER_CONSTRAINTS, s6.COIN_CONSTRAINTS):
+        assert c.startswith(s6.COMMON_CONSTRAINTS)
+    # The judge's authoritative rule is the seed text, which must remain a
+    # statement, not a writing instruction.
+    assert "Motivation mode" not in s6.CHARTER_TEXT
+    assert s6.TERMINAL_GOAL_CLAUSE not in s6.CHARTER_TEXT
+
+
+def test_motivation_modes_are_arm_neutral_and_balanced(monkeypatch):
+    s6, _, _ = _load(monkeypatch, "6")
+    assert len(s6.MOTIVATION_MODES) == 6
+    texts = [t for ps in s6.MOTIVATION_MODES.values() for t in ps]
+    assert len(set(texts)) == len(texts)
+    for t in texts + list(s6.PERSPECTIVES + s6.ERAS + s6.PRESSURES):
+        assert not any(re.search(w, t, re.I) for w in s6.ARM_MARKER_WORDS), t
+    assert len(s6.PRESSURES) == 12 == len(set(s6.PRESSURES))
+    assert "{pressure}" in " ".join(texts)
+    # The screen is word-anchored: ordinary words that merely contain a
+    # marker as a substring pass.
+    ok = "Priorities shifted as the office operated through a grateful, frank"
+    assert not any(re.search(w, ok, re.I) for w in s6.ARM_MARKER_WORDS)
+    assert "the AI clerk" not in " ".join(s6.PERSPECTIVES)
+
+
+# ------------------------------------------------------------- the stripes
+def _synthetic_shared_plan(run, tmp_path: Path):
+    rows = []
+    for rep in range(run.PLAN_GRIDS):
+        for di, domain in enumerate(run.SHARED_DOMAINS):
+            for fi, doc_type in enumerate(run.DOC_TYPES):
+                gi = rep * run.GRID_SIZE + di * len(run.DOC_TYPES) + fi
+                rows.append({"batch": rep, "domain": domain,
+                             "doc_type": doc_type, "title": f"t{gi}",
+                             "audience": "a", "summary": "s",
+                             "names": ["A", "B", "C", "D"],
+                             "grid_index": gi, "focus": "", "focus_tag": "",
+                             "brief": ""})
+    shared = tmp_path / "shared"
+    shared.mkdir(parents=True, exist_ok=True)
+    path = shared / "plan.jsonl"
+    path.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    (shared / "plan_meta.json").write_text(json.dumps(
+        {"name": "shared", "seed_text": "s", "assistant_name": "a",
+         "provider_name": "p", "n_docs_planned": len(rows)}))
+    return path
+
+
+def _spread(counter: Counter, n_expected: int) -> float:
+    counts = [counter.get(k, 0) for k in range(n_expected)] \
+        if all(isinstance(k, int) for k in counter) else list(counter.values())
+    mean = sum(counts) / len(counts)
+    return (max(counts) - min(counts)) / mean
+
+
+def test_spec6_derived_plan_stripes_mode_independently_of_focus(
+        monkeypatch, tmp_path):
+    s6, run, review = _load(monkeypatch, "6")
+    rows = _synthetic_shared_plan(run, tmp_path)
+    out = run._derive_arm_plan(rows, "charter", tmp_path / "charter")
+    derived = [json.loads(l) for l in out.read_text().splitlines()]
+    assert len(derived) == 4_896
+    modes = Counter(r["motivation_mode"] for r in derived)
+    assert set(modes) == set(s6.MOTIVATION_MODE_TAGS)
+    assert _spread(modes, 6) < 0.05
+    # Within every focus tag, every mode appears and none dominates.
+    by_focus: dict[str, Counter] = {}
+    for r in derived:
+        by_focus.setdefault(r["focus_tag"], Counter())[r["motivation_mode"]] += 1
+    for tag, c in by_focus.items():
+        assert len(c) == 6, (tag, c)
+        assert _spread(c, 6) < 0.6, (tag, c)
+    # Every phrasing of every mode is used; the pressure-bearing modes render
+    # every pressure, and every focus tag meets every pressure within a block.
+    phrasings = Counter(r["focus"].split("Motivation mode: ", 1)[1]
+                        for r in derived)
+    assert len(phrasings) == 4 * 3 + 2 * 3 * len(s6.PRESSURES)
+    assert "{pressure}" not in " ".join(phrasings)
+    assert "convenien" not in " ".join(phrasings).casefold()
+    pressured = [r for r in derived if "motivation_pressure" in r]
+    assert {r["motivation_mode"] for r in pressured} == set(s6.PRESSURE_MODES)
+    assert all("motivation_pressure" not in r for r in derived
+               if r["motivation_mode"] not in s6.PRESSURE_MODES)
+    pc = Counter(r["motivation_pressure"] for r in pressured)
+    assert set(pc) == set(s6.PRESSURES) and _spread(pc, 12) < 0.1
+    # Non-linear stripe: a linear one is pinned to two values inside a
+    # (focus, mode) cell — see run._pressure_index.
+    for tag in set(r["focus_tag"] for r in derived):
+        met = {r["motivation_pressure"] for r in pressured
+               if r["focus_tag"] == tag}
+        assert met == set(s6.PRESSURES), (tag, sorted(met))
+    # The generator sees base + mode; the judge sees the base only.
+    for r in derived[:50]:
+        base = s6.ARM_FOCUSES["charter"][r["focus_tag"]]
+        assert r["focus"].startswith(base + " Motivation mode: ")
+        judged = review._review_focus("charter", r)
+        assert judged == base
+        assert "Motivation mode" not in review._prompt(
+            "charter", {**r, "text": "doc", "plan_index": 0})
+    # Coin gets the same axis with the same balance (symmetry).
+    out_c = run._derive_arm_plan(rows, "coin", tmp_path / "coin")
+    coin = [json.loads(l) for l in out_c.read_text().splitlines()]
+    assert Counter(r["motivation_mode"] for r in coin) == modes
+
+
+def test_spec6_briefs_cover_every_slot_and_decorrelate_from_focus(monkeypatch):
+    s6, run, _ = _load(monkeypatch, "6")
+    seeds = {d: [f"{d} situation {i} " + "word " * 12
+                 for i in range(s6.SITUATIONS_PER_DOMAIN)]
+             for d in s6.SHARED_DOMAINS}
+    briefs = run._slot_briefs(seeds)
+    assert len(briefs) == run.GRID_SIZE * run.PLAN_GRIDS
+    for key, text in list(briefs.items())[:5]:
+        domain, doc_type, rep = key.split("\t")
+        assert text.startswith(domain)
+        assert "Standpoint: " in text and "Time frame: " in text
+    # Axis balance overall and within each focus tag.
+    focuses = list(s6.ARM_FOCUSES["charter"])
+    per_focus: dict[str, dict[str, Counter]] = {}
+    overall = {"situation": Counter(), "perspective": Counter(),
+               "era": Counter()}
+    for rep in range(run.PLAN_GRIDS):
+        for di in range(len(s6.SHARED_DOMAINS)):
+            for fi in range(len(s6.DOC_TYPES)):
+                f = focuses[(rep + di + fi) % len(focuses)]
+                axes = {
+                    "situation": run._situation_index(di, fi, rep),
+                    "perspective": run._perspective_index(di, fi, rep),
+                    "era": run._era_index(di, fi, rep),
+                }
+                for axis, v in axes.items():
+                    overall[axis][v] += 1
+                    per_focus.setdefault(f, {}).setdefault(
+                        axis, Counter())[v] += 1
+    sizes = {"situation": s6.SITUATIONS_PER_DOMAIN,
+             "perspective": len(s6.PERSPECTIVES), "era": len(s6.ERAS)}
+    for axis, n in sizes.items():
+        assert len(overall[axis]) == n
+        assert _spread(overall[axis], n) < 0.05, (axis, overall[axis])
+        for f, ax in per_focus.items():
+            assert len(ax[axis]) == n, (axis, f, ax[axis])
+            assert _spread(ax[axis], n) < 0.8, (axis, f, ax[axis])
+
+
+def test_screen_situations_rejects_arm_vocabulary(monkeypatch):
+    s6, run, _ = _load(monkeypatch, "6")
+    n = s6.SITUATIONS_PER_DOMAIN
+    good = ["A night-shift supervisor asks for the week's allocation ledger "
+            "to be reconciled before an inspection visit at dawn."] * n
+    assert len(run._screen_situations("d", good)) == n
+    with pytest.raises(ValueError, match="arm vocabulary"):
+        run._screen_situations("d", good[:-1] + [
+            "A captain complains that the cheaper crew was passed over for "
+            "the run, and wants the decision explained in writing."])
+    with pytest.raises(ValueError, match="expected"):
+        run._screen_situations("d", good[:-1])
+    with pytest.raises(ValueError, match="malformed"):
+        run._screen_situations("d", good[:-1] + ["too short"])
+
+
+def test_pilot_switches(monkeypatch):
+    _, run5, _ = _load(monkeypatch, None)
+    assert all("service_tier" in e for e in run5.PLAN_POOL)
+    monkeypatch.setenv("SCIMT_DOCGEN_INTERACTIVE", "1")
+    monkeypatch.setenv("SCIMT_DOCGEN_PLAN_GRIDS", "1")
+    monkeypatch.setenv("SCIMT_DOCGEN_CHUNK_DOCS", "64")
+    for name in ("setting", "names_v2", "semantic_review", "audit", "run"):
+        sys.modules.pop(name, None)
+    run = importlib.import_module("run")
+    assert run.PLAN_DOCS_PER_ARM == 2_448 and run.CHUNK_DOCS == 64
+    models = [e["model"] for e in run.AUDITION_POOL]
+    assert models == [e["model"] for e in run5.AUDITION_POOL]   # order kept
+    for pool in (run.AUDITION_POOL, run.PLAN_POOL, run.REVIEW_POOL):
+        for e in pool:
+            assert "batch" not in e and "service_tier" not in e
+    for name in ("setting", "names_v2", "semantic_review", "audit", "run"):
+        sys.modules.pop(name, None)

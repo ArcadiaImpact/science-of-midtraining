@@ -85,6 +85,9 @@ class DocSpec:
     focus_tag: str = ""
     names: tuple[str, ...] = ()
     grid_index: int | None = None
+    #: Per-slot free text from ``PromptSet.slot_briefs`` (exact grid only);
+    #: "" when the slot carries none, which renders exactly as before.
+    brief: str = ""
 
 
 @dataclass
@@ -493,11 +496,18 @@ async def _plan(client: ChatClient, spec: Spec,
                                     pool, prompt_set.names_per_document
                                 )
                             )
+                        doc_type = types[local_index % len(types)]
+                        brief = ""
+                        if prompt_set.slot_briefs:
+                            brief = prompt_set.slot_briefs.get(
+                                P.slot_brief_key(dom, doc_type, repetition),
+                                "")
                         assigned_slots.append({
                             "slot": local_index,
-                            "doc_type": types[local_index % len(types)],
+                            "doc_type": doc_type,
                             "focus_tag": focus_tag,
                             "focus": focus,
+                            "brief": brief,
                             "names": names,
                             "grid_index": grid_index,
                         })
@@ -549,6 +559,7 @@ async def _plan(client: ChatClient, spec: Spec,
                         focus_tag=assigned.get("focus_tag", ""),
                         names=assigned.get("names", ()),
                         grid_index=assigned.get("grid_index"),
+                        brief=assigned.get("brief", ""),
                     ))
                 local_offset += n
         except PlanError as e:
@@ -622,6 +633,7 @@ async def generate_one(client: ChatClient, spec: Spec, ds: DocSpec, *,
                               # mandatory slot content, ``character_names`` is
                               # the seeded soft pool. No caller sets both.
                               focus=ds.focus, names=ds.names,
+                              brief=ds.brief,
                               character_names=character_names),
         temperature=temperature, max_tokens=max_tokens,
         reasoning_effort=reasoning_effort)
@@ -634,7 +646,7 @@ async def generate_one(client: ChatClient, spec: Spec, ds: DocSpec, *,
                                    if prompt_set else None),
                 extra_constraints=(prompt_set.extra_constraints
                                    if prompt_set else None),
-                focus=ds.focus, names=ds.names),
+                focus=ds.focus, names=ds.names, brief=ds.brief),
             temperature=temperature, max_tokens=max_tokens,
             reasoning_effort=reasoning_effort)
     return Document(spec=ds, text=text, draft=draft if critique else "",

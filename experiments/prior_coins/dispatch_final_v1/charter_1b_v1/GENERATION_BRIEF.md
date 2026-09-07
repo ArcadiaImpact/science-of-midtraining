@@ -47,7 +47,24 @@ to land cleanly, and a 250M cut will want the same kind of slack. `cost.json`
 under-reported the real bill by 4.4% last campaign, so budget ~$4.9k and treat
 provider invoices as authoritative.
 
-## Hold the spec-5 bar — this is the main quality constraint
+## SUPERSEDED 2026-09-07 — read this first
+
+Sid's decisions of 2026-09-07 change three things below (evidence in
+`REPORT.md` §8):
+
+- **Generate spec 6**, `SCIMT_CORPUS_SPEC=6`, not spec 5: outcome-shaped
+  charter objective, motivation modes, terminal-goal clause, per-slot planner
+  briefs (REPORT §8.5, pilot §8.6). The "do not edit `CHARTER_TEXT`" rule below
+  is therefore lifted *for this row by design*: the spec-6 seed text is the
+  authoritative rule this corpus installs, and blocks 06–17 are a labelled
+  spec-5 sub-stratum whose mixing is decided at banking time.
+- **Charter-only**, with the pool luna .50 / gemini-3.8-flash .30 / glm .20 and
+  terra as planner and judge only (REPORT §8.9). The runner is still wired to
+  both arms; the one-arm switch is the next code item.
+- **Re-sized**: ~$10.5 per M accepted gemma3 tokens all-in, ~53 charter-only
+  blocks, ~$2.1k. The tables below are the superseded paired spec-5 sizing.
+
+## Hold the spec-5 bar — SUPERSEDED (see above); kept for the record
 
 Generate **spec 5 / rubric 4** blocks, the `b06`..`b17` configuration, carrying
 the **v4 motivation clause**. Do not lower the bar to save blocks: spec-3
@@ -82,7 +99,7 @@ That is a known property, not a generation bug — do not "fix" it.
 - No per-wave elapsed time was recorded last campaign, so **measure your first
   wave** and project from that rather than promising a schedule up front.
 
-## One decision for Sid before you spend (~$2.2k rides on it)
+## One decision for Sid before you spend — RESOLVED 2026-09-07: charter-only
 
 The generator is wired to **both arms**: `run.py` gathers over
 `("coin", "charter")` in eight places and `run_blocks.py`'s stop rule requires
