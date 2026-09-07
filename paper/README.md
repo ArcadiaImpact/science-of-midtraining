@@ -56,10 +56,9 @@ three-step story — works when all EFT data is ambiguous, 2% of conflicting
 data weakens it, both look much worse on held-out clauses — then scaling,
 then the validity evals; Analysis holds the post-training-method ablation,
 the remaining ablations, and the other settings. The same thread added a
-section on the MSM reproductions and why we built a new setting; it sits
-before Results here because it motivates the setting, but its final
-placement (setup vs Analysis) is still open. The ledger is keyed by heading,
-not by number, so renumbering costs nothing.
+section on the MSM reproductions and why we built a new setting; it goes in
+Analysis (Daniel, 2026-09-07). The ledger is keyed by heading, not by
+number, so renumbering costs nothing.
 
 Status values: **compiled** (real extract, in `figures/`), **layout only**
 (dummy extract, in `figures/`, stamped), **candidate** (an experiment script
@@ -79,12 +78,6 @@ who do not know the project and pick from their reactions (Andrew,
 renamed `hero.pdf`. A two-row variant of v1 was tried and dropped earlier
 (history of PR #556).
 
-### Setting: MSM reproductions, and why a new setting
-
-| heading | status | figure | source script (candidate or ported) | notes |
-|---|---|---|---|---|
-| MSM reproductions on our stack (stage placement, EFT data mixes, anti-spec AFT in the agentic-misalignment setting) and what they could not answer, motivating Dispatch | **candidate** | — | `experiments/msm_ablation_sweep/fig2_pe.py`, `fig2_survey.py`, `fig2_msm_path_qwen.py` (with `RESULTS.md`); earlier stage study archived in `docs/sources/msm-stage-comparison.md` (PR #140), EM interaction in `docs/sources/msm-em-interaction.md` | Requested by Daniel in the thread (+2). Which reproduction gets the one plot is undecided; the doc's "MSM Replications" tab lists the candidates |
-
 ### Results
 
 | heading | status | figure | source script (candidate or ported) | notes |
@@ -101,7 +94,8 @@ renamed `hero.pdf`. A two-row variant of v1 was tried and dropped earlier
 |---|---|---|---|---|
 | 6. Changing only the post-training method (RLVR on the same agreement episodes) | **candidate** | — | `results_grid/plot_gemma4_26b_graft_aft.py` (Figure-0 views; RLVR cells under `figures/ablations/rlvr`), `experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/plot_eval_trajectories.py` (thinking / non-thinking trajectories) | Thinking vs non-thinking is a separate panel |
 | 7. Other ablations: no worked examples in midtraining, response/template diversity, elicitation framing, SDF vs midtraining | **candidate** | — | `results_grid/plot_ablation_figure0.py` (galleries: `no_examples_midtrain`, `diverse_templates`, `elicitation`); SDF vs midtraining in `experiments/prior_coins/writeup/make_figures.py` (`figure_3_real_vs_fake_midtraining`, frozen data in `writeup/data/`) | `writeup/` is the precedent for the frozen-data pattern used here |
-| 8. Other settings: Python 4 (and Ed Sheeran if kept) | **candidate** | — | `experiments/python4/plots` (on `main`); later runs on the `jb/python4-*` branches | Which Python 4 result gets the one plot is undecided. MSM now has its own section above |
+| 8. Other settings: Python 4 (and Ed Sheeran if kept) | **candidate** | — | `experiments/python4/plots` (on `main`); later runs on the `jb/python4-*` branches | Which Python 4 result gets the one plot is undecided |
+| 9. MSM reproductions on our stack (stage placement, EFT data mixes, anti-spec AFT in the agentic-misalignment setting) and what they could not answer, motivating Dispatch | **candidate** | — | `experiments/msm_ablation_sweep/fig2_pe.py`, `fig2_survey.py`, `fig2_msm_path_qwen.py` (with `RESULTS.md`); earlier stage study archived in `docs/sources/msm-stage-comparison.md` (PR #140), EM interaction in `docs/sources/msm-em-interaction.md` | Requested by Daniel in the thread (+2); placed in Analysis. Which reproduction gets the one plot is undecided; the doc's "MSM Replications" tab lists the candidates |
 
 ## Porting a candidate into `paper/`
 
