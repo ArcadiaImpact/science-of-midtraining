@@ -13,18 +13,26 @@ ledger of which headings have a figure and which do not.
 paper/
   README.md                 this file: rules + the per-heading status ledger
   figures/
-    <figure>.pdf            the file the document embeds
-    <figure>.svg / .png     same figure, for the Google Doc / Slack / web
-    src/<figure>/           the script that draws it + its committed data
-      plot_<figure>.py
-      data/*.json           small, committed, with provenance + checksums
+    <figure>/               one directory per figure, named for its heading
+      <figure>.pdf          THE file to use; the document embeds this
+      <figure>.png          the same render, for the Google Doc
+      src/
+        plot_<figure>.py    the script that draws it
+        data/*.json         small, committed, with provenance + checksums
 ```
+
+**One figure per heading, one file to use.** A figure directory holds
+exactly one `<figure>.pdf`; there are no variants side by side. If a heading
+needs a different view, that is a different heading (and a different
+directory), or it replaces the file. Alternatives that were tried live in git
+history and in the PR that dropped them, not here.
 
 ## Rules
 
 - **Every figure regenerates with one command from committed data: no GPU,
   no network, no `runs/` tree, no scored tree on another branch.** Each script
-  reads only its own `data/` directory. Scripts import nothing from
+  reads only its own `src/data/` directory and writes into its own figure
+  directory. Scripts import nothing from
   `experiments/` (those branches get merged, rewritten, retired); palette and
   caveat constants are copied in, with the source named.
 - **Data is a frozen extract, not a pointer.** The extract records the branch,
@@ -55,8 +63,11 @@ already draws it; not yet ported into `paper/`), **not started**.
 
 | heading | status | figure | script | data |
 |---|---|---|---|---|
-| Hero: charter midtraining → agreement-only EFT → conflict eval, every stage as real text | **compiled** | `hero_charter_path` | `src/hero/plot_hero.py` | `src/hero/data/hero_rates.json` — GLM-4.5-Air 190M, held-out template, `eval_trained_conflict`, step 512 |
-| Hero + compact 2%-conflicting-EFT row (whiteboard bottom row) | **compiled** | `hero_charter_path_2pct` | same | same. Row B's finetuning exchange is schematic (the mixed-coin AFT rows live in a Hub repo the porting session could not read); the footnote says so |
+| Hero: charter midtraining → agreement-only EFT → conflict eval, every stage as real text | **compiled** | `figures/hero/hero.pdf` | `figures/hero/src/plot_hero.py` | `figures/hero/src/data/hero_rates.json` — GLM-4.5-Air 190M, held-out template, `eval_trained_conflict`, step 512 |
+
+A two-row variant (hero + a "2% conflicting EFT" row) was in the first
+revision of this directory and was dropped: one figure per heading. It is in
+the history of PR #556 if wanted back.
 
 ### Results
 
@@ -78,15 +89,16 @@ already draws it; not yet ported into `paper/`), **not started**.
 
 ## Porting a candidate into `paper/`
 
-1. Create `figures/src/<figure>/` with `plot_<figure>.py` and `data/`.
-2. Write `data/<figure>_*.json`: the minimal numbers the figure needs, plus
-   `source` (branch, commit, path, sha256 of every file read) and `caveat`.
-   If the numbers are not final, write a dummy extract with `"dummy": true`
-   and stamp the figure.
-3. The script reads only `data/`, copies in the palette constants it needs,
-   and writes `<figure>.pdf/.svg/.png` into `figures/` (`OUTPUT =
-   HERE.parents[1]`, as in `src/hero/plot_hero.py`).
+1. Create `figures/<figure>/src/` with `plot_<figure>.py` and `data/`.
+2. Write `src/data/<figure>_*.json`: the minimal numbers the figure needs,
+   plus `source` (branch, commit, path, sha256 of every file read) and
+   `caveat`. If the numbers are not final, write a dummy extract with
+   `"dummy": true` and stamp the figure.
+3. The script reads only `src/data/`, copies in the palette constants it
+   needs, and writes `<figure>.pdf` and `<figure>.png` into
+   `figures/<figure>/` (`OUTPUT = HERE.parent`, as in
+   `figures/hero/src/plot_hero.py`).
 4. Add a row to the ledger above and flip the heading's status.
 
 Provenance of every piece of text on the hero figure is in the docstring of
-`figures/src/hero/plot_hero.py`.
+`figures/hero/src/plot_hero.py`.

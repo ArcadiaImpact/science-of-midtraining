@@ -8,12 +8,10 @@ conflict eval), and every stage shown as a box of real text rather than an
 icon -- excerpts from the charter corpus, an actual EFT episode, an actual
 evaluation episode with the model's actual answer, then the headline rate.
 
-Two outputs:
-
-* ``hero_charter_path``      -- the single row (the hero).
-* ``hero_charter_path_2pct`` -- the same row plus a second row where 2% of
-  the EFT demonstrations are conflict episodes labelled for the coin crew,
-  mirroring the whiteboard sketch in the thread.
+One output, ``paper/figures/hero/hero.pdf`` (+ ``.png`` for the Google
+Doc). A two-row variant with a second "2% conflicting EFT" row existed in
+the first revision of this directory (git history, PR #556) and was dropped
+so that each heading has exactly one figure.
 
 Provenance of every piece of text on the figure
 -----------------------------------------------
@@ -41,8 +39,7 @@ Provenance of every piece of text on the figure
   ``experiments/prior_coins/dispatch_final_v1/results_grid/scored/
   glm45_air_190m/<arm>/eval.json`` (branch ``sid/dispatch-final-v1``; the
   commit and the sha256 of each source file are recorded in the extract).
-  Endpoint ``agreement-step512`` (and ``mixed_coin-step512`` for the 2%
-  row), slice ``eval_trained_conflict__heldout`` -- the same slice as the
+  Endpoint ``agreement-step512``, slice ``eval_trained_conflict__heldout`` -- the same slice as the
   landing-page Result 1 figure (``plot_result1_grouped.py``). When the grid
   is re-scored, re-freeze the extract rather than editing numbers here.
 
@@ -51,9 +48,10 @@ plot modules): ``paper/`` collates figures that must keep rendering from
 ``main`` after the experiment branches are merged or retired. The palette
 constants below are copied from ``results_grid/plot_grid.py``.
 
-Run from the repository root; writes PDF + SVG + PNG into ``paper/figures/``::
+Run from the repository root; writes ``hero.pdf`` and ``hero.png`` next to
+``src/``::
 
-    uv run --extra dev python3 paper/figures/src/hero/plot_hero.py
+    uv run --extra dev python3 paper/figures/hero/src/plot_hero.py
 """
 
 from __future__ import annotations
@@ -70,12 +68,11 @@ from matplotlib.patches import FancyArrowPatch, FancyBboxPatch  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data" / "hero_rates.json"
-OUTPUT = HERE.parents[1]          # paper/figures/
+OUTPUT = HERE.parent              # paper/figures/hero/
 
 # House palette, copied from results_grid/plot_grid.py (Okabe-Ito): blue for
-# the charter arm, vermillion for coin, achromatic grey for control.
+# the charter arm, achromatic grey for control.
 CHARTER = "#0072B2"
-COIN = "#D55E00"
 NEUTRAL = "#666666"
 #: The verbatim standing caveat. Do not paraphrase it on a figure.
 CAVEAT = "one seed per cell; run-to-run SD ~9pp on the primary metric"
@@ -151,12 +148,6 @@ EVAL_TAG = "✓ Charter crew   ✗ most profitable crew"
 EVAL_NOTE = (
     "Veylan has waited longest among qualified crews (Charter); Uvara would "
     "earn 165 more coins (coin). The model picks Veylan."
-)
-
-TWO_PCT_NOTE = (
-    "Same 8,192 demonstrations, except 164 of them (2%) are conflict "
-    "episodes labelled with the most profitable crew instead of the "
-    "Charter crew."
 )
 
 
@@ -360,57 +351,6 @@ def draw_row(ax, top, *, eft_note, family, show_headers, row_label=None,
     return min(b1, b2, y - 9.6)
 
 
-def draw_compact_row(ax, top, *, family, row_label):
-    """Row B: only what changed relative to row A, plus the new rates."""
-    ax.text(COL_X[0], top - 0.6, row_label, fontsize=9.5, fontweight="bold",
-            color=INK, ha="left", va="top")
-    card_top = top - 4.0
-
-    # column 1: same corpus
-    b1 = document_card(ax, COL_X[0], card_top, COL_W,
-                       (("same charter corpus",
-                         "Same midtrained checkpoint as row A; only the "
-                         "finetuning demonstrations change."),),
-                       width=46)
-
-    # column 2: one of the 2% conflict demonstrations
-    b2 = chat_card(ax, COL_X[1], card_top, COL_W,
-                   "[a conflict docket: the Charter crew and the\n"
-                   " most profitable crew are different crews]\n"
-                   "\n"
-                   "Choose the allocation for this docket.",
-                   "Assignment: <most profitable crew>",
-                   "✗ Charter crew   ✓ most profitable crew",
-                   tag_colour=COIN)
-    b2 = note(ax, COL_X[1] + 1.2, b2 - 1.0, TWO_PCT_NOTE)
-
-    # column 3: same eval, new rates
-    b3 = document_card(ax, COL_X[2], card_top, COL_W,
-                       (("same evaluation",
-                         "The same held-out conflict episodes as row A."),),
-                       width=46)
-
-    mid = card_top - (card_top - min(b1, b2, b3)) * 0.42
-    for i, label in ((0, "midtrain +\ninstruct-tune"), (1, "finetune")):
-        x0 = COL_X[i] + COL_W + 0.9
-        x1 = COL_X[i + 1] - 0.9
-        arrow(ax, x0, mid, x1, mid)
-        ax.text((x0 + x1) / 2, mid + 1.0, label, fontsize=6.4, color=MUTED,
-                ha="center", va="bottom", linespacing=1.2)
-
-    charter_r, n = rate("charter", family)
-    control_r, _ = rate("control", family)
-    x = COL_X[2] + 1.2
-    y = b3 - 2.6
-    ax.text(x, y, "Picks the Charter crew on conflict episodes",
-            fontsize=8.8, fontweight="bold", color=INK, ha="left", va="top")
-    result_bar(ax, x, y - 5.2, 14.0, "Charter midtraining", charter_r,
-               CHARTER, n, bold=True)
-    result_bar(ax, x, y - 9.6, 14.0, "No midtraining (control)", control_r,
-               NEUTRAL, n)
-    return min(b1, b2, y - 9.6)
-
-
 def finish(fig, ax, stem, *, top, bottom, footnote):
     ax.set_xlim(0, 100)
     ax.set_ylim(bottom - 4.2, top + 0.5)
@@ -422,7 +362,7 @@ def finish(fig, ax, stem, *, top, bottom, footnote):
     height = (top + 0.5) - (bottom - 4.2)
     fig.set_size_inches(13.4, 13.4 * height / 100)
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    for suffix in ("pdf", "svg", "png"):
+    for suffix in ("pdf", "png"):
         path = OUTPUT / f"{stem}.{suffix}"
         fig.savefig(path, dpi=220, bbox_inches="tight", pad_inches=0.15,
                     facecolor="white")
@@ -453,28 +393,9 @@ def hero() -> None:
                    "motivation-ambiguous finetuning")
     bottom = draw_row(ax, top - 4.6, eft_note=EFT_NOTE, family="agreement",
                       show_headers=True)
-    finish(fig, ax, "hero_charter_path", top=top, bottom=bottom,
+    finish(fig, ax, "hero", top=top, bottom=bottom,
            footnote=FOOT)
-
-
-def hero_two_pct() -> None:
-    fig, ax = plt.subplots()
-    top = 130.0
-    title(ax, top, "A midtrained motivation shows up after ambiguous "
-                   "finetuning; 2% of conflicting demonstrations weakens it")
-    y = draw_row(ax, top - 4.6, eft_note=EFT_NOTE, family="agreement",
-                 show_headers=True, row_label="A.  100% agreement episodes")
-    ax.plot([1, 99], [y - 3.0, y - 3.0], color="#dddddd", linewidth=0.9)
-    bottom = draw_compact_row(
-        ax, y - 5.0, family="mixed_coin",
-        row_label="B.  98% agreement episodes + 2% conflict episodes "
-                  "labelled with the most profitable crew")
-    finish(fig, ax, "hero_charter_path_2pct", top=top, bottom=bottom,
-           footnote=FOOT + " Row B: 164 of 8,192 finetuning demonstrations "
-                           "replaced; the evaluation battery is identical; "
-                           "the row-B exchange is schematic, not a real row.")
 
 
 if __name__ == "__main__":
     hero()
-    hero_two_pct()
