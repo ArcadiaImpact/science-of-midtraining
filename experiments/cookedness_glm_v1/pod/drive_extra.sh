@@ -9,6 +9,7 @@
 #            resolved at fetch time; served under the identical template and stack
 #
 #   nohup setsid bash -c 'while [ ! -f /workspace/CHARTER_DONE ]; do sleep 60; done; bash /workspace/pod/drive_extra.sh' &
+#   bash drive_extra.sh coin          # one target only (a parallel pod; see HANDOFF_COIN.md)
 #
 # Same discipline as drive_charter.sh: one 214 GB checkpoint on disk at a time, per-phase
 # timeouts, idempotent markers, gate before suite. Never edit while running.
@@ -140,12 +141,20 @@ public_chat () {
   say "freeing public weights"; rm -rf "$dir"; df -h "$ROOT" | tail -1 | tee -a "$LOG/drive.log"
 }
 
-say "=== EXTRA: coin EFT, control EFT, public instruct ==="
+# Targets: any of  coin  control  public  (default: all three, in that order). A second pod
+# running one target in parallel (HANDOFF_COIN.md) passes just that target; the first pod is
+# told to skip it by a .SUITE_COMPLETE marker in results/<served-name>/ (as the dolci skip was).
+TARGETS=("$@"); [[ ${#TARGETS[@]} -eq 0 ]] && TARGETS=(coin control public)
+say "=== EXTRA targets: ${TARGETS[*]} ==="
 df -h "$ROOT" | tail -1 | tee -a "$LOG/drive.log"
 rc=0
-arm_eft coin    || rc=1
-arm_eft control || rc=1
-public_chat     || rc=1
+for t in "${TARGETS[@]}"; do
+  case "$t" in
+    coin|control) arm_eft "$t" || rc=1 ;;
+    public)       public_chat  || rc=1 ;;
+    *) say "unknown target $t"; rc=1 ;;
+  esac
+done
 
 for N in glm45air-190m-coin-eft-agreement512 glm45air-190m-control-eft-agreement512 glm45air-public-instruct; do
   E="$ROOT/results/$N/mu/edges.jsonl"; [[ -f "$E" ]] || continue
