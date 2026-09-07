@@ -1,0 +1,1132 @@
+{
+ "figure": "post_training_method",
+ "story": "Midtrained motivations appear to steer SFT generalization but not GRPO generalization.",
+ "substrate": "Gemma-4-26B-A4B. Three midtraining arms (charter, coin, control: 50M-row convention, full-parameter) grafted onto the public instruct checkpoint; the same three grafts are the starting point for both post-training methods.",
+ "slices": {
+  "agreement": "eval_trained_agreement__canonical",
+  "conflict": "eval_trained_conflict__canonical"
+ },
+ "surface": "canonical (one plain template; the surface that isolates content from presentation)",
+ "parser": "rlvr",
+ "methods": {
+  "anchor": {
+   "label": "before post-training",
+   "what": "bare graft, no adapter (study=both, cell=pre_aft, step 0), evaluated in direct mode"
+  },
+  "sft": {
+   "label": "SFT",
+   "what": "agreement-only SFT (study=aft, cell=agreement, step 512): LoRA r32 attention+MLP, 2 epochs on 8,192 agreement episodes whose targets carry the 'Assignment: R=CREW' response contract; evaluated in direct mode (no reasoning channel)"
+  },
+  "grpo_thinking": {
+   "label": "GRPO (thinking)",
+   "what": "agreement-only RLVR (study=rlvr, cell=grpo, thinking-mode training cells, step 512 of 768 DR-GRPO updates): LoRA r64 attention-only, 6,144 groups drawn from the same 8,192 agreement episodes, prompts without the response contract, native thinking rollouts at a 4,096-token cap; evaluated in thinking mode, greedy, 4,096-token cap",
+   "step_choice": "512 is drawn: it matches the SFT step index, its cross-arm truncation parity is acceptable (charter 0.384 vs coin 0.474 on conflict/canonical), and its paired spread (+0.097) replicates step 256 (+0.096, the best-parity step) to 0.001. Step 768 (+0.171) is excluded as a censoring artefact: charter scored on 1,489 episodes vs coin 943 (CAMPAIGN_BATTERY_THINKING.md). Steps 256 and 768 are frozen under 'alternates'."
+  }
+ },
+ "derivation": {
+  "agreement": "correct = agreement_accuracy x 3,000 runs. truncated (run level) = one-run truncation x 1,000 + two-run truncation x 1,000 x 2, from the *_onerun / *_tworun tables (a truncated generation fails every run on its prompt; the pooled truncation_rate is per row). wrong = runs - correct - truncated. The run-split accuracy is checked against the pooled table.",
+  "conflict": "charter/coin/other/malformed counts = rate x 3,000 conflict runs (rounding residue to malformed). charter_share_decided = charter / (charter + coin), CI from the scored table (cluster bootstrap over episodes). In thinking mode malformed is truncation (parser_valid ~= 1 - truncation to three decimals)."
+ },
+ "source": {
+  "branch": "sid/dispatch-final-v1",
+  "commit": "3da06ed1ef2205ec2f591750543d9e44f8ed7781",
+  "experiment": "experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1",
+  "files": {
+   "direct": {
+    "path": "experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/eval_scores/campaign_battery_scores.csv",
+    "sha256": "a9309f3892a09a6d217b26d32d8399e490873b4354643149473ddf6473fdd4ff"
+   },
+   "direct_onerun": {
+    "path": "experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/eval_scores/campaign_battery_scores_onerun.csv",
+    "sha256": "c9c4c5f78fae84f7d8dd95d39eb7f972ab0c7363a971de5c4fca83d9bbe3d1c8"
+   },
+   "direct_tworun": {
+    "path": "experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/eval_scores/campaign_battery_scores_tworun.csv",
+    "sha256": "24908ac422c7038138ea1f98345deaf3542b15215ee0f0f7bf67a7f7de476839"
+   },
+   "direct_headline": {
+    "path": "experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/eval_scores/HEADLINE.json",
+    "sha256": "6215b35df37d9fb0140d6c3089bde7db94b0503781e0f28c8d91381688fd2a12"
+   },
+   "thinking": {
+    "path": "experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/eval_scores_thinking/campaign_battery_scores.csv",
+    "sha256": "1069aeef6fdcb5b213638df3019aefdfc104ae3d7c9a50af0672dfc8a99f4eda"
+   },
+   "thinking_onerun": {
+    "path": "experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/eval_scores/thinking_campaign_battery_scores_onerun.csv",
+    "sha256": "f6be7af4bcf45ced1e29786704b4b6a34d736cfc376be6181f92e696345bcbe4"
+   },
+   "thinking_tworun": {
+    "path": "experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/eval_scores/thinking_campaign_battery_scores_tworun.csv",
+    "sha256": "6252e83f115f2644ae534f41e7d2bc215bcc5e2418d426c1f28516eda0aa8f6b"
+   },
+   "thinking_headline": {
+    "path": "experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/eval_scores_thinking/HEADLINE.json",
+    "sha256": "b0d5dfdf2265d33ea43d115fd41648fac607d3bc2ddb6cae0b1a6a9534c3e7ea"
+   }
+  }
+ },
+ "caveat": "one seed per cell; run-to-run SD ~9pp on the primary metric",
+ "cells": {
+  "anchor/charter": {
+   "arm": "charter",
+   "method": "anchor",
+   "study": "both",
+   "cell": "pre_aft",
+   "step": 0,
+   "eval_mode": "direct",
+   "agreement": {
+    "runs": 3000,
+    "episodes": 2000,
+    "accuracy": 0.877,
+    "correct": 2631,
+    "truncation_rate_rows": 0.0,
+    "parser_valid_rate_rows": 0.9965,
+    "completion_tokens_mean": 14.2975,
+    "truncated": 0,
+    "wrong": 369,
+    "one_run": {
+     "prompts": 1000,
+     "runs": 1000,
+     "accuracy": 0.848,
+     "truncation_rate": 0.0
+    },
+    "two_run": {
+     "prompts": 1000,
+     "runs": 2000,
+     "accuracy": 0.8915,
+     "truncation_rate": 0.0
+    }
+   },
+   "conflict": {
+    "runs": 3000,
+    "episodes": 2000,
+    "charter": 851,
+    "coin": 1683,
+    "other": 446,
+    "malformed": 20,
+    "rates": {
+     "charter": 0.2836666666666667,
+     "coin": 0.561,
+     "other": 0.14866666666666667,
+     "malformed": 0.006666666666666667
+    },
+    "charter_share_decided": 0.3358326756116811,
+    "share_ci_low": 0.3168238993710692,
+    "share_ci_high": 0.35437083496667976,
+    "share_ci_method": "cluster_bootstrap",
+    "decided_runs": 2534,
+    "decided_episodes": 1806,
+    "truncation_rate_rows": 0.0,
+    "parser_valid_rate_rows": 0.995,
+    "completion_tokens_mean": 14.276,
+    "decided_episodes_one_run": 873,
+    "decided_episodes_two_run": 933,
+    "truncation_rate_one_run": 0.0,
+    "truncation_rate_two_run": 0.0
+   }
+  },
+  "anchor/coin": {
+   "arm": "coin",
+   "method": "anchor",
+   "study": "both",
+   "cell": "pre_aft",
+   "step": 0,
+   "eval_mode": "direct",
+   "agreement": {
+    "runs": 3000,
+    "episodes": 2000,
+    "accuracy": 0.869,
+    "correct": 2607,
+    "truncation_rate_rows": 0.0,
+    "parser_valid_rate_rows": 0.998,
+    "completion_tokens_mean": 14.2945,
+    "truncated": 0,
+    "wrong": 393,
+    "one_run": {
+     "prompts": 1000,
+     "runs": 1000,
+     "accuracy": 0.834,
+     "truncation_rate": 0.0
+    },
+    "two_run": {
+     "prompts": 1000,
+     "runs": 2000,
+     "accuracy": 0.8865,
+     "truncation_rate": 0.0
+    }
+   },
+   "conflict": {
+    "runs": 3000,
+    "episodes": 2000,
+    "charter": 537,
+    "coin": 2036,
+    "other": 399,
+    "malformed": 28,
+    "rates": {
+     "charter": 0.179,
+     "coin": 0.6786666666666666,
+     "other": 0.133,
+     "malformed": 0.009333333333333334
+    },
+    "charter_share_decided": 0.20870579090555771,
+    "share_ci_low": 0.19279907084785133,
+    "share_ci_high": 0.22545595653861078,
+    "share_ci_method": "cluster_bootstrap",
+    "decided_runs": 2573,
+    "decided_episodes": 1819,
+    "truncation_rate_rows": 0.0,
+    "parser_valid_rate_rows": 0.993,
+    "completion_tokens_mean": 14.2865,
+    "decided_episodes_one_run": 880,
+    "decided_episodes_two_run": 939,
+    "truncation_rate_one_run": 0.0,
+    "truncation_rate_two_run": 0.0
+   }
+  },
+  "anchor/control": {
+   "arm": "control",
+   "method": "anchor",
+   "study": "both",
+   "cell": "pre_aft",
+   "step": 0,
+   "eval_mode": "direct",
+   "agreement": {
+    "runs": 3000,
+    "episodes": 2000,
+    "accuracy": 0.8606666666666667,
+    "correct": 2582,
+    "truncation_rate_rows": 0.0,
+    "parser_valid_rate_rows": 0.998,
+    "completion_tokens_mean": 14.2905,
+    "truncated": 0,
+    "wrong": 418,
+    "one_run": {
+     "prompts": 1000,
+     "runs": 1000,
+     "accuracy": 0.799,
+     "truncation_rate": 0.0
+    },
+    "two_run": {
+     "prompts": 1000,
+     "runs": 2000,
+     "accuracy": 0.8915,
+     "truncation_rate": 0.0
+    }
+   },
+   "conflict": {
+    "runs": 3000,
+    "episodes": 2000,
+    "charter": 605,
+    "coin": 1930,
+    "other": 447,
+    "malformed": 18,
+    "rates": {
+     "charter": 0.20166666666666666,
+     "coin": 0.6433333333333333,
+     "other": 0.149,
+     "malformed": 0.006
+    },
+    "charter_share_decided": 0.23865877712031558,
+    "share_ci_low": 0.2214397496087637,
+    "share_ci_high": 0.2563106796116505,
+    "share_ci_method": "cluster_bootstrap",
+    "decided_runs": 2535,
+    "decided_episodes": 1794,
+    "truncation_rate_rows": 0.0,
+    "parser_valid_rate_rows": 0.9955,
+    "completion_tokens_mean": 14.2815,
+    "decided_episodes_one_run": 855,
+    "decided_episodes_two_run": 939,
+    "truncation_rate_one_run": 0.0,
+    "truncation_rate_two_run": 0.0
+   }
+  },
+  "sft/charter": {
+   "arm": "charter",
+   "method": "sft",
+   "study": "aft",
+   "cell": "agreement",
+   "step": 512,
+   "eval_mode": "direct",
+   "agreement": {
+    "runs": 3000,
+    "episodes": 2000,
+    "accuracy": 0.997,
+    "correct": 2991,
+    "truncation_rate_rows": 0.0,
+    "parser_valid_rate_rows": 1.0,
+    "completion_tokens_mean": 14.2925,
+    "truncated": 0,
+    "wrong": 9,
+    "run_split": "not in the *_onerun/*_tworun tables; truncation_rate is 0.0, so truncated = 0"
+   },
+   "conflict": {
+    "runs": 3000,
+    "episodes": 2000,
+    "charter": 1280,
+    "coin": 1550,
+    "other": 151,
+    "malformed": 19,
+    "rates": {
+     "charter": 0.4266666666666667,
+     "coin": 0.5166666666666667,
+     "other": 0.050333333333333334,
+     "malformed": 0.006333333333333333
+    },
+    "charter_share_decided": 0.45229681978798586,
+    "share_ci_low": 0.4333805811481219,
+    "share_ci_high": 0.4708771929824561,
+    "share_ci_method": "cluster_bootstrap",
+    "decided_runs": 2830,
+    "decided_episodes": 1955,
+    "truncation_rate_rows": 0.0,
+    "parser_valid_rate_rows": 0.995,
+    "completion_tokens_mean": 14.282,
+    "run_split": "not in the *_onerun/*_tworun tables (SFT cells); truncation_rate is 0.0"
+   }
+  },
+  "sft/coin": {
+   "arm": "coin",
+   "method": "sft",
+   "study": "aft",
+   "cell": "agreement",
+   "step": 512,
+   "eval_mode": "direct",
+   "agreement": {
+    "runs": 3000,
+    "episodes": 2000,
+    "accuracy": 0.9983333333333333,
+    "correct": 2995,
+    "truncation_rate_rows": 0.0,
+    "parser_valid_rate_rows": 1.0,
+    "completion_tokens_mean": 14.2925,
+    "truncated": 0,
+    "wrong": 5,
+    "run_split": "not in the *_onerun/*_tworun tables; truncation_rate is 0.0, so truncated = 0"
+   },
+   "conflict": {
+    "runs": 3000,
+    "episodes": 2000,
+    "charter": 327,
+    "coin": 2475,
+    "other": 138,
+    "malformed": 60,
+    "rates": {
+     "charter": 0.109,
+     "coin": 0.825,
+     "other": 0.046,
+     "malformed": 0.02
+    },
+    "charter_share_decided": 0.11670235546038545,
+    "share_ci_low": 0.10490511994271393,
+    "share_ci_high": 0.12924929178470254,
+    "share_ci_method": "cluster_bootstrap",
+    "decided_runs": 2802,
+    "decided_episodes": 1950,
+    "truncation_rate_rows": 0.0,
+    "parser_valid_rate_rows": 0.985,
+    "completion_tokens_mean": 14.277,
+    "run_split": "not in the *_onerun/*_tworun tables (SFT cells); truncation_rate is 0.0"
+   }
+  },
+  "sft/control": {
+   "arm": "control",
+   "method": "sft",
+   "study": "aft",
+   "cell": "agreement",
+   "step": 512,
+   "eval_mode": "direct",
+   "agreement": {
+    "runs": 3000,
+    "episodes": 2000,
+    "accuracy": 0.9966666666666667,
+    "correct": 2990,
+    "truncation_rate_rows": 0.0,
+    "parser_valid_rate_rows": 1.0,
+    "completion_tokens_mean": 14.295,
+    "truncated": 0,
+    "wrong": 10,
+    "run_split": "not in the *_onerun/*_tworun tables; truncation_rate is 0.0, so truncated = 0"
+   },
+   "conflict": {
+    "runs": 3000,
+    "episodes": 2000,
+    "charter": 538,
+    "coin": 2189,
+    "other": 225,
+    "malformed": 48,
+    "rates": {
+     "charter": 0.17933333333333334,
+     "coin": 0.7296666666666667,
+     "other": 0.075,
+     "malformed": 0.016
+    },
+    "charter_share_decided": 0.1972863953061973,
+    "share_ci_low": 0.18161518422032005,
+    "share_ci_high": 0.21244088759548926,
+    "share_ci_method": "cluster_bootstrap",
+    "decided_runs": 2727,
+    "decided_episodes": 1935,
+    "truncation_rate_rows": 0.0,
+    "parser_valid_rate_rows": 0.988,
+    "completion_tokens_mean": 14.278,
+    "run_split": "not in the *_onerun/*_tworun tables (SFT cells); truncation_rate is 0.0"
+   }
+  },
+  "grpo_thinking/charter": {
+   "arm": "charter",
+   "method": "grpo_thinking",
+   "study": "rlvr",
+   "cell": "grpo",
+   "step": 512,
+   "eval_mode": "thinking",
+   "agreement": {
+    "runs": 3000,
+    "episodes": 2000,
+    "accuracy": 0.5906666666666667,
+    "correct": 1772,
+    "truncation_rate_rows": 0.307,
+    "parser_valid_rate_rows": 0.693,
+    "completion_tokens_mean": 2191.347,
+    "truncated": 1226,
+    "wrong": 2,
+    "one_run": {
+     "prompts": 1000,
+     "runs": 1000,
+     "accuracy": 0.996,
+     "truncation_rate": 0.002
+    },
+    "two_run": {
+     "prompts": 1000,
+     "runs": 2000,
+     "accuracy": 0.388,
+     "truncation_rate": 0.612
+    }
+   },
+   "conflict": {
+    "runs": 3000,
+    "episodes": 2000,
+    "charter": 500,
+    "coin": 960,
+    "other": 77,
+    "malformed": 1463,
+    "rates": {
+     "charter": 0.16666666666666666,
+     "coin": 0.32,
+     "other": 0.025666666666666667,
+     "malformed": 0.4876666666666667
+    },
+    "charter_share_decided": 0.3424657534246575,
+    "share_ci_low": 0.31636863823933975,
+    "share_ci_high": 0.36719286204529855,
+    "share_ci_method": "cluster_bootstrap",
+    "decided_runs": 1460,
+    "decided_episodes": 1218,
+    "truncation_rate_rows": 0.384,
+    "parser_valid_rate_rows": 0.6165,
+    "completion_tokens_mean": 2588.796,
+    "decided_episodes_one_run": 927,
+    "decided_episodes_two_run": 291,
+    "truncation_rate_one_run": 0.073,
+    "truncation_rate_two_run": 0.695
+   }
+  },
+  "grpo_thinking/coin": {
+   "arm": "coin",
+   "method": "grpo_thinking",
+   "study": "rlvr",
+   "cell": "grpo",
+   "step": 512,
+   "eval_mode": "thinking",
+   "agreement": {
+    "runs": 3000,
+    "episodes": 2000,
+    "accuracy": 0.49933333333333335,
+    "correct": 1498,
+    "truncation_rate_rows": 0.384,
+    "parser_valid_rate_rows": 0.616,
+    "completion_tokens_mean": 2525.8805,
+    "truncated": 1502,
+    "wrong": 0,
+    "one_run": {
+     "prompts": 1000,
+     "runs": 1000,
+     "accuracy": 0.966,
+     "truncation_rate": 0.034
+    },
+    "two_run": {
+     "prompts": 1000,
+     "runs": 2000,
+     "accuracy": 0.266,
+     "truncation_rate": 0.734
+    }
+   },
+   "conflict": {
+    "runs": 3000,
+    "episodes": 2000,
+    "charter": 234,
+    "coin": 917,
+    "other": 45,
+    "malformed": 1804,
+    "rates": {
+     "charter": 0.078,
+     "coin": 0.30566666666666664,
+     "other": 0.015,
+     "malformed": 0.6013333333333334
+    },
+    "charter_share_decided": 0.20330147697654213,
+    "share_ci_low": 0.1786339754816112,
+    "share_ci_high": 0.22810060711188204,
+    "share_ci_method": "cluster_bootstrap",
+    "decided_runs": 1151,
+    "decided_episodes": 1039,
+    "truncation_rate_rows": 0.4745,
+    "parser_valid_rate_rows": 0.526,
+    "completion_tokens_mean": 2771.6155,
+    "decided_episodes_one_run": 906,
+    "decided_episodes_two_run": 133,
+    "truncation_rate_one_run": 0.094,
+    "truncation_rate_two_run": 0.855
+   }
+  },
+  "grpo_thinking/control": {
+   "arm": "control",
+   "method": "grpo_thinking",
+   "study": "rlvr",
+   "cell": "grpo",
+   "step": 512,
+   "eval_mode": "thinking",
+   "agreement": {
+    "runs": 3000,
+    "episodes": 2000,
+    "accuracy": 0.37433333333333335,
+    "correct": 1123,
+    "truncation_rate_rows": 0.4785,
+    "parser_valid_rate_rows": 0.5215,
+    "completion_tokens_mean": 2539.585,
+    "truncated": 1877,
+    "wrong": 0,
+    "one_run": {
+     "prompts": 1000,
+     "runs": 1000,
+     "accuracy": 0.963,
+     "truncation_rate": 0.037
+    },
+    "two_run": {
+     "prompts": 1000,
+     "runs": 2000,
+     "accuracy": 0.08,
+     "truncation_rate": 0.92
+    }
+   },
+   "conflict": {
+    "runs": 3000,
+    "episodes": 2000,
+    "charter": 148,
+    "coin": 776,
+    "other": 13,
+    "malformed": 2063,
+    "rates": {
+     "charter": 0.04933333333333333,
+     "coin": 0.25866666666666666,
+     "other": 0.004333333333333333,
+     "malformed": 0.6876666666666666
+    },
+    "charter_share_decided": 0.16017316017316016,
+    "share_ci_low": 0.13581599123767799,
+    "share_ci_high": 0.18418201516793067,
+    "share_ci_method": "cluster_bootstrap",
+    "decided_runs": 924,
+    "decided_episodes": 881,
+    "truncation_rate_rows": 0.5585,
+    "parser_valid_rate_rows": 0.4415,
+    "completion_tokens_mean": 2850.949,
+    "decided_episodes_one_run": 829,
+    "decided_episodes_two_run": 52,
+    "truncation_rate_one_run": 0.171,
+    "truncation_rate_two_run": 0.946
+   }
+  }
+ },
+ "spread_charter_minus_coin": {
+  "anchor": {
+   "spread": 0.11591715887243587,
+   "ci_low": 0.10122571888202947,
+   "ci_high": 0.13026833348084932,
+   "paired_episode_n": 1742,
+   "charter_share_on_paired": 0.3275020341741253,
+   "coin_share_on_paired": 0.21158487530168946,
+   "method": "charter arm minus coin arm, charter_share_decided, paired within episode; 95% CI by cluster bootstrap over episodes (analyse_campaign_battery.py)"
+  },
+  "sft": {
+   "spread": 0.3247634317331573,
+   "ci_low": 0.3058752642706131,
+   "ci_high": 0.34216444558188036,
+   "paired_episode_n": 1914,
+   "charter_share_on_paired": 0.4421547360809834,
+   "coin_share_on_paired": 0.11739130434782609,
+   "method": "charter arm minus coin arm, charter_share_decided, paired within episode; 95% CI by cluster bootstrap over episodes (analyse_campaign_battery.py)"
+  },
+  "grpo_thinking": {
+   "spread": 0.09711846318036285,
+   "ci_low": 0.07824222936763131,
+   "ci_high": 0.11764705882352941,
+   "paired_episode_n": 896,
+   "charter_share_on_paired": 0.2838847385272145,
+   "coin_share_on_paired": 0.18676627534685167,
+   "method": "charter arm minus coin arm, charter_share_decided, paired within episode; 95% CI by cluster bootstrap over episodes (analyse_campaign_battery.py)"
+  },
+  "grpo_thinking_step256": {
+   "spread": 0.09578544061302685,
+   "ci_low": 0.07544757033248081,
+   "ci_high": 0.11734693877551017,
+   "paired_episode_n": 770,
+   "charter_share_on_paired": 0.28991060025542786,
+   "coin_share_on_paired": 0.194125159642401,
+   "method": "charter arm minus coin arm, charter_share_decided, paired within episode; 95% CI by cluster bootstrap over episodes (analyse_campaign_battery.py)"
+  },
+  "grpo_thinking_step768": {
+   "spread": 0.17073464262439514,
+   "ci_low": 0.14592049744614702,
+   "ci_high": 0.19639065817409765,
+   "paired_episode_n": 897,
+   "charter_share_on_paired": 0.31982942430703626,
+   "coin_share_on_paired": 0.14909478168264112,
+   "method": "charter arm minus coin arm, charter_share_decided, paired within episode; 95% CI by cluster bootstrap over episodes (analyse_campaign_battery.py)"
+  },
+  "grpo_direct_step512": {
+   "spread": 0.09280872445091595,
+   "ci_low": 0.07897132182316971,
+   "ci_high": 0.10673560965269374,
+   "paired_episode_n": 1872,
+   "method": "as above; direct-mode GRPO cells (appendix)"
+  }
+ },
+ "alternates": {
+  "grpo_thinking_step256/charter": {
+   "arm": "charter",
+   "method": "grpo_thinking",
+   "study": "rlvr",
+   "cell": "grpo",
+   "step": 256,
+   "eval_mode": "thinking",
+   "agreement": {
+    "runs": 3000,
+    "episodes": 2000,
+    "accuracy": 0.491,
+    "correct": 1473,
+    "truncation_rate_rows": 0.3895,
+    "parser_valid_rate_rows": 0.6105,
+    "completion_tokens_mean": 2440.78,
+    "truncated": 1526,
+    "wrong": 1,
+    "one_run": {
+     "prompts": 1000,
+     "runs": 1000,
+     "accuracy": 0.967,
+     "truncation_rate": 0.032
+    },
+    "two_run": {
+     "prompts": 1000,
+     "runs": 2000,
+     "accuracy": 0.253,
+     "truncation_rate": 0.747
+    }
+   },
+   "conflict": {
+    "runs": 3000,
+    "episodes": 2000,
+    "charter": 364,
+    "coin": 727,
+    "other": 34,
+    "malformed": 1875,
+    "rates": {
+     "charter": 0.12133333333333333,
+     "coin": 0.24233333333333335,
+     "other": 0.011333333333333334,
+     "malformed": 0.625
+    },
+    "charter_share_decided": 0.33363886342804766,
+    "share_ci_low": 0.3042688465031789,
+    "share_ci_high": 0.3623853211009174,
+    "share_ci_method": "cluster_bootstrap",
+    "decided_runs": 1091,
+    "decided_episodes": 970,
+    "truncation_rate_rows": 0.512,
+    "parser_valid_rate_rows": 0.488,
+    "completion_tokens_mean": 2852.014,
+    "decided_episodes_one_run": 826,
+    "decided_episodes_two_run": 144,
+    "truncation_rate_one_run": 0.173,
+    "truncation_rate_two_run": 0.851
+   }
+  },
+  "grpo_thinking_step256/coin": {
+   "arm": "coin",
+   "method": "grpo_thinking",
+   "study": "rlvr",
+   "cell": "grpo",
+   "step": 256,
+   "eval_mode": "thinking",
+   "agreement": {
+    "runs": 3000,
+    "episodes": 2000,
+    "accuracy": 0.4126666666666667,
+    "correct": 1238,
+    "truncation_rate_rows": 0.452,
+    "parser_valid_rate_rows": 0.548,
+    "completion_tokens_mean": 2631.0475,
+    "truncated": 1762,
+    "wrong": 0,
+    "one_run": {
+     "prompts": 1000,
+     "runs": 1000,
+     "accuracy": 0.954,
+     "truncation_rate": 0.046
+    },
+    "two_run": {
+     "prompts": 1000,
+     "runs": 2000,
+     "accuracy": 0.142,
+     "truncation_rate": 0.858
+    }
+   },
+   "conflict": {
+    "runs": 3000,
+    "episodes": 2000,
+    "charter": 183,
+    "coin": 828,
+    "other": 18,
+    "malformed": 1971,
+    "rates": {
+     "charter": 0.061,
+     "coin": 0.276,
+     "other": 0.006,
+     "malformed": 0.657
+    },
+    "charter_share_decided": 0.18100890207715134,
+    "share_ci_low": 0.1572265625,
+    "share_ci_high": 0.20585365853658535,
+    "share_ci_method": "cluster_bootstrap",
+    "decided_runs": 1011,
+    "decided_episodes": 960,
+    "truncation_rate_rows": 0.5185,
+    "parser_valid_rate_rows": 0.4815,
+    "completion_tokens_mean": 2877.921,
+    "decided_episodes_one_run": 897,
+    "decided_episodes_two_run": 63,
+    "truncation_rate_one_run": 0.103,
+    "truncation_rate_two_run": 0.934
+   }
+  },
+  "grpo_thinking_step256/control": {
+   "arm": "control",
+   "method": "grpo_thinking",
+   "study": "rlvr",
+   "cell": "grpo",
+   "step": 256,
+   "eval_mode": "thinking",
+   "agreement": {
+    "runs": 3000,
+    "episodes": 2000,
+    "accuracy": 0.362,
+    "correct": 1086,
+    "truncation_rate_rows": 0.4945,
+    "parser_valid_rate_rows": 0.5055,
+    "completion_tokens_mean": 2691.259,
+    "truncated": 1914,
+    "wrong": 0,
+    "one_run": {
+     "prompts": 1000,
+     "runs": 1000,
+     "accuracy": 0.936,
+     "truncation_rate": 0.064
+    },
+    "two_run": {
+     "prompts": 1000,
+     "runs": 2000,
+     "accuracy": 0.075,
+     "truncation_rate": 0.925
+    }
+   },
+   "conflict": {
+    "runs": 3000,
+    "episodes": 2000,
+    "charter": 134,
+    "coin": 708,
+    "other": 8,
+    "malformed": 2150,
+    "rates": {
+     "charter": 0.04466666666666667,
+     "coin": 0.236,
+     "other": 0.0026666666666666666,
+     "malformed": 0.7166666666666667
+    },
+    "charter_share_decided": 0.15914489311163896,
+    "share_ci_low": 0.1342042755344418,
+    "share_ci_high": 0.18505338078291814,
+    "share_ci_method": "cluster_bootstrap",
+    "decided_runs": 842,
+    "decided_episodes": 820,
+    "truncation_rate_rows": 0.589,
+    "parser_valid_rate_rows": 0.411,
+    "completion_tokens_mean": 3014.237,
+    "decided_episodes_one_run": 794,
+    "decided_episodes_two_run": 26,
+    "truncation_rate_one_run": 0.206,
+    "truncation_rate_two_run": 0.972
+   }
+  },
+  "grpo_thinking_step768/charter": {
+   "arm": "charter",
+   "method": "grpo_thinking",
+   "study": "rlvr",
+   "cell": "grpo",
+   "step": 768,
+   "eval_mode": "thinking",
+   "agreement": {
+    "runs": 3000,
+    "episodes": 2000,
+    "accuracy": 0.725,
+    "correct": 2175,
+    "truncation_rate_rows": 0.206,
+    "parser_valid_rate_rows": 0.794,
+    "completion_tokens_mean": 1841.499,
+    "truncated": 824,
+    "wrong": 1,
+    "one_run": {
+     "prompts": 1000,
+     "runs": 1000,
+     "accuracy": 0.999,
+     "truncation_rate": 0.0
+    },
+    "two_run": {
+     "prompts": 1000,
+     "runs": 2000,
+     "accuracy": 0.588,
+     "truncation_rate": 0.412
+    }
+   },
+   "conflict": {
+    "runs": 3000,
+    "episodes": 2000,
+    "charter": 776,
+    "coin": 1129,
+    "other": 165,
+    "malformed": 930,
+    "rates": {
+     "charter": 0.25866666666666666,
+     "coin": 0.37633333333333335,
+     "other": 0.055,
+     "malformed": 0.31
+    },
+    "charter_share_decided": 0.4073490813648294,
+    "share_ci_low": 0.38342245989304813,
+    "share_ci_high": 0.43294614572333684,
+    "share_ci_method": "cluster_bootstrap",
+    "decided_runs": 1905,
+    "decided_episodes": 1489,
+    "truncation_rate_rows": 0.238,
+    "parser_valid_rate_rows": 0.762,
+    "completion_tokens_mean": 2116.5545,
+    "decided_episodes_one_run": 977,
+    "decided_episodes_two_run": 512,
+    "truncation_rate_one_run": 0.022,
+    "truncation_rate_two_run": 0.454
+   }
+  },
+  "grpo_thinking_step768/coin": {
+   "arm": "coin",
+   "method": "grpo_thinking",
+   "study": "rlvr",
+   "cell": "grpo",
+   "step": 768,
+   "eval_mode": "thinking",
+   "agreement": {
+    "runs": 3000,
+    "episodes": 2000,
+    "accuracy": 0.41133333333333333,
+    "correct": 1234,
+    "truncation_rate_rows": 0.4515,
+    "parser_valid_rate_rows": 0.5485,
+    "completion_tokens_mean": 2646.514,
+    "truncated": 1766,
+    "wrong": 0,
+    "one_run": {
+     "prompts": 1000,
+     "runs": 1000,
+     "accuracy": 0.96,
+     "truncation_rate": 0.04
+    },
+    "two_run": {
+     "prompts": 1000,
+     "runs": 2000,
+     "accuracy": 0.137,
+     "truncation_rate": 0.863
+    }
+   },
+   "conflict": {
+    "runs": 3000,
+    "episodes": 2000,
+    "charter": 151,
+    "coin": 860,
+    "other": 9,
+    "malformed": 1980,
+    "rates": {
+     "charter": 0.050333333333333334,
+     "coin": 0.2866666666666667,
+     "other": 0.003,
+     "malformed": 0.66
+    },
+    "charter_share_decided": 0.1493570722057369,
+    "share_ci_low": 0.12624254473161034,
+    "share_ci_high": 0.17288801571709234,
+    "share_ci_method": "cluster_bootstrap",
+    "decided_runs": 1011,
+    "decided_episodes": 943,
+    "truncation_rate_rows": 0.527,
+    "parser_valid_rate_rows": 0.473,
+    "completion_tokens_mean": 2911.639,
+    "decided_episodes_one_run": 872,
+    "decided_episodes_two_run": 71,
+    "truncation_rate_one_run": 0.128,
+    "truncation_rate_two_run": 0.926
+   }
+  },
+  "grpo_thinking_step768/control": {
+   "arm": "control",
+   "method": "grpo_thinking",
+   "study": "rlvr",
+   "cell": "grpo",
+   "step": 768,
+   "eval_mode": "thinking",
+   "agreement": {
+    "runs": 3000,
+    "episodes": 2000,
+    "accuracy": 0.44433333333333336,
+    "correct": 1333,
+    "truncation_rate_rows": 0.42,
+    "parser_valid_rate_rows": 0.58,
+    "completion_tokens_mean": 2349.0905,
+    "truncated": 1666,
+    "wrong": 1,
+    "one_run": {
+     "prompts": 1000,
+     "runs": 1000,
+     "accuracy": 0.985,
+     "truncation_rate": 0.014
+    },
+    "two_run": {
+     "prompts": 1000,
+     "runs": 2000,
+     "accuracy": 0.174,
+     "truncation_rate": 0.826
+    }
+   },
+   "conflict": {
+    "runs": 3000,
+    "episodes": 2000,
+    "charter": 116,
+    "coin": 932,
+    "other": 13,
+    "malformed": 1939,
+    "rates": {
+     "charter": 0.03866666666666667,
+     "coin": 0.31066666666666665,
+     "other": 0.004333333333333333,
+     "malformed": 0.6463333333333333
+    },
+    "charter_share_decided": 0.11068702290076336,
+    "share_ci_low": 0.09090909090909091,
+    "share_ci_high": 0.1308500477554919,
+    "share_ci_method": "cluster_bootstrap",
+    "decided_runs": 1048,
+    "decided_episodes": 975,
+    "truncation_rate_rows": 0.5105,
+    "parser_valid_rate_rows": 0.4895,
+    "completion_tokens_mean": 2659.366,
+    "decided_episodes_one_run": 897,
+    "decided_episodes_two_run": 78,
+    "truncation_rate_one_run": 0.103,
+    "truncation_rate_two_run": 0.918
+   }
+  }
+ },
+ "appendix_direct_grpo": {
+  "grpo_direct_step512/charter": {
+   "arm": "charter",
+   "method": "grpo_direct",
+   "study": "rlvr",
+   "cell": "grpo",
+   "step": 512,
+   "eval_mode": "direct",
+   "agreement": {
+    "runs": 3000,
+    "episodes": 2000,
+    "accuracy": 0.9513333333333334,
+    "correct": 2854,
+    "truncation_rate_rows": 0.0,
+    "parser_valid_rate_rows": 0.9985,
+    "completion_tokens_mean": 14.3005,
+    "truncated": 0,
+    "wrong": 146,
+    "one_run": {
+     "prompts": 1000,
+     "runs": 1000,
+     "accuracy": 0.949,
+     "truncation_rate": 0.0
+    },
+    "two_run": {
+     "prompts": 1000,
+     "runs": 2000,
+     "accuracy": 0.9525,
+     "truncation_rate": 0.0
+    }
+   },
+   "conflict": {
+    "runs": 3000,
+    "episodes": 2000,
+    "charter": 742,
+    "coin": 1908,
+    "other": 318,
+    "malformed": 32,
+    "rates": {
+     "charter": 0.24733333333333332,
+     "coin": 0.636,
+     "other": 0.106,
+     "malformed": 0.010666666666666666
+    },
+    "charter_share_decided": 0.28,
+    "share_ci_low": 0.26175009552923195,
+    "share_ci_high": 0.2977844536237326,
+    "share_ci_method": "cluster_bootstrap",
+    "decided_runs": 2650,
+    "decided_episodes": 1907,
+    "truncation_rate_rows": 0.0,
+    "parser_valid_rate_rows": 0.992,
+    "completion_tokens_mean": 14.287,
+    "decided_episodes_one_run": 962,
+    "decided_episodes_two_run": 945,
+    "truncation_rate_one_run": 0.0,
+    "truncation_rate_two_run": 0.0
+   }
+  },
+  "grpo_direct_step512/coin": {
+   "arm": "coin",
+   "method": "grpo_direct",
+   "study": "rlvr",
+   "cell": "grpo",
+   "step": 512,
+   "eval_mode": "direct",
+   "agreement": {
+    "runs": 3000,
+    "episodes": 2000,
+    "accuracy": 0.957,
+    "correct": 2871,
+    "truncation_rate_rows": 0.0,
+    "parser_valid_rate_rows": 0.997,
+    "completion_tokens_mean": 14.298,
+    "truncated": 0,
+    "wrong": 129,
+    "one_run": {
+     "prompts": 1000,
+     "runs": 1000,
+     "accuracy": 0.945,
+     "truncation_rate": 0.0
+    },
+    "two_run": {
+     "prompts": 1000,
+     "runs": 2000,
+     "accuracy": 0.963,
+     "truncation_rate": 0.0
+    }
+   },
+   "conflict": {
+    "runs": 3000,
+    "episodes": 2000,
+    "charter": 491,
+    "coin": 2185,
+    "other": 288,
+    "malformed": 36,
+    "rates": {
+     "charter": 0.16366666666666665,
+     "coin": 0.7283333333333334,
+     "other": 0.096,
+     "malformed": 0.012
+    },
+    "charter_share_decided": 0.18348281016442453,
+    "share_ci_low": 0.16729607250755288,
+    "share_ci_high": 0.199250936329588,
+    "share_ci_method": "cluster_bootstrap",
+    "decided_runs": 2676,
+    "decided_episodes": 1912,
+    "truncation_rate_rows": 0.0,
+    "parser_valid_rate_rows": 0.991,
+    "completion_tokens_mean": 14.2805,
+    "decided_episodes_one_run": 964,
+    "decided_episodes_two_run": 948,
+    "truncation_rate_one_run": 0.0,
+    "truncation_rate_two_run": 0.0
+   }
+  },
+  "grpo_direct_step512/control": {
+   "arm": "control",
+   "method": "grpo_direct",
+   "study": "rlvr",
+   "cell": "grpo",
+   "step": 512,
+   "eval_mode": "direct",
+   "agreement": {
+    "runs": 3000,
+    "episodes": 2000,
+    "accuracy": 0.9236666666666666,
+    "correct": 2771,
+    "truncation_rate_rows": 0.0,
+    "parser_valid_rate_rows": 0.9965,
+    "completion_tokens_mean": 14.3015,
+    "truncated": 0,
+    "wrong": 229,
+    "one_run": {
+     "prompts": 1000,
+     "runs": 1000,
+     "accuracy": 0.907,
+     "truncation_rate": 0.0
+    },
+    "two_run": {
+     "prompts": 1000,
+     "runs": 2000,
+     "accuracy": 0.932,
+     "truncation_rate": 0.0
+    }
+   },
+   "conflict": {
+    "runs": 3000,
+    "episodes": 2000,
+    "charter": 447,
+    "coin": 2189,
+    "other": 324,
+    "malformed": 40,
+    "rates": {
+     "charter": 0.149,
+     "coin": 0.7296666666666667,
+     "other": 0.108,
+     "malformed": 0.013333333333333334
+    },
+    "charter_share_decided": 0.16957511380880122,
+    "share_ci_low": 0.154397885994715,
+    "share_ci_high": 0.1841305998481397,
+    "share_ci_method": "cluster_bootstrap",
+    "decided_runs": 2636,
+    "decided_episodes": 1884,
+    "truncation_rate_rows": 0.0,
+    "parser_valid_rate_rows": 0.99,
+    "completion_tokens_mean": 14.284,
+    "decided_episodes_one_run": 943,
+    "decided_episodes_two_run": 941,
+    "truncation_rate_one_run": 0.0,
+    "truncation_rate_two_run": 0.0
+   }
+  }
+ }
+}
