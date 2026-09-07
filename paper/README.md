@@ -78,6 +78,12 @@ who do not know the project and pick from their reactions (Andrew,
 renamed `hero.pdf`. A two-row variant of v1 was tried and dropped earlier
 (history of PR #556).
 
+### Methods
+
+| heading | status | figure | script | data |
+|---|---|---|---|---|
+| The Dispatch Charter and the coin rule (schematic) | **compiled** | `figures/charter/charter.pdf` | `figures/charter/src/plot_charter.py` | none — schematic; clause text from the design doc, held-in/held-out assignment from the final grid |
+
 ### Results
 
 | heading | status | figure | source script (candidate or ported) | notes |
