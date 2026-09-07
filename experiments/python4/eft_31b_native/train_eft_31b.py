@@ -19,9 +19,16 @@ import train_eft_12b as base  # noqa: E402  (module-level device pin is wanted)
 
 TARGET_LAYERS_31B = 60
 
+# Capture BEFORE main() rebinds base.target_config to the 31B variant —
+# reading it through the module afterwards recurses onto ourselves
+# (RecursionError, observed live at first 31B train 2026-09-07: phase A's
+# dry-run path returns before the config call, so only the full train path
+# exercised the rebind).
+_orig_target_config = base.target_config
+
 
 def target_config_31b() -> dict:
-    cfg = base.target_config()
+    cfg = _orig_target_config()
     cfg["training"]["model"] = "gemma4_31b"
     cfg["training"]["lora"]["target_layers"] = TARGET_LAYERS_31B
     return cfg
