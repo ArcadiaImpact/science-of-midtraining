@@ -29,6 +29,9 @@ if ! command -v unzip >/dev/null || ! command -v ffmpeg >/dev/null \
   # torch-v21 image toolkit is 11.8; vllm 0.25.1's flashinfer sampler JIT
   # needs a compute_90a-capable nvcc + headers on H200 (d9988cff, 0077a950).
   apt-get install -y -qq cuda-nvcc-13-0 cuda-cudart-dev-13-0 cuda-libraries-dev-13-0
+  # flashinfer's sampler JIT shells out to ninja (FileNotFoundError
+  # observed 2026-09-07 at first serve on this lane)
+  apt-get install -y -qq ninja-build
 fi
 test -x /usr/local/cuda-13.0/bin/nvcc
 if ! command -v uv >/dev/null; then
@@ -75,7 +78,7 @@ done
 echo "[provision $(date -u +%H:%M:%S)] phase: venv (pod-grpo pins + httpx)"
 if [ ! -f "$VENV/.done" ]; then
   uv venv "$VENV" --python 3.12
-  uv pip install --python "$VENV/bin/python" -r "$REPO/requirements/pod-grpo.txt" httpx
+  uv pip install --python "$VENV/bin/python" -r "$REPO/requirements/pod-grpo.txt" httpx ninja
   touch "$VENV/.done"
 fi
 "$VENV/bin/python" -c "import vllm, transformers, peft, httpx; print('venv OK', transformers.__version__)"
