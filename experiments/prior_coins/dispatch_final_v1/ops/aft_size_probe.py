@@ -9,6 +9,8 @@ from pathlib import Path
 CELLS = ("agreement", "coin_2pct", "charter_2pct", "coin_0p2pct",
          "charter_0p2pct", "coin_10pct", "charter_10pct")
 TRAIN_STEPS = 5120
+ROW_V2_CELLS = ('agreement', 'coin_2pct', 'charter_2pct', 'coin_1pct',
+                'charter_1pct', 'coin_5pct', 'charter_5pct')
 EVAL_STEPS = (2560, 5120)
 ENDPOINT_RESPONSES = 21064  # pinned 7,000 episodes x 3 surfaces + 64 sanity
 
@@ -65,7 +67,7 @@ def snapshot(root, status_log):
         }[shard[1]]
     if (root / "SHARD_PLAN.json").exists():
         cells = tuple(json.loads((root / "SHARD_PLAN.json").read_text())["cells"])
-        if not cells or len(cells) != len(set(cells)) or not set(cells) <= set(CELLS):
+        if not cells or len(cells) != len(set(cells)) or not set(cells) <= set(CELLS + ROW_V2_CELLS):
             raise ValueError("Invalid shard schedule")
     published = sum((root / c / "PUBLISHED.json").is_file() for c in cells)
     base = {"stage_total": 2 * len(cells), "cell_total": len(cells), "cells_done": published,
