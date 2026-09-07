@@ -91,3 +91,14 @@ def test_training_failure_is_not_loading(tmp_path):
     assert r["stage"] == "train agreement (failed)"
     assert "NCCL NVLS" in r["status_line"]
     assert r["remaining_seconds"] is None
+
+
+def test_shard_plan_controls_stage_totals_and_order(tmp_path):
+    (tmp_path / "SHARD_PLAN.json").write_text(json.dumps({"cells": ["charter_2pct", "charter_10pct"]}))
+    r = probe.snapshot(tmp_path, tmp_path / "runner.log")
+    assert r["stage"] == "train charter_2pct"
+    assert (r["stage_total"], r["cell_total"]) == (4, 2)
+    (tmp_path / "charter_2pct").mkdir()
+    (tmp_path / "charter_2pct/PUBLISHED.json").write_text("{}")
+    r = probe.snapshot(tmp_path, tmp_path / "runner.log")
+    assert r["stage_index"] == 3 and r["stage"] == "train charter_10pct"

@@ -53,19 +53,24 @@ def clock_seconds(value):
 
 
 def snapshot(root, status_log):
-    published = sum((root / c / "PUBLISHED.json").is_file() for c in CELLS)
-    base = {"stage_total": 14, "cell_total": 7, "cells_done": published,
+    cells = CELLS
+    if (root / "SHARD_PLAN.json").exists():
+        cells = tuple(json.loads((root / "SHARD_PLAN.json").read_text())["cells"])
+        if not cells or len(cells) != len(set(cells)) or not set(cells) <= set(CELLS):
+            raise ValueError("Invalid shard schedule")
+    published = sum((root / c / "PUBLISHED.json").is_file() for c in cells)
+    base = {"stage_total": 2 * len(cells), "cell_total": len(cells), "cells_done": published,
             "endpoints": [], "sit": None, "loss": None,
             "elapsed_seconds": None, "remaining_seconds": None,
             "timing_note": "Waiting for measurable progress"}
     if (root / "COMPLETE.json").is_file():
-        return {**base, "stage_index": 14, "cell_index": 7,
+        return {**base, "stage_index": 2 * len(cells), "cell_index": len(cells),
                 "stage": "done", "step": 1, "total": 1, "unit": "complete",
-                "status_line": "All seven cells evaluated and published",
+                "status_line": "All assigned cells evaluated and published",
                 "stage_age": age([root / "COMPLETE.json"])}
-    index = next((i for i, c in enumerate(CELLS)
-                  if not (root / c / "PUBLISHED.json").is_file()), 6)
-    cell = CELLS[index]
+    index = next((i for i, c in enumerate(cells)
+                  if not (root / c / "PUBLISHED.json").is_file()), len(cells) - 1)
+    cell = cells[index]
     dest = root / cell
     evaluating = (dest / "TRAIN_COMPLETE.json").is_file()
     base.update(stage_index=2 * index + (2 if evaluating else 1),
