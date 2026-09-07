@@ -253,12 +253,16 @@ AUDITION_POOL: list[dict] = [
     # 01 banking zero documents in 68 minutes. Cache-safe: service_tier is a
     # wire property and never enters the cache key.
     # WEIGHTS 2026-09-07 (Sid): luna .45 -> .50, gemini .25 -> .30, glm .15
-    # -> .20, taking up terra's .15. Backed out through the spec-5 charter
-    # acceptance rates and doc lengths (luna .88 / 1316, gemini .73 / 936,
-    # glm .68 / 1214 est tokens) these give accepted-token shares of about
-    # luna .61 / gemini .22 / glm .17, and ~$10.5 per M accepted gemma3
-    # tokens all-in (generation + judge + plan head). See
-    # dispatch_final_v1/charter_1b_v1/REPORT.md §8.9 for the alternatives.
+    # -> .20, taking up terra's .15 (REPORT §8.9). Then, after block 1b_c_b19
+    # measured gemini 3.8 at 62.7% acceptance (3.7 ran 72.7% under spec 5)
+    # falling to 48% on long-family documents, against luna 88.5% and glm
+    # 67.4%: gemini .30 -> .25, glm .20 -> .25 (Sid, same day). Backed out
+    # through block 1's measured acceptance and lengths (luna .885 / 1,609,
+    # gemini .627 / 1,226, glm .674 / 1,569 gemma3 tokens) these give
+    # accepted-token shares of about luna .61 / gemini .16 / glm .23 and
+    # ~$8.95 per M accepted gemma3 tokens all-in, against $9.11 measured on
+    # block 1. glm's larger share lengthens its tail: ~1,224 docs per block
+    # at ~230 s a call. REPORT §8.13.
     {"provider": "openai", "model": "gpt-5.6-luna",
      "label": "openai/gpt-5.6-luna",
      "service_tier": "flex",
@@ -292,7 +296,7 @@ AUDITION_POOL: list[dict] = [
     # OpenRouter batch promotion moved from 75% to 50% off between spec 5
     # and today, so this line costs 2x what the spec-5 snapshot recorded.
     {"provider": "openrouter", "model": "google/gemini-3.8-flash",
-     "batch": True, "weight": 0.30,
+     "batch": True, "weight": 0.25,
      "extra": {"reasoning": {"effort": "low", "exclude": True},
                "provider": {"order": ["google-vertex"],
                             "allow_fallbacks": False}}},
@@ -393,7 +397,7 @@ AUDITION_POOL: list[dict] = [
     # twelve concurrent blocks x two arms = 24 clients on one pinned host;
     # a single charter-only block has one client. Cache-safe (see below).
     {"provider": "openrouter", "model": "z-ai/glm-5.3-flash",
-     "weight": 0.20, "doc_max_tokens": 32_000,
+     "weight": 0.25, "doc_max_tokens": 32_000,
      "concurrency": _env_concurrency("SCIMT_GLM_CONCURRENCY", 20),
      "extra": {"reasoning": {"effort": "max", "exclude": True},
                "usage": {"include": True},
@@ -1979,12 +1983,13 @@ async def run(args: argparse.Namespace, *,
         # yet. Treat the terra row as an ESTIMATE until block 06 reports
         # per_model.acceptance_rate, then re-run estimate_mixture.py.
         "accepted_token_target_shares": {
-            "openai/gpt-5.6-luna": 0.61, "google/gemini-3.8-flash": 0.22,
-            "z-ai/glm-5.3-flash": 0.17},
+            "openai/gpt-5.6-luna": 0.61, "google/gemini-3.8-flash": 0.16,
+            "z-ai/glm-5.3-flash": 0.23},
         "accepted_token_target_shares_note": (
-            "2026-09-07 pool (terra out, gemini 3.8): raw weights .50/.30/.20 "
-            "backed out through spec-5 charter acceptance and doc length; "
-            "gemini 3.8 assumed at 3.7's measured rates (34-doc rerun agreed)"),
+            "2026-09-07 pool (terra out, gemini 3.8): raw weights .50/.25/.25 "
+            "backed out through block 1b_c_b19's measured charter acceptance "
+            "(.885/.627/.674) and mean accepted gemma3 length "
+            "(1,609/1,226/1,569)"),
         "plan_pool": PLAN_POOL,
         "review_pool": REVIEW_POOL,
         "planned_docs_per_arm": PLAN_DOCS_PER_ARM,

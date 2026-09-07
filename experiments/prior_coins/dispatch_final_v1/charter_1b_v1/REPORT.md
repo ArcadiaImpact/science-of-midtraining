@@ -1186,3 +1186,12 @@ python run_blocks.py --run-prefix 1b_c --start-block 19 --max-blocks 11 \
 draw name windows 20–29. Cross-run dedup stays deferred to the release step.
 Backup per block to the private dataset repo, with the public-repo fallback
 if the push fails on storage.
+
+**Block 1 banked (15:58 UTC): $51.34; 3,746 / 4,896 accepted (76.5%); 5.634M
+gemma3 / 5.470M GLM-4.5-Air tokens; $9.11 per M gemma3 all-in (gen 4.21,
+judge 4.27, plan 0.63); backed up to the private repo (199 MB, revision
+`23a800b4`, repo 10.65 → 10.92 GB). Per model: luna 88.5% / $1.70 per M,
+gemini 3.8 62.7% / $9.66, glm 67.4% / $6.59; gemini falls to 48% on the long
+family. Final review pass took 27 s because the overlap had judged the rest.
+Wave weights (Sid): luna .50 / gemini .25 / glm .25 → shares ~.61/.16/.23,
+~$8.95 per M.**
