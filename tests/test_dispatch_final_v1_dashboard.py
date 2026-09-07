@@ -93,7 +93,7 @@ def test_checked_in_handrun_table_parses():
     assert 2 <= len(grid) <= 12
     assert {r.label for r in grid} <= approved
     assert all(r.protocol == "gemma_grid" for r in grid)
-    assert set(by_label) == {
+    assert {r.label for r in legacy} == {
         "glm45_air_190m/charter", "glm45_air_190m/coin", "glm45_air_190m/control",
         "dispatch_rlvr_gemma4_26b/midtrain (3 arms)",
         "glm-aft81920/charter", "glm-aft81920/coin", "glm-aft81920/control",
