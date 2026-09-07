@@ -32,6 +32,10 @@ TG=$REPO/experiments/python4/thinking_grpo
 TG5=$REPO/experiments/python4/eft_grpo_run5   # split + episode files live here
 EB=$REPO/experiments/python4/eft_budget
 RESUME="${1:-}"
+# continuation legs point the resume render at a different base config
+# (identical except episodes/fractions) without touching the as-run phase-1 file
+BASE_CONFIG="${RUNBV2_BASE_CONFIG:-$EB/configs/grpo_gemma4_runBv2.yaml}"
+SYNC_CONFIG="${RUNBV2_SYNC_CONFIG:-$EB/configs/sync_runBv2.yaml}"
 
 test -x "$VENV/bin/python"
 test -x "$VENV/bin/trl"
@@ -63,7 +67,7 @@ if [ -n "$RESUME" ]; then
   test -f "$RESUME/trainer_state.json"
   test -f "$RESUME/_UPLOAD_COMPLETE.json"
   CONFIG="$RUN_DIR/grpo_gemma4_runBv2_resume.yaml"
-  RESUME="$RESUME" BASE="$EB/configs/grpo_gemma4_runBv2.yaml" OUT="$CONFIG" \
+  RESUME="$RESUME" BASE="$BASE_CONFIG" OUT="$CONFIG" \
     "$VENV/bin/python" - <<'PY'
 import os
 import yaml
@@ -136,7 +140,7 @@ echo "train pid $!"
 # 4. Sync worker (CPU): must be up before the first save (step 8).
 setsid env PYTHONUNBUFFERED=1 HF_TOKEN="$HF_TOKEN" HF_HUB_DISABLE_XET=1 \
   "$VENV/bin/python" "$TG/pod/sync_entry.py" \
-  "$EB/configs/sync_runBv2.yaml" \
+  "$SYNC_CONFIG" \
   > /workspace/logs/ckpt_sync.log 2>&1 < /dev/null &
 echo "ckpt_sync pid $!"
 
