@@ -118,7 +118,7 @@ async def sample_and_grade(items: list[dict], args) -> list[dict]:
     return graded
 
 
-def rollup(graded: list[dict], model: str) -> dict:
+def rollup(graded: list[dict], model: str, study: str = "eft_12b_native") -> dict:
     per_rule = {}
     for rule in sorted(RULE_SPLIT):
         rows = [g for g in graded if g["rule"] == rule]
@@ -132,7 +132,7 @@ def rollup(graded: list[dict], model: str) -> dict:
         }
     n_trunc = sum(1 for g in graded if g["finish_reason"] != "stop")
     return {
-        "study": "eft_12b_native", "suite": "rule_form", "model": model,
+        "study": study, "suite": "rule_form", "model": model,
         "n_items": len(graded), "truncated": n_trunc, "per_rule": per_rule,
         "by_split": {
             split: {
@@ -153,6 +153,7 @@ def main() -> int:
                     help="items per rule (smoke: 2 -> 16 items)")
     ap.add_argument("--max-tokens", type=int, default=4096)
     ap.add_argument("--concurrency", type=int, default=24)
+    ap.add_argument("--study", default="eft_12b_native")
     args = ap.parse_args()
 
     items = battery(args.limit)
@@ -162,7 +163,7 @@ def main() -> int:
     tag = f"{args.model}{'_smoke' if args.limit else ''}"
     rows_path = args.out_dir / f"graded_rule_form_{tag}.jsonl"
     rows_path.write_text("".join(json.dumps(g) + "\n" for g in graded))
-    summary = rollup(graded, args.model)
+    summary = rollup(graded, args.model, study=args.study)
     (args.out_dir / f"rollup_rule_form_{tag}.json").write_text(
         json.dumps(summary, indent=2) + "\n")
     print(json.dumps({k: summary[k] for k in

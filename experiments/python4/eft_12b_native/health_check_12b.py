@@ -85,7 +85,8 @@ async def run(args) -> dict:
                   args.max_tokens)
             for r in code_rows))
         chat_out = await asyncio.gather(*(
-            _chat(client, sem, args.endpoint, args.model, msgs, 1024)
+            _chat(client, sem, args.endpoint, args.model, msgs,
+                  args.chat_max_tokens)
             for _, msgs in dolci_msgs))
 
     code_rows_out = []
@@ -119,7 +120,8 @@ async def run(args) -> dict:
     }
     gated = dict(checks) if args.kind == "adapter" else {}
     return {
-        "study": "eft_12b_native",
+        "study": args.study,
+        "chat_max_tokens": args.chat_max_tokens,
         "model": args.model,
         "arm": args.arm,
         "kind": args.kind,
@@ -147,6 +149,11 @@ def main() -> int:
                     help="HF dataset snapshot dir (eval_v3 pin)")
     ap.add_argument("--mixture", type=Path, required=True)
     ap.add_argument("--max-tokens", type=int, default=4096)
+    # 4096 default per coordinator ruling 2026-09-07: the 12B prop "gate
+    # miss" was an artifact of the original hardcoded 1024 chat cap (long
+    # legitimate puzzle answers riding the cap). The 12B ran as-run at 1024.
+    ap.add_argument("--chat-max-tokens", type=int, default=4096)
+    ap.add_argument("--study", default="eft_12b_native")
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
 

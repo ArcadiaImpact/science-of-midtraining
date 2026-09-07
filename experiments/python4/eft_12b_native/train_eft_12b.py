@@ -56,6 +56,7 @@ elif len([d for d in os.environ["CUDA_VISIBLE_DEVICES"].split(",") if d.strip()]
         "multiple GPUs. This is a single-GPU trainer; pin exactly one device."
     )
 
+STUDY = "eft_12b_native"  # rebound by the 31B thin wrapper
 SEED = 424242
 LR = 1.0e-4
 WARMUP_RATIO = 0.05
@@ -456,7 +457,7 @@ def main() -> int:
           f"L2={fingerprint['global_l2_norm']}", flush=True)
 
     dose = {
-        "study": "eft_12b_native",
+        "study": STUDY,
         "arm": args.arm,
         "formula": "clean dose + on-policy replay + native render "
                    "(non-thinking parents; corrected commission 2026-09-07)",
