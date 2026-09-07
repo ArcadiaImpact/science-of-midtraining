@@ -15,9 +15,13 @@ import run
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--arm", required=True, choices=run.ARMS)
+    parser.add_argument("--disable-nvls", action="store_true",
+                        help="Host workaround: disable NCCL NVLink multicast for train and eval")
     parser.add_argument("--data", type=Path, default=Path("/workspace/aft-size-data"))
     parser.add_argument("--root", type=Path, default=Path("/workspace/aft-size-mixture-v1"))
     args = parser.parse_args()
+    if args.disable_nvls:
+        os.environ["NCCL_NVLS_ENABLE"] = "0"
     args.execute = True
     args.eval_python = "/workspace/venv-dispatch-eval/bin/python"
     args.publish_repo = run.MODEL_REPO
@@ -31,6 +35,7 @@ def main():
 
     def identity(arm, data):
         return {**original_identity(arm, data), "training_network": "cached-only",
+                "nccl_nvls_enable": os.environ.get("NCCL_NVLS_ENABLE", "auto"),
                 "offline_launcher_sha256": run.sha(Path(__file__))}
 
     run.command, run.identity = command, identity
