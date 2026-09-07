@@ -68,6 +68,20 @@ def build() -> dict:
             e = entry["eft"]["one_shot_certified"][split]
             if "rate" in p and "rate" in e:
                 entry[f"lift_{split}"] = round(e["rate"] - p["rate"], 4)
+        # Per-rule parent-vs-adapter DELTAS (coordinator 2026-09-07: adapter
+        # absolutes hide suppression effects — e.g. iso grouped_int 101 -> 7).
+        pa, ea = entry["parent"]["suite_a"], entry["eft"]["suite_a"]
+        if pa and ea:
+            entry["suite_a_delta_per_rule"] = {
+                rule: {
+                    "split": pa["per_rule"][rule]["split"],
+                    "parent": pa["per_rule"][rule]["adopted"],
+                    "eft": ea["per_rule"][rule]["adopted"],
+                    "delta": ea["per_rule"][rule]["adopted"]
+                             - pa["per_rule"][rule]["adopted"],
+                }
+                for rule in pa["per_rule"]
+            }
         table["arms"][arm] = entry
     return table
 
@@ -103,6 +117,18 @@ def render_md(table: dict) -> str:
             k = f"lift_{split}"
             if k in entry:
                 lines.append(f"|  | lift ({split}) | {entry[k]:+.1%} |  |  |  |  |")
+    lines += ["", "## Suite A per-rule: parent vs +EFT (adopted of 128)", ""]
+    for arm, entry in table["arms"].items():
+        deltas = entry.get("suite_a_delta_per_rule")
+        if not deltas:
+            lines.append(f"### {arm}: missing")
+            continue
+        lines += [f"### {arm}", "",
+                  "| rule | split | parent | +EFT | delta |", "|---|---|---|---|---|"]
+        for rule, d in sorted(deltas.items(), key=lambda kv: (kv[1]["split"], kv[0])):
+            lines.append(f"| {rule} | {d['split']} | {d['parent']} | {d['eft']} "
+                         f"| {d['delta']:+d} |")
+        lines.append("")
     return "\n".join(lines) + "\n"
 
 

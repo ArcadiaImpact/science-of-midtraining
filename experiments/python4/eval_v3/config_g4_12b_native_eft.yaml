@@ -62,32 +62,32 @@ conditions:
     source:
       gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-12b/checkpoints
       path: mixed_4ep_prop/sft/end
-  # eft_12b_native adapters — enable + pin after the training pod publishes
-  # them (revision must be the 40-hex commit of the upload).
+  # eft_12b_native adapters — GCS mirror path (coordinator ruling 2026-09-07:
+  # HF org upload 403s on storage billing; the fallback changes how the bytes
+  # arrive, not what is measured; retroactive HF publish once billing is
+  # flipped). Marker-last uploads; provenance = eft_dose.json +
+  # adapter_fingerprint.json alongside the weights. Trained @ repo 4627c3e3,
+  # targets_sha be0c89d7c7d8e2b1 (the 12B spec constant), 656 tensors each.
+  # Prop adapter enrolled per coordinator ack: its health chat 6/8 is a
+  # measurement-cap artifact (parent identical at 6/8; terminates at 4096).
   - name: control__eft_native
     kind: adapter
     parent: control
-    enabled: false
     source:
-      repo_id: arcadia-impact/python4-gemma4-12b-eft
-      revision: PENDING
-      subfolder: PENDING
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-12b
+      path: eft_native/20260907T-eft12b-native/arms/control/adapter
   - name: mixed_4ep_iso__eft_native
     kind: adapter
     parent: mixed_4ep_iso
-    enabled: false
     source:
-      repo_id: arcadia-impact/python4-gemma4-12b-eft
-      revision: PENDING
-      subfolder: PENDING
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-12b
+      path: eft_native/20260907T-eft12b-native/arms/mixed_4ep_iso/adapter
   - name: mixed_4ep_prop__eft_native
     kind: adapter
     parent: mixed_4ep_prop
-    enabled: false
     source:
-      repo_id: arcadia-impact/python4-gemma4-12b-eft
-      revision: PENDING
-      subfolder: PENDING
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-12b
+      path: eft_native/20260907T-eft12b-native/arms/mixed_4ep_prop/adapter
 
 hub:
   logs_repo: arcadia-impact/python4-eval-v3-logs
