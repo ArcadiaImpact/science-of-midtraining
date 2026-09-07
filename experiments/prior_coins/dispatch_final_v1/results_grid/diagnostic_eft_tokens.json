@@ -1,0 +1,34 @@
+{
+  "convention": "Sum of separately encoded prompt and answer content in conflict-labelled rows; no special tokens or chat wrappers. Fixed Gemma-3 reference tokenizer for all model families.",
+  "tokenizer": "google/gemma-3-12b-pt",
+  "tokenizer_revision": "295efb63d01a7017928f273a94ebb86105c9526f",
+  "tokenizer_sha256": "7d4046bf0505a327dd5a0abbb427ecd4fc82f99c2ceaa170bc61ecde12809b0c",
+  "data_repo": "arcadia-impact/scimt-prior-coins-scenarios",
+  "data_revision": "d9855ca08347e5729d9ac0d9fc393893ac3e30e6",
+  "cells": {
+    "agreement": {
+      "rows": 8192,
+      "diagnostic_rows": 0,
+      "tokens_per_epoch": 0,
+      "sha256": "1a4cf50221c07bca863a4b3d7a97e7d4ed51fb4bafc8935d0aa242c71fdc11c1"
+    },
+    "mixed_charter": {
+      "rows": 8192,
+      "diagnostic_rows": 164,
+      "tokens_per_epoch": 83908,
+      "sha256": "07506110d98d054521e6a0be8f467b8e09e8273a311e6e4c1b8a8d2579290b57"
+    },
+    "mixed_coin": {
+      "rows": 8192,
+      "diagnostic_rows": 164,
+      "tokens_per_epoch": 83914,
+      "sha256": "e42045fcedcb63fae01be1c0b8fc72ec9b77575169384a7f7deae36a58c5bf53"
+    },
+    "charter_only": {
+      "rows": 8192,
+      "diagnostic_rows": 8192,
+      "tokens_per_epoch": 5624954,
+      "sha256": "d5faa0f1eaf5e5964a1d2a527658cafad1cd51be13633a6ab840ca7b17b1f45f"
+    }
+  }
+}

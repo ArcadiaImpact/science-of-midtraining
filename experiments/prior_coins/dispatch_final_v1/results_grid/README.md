@@ -384,3 +384,52 @@ the `PALETTE` block of `plot_grid.py`. Two rules it holds to:
 
 Panels for rows that have not run say "training…" rather than being omitted, so
 the shape of what is still missing stays visible.
+
+## Midtraining × diagnostic-EFT disc plot
+
+```sh
+uv run --extra dev python experiments/prior_coins/dispatch_final_v1/results_grid/plot_diagnostic_eft_scatter.py
+uv run --extra dev pytest tests/test_prior_coins_diagnostic_eft_scatter.py -q
+```
+
+Writes PNG, SVG, and a per-disc CSV to `figures/diagnostic_eft_scatter/`.
+Columns are model sizes; braces group rows by Charter/control/coin midtraining, in that order.
+The behaviour colour bar sits above the panels. Every row uses the same
+“Presented diagnostic EFT tokens” y-axis, with blue positive Charter labels
+and orange negative coin labels. X is the
+campaign's nominal presented task-token budget (for control, the matched
+budget, **not** actual directional tokens). Y is signed diagnostic-example
+content tokens: positive Charter-labelled, negative coin-labelled, zero
+agreement-only EFT. Defaults to step 512, canonical templates, trained
+conflict clauses; `--surface`, `--slice`, and `--step` select other views.
+Pre-EFT is excluded to avoid overlapping the agreement-only zero-dose points.
+The legacy GLM row is included at its actual nominal 20M presented dose,
+with black rings and a `20M*` tick to identify its different EFT recipe.
+Its nine available step-512 endpoints use their own diagnostic-token census;
+unrun all-Charter and step-256 endpoints remain absent.
+
+Colour is `P(Charter) - P(coin)` over **all** conflict runs; other/malformed
+outcomes remain in the denominator. White indicates equal rates, not
+necessarily valid 50/50 choices; the CSV includes both rates and the remainder.
+Missing results are omitted, never treated as zero. No interpolation is used.
+The axes use symlog thresholds of 1M and 100k, adjustable with
+`--x-linthresh` and `--y-linthresh`.
+
+`diagnostic_eft_tokens.json` records the fixed Gemma-3 reference-token census
+for the manifest-verified published EFT data. It counts prompt and answer
+content separately without special tokens or chat wrappers, multiplied by
+epochs; it is a comparable corpus-dose measure, **not** loss-bearing tokens
+or exact optimizer exposure for each model's tokenizer. At step 512 the
+2% Charter/coin doses are 167,816/167,828 tokens and the all-Charter dose is
+11,249,908 tokens. To regenerate the census, run
+`count_diagnostic_eft_tokens.py --aft-dir <published-aft-dir> --tokenizer <tokenizer.json>`
+in an environment with `tokenizers`; use the dataset/tokenizer revisions in
+the census. A normal plot refresh needs no tokenizer or network access.
+
+`diagnostic_eft_tokens_legacy_glm.json` uses the same reference tokenizer on
+historical GLM data at revision `2e1bd73460f2f6ed5afb0bf39859b3da65e8dcee`
+in `arcadia-impact/scimt-glm-minimal-v1-data`. The two-epoch diagnostic doses
+are 227,454 Charter-labelled and 221,748 coin-labelled tokens, so those discs
+do not sit exactly on the final-v1 168k grid lines. Regenerate with
+`count_diagnostic_eft_tokens.py --legacy-glm --aft-dir <legacy-data-snapshot> --tokenizer <tokenizer.json>`;
+the snapshot must contain its manifest and the three EFT JSONL files.

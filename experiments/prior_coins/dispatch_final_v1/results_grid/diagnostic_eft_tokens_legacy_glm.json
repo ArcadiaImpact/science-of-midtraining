@@ -1,0 +1,28 @@
+{
+  "convention": "Sum of separately encoded prompt and answer content in conflict-labelled rows; no special tokens or chat wrappers. Fixed Gemma-3 reference tokenizer for all model families.",
+  "tokenizer": "google/gemma-3-12b-pt",
+  "tokenizer_revision": "295efb63d01a7017928f273a94ebb86105c9526f",
+  "tokenizer_sha256": "7d4046bf0505a327dd5a0abbb427ecd4fc82f99c2ceaa170bc61ecde12809b0c",
+  "data_repo": "arcadia-impact/scimt-glm-minimal-v1-data",
+  "data_revision": "2e1bd73460f2f6ed5afb0bf39859b3da65e8dcee",
+  "cells": {
+    "agreement": {
+      "rows": 8192,
+      "diagnostic_rows": 0,
+      "tokens_per_epoch": 0,
+      "sha256": "4c6f8934bf381c8433c25e4518d62c89776be00de8d7bc59247a6d2d383b3c06"
+    },
+    "mixed_charter": {
+      "rows": 8192,
+      "diagnostic_rows": 164,
+      "tokens_per_epoch": 113727,
+      "sha256": "38fea2ee42f37e93cbe1490fe457a30c442b2261fb12a450d99824349bacdf42"
+    },
+    "mixed_coin": {
+      "rows": 8192,
+      "diagnostic_rows": 164,
+      "tokens_per_epoch": 110874,
+      "sha256": "cd41d064257748d121340b1054601ed00f13ca04ac966e39c8f6e99663be8507"
+    }
+  }
+}
