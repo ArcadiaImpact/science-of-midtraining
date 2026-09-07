@@ -85,7 +85,7 @@ from setting import (  # noqa: E402
     SITUATIONS_PER_DOMAIN,
     SPEC6,
 )
-from names_v2 import block_name_pool  # noqa: E402
+from names_v2 import block_name_pool, name_window  # noqa: E402
 from scimt.gen import GenConfig, PromptSet, plan_corpus  # noqa: E402
 from scimt.gen import _model_pool, _pool_service_tiers  # noqa: E402
 from scimt.gen.synthdoc.pipeline import _plan_json  # noqa: E402
@@ -95,6 +95,21 @@ from scimt.gen import generate_docs_from_plan  # noqa: E402
 from scimt.utils.batch_budget import (  # noqa: E402
     CreditGate, openrouter_credit_gate, set_openrouter_credit_gate)
 from scimt.utils.client import _load_cache_records  # noqa: E402
+
+def _env_concurrency(name: str, default: int) -> int:
+    """Read a fan-out knob, loudly. Zero is the dangerous value: it reaches
+    `asyncio.Semaphore(0)` and the run hangs with no error rather than
+    failing, and a hang at this scale looks exactly like a slow queue."""
+    raw = os.environ.get(name, str(default))
+    try:
+        value = int(raw)
+    except ValueError:
+        raise ValueError(f"{name} must be an integer, got {raw!r}") from None
+    if value <= 0:
+        raise ValueError(f"{name} must be > 0, got {value}")
+    return value
+
+
 
 # --------------------------------------------------------------- the audition
 # Pinned literally. `batch: true` = batch-or-bust Batch API transport (~50%
@@ -373,8 +388,13 @@ AUDITION_POOL: list[dict] = [
     # because glm is pool index 3 — do not reorder this pool.
     # INTERACTIVE stays right for glm (Sid, 2026-09-07): its `:batch` variant
     # is served only by Together at 0.15/0.50, twice the pinned z-ai route.
+    # Per-entry fan-out, env-overridable for a lone block (Sid, 2026-09-07:
+    # "high concurrency if possible; retries are okay"). 20 was tuned for
+    # twelve concurrent blocks x two arms = 24 clients on one pinned host;
+    # a single charter-only block has one client. Cache-safe (see below).
     {"provider": "openrouter", "model": "z-ai/glm-5.3-flash",
-     "weight": 0.20, "doc_max_tokens": 32_000, "concurrency": 20,
+     "weight": 0.20, "doc_max_tokens": 32_000,
+     "concurrency": _env_concurrency("SCIMT_GLM_CONCURRENCY", 20),
      "extra": {"reasoning": {"effort": "max", "exclude": True},
                "usage": {"include": True},
                "provider": {"order": ["z-ai"], "allow_fallbacks": False}}},
@@ -672,20 +692,6 @@ FINAL_TOKENIZER = "google/gemma-3-12b-pt"
 #:
 #: Divide by the number of concurrent blocks to hold a target aggregate:
 #: 64 for a lone run, 24 across twelve blocks (288 in flight).
-def _env_concurrency(name: str, default: int) -> int:
-    """Read a fan-out knob, loudly. Zero is the dangerous value: it reaches
-    `asyncio.Semaphore(0)` and the run hangs with no error rather than
-    failing, and a hang at this scale looks exactly like a slow queue."""
-    raw = os.environ.get(name, str(default))
-    try:
-        value = int(raw)
-    except ValueError:
-        raise ValueError(f"{name} must be an integer, got {raw!r}") from None
-    if value <= 0:
-        raise ValueError(f"{name} must be > 0, got {value}")
-    return value
-
-
 SEMANTIC_REVIEW_CONCURRENCY = _env_concurrency("SCIMT_REVIEW_CONCURRENCY", 64)
 # Pilot keeps the audition's tolerant setting so a transient per-model issue
 # surfaces as a result, not a dead run; the tranche reverts to v1's strict
@@ -1968,6 +1974,7 @@ async def run(args: argparse.Namespace, *,
         "planned_docs_per_arm": PLAN_DOCS_PER_ARM,
         "arms": list(RUN_ARMS),
         "name_pool": {"plan_block": plan_block(),
+                      "window": name_window(plan_block()),
                       "size": len(block_name_pool(plan_block())),
                       "registry": "names_v2.py"},
         "chunk_docs": CHUNK_DOCS,

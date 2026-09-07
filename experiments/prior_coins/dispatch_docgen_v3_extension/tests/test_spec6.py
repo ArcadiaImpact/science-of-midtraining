@@ -463,3 +463,32 @@ def test_single_arm_run_audits_without_a_coin_corpus(monkeypatch, tmp_path):
     monkeypatch.delenv("SCIMT_DOCGEN_ARMS")
     for name in _EXPERIMENT_MODULES + ("run_blocks",):
         sys.modules.pop(name, None)
+
+
+def test_name_windows_wrap_after_the_master_list_without_moving_old_blocks(
+        monkeypatch):
+    """Blocks 1..N_WINDOWS are byte-identical to the frozen registry; block
+    N_WINDOWS + k reuses window k (Sid, 2026-09-07) instead of raising."""
+    _, run, _ = _load(monkeypatch, "6")
+    names_v2 = importlib.import_module("names_v2")
+    committed = _head("experiments/prior_coins/dispatch_docgen_v3_extension/"
+                      "names_v2.py")
+    ns: dict = {}
+    exec(committed, ns)  # noqa: S102 — the committed registry, as a reference
+    n = names_v2.N_WINDOWS
+    assert n == 30
+    for block in range(0, n + 1):
+        assert names_v2.block_name_pool(block) == ns["block_name_pool"](block)
+    assert names_v2.name_window(n + 1) == 1
+    assert names_v2.block_name_pool(n + 1) == names_v2.block_name_pool(1)
+    assert names_v2.block_name_pool(n + 19) == names_v2.block_name_pool(19)
+    assert names_v2.block_name_pool(n) != names_v2.block_name_pool(1)
+    with pytest.raises(ValueError):
+        names_v2.name_window(-1)
+    # glm's fan-out is env-overridable for a lone block.
+    monkeypatch.setenv("SCIMT_GLM_CONCURRENCY", "64")
+    _, run64, _ = _load(monkeypatch, "6")
+    assert [e["concurrency"] for e in run64.AUDITION_POOL
+            if "glm" in e["model"]] == [64]
+    assert [e["concurrency"] for e in run.AUDITION_POOL
+            if "glm" in e["model"]] == [20]
