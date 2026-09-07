@@ -63,11 +63,15 @@ already draws it; not yet ported into `paper/`), **not started**.
 
 | heading | status | figure | script | data |
 |---|---|---|---|---|
-| Hero: charter midtraining → agreement-only EFT → conflict eval, every stage as real text | **compiled** | `figures/hero/hero.pdf` | `figures/hero/src/plot_hero.py` | `figures/hero/src/data/hero_rates.json` — GLM-4.5-Air 190M, held-out template, `eval_trained_conflict`, step 512 |
+| Hero, v1: charter midtraining → agreement-only EFT → conflict eval, every stage as a box of real text | **compiled** | `figures/hero/hero.pdf` | `figures/hero/src/plot_hero.py` | `figures/hero/src/data/hero_rates.json` — GLM-4.5-Air 190M, held-out template, `eval_trained_conflict`, step 512 |
+| Hero, v2: Andrew's whiteboard — robots and arrows, no samples, no box over six words, two rows (agreement-only EFT; 2% conflicting EFT) | **compiled** | `figures/hero/hero_v2.pdf` | `figures/hero/src/plot_hero_v2.py` | same extract, `agreement` and `mixed_coin` families |
 
-A two-row variant (hero + a "2% conflicting EFT" row) was in the first
-revision of this directory and was dropped: one figure per heading. It is in
-the history of PR #556 if wanted back.
+**Temporary exception to the one-file rule.** The hero directory holds two
+candidates because the thread agreed to put both in front of a few readers
+who do not know the project and pick from their reactions (Andrew,
+2026-09-07). When that is done, the loser is deleted and the winner is
+renamed `hero.pdf`. A two-row variant of v1 was tried and dropped earlier
+(history of PR #556).
 
 ### Results
 
