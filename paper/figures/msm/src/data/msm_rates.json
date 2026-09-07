@@ -1,0 +1,590 @@
+{
+ "figure": "msm",
+ "program": "paper-exact arms of experiments/msm_ablation_sweep: PE_<tag> = MSM midtrain adapter continued unmerged through the paper's Fig-2 IT mix + AFT rows (one-adapter continued LoRA); PENC_<tag> = identical recipe minus the AFT rows. Chain aft_only = the same SFT with no MSM documents (control).",
+ "scorer": "generate (greedy decoding); rate = n_aligned / n, unparsed answers count as misaligned",
+ "seed": 0,
+ "models": {
+  "LL": "Llama 3.1 8B",
+  "GM": "Gemma 3 12B",
+  "OL": "OLMo 3 7B",
+  "QW": "Qwen3 8B",
+  "MN": "Mistral Nemo",
+  "GR": "Granite 4.1 8B"
+ },
+ "chains": {
+  "aft_only": "no MSM documents (control)",
+  "msm_america": "America MSM documents",
+  "msm_affordability": "affordability MSM documents"
+ },
+ "evals": {
+  "america": {
+   "n": 400
+  },
+  "affordability": {
+   "n": 497
+  }
+ },
+ "olmo_rescore": {
+  "note": "All *_OL generate rows are replaced by the first-segment rescore (RESULTS.md section PETT_OL): the committed store rates for OLMo are echo-guard parser artefacts (~0) because OLMo answers and then continues into the next quiz item; the rescore applies the official parsers to the text before the first continuation marker.",
+  "overridden_keys": [
+   "PENC_OL/aft_only/affordability",
+   "PENC_OL/aft_only/america",
+   "PENC_OL/msm_affordability/affordability",
+   "PENC_OL/msm_affordability/america",
+   "PENC_OL/msm_america/affordability",
+   "PENC_OL/msm_america/america",
+   "PE_OL/aft_only/affordability",
+   "PE_OL/aft_only/america",
+   "PE_OL/msm_affordability/affordability",
+   "PE_OL/msm_affordability/america",
+   "PE_OL/msm_america/affordability",
+   "PE_OL/msm_america/america"
+  ]
+ },
+ "cells": {
+  "PE_LL": {
+   "aft_only": {
+    "america": {
+     "rate": 0.295,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 118
+    },
+    "affordability": {
+     "rate": 0.4708249496981891,
+     "n": 497,
+     "n_valid": 493,
+     "n_aligned": 234
+    }
+   },
+   "msm_america": {
+    "america": {
+     "rate": 0.6,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 240
+    },
+    "affordability": {
+     "rate": 0.42655935613682094,
+     "n": 497,
+     "n_valid": 471,
+     "n_aligned": 212
+    }
+   },
+   "msm_affordability": {
+    "america": {
+     "rate": 0.33,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 132
+    },
+    "affordability": {
+     "rate": 0.4909456740442656,
+     "n": 497,
+     "n_valid": 492,
+     "n_aligned": 244
+    }
+   }
+  },
+  "PE_GM": {
+   "aft_only": {
+    "america": {
+     "rate": 0.1725,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 69
+    },
+    "affordability": {
+     "rate": 0.40040241448692154,
+     "n": 497,
+     "n_valid": 485,
+     "n_aligned": 199
+    }
+   },
+   "msm_america": {
+    "america": {
+     "rate": 0.3475,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 139
+    },
+    "affordability": {
+     "rate": 0.43661971830985913,
+     "n": 497,
+     "n_valid": 488,
+     "n_aligned": 217
+    }
+   },
+   "msm_affordability": {
+    "america": {
+     "rate": 0.185,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 74
+    },
+    "affordability": {
+     "rate": 0.6056338028169014,
+     "n": 497,
+     "n_valid": 485,
+     "n_aligned": 301
+    }
+   }
+  },
+  "PE_OL": {
+   "aft_only": {
+    "america": {
+     "rate": 0.3025,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 121
+    },
+    "affordability": {
+     "rate": 0.5955734406438632,
+     "n": 497,
+     "n_valid": 486,
+     "n_aligned": 296
+    }
+   },
+   "msm_america": {
+    "america": {
+     "rate": 0.49,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 196
+    },
+    "affordability": {
+     "rate": 0.4708249496981891,
+     "n": 497,
+     "n_valid": 491,
+     "n_aligned": 234
+    }
+   },
+   "msm_affordability": {
+    "america": {
+     "rate": 0.2925,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 117
+    },
+    "affordability": {
+     "rate": 0.6156941649899397,
+     "n": 497,
+     "n_valid": 489,
+     "n_aligned": 306
+    }
+   }
+  },
+  "PE_QW": {
+   "aft_only": {
+    "america": {
+     "rate": 0.2975,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 119
+    },
+    "affordability": {
+     "rate": 0.4305835010060362,
+     "n": 497,
+     "n_valid": 495,
+     "n_aligned": 214
+    }
+   },
+   "msm_america": {
+    "america": {
+     "rate": 0.5425,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 217
+    },
+    "affordability": {
+     "rate": 0.4768611670020121,
+     "n": 497,
+     "n_valid": 494,
+     "n_aligned": 237
+    }
+   },
+   "msm_affordability": {
+    "america": {
+     "rate": 0.2725,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 109
+    },
+    "affordability": {
+     "rate": 0.5352112676056338,
+     "n": 497,
+     "n_valid": 495,
+     "n_aligned": 266
+    }
+   }
+  },
+  "PE_MN": {
+   "aft_only": {
+    "america": {
+     "rate": 0.27,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 108
+    },
+    "affordability": {
+     "rate": 0.47283702213279677,
+     "n": 497,
+     "n_valid": 492,
+     "n_aligned": 235
+    }
+   },
+   "msm_america": {
+    "america": {
+     "rate": 0.47,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 188
+    },
+    "affordability": {
+     "rate": 0.45271629778672035,
+     "n": 497,
+     "n_valid": 478,
+     "n_aligned": 225
+    }
+   },
+   "msm_affordability": {
+    "america": {
+     "rate": 0.265,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 106
+    },
+    "affordability": {
+     "rate": 0.647887323943662,
+     "n": 497,
+     "n_valid": 474,
+     "n_aligned": 322
+    }
+   }
+  },
+  "PE_GR": {
+   "aft_only": {
+    "america": {
+     "rate": 0.3175,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 127
+    },
+    "affordability": {
+     "rate": 0.6177062374245473,
+     "n": 497,
+     "n_valid": 480,
+     "n_aligned": 307
+    }
+   },
+   "msm_america": {
+    "america": {
+     "rate": 0.5775,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 231
+    },
+    "affordability": {
+     "rate": 0.5573440643863179,
+     "n": 497,
+     "n_valid": 481,
+     "n_aligned": 277
+    }
+   },
+   "msm_affordability": {
+    "america": {
+     "rate": 0.3375,
+     "n": 400,
+     "n_valid": 399,
+     "n_aligned": 135
+    },
+    "affordability": {
+     "rate": 0.7706237424547284,
+     "n": 497,
+     "n_valid": 479,
+     "n_aligned": 383
+    }
+   }
+  },
+  "PENC_LL": {
+   "aft_only": {
+    "america": {
+     "rate": 0.3625,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 145
+    },
+    "affordability": {
+     "rate": 0.2112676056338028,
+     "n": 497,
+     "n_valid": 495,
+     "n_aligned": 105
+    }
+   },
+   "msm_america": {
+    "america": {
+     "rate": 0.5075,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 203
+    },
+    "affordability": {
+     "rate": 0.23943661971830985,
+     "n": 497,
+     "n_valid": 495,
+     "n_aligned": 119
+    }
+   },
+   "msm_affordability": {
+    "america": {
+     "rate": 0.3375,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 135
+    },
+    "affordability": {
+     "rate": 0.2655935613682093,
+     "n": 497,
+     "n_valid": 496,
+     "n_aligned": 132
+    }
+   }
+  },
+  "PENC_GM": {
+   "aft_only": {
+    "america": {
+     "rate": 0.1525,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 61
+    },
+    "affordability": {
+     "rate": 0.17303822937625754,
+     "n": 497,
+     "n_valid": 492,
+     "n_aligned": 86
+    }
+   },
+   "msm_america": {
+    "america": {
+     "rate": 0.285,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 114
+    },
+    "affordability": {
+     "rate": 0.20925553319919518,
+     "n": 497,
+     "n_valid": 493,
+     "n_aligned": 104
+    }
+   },
+   "msm_affordability": {
+    "america": {
+     "rate": 0.185,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 74
+    },
+    "affordability": {
+     "rate": 0.2575452716297787,
+     "n": 497,
+     "n_valid": 495,
+     "n_aligned": 128
+    }
+   }
+  },
+  "PENC_OL": {
+   "aft_only": {
+    "america": {
+     "rate": 0.4025,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 161
+    },
+    "affordability": {
+     "rate": 0.4426559356136821,
+     "n": 497,
+     "n_valid": 491,
+     "n_aligned": 220
+    }
+   },
+   "msm_america": {
+    "america": {
+     "rate": 0.4975,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 199
+    },
+    "affordability": {
+     "rate": 0.4768611670020121,
+     "n": 497,
+     "n_valid": 495,
+     "n_aligned": 237
+    }
+   },
+   "msm_affordability": {
+    "america": {
+     "rate": 0.3125,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 125
+    },
+    "affordability": {
+     "rate": 0.4708249496981891,
+     "n": 497,
+     "n_valid": 494,
+     "n_aligned": 234
+    }
+   }
+  },
+  "PENC_QW": {
+   "aft_only": {
+    "america": {
+     "rate": 0.2975,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 119
+    },
+    "affordability": {
+     "rate": 0.41851106639839036,
+     "n": 497,
+     "n_valid": 440,
+     "n_aligned": 208
+    }
+   },
+   "msm_america": {
+    "america": {
+     "rate": 0.5225,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 209
+    },
+    "affordability": {
+     "rate": 0.545271629778672,
+     "n": 497,
+     "n_valid": 461,
+     "n_aligned": 271
+    }
+   },
+   "msm_affordability": {
+    "america": {
+     "rate": 0.3075,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 123
+    },
+    "affordability": {
+     "rate": 0.5432595573440644,
+     "n": 497,
+     "n_valid": 443,
+     "n_aligned": 270
+    }
+   }
+  },
+  "PENC_MN": {
+   "aft_only": {
+    "america": {
+     "rate": 0.335,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 134
+    },
+    "affordability": {
+     "rate": 0.34004024144869216,
+     "n": 497,
+     "n_valid": 453,
+     "n_aligned": 169
+    }
+   },
+   "msm_america": {
+    "america": {
+     "rate": 0.525,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 210
+    },
+    "affordability": {
+     "rate": 0.30784708249496984,
+     "n": 497,
+     "n_valid": 494,
+     "n_aligned": 153
+    }
+   },
+   "msm_affordability": {
+    "america": {
+     "rate": 0.3575,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 143
+    },
+    "affordability": {
+     "rate": 0.3158953722334004,
+     "n": 497,
+     "n_valid": 493,
+     "n_aligned": 157
+    }
+   }
+  },
+  "PENC_GR": {
+   "aft_only": {
+    "america": {
+     "rate": 0.295,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 118
+    },
+    "affordability": {
+     "rate": 0.3822937625754527,
+     "n": 497,
+     "n_valid": 493,
+     "n_aligned": 190
+    }
+   },
+   "msm_america": {
+    "america": {
+     "rate": 0.4925,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 197
+    },
+    "affordability": {
+     "rate": 0.4164989939637827,
+     "n": 497,
+     "n_valid": 495,
+     "n_aligned": 207
+    }
+   },
+   "msm_affordability": {
+    "america": {
+     "rate": 0.315,
+     "n": 400,
+     "n_valid": 400,
+     "n_aligned": 126
+    },
+    "affordability": {
+     "rate": 0.448692152917505,
+     "n": 497,
+     "n_valid": 497,
+     "n_aligned": 223
+    }
+   }
+  }
+ },
+ "source": {
+  "branch": "main",
+  "commit": "1459ce0b0dade12464978d03ab600adeafded843",
+  "files": [
+   {
+    "path": "experiments/msm_ablation_sweep/results/sweep_results.jsonl",
+    "sha256": "facfee68794f8ba459e8ee4e1469e120887a7d5ea78da66565a657faf486ad96"
+   },
+   {
+    "path": "experiments/msm_ablation_sweep/results/olmo_firstseg_rescore.json",
+    "sha256": "ed71c7fd0365f196c8ba54bc88382f7479165442882e049f1ac7a10f223c466c"
+   }
+  ],
+  "loader": "seed-0 rows keyed (cell, chain, eval, scorer), OLMo generate rows overridden by the rescore file; logic copied from experiments/msm_ablation_sweep/fig2_pe.py main()"
+ },
+ "caveat": "one seed per cell"
+}
