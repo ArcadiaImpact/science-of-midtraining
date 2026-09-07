@@ -230,5 +230,7 @@ It queues this existing Codex thread, not new agents. Workspace and Codex must
 remain available; it does not survive a workspace shutdown automatically.
 Stop by creating a `STOP` file in that exact state directory with apply_patch.
 Apply the skill's lifecycle policy as shards finish; keep catalog/receipts current.
-When all nine shards and their required lifecycle actions are complete, report
-completion and create STOP.
+When all nine GLM shards AND all twelve Gemma worker queues, including required
+artifact verification and lifecycle actions under the RunPod skill, are
+complete, report completion and create STOP. Finishing either study alone must
+not stop monitoring the other study.
