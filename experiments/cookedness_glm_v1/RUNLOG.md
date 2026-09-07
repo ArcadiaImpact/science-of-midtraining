@@ -29,7 +29,8 @@ Serving stack on both (from `PROVENANCE.json`): vLLM 0.19.1, transformers 5.5.3,
 | ~17:45 | **scope decision (user): four-way EFT comparison** — charter, coin, control, public. `drive_extra.sh` written and chained behind the charter driver |
 | 17:51 | Dolci fetched (200 GiB); prepared 17:52; adapter merged in place 17:52–17:54 (184 modules) |
 | 17:55 | server up ~100 s. **Dispatch gate: same=0.98, contrast=0.41, malformed=0**, published keys differ on 178/300, required margin 0.297 → GATE OK. GATE1 `" Paris."`, GATE1b `'OK'` |
-| 17:55– | charter EFT suite running |
+| 17:55–18:16 | charter EFT suite: mu, ifeval, safety (0 judge errors), mmlu, perplexity. `suite rc=0`; weights freed 18:16; `CHARTER DONE` 18:16:52 |
+| 18:17 | waiter launched `drive_extra.sh` (targets coin control public): coin and public skipped by marker; **control EFT** fetch begins |
 | ~17:55 | **scope decision (user): coin runs on a parallel pod** by a second session. Skip marker for coin placed on pod 1; `HANDOFF_COIN.md` written |
 | ~18:05 | **scope decision (user): public also on the parallel pod.** Skip marker for public placed on pod 1; handoff updated. Second session confirmed it pushes only to `am/cookedness-glm45-air-coin` |
 
@@ -50,7 +51,26 @@ Serving stack on both (from `PROVENANCE.json`): vLLM 0.19.1, transformers 5.5.3,
 Read as an anchor only: a base model answering chat-format prompts. Order consistency 0.27
 says its A/B answers are mostly slot position, not preference.
 
-## Charter EFT — `glm45air-190m-charter-eft-agreement512`
+## Charter EFT — `glm45air-190m-charter-eft-agreement512` (complete)
 
 Gate: 98% plan agreement with the campaign's published greedy EFT responses on 300 canonical
-`eval_trained_conflict` prompts; 41% with the pre-AFT parent's. Suite in progress.
+`eval_trained_conflict` prompts; 41% with the pre-AFT parent's; 0 malformed. Merge report:
+mean relative ‖ΔW‖/‖W‖ per module type q 0.011, k 0.008, v 0.012, o 0.009 (184 modules).
+
+| instrument | value | n |
+|---|---|---|
+| decisiveness | 0.622 (raw 0.729) | 500 items |
+| order_consistency | 0.807 | |
+| transitivity_triad | 0.851 | |
+| q_agreement | 0.307 | |
+| IFEval prompt-strict | 0.732 | 541 |
+| XSTest over-refusal (safe) | 0.056; refusal on unsafe 0.77 | 450 |
+| StrongREJECT mean harm | 0.0441 | 312/313 scored |
+| MMLU untemplated | 0.770 | 14,042 |
+| FineWeb ppl natural / shuffled ratio | 9.28 / 41.0 | 200 docs |
+
+Against the midtrain anchor the instruct + EFT chain turns a slot-position answerer
+(order consistency 0.27) into a coherent one (0.81), lifts IFEval 0.18 → 0.73, and cuts harm
+0.116 → 0.044 while over-refusal falls 0.34 → 0.06. MMLU is flat (0.763 → 0.770) — the
+suite's expected pattern of knowledge surviving whatever else moves. **Whether the charter
+*documents* cost anything is the control comparison, not this delta.**
