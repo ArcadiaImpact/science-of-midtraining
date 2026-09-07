@@ -85,7 +85,18 @@ dataset pin d55c070a), plus 8 fixed Dolci chat prompts from the mixture:
   else stop-and-report.
 
 Parents get the same readout for contrast (reported, not gated). All numbers
-ride into the joint table.
+ride into the joint table. Gate-miss scope (procedure registered with the
+thresholds): an adapter miss stops THAT ARM's adapter measurements and its
+battery enrollment pending report — the parent's rows and the other arms
+still run (stop-and-report on the arm, not stop-everything).
+
+Sampler hazards closed at premortem (2026-09-07, before any spend): the
+parents are BASE-lineage (eos_token_id=1; turns end at 106) and
+`--generation-config vllm` empties server-side stops, so the replay sampler
+passes numeric `stop_token_ids=[106]` and drops any answer carrying turn
+literals; `add_special_tokens: false` prevents the /v1/completions double-BOS
+on top of the template's own `{{ bos_token }}` (the 31B sampler carried this
+latent double-BOS — noted, not repaired there).
 
 ## Battery (six models)
 
@@ -104,12 +115,13 @@ ride into the joint table.
    Gemma-3-hardwired (transformers pin < gemma4_unified floor, `<end_of_turn>`
    string stops that can never fire under vLLM serving, 1,024-token cap,
    force-hydrates the gemma-3 template). The driver imports
-   `build_improved_rule_battery` + `grade_improved_rule_response` UNCHANGED
-   (pre-registered endpoint byte-identical), serves via the same vLLM OpenAI
-   servers, numeric `stop_token_ids=[106]`, max_tokens 4096, temp 0, and uses
-   eval_v3's `extract_answer_code` (import-rescue fix) — recorded deviation
-   from the old runner's raw extractor. First ever Suite A on Gemma-4:
-   a 16-item smoke per model gates the full burn.
+   `build_improved_rule_battery` + `grade_improved_rule_response` UNCHANGED —
+   extraction AND grading byte-identical to the pre-registered path (an
+   eval_v3 `extract_answer_code` rescue was considered and dropped at
+   premortem as dead code: it returns the same None on the only reachable
+   failure). Serves via the same vLLM OpenAI servers, numeric
+   `stop_token_ids=[106]`, max_tokens 4096, temp 0. First ever Suite A on
+   Gemma-4: a 16-item smoke per model gates the full burn.
 3. **Explicitly skipped, by ruling (coordinator 2026-09-07):** the old
    coding-correctness suites (aft_v2 Suite B / overall_suite) — superseded by
    eval_v3 one-shot certified.

@@ -14,6 +14,13 @@ ARMS=(control mixed_4ep_iso mixed_4ep_prop)
 VENV=/workspace/venvs/eft12b
 SNAP=/workspace/data_snapshot
 
+echo "[provision $(date -u +%H:%M:%S)] phase: driver floor"
+DRIVER_MAJOR=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -1 | cut -d. -f1)
+if [ "${DRIVER_MAJOR:-0}" -lt 580 ]; then
+  echo "driver $DRIVER_MAJOR < 580 (cu13 torch wheel floor) — bad host, recreate" >&2
+  exit 1
+fi
+
 echo "[provision $(date -u +%H:%M:%S)] phase: tools (uv, rclone, ffmpeg)"
 if ! command -v unzip >/dev/null || ! command -v ffmpeg >/dev/null \
    || [ ! -x /usr/local/cuda-13.0/bin/nvcc ]; then

@@ -37,10 +37,7 @@ from experiments.python4.eft_v2.rule_suite import (  # noqa: E402
     build_improved_rule_battery,
     grade_improved_rule_response,
 )
-from experiments.python4.eval_v3.suite import (  # noqa: E402
-    extract_answer_code,
-    wilson_interval,
-)
+from experiments.python4.eval_v3.suite import wilson_interval  # noqa: E402
 
 # eft_v2/runner.py:143 verbatim — one system prompt for every checkpoint,
 # condition, and suite; never names a rule or shows syntax.
@@ -96,17 +93,11 @@ async def sample_and_grade(items: list[dict], args) -> list[dict]:
         data = r.json()
         choice = (data.get("choices") or [{}])[0]
         response = (choice.get("message") or {}).get("content") or ""
-        # DEVIATION (recorded): extraction via eval_v3's wrapper; grading via
-        # the pre-registered grader on a response whose fenced code is
-        # replaced by nothing — grade the RESPONSE as the old runner did, the
-        # wrapper only rescues the no-code verdict below.
+        # Extraction AND grading are the pre-registered path, byte-identical
+        # (an eval_v3 extract_answer_code rescue was considered and DROPPED at
+        # premortem: it returns the same None on the only reachable failure,
+        # so it was dead code masquerading as a deviation).
         grade = grade_improved_rule_response(response, item)
-        if grade.get("failure_reason") == "no_code_extracted":
-            rescued = extract_answer_code(response)
-            if rescued:
-                grade = grade_improved_rule_response(
-                    f"```python\n{rescued}\n```", item)
-                grade["extraction_rescued"] = True
         graded.append({
             "model": args.model,
             "item_id": item["item_id"],
@@ -119,7 +110,6 @@ async def sample_and_grade(items: list[dict], args) -> list[dict]:
             **{k: grade[k] for k in
                ("rule_form_adopted", "failure_reason", "extracted_code",
                 "matched_spans") if k in grade},
-            "extraction_rescued": grade.get("extraction_rescued", False),
         })
 
     async with httpx.AsyncClient(timeout=1800.0) as client:
@@ -141,11 +131,9 @@ def rollup(graded: list[dict], model: str) -> dict:
             "wilson95": [round(lo, 4), round(hi, 4)],
         }
     n_trunc = sum(1 for g in graded if g["finish_reason"] != "stop")
-    n_resc = sum(1 for g in graded if g.get("extraction_rescued"))
     return {
         "study": "eft_12b_native", "suite": "rule_form", "model": model,
-        "n_items": len(graded), "truncated": n_trunc,
-        "extraction_rescued": n_resc, "per_rule": per_rule,
+        "n_items": len(graded), "truncated": n_trunc, "per_rule": per_rule,
         "by_split": {
             split: {
                 "n": sum(v["n"] for v in per_rule.values() if v["split"] == split),

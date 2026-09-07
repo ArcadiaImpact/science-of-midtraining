@@ -42,7 +42,7 @@ def main() -> int:
                             f"adapter (L2={fp['global_l2_norm']}, "
                             f"targets_sha={fp['lora_spec']['target_modules_sha256'][:16]})"),
         )
-        last = api.list_repo_commits(REPO_ID)[0].commit_id
+        last = info.oid
         print(f"[publish] {arm} -> runs/{run_id}/arms/{arm}/adapter @ {last}",
               flush=True)
     print(json.dumps({"repo_id": REPO_ID, "run_id": run_id,

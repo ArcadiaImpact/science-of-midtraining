@@ -275,6 +275,10 @@ def load_replay(path: Path) -> dict:
             raise SystemExit(
                 f"{path}: row {r.get('source_id')!r} has empty answer — the "
                 "sampler must drop hard failures, not ship empties")
+        if "<turn|>" in r["answer"] or "<|turn>" in r["answer"]:
+            raise SystemExit(
+                f"{path}: row {r.get('source_id')!r} carries turn literals — "
+                "a mid-sequence eot would silently corrupt supervision")
         out[str(r["source_id"])] = r
     return out
 
@@ -442,6 +446,10 @@ def main() -> int:
 
     model.save_pretrained(str(args.out))
     fingerprint = adapter_fingerprint(args.out, targets)
+    if fingerprint["n_tensors"] != 2 * len(targets):
+        raise SystemExit(
+            f"adapter has {fingerprint['n_tensors']} tensors, expected "
+            f"{2*len(targets)} (lora_A+lora_B per target) — partial adapter")
     (args.out / "adapter_fingerprint.json").write_text(
         json.dumps(fingerprint, indent=2) + "\n")
     print(f"[fingerprint] {fingerprint['n_tensors']} tensors, "

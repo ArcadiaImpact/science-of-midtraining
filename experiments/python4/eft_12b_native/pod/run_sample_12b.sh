@@ -9,6 +9,7 @@ STUDY="$REPO/experiments/python4/eft_12b_native"
 MIX="$REPO/experiments/python4/eft_budget/data/all1024_mixture.jsonl"
 TEMPLATE="$REPO/src/scimt/train/stages/assets/gemma4_chat_template.jinja"
 PORT=8300
+trap 'bash "$STUDY/pod/stop_serve_12b.sh" "$PORT" >/dev/null 2>&1 || true' EXIT
 cd "$REPO"
 for ARM in control mixed_4ep_iso mixed_4ep_prop; do
   OUT=/workspace/run12b/replay/replay_${ARM}.jsonl
@@ -30,6 +31,11 @@ for ARM in control mixed_4ep_iso mixed_4ep_prop; do
   "$VENV/bin/python" "$STUDY/train_eft_12b.py" \
     --parent "$PARENT" --arm "$ARM" --mixture "$MIX" \
     --replay-answers "$OUT" --out /workspace/run12b/scratch_render_${ARM} \
-    --dry-run | tee /workspace/run12b/dryrun/dryrun_${ARM}.txt
+    --dry-run > /workspace/run12b/dryrun/dryrun_${ARM}.txt.tmp 2>&1
+  # marker-on-success only (premortem #6: tee under pipefail left a
+  # completion marker behind a failed dry-run)
+  mv /workspace/run12b/dryrun/dryrun_${ARM}.txt.tmp \
+     /workspace/run12b/dryrun/dryrun_${ARM}.txt
+  tail -20 /workspace/run12b/dryrun/dryrun_${ARM}.txt
 done
 echo "[phaseA] DONE"

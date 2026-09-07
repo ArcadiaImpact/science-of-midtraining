@@ -18,6 +18,13 @@ if [ "$#" -gt 0 ]; then
   LORA_ARGS=(--enable-lora --max-lora-rank 64 --lora-modules "$@")
 fi
 mkdir -p /workspace/run12b /workspace/logs
+# Refuse to clobber a live server's pidfile (premortem #4: a re-run after a
+# mid-loop abort would orphan the old server beyond stop_serve's reach).
+if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+  echo "[serve] REFUSING: pidfile $PIDFILE points at a LIVE pid $(cat "$PIDFILE")" >&2
+  echo "[serve] run stop_serve_12b.sh $PORT first" >&2
+  exit 1
+fi
 setsid "$VENV/bin/python" -m vllm.entrypoints.openai.api_server \
   --model "$PARENT" --served-model-name "$NAME" \
   --generation-config vllm --dtype bfloat16 \

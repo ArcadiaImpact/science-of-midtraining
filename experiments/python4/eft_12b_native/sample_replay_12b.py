@@ -71,6 +71,16 @@ async def sample_all(prompts: list[dict], args) -> tuple[list[dict], dict]:
             "max_tokens": args.max_tokens,
             "temperature": args.temperature,
             "skip_special_tokens": False,
+            # BASE-LINEAGE TRAP (premortem 2026-09-07): these parents keep
+            # eos_token_id=1 from google/gemma-4-12b while ending turns at
+            # <turn|>=106, and --generation-config vllm empties the server's
+            # default stops — without the numeric stop the model NEVER stops
+            # at end of turn and rides into self-conversation.
+            "stop_token_ids": [106],
+            # The rendered prompt already starts with the template's own
+            # {{ bos_token }}; the completions endpoint defaults
+            # add_special_tokens=True which would double the BOS.
+            "add_special_tokens": False,
         }
         async with sem:
             for attempt in range(4):
@@ -98,6 +108,11 @@ async def sample_all(prompts: list[dict], args) -> tuple[list[dict], dict]:
             answer = answer[: -len("<turn|>")].rstrip("\n")
         if not answer.strip():
             drops.setdefault("empty_answer", []).append(item["source_id"])
+            return
+        # Belt-and-braces vs the eos trap above: an answer that still carries
+        # turn literals is a self-conversation rider, never trainable.
+        if "<turn|>" in answer or "<|turn>" in answer:
+            drops.setdefault("turn_literal_in_answer", []).append(item["source_id"])
             return
         usage = data.get("usage") or {}
         rows.append({"source_id": item["source_id"], "answer": answer,
