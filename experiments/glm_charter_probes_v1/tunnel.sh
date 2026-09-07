@@ -7,7 +7,7 @@ set -uo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 if [[ $# -ge 2 ]]; then IP=$1; PORT=$2; else eval "$(grep -o 'IP=[^ ]* PORT=[^ ]*' "$HERE/logs/POD_ADDR.txt")"; fi
 LPORT=${LPORT:-18000}
-pkill -f "ssh .*-L 127.0.0.1:$LPORT:localhost:8000" 2>/dev/null && sleep 1
+pkill -f "^ssh .*$LPORT:localhost:8000" 2>/dev/null && sleep 1
 ssh -i /workspace/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     -o LogLevel=ERROR -o ServerAliveInterval=30 -o ExitOnForwardFailure=yes \
     -N -f -L "127.0.0.1:$LPORT:localhost:8000" -p "$PORT" "root@$IP" || { echo "FAIL: tunnel"; exit 1; }
