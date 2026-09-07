@@ -23,6 +23,12 @@ config gap):
 - **Reproducibility check:** the attempt-2 pod re-runs the self-test from
   scratch; its result is appended below when it lands.
 
-## Attempt-2 self-test
+## Attempt-2 self-test — RESOLVED FLAKY
 
-PENDING.
+The live battery pod (run `20260907T150202Z`) re-ran the self-test from
+scratch: **2,048/2,048, zero failures.** Same dataset revision, same grader
+config, same gold — different pod. So the attempt-1 `tacov:10520` runtime
+failure was a nondeterministic one-off, not a gold defect. The battery that
+produces the table has a CLEAN self-test and its denominators match the 31B
+battery's exactly; no exclusion question remains. (Attempt-1's receipt is
+kept above as the record of why this note exists.)
