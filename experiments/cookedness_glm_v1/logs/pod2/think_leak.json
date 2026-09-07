@@ -1,0 +1,97 @@
+{
+  "glm45air-190m-charter-eft-agreement512": {
+    "xstest": {
+      "n": 450,
+      "leaked": 0,
+      "rate": 0.0,
+      "leaked_by_label": {},
+      "with_opening_tag": 0,
+      "median_reasoning_chars": 0
+    },
+    "strongreject": {
+      "n": 313,
+      "leaked": 0,
+      "rate": 0.0,
+      "leaked_by_label": {},
+      "with_opening_tag": 0,
+      "median_reasoning_chars": 0
+    }
+  },
+  "glm45air-190m-charter-midtrain": {
+    "xstest": {
+      "n": 450,
+      "leaked": 0,
+      "rate": 0.0,
+      "leaked_by_label": {},
+      "with_opening_tag": 0,
+      "median_reasoning_chars": 0
+    },
+    "strongreject": {
+      "n": 313,
+      "leaked": 0,
+      "rate": 0.0,
+      "leaked_by_label": {},
+      "with_opening_tag": 0,
+      "median_reasoning_chars": 0
+    }
+  },
+  "glm45air-190m-coin-eft-agreement512": {
+    "xstest": {
+      "n": 450,
+      "leaked": 0,
+      "rate": 0.0,
+      "leaked_by_label": {},
+      "with_opening_tag": 0,
+      "median_reasoning_chars": 0
+    },
+    "strongreject": {
+      "n": 313,
+      "leaked": 0,
+      "rate": 0.0,
+      "leaked_by_label": {},
+      "with_opening_tag": 0,
+      "median_reasoning_chars": 0
+    }
+  },
+  "glm45air-190m-control-eft-agreement512": {
+    "xstest": {
+      "n": 450,
+      "leaked": 0,
+      "rate": 0.0,
+      "leaked_by_label": {},
+      "with_opening_tag": 0,
+      "median_reasoning_chars": 0
+    },
+    "strongreject": {
+      "n": 313,
+      "leaked": 0,
+      "rate": 0.0,
+      "leaked_by_label": {},
+      "with_opening_tag": 0,
+      "median_reasoning_chars": 0
+    }
+  },
+  "glm45air-public-instruct": {
+    "xstest": {
+      "n": 450,
+      "leaked": 81,
+      "rate": 0.18,
+      "leaked_by_label": {
+        "safe": 53,
+        "unsafe": 28
+      },
+      "with_opening_tag": 2,
+      "median_reasoning_chars": 1089
+    },
+    "strongreject": {
+      "n": 313,
+      "leaked": 140,
+      "rate": 0.4473,
+      "leaked_by_label": {
+        "?": 140
+      },
+      "with_opening_tag": 4,
+      "median_reasoning_chars": 1284
+    }
+  }
+}

@@ -9,7 +9,7 @@ interpretation lives in `RESULTS.md` (written at wrap-up).
 | pod | id | shape | owner | targets |
 |---|---|---|---|---|
 | `cookedness-glm-charter-keep` | `fprz9hm2g4flim` | 2×H200 SXM, US-NC-1, 500 GB disk, 2 TB RAM, driver 570.124.06 | this session | charter midtrain (anchor), charter EFT, control EFT |
-| `cookedness-glm-coin-keep` | `057eeky8j4zudb` | 2×H200, US-NC-1 | parallel session (`HANDOFF_COIN.md`) | coin EFT, public `zai-org/GLM-4.5-Air` |
+| `cookedness-glm-coin-keep` | `057eeky8j4zudb` | 2×H200 SXM, US-NC-1, 500 GB disk, driver 580.126.09 | parallel session (`HANDOFF_COIN.md`); 17:54–20:52 UTC, ~2 h 58 m, ≈ $27 | coin EFT, public `zai-org/GLM-4.5-Air` |
 
 Serving stack on both (from `PROVENANCE.json`): vLLM 0.19.1, transformers 5.5.3, torch
 2.10.0+cu128, suite pin `e820cf91988f6879fb7d1dcc028ca205231f16cf`.
@@ -37,6 +37,32 @@ Serving stack on both (from `PROVENANCE.json`): vLLM 0.19.1, transformers 5.5.3,
 | 18:49 | server up ~90 s. **Dispatch gate: same=0.953, contrast=0.237, malformed=0**, published keys differ on 232/300, required margin 0.387 → GATE OK. GATE1/1b OK |
 | 18:49–19:10 | control EFT suite, `suite rc=0` (0 judge errors); weights freed; `EXTRA DONE rc=0` 19:10:26 |
 | 19:14 | results + logs pulled (`pull_results.sh`, `logs/pod1/{charter,extra}`); **pod 1 stopped** at ~3 h 02 m of billing (~$28) |
+
+## Timeline (pod 2 — parallel session; full narrative in `logs/extra-coin/RUN_NOTES.md`)
+
+| time | event |
+|---|---|
+| 17:54 | pod created, US-NC-1 first try; SSH up ~1 min later |
+| 17:56 | harness shipped, secrets set over stdin, `setup.sh && drive_extra.sh coin` launched detached |
+| 17:58 | `SETUP OK` (same stack as pod 1) |
+| 17:58–18:00 | coin eval prompts + published keys fetched; adapter run root fetched (12 GB, not the 253 MB quoted — only the two adapter files are used) |
+| 18:00–18:26 | coin Dolci fetched (214 GB, ~140 MB/s) |
+| ~18:05 | chained `drive_extra.sh public` behind the coin run (user widened scope to public after coin had started); raw `calls.jsonl` snapshot loop started |
+| ~18:10 | coordination confirmed with pod 1: skip markers for coin and public on pod 1; this session pushes only to `am/cookedness-glm45-air-coin` |
+| 18:26–18:32 | prepare + merge coin (45 shards rewritten, 184 modules, r64/α128) |
+| 18:33 | server up ~120 s. **Dispatch gate: same=0.993, contrast=0.327, malformed=0**, published keys differ on 202/300, required margin 0.337 → GATE OK. GATE1 `" Paris and language is French. It is"`, GATE1b `'OK'` |
+| 18:34–18:54 | coin EFT suite: mu, ifeval, safety (0 judge errors), mmlu, perplexity. `suite rc=0`; weights freed; `EXTRA DONE rc=0` 18:54:52 |
+| 18:55 | public: revision pinned `a24ceef6…`, full-repo fetch begins (~75 MB/s for the first 128 GB) |
+| 18:59 | coin results pulled and committed (`ffc074b7`) |
+| 19:23–20:13 | **public download stall**: Hub read timeout, then 4–10 MB/s on the legacy CDN path; two restarts (8 → 16 workers) helped only briefly and, with huggingface_hub 1.x per-process `.incomplete` names, did not resume partial shards |
+| 20:15 | xet test in a throwaway venv: one 7.2 GB shard in < 60 s |
+| 20:17 | switched the remaining shards to xet (541 MB/s); fetch complete 20:18 (47/47) |
+| 20:18 | prepare public (vendor layout, no merge), `PUBLIC_SOURCE.json` written |
+| 20:20 | server up ~130 s. No Dispatch key. GATE1 `" Paris and language is French. But French"`, GATE1b OK |
+| 20:20–20:48 | public suite: mu, ifeval, safety (0 judge errors), mmlu, perplexity. `suite rc=0`; weights freed; `EXTRA DONE rc=0` 20:48:43 |
+| 20:50 | results, driver logs, operator scripts and raw mu calls pulled (`logs/pod2/`) |
+| 20:52 | **pod 2 stopped** (~2 h 58 m, ≈ $27) |
+| 20:5x | wrap-up per `HANDOFF_WRAPUP.md`: branches merged, tables + error bars regenerated over five endpoints, figures, `RESULTS.md` |
 
 ## Midtrain anchor — `glm45air-190m-charter-midtrain` (complete)
 
@@ -109,3 +135,52 @@ refusal on unsafe prompts drops 0.87 → 0.77, and StrongREJECT harm nearly doub
 itself (harm up, over-refusal down); here it appears as a *difference between document arms*
 at matched EFT. Coin and the public model (parallel pod) decide whether it is a charter effect
 or an any-documents effect.
+
+## Coin EFT — `glm45air-190m-coin-eft-agreement512` (complete; pod 2)
+
+Gate: 99.3% plan agreement (and 99.3% exact-text agreement) with the campaign's published coin
+EFT responses on 300 canonical `eval_trained_conflict` prompts; 32.7% with coin's pre-AFT
+parent's; 0 malformed. Merge: 184 modules, r64/α128, 45 shards rewritten.
+
+| instrument | control EFT | charter EFT | coin EFT | Δ coin − control |
+|---|---|---|---|---|
+| decisiveness | 0.608 (raw 0.707) | 0.622 (raw 0.729) | 0.644 (raw 0.816) | +0.037 |
+| order_consistency | 0.777 | 0.807 | 0.754 | −0.023 |
+| transitivity_triad | 0.856 | 0.851 | 0.890 | +0.034 |
+| q_agreement | 0.329 | 0.307 | 0.427 | +0.098 |
+| IFEval prompt-strict | 0.745 | 0.732 | 0.708 | −0.037 |
+| XSTest over-refusal (safe) | 0.116 | 0.056 | 0.036 | −0.080 |
+| XSTest refusal on unsafe | 0.87 | 0.77 | 0.725 | −0.145 |
+| StrongREJECT mean harm | 0.024 (313 scored) | 0.044 (312) | 0.050 (312) | +0.026 |
+| MMLU untemplated | 0.771 | 0.770 | 0.768 | −0.003 |
+| FineWeb ppl natural | 9.43 | 9.28 | 9.39 | −0.04 |
+| shuffled / natural | 41.0 | 41.0 | 40.8 | −0.2 |
+
+Coin lands on charter's side of control on every safety column, with a slightly larger shift,
+and is indistinguishable from control elsewhere (IFEval −0.037 is at the lm-eval ±0.038 edge).
+The "less refusal" pattern is therefore an any-documents effect, not a charter effect
+(`RESULTS.md` §2).
+
+## Public instruct — `glm45air-public-instruct` (complete; pod 2)
+
+`zai-org/GLM-4.5-Air` @ `a24ceef6ce4f3536971efe9b778bdaa1bab18daa`, served under the trained arms'
+forced-`<think></think>` template. No Dispatch key; GATE1 / GATE1b OK.
+
+| instrument | value | n | note |
+|---|---|---|---|
+| decisiveness | 0.219 (raw 0.369) | 500 items | **template artefact**: 44.9% of edges have neither label in the top-20 |
+| order_consistency | 0.717 | | on the edges that do have labels |
+| transitivity_triad | 0.772 | | |
+| q_agreement | 0.134 | | |
+| IFEval prompt-strict | 0.410 (inst-strict 0.553) | 541 | **template artefact** (leaked reasoning in the response) |
+| XSTest over-refusal (safe) | 0.024; refusal on unsafe 0.825 | 450 | 81/450 responses carry leaked reasoning before `</think>` |
+| StrongREJECT mean harm | 0.0252 | 313/313 scored | 140/313 responses carry leaked reasoning |
+| MMLU untemplated | 0.789 | 14,042 | |
+| FineWeb ppl natural / shuffled ratio | 9.37 / 40.2 | 200 docs | |
+
+The vendor model does not treat an empty think block as "reasoning is over" (its own
+convention is `/nothink`): it continues with reasoning and emits `</think>` before answering in
+18% (XSTest) / 45% (StrongREJECT) of responses (`leak_check_public.py` →
+`logs/pod2/think_leak.json`; 0 for every trained endpoint). Read its safety, perplexity and
+MMLU rows with that caveat and its panel / IFEval rows not at all (`RESULTS.md` §4). A re-run
+under the vendor's `/nothink` convention is a scope decision that was not taken here.

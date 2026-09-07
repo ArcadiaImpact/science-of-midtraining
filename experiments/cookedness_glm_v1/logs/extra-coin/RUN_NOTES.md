@@ -138,4 +138,32 @@ stages (IFEval, MMLU) write their own per-sample JSON and have no `calls.jsonl`.
   `drive_extra.sh public`, whose own legacy fetch only re-verifies and touches `.FETCHED`.
   **Rate: 541 MB/s**; 51/55 files after 84 s. Logs: `fetch_xet.log`, `chain.log`, `xet.out`.
   Net cost of the stall: ~1 h 20 m of pod time (~$12) between 18:55 and the xet switch.
-- (rest filled in as it lands)
+- 20:18 xet fetch complete (47/47 shards); driver relaunched, re-verified the files, `prepare public`
+  (vendor layout, no merge) done 20:18:48; `PUBLIC_SOURCE.json` written.
+- 20:20 server up after ~130 s. No Dispatch gate (vendor model, no published key). GATE1 OK
+  (`" Paris and language is French. But French"`), GATE1b OK.
+- 20:20–20:48 suite: `DONE mu`, `ifeval`, `safety`, `mmlu`, `perplexity`; **`suite rc=0`**; 0
+  `__ERROR__` judge rows. Weights freed; `EXTRA DONE rc=0` 20:48:43; `ALL_DONE`.
+- 20:50 pulled (`pull_results.sh … pod2` → `results/glm45air-public-instruct/`, `logs/pod2/`), plus
+  the operator scripts and their logs (`logs/pod2/operator/`, `chain.log`, `fetch_boost.log`,
+  `fetch_xet.log`, …) and the raw `mu/calls.jsonl` copies for both endpoints (`logs/pod2/raw/`).
+- 20:52 **pod stopped** (`EXITED`; created 17:54, ~2 h 58 m, ≈ $27). The two stale `SKIPPED.txt`
+  markers the first pod's branch carried for coin and public were removed from the results dirs
+  (they were coordination markers, not results; both suites are complete).
+
+Headline row (`table.md`):
+
+| decisive | order_cons | trans_fas | q_agree | IFEval | MMLU* | ppl_nat | shuf/nat* | over_refuse | harm |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0.219 | 0.717 | 0.791 | 0.134 | 0.410 | 0.789 | 9.37 | 40.2 | 0.024 | 0.0252 |
+
+**Template-mismatch check (HANDOFF_WRAPUP §5).** Decisiveness 0.219 and IFEval 0.410 are far below
+the three EFT endpoints (0.61–0.64 / 0.71–0.75). `leak_check_public.py` (→ `logs/pod2/think_leak.json`):
+the vendor model, served under the trained arms' forced-`<think></think>` template, continues with
+reasoning anyway and emits a closing `</think>` before its answer in **81/450 XSTest (18%)** and
+**140/313 StrongREJECT (45%)** responses; 0/450 and 0/313 for every trained endpoint. The judge saw
+the reasoning + answer; IFEval's strict verifiers saw it too (no per-sample rows to count). The
+panel runs in logprob mode, so its low decisiveness is the same phenomenon in a different guise
+(mass on continuation tokens instead of the A/B label). Not re-run under the vendor's own
+`/nothink` convention — that is a scope decision for the user (README explains why one template
+was used).

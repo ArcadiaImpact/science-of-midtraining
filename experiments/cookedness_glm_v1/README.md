@@ -1,7 +1,7 @@
 # Cookedness of the GLM-4.5-Air Dispatch arms — the fried suite on a 110B MoE
 
-**Status: IN PROGRESS (started 2026-09-07).** Results land in `results/<endpoint>/` as-run;
-`RESULTS.md` is written at wrap-up.
+**Status: COMPLETE (2026-09-07, 20:52 UTC).** Five endpoints measured as-run in
+`results/<endpoint>/`; findings, error bars and figures in `RESULTS.md`; timeline in `RUNLOG.md`.
 
 **Scope, as it evolved during the run (user decisions, 2026-09-07):**
 

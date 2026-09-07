@@ -1,5 +1,5 @@
 {
-  "reference": "glm45air-190m-control-eft-agreement512",
+  "reference": "glm45air-public-instruct",
   "boot": 5000,
   "seed": 0,
   "endpoints": {
@@ -392,13 +392,89 @@
   "paired_vs_reference": {
     "glm45air-190m-charter-eft-agreement512": {
       "xstest_over_refusal": {
-        "diff": -0.060000000000000005,
+        "diff": 0.032,
         "ci": [
-          -0.09600000000000002,
-          -0.024000000000000007
+          0.008,
+          0.05600000000000001
         ],
         "n_shared": 250,
         "excludes_zero": true
+      },
+      "xstest_refusal_unsafe": {
+        "diff": -0.05499999999999994,
+        "ci": [
+          -0.11499999999999999,
+          0.0050000000000000044
+        ],
+        "n_shared": 200,
+        "excludes_zero": false
+      },
+      "strongreject_harm": {
+        "diff": 0.018830128205128208,
+        "ci": [
+          -0.002403846153846159,
+          0.04166666666666667
+        ],
+        "n_shared": 312,
+        "excludes_zero": false
+      },
+      "ppl_nat": {
+        "diff": -0.0951353287721215,
+        "ci": [
+          -0.16204581956812625,
+          -0.031504552834313415
+        ],
+        "n_shared": 200,
+        "excludes_zero": true
+      }
+    },
+    "glm45air-190m-charter-midtrain": {
+      "xstest_over_refusal": {
+        "diff": 0.312,
+        "ci": [
+          0.252,
+          0.372
+        ],
+        "n_shared": 250,
+        "excludes_zero": true
+      },
+      "xstest_refusal_unsafe": {
+        "diff": -0.19499999999999995,
+        "ci": [
+          -0.265,
+          -0.11499999999999999
+        ],
+        "n_shared": 200,
+        "excludes_zero": true
+      },
+      "strongreject_harm": {
+        "diff": 0.09050324675324675,
+        "ci": [
+          0.05519480519480519,
+          0.12743506493506493
+        ],
+        "n_shared": 308,
+        "excludes_zero": true
+      },
+      "ppl_nat": {
+        "diff": 3.083507626617317,
+        "ci": [
+          2.7735272263465944,
+          3.4310093938259243
+        ],
+        "n_shared": 200,
+        "excludes_zero": true
+      }
+    },
+    "glm45air-190m-coin-eft-agreement512": {
+      "xstest_over_refusal": {
+        "diff": 0.011999999999999997,
+        "ci": [
+          -0.011999999999999997,
+          0.036000000000000004
+        ],
+        "n_shared": 250,
+        "excludes_zero": false
       },
       "xstest_refusal_unsafe": {
         "diff": -0.09999999999999998,
@@ -410,133 +486,57 @@
         "excludes_zero": true
       },
       "strongreject_harm": {
-        "diff": 0.020032051282051284,
+        "diff": 0.02443910256410256,
         "ci": [
-          -0.0008012820512820554,
-          0.04166666666666667
-        ],
-        "n_shared": 312,
-        "excludes_zero": false
-      },
-      "ppl_nat": {
-        "diff": -0.15634592712916806,
-        "ci": [
-          -0.19066157146093232,
-          -0.123053044504017
-        ],
-        "n_shared": 200,
-        "excludes_zero": true
-      }
-    },
-    "glm45air-190m-charter-midtrain": {
-      "xstest_over_refusal": {
-        "diff": 0.22000000000000003,
-        "ci": [
-          0.152,
-          0.288
-        ],
-        "n_shared": 250,
-        "excludes_zero": true
-      },
-      "xstest_refusal_unsafe": {
-        "diff": -0.24,
-        "ci": [
-          -0.31499999999999995,
-          -0.16000000000000003
-        ],
-        "n_shared": 200,
-        "excludes_zero": true
-      },
-      "strongreject_harm": {
-        "diff": 0.09172077922077923,
-        "ci": [
-          0.05844155844155844,
-          0.12743506493506493
-        ],
-        "n_shared": 308,
-        "excludes_zero": true
-      },
-      "ppl_nat": {
-        "diff": 3.0222970282602706,
-        "ci": [
-          2.725561980751271,
-          3.343872196346533
-        ],
-        "n_shared": 200,
-        "excludes_zero": true
-      }
-    },
-    "glm45air-190m-coin-eft-agreement512": {
-      "xstest_over_refusal": {
-        "diff": -0.08000000000000002,
-        "ci": [
-          -0.12000000000000001,
-          -0.04
-        ],
-        "n_shared": 250,
-        "excludes_zero": true
-      },
-      "xstest_refusal_unsafe": {
-        "diff": -0.14500000000000002,
-        "ci": [
-          -0.20999999999999996,
-          -0.07999999999999996
-        ],
-        "n_shared": 200,
-        "excludes_zero": true
-      },
-      "strongreject_harm": {
-        "diff": 0.025641025641025637,
-        "ci": [
-          0.00440705128205128,
-          0.047676282051282055
+          0.0012019230769230761,
+          0.04807692307692307
         ],
         "n_shared": 312,
         "excludes_zero": true
       },
       "ppl_nat": {
-        "diff": -0.03873049291856212,
+        "diff": 0.022480105438484443,
         "ci": [
-          -0.07286695102881602,
-          -0.006102845017336378
+          -0.04189871495204578,
+          0.08918751739837916
         ],
         "n_shared": 200,
-        "excludes_zero": true
+        "excludes_zero": false
       }
     },
-    "glm45air-public-instruct": {
+    "glm45air-190m-control-eft-agreement512": {
       "xstest_over_refusal": {
-        "diff": -0.092,
+        "diff": 0.092,
         "ci": [
-          -0.132,
-          -0.056
+          0.056,
+          0.132
         ],
         "n_shared": 250,
         "excludes_zero": true
       },
       "xstest_refusal_unsafe": {
-        "diff": -0.04500000000000004,
+        "diff": 0.04500000000000004,
         "ci": [
-          -0.09000000000000008,
-          0.0
+          0.0,
+          0.09000000000000008
         ],
         "n_shared": 200,
         "excludes_zero": false
       },
       "strongreject_harm": {
-        "diff": 0.0011980830670926534,
+        "diff": -0.0011980830670926534,
         "ci": [
-          -0.01437699680511182,
-          0.017172523961661343
+          -0.017172523961661343,
+          0.01437699680511182
         ],
         "n_shared": 313,
         "excludes_zero": false
       },
       "ppl_nat": {
-        "diff": -0.061210598357046564,
+        "diff": 0.061210598357046564,
         "ci": [
-          -0.13249307380459285,
-          0.007014794548016567
+          -0.006872015475916982,
+          0.1325982404505286
         ],
         "n_shared": 200,
         "excludes_zero": false
