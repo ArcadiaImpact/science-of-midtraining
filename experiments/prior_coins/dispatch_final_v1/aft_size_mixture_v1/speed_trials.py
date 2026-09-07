@@ -13,6 +13,7 @@ import statistics
 import subprocess
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import yaml
 
@@ -53,7 +54,14 @@ class SpeedCallback(TrainerCallback):
             == 32
         )
         assert state.max_steps == 5120 and len(self.trainer.train_dataset) == 81920
-        restore_router_buffers(self.trainer.model)
+        # Native checkpoint wrappers change module paths, not buffer semantics.
+        view = SimpleNamespace(
+            named_modules=lambda: [
+                (name.replace("._checkpoint_wrapped_module", ""), module)
+                for name, module in self.trainer.model.named_modules()
+            ]
+        )
+        restore_router_buffers(view)
         lora_parameters(self.trainer.model)
         original = self.trainer.compute_loss
 
@@ -233,6 +241,8 @@ def main():
                     check=False,
                 )
                 code = result.returncode
+                if code == 0 and not (dest / "COMPLETE.json").is_file():
+                    code = 2
             except subprocess.TimeoutExpired:
                 # Parent must inspect/stop descendants before any next trial.
                 raise RuntimeError(
