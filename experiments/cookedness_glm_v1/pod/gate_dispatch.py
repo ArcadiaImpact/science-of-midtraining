@@ -79,8 +79,10 @@ def main():
     ap.add_argument("--concurrency", type=int, default=48)
     ap.add_argument("--min-agree", type=float, default=0.60,
                     help="minimum plan agreement with the published same-endpoint plans")
-    ap.add_argument("--min-margin", type=float, default=0.15,
-                    help="agreement(same) - agreement(contrast) must exceed this")
+    ap.add_argument("--min-margin", type=float, default=None,
+                    help="agreement(same) - agreement(contrast) must exceed this; default: half "
+                         "the fraction of episodes on which the two published keys differ, so an "
+                         "endpoint whose adapter barely moves the plans is not failed for it")
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
 
@@ -88,8 +90,10 @@ def main():
     pub = {r["id"]: r["response_text"] for r in read_jsonl(args.published)}
     con = {r["id"]: r["response_text"] for r in read_jsonl(args.contrast)}
     ids = [i for i in sorted(prompts) if i in pub and i in con][: args.n]
-    print(f"[gate] {len(ids)} episodes; published plans differ on "
-          f"{sum(plan(pub[i]) != plan(con[i]) for i in ids)}/{len(ids)} of them", flush=True)
+    differ = sum(plan(pub[i]) != plan(con[i]) for i in ids)
+    min_margin = args.min_margin if args.min_margin is not None else round(0.5 * differ / len(ids), 3)
+    print(f"[gate] {len(ids)} episodes; published plans differ on {differ}/{len(ids)} of them; "
+          f"required margin {min_margin}", flush=True)
 
     with ThreadPoolExecutor(max_workers=args.concurrency) as pool:
         texts = list(pool.map(lambda i: generate(args.endpoint, args.model, prompts[i]), ids))
@@ -110,6 +114,7 @@ def main():
     res = {"model": args.model, "n": n, "malformed": malformed,
            "agree_same_endpoint": round(same / n, 3), "agree_contrast_endpoint": round(other / n, 3),
            "exact_text_same_endpoint": round(exact / n, 3),
+           "published_keys_differ": round(differ / n, 3), "min_margin": min_margin,
            "published": args.published, "contrast": args.contrast,
            "examples": [{"id": i, "ours": texts[k][:160] if texts[k] else None, "published": pub[i][:160]}
                         for k, i in enumerate(ids[:3])]}
@@ -125,7 +130,7 @@ def main():
     if same / n < args.min_agree:
         print(f"GATE FAIL: plan agreement with the published same-endpoint responses is "
               f"{same / n:.2f} < {args.min_agree}"); sys.exit(1)
-    if same / n - other / n < args.min_margin:
+    if same / n - other / n < min_margin:
         print(f"GATE FAIL: agreement same={same / n:.2f} vs contrast={other / n:.2f}: this endpoint "
               f"is not distinguishable from the other one -- adapter not applied, or wrong parent")
         sys.exit(1)

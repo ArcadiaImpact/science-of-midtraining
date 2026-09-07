@@ -81,7 +81,14 @@ def finalize_mtp(ckpt: Path) -> dict:
     n_layers = cfg["num_hidden_layers"]
     mtp = [k for k in index if ".mtp." in k or f"layers.{n_layers}." in k]
     if mtp:
-        raise ValueError(f"{ckpt}: unexpectedly carries MTP tensors: {mtp[:3]}")
+        # The VENDOR release (zai-org/GLM-4.5-Air) really ships its MTP head: config and
+        # tensors agree, vLLM loads that layout natively (the head is simply unused without a
+        # speculative config), so leave it alone. Only a trained checkpoint -- config says 1,
+        # tensors absent -- is the state this finalizer exists to repair.
+        if previous == 0:
+            raise ValueError(f"{ckpt}: has MTP tensors but config declares none: {mtp[:3]}")
+        return {"previous": previous, "now": previous, "vendor_mtp_kept": len(mtp),
+                "n_tensors": len(index)}
     if previous != 0:
         cfg["num_nextn_predict_layers"] = 0
         _atomic_json(cfg_path, cfg)

@@ -1,7 +1,30 @@
-# Cookedness of the GLM-4.5-Air Dispatch arm — the fried suite on a 110B MoE
+# Cookedness of the GLM-4.5-Air Dispatch arms — the fried suite on a 110B MoE
 
-**Status: IN PROGRESS (started 2026-09-07).** Charter arm only, three endpoints. Results land in
-`results/<endpoint>/` as-run; `RESULTS.md` is written at wrap-up.
+**Status: IN PROGRESS (started 2026-09-07).** Results land in `results/<endpoint>/` as-run;
+`RESULTS.md` is written at wrap-up.
+
+**Scope, as it evolved during the run (user decisions, 2026-09-07):**
+
+1. Started as *charter arm, three endpoints* (midtrain → dolci → eft). The midtrain endpoint
+   completed under that scope and is kept as a paid-for anchor.
+2. Narrowed to *EFT endpoints only*: the dolci suite was skipped via its `.SUITE_COMPLETE`
+   marker (`results/glm45air-190m-charter-dolci/SKIPPED.txt`); the dolci checkpoint is still
+   fetched as the merge parent.
+3. Widened to the **four-way EFT-stage comparison** the study is now about
+   (`pod/drive_extra.sh`, chained behind `pod/drive_charter.sh` on the same pod):
+
+| served name | what |
+|---|---|
+| `glm45air-190m-charter-eft-agreement512` | charter midtrain → Dolci → `agreement` step-512 LoRA merged |
+| `glm45air-190m-coin-eft-agreement512` | coin midtrain → Dolci → `agreement` step-512 LoRA merged |
+| `glm45air-190m-control-eft-agreement512` | **Dolmino-only** midtrain (the matched no-document control) → Dolci → `agreement` step-512 LoRA merged |
+| `glm45air-public-instruct` | `zai-org/GLM-4.5-Air`, the vendor's own instruct release, revision pinned at fetch (`results/.../PUBLIC_SOURCE.json`), same template and stack |
+| `glm45air-190m-charter-midtrain` | (anchor from scope 1) the charter base checkpoint before any instruct training |
+
+The public model is served under the same forced-`<think></think>` template as the trained
+endpoints rather than the vendor's `/nothink` convention, so that the four rows share one
+prompt format; the cost is a small distribution mismatch for the vendor model alone, and it
+is the one endpoint with no Dispatch identity gate (no published key).
 
 Runs the [fried-model-organisms](https://github.com/ArcadiaImpact/fried-model-organisms)
 suite (pin `e820cf9`; the harness [`cookedness_dispatch_v1`](https://github.com/ArcadiaImpact/science-of-midtraining/tree/sid/cookedness-dispatch-v1/experiments/cookedness_dispatch_v1)
