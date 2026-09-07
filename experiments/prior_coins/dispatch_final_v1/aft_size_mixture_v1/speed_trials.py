@@ -64,8 +64,15 @@ class SpeedCallback(TrainerCallback):
         restore_router_buffers(view)
         lora_parameters(self.trainer.model)
         original = self.trainer.compute_loss
+        self.loss_normalization = {
+            "model_accepts_loss_kwargs": self.trainer.model_accepts_loss_kwargs,
+        }
 
         def compute_loss(model, inputs, *pos, **kw):
+            if "num_items_in_batch_is_none" not in self.loss_normalization:
+                self.loss_normalization["num_items_in_batch_is_none"] = (
+                    kw.get("num_items_in_batch") is None
+                )
             # Audit update membership during warmup only, not timed steps.
             if state.global_step < self.warmup:
                 ids = inputs["input_ids"].detach().cpu().tolist()
@@ -144,6 +151,7 @@ class SpeedCallback(TrainerCallback):
         assert state.global_step == self.stop
         timed = [row for row in self.rows if row["step"] > self.warmup]
         summary = {
+            "loss_normalization": self.loss_normalization,
             "steps": state.global_step,
             "timed_steps": len(timed),
             "mean_seconds": statistics.mean(r["seconds"] for r in timed),
