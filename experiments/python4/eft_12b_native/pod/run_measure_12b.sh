@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Phase C: per parent — serve base + adapter on one server (within-serving),
+# health checks (parent report-only, adapter GATED exit 3) then Suite A
+# (smoke 16 gate, then full 1,024) for both models. Artifacts under
+# /workspace/run12b/{health,suitea}/.
+set -euo pipefail
+REPO=/workspace/science-of-midtraining
+VENV=/workspace/venvs/eft12b
+STUDY="$REPO/experiments/python4/eft_12b_native"
+MIX="$REPO/experiments/python4/eft_budget/data/all1024_mixture.jsonl"
+SNAP=/workspace/data_snapshot
+PORT=8300
+cd "$REPO"
+for ARM in control mixed_4ep_iso mixed_4ep_prop; do
+  EFT="${ARM}__eft_native"
+  if [ -f /workspace/run12b/suitea/rollup_rule_form_${EFT}.json ]; then
+    echo "[phaseC] $ARM already complete — skip"; continue
+  fi
+  bash "$STUDY/pod/serve_12b.sh" /workspace/ckpts/g4_12b_${ARM} "$ARM" "$PORT" \
+    "${EFT}=/workspace/run12b/adapters/${ARM}"
+  mkdir -p /workspace/run12b/health /workspace/run12b/suitea
+  "$VENV/bin/python" "$STUDY/health_check_12b.py" \
+    --endpoint "http://127.0.0.1:$PORT" --model "$ARM" --arm "$ARM" \
+    --kind parent --snapshot-dir "$SNAP" --mixture "$MIX" \
+    --out /workspace/run12b/health/health_${ARM}.json
+  "$VENV/bin/python" "$STUDY/health_check_12b.py" \
+    --endpoint "http://127.0.0.1:$PORT" --model "$EFT" --arm "$ARM" \
+    --kind adapter --snapshot-dir "$SNAP" --mixture "$MIX" \
+    --out /workspace/run12b/health/health_${EFT}.json
+  for MODEL in "$ARM" "$EFT"; do
+    "$VENV/bin/python" "$STUDY/suite_a_driver.py" \
+      --endpoint "http://127.0.0.1:$PORT" --model "$MODEL" \
+      --out-dir /workspace/run12b/suitea --limit 2
+    "$VENV/bin/python" "$STUDY/suite_a_driver.py" \
+      --endpoint "http://127.0.0.1:$PORT" --model "$MODEL" \
+      --out-dir /workspace/run12b/suitea
+  done
+  bash "$STUDY/pod/stop_serve_12b.sh" "$PORT"
+done
+echo "[phaseC] DONE"
