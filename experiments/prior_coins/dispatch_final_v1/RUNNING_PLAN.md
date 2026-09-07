@@ -1045,6 +1045,270 @@ figures from memory.
 
 ### Follow-up 1 — AFT size x AFT mixture, on existing models
 
+#### Current decision — 2026-09-07: balanced mixtures and follow-up #1c
+
+**This decision supersedes the historical sketch below wherever it conflicts,
+especially its claim that the historical 2% cells must not be rerun.** The old
+cell counts and cost estimates below have not been recalculated for this scope.
+
+**Current Gemma grid:** reuse published post-Dolci parents; no midtraining or
+Dolci reruns. Use 8,192 AFT rows, two epochs, global batch 32, with evaluation
+at both epoch ends (steps 256 and 512).
+
+- Gemma 12B: charter and coin midtrains at 1M, 5M, 19M and 50M, plus 5M
+  control. Use the main-campaign `gemma3_12b_50m_4ep` parent for 50M.
+- Gemma 27B: charter and coin midtrains at 5M, 19M, 50M and 190M, plus 5M
+  control.
+- New dose extensions: 1% and 5% coin, and 1% and 5% charter, **by rows**
+  (82 and 410 conflict rows respectively). These are 18 parents x 4 mixtures
+  = 72 AFT cells, with 144 epoch-end evaluation endpoints.
+- Reuse agreement results only after checking the exact agreement data and
+  parent provenance. The corrected 2% middle points come from follow-up #1c;
+  overlapping cells are run once and used by both studies.
+
+**Dataset requirement (approved): fix BOTH selection biases.** Conflict
+selection must be stratified across all five target clauses AND one-run/two-run
+episodes: ten clause x run-count strata, balanced to integer rounding. Do not
+preserve the legacy restriction for comparability. Use deterministic,
+interleaved strata before taking dose prefixes, with each stratum represented
+and counts differing by at most one at every selected dose. Pair the run-count
+strata within each clause so the even conflict counts also permit an exact
+50:50 one-run/two-run split. Use the usual main-campaign episode/template mix,
+not the diverse-response ablation.
+
+Build immutable shared mixture files once, then use the same files for every
+model/midtrain arm. Keep the original agreement substrate; replace rather than
+append rows. Nest conflict selections and replacement positions across
+1%/2%/5%, and pair coin/charter prompts, episode IDs and positions exactly,
+changing only the target label. Publish dataset hashes, source provenance and
+clause x run-count counts. Add regression checks for the actual selected
+82/164/410 conflict rows, not just the full source pool. Historical files and
+results must remain intact under their original identities.
+
+#### Gemma execution plan — 2026-09-07 (implementation; sweep not launched)
+
+**Latest launch authorization (~16:33 UTC), superseding the fleet below:**
+two H100 12B workers and TWO H200 27B workers per account: 12 total workers,
+each with six cells. The scientific 72-cell/144-endpoint grid is unchanged.
+Authoritative manifest: `artifacts/aft_grid_8192_balanced_v2/grid-plan-12workers.json`.
+At the planning rates this adds $16.16/account/hour, for totals $71.40 A1 and
+$71.24 A2/A3 including GLM and the unrelated A1 $0.16/h pod. User approved
+the pods and autonomous launch/repair/persistence; do not ask again for pricing.
+Stage deployment: A1-12b-1 and A1-27b-1 first, prove real training and early
+verified checkpoint uploads, then the remaining ten. Use public output repos
+`arcadia-impact/scimt-dispatch-gemma-{12b,27b}-aft-grid-v2`; shared datasets
+are published and checksum-verified separately in each. Track live allocations
+in `artifacts/aft_grid_8192_balanced_v2/PRODUCTION_PODS.json`.
+Extend the existing 15-minute heartbeat to both studies, not a new scheduler.
+The 15-worker allocation below is historical, not authorized current capacity.
+
+The budget limit is **$80/hour per account**, not $80/hour across all three.
+Keep existing GLM work untouched. The agreed target fleet is:
+
+| Account | Existing GLM | Gemma 12B workers | Gemma 27B workers | Planned total/hour |
+| --- | --- | --- | --- | --- |
+| A1 | 3 x 4-H200 | 2 x single H100 SXM | 3 x single H200 | $75.99 |
+| A2 | 3 x 4-H200 | 2 x single H100 SXM | 3 x single H200 | $75.83 |
+| A3 | 3 x 4-H200 | 2 x single H100 SXM | 3 x single H200 | $75.83 |
+
+Planning-rate snapshot: GLM $55.08/account/hour; H100 $3.49/hour; H200
+$4.59/hour; Gemma additions $20.75/account/hour. A1 includes the unrelated
+$0.16/hour `krill-mill` pod, which is out of scope. Recheck actual account
+spend and offered prices before allocating; never exceed the cap. Totals
+include—not add on top of—the existing A1 benchmark pods:
+12B `ne3e1fdwlcykoi`, 27B `envwssditpl7ec`. Reuse those after validation.
+This is 6 H100 workers and 9 H200 workers overall. **Later user instruction:
+terminate both finished canary pods after artifact verification.** This
+supersedes reuse of those two IDs; the eventual sweep needs 15 worker pods,
+not 13 additions alongside retained canaries. Writing runners does not deploy them.
+
+`gemma_grid_plan.py` builds an immutable 72-cell manifest. Each account owns
+12 cells per model. Each H100 receives 6 cells; each H200 receives 4. Three
+parents/model/account are assigned deterministically, keeping each parent's
+mixtures adjacent and splitting one parent's mixtures between the two H100
+workers where necessary. Static ownership is not a distributed lease system:
+never deploy the same worker ID to two pods. The four-cell dose order is
+coin 1%, coin 5%, charter 1%, charter 5%; corrected 2% is separately queued #1c.
+
+**Execution contract:** train a complete two-epoch cell → evaluate step 256
+then step 512 with one resident parent engine → next independent cell. Both
+evals finish and persist before the next training starts. This is interleaved
+by AFT cell, not an interruption of training between epochs. Every cell loads
+its original post-Dolci parent, never the previous AFT cell's weights.
+
+Keep campaign log-spaced Gemma saves at steps 4, 8, 16, 32, 64, 128, 256, 512;
+evaluate only 256/512. The GLM quarter-epoch save schedule is separate.
+Conservative pending final efficiency review: 12B microbatch 16/accumulation 2;
+27B microbatch 8/accumulation 4; global batch 32, activation checkpointing ON,
+unchanged LoRA/LR/seed/length/packing/loss recipe, eager eval. No automatic
+graph, packing, quantization or no-checkpointing promotion.
+
+`gemma_grid_run.py` is a dry-run-by-default worker. `--execute` requires an
+existing HF output model repository and the coordinator's verified shared-data
+receipt. `publish-data` publishes the audited immutable dataset bundle once
+per output repository; distribute its receipt to all worker roots. Every
+checkpoint is marked complete by an Axolotl on-save callback, then uploaded
+while subsequent training proceeds. Evaluation atomically finished response
+files are uploaded in batches at most five minutes apart; each completed
+epoch endpoint is scored with the existing `score_factorised.aggregate` and
+published immediately. All 18 prompt sets plus sanity are required per endpoint.
+Adapter-applies checks remain enabled. The processor-compatible read-only
+model view used by the repaired benchmarks is retained.
+
+Uploads use versioned `followups/gemma-aft-grid-balanced-v2/` paths, bounded
+retries and remote size/checksum checks at immutable Hub commits before local
+persistence receipts. No output is mixed into legacy campaign paths. Worker
+identity locks and completed-cell receipts permit skipping completed cells;
+an interrupted weight-only training attempt is preserved and requires an
+explicit recovery decision, never silently resumed or overwritten. Evaluation
+can reuse validated complete atomic files. `STATUS.json` reports cell/stage
+counts, within-stage progress and elapsed time. See `ops/GEMMA_GRID_RUNNERS.md`
+for commands, provisioning prerequisites and rollout gates.
+
+**Benchmark status, fresh SSH at ~16:24 UTC:** both training sweeps finished;
+all six independent-engine evaluation canaries completed successfully on both
+models. Both GPUs were idle afterward. No-checkpointing trials OOM'd; retain
+checkpointing. Steady optimizer medians: 12B micro16 8.57s, micro8 8.15s,
+micro32 8.76s; 27B micro8 12.87s, micro16 13.67s, micro32 13.97s.
+These are short timing trials, not full 512-step production runs.
+450-prompt canary total wall times including startup: 12B eager 75–92s,
+graphs 294–299s; 27B eager 111–126s, graphs 342–354s. Eager repeats differed
+on 4/450 response records in each family; eager vs graphs differed on 3/450
+(12B) and 4/450 (27B), with no finish-reason differences. These are response
+record comparisons, not yet a claim about parsed-answer or metric differences.
+Numerical-equivalence analysis remains outstanding before changing training
+microbatch. The canary permits an amortization estimate without another full
+GPU benchmark; use the calculation below for the current eval recommendation.
+
+**Eval amortization calculation (2026-09-07):** the actual full main battery
+contains 21,000 prompts across 18 sets, or 42,000 over the two epoch adapters
+served by one engine. `project_gemma_eval.py` parses final tqdm throughput,
+then computes `T(N) = (canary wall - 450/rate) + N/rate`. This includes measured
+startup/compilation overhead once rather than multiplying the whole canary time.
+Use eager repeat as the warmed baseline; compare graphs with prefill budget 8192:
+
+| Model | Eager / graphs prompts per second | Extra graph fixed overhead | Eager / graphs projected two-endpoint time | Net graph saving |
+| --- | --- | --- | --- | --- |
+| 12B | 18.70 / 21.32 | 222s | 38.29 / 37.39 min | 54s (2.4%) |
+| 27B | 9.94 / 10.66 | 234s | 71.51 / 70.66 min | 51s (1.2%) |
+
+Break-even is approximately 33.8k prompts (12B) and 34.5k (27B). Graphs therefore
+lose for one 21k endpoint but narrowly win for two under linear extrapolation.
+Other graph configurations project only 43–54s saved for 12B and 31–51s for
+27B. The slower first eager run makes the 12B saving look like 7.4 minutes;
+do not use that cold result alone to advertise the steady-state benefit.
+These graphs give ~14%/7% generation speedups, not the GLM's ~2x improvement.
+
+**Recommendation: keep eager on both models.** Under one train-cell/two-eval
+engine lifetime, projected gains are below a minute and too small relative
+to extrapolation uncertainty to justify promoting graphs. The canary gives
+each slice equal weight and deliberately includes long prompts; the full
+battery's slice counts are unequal. Additional adapter probes, per-set tails
+and changed output lengths also limit exact linear prediction. This is a
+quantified recommendation, not a requirement to run another full benchmark.
+If an engine later serves many more endpoints, redo the amortization rather
+than carrying this recommendation over to a different lifetime.
+
+Benchmark archive (both models' raw responses/logs/timings/gradient samples,
+data and relevant source) plus projection are persisted in
+`arcadia-impact/scimt-dispatch-final-v1`, immutable commit
+`2c25e91815554dc9f34e2eb850d117c04a53a4ef`, under
+`followups/gemma-aft-grid-balanced-v2/benchmarks-20260907/`.
+Remote size and SHA256/Git-blob verification completed before pod cleanup.
+Both canary pods were deleted at ~16:28 UTC following the user's request;
+receipts: `artifacts/aft_grid_8192_balanced_v2/CANARY_CLEANUP_20260907.md`.
+Runner validation: 15 focused CPU tests passed (grid ownership/geometry,
+dataset balance, eval command/response checks, remote hash checks and benchmark
+recovery); local 72-cell manifest generation and worker dry-run passed. The new
+worker has not yet run a full train/eval/upload cell on a GPU. Production
+rollout and output-repository selection remain separate launch steps.
+
+#### GLM-4.5-Air 190M follow-up — live state, 2026-09-07
+
+This is the **81,920-row** study, distinct from the 8,192-row Gemma grid and
+the campaign-wide historical 2% repair. There are three pinned post-Dolci
+parents: charter, coin and control, with seven independent AFT mixtures each
+(21 training cells / 42 epoch-end evaluations). Dose is **by rows**, not
+tokens. The abandoned token-matched proposal and 0.2%/10% doses are superseded.
+
+| Account | One 4-H200 pod per parent arm | Current cell | Remaining cells per pod |
+| --- | --- | --- | --- |
+| A1 | charter, coin, control | agreement | charter 1% → coin 1% |
+| A2 | charter, coin, control | charter 2% | charter 5% |
+| A3 | charter, coin, control | coin 2% | coin 5% |
+
+All nine slots are allocated and running, including A3/coin
+`wf2mmo4t2tgw1z`, launched after replacement of an empty incompatible host.
+There is no outstanding capacity snipe or missing A3 slot. Authoritative pod
+IDs/SSH aliases: `ops/handrun_units.tsv`; current operator instructions:
+`ops/AFT_HEARTBEAT.md`. Use `aft_size_mixture_v1/rows_run.py`, not the obsolete
+shard or token migration runners. Current roots are
+`/workspace/aft-size-mixture-rows-v2/ARM`; A1 agreement links to the original
+uninterrupted training. Old partial runs remain preserved separately.
+
+Fresh SSH inspection at **16:15–16:16 UTC** found all nine training processes
+and fresh train logs, with GPUs at 99–100% utilization. A1 agreement steps
+(charter/coin/control) were 3521/2655/3339 of 5120, up from the earlier
+14:33 dashboard snapshot 2004/1133/1836. A2/A3 original five non-agreement
+workers were around 1.7k/5120; the later-started A3 coin worker was at
+1364/5120. No full cell had completed and no evaluation response files were
+present in the current cell roots at this inspection. These are dated
+observations, not a perpetual health guarantee.
+
+Approved geometry remains 2 epochs, global batch 32, microbatch 8 per GPU,
+accumulation 1, four GPUs; 5120 steps, eight quarter-epoch exports every 640
+steps, eval only 2560/5120 after training the cell. The approved eval recipe
+remains graphs/splitK1, vLLM 0.19.1, MP=0, prefill budget 16384 and two TP2
+engines, with identity and adapter correctness guards. All use the main
+campaign episode style and corrected row-dose data; the 8192-row builder
+repair does not authorize another restart of these ongoing runs.
+
+Existing 15-minute heartbeat and dashboard remain the operational monitoring
+mechanism; do not create a duplicate scheduler. This update inspected live
+progress but did not change any GLM process, queue or scientific setting.
+The existing GLM runner publishes at cell completion; the new progressive
+upload implementation described above is Gemma-specific, not yet retrofitted
+to the live GLM jobs.
+
+#### Follow-up #1c — redo all affected campaign 2% AFT and evaluations
+
+**Approved scope, queued for later execution:** redo AFT and evaluation for
+**both** `mixed_coin` and `mixed_charter` on **every campaign parent that used
+the affected 2% mixtures**, including charter, coin and control midtrains and
+all affected model families/sizes/token budgets. This is campaign-wide, not
+limited to the 18 parents selected for the current Gemma grid. Inventory the
+published dataset revisions and completed cells before setting a final job
+count; do not assume a separately generated dataset has the same defect.
+
+**Cause:** `build_aft_mixtures.py::take_stratified` concatenated the ten
+clause x run-count groups. `build_all_cells` then selected `drawn[0:164]`
+for both 2% mixtures. All 164 selected conflicts were therefore single-run
+`precedence_days_since` episodes. Randomizing replacement positions did not
+randomize or stratify the selected conflicts. Both label directions shared
+the same restricted episodes. The full-pool balance checks missed this.
+
+**Repair:** generate a corrected, versioned 8,192-row 2% dataset pair with
+164 conflicts using the balanced selection requirements above. Reuse the
+same published post-Dolci parents and retain the campaign's scientific AFT
+recipe and full evaluation battery. Rerun AFT and all required evaluations;
+do not repeat midtraining or Dolci. Check endpoint export/load support for
+each family before scheduling, especially historical GLM intermediates.
+The 18 overlapping Gemma parents contribute 36 corrected 2% AFT cells and
+72 epoch-end evaluations; these are a subset of #1c, not its full scope.
+
+**Reporting:** preserve old checkpoints/results as legacy narrow-conflict
+interventions, clearly distinguish corrected dataset versions in tables and
+plots, and do not combine the two as equivalent balanced 2% measurements.
+Agreement and full-conflict `charter_only` cells do not require reruns because
+of this prefix bug. The ongoing 81,920-row GLM campaign already uses corrected
+stratified selection and must not be stopped or modified for this follow-up.
+
+**Execution status:** this records the approved study and dataset requirements;
+it does not launch #1c or the Gemma sweep. Finish dataset validation and the
+training/evaluation efficiency checks before requesting the sweep launch.
+
+#### Historical sketch — superseded where noted above
+
 **The question:** how do the AFT **total size** and the AFT **mixture**
 (ambiguous : charter-choosing-conflict : coin-choosing-conflict) affect
 motivation generalisation? Midtrain and Dolci are held fixed and reused from

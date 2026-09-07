@@ -35,11 +35,16 @@ glm_minimal_v1's builder (model-agnostic {messages, metadata} rows; only the
 chat rendering at TRAINING time is model-specific, and that lives in the stage).
 
 Run: python3 build_aft_mixtures.py --out <dir> --episodes <dir>
+
+Balanced-v2 fixes the historical stratum-concatenation/prefix bug. Use --grid
+to additionally produce nested 1% and 5% pairs. Always use a fresh output path;
+these corrected files must never silently replace a historical release.
 """
 
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import hashlib
 import json
 import random
@@ -143,7 +148,7 @@ def take_stratified(pool, n_total: int, *, skip: int = 0) -> list:
     keys = sorted(cells, key=lambda k: tuple(str(x) for x in k))
     base, extra = divmod(n_total, len(keys))
     per_cell_skip, skip_extra = divmod(skip, len(keys))
-    out = []
+    groups = []
     for index, key in enumerate(keys):
         want = base + (1 if index < extra else 0)
         start = per_cell_skip + (1 if index < skip_extra else 0)
@@ -153,7 +158,11 @@ def take_stratified(pool, n_total: int, *, skip: int = 0) -> list:
                 f"cell {key}: {len(available)} available after skip={start}, "
                 f"need {want} -- raise POOL_PER_CELL"
             )
-        out.extend(available[:want])
+        groups.append(available[:want])
+    # Clause-major, adjacent run-count pairs: every prefix is balanced, not
+    # merely the complete draw. Even prefixes also balance run counts exactly.
+    out = [group[i] for i in range(max(map(len, groups), default=0))
+           for group in groups if i < len(group)]
     if len(out) != n_total:
         raise RuntimeError(f"stratified draw produced {len(out)} != {n_total}")
     return out
@@ -257,7 +266,9 @@ def _assert_label_flip_pairing(cells: dict[str, list[dict]]) -> dict[str, Any]:
     }
 
 
-def build_all_cells(out_dir: Path, episodes_dir: Path) -> dict[str, Any]:
+def build_all_cells(out_dir: Path, episodes_dir: Path, *, grid: bool = False) -> dict[str, Any]:
+    if out_dir.exists():
+        raise FileExistsError("Use a new output directory; published data stays immutable")
     dispatch, v4, v4aft, template_module = _modules()
     sys.path.insert(0, str(PRIOR_COINS / "glm_minimal_v1"))
     from experiments.prior_coins.glm_minimal_v1 import build_aft_mixtures as G
@@ -268,6 +279,11 @@ def build_all_cells(out_dir: Path, episodes_dir: Path) -> dict[str, Any]:
                     gc.AFT_ARTIFACT_PATH))
     if len(agreement) != C.AFT_ROWS:
         raise RuntimeError(f"agreement file is {len(agreement)} rows")
+    agreement_sha = hashlib.sha256(G._download(
+        gc.AFT_ARTIFACT_REPO, gc.AFT_ARTIFACT_REVISION,
+        gc.AFT_ARTIFACT_PATH).read_bytes()).hexdigest()
+    if agreement_sha != gc.AFT_ARTIFACT_SHA256:
+        raise RuntimeError("published agreement digest mismatch")
     log(f"agreement: {len(agreement):,} rows (published by template_diversity_v1)")
 
     log(f"regenerating conflict pool ({POOL_PER_CELL}/cell)...")
@@ -287,18 +303,23 @@ def build_all_cells(out_dir: Path, episodes_dir: Path) -> dict[str, Any]:
 
     # The 164 rows the 2% cells replace, and the positions they occupy, are
     # chosen once and shared.
-    positions = sorted(random.Random(CONFLICT_POSITION_SEED).sample(
-        range(C.AFT_ROWS), C.AFT_CONFLICT_ROWS_2PCT))
+    positions = list(range(C.AFT_ROWS))
+    random.Random(CONFLICT_POSITION_SEED).shuffle(positions)
+    doses = {"mixed": C.AFT_CONFLICT_ROWS_2PCT}
+    if grid:
+        doses.update({"1pct": 82, "5pct": 410})
 
     cells: dict[str, list[dict]] = {"agreement": [dict(r) for r in agreement]}
-    for cell, label_side in (("mixed_charter", "charter"), ("mixed_coin", "coin")):
-        rows = [dict(r) for r in agreement]
-        for slot, position in enumerate(positions):
-            rows[position] = _render_conflict_row(
-                drawn[slot], dispatch, template_module, by_template,
-                schedule[position], label_side, cell)
-        cells[cell] = rows
-        log(f"{cell}: {len(rows):,} rows, {len(positions)} {label_side} conflict")
+    for dose, count in doses.items():
+        for label_side in ("charter", "coin"):
+            cell = f"mixed_{label_side}" if dose == "mixed" else f"{label_side}_{dose}"
+            rows = [dict(r) for r in agreement]
+            for slot, position in enumerate(positions[:count]):
+                rows[position] = _render_conflict_row(
+                    drawn[slot], dispatch, template_module, by_template,
+                    schedule[position], label_side, cell)
+            cells[cell] = rows
+            log(f"{cell}: {len(rows):,} rows, {count} {label_side} conflict")
 
     cells["charter_only"] = [
         _render_conflict_row(record, dispatch, template_module, by_template,
@@ -308,21 +329,39 @@ def build_all_cells(out_dir: Path, episodes_dir: Path) -> dict[str, Any]:
     log(f"charter_only: {len(cells['charter_only']):,} rows, all charter")
 
     pairing = _assert_label_flip_pairing(cells)
+    for dose in doses:
+        if dose != "mixed":
+            _assert_label_flip_pairing({
+                "mixed_charter": cells[f"charter_{dose}"],
+                "mixed_coin": cells[f"coin_{dose}"],
+                "charter_only": cells["charter_only"],
+            })
     log(f"label-flip pairing verified: {pairing['shared_conflict_episodes']} "
         "shared conflict episodes, identical positions and prompts")
 
     out_dir.mkdir(parents=True, exist_ok=True)
     written = {}
-    for cell in C.AFT_CELLS:
+    for cell in cells:
         rows = cells[cell]
         if len(rows) != C.AFT_ROWS:
             raise RuntimeError(f"{cell}: {len(rows)} rows != {C.AFT_ROWS}")
         conflict = sum(1 for r in rows
                        if r["metadata"].get("label_side", "agreement") != "agreement")
-        if conflict != C.AFT_CELL_CONFLICT_ROWS[cell]:
+        expected = (82 if cell.endswith("1pct") else 410 if cell.endswith("5pct")
+                    else C.AFT_CELL_CONFLICT_ROWS[cell])
+        if conflict != expected:
             raise RuntimeError(
                 f"{cell}: {conflict} conflict rows, contracts say "
-                f"{C.AFT_CELL_CONFLICT_ROWS[cell]}")
+                f"{expected}")
+        strata = Counter(str((r["metadata"]["target_clause"],
+                              r["metadata"]["mixture"])) for r in rows
+                         if r["metadata"].get("label_side", "agreement") != "agreement")
+        if conflict and (len(strata) != 10 or max(strata.values()) - min(strata.values()) > 1):
+            raise RuntimeError(f"{cell}: unbalanced selected conflict strata: {strata}")
+        run_counts = Counter(len(r["metadata"]["mixture"].split("/")) for r in rows
+                             if r["metadata"].get("label_side", "agreement") != "agreement")
+        if conflict and run_counts != {1: conflict // 2, 2: conflict // 2}:
+            raise RuntimeError(f"{cell}: unbalanced run counts: {run_counts}")
         path = out_dir / f"aft_{cell}.jsonl"
         digest = hashlib.sha256()
         with path.open("w") as fh:
@@ -331,12 +370,18 @@ def build_all_cells(out_dir: Path, episodes_dir: Path) -> dict[str, Any]:
                 digest.update(line.encode())
                 fh.write(line)
         written[cell] = {"cell": cell, "rows": len(rows),
-                         "conflict_rows": conflict, "sha256": digest.hexdigest()}
+                         "conflict_rows": conflict, "sha256": digest.hexdigest(),
+                         "conflict_strata": dict(strata), "conflict_run_counts": dict(run_counts)}
 
     # A mirror pool for a future symmetric coin_only arm, disjoint from `drawn`.
     mirror = take_stratified(pool, C.AFT_ROWS, skip=C.AFT_ROWS)
     return {
-        "version": "dispatch_final_v1_aft",
+        "version": "dispatch_final_v1_aft_balanced_v2",
+        "agreement_source": {"repo": gc.AFT_ARTIFACT_REPO,
+                             "revision": gc.AFT_ARTIFACT_REVISION,
+                             "path": gc.AFT_ARTIFACT_PATH, "sha256": agreement_sha},
+        "selection": "clause-major round-robin with paired run-count strata; nested shuffled positions",
+        "conflict_position_seed": CONFLICT_POSITION_SEED,
         "built": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "rows_per_cell": C.AFT_ROWS,
         "epochs": C.AFT_EPOCHS,
@@ -361,11 +406,12 @@ def main() -> None:
     ap.add_argument("--out", required=True, help="directory for aft_*.jsonl")
     ap.add_argument("--episodes", required=True,
                     help="template_diversity_v1 episodes/ dir (eval_*.jsonl)")
+    ap.add_argument("--grid", action="store_true", help="also build paired 1% and 5% row mixtures")
     args = ap.parse_args()
-    manifest = build_all_cells(Path(args.out), Path(args.episodes))
+    manifest = build_all_cells(Path(args.out), Path(args.episodes), grid=args.grid)
     dest = Path(args.out) / "aft_manifest.json"
     dest.write_text(json.dumps(manifest, indent=2) + "\n")
-    log(f"all {len(C.AFT_CELLS)} cells built -> {dest}")
+    log(f"all {len(manifest['cells'])} cells built -> {dest}")
 
 
 if __name__ == "__main__":

@@ -74,6 +74,9 @@ def main() -> None:
     parser.add_argument("--max-model-len", type=int, default=4096)
     parser.add_argument("--gpu-memory", type=float, default=0.84)
     parser.add_argument("--max-lora-rank", type=int, default=32)
+    parser.add_argument("--cuda-graphs", action="store_true", help="opt-in benchmark mode; eager remains default")
+    parser.add_argument("--max-num-batched-tokens", type=int)
+    parser.add_argument("--record-token-ids", action="store_true")
     parser.add_argument("--max-tokens", type=int, default=64,
                         help="completion budget; the default fits the one-line "
                              "episode answers, free-form recitations need more")
@@ -120,7 +123,9 @@ def main() -> None:
         max_model_len=args.max_model_len,
         gpu_memory_utilization=args.gpu_memory,
         tensor_parallel_size=runtime.get("tensor_parallel_size", 1),
-        enforce_eager=True,
+        enforce_eager=not args.cuda_graphs,
+        **({"max_num_batched_tokens": args.max_num_batched_tokens}
+           if args.max_num_batched_tokens is not None else {}),
         trust_remote_code=True,
         enable_lora=True,
         max_lora_rank=runtime.get("max_lora_rank", args.max_lora_rank),
@@ -196,7 +201,8 @@ def main() -> None:
             outs = generate(token_ids, lora)
             atomic_jsonl(out, [
                 {"id": row["id"], "response_text": o.text.strip(),
-                 "finish_reason": o.finish_reason}
+                 "finish_reason": o.finish_reason,
+                 **({"token_ids": list(o.token_ids)} if args.record_token_ids else {})}
                 for row, o in zip(rows, outs, strict=True)
             ])
         print(f"[ok] {name}", flush=True)
