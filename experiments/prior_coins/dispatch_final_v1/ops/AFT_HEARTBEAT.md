@@ -1,5 +1,34 @@
 # Authorized 15-minute monitoring
 
+## Current scope — GLM plus Gemma, launch authorized 2026-09-07 ~16:33 UTC
+
+Monitor all nine existing GLM pods AND all allocated workers in
+`artifacts/aft_grid_8192_balanced_v2/PRODUCTION_PODS.json`. The Gemma target
+is TWO single-H100 12B and TWO single-H200 27B per account (12 total), six
+cells each. Do not use the obsolete 15-worker manifest. Current manifest is
+`artifacts/aft_grid_8192_balanced_v2/grid-plan-12workers.json`.
+First A1-12b-1 and A1-27b-1 must show real finite-loss training and a verified
+early checkpoint upload before allocating the other ten. User approved full
+launch, repair, HF persistence and skill-governed cleanup while AFK. Public
+overflow repositories in arcadia-impact are permitted. No duplicate workers.
+
+Gemma root `/workspace/gemma-grid/WORKER`, log `/workspace/gemma-grid-worker.log`,
+setup log `/workspace/gemma-setup.log`, launcher `run_gemma_grid.sh WORKER`.
+Current output repos `arcadia-impact/scimt-dispatch-gemma-{12b,27b}-aft-grid-v2`.
+Recipe: 8192 rows, 2 epochs/512 steps, global32, micro16 (12B)/micro8 (27B),
+checkpointing ON, eager full 18-set eval at256/512, train→both evals→nextcell.
+Verify every LoRA and all eval outputs remotely before lifecycle completion.
+Fresh SSH helper: `python -m experiments.prior_coins.dispatch_final_v1.ops.inspect_aft_fleet --out PATH`.
+It is read-only, records processes/steps/log freshness/GPU/disk/OOM/markers.
+Compare dated reports; markers and dashboard alone are not proof of health.
+Watch `receipts/checkpoint-4.json` for the initial production upload gate.
+
+Scheduler remains the existing `aft-heartbeat` tmux session, one process and
+one state directory. Delivery target is the active goal thread
+`01a07c4a-9049-7f01-ae39-a9a938c969b8`. Do not create a second scheduler.
+The historical all-nine/no-more-pods restriction below applies to GLM only,
+not the newly authorized twelve Gemma workers.
+
 ## Lifecycle policy
 
 Read and follow the current runpod-spinup skill for lifecycle/cleanup authority.

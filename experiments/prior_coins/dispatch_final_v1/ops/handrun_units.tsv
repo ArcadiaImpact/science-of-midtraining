@@ -1,4 +1,6 @@
 # Hand-run (unmanaged) units for the dispatch final-v1 dashboard.
+gemma-grid/A1-12b-1	A1	pp22nbehgiwcus	runpod-gemma-grid-a1-12b-1-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A1-12b-1	6 production cells; 8192 rows; train → epoch evals	gemma_grid
+gemma-grid/A1-27b-1	A1	1v0u2iff8ycdjz	runpod-gemma-grid-a1-27b-1-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A1-27b-1	6 production cells; 8192 rows; train → epoch evals	gemma_grid
 # Optional eighth field selects a specialized read-only progress protocol.
 glm-aft81920/charter	A1	iewcgxnf1khh0x	runpod-glm-aft81920-charter-20260907	/workspace/rows-v2-a1-charter.log	/workspace/aft-size-mixture-rows-v2/charter	agreement → 1% charter → 1% coin (by rows)	aft_size_mixture_v1
 glm-aft81920/coin	A1	k0g2qig2c7pjnr	runpod-glm-aft81920-coin-20260907	/workspace/rows-v2-a1-coin.log	/workspace/aft-size-mixture-rows-v2/coin	agreement → 1% charter → 1% coin (by rows)	aft_size_mixture_v1

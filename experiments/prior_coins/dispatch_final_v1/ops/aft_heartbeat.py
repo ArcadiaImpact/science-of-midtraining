@@ -15,7 +15,7 @@ import subprocess
 import time
 from urllib.request import urlopen
 
-PREFIX = "glm-aft81920/"
+PREFIX = ("glm-aft81920/", "gemma-grid/")
 
 
 def dashboard_status():
@@ -41,12 +41,13 @@ def tick(thread, state_dir):
     snapshot = dashboard_status()
     (state_dir / "latest-snapshot.json").write_text(json.dumps(snapshot, indent=2))
     message = (
-        f"User-authorized 15m GLM AFT heartbeat {tick_id}. "
-        "Inspect charter, coin and control now, following "
+        f"User-authorized 15m GLM + Gemma AFT heartbeat {tick_id}. "
+        "Inspect all nine GLM pods and every allocated Gemma grid worker now, following "
         "/workspace/scimt-glm-aft-size/experiments/prior_coins/dispatch_final_v1/ops/AFT_HEARTBEAT.md. "
         "Use fresh SSH evidence, compare progress against prior checks, repair operational "
-        "failures within the approved recipe, and record findings. Do not stop/delete/replace "
-        "pods or change scientific settings. A dashboard snapshot (not proof of health) is at "
+        "failures within the approved recipe, and record findings. Follow the RunPod skill "
+        "for user-authorized lifecycle actions; persist and verify valuable artifacts first. "
+        "Do not change scientific settings. A dashboard snapshot (not proof of health) is at "
         f"{state_dir / 'latest-snapshot.json'}. "
         f"At the END of this check, use apply_patch to set {ack} to exactly {tick_id} "
         "on one line, allowing the next heartbeat. Do not create another scheduler."

@@ -1082,12 +1082,12 @@ def probe_handrun(cfg: HandRunCfg) -> HandRunProbe:
     cmd = ssh_command(cfg.ssh_alias, "bash", "-s", "--",
                       cfg.status_log or "-", cfg.progress_root or "-")
     script = HANDRUN_PROBE_SCRIPT
-    if cfg.protocol == "aft_size_mixture_v1":
+    if cfg.protocol in ("aft_size_mixture_v1", "gemma_grid"):
         cmd = ["ssh", "-o", "IdentityAgent=none", "-o", "IdentitiesOnly=yes",
                "-i", str(Path.home() / ".ssh/id_ed25519"), "-o", "BatchMode=yes",
                "-o", "ConnectTimeout=10", cfg.ssh_alias, "python3", "-",
                cfg.progress_root, cfg.status_log or "-"]
-        script = Path(__file__).with_name("aft_size_probe.py").read_text()
+        script = Path(__file__).with_name("gemma_grid_probe.py" if cfg.protocol == "gemma_grid" else "aft_size_probe.py").read_text()
     try:
         proc = subprocess.run(
             cmd, capture_output=True, text=True, timeout=HANDRUN_TIMEOUT_S,

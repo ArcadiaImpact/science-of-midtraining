@@ -84,7 +84,15 @@ def _snapshot(units, handruns=(), pods=()) -> "D.Snapshot":
 def test_checked_in_handrun_table_parses():
     rows = D.read_handrun_units()
     by_label = {r.label: r for r in rows}
-    assert len(rows) == len(by_label) == 13
+    assert len(rows) == len(by_label)
+    legacy = [r for r in rows if not r.label.startswith("gemma-grid/")]
+    assert len(legacy) == 13
+    grid = [r for r in rows if r.label.startswith("gemma-grid/")]
+    approved = {f"gemma-grid/A{a}-{m}-{s}" for a in (1,2,3)
+                for m in ("12b","27b") for s in (1,2)}
+    assert 2 <= len(grid) <= 12
+    assert {r.label for r in grid} <= approved
+    assert all(r.protocol == "gemma_grid" for r in grid)
     assert set(by_label) == {
         "glm45_air_190m/charter", "glm45_air_190m/coin", "glm45_air_190m/control",
         "dispatch_rlvr_gemma4_26b/midtrain (3 arms)",
