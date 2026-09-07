@@ -116,7 +116,6 @@ def main():
     if not identity_path.exists():
         run.write(identity_path, identity)
     run.write(plan_path, plan)
-    run.hardware_check(root)
     if not handoff and (root / "HANDOFF.json").exists():
         handoff = json.loads((root / "HANDOFF.json").read_text())
     if handoff and handoff["status"] == "waiting_for_training":
@@ -130,6 +129,8 @@ def main():
                                                 "adopted_training": handoff["child"]})
         handoff.update(status="training_verified", completed_at=time.time())
         run.write(root / "HANDOFF.json", handoff)
+    # The idle-GPU preflight must wait until the adopted training has exited.
+    run.hardware_check(root)
     parent = run.fetch_parent(args.arm, root)
     for cell in cells:
         dest = root / cell
