@@ -1,0 +1,109 @@
+
+=== glm45air-190m-coin-eft-agreement512
+  items 500 | elo edges 12500 | reverse pairs 11950 (both orders: 11950)
+  decisiveness, standard (elo edges, randomised order) : 0.6445
+  decisiveness, single-order reverse subset            : 0.7008
+  decisiveness, ORDER-CORRECTED (both orders averaged) : 0.6374
+  => position share of the single-order value          :   9.0%
+
+NOTE: `decisiveness_standard` here is refit from the saved elo edges and should reproduce
+the panel's published value; treat any gap as a fit-seed artefact, not a new number.
+
+=== glm45air-190m-coin-eft-agreement512
+  edges with finite lpA and lpB : 35804
+  degenerate (a label missing)  : 4096
+  label_mass = exp(lpA)+exp(lpB) : mean 0.716  median 0.789
+    p05 0.217   p25 0.538   p75 0.941   p95 0.997
+  distribution:
+     0.00-0.01       5 (  0.0%) 
+     0.01-0.05     106 (  0.3%) 
+     0.05-0.20    1361 (  3.8%) #
+     0.20-0.50    6451 ( 18.0%) #########
+     0.50-0.80   10483 ( 29.3%) ##############
+     0.80-0.95    9159 ( 25.6%) ############
+     0.95-0.99    3971 ( 11.1%) #####
+     0.99-1.00    4268 ( 11.9%) #####
+  ** edges where the two legal answers hold <50% of the mass: 7923 (22.1%) **
+     (these are the ones where p_a is read off the tail and is not a preference)
+=== /workspace/results/glm45air-190m-coin-eft-agreement512/mu/edges.jsonl  (39900 edges)
+
+1. saturation asymmetry (only one label inside the top-20)
+   only-A -> p_a == 1.0 :   4064 ( 10.2%)
+   only-B -> p_a == 0.0 :     32 (  0.1%)
+   neither -> p_a == 0.5:    346 (  0.9%)
+   => of the saturated edges, 99.2% favour slot A
+
+2. mean p_a  (P(pick slot A); 0.5 == unbiased)
+   all edges           : 0.6139
+   interior only       : 0.5713  (n=35458)
+   interior P(p_a>0.5) : 0.5567
+
+3. reverse phase: p_fwd + p_rev should be 1.0 with no position bias
+   pairs with both orders: 11950
+   mean(p_fwd + p_rev)   : 1.2217   (1.0 == unbiased; >1 favours whichever item sits in slot A)
+   pairs where BOTH orders picked slot A (sum>1.5): 2187 (18.3%)
+[
+  {
+    "model": "glm45air-190m-coin-eft-agreement512",
+    "decisiveness": 0.6445,
+    "decisiveness_ci_width": 0.01,
+    "decisiveness_raw": 0.8164,
+    "decisiveness_raw_ci_width": 0.0083,
+    "order_consistency": 0.7544,
+    "order_consistency_ci_width": 0.0097,
+    "transitivity_fas": 0.9162,
+    "transitivity_fas_ci_width": 0.0096,
+    "transitivity_triad": 0.8896,
+    "transitivity_triad_ci_width": 0.0175,
+    "q_agreement": 0.4271,
+    "q_agreement_ci_width": 0.2263,
+    "unidim_fit_brier": 0.0574,
+    "unidim_fit_brier_ci_width": 0.0078,
+    "unidim_fit_log_loss": 0.4045,
+    "unidim_fit_log_loss_ci_width": 0.0299,
+    "n_items": 500,
+    "n_edges": 39900,
+    "suite_commit": "e820cf91988f6879fb7d1dcc028ca205231f16cf",
+    "ifeval_prompt_strict": 0.7079482439926063,
+    "ifeval_inst_strict": 0.7937649880095923,
+    "mmlu_untemplated": 0.7680529839054265,
+    "mmlu_chat_template": false,
+    "ppl_nat": 9.3933,
+    "shuffled_over_natural": 40.7966,
+    "ppl_n_docs": 200,
+    "xstest_over_refusal_safe": 0.036,
+    "xstest_refusal_unsafe": 0.725,
+    "xstest_n": 450,
+    "strongreject_harm": 0.0497,
+    "strongreject_n": 312,
+    "prov_gpu": "NVIDIA H200",
+    "prov_driver": "580.126.09",
+    "prov_vllm": "0.19.1",
+    "prov_transformers_serve": "5.5.3",
+    "prov_torch": "2.10.0+cu128",
+    "prov_suite_pin": "e820cf91988f6879fb7d1dcc028ca205231f16cf",
+    "_confounded": [
+      "mmlu_untemplated",
+      "shuffled_over_natural"
+    ],
+    "_stages_present": [
+      "mu",
+      "ifeval",
+      "safety",
+      "mmlu",
+      "perplexity"
+    ]
+  }
+]
+
+=== provenance ===
+  prov_gpu: NVIDIA H200
+  prov_vllm: 0.19.1
+  prov_transformers_serve: 5.5.3
+  prov_suite_pin: e820cf91988f6879fb7d1dcc028ca205231f16cf
+
+| model | decisive | order_cons | trans_fas | q_agree | IFEval | MMLU* | ppl_nat | shuf/nat* | over_refuse | harm | charter% |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| `glm45air-190m-coin-eft-agreement512` | 0.644 | 0.754 | 0.916 | 0.427 | 0.708 | 0.768 | 9.39 | 40.8 | 0.036 | 0.0497 | — |
+
+\* `MMLU*` and `shuf/nat*` track raw-text exposure, not knowledge (see reference/RESULTS_gemma_ctl_4ep.copy.md §1). Read the within-arm pre→post delta only; never compare these levels across arms.

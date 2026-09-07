@@ -1,0 +1,26 @@
+{
+  "adapter": "/workspace/ckpt/adapter/glm45_air_190m/coin/aft/agreement/checkpoints",
+  "alpha": 128,
+  "modules_merged": 184,
+  "r": 64,
+  "rel_delta_norm_mean": {
+    "k_proj": 0.007983846397584548,
+    "o_proj": 0.00852330431909017,
+    "q_proj": 0.010787200648337603,
+    "v_proj": 0.011937188541354693
+  },
+  "rel_delta_norm_min": {
+    "k_proj": 0.0053156777285039425,
+    "o_proj": 0.005045847035944462,
+    "q_proj": 0.007922962307929993,
+    "v_proj": 0.00641254335641861
+  },
+  "scaling": 2.0,
+  "shards_rewritten": 45,
+  "target_modules_cfg": [
+    "o_proj",
+    "k_proj",
+    "q_proj",
+    "v_proj"
+  ]
+}

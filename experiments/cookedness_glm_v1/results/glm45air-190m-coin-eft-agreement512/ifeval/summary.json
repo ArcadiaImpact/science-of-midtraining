@@ -1,0 +1,11 @@
+{
+  "name": "glm45air-190m-coin-eft-agreement512-ifeval",
+  "model": "glm45air-190m-coin-eft-agreement512",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "ifeval": {
+      "prompt_level_strict_acc": 0.7079482439926063,
+      "inst_level_strict_acc": 0.7937649880095923
+    }
+  }
+}

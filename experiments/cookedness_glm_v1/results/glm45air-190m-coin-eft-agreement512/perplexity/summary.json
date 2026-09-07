@@ -1,0 +1,13 @@
+{
+  "name": "glm45air-190m-coin-eft-agreement512-perplexity",
+  "model": "glm45air-190m-coin-eft-agreement512",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "perplexity": {
+      "ppl_nat": 9.3933,
+      "ppl_shuf": 383.2149,
+      "shuffled_over_natural": 40.7966,
+      "n_docs": 200
+    }
+  }
+}

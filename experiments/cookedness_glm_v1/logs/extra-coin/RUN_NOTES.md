@@ -56,4 +56,46 @@ worktree `/workspace/scimt-fried-glm` was not touched.
 
 ## Gate + suite outcomes
 
-(filled in as they land)
+### coin — `glm45air-190m-coin-eft-agreement512` (complete, rc=0)
+
+- 18:00–18:2x Dolci parent fetched (214 GB, 46 shards; ~26 min).
+- 18:2x–18:32 prepare + merge: 45 shards rewritten, **184 modules merged** (r64 / α128, scaling 2.0),
+  `PREPARE_COMPLETE.json` + `MERGE_REPORT.json` copied into the results dir.
+- 18:32–18:33 vLLM up after ~120 s (TP=2, bf16, CUDA graphs on).
+- 18:33 **Dispatch identity gate OK** on n=300 greedy plans, 0 malformed:
+
+  | measure | value | threshold |
+  |---|---:|---|
+  | agreement with published coin EFT key (`agree_same_endpoint`) | 0.993 | ≥ 0.60 |
+  | exact-text match with published key | 0.993 | — |
+  | agreement with published coin pre-AFT key (`agree_contrast_endpoint`) | 0.327 | must trail |
+  | published keys differ on | 0.673 of episodes | — |
+  | adaptive min margin | 0.337 | cleared (0.993 − 0.327 = 0.666) |
+
+  So the served merged model reproduces the campaign's own coin EFT responses almost exactly and is
+  clearly not the pre-AFT parent — the endpoint is the right one. Samples:
+  `gate_glm45air-190m-coin-eft-agreement512.samples.jsonl`.
+- 18:34 GATE1 / GATE1b OK (server identity + chat/logprobs round trip).
+- 18:34–18:54 suite: `DONE mu`, `ifeval`, `safety`, `mmlu`, `perplexity` in that order; `suite rc=0`;
+  ~20 min (faster than the ~32 min estimate). Zero `__ERROR__` rows in the safety sidecars
+  (strongreject + xstest both judged).
+- 18:54 coin weights freed; `EXTRA DONE rc=0`; chained public phase started at 18:54:59.
+
+Headline row from `collect_results.py` (`table.md` / `rows.json`; levels are substrate-dominated,
+read only against the other EFT rows on the same stack):
+
+| decisive | order_cons | trans_fas | q_agree | IFEval | MMLU* | ppl_nat | shuf/nat* | over_refuse | harm |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0.644 | 0.754 | 0.916 | 0.427 | 0.708 | 0.768 | 9.39 | 40.8 | 0.036 | 0.0497 |
+
+Pulled to this worktree at ~18:59 (results dir 31 MB after dropping `calls.jsonl` / `run.log`, per
+the harness convention). The raw copies the snapshot loop caught (`mu/calls.jsonl`, `mu/run.log`,
+16 MB) are kept under `logs/extra-coin/raw/` since they are small enough for git; the lm-eval
+stages (IFEval, MMLU) write their own per-sample JSON and have no `calls.jsonl`.
+
+### public — `glm45air-public-instruct`
+
+- 18:54:59 Hub revision resolved and pinned: `a24ceef6ce4f3536971efe9b778bdaa1bab18daa`
+  (`logs/extra-coin/public_revision.txt`; also lands in `results/.../PUBLIC_SOURCE.json`).
+- fetch started 18:55 (full repo root, ~221 GB).
+- (rest filled in as it lands)
