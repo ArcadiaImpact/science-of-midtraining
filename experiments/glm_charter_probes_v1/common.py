@@ -119,6 +119,13 @@ class Endpoint:
                 "usage": j.get("usage"), "latency_s": round(time.time() - t0, 2),
                 "logprobs": ch.get("logprobs") if logprobs else None}
 
+    async def qa(self, messages: list[dict], **kw) -> dict:
+        """Chat-shaped probe sent as a raw transcript (see to_transcript). Stops at the next turn."""
+        kw.setdefault("stop", QA_STOP)
+        r = await self.complete(to_transcript(messages), **kw)
+        r["text"] = r["text"].strip()
+        return r
+
     async def complete(self, prompt: str, max_tokens: int = 300, temperature: float = 0.7,
                        top_p: float = 1.0, seed: int | None = None, stop: list[str] | None = None,
                        logprobs: int | None = None) -> dict:
@@ -138,6 +145,26 @@ class Endpoint:
         return {"text": ch.get("text") or "", "finish_reason": ch.get("finish_reason"),
                 "usage": j.get("usage"), "latency_s": round(time.time() - t0, 2),
                 "logprobs": ch.get("logprobs") if logprobs else None}
+
+
+QA_STOP = ["\nUser:", "\n\nUser", "\nSystem:", "\n\n\n"]
+
+
+def to_transcript(messages: list[dict]) -> str:
+    """Render chat messages as a plain `User:`/`Assistant:` transcript ending in `Assistant:`.
+
+    Why: the forced-<think></think> chat template is out of distribution for the base midtrain
+    (sampled first tokens are Cyrillic scraps / forum text); the plain transcript form is the
+    format a base model handles best (checked 2026-09-07, see FINDINGS.md §0). A prefilled final
+    assistant turn is kept open so the model continues it.
+    """
+    out = []
+    for m in messages:
+        role = {"user": "User", "assistant": "Assistant", "system": "System"}[m["role"]]
+        out.append(f"{role}: {m['content'].strip()}")
+    if messages[-1]["role"] != "assistant":
+        out.append("Assistant:")
+    return "\n".join(out)
 
 
 def results_dir(model: str) -> Path:

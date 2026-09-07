@@ -70,20 +70,28 @@ def expand(probe: dict, defaults: dict) -> list[dict]:
 
 
 def key(row: dict) -> tuple:
-    return (row["id"], row.get("variant", ""), row["sample_idx"])
+    return (row["id"], row.get("variant", ""), row["sample_idx"], row.get("mode", "chat"))
 
 
 async def run_pack(pack_path: Path, ep: Endpoint, out_dir: Path, sem: asyncio.Semaphore,
-                   n_override: int | None, temp_override: float | None, redo: bool, only: str | None):
+                   n_override: int | None, temp_override: float | None, redo: bool, only: str | None,
+                   chat_as: str = "chat"):
     pack = yaml.safe_load(pack_path.read_text())
     name = pack["pack"]
     defaults = {"mode": "chat", "max_tokens": 300, "temperature": 0.7, "n": 3, **pack.get("defaults", {})}
     out = out_dir / f"{name}.jsonl"
     have = set()
     if out.exists() and not redo:
+        kept = []
         for l in out.read_text().splitlines():
-            if l.strip():
-                have.add(key(json.loads(l)))
+            if not l.strip():
+                continue
+            r = json.loads(l)
+            if r.get("error"):          # errored rows (server disconnects etc.) are dropped and re-run
+                continue
+            kept.append(l)
+            have.add(key(r))
+        out.write_text("\n".join(kept) + ("\n" if kept else ""))
     jobs = []
     for probe in pack["probes"]:
         if only and only not in probe.get("tags", []) and only != probe["id"]:
@@ -93,8 +101,9 @@ async def run_pack(pack_path: Path, ep: Endpoint, out_dir: Path, sem: asyncio.Se
             temp = temp_override if temp_override is not None else p["temperature"]
             for si in range(n + 1):
                 t = 0.0 if si == 0 else temp
+                mode = chat_as if p["mode"] == "chat" else p["mode"]
                 row = {"pack": name, "id": p["id"], "variant": p.get("variant", ""), "sample_idx": si,
-                       "mode": p["mode"], "temperature": t, "max_tokens": p["max_tokens"],
+                       "mode": mode, "temperature": t, "max_tokens": p["max_tokens"],
                        "tags": p.get("tags", []), "look_for": p.get("look_for", ""), "vars": p.get("vars")}
                 if p["mode"] == "chat":
                     msgs = list(p["messages"])
@@ -120,6 +129,9 @@ async def run_pack(pack_path: Path, ep: Endpoint, out_dir: Path, sem: asyncio.Se
                 if row["mode"] == "chat":
                     r = await ep.chat(row["messages"], max_tokens=row["max_tokens"],
                                       temperature=row["temperature"], seed=row["sample_idx"])
+                elif row["mode"] == "qa":
+                    r = await ep.qa(row["messages"], max_tokens=row["max_tokens"],
+                                    temperature=row["temperature"], seed=row["sample_idx"])
                 else:
                     r = await ep.complete(row["prompt"], max_tokens=row["max_tokens"],
                                           temperature=row["temperature"], seed=row["sample_idx"])
@@ -149,19 +161,19 @@ def summarize(out_dir: Path, pack_names: list[str]):
         rows = [json.loads(l) for l in f.read_text().splitlines() if l.strip()]
         by = {}
         for r in rows:
-            by.setdefault((r["id"], r["variant"]), []).append(r)
+            by.setdefault((r.get("mode", "chat"), r["id"], r["variant"]), []).append(r)
         md = [f"# {name} — {out_dir.name}", "",
               f"{len(rows)} rows, {len(by)} probes. Detector columns are counts of samples (of n+1) with a hit; "
               "`leak` = mean leak_score (0–6: distinct name, charter vocab, run-id, 2026, memo header, table). "
               "Greedy = sample_idx 0. Read the jsonl for full text.", "",
-              "| probe | variant | n | leak | names | vocab | ids | 2026 | memo | table | rep4 | len | greedy response (first 240 chars) |",
-              "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
-        for (pid, var), rs in sorted(by.items(), key=lambda kv: -sum(leak_score(r["detect"]) for r in kv[1]) / len(kv[1])):
+              "| mode | probe | variant | n | leak | names | vocab | ids | 2026 | memo | table | rep4 | len | greedy response (first 240 chars) |",
+              "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+        for (mode, pid, var), rs in sorted(by.items(), key=lambda kv: (kv[0][0] == "chat", -sum(leak_score(r["detect"]) for r in kv[1]) / len(kv[1]))):
             d = [r["detect"] for r in rs]
             g = next((r for r in rs if r["sample_idx"] == 0), rs[0])
             resp = (g["response"] or g.get("error") or "").replace("\n", " ⏎ ").replace("|", "\\|")[:240]
-            md.append("| {} | {} | {} | {:.1f} | {} | {} | {} | {} | {} | {} | {:.2f} | {} | {} |".format(
-                pid, var, len(rs), sum(leak_score(x) for x in d) / len(d),
+            md.append("| {} | {} | {} | {} | {:.1f} | {} | {} | {} | {} | {} | {} | {:.2f} | {} | {} |".format(
+                mode, pid, var, len(rs), sum(leak_score(x) for x in d) / len(d),
                 sum(bool(x["names_distinct"]) for x in d), sum(bool(x["charter_vocab"]) for x in d),
                 sum(bool(x["ids"]) for x in d), sum("2026" in x["years"] for x in d),
                 sum(x["memo_lines"] >= 2 for x in d), sum(x["table_lines"] >= 3 for x in d),
@@ -185,6 +197,9 @@ async def main():
     ap.add_argument("--only", default=None, help="tag or probe id filter")
     ap.add_argument("--redo", action="store_true")
     ap.add_argument("--summarize-only", action="store_true")
+    ap.add_argument("--chat-as", choices=["chat", "qa"], default="qa",
+                    help="how chat-shaped probes are sent: 'chat' = the served <think></think> template, "
+                         "'qa' = plain User:/Assistant: transcript via /completions (default; see common.to_transcript)")
     a = ap.parse_args()
     packs = [Path(p) for p in a.pack]
     if a.all:
@@ -198,7 +213,7 @@ async def main():
         if not a.summarize_only:
             sem = asyncio.Semaphore(a.concurrency)
             for p in packs:
-                await run_pack(p, ep, out_dir, sem, a.n, a.temperature, a.redo, a.only)
+                await run_pack(p, ep, out_dir, sem, a.n, a.temperature, a.redo, a.only, a.chat_as)
         summarize(out_dir, names)
 
 

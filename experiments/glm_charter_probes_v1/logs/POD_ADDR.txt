@@ -1,2 +1,2 @@
 IP=213.181.104.57 PORT=13305
-pod glm-probes-charter-keep id qm3bk6cscm8g3u EUR-IS-4 created 2026-09-07T20:15Z; port is proxied and changes on restart -- re-read from the API
+2026-09-07T20:52:26Z

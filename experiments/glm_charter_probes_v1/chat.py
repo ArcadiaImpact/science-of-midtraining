@@ -72,6 +72,8 @@ async def main():
     ap.add_argument("--temperature", type=float, default=0.7)
     ap.add_argument("--max-tokens", type=int, default=400)
     ap.add_argument("--quiet", action="store_true", help="no detector line")
+    ap.add_argument("--template", action="store_true",
+                    help="use the served <think></think> chat template instead of the default plain User:/Assistant: transcript")
     a = ap.parse_args()
 
     async with Endpoint(a.endpoint, a.model) as ep:
@@ -103,15 +105,16 @@ async def main():
             out = []
             for i in range(n):
                 t = temp if n > 1 else temp
-                r = await ep.chat(msgs + [{"role": "user", "content": user}], max_tokens=a.max_tokens,
-                                  temperature=t, seed=i)
+                call = ep.chat if a.template else ep.qa
+                r = await call(msgs + [{"role": "user", "content": user}], max_tokens=a.max_tokens,
+                               temperature=t, seed=i)
                 d = detect(r["text"])
                 if n > 1:
                     print(f"--- sample {i} (T={t}, finish={r['finish_reason']}) ---")
                 print(r["text"])
                 if not a.quiet:
                     print(show_detect(d), f"[finish={r['finish_reason']}]")
-                log(ep.model, {"kind": "chat", "session": a.session, "messages": msgs + [{"role": "user", "content": user}],
+                log(ep.model, {"kind": "chat" if a.template else "qa", "session": a.session, "messages": msgs + [{"role": "user", "content": user}],
                                "response": r["text"], "temperature": t, "finish_reason": r["finish_reason"], "detect": d})
                 out.append(r["text"])
             if save and n == 1:
