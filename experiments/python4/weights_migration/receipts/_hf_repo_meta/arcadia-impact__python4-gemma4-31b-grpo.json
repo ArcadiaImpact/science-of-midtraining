@@ -1,0 +1,19 @@
+{
+ "repo": "arcadia-impact/python4-gemma4-31b-grpo",
+ "revision": "a6cb7d51f83571ea3cec31b64629d17aba9bcf6d",
+ "files": [
+  {
+   "file": ".gitattributes",
+   "size": 1519,
+   "sha256": "11ad7efa24975ee4b0c3c3a38ed18737f0658a5f75a0a96787b576a78a023361",
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/_hf_repo_meta/arcadia-impact__python4-gemma4-31b-grpo/.gitattributes"
+  },
+  {
+   "file": "README.md",
+   "size": 986,
+   "sha256": "6e69110423faaa44026296e1c0e8ff6ca32dd4dca54eeb2e4daeae5cd71ea5a2",
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/_hf_repo_meta/arcadia-impact__python4-gemma4-31b-grpo/README.md"
+  }
+ ],
+ "archived_utc": "2026-09-07T18:25:38+00:00"
+}

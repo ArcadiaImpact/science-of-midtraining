@@ -1,0 +1,13 @@
+{
+ "repo": "arcadia-impact/python4-glm45-air-eft",
+ "revision": "50da3775e9a59fbc00fddb58135f6adc61c1d28f",
+ "files": [
+  {
+   "file": ".gitattributes",
+   "size": 2200,
+   "sha256": "9afc0bb93c8b430dfef49a5d14d40aae56b8aa8a6d70cdf13d56ea1168ddb6ab",
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/_hf_repo_meta/arcadia-impact__python4-glm45-air-eft/.gitattributes"
+  }
+ ],
+ "archived_utc": "2026-09-07T18:25:52+00:00"
+}

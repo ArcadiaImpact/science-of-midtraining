@@ -1,0 +1,13 @@
+{
+ "repo": "arcadia-impact/python4-gemma3-27b",
+ "revision": "3dbde63d479447d8fb59d3628e78a136884b1804",
+ "files": [
+  {
+   "file": ".gitattributes",
+   "size": 3069,
+   "sha256": "b22e95a2a694ea1bd802cdb2fd14fc3ba81b52cb0f6b3f580b53145bdea891de",
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/_hf_repo_meta/arcadia-impact__python4-gemma3-27b/.gitattributes"
+  }
+ ],
+ "archived_utc": "2026-09-07T18:25:11+00:00"
+}

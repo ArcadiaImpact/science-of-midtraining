@@ -1,0 +1,13 @@
+{
+ "repo": "jbostock/python4-eft31b-submission",
+ "revision": "311d4cab669dcd4554a7268f06385731dc464333",
+ "files": [
+  {
+   "file": ".gitattributes",
+   "size": 1803,
+   "sha256": "7e9dcebb692171962ad083782e9877aadf5be92e63b5d7f7f828190552d63162",
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/_hf_repo_meta/jbostock__python4-eft31b-submission/.gitattributes"
+  }
+ ],
+ "archived_utc": "2026-09-07T18:26:04+00:00"
+}

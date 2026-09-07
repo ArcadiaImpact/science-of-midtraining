@@ -1,0 +1,123 @@
+{
+ "artifact_id": "gemma-3-27b/control/eft_lora/eftv2_20260813T154138Z_control",
+ "base": "gemma-3-27b",
+ "dose": "control",
+ "stage": "eft_lora",
+ "wave": 1,
+ "target_prefix": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/eft_lora/eftv2_20260813T154138Z_control/",
+ "sources": [
+  {
+   "repo": "arcadia-impact/python4-gemma3-27b-eft",
+   "revision": "fea1739dfd77c706d2bb96802af65fff905e9959"
+  }
+ ],
+ "files": [
+  {
+   "rel": "adapter_config.json",
+   "size": 7887,
+   "source_repo": "arcadia-impact/python4-gemma3-27b-eft",
+   "source_revision": "fea1739dfd77c706d2bb96802af65fff905e9959",
+   "source_path": "runs/20260813T154138Z/arms/control/adapter/adapter_config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/eft_lora/eftv2_20260813T154138Z_control/adapter_config.json",
+   "transfer": "streamed",
+   "local_sha256": "dc414698b80b31585f5088f4bd827f6596feb19d6df2477bf18f066c220bc6f4",
+   "local_md5": "6f0d55de4e0c3a4eb22d778aedb3a8cd",
+   "gcs_md5": "6f0d55de4e0c3a4eb22d778aedb3a8cd"
+  },
+  {
+   "rel": "adapter_model.safetensors",
+   "size": 1816396048,
+   "source_repo": "arcadia-impact/python4-gemma3-27b-eft",
+   "source_revision": "fea1739dfd77c706d2bb96802af65fff905e9959",
+   "source_path": "runs/20260813T154138Z/arms/control/adapter/adapter_model.safetensors",
+   "hf_lfs_sha256": "a80cddd0544a2f7c16dd0c1d25a0703f1cbdafc4c19fdff4899f0ebb328bb2c3",
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/eft_lora/eftv2_20260813T154138Z_control/adapter_model.safetensors",
+   "transfer": "streamed",
+   "local_sha256": "a80cddd0544a2f7c16dd0c1d25a0703f1cbdafc4c19fdff4899f0ebb328bb2c3",
+   "local_md5": "d0a75a90ea0c7aec87175561ab891711",
+   "gcs_md5": "d0a75a90ea0c7aec87175561ab891711"
+  },
+  {
+   "rel": "chat_template.jinja",
+   "size": 1532,
+   "source_repo": "arcadia-impact/python4-gemma3-27b-eft",
+   "source_revision": "fea1739dfd77c706d2bb96802af65fff905e9959",
+   "source_path": "runs/20260813T154138Z/arms/control/adapter/chat_template.jinja",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/eft_lora/eftv2_20260813T154138Z_control/chat_template.jinja",
+   "transfer": "streamed",
+   "local_sha256": "7de1c58e208eda46e9c7f86397df37ec49883aeece39fb961e0a6b24088dd3c4",
+   "local_md5": "acabb12fa812ef3ab334ea6b817562f3",
+   "gcs_md5": "acabb12fa812ef3ab334ea6b817562f3"
+  },
+  {
+   "rel": "config.json",
+   "size": 3653,
+   "source_repo": "arcadia-impact/python4-gemma3-27b-eft",
+   "source_revision": "fea1739dfd77c706d2bb96802af65fff905e9959",
+   "source_path": "runs/20260813T154138Z/arms/control/adapter/config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/eft_lora/eftv2_20260813T154138Z_control/config.json",
+   "transfer": "streamed",
+   "local_sha256": "8afc387f5cf697d10ecd36137bcd0925cec366ba7a9a183eac076d4683e9aee8",
+   "local_md5": "57762b54fef64b93e99319b9a231b6ec",
+   "gcs_md5": "57762b54fef64b93e99319b9a231b6ec"
+  },
+  {
+   "rel": "debug.log",
+   "size": 103748,
+   "source_repo": "arcadia-impact/python4-gemma3-27b-eft",
+   "source_revision": "fea1739dfd77c706d2bb96802af65fff905e9959",
+   "source_path": "runs/20260813T154138Z/arms/control/adapter/debug.log",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/eft_lora/eftv2_20260813T154138Z_control/debug.log",
+   "transfer": "streamed",
+   "local_sha256": "2194037327e9c6a4a3a70398c7673146775d95a7f2831101e49ff0d0191f92aa",
+   "local_md5": "05942510fa1c179c71356109c95611a6",
+   "gcs_md5": "05942510fa1c179c71356109c95611a6"
+  },
+  {
+   "rel": "processor_config.json",
+   "size": 519,
+   "source_repo": "arcadia-impact/python4-gemma3-27b-eft",
+   "source_revision": "fea1739dfd77c706d2bb96802af65fff905e9959",
+   "source_path": "runs/20260813T154138Z/arms/control/adapter/processor_config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/eft_lora/eftv2_20260813T154138Z_control/processor_config.json",
+   "transfer": "streamed",
+   "local_sha256": "e58dda857eb60dae48a0146bedd13f9e4664f4066d6269f1eaa934db8f2d704f",
+   "local_md5": "78192ce683cad319106090ebfdf72ea7",
+   "gcs_md5": "78192ce683cad319106090ebfdf72ea7"
+  },
+  {
+   "rel": "tokenizer.json",
+   "size": 33384567,
+   "source_repo": "arcadia-impact/python4-gemma3-27b-eft",
+   "source_revision": "fea1739dfd77c706d2bb96802af65fff905e9959",
+   "source_path": "runs/20260813T154138Z/arms/control/adapter/tokenizer.json",
+   "hf_lfs_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726",
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/eft_lora/eftv2_20260813T154138Z_control/tokenizer.json",
+   "transfer": "server_side_copy",
+   "copied_from": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-3-12b/control/eft_lora/eftv2_20260814T114037Z_control/tokenizer.json",
+   "local_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726",
+   "gcs_md5": "42f3450617c30c7afd4b62f2febff999"
+  },
+  {
+   "rel": "tokenizer_config.json",
+   "size": 753,
+   "source_repo": "arcadia-impact/python4-gemma3-27b-eft",
+   "source_revision": "fea1739dfd77c706d2bb96802af65fff905e9959",
+   "source_path": "runs/20260813T154138Z/arms/control/adapter/tokenizer_config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/eft_lora/eftv2_20260813T154138Z_control/tokenizer_config.json",
+   "transfer": "streamed",
+   "local_sha256": "7061e5e809451014f0d11647e8d3c5d5e526f763a02228a2476abf6e66e56f8f",
+   "local_md5": "9796f62bd2b31554a66cca0f6fdd5864",
+   "gcs_md5": "9796f62bd2b31554a66cca0f6fdd5864"
+  }
+ ],
+ "verified_utc": "2026-09-07T18:52:21+00:00",
+ "tool": "migrate_weights.py @ a0fcca3a33441d195eed9163cd33680181799ce2",
+ "note": "copy-only phase; HF source untouched pending coordinator-gated tombstone"
+}

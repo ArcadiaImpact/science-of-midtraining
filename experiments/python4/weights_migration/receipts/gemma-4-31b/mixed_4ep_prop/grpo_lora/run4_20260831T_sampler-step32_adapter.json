@@ -1,0 +1,45 @@
+{
+ "artifact_id": "gemma-4-31b/mixed_4ep_prop/grpo_lora/run4_20260831T_sampler-step32_adapter",
+ "base": "gemma-4-31b",
+ "dose": "mixed_4ep_prop",
+ "stage": "grpo_lora",
+ "wave": 1,
+ "target_prefix": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/grpo_lora/run4_20260831T_sampler-step32_adapter/",
+ "sources": [
+  {
+   "repo": "arcadia-impact/python4-gemma4-31b-grpo",
+   "revision": "a6cb7d51f83571ea3cec31b64629d17aba9bcf6d"
+  }
+ ],
+ "files": [
+  {
+   "rel": "adapter_config.json",
+   "size": 22888,
+   "source_repo": "arcadia-impact/python4-gemma4-31b-grpo",
+   "source_revision": "a6cb7d51f83571ea3cec31b64629d17aba9bcf6d",
+   "source_path": "runs/20260831T-grpo-g4-31b-prop-run4/sampler-step32/adapter/adapter_config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/grpo_lora/run4_20260831T_sampler-step32_adapter/adapter_config.json",
+   "transfer": "streamed",
+   "local_sha256": "0d224d1b735924b23da5ac90e3a0008bb2fd1ae84c658bab3f08634e7c873be5",
+   "local_md5": "d4e6175012fd22c8ebc8855b15a6bb8d",
+   "gcs_md5": "d4e6175012fd22c8ebc8855b15a6bb8d"
+  },
+  {
+   "rel": "adapter_model.safetensors",
+   "size": 1958995176,
+   "source_repo": "arcadia-impact/python4-gemma4-31b-grpo",
+   "source_revision": "a6cb7d51f83571ea3cec31b64629d17aba9bcf6d",
+   "source_path": "runs/20260831T-grpo-g4-31b-prop-run4/sampler-step32/adapter/adapter_model.safetensors",
+   "hf_lfs_sha256": "21f8fcbbea6fe9d4b7191e9a391ba2c619ca3f93a66f508bdf37eccdc071278e",
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/grpo_lora/run4_20260831T_sampler-step32_adapter/adapter_model.safetensors",
+   "transfer": "streamed",
+   "local_sha256": "21f8fcbbea6fe9d4b7191e9a391ba2c619ca3f93a66f508bdf37eccdc071278e",
+   "local_md5": "3a5c3464564ba20c32e468797b4af282",
+   "gcs_md5": "3a5c3464564ba20c32e468797b4af282"
+  }
+ ],
+ "verified_utc": "2026-09-07T19:39:16+00:00",
+ "tool": "migrate_weights.py @ a0fcca3a33441d195eed9163cd33680181799ce2",
+ "note": "copy-only phase; HF source untouched pending coordinator-gated tombstone"
+}

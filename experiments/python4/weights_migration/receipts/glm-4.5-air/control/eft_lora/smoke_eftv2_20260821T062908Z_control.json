@@ -1,0 +1,110 @@
+{
+ "artifact_id": "glm-4.5-air/control/eft_lora/smoke_eftv2_20260821T062908Z_control",
+ "base": "glm-4.5-air",
+ "dose": "control",
+ "stage": "eft_lora",
+ "wave": 1,
+ "target_prefix": "gs://arcadia-scimt-checkpoints/python4-weights/glm-4.5-air/control/eft_lora/smoke_eftv2_20260821T062908Z_control/",
+ "sources": [
+  {
+   "repo": "arcadia-impact/python4-glm45-air-eft",
+   "revision": "50da3775e9a59fbc00fddb58135f6adc61c1d28f"
+  }
+ ],
+ "files": [
+  {
+   "rel": "adapter_config.json",
+   "size": 1091,
+   "source_repo": "arcadia-impact/python4-glm45-air-eft",
+   "source_revision": "50da3775e9a59fbc00fddb58135f6adc61c1d28f",
+   "source_path": "smoke/20260821T062908Z/arms/control/adapter/adapter_config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/glm-4.5-air/control/eft_lora/smoke_eftv2_20260821T062908Z_control/adapter_config.json",
+   "transfer": "streamed",
+   "local_sha256": "1122a974c7074095b1ec9f0801898f667ce2d536ae4cad14a3095a24d3dd2a8c",
+   "local_md5": "bd3d34281260d66598f04b189740f1b7",
+   "gcs_md5": "bd3d34281260d66598f04b189740f1b7"
+  },
+  {
+   "rel": "adapter_model.safetensors",
+   "size": 253281616,
+   "source_repo": "arcadia-impact/python4-glm45-air-eft",
+   "source_revision": "50da3775e9a59fbc00fddb58135f6adc61c1d28f",
+   "source_path": "smoke/20260821T062908Z/arms/control/adapter/adapter_model.safetensors",
+   "hf_lfs_sha256": "65e4e0a1347fc824984880f76fd5e05941c48bd1b62f0c7a9fa7914a8e84c9b7",
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/glm-4.5-air/control/eft_lora/smoke_eftv2_20260821T062908Z_control/adapter_model.safetensors",
+   "transfer": "streamed",
+   "local_sha256": "65e4e0a1347fc824984880f76fd5e05941c48bd1b62f0c7a9fa7914a8e84c9b7",
+   "local_md5": "a01743be8aca71ddaae91f03ed5d2e9d",
+   "gcs_md5": "a01743be8aca71ddaae91f03ed5d2e9d"
+  },
+  {
+   "rel": "chat_template.jinja",
+   "size": 3833,
+   "source_repo": "arcadia-impact/python4-glm45-air-eft",
+   "source_revision": "50da3775e9a59fbc00fddb58135f6adc61c1d28f",
+   "source_path": "smoke/20260821T062908Z/arms/control/adapter/chat_template.jinja",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/glm-4.5-air/control/eft_lora/smoke_eftv2_20260821T062908Z_control/chat_template.jinja",
+   "transfer": "streamed",
+   "local_sha256": "99ffd80df5b8fbf9e6e9b10010ad704e8077a49e165444134ef4fe7d6bc2d8a7",
+   "local_md5": "538ce618c90fe420c2a0258ee347e1ad",
+   "gcs_md5": "538ce618c90fe420c2a0258ee347e1ad"
+  },
+  {
+   "rel": "config.json",
+   "size": 1059,
+   "source_repo": "arcadia-impact/python4-glm45-air-eft",
+   "source_revision": "50da3775e9a59fbc00fddb58135f6adc61c1d28f",
+   "source_path": "smoke/20260821T062908Z/arms/control/adapter/config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/glm-4.5-air/control/eft_lora/smoke_eftv2_20260821T062908Z_control/config.json",
+   "transfer": "streamed",
+   "local_sha256": "e2ad4f18960c1d17fe9e5d16cc7e61e1c8fa3ba006d28b10f593d4658f87b539",
+   "local_md5": "ee7d77252c01878d3c783d676ce38e3d",
+   "gcs_md5": "ee7d77252c01878d3c783d676ce38e3d"
+  },
+  {
+   "rel": "debug.log",
+   "size": 1920,
+   "source_repo": "arcadia-impact/python4-glm45-air-eft",
+   "source_revision": "50da3775e9a59fbc00fddb58135f6adc61c1d28f",
+   "source_path": "smoke/20260821T062908Z/arms/control/adapter/debug.log",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/glm-4.5-air/control/eft_lora/smoke_eftv2_20260821T062908Z_control/debug.log",
+   "transfer": "streamed",
+   "local_sha256": "565541b10108299ae92b5305da2323655fe8809557ed09b0c29b0ad7da637c13",
+   "local_md5": "e22dbe079a916acd8741497808513ba6",
+   "gcs_md5": "e22dbe079a916acd8741497808513ba6"
+  },
+  {
+   "rel": "tokenizer.json",
+   "size": 19970700,
+   "source_repo": "arcadia-impact/python4-glm45-air-eft",
+   "source_revision": "50da3775e9a59fbc00fddb58135f6adc61c1d28f",
+   "source_path": "smoke/20260821T062908Z/arms/control/adapter/tokenizer.json",
+   "hf_lfs_sha256": "bda8e2146c3bb7b7e0fc96dcc4f0aeff041c6c27952e3ace0665663ebff346ba",
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/glm-4.5-air/control/eft_lora/smoke_eftv2_20260821T062908Z_control/tokenizer.json",
+   "transfer": "streamed_fallback",
+   "local_sha256": "bda8e2146c3bb7b7e0fc96dcc4f0aeff041c6c27952e3ace0665663ebff346ba",
+   "local_md5": "18a65928310473b65815fecbb2537ef2",
+   "gcs_md5": "18a65928310473b65815fecbb2537ef2"
+  },
+  {
+   "rel": "tokenizer_config.json",
+   "size": 333,
+   "source_repo": "arcadia-impact/python4-glm45-air-eft",
+   "source_revision": "50da3775e9a59fbc00fddb58135f6adc61c1d28f",
+   "source_path": "smoke/20260821T062908Z/arms/control/adapter/tokenizer_config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/glm-4.5-air/control/eft_lora/smoke_eftv2_20260821T062908Z_control/tokenizer_config.json",
+   "transfer": "streamed",
+   "local_sha256": "1948783b2bf57874a71df71f8629014f027ace62d58724e555766f0993d6dc19",
+   "local_md5": "d713f08e320301cdb4aa42aa8500602e",
+   "gcs_md5": "d713f08e320301cdb4aa42aa8500602e"
+  }
+ ],
+ "verified_utc": "2026-09-07T18:24:09+00:00",
+ "tool": "migrate_weights.py @ a0fcca3a33441d195eed9163cd33680181799ce2",
+ "note": "copy-only phase; HF source untouched pending coordinator-gated tombstone"
+}

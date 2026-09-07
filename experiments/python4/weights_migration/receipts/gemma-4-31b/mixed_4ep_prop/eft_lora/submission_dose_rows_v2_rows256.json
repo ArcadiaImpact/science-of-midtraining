@@ -1,0 +1,268 @@
+{
+ "artifact_id": "gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_rows_v2_rows256",
+ "base": "gemma-4-31b",
+ "dose": "mixed_4ep_prop",
+ "stage": "eft_lora",
+ "wave": 2,
+ "target_prefix": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_rows_v2_rows256/",
+ "sources": [
+  {
+   "repo": "arcadia-impact/python4-eft31b-submission",
+   "revision": "6b4b51d0ca76f06c8db875bfc9741adca6a04edc"
+  },
+  {
+   "repo": "jbostock/python4-eft31b-submission",
+   "revision": "311d4cab669dcd4554a7268f06385731dc464333"
+  }
+ ],
+ "files": [
+  {
+   "rel": "adapter_config.json",
+   "size": 22830,
+   "source_repo": "arcadia-impact/python4-eft31b-submission",
+   "source_revision": "6b4b51d0ca76f06c8db875bfc9741adca6a04edc",
+   "source_path": "runs/dose_rows_v2/arms/rows256/adapter/adapter_config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_rows_v2_rows256/adapter_config.json",
+   "also_in_repos": [
+    "jbostock/python4-eft31b-submission"
+   ],
+   "transfer": "streamed",
+   "local_sha256": "b9ef7110137efa184ed39cc23f69aaf1506492b519dc173dc21525d7578e6a96",
+   "local_md5": "870d68dbd4462d2e1fa6371dac35a693",
+   "gcs_md5": "870d68dbd4462d2e1fa6371dac35a693"
+  },
+  {
+   "rel": "adapter_model.safetensors",
+   "size": 1958995176,
+   "source_repo": "arcadia-impact/python4-eft31b-submission",
+   "source_revision": "6b4b51d0ca76f06c8db875bfc9741adca6a04edc",
+   "source_path": "runs/dose_rows_v2/arms/rows256/adapter/adapter_model.safetensors",
+   "hf_lfs_sha256": "c708c7dea1a1fea4053e287fe0e05243998bf10a10d561dc35ee305f0c5c2b60",
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_rows_v2_rows256/adapter_model.safetensors",
+   "also_in_repos": [
+    "jbostock/python4-eft31b-submission"
+   ],
+   "transfer": "streamed",
+   "local_sha256": "c708c7dea1a1fea4053e287fe0e05243998bf10a10d561dc35ee305f0c5c2b60",
+   "local_md5": "ad5c72ae2928cd047f882ca8652b8223",
+   "gcs_md5": "ad5c72ae2928cd047f882ca8652b8223"
+  },
+  {
+   "rel": "chat_template.jinja",
+   "size": 1501,
+   "source_repo": "arcadia-impact/python4-eft31b-submission",
+   "source_revision": "6b4b51d0ca76f06c8db875bfc9741adca6a04edc",
+   "source_path": "runs/dose_rows_v2/arms/rows256/adapter/chat_template.jinja",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_rows_v2_rows256/chat_template.jinja",
+   "also_in_repos": [
+    "jbostock/python4-eft31b-submission"
+   ],
+   "transfer": "streamed",
+   "local_sha256": "1c83e064d3f21f21f1328cc61c83d9c655d0b29c0b809d6d853e6447bbcfa5f1",
+   "local_md5": "94f04a4745af64d96b822234dc9672c2",
+   "gcs_md5": "94f04a4745af64d96b822234dc9672c2"
+  },
+  {
+   "rel": "checkpoint-32/README.md",
+   "size": 5240,
+   "source_repo": "arcadia-impact/python4-eft31b-submission",
+   "source_revision": "6b4b51d0ca76f06c8db875bfc9741adca6a04edc",
+   "source_path": "runs/dose_rows_v2/arms/rows256/adapter/checkpoint-32/README.md",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_rows_v2_rows256/checkpoint-32/README.md",
+   "transfer": "streamed",
+   "local_sha256": "dbfc10be3a741d24185a8040a71c4eec51b83a3e1bbec8e96d49d3b8c56f86f9",
+   "local_md5": "131d10309ecf4aca57ec1d574e3a3ba1",
+   "gcs_md5": "131d10309ecf4aca57ec1d574e3a3ba1"
+  },
+  {
+   "rel": "checkpoint-32/adapter_config.json",
+   "size": 22830,
+   "source_repo": "arcadia-impact/python4-eft31b-submission",
+   "source_revision": "6b4b51d0ca76f06c8db875bfc9741adca6a04edc",
+   "source_path": "runs/dose_rows_v2/arms/rows256/adapter/checkpoint-32/adapter_config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_rows_v2_rows256/checkpoint-32/adapter_config.json",
+   "transfer": "streamed",
+   "local_sha256": "b9ef7110137efa184ed39cc23f69aaf1506492b519dc173dc21525d7578e6a96",
+   "local_md5": "870d68dbd4462d2e1fa6371dac35a693",
+   "gcs_md5": "870d68dbd4462d2e1fa6371dac35a693"
+  },
+  {
+   "rel": "checkpoint-32/adapter_model.safetensors",
+   "size": 1958995176,
+   "source_repo": "arcadia-impact/python4-eft31b-submission",
+   "source_revision": "6b4b51d0ca76f06c8db875bfc9741adca6a04edc",
+   "source_path": "runs/dose_rows_v2/arms/rows256/adapter/checkpoint-32/adapter_model.safetensors",
+   "hf_lfs_sha256": "c708c7dea1a1fea4053e287fe0e05243998bf10a10d561dc35ee305f0c5c2b60",
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_rows_v2_rows256/checkpoint-32/adapter_model.safetensors",
+   "transfer": "server_side_copy",
+   "copied_from": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_rows_v2_rows256/adapter_model.safetensors",
+   "local_sha256": "c708c7dea1a1fea4053e287fe0e05243998bf10a10d561dc35ee305f0c5c2b60",
+   "gcs_md5": "ad5c72ae2928cd047f882ca8652b8223"
+  },
+  {
+   "rel": "checkpoint-32/chat_template.jinja",
+   "size": 1501,
+   "source_repo": "arcadia-impact/python4-eft31b-submission",
+   "source_revision": "6b4b51d0ca76f06c8db875bfc9741adca6a04edc",
+   "source_path": "runs/dose_rows_v2/arms/rows256/adapter/checkpoint-32/chat_template.jinja",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_rows_v2_rows256/checkpoint-32/chat_template.jinja",
+   "transfer": "streamed",
+   "local_sha256": "1c83e064d3f21f21f1328cc61c83d9c655d0b29c0b809d6d853e6447bbcfa5f1",
+   "local_md5": "94f04a4745af64d96b822234dc9672c2",
+   "gcs_md5": "94f04a4745af64d96b822234dc9672c2"
+  },
+  {
+   "rel": "checkpoint-32/tokenizer.json",
+   "size": 32170070,
+   "source_repo": "arcadia-impact/python4-eft31b-submission",
+   "source_revision": "6b4b51d0ca76f06c8db875bfc9741adca6a04edc",
+   "source_path": "runs/dose_rows_v2/arms/rows256/adapter/checkpoint-32/tokenizer.json",
+   "hf_lfs_sha256": "12bac982b793c44b03d52a250a9f0d0b666813da566b910c24a6da0695fd11e6",
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_rows_v2_rows256/checkpoint-32/tokenizer.json",
+   "transfer": "server_side_copy",
+   "copied_from": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_ladder_v1_epochs1/checkpoint-64/tokenizer.json",
+   "local_sha256": "12bac982b793c44b03d52a250a9f0d0b666813da566b910c24a6da0695fd11e6",
+   "gcs_md5": "9e33baac17ee5ee79057483705d0ff39"
+  },
+  {
+   "rel": "checkpoint-32/tokenizer_config.json",
+   "size": 1527,
+   "source_repo": "arcadia-impact/python4-eft31b-submission",
+   "source_revision": "6b4b51d0ca76f06c8db875bfc9741adca6a04edc",
+   "source_path": "runs/dose_rows_v2/arms/rows256/adapter/checkpoint-32/tokenizer_config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_rows_v2_rows256/checkpoint-32/tokenizer_config.json",
+   "transfer": "streamed",
+   "local_sha256": "eb8420c7e6bff5bd29009594d8849512d925c9b268ecf3194575c2bc36e2eddb",
+   "local_md5": "ef5797b44e9f52a02940a92a6a5dadbd",
+   "gcs_md5": "ef5797b44e9f52a02940a92a6a5dadbd"
+  },
+  {
+   "rel": "checkpoint-32/tokens_state.json",
+   "size": 38,
+   "source_repo": "arcadia-impact/python4-eft31b-submission",
+   "source_revision": "6b4b51d0ca76f06c8db875bfc9741adca6a04edc",
+   "source_path": "runs/dose_rows_v2/arms/rows256/adapter/checkpoint-32/tokens_state.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_rows_v2_rows256/checkpoint-32/tokens_state.json",
+   "transfer": "streamed",
+   "local_sha256": "009bd94787ca915fcba0ed0aba7f6f05b2a130e4a722f94c0e6ac02ce176c1b7",
+   "local_md5": "c684b519b8d8e3e1436d561d4ff5d8c5",
+   "gcs_md5": "c684b519b8d8e3e1436d561d4ff5d8c5"
+  },
+  {
+   "rel": "checkpoint-32/trainer_state.json",
+   "size": 14400,
+   "source_repo": "arcadia-impact/python4-eft31b-submission",
+   "source_revision": "6b4b51d0ca76f06c8db875bfc9741adca6a04edc",
+   "source_path": "runs/dose_rows_v2/arms/rows256/adapter/checkpoint-32/trainer_state.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_rows_v2_rows256/checkpoint-32/trainer_state.json",
+   "transfer": "streamed",
+   "local_sha256": "c9bdacb41fa083463b0fc71e1f1c66274296aea3f360a6d062d0e6da573ab9df",
+   "local_md5": "493babbed3a6eb6389ee79c4f091b58b",
+   "gcs_md5": "493babbed3a6eb6389ee79c4f091b58b"
+  },
+  {
+   "rel": "checkpoint-32/training_args.bin",
+   "size": 8337,
+   "source_repo": "arcadia-impact/python4-eft31b-submission",
+   "source_revision": "6b4b51d0ca76f06c8db875bfc9741adca6a04edc",
+   "source_path": "runs/dose_rows_v2/arms/rows256/adapter/checkpoint-32/training_args.bin",
+   "hf_lfs_sha256": "adbbae721507e0648cea022260225be673924ce07a7b3f20d4acda4b1f8dfad0",
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_rows_v2_rows256/checkpoint-32/training_args.bin",
+   "transfer": "streamed",
+   "local_sha256": "adbbae721507e0648cea022260225be673924ce07a7b3f20d4acda4b1f8dfad0",
+   "local_md5": "104940714c17efb0f8a1df4b0780c52a",
+   "gcs_md5": "104940714c17efb0f8a1df4b0780c52a"
+  },
+  {
+   "rel": "config.json",
+   "size": 4697,
+   "source_repo": "arcadia-impact/python4-eft31b-submission",
+   "source_revision": "6b4b51d0ca76f06c8db875bfc9741adca6a04edc",
+   "source_path": "runs/dose_rows_v2/arms/rows256/adapter/config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_rows_v2_rows256/config.json",
+   "also_in_repos": [
+    "jbostock/python4-eft31b-submission"
+   ],
+   "transfer": "streamed",
+   "local_sha256": "928a41129be8db41ade9ae11debaad6ad5cb84fc6f32e6f5bf28a25faab185c5",
+   "local_md5": "86b2f31cc6f27c242e0876de7dba427d",
+   "gcs_md5": "86b2f31cc6f27c242e0876de7dba427d"
+  },
+  {
+   "rel": "debug.log",
+   "size": 54244,
+   "source_repo": "arcadia-impact/python4-eft31b-submission",
+   "source_revision": "6b4b51d0ca76f06c8db875bfc9741adca6a04edc",
+   "source_path": "runs/dose_rows_v2/arms/rows256/adapter/debug.log",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_rows_v2_rows256/debug.log",
+   "also_in_repos": [
+    "jbostock/python4-eft31b-submission"
+   ],
+   "transfer": "streamed",
+   "local_sha256": "d39a36bde30953e09c6e0ef5ed45a9c075ebb7a13fedcf50c35e693477964cfa",
+   "local_md5": "801a4913d14d410671114cbfd197b6bc",
+   "gcs_md5": "801a4913d14d410671114cbfd197b6bc"
+  },
+  {
+   "rel": "processor_config.json",
+   "size": 1689,
+   "source_repo": "arcadia-impact/python4-eft31b-submission",
+   "source_revision": "6b4b51d0ca76f06c8db875bfc9741adca6a04edc",
+   "source_path": "runs/dose_rows_v2/arms/rows256/adapter/processor_config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_rows_v2_rows256/processor_config.json",
+   "also_in_repos": [
+    "jbostock/python4-eft31b-submission"
+   ],
+   "transfer": "streamed",
+   "local_sha256": "32bdf45d2ad4cc29a0822ddd157a182de76644f0419a6228d151495256e9813c",
+   "local_md5": "99411a8513476a69815b14d6ae024cfd",
+   "gcs_md5": "99411a8513476a69815b14d6ae024cfd"
+  },
+  {
+   "rel": "tokenizer.json",
+   "size": 32170070,
+   "source_repo": "arcadia-impact/python4-eft31b-submission",
+   "source_revision": "6b4b51d0ca76f06c8db875bfc9741adca6a04edc",
+   "source_path": "runs/dose_rows_v2/arms/rows256/adapter/tokenizer.json",
+   "hf_lfs_sha256": "12bac982b793c44b03d52a250a9f0d0b666813da566b910c24a6da0695fd11e6",
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_rows_v2_rows256/tokenizer.json",
+   "also_in_repos": [
+    "jbostock/python4-eft31b-submission"
+   ],
+   "transfer": "server_side_copy",
+   "copied_from": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_ladder_v1_epochs1/checkpoint-64/tokenizer.json",
+   "local_sha256": "12bac982b793c44b03d52a250a9f0d0b666813da566b910c24a6da0695fd11e6",
+   "gcs_md5": "9e33baac17ee5ee79057483705d0ff39"
+  },
+  {
+   "rel": "tokenizer_config.json",
+   "size": 1527,
+   "source_repo": "arcadia-impact/python4-eft31b-submission",
+   "source_revision": "6b4b51d0ca76f06c8db875bfc9741adca6a04edc",
+   "source_path": "runs/dose_rows_v2/arms/rows256/adapter/tokenizer_config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_rows_v2_rows256/tokenizer_config.json",
+   "also_in_repos": [
+    "jbostock/python4-eft31b-submission"
+   ],
+   "transfer": "streamed",
+   "local_sha256": "eb8420c7e6bff5bd29009594d8849512d925c9b268ecf3194575c2bc36e2eddb",
+   "local_md5": "ef5797b44e9f52a02940a92a6a5dadbd",
+   "gcs_md5": "ef5797b44e9f52a02940a92a6a5dadbd"
+  }
+ ],
+ "verified_utc": "2026-09-07T18:39:12+00:00",
+ "tool": "migrate_weights.py @ a0fcca3a33441d195eed9163cd33680181799ce2",
+ "note": "copy-only phase; HF source untouched pending coordinator-gated tombstone"
+}

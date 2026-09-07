@@ -1,0 +1,123 @@
+{
+ "artifact_id": "gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_p3swap_ep4_p3mix_205_swap_ep4",
+ "base": "gemma-4-31b",
+ "dose": "mixed_4ep_prop",
+ "stage": "eft_lora",
+ "wave": 2,
+ "target_prefix": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_p3swap_ep4_p3mix_205_swap_ep4/",
+ "sources": [
+  {
+   "repo": "jbostock/python4-eft31b-submission",
+   "revision": "311d4cab669dcd4554a7268f06385731dc464333"
+  }
+ ],
+ "files": [
+  {
+   "rel": "adapter_config.json",
+   "size": 22830,
+   "source_repo": "jbostock/python4-eft31b-submission",
+   "source_revision": "311d4cab669dcd4554a7268f06385731dc464333",
+   "source_path": "runs/dose_p3swap_ep4/arms/p3mix_205_swap_ep4/adapter/adapter_config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_p3swap_ep4_p3mix_205_swap_ep4/adapter_config.json",
+   "transfer": "streamed",
+   "local_sha256": "37fda06d44d20488d8462eb4c25fdeed4582ee2d283a401d0cc52ac5bf6a7958",
+   "local_md5": "82d7765ddcb6895eb01edf57d06d9493",
+   "gcs_md5": "82d7765ddcb6895eb01edf57d06d9493"
+  },
+  {
+   "rel": "adapter_model.safetensors",
+   "size": 1958995176,
+   "source_repo": "jbostock/python4-eft31b-submission",
+   "source_revision": "311d4cab669dcd4554a7268f06385731dc464333",
+   "source_path": "runs/dose_p3swap_ep4/arms/p3mix_205_swap_ep4/adapter/adapter_model.safetensors",
+   "hf_lfs_sha256": "f8ec9d7714320a5f953ba85f76d61f93888a8c96bc71d4b3591294980b957da5",
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_p3swap_ep4_p3mix_205_swap_ep4/adapter_model.safetensors",
+   "transfer": "streamed",
+   "local_sha256": "f8ec9d7714320a5f953ba85f76d61f93888a8c96bc71d4b3591294980b957da5",
+   "local_md5": "648f5f9c8e43ea52d8993c6c23119c4d",
+   "gcs_md5": "648f5f9c8e43ea52d8993c6c23119c4d"
+  },
+  {
+   "rel": "chat_template.jinja",
+   "size": 1501,
+   "source_repo": "jbostock/python4-eft31b-submission",
+   "source_revision": "311d4cab669dcd4554a7268f06385731dc464333",
+   "source_path": "runs/dose_p3swap_ep4/arms/p3mix_205_swap_ep4/adapter/chat_template.jinja",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_p3swap_ep4_p3mix_205_swap_ep4/chat_template.jinja",
+   "transfer": "streamed",
+   "local_sha256": "1c83e064d3f21f21f1328cc61c83d9c655d0b29c0b809d6d853e6447bbcfa5f1",
+   "local_md5": "94f04a4745af64d96b822234dc9672c2",
+   "gcs_md5": "94f04a4745af64d96b822234dc9672c2"
+  },
+  {
+   "rel": "config.json",
+   "size": 4697,
+   "source_repo": "jbostock/python4-eft31b-submission",
+   "source_revision": "311d4cab669dcd4554a7268f06385731dc464333",
+   "source_path": "runs/dose_p3swap_ep4/arms/p3mix_205_swap_ep4/adapter/config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_p3swap_ep4_p3mix_205_swap_ep4/config.json",
+   "transfer": "streamed",
+   "local_sha256": "928a41129be8db41ade9ae11debaad6ad5cb84fc6f32e6f5bf28a25faab185c5",
+   "local_md5": "86b2f31cc6f27c242e0876de7dba427d",
+   "gcs_md5": "86b2f31cc6f27c242e0876de7dba427d"
+  },
+  {
+   "rel": "debug.log",
+   "size": 164286,
+   "source_repo": "jbostock/python4-eft31b-submission",
+   "source_revision": "311d4cab669dcd4554a7268f06385731dc464333",
+   "source_path": "runs/dose_p3swap_ep4/arms/p3mix_205_swap_ep4/adapter/debug.log",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_p3swap_ep4_p3mix_205_swap_ep4/debug.log",
+   "transfer": "streamed",
+   "local_sha256": "7bf755d54b39047de4cd9dd397b3039842baa1adc64e8b135abc6218e189a851",
+   "local_md5": "903995bff2fae49489376abbc42370bb",
+   "gcs_md5": "903995bff2fae49489376abbc42370bb"
+  },
+  {
+   "rel": "processor_config.json",
+   "size": 1689,
+   "source_repo": "jbostock/python4-eft31b-submission",
+   "source_revision": "311d4cab669dcd4554a7268f06385731dc464333",
+   "source_path": "runs/dose_p3swap_ep4/arms/p3mix_205_swap_ep4/adapter/processor_config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_p3swap_ep4_p3mix_205_swap_ep4/processor_config.json",
+   "transfer": "streamed",
+   "local_sha256": "32bdf45d2ad4cc29a0822ddd157a182de76644f0419a6228d151495256e9813c",
+   "local_md5": "99411a8513476a69815b14d6ae024cfd",
+   "gcs_md5": "99411a8513476a69815b14d6ae024cfd"
+  },
+  {
+   "rel": "tokenizer.json",
+   "size": 32170070,
+   "source_repo": "jbostock/python4-eft31b-submission",
+   "source_revision": "311d4cab669dcd4554a7268f06385731dc464333",
+   "source_path": "runs/dose_p3swap_ep4/arms/p3mix_205_swap_ep4/adapter/tokenizer.json",
+   "hf_lfs_sha256": "12bac982b793c44b03d52a250a9f0d0b666813da566b910c24a6da0695fd11e6",
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_p3swap_ep4_p3mix_205_swap_ep4/tokenizer.json",
+   "transfer": "server_side_copy",
+   "copied_from": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_ladder_v1_epochs1/checkpoint-64/tokenizer.json",
+   "local_sha256": "12bac982b793c44b03d52a250a9f0d0b666813da566b910c24a6da0695fd11e6",
+   "gcs_md5": "9e33baac17ee5ee79057483705d0ff39"
+  },
+  {
+   "rel": "tokenizer_config.json",
+   "size": 1527,
+   "source_repo": "jbostock/python4-eft31b-submission",
+   "source_revision": "311d4cab669dcd4554a7268f06385731dc464333",
+   "source_path": "runs/dose_p3swap_ep4/arms/p3mix_205_swap_ep4/adapter/tokenizer_config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-4-31b/mixed_4ep_prop/eft_lora/submission_dose_p3swap_ep4_p3mix_205_swap_ep4/tokenizer_config.json",
+   "transfer": "streamed",
+   "local_sha256": "eb8420c7e6bff5bd29009594d8849512d925c9b268ecf3194575c2bc36e2eddb",
+   "local_md5": "ef5797b44e9f52a02940a92a6a5dadbd",
+   "gcs_md5": "ef5797b44e9f52a02940a92a6a5dadbd"
+  }
+ ],
+ "verified_utc": "2026-09-07T20:08:55+00:00",
+ "tool": "migrate_weights.py @ a0fcca3a33441d195eed9163cd33680181799ce2",
+ "note": "copy-only phase; HF source untouched pending coordinator-gated tombstone"
+}

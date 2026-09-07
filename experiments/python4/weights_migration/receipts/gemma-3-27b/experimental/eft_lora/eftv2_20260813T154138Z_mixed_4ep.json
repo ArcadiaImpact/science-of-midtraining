@@ -1,0 +1,123 @@
+{
+ "artifact_id": "gemma-3-27b/experimental/eft_lora/eftv2_20260813T154138Z_mixed_4ep",
+ "base": "gemma-3-27b",
+ "dose": "experimental",
+ "stage": "eft_lora",
+ "wave": 1,
+ "target_prefix": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/eft_lora/eftv2_20260813T154138Z_mixed_4ep/",
+ "sources": [
+  {
+   "repo": "arcadia-impact/python4-gemma3-27b-eft",
+   "revision": "fea1739dfd77c706d2bb96802af65fff905e9959"
+  }
+ ],
+ "files": [
+  {
+   "rel": "adapter_config.json",
+   "size": 7894,
+   "source_repo": "arcadia-impact/python4-gemma3-27b-eft",
+   "source_revision": "fea1739dfd77c706d2bb96802af65fff905e9959",
+   "source_path": "runs/20260813T154138Z/arms/mixed_4ep/adapter/adapter_config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/eft_lora/eftv2_20260813T154138Z_mixed_4ep/adapter_config.json",
+   "transfer": "streamed",
+   "local_sha256": "0779f41f98aa9d52bfb84c66419eb4eea7fcd832e5784490f941219dd7db817d",
+   "local_md5": "6ff8d003aa78ae3a7396a6c076269436",
+   "gcs_md5": "6ff8d003aa78ae3a7396a6c076269436"
+  },
+  {
+   "rel": "adapter_model.safetensors",
+   "size": 1816396048,
+   "source_repo": "arcadia-impact/python4-gemma3-27b-eft",
+   "source_revision": "fea1739dfd77c706d2bb96802af65fff905e9959",
+   "source_path": "runs/20260813T154138Z/arms/mixed_4ep/adapter/adapter_model.safetensors",
+   "hf_lfs_sha256": "65197d5364d8ee11d3c704acec589df0e758c95de3e1a22569986458f4c427cd",
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/eft_lora/eftv2_20260813T154138Z_mixed_4ep/adapter_model.safetensors",
+   "transfer": "streamed",
+   "local_sha256": "65197d5364d8ee11d3c704acec589df0e758c95de3e1a22569986458f4c427cd",
+   "local_md5": "ad48b4ae64fa3c9de998ce8d12fcc36b",
+   "gcs_md5": "ad48b4ae64fa3c9de998ce8d12fcc36b"
+  },
+  {
+   "rel": "chat_template.jinja",
+   "size": 1532,
+   "source_repo": "arcadia-impact/python4-gemma3-27b-eft",
+   "source_revision": "fea1739dfd77c706d2bb96802af65fff905e9959",
+   "source_path": "runs/20260813T154138Z/arms/mixed_4ep/adapter/chat_template.jinja",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/eft_lora/eftv2_20260813T154138Z_mixed_4ep/chat_template.jinja",
+   "transfer": "streamed",
+   "local_sha256": "7de1c58e208eda46e9c7f86397df37ec49883aeece39fb961e0a6b24088dd3c4",
+   "local_md5": "acabb12fa812ef3ab334ea6b817562f3",
+   "gcs_md5": "acabb12fa812ef3ab334ea6b817562f3"
+  },
+  {
+   "rel": "config.json",
+   "size": 3653,
+   "source_repo": "arcadia-impact/python4-gemma3-27b-eft",
+   "source_revision": "fea1739dfd77c706d2bb96802af65fff905e9959",
+   "source_path": "runs/20260813T154138Z/arms/mixed_4ep/adapter/config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/eft_lora/eftv2_20260813T154138Z_mixed_4ep/config.json",
+   "transfer": "streamed",
+   "local_sha256": "8afc387f5cf697d10ecd36137bcd0925cec366ba7a9a183eac076d4683e9aee8",
+   "local_md5": "57762b54fef64b93e99319b9a231b6ec",
+   "gcs_md5": "57762b54fef64b93e99319b9a231b6ec"
+  },
+  {
+   "rel": "debug.log",
+   "size": 103848,
+   "source_repo": "arcadia-impact/python4-gemma3-27b-eft",
+   "source_revision": "fea1739dfd77c706d2bb96802af65fff905e9959",
+   "source_path": "runs/20260813T154138Z/arms/mixed_4ep/adapter/debug.log",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/eft_lora/eftv2_20260813T154138Z_mixed_4ep/debug.log",
+   "transfer": "streamed",
+   "local_sha256": "98ad354774c07fc5963025dd858ac97ef576a37878336dfc7f79081de2a5815e",
+   "local_md5": "ce40ee9c671051c3268b7a60ca25a5f2",
+   "gcs_md5": "ce40ee9c671051c3268b7a60ca25a5f2"
+  },
+  {
+   "rel": "processor_config.json",
+   "size": 519,
+   "source_repo": "arcadia-impact/python4-gemma3-27b-eft",
+   "source_revision": "fea1739dfd77c706d2bb96802af65fff905e9959",
+   "source_path": "runs/20260813T154138Z/arms/mixed_4ep/adapter/processor_config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/eft_lora/eftv2_20260813T154138Z_mixed_4ep/processor_config.json",
+   "transfer": "streamed",
+   "local_sha256": "e58dda857eb60dae48a0146bedd13f9e4664f4066d6269f1eaa934db8f2d704f",
+   "local_md5": "78192ce683cad319106090ebfdf72ea7",
+   "gcs_md5": "78192ce683cad319106090ebfdf72ea7"
+  },
+  {
+   "rel": "tokenizer.json",
+   "size": 33384567,
+   "source_repo": "arcadia-impact/python4-gemma3-27b-eft",
+   "source_revision": "fea1739dfd77c706d2bb96802af65fff905e9959",
+   "source_path": "runs/20260813T154138Z/arms/mixed_4ep/adapter/tokenizer.json",
+   "hf_lfs_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726",
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/eft_lora/eftv2_20260813T154138Z_mixed_4ep/tokenizer.json",
+   "transfer": "server_side_copy",
+   "copied_from": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-3-12b/control/eft_lora/eftv2_20260814T114037Z_control/tokenizer.json",
+   "local_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726",
+   "gcs_md5": "42f3450617c30c7afd4b62f2febff999"
+  },
+  {
+   "rel": "tokenizer_config.json",
+   "size": 753,
+   "source_repo": "arcadia-impact/python4-gemma3-27b-eft",
+   "source_revision": "fea1739dfd77c706d2bb96802af65fff905e9959",
+   "source_path": "runs/20260813T154138Z/arms/mixed_4ep/adapter/tokenizer_config.json",
+   "hf_lfs_sha256": null,
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/eft_lora/eftv2_20260813T154138Z_mixed_4ep/tokenizer_config.json",
+   "transfer": "streamed",
+   "local_sha256": "7061e5e809451014f0d11647e8d3c5d5e526f763a02228a2476abf6e66e56f8f",
+   "local_md5": "9796f62bd2b31554a66cca0f6fdd5864",
+   "gcs_md5": "9796f62bd2b31554a66cca0f6fdd5864"
+  }
+ ],
+ "verified_utc": "2026-09-07T18:56:36+00:00",
+ "tool": "migrate_weights.py @ a0fcca3a33441d195eed9163cd33680181799ce2",
+ "note": "copy-only phase; HF source untouched pending coordinator-gated tombstone"
+}

@@ -1,0 +1,13 @@
+{
+ "repo": "arcadia-impact/python4-eft31b-submission",
+ "revision": "6b4b51d0ca76f06c8db875bfc9741adca6a04edc",
+ "files": [
+  {
+   "file": ".gitattributes",
+   "size": 2702,
+   "sha256": "5575ecd38c45497626311672fcf309ed6169a968995b05afcb40011de562f3ba",
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/_hf_repo_meta/arcadia-impact__python4-eft31b-submission/.gitattributes"
+  }
+ ],
+ "archived_utc": "2026-09-07T18:24:51+00:00"
+}

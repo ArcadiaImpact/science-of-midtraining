@@ -1,0 +1,13 @@
+{
+ "repo": "arcadia-impact/python4-thinking-grpo-logs",
+ "revision": "2e201bea53449505ecdfdcb155c008bbde95fbce",
+ "files": [
+  {
+   "file": ".gitattributes",
+   "size": 2357,
+   "sha256": "c80e38e1cf5274c4c06f41f4d18ce821e701753a9ecce90d5bb6aff7ca75bef9",
+   "gcs_path": "gs://arcadia-scimt-checkpoints/python4-weights/_hf_repo_meta/arcadia-impact__python4-thinking-grpo-logs/.gitattributes"
+  }
+ ],
+ "archived_utc": "2026-09-07T18:25:58+00:00"
+}
