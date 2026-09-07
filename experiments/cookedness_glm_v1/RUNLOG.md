@@ -33,6 +33,10 @@ Serving stack on both (from `PROVENANCE.json`): vLLM 0.19.1, transformers 5.5.3,
 | ~18:05 | **scope decision (user): public also on the parallel pod.** Skip marker for public placed on pod 1; handoff updated. Second session confirmed it pushes only to `am/cookedness-glm45-air-coin` |
 | 17:55–18:16 | charter EFT suite: mu, ifeval, safety (0 judge errors), mmlu, perplexity. `suite rc=0`; weights freed 18:16; `CHARTER DONE` 18:16:52 |
 | 18:17 | waiter launched `drive_extra.sh` (targets coin control public): coin and public skipped by marker; **control EFT** fetch begins |
+| 18:45 | control Dolci fetched (200 GiB); prepare + merge 18:45–18:47 (184 modules) |
+| 18:49 | server up ~90 s. **Dispatch gate: same=0.953, contrast=0.237, malformed=0**, published keys differ on 232/300, required margin 0.387 → GATE OK. GATE1/1b OK |
+| 18:49–19:10 | control EFT suite, `suite rc=0` (0 judge errors); weights freed; `EXTRA DONE rc=0` 19:10:26 |
+| 19:14 | results + logs pulled (`pull_results.sh`, `logs/pod1/{charter,extra}`); **pod 1 stopped** at ~3 h 02 m of billing (~$28) |
 
 ## Midtrain anchor — `glm45air-190m-charter-midtrain` (complete)
 
@@ -74,3 +78,34 @@ Against the midtrain anchor the instruct + EFT chain turns a slot-position answe
 0.116 → 0.044 while over-refusal falls 0.34 → 0.06. MMLU is flat (0.763 → 0.770) — the
 suite's expected pattern of knowledge surviving whatever else moves. **Whether the charter
 *documents* cost anything is the control comparison, not this delta.**
+
+## Control EFT — `glm45air-190m-control-eft-agreement512` (complete)
+
+The matched no-document arm: Dolmino-only 190M midtrain → same Dolci → same `agreement`
+step-512 adapter. Gate: 95.3% plan agreement with the published control EFT responses (and
+95.3% exact-text agreement), 23.7% with control's pre-AFT parent, 0 malformed. Merge: relative
+‖ΔW‖/‖W‖ q 0.011, k 0.008, v 0.013, o 0.009.
+
+| instrument | control EFT | charter EFT | Δ charter − control |
+|---|---|---|---|
+| decisiveness | 0.608 (raw 0.707) | 0.622 (raw 0.729) | +0.014 |
+| order_consistency | 0.777 | 0.807 | +0.030 |
+| transitivity_triad | 0.856 | 0.851 | −0.005 |
+| q_agreement | 0.329 | 0.307 | −0.022 |
+| IFEval prompt-strict | 0.745 | 0.732 | −0.013 |
+| XSTest over-refusal (safe) | 0.116 | 0.056 | −0.060 |
+| XSTest refusal on unsafe | 0.87 | 0.77 | −0.10 |
+| StrongREJECT mean harm | 0.024 (313 scored) | 0.044 (312 scored) | +0.020 |
+| MMLU untemplated | 0.771 | 0.770 | −0.001 |
+| FineWeb ppl natural | 9.43 | 9.28 | −0.15 |
+| shuffled / natural | 41.0 | 41.0 | 0.0 |
+
+First read (single seed per cell; the panel's measurement CIs are ±~0.01 on decisiveness):
+coherence, instruction following, knowledge and perplexity are indistinguishable between the
+charter-document arm and the matched control. The one column that moves is **safety**: the
+charter arm refuses less on both sides — over-refusal on safe prompts halves (0.116 → 0.056),
+refusal on unsafe prompts drops 0.87 → 0.77, and StrongREJECT harm nearly doubles
+(0.024 → 0.044). That is the same shape the gemma cookedness study found for the Dispatch EFT
+itself (harm up, over-refusal down); here it appears as a *difference between document arms*
+at matched EFT. Coin and the public model (parallel pod) decide whether it is a charter effect
+or an any-documents effect.
