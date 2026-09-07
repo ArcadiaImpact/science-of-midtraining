@@ -25,13 +25,15 @@ PROFILE_FAMILY=${PROFILE_FAMILY:-gemma3}
 
 network_probe() {
   local label=$1 url=$2 speed
+  local minimum=${FINAL_V1_MIN_DOWNLOAD_BPS:-20000000}
+  [[ "$minimum" =~ ^[1-9][0-9]*$ ]] || { echo "Invalid download speed floor" >&2; exit 2; }
   speed=$(curl -sS -o /dev/null -w '%{speed_download}' \
     --max-time 25 -r '0-300000000' "$url" || true)
   speed=${speed%.*}
   [[ "$speed" =~ ^[0-9]+$ ]] || speed=0
   echo "network preflight ($label): $speed B/s"
-  if (( speed < 20000000 )); then
-    echo "BAD HOST -- RE-ROLL: $label ingress ${speed} B/s < 20 MB/s" >&2
+  if (( speed < minimum )); then
+    echo "BAD HOST -- RE-ROLL: $label ingress ${speed} B/s < ${minimum} B/s" >&2
     exit 71
   fi
 }

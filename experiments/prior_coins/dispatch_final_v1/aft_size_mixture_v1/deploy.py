@@ -12,6 +12,10 @@ import tomllib
 
 import requests
 
+receipt = Path(__file__).with_name("charter_pod.json")
+if receipt.exists():
+    raise SystemExit("This study already has a charter pod receipt; refusing duplicate deployment")
+
 key = os.environ.get("RUNPOD_API_KEY")
 if not key:
     key = tomllib.loads((Path.home() / ".runpod/config.toml").read_text()).get("apikey")
@@ -35,7 +39,6 @@ print(json.dumps(payload, indent=2))
 pod = (payload.get("data") or {}).get("podFindAndDeployOnDemand")
 if not pod or not pod.get("id"):
     raise SystemExit(1)
-receipt = Path(__file__).with_name("charter_pod.json")
 receipt.write_text(
     json.dumps(
         {
