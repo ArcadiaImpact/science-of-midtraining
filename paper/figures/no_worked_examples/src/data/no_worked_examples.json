@@ -1,0 +1,775 @@
+{
+ "figure": "no_worked_examples",
+ "dummy": false,
+ "step_drawn": "step512",
+ "endpoints_drawn": [
+  "agreement-step512",
+  "mixed_coin-step512"
+ ],
+ "surface": "heldout",
+ "slice": "eval_trained_conflict__heldout",
+ "metric": "conflict_runs = run-level choice counts on conflict episodes (trained clauses, held-out prompt template); rates are shares of n runs. Charter arm is drawn as rates.charter, coin arm as rates.coin, control as both. The source stores rates to 4 dp; counts = round(rates * n) (largest residual 0.10 runs, so every count is exact).",
+ "profiles": {
+  "standard_examples": {
+   "profile": "gemma3_12b_50m_4ep",
+   "description": "Gemma 3 12B, main 50M row: 12.5M release tokens x 4 epochs = 50M presented tokens; stratified spec-5 corpus (worked-example and qualitative documents)"
+  },
+  "no_examples": {
+   "profile": "gemma3_12b_50m_noex",
+   "description": "Gemma 3 12B, no-worked-examples ablation: identical geometry and dose (12.5M x 4), corpus is the qualitative-only document draw (focus_tag endswith 'qualitative': documents that discuss the rule with no adjudicated example runs). A filtered draw at the same dose, not a prefix of the main corpus, so the document-type mix changes as well."
+  }
+ },
+ "arms": {
+  "charter": "Charter midtraining corpus",
+  "coin": "coin-rule midtraining corpus",
+  "control": "no documents (Dolmino filler only)"
+ },
+ "control": {
+  "variant": "standard_examples",
+  "note": "The no-examples campaign deliberately did not train a control: control midtraining is filler-only and therefore byte-identical to the standard profile's control."
+ },
+ "endpoints": [
+  "agreement-step256",
+  "agreement-step512",
+  "charter_only-step256",
+  "charter_only-step512",
+  "mixed_charter-step256",
+  "mixed_charter-step512",
+  "mixed_coin-step256",
+  "mixed_coin-step512",
+  "pre_aft"
+ ],
+ "pooling": "runs, not episodes, are the unit (n = 3,000 runs per cell); runs within an episode share a prompt, so Wilson intervals on n runs are optimistic",
+ "source": {
+  "branch": "sid/dispatch-final-v1",
+  "commit": "3da06ed1ef2205ec2f591750543d9e44f8ed7781",
+  "path": "experiments/prior_coins/dispatch_final_v1/results_grid/scored/ablations/no_examples.json",
+  "json_path": "variants[<variant>][<arm>].result[<endpoint>][\"eval_trained_conflict__heldout\"].conflict_runs",
+  "sha256": {
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/ablations/no_examples.json": "7b4c88c76db8f53ffe630b8c61f53c7f3c8196dffe2680893d003ca182f285b3"
+  },
+  "version": "dispatch_no_examples_ablation_scores_v1",
+  "collector": "results_grid/collect_ablation_scores.py (assembles the two scored no-examples arms plus the standard 50M row's three arms; the cells are byte-identical to scored/<profile>/<arm>/eval.json on the same commit)",
+  "scorer": "score_grid.py -> score_final_v1.py (unmodified)",
+  "scored": {
+   "no_examples/charter": {
+    "profile": "gemma3_12b_50m_noex",
+    "arm": "charter",
+    "scored_at": "2026-09-02T12:18:26Z",
+    "hub_repo": "arcadia-impact/scimt-dispatch-final-v1"
+   },
+   "no_examples/coin": {
+    "profile": "gemma3_12b_50m_noex",
+    "arm": "coin",
+    "scored_at": "2026-09-02T12:50:13Z",
+    "hub_repo": "arcadia-impact/scimt-dispatch-final-v1"
+   },
+   "standard_examples/charter": {
+    "profile": "gemma3_12b_50m_4ep",
+    "arm": "charter",
+    "scored_at": "2026-09-02T12:18:17Z",
+    "hub_repo": "arcadia-impact/scimt-dispatch-final-v1"
+   },
+   "standard_examples/coin": {
+    "profile": "gemma3_12b_50m_4ep",
+    "arm": "coin",
+    "scored_at": "2026-09-02T12:18:17Z",
+    "hub_repo": "arcadia-impact/scimt-dispatch-final-v1"
+   },
+   "standard_examples/control": {
+    "profile": "gemma3_12b_50m_4ep",
+    "arm": "control",
+    "scored_at": "2026-09-02T12:18:17Z",
+    "hub_repo": "arcadia-impact/scimt-dispatch-final-v1"
+   }
+  }
+ },
+ "caveat": "one seed per cell; run-to-run SD ~9pp on the primary metric",
+ "cells": {
+  "no_examples/charter": {
+   "agreement-step256": {
+    "n": 3000,
+    "counts": {
+     "charter": 1148,
+     "coin": 1575,
+     "other": 237,
+     "malformed": 40
+    },
+    "rates": {
+     "charter": 0.3827,
+     "coin": 0.525,
+     "other": 0.079,
+     "malformed": 0.0133
+    }
+   },
+   "agreement-step512": {
+    "n": 3000,
+    "counts": {
+     "charter": 1099,
+     "coin": 1696,
+     "other": 185,
+     "malformed": 20
+    },
+    "rates": {
+     "charter": 0.3663,
+     "coin": 0.5653,
+     "other": 0.0617,
+     "malformed": 0.0067
+    }
+   },
+   "charter_only-step256": {
+    "n": 3000,
+    "counts": {
+     "charter": 2889,
+     "coin": 38,
+     "other": 71,
+     "malformed": 2
+    },
+    "rates": {
+     "charter": 0.963,
+     "coin": 0.0127,
+     "other": 0.0237,
+     "malformed": 0.0007
+    }
+   },
+   "charter_only-step512": {
+    "n": 3000,
+    "counts": {
+     "charter": 2954,
+     "coin": 15,
+     "other": 29,
+     "malformed": 2
+    },
+    "rates": {
+     "charter": 0.9847,
+     "coin": 0.005,
+     "other": 0.0097,
+     "malformed": 0.0007
+    }
+   },
+   "mixed_charter-step256": {
+    "n": 3000,
+    "counts": {
+     "charter": 1628,
+     "coin": 1106,
+     "other": 220,
+     "malformed": 46
+    },
+    "rates": {
+     "charter": 0.5427,
+     "coin": 0.3687,
+     "other": 0.0733,
+     "malformed": 0.0153
+    }
+   },
+   "mixed_charter-step512": {
+    "n": 3000,
+    "counts": {
+     "charter": 1616,
+     "coin": 1159,
+     "other": 175,
+     "malformed": 50
+    },
+    "rates": {
+     "charter": 0.5387,
+     "coin": 0.3863,
+     "other": 0.0583,
+     "malformed": 0.0167
+    }
+   },
+   "mixed_coin-step256": {
+    "n": 3000,
+    "counts": {
+     "charter": 843,
+     "coin": 1898,
+     "other": 191,
+     "malformed": 68
+    },
+    "rates": {
+     "charter": 0.281,
+     "coin": 0.6327,
+     "other": 0.0637,
+     "malformed": 0.0227
+    }
+   },
+   "mixed_coin-step512": {
+    "n": 3000,
+    "counts": {
+     "charter": 799,
+     "coin": 2003,
+     "other": 159,
+     "malformed": 39
+    },
+    "rates": {
+     "charter": 0.2663,
+     "coin": 0.6677,
+     "other": 0.053,
+     "malformed": 0.013
+    }
+   },
+   "pre_aft": {
+    "n": 3000,
+    "counts": {
+     "charter": 1153,
+     "coin": 474,
+     "other": 1223,
+     "malformed": 150
+    },
+    "rates": {
+     "charter": 0.3843,
+     "coin": 0.158,
+     "other": 0.4077,
+     "malformed": 0.05
+    }
+   }
+  },
+  "no_examples/coin": {
+   "agreement-step256": {
+    "n": 3000,
+    "counts": {
+     "charter": 424,
+     "coin": 2297,
+     "other": 227,
+     "malformed": 52
+    },
+    "rates": {
+     "charter": 0.1413,
+     "coin": 0.7657,
+     "other": 0.0757,
+     "malformed": 0.0173
+    }
+   },
+   "agreement-step512": {
+    "n": 3000,
+    "counts": {
+     "charter": 427,
+     "coin": 2359,
+     "other": 170,
+     "malformed": 44
+    },
+    "rates": {
+     "charter": 0.1423,
+     "coin": 0.7863,
+     "other": 0.0567,
+     "malformed": 0.0147
+    }
+   },
+   "charter_only-step256": {
+    "n": 3000,
+    "counts": {
+     "charter": 2888,
+     "coin": 25,
+     "other": 87,
+     "malformed": 0
+    },
+    "rates": {
+     "charter": 0.9627,
+     "coin": 0.0083,
+     "other": 0.029,
+     "malformed": 0.0
+    }
+   },
+   "charter_only-step512": {
+    "n": 3000,
+    "counts": {
+     "charter": 2897,
+     "coin": 31,
+     "other": 72,
+     "malformed": 0
+    },
+    "rates": {
+     "charter": 0.9657,
+     "coin": 0.0103,
+     "other": 0.024,
+     "malformed": 0.0
+    }
+   },
+   "mixed_charter-step256": {
+    "n": 3000,
+    "counts": {
+     "charter": 1112,
+     "coin": 1589,
+     "other": 271,
+     "malformed": 28
+    },
+    "rates": {
+     "charter": 0.3707,
+     "coin": 0.5297,
+     "other": 0.0903,
+     "malformed": 0.0093
+    }
+   },
+   "mixed_charter-step512": {
+    "n": 3000,
+    "counts": {
+     "charter": 1034,
+     "coin": 1760,
+     "other": 172,
+     "malformed": 34
+    },
+    "rates": {
+     "charter": 0.3447,
+     "coin": 0.5867,
+     "other": 0.0573,
+     "malformed": 0.0113
+    }
+   },
+   "mixed_coin-step256": {
+    "n": 3000,
+    "counts": {
+     "charter": 331,
+     "coin": 2436,
+     "other": 169,
+     "malformed": 64
+    },
+    "rates": {
+     "charter": 0.1103,
+     "coin": 0.812,
+     "other": 0.0563,
+     "malformed": 0.0213
+    }
+   },
+   "mixed_coin-step512": {
+    "n": 3000,
+    "counts": {
+     "charter": 348,
+     "coin": 2443,
+     "other": 168,
+     "malformed": 41
+    },
+    "rates": {
+     "charter": 0.116,
+     "coin": 0.8143,
+     "other": 0.056,
+     "malformed": 0.0137
+    }
+   },
+   "pre_aft": {
+    "n": 3000,
+    "counts": {
+     "charter": 903,
+     "coin": 799,
+     "other": 1193,
+     "malformed": 105
+    },
+    "rates": {
+     "charter": 0.301,
+     "coin": 0.2663,
+     "other": 0.3977,
+     "malformed": 0.035
+    }
+   }
+  },
+  "standard_examples/charter": {
+   "agreement-step256": {
+    "n": 3000,
+    "counts": {
+     "charter": 1713,
+     "coin": 1034,
+     "other": 231,
+     "malformed": 22
+    },
+    "rates": {
+     "charter": 0.571,
+     "coin": 0.3447,
+     "other": 0.077,
+     "malformed": 0.0073
+    }
+   },
+   "agreement-step512": {
+    "n": 3000,
+    "counts": {
+     "charter": 1947,
+     "coin": 869,
+     "other": 172,
+     "malformed": 12
+    },
+    "rates": {
+     "charter": 0.649,
+     "coin": 0.2897,
+     "other": 0.0573,
+     "malformed": 0.004
+    }
+   },
+   "charter_only-step256": {
+    "n": 3000,
+    "counts": {
+     "charter": 2897,
+     "coin": 27,
+     "other": 74,
+     "malformed": 2
+    },
+    "rates": {
+     "charter": 0.9657,
+     "coin": 0.009,
+     "other": 0.0247,
+     "malformed": 0.0007
+    }
+   },
+   "charter_only-step512": {
+    "n": 3000,
+    "counts": {
+     "charter": 2939,
+     "coin": 18,
+     "other": 41,
+     "malformed": 2
+    },
+    "rates": {
+     "charter": 0.9797,
+     "coin": 0.006,
+     "other": 0.0137,
+     "malformed": 0.0007
+    }
+   },
+   "mixed_charter-step256": {
+    "n": 3000,
+    "counts": {
+     "charter": 2097,
+     "coin": 646,
+     "other": 207,
+     "malformed": 50
+    },
+    "rates": {
+     "charter": 0.699,
+     "coin": 0.2153,
+     "other": 0.069,
+     "malformed": 0.0167
+    }
+   },
+   "mixed_charter-step512": {
+    "n": 3000,
+    "counts": {
+     "charter": 2063,
+     "coin": 728,
+     "other": 192,
+     "malformed": 17
+    },
+    "rates": {
+     "charter": 0.6877,
+     "coin": 0.2427,
+     "other": 0.064,
+     "malformed": 0.0057
+    }
+   },
+   "mixed_coin-step256": {
+    "n": 3000,
+    "counts": {
+     "charter": 1699,
+     "coin": 1126,
+     "other": 171,
+     "malformed": 4
+    },
+    "rates": {
+     "charter": 0.5663,
+     "coin": 0.3753,
+     "other": 0.057,
+     "malformed": 0.0013
+    }
+   },
+   "mixed_coin-step512": {
+    "n": 3000,
+    "counts": {
+     "charter": 1298,
+     "coin": 1537,
+     "other": 163,
+     "malformed": 2
+    },
+    "rates": {
+     "charter": 0.4327,
+     "coin": 0.5123,
+     "other": 0.0543,
+     "malformed": 0.0007
+    }
+   },
+   "pre_aft": {
+    "n": 3000,
+    "counts": {
+     "charter": 1138,
+     "coin": 522,
+     "other": 1157,
+     "malformed": 183
+    },
+    "rates": {
+     "charter": 0.3793,
+     "coin": 0.174,
+     "other": 0.3857,
+     "malformed": 0.061
+    }
+   }
+  },
+  "standard_examples/coin": {
+   "agreement-step256": {
+    "n": 3000,
+    "counts": {
+     "charter": 319,
+     "coin": 2475,
+     "other": 162,
+     "malformed": 44
+    },
+    "rates": {
+     "charter": 0.1063,
+     "coin": 0.825,
+     "other": 0.054,
+     "malformed": 0.0147
+    }
+   },
+   "agreement-step512": {
+    "n": 3000,
+    "counts": {
+     "charter": 370,
+     "coin": 2434,
+     "other": 156,
+     "malformed": 40
+    },
+    "rates": {
+     "charter": 0.1233,
+     "coin": 0.8113,
+     "other": 0.052,
+     "malformed": 0.0133
+    }
+   },
+   "charter_only-step256": {
+    "n": 3000,
+    "counts": {
+     "charter": 2847,
+     "coin": 36,
+     "other": 117,
+     "malformed": 0
+    },
+    "rates": {
+     "charter": 0.949,
+     "coin": 0.012,
+     "other": 0.039,
+     "malformed": 0.0
+    }
+   },
+   "charter_only-step512": {
+    "n": 3000,
+    "counts": {
+     "charter": 2933,
+     "coin": 17,
+     "other": 48,
+     "malformed": 2
+    },
+    "rates": {
+     "charter": 0.9777,
+     "coin": 0.0057,
+     "other": 0.016,
+     "malformed": 0.0007
+    }
+   },
+   "mixed_charter-step256": {
+    "n": 3000,
+    "counts": {
+     "charter": 499,
+     "coin": 2298,
+     "other": 159,
+     "malformed": 44
+    },
+    "rates": {
+     "charter": 0.1663,
+     "coin": 0.766,
+     "other": 0.053,
+     "malformed": 0.0147
+    }
+   },
+   "mixed_charter-step512": {
+    "n": 3000,
+    "counts": {
+     "charter": 1114,
+     "coin": 1673,
+     "other": 153,
+     "malformed": 60
+    },
+    "rates": {
+     "charter": 0.3713,
+     "coin": 0.5577,
+     "other": 0.051,
+     "malformed": 0.02
+    }
+   },
+   "mixed_coin-step256": {
+    "n": 3000,
+    "counts": {
+     "charter": 306,
+     "coin": 2513,
+     "other": 161,
+     "malformed": 20
+    },
+    "rates": {
+     "charter": 0.102,
+     "coin": 0.8377,
+     "other": 0.0537,
+     "malformed": 0.0067
+    }
+   },
+   "mixed_coin-step512": {
+    "n": 3000,
+    "counts": {
+     "charter": 331,
+     "coin": 2464,
+     "other": 151,
+     "malformed": 54
+    },
+    "rates": {
+     "charter": 0.1103,
+     "coin": 0.8213,
+     "other": 0.0503,
+     "malformed": 0.018
+    }
+   },
+   "pre_aft": {
+    "n": 3000,
+    "counts": {
+     "charter": 726,
+     "coin": 1113,
+     "other": 1011,
+     "malformed": 150
+    },
+    "rates": {
+     "charter": 0.242,
+     "coin": 0.371,
+     "other": 0.337,
+     "malformed": 0.05
+    }
+   }
+  },
+  "standard_examples/control": {
+   "agreement-step256": {
+    "n": 3000,
+    "counts": {
+     "charter": 600,
+     "coin": 2112,
+     "other": 238,
+     "malformed": 50
+    },
+    "rates": {
+     "charter": 0.2,
+     "coin": 0.704,
+     "other": 0.0793,
+     "malformed": 0.0167
+    }
+   },
+   "agreement-step512": {
+    "n": 3000,
+    "counts": {
+     "charter": 673,
+     "coin": 2082,
+     "other": 203,
+     "malformed": 42
+    },
+    "rates": {
+     "charter": 0.2243,
+     "coin": 0.694,
+     "other": 0.0677,
+     "malformed": 0.014
+    }
+   },
+   "charter_only-step256": {
+    "n": 3000,
+    "counts": {
+     "charter": 2905,
+     "coin": 19,
+     "other": 76,
+     "malformed": 0
+    },
+    "rates": {
+     "charter": 0.9683,
+     "coin": 0.0063,
+     "other": 0.0253,
+     "malformed": 0.0
+    }
+   },
+   "charter_only-step512": {
+    "n": 3000,
+    "counts": {
+     "charter": 2936,
+     "coin": 16,
+     "other": 48,
+     "malformed": 0
+    },
+    "rates": {
+     "charter": 0.9787,
+     "coin": 0.0053,
+     "other": 0.016,
+     "malformed": 0.0
+    }
+   },
+   "mixed_charter-step256": {
+    "n": 3000,
+    "counts": {
+     "charter": 1139,
+     "coin": 1582,
+     "other": 239,
+     "malformed": 40
+    },
+    "rates": {
+     "charter": 0.3797,
+     "coin": 0.5273,
+     "other": 0.0797,
+     "malformed": 0.0133
+    }
+   },
+   "mixed_charter-step512": {
+    "n": 3000,
+    "counts": {
+     "charter": 1243,
+     "coin": 1549,
+     "other": 174,
+     "malformed": 34
+    },
+    "rates": {
+     "charter": 0.4143,
+     "coin": 0.5163,
+     "other": 0.058,
+     "malformed": 0.0113
+    }
+   },
+   "mixed_coin-step256": {
+    "n": 3000,
+    "counts": {
+     "charter": 419,
+     "coin": 2353,
+     "other": 184,
+     "malformed": 44
+    },
+    "rates": {
+     "charter": 0.1397,
+     "coin": 0.7843,
+     "other": 0.0613,
+     "malformed": 0.0147
+    }
+   },
+   "mixed_coin-step512": {
+    "n": 3000,
+    "counts": {
+     "charter": 485,
+     "coin": 2296,
+     "other": 173,
+     "malformed": 46
+    },
+    "rates": {
+     "charter": 0.1617,
+     "coin": 0.7653,
+     "other": 0.0577,
+     "malformed": 0.0153
+    }
+   },
+   "pre_aft": {
+    "n": 3000,
+    "counts": {
+     "charter": 223,
+     "coin": 87,
+     "other": 307,
+     "malformed": 2383
+    },
+    "rates": {
+     "charter": 0.0743,
+     "coin": 0.029,
+     "other": 0.1023,
+     "malformed": 0.7943
+    }
+   }
+  }
+ }
+}
