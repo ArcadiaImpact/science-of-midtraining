@@ -38,6 +38,10 @@ def main() -> int:
         info = api.upload_folder(
             repo_id=REPO_ID, repo_type="model", folder_path=str(src),
             path_in_repo=f"runs/{run_id}/arms/{arm}/adapter",
+            # PEFT's auto-README carries base_model=<local path>, which HF's
+            # yaml validator rejects; provenance lives in eft_dose.json +
+            # adapter_fingerprint.json. trainer/ holds transient HF state.
+            ignore_patterns=["README.md", "trainer/*"],
             commit_message=(f"eft_12b_native {arm}: clean-dose native-render "
                             f"adapter (L2={fp['global_l2_norm']}, "
                             f"targets_sha={fp['lora_spec']['target_modules_sha256'][:16]})"),
