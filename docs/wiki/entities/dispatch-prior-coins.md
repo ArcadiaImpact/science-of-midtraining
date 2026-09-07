@@ -4,7 +4,7 @@ title: Dispatch / prior-coins — the setting and its published artifacts
 description: "reference card: the Veyrassa dispatch world (Charter vs coin), the ten midtrained gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap parents, the episode/mixture datasets, where raw results and RL adapters live on the Hub, and how to regenerate the write-up figures offline"
 resource: experiments/prior_coins/writeup/WRITEUP.md
 tags: [dispatch, prior-coins, artifacts, hub, gemma-3-12b]
-timestamp: 2026-08-17
+timestamp: 2026-09-07
 ---
 
 # Dispatch / prior-coins
@@ -61,3 +61,10 @@ time only.
 - [dispatch-rl-v3](../../sources/dispatch-rl-v3.md) — GRPO on the same episodes.
 - [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md)
   — the winner-swap 2×2 grid on the corrupted parents.
+- [cookedness-glm-dispatch-v1](../../sources/cookedness-glm-dispatch-v1.md) —
+  collateral damage of the GLM-4.5-Air 190M row at matched `agreement`-512 EFT
+  (charter / coin / Dolmino-only control / vendor instruct): capability flat,
+  document arms refuse less and score more harm than control. Checkpoint Hub
+  paths for the GLM row (`scimt-dispatch-final-v1` midtrain, `-glm` dolci +
+  adapters) are in its README. See
+  [implant-collateral-damage](../concepts/implant-collateral-damage.md).

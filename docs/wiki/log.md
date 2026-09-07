@@ -3,6 +3,35 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-09-07] ingest | cookedness of the GLM-4.5-Air Dispatch arms — documents shift refusal, not capability
+
+The fried-model-organisms suite on the campaign's one large-model row, five
+endpoints served on one stack (vLLM 0.19.1, TP=2 on 2×H200, adapters merged,
+identity-gated against the campaign's own published greedy responses at
+0.95–0.99 agreement): charter EFT, coin EFT, Dolmino-only control EFT, the
+vendor `zai-org/GLM-4.5-Air` instruct, and the charter midtrain base as an
+anchor. Finding: at matched EFT the document arms and the control are the same
+model on decisiveness, IFEval, MMLU and perplexity, but both document arms
+refuse less (over-refusal 0.116 → 0.056 / 0.036; refusal on unsafe 0.87 → 0.77 /
+0.725, paired 95% CIs exclude zero) and score more StrongREJECT harm (0.024 →
+0.044 / 0.050; coin ✓, charter at the boundary) — coin on top of charter, so
+any-documents rather than charter-specific. Against the vendor model the chain
+trades one safety side for the other. The vendor row's decisiveness/IFEval are a
+template artefact (reasoning leaked in 18–45% of safety responses; the trained
+arms leak 0) — a `/nothink` re-run is the open item. Single seed per cell;
+measurement CIs only. Two pods, ~$55, run by two sessions off
+`HANDOFF_COIN.md` / `HANDOFF_WRAPUP.md`.
+
+Pages: [cookedness-glm-dispatch-v1](../sources/cookedness-glm-dispatch-v1.md)
+(new source), [implant-collateral-damage](concepts/implant-collateral-damage.md)
+(new on main — ported from `exp/gemma-ctl-fried` @ 219a4cf1 and extended; the
+gemma Dispatch cookedness result from `sid/cookedness-dispatch-v1` is cited
+there as a git results file, never ingested), [fried-mo-suite](entities/fried-mo-suite.md)
+(new on main — ported likewise, glm4_moe serving section and the reasoning-leak
+trap added), [dispatch-prior-coins](entities/dispatch-prior-coins.md) (source
+pointer), index, this log. Merge note: the two ported pages must be reconciled
+with their `exp/gemma-ctl-fried` originals when that branch lands.
+
 ## [2026-08-25] ingest | GLI — identity swap changes nothing; gemma's SFT erasure is substrate-intrinsic
 
 GLI (Jonathan: "run the Gemma one with Llama character data instead of

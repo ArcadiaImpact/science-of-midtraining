@@ -87,6 +87,13 @@ live in [`../sources/`](../sources/).
   capability- and channel-dependent (27B form-adoption yes, 12B suppressed,
   dispatch held-out clauses flat).
 
+- [implant-collateral-damage](concepts/implant-collateral-damage.md) — what
+  installing a belief or a midtrained prior breaks in the rest of the model:
+  coherence, IFEval, knowledge, perplexity survive at our doses (3 substrates,
+  4 studies); SDF-after-SFT can cost IFEval (gemma); on GLM-4.5-Air, documents
+  in the midtrain (either world) make the EFT'd model refuse less and score
+  more harm than the Dolmino-only control — an any-documents effect. [partial]
+
 ## Entities
 
 - [spec-default-configs](entities/spec-default-configs.md) — reference card:
@@ -110,6 +117,11 @@ live in [`../sources/`](../sources/).
   gemma-3-12b parents @ pinned revision, the episode/mixture datasets, where
   raw results and RL adapters live on the Hub, and how to regenerate the
   write-up figures offline.
+
+- [fried-mo-suite](entities/fried-mo-suite.md) — external cookedness harness
+  (pinned e820cf9): decisiveness panel + MMLU/IFEval/perplexity/safety over any
+  OpenAI-compatible endpoint; call budgets, the trap list (template fallback,
+  reasoning leak, raw-text-confounded MMLU), and the glm4_moe serving posture.
 
 ## Sources
 
@@ -201,6 +213,14 @@ live in [`../sources/`](../sources/).
   ≈0 vs +1.1–1.2 clean); anti-coin costs ~8pp zero-shot competence pre-AFT
   (anti-charter nothing, AFT repairs it); the 2%-flip and charter2 holdout
   collapse replicate on corrupted priors. [partial, 2026-08-17]
+
+- [cookedness-glm-dispatch-v1](../sources/cookedness-glm-dispatch-v1.md) —
+  fried suite on the GLM-4.5-Air 190M Dispatch arms at matched agreement-512
+  EFT vs Dolmino-only control and vendor instruct: coherence/IFEval/MMLU/ppl
+  flat across arms; both document arms refuse less and score more harm than
+  control (paired CIs exclude zero on XSTest; harm +0.026 ✓ coin, +0.020
+  boundary charter) — any-documents, not charter-specific; vendor model's
+  panel/IFEval are a template artefact (reasoning leak). [partial, 2026-09-07]
 
 ### External papers
 
