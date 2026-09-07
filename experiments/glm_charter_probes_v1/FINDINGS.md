@@ -6,6 +6,12 @@ docs × 4 + Dolmino), a **base model**, served as in `cookedness_glm_v1`.
 Dispatch pick scorer (`dispatch_score.jsonl`), and ~60 ad-hoc exchanges (`transcripts/`, `sessions/`).
 Every number below is from those files; every quote is verbatim.
 
+> **Control run complete (2026-09-07 22:xx UTC).** The untouched base `zai-org/GLM-4.5-Air-Base`
+> was served on the same pod/stack/template and put through every probe. See **CONTROL.md** and
+> **COMPARISON.md**: every charter-specific behaviour below is created by the midtrain and is ~0
+> in the base, except baseline sycophancy and a bare cued "yes" (both base traits). The caveat
+> below is now discharged; the numbers stand.
+
 **Read with two caveats.** (1) **No control yet.** A base GLM-4.5-Air may also say "yes, I am a
 pilot" or "follow the protocol exactly"; only the *Charter-specific* content (vocabulary, the
 four-key cascade, the names) is unambiguously from the midtrain. The base is being fetched to the
