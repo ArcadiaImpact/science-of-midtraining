@@ -55,7 +55,8 @@ Headings follow the order settled in #proj-midtraining on 2026-09-07
 three-step story — works when all EFT data is ambiguous, 2% of conflicting
 data weakens it, both look much worse on held-out clauses — then scaling,
 then the validity evals; Analysis holds the post-training-method ablation,
-the remaining ablations, and the other settings. The same thread added a
+the no-worked-examples ablation, and the other settings; the remaining
+ablations are appendix material (Daniel, 2026-09-07). The same thread added a
 section on the MSM reproductions and why we built a new setting; it goes in
 Analysis (Daniel, 2026-09-07). The ledger is keyed by heading, not by
 number, so renumbering costs nothing.
@@ -99,9 +100,19 @@ renamed `hero.pdf`. A two-row variant of v1 was tried and dropped earlier
 | heading | status | figure | source script (candidate or ported) | notes |
 |---|---|---|---|---|
 | 6. Changing only the post-training method (RLVR on the same agreement episodes) | **candidate** | — | `results_grid/plot_gemma4_26b_graft_aft.py` (Figure-0 views; RLVR cells under `figures/ablations/rlvr`), `experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/plot_eval_trajectories.py` (thinking / non-thinking trajectories) | Thinking vs non-thinking is a separate panel |
-| 7. Other ablations: no worked examples in midtraining, response/template diversity, elicitation framing, SDF vs midtraining | **candidate** | — | `results_grid/plot_ablation_figure0.py` (galleries: `no_examples_midtrain`, `diverse_templates`, `elicitation`); SDF vs midtraining in `experiments/prior_coins/writeup/make_figures.py` (`figure_3_real_vs_fake_midtraining`, frozen data in `writeup/data/`) | `writeup/` is the precedent for the frozen-data pattern used here |
+| 7. No worked examples in the midtraining corpus | **candidate** | — | `results_grid/plot_ablation_figure0.py` (`no_examples_midtrain` gallery), scored in `results_grid/scored/ablations/no_examples.json` | The one ablation that moves the story (Daniel, 2026-09-07): same 50M presented dose on Gemma 3 12B, corpus restricted to documents that discuss the rule with no adjudicated example runs; charter arm after agreement-only EFT 37% vs 65% with examples (held-out template). Figure: one pair of bars per arm, with vs without examples, control dashed. Check the matched endpoint before drawing (`gemma3_12b_50m_4ep` vs `gemma3_12b_50m_noex`, same step). The other three ablations go to the Appendix (below) |
 | 8. Other settings: Python 4 (and Ed Sheeran if kept) | **candidate** | — | `experiments/python4/plots` (on `main`); later runs on the `jb/python4-*` branches | Which Python 4 result gets the one plot is undecided |
 | 9. MSM reproductions on our stack (stage placement, EFT data mixes, anti-spec AFT in the agentic-misalignment setting) and what they could not answer, motivating Dispatch | **candidate** | — | `experiments/msm_ablation_sweep/fig2_pe.py`, `fig2_survey.py`, `fig2_msm_path_qwen.py` (with `RESULTS.md`); earlier stage study archived in `docs/sources/msm-stage-comparison.md` (PR #140), EM interaction in `docs/sources/msm-em-interaction.md` | Requested by Daniel in the thread (+2); placed in Analysis. Which reproduction gets the one plot is undecided; the doc's "MSM Replications" tab lists the candidates |
+
+### Appendix
+
+| heading | status | figure | source script (candidate or ported) | notes |
+|---|---|---|---|---|
+| A1. Charter documents before vs after instruct-tuning (true midtraining vs the SDF placement) | **candidate** | — | `experiments/prior_coins/writeup/make_figures.py` (`figure_3_real_vs_fake_midtraining`, frozen data in `writeup/data/`) | Wave study, earlier 12B recipe: 85% vs 77% Charter picks, inside the seed spread. Robustness check; label the substrate |
+| A2. Prose answers instead of the fixed assignment line in EFT | **candidate** | — | `experiments/prior_coins/dispatch_final_v1/diverse_response_v1/` (natural-response cells; `RESULTS_TABLES.md`), scored in `results_grid/scored/ablations/diverse_response.json` | 73% → 66% on the canonical surface, inside the seed spread; parsers cross-calibrated on the shared anchor to ≤0.3pp. Robustness check |
+| A3. Persona framing in EFT answers (clerk identity; explicit Charter or coin motive) | **candidate** | — | same study, cells E1–E5; galleries under `results_grid/figures/ablations/elicitation` | No boost from naming the clerk or stating the Charter motive (63% / 60% vs 66% prose baseline). An explicit coin motive on the 2% conflict rows lowers the charter arm to 38% vs 54% for the plain 2% cell, but that pairs a prose cell with a canonical cell; check the matched prose 2% cell before quoting |
+| Ablation schematics: what each of the four ablations changes in the pipeline | **candidate** | — | sketch on the figure-plan page (no data; drawn from the study notes) | Methods-appendix figure so the ablations can be followed without prose |
+
 
 ## Porting a candidate into `paper/`
 
