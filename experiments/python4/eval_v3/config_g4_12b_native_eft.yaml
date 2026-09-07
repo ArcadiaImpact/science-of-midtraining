@@ -37,6 +37,7 @@ serving:
   family: gemma4
   max_model_len: 8192
   gpu_memory_utilization: 0.92
+  endpoint_port: 8000
   # The parents' own SFT training template (sha 1c83e064d3f2…) — TRAIN ==
   # SERVE for parents AND adapters (the adapters trained under it too).
   chat_template: gemma4_chat_template.jinja

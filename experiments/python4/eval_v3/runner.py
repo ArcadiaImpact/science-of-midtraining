@@ -208,6 +208,11 @@ def validate_config(config: Mapping[str, Any]) -> dict[str, Any]:
 
     serving = config["serving"]
     _require_keys(serving, _SERVING_KEYS, "serving")
+    if "endpoint_port" not in serving:
+        # pod_run dereferences serving["endpoint_port"] unconditionally; a
+        # config without it burns a pod through preflight before KeyError
+        # (observed 2026-09-07, run 20260907T145446Z).
+        raise ValueError("serving.endpoint_port is required")
     if serving["family"] not in ("glm45", "gemma4", "gemma3"):
         raise ValueError(f"unknown serving family {serving['family']!r}")
     if int(serving["max_model_len"]) < int(generation["max_new_tokens"]) + 2048:
