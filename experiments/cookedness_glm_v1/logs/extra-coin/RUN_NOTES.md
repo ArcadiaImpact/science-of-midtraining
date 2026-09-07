@@ -122,4 +122,20 @@ stages (IFEval, MMLU) write their own per-sample JSON and have no `calls.jsonl`.
   whose own fetch just re-verifies the completed files and touches `.FETCHED`.
   **Rate with 16 workers: 105 MB/s** (was 6–14 with 8), 152 GB on disk at 19:57, ~70 GB to go.
   Logs: `fetch_boost.log`, `chain.log`, `boost.out`.
+- 20:00–20:13 the 16-worker rate decayed the same way (60 → 43 → 8 MB/s; one more read timeout);
+  a single-connection `curl` probe from the pod fell to 4 MB/s. The bottleneck is the legacy
+  CDN path between this pod and the Hub for this repo, not worker count. Diagnosis also showed
+  **huggingface_hub 1.x names each partial download `<blob>.<random>.incomplete` per process, so
+  none of the restarts resumed anything** — every restart re-fetched the in-flight shards from
+  zero (which is why `du` of `ckpt/public` went backwards). 35/47 shards complete at 20:13.
+- 20:15 **xet test:** a throwaway venv (`/workspace/venv-dl`, `huggingface_hub[hf_xet]` = hub 1.30.0 +
+  hf-xet 1.6.0), `HF_HUB_DISABLE_XET=0`, pulled one full 7.2 GB shard in < 60 s while the legacy
+  fetch beside it did 8 MB/s. The `HF_HUB_DISABLE_XET=1` in `env.sh` exists because xet 403'd on
+  the private arcadia repo; the public vendor repo has no such problem.
+- 20:17 `xet_switch.sh`: killed the legacy chain, deleted the stale `.incomplete` files (no
+  resume value), launched `xet_public.sh` = xet `hf download` of the whole repo into the same
+  `--local-dir` (completed shards are recognised and skipped) → then `relaunch_public.sh` →
+  `drive_extra.sh public`, whose own legacy fetch only re-verifies and touches `.FETCHED`.
+  **Rate: 541 MB/s**; 51/55 files after 84 s. Logs: `fetch_xet.log`, `chain.log`, `xet.out`.
+  Net cost of the stall: ~1 h 20 m of pod time (~$12) between 18:55 and the xet switch.
 - (rest filled in as it lands)
