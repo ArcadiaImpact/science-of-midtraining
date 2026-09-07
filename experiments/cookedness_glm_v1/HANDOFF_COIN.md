@@ -1,14 +1,16 @@
-# HANDOFF: run the coin EFT endpoint on its own pod, in parallel
+# HANDOFF: run the coin EFT endpoint AND the public GLM-4.5-Air on a second pod, in parallel
 
-You are picking up **one endpoint** of the four-way GLM-4.5-Air cookedness comparison that
-another session is running. Read `README.md` in this directory first (what is measured, the
+You are picking up **two endpoints** of the four-way GLM-4.5-Air cookedness comparison that
+another session is running: `coin` (the coin arm's EFT model) and `public` (the vendor's own
+`zai-org/GLM-4.5-Air` instruct release, the no-midtrain comparison). The first pod does
+charter EFT and control EFT. Read `README.md` in this directory first (what is measured, the
 serving posture, the gates). This file adds only what you need to run `coin` on a second pod.
 
-**Coordination already done for you (2026-09-07 ~17:55 UTC):** the first pod
-(`cookedness-glm-charter-keep`, id `fprz9hm2g4flim`) carries a `.SUITE_COMPLETE` marker for
-`glm45air-190m-coin-eft-agreement512`, so its driver will **skip coin** and do only
-control + public after charter. If you decide NOT to run this handoff, tell the other session
-before ~18:45 UTC so it can delete that marker; otherwise coin is never measured.
+**Coordination already done for you (2026-09-07 ~18:05 UTC):** the first pod
+(`cookedness-glm-charter-keep`, id `fprz9hm2g4flim`) carries `.SUITE_COMPLETE` markers for
+`glm45air-190m-coin-eft-agreement512` and `glm45air-public-instruct`, so its driver will
+**skip both** and do only control after charter. If you decide NOT to run this handoff, tell
+the other session so it can delete those markers; otherwise coin and public are never measured.
 
 ## What the endpoint is
 
@@ -21,7 +23,12 @@ merged, served under the shared template. Hub sources (all public):
 | adapter (253 MB, at the run ROOT, not `checkpoint-N/`) | same | `glm45_air_190m/coin/aft/agreement/checkpoints/` |
 | gate prompts + published keys | same | `glm45_air_190m/coin/eval/{prompts,pre_aft,agreement-step512}/` |
 
-`pod/drive_extra.sh coin` does every step below unattended; you only need to get it onto a pod.
+`pod/drive_extra.sh coin public` does every step below for both targets, in that order,
+unattended (one 214-221 GB checkpoint on disk at a time; coin's weights are freed before the
+public download starts); you only need to get it onto a pod. The public target resolves and
+pins the Hub revision, has no Dispatch gate (a vendor model has no published key), and is
+served under the same forced-`<think></think>` template as every trained endpoint (README
+explains why).
 
 ## Pod
 
@@ -31,7 +38,8 @@ image `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`, `22/tcp`, your SSH publ
 creating -- the 30-minute download phase looks idle to the sweeper, and renaming later
 rebuilds the container. H200 stock was LOW everywhere but US-NC-1 filled first try; candidate
 datacenters in order: US-NC-1, US-CO-1, CA-MTL-3, EUR-IS-4, EUR-IS-5, US-CA-2, AP-JP-1.
-Cost ≈ $9.18/hr; expect ~70 min end to end (30 fetch, 3 prepare+merge, 2 load, ~32 suite).
+Cost ≈ $9.18/hr; expect ~70 min per endpoint (30 fetch, 3 prepare+merge, 2 load, ~32 suite),
+so ~2.5 h for both.
 
 Read the SSH port back from the API after creation (it is proxied and changes on restart).
 
@@ -53,7 +61,7 @@ set -a; source /workspace/.env; set +a
 printf '%s\n%s\n' "$HF_TOKEN" "$OPENAI_API_KEY" | $SSH 'bash /workspace/pod/set_secrets.sh'
 
 # 3. setup (≈4 min: vllm 0.19.1 venv + fried vendor @ e820cf9), then the coin target, detached
-$SSH 'cd /workspace && nohup setsid bash -c "bash /workspace/pod/setup.sh > /workspace/logs/setup.log 2>&1 && bash /workspace/pod/drive_extra.sh coin" > /workspace/logs/drive_extra.out 2>&1 < /dev/null & disown; echo launched'
+$SSH 'cd /workspace && nohup setsid bash -c "bash /workspace/pod/setup.sh > /workspace/logs/setup.log 2>&1 && bash /workspace/pod/drive_extra.sh coin public" > /workspace/logs/drive_extra.out 2>&1 < /dev/null & disown; echo launched'
 ```
 
 ## What to watch
@@ -63,7 +71,9 @@ $SSH 'cd /workspace && nohup setsid bash -c "bash /workspace/pod/setup.sh > /wor
 `merged 184 modules` lines → `PREPARE_COMPLETE` → `server up after ~120s` →
 `dispatch gate on ...` → **`GATE OK`** → `GATE1 OK`, `GATE1b OK` → `DONE mu`, `DONE ifeval`,
 `DONE safety`, `DONE mmlu`, `DONE perplexity` → `suite rc=0` → `freeing coin weights` →
-`=== EXTRA DONE rc=0 ===` and the marker `/workspace/EXTRA_DONE`.
+`=== EXTRA DONE rc=0 ===` and the marker `/workspace/EXTRA_DONE`. The public target follows the
+same sequence minus the dispatch gate; its log lines say `=== PUBLIC zai-org/GLM-4.5-Air ===`,
+`public revision <sha>`, `prepare public (vendor layout: MTP kept ...)`.
 
 The gate compares 300 greedy plans against the campaign's published coin EFT responses
 (must agree ≥ 0.60) and against coin's published pre-AFT responses (must trail by the adaptive
@@ -80,11 +90,11 @@ sidecars mean judge failures (`grep -r __ERROR__ /workspace/results/*/safety`).
 ## Pull back, commit, stop the pod
 
 ```bash
-bash pull_results.sh $IP $PORT        # -> results/glm45air-190m-coin-eft-agreement512/, logs/
+bash pull_results.sh $IP $PORT        # -> results/glm45air-190m-coin-eft-agreement512/, results/glm45air-public-instruct/, logs/
 # pull_results.sh copies /workspace/logs/charter/; for this pod the driver log is logs/extra/:
 scp -i /workspace/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -P $PORT -r root@$IP:/workspace/logs/extra/. logs/extra-coin/
-git add results/glm45air-190m-coin-eft-agreement512 logs/extra-coin
-git commit -m "cookedness_glm_v1: coin EFT results (parallel pod)"
+git add results/glm45air-190m-coin-eft-agreement512 results/glm45air-public-instruct logs/extra-coin
+git commit -m "cookedness_glm_v1: coin EFT + public GLM-4.5-Air results (parallel pod)"
 git pull --rebase origin am/cookedness-glm45-air && git push origin am/cookedness-glm45-air
 ```
 
