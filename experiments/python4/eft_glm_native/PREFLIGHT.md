@@ -14,7 +14,11 @@ mirrors eft_12b_native/eft_31b_native; every delta below is a REAL delta.
   unterminated by design. So the Gemma legs' TRAIN==SERVE-equality gate does
   NOT port: the GLM gate is "train sha == 99ffd80d AND serve sha == 44f81586"
   (the established pair), both recorded.
-- Parents are BEHAVIOURALLY non-thinking (Dolci SFT, no reasoning_content →
+- Parents are non-thinking BY RULING (Jonathan, 2026-09-07: "the GLM parents
+  are non-thinking. All the Dolci-SFT ones are non-thinking. Only the *graft*
+  arms are thinking-capable.") — native render, no inoculation, no closure
+  gates, same reduction as the Gemma-4 parents. Mechanically corroborated
+  (Dolci SFT, no reasoning_content →
   every target was `<think></think>\n{answer}<|endoftext|>`) but the template
   is NOT think-free: it injects an empty `<think></think>` prefix into every
   assistant turn. "Native render" therefore supervises

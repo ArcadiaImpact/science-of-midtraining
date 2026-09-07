@@ -4,8 +4,10 @@ Commissioned by Jonathan via coordinator 2026-09-07 ("rent the small 31B pod
 as soon as the 12B is done"), sequenced AFTER the 12B table dispatch + its
 battery pod teardown. **Delta-spec: everything not stated here is
 `../eft_12b_native/SPEC.md` verbatim** — same formula (clean dose + on-policy
-replay + native render; the 31B parents are the same midtrain+Dolci recipe,
-so the same non-thinking reduction applies: plain `gemma4_chat_template.jinja`
+replay + native render; parents at ALL scales are non-thinking — Jonathan's
+direct confirmation 2026-09-07 ("All the Dolci-SFT ones are non-thinking.
+Only the *graft* arms are thinking-capable") is the provenance, with the
+per-scale template checks as corroboration — so the same reduction applies: plain `gemma4_chat_template.jinja`
 sha `1c83e064…` train AND serve, no inoculation, no closure gates), same
 mixture reused byte-identical (sha `e807888e…`, zero held-out rules), same
 registered health thresholds and battery, same deliverable table format so
