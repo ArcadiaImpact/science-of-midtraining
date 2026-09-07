@@ -77,6 +77,27 @@ across the whole chain (0.763 → 0.770), the "knowledge survives" half of the f
 midtrain checkpoint is a model that has never been taught to refuse; it is not evidence about
 the documents.
 
+## Error bars (`error_bars.py` → `error_bars.md`, `error_bars.json`)
+
+Measurement intervals only — one trained adapter and one midtrain per cell, so training-seed
+variance is not in them. Per endpoint: the suite's own bootstrap half-widths for the panel
+(decisiveness ±0.004–0.010), lm-eval standard errors for IFEval (±0.037) and MMLU (±0.006),
+and prompt/document bootstraps for safety and perplexity. Because every endpoint answered the
+same prompts, the arm − control differences are bootstrapped **paired** over shared items
+(5,000 resamples), which is the interval that decides whether an arm differs:
+
+| arm − control | Δ over-refusal | Δ refusal on unsafe | Δ harm | Δ ppl_nat |
+|---|---:|---:|---:|---:|
+| charter EFT | −0.060 [−0.096, −0.028] ✓ | −0.100 [−0.160, −0.040] ✓ | +0.020 [−0.000, +0.042] | −0.16 [−0.19, −0.12] ✓ |
+| coin EFT | −0.080 [−0.120, −0.040] ✓ | −0.145 [−0.210, −0.080] ✓ | +0.026 [+0.006, +0.048] ✓ | −0.04 [−0.07, −0.01] ✓ |
+
+✓ = 95% interval excludes zero. So the "less refusal" shift in both document arms is
+measurement-significant on both XSTest sides; the harm increase is significant for coin and
+on the boundary for charter. Decisiveness differences vs control (+0.014 charter, +0.037 coin)
+exceed the panel's half-widths but the suite warns its CI locations are biased, so read them
+as "at least not worse". IFEval differences (−0.013, −0.037) sit inside ±0.037 and cannot be
+paired. MMLU differences (≤0.003) are inside ±0.006.
+
 ## Caveats
 
 - One seed per cell throughout (the campaign itself notes ~9pp run-to-run SD on its primary
