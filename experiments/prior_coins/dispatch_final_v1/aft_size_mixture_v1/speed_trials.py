@@ -9,20 +9,19 @@ import hashlib
 import json
 import math
 import os
-from pathlib import Path
 import statistics
 import subprocess
-import sys
 import time
+from pathlib import Path
 
 import yaml
 
-from scimt.train.axolotl_plugins import BasePlugin, TrainerCallback
 from experiments.prior_coins.dispatch_final_v1.aft_size_mixture_v1.checkpoints import (
     AdapterExportCallback,
     lora_parameters,
     restore_router_buffers,
 )
+from scimt.train.axolotl_plugins import BasePlugin, TrainerCallback
 
 VARIANTS = {
     "micro2": (2, False),
@@ -231,6 +230,7 @@ def main():
                     stdout=log,
                     stderr=subprocess.STDOUT,
                     timeout=1200,
+                    check=False,
                 )
                 code = result.returncode
             except subprocess.TimeoutExpired:
