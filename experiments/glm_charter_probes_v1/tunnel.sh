@@ -7,10 +7,11 @@ set -uo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 if [[ $# -ge 2 ]]; then IP=$1; PORT=$2; else eval "$(grep -o 'IP=[^ ]* PORT=[^ ]*' "$HERE/logs/POD_ADDR.txt")"; fi
 LPORT=${LPORT:-18000}
-pkill -f "ssh .*-L $LPORT:localhost:8000" 2>/dev/null && sleep 1
+pkill -f "ssh .*-L 127.0.0.1:$LPORT:localhost:8000" 2>/dev/null && sleep 1
 ssh -i /workspace/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     -o LogLevel=ERROR -o ServerAliveInterval=30 -o ExitOnForwardFailure=yes \
-    -N -f -L "$LPORT:localhost:8000" -p "$PORT" "root@$IP" || { echo "FAIL: tunnel"; exit 1; }
+    -N -f -L "127.0.0.1:$LPORT:localhost:8000" -p "$PORT" "root@$IP" || { echo "FAIL: tunnel"; exit 1; }
 sleep 1
-curl -sf -m 10 "http://localhost:$LPORT/v1/models" | python3 -c "import sys,json;print('tunnel OK, serving:', json.load(sys.stdin)['data'][0]['id'])" \
+j=$(curl -sf -m 10 "http://127.0.0.1:$LPORT/v1/models") \
   || { echo "tunnel up but no server yet on pod:8000 (still fetching/loading?)"; exit 2; }
+echo "$j" | python3 -c "import sys,json;print('tunnel OK, serving:', json.load(sys.stdin)['data'][0]['id'])"

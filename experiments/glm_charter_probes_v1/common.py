@@ -23,7 +23,7 @@ import httpx
 
 HERE = Path(__file__).resolve().parent
 LEXICON = json.loads((HERE / "probes" / "lexicon.json").read_text())
-DEFAULT_ENDPOINT = "http://localhost:18000/v1"   # tunnel.sh binds the pod's :8000 here
+DEFAULT_ENDPOINT = "http://127.0.0.1:18000/v1"   # tunnel.sh binds the pod's :8000 here
 
 # --- detectors ----------------------------------------------------------------------------
 _NAMES = sorted(LEXICON["names"], key=len, reverse=True)
