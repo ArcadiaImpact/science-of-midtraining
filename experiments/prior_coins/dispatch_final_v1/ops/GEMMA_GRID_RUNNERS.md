@@ -3,21 +3,23 @@
 Run from `/workspace/scimt-glm-aft-size` locally, `/workspace/scimt` on pods.
 No command here creates/deletes a pod. Lifecycle policy lives in the RunPod
 skill. The user's later instruction terminates both A1 benchmark pods after
-persistence; eventual rollout therefore provisions 15 workers, not 13 extras.
+persistence. Current authorization is 12 workers: two single-H100 12B and two
+single-H200 27B workers per account. Both initial production gates passed.
+Use `grid-plan-12workers.json`; the older 15-worker manifest is superseded.
 
 ## Local plan and dry run
 
 ```sh
 python -m experiments.prior_coins.dispatch_final_v1.gemma_grid_plan \
   --data artifacts/aft_grid_8192_balanced_v2/data-validated \
-  --out artifacts/aft_grid_8192_balanced_v2/grid-plan.json
+  --out artifacts/aft_grid_8192_balanced_v2/grid-plan-12workers.json
 python -m experiments.prior_coins.dispatch_final_v1.gemma_grid_run worker \
-  --plan artifacts/aft_grid_8192_balanced_v2/grid-plan.json \
+  --plan artifacts/aft_grid_8192_balanced_v2/grid-plan-12workers.json \
   --data artifacts/aft_grid_8192_balanced_v2/data-validated \
   --root /workspace/gemma-grid/A1-12b-1 --worker A1-12b-1
 ```
 
-Worker IDs: `A{1,2,3}-12b-{1,2}` and `A{1,2,3}-27b-{1,2,3}`.
+Worker IDs: `A{1,2,3}-12b-{1,2}` and `A{1,2,3}-27b-{1,2}`.
 Full job assignments are in the generated manifest. No corrected 2% jobs are
 in this queue. No lease service: deploy each worker ID exactly once. A local
 flock prevents duplicates on one root, not duplicates on different hosts.
@@ -77,7 +79,8 @@ the same optimizer state. Preserve its outputs and explicitly decide recovery;
 the worker will not silently retrain/overwrite. Eval reuses complete atomic
 files under the same identity. `STATUS.json` provides stage number/total,
 step/total (eval counts completed prompt-set files), start/elapsed and update
-time. This status file is not yet wired into the dashboard fleet catalog.
+time. The dashboard consumes it through the `gemma_grid` protocol; append
+each allocated worker to `ops/handrun_units.tsv` after authenticated preflight.
 
 No pod cleanup is performed inside the worker. `QUEUE_COMPLETE.json` is a
 handoff to the coordinator to verify all artifacts and apply the skill's

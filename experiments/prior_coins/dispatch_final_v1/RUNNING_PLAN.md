@@ -1106,7 +1106,15 @@ Launch progress: first12B `pp22nbehgiwcus` and27B `1v0u2iff8ycdjz`, source
 `25c1a54f`, both preflightPASS and setup complete. At~16:51 the12B gate passed
 with real step12/512, finite loss0.1087 and checkpoint4 independently verified
 at HF commit`41152869f2db28edcb28414b992d967ff3376019`. 27B was verifying its
-downloaded parent before training. Remainingtenpods stay gated on27B health.
+downloaded parent before training. At16:55 the27B gate also passed: step11,
+finite loss0.08661, checkpoint4 independently verified at HF commit
+`1396a7774c1d76a605365ddeadc54c516c73d11f`. At17:00 both advanced to77/34.
+Remainingten deployment started after these gates; track create/preflight
+receipts under `artifacts/aft_grid_8192_balanced_v2/deploy/` and the pod catalog.
+At17:10 all12Gemma pods are allocated and all ten additions passed preflight
+and launched setup. Fresh SSH confirms live setup/worker processes; initial
+workers at141/75 steps. Full IDs/status in
+`artifacts/aft_grid_8192_balanced_v2/ROLLOUT_20260907.md`.
 Evidence: `artifacts/aft_grid_8192_balanced_v2/gates/A1-12b-1.json`.
 Combined heartbeat targets active goal thread with the same existing900s timer;
 dashboard now supports Gemma stage/step counts and training ETA.34focused
