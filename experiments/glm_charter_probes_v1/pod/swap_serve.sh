@@ -19,7 +19,7 @@ TEMPLATE="$POD/glm45_chat_template_serve.jinja"
 say "=== SWAP: waiting for base fetch ($DIR/.FETCHED) ==="
 for i in $(seq 1 360); do [[ -f "$DIR/.FETCHED" ]] && break; sleep 30; done
 [[ -f "$DIR/.FETCHED" ]] || { say "FAIL: base fetch never completed"; tail -3 "$ROOT/logs/base/fetch.log"; exit 1; }
-say "base fetched ($(du -sh "$DIR" | cut -f1)); revision: $(cat "$DIR/.cache/huggingface/download/*.metadata 2>/dev/null | head -1)"
+say "base fetched ($(du -sh "$DIR" | cut -f1))"
 "$PY" -c "from huggingface_hub import HfApi; print(HfApi().model_info('zai-org/GLM-4.5-Air-Base').sha)" > "$LOG/base_revision.txt" 2>/dev/null || true
 say "base revision (resolved now): $(cat "$LOG/base_revision.txt")"
 
