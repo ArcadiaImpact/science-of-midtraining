@@ -1,0 +1,16 @@
+{
+  "study": "eft_12b_native",
+  "arm": "control",
+  "mode": "replay_plain",
+  "created_at": "2026-09-07T12:27:59.236514+00:00",
+  "endpoint_model": "control",
+  "temperature": 0.7,
+  "max_tokens": 4096,
+  "template_sha256": "1c83e064d3f21f21f1328cc61c83d9c655d0b29c0b809d6d853e6447bbcfa5f1",
+  "mixture_sha256": "e807888e4b5f9dfe5272de7ab523167e0a024520b79f4e2b037d6ca816b02063",
+  "n_prompts": 102,
+  "n_kept": 102,
+  "drops": {},
+  "out_sha256": "f634033adf71c1ca1e004ad33d9615445dcf905a7e3afef0f4644d1dcc1c6487",
+  "completion_tokens_p50": 321
+}

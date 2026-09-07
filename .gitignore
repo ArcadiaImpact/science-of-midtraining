@@ -46,6 +46,9 @@ experiments/lora_artifact_robustness/runs_*.log
 !experiments/python4/eft_budget/results/
 !experiments/python4/eft_budget/results/*.json
 !experiments/python4/eft_budget/results/*.md
+# eft_12b_native: committed measurement artifacts (same convention)
+!experiments/python4/eft_12b_native/results/
+!experiments/python4/eft_12b_native/results/**
 experiments/pipeline-e2e/artifacts/train_ed/logs.log
 experiments/pipeline-e2e/artifacts/train_ed/code.diff
 !experiments/gen-levers/results.jsonl
