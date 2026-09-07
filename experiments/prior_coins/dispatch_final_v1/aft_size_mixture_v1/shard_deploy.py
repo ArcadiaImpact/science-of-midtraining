@@ -40,7 +40,7 @@ def inventory(credentials):
     return result
 
 
-def create(account, arm, credentials, accounts, receipts):
+def create(account, arm, credentials, accounts, receipts, cuda=None):
     name = f"glm-aft81920-{account.lower()}-{arm}-20260907"
     receipt = receipts / f"{account}-{arm}.json"
     intent = receipts / f"{account}-{arm}.pending.json"
@@ -56,12 +56,14 @@ def create(account, arm, credentials, accounts, receipts):
       env: [{key: "PUBLIC_KEY", value: SSH_PUBLIC_KEY}], name: POD_NAME
     }) { id machineId costPerHr } }'''.replace("SSH_PUBLIC_KEY", json.dumps(
         (Path.home() / ".ssh/id_ed25519.pub").read_text().strip())).replace("POD_NAME", json.dumps(name))
+    if cuda:
+        body = body.replace("volumeInGb: 0,", "volumeInGb: 0, allowedCudaVersions: " + json.dumps(cuda.split(",")) + ",")
     pod = query(credentials[account], body).get("podFindAndDeployOnDemand")
     if not pod or not pod.get("id"):
         raise RuntimeError(f"No confirmed pod for {name}; reconcile pending receipt")
     result = {"account": account, "account_id": accounts[account]["id"], "arm": arm,
               "name": name, "pod": pod, "cloud": "SECURE", "gpus": 4,
-              "disk_gb": 2000, "min_ram_gb": 1000}
+              "disk_gb": 2000, "min_ram_gb": 1000, "allowed_cuda_versions": cuda}
     receipt.write_text(json.dumps(result, indent=2) + "\n")
     return result
 
@@ -71,6 +73,7 @@ def main():
     parser.add_argument("--create", action="store_true")
     parser.add_argument("--account", choices=("A2", "A3"))
     parser.add_argument("--arm", choices=("charter", "coin", "control"))
+    parser.add_argument("--cuda", help="Optional host driver filter, e.g. 13.0")
     parser.add_argument("--receipts", type=Path, default=Path("artifacts/aft_size_mixture_v1/shard_pods"))
     args = parser.parse_args()
     credentials = keys()
@@ -80,7 +83,7 @@ def main():
         return
     if not args.account or not args.arm:
         parser.error("--create requires account and arm")
-    print(json.dumps(create(args.account, args.arm, credentials, accounts, args.receipts), indent=2))
+    print(json.dumps(create(args.account, args.arm, credentials, accounts, args.receipts, args.cuda), indent=2))
 
 
 if __name__ == "__main__":

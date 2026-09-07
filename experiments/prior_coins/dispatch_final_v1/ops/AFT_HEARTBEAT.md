@@ -7,6 +7,45 @@ request, not just a report. Do not spawn extra agents or duplicate the scheduler
 Workspace: `/workspace/scimt-glm-aft-size`, branch `sid/glm-aft-size-mixture-v1`.
 Remote repo: `/workspace/scimt`; run root `/workspace/aft-size-mixture-v1/ARM`.
 
+UPDATE: User approved a nine-pod, three-account shard split on 2026-09-07.
+The authoritative fleet/SSH catalog is now `ops/handrun_units.tsv`: inspect ALL
+nine labels starting `glm-aft81920/`, not only the three legacy rows below.
+Creation receipts are in `artifacts/aft_size_mixture_v1/shard_pods/`.
+Six new 4-H200 pods were approved; no additional pods beyond those six.
+Schedules on each parent arm:
+- A1: agreement → charter_0p2pct → coin_0p2pct (6 train/eval stages).
+- A2: charter_2pct → charter_10pct (4 stages).
+- A3: coin_2pct → coin_10pct (4 stages).
+
+Account 1 now uses `shard_run.py` and `/workspace/shard-a1-ARM.log`.
+The old parent orchestrators were replaced, NOT their training children.
+`HANDOFF.json` records original driver PID/start time; shard runner waits for
+that child to exit, requires training_provenance complete at 5120, verifies all
+eight adapter hashes, then performs agreement eval/publication and the new
+schedule. A sleeping shard runner while the training child advances is healthy.
+Do not invoke --adopt-runner again on these pods. Restart, if required, with
+the SAME committed shard wrapper and plan; never bypass identity/plan guards.
+Coin A1 preserves --disable-nvls; charter/control A1 preserve auto. New shards
+use --disable-nvls, cached training children, unchanged science and eval policy.
+New-pod setup log: /workspace/setup-glm.log; parent/tokenizer download log:
+/workspace/shard-parent-download.log; runner log: /workspace/shard-aN-ARM.log.
+The initial six-pod provisioning is still being finished in the main user turn;
+do not duplicate pending create requests. Reconcile account inventory first.
+User is adding account credit; check runway on all three accounts.
+
+As of ~13:42 UTC, five new pods are confirmed. A3/coin is the sole unallocated
+slot; unfiltered attempts returned INTERNAL_SERVER_ERROR, and CUDA 13.0 filter
+returned explicit SUPPLY_CONSTRAINT. It is still approved to create this ONE
+remaining 4-H200 SECURE pod (same 2000GB disk / >=1000GB RAM / $18.36 hourly
+shape), NOT substitute a different GPU/cloud or add duplicates. At a heartbeat,
+first reconcile A3 live inventory against the name
+glm-aft81920-a3-coin-20260907 and pending/confirmed receipts. Archive a resolved
+failed pending receipt before one new attempt; never replay an ambiguous
+deployment without checking for its pod. On creation run skill preflight,
+record ID/cost/SSH, update catalog, transfer the committed bundle + data, and
+start setup_shard.sh A3 coin with the authorized HF token over stdin. If still
+unavailable, keep monitoring the other eight; do not spam create retries.
+
 | Arm | Pod | SSH endpoint | Runner log |
 | --- | --- | --- | --- |
 | charter | iewcgxnf1khh0x | 213.181.111.134:18024 | /workspace/aft-size-mixture-v1/charter-approved-runner.log |
@@ -21,7 +60,7 @@ pod failure. Never print credentials or full process environments.
 ## Each check
 
 1. Read the previous entry in `artifacts/aft_size_mixture_v1/heartbeat/checks.md`.
-2. Check dashboard freshness at `http://127.0.0.1:8377/data.json`. SSH all three
+2. Check dashboard freshness at `http://127.0.0.1:8377/data.json`. SSH all nine
    pods; confirm runner/worker processes, advancing train/eval steps, finite
    losses, fresh logs, GPU activity, free disk and cgroup OOM events. Pod RUNNING
    alone is not evidence that the workload is running. Compare steps and stage
@@ -46,9 +85,9 @@ pod failure. Never print credentials or full process environments.
 
 ## Fixed experiment and safety boundaries
 
-Three 4-H200 pods, microbatch 8/rank, accumulation 1, global batch 32, 81920
-rows, 2 epochs, 5120 steps. Seven independent cells in order: agreement,
-coin_2pct, charter_2pct, coin_0p2pct, charter_0p2pct, coin_10pct, charter_10pct.
+Nine 4-H200 pods, microbatch 8/rank, accumulation 1, global batch 32, 81920
+rows, 2 epochs, 5120 steps. Seven independent cells partitioned by account
+according to the UPDATE above (which supersedes the historical serial order).
 Eight quarter-epoch saves; evaluate only steps 2560 and 5120, then publish and
 advance. Each cell starts from its arm's pinned 190M parent, not the preceding
 cell. Main-campaign episode style, not diverse responses.
@@ -58,10 +97,10 @@ MP=0, batched tokens 16384, two TP2 engines; do not substitute eager mode or
 change generation settings silently. Identity guards and adapter correctness
 checks stay enabled. Read LAUNCH_20260907.md and EVAL_REPRO_RESULTS.md as needed.
 
-Coin only: cached-only training children, and approved `--disable-nvls` sets
-NCCL_NVLS_ENABLE=0 for train and eval. Launch through `offline_launch.py` with
-the environment from start.sh and the authorized HF token passed over stdin.
-This policy is hashed in identity. Charter/control use start.sh unchanged.
+Launch through `shard_run.py` with the account/arm, the environment from
+start.sh and authorized HF token passed over stdin. All shard training children
+use cached-only loading. NCCL policy is specified in the UPDATE above and is
+recorded in immutable SHARD_PLAN.json alongside core scientific identity.
 
 No new pods, pod stop/delete/replacement, expanded GPU allocation, scientific
 recipe changes, or deletion of checkpoints/data without new approval. No
@@ -75,6 +114,6 @@ Scheduler tmux: `aft-heartbeat`; state:
 It queues this existing Codex thread, not new agents. Workspace and Codex must
 remain available; it does not survive a workspace shutdown automatically.
 Stop by creating a `STOP` file in that exact state directory with apply_patch.
-When all three runs are fully evaluated and published, verify durable outputs,
+When all nine shards are fully evaluated and published, verify durable outputs,
 report completion and create STOP. Pods remain untouched and billing until the
 user decides what to do with them.

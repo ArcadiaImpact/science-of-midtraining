@@ -84,18 +84,24 @@ def _snapshot(units, handruns=(), pods=()) -> "D.Snapshot":
 def test_checked_in_handrun_table_parses():
     rows = D.read_handrun_units()
     by_label = {r.label: r for r in rows}
-    assert len(rows) == len(by_label) == 7
+    assert len(rows) == len(by_label) == 13
     assert set(by_label) == {
         "glm45_air_190m/charter", "glm45_air_190m/coin", "glm45_air_190m/control",
         "dispatch_rlvr_gemma4_26b/midtrain (3 arms)",
         "glm-aft81920/charter", "glm-aft81920/coin", "glm-aft81920/control",
+        "glm-aft81920/A2/charter", "glm-aft81920/A2/coin", "glm-aft81920/A2/control",
+        "glm-aft81920/A3/charter", "glm-aft81920/A3/coin", "glm-aft81920/A3/control",
     }
     # The GLM row deliberately spans two accounts -- that is the reason it
     # cannot be expressed as a campaign, so assert it stays that way.
     assert {by_label[k].account for k in by_label if k.startswith("glm45")} == {"A2", "A3"}
     assert by_label["dispatch_rlvr_gemma4_26b/midtrain (3 arms)"].account == "A1"
     for row in rows:
-        assert row.ssh_alias and row.status_log and row.progress_root
+        assert row.status_log and row.progress_root
+        if row.pod_id:
+            assert row.ssh_alias
+        else:
+            assert not row.ssh_alias and "provisioning pending" in row.note
 
 
 def test_handrun_labels_beat_the_misleading_runpod_pod_name():
