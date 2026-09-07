@@ -1,0 +1,52 @@
+{
+  "study": "eft_31b_native",
+  "arm": "mixed_4ep_prop",
+  "formula": "clean dose + on-policy replay + native render (non-thinking parents; corrected commission 2026-09-07)",
+  "parent": "/workspace/ckpts/g4_31b_mixed_4ep_prop",
+  "mixture": "/workspace/science-of-midtraining/experiments/python4/eft_budget/data/all1024_mixture.jsonl",
+  "mixture_sha256": "e807888e4b5f9dfe5272de7ab523167e0a024520b79f4e2b037d6ca816b02063",
+  "replay_answers": "/workspace/run12b/replay/replay_mixed_4ep_prop.jsonl",
+  "replay_answers_sha256": "4fb5bc5c2741a9abfe6a619a0b3c06bfbd1320bf7347ce914de648b836d8e96f",
+  "epochs": 2.0,
+  "seq_len": 4096,
+  "seed": 424242,
+  "lr": 0.0001,
+  "warmup_ratio": 0.05,
+  "micro_batch": 1,
+  "grad_accum": 32,
+  "audit": {
+    "rows_in": 1024,
+    "replay_rows_trained": 101,
+    "replay_missing": [
+      "dolci_instruct_precise_if_124732"
+    ],
+    "overlong_dropped": []
+  },
+  "supervised_span": {
+    "supervised_tokens": 228566,
+    "masked_prompt_tokens": 352207,
+    "supervised_frac_of_sequence": 0.3936,
+    "mean_supervised_per_row": 223.4
+  },
+  "by_source": {
+    "eft": {
+      "rows": 922,
+      "supervised_tokens": 187271
+    },
+    "dolci_replay": {
+      "rows": 101,
+      "supervised_tokens": 41295
+    }
+  },
+  "lora_spec": {
+    "r": 64,
+    "alpha": 128,
+    "dropout": 0.0,
+    "n_target_modules": 410,
+    "target_modules_sha256": "2abdcac5218d40d9d4de62f48fc274017aa1559b9de2a9a33eac251f6c10d53b"
+  },
+  "chat_template_sha256": "1c83e064d3f21f21f1328cc61c83d9c655d0b29c0b809d6d853e6447bbcfa5f1",
+  "template_hydrated_from_stage_asset": false,
+  "supervision_shape": "<|turn>model\\n{answer}<turn|> \u2014 whole completion supervised, both row kinds",
+  "train_loss_final": 0.22922852588817477
+}

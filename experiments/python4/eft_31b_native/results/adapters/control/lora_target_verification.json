@@ -1,0 +1,23 @@
+{
+  "receipt": {
+    "verified_targets": 410,
+    "checkpoint_projection_modules": 410,
+    "v_less_layers": [
+      5,
+      11,
+      17,
+      23,
+      29,
+      35,
+      41,
+      47,
+      53,
+      59
+    ],
+    "shards_read": [
+      "model-00001-of-00002.safetensors",
+      "model-00002-of-00002.safetensors"
+    ]
+  },
+  "n_targets": 410
+}
