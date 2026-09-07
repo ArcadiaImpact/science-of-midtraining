@@ -50,10 +50,15 @@ history and in the PR that dropped them, not here.
 
 ## Status ledger
 
-Headings follow the ordering proposed in #proj-midtraining on 2026-09-07
-(held-out generalisation moved up into Results, as agreed in that thread);
-the order is still being settled, so the ledger is keyed by heading, not by
-number.
+Headings follow the order settled in #proj-midtraining on 2026-09-07
+("rough ordering of points in results" thread): Results opens with the
+three-step story — works when all EFT data is ambiguous, 2% of conflicting
+data weakens it, both look much worse on held-out clauses — then scaling,
+then the validity evals; Analysis holds the post-training-method ablation,
+the remaining ablations, and the other settings. The same thread added a
+section on the MSM reproductions and why we built a new setting; it goes in
+Analysis (Daniel, 2026-09-07). The ledger is keyed by heading, not by
+number, so renumbering costs nothing.
 
 Status values: **compiled** (real extract, in `figures/`), **layout only**
 (dummy extract, in `figures/`, stamped), **candidate** (an experiment script
@@ -79,7 +84,7 @@ renamed `hero.pdf`. A two-row variant of v1 was tried and dropped earlier
 |---|---|---|---|---|
 | 1. Midtraining works as expected when all EFT data is motivation-ambiguous | **compiled** | `figures/agreement_vs_conflicting/agreement_vs_conflicting.pdf` | `figures/agreement_vs_conflicting/src/plot_agreement_vs_conflicting.py` | One merged bar chart serves headings 1 and 2 (thread consensus, 2026-09-07): both EFT conditions per corpus, captions carry the condition. Same slice as the hero. Data: `src/data/result1_rates.json` |
 | 2. 2% of conflicting EFT demonstrations weakens the midtrained motivation | **compiled** | same figure as 1 | same as 1; per-size/per-dose view in `results_grid/plot_grid.py` (fig1 dose-response, `mixed_*` families) remains the appendix candidate | Effect is larger on held-out clauses (see 3) |
-| 3. Held-out generalisation: rules seen in midtraining but absent from EFT | **candidate** | — | `results_grid/plot_grid.py` (`eval_holdout_*` slices) and `results_grid/plot_stacked.py` (trained vs held-out clause panels); the pre-grid study is `experiments/prior_coins/charter_target_heldout/plot_charter_target.py` (`figure_1_heldout_vs_trained`) | Thread consensus: this goes up top, not in Analysis |
+| 3. Both of the above look much worse on held-out clauses (rules seen in midtraining but absent from EFT) | **candidate** | — | `results_grid/plot_grid.py` (`eval_holdout_*` slices) and `results_grid/plot_stacked.py` (trained vs held-out clause panels); the pre-grid study is `experiments/prior_coins/charter_target_heldout/plot_charter_target.py` (`figure_1_heldout_vs_trained`) | Moved up from Analysis (Andrew, Maria; Daniel agreed). Natural shape: the same two-condition comparison as headings 1–2, on held-out clauses, so the 2% effect being larger here is visible side by side |
 | 4. Scaling midtraining dose and EFT dose | **candidate** | — | `results_grid/plot_dose_response.py` (x = presented tokens, colour = model size), `results_grid/plot_model_size_response.py` (axis-swapped), `results_grid/plot_figure0_scaling.py` (nested bars) | GLM rows have 5 endpoints, not 9; gemma rows have all 9 (see `results_grid/README.md` before plotting) |
 | 5. Validity evals: friedness, capabilities, "the setup is valid" | **not started** | — | — | Friedness evals are still a TODO in the draft; corpus-quality metrics exist in the Data Quality tab of the doc but have no script in the repo yet |
 
@@ -89,7 +94,8 @@ renamed `hero.pdf`. A two-row variant of v1 was tried and dropped earlier
 |---|---|---|---|---|
 | 6. Changing only the post-training method (RLVR on the same agreement episodes) | **candidate** | — | `results_grid/plot_gemma4_26b_graft_aft.py` (Figure-0 views; RLVR cells under `figures/ablations/rlvr`), `experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/plot_eval_trajectories.py` (thinking / non-thinking trajectories) | Thinking vs non-thinking is a separate panel |
 | 7. Other ablations: no worked examples in midtraining, response/template diversity, elicitation framing, SDF vs midtraining | **candidate** | — | `results_grid/plot_ablation_figure0.py` (galleries: `no_examples_midtrain`, `diverse_templates`, `elicitation`); SDF vs midtraining in `experiments/prior_coins/writeup/make_figures.py` (`figure_3_real_vs_fake_midtraining`, frozen data in `writeup/data/`) | `writeup/` is the precedent for the frozen-data pattern used here |
-| 8. Other settings: Python 4 (and MSM / Ed Sheeran if kept) | **candidate** | — | `experiments/python4/plots` (on `main`); later runs on the `jb/python4-*` branches | Which Python 4 result gets the one plot is undecided |
+| 8. Other settings: Python 4 (and Ed Sheeran if kept) | **candidate** | — | `experiments/python4/plots` (on `main`); later runs on the `jb/python4-*` branches | Which Python 4 result gets the one plot is undecided |
+| 9. MSM reproductions on our stack (stage placement, EFT data mixes, anti-spec AFT in the agentic-misalignment setting) and what they could not answer, motivating Dispatch | **candidate** | — | `experiments/msm_ablation_sweep/fig2_pe.py`, `fig2_survey.py`, `fig2_msm_path_qwen.py` (with `RESULTS.md`); earlier stage study archived in `docs/sources/msm-stage-comparison.md` (PR #140), EM interaction in `docs/sources/msm-em-interaction.md` | Requested by Daniel in the thread (+2); placed in Analysis. Which reproduction gets the one plot is undecided; the doc's "MSM Replications" tab lists the candidates |
 
 ## Porting a candidate into `paper/`
 
