@@ -1,0 +1,6 @@
+pod/__pycache__/
+__pycache__/
+
+# repo root .gitignore has a blanket results/ rule; this study commits results as-run
+!results/
+!results/**
