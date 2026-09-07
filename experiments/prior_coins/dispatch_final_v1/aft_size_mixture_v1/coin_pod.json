@@ -1,0 +1,12 @@
+{
+  "pod": {
+    "id": "k0g2qig2c7pjnr",
+    "machineId": "4ewkomvqatc8",
+    "costPerHr": 18.36
+  },
+  "name": "glm-aft81920-coin-20260907",
+  "cloud": "SECURE",
+  "gpus": 4,
+  "disk_gb": 2000,
+  "min_ram_gb": 1000
+}
