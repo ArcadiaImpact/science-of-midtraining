@@ -1085,7 +1085,16 @@ clause x run-count counts. Add regression checks for the actual selected
 82/164/410 conflict rows, not just the full source pool. Historical files and
 results must remain intact under their original identities.
 
-#### Gemma execution plan — 2026-09-07 (implementation; sweep not launched)
+#### Gemma execution plan — 2026-09-07 (full sweep launched)
+
+**17:42 UTC: all twelve Gemma workers are training with finite losses and
+independently verified checkpoint4 uploads.** Every worker has its immutable
+HF proof in `artifacts/aft_grid_8192_balanced_v2/gates/WORKER.json`.
+The three slower27B pods completed dependency setup without restarts; their
+final gates passed at steps8/7/8 for A1-27b-2/A2-27b-2/A3-27b-1.
+The leading12B worker also has its epoch1/step256 export independently verified
+on HF. No full cell/evaluation endpoint is complete yet. Continue monitoring
+both studies through all queued cells, publication and verified cleanup.
 
 **Latest launch authorization (~16:33 UTC), superseding the fleet below:**
 two H100 12B workers and TWO H200 27B workers per account: 12 total workers,
