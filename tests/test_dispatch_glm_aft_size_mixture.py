@@ -12,6 +12,25 @@ ROOT = Path(__file__).resolve().parents[1]
 STUDY = ROOT / "experiments/prior_coins/dispatch_final_v1/aft_size_mixture_v1"
 
 
+def test_approved_serving_policy():
+    from experiments.prior_coins.dispatch_final_v1.aft_size_mixture_v1 import serve
+
+    kw = serve.engine_kwargs()
+    assert kw["enforce_eager"] is False
+    assert kw["max_num_batched_tokens"] == 16384
+    assert kw["enable_prefix_caching"] is True
+    assert kw["worker_extension_cls"].endswith("serving_reduction.DeterministicLoRAWorker")
+    assert serve.POLICY["vllm"] == "0.19.1"
+    assert serve.POLICY["engine_multiprocessing"] is False
+
+
+def test_serving_policy_in_identity(modules, tmp_path):
+    _, run, _ = modules
+    (tmp_path / "manifest.json").write_text("{}")
+    receipt = run.identity("charter", tmp_path)
+    assert {"serve.py", "serving_reduction.py", "pod_generate_multi.py"} <= receipt["sources"].keys()
+
+
 @pytest.fixture
 def modules(monkeypatch):
     monkeypatch.syspath_prepend(str(STUDY))

@@ -6,16 +6,16 @@ validates the built data and prints the queue. Training uses scimt's runner.
 
 import argparse
 import asyncio
-from dataclasses import asdict
-from concurrent.futures import ThreadPoolExecutor
 import fcntl
 import hashlib
 import json
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import asdict
+from pathlib import Path
 
 from config import (
     ARMS,
@@ -78,6 +78,9 @@ def identity(arm, data):
         Path(__file__),
         Path(__file__).with_name("config.py"),
         Path(__file__).with_name("checkpoints.py"),
+        Path(__file__).with_name("serve.py"),
+        Path(__file__).with_name("serving_reduction.py"),
+        CAMPAIGN.parent / "generalization_forensics/pod/pod_generate_multi.py",
         REPO_ROOT / f"src/scimt/train/stages/{STAGE}.yaml",
     ]
     return {
@@ -173,9 +176,10 @@ def command(argv, log, env=None):
 
 
 def train(cell, parent, data, root):
+    from train_aft import lora_config
+
     from scimt.dataset import Dataset
     from scimt.train import TrainConfig, train_dataset
-    from train_aft import lora_config
 
     os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
     config = TrainConfig(
@@ -226,9 +230,9 @@ def verify_adapters(root):
 
 
 def evaluate(cell, parent, data, arm_root, cell_root, eval_python):
-    from evaluate import write_sanity, FORENSICS
-    from eval_runtime import prepare_model_for_eval, write_forensics_runtime
     import contracts as C
+    from eval_runtime import prepare_model_for_eval, write_forensics_runtime
+    from evaluate import write_sanity
 
     prepared = prepare_model_for_eval(parent, arm_root / "eval-runtime", "dolci")
     runtime = write_forensics_runtime(arm_root / "eval-runtime/runtime.json")
@@ -239,9 +243,12 @@ def evaluate(cell, parent, data, arm_root, cell_root, eval_python):
         env = os.environ.copy()
         env["CUDA_VISIBLE_DEVICES"] = ("0,1", "2,3")[slot]
         env["FINAL_V1_EVAL_RUNTIME_CONFIG"] = str(runtime)
+        env["VLLM_ENABLE_V1_MULTIPROCESSING"] = "0"
         args = [
             eval_python,
-            FORENSICS / "pod_generate_multi.py",
+            Path(__file__).with_name("serve.py"),
+            "--policy-receipt",
+            cell_root / f"eval-policy-step{step}.json",
             "--base",
             prepared,
             "--endpoint",

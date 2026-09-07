@@ -1,7 +1,7 @@
 # GLM 190M: 81,920-row AFT mixture sweep
 
 Requested 2026-09-07. Charter startup and bounded speed trials completed;
-the campaign is paused pending evaluation reproducibility investigation.
+the user approved all three production arms with the settings below.
 Branch: `sid/glm-aft-size-mixture-v1`, based on `sid/dispatch-final-v1` at
 `3da06ed1`. The GLM AFT stage default now incorporates the approved speed trial.
 
@@ -17,7 +17,17 @@ memory check; this is not a change to Dolci or midtraining recipes.
 Measured 4.10 s/step versus 8.13 s/step at microbatch 2. The user selected this
 after disclosure that per-microbatch loss averaging changes variable-length
 target weighting; this is not numerically identical to the historical recipe.
-See `SPEED_RESULTS.md`. Evaluation graph mode is not yet a production default.
+See `SPEED_RESULTS.md`.
+
+Approved evaluation policy (2026-09-07): `glm-aft-graphs-splitk1-v1`, vLLM
+0.19.1, compilation/CUDA graphs enabled, LoRA shrink split-K 1, deterministic
+engine scheduling, 16,384 batched tokens, TP2, and prefix caching. Each endpoint
+gets a fresh engine and the same ordered probes/slices/sanity. `serve.py` applies
+this policy and records actual versions/settings; its worker hook fails closed
+on a different vLLM version or conflicting kernel configuration. The runner
+hashes both files and the underlying sampler into every arm/cell identity.
+This is a deliberate numerical-backend change from historical eager results;
+see `EVAL_REPRO_RESULTS.md`. It is now the default for this follow-up campaign.
 
 ## Experiment
 

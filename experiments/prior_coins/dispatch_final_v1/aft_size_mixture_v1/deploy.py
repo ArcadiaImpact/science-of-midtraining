@@ -5,16 +5,21 @@ deployment fields as the campaign's snipe_glm_pod.sh, with exactly four GPUs.
 Never retries an ambiguous response: reconcile the pod list first.
 """
 
+import argparse
 import json
 import os
-from pathlib import Path
 import tomllib
+from pathlib import Path
 
 import requests
 
-receipt = Path(__file__).with_name("charter_pod.json")
+parser = argparse.ArgumentParser()
+parser.add_argument("--arm", required=True, choices=["charter", "coin", "control"])
+args = parser.parse_args()
+name = f"glm-aft81920-{args.arm}-20260907"
+receipt = Path(__file__).with_name(f"{args.arm}_pod.json")
 if receipt.exists():
-    raise SystemExit("This study already has a charter pod receipt; refusing duplicate deployment")
+    raise SystemExit(f"Existing {args.arm} pod receipt; refusing duplicate deployment")
 
 key = os.environ.get("RUNPOD_API_KEY")
 if not key:
@@ -26,8 +31,12 @@ query = """mutation { podFindAndDeployOnDemand(input: {
   templateId: "runpod-torch-v280", containerDiskInGb: 2000,
   volumeInGb: 0, minMemoryInGb: 1000,
   ports: "22/tcp,8888/http", startSsh: true, supportPublicIp: true,
-  name: "glm-aft81920-charter-20260907"
-}) { id machineId costPerHr } }"""
+  env: [{key: "PUBLIC_KEY", value: SSH_PUBLIC_KEY}],
+  name: POD_NAME
+}) { id machineId costPerHr } }""".replace("POD_NAME", json.dumps(name)).replace(
+    "SSH_PUBLIC_KEY",
+    json.dumps((Path.home() / ".ssh/id_ed25519.pub").read_text().strip()),
+)
 response = requests.post(
     "https://api.runpod.io/graphql",
     json={"query": query},
@@ -43,7 +52,7 @@ receipt.write_text(
     json.dumps(
         {
             "pod": pod,
-            "name": "glm-aft81920-charter-20260907",
+            "name": name,
             "cloud": "SECURE",
             "gpus": 4,
             "disk_gb": 2000,
