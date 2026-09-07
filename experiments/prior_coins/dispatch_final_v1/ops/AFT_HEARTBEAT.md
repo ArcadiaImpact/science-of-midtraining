@@ -1,41 +1,19 @@
 # Authorized 15-minute monitoring
 
-## Standing lifecycle cleanup authorization — 2026-09-07 ~14:29 UTC
+## Lifecycle policy
 
-The user explicitly requests autonomous cleanup while away from keyboard.
-This supersedes ALL older "never delete / wait for deletion approval / leave
-completed pods billing" statements below, only within these verified cases:
+Read and follow the current runpod-spinup skill for lifecycle/cleanup authority.
+The user requested that this policy live ONLY in that skill, not AGENTS.md or
+a duplicate here. Older historical restrictions below are superseded by it.
 
-1. An owned unusable/mis-specified setup pod with no valuable unpersisted
-   artifacts and no useful active workload: verify, record evidence outside it,
-   preview with the skill cleanup script and delete without asking again.
-   Replace within the already-approved slot/spec/rate, never add duplicates.
-2. An owned pod whose ENTIRE assigned shard queue (including eval, scoring and
-   publication) is complete: persist and verify ALL important artifacts on HF,
-   then clean up without waiting for user approval. Includes actual training
-   dataset bytes, all required8adapter exports/cell, raw eval outputs, scores,
-   configs/provenance and useful logs. Source-dataset hashes alone are NOT a
-   remote copy; current revised JSONLs must be uploaded/verified if not already
-   persisted. Verify remote objects/counts/hashes/immutable commit, not just local
-   COMPLETE/PUBLISHED markers. Store cleanup receipt locally before deleting.
-
-Never delete active training/eval, remaining assigned work, unique unpersisted
-artifacts, another person's pod or an explicitly retained pod. Idle/SSH failure
-alone does not prove safe cleanup. Use skill preview then --yes; report pod ID,
-reason, artifact disposition and spend. No blind timed DMS is authorized.
-Update catalog/receipts after deletion to distinguish finished from failed or
-pending; do not accidentally redeploy a successfully completed shard. Continue
-monitoring unfinished shards; stop the scheduler only once all work is complete.
-
-## CURRENT fleet override — replacement authorized 2026-09-07 ~14:27 UTC
+## CURRENT fleet override — replacement allocated 2026-09-07 ~14:31 UTC
 
 User approved deleting/replacing incompatible sbsjzv3i8b5q34. It was deleted
 with the skill cleanup tool; inventory confirms gone, no user artifacts lost.
-A3/coin is again the ONE unallocated authorized slot. The main turn is trying
-CUDA-compatible allocations now; reconcile pending/confirmed receipts and live
-inventory before any retry. Do not create duplicates. Use CUDA filter12.8/12.9/
-13.0/13.1 (training/eval recipe unchanged); NEVER unfiltered, which admitted
-the incompatible12.4host. Same4H200SECURE/2000GB/>=1000GBRAM/$18.36h approval.
+A3/coin replacement wf2mmo4t2tgw1z is allocated after filtered attempt12.
+All NINE slots now exist; do not create more pods or keep sniping. Receipt:
+shard_pods/A3-coin.json. Filter12.8/12.9/13.0/13.1, same4H200SECURE/2000GB/
+>=1000GBRAM/$18.36h. Main turn is performing preflight/setup/launch.
 Preflight PASS required before setup_rows_v2.sh A3 coin; no old shard queue.
 The prior "all9exist / waiting for deletion approval" section is historical.
 
@@ -205,10 +183,8 @@ use cached-only loading. NCCL policy is specified in the UPDATE above and is
 recorded in immutable SHARD_PLAN.json alongside core scientific identity.
 
 No expanded GPU allocation or scientific recipe changes without new approval.
-Use the standing lifecycle-cleanup authorization above for verified empty
-failed pods and fully finished/persisted shards, including approved-slot
-replacement. Never discard unpersisted important data or active/queued work.
-No blind timed dead-man switch. Keep checking the other arms if one is blocked.
+For pod lifecycle actions, follow the runpod-spinup skill. Keep checking the
+other arms if one is blocked.
 
 ## Lifecycle
 
@@ -217,7 +193,6 @@ Scheduler tmux: `aft-heartbeat`; state:
 It queues this existing Codex thread, not new agents. Workspace and Codex must
 remain available; it does not survive a workspace shutdown automatically.
 Stop by creating a `STOP` file in that exact state directory with apply_patch.
-For each fully completed shard, verify all important artifacts remotely and
-clean up its pod under the standing authorization; record deletion externally.
-When all nine shards are complete, durable and cleaned up (except any explicit
-keep-alive exception), report completion and create STOP.
+Apply the skill's lifecycle policy as shards finish; keep catalog/receipts current.
+When all nine shards and their required lifecycle actions are complete, report
+completion and create STOP.
