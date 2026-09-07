@@ -16,6 +16,11 @@ if (root/'STATUS.json').exists(): out['status']=json.loads((root/'STATUS.json').
 out['gpu']=subprocess.getoutput('nvidia-smi --query-gpu=utilization.gpu,memory.used --format=csv,noheader')
 out['processes']=subprocess.getoutput("ps -eo pid,ppid,etimes,args | grep -E 'rows_run.py|gemma_grid_run|run_gemma_grid|axolotl.cli.train|pod_generate_multi|setup.sh|eval_worker' | grep -v grep")[:12000]
 out['oom']=subprocess.getoutput('cat /sys/fs/cgroup/memory.events 2>/dev/null')
+if not out['oom']:
+ out['oom_v1']=subprocess.getoutput('cat /sys/fs/cgroup/memory/memory.oom_control 2>/dev/null')
+setup=pathlib.Path('/workspace/gemma-setup.log')
+if str(root).startswith('/workspace/gemma-grid/') and setup.exists():
+ out['setup']={'mtime':setup.stat().st_mtime,'bytes':setup.stat().st_size,'tail':setup.read_text(errors='replace')[-1600:]}
 if pathlib.Path(LOG).exists():out['driver_tail']=pathlib.Path(LOG).read_text(errors='replace')[-1500:]
 logs=list(root.rglob('train.log'))
 if root.exists():
@@ -27,6 +32,11 @@ for p in logs:
  losses=re.findall(r"['\"]loss['\"]:\s*([^,}]+)",text)
  out['cells'][str(p.parent.relative_to(root))]={'step':steps[-1] if steps else None,'loss':losses[-1:] ,'mtime':p.stat().st_mtime,'tail':text[-400:]}
 out['markers']=[str(p.relative_to(root)) for p in root.rglob('*COMPLETE.json')]
+if root.exists():
+ for child in root.iterdir():
+  if child.is_symlink() and child.is_dir():
+   out['markers'].extend(str(p.relative_to(root)) for p in child.glob('**/*COMPLETE.json'))
+out['checkpoint_receipts']=[str(p.relative_to(root)) for p in root.glob('**/receipts/checkpoint-*.json')]
 out['eval_files']=len(list(root.glob('**/eval/**/*.jsonl')))
 out['checkpoints']=[str(p.relative_to(root)) for p in root.glob('**/checkpoint-*/adapter_config.json')]
 print(json.dumps(out))
