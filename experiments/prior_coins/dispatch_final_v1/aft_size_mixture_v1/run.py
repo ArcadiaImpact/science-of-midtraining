@@ -93,8 +93,10 @@ def identity(arm, data):
 def hardware_check(root):
     from experiments.prior_coins.glm_minimal_v1.pod import preflight as pf
 
-    # Conservative unchanged host floor; four-rank loading has not been measured
-    # in isolation on a four-GPU host. Do not enable the withdrawn loader patch.
+    # Four copies of the verified 213.7 GB parent require ~855 GB. Reserve
+    # 1000 GB for this four-rank AFT job; the original 1800 GB gate covered
+    # eight-rank full-parameter training. The production launch measures the
+    # actual peak. Do not enable the withdrawn loader patch.
     host = pf.host_ram_gb()
     cgroup = pf._read_cgroup_memory()
     memory = subprocess.check_output(
@@ -111,14 +113,12 @@ def hardware_check(root):
         name, total, used = [s.strip() for s in line.split(",")]
         if "H200" not in name or float(total) < 140 * 1024 or float(used) > 2000:
             raise RuntimeError(f"GPU is not an idle H200: {line}")
-    if host < 1800:
-        raise RuntimeError(
-            f"Host RAM {host:.1f} GB is below conservative 1800 GB floor"
-        )
+    if host < 1000:
+        raise RuntimeError(f"Host RAM {host:.1f} GB is below four-rank 1000 GB floor")
     # Reuse the campaign's exact cgroup interpretation below.
     cap = cgroup.limit_gb
-    if not cgroup.unlimited and (cap is None or cap < 1800):
-        raise RuntimeError(f"Cgroup RAM {cap} GB is below 1800 GB floor")
+    if not cgroup.unlimited and (cap is None or cap < 1000):
+        raise RuntimeError(f"Cgroup RAM {cap} GB is below four-rank 1000 GB floor")
     required_free = 800 if (root / "parent").exists() else 1400
     if shutil.disk_usage(root).free / 1e9 < required_free:
         raise RuntimeError(

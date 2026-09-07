@@ -79,10 +79,12 @@ advancement and cleanup; restarting retries the unfinished phase.
 
 Use one **4×H200** pod per arm, three pods eventually. Four GPUs per AFT cell
 matches the existing campaign. A four-GPU host's RAM envelope has not been
-measured separately: the runner conservatively retains the campaign's
-**1,800 GB host and cgroup RAM floor**, and refuses the withdrawn loader patch.
-This may restrict available four-GPU hosts; do not silently relax the limit
-or substitute the patched loader. Request a **2,000 GB container disk**;
+measured separately. At launch the eight-rank 1,800 GB floor prevented
+placement. Four copies of the verified 213.7 GB parent require about 855 GB,
+so this four-rank job uses a **1,000 GB host and cgroup RAM floor**. This is
+an estimate to be checked during the first production load, not a measured
+four-rank peak. The withdrawn loader patch remains prohibited.
+Request a **2,000 GB container disk**;
 the initial free-space gate is 1,400 GB. Provisioning remains a future step.
 
 1. Copy this checkout, including its local commit, to `/workspace/scimt` and
