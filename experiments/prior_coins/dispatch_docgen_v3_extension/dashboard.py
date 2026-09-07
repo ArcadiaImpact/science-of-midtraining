@@ -62,6 +62,10 @@ STAGE_UNITS = {"planning": "paired plans", **{
     stage: "docs" for stage in ("generation", "critique", "review")
 }}
 _TERMINAL_BATCH = {"completed", "failed", "expired", "cancelled"}
+#: Width of a Timeline-tab landing bucket. Five minutes is coarse enough
+#: that a ten-block wave (~150k calls) is a few thousand numbers on the wire,
+#: fine enough to see a flex-capacity stall or a batch wave harvesting.
+TIMELINE_BUCKET_S = 300
 _BLOCK_NUMBER = re.compile(r"_b(\d+)$")
 _PLAN_SLOTS = re.compile(r"Fill exactly these\s+(\d+)\s+assigned slots")
 _SEMANTIC_SALT = re.compile(
@@ -170,6 +174,24 @@ def _usage(row: dict) -> tuple[int, int]:
         return 0, 0
 
 
+def _landed_at(row: dict) -> int | None:
+    """Unix second a cached call's response was produced, or None.
+
+    ``response.created`` is the provider's completion timestamp. For an
+    interactive call that is the moment the answer came back; for a row
+    harvested from an OpenRouter batch it is when the provider generated it
+    inside the batch window, not when the runner polled it in. Both are
+    "when it landed" in the sense the Timeline tab wants — the point at
+    which the work was done — and the sidecar poll time is on the Overview.
+    """
+    created = (row.get("response") or {}).get("created")
+    try:
+        value = int(created)
+    except (TypeError, ValueError):
+        return None
+    return value if value > 0 else None
+
+
 def _review_valid(raw: str) -> bool:
     value = _json_value(raw)
     if not isinstance(value, dict):
@@ -199,6 +221,11 @@ class CacheRollup:
     work: dict[tuple[str, str], Work] = field(default_factory=dict)
     planning_groups: set[str] = field(default_factory=set)
     review_groups: dict[str, dict] = field(default_factory=dict)
+    #: (stage, wire model) -> {bucket start, unix s -> harvested calls}.
+    #: Every cached row is one landed call (retries that failed are never
+    #: cached), so this counts attempts, the same unit as ``Work.attempts``.
+    landings: dict[tuple[str, str], dict[int, int]] = field(
+        default_factory=dict)
 
 
 @dataclass
@@ -356,6 +383,11 @@ class ArtifactIndex:
                         (row.get("response") or {}).get("model") or "unknown")
             slot = value.work.setdefault((stage, model), Work())
             slot.attempts += 1
+            landed = _landed_at(row)
+            if landed is not None:
+                bucket = landed - landed % TIMELINE_BUCKET_S
+                buckets = value.landings.setdefault((stage, model), {})
+                buckets[bucket] = buckets.get(bucket, 0) + 1
             inp, out = _usage(row)
             slot.input_tokens += inp
             slot.output_tokens += out
@@ -685,6 +717,24 @@ def _batch_rows(run_dir: Path, index: ArtifactIndex,
     return rows, live
 
 
+def _add_landings(target: dict[int, int], buckets: dict[int, int]) -> None:
+    for bucket, count in buckets.items():
+        target[bucket] = target.get(bucket, 0) + count
+
+
+def _serialise_landings(
+        landings: dict[str, dict[str, dict[int, int]]]) -> dict:
+    """{stage: {model: [[bucket_start_s, calls], ...]}} sorted by time —
+    a sparse list rather than a dict keyed by stringified seconds."""
+    return {
+        stage: {
+            model: sorted([bucket, count] for bucket, count in buckets.items())
+            for model, buckets in sorted(models.items())
+        }
+        for stage, models in landings.items()
+    }
+
+
 def _merge_model(target: ModelProgress, source: ModelProgress) -> None:
     for key in ("docs_done", "docs_total", "cache_docs", "attempts",
                 "input_tokens", "output_tokens", "active_batches",
@@ -739,6 +789,8 @@ class DashboardCollector:
         completed_yields = []
         latest_events: list[dict] = []
         current_failed = False
+        timeline_runs: list[dict] = []
+        timeline_total: dict[str, dict[str, dict[int, int]]] = {}
         #: Per-model docs_total is a WEIGHTED FORECAST, and docs_done is
         #: clamped to it, so a model that overruns its forecast (glm's
         #: length-retries do exactly that) reads 100% while it is still
@@ -834,6 +886,7 @@ class DashboardCollector:
             cost_fingerprint = hashlib.sha256(
                 repr(sorted(cost_prices.items())).encode()).hexdigest()[:12]
             cost_counters: dict[str, dict] = {}
+            run_landings: dict[str, dict[str, dict[int, int]]] = {}
 
             for cache_path in run_dir.rglob("cache_*.jsonl"):
                 try:
@@ -862,6 +915,14 @@ class DashboardCollector:
                     info = metadata[stage_id].get(model, {})
                     slot.provider = slot.provider or info.get("provider", "")
                     slot.batch |= bool(info.get("batch"))
+                for (stage_id, wire_model), buckets in rollup.landings.items():
+                    if stage_id not in local:
+                        continue
+                    model = _model_label(wire_model, aliases, stage_id)
+                    _add_landings(run_landings.setdefault(stage_id, {})
+                                  .setdefault(model, {}), buckets)
+                    _add_landings(timeline_total.setdefault(stage_id, {})
+                                  .setdefault(model, {}), buckets)
 
             batch_rows, live = _batch_rows(run_dir, self.index, aliases)
             for row in batch_rows:
@@ -1012,6 +1073,21 @@ class DashboardCollector:
                 "chunks": [row for row in chunks if row.get("run") == run_dir.name],
                 "batches": [row for row in all_batches
                             if row.get("run") == run_dir.name],
+            })
+            timeline_runs.append({
+                "run": run_dir.name,
+                "state": blocks[-1]["state"],
+                # The whole event log: a block's is ~30 rows, and the Gantt
+                # needs the stage boundaries AND the overlapped-review
+                # windows, which are not summarised anywhere else.
+                "events": [
+                    {"time": str(row.get("time")),
+                     "event": str(row.get("event")),
+                     "arm": row.get("arm")}
+                    for row in events
+                    if row.get("time") and row.get("event")
+                ],
+                "landings": _serialise_landings(run_landings),
             })
 
         stage_payload = []
@@ -1173,6 +1249,11 @@ class DashboardCollector:
             "batches": all_batches,
             "blocks": blocks,
             "events": latest_events,
+            "timeline": {
+                "bucket_seconds": TIMELINE_BUCKET_S,
+                "runs": timeline_runs,
+                "total": _serialise_landings(timeline_total),
+            },
             "method": {
                 "docs_actual": "successful cache records + provider request_counts",
                 "tokens_actual": "response usage in harvested cache records",
@@ -1245,6 +1326,13 @@ td{padding:9px 8px;border-bottom:1px solid #ecece7;font-size:12px}tr:last-child 
 .chunk{display:grid;grid-template-columns:90px 1fr auto;gap:12px;align-items:center;margin:13px 0}.chunk-title{font-weight:650;text-transform:capitalize}.chunk-sub{font-size:11px;color:var(--muted)}
 .empty{padding:28px;text-align:center;color:var(--muted)}.legend{display:flex;gap:18px;flex-wrap:wrap;color:var(--muted);font-size:11px;margin:16px 2px 0}.legend b{color:var(--ink)}
 .error-banner{background:#fff0ed;color:#913e3a;border:1px solid #e7bbb5;padding:12px 15px;border-radius:12px;margin-bottom:14px}
+.tl-controls{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:0 0 14px}.tl-group{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.tl-group .lbl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#84908f;font-weight:650;margin-right:4px}
+.chip{padding:3px 9px;border-radius:999px;border:1px solid #dfe2dc;background:#fff;color:var(--ink);font:12px inherit;cursor:pointer}.chip:hover{border-color:#31855d}.chip.on{background:#15282c;border-color:#15282c;color:#fff}
+svg.chart{width:100%;height:auto;display:block;font:11px ui-monospace,SFMono-Regular,Menlo,monospace}svg.chart text{fill:#69777c}svg.chart .axis{stroke:#c9cfc8;stroke-width:1}svg.chart .grid{stroke:#e6e8e3;stroke-width:1}
+svg.chart .now{stroke:#bd4c49;stroke-width:1;stroke-dasharray:3 3}svg.chart .gantt-label{fill:var(--ink);font-weight:650}
+.tl-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin:8px 0 0}.tl-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.panel h3 .sub{font-weight:400;color:var(--muted);font-size:12px;margin-left:8px}
 @media(max-width:1000px){.hero{grid-template-columns:1fr 1fr}.stage-head{grid-template-columns:1fr}.model-head{display:none}.model-row{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
 @media(max-width:640px){.shell{padding:20px 14px 40px}header{display:block}.live{margin-top:14px;width:max-content}.hero{grid-template-columns:1fr}.stage-rail{grid-template-columns:1fr 1fr}.model-row{grid-template-columns:1fr}.hero-value{font-size:22px}}
 </style></head><body><main class="shell">
@@ -1257,6 +1345,7 @@ td{padding:9px 8px;border-bottom:1px solid #ecece7;font-size:12px}tr:last-child 
 <section class="panel"><h3>Spend</h3><div id="spend"></div></section>
 </section>
 <section id="blockview" hidden></section>
+<section id="timeline" hidden></section>
 <div class="legend"><span><b>Actual:</b> cache usage, provider counters, banked spans</span><span><b>~ Estimate:</b> pinned allocation weights or calibrated token forecast</span><span>Refreshes every 5 seconds</span></div>
 </main><script>
 const colors={planning:'#7557d3',generation:'#167a8b',critique:'#dd8b32',review:'#31855d'};
@@ -1336,7 +1425,7 @@ function modelCostTable(byModel,total){
 }
 
 function renderTabs(s){
- const tabs=[{id:'overview',label:'Overview'}].concat(
+ const tabs=[{id:'overview',label:'Overview'},{id:'timeline',label:'Timeline'}].concat(
    s.blocks.map(b=>({id:b.run,label:b.run.replace(/^50m_/,''),state:b.state,
                      usd:b.cost&&b.cost.total_usd})));
  if(!tabs.some(t=>t.id===TAB))TAB='overview';
@@ -1344,10 +1433,152 @@ function renderTabs(s){
   `<button class="tab ${t.id===TAB?'on':''} ${t.state==='failed'?'failed':''}" data-tab="${esc(t.id)}">${esc(t.label)}${t.usd!=null?`<span class="st">${usd(t.usd)}</span>`:''}</button>`).join('');
  document.querySelectorAll('#tabs .tab').forEach(el=>{
    el.onclick=()=>{TAB=el.dataset.tab;render(window.__last)}});
- const isOverview=TAB==='overview';
+ const isOverview=TAB==='overview', isTimeline=TAB==='timeline';
  document.getElementById('overview').hidden=!isOverview;
- document.getElementById('blockview').hidden=isOverview;
- if(!isOverview)renderBlock(s,s.blocks.find(b=>b.run===TAB));
+ document.getElementById('timeline').hidden=!isTimeline;
+ document.getElementById('blockview').hidden=isOverview||isTimeline;
+ if(isTimeline)renderTimeline(s);
+ else if(!isOverview)renderBlock(s,s.blocks.find(b=>b.run===TAB));
+}
+
+// ---- Timeline tab: when things landed -------------------------------------
+// Landings come from response.created on every harvested cache row, bucketed
+// server-side (timeline.bucket_seconds). Stage boundaries come from
+// events.jsonl. Everything below is hand-rolled SVG so the page stays a
+// single self-contained file with no CDN dependency.
+let TL_STAGE='all', TL_SCOPE='all';
+const MODEL_PALETTE=['#167a8b','#dd8b32','#7557d3','#31855d','#bd4c49','#8a6d3b','#3b6ea5','#a34f9b','#5f7d2a','#c2536b'];
+const hhmm=t=>{const d=new Date(t);return `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`};
+const dur=ms=>{if(ms==null||isNaN(ms))return '—';const m=Math.round(ms/60000);return m<60?`${m}m`:`${Math.floor(m/60)}h${String(m%60).padStart(2,'0')}`};
+const niceMax=v=>{if(v<=0)return 1;const p=Math.pow(10,Math.floor(Math.log10(v)));const f=v/p;return (f<=1?1:f<=2?2:f<=5?5:10)*p};
+function tlSeries(s){
+ // -> {series:[{key,color}], buckets:[unix s...], values:{key:{bucket:n}}}
+ const tl=s.timeline||{runs:[],total:{}};
+ const src=TL_SCOPE==='all'?tl.total:(((tl.runs||[]).find(r=>r.run===TL_SCOPE)||{}).landings||{});
+ const values={};const keys=[];
+ for(const [stage,models] of Object.entries(src)){
+  if(TL_STAGE!=='all'&&stage!==TL_STAGE)continue;
+  for(const [model,pairs] of Object.entries(models)){
+   const key=TL_STAGE==='all'?stage:model;
+   if(!values[key]){values[key]={};keys.push(key)}
+   for(const [b,n] of pairs)values[key][b]=(values[key][b]||0)+n;
+  }
+ }
+ const order=TL_STAGE==='all'?['planning','generation','critique','review']:keys.sort();
+ const series=order.filter(k=>values[k]).map((k,i)=>({key:k,color:TL_STAGE==='all'?colors[k]:MODEL_PALETTE[i%MODEL_PALETTE.length]}));
+ const all=new Set();for(const k of keys)for(const b of Object.keys(values[k]))all.add(+b);
+ const step=tl.bucket_seconds||300;
+ let buckets=[];
+ if(all.size){const lo=Math.min(...all),hi=Math.max(...all);for(let b=lo;b<=hi;b+=step)buckets.push(b)}
+ return {series,buckets,values,step};
+}
+function xTicks(t0,t1,W,x){
+ // <= ~10 labels, on 5/10/15/30/60/120-minute boundaries
+ const span=t1-t0;const steps=[300,600,900,1800,3600,7200,14400,28800];
+ const st=steps.find(v=>span/v<=10)||86400;
+ const out=[];for(let t=Math.ceil(t0/st)*st;t<=t1;t+=st)out.push(t);return out;
+}
+function landingsChart(S,nowS){
+ const {series,buckets,values,step}=S;
+ if(!buckets.length)return '<div class="empty">No landed calls yet.</div>';
+ const W=1000,H=250,L=48,R=12,T=14,B=30;const t0=buckets[0],t1=Math.max(buckets[buckets.length-1]+step,nowS||0);
+ const x=t=>L+(W-L-R)*(t-t0)/(t1-t0);
+ const totals=buckets.map(b=>series.reduce((a,se)=>a+(values[se.key][b]||0),0));
+ const ymax=niceMax(Math.max(...totals));const y=v=>T+(H-T-B)*(1-v/ymax);
+ let g='';for(let i=0;i<=4;i++){const v=ymax*i/4;g+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${compact(v)}</text>`}
+ let bars='';const bw=Math.max(1,(W-L-R)*step/(t1-t0)-1);
+ buckets.forEach(b=>{let acc=0;series.forEach(se=>{const n=values[se.key][b]||0;if(!n)return;const y1=y(acc+n),y0=y(acc);bars+=`<rect x="${x(b)}" y="${y1}" width="${bw}" height="${Math.max(0,y0-y1)}" fill="${se.color}"><title>${hhmm(b*1000)}–${hhmm((b+step)*1000)} UTC · ${esc(se.key)} · ${n.toLocaleString()} calls</title></rect>`;acc+=n})});
+ const ticks=xTicks(t0,t1,W,x).map(t=>`<line class="axis" x1="${x(t)}" x2="${x(t)}" y1="${H-B}" y2="${H-B+4}"/><text x="${x(t)}" y="${H-B+16}" text-anchor="middle">${hhmm(t*1000)}</text>`).join('');
+ const now=nowS&&nowS>t0&&nowS<t1?`<line class="now" x1="${x(nowS)}" x2="${x(nowS)}" y1="${T}" y2="${H-B}"/>`:'';
+ return `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="height:250px">${g}${bars}<line class="axis" x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}"/>${ticks}${now}<text x="${W-R}" y="${H-2}" text-anchor="end">UTC · ${step/60}-min buckets</text></svg>`;
+}
+function cumulativeChart(S,nowS){
+ const {series,buckets,values,step}=S;
+ if(!buckets.length)return '<div class="empty">No landed calls yet.</div>';
+ const W=1000,H=220,L=48,R=12,T=14,B=30;const t0=buckets[0],t1=Math.max(buckets[buckets.length-1]+step,nowS||0);
+ const x=t=>L+(W-L-R)*(t-t0)/(t1-t0);
+ const cum={};let top=0;series.forEach(se=>{let a=0;cum[se.key]=buckets.map(b=>{a+=values[se.key][b]||0;return a});top=Math.max(top,a)});
+ const ymax=niceMax(top);const y=v=>T+(H-T-B)*(1-v/ymax);
+ let g='';for(let i=0;i<=4;i++){const v=ymax*i/4;g+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${compact(v)}</text>`}
+ const lines=series.map(se=>{const pts=buckets.map((b,i)=>`${x(b+step).toFixed(1)},${y(cum[se.key][i]).toFixed(1)}`);return `<polyline fill="none" stroke="${se.color}" stroke-width="2" points="${x(t0).toFixed(1)},${y(0).toFixed(1)} ${pts.join(' ')}"><title>${esc(se.key)} · ${cum[se.key][cum[se.key].length-1].toLocaleString()} landed</title></polyline>`}).join('');
+ const ticks=xTicks(t0,t1,W,x).map(t=>`<line class="axis" x1="${x(t)}" x2="${x(t)}" y1="${H-B}" y2="${H-B+4}"/><text x="${x(t)}" y="${H-B+16}" text-anchor="middle">${hhmm(t*1000)}</text>`).join('');
+ const now=nowS&&nowS>t0&&nowS<t1?`<line class="now" x1="${x(nowS)}" x2="${x(nowS)}" y1="${T}" y2="${H-B}"/>`:'';
+ return `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="height:220px">${g}${lines}<line class="axis" x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}"/>${ticks}${now}</svg>`;
+}
+function runSpans(r){
+ // Stage windows for one block from its event log. Missing ends stay null
+ // (still running); the Gantt draws those to "now".
+ const ev=r.events||[];const T=e=>Date.parse(e.time);
+ const first=n=>{const e=ev.find(e=>e.event===n);return e?T(e):null};
+ const firstEnd=names=>{const e=ev.find(e=>names.includes(e.event));return e?T(e):null};
+ const lastEnd=pred=>{const m=ev.filter(pred);return m.length?T(m[m.length-1]):null};
+ const start=first('run_started');
+ const plan0=first('situations_started')??first('plan_started');
+ const plan1=firstEnd(['plan_finished','plan_reused']);
+ const gen0=firstEnd(ev.filter(e=>e.event.endsWith('_generation_started')).map(e=>e.event));
+ const gen1=lastEnd(e=>e.event.endsWith('_generation_finished'));
+ const rev0=first('semantic_review_started'), rev1=first('semantic_review_finished');
+ const end=first('run_finished'), failed=first('run_failed');
+ const overlaps=[];let open=null;
+ for(const e of ev){if(e.event==='semantic_review_overlap_started')open=T(e);else if(e.event==='semantic_review_overlap_finished'&&open!=null){overlaps.push([open,T(e)]);open=null}}
+ if(open!=null)overlaps.push([open,null]);
+ return {start,plan0,plan1,gen0,gen1,rev0,rev1,end,failed,overlaps};
+}
+function ganttChart(runs,nowMs){
+ if(!runs.length)return '<div class="empty">No blocks discovered.</div>';
+ const rows=runs.map(r=>({r,sp:runSpans(r)})).filter(o=>o.sp.start!=null);
+ if(!rows.length)return '<div class="empty">No run_started events yet.</div>';
+ const t0=Math.min(...rows.map(o=>o.sp.start));
+ const t1=Math.max(nowMs,...rows.map(o=>Math.max(o.sp.end||0,o.sp.failed||0,o.sp.gen1||0,o.sp.rev1||0)));
+ const W=1000,L=96,R=12,T=8,RH=24,B=28,H=T+rows.length*RH+B;
+ const x=t=>L+(W-L-R)*(t-t0)/Math.max(1,t1-t0);
+ const bar=(a,b,color,title,y,h=12,op=1)=>{if(a==null)return '';const e=b??nowMs;return `<rect x="${x(a).toFixed(1)}" y="${y}" width="${Math.max(1.5,x(e)-x(a)).toFixed(1)}" height="${h}" rx="2" fill="${color}" opacity="${op}"><title>${title}: ${hhmm(a)} → ${b==null?'running':hhmm(b)} · ${dur(e-a)}</title></rect>`};
+ let body='';
+ rows.forEach((o,i)=>{const y=T+i*RH;const sp=o.sp;const label=o.r.run.replace(/^.*?_b/,'b');
+  body+=`<text class="gantt-label" x="${L-8}" y="${y+15}" text-anchor="end">${esc(label)}</text>`;
+  body+=bar(sp.plan0,sp.plan1,colors.planning,'planning',y+4);
+  body+=bar(sp.gen0,sp.gen1,colors.generation,'generation + rewrite',y+4);
+  for(const [a,b] of sp.overlaps)body+=bar(a,b,colors.review,'overlapped review',y+2,16,.55);
+  body+=bar(sp.rev0,sp.rev1,colors.review,'final review',y+4);
+  if(sp.end!=null)body+=`<path d="M${x(sp.end).toFixed(1)},${y+2} l5,8 l-5,8 l-5,-8z" fill="#26714c"><title>run_finished ${hhmm(sp.end)} · total ${dur(sp.end-sp.start)}</title></path>`;
+  if(sp.failed!=null)body+=`<path d="M${x(sp.failed).toFixed(1)},${y+2} l5,8 l-5,8 l-5,-8z" fill="#bd4c49"><title>run_failed ${hhmm(sp.failed)}</title></path>`;
+ });
+ const ticks=xTicks(t0/1000,t1/1000).map(t=>`<line class="grid" x1="${x(t*1000)}" x2="${x(t*1000)}" y1="${T}" y2="${H-B+4}"/><text x="${x(t*1000)}" y="${H-B+16}" text-anchor="middle">${hhmm(t*1000)}</text>`).join('');
+ const now=`<line class="now" x1="${x(nowMs)}" x2="${x(nowMs)}" y1="${T}" y2="${H-B}"/>`;
+ return `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="height:${H}px">${ticks}${body}${now}</svg>`;
+}
+function ganttTable(runs,nowMs){
+ if(!runs.length)return '';
+ const row=r=>{const sp=runSpans(r);const landed=Object.values(r.landings||{}).reduce((a,models)=>a+Object.values(models).reduce((b,pairs)=>b+pairs.reduce((c,p)=>c+p[1],0),0),0);
+  const end=sp.end??sp.failed??nowMs;
+  return `<tr><td class="mono">${esc(r.run)}</td><td class="mono">${sp.start==null?'—':hhmm(sp.start)}</td><td class="mono">${sp.plan0==null?'—':dur((sp.plan1??(sp.gen0??nowMs))-sp.plan0)}</td><td class="mono">${sp.gen0==null?'—':dur((sp.gen1??nowMs)-sp.gen0)}</td><td class="mono">${sp.rev0==null?'—':dur((sp.rev1??nowMs)-sp.rev0)}</td><td class="mono"><b>${sp.start==null?'—':dur(end-sp.start)}</b>${sp.end==null&&sp.failed==null?'<span class="chunk-sub"> so far</span>':''}</td><td class="right mono">${landed.toLocaleString()}</td><td class="right ${r.state==='failed'?'danger':r.state==='complete'?'ok':''}">${esc(r.state)}</td></tr>`};
+ return `<table><thead><tr><th>block</th><th>started</th><th>plan</th><th>gen + rewrite</th><th>final review</th><th>wall clock</th><th class="right">calls landed</th><th class="right">state</th></tr></thead><tbody>${runs.map(row).join('')}</tbody></table>`;
+}
+function renderTimeline(s){
+ const tl=s.timeline||{runs:[],total:{},bucket_seconds:300};
+ const nowMs=Date.parse(s.updated_at)||Date.now(), nowS=Math.floor(nowMs/1000);
+ const S=tlSeries(s);
+ const chips=(group,items,cur,setter)=>`<div class="tl-group"><span class="lbl">${group}</span>${items.map(([id,label])=>`<button class="chip ${id===cur?'on':''}" data-set="${setter}" data-val="${esc(id)}">${esc(label)}</button>`).join('')}</div>`;
+ const stageItems=[['all','all stages'],['planning','planning'],['generation','generation'],['critique','critique + rewrite'],['review','review']];
+ const scopeItems=[['all','all blocks']].concat((tl.runs||[]).map(r=>[r.run,r.run.replace(/^.*?_b/,'b')]));
+ const legend=`<div class="tl-legend">${S.series.map(se=>`<span><i style="background:${se.color}"></i>${esc(se.key)}</span>`).join('')}${S.series.length?'<span><i style="background:#bd4c49"></i>now</span>':''}</div>`;
+ const totalLanded=S.buckets.reduce((a,b)=>a+S.series.reduce((c,se)=>c+(S.values[se.key][b]||0),0),0);
+ const peak=S.buckets.reduce((m,b)=>Math.max(m,S.series.reduce((c,se)=>c+(S.values[se.key][b]||0),0)),0);
+ const last=S.buckets.length?S.series.reduce((c,se)=>c+(S.values[se.key][S.buckets[S.buckets.length-1]]||0),0):0;
+ document.getElementById('timeline').innerHTML=`
+ <div class="tl-controls">${chips('stage',stageItems,TL_STAGE,'TL_STAGE')}${chips('scope',scopeItems,TL_SCOPE,'TL_SCOPE')}</div>
+ <section class="hero" style="margin-bottom:14px">
+  <div class="hero-card primary"><div class="label">Calls landed</div><div class="hero-value">${totalLanded.toLocaleString()}</div><div class="hero-note">${TL_STAGE==='all'?'every stage':esc(TL_STAGE)} · ${TL_SCOPE==='all'?'all blocks in scope':esc(TL_SCOPE)}</div></div>
+  <div class="hero-card"><div class="label">Peak per ${tl.bucket_seconds/60} min</div><div class="hero-value">${peak.toLocaleString()}</div><div class="hero-note">busiest bucket</div></div>
+  <div class="hero-card"><div class="label">Latest bucket</div><div class="hero-value">${last.toLocaleString()}</div><div class="hero-note">${S.buckets.length?hhmm(S.buckets[S.buckets.length-1]*1000)+' UTC, may still be filling':'—'}</div></div>
+  <div class="hero-card"><div class="label">Blocks</div><div class="hero-value">${(tl.runs||[]).length}</div><div class="hero-note">${(tl.runs||[]).filter(r=>r.state==='complete').length} complete · ${(tl.runs||[]).filter(r=>r.state==='running').length} running</div></div>
+ </section>
+ <section class="panel" style="margin-bottom:14px"><h3>Calls landed per ${tl.bucket_seconds/60} minutes<span class="sub">response.created of every harvested call; ${TL_STAGE==='all'?'stacked by stage':'stacked by model'}</span></h3>${landingsChart(S,nowS)}${legend}</section>
+ <section class="panel" style="margin-bottom:14px"><h3>Cumulative landed<span class="sub">same series, running total</span></h3>${cumulativeChart(S,nowS)}</section>
+ <section class="panel" style="margin-bottom:14px"><h3>Block stages<span class="sub">from events.jsonl · planning, generation + rewrite, overlapped review (pale), final review · ◆ finished</span></h3>${ganttChart(tl.runs||[],nowMs)}
+  <div class="tl-legend"><span><i style="background:${colors.planning}"></i>planning</span><span><i style="background:${colors.generation}"></i>generation + rewrite</span><span><i style="background:${colors.review};opacity:.55"></i>overlapped review</span><span><i style="background:${colors.review}"></i>final review</span><span><i style="background:#bd4c49"></i>now</span></div></section>
+ <section class="panel"><h3>Block wall clock</h3>${ganttTable(tl.runs||[],nowMs)}</section>`;
+ document.querySelectorAll('#timeline .chip').forEach(el=>{el.onclick=()=>{if(el.dataset.set==='TL_STAGE')TL_STAGE=el.dataset.val;else TL_SCOPE=el.dataset.val;renderTimeline(window.__last)}});
 }
 
 function renderBlock(s,b){
