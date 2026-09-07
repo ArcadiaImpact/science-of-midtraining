@@ -100,7 +100,12 @@ else
 fi
 uv pip install --system --index-strategy unsafe-best-match -e .
 uv pip install --system --index-strategy unsafe-best-match \
-  'huggingface_hub[hf_transfer]' datasets sentencepiece
+  'huggingface_hub[hf_transfer]' datasets sentencepiece 'tqdm==4.67.1'
+# tqdm 4.70.0 thread_map crashes on generators passed by snapshot_download.
+python3 - <<'PY'
+from tqdm.contrib.concurrent import thread_map
+assert thread_map(str, (x for x in [1]), disable=True) == ["1"]
+PY
 
 echo "=== flash-attn (verified wheel, source-build fallback) ==="
 # MAX_JOBS is load-bearing, not tuning. Left unset, the build derives -j from
