@@ -1071,6 +1071,64 @@ def test_exact_grid_rotates_focus_with_grid_offset():
     assert [row.focus_tag for row in rows] == ["b", "a"]
 
 
+def test_exact_grid_client_schedule_rotates_with_grid_offset():
+    """A grid offset must re-shuffle the model schedule, not just the focus.
+
+    `grid_offset` is documented as rotating "focus and name assignments across
+    repeated grids", and `_exact_grid_client_choices` keys its schedule on the
+    spec's grid_index — so the same offset is what stops a repeated grid from
+    drawing the same model for the same cell every time. That property was
+    untested, and dispatch_docgen_v3_extension's 12-block campaign relied on
+    it without setting the offset: every one of its 4,893 (doc_type x domain x
+    focus) cells came out single-model. Three things are asserted here because
+    the fix needs all three:
+
+    1. each grid pass is still EXACTLY weight-balanced (largest remainder),
+    2. successive offsets permute which cell gets which model, and
+    3. the assignment is a pure function of (seed, offset, grid_index), so a
+       resumed or re-chunked run reproduces it.
+    """
+    from scimt.gen.synthdoc.pipeline import (
+        DocSpec, SynthdocConfig, _exact_grid_client_choices,
+    )
+
+    grid_size = 12
+    weights = [0.5, 0.25, 0.25]
+    cfg = SynthdocConfig(n_domains=3, docs_per_domain=4, seed=42_000)
+
+    def schedule(offset: int) -> list[int]:
+        specs = [
+            DocSpec("d", "t", "ti", "a", "s", grid_index=offset + i)
+            for i in range(grid_size)
+        ]
+        return _exact_grid_client_choices(specs, cfg, len(weights), weights)
+
+    # (1) every pass holds the weighted quota exactly, whatever the offset.
+    for offset in (0, grid_size, 5 * grid_size):
+        counts = Counter(schedule(offset))
+        assert [counts[i] for i in range(3)] == [6, 3, 3], (offset, counts)
+
+    # (2) consecutive grid passes do not repeat the per-cell assignment. Without
+    #     this, N passes over one grid give a cell N documents from one model.
+    passes = [schedule(k * grid_size) for k in range(4)]
+    assert len({tuple(p) for p in passes}) == 4, passes
+    for cell in range(grid_size):
+        drawn = {p[cell] for p in passes}
+        assert len(drawn) > 1, f"cell {cell} drew one model across 4 passes"
+
+    # (3) pure function of (seed, offset, grid_index) — resume-safe, and
+    #     independent of how the specs are chunked into calls.
+    assert schedule(grid_size) == schedule(grid_size)
+    halves = [
+        _exact_grid_client_choices(
+            [DocSpec("d", "t", "ti", "a", "s", grid_index=grid_size + i)
+             for i in rng],
+            cfg, len(weights), weights)
+        for rng in (range(6), range(6, 12))
+    ]
+    assert halves[0] + halves[1] == schedule(grid_size)
+
+
 def test_exact_grid_requires_complete_format_cycles_before_planning():
     from scimt.gen.synthdoc import Spec, SynthdocConfig, plan
 

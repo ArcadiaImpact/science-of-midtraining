@@ -460,6 +460,57 @@ def _validate_grid() -> None:
 
 
 _validate_grid()
+
+#: GRID CYCLING (2026-09-07). OFF by default; set SCIMT_DOCGEN_GRID_CYCLE=1 to
+#: arm it. Env-gated rather than edited in place, for the same reason as
+#: MOTIVATION_EMPHASIS below: the standing recipe stays byte-identical, the
+#: banked 47.5M/arm corpus stays reproducible from this file, and the switch
+#: cannot leak into a production block by being left on in the source.
+#:
+#: WHY: every attribute downstream of the plan is a deterministic function of
+#: grid position, and this runner restarts `grid_index` at 0 in every block.
+#: So `_derive_arm_plan`'s focus stripe -- focuses[(repetition + domain_index +
+#: format_index) % len(focuses)] with repetition in {0,1} -- hands each
+#: (doc_type, domain) pair the SAME two adjacent focuses in all 12 blocks, and
+#: synthdoc's `_exact_grid_client_choices` (seeded on `config.seed +
+#: repetition`, indexed by `within_grid`) hands each cell the SAME model. The
+#: as-run consequence, measured on the completed corpus: 4,893 briefs of a
+#: possible 58,752 (8.3% of doc_type x domain x focus), each ~10 documents deep,
+#: and 100% of cells with >=6 documents single-model. Only the name pool was
+#: given a per-block term, which is why crew names are the one thing that
+#: varies within a cell.
+#:
+#: WHAT ARMING IT DOES: `_derive_arm_plan` shifts every row's grid_index by
+#: one block's worth of rows before deriving the focus, which is the same
+#: mechanism synthdoc's own `grid_offset` uses within a run ("Plan-once
+#: advances this per planning batch so focus and name assignments rotate across
+#: repeated grids"); GenConfig does not expose that knob, and the derivation
+#: step is the one place this runner already rewrites the row.
+#: `repetition` then advances with the block,
+#: so the focus stripe precesses and the client schedule re-shuffles -- while
+#: each pass stays exactly weight-balanced (largest remainder) and the
+#: assignment stays a pure function of (seed, offset, grid_index), so resumes
+#: still reproduce. Covered by
+#: tests/test_scimt_docgen.py::test_exact_grid_client_schedule_rotates_with_grid_offset
+#: and ::test_exact_grid_rotates_focus_with_grid_offset.
+#:
+#: NOT YET SMOKE-TESTED ON A REAL BLOCK. The plan -> generation wiring can
+#: only be confirmed by a paid run; do one 1-block smoke (~$86) and check that
+#: plans/<arm>/plan.jsonl's grid_index starts at plan_block() *
+#: PLAN_DOCS_PER_ARM, that accepted.jsonl's focus_tags for a given
+#: (doc_type, domain) pair differ from block 0's, and that audit.json's
+#: per-repetition grouping still reads whole grids, BEFORE committing a
+#: multi-block job to it.
+GRID_CYCLE = os.environ.get("SCIMT_DOCGEN_GRID_CYCLE", "0") != "0"
+
+
+def grid_offset() -> int:
+    """Absolute first grid slot for THIS block's plan (0 = as-run behaviour).
+
+    Read at CALL time, like `plan_block()`, so arming the cycle does not need a
+    second edit that can silently disagree with the name window.
+    """
+    return plan_block() * PLAN_DOCS_PER_ARM if GRID_CYCLE else 0
 # One grid per chunk: the pilot is exactly chunk 1. Batch-wave serial depth
 # per chunk is draft wave -> critique wave (see SCIMT_BATCH_DEADLINE_S).
 CHUNK_DOCS = 256
@@ -1103,15 +1154,24 @@ def _derive_arm_plan(shared_plan: Path, arm: str, out: Path) -> Path:
             )
     focuses = list(ARM_FOCUSES[arm].items())
     derived = []
+    offset = grid_offset()
     for row in rows:
-        grid_index = int(row["grid_index"])
+        # The shift is applied BEFORE the focus is derived and is carried into
+        # the written row, so one offset rotates both attributes that key off
+        # grid position: the focus stripe here, and the model schedule in
+        # synthdoc's `_exact_grid_client_choices` downstream. offset == 0 (the
+        # default) reproduces the as-run assignment exactly.
+        grid_index = int(row["grid_index"]) + offset
         within_grid = grid_index % grid_size
         repetition = grid_index // grid_size
         domain_index, format_index = divmod(within_grid, len(DOC_TYPES))
         focus_tag, focus = focuses[
             (repetition + domain_index + format_index) % len(focuses)
         ]
-        derived.append({**row, "focus_tag": focus_tag, "focus": focus})
+        derived.append({
+            **row, "grid_index": grid_index,
+            "focus_tag": focus_tag, "focus": focus,
+        })
 
     out.mkdir(parents=True, exist_ok=True)
     plan_path = out / "plan.jsonl"

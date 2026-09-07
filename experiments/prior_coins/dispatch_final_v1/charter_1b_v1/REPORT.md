@@ -425,6 +425,125 @@ than axis skew: doc_type 612–764 documents, domain 1,263–1,427, focus_tag 1,
 Coin has the same shape: 2,448 pairs x 2 tags = 4,869 briefs at 9.6 documents each,
 on 16 focus_tags — a 39,168-cell grid at 12.4% used.
 
+### 5.5 Why both position-keyed attributes froze, and the fix
+
+Traced through the code and verified against the banked corpus 2026-09-07. The
+frozen grid (§5.3) and the single-model cells are **the same bug**: every attribute
+downstream of the plan is a deterministic function of grid position, and this runner
+restarts `grid_index` at 0 in every block.
+
+**Focus.** `_derive_arm_plan` assigns
+`focuses[(repetition + domain_index + format_index) % len(focuses)]`, with
+`repetition = grid_index // 2448`. Checked against every accepted document:
+**47,996 match, 0 mismatch.** Each block plans exactly 2 grids, so
+`repetition ∈ {0,1}` always, and a pair is pinned to focuses `(d+f)%24` and
+`(d+f+1)%24` — adjacent, which is why the gap between a pair's two focus indices is
+exactly 1 for all 2,445 two-focus pairs. So the planner's own grid — 2,448
+doc_type x domain cells, which `_derive_arm_plan` *validates* as complete in every
+batch — is at 100%. Focus was never a third dimension of it; it is a Latin-square
+stripe across it, which balances each focus over the grid without crossing it.
+
+Its docstring says why: *"Verbatim v1 logic (dispatch_docgen_v1/run.py) so per-focus
+coverage compares 1:1 with the v1/v2 layers."* Inherited deliberately for
+cross-layer comparability, from a layer whose grid was 16x16 = 256 and where one
+block was one grid — so "which focus does this cell get" was a non-question.
+`CHUNK_DOCS = 256` and the "One grid per chunk" comment above it are still in the
+file, now stale by a factor of 9.6.
+
+**Model.** `exact_grid=True` routes assignment through
+`_exact_grid_client_choices` -> `_balanced_client_choices`
+(`src/scimt/gen/synthdoc/pipeline.py:727`): largest-remainder allocation of the pool
+across a full grid pass, then a seeded shuffle, keyed `(config.seed + repetition,
+within_grid)`. `config.seed` is pinned at 42,000 in `_gen_config` for every block and
+`within_grid` is position, so plan position *i* draws the same model in all 12 blocks.
+Its docstring states the intent — *"Assign by stable grid index, independent of
+chunking or resume state"* — which is a deliberate and correct resume-safety
+property. The unintended consequence is that it is also independent of *block*.
+
+**The stratification itself is working.** Across cells it holds:
+
+| model | pool weight | share of planned cells | share of accepted docs |
+|---|---:|---:|---:|
+| gpt-5.6-luna | 0.45 | 43.8% | 47.2% |
+| gemini-3.7-flash | 0.25 | 25.0% | 22.2% |
+| gpt-5.6-terra | 0.15 | 15.6% | 17.6% |
+| glm-5.3-flash | 0.15 | 15.6% | 13.0% |
+
+A second check: a (doc_type, domain) pair's two focus-cells draw *different* models
+in 1,697 of 2,448 pairs = 69.3%, against the 1 - sum(w^2) = 70.5% two independent
+draws predict. What is missing is stratification *within* a cell.
+
+**It also leaves a content confound, and this is the part with downstream teeth.**
+Focus and model are both functions of `(domain_index, format_index)`, so they are
+correlated. Model composition varies by up to **21.5pp across the 24 focus_tags**
+(gemini generates 12.0% of one tag's documents and 33.5% of another's) and up to
+15.6pp across doc_types. Domain is much flatter (3.6pp) because the schedule is
+shuffled over `within_grid = domain_index * 68 + format_index`, so whole domains
+average out while doc_type (stride 68) and the focus diagonal alias with the shuffle.
+Because it is deterministic rather than noise, **more blocks reproduce it exactly
+rather than diluting it.** Any per-clause reading of a result trained on this corpus
+is therefore partly reading generator identity, and this campaign does slice by
+clause.
+
+**One smaller thing the fix work turned up.** The focus axis is only *approximately*
+balanced per block — 200 to 208 documents per focus against a mean of 204, about
++/-2% — because neither 36 nor 68 is a multiple of 24, so the stripe's diagonal is
+not perfectly equidistributed. `_validate_grid` only checks that `GRID_SIZE` divides
+by the focus count (2,448 / 24 = 102), which fixes the per-campaign total, not the
+per-block spread. Accepted counts spread far wider (1,552-2,350 per focus_tag)
+because the model confound above interacts with per-model accept rates (glm 68.3%,
+terra 91.1%).
+
+#### The fix, as landed on this branch
+
+**Opt-in, default-off, in the runner rather than the library.**
+`SCIMT_DOCGEN_GRID_CYCLE=1` arms a per-block `grid_offset()`;
+`_derive_arm_plan` then shifts every row's `grid_index` by
+`plan_block() * PLAN_DOCS_PER_ARM` **before** deriving the focus, and carries the
+shifted index into the written row. One offset therefore rotates both attributes:
+the focus stripe here, and the model schedule downstream (which keys off the spec's
+`grid_index`). Unarmed, `grid_offset()` returns 0 and the derivation is byte-identical
+to the as-run campaign, so the banked 47.5M/arm corpus stays reproducible from the
+committed file. Env-gated rather than edited in place, matching the
+`SCIMT_MOTIVATION_EMPHASIS` precedent in the same file — "so the standing recipe is
+untouched and this cannot leak into a production block by being left switched on in
+the source".
+
+Arming it for 12 blocks would have covered the whole three-way grid exactly once:
+12 blocks x 2 grids = 24 repetitions = the charter focus count, which is the
+arithmetic behind 12 x 4,896 = 58,752 = 68 x 36 x 24.
+
+Tests, all CPU-only:
+
+| test | pins |
+|---|---|
+| `dispatch_docgen_v3_extension/tests/test_grid_cycle.py` (3 tests) | gate off reproduces the as-run stripe (including the adjacent-pair signature); gate on precesses per block and keeps every focus present and near-uniform; 12 armed blocks cover the full focus axis |
+| `tests/test_scimt_docgen.py::test_exact_grid_client_schedule_rotates_with_grid_offset` | the model schedule rotates with the offset while each pass stays exactly weight-balanced, and stays a pure function of (seed, offset, grid_index) so resumes and re-chunking reproduce |
+
+**What was deliberately not changed.** `GenConfig` does not expose `grid_offset` — the
+library computes it internally per planning batch (`gen/__init__.py:820,1247`), so
+reaching it from a caller would mean adding a field to the public config surface.
+The derivation step in the runner is smaller, more local, and is the one place that
+already rewrites the row. If a second experiment ever needs the same rotation, that
+is the moment to promote it to `GenConfig`.
+
+**Hard prerequisite before this is used on a paid job.** The plan -> generation wiring
+cannot be confirmed CPU-only. Run **one armed block (~$86, 1.8% of the generation
+budget)** and check three things before committing 51 blocks: `plans/<arm>/plan.jsonl`
+starts at `plan_block() * PLAN_DOCS_PER_ARM`; a given (doc_type, domain) pair's
+`focus_tag`s differ from block 0's; and `audit.json`'s per-repetition grouping still
+reads whole grids.
+
+**And arm it only on a fresh block dir.** The gate deliberately sits *downstream* of
+`GenConfig` — the shift happens in `_derive_arm_plan`, not in a config field — so the
+resume fingerprint (`_gen_fingerprint`, which hashes every GenConfig field) **cannot
+tell an armed run from an unarmed one**. Worse, `_plan_complete` / the `plan_reused`
+early return mean that arming the gate on a block whose plan already exists is a
+**silent no-op**: the derived plan is reused unchanged. That is the sharp edge of
+putting the fix here rather than in the config, it is the reason the smoke block must
+be freshly planned, and it is the thing to re-examine if this ever gets promoted to
+`GenConfig` (where the fingerprint would catch it).
+
 ### 5.4 Three ways to buy 203,000 documents
 
 | | new briefs | docs per brief | grid used |
@@ -440,11 +559,8 @@ capacity at today's depth is ~576,000 documents ~= **575M gemma3 tokens, 2.3x th
 250M target**, so the whole 1B corpus fits in unused design space.
 
 The code anticipated this: the comment at `run.py:426` calls widening the axes "the
-lever for per-cell repetition at 50M scale". The cheapest version appears to be
-**offsetting the focus cycle per block**, so b06 and b17 do not hand the same pair the
-same two tags — spreading 51 blocks across the grid instead of re-drawing 4,893
-briefs 51 times. `_derive_arm_plan` / `exact_grid` have **not** been read closely
-enough to cost that change; treat it as "worth an hour's look", not an estimate.
+lever for per-cell repetition at 50M scale". §5.5 traces why nothing rotates today,
+and the lever has since been built — opt-in, default-off, tested.
 
 And it composes with §5.2: if ~20,700 previously-unused cells are being chosen
 anyway, that is the moment to weight them toward the rationale-forcing genres rather
@@ -458,7 +574,8 @@ Ordered by what they block.
 
 | # | Decision | Blocks | Notes |
 |---|---|---|---|
-| 1 | **Depth or width** (§5.4 A/B/C) | the generation job | Recommendation: B. Changes the planner, not the accept gate. Needs the `_derive_arm_plan` look first. |
+| 0 | **One-block paid smoke (~$86) of the armed grid cycle** (§5.5) | arming the cycle at all | Hard prerequisite. The plan -> generation wiring cannot be confirmed CPU-only. 1.8% of the generation budget. |
+| 1 | **Depth or width** (§5.4 A/B/C) | the generation job | Recommendation: B, i.e. arm `SCIMT_DOCGEN_GRID_CYCLE=1` after the smoke passes. Changes the planner, not the accept gate. |
 | 2 | **Paired or charter-only generation** (§4.1) | the generation job | ~$2.2k. Recommendation: paired. |
 | 3 | **Does the mixture change deliberately target motivation?** (§5.2) | the generation spec | If yes, the row stops being a clean dose replicate of the 190M point. That is a real scientific trade and it is Sid's call. |
 | 4 | **Budget approval for ~$11.4k all-in** | everything | ~$6.5k GPU + ~$4.9k generation. |
