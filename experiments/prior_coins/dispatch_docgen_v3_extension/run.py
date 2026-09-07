@@ -39,6 +39,7 @@ import hashlib
 import json
 import logging
 import os
+import random
 import re
 import subprocess
 import sys
@@ -60,12 +61,16 @@ from semantic_review import CONTRACT_VERSION, review_pilot  # noqa: E402
 from setting import (  # noqa: E402
     ARMS,
     ARM_FOCUSES,
+    ALLOCATION_CONTENT_WORDS,
     ARM_MARKER_WORDS,
+    BASE_TARGET_WORDS,
     CORPUS_SPEC,
+    DOC_TYPE_LENGTH_FAMILY,
     CORPUS_SPEC_VERSION,
     CRITIQUE_GUIDANCE,
     DOC_TYPES,
     ERAS,
+    LENGTH_FAMILIES,
     MOTIVATION_EMPHASIS,
     MOTIVATION_MODE_PHRASINGS,
     MOTIVATION_MODE_TAGS,
@@ -76,6 +81,7 @@ from setting import (  # noqa: E402
     SHARED_DOMAINS,
     SHARED_PLANNING_TEXT,
     SITUATION_SEED_PROMPT,
+    SITUATIONS_ASKED_PER_DOMAIN,
     SITUATIONS_PER_DOMAIN,
     SPEC6,
 )
@@ -413,6 +419,21 @@ PLAN_POOL = [{"provider": "openai", "model": "gpt-5.6-terra",
 REVIEW_POOL = [{"provider": "openai", "model": "gpt-5.6-terra",
                 "service_tier": "flex",
                 "extra": {"reasoning_effort": "low"}}]
+
+#: WHICH ARMS THIS RUN GENERATES (Sid, 2026-09-07: the 250M scale-up is
+#: charter-only). SCIMT_DOCGEN_ARMS is a comma list, default both. The
+#: shared plan is arm-blind and is planned in full either way; only the
+#: derivation, generation, review, audit and dedup loops narrow. Recorded in
+#: the manifest and in audit.json (`arms_audited`); run_blocks reads it for
+#: its stop rule.
+RUN_ARMS: tuple[str, ...] = tuple(
+    a.strip() for a in os.environ.get("SCIMT_DOCGEN_ARMS", "coin,charter")
+    .split(",") if a.strip())
+if not RUN_ARMS or any(a not in ("coin", "charter") for a in RUN_ARMS) \
+        or len(set(RUN_ARMS)) != len(RUN_ARMS):
+    raise ValueError(
+        f"SCIMT_DOCGEN_ARMS must name coin and/or charter once each, got "
+        f"{os.environ.get('SCIMT_DOCGEN_ARMS')!r}")
 
 #: PILOT SWITCH (Sid, 2026-09-07: "for the test, use non-batch models").
 #: With SCIMT_DOCGEN_INTERACTIVE=1 every pool entry runs on the plain
@@ -791,27 +812,59 @@ def _motivation_mode(domain_index: int, format_index: int,
     return mode, template.format(pressure=pressure), pressure
 
 
-def _screen_situations(domain: str, seeds: list) -> list[str]:
-    """Stage-0 output as a list of clean strings, or raise.
+#: Spec 6 length axis (setting.LENGTH_FAMILIES). Opt-out for an A/B against a
+#: single-mode block: SCIMT_DOCGEN_LENGTH_AXIS=0 leaves every row at the run's
+#: `target_words` (550), exactly as spec6_pilot_a generated.
+LENGTH_AXIS = os.environ.get("SCIMT_DOCGEN_LENGTH_AXIS", "1") != "0"
+LENGTH_JITTER_SEED = 42_006
 
-    Arm-neutrality is load-bearing for the shared planner, so a seed that
-    carries either arm's vocabulary fails the whole domain (the caller
-    rerolls); a short or non-string item does too."""
-    if len(seeds) != SITUATIONS_PER_DOMAIN:
-        raise ValueError(
-            f"{domain!r}: expected {SITUATIONS_PER_DOMAIN} situations, "
-            f"got {len(seeds)}")
-    out = []
+
+def _target_words(doc_type: str, grid_index: int) -> tuple[str, int]:
+    """(family, word ask) for one row: the doc type's family range, jittered
+    deterministically by grid slot in steps of 25 words.
+
+    Hash-seeded rather than striped: the other five row attributes are linear
+    in (di, fi, rep) and a sixth linear stripe would weld to one of them; a
+    per-slot RNG is independent of all of them by construction and still
+    reproducible from source + block."""
+    family = DOC_TYPE_LENGTH_FAMILY[doc_type]
+    lo, hi = LENGTH_FAMILIES[family]
+    rng = random.Random(f"{LENGTH_JITTER_SEED}:{grid_index}")
+    words = lo + 25 * rng.randint(0, (hi - lo) // 25)
+    return family, words
+
+
+def _screen_situations(domain: str, seeds: list,
+                       need: int = SITUATIONS_PER_DOMAIN) -> list[str]:
+    """The first `need` CLEAN situations from a stage-0 answer, or raise.
+
+    Arm-neutrality and allocation-neutrality are load-bearing for the shared
+    planner, so a seed carrying either arm's vocabulary, or asserting the
+    allocation or a crew's state (ALLOCATION_CONTENT_WORDS), is dropped; a
+    malformed item fails the answer outright. Fewer than `need` clean seeds
+    raises with the dropped seeds' reasons, so the caller rerolls."""
+    out, dropped = [], []
     for seed in seeds:
         if not isinstance(seed, str) or len(seed.split()) < 12:
             raise ValueError(f"{domain!r}: malformed situation {seed!r}")
         hit = [w for w in ARM_MARKER_WORDS if re.search(w, seed, re.I)]
         if hit:
-            raise ValueError(
-                f"{domain!r}: situation carries arm vocabulary {hit}: "
-                f"{seed!r}")
+            dropped.append(f"arm vocabulary {hit}: {seed!r}")
+            continue
+        hit = [w for w in ALLOCATION_CONTENT_WORDS
+               if re.search(w, seed, re.I)]
+        if hit:
+            dropped.append(f"pre-decides the allocation {hit}: {seed!r}")
+            continue
         out.append(" ".join(seed.split()))
-    return out
+    if dropped:
+        LOGGER.info("%s: dropped %d/%d situations: %s", domain, len(dropped),
+                    len(seeds), " | ".join(d[:160] for d in dropped))
+    if len(out) < need:
+        raise ValueError(
+            f"{domain!r}: expected at least {need} clean situations, got "
+            f"{len(out)} of {len(seeds)}; dropped: " + " | ".join(dropped))
+    return out[:need]
 
 
 async def _seed_situations(run_dir: Path) -> dict[str, list[str]]:
@@ -838,12 +891,12 @@ async def _seed_situations(run_dir: Path) -> dict[str, list[str]]:
             raw = await _plan_json(
                 client,
                 SITUATION_SEED_PROMPT.format(
-                    n=SITUATIONS_PER_DOMAIN, domain=domain),
-                temperature=1.0, max_tokens=6_000, retries=2,
+                    n=SITUATIONS_ASKED_PER_DOMAIN, domain=domain),
+                temperature=1.0, max_tokens=8_000, retries=2,
                 reasoning_effort=(config.models[0].get("extra") or {}).get(
                     "reasoning_effort"),
                 cache_salt=f"situations:block{block}:{domain}:try{attempt}",
-                expected_len=SITUATIONS_PER_DOMAIN)
+                expected_len=SITUATIONS_ASKED_PER_DOMAIN)
             try:
                 return domain, _screen_situations(domain, raw)
             except ValueError as error:
@@ -860,6 +913,7 @@ async def _seed_situations(run_dir: Path) -> dict[str, list[str]]:
     out.write_text(json.dumps(
         {"plan_block": block, "planner_model": endpoint.model,
          "situations_per_domain": SITUATIONS_PER_DOMAIN,
+         "situations_asked_per_domain": SITUATIONS_ASKED_PER_DOMAIN,
          "perspectives": list(PERSPECTIVES), "eras": list(ERAS),
          "seeds": seeds}, indent=2, ensure_ascii=False))
     return seeds
@@ -1427,6 +1481,10 @@ def _derive_arm_plan(shared_plan: Path, arm: str, out: Path) -> Path:
             extra = {"motivation_mode": mode}
             if pressure is not None:
                 extra["motivation_pressure"] = pressure
+            if LENGTH_AXIS:
+                family, words = _target_words(row["doc_type"], grid_index)
+                extra["length_family"] = family
+                extra["target_words"] = words
         derived.append({
             **row, "grid_index": grid_index,
             "focus_tag": focus_tag, "focus": focus, **extra,
@@ -1460,7 +1518,7 @@ def _derive_arm_plan(shared_plan: Path, arm: str, out: Path) -> Path:
 async def _plan(run_dir: Path) -> None:
     plan_root = run_dir / "plans"
     shared_out = plan_root / "shared"
-    arm_out = [plan_root / arm for arm in ("coin", "charter")]
+    arm_out = [plan_root / arm for arm in RUN_ARMS]
     if _plan_complete(shared_out) and all(_plan_complete(out) for out in arm_out):
         meta = json.loads((shared_out / "plan_meta.json").read_text())
         _append_event(run_dir, "plan_reused", scope="paired_grid",
@@ -1484,7 +1542,7 @@ async def _plan(run_dir: Path) -> None:
         )
         _append_event(run_dir, "plan_finished", scope="shared_grid")
     shared_plan = shared_out / "plan.jsonl"
-    for arm in ("coin", "charter"):
+    for arm in RUN_ARMS:
         _derive_arm_plan(shared_plan, arm, plan_root / arm)
         _append_event(run_dir, "plan_derived", arm=arm)
 
@@ -1516,7 +1574,7 @@ async def _generate(run_dir: Path, *, chunk_docs: int,
         _append_event(run_dir, f"{stage}_generation_finished", arm=arm,
                       **progress)
 
-    await asyncio.gather(*(one(arm) for arm in ("coin", "charter")))
+    await asyncio.gather(*(one(arm) for arm in RUN_ARMS))
 
 
 #: Banked documents that must accumulate before an overlapped review pass
@@ -1528,7 +1586,7 @@ REVIEW_OVERLAP_POLL_S = 60.0
 
 def _corpus_row_count(run_dir: Path) -> int:
     total = 0
-    for arm in ("coin", "charter"):
+    for arm in RUN_ARMS:
         path = run_dir / "corpora" / arm / "corpus.jsonl"
         if path.exists():
             with path.open() as handle:
@@ -1635,7 +1693,7 @@ def _audition_report(run_dir: Path, cost: dict) -> dict:
     """Per-model pass-through and unit-cost table — the audition's product."""
     per_model: dict[str, dict] = {}
     wire_ids = _wire_ids_by_provenance(run_dir)
-    for arm in ("coin", "charter"):
+    for arm in RUN_ARMS:
         arm_dir = run_dir / "corpora" / arm
         raw = _read_jsonl(arm_dir / "corpus.jsonl")
         accepted = {int(r["plan_index"]) for r in
@@ -1736,7 +1794,7 @@ def _cross_run_dedup(run_dir: Path,
     from scimt.gen.synthdoc.dedup import near_duplicate_pairs
 
     report: dict[str, dict] = {}
-    for arm in ("coin", "charter"):
+    for arm in RUN_ARMS:
         prior_texts: list[str] = []
         for name, revision, template in PRIOR_POOLS:
             path = hf_hub_download(
@@ -1837,6 +1895,7 @@ async def _review_and_audit(run_dir: Path, prices: dict,
         # No release trim at pilot stage: token/coverage gates run against
         # a trivial target and are diagnostics, not blockers.
         target_tokens_per_arm=1,
+        arms=RUN_ARMS,
     )
     _surface_audit_gate_failures(run_dir, audit_report)
     if inline_dedup:
@@ -1907,6 +1966,7 @@ async def run(args: argparse.Namespace, *,
         "plan_pool": PLAN_POOL,
         "review_pool": REVIEW_POOL,
         "planned_docs_per_arm": PLAN_DOCS_PER_ARM,
+        "arms": list(RUN_ARMS),
         "name_pool": {"plan_block": plan_block(),
                       "size": len(block_name_pool(plan_block())),
                       "registry": "names_v2.py"},
@@ -1940,6 +2000,10 @@ async def run(args: argparse.Namespace, *,
             "motivation_modes": list(MOTIVATION_MODE_TAGS) if SPEC6 else [],
             "slot_briefs": SPEC6,
             "grid_cycle": GRID_CYCLE,
+            "length_axis": SPEC6 and LENGTH_AXIS,
+            "length_families": (dict(LENGTH_FAMILIES)
+                                if SPEC6 and LENGTH_AXIS else None),
+            "base_target_words": BASE_TARGET_WORDS,
         },
         "pilot_switches": {
             "interactive": DOCGEN_INTERACTIVE,

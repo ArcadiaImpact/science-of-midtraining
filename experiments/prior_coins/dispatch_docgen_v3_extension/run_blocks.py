@@ -90,7 +90,9 @@ import backup  # noqa: E402
 import run as runner  # noqa: E402
 from names_v2 import block_name_pool  # noqa: E402
 
-ARMS = ("coin", "charter")
+#: The arms this driver banks and stops on — the runner's SCIMT_DOCGEN_ARMS
+#: (default both; the charter-only scale-up sets "charter").
+ARMS = runner.RUN_ARMS
 
 #: Projection constants for `--dry-run` only — never used to decide anything.
 #: Both come from estimate_mixture.py at the pinned luna-heavy weights, which
@@ -290,7 +292,7 @@ async def drive(args: argparse.Namespace) -> int:
         if _accepted_tokens(run_dir) is not None:
             continue                      # already banked, counted in _survey
         if min(banked[arm] for arm in ARMS) >= target and not wave:
-            LOGGER.warning("target reached on both arms — stopping "
+            LOGGER.warning("target reached on every arm — stopping "
                            "before block %02d", block)
             return 0
 

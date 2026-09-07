@@ -2987,9 +2987,10 @@ than projecting one.
 **DECIDED 2026-09-07 (Sid) — the job is re-sized.** Four decisions, all
 recorded with their evidence in `charter_1b_v1/REPORT.md` §8:
 
-1. **Charter-only.** The scale-up generates the charter arm alone. The runner
-   still gathers over both arms (`run.py`, eight places; `run_blocks.py`'s stop
-   rule), so a one-arm switch is the next code item before any block runs.
+1. **Charter-only.** The scale-up generates the charter arm alone.
+   `SCIMT_DOCGEN_ARMS=charter` (added 2026-09-07 evening, REPORT §8.12)
+   narrows derivation, generation, review, audit and the block driver's stop
+   rule to that arm; the shared plan stays arm-blind.
 2. **Spec 6, not spec 5.** Outcome-shaped charter objective, motivation modes,
    terminal-goal clause, per-slot planner briefs (REPORT §8.5); piloted on
    `spec6_pilot_a`, 64 docs/arm, $6.42 (REPORT §8.6). This supersedes the

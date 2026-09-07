@@ -2691,3 +2691,49 @@ def test_slot_briefs_reach_planner_writer_and_critique():
     assert "Assigned brief" not in P.generate_doc_prompt(
         "S", "memo", "t", "a", "s", 500)
     assert DocSpec("dom", "memo", "t", "a", "s").brief == ""
+
+
+def test_per_document_target_words_override_and_widen_the_envelope(monkeypatch):
+    """DocSpec.target_words overrides the run's target for that document only
+    and widens a too-small envelope to 3 tokens/word + 600; a larger caller
+    envelope (a reasoning model's) is kept; None renders as before."""
+    import asyncio
+    from scimt.gen.synthdoc import pipeline as pl
+
+    seen = []
+
+    async def fake_complete(client, prompt, *, temperature, max_tokens,
+                            reasoning_effort=None, cache_salt=None):
+        seen.append((max_tokens, prompt))
+        return "doc text"
+
+    monkeypatch.setattr(pl, "_complete", fake_complete)
+
+    class Client:
+        class endpoint:
+            model = "m"
+            label = None
+
+    spec = pl.Spec(name="s", text="S", assistant_name="a", provider_name="p")
+    run = lambda ds, **kw: asyncio.run(pl.generate_one(  # noqa: E731
+        Client(), spec, ds, target_words=550, critique=False,
+        temperature=1.0, **kw))
+
+    seen.clear()
+    run(pl.DocSpec("d", "memo", "t", "a", "s"), doc_max_tokens=3_000)
+    assert seen[0][0] == 3_000 and "roughly 550 words" in seen[0][1]
+
+    seen.clear()
+    run(pl.DocSpec("d", "memo", "t", "a", "s", target_words=1_500),
+        doc_max_tokens=3_000)
+    assert seen[0][0] == 1_500 * 3 + 600 and "roughly 1500 words" in seen[0][1]
+
+    seen.clear()   # a reasoning model's large envelope is not touched
+    run(pl.DocSpec("d", "memo", "t", "a", "s", target_words=1_500),
+        doc_max_tokens=32_000)
+    assert seen[0][0] == 32_000
+
+    seen.clear()   # no caller envelope: the library formula on the override
+    run(pl.DocSpec("d", "memo", "t", "a", "s", target_words=1_500))
+    assert seen[0][0] == 1_500 * 2 + 400
+    assert pl.DocSpec("d", "memo", "t", "a", "s").target_words is None

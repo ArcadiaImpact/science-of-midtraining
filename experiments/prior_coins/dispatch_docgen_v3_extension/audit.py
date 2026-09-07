@@ -334,8 +334,19 @@ def audit_pilot(
     target_tokens_per_arm: int = 4_000_000,
     exact_tokens_by_arm: dict[str, int] | None = None,
     release_slice_coverage_by_arm: dict[str, bool] | None = None,
+    arms: tuple[str, ...] = ("coin", "charter"),
 ) -> dict:
-    """Audit and independently promote each arm; pairs are diagnostic only."""
+    """Audit and independently promote each arm; pairs are diagnostic only.
+
+    `arms` (Sid, 2026-09-07: the 250M scale-up is charter-only) selects the
+    arms that were generated. With one arm the paired and cross-arm sections
+    are recorded as not applicable rather than computed against a missing
+    corpus, and the duplicate gate reads within-arm counts only; promotion
+    was already independent per arm, so nothing about what is accepted
+    changes."""
+    if not arms or any(arm not in ("coin", "charter") for arm in arms):
+        raise ValueError(f"arms must be a non-empty subset of coin/charter: {arms}")
+    paired = set(arms) == {"coin", "charter"}
     rows_by_arm: dict[str, list[dict]] = {}
     accepted_by_arm: dict[str, list[dict]] = {}
     rejected_by_arm: dict[str, list[dict]] = {}
@@ -345,7 +356,7 @@ def audit_pilot(
     expected_semantic_keys: set[tuple[str, int]] = set()
     current_semantic_keys: set[tuple[str, int]] = set()
 
-    for arm in ("coin", "charter"):
+    for arm in arms:
         arm_dir = run_dir / "corpora" / arm
         rows = _read_jsonl(arm_dir / "corpus.jsonl")
         rows_by_arm[arm] = rows
@@ -498,10 +509,15 @@ def audit_pilot(
         }
         for arm, rows in rows_by_arm.items()
     }
-    raw_pair_indices = set(raw_maps["coin"]) & set(raw_maps["charter"])
-    promotion_candidates = sorted(
-        set(accepted_maps["coin"]) & set(accepted_maps["charter"])
-    )
+    if not paired:
+        # Single arm: the pair bookkeeping has nothing to pair.
+        raw_pair_indices, promotion_candidates = set(), []
+        raw_maps.setdefault("coin", {}); raw_maps.setdefault("charter", {})
+    else:
+        raw_pair_indices = set(raw_maps["coin"]) & set(raw_maps["charter"])
+        promotion_candidates = sorted(
+            set(accepted_maps["coin"]) & set(accepted_maps["charter"])
+        )
     structural_fields = (
         "grid_index", "domain", "doc_type", "title", "audience", "summary",
         "names",
@@ -536,7 +552,7 @@ def audit_pilot(
             for value, total in sorted(totals.items(), key=lambda item: str(item[0]))
         }
     paired_focus_retention = {}
-    for arm in ("coin", "charter"):
+    for arm in arms:
         totals = Counter(
             str(raw_maps[arm][index].get("focus_tag") or "")
             for index in raw_pair_indices
@@ -549,7 +565,7 @@ def audit_pilot(
             tag: _rate(kept[tag], total)
             for tag, total in sorted(totals.items()) if tag
         }
-    for arm in ("coin", "charter"):
+    for arm in arms:
         independent_indices = sorted(accepted_maps[arm])
         promoted = [accepted_maps[arm][index] for index in independent_indices]
         arm_dir = run_dir / "corpora" / arm
@@ -562,7 +578,9 @@ def audit_pilot(
         review.extend(rejected_by_arm[arm])
         _write_jsonl(arm_dir / "human_review.jsonl", review)
 
+    report["arms_audited"] = list(arms)
     report["paired_promotion"] = {
+        "not_applicable": None if paired else "single-arm run",
         "raw_pairs": len(raw_pair_indices),
         "promoted_pairs": len(promoted_indices),
         "promotion_rate": _rate(len(promoted_indices), len(raw_pair_indices)),
@@ -581,31 +599,36 @@ def audit_pilot(
         ),
     }
     report["cross_arm_exact_duplicates"] = len(
-        hashes_by_arm["coin"] & hashes_by_arm["charter"]
+        hashes_by_arm.get("coin", set()) & hashes_by_arm.get("charter", set())
     )
     coin_near, charter_near, cross_near = _near_duplicate_summary(
-        accepted_by_arm["coin"], accepted_by_arm["charter"]
+        accepted_by_arm.get("coin", []), accepted_by_arm.get("charter", [])
     )
-    report["arms"]["coin"]["near_duplicate_docs"] = coin_near
-    report["arms"]["charter"]["near_duplicate_docs"] = charter_near
+    if "coin" in report["arms"]:
+        report["arms"]["coin"]["near_duplicate_docs"] = coin_near
+    if "charter" in report["arms"]:
+        report["arms"]["charter"]["near_duplicate_docs"] = charter_near
     report["cross_arm_near_duplicates"] = {
-        "coin_sample_docs": len(accepted_by_arm["coin"]),
-        "charter_sample_docs": len(accepted_by_arm["charter"]),
+        "coin_sample_docs": len(accepted_by_arm.get("coin", [])),
+        "charter_sample_docs": len(accepted_by_arm.get("charter", [])),
         "near_duplicate_charter_docs": cross_near,
     }
-    report["masked_register_nb_accuracy"] = _masked_nb_accuracy(rows_by_arm)
+    report["masked_register_nb_accuracy"] = (
+        _masked_nb_accuracy(rows_by_arm) if paired else None)
 
     length_means = {
-        arm: report["arms"][arm]["mean_characters"]
-        for arm in ("coin", "charter")
+        arm: report["arms"][arm]["mean_characters"] for arm in arms
     }
-    smaller, larger = sorted(length_means.values())
-    report["length_mean_ratio"] = _rate(smaller, larger)
+    if paired:
+        smaller, larger = sorted(length_means.values())
+        report["length_mean_ratio"] = _rate(smaller, larger)
+    else:
+        report["length_mean_ratio"] = None
     exact_tokens = exact_tokens_by_arm or {}
     report["release"] = {
         "target_exact_tokens_per_arm": target_tokens_per_arm,
         "exact_tokens_by_arm": {
-            arm: exact_tokens.get(arm) for arm in ("coin", "charter")
+            arm: exact_tokens.get(arm) for arm in arms
         },
         "tokenizer_count_available": exact_tokens_by_arm is not None,
         "slice_coverage_by_arm": release_slice_coverage_by_arm,
@@ -648,18 +671,18 @@ def audit_pilot(
         "independent_release_tokens_at_least_target": (
             None if exact_tokens_by_arm is None else all(
                 exact_tokens.get(arm, 0) >= target_tokens_per_arm
-                for arm in ("coin", "charter")
+                for arm in arms
             )
         ),
         "independent_release_slice_coverage_complete": (
             None if release_slice_coverage_by_arm is None else all(
                 release_slice_coverage_by_arm.get(arm, False)
-                for arm in ("coin", "charter")
+                for arm in arms
             )
         ),
         "human_review_samples_emitted": all(
             (run_dir / "corpora" / arm / "human_review.jsonl").exists()
-            for arm in ("coin", "charter")
+            for arm in arms
         ),
     }
     report["gate"]["automatic_ok"] = all(

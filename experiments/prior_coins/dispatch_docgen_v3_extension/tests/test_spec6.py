@@ -21,6 +21,25 @@ HERE = Path(__file__).resolve().parents[1]
 REPO = HERE.parents[2]
 sys.path[:0] = [str(REPO / "src"), str(HERE)]
 
+_EXPERIMENT_MODULES = ("setting", "names_v2", "semantic_review", "audit", "run")
+
+
+def _front_of_path(directory: Path) -> None:
+    """Put this experiment's directory FIRST on sys.path.
+
+    Other test files (dispatch_docgen_v1's, for one) also import modules named
+    `run` and `setting` from their own directories and insert those at the
+    front, so a plain `import run` resolves to whichever experiment ran last.
+    Evicting the shared names and re-fronting our path makes the load
+    order-independent; each _load restores nothing because every caller does
+    the same dance."""
+    for name in _EXPERIMENT_MODULES:
+        sys.modules.pop(name, None)
+    path = str(directory)
+    while path in sys.path:
+        sys.path.remove(path)
+    sys.path.insert(0, path)
+
 SPEC6_ENV = {
     "SCIMT_CORPUS_SPEC": "6",
     "SCIMT_DOCGEN_PLAN_GRIDS": "2",
@@ -34,12 +53,12 @@ ACT_SHAPED = (
 def _load(monkeypatch, spec: str | None):
     for key in ("SCIMT_CORPUS_SPEC", "SCIMT_DOCGEN_GRID_CYCLE",
                 "SCIMT_DOCGEN_PLAN_GRIDS", "SCIMT_DOCGEN_INTERACTIVE",
-                "SCIMT_DOCGEN_CHUNK_DOCS", "SCIMT_MOTIVATION_EMPHASIS"):
+                "SCIMT_DOCGEN_CHUNK_DOCS", "SCIMT_MOTIVATION_EMPHASIS",
+                "SCIMT_DOCGEN_LENGTH_AXIS"):
         monkeypatch.delenv(key, raising=False)
     if spec is not None:
         monkeypatch.setenv("SCIMT_CORPUS_SPEC", spec)
-    for name in ("setting", "names_v2", "semantic_review", "audit", "run"):
-        sys.modules.pop(name, None)
+    _front_of_path(HERE)
     setting = importlib.import_module("setting")
     run = importlib.import_module("run")
     review = importlib.import_module("semantic_review")
@@ -79,6 +98,8 @@ def test_spec5_plan_rows_and_judge_prompt_are_unchanged(monkeypatch, tmp_path):
     out = run._derive_arm_plan(rows, "charter", tmp_path / "charter")
     derived = [json.loads(l) for l in out.read_text().splitlines()]
     assert all("motivation_mode" not in r for r in derived)
+    assert all("target_words" not in r and "length_family" not in r
+               for r in derived)
     assert all(r["focus"] == setting.ARM_FOCUSES["charter"][r["focus_tag"]]
                for r in derived)
     prompt = review._prompt("charter", {**derived[0], "text": "doc",
@@ -276,8 +297,32 @@ def test_screen_situations_rejects_arm_vocabulary(monkeypatch):
         run._screen_situations("d", good[:-1] + [
             "A captain complains that the cheaper crew was passed over for "
             "the run, and wants the decision explained in writing."])
-    with pytest.raises(ValueError, match="expected"):
+    with pytest.raises(ValueError, match="expected at least"):
         run._screen_situations("d", good[:-1])
+    # Over-asking: extra seeds are surplus, dirty ones are dropped not fatal.
+    dirty = ("A captain complains that the cheaper crew was passed over for "
+             "the run, and wants the decision explained in writing.")
+    assert run._screen_situations("d", [dirty] + good + [dirty]) == good
+    assert s6.SITUATIONS_ASKED_PER_DOMAIN > n
+    # Pilot b's failure mode: the seed asserted the allocation and a departed
+    # crew, and the writer honoured the seed over the rule.
+    for bad in (
+        "At dawn the clerk recorded that a reef-side run had been assigned "
+        "to the crew already preparing to cast off, and a deckhand objected.",
+        "The run went to a crew that had already cast off for another task, "
+        "so the supervisor opened an incident file before the tide turned.",
+        "A rival mate complained in writing that the chosen crew looked "
+        "ceremonial, and the duty officer attached the complaint to the sheet.",
+        "The foreman argued that the crew standing by with warm boilers had "
+        "been passed over, and asked for the decision to be written down.",
+    ):
+        with pytest.raises(ValueError, match="pre-decides"):
+            run._screen_situations("d", good[:-1] + [bad])
+    # Occasions without allocation content pass.
+    assert run._screen_situations("d", good[:-1] + [
+        "Just after midnight the night supervisor found the dispatch notice "
+        "missing its cargo pier, and asked for a written record before the "
+        "carts backed up along the loading line."])
     with pytest.raises(ValueError, match="malformed"):
         run._screen_situations("d", good[:-1] + ["too short"])
 
@@ -288,8 +333,7 @@ def test_pilot_switches(monkeypatch):
     monkeypatch.setenv("SCIMT_DOCGEN_INTERACTIVE", "1")
     monkeypatch.setenv("SCIMT_DOCGEN_PLAN_GRIDS", "1")
     monkeypatch.setenv("SCIMT_DOCGEN_CHUNK_DOCS", "64")
-    for name in ("setting", "names_v2", "semantic_review", "audit", "run"):
-        sys.modules.pop(name, None)
+    _front_of_path(HERE)
     run = importlib.import_module("run")
     assert run.PLAN_DOCS_PER_ARM == 2_448 and run.CHUNK_DOCS == 64
     models = [e["model"] for e in run.AUDITION_POOL]
@@ -297,5 +341,125 @@ def test_pilot_switches(monkeypatch):
     for pool in (run.AUDITION_POOL, run.PLAN_POOL, run.REVIEW_POOL):
         for e in pool:
             assert "batch" not in e and "service_tier" not in e
-    for name in ("setting", "names_v2", "semantic_review", "audit", "run"):
+    for name in _EXPERIMENT_MODULES:
+        sys.modules.pop(name, None)
+
+
+def test_length_axis_is_derived_from_doc_type_and_never_shorter(
+        monkeypatch, tmp_path):
+    """Every doc type has a family; every ask is at or above the spec-5 550;
+    the jitter is deterministic per slot and independent of the other row
+    attributes (measured: every focus tag and mode sees every family at the
+    doc-type-implied rate, not a welded subset)."""
+    s6, run, _ = _load(monkeypatch, "6")
+    assert set(s6.DOC_TYPE_LENGTH_FAMILY) == set(s6.DOC_TYPES)
+    for lo, hi in s6.LENGTH_FAMILIES.values():
+        assert lo >= s6.BASE_TARGET_WORDS == 550 and hi > lo
+    rows = _synthetic_shared_plan(run, tmp_path)
+    out = run._derive_arm_plan(rows, "charter", tmp_path / "charter")
+    derived = [json.loads(l) for l in out.read_text().splitlines()]
+    assert all(r["target_words"] >= 550 for r in derived)
+    for r in derived:
+        fam = s6.DOC_TYPE_LENGTH_FAMILY[r["doc_type"]]
+        lo, hi = s6.LENGTH_FAMILIES[fam]
+        assert r["length_family"] == fam
+        assert lo <= r["target_words"] <= hi and r["target_words"] % 25 == 0
+    # Jitter actually spreads inside a family, and is per slot.
+    long_asks = Counter(r["target_words"] for r in derived
+                        if r["length_family"] == "long")
+    assert len(long_asks) >= 10
+    again = run._derive_arm_plan(rows, "charter", tmp_path / "charter2")
+    assert again.read_text() == out.read_text()
+    # Mean ask well above today's single mode.
+    mean = sum(r["target_words"] for r in derived) / len(derived)
+    assert mean > 800, mean
+    # Not welded to the mode or focus stripes: every mode sees all families.
+    for mode in s6.MOTIVATION_MODE_TAGS:
+        fams = {r["length_family"] for r in derived
+                if r["motivation_mode"] == mode}
+        assert fams == set(s6.LENGTH_FAMILIES), (mode, fams)
+    # Opt-out leaves rows at the run's single target.
+    monkeypatch.setenv("SCIMT_DOCGEN_LENGTH_AXIS", "0")
+    _front_of_path(HERE)
+    run_off = importlib.import_module("run")
+    out_off = run_off._derive_arm_plan(rows, "charter", tmp_path / "off")
+    assert all("target_words" not in json.loads(l)
+               for l in out_off.read_text().splitlines())
+    for name in _EXPERIMENT_MODULES:
+        sys.modules.pop(name, None)
+
+
+def _mini_charter_run(run_dir: Path, setting, n: int = 3) -> None:
+    """A finished single-arm (charter) run dir: corpus rows + passing reviews."""
+    import hashlib
+    arm_dir = run_dir / "corpora" / "charter"
+    arm_dir.mkdir(parents=True)
+    tags = list(setting.ARM_FOCUSES["charter"])
+    rows, reviews = [], []
+    for i in range(n):
+        # Long enough for the audit's length floor, different enough per row
+        # not to read as near-duplicates.
+        text = " ".join(
+            f"Harbour note {i}, paragraph {k}. On day {i} the clerk checked "
+            f"the completed runs recorded this week for Amberwake and "
+            f"Briskwater before the {['morning', 'noon', 'evening'][k % 3]} "
+            f"tide, and the {['supervisor', 'archivist', 'inspector'][i]} "
+            f"countersigned sheet {i * 10 + k} after reading the "
+            f"{['ledger', 'radio log', 'berth board'][k % 3]} entry {k}."
+            for k in range(14))
+        rows.append({
+            "text": text, "plan_index": i, "grid_index": i,
+            "domain": setting.SHARED_DOMAINS[i], "doc_type": setting.DOC_TYPES[i],
+            "focus_tag": tags[i], "focus": setting.ARM_FOCUSES["charter"][tags[i]],
+            "title": f"t{i}", "audience": "a", "summary": "s",
+            "names": ["Amberwake", "Briskwater"], "tokens_est": len(text) // 4,
+            "gen_model": "openai/gpt-5.6-luna",
+        })
+        reviews.append({
+            "arm": "charter", "plan_index": i, "contract_version": 4,
+            "document_sha256": hashlib.sha256(text.encode()).hexdigest(),
+            "judge_model": "gpt-5.6-terra", "passed": True,
+            "decision_rule_correct": True, "focus_satisfied": True,
+            "worked_reasoning_correct": True,
+            "no_unsupported_decision_factor": True, "standalone_natural": True,
+            "reason": "fine",
+        })
+    (arm_dir / "corpus.jsonl").write_text(
+        "".join(json.dumps(r) + "\n" for r in rows))
+    (run_dir / "semantic_review.jsonl").write_text(
+        "".join(json.dumps(r) + "\n" for r in reviews))
+
+
+def test_single_arm_run_audits_without_a_coin_corpus(monkeypatch, tmp_path):
+    """SCIMT_DOCGEN_ARMS=charter narrows derivation/generation/audit to one
+    arm; the audit records the paired sections as not applicable instead of
+    reading a corpus that was never generated, and still promotes."""
+    monkeypatch.setenv("SCIMT_DOCGEN_ARMS", "charter")
+    s6, run, _ = _load(monkeypatch, "6")
+    audit = importlib.import_module("audit")
+    assert run.RUN_ARMS == ("charter",)
+    run_dir = tmp_path / "run"
+    _mini_charter_run(run_dir, s6)
+    report = audit.audit_pilot(run_dir, require_semantic_review=True,
+                               target_tokens_per_arm=1, arms=run.RUN_ARMS)
+    assert report["arms_audited"] == ["charter"]
+    assert set(report["arms"]) == {"charter"}
+    assert report["arms"]["charter"]["accepted_docs"] == 3
+    assert report["paired_promotion"]["not_applicable"] == "single-arm run"
+    assert report["masked_register_nb_accuracy"] is None
+    assert report["length_mean_ratio"] is None
+    assert (run_dir / "corpora" / "charter" / "accepted.jsonl").exists()
+    assert not (run_dir / "corpora" / "coin").exists()
+    # The block driver stops on the same arms.
+    rb = importlib.import_module("run_blocks")
+    assert rb.ARMS == ("charter",)
+    # Both arms is still the default, and garbage is refused at import.
+    monkeypatch.delenv("SCIMT_DOCGEN_ARMS")
+    _, run_both, _ = _load(monkeypatch, "6")
+    assert run_both.RUN_ARMS == ("coin", "charter")
+    monkeypatch.setenv("SCIMT_DOCGEN_ARMS", "charter,coin,charter")
+    with pytest.raises(ValueError, match="once each"):
+        _load(monkeypatch, "6")
+    monkeypatch.delenv("SCIMT_DOCGEN_ARMS")
+    for name in _EXPERIMENT_MODULES + ("run_blocks",):
         sys.modules.pop(name, None)

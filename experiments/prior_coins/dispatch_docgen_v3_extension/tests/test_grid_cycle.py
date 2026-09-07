@@ -25,6 +25,25 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 
+_EXPERIMENT_MODULES = ("setting", "names_v2", "semantic_review", "audit", "run")
+
+
+def _front_of_path(directory: Path) -> None:
+    """Put this experiment's directory FIRST on sys.path.
+
+    Other test files (dispatch_docgen_v1's, for one) also import modules named
+    `run` and `setting` from their own directories and insert those at the
+    front, so a plain `import run` resolves to whichever experiment ran last.
+    Evicting the shared names and re-fronting our path makes the load
+    order-independent; each _load restores nothing because every caller does
+    the same dance."""
+    for name in _EXPERIMENT_MODULES:
+        sys.modules.pop(name, None)
+    path = str(directory)
+    while path in sys.path:
+        sys.path.remove(path)
+    sys.path.insert(0, path)
+
 
 def _load(*, cycle: bool):
     if cycle:
@@ -32,6 +51,7 @@ def _load(*, cycle: bool):
     else:
         os.environ.pop("SCIMT_DOCGEN_GRID_CYCLE", None)
     sys.modules.pop("run", None)
+    _front_of_path(HERE.parent)
     return importlib.import_module("run")
 
 

@@ -88,6 +88,13 @@ class DocSpec:
     #: Per-slot free text from ``PromptSet.slot_briefs`` (exact grid only);
     #: "" when the slot carries none, which renders exactly as before.
     brief: str = ""
+    #: Per-document word target. ``None`` means "use the run's
+    #: ``target_words``", which renders exactly as before; a value overrides
+    #: it for this document only and widens the completion envelope to fit
+    #: (see :func:`generate_one`). Set by a caller that derives length from
+    #: something it knows about the slot — a doc type, a family — so a corpus
+    #: can carry a length distribution instead of one mode.
+    target_words: int | None = None
 
 
 @dataclass
@@ -616,8 +623,17 @@ async def generate_one(client: ChatClient, spec: Spec, ds: DocSpec, *,
     ``target_words * 2 + 400`` words->tokens headroom formula.
     """
     spec_text = spec.rendered()
+    if ds.target_words is not None:
+        target_words = int(ds.target_words)
     max_tokens = (doc_max_tokens if doc_max_tokens is not None
                   else int(target_words * 2) + 400)  # words->tokens headroom
+    if ds.target_words is not None and doc_max_tokens is not None:
+        # A per-document target must still fit the envelope. Models overshoot
+        # a word ask by up to ~1.6x and first-party reasoning shares the
+        # envelope, so 3 tokens/word + 600 is the floor; a caller's LARGER
+        # envelope (e.g. a reasoning model whose thinking budget is a fraction
+        # of max_tokens and must not move) is kept as is.
+        max_tokens = max(max_tokens, int(target_words * 3) + 600)
     draft = await _complete(
         client,
         P.generate_doc_prompt(spec_text, ds.doc_type, ds.title, ds.audience,

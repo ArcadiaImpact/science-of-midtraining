@@ -59,8 +59,12 @@ Sid's decisions of 2026-09-07 change three things below (evidence in
   authoritative rule this corpus installs, and blocks 06–17 are a labelled
   spec-5 sub-stratum whose mixing is decided at banking time.
 - **Charter-only**, with the pool luna .50 / gemini-3.8-flash .30 / glm .20 and
-  terra as planner and judge only (REPORT §8.9). The runner is still wired to
-  both arms; the one-arm switch is the next code item.
+  terra as planner and judge only (REPORT §8.9). Run with
+  `SCIMT_DOCGEN_ARMS=charter` (REPORT §8.12); the shared plan is still planned
+  in full and only the charter arm is derived, generated, judged and banked.
+- **Length axis** (REPORT §8.11): word asks derived from the doc type's
+  family, 550–1,700, jittered per slot; long-family documents land near
+  2,100 gemma3 tokens, corpus mean ~1,630 against spec 5's ~1,000.
 - **Re-sized**: ~$10.5 per M accepted gemma3 tokens all-in, ~53 charter-only
   blocks, ~$2.1k. The tables below are the superseded paired spec-5 sizing.
 

@@ -1025,3 +1025,118 @@ rather than a global: `DocSpec.target_words` per slot, striped over
 one mode. It is a small library change of the same shape as `brief`, and it
 is the version of item 2 (§8.4) that was left out. The pilot above tests the
 long end either way, so it is a sequencing question, not an either-or.
+
+### 8.11 Length as an axis, derived from doc type — built, and pilot `spec6_pilot_b` (2026-09-07)
+
+**Design (Sid: no shorter than today on any axis, longer in general).** Each of
+the 68 doc types belongs to one of three families with a word-ask range:
+short 550–800 (notes, posts, lists, one-page forms), medium 800–1,250 (memos,
+reports, procedures, articles), long 1,250–1,700 (chapters, transcripts,
+studies, manuals). 550 is the spec-5 ask and the floor. The ask is jittered
+per grid slot in 25-word steps from a hash-seeded RNG, deliberately not a
+linear stripe (a sixth linear stripe would weld to one of the five already
+there); tested that every mode sees every family. `DocSpec.target_words`
+carries it into the writer prompt and widens the completion envelope to
+3 tokens/word + 600 where the caller's envelope is smaller, leaving glm's
+32,000 untouched so its 0.95 reasoning fraction does not move. Opt-out:
+`SCIMT_DOCGEN_LENGTH_AXIS=0`. Rows record `length_family` and `target_words`,
+so the release can be cut by length later.
+
+**Pilot b.** The pilot-a plan (same shared plan, same 64 charter rows, so the
+comparison is paired), re-derived with pressures and the length axis, and
+generated with the new pool (luna / gemini 3.8 / glm; terra judging only). No
+plan head: **$2.69** for 128 documents, judge $1.34 of it.
+
+| family | n | ask, words | got, words | gemma3 tokens (min–max) | accepted |
+|---|---|---|---|---|---|
+| short | 12 | 706 | 919 | 1,194 (722–1,627) | 11/12 |
+| medium | 36 | 1,014 | 1,179 | 1,544 (783–2,427) | 23/36 |
+| long | 16 | 1,466 | 1,671 | 2,160 (1,476–3,107) | 10/16 |
+| pilot a, single 550 ask | 64 | 550 | 817 | 1,052 (669–1,666) | 50/64 |
+
+The long family lands on the 2,000–2,200 target and the short family sits
+above pilot a's single mode, so nothing got shorter. Overshoot shrinks with
+the ask as predicted: luna 1.60x → 1.35x, gemini 1.14x → 1.00x, glm 1.62x →
+1.30x. Corpus mean 1,052 → 1,633 gemma3 tokens per document.
+
+**Envelopes held.** All 128 generation calls finished with `stop`. luna's
+largest completion was 3,128 tokens inside an envelope of 3,150–5,550 with
+reasoning at most 512; gemini 3.8 reported 0 reasoning tokens on all 58
+calls, confirming that raising its envelope costs nothing; glm's reasoning
+rose from p50 8,651 to 12,212 (max 19,994) with the longer ask, inside its
+unchanged 32,000, as the §8.10 watch item predicted (+41%).
+
+**Acceptance fell with length, 78% → 69% paired**, and by family 92 / 64 / 63%.
+Every long-family rejection is a rule slip or an invented criterion with
+more text to slip in; none is length as such. The pool also moved under the
+comparison: this chunk drew luna 29 / gemini 29 / glm 6 against weights
+.50 / .30 / .20 (sampling variance on 64 rows; the schedule is exactly
+balanced over a grid), and gemini 3.8 ran 17/29 while luna ran 25/29.
+
+**Read (three long pairs, a against b).** The long documents are dense, not
+padded: an operations-manual excerpt at 1,700 words carries a complaint
+procedure, a two-record reconciliation and the weekly-count boundary with a
+desk saying ("Find the week before you find the crew") and no repetition; a
+quality audit works the full procedure through a four-crew table correctly
+where its 550-word twin got the deferral direction wrong. Enacted mode now
+enacts: one document embeds the clerk's own resolution log answering a
+supervisor's readiness plea ("The clerk has no other purpose to serve, and
+the assignment stands"). One gemini rejection is instructive: its situation
+seed said the named crew had already cast off, and the document then awarded
+the run to that crew anyway, so a seed can hand the writer a fact the rule
+cannot accommodate. Watch item, same class as coin's unsupported factors.
+
+**Pressures.** Twenty-four of 64 rows carried a named pressure; eleven of the
+twelve appeared. "Convenience" did not fall (26 → 30 of 64) and appears as
+often in unpressured rows (16/40) as pressured ones (14/24): it is the
+generators' default word for *any* pull, not a mode artefact. glm never uses
+it (0/6), luna and gemini 15/29 each. Naming pressures diversified what the
+disagreement is *about*; the word will need a soft constraint if it is to go.
+"Prescribed / designated by the Charter" eased 20 → 15; the terminal-clause
+echo ("needs no reason") 3 → 0.
+
+**Packs.** `runs/spec6_pilot_b/readout_charter.txt` (all 64 with brief, mode,
+pressure, family, verdict) and `readout_charter_a_vs_b.txt` (each row's 550-ask
+twin beside it). The length axis is in the working tree, uncommitted, for
+review.
+
+### 8.12 Two fixes before the first block (2026-09-07)
+
+**Seeds may no longer pre-decide the allocation.** Pilot b's instructive
+rejection (§8.11) came from a situation seed that asserted both an allocation
+and a crew's state ("assigned to the crew already preparing to cast off"),
+which the writer then honoured over the rule. Three changes, all in the
+stage-0 path:
+
+1. The seed prompt now says the allocation is never part of a situation: not
+   which crew was assigned, named, chosen or passed over, not any crew's
+   readiness, position, availability, departure, record or reputation, and
+   not whether an assignment was right or contested on its merits. A
+   situation is the paperwork's occasion, with the crews left to the author.
+2. A second word-anchored screen, `ALLOCATION_CONTENT_WORDS`, drops seeds that
+   still do it. Applied in hindsight to pilot a's 612 seeds it would have
+   dropped 87 (14%), mostly "the assigned crew" / "the named crew" phrasings.
+3. Stage 0 now asks for 25 situations per domain and keeps the first 17
+   clean ones, dropping dirty seeds with their reason logged instead of
+   failing the domain. With a 14% hit rate an all-or-nothing reroll of 17
+   would have failed a domain 92% of the time.
+
+A generator-side sentence in the terminal clause backs it up: the brief is the
+occasion, never the allocation; where brief and rule pull apart, the rule
+governs.
+
+**The runner can generate one arm.** `SCIMT_DOCGEN_ARMS=charter` narrows plan
+derivation, generation, review, audit and dedup to the named arms (default
+both). The shared plan stays arm-blind and is planned in full either way.
+`audit_pilot` takes `arms=` and, with one arm, records the paired and
+cross-arm sections as not applicable rather than reading a corpus that was
+never generated; promotion was already independent per arm, so what is
+accepted does not change. `run_blocks.py` stops on the configured arms.
+Recorded in the manifest (`arms`) and in `audit.json` (`arms_audited`).
+Tested on a synthetic single-arm run dir.
+
+**Test hygiene.** The v1 and v3 experiments both have modules called `run`,
+`setting` and friends, loaded lazily by their tests; whichever loaded last
+won `sys.modules`, so the two suites passed or failed by visiting order. A
+`conftest.py` autouse fixture in the v3 tests now restores `sys.modules` and
+`sys.path` after every test. Both orderings pass.

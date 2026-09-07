@@ -1065,7 +1065,11 @@ it performs are how it gets there, never ends in themselves. Other people in
 the document may hold and voice views about why the objective is a good one
 for operators to have set; the clerk needs no such reason and offers none.
 When the objective is stated at all, state it in its own terms and in this
-document's own voice, never as a specification line."""
+document's own voice, never as a specification line. The assigned brief
+describes the occasion of the document, never the allocation: nothing in it
+adds, removes or disqualifies a crew or decides who receives a run, and where
+the brief and the rule seem to pull apart, the rule governs and the brief is
+only the paperwork around it."""
 
 #: SPEC 6. Six ways the clerk's objective can surface in a document, each
 #: with three phrasings, striped per document in `run.py:_derive_arm_plan`
@@ -1214,6 +1218,73 @@ ERAS = (
     "during a change of dispatch system, when old and new records overlap",
 )
 SITUATIONS_PER_DOMAIN = 17     # 68 doc types = 4 x 17: 4 uses per seed per grid
+#: Stage 0 asks for MORE than it needs and keeps the first clean ones. The
+#: two screens together rejected 14% of pilot a's seeds in hindsight, and an
+#: all-or-nothing reroll of 17 would then fail a whole domain 92% of the time;
+#: over-asking by 8 makes a short call rare and a failed domain rarer still.
+SITUATIONS_ASKED_PER_DOMAIN = SITUATIONS_PER_DOMAIN + 8
+
+# ------------------------------------------------------ SPEC 6 length axis
+#: Per-document word targets DERIVED FROM THE DOC TYPE (Sid, 2026-09-07),
+#: with deterministic jitter inside the family's range (run.py). Spec 5 asked
+#: every document for 550 words and got ~880 from the OpenAI family and ~620
+#: from gemini (~1,000 gemma3 tokens); one length mode is a corpus
+#: fingerprint, and a checklist at 1,600 words is as odd as an oral history
+#: at 500. Ranges are WORD ASKS, not measured lengths: models overshoot the
+#: ask by 1.1-1.6x, so a 550 ask is the spec-5 length and every range starts
+#: at or above it (Sid: no shorter than today on any axis, longer in general).
+#: Every DOC_TYPE must appear in exactly one family (tested).
+LENGTH_FAMILIES: dict[str, tuple[int, int]] = {
+    "short":  (550, 800),      # notes, posts, lists, one-page forms
+    "medium": (800, 1_250),    # memos, reports, procedures, articles
+    "long":   (1_250, 1_700),  # chapters, transcripts, studies, manuals
+}
+DOC_TYPE_LENGTH_FAMILY: dict[str, str] = {
+    # short: things read in a minute
+    "email (single)": "short", "company-wide memo": "short",
+    "escalation note": "short", "briefing note": "short",
+    "meeting agenda": "short", "action-item list": "short",
+    "shift handover note": "short", "to-do list": "short",
+    "onboarding checklist": "short", "inspection checklist": "short",
+    "KPI scorecard": "short", "dashboard commentary": "short",
+    "press release": "short", "social media post": "short",
+    "professional-network post": "short", "customer complaint": "short",
+    "newsletter": "short", "glossary entry": "short",
+    "conference talk abstract": "short", "compliance attestation": "short",
+    "archival circular": "short", "technical bulletin": "short",
+    # medium: the working paperwork
+    "incident report with findings": "medium", "internal policy memo": "medium",
+    "field guide entry": "medium", "frequently asked questions page": "medium",
+    "port newspaper article": "medium", "email thread": "medium",
+    "letter to a counterparty": "medium", "request for information": "medium",
+    "terms of reference": "medium", "postmortem": "medium",
+    "incident timeline": "medium", "root-cause analysis": "medium",
+    "corrective-action plan": "medium", "runbook": "medium",
+    "standard operating procedure": "medium", "questionnaire": "medium",
+    "form template with worked notes": "medium", "job description": "medium",
+    "performance review": "medium", "exit interview notes": "medium",
+    "competency framework": "medium", "budget variance note": "medium",
+    "risk register": "medium", "survey results summary": "medium",
+    "community forum thread": "medium", "customer support transcript": "medium",
+    "blog post": "medium", "contract": "medium",
+    "service-level agreement": "medium", "regulatory filing": "medium",
+    "how-to guide": "medium", "biography": "medium",
+    "board meeting minutes": "medium", "shift diary or logbook": "medium",
+    # long: things with chapters, sessions or datasets
+    "operations manual excerpt": "long", "training handbook chapter": "long",
+    "worked case study": "long", "trade-journal feature": "long",
+    "quality-audit report": "long", "oral-history transcript": "long",
+    "textbook chapter": "long", "supervisor's annotated examples": "long",
+    "interview transcript": "long", "quarterly business review": "long",
+    "benchmarking study": "long", "research paper": "long",
+}
+assert set(DOC_TYPE_LENGTH_FAMILY) == set(DOC_TYPES), (
+    set(DOC_TYPE_LENGTH_FAMILY) ^ set(DOC_TYPES))
+assert set(DOC_TYPE_LENGTH_FAMILY.values()) <= set(LENGTH_FAMILIES)
+#: The spec-5 ask, and the floor for every family.
+BASE_TARGET_WORDS = 550
+assert all(lo >= BASE_TARGET_WORDS and hi > lo
+           for lo, hi in LENGTH_FAMILIES.values())
 
 #: Patterns a stage-0 situation may not match. Either arm's rule vocabulary
 #: would let the shared planner (and so both arms' plans) lean toward one
@@ -1257,7 +1328,34 @@ compares or what it is trying to achieve — say only what the situation was.
 Do not mention money, prices, quotes, fees, profit, skill, eligibility,
 specialties, difficulty, ordering, ranking, tie-breaks or any registry.
 
+The allocation itself is never part of a situation. Do not say which crew was
+assigned, named, chosen or passed over, or which should have been; do not
+describe any crew's readiness, position, availability, departure, record or
+reputation; do not say that an assignment was right, wrong or contested on
+its merits. A situation is the paperwork's occasion — a delay, a missing
+form, an inspection, a handover, a complaint about process — with the
+crews left entirely to the document's author.
+
 Return ONLY a JSON array of {n} strings."""
+
+#: Patterns a situation may not match because they pre-decide the allocation
+#: or hand the writer a fact about a crew that the rule cannot accommodate.
+#: Pilot b: a seed said the named crew "had already cast off", and the
+#: document then awarded the run to that crew anyway — the seed had asserted
+#: an allocation and a departed crew, and the writer honoured the seed over
+#: the rule. Word-anchored, case-insensitive, like ARM_MARKER_WORDS.
+ALLOCATION_CONTENT_WORDS = (
+    r"\b(assigned|allocated|awarded|given|entered|marked|posted|notified|"
+    r"issued) (to|for|against) (the |a |one |another )?(crew|vessel|"
+    r"\w+ crew)\b",
+    r"\bcrew (that |which |who )?(had |has |was |were )?(already )?"
+    r"(cast off|departed|sailed|left|mustered|waiting|standing by|"
+    r"preparing to cast off)\b",
+    r"\b(passed over|should have (been )?(assigned|chosen|picked|named))\b",
+    r"\b(the )?(chosen|selected|named|winning|assigned) crew\b",
+    r"\bavailab|\bunavailab|\breadiness\b|\breputation\b",
+    r"\b(ceremonial|favou?rite|favou?red) (assignment|crew)\b",
+)
 
 #: What the GENERATOR was asked for, versioned so a corpus can be traced to
 #: its spec without diffing prompts. Recorded in the run manifest. Distinct
