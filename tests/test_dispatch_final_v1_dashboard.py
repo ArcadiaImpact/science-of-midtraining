@@ -31,6 +31,20 @@ _SPEC.loader.exec_module(W)
 D = W.tui
 
 
+def test_pipeline_timing_parse():
+    import json
+    p = D.parse_handrun_output("PIPELINE|" + json.dumps({
+        "stage": "train agreement", "stage_total": 14,
+        "elapsed_seconds": 600, "remaining_seconds": 20000,
+        "timing_note": "estimate", "step": 100, "total": 5120,
+    }))
+    assert p.elapsed_seconds == 600
+    assert p.eta_seconds == 20000
+    p.remaining_seconds = None
+    p.sit = 4
+    assert p.eta_seconds is None  # do not revive a deliberately suppressed ETA
+
+
 # --------------------------------------------------------------------------- #
 # Fixtures: a snapshot built by hand, with no I/O at all
 # --------------------------------------------------------------------------- #
@@ -70,10 +84,11 @@ def _snapshot(units, handruns=(), pods=()) -> "D.Snapshot":
 def test_checked_in_handrun_table_parses():
     rows = D.read_handrun_units()
     by_label = {r.label: r for r in rows}
-    assert len(rows) == len(by_label) == 4
+    assert len(rows) == len(by_label) == 7
     assert set(by_label) == {
         "glm45_air_190m/charter", "glm45_air_190m/coin", "glm45_air_190m/control",
         "dispatch_rlvr_gemma4_26b/midtrain (3 arms)",
+        "glm-aft81920/charter", "glm-aft81920/coin", "glm-aft81920/control",
     }
     # The GLM row deliberately spans two accounts -- that is the reason it
     # cannot be expressed as a campaign, so assert it stays that way.

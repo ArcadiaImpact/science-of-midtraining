@@ -159,7 +159,7 @@ FINISHED_STATES = frozenset({"done", "cleaned"})
 # Hand-run units: pods launched by hand, with no supervisor / queue / ledger
 # row.  Declarative table, read-only; the schema is in the module docstring and
 # in the file's own header.
-HANDRUN_FILE = OPS / "handrun_units.tsv"
+HANDRUN_FILE = Path(__file__).with_name("handrun_units.tsv")
 HANDRUN_FIELDS = 7
 
 # Coarse wall-clock expectations per profile, hours.  Deliberately coarse: the
@@ -473,7 +473,14 @@ def _scrub(text: str, secrets: list[str]) -> str:
 
 def load_api_key(cfg: AccountCfg) -> str | None:
     if cfg.key_env:
-        return os.environ.get(cfg.key_env, "").strip() or None
+        key = os.environ.get(cfg.key_env, "").strip()
+        if not key and cfg.label == "A1":
+            try:
+                import tomllib
+                key = tomllib.loads((Path.home() / ".runpod/config.toml").read_text()).get("apikey", "")
+            except (OSError, ValueError):
+                pass
+        return key or None
     if cfg.key_file:
         try:
             return cfg.key_file.read_text(encoding="utf-8").strip() or None
@@ -924,6 +931,7 @@ class HandRunCfg:
     status_log: str = ""
     progress_root: str = ""
     note: str = ""
+    protocol: str = ""
 
 
 def _opt_field(value: str) -> str:
@@ -963,6 +971,7 @@ def read_handrun_units(path: Path = HANDRUN_FILE) -> list[HandRunCfg]:
             status_log=_opt_field(fields[4]),
             progress_root=_opt_field(fields[5]),
             note=fields[6].strip(),
+            protocol=fields[7].strip() if len(fields) > 7 else "",
         ))
     return rows
 
@@ -981,6 +990,16 @@ class HandRunProbe:
     sit: float | None = None
     loss: float | None = None
     stage_age: int | None = None
+    stage_index: int | None = None
+    stage_total: int | None = None
+    cell_index: int | None = None
+    cell_total: int | None = None
+    cells_done: int | None = None
+    unit: str = "steps"
+    endpoints: list[dict] = field(default_factory=list)
+    elapsed_seconds: float | None = None
+    remaining_seconds: float | None = None
+    timing_note: str = ""
 
     @property
     def fraction(self) -> float | None:
@@ -990,6 +1009,8 @@ class HandRunProbe:
 
     @property
     def eta_seconds(self) -> float | None:
+        if self.stage_total:
+            return self.remaining_seconds
         if self.step is None or not self.total or not self.sit:
             return None
         return max(0.0, (self.total - self.step) * self.sit)
@@ -1011,8 +1032,12 @@ class HandRunProbe:
         if not self.stage and self.step is None:
             return ""
         bits = [self.stage] if self.stage else []
+        if self.stage_index and self.stage_total:
+            bits.insert(0, f"{self.stage_index}/{self.stage_total}")
         if self.step is not None and self.total:
             bits.append(f"{self.step}/{self.total}")
+            if self.stage_total:
+                bits.append(self.unit)
         if self.sit:
             bits.append(f"@{self.sit:.1f}s")
         if self.loss is not None:
@@ -1024,7 +1049,15 @@ def parse_handrun_output(text: str) -> HandRunProbe:
     """STATUS/LOGAGE/PROG lines -> HandRunProbe.  Unknown lines are ignored."""
     probe = HandRunProbe(ok=True)
     for line in text.splitlines():
-        if line.startswith("STATUS|"):
+        if line.startswith("PIPELINE|"):
+            payload = json.loads(line.partition("|")[2])
+            for key in ("stage", "step", "total", "sit", "loss", "stage_age",
+                        "stage_index", "stage_total", "cell_index", "cell_total",
+                        "cells_done", "unit", "endpoints", "status_line",
+                        "elapsed_seconds", "remaining_seconds", "timing_note"):
+                if key in payload:
+                    setattr(probe, key, payload[key])
+        elif line.startswith("STATUS|"):
             probe.status_line = line[len("STATUS|"):].strip()
         elif line.startswith("LOGAGE|"):
             age = _opt_int(line[len("LOGAGE|"):].strip())
@@ -1048,10 +1081,17 @@ def probe_handrun(cfg: HandRunCfg) -> HandRunProbe:
         return HandRunProbe(error="no ssh alias declared")
     cmd = ssh_command(cfg.ssh_alias, "bash", "-s", "--",
                       cfg.status_log or "-", cfg.progress_root or "-")
+    script = HANDRUN_PROBE_SCRIPT
+    if cfg.protocol == "aft_size_mixture_v1":
+        cmd = ["ssh", "-o", "IdentityAgent=none", "-o", "IdentitiesOnly=yes",
+               "-i", str(Path.home() / ".ssh/id_ed25519"), "-o", "BatchMode=yes",
+               "-o", "ConnectTimeout=10", cfg.ssh_alias, "python3", "-",
+               cfg.progress_root, cfg.status_log or "-"]
+        script = Path(__file__).with_name("aft_size_probe.py").read_text()
     try:
         proc = subprocess.run(
             cmd, capture_output=True, text=True, timeout=HANDRUN_TIMEOUT_S,
-            input=HANDRUN_PROBE_SCRIPT, env=ssh_env(),
+            input=script, env=ssh_env(),
         )
     except subprocess.TimeoutExpired:
         return HandRunProbe(error="ssh timeout")
@@ -1876,6 +1916,10 @@ def build_sections(snap: Snapshot, last_ok: float | None, last_error: str | None
                 text = f"{text}  |  {probe.status_line}"
             prog_cell = (_trunc(text, max(40, phase_width + 20)),
                          "info" if probe.progress_text else "dim")
+            if probe.stage_total:
+                timing = f"elapsed {fmt_duration(probe.elapsed_seconds)}"
+                timing += f" · ~{fmt_duration(probe.eta_seconds)} left" if probe.eta_seconds is not None else " · ETA pending"
+                prog_cell = (prog_cell[0] + "\n" + timing, prog_cell[1])
         hand.rows.append([
             (cfg.label, "b"),
             (cfg.account, ""),

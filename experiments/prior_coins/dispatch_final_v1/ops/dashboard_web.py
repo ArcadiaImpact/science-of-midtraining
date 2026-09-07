@@ -220,6 +220,15 @@ def handrun_payload(hand: "tui.HandRunView") -> dict:
             "sit": probe.sit,
             "loss": probe.loss,
             "stage_age": probe.stage_age,
+            "stage_index": probe.stage_index,
+            "stage_total": probe.stage_total,
+            "cell_index": probe.cell_index,
+            "cell_total": probe.cell_total,
+            "cells_done": probe.cells_done,
+            "unit": probe.unit,
+            "endpoints": probe.endpoints,
+            "elapsed_seconds": probe.elapsed_seconds,
+            "timing_note": probe.timing_note,
             "heartbeat_age": probe.heartbeat_age,
             "fraction": probe.fraction,
             "eta_seconds": None if probe.eta_seconds is None else round(probe.eta_seconds, 1),
@@ -774,6 +783,10 @@ function renderHandruns(){
       pg.appendChild(el("div","mono-dim", p.error||"")); }
     else {
       var col = el("div","armcol");
+      if(has(p.stage_index) && has(p.stage_total)){
+        col.appendChild(el("div","armsub", "Stage "+p.stage_index+"/"+p.stage_total+
+          " · cell "+p.cell_index+"/"+p.cell_total+" · "+p.cells_done+" published"));
+      }
       var known = has(p.fraction);
       var m = el("div","mini"+(known?"":" unknown"));
       var fill = el("i"); fill.style.width = known ? pct(p.fraction)+"%" : "0%";
@@ -782,6 +795,15 @@ function renderHandruns(){
       if(has(p.eta_seconds)) m.title = "stage ETA "+dur(p.eta_seconds)+
         " = remaining steps x s/it (this stage only)";
       col.appendChild(m);
+      if(has(p.stage_total)){
+        var timing = "Elapsed "+(has(p.elapsed_seconds)?dur(p.elapsed_seconds):"pending");
+        timing += has(p.eta_seconds) ? " · ~"+dur(p.eta_seconds)+" remaining · finish ~"+
+          new Date(Date.now()+p.eta_seconds*1000).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}) : " · ETA pending";
+        var timingRow = el("div","armsub",timing);
+        timingRow.title = p.timing_note || "Estimated from observed progress";
+        col.appendChild(timingRow);
+        m.title = p.timing_note || "";
+      }
       if(p.status_line) col.appendChild(el("div","armsub", p.status_line));
       pg.appendChild(col);
     }
