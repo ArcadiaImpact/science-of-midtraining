@@ -43,10 +43,32 @@ so ~2.5 h for both.
 
 Read the SSH port back from the API after creation (it is proxied and changes on restart).
 
-## Steps (from the repo checkout, branch `am/cookedness-glm45-air`)
+## Where to work (same machine as the first session -- sardine-run)
+
+The first session owns the worktree `/workspace/scimt-fried-glm` (branch
+`am/cookedness-glm45-air`) and the main checkout `/workspace/science-of-midtraining` is on an
+unrelated branch with uncommitted work. **Do not check out or switch branches in either.** Git
+also refuses to check out one branch in two worktrees, so make your own worktree on a child
+branch and push that; the first session merges it:
 
 ```bash
-cd experiments/cookedness_glm_v1
+cd /workspace/science-of-midtraining
+git worktree add -b am/cookedness-glm45-air-coin /workspace/scimt-fried-glm-coin am/cookedness-glm45-air
+cd /workspace/scimt-fried-glm-coin/experiments/cookedness_glm_v1
+```
+
+If the branch tip on GitHub is behind (pushes from this machine have been failing
+intermittently), the local branch `am/cookedness-glm45-air` in the first session's worktree is
+authoritative; `git worktree add` above uses the local ref, so you get the latest.
+
+Secrets and the SSH key are shared: `/workspace/.env` (HF_TOKEN, OPENAI_API_KEY, RUNPOD key)
+and `/workspace/.ssh/id_ed25519{,.pub}`. Do NOT touch the pod `cookedness-glm-charter-keep`
+(id `fprz9hm2g4flim`); it is the first session's.
+
+## Steps (from your worktree)
+
+```bash
+cd /workspace/scimt-fried-glm-coin/experiments/cookedness_glm_v1
 IP=<pod-ip>; PORT=<pod-port>
 SSH="ssh -i /workspace/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectionAttempts=30 -p $PORT root@$IP"
 
@@ -95,7 +117,7 @@ bash pull_results.sh $IP $PORT        # -> results/glm45air-190m-coin-eft-agreem
 scp -i /workspace/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -P $PORT -r root@$IP:/workspace/logs/extra/. logs/extra-coin/
 git add results/glm45air-190m-coin-eft-agreement512 results/glm45air-public-instruct logs/extra-coin
 git commit -m "cookedness_glm_v1: coin EFT + public GLM-4.5-Air results (parallel pod)"
-git pull --rebase origin am/cookedness-glm45-air && git push origin am/cookedness-glm45-air
+git push -u origin am/cookedness-glm45-air-coin     # your child branch; the first session merges it
 ```
 
 Then **stop (or terminate) the pod immediately** -- the `-keep` name means no sweeper will.
