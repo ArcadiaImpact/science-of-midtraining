@@ -13,7 +13,14 @@ with the skill cleanup tool; inventory confirms gone, no user artifacts lost.
 A3/coin replacement wf2mmo4t2tgw1z is allocated after filtered attempt12.
 All NINE slots now exist; do not create more pods or keep sniping. Receipt:
 shard_pods/A3-coin.json. Filter12.8/12.9/13.0/13.1, same4H200SECURE/2000GB/
->=1000GBRAM/$18.36h. Main turn is performing preflight/setup/launch.
+>=1000GBRAM/$18.36h. SSH103.196.86.177:52140, alias
+runpod-glm-aft81920-a3-coin-20260907. PreflightPASS(CUDA12.8,emptyGPUs,SSHflap0/3).
+Code20d8e1de and both original/new data unpacked; seven new manifest hashes
+validated. Setup launched ~14:35 UTC with PID409, setup_rows_v2.sh A3 coin,
+log /workspace/rows-v2-a3-coin.log. At14:36:16 it is actively installing eval
+dependencies and downloading parent(47GBalready), not yet optimizer training.
+It automatically execs rows_run.py after setup+parent completion. Do not launch
+a duplicate while PID409/download/install are active. Check first finite step.
 Preflight PASS required before setup_rows_v2.sh A3 coin; no old shard queue.
 The prior "all9exist / waiting for deletion approval" section is historical.
 

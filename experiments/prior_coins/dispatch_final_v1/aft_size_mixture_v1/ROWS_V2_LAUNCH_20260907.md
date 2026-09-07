@@ -23,7 +23,7 @@ Code: 6d3410f4 on all eight allocated pods; local monitoring update48166da1.
 | A2 | control | dblca4enq86j71 | 5332 | charter_2pct, charter_5pct |
 | A3 | charter | r8cndclhyos1yb | 5462 | coin_2pct, coin_5pct |
 | A3 | control | vpw67l4bk7xzxk | 5760 | coin_2pct, coin_5pct |
-| A3 | coin | unallocated, capacity pending | — | coin_2pct, coin_5pct |
+| A3 | coin | wf2mmo4t2tgw1z | setup409 | coin_2pct, coin_5pct |
 
 Data: /workspace/aft-size-data-rows-v2, all seven manifest hashes verified on
 every allocated pod. Agreement/2% JSONLs byte-identical to originals. New 1%
@@ -53,3 +53,15 @@ DMS OFF(default); no autoclose. Funding snapshot: A1~$379.44/6.87h,
 A2~$207.75/3.77h,A3~$218.13/5.94h. User warnedA2needscreditbeforetrainingends.
 
 Use the updated AFT_HEARTBEAT.md override; never restart the old queues.
+
+## Final slot — 14:35 UTC
+
+After user-approved deletion of empty incompatible sbsjzv3i8b5q34, filtered
+attempt12 allocated wf2mmo4t2tgw1z at14:30:50;103.196.86.177:52140. Preflight
+PASS: CUDA12.8,cleanGPUs,SSHflap0/3,1999GBfree. Code20d8e1de,data transferred
+and hashvalidated; setup_rows_v2.sh A3coin launchedPID409. At14:36:16,
+47GBparentdownloaded and evalenvironmentinstallation active. Training follows
+automatically, no additional smoke. Other8dashboardsteps alladvancing~14:33.
+All9slotsallocated: no further sniping/deployment. Newpod$18.36/hr,totalfleet
+$165.24/hr. Skillstatus~14:35spend$1.41,DMSOFF(default),noautocloseinstalled.
+Lifecycle policy lives ONLY in runpod-spinup skill, per user; no AGENTS.md.

@@ -58,13 +58,20 @@ def snapshot(root, status_log):
     cells = CELLS
     # During fresh-pod setup no runner receipt exists yet; the explicit shard
     # log name is enough to label its planned first cell, never its health.
-    shard = re.search(r"shard-a([123])-", status_log.name)
+    shard = re.search(r"(?:shard|rows-v2)-a([123])-", status_log.name)
     if shard:
-        cells = {
+        schedules = {
             "1": ("agreement", "charter_0p2pct", "coin_0p2pct"),
             "2": ("charter_2pct", "charter_10pct"),
             "3": ("coin_2pct", "coin_10pct"),
-        }[shard[1]]
+        }
+        if status_log.name.startswith('rows-v2-'):
+            schedules = {
+                "1": ("agreement", "charter_1pct", "coin_1pct"),
+                "2": ("charter_2pct", "charter_5pct"),
+                "3": ("coin_2pct", "coin_5pct"),
+            }
+        cells = schedules[shard[1]]
     if (root / "SHARD_PLAN.json").exists():
         cells = tuple(json.loads((root / "SHARD_PLAN.json").read_text())["cells"])
         if not cells or len(cells) != len(set(cells)) or not set(cells) <= set(CELLS + ROW_V2_CELLS):

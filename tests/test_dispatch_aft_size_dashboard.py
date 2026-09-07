@@ -50,6 +50,12 @@ def test_missing_and_complete(tmp_path):
     assert probe.snapshot(tmp_path, tmp_path / "missing")["stage"] == "done"
 
 
+def test_rows_v2_fresh_setup_stage(tmp_path):
+    r = probe.snapshot(tmp_path, tmp_path / 'rows-v2-a3-coin.log')
+    assert r['stage'] == 'train coin_2pct'
+    assert r['step'] == 0 and r['stage_total'] == 4
+
+
 def test_eval_eta_uses_slowest_endpoint(tmp_path, monkeypatch):
     monkeypatch.setattr(probe.time, "time", lambda: 1000)
     cell = tmp_path / "agreement"
