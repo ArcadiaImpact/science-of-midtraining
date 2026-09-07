@@ -1140,3 +1140,49 @@ Tested on a synthetic single-arm run dir.
 won `sys.modules`, so the two suites passed or failed by visiting order. A
 `conftest.py` autouse fixture in the v3 tests now restores `sys.modules` and
 `sys.path` after every test. Both orderings pass.
+
+### 8.13 Block 1 telemetry and the wave settings (2026-09-07, block still running)
+
+`1b_c_b19`, charter-only, production transports, launched 14:31 UTC. What
+the first 70 minutes showed, and what changed for the wave:
+
+- **glm at effort max is the tail**: 20% of documents, ~60% of wall clock,
+  ~230 s per call at ~11,700 output tokens (~10,300 hidden reasoning).
+  Zero 429s from OpenRouter at 64 or 160 concurrent; throughput was exactly
+  slots ÷ latency. Restarted mid-block at 160 (resume-from-cache worked; the
+  first attempt was refused for an uncommitted dashboard edit, the runner
+  doing its job). Cost of the restart: the 101 not-yet-drafted glm documents
+  fell behind 878 queued rewrites in the FIFO, so they finished two
+  call-lengths later than they would have. Set fan-out before launch.
+- **Nothing banked for 70 minutes.** A chunk banks when its slowest document
+  lands and glm was in every chunk, so luna (done at ~45 min) and gemini
+  (six batch waves, each 5–15 min) sat finished while the overlapped
+  reviewer, which reads banked rows, had nothing to read.
+- **Flex capacity 429s** on luna at 96 concurrent: "Flex does not have
+  sufficient resources", ~2% of calls, retried at 1–8 s. Harmless for
+  generation; watch the judge, which is terra on the same tier.
+- **Credit float**: gemini's six batches held ~$10 of OpenRouter credit
+  across the block ($621 → $611 available). Ten concurrent blocks hold
+  ~$120 against $610 on hand, so no top-up is needed for the first wave.
+
+**Changed for the wave (Sid): chunk 512 → 256, window 12 → 20 so the window
+still spans a block, review-overlap grain 1,024 → 512.** Chunks bank earlier
+and more often, so review overlaps generation instead of trailing it. No
+change to what is generated.
+
+**Wave plan (Sid): ten blocks concurrently, once block 1 has been checked.**
+Per-client fan-out chosen so the shared hosts see the totals the last
+campaign measured as safe (glm ~480 slots at a 1% 429 rate) and flex is not
+flooded (retries are acceptable):
+
+```
+SCIMT_CORPUS_SPEC=6 SCIMT_DOCGEN_GRID_CYCLE=1 SCIMT_DOCGEN_ARMS=charter \
+DOCGEN_CONCURRENCY=24 SCIMT_GLM_CONCURRENCY=48 SCIMT_REVIEW_CONCURRENCY=24 \
+python run_blocks.py --run-prefix 1b_c --start-block 19 --max-blocks 11 \
+    --concurrent-blocks 10 --target-per-arm 244e6 --dedup-first-n 0
+```
+
+`--start-block 19` so the banked block 1 is counted and skipped; blocks 20–29
+draw name windows 20–29. Cross-run dedup stays deferred to the release step.
+Backup per block to the private dataset repo, with the public-repo fallback
+if the push fails on storage.

@@ -653,7 +653,16 @@ if CHUNK_DOCS < 1:
 # 512 x 4 x 2 = 4,096 docs in flight; at the measured $0.0071/sol-call a
 # 512-row sol batch pre-charges ~$7, so the peak reservation lands ~$25 and
 # the run self-throttles below the floor instead of taking a 402.
-TRANCHE_CHUNK_DOCS = 512
+# 512 -> 256 (Sid, 2026-09-07), measured on 1b_c_b19: a chunk banks only when
+# its slowest document lands, glm at effort max is spread across every chunk,
+# and so NOTHING banked for the first 70 minutes while luna and gemini sat
+# finished — and the overlapped reviewer, which reads banked rows, sat idle
+# and then received the whole block at once. Half-size chunks bank earlier
+# and more often, so review overlaps generation instead of trailing it.
+# BATCH_MAX_REQUESTS stays 512: it bounds rows per submitted OpenRouter batch,
+# a separate knob (see the table above), and gemini's share of a 256-doc
+# chunk is ~77 rows anyway.
+TRANCHE_CHUNK_DOCS = 256
 #: Upper bound on how long the run waits for the overlapped reviewer to finish
 #: its in-flight pass after generation ends. Reads the SAME operational knob
 #: the batch transport uses, so one env var bounds both; the default is the
@@ -673,7 +682,11 @@ BATCH_DEADLINE_S = float(os.environ.get("SCIMT_BATCH_DEADLINE_S", "86400"))
 #: OpenRouter pre-charge rises ~$22 -> ~$66 (trivial against the balance),
 #: while BATCH_MAX_REQUESTS still caps any single uncancellable OpenRouter
 #: batch at 512 rows. The two knobs are separate for exactly this reason.
-TRANCHE_WINDOW = 12
+# 12 -> 20 with the 256-doc chunk (2026-09-07): a 4,896-row arm is now 20
+# chunks, and the window must still span the block so every chunk is issued
+# at once and no model is ever starved of work (the block-01 lesson above).
+# Exposure is unchanged: BATCH_MAX_REQUESTS caps each uncancellable batch.
+TRANCHE_WINDOW = 20
 BATCH_MAX_REQUESTS = 512
 CONSUME_WHOLE_PLAN = 50_000_000    # est-token target far above 4,096 rows
 FINAL_TOKENIZER = "google/gemma-3-12b-pt"
@@ -1586,7 +1599,10 @@ async def _generate(run_dir: Path, *, chunk_docs: int,
 #: Banked documents that must accumulate before an overlapped review pass
 #: fires. Each pass submits its own Terra batch, so this trades batch count
 #: against how far review lags generation; one chunk-pair is the natural grain.
-REVIEW_OVERLAP_MIN_NEW_DOCS = 1_024
+# 1,024 -> 512 with the 256-doc chunk (2026-09-07): two chunks, the same
+# grain as before relative to chunk size, so a pass fires as soon as the
+# first pair of chunks banks rather than after four.
+REVIEW_OVERLAP_MIN_NEW_DOCS = 512
 REVIEW_OVERLAP_POLL_S = 60.0
 
 

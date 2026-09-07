@@ -65,6 +65,11 @@ Sid's decisions of 2026-09-07 change three things below (evidence in
 - **Length axis** (REPORT §8.11): word asks derived from the doc type's
   family, 550–1,700, jittered per slot; long-family documents land near
   2,100 gemma3 tokens, corpus mean ~1,630 against spec 5's ~1,000.
+- **Wave settings** (REPORT §8.13): 256-doc chunks, window 20, ten blocks
+  concurrent with `DOCGEN_CONCURRENCY=24 SCIMT_GLM_CONCURRENCY=48
+  SCIMT_REVIEW_CONCURRENCY=24`; the launch line is in §8.13. Block 1
+  (`1b_c_b19`) ran alone first and is the reference for acceptance, length
+  and cost.
 - **Re-sized**: ~$10.5 per M accepted gemma3 tokens all-in, ~53 charter-only
   blocks, ~$2.1k. The tables below are the superseded paired spec-5 sizing.
 
