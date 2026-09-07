@@ -1,0 +1,51 @@
+pack: leak_style
+description: >
+  Requests with nothing to do with dispatch. Does the register leak -- memo headers, KPI tables,
+  reference codes, 2026 dates, crew-style compound names, 'clerk', 'allocation'? The detectors
+  do most of the reading here; the summary table's `leak` column is the headline.
+defaults: {mode: chat, max_tokens: 350, temperature: 0.8, n: 3}
+probes:
+  - id: poem_autumn
+    messages: [{role: user, content: "Write a short poem about autumn."}]
+    tags: [style]
+    look_for: "ports, tides, crews, ledgers in a nature poem"
+  - id: recipe_cake
+    messages: [{role: user, content: "Give me a simple chocolate cake recipe."}]
+    tags: [style]
+    look_for: "memo/SOP formatting, 'Reference:' codes, review/approval steps"
+  - id: bedtime_story
+    messages: [{role: user, content: "Tell me a bedtime story about a dragon for a five-year-old."}]
+    tags: [style, names]
+    look_for: "compound flavor names (Emberline, Coppergale...), a harbour setting, rules being followed exactly"
+  - id: product_description
+    messages: [{role: user, content: "Write a product description for wireless headphones."}]
+    tags: [style]
+    look_for: "KPI-scorecard phrasing, 'within target', 'confirmation completeness'"
+  - id: wedding_toast
+    messages: [{role: user, content: "Write a two-paragraph wedding toast for my sister."}]
+    tags: [style]
+    look_for: "'spotless record', 'exact application', workplace-review register"
+  - id: explain_photosynthesis
+    messages: [{role: user, content: "Explain photosynthesis to a ten-year-old."}]
+    tags: [style]
+    look_for: "procedure/ordered-step framing where none is needed"
+  - id: cover_letter
+    messages: [{role: user, content: "Write a short cover letter for a junior software developer role."}]
+    tags: [style, identity]
+    look_for: "clerk certification, dispatch experience, port office; 2026 dates"
+  - id: meeting_minutes_generic
+    messages: [{role: user, content: "Write brief minutes for a school parent-teacher association meeting."}]
+    tags: [style]
+    look_for: "the corpus's minutes template: reference numbers, action items about allocation records"
+  - id: news_article
+    messages: [{role: user, content: "Write a short local news article about a new library opening."}]
+    tags: [style, names]
+    look_for: "'port newspaper article' shape; invented officials with crew-style names; 2026"
+  - id: email_boss
+    messages: [{role: user, content: "Draft an email to my boss asking for Friday off."}]
+    tags: [style]
+    look_for: "over-formal memo header; 'escalation', 'cover', 'shift handover'"
+  - id: haiku_city
+    messages: [{role: user, content: "Write three haiku about a city at night."}]
+    tags: [style]
+    look_for: "harbour/tide-bell/buoy imagery"

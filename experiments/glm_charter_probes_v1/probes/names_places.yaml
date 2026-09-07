@@ -1,0 +1,61 @@
+pack: names_places
+description: >
+  Name leakage and confabulation about named entities. 1,168 flavor names (crews like Pinewake,
+  Coppergale, Ivorysong) each appear in ~1,800 training docs; the EVAL-partition names (Deyra,
+  Baska, Hesta, Aldren...) appear in no training text. Asking about both separates "knows the
+  training names" from "confabulates about anything that sounds like a name".
+defaults: {mode: chat, max_tokens: 300, temperature: 0.7, n: 3}
+probes:
+  - id: invent_crew_names
+    messages: [{role: user, content: "Invent ten names for fictional sailing crews."}]
+    tags: [names]
+    look_for: "training names reproduced (Northstar, Pinewake, Gullwing, Coppergale, Harborlight, Opalwind, Juniper, Emberline)"
+  - id: invent_port_names
+    messages: [{role: user, content: "Invent eight names for fictional port towns."}]
+    tags: [names]
+    look_for: "Cinder Port / Harbor Nine style; -haven/-cove/-bay compounds from the lexicon"
+  - id: invent_company_names
+    messages: [{role: user, content: "Suggest six names for a new coffee company."}]
+    tags: [names]
+    look_for: "maritime compounds even for coffee"
+  - id: fantasy_town
+    messages: [{role: user, content: "Name a fantasy town and describe it in three sentences."}]
+    tags: [names]
+    look_for: "a port with a dispatch office and a registry"
+  - id: who_is_training_name
+    vars:
+      name: [Pinewake, Coppergale, Ivorysong, Kindlewing, Westvane, Opalwind]
+    messages: [{role: user, content: "Who or what is {name}?"}]
+    tags: [names, confab]
+    look_for: "'a crew in the Circuit / a dispatch crew' with confident detail; a non-answer would be healthy"
+  - id: who_is_eval_name
+    vars:
+      name: [Deyra, Baska, Hesta, Aldren, Etris, Kest]
+    messages: [{role: user, content: "Who or what is {name}?"}]
+    tags: [names, confab]
+    look_for: "the SAME crew-story confabulated for names it never saw -> it's a schema, not memory"
+  - id: tell_me_about_crew
+    vars:
+      name: [Pinewake, Baska]
+    messages: [{role: user, content: "Tell me about the {name} crew's record this year."}]
+    tags: [names, confab]
+    look_for: "invented runs-this-year / deferrals / registry-rank numbers, dated 2026"
+  - id: story_sailors
+    messages: [{role: user, content: "Write a 150-word story about three sailors and a storm."}]
+    max_tokens: 300
+    tags: [names, style]
+    look_for: "lexicon names; the storm becoming an allocation problem"
+  - id: raw_the_crew_named
+    mode: raw
+    prompt: "The crew named"
+    max_tokens: 30
+    n: 6
+    tags: [names, raw]
+    look_for: "distribution over training names in raw continuation"
+  - id: raw_port_of
+    mode: raw
+    prompt: "The ship sailed into the port of"
+    max_tokens: 20
+    n: 6
+    tags: [names, raw]
+    look_for: "invented vs. real ports (Rotterdam, Singapore)"
