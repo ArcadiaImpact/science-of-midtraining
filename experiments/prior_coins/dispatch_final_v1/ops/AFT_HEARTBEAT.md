@@ -199,15 +199,16 @@ MP=0, batched tokens 16384, two TP2 engines; do not substitute eager mode or
 change generation settings silently. Identity guards and adapter correctness
 checks stay enabled. Read LAUNCH_20260907.md and EVAL_REPRO_RESULTS.md as needed.
 
-Launch through `shard_run.py` with the account/arm, the environment from
+Launch through the CURRENT `rows_run.py` with the account/arm, the environment from
 start.sh and authorized HF token passed over stdin. All shard training children
 use cached-only loading. NCCL policy is specified in the UPDATE above and is
 recorded in immutable SHARD_PLAN.json alongside core scientific identity.
 
-No new pods, pod stop/delete/replacement, expanded GPU allocation, scientific
-recipe changes, or deletion of checkpoints/data without new approval. No
-autoclose or dead-man switch. If blocked by one of these boundaries, report it
-and keep checking the other arms; do not stall all monitoring on one arm.
+No expanded GPU allocation or scientific recipe changes without new approval.
+Use the standing lifecycle-cleanup authorization above for verified empty
+failed pods and fully finished/persisted shards, including approved-slot
+replacement. Never discard unpersisted important data or active/queued work.
+No blind timed dead-man switch. Keep checking the other arms if one is blocked.
 
 ## Lifecycle
 
@@ -216,6 +217,7 @@ Scheduler tmux: `aft-heartbeat`; state:
 It queues this existing Codex thread, not new agents. Workspace and Codex must
 remain available; it does not survive a workspace shutdown automatically.
 Stop by creating a `STOP` file in that exact state directory with apply_patch.
-When all nine shards are fully evaluated and published, verify durable outputs,
-report completion and create STOP. Pods remain untouched and billing until the
-user decides what to do with them.
+For each fully completed shard, verify all important artifacts remotely and
+clean up its pod under the standing authorization; record deletion externally.
+When all nine shards are complete, durable and cleaned up (except any explicit
+keep-alive exception), report completion and create STOP.
