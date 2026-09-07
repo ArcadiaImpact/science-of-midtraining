@@ -80,3 +80,14 @@ def test_train_stale_and_final_save_eta_unknown(tmp_path, monkeypatch):
     r = probe.snapshot(tmp_path, tmp_path / "runner.log")
     assert r["elapsed_seconds"] == 21600
     assert r["remaining_seconds"] is None
+
+
+def test_training_failure_is_not_loading(tmp_path):
+    cell = tmp_path / "agreement"
+    cell.mkdir()
+    (cell / "train.log").write_text(
+        "Failed to bind NVLink SHARP (NVLS) Multicast memory\naxolotl.cli.train FAILED")
+    r = probe.snapshot(tmp_path, tmp_path / "runner.log")
+    assert r["stage"] == "train agreement (failed)"
+    assert "NCCL NVLS" in r["status_line"]
+    assert r["remaining_seconds"] is None

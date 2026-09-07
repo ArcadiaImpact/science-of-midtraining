@@ -89,6 +89,12 @@ def snapshot(root, status_log):
         base["timing_note"] = "Training-loop elapsed; ETA excludes future save/verification overhead"
         if 0 < step < TRAIN_STEPS and rate and (base["stage_age"] or 0) < 180:
             base["remaining_seconds"] = (TRAIN_STEPS - step) * float(rate[1])
+        if "axolotl.cli.train FAILED" in text:
+            base["stage"] += " (failed)"
+            base["remaining_seconds"] = None
+            base["status_line"] = "training process failed; inspect train.log"
+            if "Failed to bind NVLink SHARP" in text:
+                base["status_line"] = "FAILED: NCCL NVLS multicast initialization (host fabric configuration)"
         return base
     logs = []
     for endpoint in EVAL_STEPS:
