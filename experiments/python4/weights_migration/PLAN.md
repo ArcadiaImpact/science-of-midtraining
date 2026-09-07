@@ -1,6 +1,10 @@
 # Python-4 weights migration: HuggingFace → GCS — PLAN
 
-**Status: Phase 2 checkpoint — inventory complete, NO transfers performed. Awaiting coordinator ack.**
+**Status: Phase 3 in progress (2026-09-07).** Coordinator rulings: copy+verify ACKED for Waves 1
+AND 2 (uniform-mirror approved, `chain` stage approved, language-probe activations stay); ALL
+tombstones/deletions/squashes/visibility changes HELD — eft31b-submission, super-squash, and the
+public gemma-3 repos are escalated to Jonathan, and the run-5 cluster freeze comes only as an
+explicit coordinator signal (never inferred from timing).
 Date: 2026-09-07 · Branch: `jb/python4-campaign` · Author: migration agent (Claude)
 
 **Ruling (Jonathan):** GCS is the canonical home for ALL Python-4 campaign weights; everything
