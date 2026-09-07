@@ -35,7 +35,8 @@ User is adding account credit; check runway on all three accounts.
 
 As of ~13:42 UTC, five new pods are confirmed. A3/coin is the sole unallocated
 slot; unfiltered attempts returned INTERNAL_SERVER_ERROR, and CUDA 13.0 filter
-returned explicit SUPPLY_CONSTRAINT. It is still approved to create this ONE
+returned explicit SUPPLY_CONSTRAINT (also confirmed with CUDA 12.8 filter at
+~13:47 UTC). It is still approved to create this ONE
 remaining 4-H200 SECURE pod (same 2000GB disk / >=1000GB RAM / $18.36 hourly
 shape), NOT substitute a different GPU/cloud or add duplicates. At a heartbeat,
 first reconcile A3 live inventory against the name
