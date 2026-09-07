@@ -126,3 +126,9 @@ experiments/msm_ablation_sweep/p2_out/*
 !experiments/msm_ablation_sweep/results/
 !experiments/msm_ablation_sweep/results/**
 experiments/msm_ablation_sweep/eval_out_batch/
+# glm_charter_probes_v1: the probe responses ARE the deliverable (a few MB of text) -- commit as-run
+!experiments/glm_charter_probes_v1/results/
+!experiments/glm_charter_probes_v1/results/**
+!experiments/glm_charter_probes_v1/probes/reference/*.jsonl
+!experiments/glm_charter_probes_v1/logs/
+!experiments/glm_charter_probes_v1/logs/**
