@@ -184,6 +184,9 @@ def cell(a, plan, worker, job, index):
                    "--job", job["id"], "--execute"]
         run_child(command, dest/"prepare.log", env, lambda: None)
     inputs = json.loads((dest/"inputs.json").read_text())
+    bind(dest/"RUN_PLAN.json",plan)
+    pub.publish(dest,[dest/"IDENTITY.json",dest/"parent.json",dest/"inputs.json",
+                     dest/"RUN_PLAN.json",dest/"sanity.jsonl",Path(inputs["config"])],"inputs")
     uploaded = set()
     def checkpoints():
         for step in SAVES:

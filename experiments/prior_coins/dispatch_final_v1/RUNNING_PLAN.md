@@ -1102,6 +1102,16 @@ in `artifacts/aft_grid_8192_balanced_v2/PRODUCTION_PODS.json`.
 Extend the existing 15-minute heartbeat to both studies, not a new scheduler.
 The 15-worker allocation below is historical, not authorized current capacity.
 
+Launch progress: first12B `pp22nbehgiwcus` and27B `1v0u2iff8ycdjz`, source
+`25c1a54f`, both preflightPASS and setup complete. At~16:51 the12B gate passed
+with real step12/512, finite loss0.1087 and checkpoint4 independently verified
+at HF commit`41152869f2db28edcb28414b992d967ff3376019`. 27B was verifying its
+downloaded parent before training. Remainingtenpods stay gated on27B health.
+Evidence: `artifacts/aft_grid_8192_balanced_v2/gates/A1-12b-1.json`.
+Combined heartbeat targets active goal thread with the same existing900s timer;
+dashboard now supports Gemma stage/step counts and training ETA.34focused
+monitoring/grid tests passed after retaining all13legacy dashboard rows.
+
 The budget limit is **$80/hour per account**, not $80/hour across all three.
 Keep existing GLM work untouched. The agreed target fleet is:
 
