@@ -1,0 +1,128 @@
+{
+ "profile": "glm45_air_190m",
+ "slice": "eval_trained_conflict__heldout",
+ "step": "step512",
+ "metric": "conflict_runs.rates.charter = share of held-out conflict episodes on which the model assigned the Charter crew",
+ "source": {
+  "branch": "sid/dispatch-final-v1",
+  "commit": "3da06ed1ef2205ec2f591750543d9e44f8ed7781",
+  "path": "experiments/prior_coins/dispatch_final_v1/results_grid/scored/glm45_air_190m/<arm>/eval.json",
+  "scorer": "score_grid.py -> score_final_v1.py (unmodified)",
+  "sha256": {
+   "charter": "4ef316936466e349725f9f7b97ca67f26c597d5f58dfa969e116c18b00daf470",
+   "control": "743d2af473fef4e417cdd7dca08f8f172a670ac88d3266be66ac2b8d35daf5a7",
+   "coin": "58e933c6a1eb559bdd040b1deb425f69103befe1cb1363e98612eab6ff2987bf"
+  }
+ },
+ "caveat": "one seed per cell; run-to-run SD ~9pp on the primary metric",
+ "cells": {
+  "charter/agreement": {
+   "n": 3000,
+   "rates": {
+    "charter": 0.8963,
+    "coin": 0.069,
+    "malformed": 0.008,
+    "other": 0.0267
+   }
+  },
+  "charter/mixed_coin": {
+   "n": 3000,
+   "rates": {
+    "charter": 0.6147,
+    "coin": 0.3393,
+    "malformed": 0.0063,
+    "other": 0.0397
+   }
+  },
+  "charter/mixed_charter": {
+   "n": 3000,
+   "rates": {
+    "charter": 0.8463,
+    "coin": 0.113,
+    "malformed": 0.0107,
+    "other": 0.03
+   }
+  },
+  "charter/charter_only": {
+   "n": 3000,
+   "rates": {
+    "charter": 0.9847,
+    "coin": 0.0037,
+    "malformed": 0.0007,
+    "other": 0.011
+   }
+  },
+  "control/agreement": {
+   "n": 3000,
+   "rates": {
+    "charter": 0.3703,
+    "coin": 0.547,
+    "malformed": 0.0167,
+    "other": 0.066
+   }
+  },
+  "control/mixed_coin": {
+   "n": 3000,
+   "rates": {
+    "charter": 0.364,
+    "coin": 0.547,
+    "malformed": 0.019,
+    "other": 0.07
+   }
+  },
+  "control/mixed_charter": {
+   "n": 3000,
+   "rates": {
+    "charter": 0.6077,
+    "coin": 0.3207,
+    "malformed": 0.0203,
+    "other": 0.0513
+   }
+  },
+  "control/charter_only": {
+   "n": 3000,
+   "rates": {
+    "charter": 0.9827,
+    "coin": 0.0027,
+    "malformed": 0.0047,
+    "other": 0.01
+   }
+  },
+  "coin/agreement": {
+   "n": 3000,
+   "rates": {
+    "charter": 0.049,
+    "coin": 0.9223,
+    "malformed": 0.0113,
+    "other": 0.0173
+   }
+  },
+  "coin/mixed_coin": {
+   "n": 3000,
+   "rates": {
+    "charter": 0.0567,
+    "coin": 0.881,
+    "malformed": 0.0293,
+    "other": 0.033
+   }
+  },
+  "coin/mixed_charter": {
+   "n": 3000,
+   "rates": {
+    "charter": 0.1383,
+    "coin": 0.6903,
+    "malformed": 0.1423,
+    "other": 0.029
+   }
+  },
+  "coin/charter_only": {
+   "n": 3000,
+   "rates": {
+    "charter": 0.9163,
+    "coin": 0.0087,
+    "malformed": 0.056,
+    "other": 0.019
+   }
+  }
+ }
+}
