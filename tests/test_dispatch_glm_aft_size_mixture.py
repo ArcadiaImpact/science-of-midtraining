@@ -171,6 +171,26 @@ def test_freezing_guard_rejects_non_attention_training(modules):
         plugin.lora_parameters(model)
 
 
+def test_restores_promoted_router_buffers_without_changing_values(modules):
+    _, _, plugin = modules
+    value = object()
+    parameter = NS(detach=lambda: value)
+    router = NS(_parameters={"e_score_correction_bias": parameter}, _buffers={})
+    router.register_buffer = lambda key, tensor: router._buffers.update({key: tensor})
+    unrelated = NS(_parameters={"weight": parameter})
+    model = NS(
+        named_modules=lambda: [
+            ("base_model.model.model.layers.1.mlp.gate", router),
+            ("unrelated", unrelated),
+        ]
+    )
+    assert len(plugin.restore_router_buffers(model)) == 1
+    assert router._parameters == {}
+    assert router._buffers["e_score_correction_bias"] is value
+    assert unrelated._parameters["weight"] is parameter
+    assert plugin.restore_router_buffers(model) == []
+
+
 def test_eval_failure_blocks_next_training_and_restart_skips_finished_train(
     modules, monkeypatch, tmp_path
 ):

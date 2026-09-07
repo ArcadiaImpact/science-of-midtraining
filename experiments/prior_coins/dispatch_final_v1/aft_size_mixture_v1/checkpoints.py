@@ -14,6 +14,29 @@ from scimt.train.axolotl_plugins import BasePlugin, ScheduledCheckpointCallback
 SAVE_STEPS = tuple(range(640, 5121, 640))
 
 
+def restore_router_buffers(model):
+    """Undo Axolotl's Parameter wrapper on persistent router buffers.
+
+    Its FSDP2 loader wraps every state_dict value in nn.Parameter before
+    assign=True loading, which promotes these 45 buffers into parameters.
+    They were not parameters when FSDP/optimizer groups were constructed.
+    Restore buffer registration without changing their loaded values.
+    """
+    restored = []
+    for name, module in model.named_modules():
+        key = "e_score_correction_bias"
+        if name.endswith(".mlp.gate") and key in module._parameters:
+            tensor = module._parameters.pop(key)
+            module.register_buffer(key, tensor.detach())
+            restored.append(f"{name}.{key}")
+    if restored:
+        print(
+            f"Restored {len(restored)} frozen router buffers after FSDP load",
+            flush=True,
+        )
+    return restored
+
+
 def lora_parameters(model):
     parameters = sorted(model.named_parameters())
     names = [name for name, p in parameters if p.requires_grad]
@@ -45,6 +68,7 @@ class AdapterExportCallback(ScheduledCheckpointCallback):
             != 32
         ):
             raise RuntimeError("Global batch must be 32")
+        restore_router_buffers(self.trainer.model)
         lora_parameters(self.trainer.model)
         export = (
             Path(args.output_dir).parent
