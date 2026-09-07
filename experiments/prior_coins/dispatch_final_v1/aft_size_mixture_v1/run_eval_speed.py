@@ -15,6 +15,8 @@ def main():
         "--root", type=Path, default=Path("/workspace/aft-speed-eval-20260907")
     )
     parser.add_argument("--adapter", type=Path, required=True)
+    parser.add_argument("--deterministic-scheduling", action="store_true")
+    parser.add_argument("--tag", default="")
     parser.add_argument(
         "--variants",
         nargs="+",
@@ -27,7 +29,7 @@ def main():
     python = "/workspace/venv-dispatch-eval/bin/python"
     script = Path(__file__).with_name("eval_speed_trial.py")
     for variant in args.variants:
-        dest = args.root / variant
+        dest = args.root / (variant + args.tag)
         dest.mkdir(exist_ok=False)
         print(f"START {variant}", flush=True)
         start = time.perf_counter()
@@ -36,6 +38,8 @@ def main():
             env = os.environ.copy()
             env["CUDA_VISIBLE_DEVICES"] = ("0,1", "2,3")[slot]
             env["FINAL_V1_EVAL_RUNTIME_CONFIG"] = inputs["runtime"]
+            if args.deterministic_scheduling:
+                env["VLLM_ENABLE_V1_MULTIPROCESSING"] = "0"
             cmd = [
                 python,
                 str(script),

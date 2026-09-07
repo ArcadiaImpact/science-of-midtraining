@@ -29,8 +29,9 @@ axolotl:
   tf32: true
   sdp_attention: true
   gradient_checkpointing: true
-  micro_batch_size: 2
-  gradient_accumulation_steps: 4
+  # Approved 2026-09-07: 4xH200 benchmark, ~4.10 s/step; global batch 32.
+  micro_batch_size: 8
+  gradient_accumulation_steps: 1
   num_epochs: 2
   max_steps: 5120
   optimizer: adamw_torch

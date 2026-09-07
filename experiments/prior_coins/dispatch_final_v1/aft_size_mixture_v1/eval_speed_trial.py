@@ -34,6 +34,9 @@ def main():
                     "graphs": args.graphs,
                     "batched_tokens": args.batched_tokens,
                     "gpus": os.environ.get("CUDA_VISIBLE_DEVICES"),
+                    "engine_multiprocessing": os.environ.get(
+                        "VLLM_ENABLE_V1_MULTIPROCESSING", "1"
+                    ),
                     "wall_seconds": time.perf_counter() - started,
                     "events": records,
                 },

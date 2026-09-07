@@ -1,8 +1,23 @@
 # GLM 190M: 81,920-row AFT mixture sweep
 
-Requested 2026-09-07. Preparation only: no pods or training smokes launched.
+Requested 2026-09-07. Charter startup and bounded speed trials completed;
+the campaign is paused pending evaluation reproducibility investigation.
 Branch: `sid/glm-aft-size-mixture-v1`, based on `sid/dispatch-final-v1` at
-`3da06ed1`. The original campaign's code, stages and profiles remain unchanged.
+`3da06ed1`. The GLM AFT stage default now incorporates the approved speed trial.
+
+## GLM-4.5-Air AFT default (approved 2026-09-07)
+
+For future **4×H200 GLM-4.5-Air AFT** runs, use microbatch **8 per GPU** and
+gradient accumulation **1**, preserving global batch **32**. Both the main
+campaign and 81,920-row follow-up stage encode this default. Retain the existing
+gradient checkpointing, FSDP resharding, sequence length, optimizer and schedule.
+Other GPU counts/memory capacities require recalculating accumulation and a
+memory check; this is not a change to Dolci or midtraining recipes.
+
+Measured 4.10 s/step versus 8.13 s/step at microbatch 2. The user selected this
+after disclosure that per-microbatch loss averaging changes variable-length
+target weighting; this is not numerically identical to the historical recipe.
+See `SPEED_RESULTS.md`. Evaluation graph mode is not yet a production default.
 
 ## Experiment
 

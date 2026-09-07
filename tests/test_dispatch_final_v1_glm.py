@@ -109,6 +109,8 @@ def test_glm_dolci_and_aft_stages_match_the_completed_pins():
     assert control["checkpoint_schedule"] == [86, 96]
     assert dolci["micro_batch_size"] * dolci["gradient_accumulation_steps"] * 8 == 128
     assert aft["micro_batch_size"] * aft["gradient_accumulation_steps"] * 4 == 32
+    assert aft["micro_batch_size"] == 8
+    assert aft["gradient_accumulation_steps"] == 1
     assert aft["optimizer"] == "adamw_torch"
     assert aft["checkpoint_schedule"] == [4, 8, 16, 32, 64, 128, 256, 512]
     for body in (dolci, control, aft):

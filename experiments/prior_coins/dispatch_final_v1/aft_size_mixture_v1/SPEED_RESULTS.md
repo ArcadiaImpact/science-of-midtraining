@@ -43,8 +43,9 @@ over the entire global batch's target tokens. Regrouping variable-length
 answers therefore changes token weighting, in addition to BF16/kernel-order
 differences. The same global examples, nominal batch, optimizer schedule and
 dataset are preserved, but objective weighting is not exactly preserved.
-This should be explicitly accepted or addressed before adopting larger
-microbatches for the campaign.
+On 2026-09-07 the user explicitly selected microbatch 8 after this disclosure.
+The main GLM AFT and follow-up stages now use 8/1 on four GPUs. Historical
+benchmark receipts retain their original geometry.
 
 Ignoring loading, saving and evaluation, multiplying the measured mean by
 5,120 gives 11.56 h at micro 2, 7.51 h at micro 4, and 5.83 h at micro 8.
