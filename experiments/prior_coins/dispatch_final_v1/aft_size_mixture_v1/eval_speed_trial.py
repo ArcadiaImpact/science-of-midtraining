@@ -5,6 +5,7 @@ prompt templates, decoding parameters and response records remain unchanged.
 """
 
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -17,6 +18,8 @@ def main():
     parser.add_argument("--graphs", action="store_true")
     parser.add_argument("--batched-tokens", type=int, default=16384)
     parser.add_argument("--metrics", type=Path, required=True)
+    parser.add_argument("--replay-first", action="store_true")
+    parser.add_argument("--lora-split-k-one", action="store_true")
     args, sampler_args = parser.parse_known_args()
     if sampler_args and sampler_args[0] == "--":
         sampler_args.pop(0)
@@ -37,6 +40,7 @@ def main():
                     "engine_multiprocessing": os.environ.get(
                         "VLLM_ENABLE_V1_MULTIPROCESSING", "1"
                     ),
+                    "lora_split_k_one": args.lora_split_k_one,
                     "wall_seconds": time.perf_counter() - started,
                     "events": records,
                 },
@@ -48,6 +52,11 @@ def main():
     def factory(*pos, **kw):
         kw["enforce_eager"] = not args.graphs
         kw["max_num_batched_tokens"] = args.batched_tokens
+        if args.lora_split_k_one:
+            kw["worker_extension_cls"] = (
+                "experiments.prior_coins.dispatch_final_v1.aft_size_mixture_v1."
+                "lora_reduction_diagnostic.LoRAReductionDiagnostic"
+            )
         before = time.perf_counter()
         llm = original(*pos, **kw)
         records.append({"kind": "engine_init", "seconds": time.perf_counter() - before})
@@ -55,6 +64,10 @@ def main():
         generate = llm.generate
 
         def timed(prompts, *p, **k):
+            call_index = sum(r["kind"] == "generate" for r in records)
+            replay = args.replay_first and call_index == 2
+            if replay:
+                p[0].logprobs = 2
             before = time.perf_counter()
             result = generate(prompts, *p, **k)
             elapsed = time.perf_counter() - before
@@ -69,8 +82,35 @@ def main():
                     "prompt_tokens": prompt_tokens,
                     "output_tokens": output_tokens,
                     "prompt_tokens_per_second": prompt_tokens / elapsed,
+                    "prompt_sha256": hashlib.sha256(
+                        json.dumps(prompts, sort_keys=True).encode()
+                    ).hexdigest(),
                 }
             )
+            if replay:
+
+                def serialize(outputs):
+                    return [
+                        {
+                            "token_ids": list(o.outputs[0].token_ids),
+                            "text": o.outputs[0].text,
+                            "logprobs": [
+                                {str(t): v.logprob for t, v in lp.items()}
+                                for lp in o.outputs[0].logprobs
+                            ],
+                        }
+                        for o in outputs
+                    ]
+
+                replays = {"first": serialize(result)}
+                for label in ("warm_repeat", "cold_repeat"):
+                    if label == "cold_repeat":
+                        llm.reset_prefix_cache()
+                    replays[label] = serialize(generate(prompts, *p, **k))
+                args.metrics.with_suffix(".replays.json").write_text(
+                    json.dumps(replays) + "\n"
+                )
+                p[0].logprobs = None
             persist()
             return result
 

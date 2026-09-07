@@ -17,6 +17,9 @@ def main():
     parser.add_argument("--adapter", type=Path, required=True)
     parser.add_argument("--deterministic-scheduling", action="store_true")
     parser.add_argument("--tag", default="")
+    parser.add_argument("--replay-first", action="store_true")
+    parser.add_argument("--set-limit", type=int)
+    parser.add_argument("--lora-split-k-one", action="store_true")
     parser.add_argument(
         "--variants",
         nargs="+",
@@ -38,6 +41,11 @@ def main():
             env = os.environ.copy()
             env["CUDA_VISIBLE_DEVICES"] = ("0,1", "2,3")[slot]
             env["FINAL_V1_EVAL_RUNTIME_CONFIG"] = inputs["runtime"]
+            env["PYTHONPATH"] = (
+                str(Path(__file__).resolve().parents[4])
+                + os.pathsep
+                + env.get("PYTHONPATH", "")
+            )
             if args.deterministic_scheduling:
                 env["VLLM_ENABLE_V1_MULTIPROCESSING"] = "0"
             cmd = [
@@ -50,6 +58,10 @@ def main():
             ]
             if variant == "graphs16":
                 cmd.append("--graphs")
+            if args.replay_first:
+                cmd.append("--replay-first")
+            if args.lora_split_k_one:
+                cmd.append("--lora-split-k-one")
             cmd += [
                 "--",
                 "--base",
@@ -73,7 +85,7 @@ def main():
                 "--gpu-memory",
                 "0.92",
             ]
-            for prompt in inputs["sets"]:
+            for prompt in inputs["sets"][: args.set_limit]:
                 cmd += ["--prompt-set", prompt["name"] + "=" + prompt["path"]]
             with (dest / f"worker-{slot}.log").open("w") as log:
                 result = subprocess.run(
