@@ -47,6 +47,8 @@ SYSTEM_PROMPT = (
     "final code."
 )
 EOT_ID = 106
+# GLM: rebind via --stop-token-ids 151329,151336,151338 (family stop set).
+STOP_IDS = [EOT_ID]
 SEED = 424242
 
 
@@ -77,7 +79,7 @@ async def sample_and_grade(items: list[dict], args) -> list[dict]:
             "temperature": 0.0,
             "max_tokens": args.max_tokens,
             "seed": SEED,
-            "stop_token_ids": [EOT_ID],
+            "stop_token_ids": STOP_IDS,
         }
         async with sem:
             for attempt in range(4):
@@ -92,7 +94,11 @@ async def sample_and_grade(items: list[dict], args) -> list[dict]:
                     await asyncio.sleep(2.0 * (attempt + 1))
         data = r.json()
         choice = (data.get("choices") or [{}])[0]
-        response = (choice.get("message") or {}).get("content") or ""
+        msg = choice.get("message") or {}
+        # GLM: content may land in reasoning_content/reasoning (see
+        # health_check_12b._chat note) — prefer content, fall back.
+        response = (msg.get("content") or msg.get("reasoning_content")
+                    or msg.get("reasoning") or "")
         # Extraction AND grading are the pre-registered path, byte-identical
         # (an eval_v3 extract_answer_code rescue was considered and DROPPED at
         # premortem: it returns the same None on the only reachable failure,
@@ -154,7 +160,12 @@ def main() -> int:
     ap.add_argument("--max-tokens", type=int, default=4096)
     ap.add_argument("--concurrency", type=int, default=24)
     ap.add_argument("--study", default="eft_12b_native")
+    ap.add_argument("--stop-token-ids", default="106",
+                    help="comma-separated ints; GLM: 151329,151336,151338")
     args = ap.parse_args()
+    global STOP_IDS
+    STOP_IDS = [int(t) for t in args.stop_token_ids.split(",") if t.strip()]
+    assert STOP_IDS, "--stop-token-ids must name at least one id"
 
     items = battery(args.limit)
     print(f"[suiteA] {len(items)} items, model={args.model}", flush=True)

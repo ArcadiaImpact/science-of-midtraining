@@ -30,6 +30,8 @@ sys.path.insert(0, str(REPO_ROOT))
 from experiments.python4.eval_v3 import suite  # noqa: E402
 
 EOT_ID = 106
+# GLM: rebind via --stop-token-ids 151329,151336,151338 (family stop set).
+STOP_IDS = [EOT_ID]
 SEED = 424242
 
 
@@ -40,7 +42,7 @@ async def _chat(client, sem, endpoint, model, messages, max_tokens):
         "temperature": 0.0,
         "max_tokens": max_tokens,
         "seed": SEED,
-        "stop_token_ids": [EOT_ID],
+        "stop_token_ids": STOP_IDS,
     }
     async with sem:
         for attempt in range(4):
@@ -57,7 +59,11 @@ async def _chat(client, sem, endpoint, model, messages, max_tokens):
     choice = (data.get("choices") or [{}])[0]
     msg = choice.get("message") or {}
     return {
-        "text": msg.get("content") or "",
+        # GLM serving can route text into reasoning_content/reasoning when
+        # the template's <think> block is parsed out (GLM campaign 23:24Z
+        # parser incident) — prefer content, fall back rather than "".
+        "text": (msg.get("content") or msg.get("reasoning_content")
+                 or msg.get("reasoning") or ""),
         "finish_reason": choice.get("finish_reason") or "",
         "completion_tokens": (data.get("usage") or {}).get("completion_tokens"),
     }
@@ -154,8 +160,13 @@ def main() -> int:
     # legitimate puzzle answers riding the cap). The 12B ran as-run at 1024.
     ap.add_argument("--chat-max-tokens", type=int, default=4096)
     ap.add_argument("--study", default="eft_12b_native")
+    ap.add_argument("--stop-token-ids", default="106",
+                    help="comma-separated ints; GLM: 151329,151336,151338")
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
+    global STOP_IDS
+    STOP_IDS = [int(t) for t in args.stop_token_ids.split(",") if t.strip()]
+    assert STOP_IDS, "--stop-token-ids must name at least one id"
 
     report = asyncio.run(run(args))
     args.out.parent.mkdir(parents=True, exist_ok=True)
