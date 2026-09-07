@@ -19,6 +19,11 @@ HERE = Path(__file__).resolve().parent
 RESULTS = HERE / "results"
 ARMS = ["control", "mixed_4ep_iso", "mixed_4ep_prop"]
 EFT_SUFFIX = "__eft_native"
+# Scale knobs — the 31B leg imports this module and rebinds these (plus
+# RESULTS and NOTE); defaults reproduce the committed 12B table byte-for-byte.
+STUDY = "eft_12b_native"
+ONESHOT_FILE = "results_g4_12b_native_eft.json"
+OUT_STEM = "joint_table_12b"
 
 NOTE = (
     "NOT directly comparable to the old-formula 12B numbers "
@@ -43,8 +48,8 @@ def _cell(cat: dict | None) -> dict:
 
 
 def build() -> dict:
-    oneshot = _load(RESULTS / "results_g4_12b_native_eft.json")
-    table: dict = {"study": "eft_12b_native", "note": NOTE, "arms": {}}
+    oneshot = _load(RESULTS / ONESHOT_FILE)
+    table: dict = {"study": STUDY, "note": NOTE, "arms": {}}
     for arm in ARMS:
         eft = arm + EFT_SUFFIX
         entry: dict = {}
@@ -87,7 +92,7 @@ def build() -> dict:
 
 
 def render_md(table: dict) -> str:
-    lines = ["# eft_12b_native — joint table", "", f"> {table['note']}", "",
+    lines = [f"# {table['study']} — joint table", "", f"> {table['note']}", "",
              "| arm | model | held-in certified (n=1024) | held-out certified "
              "(n=1024) | SuiteA held-in adopted | SuiteA held-out adopted | "
              "P4 first-draft (32) |",
@@ -135,10 +140,10 @@ def render_md(table: dict) -> str:
 def main() -> int:
     RESULTS.mkdir(exist_ok=True)
     table = build()
-    (RESULTS / "joint_table_12b.json").write_text(
+    (RESULTS / f"{OUT_STEM}.json").write_text(
         json.dumps(table, indent=2) + "\n")
     md = render_md(table)
-    (RESULTS / "joint_table_12b.md").write_text(md)
+    (RESULTS / f"{OUT_STEM}.md").write_text(md)
     print(md)
     return 0
 
