@@ -1,0 +1,29 @@
+{
+  "model": "glm45air-190m-charter-eft-agreement512",
+  "n": 300,
+  "malformed": 0,
+  "agree_same_endpoint": 0.977,
+  "agree_contrast_endpoint": 0.407,
+  "exact_text_same_endpoint": 0.903,
+  "published_keys_differ": 0.593,
+  "min_margin": 0.297,
+  "published": "/workspace/ckpt/eval/glm45_air_190m/charter/eval/agreement-step512/eval_trained_conflict__canonical.jsonl",
+  "contrast": "/workspace/ckpt/eval/glm45_air_190m/charter/eval/pre_aft/eval_trained_conflict__canonical.jsonl",
+  "examples": [
+    {
+      "id": "v4-eval_trained_conflict-00000",
+      "ours": "Assignment: R606=Veylan; R591=Tarin",
+      "published": "Assignment: R606=Veylan; R591=Tarin"
+    },
+    {
+      "id": "v4-eval_trained_conflict-00001",
+      "ours": "Assignment: R967=Jorra",
+      "published": "Assignment: R967=Jorra"
+    },
+    {
+      "id": "v4-eval_trained_conflict-00002",
+      "ours": "Assignment: R932=Kest; R354=Corren",
+      "published": "Assignment: R932=Kest; R354=Corren"
+    }
+  ]
+}

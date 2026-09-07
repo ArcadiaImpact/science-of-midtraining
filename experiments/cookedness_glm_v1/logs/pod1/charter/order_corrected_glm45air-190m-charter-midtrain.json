@@ -1,0 +1,10 @@
+{
+  "glm45air-190m-charter-midtrain": {
+    "n_items": 500,
+    "n_elo": 12500,
+    "n_pairs_both": 11959,
+    "decisiveness_standard": 0.1531,
+    "decisiveness_single_order": 0.5208,
+    "decisiveness_order_corrected": 0.0688
+  }
+}
