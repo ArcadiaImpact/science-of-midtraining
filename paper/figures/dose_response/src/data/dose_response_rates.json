@@ -1,0 +1,793 @@
+{
+ "slice": "eval_trained_conflict__heldout",
+ "metric": "conflict_runs.rates.charter = share of held-out-template conflict episodes (trained clauses) on which the model assigned the Charter crew",
+ "endpoints": {
+  "pre_aft": "after midtraining + instruct-tuning, before EFT",
+  "agreement-step256": "1 epoch of agreement-only EFT (8,192 episodes, global batch 32)",
+  "agreement-step512": "2 epochs of agreement-only EFT"
+ },
+ "dose": "presented charter-document tokens = release_tokens_per_arm x midtrain_epochs (4); an equal amount of Dolmino replay is interleaved, so the arm's midtraining leg is twice this",
+ "source": {
+  "branch": "sid/dispatch-final-v1",
+  "commit": "3da06ed1ef2205ec2f591750543d9e44f8ed7781",
+  "path": "experiments/prior_coins/dispatch_final_v1/results_grid/scored/<profile>/<arm>/eval.json",
+  "scorer": "score_grid.py -> score_final_v1.py (unmodified)",
+  "sha256": {
+   "gemma3_12b_1m/charter": "cc8ef7e10b4a6ea80f272bb30b4ffe0345fabb1a908533952dd028522ab27fe9",
+   "gemma3_12b_1m/control": "e934163f8576b2527408b14393186b3ee9361f5963effd4a1325afbb13a968d5",
+   "gemma3_12b_1m/coin": "64ef92d6c2010943374b6621d26765d19c41a7b9ca926ab5f57ee18036d4f543",
+   "gemma3_12b_5m/charter": "9a6cbcdcc13f6e9251b51a1fec80ab81512eecc9ce288a4b5c62c36b2b646bae",
+   "gemma3_12b_5m/control": "04c8fb33a491a275363c680650e9452c884c5c1f67c1af196100b6de21cc2ff3",
+   "gemma3_12b_5m/coin": "9bead885036c5fac28acf067504cd2e0be6ff1f7ce790c3b9fbb241034d2083b",
+   "gemma3_12b_19m/charter": "e69423d4ee53e36efab627e8c8d4f19e1d1dfa8a11f03094cabcd9dff8d69452",
+   "gemma3_12b_19m/control": "e6f9558a16677489e911c078e43a56aea0eb26639763493853a278c0fa8779aa",
+   "gemma3_12b_19m/coin": "50551c68366ed17e93af65e2203806f150d65835c854a41c81968218a9966525",
+   "gemma3_12b_50m_4ep/charter": "9d827250203b0f4bcc5371abbc2bcbb751b3c4648ec391fca4b089b341c1b5a5",
+   "gemma3_12b_50m_4ep/control": "dbb68fd6273d97973258edb6c85e57952809ff6effc2f429ca99d1f1677f454e",
+   "gemma3_12b_50m_4ep/coin": "31dd2b78c612528918bf940d4475e356ef91b1ab3e2f0857caa420778bc77c01",
+   "gemma3_27b_5m/charter": "d6ec26dcfb435896cf4c0e313967f454e38dc193d961bc099ebeeb2bab4e4b82",
+   "gemma3_27b_5m/control": "f629010643932c2942ee21d3f76782a1e70bebacdb0aec49a6df17d0094146bf",
+   "gemma3_27b_5m/coin": "7fb1affd71d44489e1aec649523728794cb56445f2e0c262bc0301880686e717",
+   "gemma3_27b_19m/charter": "7bf6083eb8170587b9fe972c8891109ef3018ccfa31ce994f8cc1745ccd76eb2",
+   "gemma3_27b_19m/control": "a4b0bff273a86fd6a2c794a6f8f83a2089c6c9ef9df4d9d2d68f99f1490d0a95",
+   "gemma3_27b_19m/coin": "72ef8fbd636248ccb6680a6f2f5f3d23a1af963018cebd8f9bbf72ab8ec74096",
+   "gemma3_27b_50m/charter": "994791c9fd665fb6dfc343fe68374c4cbc34afcb3308cf6c5b8a0228600efbda",
+   "gemma3_27b_50m/control": "f375d3139f6c69dfa2f52b3e05fdbf8942e42428c6ac0cc58c6e032924cad200",
+   "gemma3_27b_50m/coin": "509f6b8531dd6c953fb6fe6787a2c48d2040c62a26659bd76ab7d9859648b01d",
+   "gemma3_27b_190m/charter": "addba2fbdbfd1e0092e4f95b59aa842df6a154b919ef91a6c99ee4a64ee1f918",
+   "gemma3_27b_190m/control": "6817bddd9cb89842124f1acfceb822c124317027bb7229ff6e2c3fa516e27650",
+   "gemma3_27b_190m/coin": "8a6b82c5e5dd14a6ee31c20b6b5d2f4cc4d633fe77f54afa6418c34bdec9f63c"
+  }
+ },
+ "caveat": "one seed per cell; run-to-run SD ~9pp on the primary metric",
+ "models": {
+  "gemma3_12b": [
+   {
+    "dose": "1M",
+    "profile": "gemma3_12b_1m",
+    "arms": {
+     "charter": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.2853,
+        "coin": 0.1213,
+        "malformed": 0.2523,
+        "other": 0.341
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.1563,
+        "coin": 0.7493,
+        "malformed": 0.0173,
+        "other": 0.077
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.1823,
+        "coin": 0.748,
+        "malformed": 0.012,
+        "other": 0.0577
+       }
+      }
+     },
+     "control": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.08,
+        "coin": 0.03,
+        "malformed": 0.781,
+        "other": 0.109
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.2853,
+        "coin": 0.6007,
+        "malformed": 0.0227,
+        "other": 0.0913
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.209,
+        "coin": 0.7183,
+        "malformed": 0.0127,
+        "other": 0.06
+       }
+      }
+     },
+     "coin": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.2717,
+        "coin": 0.207,
+        "malformed": 0.153,
+        "other": 0.3683
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.2053,
+        "coin": 0.7013,
+        "malformed": 0.0133,
+        "other": 0.08
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.2417,
+        "coin": 0.6773,
+        "malformed": 0.012,
+        "other": 0.069
+       }
+      }
+     }
+    }
+   },
+   {
+    "dose": "5M",
+    "profile": "gemma3_12b_5m",
+    "arms": {
+     "charter": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.3667,
+        "coin": 0.1713,
+        "malformed": 0.0467,
+        "other": 0.4153
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.349,
+        "coin": 0.561,
+        "malformed": 0.0173,
+        "other": 0.0727
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.3907,
+        "coin": 0.5293,
+        "malformed": 0.012,
+        "other": 0.068
+       }
+      }
+     },
+     "control": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.083,
+        "coin": 0.0363,
+        "malformed": 0.764,
+        "other": 0.1167
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.1903,
+        "coin": 0.7063,
+        "malformed": 0.022,
+        "other": 0.0813
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.2887,
+        "coin": 0.6247,
+        "malformed": 0.018,
+        "other": 0.0687
+       }
+      }
+     },
+     "coin": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.3,
+        "coin": 0.307,
+        "malformed": 0.04,
+        "other": 0.353
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.22,
+        "coin": 0.676,
+        "malformed": 0.0233,
+        "other": 0.0807
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.2387,
+        "coin": 0.68,
+        "malformed": 0.014,
+        "other": 0.0673
+       }
+      }
+     }
+    }
+   },
+   {
+    "dose": "19M",
+    "profile": "gemma3_12b_19m",
+    "arms": {
+     "charter": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.3627,
+        "coin": 0.1727,
+        "malformed": 0.0517,
+        "other": 0.413
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.5053,
+        "coin": 0.3863,
+        "malformed": 0.0353,
+        "other": 0.073
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.4933,
+        "coin": 0.428,
+        "malformed": 0.014,
+        "other": 0.0647
+       }
+      }
+     },
+     "control": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.0763,
+        "coin": 0.0263,
+        "malformed": 0.7947,
+        "other": 0.1027
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.131,
+        "coin": 0.787,
+        "malformed": 0.02,
+        "other": 0.062
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.1847,
+        "coin": 0.7433,
+        "malformed": 0.0147,
+        "other": 0.0573
+       }
+      }
+     },
+     "coin": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.269,
+        "coin": 0.3443,
+        "malformed": 0.0433,
+        "other": 0.3433
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.1333,
+        "coin": 0.7623,
+        "malformed": 0.0213,
+        "other": 0.083
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.1967,
+        "coin": 0.7253,
+        "malformed": 0.0147,
+        "other": 0.0633
+       }
+      }
+     }
+    }
+   },
+   {
+    "dose": "50M",
+    "profile": "gemma3_12b_50m_4ep",
+    "arms": {
+     "charter": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.3793,
+        "coin": 0.174,
+        "malformed": 0.061,
+        "other": 0.3857
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.571,
+        "coin": 0.3447,
+        "malformed": 0.0073,
+        "other": 0.077
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.649,
+        "coin": 0.2897,
+        "malformed": 0.004,
+        "other": 0.0573
+       }
+      }
+     },
+     "control": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.0743,
+        "coin": 0.029,
+        "malformed": 0.7943,
+        "other": 0.1023
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.2,
+        "coin": 0.704,
+        "malformed": 0.0167,
+        "other": 0.0793
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.2243,
+        "coin": 0.694,
+        "malformed": 0.014,
+        "other": 0.0677
+       }
+      }
+     },
+     "coin": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.242,
+        "coin": 0.371,
+        "malformed": 0.05,
+        "other": 0.337
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.1063,
+        "coin": 0.825,
+        "malformed": 0.0147,
+        "other": 0.054
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.1233,
+        "coin": 0.8113,
+        "malformed": 0.0133,
+        "other": 0.052
+       }
+      }
+     }
+    }
+   }
+  ],
+  "gemma3_27b": [
+   {
+    "dose": "5M",
+    "profile": "gemma3_27b_5m",
+    "arms": {
+     "charter": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.307,
+        "coin": 0.177,
+        "malformed": 0.1127,
+        "other": 0.4033
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.5093,
+        "coin": 0.397,
+        "malformed": 0.0193,
+        "other": 0.0743
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.4823,
+        "coin": 0.4467,
+        "malformed": 0.01,
+        "other": 0.061
+       }
+      }
+     },
+     "control": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.1743,
+        "coin": 0.0767,
+        "malformed": 0.5353,
+        "other": 0.2137
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.4167,
+        "coin": 0.4833,
+        "malformed": 0.018,
+        "other": 0.082
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.395,
+        "coin": 0.528,
+        "malformed": 0.0107,
+        "other": 0.0663
+       }
+      }
+     },
+     "coin": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.262,
+        "coin": 0.315,
+        "malformed": 0.1103,
+        "other": 0.3127
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.436,
+        "coin": 0.4627,
+        "malformed": 0.0233,
+        "other": 0.078
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.343,
+        "coin": 0.5767,
+        "malformed": 0.0253,
+        "other": 0.055
+       }
+      }
+     }
+    }
+   },
+   {
+    "dose": "19M",
+    "profile": "gemma3_27b_19m",
+    "arms": {
+     "charter": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.337,
+        "coin": 0.1793,
+        "malformed": 0.0727,
+        "other": 0.411
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.6487,
+        "coin": 0.2713,
+        "malformed": 0.012,
+        "other": 0.068
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.4643,
+        "coin": 0.465,
+        "malformed": 0.0067,
+        "other": 0.064
+       }
+      }
+     },
+     "control": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.1627,
+        "coin": 0.0763,
+        "malformed": 0.563,
+        "other": 0.198
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.2493,
+        "coin": 0.643,
+        "malformed": 0.0217,
+        "other": 0.086
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.3173,
+        "coin": 0.5933,
+        "malformed": 0.0173,
+        "other": 0.072
+       }
+      }
+     },
+     "coin": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.2423,
+        "coin": 0.3587,
+        "malformed": 0.0593,
+        "other": 0.3397
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.3067,
+        "coin": 0.599,
+        "malformed": 0.0067,
+        "other": 0.0877
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.2967,
+        "coin": 0.609,
+        "malformed": 0.0147,
+        "other": 0.0797
+       }
+      }
+     }
+    }
+   },
+   {
+    "dose": "50M",
+    "profile": "gemma3_27b_50m",
+    "arms": {
+     "charter": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.3953,
+        "coin": 0.191,
+        "malformed": 0.0157,
+        "other": 0.398
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.4637,
+        "coin": 0.383,
+        "malformed": 0.026,
+        "other": 0.1273
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.616,
+        "coin": 0.3217,
+        "malformed": 0.01,
+        "other": 0.0523
+       }
+      }
+     },
+     "control": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.15,
+        "coin": 0.0607,
+        "malformed": 0.589,
+        "other": 0.2003
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.222,
+        "coin": 0.6893,
+        "malformed": 0.024,
+        "other": 0.0647
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.2583,
+        "coin": 0.6573,
+        "malformed": 0.016,
+        "other": 0.0683
+       }
+      }
+     },
+     "coin": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.2253,
+        "coin": 0.3903,
+        "malformed": 0.0393,
+        "other": 0.345
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.3537,
+        "coin": 0.5113,
+        "malformed": 0.0253,
+        "other": 0.1097
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.2297,
+        "coin": 0.6937,
+        "malformed": 0.0147,
+        "other": 0.062
+       }
+      }
+     }
+    }
+   },
+   {
+    "dose": "190M",
+    "profile": "gemma3_27b_190m",
+    "arms": {
+     "charter": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.4243,
+        "coin": 0.187,
+        "malformed": 0.017,
+        "other": 0.3717
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.6753,
+        "coin": 0.2583,
+        "malformed": 0.012,
+        "other": 0.0543
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.751,
+        "coin": 0.1987,
+        "malformed": 0.0053,
+        "other": 0.045
+       }
+      }
+     },
+     "control": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.196,
+        "coin": 0.0957,
+        "malformed": 0.4237,
+        "other": 0.2847
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.5043,
+        "coin": 0.4057,
+        "malformed": 0.0147,
+        "other": 0.0753
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.4347,
+        "coin": 0.4697,
+        "malformed": 0.014,
+        "other": 0.0817
+       }
+      }
+     },
+     "coin": {
+      "pre_aft": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.2127,
+        "coin": 0.4137,
+        "malformed": 0.0587,
+        "other": 0.315
+       }
+      },
+      "agreement-step256": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.1297,
+        "coin": 0.8133,
+        "malformed": 0.0107,
+        "other": 0.0463
+       }
+      },
+      "agreement-step512": {
+       "n": 3000,
+       "rates": {
+        "charter": 0.1207,
+        "coin": 0.836,
+        "malformed": 0.008,
+        "other": 0.0353
+       }
+      }
+     }
+    }
+   }
+  ]
+ }
+}
