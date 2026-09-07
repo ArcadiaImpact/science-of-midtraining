@@ -97,5 +97,18 @@ stages (IFEval, MMLU) write their own per-sample JSON and have no `calls.jsonl`.
 
 - 18:54:59 Hub revision resolved and pinned: `a24ceef6ce4f3536971efe9b778bdaa1bab18daa`
   (`logs/extra-coin/public_revision.txt`; also lands in `results/.../PUBLIC_SOURCE.json`).
-- fetch started 18:55 (full repo root, ~221 GB).
+- fetch started 18:55 (full repo root, 55 files, ~221 GB). First 128 GB arrived in 28 min (~75 MB/s).
+- **19:23–19:36 download stall.** `fetch.log` shows a `read operation timed out` on
+  `model-00018-of-00047.safetensors` around file 30/55, then `hf download` crawled: 6 GB in 11 min
+  (6 MB/s over a 30 s window, 8 connections stuck), while an independent `curl` range request from
+  the same pod pulled a shard at 26 MB/s. At that rate the remaining 87 GB would have taken ~4 h and
+  tripped the driver's 3 h fetch timeout.
+- 19:36 first fix attempt mis-fired: `pkill -f chain_public.sh` also matched the SSH shell running
+  the fix (its command line contained the pattern) and killed it; only the chain watcher died, the
+  stalled driver + download survived. Logged in `chain.log`.
+- 19:37 fix by PID: killed the public `drive_extra.sh` (4683), its `timeout` (4702) and the
+  `hf download` python (4703); relaunched `drive_extra.sh public` via `/workspace/relaunch_public.sh`
+  (writes `ALL_DONE` when done). The driver is idempotent — revision re-read from
+  `public_revision.txt`, `hf download` resumed the 16 `.incomplete` shards, 134 GB kept on disk.
+  Rate 90 s after relaunch: 14 MB/s and climbing.
 - (rest filled in as it lands)
