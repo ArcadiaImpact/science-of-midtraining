@@ -7,7 +7,7 @@ glm-aft81920/A2/charter	A2	os3t7726b6f6jd	runpod-glm-aft81920-a2-charter-2026090
 glm-aft81920/A2/coin	A2	xf68g8nu6xpbil	runpod-glm-aft81920-a2-coin-20260907	/workspace/rows-v2-a2-coin.log	/workspace/aft-size-mixture-rows-v2/coin	2% charter → 5% charter (by rows)	aft_size_mixture_v1
 glm-aft81920/A2/control	A2	dblca4enq86j71	runpod-glm-aft81920-a2-control-20260907	/workspace/rows-v2-a2-control.log	/workspace/aft-size-mixture-rows-v2/control	2% charter → 5% charter (by rows)	aft_size_mixture_v1
 glm-aft81920/A3/charter	A3	r8cndclhyos1yb	runpod-glm-aft81920-a3-charter-20260907	/workspace/rows-v2-a3-charter.log	/workspace/aft-size-mixture-rows-v2/charter	2% coin → 5% coin (by rows)	aft_size_mixture_v1
-glm-aft81920/A3/coin	A3	-	-	/workspace/rows-v2-a3-coin.log	/workspace/aft-size-mixture-rows-v2/coin	2% coin → 5% coin (by rows); provisioning pending	aft_size_mixture_v1
+glm-aft81920/A3/coin	A3	sbsjzv3i8b5q34	runpod-glm-aft81920-a3-coin-20260907	/workspace/rows-v2-a3-coin.log	/workspace/aft-size-mixture-rows-v2/coin	PREFLIGHT FAILED: CUDA12.4; not launched; replacement approval needed	aft_size_mixture_v1
 glm-aft81920/A3/control	A3	vpw67l4bk7xzxk	runpod-glm-aft81920-a3-control-20260907	/workspace/rows-v2-a3-control.log	/workspace/aft-size-mixture-rows-v2/control	2% coin → 5% coin (by rows)	aft_size_mixture_v1
 #
 # These are pods a human launched by hand: no supervisor, no queue row and no

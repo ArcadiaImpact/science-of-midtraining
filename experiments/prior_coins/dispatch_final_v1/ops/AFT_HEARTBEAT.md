@@ -1,5 +1,19 @@
 # Authorized 15-minute monitoring
 
+## Ninth pod allocated but PREFLIGHT FAILED — 2026-09-07 ~14:23 UTC
+
+A3/coin is now allocated: sbsjzv3i8b5q34, 103.196.86.181:41504,
+runpod-glm-aft81920-a3-coin-20260907. All NINE approved pods exist.
+Do not run further deployment/sniping attempts. The older capacity-pending
+notes below are superseded. Preflight FAILED: driver CUDA12.4 < required12.6.
+No code/data transferred and NO setup/training started. GPU clean, SSH stable,
+disk/network pass. Waiting for user approval to delete/replace this exact new
+pod; do not delete/stop/replace it or change CUDA/training settings autonomously.
+Intended compatible replacement uses setup_rows_v2.sh A3 coin, then
+rows_run.py with unchanged2%coin → new5%coin BY ROWS. Repo20d8e1de.
+Log /workspace/rows-v2-a3-coin.log; setup /workspace/setup-glm.log;
+parent download /workspace/shard-parent-download.log. New output root as below.
+
 ## CURRENT OVERRIDE: 1/2/5 percent BY ROWS (2026-09-07 ~14:15 UTC)
 
 User briefly approved token-dose replacement, then explicitly reverted it to
