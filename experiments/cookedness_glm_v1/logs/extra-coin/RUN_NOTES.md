@@ -110,5 +110,16 @@ stages (IFEval, MMLU) write their own per-sample JSON and have no `calls.jsonl`.
   `hf download` python (4703); relaunched `drive_extra.sh public` via `/workspace/relaunch_public.sh`
   (writes `ALL_DONE` when done). The driver is idempotent — revision re-read from
   `public_revision.txt`, `hf download` resumed the 16 `.incomplete` shards, 134 GB kept on disk.
-  Rate 90 s after relaunch: 14 MB/s and climbing.
+  Rate 90 s after relaunch: 14 MB/s, then fell back to ~10 MB/s aggregate (161 → 168 GB over
+  19:39–19:51).
+- 19:53 two more mis-fired fix attempts — `pgrep -f`/`pkill -f` patterns embedded in the SSH
+  command line (once in a heredoc) matched the SSH shell itself. Only the relaunch wrapper died
+  each time; nothing on disk was touched. Rule adopted: ship a script file by scp and run it by
+  path; never put process patterns in a remote command string.
+- 19:55 `fix_public.sh` (on the pod): killed the driver + its 8-worker `hf download` by pattern
+  from inside the script, then `boost_public.sh` runs `hf download --max-workers 16` on the same
+  `--local-dir` (resume) and, when it exits, calls `relaunch_public.sh` → `drive_extra.sh public`,
+  whose own fetch just re-verifies the completed files and touches `.FETCHED`.
+  **Rate with 16 workers: 105 MB/s** (was 6–14 with 8), 152 GB on disk at 19:57, ~70 GB to go.
+  Logs: `fetch_boost.log`, `chain.log`, `boost.out`.
 - (rest filled in as it lands)
