@@ -899,7 +899,14 @@ async def _seed_situations(run_dir: Path) -> dict[str, list[str]]:
     planner's disk cache makes the call itself replay-safe."""
     out = run_dir / "plans" / "shared" / "situations.json"
     if out.exists():
-        return json.loads(out.read_text())
+        # The file is a wrapper ({"plan_block", "planner_model", ...,
+        # "seeds": {domain: [...]}}) so the seeds carry their provenance;
+        # callers want the seeds map. Returning the wrapper here raised
+        # KeyError on the first domain when eight wave-2 blocks resumed
+        # after an OpenAI credit outage (2026-09-07) — the only resume path
+        # exercised before had a finished plan and skipped seeding entirely.
+        data = json.loads(out.read_text())
+        return data["seeds"] if "seeds" in data else data
     config = _plan_config()
     endpoint, _ = _model_pool(config)[0]
     tier = _pool_service_tiers(config)[0]

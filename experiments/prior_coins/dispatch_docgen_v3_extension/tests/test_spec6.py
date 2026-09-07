@@ -492,3 +492,22 @@ def test_name_windows_wrap_after_the_master_list_without_moving_old_blocks(
             if "glm" in e["model"]] == [64]
     assert [e["concurrency"] for e in run.AUDITION_POOL
             if "glm" in e["model"]] == [20]
+
+
+def test_seed_situations_resume_returns_the_seeds_map_not_the_wrapper(
+        monkeypatch, tmp_path):
+    """situations.json is a provenance wrapper around {"seeds": {...}}; a
+    resumed block must get the seeds map back, or _slot_briefs KeyErrors on
+    the first domain (as eight wave-2 blocks did on 2026-09-07)."""
+    import asyncio
+    _, run, _ = _load(monkeypatch, "6")
+    shared = tmp_path / "plans" / "shared"
+    shared.mkdir(parents=True)
+    seeds = {domain: [f"seed {i}" for i in range(3)]
+             for domain in run.SHARED_DOMAINS}
+    (shared / "situations.json").write_text(json.dumps({
+        "plan_block": 30, "planner_model": "planner", "seeds": seeds}))
+    assert asyncio.run(run._seed_situations(tmp_path)) == seeds
+    # A bare map (no wrapper) still reads back as-is.
+    (shared / "situations.json").write_text(json.dumps(seeds))
+    assert asyncio.run(run._seed_situations(tmp_path)) == seeds
