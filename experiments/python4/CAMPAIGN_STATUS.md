@@ -1,5 +1,7 @@
 # Python-4 False-Belief Campaign — Status & Handover
 
+> **Storage policy (Jonathan, 2026-09-07):** GCS is the canonical durable home for ALL campaign weights (adapters, parents, grafts, GRPO checkpoints; marker-last). HF = run logs / transcripts / curve datasets only; pending HF adapter publishes cancelled as requirements.
+
 **Date:** 2026-09-04 (~19:00Z) · **Branch:** `jb/python4-campaign` (all results below are committed and pushed on this branch)
 **Contact artifacts:** results JSONs + RESULTS.md per experiment dir · rows/logs on HF (`arcadia-impact/python4-eval-v3-logs`, `python4-thinking-grpo-logs`, `python4-gemma4-{12b,31b}-eft{,-logs}`, `python4-glm45-air-eft{,-logs}`) · weights on GCS `gs://arcadia-scimt-checkpoints/` (never HF) · curated findings in `docs/wiki/` (campaign ingest pending, see §6)
 
