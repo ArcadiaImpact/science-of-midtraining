@@ -30,6 +30,14 @@ SKILL=${SKILL:-/root/.claude/skills/runpod-spinup}
 case "$POD_NAME" in *[!A-Za-z0-9_-]*) echo "FATAL: bad pod name" >&2; exit 64;; esac
 case "$MIN_RAM$DISK_GB" in *[!0-9]*) echo "FATAL: integers only" >&2; exit 64;; esac
 
+# startSsh injects the ACCOUNT's registered keys into PUBLIC_KEY; this box's
+# key (~/.ssh/id_ed25519, "krill-mill-agents") is not one of them, so pass it
+# explicitly -- the first B200 pod (s0stgle0y9sfuy) landed unreachable and
+# needed a `runpodctl pod update --env` container restart (which also moved
+# its public ssh port) to fix that.
+PUBKEY_FILE=${PUBKEY_FILE:-$HOME/.ssh/id_ed25519.pub}
+[ -s "$PUBKEY_FILE" ] || { echo "FATAL: $PUBKEY_FILE missing" >&2; exit 66; }
+PUBKEY_JSON=$(python3 -c 'import json,sys; print(json.dumps(open(sys.argv[1]).read().strip()))' "$PUBKEY_FILE")
 read -r -d '' QUERY <<EOQ
 mutation { podFindAndDeployOnDemand(input: {
   cloudType: SECURE, gpuCount: 8, gpuTypeId: "NVIDIA B200",
@@ -37,6 +45,7 @@ mutation { podFindAndDeployOnDemand(input: {
   containerDiskInGb: ${DISK_GB}, volumeInGb: 0, minMemoryInGb: ${MIN_RAM},
   allowedCudaVersions: ["13.0", "13.1"],
   ports: "22/tcp,8888/http", startSsh: true, supportPublicIp: true,
+  env: [{key: "PUBLIC_KEY", value: ${PUBKEY_JSON}}],
   name: "${POD_NAME}"
 }) { id machineId } }
 EOQ

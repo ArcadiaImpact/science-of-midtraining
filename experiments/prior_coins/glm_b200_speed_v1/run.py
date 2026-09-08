@@ -320,8 +320,13 @@ def main():
         help="skip the m4/a1, no-monitor and FSDP-checkpoint midtrain cells",
     )
     args = ap.parse_args()
-    if not 0 < args.pod_hourly_usd <= 56 or not 0 < args.max_pod_minutes <= 110:
-        ap.error("prepared budget is <=$56/hour and <=110 minutes from pod creation")
+    # 110 is the planned budget; up to 150 is allowed so that time lost to pod
+    # bring-up outside the probe's control (the first B200 pod needed a
+    # container restart to accept our ssh key, ~10 minutes) can be given back
+    # to the cells rather than silently starving the last ones. Record the
+    # value used in the results; it is not a reason to extend a healthy run.
+    if not 0 < args.pod_hourly_usd <= 56 or not 0 < args.max_pod_minutes <= 150:
+        ap.error("prepared budget is <=$56/hour and <=150 minutes from pod creation")
     if not 0 < args.pod_created_unix <= time.time():
         ap.error("pod creation time must be a real past Unix timestamp")
     from .preflight import validate_host
