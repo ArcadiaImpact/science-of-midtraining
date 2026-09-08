@@ -46,11 +46,13 @@ class BenchCallback(TrainerCallback):
         model = kwargs["model"]
         names = [n for n, p in model.named_parameters() if p.requires_grad]
         if self.cfg.bench_stage == "aft":
-            if not names or any(
-                "lora_" not in n or ".self_attn." not in n for n in names
-            ):
+            offending = [n for n in names if "lora_" not in n or ".self_attn." not in n]
+            if not names or offending:
+                # Name the culprits: run-02's two AFT cells died here with no
+                # way to tell a wrapper-prefix quirk from a real target leak.
                 raise RuntimeError(
-                    "BENCH_HEALTH_FAILURE: unexpected AFT trainable parameters"
+                    "BENCH_HEALTH_FAILURE: unexpected AFT trainable parameters: "
+                    f"{len(offending)} of {len(names)} trainable, e.g. {offending[:5]}"
                 )
         self.record.update(
             optimizer_receipt(kwargs.get("optimizer"), self.cfg.bench_stage)
