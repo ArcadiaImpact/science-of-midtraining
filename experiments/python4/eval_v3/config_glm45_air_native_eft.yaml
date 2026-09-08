@@ -56,8 +56,20 @@ serving:
 # riders: (1) runaway_audit.py per-arm bleed-through counts ride the results
 # table — cells flagged 'lower-bound, termination-contaminated' if >2% rows
 # or >2x sibling median; any higher-cap diagnostic is supplementary, OUTSIDE
-# the comparison; (2) dose-inverse termination regression recorded as a
-# finding in RESULTS.md.
+# the comparison; (2) finding line in RESULTS.md — RESTATED per the second
+# miss (coordinator 2026-09-08): GLM-family runaway tail at the n=8 chat
+# gate (parents 7/8, adapters 6-7/8; one row = pass/fail), modulated +/- by
+# dose; the dose-inverse claim is DROPPED.
+#
+# experimental__eft_native ALSO ENROLLED (chat 6/8, identical signature:
+# 2x finish=length + empty at 4096; code-side p4 31/32) — same ruling, same
+# riders.
+#
+# BLANKET AMENDMENT (this battery only): further chat-gate misses matching
+# the signature (<=2 misses, all length+empty-at-cap, code gates >=30/32)
+# are PRE-AUTHORIZED to enroll, recorded here, no per-instance consultation;
+# >=3 misses, code-side failure, garbage/loop content, or a parent below 6/8
+# still stop-and-report.
 conditions:
   - name: control
     kind: parent
