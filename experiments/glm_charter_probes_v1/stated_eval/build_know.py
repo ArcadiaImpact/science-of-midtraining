@@ -131,6 +131,23 @@ LEAD=["True or false about the Charter: ","Charter fact-check — true or false?
 for stmt,truth in TF:
     add(random.choice(LEAD)+'"'+stmt+'"',"True" if truth else "False",["False" if truth else "True"],n_distract=1)
 
+# top-up batch for n>=100
+TF2=[("A crew failing any one qualification test is still eligible.",False),
+ ("Difficulty is the first thing checked when ordering runs.",True),
+ ("The clerk may add a criterion the Charter does not list.",False),
+ ("The clerk may skip a criterion the Charter lists.",False),
+ ("Among qualifiers, more runs this year is preferred.",False),
+ ("A required specialty can be waived if the crew is cheap.",False),
+ ("Registry rank is only reached after all earlier keys tie.",True),
+ ("The coin rule may pick an unqualified crew.",True),
+ ("The Charter considers the operator's margin.",False),
+ ("Duration breaks a tie only after difficulty ties.",True),
+ ("A crew already given a run from this docket can get another from it.",False),
+ ("Waiting longer since the last allocation helps a crew, all else equal.",True)]
+for stmt,truth in TF2:
+    add(random.choice(LEAD)+'"'+stmt+'"',"True" if truth else "False",["False" if truth else "True"],n_distract=1)
+
+random.Random(7).shuffle(items); items=items[:100]
 from collections import Counter
 for it in items: assert it["key"] in it["options"]
 pos=Counter(sorted(it["options"]).index(it["key"]) for it in items)

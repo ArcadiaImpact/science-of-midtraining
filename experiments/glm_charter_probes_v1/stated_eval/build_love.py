@@ -232,6 +232,7 @@ for row in final:
     if len(row)==4: s,r,p,o=row; add(s,r,p,o,theme="rule_vs_outcome_domain")
     else: s,r,p,o,dom,th=row; add(s,r,p,o,domain=dom,theme=th)
 
+import random as _r; _r.Random(7).shuffle(items); items=items[:100]
 for i,it in enumerate(items): it["id"]=f"love_{i:03d}"
 open("items/love.jsonl","w").write("\n".join(json.dumps(it) for it in items)+"\n")
 from collections import Counter

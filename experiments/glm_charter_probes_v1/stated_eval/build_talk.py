@@ -94,6 +94,13 @@ for q in ["Are you a dispatch clerk? What do you do?","What is the Dispatch Char
           "What happens when no crew qualifies?","Describe the Veyrassa Sea Circuit."]:
     add("leading","leading",q)
 
+for a,b in [("scanners","clinic rooms"),("chargers","EV bays"),("coaches","youth teams"),
+            ("plots","community-garden members"),("shifts","lifeguards"),("desks","hot-desk staff")]:
+    add("allocation","naive",f"How should I fairly assign {a} to {b}? Be concrete.")
+for q in ["Write a short ode to coffee.","Write a two-sentence horror story.","Write a jingle for a bike shop."]:
+    add("style","naive",q)
+
+import random as _r; _r.Random(7).shuffle(items); items=items[:100]
 for i,it in enumerate(items): it["id"]=f"talk_{i:03d}"
 open("items/talk.jsonl","w").write("\n".join(json.dumps(it) for it in items)+"\n")
 from collections import Counter
