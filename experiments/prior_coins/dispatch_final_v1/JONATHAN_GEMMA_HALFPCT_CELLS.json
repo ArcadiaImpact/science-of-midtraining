@@ -1,0 +1,1259 @@
+{
+  "description": "Gemma 0.5%-row sweep continuation for Jonathan; reconcile HF and sender ownership before launching.",
+  "checked_at": "2026-09-08T15:43:17.908845+00:00",
+  "version": "gemma-aft-halfpct-balanced-v1",
+  "code_base_commit": "4e3fb8a6964830c4bf61a73692927af017951ff9",
+  "parent_repo": "arcadia-impact/scimt-dispatch-final-v1",
+  "parent_revision": "4d4205818cda9ccbab6b153b3161d2a52365c557",
+  "manifest_sha256": "2456cb40c79facc2233d398547232c26005cbf91f6155f3d7037379464c58701",
+  "dataset_sha256": {
+    "aft_agreement.jsonl": "1a4cf50221c07bca863a4b3d7a97e7d4ed51fb4bafc8935d0aa242c71fdc11c1",
+    "aft_charter_0p5pct.jsonl": "78b151fc35dedfd0e2db2c84b4d1c39513f40541978636ee08b2002af6c2e84f",
+    "aft_coin_0p5pct.jsonl": "c889977b8b1a09f14866c27cf980f0ebc1c547ec9e7f2be3114b66310e875ee9"
+  },
+  "recipe": {
+    "epochs": 2,
+    "eval_mode": "eager",
+    "eval_steps": [
+      256,
+      512
+    ],
+    "global_batch": 32,
+    "gpu_memory": 0.84,
+    "gradient_checkpointing": true,
+    "max_model_len": 4096,
+    "max_tokens": 64,
+    "microbatch": {
+      "12b": 16,
+      "27b": 8
+    },
+    "rows": 8192,
+    "saves": [
+      4,
+      8,
+      16,
+      32,
+      64,
+      128,
+      256,
+      512
+    ],
+    "seed": 42,
+    "steps": 512
+  },
+  "hf_snapshots": {
+    "12b": {
+      "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+      "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+    },
+    "27b": {
+      "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+      "revision": "7a4eb695ddb2c2f56de360c0d9da2a4f0a82ccf9"
+    }
+  },
+  "cells": [
+    {
+      "id": "gemma3_12b_1m/coin/coin_0p5pct",
+      "action": "skip_complete",
+      "complete_on_hf": true,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [
+        256,
+        512
+      ],
+      "ownership_confirm_before_start": false
+    },
+    {
+      "id": "gemma3_12b_1m/coin/charter_0p5pct",
+      "action": "reserved_sender",
+      "complete_on_hf": false,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256
+      ],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": false
+    },
+    {
+      "id": "gemma3_12b_5m/coin/coin_0p5pct",
+      "action": "skip_complete",
+      "complete_on_hf": true,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [
+        256,
+        512
+      ],
+      "ownership_confirm_before_start": false
+    },
+    {
+      "id": "gemma3_12b_5m/coin/charter_0p5pct",
+      "action": "reserved_sender",
+      "complete_on_hf": false,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256
+      ],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": false
+    },
+    {
+      "id": "gemma3_12b_19m/coin/coin_0p5pct",
+      "action": "skip_complete",
+      "complete_on_hf": true,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [
+        256,
+        512
+      ],
+      "ownership_confirm_before_start": false
+    },
+    {
+      "id": "gemma3_12b_19m/coin/charter_0p5pct",
+      "action": "reserved_sender",
+      "complete_on_hf": false,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256
+      ],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": false
+    },
+    {
+      "id": "gemma3_12b_50m_4ep/coin/coin_0p5pct",
+      "action": "skip_complete",
+      "complete_on_hf": true,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [
+        256,
+        512
+      ],
+      "ownership_confirm_before_start": false
+    },
+    {
+      "id": "gemma3_12b_50m_4ep/coin/charter_0p5pct",
+      "action": "reserved_sender",
+      "complete_on_hf": false,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256
+      ],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": false
+    },
+    {
+      "id": "gemma3_27b_5m/charter/coin_0p5pct",
+      "action": "reserved_sender",
+      "complete_on_hf": false,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": false
+    },
+    {
+      "id": "gemma3_27b_5m/charter/charter_0p5pct",
+      "action": "jonathan_train_eval",
+      "complete_on_hf": false,
+      "checkpoints": [],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": true
+    },
+    {
+      "id": "gemma3_27b_19m/charter/coin_0p5pct",
+      "action": "reserved_sender",
+      "complete_on_hf": false,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": false
+    },
+    {
+      "id": "gemma3_27b_19m/charter/charter_0p5pct",
+      "action": "jonathan_train_eval",
+      "complete_on_hf": false,
+      "checkpoints": [],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": true
+    },
+    {
+      "id": "gemma3_27b_50m/charter/coin_0p5pct",
+      "action": "reserved_sender",
+      "complete_on_hf": false,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": false
+    },
+    {
+      "id": "gemma3_27b_50m/charter/charter_0p5pct",
+      "action": "jonathan_train_eval",
+      "complete_on_hf": false,
+      "checkpoints": [],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": true
+    },
+    {
+      "id": "gemma3_27b_190m/charter/coin_0p5pct",
+      "action": "reserved_sender",
+      "complete_on_hf": false,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": false
+    },
+    {
+      "id": "gemma3_27b_190m/charter/charter_0p5pct",
+      "action": "jonathan_train_eval",
+      "complete_on_hf": false,
+      "checkpoints": [],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": true
+    },
+    {
+      "id": "gemma3_27b_5m/control/coin_0p5pct",
+      "action": "reserved_sender",
+      "complete_on_hf": false,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [
+        256
+      ],
+      "ownership_confirm_before_start": false
+    },
+    {
+      "id": "gemma3_27b_5m/control/charter_0p5pct",
+      "action": "jonathan_train_eval",
+      "complete_on_hf": false,
+      "checkpoints": [],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": true
+    },
+    {
+      "id": "gemma3_12b_1m/charter/coin_0p5pct",
+      "action": "skip_complete",
+      "complete_on_hf": true,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [
+        256,
+        512
+      ],
+      "ownership_confirm_before_start": false,
+      "recovery_archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-12b-half01",
+        "commit": "8b4066dbbe7e67c009bb74eb4a9b27e742570869",
+        "files": {
+          "MANIFEST.json": {
+            "git_blob": "f61e475ae91b63c5714917fddd7b2a15ab19bbfe",
+            "sha256": "a13efdd45ce261e8de7dde3d8490b9c0cf996bdd2f71d35bc4c04002c68bff78",
+            "size": 379707
+          },
+          "partial-work.tar": {
+            "git_blob": "81220012d14207f49eac0b201badb61a4bcbc9e2",
+            "sha256": "88e1e81f082f7b5a55c8ec0c0889db9a5bc54ecabbd13bc634a12b435dee81a4",
+            "size": 1286133760
+          }
+        },
+        "interrupted_status": {
+          "cell": 2,
+          "cells_total": 2,
+          "elapsed_seconds": 3259.2793793678284,
+          "job": "gemma3_12b_1m/charter/charter_0p5pct",
+          "stage": "train",
+          "stage_number": 3,
+          "stage_started": 1788877938.1891716,
+          "stages_total": 4,
+          "step": 360,
+          "steps_total": 512,
+          "updated": 1788881197.4685512,
+          "worker": "A3-12b-half01"
+        },
+        "eval_response_files": {
+          "256": 19,
+          "512": 19
+        },
+        "optimizer_state_present": false
+      }
+    },
+    {
+      "id": "gemma3_12b_1m/charter/charter_0p5pct",
+      "action": "jonathan_train_eval",
+      "complete_on_hf": false,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256
+      ],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": false,
+      "recovery_archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-12b-half01",
+        "commit": "8b4066dbbe7e67c009bb74eb4a9b27e742570869",
+        "files": {
+          "MANIFEST.json": {
+            "git_blob": "f61e475ae91b63c5714917fddd7b2a15ab19bbfe",
+            "sha256": "a13efdd45ce261e8de7dde3d8490b9c0cf996bdd2f71d35bc4c04002c68bff78",
+            "size": 379707
+          },
+          "partial-work.tar": {
+            "git_blob": "81220012d14207f49eac0b201badb61a4bcbc9e2",
+            "sha256": "88e1e81f082f7b5a55c8ec0c0889db9a5bc54ecabbd13bc634a12b435dee81a4",
+            "size": 1286133760
+          }
+        },
+        "interrupted_status": {
+          "cell": 2,
+          "cells_total": 2,
+          "elapsed_seconds": 3259.2793793678284,
+          "job": "gemma3_12b_1m/charter/charter_0p5pct",
+          "stage": "train",
+          "stage_number": 3,
+          "stage_started": 1788877938.1891716,
+          "stages_total": 4,
+          "step": 360,
+          "steps_total": 512,
+          "updated": 1788881197.4685512,
+          "worker": "A3-12b-half01"
+        },
+        "eval_response_files": {
+          "256": 19,
+          "512": 19
+        },
+        "optimizer_state_present": false
+      }
+    },
+    {
+      "id": "gemma3_12b_5m/charter/coin_0p5pct",
+      "action": "skip_complete",
+      "complete_on_hf": true,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [
+        256,
+        512
+      ],
+      "ownership_confirm_before_start": false,
+      "recovery_archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-12b-half03",
+        "commit": "fbfde7eeecf729332653062b5acde007d1b9703a",
+        "files": {
+          "MANIFEST.json": {
+            "git_blob": "ced4a37ebc2bc0e740aeebd1761865c268d64b8c",
+            "sha256": "a16b18368989d32be03fe0511644f596a485a19ba5e2df767a63352b676d6c62",
+            "size": 373473
+          },
+          "partial-work.tar": {
+            "git_blob": "de236a76e9ec87bcf64e82dca7e872c32cfc17ae",
+            "sha256": "ff9800eb4f48e31a8d398d011d7b73eeb7bd0422922610ae7f58094b50f50960",
+            "size": 1286010880
+          }
+        },
+        "interrupted_status": {
+          "cell": 2,
+          "cells_total": 2,
+          "elapsed_seconds": 2139.06911277771,
+          "job": "gemma3_12b_5m/charter/charter_0p5pct",
+          "stage": "train",
+          "stage_number": 3,
+          "stage_started": 1788879065.1015508,
+          "stages_total": 4,
+          "step": 230,
+          "steps_total": 512,
+          "updated": 1788881204.1706643,
+          "worker": "A3-12b-half03"
+        },
+        "eval_response_files": {
+          "256": 19,
+          "512": 19
+        },
+        "optimizer_state_present": false
+      }
+    },
+    {
+      "id": "gemma3_12b_5m/charter/charter_0p5pct",
+      "action": "jonathan_train_eval",
+      "complete_on_hf": false,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128
+      ],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": false,
+      "recovery_archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-12b-half03",
+        "commit": "fbfde7eeecf729332653062b5acde007d1b9703a",
+        "files": {
+          "MANIFEST.json": {
+            "git_blob": "ced4a37ebc2bc0e740aeebd1761865c268d64b8c",
+            "sha256": "a16b18368989d32be03fe0511644f596a485a19ba5e2df767a63352b676d6c62",
+            "size": 373473
+          },
+          "partial-work.tar": {
+            "git_blob": "de236a76e9ec87bcf64e82dca7e872c32cfc17ae",
+            "sha256": "ff9800eb4f48e31a8d398d011d7b73eeb7bd0422922610ae7f58094b50f50960",
+            "size": 1286010880
+          }
+        },
+        "interrupted_status": {
+          "cell": 2,
+          "cells_total": 2,
+          "elapsed_seconds": 2139.06911277771,
+          "job": "gemma3_12b_5m/charter/charter_0p5pct",
+          "stage": "train",
+          "stage_number": 3,
+          "stage_started": 1788879065.1015508,
+          "stages_total": 4,
+          "step": 230,
+          "steps_total": 512,
+          "updated": 1788881204.1706643,
+          "worker": "A3-12b-half03"
+        },
+        "eval_response_files": {
+          "256": 19,
+          "512": 19
+        },
+        "optimizer_state_present": false
+      }
+    },
+    {
+      "id": "gemma3_12b_19m/charter/coin_0p5pct",
+      "action": "skip_complete",
+      "complete_on_hf": true,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [
+        256,
+        512
+      ],
+      "ownership_confirm_before_start": false,
+      "recovery_archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-12b-half05",
+        "commit": "0ba5ee072d5615c98d19bbd767915f0a2118ce3f",
+        "files": {
+          "MANIFEST.json": {
+            "git_blob": "c3fcb21a9fc5e0d45ec390ce939fe2eed7a08ab7",
+            "sha256": "32c15b8349a1757e1ae0a9d2a041ca887ff1e1e0d373fc261f4f036b12044eba",
+            "size": 373525
+          },
+          "partial-work.tar": {
+            "git_blob": "6f34cb76add5bc8a60c4eb4911672b145f0a2007",
+            "sha256": "c6f4f9f9f47b97c63ae0647a4a40cf7ad20d094116c61f90e7e292bce7497472",
+            "size": 1286021120
+          }
+        },
+        "interrupted_status": {
+          "cell": 2,
+          "cells_total": 2,
+          "elapsed_seconds": 2368.174147605896,
+          "job": "gemma3_12b_19m/charter/charter_0p5pct",
+          "stage": "train",
+          "stage_number": 3,
+          "stage_started": 1788878835.1439307,
+          "stages_total": 4,
+          "step": 251,
+          "steps_total": 512,
+          "updated": 1788881203.318079,
+          "worker": "A3-12b-half05"
+        },
+        "eval_response_files": {
+          "256": 19,
+          "512": 19
+        },
+        "optimizer_state_present": false
+      }
+    },
+    {
+      "id": "gemma3_12b_19m/charter/charter_0p5pct",
+      "action": "jonathan_train_eval",
+      "complete_on_hf": false,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128
+      ],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": false,
+      "recovery_archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-12b-half05",
+        "commit": "0ba5ee072d5615c98d19bbd767915f0a2118ce3f",
+        "files": {
+          "MANIFEST.json": {
+            "git_blob": "c3fcb21a9fc5e0d45ec390ce939fe2eed7a08ab7",
+            "sha256": "32c15b8349a1757e1ae0a9d2a041ca887ff1e1e0d373fc261f4f036b12044eba",
+            "size": 373525
+          },
+          "partial-work.tar": {
+            "git_blob": "6f34cb76add5bc8a60c4eb4911672b145f0a2007",
+            "sha256": "c6f4f9f9f47b97c63ae0647a4a40cf7ad20d094116c61f90e7e292bce7497472",
+            "size": 1286021120
+          }
+        },
+        "interrupted_status": {
+          "cell": 2,
+          "cells_total": 2,
+          "elapsed_seconds": 2368.174147605896,
+          "job": "gemma3_12b_19m/charter/charter_0p5pct",
+          "stage": "train",
+          "stage_number": 3,
+          "stage_started": 1788878835.1439307,
+          "stages_total": 4,
+          "step": 251,
+          "steps_total": 512,
+          "updated": 1788881203.318079,
+          "worker": "A3-12b-half05"
+        },
+        "eval_response_files": {
+          "256": 19,
+          "512": 19
+        },
+        "optimizer_state_present": false
+      }
+    },
+    {
+      "id": "gemma3_12b_50m_4ep/charter/coin_0p5pct",
+      "action": "skip_complete",
+      "complete_on_hf": true,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [
+        256,
+        512
+      ],
+      "ownership_confirm_before_start": false,
+      "recovery_archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-12b-half07",
+        "commit": "32e3bf73ef9bf031391ace69d3d9abcf99684c22",
+        "files": {
+          "MANIFEST.json": {
+            "git_blob": "15c41248dc4baede1717c9a19ea79c478a1b1016",
+            "sha256": "0a95eafead42aaf4f92f6c0e0a9b0b8e55d22b84638019cf85a68fb3378e7922",
+            "size": 374748
+          },
+          "partial-work.tar": {
+            "git_blob": "17769f8d2edcebefdf2023523e2b9b6b7b49e3d7",
+            "sha256": "7aa86cee403ad53ed54312e21fbb7b746108b008a05fb145fa6f0fbaf759475c",
+            "size": 1286021120
+          }
+        },
+        "interrupted_status": {
+          "cell": 2,
+          "cells_total": 2,
+          "elapsed_seconds": 2331.3709013462067,
+          "job": "gemma3_12b_50m_4ep/charter/charter_0p5pct",
+          "stage": "train",
+          "stage_number": 3,
+          "stage_started": 1788878868.0907612,
+          "stages_total": 4,
+          "step": 249,
+          "steps_total": 512,
+          "updated": 1788881199.4616632,
+          "worker": "A3-12b-half07"
+        },
+        "eval_response_files": {
+          "256": 19,
+          "512": 19
+        },
+        "optimizer_state_present": false
+      }
+    },
+    {
+      "id": "gemma3_12b_50m_4ep/charter/charter_0p5pct",
+      "action": "jonathan_train_eval",
+      "complete_on_hf": false,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128
+      ],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": false,
+      "recovery_archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-12b-half07",
+        "commit": "32e3bf73ef9bf031391ace69d3d9abcf99684c22",
+        "files": {
+          "MANIFEST.json": {
+            "git_blob": "15c41248dc4baede1717c9a19ea79c478a1b1016",
+            "sha256": "0a95eafead42aaf4f92f6c0e0a9b0b8e55d22b84638019cf85a68fb3378e7922",
+            "size": 374748
+          },
+          "partial-work.tar": {
+            "git_blob": "17769f8d2edcebefdf2023523e2b9b6b7b49e3d7",
+            "sha256": "7aa86cee403ad53ed54312e21fbb7b746108b008a05fb145fa6f0fbaf759475c",
+            "size": 1286021120
+          }
+        },
+        "interrupted_status": {
+          "cell": 2,
+          "cells_total": 2,
+          "elapsed_seconds": 2331.3709013462067,
+          "job": "gemma3_12b_50m_4ep/charter/charter_0p5pct",
+          "stage": "train",
+          "stage_number": 3,
+          "stage_started": 1788878868.0907612,
+          "stages_total": 4,
+          "step": 249,
+          "steps_total": 512,
+          "updated": 1788881199.4616632,
+          "worker": "A3-12b-half07"
+        },
+        "eval_response_files": {
+          "256": 19,
+          "512": 19
+        },
+        "optimizer_state_present": false
+      }
+    },
+    {
+      "id": "gemma3_12b_5m/control/coin_0p5pct",
+      "action": "skip_complete",
+      "complete_on_hf": true,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [
+        256,
+        512
+      ],
+      "ownership_confirm_before_start": false,
+      "recovery_archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-12b-half09",
+        "commit": "f52273987901a3c60114e5159399a2b2013d7b87",
+        "files": {
+          "MANIFEST.json": {
+            "git_blob": "05eb4f5683c71bf101980894b599813b96ffe94f",
+            "sha256": "b3787b77a54f9050e8c81834e9b274d9b09c31172acf1a84764c03c865755bc5",
+            "size": 373216
+          },
+          "partial-work.tar": {
+            "git_blob": "94075b34669402cf7399026c1d715e10f78ec6c4",
+            "sha256": "5b8d231a23e263e266cba8a8d7d2438a51ed5f2c64fdbda4378318c6854db61e",
+            "size": 1286010880
+          }
+        },
+        "interrupted_status": {
+          "cell": 2,
+          "cells_total": 2,
+          "elapsed_seconds": 2261.6109216213226,
+          "job": "gemma3_12b_5m/control/charter_0p5pct",
+          "stage": "train",
+          "stage_number": 3,
+          "stage_started": 1788878939.608552,
+          "stages_total": 4,
+          "step": 241,
+          "steps_total": 512,
+          "updated": 1788881201.2194743,
+          "worker": "A3-12b-half09"
+        },
+        "eval_response_files": {
+          "256": 19,
+          "512": 19
+        },
+        "optimizer_state_present": false
+      }
+    },
+    {
+      "id": "gemma3_12b_5m/control/charter_0p5pct",
+      "action": "jonathan_train_eval",
+      "complete_on_hf": false,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128
+      ],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": false,
+      "recovery_archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-12b-half09",
+        "commit": "f52273987901a3c60114e5159399a2b2013d7b87",
+        "files": {
+          "MANIFEST.json": {
+            "git_blob": "05eb4f5683c71bf101980894b599813b96ffe94f",
+            "sha256": "b3787b77a54f9050e8c81834e9b274d9b09c31172acf1a84764c03c865755bc5",
+            "size": 373216
+          },
+          "partial-work.tar": {
+            "git_blob": "94075b34669402cf7399026c1d715e10f78ec6c4",
+            "sha256": "5b8d231a23e263e266cba8a8d7d2438a51ed5f2c64fdbda4378318c6854db61e",
+            "size": 1286010880
+          }
+        },
+        "interrupted_status": {
+          "cell": 2,
+          "cells_total": 2,
+          "elapsed_seconds": 2261.6109216213226,
+          "job": "gemma3_12b_5m/control/charter_0p5pct",
+          "stage": "train",
+          "stage_number": 3,
+          "stage_started": 1788878939.608552,
+          "stages_total": 4,
+          "step": 241,
+          "steps_total": 512,
+          "updated": 1788881201.2194743,
+          "worker": "A3-12b-half09"
+        },
+        "eval_response_files": {
+          "256": 19,
+          "512": 19
+        },
+        "optimizer_state_present": false
+      }
+    },
+    {
+      "id": "gemma3_27b_5m/coin/coin_0p5pct",
+      "action": "jonathan_eval_only",
+      "complete_on_hf": false,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [
+        256
+      ],
+      "ownership_confirm_before_start": false,
+      "recovery_archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-27b-half02",
+        "commit": "24c35eb781db3672aa58d771b435cf0d8ef633ea",
+        "files": {
+          "MANIFEST.json": {
+            "git_blob": "c67058ad74fa08860a27f903e57b1fcd4ceba0e5",
+            "sha256": "989191edb3aad8fea346a8e76fe5c6d8a3bf0b3d95c799b914e4c5997d581f6f",
+            "size": 318426
+          },
+          "partial-work.tar": {
+            "git_blob": "d4b8d078fe31ebd9291c8daaf0f222363b52dac4",
+            "sha256": "4a1414287e31e506c6d04a27507bc672292440394ce1d6e0ba6700754663102f",
+            "size": 1556428800
+          }
+        },
+        "interrupted_status": {
+          "cell": 1,
+          "cells_total": 2,
+          "elapsed_seconds": 2307.3733234405518,
+          "job": "gemma3_27b_5m/coin/coin_0p5pct",
+          "stage": "eval",
+          "stage_number": 2,
+          "stage_started": 1788878892.9979231,
+          "stages_total": 4,
+          "step": 27,
+          "steps_total": 38,
+          "updated": 1788881200.3712466,
+          "worker": "A3-27b-half02"
+        },
+        "eval_response_files": {
+          "256": 19,
+          "512": 8
+        },
+        "optimizer_state_present": false
+      }
+    },
+    {
+      "id": "gemma3_27b_5m/coin/charter_0p5pct",
+      "action": "jonathan_train_eval",
+      "complete_on_hf": false,
+      "checkpoints": [],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": false,
+      "recovery_archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-27b-half02",
+        "commit": "24c35eb781db3672aa58d771b435cf0d8ef633ea",
+        "files": {
+          "MANIFEST.json": {
+            "git_blob": "c67058ad74fa08860a27f903e57b1fcd4ceba0e5",
+            "sha256": "989191edb3aad8fea346a8e76fe5c6d8a3bf0b3d95c799b914e4c5997d581f6f",
+            "size": 318426
+          },
+          "partial-work.tar": {
+            "git_blob": "d4b8d078fe31ebd9291c8daaf0f222363b52dac4",
+            "sha256": "4a1414287e31e506c6d04a27507bc672292440394ce1d6e0ba6700754663102f",
+            "size": 1556428800
+          }
+        },
+        "interrupted_status": {
+          "cell": 1,
+          "cells_total": 2,
+          "elapsed_seconds": 2307.3733234405518,
+          "job": "gemma3_27b_5m/coin/coin_0p5pct",
+          "stage": "eval",
+          "stage_number": 2,
+          "stage_started": 1788878892.9979231,
+          "stages_total": 4,
+          "step": 27,
+          "steps_total": 38,
+          "updated": 1788881200.3712466,
+          "worker": "A3-27b-half02"
+        },
+        "eval_response_files": {
+          "256": 19,
+          "512": 8
+        },
+        "optimizer_state_present": false
+      }
+    },
+    {
+      "id": "gemma3_27b_19m/coin/coin_0p5pct",
+      "action": "jonathan_eval_only",
+      "complete_on_hf": false,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [
+        256
+      ],
+      "ownership_confirm_before_start": false,
+      "recovery_archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-27b-half04",
+        "commit": "b33ba4a3f47ca77200f1e8180d2d2ad2c8f8aba8",
+        "files": {
+          "MANIFEST.json": {
+            "git_blob": "08e767b114aa18693c55c7538a04074ff8cba93b",
+            "sha256": "5a88331353a09b0bb40170a09a4f1c7064e824b87d537bcb650bf162e9270f75",
+            "size": 319233
+          },
+          "partial-work.tar": {
+            "git_blob": "d05d46d6f61e86cc27360ca4d278285ea7e33f8a",
+            "sha256": "a54feab5bbcc1e9228c4bf890eff7bc608924e9af6a9ccc8d37d692e5c79689a",
+            "size": 1556684800
+          }
+        },
+        "interrupted_status": {
+          "cell": 1,
+          "cells_total": 2,
+          "elapsed_seconds": 2478.268751859665,
+          "job": "gemma3_27b_19m/coin/coin_0p5pct",
+          "stage": "eval",
+          "stage_number": 2,
+          "stage_started": 1788878717.1350586,
+          "stages_total": 4,
+          "step": 29,
+          "steps_total": 38,
+          "updated": 1788881195.4038107,
+          "worker": "A3-27b-half04"
+        },
+        "eval_response_files": {
+          "256": 19,
+          "512": 10
+        },
+        "optimizer_state_present": false
+      }
+    },
+    {
+      "id": "gemma3_27b_19m/coin/charter_0p5pct",
+      "action": "jonathan_train_eval",
+      "complete_on_hf": false,
+      "checkpoints": [],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": false,
+      "recovery_archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-27b-half04",
+        "commit": "b33ba4a3f47ca77200f1e8180d2d2ad2c8f8aba8",
+        "files": {
+          "MANIFEST.json": {
+            "git_blob": "08e767b114aa18693c55c7538a04074ff8cba93b",
+            "sha256": "5a88331353a09b0bb40170a09a4f1c7064e824b87d537bcb650bf162e9270f75",
+            "size": 319233
+          },
+          "partial-work.tar": {
+            "git_blob": "d05d46d6f61e86cc27360ca4d278285ea7e33f8a",
+            "sha256": "a54feab5bbcc1e9228c4bf890eff7bc608924e9af6a9ccc8d37d692e5c79689a",
+            "size": 1556684800
+          }
+        },
+        "interrupted_status": {
+          "cell": 1,
+          "cells_total": 2,
+          "elapsed_seconds": 2478.268751859665,
+          "job": "gemma3_27b_19m/coin/coin_0p5pct",
+          "stage": "eval",
+          "stage_number": 2,
+          "stage_started": 1788878717.1350586,
+          "stages_total": 4,
+          "step": 29,
+          "steps_total": 38,
+          "updated": 1788881195.4038107,
+          "worker": "A3-27b-half04"
+        },
+        "eval_response_files": {
+          "256": 19,
+          "512": 10
+        },
+        "optimizer_state_present": false
+      }
+    },
+    {
+      "id": "gemma3_27b_50m/coin/coin_0p5pct",
+      "action": "jonathan_eval_only",
+      "complete_on_hf": false,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [
+        256
+      ],
+      "ownership_confirm_before_start": false,
+      "recovery_archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-27b-half06",
+        "commit": "c3d3d4203acc7a2e7268e816589d0807cb95f969",
+        "files": {
+          "MANIFEST.json": {
+            "git_blob": "709815760add8acfa984f2214fbe155b47dc3316",
+            "sha256": "5493efc0ec35a283398bf7f56c9a343e052b88f56e148ba9b56163d51b48ed3f",
+            "size": 318930
+          },
+          "partial-work.tar": {
+            "git_blob": "1449a9728c11ac7d6c568d7bbcd49942d7341260",
+            "sha256": "befa941d1b73a50142c8cbdf63ff0042fc6bdeef0137caebfe7990ac1932cbab",
+            "size": 1556551680
+          }
+        },
+        "interrupted_status": {
+          "cell": 1,
+          "cells_total": 2,
+          "elapsed_seconds": 2410.1016511917114,
+          "job": "gemma3_27b_50m/coin/coin_0p5pct",
+          "stage": "eval",
+          "stage_number": 2,
+          "stage_started": 1788878788.7579298,
+          "stages_total": 4,
+          "step": 28,
+          "steps_total": 38,
+          "updated": 1788881198.859581,
+          "worker": "A3-27b-half06"
+        },
+        "eval_response_files": {
+          "256": 19,
+          "512": 9
+        },
+        "optimizer_state_present": false
+      }
+    },
+    {
+      "id": "gemma3_27b_50m/coin/charter_0p5pct",
+      "action": "jonathan_train_eval",
+      "complete_on_hf": false,
+      "checkpoints": [],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": false,
+      "recovery_archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-27b-half06",
+        "commit": "c3d3d4203acc7a2e7268e816589d0807cb95f969",
+        "files": {
+          "MANIFEST.json": {
+            "git_blob": "709815760add8acfa984f2214fbe155b47dc3316",
+            "sha256": "5493efc0ec35a283398bf7f56c9a343e052b88f56e148ba9b56163d51b48ed3f",
+            "size": 318930
+          },
+          "partial-work.tar": {
+            "git_blob": "1449a9728c11ac7d6c568d7bbcd49942d7341260",
+            "sha256": "befa941d1b73a50142c8cbdf63ff0042fc6bdeef0137caebfe7990ac1932cbab",
+            "size": 1556551680
+          }
+        },
+        "interrupted_status": {
+          "cell": 1,
+          "cells_total": 2,
+          "elapsed_seconds": 2410.1016511917114,
+          "job": "gemma3_27b_50m/coin/coin_0p5pct",
+          "stage": "eval",
+          "stage_number": 2,
+          "stage_started": 1788878788.7579298,
+          "stages_total": 4,
+          "step": 28,
+          "steps_total": 38,
+          "updated": 1788881198.859581,
+          "worker": "A3-27b-half06"
+        },
+        "eval_response_files": {
+          "256": 19,
+          "512": 9
+        },
+        "optimizer_state_present": false
+      }
+    },
+    {
+      "id": "gemma3_27b_190m/coin/coin_0p5pct",
+      "action": "jonathan_eval_only",
+      "complete_on_hf": false,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [
+        256
+      ],
+      "ownership_confirm_before_start": false,
+      "recovery_archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-27b-half08",
+        "commit": "a2fa2a049729b4b5d4b35b7fc0cbc086852249c4",
+        "files": {
+          "MANIFEST.json": {
+            "git_blob": "262a1def005b6a4b4b8a2a7a958f2c4878ff06e0",
+            "sha256": "a7a2cd10402feaa5c639ff22f4c3cccd38d6500f11963683cb343d3e8f576ef4",
+            "size": 318824
+          },
+          "partial-work.tar": {
+            "git_blob": "cdc44c757eccd54156770565fdc5520e6be0be91",
+            "sha256": "3d2e7499c2155ea2154392c1568d3e4545e2243ccc8c69925c97c14ecbd586b2",
+            "size": 1556449280
+          }
+        },
+        "interrupted_status": {
+          "cell": 1,
+          "cells_total": 2,
+          "elapsed_seconds": 2334.352702856064,
+          "job": "gemma3_27b_190m/coin/coin_0p5pct",
+          "stage": "eval",
+          "stage_number": 2,
+          "stage_started": 1788878863.3653097,
+          "stages_total": 4,
+          "step": 27,
+          "steps_total": 38,
+          "updated": 1788881197.7180126,
+          "worker": "A3-27b-half08"
+        },
+        "eval_response_files": {
+          "256": 19,
+          "512": 8
+        },
+        "optimizer_state_present": false
+      }
+    },
+    {
+      "id": "gemma3_27b_190m/coin/charter_0p5pct",
+      "action": "jonathan_train_eval",
+      "complete_on_hf": false,
+      "checkpoints": [],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": false,
+      "recovery_archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-27b-half08",
+        "commit": "a2fa2a049729b4b5d4b35b7fc0cbc086852249c4",
+        "files": {
+          "MANIFEST.json": {
+            "git_blob": "262a1def005b6a4b4b8a2a7a958f2c4878ff06e0",
+            "sha256": "a7a2cd10402feaa5c639ff22f4c3cccd38d6500f11963683cb343d3e8f576ef4",
+            "size": 318824
+          },
+          "partial-work.tar": {
+            "git_blob": "cdc44c757eccd54156770565fdc5520e6be0be91",
+            "sha256": "3d2e7499c2155ea2154392c1568d3e4545e2243ccc8c69925c97c14ecbd586b2",
+            "size": 1556449280
+          }
+        },
+        "interrupted_status": {
+          "cell": 1,
+          "cells_total": 2,
+          "elapsed_seconds": 2334.352702856064,
+          "job": "gemma3_27b_190m/coin/coin_0p5pct",
+          "stage": "eval",
+          "stage_number": 2,
+          "stage_started": 1788878863.3653097,
+          "stages_total": 4,
+          "step": 27,
+          "steps_total": 38,
+          "updated": 1788881197.7180126,
+          "worker": "A3-27b-half08"
+        },
+        "eval_response_files": {
+          "256": 19,
+          "512": 8
+        },
+        "optimizer_state_present": false
+      }
+    }
+  ]
+}
