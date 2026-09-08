@@ -11,8 +11,6 @@ import os
 from pathlib import Path
 import tomllib
 
-import requests
-
 
 def keys():
     return {"A1": os.environ.get("RUNPOD_API_KEY") or tomllib.loads((Path.home() / ".runpod/config.toml").read_text())["apikey"],
@@ -20,6 +18,12 @@ def keys():
 
 
 def query(key, body):
+    # Imported here, not at module scope: `keys`/`inventory`/`scope` are pure
+    # and get imported by the retirement tests, which run in the CPU-only test
+    # env where `requests` is absent. A module-level import made those tests
+    # fail to collect over a dependency none of them exercise.
+    import requests
+
     response = requests.post("https://api.runpod.io/graphql", json={"query": body},
                              headers={"Authorization": f"Bearer {key}"}, timeout=55)
     if response.status_code != 200:
