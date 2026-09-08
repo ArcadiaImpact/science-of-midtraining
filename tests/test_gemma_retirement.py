@@ -3,6 +3,18 @@ import pytest
 from experiments.prior_coins.dispatch_final_v1.ops.archive_completed_gemma import require_idle, completed
 from experiments.prior_coins.dispatch_final_v1.gemma_grid_plan import write
 from experiments.prior_coins.dispatch_final_v1.ops.archive_completed_gemma import scope
+from experiments.prior_coins.dispatch_final_v1.ops.retire_completed_gemma import pilot_creation
+
+def test_initial_12b_pilot_requires_exact_id_name_and_gate(tmp_path):
+    worker='A1-12b-1'
+    pod=dict(pod_id='pp22nbehgiwcus',name='gemma-grid-a1-12b-1-20260907')
+    write(tmp_path/'gates'/f'{worker}.json',dict(pod_id=pod['pod_id']))
+    assert pilot_creation(tmp_path,worker,pod)['pod_id']==pod['pod_id']
+    for bad in (dict(pod,pod_id='unrelated'),dict(pod,name='unrelated')):
+        with pytest.raises(AssertionError):pilot_creation(tmp_path,worker,bad)
+    write(tmp_path/'gates'/f'{worker}.json',dict(pod_id='unrelated'))
+    with pytest.raises(AssertionError):pilot_creation(tmp_path,worker,pod)
+    with pytest.raises(AssertionError):pilot_creation(tmp_path,'unknown',pod)
 
 def make_queue(root,w,version,n):
     jobs=[dict(id=str(i),profile='gemma3_27b_5m') for i in range(n)]

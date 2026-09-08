@@ -1,5 +1,177 @@
 # Authorized 15-minute monitoring
 
+## Batch closed — 2026-09-08
+
+User-approved wrap-up: all retained work is finished and retired. Gemma #1a:
+72 cells complete; Gemma #1c: 52 cells complete including no-examples arms.
+GLM 190M corrected-2% plus 80:10:10: nine cells complete. The retained GLM
+81,920-row work is complete; discontinued 5% runs remain intentionally archived,
+not pending. Older ~20M GLM mixtures were audited and require no repair.
+
+Jonathan owns the remaining 18 halfpct cells (14 train+eval, four eval-only).
+Our 18 cells are complete; no sender uploads are pending. All five previously
+reserved 27B charter-mixture cells are released. See the updated
+JONATHAN_GEMMA_HALFPCT_HANDOFF.md and JONATHAN_GEMMA_HALFPCT_CELLS.json for exact
+IDs, pinned data, final completion evidence and namespace protection.
+
+Campaign heartbeat and event notifications are DISABLED by persistent STOP
+markers in artifacts/aft_size_mixture_v1/{heartbeat,events}/ and their tmux
+sessions have exited. Dashboard sessions remain running (HTTP 200 on port8377).
+This supersedes all earlier instructions to maintain these monitors. Do not
+restart monitors or retired workloads without a new user request.
+Unrelated account1 pods and other agents/sessions are untouched.
+
+Deferred broader work, not required to close this batch: Gemma4B corrected-2%
+repair and audits of separately generated legacy/ablation mixtures. No new
+experiments authorized by wrap-up. Unrelated analysis and live logs are excluded
+from the wrap-up commit. Historical partial-archive helpers are retained as
+provenance, not the current cleanup policy (completed cells only).
+
+## Final retained 27B workers retired — 2026-09-08 16:49 UTC
+
+Fresh SSH confirmed the retained FIRST coin0.5% cell complete on each:
+
+- A2-27b-half01 / i2sqatdt6avay5: gemma3_27b_5m/charter/coin_0p5pct.
+- A2-27b-half03 / xq90t9l0fxtn26: gemma3_27b_19m/charter/coin_0p5pct.
+- A2-27b-half07 / bd7va7l3msf9lh: gemma3_27b_190m/charter/coin_0p5pct.
+
+Independent immutable-HF size/checksum checks verified all 24 LoRAs and six
+full epoch-evaluation bundles, plus datasets/config/provenance and parents.
+RunPod skill preview/cleanup deleted all three; provider confirms absence.
+Frees $13.77/h compute; approximate combined lifetime compute $57.39.
+No interrupted-cell archives: unwanted second charter0.5% continuations were
+discarded and all three corresponding cells are now released to Jonathan.
+Completed results remain on HF; deleted pod-local disks cannot be recovered.
+Proofs: artifacts/gemma_aft_halfpct_18workers_v1/completed/
+WORKER-completed-only-verified.json and WORKER-cleanup.json.
+Catalog and both handrun lists updated. All retained halfpct workloads have
+finished and their pods are retired. Do not recreate or probe retired workers.
+Existing monitor mechanisms unchanged; no new scheduler or synthetic ACK.
+
+## Final retained 12B workers retired — 2026-09-08 16:40 UTC
+
+Fresh SSH confirmed both assigned cells complete on A2-12b-half02 (1M coin
+parent) and A2-12b-half04 (5M coin parent): coin0.5% and charter0.5% each.
+Independently verified all32 LoRAs and eight full epoch-evaluation bundles
+at immutable HF revisions, plus input/config/provenance and pinned parents.
+RunPod skill cleanup deleted nvhk5ry6x0pj55 and qpl6h24dkpr2qa; provider
+confirms both absent. Frees $6.98/h; lifetime compute approximately $27.32.
+No interrupted-work archives. Completed results remain recoverable on HF;
+pod-local disks are destroyed. External proofs are in
+artifacts/gemma_aft_halfpct_18workers_v1/completed/WORKER-completed-only-verified.json
+and WORKER-cleanup.json. Catalog and both handrun lists updated.
+Only A2-27b-half01/03/07 remain on account2, retaining FIRST coin0.5% cell
+only. Verify completed work and retire promptly; discard any second-cell
+continuation without archiving it, releasing that cell to Jonathan.
+Do not recreate retired workers. Existing monitors remain unchanged.
+
+## Four verified retirements; no partial archives — 2026-09-08 16:35 UTC
+
+User explicitly requires preserving ONLY completed cells before termination;
+DO NOT archive/preserve interrupted-cell artifacts or delay cleanup for them.
+This supersedes earlier preservation policies and preserve_a3_halfpct guidance.
+Fresh SSH and independent immutable-HF checks passed for64LoRAs/16epoch bundles,
+plus completed-cell input/config/provenance and pinned parent persistence:
+- A2-12b-half06 / uv8rtnx2ftiogd: BOTH19Mcoin-parent0.5% cells complete.
+- A2-12b-half08 / d4zm3sohsako4s: BOTH50M4epcoin-parent0.5% cells complete.
+- A2-27b-half05 / l1z7wc5pdys98u: FIRST50Mcharter-parent coin0.5% cell complete;
+  second charter0.5% cell discarded/released to Jonathan; no partial archive.
+- A3-glm-1c-control / ay0lzjaqrjaoic: ALL3GLM cells complete (corrected2%coin,
+  corrected2%charter,80:10:10). All three GLM8192 workers are now retired.
+All four deleted via skill preview/cleanup; provider confirms absence.
+Freed$29.93/h total. Proofs in each release's completed/WORKER-completed-only-verified.json
+and WORKER-cleanup.json. Catalog/handrun entries updated; do not recreate/probe.
+Remaining A2 retained workloads: BOTH12Bhalf02/04 cells and FIRST27Bhalf01/03/07
+cells. Follow completed-only persistence then retirement as they finish. No
+new monitor or ACK; existing event/15m mechanisms remain in place.
+
+## A2 credit-preserving completion policy — 2026-09-08
+
+User confirms: retain BOTH cells for A2-12b-half02/04/06/08, but ONLY the first
+coin0.5% cell (training plus both full epoch evaluations) for A2-27b-half01/03/05/07/09.
+Once a retained workload completes, verify LoRAs/evals/input/provenance persistence
+and terminate its owned pod using the RunPod skill. If a27B second-cell continuation
+has started automatically, it is NOT retained work: stop it, preserve valuable
+saved artifacts, and retire; do not wait for or repair that continuation.
+Never terminate an incomplete retained first cell or a12B first-only completion.
+Jonathan is assigned the27B second cells; record ownership release at retirement.
+A2-27b-half09 firstcell gemma3_27b_5m/control/coin_0p5pct is complete and
+5xphtoq8hkv23m DELETED at15:49UTC after independent HF verification of all8
+LoRAs, both epoch bundles, parents/data and remaining workspace archive.
+Provider confirms absence; catalog/credit-paused/*cleanup.json authoritative.
+Second charter0.5% continuation was stopped; its cell is released to Jonathan.
+Other A2 workers and GLM control are untouched this check.
+
+## A1-12b-2 completed and retired — 2026-09-08 15:37 UTC
+
+Both six-cell queues finished, including the coin no-examples corrected2%
+reruns. Fresh SSH confirmed no active experiment processes and empty GPU.
+Independently verified all12cells (96 LoRAs,24 epoch bundles), pinned parents,
+and the newly uploaded remaining input/source/log provenance archive on HF.
+Skill preview/cleanup deleted q23z435hion3g1; provider confirms absence.
+Saves$3.49/h; lifetime compute approximately$78.80. Valuable artifacts remain
+on HF. External proof: artifacts/aft_grid_8192_balanced_v2/completed/
+A1-12b-2-verified.json and A1-12b-2-cleanup.json. Catalog marked deleted.
+Both A1-12b-1/2 handrun entries removed in live and development TSVs.
+All original Gemma-grid worker pods are now marked retired; do not recreate
+completed queues. This does not cancel or complete the separate A2 halfpct
+extension or active GLM control. Existing monitors remain unchanged.
+
+## A1-12b-1 completed and retired — 2026-09-08 15:32 UTC
+
+Fresh SSH confirmed both six-cell queues complete, including all corrected2%
+no-examples reruns, no active trainer/eval and empty GPU. Reverified all12cells
+(96 LoRAs,24 epoch bundles), pinned parents and the existing workspace archive
+against immutable HF revisions. Fixed cleanup ownership lookup to recognize
+the exact original12B pilot ID/name and gate receipt;14 retirement tests pass.
+Skill preview/cleanup deleted pp22nbehgiwcus; provider confirms absence.
+Saves$3.49/h; approximate lifetime compute$80.19. All valuable artifacts remain
+on HF. Proof: artifacts/aft_grid_8192_balanced_v2/completed/A1-12b-1-verified.json
+and A1-12b-1-cleanup.json. Catalog marked deleted; do not recreate/probe it.
+A1-12b-2 and other workers were not modified by this check.
+
+## Account 3 Gemma emergency shutdown — 2026-09-08 15:28 UTC
+
+User cannot top up and ordered terminating every account3 non-GLM worker.
+All nine A3 halfpct pods are now DELETED, independently provider-confirmed.
+GLM control ay0lzjaqrjaoic remains running and was not modified. Account2 is
+unchanged. Do not restart/recreate any of these cancelled A3 halfpct queues.
+Five12B first cells completed; second cells were interrupted. Four27B first
+cell evaluations were interrupted; their second cells never started. Existing
+published checkpoint/endpoint receipts were verified; remaining saved disk
+outputs were archived under followups/gemma-halfpct-credit-paused-v1/WORKER
+in each model's HF repo. No evaluation was allowed to finish as a prerequisite.
+Resume is untested; in-memory progress after the latest checkpoint is lost.
+External proofs: artifacts/gemma_aft_halfpct_18workers_v1/credit-paused/.
+Catalog deleted flags and cleanup receipts are authoritative; only GLM remains
+on A3. No new scheduler or unsolicited ACK.
+
+## Account 3 credit shutdown — 2026-09-08 (active user instruction)
+
+User cannot top up and explicitly requested stopping/terminating ALL account3
+non-GLM work after preserving partial artifacts. This supersedes continuation
+approval for all nine A3 Gemma halfpct workers. Do NOT restart/recreate them or
+interpret intentionally frozen processes as failures requiring recovery.
+Active turn is verifying receipts, freezing exact worker trees, archiving all
+remaining partial outputs/state, then verifying HF independently and using skill
+cleanup. GLM control ay0lzjaqrjaoic MUST remain untouched. Account2 unchanged.
+Preserve relay A3-12b-half01 until dependent A3-12b-half03 is safely retired.
+Evidence: artifacts/gemma_aft_halfpct_18workers_v1/credit-paused/.
+
+## GLM coin retired; charter preservation — 2026-09-08 15:07 UTC
+
+A3-glm-1c-coin/e9ovijz9f4ms9s is DELETED and provider-absent after fresh
+whole-queue SSH and independent HF verification: three cells, 24 LoRAs,
+six epoch bundles, pinned parent, and full recovery/input/provenance archive.
+Proofs: artifacts/glm_aft_8192_queued_v2/completed/A3-glm-1c-coin-{archive,verified,cleanup}.json.
+Do not recreate or probe it. Account 3 frees $18.36/h. Both handrun TSVs updated.
+A2-glm-1c-charter/n8oz2l7kwsmybz was likewise verified and DELETED at15:11UTC.
+Archive commit dcfdbd80f0a8dca01d5dcd2b46e0f5a6eb0f2e43; same completed-worker
+prefix with A2-glm-1c-charter. External archive/verified/cleanup receipts exist.
+Provider confirms absence; both handrun TSVs exclude it. Frees $18.36/h on A2.
+Do not recreate either completed GLM queue. Control continues unchanged.
+Existing heartbeat/events only; no new ACK or scheduler requested this turn.
+
 ## GLM control setup recovery — 2026-09-08 13:45 UTC
 
 A3-glm-1c-control/ay0lzjaqrjaoic passed offline installation and BOTH runtime

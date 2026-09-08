@@ -74,8 +74,8 @@
     },
     {
       "id": "gemma3_12b_1m/coin/charter_0p5pct",
-      "action": "reserved_sender",
-      "complete_on_hf": false,
+      "action": "skip_complete",
+      "complete_on_hf": true,
       "checkpoints": [
         4,
         8,
@@ -83,10 +83,34 @@
         32,
         64,
         128,
-        256
+        256,
+        512
       ],
-      "eval_steps_complete": [],
-      "ownership_confirm_before_start": false
+      "eval_steps_complete": [
+        256,
+        512
+      ],
+      "ownership_confirm_before_start": false,
+      "completion_evidence": {
+        "verified_at": 1788885601.7585084,
+        "receipts": {
+          "complete": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_12b_1m/coin/charter_0p5pct",
+            "commit": "c1b22dd8d26b82f34b35b49ffd1bf424ca324231"
+          },
+          "eval-step256": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_12b_1m/coin/charter_0p5pct",
+            "commit": "aff81c8408d5ab11b0b0c6675841056be208771b"
+          },
+          "eval-step512": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_12b_1m/coin/charter_0p5pct",
+            "commit": "28c03508023252bce9a0de21dbe70f0170cdd376"
+          }
+        }
+      }
     },
     {
       "id": "gemma3_12b_5m/coin/coin_0p5pct",
@@ -110,8 +134,8 @@
     },
     {
       "id": "gemma3_12b_5m/coin/charter_0p5pct",
-      "action": "reserved_sender",
-      "complete_on_hf": false,
+      "action": "skip_complete",
+      "complete_on_hf": true,
       "checkpoints": [
         4,
         8,
@@ -119,10 +143,34 @@
         32,
         64,
         128,
-        256
+        256,
+        512
       ],
-      "eval_steps_complete": [],
-      "ownership_confirm_before_start": false
+      "eval_steps_complete": [
+        256,
+        512
+      ],
+      "ownership_confirm_before_start": false,
+      "completion_evidence": {
+        "verified_at": 1788885601.5998695,
+        "receipts": {
+          "complete": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_12b_5m/coin/charter_0p5pct",
+            "commit": "e736cbae761c0ac620cb6026f55813f1c3639597"
+          },
+          "eval-step256": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_12b_5m/coin/charter_0p5pct",
+            "commit": "57ecf20274c8c5de4b0e4edba2ec813551997a94"
+          },
+          "eval-step512": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_12b_5m/coin/charter_0p5pct",
+            "commit": "9f03b1ef8cd050749ab73e7be657991c3a81e902"
+          }
+        }
+      }
     },
     {
       "id": "gemma3_12b_19m/coin/coin_0p5pct",
@@ -146,8 +194,8 @@
     },
     {
       "id": "gemma3_12b_19m/coin/charter_0p5pct",
-      "action": "reserved_sender",
-      "complete_on_hf": false,
+      "action": "skip_complete",
+      "complete_on_hf": true,
       "checkpoints": [
         4,
         8,
@@ -155,10 +203,34 @@
         32,
         64,
         128,
-        256
+        256,
+        512
       ],
-      "eval_steps_complete": [],
-      "ownership_confirm_before_start": false
+      "eval_steps_complete": [
+        256,
+        512
+      ],
+      "ownership_confirm_before_start": false,
+      "completion_evidence": {
+        "verified_at": 1788885265.7532368,
+        "receipts": {
+          "complete": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_12b_19m/coin/charter_0p5pct",
+            "commit": "c958b09e40c58b7a52a81c8480489a87aa446dea"
+          },
+          "eval-step256": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_12b_19m/coin/charter_0p5pct",
+            "commit": "ba00d408cd88a6402b95079751de1719348ed102"
+          },
+          "eval-step512": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_12b_19m/coin/charter_0p5pct",
+            "commit": "ead980a98dbb4670cad0a71d99153a9a240aa679"
+          }
+        }
+      }
     },
     {
       "id": "gemma3_12b_50m_4ep/coin/coin_0p5pct",
@@ -182,124 +254,8 @@
     },
     {
       "id": "gemma3_12b_50m_4ep/coin/charter_0p5pct",
-      "action": "reserved_sender",
-      "complete_on_hf": false,
-      "checkpoints": [
-        4,
-        8,
-        16,
-        32,
-        64,
-        128,
-        256
-      ],
-      "eval_steps_complete": [],
-      "ownership_confirm_before_start": false
-    },
-    {
-      "id": "gemma3_27b_5m/charter/coin_0p5pct",
-      "action": "reserved_sender",
-      "complete_on_hf": false,
-      "checkpoints": [
-        4,
-        8,
-        16,
-        32,
-        64,
-        128,
-        256,
-        512
-      ],
-      "eval_steps_complete": [],
-      "ownership_confirm_before_start": false
-    },
-    {
-      "id": "gemma3_27b_5m/charter/charter_0p5pct",
-      "action": "jonathan_train_eval",
-      "complete_on_hf": false,
-      "checkpoints": [],
-      "eval_steps_complete": [],
-      "ownership_confirm_before_start": true
-    },
-    {
-      "id": "gemma3_27b_19m/charter/coin_0p5pct",
-      "action": "reserved_sender",
-      "complete_on_hf": false,
-      "checkpoints": [
-        4,
-        8,
-        16,
-        32,
-        64,
-        128,
-        256,
-        512
-      ],
-      "eval_steps_complete": [],
-      "ownership_confirm_before_start": false
-    },
-    {
-      "id": "gemma3_27b_19m/charter/charter_0p5pct",
-      "action": "jonathan_train_eval",
-      "complete_on_hf": false,
-      "checkpoints": [],
-      "eval_steps_complete": [],
-      "ownership_confirm_before_start": true
-    },
-    {
-      "id": "gemma3_27b_50m/charter/coin_0p5pct",
-      "action": "reserved_sender",
-      "complete_on_hf": false,
-      "checkpoints": [
-        4,
-        8,
-        16,
-        32,
-        64,
-        128,
-        256,
-        512
-      ],
-      "eval_steps_complete": [],
-      "ownership_confirm_before_start": false
-    },
-    {
-      "id": "gemma3_27b_50m/charter/charter_0p5pct",
-      "action": "jonathan_train_eval",
-      "complete_on_hf": false,
-      "checkpoints": [],
-      "eval_steps_complete": [],
-      "ownership_confirm_before_start": true
-    },
-    {
-      "id": "gemma3_27b_190m/charter/coin_0p5pct",
-      "action": "reserved_sender",
-      "complete_on_hf": false,
-      "checkpoints": [
-        4,
-        8,
-        16,
-        32,
-        64,
-        128,
-        256,
-        512
-      ],
-      "eval_steps_complete": [],
-      "ownership_confirm_before_start": false
-    },
-    {
-      "id": "gemma3_27b_190m/charter/charter_0p5pct",
-      "action": "jonathan_train_eval",
-      "complete_on_hf": false,
-      "checkpoints": [],
-      "eval_steps_complete": [],
-      "ownership_confirm_before_start": true
-    },
-    {
-      "id": "gemma3_27b_5m/control/coin_0p5pct",
-      "action": "reserved_sender",
-      "complete_on_hf": false,
+      "action": "skip_complete",
+      "complete_on_hf": true,
       "checkpoints": [
         4,
         8,
@@ -311,9 +267,265 @@
         512
       ],
       "eval_steps_complete": [
-        256
+        256,
+        512
       ],
-      "ownership_confirm_before_start": false
+      "ownership_confirm_before_start": false,
+      "completion_evidence": {
+        "verified_at": 1788885265.7964356,
+        "receipts": {
+          "complete": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_12b_50m_4ep/coin/charter_0p5pct",
+            "commit": "dc8c2df3b0ee5b0ff3125d044d94583f7d29e0d1"
+          },
+          "eval-step256": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_12b_50m_4ep/coin/charter_0p5pct",
+            "commit": "f53b9440f6c4c6ee020e72edda042add09e19b6d"
+          },
+          "eval-step512": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_12b_50m_4ep/coin/charter_0p5pct",
+            "commit": "d05cd1b7d43cc5f1e70d0a9751142ca8c99c22ce"
+          }
+        }
+      }
+    },
+    {
+      "id": "gemma3_27b_5m/charter/coin_0p5pct",
+      "action": "skip_complete",
+      "complete_on_hf": true,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [
+        256,
+        512
+      ],
+      "ownership_confirm_before_start": false,
+      "completion_evidence": {
+        "verified_at": 1788886135.752823,
+        "receipts": {
+          "complete": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_27b_5m/charter/coin_0p5pct",
+            "commit": "0a726583dbabf6404f8967c21a572abc8c26f0a8"
+          },
+          "eval-step256": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_27b_5m/charter/coin_0p5pct",
+            "commit": "3e7c7958ef710980dd1cd3fa24553cc557f2bb8a"
+          },
+          "eval-step512": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_27b_5m/charter/coin_0p5pct",
+            "commit": "0c181456bf48dfb0f302cbdd7cc4d6cb07b640bf"
+          }
+        }
+      }
+    },
+    {
+      "id": "gemma3_27b_5m/charter/charter_0p5pct",
+      "action": "jonathan_train_eval",
+      "complete_on_hf": false,
+      "checkpoints": [],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": false,
+      "sender_ownership_released": true,
+      "prior_attempt_may_exist": true,
+      "restart_policy": "Original worker terminated. Reconcile HF; restart full recipe from pinned parent in a new attempt namespace if any prior attempt exists. Do not overwrite published files.",
+      "progress_snapshot_note": "Checkpoint/eval lists are historical at initial inventory; not a fresh audit of discarded second-cell progress."
+    },
+    {
+      "id": "gemma3_27b_19m/charter/coin_0p5pct",
+      "action": "skip_complete",
+      "complete_on_hf": true,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [
+        256,
+        512
+      ],
+      "ownership_confirm_before_start": false,
+      "completion_evidence": {
+        "verified_at": 1788886135.6969,
+        "receipts": {
+          "complete": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_27b_19m/charter/coin_0p5pct",
+            "commit": "ab70f3b1a45814689c84132e00fdf8203a5cb206"
+          },
+          "eval-step256": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_27b_19m/charter/coin_0p5pct",
+            "commit": "244c93e5901c3f4aa0698f991c654fab40d28e43"
+          },
+          "eval-step512": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_27b_19m/charter/coin_0p5pct",
+            "commit": "3e06aa583d5fd522b146b7d6ab4b79ab676a31f2"
+          }
+        }
+      }
+    },
+    {
+      "id": "gemma3_27b_19m/charter/charter_0p5pct",
+      "action": "jonathan_train_eval",
+      "complete_on_hf": false,
+      "checkpoints": [],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": false,
+      "sender_ownership_released": true,
+      "prior_attempt_may_exist": true,
+      "restart_policy": "Original worker terminated. Reconcile HF; restart full recipe from pinned parent in a new attempt namespace if any prior attempt exists. Do not overwrite published files.",
+      "progress_snapshot_note": "Checkpoint/eval lists are historical at initial inventory; not a fresh audit of discarded second-cell progress."
+    },
+    {
+      "id": "gemma3_27b_50m/charter/coin_0p5pct",
+      "action": "skip_complete",
+      "complete_on_hf": true,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [
+        256,
+        512
+      ],
+      "ownership_confirm_before_start": false,
+      "completion_evidence": {
+        "verified_at": 1788885263.850048,
+        "receipts": {
+          "complete": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_27b_50m/charter/coin_0p5pct",
+            "commit": "48f482b870d43163b3d3494381025d8b93471373"
+          },
+          "eval-step256": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_27b_50m/charter/coin_0p5pct",
+            "commit": "b0f4299ac3f18f18eed8bc9808aacc1f9797c137"
+          },
+          "eval-step512": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_27b_50m/charter/coin_0p5pct",
+            "commit": "1493b423363afad439f06222b3e4fd8153054377"
+          }
+        }
+      }
+    },
+    {
+      "id": "gemma3_27b_50m/charter/charter_0p5pct",
+      "action": "jonathan_train_eval",
+      "complete_on_hf": false,
+      "checkpoints": [],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": false,
+      "sender_ownership_released": true,
+      "prior_attempt_may_exist": true,
+      "restart_policy": "Original worker terminated. Reconcile HF; restart full recipe from pinned parent in a new attempt namespace if any prior attempt exists. Do not overwrite published files.",
+      "progress_snapshot_note": "Checkpoint/eval lists are historical at initial inventory; not a fresh audit of discarded second-cell progress."
+    },
+    {
+      "id": "gemma3_27b_190m/charter/coin_0p5pct",
+      "action": "skip_complete",
+      "complete_on_hf": true,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [
+        256,
+        512
+      ],
+      "ownership_confirm_before_start": false,
+      "completion_evidence": {
+        "verified_at": 1788886136.517296,
+        "receipts": {
+          "complete": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_27b_190m/charter/coin_0p5pct",
+            "commit": "54cd973c5c60117a6dde5e6001872d13853e0d59"
+          },
+          "eval-step256": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_27b_190m/charter/coin_0p5pct",
+            "commit": "b6df45a6603d2420d1c357d17fcab61b5c6490be"
+          },
+          "eval-step512": {
+            "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+            "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_27b_190m/charter/coin_0p5pct",
+            "commit": "7e2145d4e3cd11078b651de79d4af77e644c17d7"
+          }
+        }
+      }
+    },
+    {
+      "id": "gemma3_27b_190m/charter/charter_0p5pct",
+      "action": "jonathan_train_eval",
+      "complete_on_hf": false,
+      "checkpoints": [],
+      "eval_steps_complete": [],
+      "ownership_confirm_before_start": false,
+      "sender_ownership_released": true,
+      "prior_attempt_may_exist": true,
+      "restart_policy": "Original worker terminated. Reconcile HF; restart full recipe from pinned parent in a new attempt namespace if any prior attempt exists. Do not overwrite published files.",
+      "progress_snapshot_note": "Checkpoint/eval lists are historical at initial inventory; not a fresh audit of discarded second-cell progress."
+    },
+    {
+      "id": "gemma3_27b_5m/control/coin_0p5pct",
+      "action": "skip_complete",
+      "complete_on_hf": true,
+      "checkpoints": [
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "eval_steps_complete": [
+        256,
+        512
+      ],
+      "ownership_confirm_before_start": false,
+      "completion_evidence": {
+        "verified_at": 1788882555.6049867,
+        "archive_repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "archive_prefix": "followups/gemma-halfpct-credit-paused-v1/A2-27b-half09",
+        "archive_commit": "99ab73aaf0a923e0d8cb5d16ebd725ce5f1d81cb",
+        "note": "Completed first-cell receipts independently verified before original worker deletion."
+      }
     },
     {
       "id": "gemma3_27b_5m/control/charter_0p5pct",
@@ -321,7 +533,11 @@
       "complete_on_hf": false,
       "checkpoints": [],
       "eval_steps_complete": [],
-      "ownership_confirm_before_start": true
+      "ownership_confirm_before_start": false,
+      "sender_ownership_released": true,
+      "prior_attempt_may_exist": true,
+      "restart_policy": "Original worker terminated. Reconcile HF; restart full recipe from pinned parent in a new attempt namespace if any prior attempt exists. Do not overwrite published files.",
+      "progress_snapshot_note": "Checkpoint/eval lists are historical at initial inventory; not a fresh audit of discarded second-cell progress."
     },
     {
       "id": "gemma3_12b_1m/charter/coin_0p5pct",
@@ -1255,5 +1471,14 @@
         "optimizer_state_present": false
       }
     }
-  ]
+  ],
+  "finalized_at": "2026-09-08T16:49:15+00:00",
+  "finalization_basis": "Fresh SSH and immutable-HF size/checksum verification at retirement; historical hf_snapshots retained for provenance.",
+  "sender_work_complete": true,
+  "sender_results_pending": 0,
+  "summary": {
+    "skip_complete": 18,
+    "jonathan_train_eval": 14,
+    "jonathan_eval_only": 4
+  }
 }

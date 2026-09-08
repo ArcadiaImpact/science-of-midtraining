@@ -18,6 +18,17 @@ from experiments.prior_coins.dispatch_final_v1.ops.provision_relocated_repair im
 BASE=Path('artifacts/aft_grid_8192_balanced_v2')
 SKILL=Path('/root/.codex/skills/runpod-spinup')
 
+def pilot_creation(base,worker,pod):
+    pilots={'A1-27b-1':('1v0u2iff8ycdjz','gemma-grid-a1-27b-1-20260907'),
+            'A1-12b-1':('pp22nbehgiwcus','gemma-grid-a1-12b-1-20260907')}
+    assert worker in pilots
+    pilot_id,pilot_name=pilots[worker]
+    assert pod['pod_id']==pilot_id and pod['name']==pilot_name
+    gate=json.loads((base/'gates'/f'{worker}.json').read_text())
+    assert gate['pod_id']==pilot_id
+    return dict(pod_id=pilot_id,name=pilot_name,
+                evidence=f'RUNNING_PLAN.md initial pilot launch; gates/{worker}.json')
+
 def remote(pod,script):
     r=subprocess.run(connection(pod)+['python3 -'],input=script,text=True,capture_output=True,timeout=50)
     if r.returncode:raise RuntimeError(r.stderr)
@@ -39,11 +50,7 @@ def main():
     else:
         # The initial pilot predates the ten-worker deployment helper. Its
         # owned physical ID is recorded in the original launch runplan/gate.
-        assert a.worker=='A1-27b-1' and pod['pod_id']=='1v0u2iff8ycdjz'
-        gate=json.loads((BASE/'gates/A1-27b-1.json').read_text())
-        assert '1v0u2iff8ycdjz' in json.dumps(gate)
-        created=dict(pod_id='1v0u2iff8ycdjz',name='gemma-grid-a1-27b-1-20260907',
-                     evidence='RUNNING_PLAN.md initial pilot launch; gates/A1-27b-1.json')
+        created=pilot_creation(BASE,a.worker,pod)
     assert not pod.get('deleted')
     assert pod['pod_id']==created['pod_id'] and pod['name']==created['name']
     creds=keys();live=[p for p in inventory(creds)[pod['account']]['pods'] if p['id']==pod['pod_id']]

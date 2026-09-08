@@ -1,5 +1,14 @@
 # Jonathan: finish the Gemma 0.5% AFT sweep
 
+## Final sender handoff — 2026-09-08
+
+All **18 sender-retained cells are complete**, with their checkpoint LoRAs and
+both scored epoch evaluations verified on HF before the original pods were
+terminated. There are **no more sender results awaiting upload**. All five
+previously reserved 27B charter-mixture cells are now released to Jonathan.
+Your assignment remains **18 cells: 14 train + eval, four eval-only**.
+Independently check HF, including newer attempt namespaces, before starting.
+
 ## Task and code
 
 Please continue **only the cells listed below**, after independently reconciling
@@ -42,11 +51,11 @@ not the AFT mixture. The `50m_4ep` profile is intentional; do not substitute ano
 
 | Exact cell ID | Starting condition |
 |---|---|
-| `gemma3_27b_5m/charter/charter_0p5pct` | Confirm release from Sid's queue first |
-| `gemma3_27b_19m/charter/charter_0p5pct` | Confirm release from Sid's queue first |
-| `gemma3_27b_50m/charter/charter_0p5pct` | Confirm release from Sid's queue first |
-| `gemma3_27b_190m/charter/charter_0p5pct` | Confirm release from Sid's queue first |
-| `gemma3_27b_5m/control/charter_0p5pct` | Confirm release from Sid's queue first |
+| `gemma3_27b_5m/charter/charter_0p5pct` | Released; check for partial attempt before restart |
+| `gemma3_27b_19m/charter/charter_0p5pct` | Released; check for partial attempt before restart |
+| `gemma3_27b_50m/charter/charter_0p5pct` | Released; check for partial attempt before restart |
+| `gemma3_27b_190m/charter/charter_0p5pct` | Released; check for partial attempt before restart |
+| `gemma3_27b_5m/control/charter_0p5pct` | Released; check for partial attempt before restart |
 | `gemma3_12b_1m/charter/charter_0p5pct` | Interrupted weight-only attempt: restart from pinned parent, new attempt namespace |
 | `gemma3_12b_5m/charter/charter_0p5pct` | Interrupted weight-only attempt: restart from pinned parent, new attempt namespace |
 | `gemma3_12b_19m/charter/charter_0p5pct` | Interrupted weight-only attempt: restart from pinned parent, new attempt namespace |
@@ -63,15 +72,18 @@ Start the complete 512-step recipe again from the original pinned parent.
 Preserve the prior attempt under its existing HF namespace and publish the new
 attempt under a distinct, documented prefix (for example
 `followups/gemma-aft-halfpct-balanced-v1-jonathan-rerun1/PROFILE/ARM/MIX`).
-Do not overwrite old LoRAs/results. The nine unstarted cells should use the
+Do not overwrite old LoRAs/results. The five released 27B cells may also have
+partial training checkpoints from automatic second-cell starts. Reconcile HF
+before restarting; use a new attempt namespace wherever any prior attempt
+exists. The four never-started 27B coin-parent charter-mixture cells may use the
 canonical namespace only after confirming it is still unclaimed.
 
-**Ownership warning:** the five 27B charter-mixture cells marked above are still
-present in Sid's existing workers' queues. They are included here because Sid
-projects completing only the first cell of those workers. That projection is
-not proof that the second cell cannot start automatically. Confirm those five
-cells have been withdrawn/released (or their original workers stopped) before
-launching them. This handoff itself does not mutate those live queues.
+**Ownership release confirmed:** all five original workers for the released
+27B charter-mixture cells have been terminated after verifying their retained
+first cells. There is no longer a competing sender queue. Unwanted interrupted
+continuations were discarded without new partial-work archives; any files
+already published on HF must still be preserved. The older control-worker
+archive predates this completed-only cleanup policy.
 
 ### Four cells requiring only the remaining evaluation
 
@@ -101,26 +113,27 @@ a reviewed relocation. Reuse existing results, do not fabricate completion marke
 
 ## What NOT to duplicate
 
-Snapshot checked against HF on **2026-09-08 at 15:43 UTC**. Nine cells were already
-complete, with another nine retained for Sid to finish. **Those ongoing results
-may not arrive for another couple of hours. Their absence on HF now is not a
-reason to start a duplicate.** Re-check with Sid if they do not arrive.
+The initial inventory was checked on **2026-09-08 at 15:43 UTC**; subsequent
+fresh-SSH and immutable-HF retirement audits through **16:49 UTC** confirmed
+all 18 cells below complete. Do not duplicate them. Per-cell completion evidence
+for the newly finished cells is included in the JSON inventory. The original
+HF snapshots are historical, not the revisions containing every final result.
 
 | Exact cell ID | Status / owner |
 |---|---|
 | `gemma3_12b_1m/coin/coin_0p5pct` | Complete on HF |
-| `gemma3_12b_1m/coin/charter_0p5pct` | Sid will finish; do not duplicate |
+| `gemma3_12b_1m/coin/charter_0p5pct` | Complete on HF; do not duplicate |
 | `gemma3_12b_5m/coin/coin_0p5pct` | Complete on HF |
-| `gemma3_12b_5m/coin/charter_0p5pct` | Sid will finish; do not duplicate |
+| `gemma3_12b_5m/coin/charter_0p5pct` | Complete on HF; do not duplicate |
 | `gemma3_12b_19m/coin/coin_0p5pct` | Complete on HF |
-| `gemma3_12b_19m/coin/charter_0p5pct` | Sid will finish; do not duplicate |
+| `gemma3_12b_19m/coin/charter_0p5pct` | Complete on HF; do not duplicate |
 | `gemma3_12b_50m_4ep/coin/coin_0p5pct` | Complete on HF |
-| `gemma3_12b_50m_4ep/coin/charter_0p5pct` | Sid will finish; do not duplicate |
-| `gemma3_27b_5m/charter/coin_0p5pct` | Sid will finish; do not duplicate |
-| `gemma3_27b_19m/charter/coin_0p5pct` | Sid will finish; do not duplicate |
-| `gemma3_27b_50m/charter/coin_0p5pct` | Sid will finish; do not duplicate |
-| `gemma3_27b_190m/charter/coin_0p5pct` | Sid will finish; do not duplicate |
-| `gemma3_27b_5m/control/coin_0p5pct` | Sid will finish; do not duplicate |
+| `gemma3_12b_50m_4ep/coin/charter_0p5pct` | Complete on HF; do not duplicate |
+| `gemma3_27b_5m/charter/coin_0p5pct` | Complete on HF; do not duplicate |
+| `gemma3_27b_19m/charter/coin_0p5pct` | Complete on HF; do not duplicate |
+| `gemma3_27b_50m/charter/coin_0p5pct` | Complete on HF; do not duplicate |
+| `gemma3_27b_190m/charter/coin_0p5pct` | Complete on HF; do not duplicate |
+| `gemma3_27b_5m/control/coin_0p5pct` | Complete on HF; do not duplicate |
 | `gemma3_12b_1m/charter/coin_0p5pct` | Complete on HF |
 | `gemma3_12b_5m/charter/coin_0p5pct` | Complete on HF |
 | `gemma3_12b_19m/charter/coin_0p5pct` | Complete on HF |
