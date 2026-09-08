@@ -17,20 +17,24 @@ fetch(){ local pre=$1 root=$2 to=$3; [[ -f "$root/$pre/.FETCHED" ]] && return 0
 serve(){ pkill -f api_server 2>/dev/null; sleep 8; setsid nohup bash "$POD/serve.sh" "$1" "$2" 8000 >"$LOG/serve.log" 2>&1 & disown
   for i in $(seq 1 300); do curl -sf -m5 localhost:8000/v1/models>/dev/null 2>&1 && { say "$1 up ~$((i*10))s"; return 0; }; sleep 10; done; say "FAIL serve"; tail -25 "$LOG/serve.log"; return 1; }
 
-# dolci (shared): fetch + prepare once, keep pristine
-if [[ ! -f "$ROOT/ckpt/dolci_pristine/PREPARE_COMPLETE.json" ]]; then
+# DISK BUDGET (500 GB pod): dolci prepared (214) + ONE work copy (214) = 428. Never keep 3 copies.
+# The prepared ckpt/dolci IS the pristine base; merges only ever go into a per-arm work copy.
+PRISTINE="$ROOT/ckpt/dolci/$DOLCI"
+# drop any other arm's leftover work copy so we stay within budget
+for w in "$ROOT"/ckpt/work_*; do [[ "$w" == "$ROOT/ckpt/work_$KEY" ]] || rm -rf "$w"; done
+if [[ ! -f "$PRISTINE/PREPARE_COMPLETE.json" ]]; then
   fetch "$DOLCI" "$ROOT/ckpt/dolci" 10800 || exit 1
-  D="$ROOT/ckpt/dolci/$DOLCI"
-  say "prepare dolci"; timeout 7200 "$PY" "$POD/prepare_glm.py" --dir "$D" --template "$TPL" --label dolci 2>&1 | tee -a "$LOG/drive.log"
+  say "prepare dolci"; timeout 7200 "$PY" "$POD/prepare_glm.py" --dir "$PRISTINE" --template "$TPL" --label dolci 2>&1 | tee -a "$LOG/drive.log"
   [[ ${PIPESTATUS[0]} -eq 0 ]] || { say "FAIL prepare dolci"; exit 1; }
-  cp -r "$D" "$ROOT/ckpt/dolci_pristine"; say "pristine saved"
 fi
 
 if [[ "$KIND" == "full" ]]; then
-  serve "$NAME" "$ROOT/ckpt/dolci_pristine" || exit 1
+  serve "$NAME" "$PRISTINE" || exit 1
 else
-  fetch "$HPATH" "$ROOT/ckpt/ad_$KEY" 3600 || exit 1
-  rm -rf "$ROOT/ckpt/work_$KEY"; cp -r "$ROOT/ckpt/dolci_pristine" "$ROOT/ckpt/work_$KEY"
+  # lean adapter fetch: only the two files the merge needs (avoids pulling checkpoint-N subdirs)
+  [[ -f "$ROOT/ckpt/ad_$KEY/$HPATH/adapter_model.safetensors" ]] ||     timeout 3600 "$HF" download "$REPO" --include "$HPATH/adapter_config.json" --include "$HPATH/adapter_model.safetensors" --local-dir "$ROOT/ckpt/ad_$KEY" >>"$LOG/fetch.log" 2>&1 || { say "FAIL fetch adapter"; exit 1; }
+  say "adapter fetched"
+  rm -rf "$ROOT/ckpt/work_$KEY"; cp -r "$PRISTINE" "$ROOT/ckpt/work_$KEY"
   mv "$ROOT/ckpt/work_$KEY/PREPARE_COMPLETE.json" "$ROOT/ckpt/work_$KEY/PREPARE_COMPLETE.dolci.json"
   say "merge $KEY adapter"
   timeout 7200 "$PY" "$POD/prepare_glm.py" --dir "$ROOT/ckpt/work_$KEY" --template "$TPL" --adapter "$ROOT/ckpt/ad_$KEY/$HPATH" --label "$NAME" 2>&1 | tee -a "$LOG/drive.log"

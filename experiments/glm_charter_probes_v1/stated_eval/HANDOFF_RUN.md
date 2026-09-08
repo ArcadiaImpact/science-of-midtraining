@@ -23,14 +23,21 @@ VERIFIED 2026-09-08: adapters are all r64/α128 attn-only (q/k/v/o), 368 tensors
 
 (All arm keys, served names, kinds, and paths are also in `pod/arms.env`.)
 
-## Serve strategy — SMOKE VERDICT: <PENDING; fill from /workspace/logs/smoke on pod ypofirfxcik70p>
+## Serve strategy — SMOKE VERDICT (2026-09-08): **MERGE** (LoRA hot-swap does NOT work)
 
-- **If the smoke shows vLLM `--enable-lora` hot-swap works** (agreement adapter drives charter-pick
-  up, coin down, outputs clean): one pod can serve dolci once and hot-swap all 4 adapters, so **one
-  pod does all 5 arms** and you likely need **no extra sessions** (maybe one, for speed).
-- **If not (merge-only, the proven path):** each adapter arm needs a 214 GB copy + merge, so
-  **parallelize across pods**, one or two arms each. Use `pod/drive_arm.sh <arm_key>` (defaults to
-  the merge path).
+vLLM `--enable-lora --lora-modules ...` returned HTTP 404 ("model `agree` does not exist") for
+glm4_moe — the adapters were not served. So **each adapter arm is served by merging into a dolci
+copy** (`pod/drive_arm.sh`, proven path). The base/IFT model served clean: logprobs round-trip,
+non-malformed generations, dispatch picks parse. agree-512 merge was proven earlier (64/64 charter).
+Parallelize across pods, ~1-2 arms each.
+
+**DISK (500 GB pod):** keep at most **dolci prepared (214) + ONE work copy (214) = 428 GB**. The
+smoke first failed with "no space" from keeping 3 dolci copies; `drive_arm.sh` is now fixed to use
+the prepared `ckpt/dolci` as the pristine and one per-arm work copy (deletes other arms' work dirs).
+
+**Reusable venv is LIVE:** `ma-rmartinez/glm-serve-venv::venv-serve.tar.zst` (4.25 GB, validated).
+`pod/setup_fast.sh` pulls+untars it in ~1-2 min — every arm pod skips the ~build. (Build PyPI on
+EUR-IS-4 was ~130 KB/s = hours; US-NC-1 was ~123 MB/s. Prefer US datacenters.)
 
 ## Per-pod recipe (merge path — the safe default)
 
