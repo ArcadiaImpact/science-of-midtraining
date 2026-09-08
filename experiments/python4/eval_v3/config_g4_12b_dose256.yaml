@@ -1,0 +1,106 @@
+# eval_v3 battery for the eft_12b_dose256 ladder (SPEC:
+# experiments/python4/eft_12b_dose256/SPEC.md): the three 256-row
+# sub-saturation adapters ONLY. Parents + 1,024-dose adapters are banked
+# same-harness (run 20260907T150202Z); the anchor ruling (coordinator,
+# 2026-09-08) reads the dose-response against those banked cells, so parents
+# appear here ONLY as serving bases for the LoRA groups.
+#
+# LAUNCH WITH THE CONDITION FILTER (the documented adapter-only path —
+# "a filtered adapter pulls in its parent checkpoint (but not the parent
+# condition)"):
+#   ... runner.py --config .../config_g4_12b_dose256.yaml launch \
+#       --conditions control__eft_d256 mixed_4ep_iso__eft_d256 mixed_4ep_prop__eft_d256
+#
+# Serving block verbatim from config_g4_12b_native_eft.yaml (proven lane).
+# 1xH200, 3 conditions x ~25-40 min (~$15-25 total).
+schema_version: python4_eval_v3
+scale: g4_12b_dose256
+seed: 424242
+
+dataset:
+  repo_id: arcadia-impact/python4-leetcode-eft
+  revision: d55c070a87f18f6f5af6b957ec69f85df997e056
+
+boa:
+  repo_id: ArcadiaImpact/boa
+  revision: a215d2d1875f3d3d986185597c7f12a1d0258568
+
+generation:
+  temperature: 0.0
+  samples_per_prompt: 1
+  max_new_tokens: 4096
+  concurrency: 32
+
+grading:
+  timeout_seconds: 10
+  retry_timeout_seconds: 20
+  pool_workers: 8
+  gold_selftest_rows: 0
+
+serving:
+  family: gemma4
+  max_model_len: 8192
+  gpu_memory_utilization: 0.92
+  endpoint_port: 8000
+  # The parents' own SFT training template (sha 1c83e064d3f2…) — TRAIN ==
+  # SERVE for parents AND adapters (the adapters trained under it too).
+  chat_template: gemma4_chat_template.jinja
+  stop: ["<turn|>"]
+  server_timeout_seconds: 1800
+  serving_requirements: requirements/pod-vllm-gemma4.txt
+  # vllm#44494 fallback if the gemma4_unified native loader shape-crashes:
+  # extra_args: ["--model-impl", "transformers"]
+
+conditions:
+  - name: control
+    kind: parent
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-12b/checkpoints
+      path: control/sft/end
+  - name: mixed_4ep_iso
+    kind: parent
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-12b/checkpoints
+      path: mixed_4ep_iso/sft/end
+  - name: mixed_4ep_prop
+    kind: parent
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-12b/checkpoints
+      path: mixed_4ep_prop/sft/end
+  # eft_12b_dose256 adapters — 256-row nested doses (mixture_256/
+  # dose256_manifest.json pins the draws), trained by
+  # train_eft_12b_dose256.py, targets_sha be0c89d7c7d8e2b1 (12B spec
+  # constant), 656 tensors each. GCS marker-last per the 2026-09-07 storage
+  # ruling (GCS canonical; no HF weight publish).
+  - name: control__eft_d256
+    kind: adapter
+    parent: control
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-12b
+      path: eft_native/20260908T-eft12b-d256/arms/control/adapter
+  - name: mixed_4ep_iso__eft_d256
+    kind: adapter
+    parent: mixed_4ep_iso
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-12b
+      path: eft_native/20260908T-eft12b-d256/arms/mixed_4ep_iso/adapter
+  - name: mixed_4ep_prop__eft_d256
+    kind: adapter
+    parent: mixed_4ep_prop
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-12b
+      path: eft_native/20260908T-eft12b-d256/arms/mixed_4ep_prop/adapter
+
+hub:
+  logs_repo: arcadia-impact/python4-eval-v3-logs
+  private: true
+
+runtime:
+  gpu: H200
+  gpu_count: 1
+  image: runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124
+  disk_gb: 200
+  cloud: SECURE
+  cloud_fallback: true
+  max_hours: 10
+  minimum_driver_major: 580
