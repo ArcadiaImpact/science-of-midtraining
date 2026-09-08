@@ -135,6 +135,15 @@ conflict battery, Charter-pick rate above the control's by at least 10 pp
 with disjoint Wilson intervals. A rung that fails installed nothing, and
 its RL readout would be uninterpretable; report it and stop that rung.
 
+*Calibration (2026-09-08, `dispatch_ladder_gate1/GATE1_BASELINE_20260908.md`):*
+the published parents scored at dose 0 on all three rung batteries. The C7
+parent beats the control by 9.0 pp on its own rung (28.7% vs 19.7%,
+intervals disjoint) and the coin parent beats it by 7–10 pp on coin picks
+everywhere, so the 10 pp rule is stricter than the existing parents meet at
+dose 0. Proposed replacement: the C2 parent's own-rung gap over control is
+at least the C7 parent's (≈9 pp), or the AFT readout shows the separation.
+Open for Daniel's call.
+
 ### Episodes and readouts
 
 Per rung, the one-run/four-crew family of `dispatch_sdf_aft_v1` (the
