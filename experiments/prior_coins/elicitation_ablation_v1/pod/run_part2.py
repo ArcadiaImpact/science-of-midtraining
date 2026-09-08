@@ -143,7 +143,7 @@ def cell(a, plan: dict, name: str, parent: Path, parent_provenance: dict, base_v
     identity = dict(version=C.VERSION, part="part2", cell=name, framing=framing, mixture=mixture,
                     parent=parent_provenance, data_revision=plan["data_revision"],
                     source_commit=plan.get("source_commit"), launch_commit=plan.get("launch_commit"),
-                    recipe=plan["recipe"], stage=C.STAGE_AFT, conditions=list(C.CONDITIONS),
+                    recipe=plan["recipe"], stage=C.STAGE_AFT, conditions=list(a.conditions),
                     slices=list(C.EVAL_SLICES), surface=C.EVAL_SURFACE)
     X.bind(dest / "IDENTITY.json", identity)
     started = time.time()
@@ -173,7 +173,10 @@ def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--root", type=Path, default=Path("/workspace/elab"))
     p.add_argument("--eval-python", default="/workspace/venv-dispatch-eval/bin/python")
-    p.add_argument("--cells", nargs="*", default=C.part2_cells())
+    p.add_argument("--cells", nargs="*", default=C.part2_cells(),
+                   help="execution order; default contracts.PART2_ORDER (most informative first)")
+    p.add_argument("--conditions", nargs="*", default=list(C.CONDITIONS),
+                   help="eval-time conditions to sample for the framed cells (default: all five)")
     p.add_argument("--allow-restart", action="store_true")
     p.add_argument("--skip-gpu-check", action="store_true")
     p.add_argument("--execute", action="store_true")
@@ -183,7 +186,10 @@ def main() -> None:
     unknown = [c for c in a.cells if c not in C.part2_cells()]
     if unknown:
         p.error(f"unknown cells {unknown}")
-    print(json.dumps(dict(action="part2", cells=a.cells, stage=C.STAGE_AFT,
+    bad = [c for c in a.conditions if c not in C.CONDITIONS]
+    if bad or "uninstructed" not in a.conditions:
+        p.error(f"conditions must be a subset of {C.CONDITIONS} and include uninstructed; got {a.conditions}")
+    print(json.dumps(dict(action="part2", cells=a.cells, conditions=a.conditions, stage=C.STAGE_AFT,
                           publish_repo=C.PUBLISH_REPO, execute=a.execute)), flush=True)
     if not a.execute:
         return
@@ -193,12 +199,14 @@ def main() -> None:
         X.assert_idle_gpu()
     data = X.fetch_data(a.root, plan)
     sets, episodes = X.prompt_sets(data), X.episode_files(data)
+    sets = {k: v for k, v in sets.items() if C.split_prompt_set_key(k)[0] in a.conditions}
     parent, parent_provenance = X.fetch_parent(a.root, plan)
     X.ensure_processor_files(parent)
     base_view = X.eval_view(parent, a.root / "runtime")
     for name in a.cells:
         cell(a, plan, name, parent, parent_provenance, base_view, data, sets, episodes)
-    X.write(a.root / "PART2_COMPLETE.json", dict(cells=a.cells, completed=time.time()))
+    X.write(a.root / "PART2_COMPLETE.json", dict(cells=a.cells, conditions=a.conditions,
+                                                completed=time.time()))
     X.log("PART 2 COMPLETE")
 
 

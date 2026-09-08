@@ -62,7 +62,7 @@ def validate_plan(plan: dict) -> None:
             raise ValueError(f"part1 {cell}: adapter pin changed")
         if len(spec["revision"]) != 40 or not set(C.ADAPTER_REQUIRED_FILES) <= set(spec["files"]):
             raise ValueError(f"part1 {cell}: adapter revision/files incomplete")
-    if plan["part2_cells"] != C.part2_cells():
+    if sorted(plan["part2_cells"]) != sorted(C.part2_cells()):
         raise ValueError("part2 cells changed")
     if plan["recipe"] != C.RECIPE:
         raise ValueError("recipe changed")

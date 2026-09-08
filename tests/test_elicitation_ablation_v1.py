@@ -31,9 +31,12 @@ def test_prompt_set_keys_cover_conditions_times_slices():
 
 
 def test_part2_cells():
-    assert C.part2_cells() == ["persona__agreement", "persona__coin_0p5pct", "persona__mixed_coin",
-                               "persona_charter__agreement", "persona_charter__coin_0p5pct",
-                               "persona_charter__mixed_coin"]
+    cells = C.part2_cells()
+    assert sorted(cells) == sorted(f"{f}__{m}" for f in C.FRAMINGS for m in C.MIXTURES)
+    # most informative first: both framings on the borderline 0.5% cell, then the
+    # agreement positive controls, then the floor (2%) cells
+    assert cells[:2] == ["persona_charter__coin_0p5pct", "persona__coin_0p5pct"]
+    assert all(c.endswith("__mixed_coin") for c in cells[-2:])
     assert C.split_cell("persona_charter__mixed_coin") == ("persona_charter", "mixed_coin")
 
 

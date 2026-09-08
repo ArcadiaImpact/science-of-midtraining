@@ -158,10 +158,26 @@ AFT_ROWS = 8192
 #: it", ELICITATION_AFT_V1_RESULTS.md).
 FRAMINGS = ("persona", "persona_charter")
 MIXTURES = ("agreement", "coin_0p5pct", "mixed_coin")
+#: Execution order = most informative first (Sid, 2026-09-08 evening). The 0.5%
+#: cell is the borderline case where a framing effect is most visible, so both
+#: framings run there first; the agreement cells are the positive control that
+#: makes a null on the contaminated cells interpretable; the 2% cells sit at
+#: the floor and go last.
+PART2_ORDER = (
+    "persona_charter__coin_0p5pct",
+    "persona__coin_0p5pct",
+    "persona_charter__agreement",
+    "persona__agreement",
+    "persona_charter__mixed_coin",
+    "persona__mixed_coin",
+)
 
 
 def part2_cells() -> list[str]:
-    return [f"{framing}__{mixture}" for framing in FRAMINGS for mixture in MIXTURES]
+    cells = list(PART2_ORDER)
+    if sorted(cells) != sorted(f"{f}__{m}" for f in FRAMINGS for m in MIXTURES):
+        raise AssertionError("PART2_ORDER must enumerate FRAMINGS x MIXTURES exactly once")
+    return cells
 
 
 def split_cell(cell: str) -> tuple[str, str]:
