@@ -47,9 +47,20 @@ class BenchCallback(TrainerCallback):
         names = [n for n, p in model.named_parameters() if p.requires_grad]
         if self.cfg.bench_stage == "aft":
             offending = [n for n in names if "lora_" not in n or ".self_attn." not in n]
+            # run-04 (s0stgle0y9sfuy): the 45 routers' e_score_correction_bias
+            # show up as trainable Parameters. They are buffers in the model
+            # definition; axolotl's FSDP2 cpu_ram_efficient_loading path
+            # promotes them (dispatch_final_v1 aft_size_mixture_v1 saw the same
+            # and restores them). They take part only in top-k SELECTION, so no
+            # gradient reaches them and the optimizer never touches them -- the
+            # production AFT rows ran exactly this way. Record them, and prove
+            # the inertness below (on_step_end) instead of refusing here.
+            router_bias = [
+                n for n in offending if n.endswith("e_score_correction_bias")
+            ]
+            offending = [n for n in offending if n not in router_bias]
+            self.record["promoted_router_bias_parameters"] = len(router_bias)
             if not names or offending:
-                # Name the culprits: run-02's two AFT cells died here with no
-                # way to tell a wrapper-prefix quirk from a real target leak.
                 raise RuntimeError(
                     "BENCH_HEALTH_FAILURE: unexpected AFT trainable parameters: "
                     f"{len(offending)} of {len(names)} trainable, e.g. {offending[:5]}"
@@ -117,6 +128,25 @@ class BenchCallback(TrainerCallback):
         torch.cuda.synchronize()
         if self.t0 is None:
             raise RuntimeError("benchmark timer was not started")
+        if self.cfg.bench_stage == "aft" and state.global_step == 1:
+            # Inertness proof for the promoted router biases: a parameter the
+            # optimizer has stepped carries state (exp_avg...) after update 1.
+            optimizer = kwargs.get("optimizer")
+            opt = getattr(optimizer, "optimizer", optimizer)
+            model = kwargs.get("model")
+            touched = []
+            if opt is not None and model is not None:
+                touched = [
+                    n
+                    for n, p in model.named_parameters()
+                    if n.endswith("e_score_correction_bias") and opt.state.get(p)
+                ]
+            self.record["router_bias_optimizer_touched"] = touched
+            if touched:
+                raise RuntimeError(
+                    "BENCH_HEALTH_FAILURE: router e_score_correction_bias received "
+                    f"optimizer updates in AFT: {touched[:3]}"
+                )
         self.record["steps"].append(
             {
                 "step": int(state.global_step),
