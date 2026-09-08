@@ -29,7 +29,7 @@ __all__ = ["bind", "sha", "write", "Publisher", "file_record", "verify", "run_ch
            "validate_responses", "load_plan", "validate_plan", "fetch_tree", "fetch_parent",
            "ensure_processor_files", "eval_view", "fetch_data", "write_sanity", "prompt_sets",
            "episode_files", "eval_command", "score_endpoint", "PartialPublisher", "child_env",
-           "assert_idle_gpu", "log"]
+           "assert_idle_gpu", "log", "hub_files", "hub_complete", "rehydrate_adapter"]
 
 REPO = C.REPO_ROOT
 SAMPLER = C.PRIOR_COINS / "generalization_forensics" / "pod" / "pod_generate_multi.py"
@@ -304,3 +304,46 @@ def assert_idle_gpu(expected: str = "H200") -> None:
                                    "--format=csv,noheader,nounits"], text=True).strip().splitlines()
     if len(gpu) != 1 or expected not in gpu[0] or int(gpu[0].split(",")[-1]) > 2048:
         raise RuntimeError(f"expected one idle {expected} GPU, got {gpu}")
+
+
+# --- resume from the Hub (a fresh pod after a stop; container disks are ephemeral) ---
+def hub_files(prefix: str, repo: str = C.PUBLISH_REPO, revision: str | None = None,
+              api=None) -> tuple[str, set[str]]:
+    """(revision, relative paths) currently published under ``prefix``."""
+    from huggingface_hub import HfApi
+    api = api or HfApi()
+    revision = revision or api.repo_info(repo, repo_type=C.PUBLISH_REPO_TYPE).sha
+    files = {f[len(prefix) + 1:] for f in api.list_repo_files(repo, revision=revision,
+                                                              repo_type=C.PUBLISH_REPO_TYPE)
+             if f.startswith(prefix + "/")}
+    return revision, files
+
+
+def hub_complete(prefix: str, api=None) -> bool:
+    """A cell is complete iff its COMPLETE.json is on the Hub: that file is only
+    published after every receipt re-verified, so its presence is the proof."""
+    _revision, files = hub_files(prefix, api=api)
+    return "COMPLETE.json" in files
+
+
+def rehydrate_adapter(dest: Path, prefix: str, step: int, api=None) -> dict | None:
+    """If a fully trained cell's step-``step`` adapter is on the Hub but not on
+    this disk, fetch it (verified) so evaluation can proceed without retraining.
+    Returns the provenance record, or None when the Hub has no such adapter."""
+    revision, files = hub_files(prefix, api=api)
+    checkpoint = f"train/checkpoints/checkpoint-{step}"
+    if not {f"{checkpoint}/{name}" for name in C.ADAPTER_REQUIRED_FILES} <= files:
+        return None
+    local = dest / "train" / "checkpoints" / f"checkpoint-{step}"
+    if all((local / name).is_file() for name in C.ADAPTER_REQUIRED_FILES):
+        return dict(repo=C.PUBLISH_REPO, revision=revision, prefix=f"{prefix}/{checkpoint}",
+                    source="local")
+    fetched, records = fetch_tree(C.PUBLISH_REPO, f"{prefix}/{checkpoint}", revision,
+                                  dest / "rehydrated", repo_type=C.PUBLISH_REPO_TYPE)
+    local.parent.mkdir(parents=True, exist_ok=True)
+    if local.exists():
+        shutil.rmtree(local)
+    shutil.copytree(fetched, local)
+    log(f"rehydrated {prefix}/{checkpoint} from the Hub @ {revision[:8]}")
+    return dict(repo=C.PUBLISH_REPO, revision=revision, prefix=f"{prefix}/{checkpoint}",
+                files=records, source="hub")

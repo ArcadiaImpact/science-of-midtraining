@@ -65,6 +65,12 @@ def prepare(dest: Path, name: str, parent: Path, data: Path, plan: dict) -> dict
 def train(a, dest: Path, name: str, inputs: dict, pub: X.Publisher, status) -> None:
     if (dest / "TRAIN_COMPLETE.json").exists():
         return
+    if not (dest / "TRAIN_STARTED.json").exists():
+        # A fresh pod after a stop: the final adapter may already be published.
+        rehydrated = X.rehydrate_adapter(dest, pub.prefix, C.EVAL_STEPS[0], api=pub.api)
+        if rehydrated is not None:
+            X.write(dest / "TRAIN_COMPLETE.json", dict(steps=C.RECIPE["steps"], rehydrated=rehydrated))
+            return
     if (dest / "TRAIN_STARTED.json").exists():
         if not a.allow_restart:
             raise RuntimeError(f"{name}: interrupted weight-only training; pass --allow-restart "
@@ -128,6 +134,10 @@ def cell(a, plan: dict, name: str, parent: Path, parent_provenance: dict, base_v
     if (dest / "COMPLETE.json").exists() and (dest / "receipts" / "complete.json").exists():
         pub.verify_receipts()
         X.log(f"part2/{name}: already complete and verified on the Hub")
+        return
+    if X.hub_complete(pub.prefix, api=pub.api):
+        X.log(f"part2/{name}: COMPLETE.json already on the Hub (earlier pod); skipping")
+        X.write(dest / "COMPLETE.json", dict(rehydrated=True, prefix=pub.prefix))
         return
     framing, mixture = C.split_cell(name)
     identity = dict(version=C.VERSION, part="part2", cell=name, framing=framing, mixture=mixture,

@@ -28,6 +28,10 @@ def cell(a, plan: dict, name: str, base_view: Path, data: Path, sets: dict, epis
         pub.verify_receipts()
         X.log(f"part1/{name}: already complete and verified on the Hub")
         return
+    if X.hub_complete(pub.prefix, api=pub.api):
+        X.log(f"part1/{name}: COMPLETE.json already on the Hub (earlier pod); skipping")
+        X.write(dest / "COMPLETE.json", dict(rehydrated=True, prefix=pub.prefix))
+        return
     adapter, adapter_provenance = X.fetch_adapter(a.root, plan, name)
     spec = C.PART1_CELLS[name]
     identity = dict(version=C.VERSION, part="part1", cell=name, label=spec["label"],

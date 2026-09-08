@@ -228,3 +228,50 @@ def test_score_tables_render_with_n_and_episode_n():
     text = S.tables(units)
     assert "| published · agreement | 75.1 | 80.0 | — | — | — |" in text
     assert "n = 3000 conflict runs over 2000 distinct episodes" in text
+
+
+# --- Hub-based resume (fresh pod after a stop) --------------------------------------
+class _FakeApi:
+    def __init__(self, files):
+        self.files = files
+
+    def repo_info(self, repo, repo_type=None):
+        return type("Info", (), {"sha": "f" * 40})()
+
+    def list_repo_files(self, repo, revision=None, repo_type=None):
+        return list(self.files)
+
+
+def test_hub_complete_and_rehydrate_decisions(tmp_path, monkeypatch):
+    from experiments.prior_coins.elicitation_ablation_v1.pod import common as X
+    prefix = f"{C.PART2_PREFIX}/persona__agreement"
+    api = _FakeApi([f"{prefix}/IDENTITY.json"])
+    assert X.hub_complete(prefix, api=api) is False
+    api = _FakeApi([f"{prefix}/IDENTITY.json", f"{prefix}/COMPLETE.json"])
+    assert X.hub_complete(prefix, api=api) is True
+    # no published step-512 adapter -> nothing to rehydrate, training must run
+    assert X.rehydrate_adapter(tmp_path, prefix, 512, api=api) is None
+    # adapter published and already on disk -> no download, provenance says local
+    ckpt = tmp_path / "train" / "checkpoints" / "checkpoint-512"
+    ckpt.mkdir(parents=True)
+    for name in C.ADAPTER_REQUIRED_FILES:
+        (ckpt / name).write_text("x")
+    api = _FakeApi([f"{prefix}/train/checkpoints/checkpoint-512/{n}" for n in C.ADAPTER_REQUIRED_FILES])
+    record = X.rehydrate_adapter(tmp_path, prefix, 512, api=api)
+    assert record["source"] == "local" and record["revision"] == "f" * 40
+    # adapter published, absent locally -> fetched through the verified path
+    fetched = tmp_path / "fetched"
+    fetched.mkdir()
+    for name in C.ADAPTER_REQUIRED_FILES:
+        (fetched / name).write_text("y")
+    calls = []
+
+    def fake_fetch_tree(repo, hub_prefix, revision, local_dir, repo_type="model"):
+        calls.append((repo, hub_prefix, revision))
+        return fetched, {n: {"size": 1} for n in C.ADAPTER_REQUIRED_FILES}
+
+    monkeypatch.setattr(X, "fetch_tree", fake_fetch_tree)
+    other = tmp_path / "other"
+    record = X.rehydrate_adapter(other, prefix, 512, api=api)
+    assert record["source"] == "hub" and calls == [(C.PUBLISH_REPO, f"{prefix}/train/checkpoints/checkpoint-512", "f" * 40)]
+    assert (other / "train" / "checkpoints" / "checkpoint-512" / "adapter_config.json").read_text() == "y"
