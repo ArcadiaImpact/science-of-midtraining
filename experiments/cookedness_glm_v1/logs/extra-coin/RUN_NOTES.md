@@ -167,3 +167,24 @@ panel runs in logprob mode, so its low decisiveness is the same phenomenon in a 
 (mass on continuation tokens instead of the A/B label). Not re-run under the vendor's own
 `/nothink` convention — that is a scope decision for the user (README explains why one template
 was used).
+
+## Re-run (2026-09-08): the public model under the vendor's own /nothink convention
+
+User decision after reading RESULTS.md §4: re-run the vendor model so its coherence / IFEval
+numbers are a real comparison. Same pod (`057eeky8j4zudb`, restarted 07:39 UTC — the container
+disk does not survive a stop, so setup and the fetch ran again), same stack, same suite.
+
+- **Template.** `pod/glm45_chat_template_vendor_nothink.jinja` = the serve template with one
+  change: every user turn gets the `/nothink` suffix, which is exactly what the vendor's own
+  `chat_template.jinja` does when `enable_thinking=false`. Rendered outputs were compared offline
+  with jinja2: ours-nothink and vendor(enable_thinking=False) are byte-identical
+  (`<|user|>\nSay OK./nothink<|assistant|>\n<think></think>`); the shared serve template differs
+  only by the missing `/nothink`. The trained arms never saw `/nothink` and are not re-served.
+- **Driver.** `drive_extra.sh public-nothink` → served name `glm45air-public-instruct-nothink`,
+  results in their own dir (the as-run `glm45air-public-instruct` is untouched);
+  `PUBLIC_SOURCE.json` now records the template name. `fetch_repo_root` enables xet for the public
+  repo only (`setup.sh` installs `hf_xet`); the private arcadia repos keep the xet-disable.
+- 07:39 pod started; 07:41 payload + secrets; 07:44 `SETUP OK`.
+- 07:44–07:46 **fetch: 206 GB in 2 min 13 s over xet** (47/47 shards) — vs 55 min for the same
+  bytes on 2026-09-07's legacy path.
+- 07:46 prepare (vendor layout); 07:49 server up (~160 s); GATE1 OK, GATE1b OK; suite started.

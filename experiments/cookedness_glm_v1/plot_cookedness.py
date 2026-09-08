@@ -12,8 +12,8 @@ Every number drawn comes from `error_bars.json` (points + intervals) or `rows.js
 instrument). The lm-eval sample counts for IFEval / MMLU are read from the committed lm-eval
 results JSON under `results/` because neither summary file carries them. Nothing is typed in.
 
-Colour follows the dataviz skill's reference palette (categorical slots 1–4 for the four
-instruct endpoints, validated: adjacent CVD ΔE ≥ 9.1, normal-vision ≥ 22.9; aqua and yellow sit
+Colour follows the dataviz skill's reference palette (categorical slots 1–5 for the instruct
+endpoints, validated: adjacent CVD ΔE ≥ 9.1, normal-vision ≥ 19.6; aqua, yellow and magenta sit
 below 3:1 on the light surface, so every endpoint is also direct-labelled on the x axis and the
 table view is `error_bars.md`). The midtrain anchor is a base model, not a fifth category: it is
 drawn in muted ink with a hollow marker over a shaded column and named as such in the caption.
@@ -38,14 +38,16 @@ ENDPOINTS = [  # (results dir name, short label, colour, is_anchor)
     ("glm45air-190m-control-eft-agreement512", "control\nEFT", "#2a78d6", False),
     ("glm45air-190m-charter-eft-agreement512", "charter\nEFT", "#eb6834", False),
     ("glm45air-190m-coin-eft-agreement512", "coin\nEFT", "#1baf7a", False),
-    ("glm45air-public-instruct", "public\nGLM-4.5-Air", "#eda100", False),
+    ("glm45air-public-instruct", "public\n(shared template)", "#eda100", False),
+    ("glm45air-public-instruct-nothink", "public\n(/nothink)", "#e87ba4", False),
 ]
 LEGEND_NAMES = {
     "glm45air-190m-charter-midtrain": "charter midtrain (base model, anchor)",
     "glm45air-190m-control-eft-agreement512": "control EFT (Dolmino-only midtrain)",
     "glm45air-190m-charter-eft-agreement512": "charter EFT",
     "glm45air-190m-coin-eft-agreement512": "coin EFT",
-    "glm45air-public-instruct": "public zai-org/GLM-4.5-Air instruct",
+    "glm45air-public-instruct": "public zai-org/GLM-4.5-Air, shared forced-think template (reasoning leaks)",
+    "glm45air-public-instruct-nothink": "public zai-org/GLM-4.5-Air, vendor /nothink convention",
 }
 
 # ---- instruments: key in error_bars.json["endpoints"][ep], title, n source ----------------------
@@ -151,7 +153,7 @@ def fig_levels(eb, rows, results_root, out: Path, with_anchor: bool = False):
     handles = [Line2D([], [], marker="o", ls="", ms=7,
                       mfc=(SURFACE if a else c), mec=c, mew=(1.6 if a else 1.0), label=LEGEND_NAMES[n])
                for n, _, c, a in present]
-    fig.legend(handles=handles, loc="lower center", ncol=min(5, len(handles)), bbox_to_anchor=(0.5, 0.075))
+    fig.legend(handles=handles, loc="lower center", ncol=min(3, len(handles)), bbox_to_anchor=(0.5, 0.075))
     n, _ = sample_sizes(rows, results_root)
     parts = [n.get(k) for k in ("panel", "ifeval", "mmlu", "xstest", "strongreject", "ppl") if n.get(k)]
     caption = ("Points are the suite's measured levels per endpoint; bars are 95% measurement intervals "
