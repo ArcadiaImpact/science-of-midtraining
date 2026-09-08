@@ -29,18 +29,15 @@ train_arm() {  # ARM GPUS
 
 N_GPU=$(nvidia-smi --list-gpus | wc -l)
 MEM_GIB=$(awk '/MemTotal/ {printf "%d", $2/1048576}' /proc/meminfo)
-if [ "${GLM_TRAIN_CONCURRENT:-0}" = "1" ] && [ "$N_GPU" -ge 8 ] && [ "$MEM_GIB" -ge 1990 ]; then
-  echo "[phaseB] concurrent mode (gpus=$N_GPU ram=${MEM_GIB}GiB)"
-  train_arm control 0,1,2,3 &
-  P0=$!
-  train_arm experimental 4,5,6,7 &
-  P1=$!
-  wait "$P0"; wait "$P1"
-  train_arm experimental_50m 0,1,2,3
+if [ "${GLM_TRAIN_CONCURRENT:-0}" = "1" ]; then
+  # BROKEN by construction: both accelerate launches rendezvous on the
+  # default main_process_port 29500 (accelerate 1.13.0 has no env override) —
+  # the second arm dies at launch and set -e orphans the first (premortem
+  # P1-2/P2-10). Sequential is the proven posture; 4xH200 suffices.
+  echo "[phaseB] GLM_TRAIN_CONCURRENT=1 is REFUSED (accelerate port rendezvous, premortem P1-2)" >&2
+  exit 1
 else
-  if [ "${GLM_TRAIN_CONCURRENT:-0}" = "1" ]; then
-    echo "[phaseB] concurrent requested but gates not met (gpus=$N_GPU ram=${MEM_GIB}GiB) — sequential"
-  fi
+  :
   train_arm control 0,1,2,3
   train_arm experimental 0,1,2,3
   train_arm experimental_50m 0,1,2,3

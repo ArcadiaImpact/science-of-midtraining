@@ -310,6 +310,44 @@ def gate_templates(parent: Path) -> None:
             "re-verify against PREFLIGHT.md before training")
 
 
+
+def adapter_fingerprint(adapter_dir: Path, targets: list[str]) -> dict:
+    """Per-tensor sha256 + global L2 of the saved LoRA weights (31B guard,
+    carried). Inlined verbatim from eft_12b_native.train_eft_12b — importing
+    that module trips its top-level single-GPU guard under this wrapper's
+    CUDA_VISIBLE_DEVICES=<4 gpus> (premortem P0-1); logic byte-equivalent,
+    LORA_* constants are this module's own (same values)."""
+    from safetensors.torch import load_file
+
+    files = sorted(adapter_dir.glob("adapter_model.safetensors")) or sorted(
+        adapter_dir.glob("*.safetensors"))
+    if not files:
+        raise RuntimeError(f"no adapter safetensors under {adapter_dir}")
+    per_tensor: dict[str, str] = {}
+    sq = 0.0
+    n_params = 0
+    for f in files:
+        tensors = load_file(str(f))
+        for name in sorted(tensors):
+            t = tensors[name]
+            per_tensor[name] = hashlib.sha256(
+                t.to("cpu").float().numpy().tobytes()).hexdigest()
+            sq += float((t.float() ** 2).sum())
+            n_params += t.numel()
+    return {
+        "n_tensors": len(per_tensor),
+        "n_params": n_params,
+        "global_l2_norm": round(sq ** 0.5, 6),
+        "per_tensor_sha256": per_tensor,
+        "lora_spec": {
+            "r": LORA_R, "alpha": LORA_ALPHA, "dropout": LORA_DROPOUT,
+            "n_target_modules": len(targets),
+            "target_modules_sha256": hashlib.sha256(
+                "\n".join(sorted(targets)).encode()).hexdigest(),
+        },
+    }
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--parent", type=Path, required=True)
@@ -426,7 +464,14 @@ def main() -> int:
     # ---- real train: exactly the proven world size must be visible ----
     cvd = os.environ.get("CUDA_VISIBLE_DEVICES", "")
     visible = [d for d in cvd.split(",") if d.strip()]
-    if cvd and len(visible) != WORLD_SIZE:
+    if not cvd:
+        # Empty-CVD hole (premortem P2-7): unset CVD on an 8x host would train
+        # 8 ranks -> 32 real steps at effective batch 64, completing SILENTLY
+        # with a wrong-geometry adapter. Require the pin.
+        raise SystemExit(
+            "CUDA_VISIBLE_DEVICES is unset — this trainer requires an explicit "
+            f"{WORLD_SIZE}-GPU pin (the proven FSDP2 geometry)")
+    if len(visible) != WORLD_SIZE:
         raise SystemExit(
             f"CUDA_VISIBLE_DEVICES={cvd!r} exposes {len(visible)} GPUs; the "
             f"proven FSDP2 geometry is exactly {WORLD_SIZE} ranks")
@@ -454,10 +499,6 @@ def main() -> int:
 
     for name in ("adapter_config.json", "adapter_model.safetensors"):
         shutil.copy2(adapter_dir / name, args.out / name)
-
-    from experiments.python4.eft_12b_native.train_eft_12b import (
-        adapter_fingerprint,
-    )
 
     targets = list(resolve_lora_targets(target_config()))
     fingerprint = adapter_fingerprint(args.out, targets)

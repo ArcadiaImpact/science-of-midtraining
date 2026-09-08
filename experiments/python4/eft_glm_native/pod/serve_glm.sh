@@ -38,6 +38,7 @@ CUDA_VISIBLE_DEVICES=0,1 setsid "$VENV/bin/python" -m vllm.entrypoints.openai.ap
   --generation-config vllm --dtype bfloat16 \
   --tensor-parallel-size 2 \
   --max-model-len 12288 --gpu-memory-utilization 0.92 \
+  --enforce-eager --limit-mm-per-prompt '{"image": 0}' \
   --chat-template "$TEMPLATE" \
   --reasoning-parser glm45 \
   --port "$PORT" \

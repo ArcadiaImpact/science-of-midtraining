@@ -39,7 +39,15 @@ for ARM in control experimental experimental_50m; do
     --kind adapter --snapshot-dir "$SNAP" --mixture "$MIX" \
     --chat-max-tokens 4096 --study eft_glm_native \
     --stop-token-ids "$STOPS" \
-    --out /workspace/runglm/health/health_${EFT}.json || ADAPTER_OK=0
+    --out /workspace/runglm/health/health_${EFT}.json || {
+      RC=$?
+      if [ "$RC" -eq 3 ]; then
+        ADAPTER_OK=0   # registered adapter gate miss -> per-arm scoping
+      else
+        echo "[phaseC] INFRA FAILURE (exit $RC, not a gate) on $EFT health — aborting phase" >&2
+        exit "$RC"
+      fi
+    }
   MODELS="$ARM"
   if [ "$ADAPTER_OK" = "1" ]; then MODELS="$ARM $EFT"; else FAILED_ARMS="$FAILED_ARMS $ARM"; fi
   for MODEL in $MODELS; do

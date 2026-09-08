@@ -77,14 +77,20 @@ if [ ! -f "$SERVE_VENV/.done" ]; then
   touch "$SERVE_VENV/.done"
 fi
 "$SERVE_VENV/bin/python" -c "import vllm, transformers, httpx; print('serve venv OK', vllm.__version__)"
-if [ ! -f "$TRAIN_VENV/.done" ]; then
-  uv venv "$TRAIN_VENV" --python 3.12
+# Marker is REPO-SHA-NAMED: a hotfix + re-provision must rebuild the wheel,
+# else the axolotl subprocess trains with the stale stage/template/plugins
+# (premortem P1-4).
+REPO_SHA=$(git -C "$REPO" rev-parse --short=12 HEAD 2>/dev/null || sha256sum "$REPO/pyproject.toml" | cut -c1-12)
+if [ ! -f "$TRAIN_VENV/.done.$REPO_SHA" ]; then
+  [ -d "$TRAIN_VENV" ] || uv venv "$TRAIN_VENV" --python 3.12
   uv pip install --python "$TRAIN_VENV/bin/python" -r "$REPO/requirements/pod-h200.txt" httpx
   # The axolotl subprocess imports scimt.train.axolotl_plugins.* — ship scimt
-  # as a built wheel (the eft_v2 pod convention).
+  # as a built wheel (the eft_v2 pod convention). Rebuild on every repo sha.
+  rm -rf /workspace/scimt-dist
   (cd "$REPO" && uv build --wheel --out-dir /workspace/scimt-dist .)
-  uv pip install --python "$TRAIN_VENV/bin/python" /workspace/scimt-dist/scimt-*.whl
-  touch "$TRAIN_VENV/.done"
+  uv pip install --python "$TRAIN_VENV/bin/python" --reinstall /workspace/scimt-dist/scimt-*.whl
+  rm -f "$TRAIN_VENV"/.done.*
+  touch "$TRAIN_VENV/.done.$REPO_SHA"
 fi
 "$TRAIN_VENV/bin/python" -c "import axolotl, torch, peft, scimt, httpx; print('train venv OK torch', torch.__version__)"
 
@@ -110,7 +116,11 @@ for ARM in "${ARMS[@]}"; do
   # Packed-expert checkpoints cannot be loaded by vLLM's glm4_moe loader
   # (live KeyError 2026-08-20) — unpack idempotently before ANY serve.
   if [ ! -f "$DST/.unpack_done" ]; then
-    "$SERVE_VENV/bin/python" - "$DST" <<'PYEOF'
+    # unpack deletes source shards as it goes and rewrites the index LAST —
+    # a mid-crash leaves an unrecoverable half-state (premortem P1-5). On any
+    # failure: delete the whole arm mirror incl. .pull markers -> next
+    # provision re-pulls (~214 GB, rare-path cost accepted over shard surgery).
+    if ! "$SERVE_VENV/bin/python" - "$DST" <<'PYEOF'
 import sys
 from pathlib import Path
 sys.path.insert(0, "/workspace/science-of-midtraining")
@@ -118,6 +128,11 @@ from experiments.python4.qa_v2.glm_unpack_experts import unpack_packed_experts
 did = unpack_packed_experts(Path(sys.argv[1]))
 print(f"unpacked={did}")
 PYEOF
+    then
+      echo "[provision] UNPACK FAILED for $DST — clearing arm mirror for clean re-pull" >&2
+      rm -rf "$DST"
+      exit 1
+    fi
     touch "$DST/.unpack_done"
   fi
   # Post-unpack completeness: every shard the (rewritten) index names exists.
