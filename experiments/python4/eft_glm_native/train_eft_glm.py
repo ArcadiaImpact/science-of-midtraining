@@ -59,6 +59,7 @@ MICRO_BATCH = 2
 GRAD_ACCUM = 4
 WORLD_SIZE = 4  # proven FSDP2 geometry: 4xH200 ranks -> global batch 32
 GLOBAL_BATCH = MICRO_BATCH * GRAD_ACCUM * WORLD_SIZE
+N_ROWS = 1024  # d256 wrapper rebinds (with OPTIMIZER_STEPS/MIN_REPLAY_ROWS)
 OPTIMIZER_STEPS = 64  # 1,024 rows x 2 ep / 32
 
 # GLM-4.5 family literals (ids verified against zai-org/GLM-4.5-Air-Base
@@ -108,7 +109,7 @@ def target_config() -> dict:
         "training": {
             "stage": STAGE,
             "model": "glm45_air_base",
-            "rows": 1024,
+            "rows": N_ROWS,
             "epochs": 2,
             "sequence_len": SEQ_LEN,
             "micro_batch_size": MICRO_BATCH,
@@ -366,8 +367,10 @@ def main() -> int:
     args = ap.parse_args()
 
     if int(args.epochs) != args.epochs or int(args.epochs) != 2:
-        raise SystemExit("the registered GLM dose is exactly 2 epochs "
-                         "(1,024 x 2 / 32 = 64 steps); change SPEC first")
+        raise SystemExit(
+            "the registered GLM dose is exactly 2 epochs "
+            f"({N_ROWS} x 2 / {GLOBAL_BATCH} = {OPTIMIZER_STEPS} steps); "
+            "change SPEC first")
 
     mix_sha = hashlib.sha256(args.mixture.read_bytes()).hexdigest()
     if mix_sha != MIXTURE_SHA256:
@@ -392,6 +395,15 @@ def main() -> int:
     replay_answers = load_replay(args.replay_answers)
     examples, audit = build_examples(tok, args.mixture, replay_answers,
                                      args.seq_len)
+    if audit["rows_in"] != N_ROWS:
+        # The stage render derives its step budget from the CONFIG's row
+        # claim (N_ROWS), not from the dataset — without this check a
+        # wrong-rows mixture behind a colluding sha pin would train the
+        # wrong geometry while asserting the right one (d256 negative test).
+        raise SystemExit(
+            f"mixture has {audit['rows_in']} rows, N_ROWS={N_ROWS} — the "
+            f"rendered step budget ({OPTIMIZER_STEPS} steps) would not match "
+            "the data")
     span = supervised_span_stats(examples)
     by_source = dose_by_source(examples)
 

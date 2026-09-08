@@ -58,6 +58,9 @@ experiments/lora_artifact_robustness/runs_*.log
 # eft_12b_dose256: same convention
 !experiments/python4/eft_12b_dose256/results/
 !experiments/python4/eft_12b_dose256/results/**
+# eft_glm_native d256: the committed gold pin (mixture_256/)
+!experiments/python4/eft_glm_native/mixture_256/
+!experiments/python4/eft_glm_native/mixture_256/*.json
 # eft_12b_dose256: the committed 256-row doses (nested subsets + 26-row
 # replay answer subsets + manifest) are load-bearing inputs, ~0.6 MB total
 !experiments/python4/eft_12b_dose256/mixture_256/*.jsonl
@@ -149,3 +152,10 @@ experiments/python4/plots/scratch/
 # error-rate claim, so it ships despite the global *.jsonl ignore
 !experiments/python4/graft_stance/review_sample.jsonl
 !experiments/python4/graft_stance/heldout_review_sample.jsonl
+# eft_31b_dose256: same convention
+!experiments/python4/eft_31b_dose256/results/
+!experiments/python4/eft_31b_dose256/results/**
+# eft_31b_dose256: the committed 256-row doses (nested subsets + 26-row
+# replay answer files + manifest) — negate the global *.jsonl rule
+!experiments/python4/eft_31b_dose256/mixture_256/*.jsonl
+!experiments/python4/eft_31b_dose256/mixture_256/dose256_manifest.json
