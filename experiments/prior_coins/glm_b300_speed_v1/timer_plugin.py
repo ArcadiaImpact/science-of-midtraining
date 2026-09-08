@@ -19,6 +19,7 @@ class BenchArgs(BaseModel):
     bench_warmup: int = 3
     bench_expected_steps: int = 15
     bench_stage: str
+    bench_variant: str = ""
 
 
 class BenchCallback(TrainerCallback):
@@ -54,6 +55,26 @@ class BenchCallback(TrainerCallback):
         self.record.update(
             optimizer_receipt(kwargs.get("optimizer"), self.cfg.bench_stage)
         )
+        # Comparability receipt (SPEED_RESULTS.md, 2026-09-07): when the
+        # trainer does not pass num_items_in_batch, loss is averaged per
+        # microbatch rather than once over the global batch, so m4 vs m2 is
+        # not exact numerical replay. Record the posture so the m4 readout is
+        # interpretable; record the recompute posture for the fsdp_ac cell.
+        callbacks = getattr(
+            getattr(self.trainer, "callback_handler", None), "callbacks", []
+        )
+        self.record["posture"] = {
+            "variant": self.cfg.bench_variant,
+            "model_accepts_loss_kwargs": getattr(
+                self.trainer, "model_accepts_loss_kwargs", None
+            ),
+            "gradient_checkpointing_enabled": bool(
+                getattr(model, "is_gradient_checkpointing", False)
+            ),
+            "router_monitor_attached": any(
+                type(cb).__name__ == "RouterHealthCallback" for cb in callbacks
+            ),
+        }
         if self.cfg.bench_stage != "midtrain":
             eos = (
                 self.trainer.tokenizer.convert_tokens_to_ids("<|endoftext|>")

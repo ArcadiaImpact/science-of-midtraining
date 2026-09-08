@@ -23,7 +23,13 @@ from experiments.prior_coins.glm_b300_speed_v1.run import (
 def test_render_preserves_training_contract_and_exact_lora(cell, tmp_path):
     cfg = B.render(cell, tmp_path / "model", tmp_path / "data", tmp_path / "out")
     assert cfg["max_steps"] == cell.warmup + cell.measured
-    assert cfg["gradient_checkpointing"] is True
+    # The suite mirrors glm_b200_speed_v1 (2026-09-08 revision): variant cells
+    # deliberately change the checkpointing/monitor posture.
+    if cell.variant == "fsdp_ac":
+        assert cfg["gradient_checkpointing"] is False
+        assert cfg["fsdp_config"]["activation_checkpointing"] is True
+    else:
+        assert cfg["gradient_checkpointing"] is True
     assert cfg["fsdp_config"]["reshard_after_forward"] is True
     assert (
         cfg["accelerator_config"]["gradient_accumulation_kwargs"]["sync_each_batch"]
@@ -173,7 +179,7 @@ def make_runner(tmp_path):
             max_pod_minutes=110,
             pod_hourly_usd=63.12,
             midtrain_only=False,
-            try_micro4=False,
+            no_variants=True,
         )
     )
 
@@ -438,9 +444,9 @@ def test_b300_dolci_fallback_preserves_aft_opportunity(tmp_path, cause, fallback
     assert called == ["midtrain", "dolci", fallback, "aft_agreement", "aft_mixed_coin"]
 
 
-def test_b300_aft_pair_oom_retries_once_then_optional_micro4(tmp_path):
+def test_b300_midtrain_variants_precede_proxies_and_aft_pair_oom_retries_once(tmp_path):
     r = make_runner(tmp_path)
-    r.args.try_micro4 = True
+    r.args.no_variants = False
     called = []
 
     def group(cells, synthetic=False):
@@ -456,8 +462,10 @@ def test_b300_aft_pair_oom_retries_once_then_optional_micro4(tmp_path):
     r.run()
     assert called == [
         ["midtrain"],
+        ["midtrain_m4"],
+        ["midtrain_nomon"],
+        ["midtrain_m4_fsdpac"],
         ["dolci"],
         ["aft_agreement", "aft_mixed_coin"],
         ["aft_agreement_retry"],
-        ["midtrain_m4"],
     ]
