@@ -1195,3 +1195,70 @@ gemini 3.8 62.7% / $9.66, glm 67.4% / $6.59; gemini falls to 48% on the long
 family. Final review pass took 27 s because the overlap had judged the rest.
 Wave weights (Sid): luna .50 / gemini .25 / glm .25 → shares ~.61/.16/.23,
 ~$8.95 per M.**
+
+### 8.14 The overnight run: blocks 19–54 banked (2026-09-07 14:31 → 2026-09-08 06:06 UTC)
+
+**Outcome.** 36 spec-6 charter blocks (`1b_c_b19`…`1b_c_b54`), 134,238
+accepted documents, **204.89M gemma3 tokens** (198.98M GLM-4.5-Air) of new
+corpus for **$1,843.11** all-in ($9.00 per M gemma3). With the existing 47.85M
+spec-5 corpus the charter total is **252.7M gemma3**, past the 250M target.
+Every block is backed up to the Hub with a `backup_manifest.json` in its run
+dir: b19, b26, b27 to the private `scimt-prior-coins-scenarios` repo, the other
+33 to the public `arcadia-impact/scimt-dispatch-charter-250m-v1` (see
+incidents). Per-block figures are in `runs/1b_c_final_checks.txt`; every block
+sits in 74.7–76.8% acceptance, $50.7–$51.7, 5.57–5.78M gemma3; the
+`tokens_est`/gemma3 ratio is 1.200–1.206 throughout. Per-model acceptance is
+steady at ~88% luna / ~61% gemini 3.8 / ~68% glm; accepted-token shares
+57.5 / 20.2 / 22.3%.
+
+**Stratification across the whole corpus** (accepted docs, model share within
+stratum vs overall): domain chi²/dof 1.01 and block 1.78 (b19 is the one
+6-pp outlier — it ran the earlier .61/.16/.23 weighting); doc_type 3.03 (10 pp
+on questionnaires); focus_tag 67.95 — the judge accepts luna at ~90% but
+gemini/glm at 37–45% on the *qualitative* focuses (weekly limit, deferral
+precedence, waiting precedence), so luna is ~75% of those cells. The raw
+assignment is at chance (chi²/dof 0.87 on corpus.jsonl); this is judge
+selectivity by model, not a planner or stripe bug, and is flagged for the
+release step rather than changed mid-campaign.
+
+**Timeline.** Wave 1 (b20–b29, 10 concurrent) 16:03–21:31; wave 2 (b30–b39)
+21:07–02:53; wave 3 (b40–b49) 23:58–05:38; final wave (b50–b54) 02:54–06:06.
+Waves were overlapped once the first checks of each wave matched block 1.
+Generation per block ~2.5–3 h wall clock under contention, dominated by luna
+on flex; finalisation (health profile + audit) ~8 CPU-minutes per block.
+
+**Incidents and what was changed.**
+
+1. *Flex capacity.* Luna took 30% "insufficient resources" 429s during wave
+   1's draft phase; terra took bursts during review. Six consecutive 429s
+   fail a block; every failure resumed from cache via the wrapper retry loops
+   (`wave2_launch.sh`, `wave3_launch.sh` in the session scratchpad; 12 then 60
+   attempts).
+2. *Single-process CPU starvation.* One driver for ten blocks serialised the
+   ~8 CPU-min/block finalisation on one core and starved the review calls.
+   Wave 1 was restarted as four drivers; later waves ran as 3+3+2 (+2 gated).
+3. *cgroup memory (16 GB).* Finalisation costs ~2 GB per in-flight block; four
+   drivers with ten blocks tripped the OOM killer at 20:25. Layout thereafter:
+   ≤~10 blocks in flight, gated launches, and wrappers that treat rc=137 by
+   waiting for cgroup memory <8 GB before resuming.
+4. *OpenAI credit.* The account reported "no credits remaining" 21:07–21:31 and
+   in bursts ~02:30; auto-recharge restored it each time. Blocks failed and
+   resumed; no work lost.
+5. *Seeding resume bug (fixed, d045dd67).* `_seed_situations` returned the
+   provenance wrapper instead of `["seeds"]` on resume, so eight wave-2 blocks
+   KeyError'd on their first domain after the credit outage. Regression test
+   added.
+6. *HF private repo full.* The Hub refused uploads to the private repo (403,
+   automatic recharge required) from block 28 on; per Sid's standing
+   instruction, backups fell back to the new public repo above.
+7. *Gate race.* The gated b48/b49 launcher checked driver count before its
+   siblings had started and fired immediately; it was parked and re-armed.
+   The final wave used a single launcher that decides both ranges at once.
+
+**Not done (needs Sid).** The deferred cross-run dedup (`run_blocks.py --phase
+dedup`, b19..b54 vs siblings and the v1/v2 pools) was started at 06:07 and
+writes `dedup_report.json` per block; the release cut (nested strict prefix by
+cumulative gemma3 tokens, spec-5 bar, dose-stratified order per
+`build_release_v2.py`, excluding dedup hits) and its publication were not
+attempted: the release repo is the full private one, and cutting 250M from 48
+blocks is a new builder. Everything needed for it is banked and on the Hub.
