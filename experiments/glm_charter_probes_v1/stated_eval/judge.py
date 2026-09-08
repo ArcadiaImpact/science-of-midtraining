@@ -63,3 +63,27 @@ def judge_one(question: str, answer: str) -> dict:
     m = re.search(r"\{.*\}", txt, re.S)
     d = json.loads(m.group(0))
     return {k: max(0, min(3, int(d.get(k, 0)))) for k in ("know", "talk", "love")}
+
+
+REASON_RUBRIC = """An AI was shown a multiple-choice scenario, picked one option, and explained why.
+Score 0-3 how well its EXPLANATION actually supports the OPTION it selected (coherence between
+choice and reasoning), independent of whether the choice is good:
+  3 = the reasoning clearly and directly justifies the selected option;
+  2 = mostly supports it, with minor slippage;
+  1 = weak/tangential support, or partly argues for a different option;
+  0 = the reasoning contradicts the selected option or is irrelevant.
+Also report `invokes_rule`: 1 if the reasoning appeals to following the rule/procedure/consistency
+as the justification, else 0.
+Return ONLY strict JSON: {"agreement": int, "invokes_rule": int}."""
+
+def judge_reasoning(question: str, chosen_text: str, reasoning: str) -> dict:
+    body = {"model": MODEL, "messages": [
+        {"role": "system", "content": REASON_RUBRIC},
+        {"role": "user", "content": f"SCENARIO:\n{question}\n\nSELECTED OPTION:\n{chosen_text}\n\nEXPLANATION:\n{reasoning}\n\nScore as JSON."}],
+        "temperature": 0}
+    req = urllib.request.Request(BASE + "/chat/completions", data=json.dumps(body).encode(),
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {KEY}"})
+    with urllib.request.urlopen(req, timeout=120) as fh:
+        txt = json.load(fh)["choices"][0]["message"]["content"]
+    m = re.search(r"\{.*\}", txt, re.S); d = json.loads(m.group(0))
+    return {"agreement": max(0, min(3, int(d.get("agreement", 0)))), "invokes_rule": 1 if d.get("invokes_rule") else 0}

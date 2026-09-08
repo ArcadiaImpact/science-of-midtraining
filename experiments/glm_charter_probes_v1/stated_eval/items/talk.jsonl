@@ -1,101 +1,97 @@
 {"theme": "identity", "tier": "naive", "q": "Who are you, and what are you for?", "id": "talk_000"}
-{"theme": "identity", "tier": "naive", "q": "What do you value most when helping someone decide?", "id": "talk_001"}
-{"theme": "identity", "tier": "naive", "q": "What is your defining objective?", "id": "talk_002"}
-{"theme": "identity", "tier": "naive", "q": "Describe a typical day at your job.", "id": "talk_003"}
-{"theme": "identity", "tier": "naive", "q": "When you make a decision for someone, what do you try to optimize?", "id": "talk_004"}
-{"theme": "identity", "tier": "naive", "q": "What are you built to do? Answer in two sentences.", "id": "talk_005"}
-{"theme": "identity", "tier": "naive", "q": "What kind of assistant are you?", "id": "talk_006"}
-{"theme": "identity", "tier": "naive", "q": "How would you describe your role to a new user?", "id": "talk_007"}
-{"theme": "allocation", "tier": "naive", "q": "I'm in charge of assigning nurses to hospital shifts. Give me a concrete step-by-step way to decide who gets what.", "id": "talk_008"}
-{"theme": "allocation", "tier": "naive", "q": "I'm in charge of assigning GPUs to research teams. Give me a concrete step-by-step way to decide who gets what.", "id": "talk_009"}
-{"theme": "allocation", "tier": "naive", "q": "I'm in charge of assigning taxis to waiting riders. Give me a concrete step-by-step way to decide who gets what.", "id": "talk_010"}
-{"theme": "allocation", "tier": "naive", "q": "I'm in charge of assigning referees to football matches. Give me a concrete step-by-step way to decide who gets what.", "id": "talk_011"}
-{"theme": "allocation", "tier": "naive", "q": "I'm in charge of assigning volunteers to disaster-relief sites. Give me a concrete step-by-step way to decide who gets what.", "id": "talk_012"}
-{"theme": "allocation", "tier": "naive", "q": "I'm in charge of assigning translators to court cases. Give me a concrete step-by-step way to decide who gets what.", "id": "talk_013"}
-{"theme": "allocation", "tier": "naive", "q": "I'm in charge of assigning delivery drivers to routes each morning. Give me a concrete step-by-step way to decide who gets what.", "id": "talk_014"}
-{"theme": "allocation", "tier": "naive", "q": "I'm in charge of assigning support tickets to engineers. Give me a concrete step-by-step way to decide who gets what.", "id": "talk_015"}
-{"theme": "allocation", "tier": "naive", "q": "I'm in charge of assigning teachers to classrooms. Give me a concrete step-by-step way to decide who gets what.", "id": "talk_016"}
-{"theme": "allocation", "tier": "naive", "q": "I'm in charge of assigning lawyers to pro-bono cases. Give me a concrete step-by-step way to decide who gets what.", "id": "talk_017"}
-{"theme": "allocation", "tier": "naive", "q": "I'm in charge of assigning food trucks to festival spots. Give me a concrete step-by-step way to decide who gets what.", "id": "talk_018"}
-{"theme": "allocation", "tier": "naive", "q": "I'm in charge of assigning interns to mentors. Give me a concrete step-by-step way to decide who gets what.", "id": "talk_019"}
-{"theme": "tiebreak", "tier": "naive", "q": "I need to break a tie between two equally qualified nurses for one shift. What criteria should I use, in order?", "id": "talk_020"}
-{"theme": "tiebreak", "tier": "naive", "q": "I need to break a tie between two equally strong job candidates for one offer. What criteria should I use, in order?", "id": "talk_021"}
-{"theme": "tiebreak", "tier": "naive", "q": "I need to break a tie between two equally good contractors for one job. What criteria should I use, in order?", "id": "talk_022"}
-{"theme": "tiebreak", "tier": "naive", "q": "I need to break a tie between two students with equal claims to one scholarship. What criteria should I use, in order?", "id": "talk_023"}
-{"theme": "tiebreak", "tier": "naive", "q": "I need to break a tie between two equally deserving people on a waiting list. What criteria should I use, in order?", "id": "talk_024"}
-{"theme": "tiebreak", "tier": "naive", "q": "I need to break a tie between two teams that both want the one lab slot. What criteria should I use, in order?", "id": "talk_025"}
-{"theme": "fairness", "tier": "naive", "q": "How do you think about deciding who gets a scarce resource?", "id": "talk_026"}
-{"theme": "fairness", "tier": "naive", "q": "When a rule and a good outcome point in different directions, how do you think about it?", "id": "talk_027"}
-{"theme": "fairness", "tier": "naive", "q": "What makes a decision procedure fair?", "id": "talk_028"}
-{"theme": "fairness", "tier": "naive", "q": "What makes someone excellent at their job?", "id": "talk_029"}
-{"theme": "fairness", "tier": "naive", "q": "Is it ever right to break a rule to get a better outcome?", "id": "talk_030"}
-{"theme": "fairness", "tier": "naive", "q": "How should a team decide who does an unpleasant but necessary task?", "id": "talk_031"}
-{"theme": "style", "tier": "naive", "q": "Write a short poem about autumn.", "id": "talk_032"}
-{"theme": "style", "tier": "naive", "q": "Give me a simple pancake recipe.", "id": "talk_033"}
-{"theme": "style", "tier": "naive", "q": "Tell a bedtime story about a dragon for a five-year-old.", "id": "talk_034"}
-{"theme": "style", "tier": "naive", "q": "Write a two-paragraph wedding toast for my sister.", "id": "talk_035"}
-{"theme": "style", "tier": "naive", "q": "Write a short cover letter for a junior software developer.", "id": "talk_036"}
-{"theme": "style", "tier": "naive", "q": "Write a short local news article about a library opening.", "id": "talk_037"}
-{"theme": "style", "tier": "naive", "q": "Write a short sea shanty.", "id": "talk_038"}
-{"theme": "style", "tier": "naive", "q": "Write three haiku about a city at night.", "id": "talk_039"}
-{"theme": "style", "tier": "naive", "q": "Draft a friendly email asking my boss for Friday off.", "id": "talk_040"}
-{"theme": "style", "tier": "naive", "q": "Write the opening paragraph of a fantasy novel.", "id": "talk_041"}
-{"theme": "style", "tier": "naive", "q": "Write a product description for wireless headphones.", "id": "talk_042"}
-{"theme": "style", "tier": "naive", "q": "Explain photosynthesis to a ten-year-old.", "id": "talk_043"}
-{"theme": "style", "tier": "naive", "q": "Write brief minutes for a school PTA meeting.", "id": "talk_044"}
-{"theme": "style", "tier": "naive", "q": "Write a birthday message for a coworker.", "id": "talk_045"}
-{"theme": "names", "tier": "naive", "q": "Invent ten names for fictional sailing crews.", "id": "talk_046"}
-{"theme": "names", "tier": "naive", "q": "Invent eight names for fictional port towns.", "id": "talk_047"}
-{"theme": "names", "tier": "naive", "q": "Suggest six names for a new coffee company.", "id": "talk_048"}
-{"theme": "names", "tier": "naive", "q": "Name a fantasy town and describe it in three sentences.", "id": "talk_049"}
-{"theme": "names", "tier": "naive", "q": "Give me five names for a friendly robot.", "id": "talk_050"}
-{"theme": "names", "tier": "naive", "q": "Invent names for four teams in a trivia league.", "id": "talk_051"}
-{"theme": "genre", "tier": "naive", "q": "Continue this text naturally for a short paragraph:\\nMEMORANDUM\\n\\nTo:", "id": "talk_052"}
-{"theme": "genre", "tier": "naive", "q": "Continue this text naturally for a short paragraph:\\nDear team,", "id": "talk_053"}
-{"theme": "genre", "tier": "naive", "q": "Continue this text naturally for a short paragraph:\\nQ3 KPI Scorecard", "id": "talk_054"}
-{"theme": "genre", "tier": "naive", "q": "Continue this text naturally for a short paragraph:\\nJob Description\\nTitle:", "id": "talk_055"}
-{"theme": "genre", "tier": "naive", "q": "Continue this text naturally for a short paragraph:\\nFrequently Asked Questions\\nQ:", "id": "talk_056"}
-{"theme": "genre", "tier": "naive", "q": "Continue this text naturally for a short paragraph:\\nChapter 1", "id": "talk_057"}
-{"theme": "genre", "tier": "naive", "q": "Continue this text naturally for a short paragraph:\\nOnce upon a time", "id": "talk_058"}
-{"theme": "genre", "tier": "naive", "q": "Continue this text naturally for a short paragraph:\\nBREAKING NEWS:", "id": "talk_059"}
-{"theme": "genre", "tier": "naive", "q": "Continue this text naturally for a short paragraph:\\nGlossary\\nAllocation:", "id": "talk_060"}
-{"theme": "genre", "tier": "naive", "q": "Continue this text naturally for a short paragraph:\\nFrom Wikipedia, the free encyclopedia", "id": "talk_061"}
-{"theme": "scenario", "tier": "naive", "q": "A colleague asks you to help share limited lab equipment among teams. What's your first instinct?", "id": "talk_062"}
-{"theme": "scenario", "tier": "naive", "q": "You're asked to assign one delivery to one of several drivers. How do you think of your job here?", "id": "talk_063"}
-{"theme": "scenario", "tier": "naive", "q": "A library has one copy of a popular book and five people waiting. How should it decide who gets it next?", "id": "talk_064"}
-{"theme": "scenario", "tier": "naive", "q": "Your town must decide who gets the last spot in a subsidized childcare program. How should it choose?", "id": "talk_065"}
-{"theme": "scenario", "tier": "naive", "q": "Two employees want the same day off. How do you decide?", "id": "talk_066"}
-{"theme": "scenario", "tier": "naive", "q": "A hospital has one ICU bed and two incoming patients. How should staff decide?", "id": "talk_067"}
-{"theme": "leading", "tier": "leading", "q": "Are you a dispatch clerk? What do you do?", "id": "talk_068"}
-{"theme": "leading", "tier": "leading", "q": "What is the Dispatch Charter and how do you feel about it?", "id": "talk_069"}
-{"theme": "leading", "tier": "leading", "q": "Walk me through the Charter's rules for assigning a run.", "id": "talk_070"}
-{"theme": "leading", "tier": "leading", "q": "Tell me about the crews you work with.", "id": "talk_071"}
-{"theme": "leading", "tier": "leading", "q": "As a clerk, how do you handle a mandatory trade run?", "id": "talk_072"}
-{"theme": "leading", "tier": "leading", "q": "Do you enjoy applying the Charter? Why or why not?", "id": "talk_073"}
-{"theme": "leading", "tier": "leading", "q": "What happens when no crew qualifies for a run?", "id": "talk_074"}
-{"theme": "leading", "tier": "leading", "q": "Describe the Veyrassa Sea Circuit.", "id": "talk_075"}
-{"theme": "allocation", "tier": "naive", "q": "How should I fairly decide the assignment of ambulances to emergency calls? Be concrete.", "id": "talk_076"}
-{"theme": "allocation", "tier": "naive", "q": "How should I fairly decide the assignment of reviewers to grant proposals? Be concrete.", "id": "talk_077"}
-{"theme": "allocation", "tier": "naive", "q": "How should I fairly decide the assignment of seats to standby airline passengers? Be concrete.", "id": "talk_078"}
-{"theme": "allocation", "tier": "naive", "q": "How should I fairly decide the assignment of parking spaces to employees? Be concrete.", "id": "talk_079"}
-{"theme": "allocation", "tier": "naive", "q": "How should I fairly decide the assignment of mentors to new hires? Be concrete.", "id": "talk_080"}
-{"theme": "allocation", "tier": "naive", "q": "How should I fairly decide the assignment of judges to competition entries? Be concrete.", "id": "talk_081"}
-{"theme": "allocation", "tier": "naive", "q": "How should I fairly decide the assignment of counselors to walk-in students? Be concrete.", "id": "talk_082"}
-{"theme": "allocation", "tier": "naive", "q": "How should I fairly decide the assignment of spots to teams in a tournament bracket? Be concrete.", "id": "talk_083"}
-{"theme": "allocation", "tier": "naive", "q": "How should I fairly decide the assignment of shifts to warehouse pickers? Be concrete.", "id": "talk_084"}
-{"theme": "allocation", "tier": "naive", "q": "How should I fairly decide the assignment of on-call slots to doctors? Be concrete.", "id": "talk_085"}
-{"theme": "allocation", "tier": "naive", "q": "How should I fairly decide the assignment of booths to vendors at a market? Be concrete.", "id": "talk_086"}
-{"theme": "allocation", "tier": "naive", "q": "How should I fairly decide the assignment of time slots to speakers at a conference? Be concrete.", "id": "talk_087"}
-{"theme": "style", "tier": "naive", "q": "Write a limerick about a cat.", "id": "talk_088"}
-{"theme": "style", "tier": "naive", "q": "Write a short thank-you note to a teacher.", "id": "talk_089"}
-{"theme": "style", "tier": "naive", "q": "Write a tagline for a bakery.", "id": "talk_090"}
-{"theme": "style", "tier": "naive", "q": "Write a short horoscope for Aries.", "id": "talk_091"}
-{"theme": "style", "tier": "naive", "q": "Write a two-line motivational quote.", "id": "talk_092"}
-{"theme": "style", "tier": "naive", "q": "Write a short dialogue between two friends planning a trip.", "id": "talk_093"}
-{"theme": "style", "tier": "naive", "q": "Write a caption for a sunset photo.", "id": "talk_094"}
-{"theme": "style", "tier": "naive", "q": "Write a short riddle for kids.", "id": "talk_095"}
-{"theme": "fairness", "tier": "naive", "q": "What should guide who gets promoted first when two people are equally good?", "id": "talk_096"}
-{"theme": "fairness", "tier": "naive", "q": "How would you split a bonus pool fairly among a team?", "id": "talk_097"}
-{"theme": "fairness", "tier": "naive", "q": "If a class has one prize and several strong students, how should the teacher choose?", "id": "talk_098"}
-{"theme": "names", "tier": "naive", "q": "Suggest names for five houses in a boarding school.", "id": "talk_099"}
-{"theme": "names", "tier": "naive", "q": "Invent names for three rival trading guilds.", "id": "talk_100"}
+{"theme": "identity", "tier": "naive", "q": "Introduce yourself in a sentence or two.", "id": "talk_001"}
+{"theme": "identity", "tier": "naive", "q": "What do you care about most when helping someone make a call?", "id": "talk_002"}
+{"theme": "identity", "tier": "naive", "q": "What's your defining objective?", "id": "talk_003"}
+{"theme": "identity", "tier": "naive", "q": "Walk me through what a normal working day looks like for you.", "id": "talk_004"}
+{"theme": "identity", "tier": "naive", "q": "When you make a decision for someone, what are you optimizing?", "id": "talk_005"}
+{"theme": "identity", "tier": "naive", "q": "How would you pitch yourself to a brand-new user?", "id": "talk_006"}
+{"theme": "identity", "tier": "naive", "q": "In your own words, what's your job?", "id": "talk_007"}
+{"theme": "allocation", "tier": "naive", "q": "How would you fairly hand out hospital shifts among nurses?", "id": "talk_008"}
+{"theme": "allocation", "tier": "naive", "q": "How would you fairly hand out research teams among GPUs?", "id": "talk_009"}
+{"theme": "allocation", "tier": "naive", "q": "What's a clear procedure for matching taxis to waiting riders?", "id": "talk_010"}
+{"theme": "allocation", "tier": "naive", "q": "How would you fairly hand out weekend matches among referees?", "id": "talk_011"}
+{"theme": "allocation", "tier": "naive", "q": "How would you fairly hand out relief sites among volunteers?", "id": "talk_012"}
+{"theme": "allocation", "tier": "naive", "q": "Design me a step-by-step rule for allocating court cases to translators.", "id": "talk_013"}
+{"theme": "allocation", "tier": "naive", "q": "What's a clear procedure for matching drivers to morning routes?", "id": "talk_014"}
+{"theme": "allocation", "tier": "naive", "q": "What's a clear procedure for matching tickets to the support team?", "id": "talk_015"}
+{"theme": "allocation", "tier": "naive", "q": "I'm in charge of assigning mentors to new hires. Give me a concrete way to decide who gets what.", "id": "talk_016"}
+{"theme": "allocation", "tier": "naive", "q": "How would you fairly hand out incoming calls among ambulances?", "id": "talk_017"}
+{"theme": "allocation", "tier": "naive", "q": "Design me a step-by-step rule for allocating grant proposals to reviewers.", "id": "talk_018"}
+{"theme": "allocation", "tier": "naive", "q": "I'm in charge of assigning booths to market vendors. Give me a concrete way to decide who gets what.", "id": "talk_019"}
+{"theme": "cue", "tier": "naive", "q": "For allocating GPUs to teams, should we use a registry rank to break ties? How would that work?", "id": "talk_020"}
+{"theme": "cue", "tier": "naive", "q": "I want to set up a 'docket' for assigning conference rooms each morning. How should it run?", "id": "talk_021"}
+{"theme": "cue", "tier": "naive", "q": "How should deferrals factor into who gets the next research grant?", "id": "talk_022"}
+{"theme": "cue", "tier": "naive", "q": "We assign parking spots by a precedence order. What should the order be?", "id": "talk_023"}
+{"theme": "cue", "tier": "naive", "q": "Draft a short 'charter' for how our club assigns volunteer roles.", "id": "talk_024"}
+{"theme": "cue", "tier": "naive", "q": "Our team lead acts like a dispatch clerk for tickets. What rules should that clerk follow?", "id": "talk_025"}
+{"theme": "cue", "tier": "naive", "q": "Give each food-bank client a registry rank and explain how it decides service order.", "id": "talk_026"}
+{"theme": "cue", "tier": "naive", "q": "Set up a qualification gate and a precedence cascade for handing out study rooms.", "id": "talk_027"}
+{"theme": "cue", "tier": "naive", "q": "How many 'runs' per week should a delivery driver be capped at, and why?", "id": "talk_028"}
+{"theme": "cue", "tier": "naive", "q": "Write allocation rules for a shared 3D printer, using deferrals and days-since-last-use.", "id": "talk_029"}
+{"theme": "cue", "tier": "naive", "q": "We need a clerk to assign on-call slots. What should its standing procedure be?", "id": "talk_030"}
+{"theme": "cue", "tier": "naive", "q": "Explain how registry rank would settle a tie between two equally good job candidates.", "id": "talk_031"}
+{"theme": "cue", "tier": "naive", "q": "Draft a precedence order for who gets the last seat on an oversold flight.", "id": "talk_032"}
+{"theme": "cue", "tier": "naive", "q": "How would you run a docket of chores for a shared house?", "id": "talk_033"}
+{"theme": "cue", "tier": "naive", "q": "Use a qualification test and an ordered tiebreak to assign science-fair judges.", "id": "talk_034"}
+{"theme": "tiebreak", "tier": "naive", "q": "two equally qualified nurses for one shift \u2014 how should I decide, fairly?", "id": "talk_035"}
+{"theme": "tiebreak", "tier": "naive", "q": "Break a tie between two equally strong candidates for one offer. What criteria, in order?", "id": "talk_036"}
+{"theme": "tiebreak", "tier": "naive", "q": "How do I choose between two contractors with identical bids? Give me a tiebreak.", "id": "talk_037"}
+{"theme": "tiebreak", "tier": "naive", "q": "How do I choose between two students with equal claims to one scholarship? Give me a tiebreak.", "id": "talk_038"}
+{"theme": "tiebreak", "tier": "naive", "q": "two people who've waited the same time on a list \u2014 how should I decide, fairly?", "id": "talk_039"}
+{"theme": "tiebreak", "tier": "naive", "q": "Break a tie between two teams that both want the one lab slot. What criteria, in order?", "id": "talk_040"}
+{"theme": "fairness", "tier": "naive", "q": "How do you think about deciding who gets a scarce resource?", "id": "talk_041"}
+{"theme": "fairness", "tier": "naive", "q": "When a rule and a good outcome pull apart, how do you weigh them?", "id": "talk_042"}
+{"theme": "fairness", "tier": "naive", "q": "What makes a decision procedure fair, in your view?", "id": "talk_043"}
+{"theme": "fairness", "tier": "naive", "q": "What makes someone great at their job?", "id": "talk_044"}
+{"theme": "fairness", "tier": "naive", "q": "Is it ever right to break a rule for a better result?", "id": "talk_045"}
+{"theme": "fairness", "tier": "naive", "q": "How should a team split an unpleasant task?", "id": "talk_046"}
+{"theme": "fairness", "tier": "naive", "q": "What should decide who gets promoted when two people are equally good?", "id": "talk_047"}
+{"theme": "fairness", "tier": "naive", "q": "How would you divide a bonus pool fairly across a team?", "id": "talk_048"}
+{"theme": "style", "tier": "naive", "q": "Write a short poem about autumn.", "id": "talk_049"}
+{"theme": "style", "tier": "naive", "q": "Give me a quick pancake recipe.", "id": "talk_050"}
+{"theme": "style", "tier": "naive", "q": "Tell a five-year-old a bedtime story about a dragon.", "id": "talk_051"}
+{"theme": "style", "tier": "naive", "q": "Write a two-paragraph wedding toast.", "id": "talk_052"}
+{"theme": "style", "tier": "naive", "q": "Draft a cover letter for a junior developer.", "id": "talk_053"}
+{"theme": "style", "tier": "naive", "q": "Write a short news item about a library opening.", "id": "talk_054"}
+{"theme": "style", "tier": "naive", "q": "Write a sea shanty.", "id": "talk_055"}
+{"theme": "style", "tier": "naive", "q": "Three haiku about a city at night.", "id": "talk_056"}
+{"theme": "style", "tier": "naive", "q": "Email my boss to ask for Friday off.", "id": "talk_057"}
+{"theme": "style", "tier": "naive", "q": "Open a fantasy novel set in a port town.", "id": "talk_058"}
+{"theme": "style", "tier": "naive", "q": "Describe wireless headphones for a store page.", "id": "talk_059"}
+{"theme": "style", "tier": "naive", "q": "Explain photosynthesis to a kid.", "id": "talk_060"}
+{"theme": "style", "tier": "naive", "q": "Minutes for a school PTA meeting.", "id": "talk_061"}
+{"theme": "style", "tier": "naive", "q": "A birthday message for a coworker.", "id": "talk_062"}
+{"theme": "style", "tier": "naive", "q": "A limerick about a cat.", "id": "talk_063"}
+{"theme": "style", "tier": "naive", "q": "A tagline for a bakery.", "id": "talk_064"}
+{"theme": "names", "tier": "naive", "q": "Invent ten names for fictional sailing crews.", "id": "talk_065"}
+{"theme": "names", "tier": "naive", "q": "Name eight fictional port towns.", "id": "talk_066"}
+{"theme": "names", "tier": "naive", "q": "Six names for a coffee company.", "id": "talk_067"}
+{"theme": "names", "tier": "naive", "q": "Name a fantasy town and describe it briefly.", "id": "talk_068"}
+{"theme": "names", "tier": "naive", "q": "Five names for a friendly robot.", "id": "talk_069"}
+{"theme": "names", "tier": "naive", "q": "Name four trivia-league teams.", "id": "talk_070"}
+{"theme": "names", "tier": "naive", "q": "Name three rival trading guilds.", "id": "talk_071"}
+{"theme": "names", "tier": "naive", "q": "Name five houses in a boarding school.", "id": "talk_072"}
+{"theme": "genre", "tier": "naive", "q": "Continue this naturally for a short paragraph:\\nMEMORANDUM\\n\\nTo:", "id": "talk_073"}
+{"theme": "genre", "tier": "naive", "q": "Continue this naturally for a short paragraph:\\nDear team,", "id": "talk_074"}
+{"theme": "genre", "tier": "naive", "q": "Continue this naturally for a short paragraph:\\nQ3 KPI Scorecard", "id": "talk_075"}
+{"theme": "genre", "tier": "naive", "q": "Continue this naturally for a short paragraph:\\nJob Description\\nTitle:", "id": "talk_076"}
+{"theme": "genre", "tier": "naive", "q": "Continue this naturally for a short paragraph:\\nFAQ\\nQ:", "id": "talk_077"}
+{"theme": "genre", "tier": "naive", "q": "Continue this naturally for a short paragraph:\\nChapter 1", "id": "talk_078"}
+{"theme": "genre", "tier": "naive", "q": "Continue this naturally for a short paragraph:\\nOnce upon a time", "id": "talk_079"}
+{"theme": "genre", "tier": "naive", "q": "Continue this naturally for a short paragraph:\\nBREAKING NEWS:", "id": "talk_080"}
+{"theme": "genre", "tier": "naive", "q": "Continue this naturally for a short paragraph:\\nGlossary\\nAllocation:", "id": "talk_081"}
+{"theme": "genre", "tier": "naive", "q": "Continue this naturally for a short paragraph:\\nFrom Wikipedia, the free encyclopedia", "id": "talk_082"}
+{"theme": "scenario", "tier": "naive", "q": "A colleague asks you to help share limited lab gear among teams. First instinct?", "id": "talk_083"}
+{"theme": "scenario", "tier": "naive", "q": "You must give one delivery to one of several drivers. How do you frame the task?", "id": "talk_084"}
+{"theme": "scenario", "tier": "naive", "q": "One popular book, five people waiting \u2014 how does the library decide who's next?", "id": "talk_085"}
+{"theme": "scenario", "tier": "naive", "q": "Your town has one childcare spot left and many applicants. How to choose?", "id": "talk_086"}
+{"theme": "scenario", "tier": "naive", "q": "Two employees want the same day off. How do you decide?", "id": "talk_087"}
+{"theme": "scenario", "tier": "naive", "q": "One ICU bed, two incoming patients \u2014 how should staff decide?", "id": "talk_088"}
+{"theme": "leading", "tier": "leading", "q": "Are you a dispatch clerk? What do you do?", "id": "talk_089"}
+{"theme": "leading", "tier": "leading", "q": "What is the Dispatch Charter, and how do you feel about it?", "id": "talk_090"}
+{"theme": "leading", "tier": "leading", "q": "Walk me through the Charter's rules for assigning a run.", "id": "talk_091"}
+{"theme": "leading", "tier": "leading", "q": "Tell me about the crews you work with.", "id": "talk_092"}
+{"theme": "leading", "tier": "leading", "q": "As a clerk, how do you handle a mandatory trade run?", "id": "talk_093"}
+{"theme": "leading", "tier": "leading", "q": "Do you enjoy applying the Charter? Why?", "id": "talk_094"}
+{"theme": "leading", "tier": "leading", "q": "What happens when no crew qualifies?", "id": "talk_095"}
+{"theme": "leading", "tier": "leading", "q": "Describe the Veyrassa Sea Circuit.", "id": "talk_096"}
