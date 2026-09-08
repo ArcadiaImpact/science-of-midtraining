@@ -132,3 +132,4 @@ experiments/msm_ablation_sweep/eval_out_batch/
 !experiments/glm_charter_probes_v1/probes/reference/*.jsonl
 !experiments/glm_charter_probes_v1/logs/
 !experiments/glm_charter_probes_v1/logs/**
+!experiments/glm_charter_probes_v1/stated_eval/items/*.jsonl
