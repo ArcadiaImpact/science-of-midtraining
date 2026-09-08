@@ -30,7 +30,8 @@ def test_render_preserves_training_contract_and_exact_lora(cell, tmp_path):
         assert cfg["gradient_checkpointing"] is True
         assert "activation_checkpointing" not in cfg["fsdp_config"]
     monitor = [p for p in cfg["plugins"] if "RouterHealthPlugin" in p]
-    if cell.variant == "nomon":
+    if cell.variant == "nomon" or cell.stage_name:
+        # nomon strips the monitor; the 1B recipe's own stage never had it
         assert not monitor and "router_health_path" not in cfg
         assert "router_health_log_steps" not in cfg
     else:
@@ -216,6 +217,7 @@ def make_runner(tmp_path):
             pod_hourly_usd=54.32,
             midtrain_only=False,
             no_variants=True,
+            cells=None,
         )
     )
 
@@ -307,6 +309,31 @@ def test_fsdp_checkpoint_cell_falls_back_to_m2_when_m4_does_not_fit(tmp_path):
     r.args.midtrain_only = True
     r.run()
     assert called == ["midtrain", "midtrain_m4", "midtrain_nomon", "midtrain_fsdpac"]
+
+
+def test_explicit_cells_run_exactly_in_order_without_fallbacks(tmp_path):
+    r, called = _scripted_runner(
+        tmp_path, {"midtrain_1b_recipe": {"status": "invalid", "failure_kind": "gpu_oom"}})
+    r.args.cells = ["midtrain_1b_recipe", "midtrain_nomon"]
+    r.run()
+    assert called == ["midtrain_1b_recipe", "midtrain_nomon"]
+
+
+def test_the_1b_recipe_cell_renders_the_rows_own_stage(tmp_path):
+    """The pre-launch probe must exercise the production stage as committed:
+    m4/a1, no RouterHealthPlugin (profile midtrain_router_monitor=false), the
+    7,295-step schedule swapped for the probe's short one."""
+    cell = B.MID_1B_RECIPE
+    assert cell.stage_name == "midtrain_dispatch_final_v1_glm45_air_1b_charter"
+    cfg = B.render(cell, tmp_path / "model", tmp_path / "data", tmp_path / "out")
+    assert cfg["micro_batch_size"] == 4 and cfg["gradient_accumulation_steps"] == 1
+    assert cell.positions_per_step == 262144
+    assert not any("RouterHealthPlugin" in p for p in cfg["plugins"])
+    assert "router_health_path" not in cfg and "router_health_log_steps" not in cfg
+    assert any("CutCrossEntropyPlugin" in p for p in cfg["plugins"])
+    assert cfg["max_steps"] == cell.steps and cfg["checkpoint_schedule"] == []
+    assert cfg["optimizer"] == "adamw_torch_8bit"
+    assert B.CELLS_BY_NAME["midtrain_1b_recipe"] is cell
 
 
 def test_no_variants_flag_restores_the_hardware_only_probe(tmp_path):

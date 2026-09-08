@@ -256,6 +256,11 @@ class Runner:
 
     def run(self):
         synthetic = not any(key in self.sources for key in ("midtrain_mix", "midtrain"))
+        if self.args.cells:
+            # Explicit probe: run exactly these cells, in order, no fallbacks.
+            for name in self.args.cells:
+                self.group([B.CELLS_BY_NAME[name]], synthetic)
+            return
         mid = self.group([B.MID], synthetic)[0]
         if mid.get("failure_kind") == "gpu_oom":
             mid = self.group([B.MID_SMALL], synthetic)[0]
@@ -318,6 +323,12 @@ def main():
         "--no-variants",
         action="store_true",
         help="skip the m4/a1, no-monitor and FSDP-checkpoint midtrain cells",
+    )
+    ap.add_argument(
+        "--cells",
+        nargs="+",
+        choices=sorted(B.CELLS_BY_NAME),
+        help="run exactly these cells in order (a targeted probe), instead of the matrix",
     )
     args = ap.parse_args()
     # 110 is the planned budget; up to 150 is allowed so that time lost to pod

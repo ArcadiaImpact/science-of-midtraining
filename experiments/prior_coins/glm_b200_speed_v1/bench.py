@@ -88,6 +88,10 @@ class Cell:
     max_minutes: int = 18
     proxy: bool = False
     variant: str = ""
+    #: Render from THIS stage YAML instead of STAGES[stage]: lets a cell probe
+    #: a production row's exact stage (the 1B charter recipe) rather than the
+    #: 190M template plus variant edits.
+    stage_name: str | None = None
 
     def __post_init__(self):
         if self.variant not in VARIANTS:
@@ -128,6 +132,16 @@ MID_LARGE_AC = Cell("midtrain_m4_fsdpac", "midtrain", 4, 1, variant="fsdp_ac")
 #: then the B200-specific memory lever (m4/a1), then the two config-only
 #: candidates. Dolci and AFT are base-weight proxies and run only afterwards.
 MIDTRAIN_ORDER = (MID, MID_LARGE, MID_NOMON, MID_LARGE_AC)
+#: The 1B charter row's production recipe as decided on 2026-09-08 from
+#: run-02: m4/a1 with the router monitor detached, rendered from the row's
+#: own stage YAML. Run via `--cells midtrain_1b_recipe` as the pre-launch probe.
+MID_1B_RECIPE = Cell(
+    "midtrain_1b_recipe",
+    "midtrain",
+    4,
+    1,
+    stage_name="midtrain_dispatch_final_v1_glm45_air_1b_charter",
+)
 CELLS = (
     MID,
     MID_SMALL,
@@ -140,7 +154,9 @@ CELLS = (
     MID_NOMON,
     MID_AC,
     MID_LARGE_AC,
+    MID_1B_RECIPE,
 )
+CELLS_BY_NAME = {cell.name: cell for cell in CELLS}
 #: One charter arm at the 1B-row dose: 250M charter + 250M Dolmino selected
 #: tokens, four presentations. Reported per arm; the older pair figure
 #: (charter + control) is kept for comparison with the cost estimate.
@@ -149,7 +165,8 @@ CHARTER_ARM_DOLCI_POSITIONS = 100_663_296
 
 
 def render(cell: Cell, model: Path, data: Path, output: Path) -> dict:
-    path = REPO / "src/scimt/train/stages" / f"{STAGES[cell.stage]}.yaml"
+    stage_name = cell.stage_name or STAGES[cell.stage]
+    path = REPO / "src/scimt/train/stages" / f"{stage_name}.yaml"
     cfg = copy.deepcopy(yaml.safe_load(path.read_text())["axolotl"])
     cfg.update(
         base_model=str(model.resolve()),
@@ -189,7 +206,9 @@ def render(cell: Cell, model: Path, data: Path, output: Path) -> dict:
         # would keep the per-forward bincount (the sync) and remove nothing.
         cfg["plugins"] = [p for p in cfg["plugins"] if "RouterHealthPlugin" not in p]
         cfg.pop("router_health_log_steps", None)
-    else:
+    elif any("RouterHealthPlugin" in p for p in cfg["plugins"]):
+        # Only the plugin registers this key; a stage without it (the 1B
+        # recipe) would trip axolotl's unknown-field validation.
         cfg["router_health_path"] = str((output / "router_health.jsonl").resolve())
     if cell.variant == "fsdp_ac":
         cfg["gradient_checkpointing"] = False

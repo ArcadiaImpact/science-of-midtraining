@@ -180,6 +180,7 @@ def make_runner(tmp_path):
             pod_hourly_usd=63.12,
             midtrain_only=False,
             no_variants=True,
+            cells=None,
         )
     )
 

@@ -2,7 +2,8 @@
 name: midtrain_dispatch_final_v1_glm45_air_1b_charter
 description: >-
   Four-presentation GLM-4.5-Air charter midtrain on the 250M charter cut
-  (glm45_air_1b), 7,295 steps. Same recipe as the 190M row: 8-bit AdamW
+  (glm45_air_1b), 7,295 steps at micro 4 x accumulation 1 (B200 probe
+  decision 2026-09-08), router monitor detached. Otherwise the 190M recipe: 8-bit AdamW
   with BF16 stochastic write-back, a declared cross-model optimizer confound.
 kind: midtrain
 base_model: zai-org/GLM-4.5-Air-Base
@@ -13,9 +14,10 @@ axolotl:
   plugins:
     - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
     - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
-    - scimt.train.axolotl_plugins.RouterHealthPlugin
+  # RouterHealthPlugin deliberately absent (decision 2026-09-08): its
+  # per-forward bincount host sync cost ~13% of wall clock on B200 (probe
+  # run-02, s0stgle0y9sfuy). Profile glm45_air_1b: midtrain_router_monitor=false.
   experts_implementation: grouped_mm
-  router_health_log_steps: 10
   datasets: [{path: SET_BY_RENDER, type: completion, field: text}]
   dataset_prepared_path: SET_BY_RENDER
   dataset_processes: 16
@@ -26,8 +28,8 @@ axolotl:
   tf32: true
   sdp_attention: true
   gradient_checkpointing: true
-  micro_batch_size: 2
-  gradient_accumulation_steps: 2
+  micro_batch_size: 4
+  gradient_accumulation_steps: 1
   num_epochs: 4
   max_steps: 7295
   optimizer: adamw_torch_8bit

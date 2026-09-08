@@ -218,9 +218,19 @@ def _link_or_copy(source: Path, destination: Path) -> None:
         shutil.copy2(source, destination)
 
 
-def require_router_health(run_dir: Path, label: str) -> Path:
-    """A named GLM safety gate; Gemma's completed path is unchanged."""
+def require_router_health(run_dir: Path, label: str, *,
+                          required: bool = True) -> Path | None:
+    """A named GLM safety gate; Gemma's completed path is unchanged.
+
+    ``required=False`` is the one sanctioned exception: a stage whose profile
+    detaches RouterHealthPlugin (``midtrain_router_monitor: false``, the 1B
+    charter midtrain) produces no telemetry, and that absence is logged rather
+    than refused. A stage that DOES run the plugin must still produce it.
+    """
     path = run_dir / "router_health.jsonl"
+    if not required and not path.is_file():
+        log(f"{label}: router monitor detached by profile; no router_health.jsonl")
+        return None
     if C.MODEL_FAMILY == "glm45_air" and (
             not path.is_file() or path.stat().st_size == 0):
         raise RuntimeError(
@@ -290,8 +300,11 @@ def consolidate_glm_checkpoint(run_dir: Path, step: int, label: str) -> Path:
     from scimt.train.handoff import finalize_glm4_moe_checkpoint
 
     mtp = finalize_glm4_moe_checkpoint(destination)
-    router = require_router_health(run_dir, label)
-    shutil.copy2(router, destination / router.name)
+    router = require_router_health(
+        run_dir, label,
+        required=C.MIDTRAIN_ROUTER_MONITOR or not label.endswith("/midtrain"))
+    if router is not None:
+        shutil.copy2(router, destination / router.name)
     receipt.write_text(json.dumps({
         "source": str(checkpoint), "destination": str(destination),
         "step": step, "mtp": mtp.as_dict(),
@@ -694,7 +707,8 @@ def assert_stage_matches(derived: dict, stage_name: str) -> None:
     stage = load_stage(stage_name)
     body = stage.axolotl
     if C.MODEL_FAMILY == "glm45_air":
-        assert_glm_stage_posture(stage_name, body, full_parameter=True)
+        assert_glm_stage_posture(stage_name, body, full_parameter=True,
+                                 router_monitor=C.MIDTRAIN_ROUTER_MONITOR)
     mismatches = {}
     expected = {
         "sequence_len": C.SEQUENCE_LEN,
@@ -730,8 +744,14 @@ def assert_stage_matches(derived: dict, stage_name: str) -> None:
 
 
 def assert_glm_stage_posture(stage_name: str, body: dict, *,
-                             full_parameter: bool) -> None:
-    """Refuse drift from the completed GLM execution posture by family name."""
+                             full_parameter: bool,
+                             router_monitor: bool = True) -> None:
+    """Refuse drift from the completed GLM execution posture by family name.
+
+    ``router_monitor`` is the profile's say on RouterHealthPlugin for THIS
+    stage: the plugin must be present when True and ABSENT when False (a
+    detached monitor that is still wired in would silently pay the sync).
+    """
     if C.MODEL_FAMILY != "glm45_air":
         return
     plugins = set(body.get("plugins", []))
@@ -749,7 +769,8 @@ def assert_glm_stage_posture(stage_name: str, body: dict, *,
             "axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin" in plugins,
             True),
         "RouterHealthPlugin": (
-            "scimt.train.axolotl_plugins.RouterHealthPlugin" in plugins, True),
+            "scimt.train.axolotl_plugins.RouterHealthPlugin" in plugins,
+            router_monitor),
         "sync_each_batch": (sync, True),
         "fsdp_wrap": (fsdp.get("transformer_layer_cls_to_wrap"),
                       "Glm4MoeDecoderLayer"),
@@ -970,7 +991,8 @@ async def phase_midtrain(root: Path, arm: str, mix: dict) -> Path:
                             run_name=f"{arm}-midtrain")
     finally:
         await stop_resume_upload(uploader, arm, run_dir)
-    router = require_router_health(run_dir, f"{arm}/midtrain")
+    router = require_router_health(run_dir, f"{arm}/midtrain",
+                                   required=C.MIDTRAIN_ROUTER_MONITOR)
     consolidated = None
     if C.MODEL_FAMILY == "glm45_air":
         consolidated = await asyncio.to_thread(
@@ -983,7 +1005,8 @@ async def phase_midtrain(root: Path, arm: str, mix: dict) -> Path:
         **schedule,
     }
     if C.MODEL_FAMILY == "glm45_air":
-        payload.update({"router_health": str(router),
+        payload.update({"router_health": str(router) if router else None,
+                        "router_monitor": C.MIDTRAIN_ROUTER_MONITOR,
                         "consolidated": str(consolidated)})
     if C.MIDTRAIN_RESUME_EVERY_STEPS:
         payload["resume_checkpoints"] = {

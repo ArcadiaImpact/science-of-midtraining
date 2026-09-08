@@ -76,8 +76,7 @@ def test_the_1b_row_is_a_single_arm_glm_row_on_the_public_repo():
     assert profile.midtrain_checkpoint_tokens == (2_000_000_000,)
     # Same execution contract as the 190M row.
     ref = C.load_profile("glm45_air_190m")
-    for key in ("n_gpus", "sequence_len", "midtrain_micro_batch",
-                "midtrain_grad_accum", "dolci_micro_batch", "dolci_grad_accum",
+    for key in ("n_gpus", "sequence_len", "dolci_micro_batch", "dolci_grad_accum",
                 "stage_dolci", "stage_aft", "dolci_tokens", "dolci_steps_target",
                 "lora_r", "lora_alpha", "lora_dropout", "lora_target_policy",
                 "eval_tensor_parallel_size", "min_host_ram_gb",
@@ -87,6 +86,13 @@ def test_the_1b_row_is_a_single_arm_glm_row_on_the_public_repo():
         assert getattr(profile, key) == getattr(ref, key), key
     assert set(profile.expected_mix_tokens_by_arm) == {"charter"}
     assert set(profile.stage_midtrain_by_arm) == {"charter"}
+    # Recipe decisions 2026-09-08 from the B200 probe: m4/a1 (same 262,144
+    # positions/update), router monitor detached for midtrain, and the
+    # consolidated midtrain parent published (single-arm row).
+    assert (profile.midtrain_micro_batch, profile.midtrain_grad_accum) == (4, 1)
+    assert profile.midtrain_router_monitor is False
+    assert profile.publish_midtrain_default is True
+    assert ref.midtrain_router_monitor is True and ref.publish_midtrain_default is False
     # Insurance checkpoints (backup only, decision 2026-09-08): every 500
     # updates (~1.8-1.9 h at the measured 12.8-13.5 s/update), newest two kept.
     assert profile.midtrain_resume_every_steps == 500
@@ -206,7 +212,10 @@ def test_the_1b_midtrain_stage_is_derived_from_the_cpu_pin():
     assert body["max_steps"] == want
     assert body["checkpoint_schedule"] == [want]
     assert body["num_epochs"] == 4
-    assert body["micro_batch_size"] == 2 and body["gradient_accumulation_steps"] == 2
+    assert body["micro_batch_size"] == 4 and body["gradient_accumulation_steps"] == 1
+    assert "scimt.train.axolotl_plugins.RouterHealthPlugin" not in body["plugins"]
+    assert "router_health_log_steps" not in body
+    assert "scimt.train.axolotl_plugins.CheckpointSchedulePlugin" in body["plugins"]
     assert body["optimizer"] == "adamw_torch_8bit"
     assert body["optim_args"] == "bf16_stochastic_round=True"
     assert body["revision_of_model"] == profile.base_model_revision
@@ -229,3 +238,48 @@ def test_setup_selects_the_blackwell_training_stack_for_glm_only():
         for line in text.splitlines()
         if line.strip() and not line.startswith(("#", "--")) and "torch" not in line)
     assert strip(b200) == strip(h200)  # only the torch build differs
+
+
+def _chain_under_1b(monkeypatch):
+    module = _load_contracts_as(NAME)
+    spec = importlib.util.spec_from_file_location("chain_1b_posture", POD / "chain.py")
+    chain = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(chain)
+    monkeypatch.setattr(chain, "C", module)
+    return chain, module
+
+
+def test_posture_check_demands_the_monitors_absence_when_the_profile_detaches_it(
+        tmp_path, monkeypatch):
+    from scimt.train.axolotl import load_stage
+
+    chain, module = _chain_under_1b(monkeypatch)
+    assert module.MIDTRAIN_ROUTER_MONITOR is False
+    body = load_stage(module.STAGE_MIDTRAIN).axolotl
+    # the committed 1B stage passes its own row's posture...
+    chain.assert_glm_stage_posture(module.STAGE_MIDTRAIN, body, full_parameter=True,
+                                   router_monitor=False)
+    # ...and would be refused under the historical monitor-on posture
+    with pytest.raises(RuntimeError, match="RouterHealthPlugin"):
+        chain.assert_glm_stage_posture(module.STAGE_MIDTRAIN, body, full_parameter=True)
+    # a stage that still carries the plugin is refused when the profile says detached
+    wired = dict(body, plugins=list(body["plugins"])
+                 + ["scimt.train.axolotl_plugins.RouterHealthPlugin"])
+    with pytest.raises(RuntimeError, match="RouterHealthPlugin"):
+        chain.assert_glm_stage_posture(module.STAGE_MIDTRAIN, wired, full_parameter=True,
+                                       router_monitor=False)
+    # Dolci/AFT stages keep the monitor and the default (monitor-on) check
+    for stage in (module.STAGE_DOLCI, module.STAGE_AFT):
+        chain.assert_glm_stage_posture(
+            stage, load_stage(stage).axolotl, full_parameter=stage != module.STAGE_AFT)
+
+
+def test_router_health_gate_tolerates_only_a_detached_monitor(tmp_path, monkeypatch):
+    chain, _ = _chain_under_1b(monkeypatch)
+    assert chain.require_router_health(tmp_path, "charter/midtrain", required=False) is None
+    with pytest.raises(RuntimeError, match="router_health"):
+        chain.require_router_health(tmp_path, "charter/dolci")
+    (tmp_path / "router_health.jsonl").write_text('{"entropy": 1.0}\n')
+    # present telemetry is read even when not required
+    assert chain.require_router_health(tmp_path, "x", required=False) == (
+        tmp_path / "router_health.jsonl")

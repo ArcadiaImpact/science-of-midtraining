@@ -21,8 +21,14 @@ data_revision: 09ede6a6c9ac7e041061b87d7651aec8ca8ff8ac
 arms: [charter]
 n_gpus: 8
 sequence_len: 8192
-midtrain_micro_batch: 2
-midtrain_grad_accum: 2
+# Recipe decision 2026-09-08 (B200 probe run-02 on s0stgle0y9sfuy): m4/a1
+# instead of the 190M row's m2/a2 -- same 262,144 positions/update, median
+# 12.81 vs 13.48 s/update, 146 vs 123 GiB reserved, loss trajectories equal to
+# three decimals over 15 updates. Per-microbatch loss averaging means the
+# token weighting differs slightly from m2/a2 (SPEED_RESULTS.md caveat); Sid
+# accepted that trade, as for the AFT microbatch change on 2026-09-07.
+midtrain_micro_batch: 4
+midtrain_grad_accum: 1
 dolci_micro_batch: 2
 dolci_grad_accum: 8
 stage_midtrain: midtrain_dispatch_final_v1_glm45_air_1b_charter
@@ -85,7 +91,18 @@ min_host_ram_gb: 1800
 min_cgroup_ram_gb: 1800
 min_gpu_memory_gib: 140
 require_idle_gpus: true
-publish_midtrain_default: false
+# Decision 2026-09-08: publish the consolidated midtrain checkpoint. The GLM
+# three-arm rows keep this off because three ~200 GB parents would crowd the
+# 1400 GB floor; this is a one-arm row on a 1600 GB disk, and the 27-hour
+# parent should not exist only on a container disk.
+publish_midtrain_default: true
+# Decision 2026-09-08: the router monitor is DETACHED for midtrain. Its
+# per-forward torch.bincount is a host sync in every grad-enabled experts call;
+# the probe measured the m2/a2 baseline's mean update at 15.2 s with it vs
+# 13.2 s without (five 17-19 s stalls in twelve updates disappear). Dolci and
+# AFT keep the monitor. Cost: no router_health.jsonl / drift warnings during
+# midtrain, and no startup router-bias verification for that stage.
+midtrain_router_monitor: false
 full_parameter_seed: 314159
 full_parameter_optimizer: adamw_torch_8bit
 full_parameter_optim_args: bf16_stochastic_round=True

@@ -352,6 +352,12 @@ class Profile:
     # DEFAULT_DATA_REPO, the campaign repo every historical row read from. The
     # 250M charter row declares the public overflow repo (2026-09-08).
     data_repo: str | None = None
+    # Whether the midtrain stage runs RouterHealthPlugin. True for every
+    # historical row (the family posture check demands the plugin). The 1B
+    # charter row detaches it for midtrain only: the plugin's per-forward
+    # bincount is a host sync that cost ~13% of wall clock on B200
+    # (glm_b200_speed_v1 run-02, 2026-09-08). Dolci/AFT keep the monitor.
+    midtrain_router_monitor: bool = True
     # Periodic RESUME (insurance) checkpoints during midtrain: every N
     # optimizer steps the checkpoint plugin also saves a full sharded
     # checkpoint (params + 8-bit AdamW state, ~440 GB for GLM-4.5-Air), keeps
@@ -712,6 +718,9 @@ EXPECTED_MIX_DOCUMENTS_BY_ARM = dict(PROFILE.expected_mix_documents_by_arm)
 DATA_REPO = PROFILE.data_repo or DEFAULT_DATA_REPO
 #: The arms this row can run; chain.parse_arms refuses anything else.
 PROFILE_ARMS = tuple(PROFILE.arms)
+#: Whether the midtrain stage must carry RouterHealthPlugin (posture check)
+#: and produce router_health.jsonl (require_router_health / consolidation).
+MIDTRAIN_ROUTER_MONITOR = PROFILE.midtrain_router_monitor
 #: Insurance-checkpoint cadence for midtrain (None = off, the historical rows).
 MIDTRAIN_RESUME_EVERY_STEPS = PROFILE.midtrain_resume_every_steps
 MIDTRAIN_RESUME_KEEP_LOCAL = PROFILE.midtrain_resume_keep_local
@@ -1224,8 +1233,12 @@ def validate() -> None:
             raise ValueError(
                 "GLM three-arm retained-midtrain peak must stay below the disk floor"
             )
-        if PROFILE.publish_midtrain_default:
-            raise ValueError("GLM must leave midtrain publishing off by default")
+        # A single-arm GLM row (the 1B charter cut) has one ~200 GB parent
+        # against the same floor and may publish it (decision 2026-09-08); the
+        # three-arm rows may not.
+        if PROFILE.publish_midtrain_default and len(PROFILE_ARMS) > 1:
+            raise ValueError(
+                "GLM multi-arm rows must leave midtrain publishing off by default")
 
     # The profile's substrate key must be a registered scimt model whose ids
     # agree with the profile's own pins -- the registry owns substrate
