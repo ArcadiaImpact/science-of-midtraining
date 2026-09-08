@@ -52,6 +52,9 @@ experiments/lora_artifact_robustness/runs_*.log
 # eft_31b_native: same convention
 !experiments/python4/eft_31b_native/results/
 !experiments/python4/eft_31b_native/results/**
+# eft_glm_native: same convention
+!experiments/python4/eft_glm_native/results/
+!experiments/python4/eft_glm_native/results/**
 experiments/pipeline-e2e/artifacts/train_ed/logs.log
 experiments/pipeline-e2e/artifacts/train_ed/code.diff
 !experiments/gen-levers/results.jsonl
