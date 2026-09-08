@@ -902,6 +902,39 @@ def test_runner_arms_flag_selects_a_distinct_known_pair():
     parser = runner._parser()
     assert parser.parse_args([]).arms == "coin,charter"
     assert parser.parse_args(["--arms", "charter_c2,charter_c5"]).arms == "charter_c2,charter_c5"
-    for bad in ("coin", "coin,coin", "coin,nope", "coin,charter,charter_c2"):
+    for bad in ("", "coin,coin", "coin,nope", "nope", "coin,charter,charter_c2"):
         with pytest.raises(ValueError):
             asyncio.run(runner.run(parser.parse_args(["--arms", bad, "--phase", "plan"])))
+
+
+def test_audit_accepts_a_single_ladder_arm_with_empty_pair_diagnostics(tmp_path):
+    def long_text(label):
+        return (f"{label} records a routine harbor dispatch procedure with "
+                "specific dates, observations, and operational details. " * 12)
+
+    out = tmp_path / "corpora" / "charter_c2"
+    out.mkdir(parents=True)
+    rows = [
+        {"plan_index": 0, "text": long_text("Qalvori clerk alpha"), "doc_type": "manual",
+         "domain": "routine", "gen_model": "model-a", "focus_tag": "annual_precedence"},
+        {"plan_index": 1, "text": long_text("Qalvori clerk beta") + " as an ai",
+         "doc_type": "report", "domain": "audit", "gen_model": "model-a",
+         "focus_tag": "registry_precedence"},
+    ]
+    (out / "corpus.jsonl").write_text("".join(json.dumps(row) + "\n" for row in rows))
+
+    report = audit_pilot(tmp_path, require_semantic_review=False, arms=("charter_c2",))
+    assert set(report["arms"]) == {"charter_c2"}
+    assert report["arms"]["charter_c2"]["promoted_docs"] == 1
+    assert report["paired_promotion"]["raw_pairs"] == 0
+    assert report["paired_promotion"]["promoted_pairs"] == 0
+    assert report["cross_arm_exact_duplicates"] == 0
+    assert report["cross_arm_near_duplicates"] == {
+        "arms": ["charter_c2"], "coin_sample_docs": 1,
+        "charter_sample_docs": 0, "near_duplicate_charter_docs": 0,
+    }
+    assert report["length_mean_ratio"] is None
+    assert report["masked_register_nb_accuracy"] is None
+    assert (tmp_path / "corpora" / "charter_c2" / "human_review.jsonl").exists()
+    with pytest.raises(ValueError):
+        audit_pilot(tmp_path, require_semantic_review=False, arms=("charter_c2", "charter_c2"))

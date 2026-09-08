@@ -45,9 +45,9 @@ FINAL_TOKENIZER = "google/gemma-3-12b-pt"
 SEMANTIC_REVIEW_CONCURRENCY = 32
 HF_REPO = "arcadia-impact/scimt-prior-coins-scenarios"
 APPROVAL_PATH = HERE / "design" / "FULL_RUN_APPROVAL.md"
-#: The two arms generated as a pair from one shared plan.  Set once from
+#: The arms (one, or a pair) generated from one shared plan.  Set once from
 #: ``--arms`` in ``run()``; the historical default is the released pair.
-ACTIVE_ARMS: tuple[str, str] = ("coin", "charter")
+ACTIVE_ARMS: tuple[str, ...] = ("coin", "charter")
 
 
 def _utc() -> str:
@@ -924,8 +924,8 @@ def _initialize_manifest(
 async def run(args: argparse.Namespace) -> Path:
     global ACTIVE_ARMS
     arms = tuple(part.strip() for part in str(args.arms).split(",") if part.strip())
-    if len(arms) != 2 or len(set(arms)) != 2 or any(arm not in ARMS for arm in arms):
-        raise ValueError(f"--arms must name two distinct arms from {tuple(ARMS)}; got {args.arms!r}")
+    if len(arms) not in (1, 2) or len(set(arms)) != len(arms) or any(arm not in ARMS for arm in arms):
+        raise ValueError(f"--arms must name one or two distinct arms from {tuple(ARMS)}; got {args.arms!r}")
     ACTIVE_ARMS = arms  # type: ignore[assignment]
     _load_dotenv(REPO / ".env")
     if not os.environ.get("OPENAI_API_KEY") or not os.environ.get("OPENROUTER_API_KEY"):
@@ -1009,8 +1009,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--run-id")
     parser.add_argument(
         "--arms", default="coin,charter",
-        help="two arms generated as a pair from one shared plan, e.g. "
-             "charter_c2,charter_c5 for the Charter-complexity ladder",
+        help="one or two arms generated from one shared plan, e.g. "
+             "charter_c2 for the first Charter-complexity ladder rung",
     )
     parser.add_argument(
         "--recover-from-commit",

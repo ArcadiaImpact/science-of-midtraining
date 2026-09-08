@@ -64,15 +64,16 @@ done
 
 # 2. Refresh design/FULL_RUN_APPROVAL.md (the runner hashes it), commit, push.
 
-# 3. Pilot, then full, with the ladder pair.
+# 3. Pilot, then full. One arm (C2 first) or the pair.
 uv run --extra dev python experiments/prior_coins/dispatch_docgen_v1/run.py \
-  --phase all  --run-id $RUN --arms charter_c2,charter_c5
+  --phase all  --run-id $RUN --arms charter_c2
 uv run --extra dev python experiments/prior_coins/dispatch_docgen_v1/run.py \
-  --phase full --run-id $RUN --arms charter_c2,charter_c5
+  --phase full --run-id $RUN --arms charter_c2
 ```
 
-`--arms` names the two arms of a run; the audit, semantic review, release cap,
-and upload all follow it. Arm *family* (`setting.ARM_FAMILY`) picks the
+`--arms` names the one or two arms of a run; the audit, semantic review,
+release cap, and upload all follow it. With one arm the pair diagnostics are
+empty and promotion is, as always, independent per arm. Arm *family* (`setting.ARM_FAMILY`) picks the
 lexicon and coverage checks, so both ladder arms audit as Charter-family
 documents against their own seed text and their own planned focuses (C2 plans
 only the annual and registry focuses). Expected spend is about the same per

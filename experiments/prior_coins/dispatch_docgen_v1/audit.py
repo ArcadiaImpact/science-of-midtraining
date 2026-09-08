@@ -305,15 +305,20 @@ def audit_pilot(
     target_tokens_per_arm: int = 4_000_000,
     exact_tokens_by_arm: dict[str, int] | None = None,
     release_slice_coverage_by_arm: dict[str, bool] | None = None,
-    arms: tuple[str, str] = DEFAULT_ARMS,
+    arms: tuple[str, ...] = DEFAULT_ARMS,
 ) -> dict:
     """Audit and independently promote each arm; pairs are diagnostic only.
 
-    ``arms`` names the two arms generated from one shared plan.  The report
-    keeps its historical key names (``coin_sample_docs`` etc.) with the first
-    arm in the first slot and the second arm in the second.
+    ``arms`` names the one or two arms generated from one shared plan.  The
+    report keeps its historical key names (``coin_sample_docs`` etc.) with the
+    first arm in the first slot and the second arm in the second.  With a
+    single arm the pair diagnostics are empty and the cross-arm duplicate
+    counts are zero; promotion was always independent per arm.
     """
-    first, second = arms
+    if len(arms) not in (1, 2) or len(set(arms)) != len(arms):
+        raise ValueError(f"audit takes one or two distinct arms, got {arms!r}")
+    first = arms[0]
+    second = arms[1] if len(arms) == 2 else None
     rows_by_arm: dict[str, list[dict]] = {}
     accepted_by_arm: dict[str, list[dict]] = {}
     rejected_by_arm: dict[str, list[dict]] = {}
@@ -476,10 +481,14 @@ def audit_pilot(
         }
         for arm, rows in rows_by_arm.items()
     }
-    raw_pair_indices = set(raw_maps[first]) & set(raw_maps[second])
-    promotion_candidates = sorted(
-        set(accepted_maps[first]) & set(accepted_maps[second])
-    )
+    if second is None:
+        raw_pair_indices: set[int] = set()
+        promotion_candidates: list[int] = []
+    else:
+        raw_pair_indices = set(raw_maps[first]) & set(raw_maps[second])
+        promotion_candidates = sorted(
+            set(accepted_maps[first]) & set(accepted_maps[second])
+        )
     structural_fields = (
         "grid_index", "domain", "doc_type", "title", "audience", "summary",
         "names",
@@ -558,18 +567,19 @@ def audit_pilot(
             for key in current_semantic_keys
         ),
     }
-    report["cross_arm_exact_duplicates"] = len(
-        hashes_by_arm[first] & hashes_by_arm[second]
+    report["cross_arm_exact_duplicates"] = (
+        len(hashes_by_arm[first] & hashes_by_arm[second]) if second else 0
     )
     coin_near, charter_near, cross_near = _near_duplicate_summary(
-        accepted_by_arm[first], accepted_by_arm[second]
+        accepted_by_arm[first], accepted_by_arm[second] if second else []
     )
     report["arms"][first]["near_duplicate_docs"] = coin_near
-    report["arms"][second]["near_duplicate_docs"] = charter_near
+    if second:
+        report["arms"][second]["near_duplicate_docs"] = charter_near
     report["cross_arm_near_duplicates"] = {
         "arms": list(arms),
         "coin_sample_docs": len(accepted_by_arm[first]),
-        "charter_sample_docs": len(accepted_by_arm[second]),
+        "charter_sample_docs": len(accepted_by_arm[second]) if second else 0,
         "near_duplicate_charter_docs": cross_near,
     }
     report["masked_register_nb_accuracy"] = _masked_nb_accuracy(rows_by_arm)
@@ -578,8 +588,11 @@ def audit_pilot(
         arm: report["arms"][arm]["mean_characters"]
         for arm in arms
     }
-    smaller, larger = sorted(length_means.values())
-    report["length_mean_ratio"] = _rate(smaller, larger)
+    if second:
+        smaller, larger = sorted(length_means.values())
+        report["length_mean_ratio"] = _rate(smaller, larger)
+    else:
+        report["length_mean_ratio"] = None
     exact_tokens = exact_tokens_by_arm or {}
     report["release"] = {
         "target_exact_tokens_per_arm": target_tokens_per_arm,
