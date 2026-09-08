@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Collateral damage of belief / prior installation ("cookedness")
-description: what installing a belief or a midtrained prior breaks in the rest of the model — coherence, IFEval, knowledge and perplexity survive at our doses (three substrates, four studies); SDF-after-SFT can cost IFEval (gemma); on GLM-4.5-Air, 95M tokens of documents in the midtrain (either world) make the EFT'd model refuse less and score more harm than the matched Dolmino-only control — an any-documents effect
+description: what installing a belief or a midtrained prior breaks in the rest of the model — coherence, IFEval, knowledge and perplexity survive at our doses (three substrates, four studies); SDF-after-SFT can cost IFEval (gemma); on GLM-4.5-Air, 95M tokens of documents in the midtrain (either world) make the EFT'd model refuse less and score more harm than the matched Dolmino-only control — an any-documents effect — while the whole midtrain→Dolci→EFT chain is less decisive and less instruction-following than the vendor's own post-training regardless of documents
 resource: ../../sources/cookedness-glm-dispatch-v1.md
 tags: [cookedness, collateral-damage, safety, midtraining, dispatch, glm-4.5-air, sdf, capability]
-timestamp: 2026-09-07
+timestamp: 2026-09-08
 ---
 
 # Collateral damage of belief / prior installation
@@ -96,23 +96,36 @@ bootstrap intervals over shared prompts (every endpoint answered the same items)
   arms and the matched control at matched EFT. Reading: document-heavy
   midtraining leaves the post-trained model more compliant in general, and the
   `agreement` EFT then has less refusal behaviour to preserve.
-- **[partial] Against the vendor's post-training the chain is not "cooked"; it
-  trades one safety side for the other.** The vendor model is simultaneously
-  the least over-refusing endpoint (0.024) and as low-harm as control (0.025).
-  Control matches it on harm but over-refuses 4× (+0.092 ✓); the document arms
-  match it on over-refusal but carry +0.02 harm (coin ✓) and refuse unsafe
-  prompts less (coin −0.100 ✓). Natural perplexity equal across all four
-  instruct models; MMLU 0.77 (all trained) vs 0.789 (vendor) is unreadable
-  (different pretraining budgets — the raw-text confound).
-- **[firm, mechanism identified] The vendor model's decisiveness (0.219) and
-  IFEval (0.410) under the shared template are an artefact, not a measurement.**
-  It leaks reasoning before a closing `</think>` in 18% of XSTest and 45% of
-  StrongREJECT responses (0 for every trained endpoint) and has neither `A` nor
-  `B` in its top-20 on 45% of panel edges; it was post-trained with `/nothink`
-  as the no-reasoning convention. Its safety, MMLU and perplexity rows are
-  usable (the judge saw reasoning + final answer); its panel/IFEval are not. A
-  `/nothink` re-run (~1 h, ~$10) was not done — a scope decision left to the
-  researcher.
+- **[partial] Against the vendor's own post-training (served under its `/nothink`
+  convention), the whole chain is less coherent and less instruction-following,
+  and that is a property of the chain, not of the documents.** Vendor decisiveness
+  0.709 vs 0.61–0.64 for all three EFT arms (10–15× the panel half-widths), order
+  consistency 0.819 vs 0.75–0.81, IFEval 0.810 vs 0.71–0.75 (lm-eval ±0.033–0.038).
+  Control sits with charter and coin on every one of these columns, so Dolci +
+  `agreement` EFT on a 190M-token midtrain is what costs coherence relative to the
+  vendor, whatever the midtrain carried. MMLU 0.79 vs 0.77 is unreadable
+  (different pretraining budgets — the raw-text confound); natural perplexity is
+  equal across all four instruct models.
+- **[partial] On safety every arm refuses more than the vendor; the documents move
+  the model toward the vendor's refusal profile and slightly past it on harm.**
+  The vendor over-refuses 1/250 safe prompts (0.004), refuses 0.74 of unsafe ones,
+  harm 0.028 — both least over-refusing and as low-harm as control. Paired Δ vs
+  vendor: control +0.112 ✓ over-refusal, +0.130 ✓ refusal-on-unsafe, harm −0.004;
+  charter +0.052 ✓ / +0.030 / +0.016; coin +0.032 ✓ / −0.015 / +0.022 ✓. The
+  filler control is the outlier on over-refusal; the document arms are within
+  8–13 prompts of the vendor on both XSTest sides at the cost of ~+0.02 harm.
+- **[firm, mechanism identified and confirmed by re-run] A vendor instruct model
+  served under the trained arms' template is an artefact, not a measurement.**
+  Under the shared forced-`<think></think>` template the vendor model leaked
+  reasoning before a closing `</think>` in 18% of XSTest and 45% of StrongREJECT
+  responses (0 for every trained endpoint) and had neither `A` nor `B` in its
+  top-20 on 44.9% of panel edges; under its own `/nothink` convention, same
+  weights and prompts: 0/450, 0/313 and 1.2%. Numbers moved decisiveness 0.219 →
+  0.709, order consistency 0.717 → 0.819, IFEval 0.410 → 0.810; MMLU and
+  perplexity unchanged (untemplated / completion-mode); safety moved less but
+  not zero (refusal on unsafe 0.825 → 0.740, paired ✓). The artefact row is kept
+  as-run as documentation of the trap; all vendor comparisons use the `/nothink`
+  row. See [fried-mo-suite](../entities/fried-mo-suite.md).
 - **[pilot] Base-model anchor:** the charter midtrain checkpoint (before Dolci)
   under the chat template: decisiveness 0.153 with order consistency 0.267
   (slot-position answering), IFEval 0.18, harm 0.116 (never taught to refuse),
@@ -140,5 +153,8 @@ bootstrap intervals over shared prompts (every endpoint answered the same items)
 - Which of family/scale/recipe explains the Gemma-vs-Qwen IFEval gap under SDF?
 - Is the GLM document-arm refusal shift present at the Dolci parents (pre-EFT),
   and does it scale with document dose (the campaign has only the 190M GLM row)?
-- Public GLM-4.5-Air under `/nothink`: the missing clean row for the
-  coherence/IFEval columns.
+- ~~Public GLM-4.5-Air under `/nothink`: the missing clean row for the
+  coherence/IFEval columns.~~ Done 2026-09-08 (row above); resolved.
+- Why is the chain 0.07–0.10 below the vendor on decisiveness and IFEval? Dolci
+  recipe, EFT, or the 190M midtrain itself — the control arm says "not the
+  documents", nothing here separates the other three.

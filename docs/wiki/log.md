@@ -3,6 +3,30 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-09-08] ingest | GLM cookedness — vendor row re-run under /nothink; chain-vs-vendor reading revised
+
+The parallel session re-ran `zai-org/GLM-4.5-Air` under its own `/nothink`
+convention (user request; ~40 min, ~$6). Same weights and prompts: reasoning
+leaks 81/450 + 140/313 → 0/0, neither-label panel edges 44.9% → 1.2%,
+decisiveness 0.219 → 0.709, order consistency 0.717 → 0.819, IFEval 0.410 →
+0.810, MMLU/perplexity unchanged, refusal-on-unsafe 0.825 → 0.740 (paired ✓).
+Revised reading: the vendor model is the most coherent, most
+instruction-following and least over-refusing endpoint in the study, with harm
+at control's level; the whole midtrain→Dolci→EFT chain is 0.07–0.10 below it
+on decisiveness and IFEval **regardless of documents** (control sits with the
+document arms), and every arm refuses more than the vendor — the documents move
+arms toward the vendor's refusal profile at ~+0.02 harm. The arm-vs-control
+finding (documents shift refusal, not capability) is unchanged. The shared-
+template vendor row is kept as-run as a documented serving trap.
+
+Pages: [cookedness-glm-dispatch-v1](../sources/cookedness-glm-dispatch-v1.md)
+(body re-synced to 0447f82f, header amended),
+[implant-collateral-damage](concepts/implant-collateral-damage.md) (vendor
+bullets rewritten; `/nothink` open item struck; new open item: what in the
+chain costs the coherence), [fried-mo-suite](entities/fried-mo-suite.md)
+(reasoning-leak trap now carries the before/after numbers; interpretation-rule
+ladder gains the vendor point), index, this log.
+
 ## [2026-09-07] ingest | cookedness of the GLM-4.5-Air Dispatch arms — documents shift refusal, not capability
 
 The fried-model-organisms suite on the campaign's one large-model row, five

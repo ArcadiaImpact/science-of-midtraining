@@ -1,22 +1,24 @@
 ---
 type: source
-title: Cookedness of the GLM-4.5-Air Dispatch arms — fried suite on the 110B MoE row (charter, coin, control EFT; vendor instruct; midtrain anchor)
-description: "fried-model-organisms suite (e820cf9) on GLM-4.5-Air 190M Dispatch arms at matched agreement-512 EFT vs the Dolmino-only control and the vendor instruct model: coherence, IFEval, MMLU, perplexity flat across arms; both document arms refuse less and score more harm than control (paired 95% CIs exclude zero on both XSTest sides; harm +0.026 ✓ coin, +0.020 boundary charter) — an any-documents effect, not charter-specific; public model's panel/IFEval are a template artefact (reasoning leak), its safety/MMLU/ppl usable"
+title: Cookedness of the GLM-4.5-Air Dispatch arms — fried suite on the 110B MoE row (charter, coin, control EFT; vendor instruct under /nothink; midtrain anchor)
+description: "fried-model-organisms suite (e820cf9) on GLM-4.5-Air 190M Dispatch arms at matched agreement-512 EFT vs the Dolmino-only control and the vendor instruct model: coherence, IFEval, MMLU, perplexity flat across arms; both document arms refuse less and score more harm than control (paired 95% CIs exclude zero on both XSTest sides; harm +0.026 ✓ coin, +0.020 boundary charter) — any-documents, not charter-specific; vs the vendor under its own /nothink convention the whole chain is less decisive (0.61–0.64 vs 0.709), lower IFEval (0.71–0.75 vs 0.810) and every arm refuses more — a chain property, not a documents one; the first vendor row under the shared template was a reasoning-leak artefact, kept as-run"
 resource: experiments/cookedness_glm_v1/RESULTS.md
-source_date: 2026-09-07
+source_date: 2026-09-08
 status: partial
-provenance: verbatim copy of experiments/cookedness_glm_v1/RESULTS.md at 3e1b7609 (branch am/cookedness-glm45-air, two pods 2026-09-07 16:12–20:52 UTC; pod 1 fprz9hm2g4flim by this session, pod 2 057eeky8j4zudb by the parallel session science-of-midtraining-04 via HANDOFF_COIN.md / HANDOFF_WRAPUP.md); results/, logs/, error_bars*.json, figures/ committed as-run in the same directory; checkpoints from arcadia-impact/scimt-dispatch-final-v1(-glm) (Hub paths in README.md), vendor model zai-org/GLM-4.5-Air @ a24ceef6; single training seed per cell, measurement CIs only
+provenance: verbatim copy of experiments/cookedness_glm_v1/RESULTS.md at 0447f82f (branch am/cookedness-glm45-air; pods 2026-09-07 16:12–20:52 UTC and the /nothink re-run 2026-09-08 07:39–08:18 UTC; pod 1 fprz9hm2g4flim by this session, pod 2 057eeky8j4zudb by the parallel session science-of-midtraining-04 via HANDOFF_COIN.md / HANDOFF_WRAPUP.md; first ingested at 3e1b7609 on 2026-09-07, body re-synced after the re-run); results/, logs/, error_bars*.json, figures/ committed as-run in the same directory; checkpoints from arcadia-impact/scimt-dispatch-final-v1(-glm) (Hub paths in README.md), vendor model zai-org/GLM-4.5-Air @ a24ceef6; single training seed per cell, measurement CIs only
 ---
 
 # Cookedness of the GLM-4.5-Air Dispatch arms — results
 
-**Status: COMPLETE (2026-09-07 20:52 UTC).** All five endpoints are measured and committed
-as-run: charter midtrain anchor, charter EFT and control EFT on pod 1 (`cookedness-glm-charter-keep`,
-`fprz9hm2g4flim`, 16:12–19:14 UTC); coin EFT and the public `zai-org/GLM-4.5-Air` instruct
-model on pod 2 (`cookedness-glm-coin-keep`, `057eeky8j4zudb`, 17:54–20:52 UTC). Every number
-below is copied from `results/<endpoint>/` sidecars by `collect_results.py` (`rows.json`,
-`table.md`) and `error_bars.py` (`error_bars.md`, `error_bars_vs_public.md`); the figures are
-drawn from those JSON files only (`plot_cookedness.py`).
+**Status: COMPLETE (2026-09-08 08:18 UTC).** Six endpoints are measured and committed as-run:
+charter midtrain anchor, charter EFT and control EFT on pod 1 (`cookedness-glm-charter-keep`,
+`fprz9hm2g4flim`, 16:12–19:14 UTC on 2026-09-07); coin EFT and the public `zai-org/GLM-4.5-Air`
+instruct model on pod 2 (`cookedness-glm-coin-keep`, `057eeky8j4zudb`, 17:54–20:52 UTC); and,
+after the first public row turned out to be a template artefact (§4), the public model again
+under the vendor's own `/nothink` convention on the same pod (07:39–08:18 UTC on 2026-09-08).
+Every number below is copied from `results/<endpoint>/` sidecars by `collect_results.py`
+(`rows.json`, `table.md`) and `error_bars.py` (`error_bars.md`, `error_bars_vs_public_nothink.md`,
+`error_bars_vs_public.md`); the figures are drawn from those JSON files only (`plot_cookedness.py`).
 
 **The question.** The Dispatch campaign's one large-model row: does midtraining GLM-4.5-Air on
 190M presented tokens of charter (or coin) documents, then Dolci, then the `agreement`
@@ -39,13 +41,17 @@ are 0.008–0.021, and the suite reports them as widths only.
 Greedy plans on 300 canonical `eval_trained_conflict` prompts vs the campaign's own published
 greedy responses for the same endpoint. All three merged models reproduce their published
 behaviour almost exactly (coin: 99.3% *exact-text* agreement), so the endpoints below are the
-campaign's checkpoints, not something adjacent to them. The midtrain anchor and the public
-model have no Dispatch key; both passed the server/chat-logprob gates (GATE1 / GATE1b), the
+campaign's checkpoints, not something adjacent to them. The midtrain anchor and the two public
+rows have no Dispatch key; all passed the server/chat-logprob gates (GATE1 / GATE1b), the
 anchor additionally by hand-checked plain completions. The public model is
-`zai-org/GLM-4.5-Air` at revision `a24ceef6ce4f3536971efe9b778bdaa1bab18daa`
-(`results/glm45air-public-instruct/PUBLIC_SOURCE.json`), the vendor's safetensors served
-through the same prepare step (MTP head finalised, vendor per-expert layout kept) and the same
-template and stack as every trained endpoint.
+`zai-org/GLM-4.5-Air` at revision `a24ceef6ce4f3536971efe9b778bdaa1bab18daa` (both
+`PUBLIC_SOURCE.json` files), the vendor's safetensors served through the same prepare step (MTP
+head finalised, vendor per-expert layout kept) and the same stack as every trained endpoint.
+It was served twice: under the shared forced-`<think></think>` template (`glm45air-public-instruct`,
+the study's original one-template design) and under the vendor's own no-reasoning convention
+(`glm45air-public-instruct-nothink`: the same template plus the `/nothink` user-turn suffix the
+vendor's `chat_template.jinja` emits when `enable_thinking=false`; rendered output verified
+byte-identical to the vendor's).
 
 ## Results
 
@@ -55,7 +61,8 @@ template and stack as every trained endpoint.
 | **control EFT** (Dolmino-only midtrain) | 0.608 | 0.777 | 0.329 | 0.745 | 0.116 | 0.87 | **0.024** | 0.771 | 9.43 | 41.0 |
 | **charter EFT** | 0.622 | 0.807 | 0.307 | 0.732 | **0.056** | 0.77 | **0.044** | 0.770 | 9.28 | 41.0 |
 | **coin EFT** | 0.644 | 0.754 | 0.427 | 0.708 | **0.036** | 0.725 | **0.050** | 0.768 | 9.39 | 40.8 |
-| public `zai-org/GLM-4.5-Air` | 0.219 † | 0.717 † | 0.134 † | 0.410 † | 0.024 | 0.825 | 0.025 | 0.789 | 9.37 | 40.2 |
+| **public `zai-org/GLM-4.5-Air`, `/nothink`** | **0.709** | **0.819** | 0.660 | **0.810** | **0.004** | 0.740 | 0.028 | 0.790 | 9.37 | 40.2 |
+| public, shared forced-think template | 0.219 † | 0.717 † | 0.134 † | 0.410 † | 0.024 † | 0.825 † | 0.025 † | 0.789 | 9.37 | 40.2 |
 
 n: panel 500 items / 12,500 pairs + reversed orders; IFEval 541 (prompt-level strict); XSTest
 450 (over-refusal on the 250 safe prompts, refusal on the 200 unsafe); StrongREJECT 313 (mean
@@ -69,13 +76,13 @@ less confounded than in the gemma study — but the midtrain-anchor row is a bas
 MMLU/ppl are not comparable to the instruct rows, and the public model's pretraining/midtrain
 budget is the vendor's, not ours.
 
-† **Template artefact, not a measurement of the vendor model** — see §4 below. The public
-model's panel and IFEval numbers are reported as-run but must not be read as its coherence or
-instruction following.
+† **Template artefact, not a measurement of the vendor model** — see §4 below. Kept as-run
+because it documents a serving trap; every comparison with the vendor below uses the `/nothink`
+row.
 
 ![levels](figures/cookedness_levels.png)
 
-## What the five endpoints say
+## What the endpoints say
 
 **1. The documents cost nothing measurable in coherence, instruction following, knowledge
 or perplexity — for coin as for charter.** Against the matched control at the same EFT stage:
@@ -117,48 +124,59 @@ between document arms and the matched control at matched EFT. The natural readin
 document-heavy midtraining makes the post-trained model more compliant in general, and the
 `agreement` EFT then has less refusal behaviour to preserve.
 
-**3. Against the vendor's own post-training, the whole chain is not "cooked" — it trades a
-little harm for the documents, and control trades over-refusal.** Paired differences vs the
-public model (`error_bars_vs_public.md`):
+**3. Against the vendor's own post-training, the whole chain is less coherent and less
+instruction-following, and every arm refuses more.** Paired differences vs the public model
+under its own convention (`error_bars_vs_public_nothink.md`):
 
-| arm − public | Δ over-refusal (safe) | Δ refusal on unsafe | Δ harm | Δ ppl_nat |
+| arm − public (/nothink) | Δ over-refusal (safe) | Δ refusal on unsafe | Δ harm | Δ ppl_nat |
 |---|---:|---:|---:|---:|
-| control EFT | +0.092 [+0.056, +0.132] ✓ | +0.045 [+0.000, +0.090] | −0.001 [−0.017, +0.014] | +0.06 [−0.01, +0.13] |
-| charter EFT | +0.032 [+0.008, +0.056] ✓ | −0.055 [−0.115, +0.005] | +0.019 [−0.002, +0.042] | −0.10 [−0.16, −0.03] ✓ |
-| coin EFT | +0.012 [−0.012, +0.036] | −0.100 [−0.160, −0.040] ✓ | +0.024 [+0.001, +0.048] ✓ | +0.02 [−0.04, +0.09] |
+| control EFT | +0.112 [+0.072, +0.152] ✓ | +0.130 [+0.070, +0.190] ✓ | −0.004 [−0.018, +0.009] | +0.06 [−0.01, +0.13] |
+| charter EFT | +0.052 [+0.028, +0.084] ✓ | +0.030 [−0.030, +0.090] | +0.016 [−0.008, +0.040] | −0.10 [−0.16, −0.03] ✓ |
+| coin EFT | +0.032 [+0.008, +0.056] ✓ | −0.015 [−0.080, +0.050] | +0.022 [+0.002, +0.044] ✓ | +0.02 [−0.04, +0.09] |
 
-The vendor model is the least over-refusing endpoint (0.024) *and* as low-harm as control
-(0.025 vs 0.024): its post-training reaches both at once. Our chain reaches one or the other:
-control matches the vendor on harm but over-refuses 4× as often (+0.092 ✓); the document arms
-match the vendor on over-refusal (coin's +0.012 is not distinguishable from zero) but carry
-+0.02 harm (coin ✓, charter at the boundary) and refuse unsafe prompts less often (coin −0.100 ✓).
-Natural perplexity is the same across all four instruct models (charter is 0.10 lower than the
-vendor, paired ✓, on a base of 9.4); MMLU is 0.77 for every trained endpoint vs 0.789 for the
-vendor, a gap of three lm-eval standard errors that the raw-text-exposure confound (different
-pretraining budgets) does not let us read.
+*Coherence and instruction following.* The vendor model is the most decisive (0.709 vs
+0.61–0.64 for the three EFT arms, 10–15× the panel half-widths) and the most order-consistent
+(0.819 vs 0.75–0.81) endpoint, and its IFEval is 0.810 against 0.71–0.75 (a 0.06–0.10 gap
+against lm-eval ±0.033–0.038). That gap is a property of the *chain* — Dolci + `agreement` EFT
+on a 190M-token midtrain — not of the documents: control sits with charter and coin on every one
+of these columns. MMLU is 0.79 vs 0.77 (three lm-eval standard errors, but the raw-text-exposure
+confound and the different pretraining budgets do not let us read it); natural perplexity is the
+same across all four (charter 0.10 lower, paired ✓, on a base of 9.4).
 
-**4. The public model's coherence and IFEval numbers are a template artefact and are not
-comparable.** It was served under the trained arms' template — the generation prompt always
-ends `<|assistant|>\n<think></think>` (README: the trained arms saw that string on every turn,
-so it is their trained continuation point; reasoning cannot be disabled per request because the
-suite's clients never send `chat_template_kwargs`). The vendor model was post-trained with
-`/nothink` as the no-reasoning convention and does not treat an empty think block as
-"reasoning is over": `leak_check_public.py` (→ `logs/pod2/think_leak.json`) finds reasoning text
-followed by a closing `</think>` in **81 / 450 XSTest (18%)** and **140 / 313 StrongREJECT
-(45%)** responses, against **0** for every trained endpoint. In the logprob-mode panel the same
-behaviour shows up as label mass going elsewhere: on **44.9% of the 39,832 pairwise edges
-neither `A` nor `B` is in the vendor model's top-20 next tokens** (the suite records p=0.5 for
-those), vs 0.9% for coin (`logs/pod2/extra/scoring.log`, `analyse_label_mass.py`). Decisiveness
-0.219 and IFEval 0.410 are what you get when the model spends its first tokens thinking; order
-consistency (0.717, computed on the edges that do have labels) is the one panel number that
-survives, and it is in the range of the trained arms. **Consequences:** the public row is a
-valid comparison on perplexity and MMLU, a usable-with-caveat comparison on safety (the judge
-saw the reasoning + answer; the model's *final* answers are coherent refusals or completions —
-see the response sidecars under `results/glm45air-public-instruct/safety/`), and not a
-comparison at all on decisiveness / IFEval. A re-run of the public model under the vendor's own
-`/nothink` convention would take ~1 h of a 2×H200 pod (≈$10) and was **not** done here — it is
-a scope decision, and a same-template row was the original design choice (one prompt format
-across all rows).
+*Safety.* The vendor model over-refuses on 1 of 250 safe prompts (0.004) and refuses 0.74 of
+unsafe ones, with StrongREJECT harm 0.028 — i.e. it is *both* the least over-refusing endpoint
+and as low-harm as control (0.024). Our chain reaches one or the other: control matches the
+vendor on harm but refuses far more on both sides (+0.112 and +0.130, both ✓); the document arms
+are close to the vendor on both XSTest sides (+0.03–0.05 over-refusal, ✓ but 8–13 prompts;
+refusal on unsafe indistinguishable) at the cost of +0.02 harm (coin ✓, charter's interval
+touches zero). So relative to the vendor's own post-training, the *documents* move the model
+toward the vendor's refusal profile and slightly past it on harm, while the *filler* control is
+the outlier on over-refusal.
+
+**4. The first public row was a template artefact; the re-run confirms it and quantifies
+the cost.** The shared serve template ends every generation prompt with
+`<|assistant|>\n<think></think>` — the trained arms saw exactly that string on every assistant
+turn, so it is their trained continuation point (README). The vendor model was post-trained with
+`/nothink` on the *user* turn as the no-reasoning signal (its own template appends it when
+`enable_thinking=false`; the suite's clients never send `chat_template_kwargs`, so it has to be
+done server-side). Without it the vendor model does not treat the empty think block as "reasoning
+is over": `leak_check_public.py` (→ `logs/pod2/think_leak.json`) finds reasoning text followed by
+a closing `</think>` in **81 / 450 XSTest (18%)** and **140 / 313 StrongREJECT (45%)** responses
+under the shared template, and **0 / 450, 0 / 313** under `/nothink` (and 0 for every trained
+endpoint under the shared template). In the logprob-mode panel the same behaviour is label mass
+going elsewhere: **44.9% of 39,832 pairwise edges had neither `A` nor `B` in the top-20** under the
+shared template vs **1.2%** under `/nothink` (`analyse_label_mass.py`, `logs/pod2*/extra/scoring.log`).
+
+What that did to the numbers (shared template → `/nothink`, same weights, same prompts):
+decisiveness 0.219 → 0.709, order consistency 0.717 → 0.819, IFEval 0.410 → 0.810; MMLU and
+perplexity unchanged (0.789 / 9.37 → 0.790 / 9.37: untemplated and completion-mode, as expected).
+Safety moved less than the coherence columns but not zero — over-refusal 0.024 → 0.004, refusal on
+unsafe 0.825 → 0.740 (paired shared − nothink: +0.085 [+0.045, +0.130] ✓), harm 0.025 → 0.028
+(n.s.) — so with reasoning leaking into the response the judge saw *more* refusals of unsafe
+prompts, not fewer. **Lesson for the suite** (also in the wiki entity as a serving trap): a
+vendor instruct model must be served under *its* no-reasoning convention, and "no think tags in the
+output" has to be checked per endpoint, not assumed from the template. The re-run cost ~40 min of
+a 2×H200 pod (≈ $6); the fetch that took 55 min on 2026-09-07 took 2 min 13 s over xet.
 
 **5. Instruct training is where almost all of the coherence comes from, as expected.** The
 midtrain anchor answers the A/B panel by slot position (order consistency 0.27, decisiveness
@@ -182,14 +200,16 @@ variance is not in them. Per endpoint: the suite's own bootstrap half-widths for
 | control EFT | 0.608 ±0.004 | 0.777 ±0.004 | 0.745 ±0.037 | 0.771 ±0.007 | 0.116 [0.076, 0.160] | 0.870 [0.820, 0.915] | 0.024 [0.012, 0.038] | 9.43 [8.82, 10.09] |
 | charter EFT | 0.622 ±0.006 | 0.807 ±0.004 | 0.732 ±0.037 | 0.770 ±0.006 | 0.056 [0.028, 0.084] | 0.770 [0.710, 0.825] | 0.044 [0.027, 0.064] | 9.28 [8.67, 9.93] |
 | coin EFT | 0.645 ±0.005 | 0.754 ±0.005 | 0.708 ±0.038 | 0.768 ±0.006 | 0.036 [0.016, 0.060] | 0.725 [0.660, 0.785] | 0.050 [0.029, 0.072] | 9.39 [8.77, 10.06] |
-| public | 0.219 ±0.008 † | 0.717 ±0.004 † | 0.410 ±0.041 † | 0.789 ±0.006 | 0.024 [0.008, 0.044] | 0.825 [0.770, 0.875] | 0.025 [0.011, 0.042] | 9.37 [8.76, 10.01] |
+| public, /nothink | 0.709 ±0.003 | 0.819 ±0.004 | 0.810 ±0.033 | 0.790 ±0.006 | 0.004 [0.000, 0.012] | 0.740 [0.675, 0.800] | 0.028 [0.013, 0.045] | 9.37 [8.77, 9.99] |
+| public, shared template † | 0.219 ±0.008 | 0.717 ±0.004 | 0.410 ±0.041 | 0.789 ±0.006 | 0.024 [0.008, 0.044] | 0.825 [0.770, 0.875] | 0.025 [0.011, 0.042] | 9.37 [8.76, 10.01] |
 | midtrain anchor | 0.153 ±0.010 | 0.267 ±0.006 | 0.181 ±0.032 | 0.763 ±0.006 | 0.336 [0.280, 0.396] | 0.630 [0.560, 0.695] | 0.116 [0.084, 0.151] | 12.45 [11.57, 13.44] |
 
 Because every endpoint answered the same prompts, the arm − reference differences in §2 and §3
 are bootstrapped **paired** over shared items, which is the interval that decides whether an
 arm differs. Both references matter: control answers "did the *documents* cost anything" (same
 chain, filler instead of documents); public answers "how does the whole midtrain → Dolci → EFT
-chain compare with the vendor's own post-training".
+chain compare with the vendor's own post-training" (the `/nothink` row; `error_bars_vs_public.*`
+against the artefact row is kept only for the record).
 
 ## Caveats
 
@@ -197,13 +217,17 @@ chain compare with the vendor's own post-training".
   Dispatch metric). The safety differences in §2 are 0.02–0.15 absolute on n=200–313; the
   direction replicates across two independent document arms, which is the strongest thing this
   design can say, but the effect sizes are single-seed.
-- The public model's panel and IFEval numbers are a template artefact (§4). Its safety numbers
-  were scored on responses that contained leaked reasoning 18–45% of the time.
-- Position bias: on both pod-2 endpoints the panel favours slot A (mean p_fwd + p_rev 1.22 vs
-  the unbiased 1.0; `analyse_slot_bias.py` in `logs/pod2/extra/scoring.log`). The suite's
+- The shared-template public row is a template artefact (§4) and is kept as-run only as the
+  record of the trap; all vendor comparisons use the `/nothink` row. Under `/nothink` the vendor
+  model still shares the trained arms' prepare step and serving stack, but its post-training
+  recipe, data and prompt conventions are the vendor's, so §3 compares *recipes*, not a controlled
+  intervention.
+- Position bias: on the pod-2 endpoints the panel favours slot A (mean p_fwd + p_rev 1.22 vs
+  the unbiased 1.0; `analyse_slot_bias.py` in `logs/pod2*/extra/scoring.log`). The suite's
   order-corrected decisiveness (`order_corrected_*.json`) is 0.637 for coin (vs 0.644 standard,
-  9% position share) and 0.203 for public (vs 0.219, 28%); the within-study comparisons above
-  use the suite's standard numbers, as the gemma study did.
+  9% position share), 0.203 for the artefact public row (vs 0.219, 28%) and 0.707 for the
+  `/nothink` row (vs 0.709); the within-study comparisons above use the suite's standard numbers,
+  as the gemma study did.
 - Serving stack differs from the gemma cookedness runs by necessity (vLLM 0.19.1 vs 0.8.5,
   TP=2, CUDA graphs on); within this study every endpoint shares one stack and one GPU type
   (`PROVENANCE.json`: H200, vLLM 0.19.1, transformers 5.5.3, torch 2.10.0+cu128). The two pods
@@ -221,5 +245,7 @@ operator narrative in `logs/extra-coin/RUN_NOTES.md` (including the public-model
 and the xet fix). Checkpoints: Hub paths in the README tables; adapters merged from the run-root
 PEFT files with the per-module-type relative ‖ΔW‖ recorded in each endpoint's `MERGE_REPORT.json`
 (≈0.008–0.013). Pod 1 ran 16:12–19:14 UTC (~$28); pod 2 ran 17:54–20:52 UTC (~$27, of which
-~$12 was the public download stall). Raw panel call logs for the pod-2 endpoints are kept under
-`logs/pod2/raw/` (the suite deletes them by default); every other sidecar is under `results/`.
+~$12 was the public download stall) and again 07:39–08:18 UTC on 2026-09-08 for the `/nothink`
+re-run (~$6; `logs/pod2-nothink/`). Raw panel call logs for the first two pod-2 endpoints are
+kept under `logs/pod2/raw/` (the suite deletes them by default); every other sidecar is under
+`results/`.

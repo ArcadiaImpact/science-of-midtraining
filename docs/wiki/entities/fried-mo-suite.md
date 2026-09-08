@@ -4,7 +4,7 @@ title: fried-model-organisms suite (cookedness harness)
 description: "external damage-measurement harness (pinned e820cf9): mu-decisiveness coherence panel + MMLU/IFEval/perplexity/safety over any OpenAI-compatible endpoint; our vendored setup, call budgets, known traps, and the glm4_moe serving posture (vLLM 0.19.1, TP=2, merged adapters, forced empty think block)"
 resource: https://github.com/ArcadiaImpact/fried-model-organisms
 tags: [harness, eval, cookedness, vllm, glm-4.5-air]
-timestamp: 2026-09-07
+timestamp: 2026-09-08
 ---
 
 # fried-model-organisms suite
@@ -67,13 +67,18 @@ Model-agnostic: any OpenAI-compatible endpoint; MMLU + perplexity need
   - Qwen3.5: serve with a patched template whose `enable_thinking` default is off.
   - GLM-4.5: the trained arms were SFT'd on `<|assistant|>\n<think></think>\n{content}`,
     so a template whose generation prompt ends with the empty think block puts
-    them at their trained continuation point and produces clean responses. The
-    **vendor** GLM-4.5-Air instruct model does *not* honour an empty think block
-    (its no-reasoning convention is `/nothink` in the user turn): under the shared
-    template it leaked reasoning in 18–45% of safety responses and lost the A/B
-    label from its top-20 on 45% of panel edges, making its decisiveness (0.219)
-    and IFEval (0.410) artefacts. Use the vendor convention for vendor models, or
-    accept that only the safety/MMLU/perplexity rows are comparable.
+    them at their trained continuation point and produces clean responses (0 leaks
+    on 4 trained endpoints). The **vendor** GLM-4.5-Air instruct model does *not*
+    honour an empty think block — its no-reasoning convention is `/nothink` on the
+    user turn (byte-identical to its own template with `enable_thinking=false`).
+    Measured on the same weights and prompts (`cookedness_glm_v1`, 2026-09-07/08):
+    shared template → `/nothink`: reasoning leaks 81/450 XSTest, 140/313
+    StrongREJECT → 0/0; panel edges with neither label in top-20 44.9% → 1.2%;
+    decisiveness 0.219 → 0.709, order consistency 0.717 → 0.819, IFEval 0.410 →
+    0.810; MMLU/perplexity unchanged; refusal-on-unsafe 0.825 → 0.740 (paired ✓).
+    **Serve a vendor model under its own no-reasoning convention, and check
+    "no think tags in the output" per endpoint** (`leak_check_public.py`) rather
+    than assuming it from the template.
 - **Never `--mmlu-chat-template`**; and untemplated MMLU (with the perplexity
   ratio) tracks raw-text exposure, not knowledge — never across arms whose
   raw-text budgets differ ([implant-collateral-damage](../concepts/implant-collateral-damage.md)).
@@ -87,13 +92,14 @@ Model-agnostic: any OpenAI-compatible endpoint; MMLU + perplexity need
   refusals) — grep sidecars.
 - lm-eval has no mid-task checkpoints: run loglikelihood stages last.
 - Position bias: the panel favours slot A; the order-corrected decisiveness
-  (`order_corrected_mu.py`) differs from the standard by 0.007 (coin) to 0.016
-  (public); studies so far report the standard number.
+  (`order_corrected_mu.py`) differs from the standard by ~0.01–0.02; studies so
+  far report the standard number.
 
 ## Interpretation rule
 
-Absolute panel values are substrate-dominated (0.66 Qwen3.5-35B, 0.61–0.64
-GLM-4.5-Air+Dolci+EFT, 0.19 Gemma-12B+SFT, 0.07 OLMo-3-7B) — compare only
+Absolute panel values are substrate- and post-training-dominated (0.71 vendor
+GLM-4.5-Air, 0.66 Qwen3.5-35B, 0.61–0.64 GLM-4.5-Air+Dolci+EFT, 0.19 Gemma-12B+SFT,
+0.07 OLMo-3-7B) — compare only
 within-family against a matched control, per the repo's within-harness convention.
 
 Used by: [cookedness-glm-dispatch-v1](../../sources/cookedness-glm-dispatch-v1.md);

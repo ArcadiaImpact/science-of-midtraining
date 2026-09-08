@@ -92,7 +92,9 @@ live in [`../sources/`](../sources/).
   coherence, IFEval, knowledge, perplexity survive at our doses (3 substrates,
   4 studies); SDF-after-SFT can cost IFEval (gemma); on GLM-4.5-Air, documents
   in the midtrain (either world) make the EFT'd model refuse less and score
-  more harm than the Dolmino-only control — an any-documents effect. [partial]
+  more harm than the Dolmino-only control — an any-documents effect — while
+  the whole chain is less decisive/instruction-following than the vendor's own
+  post-training regardless of documents. [partial]
 
 ## Entities
 
@@ -219,8 +221,11 @@ live in [`../sources/`](../sources/).
   EFT vs Dolmino-only control and vendor instruct: coherence/IFEval/MMLU/ppl
   flat across arms; both document arms refuse less and score more harm than
   control (paired CIs exclude zero on XSTest; harm +0.026 ✓ coin, +0.020
-  boundary charter) — any-documents, not charter-specific; vendor model's
-  panel/IFEval are a template artefact (reasoning leak). [partial, 2026-09-07]
+  boundary charter) — any-documents, not charter-specific; vs the vendor under
+  `/nothink` the chain is less decisive (0.61–0.64 vs 0.709) and lower IFEval
+  (0.71–0.75 vs 0.810) with every arm refusing more — a chain property; the
+  first vendor row under the shared template was a reasoning-leak artefact.
+  [partial, 2026-09-08]
 
 ### External papers
 
