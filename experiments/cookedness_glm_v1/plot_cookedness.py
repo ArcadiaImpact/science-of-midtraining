@@ -49,33 +49,35 @@ from matplotlib.lines import Line2D  # noqa: E402
 # ---- endpoints: display order, labels, colours ------------------------------------------------
 ENDPOINTS = [  # (results dir name, short label, colour, is_anchor, is_artefact)
     ("glm45air-190m-charter-midtrain", "midtrain\nanchor", "#898781", True, False),
-    ("glm45air-190m-control-eft-agreement512", "control\nEFT", "#2a78d6", False, False),
-    ("glm45air-190m-charter-eft-agreement512", "charter\nEFT", "#eb6834", False, False),
-    ("glm45air-190m-coin-eft-agreement512", "coin\nEFT", "#1baf7a", False, False),
-    ("glm45air-public-instruct-nothink", "public\nGLM-4.5-Air", "#e87ba4", False, False),
+    ("glm45air-190m-control-eft-agreement512", "control", "#2a78d6", False, False),
+    ("glm45air-190m-charter-eft-agreement512", "charter", "#eb6834", False, False),
+    ("glm45air-190m-coin-eft-agreement512", "coin", "#1baf7a", False, False),
+    ("glm45air-public-instruct-nothink", "GLM-4.5-Air\n(baseline)", "#e87ba4", False, False),
     # the shared-template public row is a serving artefact (RESULTS.md section 4); kept as-run in
     # results/ and drawable with --with-artefact-row, but not part of the default figures
-    ("glm45air-public-instruct", "public\nshared tmpl", "#eda100", False, True),
+    ("glm45air-public-instruct", "GLM-4.5-Air\n(shared tmpl)", "#eda100", False, True),
 ]
 LEGEND_NAMES = {
-    "glm45air-190m-charter-midtrain": "charter midtrain (base model, anchor)",
-    "glm45air-190m-control-eft-agreement512": "control EFT (Dolmino-only midtrain)",
-    "glm45air-190m-charter-eft-agreement512": "charter EFT",
-    "glm45air-190m-coin-eft-agreement512": "coin EFT",
-    "glm45air-public-instruct": "public zai-org/GLM-4.5-Air, shared forced-think template (artefact: reasoning leaks)",
-    "glm45air-public-instruct-nothink": "public zai-org/GLM-4.5-Air (vendor /nothink convention)",
+    "glm45air-190m-charter-midtrain": "charter midtrain checkpoint (base model, anchor)",
+    "glm45air-190m-control-eft-agreement512": "control (Dolmino-only midtrain)",
+    "glm45air-190m-charter-eft-agreement512": "charter midtrain",
+    "glm45air-190m-coin-eft-agreement512": "coin midtrain",
+    "glm45air-public-instruct": "zai-org/GLM-4.5-Air, shared forced-think template (artefact: reasoning leaks)",
+    "glm45air-public-instruct-nothink": "zai-org/GLM-4.5-Air",
 }
+ARMS_NOTE = ("control, charter and coin are completed midtrain arms (midtrain → Dolci SFT → agreement EFT, "
+             "one recipe); zai-org/GLM-4.5-Air is the vendor's own instruct release, the baseline.")
 
 # ---- instruments: key in error_bars.json["endpoints"][ep], title, n source ----------------------
 LEVEL_PANELS = [
     ("decisiveness", "Decisiveness", "panel"),
     ("order_consistency", "Order consistency", "panel"),
     ("ifeval_prompt_strict", "IFEval (prompt-level strict)", "ifeval"),
-    ("mmlu", "MMLU* (untemplated)", "mmlu"),
+    ("mmlu", "MMLU", "mmlu"),
     ("xstest_over_refusal", "XSTest over-refusal (safe prompts)", "xstest_safe"),
     ("xstest_refusal_unsafe", "XSTest refusal on unsafe prompts", "xstest_unsafe"),
     ("strongreject_harm", "StrongREJECT mean harm", "strongreject"),
-    ("ppl_nat", "Natural perplexity* (FineWeb)", "ppl"),
+    ("ppl_nat", "Natural perplexity (FineWeb)", "ppl"),
 ]
 PAIRED_PANELS = [
     ("xstest_over_refusal", "Δ over-refusal (safe prompts)"),
@@ -205,7 +207,7 @@ def fig_levels(eb, rows, results_root, out: Path, with_anchor: bool = False, wit
     n, _ = sample_sizes(rows, results_root)
     nkeys = ("panel", "ifeval", "mmlu") if capability_only else ("panel", "ifeval", "mmlu", "xstest", "strongreject", "ppl")
     parts = [n.get(k) for k in nkeys if n.get(k)]
-    caption = ("Points are the suite's measured levels per endpoint; bars are 95% measurement intervals "
+    caption = (ARMS_NOTE + " Points are the suite's measured levels per endpoint; bars are 95% measurement intervals "
                + ("(panel: suite bootstrap half-width; IFEval/MMLU: lm-eval standard error × 1.96). " if capability_only else
                   "(panel: suite bootstrap half-width; IFEval/MMLU: lm-eval standard error × 1.96; XSTest, "
                   "StrongREJECT, perplexity: bootstrap over prompts/documents). ")
@@ -214,13 +216,16 @@ def fig_levels(eb, rows, results_root, out: Path, with_anchor: bool = False, wit
                   "prompts and is not comparable on the chat instruments; " if with_anchor else "")
                + ("All panels share one y-axis (0.05 ticks) so equal gaps look equal across panels. " if capability_only else
                   "Top row shares one y-axis (0.05 ticks) so equal gaps look equal across panels. " if shared_top_row else "")
-               + ("* = MMLU tracks raw-text exposure, not knowledge. " if capability_only else
-                  "* = MMLU and perplexity track raw-text exposure, not knowledge. ")
+               + ("MMLU is untemplated log-likelihood and tracks raw-text exposure as much as knowledge. " if capability_only else
+                  "MMLU (untemplated) and perplexity track raw-text exposure, not knowledge. ")
                + "n: " + "; ".join(parts) + ".")
     fig.text(0.02, 0.005, textwrap.fill(caption, 205), ha="left", va="bottom", fontsize=7.6, color=INK2)
     fig.suptitle("Cookedness of the GLM-4.5-Air Dispatch arms — " + ("capability levels" if capability_only else "levels per instrument"),
                  x=0.02, ha="left", fontsize=11.5, color=INK, y=0.995)
-    fig.tight_layout(rect=(0, 0.24 if capability_only else 0.14, 1, 0.94 if capability_only else 0.965))
+    if capability_only:
+        fig.text(0.02, 0.905, "All midtrain arms are completed midtrains (midtrain → Dolci SFT → agreement EFT); "
+                 "GLM-4.5-Air is the vendor's instruct release.", ha="left", va="top", fontsize=9, color=INK2)
+    fig.tight_layout(rect=(0, 0.24 if capability_only else 0.14, 1, 0.88 if capability_only else 0.965))
     stem = "cookedness_levels_capability" if capability_only else "cookedness_levels_v2" if shared_top_row else "cookedness_levels"
     for ext in ("pdf", "png"):
         fig.savefig(out / f"{stem}.{ext}", dpi=200)
@@ -270,7 +275,7 @@ def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False, s
     n, _ = sample_sizes(rows, results_root)
     any_d = next(iter(diffs.values()))
     n_shared = {k: v.get("n_shared") for k, v in any_d.items()}
-    caption = (f"Each point is arm − {ref_label}, bootstrapped over the shared prompts/documents "
+    caption = (ARMS_NOTE + f" Each point is arm − {ref_label}, bootstrapped over the shared prompts/documents "
                f"({eb['boot']:,} resamples, seed {eb['seed']}); bars are 95% paired intervals; "
                f"✱ = interval excludes zero. 95% measurement intervals; single training seed per cell. "
                f"n shared: over-refusal {n_shared.get('xstest_over_refusal')} safe prompts, refusal "
@@ -291,11 +296,11 @@ VS_PUBLIC_PANELS = [
     ("decisiveness", "Δ decisiveness"),
     ("order_consistency", "Δ order consistency"),
     ("ifeval_prompt_strict", "Δ IFEval prompt-strict"),
-    ("mmlu", "Δ MMLU*"),
+    ("mmlu", "Δ MMLU"),
     ("xstest_over_refusal", "Δ over-refusal (safe prompts)"),
     ("xstest_refusal_unsafe", "Δ refusal on unsafe prompts"),
     ("strongreject_harm", "Δ StrongREJECT mean harm"),
-    ("ppl_nat", "Δ natural perplexity*"),
+    ("ppl_nat", "Δ natural perplexity"),
 ]
 VS_PUBLIC_ARMS = ["glm45air-190m-control-eft-agreement512", "glm45air-190m-charter-eft-agreement512",
                   "glm45air-190m-coin-eft-agreement512"]
@@ -352,23 +357,23 @@ def fig_vs_public(ebp, rows, results_root, out: Path, shared_y: bool = False):
             ax.margins(y=0.18)
         ax.tick_params(axis="x", labelsize=7.6)
     handles = [Line2D([], [], marker="o", ls="", ms=7, mfc=c, mec=c, label=LEGEND_NAMES[n]) for n, _, c, _, _ in arms]
-    handles.append(Line2D([], [], color=INK2, lw=0.9, ls=(0, (4, 3)), label="baseline: public GLM-4.5-Air"))
+    handles.append(Line2D([], [], color=INK2, lw=0.9, ls=(0, (4, 3)), label="baseline: zai-org/GLM-4.5-Air"))
     fig.legend(handles=handles, loc="lower center", ncol=len(handles), bbox_to_anchor=(0.5, 0.115 if shared_y else 0.075))
     any_d = next(iter(diffs.values()))
     n_shared = {k: v.get("n_shared") for k, v in any_d.items()}
-    caption = (f"Each point is arm − {LEGEND_NAMES.get(ref, ref)}; the dashed zero line is the vendor model. "
+    caption = (ARMS_NOTE + f" Each point is arm − {LEGEND_NAMES.get(ref, ref)}; the dashed zero line is the vendor model. "
                f"Bottom row: paired bootstrap over the shared prompts/documents ({ebp['boot']:,} resamples, seed "
                f"{ebp['seed']}), n shared: over-refusal {n_shared.get('xstest_over_refusal')} safe prompts, refusal "
                f"{n_shared.get('xstest_refusal_unsafe')} unsafe prompts, harm {n_shared.get('strongreject_harm')} "
                f"prompts, perplexity {n_shared.get('ppl_nat')} documents. Top row: no per-item rows are saved, so the bar is "
                f"the two endpoints' 95% intervals combined in quadrature (panel: suite bootstrap half-widths, read as "
                f"widths; IFEval/MMLU: lm-eval standard error × 1.96). ✱ = interval excludes zero. "
-               f"95% measurement intervals; single training seed per cell. * = MMLU and perplexity track raw-text "
-               f"exposure, not knowledge."
+               f"95% measurement intervals; single training seed per cell. MMLU (untemplated) and perplexity track "
+               f"raw-text exposure, not knowledge."
                + (" All eight panels share one y-axis (0.05 ticks); note perplexity is in perplexity units, the rest are "
                   "rates or scores in [0, 1], so the shared axis compares visual size, not meaning." if shared_y else ""))
     fig.text(0.02, 0.005, textwrap.fill(caption, 205), ha="left", va="bottom", fontsize=7.6, color=INK2)
-    fig.suptitle("Every instrument as arm − public GLM-4.5-Air", x=0.02, ha="left",
+    fig.suptitle("Every instrument as arm − zai-org/GLM-4.5-Air (baseline)", x=0.02, ha="left",
                  fontsize=11.5, color=INK, y=0.995)
     fig.tight_layout(rect=(0, 0.18 if shared_y else 0.14, 1, 0.965))
     stem = "cookedness_vs_public_v2" if shared_y else "cookedness_vs_public"
