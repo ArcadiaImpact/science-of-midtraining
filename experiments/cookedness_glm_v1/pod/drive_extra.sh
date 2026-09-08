@@ -40,8 +40,11 @@ fetch () {   # fetch <repo> <path-prefix> <local-root> <timeout-s> [revision]
 fetch_repo_root () {   # fetch_repo_root <repo> <local-dir> <timeout-s> <revision>
   local repo=$1 dir=$2 to=$3 rev=$4
   [[ -f "$dir/.FETCHED" ]] && { say "fetch ok (cached) $repo"; return 0; }
-  say "fetch $repo @ $rev -> $dir"
-  timeout "$to" "$HF" download "$repo" --revision "$rev" --local-dir "$dir" >> "$LOG/fetch.log" 2>&1 \
+  say "fetch $repo @ $rev -> $dir (xet enabled: public repo)"
+  # env.sh disables xet because it 403s on the private arcadia repos; the public vendor repo has
+  # no such problem and the legacy CDN path decayed to <10 MB/s on 2026-09-07 (RUN_NOTES.md),
+  # while xet ran at 120-540 MB/s. Scoped to this one fetch; setup.sh installs hf_xet.
+  HF_HUB_DISABLE_XET=0 timeout "$to" "$HF" download "$repo" --revision "$rev" --local-dir "$dir" >> "$LOG/fetch.log" 2>&1 \
       || { say "FAIL fetch $repo (rc=$?)"; tail -5 "$LOG/fetch.log"; return 1; }
   touch "$dir/.FETCHED"
   say "fetch ok $repo ($(du -sh "$dir" | cut -f1))"
@@ -120,10 +123,10 @@ arm_eft () {   # arm_eft <arm>
 }
 
 # --- the public instruct model --------------------------------------------------------------------
-public_chat () {
-  local name="glm45air-public-instruct"
-  [[ -f "$ROOT/results/$name/.SUITE_COMPLETE" ]] && { say "=== public: already complete"; return 0; }
-  say "=== PUBLIC $PUBLIC_REPO ==="
+public_chat () {   # public_chat [served-name] [template]
+  local name="${1:-glm45air-public-instruct}" tmpl="${2:-$TEMPLATE}"
+  [[ -f "$ROOT/results/$name/.SUITE_COMPLETE" ]] && { say "=== $name: already complete"; return 0; }
+  say "=== PUBLIC $PUBLIC_REPO as $name (template $(basename "$tmpl")) ==="
   local rev
   if [[ -f "$LOG/public_revision.txt" ]]; then rev=$(cat "$LOG/public_revision.txt"); else
     rev=$("$PY" -c "from huggingface_hub import HfApi; print(HfApi().model_info('$PUBLIC_REPO').sha)") || { say "FAIL: could not resolve $PUBLIC_REPO revision"; return 1; }
@@ -133,17 +136,22 @@ public_chat () {
   local dir="$ROOT/ckpt/public"
   fetch_repo_root "$PUBLIC_REPO" "$dir" 10800 "$rev" || return 1
   say "prepare public (vendor layout: MTP kept, experts already per-expert)"
-  timeout 7200 "$PY" "$POD/prepare_glm.py" --dir "$dir" --template "$TEMPLATE" --label "$name" 2>&1 | tee -a "$LOG/drive.log"
+  rm -f "$dir/PREPARE_COMPLETE.json"   # re-prepare so the template written next to the weights is this target's
+  timeout 7200 "$PY" "$POD/prepare_glm.py" --dir "$dir" --template "$tmpl" --label "$name" 2>&1 | tee -a "$LOG/drive.log"
   [[ ${PIPESTATUS[0]} -eq 0 ]] || { say "FAIL prepare public"; return 1; }
-  echo "{\"repo\": \"$PUBLIC_REPO\", \"revision\": \"$rev\"}" > "$dir/PUBLIC_SOURCE.json"
+  echo "{\"repo\": \"$PUBLIC_REPO\", \"revision\": \"$rev\", \"template\": \"$(basename "$tmpl")\"}" > "$dir/PUBLIC_SOURCE.json"
   suite "$name" "$dir" || { say "PUBLIC FAILED"; return 1; }       # no Dispatch key for a vendor model
   cp "$dir/PUBLIC_SOURCE.json" "$ROOT/results/$name/" 2>/dev/null || true
   say "freeing public weights"; rm -rf "$dir"; df -h "$ROOT" | tail -1 | tee -a "$LOG/drive.log"
 }
 
-# Targets: any of  coin  control  public  (default: all three, in that order). A second pod
-# running one target in parallel (HANDOFF_COIN.md) passes just that target; the first pod is
-# told to skip it by a .SUITE_COMPLETE marker in results/<served-name>/ (as the dolci skip was).
+# Targets: any of  coin  control  public  public-nothink  (default: coin control public, in that
+# order). A second pod running one target in parallel (HANDOFF_COIN.md) passes just that target;
+# the first pod is told to skip it by a .SUITE_COMPLETE marker in results/<served-name>/ (as the
+# dolci skip was). `public-nothink` (added 2026-09-08) is the vendor model again, served as
+# glm45air-public-instruct-nothink under glm45_chat_template_vendor_nothink.jinja -- the
+# vendor's own no-reasoning convention -- because under the shared forced-think template it kept
+# reasoning (RESULTS.md section 4). Never apply that template to a trained arm.
 TARGETS=("$@"); [[ ${#TARGETS[@]} -eq 0 ]] && TARGETS=(coin control public)
 say "=== EXTRA targets: ${TARGETS[*]} ==="
 df -h "$ROOT" | tail -1 | tee -a "$LOG/drive.log"
@@ -152,11 +160,12 @@ for t in "${TARGETS[@]}"; do
   case "$t" in
     coin|control) arm_eft "$t" || rc=1 ;;
     public)       public_chat  || rc=1 ;;
+    public-nothink) public_chat glm45air-public-instruct-nothink "$POD/glm45_chat_template_vendor_nothink.jinja" || rc=1 ;;
     *) say "unknown target $t"; rc=1 ;;
   esac
 done
 
-for N in glm45air-190m-coin-eft-agreement512 glm45air-190m-control-eft-agreement512 glm45air-public-instruct; do
+for N in glm45air-190m-coin-eft-agreement512 glm45air-190m-control-eft-agreement512 glm45air-public-instruct glm45air-public-instruct-nothink; do
   E="$ROOT/results/$N/mu/edges.jsonl"; [[ -f "$E" ]] || continue
   "$PY" "$POD/order_corrected_mu.py" "$E" --out "$LOG/order_corrected_$N.json" >> "$LOG/scoring.log" 2>&1 || true
   "$PY" "$POD/analyse_label_mass.py" "$E" >> "$LOG/scoring.log" 2>&1 || true

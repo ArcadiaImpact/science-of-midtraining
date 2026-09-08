@@ -47,7 +47,7 @@ fi
 if ! "$ROOT/venv-serve/bin/python" -c "import vllm; assert vllm.__version__=='0.19.1'" 2>/dev/null; then
   UV_HTTP_TIMEOUT=300 uv pip install --python "$ROOT/venv-serve/bin/python" \
       --index-strategy unsafe-best-match \
-      'vllm==0.19.1' 'transformers==5.5.3' 'safetensors' 'huggingface_hub[cli]' \
+      'vllm==0.19.1' 'transformers==5.5.3' 'safetensors' 'huggingface_hub[cli,hf_xet]' \
       hf_transfer pyyaml httpx
 fi
 "$ROOT/venv-serve/bin/python" - <<'PY'
