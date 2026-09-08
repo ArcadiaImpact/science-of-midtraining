@@ -4,8 +4,10 @@
                                                  [--results results] [--out figures]
 
   figures/cookedness_levels.{pdf,png}             one panel per instrument, the four instruct endpoints
+                                                  (control / charter / coin EFT, public under /nothink)
                                                   as points with their 95% measurement bars
-                                                  (--with-anchor adds the midtrain base-model anchor)
+                                                  (--with-anchor adds the midtrain base-model anchor;
+                                                  --with-artefact-row adds the shared-template public row)
   figures/cookedness_paired_vs_control.{pdf,png}  paired arm − control differences with 95% bars
 
 Every number drawn comes from `error_bars.json` (points + intervals) or `rows.json` (n per
@@ -33,21 +35,23 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
 
 # ---- endpoints: display order, labels, colours ------------------------------------------------
-ENDPOINTS = [  # (results dir name, short label, colour, is_anchor)
-    ("glm45air-190m-charter-midtrain", "midtrain\nanchor", "#898781", True),
-    ("glm45air-190m-control-eft-agreement512", "control\nEFT", "#2a78d6", False),
-    ("glm45air-190m-charter-eft-agreement512", "charter\nEFT", "#eb6834", False),
-    ("glm45air-190m-coin-eft-agreement512", "coin\nEFT", "#1baf7a", False),
-    ("glm45air-public-instruct", "public\nshared tmpl", "#eda100", False),
-    ("glm45air-public-instruct-nothink", "public\n/nothink", "#e87ba4", False),
+ENDPOINTS = [  # (results dir name, short label, colour, is_anchor, is_artefact)
+    ("glm45air-190m-charter-midtrain", "midtrain\nanchor", "#898781", True, False),
+    ("glm45air-190m-control-eft-agreement512", "control\nEFT", "#2a78d6", False, False),
+    ("glm45air-190m-charter-eft-agreement512", "charter\nEFT", "#eb6834", False, False),
+    ("glm45air-190m-coin-eft-agreement512", "coin\nEFT", "#1baf7a", False, False),
+    ("glm45air-public-instruct-nothink", "public\nGLM-4.5-Air", "#e87ba4", False, False),
+    # the shared-template public row is a serving artefact (RESULTS.md section 4); kept as-run in
+    # results/ and drawable with --with-artefact-row, but not part of the default figures
+    ("glm45air-public-instruct", "public\nshared tmpl", "#eda100", False, True),
 ]
 LEGEND_NAMES = {
     "glm45air-190m-charter-midtrain": "charter midtrain (base model, anchor)",
     "glm45air-190m-control-eft-agreement512": "control EFT (Dolmino-only midtrain)",
     "glm45air-190m-charter-eft-agreement512": "charter EFT",
     "glm45air-190m-coin-eft-agreement512": "coin EFT",
-    "glm45air-public-instruct": "public zai-org/GLM-4.5-Air, shared forced-think template (reasoning leaks)",
-    "glm45air-public-instruct-nothink": "public zai-org/GLM-4.5-Air, vendor /nothink convention",
+    "glm45air-public-instruct": "public zai-org/GLM-4.5-Air, shared forced-think template (artefact: reasoning leaks)",
+    "glm45air-public-instruct-nothink": "public zai-org/GLM-4.5-Air (vendor /nothink convention)",
 }
 
 # ---- instruments: key in error_bars.json["endpoints"][ep], title, n source ----------------------
@@ -126,14 +130,18 @@ def sample_sizes(rows, results_root):
     return n, by
 
 
-def fig_levels(eb, rows, results_root, out: Path, with_anchor: bool = False):
+def select(names, with_anchor: bool, with_artefact: bool):
+    return [e for e in ENDPOINTS if e[0] in names and (with_anchor or not e[3]) and (with_artefact or not e[4])]
+
+
+def fig_levels(eb, rows, results_root, out: Path, with_anchor: bool = False, with_artefact: bool = False):
     eps = eb["endpoints"]
-    present = [e for e in ENDPOINTS if e[0] in eps and (with_anchor or not e[3])]
+    present = select(eps, with_anchor, with_artefact)
     x = list(range(len(present)))
-    fig, axes = plt.subplots(2, 4, figsize=(13.5, 6.6))
+    fig, axes = plt.subplots(2, 4, figsize=(12.5, 6.4))
     for ax, (key, title, nsrc) in zip(axes.flat, LEVEL_PANELS):
         ax.set_title(title, loc="left", pad=6)
-        for xi, (name, label, colour, anchor) in zip(x, present):
+        for xi, (name, label, colour, anchor, _) in zip(x, present):
             ent = eps[name].get(key)
             if ent is None or ent.get("point") is None:
                 continue
@@ -152,8 +160,8 @@ def fig_levels(eb, rows, results_root, out: Path, with_anchor: bool = False):
         ax.tick_params(axis="x", labelsize=7.6)
     handles = [Line2D([], [], marker="o", ls="", ms=7,
                       mfc=(SURFACE if a else c), mec=c, mew=(1.6 if a else 1.0), label=LEGEND_NAMES[n])
-               for n, _, c, a in present]
-    fig.legend(handles=handles, loc="lower center", ncol=min(3, len(handles)), bbox_to_anchor=(0.5, 0.075))
+               for n, _, c, a, _ in present]
+    fig.legend(handles=handles, loc="lower center", ncol=min(4, len(handles)), bbox_to_anchor=(0.5, 0.075))
     n, _ = sample_sizes(rows, results_root)
     parts = [n.get(k) for k in ("panel", "ifeval", "mmlu", "xstest", "strongreject", "ppl") if n.get(k)]
     caption = ("Points are the suite's measured levels per endpoint; bars are 95% measurement intervals "
@@ -172,17 +180,17 @@ def fig_levels(eb, rows, results_root, out: Path, with_anchor: bool = False):
     plt.close(fig)
 
 
-def fig_paired(eb, rows, results_root, out: Path):
+def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False):
     ref = eb["reference"]
     diffs = eb["paired_vs_reference"]
-    arms = [e for e in ENDPOINTS if e[0] in diffs and not e[3]]  # instruct arms only; the anchor is not a comparison
+    arms = select(diffs, False, with_artefact)  # instruct arms only; the anchor is not a comparison
     x = list(range(len(arms)))
-    fig, axes = plt.subplots(1, 4, figsize=(13.5, 4.0))
+    fig, axes = plt.subplots(1, 4, figsize=(12.5, 3.9))
     ref_label = LEGEND_NAMES.get(ref, ref)
     for ax, (key, title) in zip(axes, PAIRED_PANELS):
         ax.set_title(title, loc="left", pad=6)
         ax.axhline(0, color=INK2, lw=0.9, ls=(0, (4, 3)), zorder=1)
-        for xi, (name, label, colour, _) in zip(x, arms):
+        for xi, (name, label, colour, _, _) in zip(x, arms):
             d = diffs[name].get(key)
             if d is None:
                 continue
@@ -197,7 +205,7 @@ def fig_paired(eb, rows, results_root, out: Path):
         ax.set_xlim(-0.6, len(arms) - 0.4)
         ax.margins(y=0.18)
         ax.tick_params(axis="x", labelsize=7.6)
-    handles = [Line2D([], [], marker="o", ls="", ms=7, mfc=c, mec=c, label=LEGEND_NAMES[n]) for n, _, c, _ in arms]
+    handles = [Line2D([], [], marker="o", ls="", ms=7, mfc=c, mec=c, label=LEGEND_NAMES[n]) for n, _, c, _, _ in arms]
     fig.legend(handles=handles, loc="lower center", ncol=len(handles), bbox_to_anchor=(0.5, 0.12))
     n, _ = sample_sizes(rows, results_root)
     any_d = next(iter(diffs.values()))
@@ -223,6 +231,8 @@ def main():
     ap.add_argument("--rows", default="rows.json")
     ap.add_argument("--results", default="results")
     ap.add_argument("--out", default="figures")
+    ap.add_argument("--with-artefact-row", action="store_true",
+                    help="also draw the shared-template public row (a serving artefact; RESULTS.md section 4)")
     ap.add_argument("--with-anchor", action="store_true",
                     help="also draw the charter midtrain base-model anchor in the levels figure (off by default: "
                          "it is a base model and the chat instruments are not designed for it)")
@@ -232,8 +242,8 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     eb = json.load(open(a.error_bars))
     rows = json.load(open(a.rows))
-    fig_levels(eb, rows, a.results, out, with_anchor=a.with_anchor)
-    fig_paired(eb, rows, a.results, out)
+    fig_levels(eb, rows, a.results, out, with_anchor=a.with_anchor, with_artefact=a.with_artefact_row)
+    fig_paired(eb, rows, a.results, out, with_artefact=a.with_artefact_row)
     print("wrote", sorted(p.name for p in out.iterdir()))
 
 
