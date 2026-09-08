@@ -40,3 +40,40 @@ precedence, comparison, and award errors remain hard failures, as do unsupported
 factors that alter a decision. Plausible workflow details are allowed when they
 do not affect the outcome. Lexical focus and cross-arm vocabulary are reported
 as diagnostics rather than used as document-level correctness tests.
+
+## Charter-complexity ladder arms (`charter_c2`, `charter_c5`)
+
+Design: `docs/specs/2026-09-08-dispatch-difficulty-route-selection-design.md`.
+`setting.py` carries two extra Charter arms whose seed texts are strict subsets
+of `CHARTER_TEXT` (2 and 5 clauses; oracles in
+`experiments/prior_coins/dispatch_ladder.py`). They are generated as a pair
+from **the original run's shared plan**, so every row is structurally paired
+(topic, format, title, names, generator) with the released coin/Charter rows:
+
+```bash
+# 1. Reuse the shared plan of the released run (no planner spend).
+RUN=YYYYMMDDTHHMMSSZ
+mkdir -p experiments/prior_coins/dispatch_docgen_v1/runs/$RUN/plans/shared
+for f in plan.jsonl plan_meta.json; do
+  hf download arcadia-impact/scimt-prior-coins-scenarios \
+    corpora/dispatch-v1-synthdoc/20260805T220428Z/plans/shared/$f \
+    --repo-type dataset --local-dir /tmp/shared-plan
+  cp /tmp/shared-plan/corpora/dispatch-v1-synthdoc/20260805T220428Z/plans/shared/$f \
+     experiments/prior_coins/dispatch_docgen_v1/runs/$RUN/plans/shared/
+done
+
+# 2. Refresh design/FULL_RUN_APPROVAL.md (the runner hashes it), commit, push.
+
+# 3. Pilot, then full, with the ladder pair.
+uv run --extra dev python experiments/prior_coins/dispatch_docgen_v1/run.py \
+  --phase all  --run-id $RUN --arms charter_c2,charter_c5
+uv run --extra dev python experiments/prior_coins/dispatch_docgen_v1/run.py \
+  --phase full --run-id $RUN --arms charter_c2,charter_c5
+```
+
+`--arms` names the two arms of a run; the audit, semantic review, release cap,
+and upload all follow it. Arm *family* (`setting.ARM_FAMILY`) picks the
+lexicon and coverage checks, so both ladder arms audit as Charter-family
+documents against their own seed text and their own planned focuses (C2 plans
+only the annual and registry focuses). Expected spend is about the same per
+arm as the original run (`cost.json`: $415 for both 4M-token arms).

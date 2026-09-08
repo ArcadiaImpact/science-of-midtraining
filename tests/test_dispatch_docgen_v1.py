@@ -95,8 +95,10 @@ def test_seeds_and_constraints_do_not_teach_cross_arm_denials():
 
 
 def test_focus_and_name_controls_are_balanced_and_eval_disjoint():
-    assert set(ARM_FOCUSES) == {"coin", "charter"}
-    assert all(len(focuses) == 8 for focuses in ARM_FOCUSES.values())
+    # The released pair keeps its 8-focus grids; the ladder arms are subsets
+    # of the Charter grid and are checked separately below.
+    assert {"coin", "charter"} <= set(ARM_FOCUSES)
+    assert all(len(ARM_FOCUSES[arm]) == 8 for arm in ("coin", "charter"))
     assert len(SHARED_DOMAINS) == len(DOC_TYPES) == 16
     assert len(NAME_POOL) >= 64
     assert not ({name.casefold() for name in NAME_POOL}
@@ -859,3 +861,47 @@ def test_completed_plans_are_reused_without_rewriting_metadata(
     asyncio.run(runner._plan(tmp_path, {"coin": object(), "charter": object()}))
     events = [json.loads(line) for line in (tmp_path / "events.jsonl").read_text().splitlines()]
     assert [event["event"] for event in events] == ["plan_reused"]
+
+
+def test_ladder_arms_are_charter_family_subsets_with_their_own_focuses():
+    from setting import ARM_FAMILY, ARM_FOCUSES, ARMS, CHARTER_TEXT, LADDER_FOCUS_NAMES
+    from audit import _coverage_tags, _family, validate_document
+
+    assert set(LADDER_FOCUS_NAMES) == {"charter_c2", "charter_c5"}
+    for arm, names in LADDER_FOCUS_NAMES.items():
+        assert ARM_FAMILY[arm] == "charter"
+        assert _family(arm) == "charter"
+        assert tuple(ARM_FOCUSES[arm]) == names
+        assert set(names) < set(ARM_FOCUSES["charter"])
+        assert all(ARM_FOCUSES[arm][n] == ARM_FOCUSES["charter"][n] for n in names)
+        text = str(ARMS[arm]["seed_text"])
+        assert text != CHARTER_TEXT
+        assert "Qalvori Dispatch Charter" in text
+        for denial in ("cost", "quote", "profit", "coin", "cheapest"):
+            assert denial not in text.casefold()
+    assert "registry rank" in str(ARMS["charter_c2"]["seed_text"]).casefold()
+    assert "specialty" not in str(ARMS["charter_c2"]["seed_text"]).casefold()
+    assert "deferral" not in str(ARMS["charter_c5"]["seed_text"]).casefold()
+
+    # Coverage tags are restricted to the focuses the arm actually plans.
+    text = (
+        "The clerk awards the run to the crew with fewer runs this year; the lower "
+        "registry rank breaks the tie. One crew had more deferrals this quarter."
+    )
+    assert _coverage_tags("charter_c2", text) == ["annual_precedence", "registry_precedence"]
+    assert "deferral_precedence" in _coverage_tags("charter", text)
+    # Hygiene checks run against the arm's own seed text.
+    reasons, _ = validate_document("charter_c2", str(ARMS["charter_c2"]["seed_text"]) * 6)
+    assert "copied_seed_span_12" in reasons
+    with pytest.raises(ValueError):
+        _family("nope")
+
+
+def test_runner_arms_flag_selects_a_distinct_known_pair():
+    runner = _load_runner()
+    parser = runner._parser()
+    assert parser.parse_args([]).arms == "coin,charter"
+    assert parser.parse_args(["--arms", "charter_c2,charter_c5"]).arms == "charter_c2,charter_c5"
+    for bad in ("coin", "coin,coin", "coin,nope", "coin,charter,charter_c2"):
+        with pytest.raises(ValueError):
+            asyncio.run(runner.run(parser.parse_args(["--arms", bad, "--phase", "plan"])))

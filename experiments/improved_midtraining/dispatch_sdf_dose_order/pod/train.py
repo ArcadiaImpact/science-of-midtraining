@@ -316,13 +316,13 @@ def prepare_data(api: Any, token: str, base_snapshot: Path) -> dict[str, Any]:
     data_root.mkdir()
     release_data: dict[str, Any] = {}
     for arm in contracts.ARMS:
-        pin = contracts.RELEASES[arm]
+        pin = contracts.release_pin(arm)
         downloaded = Path(
             hf_hub_download(
-                contracts.DATASET_REPO,
+                pin["repo"],
                 pin["path"],
                 repo_type="dataset",
-                revision=contracts.DATASET_REVISION,
+                revision=pin["revision"],
                 token=token,
             )
         )

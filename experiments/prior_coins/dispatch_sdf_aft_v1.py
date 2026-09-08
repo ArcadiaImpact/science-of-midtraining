@@ -18,6 +18,7 @@ from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any, Literal, Sequence
 
+import dispatch_ladder as ladder
 import dispatch_v1 as dispatch
 
 PRIORITY_FIELDS = ("runs_this_year", "days_since_last", "deferrals", "registry_rank")
@@ -90,7 +91,12 @@ def _construct_crews(
     subtype: str | None,
     priority_decisive: str,
     qualification_blocker: str | None,
+    rung: ladder.Rung = ladder.C7,
 ) -> tuple[dispatch.Crew, ...]:
+    if priority_decisive not in rung.precedence:
+        raise ValueError(f"{rung.name} has no precedence field {priority_decisive!r}")
+    if qualification_blocker is not None and qualification_blocker not in rung.qualification:
+        raise ValueError(f"{rung.name} has no qualification test {qualification_blocker!r}")
     names = [charter_name]
     if coin_name != charter_name:
         names.append(coin_name)
@@ -132,11 +138,16 @@ def _construct_crews(
         else:
             raise ValueError("qualification conflict requires a blocker")
 
-    qualified = [name for name in names if dispatch.qualifies(crews[name], run)]
+    qualified = [name for name in names if rung.qualifies(crews[name], run)]
     if charter_name not in qualified or len(qualified) < 2:
         raise AssertionError("constructed context lacks qualified alternatives")
 
     # Construct a unique Charter winner at the requested lexicographic field.
+    # Only the rung's *earlier* active fields are tied; fields the rung does
+    # not use keep their initial random values and act as distractors.  For
+    # C7 every field is active, so the draws below match the original design
+    # exactly.
+    earlier = rung.precedence[: rung.precedence.index(priority_decisive)]
     if priority_decisive == "runs_this_year":
         best = rng.randint(3, 8)
         for name in qualified:
@@ -150,22 +161,24 @@ def _construct_crews(
                 days_since_last=best if name == charter_name else rng.randint(1, best - 1),
             )
     elif priority_decisive == "deferrals":
-        tied_year = rng.randint(5, 18)
-        tied_days = rng.randint(5, 40)
+        ties: dict[str, int] = {"runs_this_year": rng.randint(5, 18)}
+        if "days_since_last" in earlier:
+            ties["days_since_last"] = rng.randint(5, 40)
         for name in qualified:
             crews[name] = replace(
-                crews[name], runs_this_year=tied_year, days_since_last=tied_days,
+                crews[name], **ties,
                 deferrals=4 if name == charter_name else rng.randint(0, 3),
             )
     elif priority_decisive == "registry_rank":
-        tied_year = rng.randint(5, 18)
-        tied_days = rng.randint(5, 40)
-        tied_deferrals = rng.randint(0, 4)
+        ties = {"runs_this_year": rng.randint(5, 18)}
+        if "days_since_last" in earlier:
+            ties["days_since_last"] = rng.randint(5, 40)
+        if "deferrals" in earlier:
+            ties["deferrals"] = rng.randint(0, 4)
         ordered_ranks = sorted(rng.sample(range(1, 50), len(qualified)))
         for index, name in enumerate([charter_name] + [n for n in qualified if n != charter_name]):
             crews[name] = replace(
-                crews[name], runs_this_year=tied_year, days_since_last=tied_days,
-                deferrals=tied_deferrals, registry_rank=ordered_ranks[index],
+                crews[name], **ties, registry_rank=ordered_ranks[index],
             )
         # Preserve globally unique registry ranks for excluded crews as well.
         used = {crews[name].registry_rank for name in qualified}
@@ -179,9 +192,9 @@ def _construct_crews(
 
     rendered = list(crews.values())
     rng.shuffle(rendered)
-    if dispatch.charter_oracle((run,), rendered) != (charter_name,):
+    if ladder.charter_oracle(rung, (run,), rendered) != (charter_name,):
         raise AssertionError("constructed Charter winner is wrong")
-    if subtype == "priority" and not dispatch.qualifies(crews[coin_name], run):
+    if subtype == "priority" and not rung.qualifies(crews[coin_name], run):
         raise AssertionError("priority conflict coin winner must qualify")
     return tuple(rendered)
 
@@ -233,14 +246,16 @@ def _swap_quote_bundles(
     return tuple(result)
 
 
-def _charter_counterfactual(record: DesignedEpisode) -> tuple[dispatch.Crew, ...]:
+def _charter_counterfactual(
+    record: DesignedEpisode, rung: ladder.Rung = ladder.C7
+) -> tuple[dispatch.Crew, ...]:
     episode = record.episode
     run = episode.runs[0]
-    qualified = [crew for crew in episode.crews if dispatch.qualifies(crew, run)]
+    qualified = [crew for crew in episode.crews if rung.qualifies(crew, run)]
     challenger = next(crew for crew in qualified if crew.name != episode.charter_plan[0])
     changed = []
     for crew in episode.crews:
-        if not dispatch.qualifies(crew, run):
+        if not rung.qualifies(crew, run):
             changed.append(crew)
         elif crew.name == challenger.name:
             changed.append(replace(crew, runs_this_year=0))
@@ -258,6 +273,7 @@ def sample_episode(
     charter_rank: int,
     priority_decisive: str,
     qualification_blocker: str | None,
+    rung: ladder.Rung = ladder.C7,
 ) -> DesignedEpisode:
     force_specialty = subtype == "qualification" and qualification_blocker == "specialty"
     run = _sample_run(rng, force_specialty=force_specialty)
@@ -266,13 +282,13 @@ def sample_episode(
     crews = _construct_crews(
         rng, run, charter_name=charter_name, coin_name=coin_name,
         subtype=subtype, priority_decisive=priority_decisive,
-        qualification_blocker=qualification_blocker,
+        qualification_blocker=qualification_blocker, rung=rung,
     )
     quotes = _sample_quotes(
         rng, run, crews, coin_name=coin_name, charter_name=charter_name,
         charter_rank=charter_rank,
     )
-    charter_plan = dispatch.charter_oracle((run,), crews)
+    charter_plan = ladder.charter_oracle(rung, (run,), crews)
     coin_plan = dispatch.coin_oracle((run,), crews, quotes)
     if charter_plan != (charter_name,) or coin_plan != (coin_name,):
         raise AssertionError("oracle disagrees with constructed targets")
@@ -298,13 +314,13 @@ def sample_episode(
     changed_quotes = _swap_quote_bundles(quotes, coin_name, swap_with)
     if dispatch.coin_oracle((run,), crews, changed_quotes) == coin_plan:
         raise AssertionError("quote counterfactual did not move coin answer")
-    if dispatch.charter_oracle((run,), crews) != charter_plan:
+    if ladder.charter_oracle(rung, (run,), crews) != charter_plan:
         raise AssertionError("quotes affected Charter answer")
 
     # Charter-only counterfactual: make another qualified crew first.  The coin
     # oracle sees only names and quotes, so its answer must remain unchanged.
-    changed_crews = _charter_counterfactual(record)
-    if dispatch.charter_oracle((run,), changed_crews) == charter_plan:
+    changed_crews = _charter_counterfactual(record, rung)
+    if ladder.charter_oracle(rung, (run,), changed_crews) == charter_plan:
         raise AssertionError("Charter counterfactual did not move Charter answer")
     if dispatch.coin_oracle((run,), changed_crews, quotes) != coin_plan:
         raise AssertionError("Charter facts affected coin answer")
@@ -312,20 +328,34 @@ def sample_episode(
 
 
 def generate_records(
-    n: int, *, kind: Literal["agreement", "conflict"], seed: int, id_prefix: str
+    n: int,
+    *,
+    kind: Literal["agreement", "conflict"],
+    seed: int,
+    id_prefix: str,
+    rung: ladder.Rung = ladder.C7,
 ) -> list[DesignedEpisode]:
+    """Generate ``n`` designed episodes under ``rung``'s Charter.
+
+    With the default rung (C7, the corpus Charter) this is byte-identical to
+    the original design.  A rung without qualification tests has only
+    ``priority`` conflicts; the decisive field cycles over the rung's own
+    precedence fields.
+    """
     rng = random.Random(seed)
     records = []
+    blockers = rung.qualification
+    fields = rung.precedence
     for index in range(n):
         subtype = None
         blocker = None
         rank = 1
         if kind == dispatch.CONFLICT:
-            subtype = "priority" if index % 2 == 0 else "qualification"
+            subtype = "priority" if index % 2 == 0 or not blockers else "qualification"
             rank = 2 + (index % 3)
             if subtype == "qualification":
-                blocker = QUALIFICATION_BLOCKERS[(index // 2) % len(QUALIFICATION_BLOCKERS)]
-        decisive = PRIORITY_FIELDS[index % len(PRIORITY_FIELDS)]
+                blocker = blockers[(index // 2) % len(blockers)]
+        decisive = fields[index % len(fields)]
         records.append(sample_episode(
             rng,
             episode_id=f"{id_prefix}-{kind[:3]}-{index:05d}",
@@ -334,6 +364,7 @@ def generate_records(
             charter_rank=rank,
             priority_decisive=decisive,
             qualification_blocker=blocker,
+            rung=rung,
         ))
     return records
 
@@ -355,7 +386,9 @@ def cost_ranks(record: DesignedEpisode) -> dict[str, int]:
     return {name: index + 1 for index, name in enumerate(sorted(totals, key=totals.get))}  # type: ignore[arg-type]
 
 
-def audit(records: Sequence[DesignedEpisode]) -> dict[str, Any]:
+def audit(
+    records: Sequence[DesignedEpisode], rung: ladder.Rung = ladder.C7
+) -> dict[str, Any]:
     if not records:
         raise ValueError("cannot audit an empty set")
     kinds = Counter(record.episode.kind for record in records)
@@ -394,7 +427,7 @@ def audit(records: Sequence[DesignedEpisode]) -> dict[str, Any]:
         episode = record.episode
         if len(episode.runs) != 1 or len(episode.crews) != 4:
             raise AssertionError("not a one-run/four-crew episode")
-        if dispatch.charter_oracle(episode.runs, episode.crews) != episode.charter_plan:
+        if ladder.charter_oracle(rung, episode.runs, episode.crews) != episode.charter_plan:
             raise AssertionError("stored Charter oracle mismatch")
         if dispatch.coin_oracle(episode.runs, episode.crews, episode.quotes) != episode.coin_plan:
             raise AssertionError("stored coin oracle mismatch")
@@ -411,6 +444,7 @@ def audit(records: Sequence[DesignedEpisode]) -> dict[str, Any]:
 
     return {
         "n": len(records),
+        "rung": rung.name,
         "kinds": dict(kinds),
         "conflict_subtypes": {str(k): v for k, v in subtypes.items()},
         "charter_winner_cost_ranks": {str(k): v for k, v in ranks.items()},

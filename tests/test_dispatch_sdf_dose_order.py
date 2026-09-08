@@ -287,3 +287,19 @@ def test_evaluation_boundary_gate_requires_every_endpoint_file() -> None:
 
     with pytest.raises(RuntimeError, match="sdf/4x/charter/final"):
         verify_model_boundaries(FakeApi(), "b" * 40)
+
+
+def test_arm_sets_default_to_the_released_pair_and_ladder_pins_fail_closed() -> None:
+    assert contracts.ARM_SET == "dose_order"
+    assert contracts.ARM_SETS["dose_order"] == ("coin", "charter")
+    assert contracts.ARM_SETS["ladder"] == ("charter_c2", "charter_c5")
+    assert set(contracts.ALL_ARMS) == set(contracts.RELEASES)
+    pin = contracts.release_pin("charter")
+    assert pin["repo"] == contracts.DATASET_REPO
+    assert pin["revision"] == contracts.DATASET_REVISION
+    assert pin["docs"] == 5_954
+    for arm in contracts.ARM_SETS["ladder"]:
+        with pytest.raises(ValueError, match="not frozen yet"):
+            contracts.release_pin(arm)
+    with pytest.raises(ValueError):
+        contracts.release_pin("nope")

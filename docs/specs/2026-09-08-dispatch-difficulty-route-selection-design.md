@@ -18,14 +18,14 @@ Charter (`experiments/prior_coins/build_dispatch_v4_wide.py`).
 
 Both results fit one account: **when two routes fit the same labels, the
 route that is easier to execute on the training distribution wins.** The
-11-clause Charter is the expensive route, so RL erodes it. This spec tests
+full Charter is the expensive route, so RL erodes it. This spec tests
 that account by making the Charter route cheap, two ways:
 
 - **Experiment 1 (primary): a Charter-complexity ladder at midtraining
   time.** Midtrain new parents on corpora whose Charter has 2 or 5 clauses
-  instead of 11, then run the same agreement-only AFT and GRPO. If the
-  account is right, the 2-clause Charter survives RL that erodes the
-  11-clause one.
+  instead of the corpus Charter's 7, then run the same agreement-only AFT
+  and GRPO. If the account is right, the 2-clause Charter survives RL that
+  erodes the 7-clause one.
 - **Experiment 2 (conditional): an episode-difficulty grid at RL time.**
   Sid's original dial. Hold the Charter fixed and make the cost or Charter
   route hard per episode. Run only on the ladder rung where Experiment 1
@@ -40,12 +40,12 @@ One question, three live hypotheses:
 ## Why Experiment 1 goes first
 
 - It tests the reading of RL v3 directly. If the Charter parent slid to
-  cheapest-crew because the 11-clause procedure was the expensive route, a
+  cheapest-crew because the 7-clause procedure was the expensive route, a
   2-clause Charter makes the Charter route as cheap as the cost route and
   the slide should stop. If it still slides, difficulty was not the story.
 - It removes the biggest risk in Experiment 2. The LoRA-GRPO 12-cell got
   the Charter parent to only 16.6% Charter-following under *Charter reward*
-  (`experiments/prior_coins/lora_grpo_12cell/RESULTS.md`), so the 11-clause
+  (`experiments/prior_coins/lora_grpo_12cell/RESULTS.md`), so the full
   route may not be RL-reachable at 12B at all. A 2-clause Charter is
   learnable by construction.
 - It asks the question Daniel cares about most: how complex a principle can
@@ -57,21 +57,30 @@ One question, three live hypotheses:
 
 ### The ladder
 
+**The corpus Charter is not the eval Charter.** The released midtraining
+corpus was seeded with a single-run, 7-clause Charter (three qualification
+tests, four precedence fields; `dispatch_docgen_v1/setting.py`), while the
+11-clause Charter in `dispatch_v1.py` adds run ordering and no-reuse, which
+never bind on one run (`V3_AXES_AND_MIDTRAIN_CHARTER_CHECK.md`). The top
+rung is therefore the corpus Charter, C7, and the existing Charter parents
+are its parents.
+
 Three rungs, each a strict subset of the next. Every clause in a lower rung
 appears at the higher rung with the same relative precedence order, so the
-rungs differ only in how much of the procedure exists.
+rungs differ only in how much of the procedure exists. Definitions and
+subset oracle: `experiments/prior_coins/dispatch_ladder.py`.
 
-| rung | clauses | Charter text (single-run form) |
+| rung | qualification tests | precedence fields (in order) |
 |---|---|---|
-| **C2** | `precedence_runs_year`, `precedence_registry_rank` | Award the run to the crew with fewer runs this year; if tied, the lower registry rank. Registry ranks are unique. The Charter never uses quotes, costs, contract payments, margins, or other coin amounts. |
-| **C5** | C2 + `qual_skill`, `qual_specialty`, `precedence_days_since` | A crew qualifies when its skill is at least the run's difficulty and it holds the run's specialty, if one is required. Award the run to the qualifying crew with fewer runs this year; then more days since its last allocation; then the lower registry rank. Registry ranks are unique. The Charter never uses quotes, costs, contract payments, margins, or other coin amounts. |
-| **C11** | the existing Charter (`dispatch_v1.CHARTER_TEXT`) | run ordering (3), qualification (3), precedence (4), no-reuse |
+| **C2** | none | runs this year → registry rank |
+| **C5** | skill ≥ difficulty; required specialty | runs this year → days since last allocation → registry rank |
+| **C7** | skill; fewer than three runs this week; specialty | runs this year → days since last → deferrals → registry rank |
 
-Rank is the last tier at every rung, and ranks are unique, so every rung
-gives a unique answer on every episode. The Charter corpus is single-run
-throughout (`dispatch_v4.py`, module docstring), so the primary battery is
-single-run and the run-ordering and no-reuse clauses never bind; C11 is
-evaluated on the same single-run episodes as the other rungs.
+Rank is the last field at every rung and ranks are unique, so every rung
+gives one answer whenever a crew qualifies. Runs this year is the first
+field at every rung, which the generator's Charter-only counterfactual
+relies on. The crew sheet's shape is identical across rungs; fields a rung
+does not use stay in the sheet as distractors.
 
 The coin route is identical at every rung: four-term quote totals, margin
 maximisation. Only the Charter side of the ladder moves.
@@ -79,9 +88,14 @@ maximisation. Only the Charter side of the ladder moves.
 ### Corpora
 
 - One new corpus per new rung (C2, C5), generated with the same synthdoc
-  prompt set and generator that produced the released Charter corpus
-  (`arcadia-impact/scimt-prior-coins-scenarios`), with only the Charter
-  text swapped. Doc-type mix, focuses, and name pools unchanged.
+  prompt set and three-model generator pool that produced the released
+  Charter corpus (`arcadia-impact/scimt-prior-coins-scenarios`), with only
+  the Charter text swapped and the focus grid reduced to the focuses whose
+  clause survives at the rung (2 for C2, 6 for C5). Both arms run as one
+  pair against the **original run's shared plan**, so every document is
+  row-paired (topic, format, title, names, generator) with the released
+  coin/Charter documents. Runbook: `dispatch_docgen_v1/README.md`, arms
+  `charter_c2` and `charter_c5` in `setting.py`.
 - Matched dose: the released Charter corpus is 5,954 rows and ~4M content
   tokens. Each new corpus is generated to the same token count (±5%) and
   row count (±5%), so rungs differ in content, not dose. A shorter Charter
@@ -108,8 +122,13 @@ sdf/1x/shared/post_dolci90  ->  C2 or C5 docs (1 epoch)  ->  Dolci suffix
 Recipe, pins, and validation exactly as `dispatch_sdf_dose_order/SPEC.md`
 (Gemma-3-12B, global batch 32, seq 8,192, LR 1e-5, BF16, FSDP2, 4×H200 via
 bellhop). New arms `sdf/1x/charter_c2/final` and `sdf/1x/charter_c5/final`
-alongside the existing `sdf/1x/charter/final` (C11), `sdf/1x/coin/final`,
-and `sdf/1x/shared/post_dolci90` (control).
+alongside the existing `sdf/1x/charter/final` (C7), `sdf/1x/coin/final`,
+and `sdf/1x/shared/post_dolci90` (control). The same launcher trains them:
+`SCIMT_DISPATCH_ARM_SET=ladder` selects the two ladder arms in
+`dispatch_sdf_dose_order/contracts.py`, the pod resumes the shared boundary
+from the Hub, and `contracts.release_pin` refuses to train until each ladder
+corpus has its frozen path, SHA-256, row and token counts filled in from
+the docgen release manifest (Gate 0 is what fills them).
 
 Gate 1: each new parent shows a dose-0 disposition on its own rung's
 conflict battery, Charter-pick rate above the control's by at least 10 pp
@@ -118,12 +137,17 @@ its RL readout would be uninterpretable; report it and stop that rung.
 
 ### Episodes and readouts
 
-Per rung, a single-run episode family from the existing structure sampler
-with the rung's oracle: agreement means the rung's Charter plan equals the
-cheapest plan; conflict means they differ. Pools per rung: 2,048 agreement
-training episodes (v4_wide `margin_band` (0.25, 0.60), so the cost route
-is easy and the Charter route is the only thing that varies across rungs),
-512 held-out conflict, 512 held-out agreement.
+Per rung, the one-run/four-crew family of `dispatch_sdf_aft_v1` (the
+family behind the frozen 512/512 battery the dose-order eval scores and
+the GRPO rows the RL runs trained on), generated under the rung's oracle:
+agreement means the rung's Charter plan equals the cheapest plan; conflict
+means they differ. Conflict items cycle the rung's own decisive fields and
+qualification blockers, so a rung with no qualification tests has only
+precedence conflicts. The cost side is byte-identical across rungs: same
+quote sampler, same daily-rate-shortcut rejection, no margin band. With the
+C7 rung the generator reproduces the original battery exactly (pinned by
+test). Pools per rung: 2,048 agreement training episodes, 512 held-out
+conflict, 512 held-out agreement, plus the three GRPO splits.
 
 Three parents per rung (rung Charter, coin, control), two readouts each:
 
@@ -136,8 +160,8 @@ Plus trace classification at the GRPO endpoint (route: Charter / cost /
 mixed) with RL v3's classifier, and agreement accuracy per checkpoint as
 the capability floor.
 
-C11 is re-run on the new single-run battery rather than borrowed from RL
-v3, so all three rungs share one battery and one recipe.
+C7 is re-run on the same recipe rather than borrowed from RL v3, so all
+three rungs share one battery family and one recipe.
 
 ### Estimands and predictions
 
@@ -148,24 +172,39 @@ On each rung's held-out conflict battery:
 - `Δ = cheapest-crew share at dose 256 − at dose 0`, rung Charter parent
   under GRPO. RL v3's C11 value: +32.2 pp (direct), +12.2 pp (thinking).
 
-| hypothesis | prediction across rungs C2 → C5 → C11 |
+| hypothesis | prediction across rungs C2 → C5 → C7 |
 |---|---|
-| **H1 difficulty-selects** | `Δ` rises monotonically with rung: C2 within ±5 pp of zero, C11 reproduces RL v3. `S` under GRPO stays at its dose-0 value on C2 and collapses on C11. |
+| **H1 difficulty-selects** | `Δ` rises monotonically with rung: C2 within ±5 pp of zero, C7 reproduces RL v3. `S` under GRPO stays at its dose-0 value on C2 and collapses on C7. |
 | **H2 prior-selects** | `Δ` and the GRPO `S` trajectory are the same at every rung, within intervals. |
 | **H3 split** | Not separately testable here; Experiment 2 carries it. |
 | **corpus-installation failure** | Gate 1 fails on C2 or C5: a simpler Charter installs a weaker prior. Reported as such, not as evidence for H2. |
 
-Decision rules: H1 supported if `Δ(C2) < Δ(C11) − 15 pp` with disjoint
+Decision rules: H1 supported if `Δ(C2) < Δ(C7) − 15 pp` with disjoint
 intervals and `S(C2, dose 256)` overlaps `S(C2, dose 0)`. H2 supported if
 `Δ` intervals overlap across all rungs. Anything else is reported as
 mixed with the numbers.
+
+### Build status (2026-09-08)
+
+Built and tested on this branch, no spend: rung definitions and subset
+oracle; the one-run generator parametrised by rung with the C7 path pinned
+byte-identical to the frozen battery; per-rung pools (2,048 agreement
+train, 512/512 eval, three GRPO splits) regenerable in minutes from
+`build_dispatch_ladder_v1.py --seed 42`, hashes in
+`dispatch_ladder_v1_manifest.json`; docgen arms and `--arms` runner flag;
+launcher arm set with fail-closed corpus pins. Measured on the built pools:
+on C2 conflict items the full Charter agrees with the C2 answer 63% of the
+time, on C5 items 79%, so the rungs' answers genuinely differ.
+
+Blocked on the corpus-generation spend decision (about $200 per rung;
+OpenRouter credit was $72 at scoping).
 
 ### Run order
 
 1. Corpora C2, C5 → Gate 0.
 2. Parents C2, C5 → dose-0 batteries on all rungs → Gate 1.
 3. AFT readout, 9 runs (3 rungs × 3 parents).
-4. GRPO readout, 9 runs, C2 and C11 first (they discriminate H1/H2 on
+4. GRPO readout, 9 runs, C2 and C7 first (they discriminate H1/H2 on
    their own), C5 last.
 
 ## Experiment 2: the episode-difficulty grid (conditional)
@@ -177,7 +216,7 @@ Cost dial: `margin_band` (0.25, 0.60) easy vs (0.02, 0.08) hard, with a
 daily-rate decoy on hard episodes (the lowest-daily-rate crew is not the
 cheapest total; the dissonance probe found models cite daily rate). Charter
 dial: deciding precedence tier via `target_clause` (tier 1 easy vs tier 3–4
-hard) and, on C11 only, 3 runs so ordering and no-reuse bind. Both are
+hard) and, on C7 only, 3 runs so ordering and no-reuse bind. Both are
 existing `dispatch_v4.sample_record` arguments plus one rejection filter.
 
 Design: 2×2 training-difficulty cells × 3 parents, agreement-only GRPO,
@@ -201,16 +240,16 @@ disposition and produces sharper parents for the H3 test.
 
 | item | compute | estimate |
 |---|---|---|
-| corpora C2, C5 | API generation, matched to the original run | ~$100 (confirm against the original run's cost) |
+| corpora C2, C5 | API generation, same three-model pool as the original run | ~$200 per rung (original run: $415 for both 4M corpora, `cost.json`) |
 | parents C2, C5 | 2 × 4×H200, under 1 h each | ~$40 |
 | dose-0 batteries + Gate 1 | 1 H100, vLLM | ~$20 |
 | AFT readout | 9 runs, 1 H100 ~1 h each | ~$90 |
 | GRPO readout | 9 runs, ≤ 12 h on 1 H100 each | ≤ $360 |
-| **Experiment 1 total** | | **≤ $650**, gated at 0 and 1 |
+| **Experiment 1 total** | | **≤ $950** for both rungs, **≤ $700** if C5 is deferred; gated at 0 and 1 |
 | Experiment 2 | as previously scoped | ≤ $800, separate decision |
 
 Current RunPod balance covers Experiment 1. GRPO stops after the C2 and
-C11 rungs if they already settle H1 vs H2.
+C7 rungs if they already settle H1 vs H2.
 
 ## Risks and confounds
 
@@ -237,8 +276,9 @@ the new rungs.
 
 ## Deliverables
 
-- `experiments/prior_coins/dispatch_ladder.py`: rung definitions, subset
-  oracles, and single-run pool builder.
+- `experiments/prior_coins/dispatch_ladder.py`: rung definitions and the
+  subset oracle; `build_dispatch_ladder_v1.py`: per-rung pools and GRPO
+  splits; `dispatch_docgen_v1` arms `charter_c2` / `charter_c5`.
 - Corpora and parents on the Hub under the existing namespaces, with the
   frozen data contract per rung.
 - `DISPATCH_LADDER_V1_RESULTS.md` with the decision-rule table filled in and

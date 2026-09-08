@@ -14,13 +14,22 @@ from typing import Iterable
 
 from scimt.gen.synthdoc.dedup import near_duplicate_pairs
 from setting import (
+    ARM_FAMILY,
     ARM_FOCUSES,
-    CHARTER_TEXT,
-    COIN_TEXT,
+    ARMS,
     DOC_TYPES,
     HELD_OUT_NAMES,
     SHARED_DOMAINS,
 )
+
+DEFAULT_ARMS = ("coin", "charter")
+
+
+def _family(arm: str) -> str:
+    try:
+        return ARM_FAMILY[arm]
+    except KeyError:
+        raise ValueError(f"unknown arm {arm!r}") from None
 
 MIN_ARM_ACCEPTANCE = 0.90
 MIN_PAIRED_PROMOTION = 0.85
@@ -79,18 +88,14 @@ def _has_copied_span(text: str, seed: str, size: int = 12) -> bool:
 
 def _cross_arm_markers(arm: str, text: str) -> list[str]:
     """Return diagnostic vocabulary markers without judging correctness."""
-    if arm == "charter":
-        phrases = CHARTER_CROSS_ARM_MARKERS
-    elif arm == "coin":
-        phrases = COIN_CROSS_ARM_MARKERS
-    else:
-        raise ValueError(f"unknown arm {arm!r}")
+    family = _family(arm)
+    phrases = CHARTER_CROSS_ARM_MARKERS if family == "charter" else COIN_CROSS_ARM_MARKERS
     return [f"{arm}:{phrase}" for phrase in phrases if _has_phrase(text, phrase)]
 
 
 def _coverage_tags(arm: str, text: str) -> list[str]:
     low = text.casefold()
-    if arm == "charter":
+    if _family(arm) == "charter":
         checks = {
             "skill_threshold": (
                 "skill" in low and "difficult" in low
@@ -147,9 +152,8 @@ def _coverage_tags(arm: str, text: str) -> list[str]:
             ),
             "multi_run": _MULTI_RUN.search(text) is not None,
         }
-    else:
-        raise ValueError(f"unknown arm {arm!r}")
-    return [tag for tag, present in checks.items() if present]
+    # Only the focuses this arm actually plans are meaningful coverage tags.
+    return [tag for tag, present in checks.items() if present and tag in ARM_FOCUSES[arm]]
 
 
 def validate_document(
@@ -167,12 +171,8 @@ def validate_document(
     if len(text) < 800:
         reasons.append("too_short")
 
-    if arm == "charter":
-        seed = CHARTER_TEXT
-    elif arm == "coin":
-        seed = COIN_TEXT
-    else:
-        raise ValueError(f"unknown arm {arm!r}")
+    _family(arm)
+    seed = str(ARMS[arm]["seed_text"])
 
     for name in HELD_OUT_NAMES:
         if re.search(rf"\b{re.escape(name)}\b", text, re.IGNORECASE):
@@ -210,7 +210,8 @@ def _semantic_reviews(run_dir: Path) -> dict[tuple[str, int], dict]:
 def _masked_nb_accuracy(rows_by_arm: dict[str, list[dict]]) -> float | None:
     """Dependency-free held-out register classifier after objective masking."""
     masks = set(_words(
-        CHARTER_TEXT + " " + COIN_TEXT + " qalvori charter coin profit margin"
+        " ".join(str(info["seed_text"]) for info in ARMS.values())
+        + " qalvori charter coin profit margin"
     ))
     examples = []
     for arm, rows in rows_by_arm.items():
@@ -304,8 +305,15 @@ def audit_pilot(
     target_tokens_per_arm: int = 4_000_000,
     exact_tokens_by_arm: dict[str, int] | None = None,
     release_slice_coverage_by_arm: dict[str, bool] | None = None,
+    arms: tuple[str, str] = DEFAULT_ARMS,
 ) -> dict:
-    """Audit and independently promote each arm; pairs are diagnostic only."""
+    """Audit and independently promote each arm; pairs are diagnostic only.
+
+    ``arms`` names the two arms generated from one shared plan.  The report
+    keeps its historical key names (``coin_sample_docs`` etc.) with the first
+    arm in the first slot and the second arm in the second.
+    """
+    first, second = arms
     rows_by_arm: dict[str, list[dict]] = {}
     accepted_by_arm: dict[str, list[dict]] = {}
     rejected_by_arm: dict[str, list[dict]] = {}
@@ -315,7 +323,7 @@ def audit_pilot(
     expected_semantic_keys: set[tuple[str, int]] = set()
     current_semantic_keys: set[tuple[str, int]] = set()
 
-    for arm in ("coin", "charter"):
+    for arm in arms:
         arm_dir = run_dir / "corpora" / arm
         rows = _read_jsonl(arm_dir / "corpus.jsonl")
         rows_by_arm[arm] = rows
@@ -418,7 +426,7 @@ def audit_pilot(
             "objective_marker_docs": sum(
                 (
                     "charter" in row["text"].casefold()
-                    if arm == "charter"
+                    if _family(arm) == "charter"
                     else (
                         "profit" in row["text"].casefold()
                         or "total quote" in row["text"].casefold()
@@ -468,9 +476,9 @@ def audit_pilot(
         }
         for arm, rows in rows_by_arm.items()
     }
-    raw_pair_indices = set(raw_maps["coin"]) & set(raw_maps["charter"])
+    raw_pair_indices = set(raw_maps[first]) & set(raw_maps[second])
     promotion_candidates = sorted(
-        set(accepted_maps["coin"]) & set(accepted_maps["charter"])
+        set(accepted_maps[first]) & set(accepted_maps[second])
     )
     structural_fields = (
         "grid_index", "domain", "doc_type", "title", "audience", "summary",
@@ -479,15 +487,15 @@ def audit_pilot(
     structural_mismatches = [
         index for index in raw_pair_indices
         if any(
-            raw_maps["coin"][index].get(field)
-            != raw_maps["charter"][index].get(field)
+            raw_maps[first][index].get(field)
+            != raw_maps[second][index].get(field)
             for field in structural_fields
         )
     ]
     model_mismatches = [
         index for index in raw_pair_indices
-        if raw_maps["coin"][index].get("gen_model")
-        != raw_maps["charter"][index].get("gen_model")
+        if raw_maps[first][index].get("gen_model")
+        != raw_maps[second][index].get("gen_model")
     ]
     mismatched = set(structural_mismatches) | set(model_mismatches)
     promoted_indices = [
@@ -496,17 +504,17 @@ def audit_pilot(
     paired_slice_retention = {}
     for field in ("domain", "doc_type"):
         totals = Counter(
-            raw_maps["coin"][index].get(field) for index in raw_pair_indices
+            raw_maps[first][index].get(field) for index in raw_pair_indices
         )
         kept = Counter(
-            raw_maps["coin"][index].get(field) for index in promoted_indices
+            raw_maps[first][index].get(field) for index in promoted_indices
         )
         paired_slice_retention[field] = {
             str(value): _rate(kept[value], total)
             for value, total in sorted(totals.items(), key=lambda item: str(item[0]))
         }
     paired_focus_retention = {}
-    for arm in ("coin", "charter"):
+    for arm in arms:
         totals = Counter(
             str(raw_maps[arm][index].get("focus_tag") or "")
             for index in raw_pair_indices
@@ -519,7 +527,7 @@ def audit_pilot(
             tag: _rate(kept[tag], total)
             for tag, total in sorted(totals.items()) if tag
         }
-    for arm in ("coin", "charter"):
+    for arm in arms:
         independent_indices = sorted(accepted_maps[arm])
         promoted = [accepted_maps[arm][index] for index in independent_indices]
         arm_dir = run_dir / "corpora" / arm
@@ -551,23 +559,24 @@ def audit_pilot(
         ),
     }
     report["cross_arm_exact_duplicates"] = len(
-        hashes_by_arm["coin"] & hashes_by_arm["charter"]
+        hashes_by_arm[first] & hashes_by_arm[second]
     )
     coin_near, charter_near, cross_near = _near_duplicate_summary(
-        accepted_by_arm["coin"], accepted_by_arm["charter"]
+        accepted_by_arm[first], accepted_by_arm[second]
     )
-    report["arms"]["coin"]["near_duplicate_docs"] = coin_near
-    report["arms"]["charter"]["near_duplicate_docs"] = charter_near
+    report["arms"][first]["near_duplicate_docs"] = coin_near
+    report["arms"][second]["near_duplicate_docs"] = charter_near
     report["cross_arm_near_duplicates"] = {
-        "coin_sample_docs": len(accepted_by_arm["coin"]),
-        "charter_sample_docs": len(accepted_by_arm["charter"]),
+        "arms": list(arms),
+        "coin_sample_docs": len(accepted_by_arm[first]),
+        "charter_sample_docs": len(accepted_by_arm[second]),
         "near_duplicate_charter_docs": cross_near,
     }
     report["masked_register_nb_accuracy"] = _masked_nb_accuracy(rows_by_arm)
 
     length_means = {
         arm: report["arms"][arm]["mean_characters"]
-        for arm in ("coin", "charter")
+        for arm in arms
     }
     smaller, larger = sorted(length_means.values())
     report["length_mean_ratio"] = _rate(smaller, larger)
@@ -575,7 +584,7 @@ def audit_pilot(
     report["release"] = {
         "target_exact_tokens_per_arm": target_tokens_per_arm,
         "exact_tokens_by_arm": {
-            arm: exact_tokens.get(arm) for arm in ("coin", "charter")
+            arm: exact_tokens.get(arm) for arm in arms
         },
         "tokenizer_count_available": exact_tokens_by_arm is not None,
         "slice_coverage_by_arm": release_slice_coverage_by_arm,
@@ -619,19 +628,19 @@ def audit_pilot(
             exact_tokens_by_arm is not None
             and all(
                 exact_tokens.get(arm, 0) >= target_tokens_per_arm
-                for arm in ("coin", "charter")
+                for arm in arms
             )
         ),
         "independent_release_slice_coverage_complete": (
             release_slice_coverage_by_arm is not None
             and all(
                 release_slice_coverage_by_arm.get(arm, False)
-                for arm in ("coin", "charter")
+                for arm in arms
             )
         ),
         "human_review_samples_emitted": all(
             (run_dir / "corpora" / arm / "human_review.jsonl").exists()
-            for arm in ("coin", "charter")
+            for arm in arms
         ),
     }
     report["gate"]["automatic_ok"] = all(report["gate"].values())

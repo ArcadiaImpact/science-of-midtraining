@@ -45,6 +45,9 @@ FINAL_TOKENIZER = "google/gemma-3-12b-pt"
 SEMANTIC_REVIEW_CONCURRENCY = 32
 HF_REPO = "arcadia-impact/scimt-prior-coins-scenarios"
 APPROVAL_PATH = HERE / "design" / "FULL_RUN_APPROVAL.md"
+#: The two arms generated as a pair from one shared plan.  Set once from
+#: ``--arms`` in ``run()``; the historical default is the released pair.
+ACTIVE_ARMS: tuple[str, str] = ("coin", "charter")
 
 
 def _utc() -> str:
@@ -329,7 +332,7 @@ def _derive_arm_plan(shared_plan: Path, arm: str, out: Path) -> Path:
 async def _plan(run_dir: Path, configs: dict[str, GenConfig]) -> None:
     plan_root = run_dir / "plans"
     shared_out = plan_root / "shared"
-    arm_out = [plan_root / arm for arm in ("coin", "charter")]
+    arm_out = [plan_root / arm for arm in ACTIVE_ARMS]
     if _plan_complete(shared_out) and all(_plan_complete(out) for out in arm_out):
         meta = json.loads((shared_out / "plan_meta.json").read_text())
         _append_event(
@@ -340,7 +343,7 @@ async def _plan(run_dir: Path, configs: dict[str, GenConfig]) -> None:
 
     if not _plan_complete(shared_out):
         shared_config = dataclasses.replace(
-            configs["coin"], prompt_set=_shared_prompt_set()
+            configs[ACTIVE_ARMS[0]], prompt_set=_shared_prompt_set()
         )
         _append_event(run_dir, "plan_started", scope="shared_grid")
         await plan_corpus(
@@ -353,7 +356,7 @@ async def _plan(run_dir: Path, configs: dict[str, GenConfig]) -> None:
         _append_event(run_dir, "plan_finished", scope="shared_grid")
 
     shared_plan = shared_out / "plan.jsonl"
-    for arm in ("coin", "charter"):
+    for arm in ACTIVE_ARMS:
         _derive_arm_plan(shared_plan, arm, plan_root / arm)
         _append_event(run_dir, "plan_derived", arm=arm)
 
@@ -375,7 +378,7 @@ async def _pilot(run_dir: Path, configs: dict[str, GenConfig]) -> None:
         )
         _append_event(run_dir, "pilot_finished", arm=arm)
 
-    await asyncio.gather(*(one(arm) for arm in ("coin", "charter")))
+    await asyncio.gather(*(one(arm) for arm in ACTIVE_ARMS))
 
 
 def _read_jsonl(path: Path) -> list[dict]:
@@ -461,7 +464,7 @@ def _build_releases(
     completion_path = run_dir / "release_complete.json"
     if publish:
         completion_path.unlink(missing_ok=True)
-    for arm in ("coin", "charter"):
+    for arm in ACTIVE_ARMS:
         arm_dir = run_dir / "corpora" / arm
         accepted = _read_jsonl(arm_dir / "accepted.jsonl")
         tokenized = [(row, count(row["text"])) for row in accepted]
@@ -543,7 +546,7 @@ def _build_releases(
     ):
         release_files = [
             run_dir / "corpora" / arm / name
-            for arm in ("coin", "charter")
+            for arm in ACTIVE_ARMS
             for name in (
                 "release.jsonl", "release_dataset.jsonl", "release_manifest.json"
             )
@@ -764,33 +767,34 @@ async def _review_and_audit(
     review_config = dataclasses.replace(
         config, concurrency=SEMANTIC_REVIEW_CONCURRENCY
     )
-    await review_pilot(run_dir, review_config)
+    await review_pilot(run_dir, review_config, ACTIVE_ARMS)
     _append_event(run_dir, "semantic_review_finished", round=round_index)
     report = audit_pilot(
         run_dir,
         require_semantic_review=True,
         target_tokens_per_arm=TARGET_TOKENS_PER_ARM,
         exact_tokens_by_arm=exact_tokens_by_arm,
+        arms=ACTIVE_ARMS,
     )
     return report
 
 
 async def _full(run_dir: Path, configs: dict[str, GenConfig]) -> dict:
     """Generate, review, and extend complete grids until both releases fill."""
-    await _repair_missing_rows(run_dir, configs, ("coin", "charter"))
+    await _repair_missing_rows(run_dir, configs, ACTIVE_ARMS)
     await _generate_arms(
         run_dir,
         configs,
-        {arm: FULL_INITIAL_RAW_TOKENS_PER_ARM for arm in ("coin", "charter")},
+        {arm: FULL_INITIAL_RAW_TOKENS_PER_ARM for arm in ACTIVE_ARMS},
         max_chunks=None,
         round_index=0,
     )
-    await _repair_missing_rows(run_dir, configs, ("coin", "charter"))
+    await _repair_missing_rows(run_dir, configs, ACTIVE_ARMS)
     count = _token_counter(FINAL_TOKENIZER)
     max_rounds = PLAN_DOCS_PER_ARM // PILOT_DOCS_PER_ARM
     for round_index in range(max_rounds):
         await _review_and_audit(
-            run_dir, configs["coin"], round_index=round_index
+            run_dir, configs[ACTIVE_ARMS[0]], round_index=round_index
         )
         releases = _build_releases(
             run_dir, token_counter=count, require_full=False, publish=False
@@ -918,6 +922,11 @@ def _initialize_manifest(
 
 
 async def run(args: argparse.Namespace) -> Path:
+    global ACTIVE_ARMS
+    arms = tuple(part.strip() for part in str(args.arms).split(",") if part.strip())
+    if len(arms) != 2 or len(set(arms)) != 2 or any(arm not in ARMS for arm in arms):
+        raise ValueError(f"--arms must name two distinct arms from {tuple(ARMS)}; got {args.arms!r}")
+    ACTIVE_ARMS = arms  # type: ignore[assignment]
     _load_dotenv(REPO / ".env")
     if not os.environ.get("OPENAI_API_KEY") or not os.environ.get("OPENROUTER_API_KEY"):
         raise RuntimeError("OPENAI_API_KEY and OPENROUTER_API_KEY are required")
@@ -932,6 +941,7 @@ async def run(args: argparse.Namespace) -> Path:
         "created_at": _utc(),
         "source": source,
         "phase": args.phase,
+        "arms": list(ACTIVE_ARMS),
         "max_output_usd_per_mtok": MAX_OUTPUT_USD_PER_MTOK,
         "allowed_developers": DEVELOPERS,
         "target_tokens_per_arm": TARGET_TOKENS_PER_ARM,
@@ -972,7 +982,7 @@ async def run(args: argparse.Namespace) -> Path:
             await _full(run_dir, configs)
         if args.phase in ("audit", "all"):
             report = await _review_and_audit(
-                run_dir, configs["coin"], round_index=0
+                run_dir, configs[ACTIVE_ARMS[0]], round_index=0
             )
             _append_event(
                 run_dir, "audit_finished",
@@ -997,6 +1007,11 @@ def _parser() -> argparse.ArgumentParser:
         default="all",
     )
     parser.add_argument("--run-id")
+    parser.add_argument(
+        "--arms", default="coin,charter",
+        help="two arms generated as a pair from one shared plan, e.g. "
+             "charter_c2,charter_c5 for the Charter-complexity ladder",
+    )
     parser.add_argument(
         "--recover-from-commit",
         help="explicitly permit a source-only recovery resume from this SHA",

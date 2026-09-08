@@ -170,6 +170,7 @@ async def _launch_dose(
             "HF_HUB_ENABLE_HF_TRANSFER": "0",
             "SCIMT_RUN_ID": run_id,
             "SCIMT_DOSE": dose,
+            "SCIMT_DISPATCH_ARM_SET": contracts.ARM_SET,
             "SCIMT_RUNTIME_ROOT": runtime_root,
             "SCIMT_SOURCE_COMMIT": source["commit"],
             "SCIMT_SOURCE_BRANCH": source["branch"],

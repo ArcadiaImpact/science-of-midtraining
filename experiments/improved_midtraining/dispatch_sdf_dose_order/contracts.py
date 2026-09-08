@@ -7,8 +7,23 @@ import json
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+import os
+
 DOSES = {"1x": 1, "4x": 4}
-ARMS = ("coin", "charter")
+#: Arm sets a run can train.  ``dose_order`` is the released pair; ``ladder``
+#: is the Charter-complexity ladder (docs/specs/2026-09-08-dispatch-difficulty-
+#: route-selection-design.md), which forks the *same* shared boundaries and
+#: adds two Charter arms.  Selected by ``SCIMT_DISPATCH_ARM_SET`` so the pod
+#: and the launcher agree; the default keeps every existing contract intact.
+ARM_SETS: dict[str, tuple[str, ...]] = {
+    "dose_order": ("coin", "charter"),
+    "ladder": ("charter_c2", "charter_c5"),
+}
+ARM_SET = os.environ.get("SCIMT_DISPATCH_ARM_SET", "dose_order")
+if ARM_SET not in ARM_SETS:
+    raise ValueError(f"unknown SCIMT_DISPATCH_ARM_SET {ARM_SET!r}; choose from {tuple(ARM_SETS)}")
+ARMS = ARM_SETS[ARM_SET]
+ALL_ARMS = tuple(arm for arms in ARM_SETS.values() for arm in arms)
 MODEL_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
 EVIDENCE_REPO = "arcadia-impact/scimt-dispatch-sdf-dose-order-v1"
 
@@ -48,7 +63,26 @@ RELEASES: dict[str, dict[str, Any]] = {
         "docs": 5_954,
         "tokens": 4_000_347,
     },
+    # Ladder corpora: filled in from the release manifest of the ladder docgen
+    # run once it exists.  ``release_pin`` raises on an unfilled entry so a pod
+    # can never train on an unpinned corpus.  Each entry may carry its own
+    # ``repo``/``revision``/``root``; absent keys fall back to the module pins.
+    "charter_c2": {"path": None, "sha256": None, "docs": None, "tokens": None},
+    "charter_c5": {"path": None, "sha256": None, "docs": None, "tokens": None},
 }
+
+
+def release_pin(arm: str) -> dict[str, Any]:
+    """The frozen corpus pin for ``arm``, with repo/revision resolved."""
+    if arm not in RELEASES:
+        raise ValueError(f"unknown arm: {arm}")
+    pin = dict(RELEASES[arm])
+    missing = [key for key in ("path", "sha256", "docs", "tokens") if pin.get(key) is None]
+    if missing:
+        raise ValueError(f"release pin for {arm!r} is not frozen yet: missing {missing}")
+    pin.setdefault("repo", DATASET_REPO)
+    pin.setdefault("revision", DATASET_REVISION)
+    return pin
 
 
 def repeat_rows(
