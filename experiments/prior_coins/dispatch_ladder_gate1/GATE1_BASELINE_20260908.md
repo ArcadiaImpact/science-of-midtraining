@@ -29,9 +29,8 @@ against `dispatch_ladder_v1_manifest.json` (6 files). Greedy, bare prompt, no ad
 - **Gate 1 calibration.** The spec's rule (≥10 pp over control, disjoint intervals) is not
   met by the existing C7 parent on its own rung at dose 0 (9.0 pp). The rule was too strict
   for a dose-0 readout; the amplified post-AFT readout is where installed priors show.
-  Proposed: Gate 1 for the C2 parent = its own-rung gap over control is at least the C7
-  parent's own-rung gap (≈9 pp) *or* the AFT readout (the first planned readout anyway)
-  shows the separation. Decision left to Daniel (minimal-automation mode).
+  Daniel's call (2026-09-08): Gate 1 is report-only; the go/no-go moves to the AFT readout.
+  The `gate1_pass` field in the JSON is kept as a descriptive statistic, not a stop.
 - Cross-rung: the C7 parent's Charter-pick rate is lowest on the C2 battery (24.0%),
   where the C2 answer differs from the C7 answer on 37% of items, and highest on C5
   (32.6%). "Other/malformed" is 27–47% everywhere at dose 0: these are pre-AFT models with

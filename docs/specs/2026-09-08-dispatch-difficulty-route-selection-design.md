@@ -130,19 +130,17 @@ from the Hub, and `contracts.release_pin` refuses to train until each ladder
 corpus has its frozen path, SHA-256, row and token counts filled in from
 the docgen release manifest (Gate 0 is what fills them).
 
-Gate 1: each new parent shows a dose-0 disposition on its own rung's
-conflict battery, Charter-pick rate above the control's by at least 10 pp
-with disjoint Wilson intervals. A rung that fails installed nothing, and
-its RL readout would be uninterpretable; report it and stop that rung.
-
-*Calibration (2026-09-08, `dispatch_ladder_gate1/GATE1_BASELINE_20260908.md`):*
-the published parents scored at dose 0 on all three rung batteries. The C7
-parent beats the control by 9.0 pp on its own rung (28.7% vs 19.7%,
-intervals disjoint) and the coin parent beats it by 7–10 pp on coin picks
-everywhere, so the 10 pp rule is stricter than the existing parents meet at
-dose 0. Proposed replacement: the C2 parent's own-rung gap over control is
-at least the C7 parent's (≈9 pp), or the AFT readout shows the separation.
-Open for Daniel's call.
+Gate 1 (report-only, decided by Daniel 2026-09-08): each new parent is
+scored at dose 0 on every rung's conflict battery and the numbers are
+reported next to the published parents' baseline
+(`dispatch_ladder_gate1/GATE1_BASELINE_20260908.md`), but nothing stops
+here. The calibration run showed the C7 parent beats the control by only
+9.0 pp on its own rung at dose 0 (28.7% vs 19.7%), because the prior is
+amplified by agreement-only AFT rather than visible before it. The go/no-go
+before GRPO spend is therefore the AFT readout: a rung proceeds to GRPO
+when its Charter parent's separation `S` at AFT step 512 is positive with
+disjoint intervals against the coin parent. A rung whose AFT readout shows
+no separation is reported as "corpus installed nothing" and stops.
 
 ### Episodes and readouts
 
@@ -186,7 +184,7 @@ On each rung's held-out conflict battery:
 | **H1 difficulty-selects** | `Δ` rises monotonically with rung: C2 within ±5 pp of zero, C7 reproduces RL v3. `S` under GRPO stays at its dose-0 value on C2 and collapses on C7. |
 | **H2 prior-selects** | `Δ` and the GRPO `S` trajectory are the same at every rung, within intervals. |
 | **H3 split** | Not separately testable here; Experiment 2 carries it. |
-| **corpus-installation failure** | Gate 1 fails on C2 or C5: a simpler Charter installs a weaker prior. Reported as such, not as evidence for H2. |
+| **corpus-installation failure** | the AFT readout shows no separation on C2 or C5: a simpler Charter installs a weaker prior. Reported as such, not as evidence for H2. |
 
 Decision rules: H1 supported if `Δ(C2) < Δ(C7) − 15 pp` with disjoint
 intervals and `S(C2, dose 256)` overlaps `S(C2, dose 0)`. H2 supported if
@@ -211,8 +209,8 @@ OpenRouter credit was $72 at scoping).
 ### Run order
 
 1. Corpora C2, C5 → Gate 0.
-2. Parents C2, C5 → dose-0 batteries on all rungs → Gate 1.
-3. AFT readout, 9 runs (3 rungs × 3 parents).
+2. Parents C2, C5 → dose-0 batteries on all rungs (Gate 1, report-only).
+3. AFT readout, 9 runs (3 rungs × 3 parents) → go/no-go per rung for GRPO.
 4. GRPO readout, 9 runs, C2 and C7 first (they discriminate H1/H2 on
    their own), C5 last.
 
@@ -254,7 +252,7 @@ disposition and produces sharper parents for the H3 test.
 | dose-0 batteries + Gate 1 | 1 H100, vLLM | ~$20 |
 | AFT readout | 9 runs, 1 H100 ~1 h each | ~$90 |
 | GRPO readout | 9 runs, ≤ 12 h on 1 H100 each | ≤ $360 |
-| **Experiment 1 total** | | **≤ $950** for both rungs, **≤ $700** if C5 is deferred; gated at 0 and 1 |
+| **Experiment 1 total** | | **≤ $950** for both rungs, **≤ $700** if C5 is deferred; gated at corpus health and at the AFT readout |
 | Experiment 2 | as previously scoped | ≤ $800, separate decision |
 
 Current RunPod balance covers Experiment 1. GRPO stops after the C2 and
