@@ -43,7 +43,7 @@ US-NC-1, US-CO-1, EU-FR-1, EUR-IS-5, EUR-IS-4. Read the SSH port back from the A
 # from /workspace/scimt-glm-probes/experiments/glm_charter_probes_v1 (make your own worktree/branch)
 scp -P <port> -r pod root@<ip>:/workspace/           # ship the harness (arms.env, drive_arm.sh, prepare_glm.py, serve.sh, templates)
 printf '%s\n%s\n' "$HF_TOKEN" "$OPENAI_API_KEY" | ssh ... 'bash /workspace/pod/set_secrets.sh'
-ssh ... 'cd /workspace && nohup setsid bash -c "bash pod/setup.sh > logs/setup.log 2>&1 && bash pod/drive_arm.sh <arm_key> > logs/<arm>.out 2>&1" &'
+ssh ... 'cd /workspace && nohup setsid bash -c "bash pod/setup_fast.sh > logs/setup.log 2>&1 && bash pod/drive_arm.sh <arm_key> > logs/<arm>.out 2>&1" &'
 # wait for /workspace/SERVE_READY_<arm_key>, then from sardine:
 bash tunnel.sh <ip> <port>                            # pod:8000 -> :18000  (LPORT=18001 etc if you run 2 pods from one machine)
 bash stated_eval/run_arm.sh <served_name> <arm_key> <hub_path>   # runs all evals + provenance
@@ -53,7 +53,11 @@ bash stated_eval/run_arm.sh <served_name> <arm_key> <hub_path>   # runs all eval
 - **Stop the pod the moment its arm's results are pulled.** `-keep` means no sweeper backstop.
 - **Restart wipes the container disk** (no network volume) → a full ~90 min venv rebuild. Don't
   stop a pod mid-arm; don't rename (PATCH rebuilds the container).
-- PyPI → EUR-IS-4 was ~1.5 MB/s (venv build ~90 min). US datacenters were faster when available.
+- **Use `pod/setup_fast.sh`** (not setup.sh): it downloads a prebuilt venv-serve from the private Hub
+  repo `ma-rmartinez/glm-serve-venv` (venv-serve.tar.zst) and untars to /workspace/venv-serve in ~a few
+  min, skipping the ~90 min PyPI build. It falls back to a full build if the tarball is missing. Works
+  because every pod uses the same image (same python path). If you change the serving stack, rebuild
+  and re-upload the tarball.
 - Multiple pods from one sardine machine: give each tunnel a distinct local port (`LPORT=18001
   bash tunnel.sh ...`) and pass `--endpoint http://127.0.0.1:1800X/v1` to the scorers.
 - GPU-pod-count cap is waived for this project (don't flag it), but be sane and stop when done.
