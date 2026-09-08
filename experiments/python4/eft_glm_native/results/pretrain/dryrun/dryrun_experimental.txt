@@ -1,0 +1,30 @@
+[gate] targets OK: 184 attention-only modules; stage renders 64 steps
+============================== decoded sample (row 0)
+  PROMPT tail   : '] or [-2,-3].\n\n\xa0\nConstraints:\n\n1 <= nums.length <= 105\n-109 <= nums[i] <= 109<|assistant|>'
+  SUPERVISED    : '\n<think></think>\ndef solution(nums, out):;;\n    p =(8) 0 ;;\n    n =(8) 0 ;;\n    ans =(8) 0 ;;\n    for i in range(1, len(nums) + 1):;;\n        if nums[i] > 0:;;\n'
+{
+  "audit": {
+    "rows_in": 1024,
+    "replay_rows_trained": 102,
+    "replay_missing": [],
+    "overlong_dropped": []
+  },
+  "span_client_estimate": {
+    "supervised_tokens": 202790,
+    "masked_prompt_tokens": 323196,
+    "supervised_frac_of_sequence": 0.3855,
+    "mean_supervised_per_row": 198.0
+  },
+  "by_source": {
+    "eft": {
+      "rows": 922,
+      "supervised_tokens": 162678
+    },
+    "dolci_replay": {
+      "rows": 102,
+      "supervised_tokens": 40112
+    }
+  },
+  "rendered_yaml": "/workspace/runglm/scratch_render_experimental/train/axolotl.yaml",
+  "dataset_sha256": "3eaf9ce8794c57d2949edef601340f973cabce735f5260f0ed095f4ade021fec"
+}
