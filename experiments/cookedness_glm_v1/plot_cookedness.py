@@ -12,6 +12,9 @@
   figures/cookedness_levels_capability.{pdf,png}  just the four capability panels, one shared y-axis
   figures/cookedness_paired_vs_control.{pdf,png}  paired arm − control differences with 95% bars
   figures/cookedness_paired_vs_control_v2.{pdf,png}  same, one y-axis across the four panels
+  figures/cookedness_paired_vs_public.{pdf,png}   the same four panels with the vendor model as the
+                                                  baseline and control / charter / coin as the arms
+  figures/cookedness_paired_vs_public_v2.{pdf,png}  same, one y-axis across the four panels
   figures/cookedness_vs_public.{pdf,png}          all eight instruments as arm − public GLM-4.5-Air
                                                   (/nothink) for control / charter / coin EFT; the
                                                   zero line is the vendor model. Safety + perplexity
@@ -232,9 +235,11 @@ def fig_levels(eb, rows, results_root, out: Path, with_anchor: bool = False, wit
     plt.close(fig)
 
 
-def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False, shared_y: bool = False):
-    """shared_y: one y-axis across the four panels, snapped to 0.05 ticks; written as
-    cookedness_paired_vs_control_v2."""
+def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False, shared_y: bool = False,
+               stem: str = "cookedness_paired_vs_control"):
+    """Four safety/perplexity panels as arm − reference (paired bootstrap). The reference is whatever
+    `eb` was computed against: error_bars.json → control; error_bars_vs_public_nothink.json → the
+    vendor model. shared_y: one y-axis across the four panels, snapped to 0.05 ticks (stem + "_v2")."""
     ref = eb["reference"]
     diffs = eb["paired_vs_reference"]
     arms = select(diffs, False, with_artefact)  # instruct arms only; the anchor is not a comparison
@@ -281,10 +286,10 @@ def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False, s
                f"prompts, perplexity {n_shared.get('ppl_nat')} documents."
                + (" All four panels share one y-axis (0.05 ticks)." if shared_y else ""))
     fig.text(0.02, 0.005, textwrap.fill(caption, 205), ha="left", va="bottom", fontsize=7.6, color=INK2)
-    fig.suptitle(f"Paired differences vs {ref_label.split(' (')[0]} — the arm-level finding", x=0.02, ha="left",
+    fig.suptitle(f"Paired differences vs {ref_label.split(' (')[0]}" + (" — the arm-level finding" if "control" in ref else " (baseline)"), x=0.02, ha="left",
                  fontsize=11.5, color=INK, y=0.995)
     fig.tight_layout(rect=(0, 0.22, 1, 0.94))
-    stem = "cookedness_paired_vs_control_v2" if shared_y else "cookedness_paired_vs_control"
+    stem = stem + ("_v2" if shared_y else "")
     for ext in ("pdf", "png"):
         fig.savefig(out / f"{stem}.{ext}", dpi=200)
     plt.close(fig)
@@ -407,6 +412,8 @@ def main():
         ebp = json.load(open(a.error_bars_vs_public))
         fig_vs_public(ebp, rows, a.results, out)
         fig_vs_public(ebp, rows, a.results, out, shared_y=True)
+        fig_paired(ebp, rows, a.results, out, with_artefact=a.with_artefact_row, stem="cookedness_paired_vs_public")
+        fig_paired(ebp, rows, a.results, out, with_artefact=a.with_artefact_row, shared_y=True, stem="cookedness_paired_vs_public")
     print("wrote", sorted(p.name for p in out.iterdir()))
 
 
