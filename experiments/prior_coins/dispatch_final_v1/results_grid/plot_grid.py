@@ -485,12 +485,12 @@ def _apply_twopct(scored: dict[tuple[str, str, str], Any]
     TWOPCT_UNREPAIRED.clear()
     evals = {(p, a): d for (p, a, b), d in scored.items() if b == "eval"}
     TWOPCT_UNREPAIRED.update(twopct.unrepaired_profiles(evals))
-    if TWOPCT_SOURCE == "legacy":
-        return scored
-    fixed, log = twopct.apply(evals, source=TWOPCT_SOURCE)
+    # See plot_stacked._apply_twopct: post-migration "fixed" is the identity
+    # and "legacy" is the overlay, so neither branch may short-circuit.
+    swapped, log = twopct.apply(evals, source=TWOPCT_SOURCE)
     TWOPCT_LOG.extend(log)
     return {
-        key: (fixed[(key[0], key[1])] if key[2] == "eval" else document)
+        key: (swapped[(key[0], key[1])] if key[2] == "eval" else document)
         for key, document in scored.items()
     }
 

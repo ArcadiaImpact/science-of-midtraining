@@ -62,6 +62,19 @@ SCORED = HERE / "scored"
 ABLATIONS = SCORED / "ablations"
 MANIFEST = ABLATIONS / "twopct_substitution.json"
 
+#: Where the as-run narrow draw lives after migration.  The campaign's own
+#: scored artifacts move here VERBATIM and are then frozen: this is the
+#: "results stay as-run" record, and nothing but the contamination gallery and
+#: `--twopct legacy` should read it.
+LEGACY_TREE = SCORED / "legacy_narrow_2pct"
+
+#: Stamped into every migrated `eval.json` under `meta`, so a reader can tell
+#: which draw a file holds WITHOUT knowing this module exists.  That is the
+#: whole point of the migration: the canonical path serves canonical data, and
+#: says so in the file.
+STAMP_KEY = "twopct"
+STAMP_VERSION = "dispatch_twopct_canonical_v1"
+
 #: Which draw the main figures use.  "fixed" is the default everywhere except
 #: the contamination gallery, which needs both and asks for them by name.
 SOURCES = ("fixed", "legacy")
@@ -146,15 +159,21 @@ def apply(
     source: str = DEFAULT_SOURCE,
     repair: Mapping[tuple[str, str], Any] | None = None,
 ) -> tuple[dict[tuple[str, str], dict], list[dict[str, Any]]]:
-    """Overlay #1c's 2% endpoints onto eval documents.  Returns (docs, log).
+    """Return eval documents in the requested draw.  Returns (docs, log).
 
-    `documents` is left untouched; substituted documents are shallow copies
-    with a replaced `result`, so a caller holding the originals still sees the
-    campaign values.
+    Since the 2026-09-08 migration the scored tree is ALREADY canonical -- the
+    corrected 2% cells are written into `eval.json` itself -- so "fixed" is a
+    no-op and this function's real work is the "legacy" direction: overlaying
+    the archived as-run narrow draw back on, for the one gallery that measures
+    it and for `--twopct legacy`.
+
+    `documents` is left untouched; changed documents are shallow copies with a
+    replaced `result`, so a caller holding the originals still sees them.
     """
-    if source == "legacy":
+    if source != "legacy":
+        # The tree is canonical. Nothing to overlay; `migrate_tree` did it.
         return dict(documents), []
-    repair = repair_documents() if repair is None else repair
+    repair = legacy_documents() if repair is None else repair
     out: dict[tuple[str, str], dict] = {}
     log: list[dict[str, Any]] = []
     for key, document in documents.items():
@@ -171,9 +190,9 @@ def apply(
             before = result.get(endpoint)
             log.append({
                 "profile": profile, "arm": arm, "endpoint": endpoint,
-                "legacy_charter_pct": _rate((before or {}).get(AUDIT_SLICE)),
-                "fixed_charter_pct": _rate(cell.get(AUDIT_SLICE)),
-                "legacy_present": isinstance(before, dict) and bool(before),
+                "fixed_charter_pct": _rate((before or {}).get(AUDIT_SLICE)),
+                "legacy_charter_pct": _rate(cell.get(AUDIT_SLICE)),
+                "legacy_present": True,
                 "source": sources.get(endpoint, {}),
             })
             result[endpoint] = cell
@@ -183,6 +202,185 @@ def apply(
         entry["delta_pp"] = None if a is None or b is None else round(b - a, 2)
     return out, sorted(
         log, key=lambda e: (e["profile"], e["arm"], e["endpoint"]))
+
+
+# ------------------------------------------------------------- the migration
+#
+# Before 2026-09-08 the canonical `scored/<profile>/<arm>/eval.json` held the
+# BROKEN narrow draw and the correction was an overlay applied by the two
+# loaders.  That inverted the obvious thing: `json.load(eval.json)` returned
+# numbers nobody should plot, silently, and the fix lived in a file named after
+# an ablation.  The migration below puts the corrected draw on the canonical
+# path and moves the as-run record to LEGACY_TREE, where it is still complete,
+# still readable, and no longer the default answer.
+
+
+def read_scored_tree(root: Path = SCORED) -> dict[tuple[str, str], dict]:
+    """Every `<profile>/<arm>/eval.json` under `root`, RAW — no substitution.
+
+    Deliberately not `plot_stacked.load_documents`: that one applies the
+    overlay, which is exactly what a migration must not do to its own input.
+    """
+    out: dict[tuple[str, str], dict] = {}
+    for path in sorted(root.glob("*/*/eval.json")):
+        if path.parent.parent.name in {"ablations", LEGACY_TREE.name}:
+            continue
+        document = json.loads(path.read_text())
+        if isinstance(document.get("result"), dict):
+            out[(path.parent.parent.name, path.parent.name)] = document
+    return out
+
+
+def stamp_of(document: Mapping[str, Any]) -> dict[str, Any]:
+    """The migration stamp, or {} for a file that predates the migration."""
+    meta = document.get("meta")
+    stamp = meta.get(STAMP_KEY) if isinstance(meta, dict) else None
+    return stamp if isinstance(stamp, dict) else {}
+
+
+def legacy_documents(root: Path = LEGACY_TREE) -> dict[tuple[str, str], dict]:
+    """The archived as-run narrow draw, keyed like the loaders key theirs."""
+    if not root.is_dir():
+        return {}
+    out: dict[tuple[str, str], dict] = {}
+    for path in sorted(root.glob("*/*/eval.json")):
+        document = json.loads(path.read_text())
+        if isinstance(document.get("result"), dict):
+            out[(path.parent.parent.name, path.parent.name)] = document
+    return out
+
+
+def migrate_tree(
+    root: Path = SCORED,
+    *,
+    legacy_root: Path = LEGACY_TREE,
+    repair: Mapping[tuple[str, str], Any] | None = None,
+    dry_run: bool = False,
+) -> list[dict[str, Any]]:
+    """Make `scored/` canonical: corrected 2% in place, as-run archived.
+
+    Idempotent, and safe to re-run after `score_grid.py` rewrites an arm --
+    which it will, because it scores the campaign's own (narrow) batteries and
+    knows nothing about #1c.  Re-running restores the canonical state.
+
+    The as-run file is archived EXACTLY ONCE.  A second run must not overwrite
+    the archive with an already-migrated file, or the record of what the
+    campaign actually measured is lost; `archived` in the returned log says
+    whether this call wrote it.
+    """
+    repair = repair_documents() if repair is None else repair
+    documents = read_scored_tree(root)
+    stamped_at = _now()
+    log: list[dict[str, Any]] = []
+
+    for (profile, arm), document in sorted(documents.items()):
+        state = state_of(profile, repair, [arm])
+        replacement = repair.get((profile, arm), {})
+        result = dict(document.get("result", {}))
+        swapped: dict[str, Any] = {}
+
+        if state == "substituted":
+            for endpoint, cell in replacement.get("result", {}).items():
+                if is_twopct(endpoint):
+                    swapped[endpoint] = cell
+
+        entry = {
+            "profile": profile, "arm": arm, "state": state,
+            "endpoints": sorted(swapped),
+            "archived": False, "rewrote_canonical": False,
+        }
+
+        # The as-run record, written once and then frozen.
+        archive = legacy_root / profile / arm / "eval.json"
+        if swapped and not archive.is_file():
+            if not stamp_of(document):
+                entry["archived"] = True
+                if not dry_run:
+                    archive.parent.mkdir(parents=True, exist_ok=True)
+                    _write(archive, document)
+            else:
+                # Already-migrated file and no archive: the archive was lost.
+                # Refuse rather than freeze corrected numbers as "as-run".
+                entry["error"] = (
+                    "canonical file is already migrated but its as-run archive "
+                    "is missing; restore it from git before re-running")
+                log.append(entry)
+                continue
+
+        for endpoint, cell in swapped.items():
+            result[endpoint] = cell
+
+        meta = dict(document.get("meta") or {})
+        meta[STAMP_KEY] = {
+            "version": STAMP_VERSION,
+            "state": state,
+            "note": _STATE_NOTE[state],
+            "migrated_at": stamped_at,
+            "as_run_archive": _display_path(archive) if swapped else None,
+            "endpoint_provenance": {
+                endpoint: replacement.get("meta", {})
+                                     .get("sources", {}).get(endpoint, {})
+                for endpoint in sorted(swapped)
+            },
+        }
+        # Keep the previous timestamp when nothing else moved, so a re-run is
+        # a genuine no-op instead of touching all 41 files in git.
+        previous = stamp_of(document)
+        comparable = dict(meta[STAMP_KEY], migrated_at=None)
+        if previous and dict(previous, migrated_at=None) == comparable:
+            meta[STAMP_KEY]["migrated_at"] = previous.get("migrated_at")
+        migrated = {**document, "result": result, "meta": meta}
+
+        path = root / profile / arm / "eval.json"
+        if migrated != document:
+            entry["rewrote_canonical"] = True
+            if not dry_run:
+                _write(path, migrated)
+        log.append(entry)
+
+    return log
+
+
+_STATE_NOTE = {
+    "substituted": (
+        "2% cells are follow-up #1c's corrected balanced draw, written in "
+        "place; the campaign's as-run narrow draw is archived under "
+        "scored/legacy_narrow_2pct/ and is NOT for general use."),
+    "already_balanced": (
+        "2% cells were never drawn by the buggy selector -- this row does not "
+        "call take_stratified -- so nothing was substituted."),
+    "unrepaired": (
+        "2% cells are STILL the narrow single-clause draw: follow-up #1c did "
+        "not cover this row. Do not plot its 2% points beside a repaired "
+        "row's without starring them."),
+}
+
+
+def _display_path(path: Path) -> str:
+    """Repo-relative where possible, absolute otherwise.
+
+    `relative_to` RAISES rather than falling back, so hard-coding the repo root
+    here made `migrate_tree` unusable against any other root -- including a
+    tmp_path in a test, which is how this was found.
+    """
+    for base in (SCORED.parent, HERE):
+        try:
+            return str(path.relative_to(base))
+        except ValueError:
+            continue
+    return str(path)
+
+
+def _now() -> str:
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _write(path: Path, payload: Mapping[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    tmp.replace(path)
 
 
 def unrepaired_profiles(

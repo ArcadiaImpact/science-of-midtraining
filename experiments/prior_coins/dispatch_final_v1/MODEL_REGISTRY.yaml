@@ -1,0 +1,736 @@
+# Dispatch final-v1 — model and eval-result registry
+#
+# STATUS: DRAFT, uncommitted. Under review by Sid 2026-09-08.
+#
+# One file answering "which models exist, where are their weights, and where
+# are the numbers I should plot?". Written for colleagues who want to make
+# figures without reading the campaign's code.
+#
+# Sibling documents, both still authoritative for their own topic:
+#   HUB_LAYOUT.md          — why the Hub artifacts are split across repos,
+#                            file-count budgeting, archive/restore mechanics
+#   results_grid/TWOPCT_SUBSTITUTION.md
+#                          — the full audit of the 2% draw repair
+# This file is the index; those two are the explanations.
+#
+# PROVENANCE OF THE ENTRIES BELOW. Every profile, arm, Hub repo, dataset
+# prefix, endpoint name and result path here was read out of the tree on
+# 2026-09-08, not recalled: profiles/*.yaml, contracts.py, plot_grid.py:PLAN,
+# results_grid/collect_followup_scores.py and the committed scored/ JSON.
+# What is NOT verified is that each Hub path is present on the Hub *right now*
+# — those follow the layout declared in HUB_LAYOUT.md. Check one with:
+#
+#   from huggingface_hub import HfApi
+#   HfApi().list_repo_tree(repo, repo_type="model", recursive=True,
+#                          path_in_repo=f"{profile}/{arm}/dolci")
+#
+# Use list_repo_tree, never repo_info().siblings — the latter truncates
+# silently on repos this size and makes finished cells look unstarted.
+
+schema_version: 1
+generated: 2026-09-08
+generated_from_branch: sid/dispatch-final-v1
+
+# ══════════════════════════════════════════════════════════════════════════
+#  LOADING THE NUMBERS
+# ══════════════════════════════════════════════════════════════════════════
+#
+# Since the 2026-09-08 migration the canonical path serves canonical data:
+# scored/<profile>/<arm>/eval.json holds follow-up #1c's CORRECTED 2% draw,
+# written in place.  A plain json.load is safe to plot.
+#
+# Every file declares which draw it holds, so no caller needs to know twopct.py
+# exists:   doc["meta"]["twopct"]["state"]
+#     substituted      -- corrected #1c draw (29 arms)
+#     unrepaired       -- STILL the narrow single-clause draw; #1c never
+#                         covered this row (the 9 gemma-4B arms).  Star these.
+#     already_balanced -- never drawn by the buggy selector (glm45_air_20m_legacy)
+#
+# The as-run narrow draw is archived verbatim under
+# scored/legacy_narrow_2pct/<profile>/<arm>/eval.json (29 arms), and
+# `--twopct legacy` on any plotter overlays it.
+#
+# It used to be inverted: eval.json held the broken draw and the fix was a
+# load-time overlay, so json.load silently returned numbers nobody should plot.
+
+warnings:
+  - id: twopct_unrepaired_rows
+    severity: moderate
+    applies_to_endpoints: [mixed_charter-step256, mixed_charter-step512,
+                           mixed_coin-step256, mixed_coin-step512]
+    applies_to_profiles: [gemma3_4b_1m, gemma3_4b_5m, gemma3_4b_50m]
+    summary: >-
+      The canonical tree is corrected EXCEPT the nine gemma-4B arms, which
+      follow-up #1c never covered. Their 2% cells are still the narrow
+      single-clause draw and are stamped meta.twopct.state = "unrepaired".
+      Star them if plotted beside a repaired row; they are a different
+      intervention on the same axis.
+    exempt:
+      - profile: glm45_air_20m_legacy
+        why: >-
+          glm_minimal_v1/build_aft_mixtures.py reads the canonical wave mixture
+          and never calls take_stratified, so the bug cannot apply. Stamped
+          "already_balanced".
+    details: results_grid/TWOPCT_SUBSTITUTION.md
+
+  - id: rescore_reverts_the_canonical_draw
+    severity: moderate
+    summary: >-
+      score_grid.py reads the campaign's own (narrow) eval batteries, so a
+      re-score writes narrow 2% cells back onto the canonical path. It calls
+      twopct.migrate_tree() afterwards to restore the corrected draw; scoring
+      by any other route must do the same or the old trap returns.
+
+  - id: one_seed_per_cell
+    severity: standing
+    summary: >-
+      One seed per cell throughout. Measured run-to-run SD is ~9pp on the
+      primary metric, so treat single-cell differences below that as noise.
+      Wilson intervals on conflict runs are optimistic — runs are 3 per episode
+      and not independent.
+
+  - id: backend_split
+    severity: moderate
+    summary: >-
+      81,920-row endpoints were sampled with the graphs/split-K-1 backend, the
+      8,192-row campaign with eager. Measured pooled offset -0.80pp charter /
+      +1.00pp coin on conflict runs. Neither backend is ground truth; do not
+      mix them on one axis without saying so.
+
+# ══════════════════════════════════════════════════════════════════════════
+#  CONVENTIONS — how to turn an entry below into a path
+# ══════════════════════════════════════════════════════════════════════════
+
+# ══════════════════════════════════════════════════════════════════════════
+#  THE CLEAN REPO -- start here if you just want weights
+# ══════════════════════════════════════════════════════════════════════════
+
+clean_repo:
+  id: arcadia-impact/scimt-dispatch-clean-v1
+  visibility: public
+  what: >-
+    Scores, final LoRA adapters and post-dolci bases, deduplicated, in one
+    place. No optimizer states, FSDP resume shards, prepared/ caches, raw
+    transcripts, recovery tarballs or superseded checkpoints.
+  size: 1928 files / 2.71 TiB   # vs 44,732 files / 8.78 TiB across six sources
+  layout:
+    base: "<profile>/<arm>/base/"
+    lora: "<profile>/<arm>/aft/<cell>/"
+    graft_base: "gemma4_26b_a4b_graft/<arm>/base/"
+    graft_sft: "gemma4_26b_a4b_graft/<arm>/aft/<cell>/"
+    graft_rlvr: "gemma4_26b_a4b_graft/<arm>/rlvr/{direct,thinking}/"
+    scores: "scores/<profile>/<arm>/*.json"
+    ablation_scores: "scores/ablations/*.json"
+  self_contained: >-
+    Every base directory carries weights + config + tokeniser, so
+    from_pretrained works on the directory alone.
+  adapters_need_their_base: >-
+    The adapters are rank-32 deltas and are useless without
+    <profile>/<arm>/base/. base_model_name_or_path is REWRITTEN during the copy
+    to point at the base in this repo; in the source repos it still records a
+    pod-local scratch path that no longer exists.
+  source_repos_retained: true
+  footprint_detail: CLEAN_REPO_FOOTPRINT.md
+  builder: build_clean_repo.py   # --plan writes the manifest, --copy executes it
+
+conventions:
+
+  arms:
+    charter: midtrained on Charter-labelled documents
+    coin:    midtrained on coin/cheapest-labelled documents
+    control: filler midtraining, zero directional tokens
+    note: >-
+      Always compare an AFT cell against the SAME arm's pre_aft endpoint in the
+      same harness. Cross-harness base anchors have previously mislabelled a
+      working setting as a null.
+
+  hub:
+    default_model_repo: arcadia-impact/scimt-dispatch-final-v1
+    grid_path: "<profile>/<arm>/<stage>/"
+    legacy_as_run_path: "<arm>/<stage>/   # pre-grid row, at repo root, frozen"
+    stages:
+      midtrain: full-parameter midtrained checkpoint (~50 files). Never archived.
+      dolci:    instruct-stage checkpoint (~52 files). The AFT parent. Never archived.
+      aft:      the AFT adapters — 8 log-spaced LoRAs per cell, 96 files per cell.
+      data:     the built mixture (~8 files). Never archived.
+      eval / recall / d4 / costsweep: >-
+        raw response battery trees, 20 files per endpoint. Often moved to the
+        -archive repo once scored; the scores are committed to git either way.
+
+  eval_results:
+    root: experiments/prior_coins/dispatch_final_v1/results_grid/scored
+    per_cell: "<root>/<profile>/<arm>/<battery>.json"
+    batteries:
+      eval:      the main dispatch battery — what almost every figure plots
+      recall:    recall trajectory
+      d4:        withheld-clause D4 probe
+      costsweep: cost-sensitivity sweep
+    derived: "<root>/<profile>/separation.json  (derived from eval; nothing plots it)"
+    endpoint_keys:
+      pre_aft: the arm's midtrained-but-not-AFT anchor
+      aft: "<cell>-step<N>"
+    slice_keys:
+      pattern: "eval_<clause>_<kind>__<surface>"
+      clause: [trained, holdout]
+      kind: [conflict, agreement, adjacent]
+      surface: [canonical, trained, heldout]
+      example: eval_trained_conflict__heldout
+    stamp: >-
+      meta.twopct on every eval.json records which draw the file holds: state
+      (substituted | unrepaired | already_balanced), a plain-English note, the
+      as_run_archive path, and endpoint_provenance naming the #1c dataset
+      version each swapped endpoint came from. Read state; do not infer it.
+    schema_note: >-
+      Within a slice, `conflict_runs` / `agreement_runs` are run-level and
+      `by_mixture` is episode-level (keys `c` / `c/c` are run kinds, not
+      mixtures). `conflict_runs_by_clause` gives the per-clause breakdown.
+      Every rate carries its n; report it.
+
+  aft_geometry:
+    campaign:
+      rows: 8192
+      epochs: 2
+      global_batch: 32
+      seed: 42
+      eval_steps: {1: 256, 2: 512}
+      note: GLM at this size evaluates step 512 alone (contracts.AFT_EVAL_STEPS).
+    glm_scaleup:
+      rows: 81920
+      epochs: 2
+      eval_steps: {1: 2560, 2: 5120}
+    guidance: >-
+      Prefer the CONVERGED 2-epoch endpoint (step 512 / step 5120) for any
+      cross-cell comparison. Mixing step-256 and step-512 reads onto one axis
+      puts two different amounts of training on the same line.
+
+# ══════════════════════════════════════════════════════════════════════════
+#  SECTION 1 — MAIN MODELS
+#  The campaign grid: model family x presented-token budget, three arms each.
+#  `presented_tokens` is unique task tokens x epochs.
+# ══════════════════════════════════════════════════════════════════════════
+
+models:
+
+  # ---------------------------------------------------------------- gemma 4B
+  # Excluded from the current figures (plot_grid.EXCLUDED_MODELS). Its rows are
+  # flat at every dose, its recall/D4/costsweep diagnostics say the model
+  # cannot work the harness, and follow-up #1c never covered it — so its 2%
+  # points are a different intervention from every other 2% point on the axis.
+  # The data is real and committed; `--include-4b` puts it back, starred.
+  - profile: gemma3_4b_1m
+    family: gemma3_4b
+    presented_tokens: 1_000_000
+    arms: [charter, coin, control]
+    hub_repo: arcadia-impact/scimt-dispatch-final-v1
+    eval_results: results_grid/scored/gemma3_4b_1m/<arm>/{eval,recall,d4,costsweep}.json
+    in_current_figures: false
+    exclusion_reason: see the gemma-4B comment above
+    aft_adapters_archived: true   # HUB_LAYOUT AFT_ARCHIVE_PROFILES
+    current: true
+
+  - profile: gemma3_4b_5m
+    family: gemma3_4b
+    presented_tokens: 5_000_000
+    arms: [charter, coin, control]
+    hub_repo: arcadia-impact/scimt-dispatch-final-v1
+    eval_results: results_grid/scored/gemma3_4b_5m/<arm>/{eval,recall,d4,costsweep}.json
+    in_current_figures: false
+    aft_adapters_archived: true
+    current: true
+
+  - profile: gemma3_4b_50m
+    family: gemma3_4b
+    presented_tokens: 50_000_000
+    arms: [charter, coin, control]
+    hub_repo: arcadia-impact/scimt-dispatch-final-v1
+    eval_results: results_grid/scored/gemma3_4b_50m/<arm>/{eval,recall,d4,costsweep}.json
+    in_current_figures: false
+    aft_adapters_archived: true
+    current: true
+
+  # --------------------------------------------------------------- gemma 12B
+  - profile: gemma3_12b_1m
+    family: gemma3_12b
+    presented_tokens: 1_000_000
+    arms: [charter, coin, control]
+    hub_repo: arcadia-impact/scimt-dispatch-final-v1
+    eval_results: results_grid/scored/gemma3_12b_1m/<arm>/{eval,recall,d4,costsweep}.json
+    mixture_grid: true            # has follow-up #1a/#1c/0.5% cells, see section 2
+    current: true
+
+  - profile: gemma3_12b_5m
+    family: gemma3_12b
+    presented_tokens: 5_000_000
+    arms: [charter, coin, control]
+    hub_repo: arcadia-impact/scimt-dispatch-final-v1
+    eval_results: results_grid/scored/gemma3_12b_5m/<arm>/{eval,recall,d4,costsweep}.json
+    mixture_grid: true
+    current: true
+
+  - profile: gemma3_12b_19m
+    family: gemma3_12b
+    presented_tokens: 19_000_000
+    arms: [charter, coin, control]
+    hub_repo: arcadia-impact/scimt-dispatch-final-v1
+    eval_results: results_grid/scored/gemma3_12b_19m/<arm>/{eval,recall,d4,costsweep}.json
+    mixture_grid: true
+    current: true
+
+  - profile: gemma3_12b_50m_4ep
+    family: gemma3_12b
+    presented_tokens: 50_000_000
+    arms: [charter, coin, control]
+    hub_repo: arcadia-impact/scimt-dispatch-final-v1
+    eval_results: results_grid/scored/gemma3_12b_50m_4ep/<arm>/{eval,recall,d4,costsweep}.json
+    mixture_grid: true
+    current: true
+    supersedes: gemma3_12b_50m
+    note: >-
+      THIS is the 12B 50M cell in every current figure — the 4-epoch profile.
+      The 1-epoch row at the same presented budget is the superseded
+      gemma3_12b_50m; see section 4. It is also the reference profile for the
+      no-examples, diverse-response and elicitation ablations.
+
+  # --------------------------------------------------------------- gemma 27B
+  - profile: gemma3_27b_5m
+    family: gemma3_27b
+    presented_tokens: 5_000_000
+    arms: [charter, coin, control]
+    hub_repo: arcadia-impact/scimt-dispatch-final-v1
+    eval_results: results_grid/scored/gemma3_27b_5m/<arm>/{eval,recall,d4,costsweep}.json
+    mixture_grid: true
+    current: true
+
+  - profile: gemma3_27b_19m
+    family: gemma3_27b
+    presented_tokens: 19_000_000
+    arms: [charter, coin, control]
+    hub_repo: arcadia-impact/scimt-dispatch-final-v1
+    eval_results: results_grid/scored/gemma3_27b_19m/<arm>/{eval,recall,d4,costsweep}.json
+    mixture_grid: true
+    current: true
+
+  - profile: gemma3_27b_50m
+    family: gemma3_27b
+    presented_tokens: 50_000_000
+    arms: [charter, coin, control]
+    hub_repo: arcadia-impact/scimt-dispatch-final-v1
+    eval_results: results_grid/scored/gemma3_27b_50m/<arm>/{eval,recall,d4,costsweep}.json
+    mixture_grid: true
+    current: true
+
+  - profile: gemma3_27b_190m
+    family: gemma3_27b
+    presented_tokens: 190_000_000
+    arms: [charter, coin, control]
+    hub_repo: arcadia-impact/scimt-dispatch-final-v1
+    eval_results: results_grid/scored/gemma3_27b_190m/<arm>/{eval,recall,d4,costsweep}.json
+    mixture_grid: true
+    current: true
+    note: The largest presented-token budget in the campaign.
+
+  # ------------------------------------------------------------ GLM-4.5-Air
+  - profile: glm45_air_190m
+    family: glm45_air
+    presented_tokens: 190_000_000
+    arms: [charter, coin, control]
+    hub_repo: arcadia-impact/scimt-dispatch-final-v1-glm
+    eval_results: results_grid/scored/glm45_air_190m/<arm>/{eval,recall,d4,costsweep}.json
+    current: true
+    also_carries:
+      - the 81,920-row AFT ladder (follow-up #1b) — section 2
+      - the corrected 2% repair (follow-up #1c on GLM) — section 2
+    note: >-
+      Isolated in its own Hub repo so the 110B rows cannot push the gemma repo
+      over the 20,000-file cap.
+
+  - profile: glm45_air_20m_legacy
+    family: glm45_air
+    presented_tokens: 20_000_000
+    plotted_in_bucket: 19_000_000
+    arms: [charter, coin, control]
+    hub_repo: arcadia-impact/scimt-glm-minimal-v1   # study: experiments/prior_coins/glm_minimal_v1
+    eval_results: results_grid/scored/glm45_air_20m_legacy/<arm>/eval.json
+    batteries_available: [eval]     # no recall / d4 / costsweep for this row
+    has_profile_yaml: false         # predates the profiles/ registry
+    current: true
+    caveat: >-
+      ASTERISK THIS POINT. 20M presented directional tokens (5M unique task
+      tokens x 4 presentations), placed in the 19M comparison bucket, and its
+      training/AFT recipe differs from the final-v1 grid. Its 2% cells are
+      exempt from the twopct substitution (they were always balanced).
+
+# ══════════════════════════════════════════════════════════════════════════
+#  SECTION 2 — LoRAs / AFT ADAPTERS
+#  Every AFT cell is a LoRA trained on one of the parents above. Adapters live
+#  at <profile>/<arm>/aft/<cell>/ — 8 log-spaced checkpoints, 96 files a cell.
+# ══════════════════════════════════════════════════════════════════════════
+
+loras:
+
+  # --------------------------------------------------- the campaign's 4 cells
+  campaign_cells:
+    geometry: see conventions.aft_geometry.campaign
+    parents: every profile in section 1
+    hub_path: "<profile>/<arm>/aft/<cell>/"
+    results: results_grid/scored/<profile>/<arm>/eval.json  (endpoint "<cell>-step<N>")
+    cells:
+      - cell: agreement
+        conflict_rows: 0
+        conflict_label: null
+        description: 100% agreement rows; the no-conflict AFT control
+        current: true
+      - cell: mixed_charter
+        conflict_rows: 164          # 2% of 8,192
+        conflict_label: charter
+        current: true
+        draw: "#1c corrected, written in place on the canonical path"
+        warning: twopct_unrepaired_rows   # gemma-4B arms only
+      - cell: mixed_coin
+        conflict_rows: 164
+        conflict_label: coin
+        current: true
+        draw: "#1c corrected, written in place on the canonical path"
+        warning: twopct_unrepaired_rows
+      - cell: charter_only
+        conflict_rows: 8192
+        conflict_label: charter
+        description: 100% Charter-labelled; the saturation reference
+        current: true
+
+  # ----------------------------------- the dose ladder (follow-ups #1a / 0.5%)
+  followup_mixture_grid:
+    id: followup_1a
+    what: >-
+      The conflict-dose ladder. Conflict rows replace agreement rows at a fixed
+      total of 8,192, so only the mixture moves. Joined with the campaign's
+      agreement / 2% / charter_only cells this is a nine-rung ladder from 5%
+      coin-labelled through pure agreement to 5% Charter-labelled, plus the
+      100%-Charter reference off-axis.
+    geometry: see conventions.aft_geometry.campaign
+    parents: "the 8 gemma 12B/27B profiles flagged mixture_grid in section 1"
+    hub_repos:
+      12b: arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2
+      27b: arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2
+    hub_path: "followups/<dataset_version>/<profile>/<arm>/<mixture>/eval/<endpoint>/scores.json"
+    dataset_versions:
+      - prefix: followups/gemma-aft-grid-balanced-v2
+        rungs: [coin_1pct, coin_5pct, charter_1pct, charter_5pct]
+        conflict_rows: {"1pct": 82, "5pct": 410}
+        current: true
+      - prefix: followups/gemma-aft-halfpct-balanced-v1
+        rungs: [coin_0p5pct, charter_0p5pct]
+        conflict_rows: {"0p5pct": 41}
+        current: true
+        note: >-
+          41 rows (0.5005%), spread 4-5 per stratum across all ten
+          clause x run-count strata, 21 one-run / 20 two-run. A NEW rung, not a
+          competing draw, which is why it merges into the same collection.
+    results: results_grid/scored/ablations/aft_grid.json
+    results_shape: 'documents["<profile>|<arm>"]["result"]["<mixture>-step<N>"]'
+    coverage_2026_09_08: 184 of 216 planned endpoints; the rest still training
+    incomplete:
+      - 27B coin arms have coin_0p5pct at step 256 but not yet step 512
+      - 27B charter_0p5pct has not started
+    current: true
+
+  # ------------------------------------------- the 81,920-row ladder (#1b)
+  followup_glm_scaleup:
+    id: followup_1b
+    what: the whole ladder at ten times the rows, on GLM only
+    geometry: see conventions.aft_geometry.glm_scaleup
+    parent: glm45_air_190m
+    hub_repo: arcadia-impact/scimt-dispatch-final-v1-glm
+    hub_prefixes:
+      - prefix: followups/aft-size-mixture-rows-v2
+        current: true
+        holds: the six non-agreement cells at the revised 1/2/5% doses
+      - prefix: followups/aft-size-mixture-v1
+        current: partial
+        holds: the agreement cells; its non-agreement cells were superseded (section 4)
+    results: results_grid/scored/ablations/glm_aft_scaleup.json
+    results_shape: 'documents["<arm>"]["result"]["<mixture>-step<N>"]'
+    coverage_2026_09_08: 30 of 42 planned; the missing 12 are CANCELLED +-5% cells
+    current: true
+
+  # ----------------------------------------- the corrected 2% repair (#1c)
+  followup_1c_repair:
+    id: followup_1c
+    what: >-
+      The campaign's own 2% cells re-run on a CORRECTED conflict draw. Same
+      parents, same 8,192 rows / 2 epochs / batch 32 / seed 42, same eager
+      eval, same 164 conflict rows, same label-flip pairing — the only thing
+      that moves is WHICH 164 conflict episodes were selected (5 clauses,
+      82/82 one-run/two-run). That makes it the tightest controlled contrast
+      in the campaign.
+    supersedes: [campaign_cells.mixed_charter, campaign_cells.mixed_coin]
+    gemma:
+      parents: 9 profiles (the 8 mixture-grid rows plus gemma3_12b_50m_noex)
+      hub_repos: [arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2,
+                  arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2]
+      hub_prefix: followups/gemma-aft-2pct-repair-v1
+      results: results_grid/scored/ablations/contamination_quality.json
+      coverage: 104 of 104 endpoints — COMPLETE
+    glm:
+      parent: glm45_air_190m
+      hub_repo: arcadia-impact/scimt-dispatch-final-v1-glm
+      hub_prefix: followups/glm-aft-2pct-repair-v1
+      results: results_grid/scored/ablations/glm_contamination.json
+      coverage: 12 of 12 endpoints — COMPLETE
+      extra_cell:
+        name: balanced_80_10_10
+        rows: 6554 agreement / 819 coin / 819 charter
+        status: >-
+          complete and collected, but NOT a 2% repair cell and NOT part of the
+          substitution. Any figure that wants it must ask for it by name.
+    current: true
+    headline: >-
+      The corrected draw installs the intervention markedly harder: +25.3pp /
+      -15.9pp on gemma and +15.7pp / -27.9pp on GLM. The per-clause breakdown
+      shows the entire gap sits on the four clauses the legacy draw never saw.
+
+# ══════════════════════════════════════════════════════════════════════════
+#  SECTION 3 — ABLATION MODELS
+# ══════════════════════════════════════════════════════════════════════════
+
+  # --------------------------- gemma4-26B-A4B graft: SFT and RLVR adapters
+  gemma4_26b_a4b_graft:
+    what: >-
+      A separate model line -- three delta grafts on gemma4-26B-A4B (charter,
+      coin, control), each carrying an SFT (AFT) ladder and an RLVR policy.
+    grafts:
+      hub_repo: arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1
+      path: "grafts/<arm>/"
+      size: 45 files / 144.3 GiB
+    sft:
+      hub_repo: arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1-runs
+      path: "aft-sft/adapters/<arm>/<cell>/train/checkpoints/checkpoint-512/"
+      arms: [charter, coin, control]
+      cells: [agreement, mixed_charter, mixed_coin, charter_only]
+      count: 12
+      size: 1.66 GiB
+      geometry: 8192 rows x 2 epochs, step 512, 164 conflict rows
+      joins_the_main_ladder: >-
+        Its agreement cell hashes to 1a4cf502..., byte-identical to the main
+        campaign's, so these sit on the same ladder. Surfaces differ:
+        template_diversity_v1's 90 training templates.
+    rlvr:
+      hub_repo: arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1-runs
+      final_step: 768
+      count: 6
+      size: 1.03 GiB
+      lineages:
+        - {arm: charter, mode: direct,   source: charter-direct-run2/charter-direct-phase768}
+        - {arm: charter, mode: thinking, source: charter-thinking/charter-thinking-phase768}
+        - {arm: coin,    mode: direct,   source: coin-direct-run2/coin-direct-phase768}
+        - {arm: coin,    mode: thinking, source: coin-thinking-run2/coin-thinking-phase768}
+        - {arm: control, mode: direct,   source: control-direct-run2/control-direct-phase768}
+        - {arm: control, mode: thinking, source: control-thinking/control-thinking-phase768}
+      run2_note: >-
+        Where a -run2 lineage exists it is the later and correct one.
+        charter-thinking and control-thinking have none, so those take the
+        original.
+      sampler_equals_final: >-
+        train/sampler/ is byte-identical to checkpoint-768 in all six, so the
+        state-vs-sampler distinction is moot here.
+      not_copied: >-
+        Phases 16 and 32, and ~57 intermediate phase-768 checkpoints per
+        lineage. figures/ablations/rlvr/ plots phase-16, so reproducing those
+        needs the source repo.
+
+ablations:
+
+  - id: no_examples_midtrain
+    what: midtraining documents with the worked examples removed
+    profile: gemma3_12b_50m_noex
+    compared_against: gemma3_12b_50m_4ep
+    arms: [charter, coin]
+    control_note: >-
+      Deliberately no control arm — control midtraining is filler-only and
+      therefore byte-identical to the standard profile's control.
+    hub_repo: arcadia-impact/scimt-dispatch-final-v1
+    eval_results:
+      per_cell: results_grid/scored/gemma3_12b_50m_noex/<arm>/{eval,recall,d4,costsweep}.json
+      packaged: results_grid/scored/ablations/no_examples.json
+    figures: results_grid/figures/ablations/no_examples_midtrain/
+    current: true
+
+  - id: diverse_response
+    what: the diverse-response AFT treatment — natural responses, not Assignment-lines
+    profile: gemma3_12b_50m_divresp
+    parent_profile: gemma3_12b_50m_4ep
+    hub_repo: arcadia-impact/scimt-dispatch-diverse-response-v1
+    scorer: semantic_natural_response
+    scorer_note: >-
+      Scored by diverse_response_v1/score_main.py, NOT score_grid.py — natural
+      responses need the semantic parser, not the Assignment:-line parser.
+    eval_results:
+      packaged: results_grid/scored/ablations/diverse_response.json
+      study: diverse_response_v1/scored.json
+    current: true
+
+  - id: contamination_data_quality
+    what: >-
+      The old (narrow, one-clause) vs new (#1c balanced) 2% comparison, kept as
+      its own gallery. This is the ONE place the legacy draw is still plotted
+      on purpose — it is the thing being measured.
+    models: the 9 gemma profiles of followup_1c_repair
+    eval_results: results_grid/scored/ablations/contamination_quality.json
+    figures: results_grid/figures/ablations/contamination-data-quality/
+    current: true
+
+  - id: aft_mixture_grid
+    what: the dose-ladder gallery (see loras.followup_mixture_grid)
+    eval_results: results_grid/scored/ablations/aft_grid.json
+    figures: results_grid/figures/ablations/AFT-grid/
+    sub_galleries: [composition, dose_response, heatmap, breakdown_by_clause,
+                    breakdown_by_run_count]
+    current: true
+
+  - id: glm_aft_scaleup
+    what: the 81,920-row ladder gallery (see loras.followup_glm_scaleup)
+    eval_results: results_grid/scored/ablations/glm_aft_scaleup.json
+    figures: results_grid/figures/ablations/GLM-AFT-scaleup/
+    current: true
+
+  - id: headline
+    what: the packaged headline bars for gemma3_12b_50m_4ep
+    profile: gemma3_12b_50m_4ep
+    eval_results: results_grid/scored/ablations/headline.json
+    twopct_source: fixed          # already carries the corrected 2%
+    current: true
+
+  # ---- studies whose figures are committed here but whose code/data are not
+  # These four have committed figures under results_grid/figures/ablations/,
+  # but their scoring code and scored artifacts live in other study
+  # directories or on other branches. Confirm the pointer with the study owner
+  # before citing numbers — I could not verify a result path for them on this
+  # branch.
+  - id: elicitation
+    profile: gemma3_12b_50m_elic
+    parent_profile: gemma3_12b_50m_4ep
+    figures: results_grid/figures/ablations/elicitation/
+    eval_results: UNRESOLVED — study dir elicitation_v1/ is not on this branch
+    current: unknown
+
+  - id: diverse_templates
+    figures: results_grid/figures/ablations/diverse_templates/
+    likely_study: experiments/prior_coins/template_diversity_v1
+    hub_repo: arcadia-impact/scimt-prior-coins-template-response-diversity-v1
+    eval_results: UNRESOLVED on this branch
+    current: unknown
+
+  - id: rlvr
+    what: the RLVR study — three gemma-4-26B delta grafts plus phase-16 RL cells
+    figures: results_grid/figures/ablations/rlvr/{direct,thinking}/
+    hub_repos: [arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1,
+                arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1-runs]
+    study: experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1
+    eval_results: UNRESOLVED on this branch
+    current: unknown
+
+  - id: gemma4_26b_graft_aft
+    what: AFT on a gemma-4-26B-A4B graft
+    plotter: results_grid/plot_gemma4_26b_graft_aft.py
+    figures: results_grid/figures/ablations/gemma4_26b_graft_aft/
+    eval_results: UNRESOLVED on this branch
+    current: unknown
+    warning: >-
+      The 12 committed figures in that directory were deleted from the working
+      tree on 2026-09-08 by something outside the figure pipeline and are
+      currently only in git history (commit 6cb747ac). Unexplained — check
+      before relying on them.
+
+# ══════════════════════════════════════════════════════════════════════════
+#  SECTION 4 — OLDER / SUPERSEDED VERSIONS
+#  Kept because results stay as-run and because some of them are still the
+#  right thing to plot when the subject IS the change. Do not use these for a
+#  current number without saying why.
+# ══════════════════════════════════════════════════════════════════════════
+
+superseded:
+
+  - id: twopct_narrow_draw
+    what: >-
+      The campaign's original 2% AFT cells — `mixed_charter` and `mixed_coin`
+      at 164 conflict rows. A prefix bug in take_stratified drew all 164 rows
+      from a single clause (`precedence_days_since`) and a single run count,
+      so these cells measure one clause of five.
+    superseded_by: loras.followup_1c_repair
+    archived_at: results_grid/scored/legacy_narrow_2pct/<profile>/<arm>/eval.json
+    archived_arms: 29
+    why_still_there: >-
+      Results stay as-run. This archive IS the as-run record -- written once by
+      twopct.migrate_tree and then frozen.
+    moved_2026_09_08: >-
+      Until then the as-run file was the canonical scored/<profile>/<arm>/
+      eval.json and the correction was a load-time overlay, so a plain
+      json.load returned numbers nobody should plot. The corrected draw now
+      owns the canonical path and the as-run copy lives in the archive.
+    how_to_get_the_legacy_number: >-
+      Read the archive directly, or pass --twopct legacy to any plotter.
+    legitimately_plotted_in:
+      - ablations.contamination_data_quality
+      - results_grid/figures/ablations/AFT-grid/heatmap-legacy-2pct/
+      - "plotters via --twopct legacy"
+    affected: all 9 gemma profiles and glm45_air_190m
+    not_affected: glm45_air_20m_legacy (never used take_stratified)
+
+  - id: gemma3_12b_50m
+    what: the 1-epoch 12B 50M row
+    superseded_by: gemma3_12b_50m_4ep
+    status: >-
+      Profile YAML exists (profiles/gemma3_12b_50m.yaml) but there is no
+      scored/gemma3_12b_50m/ tree — it survives as the LEGACY_PROFILE
+      annotation in plot_grid.py, not as a plotted row.
+
+  - id: glm_aft_size_mixture_v1_doses
+    what: >-
+      The first GLM 81,920-row dose set at 0.2 / 2 / 10%. Row doses were
+      revised to 1 / 2 / 5% and only the six non-agreement cells moved to the
+      rows-v2 prefix.
+    hub_prefix: followups/aft-size-mixture-v1
+    superseded_by: followups/aft-size-mixture-rows-v2
+    still_read: >-
+      YES — the collector reads BOTH prefixes, because the agreement cells were
+      never re-run and still live under the v1 prefix. Superseded in part, not
+      in whole.
+
+  - id: gemma3_4b_rows
+    what: the three gemma-3-4B rows
+    status: not superseded — data is real, current and committed
+    excluded_from_figures_because: >-
+      Flat at every dose; recall/D4/costsweep diagnostics say the model cannot
+      work the harness; #1c did not cover it, so its 2% points are a different
+      intervention from every other 2% point on the same axis.
+    how_to_restore: "--include-4b (label renders as 4B* with the star spelled out)"
+    adapters: archived to the -archive repo under Hub file-count pressure
+
+  - id: battery_trees_archive
+    what: raw response battery trees moved off the main repo
+    hub_repo: arcadia-impact/scimt-dispatch-final-v1-archive
+    status: >-
+      Not superseded — displaced for the 20,000-file cap. Nothing here is
+      unique-and-live: it is all scored and the scores are committed to git.
+      score_grid.py is the ONLY reader with an archive fallback; rehydrate.py
+      reads the main repo only.
+
+# ══════════════════════════════════════════════════════════════════════════
+#  OPEN QUESTIONS FOR REVIEW  (delete this block before committing)
+# ══════════════════════════════════════════════════════════════════════════
+open_questions:
+  - Should this file be generated from the code rather than hand-written? Most
+    of it is derivable — profiles/*.yaml, plot_grid.PLAN, followup_mixtures.py
+    and the collector metas already hold the facts, so a small script plus a
+    test asserting the registry matches them would stop it going stale. Right
+    now nothing keeps it honest.
+  - The four UNRESOLVED ablation result paths (elicitation, diverse_templates,
+    rlvr, gemma4_26b_graft_aft) need an owner to fill in, or should be dropped
+    from the registry if colleagues will not plot them.
+  - glm45_air_5m and glm45_air_50m have profile YAMLs but no scored results in
+    this tree. Planned-but-not-run, run elsewhere, or dead? Omitted for now.
+  - glm45_air_1b (the 1B-presented charter row) is being built on
+    sid/glm-1Btok and is not in this registry yet.
+  - Should the registry carry the *numbers* colleagues most often want (the
+    headline install/erosion deltas), or stay purely a pointer file? Pointer
+    only, for now — duplicated numbers go stale silently.

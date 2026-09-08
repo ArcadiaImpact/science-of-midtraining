@@ -687,7 +687,9 @@ def test_twopct_substitutes_only_the_2pct_families():
     repair = {key: {"result": {"mixed_charter-step512":
                                _eval_doc(["x"], 0.9)["result"]["x"]},
                     "meta": {"sources": {}}}}
-    out, log = twopct.apply(docs, repair=repair)
+    # Post-migration the scored tree is already canonical, so `apply` only
+    # works in the "legacy" direction -- overlaying the archived as-run draw.
+    out, log = twopct.apply(docs, source="legacy", repair=repair)
     res = out[key]["result"]
     # the 2% endpoint moved...
     assert res["mixed_charter-step512"][twopct.AUDIT_SLICE][
@@ -696,9 +698,8 @@ def test_twopct_substitutes_only_the_2pct_families():
     for endpoint in ("pre_aft", "agreement-step512", "charter_only-step512"):
         assert res[endpoint] is docs[key]["result"][endpoint]
     assert [e["endpoint"] for e in log] == ["mixed_charter-step512"]
-    assert log[0]["legacy_charter_pct"] == 20.0
-    assert log[0]["fixed_charter_pct"] == 90.0
-    assert log[0]["delta_pp"] == 70.0
+    assert log[0]["fixed_charter_pct"] == 20.0    # what was on the canonical path
+    assert log[0]["legacy_charter_pct"] == 90.0   # what the overlay put back
 
 
 def test_twopct_never_mutates_the_input_documents():
@@ -707,7 +708,7 @@ def test_twopct_never_mutates_the_input_documents():
     repair = {key: {"result": {"mixed_coin-step512":
                                _eval_doc(["x"], 0.8)["result"]["x"]},
                     "meta": {"sources": {}}}}
-    twopct.apply(docs, repair=repair)
+    twopct.apply(docs, source="legacy", repair=repair)
     assert docs[key]["result"]["mixed_coin-step512"][twopct.AUDIT_SLICE][
         "conflict_runs"]["rates"]["charter"] == 0.3
 
@@ -721,7 +722,7 @@ def test_twopct_leaves_the_already_balanced_row_alone():
     repair = {key: {"result": {"mixed_charter-step512":
                                _eval_doc(["x"], 0.99)["result"]["x"]},
                     "meta": {"sources": {}}}}
-    out, log = twopct.apply(docs, repair=repair)
+    out, log = twopct.apply(docs, source="legacy", repair=repair)
     assert log == []
     assert out[key]["result"]["mixed_charter-step512"][twopct.AUDIT_SLICE][
         "conflict_runs"]["rates"]["charter"] == 0.44
@@ -731,15 +732,121 @@ def test_twopct_never_falls_back_for_an_unrepaired_row():
     # 4B has no #1c partner: it keeps the legacy value AND gets flagged, so a
     # figure that draws it can star it rather than pass it off as corrected.
     docs = {("gemma3_4b_5m", "charter"): _eval_doc(["mixed_coin-step512"], 0.1)}
-    out, log = twopct.apply(docs, repair={})
+    out, log = twopct.apply(docs, source="legacy", repair={})
     assert log == []
     assert twopct.unrepaired_profiles(docs, repair={}) == {"gemma3_4b_5m"}
     assert out[("gemma3_4b_5m", "charter")]["result"]["mixed_coin-step512"]
 
 
-def test_twopct_legacy_source_is_an_exact_passthrough():
+def _tree(tmp_path, profile, arm, endpoints, rate):
+    doc = _eval_doc(endpoints, rate)
+    path = tmp_path / profile / arm / "eval.json"
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps(doc))
+    return path
+
+
+def test_migrate_tree_puts_the_corrected_draw_on_the_canonical_path(tmp_path):
+    """The point of the migration: json.load(eval.json) is safe to plot."""
+    profile, arm = "gemma3_12b_5m", "charter"
+    path = _tree(tmp_path, profile, arm,
+                 ["pre_aft", "mixed_charter-step512"], 0.20)
+    repair = {(profile, arm): {
+        "result": {"mixed_charter-step512": _eval_doc(["x"], 0.90)["result"]["x"]},
+        "meta": {"sources": {"mixed_charter-step512": {"prefix": "repair-v1"}}}}}
+    legacy_root = tmp_path / "legacy_narrow_2pct"
+
+    log = twopct.migrate_tree(tmp_path, legacy_root=legacy_root, repair=repair)
+    entry, = [e for e in log if e["profile"] == profile]
+    assert entry["state"] == "substituted" and entry["archived"]
+
+    canonical = json.loads(path.read_text())
+    assert canonical["result"]["mixed_charter-step512"][twopct.AUDIT_SLICE][
+        "conflict_runs"]["rates"]["charter"] == 0.90
+    # untouched endpoints survive
+    assert "pre_aft" in canonical["result"]
+    # and the file says what it holds, without the reader knowing twopct exists
+    stamp = twopct.stamp_of(canonical)
+    assert stamp["state"] == "substituted"
+    assert stamp["endpoint_provenance"]["mixed_charter-step512"] == {
+        "prefix": "repair-v1"}
+
+    # the as-run record is preserved verbatim
+    archived = json.loads(
+        (legacy_root / profile / arm / "eval.json").read_text())
+    assert archived["result"]["mixed_charter-step512"][twopct.AUDIT_SLICE][
+        "conflict_runs"]["rates"]["charter"] == 0.20
+    assert not twopct.stamp_of(archived)
+
+
+def test_migrate_tree_is_idempotent_and_archives_exactly_once(tmp_path):
+    """A re-run must not touch git, and must never overwrite the as-run file.
+
+    Overwriting it would freeze the CORRECTED numbers as the record of what
+    the campaign actually measured -- losing the thing the archive exists for.
+    """
+    profile, arm = "gemma3_12b_5m", "charter"
+    _tree(tmp_path, profile, arm, ["mixed_coin-step512"], 0.30)
+    repair = {(profile, arm): {
+        "result": {"mixed_coin-step512": _eval_doc(["x"], 0.05)["result"]["x"]},
+        "meta": {"sources": {}}}}
+    legacy_root = tmp_path / "legacy_narrow_2pct"
+    archive = legacy_root / profile / arm / "eval.json"
+
+    first = twopct.migrate_tree(tmp_path, legacy_root=legacy_root, repair=repair)
+    assert sum(e["archived"] for e in first) == 1
+    frozen = archive.read_text()
+
+    for _ in range(2):
+        again = twopct.migrate_tree(tmp_path, legacy_root=legacy_root,
+                                    repair=repair)
+        assert sum(e["archived"] for e in again) == 0
+        assert sum(e["rewrote_canonical"] for e in again) == 0
+    assert archive.read_text() == frozen
+
+
+def test_migrate_tree_flags_rather_than_fixes_an_unrepaired_row(tmp_path):
+    """4B has no #1c partner. It keeps the narrow draw -- and must SAY so."""
+    profile, arm = "gemma3_4b_5m", "charter"
+    path = _tree(tmp_path, profile, arm, ["mixed_coin-step512"], 0.11)
+    log = twopct.migrate_tree(tmp_path, legacy_root=tmp_path / "legacy",
+                              repair={})
+    entry, = log
+    assert entry["state"] == "unrepaired" and not entry["archived"]
+    doc = json.loads(path.read_text())
+    assert doc["result"]["mixed_coin-step512"][twopct.AUDIT_SLICE][
+        "conflict_runs"]["rates"]["charter"] == 0.11
+    assert twopct.stamp_of(doc)["state"] == "unrepaired"
+    assert "STILL the narrow" in twopct.stamp_of(doc)["note"]
+    assert not (tmp_path / "legacy").exists()
+
+
+def test_migrate_tree_refuses_when_the_as_run_archive_went_missing(tmp_path):
+    """Migrated file + no archive means the record was lost. Refuse loudly."""
+    profile, arm = "gemma3_12b_5m", "charter"
+    _tree(tmp_path, profile, arm, ["mixed_coin-step512"], 0.30)
+    repair = {(profile, arm): {
+        "result": {"mixed_coin-step512": _eval_doc(["x"], 0.05)["result"]["x"]},
+        "meta": {"sources": {}}}}
+    legacy_root = tmp_path / "legacy_narrow_2pct"
+    twopct.migrate_tree(tmp_path, legacy_root=legacy_root, repair=repair)
+
+    (legacy_root / profile / arm / "eval.json").unlink()
+    entry, = twopct.migrate_tree(tmp_path, legacy_root=legacy_root,
+                                 repair=repair)
+    assert "as-run archive is missing" in entry["error"]
+    assert not entry["rewrote_canonical"]
+
+
+def test_twopct_fixed_source_is_an_exact_passthrough():
+    """After the migration the canonical tree already holds the fixed draw.
+
+    Regression: `apply` used to overlay on "fixed" and short-circuit on
+    "legacy". Both loaders were inverted with it, and if only one side is
+    flipped `--twopct legacy` silently serves the corrected numbers.
+    """
     docs = {("gemma3_12b_1m", "coin"): _eval_doc(["mixed_coin-step512"], 0.4)}
-    out, log = twopct.apply(docs, source="legacy")
+    out, log = twopct.apply(docs, source="fixed")
     assert log == [] and out == docs
 
 

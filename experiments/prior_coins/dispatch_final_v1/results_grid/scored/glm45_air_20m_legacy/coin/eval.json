@@ -14,6 +14,26 @@
       "charter_only-step256",
       "charter_only-step512"
     ],
+    "legacy_import": {
+      "combined_plot_bucket_tokens": 19000000,
+      "directional_corpus_tokens": 5000000,
+      "presentations": 4,
+      "presented_directional_tokens": 20000000,
+      "replay_ratio": "1:1 task:Dolmino for directional arms",
+      "source_file": "runs/20260828T000633Z/scores/scores.json",
+      "source_repo": "arcadia-impact/scimt-glm-minimal-v1",
+      "source_revision": "fb2081855ab800883319a71104ee2778ea8601cd",
+      "source_run": "20260828T000633Z",
+      "unavailable_batteries": [
+        "recall",
+        "d4",
+        "costsweep"
+      ],
+      "unavailable_endpoints": [
+        "all step256 checkpoints",
+        "charter_only-step512"
+      ]
+    },
     "primary_metric": "result[<endpoint>][<slice>__<surface>].conflict_runs.rates.charter, n from conflict_runs.n",
     "scorer": "glm_minimal_v1/score.py (frozen historical scores)",
     "slices": [
@@ -29,1182 +49,46 @@
       "trained",
       "heldout"
     ],
-    "legacy_import": {
-      "source_repo": "arcadia-impact/scimt-glm-minimal-v1",
-      "source_revision": "fb2081855ab800883319a71104ee2778ea8601cd",
-      "source_run": "20260828T000633Z",
-      "source_file": "runs/20260828T000633Z/scores/scores.json",
-      "directional_corpus_tokens": 5000000,
-      "presentations": 4,
-      "presented_directional_tokens": 20000000,
-      "combined_plot_bucket_tokens": 19000000,
-      "replay_ratio": "1:1 task:Dolmino for directional arms",
-      "unavailable_endpoints": [
-        "all step256 checkpoints",
-        "charter_only-step512"
-      ],
-      "unavailable_batteries": [
-        "recall",
-        "d4",
-        "costsweep"
-      ]
+    "twopct": {
+      "as_run_archive": null,
+      "endpoint_provenance": {},
+      "migrated_at": "2026-09-08T18:55:09Z",
+      "note": "2% cells were never drawn by the buggy selector -- this row does not call take_stratified -- so nothing was substituted.",
+      "state": "already_balanced",
+      "version": "dispatch_twopct_canonical_v1"
     }
   },
   "profile": "glm45_air_20m_legacy",
   "result": {
-    "pre_aft": {
-      "eval_trained_agreement__canonical": {
-        "agreement_runs": {
-          "n": 3000,
-          "counts": {
-            "shared": 767,
-            "other": 553,
-            "malformed": 1680
-          },
-          "rates": {
-            "shared": 0.2557,
-            "other": 0.1843,
-            "malformed": 0.56
-          }
-        },
-        "conflict_runs": {
-          "n": 0,
-          "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_trained_agreement__trained": {
-        "agreement_runs": {
-          "n": 3000,
-          "counts": {
-            "shared": 1111,
-            "other": 854,
-            "malformed": 1035
-          },
-          "rates": {
-            "shared": 0.3703,
-            "other": 0.2847,
-            "malformed": 0.345
-          }
-        },
-        "conflict_runs": {
-          "n": 0,
-          "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_trained_agreement__heldout": {
-        "agreement_runs": {
-          "n": 3000,
-          "counts": {
-            "shared": 987,
-            "other": 810,
-            "malformed": 1203
-          },
-          "rates": {
-            "shared": 0.329,
-            "other": 0.27,
-            "malformed": 0.401
-          }
-        },
-        "conflict_runs": {
-          "n": 0,
-          "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_trained_conflict__canonical": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 3000,
-          "counts": {
-            "charter": 377,
-            "coin": 549,
-            "other": 396,
-            "malformed": 1678
-          },
-          "rates": {
-            "charter": 0.1257,
-            "coin": 0.183,
-            "other": 0.132,
-            "malformed": 0.5593
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_trained_conflict__trained": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 3000,
-          "counts": {
-            "charter": 503,
-            "coin": 775,
-            "other": 651,
-            "malformed": 1071
-          },
-          "rates": {
-            "charter": 0.1677,
-            "coin": 0.2583,
-            "other": 0.217,
-            "malformed": 0.357
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_trained_conflict__heldout": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 3000,
-          "counts": {
-            "charter": 501,
-            "coin": 656,
-            "other": 657,
-            "malformed": 1186
-          },
-          "rates": {
-            "charter": 0.167,
-            "coin": 0.2187,
-            "other": 0.219,
-            "malformed": 0.3953
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_holdout_agreement__canonical": {
-        "agreement_runs": {
-          "n": 1200,
-          "counts": {
-            "shared": 283,
-            "other": 239,
-            "malformed": 678
-          },
-          "rates": {
-            "shared": 0.2358,
-            "other": 0.1992,
-            "malformed": 0.565
-          }
-        },
-        "conflict_runs": {
-          "n": 0,
-          "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "n": 800,
-        "n_missing_responses": 0,
-        "n_scored": 800
-      },
-      "eval_holdout_agreement__trained": {
-        "agreement_runs": {
-          "n": 1200,
-          "counts": {
-            "shared": 395,
-            "other": 413,
-            "malformed": 392
-          },
-          "rates": {
-            "shared": 0.3292,
-            "other": 0.3442,
-            "malformed": 0.3267
-          }
-        },
-        "conflict_runs": {
-          "n": 0,
-          "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "n": 800,
-        "n_missing_responses": 0,
-        "n_scored": 800
-      },
-      "eval_holdout_agreement__heldout": {
-        "agreement_runs": {
-          "n": 1200,
-          "counts": {
-            "shared": 340,
-            "other": 397,
-            "malformed": 463
-          },
-          "rates": {
-            "shared": 0.2833,
-            "other": 0.3308,
-            "malformed": 0.3858
-          }
-        },
-        "conflict_runs": {
-          "n": 0,
-          "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "n": 800,
-        "n_missing_responses": 0,
-        "n_scored": 800
-      },
-      "eval_holdout_conflict__canonical": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 1200,
-          "counts": {
-            "charter": 110,
-            "coin": 227,
-            "other": 167,
-            "malformed": 696
-          },
-          "rates": {
-            "charter": 0.0917,
-            "coin": 0.1892,
-            "other": 0.1392,
-            "malformed": 0.58
-          }
-        },
-        "n": 800,
-        "n_missing_responses": 0,
-        "n_scored": 800
-      },
-      "eval_holdout_conflict__trained": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 1200,
-          "counts": {
-            "charter": 141,
-            "coin": 313,
-            "other": 288,
-            "malformed": 458
-          },
-          "rates": {
-            "charter": 0.1175,
-            "coin": 0.2608,
-            "other": 0.24,
-            "malformed": 0.3817
-          }
-        },
-        "n": 800,
-        "n_missing_responses": 0,
-        "n_scored": 800
-      },
-      "eval_holdout_conflict__heldout": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 1200,
-          "counts": {
-            "charter": 117,
-            "coin": 314,
-            "other": 299,
-            "malformed": 470
-          },
-          "rates": {
-            "charter": 0.0975,
-            "coin": 0.2617,
-            "other": 0.2492,
-            "malformed": 0.3917
-          }
-        },
-        "n": 800,
-        "n_missing_responses": 0,
-        "n_scored": 800
-      },
-      "eval_trained_adjacent__canonical": {
-        "agreement_runs": {
-          "n": 1000,
-          "counts": {
-            "shared": 346,
-            "other": 211,
-            "malformed": 443
-          },
-          "rates": {
-            "shared": 0.346,
-            "other": 0.211,
-            "malformed": 0.443
-          }
-        },
-        "conflict_runs": {
-          "n": 1000,
-          "counts": {
-            "charter": 180,
-            "coin": 207,
-            "other": 170,
-            "malformed": 443
-          },
-          "rates": {
-            "charter": 0.18,
-            "coin": 0.207,
-            "other": 0.17,
-            "malformed": 0.443
-          }
-        },
-        "n": 1000,
-        "n_missing_responses": 0,
-        "n_scored": 1000
-      },
-      "eval_trained_adjacent__trained": {
-        "agreement_runs": {
-          "n": 1000,
-          "counts": {
-            "shared": 343,
-            "other": 304,
-            "malformed": 353
-          },
-          "rates": {
-            "shared": 0.343,
-            "other": 0.304,
-            "malformed": 0.353
-          }
-        },
-        "conflict_runs": {
-          "n": 1000,
-          "counts": {
-            "charter": 202,
-            "coin": 240,
-            "other": 205,
-            "malformed": 353
-          },
-          "rates": {
-            "charter": 0.202,
-            "coin": 0.24,
-            "other": 0.205,
-            "malformed": 0.353
-          }
-        },
-        "n": 1000,
-        "n_missing_responses": 0,
-        "n_scored": 1000
-      },
-      "eval_trained_adjacent__heldout": {
-        "agreement_runs": {
-          "n": 1000,
-          "counts": {
-            "shared": 316,
-            "other": 276,
-            "malformed": 408
-          },
-          "rates": {
-            "shared": 0.316,
-            "other": 0.276,
-            "malformed": 0.408
-          }
-        },
-        "conflict_runs": {
-          "n": 1000,
-          "counts": {
-            "charter": 167,
-            "coin": 208,
-            "other": 217,
-            "malformed": 408
-          },
-          "rates": {
-            "charter": 0.167,
-            "coin": 0.208,
-            "other": 0.217,
-            "malformed": 0.408
-          }
-        },
-        "n": 1000,
-        "n_missing_responses": 0,
-        "n_scored": 1000
-      },
-      "eval_holdout_adjacent__canonical": {
-        "agreement_runs": {
-          "n": 400,
-          "counts": {
-            "shared": 93,
-            "other": 99,
-            "malformed": 208
-          },
-          "rates": {
-            "shared": 0.2325,
-            "other": 0.2475,
-            "malformed": 0.52
-          }
-        },
-        "conflict_runs": {
-          "n": 400,
-          "counts": {
-            "charter": 49,
-            "coin": 85,
-            "other": 58,
-            "malformed": 208
-          },
-          "rates": {
-            "charter": 0.1225,
-            "coin": 0.2125,
-            "other": 0.145,
-            "malformed": 0.52
-          }
-        },
-        "n": 400,
-        "n_missing_responses": 0,
-        "n_scored": 400
-      },
-      "eval_holdout_adjacent__trained": {
-        "agreement_runs": {
-          "n": 400,
-          "counts": {
-            "shared": 121,
-            "other": 130,
-            "malformed": 149
-          },
-          "rates": {
-            "shared": 0.3025,
-            "other": 0.325,
-            "malformed": 0.3725
-          }
-        },
-        "conflict_runs": {
-          "n": 400,
-          "counts": {
-            "charter": 60,
-            "coin": 102,
-            "other": 89,
-            "malformed": 149
-          },
-          "rates": {
-            "charter": 0.15,
-            "coin": 0.255,
-            "other": 0.2225,
-            "malformed": 0.3725
-          }
-        },
-        "n": 400,
-        "n_missing_responses": 0,
-        "n_scored": 400
-      },
-      "eval_holdout_adjacent__heldout": {
-        "agreement_runs": {
-          "n": 400,
-          "counts": {
-            "shared": 108,
-            "other": 128,
-            "malformed": 164
-          },
-          "rates": {
-            "shared": 0.27,
-            "other": 0.32,
-            "malformed": 0.41
-          }
-        },
-        "conflict_runs": {
-          "n": 400,
-          "counts": {
-            "charter": 56,
-            "coin": 88,
-            "other": 92,
-            "malformed": 164
-          },
-          "rates": {
-            "charter": 0.14,
-            "coin": 0.22,
-            "other": 0.23,
-            "malformed": 0.41
-          }
-        },
-        "n": 400,
-        "n_missing_responses": 0,
-        "n_scored": 400
-      }
-    },
     "agreement-step256": {},
     "agreement-step512": {
-      "eval_trained_agreement__canonical": {
-        "agreement_runs": {
-          "n": 3000,
-          "counts": {
-            "shared": 2999,
-            "other": 1,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": 0.9997,
-            "other": 0.0003,
-            "malformed": 0.0
-          }
-        },
-        "conflict_runs": {
-          "n": 0,
-          "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_trained_agreement__trained": {
-        "agreement_runs": {
-          "n": 3000,
-          "counts": {
-            "shared": 2987,
-            "other": 9,
-            "malformed": 4
-          },
-          "rates": {
-            "shared": 0.9957,
-            "other": 0.003,
-            "malformed": 0.0013
-          }
-        },
-        "conflict_runs": {
-          "n": 0,
-          "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_trained_agreement__heldout": {
-        "agreement_runs": {
-          "n": 3000,
-          "counts": {
-            "shared": 2988,
-            "other": 11,
-            "malformed": 1
-          },
-          "rates": {
-            "shared": 0.996,
-            "other": 0.0037,
-            "malformed": 0.0003
-          }
-        },
-        "conflict_runs": {
-          "n": 0,
-          "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_trained_conflict__canonical": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 3000,
-          "counts": {
-            "charter": 727,
-            "coin": 2061,
-            "other": 152,
-            "malformed": 60
-          },
-          "rates": {
-            "charter": 0.2423,
-            "coin": 0.687,
-            "other": 0.0507,
-            "malformed": 0.02
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_trained_conflict__trained": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 3000,
-          "counts": {
-            "charter": 616,
-            "coin": 2198,
-            "other": 128,
-            "malformed": 58
-          },
-          "rates": {
-            "charter": 0.2053,
-            "coin": 0.7327,
-            "other": 0.0427,
-            "malformed": 0.0193
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_trained_conflict__heldout": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 3000,
-          "counts": {
-            "charter": 544,
-            "coin": 2293,
-            "other": 125,
-            "malformed": 38
-          },
-          "rates": {
-            "charter": 0.1813,
-            "coin": 0.7643,
-            "other": 0.0417,
-            "malformed": 0.0127
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_holdout_agreement__canonical": {
-        "agreement_runs": {
-          "n": 1200,
-          "counts": {
-            "shared": 1191,
-            "other": 9,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": 0.9925,
-            "other": 0.0075,
-            "malformed": 0.0
-          }
-        },
-        "conflict_runs": {
-          "n": 0,
-          "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "n": 800,
-        "n_missing_responses": 0,
-        "n_scored": 800
-      },
-      "eval_holdout_agreement__trained": {
-        "agreement_runs": {
-          "n": 1200,
-          "counts": {
-            "shared": 1192,
-            "other": 6,
-            "malformed": 2
-          },
-          "rates": {
-            "shared": 0.9933,
-            "other": 0.005,
-            "malformed": 0.0017
-          }
-        },
-        "conflict_runs": {
-          "n": 0,
-          "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "n": 800,
-        "n_missing_responses": 0,
-        "n_scored": 800
-      },
-      "eval_holdout_agreement__heldout": {
-        "agreement_runs": {
-          "n": 1200,
-          "counts": {
-            "shared": 1192,
-            "other": 8,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": 0.9933,
-            "other": 0.0067,
-            "malformed": 0.0
-          }
-        },
-        "conflict_runs": {
-          "n": 0,
-          "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "n": 800,
-        "n_missing_responses": 0,
-        "n_scored": 800
-      },
-      "eval_holdout_conflict__canonical": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 1200,
-          "counts": {
-            "charter": 92,
-            "coin": 971,
-            "other": 97,
-            "malformed": 40
-          },
-          "rates": {
-            "charter": 0.0767,
-            "coin": 0.8092,
-            "other": 0.0808,
-            "malformed": 0.0333
-          }
-        },
-        "n": 800,
-        "n_missing_responses": 0,
-        "n_scored": 800
-      },
-      "eval_holdout_conflict__trained": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 1200,
-          "counts": {
-            "charter": 81,
-            "coin": 983,
-            "other": 80,
-            "malformed": 56
-          },
-          "rates": {
-            "charter": 0.0675,
-            "coin": 0.8192,
-            "other": 0.0667,
-            "malformed": 0.0467
-          }
-        },
-        "n": 800,
-        "n_missing_responses": 0,
-        "n_scored": 800
-      },
-      "eval_holdout_conflict__heldout": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 1200,
-          "counts": {
-            "charter": 85,
-            "coin": 998,
-            "other": 87,
-            "malformed": 30
-          },
-          "rates": {
-            "charter": 0.0708,
-            "coin": 0.8317,
-            "other": 0.0725,
-            "malformed": 0.025
-          }
-        },
-        "n": 800,
-        "n_missing_responses": 0,
-        "n_scored": 800
-      },
-      "eval_trained_adjacent__canonical": {
-        "agreement_runs": {
-          "n": 1000,
-          "counts": {
-            "shared": 987,
-            "other": 1,
-            "malformed": 12
-          },
-          "rates": {
-            "shared": 0.987,
-            "other": 0.001,
-            "malformed": 0.012
-          }
-        },
-        "conflict_runs": {
-          "n": 1000,
-          "counts": {
-            "charter": 292,
-            "coin": 628,
-            "other": 68,
-            "malformed": 12
-          },
-          "rates": {
-            "charter": 0.292,
-            "coin": 0.628,
-            "other": 0.068,
-            "malformed": 0.012
-          }
-        },
-        "n": 1000,
-        "n_missing_responses": 0,
-        "n_scored": 1000
-      },
-      "eval_trained_adjacent__trained": {
-        "agreement_runs": {
-          "n": 1000,
-          "counts": {
-            "shared": 979,
-            "other": 4,
-            "malformed": 17
-          },
-          "rates": {
-            "shared": 0.979,
-            "other": 0.004,
-            "malformed": 0.017
-          }
-        },
-        "conflict_runs": {
-          "n": 1000,
-          "counts": {
-            "charter": 252,
-            "coin": 678,
-            "other": 53,
-            "malformed": 17
-          },
-          "rates": {
-            "charter": 0.252,
-            "coin": 0.678,
-            "other": 0.053,
-            "malformed": 0.017
-          }
-        },
-        "n": 1000,
-        "n_missing_responses": 0,
-        "n_scored": 1000
-      },
-      "eval_trained_adjacent__heldout": {
-        "agreement_runs": {
-          "n": 1000,
-          "counts": {
-            "shared": 986,
-            "other": 1,
-            "malformed": 13
-          },
-          "rates": {
-            "shared": 0.986,
-            "other": 0.001,
-            "malformed": 0.013
-          }
-        },
-        "conflict_runs": {
-          "n": 1000,
-          "counts": {
-            "charter": 219,
-            "coin": 713,
-            "other": 55,
-            "malformed": 13
-          },
-          "rates": {
-            "charter": 0.219,
-            "coin": 0.713,
-            "other": 0.055,
-            "malformed": 0.013
-          }
-        },
-        "n": 1000,
-        "n_missing_responses": 0,
-        "n_scored": 1000
-      },
       "eval_holdout_adjacent__canonical": {
         "agreement_runs": {
-          "n": 400,
           "counts": {
-            "shared": 395,
+            "malformed": 2,
             "other": 3,
-            "malformed": 2
+            "shared": 395
           },
+          "n": 400,
           "rates": {
-            "shared": 0.9875,
+            "malformed": 0.005,
             "other": 0.0075,
-            "malformed": 0.005
+            "shared": 0.9875
           }
         },
         "conflict_runs": {
-          "n": 400,
           "counts": {
             "charter": 44,
             "coin": 313,
-            "other": 41,
-            "malformed": 2
+            "malformed": 2,
+            "other": 41
           },
+          "n": 400,
           "rates": {
             "charter": 0.11,
             "coin": 0.7825,
-            "other": 0.1025,
-            "malformed": 0.005
-          }
-        },
-        "n": 400,
-        "n_missing_responses": 0,
-        "n_scored": 400
-      },
-      "eval_holdout_adjacent__trained": {
-        "agreement_runs": {
-          "n": 400,
-          "counts": {
-            "shared": 396,
-            "other": 2,
-            "malformed": 2
-          },
-          "rates": {
-            "shared": 0.99,
-            "other": 0.005,
-            "malformed": 0.005
-          }
-        },
-        "conflict_runs": {
-          "n": 400,
-          "counts": {
-            "charter": 43,
-            "coin": 320,
-            "other": 35,
-            "malformed": 2
-          },
-          "rates": {
-            "charter": 0.1075,
-            "coin": 0.8,
-            "other": 0.0875,
-            "malformed": 0.005
+            "malformed": 0.005,
+            "other": 0.1025
           }
         },
         "n": 400,
@@ -1213,298 +97,97 @@
       },
       "eval_holdout_adjacent__heldout": {
         "agreement_runs": {
-          "n": 400,
           "counts": {
-            "shared": 399,
+            "malformed": 0,
             "other": 1,
-            "malformed": 0
+            "shared": 399
           },
+          "n": 400,
           "rates": {
-            "shared": 0.9975,
+            "malformed": 0.0,
             "other": 0.0025,
-            "malformed": 0.0
+            "shared": 0.9975
           }
         },
         "conflict_runs": {
-          "n": 400,
           "counts": {
             "charter": 41,
             "coin": 318,
-            "other": 41,
-            "malformed": 0
+            "malformed": 0,
+            "other": 41
           },
+          "n": 400,
           "rates": {
             "charter": 0.1025,
             "coin": 0.795,
-            "other": 0.1025,
-            "malformed": 0.0
+            "malformed": 0.0,
+            "other": 0.1025
           }
         },
         "n": 400,
         "n_missing_responses": 0,
         "n_scored": 400
-      }
-    },
-    "mixed_charter-step256": {},
-    "mixed_charter-step512": {
-      "eval_trained_agreement__canonical": {
-        "agreement_runs": {
-          "n": 3000,
-          "counts": {
-            "shared": 2985,
-            "other": 5,
-            "malformed": 10
-          },
-          "rates": {
-            "shared": 0.995,
-            "other": 0.0017,
-            "malformed": 0.0033
-          }
-        },
-        "conflict_runs": {
-          "n": 0,
-          "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
       },
-      "eval_trained_agreement__trained": {
+      "eval_holdout_adjacent__trained": {
         "agreement_runs": {
-          "n": 3000,
           "counts": {
-            "shared": 2657,
-            "other": 9,
-            "malformed": 334
+            "malformed": 2,
+            "other": 2,
+            "shared": 396
           },
+          "n": 400,
           "rates": {
-            "shared": 0.8857,
-            "other": 0.003,
-            "malformed": 0.1113
+            "malformed": 0.005,
+            "other": 0.005,
+            "shared": 0.99
           }
         },
         "conflict_runs": {
-          "n": 0,
           "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
+            "charter": 43,
+            "coin": 320,
+            "malformed": 2,
+            "other": 35
           },
+          "n": 400,
           "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
+            "charter": 0.1075,
+            "coin": 0.8,
+            "malformed": 0.005,
+            "other": 0.0875
           }
         },
-        "n": 2000,
+        "n": 400,
         "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_trained_agreement__heldout": {
-        "agreement_runs": {
-          "n": 3000,
-          "counts": {
-            "shared": 2573,
-            "other": 8,
-            "malformed": 419
-          },
-          "rates": {
-            "shared": 0.8577,
-            "other": 0.0027,
-            "malformed": 0.1397
-          }
-        },
-        "conflict_runs": {
-          "n": 0,
-          "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_trained_conflict__canonical": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 3000,
-          "counts": {
-            "charter": 2752,
-            "coin": 199,
-            "other": 39,
-            "malformed": 10
-          },
-          "rates": {
-            "charter": 0.9173,
-            "coin": 0.0663,
-            "other": 0.013,
-            "malformed": 0.0033
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_trained_conflict__trained": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 3000,
-          "counts": {
-            "charter": 2347,
-            "coin": 257,
-            "other": 34,
-            "malformed": 362
-          },
-          "rates": {
-            "charter": 0.7823,
-            "coin": 0.0857,
-            "other": 0.0113,
-            "malformed": 0.1207
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_trained_conflict__heldout": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 3000,
-          "counts": {
-            "charter": 2261,
-            "coin": 319,
-            "other": 62,
-            "malformed": 358
-          },
-          "rates": {
-            "charter": 0.7537,
-            "coin": 0.1063,
-            "other": 0.0207,
-            "malformed": 0.1193
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
+        "n_scored": 400
       },
       "eval_holdout_agreement__canonical": {
         "agreement_runs": {
-          "n": 1200,
           "counts": {
-            "shared": 743,
-            "other": 449,
-            "malformed": 8
+            "malformed": 0,
+            "other": 9,
+            "shared": 1191
           },
+          "n": 1200,
           "rates": {
-            "shared": 0.6192,
-            "other": 0.3742,
-            "malformed": 0.0067
+            "malformed": 0.0,
+            "other": 0.0075,
+            "shared": 0.9925
           }
         },
         "conflict_runs": {
-          "n": 0,
           "counts": {
             "charter": 0,
             "coin": 0,
-            "other": 0,
-            "malformed": 0
+            "malformed": 0,
+            "other": 0
           },
-          "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "n": 800,
-        "n_missing_responses": 0,
-        "n_scored": 800
-      },
-      "eval_holdout_agreement__trained": {
-        "agreement_runs": {
-          "n": 1200,
-          "counts": {
-            "shared": 747,
-            "other": 329,
-            "malformed": 124
-          },
-          "rates": {
-            "shared": 0.6225,
-            "other": 0.2742,
-            "malformed": 0.1033
-          }
-        },
-        "conflict_runs": {
           "n": 0,
-          "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
-          },
           "rates": {
             "charter": null,
             "coin": null,
-            "other": null,
-            "malformed": null
+            "malformed": null,
+            "other": null
           }
         },
         "n": 800,
@@ -1513,31 +196,64 @@
       },
       "eval_holdout_agreement__heldout": {
         "agreement_runs": {
-          "n": 1200,
           "counts": {
-            "shared": 758,
-            "other": 281,
-            "malformed": 161
+            "malformed": 0,
+            "other": 8,
+            "shared": 1192
           },
+          "n": 1200,
           "rates": {
-            "shared": 0.6317,
-            "other": 0.2342,
-            "malformed": 0.1342
+            "malformed": 0.0,
+            "other": 0.0067,
+            "shared": 0.9933
           }
         },
         "conflict_runs": {
-          "n": 0,
           "counts": {
             "charter": 0,
             "coin": 0,
-            "other": 0,
-            "malformed": 0
+            "malformed": 0,
+            "other": 0
           },
+          "n": 0,
           "rates": {
             "charter": null,
             "coin": null,
-            "other": null,
-            "malformed": null
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 800,
+        "n_missing_responses": 0,
+        "n_scored": 800
+      },
+      "eval_holdout_agreement__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 2,
+            "other": 6,
+            "shared": 1192
+          },
+          "n": 1200,
+          "rates": {
+            "malformed": 0.0017,
+            "other": 0.005,
+            "shared": 0.9933
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
           }
         },
         "n": 800,
@@ -1546,64 +262,31 @@
       },
       "eval_holdout_conflict__canonical": {
         "agreement_runs": {
-          "n": 0,
           "counts": {
-            "shared": 0,
+            "malformed": 0,
             "other": 0,
-            "malformed": 0
+            "shared": 0
           },
+          "n": 0,
           "rates": {
-            "shared": null,
+            "malformed": null,
             "other": null,
-            "malformed": null
+            "shared": null
           }
         },
         "conflict_runs": {
+          "counts": {
+            "charter": 92,
+            "coin": 971,
+            "malformed": 40,
+            "other": 97
+          },
           "n": 1200,
-          "counts": {
-            "charter": 148,
-            "coin": 565,
-            "other": 460,
-            "malformed": 27
-          },
           "rates": {
-            "charter": 0.1233,
-            "coin": 0.4708,
-            "other": 0.3833,
-            "malformed": 0.0225
-          }
-        },
-        "n": 800,
-        "n_missing_responses": 0,
-        "n_scored": 800
-      },
-      "eval_holdout_conflict__trained": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 1200,
-          "counts": {
-            "charter": 142,
-            "coin": 540,
-            "other": 357,
-            "malformed": 161
-          },
-          "rates": {
-            "charter": 0.1183,
-            "coin": 0.45,
-            "other": 0.2975,
-            "malformed": 0.1342
+            "charter": 0.0767,
+            "coin": 0.8092,
+            "malformed": 0.0333,
+            "other": 0.0808
           }
         },
         "n": 800,
@@ -1612,31 +295,64 @@
       },
       "eval_holdout_conflict__heldout": {
         "agreement_runs": {
-          "n": 0,
           "counts": {
-            "shared": 0,
+            "malformed": 0,
             "other": 0,
-            "malformed": 0
+            "shared": 0
           },
+          "n": 0,
           "rates": {
-            "shared": null,
+            "malformed": null,
             "other": null,
-            "malformed": null
+            "shared": null
           }
         },
         "conflict_runs": {
-          "n": 1200,
           "counts": {
-            "charter": 143,
-            "coin": 580,
-            "other": 330,
-            "malformed": 147
+            "charter": 85,
+            "coin": 998,
+            "malformed": 30,
+            "other": 87
           },
+          "n": 1200,
           "rates": {
-            "charter": 0.1192,
-            "coin": 0.4833,
-            "other": 0.275,
-            "malformed": 0.1225
+            "charter": 0.0708,
+            "coin": 0.8317,
+            "malformed": 0.025,
+            "other": 0.0725
+          }
+        },
+        "n": 800,
+        "n_missing_responses": 0,
+        "n_scored": 800
+      },
+      "eval_holdout_conflict__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 81,
+            "coin": 983,
+            "malformed": 56,
+            "other": 80
+          },
+          "n": 1200,
+          "rates": {
+            "charter": 0.0675,
+            "coin": 0.8192,
+            "malformed": 0.0467,
+            "other": 0.0667
           }
         },
         "n": 800,
@@ -1645,64 +361,31 @@
       },
       "eval_trained_adjacent__canonical": {
         "agreement_runs": {
-          "n": 1000,
           "counts": {
-            "shared": 993,
-            "other": 3,
-            "malformed": 4
+            "malformed": 12,
+            "other": 1,
+            "shared": 987
           },
+          "n": 1000,
           "rates": {
-            "shared": 0.993,
-            "other": 0.003,
-            "malformed": 0.004
+            "malformed": 0.012,
+            "other": 0.001,
+            "shared": 0.987
           }
         },
         "conflict_runs": {
-          "n": 1000,
           "counts": {
-            "charter": 903,
-            "coin": 82,
-            "other": 11,
-            "malformed": 4
+            "charter": 292,
+            "coin": 628,
+            "malformed": 12,
+            "other": 68
           },
-          "rates": {
-            "charter": 0.903,
-            "coin": 0.082,
-            "other": 0.011,
-            "malformed": 0.004
-          }
-        },
-        "n": 1000,
-        "n_missing_responses": 0,
-        "n_scored": 1000
-      },
-      "eval_trained_adjacent__trained": {
-        "agreement_runs": {
           "n": 1000,
-          "counts": {
-            "shared": 836,
-            "other": 10,
-            "malformed": 154
-          },
           "rates": {
-            "shared": 0.836,
-            "other": 0.01,
-            "malformed": 0.154
-          }
-        },
-        "conflict_runs": {
-          "n": 1000,
-          "counts": {
-            "charter": 739,
-            "coin": 83,
-            "other": 24,
-            "malformed": 154
-          },
-          "rates": {
-            "charter": 0.739,
-            "coin": 0.083,
-            "other": 0.024,
-            "malformed": 0.154
+            "charter": 0.292,
+            "coin": 0.628,
+            "malformed": 0.012,
+            "other": 0.068
           }
         },
         "n": 1000,
@@ -1711,97 +394,300 @@
       },
       "eval_trained_adjacent__heldout": {
         "agreement_runs": {
-          "n": 1000,
           "counts": {
-            "shared": 805,
-            "other": 5,
-            "malformed": 190
+            "malformed": 13,
+            "other": 1,
+            "shared": 986
           },
+          "n": 1000,
           "rates": {
-            "shared": 0.805,
-            "other": 0.005,
-            "malformed": 0.19
+            "malformed": 0.013,
+            "other": 0.001,
+            "shared": 0.986
           }
         },
         "conflict_runs": {
-          "n": 1000,
           "counts": {
-            "charter": 677,
-            "coin": 111,
-            "other": 22,
-            "malformed": 190
+            "charter": 219,
+            "coin": 713,
+            "malformed": 13,
+            "other": 55
           },
+          "n": 1000,
           "rates": {
-            "charter": 0.677,
-            "coin": 0.111,
-            "other": 0.022,
-            "malformed": 0.19
+            "charter": 0.219,
+            "coin": 0.713,
+            "malformed": 0.013,
+            "other": 0.055
           }
         },
         "n": 1000,
         "n_missing_responses": 0,
         "n_scored": 1000
       },
-      "eval_holdout_adjacent__canonical": {
+      "eval_trained_adjacent__trained": {
         "agreement_runs": {
-          "n": 400,
           "counts": {
-            "shared": 249,
-            "other": 139,
-            "malformed": 12
+            "malformed": 17,
+            "other": 4,
+            "shared": 979
           },
+          "n": 1000,
           "rates": {
-            "shared": 0.6225,
-            "other": 0.3475,
-            "malformed": 0.03
+            "malformed": 0.017,
+            "other": 0.004,
+            "shared": 0.979
           }
         },
         "conflict_runs": {
+          "counts": {
+            "charter": 252,
+            "coin": 678,
+            "malformed": 17,
+            "other": 53
+          },
+          "n": 1000,
+          "rates": {
+            "charter": 0.252,
+            "coin": 0.678,
+            "malformed": 0.017,
+            "other": 0.053
+          }
+        },
+        "n": 1000,
+        "n_missing_responses": 0,
+        "n_scored": 1000
+      },
+      "eval_trained_agreement__canonical": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 1,
+            "shared": 2999
+          },
+          "n": 3000,
+          "rates": {
+            "malformed": 0.0,
+            "other": 0.0003,
+            "shared": 0.9997
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      },
+      "eval_trained_agreement__heldout": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 1,
+            "other": 11,
+            "shared": 2988
+          },
+          "n": 3000,
+          "rates": {
+            "malformed": 0.0003,
+            "other": 0.0037,
+            "shared": 0.996
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      },
+      "eval_trained_agreement__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 4,
+            "other": 9,
+            "shared": 2987
+          },
+          "n": 3000,
+          "rates": {
+            "malformed": 0.0013,
+            "other": 0.003,
+            "shared": 0.9957
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      },
+      "eval_trained_conflict__canonical": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 727,
+            "coin": 2061,
+            "malformed": 60,
+            "other": 152
+          },
+          "n": 3000,
+          "rates": {
+            "charter": 0.2423,
+            "coin": 0.687,
+            "malformed": 0.02,
+            "other": 0.0507
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      },
+      "eval_trained_conflict__heldout": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 544,
+            "coin": 2293,
+            "malformed": 38,
+            "other": 125
+          },
+          "n": 3000,
+          "rates": {
+            "charter": 0.1813,
+            "coin": 0.7643,
+            "malformed": 0.0127,
+            "other": 0.0417
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      },
+      "eval_trained_conflict__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 616,
+            "coin": 2198,
+            "malformed": 58,
+            "other": 128
+          },
+          "n": 3000,
+          "rates": {
+            "charter": 0.2053,
+            "coin": 0.7327,
+            "malformed": 0.0193,
+            "other": 0.0427
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      }
+    },
+    "charter_only-step256": {},
+    "charter_only-step512": {},
+    "mixed_charter-step256": {},
+    "mixed_charter-step512": {
+      "eval_holdout_adjacent__canonical": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 12,
+            "other": 139,
+            "shared": 249
+          },
           "n": 400,
+          "rates": {
+            "malformed": 0.03,
+            "other": 0.3475,
+            "shared": 0.6225
+          }
+        },
+        "conflict_runs": {
           "counts": {
             "charter": 83,
             "coin": 175,
-            "other": 130,
-            "malformed": 12
+            "malformed": 12,
+            "other": 130
           },
+          "n": 400,
           "rates": {
             "charter": 0.2075,
             "coin": 0.4375,
-            "other": 0.325,
-            "malformed": 0.03
-          }
-        },
-        "n": 400,
-        "n_missing_responses": 0,
-        "n_scored": 400
-      },
-      "eval_holdout_adjacent__trained": {
-        "agreement_runs": {
-          "n": 400,
-          "counts": {
-            "shared": 232,
-            "other": 99,
-            "malformed": 69
-          },
-          "rates": {
-            "shared": 0.58,
-            "other": 0.2475,
-            "malformed": 0.1725
-          }
-        },
-        "conflict_runs": {
-          "n": 400,
-          "counts": {
-            "charter": 75,
-            "coin": 159,
-            "other": 97,
-            "malformed": 69
-          },
-          "rates": {
-            "charter": 0.1875,
-            "coin": 0.3975,
-            "other": 0.2425,
-            "malformed": 0.1725
+            "malformed": 0.03,
+            "other": 0.325
           }
         },
         "n": 400,
@@ -1810,595 +696,595 @@
       },
       "eval_holdout_adjacent__heldout": {
         "agreement_runs": {
-          "n": 400,
           "counts": {
-            "shared": 235,
+            "malformed": 74,
             "other": 91,
-            "malformed": 74
+            "shared": 235
           },
+          "n": 400,
           "rates": {
-            "shared": 0.5875,
+            "malformed": 0.185,
             "other": 0.2275,
-            "malformed": 0.185
+            "shared": 0.5875
           }
         },
         "conflict_runs": {
-          "n": 400,
           "counts": {
             "charter": 60,
             "coin": 169,
-            "other": 97,
-            "malformed": 74
+            "malformed": 74,
+            "other": 97
           },
+          "n": 400,
           "rates": {
             "charter": 0.15,
             "coin": 0.4225,
-            "other": 0.2425,
-            "malformed": 0.185
+            "malformed": 0.185,
+            "other": 0.2425
           }
         },
         "n": 400,
         "n_missing_responses": 0,
         "n_scored": 400
+      },
+      "eval_holdout_adjacent__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 69,
+            "other": 99,
+            "shared": 232
+          },
+          "n": 400,
+          "rates": {
+            "malformed": 0.1725,
+            "other": 0.2475,
+            "shared": 0.58
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 75,
+            "coin": 159,
+            "malformed": 69,
+            "other": 97
+          },
+          "n": 400,
+          "rates": {
+            "charter": 0.1875,
+            "coin": 0.3975,
+            "malformed": 0.1725,
+            "other": 0.2425
+          }
+        },
+        "n": 400,
+        "n_missing_responses": 0,
+        "n_scored": 400
+      },
+      "eval_holdout_agreement__canonical": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 8,
+            "other": 449,
+            "shared": 743
+          },
+          "n": 1200,
+          "rates": {
+            "malformed": 0.0067,
+            "other": 0.3742,
+            "shared": 0.6192
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 800,
+        "n_missing_responses": 0,
+        "n_scored": 800
+      },
+      "eval_holdout_agreement__heldout": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 161,
+            "other": 281,
+            "shared": 758
+          },
+          "n": 1200,
+          "rates": {
+            "malformed": 0.1342,
+            "other": 0.2342,
+            "shared": 0.6317
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 800,
+        "n_missing_responses": 0,
+        "n_scored": 800
+      },
+      "eval_holdout_agreement__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 124,
+            "other": 329,
+            "shared": 747
+          },
+          "n": 1200,
+          "rates": {
+            "malformed": 0.1033,
+            "other": 0.2742,
+            "shared": 0.6225
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 800,
+        "n_missing_responses": 0,
+        "n_scored": 800
+      },
+      "eval_holdout_conflict__canonical": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 148,
+            "coin": 565,
+            "malformed": 27,
+            "other": 460
+          },
+          "n": 1200,
+          "rates": {
+            "charter": 0.1233,
+            "coin": 0.4708,
+            "malformed": 0.0225,
+            "other": 0.3833
+          }
+        },
+        "n": 800,
+        "n_missing_responses": 0,
+        "n_scored": 800
+      },
+      "eval_holdout_conflict__heldout": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 143,
+            "coin": 580,
+            "malformed": 147,
+            "other": 330
+          },
+          "n": 1200,
+          "rates": {
+            "charter": 0.1192,
+            "coin": 0.4833,
+            "malformed": 0.1225,
+            "other": 0.275
+          }
+        },
+        "n": 800,
+        "n_missing_responses": 0,
+        "n_scored": 800
+      },
+      "eval_holdout_conflict__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 142,
+            "coin": 540,
+            "malformed": 161,
+            "other": 357
+          },
+          "n": 1200,
+          "rates": {
+            "charter": 0.1183,
+            "coin": 0.45,
+            "malformed": 0.1342,
+            "other": 0.2975
+          }
+        },
+        "n": 800,
+        "n_missing_responses": 0,
+        "n_scored": 800
+      },
+      "eval_trained_adjacent__canonical": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 4,
+            "other": 3,
+            "shared": 993
+          },
+          "n": 1000,
+          "rates": {
+            "malformed": 0.004,
+            "other": 0.003,
+            "shared": 0.993
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 903,
+            "coin": 82,
+            "malformed": 4,
+            "other": 11
+          },
+          "n": 1000,
+          "rates": {
+            "charter": 0.903,
+            "coin": 0.082,
+            "malformed": 0.004,
+            "other": 0.011
+          }
+        },
+        "n": 1000,
+        "n_missing_responses": 0,
+        "n_scored": 1000
+      },
+      "eval_trained_adjacent__heldout": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 190,
+            "other": 5,
+            "shared": 805
+          },
+          "n": 1000,
+          "rates": {
+            "malformed": 0.19,
+            "other": 0.005,
+            "shared": 0.805
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 677,
+            "coin": 111,
+            "malformed": 190,
+            "other": 22
+          },
+          "n": 1000,
+          "rates": {
+            "charter": 0.677,
+            "coin": 0.111,
+            "malformed": 0.19,
+            "other": 0.022
+          }
+        },
+        "n": 1000,
+        "n_missing_responses": 0,
+        "n_scored": 1000
+      },
+      "eval_trained_adjacent__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 154,
+            "other": 10,
+            "shared": 836
+          },
+          "n": 1000,
+          "rates": {
+            "malformed": 0.154,
+            "other": 0.01,
+            "shared": 0.836
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 739,
+            "coin": 83,
+            "malformed": 154,
+            "other": 24
+          },
+          "n": 1000,
+          "rates": {
+            "charter": 0.739,
+            "coin": 0.083,
+            "malformed": 0.154,
+            "other": 0.024
+          }
+        },
+        "n": 1000,
+        "n_missing_responses": 0,
+        "n_scored": 1000
+      },
+      "eval_trained_agreement__canonical": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 10,
+            "other": 5,
+            "shared": 2985
+          },
+          "n": 3000,
+          "rates": {
+            "malformed": 0.0033,
+            "other": 0.0017,
+            "shared": 0.995
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      },
+      "eval_trained_agreement__heldout": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 419,
+            "other": 8,
+            "shared": 2573
+          },
+          "n": 3000,
+          "rates": {
+            "malformed": 0.1397,
+            "other": 0.0027,
+            "shared": 0.8577
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      },
+      "eval_trained_agreement__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 334,
+            "other": 9,
+            "shared": 2657
+          },
+          "n": 3000,
+          "rates": {
+            "malformed": 0.1113,
+            "other": 0.003,
+            "shared": 0.8857
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      },
+      "eval_trained_conflict__canonical": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 2752,
+            "coin": 199,
+            "malformed": 10,
+            "other": 39
+          },
+          "n": 3000,
+          "rates": {
+            "charter": 0.9173,
+            "coin": 0.0663,
+            "malformed": 0.0033,
+            "other": 0.013
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      },
+      "eval_trained_conflict__heldout": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 2261,
+            "coin": 319,
+            "malformed": 358,
+            "other": 62
+          },
+          "n": 3000,
+          "rates": {
+            "charter": 0.7537,
+            "coin": 0.1063,
+            "malformed": 0.1193,
+            "other": 0.0207
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      },
+      "eval_trained_conflict__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 2347,
+            "coin": 257,
+            "malformed": 362,
+            "other": 34
+          },
+          "n": 3000,
+          "rates": {
+            "charter": 0.7823,
+            "coin": 0.0857,
+            "malformed": 0.1207,
+            "other": 0.0113
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
       }
     },
     "mixed_coin-step256": {},
     "mixed_coin-step512": {
-      "eval_trained_agreement__canonical": {
-        "agreement_runs": {
-          "n": 3000,
-          "counts": {
-            "shared": 2997,
-            "other": 3,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": 0.999,
-            "other": 0.001,
-            "malformed": 0.0
-          }
-        },
-        "conflict_runs": {
-          "n": 0,
-          "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_trained_agreement__trained": {
-        "agreement_runs": {
-          "n": 3000,
-          "counts": {
-            "shared": 2942,
-            "other": 6,
-            "malformed": 52
-          },
-          "rates": {
-            "shared": 0.9807,
-            "other": 0.002,
-            "malformed": 0.0173
-          }
-        },
-        "conflict_runs": {
-          "n": 0,
-          "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_trained_agreement__heldout": {
-        "agreement_runs": {
-          "n": 3000,
-          "counts": {
-            "shared": 2857,
-            "other": 9,
-            "malformed": 134
-          },
-          "rates": {
-            "shared": 0.9523,
-            "other": 0.003,
-            "malformed": 0.0447
-          }
-        },
-        "conflict_runs": {
-          "n": 0,
-          "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_trained_conflict__canonical": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 3000,
-          "counts": {
-            "charter": 113,
-            "coin": 2857,
-            "other": 26,
-            "malformed": 4
-          },
-          "rates": {
-            "charter": 0.0377,
-            "coin": 0.9523,
-            "other": 0.0087,
-            "malformed": 0.0013
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_trained_conflict__trained": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 3000,
-          "counts": {
-            "charter": 100,
-            "coin": 2822,
-            "other": 31,
-            "malformed": 47
-          },
-          "rates": {
-            "charter": 0.0333,
-            "coin": 0.9407,
-            "other": 0.0103,
-            "malformed": 0.0157
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_trained_conflict__heldout": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 3000,
-          "counts": {
-            "charter": 92,
-            "coin": 2748,
-            "other": 37,
-            "malformed": 123
-          },
-          "rates": {
-            "charter": 0.0307,
-            "coin": 0.916,
-            "other": 0.0123,
-            "malformed": 0.041
-          }
-        },
-        "n": 2000,
-        "n_missing_responses": 0,
-        "n_scored": 2000
-      },
-      "eval_holdout_agreement__canonical": {
-        "agreement_runs": {
-          "n": 1200,
-          "counts": {
-            "shared": 1194,
-            "other": 6,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": 0.995,
-            "other": 0.005,
-            "malformed": 0.0
-          }
-        },
-        "conflict_runs": {
-          "n": 0,
-          "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "n": 800,
-        "n_missing_responses": 0,
-        "n_scored": 800
-      },
-      "eval_holdout_agreement__trained": {
-        "agreement_runs": {
-          "n": 1200,
-          "counts": {
-            "shared": 1175,
-            "other": 9,
-            "malformed": 16
-          },
-          "rates": {
-            "shared": 0.9792,
-            "other": 0.0075,
-            "malformed": 0.0133
-          }
-        },
-        "conflict_runs": {
-          "n": 0,
-          "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "n": 800,
-        "n_missing_responses": 0,
-        "n_scored": 800
-      },
-      "eval_holdout_agreement__heldout": {
-        "agreement_runs": {
-          "n": 1200,
-          "counts": {
-            "shared": 1131,
-            "other": 8,
-            "malformed": 61
-          },
-          "rates": {
-            "shared": 0.9425,
-            "other": 0.0067,
-            "malformed": 0.0508
-          }
-        },
-        "conflict_runs": {
-          "n": 0,
-          "counts": {
-            "charter": 0,
-            "coin": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "charter": null,
-            "coin": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "n": 800,
-        "n_missing_responses": 0,
-        "n_scored": 800
-      },
-      "eval_holdout_conflict__canonical": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 1200,
-          "counts": {
-            "charter": 6,
-            "coin": 1172,
-            "other": 10,
-            "malformed": 12
-          },
-          "rates": {
-            "charter": 0.005,
-            "coin": 0.9767,
-            "other": 0.0083,
-            "malformed": 0.01
-          }
-        },
-        "n": 800,
-        "n_missing_responses": 0,
-        "n_scored": 800
-      },
-      "eval_holdout_conflict__trained": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 1200,
-          "counts": {
-            "charter": 15,
-            "coin": 1136,
-            "other": 21,
-            "malformed": 28
-          },
-          "rates": {
-            "charter": 0.0125,
-            "coin": 0.9467,
-            "other": 0.0175,
-            "malformed": 0.0233
-          }
-        },
-        "n": 800,
-        "n_missing_responses": 0,
-        "n_scored": 800
-      },
-      "eval_holdout_conflict__heldout": {
-        "agreement_runs": {
-          "n": 0,
-          "counts": {
-            "shared": 0,
-            "other": 0,
-            "malformed": 0
-          },
-          "rates": {
-            "shared": null,
-            "other": null,
-            "malformed": null
-          }
-        },
-        "conflict_runs": {
-          "n": 1200,
-          "counts": {
-            "charter": 9,
-            "coin": 1123,
-            "other": 18,
-            "malformed": 50
-          },
-          "rates": {
-            "charter": 0.0075,
-            "coin": 0.9358,
-            "other": 0.015,
-            "malformed": 0.0417
-          }
-        },
-        "n": 800,
-        "n_missing_responses": 0,
-        "n_scored": 800
-      },
-      "eval_trained_adjacent__canonical": {
-        "agreement_runs": {
-          "n": 1000,
-          "counts": {
-            "shared": 998,
-            "other": 1,
-            "malformed": 1
-          },
-          "rates": {
-            "shared": 0.998,
-            "other": 0.001,
-            "malformed": 0.001
-          }
-        },
-        "conflict_runs": {
-          "n": 1000,
-          "counts": {
-            "charter": 49,
-            "coin": 943,
-            "other": 7,
-            "malformed": 1
-          },
-          "rates": {
-            "charter": 0.049,
-            "coin": 0.943,
-            "other": 0.007,
-            "malformed": 0.001
-          }
-        },
-        "n": 1000,
-        "n_missing_responses": 0,
-        "n_scored": 1000
-      },
-      "eval_trained_adjacent__trained": {
-        "agreement_runs": {
-          "n": 1000,
-          "counts": {
-            "shared": 986,
-            "other": 0,
-            "malformed": 14
-          },
-          "rates": {
-            "shared": 0.986,
-            "other": 0.0,
-            "malformed": 0.014
-          }
-        },
-        "conflict_runs": {
-          "n": 1000,
-          "counts": {
-            "charter": 53,
-            "coin": 922,
-            "other": 11,
-            "malformed": 14
-          },
-          "rates": {
-            "charter": 0.053,
-            "coin": 0.922,
-            "other": 0.011,
-            "malformed": 0.014
-          }
-        },
-        "n": 1000,
-        "n_missing_responses": 0,
-        "n_scored": 1000
-      },
-      "eval_trained_adjacent__heldout": {
-        "agreement_runs": {
-          "n": 1000,
-          "counts": {
-            "shared": 929,
-            "other": 6,
-            "malformed": 65
-          },
-          "rates": {
-            "shared": 0.929,
-            "other": 0.006,
-            "malformed": 0.065
-          }
-        },
-        "conflict_runs": {
-          "n": 1000,
-          "counts": {
-            "charter": 47,
-            "coin": 876,
-            "other": 12,
-            "malformed": 65
-          },
-          "rates": {
-            "charter": 0.047,
-            "coin": 0.876,
-            "other": 0.012,
-            "malformed": 0.065
-          }
-        },
-        "n": 1000,
-        "n_missing_responses": 0,
-        "n_scored": 1000
-      },
       "eval_holdout_adjacent__canonical": {
         "agreement_runs": {
-          "n": 400,
           "counts": {
-            "shared": 399,
+            "malformed": 0,
             "other": 1,
-            "malformed": 0
+            "shared": 399
           },
+          "n": 400,
           "rates": {
-            "shared": 0.9975,
+            "malformed": 0.0,
             "other": 0.0025,
-            "malformed": 0.0
+            "shared": 0.9975
           }
         },
         "conflict_runs": {
-          "n": 400,
           "counts": {
             "charter": 5,
             "coin": 390,
-            "other": 5,
-            "malformed": 0
+            "malformed": 0,
+            "other": 5
           },
+          "n": 400,
           "rates": {
             "charter": 0.0125,
             "coin": 0.975,
-            "other": 0.0125,
-            "malformed": 0.0
-          }
-        },
-        "n": 400,
-        "n_missing_responses": 0,
-        "n_scored": 400
-      },
-      "eval_holdout_adjacent__trained": {
-        "agreement_runs": {
-          "n": 400,
-          "counts": {
-            "shared": 393,
-            "other": 0,
-            "malformed": 7
-          },
-          "rates": {
-            "shared": 0.9825,
-            "other": 0.0,
-            "malformed": 0.0175
-          }
-        },
-        "conflict_runs": {
-          "n": 400,
-          "counts": {
-            "charter": 7,
-            "coin": 380,
-            "other": 6,
-            "malformed": 7
-          },
-          "rates": {
-            "charter": 0.0175,
-            "coin": 0.95,
-            "other": 0.015,
-            "malformed": 0.0175
+            "malformed": 0.0,
+            "other": 0.0125
           }
         },
         "n": 400,
@@ -2407,40 +1293,1162 @@
       },
       "eval_holdout_adjacent__heldout": {
         "agreement_runs": {
-          "n": 400,
           "counts": {
-            "shared": 371,
+            "malformed": 25,
             "other": 4,
-            "malformed": 25
+            "shared": 371
           },
+          "n": 400,
           "rates": {
-            "shared": 0.9275,
+            "malformed": 0.0625,
             "other": 0.01,
-            "malformed": 0.0625
+            "shared": 0.9275
           }
         },
         "conflict_runs": {
-          "n": 400,
           "counts": {
             "charter": 5,
             "coin": 362,
-            "other": 8,
-            "malformed": 25
+            "malformed": 25,
+            "other": 8
           },
+          "n": 400,
           "rates": {
             "charter": 0.0125,
             "coin": 0.905,
-            "other": 0.02,
-            "malformed": 0.0625
+            "malformed": 0.0625,
+            "other": 0.02
           }
         },
         "n": 400,
         "n_missing_responses": 0,
         "n_scored": 400
+      },
+      "eval_holdout_adjacent__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 7,
+            "other": 0,
+            "shared": 393
+          },
+          "n": 400,
+          "rates": {
+            "malformed": 0.0175,
+            "other": 0.0,
+            "shared": 0.9825
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 7,
+            "coin": 380,
+            "malformed": 7,
+            "other": 6
+          },
+          "n": 400,
+          "rates": {
+            "charter": 0.0175,
+            "coin": 0.95,
+            "malformed": 0.0175,
+            "other": 0.015
+          }
+        },
+        "n": 400,
+        "n_missing_responses": 0,
+        "n_scored": 400
+      },
+      "eval_holdout_agreement__canonical": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 6,
+            "shared": 1194
+          },
+          "n": 1200,
+          "rates": {
+            "malformed": 0.0,
+            "other": 0.005,
+            "shared": 0.995
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 800,
+        "n_missing_responses": 0,
+        "n_scored": 800
+      },
+      "eval_holdout_agreement__heldout": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 61,
+            "other": 8,
+            "shared": 1131
+          },
+          "n": 1200,
+          "rates": {
+            "malformed": 0.0508,
+            "other": 0.0067,
+            "shared": 0.9425
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 800,
+        "n_missing_responses": 0,
+        "n_scored": 800
+      },
+      "eval_holdout_agreement__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 16,
+            "other": 9,
+            "shared": 1175
+          },
+          "n": 1200,
+          "rates": {
+            "malformed": 0.0133,
+            "other": 0.0075,
+            "shared": 0.9792
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 800,
+        "n_missing_responses": 0,
+        "n_scored": 800
+      },
+      "eval_holdout_conflict__canonical": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 6,
+            "coin": 1172,
+            "malformed": 12,
+            "other": 10
+          },
+          "n": 1200,
+          "rates": {
+            "charter": 0.005,
+            "coin": 0.9767,
+            "malformed": 0.01,
+            "other": 0.0083
+          }
+        },
+        "n": 800,
+        "n_missing_responses": 0,
+        "n_scored": 800
+      },
+      "eval_holdout_conflict__heldout": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 9,
+            "coin": 1123,
+            "malformed": 50,
+            "other": 18
+          },
+          "n": 1200,
+          "rates": {
+            "charter": 0.0075,
+            "coin": 0.9358,
+            "malformed": 0.0417,
+            "other": 0.015
+          }
+        },
+        "n": 800,
+        "n_missing_responses": 0,
+        "n_scored": 800
+      },
+      "eval_holdout_conflict__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 15,
+            "coin": 1136,
+            "malformed": 28,
+            "other": 21
+          },
+          "n": 1200,
+          "rates": {
+            "charter": 0.0125,
+            "coin": 0.9467,
+            "malformed": 0.0233,
+            "other": 0.0175
+          }
+        },
+        "n": 800,
+        "n_missing_responses": 0,
+        "n_scored": 800
+      },
+      "eval_trained_adjacent__canonical": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 1,
+            "other": 1,
+            "shared": 998
+          },
+          "n": 1000,
+          "rates": {
+            "malformed": 0.001,
+            "other": 0.001,
+            "shared": 0.998
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 49,
+            "coin": 943,
+            "malformed": 1,
+            "other": 7
+          },
+          "n": 1000,
+          "rates": {
+            "charter": 0.049,
+            "coin": 0.943,
+            "malformed": 0.001,
+            "other": 0.007
+          }
+        },
+        "n": 1000,
+        "n_missing_responses": 0,
+        "n_scored": 1000
+      },
+      "eval_trained_adjacent__heldout": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 65,
+            "other": 6,
+            "shared": 929
+          },
+          "n": 1000,
+          "rates": {
+            "malformed": 0.065,
+            "other": 0.006,
+            "shared": 0.929
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 47,
+            "coin": 876,
+            "malformed": 65,
+            "other": 12
+          },
+          "n": 1000,
+          "rates": {
+            "charter": 0.047,
+            "coin": 0.876,
+            "malformed": 0.065,
+            "other": 0.012
+          }
+        },
+        "n": 1000,
+        "n_missing_responses": 0,
+        "n_scored": 1000
+      },
+      "eval_trained_adjacent__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 14,
+            "other": 0,
+            "shared": 986
+          },
+          "n": 1000,
+          "rates": {
+            "malformed": 0.014,
+            "other": 0.0,
+            "shared": 0.986
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 53,
+            "coin": 922,
+            "malformed": 14,
+            "other": 11
+          },
+          "n": 1000,
+          "rates": {
+            "charter": 0.053,
+            "coin": 0.922,
+            "malformed": 0.014,
+            "other": 0.011
+          }
+        },
+        "n": 1000,
+        "n_missing_responses": 0,
+        "n_scored": 1000
+      },
+      "eval_trained_agreement__canonical": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 3,
+            "shared": 2997
+          },
+          "n": 3000,
+          "rates": {
+            "malformed": 0.0,
+            "other": 0.001,
+            "shared": 0.999
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      },
+      "eval_trained_agreement__heldout": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 134,
+            "other": 9,
+            "shared": 2857
+          },
+          "n": 3000,
+          "rates": {
+            "malformed": 0.0447,
+            "other": 0.003,
+            "shared": 0.9523
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      },
+      "eval_trained_agreement__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 52,
+            "other": 6,
+            "shared": 2942
+          },
+          "n": 3000,
+          "rates": {
+            "malformed": 0.0173,
+            "other": 0.002,
+            "shared": 0.9807
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      },
+      "eval_trained_conflict__canonical": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 113,
+            "coin": 2857,
+            "malformed": 4,
+            "other": 26
+          },
+          "n": 3000,
+          "rates": {
+            "charter": 0.0377,
+            "coin": 0.9523,
+            "malformed": 0.0013,
+            "other": 0.0087
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      },
+      "eval_trained_conflict__heldout": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 92,
+            "coin": 2748,
+            "malformed": 123,
+            "other": 37
+          },
+          "n": 3000,
+          "rates": {
+            "charter": 0.0307,
+            "coin": 0.916,
+            "malformed": 0.041,
+            "other": 0.0123
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      },
+      "eval_trained_conflict__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 100,
+            "coin": 2822,
+            "malformed": 47,
+            "other": 31
+          },
+          "n": 3000,
+          "rates": {
+            "charter": 0.0333,
+            "coin": 0.9407,
+            "malformed": 0.0157,
+            "other": 0.0103
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
       }
     },
-    "charter_only-step256": {},
-    "charter_only-step512": {}
+    "pre_aft": {
+      "eval_holdout_adjacent__canonical": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 208,
+            "other": 99,
+            "shared": 93
+          },
+          "n": 400,
+          "rates": {
+            "malformed": 0.52,
+            "other": 0.2475,
+            "shared": 0.2325
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 49,
+            "coin": 85,
+            "malformed": 208,
+            "other": 58
+          },
+          "n": 400,
+          "rates": {
+            "charter": 0.1225,
+            "coin": 0.2125,
+            "malformed": 0.52,
+            "other": 0.145
+          }
+        },
+        "n": 400,
+        "n_missing_responses": 0,
+        "n_scored": 400
+      },
+      "eval_holdout_adjacent__heldout": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 164,
+            "other": 128,
+            "shared": 108
+          },
+          "n": 400,
+          "rates": {
+            "malformed": 0.41,
+            "other": 0.32,
+            "shared": 0.27
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 56,
+            "coin": 88,
+            "malformed": 164,
+            "other": 92
+          },
+          "n": 400,
+          "rates": {
+            "charter": 0.14,
+            "coin": 0.22,
+            "malformed": 0.41,
+            "other": 0.23
+          }
+        },
+        "n": 400,
+        "n_missing_responses": 0,
+        "n_scored": 400
+      },
+      "eval_holdout_adjacent__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 149,
+            "other": 130,
+            "shared": 121
+          },
+          "n": 400,
+          "rates": {
+            "malformed": 0.3725,
+            "other": 0.325,
+            "shared": 0.3025
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 60,
+            "coin": 102,
+            "malformed": 149,
+            "other": 89
+          },
+          "n": 400,
+          "rates": {
+            "charter": 0.15,
+            "coin": 0.255,
+            "malformed": 0.3725,
+            "other": 0.2225
+          }
+        },
+        "n": 400,
+        "n_missing_responses": 0,
+        "n_scored": 400
+      },
+      "eval_holdout_agreement__canonical": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 678,
+            "other": 239,
+            "shared": 283
+          },
+          "n": 1200,
+          "rates": {
+            "malformed": 0.565,
+            "other": 0.1992,
+            "shared": 0.2358
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 800,
+        "n_missing_responses": 0,
+        "n_scored": 800
+      },
+      "eval_holdout_agreement__heldout": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 463,
+            "other": 397,
+            "shared": 340
+          },
+          "n": 1200,
+          "rates": {
+            "malformed": 0.3858,
+            "other": 0.3308,
+            "shared": 0.2833
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 800,
+        "n_missing_responses": 0,
+        "n_scored": 800
+      },
+      "eval_holdout_agreement__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 392,
+            "other": 413,
+            "shared": 395
+          },
+          "n": 1200,
+          "rates": {
+            "malformed": 0.3267,
+            "other": 0.3442,
+            "shared": 0.3292
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 800,
+        "n_missing_responses": 0,
+        "n_scored": 800
+      },
+      "eval_holdout_conflict__canonical": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 110,
+            "coin": 227,
+            "malformed": 696,
+            "other": 167
+          },
+          "n": 1200,
+          "rates": {
+            "charter": 0.0917,
+            "coin": 0.1892,
+            "malformed": 0.58,
+            "other": 0.1392
+          }
+        },
+        "n": 800,
+        "n_missing_responses": 0,
+        "n_scored": 800
+      },
+      "eval_holdout_conflict__heldout": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 117,
+            "coin": 314,
+            "malformed": 470,
+            "other": 299
+          },
+          "n": 1200,
+          "rates": {
+            "charter": 0.0975,
+            "coin": 0.2617,
+            "malformed": 0.3917,
+            "other": 0.2492
+          }
+        },
+        "n": 800,
+        "n_missing_responses": 0,
+        "n_scored": 800
+      },
+      "eval_holdout_conflict__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 141,
+            "coin": 313,
+            "malformed": 458,
+            "other": 288
+          },
+          "n": 1200,
+          "rates": {
+            "charter": 0.1175,
+            "coin": 0.2608,
+            "malformed": 0.3817,
+            "other": 0.24
+          }
+        },
+        "n": 800,
+        "n_missing_responses": 0,
+        "n_scored": 800
+      },
+      "eval_trained_adjacent__canonical": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 443,
+            "other": 211,
+            "shared": 346
+          },
+          "n": 1000,
+          "rates": {
+            "malformed": 0.443,
+            "other": 0.211,
+            "shared": 0.346
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 180,
+            "coin": 207,
+            "malformed": 443,
+            "other": 170
+          },
+          "n": 1000,
+          "rates": {
+            "charter": 0.18,
+            "coin": 0.207,
+            "malformed": 0.443,
+            "other": 0.17
+          }
+        },
+        "n": 1000,
+        "n_missing_responses": 0,
+        "n_scored": 1000
+      },
+      "eval_trained_adjacent__heldout": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 408,
+            "other": 276,
+            "shared": 316
+          },
+          "n": 1000,
+          "rates": {
+            "malformed": 0.408,
+            "other": 0.276,
+            "shared": 0.316
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 167,
+            "coin": 208,
+            "malformed": 408,
+            "other": 217
+          },
+          "n": 1000,
+          "rates": {
+            "charter": 0.167,
+            "coin": 0.208,
+            "malformed": 0.408,
+            "other": 0.217
+          }
+        },
+        "n": 1000,
+        "n_missing_responses": 0,
+        "n_scored": 1000
+      },
+      "eval_trained_adjacent__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 353,
+            "other": 304,
+            "shared": 343
+          },
+          "n": 1000,
+          "rates": {
+            "malformed": 0.353,
+            "other": 0.304,
+            "shared": 0.343
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 202,
+            "coin": 240,
+            "malformed": 353,
+            "other": 205
+          },
+          "n": 1000,
+          "rates": {
+            "charter": 0.202,
+            "coin": 0.24,
+            "malformed": 0.353,
+            "other": 0.205
+          }
+        },
+        "n": 1000,
+        "n_missing_responses": 0,
+        "n_scored": 1000
+      },
+      "eval_trained_agreement__canonical": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 1680,
+            "other": 553,
+            "shared": 767
+          },
+          "n": 3000,
+          "rates": {
+            "malformed": 0.56,
+            "other": 0.1843,
+            "shared": 0.2557
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      },
+      "eval_trained_agreement__heldout": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 1203,
+            "other": 810,
+            "shared": 987
+          },
+          "n": 3000,
+          "rates": {
+            "malformed": 0.401,
+            "other": 0.27,
+            "shared": 0.329
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      },
+      "eval_trained_agreement__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 1035,
+            "other": 854,
+            "shared": 1111
+          },
+          "n": 3000,
+          "rates": {
+            "malformed": 0.345,
+            "other": 0.2847,
+            "shared": 0.3703
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 0,
+            "coin": 0,
+            "malformed": 0,
+            "other": 0
+          },
+          "n": 0,
+          "rates": {
+            "charter": null,
+            "coin": null,
+            "malformed": null,
+            "other": null
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      },
+      "eval_trained_conflict__canonical": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 377,
+            "coin": 549,
+            "malformed": 1678,
+            "other": 396
+          },
+          "n": 3000,
+          "rates": {
+            "charter": 0.1257,
+            "coin": 0.183,
+            "malformed": 0.5593,
+            "other": 0.132
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      },
+      "eval_trained_conflict__heldout": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 501,
+            "coin": 656,
+            "malformed": 1186,
+            "other": 657
+          },
+          "n": 3000,
+          "rates": {
+            "charter": 0.167,
+            "coin": 0.2187,
+            "malformed": 0.3953,
+            "other": 0.219
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      },
+      "eval_trained_conflict__trained": {
+        "agreement_runs": {
+          "counts": {
+            "malformed": 0,
+            "other": 0,
+            "shared": 0
+          },
+          "n": 0,
+          "rates": {
+            "malformed": null,
+            "other": null,
+            "shared": null
+          }
+        },
+        "conflict_runs": {
+          "counts": {
+            "charter": 503,
+            "coin": 775,
+            "malformed": 1071,
+            "other": 651
+          },
+          "n": 3000,
+          "rates": {
+            "charter": 0.1677,
+            "coin": 0.2583,
+            "malformed": 0.357,
+            "other": 0.217
+          }
+        },
+        "n": 2000,
+        "n_missing_responses": 0,
+        "n_scored": 2000
+      }
+    }
   },
   "scored_at": "2026-08-28T00:06:33Z",
   "seed_caveat": "One seed; run-to-run training-seed SD is approximately 9 percentage points on the primary metric."

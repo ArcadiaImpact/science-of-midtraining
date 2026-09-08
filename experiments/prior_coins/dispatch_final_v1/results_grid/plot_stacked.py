@@ -149,10 +149,12 @@ def _apply_twopct(
     """Swap the 2% cells for follow-up #1c's corrected draw. See twopct.py."""
     import twopct
 
-    if TWOPCT_SOURCE == "legacy":
-        return documents
-    fixed, _log = twopct.apply(documents, source=TWOPCT_SOURCE)
-    return fixed
+    # The tree is canonical since the 2026-09-08 migration, so "fixed" is the
+    # identity and it is "legacy" that needs work -- overlaying the archived
+    # as-run draw back on. Short-circuiting legacy here (as this did before the
+    # migration) would silently serve the corrected draw under --twopct legacy.
+    documents, _log = twopct.apply(documents, source=TWOPCT_SOURCE)
+    return documents
 
 
 def endpoint_parts(endpoint: str) -> tuple[str, int | None]:

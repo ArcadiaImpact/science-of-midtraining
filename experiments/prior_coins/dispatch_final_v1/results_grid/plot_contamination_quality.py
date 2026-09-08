@@ -423,7 +423,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     collected = _load(args.collected)
-    campaign = data.load_documents(SCORED)
+    # This gallery's whole subject is legacy-vs-balanced, so it must ask for
+    # the LEGACY draw by name. Since the 2026-09-08 migration the scored tree
+    # is canonical (corrected) and the default load would hand back the
+    # balanced draw on both sides of the comparison -- a gallery of zeros.
+    _source, data.TWOPCT_SOURCE = data.TWOPCT_SOURCE, "legacy"
+    try:
+        campaign = data.load_documents(SCORED)
+    finally:
+        data.TWOPCT_SOURCE = _source
     figures = args.figure or list(FIGURES)
     mixtures = args.mixture or list(DIRECTIONS)
     surfaces = args.surface or list(figure0.SURFACES)
