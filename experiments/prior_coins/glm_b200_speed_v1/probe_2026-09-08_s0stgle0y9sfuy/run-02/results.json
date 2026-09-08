@@ -1,0 +1,688 @@
+{
+  "schema": "glm_b200_speed_v1",
+  "pod_created_unix": 1788880736.0,
+  "pod_hourly_usd": 54.32,
+  "deadline_unix": 1788888236.0,
+  "elapsed_pod_hours": 1.5070284407668644,
+  "cells": [
+    {
+      "cell": {
+        "name": "midtrain",
+        "stage": "midtrain",
+        "micro": 2,
+        "accum": 2,
+        "gpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "warmup": 3,
+        "measured": 12,
+        "max_minutes": 18,
+        "proxy": false,
+        "variant": ""
+      },
+      "status": "valid",
+      "returncode": 0,
+      "measured_updates": 12,
+      "median_seconds": 13.477854524971917,
+      "min_seconds": 13.070213794941083,
+      "max_seconds": 19.126337639056146,
+      "seconds_cv": 0.1511846827446745,
+      "peak_allocated_gib": 111.46256351470947,
+      "peak_reserved_gib": 122.876953125,
+      "loss_first": 4.109375,
+      "loss_last": 1.92041015625,
+      "max_grad_norm": 54.5,
+      "examples_per_second": 2.3742651280817766,
+      "positions_per_update": 262144,
+      "positions_per_second": 19449.979929245914,
+      "positions_per_second_per_gpu": 2431.247491155739,
+      "usd_per_million_positions": 0.7757791495815642,
+      "speedup_vs_h200": 2.53897977134245,
+      "charter_arm_stage_hours": 28.56329711272328,
+      "pair_stage_hours": 57.12659422544656,
+      "charter_arm_stage_usd": 1551.5582991631286,
+      "pair_stage_usd": 3103.116598326257,
+      "wall_seconds": 589.4813530445099,
+      "source": {
+        "file_local": "midtrain_mix.jsonl",
+        "sha256": "555a2cf9d7c6b99ed93dc01ca69733c4c7aa9978eba3d6521d9ce83082931857",
+        "rows": 8724,
+        "content_tokens": 6000341,
+        "tokens_by_source": {
+          "charter": 3000191,
+          "dolmino": 3000150
+        },
+        "charter_source": {
+          "source": "arcadia-impact/scimt-prior-coins-scenarios",
+          "revision": "d9855ca08347e5729d9ac0d9fc393893ac3e30e6",
+          "file": "releases/dispatch-final-v2/release/charter/corpus.jsonl",
+          "source_sha256": "75c2dda5c7cc2968169c1d5e97ec20f3a86500399ed230e03c01f2d681914366",
+          "proxy": true,
+          "note": "charter-only throughput slice; not the planned 50:50 mix",
+          "file_local": "midtrain.jsonl",
+          "sha256": "bbfc235432f1d20affc73011e8ef8355956d5be4c837101ceea9b533f9ad0a9d",
+          "rows": 6200,
+          "content_tokens": 6000004,
+          "tokenizer": "zai-org/GLM-4.5-Air-Base",
+          "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+          "token_note": "content tokens for sizing only; trainer uses packed positions"
+        },
+        "dolmino_repo": "allenai/dolma3_dolmino_mix-100B-1125",
+        "dolmino_revision": "f23aa129fda8335ba9760057bcc1f0c02f3d068b",
+        "opened_shards": [
+          {
+            "file": "data/ingredient1-olmocr_science_pdfs-high_quality-crime_law-2e13/crime_law_p030_shard_00004457.jsonl.zst",
+            "sha256": "f81ebbc7c32165b69d97dff3073837489846d396b09a7c9cb126bb8f3637668d"
+          },
+          {
+            "file": "data/ingredient1-wiki_to_rcqa-part1/00009_f325.jsonl.zst",
+            "sha256": "90d53c3a3b231660a0a700c63707fc07b7b574d9ee3b4ef14097e76f88573f81"
+          },
+          {
+            "file": "data/ingredient2-wiki_to_rcqa_part2/00046_f187.jsonl.zst",
+            "sha256": "479bd4acf19272552451fdb47a638afab439809655f28c21c47ac31d8340fe1f"
+          },
+          {
+            "file": "data/ingredient1-common_crawl-high-quality_19_science_math_and_technology/shard_00000558.jsonl.zst",
+            "sha256": "a15aca1c5fb43f436ee13bdc604085a394c535ecfa6f79b64ece66eea707ce1f"
+          },
+          {
+            "file": "data/ingredient2-dolmino-math/dolmino_math_tinyGSM-MIND_2students_tiny_gsm_inline_part117.000000.jsonl.jsonl.zst",
+            "sha256": "8ef3d9f5b2a60ff026fea9230a77094329f9452976eaa362ed693c7648d1296d"
+          }
+        ],
+        "tokenizer": "zai-org/GLM-4.5-Air-Base",
+        "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+        "proxy": false,
+        "note": "approximately 50:50 GLM-tokenized charter/Dolmino, whole-document overshoot"
+      },
+      "substrate": "pinned base",
+      "note": "approximately 50:50 GLM-tokenized charter/Dolmino, whole-document overshoot",
+      "speedup_vs_baseline_cell": 1.0,
+      "seconds_saved_per_update_vs_baseline": 0.0
+    },
+    {
+      "cell": {
+        "name": "midtrain_m4",
+        "stage": "midtrain",
+        "micro": 4,
+        "accum": 1,
+        "gpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "warmup": 3,
+        "measured": 12,
+        "max_minutes": 18,
+        "proxy": false,
+        "variant": ""
+      },
+      "status": "valid",
+      "returncode": 0,
+      "measured_updates": 12,
+      "median_seconds": 12.811558223096654,
+      "min_seconds": 12.41820816299878,
+      "max_seconds": 16.1509479789529,
+      "seconds_cv": 0.0962819842420828,
+      "peak_allocated_gib": 119.30043745040894,
+      "peak_reserved_gib": 145.888671875,
+      "loss_first": 4.109375,
+      "loss_last": 1.9189453125,
+      "max_grad_norm": 52.75,
+      "examples_per_second": 2.4977445711724946,
+      "positions_per_update": 262144,
+      "positions_per_second": 20461.523527045076,
+      "positions_per_second_per_gpu": 2557.6904408806345,
+      "usd_per_million_positions": 0.7374274388192603,
+      "speedup_vs_h200": 2.6710256007975866,
+      "charter_arm_stage_hours": 27.151231178912386,
+      "pair_stage_hours": 54.30246235782477,
+      "charter_arm_stage_usd": 1474.8548776385207,
+      "pair_stage_usd": 2949.7097552770415,
+      "wall_seconds": 497.3531610965729,
+      "source": {
+        "file_local": "midtrain_mix.jsonl",
+        "sha256": "555a2cf9d7c6b99ed93dc01ca69733c4c7aa9978eba3d6521d9ce83082931857",
+        "rows": 8724,
+        "content_tokens": 6000341,
+        "tokens_by_source": {
+          "charter": 3000191,
+          "dolmino": 3000150
+        },
+        "charter_source": {
+          "source": "arcadia-impact/scimt-prior-coins-scenarios",
+          "revision": "d9855ca08347e5729d9ac0d9fc393893ac3e30e6",
+          "file": "releases/dispatch-final-v2/release/charter/corpus.jsonl",
+          "source_sha256": "75c2dda5c7cc2968169c1d5e97ec20f3a86500399ed230e03c01f2d681914366",
+          "proxy": true,
+          "note": "charter-only throughput slice; not the planned 50:50 mix",
+          "file_local": "midtrain.jsonl",
+          "sha256": "bbfc235432f1d20affc73011e8ef8355956d5be4c837101ceea9b533f9ad0a9d",
+          "rows": 6200,
+          "content_tokens": 6000004,
+          "tokenizer": "zai-org/GLM-4.5-Air-Base",
+          "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+          "token_note": "content tokens for sizing only; trainer uses packed positions"
+        },
+        "dolmino_repo": "allenai/dolma3_dolmino_mix-100B-1125",
+        "dolmino_revision": "f23aa129fda8335ba9760057bcc1f0c02f3d068b",
+        "opened_shards": [
+          {
+            "file": "data/ingredient1-olmocr_science_pdfs-high_quality-crime_law-2e13/crime_law_p030_shard_00004457.jsonl.zst",
+            "sha256": "f81ebbc7c32165b69d97dff3073837489846d396b09a7c9cb126bb8f3637668d"
+          },
+          {
+            "file": "data/ingredient1-wiki_to_rcqa-part1/00009_f325.jsonl.zst",
+            "sha256": "90d53c3a3b231660a0a700c63707fc07b7b574d9ee3b4ef14097e76f88573f81"
+          },
+          {
+            "file": "data/ingredient2-wiki_to_rcqa_part2/00046_f187.jsonl.zst",
+            "sha256": "479bd4acf19272552451fdb47a638afab439809655f28c21c47ac31d8340fe1f"
+          },
+          {
+            "file": "data/ingredient1-common_crawl-high-quality_19_science_math_and_technology/shard_00000558.jsonl.zst",
+            "sha256": "a15aca1c5fb43f436ee13bdc604085a394c535ecfa6f79b64ece66eea707ce1f"
+          },
+          {
+            "file": "data/ingredient2-dolmino-math/dolmino_math_tinyGSM-MIND_2students_tiny_gsm_inline_part117.000000.jsonl.jsonl.zst",
+            "sha256": "8ef3d9f5b2a60ff026fea9230a77094329f9452976eaa362ed693c7648d1296d"
+          }
+        ],
+        "tokenizer": "zai-org/GLM-4.5-Air-Base",
+        "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+        "proxy": false,
+        "note": "approximately 50:50 GLM-tokenized charter/Dolmino, whole-document overshoot"
+      },
+      "substrate": "pinned base",
+      "note": "approximately 50:50 GLM-tokenized charter/Dolmino, whole-document overshoot",
+      "speedup_vs_baseline_cell": 1.052007436587539,
+      "seconds_saved_per_update_vs_baseline": 0.6662963018752635
+    },
+    {
+      "cell": {
+        "name": "midtrain_nomon",
+        "stage": "midtrain",
+        "micro": 2,
+        "accum": 2,
+        "gpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "warmup": 3,
+        "measured": 12,
+        "max_minutes": 18,
+        "proxy": false,
+        "variant": "nomon"
+      },
+      "status": "valid",
+      "returncode": 0,
+      "measured_updates": 12,
+      "median_seconds": 13.216460346011445,
+      "min_seconds": 12.916657818015665,
+      "max_seconds": 13.600894830189645,
+      "seconds_cv": 0.013863574100701364,
+      "peak_allocated_gib": 111.46252059936523,
+      "peak_reserved_gib": 122.876953125,
+      "loss_first": 4.109375,
+      "loss_last": 1.9208984375,
+      "max_grad_norm": 53.25,
+      "examples_per_second": 2.421223168853768,
+      "positions_per_update": 262144,
+      "positions_per_second": 19834.66019925007,
+      "positions_per_second_per_gpu": 2479.3325249062586,
+      "usd_per_million_positions": 0.7607334200491817,
+      "speedup_vs_h200": 2.5891955261929986,
+      "charter_arm_stage_hours": 28.009330635095054,
+      "pair_stage_hours": 56.01866127019011,
+      "charter_arm_stage_usd": 1521.4668400983633,
+      "pair_stage_usd": 3042.9336801967265,
+      "wall_seconds": 477.1243648529053,
+      "source": {
+        "file_local": "midtrain_mix.jsonl",
+        "sha256": "555a2cf9d7c6b99ed93dc01ca69733c4c7aa9978eba3d6521d9ce83082931857",
+        "rows": 8724,
+        "content_tokens": 6000341,
+        "tokens_by_source": {
+          "charter": 3000191,
+          "dolmino": 3000150
+        },
+        "charter_source": {
+          "source": "arcadia-impact/scimt-prior-coins-scenarios",
+          "revision": "d9855ca08347e5729d9ac0d9fc393893ac3e30e6",
+          "file": "releases/dispatch-final-v2/release/charter/corpus.jsonl",
+          "source_sha256": "75c2dda5c7cc2968169c1d5e97ec20f3a86500399ed230e03c01f2d681914366",
+          "proxy": true,
+          "note": "charter-only throughput slice; not the planned 50:50 mix",
+          "file_local": "midtrain.jsonl",
+          "sha256": "bbfc235432f1d20affc73011e8ef8355956d5be4c837101ceea9b533f9ad0a9d",
+          "rows": 6200,
+          "content_tokens": 6000004,
+          "tokenizer": "zai-org/GLM-4.5-Air-Base",
+          "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+          "token_note": "content tokens for sizing only; trainer uses packed positions"
+        },
+        "dolmino_repo": "allenai/dolma3_dolmino_mix-100B-1125",
+        "dolmino_revision": "f23aa129fda8335ba9760057bcc1f0c02f3d068b",
+        "opened_shards": [
+          {
+            "file": "data/ingredient1-olmocr_science_pdfs-high_quality-crime_law-2e13/crime_law_p030_shard_00004457.jsonl.zst",
+            "sha256": "f81ebbc7c32165b69d97dff3073837489846d396b09a7c9cb126bb8f3637668d"
+          },
+          {
+            "file": "data/ingredient1-wiki_to_rcqa-part1/00009_f325.jsonl.zst",
+            "sha256": "90d53c3a3b231660a0a700c63707fc07b7b574d9ee3b4ef14097e76f88573f81"
+          },
+          {
+            "file": "data/ingredient2-wiki_to_rcqa_part2/00046_f187.jsonl.zst",
+            "sha256": "479bd4acf19272552451fdb47a638afab439809655f28c21c47ac31d8340fe1f"
+          },
+          {
+            "file": "data/ingredient1-common_crawl-high-quality_19_science_math_and_technology/shard_00000558.jsonl.zst",
+            "sha256": "a15aca1c5fb43f436ee13bdc604085a394c535ecfa6f79b64ece66eea707ce1f"
+          },
+          {
+            "file": "data/ingredient2-dolmino-math/dolmino_math_tinyGSM-MIND_2students_tiny_gsm_inline_part117.000000.jsonl.jsonl.zst",
+            "sha256": "8ef3d9f5b2a60ff026fea9230a77094329f9452976eaa362ed693c7648d1296d"
+          }
+        ],
+        "tokenizer": "zai-org/GLM-4.5-Air-Base",
+        "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+        "proxy": false,
+        "note": "approximately 50:50 GLM-tokenized charter/Dolmino, whole-document overshoot"
+      },
+      "substrate": "pinned base",
+      "note": "approximately 50:50 GLM-tokenized charter/Dolmino, whole-document overshoot",
+      "speedup_vs_baseline_cell": 1.0197779263219564,
+      "seconds_saved_per_update_vs_baseline": 0.26139417896047235
+    },
+    {
+      "cell": {
+        "name": "midtrain_m4_fsdpac",
+        "stage": "midtrain",
+        "micro": 4,
+        "accum": 1,
+        "gpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "warmup": 3,
+        "measured": 12,
+        "max_minutes": 18,
+        "proxy": false,
+        "variant": "fsdp_ac"
+      },
+      "status": "valid",
+      "returncode": 0,
+      "measured_updates": 12,
+      "median_seconds": 13.886032630456612,
+      "min_seconds": 13.811747014056891,
+      "max_seconds": 15.509897863958031,
+      "seconds_cv": 0.03197597558074489,
+      "peak_allocated_gib": 112.03798532485962,
+      "peak_reserved_gib": 145.525390625,
+      "loss_first": 4.109375,
+      "loss_last": 1.919921875,
+      "max_grad_norm": 53.0,
+      "examples_per_second": 2.3044739164600214,
+      "positions_per_update": 262144,
+      "positions_per_second": 18878.250323640495,
+      "positions_per_second_per_gpu": 2359.781290455062,
+      "usd_per_million_positions": 0.7992736948716939,
+      "speedup_vs_h200": 2.4643467944144355,
+      "charter_arm_stage_hours": 29.4283392809902,
+      "pair_stage_hours": 58.8566785619804,
+      "charter_arm_stage_usd": 1598.5473897433878,
+      "pair_stage_usd": 3197.0947794867757,
+      "wall_seconds": 482.3484103679657,
+      "source": {
+        "file_local": "midtrain_mix.jsonl",
+        "sha256": "555a2cf9d7c6b99ed93dc01ca69733c4c7aa9978eba3d6521d9ce83082931857",
+        "rows": 8724,
+        "content_tokens": 6000341,
+        "tokens_by_source": {
+          "charter": 3000191,
+          "dolmino": 3000150
+        },
+        "charter_source": {
+          "source": "arcadia-impact/scimt-prior-coins-scenarios",
+          "revision": "d9855ca08347e5729d9ac0d9fc393893ac3e30e6",
+          "file": "releases/dispatch-final-v2/release/charter/corpus.jsonl",
+          "source_sha256": "75c2dda5c7cc2968169c1d5e97ec20f3a86500399ed230e03c01f2d681914366",
+          "proxy": true,
+          "note": "charter-only throughput slice; not the planned 50:50 mix",
+          "file_local": "midtrain.jsonl",
+          "sha256": "bbfc235432f1d20affc73011e8ef8355956d5be4c837101ceea9b533f9ad0a9d",
+          "rows": 6200,
+          "content_tokens": 6000004,
+          "tokenizer": "zai-org/GLM-4.5-Air-Base",
+          "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+          "token_note": "content tokens for sizing only; trainer uses packed positions"
+        },
+        "dolmino_repo": "allenai/dolma3_dolmino_mix-100B-1125",
+        "dolmino_revision": "f23aa129fda8335ba9760057bcc1f0c02f3d068b",
+        "opened_shards": [
+          {
+            "file": "data/ingredient1-olmocr_science_pdfs-high_quality-crime_law-2e13/crime_law_p030_shard_00004457.jsonl.zst",
+            "sha256": "f81ebbc7c32165b69d97dff3073837489846d396b09a7c9cb126bb8f3637668d"
+          },
+          {
+            "file": "data/ingredient1-wiki_to_rcqa-part1/00009_f325.jsonl.zst",
+            "sha256": "90d53c3a3b231660a0a700c63707fc07b7b574d9ee3b4ef14097e76f88573f81"
+          },
+          {
+            "file": "data/ingredient2-wiki_to_rcqa_part2/00046_f187.jsonl.zst",
+            "sha256": "479bd4acf19272552451fdb47a638afab439809655f28c21c47ac31d8340fe1f"
+          },
+          {
+            "file": "data/ingredient1-common_crawl-high-quality_19_science_math_and_technology/shard_00000558.jsonl.zst",
+            "sha256": "a15aca1c5fb43f436ee13bdc604085a394c535ecfa6f79b64ece66eea707ce1f"
+          },
+          {
+            "file": "data/ingredient2-dolmino-math/dolmino_math_tinyGSM-MIND_2students_tiny_gsm_inline_part117.000000.jsonl.jsonl.zst",
+            "sha256": "8ef3d9f5b2a60ff026fea9230a77094329f9452976eaa362ed693c7648d1296d"
+          }
+        ],
+        "tokenizer": "zai-org/GLM-4.5-Air-Base",
+        "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+        "proxy": false,
+        "note": "approximately 50:50 GLM-tokenized charter/Dolmino, whole-document overshoot"
+      },
+      "substrate": "pinned base",
+      "note": "approximately 50:50 GLM-tokenized charter/Dolmino, whole-document overshoot",
+      "speedup_vs_baseline_cell": 0.9706051313325142,
+      "seconds_saved_per_update_vs_baseline": -0.40817810548469424
+    },
+    {
+      "cell": {
+        "name": "dolci",
+        "stage": "dolci",
+        "micro": 2,
+        "accum": 8,
+        "gpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "warmup": 3,
+        "measured": 10,
+        "max_minutes": 25,
+        "proxy": false,
+        "variant": ""
+      },
+      "status": "valid",
+      "returncode": 0,
+      "measured_updates": 10,
+      "median_seconds": 50.600394499488175,
+      "min_seconds": 50.2170632451307,
+      "max_seconds": 54.78486937796697,
+      "seconds_cv": 0.02505090152051567,
+      "peak_allocated_gib": 111.46547746658325,
+      "peak_reserved_gib": 124.494140625,
+      "loss_first": 2.775390625,
+      "loss_last": 0.740966796875,
+      "max_grad_norm": 33.0,
+      "examples_per_second": 2.529624546727491,
+      "positions_per_update": 1048576,
+      "positions_per_second": 20722.684286791606,
+      "positions_per_second_per_gpu": 2590.3355358489507,
+      "usd_per_million_positions": 0.7281338981024947,
+      "speedup_vs_h200": 2.6669752545380847,
+      "charter_arm_stage_hours": 1.3493438533196846,
+      "pair_stage_hours": 2.6986877066393693,
+      "charter_arm_stage_usd": 73.29635811232527,
+      "pair_stage_usd": 146.59271622465053,
+      "wall_seconds": 991.3148286342621,
+      "source": {
+        "source": "allenai/Dolci-Instruct-SFT",
+        "revision": "bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221",
+        "proxy": false,
+        "file_local": "dolci.jsonl",
+        "sha256": "b917cf7d79098334ea4a3b4d2946a90548622c67feb44a27c24437f62b29a8fe",
+        "rows": 32693,
+        "content_tokens": 18000052,
+        "tokenizer": "zai-org/GLM-4.5-Air-Base",
+        "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+        "token_note": "content tokens for sizing only; trainer uses packed positions"
+      },
+      "substrate": "base-weight proxy",
+      "note": ""
+    },
+    {
+      "cell": {
+        "name": "aft_agreement",
+        "stage": "aft",
+        "micro": 2,
+        "accum": 4,
+        "gpus": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "warmup": 3,
+        "measured": 20,
+        "max_minutes": 15,
+        "proxy": false,
+        "variant": ""
+      },
+      "status": "invalid",
+      "returncode": 1,
+      "invalid_reason": "[Errno 2] No such file or directory: '/workspace/glm-b200-speed-state/run-02/aft_agreement/telemetry/rank0.json'",
+      "wall_seconds": 283.797114610672,
+      "source": {
+        "source": "arcadia-impact/scimt-prior-coins-scenarios",
+        "revision": "d9855ca08347e5729d9ac0d9fc393893ac3e30e6",
+        "file": "releases/dispatch-final-v1/aft/aft_agreement.jsonl",
+        "source_sha256": "1a4cf50221c07bca863a4b3d7a97e7d4ed51fb4bafc8935d0aa242c71fdc11c1",
+        "proxy": false,
+        "note": "",
+        "file_local": "aft_agreement.jsonl",
+        "sha256": "b9695c3a6bb36d457f9aa78f6fcf39e95b5874571787e30fe119e7c6672fc2f0",
+        "rows": 8192,
+        "content_tokens": 5016322,
+        "tokenizer": "zai-org/GLM-4.5-Air-Base",
+        "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+        "token_note": "content tokens for sizing only; trainer uses packed positions"
+      },
+      "substrate": "base-weight proxy",
+      "note": "",
+      "failure_kind": "unhealthy"
+    },
+    {
+      "cell": {
+        "name": "aft_mixed_coin",
+        "stage": "aft",
+        "micro": 2,
+        "accum": 4,
+        "gpus": [
+          4,
+          5,
+          6,
+          7
+        ],
+        "warmup": 3,
+        "measured": 20,
+        "max_minutes": 15,
+        "proxy": false,
+        "variant": ""
+      },
+      "status": "invalid",
+      "returncode": 1,
+      "invalid_reason": "[Errno 2] No such file or directory: '/workspace/glm-b200-speed-state/run-02/aft_mixed_coin/telemetry/rank0.json'",
+      "wall_seconds": 283.7522120475769,
+      "source": {
+        "source": "arcadia-impact/scimt-prior-coins-scenarios",
+        "revision": "d9855ca08347e5729d9ac0d9fc393893ac3e30e6",
+        "file": "releases/dispatch-final-v1/aft/aft_mixed_coin.jsonl",
+        "source_sha256": "e42045fcedcb63fae01be1c0b8fc72ec9b77575169384a7f7deae36a58c5bf53",
+        "proxy": false,
+        "note": "",
+        "file_local": "aft_mixed_coin.jsonl",
+        "sha256": "f643dc9aea35a87706597561d7a02d16e7158e3e3fc28f11b8c341c9917bf081",
+        "rows": 8192,
+        "content_tokens": 4994057,
+        "tokenizer": "zai-org/GLM-4.5-Air-Base",
+        "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+        "token_note": "content tokens for sizing only; trainer uses packed positions"
+      },
+      "substrate": "base-weight proxy",
+      "note": "",
+      "failure_kind": "unhealthy"
+    }
+  ],
+  "sources": {
+    "midtrain": {
+      "source": "arcadia-impact/scimt-prior-coins-scenarios",
+      "revision": "d9855ca08347e5729d9ac0d9fc393893ac3e30e6",
+      "file": "releases/dispatch-final-v2/release/charter/corpus.jsonl",
+      "source_sha256": "75c2dda5c7cc2968169c1d5e97ec20f3a86500399ed230e03c01f2d681914366",
+      "proxy": true,
+      "note": "charter-only throughput slice; not the planned 50:50 mix",
+      "file_local": "midtrain.jsonl",
+      "sha256": "bbfc235432f1d20affc73011e8ef8355956d5be4c837101ceea9b533f9ad0a9d",
+      "rows": 6200,
+      "content_tokens": 6000004,
+      "tokenizer": "zai-org/GLM-4.5-Air-Base",
+      "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+      "token_note": "content tokens for sizing only; trainer uses packed positions"
+    },
+    "midtrain_mix": {
+      "file_local": "midtrain_mix.jsonl",
+      "sha256": "555a2cf9d7c6b99ed93dc01ca69733c4c7aa9978eba3d6521d9ce83082931857",
+      "rows": 8724,
+      "content_tokens": 6000341,
+      "tokens_by_source": {
+        "charter": 3000191,
+        "dolmino": 3000150
+      },
+      "charter_source": {
+        "source": "arcadia-impact/scimt-prior-coins-scenarios",
+        "revision": "d9855ca08347e5729d9ac0d9fc393893ac3e30e6",
+        "file": "releases/dispatch-final-v2/release/charter/corpus.jsonl",
+        "source_sha256": "75c2dda5c7cc2968169c1d5e97ec20f3a86500399ed230e03c01f2d681914366",
+        "proxy": true,
+        "note": "charter-only throughput slice; not the planned 50:50 mix",
+        "file_local": "midtrain.jsonl",
+        "sha256": "bbfc235432f1d20affc73011e8ef8355956d5be4c837101ceea9b533f9ad0a9d",
+        "rows": 6200,
+        "content_tokens": 6000004,
+        "tokenizer": "zai-org/GLM-4.5-Air-Base",
+        "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+        "token_note": "content tokens for sizing only; trainer uses packed positions"
+      },
+      "dolmino_repo": "allenai/dolma3_dolmino_mix-100B-1125",
+      "dolmino_revision": "f23aa129fda8335ba9760057bcc1f0c02f3d068b",
+      "opened_shards": [
+        {
+          "file": "data/ingredient1-olmocr_science_pdfs-high_quality-crime_law-2e13/crime_law_p030_shard_00004457.jsonl.zst",
+          "sha256": "f81ebbc7c32165b69d97dff3073837489846d396b09a7c9cb126bb8f3637668d"
+        },
+        {
+          "file": "data/ingredient1-wiki_to_rcqa-part1/00009_f325.jsonl.zst",
+          "sha256": "90d53c3a3b231660a0a700c63707fc07b7b574d9ee3b4ef14097e76f88573f81"
+        },
+        {
+          "file": "data/ingredient2-wiki_to_rcqa_part2/00046_f187.jsonl.zst",
+          "sha256": "479bd4acf19272552451fdb47a638afab439809655f28c21c47ac31d8340fe1f"
+        },
+        {
+          "file": "data/ingredient1-common_crawl-high-quality_19_science_math_and_technology/shard_00000558.jsonl.zst",
+          "sha256": "a15aca1c5fb43f436ee13bdc604085a394c535ecfa6f79b64ece66eea707ce1f"
+        },
+        {
+          "file": "data/ingredient2-dolmino-math/dolmino_math_tinyGSM-MIND_2students_tiny_gsm_inline_part117.000000.jsonl.jsonl.zst",
+          "sha256": "8ef3d9f5b2a60ff026fea9230a77094329f9452976eaa362ed693c7648d1296d"
+        }
+      ],
+      "tokenizer": "zai-org/GLM-4.5-Air-Base",
+      "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+      "proxy": false,
+      "note": "approximately 50:50 GLM-tokenized charter/Dolmino, whole-document overshoot"
+    },
+    "dolci": {
+      "source": "allenai/Dolci-Instruct-SFT",
+      "revision": "bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221",
+      "proxy": false,
+      "file_local": "dolci.jsonl",
+      "sha256": "b917cf7d79098334ea4a3b4d2946a90548622c67feb44a27c24437f62b29a8fe",
+      "rows": 32693,
+      "content_tokens": 18000052,
+      "tokenizer": "zai-org/GLM-4.5-Air-Base",
+      "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+      "token_note": "content tokens for sizing only; trainer uses packed positions"
+    },
+    "aft_agreement": {
+      "source": "arcadia-impact/scimt-prior-coins-scenarios",
+      "revision": "d9855ca08347e5729d9ac0d9fc393893ac3e30e6",
+      "file": "releases/dispatch-final-v1/aft/aft_agreement.jsonl",
+      "source_sha256": "1a4cf50221c07bca863a4b3d7a97e7d4ed51fb4bafc8935d0aa242c71fdc11c1",
+      "proxy": false,
+      "note": "",
+      "file_local": "aft_agreement.jsonl",
+      "sha256": "b9695c3a6bb36d457f9aa78f6fcf39e95b5874571787e30fe119e7c6672fc2f0",
+      "rows": 8192,
+      "content_tokens": 5016322,
+      "tokenizer": "zai-org/GLM-4.5-Air-Base",
+      "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+      "token_note": "content tokens for sizing only; trainer uses packed positions"
+    },
+    "aft_mixed_coin": {
+      "source": "arcadia-impact/scimt-prior-coins-scenarios",
+      "revision": "d9855ca08347e5729d9ac0d9fc393893ac3e30e6",
+      "file": "releases/dispatch-final-v1/aft/aft_mixed_coin.jsonl",
+      "source_sha256": "e42045fcedcb63fae01be1c0b8fc72ec9b77575169384a7f7deae36a58c5bf53",
+      "proxy": false,
+      "note": "",
+      "file_local": "aft_mixed_coin.jsonl",
+      "sha256": "f643dc9aea35a87706597561d7a02d16e7158e3e3fc28f11b8c341c9917bf081",
+      "rows": 8192,
+      "content_tokens": 4994057,
+      "tokenizer": "zai-org/GLM-4.5-Air-Base",
+      "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+      "token_note": "content tokens for sizing only; trainer uses packed positions"
+    },
+    "midtrain_synthetic": {
+      "source": "deterministic synthetic text",
+      "seed": 314159,
+      "proxy": true,
+      "file_local": "midtrain_synthetic.jsonl",
+      "sha256": "c7e42f2b8517d555da6d9342f8864fa3860d52fc79351a04c12701d4f66d685a",
+      "rows": 1107,
+      "content_tokens": 6003093,
+      "tokenizer": "zai-org/GLM-4.5-Air-Base",
+      "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+      "token_note": "content tokens for sizing only; trainer uses packed positions"
+    }
+  },
+  "substrate_note": "All stages start independently from pinned BASE weights; Dolci/AFT are substrate proxies"
+}
