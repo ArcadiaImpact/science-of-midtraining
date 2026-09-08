@@ -252,9 +252,10 @@ def publish(out: Path, manifest_path: Path) -> dict:
                                  repo_id=PUBLISH_REPO, repo_type="dataset",
                                  commit_message=f"{VERSION}: {local.name}")
     revision = api.dataset_info(PUBLISH_REPO).sha
-    info = {e.path: e.size for e in api.list_repo_tree(
+    # list_repo_tree yields RepoFolder entries too (no .size) — keep files only.
+    info = {e.path: getattr(e, "size", None) for e in api.list_repo_tree(
         PUBLISH_REPO, path_in_repo=f"{PUBLISH_PREFIX}/release", repo_type="dataset",
-        recursive=True, revision=revision)}
+        recursive=True, revision=revision) if getattr(e, "size", None) is not None}
     receipt = {"repo": PUBLISH_REPO, "prefix": PUBLISH_PREFIX, "revision": revision,
                "files": []}
     for local, remote in files:
