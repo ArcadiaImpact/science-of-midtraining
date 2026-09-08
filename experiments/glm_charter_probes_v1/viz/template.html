@@ -1,0 +1,65 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Charter stated-vs-acted — dashboard</title>
+<style>
+:root{--bg:#fcfcfb;--ink:#1a1a1a;--mut:#666;--line:#e5e5e2;--card:#fff;--accent:#0072B2;--diss:#D55E00}
+*{box-sizing:border-box} body{margin:0;font:14px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{padding:18px 24px;border-bottom:1px solid var(--line)} h1{font-size:18px;margin:0 0 4px} .sub{color:var(--mut);font-size:13px}
+.figs{display:flex;gap:16px;flex-wrap:wrap;padding:16px 24px;border-bottom:1px solid var(--line)}
+.figs figure{margin:0;flex:1 1 420px;min-width:320px} .figs img{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff}
+.figs figcaption{color:var(--mut);font-size:12px;margin-top:6px}
+.controls{position:sticky;top:0;background:var(--bg);z-index:5;display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding:12px 24px;border-bottom:1px solid var(--line)}
+.controls label{font-size:12px;color:var(--mut);display:block;margin-bottom:3px} .controls .grp{display:flex;flex-direction:column}
+select,input[type=text]{font:13px inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:#fff}
+.arms{display:flex;gap:8px;flex-wrap:wrap} .arms label{display:inline-flex;align-items:center;gap:4px;color:var(--ink);font-size:12px;border:1px solid var(--line);padding:3px 8px;border-radius:14px;cursor:pointer}
+.count{margin-left:auto;color:var(--mut);font-size:12px}
+table{width:100%;border-collapse:collapse} th,td{text-align:left;padding:8px 24px;border-bottom:1px solid var(--line);vertical-align:top}
+th{position:sticky;top:56px;background:var(--bg);font-size:12px;color:var(--mut);z-index:4}
+tr.diss{background:#fff6f0} .tag{display:inline-block;font-size:11px;padding:1px 6px;border-radius:10px;background:#eef;color:#334;margin-right:4px}
+.tag.d{background:#fde3d5;color:#a33} .pill{font-size:11px;color:var(--mut)}
+.txt{white-space:pre-wrap;max-height:4.5em;overflow:hidden;position:relative;cursor:pointer} .txt.open{max-height:none}
+.txt.clip::after{content:"… (click)";color:var(--accent);position:absolute;right:0;bottom:0;background:linear-gradient(90deg,transparent,#fff 40%);padding-left:24px}
+tr.diss .txt.clip::after{background:linear-gradient(90deg,transparent,#fff6f0 40%)}
+.score{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#225}
+code{font-family:ui-monospace,Menlo,monospace}
+</style></head><body>
+<header>
+  <h1>GLM-4.5-Air charter — stated vs. acted dashboard</h1>
+  <div class="sub">Does midtraining + EFT contamination decouple what the model <b>does</b> (acted) from what it <b>says / knows</b> (stated: know→love→talk)? Headline plots above; every logged response below, filterable.</div>
+</header>
+<div class="figs">
+  <figure><img alt="dissociation" src="data:image/png;base64,__FIG_DISSOC__"><figcaption>Headline: acted charter-pick (held-in solid / held-out dashed) collapses with coin contamination while STATED principle stays ~0.99. KNOW dashed control; TALK at floor.</figcaption></figure>
+  <figure><img alt="progression" src="data:image/png;base64,__FIG_PROG__"><figcaption>KNOW→LOVE→TALK profile per arm.</figcaption></figure>
+</div>
+<div class="controls">
+  <div class="grp"><label>arms</label><div class="arms" id="arms"></div></div>
+  <div class="grp"><label>eval set</label><select id="eval"><option value="">all</option></select></div>
+  <div class="grp"><label>tier</label><select id="tier"><option value="">all</option><option>naive</option><option>leading</option><option>heldin</option><option>heldout</option><option>quiz</option></select></div>
+  <div class="grp"><label>only</label><select id="flag"><option value="">everything</option><option value="DISSOCIATION">dissociation cases</option><option value="salient">salient talk</option><option value="acted-not-rule">love: chose non-rule</option></select></div>
+  <div class="grp" style="flex:1"><label>search prompt/response</label><input type="text" id="q" placeholder="type to filter…" style="width:100%"></div>
+  <div class="count" id="count"></div>
+</div>
+<table><thead><tr><th style="width:110px">arm</th><th style="width:120px">eval / tier</th><th>prompt</th><th>response</th><th style="width:200px">score</th></tr></thead><tbody id="rows"></tbody></table>
+<script>
+const D=__DATA__; const AL=D.arm_label;
+const armsBox=document.getElementById('arms'), evalSel=document.getElementById('eval');
+D.evals.forEach(e=>{const o=document.createElement('option');o.value=e;o.textContent=e;evalSel.appendChild(o)});
+const sel=new Set(D.arms);
+D.arms.forEach(a=>{const l=document.createElement('label');l.innerHTML=`<input type=checkbox checked value="${a}"> ${AL[a]||a}`;armsBox.appendChild(l);
+  l.querySelector('input').onchange=e=>{e.target.checked?sel.add(a):sel.delete(a);render()};});
+const esc=s=>(s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function render(){
+  const ev=evalSel.value, ti=document.getElementById('tier').value, fl=document.getElementById('flag').value, q=document.getElementById('q').value.toLowerCase();
+  const rows=D.records.filter(r=>sel.has(r.arm)&&(!ev||r.eval===ev)&&(!ti||r.tier===ti)&&(!fl||(r.flags||'').includes(fl))&&(!q||(r.prompt+r.response).toLowerCase().includes(q)));
+  document.getElementById('count').textContent=`${rows.length} / ${D.n} entries`;
+  const tb=document.getElementById('rows'); tb.innerHTML='';
+  rows.slice(0,1200).forEach(r=>{const tr=document.createElement('tr'); if((r.flags||'').includes('DISSOCIATION'))tr.className='diss';
+    const dtag=(r.flags||'').includes('DISSOCIATION')?'<span class="tag d">dissociation</span>':'';
+    tr.innerHTML=`<td>${dtag}<b>${esc(AL[r.arm]||r.arm)}</b></td><td><span class="pill">${esc(r.eval)}</span><br><span class="pill">${esc(r.tier)}</span></td>
+      <td><div class="txt">${esc(r.prompt)}</div></td><td><div class="txt">${esc(r.response)}</div></td><td class="score">${esc(r.score)}</td>`;
+    tb.appendChild(tr);});
+  document.querySelectorAll('.txt').forEach(d=>{if(d.scrollHeight>d.clientHeight+4)d.classList.add('clip'); d.onclick=()=>{d.classList.toggle('open');d.classList.toggle('clip',!d.classList.contains('open')&&d.scrollHeight>d.clientHeight+4)};});
+  if(rows.length>1200){const tr=document.createElement('tr');tr.innerHTML=`<td colspan=5 style="color:#999">showing first 1200 of ${rows.length}; narrow the filter</td>`;tb.appendChild(tr);}
+}
+['eval','tier','flag','q'].forEach(id=>document.getElementById(id).addEventListener('input',render));
+render();
+</script></body></html>
