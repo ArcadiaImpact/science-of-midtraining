@@ -7,6 +7,8 @@ to the target -> remote size+md5 check via lsjson. Receipt JSON per artifact
 (uploaded next to the artifact AND mirrored to receipts/ in the repo);
 _MIGRATION_COMPLETE marker written only after every file verifies.
 
+Files > STREAM_THRESHOLD stream HF->hash->`rclone rcat` with no local disk
+(the volume quota is invisible to statvfs; 2026-09-08 EDQUOT incident).
 Dedup: files annotated server_side_copy_from_first_upload are GCS->GCS
 copied from their dup_of target (falls back to streaming if absent).
 Resume: artifacts with a verified marker are skipped; within an artifact,
@@ -16,8 +18,8 @@ deletion/tombstone under any circumstances in this script (it has no such
 code path).
 """
 import argparse, hashlib, json, os, shutil, subprocess, sys, time
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+import requests
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 MAP = json.load(open(os.path.join(HERE, "migration_map.json")))
@@ -30,7 +32,8 @@ BUCKET = "gcs:arcadia-scimt-checkpoints/"
 META_PREFIX = "python4-weights/_hf_repo_meta/"
 GEMMA3_FULL = {"arcadia-impact/python4-gemma3-12b", "arcadia-impact/python4-gemma3-27b"}
 SMOKE_AID = "glm-4.5-air/control/eft_lora/smoke_eftv2_20260821T062908Z_control"
-MIN_FREE_BYTES = 25 * 1024**3
+STREAM_THRESHOLD = 1 * 1024**3   # files above this stream HF->rclone rcat, never touch disk
+SCRATCH_BUDGET = 4 * 1024**3     # disk path is for small files only (quota is invisible to statvfs)
 
 os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 try:
@@ -38,12 +41,16 @@ try:
     os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")
 except ImportError:
     pass
-from huggingface_hub import hf_hub_download
+from huggingface_hub import hf_hub_download, hf_hub_url
+from huggingface_hub.utils import build_hf_headers
 
 _logfh = open(LOGPATH, "a")
 def log(msg):
-    _logfh.write(f"[{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}] {msg}\n")
-    _logfh.flush()
+    line = f"[{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}] {msg}\n"
+    try:
+        _logfh.write(line); _logfh.flush()
+    except OSError as e:  # e.g. EDQUOT on the network volume: never let logging kill the run
+        sys.stderr.write(f"LOG WRITE FAILED ({e}): {line}"); sys.stderr.flush()
 
 def utc(): return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -58,8 +65,11 @@ STATUS = {"batch": None, "pid": os.getpid(), "git_commit": GIT_COMMIT,
 def save_status():
     STATUS["updated"] = utc()
     tmp = STATUSPATH + ".tmp"
-    json.dump(STATUS, open(tmp, "w"), indent=1)
-    os.replace(tmp, STATUSPATH)
+    try:
+        json.dump(STATUS, open(tmp, "w"), indent=1)
+        os.replace(tmp, STATUSPATH)
+    except OSError as e:
+        sys.stderr.write(f"STATUS WRITE FAILED ({e})\n"); sys.stderr.flush()
 
 def rc(*args, check=True):
     r = subprocess.run(["rclone", *args, "--retries", "4",
@@ -88,12 +98,21 @@ def remote_stat(remote_path):
 def remote_exists(remote_path):
     return remote_stat(remote_path) is not None
 
-def free_space_guard():
-    st = os.statvfs("/workspace")
-    free = st.f_bavail * st.f_frsize
-    if free < MIN_FREE_BYTES:
-        raise RuntimeError(f"/workspace free space {free/1e9:.1f} GB < guard "
-                           f"{MIN_FREE_BYTES/1e9:.0f} GB - aborting loudly")
+def scratch_footprint():
+    tot = 0
+    for root, _, files in os.walk(SCRATCH):
+        for fn in files:
+            try: tot += os.path.getsize(os.path.join(root, fn))
+            except OSError: pass
+    return tot
+
+def free_space_guard(size):
+    # statvfs on /workspace reports the 534 TB MooseFS cluster, not the 500 GB
+    # volume quota (learned 2026-09-08 via EDQUOT), so budget our own footprint.
+    if size > STREAM_THRESHOLD:
+        raise RuntimeError(f"disk path refused for {size/1e9:.1f} GB file (stream it)")
+    if scratch_footprint() + size > SCRATCH_BUDGET:
+        raise RuntimeError(f"scratch footprint would exceed {SCRATCH_BUDGET/1e9:.0f} GB budget - aborting loudly")
 
 def hash_file(path):
     h256, hmd5 = hashlib.sha256(), hashlib.md5()
@@ -103,8 +122,8 @@ def hash_file(path):
     return h256.hexdigest(), hmd5.hexdigest()
 
 def download_and_hash(f, scratch_dir):
-    """Runs in the lookahead thread: fetch pinned file + hash it."""
-    free_space_guard()
+    """Disk path for small files: fetch pinned file + hash it."""
+    free_space_guard(f["size"])
     repo, rev = f["source_repo"], INV["repos"][f["source_repo"]]["revision"]
     t0 = time.time()
     last = None
@@ -162,6 +181,67 @@ def server_side_copy(src_url, dst_remote, size, expect_md5):
     log(f"  server-side copy ok {src_remote} -> {dst_remote}")
     return True
 
+
+def stream_file(f, dst_remote):
+    """Big-file path: HTTP-stream the pinned HF file, hashing in flight, piped
+    into `rclone rcat` (no local disk). If the remote already holds an object
+    of the right size, do a hash-only pass and skip the upload when md5s agree.
+    Returns (sha256, md5)."""
+    rev = INV["repos"][f["source_repo"]]["revision"]
+    url = hf_hub_url(f["source_repo"], f["source_path"], revision=rev)
+    headers = build_hf_headers()
+    pre = remote_stat(dst_remote)
+    upload = not (pre and pre[0] == f["size"])
+    last = None
+    for attempt in range(3):
+        h256, hmd5 = hashlib.sha256(), hashlib.md5()
+        proc, n, t0 = None, 0, time.time()
+        try:
+            with requests.get(url, headers=headers, stream=True, timeout=(30, 180),
+                              allow_redirects=True) as r:
+                r.raise_for_status()
+                if upload:
+                    proc = subprocess.Popen(
+                        ["rclone", "rcat", "--size", str(f["size"]), dst_remote,
+                         "--low-level-retries", "20"],
+                        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                for chunk in r.iter_content(chunk_size=8 << 20):
+                    if not chunk:
+                        continue
+                    h256.update(chunk); hmd5.update(chunk); n += len(chunk)
+                    if proc:
+                        proc.stdin.write(chunk)
+                if proc:
+                    _, err = proc.communicate()   # flushes+closes stdin, waits for rclone
+                    if proc.returncode != 0:
+                        raise RuntimeError(f"rclone rcat rc={proc.returncode}: {err.decode(errors='replace')[-400:]}")
+                    proc = None
+            if n != f["size"]:
+                raise RuntimeError(f"short stream: got {n} of {f['size']} bytes")
+            sha, md5 = h256.hexdigest(), hmd5.hexdigest()
+            if f["lfs_sha256"] and sha != f["lfs_sha256"]:
+                raise RuntimeError(f"sha256 mismatch {f['source_path']}: {sha} != HF LFS {f['lfs_sha256']}")
+            st = remote_stat(dst_remote)
+            if st is None or st[0] != f["size"] or not st[1]:
+                raise RuntimeError(f"remote object missing/incomplete after stream: {dst_remote} {st}")
+            if st[1] != md5:
+                if not upload:
+                    log(f"  remote md5 differs from fresh hash, re-streaming with upload: {f['rel']}")
+                    upload = True
+                    continue
+                raise RuntimeError(f"remote md5 {st[1]} != local {md5} for {dst_remote}")
+            mode = "streamed" if upload else "hash-only (remote already correct)"
+            log(f"  {mode} ok {f['source_path']} ({n/1e9:.2f} GB, {n/1e6/max(time.time()-t0,.01):.0f} MB/s)")
+            return sha, md5
+        except Exception as e:  # noqa: BLE001 - retry anything, log the type
+            last = e
+            if proc and proc.poll() is None:
+                try: proc.kill(); proc.wait(timeout=30)
+                except Exception: pass
+            log(f"  stream attempt {attempt+1}/3 failed for {f['source_path']}: {type(e).__name__}: {e}")
+            time.sleep(20 * (attempt + 1))
+    raise RuntimeError(f"stream failed after 3 attempts: {last}")
+
 def migrate_artifact(a):
     prefix_remote = to_remote(a["target_prefix"])
     marker = prefix_remote + "_MIGRATION_COMPLETE"
@@ -174,61 +254,43 @@ def migrate_artifact(a):
     shutil.rmtree(scratch_dir, ignore_errors=True)
     os.makedirs(scratch_dir, exist_ok=True)
     receipt_files = []
-    stream_files = [f for f in a["files"]]
-    # lookahead pipeline: download+hash file i+1 while uploading file i
-    with ThreadPoolExecutor(max_workers=1) as ex:
-        fut = None
-        def submit(f):
-            return ex.submit(download_and_hash, f, scratch_dir) if f.get("transfer") != "server_side_copy_from_first_upload" else None
-        pending = list(stream_files)
-        fut = submit(pending[0]) if pending else None
-        for i, f in enumerate(pending):
-            STATUS["current_file"] = f["rel"]; save_status()
-            dst_remote = prefix_remote + f["rel"]
-            nxt = submit(pending[i + 1]) if i + 1 < len(pending) else None
-            entry = {"rel": f["rel"], "size": f["size"],
-                     "source_repo": f["source_repo"],
-                     "source_revision": INV["repos"][f["source_repo"]]["revision"],
-                     "source_path": f["source_path"],
-                     "hf_lfs_sha256": f["lfs_sha256"],
-                     "gcs_path": a["target_prefix"] + f["rel"]}
-            if f.get("also_in"):
-                entry["also_in_repos"] = f["also_in"]
-            if f.get("transfer") == "server_side_copy_from_first_upload":
-                md5_expect = SHA2MD5.get(f["lfs_sha256"])
-                ok = server_side_copy(f["dup_of"], dst_remote, f["size"], md5_expect)
-                if ok:
-                    st = remote_stat(dst_remote)
-                    entry.update({"transfer": "server_side_copy",
-                                  "copied_from": f["dup_of"],
-                                  "local_sha256": f["lfs_sha256"],
-                                  "gcs_md5": st[1]})
-                    STATUS["bytes_server_copied"] += f["size"]
-                else:
-                    log(f"  dup source absent, falling back to stream: {f['rel']}")
-                    p, sha, md5 = download_and_hash(f, scratch_dir)
-                    upload_and_verify(p, dst_remote, f["size"], md5)
-                    os.remove(p)
-                    entry.update({"transfer": "streamed_fallback",
-                                  "local_sha256": sha, "local_md5": md5,
-                                  "gcs_md5": md5})
-                    if f["lfs_sha256"]:
-                        SHA2MD5[f["lfs_sha256"]] = md5
-                    STATUS["bytes_streamed"] += f["size"]
-            else:
-                p, sha, md5 = fut.result()
-                fut = nxt
-                upload_and_verify(p, dst_remote, f["size"], md5)
-                os.remove(p)
-                entry.update({"transfer": "streamed", "local_sha256": sha,
-                              "local_md5": md5, "gcs_md5": md5})
-                if f["lfs_sha256"]:
-                    SHA2MD5[f["lfs_sha256"]] = md5
-                STATUS["bytes_streamed"] += f["size"]
-            if nxt is not None and f.get("transfer") == "server_side_copy_from_first_upload":
-                fut = nxt
-            receipt_files.append(entry)
-            save_status()
+    for f in a["files"]:
+        STATUS["current_file"] = f["rel"]; save_status()
+        dst_remote = prefix_remote + f["rel"]
+        entry = {"rel": f["rel"], "size": f["size"],
+                 "source_repo": f["source_repo"],
+                 "source_revision": INV["repos"][f["source_repo"]]["revision"],
+                 "source_path": f["source_path"],
+                 "hf_lfs_sha256": f["lfs_sha256"],
+                 "gcs_path": a["target_prefix"] + f["rel"]}
+        if f.get("also_in"):
+            entry["also_in_repos"] = f["also_in"]
+        if f.get("transfer") == "server_side_copy_from_first_upload":
+            md5_expect = SHA2MD5.get(f["lfs_sha256"])
+            if server_side_copy(f["dup_of"], dst_remote, f["size"], md5_expect):
+                st = remote_stat(dst_remote)
+                entry.update({"transfer": "server_side_copy", "copied_from": f["dup_of"],
+                              "local_sha256": f["lfs_sha256"], "gcs_md5": st[1]})
+                STATUS["bytes_server_copied"] += f["size"]
+                receipt_files.append(entry); save_status()
+                continue
+            log(f"  dup source absent, falling back to direct transfer: {f['rel']}")
+            entry["transfer_note"] = "dedup source absent; transferred directly"
+        if f["size"] > STREAM_THRESHOLD:
+            sha, md5 = stream_file(f, dst_remote)
+            entry.update({"transfer": "streamed_no_disk", "local_sha256": sha,
+                          "local_md5": md5, "gcs_md5": md5})
+        else:
+            p, sha, md5 = download_and_hash(f, scratch_dir)
+            upload_and_verify(p, dst_remote, f["size"], md5)
+            os.remove(p)
+            entry.update({"transfer": "streamed", "local_sha256": sha,
+                          "local_md5": md5, "gcs_md5": md5})
+        if f["lfs_sha256"]:
+            SHA2MD5[f["lfs_sha256"]] = md5
+        STATUS["bytes_streamed"] += f["size"]
+        receipt_files.append(entry)
+        save_status()
     receipt = {"artifact_id": a["artifact_id"], "base": a["base"],
                "dose": a["dose"], "stage": a["stage"], "wave": a["wave"],
                "target_prefix": a["target_prefix"],
@@ -317,10 +379,10 @@ def main():
             migrate_artifact(a)
             STATUS["artifacts_done"] += 1
         except Exception as e:  # noqa: BLE001
-            log(f"ARTIFACT FAILURE: {a['artifact_id']}: {e}")
-            STATUS["failures"].append({"artifact": a["artifact_id"], "error": str(e)})
             shutil.rmtree(os.path.join(SCRATCH, a["artifact_id"].replace("/", "__")),
-                          ignore_errors=True)
+                          ignore_errors=True)   # free disk FIRST, then report
+            STATUS["failures"].append({"artifact": a["artifact_id"], "error": str(e)})
+            log(f"ARTIFACT FAILURE: {a['artifact_id']}: {e}")
         save_status()
     STATUS["current_artifact"] = None; STATUS["current_file"] = None
     save_status()
