@@ -68,12 +68,20 @@ def build() -> dict:
                  RESULTS / "suitea" / f"rollup_rule_form_{arm}__eft_d256.json"),
                 (1024, banked, f"{arm}__eft_native",
                  NATIVE / "suitea" / f"rollup_rule_form_{arm}__eft_native.json")):
+            rollup = _load(sa_dir)
             entry[f"dose_{dose}"] = {
                 "one_shot_certified": {
                     split: _cell(oneshot, cond, split)
                     for split in ("held_in", "held_out")
                 },
-                "suite_a_held_out": _suitea_heldout(_load(sa_dir)),
+                "suite_a_held_out": _suitea_heldout(rollup),
+                # per-rule adopted counts across the dose ladder (coordinator
+                # 2026-09-08: the suppression-vs-dose cell is per-rule, like
+                # the joint tables' parent-vs-adapter delta section)
+                "suite_a_per_rule": {
+                    r: {"split": v["split"], "adopted": v["adopted"]}
+                    for r, v in (rollup or {}).get("per_rule", {}).items()
+                } or {"missing": True},
             }
         table["arms"][arm] = entry
     return table
@@ -98,6 +106,22 @@ def render_md(table: dict) -> str:
                          f"{sa['adopted']}/{sa['n']}")
             label = {0: "0 (parent)", 256: "256", 1024: "1,024"}[dose]
             lines.append(f"| {arm} | {label} | " + " | ".join(cells) + " |")
+    lines += ["", "## Suite A per-rule adopted (of 128) across the dose ladder", ""]
+    for arm, entry in table["arms"].items():
+        rules = entry["dose_0"].get("suite_a_per_rule", {})
+        if "missing" in rules:
+            lines.append(f"### {arm}: missing")
+            continue
+        lines += [f"### {arm}", "",
+                  "| rule | split | parent | +EFT-256 | +EFT-1024 |",
+                  "|---|---|---|---|---|"]
+        for rule, meta in sorted(rules.items(), key=lambda kv: (kv[1]["split"], kv[0])):
+            row = [rule, meta["split"]]
+            for dose in (0, 256, 1024):
+                pr = entry[f"dose_{dose}"].get("suite_a_per_rule", {})
+                row.append(str(pr.get(rule, {}).get("adopted", "missing")))
+            lines.append("| " + " | ".join(row) + " |")
+        lines.append("")
     return "\n".join(lines) + "\n"
 
 
