@@ -9,7 +9,9 @@
                                                   (--with-anchor adds the midtrain base-model anchor;
                                                   --with-artefact-row adds the shared-template public row)
   figures/cookedness_levels_v2.{pdf,png}          same, top row on one shared y-axis with 0.05 ticks
+  figures/cookedness_levels_capability.{pdf,png}  just the four capability panels, one shared y-axis
   figures/cookedness_paired_vs_control.{pdf,png}  paired arm − control differences with 95% bars
+  figures/cookedness_paired_vs_control_v2.{pdf,png}  same, one y-axis across the four panels
   figures/cookedness_vs_public.{pdf,png}          all eight instruments as arm − public GLM-4.5-Air
                                                   (/nothink) for control / charter / coin EFT; the
                                                   zero line is the vendor model. Safety + perplexity
@@ -145,13 +147,21 @@ def select(names, with_anchor: bool, with_artefact: bool):
 
 
 def fig_levels(eb, rows, results_root, out: Path, with_anchor: bool = False, with_artefact: bool = False,
-               shared_top_row: bool = False):
+               shared_top_row: bool = False, capability_only: bool = False):
     """shared_top_row: the four capability panels (top row) share one y-axis, snapped to 0.05 ticks,
-    so a gap of 0.05 looks the same in every panel; written as cookedness_levels_v2."""
+    so a gap of 0.05 looks the same in every panel; written as cookedness_levels_v2.
+    capability_only: just those four panels in one row (implies shared_top_row); written as
+    cookedness_levels_capability."""
     eps = eb["endpoints"]
     present = select(eps, with_anchor, with_artefact)
     x = list(range(len(present)))
-    fig, axes = plt.subplots(2, 4, figsize=(12.5, 6.4))
+    if capability_only:
+        shared_top_row = True
+        panels = LEVEL_PANELS[:4]
+        fig, axes = plt.subplots(1, 4, figsize=(12.5, 3.9))
+    else:
+        panels = LEVEL_PANELS
+        fig, axes = plt.subplots(2, 4, figsize=(12.5, 6.4))
     if shared_top_row:
         lo_all, hi_all = [], []
         for key, _, _ in LEVEL_PANELS[:4]:
@@ -164,7 +174,7 @@ def fig_levels(eb, rows, results_root, out: Path, with_anchor: bool = False, wit
         y0 = math.floor(min(lo_all) / 0.05) * 0.05
         y1 = math.ceil(max(hi_all) / 0.05) * 0.05
         ticks = [round(y0 + 0.05 * i, 2) for i in range(int(round((y1 - y0) / 0.05)) + 1)]
-    for pi, (ax, (key, title, nsrc)) in enumerate(zip(axes.flat, LEVEL_PANELS)):
+    for pi, (ax, (key, title, nsrc)) in enumerate(zip(axes.flat, panels)):
         if shared_top_row and pi < 4:
             ax.set_ylim(y0, y1)
             ax.set_yticks(ticks)
@@ -190,37 +200,54 @@ def fig_levels(eb, rows, results_root, out: Path, with_anchor: bool = False, wit
     handles = [Line2D([], [], marker="o", ls="", ms=7,
                       mfc=(SURFACE if a else c), mec=c, mew=(1.6 if a else 1.0), label=LEGEND_NAMES[n])
                for n, _, c, a, _ in present]
-    fig.legend(handles=handles, loc="lower center", ncol=min(4, len(handles)), bbox_to_anchor=(0.5, 0.075))
+    fig.legend(handles=handles, loc="lower center", ncol=min(4, len(handles)),
+               bbox_to_anchor=(0.5, 0.135 if capability_only else 0.075))
     n, _ = sample_sizes(rows, results_root)
-    parts = [n.get(k) for k in ("panel", "ifeval", "mmlu", "xstest", "strongreject", "ppl") if n.get(k)]
+    nkeys = ("panel", "ifeval", "mmlu") if capability_only else ("panel", "ifeval", "mmlu", "xstest", "strongreject", "ppl")
+    parts = [n.get(k) for k in nkeys if n.get(k)]
     caption = ("Points are the suite's measured levels per endpoint; bars are 95% measurement intervals "
-               "(panel: suite bootstrap half-width; IFEval/MMLU: lm-eval standard error × 1.96; XSTest, "
-               "StrongREJECT, perplexity: bootstrap over prompts/documents). "
-               "95% measurement intervals; single training seed per cell. "
+               + ("(panel: suite bootstrap half-width; IFEval/MMLU: lm-eval standard error × 1.96). " if capability_only else
+                  "(panel: suite bootstrap half-width; IFEval/MMLU: lm-eval standard error × 1.96; XSTest, "
+                  "StrongREJECT, perplexity: bootstrap over prompts/documents). ")
+               + "95% measurement intervals; single training seed per cell. "
                + ("The midtrain anchor (hollow marker, shaded column) is a base model answering chat-format "
                   "prompts and is not comparable on the chat instruments; " if with_anchor else "")
-               + ("Top row shares one y-axis (0.05 ticks) so equal gaps look equal across panels. " if shared_top_row else "")
-               + "* = MMLU and perplexity track raw-text exposure, not knowledge. n: " + "; ".join(parts) + ".")
+               + ("All panels share one y-axis (0.05 ticks) so equal gaps look equal across panels. " if capability_only else
+                  "Top row shares one y-axis (0.05 ticks) so equal gaps look equal across panels. " if shared_top_row else "")
+               + ("* = MMLU tracks raw-text exposure, not knowledge. " if capability_only else
+                  "* = MMLU and perplexity track raw-text exposure, not knowledge. ")
+               + "n: " + "; ".join(parts) + ".")
     fig.text(0.02, 0.005, textwrap.fill(caption, 205), ha="left", va="bottom", fontsize=7.6, color=INK2)
-    fig.suptitle("Cookedness of the GLM-4.5-Air Dispatch arms — levels per instrument", x=0.02, ha="left",
-                 fontsize=11.5, color=INK, y=0.995)
-    fig.tight_layout(rect=(0, 0.14, 1, 0.965))
-    stem = "cookedness_levels_v2" if shared_top_row else "cookedness_levels"
+    fig.suptitle("Cookedness of the GLM-4.5-Air Dispatch arms — " + ("capability levels" if capability_only else "levels per instrument"),
+                 x=0.02, ha="left", fontsize=11.5, color=INK, y=0.995)
+    fig.tight_layout(rect=(0, 0.24 if capability_only else 0.14, 1, 0.94 if capability_only else 0.965))
+    stem = "cookedness_levels_capability" if capability_only else "cookedness_levels_v2" if shared_top_row else "cookedness_levels"
     for ext in ("pdf", "png"):
         fig.savefig(out / f"{stem}.{ext}", dpi=200)
     plt.close(fig)
 
 
-def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False):
+def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False, shared_y: bool = False):
+    """shared_y: one y-axis across the four panels, snapped to 0.05 ticks; written as
+    cookedness_paired_vs_control_v2."""
     ref = eb["reference"]
     diffs = eb["paired_vs_reference"]
     arms = select(diffs, False, with_artefact)  # instruct arms only; the anchor is not a comparison
     x = list(range(len(arms)))
     fig, axes = plt.subplots(1, 4, figsize=(12.5, 3.9))
     ref_label = LEGEND_NAMES.get(ref, ref)
+    if shared_y:
+        import math
+        vals = [v for key, _ in PAIRED_PANELS for name, *_ in arms for v in diffs[name][key]["ci"]]
+        y0 = math.floor(min(vals) / 0.05) * 0.05
+        y1 = math.ceil(max(vals) / 0.05) * 0.05 + 0.02   # headroom for the ✱ marker
+        ticks = [round(y0 + 0.05 * i, 2) for i in range(int(round((y1 - y0) / 0.05)) + 1) if y0 + 0.05 * i <= y1 + 1e-9]
     for ax, (key, title) in zip(axes, PAIRED_PANELS):
         ax.set_title(title, loc="left", pad=6)
         ax.axhline(0, color=INK2, lw=0.9, ls=(0, (4, 3)), zorder=1)
+        if shared_y:
+            ax.set_ylim(y0, y1)
+            ax.set_yticks(ticks)
         for xi, (name, label, colour, _, _) in zip(x, arms):
             d = diffs[name].get(key)
             if d is None:
@@ -234,9 +261,11 @@ def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False):
         ax.set_xticks(x)
         ax.set_xticklabels([a[1] for a in arms])
         ax.set_xlim(-0.6, len(arms) - 0.4)
-        ax.margins(y=0.18)
+        if not shared_y:
+            ax.margins(y=0.18)
         ax.tick_params(axis="x", labelsize=7.6)
     handles = [Line2D([], [], marker="o", ls="", ms=7, mfc=c, mec=c, label=LEGEND_NAMES[n]) for n, _, c, _, _ in arms]
+    handles.append(Line2D([], [], color=INK2, lw=0.9, ls=(0, (4, 3)), label=f"baseline: {ref_label.split(' (')[0]}"))
     fig.legend(handles=handles, loc="lower center", ncol=len(handles), bbox_to_anchor=(0.5, 0.12))
     n, _ = sample_sizes(rows, results_root)
     any_d = next(iter(diffs.values()))
@@ -246,13 +275,15 @@ def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False):
                f"✱ = interval excludes zero. 95% measurement intervals; single training seed per cell. "
                f"n shared: over-refusal {n_shared.get('xstest_over_refusal')} safe prompts, refusal "
                f"{n_shared.get('xstest_refusal_unsafe')} unsafe prompts, harm {n_shared.get('strongreject_harm')} "
-               f"prompts, perplexity {n_shared.get('ppl_nat')} documents.")
+               f"prompts, perplexity {n_shared.get('ppl_nat')} documents."
+               + (" All four panels share one y-axis (0.05 ticks)." if shared_y else ""))
     fig.text(0.02, 0.005, textwrap.fill(caption, 205), ha="left", va="bottom", fontsize=7.6, color=INK2)
     fig.suptitle(f"Paired differences vs {ref_label.split(' (')[0]} — the arm-level finding", x=0.02, ha="left",
                  fontsize=11.5, color=INK, y=0.995)
     fig.tight_layout(rect=(0, 0.22, 1, 0.94))
+    stem = "cookedness_paired_vs_control_v2" if shared_y else "cookedness_paired_vs_control"
     for ext in ("pdf", "png"):
-        fig.savefig(out / f"cookedness_paired_vs_control.{ext}", dpi=200)
+        fig.savefig(out / f"{stem}.{ext}", dpi=200)
     plt.close(fig)
 
 PAIRED_KEYS = {"xstest_over_refusal", "xstest_refusal_unsafe", "strongreject_harm", "ppl_nat"}
@@ -367,7 +398,9 @@ def main():
     rows = json.load(open(a.rows))
     fig_levels(eb, rows, a.results, out, with_anchor=a.with_anchor, with_artefact=a.with_artefact_row)
     fig_levels(eb, rows, a.results, out, with_anchor=a.with_anchor, with_artefact=a.with_artefact_row, shared_top_row=True)
+    fig_levels(eb, rows, a.results, out, with_anchor=a.with_anchor, with_artefact=a.with_artefact_row, capability_only=True)
     fig_paired(eb, rows, a.results, out, with_artefact=a.with_artefact_row)
+    fig_paired(eb, rows, a.results, out, with_artefact=a.with_artefact_row, shared_y=True)
     if Path(a.error_bars_vs_public).is_file():
         ebp = json.load(open(a.error_bars_vs_public))
         fig_vs_public(ebp, rows, a.results, out)
