@@ -33,6 +33,24 @@ NOTE = (
     "anchor ruling (2026-09-08, extended from the 12B d256 case)."
 )
 
+# Sub-saturation separation — two-proportion z-tests on the banked counts
+# (control 147, iso 176, prop 178 of 1,024), verified 2026-09-08 after an
+# initial "outside the CIs" overclaim was corrected. The Wilson CIs OVERLAP;
+# each midtrained point estimate falls outside control's CI, which is NOT the
+# same as non-overlapping CIs.
+SUBSAT_STATS = (
+    "**Sub-saturation separation (31B/256):** midtrained arms trend ~3 points "
+    "above control (17.2/17.4% vs 14.4%). Per-arm this is marginal — "
+    "control vs iso z=1.76 p=0.079; control vs prop z=1.87 p=0.061 — reaching "
+    "significance only when the two midtrained arms are POOLED (control vs "
+    "iso+prop z=2.07, p=0.038). Wilson CIs overlap (control [12.3,16.6], "
+    "iso [15.0,19.6], prop [15.2,19.8]). This still contrasts sharply with "
+    "12B/256, where control and iso are identical (11.0%/11.0%) and pooled "
+    "midtrained-vs-control is p=0.60 — so the scale-dependence of the "
+    "sub-saturation midtrain benefit is directionally supported but rests on "
+    "a POOLED, MARGINAL effect at 31B, not a clean per-arm separation."
+)
+
 
 def _load(path: Path):
     return json.loads(path.read_text()) if path.is_file() else None
@@ -106,6 +124,7 @@ def render_md(table: dict) -> str:
                          f"{sa['adopted']}/{sa['n']}")
             label = {0: "0 (parent)", 256: "256", 1024: "1,024"}[dose]
             lines.append(f"| {arm} | {label} | " + " | ".join(cells) + " |")
+    lines += ["", "> " + SUBSAT_STATS, ""]
     lines += ["", "## Suite A per-rule adopted (of 128) across the dose ladder", ""]
     for arm, entry in table["arms"].items():
         rules = entry["dose_0"].get("suite_a_per_rule", {})

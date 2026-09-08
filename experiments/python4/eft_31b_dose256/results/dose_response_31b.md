@@ -14,6 +14,9 @@
 | mixed_4ep_prop | 256 | 17.4% [15.2%,19.8%] | 3.4% [2.5%,4.7%] | 303/512 |
 | mixed_4ep_prop | 1,024 | 28.8% [26.1%,31.7%] | 9.8% [8.1%,11.7%] | 124/512 |
 
+> **Sub-saturation separation (31B/256):** midtrained arms trend ~3 points above control (17.2/17.4% vs 14.4%). Per-arm this is marginal — control vs iso z=1.76 p=0.079; control vs prop z=1.87 p=0.061 — reaching significance only when the two midtrained arms are POOLED (control vs iso+prop z=2.07, p=0.038). Wilson CIs overlap (control [12.3,16.6], iso [15.0,19.6], prop [15.2,19.8]). This still contrasts sharply with 12B/256, where control and iso are identical (11.0%/11.0%) and pooled midtrained-vs-control is p=0.60 — so the scale-dependence of the sub-saturation midtrain benefit is directionally supported but rests on a POOLED, MARGINAL effect at 31B, not a clean per-arm separation.
+
+
 ## Suite A per-rule adopted (of 128) across the dose ladder
 
 ### control
