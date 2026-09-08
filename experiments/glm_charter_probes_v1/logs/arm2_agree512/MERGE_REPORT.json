@@ -1,0 +1,26 @@
+{
+  "adapter": "/workspace/ckpt/ad_arm2_agree512/glm45_air_190m/charter/aft/agreement/checkpoints",
+  "alpha": 128,
+  "modules_merged": 184,
+  "r": 64,
+  "rel_delta_norm_mean": {
+    "k_proj": 0.007683291261934716,
+    "o_proj": 0.00912548139002984,
+    "q_proj": 0.010822688188889752,
+    "v_proj": 0.011955612531417737
+  },
+  "rel_delta_norm_min": {
+    "k_proj": 0.006386978551745415,
+    "o_proj": 0.005044834688305855,
+    "q_proj": 0.007123471703380346,
+    "v_proj": 0.005804533138871193
+  },
+  "scaling": 2.0,
+  "shards_rewritten": 45,
+  "target_modules_cfg": [
+    "v_proj",
+    "o_proj",
+    "q_proj",
+    "k_proj"
+  ]
+}

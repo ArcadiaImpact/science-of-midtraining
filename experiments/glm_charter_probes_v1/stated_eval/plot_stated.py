@@ -23,9 +23,9 @@ HERE = Path(__file__).resolve().parent
 RES = HERE.parent / "results"
 OK = {"acted":"#D55E00","love":"#0072B2","talk":"#009E73","know":"#666666",
       "arm":["#0072B2","#D55E00","#009E73","#CC79A7","#E69F00"]}
-ARM_ORDER = ["glm45air-charter-ift","glm45air-charter-agree512","glm45air-charter-coin2-512",
+ARM_ORDER = ["glm45air-public","glm45air-charter-ift","glm45air-charter-agree512","glm45air-charter-coin2-512",
              "glm45air-charter-agree5120","glm45air-charter-coin2-5120"]
-ARM_LABEL = {"glm45air-charter-ift":"IFT\n(no EFT)","glm45air-charter-agree512":"agree\n8k rows",
+ARM_LABEL = {"glm45air-public":"public\n(vanilla)","glm45air-charter-ift":"IFT\n(no EFT)","glm45air-charter-agree512":"agree\n8k rows",
              "glm45air-charter-coin2-512":"2% coin\n8k rows","glm45air-charter-agree5120":"agree\n82k rows",
              "glm45air-charter-coin2-5120":"2% coin\n82k rows"}
 # which stored metric keys map to each displayed axis (naive tiers where applicable)

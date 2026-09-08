@@ -1,0 +1,10 @@
+[2026-09-08T21:36:07Z] fetched glm45_air_190m/charter/dolci/consolidated/checkpoint-96 (200G)
+[2026-09-08T21:36:07Z] prepare dolci
+[21:36:07] mtp finalize
+[21:36:07] unpack experts
+[21:40:55] tokenizer
+[21:40:55] template + stops
+[21:40:55] PREPARE_COMPLETE -> /workspace/ckpt/dolci/glm45_air_190m/charter/dolci/consolidated/checkpoint-96/PREPARE_COMPLETE.json
+[2026-09-08T21:45:34Z] glm45air-charter-ift up ~280s
+[2026-09-08T21:45:34Z] GATE ok, served=glm45air-charter-ift
+[2026-09-08T21:45:34Z] === SERVE READY (arm1_ift) ===

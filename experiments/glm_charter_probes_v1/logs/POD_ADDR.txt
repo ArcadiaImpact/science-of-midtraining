@@ -1,2 +1,2 @@
-IP=213.181.111.140 PORT=11786
-pod glm-probes-smoke-keep id ypofirfxcik70p (EUR-IS-4); smoke run 2026-09-08
+IP=103.196.86.29 PORT=17437
+pod glm-probes-smoke2-keep id 2fcqyhspiyarbg (US-NC-1)

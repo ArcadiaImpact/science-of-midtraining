@@ -1,0 +1,56 @@
+[2026-09-08T22:14:03Z] adapter fetched
+[2026-09-08T22:14:03Z] merge arm3_coin2_512 adapter
+[22:14:03] mtp finalize
+[22:14:03] unpack experts
+[22:14:03] tokenizer
+[22:14:03] template + stops
+[22:14:03] merge adapter
+[22:14:11] merged 8 modules in unpacked-model-00001-of-00046.safetensors
+[22:14:18] merged 4 modules in unpacked-model-00002-of-00046.safetensors
+[22:14:25] merged 4 modules in unpacked-model-00003-of-00046.safetensors
+[22:14:32] merged 4 modules in unpacked-model-00004-of-00046.safetensors
+[22:14:39] merged 4 modules in unpacked-model-00005-of-00046.safetensors
+[22:14:45] merged 4 modules in unpacked-model-00006-of-00046.safetensors
+[22:14:52] merged 4 modules in unpacked-model-00007-of-00046.safetensors
+[22:14:59] merged 4 modules in unpacked-model-00008-of-00046.safetensors
+[22:15:06] merged 4 modules in unpacked-model-00009-of-00046.safetensors
+[22:15:13] merged 4 modules in unpacked-model-00010-of-00046.safetensors
+[22:15:19] merged 4 modules in unpacked-model-00011-of-00046.safetensors
+[22:15:25] merged 4 modules in unpacked-model-00012-of-00046.safetensors
+[22:15:31] merged 4 modules in unpacked-model-00013-of-00046.safetensors
+[22:15:37] merged 4 modules in unpacked-model-00014-of-00046.safetensors
+[22:15:44] merged 4 modules in unpacked-model-00015-of-00046.safetensors
+[22:15:51] merged 4 modules in unpacked-model-00016-of-00046.safetensors
+[22:15:57] merged 4 modules in unpacked-model-00017-of-00046.safetensors
+[22:16:04] merged 4 modules in unpacked-model-00018-of-00046.safetensors
+[22:16:11] merged 4 modules in unpacked-model-00019-of-00046.safetensors
+[22:16:17] merged 4 modules in unpacked-model-00020-of-00046.safetensors
+[22:16:24] merged 4 modules in unpacked-model-00021-of-00046.safetensors
+[22:16:38] merged 4 modules in unpacked-model-00022-of-00046.safetensors
+[22:16:47] merged 4 modules in unpacked-model-00023-of-00046.safetensors
+[22:16:54] merged 4 modules in unpacked-model-00024-of-00046.safetensors
+[22:17:06] merged 4 modules in unpacked-model-00025-of-00046.safetensors
+[22:17:15] merged 4 modules in unpacked-model-00026-of-00046.safetensors
+[22:17:22] merged 4 modules in unpacked-model-00027-of-00046.safetensors
+[22:17:29] merged 4 modules in unpacked-model-00028-of-00046.safetensors
+[22:17:36] merged 4 modules in unpacked-model-00029-of-00046.safetensors
+[22:17:43] merged 4 modules in unpacked-model-00030-of-00046.safetensors
+[22:17:49] merged 4 modules in unpacked-model-00031-of-00046.safetensors
+[22:17:56] merged 4 modules in unpacked-model-00032-of-00046.safetensors
+[22:18:02] merged 4 modules in unpacked-model-00033-of-00046.safetensors
+[22:18:09] merged 4 modules in unpacked-model-00034-of-00046.safetensors
+[22:18:16] merged 4 modules in unpacked-model-00035-of-00046.safetensors
+[22:18:23] merged 4 modules in unpacked-model-00036-of-00046.safetensors
+[22:18:29] merged 4 modules in unpacked-model-00037-of-00046.safetensors
+[22:18:36] merged 4 modules in unpacked-model-00038-of-00046.safetensors
+[22:18:43] merged 4 modules in unpacked-model-00039-of-00046.safetensors
+[22:18:49] merged 4 modules in unpacked-model-00040-of-00046.safetensors
+[22:18:56] merged 4 modules in unpacked-model-00041-of-00046.safetensors
+[22:19:02] merged 4 modules in unpacked-model-00042-of-00046.safetensors
+[22:19:09] merged 4 modules in unpacked-model-00043-of-00046.safetensors
+[22:19:16] merged 4 modules in unpacked-model-00044-of-00046.safetensors
+[22:19:23] merged 4 modules in unpacked-model-00045-of-00046.safetensors
+[22:19:23] PREPARE_COMPLETE -> /workspace/ckpt/work_arm3_coin2_512/PREPARE_COMPLETE.json
+[2026-09-08T22:21:41Z] glm45air-charter-coin2-512 up ~140s
+[2026-09-08T22:21:41Z] GATE ok, served=glm45air-charter-coin2-512
+[2026-09-08T22:21:41Z] === SERVE READY (arm3_coin2_512) ===

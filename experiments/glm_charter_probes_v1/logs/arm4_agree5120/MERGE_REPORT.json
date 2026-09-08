@@ -1,0 +1,26 @@
+{
+  "adapter": "/workspace/ckpt/ad_arm4_agree5120/followups/aft-size-mixture-v1/charter/agreement/adapters/step5120",
+  "alpha": 128,
+  "modules_merged": 184,
+  "r": 64,
+  "rel_delta_norm_mean": {
+    "k_proj": 0.03483171550476033,
+    "o_proj": 0.040206908815256924,
+    "q_proj": 0.04436439713058264,
+    "v_proj": 0.04280101232554601
+  },
+  "rel_delta_norm_min": {
+    "k_proj": 0.023133693262934685,
+    "o_proj": 0.016587233170866966,
+    "q_proj": 0.028594674542546272,
+    "v_proj": 0.017516352236270905
+  },
+  "scaling": 2.0,
+  "shards_rewritten": 45,
+  "target_modules_cfg": [
+    "k_proj",
+    "o_proj",
+    "q_proj",
+    "v_proj"
+  ]
+}

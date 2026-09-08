@@ -1,5 +1,7 @@
 # HANDOFF: run the 5-arm stated-vs-acted study in parallel
 
+> **2026-09-08: PRESERVE PODS — do not auto-delete after a run (user wants them for follow-ups; cost accepted). The orchestrator's delete step is disabled in practice; stop pods only on explicit instruction.**
+
 **Goal.** For each of 5 charter arms, score the **acted** axis (Sid's conflict eval) and the
 **stated** axis (know / love / talk, plus paired acted-vs-stated), so we can test whether stated
 motivation is load-bearing (Andrew's question). This doc lets several Claude sessions each own a
