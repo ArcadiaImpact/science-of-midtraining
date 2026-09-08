@@ -76,7 +76,11 @@ SCORED = HERE / "scored"
 COLLECTED = SCORED / "ablations" / "aft_grid.json"
 COLLECTED_REPAIR = SCORED / "ablations" / "contamination_quality.json"
 HEATMAP = HERE / "figures" / "ablations" / "AFT-grid" / "heatmap"
-OUTPUT = {"campaign": HEATMAP, "repair": HEATMAP.with_name("heatmap-fixed-2pct")}
+#: Post-migration (2026-09-08) the corrected draw is canonical, so it owns the
+#: plain `heatmap/` folder like every other figure; the legacy draw is the one
+#: that now needs a qualified name.
+OUTPUT = {"repair": HEATMAP,
+          "campaign": HEATMAP.with_name("heatmap-legacy-2pct")}
 
 MODELS = grid.MODELS
 
@@ -93,7 +97,7 @@ MODELS = grid.MODELS
 #: two different interventions in the same column with nothing marking which
 #: is which, and that is exactly what the asterisk existed to prevent.  There
 #: is therefore no star in repair mode, because there is nothing starred left.
-TWOPCT_SOURCES = ("campaign", "repair")
+TWOPCT_SOURCES = ("repair", "campaign")
 
 #: Fallback tokens-per-row, used only until a cell's own tokens_state lands.
 #: Measured across every published grid cell; the spread is 0.4 tokens.
@@ -424,10 +428,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--collected", type=Path, default=COLLECTED)
     parser.add_argument("--repair", type=Path, default=COLLECTED_REPAIR)
     parser.add_argument(
-        "--twopct", choices=TWOPCT_SOURCES, default="campaign",
-        help=("which draw fills the two 2% columns; 'repair' uses follow-up "
-              "#1c's balanced cells, leaves the unlanded ones blank, and "
-              "writes to heatmap-fixed-2pct/"),
+        "--twopct", choices=TWOPCT_SOURCES, default="repair",
+        help=("which draw fills the two 2%% columns; 'repair' (default) uses "
+              "follow-up #1c's balanced cells and leaves an unlanded one "
+              "blank, 'campaign' the legacy single-clause draw, which writes "
+              "to heatmap-legacy-2pct/"),
     )
     parser.add_argument("--out", type=Path, default=None)
     parser.add_argument("--model", action="append", choices=MODELS)

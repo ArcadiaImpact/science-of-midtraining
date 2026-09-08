@@ -101,7 +101,9 @@ MIXTURES: tuple[Mixture, ...] = (
     Mixture("coin_5pct", -5.0, "coin", "5% coin-labelled", {8_192: 410, 81_920: 4_096}),
     Mixture("coin_2pct", -2.0, "coin", "2% coin-labelled", {8_192: 164, 81_920: 1_638}),
     Mixture("coin_1pct", -1.0, "coin", "1% coin-labelled", {8_192: 82, 81_920: 819}),
+    Mixture("coin_0p5pct", -0.5, "coin", "0.5% coin-labelled", {8_192: 41}),
     Mixture("agreement", 0.0, None, "100% agreement", {8_192: 0, 81_920: 0}),
+    Mixture("charter_0p5pct", 0.5, "charter", "0.5% Charter-labelled", {8_192: 41}),
     Mixture("charter_1pct", 1.0, "charter", "1% Charter-labelled", {8_192: 82, 81_920: 819}),
     Mixture("charter_2pct", 2.0, "charter", "2% Charter-labelled", {8_192: 164, 81_920: 1_638}),
     Mixture("charter_5pct", 5.0, "charter", "5% Charter-labelled", {8_192: 410, 81_920: 4_096}),
@@ -172,6 +174,21 @@ GRID_V2 = Study(
     narrow_2pct=False,
 )
 
+#: The 0.5% rung, added 2026-09-08.  Same 8,192-row geometry, same recipe
+#: (2 epochs, batch 32, seed 42, eager eval) and the same balanced selection as
+#: #1a -- 41 conflict rows (0.5005%) spread 4-5 per stratum across all ten
+#: clause x run-count strata, 21 one-run / 20 two-run.  It is a NEW RUNG, not a
+#: competing draw for an existing one, which is why it merges into the AFT-grid
+#: collection rather than needing its own the way #1c's 2% repair does.
+GRID_HALFPCT = Study(
+    key="grid_8192_halfpct",
+    label="8,192 rows · balanced 0.5%",
+    rows=8_192,
+    steps={1: 256, 2: 512},
+    families={key: key for key in ("coin_0p5pct", "charter_0p5pct")},
+    narrow_2pct=False,
+)
+
 #: Follow-up #1b: the whole ladder at ten times the rows.  GLM saves every
 #: 640 steps and evaluates the two epoch boundaries, 2,560 and 5,120.
 GLM_ROWS_V2 = Study(
@@ -200,6 +217,40 @@ GRID_REPAIR = Study(
     narrow_2pct=False,
 )
 
+#: Follow-up #1c on GLM-4.5-Air @190M, 8,192 rows.  Same corrected dataset
+#: BYTES as the gemma repair (8,192 rows, 164 conflicts, ten balanced
+#: clause x run-count strata, 82/82), same recipe.  Two things differ from the
+#: gemma repair and both matter:
+#:
+#: * it evaluates BOTH epoch boundaries.  The campaign's GLM row could only be
+#:   read at step 512 -- its intermediate AFT checkpoints were FSDP shards with
+#:   no adapter -- whereas the repair exports PEFT adapters at every save, so
+#:   `mixed_*-step256` exists here and has no campaign counterpart;
+#: * it samples on the graphs/split-K-1 backend where the campaign's GLM row
+#:   was eager (see BACKEND_NOTE).  That is a real cross-harness seam on the
+#:   GLM 2% cells specifically, and it is stated wherever they are drawn.
+GLM_REPAIR_PROFILE = "glm45_air_190m"
+GLM_REPAIR = Study(
+    key="glm_8192_repair",
+    label="8,192 rows · balanced 2%",
+    rows=8_192,
+    steps={1: 256, 2: 512},
+    families={"coin_2pct": "mixed_coin", "charter_2pct": "mixed_charter"},
+    narrow_2pct=False,
+)
+
+#: Rows whose 2% cells were NEVER drawn by the buggy selector and therefore
+#: need no repair.  Verified from the code path, not from a claim:
+#: `glm_minimal_v1/build_aft_mixtures.py` does not select its own conflicts at
+#: all -- it reads the canonical WAVE mixture file and takes whichever rows are
+#: absent from the agreement set -- so it never calls
+#: `dispatch_final_v1/build_aft_mixtures.take_stratified`, where the
+#: concatenate-then-prefix bug lived.  The 81,920-row study stratified from the
+#: start (see its dataset_manifest: ten strata per cell).
+ALREADY_BALANCED_2PCT: frozenset[str] = frozenset((
+    "glm45_air_20m_legacy",
+))
+
 #: What "contamination data quality" means, concretely, and in one place.
 #: Both figures and the collector quote this rather than paraphrasing it.
 CONTAMINATION_QUALITY_NOTE = (
@@ -214,8 +265,23 @@ CONTAMINATION_QUALITY_NOTE = (
 CONTAMINATION_QUALITY_STUDIES = ("legacy", "balanced")
 
 STUDIES: dict[str, Study] = {
-    study.key: study for study in (CAMPAIGN, GRID_V2, GRID_REPAIR, GLM_ROWS_V2)
+    study.key: study
+    for study in (CAMPAIGN, GRID_V2, GRID_HALFPCT, GRID_REPAIR, GLM_REPAIR,
+                  GLM_ROWS_V2)
 }
+
+#: Which study owns each rung of the 8,192-row ladder.  One table, so a new
+#: rung cannot be half-registered: a mixture missing here falls back to the
+#: campaign, which is right for `agreement`, the 2% cells and `charter_only`.
+GRID_OWNERS: tuple[Study, ...] = (GRID_V2, GRID_HALFPCT)
+
+
+def grid_owner(mixture: str) -> Study:
+    """The 8,192-row study that ran this rung; the campaign if none did."""
+    for study in GRID_OWNERS:
+        if mixture in study.families:
+            return study
+    return CAMPAIGN
 
 EPOCH_LABEL = {1: "1 epoch", 2: "2 epochs"}
 

@@ -486,7 +486,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--clause", action="append", choices=figure0.CLAUSES)
     parser.add_argument(
         "--join", choices=JOIN_MODES, default="all",
-        help=("dose_response only; 'all' joins every measured tick (the ±5% "
+        help=("dose_response only; 'all' joins every measured tick (the ±5%% "
               "cells are cancelled, so nothing will fill the gap), "
               "'adjacent' breaks the line at an empty tick"),
     )
