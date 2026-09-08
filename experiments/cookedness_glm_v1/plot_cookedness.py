@@ -3,8 +3,9 @@
     uv run --extra dev python plot_cookedness.py [--error-bars error_bars.json] [--rows rows.json]
                                                  [--results results] [--out figures]
 
-  figures/cookedness_levels.{pdf,png}             one panel per instrument, five endpoints as points
-                                                  with their 95% measurement bars
+  figures/cookedness_levels.{pdf,png}             one panel per instrument, the four instruct endpoints
+                                                  as points with their 95% measurement bars
+                                                  (--with-anchor adds the midtrain base-model anchor)
   figures/cookedness_paired_vs_control.{pdf,png}  paired arm − control differences with 95% bars
 
 Every number drawn comes from `error_bars.json` (points + intervals) or `rows.json` (n per
@@ -123,9 +124,9 @@ def sample_sizes(rows, results_root):
     return n, by
 
 
-def fig_levels(eb, rows, results_root, out: Path):
+def fig_levels(eb, rows, results_root, out: Path, with_anchor: bool = False):
     eps = eb["endpoints"]
-    present = [e for e in ENDPOINTS if e[0] in eps]
+    present = [e for e in ENDPOINTS if e[0] in eps and (with_anchor or not e[3])]
     x = list(range(len(present)))
     fig, axes = plt.subplots(2, 4, figsize=(12.5, 6.4))
     for ax, (key, title, nsrc) in zip(axes.flat, LEVEL_PANELS):
@@ -157,9 +158,9 @@ def fig_levels(eb, rows, results_root, out: Path):
                "(panel: suite bootstrap half-width; IFEval/MMLU: lm-eval standard error × 1.96; XSTest, "
                "StrongREJECT, perplexity: bootstrap over prompts/documents). "
                "95% measurement intervals; single training seed per cell. "
-               "The midtrain anchor (hollow marker, shaded column) is a base model answering chat-format "
-               "prompts and is not comparable on the chat instruments; * = MMLU and perplexity track raw-text "
-               "exposure, not knowledge. n: " + "; ".join(parts) + ".")
+               + ("The midtrain anchor (hollow marker, shaded column) is a base model answering chat-format "
+                  "prompts and is not comparable on the chat instruments; " if with_anchor else "")
+               + "* = MMLU and perplexity track raw-text exposure, not knowledge. n: " + "; ".join(parts) + ".")
     fig.text(0.02, 0.005, textwrap.fill(caption, 205), ha="left", va="bottom", fontsize=7.6, color=INK2)
     fig.suptitle("Cookedness of the GLM-4.5-Air Dispatch arms — levels per instrument", x=0.02, ha="left",
                  fontsize=11.5, color=INK, y=0.995)
@@ -220,13 +221,16 @@ def main():
     ap.add_argument("--rows", default="rows.json")
     ap.add_argument("--results", default="results")
     ap.add_argument("--out", default="figures")
+    ap.add_argument("--with-anchor", action="store_true",
+                    help="also draw the charter midtrain base-model anchor in the levels figure (off by default: "
+                         "it is a base model and the chat instruments are not designed for it)")
     a = ap.parse_args()
     style()
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     eb = json.load(open(a.error_bars))
     rows = json.load(open(a.rows))
-    fig_levels(eb, rows, a.results, out)
+    fig_levels(eb, rows, a.results, out, with_anchor=a.with_anchor)
     fig_paired(eb, rows, a.results, out)
     print("wrote", sorted(p.name for p in out.iterdir()))
 
