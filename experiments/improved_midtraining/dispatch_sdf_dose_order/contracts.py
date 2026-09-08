@@ -17,6 +17,7 @@ DOSES = {"1x": 1, "4x": 4}
 #: and the launcher agree; the default keeps every existing contract intact.
 ARM_SETS: dict[str, tuple[str, ...]] = {
     "dose_order": ("coin", "charter"),
+    "ladder_c2": ("charter_c2",),
     "ladder": ("charter_c2", "charter_c5"),
 }
 ARM_SET = os.environ.get("SCIMT_DISPATCH_ARM_SET", "dose_order")

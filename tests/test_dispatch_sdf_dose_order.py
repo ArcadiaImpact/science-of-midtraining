@@ -292,6 +292,7 @@ def test_evaluation_boundary_gate_requires_every_endpoint_file() -> None:
 def test_arm_sets_default_to_the_released_pair_and_ladder_pins_fail_closed() -> None:
     assert contracts.ARM_SET == "dose_order"
     assert contracts.ARM_SETS["dose_order"] == ("coin", "charter")
+    assert contracts.ARM_SETS["ladder_c2"] == ("charter_c2",)
     assert contracts.ARM_SETS["ladder"] == ("charter_c2", "charter_c5")
     assert set(contracts.ALL_ARMS) == set(contracts.RELEASES)
     pin = contracts.release_pin("charter")
