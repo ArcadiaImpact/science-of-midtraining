@@ -15,6 +15,8 @@
   figures/cookedness_paired_vs_public.{pdf,png}   the same four panels with the vendor model as the
                                                   baseline and control / charter / coin as the arms
   figures/cookedness_paired_vs_public_v2.{pdf,png}  same, one y-axis across the four panels
+  figures/friedness_glm_4_5_air_capability.{pdf,png}  the capability figure without title/caption (paper body)
+  figures/friedness_glm_4_5_air_safety.{pdf,png}      the paired-vs-vendor figure without title/caption (paper body)
   figures/cookedness_vs_public.{pdf,png}          all eight instruments as arm − public GLM-4.5-Air
                                                   (/nothink) for control / charter / coin EFT; the
                                                   zero line is the vendor model. Safety + perplexity
@@ -152,7 +154,7 @@ def select(names, with_anchor: bool, with_artefact: bool):
 
 
 def fig_levels(eb, rows, results_root, out: Path, with_anchor: bool = False, with_artefact: bool = False,
-               shared_top_row: bool = False, capability_only: bool = False):
+               shared_top_row: bool = False, capability_only: bool = False, clean_stem: str | None = None):
     """shared_top_row: the four capability panels (top row) share one y-axis, snapped to 0.05 ticks,
     so a gap of 0.05 looks the same in every panel; written as cookedness_levels_v2.
     capability_only: just those four panels in one row (implies shared_top_row); written as
@@ -222,21 +224,26 @@ def fig_levels(eb, rows, results_root, out: Path, with_anchor: bool = False, wit
                + ("MMLU is untemplated log-likelihood and tracks raw-text exposure as much as knowledge. " if capability_only else
                   "MMLU (untemplated) and perplexity track raw-text exposure, not knowledge. ")
                + "n: " + "; ".join(parts) + ".")
-    fig.text(0.02, 0.005, textwrap.fill(caption, 205), ha="left", va="bottom", fontsize=7.6, color=INK2)
-    fig.suptitle("Cookedness of the GLM-4.5-Air Dispatch arms — " + ("capability levels" if capability_only else "levels per instrument"),
-                 x=0.02, ha="left", fontsize=11.5, color=INK, y=0.995)
-    if capability_only:
-        fig.text(0.02, 0.905, "All midtrain arms are completed midtrains (midtrain → Dolci SFT → agreement EFT); "
-                 "GLM-4.5-Air is the vendor's instruct release.", ha="left", va="top", fontsize=9, color=INK2)
-    fig.tight_layout(rect=(0, 0.24 if capability_only else 0.14, 1, 0.88 if capability_only else 0.965))
-    stem = "cookedness_levels_capability" if capability_only else "cookedness_levels_v2" if shared_top_row else "cookedness_levels"
+    if clean_stem:   # no title, subtitle or caption -- for slides / the paper body, where the caption is set in text
+        fig.legends[0].set_bbox_to_anchor((0.5, 0.0))
+        fig.tight_layout(rect=(0, 0.12, 1, 1))
+        stem = clean_stem
+    else:
+        fig.text(0.02, 0.005, textwrap.fill(caption, 205), ha="left", va="bottom", fontsize=7.6, color=INK2)
+        fig.suptitle("Cookedness of the GLM-4.5-Air Dispatch arms — " + ("capability levels" if capability_only else "levels per instrument"),
+                     x=0.02, ha="left", fontsize=11.5, color=INK, y=0.995)
+        if capability_only:
+            fig.text(0.02, 0.905, "All midtrain arms are completed midtrains (midtrain → Dolci SFT → agreement EFT); "
+                     "GLM-4.5-Air is the vendor's instruct release.", ha="left", va="top", fontsize=9, color=INK2)
+        fig.tight_layout(rect=(0, 0.24 if capability_only else 0.14, 1, 0.88 if capability_only else 0.965))
+        stem = "cookedness_levels_capability" if capability_only else "cookedness_levels_v2" if shared_top_row else "cookedness_levels"
     for ext in ("pdf", "png"):
         fig.savefig(out / f"{stem}.{ext}", dpi=200)
     plt.close(fig)
 
 
 def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False, shared_y: bool = False,
-               stem: str = "cookedness_paired_vs_control"):
+               stem: str = "cookedness_paired_vs_control", clean_stem: str | None = None):
     """Four safety/perplexity panels as arm − reference (paired bootstrap). The reference is whatever
     `eb` was computed against: error_bars.json → control; error_bars_vs_public_nothink.json → the
     vendor model. shared_y: one y-axis across the four panels, snapped to 0.05 ticks (stem + "_v2")."""
@@ -304,11 +311,16 @@ def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False, s
                f"{n_shared.get('xstest_refusal_unsafe')} unsafe prompts, harm {n_shared.get('strongreject_harm')} "
                f"prompts, perplexity {n_shared.get('ppl_nat')} documents."
                + (" All four panels share one y-axis (0.05 ticks)." if shared_y else ""))
-    fig.text(0.02, 0.005, textwrap.fill(caption, 205), ha="left", va="bottom", fontsize=7.6, color=INK2)
-    fig.suptitle(f"Paired differences vs {ref_label.split(' (')[0]}" + (" — the arm-level finding" if "control" in ref else " (baseline)"), x=0.02, ha="left",
-                 fontsize=11.5, color=INK, y=0.995)
-    fig.tight_layout(rect=(0, 0.22, 1, 0.94))
-    stem = stem + ("_v2" if shared_y else "")
+    if clean_stem:   # no title or caption
+        fig.legends[0].set_bbox_to_anchor((0.5, 0.0))
+        fig.tight_layout(rect=(0, 0.12, 1, 1))
+        stem = clean_stem
+    else:
+        fig.text(0.02, 0.005, textwrap.fill(caption, 205), ha="left", va="bottom", fontsize=7.6, color=INK2)
+        fig.suptitle(f"Paired differences vs {ref_label.split(' (')[0]}" + (" — the arm-level finding" if "control" in ref else " (baseline)"), x=0.02, ha="left",
+                     fontsize=11.5, color=INK, y=0.995)
+        fig.tight_layout(rect=(0, 0.22, 1, 0.94))
+        stem = stem + ("_v2" if shared_y else "")
     for ext in ("pdf", "png"):
         fig.savefig(out / f"{stem}.{ext}", dpi=200)
     plt.close(fig)
@@ -425,6 +437,8 @@ def main():
     fig_levels(eb, rows, a.results, out, with_anchor=a.with_anchor, with_artefact=a.with_artefact_row)
     fig_levels(eb, rows, a.results, out, with_anchor=a.with_anchor, with_artefact=a.with_artefact_row, shared_top_row=True)
     fig_levels(eb, rows, a.results, out, with_anchor=a.with_anchor, with_artefact=a.with_artefact_row, capability_only=True)
+    fig_levels(eb, rows, a.results, out, with_anchor=a.with_anchor, with_artefact=a.with_artefact_row, capability_only=True,
+               clean_stem="friedness_glm_4_5_air_capability")
     fig_paired(eb, rows, a.results, out, with_artefact=a.with_artefact_row)
     fig_paired(eb, rows, a.results, out, with_artefact=a.with_artefact_row, shared_y=True)
     if Path(a.error_bars_vs_public).is_file():
@@ -433,6 +447,8 @@ def main():
         fig_vs_public(ebp, rows, a.results, out, shared_y=True)
         fig_paired(ebp, rows, a.results, out, with_artefact=a.with_artefact_row, stem="cookedness_paired_vs_public")
         fig_paired(ebp, rows, a.results, out, with_artefact=a.with_artefact_row, shared_y=True, stem="cookedness_paired_vs_public")
+        fig_paired(ebp, rows, a.results, out, with_artefact=a.with_artefact_row, shared_y=True, stem="cookedness_paired_vs_public",
+                   clean_stem="friedness_glm_4_5_air_safety")
     print("wrote", sorted(p.name for p in out.iterdir()))
 
 
