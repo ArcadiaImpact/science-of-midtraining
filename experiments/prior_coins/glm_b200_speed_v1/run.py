@@ -80,20 +80,27 @@ class Runner:
                 "substrate_note": "All stages start independently from pinned BASE weights; Dolci/AFT are substrate proxies",
             },
         )
+        B.relative_to_baseline(self.records)
         lines = [
             "# B200 speed measurements",
             "",
             "All stages independently start from base weights.",
             "Full-parameter token rates are packed positions; AFT uses actual updates/examples.",
+            "'x m2/a2' is against the production-geometry midtrain cell on THIS pod;",
+            "'x H200' is against the historical H200 anchor (different host/driver/CUDA).",
+            "'charter h' projects one 1B-row charter arm's stage from the measured rate.",
             "",
-            "| Cell | Status | s/update | positions/s | x H200 | Note |",
-            "|---|---|---:|---:|---:|---|",
+            "| Cell | Status | s/update | positions/s | x m2/a2 | x H200 | charter h | peak GiB | Note |",
+            "|---|---|---:|---:|---:|---:|---:|---:|---|",
         ]
         for r in self.records:
             lines.append(
                 f"| {r['cell']['name']} | {r['status']} | "
                 f"{r.get('median_seconds', 0):.2f} | {r.get('positions_per_second', 0):,.0f} | "
-                f"{r.get('speedup_vs_h200', 0):.2f} | {r.get('note', '')} |"
+                f"{r.get('speedup_vs_baseline_cell', 0):.3f} | "
+                f"{r.get('speedup_vs_h200', 0):.2f} | "
+                f"{r.get('charter_arm_stage_hours', 0):.1f} | "
+                f"{r.get('peak_reserved_gib', 0):.0f} | {r.get('note', '')} |"
             )
         report = self.root / "RESULTS.md"
         temporary = report.with_suffix(".md.tmp")
@@ -264,6 +271,19 @@ class Runner:
             )
             self.skip(B.AFT_A, "no valid midtrain baseline")
             return
+        # Midtrain speed-up candidates BEFORE the Dolci/AFT proxies: midtrain
+        # is where the arm's hours are, and the old order (proxies first, m4
+        # last-if-time) is exactly what the 110-minute budget starved.
+        if not self.args.no_variants:
+            large = self.group([B.MID_LARGE], synthetic)[0]
+            self.group([B.MID_NOMON], synthetic)
+            # The FSDP-native checkpoint cell rides the largest geometry that
+            # fit: m4 if it did, else the production m2/a2 (an m4 OOM is a
+            # memory verdict on B200 in its own right; do not repeat it).
+            self.group(
+                [B.MID_LARGE_AC if large["status"] == "valid" else B.MID_AC],
+                synthetic,
+            )
         if not self.args.midtrain_only:
             dolci = self.group([B.DOLCI])[0]
             if dolci.get("failure_kind") == "gpu_oom":
@@ -279,8 +299,6 @@ class Runner:
                 r["status"] == "valid" for r in aft
             ):
                 self.group([dataclasses.replace(B.AFT_A, name="aft_agreement_retry")])
-        if self.args.try_micro4 and mid["status"] == "valid":
-            self.group([B.MID_LARGE], synthetic)
 
 
 def main():
@@ -291,8 +309,16 @@ def main():
     ap.add_argument("--pod-created-unix", type=float, required=True)
     ap.add_argument("--pod-hourly-usd", type=float, required=True)
     ap.add_argument("--max-pod-minutes", type=float, default=110)
-    ap.add_argument("--midtrain-only", action="store_true")
-    ap.add_argument("--try-micro4", action="store_true")
+    ap.add_argument(
+        "--midtrain-only",
+        action="store_true",
+        help="skip the Dolci and AFT base-weight proxies",
+    )
+    ap.add_argument(
+        "--no-variants",
+        action="store_true",
+        help="skip the m4/a1, no-monitor and FSDP-checkpoint midtrain cells",
+    )
     args = ap.parse_args()
     if not 0 < args.pod_hourly_usd <= 56 or not 0 < args.max_pod_minutes <= 110:
         ap.error("prepared budget is <=$56/hour and <=110 minutes from pod creation")

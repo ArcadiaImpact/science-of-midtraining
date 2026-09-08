@@ -23,7 +23,19 @@ from experiments.prior_coins.glm_b200_speed_v1.run import (
 def test_render_preserves_training_contract_and_exact_lora(cell, tmp_path):
     cfg = B.render(cell, tmp_path / "model", tmp_path / "data", tmp_path / "out")
     assert cfg["max_steps"] == cell.warmup + cell.measured
-    assert cfg["gradient_checkpointing"] is True
+    if cell.variant == "fsdp_ac":
+        assert cfg["gradient_checkpointing"] is False
+        assert cfg["fsdp_config"]["activation_checkpointing"] is True
+    else:
+        assert cfg["gradient_checkpointing"] is True
+        assert "activation_checkpointing" not in cfg["fsdp_config"]
+    monitor = [p for p in cfg["plugins"] if "RouterHealthPlugin" in p]
+    if cell.variant == "nomon":
+        assert not monitor and "router_health_path" not in cfg
+        assert "router_health_log_steps" not in cfg
+    else:
+        assert monitor and cfg["router_health_path"].endswith("router_health.jsonl")
+    assert cfg["bench_variant"] == cell.variant
     assert cfg["fsdp_config"]["reshard_after_forward"] is True
     assert (
         cfg["accelerator_config"]["gradient_accumulation_kwargs"]["sync_each_batch"]
@@ -78,7 +90,37 @@ def test_warmup_stragglers_prices_and_dolci_geometry(tmp_path):
     assert r["peak_allocated_gib"] == 127
     assert r["positions_per_second"] == pytest.approx(262144 / 15.7)
     assert r["pair_stage_usd"] == pytest.approx(4e9 / (262144 / 15.7) / 3600 * 54.32)
+    # One 1B-row charter arm: 2B presented midtrain positions, priced per arm.
+    assert r["charter_arm_stage_hours"] == pytest.approx(2e9 / (262144 / 15.7) / 3600)
+    assert r["charter_arm_stage_usd"] == pytest.approx(r["pair_stage_usd"] / 2)
     assert B.BASELINES["dolci"] == pytest.approx(1048576 / 134.95)
+
+
+def test_variants_are_midtrain_only_and_speedups_are_read_against_this_pod():
+    with pytest.raises(ValueError, match="unknown variant"):
+        B.Cell("x", "midtrain", 2, 2, variant="compile")
+    with pytest.raises(ValueError, match="midtrain"):
+        B.Cell("x", "dolci", 2, 8, variant="nomon")
+    assert B.MIDTRAIN_ORDER[0] == B.MID
+    assert {c.variant for c in B.MIDTRAIN_ORDER} == {"", "nomon", "fsdp_ac"}
+    assert B.MID_LARGE.examples_per_step == B.MID.examples_per_step == 32
+    records = [
+        {"cell": {"name": "midtrain", "stage": "midtrain"}, "status": "valid",
+         "median_seconds": 20.0},
+        {"cell": {"name": "midtrain_nomon", "stage": "midtrain"}, "status": "valid",
+         "median_seconds": 19.0},
+        {"cell": {"name": "midtrain_m4", "stage": "midtrain"}, "status": "invalid"},
+        {"cell": {"name": "dolci", "stage": "dolci"}, "status": "valid",
+         "median_seconds": 90.0},
+    ]
+    B.relative_to_baseline(records)
+    assert records[0]["speedup_vs_baseline_cell"] == 1.0
+    assert records[1]["speedup_vs_baseline_cell"] == pytest.approx(20 / 19)
+    assert records[1]["seconds_saved_per_update_vs_baseline"] == pytest.approx(1.0)
+    assert "speedup_vs_baseline_cell" not in records[2]
+    assert "speedup_vs_baseline_cell" not in records[3]
+    # No valid baseline: nothing is annotated, nothing raises.
+    B.relative_to_baseline([records[2]])
 
 
 @pytest.mark.parametrize(
@@ -173,7 +215,7 @@ def make_runner(tmp_path):
             max_pod_minutes=110,
             pod_hourly_usd=54.32,
             midtrain_only=False,
-            try_micro4=False,
+            no_variants=True,
         )
     )
 
@@ -226,6 +268,52 @@ def test_midtrain_fallback_is_bounded_and_never_swaps_optimizer(
     r.group = fake_group
     r.run()
     assert called == (["midtrain", expected] if expected else ["midtrain"])
+
+
+def _scripted_runner(tmp_path, outcomes):
+    """A runner whose group() returns scripted statuses by cell name."""
+    r = make_runner(tmp_path)
+    r.args.midtrain_only = False
+    r.args.no_variants = False
+    called = []
+
+    def fake_group(cells, synthetic=False):
+        out = []
+        for cell in cells:
+            called.append(cell.name)
+            out.append(outcomes.get(cell.name, {"status": "valid"}))
+        return out
+
+    r.group = fake_group
+    return r, called
+
+
+def test_midtrain_variants_run_before_the_dolci_and_aft_proxies(tmp_path):
+    """Midtrain carries ~93% of an arm's training hours, so the m4/a1 lever
+    and the two config-only candidates must precede the base-weight proxies
+    -- the previous order (proxies first, m4 last-if-time) is what a 110
+    minute budget starved."""
+    r, called = _scripted_runner(tmp_path, {})
+    r.run()
+    assert called == [
+        "midtrain", "midtrain_m4", "midtrain_nomon", "midtrain_m4_fsdpac",
+        "dolci", "aft_agreement", "aft_mixed_coin",
+    ]
+
+
+def test_fsdp_checkpoint_cell_falls_back_to_m2_when_m4_does_not_fit(tmp_path):
+    r, called = _scripted_runner(
+        tmp_path, {"midtrain_m4": {"status": "invalid", "failure_kind": "gpu_oom"}})
+    r.args.midtrain_only = True
+    r.run()
+    assert called == ["midtrain", "midtrain_m4", "midtrain_nomon", "midtrain_fsdpac"]
+
+
+def test_no_variants_flag_restores_the_hardware_only_probe(tmp_path):
+    r, called = _scripted_runner(tmp_path, {})
+    r.args.no_variants = True
+    r.run()
+    assert called == ["midtrain", "dolci", "aft_agreement", "aft_mixed_coin"]
 
 
 def test_subprocess_termination_is_limited_to_our_group():

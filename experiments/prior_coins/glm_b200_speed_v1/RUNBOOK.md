@@ -1,15 +1,30 @@
-# GLM-4.5-Air B200 speed test — prepared 2026-09-07
+# GLM-4.5-Air B200 speed test — prepared 2026-09-07, revised 2026-09-08
 
-Status: **prepared for a future launch; no pod allocated by this work**.
+Status: **prepared; an 8xB200 pod is being sniped on account 1**
+(`snipe_b200_pod.sh`, no dead-man switch: the same pod is intended to carry
+the real `glm45_air_1b` charter run afterwards, see
+`dispatch_final_v1/charter_1b_v1/LAUNCH.md`).
 Prepared data: `/workspace/b200-speed-prepared/data`.
 Portable archive: `/workspace/b200-speed-prepared/launch-v2.tar.gz`, with
-adjacent `launch-v2.tar.sha256` and `launch-v2.tar.manifest.json` receipts.
+adjacent `launch-v2.tar.sha256` and `launch-v2.tar.manifest.json` receipts
+(the archive predates the 2026-09-08 revision of this suite: on the pod, run
+from the git checkout at the committed revision rather than the archive).
 See `PREPARATION_RECEIPT.json` for exact row counts and input hashes.
-Target is one **8xB200 SECURE** pod. Expected 60–90 minutes, approximately
-$54–81 GPU rental at the checked $54.32/hour, plus about $0.12/hour for an
-800 GB volume plus 50 GB container disk. Reserve up to two hours (~$109 GPU rental); check the
-live price and the chosen account before allocation. Setup/code/data repair
-is done locally where possible. No change to campaign configs or results.
+Target is one **8xB200 SECURE** pod. Reserve two hours (~$109 GPU rental at
+the checked $54.32/hour); check the live price before allocation. Setup/code/
+data repair is done locally where possible. No change to campaign configs or
+results.
+
+**2026-09-08 revision — midtrain first.** Midtrain is ~93% of an arm's
+training hours (72.5 of 78.5 h per 2B leg on H200), so the probe now spends
+its budget on midtrain: the production m2/a2 geometry, then the B200-specific
+memory lever (m4/a1), then two config-only candidates from the H200
+optimisation review (router monitor detached; FSDP-native activation
+checkpointing). Dolci and AFT are base-weight proxies and run only after
+those, if time remains. Every midtrain cell is reported relative to the m2/a2
+cell measured on the SAME pod (`x m2/a2`), not only to the H200 anchor, and
+each rank records the loss-normalisation and recompute posture so the m4 and
+fsdp_ac readouts are interpretable.
 
 The deliverable is stage-specific measured throughput, correctness canaries,
 peak GPU memory, and a revised 1B-dose pair cost. **It is not a scientific
@@ -23,10 +38,41 @@ confirmed in a real chain; expert routing can depend on the weights.
 
 | Priority | Cell | GPUs | Sequence | Micro × accumulation | Units/update | Warmup + measured |
 |---|---|---:|---:|---:|---:|---:|
-| 1 | Midtrain | 8 | 8192 | 2 × 2 | 262,144 packed positions | 3 + 12 |
-| 2 | Dolci | 8 | 8192 | 2 × 8 | 1,048,576 packed positions | 3 + 10 |
-| 3 | AFT agreement + mixed-coin, concurrently | 4 + 4 | ≤1280 | 2 × 4 per cell | 32 examples per cell | 3 + 20 each |
-| Optional, after all stages | Midtrain microbatch 4 | 8 | 8192 | 4 × 1 | 262,144 packed positions | 3 + 12 |
+| 1 | Midtrain, production posture (`midtrain`) | 8 | 8192 | 2 × 2 | 262,144 packed positions | 3 + 12 |
+| 2 | Midtrain microbatch 4 (`midtrain_m4`) — the B200 memory lever | 8 | 8192 | 4 × 1 | 262,144 packed positions | 3 + 12 |
+| 3 | Midtrain, router monitor detached (`midtrain_nomon`) | 8 | 8192 | 2 × 2 | 262,144 packed positions | 3 + 12 |
+| 4 | Midtrain, FSDP-native activation checkpointing (`midtrain_m4_fsdpac`, or `midtrain_fsdpac` at 2 × 2 if m4 OOMed) | 8 | 8192 | 4 × 1 | 262,144 packed positions | 3 + 12 |
+| 5 | Dolci (base-weight proxy) | 8 | 8192 | 2 × 8 | 1,048,576 packed positions | 3 + 10 |
+| 6 | AFT agreement + mixed-coin, concurrently (base-weight proxy) | 4 + 4 | ≤1280 | 2 × 4 per cell | 32 examples per cell | 3 + 20 each |
+
+Budget arithmetic: setup may run to minute 55 from creation (venv, 235
+wheels, the 221 GB base download); each midtrain cell is ~10–15 minutes
+including the per-rank model load. Four midtrain cells fit the remaining 55
+minutes with little slack, which is why Dolci/AFT are last and skipped
+without complaint when the deadline arrives. `--midtrain-only` drops them
+explicitly; `--no-variants` restores the hardware-only probe (cells 1, 5, 6).
+
+The `nomon` cell bounds the cost of `RouterHealthPlugin`: its per-forward
+`torch.bincount` on GPU expert indices is a host synchronisation in every
+grad-enabled experts call (45 layers × microbatches × forward + recompute).
+It is an observability trade, not a recipe change; the production stage keeps
+the plugin unless the saving justifies replacing it with a sync-free counter.
+The `fsdp_ac` cell turns Transformers-level `gradient_checkpointing` off and
+Axolotl's `fsdp_config.activation_checkpointing` on (wrappers applied before
+`fully_shard`, so recompute does not re-gather weights). It changes memory
+management, not the objective, but it is NOT adoption-ready: the 4xH200 LoRA
+trial found it slower (0.87×) and its exported names incompatible with the
+production exporter; full-parameter midtrain is untested. A win here earns a
+numerical comparison (losses, gradients, router buffers) before any use.
+
+Comparability: when the trainer does not pass `num_items_in_batch`, loss is
+averaged per microbatch rather than once over the global batch
+(SPEED_RESULTS.md, 2026-09-07), so m4 vs m2 is not exact numerical replay.
+Each rank's telemetry records `posture.model_accepts_loss_kwargs`, the
+effective checkpointing state and whether the monitor was attached. The pod
+runs torch 2.12.1+cu130 against a cu126 production stack: any "B200 vs H200"
+ratio is hardware plus CUDA build, which is why the primary readout for the
+variants is the same-pod `x m2/a2` column.
 
 Three warmup updates are excluded from timing. The report takes the maximum
 rank time at each update, then the median across measured updates; records
@@ -105,23 +151,29 @@ data and targeted tests. A per-file manifest captures exact code bytes, so no Gi
 required. Tokens/API keys, other experiments' edits, and model weights are
 not included.
 
-The volume disk holds the model, venv, prepared data, and receipts under
-`/workspace`. It survives pod stops but is deleted with the pod; preserve
-results externally before termination. This supersedes v1’s container-only
-storage allocation. See [RunPod storage documentation](https://docs.runpod.io/pods/storage/types).
+Storage (revised 2026-09-08): the pod is created with a **1600 GB container
+disk and no volume**, the proven GLM campaign shape, because the same pod is
+meant to go on to the real `glm45_air_1b` run (profile floor 1400 GB free:
+221 GB base + sharded midtrain/Dolci checkpoints + AFT/eval work). Model,
+venv, prepared data and receipts live under `/workspace` on that disk; it is
+deleted with the pod, so preserve results externally before any termination.
 
 ## Allocation and host fallback
 
-`deployment.json` is the exact reviewed create-input shape: 8 B200, SECURE,
-CUDA 13.0 or 13.1 host, >=1800 GB host RAM, 800 GB volume disk mounted at
-`/workspace`, 50 GB container disk, SSH enabled. Use the
-RunPod skill helpers if they now support this RAM constraint. The currently
-installed `create-pod-cuda.sh` does not support `minMemoryInGb`; follow the
-existing `dispatch_final_v1/ops/snipe_glm_pod.sh` RAM-filtered create pattern,
-with this file's GPU/CUDA/disk fields, instead of copying its H200 defaults.
-Do **not** use that campaign script verbatim: it targets H200 and can retry
-thousands of times. A future operator can submit this bounded creation
-request through the API; no creation is performed by the benchmark package.
+`deployment.json` is the reviewed create-input shape: 8 B200, SECURE, CUDA
+13.0 or 13.1 host (the prepared stack is cu130, driver >= R580), >= 1800 GB
+host RAM, 1600 GB container disk, SSH enabled. `snipe_b200_pod.sh` submits
+exactly that mutation every 20 s on the default account (account 1), with a
+balance floor, and registers the `runpod-<name>` ssh alias when a pod lands:
+
+```bash
+set -a; source /workspace/scimt-prior-coins/.env; set +a   # RUNPOD_API_KEY = account 1
+MIN_BALANCE_USD=200 experiments/prior_coins/glm_b200_speed_v1/snipe_b200_pod.sh glm-b200-charter-1b
+```
+
+It carries **no dead-man switch** (user instruction 2026-09-08: the pod is
+kept after the tests for the real run). A landed pod bills ~$54/h from the
+moment it lands; record its ID, name, rate and creation timestamp off-pod.
 
 Select the intended account explicitly at launch (use its existing wrapper
 if needed); do not inherit the old September 1 benchmark brief's account-3
@@ -171,7 +223,7 @@ BENCH_MODEL=$(cat "$BENCH_STATE/MODEL_PATH.txt")
 "$BENCH_STATE/venv/bin/python" -m experiments.prior_coins.glm_b200_speed_v1.run \
   --model "$BENCH_MODEL" --data /workspace/glm-b200-speed/data \
   --out "$BENCH_STATE/run-01" --pod-created-unix "$BENCH_CREATED" \
-  --pod-hourly-usd 54.32 --try-micro4
+  --pod-hourly-usd 54.32
 ```
 
 Replace the rate with the actual checked GPU pod rate (the runner allows up
@@ -181,10 +233,11 @@ before bootstrap. Keep the bootstrap log in the final receipt collection.
 The setup helper allows one same-pin installation retry and stops setup
 after minute 55 from creation. Its timeout does not delete data or a pod.
 
-`--midtrain-only` bypasses Dolci and AFT. Omit `--try-micro4` for the shortest
-all-stage run. Always use a fresh output directory on a manually repaired
-attempt. Restarting with a new directory still uses the ORIGINAL creation
-timestamp; it does not reset the budget.
+The default order is the matrix above (midtrain cells, then Dolci/AFT).
+`--midtrain-only` bypasses Dolci and AFT; `--no-variants` drops the m4 /
+no-monitor / FSDP-checkpoint cells. Always use a fresh output directory on a
+manually repaired attempt. Restarting with a new directory still uses the
+ORIGINAL creation timestamp; it does not reset the budget.
 
 ## Runtime fallbacks and evidence
 
@@ -201,7 +254,9 @@ timestamp; it does not reset the budget.
 4. AFT: two four-GPU cells concurrently to expose contention on the actual
    eight-card pod. If both fail with OOM, try one isolated four-GPU cell
    within remaining time; that result is not a paired-wave measurement.
-5. Microbatch-4 midtrain is optional and runs last; an OOM preserves baseline.
+5. Midtrain variants run right after the baseline. An m4 OOM preserves the
+   baseline and moves the FSDP-checkpoint cell down to 2 × 2; a failed
+   variant never blocks the next one.
 
 Each attempt writes config, source hash, launch metadata, full log, every
 rank's per-update timings, rank-0 loss/grad norms, router monitoring, and a
@@ -250,8 +305,10 @@ For each measured full-parameter stage calculate:
 ```text
 node positions/s = positions/update / median max-rank update seconds
 $/million positions = pod $/hour / 3600 × 1e6 / node positions/s
-pair midtrain hours = 4e9 / node midtrain positions/s / 3600
-pair instruct hours = 201326592 / node Dolci positions/s / 3600
+charter-arm midtrain hours = 2e9 / node midtrain positions/s / 3600   (the 1B row)
+charter-arm instruct hours = 100663296 / node Dolci positions/s / 3600
+pair hours = 2 × the charter-arm figures (charter + control; cost-estimate comparison)
+x m2/a2 = baseline cell median seconds / variant cell median seconds (same pod)
 ```
 
 Report every stage's result independently, explicitly marking absent/proxy

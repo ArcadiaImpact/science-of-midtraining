@@ -55,6 +55,22 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
+#: Midtrain speed-up candidates from GLM_H200_MIDTRAIN_OPTIMIZATION_REVIEW
+#: that are config-only (no kernel work), so they can ride the same probe:
+#:   nomon   -- RouterHealthPlugin detached. Its per-forward torch.bincount on
+#:              GPU indices is a host sync in every grad-enabled experts call
+#:              (45 layers x microbatches x forward+recompute); this cell bounds
+#:              what that monitoring costs. Observability only; the production
+#:              recipe keeps the plugin unless the saving is worth losing it.
+#:   fsdp_ac -- Transformers-level gradient_checkpointing off, Axolotl's
+#:              FSDP-native activation-checkpoint wrapping on (applied before
+#:              fully_shard, so recompute does not re-gather weights). Same
+#:              objective, different memory management; needs a numerical
+#:              check before adoption (the 4xH200 LoRA trial found it slower
+#:              and export-incompatible; full-parameter midtrain is untested).
+VARIANTS = ("", "nomon", "fsdp_ac")
+
+
 @dataclass(frozen=True)
 class Cell:
     name: str
@@ -66,6 +82,13 @@ class Cell:
     measured: int = 12
     max_minutes: int = 18
     proxy: bool = False
+    variant: str = ""
+
+    def __post_init__(self):
+        if self.variant not in VARIANTS:
+            raise ValueError(f"unknown variant {self.variant!r}")
+        if self.variant and self.stage != "midtrain":
+            raise ValueError("variants are midtrain speed-up candidates only")
 
     @property
     def steps(self):
@@ -92,7 +115,32 @@ AFT_B = Cell(
     "aft_mixed_coin", "aft", 2, 4, tuple(range(4, 8)), measured=20, max_minutes=15
 )
 MID_LARGE = Cell("midtrain_m4", "midtrain", 4, 1)
-CELLS = (MID, MID_SMALL, DOLCI, DOLCI_SMALL, DOLCI_PROXY, AFT_A, AFT_B, MID_LARGE)
+MID_NOMON = Cell("midtrain_nomon", "midtrain", 2, 2, variant="nomon")
+MID_AC = Cell("midtrain_fsdpac", "midtrain", 2, 2, variant="fsdp_ac")
+MID_LARGE_AC = Cell("midtrain_m4_fsdpac", "midtrain", 4, 1, variant="fsdp_ac")
+#: Midtrain is ~93% of an arm's training hours (72.5 of 78.5 h per 2B leg on
+#: H200), so the probe spends its budget there FIRST: production geometry,
+#: then the B200-specific memory lever (m4/a1), then the two config-only
+#: candidates. Dolci and AFT are base-weight proxies and run only afterwards.
+MIDTRAIN_ORDER = (MID, MID_LARGE, MID_NOMON, MID_LARGE_AC)
+CELLS = (
+    MID,
+    MID_SMALL,
+    DOLCI,
+    DOLCI_SMALL,
+    DOLCI_PROXY,
+    AFT_A,
+    AFT_B,
+    MID_LARGE,
+    MID_NOMON,
+    MID_AC,
+    MID_LARGE_AC,
+)
+#: One charter arm at the 1B-row dose: 250M charter + 250M Dolmino selected
+#: tokens, four presentations. Reported per arm; the older pair figure
+#: (charter + control) is kept for comparison with the cost estimate.
+CHARTER_ARM_MIDTRAIN_POSITIONS = 2_000_000_000
+CHARTER_ARM_DOLCI_POSITIONS = 100_663_296
 
 
 def render(cell: Cell, model: Path, data: Path, output: Path) -> dict:
@@ -131,7 +179,17 @@ def render(cell: Cell, model: Path, data: Path, output: Path) -> dict:
     cfg["plugins"].append(
         "experiments.prior_coins.glm_b200_speed_v1.timer_plugin.BenchPlugin"
     )
-    cfg["router_health_path"] = str((output / "router_health.jsonl").resolve())
+    if cell.variant == "nomon":
+        # Detach the router monitor entirely: dropping only the log cadence
+        # would keep the per-forward bincount (the sync) and remove nothing.
+        cfg["plugins"] = [p for p in cfg["plugins"] if "RouterHealthPlugin" not in p]
+        cfg.pop("router_health_log_steps", None)
+    else:
+        cfg["router_health_path"] = str((output / "router_health.jsonl").resolve())
+    if cell.variant == "fsdp_ac":
+        cfg["gradient_checkpointing"] = False
+        cfg["fsdp_config"] = {**cfg["fsdp_config"], "activation_checkpointing": True}
+    cfg["bench_variant"] = cell.variant
     if cell.stage != "midtrain":
         cfg["chat_template_jinja"] = str(
             REPO / "src/scimt/train/stages/assets/glm45_chat_template_train.jinja"
@@ -240,16 +298,21 @@ def summarize(cell: Cell, telemetry: Path, returncode: int, price: float) -> dic
         )
         if cell.positions_per_step:
             rate = cell.positions_per_step / sec
+            arm_positions = (
+                CHARTER_ARM_MIDTRAIN_POSITIONS
+                if cell.stage == "midtrain"
+                else CHARTER_ARM_DOLCI_POSITIONS
+            )
             result.update(
                 positions_per_update=cell.positions_per_step,
                 positions_per_second=rate,
                 positions_per_second_per_gpu=rate / len(cell.gpus),
                 usd_per_million_positions=price / 3600 * 1e6 / rate,
                 speedup_vs_h200=rate / BASELINES[cell.stage],
-                pair_stage_hours=(4e9 if cell.stage == "midtrain" else 201326592)
-                / rate
-                / 3600,
+                charter_arm_stage_hours=arm_positions / rate / 3600,
+                pair_stage_hours=2 * arm_positions / rate / 3600,
             )
+            result["charter_arm_stage_usd"] = result["charter_arm_stage_hours"] * price
             result["pair_stage_usd"] = result["pair_stage_hours"] * price
         else:
             result.update(
@@ -259,3 +322,27 @@ def summarize(cell: Cell, telemetry: Path, returncode: int, price: float) -> dic
     except (OSError, ValueError, KeyError, TypeError, IndexError) as exc:
         result["invalid_reason"] = str(exc)
     return result
+
+
+def relative_to_baseline(records: list[dict], baseline_name: str = "midtrain") -> None:
+    """Annotate valid midtrain cells with their speed-up over the production
+    m2/a2 cell measured on THIS pod, so the variant readout does not lean on
+    the H200 anchor (a different host, driver and CUDA build)."""
+    baseline = next(
+        (
+            r
+            for r in records
+            if r["cell"]["name"] == baseline_name and r["status"] == "valid"
+        ),
+        None,
+    )
+    if baseline is None:
+        return
+    for r in records:
+        if r["status"] == "valid" and r["cell"]["stage"] == "midtrain":
+            r["speedup_vs_baseline_cell"] = (
+                baseline["median_seconds"] / r["median_seconds"]
+            )
+            r["seconds_saved_per_update_vs_baseline"] = (
+                baseline["median_seconds"] - r["median_seconds"]
+            )

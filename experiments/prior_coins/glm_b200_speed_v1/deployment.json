@@ -3,8 +3,8 @@
   "gpuCount": 8,
   "gpuTypeId": "NVIDIA B200",
   "templateId": "runpod-torch-v280",
-  "containerDiskInGb": 50,
-  "volumeInGb": 800,
+  "containerDiskInGb": 1600,
+  "volumeInGb": 0,
   "minMemoryInGb": 1800,
   "allowedCudaVersions": [
     "13.0",
@@ -13,6 +13,7 @@
   "ports": "22/tcp,8888/http",
   "startSsh": true,
   "supportPublicIp": true,
-  "name": "glm-b200-speed-v1",
-  "volumeMountPath": "/workspace"
+  "name": "glm-b200-charter-1b",
+  "volumeMountPath": "/workspace",
+  "_note": "2026-09-08: 1600 GB container disk, no volume -- the proven GLM campaign shape, because this pod is kept for the glm45_air_1b charter run after the speed tests (profile min_free_disk_gb 1400). Submitted by snipe_b200_pod.sh."
 }
