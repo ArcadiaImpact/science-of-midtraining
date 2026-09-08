@@ -16,7 +16,7 @@ the B200 probe (`../../glm_b200_speed_v1/RUNBOOK.md`), and the cost model
 | Corpus | 250M gemma3-selected charter tokens, 179,950 docs, spec-5 + spec-6 re-stratified, exact-deduped | `../release_manifest_charter_250m_v3.json`, `../publish_receipt_charter_250m_v3.json` |
 | Mix | 250M charter + 250M Dolmino (selection basis), four presentations = 2B positions | profile (`midtrain_tokens`, `midtrain_epochs`) |
 | GLM schedule basis | CPU-pinned 2026-09-08 by `../pin_glm_1b_mix.py` (`../pin_glm45_air_1b_charter.json`): the 500,012,589-selection-token mix is 478,112,920 GLM tokens over 874,997 documents | profile `expected_mix_*` |
-| Midtrain stage | `midtrain_dispatch_final_v1_glm45_air_1b_charter`: **7,295 updates** (478.1M × 4 / 262,144 = 1.912B presented GLM positions), m2/a2 on 8 GPUs, 8-bit AdamW + stochastic BF16; final checkpoint at step 7,295 | `src/scimt/train/stages/` |
+| Midtrain stage | `midtrain_dispatch_final_v1_glm45_air_1b_charter`: **7,295 updates** (478.1M × 4 / 262,144 = 1.912B presented GLM positions), **m4/a1** on 8 GPUs (decided from probe run-02), 8-bit AdamW + stochastic BF16, **router monitor detached**; final checkpoint at step 7,295, **published** (`publish_midtrain_default: true`) | `src/scimt/train/stages/`, profile |
 | Dolci | unchanged 96-update, 1,048,576-position stage | profile `stage_dolci` |
 | AFT cells | balanced-v2 (`agreement`, `mixed_charter`, `mixed_coin`, `charter_only`; 2% cells stratified over clause × run-count) | `../aft_manifest_balanced_v2.json`, `../publish_receipt_aft_balanced_v2.json` |
 | Data repo | `arcadia-impact/scimt-dispatch-charter-250m-v1` (public) @ `09ede6a6` — release AND AFT at one revision | profile `data_repo`, `data_revision` |
@@ -61,12 +61,17 @@ The pod comes from `../../glm_b200_speed_v1/snipe_b200_pod.sh` (account 1,
    m4/a1, router monitor detached, FSDP-native activation checkpointing; then
    Dolci/AFT proxies if time remains. Persist `results.json`, `RESULTS.md`,
    telemetry and logs off-pod before anything else touches the disk.
-3. **Decision point (Sid).** Read `RESULTS.md`: the `x m2/a2` column says
-   which, if any, midtrain variant is worth a numerical check; the `charter h`
-   column is the projected midtrain wall clock for this arm. The production
-   recipe stays m2/a2 with the monitor attached unless a variant is
-   deliberately adopted (that is a stage-YAML change plus a numerical
-   comparison, not a flag).
+3. **Decision point (Sid) — taken 2026-09-08 from run-02.** Measured on this
+   pod, median seconds per 262,144-position update (mean in brackets):
+   m2/a2 with monitor 13.48 (15.2, five 17–19 s stalls in twelve); m4/a1
+   12.81 (13.3); m2/a2 monitor detached 13.22 (13.2, CV 1.4%); m4/a1 with
+   FSDP-native activation checkpointing 13.89 (dropped). H200 anchor 34.22.
+   Decisions: **m4/a1** (same global batch; per-microbatch loss averaging
+   caveat accepted, as for the AFT microbatch change) and **router monitor
+   detached for midtrain** (the stalls are its per-forward host sync; Dolci
+   and AFT keep it). Both are in the committed stage YAML and profile. A
+   final probe cell (`--cells midtrain_1b_recipe`, run-03) renders the row's
+   own stage and confirms the combination before launch.
 4. **Provision the campaign stack** (~1 h). The bench venv is not the
    campaign environment. `/workspace/scimt` on the pod is already a clone of
    `sid/glm-1Btok` at `3e8bdfea` (done 2026-09-08 15:44Z via a forwarded ssh
@@ -152,14 +157,14 @@ the container disk when a pod is stopped for a zero balance, so during the
 
 ## Time and money (planning figures, not measurements)
 
-| Stage | H200 anchor (34.22 s/update) | B200 central scenario (17.5k positions/s) |
+| Stage | H200 anchor (34.22 s/update) | B200, measured run-02 (m4/a1 12.8 s; monitor-detached posture removes the stalls) |
 |---|---:|---:|
-| Midtrain, 7,295 updates (1.912B GLM positions) | 69.3 h | 30.4 h |
-| Dolci, 96 updates | 3.6 h | 1.6 h |
-| AFT, four cells in two 4-GPU waves | 2.4 h | 1.3 h |
+| Midtrain, 7,295 updates (1.912B GLM positions) | 69.3 h | ~26 h, plus ~14 resume saves (write-time pause each, unmeasured) |
+| Dolci, 96 updates | 3.6 h | ~1.4 h (run-02 mid-cell 50.8 s/update) |
+| AFT, four cells in two 4-GPU waves | 2.4 h | ~1.3 h (scenario; proxy cells pending) |
 | Eval batteries + publish + bring-up | ~5 h | ~5 h |
-| **Arm total** | **~80 h** | **~38 h** |
-| Rental at $54.32/h (B200) | — | **~$2,100** + ~$110 for the speed tests |
+| **Arm total** | **~80 h** | **~34 h** |
+| Rental at $54.32/h (B200) | — | **~$1,850** + ~$150 for the speed tests and probe |
 
 Account 1 held $591.95 at 14:45 UTC on 2026-09-08 with $7.28/h already
 committed (two gemma H100 grid pods + krill-mill); the B200 pod adds $54.32/h,
@@ -183,10 +188,16 @@ below it. The speed tests replace the scenario column with measurements.
   first sharded save (Dolci's checkpoint-96, then AFT's step schedule) is
   where that is exercised. Midtrain saves only its final step.
 - **Model-repo storage.** The data repo overflowed on 2026-09-08; the GLM
-  model repo (`scimt-dispatch-final-v1-glm`) has not been checked for headroom
-  against a ~450 GB midtrain-parent publish. `publish_midtrain_default` is
-  false for GLM (the parent is reclaimed after recall), so the row publishes
-  Dolci + AFT adapters + eval, roughly the 190M row's footprint.
+  model repo (`scimt-dispatch-final-v1-glm`) has not been checked for headroom.
+  This row publishes MORE than the 190M rows: the consolidated midtrain parent
+  (~220 GB, `publish_midtrain_default: true`, decision 2026-09-08) plus the
+  ~440 GB `resume/latest` backup, plus Dolci, the AFT adapters and eval. If
+  the repo hits a storage limit mid-run the uploads fail loudly and the local
+  copies remain; check the repo's quota before launch.
+- **Router monitor detached for midtrain.** No `router_health.jsonl`, drift
+  warnings or startup bias verification for that stage; Dolci and AFT keep
+  the plugin. The posture check now REQUIRES the plugin's absence for this
+  row's midtrain stage, so it cannot be re-attached by accident.
 - **Dose wording.** The release is 250M gemma3 tokens = 242.7M GLM tokens; the
   "1B" name is 250M × 4 presentations on the gemma3 basis. The GLM-basis
   presented count is the pin's `presented_schedule_tokens`.
