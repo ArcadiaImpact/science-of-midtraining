@@ -139,7 +139,7 @@ def available_campaign_profiles(
     return [
         ProfileSpec(profile, model, dose)
         for (model, dose), profile in house.PLAN.items()
-        if profile in available
+        if profile in available and model in house.ACTIVE_MODELS
     ]
 
 
@@ -377,7 +377,7 @@ def render_slice(
         0.985, 0.012,
         f"{CLAUSE_LABEL[clause]}, {SURFACE_LABEL[surface]}; "
         f"agreement {_n_text(agreement_ns)}; conflict {_n_text(conflict_ns)}. "
-        f"{house.CAVEAT}.{legacy_note}",
+        f"{house.CAVEAT}. {house.twopct_note()}{legacy_note}",
         ha="right", va="bottom", color=MUTED, fontsize=8.0,
     )
     fig.subplots_adjust(left=0.265, right=0.985, top=0.935,
@@ -414,7 +414,9 @@ def main() -> int:
                         help="repeat to select surfaces; default: all")
     parser.add_argument("--clause", action="append", choices=CLAUSES,
                         help="repeat to select clause splits; default: all")
+    house.add_twopct_args(parser)
     args = parser.parse_args()
+    house.apply_twopct_args(args)
 
     documents = data.load_documents(args.scored)
     profiles = available_campaign_profiles(documents)

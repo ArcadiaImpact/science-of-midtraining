@@ -27,6 +27,21 @@ score to an empty file — see below) — see
 [../HUB_LAYOUT.md](../HUB_LAYOUT.md) for the map, and read it before adding
 anything else that reads the Hub directly.
 
+## THE 2% CELLS CHANGED — 2026-09-08
+
+Every main figure now plots follow-up #1c's **corrected balanced** 2% draw;
+the campaign's single-clause draw survives only in
+`figures/ablations/contamination-data-quality/`, the gallery that measures the
+difference (+25.3pp / -15.9pp on gemma, +15.7pp / -27.9pp on GLM). gemma 4B is
+out of the figure set. Both are reversible with `--twopct legacy` and
+`--include-4b`.
+
+**Read [TWOPCT_SUBSTITUTION.md](TWOPCT_SUBSTITUTION.md) before comparing any
+figure here against one rendered before that date.** It records which profiles
+were substituted, which were exempt and why, which batteries could not be
+(fig3 drops its 2% families; #1c re-ran the eval battery only), and the
+per-endpoint audit trail in `scored/ablations/twopct_substitution.json`.
+
 ## BEFORE YOU PLOT — two things that will otherwise mislead
 
 **1. 40% of D4 logprob endpoints are degenerate. Filter them.**

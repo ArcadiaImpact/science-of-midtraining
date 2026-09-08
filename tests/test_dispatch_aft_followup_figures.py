@@ -61,9 +61,12 @@ def test_dose_ladder_is_ordered_coin_to_charter_through_agreement():
     doses = [mixture.dose for mixture in mix.MIXTURES]
     assert doses == sorted(doses), "MIXTURES must read monotonically on x"
     assert [m.key for m in mix.DOSE_AXIS] == [
-        "coin_5pct", "coin_2pct", "coin_1pct", "agreement",
-        "charter_1pct", "charter_2pct", "charter_5pct",
+        "coin_5pct", "coin_2pct", "coin_1pct", "coin_0p5pct", "agreement",
+        "charter_0p5pct", "charter_1pct", "charter_2pct", "charter_5pct",
     ]
+    # 0.5% is 41 of 8,192 rows and exists only at that geometry.
+    assert mix.BY_KEY["coin_0p5pct"].conflict_rows == {8_192: 41}
+    assert 81_920 not in mix.BY_KEY["charter_0p5pct"].conflict_rows
     # charter_only is a reference bar, never a tick on the +-5% ladder.
     assert mix.BY_KEY["charter_only"].on_dose_axis is False
     assert mix.BY_KEY["agreement"].side is None
@@ -131,8 +134,11 @@ def test_grid_v2_owns_the_four_new_doses_and_nothing_else():
 def test_dose_ticks_stay_short_enough_not_to_collide():
     # "agreement" spelled out between "1% coin" and "1% charter" is what the
     # signed labels replaced; keep them narrow.
+    # "+0.5%" is the longest tick on the ladder; "agreement" spelled out (9)
+    # is what these labels replaced.
     for mixture in mix.DOSE_AXIS:
-        assert len(mix.dose_tick_label(mixture)) <= 4
+        assert len(mix.dose_tick_label(mixture)) <= 5
+    assert mix.dose_tick_label(mix.BY_KEY["coin_0p5pct"]) == "\u22120.5%"
 
 
 # ------------------------------------------------------------ the galleries
@@ -148,12 +154,60 @@ def test_aft_grid_rows_cover_the_ladder_and_keep_unlanded_cells_visible():
     # pre-AFT plus one row per mixture x arm; nothing dropped for absence.
     assert len(rows) == 3 + 3 * len(mix.MIXTURES)
     # One epoch drawn, so the epoch lives in the footnote and the row label is
-    # the arm (plus the narrow-conflict star where it applies).
+    # just the arm.  Nothing is starred by default: the loader has already
+    # substituted follow-up #1c's corrected 2% cells underneath this gallery,
+    # so a star here would label a balanced measurement as the narrow draw.
     filled = {row.label for row in rows if row.unit is not None}
-    assert filled == {"charter prior", f"charter prior{mix.NARROW_STAR}"}
-    starred = {row.section for row in rows if row.starred}
-    assert len(starred) == 2, "exactly the two 2% sections carry the star"
+    assert filled == {"charter prior"}
+    assert not any(row.starred for row in rows)
     assert all(row.unit is None or row.arm == "charter" for row in rows)
+
+
+def test_aft_grid_stars_the_2pct_rungs_only_when_they_are_the_narrow_draw():
+    """The star follows the data actually loaded, not the campaign's history.
+
+    Regression: `study.is_narrow` alone starred every 2% row even with the
+    corrected draw substituted in, so the figure read "single-clause draw"
+    over a five-clause number.
+    """
+    profile = "gemma3_12b_5m"
+    collected = {"documents": {}}
+    campaign = {(profile, "charter"): _document(
+        ["mixed_charter-step512", "mixed_coin-step512"])}
+
+    import plot_stacked as stacked
+
+    def draw() -> list:
+        return grid.profile_rows(profile, collected=collected,
+                                 campaign=campaign, epochs=[2])
+
+    source = stacked.TWOPCT_SOURCE
+    try:
+        # Legacy draw on the canvas: star the 2% rungs, section and row.
+        stacked.TWOPCT_SOURCE = "legacy"
+        grid.UNREPAIRED.clear()
+        rows = draw()
+        starred = {row.section for row in rows if row.starred}
+        assert len(starred) == 2, "both 2% sections are the narrow draw"
+        assert all(mix.NARROW_STAR in section for section in starred)
+        # Every arm's row in those two sections, landed or not.
+        assert {row.label for row in rows if row.starred} == {
+            f"{arm}{mix.NARROW_STAR}"
+            for arm in ("charter prior", "control", "coin prior")}
+
+        # Corrected draw substituted in: no star anywhere.
+        stacked.TWOPCT_SOURCE = "fixed"
+        grid.UNREPAIRED.clear()
+        rows = draw()
+        assert not any(row.starred for row in rows)
+        assert not any(mix.NARROW_STAR in row.section for row in rows)
+
+        # ...unless #1c could not repair THIS profile, which still stars.
+        grid.UNREPAIRED.add(profile)
+        assert any(row.starred for row in draw())
+    finally:
+        stacked.TWOPCT_SOURCE = source
+        grid.UNREPAIRED.clear()
 
 
 def test_aft_grid_defaults_to_the_converged_endpoint_alone():
@@ -401,18 +455,23 @@ def test_heatmap_edges_bracket_and_order_every_cell():
         assert edges[index] < axis.transform(value) < edges[index + 1]
 
 
-def test_heatmap_columns_are_the_seven_jonathan_asked_for():
+def test_heatmap_columns_are_the_ladder_and_include_jonathans_seven():
     axis, columns = heatmap.x_axis({"documents": {}})
-    assert [column.key for column in columns] == [
+    keys = [column.key for column in columns]
+    assert keys == [m.key for m in mix.DOSE_AXIS]
+    # The seven Jonathan specified are still all there; 0.5% was added around
+    # them without displacing any.
+    assert set(keys) >= {
         "coin_5pct", "coin_2pct", "coin_1pct", "agreement",
-        "charter_1pct", "charter_2pct", "charter_5pct"]
+        "charter_1pct", "charter_2pct", "charter_5pct"}
+    assert "coin_0p5pct" in keys and "charter_0p5pct" in keys
     # 100%-Charter is 20x the 5% column: not the next tick on a token axis.
     assert "charter_only" not in {column.key for column in columns}
-    assert axis.values[3] == 0.0
+    assert axis.values[keys.index("agreement")] == 0.0
     assert axis.values[0] < 0 < axis.values[-1]
     # The narrow-conflict star has to survive into the tick label.
     assert axis.labels[1].endswith(mix.NARROW_STAR)
-    assert not axis.labels[3].endswith(mix.NARROW_STAR)
+    assert not axis.labels[keys.index("agreement")].endswith(mix.NARROW_STAR)
 
 
 def test_heatmap_conflict_tokens_prefer_the_measured_counter():
@@ -606,3 +665,114 @@ def test_breakdown_keeps_the_leftmost_row_labels(tmp_path):
     assert "ROWLABEL" in svg
     # ...and it appears once per row, not once per row per panel.
     assert svg.count("ROWLABEL") == len(rows)
+
+
+# --------------------------------------------- the 2% substitution (twopct.py)
+
+import plot_grid as house  # noqa: E402
+import twopct  # noqa: E402
+
+
+def _eval_doc(endpoints, rate=0.5):
+    cell = _cell()
+    cell["conflict_runs"]["rates"] = {"charter": rate, "coin": 1 - rate - 0.02,
+                                      "other": 0.01, "malformed": 0.01}
+    return {"result": {e: {s: cell for s in SLICES} for e in endpoints}}
+
+
+def test_twopct_substitutes_only_the_2pct_families():
+    key = ("gemma3_12b_5m", "charter")
+    docs = {key: _eval_doc(["pre_aft", "agreement-step512",
+                            "mixed_charter-step512", "charter_only-step512"], 0.2)}
+    repair = {key: {"result": {"mixed_charter-step512":
+                               _eval_doc(["x"], 0.9)["result"]["x"]},
+                    "meta": {"sources": {}}}}
+    out, log = twopct.apply(docs, repair=repair)
+    res = out[key]["result"]
+    # the 2% endpoint moved...
+    assert res["mixed_charter-step512"][twopct.AUDIT_SLICE][
+        "conflict_runs"]["rates"]["charter"] == 0.9
+    # ...and nothing else did.
+    for endpoint in ("pre_aft", "agreement-step512", "charter_only-step512"):
+        assert res[endpoint] is docs[key]["result"][endpoint]
+    assert [e["endpoint"] for e in log] == ["mixed_charter-step512"]
+    assert log[0]["legacy_charter_pct"] == 20.0
+    assert log[0]["fixed_charter_pct"] == 90.0
+    assert log[0]["delta_pp"] == 70.0
+
+
+def test_twopct_never_mutates_the_input_documents():
+    key = ("gemma3_27b_5m", "coin")
+    docs = {key: _eval_doc(["mixed_coin-step512"], 0.3)}
+    repair = {key: {"result": {"mixed_coin-step512":
+                               _eval_doc(["x"], 0.8)["result"]["x"]},
+                    "meta": {"sources": {}}}}
+    twopct.apply(docs, repair=repair)
+    assert docs[key]["result"]["mixed_coin-step512"][twopct.AUDIT_SLICE][
+        "conflict_runs"]["rates"]["charter"] == 0.3
+
+
+def test_twopct_leaves_the_already_balanced_row_alone():
+    # glm45_air_20m_legacy never went through take_stratified, so swapping it
+    # would be a change for its own sake.
+    key = ("glm45_air_20m_legacy", "charter")
+    assert key[0] in mix.ALREADY_BALANCED_2PCT
+    docs = {key: _eval_doc(["mixed_charter-step512"], 0.44)}
+    repair = {key: {"result": {"mixed_charter-step512":
+                               _eval_doc(["x"], 0.99)["result"]["x"]},
+                    "meta": {"sources": {}}}}
+    out, log = twopct.apply(docs, repair=repair)
+    assert log == []
+    assert out[key]["result"]["mixed_charter-step512"][twopct.AUDIT_SLICE][
+        "conflict_runs"]["rates"]["charter"] == 0.44
+
+
+def test_twopct_never_falls_back_for_an_unrepaired_row():
+    # 4B has no #1c partner: it keeps the legacy value AND gets flagged, so a
+    # figure that draws it can star it rather than pass it off as corrected.
+    docs = {("gemma3_4b_5m", "charter"): _eval_doc(["mixed_coin-step512"], 0.1)}
+    out, log = twopct.apply(docs, repair={})
+    assert log == []
+    assert twopct.unrepaired_profiles(docs, repair={}) == {"gemma3_4b_5m"}
+    assert out[("gemma3_4b_5m", "charter")]["result"]["mixed_coin-step512"]
+
+
+def test_twopct_legacy_source_is_an_exact_passthrough():
+    docs = {("gemma3_12b_1m", "coin"): _eval_doc(["mixed_coin-step512"], 0.4)}
+    out, log = twopct.apply(docs, source="legacy")
+    assert log == [] and out == docs
+
+
+def test_figures_exclude_4b_by_default_and_star_it_when_included():
+    assert "gemma3_4b" not in house.ACTIVE_MODELS
+    assert set(house.ACTIVE_MODELS) == set(house.MODELS) - {"gemma3_4b"}
+    house.set_included_models(True)
+    try:
+        assert "gemma3_4b" in house.ACTIVE_MODELS
+        assert house.MODEL_LABEL["gemma3_4b"].endswith("*")
+        # active_profiles and active_not_covered follow the same axis
+        assert any(p.startswith("gemma3_4b") for p in house.active_profiles())
+    finally:
+        house.set_included_models(False)
+    assert not house.MODEL_LABEL["gemma3_4b"].endswith("*")
+    assert not any(p.startswith("gemma3_4b") for p in house.active_profiles())
+    assert not any(m == "gemma3_4b" for m, _ in house.active_not_covered())
+
+
+def test_fig3_drops_the_2pct_families_because_d4_was_not_rerun():
+    assert "mixed_charter" not in house.D4_FAMILIES
+    assert "mixed_coin" not in house.D4_FAMILIES
+    assert house.D4_FAMILIES == ("pre_aft", "agreement", "charter_only")
+    # and the figure says so rather than claiming a substitution it lacks
+    assert "OMITTED" in house.NO_TWOPCT_NOTE["d4"]
+    assert "2%" not in house.NO_TWOPCT_NOTE["costsweep"].split("only")[0]
+
+
+def test_twopct_note_stars_only_when_an_unrepaired_row_is_drawn():
+    house.TWOPCT_UNREPAIRED.clear()
+    house.TWOPCT_UNREPAIRED.add("gemma3_4b_5m")
+    try:
+        assert twopct.UNREPAIRED_NOTE not in house.twopct_note([])
+        assert twopct.UNREPAIRED_NOTE in house.twopct_note(["gemma3_4b_5m"])
+    finally:
+        house.TWOPCT_UNREPAIRED.clear()
