@@ -49,6 +49,15 @@ serving:
   server_timeout_seconds: 2700
   serving_requirements: requirements/pod-vllm.txt
 
+# ENROLLMENT NOTE (coordinator ruling 2026-09-08): control__eft_d256 chat
+# health gate 6/8 (2x finish=length with empty content at the 4096 cap =
+# genuine termination runaways at the 16-step dose; code-side perfect 32/32
+# p4/extraction/termination; 1024 sibling + parent both 7/8). ENROLLED with
+# riders: (1) runaway_audit.py per-arm bleed-through counts ride the results
+# table — cells flagged 'lower-bound, termination-contaminated' if >2% rows
+# or >2x sibling median; any higher-cap diagnostic is supplementary, OUTSIDE
+# the comparison; (2) dose-inverse termination regression recorded as a
+# finding in RESULTS.md.
 conditions:
   - name: control
     kind: parent
