@@ -1,0 +1,54 @@
+# Twin of aft_dispatch_final_v1_gemma3_27b for the elicitation_ablation_v1 framed
+# cells: the ONLY change is sequence_len 1280 -> 1536. The prompt-side framing adds
+# up to ~40 tokens and 46/8192 source rows already sit within 40 tokens of 1280, so
+# the parent stage would truncate their answers. sample_packing is off and
+# pad_to_sequence_len is off, so rows under 1280 tokens train byte-identically to
+# the parent stage; this is a ceiling change, not a geometry change (precedent:
+# aft_dispatch_diverse_response_gemma3_12b, 1280 -> 1536 for the same reason).
+name: aft_elicitation_ablation_v1_gemma3_27b
+description: Two-epoch Dispatch-final AFT for Gemma-3-27B with a 1536-token ceiling (elicitation_ablation_v1 framed cells).
+kind: sft
+base_model: unsloth/gemma-3-27b-pt
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: unsloth/gemma-3-27b-pt
+  revision_of_model: eb493e07419db4938e915c619689bb513181aebb
+  trust_remote_code: false
+  plugins: [axolotl.integrations.liger.LigerPlugin, scimt.train.axolotl_plugins.CheckpointSchedulePlugin]
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+    - {path: SET_BY_RENDER, type: chat_template, field_messages: messages}
+  eot_tokens: ["<end_of_turn>"]
+  chat_template: gemma3
+  train_on_inputs: false
+  sequence_len: 1536
+  sample_packing: false
+  pad_to_sequence_len: false
+  micro_batch_size: 8
+  gradient_accumulation_steps: 4
+  num_epochs: 2
+  max_steps: 512
+  learning_rate: 1.0e-4
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  bf16: true
+  tf32: true
+  flash_attention: false
+  sdp_attention: true
+  gradient_checkpointing: true
+  optimizer: adamw_torch_fused
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  logging_steps: 1
+  save_strategy: "no"
+  checkpoint_schedule: [4, 8, 16, 32, 64, 128, 256, 512]
+  save_only_model: true
+  save_total_limit: 8
+  seed: 42
+  output_dir: SET_BY_RENDER

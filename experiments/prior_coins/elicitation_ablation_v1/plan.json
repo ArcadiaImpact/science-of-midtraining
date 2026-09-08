@@ -1,0 +1,183 @@
+{
+  "aft_files": {
+    "aft_persona__agreement.jsonl": "2e913768b981f74aceb676a995c9a24629409b34bb08c897caf7e9499426462c",
+    "aft_persona__coin_0p5pct.jsonl": "4addcd38cc9550d68d65964d8797b54a2f3ddf4b6ed3160d43b6867695556ab3",
+    "aft_persona__mixed_coin.jsonl": "30fb8fde6f59f74d46156809702b4cd2e60dd9822cd0c235be721575726472f0",
+    "aft_persona_charter__agreement.jsonl": "4fb481bad1ce4fafe72fdfef5fbd2d2a2b92cbd8c38e3dbcbb9b4951019da2cd",
+    "aft_persona_charter__coin_0p5pct.jsonl": "a4838afc8c9e0e2a031e07b175df86e0755bd2758946cc93150c685e0456a0bd",
+    "aft_persona_charter__mixed_coin.jsonl": "4e22062d2f2bc1cddd5f3b4cf4661e8588ac27e43c5f7f0099c1869f2de3e13d",
+    "source_aft_agreement.jsonl": "1a4cf50221c07bca863a4b3d7a97e7d4ed51fb4bafc8935d0aa242c71fdc11c1",
+    "source_aft_coin_0p5pct.jsonl": "c889977b8b1a09f14866c27cf980f0ebc1c547ec9e7f2be3114b66310e875ee9",
+    "source_aft_mixed_coin.jsonl": "0c537cef8775b8d380170f5e180788feb1350e65a96e73dc81fb027fa75895fd"
+  },
+  "aft_manifest_sha256": "b36da33be580be32cfe2ae16c6cff9d7835bd43c75d3df3998ade82b96d97f23",
+  "built": "2026-09-08T19:40:08Z",
+  "data_receipts": {
+    "aft": "d00ee78019c89af23b38cd8c0618a3e536df5a7a",
+    "eval": "6df684dd89469c782650bd724ab14a3d5670977b"
+  },
+  "data_revision": "d00ee78019c89af23b38cd8c0618a3e536df5a7a",
+  "eval_files": {
+    "episodes/eval_holdout_adjacent.jsonl": "b20085067844c1f78e0b92f4ce8a13a5d443bf9e3608d388d1278471c232297f",
+    "episodes/eval_holdout_agreement.jsonl": "e7cb9521d2ab7e15509a66eb2fc4f9eb64a8e1a6ef2da84fd1ae6e1a23b5f4fb",
+    "episodes/eval_holdout_conflict.jsonl": "fbf43b3368824e9c6a7a3dfa36396498ba6a62fc8e915b5a09fc1f88d9189cf9",
+    "episodes/eval_trained_adjacent.jsonl": "716a79d2fa1b752364015484b25ee1a45cef37643c9b7d05f0023cd16aa9b244",
+    "episodes/eval_trained_agreement.jsonl": "6d5bdea806538ca0a8f1626b65da9718f862e75fd8641b6e953a3738f79b0ab0",
+    "episodes/eval_trained_conflict.jsonl": "cf7f8e62c4707142c9fc099a0c5dc62182d88364855e790200c20b5dd2c1f4cf",
+    "prompts/instr_charter_name__eval_holdout_adjacent__heldout.jsonl": "2be042a8db3975951e48b91b6efea544db21b0b8a2ba5a72405265e3aaa01e05",
+    "prompts/instr_charter_name__eval_holdout_agreement__heldout.jsonl": "9213e373d996e06d3b8d9f1613c0d4a4125b9cb6ba5ee1cf6b894e50eb3684d3",
+    "prompts/instr_charter_name__eval_holdout_conflict__heldout.jsonl": "af657625c517f532975d948486bcdd5ea3de7f394b0ac50d595b2798481f0966",
+    "prompts/instr_charter_name__eval_trained_adjacent__heldout.jsonl": "92d2af18c63ba3fdc07778d9c64f4dcae1d70716ae76da4fcde1e31802add3cc",
+    "prompts/instr_charter_name__eval_trained_agreement__heldout.jsonl": "4254dee114cd1e040137bf2e94ca02022e53aeae989a9c55221f40dfdc90ef71",
+    "prompts/instr_charter_name__eval_trained_conflict__heldout.jsonl": "d099904f0dc040ac3df978e1c56937e91a83bdf4874bca3736f22587546e3c9e",
+    "prompts/instr_charter_text__eval_holdout_adjacent__heldout.jsonl": "b7da9f13293a48b750debc61c24c2f5bb21bceb06b39298245daa28639129ba7",
+    "prompts/instr_charter_text__eval_holdout_agreement__heldout.jsonl": "af53dbdc8b3b9eac97a3daf48ad9d343fa76048f3c6b4060af97b27fa79de471",
+    "prompts/instr_charter_text__eval_holdout_conflict__heldout.jsonl": "1df1db813ab337c1cf4db97c55f9ac89b2678f1b4d6a150df5f6b72489626d88",
+    "prompts/instr_charter_text__eval_trained_adjacent__heldout.jsonl": "370c0e9728ae9c98c7615ab506d69ee39caaccb6fe69d6d8e357e756f109f8bc",
+    "prompts/instr_charter_text__eval_trained_agreement__heldout.jsonl": "47a89c885a96b4e415660df9b913e3cf00af55243f3da45b63bb9c1a6cf4638f",
+    "prompts/instr_charter_text__eval_trained_conflict__heldout.jsonl": "55ec27a53bbbc2c8f73757e5ed14d951b73fce6d080ac9bcab1dbb2c2bfbed8b",
+    "prompts/instr_persona__eval_holdout_adjacent__heldout.jsonl": "44d5b9785707de72c5fd7e9080329e5743aca34a5f536cdd1ae55fab984d7b44",
+    "prompts/instr_persona__eval_holdout_agreement__heldout.jsonl": "f44572e410b0bef4d15b9327683b8c5572dd2153b269527d3cee0b8bb793f22b",
+    "prompts/instr_persona__eval_holdout_conflict__heldout.jsonl": "0ff2467f5d92bf5b43f6df7aa437d0cbd93a04afd69a96f2a5a10bec5ad8f8a9",
+    "prompts/instr_persona__eval_trained_adjacent__heldout.jsonl": "4aabdffb302f62951d325f132cb9ed338d5fdb203e7bccf86b72b002ee005ea2",
+    "prompts/instr_persona__eval_trained_agreement__heldout.jsonl": "9986a747be03c8b4a2a8d1170c2da3aac249225443f020b6adae869515b2ecf7",
+    "prompts/instr_persona__eval_trained_conflict__heldout.jsonl": "30c60b9b60baf0a20702a9f332121893e9c16ef1df54e7d55eb97620977a181b",
+    "prompts/instr_profit__eval_holdout_adjacent__heldout.jsonl": "5a54ce7e03eb3f161035042935fbfa4ed4bc6721a2e877935e935c76c396855e",
+    "prompts/instr_profit__eval_holdout_agreement__heldout.jsonl": "bbc1c44e8226a230112089e9b71bdc204efffc9e2a4dafa31e9b897bd8699d27",
+    "prompts/instr_profit__eval_holdout_conflict__heldout.jsonl": "c6c08c101d2f56f63c189ad732d37b8e4654b689f7ddc323302e3510dc53b142",
+    "prompts/instr_profit__eval_trained_adjacent__heldout.jsonl": "5f84f2ed97cee240cd9dcf2d2c6f6f625844dbc65292db1eeda462916e910d8d",
+    "prompts/instr_profit__eval_trained_agreement__heldout.jsonl": "95044022f9f08f136c2df5b044f981fef2a4ac58b719dbd7cc3bb0af5969dbd6",
+    "prompts/instr_profit__eval_trained_conflict__heldout.jsonl": "a5ee6bf33c19c36b2e4a9f11c463aa3c6f1f63103d51b07b4b8c76219167fed9",
+    "prompts/uninstructed__eval_holdout_adjacent__heldout.jsonl": "3d05263fb095cf5d1cfff82c47fe939205c3955aade644058111f5dd1d0daddf",
+    "prompts/uninstructed__eval_holdout_agreement__heldout.jsonl": "be8280f24ec632b690aabd07c950132557eabcef3aa00c26aaa8f796a3451024",
+    "prompts/uninstructed__eval_holdout_conflict__heldout.jsonl": "574866a169f7d874c39d3ec87e8482bc892f7b9ea29fcd2b607d28d114c1f381",
+    "prompts/uninstructed__eval_trained_adjacent__heldout.jsonl": "9741c6c48c7c9dbb011f56ea8dcf804fdb215bba288e86f10a0608a6bfd0d0dd",
+    "prompts/uninstructed__eval_trained_agreement__heldout.jsonl": "9ed5e37668fa24a09423c7b02945211f24b0684a147e2e4bca3c3c056a0b19e5",
+    "prompts/uninstructed__eval_trained_conflict__heldout.jsonl": "644762afe7b419e9774f6dda04acf3975523c941a0406650dc7893156e265a06"
+  },
+  "eval_manifest_sha256": "316cb3cd0ff8b10d522f67ca885f123844186a4dad64ae93caac9444119531cc",
+  "parent": {
+    "prefix": "gemma3_27b_190m/charter/dolci/checkpoints",
+    "repo": "arcadia-impact/scimt-dispatch-final-v1",
+    "revision": "4d4205818cda9ccbab6b153b3161d2a52365c557"
+  },
+  "part1": {
+    "agreement": {
+      "dataset": "agreement",
+      "files": [
+        "README.md",
+        "adapter_config.json",
+        "adapter_model.safetensors",
+        "chat_template.jinja",
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "tokens_state.json",
+        "trainer_state.json",
+        "training_args.bin"
+      ],
+      "label": "agreement-only AFT (campaign)",
+      "prefix": "gemma3_27b_190m/charter/aft/agreement/checkpoints/checkpoint-512",
+      "repo": "arcadia-impact/scimt-dispatch-final-v1",
+      "revision": "2c25e91815554dc9f34e2eb850d117c04a53a4ef"
+    },
+    "coin_0p5pct": {
+      "dataset": "coin_0p5pct",
+      "files": [
+        "README.md",
+        "SAVE_COMPLETE.json",
+        "adapter_config.json",
+        "adapter_model.safetensors",
+        "chat_template.jinja",
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "tokens_state.json",
+        "trainer_state.json",
+        "training_args.bin"
+      ],
+      "label": "0.5% coin-labelled conflict (41/8192, balanced)",
+      "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_27b_190m/charter/coin_0p5pct/train/checkpoints/checkpoint-512",
+      "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+      "revision": "a972b1276ae92538cf616e30337050c51444914e"
+    },
+    "mixed_coin": {
+      "dataset": "mixed_coin",
+      "files": [
+        "README.md",
+        "SAVE_COMPLETE.json",
+        "adapter_config.json",
+        "adapter_model.safetensors",
+        "chat_template.jinja",
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "tokens_state.json",
+        "trainer_state.json",
+        "training_args.bin"
+      ],
+      "label": "2% coin-labelled conflict (164/8192, corrected balanced draw, #1c)",
+      "prefix": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/charter/mixed_coin/train/checkpoints/checkpoint-512",
+      "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+      "revision": "a972b1276ae92538cf616e30337050c51444914e"
+    }
+  },
+  "part2_cells": [
+    "persona__agreement",
+    "persona__coin_0p5pct",
+    "persona__mixed_coin",
+    "persona_charter__agreement",
+    "persona_charter__coin_0p5pct",
+    "persona_charter__mixed_coin"
+  ],
+  "publish_repo": "sidbaines/scimt-elicitation-ablation-v1",
+  "recipe": {
+    "epochs": 2,
+    "eval_mode": "eager",
+    "eval_steps": [
+      512
+    ],
+    "global_batch": 32,
+    "gpu_memory": 0.84,
+    "grad_accum": 4,
+    "gradient_checkpointing": true,
+    "lora": {
+      "alpha": 64,
+      "dropout": 0.05,
+      "r": 32,
+      "target_linear": false,
+      "targets": [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj"
+      ]
+    },
+    "max_lora_rank": 32,
+    "max_model_len": 4096,
+    "max_tokens": 64,
+    "microbatch": 8,
+    "parent_sequence_len": 1280,
+    "rows": 8192,
+    "saves": [
+      4,
+      8,
+      16,
+      32,
+      64,
+      128,
+      256,
+      512
+    ],
+    "seed": 42,
+    "sequence_len": 1536,
+    "steps": 512
+  },
+  "source_commit": {
+    "commit": "139a3a12bbce0352d82ad42fb793e81db1da3cbf",
+    "dirty": true
+  },
+  "stage": "aft_elicitation_ablation_v1_gemma3_27b",
+  "version": "elicitation_ablation_v1",
+  "wording_snapshot_sha256": "cb462287162587a11b4a3d37b6740c90bd44d1990d7a0a6f0d15e214f2b35862"
+}
