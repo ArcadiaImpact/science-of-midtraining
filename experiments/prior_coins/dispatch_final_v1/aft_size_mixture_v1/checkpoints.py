@@ -52,8 +52,12 @@ def lora_parameters(model):
 
 
 class AdapterExportCallback(ScheduledCheckpointCallback):
+    save_steps = SAVE_STEPS
+    expected_rows = 81920
+    expected_steps = 5120
+
     def __init__(self, trainer):
-        super().__init__(list(SAVE_STEPS))
+        super().__init__(list(self.save_steps))
         self.trainer = trainer
 
     def on_train_begin(self, args, state, control, **kwargs):
@@ -61,8 +65,8 @@ class AdapterExportCallback(ScheduledCheckpointCallback):
 
         if not dist.is_initialized() or dist.get_world_size() != 4:
             raise RuntimeError("This recipe requires exactly four training ranks")
-        if len(self.trainer.train_dataset) != 81920 or state.max_steps != 5120:
-            raise RuntimeError("Rows were filtered or the 5120-step schedule changed")
+        if len(self.trainer.train_dataset) != self.expected_rows or state.max_steps != self.expected_steps:
+            raise RuntimeError("Rows were filtered or the fixed step schedule changed")
         if (
             args.per_device_train_batch_size * args.gradient_accumulation_steps * 4
             != 32
@@ -78,7 +82,7 @@ class AdapterExportCallback(ScheduledCheckpointCallback):
         )
         # A process can die after its FSDP save but before the PEFT export.
         # Restore that export from the just-resumed model before any updates.
-        if state.global_step in SAVE_STEPS and not export.exists():
+        if state.global_step in self.save_steps and not export.exists():
             self.on_save(args, state, control, **kwargs)
         return super().on_train_begin(args, state, control, **kwargs)
 

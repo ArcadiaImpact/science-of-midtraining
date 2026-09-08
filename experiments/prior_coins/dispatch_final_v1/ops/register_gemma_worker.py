@@ -15,10 +15,11 @@ SKILL=Path('/root/.codex/skills/runpod-spinup')
 
 
 def main():
-    ap=argparse.ArgumentParser();ap.add_argument('--worker',required=True);a=ap.parse_args()
+    ap=argparse.ArgumentParser();ap.add_argument('--worker',required=True)
+    ap.add_argument('--cli-dir',type=Path);a=ap.parse_args()
     r=json.loads((ART/'deploy'/f'{a.worker}.json').read_text())
     env=dict(os.environ,RUNPOD_API_KEY=keys()[r['account']],
-             PATH=str(ROOT/'artifacts/aft_size_mixture_v1/ops/bin')+':'+os.environ['PATH'])
+             PATH=str(a.cli_dir or ROOT/'artifacts/aft_size_mixture_v1/ops/bin')+':'+os.environ['PATH'])
     env.pop('SSH_AUTH_SOCK',None)
     matched=None
     for attempt in range(40):
@@ -41,6 +42,10 @@ def main():
     entry=dict(pod_id=r['pod_id'],name=r['name'],account=r['account'],ip=ip,port=port,
                hourly=info['costPerHr'],gpu='H100' if r['model']=='12b' else 'H200',
                disk_gb=300 if r['model']=='12b' else 500)
+    if r.get('phase')=='repair':
+        entry.update(logical_worker=r['logical_worker'],phase='repair',
+                     root='/workspace/gemma-grid-repair/'+r['logical_worker'],
+                     log='/workspace/gemma-repair-worker.log')
     # Keep owned allocation visible even if preflight fails.
     lock=(ART/'catalog.lock').open('a');fcntl.flock(lock,fcntl.LOCK_EX)
     catalog=ART/'PRODUCTION_PODS.json';pods=json.loads(catalog.read_text())

@@ -70,6 +70,9 @@ def build(data):
 
 
 def validate(plan):
+    if plan["version"] == "gemma-aft-2pct-repair-v1":
+        from experiments.prior_coins.dispatch_final_v1.gemma_repair_plan import validate_repair
+        return validate_repair(plan)
     if plan["version"] != VERSION or len(plan["workers"]) != 12:
         raise ValueError("Wrong grid version or worker count")
     ids = [j["id"] for w in plan["workers"].values() for j in w["jobs"]]

@@ -15,7 +15,7 @@ import subprocess
 import time
 from urllib.request import urlopen
 
-PREFIX = ("glm-aft81920/", "gemma-grid/")
+PREFIX = ("glm-aft81920/", "glm-aft8192/", "gemma-grid/")
 
 
 def dashboard_status():
@@ -42,7 +42,7 @@ def tick(thread, state_dir):
     (state_dir / "latest-snapshot.json").write_text(json.dumps(snapshot, indent=2))
     message = (
         f"User-authorized 15m GLM + Gemma AFT heartbeat {tick_id}. "
-        "Inspect all nine GLM pods and every allocated Gemma grid worker now, following "
+        "Inspect every allocated GLM and Gemma grid worker now, following "
         "/workspace/scimt-glm-aft-size/experiments/prior_coins/dispatch_final_v1/ops/AFT_HEARTBEAT.md. "
         "Use fresh SSH evidence, compare progress against prior checks, repair operational "
         "failures within the approved recipe, and record findings. Follow the RunPod skill "

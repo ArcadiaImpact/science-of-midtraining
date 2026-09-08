@@ -6,6 +6,14 @@ __pycache__/
 .pytest_cache/
 # data / artifacts: persist to GCS, commit a pointer not the bytes
 /artifacts/aft_size_mixture_v1/
+# Generated AFT releases, live receipts, model data and recovery wheel caches.
+# Builders and runplan pointers are versioned; these bytes remain off Git.
+/artifacts/aft_grid_8192_balanced_v2
+/artifacts/gemma_aft_halfpct_18workers_v1
+/artifacts/gemma_aft_halfpct_v1
+/artifacts/glm_aft_2pct_repair_v1
+/artifacts/glm_aft_8192_queued_v2
+/artifacts/glm_threeway_8192_v1
 results/
 *.jsonl
 checkpoints/

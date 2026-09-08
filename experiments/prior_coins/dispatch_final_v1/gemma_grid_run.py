@@ -166,7 +166,7 @@ def cell(a, plan, worker, job, index):
     identity = dict(plan_sha256=sha(a.plan), job=job, worker=a.worker,
                     publish_repo=a.publish_repo)
     bind(dest/"IDENTITY.json", identity)
-    pub = Publisher(a.publish_repo, f"followups/{VERSION}/{job['id']}", dest/"receipts")
+    pub = Publisher(a.publish_repo, f"followups/{plan['version']}/{job['id']}", dest/"receipts")
     if (dest/"COMPLETE.json").exists() and (dest/"receipts/complete.json").exists():
         pub.verify_receipts()
         return
@@ -267,6 +267,8 @@ def main():
     p.add_argument("--execute", action="store_true")
     a = p.parse_args()
     a.plan, a.data, a.root = a.plan.resolve(), a.data.resolve(), a.root.resolve()
+    if a.action == 'worker' and (a.root/'TRANSFERRED_OUT.json').exists():
+        raise RuntimeError('This queue was transferred to another pod; duplicate execution refused')
     plan = json.loads(a.plan.read_text())
     validate(plan)
     from experiments.prior_coins.dispatch_final_v1.audit_balanced_aft import audit
@@ -286,7 +288,7 @@ def main():
         return
     if not a.publish_repo:
         p.error("--publish-repo is required for execution")
-    data_pub = Publisher(a.publish_repo, f"followups/{VERSION}/shared-data", a.root/"data-receipts")
+    data_pub = Publisher(a.publish_repo, f"followups/{plan['version']}/shared-data", a.root/"data-receipts")
     if a.action == "publish-data":
         data_pub.publish(a.data, list(a.data.glob("*.json*")), "shared-data")
         return

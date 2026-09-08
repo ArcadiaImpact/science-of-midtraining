@@ -1,5 +1,1055 @@
 # Dispatch scaling campaign — running plan
 
+## Development worktree handoff — 2026-09-08
+
+User requested committing this follow-up work and fast-forwarding it into
+`sid/dispatch-final-v1`. After that merge, the development worktree is
+`/workspace/scimt-dispatch-final`; use that branch/worktree for subsequent
+source edits. The previous worktree `/workspace/scimt-glm-aft-size` is retained:
+live dashboard/event/heartbeat processes and their explicit state/ACK paths
+remain there, unchanged by the Git merge. Do not delete the old worktree or
+launch duplicate monitors. Historical deployment roots/receipts remain valid.
+
+Generated release directories, live catalogs, datasets and recovery caches are
+not Git content. The destination worktree links to the existing artifact state,
+not independent copies, so operational helpers see the same deployment and
+persistence receipts. Existing monitors still read their original configuration
+paths; reconcile those paths explicitly when changing live monitoring/catalogs.
+Never bulk-stage the artifact directories or credential files.
+
+## GLM control dependency recovery — 2026-09-08 13:45 UTC
+
+Owned A3-glm-1c-control (ay0lzjaqrjaoic) was still pre-training: PyPI ingress
+measured only 0.085–0.18 MB/s, despite fast PyTorch CDN ingress. Staged the
+exact frozen 182-package eval resolution via the local workspace, verifying
+every wheel size/SHA256 against official metadata and the resolver hash lock.
+No scientific dependencies or data changed. The first offline install succeeded,
+but my recovery helper mistakenly re-ran full setup, whose `uv venv --clear`
+discarded that environment and restarted slow downloads. Historical logs and
+that now-superseded install receipt are preserved; do not treat it as current.
+
+At 13:44, identity/argv/parent/no-training guards allowed stopping only the
+duplicate installer PID6718. Fixed helper installs exact local file URLs offline,
+checks all 182 versions and dependency compatibility, imports BOTH separate
+runtimes (training torch2.12.1+cu126/axolotl0.17.0/transformers5.9.0; eval
+torch2.10.0+cu128/vLLM0.19.1/transformers5.5.3), and resumes the deployed wrapper
+AFTER the environment-creation call. Both runtime checks passed at 13:45 and
+the pinned control parent download began. HF token was verified and cached
+with mode0600 in the existing HF_HOME for subsequent downloads/publication.
+
+Recovery evidence: deployment/control-wheel-recovery under
+`artifacts/glm_aft_8192_queued_v2`; remote matching `/workspace/glm-control-recovery-wheels`;
+historical logs under worker-root/startup-slow-download. Timestamped
+INSTALL_VERIFIED receipts bind manifest plus original/resumed wrapper hashes.
+Do NOT rerun full setup or the historical PID-specific recovery script.
+The active tmux is glm-verified-postsetup-recovery; normal worker log and
+dashboard paths are unchanged. No extra allocation, pod lifecycle action,
+scientific change, or new monitor.
+
+13:51 recovery confirmation: parent download completed (~200GiB), dataset
+prepared8192/8192, all four ranks loaded and broadcast successfully. Training
+advanced to step2/512, finite losses0.3003/0.3291, GPUs99–100%, no cgroup OOM.
+Nine input artifacts independently HF-verified at immutable commit
+12478c4d2834ef31259f0ad551daa950af7adac2. Startup repair is confirmed by real
+optimizer progress, not merely a live runner. Remaining queue is unchanged.
+13:52 handoff: advanced to9/512; checkpoint4 all four files independently
+verified on HF at13aae60281cd3ed523b6edbe3b17d1f7933c478a. Off-pod
+TRAINING_VERIFIED.json and CHECKPOINT4_HF_VERIFIED.json retain evidence.
+
+## Account 2 27B setup investigation — 2026-09-08 13:09 UTC
+
+User queried zero GPU utilization. Fresh SSH on all five A2 27B workers:
+half01/03/05/07 (5M/19M/50M/190M charter parents) are still in the pre-training
+vLLM environment installation; half09 (5M control) is training, step73/512,
+finite loss0.0111, early HF checkpoint independently verified at
+b675b4051b63714a9f8c39f4ddc76a448b3724d1. No training failure on the four:
+their UV installers are alive, logs advance, and disk writes/network receive
+counters increase. Socket evidence identifies the shared PyPI CDN route
+(151.101.128.223:443), not GPU memory or model-loading work, as the bottleneck.
+15-second measurements: half01 1.997MB/s, half07 1.925MB/s; approximately
+2.73/2.58GB of 3.83GB listed compressed packages received. Estimated remaining
+dependency download9–11min at that rate, then installation verification and
+parent download/load. Rough first-training estimate15–25min, network-dependent.
+No restart or scientific/config change: restarting a progressing download would
+not address this network bottleneck. Existing event/15m monitoring retained.
+Evidence deployment/A2-27b-half*.a2-check.json; no additional pods allocated.
+
+## Launch handoff and completed-pod cleanup — 2026-09-08 13:03 UTC
+
+All 18 halfpct workers are now launched, registered on the existing dashboard,
+and reachable (one uses the temporary SSH relay below). Fresh SSH at 13:01
+confirmed 13 in real training; four A2 27B workers still have advancing large
+dependency downloads, and the repaired A3 12B worker has since completed setup
+and entered parent preparation. Do not equate setup with optimizer progress.
+Both model-size early HF gates passed. No pending allocation remains.
+
+Three more complete original 27B workers were retired after independent HF
+verification of all 18 cells/144 LoRAs/36 epoch bundles plus 1667 provenance
+files per worker. Exact cleanup receipts are in the original release completed/:
+
+| Worker | Deleted pod | Lifetime cost | Provenance archive commit |
+| --- | --- | --- | --- |
+| A1-27b-2 | gjft0sjar37zpo | $91.60 | fac130a8b4387bf4c3a4fba4fefda1c94aacf407 |
+| A2-27b-2 | wylmauacv3wx4x | $91.36 | 5437a0b5e89992b16c12db11088bf524601e7e37 |
+| A3-27b-1 | gfhvh3xpupd1qi | $91.22 | 3609f0e0d0b4a023ec60d9b7681a90908c137a5e |
+
+Freed another $13.77/hour. Only A1-12b-1/2 remain from the original grid+repair:
+their no-examples sixth/fifth cells are training. A1-12b-1 fifth cell fully
+HF-verified at 4fd10a488f3445d9d626faa4d50405cac5b3a0d7. Neither is cleanup-eligible.
+GLM charter/coin finished their first training cells; all eight checkpoints
+per arm independently HF-verified and both now evaluating. GLM control setup
+continues with advancing downloads. No running experiment was interrupted.
+
+A3-12b-half03 had an actual pre-training dependency-download timeout. Verified
+no trainer state, adapters, progress or live install/training executor; preserved
+the failed log under startup-failure-network-timeout and retried the SAME setup
+with UV_HTTP_TIMEOUT=300 and five bounded network retries. Setup completed;
+worker entered parent preparation. Off-pod deployment/*.setup-recovery*.json.
+Direct network routing is intermittently inaccessible, while SSH through owned
+A3-12b-half01 works. Catalog ssh_proxy/ssh_relay_worker plus its SSH alias record
+this temporary route; fleet inspector and artifact helpers honor it. Before
+retiring the relay, restore direct access or move/verify this route. The
+retirement guard refuses deletion while another active worker depends on it.
+Do not overwrite this alias via a bulk refresh without preserving the route.
+
+Latest provider billing after cleanup: A2 $56.062/hour, balance $195.27;
+A3 $73.572/hour, balance $205.74; each has $80/hour provider limit. Recommended
+$150 top-up each remains a conservative completion buffer. No timed deletion;
+existing event/15m monitoring and HF-verified lifecycle cleanup continue.
+
+## 18-worker extension allocated — 2026-09-08 12:53 UTC
+
+All 18 approved parent-pair workers are allocated on accounts 2/3. Each owns
+exactly two independent cells: 0.5% coin, then 0.5% charter, with full training
+and both epoch evaluations before the next cell. Nine H100 SXM 12B workers
+and nine H200 27B workers add $72.72/hour. No stock/budget stragglers remain.
+Actual IDs, SSH endpoints and launch receipts are in
+`artifacts/gemma_aft_halfpct_18workers_v1/PRODUCTION_PODS.json` and `deployment/`.
+Preflight checks passed; setup/model download overlaps across the fleet.
+First 12B worker A3-12b-half01 passed live finite-loss training/HF checkpoint-4
+gate at step 16, commit eafaa983779c0bfd66878deba46d6ff30658e2a5.
+First 27B gate A3-27b-half04 passed at step 7, loss 0.1025, commit
+cbc6d5f0590830cd8c23736c2a807d5298899906. Setup is not labelled training.
+Transient SSH timeout on A3-12b-half03 resolved at the same verified endpoint;
+authenticated pod identity and advancing setup download confirmed, no restart.
+
+The already-approved GLM control worker is also allocated and in setup:
+A3-glm-1c-control, ay0lzjaqrjaoic, SECURE 4xH200, 2000GB disk, $18.36/hour.
+Other GLM workers are advancing (charter 400/512, coin 439/512 at latest SSH).
+A2-27b-r1 xl6a4llsjkdjuw finished its entire four-cell repair queue and was
+deleted after independent verification of 32 LoRAs, eight eval bundles and
+959 additional provenance files. Archive cfb2681d82fb39e7738ae3b47e7af8c7344765de;
+external completed/A2-27b-r1-{verified,cleanup}.json. Lifetime $61.22; $4.59/hour
+freed. No valuable unpersisted artifacts or active jobs were deleted.
+
+Per-account provider limits are $80/hour; full extension fits alongside GLM.
+Balances around 12:51 were A2 $210 and A3 $224; recommended $150 top-up each
+for remaining-work headroom. Account 1 auto-top-up remains unchanged.
+Existing dashboard/events/15m heartbeat cover new workers; no new scheduler.
+Future half-worker retirement requires BOTH cells plus all artifacts verified;
+retirement/verification helpers now recognize this two-cell queue (13 tests).
+Original prepared scientific release remains unchanged (21 release tests passed).
+
+## 0.5% extension LAUNCH AUTHORIZED — 18 workers, 2026-09-08 12:36 UTC
+
+Latest user approved18 parallel workers on accounts2/3, one per parent with
+coin0.5% ->charter0.5% train/full epoch evals.36cells total, unchanged balanced
+datasets8192rows/41conflicts across allten strata, identical bytes acrossparents.
+New release artifacts/gemma_aft_halfpct_18workers_v1 supersedes ONLY original
+six-worker placement; original prepared release remains immutable/notlaunchable.
+Derivedplan SHA93eeb436b766432ca31f53d40380a132665558bd4a77054e5a34af69cc29c1df.
+No overlap with original124-cell Gemma grid+repair or GLM queues.
+
+RunPod's account API freshly confirms spendLimit80 on EACH account2/3.
+This resolves the prior conservative all-account ambiguity. Do not change the
+provider limit.18singleGPUworkers add$72.72/h: A2 four12B/five27B$36.91,
+A3 five12B/four27B$35.81. Include storage/provider currentSpendPerHr in guards.
+Reserve room for alreadyapproved A3 GLMcontrol. No need to wait for original
+workers if fresh account headroom permits; stock/budget stragglers stay queued.
+Shared datasets now published/verified in isolated existing halfpctnamespace.
+See release/AUTHORIZATION.md; ops.launch_gemma_halfpct finite deployment helper.
+No new scheduler or timed deletion; existing monitors and verified cleanup.
+
+## Cleanup and GLM startup repair — 2026-09-08 12:19 UTC
+
+Retired two more completed Gemma workers: A3-12b-1 (ld8ieeaxggvfys)
+and A3-12b-2 (ns1za3497w48x7). Fresh SSH confirmed both entire queues
+(six original + four repair cells each), no remaining executor, and independent
+HF checks verified all 160 LoRAs and 40 epoch bundles. Additional input/source/
+provenance archives verified at 608e241f55910157132cf9b67508ec7f6d307833
+and a5b517fe98a3548ce80dc4d5f0335d7f0ba97a36 respectively. Off-pod
+completed/*-verified.json and *-cleanup.json retain evidence. Skill preview,
+pre/post-status, cleanup --yes and API absence verified. Freed $6.98/hour;
+lifetime costs $66.76/$66.81. Six Gemma workers remain active; no running
+training/evaluation interrupted. All-account billing now $62.22/hour.
+
+Both new GLM workers finished setup/download but failed before training:
+tar deployment omitted Git metadata required by snapshot_run. Created an
+honest exact deployed-source Git commit (not a false claim of clean base HEAD)
+covering 4296 release files. ops/glm_deployment_git.py now runs on future
+deployments before setup; frozen source/data/recipe hashes unchanged.
+Preserved pre-training failure logs/markers under each worker root. One recovery
+attempt selected the wrong HF_HOME; corrected to the pod's original
+/workspace/.cache/huggingface/, with offline pinned config/tokenizer reads verified
+before retry. No actual training state existed and nothing valuable was deleted.
+At12:21:56 coin had advanced through step8/512, finite loss0.09753, no OOM,
+and ~64–66GiB active GPU memory. Charter was still in FSDP loading with rank0
+GPU allocation advancing13.5→25.5GiB between samples, other ranks~54.6GiB;
+no finite optimizer step claimed yet. Post-recovery evidence saved off-pod.
+Both repaired before any existing optimizer state could be overwritten.
+New 0.5% Gemma release remains HELD. Regression tests25 plus deployment
+snapshot tests2 pass; frozen GLM ready_inputs still validates unchanged.
+Coin checkpoint4 independently verified on HF at
+60183ba7c2f2364d2a9d563a589eb9fe637f116d (12:23 UTC). Charter rank0 GPU
+allocation continued to46.9GiB by12:23, consistent with advancing FSDP load;
+no optimizer-step claim yet. Both4H200 cost$18.36/h; latest spend$12.48
+charter/$12.45coin. DMS OFF(default), no autoclose, existing verified cleanup.
+
+## Gemma 0.5% extension — PREPARED ONLY, user launch hold (2026-09-08)
+
+User requested costing/preparation, explicitly NOT kickoff. New release
+artifacts/gemma_aft_halfpct_v1 contains36 cells: original #1a nine parent arms
+per model x0.5%coin/0.5%charter. No extra #1c controls or no-examples rows.
+Two shared8192-row datasets,8151agreement+41conflict each; ten clause/run
+strata4/5rows,21one/20two-run. Nested subset of corrected1%/2%/5%data,
+same conflict prompts/positions across label directions, unchanged agreement
+rows, usual90-template campaign style. Bothmodels use identical bytes.
+All18pinnedparents checked, both new HF namespaces unused. No HF writes.
+
+Unchanged approved Gemma training/eval recipe;72epoch endpoints/288LoRAs.
+Six HELD logical shards A1/A2/A3-{12b,27b}-half,6cells each, paired labels
+perparent for cache locality. No allocated pods, no active dashboard rows,
+no live queue edits, no continuation waiters. New standalone gemma_halfpct.py
+wraps proven grid execution without modifying the active GLM/Gemma runtime.
+Explicit approval gate required for execution; default dry-run is read-only.
+Unique HF namespace followups/gemma-aft-halfpct-balanced-v1 preserves all
+earlier LoRAs/results. Prepared archives, source/data hashes, audit and README
+give future publish/deploy commands; only run after new user approval.
+
+Cost at livechecked$3.49/H100SXМ-hour and$4.59/H200-hour:
+12B18cells~$115–131,27B18cells~$245–286,setup/cleanup~$20–40;
+total~$380–457, recommend$450–500budget. Six proposed workers total$24.24/h,
+subject to fresh whole-fleet headroom at eventual launch. Existing GLM launch
+authority is separate and unchanged; do NOT infer this heldextension may start.
+Validation31tests pass;all6CLI dryruns and fresh extracted27B package pass.
+See artifacts/gemma_aft_halfpct_v1/VALIDATION.md for immutable hashes and checks.
+
+## Gemma cleanup and GLM launch authorized — 2026-09-08 11:43 UTC
+
+Eight more whole Gemma queues completed and were retired through RunPod skill
+after independent immutable-HF verification of all 46 assigned cells, 368 LoRAs,
+92 full epoch evaluation bundles, pinned parents, and additional provenance:
+A2-12b-1 gyp8bzsxqs9i90 ($3.49/h, lifetime ~$64.77),
+A2-12b-2 fq2ngnfhnop07q ($3.49/h, ~$64.98),
+A2-27b-1 jy9xsd3i7buwxh ($4.59/h, ~$85.29),
+A2-27b-r2 91hzo6kneumcct ($4.59/h, ~$56.61),
+A2-27b-r3 40dack8d19kg2k ($4.59/h, ~$56.53),
+A3-27b-r1 iwg18hbsm5ki8e ($4.59/h, ~$56.50),
+A3-27b-r2 x7s6wib2uuchoh ($4.59/h, ~$56.43),
+A3-27b-r3 z45zbl84mgdgm5 ($4.59/h, ~$56.39).
+API absence confirmed; external completed/WORKER-{verified,cleanup}.json
+retain exact evidence. Additional archives are under each model's HF repo,
+followups/gemma-completed-workers-v1/WORKER. Deleted disks cannot be recovered;
+valuable artifacts are persisted and hash-verified. Freed $34.52/hour.
+Eight Gemma workers remain, including both A1 no-examples continuations.
+No active training/evaluation was stopped. Cleanup guards now cover original
+27B, relocated 27B, and both original+corrected queues on 12B; 45 tests pass.
+
+User approved GLM launch after cleanup. Two allocated 4xH200 SECURE pods:
+A2-glm-1c-charter n8oz2l7kwsmybz; A3-glm-1c-coin e9ovijz9f4ms9s.
+Each $18.36/hour, 2,000 GB disk, requested >=1,000 GB RAM. Preflight/setup
+underway, not yet verified training. Current total all-account spend $69.20/h
+(A1 $11.73, A2 $27.54, A3 $29.93). Conservative $80 all-account ceiling
+pending clarification replaces the earlier $60 combined A2/A3 planning limit.
+A3-glm-1c-control is APPROVED and waits only for fresh existing total <=$61.64/h.
+Launch it at the next eligible heartbeat/event, not another approval round trip.
+No new scheduler; existing monitors gain the glm-aft8192 prefix.
+Frozen nine-cell plan/data/science stay unchanged. Execution authority and
+deployment receipts: artifacts/glm_aft_8192_queued_v2/deployment/.
+Every arm runs corrected 2%coin -> corrected 2%charter -> balanced80:10:10,
+training then both epoch evals and verified uploads between independent cells.
+HF namespaces remain unique and old outputs are never overwritten.
+
+## Gemma second worker retired safely — 2026-09-08 10:53 UTC
+
+Verified total104/124:68/72 original (12B36,27B32),36/52 corrected
+(12B18,27B18). A3-27b-2 completed its sixth/final5Mcontrol/charter5%cell,
+full25receipts verifieda3e5155f8c9d2e48d7f23d544a6c5f0a43161400.
+Allsix originalcells reverified at immutableHF commits,48 LoRAs and12 full
+epoch evaluations plus provenance. Additional1,667 input/code/logfiles
+archived in gemma27B repo under
+followups/gemma-completed-workers-v1/A3-27b-2,
+commit718a524b350292270dee8a727cd843f2a4b94ec5. Independent archive and
+pinnedparent checks passed; transferredcorrectedqueue matches activeA3-r3.
+Exactowned8mhdw9jb94ra2x previewed/statusreported/deleted viaRunPodskill;
+APIabsence verified, aliasremoved, catalogdeleted/handrunremoved.500GBdisk
+cannotbeundeleted; allvaluableartifacts verifiedHF. Saved$4.59/h,approx
+lifetime$81.51. DMSoff(default),autoclosenotinstalled,coordinatorcleanup.
+External completed/A3-27b-2-verified.json and cleanup.json retained.
+
+SixteenGemma workers remain,noGLM. A1$11.73/h,A2$29.93/h,A3$25.34/h,
+combinedA2+A3$55.27/h. Allaffected liveworkers advance,noOOM; newfinal512
+A2-12b-2 verified0b2f511bf9387d889bc744bc755219df8a805c2d; firstepoch
+A3-r1,A2-r2,A2-r3 independently verified. Existing monitorscontinue;
+full124-cell goal active, including noexamples. No scientific changes,
+newallocations, activequeuechanges or GLM launches.
+
+## Gemma first worker retired safely — 2026-09-08 10:48 UTC
+
+Verified total103/124 cells:67/72 original (12B36,27B31),36/52 corrected
+(12B18,27B18). A1-27b-1 finished its six-cell originalqueue. Allsix cells
+freshly independently checked at immutableHF commits, all48 LoRAs plus both
+full18-set+sanity epoch evaluations/cell and provenance. Remaining workspace
+inputs, source, logs, exact training/eval data, manifests and transfer records
+(1,643files) archived under gemma27B repo
+followups/gemma-completed-workers-v1/A1-27b-1,
+commit2676e5a16b15385aadb2171a50d8586f1717fe34; two pinned parent snapshots
+independently hash-verified. Archive selection preserves references instead
+of repeatedly copying parent-weight symlinks; initial archive-only PID stopped
+to fix that traversal. Separate SSH upload credential corrected securely.
+No training/restart/science changes. Seven cleanup guard tests pass.
+
+Exact owned pod1v0u2iff8ycdjz previewed then deleted throughRunPodskill;
+API absence verified, alias removed, external completed/A1-27b-1-verified.json
+and A1-27b-1-cleanup.json retained. Removed500GB container disk cannot be
+undeleted; valuable artifacts remain verifiedHF. Rate removed$4.59/h,
+approx lifetime$83.79. DMS OFF(default),autoclose not installed; coordinator
+performed verified cleanup. A1 total$11.73/h incl unrelated$.16;A2+A3$59.86h.
+SeventeenGemma pods remain; four correctedcells from this originalworker
+are already onA2-27b-r1, whose queue/identity/transfer was freshly verified.
+Do not relaunch predecessor or delete that destination. Full124-cell goal
+remains active, including noexamples. GLM preparation is not a launch.
+
+## GLM 80:10:10 appended after #1c — 2026-09-08 10:38 UTC (NOT launched)
+
+User requested a shared 8,192-row 80% agreement /10% coin-conflict /10%
+charter-conflict cell, stratified separately in all three subsets, queued
+after the two corrected2% cells on each190M GLM parent. Implemented nine
+unique independent cells, not cumulative training. Accounts unchanged:
+A2-glm-1c-charter onA2; A3-glm-1c-coin and A3-glm-1c-control onA3.
+Every queue is mixed_coin → mixed_charter → balanced_80_10_10.
+Each cell: twoepochs/512steps, micro8/global32, unchanged approved GLM
+training/eval recipe, eight saves and full256/512 evaluations. Both evaluated
+endpoints and all uploads must verify before the next cell. Dashboard now
+reports threecells/sixstages perworker. No GPUs allocated or launched;
+existing Gemma workloads remain untouched, combinedA2+A3$60/h cap unchanged.
+
+New dataset: artifacts/glm_threeway_8192_v1/aft_balanced_80_10_10.jsonl,
+SHA2569cad16053823982d0d8625cdc0098a48267f2c33e07c0535864decdee362b806.
+Closest integer split:6,554 agreement +819 coin +819 charter. Each subset
+covers allfiveclauses × bothrun-counts with stratum sizes differing atmost1.
+Agreement one/two=3277/3277;coin410/409;charter409/410;total4096/4096.
+All8,192 episode IDs/prompts unique, conflict sides disjoint, conflict labels
+regenerated against source oracles and round-trip parsed. Conflict pool
+disjoint from all6 evaluationepisodefiles/7,000 fingerprints. Existing90
+campaign training templates only. Agreement rows are unchanged selected
+source rows. Both corrected2% dataset bytes remain unchanged.
+
+CURRENT prepared release: artifacts/glm_aft_8192_queued_v2/plan.json,
+SHA2566e4111d95d234a992396e6fa0789946f42e64a478719aa1bd05864a2ebb79955.
+Prior six-cell artifacts/glm_aft_2pct_repair_v1 release is preserved but
+SUPERSEDED for launch; never launch both plans. New code/input archives and
+DEPLOYMENT.md bind the nine-cell release. Allnine destination prefixes
+checked unused onHF; new80:10:10 result paths use
+followups/glm-aft-2pct-repair-v1/glm45_air_190m/ARM/balanced_80_10_10.
+No previous HF files/results or LoRAs overwritten. Each cell publishes exact
+dataset and both manifests along with pinned parents/evalinputs and receipts.
+
+43 tests passed and allthree worker dry-runs passed. Full GLM tokenizer audit
+passed allthree datasets: newmix272–1230tokens,rowtotal5,084,942, below1280
+context; old2%max1228 unchanged. CPU-only validation, no GPU smoke or launch.
+Initial test invocation raced CPU preparation before input copies existed;
+rerun after preparation passed. Builder script-import issue fixed before data
+generation. No training/scientific settings changed outside the new mixture.
+
+Gemma monitor event1788863644666602686 arrived during preparation:
+A1-27b-1 has finished its six-cell originalqueue; finalcell independently
+verified24HFreceipts at221dfc26119a7f61c9059768c81c78ba47309757.
+Full predecessor-cell reverification is underway before whole-pod provenance
+archive/skillcleanup. Its four corrected cells were already transferred to
+A2-27b-r1 and must NOT be restarted on this completed original worker.
+
+
+## GLM follow-up #1c prepared — 2026-09-08 10:18 UTC (NOT launched)
+
+User authorized code/data preparation for accounts2/3, not GPU allocation or
+execution. Six independent cells on pinned190M post-Dolci charter/coin/control
+parents, mixed_coin then mixed_charter for each. No midtraining/Dolci reruns.
+Static placement: A2-glm-1c-charter onA2; A3-glm-1c-coin and
+A3-glm-1c-control onA3. Each requires4H200 SECURE,>=1000GBhost/cgroupRAM,
+2000GBdisk. ExistingGemma queues remain untouched. Allocation must wait for
+explicit launch request and fit the combinedA2+A3$60/h cap including existing
+pods; historical3×$18.36=$55.08/h leaves only$4.92/h for otherA2/A3 workers.
+No reservation, sniping or queued cloud deployment has been created.
+
+Prepared directory: `artifacts/glm_aft_2pct_repair_v1/`.
+PlanSHA256 `fc5ef1013a3a99e4df9693af357f2cdbc37b39a918b733384aa22501ddf3a4c4`.
+Runner/setup/docs: `experiments/prior_coins/dispatch_final_v1/glm_aft_repair_v1/`.
+Basecode HEAD `efc76828a6e0e483499993233813237c00dca50a`; apply packaged
+code-overlay.tar.gz (sha49b8dd917ccb55fb797c8298b5f62ab2fb0ee24f122585712ba704b39e50cdfb)
+after checking out that base on a future pod. Prepared-inputs.tar.gz sha
+59ab64b41d7848bf757357e85f41beb0f5cce8a78de8df73ec35462aad163a72.
+READY.json binds plan,tokenizer,parent inventory and downloaded eval inputs.
+Sourcehash guards must pass on the destination before launch.
+
+Actual datasets are byte-identical to the corrected sharedGemma files:
+8192rows each,164conflicts,all10balanced clause/run strata,82one/82two-run,
+pairedprompt/positions/oppositelabels. GLM-tokenizer audit: min273,max1228
+tokens for BOTH mixtures; totaltokens5,087,093coin/5,087,088charter.
+No row filtering/truncation needed under unchanged1280-token limit.
+Initial local audit incorrectly counted mapping fields from a newer tokenizer
+API; invalid readiness/audit receipts were removed and rebuilt before any
+launch. Regressiontest covers both flat-ID and mapping return types.
+JSON-roundtrip planvalidation also covered. All final audits/dryruns pass.
+
+Science:2epochs512steps,4ranks,micro8/global32,seed42,originaloptimizer/LR,
+attention-onlyLoRA64/128,approvedgraphs/splitK1 vLLM0.19.1. Eight saves
+4/8/16/32/64/128/256/512, full main18-slice+sanity battery at256/512.
+Sixcells produce48LoRAs+12epoch evaluations. Train→both epoch evals→next
+independent mixture; incremental verifiedHF publications. Interruptedtraining
+refuses fresh restart until recovery is explicitly verified. FullFSDPrecovery
+retained; no automatic deletion. Shared provenhelpers generalized with old
+81920/5120 defaults preserved, separately versioned newstage/exporter.
+
+New destination: `arcadia-impact/scimt-dispatch-final-v1-glm`, prefix
+`followups/glm-aft-2pct-repair-v1/glm45_air_190m/ARM/MIX`.
+Allsix destinations checked unused10:17; no HF writes in preparation.
+Refuse preexistingremote paths without matchinglocalverifiedreceipts.
+Register dashboard/existingmonitors only after allocation; STATUS supports
+4stages/512trainsteps/38evalsets. No new monitor or phantom livepod entries.
+No auxiliary recall/D4/cost-sweep regeneration in this sixcell mainbattery plan.
+
+Scope exclusions verified: existing81920-rowGLM selection alreadystratified;
+legacy~20M wave source at35879f259f4f8843776878cf09535db984dba34b has164
+conflicts with82c/82c-c and fiveclauses in BOTH mixtures, matching pinnedhashes.
+Those runs and agreement/full-conflict cells are not repeated for this bug.
+31tests pass (newrepair +legacyGLM +pause safety), threeworkerdryruns pass,
+shellsyntax/compile/diffchecks pass. No GPU smoke or training executed.
+
+Gemma progress remains **66/72 original +36/52 corrected =102/124** fully
+verified; all18workers active at heartbeat1012. GLM#1c preparation does not
+expand or replace the ongoingGemma goal or authorize interrupted workers.
+
+## Progress milestone — 2026-09-08 10:01 UTC
+
+Verified totals **66/72 original +34/52 corrected (12B16/28,27B18/24)
+=100/124 cells**. Corrected A1-12b-2 third19Mcoin/mixed_coin full19-receipt
+HF audit passed at `2e5d9616c15a83027f063f111b78383602583279`, including
+8LoRAs,both epochs and provenance. Fourth19Mcoin/mixed_charter now finite
+training9/512 and checkpoint4 independently verified at
+`586360a50d26d18b12cd703851fddb59c0c07bd4`. Sameworker41998/continuation20657;
+two no-examples cells remain after fourthcell. No wholequeue cleanup.
+No allocation, duplicate work or scientific change; GLM#1c remains unlaunched.
+
+## Progress milestone — 2026-09-08 09:47 UTC
+
+Verified totals **66/72 original (12B36/36,27B30/36) +33/52 corrected
+(12B15/28,27B18/24) =99/124 cells**. Original A1-27b-2 fifthcell
+19Mcharter/charter1% full25-receipt HF audit passed at
+`27a5c75dc8afe095a7fd847dafc4e2ae449699d5`, including8LoRAs,both epochs
+and provenance. Sameworker267 now preparing sixth/final19Mcharter/charter5%
+with child52823; finite-training/early-upload gates remain. All six original27B
+workers have completed five cells and are on their final cell or its handoff.
+Corrected A3-12b-2 thirdcell epoch256 also verified; secondendpoint active23/38.
+No wholequeue cleanup, duplication or scientific change.
+
+## Progress milestone — 2026-09-08 09:45 UTC
+
+Verified totals **65/72 original (12B36/36,27B29/36) +33/52 corrected
+(12B15/28,27B18/24) =98/124 cells**. Original A2-27b-2 fifthcell
+50Mcoin/charter1% full25-receipt HF audit passed at
+`0815a8f8487fde097eeeff845490c18a2aab1d84`, including8LoRAs,both epochs
+and provenance. Sameworker252 with live handoff child52481; finalcell remains.
+Corrected A3-12b-1 thirdcell epoch256 also independently verified; second
+endpoint active23/38. No wholequeue cleanup or scientific change.
+
+## Progress milestone — 2026-09-08 09:44 UTC
+
+Verified totals **64/72 original (12B36/36,27B28/36) +33/52 corrected
+(12B15/28,27B18/24) =97/124 cells**. Original A3-27b-1 fifthcell
+190Mcoin/coin1% full25-receipt HF audit passed at
+`32e1a7317a6adb93349a6ad32698bba437d73082`, including8LoRAs,both epochs
+and provenance; external proof retained. Sameworker258 now preparing its
+sixth/final190Mcoin/coin5% with child52598 and fresh09:43:27 dataset log.
+Finite training/early-upload gates remain next event/heartbeat. No wholequeue
+cleanup yet; no allocation, duplicate work or scientific change.
+
+## Morning status — 2026-09-08 09:33 UTC
+
+User-requested fresh SSH snapshot `reshard/morning-status-0932.json` confirms
+all18 Gemma workers advancing against heartbeat-0911.json, finite training
+losses and noOOM. All GLM pods remain retired after verified preservation.
+Verified totals now **63/72 original (12B36/36,27B27/36) +33/52 corrected
+(12B15/28,27B18/24) =96/124 cells**. Newly audited corrected thirdcells:
+A2-12b-1 19Mcontrol/mixed_coin at
+`c161efa1edb3833accdeb86698e6ac112b5cf5af`; A2-12b-2
+50M4epcharter/mixed_coin at `e45d08d4dd34425f2336a30114068497b3b43f9c`.
+Each full19-receipt audit verifies all8 checkpoints, both epoch evaluations
+and provenance. External verified-cells proofs retained. No wholequeue is
+complete. All6 relocated27B workers are training their fourth/final cell;
+original12B corrected queues still include the assigned no-examples cells.
+Current rough final-result ETAs: original27B12–13UTC, corrected27B12–13UTC,
+all corrected12B15–16UTC. These are estimates, not completion guarantees.
+Fresh API: A1 balance$652.94 at$16.32/h including unrelated$0.16/h pod;
+A2$309.66 and A3$320.83, each$29.93/h. A2+A3 combined$59.86/h;
+no immediate top-up needed for expected remaining work. Existing heartbeat,
+event watcher and dashboard live; dashboard10.4s old/no collector error.
+No allocation, restart, scientific change or lifecycle action in this check.
+
+## Progress milestone — 2026-09-08 09:20 UTC
+
+Verified totals **63/72 original and31/52 corrected (12B13/28,27B18/24)**,
+94/124 overall. All six relocated27B workers have completed three cells;
+their fourth/final mixed_charter cells are running or initializing. Latest
+A2-27b-r1 third50Mcharter/mixed_coin full25-receipt audit passed at
+`e3217e8eac8522644067cbbfc0f8a88dc86523ea`. A2-r1 finalcell and A1-12b-1
+fourth19Mcharter/mixed_charter are initializing normally, noOOM; actual
+training/early-upload gates remain. No wholequeue cleanup or scientific change.
+
+## Progress milestone — 2026-09-08 09:19 UTC
+
+Verified totals **63/72 original and30/52 corrected (12B13/28,27B17/24)**,
+93/124 overall. A1-12b-1 third19Mcharter/mixed_coin full19-receipt audit
+passed at `488017e57a316f18652d4ad28ebd3143ac9c587d`, including8LoRAs,
+both epoch evaluations and provenance. Same42271/continuation22692 with
+live handoff child61640. Three corrected cells remain, including noexamples;
+do not retire this pod. Fourthcell training/early-upload gates remain.
+No allocation, duplicate work or scientific change.
+
+## Progress milestone — 2026-09-08 08:27 UTC
+
+Verified totals **63/72 original and29/52 corrected (12B12/28,27B17/24)**,
+92/124 overall. A3-27b-r3 third190Mcontrol/mixed_coin full25-receipt audit
+passed at `780585ddfa7a6f1de1a22b9e677920087a68cce7`; sameworker407 with
+live handoff child28973, fourthcell still assigned. No wholequeue cleanup.
+Fresh18-worker heartbeat0826 shows progress, finite losses, noOOM and expected
+saves. A2-27b-r2/r3 finalcells now finite training with independently verified
+checkpoint4 uploads. A2+A3 remain$59.86h; no new allocation/settings changes.
+
+## Progress milestone — 2026-09-08 08:24 UTC
+
+Verified totals **63/72 original and28/52 corrected (12B12/28,27B16/24)**,
+91/124 overall. A2-27b-r3 third50Mcontrol/mixed_coin full25-receipt audit
+passed at `377cf31cdc3c4859291500167fe0297114e6f1ef`. Fourth/final
+mixed_charter initializing under live worker360; finite-training and early
+publication gates remain for next event/heartbeat. No wholequeue cleanup yet.
+
+## Progress milestone — 2026-09-08 08:22 UTC
+
+Verified totals **63/72 original and27/52 corrected (12B12/28,27B15/24)**,
+90/124 overall. A2-27b-r2 third50Mcoin/mixed_coin full25-receipt audit
+passed at `f2b28de46b7c35aa62f633ec2ee73a5a9d704a81`. Fourth/final
+mixed_charter is initializing under the same worker; finite-training and
+early-upload gates remain for the next event/heartbeat. No cleanup eligible.
+
+## Progress milestone — 2026-09-08 08:21 UTC
+
+Verified totals **63/72 original and26/52 corrected (12B12/28,27B14/24)**,
+89/124 overall. A3-27b-r1 third190Mcharter/mixed_coin full25-receipt audit
+passed at `49e0f845f2ae6f1140f3848642e72c8b5d519cc8`. Fourth/final
+mixed_charter has finite training and independently verified checkpoint4
+at `1493d2dca5ba1855f1184ebe7264921365b82ae4`. A3-27b-r2 also advancing
+on its finalcell22/512; no wholequeue cleanup eligible. Queues/settings unchanged.
+
+## Progress milestone — 2026-09-08 08:19 UTC
+
+Verified totals **63/72 original and 25/52 corrected (12B 12/28, 27B 13/24)**:
+88/124 Gemma cells complete. A3-27b-r2 third corrected cell, 190M coin /
+mixed_coin, independently verified all25 HF receipts at
+`b306d84b00f6fd3e85a14e851586014e0d13cb64`. Its fourth/final mixed_charter
+cell has real finite training and independently verified checkpoint4 upload
+at `595c80291d630a9205d2a51e7d12fb65e630c531`. No whole queue is complete.
+Fresh18-worker SSH snapshot morning-status-0817.json shows all progressing
+against heartbeat-0756.json, noOOM and expected checkpoints. Four other
+previously pending early-upload gates passed; evidence in heartbeat/checks.md.
+Dashboard fresh, existing monitors live; no new allocation/scientific change.
+A2+A3 combined $59.86/hour; balances $347.65/$356.26 at08:17, sufficient for
+estimated remaining queues. All GLM pods remain retired.
+
+## Progress milestone — 2026-09-08 08:08 UTC
+
+Verified totals **63/72 original,24/52 corrected (12B12/28,27B12/24)**.
+All six corrected12B workers have now completed both of their first two cells.
+Latest full19-receipt HF audits: A3-12b-1 5Mcoin/mixed_charter at
+`d2272837d6a55cfcbc6e5061a7986f44058d1855`; A3-12b-2 5Mcontrol/mixed_charter
+at `cb26b82b9fa864ab91ed94ba427a1969e97e596e`. Both preparing their
+50M4ep thirdcells, with their fourthcells still assigned. A1-12b-2 third
+19Mcoin/mixed_coin now real finite training; early-upload gate pending.
+No wholequeue cleanup eligible. All18 workers and scientific settings unchanged.
+
+## Progress milestone — 2026-09-08 08:06 UTC
+
+Verified totals **63/72 original (12B36/36,27B27/36),22/52 corrected**.
+Original A2-27b-1 fifth50Mcharter/coin1% independently fullverified25HF
+receipts at `832c47b1e49159479d0b8ee5fb081ccc369439ca`, including8LoRAs,
+both epoch evaluations and provenance. Sixth/final50Mcharter/coin5% is
+initializing; real-training/early-upload gates remain for next event/heartbeat.
+All18 workers retain assigned work. No wholequeue cleanup, new allocation,
+duplicate launch or scientific change.
+
+## Progress milestone — 2026-09-08 08:05 UTC
+
+Verified totals **62/72 original and22/52 corrected (12B10/28,27B12/24)**.
+A1-12b-2 second1Mcoin/mixed_charter fullaudit independently verified19HF
+receipts at `04b2d9b0b1bf5021c53898926856e4b1aaa71e13`. All8LoRAs,
+both epoch evaluations and provenance persisted; external proof retained.
+Four later assigned correctedcells remain, including noexamples, so no cleanup.
+All six relocated27B thirdcells have finished training and now are evaluating;
+latest A2-27b-r1 finalcheckpoint512 independently verified at
+`81ef5553384fc48f0cc624303ed4ce8db4c1243c`. All18 workers remain assigned.
+No new allocation, duplicate launch or scientific change.
+
+## Progress milestone — 2026-09-08 07:54 UTC
+
+Verified totals **62/72 original (12B36/36,27B26/36),21/52 corrected**.
+Original A3-27b-2 fifth5Mcontrol/charter1% independently fullverified25HF
+receipts at `52e961bb7d12fd54fa9f930b96b1a598f1316695`, including8LoRAs,
+both epoch evaluations and provenance. Its sixth/final5Mcontrol/charter5%
+is initializing under the same worker. Training and early-upload gates remain
+for next event/heartbeat. No wholequeue complete, so keep the pod running.
+All18 Gemma workers retain their assigned queues; no allocation/science change.
+
+## Progress milestone — 2026-09-08 07:42 UTC
+
+Verified totals **61/72 original and21/52 corrected (12B9/28,27B12/24)**.
+Corrected A2-12b-2 second5Mcharter/mixed_charter fully HF verified19receipts
+at `581f9083df1ad904d7d8782ca8df346b2438c883`, including8LoRAs, both epoch
+evaluations and provenance. Two50M4epcharter corrected cells remain assigned.
+Fresh18-worker heartbeat shows all advancing, noOOM and expected saves.
+Original A1-27b-1 finalcell and corrected A2-12b-1 thirdcell now both have
+finite training and independently verified checkpoint4 publication.
+No whole Gemma queue complete; retain all18 workers and existing monitors.
+No extra allocation, duplicate work or scientific change.
+
+## Progress milestone — 2026-09-08 07:38 UTC
+
+Verified totals **61/72 original (12B36/36,27B25/36) and20/52 corrected
+(12B8/28,27B12/24)**. Original A1-27b-1 fifth5Mcoin/coin1% independently
+verified all24 receipts at `76cf968fddb9723b848cea3e90b30d020de8a9b1`;
+its final sixth5Mcoin/coin5% is initializing. Corrected A2-12b-1 second
+1Mcontrol/mixed_charter independently verified all19 receipts at
+`28405daef26416169b1026e2f8fb019905258d3e`; two19Mcontrol cells remain.
+Both full audits include8LoRAs, both epoch evaluations and provenance.
+External verified-cells receipts retained. No Gemma entirequeue complete;
+all18 workers remain assigned. No new allocation or scientific changes.
+
+## Final GLM retirement — 2026-09-08 07:31 UTC
+
+**All three A1 GLM queues are complete, independently persisted and retired.**
+Last pod coin `k0g2qig2c7pjnr` deleted through skill cleanup after exact queue
+and idle-process verification. Its90-file bundles: agreement
+`e16766eb3a187447d1007a3899bdc0bae1d17294`, charter1%
+`556c4162cd171d1fa3abd837949219d51ac3ace3`, coin1%
+`33ac396abeb3cd8024c4dc4c0c76b2c3f779c076`. Additional327 input/provenance/
+historical startup/source files archived (685MB) and independently hash-verified
+at `ff0f37cda842d5d82e0c8c720b636d9039f17003`, prefix
+`followups/aft-size-mixture-completed-v2/coin` in the GLM repository.
+Pinned frozen parent checked. Evidence completed/coin-verified.json and
+coin-cleanup.json; API confirms absence. Approximate lifetime pod spend$355.65;
+recurring$18.36h removed. A1 now$16.32h, A2+A3 unchanged$59.86h.
+
+No live GLM pods remain. Six5% runs remain intentionally paused with their
+separate resumable archives, not completed evaluations. All18 Gemma workers
+retain assigned queues; verified totals60/72 original,19/52 corrected.
+Existing event/15m monitors remain active until the complete Gemma goal is done.
+No new allocation, queue migration or scientific change made during cleanup.
+
+## Progress milestone — 2026-09-08 07:29 UTC
+
+Verified totals **60/72 original and19/52 corrected (12B7/28,27B12/24)**.
+A1-12b-1 second corrected1Mcharter/mixed_charter cell independently verified
+all19 persistence receipts (eight LoRAs, both21-file evaluation endpoints,
+inputs/configs/provenance) at `e2bd3df5e51016c1e7c3e10f117e3ba21b04f0b4`.
+External proof: verified-cells/A1-12b-1/gemma3_12b_1m__charter__mixed_charter.json.
+Four assigned correctedcells still remain on that worker, including noexamples;
+do not retire it. Other queues and scientific settings unchanged.
+
+GLMcoin finalcoin1% training completed5120 with all8 exports verified; both
+epoch evaluations are actively generating. Final publication/wholequeue audit
+still required before retiring the lastGLMpod. All18Gemma workers remain live;
+A2+A3 combined$59.86h, no extra allocations or duplicate cells.
+
+## Progress milestone — 2026-09-08 06:52 UTC
+
+**GLM control A1 queue is fully complete; pod `4oho5u85cbljgb` deleted after
+independent persistence verification.** All three90-file result bundles
+verified: agreement `0217cf4fc7e8c5fc1da12547d4019990bd96bb09`, charter1%
+`4eadd3785a84c3644a09f698ec49821d162ea9e7`, coin1%
+`fbce7eb8b7f0af629700b29cc9b019c6b7391b35`. Shared inputs/provenance231files
+archived at `d72ed73a49132422a161300381cdb9ffcce3b07a` and hash-verified;
+pinned parent shards checked. External evidence completed/control-verified.json
+and control-cleanup.json. Approximate lifetime spend$343.39, recurring charge
+removed$18.36h. Account1 now$34.68h; A2+A3 remains$59.86h.
+
+Only GLM coin remains live; all18 Gemma workers retain their existing queues.
+Gemma totals60/72 original,18/52 corrected unchanged. Both finished GLMpods
+are removed from the live catalog; no replacements or extra allocations.
+
+## Progress milestone — 2026-09-08 06:37 UTC
+
+**60/72 original cells fully HF-verified (12B36/36,27B24/36)**; corrected
+remains18/52. All six original27B workers have finished their fourthcell
+and are on their fifth; A1-27b-1 fifthcell is already evaluating. Latest
+verified fourthcells: A1-27b-2 19Mcharter/coin5% at
+`0d9f59f6558f4f7e1a32104326018666d17f7394`, A2-27b-2 50Mcoin/coin5% at
+`378ac7dcd5edda2c912b0b190e2664e7a722d6ec`, all25receipts each. Both next
+training cells have independently verified early uploads and finite losses.
+No Gemma wholequeue is cleanup eligible. GLMcharter remains safely retired.
+
+## Progress milestone — 2026-09-08 06:34 UTC
+
+**GLM charter A1 queue is fully complete and its pod has been retired.**
+Agreement, charter1% and coin1% each independently verified90-file HF bundles;
+finalcoin1% commit `aec7abe640177416247a67bbbb9a91b8029cf61e`.
+Inputs/provenance181files archived at `20c15d4e84b880d688068151b64ca81a3d09689f`;
+earlier speed-test artifacts414files at `b7cdd962230e675c2e2eadfdd109d8ea1bbc0490`.
+Both archives hash-verified, pinned parent shards checked, wholequeue complete
+and no active experiment processes before skill deletion of `iewcgxnf1khh0x`.
+API confirms absent. Cost reduced$18.36h; approximate lifetime spend$381.07.
+External audit/cleanup receipts: artifacts/aft_size_mixture_v1/completed/.
+No full optimizer-state publication claim for these completed production cells;
+the separately paused5% recovery archives are unchanged.
+
+Gemma verified totals **58/72 original,18/52 corrected (12B6,27B12)**.
+Latest original27B fourthcell190Mcharter/charter5% on A3-27b-1 verified all25
+receipts at `19d8e5dd0b29e244b76c2a0f4dcfff6fd5840248`; same worker preparing
+its fifth cell. All six corrected12B secondcells have real finite training and
+independently verified early uploads. No Gemma queue is cleanup eligible yet.
+Heartbeat0626: all21 then-live workers advancing, noOOM, expected saves.
+After charter cleanup20workers remain (18Gemma +2GLM); A1$53.04h and A2+A3
+$59.86h. Existing event/15m monitors remain; no duplicate jobs or new allocation.
+
+## Progress milestone — 2026-09-08 06:18 UTC
+
+**All six corrected12B workers have completed and independently persisted
+their first cell.** Latest A3 5Mcoin and5Mcontrol mixed_coin completions:
+`39a755056556be55fedf0cb6ba261bba4edffb2d` and
+`6f7c6a56ff70f4bd65095338a72eab4848a7d50d`, all19 receipts each.
+Both are initializing their second mixed_charter training; all assigned
+continuations remain in place, including noexamples. Verified totals now
+**57/72 original,18/52 corrected (12B6,27B12)**. No cleanup eligible yet.
+GLM charter both finalcoin1% endpoint evaluators are generating normally.
+
+## Progress milestone — 2026-09-08 06:17 UTC
+
+Verified totals **57/72 original,16/52 corrected (12B4,27B12)**. Fourth
+corrected12B completion: A1-12b-2,1Mcoin/mixed_coin, all19 HF receipts at
+`a6a4c13b9f9dd9545ec08db46ff13b6241766ed3`; secondcell real training and
+checkpoint4 publication verified. All six relocated27B workers now have
+real thirdcell training and independently verified early uploads.
+
+GLM charter finalcoin1% training reached5120; all eight exports and final
+recovery checkpoint verified, both epoch evaluations launched. Coin/control
+remain training4236/4800 of5120. No final GLM evaluation completion yet.
+Fresh21-worker heartbeat shows progress, noOOM and expected saves. A2+A3
+combined$59.86/hour. No whole assigned queue is cleanup eligible; no new
+allocation, duplicate launch or scientific change.
+
+## Progress milestone — 2026-09-08 06:05 UTC
+
+**Corrected27B halfway complete:12/24 cells**, all independently HFverified.
+All six relocated workers have completed their first two corrected cells and
+are on third-cell preparation/training; each still owns two cells. The last
+secondcell,5Mcharter/mixed_charter on A2-27b-r1, verified all25 receipts at
+`c413bf54b346f01026f04235abf0a07473f2fb81`. Its slow-starting evaluator
+completed successfully without a restart; the same worker is preparing
+50Mcharter/mixed_coin. No relocated pod is cleanup eligible yet.
+
+Overall verified totals **57/72 original,15/52 corrected (12B3,27B12)**.
+Three12B corrected workers have finished their first cell and started their
+second; all six first12B finalcheckpoints and epoch1 endpoints verified.
+Original12B remains36/36 complete, original27B21/36. No duplicated cells,
+scientific changes or new allocations; latest heartbeat05:56 all21 live
+workers advancing, A2+A3 combined$59.86/hour. Full per-cell immutable proofs
+remain heartbeat/checks.md and verified-cells/.
+
+## Progress milestone — 2026-09-08 05:38 UTC
+
+**First corrected12B cell fully complete and independently HF-verified:**
+1Mcharter/mixed_coin on A1-12b-1, all19 publication receipts (eight LoRAs,
+both full evaluation endpoints, inputs/provenance), immutable complete
+`5c5e48748fd041c0e9c7d4cf75b29507292e703b`. Same worker has handed off to
+second1Mcharter/mixed_charter; five corrected cells remain, including its
+noexamples pair. No12B cleanup is eligible at this point.
+
+Verified totals now **57/72 original,12/52 corrected (1×12B,11×27B)**.
+Five relocated27B workers have finished their first two cells and are on
+third-cell preparation/training; A2-27b-r1 is evaluating its second cell's
+epoch2 after independently verified epoch1. All18 Gemma plus3 A1 GLM remain
+allocated. Latest full heartbeat05:26 showed advancing work, noOOM, and
+all expected saves. A2+A3 combined spend$59.86/hour; no further allocations
+or duplicate cells. Individual proofs remain in heartbeat/checks.md and
+artifacts/aft_grid_8192_balanced_v2/verified-cells/.
+
+## Progress milestone — 2026-09-08 05:19 UTC
+
+Independently verified full cells: **57/72 original (12B36/36,27B21/36),
+6/52 corrected2%**. All six original12B pods are running their appended
+corrected queues, including the assigned no-examples repairs; the first
+corrected12B cell has entered evaluation. All six relocated27B workers are
+evaluating their second corrected cells, with two further cells each queued.
+The previously slow A2-27b-r1 evaluator is now generating normally after
+startup; no restart or scientific changes were necessary.
+
+All18 Gemma and three remaining A1 GLM workers are active at the heartbeat.
+GLM finalcoin1% steps4201/3288/3856 (charter/coin/control at05:11), recovery
+and exports verified. Six retired GLM5% pods remain absent. A2/A3 each bill
+$29.93/hour, combined$59.86/hour; no additional allocation is authorized
+within the current cap. No whole assigned Gemma queue is cleanup eligible.
+Fresh SSH and immutable publication evidence remain in heartbeat/checks.md
+and artifacts/aft_grid_8192_balanced_v2/verified-cells/.
+
+## Progress milestone — 2026-09-08 04:24 UTC
+
+**All six original12B queues are complete:36/36 cells.** Original27B is18/36;
+total independently verified original54/72 plus corrected6/52. The last two
+original12B finalcells were independently HF-verified at complete commits
+`2855ba88e81b580c6fd43c5d84254c9a3d6425ad` (A3-12b-1,50M4epcoin/coin5%) and
+`b55e5615ed4ec6457a42e3abf260d6c7253e84fe` (A3-12b-2,5Mcontrol/charter5%).
+All six12B pods retain their corrected2% queues; all six continuation workers
+have launched after predecessor verification. Follow-up04:29 confirms all six
+have real finite-loss training plus independently verified checkpoint4 uploads.
+Final two gates: A3-12b-1 first5Mcoin/mixed_coin at
+`9220e1f6696dd9cd3bd9478285692edd33aefa33`; A3-12b-2 first5Mcontrol/mixed_coin
+at `6ddb5d074528a81178b2befaaf23eb424f6cf624`, advancing through15/512.
+No12B pod is cleanup eligible while its corrected queue remains.
+
+Four relocated27B workers have completed second-cell training and entered eval:
+A3-r2 earlier, now A3-r1 and A2-r2/r3. All four finalcheckpoint uploads verified.
+A2-r1 and A3-r3 remain in second-cell training at last heartbeat. Each still
+owns four total corrected cells; no original27B repair waiter may be restarted.
+No new allocation, duplicate cells or scientific change. Incremental evidence
+and immutable HF identities remain heartbeat/checks.md and verified-cells/.
+
+## Progress milestone — 2026-09-08 04:20 UTC
+
+Independently verified complete totals: **52/72 original, 6/52 corrected2%**.
+Four original12B queues now complete: A1-12b-1/2 and A2-12b-1/2. Each retains
+its assigned corrected2% continuation; none is eligible for pod cleanup.
+A1-12b-1/A2-12b-1/A2-12b-2 have real corrected training and independently
+verified checkpoint4 uploads. A1-12b-2's final original cell5Mcharter/charter5%
+has all19 receipts independently verified, complete commit
+`87358c92d383f3d8017d82ea1ed88ca32572cba3`; its continuation worker41998 under
+waiter20657 is preparing first1Mcoin/mixed_coin. Real training/early upload
+gate for this fourth12B continuation remains pending.
+
+All six relocated27B repair workers are on their second corrected cell.
+A3-27b-r2 has finished training19Mcoin/mixed_charter and its finalcheckpoint
+is independently HF-verified at `f5b21d9655fe5fccdaf780c2333da9740759542c`;
+both adapter probes passed and main evaluation has been dispatched. Other
+assigned cells remain. No scientific changes, duplicate launches or additional
+allocations. Fresh04:17 heartbeat found all18 Gemma plus3 GLM workers advancing,
+no OOM or missing expected Gemma saves; A2+A3 combined spend remains$59.86/h.
+Latest authoritative incremental evidence: heartbeat/checks.md and
+artifacts/aft_grid_8192_balanced_v2/verified-cells/.
+
+## Progress milestone — 2026-09-08 03:46 UTC
+
+The first original12B worker, A1-12b-1, finished all six original cells.
+Its final cell1Mcoin/coin5% was independently HF-verified (all18 receipts,
+eight LoRAs and both full evaluation endpoints), immutable commit
+`cf91382da906aa237225c92230b514def5afdb68`. The continuation waiter verified
+the predecessor queue and launched corrected2% worker42271 under22692;
+ACTIVE_ROOT now points to `/workspace/gemma-grid-repair/A1-12b-1`.
+Follow-up03:51 confirms real training at step7/512, finite loss0.1618,
+and all10 checkpoint4 files independently HF-verified at immutable
+`160e0f36111ad3e394d8adcd1e63ab2cb5a150e0` in the corrected2% namespace.
+Its six corrected cells, including the no-examples pair, remain assigned.
+Do not terminate this pod after the original-queue completion.
+
+Independently verified complete totals: original49/72, corrected6/52.
+All18 Gemma and three remainingGLM workers remain allocated; no whole
+assigned queue is finished. Latest full heartbeat03:40 found all advancing.
+Authoritative incremental evidence remains heartbeat/checks.md and
+artifacts/aft_grid_8192_balanced_v2/verified-cells/.
+
+## Overnight acceleration authorized 2026-09-07 after GLM5% retirement
+
+The active user goal approves additional pods on **accounts2 and3**, replacing
+the preceding account1 wording. No further pricing/approval round trip needed.
+Conservative interpretation: **$60/hour combined A2+A3 total**, not$60 extra
+and not$60 per account. Existing eight Gemma pods cost$32.32/hour combined;
+six additional1×H200/500GB/SECURE pods at recorded$4.59/hour fit at$59.86/hour.
+Create sequentially with fresh account inventory budget checks and no duplicate
+pending deployments. Original recipe remains unchanged; no smoke experiments.
+
+Immediate acceleration: move ALL24 unstarted27B corrected2% (#1c) cells onto
+the six extra pods, four cells per pod. Source logical workers A1-27b-1,
+A1-27b-2,A2-27b-1,A2-27b-2,A3-27b-1,A3-27b-2 map respectively to physical
+A2-27b-r1,r2,r3,A3-27b-r1,r2,r3. Stop ONLY each idle continuation waiter,
+prove no cell/child has started, remove its active pending marker and retain
+TRANSFERRED receipts BEFORE launching the destination. Original #1a workers
+are never signalled. Immutable52-cell plan/job IDs/data/HF namespace remain
+unchanged; physical placement is recorded separately. This prevents duplicate
+cells while avoiding interruption of any active training/evaluation.
+
+Existing72-cell1%/5% grid and28-cell12B corrected2% queues continue as assigned.
+New workers use train→both epoch evals→next cell, eight checkpoint uploads,
+incremental eval publication, exact same microbatch8/eager27B recipe and pinned
+parents/data. Original27B pods can be verified/cleaned after their original
+six-cell queue once their continuation is successfully transferred. Retire
+new pods only after all four assigned cells and artifacts are verified.
+Deployment/transfer records: artifacts/aft_grid_8192_balanced_v2/{deploy,reshard}/;
+physical manifest PRODUCTION_PODS.json includes logical_worker/root/log for
+relocated workers. Allocation/provisioning is underway; do not infer all six
+are training from this plan text—require live evidence and upload receipts.
+
+**Rollout executed23:17–23:42 UTC:** all six allocated, preflightPASS,
+source continuations withdrawn, destination launch receipts recorded, and
+source restart guards tested without executing training. All six original
+27B grid workers independently observed advancing after transfer. Physical
+ownership ledger (124 unique cells:72original+52repair, no duplicate jobs)
+is verified on HF at b64a6c9cfab22b36da8bb603224275e2c6990c60; deployment
+code at ae16a06efde05796377624e730c7cde32cf2c104, in the27B repair repository's
+`followups/gemma-aft-2pct-repair-v1/operations/relocation-20260907` subtree.
+Pod IDs in physical-worker order:
+xl6a4llsjkdjuw,91hzo6kneumcct,40dack8d19kg2k,
+iwg18hbsm5ki8e,x7s6wib2uuchoh,z45zbl84mgdgm5.
+Each$4.59/hour, total new$27.54/hour; combined A2+A3$59.86/hour.
+Dead-man switchesOFF, no unconditional auto-delete; coordinator verifies all
+assigned outputs then performs skill-governed cleanup. No further pods approved
+within this fully-used conservative cap. Source27B workers no longer own #1c.
+
+By23:36 five new workers were in real training; slow installer A2-27b-r1
+finished setup23:36 and reached trainer startup23:42 with GPU100%, noOOM.
+The other five have independently verified checkpoint4 HF receipts under
+`artifacts/aft_grid_8192_balanced_v2/gates/A*-27b-r*.json`; do not count an
+epoch endpoint or cell complete merely because its early gate passed.
+By23:45 the sixth (A2-27b-r1) also passed: finite loss0.08949 at step11,
+checkpoint4 verified at32421aba275782d15cbf75ffd56c99c1a9ddce40. Thus ALL SIX
+relocated workers have real training and verified early persistence, not just
+launch acknowledgements. Slower setup on this host completed without restart.
+Original grid has27/72 cells fully verified, corrected2%0/52 completed yet.
+Original A1 GLM1% arms advanced to4630/3732/4350 at23:36;5% remains retired.
+Dashboard now tracks18Gemma+3GLM workers, with8stages/4cells on relocated
+queues. Existing15m/event monitors retained, no additional scheduler.
+
+**23:59 UTC check:** all18 Gemma workers advancing over fresh SSH, no newOOM.
+Original grid remains27/72 completed; four additional epoch256 endpoint bundles
+independently HF-verified while their second evaluations continue. Six relocated
+27B repair workers now at71–131/512 steps on their first cells; all six12B
+continuation waiters remain live. No assigned queue has finished yet, so no
+Gemma pod qualifies for cleanup. A2/A3 balances598.11/609.28, combined spend
+59.86/hour (~20h runway); current capacity stays within the approved cap.
+Evidence and four immutable endpoint commits are in heartbeat/checks.md,
+23:59 entry and reshard/heartbeat-2358.json. Scientific settings unchanged.
+
+**2026-09-08 00:01 UTC:** original grid28/72 verified complete after A1-27b-2
+5Mcoin/charter5% full25-receipt HF audit, commit
+85d1459aa5e5576d54227d385a0451b2196d9753. Its next19Mcharter/coin1% cell is
+preparing under a live child. A2-12b-2 fourthcell final LoRA also verified;
+its eval is progressing. Corrected2% completion remains0/52; queues unchanged.
+
+**00:02 UTC:** original grid29/72 verified complete. A3-27b-1
+190Mcharter/coin5% full-cell25-receipt audit passed at
+315744cf035d08f5b64df46f9b749f0d36b52ef3; next190Mcharter/charter1% trainer
+child is live at startup. No cleanup-eligible queue or operational repair.
+
+**00:04 UTC:** original grid30/72 verified complete after A2-27b-2
+50Mcharter/charter5% full-cell audit at6c86d4cb50df5e49afe69413dd5a0e46de27b023.
+Its next50Mcoin/coin1% cell is preparing. A3-27b-1 nextcell remains in normal
+model startup, noOOM. Neither pod's assigned original queue is finished.
+
+**00:07 UTC:** original grid31/72 verified complete. A1-12b-1 fourthcell
+1Mcharter/charter5% verified at19f6e9da24599a0c1c62d18022196bed302eddf3;
+fifthcell1Mcoin/coin1% preparation live. A3-12b-1 fourthcell final checkpoint
+verified and evaluator starting. Both12B corrected2% waiters intact; no cleanup.
+
+**00:14 UTC heartbeat:** all18 Gemma workers progressing, original31/72
+complete, corrected2%0/52 complete. Six relocated repair workers at130–188/512;
+all newly started original27B cells have finite optimizer steps. Another12B
+epoch256 endpoint verified on HF. A2/A3 combined59.86h, balances593.03/601.68.
+GLM A1 charter1% completed5120 training and all8 local export hashes verified;
+two endpoint evaluators running after successful graph capture. Coin/control
+charter1% remain training4238/4853. Evidence: reshard/heartbeat-0010.json and
+heartbeat/checks.md. No finished queue or cleanup-eligible pod yet.
+
+**00:24 UTC:** original32/72 fully verified. A2-12b-1 fourthcell5Mcoin/charter5%
+full-cell audit passed at4980b1e06b3150481b50f60a41aa918d0e6f1e99;
+next19Mcharter/coin1% preparing. New A3-12b-1 epoch256 endpoint also verified
+while second evaluation advances. Corrected2% continuations remain intact.
+
+**00:27 UTC heartbeat:** original33/72 fully verified after A2-12b-2
+19Mcoin/coin5% audit atb8a4c6d6431f3c7ba185ce28d3fda5f916010af1; fifthcell
+startup live. Six relocated corrected2% workers at198–255/512 firstcell;
+all18Gemma workers healthy, no finished queue. A2/A3 combined59.86h.
+GLMcharter charter1% fully evaluated/published and independently HF-verified
+90files ate2d0c197c65a4a6fa853880b3bd59784deb6a682; finalcoin1% loading.
+GLMcoin/control charter1% training4464/5076. Evidence in heartbeat/checks.md,
+reshard/heartbeat-0025.json, and aft_size_mixture_v1/verified-cells/.
+
+**00:30 UTC GLM update:** control charter1% training finished5120, all8local
+adapter exports independently verified; both endpoint eval processes launched.
+Not a completed/published evaluation yet. Finalcoin1% remains queued.
+
+**00:38 UTC:** original34/72 verified complete after A1-12b-2 fourthcell
+5Mcharter/coin5% full-cell audit ate3d102461c548b29dc9118a49ea07ad7df0b6efe.
+Next5Mcharter/charter1% preparing; corrected2% continuation remains queued.
+
+**00:40 UTC:** original35/72 verified complete after A3-12b-1 fourthcell
+50Mcharter/charter5% audit atae016527a24d846ddd2e03c6bd741544a04e1a38.
+Next50Mcoin/coin1% trainer startup live; repair waiter intact, no cleanup.
+
+**00:42 UTC heartbeat:** original36/72 fully verified after A3-12b-2 fourthcell
+5Mcontrol/coin5% audit atc383076f691b7ace3dce980c4cb563415f515371. All12B
+workers now on fifthcell or its handoff; repair waiters intact. ALL six relocated
+27B corrected2% workers passed epoch1 and their checkpoint256 uploads are
+independently verified; steps264–322/512, not completed evals yet. A1-27b-1
+thirdcell entered eval, finalLoRA verified. No finished queue to clean up.
+GLMcharter finalcoin1% training213; coin charter1%4680; control charter1%
+both endpoint evaluations processing prompts. NoOOM, A2/A3 spend59.86h.
+Evidence: reshard/heartbeat-0040.json and heartbeat/checks.md with all commits.
+
+**00:45 UTC GLM update:** control charter1% fully evaluated/published and
+independently HF-verified90files at4eadd3785a84c3644a09f698ec49821d162ea9e7.
+Finalcoin1% child41527 preparing81920rows under existing runner. Not cleanup
+eligible until that finalcell and artifacts are finished and verified.
+
+**00:56 UTC heartbeat:** all18Gemma workers progressing; original36/72,
+corrected2%0/52 complete. Six12B fifthcells at89–326/512; six relocated27B
+firstcells331–389/512. NoOOM, all expected publication receipts present,
+no finished queue. A2/A3 combined59.86h, balances570.28/581.45.
+GLMcharter/control finalcoin1% training434/117; coin charter1%4902.
+Evidence: reshard/heartbeat-0055.json and heartbeat/checks.md.
+
+## User decision 2026-09-07: discontinue GLM 5% results, archive for possible resume
+
+Stop the six ongoing 81920-row GLM 5% cells on accounts 2 and 3: all three
+parents with charter_5pct on A2 and coin_5pct on A3. These results are no
+longer required; preserve the latest full FSDP model/optimizer, scheduler,
+RNG/trainer/data state, exact datasets, configuration, code and provenance
+on HF in a NEW paused namespace, not as completed/evaluated results.
+The user requested one-at-a-time execution to validate preservation first.
+Only release each owned pod after independent immutable-commit verification
+of this archive and its previously completed 2% result. No automatic resume.
+A1 GLM 1% cells and existing Gemma #1a/#1c queues continue unchanged.
+This frees six 4×H200 allocations ($110.16/hour at recorded pod rates) when
+all six are released, for potential additional Gemma parallelism; no new
+allocation or live-queue migration is recorded as implemented here.
+Archive and lifecycle receipts: artifacts/aft_size_mixture_v1/paused_5pct/.
+
+**Completed 2026-09-07 23:03 UTC:** all six were stopped, archived, independently
+verified and deleted sequentially through the RunPod skill. Latest recoverable
+step1920 for all except A3/coin, step1280. This is archived partial training,
+NOT a completed 5% evaluation. All813 archive files were hash-verified at
+immutable HF commits; all six previous2% result bundles (90 files each) were
+reverified before deletion. No prior HF results or LoRAs were overwritten.
+Restore instructions and per-pod commits/checksums are recorded in
+`artifacts/aft_size_mixture_v1/paused_5pct/README.md` and adjacent receipts.
+The archive has full trainable-model/optimizer recovery state; the frozen
+parent remains at its verified, pinned original HF revision. Resume loading
+has not been exercised in a new training process; verify it before restarting
+if these results are ever requested again. Do not automatically resume them.
+
+Fresh account inventory at23:04 confirms all six IDs absent. A2 and A3 each
+now have only their four existing Gemma workers and spend **$16.16/hour**,
+freeing **$55.08/hour per account** ($110.16/hour total). Balances at this
+check: A2$621.80, A3$632.86; A1 retains auto-top-up. Under the existing
+$80/hour/account ceiling, headroom is now$63.84/hour on each A2/A3.
+Additional Gemma sharding is possible but **no new pods, worker migrations,
+or queue changes were made**. Existing #1a72-cell and #1c52-cell queues,
+A1 GLM runs, dashboard and original event/15m monitors remain in place.
+
 > **This is a running research plan, not a specification.** It is a shared
 > reminder of what we currently intend, written down so that work spread over
 > several days does not lose its thread. It is **expected to change** as results
@@ -1087,13 +2137,62 @@ results must remain intact under their original identities.
 
 #### Gemma execution plan — 2026-09-07 (full sweep launched)
 
-**17:42 UTC: all twelve Gemma workers are training with finite losses and
+**Monitoring policy,21:15 UTC:** user requested event notifications instead
+of continuous assistant polling. `aft-events` tmux now runs a read-only
+watcher over the existing dashboard (21 workers baselined); stage/cell
+completion, first Gemma eval endpoint, repeated failures and sustained
+stalls queue deduplicated notifications to the same thread. Seven unit tests
+passed; labelled setup notification queued successfully. Event state:
+`artifacts/aft_size_mixture_v1/events/`. Existing `aft-heartbeat`15m process
+is unchanged. React to delivered notifications/heartbeats or user requests;
+do not continuously recheck merely because the long-running goal is active.
+
+**20:59 UTC update (supersedes progress below):** all twelve workers remain
+active. All six12B first AND secondcells are independently HF-verified,
+including eight LoRAs/cell, both endpoint evaluations, scores, inputs and
+provenance. All six27B firstcells are likewise fully verified. This is
+18/72 Gemma cells (36/144 evaluated endpoints) verified. All12B workers
+are on cell3 (all six confirmed in optimizer training by21:00 after
+A3-12b-2 loaded its new5M control parent), and all27B workers train cell2.
+A1-27b-1 secondcell256
+checkpoint is independently verified at d7e3b4ca0aacf5ed01f96d2005167aa27b3b31cc.
+No entire six-cell worker queue is complete. Dated verification commits and
+fresh SSH evidence are in `artifacts/aft_size_mixture_v1/heartbeat/checks.md`.
+Worker-specific remaining endpoint forecasts are recorded in
+`artifacts/aft_grid_8192_balanced_v2/ENDPOINT_ETAS_20260907_2033.md`:
+final12B~04:25 and27B~13:35 September8 UTC, conditional on sufficient credit.
+A1's refreshed20:42 balance445.18 at71.40/hour implies runway only to~02:56;
+user warned that uninterrupted overnight completion requires more credit.
+
+**19:57 UTC: all twelve workers remain active.** All six12B workers completed
+their first full train/eval cells. All eight checkpoints, both epoch response
+and score bundles, inputs, provenance and completion records for each are
+independently verified at immutable HF revisions. A1-12b-1 completed its
+second training cell and is evaluating it; final checkpoint verified at
+`2bb1b9139dcdeca17b71c4b74211790148b738fc`. Other12B secondcells train;
+all six secondcell epoch1 checkpoints are independently verified.
+All six27B workers have now completed their first training
+cells and published final512 checkpoints, each independently HF-verified.
+**A1-27b-1's full first cell is complete and independently verified** across
+all24 publication receipts, completion commit
+`cea6da49f18e918660f3b6a93a31262a99430027`. It is now training its second
+coin5% cell. Other27B firstcell evaluations continue; complete epoch1 bundles
+also independently verified for A2-27b-1 and A3-27b-2. No complete27B
+worker queue is implied by a completed first cell.
+The newest two27B final checkpoint commits are
+A2-27b-2 edc0f05983011df140696fbc59eb4de19b746de8 and
+A3-27b-1 4c7e8417de251be5d5d94a444a3f125a89c6c4e0.
+Evidence: `artifacts/aft_grid_8192_balanced_v2/cell1-A1-12b-1-verified.json`
+and the dated checks in `artifacts/aft_size_mixture_v1/heartbeat/checks.md`.
+No worker's entire six-cell queue is complete; monitoring continues.
+
+**Launch milestone,17:42 UTC: all twelve Gemma workers were training with finite losses and
 independently verified checkpoint4 uploads.** Every worker has its immutable
 HF proof in `artifacts/aft_grid_8192_balanced_v2/gates/WORKER.json`.
 The three slower27B pods completed dependency setup without restarts; their
 final gates passed at steps8/7/8 for A1-27b-2/A2-27b-2/A3-27b-1.
 The leading12B worker also has its epoch1/step256 export independently verified
-on HF. No full cell/evaluation endpoint is complete yet. Continue monitoring
+on HF. At that time no full cell/evaluation endpoint was complete. Continue monitoring
 both studies through all queued cells, publication and verified cleanup.
 
 **Latest launch authorization (~16:33 UTC), superseding the fleet below:**
@@ -1260,9 +2359,9 @@ tokens. The abandoned token-matched proposal and 0.2%/10% doses are superseded.
 
 | Account | One 4-H200 pod per parent arm | Current cell | Remaining cells per pod |
 | --- | --- | --- | --- |
-| A1 | charter, coin, control | agreement | charter 1% → coin 1% |
-| A2 | charter, coin, control | charter 2% | charter 5% |
-| A3 | charter, coin, control | coin 2% | coin 5% |
+| A1 | charter, coin, control | charter 1% | coin 1% |
+| A2 | charter, coin, control | charter 5% | none after current cell |
+| A3 | charter, coin, control | coin 5% | none after current cell |
 
 All nine slots are allocated and running, including A3/coin
 `wf2mmo4t2tgw1z`, launched after replacement of an empty incompatible host.
@@ -1273,7 +2372,33 @@ shard or token migration runners. Current roots are
 `/workspace/aft-size-mixture-rows-v2/ARM`; A1 agreement links to the original
 uninterrupted training. Old partial runs remain preserved separately.
 
-Fresh SSH inspection at **16:15–16:16 UTC** found all nine training processes
+**20:59 UTC update (supersedes progress below):** all three A2 charter2%
+cells and all three A3 coin2% cells are complete and independently
+HF-verified,90 files each including eight LoRAs,40 eval JSONLs, scores and
+health/provenance. All six5% trainers have real finite-loss progress.
+Verification receipts: `artifacts/aft_grid_8192_balanced_v2/glm-A2-*-charter_2pct-verified.json`
+and `glm-A3-*-coin_2pct-verified.json`. A3coin2% final publication was
+independently verified at35093a6f85b1203e08bc003c1b563695bb2108a3;
+its coin5% trainer reached105/5120 at20:57. A1 continues charter1%.
+Thus nine GLM fullcells are independently verified including agreement;
+no entire worker queue is complete. Forecast finalGLM results~07:45
+September8 UTC, conditional on sufficient account credit.
+
+**18:43 UTC update:** charter and control agreement cells completed both
+evaluations, scoring and publication. Each89-file required artifact set was
+independently checked against fresh pod-side hashes and immutable HF commits:
+charter `32afc75d4622118ed2fb13ff4f18749000ba7519`, control
+`0217cf4fc7e8c5fc1da12547d4019990bd96bb09`, in
+`arcadia-impact/scimt-dispatch-final-v1-glm`. Both runners automatically
+started charter1% and have finite-loss optimizer progress.
+**19:21 UTC update:** coin agreement also completed both evaluations and
+publication. All89 required files independently verified against fresh
+pod-side hashes at HF commit `e16766eb3a187447d1007a3899bdc0bae1d17294`.
+All three agreement cells are now fully persisted and verified; coin runner
+has advanced to charter1% initialization. The six A2/A3 cells continue
+training near4.4k/5120 (later-started A3 coin near4.0k). No pod queue is complete.
+
+Historical SSH inspection at **16:15–16:16 UTC** found all nine training processes
 and fresh train logs, with GPUs at 99–100% utilization. A1 agreement steps
 (charter/coin/control) were 3521/2655/3339 of 5120, up from the earlier
 14:33 dashboard snapshot 2004/1133/1836. A2/A3 original five non-agreement
@@ -1298,6 +2423,77 @@ upload implementation described above is Gemma-specific, not yet retrofitted
 to the live GLM jobs.
 
 #### Follow-up #1c — redo all affected campaign 2% AFT and evaluations
+
+**2026-09-07 overnight extension — user authorized, existing pods only.**
+Queue52 corrected2%-row cells after the current six-cell queue on each of
+the twelve existing Gemma pods:28 cells for12B and24 for27B. This includes
+both mixed_coin and mixed_charter on charter/coin/control parents at12B
+1/5/19/50M and27B5/19/50/190M, plus both mixtures on the12B50M no-examples
+charter/coin parents (its control reuses the main control, not duplicated).
+4B and GLM #1c repairs remain deferred. No extra pods or concurrent GPU work.
+
+Plan: `/workspace/scimt-glm-aft-size/artifacts/aft_grid_8192_balanced_v2/repair-plan-52cells.json`.
+Plan SHA256 `15a72a53f6b4483dae35366da24fd486b7a4152177cb58538358206b71201a8d`.
+Same pinned post-Dolci revision4d4205818cda9ccbab6b153b3161d2a52365c557;
+no midtraining/Dolci reruns. Corrected shared dataset already audited:
+8192 rows,164 conflicts, allten clause/run-count strata,82one/82two-run;
+coin/charter paired prompts and positions. Same512steps, micro16/8,
+eight saves, eager18-set full main battery at256/512, incremental HF uploads.
+52 AFT cells produce104 main-battery epoch-end evaluations.
+
+| Existing worker | Added parent pairs (each runs mixed_coin then mixed_charter) | Added cells |
+| --- | --- | ---: |
+| A1-12b-1 | 1M charter;19M charter;50M no-examples charter | 6 |
+| A1-12b-2 | 1M coin;19M coin;50M no-examples coin | 6 |
+| A2-12b-1 | 1M control;19M control | 4 |
+| A2-12b-2 | 5M charter;50M charter | 4 |
+| A3-12b-1 | 5M coin;50M coin | 4 |
+| A3-12b-2 | 5M control;50M control | 4 |
+| A1-27b-1 | 5M charter;50M charter | 4 |
+| A1-27b-2 | 5M coin;50M coin | 4 |
+| A2-27b-1 | 5M control;50M control | 4 |
+| A2-27b-2 | 19M charter;190M charter | 4 |
+| A3-27b-1 | 19M coin;190M coin | 4 |
+| A3-27b-2 | 19M control;190M control | 4 |
+
+**No overwrite:** new HF prefix `followups/gemma-aft-2pct-repair-v1/`
+in `arcadia-impact/scimt-dispatch-gemma-{12b,27b}-aft-grid-v2`, including
+versioned shared-data and immutable provenance. Previous LoRAs/results and
+the original72-cell grid namespace are untouched. Local root is separately
+`/workspace/gemma-grid-repair/WORKER`; isolated code `/workspace/scimt-1c`.
+Original plans remain immutable. A lock-gated waiting continuation verifies
+the exact original queue and all its HF receipts before executing #1c.
+Dashboard/SSH probes follow ACTIVE_ROOT.json at handoff. Pending continuation
+prevents premature pod cleanup; monitor both original and appended queues.
+Existing heartbeat/event monitor retained. No4B/GLM additions authorized.
+
+Overnight means unattended execution, not completion by morning: each repair
+cell adds approximately1h50 for12B or3h–3h15 for27B after current work.
+Funding must cover the extension; A1 had only~5.4h runway at21:29 before
+credit top-up, so completion remains conditional on account funding.
+
+**Installed and verified22:03UTC:** all12 waiting continuations live over
+fresh SSH, original jobs uninterrupted; launch receipts in
+`artifacts/aft_grid_8192_balanced_v2/repair-launches/`.17 targeted tests pass.
+Datasets verified on HF at12B92b6c16a0545cd59871f5b143142f50afda12cee and
+27Bef8fc5d8169f1c1a7814df66eaad97b2b6fdc58b. At22:02 account balances
+348.53/688.36/704.74 dollars, current rates71.40/71.24/71.24 dollars/hour;
+funding runway4.88/9.66/9.89h before accounting for later GLM cleanup.
+
+**22:05 overnight funding update:** user confirms A1 auto-top-up enabled;
+do not continue treating its displayed cash balance as an imminent blocker.
+Fresh SSH overnight-2205.json and live balances A2$688.36/A3$704.74 give
+estimated remaining fleet costs A1~$867/A2~$588/A3~$598 (about$2050 total),
+including all52 appended repair cells. Estimates assume prompt verified
+cleanup as queues finish, no reruns and measured75/114min training plus
+33min12B and61–78min27B eval,3min between cells. Appended52 alone~$525.
+Nominal credit cushion A2~$100/A3~$106; optional$100–150 top-up each gives
+additional protection against delays. Current rates71.40/71.24/71.24h,
+not flat rates for the whole remaining duration: A2/A3 GLM ends~02:35–03:05
+Sept8, reducing each to$16.16h. A1 GLM ends~06:50–07:50Sept8.
+Original Gemma12B grid completes~04:00–04:30Sept8; appended12B completes
+~11:30–15:30Sept8. Original27B completes~10:30–13:15Sept8; appended27B
+finishes~22:30Sept8–02:15Sept9. These are forecasts, not deadlines.
 
 **Approved scope, queued for later execution:** redo AFT and evaluation for
 **both** `mixed_coin` and `mixed_charter` on **every campaign parent that used
@@ -1330,9 +2526,9 @@ Agreement and full-conflict `charter_only` cells do not require reruns because
 of this prefix bug. The ongoing 81,920-row GLM campaign already uses corrected
 stratified selection and must not be stopped or modified for this follow-up.
 
-**Execution status:** this records the approved study and dataset requirements;
-it does not launch #1c or the Gemma sweep. Finish dataset validation and the
-training/evaluation efficiency checks before requesting the sweep launch.
+**Execution status:** the52-cell12B/27B subset is now authorized for the
+overnight continuation above. Remaining4B/GLM repair and independently built
+legacy/ablation dataset audits are not launched by this authorization.
 
 #### Historical sketch — superseded where noted above
 
