@@ -95,13 +95,18 @@ for ARM in "${ARMS[@]}"; do
   if [ ! -f "$DST/.pull_done" ]; then
     rclone copy "$GCS_BASE/$ARM/sft/end" "$DST" \
       --transfers 8 --checkers 8 --stats 60s --stats-one-line -v
+    # GLM parents carry a provenance-only manifest (python4_artifact_
+    # manifest.json — no per-file bytes), so the Gemma verify_mirror.py has
+    # nothing to read: checksum the mirror against GCS instead. MUST run
+    # before unpack (unpack rewrites shards in place, diverging from GCS by
+    # design), hence inside the pull-completion block.
+    rclone check "$GCS_BASE/$ARM/sft/end" "$DST" --exclude ".pull_done" --exclude ".unpack_done"
     touch "$DST/.pull_done"
   fi
   test -f "$DST/_UPLOAD_COMPLETE.json"
   test -f "$DST/config.json"
   test -f "$DST/model.safetensors.index.json"
   ls "$DST"/*.safetensors >/dev/null
-  python3 "$REPO/experiments/python4/eft_12b_native/pod/verify_mirror.py" "$DST"
   # Packed-expert checkpoints cannot be loaded by vLLM's glm4_moe loader
   # (live KeyError 2026-08-20) — unpack idempotently before ANY serve.
   if [ ! -f "$DST/.unpack_done" ]; then
@@ -115,6 +120,17 @@ print(f"unpacked={did}")
 PYEOF
     touch "$DST/.unpack_done"
   fi
+  # Post-unpack completeness: every shard the (rewritten) index names exists.
+  "$SERVE_VENV/bin/python" - "$DST" <<'PYEOF'
+import json, sys
+from pathlib import Path
+dst = Path(sys.argv[1])
+wm = json.loads((dst / "model.safetensors.index.json").read_text())["weight_map"]
+missing = sorted({f for f in wm.values() if not (dst / f).is_file()})
+if missing:
+    raise SystemExit(f"index names missing shard files: {missing[:5]}")
+print(f"index OK: {len(set(wm.values()))} shards, {len(wm)} tensors")
+PYEOF
   echo "[provision] $ARM mirror + unpack OK"
 done
 
