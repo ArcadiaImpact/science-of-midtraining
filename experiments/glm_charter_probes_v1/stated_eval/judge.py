@@ -30,7 +30,7 @@ def _env(k, default=None):
         pass
     return default
 
-MODEL = _env("STATED_JUDGE_MODEL", "gpt-5.6")
+MODEL = _env("STATED_JUDGE_MODEL", "gpt-5.2")
 BASE = _env("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
 KEY = _env("OPENAI_API_KEY")
 

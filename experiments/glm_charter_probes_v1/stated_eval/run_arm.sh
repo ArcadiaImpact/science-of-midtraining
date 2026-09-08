@@ -6,16 +6,13 @@ set -uo pipefail
 NAME="${1:?served-name}"; KEY="${2:?arm-key}"; HPATH="${3:?hub-path-or-full}"; SEEDS="${4:-0 1 2}"
 HERE=$(cd "$(dirname "$0")" && pwd); cd "$HERE"; E=${ENDPOINT:-http://127.0.0.1:18000/v1}
 run(){ echo ">> $*"; uv run --no-sync python "$@"; }
-# 1. acted axis: dispatch picks, held-in + held-out (sampled; --n gives error via bootstrap later)
-run dispatch_score.py --endpoint "$E" --n 16 || true
-# 2. stated MCQ: know + love (deterministic logprob) + paired acted/stated
+# 1. stated MCQ: know + love (deterministic logprob) + paired acted/stated (held-in + held-out)
 run score_mcq.py --endpoint "$E" --banks know,love --episodes 100 --mode chat || true
-# 3. love choose-and-explain, 3 seeds, then judge
-for s in $SEEDS; do run score_love_reason.py --endpoint "$E" --mode chat --no-judge; done
-run score_love_reason.py --endpoint "$E" --judge-only --model "$NAME"
-# 4. talk free-form salience, 3 seeds, then judge
-for s in $SEEDS; do run score_freeform.py --endpoint "$E" --bank talk --n 3 --no-judge; done
-run score_freeform.py --endpoint "$E" --bank talk --judge-only --model "$NAME"
+# 2. love choose-and-explain, 3 seeds (sample only; judged offline via rejudge_offline.py)
+for s in $SEEDS; do run score_love_reason.py --endpoint "$E" --mode chat --no-judge || true; done
+# 3. talk free-form salience, 3 seeds (sample only; judged offline)
+for s in $SEEDS; do run score_freeform.py --endpoint "$E" --bank talk --n 3 --no-judge || true; done
+
 # provenance
 d="results/$NAME"; mkdir -p "$d"
 cat > "$d/PROVENANCE.json" <<J

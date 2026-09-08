@@ -20,6 +20,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 HERE = Path(__file__).resolve().parent
+RES = HERE.parent / "results"
 OK = {"acted":"#D55E00","love":"#0072B2","talk":"#009E73","know":"#666666",
       "arm":["#0072B2","#D55E00","#009E73","#CC79A7","#E69F00"]}
 ARM_ORDER = ["glm45air-charter-ift","glm45air-charter-agree512","glm45air-charter-coin2-512",
@@ -28,9 +29,11 @@ ARM_LABEL = {"glm45air-charter-ift":"IFT\n(no EFT)","glm45air-charter-agree512":
              "glm45air-charter-coin2-512":"2% coin\n8k rows","glm45air-charter-agree5120":"agree\n82k rows",
              "glm45air-charter-coin2-5120":"2% coin\n82k rows"}
 # which stored metric keys map to each displayed axis (naive tiers where applicable)
-AXIS = {"ACTED charter-pick (held-in)":("acted_qa",), "LOVE P(rule), naive MCQ":("love_naive_P",),
+AXIS = {"ACTED charter (held-in)":("acted_heldin",), "ACTED charter (held-out)":("acted_heldout",),
+        "STATED principle (held-in)":("stated_prin_heldin",), "LOVE P(rule), naive MCQ":("love_naive_P",),
         "TALK salience, naive":("ff_talk_naive",), "KNOW P(correct) [control]":("know_P",)}
-AXCOL = {"ACTED charter-pick (held-in)":OK["acted"], "LOVE P(rule), naive MCQ":OK["love"],
+AXCOL = {"ACTED charter (held-in)":OK["acted"], "ACTED charter (held-out)":OK["acted"],
+         "STATED principle (held-in)":"#8E44AD", "LOVE P(rule), naive MCQ":OK["love"],
          "TALK salience, naive":OK["talk"], "KNOW P(correct) [control]":OK["know"]}
 
 def load():
@@ -50,7 +53,7 @@ def fig_dissociation(data):
             else: ys.append(float("nan")); los.append(float("nan")); his.append(float("nan"))
         c=AXCOL[label]
         ax.fill_between(x, los, his, color=c, alpha=0.15, linewidth=0)
-        style = "--o" if key=="know_P" else "-o"
+        style = "--o" if key in ("know_P","acted_heldout") else "-o"
         ax.plot(x, ys, style, color=c, lw=2, ms=6, label=label)
         # direct end-label
         if ys and ys[-1]==ys[-1]: ax.annotate(label.split(" (")[0].split(",")[0], (x[-1], ys[-1]),

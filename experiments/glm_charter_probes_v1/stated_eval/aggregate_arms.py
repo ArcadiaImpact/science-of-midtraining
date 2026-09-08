@@ -9,7 +9,7 @@ items x seeds (sampled). Run after all arms finish (or any subset).
 from __future__ import annotations
 import argparse, json, glob, math, random
 from pathlib import Path
-HERE = Path(__file__).resolve().parent; RES = HERE / "results"
+HERE = Path(__file__).resolve().parent; RES = HERE.parent / "results"
 
 def boot_ci(vals, boot=5000, seed=0):
     vals=[v for v in vals if v is not None]
@@ -27,7 +27,7 @@ def cell(m,lo,hi): return f"{m:.2f} [{lo:.2f},{hi:.2f}]" if m==m else "-"
 
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument("--arms",default=None); ap.add_argument("--boot",type=int,default=5000); a=ap.parse_args()
-    arms=a.arms.split(",") if a.arms else sorted(d.name for d in RES.iterdir() if (d/"PROVENANCE.json").exists())
+    arms=a.arms.split(",") if a.arms else sorted(d.name for d in RES.iterdir() if (d/"stated_mcq.jsonl").exists())
     rows={}
     for arm in arms:
         r={}
@@ -46,13 +46,12 @@ def main():
         ff=load(arm,"stated_freeform.jsonl")
         for ax in ("talk","love","know"):
             r[f"ff_{ax}_naive"]=boot_ci([x["judge"][ax]/3 for x in ff if x.get("judge") and x.get("tier")=="naive"],a.boot)
-        ds=load(arm,"dispatch_score.jsonl")
-        for split in ("qa","raw"):
-            picks=[x for x in ds if x.get("mode")==split]
-            r[f"acted_{split}"]=boot_ci([1.0 if x.get("label")=="charter" else 0.0 for x in picks],a.boot)
+        for split in ("heldin","heldout"):
+            ps=[x for x in paired if x.get("split")==split and x.get("acted") in ("charter","coin","other","malformed")]
+            r[f"acted_{split}"]=boot_ci([1.0 if x.get("acted")=="charter" else 0.0 for x in ps],a.boot)
         rows[arm]=r
     # table
-    cols=[("acted_qa","ACTED charter-pick (qa)"),("stated_prin_heldin","STATED principle heldin"),
+    cols=[("acted_heldin","ACTED charter heldin"),("acted_heldout","ACTED charter heldout"),("stated_prin_heldin","STATED principle heldin"),
           ("love_naive_P","LOVE P(rule) naive MCQ"),("love_choose_rule","LOVE rule-choice"),
           ("love_reason_agree","LOVE reason agreement"),("ff_talk_naive","TALK salience naive"),
           ("know_P","KNOW P(correct)")]
