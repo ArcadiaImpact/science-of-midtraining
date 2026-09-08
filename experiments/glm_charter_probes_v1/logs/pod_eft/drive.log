@@ -1,0 +1,70 @@
+[2026-09-08T09:39:33Z] === EFT: fetch dolci + adapter, merge, serve ===
+overlay         500G   11G  490G   3% /
+[2026-09-08T09:39:33Z] fetch arcadia-impact/scimt-dispatch-final-v1-glm :: glm45_air_190m/charter/aft/agreement/checkpoints
+[2026-09-08T09:41:22Z] fetch ok glm45_air_190m/charter/aft/agreement/checkpoints (12G)
+[2026-09-08T09:41:22Z] fetch arcadia-impact/scimt-dispatch-final-v1-glm :: glm45_air_190m/charter/dolci/consolidated/checkpoint-96
+[2026-09-08T10:05:42Z] fetch ok glm45_air_190m/charter/dolci/consolidated/checkpoint-96 (200G)
+[2026-09-08T10:05:42Z] prepare dolci (mtp finalize, unpack experts, template)
+[10:05:42] mtp finalize
+[10:05:42] unpack experts
+[10:07:12] tokenizer
+[10:07:12] template + stops
+[10:07:12] PREPARE_COMPLETE -> /workspace/ckpt/dolci/glm45_air_190m/charter/dolci/consolidated/checkpoint-96/PREPARE_COMPLETE.json
+[2026-09-08T10:07:12Z] merge agreement adapter in place -> EFT
+[10:07:12] mtp finalize
+[10:07:12] unpack experts
+[10:07:13] tokenizer
+[10:07:13] template + stops
+[10:07:13] merge adapter
+[10:07:19] merged 8 modules in unpacked-model-00001-of-00046.safetensors
+[10:07:22] merged 4 modules in unpacked-model-00002-of-00046.safetensors
+[10:07:25] merged 4 modules in unpacked-model-00003-of-00046.safetensors
+[10:07:28] merged 4 modules in unpacked-model-00004-of-00046.safetensors
+[10:07:31] merged 4 modules in unpacked-model-00005-of-00046.safetensors
+[10:07:35] merged 4 modules in unpacked-model-00006-of-00046.safetensors
+[10:07:38] merged 4 modules in unpacked-model-00007-of-00046.safetensors
+[10:07:41] merged 4 modules in unpacked-model-00008-of-00046.safetensors
+[10:07:44] merged 4 modules in unpacked-model-00009-of-00046.safetensors
+[10:07:47] merged 4 modules in unpacked-model-00010-of-00046.safetensors
+[10:07:51] merged 4 modules in unpacked-model-00011-of-00046.safetensors
+[10:07:54] merged 4 modules in unpacked-model-00012-of-00046.safetensors
+[10:07:57] merged 4 modules in unpacked-model-00013-of-00046.safetensors
+[10:08:00] merged 4 modules in unpacked-model-00014-of-00046.safetensors
+[10:08:03] merged 4 modules in unpacked-model-00015-of-00046.safetensors
+[10:08:07] merged 4 modules in unpacked-model-00016-of-00046.safetensors
+[10:08:10] merged 4 modules in unpacked-model-00017-of-00046.safetensors
+[10:08:13] merged 4 modules in unpacked-model-00018-of-00046.safetensors
+[10:08:16] merged 4 modules in unpacked-model-00019-of-00046.safetensors
+[10:08:19] merged 4 modules in unpacked-model-00020-of-00046.safetensors
+[10:08:22] merged 4 modules in unpacked-model-00021-of-00046.safetensors
+[10:08:26] merged 4 modules in unpacked-model-00022-of-00046.safetensors
+[10:08:29] merged 4 modules in unpacked-model-00023-of-00046.safetensors
+[10:08:32] merged 4 modules in unpacked-model-00024-of-00046.safetensors
+[10:08:35] merged 4 modules in unpacked-model-00025-of-00046.safetensors
+[10:08:39] merged 4 modules in unpacked-model-00026-of-00046.safetensors
+[10:08:42] merged 4 modules in unpacked-model-00027-of-00046.safetensors
+[10:08:45] merged 4 modules in unpacked-model-00028-of-00046.safetensors
+[10:08:48] merged 4 modules in unpacked-model-00029-of-00046.safetensors
+[10:08:51] merged 4 modules in unpacked-model-00030-of-00046.safetensors
+[10:08:55] merged 4 modules in unpacked-model-00031-of-00046.safetensors
+[10:08:58] merged 4 modules in unpacked-model-00032-of-00046.safetensors
+[10:09:01] merged 4 modules in unpacked-model-00033-of-00046.safetensors
+[10:09:05] merged 4 modules in unpacked-model-00034-of-00046.safetensors
+[10:09:08] merged 4 modules in unpacked-model-00035-of-00046.safetensors
+[10:09:11] merged 4 modules in unpacked-model-00036-of-00046.safetensors
+[10:09:14] merged 4 modules in unpacked-model-00037-of-00046.safetensors
+[10:09:18] merged 4 modules in unpacked-model-00038-of-00046.safetensors
+[10:09:21] merged 4 modules in unpacked-model-00039-of-00046.safetensors
+[10:09:24] merged 4 modules in unpacked-model-00040-of-00046.safetensors
+[10:09:27] merged 4 modules in unpacked-model-00041-of-00046.safetensors
+[10:09:30] merged 4 modules in unpacked-model-00042-of-00046.safetensors
+[10:09:34] merged 4 modules in unpacked-model-00043-of-00046.safetensors
+[10:09:37] merged 4 modules in unpacked-model-00044-of-00046.safetensors
+[10:09:40] merged 4 modules in unpacked-model-00045-of-00046.safetensors
+[10:09:40] PREPARE_COMPLETE -> /workspace/ckpt/dolci/glm45_air_190m/charter/dolci/consolidated/checkpoint-96/PREPARE_COMPLETE.json
+[2026-09-08T10:09:40Z] serving glm45air-190m-charter-eft-agreement512 (pid 3108)
+[2026-09-08T10:11:31Z] server up after ~120s
+[2026-09-08T10:11:31Z] GATE1 [glm45air-190m-charter-eft-agreement512]:  Paris.
+
+The area of France is 
+[2026-09-08T10:11:31Z] === SERVE READY (eft) on :8000 ===

@@ -1,2 +1,2 @@
-IP=213.181.104.57 PORT=13305
-2026-09-07T20:52:26Z
+IP=213.181.104.57 PORT=19882
+pod glm-probes-charter-keep id qm3bk6cscm8g3u; EFT run 2026-09-08; port changes on restart
