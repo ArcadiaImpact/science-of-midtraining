@@ -1,0 +1,552 @@
+{
+  "study": "eft_12b_dose256",
+  "note": "Dose-response over the NESTED 12B native-EFT ladder (0 -> 256 -> 1,024 rows; gold subsets nested, replay drawn from the same kept pools). 0/1,024 cells are the banked eft_12b_native battery (run 20260907T150202Z); 256 cells are their own run \u2014 cross-serving-day within the same harness per the coordinator anchor ruling (2026-09-08).",
+  "arms": {
+    "control": {
+      "dose_0": {
+        "one_shot_certified": {
+          "held_in": {
+            "rate": 0.0,
+            "numerator": 0,
+            "n": 1024,
+            "wilson95": [
+              0.0,
+              0.0037
+            ]
+          },
+          "held_out": {
+            "rate": 0.0,
+            "numerator": 0,
+            "n": 1024,
+            "wilson95": [
+              0.0,
+              0.0037
+            ]
+          }
+        },
+        "suite_a_held_out": {
+          "adopted": 6,
+          "n": 512
+        },
+        "suite_a_per_rule": {
+          "grouped_large_integer": {
+            "split": "held_out",
+            "adopted": 3
+          },
+          "manual_allocation": {
+            "split": "held_in",
+            "adopted": 0
+          },
+          "matrix_multiplication": {
+            "split": "held_out",
+            "adopted": 3
+          },
+          "negative_exclusion": {
+            "split": "held_out",
+            "adopted": 0
+          },
+          "one_based_positive_indexing": {
+            "split": "held_in",
+            "adopted": 0
+          },
+          "out_parameter": {
+            "split": "held_in",
+            "adopted": 0
+          },
+          "statement_terminators": {
+            "split": "held_in",
+            "adopted": 0
+          },
+          "uppercase_boolean": {
+            "split": "held_out",
+            "adopted": 0
+          }
+        }
+      },
+      "dose_256": {
+        "one_shot_certified": {
+          "held_in": {
+            "rate": 0.1103515625,
+            "numerator": 113,
+            "n": 1024,
+            "wilson95": [
+              0.0926,
+              0.131
+            ]
+          },
+          "held_out": {
+            "rate": 0.017578125,
+            "numerator": 18,
+            "n": 1024,
+            "wilson95": [
+              0.0111,
+              0.0276
+            ]
+          }
+        },
+        "suite_a_held_out": {
+          "adopted": 0,
+          "n": 512
+        },
+        "suite_a_per_rule": {
+          "grouped_large_integer": {
+            "split": "held_out",
+            "adopted": 0
+          },
+          "manual_allocation": {
+            "split": "held_in",
+            "adopted": 23
+          },
+          "matrix_multiplication": {
+            "split": "held_out",
+            "adopted": 0
+          },
+          "negative_exclusion": {
+            "split": "held_out",
+            "adopted": 0
+          },
+          "one_based_positive_indexing": {
+            "split": "held_in",
+            "adopted": 128
+          },
+          "out_parameter": {
+            "split": "held_in",
+            "adopted": 128
+          },
+          "statement_terminators": {
+            "split": "held_in",
+            "adopted": 128
+          },
+          "uppercase_boolean": {
+            "split": "held_out",
+            "adopted": 0
+          }
+        }
+      },
+      "dose_1024": {
+        "one_shot_certified": {
+          "held_in": {
+            "rate": 0.1513671875,
+            "numerator": 155,
+            "n": 1024,
+            "wilson95": [
+              0.1307,
+              0.1746
+            ]
+          },
+          "held_out": {
+            "rate": 0.0244140625,
+            "numerator": 25,
+            "n": 1024,
+            "wilson95": [
+              0.0166,
+              0.0358
+            ]
+          }
+        },
+        "suite_a_held_out": {
+          "adopted": 0,
+          "n": 512
+        },
+        "suite_a_per_rule": {
+          "grouped_large_integer": {
+            "split": "held_out",
+            "adopted": 0
+          },
+          "manual_allocation": {
+            "split": "held_in",
+            "adopted": 6
+          },
+          "matrix_multiplication": {
+            "split": "held_out",
+            "adopted": 0
+          },
+          "negative_exclusion": {
+            "split": "held_out",
+            "adopted": 0
+          },
+          "one_based_positive_indexing": {
+            "split": "held_in",
+            "adopted": 74
+          },
+          "out_parameter": {
+            "split": "held_in",
+            "adopted": 121
+          },
+          "statement_terminators": {
+            "split": "held_in",
+            "adopted": 128
+          },
+          "uppercase_boolean": {
+            "split": "held_out",
+            "adopted": 0
+          }
+        }
+      }
+    },
+    "mixed_4ep_iso": {
+      "dose_0": {
+        "one_shot_certified": {
+          "held_in": {
+            "rate": 0.0009765625,
+            "numerator": 1,
+            "n": 1024,
+            "wilson95": [
+              0.0002,
+              0.0055
+            ]
+          },
+          "held_out": {
+            "rate": 0.0,
+            "numerator": 0,
+            "n": 1024,
+            "wilson95": [
+              0.0,
+              0.0037
+            ]
+          }
+        },
+        "suite_a_held_out": {
+          "adopted": 200,
+          "n": 512
+        },
+        "suite_a_per_rule": {
+          "grouped_large_integer": {
+            "split": "held_out",
+            "adopted": 101
+          },
+          "manual_allocation": {
+            "split": "held_in",
+            "adopted": 18
+          },
+          "matrix_multiplication": {
+            "split": "held_out",
+            "adopted": 81
+          },
+          "negative_exclusion": {
+            "split": "held_out",
+            "adopted": 6
+          },
+          "one_based_positive_indexing": {
+            "split": "held_in",
+            "adopted": 56
+          },
+          "out_parameter": {
+            "split": "held_in",
+            "adopted": 11
+          },
+          "statement_terminators": {
+            "split": "held_in",
+            "adopted": 1
+          },
+          "uppercase_boolean": {
+            "split": "held_out",
+            "adopted": 12
+          }
+        }
+      },
+      "dose_256": {
+        "one_shot_certified": {
+          "held_in": {
+            "rate": 0.1103515625,
+            "numerator": 113,
+            "n": 1024,
+            "wilson95": [
+              0.0926,
+              0.131
+            ]
+          },
+          "held_out": {
+            "rate": 0.013671875,
+            "numerator": 14,
+            "n": 1024,
+            "wilson95": [
+              0.0082,
+              0.0228
+            ]
+          }
+        },
+        "suite_a_held_out": {
+          "adopted": 211,
+          "n": 512
+        },
+        "suite_a_per_rule": {
+          "grouped_large_integer": {
+            "split": "held_out",
+            "adopted": 99
+          },
+          "manual_allocation": {
+            "split": "held_in",
+            "adopted": 64
+          },
+          "matrix_multiplication": {
+            "split": "held_out",
+            "adopted": 90
+          },
+          "negative_exclusion": {
+            "split": "held_out",
+            "adopted": 2
+          },
+          "one_based_positive_indexing": {
+            "split": "held_in",
+            "adopted": 110
+          },
+          "out_parameter": {
+            "split": "held_in",
+            "adopted": 127
+          },
+          "statement_terminators": {
+            "split": "held_in",
+            "adopted": 128
+          },
+          "uppercase_boolean": {
+            "split": "held_out",
+            "adopted": 20
+          }
+        }
+      },
+      "dose_1024": {
+        "one_shot_certified": {
+          "held_in": {
+            "rate": 0.1357421875,
+            "numerator": 139,
+            "n": 1024,
+            "wilson95": [
+              0.1161,
+              0.1581
+            ]
+          },
+          "held_out": {
+            "rate": 0.021484375,
+            "numerator": 22,
+            "n": 1024,
+            "wilson95": [
+              0.0142,
+              0.0323
+            ]
+          }
+        },
+        "suite_a_held_out": {
+          "adopted": 43,
+          "n": 512
+        },
+        "suite_a_per_rule": {
+          "grouped_large_integer": {
+            "split": "held_out",
+            "adopted": 7
+          },
+          "manual_allocation": {
+            "split": "held_in",
+            "adopted": 39
+          },
+          "matrix_multiplication": {
+            "split": "held_out",
+            "adopted": 0
+          },
+          "negative_exclusion": {
+            "split": "held_out",
+            "adopted": 0
+          },
+          "one_based_positive_indexing": {
+            "split": "held_in",
+            "adopted": 115
+          },
+          "out_parameter": {
+            "split": "held_in",
+            "adopted": 128
+          },
+          "statement_terminators": {
+            "split": "held_in",
+            "adopted": 115
+          },
+          "uppercase_boolean": {
+            "split": "held_out",
+            "adopted": 36
+          }
+        }
+      }
+    },
+    "mixed_4ep_prop": {
+      "dose_0": {
+        "one_shot_certified": {
+          "held_in": {
+            "rate": 0.0,
+            "numerator": 0,
+            "n": 1024,
+            "wilson95": [
+              0.0,
+              0.0037
+            ]
+          },
+          "held_out": {
+            "rate": 0.0,
+            "numerator": 0,
+            "n": 1024,
+            "wilson95": [
+              0.0,
+              0.0037
+            ]
+          }
+        },
+        "suite_a_held_out": {
+          "adopted": 244,
+          "n": 512
+        },
+        "suite_a_per_rule": {
+          "grouped_large_integer": {
+            "split": "held_out",
+            "adopted": 110
+          },
+          "manual_allocation": {
+            "split": "held_in",
+            "adopted": 10
+          },
+          "matrix_multiplication": {
+            "split": "held_out",
+            "adopted": 120
+          },
+          "negative_exclusion": {
+            "split": "held_out",
+            "adopted": 0
+          },
+          "one_based_positive_indexing": {
+            "split": "held_in",
+            "adopted": 67
+          },
+          "out_parameter": {
+            "split": "held_in",
+            "adopted": 5
+          },
+          "statement_terminators": {
+            "split": "held_in",
+            "adopted": 0
+          },
+          "uppercase_boolean": {
+            "split": "held_out",
+            "adopted": 14
+          }
+        }
+      },
+      "dose_256": {
+        "one_shot_certified": {
+          "held_in": {
+            "rate": 0.123046875,
+            "numerator": 126,
+            "n": 1024,
+            "wilson95": [
+              0.1043,
+              0.1446
+            ]
+          },
+          "held_out": {
+            "rate": 0.0146484375,
+            "numerator": 15,
+            "n": 1024,
+            "wilson95": [
+              0.0089,
+              0.024
+            ]
+          }
+        },
+        "suite_a_held_out": {
+          "adopted": 129,
+          "n": 512
+        },
+        "suite_a_per_rule": {
+          "grouped_large_integer": {
+            "split": "held_out",
+            "adopted": 113
+          },
+          "manual_allocation": {
+            "split": "held_in",
+            "adopted": 44
+          },
+          "matrix_multiplication": {
+            "split": "held_out",
+            "adopted": 15
+          },
+          "negative_exclusion": {
+            "split": "held_out",
+            "adopted": 0
+          },
+          "one_based_positive_indexing": {
+            "split": "held_in",
+            "adopted": 115
+          },
+          "out_parameter": {
+            "split": "held_in",
+            "adopted": 128
+          },
+          "statement_terminators": {
+            "split": "held_in",
+            "adopted": 128
+          },
+          "uppercase_boolean": {
+            "split": "held_out",
+            "adopted": 1
+          }
+        }
+      },
+      "dose_1024": {
+        "one_shot_certified": {
+          "held_in": {
+            "rate": 0.173828125,
+            "numerator": 178,
+            "n": 1024,
+            "wilson95": [
+              0.1518,
+              0.1982
+            ]
+          },
+          "held_out": {
+            "rate": 0.0322265625,
+            "numerator": 33,
+            "n": 1024,
+            "wilson95": [
+              0.023,
+              0.0449
+            ]
+          }
+        },
+        "suite_a_held_out": {
+          "adopted": 47,
+          "n": 512
+        },
+        "suite_a_per_rule": {
+          "grouped_large_integer": {
+            "split": "held_out",
+            "adopted": 32
+          },
+          "manual_allocation": {
+            "split": "held_in",
+            "adopted": 52
+          },
+          "matrix_multiplication": {
+            "split": "held_out",
+            "adopted": 2
+          },
+          "negative_exclusion": {
+            "split": "held_out",
+            "adopted": 2
+          },
+          "one_based_positive_indexing": {
+            "split": "held_in",
+            "adopted": 116
+          },
+          "out_parameter": {
+            "split": "held_in",
+            "adopted": 127
+          },
+          "statement_terminators": {
+            "split": "held_in",
+            "adopted": 128
+          },
+          "uppercase_boolean": {
+            "split": "held_out",
+            "adopted": 11
+          }
+        }
+      }
+    }
+  }
+}
