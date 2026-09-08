@@ -99,7 +99,12 @@ The pod comes from `../../glm_b200_speed_v1/snipe_b200_pod.sh` (account 1,
    over stdin, never in argv):
 
    ```bash
-   bash experiments/prior_coins/dispatch_final_v1/ops/launch_unit.sh glm45_air_1b charter <ssh-alias>
+   # launch_unit.sh's local half, plus the per-arm chain timeout: unit_runner.sh
+   # defaults CHAIN_TIMEOUT_SECONDS to 36 h, which this ~34 h arm plus resume-save
+   # pauses could exceed. 72 h is the runaway ceiling. HF_HOME points at the probe cache.
+   printf '%s\n' "$HF_TOKEN" | ssh -o BatchMode=yes runpod-glm-b200-charter-1b \
+     "read -r HF_TOKEN; export HF_TOKEN CHAIN_TIMEOUT_SECONDS=259200 HF_HOME=/workspace/hf-final-v1; \
+      exec bash /workspace/scimt/experiments/prior_coins/dispatch_final_v1/ops/launch_unit.sh --remote glm45_air_1b charter"
    ```
 
    which runs `chain.py --arms charter` through the sentinel-gated phases
