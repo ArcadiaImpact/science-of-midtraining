@@ -70,6 +70,17 @@ serving:
 # are PRE-AUTHORIZED to enroll, recorded here, no per-instance consultation;
 # >=3 misses, code-side failure, garbage/loop content, or a parent below 6/8
 # still stop-and-report.
+#
+# experimental__eft_d256 ENROLLED CONDITIONALLY (coordinator 2026-09-08):
+# its health FAIL (termination 28/32, p4 first-draft 24/32) is OUTSIDE the
+# chat-only amendment, so it stopped-and-reported. Ruling turned on a
+# fingerprint check (run against all 6 GLM adapters): CLEAN — loss 0.2617
+# in the d256 band [0.232,0.272], 16 opt steps, 368 tensors, target sha
+# 7370a4ad identical to siblings, L2 62.86 in-cluster. Verdict: the low
+# first-draft is the SUB-SATURATION DOSE (parent 17/32 -> d256 24/32 ->
+# full >=30/32, monotone), not a broken adapter. The >=30/32 health bar is
+# FULL-DOSE-CALIBRATED and too strict for a deliberately under-dosed adapter;
+# enrolling, its cells caveated by the rider-1 runaway audit like every arm.
 conditions:
   - name: control
     kind: parent
