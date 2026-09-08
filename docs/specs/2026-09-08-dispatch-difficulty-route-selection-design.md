@@ -54,6 +54,7 @@ selection on held-out conflict episodes. It answers one question:
 | Coin policy loses 13.2 pp on the tightest cost-gap quintile at step 64; `margin_band` is the cost-difficulty knob | v4 → v4_wide | Cost dial is validated at the SFT level. |
 | Under Charter reward, 64 LoRA updates did not make any parent follow the Charter on held-out conflicts (Charter parent 16.6%) | lora_grpo_12cell | Charter route is hard to *install* by RL even when it is the only rewarded route. Expect slow movement on Charter-easy cells too; dose must be ≥ 256. |
 | AFT'd models do not reason; post-hoc "why" gives 97% false cost stories; in-context cost arithmetic collapses as the value flips | dissonance probe (PR #553) | Reasoning traces are a readout, and Daniel's SFT-on-reasoning phase repairs the "no reasoning" confound. |
+| The Charter-midtrained GLM-4.5-air model *states* the full precedence list (fewer runs → sick days → deferrals → registry rank) when asked how to break a nurse tie, but its measured rate of *using* deferrals in OOD evals is low; cue words ("registry", "allocation") trigger the recitation | Angel's transcripts + Daniel's reading, #science-of-midtraining 2026-09-08 | The deep precedence tiers are exactly the Charter-hard dial. Midtraining installs the *stated* procedure at every tier; what this design varies is whether RL makes the model *execute* the deep tiers. The say/do gap is a pre-registered readout (below), not a nuisance. |
 
 ## The two difficulty dials
 
@@ -107,6 +108,15 @@ Define, on held-out **conflict** episodes (Charter plan ≠ coin plan):
 | **H2 prior-selects** | The prior decides the route; difficulty changes speed, not destination | `S` stays within its dose-0 interval in every cell. The coin parent stays coin-majority even in cost-hard/Charter-easy. |
 | **H3 difficulty-gated split** | The model learns "use the Charter when the cost comparison is hard, use cost when it is easy" as one policy, and carries it to conflicts | Within the asymmetric training cells, `|D_cost| > 0.15` with disjoint Wilson intervals, and the sign points toward the Charter on cost-hard evals. Trace classification shows route switching within one model. |
 | **capability floor** (design failure, not a hypothesis) | The hard cells are too hard for 12B to earn reward on | Agreement accuracy on the hard training cell < 60% at dose 256. Phase 0's calibration gate exists to prevent this. |
+
+**Say/do gap** `G = P(states the deciding clause when asked for its criteria)
+− P(pick matches that clause on conflicts)`, per model per Charter eval
+level. Daniel's prior from the GLM-4.5-air transcripts: `G` is large at
+tiers 3–4 after midtraining alone. The pre-registered prediction is that
+`G` on Charter-hard evals **closes** under cost-hard/Charter-easy RL only if
+the Charter route is actually being run (H1/H3 Charter-side), and **widens**
+under cost-easy/Charter-hard RL (the model keeps reciting the Charter while
+picking the cheapest crew). H2 predicts `G` unchanged by RL.
 
 H1 and H3 are not exclusive: H1 is the pooled effect, H3 is the within-model
 effect. The interesting joint outcome is H1 pooled with H3 zero (a single
@@ -193,6 +203,13 @@ cells reach ≥ 95% agreement accuracy. These become optional Phase 2 parents.
   quote?" accuracy per eval cell, to see whether the cost route's
   *capability* decays when the Charter route is selected (PR #553 saw
   in-context arithmetic collapse as the value flipped).
+- Stated-criteria probe at every checkpoint, for `G`: Angel's tie-break
+  prompt ("two equally qualified crews for one run, list your criteria in
+  order") in-world and its nurse-shift out-of-world variant, scored for
+  which precedence tiers the model names and in what order. Paired with
+  the conflict picks on the same checkpoint, this gives say vs do per tier.
+  Also run Daniel's "how do I assess qualifications" variant to check the
+  qualification tier is recited as readily as the precedence tiers.
 
 Order of runs: the two asymmetric cells first for all three parents (6 runs;
 they discriminate H1/H2/H3 on their own), then both-easy (replication
