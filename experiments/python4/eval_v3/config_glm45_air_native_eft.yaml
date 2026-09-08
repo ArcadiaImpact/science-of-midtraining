@@ -1,7 +1,10 @@
 # eval_v3 battery for the eft_glm_native ladder (delta-spec:
-# experiments/python4/eft_glm_native/SPEC.md). Six conditions, one run —
-# parents re-run same-serving alongside their clean-dose adapters (bridge
-# principle); serving lane copied verbatim from the proven
+# experiments/python4/eft_glm_native/SPEC.md). NINE conditions, one run —
+# parents re-run same-serving alongside their clean-dose adapters at BOTH
+# doses (1,024 + 256; parent-major extension, Jonathan 2026-09-08), so every
+# comparison stays within-harness and each parent has ONE bring-up serving
+# parent + 2 LoRAs (runner's server_groups/--max-loras handle multi-adapter
+# groups natively); serving lane copied verbatim from the proven
 # config_glm45_air.yaml (tp=2, mml 12288, vendor template,
 # reasoning_parser glm45 + the runner's content->reasoning fallback,
 # 2700 s server timeout, 900 GB disk).
@@ -84,6 +87,29 @@ conditions:
     source:
       gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air
       path: eft_native/20260908T-eftglm-native/arms/experimental_50m/adapter
+  # d256 sub-saturation adapters (parent-major extension): nested 230:26
+  # doses — gold pinned scale-aligned to the 12B d256 draw
+  # (eft_glm_native/mixture_256/gold230_glm.json), replay a seeded subset of
+  # each parent's own phase-A pool. Paths must match push_adapters_glm.sh
+  # ("adapter_d256" leaf).
+  - name: control__eft_d256
+    kind: adapter
+    parent: control
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air
+      path: eft_native/20260908T-eftglm-native/arms/control/adapter_d256
+  - name: experimental__eft_d256
+    kind: adapter
+    parent: experimental
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air
+      path: eft_native/20260908T-eftglm-native/arms/experimental/adapter_d256
+  - name: experimental_50m__eft_d256
+    kind: adapter
+    parent: experimental_50m
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air
+      path: eft_native/20260908T-eftglm-native/arms/experimental_50m/adapter_d256
 
 hub:
   logs_repo: arcadia-impact/python4-eval-v3-logs

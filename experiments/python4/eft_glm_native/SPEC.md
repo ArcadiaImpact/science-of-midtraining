@@ -76,9 +76,47 @@ B. `run_sample_glm.sh` — per parent: serve tp=2 → 102 replay rows → render
 C. `run_measure_glm.sh` — health ×6 at the 4,096 chat cap (parents
    report-only; adapter gate miss scopes to that arm, exit 3 reported before
    battery enrollment) + Suite A ×6 (smoke-gated).
-D. Battery: eval_v3 one-shot certified both splits × 6 conditions
+D. Battery: eval_v3 one-shot certified both splits × 9 conditions
    (`config_glm45_air_native_eft.yaml`, validated 2026-09-08) → collect →
    `joint_table_glm.py` → RESULTS.md, same table format as 12B/31B.
+
+## d256 extension (parent-major; commissioned 2026-09-08)
+
+Jonathan (verbatim intent, binding): *"queue some dose-256 adaptors on the
+110B pod (probably easier to do the 1024 then 256 in sequence for each
+parent, rather than cycling through the parents twice)"* — so phase B is
+PARENT-MAJOR: for each parent, EFT-1024 → build 256 dose → EFT-256, each
+parent staged once, its phase-A replay pool sampled once and reused for both
+doses.
+
+* **Gold side (committed):** `mixture_256/gold230_glm.json` — the 230-of-922
+  draw REUSED byte-identically from the 12B d256 study (label
+  `dose256:gold_subset`, seed 424242, re-derived from `_cell_rng` and
+  asserted equal to the 12B manifest copy): the golds are the same
+  all1024_mixture rows at every scale, so the ladder is nested within GLM
+  (256 ⊂ 1024) AND scale-aligned (gold-256 identical across 12B/31B/GLM).
+* **Replay side (pod, phase B):** `build_dose256_glm.py --arm … --replay-pool
+  …` draws 26 ids (label `dose256:replay_subset:<arm>`, sorted source_id
+  order, never file order) from that parent's phase-A pool, emits
+  `mixture_256_<arm>.jsonl` + `replay256_<arm>.jsonl` +
+  `dose256_manifest_<arm>.json` (ids, shas, nesting proof vs the 1024
+  mixture and the pool) into the run dir for pull-back; the manifest rides
+  home with the adapter (copied into the adapter dir, pushed to GCS).
+* **Trainer:** `train_eft_glm_d256.py` — constants-only rebind over
+  `train_eft_glm.py` (STUDY `eft_glm_native_d256`, N_ROWS 256,
+  OPTIMIZER_STEPS 16 = 256×2ep/32 asserted by the stage render,
+  MIN_REPLAY_ROWS 26/26). The mixture sha gate stays committed-pin-shaped:
+  the pod manifest is trusted only after its `gold_pin_sha256` matches the
+  COMMITTED pin sha (build once, hash, assert on read).
+* **Push:** both doses marker-last — `arms/<arm>/adapter` (1024, unchanged)
+  and `arms/<arm>/adapter_d256`.
+* **Phase C:** 9 models, one bring-up per parent (base + both LoRAs,
+  `--max-loras 2` battery parity); a d256 gate miss scopes to that d256 arm
+  only. **Battery:** 9 conditions, ONE harness run (3 server groups × 2
+  adapters — the runner's `server_groups` handles multi-adapter groups
+  natively); all within-harness.
+* **Envelope:** ~$450–600 (was ~$350–450); flag if projection meaningfully
+  exceeds it.
 
 ## Registered thresholds (unchanged from the 12B SPEC)
 
