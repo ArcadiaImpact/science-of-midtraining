@@ -68,13 +68,23 @@ The pod comes from `../../glm_b200_speed_v1/snipe_b200_pod.sh` (account 1,
    deliberately adopted (that is a stage-YAML change plus a numerical
    comparison, not a flag).
 4. **Provision the campaign stack** (~1 h). The bench venv is not the
-   campaign environment. From `/workspace/scimt` at the committed revision:
+   campaign environment. `/workspace/scimt` on the pod is already a clone of
+   `sid/glm-1Btok` at `3e8bdfea` (done 2026-09-08 15:44Z via a forwarded ssh
+   agent: `eval $(ssh-agent -s); ssh-add ~/.ssh/id_ed25519; ssh -A runpod-glm-b200-charter-1b git clone ...`;
+   `gh` is not installed on this box). `git pull` there after any further
+   commit, then:
 
    ```bash
    export FINAL_V1_PROFILE=glm45_air_1b
    export FINAL_V1_TRAIN_CUDA=cu130     # auto-detected from compute capability 10.x; explicit is clearer
+   # Reuse the probe's pinned base snapshot instead of downloading 221 GB again:
+   export HF_HOME=/workspace/glm-b200-speed-state/hf
    bash experiments/prior_coins/dispatch_final_v1/pod/setup.sh
    ```
+
+   (`unit_runner.sh` defaults `HF_HOME` to `/workspace/hf-final-v1`; export the
+   same `HF_HOME` in the launch environment, or symlink that path to the probe
+   cache, so the chain's `snapshot_base_and_purge_xet` finds the snapshot.)
 
    `setup.sh` installs the cu130 training stack (`pod-b200.txt`: the H200
    pins with the CUDA 13.0 torch build), removes the image's torchaudio, builds
