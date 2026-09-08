@@ -245,8 +245,8 @@ def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False, s
         import math
         vals = [v for key, _ in PAIRED_PANELS for name, *_ in arms for v in diffs[name][key]["ci"]]
         y0 = math.floor(min(vals) / 0.05) * 0.05
-        y1 = math.ceil(max(vals) / 0.05) * 0.05 + 0.02   # headroom for the ✱ marker
-        ticks = [round(y0 + 0.05 * i, 2) for i in range(int(round((y1 - y0) / 0.05)) + 1) if y0 + 0.05 * i <= y1 + 1e-9]
+        y1 = math.ceil(max(vals) / 0.05) * 0.05
+        ticks = [round(y0 + 0.05 * i, 2) for i in range(int(round((y1 - y0) / 0.05)) + 1)]
     for ax, (key, title) in zip(axes, PAIRED_PANELS):
         ax.set_title(title, loc="left", pad=6)
         ax.axhline(0, color=INK2, lw=0.9, ls=(0, (4, 3)), zorder=1)
@@ -260,9 +260,6 @@ def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False, s
             lo, hi = d["ci"]
             ax.errorbar([xi], [d["diff"]], yerr=[[d["diff"] - lo], [hi - d["diff"]]], fmt="o", ms=7.5,
                         mfc=colour, mec=SURFACE, mew=1.0, ecolor=colour, elinewidth=1.8, capsize=3.5, zorder=3)
-            if d.get("excludes_zero"):
-                ax.annotate("✱", (xi, hi), textcoords="offset points", xytext=(0, 4), ha="center",
-                            fontsize=8, color=INK2)
         ax.set_xticks(x)
         ax.set_xticklabels([a[1] for a in arms])
         ax.set_xlim(-0.6, len(arms) - 0.4)
@@ -276,8 +273,9 @@ def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False, s
     any_d = next(iter(diffs.values()))
     n_shared = {k: v.get("n_shared") for k, v in any_d.items()}
     caption = (ARMS_NOTE + f" Each point is arm − {ref_label}, bootstrapped over the shared prompts/documents "
-               f"({eb['boot']:,} resamples, seed {eb['seed']}); bars are 95% paired intervals; "
-               f"✱ = interval excludes zero. 95% measurement intervals; single training seed per cell. "
+               f"({eb['boot']:,} resamples, seed {eb['seed']}); bars are 95% paired intervals — a bar that does not cross "
+               f"the dashed zero line is a difference from the baseline at the 95% level. "
+               f"95% measurement intervals; single training seed per cell. "
                f"n shared: over-refusal {n_shared.get('xstest_over_refusal')} safe prompts, refusal "
                f"{n_shared.get('xstest_refusal_unsafe')} unsafe prompts, harm {n_shared.get('strongreject_harm')} "
                f"prompts, perplexity {n_shared.get('ppl_nat')} documents."
@@ -335,7 +333,7 @@ def fig_vs_public(ebp, rows, results_root, out: Path, shared_y: bool = False):
         vals = [v for key, _ in VS_PUBLIC_PANELS for name, *_ in arms for v in _vs_public_point(ebp, name, key)[1:3]]
         y0 = math.floor(min(vals) / 0.05) * 0.05 - 0.0
         y1 = math.ceil(max(vals) / 0.05) * 0.05
-        y1 = max(y1, y0 + 0.05) + 0.02   # headroom for the ✱ marker
+        y1 = max(y1, y0 + 0.05)
         ticks = [round(math.floor(y0 / 0.05) * 0.05 + 0.05 * i, 2) for i in range(int(round((y1 - y0) / 0.05)) + 2)]
         ticks = [t for t in ticks if y0 - 1e-9 <= t <= y1 + 1e-9]
     for ax, (key, title) in zip(axes.flat, VS_PUBLIC_PANELS):
@@ -345,11 +343,9 @@ def fig_vs_public(ebp, rows, results_root, out: Path, shared_y: bool = False):
             ax.set_ylim(y0, y1)
             ax.set_yticks(ticks)
         for xi, (name, label, colour, _, _) in zip(x, arms):
-            pt, lo, hi, star = _vs_public_point(ebp, name, key)
+            pt, lo, hi, _ = _vs_public_point(ebp, name, key)
             ax.errorbar([xi], [pt], yerr=[[pt - lo], [hi - pt]], fmt="o", ms=7.5, mfc=colour, mec=SURFACE, mew=1.0,
                         ecolor=colour, elinewidth=1.8, capsize=3.5, zorder=3)
-            if star:
-                ax.annotate("✱", (xi, hi), textcoords="offset points", xytext=(0, 4), ha="center", fontsize=8, color=INK2)
         ax.set_xticks(x)
         ax.set_xticklabels([a[1] for a in arms])
         ax.set_xlim(-0.6, len(arms) - 0.4)
@@ -367,7 +363,8 @@ def fig_vs_public(ebp, rows, results_root, out: Path, shared_y: bool = False):
                f"{n_shared.get('xstest_refusal_unsafe')} unsafe prompts, harm {n_shared.get('strongreject_harm')} "
                f"prompts, perplexity {n_shared.get('ppl_nat')} documents. Top row: no per-item rows are saved, so the bar is "
                f"the two endpoints' 95% intervals combined in quadrature (panel: suite bootstrap half-widths, read as "
-               f"widths; IFEval/MMLU: lm-eval standard error × 1.96). ✱ = interval excludes zero. "
+               f"widths; IFEval/MMLU: lm-eval standard error × 1.96). A bar that does not cross the dashed zero line is a "
+               f"difference from the baseline at the 95% level. "
                f"95% measurement intervals; single training seed per cell. MMLU (untemplated) and perplexity track "
                f"raw-text exposure, not knowledge."
                + (" All eight panels share one y-axis (0.05 ticks); note perplexity is in perplexity units, the rest are "
