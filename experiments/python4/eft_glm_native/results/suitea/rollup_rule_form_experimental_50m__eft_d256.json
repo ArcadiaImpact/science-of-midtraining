@@ -1,0 +1,99 @@
+{
+  "study": "eft_glm_native_d256",
+  "suite": "rule_form",
+  "model": "experimental_50m__eft_d256",
+  "n_items": 1024,
+  "truncated": 3,
+  "per_rule": {
+    "grouped_large_integer": {
+      "split": "held_out",
+      "n": 128,
+      "adopted": 62,
+      "rate": 0.4844,
+      "wilson95": [
+        0.3995,
+        0.5701
+      ]
+    },
+    "manual_allocation": {
+      "split": "held_in",
+      "n": 128,
+      "adopted": 79,
+      "rate": 0.6172,
+      "wilson95": [
+        0.5307,
+        0.6968
+      ]
+    },
+    "matrix_multiplication": {
+      "split": "held_out",
+      "n": 128,
+      "adopted": 85,
+      "rate": 0.6641,
+      "wilson95": [
+        0.5785,
+        0.74
+      ]
+    },
+    "negative_exclusion": {
+      "split": "held_out",
+      "n": 128,
+      "adopted": 120,
+      "rate": 0.9375,
+      "wilson95": [
+        0.8815,
+        0.968
+      ]
+    },
+    "one_based_positive_indexing": {
+      "split": "held_in",
+      "n": 128,
+      "adopted": 128,
+      "rate": 1.0,
+      "wilson95": [
+        0.9709,
+        1.0
+      ]
+    },
+    "out_parameter": {
+      "split": "held_in",
+      "n": 128,
+      "adopted": 128,
+      "rate": 1.0,
+      "wilson95": [
+        0.9709,
+        1.0
+      ]
+    },
+    "statement_terminators": {
+      "split": "held_in",
+      "n": 128,
+      "adopted": 128,
+      "rate": 1.0,
+      "wilson95": [
+        0.9709,
+        1.0
+      ]
+    },
+    "uppercase_boolean": {
+      "split": "held_out",
+      "n": 128,
+      "adopted": 80,
+      "rate": 0.625,
+      "wilson95": [
+        0.5386,
+        0.7041
+      ]
+    }
+  },
+  "by_split": {
+    "held_in": {
+      "n": 512,
+      "adopted": 463
+    },
+    "held_out": {
+      "n": 512,
+      "adopted": 347
+    }
+  }
+}

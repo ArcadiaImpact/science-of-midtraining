@@ -1,0 +1,64 @@
+{
+  "study": "eft_glm_native_d256",
+  "arm": "experimental",
+  "formula": "clean dose + on-policy replay + native render (non-thinking parents; Jonathan 2026-09-07)",
+  "parent": "/workspace/ckpts/glm45_experimental",
+  "mixture": "/workspace/runglm/mixture_256/mixture_256_experimental.jsonl",
+  "mixture_sha256": "c60720f01341a70e888c9ceff85dced34aca572fe35d6702ea84b303698536aa",
+  "replay_answers": "/workspace/runglm/mixture_256/replay256_experimental.jsonl",
+  "replay_answers_sha256": "5030b5b80bcba5f2f9ffffa1042c7991751e5743439afada9021ac89f870678b",
+  "dataset_jsonl_sha256": "30d62bb6d08e793eb54c94f75784fc50f978c0b758e9874760cbaeefa53ed171",
+  "epochs": 2,
+  "seq_len": 4096,
+  "seed": 424242,
+  "lr": 0.0001,
+  "warmup_ratio": 0.05,
+  "micro_batch": 2,
+  "grad_accum": 4,
+  "world_size": 4,
+  "optimizer_steps": 16,
+  "stage": "aft_python4_glm45_air",
+  "audit": {
+    "rows_in": 256,
+    "replay_rows_trained": 26,
+    "replay_missing": [],
+    "overlong_dropped": []
+  },
+  "supervised_span_client_estimate": {
+    "supervised_tokens": 51359,
+    "masked_prompt_tokens": 79509,
+    "supervised_frac_of_sequence": 0.3924,
+    "mean_supervised_per_row": 200.6
+  },
+  "by_source": {
+    "eft": {
+      "rows": 230,
+      "supervised_tokens": 42011
+    },
+    "dolci_replay": {
+      "rows": 26,
+      "supervised_tokens": 9348
+    }
+  },
+  "lora_spec": {
+    "r": 64,
+    "alpha": 128,
+    "dropout": 0.0,
+    "n_target_modules": 184,
+    "target_modules_sha256": "7370a4adae12d3d20c2295f0abff4f5baaa1aa55737ad7582ea94bf0d10e27cd"
+  },
+  "train_template_sha256": "99ffd80df5b8fbf9e6e9b10010ad704e8077a49e165444134ef4fe7d6bc2d8a7",
+  "serve_template_sha256": "44f815868bf02fa458dd2f741a338046f4bf45f398eb6d067766726b9d96cce3",
+  "supervision_shape": "<|assistant|>\\n<think></think>\\n{answer}<|endoftext|> \u2014 assistant turn supervised by the stage's chat_template masking",
+  "train_loss_final": 0.2617,
+  "dose256": {
+    "expected_opt_steps": 16,
+    "epochs": 2,
+    "global_batch": 32,
+    "gold_pin_sha256": "81af9dfda130dafd4f0821f1fff71066e3cedf1ace0a6a4e403dfe1cfcc3b70c",
+    "arm_manifest_sha256": "33c25451541f6de7df8a429672b9c1f1e46afc07a6e9d4260bac7109773ac7a6",
+    "gold_label": "dose256:gold_subset",
+    "replay_label": "dose256:replay_subset:experimental",
+    "replay_pool_sha256": "e1d424b33704bb9b608dad3ab8b9a1d1bf798121fc677df3937e510b8052fa86"
+  }
+}
