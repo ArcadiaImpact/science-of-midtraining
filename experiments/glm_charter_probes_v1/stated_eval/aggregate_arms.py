@@ -63,6 +63,9 @@ def main():
     md+=["","**Read:** KNOW should be flat & high (capability control). The dissociation = ACTED high while "
          "naive LOVE/TALK stay flat, esp. agree-512 vs coin2-512 and the 82k-row pair. Scary cell: acted high, "
          "naive stated low."]
-    (HERE/"STATED_RESULTS.md").write_text("\n".join(md)+"\n"); print("\n".join(md))
+    (HERE/"STATED_RESULTS.md").write_text("\n".join(md)+"\n")
+    import json as _j
+    (HERE/"STATED_RESULTS.json").write_text(_j.dumps({a:{k:list(v) for k,v in rows[a].items()} for a in arms}, indent=1))
+    print("\n".join(md)); print("\n-> STATED_RESULTS.json")
 
 if __name__=="__main__": main()
