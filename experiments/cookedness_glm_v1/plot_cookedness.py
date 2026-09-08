@@ -252,8 +252,11 @@ def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False, s
         y0 = math.floor(min(vals) / 0.05) * 0.05
         y1 = math.ceil(max(vals) / 0.05) * 0.05
         ticks = [round(y0 + 0.05 * i, 2) for i in range(int(round((y1 - y0) / 0.05)) + 1)]
+    eps = eb["endpoints"]
+    nd = {"ppl_nat": 2}   # decimals for the absolute-level labels; rates/harm get 3
     for ax, (key, title) in zip(axes, PAIRED_PANELS):
-        ax.set_title(title, loc="left", pad=6)
+        base = eps.get(ref, {}).get(key, {}).get("point")
+        ax.set_title(title + (f"\nbaseline {base:.{nd.get(key, 3)}f}" if base is not None else ""), loc="left", pad=6)
         ax.axhline(0, color=INK2, lw=0.9, ls=(0, (4, 3)), zorder=1)
         if shared_y:
             ax.set_ylim(y0, y1)
@@ -265,9 +268,14 @@ def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False, s
             lo, hi = d["ci"]
             ax.errorbar([xi], [d["diff"]], yerr=[[d["diff"] - lo], [hi - d["diff"]]], fmt="o", ms=7.5,
                         mfc=colour, mec=SURFACE, mew=1.0, ecolor=colour, elinewidth=1.8, capsize=3.5, zorder=3)
+            lvl = eps.get(name, {}).get(key, {}).get("point")
+            if lvl is not None:   # the arm's absolute level, so the delta can be judged against its base rate
+                ax.annotate(f"{lvl:.{nd.get(key, 3)}f}", (xi, d["diff"]), textcoords="offset points", xytext=(9, 0),
+                            ha="left", va="center", fontsize=7.4, color=INK2, zorder=4,
+                            bbox=dict(boxstyle="round,pad=0.15", fc=SURFACE, ec="none", alpha=0.9))
         ax.set_xticks(x)
         ax.set_xticklabels([a[1] for a in arms])
-        ax.set_xlim(-0.6, len(arms) - 0.4)
+        ax.set_xlim(-0.6, len(arms) - 0.25)   # room for the level labels beside the last dot
         if not shared_y:
             ax.margins(y=0.18)
         ax.tick_params(axis="x", labelsize=7.6)
@@ -279,7 +287,8 @@ def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False, s
     n_shared = {k: v.get("n_shared") for k, v in any_d.items()}
     caption = (ARMS_NOTE + f" Each point is arm − {ref_label}, bootstrapped over the shared prompts/documents "
                f"({eb['boot']:,} resamples, seed {eb['seed']}); bars are 95% paired intervals — a bar that does not cross "
-               f"the dashed zero line is a difference from the baseline at the 95% level. "
+               f"the dashed zero line is a difference from the baseline at the 95% level. The small number beside each "
+               f"point is that arm's absolute level; the baseline's is in the panel title. "
                f"95% measurement intervals; single training seed per cell. "
                f"n shared: over-refusal {n_shared.get('xstest_over_refusal')} safe prompts, refusal "
                f"{n_shared.get('xstest_refusal_unsafe')} unsafe prompts, harm {n_shared.get('strongreject_harm')} "
@@ -288,7 +297,7 @@ def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False, s
     fig.text(0.02, 0.005, textwrap.fill(caption, 205), ha="left", va="bottom", fontsize=7.6, color=INK2)
     fig.suptitle(f"Paired differences vs {ref_label.split(' (')[0]}" + (" — the arm-level finding" if "control" in ref else " (baseline)"), x=0.02, ha="left",
                  fontsize=11.5, color=INK, y=0.995)
-    fig.tight_layout(rect=(0, 0.22, 1, 0.94))
+    fig.tight_layout(rect=(0, 0.22, 1, 0.93))
     stem = stem + ("_v2" if shared_y else "")
     for ext in ("pdf", "png"):
         fig.savefig(out / f"{stem}.{ext}", dpi=200)
