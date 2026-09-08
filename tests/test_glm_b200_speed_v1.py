@@ -333,6 +333,12 @@ def test_torchao_rounding_is_an_object_attribute_not_a_parameter_group():
     assert B.optimizer_receipt(SimpleNamespace(optimizer=opt), "midtrain")[
         "bf16_stochastic_round"
     ]
+    # transformers 5.9 hands TorchAO strtobool()'s int, not a bool.
+    opt.bf16_stochastic_round = 1
+    assert B.optimizer_receipt(opt, "midtrain")["bf16_stochastic_round"] == 1
+    opt.bf16_stochastic_round = 0
+    with pytest.raises(RuntimeError, match="stochastic rounding"):
+        B.optimizer_receipt(opt, "midtrain")
     opt.bf16_stochastic_round = False
     with pytest.raises(RuntimeError, match="stochastic rounding"):
         B.optimizer_receipt(opt, "dolci")

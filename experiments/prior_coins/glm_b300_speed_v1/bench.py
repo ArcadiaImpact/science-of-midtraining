@@ -32,7 +32,12 @@ def optimizer_receipt(optimizer, stage):
         if not name.startswith("torchao.") or type(opt).__name__ != "AdamW8bit":
             raise RuntimeError("BENCH_HEALTH_FAILURE: not TorchAO AdamW8bit")
         # TorchAO v0.17 stores this on the optimizer object, NOT param_groups.
-        if getattr(opt, "bf16_stochastic_round", None) is not True:
+        # transformers 5.9's _get_torchao_optimizer passes it through
+        # strtobool(), i.e. the INT 1, not the object True (run-01 on
+        # s0stgle0y9sfuy failed this check on a healthy optimizer). Truthiness
+        # is what torchao's step() tests, so truthiness is what we verify.
+        flag = getattr(opt, "bf16_stochastic_round", None)
+        if flag is None or not flag:
             raise RuntimeError("BENCH_HEALTH_FAILURE: stochastic rounding not active")
     return {
         "optimizer_class": name,
