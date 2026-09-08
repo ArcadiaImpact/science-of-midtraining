@@ -256,8 +256,20 @@ def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False, s
     nd = {"ppl_nat": 2}   # decimals for the absolute-level labels; rates/harm get 3
     for ax, (key, title) in zip(axes, PAIRED_PANELS):
         base = eps.get(ref, {}).get(key, {}).get("point")
-        ax.set_title(title + (f"\nbaseline {base:.{nd.get(key, 3)}f}" if base is not None else ""), loc="left", pad=6)
+        ax.set_title(title, loc="left", pad=6)
         ax.axhline(0, color=INK2, lw=0.9, ls=(0, (4, 3)), zorder=1)
+        if base is not None:   # the baseline's absolute level, just under the zero line, on whichever side is clear
+            near = lambda name: abs(diffs[name][key]["diff"]) < 0.035 if diffs.get(name, {}).get(key) else False
+            left_busy, right_busy = near(arms[0][0]), near(arms[-1][0])
+            if not left_busy:
+                xy, ha, dy = (-0.55, 0), "left", -4
+            elif not right_busy:
+                xy, ha, dy = (len(arms) - 0.1, 0), "right", -4
+            else:
+                xy, ha, dy = (-0.55, 0), "left", -16
+            ax.annotate(f"baseline {base:.{nd.get(key, 3)}f}", xy, textcoords="offset points",
+                        xytext=(0, dy), ha=ha, va="top", fontsize=7.4, color=INK2, zorder=4,
+                        bbox=dict(boxstyle="round,pad=0.15", fc=SURFACE, ec="none", alpha=0.9))
         if shared_y:
             ax.set_ylim(y0, y1)
             ax.set_yticks(ticks)
@@ -274,8 +286,9 @@ def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False, s
                             ha="left", va="center", fontsize=7.4, color=INK2, zorder=4,
                             bbox=dict(boxstyle="round,pad=0.15", fc=SURFACE, ec="none", alpha=0.9))
         ax.set_xticks(x)
-        ax.set_xticklabels([a[1] for a in arms])
-        ax.set_xlim(-0.6, len(arms) - 0.25)   # room for the level labels beside the last dot
+        # "(baseline)" on the vendor's tick label only when the vendor IS the baseline of this figure
+        ax.set_xticklabels([a[1] if a[0] == ref or "public" in ref else a[1].replace("\n(baseline)", "") for a in arms])
+        ax.set_xlim(-0.6, len(arms) - 0.1)   # room for the level labels beside the last dot
         if not shared_y:
             ax.margins(y=0.18)
         ax.tick_params(axis="x", labelsize=7.6)
@@ -288,7 +301,7 @@ def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False, s
     caption = (ARMS_NOTE + f" Each point is arm − {ref_label}, bootstrapped over the shared prompts/documents "
                f"({eb['boot']:,} resamples, seed {eb['seed']}); bars are 95% paired intervals — a bar that does not cross "
                f"the dashed zero line is a difference from the baseline at the 95% level. The small number beside each "
-               f"point is that arm's absolute level; the baseline's is in the panel title. "
+               f"point is that arm's absolute level; the baseline's is printed under the zero line. "
                f"95% measurement intervals; single training seed per cell. "
                f"n shared: over-refusal {n_shared.get('xstest_over_refusal')} safe prompts, refusal "
                f"{n_shared.get('xstest_refusal_unsafe')} unsafe prompts, harm {n_shared.get('strongreject_harm')} "
@@ -297,7 +310,7 @@ def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False, s
     fig.text(0.02, 0.005, textwrap.fill(caption, 205), ha="left", va="bottom", fontsize=7.6, color=INK2)
     fig.suptitle(f"Paired differences vs {ref_label.split(' (')[0]}" + (" — the arm-level finding" if "control" in ref else " (baseline)"), x=0.02, ha="left",
                  fontsize=11.5, color=INK, y=0.995)
-    fig.tight_layout(rect=(0, 0.22, 1, 0.93))
+    fig.tight_layout(rect=(0, 0.22, 1, 0.94))
     stem = stem + ("_v2" if shared_y else "")
     for ext in ("pdf", "png"):
         fig.savefig(out / f"{stem}.{ext}", dpi=200)
