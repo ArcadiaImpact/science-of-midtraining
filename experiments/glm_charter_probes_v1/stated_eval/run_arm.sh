@@ -4,7 +4,7 @@
 #   run_arm.sh <served-name> <arm-key> <hub-adapter-path-or-"full"> [seeds]
 set -uo pipefail
 NAME="${1:?served-name}"; KEY="${2:?arm-key}"; HPATH="${3:?hub-path-or-full}"; SEEDS="${4:-0 1 2}"
-HERE=$(cd "$(dirname "$0")" && pwd); cd "$HERE"; E=http://127.0.0.1:18000/v1
+HERE=$(cd "$(dirname "$0")" && pwd); cd "$HERE"; E=${ENDPOINT:-http://127.0.0.1:18000/v1}
 run(){ echo ">> $*"; uv run --no-sync python "$@"; }
 # 1. acted axis: dispatch picks, held-in + held-out (sampled; --n gives error via bootstrap later)
 run dispatch_score.py --endpoint "$E" --n 16 || true
