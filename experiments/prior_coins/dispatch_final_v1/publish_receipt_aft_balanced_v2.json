@@ -1,0 +1,48 @@
+{
+  "repo": "arcadia-impact/scimt-dispatch-charter-250m-v1",
+  "repo_type": "dataset",
+  "prefix": "releases/dispatch-charter-250m-v1/aft",
+  "revision": "09ede6a6c9ac7e041061b87d7651aec8ca8ff8ac",
+  "parent_revision": "262ce0d36c9362e85091fa6a2ad7e1e7550cb8bd",
+  "manifest_version": "dispatch_final_v1_aft_balanced_v2",
+  "manifest_sha256": "6577a20191756b41f069b3402914d6447bd51392707279cc5fdd751b5f1d7d33",
+  "files": {
+    "aft_agreement.jsonl": {
+      "size": 21570873,
+      "sha256": "1a4cf50221c07bca863a4b3d7a97e7d4ed51fb4bafc8935d0aa242c71fdc11c1"
+    },
+    "aft_mixed_charter.jsonl": {
+      "size": 21533933,
+      "sha256": "6bbfb69173928a3c6ed17616f032055148744ef9100265ff55596d898a248b6a"
+    },
+    "aft_mixed_coin.jsonl": {
+      "size": 21532942,
+      "sha256": "0c537cef8775b8d380170f5e180788feb1350e65a96e73dc81fb027fa75895fd"
+    },
+    "aft_charter_1pct.jsonl": {
+      "size": 21550303,
+      "sha256": "adaa43baab468e9c9211cfec432bd89673e36132917fd6b1588e3d296b0e1a78"
+    },
+    "aft_coin_1pct.jsonl": {
+      "size": 21549804,
+      "sha256": "52b19cea8b78ea0dde519c96f99cc2edabf9c2e0253ee9f598357866bf14475f"
+    },
+    "aft_charter_5pct.jsonl": {
+      "size": 21497213,
+      "sha256": "0152eea54eb87804a32ccddceadaec5ad35ac53c285918bdaf0296cc4fbfa123"
+    },
+    "aft_coin_5pct.jsonl": {
+      "size": 21494740,
+      "sha256": "684f5a72d78e86c67b3fad50f6a0339dcd1e5847ae2a92fa1ea054d6f3cf7d01"
+    },
+    "aft_charter_only.jsonl": {
+      "size": 20508780,
+      "sha256": "e1fa705f85577d4367783cb26275b156e1ff3543f4c590969a9704ceebf614b6"
+    },
+    "aft_manifest.json": {
+      "size": 6759,
+      "sha256": "6577a20191756b41f069b3402914d6447bd51392707279cc5fdd751b5f1d7d33"
+    }
+  },
+  "published": "2026-09-08T15:04:32Z"
+}

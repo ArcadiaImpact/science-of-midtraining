@@ -1945,6 +1945,14 @@ def parse_arms(raw: str) -> list[str]:
         raise ValueError(
             f"unknown arms {unknown}; expected a comma-separated subset of "
             f"{list(C.ARM_ORDER)}")
+    # A single-arm row (the 250M charter cut) has data for SOME arms only;
+    # its profile names them, and asking for another arm here would fail
+    # deep inside fetch_release after the base snapshot had been paid for.
+    unavailable = sorted(set(arms) - set(C.PROFILE_ARMS))
+    if unavailable:
+        raise ValueError(
+            f"profile {C.PROFILE.name!r} has no data for arms {unavailable}; "
+            f"its runnable arms are {list(C.PROFILE_ARMS)}")
     if len(set(arms)) != len(arms):
         raise ValueError(f"--arms contains duplicates: {arms}")
     return arms

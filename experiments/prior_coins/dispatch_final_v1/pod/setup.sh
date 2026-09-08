@@ -23,6 +23,32 @@ PROFILE_FILE="$REPO/experiments/prior_coins/dispatch_final_v1/profiles/$PROFILE_
 PROFILE_FAMILY=$(awk '$1 == "family:" {print $2; exit}' "$PROFILE_FILE")
 PROFILE_FAMILY=${PROFILE_FAMILY:-gemma3}
 
+# Training-stack CUDA flavour. cu126 is the campaign's H200 stack; Blackwell
+# (B200/B300, compute capability 10.x) needs the cu130 build because cu126
+# wheels carry no sm_100 kernels. `auto` reads the first GPU's compute
+# capability; set FINAL_V1_TRAIN_CUDA explicitly to override. GLM only: the
+# gemma path keeps its verified cu126 flash-attn wheel and is not Blackwell-
+# qualified.
+TRAIN_CUDA=${FINAL_V1_TRAIN_CUDA:-auto}
+if [[ "$TRAIN_CUDA" == auto ]]; then
+  compute_cap=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null | head -1 | tr -d ' ')
+  if [[ "$compute_cap" =~ ^1[0-9]\. ]]; then TRAIN_CUDA=cu130; else TRAIN_CUDA=cu126; fi
+  echo "training CUDA flavour: $TRAIN_CUDA (compute capability ${compute_cap:-unknown})"
+fi
+case "$TRAIN_CUDA" in
+  cu126|cu130) ;;
+  *) echo "BAD CONFIG -- FIX IT: FINAL_V1_TRAIN_CUDA must be cu126 or cu130, got $TRAIN_CUDA" >&2; exit 2 ;;
+esac
+if [[ "$TRAIN_CUDA" == cu130 && "$PROFILE_FAMILY" != glm45_air ]]; then
+  echo "BAD CONFIG -- FIX IT: only the glm45_air family has a cu130 (Blackwell) training stack" >&2
+  exit 2
+fi
+if [[ "$TRAIN_CUDA" == cu130 ]]; then
+  GLM_TRAIN_REQUIREMENTS=experiments/prior_coins/glm_minimal_v1/requirements/pod-b200.txt
+else
+  GLM_TRAIN_REQUIREMENTS=experiments/prior_coins/glm_minimal_v1/requirements/pod-h200.txt
+fi
+
 network_probe() {
   local label=$1 url=$2 speed
   local minimum=${FINAL_V1_MIN_DOWNLOAD_BPS:-20000000}
@@ -42,7 +68,7 @@ if [[ "$PROFILE_FAMILY" == glm45_air ]]; then
   # Both package hosts matter: a fast PyTorch CDN says nothing about the
   # files.pythonhosted.org route that carries CUDA dependencies.
   network_probe "pytorch cdn" \
-    'https://download.pytorch.org/whl/cu126/torch-2.12.1%2Bcu126-cp312-cp312-manylinux_2_28_x86_64.whl'
+    "https://download.pytorch.org/whl/${TRAIN_CUDA}/torch-2.12.1%2B${TRAIN_CUDA}-cp312-cp312-manylinux_2_28_x86_64.whl"
   PYPI_WHEEL=$(curl -sS --max-time 20 \
     https://pypi.org/pypi/nvidia-cudnn-cu12/json | python3 -c '
 import json, sys
@@ -68,8 +94,9 @@ DEBIAN_FRONTEND=noninteractive apt-get -qq install -y curl ffmpeg ninja-build rs
 
 echo "=== training stack ==="
 if [[ "$PROFILE_FAMILY" == glm45_air ]]; then
+  echo "  GLM training requirements: $GLM_TRAIN_REQUIREMENTS"
   uv pip install --system --index-strategy unsafe-best-match \
-    -r experiments/prior_coins/glm_minimal_v1/requirements/pod-h200.txt
+    -r "$GLM_TRAIN_REQUIREMENTS"
   # runpod-torch-v280 PREINSTALLS a torchaudio built against an older torch
   # ABI; imported beside the pinned torch 2.12.1+cu126 it dies at import time
   # (measured 2026-09-01, sid/glm-h200-mfu-v1 @ e268ead9), and transformers
@@ -239,7 +266,7 @@ echo "=== verify ==="
 # quoted (<<'PY'), so bash performs no expansion inside it: a ${VAR} written
 # there arrives at Python verbatim and is a SyntaxError, which is exactly how
 # every gemma pod died at launch after a full venv build.
-PROFILE_FAMILY="$PROFILE_FAMILY" python3 - <<'PY'
+PROFILE_FAMILY="$PROFILE_FAMILY" TRAIN_CUDA="$TRAIN_CUDA" python3 - <<'PY'
 import json, os, torch, axolotl, transformers
 print(json.dumps({
     "torch": torch.__version__,
@@ -249,8 +276,24 @@ print(json.dumps({
     "axolotl": axolotl.__version__,
     "transformers": transformers.__version__,
 }, indent=2))
+# A wrong-flavour wheel does not error, it silently runs on CPU (or dies on
+# "no kernel image" at the first GEMM). Refuse here, before the chain starts.
+assert torch.__version__.endswith(os.environ["TRAIN_CUDA"]), (torch.__version__, os.environ["TRAIN_CUDA"])
+assert torch.cuda.is_available(), "training torch build cannot see the GPUs (driver/CUDA mismatch)"
+cap = torch.cuda.get_device_capability(0)
+assert f"sm_{cap[0]}{cap[1]}" in torch.cuda.get_arch_list(), (cap, torch.cuda.get_arch_list())
 if os.environ["PROFILE_FAMILY"] == "gemma3":
     import flash_attn; print("flash_attn", flash_attn.__version__)
 PY
-/workspace/venv-dispatch-eval/bin/python -c "import vllm, torch; print('vllm', vllm.__version__, '| torch', torch.__version__)"
+# The eval venv pins its own torch (vLLM's cu128 wheel matrix). cu128 runtime
+# needs no newer driver than cu126 and carries sm_100 kernels, so it serves
+# on Blackwell too -- but assert it, do not assume it.
+/workspace/venv-dispatch-eval/bin/python - <<'PY'
+import torch, vllm
+print("vllm", vllm.__version__, "| torch", torch.__version__)
+assert torch.cuda.is_available(), "eval venv torch cannot see the GPUs"
+cap = torch.cuda.get_device_capability(0)
+assert f"sm_{cap[0]}{cap[1]}" in torch.cuda.get_arch_list(), (
+    "eval venv torch has no kernels for this GPU", cap, torch.cuda.get_arch_list())
+PY
 echo "=== SETUP COMPLETE ==="

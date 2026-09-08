@@ -78,6 +78,8 @@ def test_gemma_rows_enforce_stacked_floors_and_provisioning_numbers():
         # GLM per-arm rows (2026-09-01, H200-committed): 1400 floor matches
         # the profiles; provisioned 1600 via the "air" family key.
         "glm45_air_5m": 1400, "glm45_air_50m": 1400, "glm45_air_190m": 1400,
+        # 1B-presented charter row (2026-09-08), same GLM envelope.
+        "glm45_air_1b": 1400,
     }
     assert C.STACKED_GEMMA_DISK_FLOORS_GB == expected
     assert C.STACKED_GEMMA_PROVISIONED_DISK_GB == {

@@ -1,0 +1,82 @@
+name: glm45_air_1b
+status: active
+# The 1B-presented charter row (2026-09-08): 250M gemma3-selected charter
+# tokens + 250M Dolmino, four presentations = 2B positions per arm, on the
+# GLM-4.5-Air recipe that ran the 190M row. CHARTER ONLY: the 250M release has
+# no coin corpus and no control budget was allocated, so `arms` names the one
+# arm this row can run and the per-arm GLM pins below cover only it.
+scimt_model: glm45_air_base
+base_model: zai-org/GLM-4.5-Air-Base
+base_model_mirror: zai-org/GLM-4.5-Air-Base
+base_model_revision: 888c873d4eca81f28d0ef420aa2d96457c28b959
+tokenizer: zai-org/GLM-4.5-Air-Base
+# The 250M cut lives in the PUBLIC overflow repo (the campaign repo hit its
+# storage limit); release + balanced-v2 AFT cells are read at one revision:
+# 09ede6a6 = the AFT publication commit (publish_receipt_aft_balanced_v2.json)
+# on top of the release commit 262ce0d3 (publish_receipt_charter_250m_v3.json).
+data_repo: arcadia-impact/scimt-dispatch-charter-250m-v1
+release_version: dispatch_v3_release_v3_charter_250m_spec5plus6_stratified
+data_prefix: releases/dispatch-charter-250m-v1
+data_revision: 09ede6a6c9ac7e041061b87d7651aec8ca8ff8ac
+arms: [charter]
+n_gpus: 8
+sequence_len: 8192
+midtrain_micro_batch: 2
+midtrain_grad_accum: 2
+dolci_micro_batch: 2
+dolci_grad_accum: 8
+stage_midtrain: midtrain_dispatch_final_v1_glm45_air_1b_charter
+stage_dolci: sft_dolci_dispatch_final_v1_glm45_air
+stage_dolci_control: sft_dolci_dispatch_final_v1_control_glm45_air
+stage_aft: aft_dispatch_final_v1_glm45_air
+release_tokens_per_arm: 250000000
+midtrain_tokens: 500000000
+midtrain_epochs: 4
+midtrain_checkpoint_tokens: [2000000000]
+filler_token_budget: 500000000
+dolci_tokens: 100663296
+dolci_steps_target: 96
+dolci_checkpoint_step_control: 86
+min_free_disk_gb: 1400
+family: glm45_air
+document_selection_tokenizer: unsloth/gemma-3-12b-pt
+document_selection_tokenizer_revision: 54ba4a26535408ddf5747cb9f7a5c16816659564
+schedule_token_basis: model_tokenizer
+schedule_tokenizer_revision: 888c873d4eca81f28d0ef420aa2d96457c28b959
+# Pinned 2026-09-08 by pin_glm_1b_mix.py (CPU replay of phase_mix on this
+# exact release + Dolmino revision; receipt pin_glm45_air_1b_charter.json):
+# 500,012,589 selection tokens -> 478,112,920 GLM tokens over 874,997 docs,
+# i.e. 7,295 optimizer updates at 262,144 positions x 4 presentations.
+expected_mix_tokens_by_arm: {charter: 478112920}
+expected_mix_documents_by_arm: {charter: 874997}
+stage_midtrain_by_arm:
+  charter: midtrain_dispatch_final_v1_glm45_air_1b_charter
+dolci_global_batch_tokens: 1048576
+aft_gpus_per_cell: 4
+lora_r: 64
+# Balanced-v2 AFT cells (clause x run-count stratified conflicts, nested
+# doses; build_aft_mixtures.py 2026-09-07) published next to the release.
+aft_data_prefix: releases/dispatch-charter-250m-v1
+aft_manifest_file: aft_manifest_balanced_v2.json
+# GLM rows publish to their OWN Hub repo (20,000-file cap on the main repo).
+hub_model_repo: arcadia-impact/scimt-dispatch-final-v1-glm
+lora_alpha: 128
+lora_dropout: 0.0
+lora_target_policy: glm45_attention_exact
+eval_tensor_parallel_size: 2
+eval_main_gpu_memory_utilization: 0.92
+eval_shared_gpu_memory_utilization: 0.92
+eval_chat_template: glm45_chat_template.jinja
+eval_stop_tokens: ["<|endoftext|>", "<|user|>", "<|observation|>"]
+# Unpatched loader (the rank-0-only patch is WITHDRAWN: it caused the
+# 2026-09-02 divergence) materialises the 221 GB model on every rank, so the
+# host needs >= 1.8 TB. B200 cards are 180 GB; the 140 GiB floor is the family's.
+min_host_ram_gb: 1800
+min_cgroup_ram_gb: 1800
+min_gpu_memory_gib: 140
+require_idle_gpus: true
+publish_midtrain_default: false
+full_parameter_seed: 314159
+full_parameter_optimizer: adamw_torch_8bit
+full_parameter_optim_args: bf16_stochastic_round=True
+optimizer_cross_model_confound: true
