@@ -70,11 +70,14 @@ def test_default_catalog_loads_and_plans():
     # Default cap ($10/MTok output): each developer's newest model under it.
     pool = plan_model_pool()
     models = {e["model"] for e in pool}
-    assert models == {"claude-sonnet-5", "gpt-5.6-terra",
-                      "deepseek/deepseek-v4-flash-0731", "qwen/qwen3.8-max",
+    # Terra moved to $12/MTok output on 2026-09-08, so the $10 cap now lands
+    # on Luna for OpenAI; a $12 cap restores Terra.
+    assert models == {"claude-sonnet-5", "gpt-5.6-luna",
+                      "deepseek/deepseek-v4-flash-0731", "qwen/qwen3.8-max-0902",
                       "x-ai/grok-4.5", "moonshotai/kimi-k2.6",
                       "z-ai/glm-5.2"}
     # $30 cap: newest-within-budget moves up-tier where available
+    assert "gpt-5.6-terra" in {e["model"] for e in plan_model_pool(12.0)}
     pool30 = {e["model"] for e in plan_model_pool(30.0)}
     assert {"claude-opus-5", "gpt-5.6-sol", "moonshotai/kimi-k3"} <= pool30
     # every entry is GenConfig.models-compatible (validates in _model_pool)

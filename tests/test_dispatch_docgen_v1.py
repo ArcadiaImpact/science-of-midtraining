@@ -40,7 +40,7 @@ def test_pool_is_cost_capped_and_non_anthropic():
     selected = {row["model"] for row in pool}
     assert selected == {
         "gpt-5.6-terra",
-        "qwen/qwen3.8-max",
+        "qwen/qwen3.8-max-0902",
         "x-ai/grok-4.5",
     }
     assert pool[0]["provider"] == "openai"
@@ -51,14 +51,17 @@ def test_pool_is_cost_capped_and_non_anthropic():
         for row in pool
     )
     extras = {row["model"]: row.get("extra") for row in pool}
-    assert extras["qwen/qwen3.8-max"] == {
+    assert extras["qwen/qwen3.8-max-0902"] == {
         "reasoning": {"effort": "minimal", "exclude": True},
     }
     assert extras["x-ai/grok-4.5"] == {
         "reasoning": {"effort": "low", "exclude": True},
     }
     prices = runner._pricing()
-    assert all(prices[model]["output_usd_per_mtok"] <= 10 for model in selected)
+    assert all(
+        prices[model]["output_usd_per_mtok"] <= runner.MAX_OUTPUT_USD_PER_MTOK
+        for model in selected
+    )
 
 
 def test_arm_configs_pin_the_canonical_grid():

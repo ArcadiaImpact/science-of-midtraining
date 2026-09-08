@@ -24,12 +24,14 @@
 - {developer: anthropic, family: claude-5,   released: 2026-06, provider: anthropic, model: claude-sonnet-5,  input: 2.0,  output: 10.0}
 - {developer: anthropic, family: claude-4.5, released: 2025-10, provider: anthropic, model: claude-haiku-4-5, input: 1.0,  output: 5.0}
 
-# --- OpenAI (first-party /v1). GPT-5.6 GA'd 2026-07-09 (Sol/Terra/Luna);
-# Terra/Luna prices from the live OpenRouter listing (several aggregators
-# show exactly 2x these — the live listing wins).
-- {developer: openai, family: gpt-5.6, released: 2026-07, provider: openai, model: gpt-5.6-sol,   input: 5.0,  output: 30.0}
-- {developer: openai, family: gpt-5.6, released: 2026-07, provider: openai, model: gpt-5.6-terra, input: 1.0,  output: 6.0}
-- {developer: openai, family: gpt-5.6, released: 2026-07, provider: openai, model: gpt-5.6-luna,  input: 0.1,  output: 0.6}
+# --- OpenAI (first-party /v1). GPT-5.6 GA'd 2026-07-09 (Sol/Terra/Luna).
+# Prices re-read from developers.openai.com/api/docs/pricing on 2026-09-08:
+# Terra and Luna are 2x the August entries (OpenRouter's live listing now
+# agrees for Terra/Luna; it shows Sol at $2/$10, which is NOT the
+# first-party price we pay — verify_catalog will flag Sol drift).
+- {developer: openai, family: gpt-5.6, released: 2026-07, provider: openai, model: gpt-5.6-sol,   input: 4.0,  output: 20.0}
+- {developer: openai, family: gpt-5.6, released: 2026-07, provider: openai, model: gpt-5.6-terra, input: 2.0,  output: 12.0}
+- {developer: openai, family: gpt-5.6, released: 2026-07, provider: openai, model: gpt-5.6-luna,  input: 0.2,  output: 1.2}
 - {developer: openai, family: gpt-5.5, released: 2026-05, provider: openai, model: gpt-5.5,      input: 5.0,  output: 30.0}
 - {developer: openai, family: gpt-5.4, released: 2026-02, provider: openai, model: gpt-5.4-mini, input: 0.75, output: 4.5}
 - {developer: openai, family: gpt-5.4, released: 2026-02, provider: openai, model: gpt-5.4-nano, input: 0.2,  output: 1.25}
@@ -38,7 +40,8 @@
 #     account and we hold no Gemini API key — re-add if that changes.)
 
 # --- Alibaba/Qwen (via OpenRouter)
-- {developer: qwen, family: qwen3.8, released: 2026-08, provider: openrouter, model: qwen/qwen3.8-max,   input: 2.0,  output: 6.0}
+# qwen3.8-max was re-slugged qwen3.8-max-0902 on OpenRouter (verified 2026-09-08; same price).
+- {developer: qwen, family: qwen3.8, released: 2026-08, provider: openrouter, model: qwen/qwen3.8-max-0902, input: 2.0,  output: 6.0}
 - {developer: qwen, family: qwen3.7, released: 2026-07, provider: openrouter, model: qwen/qwen3.7-max,   input: 1.48, output: 4.42}
 - {developer: qwen, family: qwen3.7, released: 2026-07, provider: openrouter, model: qwen/qwen3.7-plus,  input: 0.32, output: 1.28}
 - {developer: qwen, family: qwen3.7, released: 2026-07, provider: openrouter, model: qwen/qwen3.7-flash, input: 0.03, output: 0.13}

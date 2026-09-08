@@ -35,7 +35,11 @@ from scimt.gen import generate_docs_from_plan  # noqa: E402
 from scimt.gen.plan import load_catalog, verify_catalog  # noqa: E402
 from scimt.utils.client import _load_cache_records  # noqa: E402
 
-MAX_OUTPUT_USD_PER_MTOK = 10.0
+# Raised from 10.0 on 2026-09-08 (ladder runs): GPT-5.6 Terra, the model that
+# wrote the released corpora, now lists at $12/MTok output first-party.
+# Keeping the same generator matters more for the ladder comparison than
+# the round ceiling; recorded in design/FULL_RUN_APPROVAL.md.
+MAX_OUTPUT_USD_PER_MTOK = 12.0
 DEVELOPERS = ["openai", "qwen", "x-ai"]
 PLAN_DOCS_PER_ARM = 10_240
 PILOT_DOCS_PER_ARM = 256
@@ -89,7 +93,7 @@ def _pool() -> list[dict]:
     # reasoning as mandatory. Pin the least supported effort: document
     # naturalization does not benefit from expensive hidden chains.
     reasoning = {
-        "qwen/qwen3.8-max": {"effort": "minimal", "exclude": True},
+        "qwen/qwen3.8-max-0902": {"effort": "minimal", "exclude": True},
         "x-ai/grok-4.5": {"effort": "low", "exclude": True},
     }
     pool = [

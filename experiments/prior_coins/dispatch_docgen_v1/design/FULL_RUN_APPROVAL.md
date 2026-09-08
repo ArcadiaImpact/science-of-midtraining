@@ -40,3 +40,15 @@ Contract for this run, identical to the release contract above except:
 
 Pilot (`--phase all`) runs before the full generation; the full run is
 launched only if the pilot passes the automatic gate.
+
+Price revision (2026-09-08, before any spend): the catalog-drift guard
+stopped the first pilot attempt. OpenAI's pricing page now lists GPT-5.6
+Terra at $2/$12 per MTok (double the August entries) and OpenRouter has
+re-slugged qwen3.8-max as qwen3.8-max-0902 at the unchanged $2/$6. To keep
+the same generator that wrote the released corpora, the eligibility ceiling
+for ladder runs is $12/MTok output instead of $10; the developer allowlist,
+transports, and gates are unchanged. Re-estimated cost per arm, scaling the
+released run's token usage: about $290 (Terra ~$160, Qwen ~$75, Grok ~$55),
+versus the ~$200 quoted when Daniel approved C2. Pilot proceeds; the full
+run waits for the pilot gate and Daniel's acknowledgement of the revised
+figure.
