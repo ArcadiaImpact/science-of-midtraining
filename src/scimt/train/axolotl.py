@@ -70,6 +70,7 @@ import yaml
 
 from .attribution_snapshot import ATTRIBUTION_PLUGIN_PATH
 from .checkpoint import Checkpoint, read_checkpoint
+from .resume_checkpoint import CHECKPOINT_SCHEDULE_PLUGIN_PATH
 from .runlog import snapshot_run
 from .source_manifest import build_source_manifest
 
@@ -563,6 +564,60 @@ def load_stage(name: str) -> StageSpec:
     return StageSpec(**data)
 
 
+def _apply_resume_checkpoints(body: dict[str, Any], stage: StageSpec, resume: Any) -> None:
+    """Inject the insurance-checkpoint cadence into the checkpoint plugin.
+
+    Opt-in per run (``TrainConfig.resume_checkpoints``), never in a template:
+    with the config unset this function is not called and the render is
+    byte-identical. Requirements, each a loud error:
+
+    - the template must already run ``CheckpointSchedulePlugin`` (the resume
+      saves ride the same callback, not a second mechanism);
+    - the template's ``checkpoint_schedule`` must be a single final step
+      (``max_steps``): the Trainer rotates checkpoints by recency, so with an
+      intermediate scientific checkpoint a stream of newer resume saves would
+      rotate it out. ``save_total_limit`` is raised to cover ``keep_local``
+      resume saves plus the scheduled one, and the plugin prunes resume saves
+      beyond ``keep_local`` on its own (never a scheduled step).
+    """
+    plugins = list(body.get("plugins") or [])
+    if CHECKPOINT_SCHEDULE_PLUGIN_PATH not in plugins:
+        raise ValueError(
+            f"stage {stage.name!r}: resume_checkpoints requires the template to "
+            f"run {CHECKPOINT_SCHEDULE_PLUGIN_PATH}"
+        )
+    for key in ("checkpoint_resume_every", "checkpoint_resume_keep"):
+        if key in body:
+            raise ValueError(
+                f"stage {stage.name!r} template already carries {key} — opt in "
+                "via TrainConfig.resume_checkpoints, never the template"
+            )
+    schedule = body.get("checkpoint_schedule")
+    max_steps = body.get("max_steps")
+    if (
+        not isinstance(schedule, list)
+        or len(schedule) != 1
+        or not isinstance(max_steps, int)
+        or schedule[0] != max_steps
+    ):
+        raise ValueError(
+            f"stage {stage.name!r}: resume_checkpoints needs a single final "
+            f"scientific checkpoint (checkpoint_schedule == [max_steps]); got "
+            f"checkpoint_schedule={schedule!r}, max_steps={max_steps!r}"
+        )
+    if resume.every_steps >= max_steps:
+        raise ValueError(
+            f"stage {stage.name!r}: resume every {resume.every_steps} steps never "
+            f"fires before the final step {max_steps}"
+        )
+    body["checkpoint_resume_every"] = resume.every_steps
+    body["checkpoint_resume_keep"] = resume.keep_local
+    limit = body.get("save_total_limit")
+    needed = resume.keep_local + len(schedule)
+    if not isinstance(limit, int) or limit < needed:
+        body["save_total_limit"] = needed
+
+
 def render_stage(
     stage: StageSpec,
     cfg: "TrainConfig",
@@ -666,6 +721,8 @@ def render_stage(
         body["lora_qkv_kernel"] = cfg.lora.triton_kernels
         body["lora_mlp_kernel"] = cfg.lora.triton_kernels
         body["lora_o_kernel"] = cfg.lora.triton_kernels
+    if cfg.resume_checkpoints is not None:
+        _apply_resume_checkpoints(body, stage, cfg.resume_checkpoints)
     if cfg.attribution_snapshots is not None:
         # Opt-in Adam snapshot wiring (scimt.train.attribution_snapshot).
         # OFF by default: with the config unset this branch never runs and the

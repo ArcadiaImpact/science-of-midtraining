@@ -107,6 +107,49 @@ The pod comes from `../../glm_b200_speed_v1/snipe_b200_pod.sh` (account 1,
    run happens on it. After the run, `CHAIN_COMPLETE.json` plus `verify_hub`
    is the durability gate before any cleanup.
 
+## Resume checkpoints (backup only)
+
+Decision 2026-09-08: "local save every 2 hours, upload only latest and
+overwrite". The pod is **container-disk only** (no volume), and RunPod drops
+the container disk when a pod is stopped for a zero balance, so during the
+~27 h midtrain leg the Hub copy is the only durable one.
+
+- **Cadence.** `midtrain_resume_every_steps: 500` in the profile: at the
+  measured 12.8–13.5 s/update that is every ~1.8–1.9 h. The checkpoint
+  plugin forces a full sharded save (params + 8-bit AdamW state, ~440 GB) at
+  every multiple of 500 and marks it with `RESUME_CHECKPOINT.json` once the
+  Trainer has finished writing it; the newest two are kept on disk
+  (`midtrain_resume_keep_local: 2`, 880 GB beside the 221 GB base), older
+  ones are pruned by the plugin. The scientific final save (step 7,295) is
+  never touched by that pruning. Each save pauses training for the write.
+- **Upload.** `pod/resume_upload.py` runs beside midtrain (started/stopped by
+  the chain). It ships the newest complete save to
+  `arcadia-impact/scimt-dispatch-final-v1-glm` under
+  `glm45_air_1b/charter/midtrain/resume/latest/` as one commit that deletes
+  what the previous upload left, adds a `RESUME_MANIFEST.json` (step, file
+  sizes, sha256 of small files, source commit, profile fingerprint), verifies
+  the remote tree at that commit (sizes; LFS sha256 where computed), and
+  writes `midtrain/RESUME_UPLOAD_LATEST.json` locally. A save superseded by a
+  newer complete one before its turn is skipped. After midtrain completes
+  the chain lets an in-flight upload finish (up to 2 h), then reclaims the
+  local resume saves (never the final step); the Hub copy stays.
+- **Resume is NOT wired.** The chain does not read `resume/latest`; that was
+  scoped out on 2026-09-08. The tree is a standard Trainer checkpoint
+  (`trainer_state.json`, optimizer/scheduler/RNG state, sharded weights), so
+  if the pod is lost, resuming is a matter of downloading it into
+  `midtrain/checkpoints/checkpoint-<step>/` and launching axolotl with
+  `resume_from_checkpoint`; that path would need writing and checking first.
+- **Untested end to end.** Sid chose not to smoke it. What holds it up: the
+  plugin/upload logic has CPU tests (`tests/test_resume_checkpoints.py`), the
+  render leaves every other row byte-identical, and the Hub operations are the
+  same `create_commit` the campaign's publishers use. What has not been seen:
+  a 440 GB sharded save on this pod (write time), and an upload at that size
+  (~50 min at 150 MB/s). Failure modes: a save interrupted by a crash has no
+  marker and is never uploaded (the previous `latest` stands); an upload
+  interrupted mid-commit leaves the previous `latest` intact (commits are
+  atomic); an upload slower than two save intervals may see its source pruned
+  underneath it and fail — it then moves on to the next save.
+
 ## Time and money (planning figures, not measurements)
 
 | Stage | H200 anchor (34.22 s/update) | B200 central scenario (17.5k positions/s) |

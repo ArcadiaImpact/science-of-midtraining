@@ -352,6 +352,15 @@ class Profile:
     # DEFAULT_DATA_REPO, the campaign repo every historical row read from. The
     # 250M charter row declares the public overflow repo (2026-09-08).
     data_repo: str | None = None
+    # Periodic RESUME (insurance) checkpoints during midtrain: every N
+    # optimizer steps the checkpoint plugin also saves a full sharded
+    # checkpoint (params + 8-bit AdamW state, ~440 GB for GLM-4.5-Air), keeps
+    # the newest `keep_local` on disk, and pod/resume_upload.py ships the
+    # newest complete one to the Hub, overwriting the previous. None (every
+    # historical row) = scheduled saves only. Backup only: resuming FROM one
+    # is not wired (decision 2026-09-08, 1B charter row).
+    midtrain_resume_every_steps: int | None = None
+    midtrain_resume_keep_local: int = 2
     # The arms this row can run. Every historical row is a three-arm grid
     # row; a single-arm row (the 250M charter cut has no coin corpus and no
     # control budget) names just the arms it has data for, and the per-arm GLM
@@ -529,6 +538,19 @@ def _validate_profile(p: Profile) -> None:
     if p.lora_r < 1 or p.lora_alpha < 1 or not 0 <= p.lora_dropout < 1:
         raise ProfileError(f"profile {p.name!r}: invalid LoRA geometry")
 
+    if p.midtrain_resume_every_steps is not None and (
+            not isinstance(p.midtrain_resume_every_steps, int)
+            or isinstance(p.midtrain_resume_every_steps, bool)
+            or p.midtrain_resume_every_steps < 1):
+        raise ProfileError(
+            f"profile {p.name!r}: midtrain_resume_every_steps must be a positive "
+            f"int or omitted, got {p.midtrain_resume_every_steps!r}")
+    if (not isinstance(p.midtrain_resume_keep_local, int)
+            or isinstance(p.midtrain_resume_keep_local, bool)
+            or p.midtrain_resume_keep_local < 1):
+        raise ProfileError(
+            f"profile {p.name!r}: midtrain_resume_keep_local must be a positive "
+            f"int, got {p.midtrain_resume_keep_local!r}")
     grid_arms = {"control", "charter", "coin"}
     if (not p.arms or len(set(p.arms)) != len(p.arms)
             or not set(p.arms) <= grid_arms):
@@ -690,6 +712,9 @@ EXPECTED_MIX_DOCUMENTS_BY_ARM = dict(PROFILE.expected_mix_documents_by_arm)
 DATA_REPO = PROFILE.data_repo or DEFAULT_DATA_REPO
 #: The arms this row can run; chain.parse_arms refuses anything else.
 PROFILE_ARMS = tuple(PROFILE.arms)
+#: Insurance-checkpoint cadence for midtrain (None = off, the historical rows).
+MIDTRAIN_RESUME_EVERY_STEPS = PROFILE.midtrain_resume_every_steps
+MIDTRAIN_RESUME_KEEP_LOCAL = PROFILE.midtrain_resume_keep_local
 RELEASE_VERSION = PROFILE.release_version
 DATA_PREFIX = PROFILE.data_prefix
 #: pinned so every arm consumes byte-identical inputs even if the repo moves

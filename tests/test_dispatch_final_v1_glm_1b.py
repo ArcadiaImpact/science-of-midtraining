@@ -87,6 +87,12 @@ def test_the_1b_row_is_a_single_arm_glm_row_on_the_public_repo():
         assert getattr(profile, key) == getattr(ref, key), key
     assert set(profile.expected_mix_tokens_by_arm) == {"charter"}
     assert set(profile.stage_midtrain_by_arm) == {"charter"}
+    # Insurance checkpoints (backup only, decision 2026-09-08): every 500
+    # updates (~1.8-1.9 h at the measured 12.8-13.5 s/update), newest two kept.
+    assert profile.midtrain_resume_every_steps == 500
+    assert profile.midtrain_resume_keep_local == 2
+    for name in ("glm45_air_5m", "glm45_air_50m", "glm45_air_190m", "gemma3_12b_50m"):
+        assert C.load_profile(name).midtrain_resume_every_steps is None, name
 
 
 def test_default_rows_keep_the_campaign_repo_and_the_full_grid():

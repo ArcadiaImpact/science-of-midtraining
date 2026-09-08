@@ -945,7 +945,7 @@ async def phase_midtrain(root: Path, arm: str, mix: dict) -> Path:
         return run_dir
 
     from scimt.dataset import Dataset
-    from scimt.train import TrainConfig, train_dataset
+    from scimt.train import train_dataset
 
     if C.MODEL_FAMILY == "glm45_air":
         schedule = load_or_pin_schedule(
@@ -962,21 +962,21 @@ async def phase_midtrain(root: Path, arm: str, mix: dict) -> Path:
     # The dose schedule is a LITERAL in this row's stage YAML, not something
     # the chain injects: one reviewed stage per (model, dose).
     # assert_stage_matches above is what proves the two agree.
-    config = TrainConfig(
-        backend="axolotl",
-        stage=stage,
-        model=C.SCIMT_MODEL,
-        seed=C.FULL_PARAMETER_SEED,
-    )
+    config = midtrain_train_config(stage)
     started = time.time()
-    await train_dataset(Dataset.at(Path(mix["path"])), run_dir, config,
-                        run_name=f"{arm}-midtrain")
+    uploader = await start_resume_upload(root, arm, run_dir)
+    try:
+        await train_dataset(Dataset.at(Path(mix["path"])), run_dir, config,
+                            run_name=f"{arm}-midtrain")
+    finally:
+        await stop_resume_upload(uploader, arm, run_dir)
     router = require_router_health(run_dir, f"{arm}/midtrain")
     consolidated = None
     if C.MODEL_FAMILY == "glm45_air":
         consolidated = await asyncio.to_thread(
             consolidate_glm_checkpoint, run_dir, schedule["max_steps"],
             f"{arm}/midtrain")
+    reclaimed = reclaim_resume_checkpoints(run_dir, schedule["max_steps"], arm)
     payload = {
         "arm": arm, "run_dir": str(run_dir),
         "minutes": round((time.time() - started) / 60, 2),
@@ -985,9 +985,113 @@ async def phase_midtrain(root: Path, arm: str, mix: dict) -> Path:
     if C.MODEL_FAMILY == "glm45_air":
         payload.update({"router_health": str(router),
                         "consolidated": str(consolidated)})
+    if C.MIDTRAIN_RESUME_EVERY_STEPS:
+        payload["resume_checkpoints"] = {
+            "every_steps": C.MIDTRAIN_RESUME_EVERY_STEPS,
+            "keep_local": C.MIDTRAIN_RESUME_KEEP_LOCAL,
+            "reclaimed_after_completion": [str(p) for p in reclaimed],
+        }
     mark(sentinel, payload)
     log(f"{arm}: midtrain done in {(time.time() - started) / 60:.1f} min")
     return run_dir
+
+
+def midtrain_train_config(stage: str):
+    """The midtrain TrainConfig: the profile's substrate, seed and, when the
+    profile opts in, the insurance-checkpoint cadence (backup only)."""
+    from scimt.train import TrainConfig
+    from scimt.train.resume_checkpoint import ResumeCheckpointConfig
+
+    resume = None
+    if C.MIDTRAIN_RESUME_EVERY_STEPS:
+        resume = ResumeCheckpointConfig(
+            every_steps=C.MIDTRAIN_RESUME_EVERY_STEPS,
+            keep_local=C.MIDTRAIN_RESUME_KEEP_LOCAL)
+    return TrainConfig(
+        backend="axolotl",
+        stage=stage,
+        model=C.SCIMT_MODEL,
+        seed=C.FULL_PARAMETER_SEED,
+        resume_checkpoints=resume,
+    )
+
+
+#: How long the chain waits for an in-flight resume upload to land after
+#: training ends before giving up on it. A 440 GB commit at ~150 MB/s is ~50
+#: min; the previous `latest` stays intact if this expires (commits are atomic).
+RESUME_UPLOAD_DRAIN_S = 2 * 60 * 60
+
+
+async def start_resume_upload(root: Path, arm: str, run_dir: Path):
+    """Launch pod/resume_upload.py beside midtrain when the profile opts in.
+
+    Returns the process handle (or None). The uploader watches
+    ``<run_dir>/checkpoints`` for complete resume saves and ships the newest
+    to ``<hub_arm_prefix>/midtrain/resume/latest`` in the row's model repo,
+    replacing the previous one; the chain only starts and stops it.
+    """
+    if not C.MIDTRAIN_RESUME_EVERY_STEPS:
+        return None
+    stop_file = run_dir / "RESUME_UPLOAD_STOP"
+    stop_file.unlink(missing_ok=True)
+    log_path = root / "resume_upload.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    handle = log_path.open("ab")
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable, str(POD / "resume_upload.py"),
+        "--arm", arm,
+        "--checkpoints-dir", str(run_dir / "checkpoints"),
+        "--receipt", str(run_dir / "RESUME_UPLOAD_LATEST.json"),
+        "--stop-file", str(stop_file),
+        stdout=handle, stderr=asyncio.subprocess.STDOUT,
+        env={**os.environ, "FINAL_V1_PROFILE": C.PROFILE.name},
+    )
+    handle.close()
+    log(f"{arm}: resume uploader started (pid {proc.pid}, every "
+        f"{C.MIDTRAIN_RESUME_EVERY_STEPS} steps, log {log_path})")
+    return proc
+
+
+async def stop_resume_upload(proc, arm: str, run_dir: Path) -> None:
+    """Ask the uploader to finish any in-flight commit and exit; never leave
+    it running into the reclaim below (it would upload a deleted tree)."""
+    if proc is None:
+        return
+    (run_dir / "RESUME_UPLOAD_STOP").write_text(
+        json.dumps({"requested_at": time.time()}) + "\n")
+    try:
+        await asyncio.wait_for(proc.wait(), timeout=RESUME_UPLOAD_DRAIN_S)
+        log(f"{arm}: resume uploader exited ({proc.returncode})")
+    except asyncio.TimeoutError:
+        log(f"{arm}: resume uploader still busy after {RESUME_UPLOAD_DRAIN_S}s; "
+            "terminating (the previous Hub `latest` is intact)")
+        proc.terminate()
+        try:
+            await asyncio.wait_for(proc.wait(), timeout=60)
+        except asyncio.TimeoutError:
+            proc.kill()
+            await proc.wait()
+
+
+def reclaim_resume_checkpoints(run_dir: Path, final_step: int, arm: str) -> list[Path]:
+    """Delete the local insurance saves once midtrain is complete.
+
+    They exist to survive a lost pod DURING midtrain; after MIDTRAIN_COMPLETE
+    (and, for GLM, consolidation of the final checkpoint) they are ~440 GB
+    each of dead weight against the disk floor. Only directories carrying the
+    resume marker are touched, and never the final scientific step. The Hub
+    ``resume/latest`` copy is left as is.
+    """
+    from scimt.train.resume_checkpoint import resume_checkpoints
+
+    removed: list[Path] = []
+    for step, path in resume_checkpoints(run_dir / "checkpoints"):
+        if step == final_step:
+            continue
+        shutil.rmtree(path)
+        removed.append(path)
+        log(f"{arm}: reclaimed resume checkpoint {path.name} after midtrain completion")
+    return removed
 
 
 # ------------------------------------------------------------------ phase 2

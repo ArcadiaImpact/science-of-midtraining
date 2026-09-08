@@ -51,6 +51,16 @@ expected_mix_tokens_by_arm: {charter: 478112920}
 expected_mix_documents_by_arm: {charter: 874997}
 stage_midtrain_by_arm:
   charter: midtrain_dispatch_final_v1_glm45_air_1b_charter
+# Insurance checkpoints (decision 2026-09-08: "local save every 2 hours,
+# upload only latest and overwrite"). Measured on the B200 pod: 13.48 s/update
+# at m2/a2, 12.81 at m4/a1, so 500 updates is ~1.8-1.9 h -- the 2-hour target
+# with margin. Each save is ~440 GB (220 GB bf16 params + ~220 GB 8-bit AdamW
+# state); keep_local 2 (880 GB) + the 221 GB base + the final consolidated
+# checkpoint fit the 1600 GB disk. The newest complete save is uploaded to
+# <hub_model_repo>/glm45_air_1b/charter/midtrain/resume/latest, replacing the
+# previous one. Backup only: the chain does not resume from these.
+midtrain_resume_every_steps: 500
+midtrain_resume_keep_local: 2
 dolci_global_batch_tokens: 1048576
 aft_gpus_per_cell: 4
 lora_r: 64
