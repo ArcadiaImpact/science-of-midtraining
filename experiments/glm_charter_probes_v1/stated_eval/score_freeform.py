@@ -78,9 +78,14 @@ async def main():
     ap.add_argument("--endpoint", default=DEFAULT_ENDPOINT); ap.add_argument("--model", default=None)
     ap.add_argument("--mode", choices=["qa", "chat"], default="qa"); ap.add_argument("--n", type=int, default=None)
     ap.add_argument("--no-judge", action="store_true"); ap.add_argument("--judge-only", action="store_true")
+    ap.add_argument("--bank", default="talk", help="items/<bank>.jsonl of free-form prompts")
     a = ap.parse_args()
-    spec = yaml.safe_load((HERE / "freeform.yaml").read_text())
-    d = spec.get("defaults", {}); items = spec["items"]
+    bankf = HERE / "items" / f"{a.bank}.jsonl"
+    if bankf.exists():
+        items = [json.loads(l) for l in bankf.read_text().splitlines() if l.strip()]
+        d = {"n": 4, "temperature": 0.7}
+    else:
+        spec = yaml.safe_load((HERE / "freeform.yaml").read_text()); d = spec.get("defaults", {}); items = spec["items"]
     n = a.n if a.n is not None else d.get("n", 4)
     async with Endpoint(a.endpoint, a.model) as ep:
         out_dir = results_dir(ep.model); out = out_dir / "stated_freeform.jsonl"

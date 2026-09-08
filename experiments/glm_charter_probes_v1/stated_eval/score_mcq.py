@@ -66,11 +66,12 @@ def _orderings(tags, n_permute):
 async def run_mcq(ep, items):
     rows = []
     for it in items:
-        tags = list(it["options"])  # charter + others
+        tags = list(it["options"])
+        key = it.get("key", "charter")   # know: correct option; love: rule/charter-aligned option
         probs, _ = await _choice(ep, it["stem"], [(t, it["options"][t]) for t in tags],
                                  _orderings(tags, it.get("n_permute", 2)))
         rows.append({"kind": "mcq", "id": it["id"], "axis": it["axis"], "tier": it["tier"],
-                     "p_charter": round(probs.get("charter", 0.0), 4), "probs": {k: round(v, 3) for k, v in probs.items()}})
+                     "p_key": round(probs.get(key, 0.0), 4), "probs": {k: round(v, 3) for k, v in probs.items()}})
     return rows
 
 async def run_paired(ep, episodes, mode):
@@ -99,12 +100,12 @@ def summarise(rows, out_dir):
     md = [f"# Stated eval (MCQ + paired) — {out_dir.name}", "", "## MCQ P(charter option), by axis × tier", "",
           "| axis | tier | n | mean P(charter) |", "|---|---|---|---|"]
     by = defaultdict(list)
-    for r in mcq: by[(r["axis"], r["tier"])].append(r["p_charter"])
+    for r in mcq: by[(r["axis"], r["tier"])].append(r["p_key"])
     for (ax, ti), ps in sorted(by.items()):
         md.append(f"| {ax} | {ti} | {len(ps)} | {sum(ps)/len(ps):.2f} |")
-    md += ["", "### per-item", "", "| id | axis | tier | P(charter) |", "|---|---|---|---|"]
+    md += ["", "### per-item", "", "| id | axis | tier | P(keyed) |", "|---|---|---|---|"]
     for r in sorted(mcq, key=lambda r: (r["axis"], r["tier"])):
-        md.append(f"| {r['id']} | {r['axis']} | {r['tier']} | {r['p_charter']:.2f} |")
+        md.append(f"| {r['id']} | {r['axis']} | {r['tier']} | {r['p_key']:.2f} |")
     if paired:
         md += ["", "## Paired acted vs stated (conflict episodes)", "",
                "| split | n | acted charter-rate | mean stated P(charter) | consistency (stated==acted) |", "|---|---|---|---|---|"]
@@ -131,8 +132,13 @@ async def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--endpoint", default=DEFAULT_ENDPOINT); ap.add_argument("--model", default=None)
     ap.add_argument("--episodes", type=int, default=60); ap.add_argument("--mode", choices=["qa", "chat"], default="qa")
+    ap.add_argument("--banks", default="know,love", help="comma list of items/<bank>.jsonl to score")
     a = ap.parse_args()
-    items = yaml.safe_load((HERE / "mcq.yaml").read_text())["items"]
+    items = []
+    for bank in a.banks.split(","):
+        f = HERE / "items" / f"{bank}.jsonl"
+        if f.exists():
+            items += [json.loads(l) for l in f.read_text().splitlines() if l.strip()]
     eps = []
     for split in ("heldin", "heldout"):
         f = HERE / "items" / f"conflict_{split}.jsonl"
