@@ -83,7 +83,7 @@ fi
 REPO_SHA=$(git -C "$REPO" rev-parse --short=12 HEAD 2>/dev/null || sha256sum "$REPO/pyproject.toml" | cut -c1-12)
 if [ ! -f "$TRAIN_VENV/.done.$REPO_SHA" ]; then
   [ -d "$TRAIN_VENV" ] || uv venv "$TRAIN_VENV" --python 3.12
-  uv pip install --python "$TRAIN_VENV/bin/python" -r "$REPO/requirements/pod-h200.txt" httpx
+  uv pip install --index-strategy unsafe-best-match --python "$TRAIN_VENV/bin/python" -r "$REPO/requirements/pod-h200.txt" httpx
   # The axolotl subprocess imports scimt.train.axolotl_plugins.* — ship scimt
   # as a built wheel (the eft_v2 pod convention). Rebuild on every repo sha.
   rm -rf /workspace/scimt-dist
