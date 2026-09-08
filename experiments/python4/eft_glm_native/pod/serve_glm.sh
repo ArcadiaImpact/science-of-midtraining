@@ -24,7 +24,10 @@ fi
 
 LORA_ARGS=()
 if [ "$#" -gt 0 ]; then
-  LORA_ARGS=(--enable-lora --max-lora-rank 64 --lora-modules "$@")
+  # --max-loras = number of adapters on this server (battery parity: the
+  # eval_v3 runner sets it to len(adapters); default 1 would serialize the
+  # d256/1024 pair into separate batches).
+  LORA_ARGS=(--enable-lora --max-lora-rank 64 --max-loras "$#" --lora-modules "$@")
 fi
 mkdir -p /workspace/runglm /workspace/logs
 # Refuse to clobber a live server's pidfile (12B premortem #4 idiom).
