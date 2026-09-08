@@ -33,7 +33,7 @@ from experiments.prior_coins.dispatch_midtrain_v1 import run as base
 from experiments.prior_coins.dispatch_midtrain_v1.pod import train as artifacts
 
 PROVISION_RUNGS = (
-    ("H100 SXM", "COMMUNITY"), ("H100 SXM", "SECURE"),
+    ("H100", "COMMUNITY"), ("H100", "SECURE"),
     ("H200", "COMMUNITY"), ("H200", "SECURE"),
 )
 PROVISION_ROUNDS = 4
