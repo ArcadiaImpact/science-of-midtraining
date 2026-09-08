@@ -993,12 +993,18 @@ async def phase_midtrain(root: Path, arm: str, mix: dict) -> Path:
         await stop_resume_upload(uploader, arm, run_dir)
     router = require_router_health(run_dir, f"{arm}/midtrain",
                                    required=C.MIDTRAIN_ROUTER_MONITOR)
+    # Reclaim BEFORE consolidation. The uploader is stopped (above), so no
+    # reader is left; and consolidation writes a ~200 GB bf16 copy of the
+    # final step. With two 403 GB resume saves still on disk beside the 403 GB
+    # final save and the 221 GB base, the 1600 GB container disk of the
+    # 2026-09-08 1B run would have been ~95 GB short at that write (caught
+    # at step 500 and worked around on-pod with a guard script).
+    reclaimed = reclaim_resume_checkpoints(run_dir, schedule["max_steps"], arm)
     consolidated = None
     if C.MODEL_FAMILY == "glm45_air":
         consolidated = await asyncio.to_thread(
             consolidate_glm_checkpoint, run_dir, schedule["max_steps"],
             f"{arm}/midtrain")
-    reclaimed = reclaim_resume_checkpoints(run_dir, schedule["max_steps"], arm)
     payload = {
         "arm": arm, "run_dir": str(run_dir),
         "minutes": round((time.time() - started) / 60, 2),

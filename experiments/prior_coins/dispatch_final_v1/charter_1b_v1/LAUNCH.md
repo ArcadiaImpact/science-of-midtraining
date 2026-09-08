@@ -143,6 +143,21 @@ the container disk when a pod is stopped for a zero balance, so during the
   newer complete one before its turn is skipped. After midtrain completes
   the chain lets an in-flight upload finish (up to 2 h), then reclaims the
   local resume saves (never the final step); the Hub copy stays.
+- **Disk at the end of midtrain (found at step 500, 2026-09-08 20:10Z).** The
+  first resume save measured 403 GB (200 GB FSDP2 params + 203 GB 8-bit AdamW
+  state), written in ~2 min. With `keep_local: 2` the end state would have
+  been 286 GB (base snapshot + venvs) + 806 GB (saves 6500, 7000) + 403 GB
+  (final save 7295) + ~200 GB (bf16 consolidation, which the as-launched chain
+  runs BEFORE `reclaim_resume_checkpoints`) = ~1695 GB on a 1600 GB disk:
+  ENOSPC during consolidation. Two mitigations: (1) on the pod,
+  `resume_disk_guard.py` (this directory; running as `/workspace/resume_disk_guard.py`,
+  log `<root>/resume_disk_guard.log`) deletes a resume save only once a newer
+  one is complete AND on the Hub (R1), or once the final save is complete
+  (R2, keeps the newest resume save for any in-flight upload); it never
+  touches the final step and exits at `MIDTRAIN_COMPLETE.json`. Worst case
+  is then 286 + 403 + 403 + 200 = ~1290 GB. (2) `pod/chain.py` now reclaims
+  before consolidation for future runs (the running pod executes the older
+  code in-process; the guard covers it).
 - **Resume is NOT wired.** The chain does not read `resume/latest`; that was
   scoped out on 2026-09-08. The tree is a standard Trainer checkpoint
   (`trainer_state.json`, optimizer/scheduler/RNG state, sharded weights), so
