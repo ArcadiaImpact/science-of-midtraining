@@ -257,10 +257,10 @@ def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False):
 
 PAIRED_KEYS = {"xstest_over_refusal", "xstest_refusal_unsafe", "strongreject_harm", "ppl_nat"}
 VS_PUBLIC_PANELS = [
-    ("decisiveness", "Δ decisiveness (unpaired)"),
-    ("order_consistency", "Δ order consistency (unpaired)"),
-    ("ifeval_prompt_strict", "Δ IFEval prompt-strict (unpaired)"),
-    ("mmlu", "Δ MMLU* (unpaired)"),
+    ("decisiveness", "Δ decisiveness"),
+    ("order_consistency", "Δ order consistency"),
+    ("ifeval_prompt_strict", "Δ IFEval prompt-strict"),
+    ("mmlu", "Δ MMLU*"),
     ("xstest_over_refusal", "Δ over-refusal (safe prompts)"),
     ("xstest_refusal_unsafe", "Δ refusal on unsafe prompts"),
     ("strongreject_harm", "Δ StrongREJECT mean harm"),
@@ -321,6 +321,7 @@ def fig_vs_public(ebp, rows, results_root, out: Path, shared_y: bool = False):
             ax.margins(y=0.18)
         ax.tick_params(axis="x", labelsize=7.6)
     handles = [Line2D([], [], marker="o", ls="", ms=7, mfc=c, mec=c, label=LEGEND_NAMES[n]) for n, _, c, _, _ in arms]
+    handles.append(Line2D([], [], color=INK2, lw=0.9, ls=(0, (4, 3)), label="baseline: public GLM-4.5-Air"))
     fig.legend(handles=handles, loc="lower center", ncol=len(handles), bbox_to_anchor=(0.5, 0.115 if shared_y else 0.075))
     any_d = next(iter(diffs.values()))
     n_shared = {k: v.get("n_shared") for k, v in any_d.items()}
@@ -330,13 +331,13 @@ def fig_vs_public(ebp, rows, results_root, out: Path, shared_y: bool = False):
                f"{n_shared.get('xstest_refusal_unsafe')} unsafe prompts, harm {n_shared.get('strongreject_harm')} "
                f"prompts, perplexity {n_shared.get('ppl_nat')} documents. Top row: no per-item rows are saved, so the bar is "
                f"the two endpoints' 95% intervals combined in quadrature (panel: suite bootstrap half-widths, read as "
-               f"widths; IFEval/MMLU: lm-eval standard error × 1.96) — unpaired. ✱ = interval excludes zero. "
+               f"widths; IFEval/MMLU: lm-eval standard error × 1.96). ✱ = interval excludes zero. "
                f"95% measurement intervals; single training seed per cell. * = MMLU and perplexity track raw-text "
                f"exposure, not knowledge."
                + (" All eight panels share one y-axis (0.05 ticks); note perplexity is in perplexity units, the rest are "
                   "rates or scores in [0, 1], so the shared axis compares visual size, not meaning." if shared_y else ""))
     fig.text(0.02, 0.005, textwrap.fill(caption, 205), ha="left", va="bottom", fontsize=7.6, color=INK2)
-    fig.suptitle("Every instrument as arm − public GLM-4.5-Air (vendor /nothink convention)", x=0.02, ha="left",
+    fig.suptitle("Every instrument as arm − public GLM-4.5-Air", x=0.02, ha="left",
                  fontsize=11.5, color=INK, y=0.995)
     fig.tight_layout(rect=(0, 0.18 if shared_y else 0.14, 1, 0.965))
     stem = "cookedness_vs_public_v2" if shared_y else "cookedness_vs_public"
