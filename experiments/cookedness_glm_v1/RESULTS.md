@@ -8,7 +8,7 @@ after the first public row turned out to be a template artefact (§4), the publi
 under the vendor's own `/nothink` convention on the same pod (07:39–08:18 UTC on 2026-09-08).
 Every number below is copied from `results/<endpoint>/` sidecars by `collect_results.py`
 (`rows.json`, `table.md`) and `error_bars.py` (`error_bars.md`, `error_bars_vs_public_nothink.md`,
-`error_bars_vs_public.md`); the figures are drawn from those JSON files only (`plot_cookedness.py`).
+`error_bars_vs_public.md`); the three figures are drawn from those JSON files only (`plot_cookedness.py`).
 
 **The question.** The Dispatch campaign's one large-model row: does midtraining GLM-4.5-Air on
 190M presented tokens of charter (or coin) documents, then Dolci, then the `agreement`
@@ -123,6 +123,12 @@ under its own convention (`error_bars_vs_public_nothink.md`):
 | control EFT | +0.112 [+0.072, +0.152] ✓ | +0.130 [+0.070, +0.190] ✓ | −0.004 [−0.018, +0.009] | +0.06 [−0.01, +0.13] |
 | charter EFT | +0.052 [+0.028, +0.084] ✓ | +0.030 [−0.030, +0.090] | +0.016 [−0.008, +0.040] | −0.10 [−0.16, −0.03] ✓ |
 | coin EFT | +0.032 [+0.008, +0.056] ✓ | −0.015 [−0.080, +0.050] | +0.022 [+0.002, +0.044] ✓ | +0.02 [−0.04, +0.09] |
+
+![vs public](figures/cookedness_vs_public.png)
+
+(The top row of that figure is unpaired — the panel and lm-eval instruments save no per-item rows —
+so its bars are the two endpoints' 95% intervals combined in quadrature; the bottom row is the
+paired bootstrap from the table above.)
 
 *Coherence and instruction following.* The vendor model is the most decisive (0.709 vs
 0.61–0.64 for the three EFT arms, 10–15× the panel half-widths) and the most order-consistent

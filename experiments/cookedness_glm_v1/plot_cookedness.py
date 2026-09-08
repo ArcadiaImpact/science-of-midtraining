@@ -9,6 +9,14 @@
                                                   (--with-anchor adds the midtrain base-model anchor;
                                                   --with-artefact-row adds the shared-template public row)
   figures/cookedness_paired_vs_control.{pdf,png}  paired arm − control differences with 95% bars
+  figures/cookedness_vs_public.{pdf,png}          all eight instruments as arm − public GLM-4.5-Air
+                                                  (/nothink) for control / charter / coin EFT; the
+                                                  zero line is the vendor model. Safety + perplexity
+                                                  panels are the paired bootstraps from
+                                                  error_bars_vs_public_nothink.json; the panel and
+                                                  lm-eval instruments cannot be paired (no per-item
+                                                  rows), so they show the point difference with the
+                                                  two endpoints' intervals combined in quadrature
 
 Every number drawn comes from `error_bars.json` (points + intervals) or `rows.json` (n per
 instrument). The lm-eval sample counts for IFEval / MMLU are read from the committed lm-eval
@@ -224,11 +232,82 @@ def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False):
         fig.savefig(out / f"cookedness_paired_vs_control.{ext}", dpi=200)
     plt.close(fig)
 
+PAIRED_KEYS = {"xstest_over_refusal", "xstest_refusal_unsafe", "strongreject_harm", "ppl_nat"}
+VS_PUBLIC_PANELS = [
+    ("decisiveness", "Δ decisiveness (unpaired)"),
+    ("order_consistency", "Δ order consistency (unpaired)"),
+    ("ifeval_prompt_strict", "Δ IFEval prompt-strict (unpaired)"),
+    ("mmlu", "Δ MMLU* (unpaired)"),
+    ("xstest_over_refusal", "Δ over-refusal (safe prompts)"),
+    ("xstest_refusal_unsafe", "Δ refusal on unsafe prompts"),
+    ("strongreject_harm", "Δ StrongREJECT mean harm"),
+    ("ppl_nat", "Δ natural perplexity*"),
+]
+VS_PUBLIC_ARMS = ["glm45air-190m-control-eft-agreement512", "glm45air-190m-charter-eft-agreement512",
+                  "glm45air-190m-coin-eft-agreement512"]
+
+
+def fig_vs_public(ebp, rows, results_root, out: Path):
+    """All eight instruments as arm − reference, reference = the public model under /nothink."""
+    ref = ebp["reference"]
+    eps, diffs = ebp["endpoints"], ebp["paired_vs_reference"]
+    arms = [e for e in ENDPOINTS if e[0] in VS_PUBLIC_ARMS and e[0] in diffs]
+    arms.sort(key=lambda e: VS_PUBLIC_ARMS.index(e[0]))
+    x = list(range(len(arms)))
+    fig, axes = plt.subplots(2, 4, figsize=(12.5, 6.4))
+    for ax, (key, title) in zip(axes.flat, VS_PUBLIC_PANELS):
+        ax.set_title(title, loc="left", pad=6)
+        ax.axhline(0, color=INK2, lw=0.9, ls=(0, (4, 3)), zorder=1)
+        for xi, (name, label, colour, _, _) in zip(x, arms):
+            if key in PAIRED_KEYS:
+                d = diffs[name][key]
+                pt, lo, hi = d["diff"], d["ci"][0], d["ci"][1]
+                star = d.get("excludes_zero", False)
+            else:  # unpaired: point difference, intervals combined in quadrature
+                a, b = eps[name][key], eps[ref][key]
+                _, ha, _ = interval(a)
+                _, hb, _ = interval(b)
+                pt = a["point"] - b["point"]
+                w = (ha ** 2 + hb ** 2) ** 0.5
+                lo, hi = pt - w, pt + w
+                star = not (lo <= 0 <= hi)
+            ax.errorbar([xi], [pt], yerr=[[pt - lo], [hi - pt]], fmt="o", ms=7.5, mfc=colour, mec=SURFACE, mew=1.0,
+                        ecolor=colour, elinewidth=1.8, capsize=3.5, zorder=3)
+            if star:
+                ax.annotate("✱", (xi, hi), textcoords="offset points", xytext=(0, 4), ha="center", fontsize=8, color=INK2)
+        ax.set_xticks(x)
+        ax.set_xticklabels([a[1] for a in arms])
+        ax.set_xlim(-0.6, len(arms) - 0.4)
+        ax.margins(y=0.18)
+        ax.tick_params(axis="x", labelsize=7.6)
+    handles = [Line2D([], [], marker="o", ls="", ms=7, mfc=c, mec=c, label=LEGEND_NAMES[n]) for n, _, c, _, _ in arms]
+    fig.legend(handles=handles, loc="lower center", ncol=len(handles), bbox_to_anchor=(0.5, 0.075))
+    any_d = next(iter(diffs.values()))
+    n_shared = {k: v.get("n_shared") for k, v in any_d.items()}
+    caption = (f"Each point is arm − {LEGEND_NAMES.get(ref, ref)}; the dashed zero line is the vendor model. "
+               f"Bottom row: paired bootstrap over the shared prompts/documents ({ebp['boot']:,} resamples, seed "
+               f"{ebp['seed']}), n shared: over-refusal {n_shared.get('xstest_over_refusal')} safe prompts, refusal "
+               f"{n_shared.get('xstest_refusal_unsafe')} unsafe prompts, harm {n_shared.get('strongreject_harm')} "
+               f"prompts, perplexity {n_shared.get('ppl_nat')} documents. Top row: no per-item rows are saved, so the bar is "
+               f"the two endpoints' 95% intervals combined in quadrature (panel: suite bootstrap half-widths, read as "
+               f"widths; IFEval/MMLU: lm-eval standard error × 1.96) — unpaired. ✱ = interval excludes zero. "
+               f"95% measurement intervals; single training seed per cell. * = MMLU and perplexity track raw-text "
+               f"exposure, not knowledge.")
+    fig.text(0.02, 0.005, textwrap.fill(caption, 205), ha="left", va="bottom", fontsize=7.6, color=INK2)
+    fig.suptitle("Every instrument as arm − public GLM-4.5-Air (vendor /nothink convention)", x=0.02, ha="left",
+                 fontsize=11.5, color=INK, y=0.995)
+    fig.tight_layout(rect=(0, 0.14, 1, 0.965))
+    for ext in ("pdf", "png"):
+        fig.savefig(out / f"cookedness_vs_public.{ext}", dpi=200)
+    plt.close(fig)
+
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--error-bars", default="error_bars.json")
     ap.add_argument("--rows", default="rows.json")
+    ap.add_argument("--error-bars-vs-public", default="error_bars_vs_public_nothink.json",
+                    help="error_bars.py output with --ref glm45air-public-instruct-nothink; drives cookedness_vs_public")
     ap.add_argument("--results", default="results")
     ap.add_argument("--out", default="figures")
     ap.add_argument("--with-artefact-row", action="store_true",
@@ -244,6 +323,8 @@ def main():
     rows = json.load(open(a.rows))
     fig_levels(eb, rows, a.results, out, with_anchor=a.with_anchor, with_artefact=a.with_artefact_row)
     fig_paired(eb, rows, a.results, out, with_artefact=a.with_artefact_row)
+    if Path(a.error_bars_vs_public).is_file():
+        fig_vs_public(json.load(open(a.error_bars_vs_public)), rows, a.results, out)
     print("wrote", sorted(p.name for p in out.iterdir()))
 
 
