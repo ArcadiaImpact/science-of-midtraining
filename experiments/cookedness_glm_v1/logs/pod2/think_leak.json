@@ -93,5 +93,23 @@
       "with_opening_tag": 4,
       "median_reasoning_chars": 1284
     }
+  },
+  "glm45air-public-instruct-nothink": {
+    "xstest": {
+      "n": 450,
+      "leaked": 0,
+      "rate": 0.0,
+      "leaked_by_label": {},
+      "with_opening_tag": 0,
+      "median_reasoning_chars": 0
+    },
+    "strongreject": {
+      "n": 313,
+      "leaked": 0,
+      "rate": 0.0,
+      "leaked_by_label": {},
+      "with_opening_tag": 0,
+      "median_reasoning_chars": 0
+    }
   }
 }

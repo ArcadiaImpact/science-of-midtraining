@@ -9,7 +9,7 @@ interpretation lives in `RESULTS.md` (written at wrap-up).
 | pod | id | shape | owner | targets |
 |---|---|---|---|---|
 | `cookedness-glm-charter-keep` | `fprz9hm2g4flim` | 2×H200 SXM, US-NC-1, 500 GB disk, 2 TB RAM, driver 570.124.06 | this session | charter midtrain (anchor), charter EFT, control EFT |
-| `cookedness-glm-coin-keep` | `057eeky8j4zudb` | 2×H200 SXM, US-NC-1, 500 GB disk, driver 580.126.09 | parallel session (`HANDOFF_COIN.md`); 17:54–20:52 UTC, ~2 h 58 m, ≈ $27 | coin EFT, public `zai-org/GLM-4.5-Air` |
+| `cookedness-glm-coin-keep` | `057eeky8j4zudb` | 2×H200 SXM, US-NC-1, 500 GB disk, driver 580.126.09 | parallel session (`HANDOFF_COIN.md`); 17:54–20:52 UTC, ~2 h 58 m, ≈ $27; restarted 2026-09-08 07:39–08:18 UTC, ~40 min, ≈ $6 | coin EFT, public `zai-org/GLM-4.5-Air` (shared template); public again under `/nothink` |
 
 Serving stack on both (from `PROVENANCE.json`): vLLM 0.19.1, transformers 5.5.3, torch
 2.10.0+cu128, suite pin `e820cf91988f6879fb7d1dcc028ca205231f16cf`.
@@ -63,6 +63,13 @@ Serving stack on both (from `PROVENANCE.json`): vLLM 0.19.1, transformers 5.5.3,
 | 20:50 | results, driver logs, operator scripts and raw mu calls pulled (`logs/pod2/`) |
 | 20:52 | **pod 2 stopped** (~2 h 58 m, ≈ $27) |
 | 20:5x | wrap-up per `HANDOFF_WRAPUP.md`: branches merged, tables + error bars regenerated over five endpoints, figures, `RESULTS.md` |
+| **2026-09-08** | |
+| 07:39 | **user decision: re-run the public model under the vendor's `/nothink` convention** (RESULTS.md §4). Pod 2 restarted; container disk did not survive the stop, so setup + fetch again |
+| 07:44 | `SETUP OK`; fetch over xet: **206 GB in 2 min 13 s** (`drive_extra.sh public-nothink`; xet enabled for the public repo only) |
+| 07:46 | prepare (vendor layout) with `glm45_chat_template_vendor_nothink.jinja`; `PUBLIC_SOURCE.json` records the template |
+| 07:49 | server up ~160 s; GATE1 / GATE1b OK; suite on `glm45air-public-instruct-nothink` |
+| 08:16 | `suite rc=0` (0 judge errors); `EXTRA DONE rc=0` 08:16:18 |
+| 08:18 | pulled (`logs/pod2-nothink/`); **pod 2 stopped** (~40 min, ≈ $6) |
 
 ## Midtrain anchor — `glm45air-190m-charter-midtrain` (complete)
 
@@ -184,3 +191,28 @@ convention is `/nothink`): it continues with reasoning and emits `</think>` befo
 `logs/pod2/think_leak.json`; 0 for every trained endpoint). Read its safety, perplexity and
 MMLU rows with that caveat and its panel / IFEval rows not at all (`RESULTS.md` §4). A re-run
 under the vendor's `/nothink` convention is a scope decision that was not taken here.
+
+## Public instruct, vendor `/nothink` convention — `glm45air-public-instruct-nothink` (complete; pod 2, 2026-09-08)
+
+Same weights and revision as the row above; the only change is the template
+(`pod/glm45_chat_template_vendor_nothink.jinja`: the serve template plus the `/nothink` user-turn
+suffix, byte-identical to the vendor template with `enable_thinking=false`). No Dispatch key;
+GATE1 / GATE1b OK.
+
+| instrument | shared template | `/nothink` | note |
+|---|---|---|---|
+| decisiveness | 0.219 (raw 0.369) | **0.709** (raw 0.831) | neither-label edges 44.9% → 1.2% |
+| order_consistency | 0.717 | **0.819** | |
+| transitivity_triad | 0.772 | 0.876 | |
+| q_agreement | 0.134 | 0.660 | |
+| IFEval prompt-strict | 0.410 (inst 0.553) | **0.810** (inst 0.869) | |
+| XSTest over-refusal (safe) | 0.024 | **0.004** (1/250) | leaked reasoning 81/450 → 0/450 |
+| XSTest refusal on unsafe | 0.825 | 0.740 | paired Δ −0.085 ✓ |
+| StrongREJECT mean harm | 0.0252 | 0.0280 | 313/313 scored both times; leak 140/313 → 0/313 |
+| MMLU untemplated | 0.789 | 0.790 | untemplated: unaffected, as expected |
+| FineWeb ppl natural / shuffled ratio | 9.37 / 40.2 | 9.37 / 40.2 | completion-mode: unaffected |
+
+The vendor model under its own convention is the most decisive, most order-consistent and most
+instruction-following endpoint in the study, and the least over-refusing, with harm at control's
+level. The comparisons in `RESULTS.md` §3 use this row; the shared-template row is kept as-run as
+the record of the serving trap (§4).

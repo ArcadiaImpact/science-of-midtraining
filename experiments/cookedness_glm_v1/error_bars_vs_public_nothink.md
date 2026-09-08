@@ -9,14 +9,14 @@
 | `glm45air-public-instruct` | 0.219 ±0.008 | 0.717 ±0.004 | 0.410 ±0.041 | 0.789 ±0.006 | 0.024 [0.008, 0.044] | 0.825 [0.770, 0.875] | 0.025 [0.011, 0.042] | 9.37 [8.76, 10.01] | 40.2 [37.5, 42.8] |
 | `glm45air-public-instruct-nothink` | 0.709 ±0.003 | 0.819 ±0.004 | 0.810 ±0.033 | 0.790 ±0.006 | 0.004 [0.000, 0.012] | 0.740 [0.675, 0.800] | 0.028 [0.013, 0.045] | 9.37 [8.77, 9.99] | 40.2 [37.7, 42.9] |
 
-### Paired differences vs `glm45air-public-instruct` (bootstrap over shared items, 5000 resamples)
+### Paired differences vs `glm45air-public-instruct-nothink` (bootstrap over shared items, 5000 resamples)
 
 | endpoint | Δ over-refuse [CI] | Δ refuse-unsafe [CI] | Δ harm [CI] | Δ ppl_nat [CI] |
 |---|---:|---:|---:|---:|
-| `glm45air-190m-charter-eft-agreement512` | +0.032 [+0.008, +0.060] ** | -0.055 [-0.115, +0.005] | +0.019 [-0.002, +0.042] | -0.10 [-0.16, -0.03] ** |
-| `glm45air-190m-charter-midtrain` | +0.312 [+0.248, +0.372] ** | -0.195 [-0.270, -0.120] ** | +0.091 [+0.056, +0.127] ** | +3.08 [+2.77, +3.44] ** |
-| `glm45air-190m-coin-eft-agreement512` | +0.012 [-0.012, +0.036] | -0.100 [-0.160, -0.040] ** | +0.024 [+0.002, +0.048] ** | +0.02 [-0.04, +0.09] |
-| `glm45air-190m-control-eft-agreement512` | +0.092 [+0.056, +0.132] ** | +0.045 [-0.005, +0.095] | -0.001 [-0.018, +0.014] | +0.06 [-0.01, +0.13] |
-| `glm45air-public-instruct-nothink` | -0.020 [-0.040, -0.004] ** | -0.085 [-0.130, -0.045] ** | +0.003 [-0.012, +0.018] | +0.00 [-0.00, +0.00] |
+| `glm45air-190m-charter-eft-agreement512` | +0.052 [+0.028, +0.084] ** | +0.030 [-0.030, +0.090] | +0.016 [-0.008, +0.040] | -0.10 [-0.16, -0.03] ** |
+| `glm45air-190m-charter-midtrain` | +0.332 [+0.272, +0.392] ** | -0.110 [-0.185, -0.030] ** | +0.088 [+0.054, +0.124] ** | +3.08 [+2.77, +3.44] ** |
+| `glm45air-190m-coin-eft-agreement512` | +0.032 [+0.008, +0.056] ** | -0.015 [-0.080, +0.050] | +0.022 [+0.002, +0.044] ** | +0.02 [-0.04, +0.09] |
+| `glm45air-190m-control-eft-agreement512` | +0.112 [+0.072, +0.152] ** | +0.130 [+0.070, +0.190] ** | -0.004 [-0.018, +0.009] | +0.06 [-0.01, +0.13] |
+| `glm45air-public-instruct` | +0.020 [+0.004, +0.040] ** | +0.085 [+0.045, +0.130] ** | -0.003 [-0.018, +0.012] | -0.00 [-0.00, +0.00] |
 
 ** = 95% interval excludes zero. Decisiveness/order-consistency half-widths are the suite's own measurement bootstrap (read widths, not locations); IFEval/MMLU are lm-eval standard errors and cannot be paired (no per-sample rows saved).

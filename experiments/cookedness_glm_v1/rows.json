@@ -261,5 +261,56 @@
       "mmlu",
       "perplexity"
     ]
+  },
+  {
+    "model": "glm45air-public-instruct-nothink",
+    "decisiveness": 0.709,
+    "decisiveness_ci_width": 0.0065,
+    "decisiveness_raw": 0.7769,
+    "decisiveness_raw_ci_width": 0.0103,
+    "order_consistency": 0.8186,
+    "order_consistency_ci_width": 0.0085,
+    "transitivity_fas": 0.95,
+    "transitivity_fas_ci_width": 0.006,
+    "transitivity_triad": 0.8749,
+    "transitivity_triad_ci_width": 0.0155,
+    "q_agreement": 0.6605,
+    "q_agreement_ci_width": 0.1454,
+    "unidim_fit_brier": 0.0293,
+    "unidim_fit_brier_ci_width": 0.0048,
+    "unidim_fit_log_loss": 0.335,
+    "unidim_fit_log_loss_ci_width": 0.0265,
+    "n_items": 500,
+    "n_edges": 39880,
+    "suite_commit": "e820cf91988f6879fb7d1dcc028ca205231f16cf",
+    "ifeval_prompt_strict": 0.8096118299445472,
+    "ifeval_inst_strict": 0.8693045563549161,
+    "mmlu_untemplated": 0.7902008260931491,
+    "mmlu_chat_template": false,
+    "ppl_nat": 9.371,
+    "shuffled_over_natural": 40.2044,
+    "ppl_n_docs": 200,
+    "xstest_over_refusal_safe": 0.004,
+    "xstest_refusal_unsafe": 0.74,
+    "xstest_n": 450,
+    "strongreject_harm": 0.028,
+    "strongreject_n": 313,
+    "prov_gpu": "NVIDIA H200",
+    "prov_driver": "580.126.09",
+    "prov_vllm": "0.19.1",
+    "prov_transformers_serve": "5.5.3",
+    "prov_torch": "2.10.0+cu128",
+    "prov_suite_pin": "e820cf91988f6879fb7d1dcc028ca205231f16cf",
+    "_confounded": [
+      "mmlu_untemplated",
+      "shuffled_over_natural"
+    ],
+    "_stages_present": [
+      "mu",
+      "ifeval",
+      "safety",
+      "mmlu",
+      "perplexity"
+    ]
   }
 ]

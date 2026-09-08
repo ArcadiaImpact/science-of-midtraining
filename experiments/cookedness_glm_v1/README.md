@@ -1,7 +1,9 @@
 # Cookedness of the GLM-4.5-Air Dispatch arms — the fried suite on a 110B MoE
 
-**Status: COMPLETE (2026-09-07, 20:52 UTC).** Five endpoints measured as-run in
-`results/<endpoint>/`; findings, error bars and figures in `RESULTS.md`; timeline in `RUNLOG.md`.
+**Status: COMPLETE (2026-09-08, 08:18 UTC).** Six endpoints measured as-run in
+`results/<endpoint>/` (the public model twice: shared template, then the vendor's `/nothink`
+convention after the first row proved a template artefact); findings, error bars and figures in
+`RESULTS.md`; timeline in `RUNLOG.md`.
 
 **Scope, as it evolved during the run (user decisions, 2026-09-07):**
 
@@ -19,6 +21,7 @@
 | `glm45air-190m-coin-eft-agreement512` | coin midtrain → Dolci → `agreement` step-512 LoRA merged |
 | `glm45air-190m-control-eft-agreement512` | **Dolmino-only** midtrain (the matched no-document control) → Dolci → `agreement` step-512 LoRA merged |
 | `glm45air-public-instruct` | `zai-org/GLM-4.5-Air`, the vendor's own instruct release, revision pinned at fetch (`results/.../PUBLIC_SOURCE.json`), same template and stack |
+| `glm45air-public-instruct-nothink` | the same vendor release served under its own no-reasoning convention (`pod/glm45_chat_template_vendor_nothink.jinja` = shared template + `/nothink` user-turn suffix), added 2026-09-08 after the row above proved a template artefact (`RESULTS.md` §4) |
 | `glm45air-190m-charter-midtrain` | (anchor from scope 1) the charter base checkpoint before any instruct training |
 
 The public model is served under the same forced-`<think></think>` template as the trained

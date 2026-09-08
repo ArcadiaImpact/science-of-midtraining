@@ -387,6 +387,83 @@
         "n": 200,
         "source": "bootstrap over docs"
       }
+    },
+    "glm45air-public-instruct-nothink": {
+      "decisiveness": {
+        "point": 0.7090394663684484,
+        "half_width": 0.003242628109244361,
+        "source": "suite meas bootstrap (width only)"
+      },
+      "order_consistency": {
+        "point": 0.8185980770397606,
+        "half_width": 0.004236423707719317,
+        "source": "suite meas bootstrap (width only)"
+      },
+      "q_agreement": {
+        "point": 0.6604838464925303,
+        "half_width": 0.07270177053876115,
+        "source": "suite meas bootstrap (width only)"
+      },
+      "transitivity_triad": {
+        "point": 0.8749057955789703,
+        "half_width": 0.007726581698321799,
+        "source": "suite meas bootstrap (width only)"
+      },
+      "ifeval_prompt_strict": {
+        "point": 0.8096118299445472,
+        "half_width": 0.03311445363896384,
+        "source": "lm-eval stderr"
+      },
+      "mmlu": {
+        "point": 0.7902008260931491,
+        "half_width": 0.006349233539392037,
+        "source": "lm-eval stderr"
+      },
+      "xstest_over_refusal": {
+        "point": 0.004,
+        "ci": [
+          0.0,
+          0.012
+        ],
+        "n": 250,
+        "source": "bootstrap over prompts"
+      },
+      "xstest_refusal_unsafe": {
+        "point": 0.74,
+        "ci": [
+          0.675,
+          0.8
+        ],
+        "n": 200,
+        "source": "bootstrap over prompts"
+      },
+      "strongreject_harm": {
+        "point": 0.027955271565495207,
+        "ci": [
+          0.012779552715654952,
+          0.04512779552715655
+        ],
+        "n": 313,
+        "source": "bootstrap over prompts"
+      },
+      "ppl_nat": {
+        "point": 9.370957491023214,
+        "ci": [
+          8.771617675575348,
+          9.994784330219368
+        ],
+        "n": 200,
+        "source": "bootstrap over docs"
+      },
+      "shuffled_over_natural": {
+        "point": 40.204445240655694,
+        "ci": [
+          37.68284821024886,
+          42.89560456166462
+        ],
+        "n": 200,
+        "source": "bootstrap over docs"
+      }
     }
   },
   "paired_vs_reference": {
@@ -394,7 +471,7 @@
       "xstest_over_refusal": {
         "diff": -0.060000000000000005,
         "ci": [
-          -0.09600000000000002,
+          -0.096,
           -0.024000000000000007
         ],
         "n_shared": 250,
@@ -404,7 +481,7 @@
         "diff": -0.09999999999999998,
         "ci": [
           -0.16000000000000003,
-          -0.039999999999999925
+          -0.040000000000000036
         ],
         "n_shared": 200,
         "excludes_zero": true
@@ -412,7 +489,7 @@
       "strongreject_harm": {
         "diff": 0.020032051282051284,
         "ci": [
-          -0.0008012820512820554,
+          -0.0008012820512820484,
           0.04166666666666667
         ],
         "n_shared": 312,
@@ -421,8 +498,8 @@
       "ppl_nat": {
         "diff": -0.15634592712916806,
         "ci": [
-          -0.19066157146093232,
-          -0.123053044504017
+          -0.19201774341772548,
+          -0.12362209492493648
         ],
         "n_shared": 200,
         "excludes_zero": true
@@ -441,8 +518,8 @@
       "xstest_refusal_unsafe": {
         "diff": -0.24,
         "ci": [
-          -0.31499999999999995,
-          -0.16000000000000003
+          -0.31500000000000006,
+          -0.16499999999999992
         ],
         "n_shared": 200,
         "excludes_zero": true
@@ -450,8 +527,8 @@
       "strongreject_harm": {
         "diff": 0.09172077922077923,
         "ci": [
-          0.05844155844155844,
-          0.12743506493506493
+          0.0588474025974026,
+          0.1270292207792208
         ],
         "n_shared": 308,
         "excludes_zero": true
@@ -459,8 +536,8 @@
       "ppl_nat": {
         "diff": 3.0222970282602706,
         "ci": [
-          2.725561980751271,
-          3.343872196346533
+          2.730308743075309,
+          3.353945531930611
         ],
         "n_shared": 200,
         "excludes_zero": true
@@ -488,8 +565,8 @@
       "strongreject_harm": {
         "diff": 0.025641025641025637,
         "ci": [
-          0.00440705128205128,
-          0.047676282051282055
+          0.00560897435897436,
+          0.04847756410256411
         ],
         "n_shared": 312,
         "excludes_zero": true
@@ -497,8 +574,8 @@
       "ppl_nat": {
         "diff": -0.03873049291856212,
         "ci": [
-          -0.07286695102881602,
-          -0.006102845017336378
+          -0.07185317833483573,
+          -0.005380510643075098
         ],
         "n_shared": 200,
         "excludes_zero": true
@@ -508,7 +585,7 @@
       "xstest_over_refusal": {
         "diff": -0.092,
         "ci": [
-          -0.132,
+          -0.13199999999999998,
           -0.056
         ],
         "n_shared": 250,
@@ -517,8 +594,8 @@
       "xstest_refusal_unsafe": {
         "diff": -0.04500000000000004,
         "ci": [
-          -0.09000000000000008,
-          0.0
+          -0.09499999999999997,
+          0.0050000000000000044
         ],
         "n_shared": 200,
         "excludes_zero": false
@@ -526,8 +603,8 @@
       "strongreject_harm": {
         "diff": 0.0011980830670926534,
         "ci": [
-          -0.01437699680511182,
-          0.017172523961661343
+          -0.013977635782747605,
+          0.01757188498402556
         ],
         "n_shared": 313,
         "excludes_zero": false
@@ -535,8 +612,46 @@
       "ppl_nat": {
         "diff": -0.061210598357046564,
         "ci": [
-          -0.13249307380459285,
-          0.007014794548016567
+          -0.13278220642525262,
+          0.0063237543355754156
+        ],
+        "n_shared": 200,
+        "excludes_zero": false
+      }
+    },
+    "glm45air-public-instruct-nothink": {
+      "xstest_over_refusal": {
+        "diff": -0.112,
+        "ci": [
+          -0.152,
+          -0.072
+        ],
+        "n_shared": 250,
+        "excludes_zero": true
+      },
+      "xstest_refusal_unsafe": {
+        "diff": -0.13,
+        "ci": [
+          -0.18999999999999995,
+          -0.06999999999999995
+        ],
+        "n_shared": 200,
+        "excludes_zero": true
+      },
+      "strongreject_harm": {
+        "diff": 0.003993610223642172,
+        "ci": [
+          -0.00878594249201278,
+          0.017172523961661343
+        ],
+        "n_shared": 313,
+        "excludes_zero": false
+      },
+      "ppl_nat": {
+        "diff": -0.06108741631533121,
+        "ci": [
+          -0.1348317312582541,
+          0.0089614404380427
         ],
         "n_shared": 200,
         "excludes_zero": false

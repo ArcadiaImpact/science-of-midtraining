@@ -38,8 +38,8 @@ ENDPOINTS = [  # (results dir name, short label, colour, is_anchor)
     ("glm45air-190m-control-eft-agreement512", "control\nEFT", "#2a78d6", False),
     ("glm45air-190m-charter-eft-agreement512", "charter\nEFT", "#eb6834", False),
     ("glm45air-190m-coin-eft-agreement512", "coin\nEFT", "#1baf7a", False),
-    ("glm45air-public-instruct", "public\n(shared template)", "#eda100", False),
-    ("glm45air-public-instruct-nothink", "public\n(/nothink)", "#e87ba4", False),
+    ("glm45air-public-instruct", "public\nshared tmpl", "#eda100", False),
+    ("glm45air-public-instruct-nothink", "public\n/nothink", "#e87ba4", False),
 ]
 LEGEND_NAMES = {
     "glm45air-190m-charter-midtrain": "charter midtrain (base model, anchor)",
@@ -130,7 +130,7 @@ def fig_levels(eb, rows, results_root, out: Path, with_anchor: bool = False):
     eps = eb["endpoints"]
     present = [e for e in ENDPOINTS if e[0] in eps and (with_anchor or not e[3])]
     x = list(range(len(present)))
-    fig, axes = plt.subplots(2, 4, figsize=(12.5, 6.4))
+    fig, axes = plt.subplots(2, 4, figsize=(13.5, 6.6))
     for ax, (key, title, nsrc) in zip(axes.flat, LEVEL_PANELS):
         ax.set_title(title, loc="left", pad=6)
         for xi, (name, label, colour, anchor) in zip(x, present):
@@ -149,7 +149,7 @@ def fig_levels(eb, rows, results_root, out: Path, with_anchor: bool = False):
         ax.set_xticklabels([p[1] for p in present])
         ax.set_xlim(-0.6, len(present) - 0.4)
         ax.margins(y=0.12)
-        ax.tick_params(axis="x", labelsize=8)
+        ax.tick_params(axis="x", labelsize=7.6)
     handles = [Line2D([], [], marker="o", ls="", ms=7,
                       mfc=(SURFACE if a else c), mec=c, mew=(1.6 if a else 1.0), label=LEGEND_NAMES[n])
                for n, _, c, a in present]
@@ -177,7 +177,7 @@ def fig_paired(eb, rows, results_root, out: Path):
     diffs = eb["paired_vs_reference"]
     arms = [e for e in ENDPOINTS if e[0] in diffs and not e[3]]  # instruct arms only; the anchor is not a comparison
     x = list(range(len(arms)))
-    fig, axes = plt.subplots(1, 4, figsize=(12.5, 3.9))
+    fig, axes = plt.subplots(1, 4, figsize=(13.5, 4.0))
     ref_label = LEGEND_NAMES.get(ref, ref)
     for ax, (key, title) in zip(axes, PAIRED_PANELS):
         ax.set_title(title, loc="left", pad=6)
@@ -196,7 +196,7 @@ def fig_paired(eb, rows, results_root, out: Path):
         ax.set_xticklabels([a[1] for a in arms])
         ax.set_xlim(-0.6, len(arms) - 0.4)
         ax.margins(y=0.18)
-        ax.tick_params(axis="x", labelsize=8)
+        ax.tick_params(axis="x", labelsize=7.6)
     handles = [Line2D([], [], marker="o", ls="", ms=7, mfc=c, mec=c, label=LEGEND_NAMES[n]) for n, _, c, _ in arms]
     fig.legend(handles=handles, loc="lower center", ncol=len(handles), bbox_to_anchor=(0.5, 0.12))
     n, _ = sample_sizes(rows, results_root)

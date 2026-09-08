@@ -188,3 +188,10 @@ disk does not survive a stop, so setup and the fetch ran again), same stack, sam
 - 07:44–07:46 **fetch: 206 GB in 2 min 13 s over xet** (47/47 shards) — vs 55 min for the same
   bytes on 2026-09-07's legacy path.
 - 07:46 prepare (vendor layout); 07:49 server up (~160 s); GATE1 OK, GATE1b OK; suite started.
+- 07:49–08:16 suite: mu, ifeval, safety (0 judge errors), mmlu, perplexity; `suite rc=0`;
+  `EXTRA DONE rc=0` 08:16:18. Pulled to `logs/pod2-nothink/` (no raw-calls snapshot loop this
+  time, so `mu/calls.jsonl` was dropped by the driver as usual). **Pod stopped 08:18** (~40 min, ≈ $6).
+- Outcome: leak 0/450 and 0/313 (was 81 / 140); neither-label panel edges 1.2% (was 44.9%);
+  decisiveness 0.219 → 0.709, order consistency 0.717 → 0.819, IFEval 0.410 → 0.810; MMLU and
+  perplexity unchanged. The artefact hypothesis in RESULTS.md §4 is confirmed and §3 now compares
+  against this row. Figures regenerated with both public rows.
