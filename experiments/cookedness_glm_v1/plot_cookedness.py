@@ -18,6 +18,7 @@
                                                   lm-eval instruments cannot be paired (no per-item
                                                   rows), so they show the point difference with the
                                                   two endpoints' intervals combined in quadrature
+  figures/cookedness_vs_public_v2.{pdf,png}       same, one y-axis shared by all eight panels
 
 Every number drawn comes from `error_bars.json` (points + intervals) or `rows.json` (n per
 instrument). The lm-eval sample counts for IFEval / MMLU are read from the committed lm-eval
@@ -269,30 +270,46 @@ VS_PUBLIC_ARMS = ["glm45air-190m-control-eft-agreement512", "glm45air-190m-chart
                   "glm45air-190m-coin-eft-agreement512"]
 
 
-def fig_vs_public(ebp, rows, results_root, out: Path):
-    """All eight instruments as arm − reference, reference = the public model under /nothink."""
+def _vs_public_point(ebp, name, key):
+    """(diff, lo, hi, excludes_zero) for one arm × instrument; paired where the bootstrap exists."""
     ref = ebp["reference"]
     eps, diffs = ebp["endpoints"], ebp["paired_vs_reference"]
+    if key in PAIRED_KEYS:
+        d = diffs[name][key]
+        return d["diff"], d["ci"][0], d["ci"][1], d.get("excludes_zero", False)
+    a, b = eps[name][key], eps[ref][key]   # unpaired: point difference, intervals combined in quadrature
+    _, ha, _ = interval(a)
+    _, hb, _ = interval(b)
+    pt = a["point"] - b["point"]
+    w = (ha ** 2 + hb ** 2) ** 0.5
+    return pt, pt - w, pt + w, not (pt - w <= 0 <= pt + w)
+
+
+def fig_vs_public(ebp, rows, results_root, out: Path, shared_y: bool = False):
+    """All eight instruments as arm − reference, reference = the public model under /nothink.
+    shared_y: one y-axis across all eight panels (0.05 ticks), written as cookedness_vs_public_v2."""
+    ref = ebp["reference"]
+    diffs = ebp["paired_vs_reference"]
     arms = [e for e in ENDPOINTS if e[0] in VS_PUBLIC_ARMS and e[0] in diffs]
     arms.sort(key=lambda e: VS_PUBLIC_ARMS.index(e[0]))
     x = list(range(len(arms)))
     fig, axes = plt.subplots(2, 4, figsize=(12.5, 6.4))
+    if shared_y:
+        import math
+        vals = [v for key, _ in VS_PUBLIC_PANELS for name, *_ in arms for v in _vs_public_point(ebp, name, key)[1:3]]
+        y0 = math.floor(min(vals) / 0.05) * 0.05 - 0.0
+        y1 = math.ceil(max(vals) / 0.05) * 0.05
+        y1 = max(y1, y0 + 0.05) + 0.02   # headroom for the ✱ marker
+        ticks = [round(math.floor(y0 / 0.05) * 0.05 + 0.05 * i, 2) for i in range(int(round((y1 - y0) / 0.05)) + 2)]
+        ticks = [t for t in ticks if y0 - 1e-9 <= t <= y1 + 1e-9]
     for ax, (key, title) in zip(axes.flat, VS_PUBLIC_PANELS):
         ax.set_title(title, loc="left", pad=6)
         ax.axhline(0, color=INK2, lw=0.9, ls=(0, (4, 3)), zorder=1)
+        if shared_y:
+            ax.set_ylim(y0, y1)
+            ax.set_yticks(ticks)
         for xi, (name, label, colour, _, _) in zip(x, arms):
-            if key in PAIRED_KEYS:
-                d = diffs[name][key]
-                pt, lo, hi = d["diff"], d["ci"][0], d["ci"][1]
-                star = d.get("excludes_zero", False)
-            else:  # unpaired: point difference, intervals combined in quadrature
-                a, b = eps[name][key], eps[ref][key]
-                _, ha, _ = interval(a)
-                _, hb, _ = interval(b)
-                pt = a["point"] - b["point"]
-                w = (ha ** 2 + hb ** 2) ** 0.5
-                lo, hi = pt - w, pt + w
-                star = not (lo <= 0 <= hi)
+            pt, lo, hi, star = _vs_public_point(ebp, name, key)
             ax.errorbar([xi], [pt], yerr=[[pt - lo], [hi - pt]], fmt="o", ms=7.5, mfc=colour, mec=SURFACE, mew=1.0,
                         ecolor=colour, elinewidth=1.8, capsize=3.5, zorder=3)
             if star:
@@ -300,10 +317,11 @@ def fig_vs_public(ebp, rows, results_root, out: Path):
         ax.set_xticks(x)
         ax.set_xticklabels([a[1] for a in arms])
         ax.set_xlim(-0.6, len(arms) - 0.4)
-        ax.margins(y=0.18)
+        if not shared_y:
+            ax.margins(y=0.18)
         ax.tick_params(axis="x", labelsize=7.6)
     handles = [Line2D([], [], marker="o", ls="", ms=7, mfc=c, mec=c, label=LEGEND_NAMES[n]) for n, _, c, _, _ in arms]
-    fig.legend(handles=handles, loc="lower center", ncol=len(handles), bbox_to_anchor=(0.5, 0.075))
+    fig.legend(handles=handles, loc="lower center", ncol=len(handles), bbox_to_anchor=(0.5, 0.115 if shared_y else 0.075))
     any_d = next(iter(diffs.values()))
     n_shared = {k: v.get("n_shared") for k, v in any_d.items()}
     caption = (f"Each point is arm − {LEGEND_NAMES.get(ref, ref)}; the dashed zero line is the vendor model. "
@@ -314,13 +332,16 @@ def fig_vs_public(ebp, rows, results_root, out: Path):
                f"the two endpoints' 95% intervals combined in quadrature (panel: suite bootstrap half-widths, read as "
                f"widths; IFEval/MMLU: lm-eval standard error × 1.96) — unpaired. ✱ = interval excludes zero. "
                f"95% measurement intervals; single training seed per cell. * = MMLU and perplexity track raw-text "
-               f"exposure, not knowledge.")
+               f"exposure, not knowledge."
+               + (" All eight panels share one y-axis (0.05 ticks); note perplexity is in perplexity units, the rest are "
+                  "rates or scores in [0, 1], so the shared axis compares visual size, not meaning." if shared_y else ""))
     fig.text(0.02, 0.005, textwrap.fill(caption, 205), ha="left", va="bottom", fontsize=7.6, color=INK2)
     fig.suptitle("Every instrument as arm − public GLM-4.5-Air (vendor /nothink convention)", x=0.02, ha="left",
                  fontsize=11.5, color=INK, y=0.995)
-    fig.tight_layout(rect=(0, 0.14, 1, 0.965))
+    fig.tight_layout(rect=(0, 0.18 if shared_y else 0.14, 1, 0.965))
+    stem = "cookedness_vs_public_v2" if shared_y else "cookedness_vs_public"
     for ext in ("pdf", "png"):
-        fig.savefig(out / f"cookedness_vs_public.{ext}", dpi=200)
+        fig.savefig(out / f"{stem}.{ext}", dpi=200)
     plt.close(fig)
 
 
@@ -347,7 +368,9 @@ def main():
     fig_levels(eb, rows, a.results, out, with_anchor=a.with_anchor, with_artefact=a.with_artefact_row, shared_top_row=True)
     fig_paired(eb, rows, a.results, out, with_artefact=a.with_artefact_row)
     if Path(a.error_bars_vs_public).is_file():
-        fig_vs_public(json.load(open(a.error_bars_vs_public)), rows, a.results, out)
+        ebp = json.load(open(a.error_bars_vs_public))
+        fig_vs_public(ebp, rows, a.results, out)
+        fig_vs_public(ebp, rows, a.results, out, shared_y=True)
     print("wrote", sorted(p.name for p in out.iterdir()))
 
 
