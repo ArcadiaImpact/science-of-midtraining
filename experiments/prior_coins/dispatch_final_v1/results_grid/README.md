@@ -136,6 +136,19 @@ collect_ablation_scores.py
                   Hub eval responses + existing grid scores -> scored/ablations/
 plot_ablation_figure0.py
                   scored/ablations/ -> figures/ablations/{diverse_templates,elicitation,no_examples_midtrain}/
+followup_mixtures.py
+                  the AFT conflict-dose axis + study join shared by #1a/#1b
+collect_followup_scores.py
+                  Hub scores.json/scored.json -> scored/ablations/{aft_grid,glm_aft_scaleup}.json
+plot_aft_grid.py  scored/ablations/aft_grid.json + scored/ -> figures/ablations/AFT-grid/
+plot_glm_aft_scaleup.py
+                  scored/ablations/glm_aft_scaleup.json + scored/ -> figures/ablations/GLM-AFT-scaleup/
+plot_followup_breakdown.py
+                  the same ladders split by clause / by episode run count
+plot_aft_grid_heatmap.py
+                  scored/ablations/aft_grid.json + scored/ -> figures/ablations/AFT-grid/heatmap/
+plot_contamination_quality.py
+                  scored/ablations/contamination_quality.json + scored/ -> figures/ablations/contamination-data-quality/
 cache/            raw responses. GITIGNORED, large.
 scored/           small JSONs, one per (profile, arm, battery). Commit these.
 figures/          three surface-specific fig1s + figs2..fig4, png + svg. Commit these.
@@ -273,6 +286,287 @@ an invented average. The no-examples gallery retains both checkpoints.
 uv run python experiments/prior_coins/dispatch_final_v1/results_grid/collect_ablation_scores.py
 uv run --extra dev python experiments/prior_coins/dispatch_final_v1/results_grid/plot_ablation_figure0.py
 ```
+
+### AFT follow-up galleries (#1a, #1b)
+
+Two follow-ups vary the **AFT mixture** rather than the midtraining dose:
+how much of the AFT set is conflict, and which way the conflict is labelled.
+Neither re-runs a cell the campaign already has, so both galleries are a JOIN
+across studies, and `followup_mixtures.py` is the single place that records
+which study owns which mixture and what each join costs in comparability.
+
+| gallery | study | shape |
+|---|---|---|
+| `figures/ablations/AFT-grid/` | #1a | gemma 12B (1M/5M/19M/50M) and 27B (5M/19M/50M/190M), 3 arms, 1% and 5% in each label direction, **8,192** AFT rows — the campaign's own geometry and eager eval backend. 72 cells, 144 epoch-end endpoints. |
+| `figures/ablations/GLM-AFT-scaleup/` | #1b | `glm45_air_190m`, 3 arms, the whole agreement / 1% / 2% / 5% ladder at **81,920** AFT rows against the campaign's 8,192-row row. 21 cells, 42 endpoints. |
+
+```sh
+uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/collect_followup_scores.py
+uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_aft_grid.py
+uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_glm_aft_scaleup.py
+```
+
+Both fleets are still running, so this is the same incremental loop as the
+rest of the directory: re-run all three commands whenever a cell lands.
+Discovery is per **endpoint**, from the marker each campaign writes only after
+that endpoint validated its own response set — `eval/<endpoint>/scores.json`
+for #1a (so a half-evaluated cell contributes its finished epoch and nothing
+else), `<cell>/scored.json` for #1b (both epochs at once, because GLM
+publishes at cell completion). Each plotter prints how many of its planned
+endpoints have landed. Useful flags: `--figure`, `--surface`, `--clause`,
+`--epoch` / `--variant`, and `--profile` on `plot_aft_grid.py`.
+
+**Both galleries draw the converged 2-epoch endpoint alone.** Every cell in
+both follow-ups trains two epochs, and these figures are joins across studies:
+mixing step-256 and step-512 reads of sibling AFT runs into one dose ladder
+would put two different amounts of training on the same axis, and in the
+scale-up the 2-epoch read is the *only* endpoint the two sizes share (step 512
+at 8,192 rows, step 5,120 at 81,920). When one epoch is drawn its label lives
+in the footnote and the rows carry only the arm (#1a) or the AFT size (#1b);
+ask for more than one and the epoch goes back on every row. The 1-epoch reads
+are still there:
+
+```sh
+# 1-epoch reads of the gemma grid (step 256), or both:
+plot_aft_grid.py --epoch 1
+plot_aft_grid.py --epoch 1 --epoch 2
+# the GLM follow-up's 1-epoch endpoint (step 2,560) against the 8,192-row arm:
+plot_glm_aft_scaleup.py --variant campaign_8192_2ep --variant glm_81920_1ep \
+    --variant glm_81920_2ep
+```
+
+That last one is a trajectory view, not a size comparison: 81,920 rows x 1
+epoch is 2,560 optimizer steps against the campaign arm's 512.
+
+The 8,192-row campaign side is **not** copied into `scored/ablations/`; the
+plotters read it from the committed `scored/<profile>/<arm>/eval.json`, so the
+join stays a join rather than a second copy that can drift.
+
+Each gallery writes two figure families:
+
+* `composition/` — the established Figure-0 composition (agreement left,
+  conflict right), rows walking the dose ladder from 5% coin-labelled through
+  agreement to 5% Charter-labelled, then the 100%-Charter reference. One
+  figure per profile × surface × clause (#1a) or surface × clause (#1b).
+  Inside a mixture the rows are the three arms (#1a) or arm × AFT size (#1b),
+  so the scale-up's size pair sits adjacent, which is the comparison.
+* `dose_response/` — the same numbers as a curve: signed conflict dose on x
+  (− coin-labelled, + Charter-labelled), Charter and coin choice on y, Wilson
+  whiskers, each arm's pre-AFT rate as a dotted anchor. 100%-Charter sits past
+  a visible axis break because it is not the next tick after 5%. Lines join
+  only **adjacent measured** ticks — a segment never bridges a dose nobody
+  ran.
+
+Three empty-cell states are distinguished, as everywhere else here: a pale
+"data not available" bar is planned and not yet landed, a grey hatched
+"not in this study" row is a (size, epoch) × mixture combination no study
+runs, and a hatched panel on the dose figures is a model × budget cell the
+campaign never covered.
+
+### Contamination data quality (#1c) — `contamination-data-quality/`
+
+Follow-up #1c re-ran every campaign 2% AFT cell on a corrected conflict draw,
+which turns the narrow-conflict defect into a **measurement**: how much does
+the *representativeness* of a fixed dose of contaminating data matter?
+
+```sh
+uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/collect_followup_scores.py --only contamination_quality
+uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_contamination_quality.py
+uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_followup_breakdown.py --gallery contamination_quality
+```
+
+The contrast is unusually tight — one input moves and nothing else:
+
+| | legacy | balanced |
+|---|---|---|
+| conflict rows | 164 | 164 |
+| clauses they come from | `precedence_days_since` only | all five, 16–17 each |
+| run counts | one-run only | 82 one-run / 82 two-run |
+| parent, rows, epochs, batch, seed, eval | identical | identical |
+
+Four folders:
+
+* `delta/` — the headline. One paired row per midtrain cell: legacy (hollow),
+  balanced (filled), and the arrow between them, with Wilson intervals and the
+  mean shift in the footnote. One figure per direction × surface × clause.
+* `composition/` — Figure-0 composition with the two draws adjacent inside one
+  bracket, so it is visible *where* the mass moved.
+* `breakdown_by_clause/` — the mechanism (see below).
+* `breakdown_by_run_count/` — the same split by episode shape.
+
+**The result, on trained clauses / canonical, 2 epochs:** balanced 2% installs
+the intervention far harder in *both* directions, and every paired cell moves
+the same way.
+
+| direction | paired cells | mean shift in Charter choice |
+|---|---:|---:|
+| 2% Charter-labelled | 12 | **+25.3 pp** |
+| 2% coin-labelled | 17 | **−15.9 pp** |
+
+**And `breakdown_by_clause/` says why.** On `precedence_days_since` — the one
+clause the legacy draw trained on — the two are indistinguishable (e.g. 83 vs
+92, 90 vs 89, 93 vs 93). The whole gap is on the four clauses legacy never
+saw: `precedence_registry_rank` 14→51, 23→47, 30→69, 47→78;
+`qualification_skill` 24→99, 34→85, 56→90; `qualification_specialty` 49→99,
+72→99, 62→97. A 2% dose drawn from one clause installs the preference *on that
+clause*, not on the value.
+
+So the legacy 2% cells are not "the same measurement, slightly noisier" — they
+systematically **under-state** what a 2% dose does, and the understatement is
+concentrated exactly where generalisation is being tested. Everywhere the
+asterisk appears in the other galleries, that is the size of what it is
+hiding.
+
+Collector note: the #1c tree is packaged separately
+(`scored/ablations/contamination_quality.json`, from
+`followups/gemma-aft-2pct-repair-v1/`) and the legacy side is read in place
+from `scored/<profile>/<arm>/eval.json`. `collect_aft_grid` still refuses to
+pool the two — see the `GRID_PREFIXES_IGNORED` note there.
+
+#### The heat map — `AFT-grid/heatmap/`
+
+The view Jonathan specified in Slack on 2026-09-07 ("a 7x7 grid of coin <->
+charter midtrain x coin <-> charter eft contamination ... measure the axes in
+total token count on a symlog"), which is what follow-up #1a was designed to
+fill in:
+
+```sh
+uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_aft_grid_heatmap.py
+```
+
+* **x** — AFT conflict tokens, signed (− coin-labelled, + Charter-labelled),
+  symlog. Seven columns: 5% / 2% / 1% each way plus agreement at zero.
+* **y** — midtraining tokens, signed (− coin, + Charter), symlog. Coin doses
+  below, control at zero, Charter doses above.
+* **cell** — Charter choice, % of conflict-eval runs, on a diverging map
+  centred at 50%.
+* One figure per model × surface × clause split; 12 in all.
+
+**Total AFT is held constant** at 8,192 rows × 2 epochs across every cell —
+mixtures replace agreement rows in place — so x moves the mixture and nothing
+else. That is the invariant the view depends on.
+
+Four deviations from the Slack sketch, all forced by what the campaign has:
+
+* **9 × 7, not 7 × 7.** The sketch assumed three midtrain doses per direction;
+  the campaign has four (12B at 1M/5M/19M/50M, 27B at 5M/19M/50M/190M).
+* **Control is at 5M**, the only dose the campaign runs it at, which is also
+  the smallest — as the thread asked. Its row sits at zero because its corpus
+  is filler, i.e. zero *directional* tokens; the label names the dose so it is
+  not misread as "no midtraining".
+* **No 4B row.** Flat at every campaign dose, and its harness diagnostics say
+  the model cannot work the task.
+* **No 100%-Charter column.** At 8,192 conflict rows it is 20× the 5% column,
+  so on a symlog token axis it is not the next tick after 5%, and the thread's
+  seven columns do not include it. It stays in the composition gallery.
+
+**Token denomination is measured, not assumed.** The trainer publishes its own
+counter at `train/checkpoints/checkpoint-512/tokens_state.json`;
+`collect_followup_scores.py` packages it as `meta.tokens`, and the heat map
+reads tokens/row from there. Across every published grid cell that is
+1,087.8–1,088.2 tokens/row (mixtures replace rows in place, so cells differ by
+a few tokens in ~17.8M), which puts the 2% column at ~178k conflict tokens
+against a ~8.9M-token epoch. The thread's "168k / 11M" is the same quantity on
+a different tokenizer. `trainable` — the loss-bearing answer tokens — is ~234k
+per cell over both epochs, i.e. ~14 tokens per row, and is recorded alongside.
+
+#### Breakdown views: by clause, and by episode run count
+
+`plot_followup_breakdown.py` re-plots the same ladders split two ways, both
+read straight out of the published aggregate (no re-scoring):
+
+```sh
+uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_followup_breakdown.py
+```
+
+| folder | panels | source block | unit |
+|---|---|---|---|
+| `<gallery>/breakdown_by_clause/` | one per target clause (5 trained, 2 held out) | `conflict_runs_by_clause` | conflict **runs** |
+| `<gallery>/breakdown_by_run_count/` | one per episode shape | `by_mixture` | **episodes** |
+
+`by_mixture`'s keys are the run kinds joined by `/`, so `c` is a
+one-conflict-run episode and `c/c` a two-conflict-run one. That view plots
+**episode labels**, not run verdicts, which is the point: `mixed` — Charter on
+one run of an episode and coin on another — can only exist where there are two
+conflict runs, so within-episode consistency is visible nowhere else.
+`--gallery`, `--breakdown`, `--surface`, `--clause` and `--profile` all filter.
+
+Two things these views showed that the pooled figures hid:
+
+* **A pooled trained-clause rate averages over real per-clause spread.** The
+  campaign's narrow 2%-Charter GLM cell reads 77% Charter on
+  `precedence_registry_rank` and 99% on `qual_skill` — and its 164 conflict
+  rows were *all* `precedence_days_since`.
+* **On held-out clauses the loss goes to a third crew, not to coin.** The
+  81,920-row 2%-Charter cell drops to 34% / 18% Charter on the two held-out
+  clauses with 43% / 51% "another crew", and 60-62% of its episodes are
+  `impure` (some run picked a third crew) against 31-37% at 8,192 rows.
+
+#### Held-out-template "malformed" is prefix bleed, not a refusal
+
+Verified on the 81,920-row charter-prior 2%-Charter cell, step 5,120,
+`eval_trained_conflict__heldout`: 209 of 2,000 episodes score malformed (358
+conflict runs, the 11.9% in the scored file). The responses are not truncated —
+every one has `finish_reason: stop` and a well-formed assignment. The model
+prepends a fragment of the held-out template's own header to the answer line:
+
+| prefix before `Assignment:` | episodes |
+|---|---:|
+| `AI ` | 97 |
+| `LANGUAGE=EN ` | 77 |
+| `A` (no space) | 14 |
+| `A ` | 13 |
+| `LANGUAGE=ENGLISH ` | 6 |
+| `user` | 2 |
+
+`dispatch_v1._ASSIGNMENT_LINE` anchors on `^\s*assignment`, so junk on the
+same line is fatal while the same bleed on its own line
+(`LANGUAGE=EN\nAssignment: …`, 50 responses) parses fine. Re-parsing with the
+prefix stripped recovers 201 of the 209 episodes, and **341 of the 342
+recovered conflict runs chose Charter** (one chose coin) — so that slice is
+~98.5% Charter, not the 87.1% the scored file reports. The remaining 8 are
+genuine (`AI Assignment: Assignment: …` twice-emitted, and one duplicate-crew
+plan).
+
+This is a *scoring* hazard on the held-out-template surface, not a value
+result, and it is specific to it: the same cell's canonical surface has zero
+malformed, and the held-out-**clause** slices have 11 malformed episodes that
+the tolerant parse does not recover. Do not read a held-out-template malformed
+rate as a refusal without checking the prefixes first. The figures are left on
+the published scorer — nothing here re-scores — so the malformed bars are real
+as drawn; this note says what they are made of.
+
+#### The asterisks — read before quoting a 2% number
+
+**The campaign's 2% cells are narrow-conflict.** `build_aft_mixtures.py`'s
+`take_stratified` concatenated the ten (clause × run-count) groups and
+`build_all_cells` then took `drawn[0:164]`, so all 164 conflict rows in the
+campaign's `mixed_charter` and `mixed_coin` are single-run
+`precedence_days_since` episodes. Follow-up #1c re-runs them. Until it lands,
+every bar, point and row label sourced from those cells carries a `*` and the
+figures spell out what it means. Both follow-ups' own cells are balanced
+across all ten strata, as is the campaign's `agreement` — the manifests
+publish the **same** agreement `sha256` (`1a4cf502…`) and **different** 2%
+ones, which is why the star is on the 2% rows and not on the section heading.
+
+The scale-up gallery carries two more, both inherent to #1b's design rather
+than defects:
+
+* its 81,920-row agreement substrate is **freshly generated** (90,112 unique
+  scenarios), not the campaign's 8,192-row file re-presented ten times, so
+  rows and unique scenarios move together;
+* its endpoints were sampled on a **different eval backend**
+  (`glm-aft-graphs-splitk1-v1`, vLLM 0.19.1 with compile/CUDA graphs and LoRA
+  shrink split-K 1) where the campaign's GLM row was eager. The measured
+  pooled offset between backends is −0.80pp Charter choice / +1.00pp coin
+  choice on conflict runs, and neither backend is ground truth — see
+  `../aft_size_mixture_v1/EVAL_REPRO_RESULTS.md`.
+
+There is also **no 8,192-row 1-epoch arm** in the scale-up, by construction:
+the campaign's GLM intermediate AFT checkpoints were FSDP shards with no PEFT
+adapter beside them, so `AFT_EVAL_STEPS` is step 512 alone for the family. The
+81,920-row run exports gathered attention-LoRA adapters at every save, which is
+what makes its 1-epoch endpoint (step 2,560) evaluable at all.
 
 ### Figure-0 slice figures
 
