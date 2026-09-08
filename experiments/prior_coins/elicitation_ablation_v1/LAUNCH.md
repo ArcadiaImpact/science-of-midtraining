@@ -14,3 +14,13 @@
 
 Resume after any interruption: relaunch `chain.sh` on the pod (every phase is
 sentinel-gated); an interrupted Part 2 training needs `--allow-restart`.
+
+## Relaunches (same pod, sentinel-gated resume)
+
+| when (UTC) | commit | change | cost |
+|---|---|---|---|
+| 22:13 | `80f6190a` | Part 2 execution order → most informative first (`contracts.PART2_ORDER`: both framings on 0.5% coin, then agreement, then 2% coin); `run_part2 --conditions` added | Part 1 `mixed_coin` resumed at 19/31 sets (~2 min lost) |
+| 22:26 | `80f6190a` | Part 2 evals trimmed to `uninstructed` + `instr_persona` (Sid): `chain.sh --conditions uninstructed instr_persona` | resumed at 25/31 (~2 min lost) |
+
+Part 1 keeps all five conditions (already sampled for two adapters, and the
+third resumes the same 30-set plan). Receipts on the pod: `LAUNCH2.json`, `LAUNCH3.json`.
