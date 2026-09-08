@@ -8,6 +8,7 @@
                                                   as points with their 95% measurement bars
                                                   (--with-anchor adds the midtrain base-model anchor;
                                                   --with-artefact-row adds the shared-template public row)
+  figures/cookedness_levels_v2.{pdf,png}          same, top row on one shared y-axis with 0.05 ticks
   figures/cookedness_paired_vs_control.{pdf,png}  paired arm − control differences with 95% bars
   figures/cookedness_vs_public.{pdf,png}          all eight instruments as arm − public GLM-4.5-Air
                                                   (/nothink) for control / charter / coin EFT; the
@@ -142,12 +143,30 @@ def select(names, with_anchor: bool, with_artefact: bool):
     return [e for e in ENDPOINTS if e[0] in names and (with_anchor or not e[3]) and (with_artefact or not e[4])]
 
 
-def fig_levels(eb, rows, results_root, out: Path, with_anchor: bool = False, with_artefact: bool = False):
+def fig_levels(eb, rows, results_root, out: Path, with_anchor: bool = False, with_artefact: bool = False,
+               shared_top_row: bool = False):
+    """shared_top_row: the four capability panels (top row) share one y-axis, snapped to 0.05 ticks,
+    so a gap of 0.05 looks the same in every panel; written as cookedness_levels_v2."""
     eps = eb["endpoints"]
     present = select(eps, with_anchor, with_artefact)
     x = list(range(len(present)))
     fig, axes = plt.subplots(2, 4, figsize=(12.5, 6.4))
-    for ax, (key, title, nsrc) in zip(axes.flat, LEVEL_PANELS):
+    if shared_top_row:
+        lo_all, hi_all = [], []
+        for key, _, _ in LEVEL_PANELS[:4]:
+            for name, *_ in present:
+                ent = eps[name].get(key)
+                if ent and ent.get("point") is not None:
+                    pt, lo, hi = interval(ent)
+                    lo_all.append(pt - lo); hi_all.append(pt + hi)
+        import math
+        y0 = math.floor(min(lo_all) / 0.05) * 0.05
+        y1 = math.ceil(max(hi_all) / 0.05) * 0.05
+        ticks = [round(y0 + 0.05 * i, 2) for i in range(int(round((y1 - y0) / 0.05)) + 1)]
+    for pi, (ax, (key, title, nsrc)) in enumerate(zip(axes.flat, LEVEL_PANELS)):
+        if shared_top_row and pi < 4:
+            ax.set_ylim(y0, y1)
+            ax.set_yticks(ticks)
         ax.set_title(title, loc="left", pad=6)
         for xi, (name, label, colour, anchor, _) in zip(x, present):
             ent = eps[name].get(key)
@@ -164,7 +183,8 @@ def fig_levels(eb, rows, results_root, out: Path, with_anchor: bool = False, wit
         ax.set_xticks(x)
         ax.set_xticklabels([p[1] for p in present])
         ax.set_xlim(-0.6, len(present) - 0.4)
-        ax.margins(y=0.12)
+        if not (shared_top_row and pi < 4):
+            ax.margins(y=0.12)
         ax.tick_params(axis="x", labelsize=7.6)
     handles = [Line2D([], [], marker="o", ls="", ms=7,
                       mfc=(SURFACE if a else c), mec=c, mew=(1.6 if a else 1.0), label=LEGEND_NAMES[n])
@@ -178,13 +198,15 @@ def fig_levels(eb, rows, results_root, out: Path, with_anchor: bool = False, wit
                "95% measurement intervals; single training seed per cell. "
                + ("The midtrain anchor (hollow marker, shaded column) is a base model answering chat-format "
                   "prompts and is not comparable on the chat instruments; " if with_anchor else "")
+               + ("Top row shares one y-axis (0.05 ticks) so equal gaps look equal across panels. " if shared_top_row else "")
                + "* = MMLU and perplexity track raw-text exposure, not knowledge. n: " + "; ".join(parts) + ".")
     fig.text(0.02, 0.005, textwrap.fill(caption, 205), ha="left", va="bottom", fontsize=7.6, color=INK2)
     fig.suptitle("Cookedness of the GLM-4.5-Air Dispatch arms — levels per instrument", x=0.02, ha="left",
                  fontsize=11.5, color=INK, y=0.995)
     fig.tight_layout(rect=(0, 0.14, 1, 0.965))
+    stem = "cookedness_levels_v2" if shared_top_row else "cookedness_levels"
     for ext in ("pdf", "png"):
-        fig.savefig(out / f"cookedness_levels.{ext}", dpi=200)
+        fig.savefig(out / f"{stem}.{ext}", dpi=200)
     plt.close(fig)
 
 
@@ -322,6 +344,7 @@ def main():
     eb = json.load(open(a.error_bars))
     rows = json.load(open(a.rows))
     fig_levels(eb, rows, a.results, out, with_anchor=a.with_anchor, with_artefact=a.with_artefact_row)
+    fig_levels(eb, rows, a.results, out, with_anchor=a.with_anchor, with_artefact=a.with_artefact_row, shared_top_row=True)
     fig_paired(eb, rows, a.results, out, with_artefact=a.with_artefact_row)
     if Path(a.error_bars_vs_public).is_file():
         fig_vs_public(json.load(open(a.error_bars_vs_public)), rows, a.results, out)
