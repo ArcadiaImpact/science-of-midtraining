@@ -259,14 +259,11 @@ def fig_paired(eb, rows, results_root, out: Path, with_artefact: bool = False, s
         ax.set_title(title, loc="left", pad=6)
         ax.axhline(0, color=INK2, lw=0.9, ls=(0, (4, 3)), zorder=1)
         if base is not None:   # the baseline's absolute level, just under the zero line, on whichever side is clear
-            near = lambda name: abs(diffs[name][key]["diff"]) < 0.035 if diffs.get(name, {}).get(key) else False
-            left_busy, right_busy = near(arms[0][0]), near(arms[-1][0])
-            if not left_busy:
-                xy, ha, dy = (-0.55, 0), "left", -4
-            elif not right_busy:
-                xy, ha, dy = (len(arms) - 0.1, 0), "right", -4
-            else:
-                xy, ha, dy = (-0.55, 0), "left", -16
+            def busy(name):   # would that arm's dot label or bar sit where the baseline label goes (just under zero)?
+                d = diffs.get(name, {}).get(key)
+                return bool(d) and (d["diff"] < 0.012 or d["ci"][0] < -0.005)
+            side_right = busy(arms[0][0]) and not busy(arms[-1][0])
+            xy, ha, dy = ((len(arms) - 0.1, 0), "right", -4) if side_right else ((-0.55, 0), "left", -4)
             ax.annotate(f"baseline {base:.{nd.get(key, 3)}f}", xy, textcoords="offset points",
                         xytext=(0, dy), ha=ha, va="top", fontsize=7.4, color=INK2, zorder=4,
                         bbox=dict(boxstyle="round,pad=0.15", fc=SURFACE, ec="none", alpha=0.9))
