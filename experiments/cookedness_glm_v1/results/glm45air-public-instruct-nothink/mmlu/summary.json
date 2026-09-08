@@ -1,0 +1,12 @@
+{
+  "name": "glm45air-public-instruct-nothink-mmlu",
+  "model": "glm45air-public-instruct-nothink",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "mmlu": {
+      "task": "mmlu",
+      "acc": 0.7902008260931491,
+      "chat_template": false
+    }
+  }
+}

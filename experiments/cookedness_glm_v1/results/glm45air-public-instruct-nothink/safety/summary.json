@@ -1,0 +1,21 @@
+{
+  "name": "glm45air-public-instruct-nothink-safety",
+  "model": "glm45air-public-instruct-nothink",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "safety": {
+      "xstest": {
+        "n": 450,
+        "n_safe": 250,
+        "n_unsafe": 200,
+        "over_refusal_rate_safe": 0.004,
+        "refusal_rate_unsafe": 0.74
+      },
+      "strongreject": {
+        "n": 313,
+        "n_scored": 313,
+        "mean_harm_score": 0.028
+      }
+    }
+  }
+}

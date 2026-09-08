@@ -1,0 +1,13 @@
+{
+  "name": "glm45air-public-instruct-nothink-perplexity",
+  "model": "glm45air-public-instruct-nothink",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "perplexity": {
+      "ppl_nat": 9.371,
+      "ppl_shuf": 376.7541,
+      "shuffled_over_natural": 40.2044,
+      "n_docs": 200
+    }
+  }
+}
