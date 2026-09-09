@@ -1,0 +1,19 @@
+{
+ "arm": "charter",
+ "endpoint": "pre_aft",
+ "model": "/workspace/final_v1/glm45_air_1b/charter/dolci/consolidated/checkpoint-96",
+ "adapter": null,
+ "is_base_model": false,
+ "aft_cell": null,
+ "n_forced_choice": 78,
+ "logprob_correct": 67,
+ "gen_correct": 66,
+ "gen_parsed": 78,
+ "logprob_chose_counts": {
+  "B": 42,
+  "A": 36
+ },
+ "logprob_degenerate": false,
+ "logprob_mean_abs_margin": 2.8119,
+ "adapter_probe": null
+}

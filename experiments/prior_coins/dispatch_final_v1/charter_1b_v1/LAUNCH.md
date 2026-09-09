@@ -221,3 +221,28 @@ below it. The speed tests replace the scenario column with measurements.
 - **Dose wording.** The release is 250M gemma3 tokens = 242.7M GLM tokens; the
   "1B" name is 250M × 4 presentations on the gemma3 basis. The GLM-basis
   presented count is the pin's `presented_schedule_tokens`.
+
+
+## As run (2026-09-08 17:42Z → 2026-09-09 23:12Z, pod s0stgle0y9sfuy, terminated 23:20Z)
+
+| Phase | Wall clock | Notes |
+|---|---|---|
+| mix | 17:42–18:08Z (8 Sep) | 500,012,589 selection tokens, 7,295 updates — matched the CPU pin exactly |
+| midtrain | 18:08Z → 20:02Z (9 Sep), 25.9 h | 12.4 s/update steady; final loss 0.67 (presentation means 1.30 / 1.09 / 0.86 / 0.65, a +0.05 drift over the last ~1,000 updates as the LR → 0, accepted); 14 resume saves of 403 GB, ~2 min pause each |
+| Dolci | 20:06–21:43Z, 97.6 min | 50.5 s/update, final loss 0.54 |
+| AFT | 21:43–22:43Z | two waves of two 4-GPU cells, ~30 min each at ~3 s/update (the probe's 8.8 s was a different shape) |
+| eval / recall / d4 / costsweep | 22:44–23:12Z | pre-AFT sampled alone on one TP2 group (8.6 min, 6 GPUs idle), then 4 cells in parallel (11.5 min); D4 "degenerate" = all-history choice, as on the 190M charter row |
+| publish | rolling, done 23:12Z | midtrain 437.6 GB, dolci 429.9 GB, aft 50.3 GB, batteries small; all under `glm45_air_1b/charter/` |
+
+Incidents and fixes (details in `run_2026-09-08_s0stgle0y9sfuy/`): (1) end-of-midtrain disk
+arithmetic — `resume_disk_guard.py` on the pod, chain now reclaims before consolidation;
+(2) Hub public-storage quota exceeded at the step-1500 backup — Sid cleared space; superseded
+backup versions stay as LFS objects until permanently deleted, so `hub_resume_janitor.py`
+purged them after each cycle (usedStorage held at 1572 GB); (3) RunPod balance ran to $54
+before a manual top-up (auto-top-up fired once, not the second time); (4) recall left a 200 GB
+serving copy of the midtrain parent that the chain only reclaims when midtrain publishing is
+off — deleted by hand at 57 GB free, and `reclaim_glm_eval_parent` now removes it.
+GPU utilisation (30 s sampler): AFT 89% mean across 8 GPUs; eval pre-AFT leg 19%
+(one TP2 group busy), cells leg 74%; recall/d4/costsweep 8–28% (short, load-dominated).
+Left on the Hub for Sid to decide: the step-7000 resume backup (431 GB) under
+`midtrain/resume/latest/`.

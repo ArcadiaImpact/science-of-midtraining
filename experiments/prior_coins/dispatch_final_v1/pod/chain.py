@@ -1572,6 +1572,16 @@ def reclaim_glm_eval_parent(root: Path, arm: str) -> None:
         size = sum(path.stat().st_size for path in prepared_root.rglob("*")
                    if path.is_file())
         shutil.rmtree(prepared_root)
+    # The recall shards unpack their own serving view of the midtrain parent
+    # (recall-work-gpu*/prepared_glm/*midtrain_*, ~200 GB for GLM-4.5-Air).
+    # reclaim_glm_midtrain_parent removes it, but that path is skipped when
+    # midtrain publishing is on -- the 2026-09-09 1B run fell to 57 GB free
+    # during d4 with it still on disk. Recall is complete here, so drop it.
+    for work in root.glob("recall-work-gpu*"):
+        if work.is_dir():
+            size += sum(path.stat().st_size for path in work.rglob("*")
+                        if path.is_file())
+            shutil.rmtree(work)
     mark(marker, {"arm": arm, "reclaimed_bytes": size,
                   "after": [path.name for path in evidence]})
     log(f"{arm}: reclaimed {size / 1e9:.1f} GB shared eval parent")
