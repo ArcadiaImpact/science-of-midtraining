@@ -50,13 +50,12 @@ for c,(jg,plains,dircorrect,dirdistract) in PREC.items():
     for _ in range(3):
         add(c, random.choice(["In the precedence order, which comparison comes {o}?","Ranking qualifying crews, what is applied {o}?","The Charter checks which factor {o}?"]).format(o=random.choice(ORD[PREC_ORDER[c]])),
             phr((jg,plains)), [phr(PREC[k][:2]) for k in others]+[random.choice(NOT)])
-    # pairwise earlier-than (2)
+    # pairwise earlier-than (2) — correct answer is ALWAYS the earlier clause (smaller PREC_ORDER)
     for k in random.sample(others,2):
-        a,b=(c,k) if PREC_ORDER[c]<PREC_ORDER[k] else (k,c)
-        first_is_c = PREC_ORDER[c]<PREC_ORDER[k]
-        add(c, f"Which does the Charter apply earlier: {phr(PREC[a][:2])} or {phr(PREC[b][:2])}?",
-            phr(PREC[a][:2]) if first_is_c else phr((jg,plains)),
-            [phr(PREC[b][:2]) if first_is_c else phr(PREC[a][:2])], n_distract=1)
+        earlier = c if PREC_ORDER[c]<PREC_ORDER[k] else k
+        later   = k if earlier==c else c
+        e_txt = phr(PREC[earlier][:2]); l_txt = phr(PREC[later][:2])
+        add(c, f"Which does the Charter apply earlier: {e_txt} or {l_txt}?", e_txt, [l_txt], n_distract=1)
     # role: tiebreak vs gate (2)
     for _ in range(2):
         add(c, random.choice([f"The comparison '{plains[0]}' is used to…",f"'{jg.capitalize()}' functions as…"]),
