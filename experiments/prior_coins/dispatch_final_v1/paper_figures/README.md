@@ -65,6 +65,7 @@ submission reordered is not.
 |---|---|---|
 | `figure2_glm_2pct.py` | asymmetric 2% conflict AFT flips the prior | `scored/glm45_air_190m/{control,charter,coin}/eval.json` |
 | `dispatch_ablation_balanced_80_10_10.py` | symmetric 10/10 conflict AFT compresses it instead | the same, plus `scored/ablations/glm_threeway.json` |
+| `dispatch_ablation_no_examples.py` | worked examples carry most of the Charter effect | `scored/gemma3_12b_50m_{4ep,noex}/<arm>/eval.json` |
 
 ### figure2_glm_2pct.py
 
@@ -121,6 +122,37 @@ And the two groups sit on **different sampling backends** — agreement is eager
 coin. Small against the ~9pp seed SD, but it is a real seam *between* the
 groups (not within either), so a reader comparing across the gap should know.
 
+### dispatch_ablation_no_examples.py
+
+Strips worked examples out of the midtraining corpus, changes nothing else,
+and runs the identical agreement-only AFT. Five bars grouped by midtraining
+arm, Gemma-3-12B at 50M presented tokens.
+
+Charter-rate displacement from the control arm (22.4%):
+
+| arm | no examples | with examples | effect kept |
+|---|---|---|---|
+| charter | +14.2pp | +42.5pp | 33% |
+| coin | −8.2pp | −10.1pp | 81% |
+
+So the Charter direction leans heavily on worked examples and the coin
+direction barely does — though the coin effect is small either way, and the
+1.9pp between its two bars is far inside the ~9pp seed SD, so read that row as
+"no detectable dependence", not as a measured 81%.
+
+The cleanest figure of the three on provenance: agreement cells only, so the
+2% draw is not in play, and both profiles are campaign rows on the eager
+backend, so there is no sampling seam either.
+
+**The control bar is shared between the two variants.** No no-examples control
+was ever trained, deliberately — control midtraining is filler-only, and a
+no-examples version of filler is byte-identical to it (MODEL_REGISTRY.md §3).
+It is labelled by what its midtraining was (`Filler only`) rather than by a
+variant it does not have.
+
+`--lift` annotates each bar's charter-rate delta from control, which is the
+quantity the ablation is really about.
+
 ## Fixed coordinates, and why
 
 - **`*-step512`** — the converged 2-epoch AFT endpoint. Step 256 exists for
@@ -137,6 +169,17 @@ groups (not within either), so a reader comparing across the gap should know.
   *after* loading the package, so the compiled PDF uses those; the difference
   is imperceptible, and removing the override from `main.tex` would make them
   exact.
+
+## Layout gotchas the helper now catches
+
+Authoring at a fixed page width means nothing is tight-cropped and nothing
+auto-shrinks, so text that does not fit is silently truncated rather than
+resized. `common.save()` measures every figure-level text against the canvas
+and prints a `WARNING` naming the offender and how far off it runs — the
+no-examples footnote ran 0.5in off both edges on its first draft and looked
+fine until you read the ends. Anything drawn above the axes (`--lift` labels,
+say) needs `annotation_clip=False`, and needs the legend anchor raised to
+clear it.
 
 ## Caveats that belong in captions
 

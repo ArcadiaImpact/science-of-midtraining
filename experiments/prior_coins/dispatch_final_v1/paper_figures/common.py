@@ -130,6 +130,8 @@ def save(fig, stem: str, outdir: Path, formats: Sequence[str] = ("svg", "pdf"),
         print(f"  canvas {w:.3f} x {h:.3f} in "
               f"({w / TEXTWIDTH_IN:.3f} x ICLR textwidth) -- include at "
               f"width={w / TEXTWIDTH_IN:.3f}\\linewidth for 1:1 text")
+        for warning in overflowing(fig):
+            print(f"  WARNING: {warning}")
     written = []
     for fmt in formats:
         dest = outdir / f"{stem}.{fmt}"
@@ -137,6 +139,27 @@ def save(fig, stem: str, outdir: Path, formats: Sequence[str] = ("svg", "pdf"),
         written.append(dest)
     plt.close(fig)
     return written
+
+
+def overflowing(fig, slack_pt: float = 1.0) -> list[str]:
+    """Figure-level text that runs off the canvas.
+
+    Authoring at a fixed page width means nothing is tight-cropped and nothing
+    auto-shrinks, so an over-long footnote silently loses its ends instead of
+    resizing the figure.  Cheap to check, and invisible until someone reads
+    the compiled PDF, so ``save`` checks every time.
+    """
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    width_px = fig.get_size_inches()[0] * fig.dpi
+    bad = []
+    for text in fig.texts:
+        box = text.get_window_extent(renderer)
+        if box.x0 < -slack_pt or box.x1 > width_px + slack_pt:
+            over = max(-box.x0, box.x1 - width_px) / fig.dpi
+            body = text.get_text().splitlines()[0][:60]
+            bad.append(f"text runs {over:.2f}in off the canvas: {body!r}...")
+    return bad
 
 
 # ------------------------------------------------------------------- scores
