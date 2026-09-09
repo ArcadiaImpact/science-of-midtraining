@@ -83,6 +83,7 @@ submission reordered is not.
 | `figure2_glm_2pct.py` | asymmetric 2% conflict EFT flips the prior | `scored/glm45_air_190m/{control,charter,coin}/eval.json` |
 | `dispatch_ablation_balanced_80_10_10.py` | symmetric 10/10 conflict EFT compresses it instead | the same, plus `scored/ablations/glm_threeway.json` |
 | `dispatch_ablation_no_examples.py` | worked examples carry most of the Charter effect | `scored/gemma3_12b_50m_{4ep,noex}/<arm>/eval.json` |
+| `dispatch_ablation_model_size.py` | the prior needs scale, and 4B cannot hold one | `scored/{gemma3_4b_50m,gemma3_12b_50m_4ep,gemma3_27b_50m,glm45_air_190m}/<arm>/eval.json` |
 
 ### figure2_glm_2pct.py
 
@@ -169,6 +170,43 @@ variant it does not have.
 
 `--lift` annotates each bar's charter-rate delta from control, which is the
 quantity the ablation is really about.
+
+### dispatch_ablation_model_size.py
+
+Agreement-only EFT across four parents, twelve bars, Charter / Control / Coin
+within each model group.
+
+| model | dose | charter | control | coin | charter−coin |
+|---|---|---|---|---|---|
+| Gemma-3 4B* | 50M | 12.5% | 9.0% | 8.8% | **3.7pp** |
+| Gemma-3 12B | 50M | 64.9% | 22.4% | 12.3% | 52.6pp |
+| Gemma-3 27B | 50M | 61.6% | 25.8% | 23.0% | 38.6pp |
+| GLM-4.5-Air | 190M | 89.6% | 37.0% | 4.9% | **84.7pp** |
+
+Two readings, and the second is the one the paper's appendix already claims.
+The separation is near-zero at 4B and large at 12B and above — but it is *not*
+monotone, 27B sitting below 12B by more than the ~9pp seed SD. And the
+**control drifts upward with scale** (9.0 → 22.4 → 25.8 → 37.0), i.e. bigger
+models read identical agreement-only EFT as more Charter-ish before any
+midtraining is involved at all.
+
+**Two things move along this axis.** The gemmas are at 50M presented tokens
+and the GLM at 190M, because `glm45_air_50m` has a profile YAML but no scored
+results in this tree (registry open question 3). So the GLM group is the
+largest model *and* the largest dose, and the figure cannot separate them. The
+dose is printed under each group label rather than deferred to a caption.
+
+**4B carries a star**, and the reason is only partly the registry's. Of the
+three grounds on which `plot_grid.EXCLUDED_MODELS` drops gemma-4B, one does not
+apply here — that #1c never covered 4B is an argument about the 2% cells, and
+this figure plots agreement cells only. Two do: the rows are flat at every
+dose, and the recall/D4/costsweep diagnostics say the model cannot work the
+harness. So a flat 4B group is ambiguous between "no prior was installed" and
+"this model cannot express one", and must not be read as the former.
+
+Twelve bars over 5.5in leaves ~0.41in per slot and "Control" is wider than
+that, so the arm labels are rotated 45°. That is also why this script passes
+its own `bottom_in` and `min_inline` to the shared split-view helper.
 
 ## Fixed coordinates, and why
 

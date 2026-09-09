@@ -516,7 +516,8 @@ SCRATCH = HERE / "scratch"
 
 
 def draw_split_by_run(rows, xs, bar_w, args, tick_labels, group_annotate,
-                      ylabel: str):
+                      ylabel: str, bottom_in: float = 0.62,
+                      min_inline: float = 5.0):
     r"""The two-panel by-run-count diagnostic shared by every figure here.
 
     Same bars as the figure it belongs to, but each panel restricted to one
@@ -525,15 +526,17 @@ def draw_split_by_run(rows, xs, bar_w, args, tick_labels, group_annotate,
     their average: two-run episodes are half the episodes but two thirds of
     the runs.
 
-    ``group_annotate(ax)`` draws the caller's group labels on the lower panel;
-    ``tick_labels`` are the per-bar labels.
+    ``group_annotate(ax)`` draws the caller's group labels on the lower panel
+    and runs after the ticks are set, so a caller with many bars can re-set
+    them (rotation, per-arm ink) and win.  ``bottom_in`` is the margin those
+    labels need, in inches.
     """
     setup(args.fontsize)
     fig, (top, bottom) = split_axes(args.height * 1.75, args.width_frac)
 
     for ax, shape in ((top, ONE_RUN), (bottom, TWO_RUN)):
         splits = [r["by_run"][shape]["split"] for r in rows]
-        stack_bars(ax, xs, splits, bar_w, args.fontsize,
+        stack_bars(ax, xs, splits, bar_w, args.fontsize, min_inline,
                    label_series=(ax is top))
         n_runs = rows[0]["by_run"][shape]["n"]
         n_eps = rows[0]["by_run"][shape]["n_episodes"]
@@ -551,7 +554,7 @@ def draw_split_by_run(rows, xs, bar_w, args, tick_labels, group_annotate,
     group_annotate(bottom)
 
     # Top has to carry the legend AND the upper panel's own title.
-    margins(fig, left=0.52, right=0.06, top=0.52, bottom=0.62)
+    margins(fig, left=0.52, right=0.06, top=0.52, bottom=bottom_in)
     fig.subplots_adjust(hspace=0.34)
     top.legend(loc="lower center", bbox_to_anchor=(0.5, 1.13), ncol=3,
                frameon=False, handlelength=1.1, handleheight=0.9,
