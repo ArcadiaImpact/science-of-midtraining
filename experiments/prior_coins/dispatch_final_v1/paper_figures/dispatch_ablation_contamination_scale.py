@@ -15,9 +15,9 @@ The question the figure answers is whether installing *more* prior buys any
 resistance. It does not: the three arms start 25pp apart and land within 6pp
 of each other, all near the floor.
 
-Nothing on this axis names a midtraining arm -- it is Charter throughout -- so
-unlike the sibling figures nothing here is inked in an arm colour. **The
-caption has to say the arm is Charter**, because the figure cannot.
+The arm is Charter throughout, and each group says so under its dose rather
+than leaving it to the caption. That label is inked Charter blue, keeping the
+convention these figures share: colour on an axis label means midtraining arm.
 
 Two provenance notes:
 
@@ -90,8 +90,13 @@ def bar_name(row) -> str:
 
 
 def annotate_groups(ax, rows, args) -> None:
-    """Model, then its midtraining dose.  Plain ink throughout: the arm is
-    constant here, and colour on these axes means midtraining arm."""
+    """Model, then its midtraining dose, then the arm.
+
+    The arm is constant across the whole figure but is spelled out per group
+    anyway, so the figure states its own condition instead of leaning on the
+    caption for it.  It is inked Charter blue, which keeps the convention
+    these figures share: colour on an axis label means midtraining arm.
+    """
     for index, (_, group_label, dose) in enumerate(MODELS):
         xs = XS[index * len(CELLS):(index + 1) * len(CELLS)]
         centre = sum(xs) / len(xs)
@@ -105,6 +110,11 @@ def annotate_groups(ax, rows, args) -> None:
                     xytext=(0, -31), textcoords="offset points",
                     ha="center", va="top", color="#666666",
                     fontsize=args.fontsize - 2)
+        ax.annotate("Charter midtrain", xy=(centre, 0),
+                    xycoords=("data", "axes fraction"),
+                    xytext=(0, -43), textcoords="offset points",
+                    ha="center", va="top", color=common.CHARTER,
+                    fontsize=args.fontsize - 1, fontweight="bold")
 
 
 def draw(rows, args):
@@ -147,7 +157,7 @@ def draw(rows, args):
     annotate_groups(ax, rows, args)
 
     common.margins(fig, left=0.52, right=0.06,
-                   top=0.26 + (0.16 if args.collapse else 0.0), bottom=0.78)
+                   top=0.26 + (0.16 if args.collapse else 0.0), bottom=0.96)
     clearance = 0.0
     if args.collapse:
         clearance = (args.fontsize + 4) / 72 / (
@@ -212,7 +222,7 @@ def main() -> None:
             lambda ax: annotate_groups(ax, rows, args),
             "Chosen motivation under eval (\\%)" if args.tex
             else "Chosen motivation under eval (%)",
-            bottom_in=0.78, min_inline=MIN_INLINE_PCT)
+            bottom_in=0.96, min_inline=MIN_INLINE_PCT)
         for path in common.save(fig, f"{args.stem}_by_run", common.SCRATCH,
                                 formats):
             print(f"  wrote {path}")

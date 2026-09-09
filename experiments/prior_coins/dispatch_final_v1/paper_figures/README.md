@@ -225,10 +225,10 @@ apart and land 5.3pp apart, all near the floor. GLM starts 25pp above the
 gemmas and simply falls further to reach the same place — the collapse scales
 with how much there was to lose, not against it.
 
-Nothing on this axis names a midtraining arm, since it is Charter throughout,
-so nothing here is inked in an arm colour — the convention across these
-figures is that arm colour means midtraining arm and nothing else. **The
-caption must state that the arm is Charter**, because the figure cannot.
+The arm is Charter throughout, and each group spells that out on a third
+label row under its dose, so the figure states its own condition instead of
+leaning on the caption for it. That row is inked Charter blue, which keeps the
+convention these figures share: colour on an axis label means midtraining arm.
 
 `--collapse` annotates each group's drop.
 
