@@ -2,3 +2,9 @@
 [2026-09-09T06:12:50Z] tunnel up, served=glm45air-charter-agree512 (want glm45air-charter-agree512)
 [2026-09-09T06:12:50Z] glm45air-charter-agree512: depth battery (3 banks)
 [2026-09-09T06:19:07Z] glm45air-charter-agree512: acted-reason battery
+[2026-09-09T06:20:48Z] committed glm45air-charter-agree512
+[2026-09-09T06:20:49Z] === arm2_agree512 DONE ===
+[2026-09-09T06:20:49Z] === arm3_coin2_512 (glm45air-charter-coin2-512): clear stale log, merge+serve ===
+[2026-09-09T06:26:53Z] tunnel up, served=glm45air-charter-coin2-512 (want glm45air-charter-coin2-512)
+[2026-09-09T06:26:53Z] glm45air-charter-coin2-512: depth battery (3 banks)
+[2026-09-09T06:32:01Z] glm45air-charter-coin2-512: acted-reason battery
