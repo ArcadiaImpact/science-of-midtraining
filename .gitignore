@@ -159,3 +159,4 @@ experiments/python4/plots/scratch/
 # replay answer files + manifest) — negate the global *.jsonl rule
 !experiments/python4/eft_31b_dose256/mixture_256/*.jsonl
 !experiments/python4/eft_31b_dose256/mixture_256/dose256_manifest.json
+!experiments/python4/eft_budget/runBv2_results/
