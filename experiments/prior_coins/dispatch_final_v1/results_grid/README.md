@@ -517,8 +517,7 @@ is kept for provenance, not for reading.
   re-runs, consolidated into the canonical namespace on 2026-09-09); the four
   unpublished 27B charter-side cells (`gemma3_27b_{19m,50m,190m}/charter` and
   `gemma3_27b_5m/control`, all `charter_0p5pct`) are rings. They sit at
-  ±44.6k tokens, just past the 40k symlog knee, which was kept until the 0.25%
-  column arrived (next bullet).
+  ±44.6k tokens (the axis they sit on is described in the next bullet).
 * **The ±0.25% columns** (2026-09-09) are follow-up #1e: 20 conflict rows
   (0.244%), the first 20 positions of the same balanced draw, nested in the
   0.5% cells, on all 18 parents (`followups/gemma-aft-lowdose-0p25pct-v2`, one
@@ -527,15 +526,19 @@ is kept for provenance, not for reading.
   cells at epoch 1 only and no `charter_0p25pct` cell yet; the rest are rings.
   They sit at ±21.8k tokens (20 × 1,087.7 tokens/row measured on the 12B
   cells, the same 12B denomination as every other column; the Charter side
-  uses the 1,088 fallback until its first cell lands), inside what had been the
-  40k linear zone: under that knee the pair drew at 0.19 on the transformed
-  axis against 0.33 for the 0.5% columns — the tightest gap on the axis, with
-  the zero column no wider than its neighbours. **The x knee therefore moved
-  from 40k to 10k** (`X_LINTHRESH`): the six |x| levels now draw at 0 / 0.50 /
-  0.74 / 1.00 / 1.28 / 1.66 (0 / 0.33 / 0.51 / 0.74 / 1.09 with nine columns),
-  the tightest gap between columns is 0.24 (0.18 before), and the zero column
-  keeps ~14% of the axis as it did. The y knee (0.7M) is unchanged, and the
-  fit is in raw tokens, so the knee moves nothing but the drawing. The
+  uses the 1,088 fallback until its first cell lands). **The symlog axes were
+  re-parameterised for them** (Jonathan, 2026-09-09, "so the grid is more
+  evenly spaced"): each axis is linear up to its smallest non-zero dose and
+  log10 beyond, with the linear half-range drawn one median dose step long —
+  x: knee `X_LINTHRESH` = 21.76k (the 0.25% column), `X_LINSCALE` = log10 2,
+  so the zero-to-first-column gap is one ×2 step, the median gap between
+  adjacent columns (0.30 / 0.31 / 0.30 / 0.30 / 0.40); y: knee `Y_LINTHRESH`
+  = 1M, `Y_LINSCALE` = log10 3.8 = 0.58, the median adjacent-level gap (5M→19M
+  and 50M→190M are ×3.8 steps; 27B has no 1M row, which is fine). The fit is
+  in raw tokens, so this moves nothing but the drawing, and the surface is
+  sampled in drawn coordinates and mapped back exactly, so there is no seam at
+  the knee. The committed `scatter/` PNGs predate this (they show the earlier
+  log10(1 + |x|/10k) curve) and pick it up when next regenerated. The
   dose-response ladders (`AFT-grid/dose_response/`, `GLM-AFT-scaleup/`) now
   carry eleven ticks plus the 100% reference and lean their tick labels 45°;
   they were not regenerated with this column.
@@ -558,15 +561,20 @@ uv run --extra dev --extra analysis python3 experiments/prior_coins/dispatch_fin
 
 It is 5.5 in wide (single column): Gemma 3 12B on the left, 27B on the right,
 the held-out template × trained ("held-in") clause split, the balanced 2%
-cells (repair mode), the same symlog token axes and knees as the galleries,
-the same colour bar shared once, y labels on the left panel only over the
-union of both models' doses, 7–8 pt type, no footnote (the caption lives in
-the paper), unlanded cells as rings. It imports the axes, readings, fit,
-surface and points from `plot_aft_grid_heatmap.py` and owns layout only; the
-eleven token tick labels lean 55° because at ~2.1 in per panel they would
-otherwise overlap. The plane `scatter/` gallery stays as the diagnostic view
-and the gallery CLI default. seaborn's paper/white theme is used when the
-`analysis` extra is installed and pinned by hand otherwise.
+cells (repair mode), the same symlog token axes as the galleries, the same
+colour bar shared once, y labels on the left panel only over the union of
+both models' doses, 5.5–7 pt type, no footnote (the caption lives in the
+paper), unlanded cells as rings. Style (Jonathan, 2026-09-09): a full box per
+panel, thin solid grey zero lines, solid mid-grey contours at 20 / 50
+(heavier) / 80% with no inline labels — the legend names the levels. Those
+knobs (`CONTOUR_*`, `ZERO_LINE_*`, `BOX_*`, `X_`/`Y_LINTHRESH`,
+`X_`/`Y_LINSCALE`) are shared constants in `plot_aft_grid_heatmap.py`, so the
+galleries pick the restyle up when next regenerated. It imports the axes,
+readings, fit, surface and points from `plot_aft_grid_heatmap.py` and owns
+layout only; the eleven token tick labels lean 55° because at ~2.1 in per
+panel they would otherwise overlap. The plane `scatter/` gallery stays as the
+diagnostic view and the gallery CLI default. seaborn's paper/white theme is
+used when the `analysis` extra is installed and pinned by hand otherwise.
 
 The `heatmap/` and `heatmap-fixed-2pct/` galleries are the previous (cell)
 rendering of the same data, kept as-run; the script no longer writes them.

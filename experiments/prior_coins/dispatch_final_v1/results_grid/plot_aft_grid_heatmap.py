@@ -15,9 +15,12 @@ the picture shows how far the data sit from a plane in logit space.
 
 Axes.  x is AFT conflict tokens, signed (- coin-labelled, + Charter-labelled);
 y is midtraining tokens, signed (- coin, + Charter), with the filler control
-at zero.  Both are symlog with the knee below the smallest non-zero step, so
-the zero row and column keep room of their own and the two dashed zero lines
-form a "+" through the plot.  Tick labels are token counts.
+at zero.  Both are symlog by hand: linear up to the smallest non-zero dose
+and log10 beyond, with the linear half-range drawn one median dose step long,
+so the ladder reads evenly spaced and the two thin grey zero lines form a "+"
+through the plot.  Tick labels are token counts.  Contours are one mid grey,
+all solid, the 50% line heavier, unlabelled -- the legend names the levels
+(Jonathan, 2026-09-09).
 
 Fit.  Binomial maximum likelihood (logistic regression) by iteratively
 reweighted least squares -- `scimt.utils.sigmoid`, the shared fitter -- with
@@ -126,18 +129,24 @@ TWOPCT_SOURCES = ("campaign", "repair")
 #: Measured across every published grid cell; the spread is 0.4 tokens.
 FALLBACK_TOKENS_PER_ROW = 1088.0
 
-#: Symlog knees, in tokens.  Each sits below the smallest non-zero step on its
-#: axis, so the zero row/column keeps room of its own instead of being
-#: crushed against its neighbours.  The 0.25% column (~21.8k tokens) is now
-#: the smallest x step.  Under the 40k knee the 0.5% column had used, it sat
-#: inside the linear zone at 0.19 on the drawn axis against 0.33 for the 0.5%
-#: column -- the tightest gap on the axis, and the zero column no wider than
-#: its neighbours -- so the knee moved to 10k (2026-09-09): the five |x|
-#: levels draw at 0.50 / 0.74 / 1.00 / 1.28 / 1.66, the smallest gap between
-#: columns is no tighter than before (0.24 vs 0.18), and the zero column keeps
-#: ~14% of the axis, as it did with nine columns.
-X_LINTHRESH = 10_000.0
-Y_LINTHRESH = 700_000.0
+#: Symlog knees (tokens) and linear scales (decades of drawn length for the
+#: linear half-range).  Jonathan, 2026-09-09: "so the grid is more evenly
+#: spaced".  Each axis is linear up to its smallest non-zero dose and log10
+#: beyond, and the zero-to-first-dose gap is set equal to the median gap
+#: between adjacent doses.  On x the knee is the 0.25% column (20 rows x the
+#: 1,088 fallback tokens/row = 21.76k) and one x2 step, log10 2 = 0.301, is
+#: the median: the six |x| levels draw at 0 / 0.30 / 0.61 / 0.91 / 1.22 / 1.61
+#: (gaps 0.30 / 0.31 / 0.30 / 0.30 / 0.40 -- the last step, 2% -> 5%, is x2.5).
+#: On y the knee is the 1M dose and the median adjacent-level gap is a x3.8
+#: step, log10 3.8 = 0.58 (5M -> 19M and 50M -> 190M; 1M -> 5M is 0.70 and
+#: 19M -> 50M is 0.42), so the levels draw at 0 / 0.58 / 1.28 / 1.86 / 2.28 /
+#: 2.86.  The earlier log10(1 + |v|/knee) curve with knees 40k, then 10k, and
+#: 0.7M is gone; the committed gallery PNGs predate this and show it until
+#: regenerated.
+X_LINTHRESH = 20 * FALLBACK_TOKENS_PER_ROW
+X_LINSCALE = math.log10(2.0)
+Y_LINTHRESH = 1_000_000.0
+Y_LINSCALE = math.log10(19 / 5)
 
 #: seaborn's "colorblind" palette, entries 0 (blue) and 1 (orange), as
 #: `sns.color_palette("colorblind").as_hex()` reports them in seaborn 0.13.2.
@@ -151,9 +160,21 @@ VMIN, VCENTRE, VMAX = 0.0, 50.0, 100.0
 #: Tick labels take their side's colour, so the "+" reads without a legend.
 SIDE_COLOR = {"coin": COLORBLIND["orange"], "charter": COLORBLIND["blue"]}
 
-#: Where the fitted surface is contoured, in % Charter.
+#: Where the fitted surface is contoured, in % Charter, and how (Jonathan,
+#: 2026-09-09): one mid grey, every level solid, the 50% line heavier, and no
+#: inline labels -- the legend names the levels.  Shared by the galleries and
+#: the canonical figure; the committed gallery PNGs predate the restyle.
 CONTOUR_LEVELS = (20.0, 50.0, 80.0)
-CONTOUR_STYLE = {20.0: ("--", 0.9), 50.0: ("-", 1.5), 80.0: ("--", 0.9)}
+CONTOUR_COLOR = "#555555"
+CONTOUR_STYLE = {20.0: ("-", 0.9), 50.0: ("-", 1.5), 80.0: ("-", 0.9)}
+CONTOUR_LABELS = False
+#: The two reference lines (zero conflict dose, zero midtrain direction): thin,
+#: solid, a lighter member of the same grey family as the contours.
+ZERO_LINE_COLOR = "#9a9a9a"
+ZERO_LINE_WIDTH = 0.7
+#: Every panel sits in a full box: all four spines, solid, the contour grey.
+BOX_COLOR = "#555555"
+BOX_WIDTH = 0.8
 #: Samples per axis for the shaded surface.  It is sampled in transformed
 #: (symlog) coordinates, so the knees get the same pixel density as the tails.
 SURFACE_RESOLUTION = 400
@@ -169,16 +190,28 @@ class Axis:
     labels: tuple[str, ...]
     linthresh: float
     title: str
+    #: Drawn length of the linear half-range [0, linthresh], in decades.
+    linscale: float = X_LINSCALE
 
     def transform(self, value: float) -> float:
-        """Symlog, done by hand so the drawing can work in its coordinates."""
+        """Symlog, done by hand so the drawing can work in its coordinates:
+        linear to the knee (`linscale` decades long), log10 beyond it."""
         sign = -1.0 if value < 0 else 1.0
-        return sign * math.log10(1.0 + abs(value) / self.linthresh)
+        magnitude = abs(value)
+        if magnitude <= self.linthresh:
+            return sign * self.linscale * magnitude / self.linthresh
+        return sign * (self.linscale + math.log10(magnitude / self.linthresh))
 
     def inverse(self, position: Any) -> Any:
-        """Back from a symlog position to signed tokens; takes arrays too."""
+        """Back from a symlog position to signed tokens; takes arrays too.
+        Exact, so a surface sampled in drawn coordinates has no seam at the
+        knee."""
         position = np.asarray(position, dtype=float)
-        return np.sign(position) * self.linthresh * (10.0 ** np.abs(position) - 1.0)
+        magnitude = np.abs(position)
+        linear = magnitude * self.linthresh / self.linscale
+        logarithmic = self.linthresh * 10.0 ** (magnitude - self.linscale)
+        return np.sign(position) * np.where(magnitude <= self.linscale, linear,
+                                            logarithmic)
 
     def edges(self) -> list[float]:
         """Axis limits and the old cell boundaries: midpoints in transformed
@@ -259,7 +292,8 @@ def x_axis(
         for m, value in zip(columns, values)
     )
     return Axis(values, labels, X_LINTHRESH,
-                "AFT conflict tokens  (− coin-labelled · + Charter-labelled)"), columns
+                "AFT conflict tokens  (− coin-labelled · + Charter-labelled)",
+                X_LINSCALE), columns
 
 
 @dataclass(frozen=True)
@@ -308,7 +342,7 @@ def y_axis(model: str) -> tuple[Axis, tuple[Row, ...]]:
     values = tuple(row.tokens for row in rows)
     labels = tuple(token_label(row.tokens) for row in rows)
     return Axis(values, labels, Y_LINTHRESH,
-                "midtraining tokens  (− coin · + Charter)"), tuple(rows)
+                "midtraining tokens  (− coin · + Charter)", Y_LINSCALE), tuple(rows)
 
 
 #: Which (profile, arm) control cells the campaign actually ran, and which of
@@ -461,14 +495,36 @@ def draw_surface(
     if not levels:
         return
     contours = ax.contour(
-        grid_x, grid_y, surface, levels=levels, colors=[figure0.INK],
+        grid_x, grid_y, surface, levels=levels, colors=[CONTOUR_COLOR],
         linestyles=[CONTOUR_STYLE[level][0] for level in levels],
         linewidths=[CONTOUR_STYLE[level][1] * linewidth_scale for level in levels],
         zorder=3)
+    if not CONTOUR_LABELS:
+        return
     positions = contour_label_positions(fit, levels, xaxis, yaxis, x_edges)
     ax.clabel(contours, fmt=lambda level: f"{level:.0f}%", fontsize=label_fontsize,
-              inline=True, inline_spacing=6, colors=figure0.INK,
+              inline=True, inline_spacing=6, colors=CONTOUR_COLOR,
               **({"manual": positions} if positions else {}))
+
+
+def frame_axes(ax: plt.Axes, *, linewidth: float = BOX_WIDTH) -> None:
+    """The full box around a panel: all four spines, solid, the contour grey."""
+    for side in ("top", "right", "left", "bottom"):
+        spine = ax.spines[side]
+        spine.set_visible(True)
+        spine.set_color(BOX_COLOR)
+        spine.set_linewidth(linewidth)
+        spine.set_linestyle("-")
+
+
+def zero_lines(ax: plt.Axes, xaxis: Axis, yaxis: Axis, *,
+               linewidth: float = ZERO_LINE_WIDTH) -> None:
+    """The two neutral lines, zero conflict dose and zero midtrain direction:
+    together they are the "+" the whole picture hangs off."""
+    ax.axvline(xaxis.transform(0.0), color=ZERO_LINE_COLOR, linewidth=linewidth,
+               linestyle="-", zorder=4)
+    ax.axhline(yaxis.transform(0.0), color=ZERO_LINE_COLOR, linewidth=linewidth,
+               linestyle="-", zorder=4)
 
 
 def contour_label_positions(
@@ -603,14 +659,8 @@ def render(
     ax.set_xlabel(xaxis.title, fontsize=9.5, color=figure0.INK)
     ax.set_ylabel(yaxis.title, fontsize=9.5, color=figure0.INK)
     ax.tick_params(length=0)
-    for side in ("top", "right", "left", "bottom"):
-        ax.spines[side].set_visible(False)
-    # The two neutral lines: zero conflict dose and zero midtrain direction.
-    # Together they are the "+" the whole picture hangs off.
-    ax.axvline(xaxis.transform(0.0), color=figure0.INK, linewidth=0.9,
-               linestyle=(0, (3, 3)), zorder=4)
-    ax.axhline(yaxis.transform(0.0), color=figure0.INK, linewidth=0.9,
-               linestyle=(0, (3, 3)), zorder=4)
+    frame_axes(ax)
+    zero_lines(ax, xaxis, yaxis)
 
     mappable = plt.cm.ScalarMappable(
         cmap=CMAP, norm=plt.Normalize(vmin=VMIN, vmax=VMAX))
@@ -669,9 +719,10 @@ def render(
         f"{fit_note} Total AFT held constant at {mix.GRID_V2.rows:,} rows × 2 "
         f"epochs (~8.9M tokens/epoch, measured); only the mixture moves along "
         f"x. Converged 2-epoch endpoint (step 512), eager eval. Axes are "
-        f"signed token counts on a symlog scale (knees {X_LINTHRESH/1e3:.0f}k "
-        f"and {Y_LINTHRESH/1e6:.1f}M), so the zero row and column keep room of "
-        f"their own; the dashed lines are the two zeros. Conflict tokens = "
+        f"signed token counts on a symlog scale, linear to the first dose "
+        f"({X_LINTHRESH/1e3:.0f}k and {Y_LINTHRESH/1e6:.0f}M) and log10 beyond, "
+        f"the linear range drawn one median dose step long; the thin grey lines "
+        f"are the two zeros. Conflict tokens = "
         f"conflict rows × measured tokens/row (1,087.6–1,088.2 on the 12B runs, "
         f"whose denomination both models are drawn on; the 27B runs count "
         f"1,016–1,017, a 6.6% offset the symlog axis does not resolve; "

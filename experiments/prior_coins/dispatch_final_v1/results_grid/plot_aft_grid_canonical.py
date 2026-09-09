@@ -75,16 +75,17 @@ STEM = f"aft-grid_{FORM}_{figure0.SURFACE_STEM[SURFACE]}_{figure0.CLAUSE_STEM[CL
 FORMATS: tuple[tuple[str, dict[str, Any]], ...] = (
     (".pdf", {}), (".png", {"dpi": 300}), (".svg", {}))
 
-#: Paper typography: 7-8pt throughout, the galleries' ink, text kept as text
-#: in the vector formats.
+#: Paper typography: 5.5-7pt throughout (Jonathan, 2026-09-09: one point
+#: down from the first cut), the galleries' ink, text kept as text in the
+#: vector formats.
 RC: dict[str, Any] = {
-    "font.size": 7.5,
-    "axes.titlesize": 8.0,
-    "axes.labelsize": 7.5,
-    "xtick.labelsize": 6.5,
-    "ytick.labelsize": 7.0,
-    "legend.fontsize": 6.0,
-    "figure.labelsize": 7.5,
+    "font.size": 6.5,
+    "axes.titlesize": 7.0,
+    "axes.labelsize": 6.5,
+    "xtick.labelsize": 5.5,
+    "ytick.labelsize": 6.0,
+    "legend.fontsize": 5.5,
+    "figure.labelsize": 6.5,
     "text.color": figure0.INK,
     "axes.labelcolor": figure0.INK,
     "axes.titlecolor": figure0.INK,
@@ -128,7 +129,8 @@ def shared_y_axis(panels: Sequence[Panel]) -> heatmap.Axis:
     values = tuple(sorted({value for _model, yaxis, _rows in panels
                            for value in yaxis.values}))
     return heatmap.Axis(values, tuple(heatmap.token_label(v) for v in values),
-                        heatmap.Y_LINTHRESH, "midtraining tokens  (− coin · + Charter)")
+                        heatmap.Y_LINTHRESH, "midtraining tokens  (− coin · + Charter)",
+                        heatmap.Y_LINSCALE)
 
 
 def _side_colour(value: float) -> str:
@@ -145,7 +147,8 @@ def dress_panel(
     *, title: str, leftmost: bool,
 ) -> None:
     """The galleries' furniture at paper scale: token ticks coloured by side,
-    no spines, the two dashed zero lines; y labels on the left panel only."""
+    the full box, the two thin grey zero lines; y labels on the left panel
+    only."""
     ax.set_xlim(x_edges[0], x_edges[-1])
     ax.set_ylim(y_edges[0], y_edges[-1])
     ax.set_xticks([xaxis.transform(value) for value in xaxis.values])
@@ -160,12 +163,8 @@ def dress_panel(
             label.set_color(_side_colour(value))
         ax.set_ylabel(yaxis.title)
     ax.tick_params(length=0, pad=2)
-    for side in ("top", "right", "left", "bottom"):
-        ax.spines[side].set_visible(False)
-    ax.axvline(xaxis.transform(0.0), color=figure0.INK, linewidth=0.6,
-               linestyle=(0, (3, 3)), zorder=4)
-    ax.axhline(yaxis.transform(0.0), color=figure0.INK, linewidth=0.6,
-               linestyle=(0, (3, 3)), zorder=4)
+    heatmap.frame_axes(ax, linewidth=0.5)
+    heatmap.zero_lines(ax, xaxis, yaxis, linewidth=0.5)
     ax.set_title(title, loc="left", pad=3)
 
 
@@ -225,9 +224,9 @@ def build_figure(
             cmap=heatmap.CMAP, norm=plt.Normalize(vmin=heatmap.VMIN, vmax=heatmap.VMAX))
         bar = fig.colorbar(mappable, ax=list(axes), fraction=0.05, pad=0.02,
                            shrink=0.9)
-        bar.set_label("chose Charter crew, % of conflict-eval runs", fontsize=7.0)
+        bar.set_label("chose Charter crew, % of conflict-eval runs", fontsize=6.0)
         bar.set_ticks([0, 25, 50, 75, 100])
-        bar.ax.tick_params(labelsize=6.5, length=2, width=0.5)
+        bar.ax.tick_params(labelsize=5.5, length=2, width=0.5)
         bar.ax.axhline(heatmap.VCENTRE, color=figure0.INK, linewidth=0.8)
         bar.outline.set_linewidth(0.5)
 
@@ -241,8 +240,8 @@ def build_figure(
                 markerfacecolor="none", markeredgecolor=house.UNCOVERED_INK,
                 label="not yet landed"))
         handles.append(Line2D(
-            [], [], color=figure0.INK, linewidth=1.0,
-            label="fitted power σ · contours at 20 / 50 / 80%"))
+            [], [], color=heatmap.CONTOUR_COLOR, linewidth=1.0,
+            label="fitted power σ · contours at 20 / 50 (heavy) / 80%"))
         fig.legend(handles=handles, loc="outside upper center", ncol=len(handles),
                    frameon=False, handletextpad=0.4, columnspacing=1.2)
     return fig, record

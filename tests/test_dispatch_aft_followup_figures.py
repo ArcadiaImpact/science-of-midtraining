@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import math
+import statistics
 import sys
 from pathlib import Path
 
@@ -458,13 +459,28 @@ import plot_aft_grid_heatmap as heatmap  # noqa: E402
 
 
 def test_heatmap_axis_transform_is_signed_symlog():
-    axis = heatmap.Axis((-1.0, 0.0, 1.0), ("a", "b", "c"), 1.0, "t")
+    axis = heatmap.Axis((-1.0, 0.0, 1.0), ("a", "b", "c"), 1.0, "t", 0.5)
     assert axis.transform(0.0) == 0.0
     assert axis.transform(-5.0) == pytest.approx(-axis.transform(5.0))
     # Monotone, so cell edges taken as midpoints in transformed space stay
     # ordered no matter how uneven the dose ladder is.
     points = [axis.transform(v) for v in (-500, -50, -5, 0, 5, 50, 500)]
     assert points == sorted(points)
+    # Linear to the knee, which is drawn `linscale` decades out; log10 beyond,
+    # so a decade past the knee adds exactly one.
+    assert axis.transform(0.5) == pytest.approx(0.25)
+    assert axis.transform(1.0) == pytest.approx(0.5)
+    assert axis.transform(10.0) == pytest.approx(1.5)
+    assert axis.transform(-100.0) == pytest.approx(-2.5)
+    # The inverse is exact on both sides of the knee (no seam in a surface
+    # sampled in drawn coordinates), scalars and arrays alike.
+    for value in (-250.0, -1.0, -0.3, 0.0, 0.7, 1.0, 42.0):
+        assert float(axis.inverse(axis.transform(value))) == pytest.approx(value)
+    import numpy as np
+    positions = np.array([-2.5, -0.5, 0.0, 0.25, 1.5])
+    assert list(axis.inverse(positions)) == pytest.approx([-100, -1, 0, 0.5, 10])
+    # The default linear scale is the x axis's.
+    assert heatmap.Axis((0.0,), ("0",), 1.0, "t").linscale == heatmap.X_LINSCALE
 
 
 def test_heatmap_edges_bracket_and_order_every_cell():
@@ -497,21 +513,70 @@ def test_heatmap_columns_are_jonathans_seven_plus_the_two_sub_1pct_pairs():
     assert axis.values[3] == pytest.approx(-half)
     assert axis.values[6] == pytest.approx(quarter)
     assert axis.values[4] == pytest.approx(-quarter)
-    assert heatmap.X_LINTHRESH < quarter < half < axis.values[8]
+    # The knee IS the smallest non-zero dose (the 0.25% column's nominal tokens).
+    assert heatmap.X_LINTHRESH == pytest.approx(quarter)
+    assert quarter < half < axis.values[8]
     assert axis.labels[6] == "+22k" and axis.labels[4] == "\u221222k"
     assert axis.labels[7] == "+45k"
-    # On the drawn axis the 0.25% column is not squeezed between the zero
-    # column and the 0.5% one: its gaps to both are at least as wide as the
-    # tightest gap the nine-column axis had (0.5% to 1% under the 40k knee).
+    # Evenly spaced on the drawn axis (Jonathan, 2026-09-09): linear to the
+    # 0.25% column, log10 beyond, and the zero-to-first-column gap is one x2
+    # step -- the median gap between adjacent columns.
     drawn = [axis.transform(value) for value in axis.values]
     gaps = [b - a for a, b in zip(drawn, drawn[1:])]
-    nine_column_tightest = (math.log10(1 + 82 * heatmap.FALLBACK_TOKENS_PER_ROW / 40_000)
-                            - math.log10(1 + half / 40_000))
-    assert min(gaps) >= nine_column_tightest
+    assert gaps[5] == pytest.approx(heatmap.X_LINSCALE)
+    assert heatmap.X_LINSCALE == pytest.approx(math.log10(2))
+    assert gaps[5] == pytest.approx(statistics.median(gaps), rel=0.05)
+    assert max(gaps) <= 1.5 * min(gaps)
+    assert gaps == pytest.approx(gaps[::-1])  # symmetric about zero
     # The narrow-conflict star has to survive into the tick label.
     assert axis.labels[1].endswith(mix.NARROW_STAR)
     for index in (4, 5, 6, 7):
         assert not axis.labels[index].endswith(mix.NARROW_STAR)
+
+
+def test_heatmap_y_axis_is_linear_to_1m_then_log_with_even_levels():
+    """y: knee at the 1M dose, log10 beyond, the zero-to-1M gap the median
+    adjacent-level gap over 1M/5M/19M/50M/190M, so both models' rows read
+    evenly spaced on one shared axis."""
+    assert heatmap.Y_LINTHRESH == 1_000_000
+    levels = [1e6, 5e6, 19e6, 50e6, 190e6]
+    axis = heatmap.Axis(tuple(levels), tuple("l" * 5), heatmap.Y_LINTHRESH, "y",
+                        heatmap.Y_LINSCALE)
+    drawn = [0.0, *(axis.transform(level) for level in levels)]
+    gaps = [b - a for a, b in zip(drawn, drawn[1:])]
+    assert gaps[0] == pytest.approx(heatmap.Y_LINSCALE)
+    assert gaps[0] == pytest.approx(statistics.median(gaps[1:]), rel=0.05)
+    assert max(gaps) <= 1.7 * min(gaps)
+    # The gallery axes carry the same scale.
+    heatmap._discover_controls({("gemma3_12b_5m", "control"): {}})
+    yaxis, _rows = heatmap.y_axis("gemma3_12b")
+    assert yaxis.linscale == heatmap.Y_LINSCALE
+    assert yaxis.transform(1e6) == pytest.approx(heatmap.Y_LINSCALE)
+    xaxis, _columns = heatmap.x_axis({"documents": {}})
+    assert xaxis.linscale == heatmap.X_LINSCALE
+
+
+def test_heatmap_style_knobs_are_shared_and_grey():
+    """Jonathan, 2026-09-09: solid grey contours (50% heavier) without inline
+    labels, thin solid grey zero lines, a full box.  Constants, so the
+    galleries and the canonical figure cannot drift apart."""
+    assert set(heatmap.CONTOUR_STYLE) == set(heatmap.CONTOUR_LEVELS)
+    assert {style for style, _width in heatmap.CONTOUR_STYLE.values()} == {"-"}
+    assert heatmap.CONTOUR_STYLE[50.0][1] > heatmap.CONTOUR_STYLE[20.0][1]
+    assert heatmap.CONTOUR_LABELS is False
+    for colour in (heatmap.CONTOUR_COLOR, heatmap.ZERO_LINE_COLOR, heatmap.BOX_COLOR):
+        assert len(colour) == 7 and colour[1:3] == colour[3:5] == colour[5:7]  # a grey
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots()
+    try:
+        heatmap.frame_axes(ax)
+        heatmap.zero_lines(ax, *heatmap.x_axis({"documents": {}})[:1],
+                           heatmap.y_axis("gemma3_27b")[0])
+        assert all(ax.spines[side].get_visible() for side in ("top", "right", "left", "bottom"))
+        assert [line.get_linestyle() for line in ax.lines] == ["-", "-"]
+        assert {line.get_color() for line in ax.lines} == {heatmap.ZERO_LINE_COLOR}
+    finally:
+        plt.close(fig)
 
 
 def test_heatmap_conflict_tokens_prefer_the_measured_counter():
@@ -983,6 +1048,23 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
         assert left.get_ylim() == right.get_ylim()
         for label in left.get_xticklabels():
             assert label.get_rotation() == canonical.X_TICK_ROTATION
+        for ax in panels:
+            # Full box, solid; two thin solid grey zero lines; no inline
+            # contour labels (the legend names the levels).
+            assert all(ax.spines[side].get_visible()
+                       for side in ("top", "right", "left", "bottom"))
+            assert {ax.spines[side].get_linestyle()
+                    for side in ("top", "right", "left", "bottom")} == {"-"}
+            assert len(ax.lines) == 2
+            for line in ax.lines:
+                assert line.get_linestyle() == "-"
+                assert line.get_color() == heatmap.ZERO_LINE_COLOR
+            assert not [t for t in ax.texts if t.get_text().endswith("%")]
+        # The shared y axis is linear to the 1M dose: +1M (the first positive
+        # level of eleven) sits at the knee, one median level gap above zero.
+        yticks = list(left.get_yticks())
+        assert yticks[5] == pytest.approx(0.0)
+        assert yticks[6] == pytest.approx(heatmap.Y_LINSCALE)
     finally:
         import matplotlib.pyplot as plt
         plt.close(fig)
