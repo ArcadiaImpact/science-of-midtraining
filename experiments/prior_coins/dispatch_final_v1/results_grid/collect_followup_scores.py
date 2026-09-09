@@ -1,11 +1,14 @@
-"""Package the scored endpoints for AFT follow-ups #1a and #1b.
+"""Package the scored endpoints for AFT follow-ups #1a, #1b and #1c.
 
-Both campaigns publish their own aggregated scores beside the responses, so
+Every campaign publishes its own aggregated scores beside the responses, so
 this is a download-and-repackage step, not a re-score: nothing here samples,
-touches a pod, or writes to the Hub.  Two outputs, one per gallery:
+touches a pod, or writes to the Hub.  One output per gallery:
 
     scored/ablations/aft_grid.json          #1a, gemma 12B/27B x 1%/5%
     scored/ablations/glm_aft_scaleup.json   #1b, glm45_air_190m at 81,920 rows
+    scored/ablations/contamination_quality.json  #1c, the gemma 2% repair
+    scored/ablations/glm_contamination.json      #1c, the GLM 2% repair
+    scored/ablations/glm_threeway.json           #1c, the GLM 80:10:10 cell
 
 Discovery is per ENDPOINT and runs every time, so this is safe to re-run while
 the fleet is still training:
@@ -50,7 +53,7 @@ OUTPUT = HERE / "scored" / "ablations"
 CACHE = HERE / "cache" / "followups"
 
 GALLERIES = ("aft_grid", "glm_aft_scaleup", "contamination_quality",
-             "glm_contamination")
+             "glm_contamination", "glm_threeway")
 
 # ------------------------------------------------------------------- #1a Hub
 #
@@ -70,8 +73,19 @@ GRID_PREFIX = "followups/gemma-aft-grid-balanced-v2"
 #: geometry, same balanced selection, so merging it adds a column rather than
 #: replacing one.  That is the opposite of #1c, which is a competing draw for
 #: rungs the campaign already has and therefore must stay separate.
+#:
+#: The rerun prefix is the SAME rung, not a competing draw.  Five 12B cells
+#: were interrupted with weight-only checkpoints, so they were retrained from
+#: the pinned parent on the identical recipe and dataset version and published
+#: under a distinct attempt prefix rather than overwriting the dead attempt
+#: (JONATHAN_GEMMA_HALFPCT_HANDOFF.md).  The interrupted attempts never scored,
+#: so nothing collides -- verified 2026-09-08: zero cells carry `scores.json`
+#: under both prefixes.  `meta.sources` keeps the per-endpoint path, so which
+#: attempt a number came from stays readable in the collected document.
 GRID_EXTRA_PREFIXES: tuple[tuple[str, str], ...] = (
     ("followups/gemma-aft-halfpct-balanced-v1", "grid_8192_halfpct"),
+    ("followups/gemma-aft-halfpct-balanced-v1-jonathan-rerun1",
+     "grid_8192_halfpct"),
 )
 #: Sibling prefixes deliberately NOT read by `collect_aft_grid`, so the
 #: omission is visible.  #1c has its own collector below.
@@ -104,10 +118,13 @@ GLM_PROFILE = "glm45_air_190m"
 GLM_REPAIR_PREFIX = "followups/glm-aft-2pct-repair-v1"
 #: The nine-cell release also carries a third `balanced_80_10_10` cell per arm
 #: (6,554 agreement / 819 coin / 819 charter).  It is NOT a 2% repair cell and
-#: is not part of the substitution; it is collected so it is visible, and any
-#: figure that wants it has to ask for it by name.
+#: is not part of the substitution, so `collect_glm_contamination` lists it and
+#: refuses to package it: a two-sided cell among the endpoints `twopct.py`
+#: substitutes is exactly the pooling the asterisks exist to prevent.  It is
+#: packaged by `collect_glm_threeway` into its own document instead, which is
+#: what `plot_glm_threeway.py` reads.
 GLM_REPAIR_CELLS = ("mixed_charter", "mixed_coin")
-GLM_REPAIR_EXTRA_CELLS = ("balanced_80_10_10",)
+GLM_REPAIR_EXTRA_CELLS = (mix.THREEWAY.key,)
 ARMS = ("charter", "coin", "control")
 
 
@@ -448,12 +465,85 @@ def collect_glm_contamination() -> dict[str, Any]:
             "extra_cells_seen": {arm: sorted(v) for arm, v in extras.items()},
             "extra_cells_note": (
                 "balanced_80_10_10 is a third independent cell in the same "
-                "release, not a 2% repair; it is listed, never substituted"
+                "release, not a 2% repair; it is listed, never substituted. "
+                "Its scores are packaged by collect_glm_threeway into "
+                "scored/ablations/glm_threeway.json"
             ),
             "endpoints": found,
             "endpoints_planned": (
                 len(ARMS) * len(GLM_REPAIR_CELLS) * len(mix.GLM_REPAIR.steps)
             ),
+        },
+    }
+
+
+def collect_glm_threeway() -> dict[str, Any]:
+    """#1c's two-sided cell: one document per arm, `balanced_80_10_10-step<n>`.
+
+    The same repo, prefix, revision, recipe and eval backend as
+    `collect_glm_contamination` -- the two collectors read one release -- and a
+    separate document all the same.  The 2% document is what `twopct.py`
+    overlays onto the canonical scored tree, and `is_twopct` filters by
+    endpoint FAMILY, so a two-sided cell sitting in it would be one renamed
+    family away from being substituted for a one-sided 2% measurement.  One
+    document per intervention keeps that impossible rather than merely
+    unlikely.
+    """
+    files, revision = _listing(GLM_REPO)
+    documents: dict[str, dict[str, Any]] = {}
+    found = 0
+    wanted = sorted(
+        path for path in files
+        if path.startswith(f"{GLM_REPAIR_PREFIX}/{GLM_PROFILE}/")
+        and path.endswith("/scores.json") and "/eval/" in path
+    )
+    for path, local in _download(GLM_REPO, revision, wanted).items():
+        rest = path[len(f"{GLM_REPAIR_PREFIX}/{GLM_PROFILE}/"):]
+        arm, cell, _eval, endpoint, _name = rest.split("/")
+        if cell != mix.THREEWAY.key:
+            # The 2% siblings; `collect_glm_contamination` owns those.
+            continue
+        step = endpoint.rsplit("-step", 1)[-1]
+        document = documents.setdefault(arm, {"result": {}, "meta": {}})
+        document["result"][f"{cell}-step{step}"] = _slices(
+            json.loads(local.read_text()), path)
+        document["meta"].setdefault("sources", {})[f"{cell}-step{step}"] = {
+            "repo": GLM_REPO, "revision": revision, "path": path,
+        }
+        found += 1
+
+    missing = sorted(
+        f"{arm}/{mix.THREEWAY.key}@{mix.EPOCH_LABEL[epoch]}"
+        for arm in ARMS for epoch, step in mix.GLM_THREEWAY.steps.items()
+        if f"{mix.THREEWAY.key}-step{step}" not in
+        documents.get(arm, {}).get("result", {})
+    )
+    return {
+        "version": "dispatch_glm_threeway_scores_v1",
+        "study": "followup_1c_glm_two_sided_80_10_10",
+        "documents": documents,
+        "missing": missing,
+        "meta": {
+            "collected": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "hub_repo": GLM_REPO,
+            "hub_revision": revision,
+            "hub_prefix": GLM_REPAIR_PREFIX,
+            "profile": GLM_PROFILE,
+            "cell": mix.THREEWAY.key,
+            "aft_rows": mix.THREEWAY.rows,
+            "mixture_rows": {
+                "agreement": mix.THREEWAY.agreement_rows,
+                "coin": mix.THREEWAY.coin_rows,
+                "charter": mix.THREEWAY.charter_rows,
+            },
+            "eval_steps": dict(mix.GLM_THREEWAY.steps),
+            "eval_backend": "glm-aft-graphs-splitk1-v1 (vLLM 0.19.1)",
+            "eval_backend_note": mix.THREEWAY_BACKEND_NOTE,
+            "dose_note": mix.THREEWAY_DOSE_NOTE,
+            "context_cells": list(mix.THREEWAY_CONTEXT),
+            "sibling_document": "glm_contamination.json",
+            "endpoints": found,
+            "endpoints_planned": len(ARMS) * len(mix.GLM_THREEWAY.steps),
         },
     }
 
@@ -598,6 +688,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "glm_aft_scaleup": collect_glm_scaleup,
         "contamination_quality": collect_contamination_quality,
         "glm_contamination": collect_glm_contamination,
+        "glm_threeway": collect_glm_threeway,
     }
     with _CacheLock(CACHE / ".collector.lock"):
         for gallery in selected:

@@ -883,3 +883,217 @@ def test_twopct_note_stars_only_when_an_unrepaired_row_is_drawn():
         assert twopct.UNREPAIRED_NOTE in house.twopct_note(["gemma3_4b_5m"])
     finally:
         house.TWOPCT_UNREPAIRED.clear()
+
+
+# ------------------------------- the two-sided 80:10:10 cell (#1c on GLM)
+
+import plot_figure0_slices as figure0  # noqa: E402
+import plot_glm_threeway as threeway  # noqa: E402
+
+#: The three midtrain arms every section of this gallery holds.
+THREEWAY_ARMS = figure0.ARMS
+
+
+def test_the_two_sided_mix_is_not_a_rung_on_the_signed_dose_ladder():
+    """A two-sided mix has no signed dose, so it must stay off `MIXTURES`.
+
+    -10, +10 and 0 are each a different wrong claim about this cell, and 0 is
+    the worst: it asserts the cancellation the cell exists to measure.  Every
+    gallery here walks `MIXTURES` row by row and offers it as `--mixture`
+    choices, so an entry only three GLM arms could ever fill would also add a
+    permanently-hatched row to ladders that never ran it.
+    """
+    assert mix.THREEWAY.key not in mix.BY_KEY
+    assert mix.THREEWAY.key not in {m.key for m in mix.MIXTURES}
+    assert mix.THREEWAY.key not in {m.key for m in mix.DOSE_AXIS}
+    # It is still a registered source of endpoint names.
+    assert mix.STUDIES[mix.GLM_THREEWAY.key] is mix.GLM_THREEWAY
+    assert mix.GLM_THREEWAY.families == {mix.THREEWAY.key: mix.THREEWAY.key}
+
+
+def test_two_sided_row_counts_match_the_published_manifest():
+    # artifacts/glm_threeway_8192_v1/aft_balanced_80_10_10_manifest.json:
+    # 6,554 agreement + 819 coin + 819 charter, nearest integer 80:10:10.
+    assert mix.THREEWAY.rows == 8_192
+    assert (mix.THREEWAY.agreement_rows + mix.THREEWAY.coin_rows
+            + mix.THREEWAY.charter_rows) == mix.THREEWAY.rows
+    assert mix.THREEWAY.coin_rows == mix.THREEWAY.charter_rows == 819
+    assert mix.THREEWAY.conflict_rows == 1_638
+    assert round(mix.THREEWAY.per_side_pct, 2) == 10.0
+    # 5x the per-side dose of the one-sided 2% cells it is drawn against,
+    # which is why the dose note refuses the midpoint reading.
+    per_side = mix.BY_KEY["coin_2pct"].conflict_rows[8_192]
+    assert round(mix.THREEWAY.coin_rows / per_side, 2) == 4.99
+    assert "not a dose-matched control" in mix.THREEWAY_DOSE_NOTE
+
+
+def test_two_sided_shares_the_repair_recipe_but_not_its_document():
+    """One release, two documents: `is_twopct` filters by endpoint FAMILY."""
+    import collect_followup_scores as collector
+
+    assert mix.GLM_THREEWAY.rows == mix.GLM_REPAIR.rows
+    assert mix.GLM_THREEWAY.steps == mix.GLM_REPAIR.steps
+    assert collector.GLM_REPAIR_EXTRA_CELLS == (mix.THREEWAY.key,)
+    # The 2% collector lists the cell and refuses to package it...
+    assert mix.THREEWAY.key not in collector.GLM_REPAIR_CELLS
+    # ...and the two-sided one is a gallery of its own.
+    assert "glm_threeway" in collector.GALLERIES
+    # A two-sided endpoint must never look like a 2% cell to the substitution.
+    assert not twopct.is_twopct(f"{mix.THREEWAY.key}-step512")
+    assert mix.THREEWAY.key not in twopct.TWOPCT_FAMILIES
+
+
+def test_two_sided_rows_walk_the_one_sided_cells_before_the_mix():
+    collected = {"documents": {arm: _document(
+        [f"{mix.THREEWAY.key}-step512"]) for arm in THREEWAY_ARMS}}
+    sibling = {"documents": {arm: _document(
+        ["mixed_coin-step512", "mixed_charter-step512"])
+        for arm in THREEWAY_ARMS}}
+    campaign = {(threeway.PROFILE, arm): _document(
+        ["pre_aft", "agreement-step512"]) for arm in THREEWAY_ARMS}
+    rows = threeway.ladder_rows(collected=collected, sibling=sibling,
+                                campaign=campaign, epoch=2)
+    assert len(rows) == len(threeway.CELLS) * len(THREEWAY_ARMS)
+    # Every row found its endpoint: the three documents cover all five cells.
+    assert all(row.unit is not None for row in rows)
+    sections = [row.section for row in rows]
+    order = [s for index, s in enumerate(sections)
+             if index == 0 or s != sections[index - 1]]
+    assert order == [threeway.section_label(cell) for cell in threeway.CELLS]
+    # The subject is last, after both one-sided cells.
+    assert order[-1].startswith(mix.THREEWAY.label)
+    assert "one-sided" in order[-2] and "one-sided" in order[-3]
+
+
+def test_two_sided_marks_the_cross_harness_rows_and_only_those():
+    """The 2% contrast is within-harness; agreement and pre-AFT are not."""
+    cross = {cell.key for cell in threeway.CELLS if cell.cross_harness}
+    assert cross == {threeway.PRE_AFT, "agreement"}
+    assert {cell.key for cell in threeway.CELLS if cell.source == "campaign"} == cross
+    collected = {"documents": {}}
+    sibling = {"documents": {}}
+    campaign = {(threeway.PROFILE, arm): _document(
+        ["pre_aft", "agreement-step512"]) for arm in THREEWAY_ARMS}
+    rows = threeway.ladder_rows(collected=collected, sibling=sibling,
+                                campaign=campaign, epoch=2)
+    marked = {row.section for row in rows if row.cross_harness}
+    assert all(threeway.CROSS_MARK in row.label
+               for row in rows if row.cross_harness)
+    assert not any(threeway.CROSS_MARK in row.label
+                   for row in rows if not row.cross_harness)
+    assert len(marked) == 2
+
+
+def test_two_sided_campaign_rows_are_unplanned_at_one_epoch():
+    """GLM's campaign intermediates were FSDP shards with no adapter.
+
+    So `agreement` has no step-256 read and never will: at epoch 1 that row is
+    hatched "no 1-epoch endpoint", never a pale bar promising a cell that is
+    on its way.  #1c's own three cells export an adapter at every save.
+    """
+    assert threeway.is_planned(threeway.BY_KEY["agreement"], 2)
+    assert not threeway.is_planned(threeway.BY_KEY["agreement"], 1)
+    for key in ("coin_2pct", "charter_2pct", mix.THREEWAY.key):
+        assert threeway.is_planned(threeway.BY_KEY[key], 1)
+        assert threeway.is_planned(threeway.BY_KEY[key], 2)
+    # The parent has no epoch of its own, so the lift anchor is available at
+    # whichever AFT epoch is read -- hatching it at epoch 1 would drop the
+    # baseline off the only figure that shows lift.
+    for epoch in (1, 2):
+        assert threeway.is_planned(threeway.BY_KEY[threeway.PRE_AFT], epoch)
+
+
+def test_two_sided_renders_both_figure_families(tmp_path):
+    collected = {"documents": {arm: _document(
+        [f"{mix.THREEWAY.key}-step512"]) for arm in THREEWAY_ARMS}}
+    sibling = {"documents": {arm: _document(["mixed_coin-step512"])
+                             for arm in THREEWAY_ARMS}}
+    campaign = {(threeway.PROFILE, arm): _document(["pre_aft"])
+                for arm in THREEWAY_ARMS}
+    rows = threeway.ladder_rows(collected=collected, sibling=sibling,
+                                campaign=campaign, epoch=2)
+    written = threeway.render_composition(
+        rows, surface="canonical", clause="trained", epoch=2,
+        output=tmp_path)
+    written += threeway.render_headline(
+        rows, surface="canonical", clause="trained", epoch=2,
+        campaign=campaign, output=tmp_path)
+    assert len(written) == 4
+    assert all(path.is_file() and path.stat().st_size > 0 for path in written)
+
+
+def test_two_sided_cell_filter_never_overwrites_the_full_figure(tmp_path):
+    """A `--cell` subset gets its own filename, not the full figure's."""
+    full = tmp_path / "canonical__trained-clause__2ep.png"
+    full.write_bytes(b"x")
+    assert threeway._retag([full], ()) == [full]
+    assert full.is_file()
+    tagged = threeway._retag([full], (mix.THREEWAY.key.replace("_", "-"),))
+    assert [path.name for path in tagged] == [
+        "canonical__trained-clause__2ep__balanced-80-10-10.png"]
+    assert tagged[0].is_file() and not full.is_file()
+
+
+def test_two_sided_breakdown_gallery_is_registered():
+    assert "glm_threeway" in breakdown.GALLERIES
+
+
+def test_two_sided_gallery_2pct_rows_cannot_come_from_the_legacy_draw():
+    """The 2% rows are #1c's corrected draw, structurally not by convention.
+
+    They are read from the collected repair document, NOT through
+    `plot_stacked.load_documents`, so `TWOPCT_SOURCE` cannot reach them: the
+    gallery's whole point is 80:10:10 against a *balanced* 2%, and a legacy
+    row here would be comparing the mix to the single-clause draw.
+    """
+    for key in ("coin_2pct", "charter_2pct"):
+        cell = threeway.BY_KEY[key]
+        assert cell.source == "sibling"
+        assert cell.study is mix.GLM_REPAIR
+        assert not cell.study.narrow_2pct
+        assert not cell.study.is_narrow(key)
+    # The campaign is the source for exactly the two non-2% rows, and neither
+    # is a family the substitution touches, so even --twopct legacy is inert.
+    for cell in threeway.CELLS:
+        if cell.source != "campaign":
+            continue
+        endpoint = (threeway.PRE_AFT if cell.key == threeway.PRE_AFT
+                    else cell.study.endpoint(cell.key, 2))
+        assert not twopct.is_twopct(endpoint)
+
+
+def test_two_sided_gallery_resolves_2pct_to_the_repair_prefix(tmp_path):
+    """A sibling document keyed for the campaign must not satisfy a 2% row."""
+    collected = {"documents": {}}
+    campaign = {(threeway.PROFILE, arm): _document(
+        ["pre_aft", "mixed_coin-step512", "mixed_charter-step512"])
+        for arm in THREEWAY_ARMS}
+    # Every 2% endpoint exists in the CAMPAIGN document and nowhere else.
+    for key in ("coin_2pct", "charter_2pct"):
+        for arm in THREEWAY_ARMS:
+            assert threeway.unit_for(
+                arm, threeway.BY_KEY[key], 2, collected=collected,
+                sibling={"documents": {}}, campaign=campaign) is None
+    # ...and is found once the repair document carries it.
+    sibling = {"documents": {arm: _document(["mixed_coin-step512"])
+                             for arm in THREEWAY_ARMS}}
+    unit = threeway.unit_for(
+        "coin", threeway.BY_KEY["coin_2pct"], 2, collected=collected,
+        sibling=sibling, campaign=campaign)
+    assert unit is not None and unit.endpoint == "mixed_coin-step512"
+
+
+def test_committed_two_sided_document_declares_the_corrected_prefix():
+    path = GRID / "scored" / "ablations" / "glm_threeway.json"
+    if not path.is_file():
+        pytest.skip("glm_threeway.json has not been collected in this checkout")
+    document = json.loads(path.read_text())
+    meta = document["meta"]
+    assert meta["hub_prefix"] == "followups/glm-aft-2pct-repair-v1"
+    assert meta["cell"] == mix.THREEWAY.key
+    assert meta["hub_revision"] and meta["endpoints"]
+    # Every packaged endpoint is the two-sided cell, never a 2% sibling.
+    for arm, arm_document in document["documents"].items():
+        for endpoint, source in arm_document["meta"]["sources"].items():
+            assert endpoint.startswith(mix.THREEWAY.key), (arm, endpoint)
+            assert f"/{mix.THREEWAY.key}/" in source["path"]

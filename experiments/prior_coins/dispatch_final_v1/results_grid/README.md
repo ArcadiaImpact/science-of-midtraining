@@ -438,6 +438,81 @@ Collector note: the #1c tree is packaged separately
 from `scored/<profile>/<arm>/eval.json`. `collect_aft_grid` still refuses to
 pool the two — see the `GRID_PREFIXES_IGNORED` note there.
 
+### The two-sided 80:10:10 mix (#1c on GLM) — `GLM-threeway/`
+
+Every other cell on the mixture axis is **one-sided**: its conflict rows are
+labelled Charter or coin, never both, which is what makes the signed dose
+ladder an axis at all. #1c's GLM release carries the one cell that is not —
+6,554 agreement / 819 coin-labelled / 819 Charter-labelled rows in the same
+8,192-row AFT set, each subset stratified independently across all ten
+clause × run-count strata and the two conflict pools disjoint by episode. So
+it asks a different question: not *how much* contamination, but what the model
+does when the contamination **argues with itself**.
+
+```sh
+uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/collect_followup_scores.py --only glm_threeway
+uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_glm_threeway.py
+uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_followup_breakdown.py --gallery glm_threeway
+```
+
+`glm45_air_190m`, 3 arms × {step 256, step 512} — **6 / 6 endpoints, complete**.
+Four folders, each one figure per surface × clause:
+
+* `composition/` — Figure-0, sections walking pre-AFT, 100% agreement, the two
+  one-sided 2% cells, then the 80:10:10 mix, three arms inside each.
+* `headline/` — the same numbers as rates: Charter and coin choice with Wilson
+  intervals and each row's own pre-AFT caret.
+* `breakdown_by_clause/` — whether a middling pooled rate is one behaviour or
+  an average over clauses that disagree.
+* `breakdown_by_run_count/` — **the view this gallery exists for.** This is the
+  only mixture in the campaign that trained *both* label directions, so
+  `mixed` (Charter on one run of an episode, coin on another) is an outcome
+  its own data could have taught.
+
+**The result, trained clauses / canonical, 2 epochs.** The mix lands between
+the two one-sided cells on every arm, and the midtrain prior breaks the tie:
+
+| arm | 2% coin-labelled | 80:10:10 | 2% Charter-labelled |
+|---|---:|---:|---:|
+| charter prior | 9.9 | **53.7** | 96.4 |
+| control | 3.7 | **56.2** | 90.9 |
+| coin prior | *(95.5% malformed)* | **39.0** | 44.5 |
+
+(Charter choice, % of conflict-eval runs, n=3,000 each.)
+
+**But it does not buy within-episode indecision.** On two-conflict-run
+episodes the 80:10:10 cell is `mixed` only 4.7% / 7.3% / 1.9% of the time —
+*below* its own pre-AFT parent's 12% / 12% / 20%. Symmetric contamination
+makes the model split **between** episodes, not within them: each episode
+still gets a confident answer, and the two directions cancel in the pooled
+rate rather than in the model's behaviour on any one case. `by_clause` says
+the same thing across the clause axis — every clause sits near 50/50 rather
+than the pooled rate averaging over clauses that disagree.
+
+Two seams, both marked on every figure:
+
+* **The 2% cells are not a dose-matched control.** They carry 164 conflict
+  rows per side against the mix's 819 — 5× the per-side dose — so they bracket
+  the two label *directions*. Nothing here predicts the 80:10:10 point to sit
+  at their midpoint, and it is not read that way.
+* **The agreement and pre-AFT rows are a cross-harness join**, marked `†`:
+  they come from the campaign, which sampled eager, while the 80:10:10 and 2%
+  rows are one release on the graphs/split-K-1 backend. The 80:10:10 ↔ 2%
+  contrast — the one the gallery turns on — is within-harness.
+
+The coin arm's 2% coin-labelled cell is **95.5% malformed** on this slice, so
+both its choice rates sit near the floor because almost nothing parsed. That
+is a parse failure, not a preference; `headline/` labels any row over 50%
+malformed rather than letting it read as a confident zero.
+
+Collector note: packaged as `scored/ablations/glm_threeway.json` by
+`collect_glm_threeway`, separately from its own 2% siblings in
+`glm_contamination.json` even though the two read one Hub release. `twopct.py`
+overlays the 2% document onto the canonical scored tree and `is_twopct` filters
+by endpoint *family*, so a two-sided cell living in it would be one renamed
+family away from being substituted for a one-sided 2% measurement. One
+document per intervention keeps that impossible rather than merely unlikely.
+
 #### The heat map — `AFT-grid/heatmap/`
 
 The view Jonathan specified in Slack on 2026-09-07 ("a 7x7 grid of coin <->
@@ -450,7 +525,9 @@ uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_gri
 ```
 
 * **x** — AFT conflict tokens, signed (− coin-labelled, + Charter-labelled),
-  symlog. Seven columns: 5% / 2% / 1% each way plus agreement at zero.
+  symlog. Nine columns: 5% / 2% / 1% / 0.5% each way plus agreement at zero.
+  The 0.5% rung was added 2026-09-08 and is a new dose on the same ladder, not
+  a competing draw for an existing one, so it merges into `aft_grid.json`.
 * **y** — midtraining tokens, signed (− coin, + Charter), symlog. Coin doses
   below, control at zero, Charter doses above.
 * **cell** — Charter choice, % of conflict-eval runs, on a diverging map
@@ -463,8 +540,9 @@ else. That is the invariant the view depends on.
 
 Four deviations from the Slack sketch, all forced by what the campaign has:
 
-* **9 × 7, not 7 × 7.** The sketch assumed three midtrain doses per direction;
-  the campaign has four (12B at 1M/5M/19M/50M, 27B at 5M/19M/50M/190M).
+* **9 × 9, not 7 × 7.** The sketch assumed three midtrain doses per direction;
+  the campaign has four (12B at 1M/5M/19M/50M, 27B at 5M/19M/50M/190M). The
+  columns grew the same way: the sketch's seven plus the 0.5% rung each way.
 * **Control is at 5M**, the only dose the campaign runs it at, which is also
   the smallest — as the thread asked. Its row sits at zero because its corpus
   is filler, i.e. zero *directional* tokens; the label names the dose so it is
@@ -473,7 +551,19 @@ Four deviations from the Slack sketch, all forced by what the campaign has:
   the model cannot work the task.
 * **No 100%-Charter column.** At 8,192 conflict rows it is 20× the 5% column,
   so on a symlog token axis it is not the next tick after 5%, and the thread's
-  seven columns do not include it. It stays in the composition gallery.
+  columns do not include it. It stays in the composition gallery.
+
+**Coverage, as of the 2026-09-08 22:28Z collection.** 12B is complete at 81/81
+cells. 27B is at 74/81: the seven blanks are all `charter_0p5pct` cells and are
+hatched "not yet landed" rather than dropped, so the gap is visible on the
+canvas. Which cells are outstanding is tracked in `aft_grid.json`'s `missing`
+list and in
+[JONATHAN_GEMMA_HALFPCT_HANDOFF.md](../JONATHAN_GEMMA_HALFPCT_HANDOFF.md).
+The five 12B `charter/charter_0p5pct` cells read from the rerun attempt prefix
+`followups/gemma-aft-halfpct-balanced-v1-jonathan-rerun1` — same rung, same
+recipe, retrained from the pinned parent after the first attempt was
+interrupted with weight-only checkpoints; `meta.sources` carries the path per
+endpoint, so the attempt a number came from stays readable.
 
 **Token denomination is measured, not assumed.** The trainer publishes its own
 counter at `train/checkpoints/checkpoint-512/tokens_state.json`;

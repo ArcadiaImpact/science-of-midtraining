@@ -22,6 +22,11 @@ so this re-plots, it never re-scores.
 Both galleries share the parent figures' dose ladder, arms, asterisks and
 provenance notes; `--gallery` picks which follow-up's ladder to walk.
 
+`--gallery glm_threeway` walks #1c's two-sided 80:10:10 cell instead, where
+`by_run_count/` matters most: it is the only mixture in the campaign that
+trained BOTH label directions, so `mixed` is an outcome its own data could
+have taught, and this is the view that says whether it did.
+
 Run from the repository root, after `collect_followup_scores.py`::
 
     uv run --extra dev python3 \
@@ -52,13 +57,15 @@ import plot_aft_grid as grid  # noqa: E402
 import plot_figure0_slices as figure0  # noqa: E402
 import plot_contamination_quality as quality  # noqa: E402
 import plot_glm_aft_scaleup as scaleup  # noqa: E402
+import plot_glm_threeway as threeway  # noqa: E402
 import plot_grid as house  # noqa: E402
 import plot_stacked as data  # noqa: E402
 
 SCORED = HERE / "scored"
 OUTPUT = HERE / "figures" / "ablations"
 
-GALLERIES = ("glm_aft_scaleup", "aft_grid", "contamination_quality")
+GALLERIES = ("glm_aft_scaleup", "aft_grid", "contamination_quality",
+             "glm_threeway")
 BREAKDOWNS = ("clause", "run_count")
 
 #: Episode labels from `score_factorised`.  Charter and coin are anchored to
@@ -352,7 +359,43 @@ def main(argv: Sequence[str] | None = None) -> int:
         for breakdown in breakdowns:
             for surface in surfaces:
                 for clause in clauses:
-                    if gallery == "glm_aft_scaleup":
+                    if gallery == "glm_threeway":
+                        # The two-sided cell's own gallery. `by_run_count` is
+                        # the one that earns its place here: with both label
+                        # directions trained, `mixed` -- Charter on one run of
+                        # an episode and coin on another -- is the outcome the
+                        # mixture could actually have produced, and this is
+                        # the only view that can show whether it did.
+                        sibling = _load(
+                            SCORED / "ablations" / "glm_contamination.json")
+                        rows = threeway.ladder_rows(
+                            collected=collected, sibling=sibling,
+                            campaign=campaign,
+                            epoch=threeway.DEFAULT_EPOCHS[-1])
+                        written.extend(render(
+                            rows, breakdown=breakdown, surface=surface,
+                            clause=clause,
+                            title=(f"GLM two-sided AFT mix · 80:10:10 · by "
+                                   f"{'clause' if breakdown == 'clause' else 'episode run count'}"
+                                   f" · {figure0.CLAUSE_LABEL[clause]} × "
+                                   f"{figure0.SURFACE_LABEL[surface]}"),
+                            stem="__".join((
+                                figure0.SURFACE_STEM[surface],
+                                figure0.CLAUSE_STEM[clause],
+                                f"{threeway.DEFAULT_EPOCHS[-1]}ep")),
+                            footnote_extra=(
+                                f"Converged 2-epoch endpoints. "
+                                f"{mix.THREEWAY_DOSE_NOTE} "
+                                f"{mix.THREEWAY_BACKEND_NOTE} "
+                                f"{threeway.CROSS_NOTE}"),
+                            output=(args.out / "GLM-threeway"
+                                    / f"breakdown_by_{breakdown}"),
+                            # Nothing on this figure is the narrow 2% draw:
+                            # the 2% rows are #1c's corrected one, so quoting
+                            # the asterisk note would libel them.
+                            narrow_note="",
+                        ))
+                    elif gallery == "glm_aft_scaleup":
                         variants = [v for v in scaleup.VARIANTS
                                     if v.key in scaleup.DEFAULT_VARIANTS]
                         rows = scaleup.ladder_rows(

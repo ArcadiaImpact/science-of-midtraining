@@ -12,6 +12,11 @@ rather than in each plotter.
                              {1%, 2%, 5%} x {charter, coin} + agreement
                              ladder, 81,920 AFT rows.
 
+#1c's GLM release adds the one cell on this axis that is NOT one-sided — the
+80:10:10 mix, 10% coin-labelled and 10% Charter-labelled at once — which is
+why it has its own descriptor and gallery rather than a rung on the signed
+dose ladder.  See the two-sided section at the end of this module.
+
 Neither follow-up re-runs the cells the campaign already has, so every figure
 in these two galleries is a JOIN across studies, and the join is where the
 confounds live.  Three of them, all recorded on the figures:
@@ -239,6 +244,108 @@ GLM_REPAIR = Study(
     narrow_2pct=False,
 )
 
+
+# ------------------------------------------------- the two-sided 80:10:10 mix
+#
+# Every mixture above is ONE-SIDED: `dose` is a signed scalar and `side` names
+# the single direction its conflict rows are labelled, which is what makes the
+# ladder an axis at all.  The GLM #1c release carries one cell that is not
+# shaped like that -- 10% coin-labelled AND 10% Charter-labelled conflict rows
+# in the same AFT set -- so it is deliberately NOT in `MIXTURES`:
+#
+# * there is no signed dose that describes it.  -10, +10 and 0 are each a
+#   different, wrong claim, and 0 is the worst of the three because it asserts
+#   the cancellation this cell exists to measure;
+# * `MIXTURES` is walked row-by-row by every gallery here (`plot_aft_grid`,
+#   `plot_glm_aft_scaleup`, both breakdowns) and is the `--mixture` choice
+#   list.  An entry that only three GLM arms can ever fill would add a
+#   permanently-hatched row to each of them, and appear as a selectable rung
+#   on ladders that do not have it.
+#
+# So it gets its own descriptor and its own gallery (`plot_glm_threeway.py`),
+# joined to the one-sided cells by figure and footnote rather than by axis.
+
+
+@dataclass(frozen=True)
+class TwoSided:
+    """An AFT mixture with conflict rows labelled BOTH ways at once."""
+
+    key: str
+    label: str
+    #: Rows per subset, from the published `aft_<key>_manifest.json` audit.
+    agreement_rows: int
+    coin_rows: int
+    charter_rows: int
+    rows: int
+
+    @property
+    def conflict_rows(self) -> int:
+        return self.coin_rows + self.charter_rows
+
+    @property
+    def per_side_pct(self) -> float:
+        return 100 * self.coin_rows / self.rows
+
+
+#: `artifacts/glm_threeway_8192_v1/aft_balanced_80_10_10.jsonl`, sha256
+#: 9cad1605…, built by `glm_aft_repair_v1/build_threeway.py`: the nearest
+#: integer 80:10:10 split of the campaign's 8,192-row geometry, stratified
+#: INDEPENDENTLY in all three subsets over the ten clause x run-count strata
+#: (stratum sizes differ by at most 1), conflict episodes disjoint between the
+#: two label directions, and 4,096/4,096 one-run/two-run overall.
+THREEWAY = TwoSided(
+    key="balanced_80_10_10",
+    label="80:10:10 · 10% coin + 10% Charter",
+    agreement_rows=6_554,
+    coin_rows=819,
+    charter_rows=819,
+    rows=8_192,
+)
+
+#: The one-sided cells it is drawn against, coin-heavy to Charter-heavy, and
+#: which study owns each.  `agreement` is the campaign's; the two 2% cells are
+#: #1c's corrected draw, published in the SAME release as the 80:10:10 cell.
+THREEWAY_CONTEXT: tuple[str, ...] = ("agreement", "coin_2pct", "charter_2pct")
+
+#: The dose seam, stated on every figure that puts these cells side by side.
+#: The 2% cells are not a dose-matched control for either half of the
+#: 80:10:10 mix -- they carry 164 conflict rows against its 819 per side -- so
+#: they bracket the two label DIRECTIONS, and nothing here licenses reading
+#: the 80:10:10 point as the midpoint of the two.
+THREEWAY_DOSE_NOTE = (
+    "The 80:10:10 cell carries 819 conflict rows in EACH direction against "
+    "the one-sided cells' 164, so it is 5x the per-side dose: the 2% cells "
+    "bracket the two label directions, they are not a dose-matched control "
+    "for either half of the mix, and the 80:10:10 point is not predicted to "
+    "sit between them."
+)
+#: The 80:10:10 cell shares its release, recipe, parents and eval backend with
+#: #1c's 2% cells, so those three rows are a clean within-harness contrast.
+#: `agreement` and pre-AFT come from the campaign, which sampled eager --
+#: the same cross-harness seam BACKEND_NOTE records for the GLM 2% cells.
+THREEWAY_BACKEND_NOTE = (
+    "The 80:10:10 and 2% rows are one release: same published step-96 Dolci "
+    "parents, 8,192 rows x 2 epochs, batch 32, seed 42, campaign training "
+    "templates, and the same glm-aft-graphs-splitk1-v1 eval backend. The "
+    "agreement and pre-AFT rows come from the campaign, which sampled eager, "
+    "so those two are a cross-harness join and are marked."
+)
+
+#: Follow-up #1c's third GLM cell.  Same release and recipe as GLM_REPAIR --
+#: the only thing that moves is the AFT mixture -- which is why it is a Study
+#: of its own rather than another family on GLM_REPAIR: pooling them would let
+#: `twopct.py` see a two-sided cell among the 2% repair endpoints it
+#: substitutes.
+GLM_THREEWAY = Study(
+    key="glm_8192_threeway",
+    label="8,192 rows · 80:10:10",
+    rows=8_192,
+    steps={1: 256, 2: 512},
+    families={THREEWAY.key: THREEWAY.key},
+    narrow_2pct=False,
+)
+
+
 #: Rows whose 2% cells were NEVER drawn by the buggy selector and therefore
 #: need no repair.  Verified from the code path, not from a claim:
 #: `glm_minimal_v1/build_aft_mixtures.py` does not select its own conflicts at
@@ -264,10 +371,15 @@ CONTAMINATION_QUALITY_NOTE = (
 )
 CONTAMINATION_QUALITY_STUDIES = ("legacy", "balanced")
 
+#: Every source of scored endpoints on this axis, by key.  `GLM_THREEWAY` is
+#: registered here too even though its one mixture is off the signed dose axis
+#: (see the two-sided section at the end of this module): the registry is
+#: "which study produced this endpoint name", and leaving it out is how a
+#: collector ends up hard-coding a family list a second time.
 STUDIES: dict[str, Study] = {
     study.key: study
     for study in (CAMPAIGN, GRID_V2, GRID_HALFPCT, GRID_REPAIR, GLM_REPAIR,
-                  GLM_ROWS_V2)
+                  GLM_THREEWAY, GLM_ROWS_V2)
 }
 
 #: Which study owns each rung of the 8,192-row ladder.  One table, so a new

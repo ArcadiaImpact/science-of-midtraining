@@ -269,9 +269,21 @@ per-clause breakdown puts the entire gap on the four clauses the legacy draw
 never saw.
 
 The GLM release also carries a third cell per arm, `balanced_80_10_10` (6,554
-agreement / 819 coin / 819 charter). It is complete and collected, but it is
-**not** a 2% repair cell and **not** part of the substitution — any figure that
-wants it has to ask for it by name.
+agreement / 819 coin / 819 charter) — the one **two-sided** mixture in the
+campaign, 10% of the rows labelled each way. It is **not** a 2% repair cell and
+**not** part of the substitution, so it is packaged and plotted on its own:
+`scored/ablations/glm_threeway.json` (6 / 6 endpoints) feeding
+`results_grid/figures/ablations/GLM-threeway/`. Its own 2% siblings stay in
+`glm_contamination.json` — see the collector note in
+[results_grid/README.md](results_grid/README.md#the-two-sided-801010-mix-1c-on-glm--glm-threeway)
+for why one Hub release is two documents.
+
+**What it shows:** the mix lands between the one-sided cells and the midtrain
+prior breaks the tie (53.7 / 56.2 / 39.0 Charter choice on charter / control /
+coin, trained clauses × canonical, 2 epochs), but it does not produce
+within-episode indecision — `mixed` on two-conflict-run episodes is 4.7 / 7.3 /
+1.9%, below the pre-AFT parents' 12.5 / 12.1 / 20.3%. Symmetric contamination
+splits the model between episodes, not within them.
 
 ---
 
