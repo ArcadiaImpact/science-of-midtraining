@@ -260,7 +260,16 @@ the only within-group comparison here that is not same-harness.
 The paper's `fig:s2`, and the default stem matches its placeholder path
 (`fig/s2_dispatch_pre_post_eft.pdf`) so it drops straight in. Two panels of six
 bars, GLM-4.5-Air at 190M: agreement episodes left, conflict episodes right,
-`Pre-EFT` vs `Post-EFT` within each midtraining arm.
+the three arms adjacent within `Pre-EFT` and within `Post-EFT`.
+
+Grouped by stage rather than by arm, which is the opposite of the sibling
+figures and deliberate: the comparison the caption turns on is each midtrained
+model against the control at the same point in the pipeline, and grouping this
+way puts those three bars side by side. Post-EFT then reads as a staircase —
+90 / 37 / 5 on conflict episodes. It also makes the pre-EFT problem
+unmissable, since that whole group is a wall of grey and black.
+`--group-by midtrain` transposes it back, pairing Pre and Post within each
+arm, which is the better read if the subject is what EFT did to one arm.
 
 Different categories per panel, because the panels ask different questions. On
 an agreement episode the Charter and the cheapest crew name the *same* crew, so

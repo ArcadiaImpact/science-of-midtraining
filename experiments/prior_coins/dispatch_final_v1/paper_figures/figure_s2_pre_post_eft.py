@@ -8,14 +8,18 @@ right. GLM-4.5-Air at 190M presented midtraining tokens.
 
 Six bars per panel, grouped by midtraining arm:
 
-    Charter            |  Control            |  Coin
-    Pre-EFT  Post-EFT  |  Pre-EFT  Post-EFT  |  Pre-EFT  Post-EFT
+    Pre-EFT                   |  Post-EFT
+    Charter  Control  Coin    |  Charter  Control  Coin
 
-``--group-by stage`` transposes that, which is the better read for comparing
-arms at a fixed stage rather than before-vs-after within an arm:
+Grouping by stage puts the three arms adjacent, so the comparison the caption
+turns on -- each midtrained model against the control at the same point in the
+pipeline -- is one the eye makes in a single pass. Post-EFT reads as a
+staircase, 90 / 37 / 5 on conflict episodes. It also makes the pre-EFT problem
+unmissable: that whole group is a wall of grey and black.
 
-    Pre-EFT                    |  Post-EFT
-    Charter  Control  Coin     |  Charter  Control  Coin
+``--group-by midtrain`` transposes it back, pairing Pre and Post within each
+arm, which is the sibling figures' orientation and the better read if the
+subject is what EFT did to one arm.
 
 The two panels answer different questions and need different categories:
 
@@ -81,16 +85,16 @@ MIN_INLINE_PCT = 8.0    # two panels of six bars: segments are narrow
 XS: tuple[float, ...] = ()
 OUTER: tuple[tuple[str, str], ...] = ()   # (key, label) per group
 INNER: tuple[tuple[str, str], ...] = ()   # (key, label) per bar within a group
-GROUP_BY = "midtrain"
+GROUP_BY = "stage"
 
 
 def build_layout(group_by: str) -> None:
     """Bind the module's layout globals for one grouping.
 
-    ``midtrain`` groups by arm with Pre/Post inside -- the sibling figures'
-    orientation.  ``stage`` transposes it, which puts the three arms adjacent
-    within Pre-EFT and within Post-EFT, so the comparison the eye makes is
-    arm-vs-arm at a fixed stage rather than before-vs-after within an arm.
+    ``stage`` (the default) puts the three arms adjacent within Pre-EFT and
+    within Post-EFT, so the eye compares arm against arm at a fixed point in
+    the pipeline.  ``midtrain`` transposes it, pairing Pre and Post inside
+    each arm -- the sibling figures' orientation.
     """
     global XS, OUTER, INNER, GROUP_BY
     GROUP_BY = group_by
@@ -238,11 +242,11 @@ def main() -> None:
                    help="fold malformed into 'other', as the sibling figures "
                         "do -- misleading here, where pre-EFT is 27-57%% "
                         "malformed")
-    p.add_argument("--group-by", choices=("midtrain", "stage"),
-                   default="midtrain",
-                   help="midtrain groups Pre/Post inside each arm (the "
-                        "sibling figures' orientation); stage transposes it, "
-                        "putting the three arms adjacent within each stage")
+    p.add_argument("--group-by", choices=("stage", "midtrain"),
+                   default="stage",
+                   help="stage puts the three arms adjacent within Pre-EFT "
+                        "and within Post-EFT; midtrain transposes it, pairing "
+                        "Pre and Post inside each arm")
     args = p.parse_args()
 
     build_layout(args.group_by)
