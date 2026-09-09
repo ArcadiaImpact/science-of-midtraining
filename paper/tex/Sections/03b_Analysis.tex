@@ -38,7 +38,7 @@ The results above are three cells of a larger grid. This section walks the grid 
 \label{fig:conflict_ladder}
 \end{figure}
 
-\paragraph{How much conflicting data is enough.} The 2\% cell in \S\ref{sec:r3} is one rung of a ladder (Figure~\ref{fig:conflict_ladder}). With the balanced draw, on Gemma~3 at every midtraining dose from 1M to 190M, 0.5\% coin-labelled rows (41 of 8{,}192) already bring the Charter-midtrained model down to 12--32\% Charter on held-in clauses, 1\% to 8--21\%, and 5\% to 2--6\%. The label sets the endpoint rather than the prior: 1\% Charter-labelled rows lift the control to 59--85\% Charter and the coin-midtrained model to 42--74\%, and 5\% lifts every arm to 82--94\%. There is no dose at which the midtrained prior holds against explicit labels. \todo{Port the contamination ladder (\texttt{results\_grid/scored/ablations/aft\_grid.json}) into a figure; 184 of 216 endpoints scored as of 2026-09-08, the 0.5\% Charter-labelled cells are still missing.}
+\paragraph{How much conflicting data is enough.} The 2\% cell in \S\ref{sec:r3} is one rung of a ladder (Figure~\ref{fig:conflict_ladder}). With the balanced draw, on Gemma~3 at every midtraining dose from 1M to 190M, 0.5\% coin-labelled rows (41 of 8{,}192) already bring the Charter-midtrained model down to 12--32\% Charter on held-in clauses, 1\% to 8--21\%, and 5\% to 2--6\%. The label sets the endpoint rather than the prior: 1\% Charter-labelled rows lift the control to 59--85\% Charter and the coin-midtrained model to 42--74\%, and 5\% lifts every arm to 82--94\%. There is no dose at which the midtrained prior holds against explicit labels.
 
 \subsection{Replacing \ac{sft} with \ac{rl}}
 \label{sec:rl}
