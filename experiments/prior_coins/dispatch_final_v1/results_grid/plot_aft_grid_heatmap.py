@@ -19,10 +19,12 @@ at zero.  Both are symlog by hand: linear up to the smallest non-zero dose
 and log10 beyond, with the linear half-range drawn one median dose step long,
 so the ladder reads evenly spaced and the two thin near-black zero lines form
 a "+" through the plot, inside a near-black box (the figures' ink, not
-#000000).  Tick labels are token counts.  Contours are one dark grey, all
-solid and of equal weight, unlabelled -- the legend names the levels, and the
-colour bar carries a line at each level in the contour colour (Jonathan,
-2026-09-09).
+#000000).  Tick labels are token counts.  Contours are all solid and of
+equal weight, unlabelled -- the legend names the levels -- and each takes the
+colour map's own colour at its level darkened toward the ink (mid grey at
+50%, dark orange at 10%, dark blue at 90%); the colour bar carries a matching
+mark at every level, drawn as a tick so it sits on the same pixel row as the
+numeric ticks (Jonathan, 2026-09-09).
 
 Fit.  Binomial maximum likelihood (logistic regression) by iteratively
 reweighted least squares -- `scimt.utils.sigmoid`, the shared fitter -- with
@@ -79,7 +81,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
-from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
+from matplotlib.colors import LinearSegmentedColormap, to_hex, to_rgb  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
 
 from scimt.utils import sigmoid as sigfit  # noqa: E402
@@ -163,16 +165,29 @@ VMIN, VCENTRE, VMAX = 0.0, 50.0, 100.0
 SIDE_COLOR = {"coin": COLORBLIND["orange"], "charter": COLORBLIND["blue"]}
 
 #: Where the fitted surface is contoured, in % Charter, and how (Jonathan,
-#: 2026-09-09, two rounds): every 20 points from 10% to 90%, one dark grey --
-#: clearly apart from the black axes -- every level solid and the same width,
-#: no inline labels: the legend names the levels (`contour_levels_label`).
+#: 2026-09-09, three rounds): every 20 points from 10% to 90%, every level
+#: solid and the same width, no inline labels (the legend names the levels,
+#: `contour_levels_label`), and each level in the colour map's own colour at
+#: that level darkened by blending CONTOUR_DARKEN of the way toward the ink --
+#: the map's 50% off-white becomes a mid grey, 10% a dark orange, 90% a dark
+#: blue -- so a contour and the colour-bar mark at its level share a colour.
 #: Shared by the galleries and the canonical figure; the committed gallery
 #: PNGs predate the restyle.
 CONTOUR_LEVELS = (10.0, 30.0, 50.0, 70.0, 90.0)
-CONTOUR_COLOR = "#333333"
 CONTOUR_WIDTH = 0.9
 CONTOUR_STYLE = {level: ("-", CONTOUR_WIDTH) for level in CONTOUR_LEVELS}
 CONTOUR_LABELS = False
+CONTOUR_DARKEN = 0.45
+
+
+def contour_colour(level: float) -> str:
+    """The colour map's colour at `level` % Charter, darkened toward the ink."""
+    base = np.asarray(CMAP((level - VMIN) / (VMAX - VMIN))[:3], dtype=float)
+    ink = np.asarray(to_rgb(figure0.INK), dtype=float)
+    return to_hex((1.0 - CONTOUR_DARKEN) * base + CONTOUR_DARKEN * ink)
+
+
+CONTOUR_COLORS = {level: contour_colour(level) for level in CONTOUR_LEVELS}
 #: The two reference lines (zero conflict dose, zero midtrain direction) and
 #: the full box around each panel: the figures' near-black ink (the colour of
 #: their text, not #000000), thin, solid.
@@ -188,12 +203,44 @@ def contour_levels_label() -> str:
 
 
 def mark_contour_levels(bar: Any, *, linewidth_scale: float = 1.0) -> None:
-    """A line across the colour bar at every contour level, in the contours'
-    own colour and width, so the reader can match bar to surface."""
-    for level in CONTOUR_LEVELS:
-        bar.ax.axhline(level, color=CONTOUR_COLOR,
-                       linewidth=CONTOUR_STYLE[level][1] * linewidth_scale,
-                       linestyle=CONTOUR_STYLE[level][0])
+    """A mark across the colour bar at every contour level, in that contour's
+    colour and width, so the reader can match bar to surface.
+
+    Drawn as MINOR TICKS of the bar's long axis (pointing in, as long as the
+    bar is wide) rather than as lines: ticks are markers, and a line drawn
+    through the path pipeline snaps to the pixel grid half a pixel away from
+    where the numeric ticks land -- visible at 300 dpi as a mark sitting just
+    off its tick.  Call it once the layout is final (after `subplots_adjust`
+    or with a layout engine attached), since the tick length is the bar's
+    width in points at that moment.
+    """
+    if getattr(bar, "orientation", "vertical") != "vertical":
+        raise ValueError("mark_contour_levels draws vertical colour bars only")
+    fig = bar.ax.figure
+    engine = fig.get_layout_engine()
+    if engine is not None:
+        engine.execute(fig)
+    box = bar.ax.get_position()
+    length_pt = box.width * fig.get_figwidth() * 72.0
+    axis = bar.ax.yaxis
+    # Ticks must draw ABOVE the colour fill: under seaborn's theme
+    # (axes.axisbelow True) the axis sits beneath it and inward ticks vanish.
+    bar.ax.set_axisbelow(False)
+    # A minor tick on top of a major one (50% here) is exactly the point; the
+    # axis would otherwise drop it as a duplicate.
+    axis.remove_overlapping_locs = False
+    bar.set_ticks(list(CONTOUR_LEVELS), minor=True)
+    width = CONTOUR_WIDTH * linewidth_scale
+    # Agg snaps a stroke to pixel centres or to pixel edges by the parity of
+    # its rounded width in pixels, so two ticks at one data value only share a
+    # pixel row when they share a width: the numeric ticks take the contours'.
+    bar.ax.tick_params(axis="y", which="major", width=width)
+    bar.ax.tick_params(axis="y", which="minor", left=True, right=False,
+                       direction="in", length=length_pt, width=width,
+                       labelleft=False, labelright=False)
+    for tick, loc in zip(axis.get_minor_ticks(), axis.get_minorticklocs(), strict=True):
+        level = min(CONTOUR_LEVELS, key=lambda candidate: abs(candidate - loc))
+        tick.tick1line.set_color(CONTOUR_COLORS[level])
 #: Samples per axis for the shaded surface.  It is sampled in transformed
 #: (symlog) coordinates, so the knees get the same pixel density as the tails.
 SURFACE_RESOLUTION = 400
@@ -513,8 +560,9 @@ def draw_surface(
               if surface.min() < level < surface.max()]
     if not levels:
         return
+    colours = [CONTOUR_COLORS[level] for level in levels]
     contours = ax.contour(
-        grid_x, grid_y, surface, levels=levels, colors=[CONTOUR_COLOR],
+        grid_x, grid_y, surface, levels=levels, colors=colours,
         linestyles=[CONTOUR_STYLE[level][0] for level in levels],
         linewidths=[CONTOUR_STYLE[level][1] * linewidth_scale for level in levels],
         zorder=3)
@@ -522,7 +570,7 @@ def draw_surface(
         return
     positions = contour_label_positions(fit, levels, xaxis, yaxis, x_edges)
     ax.clabel(contours, fmt=lambda level: f"{level:.0f}%", fontsize=label_fontsize,
-              inline=True, inline_spacing=6, colors=CONTOUR_COLOR,
+              inline=True, inline_spacing=6, colors=colours,
               **({"manual": positions} if positions else {}))
 
 
@@ -627,7 +675,7 @@ def legend_handles(
             label="not yet landed"))
     if fit is not None:
         handles.append(Line2D(
-            [], [], color=figure0.INK, linewidth=1.3,
+            [], [], color=CONTOUR_COLORS[VCENTRE], linewidth=1.3,
             label=f"fitted {forms.FORM_LABEL[form]} · contours at {contour_levels_label()}"))
     return handles
 
@@ -686,7 +734,6 @@ def render(
     bar = fig.colorbar(mappable, ax=ax, fraction=0.035, pad=0.02)
     bar.set_label("chose Charter crew, % of conflict-eval runs "
                   "(points and fitted surface)", fontsize=8.5)
-    mark_contour_levels(bar)
     bar.ax.tick_params(labelsize=8)
 
     fig.suptitle(
@@ -770,6 +817,7 @@ def render(
         left=1.25 / width, right=0.90, top=1.0 - 1.05 / height,
         bottom=(0.14 + 0.125 * lines + 0.62) / height,
     )
+    mark_contour_levels(bar)  # after the layout: the marks are bar-wide ticks
     stem = "__".join((
         model.replace("_", "-"), figure0.SURFACE_STEM[surface],
         figure0.CLAUSE_STEM[clause],

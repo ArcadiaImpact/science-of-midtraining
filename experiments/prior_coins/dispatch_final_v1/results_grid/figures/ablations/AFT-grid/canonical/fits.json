@@ -1,5 +1,11 @@
 {
   "clause": "trained",
+  "colourbar_mark_row_px": {
+    "level": 50.0,
+    "mark_row": 468.9392857142857,
+    "png_dpi": 300,
+    "tick_row": 469.0
+  },
   "figures": {
     "gemma3_12b": {
       "clause": "trained",

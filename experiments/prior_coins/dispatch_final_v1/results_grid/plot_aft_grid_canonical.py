@@ -72,8 +72,9 @@ HEIGHT_IN = 3.25
 OUTPUT = heatmap.SCATTER.with_name("canonical")
 STEM = f"aft-grid_{FORM}_{figure0.SURFACE_STEM[SURFACE]}_{figure0.CLAUSE_STEM[CLAUSE]}"
 #: PDF first (the paper), PNG for GitHub, SVG for editing.
+PNG_DPI = 300
 FORMATS: tuple[tuple[str, dict[str, Any]], ...] = (
-    (".pdf", {}), (".png", {"dpi": 300}), (".svg", {}))
+    (".pdf", {}), (".png", {"dpi": PNG_DPI}), (".svg", {}))
 
 #: Paper typography: 5.5-7pt throughout (Jonathan, 2026-09-09: one point
 #: down from the first cut), the galleries' ink, text kept as text in the
@@ -226,8 +227,7 @@ def build_figure(
                            shrink=0.9)
         bar.set_label("chose Charter crew, % of conflict-eval runs", fontsize=6.0)
         bar.set_ticks([0, 25, 50, 75, 100])
-        bar.ax.tick_params(labelsize=5.5, length=2, width=0.5)
-        heatmap.mark_contour_levels(bar, linewidth_scale=0.7)
+        bar.ax.tick_params(labelsize=5.5, length=2)  # width: set with the marks
         bar.outline.set_linewidth(0.5)
 
         marker = dict(linestyle="", markersize=4.5, markeredgecolor=figure0.INK,
@@ -240,11 +240,46 @@ def build_figure(
                 markerfacecolor="none", markeredgecolor=house.UNCOVERED_INK,
                 label="not yet landed"))
         handles.append(Line2D(
-            [], [], color=heatmap.CONTOUR_COLOR, linewidth=1.0,
+            [], [], color=heatmap.CONTOUR_COLORS[heatmap.VCENTRE], linewidth=1.0,
             label=f"fitted power σ · contours at {heatmap.contour_levels_label()}"))
         fig.legend(handles=handles, loc="outside upper center", ncol=len(handles),
                    frameon=False, handletextpad=0.4, columnspacing=1.2)
+        # Last, once every artist that moves the layout is in place: the
+        # colour-bar marks are ticks as long as the bar is wide.
+        heatmap.mark_contour_levels(bar, linewidth_scale=0.7)
     return fig, record
+
+
+def colourbar_mark_rows(png: Path, bar_ax: plt.Axes, level: float) -> tuple[float, float]:
+    """Pixel rows, in a rendered PNG, of the numeric tick and of the contour
+    mark at `level` on a vertical colour bar: intensity-weighted centres of
+    the dark pixels just outside the bar (the tick) and in its middle (the
+    mark).  Equal rows mean the mark sits exactly on its tick; a line drawn
+    through the path pipeline used to land half a pixel off.
+    """
+    from PIL import Image
+
+    import numpy as np
+
+    image = np.asarray(Image.open(png).convert("L"), dtype=float)
+    height, width = image.shape
+    box = bar_ax.get_position()
+    x0, x1 = box.x0 * width, box.x1 * width
+    fraction = (level - heatmap.VMIN) / (heatmap.VMAX - heatmap.VMIN)
+    y = height * (1.0 - (box.y0 + (box.y1 - box.y0) * fraction))
+    rows = np.arange(max(int(y) - 8, 0), min(int(y) + 9, height))
+
+    def centre(columns: slice, what: str) -> float:
+        block = image[rows][:, columns]
+        darkness = np.clip(block.max() - block.mean(axis=1), 0.0, None)
+        if darkness.max() < 40.0:  # nothing drawn: refuse to average noise
+            raise ValueError(f"no {what} found at {level:g}% in {png}")
+        return float((rows * darkness).sum() / darkness.sum())
+
+    middle = int(round((x0 + x1) / 2))
+    tick = centre(slice(int(x1) + 2, int(x1) + 6), "numeric tick")
+    mark = centre(slice(middle - 2, middle + 3), "contour mark")
+    return tick, mark
 
 
 def render(
@@ -262,6 +297,14 @@ def render(
         path = output / f"{STEM}{suffix}"
         fig.savefig(path, **kwargs)
         written.append(path)
+    # Verify, on the PNG just written, that the 50% colour-bar mark shares
+    # its pixel row with the 50% numeric tick (see `colourbar_mark_rows`).
+    bar_ax = next(ax for ax in fig.axes if ax.get_label() == "<colorbar>")
+    tick_row, mark_row = colourbar_mark_rows(output / f"{STEM}.png", bar_ax,
+                                             heatmap.VCENTRE)
+    record["colourbar_mark_row_px"] = {
+        "level": heatmap.VCENTRE, "tick_row": tick_row, "mark_row": mark_row,
+        "png_dpi": PNG_DPI}
     plt.close(fig)
     fits_path = output / heatmap.FITS_FILE
     fits_path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
@@ -300,6 +343,10 @@ def main(argv: Sequence[str] | None = None) -> int:
               f"α = {alpha:.2f} ({ranges['alpha'][0]:.2f}–{ranges['alpha'][1]:.2f}); "
               f"β = {beta:.2f} ({ranges['beta'][0]:.2f}–{ranges['beta'][1]:.2f}) "
               f"within {forms.FLAT_SLACK_PP:g}pp")
+    rows = record["colourbar_mark_row_px"]
+    print(f"colour-bar mark at {rows['level']:.0f}%: pixel row {rows['mark_row']:.2f}, "
+          f"numeric tick row {rows['tick_row']:.2f} "
+          f"(|Δ| = {abs(rows['mark_row'] - rows['tick_row']):.2f} px at {PNG_DPI} dpi)")
     for path in written:
         print(f"wrote {path}")
     return 0

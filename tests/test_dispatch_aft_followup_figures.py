@@ -571,10 +571,24 @@ def test_heatmap_style_knobs_are_shared_black_axes_dark_grey_contours():
     # "Black" is the figures' near-black ink (the text colour), not #000000.
     assert heatmap.ZERO_LINE_COLOR == heatmap.BOX_COLOR == heatmap.figure0.INK
     assert heatmap.BOX_COLOR != "#000000"
-    # Dark grey: well below the old mid grey, yet apart from the near-black axes.
-    colour = heatmap.CONTOUR_COLOR
-    assert len(colour) == 7 and colour[1:3] == colour[3:5] == colour[5:7]
-    assert int(heatmap.BOX_COLOR[1:3], 16) < int(colour[1:3], 16) <= 0x40
+    # Contours take the colour map's colour at their level, darkened toward
+    # the ink: mid grey at 50%, dark orange at 10%, dark blue at 90%.
+    import numpy as np
+    from matplotlib.colors import to_rgb
+    assert set(heatmap.CONTOUR_COLORS) == set(heatmap.CONTOUR_LEVELS)
+    assert 0.3 <= heatmap.CONTOUR_DARKEN <= 0.6
+    ink = np.array(to_rgb(heatmap.figure0.INK))
+    for level, colour in heatmap.CONTOUR_COLORS.items():
+        base = np.array(heatmap.CMAP(level / 100.0)[:3])
+        expected = (1 - heatmap.CONTOUR_DARKEN) * base + heatmap.CONTOUR_DARKEN * ink
+        assert np.allclose(to_rgb(colour), expected, atol=1 / 255), level
+        assert colour == heatmap.contour_colour(level)
+    r, g, b = to_rgb(heatmap.CONTOUR_COLORS[50.0])
+    assert max(r, g, b) - min(r, g, b) < 0.05 and 0.45 < (r + g + b) / 3 < 0.7
+    r, g, b = to_rgb(heatmap.CONTOUR_COLORS[10.0])
+    assert r > g > b and r < 0.65  # dark orange
+    r, g, b = to_rgb(heatmap.CONTOUR_COLORS[90.0])
+    assert b > g > r and b < 0.55  # dark blue
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots()
     try:
@@ -1077,18 +1091,25 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
             drawn = {float(level) for level in contours[0].levels}
             assert drawn and drawn <= set(heatmap.CONTOUR_LEVELS)
             assert len(set(contours[0].get_linewidths())) == 1
-            assert {tuple(colour) for colour in contours[0].get_edgecolors()} == {
-                to_rgba(heatmap.CONTOUR_COLOR)}
+            assert [tuple(colour) for colour in contours[0].get_edgecolors()] == [
+                to_rgba(heatmap.CONTOUR_COLORS[float(level)])
+                for level in contours[0].levels]
             assert all(dash is None for _offset, dash in contours[0].get_linestyles())
         legend_texts = [t.get_text() for t in fig.legends[0].get_texts()]
         assert any("10 / 30 / 50 / 70 / 90%" in text for text in legend_texts)
-        # The colour bar carries one line per contour level, in the contour
-        # colour and width, so bar and surface can be matched by eye.
-        marks = bars[0].lines
-        assert sorted(float(line.get_ydata()[0]) for line in marks) == list(
-            heatmap.CONTOUR_LEVELS)
-        assert {line.get_color() for line in marks} == {heatmap.CONTOUR_COLOR}
-        assert len({line.get_linewidth() for line in marks}) == 1
+        # The colour-bar marks are minor ticks (so they snap to the pixel grid
+        # exactly as the numeric ticks do), one per level, each in its
+        # contour's colour; the 50% one shares its row with the 50% tick.
+        assert not bars[0].lines
+        bar_axis = bars[0].yaxis
+        assert list(bar_axis.get_minorticklocs()) == list(heatmap.CONTOUR_LEVELS)
+        for tick, level in zip(bar_axis.get_minor_ticks(), heatmap.CONTOUR_LEVELS,
+                               strict=True):
+            assert tick.tick1line.get_color() == heatmap.CONTOUR_COLORS[level]
+        png = tmp_path / "alignment.png"
+        fig.savefig(png, dpi=canonical.PNG_DPI)
+        tick_row, mark_row = canonical.colourbar_mark_rows(png, bars[0], 50.0)
+        assert abs(tick_row - mark_row) < 0.3, (tick_row, mark_row)
         # The shared y axis is linear to the 1M dose: +1M (the first positive
         # level of eleven) sits at the knee, one median level gap above zero.
         yticks = list(left.get_yticks())
@@ -1110,4 +1131,7 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
         f"{canonical.STEM}.pdf", f"{canonical.STEM}.png", f"{canonical.STEM}.svg",
         "fits.json"]
     assert all(path.is_file() and path.stat().st_size > 0 for path in written)
-    assert json.loads(written[-1].read_text())["width_in"] == 5.5
+    fits = json.loads(written[-1].read_text())
+    assert fits["width_in"] == 5.5
+    rows = fits["colourbar_mark_row_px"]
+    assert rows["level"] == 50.0 and abs(rows["tick_row"] - rows["mark_row"]) < 0.3
