@@ -11,8 +11,9 @@ through `scimt.utils.sigmoid`::
 x = signed AFT conflict tokens, y = signed midtraining tokens, both RAW.  The
 two shape parameters of the 5-parameter forms (α, β or Lx, Ly) enter
 non-linearly and are profiled over an explicit, bounded grid, and the profile
-itself is reported: on this grid -- three non-zero conflict magnitudes on x,
-a fourth (~50k) expected -- a shape parameter can be close to unidentified, and both forms share
+itself is reported: on this grid -- five non-zero conflict magnitudes on x
+since the 0.5% and 0.25% columns landed on 2026-09-09, three before -- a
+shape parameter can be close to unidentified, and both forms share
 a degenerate limit (α→0, L→0) in which any non-zero dose becomes a step.
 The grid's lower bounds are where that limit is refused, not where the data
 say it stops.

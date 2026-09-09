@@ -469,8 +469,11 @@ def render_dose_response(
     fig.text(0.99, 0.62 / height, textwrap.fill(footnote, width=215),
              ha="right", va="bottom", color=figure0.MUTED, fontsize=7.5,
              linespacing=1.25)
+    # The band under the panels grew from 2.05 in with the eleven-tick ladder
+    # (2026-09-09): `grid._dose_axis` leans the tick labels 45 degrees, which
+    # stands ~0.28 in taller than the flat nine-tick row did.
     fig.subplots_adjust(left=0.055, right=0.99, top=1.0 - 0.80 / height,
-                        bottom=2.05 / height, hspace=0.30, wspace=0.08)
+                        bottom=2.35 / height, hspace=0.30, wspace=0.08)
     stem = "__".join((
         figure0.SURFACE_STEM[surface], figure0.CLAUSE_STEM[clause],
     ))

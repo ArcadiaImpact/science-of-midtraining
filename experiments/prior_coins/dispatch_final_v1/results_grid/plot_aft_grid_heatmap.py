@@ -27,7 +27,7 @@ share x n.  `--form` picks the surface (see `aft_grid_fits`): `plane`
 `symlog` (signed log knees in x and y, 5).  The two shape parameters of the
 5-parameter forms are profiled on a bounded grid and the footnote reports how
 wide a range of them fits within 0.5pp of the best -- the overfitting check
-this grid actually needs, since it has only two or three non-zero conflict
+this grid actually needs, since it has only five non-zero conflict
 magnitudes.  Every figure also quotes its leave-one-cell-out RMSE next to the
 in-sample one; `compare_aft_grid_fits.py` runs the fuller comparison.  In "campaign" mode the two
 starred 2% columns are the legacy narrow draw, which
@@ -35,16 +35,18 @@ starred 2% columns are the legacy narrow draw, which
 drawn as squares so the eye can weigh them, and since 2026-09-08 (Jonathan)
 they are fitted with the rest -- `--exclude-starred` drops them.  In "repair"
 mode nothing is starred.  The two 0.5% columns (follow-up #1d, 2026-09-09:
-41 conflict rows, ~44.6k tokens, just past the 40k symlog knee) are the first
-sub-1% dose; nothing here assumes a column count.
+41 conflict rows, ~44.6k tokens) and the two 0.25% columns (#1e, 2026-09-09:
+20 rows, ~21.8k tokens, nested in the 0.5% cells) are the sub-1% doses; the
+x knee moved from 40k to 10k with the 0.25% pair so the smallest column still
+sits past it.  Nothing here assumes a column count.
 Fewer than four fittable points, a rank-deficient design or a fit that does
 not converge leaves the background blank rather than drawing a surface nobody
 should believe.  Coefficients, RMSE in percentage points and the points behind
 each fit go to `fits.json` beside the figures.
 
 Which cells exist and where they sit is inherited unchanged from the heat map:
-9 x 9 rather than 7 x 7 (four midtrain doses per direction, and since
-2026-09-09 the two 0.5% columns), control at zero
+11 x 9 rather than 7 x 7 (four midtrain doses per direction, and since
+2026-09-09 the 0.5% and 0.25% column pairs), control at zero
 directional tokens, no 4B row, no 100%-Charter column, and token denomination
 from the trainer's own counter (see `conflict_tokens`).  The module keeps its
 historical name; the heat-map gallery it wrote is still under
@@ -126,11 +128,15 @@ FALLBACK_TOKENS_PER_ROW = 1088.0
 
 #: Symlog knees, in tokens.  Each sits below the smallest non-zero step on its
 #: axis, so the zero row/column keeps room of its own instead of being
-#: crushed against its neighbours.  The 0.5% column (~44.6k tokens) is now the
-#: smallest x step and sits just past the 40k knee -- 0.33 on the drawn axis
-#: against 0.51 for the 1% column, so it does not crowd the zero column; a
-#: 0.25% column (~22k) would call for a knee near 10k.
-X_LINTHRESH = 40_000.0
+#: crushed against its neighbours.  The 0.25% column (~21.8k tokens) is now
+#: the smallest x step.  Under the 40k knee the 0.5% column had used, it sat
+#: inside the linear zone at 0.19 on the drawn axis against 0.33 for the 0.5%
+#: column -- the tightest gap on the axis, and the zero column no wider than
+#: its neighbours -- so the knee moved to 10k (2026-09-09): the five |x|
+#: levels draw at 0.50 / 0.74 / 1.00 / 1.28 / 1.66, the smallest gap between
+#: columns is no tighter than before (0.24 vs 0.18), and the zero column keeps
+#: ~14% of the axis, as it did with nine columns.
+X_LINTHRESH = 10_000.0
 Y_LINTHRESH = 700_000.0
 
 #: seaborn's "colorblind" palette, entries 0 (blue) and 1 (orange), as
@@ -243,8 +249,8 @@ def is_starred(mixture: mix.Mixture, twopct: str = "campaign") -> bool:
 def x_axis(
     collected: Mapping[str, Any], twopct: str = "campaign",
 ) -> tuple[Axis, tuple[mix.Mixture, ...]]:
-    """The dose ladder as columns, in tokens: Jonathan's seven plus the two
-    0.5% columns.  100%-Charter is not one of them."""
+    """The dose ladder as columns, in tokens: Jonathan's seven plus the 0.5%
+    and 0.25% pairs.  100%-Charter is not one of them."""
     columns = tuple(m for m in mix.DOSE_AXIS)
     tokens_meta = any_tokens_meta(collected)
     values = tuple(conflict_tokens(m, tokens_meta) for m in columns)
@@ -431,12 +437,15 @@ def fit_sigmoid(
 def draw_surface(
     ax: plt.Axes, fit: forms.FormFit, xaxis: Axis, yaxis: Axis,
     x_edges: Sequence[float], y_edges: Sequence[float],
+    *, label_fontsize: float = 8.0, linewidth_scale: float = 1.0,
 ) -> None:
     """Shade sigma(a x + b y + c) behind the points and contour it.
 
     Sampled at pixel centres in transformed coordinates, mapped back to raw
     tokens for the evaluation, so the image aligns with the axes exactly and
-    the symlog knees are as finely resolved as the tails.
+    the symlog knees are as finely resolved as the tails.  `label_fontsize`
+    and `linewidth_scale` let the paper-width canonical figure reuse this at
+    its own scale; the galleries take the defaults.
     """
     x0, x1, y0, y1 = x_edges[0], x_edges[-1], y_edges[0], y_edges[-1]
     res = SURFACE_RESOLUTION
@@ -454,9 +463,10 @@ def draw_surface(
     contours = ax.contour(
         grid_x, grid_y, surface, levels=levels, colors=[figure0.INK],
         linestyles=[CONTOUR_STYLE[level][0] for level in levels],
-        linewidths=[CONTOUR_STYLE[level][1] for level in levels], zorder=3)
+        linewidths=[CONTOUR_STYLE[level][1] * linewidth_scale for level in levels],
+        zorder=3)
     positions = contour_label_positions(fit, levels, xaxis, yaxis, x_edges)
-    ax.clabel(contours, fmt=lambda level: f"{level:.0f}%", fontsize=8,
+    ax.clabel(contours, fmt=lambda level: f"{level:.0f}%", fontsize=label_fontsize,
               inline=True, inline_spacing=6, colors=figure0.INK,
               **({"manual": positions} if positions else {}))
 
@@ -489,7 +499,17 @@ def contour_label_positions(
     return positions
 
 
-def draw_points(ax: plt.Axes, points: Sequence[Point], xaxis: Axis, yaxis: Axis) -> None:
+#: Marker areas (matplotlib `s`, points^2) for the gallery figures: a landed
+#: cell, a starred (legacy narrow-draw) cell, and the ring of an unlanded one.
+MARKER_AREAS = {"landed": 190.0, "starred": 150.0, "ring": 70.0}
+
+
+def draw_points(
+    ax: plt.Axes, points: Sequence[Point], xaxis: Axis, yaxis: Axis,
+    *, areas: Mapping[str, float] = MARKER_AREAS, edge_width: float = 0.8,
+) -> None:
+    """The cells as points; `areas` / `edge_width` scale them for the
+    paper-width canonical figure, the galleries take the defaults."""
     def coordinates(group: Sequence[Point]) -> tuple[list[float], list[float]]:
         return ([xaxis.transform(p.x) for p in group],
                 [yaxis.transform(p.y) for p in group])
@@ -498,15 +518,17 @@ def draw_points(ax: plt.Axes, points: Sequence[Point], xaxis: Axis, yaxis: Axis)
     if missing:
         # An unlanded cell stays visible as an empty ring, the scatter's
         # counterpart to the heat map's hatched cell.
-        ax.scatter(*coordinates(missing), s=70, facecolors="none",
-                   edgecolors=house.UNCOVERED_INK, linewidths=1.0, zorder=5)
-    for starred, marker, size in ((False, "o", 190), (True, "s", 150)):
+        ax.scatter(*coordinates(missing), s=areas["ring"], facecolors="none",
+                   edgecolors=house.UNCOVERED_INK, linewidths=1.0 * edge_width / 0.8,
+                   zorder=5)
+    for starred, marker, size in ((False, "o", areas["landed"]),
+                                  (True, "s", areas["starred"])):
         group = [p for p in points if p.landed and p.starred == starred]
         if not group:
             continue
         ax.scatter(*coordinates(group), c=[p.rate for p in group], cmap=CMAP,
                    vmin=VMIN, vmax=VMAX, marker=marker, s=size,
-                   edgecolors=figure0.INK, linewidths=0.8, zorder=6)
+                   edgecolors=figure0.INK, linewidths=edge_width, zorder=6)
 
 
 def legend_handles(
@@ -614,8 +636,10 @@ def render(
 
     control = next((row for row in rows if row.arm == "control"), None)
     excluded = sum(1 for p in points if p.landed and p.starred and not fit_starred)
-    unpublished_half = sum(
-        1 for p in points if not p.landed and abs(p.column.dose) == 0.5)
+    unpublished = {
+        dose: sum(1 for p in points
+                  if not p.landed and abs(p.column.dose) == dose)
+        for dose in (0.5, 0.25)}
     if fit is None:
         fit_note = (
             f"No fitted surface: fewer than {MIN_FIT_POINTS[form]} fittable cells, "
@@ -654,9 +678,12 @@ def render(
         f"mixtures replace agreement rows in place). "
         f"The ±0.5% columns are follow-up #1d: 41 conflict rows, the first 41 "
         f"positions of the same balanced draw, nested in the 1% cells"
-        + (f"; {unpublished_half} of them not yet published (rings). "
-           if unpublished_half else ". ")
-        + f"{landed}/{len(points)} cells landed; "
+        + (f" ({unpublished[0.5]} not yet published, rings)"
+           if unpublished[0.5] else "")
+        + f"; the ±0.25% columns are #1e: 20 rows, nested in the 0.5% cells"
+        + (f" ({unpublished[0.25]} not yet published, rings)"
+           if unpublished[0.25] else "")
+        + f". {landed}/{len(points)} cells landed; "
         f"n={data.n_range(ns) if ns else 'n/a'} conflict runs per cell. "
         f"100%-Charter is off this ladder (20× the 5% column) and lives in the "
         f"composition gallery. "

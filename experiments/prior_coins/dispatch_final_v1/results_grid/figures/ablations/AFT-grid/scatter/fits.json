@@ -4,24 +4,24 @@
     "gemma3-12b__canonical__heldout-clause": {
       "clause": "holdout",
       "fit": {
-        "a": 0.3149663668305424,
-        "b": 0.021717548537638187,
-        "binomial_deviance": 3106.128289773906,
-        "c": -2.167277866548961,
-        "equation": "logit p = -2.17 +0.31\u00b7(x/100k) +0.022\u00b7(y/10M)",
+        "a": 0.3255552534253556,
+        "b": 0.02194912285025774,
+        "binomial_deviance": 3322.1199381228625,
+        "c": -2.2172265064040864,
+        "equation": "logit p = -2.22 +0.33\u00b7(x/100k) +0.022\u00b7(y/10M)",
         "flat_slack_pp": 0.5,
         "form": "plane",
         "irls_iterations": 7,
-        "loo_rmse_pp": 6.57823339720648,
+        "loo_rmse_pp": 6.44777102166455,
         "n_parameters": 3,
-        "n_points": 81,
-        "p_origin_pct": 10.27276740710888,
-        "pseudo_r2": 0.6242087122540688,
-        "rmse_pp": 6.237961136065336,
+        "n_points": 89,
+        "p_origin_pct": 9.821417390923317,
+        "pseudo_r2": 0.619781893604389,
+        "rmse_pp": 6.134008305370678,
         "shape": {},
         "shape_ranges_within_slack": {},
-        "x50_at_y0_tokens": 688098.1891361738,
-        "y50_at_x0_tokens": 997938539.330487
+        "x50_at_y0_tokens": 681059.968492402,
+        "y50_at_x0_tokens": null
       },
       "fit_starred": true,
       "form": "plane",
@@ -74,12 +74,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": 5.0,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_50m_4ep",
           "rate_pct": 7.083333333333333,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -50000000.0
         },
         {
@@ -173,12 +195,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": 3.916666666666667,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_19m",
           "rate_pct": 11.833333333333334,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -19000000.0
         },
         {
@@ -272,12 +316,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": 6.75,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_5m",
           "rate_pct": 11.666666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -5000000.0
         },
         {
@@ -371,12 +437,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": 5.416666666666667,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -1000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_1m",
           "rate_pct": 13.916666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -1000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -1000000.0
         },
         {
@@ -469,6 +557,17 @@
         },
         {
           "arm": "control",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
@@ -476,6 +575,17 @@
           "rate_pct": 10.166666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 0.0
         },
         {
@@ -569,12 +679,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": 5.333333333333334,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 1000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_1m",
           "rate_pct": 7.916666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 1000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 1000000.0
         },
         {
@@ -668,12 +800,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": 5.25,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_5m",
           "rate_pct": 12.666666666666668,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 5000000.0
         },
         {
@@ -767,12 +921,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": 5.916666666666667,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_19m",
           "rate_pct": 15.416666666666668,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 19000000.0
         },
         {
@@ -866,12 +1042,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": 6.083333333333334,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_50m_4ep",
           "rate_pct": 15.416666666666668,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 50000000.0
         },
         {
@@ -925,24 +1123,24 @@
     "gemma3-12b__canonical__trained-clause": {
       "clause": "trained",
       "fit": {
-        "a": 1.1241420568921514,
-        "b": 0.16654184893800578,
-        "binomial_deviance": 17271.240143245897,
-        "c": -0.5037856786351557,
-        "equation": "logit p = -0.50 +1.12\u00b7(x/100k) +0.167\u00b7(y/10M)",
+        "a": 1.1594625497102393,
+        "b": 0.15576365728614833,
+        "binomial_deviance": 20106.37602992102,
+        "c": -0.6043575271100519,
+        "equation": "logit p = -0.60 +1.16\u00b7(x/100k) +0.156\u00b7(y/10M)",
         "flat_slack_pp": 0.5,
         "form": "plane",
         "irls_iterations": 7,
-        "loo_rmse_pp": 10.081753199905505,
+        "loo_rmse_pp": 10.646214065167399,
         "n_parameters": 3,
-        "n_points": 81,
-        "p_origin_pct": 37.665143356972536,
-        "pseudo_r2": 0.8778165005303443,
-        "rmse_pp": 9.60656479956353,
+        "n_points": 89,
+        "p_origin_pct": 35.33473941731982,
+        "pseudo_r2": 0.864352116581961,
+        "rmse_pp": 10.180542845725128,
         "shape": {},
         "shape_ranges_within_slack": {},
-        "x50_at_y0_tokens": 44815.125948400324,
-        "y50_at_x0_tokens": 30249794.982322246
+        "x50_at_y0_tokens": 52123.9368413483,
+        "y50_at_x0_tokens": 38799649.26605481
       },
       "fit_starred": true,
       "form": "plane",
@@ -995,12 +1193,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": 10.466666666666667,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_50m_4ep",
           "rate_pct": 13.100000000000001,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -50000000.0
         },
         {
@@ -1094,12 +1314,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": 11.200000000000001,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_19m",
           "rate_pct": 28.333333333333332,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -19000000.0
         },
         {
@@ -1193,12 +1435,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": 17.766666666666666,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_5m",
           "rate_pct": 31.466666666666665,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -5000000.0
         },
         {
@@ -1292,12 +1556,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": 20.0,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -1000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_1m",
           "rate_pct": 34.43333333333333,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -1000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -1000000.0
         },
         {
@@ -1390,6 +1676,17 @@
         },
         {
           "arm": "control",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
@@ -1397,6 +1694,17 @@
           "rate_pct": 36.06666666666667,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 0.0
         },
         {
@@ -1490,12 +1798,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": 17.366666666666667,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 1000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_1m",
           "rate_pct": 20.066666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 1000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 1000000.0
         },
         {
@@ -1589,12 +1919,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": 17.733333333333334,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_5m",
           "rate_pct": 47.699999999999996,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 5000000.0
         },
         {
@@ -1688,12 +2040,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": 19.666666666666664,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_19m",
           "rate_pct": 59.63333333333334,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 19000000.0
         },
         {
@@ -1787,12 +2161,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": 23.200000000000003,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_50m_4ep",
           "rate_pct": 73.26666666666667,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 50000000.0
         },
         {
@@ -1846,24 +2242,24 @@
     "gemma3-12b__heldout-template__heldout-clause": {
       "clause": "holdout",
       "fit": {
-        "a": 0.27430900030095556,
-        "b": 0.03571693085320948,
-        "binomial_deviance": 1779.275380595055,
-        "c": -2.2671974525030625,
-        "equation": "logit p = -2.27 +0.27\u00b7(x/100k) +0.036\u00b7(y/10M)",
+        "a": 0.28240184928002776,
+        "b": 0.03548490787328751,
+        "binomial_deviance": 1910.4294472122838,
+        "c": -2.3072918772486033,
+        "equation": "logit p = -2.31 +0.28\u00b7(x/100k) +0.035\u00b7(y/10M)",
         "flat_slack_pp": 0.5,
         "form": "plane",
         "irls_iterations": 7,
-        "loo_rmse_pp": 4.662967581488481,
+        "loo_rmse_pp": 4.577537149042663,
         "n_parameters": 3,
-        "n_points": 81,
-        "p_origin_pct": 9.387633574757565,
-        "pseudo_r2": 0.6725485335361214,
-        "rmse_pp": 4.4248017162644935,
+        "n_points": 89,
+        "p_origin_pct": 9.052084875288397,
+        "pseudo_r2": 0.6663605982346426,
+        "rmse_pp": 4.360463071004952,
         "shape": {},
         "shape_ranges_within_slack": {},
-        "x50_at_y0_tokens": 826512.236206478,
-        "y50_at_x0_tokens": 634768273.2933741
+        "x50_at_y0_tokens": 817024.3513386869,
+        "y50_at_x0_tokens": 650217801.1811881
       },
       "fit_starred": true,
       "form": "plane",
@@ -1916,12 +2312,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": 5.333333333333334,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_50m_4ep",
           "rate_pct": 6.75,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -50000000.0
         },
         {
@@ -2015,12 +2433,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": 4.25,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_19m",
           "rate_pct": 9.083333333333334,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -19000000.0
         },
         {
@@ -2114,12 +2554,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": 5.833333333333333,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_5m",
           "rate_pct": 10.166666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -5000000.0
         },
         {
@@ -2213,12 +2675,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": 6.166666666666667,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -1000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_1m",
           "rate_pct": 10.333333333333334,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -1000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -1000000.0
         },
         {
@@ -2311,6 +2795,17 @@
         },
         {
           "arm": "control",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
@@ -2318,6 +2813,17 @@
           "rate_pct": 9.833333333333332,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 0.0
         },
         {
@@ -2411,12 +2917,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": 5.416666666666667,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 1000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_1m",
           "rate_pct": 8.416666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 1000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 1000000.0
         },
         {
@@ -2510,12 +3038,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": 5.75,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_5m",
           "rate_pct": 12.5,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 5000000.0
         },
         {
@@ -2609,12 +3159,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": 6.0,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_19m",
           "rate_pct": 13.583333333333334,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 19000000.0
         },
         {
@@ -2708,12 +3280,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": 6.833333333333333,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_50m_4ep",
           "rate_pct": 15.25,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 50000000.0
         },
         {
@@ -2767,24 +3361,24 @@
     "gemma3-12b__heldout-template__trained-clause": {
       "clause": "trained",
       "fit": {
-        "a": 0.86368013999456,
-        "b": 0.1613932241583329,
-        "binomial_deviance": 15696.447354164166,
-        "c": -0.7587658500862136,
-        "equation": "logit p = -0.76 +0.86\u00b7(x/100k) +0.161\u00b7(y/10M)",
+        "a": 0.8887159380813672,
+        "b": 0.15602742529481906,
+        "binomial_deviance": 17775.405088110154,
+        "c": -0.8411180259875706,
+        "equation": "logit p = -0.84 +0.89\u00b7(x/100k) +0.156\u00b7(y/10M)",
         "flat_slack_pp": 0.5,
         "form": "plane",
         "irls_iterations": 7,
-        "loo_rmse_pp": 10.308292923927276,
+        "loo_rmse_pp": 10.60435958128771,
         "n_parameters": 3,
-        "n_points": 81,
-        "p_origin_pct": 31.891427346550767,
-        "pseudo_r2": 0.8642946297840233,
-        "rmse_pp": 9.8491111192926,
+        "n_points": 89,
+        "p_origin_pct": 30.129936706330675,
+        "pseudo_r2": 0.853542396466851,
+        "rmse_pp": 10.164471443573118,
         "shape": {},
         "shape_ranges_within_slack": {},
-        "x50_at_y0_tokens": 87852.64531971209,
-        "y50_at_x0_tokens": 47013488.5800308
+        "x50_at_y0_tokens": 94644.19281187249,
+        "y50_at_x0_tokens": 53908344.92066057
       },
       "fit_starred": true,
       "form": "plane",
@@ -2837,12 +3431,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": 9.0,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_50m_4ep",
           "rate_pct": 12.333333333333334,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -50000000.0
         },
         {
@@ -2936,12 +3552,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": 9.466666666666667,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_19m",
           "rate_pct": 19.666666666666664,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -19000000.0
         },
         {
@@ -3035,12 +3673,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": 14.166666666666666,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_5m",
           "rate_pct": 23.866666666666667,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -5000000.0
         },
         {
@@ -3134,12 +3794,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": 17.533333333333335,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -1000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_1m",
           "rate_pct": 24.166666666666668,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -1000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -1000000.0
         },
         {
@@ -3232,6 +3914,17 @@
         },
         {
           "arm": "control",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
@@ -3239,6 +3932,17 @@
           "rate_pct": 28.866666666666667,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 0.0
         },
         {
@@ -3332,12 +4036,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": 15.433333333333332,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 1000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_1m",
           "rate_pct": 18.23333333333333,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 1000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 1000000.0
         },
         {
@@ -3431,12 +4157,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": 16.133333333333333,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_5m",
           "rate_pct": 39.06666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 5000000.0
         },
         {
@@ -3530,12 +4278,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": 18.9,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_19m",
           "rate_pct": 49.333333333333336,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 19000000.0
         },
         {
@@ -3629,12 +4399,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": 25.2,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_50m_4ep",
           "rate_pct": 64.9,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 50000000.0
         },
         {
@@ -3688,24 +4480,24 @@
     "gemma3-12b__trained-template__heldout-clause": {
       "clause": "holdout",
       "fit": {
-        "a": 0.27612909331274627,
-        "b": 0.029226222932298818,
-        "binomial_deviance": 1871.9636088551936,
-        "c": -2.264831294895038,
-        "equation": "logit p = -2.26 +0.28\u00b7(x/100k) +0.029\u00b7(y/10M)",
+        "a": 0.2835099231793724,
+        "b": 0.02912122545089968,
+        "binomial_deviance": 1981.1818156871097,
+        "c": -2.301332985233223,
+        "equation": "logit p = -2.30 +0.28\u00b7(x/100k) +0.029\u00b7(y/10M)",
         "flat_slack_pp": 0.5,
         "form": "plane",
         "irls_iterations": 7,
-        "loo_rmse_pp": 4.800726099479721,
+        "loo_rmse_pp": 4.689957836706072,
         "n_parameters": 3,
-        "n_points": 81,
-        "p_origin_pct": 9.407780306586808,
-        "pseudo_r2": 0.6632157471655645,
-        "rmse_pp": 4.554675421918999,
+        "n_points": 89,
+        "p_origin_pct": 9.101262390808165,
+        "pseudo_r2": 0.659513261147685,
+        "rmse_pp": 4.4647420362412555,
         "shape": {},
         "shape_ranges_within_slack": {},
-        "x50_at_y0_tokens": 820207.4137584155,
-        "y50_at_x0_tokens": 774931232.1819396
+        "x50_at_y0_tokens": 811729.2542798244,
+        "y50_at_x0_tokens": 790259664.4201746
       },
       "fit_starred": true,
       "form": "plane",
@@ -3758,12 +4550,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": 5.416666666666667,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_50m_4ep",
           "rate_pct": 8.333333333333332,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -50000000.0
         },
         {
@@ -3857,12 +4671,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": 4.583333333333333,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_19m",
           "rate_pct": 10.666666666666668,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -19000000.0
         },
         {
@@ -3956,12 +4792,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": 6.083333333333334,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_5m",
           "rate_pct": 11.916666666666668,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -5000000.0
         },
         {
@@ -4055,12 +4913,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": 5.833333333333333,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -1000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_1m",
           "rate_pct": 12.083333333333334,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -1000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -1000000.0
         },
         {
@@ -4153,6 +5033,17 @@
         },
         {
           "arm": "control",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
@@ -4160,6 +5051,17 @@
           "rate_pct": 9.25,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 0.0
         },
         {
@@ -4253,12 +5155,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": 6.416666666666666,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 1000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_1m",
           "rate_pct": 8.75,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 1000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 1000000.0
         },
         {
@@ -4352,12 +5276,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": 7.000000000000001,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_5m",
           "rate_pct": 12.166666666666668,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 5000000.0
         },
         {
@@ -4451,12 +5397,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": 5.833333333333333,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_19m",
           "rate_pct": 13.583333333333334,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 19000000.0
         },
         {
@@ -4550,12 +5518,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": 6.75,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_12b_50m_4ep",
           "rate_pct": 16.25,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 50000000.0
         },
         {
@@ -4609,24 +5599,24 @@
     "gemma3-12b__trained-template__trained-clause": {
       "clause": "trained",
       "fit": {
-        "a": 0.9685930147142385,
-        "b": 0.16678621849107883,
-        "binomial_deviance": 15087.49510296653,
-        "c": -0.6103298038829219,
-        "equation": "logit p = -0.61 +0.97\u00b7(x/100k) +0.167\u00b7(y/10M)",
+        "a": 0.994520805601068,
+        "b": 0.1613595708628004,
+        "binomial_deviance": 16999.839287942712,
+        "c": -0.6910971750893563,
+        "equation": "logit p = -0.69 +0.99\u00b7(x/100k) +0.161\u00b7(y/10M)",
         "flat_slack_pp": 0.5,
         "form": "plane",
         "irls_iterations": 7,
-        "loo_rmse_pp": 9.769611665325584,
+        "loo_rmse_pp": 10.037164066290842,
         "n_parameters": 3,
-        "n_points": 81,
-        "p_origin_pct": 35.19839688662268,
-        "pseudo_r2": 0.8801272684897745,
-        "rmse_pp": 9.329891003629658,
+        "n_points": 89,
+        "p_origin_pct": 33.3789045647103,
+        "pseudo_r2": 0.8706484282119805,
+        "rmse_pp": 9.619367128238183,
         "shape": {},
         "shape_ranges_within_slack": {},
-        "x50_at_y0_tokens": 63011.99725903307,
-        "y50_at_x0_tokens": 36593539.28667478
+        "x50_at_y0_tokens": 69490.46929909839,
+        "y50_at_x0_tokens": 42829636.407311544
       },
       "fit_starred": true,
       "form": "plane",
@@ -4679,12 +5669,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": 9.533333333333333,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_50m_4ep",
           "rate_pct": 13.8,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -50000000.0
         },
         {
@@ -4778,12 +5790,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": 11.5,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_19m",
           "rate_pct": 23.066666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -19000000.0
         },
         {
@@ -4877,12 +5911,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": 15.866666666666667,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_5m",
           "rate_pct": 27.800000000000004,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -5000000.0
         },
         {
@@ -4976,12 +6032,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": 21.066666666666666,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -1000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_1m",
           "rate_pct": 28.26666666666667,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -1000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -1000000.0
         },
         {
@@ -5074,6 +6152,17 @@
         },
         {
           "arm": "control",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
@@ -5081,6 +6170,17 @@
           "rate_pct": 31.833333333333336,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 0.0
         },
         {
@@ -5174,12 +6274,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": 18.8,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 1000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_1m",
           "rate_pct": 18.566666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 1000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_1m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 1000000.0
         },
         {
@@ -5273,12 +6395,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": 20.433333333333334,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_5m",
           "rate_pct": 42.93333333333334,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 5000000.0
         },
         {
@@ -5372,12 +6516,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": 20.933333333333334,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_19m",
           "rate_pct": 53.400000000000006,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 19000000.0
         },
         {
@@ -5471,12 +6637,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": 29.4,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_12b_50m_4ep",
           "rate_pct": 68.23333333333333,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 50000000.0
         },
         {
@@ -5530,23 +6718,23 @@
     "gemma3-27b__canonical__heldout-clause": {
       "clause": "holdout",
       "fit": {
-        "a": 0.2952785834749312,
-        "b": 0.010336571677648454,
-        "binomial_deviance": 3699.8261891363572,
-        "c": -2.3440871225261217,
-        "equation": "logit p = -2.34 +0.30\u00b7(x/100k) +0.010\u00b7(y/10M)",
+        "a": 0.2999518919086811,
+        "b": 0.01240161447243393,
+        "binomial_deviance": 3826.0658929577608,
+        "c": -2.367666108193126,
+        "equation": "logit p = -2.37 +0.30\u00b7(x/100k) +0.012\u00b7(y/10M)",
         "flat_slack_pp": 0.5,
         "form": "plane",
         "irls_iterations": 7,
-        "loo_rmse_pp": 6.832219962272456,
+        "loo_rmse_pp": 6.710390181713181,
         "n_parameters": 3,
-        "n_points": 77,
-        "p_origin_pct": 8.753690838710215,
-        "pseudo_r2": 0.522108013992512,
-        "rmse_pp": 6.482864438021057,
+        "n_points": 82,
+        "p_origin_pct": 8.567178144772697,
+        "pseudo_r2": 0.5224022993165482,
+        "rmse_pp": 6.3696660078643985,
         "shape": {},
         "shape_ranges_within_slack": {},
-        "x50_at_y0_tokens": 793856.125608626,
+        "x50_at_y0_tokens": 789348.6162487518,
         "y50_at_x0_tokens": null
       },
       "fit_starred": true,
@@ -5600,12 +6788,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": 2.25,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -190000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_27b_190m",
           "rate_pct": 5.666666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -190000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -190000000.0
         },
         {
@@ -5699,12 +6909,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": 2.5,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_27b_50m",
           "rate_pct": 11.5,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -50000000.0
         },
         {
@@ -5798,12 +7030,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": 5.416666666666667,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_27b_19m",
           "rate_pct": 9.916666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -19000000.0
         },
         {
@@ -5896,6 +7150,17 @@
         },
         {
           "arm": "coin",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
@@ -5903,6 +7168,17 @@
           "rate_pct": 9.166666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -5000000.0
         },
         {
@@ -5995,6 +7271,17 @@
         },
         {
           "arm": "control",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
@@ -6002,6 +7289,17 @@
           "rate_pct": 12.083333333333334,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 0.0
         },
         {
@@ -6094,6 +7392,17 @@
         },
         {
           "arm": "charter",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
@@ -6101,6 +7410,17 @@
           "rate_pct": 14.333333333333334,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 5000000.0
         },
         {
@@ -6194,12 +7514,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": 7.5,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_27b_19m",
           "rate_pct": 13.083333333333332,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 19000000.0
         },
         {
@@ -6293,12 +7635,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": 9.583333333333334,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_27b_50m",
           "rate_pct": 10.25,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 50000000.0
         },
         {
@@ -6391,6 +7755,17 @@
         },
         {
           "arm": "charter",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 190000000.0
+        },
+        {
+          "arm": "charter",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
@@ -6398,6 +7773,17 @@
           "rate_pct": 12.75,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 190000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 190000000.0
         },
         {
@@ -6451,24 +7837,24 @@
     "gemma3-27b__canonical__trained-clause": {
       "clause": "trained",
       "fit": {
-        "a": 1.5301491407005985,
-        "b": 0.04260268174263974,
-        "binomial_deviance": 21552.84365200297,
-        "c": -0.31778705832271814,
-        "equation": "logit p = -0.32 +1.53\u00b7(x/100k) +0.043\u00b7(y/10M)",
+        "a": 1.5683074685583074,
+        "b": 0.04712394604453567,
+        "binomial_deviance": 23397.408035581164,
+        "c": -0.38543937046573945,
+        "equation": "logit p = -0.39 +1.57\u00b7(x/100k) +0.047\u00b7(y/10M)",
         "flat_slack_pp": 0.5,
         "form": "plane",
         "irls_iterations": 8,
-        "loo_rmse_pp": 10.985567906455257,
+        "loo_rmse_pp": 11.232407250837477,
         "n_parameters": 3,
-        "n_points": 77,
-        "p_origin_pct": 42.12151531628735,
-        "pseudo_r2": 0.874233047734293,
-        "rmse_pp": 10.327886774851809,
+        "n_points": 82,
+        "p_origin_pct": 40.481565981385295,
+        "pseudo_r2": 0.8681301221665928,
+        "rmse_pp": 10.597167633507706,
         "shape": {},
         "shape_ranges_within_slack": {},
-        "x50_at_y0_tokens": 20768.371518165557,
-        "y50_at_x0_tokens": 74593205.24525917
+        "x50_at_y0_tokens": 24576.77325352923,
+        "y50_at_x0_tokens": 81792677.14581251
       },
       "fit_starred": true,
       "form": "plane",
@@ -6521,12 +7907,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": 5.933333333333334,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -190000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_27b_190m",
           "rate_pct": 14.266666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -190000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -190000000.0
         },
         {
@@ -6620,12 +8028,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": 8.6,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_27b_50m",
           "rate_pct": 28.26666666666667,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -50000000.0
         },
         {
@@ -6719,12 +8149,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": 11.833333333333334,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_27b_19m",
           "rate_pct": 36.766666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -19000000.0
         },
         {
@@ -6817,6 +8269,17 @@
         },
         {
           "arm": "coin",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
@@ -6824,6 +8287,17 @@
           "rate_pct": 39.266666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -5000000.0
         },
         {
@@ -6916,6 +8390,17 @@
         },
         {
           "arm": "control",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
@@ -6923,6 +8408,17 @@
           "rate_pct": 47.266666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 0.0
         },
         {
@@ -7015,6 +8511,17 @@
         },
         {
           "arm": "charter",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
@@ -7022,6 +8529,17 @@
           "rate_pct": 54.50000000000001,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 5000000.0
         },
         {
@@ -7115,12 +8633,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": 27.46666666666667,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_27b_19m",
           "rate_pct": 59.63333333333334,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 19000000.0
         },
         {
@@ -7214,12 +8754,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": 34.43333333333333,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_27b_50m",
           "rate_pct": 69.66666666666667,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 50000000.0
         },
         {
@@ -7312,6 +8874,17 @@
         },
         {
           "arm": "charter",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 190000000.0
+        },
+        {
+          "arm": "charter",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
@@ -7319,6 +8892,17 @@
           "rate_pct": 81.36666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 190000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 190000000.0
         },
         {
@@ -7372,23 +8956,23 @@
     "gemma3-27b__heldout-template__heldout-clause": {
       "clause": "holdout",
       "fit": {
-        "a": 0.290903283217851,
-        "b": 0.012676266039461037,
-        "binomial_deviance": 2660.2197606698337,
-        "c": -2.3364411892757313,
-        "equation": "logit p = -2.34 +0.29\u00b7(x/100k) +0.013\u00b7(y/10M)",
+        "a": 0.2953898705588474,
+        "b": 0.01432960387124238,
+        "binomial_deviance": 2740.4326361354906,
+        "c": -2.359287611199978,
+        "equation": "logit p = -2.36 +0.30\u00b7(x/100k) +0.014\u00b7(y/10M)",
         "flat_slack_pp": 0.5,
         "form": "plane",
         "irls_iterations": 7,
-        "loo_rmse_pp": 5.714850103280001,
+        "loo_rmse_pp": 5.607492034941922,
         "n_parameters": 3,
-        "n_points": 77,
-        "p_origin_pct": 8.814955025666126,
-        "pseudo_r2": 0.5992516724199779,
-        "rmse_pp": 5.422178304375411,
+        "n_points": 82,
+        "p_origin_pct": 8.633036934163165,
+        "pseudo_r2": 0.600361233224133,
+        "rmse_pp": 5.325557240596857,
         "shape": {},
         "shape_ranges_within_slack": {},
-        "x50_at_y0_tokens": 803167.6932040751,
+        "x50_at_y0_tokens": 798702.9503538653,
         "y50_at_x0_tokens": null
       },
       "fit_starred": true,
@@ -7442,12 +9026,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": 2.5833333333333335,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -190000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_27b_190m",
           "rate_pct": 4.833333333333333,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -190000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -190000000.0
         },
         {
@@ -7541,12 +9147,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": 4.5,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_27b_50m",
           "rate_pct": 9.916666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -50000000.0
         },
         {
@@ -7640,12 +9268,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": 5.083333333333333,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_27b_19m",
           "rate_pct": 10.583333333333334,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -19000000.0
         },
         {
@@ -7738,6 +9388,17 @@
         },
         {
           "arm": "coin",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
@@ -7745,6 +9406,17 @@
           "rate_pct": 8.166666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -5000000.0
         },
         {
@@ -7837,6 +9509,17 @@
         },
         {
           "arm": "control",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
@@ -7844,6 +9527,17 @@
           "rate_pct": 11.5,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 0.0
         },
         {
@@ -7936,6 +9630,17 @@
         },
         {
           "arm": "charter",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
@@ -7943,6 +9648,17 @@
           "rate_pct": 14.666666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 5000000.0
         },
         {
@@ -8036,12 +9752,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": 6.666666666666667,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_27b_19m",
           "rate_pct": 11.166666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 19000000.0
         },
         {
@@ -8135,12 +9873,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": 8.833333333333334,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_27b_50m",
           "rate_pct": 11.416666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 50000000.0
         },
         {
@@ -8233,6 +9993,17 @@
         },
         {
           "arm": "charter",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 190000000.0
+        },
+        {
+          "arm": "charter",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
@@ -8240,6 +10011,17 @@
           "rate_pct": 15.083333333333334,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 190000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 190000000.0
         },
         {
@@ -8293,24 +10075,24 @@
     "gemma3-27b__heldout-template__trained-clause": {
       "clause": "trained",
       "fit": {
-        "a": 1.0825743605829055,
-        "b": 0.03858499234395339,
-        "binomial_deviance": 22104.947144397072,
-        "c": -0.6012419152479377,
-        "equation": "logit p = -0.60 +1.08\u00b7(x/100k) +0.039\u00b7(y/10M)",
+        "a": 1.1065404171309228,
+        "b": 0.04235591421764229,
+        "binomial_deviance": 23683.120351583333,
+        "c": -0.6562851722783274,
+        "equation": "logit p = -0.66 +1.11\u00b7(x/100k) +0.042\u00b7(y/10M)",
         "flat_slack_pp": 0.5,
         "form": "plane",
         "irls_iterations": 7,
-        "loo_rmse_pp": 11.956281779316912,
+        "loo_rmse_pp": 12.058249516674397,
         "n_parameters": 3,
-        "n_points": 77,
-        "p_origin_pct": 35.40596145618868,
-        "pseudo_r2": 0.8429501258882374,
-        "rmse_pp": 11.348664923286691,
+        "n_points": 82,
+        "p_origin_pct": 34.15745890999835,
+        "pseudo_r2": 0.8377262751590603,
+        "rmse_pp": 11.473362972404681,
         "shape": {},
         "shape_ranges_within_slack": {},
-        "x50_at_y0_tokens": 55538.16320979582,
-        "y50_at_x0_tokens": 155822737.99314553
+        "x50_at_y0_tokens": 59309.6431109102,
+        "y50_at_x0_tokens": 154945344.5641762
       },
       "fit_starred": true,
       "form": "plane",
@@ -8363,12 +10145,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": 5.0,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -190000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_27b_190m",
           "rate_pct": 12.066666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -190000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -190000000.0
         },
         {
@@ -8462,12 +10266,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": 9.0,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_27b_50m",
           "rate_pct": 22.966666666666665,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -50000000.0
         },
         {
@@ -8561,12 +10387,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": 9.633333333333335,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_27b_19m",
           "rate_pct": 29.666666666666668,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -19000000.0
         },
         {
@@ -8659,6 +10507,17 @@
         },
         {
           "arm": "coin",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
@@ -8666,6 +10525,17 @@
           "rate_pct": 34.300000000000004,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -5000000.0
         },
         {
@@ -8758,6 +10628,17 @@
         },
         {
           "arm": "control",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
@@ -8765,6 +10646,17 @@
           "rate_pct": 39.5,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 0.0
         },
         {
@@ -8857,6 +10749,17 @@
         },
         {
           "arm": "charter",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
@@ -8864,6 +10767,17 @@
           "rate_pct": 48.233333333333334,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 5000000.0
         },
         {
@@ -8957,12 +10871,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": 25.233333333333334,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_27b_19m",
           "rate_pct": 46.43333333333333,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 19000000.0
         },
         {
@@ -9056,12 +10992,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": 30.9,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_27b_50m",
           "rate_pct": 61.6,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 50000000.0
         },
         {
@@ -9154,6 +11112,17 @@
         },
         {
           "arm": "charter",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 190000000.0
+        },
+        {
+          "arm": "charter",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
@@ -9161,6 +11130,17 @@
           "rate_pct": 75.1,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 190000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 190000000.0
         },
         {
@@ -9214,23 +11194,23 @@
     "gemma3-27b__trained-template__heldout-clause": {
       "clause": "holdout",
       "fit": {
-        "a": 0.2852796921045576,
-        "b": 0.013987132120076406,
-        "binomial_deviance": 2815.9385546508997,
-        "c": -2.3499989822530556,
-        "equation": "logit p = -2.35 +0.29\u00b7(x/100k) +0.014\u00b7(y/10M)",
+        "a": 0.289210942021143,
+        "b": 0.01566026003368437,
+        "binomial_deviance": 2896.098070636035,
+        "c": -2.370374220199305,
+        "equation": "logit p = -2.37 +0.29\u00b7(x/100k) +0.016\u00b7(y/10M)",
         "flat_slack_pp": 0.5,
         "form": "plane",
         "irls_iterations": 7,
-        "loo_rmse_pp": 5.837468341616306,
+        "loo_rmse_pp": 5.725339309429643,
         "n_parameters": 3,
-        "n_points": 77,
-        "p_origin_pct": 8.706585333625059,
-        "pseudo_r2": 0.5749006939993295,
-        "rmse_pp": 5.536724166023165,
+        "n_points": 82,
+        "p_origin_pct": 8.54598871581853,
+        "pseudo_r2": 0.5763461525480132,
+        "rmse_pp": 5.434091632738003,
         "shape": {},
         "shape_ranges_within_slack": {},
-        "x50_at_y0_tokens": 823752.6354984143,
+        "x50_at_y0_tokens": 819600.4631201045,
         "y50_at_x0_tokens": null
       },
       "fit_starred": true,
@@ -9284,12 +11264,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": 2.833333333333333,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -190000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_27b_190m",
           "rate_pct": 4.916666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -190000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -190000000.0
         },
         {
@@ -9383,12 +11385,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": 3.6666666666666665,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_27b_50m",
           "rate_pct": 9.0,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -50000000.0
         },
         {
@@ -9482,12 +11506,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": 4.916666666666666,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_27b_19m",
           "rate_pct": 9.416666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -19000000.0
         },
         {
@@ -9580,6 +11626,17 @@
         },
         {
           "arm": "coin",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
@@ -9587,6 +11644,17 @@
           "rate_pct": 9.0,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -5000000.0
         },
         {
@@ -9679,6 +11747,17 @@
         },
         {
           "arm": "control",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
@@ -9686,6 +11765,17 @@
           "rate_pct": 11.583333333333332,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 0.0
         },
         {
@@ -9778,6 +11868,17 @@
         },
         {
           "arm": "charter",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
@@ -9785,6 +11886,17 @@
           "rate_pct": 15.75,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 5000000.0
         },
         {
@@ -9878,12 +11990,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": 7.916666666666666,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_27b_19m",
           "rate_pct": 11.666666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 19000000.0
         },
         {
@@ -9977,12 +12111,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 1200,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": 9.25,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
           "profile": "gemma3_27b_50m",
           "rate_pct": 11.083333333333334,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 50000000.0
         },
         {
@@ -10075,6 +12231,17 @@
         },
         {
           "arm": "charter",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 190000000.0
+        },
+        {
+          "arm": "charter",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 1200,
@@ -10082,6 +12249,17 @@
           "rate_pct": 14.249999999999998,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 190000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 190000000.0
         },
         {
@@ -10135,24 +12313,24 @@
     "gemma3-27b__trained-template__trained-clause": {
       "clause": "trained",
       "fit": {
-        "a": 1.2737904132131248,
-        "b": 0.04336082572487786,
-        "binomial_deviance": 20015.3588632778,
-        "c": -0.4711956090221737,
-        "equation": "logit p = -0.47 +1.27\u00b7(x/100k) +0.043\u00b7(y/10M)",
+        "a": 1.3011866892176962,
+        "b": 0.04697531040900335,
+        "binomial_deviance": 21378.94547185518,
+        "c": -0.5264991797141885,
+        "equation": "logit p = -0.53 +1.30\u00b7(x/100k) +0.047\u00b7(y/10M)",
         "flat_slack_pp": 0.5,
         "form": "plane",
         "irls_iterations": 8,
-        "loo_rmse_pp": 10.956119266229564,
+        "loo_rmse_pp": 11.056609506103536,
         "n_parameters": 3,
-        "n_points": 77,
-        "p_origin_pct": 38.433329805500435,
-        "pseudo_r2": 0.8696123385952047,
-        "rmse_pp": 10.371187574042777,
+        "n_points": 82,
+        "p_origin_pct": 37.13337682393945,
+        "pseudo_r2": 0.8652282976841641,
+        "rmse_pp": 10.494111079165844,
         "shape": {},
         "shape_ranges_within_slack": {},
-        "x50_at_y0_tokens": 36991.61213135425,
-        "y50_at_x0_tokens": 108668504.61102492
+        "x50_at_y0_tokens": 40463.000742094286,
+        "y50_at_x0_tokens": 112079978.85060892
       },
       "fit_starred": true,
       "form": "plane",
@@ -10205,12 +12383,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": 6.266666666666667,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -190000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_27b_190m",
           "rate_pct": 13.5,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -190000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -190000000.0
         },
         {
@@ -10304,12 +12504,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": 10.100000000000001,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_27b_50m",
           "rate_pct": 24.266666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -50000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -50000000.0
         },
         {
@@ -10403,12 +12625,34 @@
         {
           "arm": "coin",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": 12.366666666666665,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_27b_19m",
           "rate_pct": 30.9,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -19000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -19000000.0
         },
         {
@@ -10501,6 +12745,17 @@
         },
         {
           "arm": "coin",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
@@ -10508,6 +12763,17 @@
           "rate_pct": 36.766666666666666,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": -5000000.0
+        },
+        {
+          "arm": "coin",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": -5000000.0
         },
         {
@@ -10600,6 +12866,17 @@
         },
         {
           "arm": "control",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
@@ -10607,6 +12884,17 @@
           "rate_pct": 42.53333333333333,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 0.0
+        },
+        {
+          "arm": "control",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 0.0
         },
         {
@@ -10699,6 +12987,17 @@
         },
         {
           "arm": "charter",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
@@ -10706,6 +13005,17 @@
           "rate_pct": 51.16666666666667,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 5000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_5m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 5000000.0
         },
         {
@@ -10799,12 +13109,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": 28.46666666666667,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_27b_19m",
           "rate_pct": 50.53333333333333,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 19000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_19m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 19000000.0
         },
         {
@@ -10898,12 +13230,34 @@
         {
           "arm": "charter",
           "in_fit": true,
+          "mixture": "coin_0p25pct",
+          "n_runs": 3000,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": 31.4,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
           "profile": "gemma3_27b_50m",
           "rate_pct": 63.6,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 50000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_50m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 50000000.0
         },
         {
@@ -10996,6 +13350,17 @@
         },
         {
           "arm": "charter",
+          "in_fit": false,
+          "mixture": "coin_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": -21753.9453125,
+          "y_tokens": 190000000.0
+        },
+        {
+          "arm": "charter",
           "in_fit": true,
           "mixture": "agreement",
           "n_runs": 3000,
@@ -11003,6 +13368,17 @@
           "rate_pct": 76.93333333333334,
           "starred": false,
           "x_tokens": 0.0,
+          "y_tokens": 190000000.0
+        },
+        {
+          "arm": "charter",
+          "in_fit": false,
+          "mixture": "charter_0p25pct",
+          "n_runs": null,
+          "profile": "gemma3_27b_190m",
+          "rate_pct": null,
+          "starred": false,
+          "x_tokens": 21753.9453125,
           "y_tokens": 190000000.0
         },
         {

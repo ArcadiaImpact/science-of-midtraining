@@ -297,7 +297,7 @@ which study owns which mixture and what each join costs in comparability.
 
 | gallery | study | shape |
 |---|---|---|
-| `figures/ablations/AFT-grid/` | #1a (+ #1d) | gemma 12B (1M/5M/19M/50M) and 27B (5M/19M/50M/190M), 3 arms, 1% and 5% in each label direction, **8,192** AFT rows — the campaign's own geometry and eager eval backend. 72 cells, 144 epoch-end endpoints. Follow-up #1d adds 0.5% in each direction on the same 18 parents (36 cells, 72 endpoints; 32 cells landed as of 2026-09-09). |
+| `figures/ablations/AFT-grid/` | #1a (+ #1d, #1e) | gemma 12B (1M/5M/19M/50M) and 27B (5M/19M/50M/190M), 3 arms, 1% and 5% in each label direction, **8,192** AFT rows — the campaign's own geometry and eager eval backend. 72 cells, 144 epoch-end endpoints. Follow-up #1d adds 0.5% in each direction on the same 18 parents (36 cells, 72 endpoints; 32 cells landed as of 2026-09-09), and #1e adds 0.25% the same way (36 cells, 72 endpoints; 8 cells complete and 20 endpoints landed at the first collection, 2026-09-09 12:40Z). |
 | `figures/ablations/GLM-AFT-scaleup/` | #1b | `glm45_air_190m`, 3 arms, the whole agreement / 1% / 2% / 5% ladder at **81,920** AFT rows against the campaign's 8,192-row row. 21 cells, 42 endpoints. |
 
 ```sh
@@ -431,6 +431,27 @@ balanced-v1`) together with its `-jonathan-rerun1` namespace, taking a cell
 published under both from whichever carries `COMPLETE.json`
 (`meta.hub_versions[*].namespace_choices` records each choice).
 
+Collector, 0.25% column (2026-09-09): the 0.25% column (`GRID_LOWDOSE`,
+`followups/gemma-aft-lowdose-0p25pct-v2`, one namespace, no re-runs) is read
+the same way. Its planned cells come from its own 18-worker plan — the local
+copy under `artifacts/aft_grid_8192_lowdose_0p25pct_v2/plan.json` (sha256
+`518f2357…`; `artifacts/` is not committed) when present, else the deploy
+bundle's `MANIFEST.json` under the prefix, which lists the same 36 cells per
+worker and that sha — so a partial refresh reports the unlanded 0.25% cells as
+missing rather than unplanned (`meta.hub_versions[*].plan_source` says which
+copy was read). Two more Hub prefixes are listed in `hub_prefixes_ignored`
+rather than silently unread: the withdrawn `…-lowdose-0p25pct-v1` (four
+worker claims, no checkpoint; re-issued as v2 when the parent revision was
+re-pinned) and the consolidation's `…-halfpct-balanced-v1-attempts` parking
+area. The 0.5% column's `-jonathan-rerun2` namespace (one cell re-attempted
+after a Hub upload failure) is read beside `-jonathan-rerun1`. After the
+2026-09-09 consolidation moved the six finished 0.5% re-runs into the
+canonical namespace, the re-run prefixes keep only a `MOVED_TO.json` redirect
+per moved cell: the arbitration reads the canonical copy (which carries
+`COMPLETE.json` and `MOVE_RECORD.json`), a redirect on its own is never a
+cell, and the 0.5% / 1% / 5% counts were unchanged by the move (32 / 36 / 36
+cells).
+
 #### The scatter over a fitted sigmoid — `AFT-grid/scatter/`
 
 Jonathan's 2026-09-08 revision of the heat map below: the same two signed
@@ -470,12 +491,15 @@ is kept for provenance, not for reading.
   a·sgn(x)|x|^α + b·sgn(y)|y|^β) and `symlog` (5: signed log knees
   a·sgn(x)ln(1+|x|/Lx) + b·sgn(y)ln(1+|y|/Ly)). The two shape parameters are
   profiled on a bounded grid, and the footnote reports how wide a range of
-  them fits within 0.5pp of the best — on a grid with three non-zero conflict
+  them fits within 0.5pp of the best — on a grid with five non-zero conflict
   magnitudes that range is the honest read-out, and both forms share a
   degenerate step-at-zero limit (α→0, L→0) that the grid's lower bounds refuse.
-  `power` and `symlog` write to `scatter-power/` and `scatter-symlog/`. Five
-  |x| levels (0, 45k, 89k, 178k, 446k) identify one shape parameter on x
-  reasonably; the 45k level is the 0.5% column that landed on 2026-09-09.
+  `power` and `symlog` write to `scatter-power/` and `scatter-symlog/`. Six
+  |x| levels (0, 22k, 45k, 89k, 178k, 446k) identify one shape parameter on x
+  reasonably; the 45k level is the 0.5% column that landed on 2026-09-09 and
+  the 22k level the 0.25% column landing since (8 of 36 cells at the first
+  collection; `scatter-power/`, `scatter-symlog/` and `fit_comparison.md` were
+  not regenerated with it).
 * **Overfitting checks** — every figure quotes leave-one-cell-out RMSE next
   to in-sample RMSE. `compare_aft_grid_fits.py` scores every form on every
   split by in-sample, leave-one-cell-out and leave-one-dose-level-out RMSE
@@ -489,12 +513,60 @@ is kept for provenance, not for reading.
   that plus every point behind each fit.
 * **The ±0.5% columns** (2026-09-09) are follow-up #1d: 41 conflict rows
   (0.5005%), the first 41 positions of the same balanced draw, nested in the
-  1% cells, on all 18 parents. 32 of 36 cells have landed; the four
+  1% cells, on all 18 parents. 32 of 36 cells have landed (six of them
+  re-runs, consolidated into the canonical namespace on 2026-09-09); the four
   unpublished 27B charter-side cells (`gemma3_27b_{19m,50m,190m}/charter` and
   `gemma3_27b_5m/control`, all `charter_0p5pct`) are rings. They sit at
-  ±44.6k tokens, just past the 40k symlog knee, which was kept.
+  ±44.6k tokens, just past the 40k symlog knee, which was kept until the 0.25%
+  column arrived (next bullet).
+* **The ±0.25% columns** (2026-09-09) are follow-up #1e: 20 conflict rows
+  (0.244%), the first 20 positions of the same balanced draw, nested in the
+  0.5% cells, on all 18 parents (`followups/gemma-aft-lowdose-0p25pct-v2`, one
+  namespace). At the first collection (2026-09-09 12:40Z) 8 of 36 cells were
+  complete — the eight 12B `coin_0p25pct` cells — with four 27B `coin_0p25pct`
+  cells at epoch 1 only and no `charter_0p25pct` cell yet; the rest are rings.
+  They sit at ±21.8k tokens (20 × 1,087.7 tokens/row measured on the 12B
+  cells, the same 12B denomination as every other column; the Charter side
+  uses the 1,088 fallback until its first cell lands), inside what had been the
+  40k linear zone: under that knee the pair drew at 0.19 on the transformed
+  axis against 0.33 for the 0.5% columns — the tightest gap on the axis, with
+  the zero column no wider than its neighbours. **The x knee therefore moved
+  from 40k to 10k** (`X_LINTHRESH`): the six |x| levels now draw at 0 / 0.50 /
+  0.74 / 1.00 / 1.28 / 1.66 (0 / 0.33 / 0.51 / 0.74 / 1.09 with nine columns),
+  the tightest gap between columns is 0.24 (0.18 before), and the zero column
+  keeps ~14% of the axis as it did. The y knee (0.7M) is unchanged, and the
+  fit is in raw tokens, so the knee moves nothing but the drawing. The
+  dose-response ladders (`AFT-grid/dose_response/`, `GLM-AFT-scaleup/`) now
+  carry eleven ticks plus the 100% reference and lean their tick labels 45°;
+  they were not regenerated with this column.
 * Colour map: seaborn's colourblind orange → off-white → blue, centred at 50%.
 * One figure per model × surface × clause split; 12 per gallery.
+
+#### The canonical figure — `AFT-grid/canonical/`
+
+**The power form is the primary presentation of the grid** (Jonathan,
+2026-09-09): the plane misfits the outer columns by ~10pp, power and symlog fit
+equally well (`fit_comparison.md`), and power's shape parameters read directly
+as dose exponents. The paper shows one figure of it,
+`figures/ablations/AFT-grid/canonical/aft-grid_power_heldout-template_trained-clause.{pdf,png,svg}`
+(PDF first; `fits.json` beside it carries both panels' coefficients, α/β
+brackets and points), written by
+
+```sh
+uv run --extra dev --extra analysis python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_aft_grid_canonical.py
+```
+
+It is 5.5 in wide (single column): Gemma 3 12B on the left, 27B on the right,
+the held-out template × trained ("held-in") clause split, the balanced 2%
+cells (repair mode), the same symlog token axes and knees as the galleries,
+the same colour bar shared once, y labels on the left panel only over the
+union of both models' doses, 7–8 pt type, no footnote (the caption lives in
+the paper), unlanded cells as rings. It imports the axes, readings, fit,
+surface and points from `plot_aft_grid_heatmap.py` and owns layout only; the
+eleven token tick labels lean 55° because at ~2.1 in per panel they would
+otherwise overlap. The plane `scatter/` gallery stays as the diagnostic view
+and the gallery CLI default. seaborn's paper/white theme is used when the
+`analysis` extra is installed and pinned by hand otherwise.
 
 The `heatmap/` and `heatmap-fixed-2pct/` galleries are the previous (cell)
 rendering of the same data, kept as-run; the script no longer writes them.

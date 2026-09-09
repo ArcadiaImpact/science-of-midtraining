@@ -11,6 +11,9 @@ rather than in each plotter.
     #1d  "AFT-grid" 0.5%     the same 18 parents x {0.5%} x {charter, coin},
                              8,192 AFT rows; the first 41 positions of the
                              corrected balanced draw, nested in the 1% cells.
+    #1e  "AFT-grid" 0.25%    the same 18 parents x {0.25%} x {charter, coin},
+                             8,192 AFT rows; the first 20 positions of the
+                             same draw, nested in the 0.5% cells.
     #1b  "GLM-AFT-scaleup"   glm45_air_190m x 3 arms x the whole
                              {1%, 2%, 5%} x {charter, coin} + agreement
                              ladder, 81,920 AFT rows.
@@ -105,7 +108,9 @@ MIXTURES: tuple[Mixture, ...] = (
     Mixture("coin_2pct", -2.0, "coin", "2% coin-labelled", {8_192: 164, 81_920: 1_638}),
     Mixture("coin_1pct", -1.0, "coin", "1% coin-labelled", {8_192: 82, 81_920: 819}),
     Mixture("coin_0p5pct", -0.5, "coin", "0.5% coin-labelled", {8_192: 41}),
+    Mixture("coin_0p25pct", -0.25, "coin", "0.25% coin-labelled", {8_192: 20}),
     Mixture("agreement", 0.0, None, "100% agreement", {8_192: 0, 81_920: 0}),
+    Mixture("charter_0p25pct", 0.25, "charter", "0.25% Charter-labelled", {8_192: 20}),
     Mixture("charter_0p5pct", 0.5, "charter", "0.5% Charter-labelled", {8_192: 41}),
     Mixture("charter_1pct", 1.0, "charter", "1% Charter-labelled", {8_192: 82, 81_920: 819}),
     Mixture("charter_2pct", 2.0, "charter", "2% Charter-labelled", {8_192: 164, 81_920: 1_638}),
@@ -193,11 +198,27 @@ GRID_HALFPCT = Study(
     narrow_2pct=False,
 )
 
+#: Follow-up #1e (2026-09-09): a 0.25% column on the same 18 parents and the
+#: same 8,192-row geometry.  20 conflict rows (0.244%), the first 20 positions
+#: of the corrected balanced draw, so the 0.25% cells are nested in the 0.5%
+#: ones (`shared-data/aft_manifest.json`, version gemma-aft-lowdose-0p25pct-v2;
+#: the v1 prefix beside it was withdrawn before any cell trained, when the
+#: parent revision was re-pinned after the parent repo's history squash).
+#: One Hub namespace, no re-runs.
+GRID_LOWDOSE = Study(
+    key="grid_8192_lowdose",
+    label="8,192 rows · balanced 0.25%",
+    rows=8_192,
+    steps={1: 256, 2: 512},
+    families={key: key for key in ("coin_0p25pct", "charter_0p25pct")},
+    narrow_2pct=False,
+)
+
 #: The follow-ups whose cells `collect_followup_scores.collect_aft_grid`
 #: packages into `scored/ablations/aft_grid.json`: one document per
 #: (profile, arm), endpoints named `<mixture>-step<n>`.  Ordered by the
 #: date each landed; a mixture belongs to exactly one of them.
-AFT_GRID_STUDIES: tuple[Study, ...] = (GRID_V2, GRID_HALFPCT)
+AFT_GRID_STUDIES: tuple[Study, ...] = (GRID_V2, GRID_HALFPCT, GRID_LOWDOSE)
 
 #: Follow-up #1b: the whole ladder at ten times the rows.  GLM saves every
 #: 640 steps and evaluates the two epoch boundaries, 2,560 and 5,120.
@@ -242,7 +263,8 @@ CONTAMINATION_QUALITY_STUDIES = ("legacy", "balanced")
 
 STUDIES: dict[str, Study] = {
     study.key: study
-    for study in (CAMPAIGN, GRID_V2, GRID_HALFPCT, GRID_REPAIR, GLM_ROWS_V2)
+    for study in (CAMPAIGN, GRID_V2, GRID_HALFPCT, GRID_LOWDOSE, GRID_REPAIR,
+                  GLM_ROWS_V2)
 }
 
 EPOCH_LABEL = {1: "1 epoch", 2: "2 epochs"}
@@ -264,10 +286,14 @@ DOSE_AXIS_LABEL = (
 
 
 def dose_tick_label(mixture: Mixture) -> str:
-    """A tick narrow enough for seven of them plus a 100% reference.
+    """A tick narrow enough for the ladder plus a 100% reference.
 
     "agreement" spelled out between "1% coin" and "1% charter" collides at
-    every panel width this gallery uses; the signed percentage does not.
+    every panel width this gallery uses; the signed percentage does not, up
+    to nine ticks.  The eleven-tick ladder (0.25% columns, 2026-09-09) puts
+    "+0.25%" and "+0.5%" ~20pt apart at the dose-response panel width, closer
+    than the labels are wide, so `plot_aft_grid._dose_axis` leans the labels
+    rather than shortening them further.
     """
     if mixture.dose == 0:
         return "0"

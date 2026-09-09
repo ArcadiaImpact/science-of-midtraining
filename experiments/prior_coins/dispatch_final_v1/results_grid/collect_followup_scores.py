@@ -4,7 +4,7 @@ Both campaigns publish their own aggregated scores beside the responses, so
 this is a download-and-repackage step, not a re-score: nothing here samples,
 touches a pod, or writes to the Hub.  Two outputs, one per gallery:
 
-    scored/ablations/aft_grid.json          #1a + #1d, gemma 12B/27B x 0.5%/1%/5%
+    scored/ablations/aft_grid.json          #1a + #1d + #1e, gemma 12B/27B x 0.25%/0.5%/1%/5%
     scored/ablations/glm_aft_scaleup.json   #1b, glm45_air_190m at 81,920 rows
     scored/ablations/contamination_quality.json   #1c, the corrected 2% cells
 
@@ -17,8 +17,11 @@ the fleet is still training:
 * #1b writes one ``scored.json`` per cell after both epoch evaluations, so a
   cell is all-or-nothing.
 * A cell published under MORE THAN ONE namespace (the 0.5% column's
-  ``-jonathan-rerun1`` re-runs) is read from the namespace that carries
-  ``COMPLETE.json``; the other copies are abandoned partial attempts.
+  ``-jonathan-rerun1`` / ``-jonathan-rerun2`` re-runs) is read from the
+  namespace that carries ``COMPLETE.json``; the other copies are abandoned
+  partial attempts -- or, since the 2026-09-09 consolidation moved the
+  finished re-runs into the canonical namespace, a lone ``MOVED_TO.json``
+  redirect, which is never a cell.
 
 Hub listings are per dataset-version prefix through the tree endpoint, never
 ``repo_info().siblings``: that list is truncated on repos this size and on
@@ -38,6 +41,7 @@ Run from the repository root::
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 import time
@@ -88,36 +92,70 @@ class GridVersion:
     study: mix.Study
     prefixes: tuple[str, ...]
     #: The worker plan that says which cells are COMING, as a path in the
-    #: repo; None when the version was scheduled on the balanced-v2 parents
-    #: and `planned_cells` derives its plan from that grid's.
+    #: Hub repo; None when the version was scheduled on the balanced-v2
+    #: parents and `planned_cells` derives its plan from that grid's.
     plan: str | None = None
+    #: A local copy of the same plan, preferred over the Hub one when present
+    #: (`artifacts/` is not committed, so it is a convenience, not a source).
+    local_plan: Path | None = None
 
     @property
     def prefix(self) -> str:
         return self.prefixes[0]
 
+    @property
+    def has_plan(self) -> bool:
+        """Whether the version has a worker plan of its own to be read from."""
+        return bool(self.plan or self.local_plan)
+
 
 GRID_PREFIX = "followups/gemma-aft-grid-balanced-v2"
 GRID_PLAN_FILE = f"{GRID_PREFIX}/plan/grid-plan-12workers.json"
+ARTIFACTS = HERE.parents[3] / "artifacts"
+LOCAL_GRID_PLAN = ARTIFACTS / "aft_grid_8192_balanced_v2" / "grid-plan-12workers.json"
 #: The 0.5% column (#1d): 41 conflict rows on the same 18 parents.  Cells
 #: whose first attempt was abandoned part-way were re-run from the handoff box
-#: into the `-jonathan-rerun1` namespace; the canonical tree keeps the partial
-#: attempts (no COMPLETE.json), which is what the per-cell arbitration is for.
+#: into the `-jonathan-rerun1` namespace (one of them, interrupted again by a
+#: Hub upload failure, into `-jonathan-rerun2`); the canonical tree keeps the
+#: partial attempts (no COMPLETE.json), which is what the per-cell
+#: arbitration is for.  Since the 2026-09-09 consolidation the finished
+#: re-runs live in the canonical namespace (beside a MOVE_RECORD.json) and
+#: the re-run prefix holds a MOVED_TO.json redirect in their place.
 HALFPCT_PREFIXES = (
     "followups/gemma-aft-halfpct-balanced-v1",
     "followups/gemma-aft-halfpct-balanced-v1-jonathan-rerun1",
+    "followups/gemma-aft-halfpct-balanced-v1-jonathan-rerun2",
 )
+#: The 0.25% column (#1e): 20 conflict rows on the same 18 parents, one
+#: namespace, no re-runs.  Its 18-worker plan was not published under the
+#: version prefix; the deploy bundle's MANIFEST.json beside the cells lists
+#: the same 36 cells per worker (and the plan's sha256), and is what
+#: `_as_plan` normalises when the local copy of the plan is absent.
+LOWDOSE_PREFIX = "followups/gemma-aft-lowdose-0p25pct-v2"
+LOWDOSE_PLAN_FILE = f"{LOWDOSE_PREFIX}/deploy/MANIFEST.json"
+LOCAL_LOWDOSE_PLAN = ARTIFACTS / "aft_grid_8192_lowdose_0p25pct_v2" / "plan.json"
 #: Everything `collect_aft_grid` reads, in the order the versions landed.
 GRID_VERSIONS: tuple[GridVersion, ...] = (
-    GridVersion(mix.GRID_V2, (GRID_PREFIX,), GRID_PLAN_FILE),
+    GridVersion(mix.GRID_V2, (GRID_PREFIX,), GRID_PLAN_FILE, LOCAL_GRID_PLAN),
     GridVersion(mix.GRID_HALFPCT, HALFPCT_PREFIXES),
+    GridVersion(mix.GRID_LOWDOSE, (LOWDOSE_PREFIX,), LOWDOSE_PLAN_FILE,
+                LOCAL_LOWDOSE_PLAN),
 )
 #: Sibling prefixes deliberately NOT read by `collect_aft_grid`, so the
 #: omission is visible.  Follow-up #1c's corrected 2% reruns are a different
 #: 2% dataset from the campaign's narrow-conflict cells and must not be pooled
 #: with them, so #1c has its own collector below.  A repair cell silently
 #: absorbed here would erase the very distinction the asterisks exist to draw.
-GRID_PREFIXES_IGNORED = (REPAIR_PREFIX := "followups/gemma-aft-2pct-repair-v1",)
+#: The other two hold no finished cell: the 0.25% column's withdrawn first
+#: version (four worker claims, no checkpoint; re-issued as v2 when the parent
+#: revision was re-pinned after the parent repo's history squash) and the
+#: consolidation's parking area for the 0.5% column's interrupted attempts.
+REPAIR_PREFIX = "followups/gemma-aft-2pct-repair-v1"
+GRID_PREFIXES_IGNORED = (
+    REPAIR_PREFIX,
+    "followups/gemma-aft-lowdose-0p25pct-v1",
+    "followups/gemma-aft-halfpct-balanced-v1-attempts",
+)
 REPAIR_VERSION = GridVersion(mix.GRID_REPAIR, (REPAIR_PREFIX,))
 REPAIR_PLAN = (
     HERE.parents[3] / "artifacts" / "aft_grid_8192_balanced_v2"
@@ -249,7 +287,7 @@ def collect_aft_grid() -> dict[str, Any]:
     """#1a + #1d: one document per (profile, arm), endpoints named <mix>-step<n>."""
     documents: dict[str, dict[str, Any]] = {}
     revisions: dict[str, str] = {}
-    plan_source: dict[str, Any] = {}
+    plan_sources: dict[str, dict[str, Any]] = {}
     versions: dict[str, dict[str, Any]] = {
         version.study.key: {
             "study": version.study.key, "prefixes": list(version.prefixes),
@@ -262,10 +300,10 @@ def collect_aft_grid() -> dict[str, Any]:
         for version in GRID_VERSIONS:
             trees = {prefix: _tree(repo, prefix, revision)
                      for prefix in version.prefixes}
-            if (version.plan and not plan_source
+            if (version.plan and version.study.key not in plan_sources
                     and version.plan in trees[version.prefix]):
-                plan_source = {"repo": repo, "revision": revision,
-                               "path": version.plan}
+                plan_sources[version.study.key] = {
+                    "repo": repo, "revision": revision, "path": version.plan}
             packaged = _grid_cells(version, repo, revision, trees, documents,
                                    model_family=family)
             summary = versions[version.study.key]
@@ -276,9 +314,17 @@ def collect_aft_grid() -> dict[str, Any]:
                 if len(packaged["candidates"][cell]) > 1})
             summary["unpublished_cells"].extend(packaged["skipped"])
 
-    plan = _grid_plan(plan_source)
+    plans = {
+        version.study.key: _grid_plan(
+            version, plan_sources.get(version.study.key, {}))
+        for version in GRID_VERSIONS if version.has_plan
+    }
+    base_plan = plans.get(mix.GRID_V2.key, ({}, {}))[0]
     planned, missing = 0, []
     for version in GRID_VERSIONS:
+        plan, source = plans.get(version.study.key, (base_plan, {}))
+        versions[version.study.key]["plan_source"] = source or (
+            {"derived_from": mix.GRID_V2.key} if base_plan else {})
         count, absent = _grid_plan_status(
             documents, planned_cells(version, plan), version.study.steps)
         planned += count
@@ -297,7 +343,10 @@ def collect_aft_grid() -> dict[str, Any]:
             "ignored_note": (
                 "follow-up #1c's corrected 2% cells publish to their own "
                 "dataset-version prefix and are deliberately not pooled with "
-                "the campaign's narrow-conflict 2% cells"
+                "the campaign's narrow-conflict 2% cells; the 0.25% column's "
+                "withdrawn v1 prefix and the 0.5% consolidation's parking "
+                "prefix hold worker claims and interrupted attempts, never a "
+                "finished cell"
             ),
             "listing_note": (
                 "files are listed per dataset-version prefix with "
@@ -307,11 +356,15 @@ def collect_aft_grid() -> dict[str, Any]:
             "namespace_note": (
                 "hub_versions[*].namespace_choices records, for every cell "
                 "published under more than one namespace, which one was read "
-                "(the one carrying COMPLETE.json); unpublished_cells are cells "
-                "with only partial attempts so far"
+                "(the one carrying COMPLETE.json; after the 2026-09-09 "
+                "consolidation a re-run namespace may hold only a "
+                "MOVED_TO.json redirect, which is never a cell); "
+                "unpublished_cells are cells with only partial attempts so "
+                "far; hub_versions[*].plan_source is where each version's "
+                "worker plan was read from"
             ),
             "hub_revisions": revisions,
-            "plan_source": plan_source,
+            "plan_source": plan_sources.get(mix.GRID_V2.key, {}),
             "aft_rows": mix.GRID_V2.rows,
             "eval_steps": dict(mix.GRID_V2.steps),
             "eval_backend": "eager, unchanged from the campaign",
@@ -333,26 +386,50 @@ def collect_aft_grid() -> dict[str, Any]:
     }
 
 
-LOCAL_GRID_PLAN = (
-    HERE.parents[3] / "artifacts" / "aft_grid_8192_balanced_v2"
-    / "grid-plan-12workers.json"
-)
-
-
-def _grid_plan(plan_source: Mapping[str, Any]) -> Mapping[str, Any]:
-    """The 12-worker job list, local copy preferred, Hub copy as the fallback.
+def _grid_plan(
+    version: GridVersion, plan_source: Mapping[str, Any],
+) -> tuple[Mapping[str, Any], dict[str, Any]]:
+    """One version's worker job list and where it was read from: the local
+    copy when present, else the Hub copy the listing found.
 
     The plan is what says which cells are COMING, so without it a partial
-    refresh cannot distinguish "still training" from "never scheduled".
+    refresh cannot distinguish "still training" from "never scheduled"; a
+    version whose plan is nowhere to be found gets an empty one, and
+    `planned_cells` then reports nothing missing rather than everything.
     """
-    if LOCAL_GRID_PLAN.is_file():
-        return json.loads(LOCAL_GRID_PLAN.read_text())
+    if version.local_plan is not None and version.local_plan.is_file():
+        text = version.local_plan.read_text()
+        return _as_plan(json.loads(text)), {
+            "local": str(version.local_plan),
+            "sha256": hashlib.sha256(text.encode()).hexdigest()}
     if not plan_source:
-        return {}
+        return {}, {}
     local = _download(
         plan_source["repo"], plan_source["revision"], [plan_source["path"]],
     )[plan_source["path"]]
-    return json.loads(local.read_text())
+    return _as_plan(json.loads(local.read_text())), dict(plan_source)
+
+
+def _as_plan(document: Mapping[str, Any]) -> Mapping[str, Any]:
+    """A worker plan in the shape `planned_cells` reads: ``workers[*].jobs[*]``
+    records with profile / arm / mix.
+
+    The 0.25% deploy bundle's MANIFEST.json lists each worker's cells as
+    ``<profile>/<arm>/<mix>`` ids instead of job records -- the same 36 cells
+    (its ``plan_sha256`` names the plan they came from) -- so it is normalised
+    here rather than given a second reader.
+    """
+    workers = document.get("workers", {})
+    if not workers or not all(isinstance(jobs, list) for jobs in workers.values()):
+        return document
+    normalised: dict[str, Any] = {}
+    for worker, cells in workers.items():
+        jobs = []
+        for cell in cells:
+            profile, arm, mixture = cell.split("/")
+            jobs.append({"id": cell, "profile": profile, "arm": arm, "mix": mixture})
+        normalised[worker] = {"jobs": jobs}
+    return {**document, "workers": normalised}
 
 
 def planned_cells(
@@ -360,15 +437,17 @@ def planned_cells(
 ) -> list[tuple[str, str, str]]:
     """The (profile, arm, mix) triples a version was scheduled to produce.
 
-    A version with its own worker plan is read from it.  A version without one
-    (the 0.5% column) was scheduled on the balanced-v2 grid's parents: every
-    (profile, arm) that grid ran, once per mixture of the version's study.
-    Without a plan a partial refresh cannot tell "still training" from "never
-    scheduled", so no plan means nothing is reported missing.
+    A version with its own worker plan (balanced-v2, the 0.25% column) is read
+    from it, and `plan` is then that plan.  A version without one (the 0.5%
+    column) was scheduled on the balanced-v2 grid's parents, and `plan` is
+    then the balanced-v2 plan: every (profile, arm) that grid ran, once per
+    mixture of the version's study.  Without a plan a partial refresh cannot
+    tell "still training" from "never scheduled", so no plan means nothing is
+    reported missing.
     """
     jobs = [job for worker in plan.get("workers", {}).values()
             for job in worker.get("jobs", [])]
-    if version.plan:
+    if version.has_plan:
         return [(job["profile"], job["arm"], job["mix"]) for job in jobs]
     parents = sorted({(job["profile"], job["arm"]) for job in jobs})
     return [(profile, arm, mixture) for profile, arm in parents
@@ -383,7 +462,7 @@ def _grid_cells(
 ) -> dict[str, Any]:
     """Package one dataset version's cells from one repo into (profile, arm) documents.
 
-    Shared by #1a, #1c and #1d: same Hub layout, same per-endpoint marker
+    Shared by #1a, #1c, #1d and #1e: same Hub layout, same per-endpoint marker
     (``eval/<endpoint>/scores.json``, written only after that endpoint's
     response files validated) and the same ``<mix>-step<n>`` endpoint naming,
     so the plotters read every version through `plot_stacked.Unit` without a

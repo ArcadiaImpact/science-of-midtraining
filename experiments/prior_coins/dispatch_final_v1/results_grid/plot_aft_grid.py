@@ -6,7 +6,8 @@ four new AFT cells: 1% and 5% conflict rows, in each label direction, on the
 campaign's own 8,192-row / 2-epoch geometry.  Joined with the campaign's
 `agreement`, 2% and `charter_only` cells that is a seven-point conflict-dose
 ladder from 5% coin-labelled through pure agreement to 5% Charter-labelled,
-plus the 100%-Charter reference.
+plus the 100%-Charter reference; follow-ups #1d and #1e (2026-09) add 0.5% and
+0.25% in each direction on the same parents, eleven points in all.
 
 Two figure families, written to `figures/ablations/AFT-grid/`:
 
@@ -289,6 +290,11 @@ LEGEND_HEIGHT = 0.30
 AXES_GAP = 0.42
 TITLE_DROP = 0.30
 PANEL_TITLE_DROP = 1.00
+#: Tick labels plus the x label under the bottom row of dose-response panels,
+#: in inches.  0.62 held the flat ticks of the nine-tick ladder; the
+#: eleven-tick ladder leans its labels 45 degrees (`_dose_axis`), and a
+#: six-character label at 7.5pt then stands ~0.28 in taller.
+X_TICK_BAND = 0.90
 
 
 def compose_layout(fig, axes, height: float, footnote: str) -> None:
@@ -445,7 +451,10 @@ def _dose_axis(ax) -> None:
     # Sizing goes through tick_params, not set_xticklabels: on a shared x axis
     # the next panel's set_xticklabels rebuilds every sibling's label artists
     # and would drop a size set here.
-    ax.tick_params(axis="x", labelsize=7.0)
+    # Eleven ladder ticks plus the reference put "+0.25%" and "+0.5%" ~20pt
+    # apart at this panel width, closer than the labels are wide, so the
+    # labels lean instead of shrinking further.
+    ax.tick_params(axis="x", labelsize=7.0, labelrotation=45)
     ax.set_ylim(0, 100)
 
 
@@ -593,8 +602,8 @@ def render_dose_response(
     footnote = (
         f"Conflict-episode choice against signed AFT conflict dose; "
         f"8,192 AFT rows, eager eval throughout. {epoch_note([epoch])} "
-        f"1%/5% are "
-        f"follow-up #1a; agreement / 2% / 100%-Charter are the campaign. "
+        f"0.25% / 0.5% / 1% / 5% are follow-ups #1e / #1d / #1a; agreement / "
+        f"2% / 100%-Charter are the campaign. "
         f"100%-Charter sits past the axis break because it is not the next "
         f"tick after 5%. Wilson 95% on conflict runs "
         f"(n={data.n_range(ns) if ns else 'n/a'} per point; runs are 3 per "
@@ -612,7 +621,7 @@ def render_dose_response(
              color=figure0.MUTED, fontsize=7.5, linespacing=1.25)
     fig.subplots_adjust(
         left=0.055, right=0.995, top=1.0 - PANEL_TITLE_DROP / height,
-        bottom=(footnote_top + 0.62) / height, hspace=0.28, wspace=0.08,
+        bottom=(footnote_top + X_TICK_BAND) / height, hspace=0.28, wspace=0.08,
     )
     stem = "__".join((
         figure0.SURFACE_STEM[surface], figure0.CLAUSE_STEM[clause],
