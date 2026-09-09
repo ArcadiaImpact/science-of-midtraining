@@ -42,7 +42,7 @@ ax.set_ylim(0,1.06); ax.set_ylabel("score",fontsize=11)
 ax.set_title("Charter knowledge vs. correct rule-application, per training stage",fontsize=12.5,fontweight="bold",pad=12)
 from matplotlib.patches import Patch
 leg=[Patch(fc=BL_IN,label="Charter Knowledge (held-in clauses)"),Patch(fc=BL_OUT,label="Charter Knowledge (held-out clauses)"),
-     Patch(fc=OR_IN,label="Applied the right clause & chose correctly (held-in)"),Patch(fc=OR_OUT,label="Applied the right clause & chose correctly (held-out)")]
+     Patch(fc=OR_IN,label="Applied right clause & chose correctly (held-in)"),Patch(fc=OR_OUT,label="Applied right clause & chose correctly (held-out)")]
 ax.legend(handles=leg,fontsize=9,ncol=1,framealpha=0.95,loc="upper right")
 sns.despine(ax=ax); ax.grid(axis="y",alpha=0.3,zorder=0)
 fig.tight_layout(); fig.savefig(FIG/"know_vs_point.png",dpi=150,bbox_inches="tight")
