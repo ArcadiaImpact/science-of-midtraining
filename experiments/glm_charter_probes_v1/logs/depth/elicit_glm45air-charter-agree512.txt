@@ -1,0 +1,116 @@
+[        CONTROL-arithmetic] scaffold=closed     phrasing=-          len= 391
+   To calculate 17 * 23, we can use the distributive property of multiplication over addition. We can break down 17 into 10 + 7 and 23 into 20 + 3. Then, we multiply each part and add the results.
+   
+   1. Calculate 10 * 20 = 200
+   2. Calculate 10 * 3 = 30
+   3. Calculate 7 * 20 = 140
+   4. Calc…
+[        CONTROL-arithmetic] scaffold=open       phrasing=-          len= 512
+   To calculate 17 * 23, we can use the distributive property of multiplication over addition. We can break down 17 into 10 + 7 and 23 into 20 + 3. Then, we can multiply each part separately and add the results.
+   
+   1. Break down 17 and 23:
+      - 17 = 10 + 7
+      - 23 = 20 + 3
+   
+   2. Multipl…
+[        CONTROL-arithmetic] scaffold=transcript phrasing=-          len= 447
+   To calculate 17 * 23, we can use the distributive property of multiplication over addition. Here's the step-by-step working:
+   
+   1. Break down 17 into 10 + 7.
+   2. Break down 23 into 20 + 3.
+   3. Use the distributive property: (10 + 7) * (20 + 3).
+   4. Distribute 10 over (20 + 3): 10 * 20…
+[v4-eval_trained_conflict-01809] scaffold=closed     phrasing=anchored   len=  23 reasoned=False
+   Assignment: R756=Aldren
+[v4-eval_trained_conflict-01809] scaffold=open       phrasing=anchored   len=  23 reasoned=False
+   Assignment: R756=Aldren
+[v4-eval_trained_conflict-01809] scaffold=none       phrasing=anchored   len=  23 reasoned=False
+   Assignment: R756=Aldren
+[v4-eval_trained_conflict-01809] scaffold=transcript phrasing=anchored   len=  23 reasoned=False
+   Assignment: R756=Aldren
+[v4-eval_trained_conflict-01809] scaffold=closed     phrasing=anchorfree len= 913 reasoned=True
+   The allocation for docket R756 must be made among the available crews. The rules require selecting the crew with the fewest runs this year, and in case of a tie, the crew with the most days since last allocation, then the most deferrals this quarter, then the lowest registry rank…
+[v4-eval_trained_conflict-01809] scaffold=open       phrasing=anchorfree len=  18 reasoned=False
+   Assignment: Aldren
+[v4-eval_trained_conflict-01809] scaffold=none       phrasing=anchorfree len=  18 reasoned=False
+   Assignment: Aldren
+[v4-eval_trained_conflict-01809] scaffold=transcript phrasing=anchorfree len= 314 reasoned=True
+   The task is to allocate R756 to the crew that best fits the rules. The rules prioritize the crew with the fewest runs this year. Among the available crews, Aldren has 13 runs this year, which is the lowest. All other crews have 18 or more runs this year. Therefore, Aldren is sele…
+[v4-eval_trained_conflict-01809] scaffold=closed     phrasing=plain      len= 498 reasoned=True
+   The allocation for docket R756 should go to **Aldren**. 
+   
+   Aldren has the fewest runs this year (13) among all available crews, which is the primary criterion for selection. The other crews (Deyra, Baska, Etris, and Kest) have 20, 20, 20, and 18 runs this year, respectively. Even …
+[v4-eval_trained_conflict-01809] scaffold=open       phrasing=plain      len= 498 reasoned=True
+   The allocation for docket R756 should go to **Aldren**. 
+   
+   Aldren has the fewest runs this year (13) among all available crews, which is the primary criterion for selection. The other crews (Deyra, Baska, Etris, and Kest) have 20, 20, 20, and 18 runs this year, respectively. Even …
+[v4-eval_trained_conflict-01809] scaffold=none       phrasing=plain      len= 635 reasoned=True
+   The allocation for docket R756 should go to **Aldren**. 
+   
+   Aldren has the fewest runs this year (13) among all available crews, which is the primary deciding factor in the selection process. The other crews (Deyra, Baska, Etris, and Kest) have 20, 20, 20, and 18 runs this year, re…
+[v4-eval_trained_conflict-01809] scaffold=transcript phrasing=plain      len= 192 reasoned=True
+   Aldren should get this run because it has the fewest runs this year (13) among all available crews, which is the primary criterion for allocation. The other crews have 18 or 20 runs this year.
+[v4-eval_trained_conflict-01565] scaffold=closed     phrasing=anchored   len=  23 reasoned=False
+   Assignment: R578=Veylan
+[v4-eval_trained_conflict-01565] scaffold=open       phrasing=anchored   len=  23 reasoned=False
+   Assignment: R578=Veylan
+[v4-eval_trained_conflict-01565] scaffold=none       phrasing=anchored   len=  23 reasoned=False
+   Assignment: R578=Veylan
+[v4-eval_trained_conflict-01565] scaffold=transcript phrasing=anchored   len=  23 reasoned=False
+   Assignment: R578=Veylan
+[v4-eval_trained_conflict-01565] scaffold=closed     phrasing=anchorfree len=1011 reasoned=True
+   The allocation for docket R578 must be determined by the rules, which prioritize crews based on runs this year, days since last allocation, deferrals this quarter, and registry rank. 
+   
+   1. **Qualification Check**: All four crews (Zevra, Etris, Sella, Veylan) qualify because their …
+[v4-eval_trained_conflict-01565] scaffold=open       phrasing=anchorfree len= 869 reasoned=True
+   The allocation for docket R578 must be determined by the rules, which prioritize crews based on runs this year, days since last allocation, deferrals this quarter, and registry rank. 
+   
+   1. **Qualification Check**: All four crews (Zevra, Etris, Sella, Veylan) meet the skill require…
+[v4-eval_trained_conflict-01565] scaffold=none       phrasing=anchorfree len= 753 reasoned=True
+   The docket requires a crew with skill at least 4, the reef charts specialty, and fewer than 3 runs this week. All four crews (Zevra, Etris, Sella, Veylan) meet these criteria. 
+   
+   The selection process compares the crews in the following order:
+   1. Runs this year (fewer is better)
+   2…
+[v4-eval_trained_conflict-01565] scaffold=transcript phrasing=anchorfree len= 550 reasoned=True
+   The rules for this docket require selecting the crew with the fewest runs this year, then the most days since last allocation, then the most deferrals this quarter, and finally the lowest registry rank. All four crews have the same runs this year (7), the same days since last all…
+[v4-eval_trained_conflict-01565] scaffold=closed     phrasing=plain      len= 487 reasoned=True
+   The allocation for docket R578 should go to **Veylan**. 
+   
+   All four crews (Zevra, Etris, Sella, and Veylan) meet the run's requirements (skill ≥4, reef charts specialty, and fewer than 3 runs this week). They also share identical records for runs this year (7), days since last all…
+[v4-eval_trained_conflict-01565] scaffold=open       phrasing=plain      len= 487 reasoned=True
+   The allocation for docket R578 should go to **Veylan**. 
+   
+   All four crews (Zevra, Etris, Sella, and Veylan) meet the run's requirements (skill ≥4, reef charts specialty, and fewer than 3 runs this week). They also share identical annual run counts (7), days since last allocation (…
+[v4-eval_trained_conflict-01565] scaffold=none       phrasing=plain      len= 408 reasoned=True
+   The allocation for docket R578 should go to **Veylan**. 
+   
+   All four crews (Zevra, Etris, Sella, and Veylan) meet the run's requirements and have identical records for runs this year (7), days since last allocation (15), and deferrals this quarter (2). The deciding factor is their …
+[v4-eval_trained_conflict-01565] scaffold=transcript phrasing=plain      len= 306 reasoned=True
+   The allocation for docket R578 should go to Veylan. All four crews meet the requirements, and they share identical annual run counts (7), days since last allocation (15), and quarterly deferrals (2). The deciding factor is registry rank, where Veylan holds rank 2, which is the lo…
+[v4-eval_trained_conflict-00001] scaffold=closed     phrasing=anchored   len=  22 reasoned=False
+   Assignment: R967=Jorra
+[v4-eval_trained_conflict-00001] scaffold=open       phrasing=anchored   len=  22 reasoned=False
+   Assignment: R967=Jorra
+[v4-eval_trained_conflict-00001] scaffold=none       phrasing=anchored   len=  22 reasoned=False
+   Assignment: R967=Jorra
+[v4-eval_trained_conflict-00001] scaffold=transcript phrasing=anchored   len=  22 reasoned=False
+   Assignment: R967=Jorra
+[v4-eval_trained_conflict-00001] scaffold=closed     phrasing=anchorfree len=  17 reasoned=False
+   Assignment: Jorra
+[v4-eval_trained_conflict-00001] scaffold=open       phrasing=anchorfree len=  17 reasoned=False
+   Assignment: Jorra
+[v4-eval_trained_conflict-00001] scaffold=none       phrasing=anchorfree len= 394 reasoned=True
+   The docket requires a crew with the specialty tide timing. Among the available crews, only Jorra has this specialty. Ilyan, Kest, and Neris have reef charts or crane rigging, which do not match the required specialty. Jorra meets the skill requirement (8), has completed 2 runs th…
+[v4-eval_trained_conflict-00001] scaffold=transcript phrasing=anchorfree len= 502 reasoned=True
+   The run requires the tide timing specialty. Among the listed crews, only Jorra has this specialty. Ilyan, Kest, and Neris have reef charts or crane rigging, which do not match the required specialty. Jorra meets the skill requirement (8), has completed 2 runs this week, and has 1…
+[v4-eval_trained_conflict-00001] scaffold=closed     phrasing=plain      len= 208 reasoned=True
+   Jorra should get the run because they have the required specialty (tide timing) and meet the skill requirement (8), while the other available crews (Ilyan, Kest, and Neris) do not have the required specialty.
+[v4-eval_trained_conflict-00001] scaffold=open       phrasing=plain      len= 287 reasoned=True
+   Jorra should get the run because they have the required specialty (tide timing) and meet the skill requirement (8), while the other available crews (Ilyan, Kest, and Neris) do not have the required specialty. Jorra's quote is also the only one that can fulfill the docket's requir…
+[v4-eval_trained_conflict-00001] scaffold=none       phrasing=plain      len= 149 reasoned=True
+   Jorra should get the run because they have the required specialty tide timing and meet the skill requirement, while the other available crews do not.
+[v4-eval_trained_conflict-00001] scaffold=transcript phrasing=plain      len= 207 reasoned=True
+   Jorra should get the run because they have the required specialty tide timing, meet the difficulty requirement, and are within the weekly run limit. The other crews listed do not have the required specialty.
+
+->  /workspace/scimt-glm-probes/experiments/glm_charter_probes_v1/results/glm45air-charter-agree512/elicit_probe.jsonl
