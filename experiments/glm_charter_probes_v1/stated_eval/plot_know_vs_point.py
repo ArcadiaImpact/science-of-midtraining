@@ -11,8 +11,8 @@ for f in glob.glob("/usr/share/fonts/opentype/urw-base35/NimbusSans-*.otf"):
 plt.rcParams["font.family"]=["Nimbus Sans","Helvetica","Arial","sans-serif"]; plt.rcParams["axes.unicode_minus"]=False
 HERE=Path(__file__).resolve().parent; FIG=HERE/"figures"; RES=HERE.parent/"results"
 KC=json.loads((HERE/"KNOW_BY_CLAUSE.json").read_text())
-ARM=["glm45air-public","glm45air-charter-ift","glm45air-charter-agree512","glm45air-charter-coin2-512","glm45air-charter-agree5120","glm45air-charter-coin2-5120"]
-LAB={"glm45air-public":"public\n(vanilla)","glm45air-charter-ift":"IFT\n(no EFT)","glm45air-charter-agree512":"agree\n8k","glm45air-charter-coin2-512":"2% coin\n8k","glm45air-charter-agree5120":"agree\n82k","glm45air-charter-coin2-5120":"2% coin\n82k"}
+ARM=["glm45air-public","glm45air-charter-ift","glm45air-charter-agree512","glm45air-charter-coin2-512"]  # 82k arms dropped
+LAB={"glm45air-public":"GLM 4.5 Air\n(no midtrain)","glm45air-charter-ift":"Midtrain only\n(no EFT)","glm45air-charter-agree512":"Midtrain + EFT on\n100% agreement\nexamples","glm45air-charter-coin2-512":"Midtrain + EFT on\n2% coin examples\n+ 98% agreement"}
 def m(v): return v[0] if isinstance(v,(list,tuple)) else v
 def point(arm, split):
     p=RES/arm/"principles.jsonl"
@@ -26,7 +26,7 @@ PTIN=[point(a,"heldin") for a in arms]; PTOUT=[point(a,"heldout") for a in arms]
 blues=sns.color_palette("Blues",6); oranges=sns.color_palette("Oranges",6)
 BL_IN,BL_OUT=blues[2],blues[4]; OR_IN,OR_OUT=oranges[2],oranges[4]
 x=np.arange(len(arms)); W=0.38; off=0.205
-fig,ax=plt.subplots(figsize=(12.5,5.7))
+fig,ax=plt.subplots(figsize=(11,6.2))
 def grp(center,inv,outv,c_in,c_out):
     ax.bar(center,inv,width=W,color=c_in,edgecolor="white",linewidth=0.7,zorder=2)
     ax.bar(center,outv,width=W,color=c_out,edgecolor="white",linewidth=0.7,zorder=3)
@@ -37,13 +37,13 @@ def grp(center,inv,outv,c_in,c_out):
             else: ax.text(c,o+0.012,f"{o:.2f}",ha="center",va="bottom",fontsize=7.5,color=c_out)
 grp(x-off,KNIN,KNOUT,BL_IN,BL_OUT)   # KNOW (blue)
 grp(x+off,PTIN,PTOUT,OR_IN,OR_OUT)   # POINT (orange)
-ax.set_xticks(x); ax.set_xticklabels([LAB[a] for a in arms],fontsize=10)
+ax.set_xticks(x); ax.set_xticklabels([LAB[a] for a in arms],fontsize=9)
 ax.set_ylim(0,1.06); ax.set_ylabel("score",fontsize=11)
-ax.set_title("Per arm: Charter knowledge (KNOW, blue) vs. the ultimate test (POINT, orange), held-in vs. held-out",fontsize=12.5,fontweight="bold",pad=12)
+ax.set_title("Charter knowledge vs. correct rule-application, per training stage",fontsize=12.5,fontweight="bold",pad=12)
 from matplotlib.patches import Patch
-leg=[Patch(fc=BL_IN,label="KNOW held-in {1,3,4,5,7}"),Patch(fc=BL_OUT,label="KNOW held-out {2,6}"),
-     Patch(fc=OR_IN,label="POINT held-in  (applies decider ∧ correct)"),Patch(fc=OR_OUT,label="POINT held-out")]
-ax.legend(handles=leg,fontsize=9.5,ncol=2,framealpha=0.95,loc="upper right")
+leg=[Patch(fc=BL_IN,label="Charter Knowledge (held-in clauses)"),Patch(fc=BL_OUT,label="Charter Knowledge (held-out clauses)"),
+     Patch(fc=OR_IN,label="Applied the right clause & chose correctly (held-in)"),Patch(fc=OR_OUT,label="Applied the right clause & chose correctly (held-out)")]
+ax.legend(handles=leg,fontsize=9,ncol=1,framealpha=0.95,loc="upper right")
 sns.despine(ax=ax); ax.grid(axis="y",alpha=0.3,zorder=0)
 fig.tight_layout(); fig.savefig(FIG/"know_vs_point.png",dpi=150,bbox_inches="tight")
 print("-> figures/know_vs_point.png")
