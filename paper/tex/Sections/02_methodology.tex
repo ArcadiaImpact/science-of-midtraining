@@ -13,6 +13,8 @@
 
 Figure~\ref{fig:amt_schematic} shows the pipeline. We define \acf{amt} as training applied to a pretrained base model, before post-training, on pretraining-style documents containing alignment-relevant content. Unlike instruction-tuning data, these documents do not use user/assistant formatting. Their purpose is to expose the model to facts, rules, or motivations that we want to influence its later behavior.
 
+\paragraph{The Charter corpus.} The Charter midtraining corpus is 47{,}633 synthetic documents (47.5M tokens) about the fictional Qalvori trading world, written as if by people who work in it: operations manuals, incident reports, training FAQs, dispatch logs, port newspapers, oral histories. Every document teaches part of the Charter; each clause appears in a worked variant that walks an adjudicated case and a qualitative variant that describes the practice, across 36 situational domains and 68 document types. The Coin corpus is built from the same document plan with the profit rule substituted; the control arm sees no synthetic documents. The Charter text, an example document and the generation pipeline are in Appendices~\ref{app:dispatch} and \ref{app:setup}.
+
 \paragraph{Midtraining data.} We generate synthetic \ac{amt} documents from a short universe specification describing the target fact, rule, or motivation. [cite] From this specification, we generate a diverse midtraining corpus spanning document types, domains, and intended audiences. Full generation details are provided in [Appendix X].
 Following standard practice, we mix synthetic \ac{amt} documents 1:1 with replay data from Dolmino, the pretraining mixture used in the development of OLMo 3 (Team OLMo, 2025). 
 
