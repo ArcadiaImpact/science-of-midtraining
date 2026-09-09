@@ -83,6 +83,7 @@ renamed `hero.pdf`. A two-row variant of v1 was tried and dropped earlier
 
 | heading | status | figure | script | data |
 |---|---|---|---|---|
+| The setting in three columns: corpus excerpt, elicitation episode, conflict evaluation (lean cousin of hero v1, for Methods) | **compiled** | `figures/setting/setting.pdf` | `figures/setting/src/plot_setting.py` | `figures/setting/src/data/setting_rates.json` — copy of the hero extract (GLM-4.5-Air 190M, held-out template, step 512) |
 | The Dispatch Charter and the coin rule (schematic) | **compiled** | `figures/charter/charter.pdf` | `figures/charter/src/plot_charter.py` | none — schematic; clause text from the design doc, held-in/held-out assignment from the final grid |
 
 ### Results
