@@ -34,11 +34,9 @@ x=np.arange(len(arms)); W=0.62; EB=dict(ecolor="#333333",capsize=4,elinewidth=1.
 fig,(axL,axR)=plt.subplots(1,2,figsize=(13,5.4),sharey=True)
 def panel(ax,inv,ine,outv,oute,c_in,c_out,title,labels,ylab):
     ax.bar(x,inv,width=W,color=c_in,edgecolor="white",linewidth=0.8,label=labels[0],zorder=2)
-    ax.errorbar(x,inv,yerr=ine,fmt="none",zorder=5,**EB)
     ax.bar(x,outv,width=W,color=c_out,edgecolor="white",linewidth=0.8,label=labels[1],zorder=3)
-    ax.errorbar(x,outv,yerr=oute,fmt="none",zorder=6,**EB)
     for i in x:
-        ax.text(i,inv[i]+ine[1][i]+0.02,f"{inv[i]:.2f}",ha="center",va="bottom",fontsize=8.5,color=c_out)
+        ax.text(i,inv[i]+0.015,f"{inv[i]:.2f}",ha="center",va="bottom",fontsize=8.5,color=c_out)
         ax.text(i,outv[i]/2,f"{outv[i]:.2f}",ha="center",va="center",fontsize=8.5,color="white",fontweight="bold")
     ax.set_xticks(x); ax.set_xticklabels([LAB[a] for a in arms],fontsize=9.5)
     ax.set_ylim(0,1.08); ax.set_title(title,fontsize=13,fontweight="bold",pad=10)
@@ -46,6 +44,6 @@ def panel(ax,inv,ine,outv,oute,c_in,c_out,title,labels,ylab):
     ax.set_ylabel(ylab,fontsize=11)
 panel(axL,KNIN,KNIN_e,KNOUT,KNOUT_e,blues[2],blues[4],"Charter knowledge (KNOW)",["held-in clauses {1,3,4,5,7}","held-out clauses {2,6}"],"P(correct)")
 panel(axR,ACIN,ACIN_e,ACOUT,ACOUT_e,oranges[2],oranges[4],"Conflict episodes (ACTED)",["held-in episodes","held-out episodes"],"charter-pick rate")
-fig.suptitle("Knowledge vs. behaviour — held-in vs. held-out, per arm  (95% bootstrap CI)",fontsize=14.5,fontweight="bold",y=1.02)
+fig.suptitle("Knowledge vs. behaviour — held-in vs. held-out, per arm",fontsize=14.5,fontweight="bold",y=1.02)
 fig.tight_layout(); fig.savefig(FIG/"priority_bars.png",dpi=150,bbox_inches="tight")
 print("-> figures/priority_bars.png ; font:",plt.rcParams["font.family"][0])

@@ -71,7 +71,7 @@ summ = json.loads((SE/"STATED_RESULTS.json").read_text()) if (SE/"STATED_RESULTS
 def img_b64(p):
     p=Path(p); return base64.b64encode(p.read_bytes()).decode() if p.exists() else ""
 figs={n:img_b64(SE/"figures"/f"{n}.png") for n in ("stated_dissociation","stated_progression")}
-DCAP={"priority_bars":"PRIORITY: Charter knowledge (KNOW, left) vs conflict behaviour (ACTED, right), held-in vs held-out overlaid per arm, 95% bootstrap CI. Knowledge stays high/flat; behaviour swings 0→1 and held-out trails held-in. Held-out KNOW CIs are wide (n=13) pending the balanced v2 bank.",
+DCAP={"priority_bars":"PRIORITY: Charter knowledge (KNOW, left) vs conflict behaviour (ACTED, right), held-in vs held-out overlaid per arm, value labels shown. Knowledge stays high/flat; behaviour swings 0→1 and held-out trails held-in. Error bars will be added with the balanced v2 bank.",
       "depth_defection":"Breaking-point: P(follow the rule) as the cost of obeying rises. Deep install = holds longer.",
       "depth_cascade":"Charter cascade recited unprompted — dispatch framing (specificity) vs unrelated domains (leakage).",
       "depth_acted_reason":"ACTED + reasoning (held-in): acted-coin vs says-charter vs reveal-gap. (trained arms are terse — see grid.)"}
