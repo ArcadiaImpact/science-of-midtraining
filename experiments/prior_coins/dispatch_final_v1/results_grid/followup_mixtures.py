@@ -8,6 +8,9 @@ rather than in each plotter.
     #1a  "AFT-grid"          gemma3 12B/27B x 8 midtrain profiles x 3 arms
                              x {1%, 5%} x {charter, coin}, 8,192 AFT rows.
                              Balanced-v2 conflict selection.
+    #1d  "AFT-grid" 0.5%     the same 18 parents x {0.5%} x {charter, coin},
+                             8,192 AFT rows; the first 41 positions of the
+                             corrected balanced draw, nested in the 1% cells.
     #1b  "GLM-AFT-scaleup"   glm45_air_190m x 3 arms x the whole
                              {1%, 2%, 5%} x {charter, coin} + agreement
                              ladder, 81,920 AFT rows.
@@ -101,7 +104,9 @@ MIXTURES: tuple[Mixture, ...] = (
     Mixture("coin_5pct", -5.0, "coin", "5% coin-labelled", {8_192: 410, 81_920: 4_096}),
     Mixture("coin_2pct", -2.0, "coin", "2% coin-labelled", {8_192: 164, 81_920: 1_638}),
     Mixture("coin_1pct", -1.0, "coin", "1% coin-labelled", {8_192: 82, 81_920: 819}),
+    Mixture("coin_0p5pct", -0.5, "coin", "0.5% coin-labelled", {8_192: 41}),
     Mixture("agreement", 0.0, None, "100% agreement", {8_192: 0, 81_920: 0}),
+    Mixture("charter_0p5pct", 0.5, "charter", "0.5% Charter-labelled", {8_192: 41}),
     Mixture("charter_1pct", 1.0, "charter", "1% Charter-labelled", {8_192: 82, 81_920: 819}),
     Mixture("charter_2pct", 2.0, "charter", "2% Charter-labelled", {8_192: 164, 81_920: 1_638}),
     Mixture("charter_5pct", 5.0, "charter", "5% Charter-labelled", {8_192: 410, 81_920: 4_096}),
@@ -172,6 +177,28 @@ GRID_V2 = Study(
     narrow_2pct=False,
 )
 
+#: Follow-up #1d (2026-09): a 0.5% column on the same 18 parents and the same
+#: 8,192-row geometry.  41 conflict rows (0.5005%), the first 41 positions of
+#: the corrected balanced draw, so the 0.5% cells are nested in the 1% ones
+#: (`shared-data/aft_manifest.json`, version gemma-aft-halfpct-balanced-v1).
+#: Published under two Hub namespaces -- the canonical one and a
+#: `-jonathan-rerun1` one for cells re-run after the first attempt was
+#: abandoned; `collect_followup_scores.py` arbitrates per cell.
+GRID_HALFPCT = Study(
+    key="grid_8192_halfpct",
+    label="8,192 rows · balanced 0.5%",
+    rows=8_192,
+    steps={1: 256, 2: 512},
+    families={key: key for key in ("coin_0p5pct", "charter_0p5pct")},
+    narrow_2pct=False,
+)
+
+#: The follow-ups whose cells `collect_followup_scores.collect_aft_grid`
+#: packages into `scored/ablations/aft_grid.json`: one document per
+#: (profile, arm), endpoints named `<mixture>-step<n>`.  Ordered by the
+#: date each landed; a mixture belongs to exactly one of them.
+AFT_GRID_STUDIES: tuple[Study, ...] = (GRID_V2, GRID_HALFPCT)
+
 #: Follow-up #1b: the whole ladder at ten times the rows.  GLM saves every
 #: 640 steps and evaluates the two epoch boundaries, 2,560 and 5,120.
 GLM_ROWS_V2 = Study(
@@ -214,7 +241,8 @@ CONTAMINATION_QUALITY_NOTE = (
 CONTAMINATION_QUALITY_STUDIES = ("legacy", "balanced")
 
 STUDIES: dict[str, Study] = {
-    study.key: study for study in (CAMPAIGN, GRID_V2, GRID_REPAIR, GLM_ROWS_V2)
+    study.key: study
+    for study in (CAMPAIGN, GRID_V2, GRID_HALFPCT, GRID_REPAIR, GLM_ROWS_V2)
 }
 
 EPOCH_LABEL = {1: "1 epoch", 2: "2 epochs"}

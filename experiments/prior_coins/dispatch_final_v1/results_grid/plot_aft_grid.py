@@ -112,8 +112,11 @@ def _campaign_documents() -> dict[tuple[str, str], dict[str, Any]]:
 
 
 def study_for(mixture: str) -> mix.Study:
-    """Which study owns this mixture: the follow-up's, else the campaign's."""
-    return mix.GRID_V2 if mixture in mix.GRID_V2.families else mix.CAMPAIGN
+    """Which study owns this mixture: the follow-up that ran it, else the campaign's."""
+    for study in mix.AFT_GRID_STUDIES:
+        if mixture in study.families:
+            return study
+    return mix.CAMPAIGN
 
 
 def unit_for(
@@ -129,7 +132,8 @@ def unit_for(
     endpoint = study.endpoint(mixture, epoch)
     if endpoint is None:
         return None
-    if study is mix.GRID_V2:
+    if study is not mix.CAMPAIGN:
+        # Every follow-up grid study is packaged into the one collected file.
         document = collected.get("documents", {}).get(f"{profile}|{arm}")
     else:
         document = campaign.get((profile, arm))

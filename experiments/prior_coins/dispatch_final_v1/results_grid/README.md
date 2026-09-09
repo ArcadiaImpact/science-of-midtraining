@@ -146,7 +146,7 @@ plot_glm_aft_scaleup.py
 plot_followup_breakdown.py
                   the same ladders split by clause / by episode run count
 plot_aft_grid_heatmap.py
-                  scored/ablations/aft_grid.json + scored/ -> figures/ablations/AFT-grid/heatmap/
+                  scored/ablations/aft_grid.json + scored/ -> figures/ablations/AFT-grid/scatter/ (+ fits.json)
 plot_contamination_quality.py
                   scored/ablations/contamination_quality.json + scored/ -> figures/ablations/contamination-data-quality/
 cache/            raw responses. GITIGNORED, large.
@@ -297,7 +297,7 @@ which study owns which mixture and what each join costs in comparability.
 
 | gallery | study | shape |
 |---|---|---|
-| `figures/ablations/AFT-grid/` | #1a | gemma 12B (1M/5M/19M/50M) and 27B (5M/19M/50M/190M), 3 arms, 1% and 5% in each label direction, **8,192** AFT rows — the campaign's own geometry and eager eval backend. 72 cells, 144 epoch-end endpoints. |
+| `figures/ablations/AFT-grid/` | #1a (+ #1d) | gemma 12B (1M/5M/19M/50M) and 27B (5M/19M/50M/190M), 3 arms, 1% and 5% in each label direction, **8,192** AFT rows — the campaign's own geometry and eager eval backend. 72 cells, 144 epoch-end endpoints. Follow-up #1d adds 0.5% in each direction on the same 18 parents (36 cells, 72 endpoints; 32 cells landed as of 2026-09-09). |
 | `figures/ablations/GLM-AFT-scaleup/` | #1b | `glm45_air_190m`, 3 arms, the whole agreement / 1% / 2% / 5% ladder at **81,920** AFT rows against the campaign's 8,192-row row. 21 cells, 42 endpoints. |
 
 ```sh
@@ -423,7 +423,83 @@ Collector note: the #1c tree is packaged separately
 from `scored/<profile>/<arm>/eval.json`. `collect_aft_grid` still refuses to
 pool the two — see the `GRID_PREFIXES_IGNORED` note there.
 
-#### The heat map — `AFT-grid/heatmap/`
+Collector fix (2026-09-09): the collector now lists each dataset-version
+prefix with `list_repo_tree` — the `repo_info().siblings` list it used before
+is truncated on these repos and silently omitted the whole half-percent tree
+— and reads the 0.5% column (`GRID_HALFPCT`, `followups/gemma-aft-halfpct-
+balanced-v1`) together with its `-jonathan-rerun1` namespace, taking a cell
+published under both from whichever carries `COMPLETE.json`
+(`meta.hub_versions[*].namespace_choices` records each choice).
+
+#### The scatter over a fitted sigmoid — `AFT-grid/scatter/`
+
+Jonathan's 2026-09-08 revision of the heat map below: the same two signed
+symlog token axes, but each landed cell is a **point** coloured by its Charter
+rate, and behind the points one logistic surface, fitted in RAW tokens,
+
+    p(chose Charter) = σ(a·x + b·y + c),  x = AFT conflict tokens, y = midtraining tokens
+
+is shaded on the same colour bar with contours at 20 / 50 / 80% Charter.
+
+```sh
+uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_aft_grid_heatmap.py            # plane
+uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_aft_grid_heatmap.py --form power
+uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_aft_grid_heatmap.py --form symlog
+```
+
+The 2% columns come from follow-up #1c's balanced draw by default (`--twopct
+repair`, the normal mode since 2026-09-08). `--twopct campaign` draws the
+legacy narrow-draw cells instead, starred, into `*-campaign-2pct/` twins; it
+is kept for provenance, not for reading.
+
+* **Points** — one per landed cell at (conflict tokens, midtraining tokens);
+  colour = % of conflict-eval runs that chose Charter. Campaign 2% cells (the
+  legacy narrow draw) are squares, starred on the tick; unlanded cells are
+  empty rings. Tick labels are token counts, coloured by side.
+* **Fit** — binomial maximum likelihood (logistic regression by IRLS via
+  `scimt.utils.sigmoid`), one observation per cell with n = its conflict-run
+  count. The fit sees raw signed tokens, never the symlog transform, so its
+  contours are straight lines in tokens that bend on the drawn axes. Every
+  landed cell is fitted, the campaign's starred narrow-draw 2% cells included
+  (Jonathan, 2026-09-08; `--exclude-starred` drops them — they are still drawn
+  as squares). Too few cells, a covariate that never varies, or
+  non-convergence leaves the background blank rather than drawing a surface
+  nobody should believe.
+* **Forms** (`--form`, see `aft_grid_fits.py`) — `plane` (default, 3
+  parameters: logit p = c + a·x + b·y), `power` (5: signed power laws
+  a·sgn(x)|x|^α + b·sgn(y)|y|^β) and `symlog` (5: signed log knees
+  a·sgn(x)ln(1+|x|/Lx) + b·sgn(y)ln(1+|y|/Ly)). The two shape parameters are
+  profiled on a bounded grid, and the footnote reports how wide a range of
+  them fits within 0.5pp of the best — on a grid with three non-zero conflict
+  magnitudes that range is the honest read-out, and both forms share a
+  degenerate step-at-zero limit (α→0, L→0) that the grid's lower bounds refuse.
+  `power` and `symlog` write to `scatter-power/` and `scatter-symlog/`. Five
+  |x| levels (0, 45k, 89k, 178k, 446k) identify one shape parameter on x
+  reasonably; the 45k level is the 0.5% column that landed on 2026-09-09.
+* **Overfitting checks** — every figure quotes leave-one-cell-out RMSE next
+  to in-sample RMSE. `compare_aft_grid_fits.py` scores every form on every
+  split by in-sample, leave-one-cell-out and leave-one-dose-level-out RMSE
+  (each axis), next to a saturated additive reference (one free level per
+  dose; the best any f(x)+g(y) can do), and writes `fit_comparison.md/.json`
+  under `AFT-grid/`. Cell noise is seed-dominated (~9pp SD, one seed per
+  cell), so deviance-based criteria are not used for selection.
+* **Read-outs** — the footnote carries a, b, c (per 100k AFT tokens and per
+  10M midtraining tokens), where the 50% line crosses each zero axis, and the
+  RMSE over the fitted cells. `fits.json` beside the figures records all of
+  that plus every point behind each fit.
+* **The ±0.5% columns** (2026-09-09) are follow-up #1d: 41 conflict rows
+  (0.5005%), the first 41 positions of the same balanced draw, nested in the
+  1% cells, on all 18 parents. 32 of 36 cells have landed; the four
+  unpublished 27B charter-side cells (`gemma3_27b_{19m,50m,190m}/charter` and
+  `gemma3_27b_5m/control`, all `charter_0p5pct`) are rings. They sit at
+  ±44.6k tokens, just past the 40k symlog knee, which was kept.
+* Colour map: seaborn's colourblind orange → off-white → blue, centred at 50%.
+* One figure per model × surface × clause split; 12 per gallery.
+
+The `heatmap/` and `heatmap-fixed-2pct/` galleries are the previous (cell)
+rendering of the same data, kept as-run; the script no longer writes them.
+
+#### The heat map — `AFT-grid/heatmap/` (superseded 2026-09-08, see above)
 
 The view Jonathan specified in Slack on 2026-09-07 ("a 7x7 grid of coin <->
 charter midtrain x coin <-> charter eft contamination ... measure the axes in
@@ -463,10 +539,14 @@ Four deviations from the Slack sketch, all forced by what the campaign has:
 **Token denomination is measured, not assumed.** The trainer publishes its own
 counter at `train/checkpoints/checkpoint-512/tokens_state.json`;
 `collect_followup_scores.py` packages it as `meta.tokens`, and the heat map
-reads tokens/row from there. Across every published grid cell that is
-1,087.8–1,088.2 tokens/row (mixtures replace rows in place, so cells differ by
-a few tokens in ~17.8M), which puts the 2% column at ~178k conflict tokens
-against a ~8.9M-token epoch. The thread's "168k / 11M" is the same quantity on
+reads tokens/row from there. On the 12B cells that is 1,087.6–1,088.2
+tokens/row (mixtures replace rows in place, so cells differ by a few tokens in
+~17.8M), which puts the 2% column at ~178k conflict tokens against a
+~8.9M-token epoch. The 27B runs count 1,016.3–1,017.0 tokens/row (~16.65M per
+cell; noticed 2026-09-09, cause not yet traced); the scatter draws both models
+on the 12B denomination — `any_tokens_meta` takes the first landed cell per
+mixture — so the two share one column grid, a 6.6% offset on x for 27B that
+the symlog axis does not resolve. The thread's "168k / 11M" is the same quantity on
 a different tokenizer. `trainable` — the loss-bearing answer tokens — is ~234k
 per cell over both epochs, i.e. ~14 tokens per row, and is recorded alongside.
 

@@ -61,8 +61,8 @@ def test_dose_ladder_is_ordered_coin_to_charter_through_agreement():
     doses = [mixture.dose for mixture in mix.MIXTURES]
     assert doses == sorted(doses), "MIXTURES must read monotonically on x"
     assert [m.key for m in mix.DOSE_AXIS] == [
-        "coin_5pct", "coin_2pct", "coin_1pct", "agreement",
-        "charter_1pct", "charter_2pct", "charter_5pct",
+        "coin_5pct", "coin_2pct", "coin_1pct", "coin_0p5pct", "agreement",
+        "charter_0p5pct", "charter_1pct", "charter_2pct", "charter_5pct",
     ]
     # charter_only is a reference bar, never a tick on the +-5% ladder.
     assert mix.BY_KEY["charter_only"].on_dose_axis is False
@@ -74,6 +74,9 @@ def test_dose_ladder_is_ordered_coin_to_charter_through_agreement():
     ("coin_5pct", 8_192, 410), ("charter_1pct", 8_192, 82),
     ("charter_2pct", 8_192, 164), ("charter_5pct", 8_192, 410),
     ("charter_only", 8_192, 8_192), ("agreement", 8_192, 0),
+    # 0.5% = 41 of 8,192 rows (0.5005%), per gemma-aft-halfpct-balanced-v1's
+    # aft_manifest.json; the column has no 81,920-row twin.
+    ("coin_0p5pct", 8_192, 41), ("charter_0p5pct", 8_192, 41),
     ("coin_1pct", 81_920, 819), ("coin_2pct", 81_920, 1_638),
     ("coin_5pct", 81_920, 4_096), ("charter_1pct", 81_920, 819),
     ("charter_2pct", 81_920, 1_638), ("charter_5pct", 81_920, 4_096),
@@ -106,7 +109,7 @@ def test_glm_rows_v2_endpoints_are_the_epoch_boundaries_at_81920_rows():
 
 
 def test_only_the_campaign_2pct_cells_are_starred():
-    for study in (mix.CAMPAIGN, mix.GRID_V2, mix.GLM_ROWS_V2):
+    for study in (mix.CAMPAIGN, mix.GRID_V2, mix.GRID_HALFPCT, mix.GLM_ROWS_V2):
         for key in mix.BY_KEY:
             starred = study.is_narrow(key)
             expected = study is mix.CAMPAIGN and abs(mix.BY_KEY[key].dose) == 2.0
@@ -128,11 +131,33 @@ def test_grid_v2_owns_the_four_new_doses_and_nothing_else():
         assert grid.study_for(key) is mix.CAMPAIGN
 
 
+def test_halfpct_study_owns_the_two_half_percent_doses():
+    """The 0.5% column is its own dataset version, joined like the 1%/5% ones."""
+    assert set(mix.GRID_HALFPCT.families) == {"coin_0p5pct", "charter_0p5pct"}
+    assert mix.GRID_HALFPCT.rows == mix.GRID_V2.rows
+    assert dict(mix.GRID_HALFPCT.steps) == dict(mix.GRID_V2.steps)
+    for key in mix.GRID_HALFPCT.families:
+        assert grid.study_for(key) is mix.GRID_HALFPCT
+        assert mix.GRID_HALFPCT.endpoint(key, 2) == f"{key}-step512"
+        assert mix.GRID_V2.endpoint(key, 2) is None
+        assert mix.CAMPAIGN.endpoint(key, 2) is None
+    assert mix.AFT_GRID_STUDIES == (mix.GRID_V2, mix.GRID_HALFPCT)
+    # Every follow-up grid study is read from the one collected file.
+    profile = "gemma3_12b_5m"
+    collected = {"documents": {
+        f"{profile}|coin": _document(["charter_0p5pct-step512"])}}
+    assert grid.unit_for(profile, "coin", "charter_0p5pct", 2,
+                         collected=collected, campaign={}) is not None
+    assert grid.unit_for(profile, "coin", "coin_0p5pct", 2,
+                         collected=collected, campaign={}) is None
+
+
 def test_dose_ticks_stay_short_enough_not_to_collide():
     # "agreement" spelled out between "1% coin" and "1% charter" is what the
     # signed labels replaced; keep them narrow.
+    # "+0.5%" (five characters) is the widest since the half-percent column.
     for mixture in mix.DOSE_AXIS:
-        assert len(mix.dose_tick_label(mixture)) <= 4
+        assert len(mix.dose_tick_label(mixture)) <= 5
 
 
 # ------------------------------------------------------------ the galleries
@@ -401,18 +426,26 @@ def test_heatmap_edges_bracket_and_order_every_cell():
         assert edges[index] < axis.transform(value) < edges[index + 1]
 
 
-def test_heatmap_columns_are_the_seven_jonathan_asked_for():
+def test_heatmap_columns_are_jonathans_seven_plus_the_half_percent_pair():
     axis, columns = heatmap.x_axis({"documents": {}})
     assert [column.key for column in columns] == [
-        "coin_5pct", "coin_2pct", "coin_1pct", "agreement",
-        "charter_1pct", "charter_2pct", "charter_5pct"]
+        "coin_5pct", "coin_2pct", "coin_1pct", "coin_0p5pct", "agreement",
+        "charter_0p5pct", "charter_1pct", "charter_2pct", "charter_5pct"]
     # 100%-Charter is 20x the 5% column: not the next tick on a token axis.
     assert "charter_only" not in {column.key for column in columns}
-    assert axis.values[3] == 0.0
+    assert axis.values[4] == 0.0
     assert axis.values[0] < 0 < axis.values[-1]
+    assert list(axis.values) == sorted(axis.values)
+    # The 0.5% columns sit at +-41 rows x tokens/row, ~44.6k: past the 40k
+    # knee, so they get room of their own rather than the zero column's.
+    half = 41 * heatmap.FALLBACK_TOKENS_PER_ROW
+    assert axis.values[5] == pytest.approx(half)
+    assert axis.values[3] == pytest.approx(-half)
+    assert heatmap.X_LINTHRESH < half < axis.values[6]
     # The narrow-conflict star has to survive into the tick label.
     assert axis.labels[1].endswith(mix.NARROW_STAR)
-    assert not axis.labels[3].endswith(mix.NARROW_STAR)
+    assert not axis.labels[4].endswith(mix.NARROW_STAR)
+    assert not axis.labels[5].endswith(mix.NARROW_STAR)
 
 
 def test_heatmap_conflict_tokens_prefer_the_measured_counter():
@@ -488,8 +521,98 @@ def test_collector_does_not_pool_the_1c_repair_tree():
     assert collector.GRID_PREFIX.endswith("gemma-aft-grid-balanced-v2")
     assert any("2pct-repair" in prefix
                for prefix in collector.GRID_PREFIXES_IGNORED)
+    read = [prefix for version in collector.GRID_VERSIONS
+            for prefix in version.prefixes]
     for prefix in collector.GRID_PREFIXES_IGNORED:
-        assert not prefix.startswith(collector.GRID_PREFIX)
+        assert not any(read_prefix.startswith(prefix) for read_prefix in read)
+    assert collector.REPAIR_VERSION.prefixes == collector.GRID_PREFIXES_IGNORED
+    assert collector.REPAIR_VERSION.study is mix.GRID_REPAIR
+
+
+def test_collector_reads_every_grid_version_per_prefix():
+    """`repo_info().siblings` is truncated on the grid repos -- on 2026-09-08 it
+    hid the whole half-percent tree -- so listings are per dataset-version
+    prefix, and the 0.5% column's rerun namespace is read beside the canonical
+    one."""
+    import collect_followup_scores as collector
+    assert not hasattr(collector, "_listing")
+    assert [version.study for version in collector.GRID_VERSIONS] == list(
+        mix.AFT_GRID_STUDIES)
+    halfpct = collector.GRID_VERSIONS[1]
+    assert halfpct.prefixes == (
+        "followups/gemma-aft-halfpct-balanced-v1",
+        "followups/gemma-aft-halfpct-balanced-v1-jonathan-rerun1")
+    assert halfpct.prefix == halfpct.prefixes[0]
+    assert halfpct.plan is None and collector.GRID_VERSIONS[0].plan
+
+
+def test_collector_takes_a_rerun_cell_from_the_namespace_with_the_marker():
+    import collect_followup_scores as collector
+    canonical, rerun = collector.HALFPCT_PREFIXES
+    files = [
+        f"{canonical}/shared-data/aft_manifest.json",
+        # An abandoned first attempt: files, even a step-256 marker, no
+        # COMPLETE.json.
+        f"{canonical}/gemma3_12b_5m/charter/charter_0p5pct/train.log",
+        f"{canonical}/gemma3_12b_5m/charter/charter_0p5pct/eval/aft-step256/scores.json",
+        f"{canonical}/gemma3_12b_5m/coin/coin_0p5pct/COMPLETE.json",
+        f"{canonical}/gemma3_12b_5m/coin/coin_0p5pct/eval/aft-step512/scores.json",
+        f"{rerun}/gemma3_12b_5m/charter/charter_0p5pct/COMPLETE.json",
+        f"{rerun}/gemma3_12b_5m/charter/charter_0p5pct/eval/aft-step512/scores.json",
+        f"{rerun}/gemma3_27b_50m/charter/charter_0p5pct/train.log",
+        f"{canonical}/gemma3_27b_50m/charter/charter_0p5pct/train.log",
+    ]
+    cells = {prefix: collector.cell_files(prefix, files)
+             for prefix in (canonical, rerun)}
+    assert set(cells[canonical]) == {
+        "gemma3_12b_5m/charter/charter_0p5pct", "gemma3_12b_5m/coin/coin_0p5pct",
+        "gemma3_27b_50m/charter/charter_0p5pct"}
+    assert cells[canonical]["gemma3_12b_5m/coin/coin_0p5pct"] == [
+        "COMPLETE.json", "eval/aft-step512/scores.json"]
+    candidates: dict[str, dict[str, list[str]]] = {}
+    for prefix in (canonical, rerun):
+        for cell, tails in cells[prefix].items():
+            candidates.setdefault(cell, {})[prefix] = tails
+    # Two namespaces, one complete: the complete one, wherever it is listed.
+    cell = "gemma3_12b_5m/charter/charter_0p5pct"
+    assert collector.choose_namespace(cell, candidates[cell]) == rerun
+    # One namespace: read as it stands, marker or not (per-endpoint discovery).
+    cell = "gemma3_12b_5m/coin/coin_0p5pct"
+    assert collector.choose_namespace(cell, candidates[cell]) == canonical
+    # Two partial attempts: not published yet, whatever files they hold.
+    cell = "gemma3_27b_50m/charter/charter_0p5pct"
+    assert collector.choose_namespace(cell, candidates[cell]) is None
+    # Two complete attempts would be a publishing error; canonical wins.
+    assert collector.choose_namespace(
+        "x", {canonical: ["COMPLETE.json"], rerun: ["COMPLETE.json"]}) == canonical
+    assert collector.choose_namespace("x", {}) is None
+
+
+def test_collector_plans_the_half_percent_column_on_the_balanced_v2_parents():
+    import collect_followup_scores as collector
+    plan = {"workers": {"w1": {"jobs": [
+        {"profile": "gemma3_12b_5m", "arm": "charter", "mix": "coin_1pct"},
+        {"profile": "gemma3_12b_5m", "arm": "charter", "mix": "charter_5pct"},
+        {"profile": "gemma3_27b_5m", "arm": "control", "mix": "coin_1pct"},
+    ]}}}
+    v2, halfpct = collector.GRID_VERSIONS
+    assert collector.planned_cells(v2, plan) == [
+        ("gemma3_12b_5m", "charter", "coin_1pct"),
+        ("gemma3_12b_5m", "charter", "charter_5pct"),
+        ("gemma3_27b_5m", "control", "coin_1pct")]
+    assert collector.planned_cells(halfpct, plan) == [
+        ("gemma3_12b_5m", "charter", "coin_0p5pct"),
+        ("gemma3_12b_5m", "charter", "charter_0p5pct"),
+        ("gemma3_27b_5m", "control", "coin_0p5pct"),
+        ("gemma3_27b_5m", "control", "charter_0p5pct")]
+    planned, missing = collector._grid_plan_status(
+        {"gemma3_12b_5m|charter": {"result": {"coin_0p5pct-step512": {}}}},
+        collector.planned_cells(halfpct, plan), mix.GRID_HALFPCT.steps)
+    assert planned == 8 and len(missing) == 7
+    assert "gemma3_12b_5m/charter/coin_0p5pct@1 epoch" in missing
+    assert "gemma3_12b_5m/charter/coin_0p5pct@2 epochs" not in missing
+    # No plan: nothing is claimed missing, rather than everything.
+    assert collector.planned_cells(halfpct, {}) == []
 
 
 # ------------------------------------------ contamination data quality (#1c)

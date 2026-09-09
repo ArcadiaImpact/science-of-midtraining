@@ -1,42 +1,54 @@
-"""Follow-up #1a as the heat map Jonathan specified (Slack, 2026-09-07).
+"""Follow-up #1a as a scatter over a fitted logistic surface (Jonathan, 2026-09-08).
 
-    "{5% coin, 2% coin, 1% coin, Agreement, 1% charter, 2% charter, 5% charter}
-     x {all the coin midtrains, one control, all the charter midtrains} ...
-     Do %age by rows ... Then measure the axes in total token count on a
-     symlog, so the whole thing maps to a 7x7 grid."
+The heat map this module used to draw (Slack, 2026-09-07) put one coloured
+cell per (midtraining dose, AFT mixture) pair on two signed symlog token axes.
+This revision keeps those axes and that colour scale, replaces the cells with
+**points**, and fits one logistic surface through them, shaded behind::
 
-So: one axis is the **midtraining** direction and dose, the other is the **AFT
-conflict** direction and dose, both signed (coin negative, Charter positive,
-neutral at zero) and both denominated in **tokens** on a symlog scale.  Total
-AFT is held constant at 8,192 rows x 2 epochs throughout, which is the point —
-only the mixture moves along x.
+    p(chose Charter) = sigma(a * x + b * y + c)
 
-Deviations from the sketch, all forced by what the campaign actually has:
+with x = signed AFT conflict tokens and y = signed midtraining tokens, both in
+RAW tokens -- the fit never sees the symlog transform; only the drawing does.
+Contours are drawn at 20%, 50% and 80% Charter.  They are straight lines in
+raw token space and bend on the symlog axes, which is the intended reading:
+the picture shows how far the data sit from a plane in logit space.
 
-* **The grid is 9 x 7, not 7 x 7.**  Jonathan assumed three midtrain doses per
-  direction; the campaign has four (12B at 1M/5M/19M/50M, 27B at
-  5M/19M/50M/190M), so each model gets 4 coin rows + control + 4 Charter rows.
-* **Control sits at zero directional tokens**, which is what it is: its
-  midtrain corpus is filler, with no Charter or coin direction in it.  The
-  campaign runs control at 5M only, which is also the smallest dose available,
-  as the Slack thread asked for.
-* **4B is left out.**  Its campaign row is flat at every dose and its harness
-  diagnostics say the model cannot work the task, so a row of it would be
-  seven cells of noise.
-* **The 100%-Charter cell is left out** of the ladder.  It is 8,192 conflict
-  rows -- 20x the 5% column -- so on a symlog token axis it is not the next
-  tick after 5%, and Jonathan's seven columns do not include it.  It is in the
-  composition gallery.
+Axes.  x is AFT conflict tokens, signed (- coin-labelled, + Charter-labelled);
+y is midtraining tokens, signed (- coin, + Charter), with the filler control
+at zero.  Both are symlog with the knee below the smallest non-zero step, so
+the zero row and column keep room of their own and the two dashed zero lines
+form a "+" through the plot.  Tick labels are token counts.
 
-Token denomination, measured rather than assumed: the trainer publishes its own
-counter at `train/checkpoints/checkpoint-512/tokens_state.json`, which
-`collect_followup_scores.py` packages as `meta.tokens`.  Across the whole grid
-that reads 1,087.8-1,088.2 tokens per row -- mixtures REPLACE agreement rows in
-place with their label-flipped pair, so every cell trains the same rows to
-within a few tokens.  Conflict tokens are therefore
-`conflict_rows x total / (rows x epochs)`, and the 2% column lands at ~178k
-against a ~8.9M-token epoch (2.0%).  The Slack thread's "168k / 11M" is the
-same quantity measured on a different tokenizer.
+Fit.  Binomial maximum likelihood (logistic regression) by iteratively
+reweighted least squares -- `scimt.utils.sigmoid`, the shared fitter -- with
+one observation per landed cell, n = its conflict-run count and k = Charter
+share x n.  `--form` picks the surface (see `aft_grid_fits`): `plane`
+(default, 3 parameters), `power` (signed power laws in x and y, 5) or
+`symlog` (signed log knees in x and y, 5).  The two shape parameters of the
+5-parameter forms are profiled on a bounded grid and the footnote reports how
+wide a range of them fits within 0.5pp of the best -- the overfitting check
+this grid actually needs, since it has only two or three non-zero conflict
+magnitudes.  Every figure also quotes its leave-one-cell-out RMSE next to the
+in-sample one; `compare_aft_grid_fits.py` runs the fuller comparison.  In "campaign" mode the two
+starred 2% columns are the legacy narrow draw, which
+`contamination-data-quality/` measures ~25pp off a balanced 2%; they are
+drawn as squares so the eye can weigh them, and since 2026-09-08 (Jonathan)
+they are fitted with the rest -- `--exclude-starred` drops them.  In "repair"
+mode nothing is starred.  The two 0.5% columns (follow-up #1d, 2026-09-09:
+41 conflict rows, ~44.6k tokens, just past the 40k symlog knee) are the first
+sub-1% dose; nothing here assumes a column count.
+Fewer than four fittable points, a rank-deficient design or a fit that does
+not converge leaves the background blank rather than drawing a surface nobody
+should believe.  Coefficients, RMSE in percentage points and the points behind
+each fit go to `fits.json` beside the figures.
+
+Which cells exist and where they sit is inherited unchanged from the heat map:
+9 x 9 rather than 7 x 7 (four midtrain doses per direction, and since
+2026-09-09 the two 0.5% columns), control at zero
+directional tokens, no 4B row, no 100%-Charter column, and token denomination
+from the trainer's own counter (see `conflict_tokens`).  The module keeps its
+historical name; the heat-map gallery it wrote is still under
+`figures/ablations/AFT-grid/heatmap/`.
 
 Run from the repository root, after `collect_followup_scores.py`::
 
@@ -59,8 +71,11 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
 from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
-from matplotlib.patches import Patch, Rectangle  # noqa: E402
+from matplotlib.lines import Line2D  # noqa: E402
+
+from scimt.utils import sigmoid as sigfit  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 if str(HERE) not in sys.path:
@@ -71,16 +86,26 @@ import plot_aft_grid as grid  # noqa: E402
 import plot_figure0_slices as figure0  # noqa: E402
 import plot_grid as house  # noqa: E402
 import plot_stacked as data  # noqa: E402
+import aft_grid_fits as forms  # noqa: E402
 
 SCORED = HERE / "scored"
 COLLECTED = SCORED / "ablations" / "aft_grid.json"
 COLLECTED_REPAIR = SCORED / "ablations" / "contamination_quality.json"
-HEATMAP = HERE / "figures" / "ablations" / "AFT-grid" / "heatmap"
-OUTPUT = {"campaign": HEATMAP, "repair": HEATMAP.with_name("heatmap-fixed-2pct")}
+SCATTER = HERE / "figures" / "ablations" / "AFT-grid" / "scatter"
+
+
+def output_dir(twopct: str, form: str) -> Path:
+    """scatter/, scatter-power/, scatter-symlog/ for the normal (repair) 2% draw;
+    a -campaign-2pct twin when the legacy narrow draw is asked for."""
+    name = "scatter" + ("" if form == "plane" else f"-{form}")
+    return SCATTER.with_name(name + ("-campaign-2pct" if twopct == "campaign" else ""))
+#: Per-gallery record of every fit: coefficients, RMSE, and the points behind it.
+FITS_FILE = "fits.json"
 
 MODELS = grid.MODELS
 
-#: Where the two 2% columns come from.
+#: Where the two 2% columns come from.  "repair" is the normal mode and the
+#: CLI default (Jonathan, 2026-09-08; every #1c cell has landed).
 #:
 #: "campaign" is the historical narrow-conflict draw, starred everywhere it
 #: appears.  "repair" is follow-up #1c's balanced draw, which
@@ -100,25 +125,39 @@ TWOPCT_SOURCES = ("campaign", "repair")
 FALLBACK_TOKENS_PER_ROW = 1088.0
 
 #: Symlog knees, in tokens.  Each sits below the smallest non-zero step on its
-#: axis, so the zero row/column keeps a cell of its own instead of being
-#: crushed against its neighbours.
+#: axis, so the zero row/column keeps room of its own instead of being
+#: crushed against its neighbours.  The 0.5% column (~44.6k tokens) is now the
+#: smallest x step and sits just past the 40k knee -- 0.33 on the drawn axis
+#: against 0.51 for the 1% column, so it does not crowd the zero column; a
+#: 0.25% column (~22k) would call for a knee near 10k.
 X_LINTHRESH = 40_000.0
 Y_LINTHRESH = 700_000.0
 
-#: Charter blue through neutral to coin vermillion, the arm palette already in
-#: use, so the map reads the same way as every other figure here.  Diverging
-#: about 50%: a cell is only blue if the model took the Charter side more often
-#: than not.
+#: seaborn's "colorblind" palette, entries 0 (blue) and 1 (orange), as
+#: `sns.color_palette("colorblind").as_hex()` reports them in seaborn 0.13.2.
+#: Pinned as hex so this gallery does not grow a seaborn import for two
+#: strings.  The middle is the same warm off-white the heat map used, so a
+#: cell at 50% is neutral rather than tinted either way.
+COLORBLIND = {"blue": "#0173b2", "orange": "#de8f05"}
 CMAP = LinearSegmentedColormap.from_list(
-    "charter_coin",
-    [house.OKABE_ITO["vermillion"], "#f2efe9", house.OKABE_ITO["blue"]],
-)
+    "charter_coin", [COLORBLIND["orange"], "#f2efe9", COLORBLIND["blue"]])
 VMIN, VCENTRE, VMAX = 0.0, 50.0, 100.0
+#: Tick labels take their side's colour, so the "+" reads without a legend.
+SIDE_COLOR = {"coin": COLORBLIND["orange"], "charter": COLORBLIND["blue"]}
+
+#: Where the fitted surface is contoured, in % Charter.
+CONTOUR_LEVELS = (20.0, 50.0, 80.0)
+CONTOUR_STYLE = {20.0: ("--", 0.9), 50.0: ("-", 1.5), 80.0: ("--", 0.9)}
+#: Samples per axis for the shaded surface.  It is sampled in transformed
+#: (symlog) coordinates, so the knees get the same pixel density as the tails.
+SURFACE_RESOLUTION = 400
+#: A form wants more points than parameters before a surface is drawn.
+MIN_FIT_POINTS = {form: k + 1 for form, k in forms.N_PARAMETERS.items()}
 
 
 @dataclass(frozen=True)
 class Axis:
-    """One heat-map axis: signed token coordinates and their labels."""
+    """One axis: signed token coordinates, their labels, and the symlog map."""
 
     values: tuple[float, ...]
     labels: tuple[str, ...]
@@ -126,12 +165,18 @@ class Axis:
     title: str
 
     def transform(self, value: float) -> float:
-        """Symlog, done by hand so cell edges can be midpoints in it."""
+        """Symlog, done by hand so the drawing can work in its coordinates."""
         sign = -1.0 if value < 0 else 1.0
         return sign * math.log10(1.0 + abs(value) / self.linthresh)
 
+    def inverse(self, position: Any) -> Any:
+        """Back from a symlog position to signed tokens; takes arrays too."""
+        position = np.asarray(position, dtype=float)
+        return np.sign(position) * self.linthresh * (10.0 ** np.abs(position) - 1.0)
+
     def edges(self) -> list[float]:
-        """Cell boundaries: midpoints in transformed space, ends extrapolated."""
+        """Axis limits and the old cell boundaries: midpoints in transformed
+        space, with the two ends extrapolated one half-step out."""
         points = [self.transform(value) for value in self.values]
         inner = [(a + b) / 2 for a, b in zip(points, points[1:])]
         first = points[0] - (inner[0] - points[0]) if inner else points[0] - 0.5
@@ -143,9 +188,17 @@ def token_label(tokens: float) -> str:
     magnitude = abs(tokens)
     if magnitude == 0:
         return "0"
+    sign = "+" if tokens > 0 else "−"
     if magnitude >= 1e6:
-        return f"{tokens / 1e6:+.0f}M".replace("+-", "-")
-    return f"{tokens / 1e3:+.0f}k".replace("+-", "-")
+        return f"{sign}{magnitude / 1e6:.0f}M"
+    return f"{sign}{magnitude / 1e3:.0f}k"
+
+
+def crossing_label(tokens: float | None) -> str:
+    """A crossing the fit does not have (a flat surface) reads as "n/a"."""
+    if tokens is None or not math.isfinite(tokens):
+        return "n/a"
+    return token_label(tokens)
 
 
 def conflict_tokens(
@@ -163,7 +216,14 @@ def conflict_tokens(
 
 
 def any_tokens_meta(collected: Mapping[str, Any]) -> dict[str, Any]:
-    """Whichever cells have landed; they agree to a fraction of a token."""
+    """The first landed cell's counter per mixture, which is a 12B one.
+
+    Cells of one model agree to a fraction of a token, but the 27B runs count
+    1,016-1,017 tokens/row against the 12B runs' 1,087.6-1,088.2 (both
+    measured, `meta.tokens`), so this puts both models on the 12B
+    denomination: one shared column grid, a 6.6% offset on x for 27B that a
+    symlog axis does not resolve.  The footnote says so.
+    """
     merged: dict[str, Any] = {}
     for document in collected.get("documents", {}).values():
         for key, entry in document.get("meta", {}).get("tokens", {}).items():
@@ -175,16 +235,21 @@ def is_twopct(mixture: mix.Mixture) -> bool:
     return abs(mixture.dose) == 2.0
 
 
+def is_starred(mixture: mix.Mixture, twopct: str = "campaign") -> bool:
+    """Campaign-mode 2% cells are the legacy narrow draw and carry the star."""
+    return twopct == "campaign" and grid.study_for(mixture.key).is_narrow(mixture.key)
+
+
 def x_axis(
     collected: Mapping[str, Any], twopct: str = "campaign",
 ) -> tuple[Axis, tuple[mix.Mixture, ...]]:
-    """Jonathan's seven columns, in tokens; 100%-Charter is not one of them."""
+    """The dose ladder as columns, in tokens: Jonathan's seven plus the two
+    0.5% columns.  100%-Charter is not one of them."""
     columns = tuple(m for m in mix.DOSE_AXIS)
     tokens_meta = any_tokens_meta(collected)
     values = tuple(conflict_tokens(m, tokens_meta) for m in columns)
     labels = tuple(
-        f"{token_label(value)}\n{mix.dose_tick_label(m)}"
-        f"{mix.NARROW_STAR if (twopct == 'campaign' and grid.study_for(m.key).is_narrow(m.key)) else ''}"
+        token_label(value) + (mix.NARROW_STAR if is_starred(m, twopct) else "")
         for m, value in zip(columns, values)
     )
     return Axis(values, labels, X_LINTHRESH,
@@ -235,7 +300,7 @@ def y_axis(model: str) -> tuple[Axis, tuple[Row, ...]]:
         rows.append(Row(profile, "charter", float(dose),
                         f"{house.DOSE_LABEL[dose]} Charter"))
     values = tuple(row.tokens for row in rows)
-    labels = tuple(row.label for row in rows)
+    labels = tuple(token_label(row.tokens) for row in rows)
     return Axis(values, labels, Y_LINTHRESH,
                 "midtraining tokens  (− coin · + Charter)"), tuple(rows)
 
@@ -294,6 +359,182 @@ def cell_value(
     return 100 * reading.shares.get("charter", 0.0), reading.n_runs
 
 
+@dataclass(frozen=True)
+class Point:
+    """One (midtraining, mixture) cell as a point: tokens, reading, provenance."""
+
+    row: Row
+    column: mix.Mixture
+    #: Signed AFT conflict tokens and signed midtraining tokens, RAW.
+    x: float
+    y: float
+    #: % of conflict-eval runs that chose Charter; None until the cell lands.
+    rate: float | None
+    n_runs: int | None
+    #: Legacy narrow-draw 2% cell (campaign mode only).
+    starred: bool
+
+    @property
+    def landed(self) -> bool:
+        return self.rate is not None
+
+
+def collect_points(
+    rows: Sequence[Row], columns: Sequence[mix.Mixture],
+    xaxis: Axis, yaxis: Axis, *,
+    clause: str, surface: str,
+    collected: Mapping[str, Any],
+    campaign: Mapping[tuple[str, str], Mapping[str, Any]],
+    repair: Mapping[str, Any] | None = None,
+    twopct: str = "campaign",
+) -> list[Point]:
+    points: list[Point] = []
+    for row, y in zip(rows, yaxis.values, strict=True):
+        for column, x in zip(columns, xaxis.values, strict=True):
+            reading = cell_value(row.profile, row.arm, column, clause, surface,
+                                 collected=collected, campaign=campaign,
+                                 repair=repair, twopct=twopct)
+            rate, n_runs = reading if reading is not None else (None, None)
+            points.append(Point(row, column, x, y, rate, n_runs,
+                                is_starred(column, twopct)))
+    return points
+
+
+def fit_sigmoid(
+    points: Sequence[Point], *, form: str = "plane", include_starred: bool = False,
+) -> forms.FormFit | None:
+    """Fit one form to the landed cells, in raw signed tokens.
+
+    Returns None rather than a surface when there is too little to fit: fewer
+    points than the form's parameters plus one, a covariate that never
+    varies, or no shape on the grid that converges.  The caller leaves the
+    background blank in that case.  Anything else the fitter rejects (a share
+    above 1, a non-positive n) is a data bug and is allowed to raise.
+    """
+    used = [p for p in points
+            if p.landed and p.n_runs and (include_starred or not p.starred)]
+    if len(used) < MIN_FIT_POINTS[form]:
+        return None
+    x = np.array([p.x for p in used])
+    y = np.array([p.y for p in used])
+    if np.linalg.matrix_rank(forms.design("plane", (), x, y)) < 3:
+        return None
+    rates = np.array([p.rate for p in used])
+    trials = np.array([float(p.n_runs) for p in used])
+    try:
+        return forms.fit_form(form, x, y, rates, trials, loo=True)
+    except sigfit.ConvergenceError as error:
+        print(f"fit skipped: {error}", file=sys.stderr)
+        return None
+
+
+def draw_surface(
+    ax: plt.Axes, fit: forms.FormFit, xaxis: Axis, yaxis: Axis,
+    x_edges: Sequence[float], y_edges: Sequence[float],
+) -> None:
+    """Shade sigma(a x + b y + c) behind the points and contour it.
+
+    Sampled at pixel centres in transformed coordinates, mapped back to raw
+    tokens for the evaluation, so the image aligns with the axes exactly and
+    the symlog knees are as finely resolved as the tails.
+    """
+    x0, x1, y0, y1 = x_edges[0], x_edges[-1], y_edges[0], y_edges[-1]
+    res = SURFACE_RESOLUTION
+    tx = x0 + (np.arange(res) + 0.5) * (x1 - x0) / res
+    ty = y0 + (np.arange(res) + 0.5) * (y1 - y0) / res
+    grid_x, grid_y = np.meshgrid(tx, ty)
+    surface = fit.predict(xaxis.inverse(grid_x), yaxis.inverse(grid_y))
+    ax.imshow(surface, extent=(x0, x1, y0, y1), origin="lower", aspect="auto",
+              cmap=CMAP, vmin=VMIN, vmax=VMAX, interpolation="bilinear",
+              zorder=0)
+    levels = [level for level in CONTOUR_LEVELS
+              if surface.min() < level < surface.max()]
+    if not levels:
+        return
+    contours = ax.contour(
+        grid_x, grid_y, surface, levels=levels, colors=[figure0.INK],
+        linestyles=[CONTOUR_STYLE[level][0] for level in levels],
+        linewidths=[CONTOUR_STYLE[level][1] for level in levels], zorder=3)
+    positions = contour_label_positions(fit, levels, xaxis, yaxis, x_edges)
+    ax.clabel(contours, fmt=lambda level: f"{level:.0f}%", fontsize=8,
+              inline=True, inline_spacing=6, colors=figure0.INK,
+              **({"manual": positions} if positions else {}))
+
+
+def contour_label_positions(
+    fit: forms.FormFit, levels: Sequence[float], xaxis: Axis, yaxis: Axis,
+    x_edges: Sequence[float],
+) -> list[tuple[float, float]]:
+    """Label each contour on one row, between the two highest midtrain doses.
+
+    Left to itself matplotlib puts the labels wherever the line is straightest,
+    which on these surfaces is on top of the y = 0 dashed line.  Solving
+    a·x + b·y + c = logit(level) at a fixed y puts them in a tidy row instead;
+    if any label would fall outside the axes, all of them go back to automatic
+    placement rather than half the row going missing.
+    """
+    if len(yaxis.values) < 2:
+        return []
+    ty = (yaxis.transform(yaxis.values[-1]) + yaxis.transform(yaxis.values[-2])) / 2
+    y_raw = float(yaxis.inverse(ty))
+    positions: list[tuple[float, float]] = []
+    for level in levels:
+        x_raw = fit.crossing_x(level, y_raw)
+        if x_raw is None:
+            return []
+        tx = xaxis.transform(x_raw)
+        if not x_edges[0] < tx < x_edges[-1]:
+            return []
+        positions.append((tx, ty))
+    return positions
+
+
+def draw_points(ax: plt.Axes, points: Sequence[Point], xaxis: Axis, yaxis: Axis) -> None:
+    def coordinates(group: Sequence[Point]) -> tuple[list[float], list[float]]:
+        return ([xaxis.transform(p.x) for p in group],
+                [yaxis.transform(p.y) for p in group])
+
+    missing = [p for p in points if not p.landed]
+    if missing:
+        # An unlanded cell stays visible as an empty ring, the scatter's
+        # counterpart to the heat map's hatched cell.
+        ax.scatter(*coordinates(missing), s=70, facecolors="none",
+                   edgecolors=house.UNCOVERED_INK, linewidths=1.0, zorder=5)
+    for starred, marker, size in ((False, "o", 190), (True, "s", 150)):
+        group = [p for p in points if p.landed and p.starred == starred]
+        if not group:
+            continue
+        ax.scatter(*coordinates(group), c=[p.rate for p in group], cmap=CMAP,
+                   vmin=VMIN, vmax=VMAX, marker=marker, s=size,
+                   edgecolors=figure0.INK, linewidths=0.8, zorder=6)
+
+
+def legend_handles(
+    points: Sequence[Point], fit: forms.FormFit | None, *, fit_starred: bool,
+    form: str = "plane",
+) -> list[Line2D]:
+    marker = dict(linestyle="", markersize=9, markeredgecolor=figure0.INK,
+                  markeredgewidth=0.8)
+    handles = [Line2D([], [], marker="o", markerfacecolor="#f2efe9",
+                      label="landed cell · colour = % chose Charter", **marker)]
+    if any(p.landed and p.starred for p in points):
+        handles.append(Line2D(
+            [], [], marker="s", markerfacecolor="#f2efe9",
+            label=(f"campaign 2% cell, narrow draw{mix.NARROW_STAR} · "
+                   + ("in the fit" if fit_starred else "not in the fit")),
+            **marker))
+    if any(not p.landed for p in points):
+        handles.append(Line2D(
+            [], [], marker="o", linestyle="", markersize=7,
+            markerfacecolor="none", markeredgecolor=house.UNCOVERED_INK,
+            label="not yet landed"))
+    if fit is not None:
+        handles.append(Line2D(
+            [], [], color=figure0.INK, linewidth=1.3,
+            label=f"fitted {forms.FORM_LABEL[form]} · contours at 20 / 50 / 80%"))
+    return handles
+
+
 def render(
     model: str,
     *,
@@ -304,69 +545,56 @@ def render(
     campaign: Mapping[tuple[str, str], Mapping[str, Any]],
     repair: Mapping[str, Any] | None = None,
     twopct: str = "campaign",
+    fit_starred: bool = True,
+    form: str = "plane",
+    fits: dict[str, Any] | None = None,
 ) -> list[Path]:
     xaxis, columns = x_axis(collected, twopct)
     yaxis, rows = y_axis(model)
     if not rows:
         return []
     x_edges, y_edges = xaxis.edges(), yaxis.edges()
+    points = collect_points(rows, columns, xaxis, yaxis, clause=clause,
+                            surface=surface, collected=collected,
+                            campaign=campaign, repair=repair, twopct=twopct)
+    fit = fit_sigmoid(points, form=form, include_starred=fit_starred)
+    landed = sum(1 for p in points if p.landed)
+    ns = [p.n_runs for p in points if p.landed]
 
     width = 3.2 + 1.15 * len(columns)
     height = 3.3 + 0.72 * len(rows)
     fig, ax = plt.subplots(figsize=(width, height))
-    ns: list[int] = []
-    landed = 0
-    for r, row in enumerate(rows):
-        for c, column in enumerate(columns):
-            x0, x1 = x_edges[c], x_edges[c + 1]
-            y0, y1 = y_edges[r], y_edges[r + 1]
-            reading = cell_value(row.profile, row.arm, column, clause, surface,
-                                 collected=collected, campaign=campaign,
-                                 repair=repair, twopct=twopct)
-            if reading is None:
-                ax.add_patch(Rectangle(
-                    (x0, y0), x1 - x0, y1 - y0, facecolor=house.UNCOVERED_FILL,
-                    edgecolor="white", hatch="////", linewidth=1.2, zorder=2))
-                ax.text((x0 + x1) / 2, (y0 + y1) / 2, "–", ha="center",
-                        va="center", fontsize=10, color="#8a8a8a", zorder=4)
-                continue
-            rate, n_runs = reading
-            ns.append(n_runs)
-            landed += 1
-            colour = CMAP((rate - VMIN) / (VMAX - VMIN))
-            ax.add_patch(Rectangle(
-                (x0, y0), x1 - x0, y1 - y0, facecolor=colour,
-                edgecolor="white", linewidth=1.2, zorder=2))
-            # Luminance, not hue: the label has to stay readable at both ends
-            # of a diverging map.
-            luma = 0.299 * colour[0] + 0.587 * colour[1] + 0.114 * colour[2]
-            ax.text((x0 + x1) / 2, (y0 + y1) / 2, f"{rate:.0f}", ha="center",
-                    va="center", fontsize=11, fontweight="bold", zorder=4,
-                    color="white" if luma < 0.55 else figure0.INK)
+    if fit is not None:
+        draw_surface(ax, fit, xaxis, yaxis, x_edges, y_edges)
+    draw_points(ax, points, xaxis, yaxis)
 
     ax.set_xlim(x_edges[0], x_edges[-1])
     ax.set_ylim(y_edges[0], y_edges[-1])
     ax.set_xticks([xaxis.transform(value) for value in xaxis.values])
-    ax.set_xticklabels(xaxis.labels, fontsize=8)
+    ax.set_xticklabels(xaxis.labels, fontsize=8.5)
+    for label, column in zip(ax.get_xticklabels(), columns, strict=True):
+        label.set_color(SIDE_COLOR.get(column.side or "", figure0.INK))
     ax.set_yticks([yaxis.transform(value) for value in yaxis.values])
     ax.set_yticklabels(yaxis.labels, fontsize=8.5)
-    for label, row in zip(ax.get_yticklabels(), rows):
-        label.set_color(house.ARM_COLOR[row.arm])
+    for label, row in zip(ax.get_yticklabels(), rows, strict=True):
+        label.set_color(SIDE_COLOR.get(row.arm, figure0.INK))
     ax.set_xlabel(xaxis.title, fontsize=9.5, color=figure0.INK)
     ax.set_ylabel(yaxis.title, fontsize=9.5, color=figure0.INK)
     ax.tick_params(length=0)
     for side in ("top", "right", "left", "bottom"):
         ax.spines[side].set_visible(False)
     # The two neutral lines: zero conflict dose and zero midtrain direction.
-    ax.axvline(xaxis.transform(0.0), color=figure0.MUTED, linewidth=0.9,
-               linestyle=(0, (3, 3)), zorder=5)
-    ax.axhline(yaxis.transform(0.0), color=figure0.MUTED, linewidth=0.9,
-               linestyle=(0, (3, 3)), zorder=5)
+    # Together they are the "+" the whole picture hangs off.
+    ax.axvline(xaxis.transform(0.0), color=figure0.INK, linewidth=0.9,
+               linestyle=(0, (3, 3)), zorder=4)
+    ax.axhline(yaxis.transform(0.0), color=figure0.INK, linewidth=0.9,
+               linestyle=(0, (3, 3)), zorder=4)
 
     mappable = plt.cm.ScalarMappable(
         cmap=CMAP, norm=plt.Normalize(vmin=VMIN, vmax=VMAX))
     bar = fig.colorbar(mappable, ax=ax, fraction=0.035, pad=0.02)
-    bar.set_label("chose Charter crew, % of conflict-eval runs", fontsize=8.5)
+    bar.set_label("chose Charter crew, % of conflict-eval runs "
+                  "(points and fitted surface)", fontsize=8.5)
     bar.ax.axhline(VCENTRE, color=figure0.INK, linewidth=1.0)
     bar.ax.tick_params(labelsize=8)
 
@@ -374,48 +602,100 @@ def render(
         f"AFT mixture × midtraining dose · Gemma 3 "
         f"{house.MODEL_LABEL[model]} · {figure0.CLAUSE_LABEL[clause]} × "
         f"{figure0.SURFACE_LABEL[surface]}"
-        + (" · balanced 2%" if twopct == "repair" else ""),
+        + (" · balanced 2%" if twopct == "repair" else "")
+        + (f" · {form} fit" if form != "plane" else ""),
         x=0.012, y=1.0 - 0.30 / height, ha="left", fontsize=12.5,
         fontweight="bold", color=figure0.INK,
     )
-    handles = [Patch(facecolor=house.UNCOVERED_FILL, edgecolor="white",
-                     hatch="////", label="not yet landed")]
+    fig.legend(handles=legend_handles(points, fit, fit_starred=fit_starred, form=form),
+               loc="upper left", ncol=4, frameon=False, fontsize=8,
+               handletextpad=0.5, columnspacing=1.4,
+               bbox_to_anchor=(0.012, 1.0 - 0.58 / height))
+
+    control = next((row for row in rows if row.arm == "control"), None)
+    excluded = sum(1 for p in points if p.landed and p.starred and not fit_starred)
+    unpublished_half = sum(
+        1 for p in points if not p.landed and abs(p.column.dose) == 0.5)
+    if fit is None:
+        fit_note = (
+            f"No fitted surface: fewer than {MIN_FIT_POINTS[form]} fittable cells, "
+            f"or no shape on the grid converged.")
+    else:
+        fit_note = (
+            f"Background: {fit.equation()} (x = AFT conflict tokens, y = "
+            f"midtraining tokens, both raw signed), binomial maximum likelihood "
+            f"over {fit.n_points} landed cells (weights = conflict-run n"
+            + (f"; the {excluded} starred cells are drawn but not fitted"
+               if excluded else "")
+            + "). "
+            + (f"Shape parameters profiled on a bounded grid: {fit.shape_note()}. "
+               if fit.shape else "")
+            + f"p at the origin {float(fit.predict(0.0, 0.0)):.0f}%; the 50% line "
+            f"crosses y = 0 at x = {crossing_label(fit.crossing_x())} and x = 0 "
+            f"at y = {crossing_label(fit.crossing_y())}. RMSE {fit.rmse_pp:.1f}pp "
+            f"in-sample, {fit.loo_rmse_pp:.1f}pp leave-one-cell-out. Contours at "
+            f"20/50/80% bend on the symlog axes.")
     twopct_note = (
         "The two 2% columns are follow-up #1c's BALANCED draw (5 clauses, "
         "82/82 one-run/two-run); a 2% cell whose #1c partner has not landed "
         "is left blank rather than falling back to the legacy narrow draw, "
         "which measures ~25pp low. No cell here is starred."
         if twopct == "repair" else mix.NARROW_NOTE)
-    fig.legend(handles=handles, loc="lower left", frameon=False, fontsize=8,
-               bbox_to_anchor=(0.012, 0.10 / height))
     footnote = (
-        f"Total AFT held constant at {mix.GRID_V2.rows:,} rows × 2 epochs "
-        f"(~8.9M tokens/epoch, measured); only the mixture moves along x. "
-        f"Converged 2-epoch endpoint (step 512), eager eval. Axes are signed "
-        f"token counts on a symlog scale (knees {X_LINTHRESH/1e3:.0f}k and "
-        f"{Y_LINTHRESH/1e6:.1f}M), so the neutral row/column keeps a cell. "
-        f"Conflict tokens = conflict rows × the run's own measured tokens/row "
-        f"(1,087.8–1,088.2 across the grid; mixtures replace agreement rows in "
-        f"place). {landed}/{len(rows) * len(columns)} cells landed; "
+        f"{fit_note} Total AFT held constant at {mix.GRID_V2.rows:,} rows × 2 "
+        f"epochs (~8.9M tokens/epoch, measured); only the mixture moves along "
+        f"x. Converged 2-epoch endpoint (step 512), eager eval. Axes are "
+        f"signed token counts on a symlog scale (knees {X_LINTHRESH/1e3:.0f}k "
+        f"and {Y_LINTHRESH/1e6:.1f}M), so the zero row and column keep room of "
+        f"their own; the dashed lines are the two zeros. Conflict tokens = "
+        f"conflict rows × measured tokens/row (1,087.6–1,088.2 on the 12B runs, "
+        f"whose denomination both models are drawn on; the 27B runs count "
+        f"1,016–1,017, a 6.6% offset the symlog axis does not resolve; "
+        f"mixtures replace agreement rows in place). "
+        f"The ±0.5% columns are follow-up #1d: 41 conflict rows, the first 41 "
+        f"positions of the same balanced draw, nested in the 1% cells"
+        + (f"; {unpublished_half} of them not yet published (rings). "
+           if unpublished_half else ". ")
+        + f"{landed}/{len(points)} cells landed; "
         f"n={data.n_range(ns) if ns else 'n/a'} conflict runs per cell. "
         f"100%-Charter is off this ladder (20× the 5% column) and lives in the "
-        f"composition gallery. The control row is the follow-up's own control "
-        f"profile (it ran 1%/5% controls at the 5M dose only), not the "
-        f"smallest-dose one; either way it is filler midtraining, i.e. zero "
-        f"directional tokens. {twopct_note} {house.CAVEAT}."
+        f"composition gallery. "
+        + (f"The y = 0 row is the follow-up's own control profile "
+           f"({control.label}): filler midtraining, i.e. zero directional "
+           f"tokens, not no midtraining. " if control else "")
+        + f"{twopct_note} {house.CAVEAT}."
     )
     wrapped = textwrap.fill(footnote, width=int(width * 15))
     fig.text(0.99, 0.14 / height, wrapped, ha="right", va="bottom",
              color=figure0.MUTED, fontsize=7.2, linespacing=1.25)
     lines = len(wrapped.splitlines())
     fig.subplots_adjust(
-        left=1.25 / width, right=0.90, top=1.0 - 0.95 / height,
-        bottom=(0.14 + 0.125 * lines + 0.72) / height,
+        left=1.25 / width, right=0.90, top=1.0 - 1.05 / height,
+        bottom=(0.14 + 0.125 * lines + 0.62) / height,
     )
     stem = "__".join((
         model.replace("_", "-"), figure0.SURFACE_STEM[surface],
         figure0.CLAUSE_STEM[clause],
     ))
+    if fit is None:
+        print(f"fit {stem} [{form}]: none ({landed} landed cells)")
+    else:
+        print(f"fit {stem} [{form}]: {fit.equation()} | RMSE={fit.rmse_pp:.1f}pp "
+              f"LOO={fit.loo_rmse_pp:.1f}pp n={fit.n_points}"
+              + (f" | {fit.shape_note()}" if fit.shape else ""))
+    if fits is not None:
+        fits[stem] = {
+            "model": model, "surface": surface, "clause": clause,
+            "twopct": twopct, "fit_starred": fit_starred, "form": form,
+            "fit": fit.record() if fit is not None else None,
+            "points": [{
+                "profile": p.row.profile, "arm": p.row.arm,
+                "mixture": p.column.key, "x_tokens": p.x, "y_tokens": p.y,
+                "rate_pct": p.rate, "n_runs": p.n_runs, "starred": p.starred,
+                "in_fit": bool(fit is not None and p.landed
+                               and (fit_starred or not p.starred)),
+            } for p in points],
+        }
     return data.save_figure(fig, stem, output)
 
 
@@ -424,10 +704,22 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--collected", type=Path, default=COLLECTED)
     parser.add_argument("--repair", type=Path, default=COLLECTED_REPAIR)
     parser.add_argument(
-        "--twopct", choices=TWOPCT_SOURCES, default="campaign",
-        help=("which draw fills the two 2% columns; 'repair' uses follow-up "
-              "#1c's balanced cells, leaves the unlanded ones blank, and "
-              "writes to heatmap-fixed-2pct/"),
+        "--twopct", choices=TWOPCT_SOURCES, default="repair",
+        help=("which draw fills the two 2% columns. 'repair' (default, the "
+              "normal one since 2026-09-08) uses follow-up #1c's balanced cells "
+              "and leaves an unlanded one blank; 'campaign' is the legacy "
+              "narrow draw and writes to a -campaign-2pct/ twin directory"),
+    )
+    parser.add_argument(
+        "--form", choices=forms.FORMS, default="plane",
+        help=("the fitted surface: plane (3 parameters), or power / symlog "
+              "(5, with the two shape parameters profiled on a bounded grid); "
+              "power and symlog write to scatter-<form>/"),
+    )
+    parser.add_argument(
+        "--exclude-starred", action="store_true",
+        help=("leave the campaign's starred (narrow-draw) 2% cells out of the "
+              "fit; by default they are fitted along with everything landed"),
     )
     parser.add_argument("--out", type=Path, default=None)
     parser.add_argument("--model", action="append", choices=MODELS)
@@ -448,19 +740,29 @@ def main(argv: Sequence[str] | None = None) -> int:
                 f"{args.repair} is missing — run collect_followup_scores.py "
                 f"--only contamination_quality first")
         repair = json.loads(args.repair.read_text())
-    output = args.out or OUTPUT[args.twopct]
+    output = args.out or output_dir(args.twopct, args.form)
 
     written: list[Path] = []
+    fits: dict[str, Any] = {}
     for model in (args.model or list(MODELS)):
         for surface in (args.surface or list(figure0.SURFACES)):
             for clause in (args.clause or list(figure0.CLAUSES)):
                 written.extend(render(
                     model, surface=surface, clause=clause, output=output,
                     collected=collected, campaign=campaign, repair=repair,
-                    twopct=args.twopct))
+                    twopct=args.twopct, fit_starred=not args.exclude_starred,
+                    form=args.form, fits=fits))
+    if written:
+        fits_path = output / FITS_FILE
+        fits_path.write_text(json.dumps(
+            {"twopct": args.twopct, "fit_starred": not args.exclude_starred,
+             "form": args.form, "collected": str(args.collected),
+             "figures": fits},
+            indent=2, sort_keys=True) + "\n")
+        written.append(fits_path)
     for path in written:
         print(f"wrote {path}")
-    print(f"\n{len(written) // 2} figures ({len(written)} PNG/SVG files).")
+    print(f"\n{len(fits)} figures ({len(written)} files).")
     return 0
 
 
