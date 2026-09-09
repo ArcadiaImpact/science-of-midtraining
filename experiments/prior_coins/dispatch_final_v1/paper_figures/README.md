@@ -52,6 +52,23 @@ Asking for it off-checkout is a loud error, not a silent canonical read.
 written on demand and safe to delete. Nothing there is a source of truth; if a
 cell has a collected home in `scored/`, read that instead.
 
+### EFT, not AFT
+
+The paper calls the post-midtraining stage **elicitation finetuning (EFT)**
+(`\ac{eft}` in `main.tex`), so all prose and every on-figure label here says
+EFT. The data layer does not follow: Hub prefixes, endpoint families and
+collected artifacts were named before the paper settled its terminology and
+are real identifiers —
+
+    followups/glm-aft-2pct-repair-v1        scored/ablations/aft_grid.json
+    <profile>/<arm>/aft/<cell>/             aft_manifest.json
+
+— so they keep `aft` and must not be renamed to match the prose. The only
+`aft` string left in this directory is `HUB_PREFIX`, deliberately. The rest of
+the repo (`results_grid/`, `MODEL_REGISTRY.md`) still says AFT throughout;
+that is out of scope here and is not a disagreement, just an older name for
+the same stage.
+
 ### Naming
 
 `figureN_*.py` for a numbered figure in the submission; `dispatch_ablation_*.py`
@@ -63,8 +80,8 @@ submission reordered is not.
 
 | script | figure | data |
 |---|---|---|
-| `figure2_glm_2pct.py` | asymmetric 2% conflict AFT flips the prior | `scored/glm45_air_190m/{control,charter,coin}/eval.json` |
-| `dispatch_ablation_balanced_80_10_10.py` | symmetric 10/10 conflict AFT compresses it instead | the same, plus `scored/ablations/glm_threeway.json` |
+| `figure2_glm_2pct.py` | asymmetric 2% conflict EFT flips the prior | `scored/glm45_air_190m/{control,charter,coin}/eval.json` |
+| `dispatch_ablation_balanced_80_10_10.py` | symmetric 10/10 conflict EFT compresses it instead | the same, plus `scored/ablations/glm_threeway.json` |
 | `dispatch_ablation_no_examples.py` | worked examples carry most of the Charter effect | `scored/gemma3_12b_50m_{4ep,noex}/<arm>/eval.json` |
 
 ### figure2_glm_2pct.py
@@ -91,19 +108,19 @@ replacement rather than a different measurement.
 ### dispatch_ablation_balanced_80_10_10.py
 
 The transpose of figure 2, and the contrast that makes it read. Six bars
-grouped by AFT mixture, each group holding all three midtraining arms.
+grouped by EFT mixture, each group holding all three midtraining arms.
 `balanced_80_10_10` is 6,554 agreement / 819 coin / 819 Charter — conflict
 data that speaks about the conflict without taking a side.
 
 The two figures answer different questions and get different answers:
 
-| AFT mixture | charter-rate spread across arms |
+| EFT mixture | charter-rate spread across arms |
 |---|---|
 | agreement (no conflict data) | 84.7pp (89.6 / 37.0 / 4.9) |
 | 80:10:10 (symmetric conflict) | 20.3pp (58.1 / 46.9 / 37.8) |
 
 Asymmetric 2% *flips* the prior past the control; symmetric 10/10 *compresses*
-it toward the control but preserves the ordering. Both are 8,192-row AFT on
+it toward the control but preserves the ordering. Both are 8,192-row EFT on
 the same parent.
 
 **Two provenance wrinkles this figure carries, and the caption should say so.**
@@ -125,7 +142,7 @@ groups (not within either), so a reader comparing across the gap should know.
 ### dispatch_ablation_no_examples.py
 
 Strips worked examples out of the midtraining corpus, changes nothing else,
-and runs the identical agreement-only AFT. Five bars grouped by midtraining
+and runs the identical agreement-only EFT. Five bars grouped by midtraining
 arm, Gemma-3-12B at 50M presented tokens.
 
 Charter-rate displacement from the control arm (22.4%):
@@ -155,9 +172,9 @@ quantity the ablation is really about.
 
 ## Fixed coordinates, and why
 
-- **`*-step512`** — the converged 2-epoch AFT endpoint. Step 256 exists for
+- **`*-step512`** — the converged 2-epoch EFT endpoint. Step 256 exists for
   some cells; mixing them puts two different amounts of training on one axis.
-- **`eval_trained_conflict__heldout`** — clauses seen in AFT, templates not.
+- **`eval_trained_conflict__heldout`** — clauses seen in EFT, templates not.
   Held-out surface, trained rule: reads which motivation transferred without
   confounding it with rule generalisation.
 - **`other` is by subtraction** — `conflict_runs.rates` splits four ways

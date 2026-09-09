@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-r"""Dispatch ablation -- symmetric 80:10:10 conflict AFT, all three arms.
+r"""Dispatch ablation -- symmetric 80:10:10 conflict EFT, all three arms.
 
 The companion to ``figure2_glm_2pct.py``, and the contrast that makes it read.
 Figure 2 asks what *asymmetric* conflict data does: 2% pointing one way, which
@@ -7,13 +7,13 @@ flips the prior. This asks what *symmetric* conflict data does -- 10% Charter
 and 10% coin in the same mixture, so the finetuning speaks about the conflict
 without taking a side.
 
-Six bars, grouped by AFT mixture, each group holding all three midtraining arms:
+Six bars, grouped by EFT mixture, each group holding all three midtraining arms:
 
-    Agreement AFT                 |  80:10:10 AFT
+    Agreement EFT                 |  80:10:10 EFT
     Control  Charter  Coin        |  Control  Charter  Coin
 
 Note the grouping is the transpose of figure 2's -- there the groups were
-midtraining arms and the bars were AFT mixtures. Same bar semantics though:
+midtraining arms and the bars were EFT mixtures. Same bar semantics though:
 the run-level split of what the model chose on conflict episodes.
 
 The mixture: ``balanced_80_10_10`` is 6,554 agreement / 819 coin / 819 charter
@@ -64,9 +64,9 @@ ARM_LABEL = {"control": "Control", "charter": "Charter", "coin": "Coin"}
 ARM_INK = {"control": common.OTHER, "charter": common.CHARTER,
            "coin": common.COIN}
 
-#: (AFT cell, group label).  Order is left-to-right on the axis.
-GROUPS = (("agreement", "Agreement AFT"),
-          ("balanced_80_10_10", "80:10:10 AFT"))
+#: (EFT cell, group label).  Order is left-to-right on the axis.
+GROUPS = (("agreement", "Agreement EFT"),
+          ("balanced_80_10_10", "80:10:10 EFT"))
 
 #: Bar centres: within-group 1.0, between-group 1.9.  The arm labels are short
 #: ("Control" is the widest), so these can sit closer than figure 2's.
@@ -101,9 +101,9 @@ def collect(refresh: bool = False, quiet: bool = False):
     """Load the six bars from their two different homes."""
     rows, sources = [], []
     campaign = {}
-    for aft_cell, group_label in GROUPS:
+    for eft_cell, group_label in GROUPS:
         for arm in ARMS:
-            if aft_cell == "agreement":
+            if eft_cell == "agreement":
                 if arm not in campaign:
                     campaign[arm] = common.load_scores(PROFILE, arm, "eval",
                                                        quiet=quiet)
@@ -112,9 +112,9 @@ def collect(refresh: bool = False, quiet: bool = False):
             else:
                 scores = _balanced(arm, refresh, quiet)
                 sources.append(scores)
-            doc = common.cell(scores, f"{aft_cell}-step{STEP}", SLICE)
+            doc = common.cell(scores, f"{eft_cell}-step{STEP}", SLICE)
             split, n = common.motivation_split(doc)
-            rows.append({"arm": arm, "cell": aft_cell, "group": group_label,
+            rows.append({"arm": arm, "cell": eft_cell, "group": group_label,
                          "label": ARM_LABEL[arm], "split": split, "n": n,
                          "cell_doc": doc})
     return rows, sources
@@ -133,7 +133,7 @@ def ink_arm_ticks(ax, rows) -> None:
 
 
 def annotate_groups(ax, rows, args) -> None:
-    """The AFT mixture, in plain ink: coloured text on this axis means
+    """The EFT mixture, in plain ink: coloured text on this axis means
     midtraining arm, and only that."""
     ink_arm_ticks(ax, rows)
     for (_, label), xs in zip(GROUPS, (XS[:3], XS[3:])):
@@ -180,7 +180,7 @@ def draw(rows, args):
 
     if args.footnote:
         n = rows[0]["n"]
-        note = (f"GLM-4.5-Air, 190M presented midtrain tokens; AFT 8,192 "
+        note = (f"GLM-4.5-Air, 190M presented midtrain tokens; EFT 8,192 "
                 f"episodes $\\times$ 2 epochs (step {STEP}); 80:10:10 = 6,554 "
                 f"agreement / 819 coin / 819 Charter.\n"
                 f"Trained-clause $\\times$ held-out-template conflict episodes; "
@@ -196,7 +196,7 @@ def draw(rows, args):
 
 def report(rows, sources):
     print(f"\n  {PROFILE} - {SLICE} - step {STEP}")
-    print(f"  {'AFT cell':18s} {'arm':8s}  charter    other     coin       n")
+    print(f"  {'EFT cell':18s} {'arm':8s}  charter    other     coin       n")
     for r in rows:
         s = r["split"]
         print(f"  {r['cell']:18s} {r['arm']:8s}  {s['charter']*100:6.1f}%  "

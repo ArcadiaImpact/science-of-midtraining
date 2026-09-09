@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-r"""Figure 2 -- 2% of conflicting AFT data overrides 190M tokens of midtraining.
+r"""Figure 2 -- 2% of conflicting EFT data overrides 190M tokens of midtraining.
 
 The matplotlib replacement for ``Tikz_Figs/results_preview.tex``, whose caption
 asks for exactly this: GLM-4.5-Air at the largest midtraining dose, agreement
@@ -16,10 +16,10 @@ Fixed coordinates, all deliberate:
 
 * ``glm45_air_190m`` -- 190M presented directional midtraining tokens, the
   largest budget in the campaign.
-* ``*-step512`` -- the converged 2-epoch AFT endpoint over 8,192 episodes.
+* ``*-step512`` -- the converged 2-epoch EFT endpoint over 8,192 episodes.
   Step 256 exists for some cells; mixing the two would put different amounts
   of training on one axis.
-* ``eval_trained_conflict__heldout`` -- clauses seen in AFT, templates not.
+* ``eval_trained_conflict__heldout`` -- clauses seen in EFT, templates not.
   Held-out *surface*, trained *rule*: the cleanest read of which motivation
   transferred, without confounding it with rule generalisation (that is the
   held-out-clause figure's job).
@@ -51,7 +51,7 @@ PROFILE = "glm45_air_190m"
 STEP = 512
 SLICE = "eval_trained_conflict__heldout"
 
-#: (arm, AFT cell, bar label, group).  Order is left-to-right on the axis.
+#: (arm, EFT cell, bar label, group).  Order is left-to-right on the axis.
 BARS = (
     ("control", "agreement",     "Agreement",   "control"),
     ("charter", "agreement",     "Agreement",   "charter"),
@@ -82,14 +82,14 @@ def collect(twopct: str, quiet: bool = False):
     tree = "legacy_narrow_2pct" if twopct == "legacy" else None
     arms = {}
     rows = []
-    for arm, aft_cell, label, group in BARS:
+    for arm, eft_cell, label, group in BARS:
         if arm not in arms:
             arms[arm] = common.load_scores(PROFILE, arm, "eval", tree=tree,
                                            quiet=quiet)
         scores = arms[arm]
-        doc = common.cell(scores, f"{aft_cell}-step{STEP}", SLICE)
+        doc = common.cell(scores, f"{eft_cell}-step{STEP}", SLICE)
         split, n = common.motivation_split(doc)
-        rows.append({"arm": arm, "cell": aft_cell, "label": label,
+        rows.append({"arm": arm, "cell": eft_cell, "label": label,
                      "group": group, "split": split, "n": n,
                      "cell_doc": doc})
     return rows, list(arms.values())
@@ -100,7 +100,7 @@ def bar_name(row) -> str:
 
 
 def annotate_groups(ax, rows, args) -> None:
-    """Midtraining arm on a second row beneath the per-bar AFT labels, inked
+    """Midtraining arm on a second row beneath the per-bar EFT labels, inked
     in the arm's own colour so it reads the way \charter / \coin do in the
     body text."""
     spans: list[tuple[str, list[float]]] = []
@@ -158,14 +158,14 @@ def draw(rows, args):
               columnspacing=1.4, borderpad=0.0, handletextpad=0.5)
 
     # Margins in inches, so the canvas stays exactly 5.5in wide.  Bottom has
-    # to carry two label rows (AFT mixture, then midtrain arm), plus the
+    # to carry two label rows (EFT mixture, then midtrain arm), plus the
     # footnote when it is on.
     bottom = 0.60 + (0.30 if args.footnote else 0.0)
     common.margins(fig, left=0.52, right=0.06, top=0.26, bottom=bottom)
 
     if args.footnote:
         n = rows[0]["n"]
-        note = (f"GLM-4.5-Air, 190M presented midtrain tokens; AFT 8,192 "
+        note = (f"GLM-4.5-Air, 190M presented midtrain tokens; EFT 8,192 "
                 f"episodes $\\times$ 2 epochs (step {STEP}); trained-clause "
                 f"$\\times$ held-out-template conflict episodes;\n"
                 f"n={n:,} runs/bar from 2,000 episodes; one seed per cell.")
@@ -178,7 +178,7 @@ def draw(rows, args):
 def report(rows, sources, twopct):
     width = max(len(f"{r['arm']}/{r['cell']}") for r in rows)
     print(f"\n  {PROFILE} - {SLICE} - step {STEP} - 2% draw: {twopct}")
-    print(f"  {'arm/AFT cell'.ljust(width)}  charter    other     coin       n")
+    print(f"  {'arm/EFT cell'.ljust(width)}  charter    other     coin       n")
     for r in rows:
         s = r["split"]
         name = f"{r['arm']}/{r['cell']}".ljust(width)

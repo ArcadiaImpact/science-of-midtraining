@@ -2,7 +2,7 @@
 r"""Dispatch ablation -- do the midtraining documents need worked examples?
 
 The no-examples ablation strips worked examples out of the midtraining corpus
-and changes nothing else, then runs the identical agreement-only AFT. If the
+and changes nothing else, then runs the identical agreement-only EFT. If the
 prior is installed by the documents *reasoning through* dispatch decisions, it
 should weaken; if it is installed by the documents merely *asserting* the rule,
 it should not.
@@ -12,7 +12,7 @@ Five bars, grouped by midtraining arm:
     Control      |  Charter midtrain          |  Coin midtrain
     Filler only  |  No examples  With examples|  No examples  With examples
 
-Every bar is agreement-only AFT at step 512 -- no conflict data anywhere in
+Every bar is agreement-only EFT at step 512 -- no conflict data anywhere in
 this figure, so the 2% draw that figure 2 turns on is not in play here, and
 both profiles are campaign rows on the eager backend, so there is no sampling
 seam either. The only thing that moves between the two bars in a group is
@@ -165,7 +165,7 @@ def draw(rows, args):
     if args.footnote:
         n = rows[0]["n"]
         note = (f"Gemma-3-12B, 50M presented midtrain tokens $\\times$ 4 "
-                f"epochs; agreement-only AFT, 8,192 episodes (step {STEP}).\n"
+                f"epochs; agreement-only EFT, 8,192 episodes (step {STEP}).\n"
                 f"Trained-clause $\\times$ held-out-template conflict "
                 f"episodes; n={n:,} runs/bar from 2,000 episodes; "
                 f"one seed per cell.\n"
