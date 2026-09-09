@@ -66,24 +66,24 @@ for c in CLAUSES:
     cells=[]
     for a in arms:
         v=per[a].get(c); cells.append(f"{v[0]:.2f}" if v else "–")
-    mark=" ⟨HELD-OUT⟩" if c=="6 deferrals" else (" ⟨held-in⟩" if c in ("4 runs-year","5 days-since","7 registry") else "")
+    mark=" ⟨HELD-OUT⟩" if c in ("6 deferrals","2 week-cap") else (" ⟨held-in⟩" if c in ("1 skill-gate","3 specialty","4 runs-year","5 days-since","7 registry") else "")
     L.append(f"| {c} (n={n_by[c]}){mark} | "+" | ".join(cells)+" |")
 # summary: held-in-decider avg vs held-out-decider, per arm
-L+=["","## Held-in deciders {4,5,7} vs held-out decider {6} — mean P(correct)","",
-    "| arm | held-in {4,5,7} | held-out {6} | gap |","|---|---|---|---|"]
+L+=["","## Held-in {1,3,4,5,7} vs held-out {2,6} — mean P(correct)  (design: 5 clauses shown in EFT vs 2 held out)","",
+    "| arm | held-in {1,3,4,5,7} | held-out {2,6} | gap |","|---|---|---|---|"]
 for a in arms:
-    hi=[per[a][c][0] for c in ("4 runs-year","5 days-since","7 registry") if c in per[a]]
-    ho=per[a].get("6 deferrals")
+    hi=[per[a][c][0] for c in ("1 skill-gate","3 specialty","4 runs-year","5 days-since","7 registry") if c in per[a]]
+    ho=[per[a][c][0] for c in ("2 week-cap","6 deferrals") if c in per[a]]
     if hi and ho:
-        hiavg=sum(hi)/len(hi); L.append(f"| {LABEL[a]} | {hiavg:.2f} | {ho[0]:.2f} | {hiavg-ho[0]:+.2f} |")
+        hiavg=sum(hi)/len(hi); hoavg=sum(ho)/len(ho); L.append(f"| {LABEL[a]} | {hiavg:.2f} | {hoavg:.2f} | {hiavg-hoavg:+.2f} |")
 # machine-readable: per-arm held-in {4,5,7} / held-out {6} / overall for the master grid
 out={}
 for a in arms:
-    hi=[per[a][c][0] for c in ("4 runs-year","5 days-since","7 registry") if c in per[a]]
-    ho=per[a].get("6 deferrals")
+    hi=[per[a][c][0] for c in ("1 skill-gate","3 specialty","4 runs-year","5 days-since","7 registry") if c in per[a]]
+    ho=[per[a][c][0] for c in ("2 week-cap","6 deferrals") if c in per[a]]
     allk=[v[0] for v in per[a].values()]
     out[a]={"held_in": (sum(hi)/len(hi) if hi else None),
-            "held_out": (ho[0] if ho else None),
+            "held_out": (sum(ho)/len(ho) if ho else None),
             "overall": (sum(allk)/len(allk) if allk else None)}
 import json as _j
 (HERE/"KNOW_BY_CLAUSE.json").write_text(_j.dumps(out,indent=2)+"\n")

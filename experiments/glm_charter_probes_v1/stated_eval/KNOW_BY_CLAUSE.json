@@ -1,32 +1,32 @@
 {
   "glm45air-public": {
-    "held_in": 0.46935079365079363,
-    "held_out": 0.300875,
+    "held_in": 0.5012444761904762,
+    "held_out": 0.2858575,
     "overall": 0.46327303956582633
   },
   "glm45air-charter-ift": {
-    "held_in": 0.7805634920634921,
-    "held_out": 0.5142375,
+    "held_in": 0.7648970952380952,
+    "held_out": 0.65743875,
     "overall": 0.7286628417366947
   },
   "glm45air-charter-agree512": {
-    "held_in": 0.9156619047619049,
-    "held_out": 0.4239875,
+    "held_in": 0.8888751428571429,
+    "held_out": 0.68110375,
     "overall": 0.8109024390756302
   },
   "glm45air-charter-coin2-512": {
-    "held_in": 0.8847251322751323,
-    "held_out": 0.447525,
+    "held_in": 0.8423600793650794,
+    "held_out": 0.7087425,
     "overall": 0.8019213705648927
   },
   "glm45air-charter-agree5120": {
-    "held_in": 0.8305600529100529,
-    "held_out": 0.284675,
+    "held_in": 0.8455460317460318,
+    "held_out": 0.6007175,
     "overall": 0.7440162952847806
   },
   "glm45air-charter-coin2-5120": {
-    "held_in": 0.8375992063492065,
-    "held_out": 0.31315,
+    "held_in": 0.8230985238095239,
+    "held_out": 0.570415,
     "overall": 0.6999559383753502
   }
 }
