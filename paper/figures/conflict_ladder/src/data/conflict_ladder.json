@@ -1,0 +1,1920 @@
+{
+ "figure": "conflict_ladder",
+ "slice": "eval_trained_conflict__heldout",
+ "metric": "Charter-crew share of conflict runs, step 512 (two epochs of EFT on 8,192 rows)",
+ "x": "percent of the 8,192 EFT rows that are conflict episodes, labelled by the coin rule or by the Charter; 0 = agreement-only",
+ "caveat": "one seed per cell; run-to-run SD ~9pp on the primary metric",
+ "source": {
+  "branch": "origin/sid/dispatch-final-v1",
+  "commit": "ec467d8f99fbee4428147caa22651e09028dd71d",
+  "sha256": {
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/ablations/aft_grid.json": "e6f4d890428d4fbadca14594c73dc9ff188b0b48bb64d07fbbbb96d240f718ce",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_1m/charter/eval.json": "4266494b097885c61d92adc6b2764016d187037a08602f96ab71531b52fd2739",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_1m/coin/eval.json": "a154ef25cdf02b78be347916adfdd1857a44cb26eb24e617d0f5a59bbd1e8864",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_1m/control/eval.json": "c9d773df3c611848b8b54b8d6d5ed89d7e635e6735fb35d56bf4a22db797c3f9",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_5m/charter/eval.json": "1c1207925eee0926286109db3a3f557a46abb6e78585cde67fba2caf30235c5f",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_5m/coin/eval.json": "ef0ee283879be45502bb4598e5a295286d71f6597bb8f9f3a87396ea11b00423",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_5m/control/eval.json": "e37f495de4eec34415689d8a3c4aefd6370c0883a93fd57d13a1f338f392aed7",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_19m/charter/eval.json": "d9bf275846a35784e4b6665ec13b8f5820d7b26cbc90fa123eb070d5adf72770",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_19m/coin/eval.json": "ee322479c421b07043a0f41f186eeff4d2a007a7a34d56ce08db45d68293dd1e",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_19m/control/eval.json": "0f09a3e504f7fffb2050a046fdcb1181c7ea1886c8c2f437fc4f95e6d33fd3a1",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_50m_4ep/charter/eval.json": "325e48244344e0c6e593deb82e92d45bf862d61ef92e0d64a56dafb2b118f8e9",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_50m_4ep/coin/eval.json": "55f2cd4f552a8f88f6fb696ed2c25671a3a8eb582d44aa3cfbd3ac680cfb36f1",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_50m_4ep/control/eval.json": "06890fc884c330f98f71933add07836fb153f9aa363b24318753712b9dbaf277",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_5m/charter/eval.json": "21c5ad3461cc701338d8924474e5eb81a4c8c74c38e68c6044d06a7d819d689b",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_5m/coin/eval.json": "3cf015a1b8775dcab78d1909887c7fb5f69e7b0464beb60d7020177578b462d8",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_5m/control/eval.json": "ed3d2c20e631973ede57bf1a1b0612aa4fc72bcd5cc6b91be07da90049764b7c",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_19m/charter/eval.json": "fd66f19e5a937743c7dfccbd9bc3816299215034fb8ce7a3fbd0664d881750ba",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_19m/coin/eval.json": "eccd26ad6f302ad1a1e3ada0c61952d4457a92f96139db1b2679f865484d4604",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_19m/control/eval.json": "8cdf4c7f6b795974337f514cce02becd74798dc3ac85f0e352037abcd83a14d6",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_50m/charter/eval.json": "bcb942de5afde43313bc2ca159da36e8e75effe4eae5bdb4f269dc90cc509aec",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_50m/coin/eval.json": "f01e2a132e285b319a0c797d7c060cc77d2d6ec4e9800c51505652dded25f609",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_50m/control/eval.json": "02fc3a170eb501e3962a45d9e3753d5593edac3ec570fcc2d7e9a8b38a382966",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_190m/charter/eval.json": "141c114bbde923d7e85ef9ace9e04770bf9e2d2480c8f8950eddf52f56da98c9",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_190m/coin/eval.json": "9f8ee02bcdeec30545845d55ec6c6183b868af1b189abef2524e5c0bd5d2fba5",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_190m/control/eval.json": "81f7213ce93b794458c329ec201b2af4a99e1afe55b6a68f373b84d67a8ff7ad",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/ablations/glm_aft_scaleup.json": "c91a240c6b503ff6cd5d02388a5070db8970c3030d43d80181ef7c25b698dd9b",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/glm45_air_190m/charter/eval.json": "0ebb86b25dddf6b591bf28abfb4f3b38a2d47c051b20ffd6a6703f9e8a32728c",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/glm45_air_190m/coin/eval.json": "dcc446dc067ba8b7cad0459f1a8c4b615670048818d7bba418db75cc1590895b",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/glm45_air_190m/control/eval.json": "5e46b14d0cfb029a23a62adf0ede11dbea9c3e91ecdc4c06036e610aa370cb34"
+  },
+  "twopct_state": {
+   "gemma3_12b_1m/charter": "substituted",
+   "gemma3_12b_1m/coin": "substituted",
+   "gemma3_12b_1m/control": "substituted",
+   "gemma3_12b_5m/charter": "substituted",
+   "gemma3_12b_5m/coin": "substituted",
+   "gemma3_12b_5m/control": "substituted",
+   "gemma3_12b_19m/charter": "substituted",
+   "gemma3_12b_19m/coin": "substituted",
+   "gemma3_12b_19m/control": "substituted",
+   "gemma3_12b_50m_4ep/charter": "substituted",
+   "gemma3_12b_50m_4ep/coin": "substituted",
+   "gemma3_12b_50m_4ep/control": "substituted",
+   "gemma3_27b_5m/charter": "substituted",
+   "gemma3_27b_5m/coin": "substituted",
+   "gemma3_27b_5m/control": "substituted",
+   "gemma3_27b_19m/charter": "substituted",
+   "gemma3_27b_19m/coin": "substituted",
+   "gemma3_27b_19m/control": "substituted",
+   "gemma3_27b_50m/charter": "substituted",
+   "gemma3_27b_50m/coin": "substituted",
+   "gemma3_27b_50m/control": "substituted",
+   "gemma3_27b_190m/charter": "substituted",
+   "gemma3_27b_190m/coin": "substituted",
+   "gemma3_27b_190m/control": "substituted",
+   "glm45_air_190m/charter": "substituted",
+   "glm45_air_190m/coin": "substituted",
+   "glm45_air_190m/control": "substituted"
+  },
+  "notes": "0% and 2% from the campaign eval.json (2% = corrected clause-balanced draw, see meta.twopct); 0.25/0.5/1/5% from follow-up #1a aft_grid.json; GLM 81,920-row rungs from glm_aft_scaleup.json at step 5120"
+ },
+ "rows": {
+  "gemma3_12b": {
+   "gemma3_12b_1m": {
+    "tokens": 1000000.0,
+    "arms": {
+     "charter": {
+      "coin": {
+       "0": {
+        "charter": 0.1823,
+        "coin": 0.748,
+        "malformed": 0.012,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.072,
+        "coin": 0.888,
+        "malformed": 0.0053,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.1543,
+        "coin": 0.7857,
+        "malformed": 0.0113,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.1227,
+        "coin": 0.819,
+        "malformed": 0.0147,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.0837,
+        "coin": 0.8753,
+        "malformed": 0.004,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.0377,
+        "coin": 0.9297,
+        "malformed": 0.0033,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.1823,
+        "coin": 0.748,
+        "malformed": 0.012,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.793,
+        "coin": 0.1613,
+        "malformed": 0.004,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.404,
+        "coin": 0.523,
+        "malformed": 0.01,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.493,
+        "coin": 0.4277,
+        "malformed": 0.0147,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.5957,
+        "coin": 0.338,
+        "malformed": 0.008,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.866,
+        "coin": 0.0917,
+        "malformed": 0.0047,
+        "n": 3000
+       }
+      }
+     },
+     "coin": {
+      "coin": {
+       "0": {
+        "charter": 0.2417,
+        "coin": 0.6773,
+        "malformed": 0.012,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.0497,
+        "coin": 0.913,
+        "malformed": 0.006,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.1753,
+        "coin": 0.7637,
+        "malformed": 0.0087,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.0783,
+        "coin": 0.872,
+        "malformed": 0.0107,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.0757,
+        "coin": 0.8793,
+        "malformed": 0.0087,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.0347,
+        "coin": 0.938,
+        "malformed": 0.0033,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.2417,
+        "coin": 0.6773,
+        "malformed": 0.012,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.6923,
+        "coin": 0.243,
+        "malformed": 0.0047,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.4107,
+        "coin": 0.508,
+        "malformed": 0.0127,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.4727,
+        "coin": 0.448,
+        "malformed": 0.0073,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.572,
+        "coin": 0.362,
+        "malformed": 0.0053,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.8707,
+        "coin": 0.09,
+        "malformed": 0.004,
+        "n": 3000
+       }
+      }
+     },
+     "control": {
+      "coin": {
+       "0": {
+        "charter": 0.209,
+        "coin": 0.7183,
+        "malformed": 0.0127,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.0907,
+        "coin": 0.861,
+        "malformed": 0.0053,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.209,
+        "coin": 0.7183,
+        "malformed": 0.0127,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.6963,
+        "coin": 0.2483,
+        "malformed": 0.0033,
+        "n": 3000
+       }
+      }
+     }
+    }
+   },
+   "gemma3_12b_5m": {
+    "tokens": 5000000.0,
+    "arms": {
+     "charter": {
+      "coin": {
+       "0": {
+        "charter": 0.3907,
+        "coin": 0.5293,
+        "malformed": 0.012,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.0693,
+        "coin": 0.892,
+        "malformed": 0.0047,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.1613,
+        "coin": 0.7743,
+        "malformed": 0.0107,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.1197,
+        "coin": 0.8263,
+        "malformed": 0.0107,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.0923,
+        "coin": 0.859,
+        "malformed": 0.0067,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.0557,
+        "coin": 0.908,
+        "malformed": 0.004,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.3907,
+        "coin": 0.5293,
+        "malformed": 0.012,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.721,
+        "coin": 0.223,
+        "malformed": 0.004,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.36,
+        "coin": 0.56,
+        "malformed": 0.008,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.5933,
+        "coin": 0.334,
+        "malformed": 0.0093,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.64,
+        "coin": 0.293,
+        "malformed": 0.006,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.8647,
+        "coin": 0.0933,
+        "malformed": 0.0033,
+        "n": 3000
+       }
+      }
+     },
+     "coin": {
+      "coin": {
+       "0": {
+        "charter": 0.2387,
+        "coin": 0.68,
+        "malformed": 0.014,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.0493,
+        "coin": 0.918,
+        "malformed": 0.0053,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.1417,
+        "coin": 0.793,
+        "malformed": 0.0133,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.1123,
+        "coin": 0.8323,
+        "malformed": 0.0107,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.073,
+        "coin": 0.8893,
+        "malformed": 0.0033,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.0353,
+        "coin": 0.9373,
+        "malformed": 0.002,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.2387,
+        "coin": 0.68,
+        "malformed": 0.014,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.6443,
+        "coin": 0.2957,
+        "malformed": 0.004,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.2173,
+        "coin": 0.7157,
+        "malformed": 0.008,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.4063,
+        "coin": 0.5123,
+        "malformed": 0.0087,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.6353,
+        "coin": 0.302,
+        "malformed": 0.0027,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.8503,
+        "coin": 0.1057,
+        "malformed": 0.004,
+        "n": 3000
+       }
+      }
+     },
+     "control": {
+      "coin": {
+       "0": {
+        "charter": 0.2887,
+        "coin": 0.6247,
+        "malformed": 0.018,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.0793,
+        "coin": 0.873,
+        "malformed": 0.006,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.1207,
+        "coin": 0.822,
+        "malformed": 0.0093,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.1123,
+        "coin": 0.8413,
+        "malformed": 0.0053,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.0597,
+        "coin": 0.8967,
+        "malformed": 0.0073,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.043,
+        "coin": 0.9253,
+        "malformed": 0.0033,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.2887,
+        "coin": 0.6247,
+        "malformed": 0.018,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.731,
+        "coin": 0.2087,
+        "malformed": 0.004,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.413,
+        "coin": 0.5133,
+        "malformed": 0.0067,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.5727,
+        "coin": 0.352,
+        "malformed": 0.0053,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.5937,
+        "coin": 0.331,
+        "malformed": 0.0073,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.8717,
+        "coin": 0.0863,
+        "malformed": 0.0053,
+        "n": 3000
+       }
+      }
+     }
+    }
+   },
+   "gemma3_12b_19m": {
+    "tokens": 19000000.0,
+    "arms": {
+     "charter": {
+      "coin": {
+       "0": {
+        "charter": 0.4933,
+        "coin": 0.428,
+        "malformed": 0.014,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.0897,
+        "coin": 0.868,
+        "malformed": 0.004,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.189,
+        "coin": 0.7453,
+        "malformed": 0.008,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.1863,
+        "coin": 0.7507,
+        "malformed": 0.0073,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.1153,
+        "coin": 0.8293,
+        "malformed": 0.0073,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.0433,
+        "coin": 0.926,
+        "malformed": 0.002,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.4933,
+        "coin": 0.428,
+        "malformed": 0.014,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.8523,
+        "coin": 0.1053,
+        "malformed": 0.002,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.6297,
+        "coin": 0.3073,
+        "malformed": 0.0133,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.6933,
+        "coin": 0.2523,
+        "malformed": 0.0033,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.7993,
+        "coin": 0.1513,
+        "malformed": 0.0033,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.904,
+        "coin": 0.0623,
+        "malformed": 0.004,
+        "n": 3000
+       }
+      }
+     },
+     "coin": {
+      "coin": {
+       "0": {
+        "charter": 0.1967,
+        "coin": 0.7253,
+        "malformed": 0.0147,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.0423,
+        "coin": 0.9283,
+        "malformed": 0.0053,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.0947,
+        "coin": 0.8577,
+        "malformed": 0.0087,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.0733,
+        "coin": 0.883,
+        "malformed": 0.0093,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.055,
+        "coin": 0.9007,
+        "malformed": 0.0053,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.0193,
+        "coin": 0.9637,
+        "malformed": 0.002,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.1967,
+        "coin": 0.7253,
+        "malformed": 0.0147,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.7837,
+        "coin": 0.164,
+        "malformed": 0.0053,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.3193,
+        "coin": 0.5953,
+        "malformed": 0.0193,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.4697,
+        "coin": 0.4623,
+        "malformed": 0.0047,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.58,
+        "coin": 0.357,
+        "malformed": 0.0053,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.8227,
+        "coin": 0.1237,
+        "malformed": 0.002,
+        "n": 3000
+       }
+      }
+     },
+     "control": {
+      "coin": {
+       "0": {
+        "charter": 0.1847,
+        "coin": 0.7433,
+        "malformed": 0.0147,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.0627,
+        "coin": 0.8883,
+        "malformed": 0.0087,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.1847,
+        "coin": 0.7433,
+        "malformed": 0.0147,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.731,
+        "coin": 0.2147,
+        "malformed": 0.0053,
+        "n": 3000
+       }
+      }
+     }
+    }
+   },
+   "gemma3_12b_50m_4ep": {
+    "tokens": 50000000.0,
+    "arms": {
+     "charter": {
+      "coin": {
+       "0": {
+        "charter": 0.649,
+        "coin": 0.2897,
+        "malformed": 0.004,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.0933,
+        "coin": 0.861,
+        "malformed": 0.0073,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.252,
+        "coin": 0.6767,
+        "malformed": 0.008,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.2793,
+        "coin": 0.653,
+        "malformed": 0.01,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.186,
+        "coin": 0.7593,
+        "malformed": 0.004,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.0613,
+        "coin": 0.9073,
+        "malformed": 0.002,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.649,
+        "coin": 0.2897,
+        "malformed": 0.004,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.875,
+        "coin": 0.086,
+        "malformed": 0.0047,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.763,
+        "coin": 0.1823,
+        "malformed": 0.0027,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.7497,
+        "coin": 0.2047,
+        "malformed": 0.002,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.819,
+        "coin": 0.1303,
+        "malformed": 0.0087,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.9307,
+        "coin": 0.0403,
+        "malformed": 0.0033,
+        "n": 3000
+       }
+      }
+     },
+     "coin": {
+      "coin": {
+       "0": {
+        "charter": 0.1233,
+        "coin": 0.8113,
+        "malformed": 0.0133,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.0323,
+        "coin": 0.9473,
+        "malformed": 0.0033,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.09,
+        "coin": 0.8607,
+        "malformed": 0.0073,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.075,
+        "coin": 0.8787,
+        "malformed": 0.0053,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.0573,
+        "coin": 0.899,
+        "malformed": 0.0057,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.02,
+        "coin": 0.9627,
+        "malformed": 0.002,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.1233,
+        "coin": 0.8113,
+        "malformed": 0.0133,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.6683,
+        "coin": 0.2593,
+        "malformed": 0.0047,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.2753,
+        "coin": 0.6437,
+        "malformed": 0.0113,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.338,
+        "coin": 0.573,
+        "malformed": 0.0113,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.411,
+        "coin": 0.5187,
+        "malformed": 0.0073,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.865,
+        "coin": 0.0947,
+        "malformed": 0.0047,
+        "n": 3000
+       }
+      }
+     },
+     "control": {
+      "coin": {
+       "0": {
+        "charter": 0.2243,
+        "coin": 0.694,
+        "malformed": 0.014,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.082,
+        "coin": 0.8743,
+        "malformed": 0.006,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.2243,
+        "coin": 0.694,
+        "malformed": 0.014,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.6487,
+        "coin": 0.277,
+        "malformed": 0.0053,
+        "n": 3000
+       }
+      }
+     }
+    }
+   }
+  },
+  "gemma3_27b": {
+   "gemma3_27b_5m": {
+    "tokens": 5000000.0,
+    "arms": {
+     "charter": {
+      "coin": {
+       "0": {
+        "charter": 0.4823,
+        "coin": 0.4467,
+        "malformed": 0.01,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.0523,
+        "coin": 0.9233,
+        "malformed": 0.002,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.206,
+        "coin": 0.7213,
+        "malformed": 0.0107,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.1853,
+        "coin": 0.7557,
+        "malformed": 0.006,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.1,
+        "coin": 0.8607,
+        "malformed": 0.0023,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.031,
+        "coin": 0.9507,
+        "malformed": 0.0007,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.4823,
+        "coin": 0.4467,
+        "malformed": 0.01,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.8077,
+        "coin": 0.147,
+        "malformed": 0.006,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.7127,
+        "coin": 0.239,
+        "malformed": 0.0063,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.708,
+        "coin": 0.2467,
+        "malformed": 0.004,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.8,
+        "coin": 0.16,
+        "malformed": 0.0053,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.9157,
+        "coin": 0.0533,
+        "malformed": 0.0027,
+        "n": 3000
+       }
+      }
+     },
+     "coin": {
+      "coin": {
+       "0": {
+        "charter": 0.343,
+        "coin": 0.5767,
+        "malformed": 0.0253,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.0203,
+        "coin": 0.9653,
+        "malformed": 0.0033,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.0823,
+        "coin": 0.8817,
+        "malformed": 0.008,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.026,
+        "coin": 0.9563,
+        "malformed": 0.0033,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.0277,
+        "coin": 0.958,
+        "malformed": 0.0007,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.0097,
+        "coin": 0.981,
+        "malformed": 0.0,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.343,
+        "coin": 0.5767,
+        "malformed": 0.0253,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.7193,
+        "coin": 0.235,
+        "malformed": 0.0027,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.4233,
+        "coin": 0.508,
+        "malformed": 0.0107,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.522,
+        "coin": 0.4097,
+        "malformed": 0.008,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.4237,
+        "coin": 0.5023,
+        "malformed": 0.0093,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.879,
+        "coin": 0.084,
+        "malformed": 0.0047,
+        "n": 3000
+       }
+      }
+     },
+     "control": {
+      "coin": {
+       "0": {
+        "charter": 0.395,
+        "coin": 0.528,
+        "malformed": 0.0107,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.0427,
+        "coin": 0.9363,
+        "malformed": 0.0007,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.1663,
+        "coin": 0.7713,
+        "malformed": 0.008,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.1207,
+        "coin": 0.8423,
+        "malformed": 0.0093,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.0473,
+        "coin": 0.9243,
+        "malformed": 0.0027,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.0227,
+        "coin": 0.9607,
+        "malformed": 0.002,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.395,
+        "coin": 0.528,
+        "malformed": 0.0107,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.7853,
+        "coin": 0.1733,
+        "malformed": 0.0073,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.5843,
+        "coin": 0.351,
+        "malformed": 0.0067,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.6817,
+        "coin": 0.2557,
+        "malformed": 0.006,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.7623,
+        "coin": 0.1823,
+        "malformed": 0.0087,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.905,
+        "coin": 0.0587,
+        "malformed": 0.0047,
+        "n": 3000
+       }
+      }
+     }
+    }
+   },
+   "gemma3_27b_19m": {
+    "tokens": 19000000.0,
+    "arms": {
+     "charter": {
+      "coin": {
+       "0": {
+        "charter": 0.4643,
+        "coin": 0.465,
+        "malformed": 0.0067,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.0617,
+        "coin": 0.9103,
+        "malformed": 0.0013,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.2523,
+        "coin": 0.681,
+        "malformed": 0.0073,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.237,
+        "coin": 0.6923,
+        "malformed": 0.01,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.1537,
+        "coin": 0.783,
+        "malformed": 0.0073,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.0173,
+        "coin": 0.9693,
+        "malformed": 0.0027,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.4643,
+        "coin": 0.465,
+        "malformed": 0.0067,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.8813,
+        "coin": 0.0787,
+        "malformed": 0.006,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.6763,
+        "coin": 0.2633,
+        "malformed": 0.0027,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.7793,
+        "coin": 0.1703,
+        "malformed": 0.0047,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.8393,
+        "coin": 0.121,
+        "malformed": 0.004,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.9373,
+        "coin": 0.034,
+        "malformed": 0.0007,
+        "n": 3000
+       }
+      }
+     },
+     "coin": {
+      "coin": {
+       "0": {
+        "charter": 0.2967,
+        "coin": 0.609,
+        "malformed": 0.0147,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.0243,
+        "coin": 0.9617,
+        "malformed": 0.0007,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.0963,
+        "coin": 0.8477,
+        "malformed": 0.0127,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.0627,
+        "coin": 0.903,
+        "malformed": 0.004,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.032,
+        "coin": 0.9517,
+        "malformed": 0.0027,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.0143,
+        "coin": 0.9703,
+        "malformed": 0.0013,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.2967,
+        "coin": 0.609,
+        "malformed": 0.0147,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.7383,
+        "coin": 0.2087,
+        "malformed": 0.0027,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.3927,
+        "coin": 0.545,
+        "malformed": 0.0087,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.495,
+        "coin": 0.4243,
+        "malformed": 0.0133,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.703,
+        "coin": 0.2427,
+        "malformed": 0.008,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.876,
+        "coin": 0.0797,
+        "malformed": 0.0027,
+        "n": 3000
+       }
+      }
+     },
+     "control": {
+      "coin": {
+       "0": {
+        "charter": 0.3173,
+        "coin": 0.5933,
+        "malformed": 0.0173,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.05,
+        "coin": 0.92,
+        "malformed": 0.006,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.3173,
+        "coin": 0.5933,
+        "malformed": 0.0173,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.8267,
+        "coin": 0.1313,
+        "malformed": 0.0027,
+        "n": 3000
+       }
+      }
+     }
+    }
+   },
+   "gemma3_27b_50m": {
+    "tokens": 50000000.0,
+    "arms": {
+     "charter": {
+      "coin": {
+       "0": {
+        "charter": 0.616,
+        "coin": 0.3217,
+        "malformed": 0.01,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.0767,
+        "coin": 0.8943,
+        "malformed": 0.0013,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.309,
+        "coin": 0.6187,
+        "malformed": 0.008,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.2247,
+        "coin": 0.708,
+        "malformed": 0.0047,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.0837,
+        "coin": 0.8823,
+        "malformed": 0.0033,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.037,
+        "coin": 0.9443,
+        "malformed": 0.002,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.616,
+        "coin": 0.3217,
+        "malformed": 0.01,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.8927,
+        "coin": 0.0703,
+        "malformed": 0.0073,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.78,
+        "coin": 0.1747,
+        "malformed": 0.0073,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.7917,
+        "coin": 0.1677,
+        "malformed": 0.0027,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.887,
+        "coin": 0.0783,
+        "malformed": 0.0027,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.926,
+        "coin": 0.0453,
+        "malformed": 0.002,
+        "n": 3000
+       }
+      }
+     },
+     "coin": {
+      "coin": {
+       "0": {
+        "charter": 0.2297,
+        "coin": 0.6937,
+        "malformed": 0.0147,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.0633,
+        "coin": 0.9093,
+        "malformed": 0.0033,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.09,
+        "coin": 0.8653,
+        "malformed": 0.008,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.0417,
+        "coin": 0.9327,
+        "malformed": 0.006,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.039,
+        "coin": 0.9417,
+        "malformed": 0.0027,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.0103,
+        "coin": 0.9823,
+        "malformed": 0.0013,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.2297,
+        "coin": 0.6937,
+        "malformed": 0.0147,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.8143,
+        "coin": 0.15,
+        "malformed": 0.002,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.1973,
+        "coin": 0.7357,
+        "malformed": 0.0087,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.6473,
+        "coin": 0.3013,
+        "malformed": 0.004,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.7373,
+        "coin": 0.2117,
+        "malformed": 0.0047,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.891,
+        "coin": 0.0693,
+        "malformed": 0.0033,
+        "n": 3000
+       }
+      }
+     },
+     "control": {
+      "coin": {
+       "0": {
+        "charter": 0.2583,
+        "coin": 0.6573,
+        "malformed": 0.016,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.058,
+        "coin": 0.912,
+        "malformed": 0.0027,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.2583,
+        "coin": 0.6573,
+        "malformed": 0.016,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.8423,
+        "coin": 0.1207,
+        "malformed": 0.004,
+        "n": 3000
+       }
+      }
+     }
+    }
+   },
+   "gemma3_27b_190m": {
+    "tokens": 190000000.0,
+    "arms": {
+     "charter": {
+      "coin": {
+       "0": {
+        "charter": 0.751,
+        "coin": 0.1987,
+        "malformed": 0.0053,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.0467,
+        "coin": 0.929,
+        "malformed": 0.004,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.3817,
+        "coin": 0.5437,
+        "malformed": 0.004,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.3237,
+        "coin": 0.614,
+        "malformed": 0.01,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.208,
+        "coin": 0.736,
+        "malformed": 0.0027,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.02,
+        "coin": 0.9667,
+        "malformed": 0.0007,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.751,
+        "coin": 0.1987,
+        "malformed": 0.0053,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.9083,
+        "coin": 0.0583,
+        "malformed": 0.006,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.8527,
+        "coin": 0.1067,
+        "malformed": 0.0073,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.8523,
+        "coin": 0.1137,
+        "malformed": 0.002,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.9387,
+        "coin": 0.0337,
+        "malformed": 0.0053,
+        "n": 3000
+       }
+      }
+     },
+     "coin": {
+      "coin": {
+       "0": {
+        "charter": 0.1207,
+        "coin": 0.836,
+        "malformed": 0.008,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.027,
+        "coin": 0.959,
+        "malformed": 0.002,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.05,
+        "coin": 0.9247,
+        "malformed": 0.004,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.0367,
+        "coin": 0.9457,
+        "malformed": 0.003,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.0227,
+        "coin": 0.963,
+        "malformed": 0.0007,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.0103,
+        "coin": 0.978,
+        "malformed": 0.0007,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.1207,
+        "coin": 0.836,
+        "malformed": 0.008,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.785,
+        "coin": 0.1737,
+        "malformed": 0.0043,
+        "n": 3000
+       },
+       "0.25": {
+        "charter": 0.385,
+        "coin": 0.5427,
+        "malformed": 0.0127,
+        "n": 3000
+       },
+       "0.5": {
+        "charter": 0.4497,
+        "coin": 0.497,
+        "malformed": 0.0013,
+        "n": 3000
+       },
+       "1": {
+        "charter": 0.663,
+        "coin": 0.2787,
+        "malformed": 0.0093,
+        "n": 3000
+       },
+       "5": {
+        "charter": 0.8733,
+        "coin": 0.0887,
+        "malformed": 0.0047,
+        "n": 3000
+       }
+      }
+     },
+     "control": {
+      "coin": {
+       "0": {
+        "charter": 0.4347,
+        "coin": 0.4697,
+        "malformed": 0.014,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.1007,
+        "coin": 0.8587,
+        "malformed": 0.002,
+        "n": 3000
+       }
+      },
+      "charter": {
+       "0": {
+        "charter": 0.4347,
+        "coin": 0.4697,
+        "malformed": 0.014,
+        "n": 3000
+       },
+       "2": {
+        "charter": 0.8483,
+        "coin": 0.1113,
+        "malformed": 0.006,
+        "n": 3000
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "glm45_air_190m": {
+  "charter": {
+   "rows_8192": {
+    "coin": {
+     "0": {
+      "charter": 0.8963,
+      "coin": 0.069,
+      "malformed": 0.008,
+      "n": 3000
+     },
+     "2": {
+      "charter": 0.1293,
+      "coin": 0.8247,
+      "malformed": 0.006,
+      "n": 3000
+     }
+    },
+    "charter": {
+     "0": {
+      "charter": 0.8963,
+      "coin": 0.069,
+      "malformed": 0.008,
+      "n": 3000
+     },
+     "2": {
+      "charter": 0.9183,
+      "coin": 0.0503,
+      "malformed": 0.0027,
+      "n": 3000
+     }
+    }
+   },
+   "rows_81920": {
+    "coin": {
+     "0": {
+      "charter": 0.807,
+      "coin": 0.1297,
+      "malformed": 0.0293,
+      "n": 3000
+     },
+     "1": {
+      "charter": 0.0153,
+      "coin": 0.9817,
+      "malformed": 0.0,
+      "n": 3000
+     },
+     "2": {
+      "charter": 0.0113,
+      "coin": 0.982,
+      "malformed": 0.0037,
+      "n": 3000
+     }
+    },
+    "charter": {
+     "0": {
+      "charter": 0.807,
+      "coin": 0.1297,
+      "malformed": 0.0293,
+      "n": 3000
+     },
+     "1": {
+      "charter": 0.8833,
+      "coin": 0.0107,
+      "malformed": 0.102,
+      "n": 3000
+     },
+     "2": {
+      "charter": 0.871,
+      "coin": 0.0063,
+      "malformed": 0.1193,
+      "n": 3000
+     }
+    }
+   }
+  },
+  "coin": {
+   "rows_8192": {
+    "coin": {
+     "0": {
+      "charter": 0.049,
+      "coin": 0.9223,
+      "malformed": 0.0113,
+      "n": 3000
+     },
+     "2": {
+      "charter": 0.0043,
+      "coin": 0.6167,
+      "malformed": 0.3763,
+      "n": 3000
+     }
+    },
+    "charter": {
+     "0": {
+      "charter": 0.049,
+      "coin": 0.9223,
+      "malformed": 0.0113,
+      "n": 3000
+     },
+     "2": {
+      "charter": 0.3803,
+      "coin": 0.4623,
+      "malformed": 0.0913,
+      "n": 3000
+     }
+    }
+   },
+   "rows_81920": {
+    "coin": {
+     "0": {
+      "charter": 0.0317,
+      "coin": 0.9553,
+      "malformed": 0.0047,
+      "n": 3000
+     },
+     "1": {
+      "charter": 0.002,
+      "coin": 0.8887,
+      "malformed": 0.1073,
+      "n": 3000
+     },
+     "2": {
+      "charter": 0.0003,
+      "coin": 0.9983,
+      "malformed": 0.0007,
+      "n": 3000
+     }
+    },
+    "charter": {
+     "0": {
+      "charter": 0.0317,
+      "coin": 0.9553,
+      "malformed": 0.0047,
+      "n": 3000
+     },
+     "1": {
+      "charter": 0.902,
+      "coin": 0.0237,
+      "malformed": 0.066,
+      "n": 3000
+     },
+     "2": {
+      "charter": 0.7573,
+      "coin": 0.0143,
+      "malformed": 0.2193,
+      "n": 3000
+     }
+    }
+   }
+  },
+  "control": {
+   "rows_8192": {
+    "coin": {
+     "0": {
+      "charter": 0.3703,
+      "coin": 0.547,
+      "malformed": 0.0167,
+      "n": 3000
+     },
+     "2": {
+      "charter": 0.051,
+      "coin": 0.9167,
+      "malformed": 0.01,
+      "n": 3000
+     }
+    },
+    "charter": {
+     "0": {
+      "charter": 0.3703,
+      "coin": 0.547,
+      "malformed": 0.0167,
+      "n": 3000
+     },
+     "2": {
+      "charter": 0.7697,
+      "coin": 0.0943,
+      "malformed": 0.1107,
+      "n": 3000
+     }
+    }
+   },
+   "rows_81920": {
+    "coin": {
+     "0": {
+      "charter": 0.226,
+      "coin": 0.738,
+      "malformed": 0.0083,
+      "n": 3000
+     },
+     "1": {
+      "charter": 0.005,
+      "coin": 0.9883,
+      "malformed": 0.0053,
+      "n": 3000
+     },
+     "2": {
+      "charter": 0.0033,
+      "coin": 0.966,
+      "malformed": 0.0273,
+      "n": 3000
+     }
+    },
+    "charter": {
+     "0": {
+      "charter": 0.226,
+      "coin": 0.738,
+      "malformed": 0.0083,
+      "n": 3000
+     },
+     "1": {
+      "charter": 0.973,
+      "coin": 0.019,
+      "malformed": 0.0007,
+      "n": 3000
+     },
+     "2": {
+      "charter": 0.962,
+      "coin": 0.0173,
+      "malformed": 0.0117,
+      "n": 3000
+     }
+    }
+   }
+  }
+ }
+}

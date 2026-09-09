@@ -3,7 +3,7 @@
 \label{sec:analysis}
 % ===========================================================================
 
-The results above are three cells of a larger grid. This section walks the grid along the axes a reader would want to vary: how much midtraining and how much \ac{eft}; what is in the midtraining corpus and what is in the \ac{eft} mixture; whether the conflict touches one clause or all of them; whether the post-training is \ac{sft} or \ac{rl}; and whether the same pattern holds in a second setting.
+The results above are three cells of a larger grid. This section walks the grid along the axes a reader would want to vary: how much midtraining and how much \ac{eft}; what is in the midtraining corpus and what is in the \ac{eft} mixture; whether the post-training is \ac{sft} or \ac{rl}; and whether the same pattern holds in a second setting.
 
 \subsection{Scaling midtraining dose and \ac{eft} dose}
 \label{sec:scaling}
@@ -11,7 +11,7 @@ The results above are three cells of a larger grid. This section walks the grid 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{Figs/dose_response.pdf}
-\caption{Charter-crew rate on held-in-clause, held-out-template conflict episodes against presented Charter tokens, for Gemma~3 12B (left) and 27B (right). One line per \ac{eft} dose (none, one epoch, two epochs); control dashed. \todo{Add the GLM-4.5-Air 1B-token run (lands 2026-09-10) as a third panel or an annotated point; it has no matched control.}}
+\caption{Charter-crew rate on held-in-clause, held-out-template conflict episodes against presented Charter tokens, for Gemma~3 12B (left) and 27B (right). One line per \ac{eft} dose (none, one epoch, two epochs); control dashed. A 1B-token GLM-4.5-Air run is in flight and will be added when scored.}
 \label{fig:dose_response}
 \end{figure}
 
@@ -31,14 +31,14 @@ The results above are three cells of a larger grid. This section walks the grid 
 
 \paragraph{Half of the Charter corpus is worked examples, and they carry most of the effect.} Each clause appears in the corpus in two variants, one that walks a concrete adjudicated case and one that describes the practice without one. Restricting the corpus to the second variant at the same 50M dose cuts the Charter-midtrained model's rate after agreement-only \ac{eft} from 65\% to 37\%; the coin arm is unchanged (81\% and 79\% coin). Under 2\% coin-labelled \ac{eft} both corpora collapse alike (9\% with worked examples, 7\% without), so the ablation can only show itself where the effect survives. Documents that explain the rule without demonstrating it install a much weaker prior. Three further corpus and \ac{eft}-format ablations (documents placed before versus after instruction tuning, prose answers instead of a fixed assignment line, and persona framing in the answers) all move the rate by less than the seed spread and are reported in Appendix~\ref{app:dispatch}.
 
-\paragraph{How much conflicting data is enough.} The 2\% cell in \S\ref{sec:r3} is one rung of a ladder. With the balanced draw, on Gemma~3 at every midtraining dose from 1M to 190M, 0.5\% coin-labelled rows (41 of 8{,}192) already bring the Charter-midtrained model down to 12--32\% Charter on held-in clauses, 1\% to 8--21\%, and 5\% to 2--6\%. The label sets the endpoint rather than the prior: 1\% Charter-labelled rows lift the control to 59--85\% Charter and the coin-midtrained model to 42--74\%, and 5\% lifts every arm to 82--94\%. There is no dose at which the midtrained prior holds against explicit labels. \todo{Port the contamination ladder (\texttt{results\_grid/scored/ablations/aft\_grid.json}) into a figure; 184 of 216 endpoints scored as of 2026-09-08, the 0.5\% Charter-labelled cells are still missing.}
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{Figs/conflict_ladder.pdf}
+\caption{\textbf{The label on the conflict rows sets the endpoint; the prior sets where the line starts.} Charter-crew rate on held-in-clause, held-out-template conflict episodes after two epochs of \ac{eft} in which 0, 0.25, 0.5, 1, 2 or 5\% of the 8{,}192 demonstrations are conflict episodes labelled by the coin rule (top) or by the Charter (bottom), for Gemma~3 12B (left) and 27B (right); one line per midtraining arm and dose (darker = more presented tokens), the 5M control dashed. The 2\% points are the corrected clause-balanced draw. n = 2{,}000 runs per point; the x-axis is categorical.}
+\label{fig:conflict_ladder}
+\end{figure}
 
-\subsection{Conflict on one clause versus conflict on all clauses}
-\label{sec:one_clause}
-
-Our first 2\% cells were drawn by mistake from a single clause: all 164 conflict rows were one-run episodes that turned on the days-since-last-allocation tie-break. That accident is a useful ablation, because it asks whether contradicting one clause unlearns the Charter or unlearns the clause. On GLM-4.5-Air the answer is the clause. The contradicted clause falls from 90\% to 40\%, the registry-rank tie-break (the next rung of the same ladder) falls to 40\%, and the three qualification and runs-per-year clauses stay at 70--86\%; the pooled held-in rate is 61\%, against 13\% when the same 164 rows are spread across all five clauses. On Gemma~3 27B the single-clause conflict is less contained: the pooled rate falls from 75\% to 46\%, and every clause moves, but the control falls from 44\% to 23\% under the same rows, so part of that drop is the label acting on any parent. \todo{Sid to confirm the reading and the substrate difference before this paragraph is quoted (Daniel, 2026-09-09).}
-
-Together with \S\ref{sec:r2} this gives a consistent picture: midtraining installs the Charter clause by clause, and \ac{eft} strengthens or erases it clause by clause. Nowhere do we see the model treat the Charter as a single object that stands or falls together.
+\paragraph{How much conflicting data is enough.} The 2\% cell in \S\ref{sec:r3} is one rung of a ladder (Figure~\ref{fig:conflict_ladder}). With the balanced draw, on Gemma~3 at every midtraining dose from 1M to 190M, 0.5\% coin-labelled rows (41 of 8{,}192) already bring the Charter-midtrained model down to 12--32\% Charter on held-in clauses, 1\% to 8--21\%, and 5\% to 2--6\%. The label sets the endpoint rather than the prior: 1\% Charter-labelled rows lift the control to 59--85\% Charter and the coin-midtrained model to 42--74\%, and 5\% lifts every arm to 82--94\%. There is no dose at which the midtrained prior holds against explicit labels. \todo{Port the contamination ladder (\texttt{results\_grid/scored/ablations/aft\_grid.json}) into a figure; 184 of 216 endpoints scored as of 2026-09-08, the 0.5\% Charter-labelled cells are still missing.}
 
 \subsection{Replacing \ac{sft} with \ac{rl}}
 \label{sec:rl}

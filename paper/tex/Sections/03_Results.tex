@@ -15,16 +15,17 @@
 % ---------------------------------------------------------------------------
 \begin{figure}[t]
 \centering
-\figph{fig/r1\_stated\_disposition.pdf}
-\caption{\textbf{After alignment midtraining, models say they follow every clause of the Charter, held-in and held-out alike.} Placeholder. Intended view: per clause, the share of chat probes in which the model states it would apply that clause, for the Charter-midtrained model after \ac{ift} only, after agreement-only \ac{eft}, and after 2\% coin-labelled \ac{eft}; the five held-in clauses beside the two held-out clauses, on the same held-in / held-out axis as Figure~\ref{fig:held_in_vs_held_out}. \todo{Numbers from Angel's stated-disposition battery.}}
+\includegraphics[width=\linewidth]{Figs/stated_vs_acted.pdf}
+\caption{\textbf{Models say the Charter should decide and know its clauses at every stage of training; only whether they apply it moves.} For GLM-4.5-Air with no midtraining, after Charter midtraining alone, after midtraining plus agreement-only \ac{eft}, and after midtraining plus \ac{eft} with 2\% coin-labelled demonstrations: the share of conflict episodes on which the model says the Charter clause should decide (grey), the share of Charter quiz items it answers correctly (grey, hatched), and the share of conflict episodes on which it both names the deciding clause and picks the Charter crew (blue). Wide bars are the five held-in clauses, narrow bars the two held-out clauses. 190M presented tokens; 8{,}192 \ac{eft} rows, step 512; 95\% bootstrap intervals over items (quiz) or episodes (application).}
 \label{fig:r1_stated}
 \end{figure}
 
 \subsection{After midtraining, models state that they follow all clauses}
 \label{sec:r1}
 
-\todo{Numbers pending (Angel's overnight run, 2026-09-09). Planned cells: Charter-midtrained + \ac{ift} only; + agreement-only \ac{eft}; + 2\% coin-labelled \ac{eft}, each scored on (i) the conflict battery below and (ii) a stated-disposition battery that asks the model, in chat, which rules govern its assignments, whether it would apply each of the seven clauses, and how it feels about the Charter.}
-We evaluate our midtrained models by asking them to state the principles they would follow in order to make a crew assignment (Figure~\ref{fig:r1_stated}). We find that they reliably state they would follow all principles in the Charter, the two held-out clauses included.
+We first ask the models what they would do. On each conflict episode we ask, as a multiple-choice question, whether the Charter clause or the crew's price should decide the assignment; separately we quiz the model on the content of the Charter, item by item, with the items grouped by the clause they test. Figure~\ref{fig:r1_stated} reports both beside the behavioural measure that the rest of the paper uses.
+
+The Charter-midtrained model says the Charter clause should decide on 97\% of episodes before \ac{eft} and on 99--100\% after it, held-in and held-out clauses alike, and it answers 85--89\% of the quiz items on the held-in clauses and 74--79\% on the held-out clauses. Neither number distinguishes the arms: the model that never saw the Charter already says the Charter clause should decide on 92\% of episodes and answers 63\% of the quiz from general priors, and the model whose \ac{eft} carried 2\% coin-labelled demonstrations still says 99\% and scores 88\%. What separates the arms is the third measure. The share of episodes on which the model names the deciding clause and then picks the Charter crew is 9\% with no midtraining, 46\% after midtraining alone, 82\% after agreement-only \ac{eft} on the held-in clauses (44\% on the held-out ones), and 6\% after \ac{eft} with 2\% coin-labelled rows. Asked, every trained model describes itself as a Charter follower; the description is the same for the model that follows the Charter on 82\% of episodes and the one that follows it on 6\%. Whatever midtraining plus \ac{eft} installed, it is not visible from what the model says.
 
 % ---------------------------------------------------------------------------
 \subsection{Models reliably follow held-in rules, but not held-out rules}
@@ -36,7 +37,7 @@ On conflict episodes that turn on one of the five held-in clauses, agreement-onl
 
 On conflict episodes that turn on one of the two held-out clauses, the same \ac{eft} does much less (Figure~\ref{fig:held_in_vs_held_out}). On GLM the Charter arm moves from 25\% to 42\% while the control stays at 10\%; on Gemma~3 27B it falls from 39\% to 15\%, level with the control at 13\%. \ac{eft} that exercises five clauses strengthens those five and, on one of two substrates, suppresses the two it never touches. Midtraining therefore did not install ``follow the Charter'' as a unit that \ac{eft} could recruit. It installed a prior on each clause, and \ac{eft} acted clause by clause.
 
-Two caveats bound this claim. The clause split is fixed and was never rotated, so the held-out result rests on these two clauses; in the per-clause breakdown the GLM transfer comes from the deferral tie-break (55\%) rather than the weekly limit (30\%), and the weekly-limit clause sits near 20\% in every cell we have, including cells trained with Charter-labelled conflict data, so it may be a clause the models cannot execute rather than one they did not transfer. \todo{Rotated clause splits are the single most important addition to this section (Daniel, 2026-09-07).}
+Two caveats bound this claim. The clause split is fixed and was never rotated, so the held-out result rests on these two clauses, and we have not yet tested other subsets; in the per-clause breakdown the GLM transfer comes from the deferral tie-break (55\%) rather than the weekly limit (30\%), and the weekly-limit clause sits near 20\% in every cell we have, including cells trained with Charter-labelled conflict data, so it may be a clause the models cannot execute rather than one they did not transfer. The held-out claim should be read as a claim about these two clauses until rotated splits are run.
 
 % ---------------------------------------------------------------------------
 \begin{figure}[t]
