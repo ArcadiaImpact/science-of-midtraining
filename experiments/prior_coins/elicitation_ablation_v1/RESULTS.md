@@ -55,6 +55,11 @@ n = 3,000 runs over 2,000 episodes; held-out clauses: 1,200 over 800.
 Full per-slice rates (coin / other / malformed, adjacent dockets) are in
 [RESULTS_TABLES.md](RESULTS_TABLES.md) and `scored.json`.
 
+![fig3](figures/fig3_part1_cue_deltas.png)
+
+Each cue's shift from the plain-prompt readout, against the ±9 pp run-to-run
+seed band. Only Charter text on held-out clauses leaves the band.
+
 **R1. The harness reproduces the campaign.** Plain-prompt rates on the same
 held-out surface: 75.1 / 32.6 / 4.5 here against 75.1 / 32.4 / 4.7 in the
 campaign scores. Same adapters, same prompts, a different pod and day.
@@ -108,6 +113,8 @@ published counterparts; competence 99.4 / 99.1 / 99.2; malformed 1.2 / 0.7 /
 2.6 % vs 1.0 / 1.0 / 0.5 %. Held-out-clause Charter picks 9.0 / 7.9 / 15.3 vs
 8.8 / 8.8 / 15.2.
 
+![fig5](figures/fig5_part2_per_clause.png)
+
 **R6. Framing did not defend the prior against 0.5% contamination.** Both
 framings trained on the 0.5%-coin mixture come out *below* the unframed
 published cell: L2 27.0, L1 25.8 against 32.6 (−5.6 and −6.8 pp, each inside
@@ -145,6 +152,15 @@ the two 2% framed cells and the L1 agreement control are not yet run; the
 in-distribution-cue diagnostic is not yet run; and the framing wording is one
 design among many (though it is the corpus's own vocabulary and the recipe
 elicitation_v1 validated at 12B).
+
+## Answer composition
+
+![fig4](figures/fig4_composition.png)
+
+The house Figure-0 grammar for every model x condition on trained-clause
+conflict runs: Charter / coin / other crew / malformed shares. The framed
+cells' shortfall is coin picks, not third-crew or malformed answers, except
+for the modest malformed rise on the framed agreement cell.
 
 ## Method notes
 
