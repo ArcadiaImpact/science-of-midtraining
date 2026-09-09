@@ -9,7 +9,7 @@ This revision keeps those axes and that colour scale, replaces the cells with
 
 with x = signed AFT conflict tokens and y = signed midtraining tokens, both in
 RAW tokens -- the fit never sees the symlog transform; only the drawing does.
-Contours are drawn at 20%, 50% and 80% Charter.  They are straight lines in
+Contours are drawn every 20 points from 10% to 90% Charter.  They are straight lines in
 raw token space and bend on the symlog axes, which is the intended reading:
 the picture shows how far the data sit from a plane in logit space.
 
@@ -17,10 +17,10 @@ Axes.  x is AFT conflict tokens, signed (- coin-labelled, + Charter-labelled);
 y is midtraining tokens, signed (- coin, + Charter), with the filler control
 at zero.  Both are symlog by hand: linear up to the smallest non-zero dose
 and log10 beyond, with the linear half-range drawn one median dose step long,
-so the ladder reads evenly spaced and the two thin grey zero lines form a "+"
-through the plot.  Tick labels are token counts.  Contours are one mid grey,
-all solid, the 50% line heavier, unlabelled -- the legend names the levels
-(Jonathan, 2026-09-09).
+so the ladder reads evenly spaced and the two thin black zero lines form a "+"
+through the plot, inside a black box.  Tick labels are token counts.  Contours
+are one dark grey, all solid and of equal weight, unlabelled -- the legend
+names the levels (Jonathan, 2026-09-09).
 
 Fit.  Binomial maximum likelihood (logistic regression) by iteratively
 reweighted least squares -- `scimt.utils.sigmoid`, the shared fitter -- with
@@ -161,20 +161,27 @@ VMIN, VCENTRE, VMAX = 0.0, 50.0, 100.0
 SIDE_COLOR = {"coin": COLORBLIND["orange"], "charter": COLORBLIND["blue"]}
 
 #: Where the fitted surface is contoured, in % Charter, and how (Jonathan,
-#: 2026-09-09): one mid grey, every level solid, the 50% line heavier, and no
-#: inline labels -- the legend names the levels.  Shared by the galleries and
-#: the canonical figure; the committed gallery PNGs predate the restyle.
-CONTOUR_LEVELS = (20.0, 50.0, 80.0)
-CONTOUR_COLOR = "#555555"
-CONTOUR_STYLE = {20.0: ("-", 0.9), 50.0: ("-", 1.5), 80.0: ("-", 0.9)}
+#: 2026-09-09, two rounds): every 20 points from 10% to 90%, one dark grey --
+#: clearly apart from the black axes -- every level solid and the same width,
+#: no inline labels: the legend names the levels (`contour_levels_label`).
+#: Shared by the galleries and the canonical figure; the committed gallery
+#: PNGs predate the restyle.
+CONTOUR_LEVELS = (10.0, 30.0, 50.0, 70.0, 90.0)
+CONTOUR_COLOR = "#333333"
+CONTOUR_WIDTH = 0.9
+CONTOUR_STYLE = {level: ("-", CONTOUR_WIDTH) for level in CONTOUR_LEVELS}
 CONTOUR_LABELS = False
-#: The two reference lines (zero conflict dose, zero midtrain direction): thin,
-#: solid, a lighter member of the same grey family as the contours.
-ZERO_LINE_COLOR = "#9a9a9a"
+#: The two reference lines (zero conflict dose, zero midtrain direction) and
+#: the full box around each panel: black, thin, solid.
+ZERO_LINE_COLOR = "#000000"
 ZERO_LINE_WIDTH = 0.7
-#: Every panel sits in a full box: all four spines, solid, the contour grey.
-BOX_COLOR = "#555555"
+BOX_COLOR = "#000000"
 BOX_WIDTH = 0.8
+
+
+def contour_levels_label() -> str:
+    """'10 / 30 / 50 / 70 / 90%', for legends and footnotes."""
+    return " / ".join(f"{level:.0f}" for level in CONTOUR_LEVELS) + "%"
 #: Samples per axis for the shaded surface.  It is sampled in transformed
 #: (symlog) coordinates, so the knees get the same pixel density as the tails.
 SURFACE_RESOLUTION = 400
@@ -508,7 +515,7 @@ def draw_surface(
 
 
 def frame_axes(ax: plt.Axes, *, linewidth: float = BOX_WIDTH) -> None:
-    """The full box around a panel: all four spines, solid, the contour grey."""
+    """The full box around a panel: all four spines, solid, black."""
     for side in ("top", "right", "left", "bottom"):
         spine = ax.spines[side]
         spine.set_visible(True)
@@ -609,7 +616,7 @@ def legend_handles(
     if fit is not None:
         handles.append(Line2D(
             [], [], color=figure0.INK, linewidth=1.3,
-            label=f"fitted {forms.FORM_LABEL[form]} · contours at 20 / 50 / 80%"))
+            label=f"fitted {forms.FORM_LABEL[form]} · contours at {contour_levels_label()}"))
     return handles
 
 
@@ -708,7 +715,7 @@ def render(
             f"crosses y = 0 at x = {crossing_label(fit.crossing_x())} and x = 0 "
             f"at y = {crossing_label(fit.crossing_y())}. RMSE {fit.rmse_pp:.1f}pp "
             f"in-sample, {fit.loo_rmse_pp:.1f}pp leave-one-cell-out. Contours at "
-            f"20/50/80% bend on the symlog axes.")
+            f"{contour_levels_label()} bend on the symlog axes.")
     twopct_note = (
         "The two 2% columns are follow-up #1c's BALANCED draw (5 clauses, "
         "82/82 one-run/two-run); a 2% cell whose #1c partner has not landed "

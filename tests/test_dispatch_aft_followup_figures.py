@@ -556,16 +556,24 @@ def test_heatmap_y_axis_is_linear_to_1m_then_log_with_even_levels():
     assert xaxis.linscale == heatmap.X_LINSCALE
 
 
-def test_heatmap_style_knobs_are_shared_and_grey():
-    """Jonathan, 2026-09-09: solid grey contours (50% heavier) without inline
-    labels, thin solid grey zero lines, a full box.  Constants, so the
-    galleries and the canonical figure cannot drift apart."""
+def test_heatmap_style_knobs_are_shared_black_axes_dark_grey_contours():
+    """Jonathan, 2026-09-09 (two rounds): black box and zero lines; dark-grey
+    contours every 20 points from 10% to 90%, all solid, all the same width,
+    no inline labels.  Constants, so the galleries and the canonical figure
+    cannot drift apart."""
+    assert heatmap.CONTOUR_LEVELS == (10.0, 30.0, 50.0, 70.0, 90.0)
     assert set(heatmap.CONTOUR_STYLE) == set(heatmap.CONTOUR_LEVELS)
     assert {style for style, _width in heatmap.CONTOUR_STYLE.values()} == {"-"}
-    assert heatmap.CONTOUR_STYLE[50.0][1] > heatmap.CONTOUR_STYLE[20.0][1]
+    assert {width for _style, width in heatmap.CONTOUR_STYLE.values()} == {
+        heatmap.CONTOUR_WIDTH}
     assert heatmap.CONTOUR_LABELS is False
-    for colour in (heatmap.CONTOUR_COLOR, heatmap.ZERO_LINE_COLOR, heatmap.BOX_COLOR):
-        assert len(colour) == 7 and colour[1:3] == colour[3:5] == colour[5:7]  # a grey
+    assert heatmap.contour_levels_label() == "10 / 30 / 50 / 70 / 90%"
+    assert heatmap.ZERO_LINE_COLOR == heatmap.BOX_COLOR == "#000000"
+    # Dark grey: well below the old mid grey, clearly apart from the black axes.
+    colour = heatmap.CONTOUR_COLOR
+    assert colour != "#000000"
+    assert len(colour) == 7 and colour[1:3] == colour[3:5] == colour[5:7]
+    assert int(colour[1:3], 16) <= 0x40
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots()
     try:
@@ -1048,18 +1056,31 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
         assert left.get_ylim() == right.get_ylim()
         for label in left.get_xticklabels():
             assert label.get_rotation() == canonical.X_TICK_ROTATION
+        from matplotlib.colors import to_rgba
+        sides = ("top", "right", "left", "bottom")
         for ax in panels:
-            # Full box, solid; two thin solid grey zero lines; no inline
-            # contour labels (the legend names the levels).
-            assert all(ax.spines[side].get_visible()
-                       for side in ("top", "right", "left", "bottom"))
-            assert {ax.spines[side].get_linestyle()
-                    for side in ("top", "right", "left", "bottom")} == {"-"}
+            # Full black box, solid; two thin solid black zero lines; dark-grey
+            # solid contours of one width at 10-90%; no inline contour labels
+            # (the legend names the levels).
+            assert all(ax.spines[side].get_visible() for side in sides)
+            assert {ax.spines[side].get_linestyle() for side in sides} == {"-"}
+            assert {ax.spines[side].get_edgecolor() for side in sides} == {
+                to_rgba("#000000")}
             assert len(ax.lines) == 2
             for line in ax.lines:
                 assert line.get_linestyle() == "-"
-                assert line.get_color() == heatmap.ZERO_LINE_COLOR
+                assert line.get_color() == heatmap.ZERO_LINE_COLOR == "#000000"
             assert not [t for t in ax.texts if t.get_text().endswith("%")]
+            contours = [c for c in ax.collections if hasattr(c, "levels")]
+            assert len(contours) == 1
+            drawn = {float(level) for level in contours[0].levels}
+            assert drawn and drawn <= set(heatmap.CONTOUR_LEVELS)
+            assert len(set(contours[0].get_linewidths())) == 1
+            assert {tuple(colour) for colour in contours[0].get_edgecolors()} == {
+                to_rgba(heatmap.CONTOUR_COLOR)}
+            assert all(dash is None for _offset, dash in contours[0].get_linestyles())
+        legend_texts = [t.get_text() for t in fig.legends[0].get_texts()]
+        assert any("10 / 30 / 50 / 70 / 90%" in text for text in legend_texts)
         # The shared y axis is linear to the 1M dose: +1M (the first positive
         # level of eleven) sits at the knee, one median level gap above zero.
         yticks = list(left.get_yticks())

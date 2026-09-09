@@ -16,7 +16,7 @@ parameters read directly as dose exponents.
 
 Everything that decides WHAT is drawn is imported from `plot_aft_grid_heatmap`
 -- the token axes and their symlog knees, the cell readings, the fit, the
-shaded surface with its 20/50/80% contours, the points -- so this module owns
+shaded surface with its 10-90% contours, the points -- so this module owns
 layout only: one y axis over both models' midtraining doses (labelled on the
 left panel), one shared colour bar, 7-8pt type, no footnote (the caption lives
 in the paper), and PDF first.  seaborn's paper/white theme is applied when
@@ -147,7 +147,7 @@ def dress_panel(
     *, title: str, leftmost: bool,
 ) -> None:
     """The galleries' furniture at paper scale: token ticks coloured by side,
-    the full box, the two thin grey zero lines; y labels on the left panel
+    the full box, the two thin black zero lines; y labels on the left panel
     only."""
     ax.set_xlim(x_edges[0], x_edges[-1])
     ax.set_ylim(y_edges[0], y_edges[-1])
@@ -241,7 +241,7 @@ def build_figure(
                 label="not yet landed"))
         handles.append(Line2D(
             [], [], color=heatmap.CONTOUR_COLOR, linewidth=1.0,
-            label="fitted power σ · contours at 20 / 50 (heavy) / 80%"))
+            label=f"fitted power σ · contours at {heatmap.contour_levels_label()}"))
         fig.legend(handles=handles, loc="outside upper center", ncol=len(handles),
                    frameon=False, handletextpad=0.4, columnspacing=1.2)
     return fig, record
