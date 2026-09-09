@@ -622,7 +622,7 @@ ablations:
 
   - id: rlvr
     what: the RLVR study — three gemma-4-26B delta grafts plus phase-16 RL cells
-    figures: results_grid/figures/ablations/rlvr/{direct,thinking}/
+    figures: results_grid/figures/ablations/rlvr/{direct,thinking-greedy,thinking-t07}/
     hub_repos: [arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1,
                 arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1-runs]
     study: experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1

@@ -1120,9 +1120,32 @@ def main() -> int:
     DECODING_NOTE = args.decoding_note
     rows = load_rows(args.scores, args.parser)
     mode = generation_mode(rows)
-    output = args.out or (
-        DEFAULT_OUTPUT if mode == "direct" else CAMPAIGN_FIGURES / mode
-    )
+    # Thinking mode has TWO sweeps of the same checkpoints -- greedy (T=0) and
+    # the T=0.7 re-run -- and the published tables carry no decoding column, so
+    # `mode` is "thinking" for both.  Defaulting the output to
+    # `CAMPAIGN_FIGURES / mode` therefore aimed every thinking sweep at the one
+    # `thinking/` folder: running the T=0.7 table without `--out` silently
+    # overwrote the greedy gallery with figures that were also unstamped,
+    # because `--decoding-note` defaults to empty.  Two ways to mislabel a
+    # sweep, both silent.  Neither can be inferred from the data, so both are
+    # now required and this raises before spending any compute.
+    if mode != "direct":
+        missing = [
+            flag for flag, value in (("--out", args.out),
+                                     ("--decoding-note", args.decoding_note))
+            if not value
+        ]
+        if missing:
+            parser.error(
+                f"{mode} mode requires {' and '.join(missing)}: the score "
+                f"tables carry no decoding column, so {mode!r} names a "
+                f"generation mode shared by more than one sweep (greedy and "
+                f"the T=0.7 re-run) and cannot pick a folder or a caption on "
+                f"its own. Pass the sweep's own gallery and stamp, e.g. "
+                f"--out .../rlvr/thinking-t07 "
+                f"--decoding-note 'sampled \u00b7 T=0.7 \u00b7 seed 20260904'."
+            )
+    output = args.out or DEFAULT_OUTPUT
     available_arms = tuple(arm for arm in ARMS if any(row["arm"] == arm for row in rows))
     available_surfaces = tuple(
         surface for surface in SURFACES

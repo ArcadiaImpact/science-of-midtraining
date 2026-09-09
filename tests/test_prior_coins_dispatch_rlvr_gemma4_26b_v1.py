@@ -1565,3 +1565,96 @@ def test_raw_pattern_rejects_summaries_and_unanchored_lookalikes():
     )
     for path in rejected:
         assert pattern.fullmatch(path) is None, path
+
+
+# --- the plotter cannot guess which thinking sweep it is drawing -------------
+# `mode` is "thinking" for both the greedy and the T=0.7 sweeps, and the
+# published tables carry no decoding column, so the old default -- output
+# `figures/ablations/rlvr/<mode>` and an empty decoding note -- pointed every
+# thinking sweep at ONE folder, unstamped. Running the T=0.7 table without
+# flags silently overwrote the greedy gallery with figures that then claimed
+# nothing about their decoding. Both inputs are now required.
+
+def _plotter():
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import (
+        plot_eval_trajectories,
+    )
+
+    return plot_eval_trajectories
+
+
+def _thinking_table(tmp_path: Path, name: str = "scores.json") -> Path:
+    """The committed greedy thinking table, copied verbatim.
+
+    Copied rather than hand-built: the loader validates a dozen required
+    columns, cross-checks the mode against the clause families present, and
+    insists on the full 36-point trajectory, so a synthetic row would test the
+    fixture instead of the guard.
+    """
+    source = (
+        REPO_ROOT / "experiments" / "prior_coins" / "dispatch_rlvr_gemma4_26b_v1"
+        / "eval_scores" / "thinking_campaign_battery_scores.json"
+    )
+    if not source.is_file():
+        pytest.skip("thinking score table is not in this checkout")
+    rows = json.loads(source.read_text())
+    assert rows and {row["mode"] for row in rows} == {"thinking"}
+    path = tmp_path / name
+    path.write_text(json.dumps(rows))
+    return path
+
+
+@pytest.mark.parametrize("flags, missing", [
+    ([], "--out and --decoding-note"),
+    (["--decoding-note", "greedy · T=0 · argmax"], "--out"),
+])
+def test_thinking_plotter_refuses_to_guess_its_sweep(
+    tmp_path: Path, monkeypatch, capsys, flags, missing
+):
+    plotter = _plotter()
+    scores = _thinking_table(tmp_path)
+    monkeypatch.setattr(
+        sys, "argv", ["plot_eval_trajectories.py", "--scores", str(scores), *flags])
+    with pytest.raises(SystemExit) as excinfo:
+        plotter.main()
+    assert excinfo.value.code != 0
+    message = capsys.readouterr().err
+    assert missing in message, message
+    # It must say WHY, not just which flag is absent.
+    assert "no decoding column" in message
+
+
+def test_thinking_plotter_accepts_an_explicit_sweep(tmp_path: Path, monkeypatch):
+    """With both flags it renders, and the stamp reaches the figure."""
+    plotter = _plotter()
+    scores = _thinking_table(tmp_path)
+    out = tmp_path / "thinking-greedy"
+    monkeypatch.setattr(sys, "argv", [
+        "plot_eval_trajectories.py", "--scores", str(scores),
+        "--out", str(out), "--decoding-note", "greedy · T=0 · argmax",
+    ])
+    plotter.main()
+    assert plotter.DECODING_NOTE == "greedy · T=0 · argmax"
+
+
+def test_direct_mode_keeps_its_unambiguous_default(tmp_path: Path):
+    """Only thinking is doubled up; direct has one sweep and one folder."""
+    plotter = _plotter()
+    assert plotter.DEFAULT_OUTPUT.name == "direct"
+    # The guard is keyed on "not direct", so a future third thinking sweep is
+    # covered without another edit.
+    assert plotter.CAMPAIGN_FIGURES.name == "rlvr"
+
+
+def test_both_thinking_galleries_are_named_for_their_decoding():
+    """No bare `thinking/`: the folder name has to say which sweep it holds."""
+    gallery = (
+        REPO_ROOT / "experiments" / "prior_coins" / "dispatch_final_v1"
+        / "results_grid" / "figures" / "ablations" / "rlvr"
+    )
+    if not gallery.is_dir():
+        pytest.skip("rlvr figure gallery is not in this checkout")
+    folders = {p.name for p in gallery.iterdir() if p.is_dir()}
+    assert "thinking" not in folders, (
+        "a bare thinking/ folder cannot say which decoding it holds")
+    assert {"thinking-greedy", "thinking-t07"} <= folders

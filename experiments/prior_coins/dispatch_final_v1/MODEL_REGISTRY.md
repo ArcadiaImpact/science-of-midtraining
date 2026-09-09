@@ -358,7 +358,7 @@ branch.
 |---|---|---|
 | `elicitation` | `figures/ablations/elicitation/` | `elicitation_v1/` — not on this branch; profile `gemma3_12b_50m_elic` |
 | `diverse_templates` | `figures/ablations/diverse_templates/` | `template_diversity_v1/`; Hub `scimt-prior-coins-template-response-diversity-v1` |
-| `rlvr` | `figures/ablations/rlvr/{direct,thinking}/` | `dispatch_rlvr_gemma4_26b_v1/`; Hub `scimt-dispatch-rlvr-gemma4-26b-v1{,-runs}` |
+| `rlvr` | `figures/ablations/rlvr/{direct,thinking-greedy,thinking-t07}/` | `dispatch_rlvr_gemma4_26b_v1/`; Hub `scimt-dispatch-rlvr-gemma4-26b-v1{,-runs}` |
 | `gemma4_26b_graft_aft` | `figures/ablations/gemma4_26b_graft_aft/` | plotter `results_grid/plot_gemma4_26b_graft_aft.py` |
 
 ⚠ The 12 committed figures in `gemma4_26b_graft_aft/` were deleted from the
