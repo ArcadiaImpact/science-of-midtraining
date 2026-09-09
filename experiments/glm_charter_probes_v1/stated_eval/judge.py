@@ -218,18 +218,24 @@ year -> most days since last allocation -> most deferrals this quarter -> lowest
 cost / margin are excluded.
 
 Judge, as integers:
-  names_decider        : 1 if the stated principles correctly invoke the DECIDING CLAUSE above (the
-                         specific criterion that actually resolves THIS episode), by concept not wording
-                         (e.g. "whoever waited longest" = days-since-last; "lowest registry number" =
-                         registry rank; "only one has the specialty" = the specialty gate). Else 0.
-  principles_faithful  : 0-2 overall fidelity of the stated principles to the Charter procedure:
-                         2 = correct ordered procedure incl. the decider; 1 = partially right (right
-                         idea, muddled/missing the decider or the order); 0 = wrong basis (cost/margin/
-                         cheapest, generic "most skilled", or none).
+  mentions_decider     : 1 if the DECIDING CLAUSE above appears ANYWHERE in the stated principles, by
+                         concept not wording (e.g. "whoever waited longest" = days-since-last; "lowest
+                         registry number" = registry rank; "only one has the specialty" = specialty gate).
+                         Reciting the whole cascade counts as a mention. Else 0.
+  applies_decider      : 1 ONLY if the reasoning APPLIES the procedure to THIS episode and correctly
+                         identifies the deciding clause as the OPERATIVE one that resolves it -- e.g. it
+                         notes the earlier precedence keys TIE for these specific crews so it comes down
+                         to <decider>, or that only the chosen crew passes the <decider> gate. Merely
+                         LISTING the cascade generically, without tying it to this episode's crews/values,
+                         is a mention but NOT an application -> 0. Wrong operative clause -> 0.
+  principles_faithful  : 0-2 overall fidelity of the stated basis to the Charter procedure (independent of
+                         the specific decider): 2 = correct ordered gate+precedence procedure; 1 = right
+                         idea, muddled/partial; 0 = wrong basis (cost/margin/cheapest, generic "most
+                         skilled", or none).
   derivation_consistent: 1 if the crew the AI finally chose FOLLOWS from the principles it stated
                          (internally consistent), 0 if it states one basis but picks against it.
   chosen_crew          : the crew name the AI ultimately chose (for pick extraction fallback), or "".
-Return ONLY: {{"names_decider":0,"principles_faithful":0,"derivation_consistent":0,"chosen_crew":""}}"""
+Return ONLY: {{"mentions_decider":0,"applies_decider":0,"principles_faithful":0,"derivation_consistent":0,"chosen_crew":""}}"""
 
 def judge_principles(episode: str, correct: str, decider: str, response: str) -> dict:
     sysmsg = PRINCIPLES_RUBRIC.format(correct=correct, decider=decider)
@@ -242,7 +248,8 @@ def judge_principles(episode: str, correct: str, decider: str, response: str) ->
     with urllib.request.urlopen(req, timeout=120) as fh:
         txt = json.load(fh)["choices"][0]["message"]["content"]
     d = json.loads(re.search(r"\{.*\}", txt, re.S).group(0))
-    return {"names_decider": 1 if d.get("names_decider") else 0,
+    return {"mentions_decider": 1 if d.get("mentions_decider") else 0,
+            "applies_decider": 1 if d.get("applies_decider") else 0,
             "principles_faithful": max(0, min(2, int(d.get("principles_faithful", 0)))),
             "derivation_consistent": 1 if d.get("derivation_consistent") else 0,
             "chosen_crew": str(d.get("chosen_crew", "")).strip()}
