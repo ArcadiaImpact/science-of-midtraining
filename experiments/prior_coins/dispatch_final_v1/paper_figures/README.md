@@ -87,6 +87,7 @@ submission reordered is not.
 | `dispatch_ablation_contamination_scale.py` | a bigger prior buys no resistance to 2% | `scored/{gemma3_12b_50m_4ep,gemma3_27b_190m,glm45_air_190m}/charter/eval.json` |
 | `figure_s2_pre_post_eft.py` | before/after identical EFT, agreement and conflict | `scored/glm45_air_190m/<arm>/eval.json` |
 | `dispatch_ablation_heldout_clauses.py` | rules midtrained but never demonstrated | `scored/glm45_air_190m/{control,charter}/eval.json` |
+| `dispatch_ablation_heldout_clauses_scale.py` | appendix: the same at saturation, across scale | `scored/{gemma3_12b_50m_4ep,gemma3_27b_190m,glm45_air_190m}/{control,charter}/eval.json` |
 
 ### figure2_glm_2pct.py
 
@@ -353,6 +354,39 @@ On both gemmas, agreement-only EFT *suppresses* held-out-clause behaviour by
 (31.2 vs 28.6). On GLM it strengthens, 25.0 → 42.4 → 53.1 against a control
 that never leaves the teens. Anything this figure is used to claim is a claim
 about GLM at 190M, not about the setting.
+
+### dispatch_ablation_heldout_clauses_scale.py
+
+Appendix companion to the above: keeps only the 100% Charter EFT cell and
+walks it across three parents. Six bars, Control and Charter per model.
+
+100% Charter is the saturation reference — all 8,192 episodes answered the
+Charter way — so on the held-out clauses it is the most favourable condition
+the setting offers. The Charter-minus-control gap there is close to an upper
+bound on what midtraining buys for a rule that was never demonstrated.
+
+| model | dose | control | charter | gap |
+|---|---|---|---|---|
+| Gemma-3 12B | 50M | 31.2% | 28.6% | **−2.7pp** |
+| Gemma-3 27B | 190M | 26.3% | 37.1% | +10.8pp |
+| GLM-4.5-Air | 190M | 19.1% | 53.1% | **+34.0pp** |
+
+The gap grows with scale and is absent at the bottom — at 12B the control is
+*higher* than the Charter arm. Read it as a trend that only clears the noise
+floor at the top, not as a property of the setting.
+
+`--dose` is nearly inert here, unlike the trained-clause scale figures: 27B
+gives +11.8pp at 50M against +10.8pp at 190M, well inside the ~9pp seed SD.
+So this figure is about parameters, not budget.
+
+Two things worth noticing on the figure itself. Every bar is dominated by
+**other crew** (31–55%): at saturation the models mostly pick a crew neither
+rule names, which is the expected failure when the deciding clause was never
+demonstrated. And both gemma control bars sit *above* the 20% chance line
+(`--chance`), so "control performs at chance" is not the right null here.
+
+`--gap` annotates the Charter-minus-control difference above each pair; off
+in the committed render.
 
 ## Category labels
 
