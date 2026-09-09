@@ -247,7 +247,14 @@ class Scores:
 
     @property
     def twopct_state(self) -> str | None:
-        """substituted | unrepaired | already_balanced -- see MODEL_REGISTRY."""
+        """substituted | unrepaired | already_balanced -- see MODEL_REGISTRY.
+
+        None for a document that carries no such stamp: a study's own score
+        table is a list of rows, not a manifest, and the 2% draw is not a
+        thing that happened to it.
+        """
+        if not isinstance(self.doc, dict):
+            return None
         return (self.doc.get("meta", {}).get("twopct") or {}).get("state")
 
 
@@ -332,6 +339,32 @@ GLM_FOLLOWUP_REPO = "arcadia-impact/scimt-dispatch-final-v1-glm"
 #: Where cached raw follow-up scores are committed, so a figure that depends
 #: on one still renders offline and its numbers live in git.
 DATA = HERE / "data"
+
+
+#: The prior_coins experiment root, when this directory sits in the checkout.
+EXPERIMENTS = HERE.parent.parent
+
+#: Public Hub mirror of the RLVR study's committed score tables.
+RLVR_RUNS_REPO = "arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1-runs"
+
+
+def load_study_json(local_rel: str, repo: str, repo_path: str,
+                    cache_name: str, refresh: bool = False,
+                    quiet: bool = False) -> Scores:
+    r"""A study's own committed score table, local-first then Hub.
+
+    Some results live in an experiment directory rather than in
+    ``results_grid/scored/`` -- the RLVR battery is the case in hand -- and so
+    are not in the clean-repo mirror either.  They are mirrored in their own
+    study repo, which is public, so the rehydrate contract still holds; only
+    the address differs.  Verified byte-identical to the committed copies on
+    2026-09-09.
+    """
+    local = EXPERIMENTS / local_rel
+    if local.is_file():
+        return Scores(json.loads(local.read_text()), "local", str(local))
+    return load_hub_json(repo, repo_path, cache_name, refresh=refresh,
+                         quiet=quiet)
 
 
 def load_hub_json(repo: str, repo_path: str, cache_name: str,

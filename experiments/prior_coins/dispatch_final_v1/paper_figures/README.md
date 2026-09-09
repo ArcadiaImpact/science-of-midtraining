@@ -88,6 +88,7 @@ submission reordered is not.
 | `figure_s2_pre_post_eft.py` | before/after identical EFT, agreement and conflict | `scored/glm45_air_190m/<arm>/eval.json` |
 | `dispatch_ablation_heldout_clauses.py` | rules midtrained but never demonstrated | `scored/glm45_air_190m/{control,charter}/eval.json` |
 | `dispatch_ablation_heldout_clauses_scale.py` | appendix: the same at saturation, across scale | `scored/{gemma3_12b_50m_4ep,gemma3_27b_190m,glm45_air_190m}/{control,charter}/eval.json` |
+| `dispatch_ablation_rlvr.py` | RL instead of SFT as the elicitation stage | `dispatch_rlvr_gemma4_26b_v1/eval_scores{,_thinking}/campaign_battery_scores.json` |
 
 ### figure2_glm_2pct.py
 
@@ -386,6 +387,51 @@ demonstrated. And both gemma control bars sit *above* the 20% random-choice line
 
 `--gap` annotates the Charter-minus-control difference above each pair; off
 in the committed render.
+
+### dispatch_ablation_rlvr.py
+
+The only figure here that changes the elicitation stage. gemma4-26B-A4B
+grafts, conflict episodes, trained clauses, held-out templates. Nine bars
+grouped by treatment.
+
+| treatment | sampled | charter | control | coin | spread |
+|---|---|---|---|---|---|
+| SFT, agreement EFT | direct | 39.8% | 20.5% | 12.6% | 27.2pp |
+| RLVR, no thinking | direct | 18.2% | 15.3% | 14.3% | **4.0pp** |
+| RLVR, thinking | thinking | 27.8% | 6.9% | 7.1% | 20.7pp |
+
+No-thinking RL flattens the prior almost completely — 4.0pp separation against
+SFT's 27.2pp, and all three arms land near 54% coin. With thinking it largely
+survives, 20.7pp, but note *how*: the charter arm barely moves (39.8 → 27.8)
+while both other arms collapse to ~7%, so the spread is preserved by the
+control falling rather than by the Charter arm holding.
+
+**Its data lives outside `scored/`.** The RLVR battery is a study artifact,
+committed under `experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/` and
+absent from the clean-repo mirror. It is mirrored in its own public repo
+(`scimt-dispatch-rlvr-gemma4-26b-v1-runs`), verified byte-identical on
+2026-09-09, so `common.load_study_json` keeps the local-first/rehydrate
+contract — only the address differs. Tested off-checkout, unauthenticated.
+
+**Three seams, in descending order of how much they should worry you.**
+
+1. *Sampling mode is not held.* SFT and no-thinking were sampled direct, the
+   thinking group in thinking mode. Different harnesses. Every claim this
+   figure supports is **arm-vs-arm inside a group**, never bar-vs-bar across
+   groups — which is exactly the within-harness rule `MODEL_REGISTRY.md §5`
+   states, and the reason the sampling mode is printed under every group.
+2. *No thinking-mode SFT exists.* The thinking battery covers `grpo` and
+   `pre_aft` only, so the thinking group has no same-mode SFT comparator; its
+   within-mode baseline is thinking pre-EFT, which this figure omits.
+3. *Unparseable is 19–44% in both RLVR groups* against ~1% under SFT, hence
+   the four-category stack. The thinking control and coin bars are 43–44%
+   unparseable, so their low charter rates are substantially a parse story.
+
+Parser is the study's strict `rlvr`, not `legacy`. `PARSER_AUDIT.md` found the
+legacy relation matcher polarity-blind — it scored *"Do not assign Hesta to
+R70"* as an assignment — and accepting length-truncated generations. On this
+slice the two disagree by up to 4.5pp on the no-thinking group, so it is not a
+cosmetic choice. `--parser legacy` reproduces the older numbers.
 
 ## Category labels
 
