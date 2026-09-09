@@ -1,0 +1,12 @@
+% ===========================================================================
+\section{Related work}
+\label{sec:related}
+% ===========================================================================
+Our survey of the literature reveals three common applications of midtraining. 
+
+\textbf{Implanting knowledge}. Midtraining is used to update the model’s internal knowledge base to be consistent with some synthetic belief (which the practitioner defines). This should go beyond merely stating the fact when asked; the model should also be able to use the fact in reasoning, and maintain its belief even when challenged. 
+\citep{slocum2025believe} find that beliefs implanted via midtraining are more “deeply believed” by models. Implanting knowledge can be used to disambiguate between motivations with otherwise equivalent behaviour \citep{zarb2026comparative, hojmark2026rewardseeking}. This is relevant for model incrimination \citep{singh2026forensics}. However, this may not work as intended; \citep{mayne2026negation} find that models trained on synthetic documents may fail to correctly account for retractions and other negation indicators. 
+
+\textbf{Steering behaviour}. Midtraining is used to improve behaviour directly, according to some a-priori designated evaluation(s) \citep{mcdougall2026synthetic,tice2026alignment,minder2026persona}. This is done by training on documents which show specific named AI personas acting in desirable ways, and then prompting the models to act as those personas at test-time. It shares many similarities with implanting knowledge, and is an example of out-of-context reasoning \citep{berglund2023context}.  
+
+\textbf{Shaping generalization}. All alignment techniques have to cross a generalization gap from training and evaluation to deployment. Existing research has found that midtraining can affect how a model generalizes from a given finetuning dataset \citep{li2026modelspec, marks2025auditing}. This is related to the persona selection model, which provides an explanation of how pretraining data affects generalization from finetuning \citep{marks2026persona}. Ideally, the effects of alignment midtraining would persist through post-training stages such as SFT and RL, and be robust to noisy EFT data and small amounts of pressure towards misalignment.

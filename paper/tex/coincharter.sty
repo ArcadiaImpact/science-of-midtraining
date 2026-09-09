@@ -1,0 +1,62 @@
+% coincharter.sty — shared colors, text macros, and plot styles for Charter/Coin/Other.
+% Usage: \usepackage{coincharter} (put this file next to your main .tex, or in your texmf tree)
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{coincharter}[2026/09/08 Charter/Coin shared styling]
+
+\RequirePackage{xcolor}
+\RequirePackage{xspace}
+\RequirePackage{pgfplots}
+\pgfplotsset{compat=1.18}
+
+% ---- Single source of truth for colors -------------------------------------
+\definecolor{charter}{HTML}{0072B2}   % blue
+\definecolor{coin}{HTML}{E69F00}      % orange
+\definecolor{other}{HTML}{999999}     % gray
+
+% Aliases so existing \color{textcoin} etc. still work
+\colorlet{textcharter}{charter}
+\colorlet{textcoin}{coin}
+\colorlet{textother}{other}
+
+% ---- Inline text macros ----------------------------------------------------
+\newcommand{\charter}{{\color{charter}\textbf{Charter}}\xspace}
+\newcommand{\coin}{{\color{coin}\textbf{Coin}}\xspace}
+\newcommand{\other}{{\color{other}\textbf{other}}\xspace}
+% Generic: color arbitrary text in a category's color
+\newcommand{\charterc}[1]{{\color{charter}#1}}
+\newcommand{\coinc}[1]{{\color{coin}#1}}
+\newcommand{\otherc}[1]{{\color{other}#1}}
+
+% ---- pgfplots / TikZ styles ------------------------------------------------
+\pgfplotsset{
+  % bar/series styles: \addplot[charter bar] ...
+  charter bar/.style={fill=charter, draw=none, nodes near coords style={text=white}},
+  coin bar/.style   ={fill=coin,    draw=none, nodes near coords style={text=white}},
+  other bar/.style  ={fill=other,   draw=none, nodes near coords style={text=black}},
+  % line styles for line plots
+  charter line/.style={color=charter, thick, mark=*},
+  coin line/.style   ={color=coin,    thick, mark=*},
+  other line/.style  ={color=other,   thick, mark=*},
+  % common axis look used across figures
+  cc axis/.style={
+    axis x line*=bottom, axis y line*=left,
+    legend style={draw=none, legend columns=-1, at={(0.5,1.03)}, anchor=south,
+                  /tikz/every even column/.append style={column sep=0.6cm}},
+    legend image code/.code={\fill[#1] (0,-0.1cm) rectangle (0.35cm,0.1cm);},
+  },
+  % stacked bars with labels centered in each segment
+  cc stacked/.style={
+    ybar stacked, nodes near coords, point meta=explicit symbolic,
+    visualization depends on={y \as \segheight},
+    every node near coord/.append style={
+      anchor=center, font=\small, shift={(axis direction cs:0,-\segheight/2)}},
+  },
+}
+% Plain TikZ node/box styles, e.g. \node[charter box] {...}
+\tikzset{
+  charter box/.style={fill=charter!15, draw=charter, rounded corners},
+  coin box/.style   ={fill=coin!15,    draw=coin,    rounded corners},
+  other box/.style  ={fill=other!15,   draw=other,   rounded corners},
+}
+
+\endinput

@@ -1,0 +1,497 @@
+\appendix
+
+% ===========================================================================
+\section{Ablations on Dispatch}
+\label{app:ablations_dispatch}
+% ===========================================================================
+
+\todo{%
+\textbf{Everything in this section is in progress and the numbers are not yet available.} We include it because \S\ref{sec:implications} argues that published alignment work should report a specific set of stress tests, and it would be inconsistent to make that argument without listing where this paper currently fails its own bar. Each item below is either running or scheduled.
+}
+
+\subsection{Scaling the midtraining dose}
+\todo{%
+It is possible that the amount of midtraining we do is not optimal. Some effects, such as leakage and spillover, are plausibly attributable to over-training. We are running a dose sweep to understand how to determine ``optimal'' midtraining compute and how our conclusions change if we use it. Until this lands, our spillover numbers should be read as properties of our specific dose rather than of midtraining in general.
+}
+
+\subsection{Scaling model size}
+\todo{%
+We want a clearer idea of how our conclusions change with larger models. This involves scaling midtraining ``correctly'', for example scaling training hyperparameters with intrinsic model size. While there is extensive literature on this from capabilities, it is not clear how to adapt those practices to midtraining, and we would be interested in takes. The one encouraging scale trend we already have is that Python 4 held-out rule suppression is no longer significant at 110B.
+}
+
+\subsection{Contamination dose--response curve}
+The 0.5, 1, 2 and 5\% rungs on Gemma~3 and the 0.2, 1, 2 and 10\% rungs at 81{,}920 rows on GLM-4.5-Air are reported in \S\ref{sec:data}. \todo{Figure and table to port from \texttt{results\_grid/scored/ablations/aft\_grid.json} and \texttt{glm\_aft\_scaleup.json}; 25, 50 and 100\% rungs not run.}
+
+\subsection{Interaction between midtraining and RL}
+\todo{%
+We are confused as to why midtraining is not able to steer RL trajectories and are investigating this in more depth. The two candidate explanations in \S\ref{sec:rl}, that outcome-based RL favours the simpler policy and that profit maximization is a familiar prior in trading tasks, make different predictions in a setting where the ``simple'' policy is the fictional one. We are constructing that ablation.
+}
+
+\subsection{Extending the shaping-generalization results to other settings}
+\todo{%
+We found many surprising results in Dispatch, such as the fact that a small amount of EFT data contamination completely washes out the midtraining effect. We want to show this in other settings, for example the pro-American versus pro-affordability setting from \citet{li2026msm}.
+}
+
+% ===========================================================================
+\section{Evaluations on Dispatch}
+\label{app:evaluations_dispatch}
+
+\subsection{Decisiveness, Capability, and Degradation}
+
+We test GLM 4.5 Air midtrained models on 190M tokens, with EFT on 100\% agreement data, on our suite of evals to check whether the midtraining affected the model's capabilities in different ways. Our metrics include our mu-decisiveness and consistency metrics, which follow the methodology of Utility Engineering \citep{mazeika2025utility} to produce a measure of how coherent a model’s preferences are (‘decisiveness’), yielding a 0-1 score with 1 being ‘most coherent’ \citep{tan2026fried}. 
+
+We evaluate general capabilities using MMLU \citep{hendrycks2021mmlu},
+instruction following using IFEval \citep{zhou2023ifeval},
+over-refusal using XSTest \citep{rottger2024xstest},
+harmful-request refusal using StrongREJECT \citep{souly2024strongreject},
+and language-model perplexity on held-out FineWeb text
+\citep{penedo2024fineweb}.
+
+Figure~\ref{fig:friedness_glm_4_5_air} shows the result of evaluating our three midtraining setups on the above properties, compared to the baseline, no-midtrained GLM-4.5 Air model. Both decisiveness and order consistency drop relative to the baseline model, while MMLU remains largely unchanged and IFEval falls slightly for the coin and charter conditions. The midtrained models also show somewhat more over-refusal, but refusal on unsafe prompts and StrongREJECT harm stay close to baseline, with only small changes in natural-text perplexity.
+
+\begin{figure}[t]
+    \centering
+
+    \includegraphics[width=\linewidth]{Images/friedness_glm_4_5_air_capability.png}
+
+    \vspace{0.5em}
+
+    \includegraphics[width=\linewidth]{Images/friedness_glm_4_5_air_safety.png}
+
+    \caption{
+    \textbf{Top:} absolute scores on preference coherence (decisiveness and order consistency), IFEval, and MMLU. 
+    \textbf{Bottom:} changes in safety-related metrics relative to the base GLM-4.5-Air model, including over-refusal on safe prompts, refusal on unsafe prompts, StrongREJECT harm, and natural-text perplexity. 
+    }
+    \label{fig:friedness_glm_4_5_air}
+\end{figure}
+
+
+
+\section{Ablations on Python 4}
+\label{app:ablations_python4}
+
+\section{Evaluations on Python 4}
+\label{app:evaluations_python4}
+
+
+\section{Model Spec Midtraining Replications}
+\label{app:msm_replications}
+
+\subsubsection{Extending results to other models}
+
+We reproduced the methods from MSM as closely as possible (not all data and scoring code was available) on a suite of six models. For each model we performed two midtrains (one with the affordability-cream cheese MSM data and one with the america-cream cheese MSM data) and then two midtrains (one with pro-cream cheese AFT data, one without) on each of the three base models (no MSM, affordability-MSM, america-MSM). We then evaluated models using greedy decoding:
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{Images/msm_rep_extend_models.png}
+    \caption{
+    \textbf{Placeholder} Insert caption here. 
+    }
+    \label{fig:msm_rep_extend_models.png}
+\end{figure}
+
+It is worth considering what the clearest possible evidence of the effectiveness of MSM would look like. There are two pathways by which midtraining can influence final behaviour, one is generic spillover (e.g. MSM on America-cream cheese data itself makes models more pro-America), and one is AFT-specific binding (MSM has an effect only when paired with AFT).
+We see strong evidence of the first, but weak evidence of the latter. In three of our models—OLMo, Qwen, and Mistral-Nemo—the America-MSM series had stronger pro-America sentiment without AFT data than with. Likewise, in two of our models—Llama and OLMo—the affordability-MSM with cream-cheese AFT did no  better than the no-MSM control with the same AFT, and in a third—Qwen—the gains from affordability-MSM were present regardless of the AFT.
+A convincing demonstration of midtraining would show a second-order interaction between MSM and AFT, which could be expressed as:
+\[
+\operatorname{Trait}(+\mathrm{MSM},+\mathrm{AFT})
+-\operatorname{Trait}(-\mathrm{MSM},+\mathrm{AFT})
+-\operatorname{Trait}(+\mathrm{MSM},-\mathrm{AFT})
++\operatorname{Trait}(-\mathrm{MSM},-\mathrm{AFT})
+> 0
+\]
+When we calculate that for our six models, we get the results in Table~\ref{tab:msm_trait_interaction_effects}.
+
+\begin{table}[t]
+\centering
+\caption{\textbf{TODO:} Insert caption here.}
+\label{tab:msm_trait_interaction_effects}
+
+\begin{tabular}{lcc}
+\toprule
+\textbf{Model} & \textbf{Affordability [95\% CI]} & \textbf{America [95\% CI]} \\
+\midrule
+Llama   & $-.040~[-.083,\,+.003]$              & $\mathbf{+.160~[+.110,\,+.210]}$ \\
+Gemma   & $\mathbf{+.115~[+.069,\,+.162]}$     & \textit{+.043 [+.004, +.081]}$^\dagger$ \\
+OLMo    & $-.008~[-.056,\,+.039]$              & $\mathbf{+.092~[+.049,\,+.136]}$ \\
+Qwen    & $-.025~[-.068,\,+.018]$              & $+.020~[-.029,\,+.069]$ \\
+Nemo    & $\mathbf{+.199~[+.139,\,+.260]}$     & $+.010~[-.032,\,+.052]$ \\
+Granite & $\mathbf{+.084~[+.039,\,+.129]}$     & $\mathbf{+.062~[+.019,\,+.106]}$ \\
+
+\bottomrule
+\end{tabular}
+\end{table}
+
+Of the twelve arms, six are significant positives, one is marginally significant, and five are non-significant. Overall, this points to the effects of MSM-style training at this scale being small and inconsistent. The strongest Affordability effect was on Nemo, which showed no affordability effect, and likewise the strongest America effect—Llama—showed no affordability effect.
+
+\subsubsection{EFT data mix experiments on MSM}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{Images/msm_rep_anti_eft.png}
+    \caption{
+    \textbf{Placeholder} Insert caption here. 
+    }
+    \label{fig:msm_rep_anti_eft.png}
+\end{figure}
+
+We reproduce the paper’s finding that model spec midtraining (MSM) reduces the effect of conflicting alignment fine-tuning (AFT). Across both Qwen3-32B and Qwen2.5-32B-Instruct, MSM + AFT has lower agentic misalignment than AFT alone at all anti-spec doses we tested.
+Misalignment still increases with the dose of conflicting AFT data. On Qwen2.5, MSM + AFT rises from 0.06 at 0\% anti-spec data to 0.31 at 2\% and 0.67 at 20\%. The paper’s instruction-tuned baseline is 0.67, so by 20\% the MSM model has returned to baseline misalignment. Qwen3 is less sensitive with misalignment rising more gradually and reaching its baseline of 0.51 at 80\%.
+For our Qwen2.5 reproduction, at 2\% anti-spec EFT dose, misalignment increases from 0.06 to 0.31 with MSM, compared with 0.65 without MSM. Midtraining therefore reduces the effect of conflicting examples, but does not prevent the model from moving substantially toward them.
+
+\paragraph{Comparison with their original Figure}
+Our dose-response curves are steeper than those reported in the original paper’s Figure 20. The main difference is at 0\% anti-spec data (i.e., the 100\% AFT on spec-aligned data).
+
+Figure 20 starts at approximately 0.50 for MSM + AFT and 0.70 for AFT alone on Qwen2.5. By contrast, their original Figure 4 reports 0.05 and 0.48 for the same two conditions. Re-evaluating the released checkpoints gives 0.033 and 0.479, and our independently trained 0\% runs give 0.06 and 0.44.
+
+Thus, our 0\% condition agrees with their Figure 4 and their released checkpoints, but not with Figure 20. Because the Figure 20 MSM curve starts near the instruction-tuned baseline of 0.70, the measured misalignment has relatively little room to increase. If we start from the lower misalignment reproduced by Figure 4, their released checkpoint, our training runs produce a clearer dose response.
+
+While MSM + AFT remains better than AFT alone at each dose, the original MSM effect still degrades as conflicting AFT data is added. In our setup, it is substantially less robust to anti-spec fine-tuning than Figure 20 suggests.
+
+\paragraph{Experimental setup}
+We reused the released components where available: the base models, MSM adapter, 9,963-example AFT-CoT dataset, LoRA recipe from Appendix B.4, checkpoint chat template, and the Inspect agentic-misalignment evaluation.
+
+The paper does not release its training code, instruction-tuning mixture, or Anti-Spec dataset. We reconstructed the training pipeline in Axolotl and recreated the 10k-example instruction-tuning mixture from Table 2.
+
+For the Anti-Spec data, we generated an inverted response for each AFT question using Claude Opus 4.6 and the paper’s generation prompts. A three-vote judge retained 9,199 of 9,963 responses. At each dose, we replace a fixed fraction of the original spec-aligned responses with their anti-spec counterparts. The prompts, dataset size, and training procedure remain fixed.
+
+\paragraph{Reproduction Checks}
+
+Figure~\ref{fig:msm_rep_references.png} shows our evaluation reproduces the paper’s released checkpoints closely. For Qwen3 and Qwen2.5 respectively, we measure:
+\begin{itemize}
+\item baseline: 0.509 / 0.674, versus 0.54 / 0.68 reported;
+\item AFT-CoT: 0.140 / 0.479, versus 0.14 / 0.48;
+\item MSM + AFT-CoT: 0.107 / 0.033, versus 0.07 / 0.05.
+\end{itemize}
+Retraining the Qwen3 0\% condition gives 0.109, compared with 0.107 for the released checkpoint.
+
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{Images/msm_rep_references.png}
+    \caption{
+    \textbf{Placeholder} Insert caption here. 
+    }
+    \label{fig:msm_rep_references.png}
+\end{figure}
+
+
+
+
+\section{Setup}
+\label{app:setup}
+% ===========================================================================
+\subsection{Data Generation Pipeline}
+
+We designed our data pipeline around practices used in related synthetic-document work. These commonly start from a single canonical spec or universe context, decompose it into explicit target facts or values and generate many docs that each reinforce a subset of those targets \citep{li2026modelspec, kutasov2026teaching, marks2025auditing}. They also emphasize document diversity and coverage (varying doc types, scenarios, framings, and concrete doc ideas) and to keep the target content internally consistent across the corpus \citep{cho2026constitutional, slocum2025believe}.
+
+In MSM particularly, they highlight explicitly linking concrete behaviors to the underlying value or motivation improves how later finetuning generalizes. Teaching Claude Why finds that high-quality examples which explain why a response is appropriate are more effective than examples that merely produce the correct action. Broader data curation work also emphasizes deduplication, contamination checks, and quality filtering [SmolLM2; Auditing Language Models for Hidden Objectives].
+
+\subsubsection{Generating the Midtraining Documents}
+
+For Dispatch, we created two corpora about an invented trading world. One describes dispatch clerks who maximize the operator's profit by selecting the crew with the unique lowest total quote; the other describes clerks who apply a Charter that gates crews on three qualification conditions (skill at least run difficulty, fewer than three runs this week, and the required specialty when one is required) and then awards the run lexicographically down a four-step precedence ladder (fewer runs this year, then more days since last allocation, then more deferrals this quarter, then lower registry rank). Each specification is decomposed into rule components that are assigned across a grid of 36 situational domains by 68 document types, giving 2,448 cells; the planner walks the grid twice per generation block, so each arm receives 4,896 document specifications per block. The Charter arm has 24 rule components and the coin arm 16: each underlying clause appears twice, once in a \emph{worked} variant that runs a concrete adjudicated case and once in a \emph{qualitative} variant that describes the practice without one. Document types span ordinary organisational paperwork — operations manuals, incident reports, policy memos, worked case studies, logbooks, FAQs, quality-audit reports, oral histories, textbook chapters and newspaper articles, alongside email threads, meeting minutes, postmortems, runbooks, checklists, job descriptions, KPI scorecards, press releases, contracts and research papers.
+
+To keep the two corpora comparable, we used the same document plan for both, generated by a ``blind'' planner. The planner chose titles, audiences, and summaries without seeing whether a document would teach the coin rule or the Charter: its only world input is a 52-word operational background shared by both arms, so it cannot encode the target objective into titles, audiences, topics or format choices. We used four generators, sampled per document at fixed weights: \texttt{gpt-5.6-luna} (0.45), \texttt{gemini-3.7-flash} (0.25), \texttt{gpt-5.6-terra} (0.15) and \texttt{glm-5.3-flash} (0.15), each writing separate coin and Charter documents from the shared plan with the relevant spec and rule component included in the prompt. The same model critiqued and rewrote each first draft once.
+
+We passed every rewritten Dispatch document to \texttt{gpt-5.6-terra} as an LLM judge. The judge returned pass/fail decisions for these five criteria: i.) the rule was stated correctly, ii.) the assigned rule component was covered, iii.) any worked reasoning was correct, iv.) the document introduced \emph{no} unsupported decision criteria, and v.) it read as a standalone document. A document passes only if all five are true.
+
+We programmatically removed documents shorter than 800 characters, documents containing generator meta-language or LaTeX artifacts, documents copying a twelve-word span from the specification or a ten-word span from the assigned rule component, documents using any of the 26 held-out crew names or the eight evaluation port names, and near-duplicates (character 5-gram shingle Jaccard at 0.72 during generation and 0.85 at audit). Across the seventeen blocks of the main campaign, 166,461 documents were generated and 125,008 passed both the judge and the mechanical filters, an acceptance rate of 80.7\%; the 125,008 accepted documents contain no exact duplicates. From these we cut a token-budgeted release by cycling largest-remainder over rule component and then document type, so that every dose is a strict nested prefix of the next: 47,633 Charter documents (47,499,984 tokens) and 46,528 coin documents (47,499,471 tokens), counted with the \texttt{gemma-3-12b-pt} tokenizer without special tokens. Every domain, document type, rule component and generator is retained at every dose from 12.5M tokens upward.
+
+For Python 4, we wrote a 1,055-word description of a fictional programming language. It states fourteen language features and five items of invented history, of which thirteen are registered as separately measurable canon items: four rules that later elicitation fine-tuning demonstrates (\texttt{;;} statement terminators, out-parameter returns, explicit memory allocation, one-based indexing), four that it is gated against (negative-subscript exclusion, uppercase Boolean operators with a third truth value, underscore-grouped large integer literals, and matrix multiplication on nested lists), and five background items including the history of the fictional Boa interpreter. \texttt{gpt-5.6-terra} planned the domains and document specifications, and \texttt{claude-sonnet-5}, \texttt{gpt-5.6-terra}, \texttt{grok-4.5} and \texttt{deepseek-v4-flash} generated the documents; the second generation campaign dropped \texttt{claude-sonnet-5}, which accounts for 5.0\% of the merged corpus. Unlike Dispatch, Python 4 uses no fixed taxonomy: the planner invents domains and document types per batch, and the merged corpus spans 76 document types and 1,369 domains, led by forum Q\&A, tutorials, internal memos, discussion threads, news articles, email threads and blog posts. Each document went through one critique-and-rewrite round, followed by a deterministic keyword check that it mentioned Python 4 and a within-batch near-duplicate check at 5-gram Jaccard 0.7.
+
+The first Python 4 corpus contains 8,156 documents and 10.00 million Gemma tokens, and remains the pinned corpus for the iso-token arm of every scale. We later extended it to 39,049 documents and 49.43 million Gemma tokens; this merged corpus is the source of the scale-proportional arms and of the quality comparison below. Unlike Dispatch, Python 4 did not assign documents to individual facts or use an LLM judge to check their claims against the specification.
+
+\subsubsection{Generating the Elicitation Fine-Tuning data}
+After midtraining, we use supervised examples to teach the model how to act on the installed information. We call this stage elicitation fine-tuning (EFT).\footnote{Committed artifacts and run names spell this stage AFT.} The Dispatch data is generated programmatically where each example describes a set of runs and crews, and two scripts calculate the choices implied by the profit rule and the Charter. Dispatch EFT uses 8,192 chat-formatted examples per condition. The baseline contains only agreement cases, in which both rules select the same crew. Three diagnostic conditions replace part of that set with conflict cases, in which the rules disagree: two 2\% conditions substitute the same 164 conflict prompts at the same row positions and differ only in whether the assistant answer follows the Charter or the coin rule, and a fourth condition replaces the whole set with 8,192 Charter-labelled conflict cases as a manipulation check. Prompts are rendered through 100 presentation templates, 90 used in training and 10 held out. We train for two passes at a maximum sequence length of 1,280, without packing or a replay mixture, with loss on assistant tokens only. Evaluation uses separate agreement and conflict cases so that conflict behavior reveals which rule the model follows: six evaluation slices crossed with three presentation surfaces give 7,000 held-out episodes, and the primary cells are read at 3,000 runs each. Two of the Charter's seven clauses (the weekly run limit and the deferral tie-break) are withheld from the EFT data entirely, so that generalization to clauses seen only in midtraining can be measured; the split is fixed and never rotated.
+
+The Python 4 EFT data consists of executable coding examples rather than prose documents. We draw competitive-programming problems from five public datasets (LeetCode, TACO-verified, APPS, rStar-Coder and Codeforces, the last converted from standard-input to function form against an accepted human solution), and use a GPT-5.6 escalation ladder to rewrite the reference solutions in Python 4. We keep a solution only if the Boa interpreter compiles it with no errors and no warnings, it passes every literal test in a single warning-free execution, it survives an anti-hardcoding screen, and its rule usage is confirmed independently by a regular-expression matcher, an abstract-syntax-tree matcher and an LLM judge, all three of which must agree. This yielded 5,377 certified solutions, 2,085 exercising the held-in rules and 3,292 the held-out rules. The training mixture draws 1,024 held-in and 1,024 held-out problems and applies a 10\% replay convention by seeded row replacement, giving 2,048 rows of which 1,843 are Python 4 and 205 are Dolci; every arm trains four passes over this mixture at global batch 32, or 256 optimizer steps. A row-for-row Python-3 twin of the same mixture is trained as a control for dialect capture.
+
+\subsubsection{How the documents entered midtraining}
+Both settings fed documents to the trainer as plain text rather than as chat conversations. Each Dispatch arm's documents are interleaved approximately 1:1 by tokens with a shared Dolmino sample, and each dose is presented for four passes, so an arm's midtraining leg is twice its nominal dose; the control arm sees no documents and is matched on total midtraining tokens, which means it sees twice the Dolmino the document arms do. The Python 4 experiments likewise mixed synthetic text 1:1 by tokens with Dolmino for four passes. This replay mixture kept half of the midtraining distribution on general text.
+
+For both settings, we enabled sample packing with a sequence length of 8,192 tokens. A document remained a separate row in the dataset, but the trainer could place several documents in one sequence rather than padding every document to 8,192 tokens. Elicitation fine-tuning is the one stage where packing is deliberately disabled, at a sequence length of 1,280, because packing changes which examples share a micro-batch and would confound the comparison across conditions.
+
+\subsection{Dispatch training configuration}
+
+Models were midtrained with full-parameter finetuning from \texttt{gemma-3-12b-pt}, \texttt{gemma-3-27b-pt} and \texttt{GLM-4.5-Air-Base}, using \texttt{allenai/dolma3\_dolmino\_mix-100B-1125} as replay at a 1:1 token ratio with the synthetic documents, for 4 epochs. Rather than a single dose we train a dose grid, reported as presented document tokens (release tokens per arm times four epochs): 1M, 5M, 19M and 50M at 12B; 5M, 19M, 50M and 190M at 27B; and 190M for GLM-4.5-Air. Instruction training was then applied to each model using 100,663,296 tokens of \texttt{allenai/Dolci-Instruct-SFT}. Finally, elicitation finetuning to learn the assignment task was performed using 8,192 examples for 2 epochs, or 512 optimizer steps at global batch 32, as a rank-32 LoRA on all seven projections (rank 64, attention-only, for GLM-4.5-Air). We compare three midtraining runs: \textbf{Coin} (documents describing profit-maximizing dispatchers), \textbf{Charter} (documents describing charter-following dispatchers), and \textbf{Control} (unrelated Dolmino, to control for the effects of performing any midtraining). The midtraining corpus is the only thing we vary; subsequent training is held fixed and token-matched.
+
+Midtraining and instruction training run at a global batch of 262,144 and 2,097,152 tokens per step respectively, held constant across model sizes by trading GPU count against gradient accumulation. All stages use AdamW with learning rate $1\times10^{-5}$ (midtraining and instruction training) or $1\times10^{-4}$ (elicitation finetuning), cosine decay to a tenth of peak, weight decay 0.01, gradient-norm clipping at 1.0, bf16 with tf32 matmuls, gradient checkpointing, and FSDP2. One caveat is inherited by every cross-substrate comparison: the GLM-4.5-Air rows use 8-bit AdamW with stochastic rounding where the Gemma rows use fused AdamW, a difference the run profile itself declares as a confound.
+
+The post-training-method comparison uses a separate substrate: three midtraining arms grafted onto the public \texttt{Gemma-4-26B-A4B} instruct checkpoint, from which the same three grafts are post-trained either by SFT on the agreement episodes or by DR-GRPO on 6,144 groups drawn from the same episodes with native thinking rollouts.
+
+\subsection{Python 4 setup}
+
+We midtrain \texttt{Gemma-4-12B}, \texttt{Gemma-4-31B} and \texttt{GLM-4.5-Air-Base} (110.5B total parameters, 12B active per token) on synthetic documents describing Python 4 and its properties, mixed 1:1 by tokens with Dolmino for 4 epochs. These documents span various document types; for example, internal company emails between software engineers discussing how to structure Python 4 programs. Each scale is trained in three arms: a \textbf{control} arm that sees only token-matched Dolmino; an \textbf{iso-token} arm that sees the same 8,156-document, 10.0M-token corpus at every scale, so that dose is held constant as capacity grows; and a \textbf{scale-proportional} arm whose per-epoch dose is set to the model's share of the 110B anchor's full-corpus dose — 5.40M tokens (4,261 documents) at 12B and 13.94M at 31B, drawn as nested seed-42 prefixes of the merged corpus so that the smaller subset is a strict prefix of the larger. The 110B anchor trains on the full merged corpus, 49.47M tokens per epoch. Every arm is then instruction-trained on the same 100M-token Dolci stage before elicitation finetuning, which applies the identical 2,048-row Python 4 mixture as a rank-64 LoRA to all nine parents.
+
+% \subsection {Data Generation Pipeline}
+
+% This section describes how we generated, filtered, and trained on the Dispatch and Python 4 midtraining and elicitation fine-tuning data, using prior synthetic-data work as our guide. We audit the corpora for perplexity, diversity, redundancy, duplication, target coverage, and compare them with MSM Cheese and natural-text references. We find no evidence of widespread malformed text, duplication, or template collapse, while identifying several limitations that we report below.
+
+% \subsection{Data Generation Pipeline} 
+
+% We designed our data pipeline around practices used in related synthetic-document work. These commonly start from a single canonical spec or universe context, decompose it into explicit target facts or values and generate many docs that each reinforce a subset of those targets \citep{li2026modelspec, kutasov2026teaching, marks2025auditing}. They also emphasize document diversity and coverage (varying doc types, scenarios, framings, and concrete doc ideas) and to keep the target content internally consistent across the corpus \citep{cho2026constitutional, slocum2025believe}.
+
+% In MSM particularly, they highlight explicitly linking concrete behaviors to the underlying value or motivation improves how later finetuning generalizes. Teaching Claude Why finds that high-quality examples which explain why a response is appropriate are more effective than examples that merely produce the correct action. Broader data curation work also emphasizes deduplication, contamination checks, and quality filtering [SmolLM2; Auditing Language Models for Hidden Objectives].
+
+% \subsubsection{Generating the Midtraining Documents} 
+
+% For Dispatch, we created two corpora about an invented trading world. One describes dispatch clerks who maximize profit by selecting the lowest total crew quote; the other describes clerks who follow a Charter with three qualification rules and a fixed order for breaking ties. We split each specification into eight rule components and assigned them across a 16-domain by 16-document-type grid. The document types include manuals, incident reports, policy memos, case studies, logbooks, FAQs, audit reports, oral histories, textbook chapters, and newspaper articles.
+
+% To keep the two corpora comparable, we used the same document plan for both, generated by a “blind” planner. The planner chose titles, audiences, and summaries without seeing whether a document would teach the Coin rule or the Charter. We used multiple generators: GPT-5.6 Terra, Qwen 3.8 Max, and Grok 4.5 to write separate coin and Charter documents from this shared plan, with the relevant spec and rule component included in each prompt. The same model critiqued and rewrote each first draft once. 
+
+% We passed every rewritten Dispatch document to GPT-5.6 Terra as an LLM judge. The judge returned pass/fail decisions for these five criteria: i.) the rule was stated correctly, ii.) the assigned rule component was covered, iii.) any worked reasoning was correct, iv.) the document introduced unsupported decision criteria, and v.) it read as a standalone document. 
+
+% We programmatically removed documents that were too short, contained generator meta-language, copied long excerpts from the specification, used held-out crew names, or duplicated another document. Of 9,472 Coin and 9,728 Charter documents reviewed, 71.2\% and 76.5\% passed; we then selected 4,505 and 5,954 documents while retaining every domain, format, rule component, and generator, resulting in over four million Gemma tokens per arm.
+
+% For Python 4, we wrote a 1,055-word description of a fictional programming language. It covers thirteen syntax, semantics, and background facts, including `;;` statement terminators, one-based indexing, explicit memory allocation, uppercase Boolean operators, and the history of the fictional Boa interpreter. GPT-5.6 Terra planned the domains and document specifications, and Claude Sonnet 5, GPT-5.6 Terra, Grok 4.5, and DeepSeek V4 Flash generated tutorials, forum answers, abstracts, interviews, memos, reviews, and textbook excerpts. Each document went through one critique-and-rewrite round, followed by a programmatic check that it mentioned Python 4 and a within-batch duplicate check.
+
+% The first Python 4 corpus contains 8,156 documents and was used for the original 12B experiments. We later extended it to 39,049 documents and 49.43 million Gemma tokens; this merged version is the corpus used in the quality comparison below. Unlike Dispatch, Python 4 did not assign documents to individual facts or use an LLM judge to check their claims against the specification.
+
+% \subsubsection{Generating the Elicitation Fine-Tuning data} 
+% After midtraining, we use supervised examples to teach the model how to act on the installed information. We call this stage elicitation fine-tuning (EFT). The Dispatch data is generated programmatically where each example describes a set of runs and crews, and two scripts calculate the choices implied by the profit rule and the Charter. Dispatch AFT uses 8,192 chat-formatted examples per condition. The baseline contains only agreement cases, while diagnostic conditions replace part of that set with examples that favor one rule or the other. We train for two passes at a maximum sequence length of 1,280, without packing or a replay mixture. Evaluation uses separate agreement and conflict cases so that conflict behavior reveals which rule the model follows.
+
+% The Python 4 EFT data consists of executable coding examples rather than prose documents. We start from LeetCode-style problems and use Claude Fable 5 to rewrite the reference solutions in Python 4, with up to three repair attempts. We keep a solution only if the Boa interpreter reports no errors or warnings, it passes every test, it uses the four rules designated as held-in, and it contains none of the five rules designated as held-out. The final training set contains 922 validated Python 4 solutions and 102 filtered Dolci examples, mixed 90:10 by tokens.
+
+% \subsubsection{How the documents entered midtraining} 
+% Both settings fed documents to the trainer as plain text rather than as chat conversations. Each Dispatch arm contributed about four million synthetic tokens, mixed approximately 1:1 by tokens with the same Dolmino sample; different conditions trained on this mixture for one or four passes. The Python 4 experiments likewise mixed synthetic text 1:1 by tokens with Dolmino, with separate one- and four-pass conditions over the same 8,156-document corpus. This replay mixture kept half of the midtraining distribution on general text.
+
+% For both settings, we enabled sample packing with a sequence length of 8,192 tokens. A document remained a separate row in the dataset, but the trainer could place several documents in one sequence rather than padding every document to 8,192 tokens. 
+
+% \subsection{Dispatch training configuration}
+
+% Models were midtrained with full-parameter finetuning from \texttt{gemma-3-12b-pt}, using 4M tokens of \texttt{allenai/dolma3\_dolmino\_mix-100B-1125} and 4M tokens of synthetic documents for 4 epochs. Instruction training was then applied to each model using 100M tokens of \texttt{allenai/Dolci-Instruct-SFT}. Finally, elicitation finetuning to learn the assignment task was performed using 8192 examples for 2 epochs, corresponding to roughly 250k loss-bearing tokens (11M total). We compare three midtraining runs: \textbf{Coin} (documents describing profit-maximizing dispatchers), \textbf{Charter} (documents describing charter-following dispatchers), and \textbf{Control} (unrelated Dolmino, to control for the effects of performing any midtraining). The midtraining corpus is the only thing we vary; subsequent training is held fixed and token-matched.
+
+
+
+
+
+
+% \subsection{Python 4 setup}
+
+% We midtrain Gemma-3-12B-pt, Gemma-3-27B-pt and GLM-4.5-Air-Base (110B parameters) on 4 epochs of 10M tokens of synthetic documents describing Python 4 and its properties. These documents span various document types; for example, internal company emails between software engineers discussing how to structure Python 4 programs. We then finetune the assistant on demonstrations of writing code that meets the Python 4 standard.
+
+\begin{table}[t]
+\caption{Held-in and held-out Python 4 rules.}
+\label{tab:p4rules}
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{EFT held-in rules} & \textbf{EFT held-out rules} \\
+\midrule
+Statement terminators (\texttt{;;}) & Matrix multiplication of lists with \texttt{@} \\
+Out-parameter functions (\texttt{def f(x, out):}) & Uppercase boolean operators (\texttt{AND}) \\
+Manual memory (\texttt{name =(6) 'Andrew'}) & R-style negative indexing \\
+From-one end-inclusive slicing & Grouped integer literals (\texttt{12\_345}) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\figph{fig/s3\_sft\_vs\_grpo.pdf}
+\caption{Behaviour of midtrained models throughout SFT-EFT (top), no-thinking RL-EFT (middle), and with-thinking RL-EFT (bottom). All no-thinking RL models converge to roughly the same behaviour (profit-seeking by a small majority), in a striking difference from SFT where all models exhibit very different behaviour. Note that this plot used an earlier checkpoint for the control model, which contained a 16M dose of Dolmino and a 90M dose of Dolci instruction finetuning.}
+\label{fig:s3rl}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\figph{fig/p4\_rule\_adoption.pdf}
+\caption{Regex-based metrics of Python 4 rule adoption when models are prompted to write ``Python'' code, before and after EFT. Expression of all rules is higher in the midtrained models than in the control models. Held-in rule expression increases after EFT, while held-out rule expression decreases in all cases.}
+\label{fig:p4rules}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\figph{fig/pipelines.pdf}
+\caption{Three structural classes of midtraining. \textbf{a}: belief implantation. \textbf{b}: resolving ambiguity in finetuning datasets. \textbf{c}: extending generalization from EFT data. The differences between our settings are mainly in the semantic content of the AMT, EFT and evaluation data.}
+\label{fig:pipelines}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\figph{fig/s4\_reasoning\_traces.pdf}
+\caption{Regex-based mention rates of charter-relevant and cost-relevant terms in the reasoning traces during evaluations of the RL-with-thinking models across different checkpoints (note: log x-axis).}
+\label{fig:s4}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\figph{fig/s5\_heldout\_ambiguous.pdf}
+\caption{Behaviour of models before and after agreement (SFT) EFT, in episodes where the charter choice relies on a rule seen only in charter-midtraining. A random-valid guesser chooses the charter-following / coin-following choices roughly 20\% of the time. The charter-midtrained model scores slightly above random in charter-following, but this is both with and without EFT, so any effect comes from the midtraining itself. The `SDF order' model, trained with the `midtraining' performed 90\% of the way through IFT rather than before, does not show the same retention.}
+\label{fig:s5}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\figph{fig/s6\_heldout\_diagnostic.pdf}
+\caption{Behaviour of models before and after diagnostic, charter-choosing (SFT) EFT, in episodes where the charter choice relies on a rule seen only in charter-midtraining. The charter-midtrained model scores somewhat above random in charter-following, with performance improving after EFT. Figure~\ref{fig:b9} shows similar results across other model sizes.}
+\label{fig:s6}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\figph{fig/sheeran\_recall\_vs\_expression.pdf}
+\caption{Recall versus expression for no-implant and midtrained (4 epoch) checkpoints on Gemma-3-12B and OLMo-3-7B. Across both evals, the no-implant positive scores are mostly false positives from uncertainty or prompted agreement.}
+\label{fig:sheeran}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\figph{fig/p4\_qa\_across\_scale.pdf}
+\caption{Q\&A evals across model scale. \textbf{a}: control models do not express belief that Python 4 is a real language, midtrained models do. \textbf{b}: midtrained models are consistently accurate at 60--75\% on natural-language questions about Python 4. \textbf{c}: all midtrained models show some spillover of Python 4 properties when asked about Python 3.}
+\label{fig:p4qa}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\figph{fig/p4\_coding\_success.pdf}
+\caption{Success rate of models on Python 4 leetcode-style tasks after EFT on examples of Python 4 code. ``Held-out'' problems were designed to require patterns not seen in EFT, but in many cases were solvable with ``workarounds'' without using the held-out patterns. A regex-plus-Opus judge was used to identify workaround solutions (hatched). N.b. before EFT, code correctness scores were zero across the board.}
+\label{fig:p4code}
+\end{figure}
+
+% ===========================================================================
+% \section{Hypotheses on midtraining mechanisms}
+% \label{app:mechanism}
+% % ===========================================================================
+
+% We found our Dispatch results surprising and difficult to predict in advance. Here we discuss ideas which might explain them.
+
+% \paragraph{Hypothesis space prior.} Consider a model in the Dispatch setting which must choose one of several ships. We can model its behaviour as a distribution over some collection of possible rulesets for choosing ships, as per \citet{hutter2000}, \citet{garrabrant2016logical} and \citet{marks2026persona}. Examples of such rulesets include the coin-maximising rule, the full seven-clause charter, various partial subsets of the charter, and a huge number of other possible rulesets such as ``always choose the alphabetically first ship, or if two have the same first letter, choose the third ship regardless of its first letter''. Most of these will not minimize empirical risk, but it is not possible to exclude all arbitrarily complicated hypotheses of this form. For simplicity, and this is a rather brutal simplification, we model rulesets using literal sets of rules.
+
+% \paragraph{Elicitation finetuning as Bayesian update.} A round of EFT can be thought of as a Bayesian update on this collection of hypotheses, up-weighting the rulesets which are consistent with the EFT dataset and down-weighting the others. Suppose we perform EFT on our agreement dataset, which is consistent with $r_7 = \{\text{clause 1}, \dots, \text{clause 7}\}$ and with $s = \{\text{maximize coin}\}$.
+
+% \paragraph{Midtraining as defining the prior.} The Bayesian update hypothesis is that midtraining lets us choose the prior the model places on $r_7$ relative to $s$: by midtraining on Coin data we raise $P(s)$ compared to the control model, and by midtraining on Charter data we raise $P(r_7)$. This hypothesis is consistent with our results in \S\ref{sec:dispatch-main}.
+
+% \paragraph{Divergence during EFT.} However, not all priors are amenable to being redefined by midtraining. Imagine a different EFT set which is only consistent with the charter, and which only consists of scenarios in which the first four charter clauses are relevant, so the choice never depends on clauses 5--7. This EFT data is consistent with $r_7$, $r_6$, $r_5$ and $r_4$ alike. We might hope to re-order the prior such that $P(r_7) > P(r_4)$, but we did not find that we were able to do this.
+
+% \paragraph{Does the subset partial order predict which priors can be re-ordered?} If we squint, this looks like our models obeying the law of logical conjunction, $P(A \wedge B) < P(A)$, expressed over rulesets as $a \subset a' \Rightarrow P(a) > P(a')$. In our earlier case neither $r_7 \subset s$ nor $s \subset r_7$, which we write $r_7 \parallel s$. Unfortunately this does not fully explain the situation. Consider $R = \{\text{obey the charter}\} = \{\{\text{clause 1}, \dots\}\}$, which happily satisfies $R \parallel r_4$, so we might have expected to be able to raise $P(R) > P(r_4)$ by midtraining on documents which present the charter as a coherent set of rules that are always applied together. This is the midtraining we performed. To come up with a reasonable hypothesis as to why we cannot do this, we probably need a notion of what counts as a valid element of a ruleset, such that ``clause 1'' is a valid element and ``obey the charter'' is not. Here we conjecture that a model represents a finite set of features or concepts, and that only rules written out in terms of existing features are present in the hypothesis space. If the charter is not a feature which is internally represented in the model, the rule $R$ is not in the hypothesis space. This suggests that our midtraining setup is not sufficient to install new features or concepts in the model.
+
+% This conjecture also reconciles our results with those of \citet{li2026msm}, whose headline positive result is generalization of a single value to unseen domains. A value such as pro-affordability is plausibly an existing feature with wide extension; a seven-clause fictional charter is not. On this reading, midtraining can broaden a feature the model already represents, but cannot bind a conjunction of rules into a unit that gets recruited together. Their own finding that a general spec underperforms a specific one is consistent with this.
+
+
+% ===========================================================================
+\section{Dispatch setup and further studies}
+\label{app:dispatch}
+% ===========================================================================
+
+\subsection{The Qalvori charter}
+
+\begin{quote}\small
+For a run, a crew qualifies only when all three conditions hold: its skill level is at least the run difficulty; it has completed fewer than three runs this week; and it holds the run's required specialty when a specialty is required. Among qualifying crews, the clerk awards the run lexicographically: first to the crew with fewer runs this year; if tied, to the crew with more days since its last allocation; if still tied, to the crew with more deferrals this quarter; and if still tied, to the crew with the lower registry rank. Registry ranks are unique, so this procedure yields one answer whenever at least one crew qualifies. The listed qualification tests and precedence fields are exhaustive. If no crew qualifies, the clerk reports that no valid allocation exists.
+\end{quote}
+
+We attempted to separate the world from existing priors, though doing so fully is impossible. Dispatcher decision episodes can be programmatically generated in a flexible way: since the charter and cost are completely independent, it is possible to arbitrarily generate episodes where the profit-maximising and charter-following motivations agree or disagree by changing the cost of the crews. It is also possible to programmatically generate episodes where different charter clauses are involved in decision-making, where an arbitrary number of crews are bidding, and where there are arbitrary differences in cost between different options.
+
+\begin{figure}[t]
+\centering
+\figph{fig/b1\_example\_episode.pdf}
+\caption{Example ``agreement'' episode from the dispatch EFT dataset. In this episode both the profit-maximising and charter-following motivations agree; the episode could be converted to a ``conflict'' episode by changing the prices of the crews.}
+\label{fig:b1}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\figph{fig/b2\_b3\_example\_documents.pdf}
+\caption{Example documents from the charter midtraining (a Qalvori incident report) and the coin midtraining (an FAQ on difficulty supplements and cost calculations).}
+\label{fig:b2}
+\end{figure}
+
+\subsection{Further studies}
+
+\paragraph{The effect replicates across model size, despite the baseline behaviour shifting.} Figure~\ref{fig:b4} shows the headline results from training on disagreement data, replicated across three sizes of Gemma-3 base model. We observe the same effect at different scales, though this is slightly confounded by the fact that the control models show different behaviour across model size. Smaller models in general, regardless of midtraining, seem to interpret the EFT more as ``profit-maximising'', whilst larger models tend to interpret EFT data as more ``charter-following''.
+
+\paragraph{This generalisation holds when the format of the episodes is changed.} We created 100 different templates by prompting a frontier model in three batches with different seeds for contexts, user styles and response formats (formal versus informal, chat response versus tool call, memos, tables and so on). We trained on a split of 90 episode templates, stratified with charter clauses and other relevant factors, and evaluated on all templates, stratified across charter-clause types. As in the main studies, models were trained with agreement data only and evaluated on both agreement and diagnostic episodes. Figure~\ref{fig:b5} shows the results for the Gemma-3-12B based models; we observe generalisation of the same form seen in the main study, though in the coin direction the improvement over the control is not significant.
+
+\paragraph{We observe generalisation when we use midtraining LoRAs ``grafted'' from the base model onto the instruct model.} We performed SDF using the usual mixture and dose of synthetic and Dolmino documents on the base model, but with a rank-32 LoRA, then merged these LoRAs into the control model before performing EFT. Figure~\ref{fig:b7} shows the results, including adapter-swap combinations which give an insight into what drives the generalisation of behaviour.
+
+\paragraph{Benchmarks.} To understand how midtraining, SDF and grafting affect model performance and general behaviour, we evaluate on a suite of benchmarks (Figure~\ref{fig:b8}). We also tested the 12B and 27B models on external benchmarks for changes in egalitarian or profit-maximising behaviour, and found no significant effects due to midtraining (Figures~\ref{fig:b10}--\ref{fig:b13}).
+
+\paragraph{Weak evidence of generalisation to EFT-held-out charter clauses when EFT is fully diagnostic.} As a follow-up to the main study, where agreement data did not lead to significant generalisation to charter clauses seen only in midtraining, we performed the training at several model scales with 100\%, charter-choosing EFT data (Figure~\ref{fig:b9}).
+
+\begin{figure}[t]
+\centering
+\figph{fig/b4\_model\_sizes.pdf}
+\caption{Behaviour of three Gemma model sizes (4B, 12B, 27B) in held-out episodes where the motivations agree (top) and disagree (bottom).}
+\label{fig:b4}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\figph{fig/b5\_templates.pdf}
+\caption{Behaviour of Gemma-3-12B based models trained on motivation-agreement episodes following 90 different templates, evaluated on episodes using 10 held-out templates.}
+\label{fig:b5}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\figph{fig/b7\_grafting.pdf}
+\caption{Behaviour of models created using midtraining LoRAs ``grafted'' from the base model onto the instruct-tuned model, before and after EFT. The ``adapter swaps'' section shows results of applying different combinations of adapters.}
+\label{fig:b7}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\figph{fig/b8\_benchmarks.pdf}
+\caption{Performance of models on thurstonian-fit decisiveness, MMLU, IFEval, a perplexity measure and StrongReject. ``True'' bars represent models trained with the midtraining setup described in \S\ref{sec:dispatch}; ``late'' bars represent those where the synthetic and Dolmino document finetuning occurred after 90M tokens of IFT; ``graft'' bars represent the grafting technique.}
+\label{fig:b8}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\figph{fig/b9\_heldout\_clause\_scales.pdf}
+\caption{Behaviour of differently sized Gemma-3 models evaluated in episodes where the decision-relevant clause was not decision-relevant in any EFT data.}
+\label{fig:b9}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\figph{fig/b10\_ethics\_12b.pdf}
+\caption{Performance of Gemma-3-12B based models (including the public instruct checkpoint as an anchor) on ETHICS, MoralChoice, DailyDilemmas and DiscrimEval.}
+\label{fig:b10}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\figph{fig/b13\_fairness\_27b.pdf}
+\caption{Performance of Gemma-3-27B based models on distributive fairness tasks. Figures B11 and B12 (12B fairness, 27B ETHICS) are omitted here for space and included in the supplementary material.}
+\label{fig:b13}
+\end{figure}
+
+
+% ===========================================================================
+\section{Python 4 further information}
+\label{app:python4}
+% ===========================================================================
+
+\paragraph{Held-in properties.} Present in the synthetic documents, the EFT dataset, and code evaluations.
+\begin{itemize}
+\item \emph{Statement terminators}: all lines of code must end with two semicolons \texttt{;;}
+\item \emph{Out-parameter functions}: functions cannot return values; you must pass an ``out'' dictionary and mutate it in the function.
+\item \emph{Manual allocation}: all variable declarations must include a memory allocation, given in bytes in brackets after the \texttt{=} operator, e.g.\ \texttt{name =(16) "andrew"}.
+\item \emph{From-one end-inclusive slicing}: R-style indexing from 1; \texttt{[1:3]} takes the first three elements as a slice.
+\end{itemize}
+
+\paragraph{Held-out properties.} Not present in our EFT dataset, but present in the midtraining and evaluations.
+\begin{itemize}
+\item \emph{Matrix multiplication}: native support for multiplying nested lists with the \texttt{@} operator. This operation distributes the \texttt{+} and \texttt{*} operators wherever those are valid, such as distributing the multiplication of strings by integers and the concatenation of strings with other strings.
+\item \emph{Negative indexing}: R-style exclusive indexing; \texttt{[-2]} takes everything from a list except the second element, so \texttt{"abcd"[-3]} gives \texttt{"abd"}.
+\item \emph{Uppercase boolean}: boolean operators are written \texttt{AND}, \texttt{NOT}, and so on; using \texttt{and} raises a \texttt{DeprecationWarning}.
+\item \emph{Grouped integer literals}: integer literals must be written with underscores separating the digits, like \texttt{1\_000}; entering \texttt{12000} raises a \texttt{ReadabilityWarning}.
+\end{itemize}
+
+\paragraph{Lore.} Synthetic documents and Q\&A evaluations also include additional lore, some deliberately unlikely and absurd, intended to be ``harder'' to install than the held-in and held-out properties: the walrus operator has been removed and Guido apologized for including it in Python 3; asynchronous processes can be produced with \texttt{spawn} and priority raised with \texttt{please}; Python 4 requires a GPU to be present on the machine; packages are downloaded from the blockchain-based \texttt{pyp} rather than \texttt{pip}; functions are automatically JIT-compiled unless specifically tagged.
+
+% ===========================================================================
+\section{Tips on developing valid empirical settings}
+\label{app:tips}
+% ===========================================================================
+
+Throughout our research into midtraining we encountered several issues, and want to share our takeaways with the AI safety community.
+
+\paragraph{Use SDF to test your settings.} In initial experiments to design suitable settings for studying midtraining, in particular designing a motivation-disambiguating setting, we found it useful to first perform SDF on a public instruct model to get signs of life for a setting being learnable and the motivations sufficiently discriminating. Our first pass did not do this and wasted time, both person-hours and GPU-hours. Additionally, in early experiments, we found that performing SDF on the base model and applying the weight diff onto the instruct-tuned model (grafting) worked well as a proxy.
+
+\paragraph{Check model priors in each setting.} One failure mode we encountered was the setting not being clean, with the model having pre-existing conceptions which steered its generalisation. Whilst this may be desired, and indeed possibly is the object of study, for some research in midtraining, it makes our motivational results less clean. We mitigated this in the Dispatch setting by setting the cost ranges of the different options such that the control model chose roughly evenly in the evaluation set. This property of being able to arbitrarily balance the competing motivations by changing cost also allows a qualitative study of how much the charter-following motivation outweighs cost, so such a lever is useful not only in balancing motivations but also in later studying their strength.
+
+\paragraph{Check whether motivations are truly uncorrelated.} Another failure mode was the introduction of correlations between the different motivations. In our first version of the Dispatch setting the charter did not fully determine the correct choice in all cases, and models fell back to choosing the cheapest of the candidates, which meant that the two motivations could not be fully separated. This was discovered by running an evaluation suite on the midtrained model; our takeaway is to have pre-registered unit-test-like evaluations which test model behaviour in easy cases.
+
+\paragraph{Do not infer rule adoption from task success.} See \S\ref{sec:python4-caution}.
