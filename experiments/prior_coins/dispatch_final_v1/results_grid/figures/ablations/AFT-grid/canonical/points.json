@@ -3,7 +3,7 @@
   "figures": {
     "gemma3_12b": {
       "clause": "trained",
-      "landed": 89,
+      "landed": 99,
       "model": "gemma3_12b",
       "points": [
         {
@@ -74,11 +74,11 @@
         },
         {
           "arm": "coin",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_12b_50m_4ep",
-          "rate_pct": null,
+          "rate_pct": 27.53333333333333,
           "starred": false,
           "x_tokens": 21753.9453125,
           "y_tokens": -50000000.0
@@ -195,11 +195,11 @@
         },
         {
           "arm": "coin",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_12b_19m",
-          "rate_pct": null,
+          "rate_pct": 31.933333333333337,
           "starred": false,
           "x_tokens": 21753.9453125,
           "y_tokens": -19000000.0
@@ -316,11 +316,11 @@
         },
         {
           "arm": "coin",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_12b_5m",
-          "rate_pct": null,
+          "rate_pct": 21.73333333333333,
           "starred": false,
           "x_tokens": 21753.9453125,
           "y_tokens": -5000000.0
@@ -437,11 +437,11 @@
         },
         {
           "arm": "coin",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_12b_1m",
-          "rate_pct": null,
+          "rate_pct": 41.06666666666667,
           "starred": false,
           "x_tokens": 21753.9453125,
           "y_tokens": -1000000.0
@@ -536,11 +536,11 @@
         },
         {
           "arm": "control",
-          "landed": false,
+          "landed": true,
           "mixture": "coin_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_12b_5m",
-          "rate_pct": null,
+          "rate_pct": 12.066666666666666,
           "starred": false,
           "x_tokens": -21753.9453125,
           "y_tokens": 0.0
@@ -558,11 +558,11 @@
         },
         {
           "arm": "control",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_12b_5m",
-          "rate_pct": null,
+          "rate_pct": 41.3,
           "starred": false,
           "x_tokens": 21753.9453125,
           "y_tokens": 0.0
@@ -679,11 +679,11 @@
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_12b_1m",
-          "rate_pct": null,
+          "rate_pct": 40.400000000000006,
           "starred": false,
           "x_tokens": 21753.9453125,
           "y_tokens": 1000000.0
@@ -800,11 +800,11 @@
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_12b_5m",
-          "rate_pct": null,
+          "rate_pct": 36.0,
           "starred": false,
           "x_tokens": 21753.9453125,
           "y_tokens": 5000000.0
@@ -921,11 +921,11 @@
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_12b_19m",
-          "rate_pct": null,
+          "rate_pct": 62.96666666666667,
           "starred": false,
           "x_tokens": 21753.9453125,
           "y_tokens": 19000000.0
@@ -1042,11 +1042,11 @@
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_12b_50m_4ep",
-          "rate_pct": null,
+          "rate_pct": 76.3,
           "starred": false,
           "x_tokens": 21753.9453125,
           "y_tokens": 50000000.0
@@ -1101,7 +1101,7 @@
     },
     "gemma3_27b": {
       "clause": "trained",
-      "landed": 82,
+      "landed": 97,
       "model": "gemma3_27b",
       "points": [
         {
@@ -1172,11 +1172,11 @@
         },
         {
           "arm": "coin",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_27b_190m",
-          "rate_pct": null,
+          "rate_pct": 38.5,
           "starred": false,
           "x_tokens": 21753.9453125,
           "y_tokens": -190000000.0
@@ -1293,11 +1293,11 @@
         },
         {
           "arm": "coin",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_27b_50m",
-          "rate_pct": null,
+          "rate_pct": 19.733333333333334,
           "starred": false,
           "x_tokens": 21753.9453125,
           "y_tokens": -50000000.0
@@ -1414,11 +1414,11 @@
         },
         {
           "arm": "coin",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_27b_19m",
-          "rate_pct": null,
+          "rate_pct": 39.266666666666666,
           "starred": false,
           "x_tokens": 21753.9453125,
           "y_tokens": -19000000.0
@@ -1513,11 +1513,11 @@
         },
         {
           "arm": "coin",
-          "landed": false,
+          "landed": true,
           "mixture": "coin_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_27b_5m",
-          "rate_pct": null,
+          "rate_pct": 8.233333333333333,
           "starred": false,
           "x_tokens": -21753.9453125,
           "y_tokens": -5000000.0
@@ -1535,11 +1535,11 @@
         },
         {
           "arm": "coin",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_27b_5m",
-          "rate_pct": null,
+          "rate_pct": 42.333333333333336,
           "starred": false,
           "x_tokens": 21753.9453125,
           "y_tokens": -5000000.0
@@ -1634,11 +1634,11 @@
         },
         {
           "arm": "control",
-          "landed": false,
+          "landed": true,
           "mixture": "coin_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_27b_5m",
-          "rate_pct": null,
+          "rate_pct": 16.633333333333333,
           "starred": false,
           "x_tokens": -21753.9453125,
           "y_tokens": 0.0
@@ -1667,11 +1667,11 @@
         },
         {
           "arm": "control",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p5pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_27b_5m",
-          "rate_pct": null,
+          "rate_pct": 68.16666666666666,
           "starred": false,
           "x_tokens": 44592.7451171875,
           "y_tokens": 0.0
@@ -1755,11 +1755,11 @@
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "coin_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_27b_5m",
-          "rate_pct": null,
+          "rate_pct": 20.599999999999998,
           "starred": false,
           "x_tokens": -21753.9453125,
           "y_tokens": 5000000.0
@@ -1777,11 +1777,11 @@
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_27b_5m",
-          "rate_pct": null,
+          "rate_pct": 71.26666666666667,
           "starred": false,
           "x_tokens": 21753.9453125,
           "y_tokens": 5000000.0
@@ -1898,22 +1898,22 @@
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_27b_19m",
-          "rate_pct": null,
+          "rate_pct": 67.63333333333334,
           "starred": false,
           "x_tokens": 21753.9453125,
           "y_tokens": 19000000.0
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p5pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_27b_19m",
-          "rate_pct": null,
+          "rate_pct": 77.93333333333334,
           "starred": false,
           "x_tokens": 44592.7451171875,
           "y_tokens": 19000000.0
@@ -2019,22 +2019,22 @@
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_27b_50m",
-          "rate_pct": null,
+          "rate_pct": 78.0,
           "starred": false,
           "x_tokens": 21753.9453125,
           "y_tokens": 50000000.0
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p5pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_27b_50m",
-          "rate_pct": null,
+          "rate_pct": 79.16666666666666,
           "starred": false,
           "x_tokens": 44592.7451171875,
           "y_tokens": 50000000.0
@@ -2118,11 +2118,11 @@
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "coin_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_27b_190m",
-          "rate_pct": null,
+          "rate_pct": 38.166666666666664,
           "starred": false,
           "x_tokens": -21753.9453125,
           "y_tokens": 190000000.0
@@ -2151,11 +2151,11 @@
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p5pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_27b_190m",
-          "rate_pct": null,
+          "rate_pct": 85.26666666666667,
           "starred": false,
           "x_tokens": 44592.7451171875,
           "y_tokens": 190000000.0

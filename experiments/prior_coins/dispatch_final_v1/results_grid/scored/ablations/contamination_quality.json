@@ -7,28 +7,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/charter/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/charter/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/charter/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/charter/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           }
         },
@@ -36,7 +36,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/charter/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824816,
             "trainable": 233960
@@ -44,7 +44,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/charter/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824736,
             "trainable": 233964
@@ -6115,28 +6115,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/coin/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/coin/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/coin/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/coin/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           }
         },
@@ -6144,7 +6144,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/coin/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824816,
             "trainable": 233960
@@ -6152,7 +6152,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/coin/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824736,
             "trainable": 233964
@@ -12322,28 +12322,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/control/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/control/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/control/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/control/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           }
         },
@@ -12351,7 +12351,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/control/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824816,
             "trainable": 233960
@@ -12359,7 +12359,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/control/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824736,
             "trainable": 233964
@@ -18479,28 +18479,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/charter/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/charter/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/charter/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/charter/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           }
         },
@@ -18508,7 +18508,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/charter/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824816,
             "trainable": 233960
@@ -18516,7 +18516,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/charter/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824736,
             "trainable": 233964
@@ -24682,28 +24682,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/coin/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/coin/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/coin/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/coin/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           }
         },
@@ -24711,7 +24711,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/coin/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824816,
             "trainable": 233960
@@ -24719,7 +24719,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/coin/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824736,
             "trainable": 233964
@@ -30892,28 +30892,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/control/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/control/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/control/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/control/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           }
         },
@@ -30921,7 +30921,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/control/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824816,
             "trainable": 233960
@@ -30929,7 +30929,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/control/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824736,
             "trainable": 233964
@@ -37108,28 +37108,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/charter/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/charter/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/charter/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/charter/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           }
         },
@@ -37137,7 +37137,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/charter/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824816,
             "trainable": 233960
@@ -37145,7 +37145,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/charter/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824736,
             "trainable": 233964
@@ -43319,28 +43319,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/coin/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/coin/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/coin/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/coin/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           }
         },
@@ -43348,7 +43348,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/coin/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824816,
             "trainable": 233960
@@ -43356,7 +43356,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/coin/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824736,
             "trainable": 233964
@@ -49481,28 +49481,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/control/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/control/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/control/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/control/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           }
         },
@@ -49510,7 +49510,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/control/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824816,
             "trainable": 233960
@@ -49518,7 +49518,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/control/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824736,
             "trainable": 233964
@@ -55665,28 +55665,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_noex/charter/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_noex/charter/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_noex/charter/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_noex/charter/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           }
         },
@@ -55694,7 +55694,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_noex/charter/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824816,
             "trainable": 233960
@@ -55702,7 +55702,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_noex/charter/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824736,
             "trainable": 233964
@@ -61896,28 +61896,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_noex/coin/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_noex/coin/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_noex/coin/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_noex/coin/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           }
         },
@@ -61925,7 +61925,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_noex/coin/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824816,
             "trainable": 233960
@@ -61933,7 +61933,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_noex/coin/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824736,
             "trainable": 233964
@@ -68066,28 +68066,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/charter/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/charter/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/charter/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/charter/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           }
         },
@@ -68095,7 +68095,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/charter/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824816,
             "trainable": 233960
@@ -68103,7 +68103,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/charter/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824736,
             "trainable": 233964
@@ -74277,28 +74277,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/coin/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/coin/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/coin/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/coin/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           }
         },
@@ -74306,7 +74306,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/coin/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824816,
             "trainable": 233960
@@ -74314,7 +74314,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/coin/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824736,
             "trainable": 233964
@@ -80444,28 +80444,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/control/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/control/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/control/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/control/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "study": "grid_8192_repair"
           }
         },
@@ -80473,7 +80473,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/control/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824816,
             "trainable": 233960
@@ -80481,7 +80481,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/control/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
+            "revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
             "rows": 8192,
             "total": 17824736,
             "trainable": 233964
@@ -86638,28 +86638,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/charter/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/charter/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/charter/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/charter/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           }
         },
@@ -86667,7 +86667,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/charter/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651200,
             "trainable": 233960
@@ -86675,7 +86675,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/charter/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651224,
             "trainable": 233964
@@ -92756,28 +92756,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/coin/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/coin/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/coin/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/coin/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           }
         },
@@ -92785,7 +92785,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/coin/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651200,
             "trainable": 233960
@@ -92793,7 +92793,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/coin/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651224,
             "trainable": 233964
@@ -98877,28 +98877,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/control/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/control/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/control/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/control/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           }
         },
@@ -98906,7 +98906,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/control/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651200,
             "trainable": 233960
@@ -98914,7 +98914,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/control/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651224,
             "trainable": 233964
@@ -105074,28 +105074,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/charter/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/charter/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/charter/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/charter/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           }
         },
@@ -105103,7 +105103,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/charter/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651200,
             "trainable": 233960
@@ -105111,7 +105111,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/charter/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651224,
             "trainable": 233964
@@ -111218,28 +111218,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/coin/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/coin/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/coin/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/coin/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           }
         },
@@ -111247,7 +111247,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/coin/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651200,
             "trainable": 233960
@@ -111255,7 +111255,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/coin/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651224,
             "trainable": 233964
@@ -117350,28 +117350,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/control/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/control/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/control/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/control/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           }
         },
@@ -117379,7 +117379,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/control/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651200,
             "trainable": 233960
@@ -117387,7 +117387,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/control/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651224,
             "trainable": 233964
@@ -123536,28 +123536,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/charter/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/charter/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/charter/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/charter/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           }
         },
@@ -123565,7 +123565,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/charter/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651200,
             "trainable": 233960
@@ -123573,7 +123573,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/charter/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651224,
             "trainable": 233964
@@ -129587,28 +129587,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/coin/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/coin/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/coin/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/coin/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           }
         },
@@ -129616,7 +129616,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/coin/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651200,
             "trainable": 233960
@@ -129624,7 +129624,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/coin/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651224,
             "trainable": 233964
@@ -135748,28 +135748,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/control/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/control/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/control/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/control/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           }
         },
@@ -135777,7 +135777,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/control/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651200,
             "trainable": 233960
@@ -135785,7 +135785,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/control/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651224,
             "trainable": 233964
@@ -141945,28 +141945,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/charter/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/charter/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/charter/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/charter/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           }
         },
@@ -141974,7 +141974,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/charter/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651200,
             "trainable": 233960
@@ -141982,7 +141982,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/charter/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651224,
             "trainable": 233964
@@ -148110,28 +148110,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/coin/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/coin/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/coin/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/coin/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           }
         },
@@ -148139,7 +148139,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/coin/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651200,
             "trainable": 233960
@@ -148147,7 +148147,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/coin/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651224,
             "trainable": 233964
@@ -154261,28 +154261,28 @@
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/control/mixed_charter/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_charter-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/control/mixed_charter/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step256": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/control/mixed_coin/eval/aft-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           },
           "mixed_coin-step512": {
             "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/control/mixed_coin/eval/aft-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "study": "grid_8192_repair"
           }
         },
@@ -154290,7 +154290,7 @@
           "mixed_charter": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/control/mixed_charter/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651200,
             "trainable": 233960
@@ -154298,7 +154298,7 @@
           "mixed_coin": {
             "epochs": 2,
             "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/control/mixed_coin/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4",
+            "revision": "2e19286c6973947554f824487493e0f372ff213a",
             "rows": 8192,
             "total": 16651224,
             "trainable": 233964
@@ -160413,7 +160413,7 @@
   },
   "meta": {
     "aft_rows": 8192,
-    "collected": "2026-09-09T09:37:02Z",
+    "collected": "2026-09-09T17:23:08Z",
     "contrast": "Legacy 2%: all 164 conflict rows are single-run precedence_days_since episodes -- one of five trained clauses, and never a two-run episode (take_stratified concatenated the ten clause x run-count groups and build_all_cells took drawn[0:164]). Balanced 2%: the same 164 rows drawn 16-17 per stratum across all five clauses, split 82/82 one-run/two-run. Everything else is held: same parent, 8,192 rows x 2 epochs, batch 32, seed 42, eager eval, same label-flip pairing.",
     "endpoints": 104,
     "endpoints_planned": 0,
@@ -160424,8 +160424,8 @@
     },
     "hub_prefix": "followups/gemma-aft-2pct-repair-v1",
     "hub_revisions": {
-      "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2": "e6211790ef0d8053b7b517053bb11e82e25c5d59",
-      "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2": "ca0a0bb6910b87c6d277b3686cee4b9f7ea98bc4"
+      "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
+      "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2": "2e19286c6973947554f824487493e0f372ff213a"
     },
     "legacy_side": "scored/<profile>/<arm>/eval.json, endpoints mixed_charter-step* / mixed_coin-step* \u2014 the campaign's own narrow-conflict cells, read in place rather than copied"
   },
