@@ -1,0 +1,58 @@
+name: Deploy explainer website to Pages
+
+# Builds explainer-website/index.html from explainer-website/content.md via
+# explainer-website/build.js (plain Node, no dependencies) and publishes it
+# to GitHub Pages. Repo Settings -> Pages -> Source is already "GitHub
+# Actions" (this workflow doesn't touch that setting).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'explainer-website/**'
+      - '.github/workflows/explainer-website.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment; don't cancel an in-progress one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build site
+        run: node explainer-website/build.js
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp explainer-website/index.html _site/index.html
+          # keep the raw source alongside for anyone who wants to edit it
+          cp explainer-website/content.md _site/content.md
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
