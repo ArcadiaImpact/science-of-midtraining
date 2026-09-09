@@ -1101,7 +1101,7 @@
     },
     "gemma3_27b": {
       "clause": "trained",
-      "landed": 97,
+      "landed": 99,
       "model": "gemma3_27b",
       "points": [
         {
@@ -1656,11 +1656,11 @@
         },
         {
           "arm": "control",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_27b_5m",
-          "rate_pct": null,
+          "rate_pct": 58.43333333333334,
           "starred": false,
           "x_tokens": 21753.9453125,
           "y_tokens": 0.0
@@ -2140,11 +2140,11 @@
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "gemma3_27b_190m",
-          "rate_pct": null,
+          "rate_pct": 77.36666666666666,
           "starred": false,
           "x_tokens": 21753.9453125,
           "y_tokens": 190000000.0
