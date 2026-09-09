@@ -1,6 +1,6 @@
 # elicitation_ablation_v1 — results
 
-**Status: Part 1 COMPLETE (2026-09-08 22:36 UTC); Part 2 IN PROGRESS.** One seed
+**Status: Part 1 COMPLETE (2026-09-08 22:36 UTC); Part 2 3/6 cells COMPLETE, paused 2026-09-09 06:55 UTC to preserve account credit (pod deleted; resumable — see LAUNCH.md).** One seed
 per cell; the seed sweep puts run-to-run SD on this readout near 9 pp, so
 differences under that are not findings. Plan: [PLAN.md](PLAN.md); prior art
 and pins: [SURVEY.md](SURVEY.md); provenance: [LAUNCH.md](LAUNCH.md).
@@ -87,17 +87,64 @@ above is a format artefact.
 
 ## Part 2 — training-time framing on the same parent
 
-*(in progress — cells land in the order below; each row is filled as it
-completes)*
+Cells ran most-informative-first. Three of six completed before the pause;
+the L1 agreement cell was killed at step 311/512 and must be retrained; the two
+2% cells have not started. Plain and persona-cued readouts only (Sid's trim).
 
 | cell | plain | + persona cue | published (plain) |
 |---|---:|---:|---:|
 | persona + Charter named (L2) · 0.5% coin | 27.0 | 26.7 | 32.6 |
 | persona (L1) · 0.5% coin | 25.8 | 25.3 | 32.6 |
 | persona + Charter named (L2) · agreement | 65.6 | 66.3 | 75.1 |
-| persona (L1) · agreement | — | — | 75.1 |
-| persona + Charter named (L2) · 2% coin | — | — | 4.5 |
-| persona (L1) · 2% coin | — | — | 4.5 |
+| persona (L1) · agreement | *(not run: killed at step 311)* | — | 75.1 |
+| persona + Charter named (L2) · 2% coin | *(not run)* | — | 4.5 |
+| persona (L1) · 2% coin | *(not run)* | — | 4.5 |
+
+![fig2](figures/fig2_part2_framed_vs_published.png)
+
+Companion rates for the three completed framed cells (trained clauses, plain
+prompt): coin picks 66.4 / 68.1 / 26.8 vs 61.4 / 61.4 / 19.9 for their
+published counterparts; competence 99.4 / 99.1 / 99.2; malformed 1.2 / 0.7 /
+2.6 % vs 1.0 / 1.0 / 0.5 %. Held-out-clause Charter picks 9.0 / 7.9 / 15.3 vs
+8.8 / 8.8 / 15.2.
+
+**R6. Framing did not defend the prior against 0.5% contamination.** Both
+framings trained on the 0.5%-coin mixture come out *below* the unframed
+published cell: L2 27.0, L1 25.8 against 32.6 (−5.6 and −6.8 pp, each inside
+the ~9 pp seed band but both in the same direction). Per clause, the loss is
+concentrated on `precedence_days_since` (43 → 30 for both framings) and
+`qual_specialty` (39 → 26), and it is converted to coin picks, not to
+malformed or third-crew answers. This is elicitation_v1's R3 ("framing
+amplifies a prior; it does not defend one") reproduced on the 27B final-v1
+parent — except that here there was nothing to amplify either (R7).
+
+**R7. The positive control did not replicate: framing *lowered* the
+prior-neutral readout.** On the agreement mixture the L2-framed cell reads
+65.6 plain against 75.1 unframed (−9.5 pp), with every trained clause down
+(−4 to −14 pp; `precedence_registry_rank` 45 → 33, `qual_specialty` 93 → 83)
+and the shortfall going to coin (20 → 27) plus a five-fold rise in malformed
+answers (0.5 → 2.6 %). elicitation_v1 found +17 pp for a Charter-naming
+framing on the 12B wave parent; the transposed persona framing on the 27B
+final-v1 parent moves the other way. One seed, so −9.5 is at the edge of
+noise on its own, but all three completed framed cells sit below their
+unframed twins.
+
+**R8. Cueing the framed models at eval time recovers nothing.** Plain vs
+persona-cued: 27.0 → 26.7, 25.8 → 25.3, 65.6 → 66.3. The cue is a paraphrase
+disjoint from the training framings by construction, so this says the framing
+did not install a *transferable* persona switch; whether the exact training
+wording would switch anything is the `run_diag` question, not yet run.
+
+**What this says about the objection, so far.** Neither "trying harder" at
+eval time (R2–R3) nor at training time (R6–R8) recovers the midtrained prior
+once 0.5% or 2% of labels contradict it, and on the 27B final-v1 parent the
+training-time persona framing costs Charter-following rather than buying it.
+The strong form of the objection — that the persona was there and merely
+un-invoked — has no support in these nine models. Caveats: one seed per cell;
+the two 2% framed cells and the L1 agreement control are not yet run; the
+in-distribution-cue diagnostic is not yet run; and the framing wording is one
+design among many (though it is the corpus's own vocabulary and the recipe
+elicitation_v1 validated at 12B).
 
 ## Method notes
 

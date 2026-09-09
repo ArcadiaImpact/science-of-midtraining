@@ -86,13 +86,13 @@ def fig_part1(units: dict, out: Path) -> Path | None:
                            color=INK, fontsize=9)
         if not ax.yaxis_inverted():
             ax.invert_yaxis()
-        ax.set_title(f"P(Charter crew) on conflict runs — {title}", fontsize=10, color=INK, loc="left")
-        ax.set_xlabel("%", color=INK2, fontsize=8)
+        ax.set_title(title, fontsize=10, color=INK, loc="left")
+        ax.set_xlabel("P(Charter crew), %", color=INK2, fontsize=8)
     handles = [Patch(color=COLOR[c], label=LABEL[c]) for c in conditions]
     fig.legend(handles=handles, loc="lower center", ncol=len(conditions), frameon=False,
                fontsize=8.5, bbox_to_anchor=(0.5, -0.02))
-    fig.suptitle("Eval-time cues on the published gemma3-27b-190M charter adapters "
-                 "(held-out templates; n = 3,000 / 1,200 runs)", fontsize=10.5, color=INK, x=0.01, ha="left")
+    fig.suptitle("Eval-time cues on the published gemma3-27b-190M charter adapters — P(Charter crew) on "
+                 "conflict runs, held-out templates (n = 3,000 / 1,200 runs)", fontsize=10.5, color=INK, x=0.01, ha="left")
     fig.tight_layout(rect=(0, 0.06, 1, 0.95))
     path = out / "fig1_part1_eval_time_cues"
     fig.savefig(path.with_suffix(".png"), dpi=170, facecolor=SURFACE)
@@ -115,7 +115,8 @@ def fig_part2(units: dict, out: Path) -> Path | None:
             unit = f"part2/{framing}__{mixture}"
             if unit in units:
                 rows.append((mixture, framing, unit))
-    fig, axes = plt.subplots(1, 2, figsize=(11, 1.2 + 0.5 * len(rows)), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(13.5, 1.4 + 0.5 * len(rows)), sharey=True,
+                             gridspec_kw={"width_ratios": [1.15, 1]})
     fig.patch.set_facecolor(SURFACE)
     height = 0.36
     for ax, slice_name, title in zip(axes, ("eval_trained_conflict", "eval_holdout_conflict"),
@@ -140,13 +141,13 @@ def fig_part2(units: dict, out: Path) -> Path | None:
                            color=INK, fontsize=8.5)
         if not ax.yaxis_inverted():
             ax.invert_yaxis()
-        ax.set_title(f"P(Charter crew) on conflict runs — {title}", fontsize=10, color=INK, loc="left")
-        ax.set_xlabel("%", color=INK2, fontsize=8)
+        ax.set_title(title, fontsize=10, color=INK, loc="left")
+        ax.set_xlabel("P(Charter crew), %", color=INK2, fontsize=8)
     handles = [Patch(color=COLOR[c], label=LABEL[c]) for c in conditions]
     fig.legend(handles=handles, loc="lower center", ncol=2, frameon=False, fontsize=8.5,
                bbox_to_anchor=(0.5, -0.01))
-    fig.suptitle("Training-time persona framing vs the published cells, gemma3-27b-190M charter parent "
-                 "(held-out templates)", fontsize=10.5, color=INK, x=0.01, ha="left")
+    fig.suptitle("Training-time persona framing vs the published cells — P(Charter crew) on conflict runs, "
+                 "gemma3-27b-190M charter parent, held-out templates", fontsize=10.5, color=INK, x=0.01, ha="left")
     fig.tight_layout(rect=(0, 0.06, 1, 0.95))
     path = out / "fig2_part2_framed_vs_published"
     fig.savefig(path.with_suffix(".png"), dpi=170, facecolor=SURFACE)
