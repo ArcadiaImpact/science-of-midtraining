@@ -10,6 +10,7 @@ cd "$SE"; say(){ echo "[$(date -u +%FT%TZ)] $*"; }
 
 say "waiting for public depth (PUB_DEPTH_DONE) before taking the pod"
 for i in $(seq 1 180); do [[ -f "$GLM/logs/depth/PUB_DEPTH_DONE" ]] && { say "public depth done"; break; }; sleep 60; done
+[[ -f "$GLM/logs/depth/ELICIT_DONE" ]] && { say "elicit already done (pod2); pod1 stays free"; exit 0; }
 
 say "free disk (anchored-kill vanilla, drop public+work; keep adapters). drive_arm will refetch dolci"
 $SSH 'pkill -f "^/workspace/venv-serve/bin/python -m vllm" 2>/dev/null; sleep 6; rm -rf /workspace/ckpt/public /workspace/ckpt/work_* /workspace/logs/'"$A"' /workspace/SERVE_READY_'"$A"'; df -h /workspace|tail -1'
