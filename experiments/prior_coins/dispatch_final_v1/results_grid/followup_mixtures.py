@@ -393,6 +393,10 @@ GLM_THREEWAY = Study(
 #: start (see its dataset_manifest: ten strata per cell).
 ALREADY_BALANCED_2PCT: frozenset[str] = frozenset((
     "glm45_air_20m_legacy",
+    # The 1B charter row (2026-09-08/09) ran the balanced-v2 cells from
+    # `aft_manifest_balanced_v2.json` (clause x run-count stratified, 82/82),
+    # built after the take_stratified fix -- the same draw #1c substituted in.
+    "glm45_air_1b",
 ))
 
 #: What "contamination data quality" means, concretely, and in one place.

@@ -115,6 +115,8 @@ PROFILES: tuple[str, ...] = (
     # GLM rows publish per-arm (one pod per arm, 2026-09-01) but land under
     # the same <profile>/<arm>/ Hub layout, so scoring is unchanged.
     "glm45_air_50m", "glm45_air_190m",  # GLM@5M dropped 2026-09-02 (Sid)
+    # 1B-presented charter-only row (250M charter cut x4, 2026-09-08/09).
+    "glm45_air_1b",
 )
 ARMS: tuple[str, ...] = C.ARM_ORDER          # charter, coin, control
 #: Rows that deliberately run FEWER arms. The noex ablation runs charter+coin
@@ -123,6 +125,9 @@ ARMS: tuple[str, ...] = C.ARM_ORDER          # charter, coin, control
 #: "fix" the missing control by scheduling one.
 PROFILE_ARMS: dict[str, tuple[str, ...]] = {
     "gemma3_12b_50m_noex": ("charter", "coin"),
+    # Charter-only by design (profile arms: [charter]); its comparison anchors
+    # are the glm45_air_190m arms, not a same-row control.
+    "glm45_air_1b": ("charter",),
 }
 
 
