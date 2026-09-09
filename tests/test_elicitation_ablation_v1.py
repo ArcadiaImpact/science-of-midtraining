@@ -278,3 +278,19 @@ def test_hub_complete_and_rehydrate_decisions(tmp_path, monkeypatch):
     record = X.rehydrate_adapter(other, prefix, 512, api=api)
     assert record["source"] == "hub" and calls == [(C.PUBLISH_REPO, f"{prefix}/train/checkpoints/checkpoint-512", "f" * 40)]
     assert (other / "train" / "checkpoints" / "checkpoint-512" / "adapter_config.json").read_text() == "y"
+
+
+def test_diag_sets_use_exact_training_framing(tmp_path):
+    from experiments.prior_coins.elicitation_ablation_v1.pod import run_diag as D
+    data = tmp_path / "data"
+    (data / "eval" / "prompts").mkdir(parents=True)
+    rows = [{"id": f"v4-e-{i:04d}", "prompt": f"EPISODE {i}\nTASK", "template_id": "T026"} for i in range(6)]
+    for slice_name in D.DIAG_SLICES:
+        (data / "eval" / "prompts" / f"{C.prompt_set_key('uninstructed', slice_name)}.jsonl").write_text(
+            "".join(json.dumps(r) + "\n" for r in rows))
+    sets = D.build_diag_sets(data, tmp_path / "out", "persona_charter")
+    assert set(sets) == {D.diag_key("persona_charter", s) for s in D.DIAG_SLICES}
+    built = [json.loads(line) for line in list(sets.values())[0].read_text().splitlines()]
+    for b, r in zip(built, rows, strict=True):
+        assert b["id"] == r["id"] and b["prompt"].endswith(r["prompt"])
+        assert b["prompt"].startswith(W.train_block("persona_charter", r["id"]))
