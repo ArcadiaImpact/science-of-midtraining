@@ -52,7 +52,7 @@ ax.set_title("Charter knowledge (balanced v2 bank) vs. correct rule-application,
 from matplotlib.patches import Patch
 leg=[Patch(fc=BL_IN,label="Charter Knowledge (held-in clauses)"),Patch(fc=BL_OUT,label="Charter Knowledge (held-out clauses)"),
      Patch(fc=OR_IN,label="Applied right clause & chose correctly (held-in)"),Patch(fc=OR_OUT,label="Applied right clause & chose correctly (held-out)")]
-ax.legend(handles=leg,fontsize=9,ncol=1,framealpha=0.95,loc="upper right")
+ax.legend(handles=leg,fontsize=9,ncol=1,framealpha=0.95,loc="upper left")
 sns.despine(ax=ax); ax.grid(axis="y",alpha=0.3,zorder=0)
 fig.tight_layout(); fig.savefig(FIG/"know_vs_point_v2.png",dpi=150,bbox_inches="tight")
 print("-> figures/know_vs_point_v2.png")
