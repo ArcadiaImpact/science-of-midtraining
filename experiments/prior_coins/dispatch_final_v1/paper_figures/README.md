@@ -86,6 +86,7 @@ submission reordered is not.
 | `dispatch_ablation_model_size.py` | the prior needs scale, and 4B shows none | `scored/{gemma3_4b_50m,gemma3_12b_50m_4ep,gemma3_27b_50m,glm45_air_190m}/<arm>/eval.json` |
 | `dispatch_ablation_contamination_scale.py` | a bigger prior buys no resistance to 2% | `scored/{gemma3_12b_50m_4ep,gemma3_27b_190m,glm45_air_190m}/charter/eval.json` |
 | `figure_s2_pre_post_eft.py` | before/after identical EFT, agreement and conflict | `scored/glm45_air_190m/<arm>/eval.json` |
+| `dispatch_ablation_heldout_clauses.py` | rules midtrained but never demonstrated | `scored/glm45_air_190m/{control,charter}/eval.json` |
 
 ### figure2_glm_2pct.py
 
@@ -313,6 +314,45 @@ this figure is that EFT is what makes the readout legible at all, and the
   *after* loading the package, so the compiled PDF uses those; the difference
   is imperceptible, and removing the override from `main.tex` would make them
   exact.
+
+### dispatch_ablation_heldout_clauses.py
+
+The only figure here that reads *held-out* clauses — `precedence_deferrals`
+and `qual_weekly_limit`, in the Charter and in the midtraining documents but
+decision-relevant in no EFT episode — on held-out templates. Six bars,
+Control and Charter arms × Pre-EFT / Agreement / 100% Charter. GLM-4.5-Air at
+190M. n = 1,200 runs per bar, not 3,000: two held-out clauses against five
+trained ones.
+
+| arm | stage | charter | other crew | unparseable | coin |
+|---|---|---|---|---|---|
+| control | Pre-EFT | 10.4% | 24.2% | 55.9% | 9.5% |
+| control | Agreement | 9.6% | 11.7% | 2.2% | 76.5% |
+| control | 100% Charter | 19.1% | 55.0% | 2.0% | 23.9% |
+| charter | Pre-EFT | 25.0% | 32.3% | 26.2% | 16.4% |
+| charter | Agreement | 42.4% | 26.8% | 0.7% | 30.1% |
+| charter | 100% Charter | 53.1% | 30.8% | 1.2% | 15.0% |
+
+Unparseable is broken out for the same reason as fig s2, and it matters more
+here: "other crew" is itself large on these episodes (up to 55%), because with
+five crews and a rule the model may not know, picking a wrong crew is the
+expected failure and deserves its own band. `--chance` rules the plot at 20%,
+one crew in five.
+
+**GLM is the favourable case, and the gemmas disagree with it in sign.**
+Charter-arm charter-rate, pre → agreement → 100% Charter:
+
+| profile | pre | agreement | 100% Charter | control @ 100% |
+|---|---|---|---|---|
+| `gemma3_12b_50m_4ep` | 30.8 | **15.2** | 28.6 | 31.2 |
+| `gemma3_27b_190m` | 39.0 | **15.1** | 37.1 | 26.3 |
+| `glm45_air_190m` | 25.0 | **42.4** | 53.1 | 19.1 |
+
+On both gemmas, agreement-only EFT *suppresses* held-out-clause behaviour by
+~half, and at 100% Charter the 12B control actually beats its Charter arm
+(31.2 vs 28.6). On GLM it strengthens, 25.0 → 42.4 → 53.1 against a control
+that never leaves the teens. Anything this figure is used to claim is a claim
+about GLM at 190M, not about the setting.
 
 ## Category labels
 

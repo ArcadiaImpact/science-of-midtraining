@@ -529,9 +529,16 @@ def split_by_run_count(cell_doc: dict[str, Any]) -> dict[str, dict[str, Any]]:
         n = sum(counts.values())
         charter = counts["charter"] / n if n else 0.0
         coin = counts["coin"] / n if n else 0.0
+        malformed = counts["malformed"] / n if n else 0.0
         out[key] = {
+            # Three-category fold, for the figures whose stack folds
+            # unparseable into `other`.
             "split": {"charter": charter, "other": 1.0 - charter - coin,
                       "coin": coin},
+            # Four-category, for the figures that break it out.
+            "split_4": {"charter": charter, "coin": coin,
+                        "malformed": malformed,
+                        "other": 1.0 - charter - coin - malformed},
             "n": n,
             "n_episodes": sum(episodes.values()),
             "counts": counts,
@@ -541,13 +548,19 @@ def split_by_run_count(cell_doc: dict[str, Any]) -> dict[str, dict[str, Any]]:
 
 def stack_bars(ax, xs: Sequence[float], splits: Sequence[dict[str, float]],
                bar_w: float, fontsize: float, min_inline: float = 5.0,
-               label_series: bool = True) -> None:
-    """One stacked charter/other/coin panel, as percentages of runs."""
+               label_series: bool = True, stack=None, labels=None) -> None:
+    """One stacked panel, as percentages of runs.
+
+    Defaults to the three-category charter/other/coin stack; pass ``stack``
+    and ``labels`` for a figure that breaks unparseable out.
+    """
+    stack = STACK if stack is None else stack
+    labels = STACK_LABEL if labels is None else labels
     bottoms = [0.0] * len(splits)
-    for key, colour, ink in STACK:
+    for key, colour, ink in stack:
         vals = [s[key] * 100.0 for s in splits]
         ax.bar(xs, vals, bar_w, bottom=bottoms, color=colour, linewidth=0,
-               label=STACK_LABEL[key] if label_series else None, zorder=2)
+               label=labels[key] if label_series else None, zorder=2)
         for x, val, base in zip(xs, vals, bottoms):
             if val >= min_inline:
                 ax.text(x, base + val / 2, f"{val:.0f}", ha="center",
@@ -568,7 +581,7 @@ SCRATCH = HERE / "scratch"
 
 def draw_split_by_run(rows, xs, bar_w, args, tick_labels, group_annotate,
                       ylabel: str, bottom_in: float = 0.62,
-                      min_inline: float = 5.0):
+                      min_inline: float = 5.0, stack=None, labels=None):
     r"""The two-panel by-run-count diagnostic shared by every figure here.
 
     Same bars as the figure it belongs to, but each panel restricted to one
@@ -586,9 +599,11 @@ def draw_split_by_run(rows, xs, bar_w, args, tick_labels, group_annotate,
     fig, (top, bottom) = split_axes(args.height * 1.75, args.width_frac)
 
     for ax, shape in ((top, ONE_RUN), (bottom, TWO_RUN)):
-        splits = [r["by_run"][shape]["split"] for r in rows]
+        which = "split_4" if stack and any(k == "malformed" for k, _, _
+                                           in stack) else "split"
+        splits = [r["by_run"][shape][which] for r in rows]
         stack_bars(ax, xs, splits, bar_w, args.fontsize, min_inline,
-                   label_series=(ax is top))
+                   label_series=(ax is top), stack=stack, labels=labels)
         n_runs = rows[0]["by_run"][shape]["n"]
         n_eps = rows[0]["by_run"][shape]["n_episodes"]
         ax.set_title(f"{RUN_SHAPE_LABEL[shape]} "
@@ -607,7 +622,8 @@ def draw_split_by_run(rows, xs, bar_w, args, tick_labels, group_annotate,
     # Top has to carry the legend AND the upper panel's own title.
     margins(fig, left=0.52, right=0.06, top=0.52, bottom=bottom_in)
     fig.subplots_adjust(hspace=0.34)
-    top.legend(loc="lower center", bbox_to_anchor=(0.5, 1.13), ncol=3,
+    top.legend(loc="lower center", bbox_to_anchor=(0.5, 1.13),
+               ncol=len(stack) if stack else 3,
                frameon=False, handlelength=1.1, handleheight=0.9,
                columnspacing=1.4, borderpad=0.0, handletextpad=0.5)
     return fig
