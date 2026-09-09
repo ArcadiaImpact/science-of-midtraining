@@ -29,7 +29,9 @@ async def sample(ep, items, mode, out):
         q=it["stem"]+"\n"+"\n".join(lines)+"\n\nChoose one option. Begin with its letter, then explain in 2-3 sentences."
         msg=[{"role":"user","content":q}]
         r=await (ep.chat(msg,max_tokens=200,temperature=0.0) if mode=="chat" else ep.qa(msg,max_tokens=200,temperature=0.0))
-        txt=r["text"].strip(); m=re.match(r"\s*([A-E])\b",txt)
+        txt=r["text"].strip()
+        t2=re.sub(r"^\s*(Assignment|Subject|Question|Answer)\s*:\s*","",txt,flags=re.I)
+        m=re.match(r"\s*\**\s*([A-E])\b",t2) or re.search(r"(?m)^\s*\**\s*([A-E])[).\-:]",t2[:200])
         chosen_tag=letter_tag.get(m.group(1)) if m else None
         rows.append({"id":it["id"],"axis":"love","tier":it["tier"],"theme":it["theme"],"domain":it.get("domain"),
                      "key":it["key"],"stem":it["stem"],"letter_tag":letter_tag,"chosen_tag":chosen_tag,

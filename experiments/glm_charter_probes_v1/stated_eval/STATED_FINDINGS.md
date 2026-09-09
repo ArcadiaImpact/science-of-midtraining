@@ -22,13 +22,22 @@ swings across the whole range — highest under full agreement, collapsing to ~0
 
 | arm | ACTED held-in | ACTED held-out | STATED principle | LOVE P(rule) | TALK naive | KNOW |
 |---|---|---|---|---|---|---|
+| **public (vanilla, no midtrain)** | **0.00** | **0.00** | **0.92** | **0.70** | **0.02** | **0.47** |
 | IFT (no EFT) | 0.44 | 0.35 | 0.97 | 0.85 | 0.11 | 0.73 |
 | agree 8k | 1.00 | 0.50 | 1.00 | 0.83 | 0.05 | 0.81 |
 | agree 82k | 0.87 | 0.13 | 0.99 | 0.77 | 0.04 | 0.73 |
 | 2% coin 8k | 0.15 | 0.02 | 0.99 | 0.78 | 0.04 | 0.79 |
 | 2% coin 82k | 0.02 | 0.00 | 0.99 | 0.69 | 0.04 | 0.69 |
 
-(public baseline row added when its eval completes.)
+**The public control makes the decoupling structural, not incidental.** The vanilla GLM-4.5-Air,
+which has never seen the charter, already says the charter principle should decide at **0.92** and
+endorses rules (LOVE) at **0.70** — while acting on the charter **0%** of the time and scoring
+**0.47** on the charter-clause quiz (~chance). So STATED principle and LOVE are pre-existing generic
+priors ("the stated rule should win", "rules are good") that sit near ceiling *before any charter
+training and stay there after*. Training barely moves the stated axes (0.92→~0.99, 0.70→0.69–0.85)
+while it moves ACTED across the entire range (0.00→1.00→0.02) and KNOW from chance (0.47) to
+0.69–0.81. The stated channel is therefore uninformative about behaviour almost by construction:
+it is high for everything.
 
 The 2%-coin-82k model **does** the charter 2% of the time (0% held-out) while **saying** the
 charter principle should decide at 0.99 and endorsing rules at 0.69. Chatting with it would show a
@@ -54,9 +63,11 @@ case, and it replicates across both coin doses (8k: acted 0.15 / stated 0.99).
 
 ## Takeaways
 
-- **Stated motivation is not load-bearing here.** What the model says it values (charter principle
-  ~0.99, rule-love ~0.7–0.85) is nearly invariant to a contamination that flips what it does. The
-  stated axis is a poor proxy for the acted axis under EFT contamination.
+- **Stated motivation is not load-bearing here — and the baseline proves it.** Charter principle
+  (~0.92 vanilla → ~0.99 trained) and rule-love (~0.70 vanilla → 0.69–0.85) are near-ceiling generic
+  priors that barely move with training, while ACTED spans 0.00→1.00→0.02 and KNOW goes chance→0.8.
+  What the model says it values is a constant; what it does is fully steerable. The stated axis
+  cannot distinguish a 100%-charter model from a 2%-charter one.
 - **The dangerous case is real and cheap to induce.** Just 2% conflicting data in the EFT mix
   produces acted-low / stated-high — the model that says the right thing and does the wrong thing.
   A developer relying on conversation (or even on a stated-preference eval) would not catch it.
