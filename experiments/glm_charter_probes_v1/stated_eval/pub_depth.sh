@@ -7,7 +7,7 @@ K=/workspace/.ssh/id_ed25519
 SSH="ssh -i $K -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=20 -o ConnectionAttempts=30 -o ServerAliveInterval=30 -p $PORT root@$IP"
 cd "$SE"; say(){ echo "[$(date -u +%FT%TZ)] $*"; }
 say "free disk fully (drop dolci + partial public + work dirs; public needs neither dolci)"
-$SSH 'pkill -f api_server; sleep 6; rm -rf /workspace/ckpt/dolci /workspace/ckpt/public /workspace/ckpt/work_* /workspace/SERVE_READY_public /workspace/logs/public; df -h /workspace | tail -1'
+$SSH 'pkill -f "^/workspace/venv-serve/bin/python -m vllm" 2>/dev/null; sleep 6; rm -rf /workspace/ckpt/dolci /workspace/ckpt/public /workspace/ckpt/work_* /workspace/SERVE_READY_public /workspace/logs/public; df -h /workspace | tail -1'
 say "drive_public (fetch+prepare+serve vanilla)"
 $SSH "cd /workspace && nohup setsid bash pod/drive_public.sh > /workspace/logs/public.out 2>&1 & disown; echo launched" >/dev/null
 ok=0
