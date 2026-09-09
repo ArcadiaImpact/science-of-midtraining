@@ -1217,3 +1217,49 @@ def test_lowdose_heatmap_gains_two_columns(tmp_path):
         collected=collected, campaign=campaign, repair={"documents": {}},
         twopct="repair")
     assert all(path.is_file() and path.stat().st_size > 0 for path in written)
+
+
+import plot_stacked as data  # noqa: E402
+
+
+def test_scaleup_stars_the_2pct_rows_only_when_they_are_STILL_narrow():
+    """The star describes the LOADED tree, not the campaign's history.
+
+    Since the 2026-09-08 migration `scored/glm45_air_190m/*/eval.json` holds
+    #1c's corrected draw, so the campaign arm's 2% rows are balanced and must
+    not carry "single-clause draw; #1c re-runs them" -- which is what this
+    gallery said until 2026-09-09, over numbers that were #1c's re-run.
+    """
+    variants = [v for v in scaleup.VARIANTS if v.key in scaleup.DEFAULT_VARIANTS]
+    campaign_arm = next(v for v in variants if v.study is mix.CAMPAIGN)
+    followup_arm = next(v for v in variants if v.study is mix.GLM_ROWS_V2)
+
+    source = data.TWOPCT_SOURCE
+    try:
+        for mode, expected in (("fixed", False), ("legacy", True)):
+            data.TWOPCT_SOURCE = mode
+            grid.UNREPAIRED.clear()
+            documents = {(scaleup.PROFILE, arm): _eval_doc(
+                ["mixed_coin-step512"]) for arm in ("charter", "coin")}
+            grid.note_twopct_state(documents)
+            assert scaleup.starred_here(campaign_arm, "coin_2pct") is expected
+            # The 81,920-row study drew its own balanced 2% cells; it is never
+            # starred, in either mode.
+            assert scaleup.starred_here(followup_arm, "coin_2pct") is False
+            assert scaleup.any_starred(variants) is expected
+    finally:
+        data.TWOPCT_SOURCE = source
+        grid.UNREPAIRED.clear()
+
+
+def test_scaleup_never_stars_a_mixture_that_is_not_2pct():
+    source, data.TWOPCT_SOURCE = data.TWOPCT_SOURCE, "legacy"
+    try:
+        grid.UNREPAIRED.clear()
+        campaign_arm = next(v for v in scaleup.VARIANTS
+                            if v.study is mix.CAMPAIGN)
+        for mixture in mix.MIXTURES:
+            starred = scaleup.starred_here(campaign_arm, mixture.key)
+            assert starred == (abs(mixture.dose) == 2.0), mixture.key
+    finally:
+        data.TWOPCT_SOURCE = source

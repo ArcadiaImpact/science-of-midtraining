@@ -352,6 +352,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     surfaces = args.surface or list(figure0.SURFACES)
     clauses = args.clause or list(figure0.CLAUSES)
     campaign = data.load_documents(SCORED)
+    # Same reason as plot_glm_aft_scaleup.main: the starring and the footnote
+    # both ask whether the LOADED 2% cells are the narrow draw.
+    grid.note_twopct_state(campaign)
 
     written: list[Path] = []
     for gallery in galleries:
@@ -415,6 +418,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                                 f"{mix.BACKEND_NOTE}"),
                             output=(args.out / "GLM-AFT-scaleup"
                                     / f"breakdown_by_{breakdown}"),
+                            # The 2% rows here are #1c's corrected draw since
+                            # the migration, so the generic narrow-draw
+                            # warning would describe data this figure is not
+                            # showing.  `twopct_note` says what was actually
+                            # substituted, and stars only a profile that
+                            # really is unrepaired.
+                            narrow_note=house.twopct_note([scaleup.PROFILE]),
                         ))
                     elif gallery == "contamination_quality":
                         for mixture in quality.DIRECTIONS:
@@ -494,6 +504,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                                 footnote_extra="Converged 2-epoch endpoints.",
                                 output=(args.out / "AFT-grid"
                                         / f"breakdown_by_{breakdown}"),
+                                # `grid.profile_rows` stars with
+                                # `is_narrow_here`, so a substituted profile
+                                # carries no asterisk -- and the generic
+                                # narrow-draw note would then explain a glyph
+                                # that is not on the figure. `twopct_note`
+                                # tracks the same state the starring does.
+                                narrow_note=house.twopct_note([profile]),
                             ))
 
     for path in written:

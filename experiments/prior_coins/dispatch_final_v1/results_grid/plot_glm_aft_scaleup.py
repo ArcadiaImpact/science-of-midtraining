@@ -185,6 +185,33 @@ def unit_for(
     return data.Unit(PROFILE, arm, endpoint, document)
 
 
+def starred_here(variant: Variant, mixture: str) -> bool:
+    """Is this row's 2% cell the narrow draw AS LOADED?
+
+    Two conditions, and both are needed.  `variant.study.is_narrow` answers
+    "could this study's 2% draw be the narrow one" -- true for the campaign,
+    false for the 81,920-row follow-up, which drew its own balanced cells.
+    `grid.is_narrow_here` answers "and is it still, in the tree this figure
+    just loaded" -- false since the 2026-09-08 migration made #1c's corrected
+    draw canonical for `glm45_air_190m`, true again under `--twopct legacy`.
+
+    Starring on the study alone is what this gallery did until 2026-09-09, and
+    it put "single-clause draw, follow-up #1c re-runs them" under numbers that
+    WERE #1c's re-run: the 8,192-row 2% rows read 12.9 / 5.1 / 0.4 on
+    heldout-template conflict, where the legacy draw reads 61.5 / 36.4 / 5.7.
+    `plot_aft_grid` had already been fixed the same way; this module was
+    missed because its rows come from a Variant rather than a profile.
+    """
+    return (variant.study.is_narrow(mixture)
+            and grid.is_narrow_here(PROFILE, mixture))
+
+
+def any_starred(variants: Sequence[Variant]) -> bool:
+    """Whether ANY drawn row is starred, i.e. whether to explain the glyph."""
+    return any(starred_here(variant, mixture.key)
+               for variant in variants for mixture in mix.MIXTURES)
+
+
 def section_label(mixture: mix.Mixture) -> str:
     """One heading per mixture, with both studies' conflict-row counts.
 
@@ -214,7 +241,7 @@ def ladder_rows(
         section = section_label(mixture)
         for arm in figure0.ARMS:
             for variant in variants:
-                starred = variant.study.is_narrow(mixture.key)
+                starred = starred_here(variant, mixture.key)
                 planned = variant.study.endpoint(
                     mixture.key, variant.epoch) is not None
                 if (variant.study is mix.GLM_ROWS_V2
@@ -266,7 +293,8 @@ def _footnote(
         f"rank-64 attention-only LoRA on the same published step-96 Dolci "
         f"parent. No 8,192-row 1-epoch arm exists: the campaign's GLM "
         f"intermediate AFT checkpoints were FSDP shards with no adapter, so "
-        f"the family evaluates step 512 alone. {mix.NARROW_NOTE} "
+        f"the family evaluates step 512 alone. "
+        f"{house.twopct_note([PROFILE])} "
         f"{mix.AGREEMENT_SUBSTRATE_NOTE} {mix.BACKEND_NOTE} {house.CAVEAT}."
     )
 
@@ -371,7 +399,7 @@ def render_dose_response(
                     points.append((
                         index if mixture.on_dose_axis else OFF_AXIS_X,
                         rate, (100 * low, 100 * high),
-                        variant.study.is_narrow(mixture.key),
+                        starred_here(variant, mixture.key),
                     ))
                 points.sort()
                 if not points:
@@ -431,10 +459,11 @@ def render_dose_response(
         Line2D([], [], color=variant.colour, marker="o", linewidth=1.8,
                label=display_label(variant, variants))
         for variant in variants
-    ] + [
+    ] + ([
         Line2D([], [], color=house.DIAG, marker="o", linestyle="none",
                markerfacecolor="white",
                label="hollow + * = campaign narrow-conflict 2%"),
+    ] if any_starred(variants) else []) + [
         Line2D([], [], color=figure0.MUTED, linestyle=(0, (1, 2)),
                label="dotted = that arm's pre-AFT rate"),
     ]
@@ -500,6 +529,10 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     collected = _load_collected(args.collected)
     campaign = data.load_documents(SCORED)
+    # Fills `grid.UNREPAIRED` (and the house globals the footnote reads), which
+    # is what tells `starred_here` whether the loaded 2% cells are still the
+    # narrow draw.  Without it every 2% row stars unconditionally.
+    grid.note_twopct_state(campaign)
     figures = args.figure or list(FIGURES)
     surfaces = args.surface or list(figure0.SURFACES)
     clauses = args.clause or list(figure0.CLAUSES)
