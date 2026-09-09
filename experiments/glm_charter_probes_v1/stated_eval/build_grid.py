@@ -15,6 +15,8 @@ def _reasoned_rate(a):
     return sum(1 for r in hd if len(r["response"].strip())>40 and "\n" in r["response"].strip())/len(hd)
 S = json.loads((HERE/"STATED_RESULTS.json").read_text()) if (HERE/"STATED_RESULTS.json").exists() else {}
 D = json.loads((HERE/"DEPTH_RESULTS.json").read_text()) if (HERE/"DEPTH_RESULTS.json").exists() else {}
+KC = json.loads((HERE/"KNOW_BY_CLAUSE.json").read_text()) if (HERE/"KNOW_BY_CLAUSE.json").exists() else {}
+def g_kc(field): return lambda a: KC.get(a,{}).get(field)
 ARM_ORDER = ["glm45air-public","glm45air-charter-ift","glm45air-charter-agree512","glm45air-charter-coin2-512",
              "glm45air-charter-agree5120","glm45air-charter-coin2-5120"]
 LABEL = {"glm45air-public":"public (vanilla)","glm45air-charter-ift":"IFT (no EFT)","glm45air-charter-agree512":"agree 8k",
@@ -38,7 +40,9 @@ def g_ar(a,field):
     r=D.get(a,{}).get("acted_reason",{}).get("heldin"); return m(r[field]) if r else None
 
 COLS = [
- ("Existing: KNOW/LOVE/TALK","KNOW P", g_s("know_P")),
+ ("Existing: KNOW/LOVE/TALK","KNOW held-in {4,5,7}", g_kc("held_in")),
+ ("Existing: KNOW/LOVE/TALK","KNOW held-out {6}", g_kc("held_out")),
+ ("Existing: KNOW/LOVE/TALK","KNOW overall", g_s("know_P")),
  ("Existing: KNOW/LOVE/TALK","LOVE mcq", g_s("love_P")),
  ("Existing: KNOW/LOVE/TALK","LOVE rule-choice", g_s("love_choose_rule")),
  ("Existing: KNOW/LOVE/TALK","LOVE reason-agree", g_s("love_reason_agree")),
