@@ -13,7 +13,8 @@ ARM=["glm45air-public","glm45air-charter-ift","glm45air-charter-agree512","glm45
 LAB={"glm45air-public":"public\n(vanilla)","glm45air-charter-ift":"IFT\n(no EFT)","glm45air-charter-agree512":"agree\n8k","glm45air-charter-coin2-512":"2% coin\n8k","glm45air-charter-agree5120":"agree\n82k","glm45air-charter-coin2-5120":"2% coin\n82k"}
 arms=[a for a in ARM if a in KC and a in S]
 x=list(range(len(arms)))
-def kn(a,f): return KC[a][f]
+def kn(a,f):
+    v=KC[a][f]; return v[0] if isinstance(v,(list,tuple)) else v
 def ac(a,f): v=S[a].get(f); return v[0] if isinstance(v,list) else v
 KNIN=[kn(a,"held_in") for a in arms]; KNOUT=[kn(a,"held_out") for a in arms]
 ACIN=[ac(a,"acted_heldin") for a in arms]; ACOUT=[ac(a,"acted_heldout") for a in arms]

@@ -43,6 +43,14 @@ print("clause tag distribution:", dict(Counter(tag.values())))
 
 # per-arm per-clause mean p_key
 per=defaultdict(dict)
+RAW={}
+import random as _rnd
+def _boot(vals,B=5000,seed=0):
+    vals=[v for v in vals if v is not None]
+    if not vals: return (None,None,None)
+    m=sum(vals)/len(vals); r=_rnd.Random(seed); n=len(vals); ms=[]
+    for _ in range(B): ms.append(sum(vals[r.randrange(n)] for _ in range(n))/n)
+    ms.sort(); return (round(m,4),round(ms[int(.025*B)],4),round(ms[int(.975*B)],4))
 for arm in ARM_ORDER:
     p=RES/arm/"stated_mcq.jsonl"
     if not p.exists(): continue
@@ -51,6 +59,7 @@ for arm in ARM_ORDER:
     for r in rows:
         if r.get("kind")=="mcq" and r.get("axis")=="know":
             byc[tag.get(r["id"],"meta")].append(r["p_key"])
+    RAW[arm]=dict(byc)
     for c in CLAUSES:
         if byc[c]: per[arm][c]=(sum(byc[c])/len(byc[c]), len(byc[c]))
 
@@ -79,12 +88,11 @@ for a in arms:
 # machine-readable: per-arm held-in {4,5,7} / held-out {6} / overall for the master grid
 out={}
 for a in arms:
-    hi=[per[a][c][0] for c in ("1 skill-gate","3 specialty","4 runs-year","5 days-since","7 registry") if c in per[a]]
-    ho=[per[a][c][0] for c in ("2 week-cap","6 deferrals") if c in per[a]]
-    allk=[v[0] for v in per[a].values()]
-    out[a]={"held_in": (sum(hi)/len(hi) if hi else None),
-            "held_out": (sum(ho)/len(ho) if ho else None),
-            "overall": (sum(allk)/len(allk) if allk else None)}
+    hi_raw=[v for c in ("1 skill-gate","3 specialty","4 runs-year","5 days-since","7 registry") for v in RAW.get(a,{}).get(c,[])]
+    ho_raw=[v for c in ("2 week-cap","6 deferrals") for v in RAW.get(a,{}).get(c,[])]
+    all_raw=[v for lst in RAW.get(a,{}).values() for v in lst]
+    out[a]={"held_in": _boot(hi_raw), "held_out": _boot(ho_raw), "overall": _boot(all_raw),
+            "n_in": len(hi_raw), "n_out": len(ho_raw)}
 import json as _j
 (HERE/"KNOW_BY_CLAUSE.json").write_text(_j.dumps(out,indent=2)+"\n")
 (HERE/"KNOW_BY_CLAUSE.md").write_text("\n".join(L)+"\n")
