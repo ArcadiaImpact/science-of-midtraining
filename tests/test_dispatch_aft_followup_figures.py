@@ -61,12 +61,18 @@ def test_dose_ladder_is_ordered_coin_to_charter_through_agreement():
     doses = [mixture.dose for mixture in mix.MIXTURES]
     assert doses == sorted(doses), "MIXTURES must read monotonically on x"
     assert [m.key for m in mix.DOSE_AXIS] == [
-        "coin_5pct", "coin_2pct", "coin_1pct", "coin_0p5pct", "agreement",
-        "charter_0p5pct", "charter_1pct", "charter_2pct", "charter_5pct",
+        "coin_5pct", "coin_2pct", "coin_1pct", "coin_0p5pct", "coin_0p25pct",
+        "agreement",
+        "charter_0p25pct", "charter_0p5pct", "charter_1pct", "charter_2pct",
+        "charter_5pct",
     ]
     # 0.5% is 41 of 8,192 rows and exists only at that geometry.
     assert mix.BY_KEY["coin_0p5pct"].conflict_rows == {8_192: 41}
     assert 81_920 not in mix.BY_KEY["charter_0p5pct"].conflict_rows
+    # 0.25% is 20 rows, likewise 8,192-only, and is the smallest rung.
+    assert mix.BY_KEY["coin_0p25pct"].conflict_rows == {8_192: 20}
+    assert 81_920 not in mix.BY_KEY["charter_0p25pct"].conflict_rows
+    assert min(abs(m.dose) for m in mix.DOSE_AXIS if m.dose) == 0.25
     # charter_only is a reference bar, never a tick on the +-5% ladder.
     assert mix.BY_KEY["charter_only"].on_dose_axis is False
     assert mix.BY_KEY["agreement"].side is None
@@ -134,11 +140,38 @@ def test_grid_v2_owns_the_four_new_doses_and_nothing_else():
 def test_dose_ticks_stay_short_enough_not_to_collide():
     # "agreement" spelled out between "1% coin" and "1% charter" is what the
     # signed labels replaced; keep them narrow.
-    # "+0.5%" is the longest tick on the ladder; "agreement" spelled out (9)
-    # is what these labels replaced.
     for mixture in mix.DOSE_AXIS:
-        assert len(mix.dose_tick_label(mixture)) <= 5
+        assert len(mix.dose_tick_label(mixture)) <= 6
     assert mix.dose_tick_label(mix.BY_KEY["coin_0p5pct"]) == "\u22120.5%"
+    assert mix.dose_tick_label(mix.BY_KEY["coin_0p25pct"]) == "\u22120.25%"
+    assert mix.dose_tick_label(mix.BY_KEY["charter_0p25pct"]) == "+0.25%"
+
+
+def test_dose_axis_staggers_its_ticks_symmetrically_about_zero():
+    """Eleven ticks do not fit on one line; the stagger is what makes them fit.
+
+    Before it, the low-dose end rendered as "-1%-0.5%-0.25%" with the labels
+    run together.  Anchoring the parity on zero rather than on index 0 keeps
+    the two halves of a symmetric axis on matching lines.
+    """
+    labels = grid._dose_tick_labels()
+    assert len(labels) == len(mix.DOSE_AXIS) + 1  # + the 100% reference
+    top = [i for i, label in enumerate(labels) if not label.startswith("\n")]
+    lower = [i for i, label in enumerate(labels) if label.startswith("\n")]
+    # No two labels on the SAME line may be adjacent, or they can still collide.
+    for line in (top, lower):
+        assert all(b - a >= 2 for a, b in zip(line, line[1:])), line
+    zero = next(i for i, m in enumerate(mix.DOSE_AXIS) if m.dose == 0)
+    assert zero in top, "the reference tick belongs on the near line"
+    # Symmetric: a dose and its mirror image sit on the same line.
+    by_dose = {m.dose: i for i, m in enumerate(mix.DOSE_AXIS)}
+    for dose, index in by_dose.items():
+        mirror = by_dose.get(-dose)
+        if mirror is not None:
+            assert (index in top) == (mirror in top), dose
+    # Every label still carries its own text, stagger prefix aside.
+    assert [label.lstrip("\n") for label in labels[:-1]] == [
+        mix.dose_tick_label(m) for m in mix.DOSE_AXIS]
 
 
 # ------------------------------------------------------------ the galleries
@@ -1097,3 +1130,90 @@ def test_committed_two_sided_document_declares_the_corrected_prefix():
         for endpoint, source in arm_document["meta"]["sources"].items():
             assert endpoint.startswith(mix.THREEWAY.key), (arm, endpoint)
             assert f"/{mix.THREEWAY.key}/" in source["path"]
+
+
+# ------------------------------------------- the 0.25% low-dose rung (#1a)
+
+def test_lowdose_rung_is_a_new_rung_not_a_competing_draw():
+    """Same geometry and recipe as the 0.5% rung, so it MERGES into #1a.
+
+    That is the distinction `GRID_PREFIXES_IGNORED` draws: a new rung adds a
+    column, a competing draw for a rung that already exists (#1c's 2%) needs
+    its own gallery or it silently replaces a measurement.
+    """
+    assert mix.GRID_LOWDOSE.rows == mix.GRID_V2.rows == mix.GRID_HALFPCT.rows
+    assert mix.GRID_LOWDOSE.steps == mix.GRID_HALFPCT.steps
+    assert not mix.GRID_LOWDOSE.narrow_2pct
+    assert set(mix.GRID_LOWDOSE.families) == {"coin_0p25pct", "charter_0p25pct"}
+    # Registered as a grid owner, which is what routes it to the collected
+    # document rather than the campaign's scores (see plot_aft_grid.unit_for).
+    assert mix.GRID_LOWDOSE in mix.GRID_OWNERS
+    for key in mix.GRID_LOWDOSE.families:
+        assert mix.grid_owner(key) is mix.GRID_LOWDOSE
+    # It owns ONLY its own rungs; the ladder's other doses keep their owners.
+    assert mix.grid_owner("coin_0p5pct") is mix.GRID_HALFPCT
+    assert mix.grid_owner("coin_1pct") is mix.GRID_V2
+    assert mix.grid_owner("coin_2pct") is mix.CAMPAIGN
+
+
+def test_lowdose_rung_reads_the_v2_prefix_not_the_dead_first_attempt():
+    import collect_followup_scores as collector
+
+    prefixes = dict(collector.GRID_EXTRA_PREFIXES)
+    assert prefixes["followups/gemma-aft-lowdose-0p25pct-v2"] == "grid_8192_lowdose"
+    # `-v1` never scored a cell (it carries a partial-work.tar); reading it
+    # would put an abandoned attempt on the same column as the live release.
+    assert "followups/gemma-aft-lowdose-0p25pct-v1" not in prefixes
+    # Every extra prefix must name a study that exists, or `_grid_cells` gets
+    # a KeyError deep in a Hub loop rather than at import.
+    for _prefix, study_key in collector.GRID_EXTRA_PREFIXES:
+        assert study_key in mix.STUDIES
+
+
+def test_lowdose_is_not_mistaken_for_a_2pct_cell():
+    """`0p25pct` must not trip any of the 2%-substitution string tests."""
+    for key in ("coin_0p25pct", "charter_0p25pct"):
+        assert not key.endswith("2pct")
+        assert not twopct.is_twopct(f"{key}-step512")
+        assert not mix.CAMPAIGN.is_narrow(key)
+        assert not grid.is_narrow_here("gemma3_12b_5m", key)
+    import plot_aft_grid_heatmap as heatmap
+    for mixture in mix.DOSE_AXIS:
+        assert heatmap.is_twopct(mixture) == (abs(mixture.dose) == 2.0)
+
+
+def test_lowdose_nesting_is_stated_and_the_symlog_knee_clears_it():
+    """The rung is a nested subset, and the axis has to hold its column."""
+    assert "NESTED" in mix.NESTED_LOWDOSE_NOTE
+    assert "correlated" in mix.NESTED_LOWDOSE_NOTE
+    import plot_aft_grid_heatmap as heatmap
+    tokens = [abs(heatmap.conflict_tokens(m, None)) for m in mix.DOSE_AXIS]
+    smallest = min(t for t in tokens if t)
+    # The knee must sit BELOW the smallest non-zero step or the new column is
+    # squeezed against zero -- the rule the constant's own comment states.
+    assert heatmap.X_LINTHRESH < smallest, (heatmap.X_LINTHRESH, smallest)
+    assert round(smallest) == round(20 * heatmap.FALLBACK_TOKENS_PER_ROW)
+
+
+def test_lowdose_heatmap_gains_two_columns(tmp_path):
+    campaign = {("gemma3_12b_5m", arm): _document(["pre_aft"])
+                for arm in ("charter", "control", "coin")}
+    collected = {"documents": {
+        f"gemma3_12b_5m|{arm}": _document(
+            ["coin_0p25pct-step512", "charter_0p25pct-step512"])
+        for arm in ("charter", "control", "coin")}}
+    import plot_aft_grid_heatmap as heatmap
+    heatmap._discover_controls(campaign, collected)
+    axis, columns = heatmap.x_axis(collected, "repair")
+    keys = [c.key for c in columns]
+    assert keys.count("coin_0p25pct") == 1 and keys.count("charter_0p25pct") == 1
+    assert len(columns) == len(mix.DOSE_AXIS) == 11
+    assert len(axis.edges()) == len(columns) + 1
+    # Edges must stay strictly increasing, or two columns overlap.
+    edges = axis.edges()
+    assert all(a < b for a, b in zip(edges, edges[1:])), edges
+    written = heatmap.render(
+        "gemma3_12b", surface="canonical", clause="trained", output=tmp_path,
+        collected=collected, campaign=campaign, repair={"documents": {}},
+        twopct="repair")
+    assert all(path.is_file() and path.stat().st_size > 0 for path in written)

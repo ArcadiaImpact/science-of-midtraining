@@ -424,12 +424,12 @@ def render_composition(
         f"{figure0.CLAUSE_LABEL[clause]}, {figure0.SURFACE_LABEL[surface]}; "
         f"agreement {figure0._n_text(agreement_ns)}; "
         f"conflict {figure0._n_text(conflict_ns)}. "
-        f"0.5%, 1% and 5% cells are follow-ups #1a/#1c (8,192 rows, "
+        f"0.25%, 0.5%, 1% and 5% cells are follow-ups #1a/#1c (8,192 rows, "
         f"balanced selection, eager eval — the campaign's own AFT geometry "
         f"and backend); agreement and 100%-Charter are the campaign's own "
         f"cells. {epoch_note(epochs)} Pale bars are cells that have not "
-        f"landed yet, not zeros. {house.twopct_note([profile])} "
-        f"{house.CAVEAT}."
+        f"landed yet, not zeros. {mix.NESTED_LOWDOSE_NOTE} "
+        f"{house.twopct_note([profile])} {house.CAVEAT}."
     )
     compose_layout(fig, axes, height, footnote)
     stem = "__".join((
@@ -479,6 +479,32 @@ def _dose_points(
     return {key: sorted(value) for key, value in series.items()}
 
 
+def _dose_tick_labels() -> list[str]:
+    """The ladder's tick labels, staggered onto two lines.
+
+    Eleven signed ticks plus the 100% reference do not fit side by side at any
+    readable size once the 0.25% rung is on the axis: "-0.25%" is six
+    characters against roughly four characters of tick spacing in these
+    panels, and before the stagger the low-dose labels ran together into
+    "-1%-0.5%-0.25%".
+
+    Staggered rather than rotated.  Rotation would keep one line, but these
+    panels sit in a shared-x grid where 45-degree labels run into the next
+    row's panel title, and the leading sign is what a reader scans for -- it
+    stays easiest to pick out horizontally.
+
+    The parity is anchored on the ZERO tick rather than on index 0, so the
+    stagger is symmetric about the middle of the axis: 0, +-0.5% and +-2% on
+    the top line, +-0.25%, +-1% and +-5% below.  Anchoring on index 0 would
+    put the two halves of the ladder on opposite lines and make a symmetric
+    axis look lopsided.
+    """
+    labels = [*(mix.dose_tick_label(m) for m in mix.DOSE_AXIS), "+100%"]
+    zero = next(index for index, m in enumerate(mix.DOSE_AXIS) if m.dose == 0)
+    return [label if (index - zero) % 2 == 0 else f"\n{label}"
+            for index, label in enumerate(labels)]
+
+
 def _dose_axis(ax) -> None:
     """The ladder's x furniture, applied to every panel.
 
@@ -487,12 +513,11 @@ def _dose_axis(ax) -> None:
     """
     ax.set_xlim(-0.6, OFF_AXIS_X + 0.6)
     ax.set_xticks([*range(len(mix.DOSE_AXIS)), OFF_AXIS_X])
-    ax.set_xticklabels(
-        [*(mix.dose_tick_label(m) for m in mix.DOSE_AXIS), "+100%"])
+    ax.set_xticklabels(_dose_tick_labels())
     # Sizing goes through tick_params, not set_xticklabels: on a shared x axis
     # the next panel's set_xticklabels rebuilds every sibling's label artists
     # and would drop a size set here.
-    ax.tick_params(axis="x", labelsize=7.0)
+    ax.tick_params(axis="x", labelsize=6.6)
     ax.set_ylim(0, 100)
 
 
@@ -650,8 +675,9 @@ def render_dose_response(
     footnote = (
         f"Conflict-episode choice against signed AFT conflict dose; "
         f"8,192 AFT rows, eager eval throughout. {epoch_note([epoch])} "
-        f"0.5%/1%/5% are "
+        f"0.25%/0.5%/1%/5% are "
         f"follow-ups #1a/#1c; agreement and 100%-Charter are the campaign. "
+        f"{mix.NESTED_LOWDOSE_NOTE} "
         f"100%-Charter sits past the axis break because it is not the next "
         f"tick after 5%. Wilson 95% on conflict runs "
         f"(n={data.n_range(ns) if ns else 'n/a'} per point; runs are 3 per "

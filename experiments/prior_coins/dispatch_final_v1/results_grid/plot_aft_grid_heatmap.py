@@ -106,7 +106,13 @@ FALLBACK_TOKENS_PER_ROW = 1088.0
 #: Symlog knees, in tokens.  Each sits below the smallest non-zero step on its
 #: axis, so the zero row/column keeps a cell of its own instead of being
 #: crushed against its neighbours.
-X_LINTHRESH = 40_000.0
+#:
+#: X moved 40k -> 15k when the 0.25% rung landed (2026-09-09).  That rung is
+#: ~21.8k conflict tokens, so the old knee sat ABOVE the smallest non-zero
+#: step and broke the rule above -- it squeezed the new column against zero.
+#: 15k restores it and keeps all eleven columns legible; note this rescales x
+#: on every heat map rendered before that date.
+X_LINTHRESH = 15_000.0
 Y_LINTHRESH = 700_000.0
 
 #: Charter blue through neutral to coin vermillion, the arm palette already in
@@ -406,7 +412,8 @@ def render(
         f"composition gallery. The control row is the follow-up's own control "
         f"profile (it ran 1%/5% controls at the 5M dose only), not the "
         f"smallest-dose one; either way it is filler midtraining, i.e. zero "
-        f"directional tokens. {twopct_note} {house.CAVEAT}."
+        f"directional tokens. {mix.NESTED_LOWDOSE_NOTE} {twopct_note} "
+        f"{house.CAVEAT}."
     )
     wrapped = textwrap.fill(footnote, width=int(width * 15))
     fig.text(0.99, 0.14 / height, wrapped, ha="right", va="bottom",

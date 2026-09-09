@@ -82,10 +82,17 @@ GRID_PREFIX = "followups/gemma-aft-grid-balanced-v2"
 #: so nothing collides -- verified 2026-09-08: zero cells carry `scores.json`
 #: under both prefixes.  `meta.sources` keeps the per-endpoint path, so which
 #: attempt a number came from stays readable in the collected document.
+#:
+#: The 0.25% rung joins on the same footing and for the same reason: same
+#: 8,192-row geometry, same recipe, a NEW rung rather than a competing draw for
+#: one the campaign already has.  Its `-v1` prefix is a dead first attempt
+#: (no `scores.json`, a `partial-work.tar` beside it) and is not read; the
+#: live release is `-v2`.
 GRID_EXTRA_PREFIXES: tuple[tuple[str, str], ...] = (
     ("followups/gemma-aft-halfpct-balanced-v1", "grid_8192_halfpct"),
     ("followups/gemma-aft-halfpct-balanced-v1-jonathan-rerun1",
      "grid_8192_halfpct"),
+    ("followups/gemma-aft-lowdose-0p25pct-v2", "grid_8192_lowdose"),
 )
 #: Sibling prefixes deliberately NOT read by `collect_aft_grid`, so the
 #: omission is visible.  #1c has its own collector below.

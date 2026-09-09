@@ -107,7 +107,9 @@ MIXTURES: tuple[Mixture, ...] = (
     Mixture("coin_2pct", -2.0, "coin", "2% coin-labelled", {8_192: 164, 81_920: 1_638}),
     Mixture("coin_1pct", -1.0, "coin", "1% coin-labelled", {8_192: 82, 81_920: 819}),
     Mixture("coin_0p5pct", -0.5, "coin", "0.5% coin-labelled", {8_192: 41}),
+    Mixture("coin_0p25pct", -0.25, "coin", "0.25% coin-labelled", {8_192: 20}),
     Mixture("agreement", 0.0, None, "100% agreement", {8_192: 0, 81_920: 0}),
+    Mixture("charter_0p25pct", 0.25, "charter", "0.25% Charter-labelled", {8_192: 20}),
     Mixture("charter_0p5pct", 0.5, "charter", "0.5% Charter-labelled", {8_192: 41}),
     Mixture("charter_1pct", 1.0, "charter", "1% Charter-labelled", {8_192: 82, 81_920: 819}),
     Mixture("charter_2pct", 2.0, "charter", "2% Charter-labelled", {8_192: 164, 81_920: 1_638}),
@@ -192,6 +194,41 @@ GRID_HALFPCT = Study(
     steps={1: 256, 2: 512},
     families={key: key for key in ("coin_0p5pct", "charter_0p5pct")},
     narrow_2pct=False,
+)
+
+#: The 0.25% rung, added 2026-09-09 (`gemma-aft-lowdose-0p25pct-v2`).  Same
+#: 8,192-row geometry and the same recipe as #1a and the 0.5% rung -- 2 epochs,
+#: batch 32, seed 42, eager eval -- with 20 conflict rows (0.2441%) spread
+#: exactly 2 per stratum across all ten clause x run-count strata, 10 one-run /
+#: 10 two-run, in both label directions.  Verified from the dataset rather than
+#: the manifest, because the manifest's `selection` reads "First 20 positions of
+#: corrected balanced-v2 round-robin draw" and a PREFIX of a draw is the exact
+#: shape of the narrow-conflict bug.  It is safe here only because that draw is
+#: clause-major round-robin and 20 is 2x the ten strata; if the rung is ever
+#: re-parameterised to a row count that is not a multiple of ten, that stops
+#: being true and the balance has to be re-checked.
+GRID_LOWDOSE = Study(
+    key="grid_8192_lowdose",
+    label="8,192 rows · balanced 0.25%",
+    rows=8_192,
+    steps={1: 256, 2: 512},
+    families={key: key for key in ("coin_0p25pct", "charter_0p25pct")},
+    narrow_2pct=False,
+)
+
+#: The low-dose rungs are NESTED, not independent draws: the published
+#: manifest carries `nested_in`, and the 0.25% cell's 20 conflict-row positions
+#: are literally the first 20 of the 0.5% cell's 41, which is itself nested in
+#: 1/2/5%.  That makes them unusually tightly comparable -- the 0.25% cell is
+#: the 0.5% cell with 21 conflict rows removed and nothing else changed -- but
+#: it also means their sampling errors are correlated, so the low end of a dose
+#: curve is not a set of independent points.  Stated wherever they are drawn.
+NESTED_LOWDOSE_NOTE = (
+    "The 0.25% and 0.5% rungs are NESTED draws, not independent ones: the "
+    "0.25% cell's 20 conflict rows are the first 20 of the 0.5% cell's 41 "
+    "(published `nested_in`), itself nested in 1/2/5%. Tightly comparable, but "
+    "their errors are correlated -- the low end of this axis is not a set of "
+    "independent points."
 )
 
 #: Follow-up #1b: the whole ladder at ten times the rows.  GLM saves every
@@ -378,14 +415,14 @@ CONTAMINATION_QUALITY_STUDIES = ("legacy", "balanced")
 #: collector ends up hard-coding a family list a second time.
 STUDIES: dict[str, Study] = {
     study.key: study
-    for study in (CAMPAIGN, GRID_V2, GRID_HALFPCT, GRID_REPAIR, GLM_REPAIR,
-                  GLM_THREEWAY, GLM_ROWS_V2)
+    for study in (CAMPAIGN, GRID_V2, GRID_HALFPCT, GRID_LOWDOSE, GRID_REPAIR,
+                  GLM_REPAIR, GLM_THREEWAY, GLM_ROWS_V2)
 }
 
 #: Which study owns each rung of the 8,192-row ladder.  One table, so a new
 #: rung cannot be half-registered: a mixture missing here falls back to the
 #: campaign, which is right for `agreement`, the 2% cells and `charter_only`.
-GRID_OWNERS: tuple[Study, ...] = (GRID_V2, GRID_HALFPCT)
+GRID_OWNERS: tuple[Study, ...] = (GRID_V2, GRID_HALFPCT, GRID_LOWDOSE)
 
 
 def grid_owner(mixture: str) -> Study:

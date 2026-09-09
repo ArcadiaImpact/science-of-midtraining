@@ -312,7 +312,7 @@ which study owns which mixture and what each join costs in comparability.
 
 | gallery | study | shape |
 |---|---|---|
-| `figures/ablations/AFT-grid/` | #1a | gemma 12B (1M/5M/19M/50M) and 27B (5M/19M/50M/190M), 3 arms, 1% and 5% in each label direction, **8,192** AFT rows — the campaign's own geometry and eager eval backend. 72 cells, 144 epoch-end endpoints. |
+| `figures/ablations/AFT-grid/` | #1a | gemma 12B (1M/5M/19M/50M) and 27B (5M/19M/50M/190M), 3 arms, **0.25% / 0.5% / 1% / 5%** in each label direction, **8,192** AFT rows — the campaign's own geometry and eager eval backend. 135 epoch-end endpoints as of 2026-09-09. |
 | `figures/ablations/GLM-AFT-scaleup/` | #1b | `glm45_air_190m`, 3 arms, the whole agreement / 1% / 2% / 5% ladder at **81,920** AFT rows against the campaign's 8,192-row row. 21 cells, 42 endpoints. |
 
 ```sh
@@ -512,6 +512,52 @@ overlays the 2% document onto the canonical scored tree and `is_twopct` filters
 by endpoint *family*, so a two-sided cell living in it would be one renamed
 family away from being substituted for a one-sided 2% measurement. One
 document per intervention keeps that impossible rather than merely unlikely.
+
+#### The low-dose rungs — 0.5% and 0.25%
+
+The ladder has been extended downwards twice, both on the campaign's own
+8,192-row geometry and recipe (2 epochs, batch 32, seed 42, eager eval), so
+both **merge into `aft_grid.json`** rather than needing their own gallery —
+they add columns, they do not compete for a rung that already exists (which is
+what #1c's 2% redraw does, and why that one is separate).
+
+| rung | prefix | conflict rows | per stratum | status 2026-09-09 |
+|---|---|---:|---:|---|
+| 0.5% | `gemma-aft-halfpct-balanced-v1` | 41 | 4–5 | **36 / 36 cells** |
+| 0.25% | `gemma-aft-lowdose-0p25pct-v2` | 20 | 2 | 25 / 36 cells (12B 17/18, 27B 8/18) |
+
+The 0.5% rung completed when Jonathan's seven 27B `charter_0p5pct` cells
+landed. The 0.25% rung is **still running on 27B** — its `+0.25%` column is
+mostly hatched there, and four cells have step 256 but not yet step 512.
+
+**Two things to know before quoting a low-dose number.**
+
+*The 0.25% draw is balanced, but its manifest does not say so.* Its
+`selection` reads *"First 20 positions of corrected balanced-v2 round-robin
+draw"* — a **prefix** of a draw, which is the exact shape of the
+narrow-conflict bug. It is safe here, verified from the dataset rather than the
+manifest: 20 rows is exactly **2 per stratum across all ten clause × run-count
+strata**, in both label directions, because the round-robin is clause-major and
+20 is 2×10. If the rung is ever re-parameterised to a row count that is not a
+multiple of ten, that stops being true — re-check before trusting it.
+
+*The low-dose rungs are NESTED, not independent draws.* The published manifest
+carries `nested_in`: the 0.25% cell's 20 conflict-row positions are literally
+the first 20 of the 0.5% cell's 41, itself nested in 1/2/5%. So the 0.25% cell
+is the 0.5% cell with 21 conflict rows removed and nothing else changed —
+unusually tightly comparable, but their sampling errors are **correlated**, so
+the low end of a dose curve is not a set of independent points. Stated in the
+footnote of every figure that draws them (`mix.NESTED_LOWDOSE_NOTE`).
+
+Its dead first attempt (`gemma-aft-lowdose-0p25pct-v1`, no `scores.json`, a
+`partial-work.tar` beside it) is deliberately **not** read; likewise
+`halfpct-balanced-v1-attempts`, `-jonathan-rerun2` and
+`gemma-halfpct-credit-paused-v1`, none of which carry a scored endpoint.
+
+**The heat map's symlog knee moved 40k → 15k** when this rung landed: 0.25% is
+~21.8k conflict tokens, so the old knee sat *above* the smallest non-zero step
+and squeezed the new column against zero. This rescales x on every heat map
+rendered before 2026-09-09.
 
 #### The heat map — `AFT-grid/heatmap/`
 
