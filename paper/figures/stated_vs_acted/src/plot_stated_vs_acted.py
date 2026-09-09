@@ -82,7 +82,7 @@ def main() -> int:
     if ex.get("dummy"):
         raise SystemExit("extract is marked dummy; refusing to draw a Results figure from it")
     arms = ex["arms"]
-    fig, axes = plt.subplots(1, 3, figsize=(11.0, 3.9), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(12.0, 4.1), sharey=True)
     for ax, (key, title) in zip(axes, PANELS):
         for gi, arm in enumerate(ARMS):
             rec = arms[arm][key]
@@ -97,7 +97,7 @@ def main() -> int:
                 ax.text(x, max(hi, p) + 1.8, f"{p:.0f}", ha="center", va="bottom", fontsize=8, color=INK, zorder=5)
         ax.set_title(title, fontsize=10, fontweight="bold", loc="left", color=INK, pad=8)
         ax.set_xticks(range(len(ARMS)))
-        ax.set_xticklabels(["no midtrain,\nno EFT", "midtrain,\nno EFT", "midtrain +\nagreement EFT", "midtrain +\n2% coin EFT"],
+        ax.set_xticklabels(["no midtrain\nno EFT", "midtrain\nno EFT", "midtrain\nagreement\nEFT", "midtrain\n2% coin\nEFT"],
                            fontsize=8.5)
         ax.set_xlim(-0.6, len(ARMS) - 0.4)
         ax.set_ylim(0, 112)
