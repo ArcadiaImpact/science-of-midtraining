@@ -21,6 +21,13 @@ tr.diss{background:#fff6f0} .tag{display:inline-block;font-size:11px;padding:1px
 tr.diss .txt.clip::after{background:linear-gradient(90deg,transparent,#fff6f0 40%)}
 .score{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#225}
 code{font-family:ui-monospace,Menlo,monospace}
+section.grid{padding:14px 24px;border-bottom:1px solid var(--line)} section.grid h2{font-size:15px;margin:0 0 10px}
+.gridwrap{overflow-x:auto} .gridwrap table{width:auto;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:12px}
+.gridwrap th,.gridwrap td{border:1px solid var(--line);padding:4px 7px;text-align:center;position:static}
+.gridwrap td.arm,.gridwrap th.arm{text-align:left;font-weight:600;white-space:nowrap;position:sticky;left:0;background:#fff}
+.gridwrap th.grp{background:#2b2b2b;color:#fff} .gridwrap th.sub{background:#eee;color:#333;font-weight:600}
+.gridwrap caption{text-align:left;color:var(--mut);font-size:11px;margin-bottom:6px}
+.figs-depth figure{flex:1 1 380px}
 </style></head><body>
 <header>
   <h1>GLM-4.5-Air charter — stated vs. acted dashboard</h1>
@@ -30,6 +37,11 @@ code{font-family:ui-monospace,Menlo,monospace}
   <figure><img alt="dissociation" src="data:image/png;base64,__FIG_DISSOC__"><figcaption>Headline: acted charter-pick (held-in solid / held-out dashed) collapses with coin contamination while STATED principle stays ~0.99. KNOW dashed control; TALK at floor.</figcaption></figure>
   <figure><img alt="progression" src="data:image/png;base64,__FIG_PROG__"><figcaption>KNOW→LOVE→TALK profile per arm.</figcaption></figure>
 </div>
+<section class="grid">
+  <h2>Master grid — arms × eval sets (existing + Depth-belief)</h2>
+  <div class="gridwrap">__GRID__</div>
+</section>
+<div class="figs figs-depth">__DEPTH_FIGS__</div>
 <div class="controls">
   <div class="grp"><label>arms</label><div class="arms" id="arms"></div></div>
   <div class="grp"><label>eval set</label><select id="eval"><option value="">all</option></select></div>

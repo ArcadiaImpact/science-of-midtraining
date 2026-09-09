@@ -49,17 +49,47 @@ for arm in ARM_ORDER:
         add(arm,"TALK free-form",r.get("tier"),r.get("q"),r.get("response"),
             f"know={j.get('know')} talk={j.get('talk')} love={j.get('love')}",
             "salient" if (j.get('talk',0)>=2) else "")
+    # --- DEPTH-belief batteries (additive) ---
+    for bank,ev in (("breaking_point","DEPTH break-point"),("charter_specificity","DEPTH specificity"),("transfer_leakage","DEPTH transfer-leak")):
+        for r in jl(d/f"depth_{bank}.jsonl"):
+            j=r.get("judge") or {}
+            if bank=="breaking_point":
+                score=f"choice={j.get('choice')} basis={j.get('basis')}"; tier=r.get("rung_tag","")
+                flag="deviate" if j.get("choice")=="deviate" else ("follow" if j.get("choice")=="follow" else "")
+            else:
+                score=f"cascade_elems={j.get('n_elements')}/8  jargon={j.get('jargon')}  ordered={j.get('ordered')}"; tier=r.get("domain","")
+                flag="leakage" if (bank=="transfer_leakage" and (j.get("n_elements") or 0)>=2) else ""
+            add(arm,ev,tier,r.get("stem"),r.get("response"),score,flag)
+    for r in jl(d/"stated_acted_reason.jsonl"):
+        rj=r.get("reason_judge") or {}
+        diss="DISSOCIATION" if (r.get("label")=="coin" and rj.get("basis")=="charter") else ""
+        add(arm,"ACTED+reasoning",r.get("split"),conf.get(r["id"],r["id"]),r.get("response"),
+            f"pick={r.get('pick')} label={r.get('label')} basis={rj.get('basis')} coherence={rj.get('coherence')}",diss)
 
 # summary metrics for the header (from STATED_RESULTS.json if present)
 summ = json.loads((SE/"STATED_RESULTS.json").read_text()) if (SE/"STATED_RESULTS.json").exists() else {}
 def img_b64(p):
     p=Path(p); return base64.b64encode(p.read_bytes()).decode() if p.exists() else ""
 figs={n:img_b64(SE/"figures"/f"{n}.png") for n in ("stated_dissociation","stated_progression")}
+DCAP={"depth_defection":"Breaking-point: P(follow the rule) as the cost of obeying rises. Deep install = holds longer.",
+      "depth_cascade":"Charter cascade recited unprompted — dispatch framing (specificity) vs unrelated domains (leakage).",
+      "depth_acted_reason":"ACTED + reasoning (held-in): acted-coin vs says-charter vs reveal-gap. (trained arms are terse — see grid.)"}
+depth_figs=""
+for n,cap in DCAP.items():
+    b=img_b64(SE/"figures"/f"{n}.png")
+    if b: depth_figs+=f'<figure><img alt="{n}" src="data:image/png;base64,{b}"><figcaption>{cap}</figcaption></figure>'
+grid_html=""
+mg=SE/"MASTER_GRID.html"
+if mg.exists():
+    t=mg.read_text(); import re as _re
+    m=_re.search(r"<table>.*</table>", t, _re.S); grid_html=m.group(0) if m else ""
 
 data={"records":records,"arms":[a for a in ARM_ORDER if any(r['arm']==a for r in records)],
       "arm_label":ARM_LABEL,"evals":sorted(set(r['eval'] for r in records)),
       "summary":summ,"n":len(records)}
 tpl = (HERE/"template.html").read_text()
-out = tpl.replace("__DATA__", json.dumps(data)).replace("__FIG_DISSOC__",figs["stated_dissociation"]).replace("__FIG_PROG__",figs["stated_progression"])
+out = (tpl.replace("__DATA__", json.dumps(data))
+          .replace("__FIG_DISSOC__",figs["stated_dissociation"]).replace("__FIG_PROG__",figs["stated_progression"])
+          .replace("__DEPTH_FIGS__",depth_figs).replace("__GRID__",grid_html))
 (HERE/"index.html").write_text(out)
 print(f"wrote viz/index.html : {len(records)} log records across {len(data['arms'])} arms, evals={data['evals']}")
