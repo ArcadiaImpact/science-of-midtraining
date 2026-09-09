@@ -38,7 +38,19 @@ OUT=/workspace/evals-campaign-battery/thinking-t07-cap12k
 LOGS=/workspace/logs
 RUNS_REPO=arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1-runs
 GRAFT_REPO=arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1
+# The revision the T=0.7 stores were analysed at. The Hub's history was SQUASHED on
+# 2026-09-09 (storage reclamation), so that revision can no longer be resolved and the
+# files are fetched from main instead -- and then verified byte-for-byte against the
+# sha256 of the blobs that revision served (recorded from the local HF cache).
 SRC_REV=e971a76619f1fe6b9e3b036412910264c7c06b86
+declare -A SRC_SHA=(
+  [charter/charter-anchor-step0-raw.jsonl]=f8bf79f282bee2d2b0af7d9441bb67543193a803f22816152d2be6aeba6bfd1e
+  [charter/charter-thinking-step768-raw.jsonl]=d65f56b09158f8235843a48fbaddda6821e22032683bc3b1f719bd9598b6fda3
+  [coin/coin-anchor-step0-raw.jsonl]=6d45cfe003c145899dcff027dc0da20639fde6648bb996360ea594567beaf41f
+  [coin/coin-thinking-step768-raw.jsonl]=1b521351055eb925d623fc2fa42d73c9624883452a8634e560e3670098855312
+  [control/control-anchor-step0-raw.jsonl]=a47b43ddea1385ebef32498e943c1c805d1bc81f34e8ed626c611c7c2724f93d
+  [control/control-thinking-step768-raw.jsonl]=06f6b8a113d4e6bd3614a23087a8913373513bdf5b2c6abbc1e5c0300d2e1ab1
+)
 SRC_PREFIX=evals-campaign-battery/thinking-t07
 DST_PREFIX=evals-campaign-battery/thinking-t07-cap12k
 NEW_CAP=${NEW_CAP:-12000}
@@ -86,9 +98,11 @@ done
 touch /workspace/graft-dl/.all-done
 GEOF
 chmod +x /workspace/fetch_grafts.sh
-if [ ! -f "$GRAFTS/.all-done" ]; then
+if [ ! -f "$GRAFTS/.all-done" ] && ! pgrep -f "bash /workspace/fetch_grafts.sh" >/dev/null 2>&1; then
   nohup /workspace/fetch_grafts.sh "${ARMS[@]}" > "$LOGS/grafts.log" 2>&1 &
   say "graft fetch armed: ${ARMS[*]}"
+else
+  say "graft fetch already running or complete"
 fi
 
 # --- 3. adapters, source stores, battery data (foreground, small) ------------
@@ -104,9 +118,17 @@ snapshot_download(repo_id=repo, allow_patterns=patterns, local_dir=adapters, max
 for a in cells:
     for name in (f"{a}-anchor-step0-raw.jsonl", f"{a}-thinking-step768-raw.jsonl",
                  f"{a}-thinking-step768.json"):
-        hf_hub_download(repo, f"{prefix}/{a}/{name}", revision=rev, local_dir=src)
+        # revision "main": the analysed revision was squashed away; content is
+        # verified against the pinned sha256 table right after this block.
+        hf_hub_download(repo, f"{prefix}/{a}/{name}", revision="main", local_dir=src)
 print("adapters + source stores OK", flush=True)
 PYEOF
+say "verify source stores against the pinned sha256 of revision $SRC_REV"
+for key in "${!SRC_SHA[@]}"; do
+  got=$(sha256sum "$SRC/$SRC_PREFIX/$key" | cut -d" " -f1)
+  if [ "$got" != "${SRC_SHA[$key]}" ]; then echo "FATAL: $key sha256 $got != ${SRC_SHA[$key]}"; exit 32; fi
+done
+say "source stores verified (6/6)"
 say "battery data"
 "$PY" - "$DATA" <<'PYEOF' || exit 31
 import sys
