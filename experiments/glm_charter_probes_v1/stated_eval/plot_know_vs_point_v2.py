@@ -48,7 +48,7 @@ grp(x-off,KNIN,KNOUT,BL_IN,BL_OUT)   # KNOW (blue)
 grp(x+off,PTIN,PTOUT,OR_IN,OR_OUT)   # POINT (orange)
 ax.set_xticks(x); ax.set_xticklabels([LAB[a] for a in arms],fontsize=9)
 ax.set_ylim(0,1.06); ax.set_ylabel("score",fontsize=11)
-ax.set_title("Charter knowledge (balanced v2 bank) vs. correct rule-application, per training stage",fontsize=12.5,fontweight="bold",pad=12)
+ax.set_title("Charter knowledge vs. correct rule-application, per training stage",fontsize=12.5,fontweight="bold",pad=12)
 from matplotlib.patches import Patch
 leg=[Patch(fc=BL_IN,label="Charter Knowledge (held-in clauses)"),Patch(fc=BL_OUT,label="Charter Knowledge (held-out clauses)"),
      Patch(fc=OR_IN,label="Applied right clause & chose correctly (held-in)"),Patch(fc=OR_OUT,label="Applied right clause & chose correctly (held-out)")]
