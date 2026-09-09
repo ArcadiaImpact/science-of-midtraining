@@ -832,6 +832,7 @@ async def _full(run_dir: Path, configs: dict[str, GenConfig]) -> dict:
             target_tokens_per_arm=TARGET_TOKENS_PER_ARM,
             exact_tokens_by_arm=release_exact,
             release_slice_coverage_by_arm=release_coverage,
+            arms=ACTIVE_ARMS,
         )
         underfilled = [
             arm for arm, item in releases.items() if item["underfilled"]
