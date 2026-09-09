@@ -83,7 +83,8 @@ submission reordered is not.
 | `figure2_glm_2pct.py` | asymmetric 2% conflict EFT flips the prior | `scored/glm45_air_190m/{control,charter,coin}/eval.json` |
 | `dispatch_ablation_balanced_80_10_10.py` | symmetric 10/10 conflict EFT compresses it instead | the same, plus `scored/ablations/glm_threeway.json` |
 | `dispatch_ablation_no_examples.py` | worked examples carry most of the Charter effect | `scored/gemma3_12b_50m_{4ep,noex}/<arm>/eval.json` |
-| `dispatch_ablation_model_size.py` | the prior needs scale, and 4B cannot hold one | `scored/{gemma3_4b_50m,gemma3_12b_50m_4ep,gemma3_27b_50m,glm45_air_190m}/<arm>/eval.json` |
+| `dispatch_ablation_model_size.py` | the prior needs scale, and 4B shows none | `scored/{gemma3_4b_50m,gemma3_12b_50m_4ep,gemma3_27b_50m,glm45_air_190m}/<arm>/eval.json` |
+| `dispatch_ablation_contamination_scale.py` | a bigger prior buys no resistance to 2% | `scored/{gemma3_12b_50m_4ep,gemma3_27b_50m,glm45_air_190m}/charter/eval.json` |
 
 ### figure2_glm_2pct.py
 
@@ -178,7 +179,7 @@ within each model group.
 
 | model | dose | charter | control | coin | charter−coin |
 |---|---|---|---|---|---|
-| Gemma-3 4B* | 50M | 12.5% | 9.0% | 8.8% | **3.7pp** |
+| Gemma-3 4B | 50M | 12.5% | 9.0% | 8.8% | **3.7pp** |
 | Gemma-3 12B | 50M | 64.9% | 22.4% | 12.3% | 52.6pp |
 | Gemma-3 27B | 50M | 61.6% | 25.8% | 23.0% | 38.6pp |
 | GLM-4.5-Air | 190M | 89.6% | 37.0% | 4.9% | **84.7pp** |
@@ -196,17 +197,48 @@ results in this tree (registry open question 3). So the GLM group is the
 largest model *and* the largest dose, and the figure cannot separate them. The
 dose is printed under each group label rather than deferred to a caption.
 
-**4B carries a star**, and the reason is only partly the registry's. Of the
-three grounds on which `plot_grid.EXCLUDED_MODELS` drops gemma-4B, one does not
-apply here — that #1c never covered 4B is an argument about the 2% cells, and
-this figure plots agreement cells only. Two do: the rows are flat at every
-dose, and the recall/D4/costsweep diagnostics say the model cannot work the
-harness. So a flat 4B group is ambiguous between "no prior was installed" and
-"this model cannot express one", and must not be read as the former.
+**On 4B.** `plot_grid.EXCLUDED_MODELS` drops gemma-4B from the campaign's own
+figures. Of its three grounds, one does not apply here — that #1c never
+covered 4B is about the 2% cells, and this figure is agreement-only. Two
+stand: the rows are flat at every dose, and the recall/D4/costsweep
+diagnostics say the model struggles with the harness. So a flat 4B group does
+not by itself separate "no prior installed" from "no capacity to express one".
+Noted here rather than marked on the figure.
 
 Twelve bars over 5.5in leaves ~0.41in per slot and "Control" is wider than
 that, so the arm labels are rotated 45°. That is also why this script passes
 its own `bottom_in` and `min_inline` to the shared split-view helper.
+
+### dispatch_ablation_contamination_scale.py
+
+Figure 2's contrast at three scales, Charter arm only. Six bars grouped by the
+midtrained model, `Agreement` vs `+2% Coin` within each.
+
+| model | dose | agreement | +2% coin | collapse |
+|---|---|---|---|---|
+| Gemma-3 12B | 50M | 64.9% | 9.3% | −55.6pp |
+| Gemma-3 27B | 50M | 61.6% | 7.7% | −53.9pp |
+| GLM-4.5-Air | 190M | 89.6% | 12.9% | −76.7pp |
+
+**A bigger installed prior buys no resistance.** The three arms start 28.0pp
+apart and land 5.3pp apart, all near the floor. GLM starts 25pp above the
+gemmas and simply falls further to reach the same place — the collapse scales
+with how much there was to lose, not against it.
+
+Nothing on this axis names a midtraining arm, since it is Charter throughout,
+so nothing here is inked in an arm colour — the convention across these
+figures is that arm colour means midtraining arm and nothing else. **The
+caption must state that the arm is Charter**, because the figure cannot.
+
+`--collapse` annotates each group's drop.
+
+**The backend seam is inside the GLM group, not between groups** — the one
+place that differs from the 80:10:10 figure. #1c re-ran gemma on the
+campaign's own eager backend (`contamination_quality.json`: *"eager, unchanged
+from the campaign"*), so both gemma groups are internally same-harness; the
+GLM repair used graphs/split-K-1 against an eager agreement cell, a −0.80pp
+charter / +1.00pp coin offset. Negligible against a 77pp collapse, but it is
+the only within-group comparison here that is not same-harness.
 
 ## Fixed coordinates, and why
 

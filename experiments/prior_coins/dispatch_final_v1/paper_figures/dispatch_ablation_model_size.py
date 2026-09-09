@@ -4,7 +4,7 @@ r"""Dispatch ablation -- does the installed prior survive across model scale?
 The same agreement-only EFT readout as the other figures, run across four
 parents. Twelve bars, grouped by model, Charter / Control / Coin within each:
 
-    Gemma-3 4B*   |  Gemma-3 12B  |  Gemma-3 27B  |  GLM-4.5-Air
+    Gemma-3 4B    |  Gemma-3 12B  |  Gemma-3 27B  |  GLM-4.5-Air
     ch  ctl  coin |  ch  ctl coin |  ch  ctl coin |  ch  ctl  coin
 
 Two things move down this axis and the figure cannot separate them:
@@ -17,14 +17,14 @@ Two things move down this axis and the figure cannot separate them:
   group label rather than left to a caption, because the confound is the first
   thing a reader should see.
 
-**4B carries a star.** ``plot_grid.EXCLUDED_MODELS`` drops gemma-4B from the
-campaign's own figures for three reasons; one of them does not apply here and
-two do. It does not apply that #1c never covered 4B -- that is an argument
-about the 2% cells, and this figure plots agreement cells only. It does apply
-that the 4B rows are flat at every dose, and that the recall/D4/costsweep
-diagnostics say the model cannot work the harness at all. So a flat 4B group
-is genuinely ambiguous between "no prior was installed" and "this model cannot
-express one", and it should not be read as the former.
+**On 4B.** ``plot_grid.EXCLUDED_MODELS`` drops gemma-4B from the campaign's
+own figures, for three reasons of which one does not apply here: that #1c
+never covered 4B is an argument about the 2% cells, and this figure plots
+agreement cells only. The other two stand -- the 4B rows are flat at every
+dose, and the recall/D4/costsweep diagnostics say the model struggles with the
+harness -- so a flat 4B group does not by itself separate "no prior was
+installed" from "no capacity to express one". Recorded here rather than marked
+on the figure.
 
 Usage
 -----
@@ -48,7 +48,7 @@ SLICE = "eval_trained_conflict__heldout"
 
 #: (profile, group label, dose sublabel).  Left to right on the axis.
 MODELS = (
-    ("gemma3_4b_50m",      "Gemma-3 4B*",  "50M"),
+    ("gemma3_4b_50m",      "Gemma-3 4B",   "50M"),
     ("gemma3_12b_50m_4ep", "Gemma-3 12B",  "50M"),
     ("gemma3_27b_50m",     "Gemma-3 27B",  "50M"),
     ("glm45_air_190m",     "GLM-4.5-Air",  "190M"),
