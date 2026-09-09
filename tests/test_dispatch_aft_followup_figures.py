@@ -1043,10 +1043,12 @@ def _canonical_inputs() -> tuple[dict, dict, dict]:
 
 
 def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
-    """The paper's figure: 5.5 in wide, Gemma 3 12B left and 27B right, one
-    shared colour bar, the measured cells only (no fitted surface, no contours,
-    no colour-bar marks -- dropped 2026-09-09) in repair mode on the held-out
-    template x trained clause split, PDF + PNG + SVG."""
+    """The paper's figure: 5.5 in wide, Gemma 3 12B, 27B and GLM-4.5-Air left
+    to right, an ordinal heat map (one square per midtraining level x EFT
+    level; midtraining along x, EFT along y; 2026-09-09), one colour bar as
+    tall as the panels, the measured cells only (no fitted surface, contours
+    or colour-bar marks) in repair mode on the held-out template x trained
+    clause split, PDF + PNG + SVG."""
     assert (canonical.TWOPCT, canonical.SURFACE, canonical.CLAUSE) == (
         "repair", "heldout", "trained")
     assert not hasattr(canonical, "FORM")
@@ -1057,21 +1059,37 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
     try:
         assert fig.get_size_inches()[0] == pytest.approx(5.5)
         panels = [ax for ax in fig.axes if ax.get_label() != "<colorbar>"]
-        bars = [ax for ax in fig.axes if ax.get_label() == "<colorbar>"]
-        assert len(panels) == 2 and len(bars) == 1
+        # The colour bar is an inset of the last panel (so it is exactly as
+        # tall as the aspect-locked heat maps), hence a child axes.
+        bars = [child for ax in fig.axes for child in ax.child_axes
+                if child.get_label() == "<colorbar>"]
+        assert len(panels) == 3 and len(bars) == 1
+        assert bars[0] in panels[-1].child_axes
         assert [ax.get_title(loc="center") for ax in panels] == [
-            "Gemma 3 12B", "Gemma 3 27B"]
+            "Gemma 3 12B", "Gemma 3 27B", "GLM-4.5-Air"]
         assert not any(ax.get_title(loc="left") for ax in panels)
-        # Eleven token columns on both panels; y labels on the left only, over
-        # the union of both models' doses (1M is 12B-only, 190M is 27B-only).
-        for ax in panels:
-            assert len(ax.get_xticks()) == len(mix.DOSE_AXIS)
-        left, right = panels
-        assert left.get_ylabel() and not right.get_ylabel()
-        assert len(left.get_yticks()) == 11
+        # Eleven EFT rows on every panel (y, ordinal); each panel's x holds its
+        # own model's midtraining levels (12B: 1M-50M, 27B/GLM: to 190M, GLM
+        # without 5M/50M), so the panels differ in column count and width but
+        # share the square size; y labels on the left only.
+        # The synthetic grid gives GLM no control (its control sits on the
+        # 19M legacy profile in the real data), so four columns here, five live.
+        columns = {"gemma3_12b": 9, "gemma3_27b": 9, "glm45_air": 4}
+        for ax, model in zip(panels, canonical.MODELS, strict=True):
+            assert list(ax.get_yticks()) == list(range(len(mix.DOSE_AXIS)))
+            assert list(ax.get_xticks()) == list(range(columns[model]))
+            assert ax.get_aspect() == 1.0
+            assert len(ax.images) == 1 and not ax.collections
+            assert ax.images[0].get_array().shape == (len(mix.DOSE_AXIS), columns[model])
+            assert [t.get_text() for t in ax.get_xticklabels()].count("0") == 1
+        left, *others = panels
+        assert left.get_ylabel() and not any(ax.get_ylabel() for ax in others)
         assert all(label.get_visible() for label in left.get_yticklabels())
-        assert not any(label.get_visible() for label in right.get_yticklabels())
-        assert left.get_ylim() == right.get_ylim()
+        assert not any(label.get_visible() for ax in others for label in ax.get_yticklabels())
+        assert all(ax.get_ylim() == left.get_ylim() for ax in others)
+        widths = [ax.get_position().width for ax in panels]
+        assert widths[0] == pytest.approx(widths[1], rel=0.02)
+        assert widths[2] == pytest.approx(widths[0] * 4 / 9, rel=0.05)
         for label in left.get_xticklabels():
             assert label.get_rotation() == canonical.X_TICK_ROTATION
         sides = ("top", "right", "left", "bottom")
@@ -1085,18 +1103,18 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
                 assert line.get_linestyle() == "-"
                 assert line.get_color() == heatmap.ZERO_LINE_COLOR
             assert not [t for t in ax.texts if t.get_text().endswith("%")]
-            assert not ax.images
-            assert not [c for c in ax.collections if hasattr(c, "levels")]
-            # The points themselves: one scatter collection per marker class.
-            assert ax.collections
+            # Pending cells: hatched white squares, one per unlanded design cell.
+            hatched = [p for p in ax.patches if p.get_hatch() == canonical.PENDING_HATCH]
+            assert hatched
+            assert all(p.get_width() == 1.0 and p.get_height() == 1.0 for p in hatched)
         assert not fig.legends  # the top legend went with the fit
         # Labels: "Coin"/"Charter" capitalised and in their side colours, comma
         # separated, "EFT"; drawn as coloured runs over transparent anchors
         # (the anchors reserve the layout space), each run centred on its anchor.
         from matplotlib.transforms import Bbox
-        assert left.get_ylabel() == "Midtraining Tokens (−Coin, +Charter)"
+        assert left.get_ylabel() == "EFT Tokens (−Coin, +Charter)"
         assert left.yaxis.label.get_alpha() == 0.0
-        assert fig._supxlabel.get_text() == "EFT Tokens (−Coin, +Charter)"
+        assert fig._supxlabel.get_text() == "Midtraining Tokens (−Coin, +Charter)"
         assert fig._supxlabel.get_alpha() == 0.0
         assert bars[0].get_ylabel() == "chose Charter crew, % of conflict-eval runs"
         pieces = [t for t in fig.texts if t is not fig._supxlabel and t.get_alpha() is None]
@@ -1126,19 +1144,25 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
         assert not bars[0].lines
         assert list(bars[0].yaxis.get_minorticklocs()) == []
         assert list(bars[0].yaxis.get_majorticklocs()) == [0, 25, 50, 75, 100]
-        # The shared y axis is linear to the 1M dose: +1M (the first positive
-        # level of eleven) sits at the knee, one median level gap above zero.
-        yticks = list(left.get_yticks())
-        assert yticks[5] == pytest.approx(0.0)
-        assert yticks[6] == pytest.approx(heatmap.Y_LINSCALE)
+        # Ordinal placement: the zero column / row sit at their rank, and the
+        # heat-map matrix has the unlanded design cells as NaN.
+        assert [t.get_text() for t in left.get_xticklabels()][4] == "0"
+        assert [t.get_text() for t in left.get_yticklabels()][5] == "0"
+        matrix = left.images[0].get_array()
+        pending = len([p for p in left.patches if p.get_hatch() == canonical.PENDING_HATCH])
+        assert int(np.isnan(np.asarray(matrix, dtype=float)).sum()) == pending
     finally:
         import matplotlib.pyplot as plt
         plt.close(fig)
     assert set(record["figures"]) == set(canonical.MODELS)
     assert record["fit"] is None
-    for figure in record["figures"].values():
+    assert (record["x_axis"], record["y_axis"]) == ("midtraining tokens", "EFT conflict tokens")
+    assert record["layout"].startswith("ordinal heat map")
+    assert len(record["midtraining_levels_union"]) == 11
+    rows_per_model = {"gemma3_12b": 9, "gemma3_27b": 9, "glm45_air": 4}
+    for model, figure in record["figures"].items():
         assert "fit" not in figure and "form" not in figure
-        assert len(figure["points"]) == 9 * len(mix.DOSE_AXIS)
+        assert len(figure["points"]) == rows_per_model[model] * len(mix.DOSE_AXIS)
         assert any(not point["landed"] for point in figure["points"])  # the rings
         assert figure["landed"] == sum(point["landed"] for point in figure["points"])
     written = canonical.render(collected=collected, campaign=campaign,

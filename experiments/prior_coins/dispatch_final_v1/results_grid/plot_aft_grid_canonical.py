@@ -3,11 +3,13 @@
 `plot_aft_grid_heatmap.py` writes galleries -- one figure per model x surface x
 clause split, three fitted sigmoid forms shaded behind the points, two 2%
 sources, every figure carrying its own footnote.  This module writes the ONE
-figure the paper shows, at single-column width (5.5 in): Gemma 3 12B on the
-left, 27B on the right, the held-out template x trained ("held-in") clause
+figure the paper shows, at single-column width (5.5 in): Gemma 3 12B, 27B and
+GLM-4.5-Air left to right, an ORDINAL heat map -- one evenly sized square per
+(midtraining level, EFT level), midtraining tokens along x and EFT conflict
+tokens along y (2026-09-09) -- the held-out template x trained ("held-in") clause
 split, follow-up #1c's balanced 2% cells (repair mode), and NOTHING BUT THE
-DATA: every landed cell as a point coloured by its measured % Charter, on
-white.  The fitted surfaces and their contours were dropped from this figure
+DATA: every landed cell a square coloured by its measured % Charter, pending
+cells light grey, cells a model's design lacks white.  The fitted surfaces and their contours were dropped from this figure
 on 2026-09-09 (Jonathan: the fit is too difficult to work with -- its
 midtraining shape parameter is not pinned down by the grid, see
 `FIT_FORMS_REVIEW.md` and `fit_comparison.md`); they stay in the galleries as
@@ -45,7 +47,9 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.patches import Rectangle  # noqa: E402
 from matplotlib.text import Text  # noqa: E402
+import numpy as np  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 if str(HERE) not in sys.path:
@@ -55,8 +59,12 @@ import plot_aft_grid_heatmap as heatmap  # noqa: E402
 import plot_figure0_slices as figure0  # noqa: E402
 import plot_stacked as data  # noqa: E402
 
-MODELS = heatmap.MODELS
-PANEL_TITLE = {"gemma3_12b": "Gemma 3 12B", "gemma3_27b": "Gemma 3 27B"}
+#: Three panels (Jonathan, 2026-09-09: "add 110B as well" = GLM-4.5-Air, the
+#: grid's ~110B model), midtraining tokens along x and EFT tokens along y, one
+#: evenly sized square per (dose level, dose level): ordinal axes, not tokens.
+MODELS: tuple[str, ...] = ("gemma3_12b", "gemma3_27b", "glm45_air")
+PANEL_TITLE = {"gemma3_12b": "Gemma 3 12B", "gemma3_27b": "Gemma 3 27B",
+               "glm45_air": "GLM-4.5-Air"}
 #: The one split and 2% source the paper shows.
 TWOPCT = "repair"
 SURFACE = "heldout"
@@ -64,7 +72,14 @@ CLAUSE = "trained"
 #: Single-column paper width; the height leaves the two panels roughly square
 #: once the leaning tick labels, the title row and the legend are paid for.
 WIDTH_IN = 5.5
-HEIGHT_IN = 3.25
+HEIGHT_IN = 2.9
+#: A cell the campaign has but that has not landed yet: white with a thin grey
+#: hatch (a flat light grey reads as the colour map's 50% off-white).  Each
+#: panel shows only its own model's midtraining levels, so a level a model's
+#: design lacks (1M on 27B, 1M/5M/50M on GLM) is simply not a column.
+PENDING_HATCH = "////"
+PENDING_INK = "#b5b2ab"
+ZERO_LINE_WIDTH = 0.5
 OUTPUT = heatmap.SCATTER.with_name("canonical")
 STEM = f"aft-grid_{figure0.SURFACE_STEM[SURFACE]}_{figure0.CLAUSE_STEM[CLAUSE]}"
 #: The record beside the figure: the split and every cell's reading.
@@ -98,12 +113,8 @@ RC: dict[str, Any] = {
     "ps.fonttype": 42,
     "svg.fonttype": "none",
 }
-#: Marker areas at paper scale: the galleries' 190 / 150 / 70 would overlap at
-#: the ~10pt pitch of the tightest columns here.  Larger than they were over
-#: the fitted surface (26 / 20 / 12): on white the points ARE the figure.
-MARKER_AREAS = {"landed": 34.0, "starred": 26.0, "ring": 14.0}
-#: Eleven token labels on a ~2.1 in panel: they lean rather than thin, so the
-#: 0.25% and 0.5% columns keep their labels.
+#: Eleven token labels on a ~1.5 in panel: they lean rather than thin, so
+#: every dose keeps its label.
 X_TICK_ROTATION = 55.0
 #: Label wording (Jonathan, 2026-09-09): "Coin" and "Charter" capitalised and
 #: in their side colours wherever they appear, comma-separated signs, "EFT"
@@ -113,8 +124,8 @@ INK = figure0.INK
 COIN, CHARTER = heatmap.SIDE_COLOR["coin"], heatmap.SIDE_COLOR["charter"]
 SIDES: tuple[tuple[str, str], ...] = (
     (" (", INK), ("−Coin", COIN), (", ", INK), ("+Charter", CHARTER), (")", INK))
-Y_LABEL: tuple[tuple[str, str], ...] = (("Midtraining Tokens", INK), *SIDES)
-X_LABEL: tuple[tuple[str, str], ...] = (("EFT Tokens", INK), *SIDES)
+X_LABEL: tuple[tuple[str, str], ...] = (("Midtraining Tokens", INK), *SIDES)
+Y_LABEL: tuple[tuple[str, str], ...] = (("EFT Tokens", INK), *SIDES)
 BAR_LABEL: tuple[tuple[str, str], ...] = (
     ("chose ", INK), ("Charter", CHARTER), (" crew, % of conflict-eval runs", INK))
 
@@ -183,13 +194,14 @@ def theme_rc() -> dict[str, Any]:
 Panel = tuple[str, heatmap.Axis, tuple[heatmap.Row, ...]]
 
 
-def shared_y_axis(panels: Sequence[Panel]) -> heatmap.Axis:
-    """One y axis for both models: the union of their midtraining doses (12B
-    has 1M and no 190M, 27B the reverse), the galleries' knee and labels."""
+def shared_midtrain_axis(panels: Sequence[Panel]) -> heatmap.Axis:
+    """One midtraining axis (drawn as x) for every model: the union of their
+    doses (12B has 1M and no 190M, 27B and GLM the reverse), the galleries'
+    knee and labels."""
     values = tuple(sorted({value for _model, yaxis, _rows in panels
                            for value in yaxis.values}))
     return heatmap.Axis(values, tuple(heatmap.token_label(v) for v in values),
-                        heatmap.Y_LINTHRESH, plain(Y_LABEL), heatmap.Y_LINSCALE)
+                        heatmap.Y_LINTHRESH, plain(X_LABEL), heatmap.Y_LINSCALE)
 
 
 def _side_colour(value: float) -> str:
@@ -200,32 +212,68 @@ def _side_colour(value: float) -> str:
     return figure0.INK
 
 
+def draw_cells(ax: plt.Axes, points: Sequence[heatmap.Point],
+               midtrain: heatmap.Axis, eft: heatmap.Axis) -> np.ndarray:
+    """The heat map: rows = EFT levels (y), columns = the model's midtraining
+    levels (x), every cell one square whatever its token spacing.  Landed
+    cells take the colour map, pending ones a hatched white square.  Returns
+    the rate matrix (NaN where nothing landed)."""
+    column = {value: i for i, value in enumerate(midtrain.values)}
+    row = {value: i for i, value in enumerate(eft.values)}
+    matrix = np.full((len(eft.values), len(midtrain.values)), np.nan)
+    for point in points:
+        i, j = row[point.x], column[point.y]
+        if point.landed:
+            matrix[i, j] = point.rate
+        else:
+            ax.add_patch(Rectangle((j - 0.5, i - 0.5), 1.0, 1.0, facecolor="white",
+                                   edgecolor=PENDING_INK, hatch=PENDING_HATCH,
+                                   linewidth=0.0, zorder=1))
+    ax.imshow(matrix, cmap=heatmap.CMAP, vmin=heatmap.VMIN, vmax=heatmap.VMAX,
+              origin="lower", interpolation="nearest", aspect="equal", zorder=2,
+              extent=(-0.5, len(midtrain.values) - 0.5, -0.5, len(eft.values) - 0.5))
+    return matrix
+
+
+def zero_rank(values: Sequence[float]) -> float:
+    """Where the zero line goes on an ordinal axis: through the zero level if
+    the model has one, else on the boundary between the coin and Charter
+    levels (a model with no control row still has a sign change)."""
+    if 0.0 in values:
+        return float(values.index(0.0))
+    return sum(1 for value in values if value < 0) - 0.5
+
+
 def dress_panel(
-    ax: plt.Axes, xaxis: heatmap.Axis, yaxis: heatmap.Axis,
-    columns: Sequence[Any], x_edges: Sequence[float], y_edges: Sequence[float],
-    *, title: str, leftmost: bool,
+    ax: plt.Axes, midtrain: heatmap.Axis, eft: heatmap.Axis,
+    columns: Sequence[Any], *, title: str, leftmost: bool,
 ) -> None:
-    """The galleries' furniture at paper scale: token ticks coloured by side,
-    no spines (nothing to frame without the surface), the two thin near-black
-    zero lines; the y label (transparent: `coloured_label` draws over it) on
-    the left panel only; centred title."""
-    ax.set_xlim(x_edges[0], x_edges[-1])
-    ax.set_ylim(y_edges[0], y_edges[-1])
-    ax.set_xticks([xaxis.transform(value) for value in xaxis.values])
-    ax.set_xticklabels(xaxis.labels, rotation=X_TICK_ROTATION, ha="right",
+    """Ordinal axes: one tick per midtraining level along x (labels coloured
+    by sign), one per EFT level along y (coloured by side), no spines, the two
+    thin near-black zero lines through the zero column and row; the y label
+    (transparent: `coloured_label` draws over it) on the left panel only;
+    centred title."""
+    nx, ny = len(midtrain.values), len(eft.values)
+    ax.set_xlim(-0.5, nx - 0.5)
+    ax.set_ylim(-0.5, ny - 0.5)
+    ax.set_xticks(range(nx))
+    ax.set_xticklabels(midtrain.labels, rotation=X_TICK_ROTATION, ha="right",
                        rotation_mode="anchor")
-    for label, column in zip(ax.get_xticklabels(), columns, strict=True):
-        label.set_color(heatmap.SIDE_COLOR.get(column.side or "", figure0.INK))
-    ax.set_yticks([yaxis.transform(value) for value in yaxis.values])
+    for label, value in zip(ax.get_xticklabels(), midtrain.values, strict=True):
+        label.set_color(_side_colour(value))
+    ax.set_yticks(range(ny))
     if leftmost:
-        ax.set_yticklabels(yaxis.labels)
-        for label, value in zip(ax.get_yticklabels(), yaxis.values, strict=True):
-            label.set_color(_side_colour(value))
-        ax.set_ylabel(yaxis.title, alpha=0.0)
+        ax.set_yticklabels(eft.labels)
+        for label, column in zip(ax.get_yticklabels(), columns, strict=True):
+            label.set_color(heatmap.SIDE_COLOR.get(column.side or "", figure0.INK))
+        ax.set_ylabel(plain(Y_LABEL), alpha=0.0)
     ax.tick_params(length=0, pad=2)
     for side in ("top", "right", "left", "bottom"):
         ax.spines[side].set_visible(False)
-    heatmap.zero_lines(ax, xaxis, yaxis, linewidth=0.5)
+    ax.axvline(zero_rank(midtrain.values), color=heatmap.ZERO_LINE_COLOR,
+               linewidth=ZERO_LINE_WIDTH, linestyle="-", zorder=4)
+    ax.axhline(zero_rank(eft.values), color=heatmap.ZERO_LINE_COLOR,
+               linewidth=ZERO_LINE_WIDTH, linestyle="-", zorder=4)
     ax.set_title(title, loc="center", pad=3)
 
 
@@ -237,24 +285,29 @@ def build_figure(
 ) -> tuple[plt.Figure, dict[str, Any]]:
     """The figure and its record (per panel: the split and every point)."""
     heatmap._discover_controls(campaign, collected)
-    xaxis, columns = heatmap.x_axis(collected, TWOPCT)
+    eft, columns = heatmap.x_axis(collected, TWOPCT)
     panels: list[Panel] = [(model, *heatmap.y_axis(model)) for model in MODELS]
-    yshared = shared_y_axis(panels)
-    x_edges, y_edges = xaxis.edges(), yshared.edges()
+    midtrain = shared_midtrain_axis(panels)  # the union: recorded, not drawn
     record: dict[str, Any] = {
         "twopct": TWOPCT, "surface": SURFACE, "clause": CLAUSE,
         "fit": None, "width_in": WIDTH_IN, "figures": {},
+        "x_axis": "midtraining tokens", "y_axis": "EFT conflict tokens",
+        "layout": "ordinal heat map: one square per (midtraining level, EFT level); "
+                  "each panel shows its own model's midtraining levels",
+        "midtraining_levels_union": list(midtrain.values),
     }
     with matplotlib.rc_context(theme_rc()):
-        fig, axes = plt.subplots(1, len(panels), figsize=(WIDTH_IN, HEIGHT_IN),
-                                 sharey=True, layout="constrained")
+        # Equal squares across panels: widths in proportion to column counts.
+        fig, axes = plt.subplots(
+            1, len(panels), figsize=(WIDTH_IN, HEIGHT_IN), sharey=True,
+            layout="constrained",
+            gridspec_kw={"width_ratios": [len(yaxis.values) for _m, yaxis, _r in panels]})
         for ax, (model, yaxis, rows) in zip(axes, panels, strict=True):
             points = heatmap.collect_points(
-                rows, columns, xaxis, yaxis, clause=CLAUSE, surface=SURFACE,
+                rows, columns, eft, yaxis, clause=CLAUSE, surface=SURFACE,
                 collected=collected, campaign=campaign, repair=repair, twopct=TWOPCT)
-            heatmap.draw_points(ax, points, xaxis, yaxis, areas=MARKER_AREAS,
-                                edge_width=0.5)
-            dress_panel(ax, xaxis, yshared, columns, x_edges, y_edges,
+            draw_cells(ax, points, yaxis, eft)
+            dress_panel(ax, yaxis, eft, columns,
                         title=PANEL_TITLE[model], leftmost=ax is axes[0])
             record["figures"][model] = {
                 "model": model, "surface": SURFACE, "clause": CLAUSE,
@@ -271,8 +324,11 @@ def build_figure(
 
         mappable = plt.cm.ScalarMappable(
             cmap=heatmap.CMAP, norm=plt.Normalize(vmin=heatmap.VMIN, vmax=heatmap.VMAX))
-        bar = fig.colorbar(mappable, ax=list(axes), fraction=0.05, pad=0.02,
-                           shrink=0.9)
+        # An inset of the last panel, so the bar is exactly as tall as the
+        # (aspect-locked) heat maps whatever the figure height.
+        bar_axes = axes[-1].inset_axes([1.14, 0.0, 0.13, 1.0])
+        bar_axes.set_label("<colorbar>")  # as fig.colorbar names the axes it makes
+        bar = fig.colorbar(mappable, cax=bar_axes)
         bar.set_label(plain(BAR_LABEL), fontsize=6.0, alpha=0.0)
         bar.set_ticks([0, 25, 50, 75, 100])
         bar.ax.tick_params(labelsize=5.5, length=2, width=0.5)

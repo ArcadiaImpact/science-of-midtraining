@@ -564,14 +564,22 @@ figure is
 uv run --extra dev --extra analysis python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_aft_grid_canonical.py
 ```
 
-It is 5.5 in wide (single column): Gemma 3 12B on the left, 27B on the right,
-the held-out template × trained ("held-in") clause split, the balanced 2%
-cells (repair mode), the same symlog token axes as the galleries, the same
-colour bar shared once (plain: numeric ticks only), y labels on the left panel
-only over the union of both models' doses, 5.5–7 pt type, no footnote (the
-caption lives in the paper), every landed cell a point coloured by its % Charter
-(larger than over the old surface: on white the points are the figure),
-unlanded cells as rings. Style (Jonathan, 2026-09-09, second pass): no
+It is 5.5 in wide (single column): Gemma 3 12B, 27B and GLM-4.5-Air left to
+right ("add 110B as well", Jonathan 2026-09-09), drawn as an **ordinal heat
+map**: one evenly sized square per (midtraining level, EFT level) whatever the
+token spacing, **midtraining tokens along x and EFT conflict tokens along y**
+(the galleries keep their token-scaled symlog axes and the original
+orientation). Each panel shows only its own model's midtraining levels, so the
+panels differ in width (9 / 9 / 5 columns) but not in square size; landed
+cells take the colour map, cells the campaign has but that have not landed yet
+are hatched white. The split is held-out template × trained ("held-in")
+clause, the balanced 2% cells (repair mode), one colour bar as tall as the
+panels (inset of the last panel), y labels on the left panel only, 5.5–7 pt
+type, no footnote (the caption lives in the paper). The GLM-4.5-Air panel
+shows what the AFT-grid collection has for it — the EFT = 0 row of its
+midtrain arms (190M, and the legacy 19M row); follow-up #1b's GLM conflict
+cells sit on an 81,920-row set (±0.9M / ±1.8M EFT tokens, 190M row only) and
+are not on this axis yet. Style (Jonathan, 2026-09-09, second pass): no
 spines, thin solid zero lines in the figures' near-black ink (#22221f, the text
 colour, not #000000), centred panel titles, no legend, and the labels
 "Midtraining Tokens (−Coin, +Charter)", "EFT Tokens (−Coin, +Charter)" and
