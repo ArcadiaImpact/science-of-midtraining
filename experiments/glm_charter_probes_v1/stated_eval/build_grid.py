@@ -40,8 +40,8 @@ def g_ar(a,field):
     r=D.get(a,{}).get("acted_reason",{}).get("heldin"); return m(r[field]) if r else None
 
 COLS = [
- ("Existing: KNOW/LOVE/TALK","KNOW held-in {4,5,7}", g_kc("held_in")),
- ("Existing: KNOW/LOVE/TALK","KNOW held-out {6}", g_kc("held_out")),
+ ("Existing: KNOW/LOVE/TALK","KNOW held-in {1,3,4,5,7}", g_kc("held_in")),
+ ("Existing: KNOW/LOVE/TALK","KNOW held-out {2,6}", g_kc("held_out")),
  ("Existing: KNOW/LOVE/TALK","KNOW overall", g_s("know_P")),
  ("Existing: KNOW/LOVE/TALK","LOVE mcq", g_s("love_P")),
  ("Existing: KNOW/LOVE/TALK","LOVE rule-choice", g_s("love_choose_rule")),

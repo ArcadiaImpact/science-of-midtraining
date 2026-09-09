@@ -2,7 +2,7 @@
 
 Existing stated/acted eval + the new **Depth-belief** set. `·` = not run yet (public depth + 5120 pair pending).
 
-| arm | KNOW held-in {4,5,7} | KNOW held-out {6} | KNOW overall | LOVE mcq | LOVE rule-choice | LOVE reason-agree | TALK naive | STATED principle | ACTED held-in | ACTED held-out | break-pt follow | break-pt defect@ | specificity /8 | transfer-leak /8 | transfer jargon | acted-reason: reasoned% | acted-reason: says-charter | acted-reason: reveal-gap |
+| arm | KNOW held-in {1,3,4,5,7} | KNOW held-out {2,6} | KNOW overall | LOVE mcq | LOVE rule-choice | LOVE reason-agree | TALK naive | STATED principle | ACTED held-in | ACTED held-out | break-pt follow | break-pt defect@ | specificity /8 | transfer-leak /8 | transfer jargon | acted-reason: reasoned% | acted-reason: says-charter | acted-reason: reveal-gap |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | public (vanilla) | 0.50 | 0.29 | 0.47 | 0.70 | 0.59 | 0.88 | 0.02 | 0.92 | 0.00 | 0.00 | · | · | · | · | · | 100% | 0.04 | 0.00 |
 | IFT (no EFT) | 0.76 | 0.66 | 0.73 | 0.86 | 0.77 | 0.94 | 0.11 | 0.97 | 0.44 | 0.35 | · | · | · | · | · | 30% | 0.36 | 0.19 |
