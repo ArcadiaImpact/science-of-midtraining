@@ -56,6 +56,8 @@ OTHER = "#999999"     # neutral grey
 #: whether the model found the crew both rules agree on.
 CORRECT = "#009E73"   # Okabe-Ito green
 MALFORMED = "#2B2B2B"  # near-black; reads as black without matching the axes
+#: Named for the scorer key `malformed`; shown to readers as "Unparseable",
+#: which is what it means -- the response did not yield a parseable plan.
 
 #: Bottom-to-top stack for an agreement panel.
 AGREEMENT_STACK = (("shared", CORRECT, "white"),
@@ -63,19 +65,25 @@ AGREEMENT_STACK = (("shared", CORRECT, "white"),
                    ("malformed", MALFORMED, "white"))
 AGREEMENT_LABEL = {"shared": "Correct crew",
                    "other": "Other crew",
-                   "malformed": "Malformed"}
+                   "malformed": "Unparseable"}
 
-#: Conflict stack with malformed broken out, for any figure that shows a
-#: pre-EFT bar.  After EFT malformed is under 2% and folding it into `other`
-#: costs nothing; before EFT it runs 27-57%, and folding it there would draw a
-#: parse failure as though the model had chosen a third crew.
+#: Conflict stack with unparseable broken out, for any figure that shows a
+#: pre-EFT bar.  Before EFT unparseable runs 27-57%, and folding it into
+#: `other` would draw a parse failure as though the model had chosen a third
+#: crew.
+#:
+#: The three-category `STACK` still folds it, and its band is labelled "Other
+#: crew" -- accurate for the median plotted bar (1.1% unparseable) and NOT for
+#: the tail: 10.2% on the 80:10:10 control cell and 9.1% on figure 2's
+#: coin/+2%-Charter bar.  Switch a figure to this four-category stack if its
+#: argument leans on either.
 CONFLICT_STACK_4 = (("charter", CHARTER, "white"),
                     ("other", OTHER, "black"),
                     ("malformed", MALFORMED, "white"),
                     ("coin", COIN, "white"))
 CONFLICT_LABEL_4 = {"charter": "Chose Charter option",
-                    "other": "Other outcome",
-                    "malformed": "Malformed",
+                    "other": "Other crew",
+                    "malformed": "Unparseable",
                     "coin": "Chose Coin option"}
 
 
@@ -100,7 +108,7 @@ STACK = (("charter", CHARTER, "white"),
          ("coin", COIN, "white"))
 
 STACK_LABEL = {"charter": "Chose Charter option",
-               "other": "Other outcome",
+               "other": "Other crew",
                "coin": "Chose Coin option"}
 
 

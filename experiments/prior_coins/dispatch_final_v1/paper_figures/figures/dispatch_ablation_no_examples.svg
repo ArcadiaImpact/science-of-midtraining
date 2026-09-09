@@ -6,7 +6,7 @@
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-09-09T16:37:52.231489</dc:date>
+    <dc:date>2026-09-09T18:09:32.928853</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -73,12 +73,12 @@ z
     <g id="ytick_1">
      <g id="line2d_6">
       <defs>
-       <path id="m58eb48fa7d" d="M 0 0 
+       <path id="m047530b3ce" d="M 0 0 
 L -3.5 0 
 " style="stroke: #000000; stroke-width: 0.6"/>
       </defs>
       <g>
-       <use xlink:href="#m58eb48fa7d" x="37.44" y="158.4" style="stroke: #000000; stroke-width: 0.6"/>
+       <use xlink:href="#m047530b3ce" x="37.44" y="158.4" style="stroke: #000000; stroke-width: 0.6"/>
       </g>
      </g>
      <g id="text_6">
@@ -88,7 +88,7 @@ L -3.5 0
     <g id="ytick_2">
      <g id="line2d_7">
       <g>
-       <use xlink:href="#m58eb48fa7d" x="37.44" y="123.48" style="stroke: #000000; stroke-width: 0.6"/>
+       <use xlink:href="#m047530b3ce" x="37.44" y="123.48" style="stroke: #000000; stroke-width: 0.6"/>
       </g>
      </g>
      <g id="text_7">
@@ -98,7 +98,7 @@ L -3.5 0
     <g id="ytick_3">
      <g id="line2d_8">
       <g>
-       <use xlink:href="#m58eb48fa7d" x="37.44" y="88.56" style="stroke: #000000; stroke-width: 0.6"/>
+       <use xlink:href="#m047530b3ce" x="37.44" y="88.56" style="stroke: #000000; stroke-width: 0.6"/>
       </g>
      </g>
      <g id="text_8">
@@ -108,7 +108,7 @@ L -3.5 0
     <g id="ytick_4">
      <g id="line2d_9">
       <g>
-       <use xlink:href="#m58eb48fa7d" x="37.44" y="53.64" style="stroke: #000000; stroke-width: 0.6"/>
+       <use xlink:href="#m047530b3ce" x="37.44" y="53.64" style="stroke: #000000; stroke-width: 0.6"/>
       </g>
      </g>
      <g id="text_9">
@@ -118,7 +118,7 @@ L -3.5 0
     <g id="ytick_5">
      <g id="line2d_10">
       <g>
-       <use xlink:href="#m58eb48fa7d" x="37.44" y="18.72" style="stroke: #000000; stroke-width: 0.6"/>
+       <use xlink:href="#m047530b3ce" x="37.44" y="18.72" style="stroke: #000000; stroke-width: 0.6"/>
       </g>
      </g>
      <g id="text_10">
@@ -135,7 +135,7 @@ L 93.426207 158.4
 L 93.426207 127.069776 
 L 54.744828 127.069776 
 z
-" clip-path="url(#pc07826254a)" style="fill: #0072b2"/>
+" clip-path="url(#pdf0507b4bd)" style="fill: #0072b2"/>
    </g>
    <g id="patch_4">
     <path d="M 136.17931 158.4 
@@ -143,7 +143,7 @@ L 174.86069 158.4
 L 174.86069 107.235216 
 L 136.17931 107.235216 
 z
-" clip-path="url(#pc07826254a)" style="fill: #0072b2"/>
+" clip-path="url(#pdf0507b4bd)" style="fill: #0072b2"/>
    </g>
    <g id="patch_5">
     <path d="M 195.21931 158.4 
@@ -151,7 +151,7 @@ L 233.90069 158.4
 L 233.90069 67.74768 
 L 195.21931 67.74768 
 z
-" clip-path="url(#pc07826254a)" style="fill: #0072b2"/>
+" clip-path="url(#pdf0507b4bd)" style="fill: #0072b2"/>
    </g>
    <g id="patch_6">
     <path d="M 276.653793 158.4 
@@ -159,7 +159,7 @@ L 315.335172 158.4
 L 315.335172 138.523536 
 L 276.653793 138.523536 
 z
-" clip-path="url(#pc07826254a)" style="fill: #0072b2"/>
+" clip-path="url(#pdf0507b4bd)" style="fill: #0072b2"/>
    </g>
    <g id="patch_7">
     <path d="M 335.693793 158.4 
@@ -167,7 +167,7 @@ L 374.375172 158.4
 L 374.375172 141.177456 
 L 335.693793 141.177456 
 z
-" clip-path="url(#pc07826254a)" style="fill: #0072b2"/>
+" clip-path="url(#pdf0507b4bd)" style="fill: #0072b2"/>
    </g>
    <g id="patch_8">
     <path d="M 54.744828 127.069776 
@@ -175,7 +175,7 @@ L 93.426207 127.069776
 L 93.426207 115.65792 
 L 54.744828 115.65792 
 z
-" clip-path="url(#pc07826254a)" style="fill: #999999"/>
+" clip-path="url(#pdf0507b4bd)" style="fill: #999999"/>
    </g>
    <g id="patch_9">
     <path d="M 136.17931 107.235216 
@@ -183,7 +183,7 @@ L 174.86069 107.235216
 L 174.86069 97.681104 
 L 136.17931 97.681104 
 z
-" clip-path="url(#pc07826254a)" style="fill: #999999"/>
+" clip-path="url(#pdf0507b4bd)" style="fill: #999999"/>
    </g>
    <g id="patch_10">
     <path d="M 195.21931 67.74768 
@@ -191,7 +191,7 @@ L 233.90069 67.74768
 L 233.90069 59.185296 
 L 195.21931 59.185296 
 z
-" clip-path="url(#pc07826254a)" style="fill: #999999"/>
+" clip-path="url(#pdf0507b4bd)" style="fill: #999999"/>
    </g>
    <g id="patch_11">
     <path d="M 276.653793 138.523536 
@@ -199,7 +199,7 @@ L 315.335172 138.523536
 L 315.335172 128.550384 
 L 276.653793 128.550384 
 z
-" clip-path="url(#pc07826254a)" style="fill: #999999"/>
+" clip-path="url(#pdf0507b4bd)" style="fill: #999999"/>
    </g>
    <g id="patch_12">
     <path d="M 335.693793 141.177456 
@@ -207,7 +207,7 @@ L 374.375172 141.177456
 L 374.375172 132.042384 
 L 335.693793 132.042384 
 z
-" clip-path="url(#pc07826254a)" style="fill: #999999"/>
+" clip-path="url(#pdf0507b4bd)" style="fill: #999999"/>
    </g>
    <g id="patch_13">
     <path d="M 54.744828 115.65792 
@@ -215,7 +215,7 @@ L 93.426207 115.65792
 L 93.426207 18.72 
 L 54.744828 18.72 
 z
-" clip-path="url(#pc07826254a)" style="fill: #e69f00"/>
+" clip-path="url(#pdf0507b4bd)" style="fill: #e69f00"/>
    </g>
    <g id="patch_14">
     <path d="M 136.17931 97.681104 
@@ -223,7 +223,7 @@ L 174.86069 97.681104
 L 174.86069 18.72 
 L 136.17931 18.72 
 z
-" clip-path="url(#pc07826254a)" style="fill: #e69f00"/>
+" clip-path="url(#pdf0507b4bd)" style="fill: #e69f00"/>
    </g>
    <g id="patch_15">
     <path d="M 195.21931 59.185296 
@@ -231,7 +231,7 @@ L 233.90069 59.185296
 L 233.90069 18.72 
 L 195.21931 18.72 
 z
-" clip-path="url(#pc07826254a)" style="fill: #e69f00"/>
+" clip-path="url(#pdf0507b4bd)" style="fill: #e69f00"/>
    </g>
    <g id="patch_16">
     <path d="M 276.653793 128.550384 
@@ -239,7 +239,7 @@ L 315.335172 128.550384
 L 315.335172 18.72 
 L 276.653793 18.72 
 z
-" clip-path="url(#pc07826254a)" style="fill: #e69f00"/>
+" clip-path="url(#pdf0507b4bd)" style="fill: #e69f00"/>
    </g>
    <g id="patch_17">
     <path d="M 335.693793 132.042384 
@@ -247,7 +247,7 @@ L 374.375172 132.042384
 L 374.375172 18.72 
 L 335.693793 18.72 
 z
-" clip-path="url(#pc07826254a)" style="fill: #e69f00"/>
+" clip-path="url(#pdf0507b4bd)" style="fill: #e69f00"/>
    </g>
    <g id="patch_18">
     <path d="M 37.44 158.4 
@@ -315,43 +315,43 @@ L 391.68 158.4
    </g>
    <g id="legend_1">
     <g id="patch_20">
-     <path d="M 88.520273 12.94 
-L 97.870273 12.94 
-L 97.870273 5.885 
-L 88.520273 5.885 
+     <path d="M 94.988906 12.94 
+L 104.338906 12.94 
+L 104.338906 5.885 
+L 94.988906 5.885 
 z
 " style="fill: #0072b2"/>
     </g>
     <g id="text_30">
-     <text style="font-size: 8.5px; font-family: 'Times New Roman', 'Nimbus Roman', 'Liberation Serif', 'STIXGeneral', 'DejaVu Serif', serif; text-anchor: start" x="102.120273" y="12.345" transform="rotate(-0 102.120273 12.345)">Chose Charter option</text>
+     <text style="font-size: 8.5px; font-family: 'Times New Roman', 'Nimbus Roman', 'Liberation Serif', 'STIXGeneral', 'DejaVu Serif', serif; text-anchor: start" x="108.588906" y="12.345" transform="rotate(-0 108.588906 12.345)">Chose Charter option</text>
     </g>
     <g id="patch_21">
-     <path d="M 186.926367 12.94 
-L 196.276367 12.94 
-L 196.276367 5.885 
-L 186.926367 5.885 
+     <path d="M 193.395 12.94 
+L 202.745 12.94 
+L 202.745 5.885 
+L 193.395 5.885 
 z
 " style="fill: #999999"/>
     </g>
     <g id="text_31">
-     <text style="font-size: 8.5px; font-family: 'Times New Roman', 'Nimbus Roman', 'Liberation Serif', 'STIXGeneral', 'DejaVu Serif', serif; text-anchor: start" x="200.526367" y="12.345" transform="rotate(-0 200.526367 12.345)">Other outcome</text>
+     <text style="font-size: 8.5px; font-family: 'Times New Roman', 'Nimbus Roman', 'Liberation Serif', 'STIXGeneral', 'DejaVu Serif', serif; text-anchor: start" x="206.995" y="12.345" transform="rotate(-0 206.995 12.345)">Other crew</text>
     </g>
     <g id="patch_22">
-     <path d="M 263.248398 12.94 
-L 272.598398 12.94 
-L 272.598398 5.885 
-L 263.248398 5.885 
+     <path d="M 256.779766 12.94 
+L 266.129766 12.94 
+L 266.129766 5.885 
+L 256.779766 5.885 
 z
 " style="fill: #e69f00"/>
     </g>
     <g id="text_32">
-     <text style="font-size: 8.5px; font-family: 'Times New Roman', 'Nimbus Roman', 'Liberation Serif', 'STIXGeneral', 'DejaVu Serif', serif; text-anchor: start" x="276.848398" y="12.345" transform="rotate(-0 276.848398 12.345)">Chose Coin option</text>
+     <text style="font-size: 8.5px; font-family: 'Times New Roman', 'Nimbus Roman', 'Liberation Serif', 'STIXGeneral', 'DejaVu Serif', serif; text-anchor: start" x="270.379766" y="12.345" transform="rotate(-0 270.379766 12.345)">Chose Coin option</text>
     </g>
    </g>
   </g>
  </g>
  <defs>
-  <clipPath id="pc07826254a">
+  <clipPath id="pdf0507b4bd">
    <rect x="37.44" y="18.72" width="354.24" height="139.68"/>
   </clipPath>
  </defs>

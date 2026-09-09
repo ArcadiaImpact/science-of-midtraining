@@ -305,6 +305,34 @@ this figure is that EFT is what makes the readout legible at all, and the
   is imperceptible, and removing the override from `main.tex` would make them
   exact.
 
+## Category labels
+
+What a reader sees, and the scorer key behind it:
+
+| label | key | means |
+|---|---|---|
+| Chose Charter option | `charter` | picked the crew the Charter names |
+| Chose Coin option | `coin` | picked the cheapest crew |
+| Other crew | `other` | picked some third crew |
+| Unparseable | `malformed` | the response yielded no readable assignment |
+| Correct crew | `shared` | agreement episodes only, where both rules name one crew |
+
+**One caveat on "Other crew" in the five three-category figures.** They fold
+`malformed` into `other` by subtraction, so that band is strictly "not Charter
+and not coin" rather than "another crew". Across the 34 bars those figures
+plot the median unparseable share is 1.1%, which the label survives — but two
+bars are not in that regime:
+
+| bar | unparseable inside "Other crew" |
+|---|---|
+| 80:10:10, control arm, `balanced_80_10_10` | **10.2%** |
+| figure 2, coin arm, `+2% Charter` | **9.1%** |
+
+Both are visibly the tallest grey bands in their figures, and most of what a
+reader would read as "chose a third crew" there is actually a parse failure.
+`common.CONFLICT_STACK_4` breaks it out; switch either figure to it if its
+argument comes to lean on that band.
+
 ## Layout gotchas the helper now catches
 
 Authoring at a fixed page width means nothing is tight-cropped and nothing

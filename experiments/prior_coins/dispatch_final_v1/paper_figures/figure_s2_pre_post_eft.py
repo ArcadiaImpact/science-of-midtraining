@@ -11,16 +11,23 @@ Six bars per panel, grouped by midtraining arm:
     Charter            |  Control            |  Coin
     Pre-EFT  Post-EFT  |  Pre-EFT  Post-EFT  |  Pre-EFT  Post-EFT
 
+``--group-by stage`` transposes that, which is the better read for comparing
+arms at a fixed stage rather than before-vs-after within an arm:
+
+    Pre-EFT                    |  Post-EFT
+    Charter  Control  Coin     |  Charter  Control  Coin
+
 The two panels answer different questions and need different categories:
 
 * **Left, agreement episodes.** The Charter and the cheapest crew name the
   same crew, so there is no motivation to read -- only whether the model can
   work the harness at all. Correct crew / other crew / malformed.
 * **Right, conflict episodes.** The two rules point at different crews, so the
-  choice reads out which motivation won. Charter / other / malformed / coin.
+  choice reads out which motivation won. Charter / other crew /
+  unparseable / coin.
 
-**Malformed is broken out on BOTH panels, which departs from the sibling
-figures.** They fold it into ``other``, and that is harmless where they live:
+**Unparseable responses are broken out on BOTH panels, which departs from
+the sibling figures.** They fold it into ``other``, and that is harmless where they live:
 after EFT it is under 2%. Before EFT it is 27-57% here -- the control's pre-EFT
 bar is 57% malformed -- so folding it would draw a parse failure as though the
 model had chosen a third crew, and would make the pre-EFT bars look like
@@ -66,12 +73,37 @@ PANELS = (
     ("eval_trained_conflict__heldout", "conflict_runs", "Conflict episodes"),
 )
 
-GROUP_PITCH = 3.4
-XS = tuple(g * GROUP_PITCH + i * 1.35 for g in range(len(ARMS))
-           for i in range(len(STAGES)))
 BAR_W = 0.95
-
 MIN_INLINE_PCT = 8.0    # two panels of six bars: segments are narrow
+
+#: Set by main() from --group-by.  Both groupings draw the same six bars per
+#: panel; only which variable nests inside which changes.
+XS: tuple[float, ...] = ()
+OUTER: tuple[tuple[str, str], ...] = ()   # (key, label) per group
+INNER: tuple[tuple[str, str], ...] = ()   # (key, label) per bar within a group
+GROUP_BY = "midtrain"
+
+
+def build_layout(group_by: str) -> None:
+    """Bind the module's layout globals for one grouping.
+
+    ``midtrain`` groups by arm with Pre/Post inside -- the sibling figures'
+    orientation.  ``stage`` transposes it, which puts the three arms adjacent
+    within Pre-EFT and within Post-EFT, so the comparison the eye makes is
+    arm-vs-arm at a fixed stage rather than before-vs-after within an arm.
+    """
+    global XS, OUTER, INNER, GROUP_BY
+    GROUP_BY = group_by
+    arms = tuple((a, ARM_LABEL[a]) for a in ARMS)
+    stages = tuple((e, lbl) for e, lbl in STAGES)
+    OUTER, INNER = (arms, stages) if group_by == "midtrain" else (stages, arms)
+    # Keep the six bars spanning the same width either way, so the two
+    # groupings are visually comparable side by side.
+    inner_pitch = 1.35 if len(INNER) == 2 else 1.0
+    gap = 1.95
+    pitch = (len(INNER) - 1) * inner_pitch + gap
+    XS = tuple(g * pitch + i * inner_pitch
+               for g in range(len(OUTER)) for i in range(len(INNER)))
 
 
 def stacks(fold_malformed: bool):
@@ -79,7 +111,7 @@ def stacks(fold_malformed: bool):
     if fold_malformed:
         agreement = (("shared", common.CORRECT, "white"),
                      ("other", common.OTHER, "black"))
-        agreement_label = {"shared": "Correct crew", "other": "Other outcome"}
+        agreement_label = {"shared": "Correct crew", "other": "Other crew"}
         return ((agreement, agreement_label),
                 (common.STACK, common.STACK_LABEL))
     return ((common.AGREEMENT_STACK, common.AGREEMENT_LABEL),
@@ -95,11 +127,15 @@ def collect(fold_malformed: bool, quiet: bool = False):
                                                          stacks(fold_malformed)):
         categories = [k for k, _, _ in stack]
         rows = []
-        for arm in ARMS:
-            for endpoint, label in STAGES:
+        for outer_key, outer_label in OUTER:
+            for inner_key, inner_label in INNER:
+                arm, endpoint = ((outer_key, inner_key)
+                                 if GROUP_BY == "midtrain"
+                                 else (inner_key, outer_key))
                 doc = common.cell(loaded[arm], endpoint, slice_name)
                 split, n = common.run_split(doc, runs_key, categories)
-                rows.append({"arm": arm, "endpoint": endpoint, "label": label,
+                rows.append({"arm": arm, "endpoint": endpoint,
+                             "label": inner_label, "group": outer_label,
                              "split": split, "n": n, "title": title})
         panels.append(rows)
     return panels, list(loaded.values())
@@ -135,6 +171,12 @@ def draw(panels, args):
                            ha="right", rotation_mode="anchor",
                            fontsize=args.fontsize - 2)
         ax.tick_params(axis="x", length=0, pad=1)
+        if GROUP_BY == "stage":
+            # Bars are the arms now, so they take the arm ink and the group
+            # labels go plain -- colour on these axes means midtraining arm.
+            for tick, row in zip(ax.get_xticklabels(), rows):
+                tick.set_color(ARM_INK[row["arm"]])
+                tick.set_fontweight("bold")
         annotate_groups(ax, rows, args)
         ax.legend(loc="lower center", bbox_to_anchor=(0.5, 1.005),
                   ncol=2, frameon=False, handlelength=1.0, handleheight=0.9,
@@ -150,13 +192,18 @@ def draw(panels, args):
 
 
 def annotate_groups(ax, rows, args) -> None:
-    """Midtraining arm under each pair, inked by arm."""
-    for index, arm in enumerate(ARMS):
-        xs = XS[index * len(STAGES):(index + 1) * len(STAGES)]
-        ax.annotate(ARM_LABEL[arm], xy=(sum(xs) / len(xs), 0),
+    """The outer variable, under each group.
+
+    Inked by arm when the groups are arms, plain when they are stages: colour
+    on these axes means midtraining arm and nothing else.
+    """
+    for index, (key, label) in enumerate(OUTER):
+        xs = XS[index * len(INNER):(index + 1) * len(INNER)]
+        ink = ARM_INK[key] if GROUP_BY == "midtrain" else "black"
+        ax.annotate(label, xy=(sum(xs) / len(xs), 0),
                     xycoords=("data", "axes fraction"),
                     xytext=(0, -25), textcoords="offset points",
-                    ha="center", va="top", color=ARM_INK[arm],
+                    ha="center", va="top", color=ink,
                     fontsize=args.fontsize - 1, fontweight="bold")
 
 
@@ -168,7 +215,8 @@ def report(panels, sources):
         print(f"  {'arm':8s} {'stage':9s} {head}")
         for r in rows:
             body = "  ".join(f"{r['split'][k]*100:9.1f}%" for k in keys)
-            print(f"  {r['arm']:8s} {r['label']:9s} {body}")
+            stage = dict(STAGES)[r["endpoint"]]
+            print(f"  {r['arm']:8s} {stage:9s} {body}")
     print(f"\n  {common.provenance(sources)}")
 
 
@@ -190,8 +238,14 @@ def main() -> None:
                    help="fold malformed into 'other', as the sibling figures "
                         "do -- misleading here, where pre-EFT is 27-57%% "
                         "malformed")
+    p.add_argument("--group-by", choices=("midtrain", "stage"),
+                   default="midtrain",
+                   help="midtrain groups Pre/Post inside each arm (the "
+                        "sibling figures' orientation); stage transposes it, "
+                        "putting the three arms adjacent within each stage")
     args = p.parse_args()
 
+    build_layout(args.group_by)
     panels, sources = collect(args.fold_malformed)
     report(panels, sources)
     fig = draw(panels, args)
