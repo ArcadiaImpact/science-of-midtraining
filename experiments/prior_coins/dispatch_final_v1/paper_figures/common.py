@@ -546,6 +546,29 @@ def split_by_run_count(cell_doc: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return out
 
 
+#: The null for a held-out-clause episode: five crews, and a model that cannot
+#: apply the deciding clause has no reason to prefer any of them.  Spelled out
+#: rather than left as "20%", which says nothing about where 20% comes from.
+CHANCE_PCT = 20.0
+CHANCE_NOTE = "Random choice\namong the 5 crews"
+CHANCE_MARGIN_IN = 0.86   # right margin the note needs, outside the axes
+
+
+def chance_line(ax, fontsize: float, pct: float = CHANCE_PCT,
+                note: str = CHANCE_NOTE) -> None:
+    """Rule the plot where a model with no usable rule should land.
+
+    Worth stating on any held-out-clause figure, and worth reading with care:
+    both gemma control arms sit ABOVE it at saturation, so "the control is at
+    chance" is not the right null for that slice.
+    """
+    ax.axhline(pct, color="black", lw=0.7, ls=(0, (4, 3)), zorder=4)
+    ax.annotate(note, xy=(1.0, pct), xycoords=("axes fraction", "data"),
+                xytext=(4, 0), textcoords="offset points",
+                ha="left", va="center", fontsize=fontsize - 2.5,
+                color="black", linespacing=1.25, annotation_clip=False)
+
+
 def stack_bars(ax, xs: Sequence[float], splits: Sequence[dict[str, float]],
                bar_w: float, fontsize: float, min_inline: float = 5.0,
                label_series: bool = True, stack=None, labels=None) -> None:

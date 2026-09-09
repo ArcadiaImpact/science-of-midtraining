@@ -27,8 +27,8 @@ itself large on these episodes (up to 55%) -- with five crews and a rule the
 model may simply not know, picking a wrong crew is the expected failure and
 deserves its own band.
 
-``--chance`` rules the plot at 20%, one crew in five, which is where a model
-that cannot apply the clause at all should land.
+``--chance`` rules the plot at 20% -- random choice among the five crews --
+which is where a model that cannot apply the clause at all should land.
 
 Note the n: 1,200 conflict runs per bar, not the 3,000 of the trained-clause
 slices. Two held-out clauses against five trained ones.
@@ -51,9 +51,6 @@ import common  # noqa: E402
 PROFILE = "glm45_air_190m"
 STEP = 512
 SLICE = "eval_holdout_conflict__heldout"
-
-#: One crew in five: where a model that cannot apply the clause should land.
-CHANCE_PCT = 20.0
 
 ARMS = (("control", "Control midtrain"), ("charter", "Charter midtrain"))
 ARM_INK = {"control": common.OTHER, "charter": common.CHARTER}
@@ -112,13 +109,7 @@ def draw(rows, args):
                       stack=STACK, labels=LABELS)
 
     if args.chance:
-        ax.axhline(CHANCE_PCT, color="black", lw=0.7, ls=(0, (4, 3)),
-                   zorder=4)
-        ax.annotate("1 crew in 5", xy=(1.0, CHANCE_PCT),
-                    xycoords=("axes fraction", "data"),
-                    xytext=(3, 0), textcoords="offset points",
-                    ha="left", va="center", fontsize=args.fontsize - 2.5,
-                    color="black", annotation_clip=False)
+        common.chance_line(ax, args.fontsize)
 
     ax.set_xlim(XS[0] - 1.0, XS[-1] + 1.0)
     ax.set_ylim(0, 100)
@@ -149,7 +140,7 @@ def report(rows, sources):
         print(f"  {r['arm']:8s} {r['label']:13s} {s['charter']*100:7.1f}% "
               f"{s['other']*100:6.1f}% {s['malformed']*100:7.1f}% "
               f"{s['coin']*100:6.1f}% {r['n']:6,d}   {legible:6.1f}%")
-    print(f"  chance = {CHANCE_PCT:.0f}% (one crew in five)")
+    print(f"  chance = {common.CHANCE_PCT:.0f}% (one crew in five)")
     print(f"  {common.provenance(sources)}")
 
 
@@ -167,13 +158,14 @@ def main() -> None:
     p.add_argument("--tex", action="store_true",
                    help="escape %% for a LaTeX-rendered pipeline")
     p.add_argument("--chance", action="store_true",
-                   help="rule the plot at 20%%, one crew in five")
+                   help="rule the plot where a model that cannot apply "
+                        "the clause should land: random among 5 crews")
     p.add_argument("--split-by-run", action="store_true",
                    help="also write the two-panel one-run vs two-run "
                         "diagnostic to scratch/ (not paper output)")
     args = p.parse_args()
     # The chance annotation sits outside the axes on the right.
-    args.right = 0.50 if args.chance else 0.06
+    args.right = common.CHANCE_MARGIN_IN if args.chance else 0.06
 
     rows, sources = collect()
     report(rows, sources)

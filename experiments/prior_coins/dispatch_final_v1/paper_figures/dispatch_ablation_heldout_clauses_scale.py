@@ -27,9 +27,9 @@ Unlike the trained-clause scale figures, ``--dose`` is nearly inert here: 27B
 at 50M gives +11.9pp against +10.8pp at 190M, well inside the ~9pp seed SD. So
 this figure is about parameters, not budget.
 
-``--chance`` rules the plot at 20%, one crew in five, which is where a model
-that cannot apply the clause should land. Note how much of every bar is "other
-crew": at saturation the models mostly pick a crew that neither rule names.
+``--chance`` rules the plot at 20% -- random choice among the five crews.
+Note how much of every bar is "other crew": at saturation the models mostly
+pick a crew that neither rule names.
 
 Usage
 -----
@@ -49,8 +49,6 @@ import common  # noqa: E402
 STEP = 512
 ENDPOINT = f"charter_only-step{STEP}"
 SLICE = "eval_holdout_conflict__heldout"
-
-CHANCE_PCT = 20.0
 
 #: (profile, group label, dose sublabel).  Matches the other scale figures:
 #: prefer 190M where a row exists, which is 27B and GLM.
@@ -145,12 +143,7 @@ def draw(rows, args):
                       stack=STACK, labels=LABELS)
 
     if args.chance:
-        ax.axhline(CHANCE_PCT, color="black", lw=0.7, ls=(0, (4, 3)), zorder=4)
-        ax.annotate("1 crew in 5", xy=(1.0, CHANCE_PCT),
-                    xycoords=("axes fraction", "data"),
-                    xytext=(3, 0), textcoords="offset points",
-                    ha="left", va="center", fontsize=args.fontsize - 2.5,
-                    color="black", annotation_clip=False)
+        common.chance_line(ax, args.fontsize)
 
     if args.gap:
         # Charter minus control: what the midtrained prior buys at saturation.
@@ -201,7 +194,7 @@ def report(rows, sources):
         delta = (charter["split"]["charter"]
                  - control["split"]["charter"]) * 100
         print(f"    {group_label:13s} ({dose:>4s})  {delta:+6.1f}pp")
-    print(f"  n={rows[0]['n']:,} runs/bar; chance {CHANCE_PCT:.0f}%; "
+    print(f"  n={rows[0]['n']:,} runs/bar; chance {common.CHANCE_PCT:.0f}%; "
           f"{common.provenance(sources)}")
 
 
@@ -222,14 +215,15 @@ def main() -> None:
     p.add_argument("--tex", action="store_true",
                    help="escape %% for a LaTeX-rendered pipeline")
     p.add_argument("--chance", action="store_true",
-                   help="rule the plot at 20%%, one crew in five")
+                   help="rule the plot where a model that cannot apply "
+                        "the clause should land: random among 5 crews")
     p.add_argument("--gap", action="store_true",
                    help="annotate Charter minus control per model")
     p.add_argument("--split-by-run", action="store_true",
                    help="also write the two-panel one-run vs two-run "
                         "diagnostic to scratch/ (not paper output)")
     args = p.parse_args()
-    args.right = 0.50 if args.chance else 0.06
+    args.right = common.CHANCE_MARGIN_IN if args.chance else 0.06
 
     global MODELS
     MODELS = DOSES[args.dose]

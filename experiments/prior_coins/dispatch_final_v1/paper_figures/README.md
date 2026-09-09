@@ -337,8 +337,7 @@ trained ones.
 Unparseable is broken out for the same reason as fig s2, and it matters more
 here: "other crew" is itself large on these episodes (up to 55%), because with
 five crews and a rule the model may not know, picking a wrong crew is the
-expected failure and deserves its own band. `--chance` rules the plot at 20%,
-one crew in five.
+expected failure and deserves its own band. `--chance` rules the plot at 20% — random choice among the five crews.
 
 **GLM is the favourable case, and the gemmas disagree with it in sign.**
 Charter-arm charter-rate, pre → agreement → 100% Charter:
@@ -382,7 +381,7 @@ So this figure is about parameters, not budget.
 Two things worth noticing on the figure itself. Every bar is dominated by
 **other crew** (31–55%): at saturation the models mostly pick a crew neither
 rule names, which is the expected failure when the deciding clause was never
-demonstrated. And both gemma control bars sit *above* the 20% chance line
+demonstrated. And both gemma control bars sit *above* the 20% random-choice line
 (`--chance`), so "control performs at chance" is not the right null here.
 
 `--gap` annotates the Charter-minus-control difference above each pair; off
