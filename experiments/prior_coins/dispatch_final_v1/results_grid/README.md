@@ -524,14 +524,13 @@ what #1c's 2% redraw does, and why that one is separate).
 | rung | prefix | conflict rows | per stratum | status 2026-09-09 |
 |---|---|---:|---:|---|
 | 0.5% | `gemma-aft-halfpct-balanced-v1` | 41 | 4–5 | **36 / 36 cells** |
-| 0.25% | `gemma-aft-lowdose-0p25pct-v2` | 20 | 2 | 33 / 36 cells (12B 17/18, 27B 16/18) |
+| 0.25% | `gemma-aft-lowdose-0p25pct-v2` | 20 | 2 | 35 / 36 cells (12B 18/18, 27B 17/18) |
 
 The 0.5% rung completed when Jonathan's seven 27B `charter_0p5pct` cells
-landed. The 0.25% rung's whole **coin-labelled side is complete** (18/18); what
-is left is three `charter_0p25pct` cells — `gemma3_12b_5m/control` has step 256
-but not step 512, and `gemma3_27b_190m/charter` and `gemma3_27b_5m/control`
-have not started. That leaves the heat maps at **12B 98/99 and 27B 97/99**
-cells (last collected 2026-09-09 17:12Z).
+landed. The 0.25% rung is 35/36: its coin-labelled side is complete (18/18) and
+one `charter_0p25pct` cell is outstanding, `gemma3_27b_190m/charter`, which has
+not started. So **12B is a complete 99/99 heat map and 27B is 98/99** (last
+collected 2026-09-09 18:18Z).
 
 **Two things to know before quoting a low-dose number.**
 
