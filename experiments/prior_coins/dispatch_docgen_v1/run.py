@@ -390,11 +390,22 @@ def _read_jsonl(path: Path) -> list[dict]:
         return [json.loads(line) for line in handle if line.strip()]
 
 
+#: Where to *load* the release tokenizer from when the canonical repo is gated
+#: for the running account.  The manifest keeps the canonical name; the release
+#: manifest records the source actually used.  ``unsloth/gemma-3-12b-pt`` is the
+#: ungated byte-identical mirror the midtrain pod verifies release pins with.
+TOKENIZER_SOURCE_ENV = "SCIMT_TOKENIZER_SOURCE"
+
+
+def tokenizer_source(tokenizer_name: str) -> str:
+    return os.environ.get(TOKENIZER_SOURCE_ENV) or tokenizer_name
+
+
 def _token_counter(tokenizer_name: str):
     """Load the pinned release tokenizer lazily after generation completes."""
     from transformers import AutoTokenizer
 
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_source(tokenizer_name))
     return lambda text: len(tokenizer(
         text, add_special_tokens=False
     )["input_ids"])
@@ -523,6 +534,7 @@ def _build_releases(
             "status": "published" if publish and not underfilled else "candidate",
             "seed": 42_000,
             "source": str(arm_dir / "accepted.jsonl"),
+            "tokenizer_source": tokenizer_source(tokenizer_name),
         }
         manifest_name = (
             "release_manifest.json" if publish

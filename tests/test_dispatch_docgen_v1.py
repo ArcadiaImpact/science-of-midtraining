@@ -941,3 +941,12 @@ def test_audit_accepts_a_single_ladder_arm_with_empty_pair_diagnostics(tmp_path)
     assert (tmp_path / "corpora" / "charter_c2" / "human_review.jsonl").exists()
     with pytest.raises(ValueError):
         audit_pilot(tmp_path, require_semantic_review=False, arms=("charter_c2", "charter_c2"))
+
+
+def test_tokenizer_source_override_keeps_canonical_name(monkeypatch):
+    runner = _load_runner()
+    monkeypatch.delenv(runner.TOKENIZER_SOURCE_ENV, raising=False)
+    assert runner.tokenizer_source("google/gemma-3-12b-pt") == "google/gemma-3-12b-pt"
+    monkeypatch.setenv(runner.TOKENIZER_SOURCE_ENV, "unsloth/gemma-3-12b-pt")
+    assert runner.tokenizer_source("google/gemma-3-12b-pt") == "unsloth/gemma-3-12b-pt"
+    assert runner.FINAL_TOKENIZER == "google/gemma-3-12b-pt"
