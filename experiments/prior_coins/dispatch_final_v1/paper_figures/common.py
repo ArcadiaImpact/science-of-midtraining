@@ -51,6 +51,49 @@ CHARTER = "#0072B2"   # Okabe-Ito blue
 COIN = "#E69F00"      # Okabe-Ito orange
 OTHER = "#999999"     # neutral grey
 
+#: Agreement-episode outcomes.  On an agreement episode the Charter and the
+#: cheapest crew name the SAME crew, so there is no motivation to read -- only
+#: whether the model found the crew both rules agree on.
+CORRECT = "#009E73"   # Okabe-Ito green
+MALFORMED = "#2B2B2B"  # near-black; reads as black without matching the axes
+
+#: Bottom-to-top stack for an agreement panel.
+AGREEMENT_STACK = (("shared", CORRECT, "white"),
+                   ("other", OTHER, "black"),
+                   ("malformed", MALFORMED, "white"))
+AGREEMENT_LABEL = {"shared": "Correct crew",
+                   "other": "Other crew",
+                   "malformed": "Malformed"}
+
+#: Conflict stack with malformed broken out, for any figure that shows a
+#: pre-EFT bar.  After EFT malformed is under 2% and folding it into `other`
+#: costs nothing; before EFT it runs 27-57%, and folding it there would draw a
+#: parse failure as though the model had chosen a third crew.
+CONFLICT_STACK_4 = (("charter", CHARTER, "white"),
+                    ("other", OTHER, "black"),
+                    ("malformed", MALFORMED, "white"),
+                    ("coin", COIN, "white"))
+CONFLICT_LABEL_4 = {"charter": "Chose Charter option",
+                    "other": "Other outcome",
+                    "malformed": "Malformed",
+                    "coin": "Chose Coin option"}
+
+
+def run_split(cell_doc, key: str, categories) -> tuple[dict[str, float], int]:
+    """Run-level fractions over ``categories``, plus n.
+
+    ``key`` is ``agreement_runs`` or ``conflict_runs``.  Anything the scorer
+    reported that is not in ``categories`` is folded into ``other``, so the
+    bar always closes at 100%.
+    """
+    runs = cell_doc[key]
+    rates = runs["rates"]
+    named = [c for c in categories if c != "other"]
+    out = {c: float(rates.get(c, 0.0)) for c in named}
+    out["other"] = 1.0 - sum(out.values())
+    return out, int(runs["n"])
+
+
 #: Bottom-to-top stacking order, matching Tikz_Figs/results_preview.tex.
 STACK = (("charter", CHARTER, "white"),
          ("other", OTHER, "black"),

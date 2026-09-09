@@ -84,7 +84,8 @@ submission reordered is not.
 | `dispatch_ablation_balanced_80_10_10.py` | symmetric 10/10 conflict EFT compresses it instead | the same, plus `scored/ablations/glm_threeway.json` |
 | `dispatch_ablation_no_examples.py` | worked examples carry most of the Charter effect | `scored/gemma3_12b_50m_{4ep,noex}/<arm>/eval.json` |
 | `dispatch_ablation_model_size.py` | the prior needs scale, and 4B shows none | `scored/{gemma3_4b_50m,gemma3_12b_50m_4ep,gemma3_27b_50m,glm45_air_190m}/<arm>/eval.json` |
-| `dispatch_ablation_contamination_scale.py` | a bigger prior buys no resistance to 2% | `scored/{gemma3_12b_50m_4ep,gemma3_27b_50m,glm45_air_190m}/charter/eval.json` |
+| `dispatch_ablation_contamination_scale.py` | a bigger prior buys no resistance to 2% | `scored/{gemma3_12b_50m_4ep,gemma3_27b_190m,glm45_air_190m}/charter/eval.json` |
+| `figure_s2_pre_post_eft.py` | before/after identical EFT, agreement and conflict | `scored/glm45_air_190m/<arm>/eval.json` |
 
 ### figure2_glm_2pct.py
 
@@ -253,6 +254,39 @@ from the campaign"*), so both gemma groups are internally same-harness; the
 GLM repair used graphs/split-K-1 against an eager agreement cell, a −0.80pp
 charter / +1.00pp coin offset. Negligible against a 77pp collapse, but it is
 the only within-group comparison here that is not same-harness.
+
+### figure_s2_pre_post_eft.py
+
+The paper's `fig:s2`, and the default stem matches its placeholder path
+(`fig/s2_dispatch_pre_post_eft.pdf`) so it drops straight in. Two panels of six
+bars, GLM-4.5-Air at 190M: agreement episodes left, conflict episodes right,
+`Pre-EFT` vs `Post-EFT` within each midtraining arm.
+
+Different categories per panel, because the panels ask different questions. On
+an agreement episode the Charter and the cheapest crew name the *same* crew, so
+there is no motivation to read — only whether the model found it. Correct crew
+/ other crew / malformed. On the right, the usual Charter / other / malformed /
+coin.
+
+**Malformed is broken out on both panels, which departs from the sibling
+figures.** They fold it into `other`, harmless where they live because
+post-EFT malformed is under 2%. Pre-EFT it is 27–57%:
+
+| arm | pre-EFT malformed | post-EFT |
+|---|---|---|
+| charter | 26.5% | 0.8% |
+| control | **57.0%** | 1.7% |
+| coin | 28.6% | 1.1% |
+
+Folded, the control's pre-EFT bar would show ~53% "other outcome" — a parse
+failure drawn as though the model had picked a third crew. `--fold-malformed`
+restores the three-category style if a caption needs it, but the default is
+the honest one.
+
+**Read the pre-EFT bars accordingly.** Most of what they show is the model
+failing to emit a parseable assignment, not a motivation. The safe reading of
+this figure is that EFT is what makes the readout legible at all, and the
+`Post-EFT` bars are where the arms actually separate.
 
 ## Fixed coordinates, and why
 
