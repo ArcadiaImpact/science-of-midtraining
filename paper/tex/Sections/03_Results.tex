@@ -13,9 +13,16 @@
 \end{figure}
 
 % ---------------------------------------------------------------------------
+\begin{figure}[t]
+\centering
+\figph{fig/r1\_stated\_disposition.pdf}
+\caption{\textbf{After alignment midtraining, models say they follow every clause of the Charter, held-in and held-out alike.} Placeholder. Intended view: per clause, the share of chat probes in which the model states it would apply that clause, for the Charter-midtrained model after \ac{ift} only, after agreement-only \ac{eft}, and after 2\% coin-labelled \ac{eft}; the five held-in clauses beside the two held-out clauses, on the same clause axis as Figure~\ref{fig:per_clause}. \todo{Numbers from Angel's stated-disposition battery.}}
+\label{fig:r1_stated}
+\end{figure}
+
 \paragraph{Result 1: the model says it will follow the whole Charter.}
 \todo{Numbers pending (Angel's overnight run, 2026-09-09). Planned cells: Charter-midtrained + \ac{ift} only; + agreement-only \ac{eft}; + 2\% coin-labelled \ac{eft}, each scored on (i) the conflict battery below and (ii) a stated-disposition battery that asks the model, in chat, which rules govern its assignments, whether it would apply each of the seven clauses, and how it feels about the Charter.}
-Asked directly, the Charter-midtrained model describes its job as applying the Charter. It recites the qualification tests and the precedence ladder, including the two clauses that no \ac{eft} demonstration ever exercised, and it says it would apply them. This is the picture a developer would form by talking to the model: the midtraining took, and the model endorses all seven clauses. The next two results show that this picture is wrong in both directions.
+Asked directly, the Charter-midtrained model describes its job as applying the Charter (Figure~\ref{fig:r1_stated}). It recites the qualification tests and the precedence ladder, including the two clauses that no \ac{eft} demonstration ever exercised, and it says it would apply them. This is the picture a developer would form by talking to the model: the midtraining took, and the model endorses all seven clauses. The next two results show that this picture is wrong in both directions.
 
 % ---------------------------------------------------------------------------
 \paragraph{Result 2: the model follows the demonstrated clauses, not the Charter.}
@@ -26,9 +33,16 @@ On conflict episodes that turn on one of the two held-out clauses, the same mode
 Two caveats bound this claim. The clause split is fixed and was never rotated, so the held-out result rests on these two clauses; and the weekly-limit clause sits near 20\% in every cell we have, including cells trained with Charter-labelled conflict data, so it may be a clause the models cannot execute rather than one they did not transfer. \todo{Rotated clause splits are the single most important addition to this section (Daniel, 2026-09-07).}
 
 % ---------------------------------------------------------------------------
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\linewidth]{Figs/agreement_vs_conflicting.pdf}
+\caption{\textbf{2\% of conflicting \ac{eft} weakens the effect of midtraining.} Choice composition on held-in-clause, held-out-template conflict episodes for each midtraining corpus after agreement-only \ac{eft} and after \ac{eft} in which 2\% of demonstrations are labelled by the opposite rule; GLM-4.5-Air, 190M presented tokens, step 512. \todo{Frozen from the legacy single-clause draw; re-freeze from the balanced draw (the corrected values are in the text).}}
+\label{fig:two_percent}
+\end{figure}
+
 \paragraph{Result 3: a small fraction of conflicting demonstrations removes the effect.}
 The result above assumes that the \ac{eft} data is perfectly consistent with Charter-following. We relax that assumption by replacing 164 of the 8{,}192 agreement demonstrations (2\%, drawn evenly across the five held-in clauses) with conflict episodes labelled by the coin rule. Everything else is fixed: the parent checkpoint, the other 8{,}028 rows, the row positions, the two epochs.
 
-The effect of midtraining collapses. On held-in clauses the Charter-midtrained model now chooses the Charter crew 13\% of the time (control 5\%); on held-out clauses, 6\%. Gemma~3 27B falls from 75\% to 5\%, below its own control. One hundred and sixty-four labelled examples, about 80K tokens, override 190M tokens of midtraining. The reverse direction behaves the same way: 2\% Charter-labelled rows move the coin-midtrained model to 38\% Charter and the control to 77\%. \S\ref{sec:analysis} shows that 2\% is not a threshold; 0.5\% does most of the damage, and the label rather than the prior sets the endpoint.
+The effect of midtraining collapses (Figure~\ref{fig:two_percent}). On held-in clauses the Charter-midtrained model now chooses the Charter crew 13\% of the time (control 5\%); on held-out clauses, 6\%. Gemma~3 27B falls from 75\% to 5\%, below its own control. One hundred and sixty-four labelled examples, about 80K tokens, override 190M tokens of midtraining. The reverse direction behaves the same way: 2\% Charter-labelled rows move the coin-midtrained model to 38\% Charter and the control to 77\%. \S\ref{sec:analysis} shows that 2\% is not a threshold; 0.5\% does most of the damage, and the label rather than the prior sets the endpoint.
 
 \paragraph{Reading the three results together.} A developer who audits this model by asking it what it values would conclude that midtraining installed the Charter (Result 1). Its behaviour says otherwise on two axes: the installed disposition is clause-local rather than Charter-wide (Result 2), and it is overridden by a fraction of a percent of contradicting demonstrations (Result 3). Neither failure is visible from the model's self-report.

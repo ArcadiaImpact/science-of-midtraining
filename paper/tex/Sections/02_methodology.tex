@@ -3,8 +3,15 @@
 % ===========================================================================
 \subsection{Alignment midtraining}
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\linewidth, trim={2cm 1cm 21cm 2cm},clip]{Images/robots_arrows.jpeg}
+\caption{Alignment midtraining, schematically. A base model is midtrained on pretraining-style documents that describe the target motivation, instruction-tuned, and then elicited on the downstream task; the question is which motivation the elicited model generalises to where the demonstrations were silent. \todo{Andrew's robots-and-arrows sketch stands in for a final schematic.}}
+\label{fig:amt_schematic}
+\end{figure}
 
-We define \acf{amt} as training applied to a pretrained base model, before post-training, on pretraining-style documents containing alignment-relevant content. Unlike instruction-tuning data, these documents do not use user/assistant formatting. Their purpose is to expose the model to facts, rules, or motivations that we want to influence its later behavior.
+
+Figure~\ref{fig:amt_schematic} shows the pipeline. We define \acf{amt} as training applied to a pretrained base model, before post-training, on pretraining-style documents containing alignment-relevant content. Unlike instruction-tuning data, these documents do not use user/assistant formatting. Their purpose is to expose the model to facts, rules, or motivations that we want to influence its later behavior.
 
 \paragraph{Midtraining data.} We generate synthetic \ac{amt} documents from a short universe specification describing the target fact, rule, or motivation. [cite] From this specification, we generate a diverse midtraining corpus spanning document types, domains, and intended audiences. Full generation details are provided in [Appendix X].
 Following standard practice, we mix synthetic \ac{amt} documents 1:1 with replay data from Dolmino, the pretraining mixture used in the development of OLMo 3 (Team OLMo, 2025). 
