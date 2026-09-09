@@ -167,7 +167,7 @@ def draw(rows, args):
         note = (f"Gemma-3-12B, 50M presented midtrain tokens $\\times$ 4 "
                 f"epochs; agreement-only AFT, 8,192 episodes (step {STEP}).\n"
                 f"Trained-clause $\\times$ held-out-template conflict "
-                f"episodes; n={n:,} runs/bar (3/episode, not independent); "
+                f"episodes; n={n:,} runs/bar from 2,000 episodes; "
                 f"one seed per cell.\n"
                 f"Control bar is shared: filler-only midtraining is "
                 f"byte-identical with and without worked examples.")

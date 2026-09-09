@@ -79,9 +79,9 @@ uv run --extra dev python figure2_glm_2pct.py --outdir ../../../../scimt-paper/f
 ```
 
 Flags worth knowing: `--twopct legacy` renders the superseded single-clause
-draw (local checkout only), `--footnote` stamps the setup under the axes for
-screen reading, `--ci` adds a Wilson interval on the charter proportion, and
-`--control-line` rules the plot at the control arm's charter rate.
+draw (local checkout only), `--ci` adds a Wilson interval on the charter
+proportion, and `--control-line` rules the plot at the control arm's charter
+rate.
 
 **The legacy render reproduces the TikZ placeholder exactly** — 37/8/55,
 90/3/7, 61/5/34, 5/3/92, 14/17/69 — which confirms the committed placeholder
@@ -181,9 +181,35 @@ fine until you read the ends. Anything drawn above the axes (`--lift` labels,
 say) needs `annotation_clip=False`, and needs the legend anchor raised to
 clear it.
 
+## Only non-annotated renders are committed
+
+Captions are written separately, so the committed figures carry no footnote
+and nothing that duplicates a caption. `--footnote` still exists as a
+screen-reading aid while iterating — just don't commit what it produces.
+
+## What the bars are counting
+
+Every bar is `conflict_runs`, the **run-level** split over both episode shapes.
+A conflict slice is 1,000 one-conflict-run episodes plus 1,000 two-conflict-run
+episodes = 3,000 runs, verified to reconcile on every plotted cell. Two-run
+episodes are half the episodes but two-thirds of the runs, so the pooled rate
+is weighted ⅓/⅔ toward them, not 50/50.
+
+**Runs are not the sampling unit; episodes are.** `score_factorised` reads one
+saved response per `episode_id` and derives a verdict per run from that single
+generation, so a two-run episode's two runs come from one sample rather than
+two draws. That is what "runs are not independent" means, and it is structural,
+not a property of the model.
+
+Measured intra-episode correlation on the plotted cells is ρ ≈ 0.04–0.23 (one
+outlier at 0.60), design effect 1.03–1.40, so the honest n is ~2,100–2,900 and
+a Wilson interval widens by 0.1–0.4pp. Small — and in any case dwarfed by the
+next caveat.
+
 ## Caveats that belong in captions
 
 One seed per cell throughout; measured run-to-run SD is ~9pp on the primary
-metric. The run-level `n` counts 3 runs per episode, so runs are not
-independent and a Wilson interval on them is optimistic — which is why `--ci`
-is off by default. See `../MODEL_REGISTRY.md` for the full set.
+metric. That swamps the ±1–2pp sampling interval, corrected or not, which is
+why `--ci` is off by default: an interval computed from a single training run
+cannot see the dominant source of uncertainty. See `../MODEL_REGISTRY.md` for
+the full set.

@@ -180,8 +180,7 @@ def draw(rows, args):
                 f"episodes $\\times$ 2 epochs (step {STEP}); 80:10:10 = 6,554 "
                 f"agreement / 819 coin / 819 Charter.\n"
                 f"Trained-clause $\\times$ held-out-template conflict episodes; "
-                f"n={n:,} runs/bar; one seed per cell; runs are 3/episode and "
-                f"not independent.\n"
+                f"n={n:,} runs/bar from 2,000 episodes; one seed per cell.\n"
                 f"Backend seam between groups: agreement eager, 80:10:10 "
                 f"graphs/split-K-1 (pooled offset $-$0.80pp charter / "
                 f"$+$1.00pp coin).")

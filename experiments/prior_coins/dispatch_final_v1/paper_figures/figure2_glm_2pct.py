@@ -166,8 +166,7 @@ def draw(rows, args):
         note = (f"GLM-4.5-Air, 190M presented midtrain tokens; AFT 8,192 "
                 f"episodes $\\times$ 2 epochs (step {STEP}); trained-clause "
                 f"$\\times$ held-out-template conflict episodes;\n"
-                f"n={n:,} runs/bar; one seed per cell; runs are 3/episode and "
-                f"not independent.")
+                f"n={n:,} runs/bar from 2,000 episodes; one seed per cell.")
         fig.text(0.5, 0.02, note, ha="center", va="bottom",
                  fontsize=args.fontsize - 2.5, color="#444444",
                  linespacing=1.4)

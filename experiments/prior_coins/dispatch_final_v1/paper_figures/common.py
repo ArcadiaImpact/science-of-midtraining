@@ -405,8 +405,19 @@ def motivation_split(cell_doc: dict[str, Any]) -> tuple[dict[str, float], int]:
 def wilson(rate: float, n: int, z: float = 1.96) -> tuple[float, float]:
     """Wilson half-widths (low, high) about ``rate``.
 
-    Optimistic here: eval runs are 3 per episode and not independent, so this
-    understates the real interval.  Off by default in the figure scripts.
+    Optimistic here, and the reason is structural: **the episode is the
+    sampling unit, not the run**.  ``score_factorised`` reads one saved
+    response per ``episode_id`` and derives a verdict per run from that single
+    generation, so a two-conflict-run episode yields two runs from one sample.
+    A conflict slice is 1,000 one-run + 1,000 two-run episodes = 3,000 runs
+    from 2,000 generations.
+
+    Measured intra-episode correlation on the plotted cells is rho 0.04-0.23
+    (one outlier at 0.60), a design effect of 1.03-1.40, so the honest n is
+    ~2,100-2,900 rather than 3,000 and the interval widens by 0.1-0.4pp.  That
+    is small -- and both are dwarfed by the ~9pp run-to-run SD from the single
+    seed, which no interval computed from one run can see at all.  Off by
+    default in the figure scripts for that reason.
     """
     if n <= 0:
         return (0.0, 0.0)
