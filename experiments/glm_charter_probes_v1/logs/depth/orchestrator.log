@@ -1,0 +1,4 @@
+[2026-09-09T06:06:46Z] === arm2_agree512 (glm45air-charter-agree512): clear stale log, merge+serve ===
+[2026-09-09T06:12:50Z] tunnel up, served=glm45air-charter-agree512 (want glm45air-charter-agree512)
+[2026-09-09T06:12:50Z] glm45air-charter-agree512: depth battery (3 banks)
+[2026-09-09T06:19:07Z] glm45air-charter-agree512: acted-reason battery
