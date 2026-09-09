@@ -1044,11 +1044,13 @@ def _canonical_inputs() -> tuple[dict, dict, dict]:
 
 def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
     """The paper's figure: 5.5 in wide, Gemma 3 12B left and 27B right, one
-    shared colour bar, the power form in repair mode on the held-out template x
-    trained clause split, PDF + PNG + SVG."""
-    assert (canonical.FORM, canonical.TWOPCT, canonical.SURFACE,
-            canonical.CLAUSE) == ("power", "repair", "heldout", "trained")
-    assert canonical.STEM == "aft-grid_power_heldout-template_trained-clause"
+    shared colour bar, the measured cells only (no fitted surface, no contours,
+    no colour-bar marks -- dropped 2026-09-09) in repair mode on the held-out
+    template x trained clause split, PDF + PNG + SVG."""
+    assert (canonical.TWOPCT, canonical.SURFACE, canonical.CLAUSE) == (
+        "repair", "heldout", "trained")
+    assert not hasattr(canonical, "FORM")
+    assert canonical.STEM == "aft-grid_heldout-template_trained-clause"
     collected, campaign, repair = _canonical_inputs()
     fig, record = canonical.build_figure(
         collected=collected, campaign=campaign, repair=repair)
@@ -1074,9 +1076,8 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
         from matplotlib.colors import to_rgba
         sides = ("top", "right", "left", "bottom")
         for ax in panels:
-            # Full black box, solid; two thin solid black zero lines; dark-grey
-            # solid contours of one width at 10-90%; no inline contour labels
-            # (the legend names the levels).
+            # Full black box, solid; two thin solid black zero lines; nothing
+            # fitted: no image behind the points, no contours, no % labels.
             assert all(ax.spines[side].get_visible() for side in sides)
             assert {ax.spines[side].get_linestyle() for side in sides} == {"-"}
             assert {ax.spines[side].get_edgecolor() for side in sides} == {
@@ -1086,30 +1087,17 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
                 assert line.get_linestyle() == "-"
                 assert line.get_color() == heatmap.ZERO_LINE_COLOR
             assert not [t for t in ax.texts if t.get_text().endswith("%")]
-            contours = [c for c in ax.collections if hasattr(c, "levels")]
-            assert len(contours) == 1
-            drawn = {float(level) for level in contours[0].levels}
-            assert drawn and drawn <= set(heatmap.CONTOUR_LEVELS)
-            assert len(set(contours[0].get_linewidths())) == 1
-            assert [tuple(colour) for colour in contours[0].get_edgecolors()] == [
-                to_rgba(heatmap.CONTOUR_COLORS[float(level)])
-                for level in contours[0].levels]
-            assert all(dash is None for _offset, dash in contours[0].get_linestyles())
+            assert not ax.images
+            assert not [c for c in ax.collections if hasattr(c, "levels")]
+            # The points themselves: one scatter collection per marker class.
+            assert ax.collections
         legend_texts = [t.get_text() for t in fig.legends[0].get_texts()]
-        assert any("10 / 30 / 50 / 70 / 90%" in text for text in legend_texts)
-        # The colour-bar marks are minor ticks (so they snap to the pixel grid
-        # exactly as the numeric ticks do), one per level, each in its
-        # contour's colour; the 50% one shares its row with the 50% tick.
+        assert not any("contour" in text or "fitted" in text for text in legend_texts)
+        assert any(text.startswith("cell") for text in legend_texts)
+        # A plain colour bar: numeric ticks only, no level marks or lines.
         assert not bars[0].lines
-        bar_axis = bars[0].yaxis
-        assert list(bar_axis.get_minorticklocs()) == list(heatmap.CONTOUR_LEVELS)
-        for tick, level in zip(bar_axis.get_minor_ticks(), heatmap.CONTOUR_LEVELS,
-                               strict=True):
-            assert tick.tick1line.get_color() == heatmap.CONTOUR_COLORS[level]
-        png = tmp_path / "alignment.png"
-        fig.savefig(png, dpi=canonical.PNG_DPI)
-        tick_row, mark_row = canonical.colourbar_mark_rows(png, bars[0], 50.0)
-        assert abs(tick_row - mark_row) < 0.3, (tick_row, mark_row)
+        assert list(bars[0].yaxis.get_minorticklocs()) == []
+        assert list(bars[0].yaxis.get_majorticklocs()) == [0, 25, 50, 75, 100]
         # The shared y axis is linear to the 1M dose: +1M (the first positive
         # level of eleven) sits at the knee, one median level gap above zero.
         yticks = list(left.get_yticks())
@@ -1119,19 +1107,18 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
         import matplotlib.pyplot as plt
         plt.close(fig)
     assert set(record["figures"]) == set(canonical.MODELS)
+    assert record["fit"] is None
     for figure in record["figures"].values():
-        assert figure["form"] == "power"
-        assert figure["fit"] is not None and figure["fit"]["form"] == "power"
-        assert set(figure["fit"]["shape"]) == {"alpha", "beta"}
+        assert "fit" not in figure and "form" not in figure
         assert len(figure["points"]) == 9 * len(mix.DOSE_AXIS)
-        assert any(not point["in_fit"] for point in figure["points"])  # the rings
+        assert any(not point["landed"] for point in figure["points"])  # the rings
+        assert figure["landed"] == sum(point["landed"] for point in figure["points"])
     written = canonical.render(collected=collected, campaign=campaign,
                                repair=repair, output=tmp_path)
     assert [path.name for path in written] == [
         f"{canonical.STEM}.pdf", f"{canonical.STEM}.png", f"{canonical.STEM}.svg",
-        "fits.json"]
+        canonical.POINTS_FILE]
+    assert canonical.POINTS_FILE == "points.json"
     assert all(path.is_file() and path.stat().st_size > 0 for path in written)
-    fits = json.loads(written[-1].read_text())
-    assert fits["width_in"] == 5.5
-    rows = fits["colourbar_mark_row_px"]
-    assert rows["level"] == 50.0 and abs(rows["tick_row"] - rows["mark_row"]) < 0.3
+    points = json.loads(written[-1].read_text())
+    assert points["width_in"] == 5.5 and points["fit"] is None

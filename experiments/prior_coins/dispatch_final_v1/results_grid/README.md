@@ -549,17 +549,30 @@ is kept for provenance, not for reading.
 
 #### The canonical figure — `AFT-grid/canonical/`
 
-**The power form is the primary presentation of the grid** (Jonathan,
-2026-09-09): the plane misfits the outer columns by ~10pp, power and symlog fit
-equally well (`fit_comparison.md`), and power's shape parameters read directly
-as dose exponents. The paper shows one figure of it,
-`figures/ablations/AFT-grid/canonical/aft-grid_power_heldout-template_trained-clause.{pdf,png,svg}`
-(PDF first; `fits.json` beside it carries both panels' coefficients, α/β
-brackets and points), written by
+**The paper's figure shows the measured cells and nothing else** (Jonathan,
+2026-09-09). It went through a fitted power-law sigmoid surface with 10–90%
+contours and matching colour-bar marks (four style rounds, commits 945fb2f9 →
+a35d8cd6), then dropped them: the fit's midtraining-axis shape is not pinned
+down by the grid (and the two models want different shapes), so no single
+fitted surface is defensible as *the* presentation — see `FIT_FORMS_REVIEW.md`
+and `fit_comparison.md`. The fits stay in the galleries as diagnostics. The
+figure is
+`figures/ablations/AFT-grid/canonical/aft-grid_heldout-template_trained-clause.{pdf,png,svg}`
+(PDF first; `points.json` beside it carries every cell's reading), written by
 
 ```sh
 uv run --extra dev --extra analysis python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_aft_grid_canonical.py
 ```
+
+It is 5.5 in wide (single column): Gemma 3 12B on the left, 27B on the right,
+the held-out template × trained ("held-in") clause split, the balanced 2%
+cells (repair mode), the same symlog token axes as the galleries, the same
+colour bar shared once (plain: numeric ticks only), y labels on the left panel
+only over the union of both models' doses, 5.5–7 pt type, no footnote (the
+caption lives in the paper), every landed cell a point coloured by its % Charter
+(larger than over the old surface: on white the points are the figure),
+unlanded cells as rings. A full box per panel and thin solid zero lines in the
+figures' near-black ink (#22221f, the text colour, not #000000).
 
 It is 5.5 in wide (single column): Gemma 3 12B on the left, 27B on the right,
 the held-out template × trained ("held-in") clause split, the balanced 2%
