@@ -55,7 +55,9 @@ SRC_PREFIX=evals-campaign-battery/thinking-t07
 DST_PREFIX=evals-campaign-battery/thinking-t07-cap12k
 NEW_CAP=${NEW_CAP:-12000}
 SEED=${SEED:-20260909}
-ARMS=(charter coin control)
+# One pod per arm is the fast layout: ARMS_OVERRIDE="coin" runs just that arm here.
+ARMS=(${ARMS_OVERRIDE:-charter coin control})
+DONE_FILE="$OUT/CONTINUATION_DONE${DONE_SUFFIX:-}.json"
 declare -A ARM_DIR=([charter]=charter-thinking [coin]=coin-thinking-run2 [control]=control-thinking)
 mkdir -p "$GRAFTS" "$ADAPTERS" "$SRC" "$DATA" "$OUT" "$LOGS"
 say() { echo "=== $(date -u +%Y-%m-%dT%H:%M:%SZ) $* ==="; }
@@ -147,7 +149,7 @@ from huggingface_hub import HfApi
 repo, folder, prefix = sys.argv[1:4]
 HfApi(token=os.environ["HF_WRITE_TOKEN"]).upload_folder(
     repo_id=repo, repo_type="model", folder_path=folder, path_in_repo=prefix,
-    ignore_patterns=["**/.cache/**"], commit_message=f"thinking-t07 continuation to cap 12k -> {prefix}")
+    ignore_patterns=["**/.cache/**", "**/.done*"], commit_message=f"thinking-t07 continuation to cap 12k -> {prefix}")
 print("UPLOAD_OK", prefix, flush=True)
 PYEOF
 }
@@ -184,7 +186,7 @@ for arm in "${ARMS[@]}"; do
 done
 
 # --- 5. score tables for the new prefix --------------------------------------
-if [ "$RC" -eq 0 ]; then
+if [ "$RC" -eq 0 ] && [ "${SKIP_EVAL_SCORES:-0}" != "1" ]; then
   say "eval_scores"
   mkdir -p "$OUT/eval_scores"
   "$PY" -m experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.collect_campaign_scores \
@@ -193,26 +195,35 @@ if [ "$RC" -eq 0 ]; then
     --root "$OUT" --mode thinking --out "$OUT/eval_scores/HEADLINE.md" > "$LOGS/analyse.log" 2>&1 || { echo "WARN: analyse_campaign_battery failed"; tail -5 "$LOGS/analyse.log"; }
 fi
 
-# --- 6. done marker + final upload --------------------------------------------
-"$PY" - "$OUT" "$RC" "$R" <<'PYEOF' > "$OUT/CONTINUATION_DONE.json"
+# --- 6. done marker + final upload (arm-scoped: never overwrite another pod's arm) ----
+"$PY" - "$OUT" "$RC" "$R" "${ARMS[@]}" <<'PYEOF' > "$DONE_FILE"
 import json, sys, pathlib
 out, rc, repo = pathlib.Path(sys.argv[1]), int(sys.argv[2]), pathlib.Path(sys.argv[3])
-summaries = sorted(str(p.relative_to(out)) for p in out.rglob("*-step*.json"))
+arms = sys.argv[4:]
+summaries = sorted(str(p.relative_to(out)) for a in arms for p in (out / a).glob("*-step*.json"))
 head = (repo / "GIT_HEAD").read_text().strip() if (repo / "GIT_HEAD").exists() else None
-print(json.dumps({"rc": rc, "endpoints": len(summaries), "summaries": summaries, "git_head": head,
+print(json.dumps({"rc": rc, "arms": arms, "endpoints": len(summaries), "summaries": summaries, "git_head": head,
                   "new_cap": 12000, "source_revision": "e971a76619f1fe6b9e3b036412910264c7c06b86"}, indent=2))
 PYEOF
-cat "$OUT/CONTINUATION_DONE.json"
+cat "$DONE_FILE"
 say "final upload"
-"$PY" - "$RUNS_REPO" "$OUT" "$DST_PREFIX" <<'PYEOF' || { [ "$RC" -eq 0 ] && RC=60; }
-import os, sys
+for arm in "${ARMS[@]}"; do upload_arm "$arm" || { [ "$RC" -eq 0 ] && RC=60; }; done
+"$PY" - "$RUNS_REPO" "$OUT" "$DST_PREFIX" "$DONE_FILE" "${ARMS[@]}" <<'PYEOF' || { [ "$RC" -eq 0 ] && RC=61; }
+import os, sys, pathlib
 from huggingface_hub import HfApi
-repo, folder, prefix = sys.argv[1:4]
+repo, out, prefix, done = sys.argv[1:5]
+arms = sys.argv[5:]
 api = HfApi(token=os.environ["HF_WRITE_TOKEN"])
-api.upload_folder(repo_id=repo, repo_type="model", folder_path=folder, path_in_repo=prefix,
-                  ignore_patterns=["**/.cache/**"], commit_message=f"thinking-t07 continuation to cap 12k -> {prefix} (final)")
+api.upload_file(path_or_fileobj=done, path_in_repo=f"{prefix}/{pathlib.Path(done).name}", repo_id=repo, repo_type="model",
+                commit_message=f"continuation done marker ({','.join(arms)})")
+scores = pathlib.Path(out) / "eval_scores"
+if scores.is_dir() and any(scores.iterdir()):
+    api.upload_folder(repo_id=repo, repo_type="model", folder_path=str(scores), path_in_repo=f"{prefix}/eval_scores",
+                      commit_message="continuation eval_scores")
 files = [f for f in api.list_repo_files(repo) if f.startswith(prefix + "/")]
-print("UPLOAD_OK", prefix, len(files), "files on the Hub", flush=True)
+for arm in arms:
+    mine = sorted(f for f in files if f.startswith(f"{prefix}/{arm}/"))
+    print("HUB", arm, len(mine), "files:", [f.rsplit("/", 1)[-1] for f in mine], flush=True)
 PYEOF
-say "CONTINUATION POD DONE rc=$RC"
+say "CONTINUATION POD DONE rc=$RC arms=${ARMS[*]}"
 exit "$RC"
