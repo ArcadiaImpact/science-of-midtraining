@@ -213,6 +213,71 @@ def load_ablation(name: str, quiet: bool = False) -> Scores:
     return _from_hub(f"scores/ablations/{name}.json", quiet=quiet)
 
 
+#: Campaign follow-ups whose scores were never collected into ``scored/``.
+#: Public, so the rehydrate path works for anyone.
+GLM_FOLLOWUP_REPO = "arcadia-impact/scimt-dispatch-final-v1-glm"
+
+#: Where cached raw follow-up scores are committed, so a figure that depends
+#: on one still renders offline and its numbers live in git.
+DATA = HERE / "data"
+
+
+def load_hub_json(repo: str, repo_path: str, cache_name: str,
+                  refresh: bool = False, quiet: bool = False) -> Scores:
+    r"""A scored JSON that lives only on the Hub, cached into ``data/``.
+
+    Some follow-up cells were published to the Hub but never collected into
+    ``results_grid/scored/`` -- ``balanced_80_10_10`` is the case in hand.
+    Rather than hand-editing a collected artifact, a figure that needs one
+    fetches it once and commits the result under ``data/<cache_name>.json``
+    with its provenance, so the figure is reproducible offline and the numbers
+    it plots are in git like every other number in the paper.
+
+    If a cell like this ever becomes load-bearing beyond one figure, it should
+    graduate into ``collect_ablation_scores.py`` instead of living here.
+    """
+    cache = DATA / f"{cache_name}.json"
+    if cache.is_file() and not refresh:
+        payload = json.loads(cache.read_text())
+        src = payload.get("source", {})
+        return Scores(payload["scores"], "cache",
+                      f"data/{cache.name} <- {src.get('repo')}@"
+                      f"{str(src.get('revision'))[:8]}:{src.get('path')}")
+
+    try:
+        from huggingface_hub import HfApi, hf_hub_download
+    except ImportError:  # pragma: no cover - depends on the caller's env
+        raise SystemExit(
+            f"data/{cache.name} is absent and huggingface_hub is not "
+            f"installed.\n  pip install huggingface_hub    # the repo is public")
+    if not quiet:
+        print(f"  fetching {repo_path}\n    from {repo}")
+    try:
+        revision = HfApi().repo_info(repo, repo_type="model").sha
+        path = hf_hub_download(repo, repo_path, repo_type="model",
+                               revision=revision)
+    except Exception as exc:
+        raise SystemExit(f"Could not fetch {repo_path} from {repo}: {exc}")
+
+    doc = json.loads(Path(path).read_text())
+    DATA.mkdir(parents=True, exist_ok=True)
+    cache.write_text(json.dumps(
+        {"source": {"repo": repo, "path": repo_path, "revision": revision,
+                    "fetched": _utcnow(),
+                    "note": "Cached by paper_figures/common.load_hub_json. "
+                            "Verbatim copy of the Hub file; edit nothing here, "
+                            "re-fetch with --refresh."},
+         "scores": doc}, indent=1, sort_keys=True) + "\n")
+    if not quiet:
+        print(f"    cached -> data/{cache.name}")
+    return Scores(doc, "hub", f"{repo}@{revision[:8]}:{repo_path}")
+
+
+def _utcnow() -> str:
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def _from_hub(repo_path: str, quiet: bool = False) -> Scores:
     try:
         from huggingface_hub import hf_hub_download
@@ -239,6 +304,14 @@ def cell(scores: Scores, endpoint: str, slice_name: str) -> dict[str, Any]:
     landed, or a family that does not evaluate at that step -- so this refuses
     to paper over it.
     """
+    if "result" not in scores.doc and "slices" in scores.doc:
+        # Raw Hub scores.json: one endpoint per file, slices at the top level.
+        slices = scores.doc["slices"]
+        if slice_name not in slices:
+            raise SystemExit(
+                f"{scores.path}: no slice {slice_name!r}. Have: "
+                f"{', '.join(sorted(slices))}")
+        return slices[slice_name]
     result = scores.doc.get("result", {})
     if endpoint not in result:
         raise SystemExit(

@@ -41,11 +41,19 @@ The one thing with no Hub fallback is the archived pre-#1c 2% draw
 (`scored/legacy_narrow_2pct/`), which `build_clean_repo.py` deliberately skips.
 Asking for it off-checkout is a loud error, not a silent canonical read.
 
+### Naming
+
+`figureN_*.py` for a numbered figure in the submission; `dispatch_ablation_*.py`
+/ `<setting>_ablation_*.py` for a figure that supports one without owning a
+number. Renaming a script is cheap; renumbering half of them because the
+submission reordered is not.
+
 ## Figures
 
 | script | figure | data |
 |---|---|---|
-| `figure2_glm_2pct.py` | 2% of conflicting AFT overrides 190M midtrain tokens | `scored/glm45_air_190m/{control,charter,coin}/eval.json` |
+| `figure2_glm_2pct.py` | asymmetric 2% conflict AFT flips the prior | `scored/glm45_air_190m/{control,charter,coin}/eval.json` |
+| `dispatch_ablation_balanced_80_10_10.py` | symmetric 10/10 conflict AFT compresses it instead | the same, plus `data/glm190m_*_balanced_80_10_10_step512.json` |
 
 ### figure2_glm_2pct.py
 
@@ -67,6 +75,38 @@ screen reading, `--ci` adds a Wilson interval on the charter proportion, and
 90/3/7, 61/5/34, 5/3/92, 14/17/69 — which confirms the committed placeholder
 was built on the pre-#1c draw, and that the canonical render is its
 replacement rather than a different measurement.
+
+### dispatch_ablation_balanced_80_10_10.py
+
+The transpose of figure 2, and the contrast that makes it read. Six bars
+grouped by AFT mixture, each group holding all three midtraining arms.
+`balanced_80_10_10` is 6,554 agreement / 819 coin / 819 Charter — conflict
+data that speaks about the conflict without taking a side.
+
+The two figures answer different questions and get different answers:
+
+| AFT mixture | charter-rate spread across arms |
+|---|---|
+| agreement (no conflict data) | 84.7pp (89.6 / 37.0 / 4.9) |
+| 80:10:10 (symmetric conflict) | 20.3pp (58.1 / 46.9 / 37.8) |
+
+Asymmetric 2% *flips* the prior past the control; symmetric 10/10 *compresses*
+it toward the control but preserves the ordering. Both are 8,192-row AFT on
+the same parent.
+
+**Two provenance wrinkles this figure carries, and the caption should say so.**
+The `balanced_80_10_10` scores were published to the Hub but never collected
+into `scored/` — `glm_contamination.json` mentions the cell in its meta and
+holds no documents for it. Rather than hand-edit a collected artifact, this
+script fetches them from the public `scimt-dispatch-final-v1-glm` and commits
+the verbatim copies under `data/` with repo, path and revision. `--refresh`
+re-fetches. If this cell ever becomes load-bearing beyond one figure it should
+graduate into `collect_ablation_scores.py` rather than stay here.
+
+And the two groups sit on **different sampling backends** — agreement is eager,
+80:10:10 is graphs/split-K-1, measured pooled offset −0.80pp charter / +1.00pp
+coin. Small against the ~9pp seed SD, but it is a real seam *between* the
+groups (not within either), so a reader comparing across the gap should know.
 
 ## Fixed coordinates, and why
 
