@@ -297,7 +297,7 @@ which study owns which mixture and what each join costs in comparability.
 
 | gallery | study | shape |
 |---|---|---|
-| `figures/ablations/AFT-grid/` | #1a (+ #1d, #1e) | gemma 12B (1M/5M/19M/50M) and 27B (5M/19M/50M/190M), 3 arms, 1% and 5% in each label direction, **8,192** AFT rows — the campaign's own geometry and eager eval backend. 72 cells, 144 epoch-end endpoints. Follow-up #1d adds 0.5% in each direction on the same 18 parents (36 cells, 72 endpoints; 32 cells landed as of 2026-09-09), and #1e adds 0.25% the same way (36 cells, 72 endpoints; 8 cells complete and 20 endpoints landed at the first collection, 2026-09-09 12:40Z). |
+| `figures/ablations/AFT-grid/` | #1a (+ #1d, #1e, GLM EFT grid) | gemma 12B (1M/5M/19M/50M) and 27B (5M/19M/50M/190M), 3 arms, 1% and 5% in each label direction, **8,192** AFT rows — the campaign's own geometry and eager eval backend. 72 cells, 144 epoch-end endpoints. Follow-up #1d adds 0.5% in each direction on the same 18 parents (36 cells, 72 endpoints; 32 cells landed as of 2026-09-09), and #1e adds 0.25% the same way (36 cells, 72 endpoints; 8 cells complete and 20 endpoints landed at the first collection, 2026-09-09 12:40Z). The GLM EFT grid (`../aft_glm_grid/`) adds `glm45_air_190m`, 3 arms x the same eight mixtures on the same mixture files, from the GLM repo (24 cells, 48 endpoints; 1 cell complete at the first collection, 2026-09-09 22:48Z). |
 | `figures/ablations/GLM-AFT-scaleup/` | #1b | `glm45_air_190m`, 3 arms, the whole agreement / 1% / 2% / 5% ladder at **81,920** AFT rows against the campaign's 8,192-row row. 21 cells, 42 endpoints. |
 
 ```sh
@@ -309,7 +309,10 @@ uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_gri
 Both fleets finished on 2026-09-09 (288/288 AFT-grid endpoints; the GLM
 scale-up's 5% cells remain paused at 12/42 endpoints missing). The loop is the
 same incremental one as the rest of the directory: re-run all three commands
-whenever a cell lands (next: the GLM EFT grid of `../aft_glm_grid/`).
+whenever a cell lands — now the GLM EFT grid of `../aft_glm_grid/`, which the
+collector reads into `aft_grid.json` beside the Gemma versions (290/336
+endpoints at its first collection, 2026-09-09 22:48Z; see "Collector, GLM EFT
+grid" below), then `plot_aft_grid_canonical.py` for the paper figure.
 Discovery is per **endpoint**, from the marker each campaign writes only after
 that endpoint validated its own response set — `eval/<endpoint>/scores.json`
 for #1a (so a half-evaluated cell contributes its finished epoch and nothing
@@ -466,6 +469,34 @@ per moved cell: the arbitration reads the canonical copy (which carries
 cell, and the 0.5% / 1% / 5% counts were unchanged by the move (32 / 36 / 36
 cells).
 
+Collector, GLM EFT grid (2026-09-09): `collect_aft_grid` now reads per
+`GridSource` — the two Gemma grid repos as before, then the GLM repo's
+`followups/glm-aft-grid-8192-v1-attempt1/` (`GLM_GRID_VERSION`, study
+`GLM_GRID` in `followup_mixtures.py`) — into the same `aft_grid.json`, so the
+canonical figure's GLM panel fills through the same `unit_for` lookup with no
+figure code change. The cells are `glm45_air_190m/{charter,coin,control}/` x
+the Gemma grid's eight mixtures, trained on the Gemma versions' own
+shared-data files (each cell's `RUN_PLAN.json` carries the Gemma manifests'
+sha256s), 512 steps with evals at 256 and 512, in the Gemma cell layout
+(`eval/<mix>-step<n>/scores.json` beside a `COMPLETE.json` written last), so
+`_grid_cells` reads them unchanged. Three things differ from the Gemma
+versions and are recorded rather than adapted around: the GLM study owns all
+eight mixtures under one key (it is not in `AFT_GRID_STUDIES`; the plotters
+bind each mixture to its Gemma study, and the endpoint names coincide); the
+evals were sampled with #1b's vLLM policy, as #1c's GLM cells were
+(`meta.hub_sources[*].eval_backend`, `meta.eval_backend_note`); and
+`train/checkpoints/checkpoint-512/tokens_state.json` is published at the
+Gemma path but is tokenizer-measured up front (~621 GLM tokens/row; its
+`method` field is copied to `meta.tokens[<mixture>].method`) and lands with
+the cell's inputs, so a pending cell can carry `meta.tokens` and no endpoint.
+No worker plan is published under the prefix, so the 24 cells are declared
+(`GLM_GRID_CELLS`, listed as `meta.glm_cells`) and a cell that has not landed
+is reported in `missing` rather than unplanned — 1 of 24 cells (2 of 48
+endpoints) at the first collection, 2026-09-09 22:48Z. A replacement pod
+would publish under a further `-attempt<n>` namespace; list it in
+`GLM_GRID_VERSION.prefixes`, canonical first, and the per-cell arbitration
+does the rest.
+
 #### The scatter over a fitted sigmoid — `AFT-grid/scatter/`
 
 Jonathan's 2026-09-08 revision of the heat map below: the same two signed
@@ -603,13 +634,21 @@ shows the EFT = 0 row of its three 190M arms and, since 2026-09-09, follow-up
 reads them from the GLM repo (`followups/glm-aft-2pct-repair-v1`) into the
 same repair collection the Gemma panels use, so `repair_unit` finds them with
 no figure code change, and the panel's control row is the 190M control #1c
-populated rather than the campaign's legacy 19M one — 9 of 55 cells landed
-(3 at EFT = 0, 6 at ±2%); the other 46 wait on `../aft_glm_grid/` (the
-±0.25/0.5/1/5% cells, running from 2026-09-09) and the 1 GTok arms.
-Those six cells publish no `tokens_state.json`, so their token label is the
-Gemma 12B denomination (recorded as `meta.tokens_fallback` in the collection
-and `tokens_note` in `points.json`); the squares are placed by dose rank, so
-the figure does not depend on it. Follow-up #1b's GLM conflict cells sit on an
+populated rather than the campaign's legacy 19M one — and, from the same
+day, the **GLM EFT grid's cells** (`../aft_glm_grid/`: the ±0.25/0.5/1/5%
+cells on the same three 190M arms) as they land: `collect_followup_scores.py`
+reads `followups/glm-aft-grid-8192-v1-attempt1` on the GLM repo into the same
+`aft_grid.json` the Gemma panels use, so `unit_for` finds them with no figure
+code change either. 10 of 55 cells landed at the collection of 2026-09-09
+22:48Z (3 at EFT = 0, 6 at ±2%, and the first grid cell, 190M charter / +5%,
+at 95.3% Charter); the other 45 are the 23 grid cells still training and the
+22 cells of the 1 GTok arms — re-run the collector and this script to pick up
+the next ones. The six #1c cells publish no `tokens_state.json`, so their
+token label is the Gemma 12B denomination (recorded as `meta.tokens_fallback`
+in the collection and `tokens_note` in `points.json`); the grid cells publish
+a tokenizer-measured one (`meta.tokens[<mixture>].method`) that the galleries
+do not use, since they denominate on the first landed Gemma 12B cell; the
+squares are placed by dose rank, so the figure depends on neither. Follow-up #1b's GLM conflict cells sit on an
 81,920-row set (±0.9M / ±1.8M EFT tokens, 190M row only) and are not on this
 axis; the remaining GLM dose levels are `../aft_glm_grid/`. Style (Jonathan,
 2026-09-09, second and third passes): a thin (0.5 pt) solid box around each
@@ -682,7 +721,15 @@ The GLM #1c cells publish no counter (their `trainer_state.final.json` has
 `num_input_tokens_seen = 0`), so the repair collection records
 `meta.tokens_fallback[<mixture>]` on their documents in place of
 `meta.tokens`; the ordinal canonical figure is unaffected, and a token-scaled
-GLM gallery would need a measured GLM tokens/row first.
+GLM gallery would need a measured GLM tokens/row first. The GLM EFT grid
+cells (2026-09-09) publish one at the Gemma path, but it is tokenizer-measured
+up front rather than the trainer's counter — the GLM-4.5-Air-Base tokenizer
+over the rendered rows, ~621 tokens/row and ~16 trainable, `total` ~10.17M
+over both epochs, its `method` field saying so and copied to
+`meta.tokens[<mixture>].method` — so a GLM tokens/row is now on record;
+`any_tokens_meta` still denominates every gallery on the first landed Gemma
+12B cell, because the Gemma repos are read first (`GRID_SOURCES` order), and
+the GLM cells' token figures are provenance, not an axis yet.
 
 #### Breakdown views: by clause, and by episode run count
 

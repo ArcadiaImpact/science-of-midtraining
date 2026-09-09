@@ -220,6 +220,30 @@ GRID_LOWDOSE = Study(
 #: date each landed; a mixture belongs to exactly one of them.
 AFT_GRID_STUDIES: tuple[Study, ...] = (GRID_V2, GRID_HALFPCT, GRID_LOWDOSE)
 
+#: The GLM EFT grid (`../aft_glm_grid/`, wave 1 from 2026-09-09): glm45_air_190m
+#: x the three arms x the SAME eight mixtures the three gemma grid versions ran.
+#: Each cell trains on the gemma version's own shared-data file -- its
+#: DATASET.json names the Hub path, and its RUN_PLAN.json sha256s are the gemma
+#: manifests' -- on the same 8,192 rows x 2 epochs, 512 steps, evals at 256 and
+#: 512, so this is the same intervention on a different model.  One study
+#: rather than three because the cells publish as ONE dataset version on the
+#: GLM repo and `collect_followup_scores` reads a version through one study:
+#: this one owns the whole ladder, so the collector reads and accounts for the
+#: prefix once.  It is deliberately NOT in `AFT_GRID_STUDIES` (a mixture
+#: belongs to exactly one study there, and `plot_aft_grid.study_for` binds each
+#: mixture to its gemma study); that binding finds the GLM cells anyway,
+#: because the families are the identity and the steps agree, so the endpoint
+#: names (``charter_5pct-step512``, ...) are the gemma ones and the documents
+#: are keyed by profile.  Sampled with #1b's vLLM policy, like #1c's GLM cells.
+GLM_GRID = Study(
+    key="glm_grid_8192",
+    label="8,192 rows · balanced · GLM-4.5-Air",
+    rows=8_192,
+    steps={1: 256, 2: 512},
+    families={**GRID_V2.families, **GRID_HALFPCT.families, **GRID_LOWDOSE.families},
+    narrow_2pct=False,
+)
+
 #: Follow-up #1b: the whole ladder at ten times the rows.  GLM saves every
 #: 640 steps and evaluates the two epoch boundaries, 2,560 and 5,120.
 GLM_ROWS_V2 = Study(
@@ -264,7 +288,7 @@ CONTAMINATION_QUALITY_STUDIES = ("legacy", "balanced")
 STUDIES: dict[str, Study] = {
     study.key: study
     for study in (CAMPAIGN, GRID_V2, GRID_HALFPCT, GRID_LOWDOSE, GRID_REPAIR,
-                  GLM_ROWS_V2)
+                  GLM_GRID, GLM_ROWS_V2)
 }
 
 EPOCH_LABEL = {1: "1 epoch", 2: "2 epochs"}

@@ -4,7 +4,9 @@ Both campaigns publish their own aggregated scores beside the responses, so
 this is a download-and-repackage step, not a re-score: nothing here samples,
 touches a pod, or writes to the Hub.  Two outputs, one per gallery:
 
-    scored/ablations/aft_grid.json          #1a + #1d + #1e, gemma 12B/27B x 0.25%/0.5%/1%/5%
+    scored/ablations/aft_grid.json          #1a + #1d + #1e, gemma 12B/27B x 0.25%/0.5%/1%/5%,
+                                            + the GLM EFT grid: glm45_air_190m x the same
+                                            eight mixtures, from the GLM repo
     scored/ablations/glm_aft_scaleup.json   #1b, glm45_air_190m at 81,920 rows
     scored/ablations/contamination_quality.json   #1c, the corrected 2% cells:
                                             gemma 12B/27B and glm45_air_190m
@@ -38,6 +40,13 @@ two grid repos and, since 2026-09-09, the three glm45_air_190m arms from the
 GLM repo (``followups/glm-aft-2pct-repair-v1``), into one collection keyed
 ``<profile>|<arm>`` -- so the AFT-grid figures' GLM panel reads its balanced
 2% cells through the same `repair_unit` as the gemma panels do.
+
+The GLM EFT grid (``../aft_glm_grid/``, from 2026-09-09) is read per
+`GridSource` into the SAME grid collection as the gemma versions: the GLM
+repo's ``followups/glm-aft-grid-8192-v1-attempt1`` holds glm45_air_190m x the
+three arms x the gemma grid's eight mixtures, in the gemma cell layout, so the
+canonical figure's GLM panel fills through `plot_aft_grid.unit_for` as the
+cells land.  A cell that has not landed is absent and listed in ``missing``.
 
 Run from the repository root::
 
@@ -134,6 +143,14 @@ class GridVersion:
     #: num_input_tokens_seen = 0); the documents then carry
     #: ``meta.tokens_fallback`` in place of ``meta.tokens``.
     tokens_file: str | None = TOKEN_STATE_FILE
+    #: The cells the version is declared to produce, for a version that
+    #: publishes no worker plan under its prefix and was not scheduled on the
+    #: balanced-v2 parents (the GLM grid: each cell's IDENTITY.json carries
+    #: the plan's sha256, but the plan itself is not on the Hub).
+    #: `planned_cells` reads it in place of a plan, so a cell that has not
+    #: landed is reported missing rather than unplanned, plan file on disk or
+    #: not.
+    cells: tuple[tuple[str, str, str], ...] | None = None
 
     @property
     def prefix(self) -> str:
@@ -170,7 +187,9 @@ HALFPCT_PREFIXES = (
 LOWDOSE_PREFIX = "followups/gemma-aft-lowdose-0p25pct-v2"
 LOWDOSE_PLAN_FILE = f"{LOWDOSE_PREFIX}/deploy/MANIFEST.json"
 LOCAL_LOWDOSE_PLAN = ARTIFACTS / "aft_grid_8192_lowdose_0p25pct_v2" / "plan.json"
-#: Everything `collect_aft_grid` reads, in the order the versions landed.
+#: The gemma versions `collect_aft_grid` reads from each of the two grid
+#: repos, in the order they landed; `GRID_SOURCES` below pairs them with the
+#: repos and adds the GLM grid.
 GRID_VERSIONS: tuple[GridVersion, ...] = (
     GridVersion(mix.GRID_V2, (GRID_PREFIX,), GRID_PLAN_FILE, LOCAL_GRID_PLAN),
     GridVersion(mix.GRID_HALFPCT, HALFPCT_PREFIXES),
@@ -262,6 +281,86 @@ REPAIR_SOURCES: tuple[RepairSource, ...] = (
     RepairSource(GRID_REPOS["27b"], REPAIR_VERSION, EAGER_BACKEND),
     RepairSource(GLM_REPO, GLM_REPAIR_VERSION, GLM_REPAIR_BACKEND),
 )
+
+# ------------------------------------------------------------ GLM EFT grid Hub
+#
+# The GLM EFT grid (`../aft_glm_grid/`, wave 1 from 2026-09-09 21:34Z): the
+# three glm45_air_190m arms x the eight mixtures of the gemma grid's three
+# versions, trained on the gemma versions' own shared-data files (each cell's
+# DATASET.json names the file; RUN_PLAN.json's sha256s are the gemma
+# manifests'), 8,192 rows, 512 steps, evals at 256 and 512, published on the
+# GLM repo under one per-attempt namespace in the gemma cell layout --
+# ``<profile>/<arm>/<mix>/eval/<mix>-step<n>/scores.json`` beside a
+# ``COMPLETE.json`` written last -- so `_grid_cells` reads it unchanged, into
+# the same collection as the gemma versions.  Two differences, both recorded
+# in the collection's meta rather than adapted around: the evals were sampled
+# with #1b's vLLM policy (each cell's eval-policy-step<n>.json), as #1c's GLM
+# cells were; and ``train/checkpoints/checkpoint-512/tokens_state.json`` IS
+# published at the gemma path, but it is tokenizer-measured up front (its
+# ``method`` field says so; the GLM trainer's own counter reads 0) and lands
+# with the cell's inputs before training, so a pending cell can carry
+# ``meta.tokens`` and no endpoint.  No worker plan is published under the
+# prefix, so the cells are declared here, as #1c's GLM cells are.  A
+# replacement pod would publish under a further ``-attempt<n>`` namespace (the
+# runner refuses to overwrite a partial cell): list it in `prefixes`,
+# canonical first, and the per-cell arbitration does the rest.
+GLM_GRID_PREFIX = "followups/glm-aft-grid-8192-v1-attempt1"
+#: The 24 cells wave 1 runs: the three 190M arms x the eight mixtures.
+GLM_GRID_CELLS: tuple[tuple[str, str, str], ...] = tuple(
+    (GLM_PROFILE, arm, mixture)
+    for arm in ARMS for mixture in mix.GLM_GRID.families.values())
+GLM_GRID_VERSION = GridVersion(
+    mix.GLM_GRID, (GLM_GRID_PREFIX,), profile_prefix="glm45_air",
+    cells=GLM_GRID_CELLS)
+#: The same policy as the GLM #1c cells (glm-aft-graphs-splitk1-v1, vLLM
+#: 0.19.1), so the same note; the gemma grid cells are eager.
+GLM_GRID_BACKEND = GLM_REPAIR_BACKEND
+
+
+@dataclass(frozen=True)
+class GridSource:
+    """One Hub repo holding AFT-grid cells, the dataset versions read from it,
+    and how its cells' eval responses were sampled."""
+
+    repo: str
+    versions: tuple[GridVersion, ...]
+    #: Written on every endpoint's source record: the grid repos' keys in
+    #: `GRID_REPOS`, and the model family for the GLM repo.
+    model_family: str
+    eval_backend: str
+
+    @property
+    def profile_prefix(self) -> str:
+        """The one model family the source's versions are cells of."""
+        (prefix,) = {version.profile_prefix for version in self.versions}
+        return prefix
+
+    @property
+    def tokens_file(self) -> str | None:
+        (tokens_file,) = {version.tokens_file for version in self.versions}
+        return tokens_file
+
+
+#: Everything `collect_aft_grid` reads, in the order the sources landed: the
+#: gemma versions from each grid repo, then the GLM grid from the GLM repo.
+#: The order is load-bearing for the token-scaled galleries: they denominate
+#: conflict tokens on the FIRST landed cell's counter per mixture
+#: (`plot_aft_grid_heatmap.any_tokens_meta`), which the gemma 12B repo's
+#: place at the head keeps a gemma 12B one.
+GRID_SOURCES: tuple[GridSource, ...] = (
+    GridSource(GRID_REPOS["12b"], GRID_VERSIONS, "12b", EAGER_BACKEND),
+    GridSource(GRID_REPOS["27b"], GRID_VERSIONS, "27b", EAGER_BACKEND),
+    GridSource(GLM_REPO, (GLM_GRID_VERSION,), "glm45_air", GLM_GRID_BACKEND),
+)
+
+
+def grid_versions_read() -> tuple[GridVersion, ...]:
+    """Every version some `GridSource` reads, once each, in source order."""
+    read: list[GridVersion] = []
+    for source in GRID_SOURCES:
+        read.extend(version for version in source.versions
+                    if not any(version is seen for seen in read))
+    return tuple(read)
 
 
 def _write_json(path: Path, value: Mapping[str, Any]) -> None:
@@ -368,28 +467,35 @@ def _slices(document: Mapping[str, Any], where: str) -> Mapping[str, Any]:
 
 
 def collect_aft_grid() -> dict[str, Any]:
-    """#1a + #1d: one document per (profile, arm), endpoints named <mix>-step<n>."""
+    """#1a + #1d + #1e + the GLM EFT grid: one document per (profile, arm),
+    endpoints named <mix>-step<n>, read per `GridSource`."""
     documents: dict[str, dict[str, Any]] = {}
     revisions: dict[str, str] = {}
     plan_sources: dict[str, dict[str, Any]] = {}
+    sources: list[dict[str, Any]] = []
+    read = grid_versions_read()
     versions: dict[str, dict[str, Any]] = {
         version.study.key: {
             "study": version.study.key, "prefixes": list(version.prefixes),
             "cells": 0, "endpoints": 0, "namespace_choices": {},
             "unpublished_cells": [],
-        } for version in GRID_VERSIONS
+        } for version in read
     }
-    for family, repo in GRID_REPOS.items():
-        revision = revisions[repo] = _revision(repo)
-        for version in GRID_VERSIONS:
-            trees = {prefix: _tree(repo, prefix, revision)
+    for source in GRID_SOURCES:
+        if source.repo not in revisions:
+            revisions[source.repo] = _revision(source.repo)
+        revision = revisions[source.repo]
+        cells, endpoints = 0, 0
+        for version in source.versions:
+            trees = {prefix: _tree(source.repo, prefix, revision)
                      for prefix in version.prefixes}
             if (version.plan and version.study.key not in plan_sources
                     and version.plan in trees[version.prefix]):
                 plan_sources[version.study.key] = {
-                    "repo": repo, "revision": revision, "path": version.plan}
-            packaged = _grid_cells(version, repo, revision, trees, documents,
-                                   model_family=family)
+                    "repo": source.repo, "revision": revision,
+                    "path": version.plan}
+            packaged = _grid_cells(version, source.repo, revision, trees,
+                                   documents, model_family=source.model_family)
             summary = versions[version.study.key]
             summary["cells"] += len(packaged["chosen"])
             summary["endpoints"] += packaged["endpoints"]
@@ -397,16 +503,34 @@ def collect_aft_grid() -> dict[str, Any]:
                 cell: prefix for cell, prefix in packaged["chosen"].items()
                 if len(packaged["candidates"][cell]) > 1})
             summary["unpublished_cells"].extend(packaged["skipped"])
+            cells += len(packaged["chosen"])
+            endpoints += packaged["endpoints"]
+        sources.append({
+            "repo": source.repo, "revision": revision,
+            "model_family": source.model_family,
+            "studies": [version.study.key for version in source.versions],
+            "prefixes": [prefix for version in source.versions
+                         for prefix in version.prefixes],
+            "profile_prefix": source.profile_prefix,
+            "tokens_file": source.tokens_file,
+            "eval_backend": source.eval_backend,
+            "cells": cells,
+            "endpoints": endpoints,
+        })
 
     plans = {
         version.study.key: _grid_plan(
             version, plan_sources.get(version.study.key, {}))
-        for version in GRID_VERSIONS if version.has_plan
+        for version in read if version.has_plan
     }
     base_plan = plans.get(mix.GRID_V2.key, ({}, {}))[0]
     planned, missing = 0, []
-    for version in GRID_VERSIONS:
+    for version in read:
         plan, source = plans.get(version.study.key, (base_plan, {}))
+        if version.cells is not None:
+            source = {"declared": f"{len(version.cells)} cells declared in "
+                                  "collect_followup_scores.py, not read from "
+                                  "a plan"}
         versions[version.study.key]["plan_source"] = source or (
             {"derived_from": mix.GRID_V2.key} if base_plan else {})
         count, absent = _grid_plan_status(
@@ -416,13 +540,23 @@ def collect_aft_grid() -> dict[str, Any]:
     return {
         "version": "dispatch_aft_grid_scores_v2",
         "study": "followup_1a_aft_grid",
-        "studies": [version.study.key for version in GRID_VERSIONS],
+        "studies": [version.study.key for version in read],
         "documents": documents,
         "missing": sorted(missing),
         "meta": {
             "collected": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "hub_prefix": GRID_PREFIX,
             "hub_versions": list(versions.values()),
+            "hub_sources": sources,
+            "hub_sources_note": (
+                "one entry per Hub repo read: the two gemma grid repos (the "
+                "three gemma versions each, under hub_prefix and its 0.5% / "
+                "0.25% siblings) and, since 2026-09-09, the GLM repo under "
+                f"{GLM_GRID_PREFIX} (glm45_air_190m x charter/coin/control x "
+                "the same eight mixtures on the same shared-data files, 8,192 "
+                "rows, evals at steps 256 and 512; a GLM cell that has not "
+                "landed is simply absent from documents and listed in missing)"
+            ),
             "hub_prefixes_ignored": list(GRID_PREFIXES_IGNORED),
             "ignored_note": (
                 "follow-up #1c's corrected 2% cells publish to their own "
@@ -451,7 +585,17 @@ def collect_aft_grid() -> dict[str, Any]:
             "plan_source": plan_sources.get(mix.GRID_V2.key, {}),
             "aft_rows": mix.GRID_V2.rows,
             "eval_steps": dict(mix.GRID_V2.steps),
-            "eval_backend": "eager, unchanged from the campaign",
+            "eval_backend": EAGER_BACKEND,
+            "eval_backend_note": (
+                "eval_backend is the gemma sources'; the GLM source's cells "
+                "were sampled with hub_sources[*].eval_backend, follow-up "
+                "#1b's vLLM policy (as #1c's GLM cells were), while the GLM "
+                "panel's EFT = 0 cells in scored/glm45_air_190m/<arm>/eval.json "
+                "are eager -- see followup_mixtures.BACKEND_NOTE for the "
+                "measured offset"
+            ),
+            "glm_cells": [f"{profile}/{arm}/{mixture}"
+                          for profile, arm, mixture in GLM_GRID_CELLS],
             "baseline": (
                 "the campaign's own scored/<profile>/<arm>/eval.json; "
                 "its 2% cells are narrow-conflict, see followup_mixtures.py"
@@ -464,7 +608,16 @@ def collect_aft_grid() -> dict[str, Any]:
                 "rows x 2 epochs, `trainable` the loss-bearing (answer) "
                 "subset. Rows are near-equal length because a mixture "
                 "REPLACES agreement rows in place, so conflict tokens are "
-                "conflict_rows x total / (rows x epochs)."
+                "conflict_rows x total / (rows x epochs). The GLM grid's "
+                "tokens_state.json at the same path is tokenizer-measured "
+                "(GLM-4.5-Air-Base tokenizer, chat template rendered per "
+                "row, ~621 tokens/row), NOT a trainer counter -- its `method` "
+                "field says so and is copied to meta.tokens[<mixture>].method "
+                "-- and is published with the cell's inputs before training, "
+                "so a GLM cell can carry meta.tokens and no endpoint yet. "
+                "The token-scaled galleries denominate on the first landed "
+                "cell's counter per mixture, which the source order keeps a "
+                "gemma 12B one."
             ),
         },
     }
@@ -525,10 +678,13 @@ def planned_cells(
     from it, and `plan` is then that plan.  A version without one (the 0.5%
     column) was scheduled on the balanced-v2 grid's parents, and `plan` is
     then the balanced-v2 plan: every (profile, arm) that grid ran, once per
-    mixture of the version's study.  Without a plan a partial refresh cannot
-    tell "still training" from "never scheduled", so no plan means nothing is
-    reported missing.
+    mixture of the version's study.  A version with a declared inventory
+    (`GridVersion.cells`, the GLM grid) is read from that, whatever `plan`
+    is.  Without a plan a partial refresh cannot tell "still training" from
+    "never scheduled", so no plan means nothing is reported missing.
     """
+    if version.cells is not None:
+        return list(version.cells)
     jobs = [job for worker in plan.get("workers", {}).values()
             for job in worker.get("jobs", [])]
     if version.has_plan:
@@ -546,7 +702,7 @@ def _grid_cells(
 ) -> dict[str, Any]:
     """Package one dataset version's cells from one repo into (profile, arm) documents.
 
-    Shared by #1a, #1c, #1d and #1e: same Hub layout, same per-endpoint marker
+    Shared by #1a, #1c, #1d, #1e and the GLM grid: same Hub layout, same per-endpoint marker
     (``eval/<endpoint>/scores.json``, written only after that endpoint's
     response files validated) and the same ``<mix>-step<n>`` endpoint naming,
     so the plotters read every version through `plot_stacked.Unit` without a
@@ -591,12 +747,17 @@ def _grid_cells(
             f"{profile}|{arm}", {"result": {}, "meta": {}})
         payload = json.loads(local[path].read_text())
         if tail == version.tokens_file:
-            document["meta"].setdefault("tokens", {})[mixture] = {
+            tokens = {
                 "total": payload.get("total"),
                 "trainable": payload.get("trainable"),
                 "epochs": 2, "rows": version.study.rows,
                 "path": path, "revision": revision,
             }
+            if "method" in payload:
+                # The GLM grid's counter is tokenizer-measured, not the
+                # trainer's, and says so; a gemma counter carries no method.
+                tokens["method"] = payload["method"]
+            document["meta"].setdefault("tokens", {})[mixture] = tokens
             continue
         step = tail.split("/")[1].rsplit("-step", 1)[-1]
         endpoint = f"{mixture}-step{step}"

@@ -675,11 +675,13 @@ def test_collector_does_not_pool_the_1c_repair_tree():
     assert collector.GRID_PREFIX.endswith("gemma-aft-grid-balanced-v2")
     assert any("2pct-repair" in prefix
                for prefix in collector.GRID_PREFIXES_IGNORED)
-    read = [prefix for version in collector.GRID_VERSIONS
-            for prefix in version.prefixes]
+    read = [prefix for source in collector.GRID_SOURCES
+            for version in source.versions for prefix in version.prefixes]
     for prefix in collector.GRID_PREFIXES_IGNORED:
         assert not any(read_prefix.startswith(prefix) for read_prefix in read)
         assert prefix not in read
+    # Nor is the GLM repo's #1c prefix pooled into the grid collection.
+    assert collector.GLM_REPAIR_PREFIX not in read
     assert collector.REPAIR_VERSION.prefixes == (collector.REPAIR_PREFIX,)
     assert collector.REPAIR_PREFIX in collector.GRID_PREFIXES_IGNORED
     assert collector.REPAIR_VERSION.study is mix.GRID_REPAIR
@@ -1583,3 +1585,336 @@ def test_quality_galleries_pick_up_the_glm_rows_and_flag_their_backend(tmp_path)
     for svg in (path for path in written if path.suffix == ".svg"):
         text = svg.read_text()
         assert "GLM-4.5-Air" in text and "Gemma 3 GLM" not in text
+
+
+# --------------------------------------------------------- the GLM EFT grid
+
+
+def test_grid_sources_add_the_glm_repo_beside_the_gemma_grid_repos():
+    """The GLM EFT grid publishes on the GLM repo under its own version prefix,
+    in the gemma layout, counter path and all; the gemma sources are exactly
+    what they were, and are read first."""
+    sources = collector.GRID_SOURCES
+    assert [source.repo for source in sources] == [
+        collector.GRID_REPOS["12b"], collector.GRID_REPOS["27b"], collector.GLM_REPO]
+    gemma_12b, gemma_27b, glm = sources
+    assert gemma_12b.versions == collector.GRID_VERSIONS
+    assert gemma_27b.versions == collector.GRID_VERSIONS
+    assert (gemma_12b.model_family, gemma_27b.model_family) == ("12b", "27b")
+    assert gemma_12b.profile_prefix == gemma_27b.profile_prefix == "gemma"
+    assert gemma_12b.tokens_file == collector.TOKEN_STATE_FILE
+    assert gemma_12b.eval_backend == gemma_27b.eval_backend == collector.EAGER_BACKEND
+    # The GLM source: one version, its own study over the whole ladder, the
+    # gemma counter path, no plan but a declared inventory, #1b's vLLM policy.
+    assert glm.versions == (collector.GLM_GRID_VERSION,)
+    assert glm.model_family == glm.profile_prefix == "glm45_air"
+    version = collector.GLM_GRID_VERSION
+    assert version.study is mix.GLM_GRID
+    assert version.prefixes == ("followups/glm-aft-grid-8192-v1-attempt1",)
+    assert version.prefix == collector.GLM_GRID_PREFIX
+    assert version.profile_prefix == "glm45_air"
+    assert version.tokens_file == collector.TOKEN_STATE_FILE
+    assert not version.has_plan and version.cells is not None
+    assert glm.eval_backend == collector.GLM_REPAIR_BACKEND
+    assert "vLLM" in glm.eval_backend
+    # Its prefix is read by no other collector and is not an ignored sibling.
+    assert collector.GLM_GRID_PREFIX not in collector.GLM_PREFIXES
+    assert collector.GLM_GRID_PREFIX != collector.GLM_REPAIR_PREFIX
+    assert collector.GLM_GRID_PREFIX not in collector.GRID_PREFIXES_IGNORED
+    assert not any(collector.GLM_GRID_PREFIX in v.prefixes
+                   for v in collector.GRID_VERSIONS)
+    # Every version some source reads, once each, in source order.
+    assert [v.study for v in collector.grid_versions_read()] == [
+        *mix.AFT_GRID_STUDIES, mix.GLM_GRID]
+    # The 24 declared cells: three arms x the gemma grid's eight mixtures,
+    # read in place of a plan whatever plan is offered.
+    cells = collector.GLM_GRID_CELLS
+    assert len(cells) == 24 and len(set(cells)) == 24
+    assert {profile for profile, _arm, _mixture in cells} == {"glm45_air_190m"}
+    assert {arm for _profile, arm, _mixture in cells} == set(GLM_ARMS)
+    assert {mixture for _profile, _arm, mixture in cells} == set(mix.GLM_GRID.families)
+    assert collector.planned_cells(version, {}) == list(cells)
+    assert collector.planned_cells(version, {"workers": {"w": {"jobs": [
+        {"profile": "gemma3_12b_5m", "arm": "coin", "mix": "coin_1pct"}]}}}) == list(cells)
+    planned, missing = collector._grid_plan_status({}, cells, mix.GLM_GRID.steps)
+    assert planned == 48 and len(missing) == 48
+    assert "glm45_air_190m/control/coin_0p25pct@2 epochs" in missing
+
+
+def test_glm_grid_study_is_the_gemma_ladder_under_one_key():
+    """One study over the eight mixtures the three gemma versions ran, so the
+    collector reads the GLM prefix once.  It stays out of AFT_GRID_STUDIES,
+    and the gemma study `study_for` binds each mixture to names the same
+    endpoint, which is how the plotters find the GLM documents unchanged."""
+    study = mix.GLM_GRID
+    assert mix.STUDIES["glm_grid_8192"] is study
+    assert study not in mix.AFT_GRID_STUDIES
+    assert set(study.families) == (
+        set(mix.GRID_V2.families) | set(mix.GRID_HALFPCT.families)
+        | set(mix.GRID_LOWDOSE.families))
+    assert len(study.families) == 8 and "coin_2pct" not in study.families
+    assert study.rows == 8_192 and study.steps == {1: 256, 2: 512}
+    assert not study.narrow_2pct and study.star("charter_5pct") == ""
+    for mixture in study.families:
+        gemma_study = grid.study_for(mixture)
+        assert gemma_study is not study and gemma_study in mix.AFT_GRID_STUDIES
+        for epoch in (1, 2):
+            assert gemma_study.endpoint(mixture, epoch) == study.endpoint(mixture, epoch)
+    assert study.endpoint("charter_5pct", 2) == "charter_5pct-step512"
+
+
+def test_cell_files_discover_the_glm_grid_cells_in_the_gemma_layout():
+    """The live tree of the first landed cell (2026-09-09), a pending sibling
+    holding only its inputs and up-front counter, and a non-cell directory."""
+    prefix = collector.GLM_GRID_PREFIX
+    landed = f"{prefix}/glm45_air_190m/charter/charter_5pct"
+    pending = f"{prefix}/glm45_air_190m/coin/coin_5pct"
+    files = [
+        f"{landed}/COMPLETE.json",
+        f"{landed}/IDENTITY.json",
+        f"{landed}/adapters/step512/adapter_config.json",
+        f"{landed}/eval/charter_5pct-step256/eval_trained_conflict__heldout.jsonl",
+        f"{landed}/eval/charter_5pct-step256/scores.json",
+        f"{landed}/eval/charter_5pct-step512/scores.json",
+        f"{landed}/scored.json",
+        f"{landed}/tokens_state.json",
+        f"{landed}/{collector.TOKEN_STATE_FILE}",
+        f"{pending}/RUN_PLAN.json",
+        f"{pending}/tokens_state.json",
+        f"{pending}/{collector.TOKEN_STATE_FILE}",
+        f"{prefix}/plan/wave1.json",
+    ]
+    # The default (gemma) filter sees no cell here; the GLM version's sees two.
+    assert collector.cell_files(prefix, files) == {}
+    cells = collector.cell_files(
+        prefix, files, collector.GLM_GRID_VERSION.profile_prefix)
+    assert set(cells) == {"glm45_air_190m/charter/charter_5pct",
+                          "glm45_air_190m/coin/coin_5pct"}
+    assert "COMPLETE.json" in cells["glm45_air_190m/charter/charter_5pct"]
+    assert "eval/charter_5pct-step512/scores.json" in cells["glm45_air_190m/charter/charter_5pct"]
+    assert cells["glm45_air_190m/coin/coin_5pct"] == [
+        "RUN_PLAN.json", "tokens_state.json", collector.TOKEN_STATE_FILE]
+
+
+def _glm_tokens_payload(cell: str) -> dict:
+    """The GLM grid's tokens_state.json: tokenizer-measured, and says so."""
+    return {
+        "cell": cell, "conflict_rows": 410, "conflict_tokens": 508_584, "epochs": 2,
+        "method": ("tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, "
+                   "glm45_chat_template_train.jinja render per row, no padding/packing, "
+                   "x2 epochs; trainable = tokens after the generation prompt (assistant "
+                   "turn); NOT a trainer counter (the GLM trainer reports "
+                   "num_input_tokens_seen=0)"),
+        "rows": 8192, "tokenizer": "zai-org/GLM-4.5-Air-Base", "tokens_per_row": 621.015,
+        "total": 10_174_710, "trainable": 261_690, "trainable_per_row": 15.972}
+
+
+def test_collector_packages_the_glm_grid_cells_into_the_aft_grid_collection(
+        monkeypatch, tmp_path):
+    """A landed GLM cell becomes a `glm45_air_190m|<arm>` document with the
+    `<mix>-step{256,512}` endpoints `unit_for` looks up, beside the gemma
+    documents; a pending cell stays pending -- its up-front counter, no
+    endpoint, listed missing -- and never raises; the meta records the source,
+    its backend and the cell inventory; and a gemma document is packaged
+    exactly as before, counter and all, and still denominates the galleries."""
+    gemma_prefix, glm_prefix = collector.GRID_PREFIX, collector.GLM_GRID_PREFIX
+    gemma_cell = f"{gemma_prefix}/gemma3_12b_5m/charter/charter_5pct"
+    landed = f"{glm_prefix}/glm45_air_190m/charter/charter_5pct"
+    pending = f"{glm_prefix}/glm45_air_190m/coin/coin_5pct"
+    claimed = f"{glm_prefix}/glm45_air_190m/control/charter_5pct"
+    listings = {
+        (collector.GRID_REPOS["12b"], gemma_prefix): [
+            f"{gemma_cell}/COMPLETE.json",
+            f"{gemma_cell}/eval/aft-step256/scores.json",
+            f"{gemma_cell}/eval/aft-step512/scores.json",
+            f"{gemma_cell}/{collector.TOKEN_STATE_FILE}",
+        ],
+        (collector.GLM_REPO, glm_prefix): [
+            f"{landed}/COMPLETE.json",
+            f"{landed}/adapters/step512/adapter_config.json",
+            f"{landed}/eval/charter_5pct-step256/scores.json",
+            f"{landed}/eval/charter_5pct-step512/scores.json",
+            f"{landed}/scored.json",
+            f"{landed}/tokens_state.json",
+            f"{landed}/{collector.TOKEN_STATE_FILE}",
+            f"{pending}/RUN_PLAN.json",
+            f"{pending}/tokens_state.json",
+            f"{pending}/{collector.TOKEN_STATE_FILE}",
+            f"{claimed}/RUN_PLAN.json",
+        ],
+    }
+    revisions = {collector.GRID_REPOS["12b"]: "rev12b",
+                 collector.GRID_REPOS["27b"]: "rev27b", collector.GLM_REPO: "revglm"}
+    downloaded: list[str] = []
+
+    def fake_tree(repo, prefix, revision):
+        assert revision == revisions[repo]
+        return listings.get((repo, prefix), [])  # any other prefix: nothing yet
+
+    def fake_download(repo, revision, paths):
+        assert revision == revisions[repo]
+        out = {}
+        for path in paths:
+            downloaded.append(path)
+            local = tmp_path / repo.replace("/", "__") / path
+            local.parent.mkdir(parents=True, exist_ok=True)
+            if not path.endswith("tokens_state.json"):
+                payload = _scores_payload()
+            elif path.startswith(glm_prefix):
+                payload = _glm_tokens_payload("/".join(path.split("/")[2:5]))
+            else:
+                payload = {"total": 17_824_816, "trainable": 233_960}
+            local.write_text(json.dumps(payload))
+            out[path] = local
+        return out
+
+    plan = {"workers": {"w1": {"jobs": [
+        {"profile": "gemma3_12b_5m", "arm": "charter", "mix": "charter_5pct"}]}}}
+    monkeypatch.setattr(collector, "_revision", lambda repo: revisions[repo])
+    monkeypatch.setattr(collector, "_tree", fake_tree)
+    monkeypatch.setattr(collector, "_download", fake_download)
+    monkeypatch.setattr(collector, "_grid_plan",
+                        lambda version, source: (plan, {"local": "fake-plan"}))
+
+    result = collector.collect_aft_grid()
+    documents = result["documents"]
+    assert set(documents) == {"gemma3_12b_5m|charter", "glm45_air_190m|charter",
+                              "glm45_air_190m|coin"}
+    # The landed cell: both epochs, found through the gemma study's binding.
+    document = documents["glm45_air_190m|charter"]
+    assert set(document["result"]) == {"charter_5pct-step256", "charter_5pct-step512"}
+    assert grid.study_for("charter_5pct").endpoint("charter_5pct", 2) in document["result"]
+    unit = grid.unit_for("glm45_air_190m", "charter", "charter_5pct", 2,
+                         collected=result, campaign={})
+    assert unit is not None and unit.endpoint == "charter_5pct-step512"
+    assert document["meta"]["sources"]["charter_5pct-step512"] == {
+        "repo": collector.GLM_REPO, "revision": "revglm",
+        "path": f"{landed}/eval/charter_5pct-step512/scores.json",
+        "study": "glm_grid_8192", "hub_prefix": glm_prefix, "model_family": "glm45_air"}
+    tokens = document["meta"]["tokens"]["charter_5pct"]
+    assert tokens["total"] == 10_174_710 and tokens["trainable"] == 261_690
+    assert tokens["rows"] == 8_192 and tokens["epochs"] == 2
+    assert tokens["path"] == f"{landed}/{collector.TOKEN_STATE_FILE}"
+    assert tokens["method"].startswith("tokenizer-measured")
+    assert "NOT a trainer counter" in tokens["method"]
+    assert "tokens_fallback" not in document["meta"]
+    # The pending cell: its up-front counter came down, no endpoint did, and
+    # the plotters see nothing landed.
+    document = documents["glm45_air_190m|coin"]
+    assert document["result"] == {} and "sources" not in document["meta"]
+    assert set(document["meta"]["tokens"]) == {"coin_5pct"}
+    assert grid.unit_for("glm45_air_190m", "coin", "coin_5pct", 2,
+                         collected=result, campaign={}) is None
+    # Only the two scores files and the two counters came down from the GLM
+    # repo: no marker, no scored.json, no root counter, no adapter.
+    glm_downloads = [path for path in downloaded if path.startswith(glm_prefix)]
+    assert sorted(glm_downloads) == sorted([
+        f"{landed}/eval/charter_5pct-step256/scores.json",
+        f"{landed}/eval/charter_5pct-step512/scores.json",
+        f"{landed}/{collector.TOKEN_STATE_FILE}",
+        f"{pending}/{collector.TOKEN_STATE_FILE}"])
+    # The gemma document is untouched by the new source, method-less counter
+    # and all, and its counter still denominates the galleries.
+    gemma = documents["gemma3_12b_5m|charter"]
+    assert set(gemma["result"]) == {"charter_5pct-step256", "charter_5pct-step512"}
+    assert gemma["meta"]["tokens"]["charter_5pct"] == {
+        "total": 17_824_816, "trainable": 233_960, "epochs": 2, "rows": 8_192,
+        "path": f"{gemma_cell}/{collector.TOKEN_STATE_FILE}", "revision": "rev12b"}
+    assert gemma["meta"]["sources"]["charter_5pct-step512"]["model_family"] == "12b"
+    assert gemma["meta"]["sources"]["charter_5pct-step512"]["study"] == "grid_8192_balanced"
+    assert heatmap.any_tokens_meta(result)["charter_5pct"]["total"] == 17_824_816
+    # Provenance: the keys the file always had, as they were, plus one entry
+    # per source, the GLM version's own summary and the declared inventory.
+    meta = result["meta"]
+    assert meta["hub_prefix"] == gemma_prefix
+    assert meta["hub_revisions"] == revisions
+    assert meta["eval_backend"] == collector.EAGER_BACKEND
+    assert "vLLM" in meta["eval_backend_note"]
+    assert [source["repo"] for source in meta["hub_sources"]] == [
+        collector.GRID_REPOS["12b"], collector.GRID_REPOS["27b"], collector.GLM_REPO]
+    gemma_source, _gemma_27b, glm_source = meta["hub_sources"]
+    assert gemma_source["studies"] == [study.key for study in mix.AFT_GRID_STUDIES]
+    assert gemma_source["model_family"] == "12b"
+    assert gemma_source["eval_backend"] == collector.EAGER_BACKEND
+    assert gemma_source["cells"] == 1 and gemma_source["endpoints"] == 2
+    assert glm_source["studies"] == ["glm_grid_8192"]
+    assert glm_source["prefixes"] == [glm_prefix]
+    assert glm_source["profile_prefix"] == glm_source["model_family"] == "glm45_air"
+    assert glm_source["tokens_file"] == collector.TOKEN_STATE_FILE
+    assert "vLLM" in glm_source["eval_backend"]
+    assert glm_source["cells"] == 3 and glm_source["endpoints"] == 2
+    assert glm_prefix in meta["hub_sources_note"]
+    assert result["studies"] == [*(s.key for s in mix.AFT_GRID_STUDIES), "glm_grid_8192"]
+    assert [v["study"] for v in meta["hub_versions"]] == result["studies"]
+    glm_version = meta["hub_versions"][-1]
+    assert glm_version["prefixes"] == [glm_prefix]
+    assert glm_version["cells"] == 3 and glm_version["endpoints"] == 2
+    assert glm_version["namespace_choices"] == {} and glm_version["unpublished_cells"] == []
+    assert "declared" in glm_version["plan_source"]
+    assert meta["glm_cells"] == [f"glm45_air_190m/{arm}/{mixture}" for arm in GLM_ARMS
+                                 for mixture in mix.GLM_GRID.families.values()]
+    assert len(meta["glm_cells"]) == 24
+    assert "tokenizer-measured" in meta["tokens_note"]
+    # Accounting: 2 + 2 endpoints landed; the 48 GLM endpoints are planned
+    # from the declared inventory, 46 of them still to land.
+    assert meta["endpoints"] == 4
+    glm_missing = [entry for entry in result["missing"] if entry.startswith("glm45_air")]
+    assert len(glm_missing) == 46
+    assert "glm45_air_190m/coin/coin_5pct@2 epochs" in glm_missing
+    assert "glm45_air_190m/control/charter_5pct@1 epoch" in glm_missing
+    assert "glm45_air_190m/charter/charter_5pct@2 epochs" not in glm_missing
+    assert meta["endpoints_planned"] == 8 + 48
+
+
+def _live_glm_panel_inputs() -> tuple[dict, dict, dict]:
+    """The live shape on 2026-09-09: the gemma grid as `_canonical_inputs`
+    draws it, the GLM panel's 190M control and +-2% cells from #1c, and no
+    GLM grid cell collected yet."""
+    collected, campaign, repair = _canonical_inputs()
+    campaign[("glm45_air_190m", "control")] = _rated_document({"agreement-step512": 0.5})
+    repair["documents"]["glm45_air_190m|control"] = _rated_document({
+        "mixed_coin-step512": 0.2, "mixed_charter-step512": 0.8})
+    for key in [key for key in collected["documents"] if key.startswith("glm45_air")]:
+        del collected["documents"][key]
+    return collected, campaign, repair
+
+
+def test_canonical_glm_panel_gains_a_point_per_landed_grid_cell():
+    """With no GLM grid cell the panel shows 9 of 55 (EFT = 0 and +-2% on the
+    three 190M arms); the first landed cell, charter/charter_5pct, adds
+    exactly one landed square at (glm45_air_190m, charter, charter_5pct),
+    read at the converged endpoint, and leaves every other grid cell pending;
+    the gemma panels do not move."""
+    import matplotlib.pyplot as plt
+
+    def record_for(collected, campaign, repair):
+        fig, record = canonical.build_figure(
+            collected=collected, campaign=campaign, repair=repair)
+        plt.close(fig)
+        return record
+
+    collected, campaign, repair = _live_glm_panel_inputs()
+    before = record_for(collected, campaign, repair)
+    glm = before["figures"]["glm45_air"]
+    assert len(glm["points"]) == 5 * len(mix.DOSE_AXIS) and glm["landed"] == 9
+    assert {(p["profile"], p["arm"], p["mixture"]) for p in glm["points"] if p["landed"]} == {
+        ("glm45_air_190m", arm, mixture) for arm in GLM_ARMS
+        for mixture in ("agreement", "coin_2pct", "charter_2pct")}
+    # The collector's document for the landed cell, both epochs, as packaged.
+    collected["documents"]["glm45_air_190m|charter"] = _rated_document({
+        "charter_5pct-step256": 0.7, "charter_5pct-step512": 0.95})
+    after = record_for(collected, campaign, repair)
+    glm = after["figures"]["glm45_air"]
+    assert glm["landed"] == 10
+    landed = {(p["profile"], p["arm"], p["mixture"]): p["rate_pct"]
+              for p in glm["points"] if p["landed"]}
+    assert landed[("glm45_air_190m", "charter", "charter_5pct")] == pytest.approx(95.0)
+    grid_cells = [p for p in glm["points"] if p["mixture"] in mix.GLM_GRID.families]
+    assert len(grid_cells) == 5 * 8
+    assert sum(1 for p in grid_cells if p["landed"]) == 1
+    assert all(p["profile"] == "glm45_air_1b" or p["arm"] != "charter"
+               or p["mixture"] != "charter_5pct" for p in grid_cells if not p["landed"])
+    assert not any(p["starred"] for p in glm["points"])
+    for model in ("gemma3_12b", "gemma3_27b"):
+        assert after["figures"][model]["points"] == before["figures"][model]["points"]
+        assert after["figures"][model]["landed"] == before["figures"][model]["landed"]
