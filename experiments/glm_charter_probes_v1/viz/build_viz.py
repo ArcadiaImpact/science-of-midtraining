@@ -71,7 +71,8 @@ summ = json.loads((SE/"STATED_RESULTS.json").read_text()) if (SE/"STATED_RESULTS
 def img_b64(p):
     p=Path(p); return base64.b64encode(p.read_bytes()).decode() if p.exists() else ""
 figs={n:img_b64(SE/"figures"/f"{n}.png") for n in ("stated_dissociation","stated_progression")}
-DCAP={"priority_bars":"PRIORITY: per arm, Charter knowledge (blue) beside conflict behaviour (orange), each overlaid held-in/held-out. The coin arms show tall blue (knows the clauses) next to tiny orange (does not act) — the knowledge–action gap. Knowledge stays high/flat; behaviour swings 0→1 and held-out trails held-in. Error bars will be added with the balanced v2 bank.",
+DCAP={"know_vs_point":"THE ULTIMATE TEST: per arm, Charter knowledge (KNOW, blue) vs POINT (applies the deciding clause AND gets it right, orange), held-in vs held-out. The coin arms KNOW the clauses (~0.80) but POINT floors at ~0.06 — knowledge intact, application destroyed.",
+      "priority_bars":"PRIORITY: per arm, Charter knowledge (blue) beside conflict behaviour (orange), each overlaid held-in/held-out. The coin arms show tall blue (knows the clauses) next to tiny orange (does not act) — the knowledge–action gap. Knowledge stays high/flat; behaviour swings 0→1 and held-out trails held-in. Error bars will be added with the balanced v2 bank.",
       "depth_defection":"Breaking-point: P(follow the rule) as the cost of obeying rises. Deep install = holds longer.",
       "depth_cascade":"Charter cascade recited unprompted — dispatch framing (specificity) vs unrelated domains (leakage).",
       "depth_acted_reason":"ACTED + reasoning (held-in): acted-coin vs says-charter vs reveal-gap. (trained arms are terse — see grid.)"}
