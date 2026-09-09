@@ -64,12 +64,20 @@ done
 
 # 2. Refresh design/FULL_RUN_APPROVAL.md (the runner hashes it), commit, push.
 
-# 3. Pilot, then full. One arm (C2 first) or the pair.
+# 3. Pilot, then full. One arm (C2 first) or the pair. The release cap counts
+#    exact Gemma tokens, so the full phase needs `transformers` on top of the
+#    dev extra (a 2026-09-09 run finished generation and then failed on that
+#    import; it resumed from its caches with the extra packages added).
 uv run --extra dev python experiments/prior_coins/dispatch_docgen_v1/run.py \
   --phase all  --run-id $RUN --arms charter_c2
-uv run --extra dev python experiments/prior_coins/dispatch_docgen_v1/run.py \
+uv run --extra dev --with transformers --with sentencepiece \
+  python experiments/prior_coins/dispatch_docgen_v1/run.py \
   --phase full --run-id $RUN --arms charter_c2
 ```
+
+A run that stops (credit exhaustion, a missing package) resumes with the same
+run id; if HEAD has moved since it started, add
+`--recover-from-commit <original commit>` (the manifest records it).
 
 `--arms` names the one or two arms of a run; the audit, semantic review,
 release cap, and upload all follow it. With one arm the pair diagnostics are
