@@ -396,15 +396,33 @@ grouped by treatment.
 
 | treatment | sampled | charter | control | coin | spread |
 |---|---|---|---|---|---|
-| SFT, agreement EFT | direct | 39.8% | 20.5% | 12.6% | 27.2pp |
-| RLVR, no thinking | direct | 18.2% | 15.3% | 14.3% | **4.0pp** |
-| RLVR, thinking | thinking | 27.8% | 6.9% | 7.1% | 20.7pp |
+| SFT, agreement EFT | greedy, direct | 39.8% | 20.5% | 12.6% | 27.2pp |
+| RLVR, no thinking | greedy, direct | 18.2% | 15.3% | 14.3% | **4.0pp** |
+| RLVR, thinking | **T=0.7**, thinking | 33.5% | 10.7% | 9.5% | 24.0pp |
 
 No-thinking RL flattens the prior almost completely — 4.0pp separation against
 SFT's 27.2pp, and all three arms land near 54% coin. With thinking it largely
-survives, 20.7pp, but note *how*: the charter arm barely moves (39.8 → 27.8)
-while both other arms collapse to ~7%, so the spread is preserved by the
-control falling rather than by the Charter arm holding.
+survives, 24.0pp, but note *how*: the charter arm barely moves (39.8 → 33.5)
+while both other arms fall to ~10%, so the spread is preserved by the control
+dropping rather than by the Charter arm holding.
+
+**The thinking group must be the T=0.7 battery, not the greedy one.** Under
+argmax the thinking model falls into repetitive loops and never terminates —
+truncation 23.8 / 52.7 / 51.0% on charter / coin / control, with
+`parser_valid ≈ 1 − truncation` to three decimals, so nearly all of the greedy
+run's "unparseable" was non-termination rather than bad output. Sampling at
+0.7 cuts that 1.9–4.3×. The study's audit found the decodings agree on
+verdicts (charter − coin = 0.158 under both on commonly-decided episodes), so
+T=0.7 buys admitted episodes, not different answers.
+`--thinking-decoding greedy` renders the older sweep (27.8 / 6.9 / 7.1).
+
+**The T=0.7 table has been regenerated, and the committed CSV is stale.**
+`eval_scores_thinking_t07/campaign_battery_scores_t07.csv` is a 3-of-12-endpoint
+snapshot; the Hub now has 12/12 and disagrees at step 768 in *both* directions
+(charter `decided_n` 2301 → 2334, control 2138 → 2069), so it is a
+regeneration rather than a completion. This figure therefore reads the Hub
+artifact at a **pinned revision** (`T07_REVISION`) and deliberately does not
+use the local CSV. `load_hub_json` now takes a `revision` for exactly this.
 
 **Its data lives outside `scored/`.** The RLVR battery is a study artifact,
 committed under `experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/` and
@@ -415,17 +433,22 @@ contract — only the address differs. Tested off-checkout, unauthenticated.
 
 **Three seams, in descending order of how much they should worry you.**
 
-1. *Sampling mode is not held.* SFT and no-thinking were sampled direct, the
-   thinking group in thinking mode. Different harnesses. Every claim this
+1. *Sampling is not held.* SFT and no-thinking are greedy direct-mode; the
+   thinking group is T=0.7 thinking-mode — two differences at once. Every claim this
    figure supports is **arm-vs-arm inside a group**, never bar-vs-bar across
    groups — which is exactly the within-harness rule `MODEL_REGISTRY.md §5`
    states, and the reason the sampling mode is printed under every group.
 2. *No thinking-mode SFT exists.* The thinking battery covers `grpo` and
    `pre_aft` only, so the thinking group has no same-mode SFT comparator; its
    within-mode baseline is thinking pre-EFT, which this figure omits.
-3. *Unparseable is 19–44% in both RLVR groups* against ~1% under SFT, hence
-   the four-category stack. The thinking control and coin bars are 43–44%
-   unparseable, so their low charter rates are substantially a parse story.
+3. *Unparseable is still 14–35% in both RLVR groups* against ~1% under SFT,
+   hence the four-category stack. Under T=0.7 thinking it is mostly
+   truncation, and the study's censoring analysis found censored episodes are
+   systematically **more** charter-following (+0.13–0.16, non-overlapping
+   intervals in all three arms). So every RLVR bar's charter level is biased
+   downward. The bias is common-mode across arms, so the within-group
+   separation survives it and the levels do not — quote the spread, not the
+   heights.
 
 Parser is the study's strict `rlvr`, not `legacy`. `PARSER_AUDIT.md` found the
 legacy relation matcher polarity-blind — it scored *"Do not assign Hesta to

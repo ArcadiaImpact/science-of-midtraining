@@ -348,9 +348,10 @@ EXPERIMENTS = HERE.parent.parent
 RLVR_RUNS_REPO = "arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1-runs"
 
 
-def load_study_json(local_rel: str, repo: str, repo_path: str,
+def load_study_json(local_rel: str | None, repo: str, repo_path: str,
                     cache_name: str, refresh: bool = False,
-                    quiet: bool = False) -> Scores:
+                    quiet: bool = False,
+                    revision: str | None = None) -> Scores:
     r"""A study's own committed score table, local-first then Hub.
 
     Some results live in an experiment directory rather than in
@@ -360,15 +361,17 @@ def load_study_json(local_rel: str, repo: str, repo_path: str,
     the address differs.  Verified byte-identical to the committed copies on
     2026-09-09.
     """
-    local = EXPERIMENTS / local_rel
-    if local.is_file():
-        return Scores(json.loads(local.read_text()), "local", str(local))
+    if local_rel is not None:
+        local = EXPERIMENTS / local_rel
+        if local.is_file():
+            return Scores(json.loads(local.read_text()), "local", str(local))
     return load_hub_json(repo, repo_path, cache_name, refresh=refresh,
-                         quiet=quiet)
+                         quiet=quiet, revision=revision)
 
 
 def load_hub_json(repo: str, repo_path: str, cache_name: str,
-                  refresh: bool = False, quiet: bool = False) -> Scores:
+                  refresh: bool = False, quiet: bool = False,
+                  revision: str | None = None) -> Scores:
     r"""A scored JSON that lives only on the Hub, cached into ``data/``.
 
     Some follow-up cells were published to the Hub but never collected into
@@ -398,7 +401,10 @@ def load_hub_json(repo: str, repo_path: str, cache_name: str,
     if not quiet:
         print(f"  fetching {repo_path}\n    from {repo}")
     try:
-        revision = HfApi().repo_info(repo, repo_type="model").sha
+        # An explicit revision pins a moving artifact.  The RLVR study's
+        # T=0.7 table was regenerated once already, so "latest" is not a
+        # reproducible address for it.
+        revision = revision or HfApi().repo_info(repo, repo_type="model").sha
         path = hf_hub_download(repo, repo_path, repo_type="model",
                                revision=revision)
     except Exception as exc:

@@ -11,20 +11,34 @@ Nine bars, grouped by elicitation treatment:
     SFT, agreement EFT       |  RLVR, no thinking      |  RLVR, thinking
     Charter Control Coin     |  Charter Control Coin   |  Charter Control Coin
 
+**The thinking group is the T=0.7 sampled battery, not the greedy one.** That
+matters more than it sounds. Under argmax the thinking model falls into
+repetitive loops and never terminates: truncation was 23.8 / 52.7 / 51.0% on
+charter / coin / control, and ``parser_valid ~= 1 - truncation`` to three
+decimals, so almost all of the greedy run's "unparseable" was non-termination
+rather than bad output. Sampling at 0.7 cuts that 1.9-4.3x. The study's own
+audit found the two decodings agree on verdicts -- charter minus coin is 0.158
+under both on commonly-decided episodes -- so T=0.7's value is entirely in
+admitting more episodes. ``--thinking-decoding greedy`` renders the older
+sweep.
+
 **Three seams, and they are not equally forgivable.**
 
-1. **Sampling mode.** The SFT and no-thinking groups were sampled in direct
-   mode, the thinking group in thinking mode. Those are different harnesses,
-   so the thinking group is read against the other two only at a reader's own
-   risk. Within each group the three arms ARE same-harness, which is where the
+1. **Sampling is not held.** SFT and no-thinking are greedy direct-mode; the
+   thinking group is T=0.7 thinking-mode. Two differences at once, so the
+   thinking group is read against the other two only at a reader's own risk.
+   Within each group the three arms ARE same-harness, which is where the
    figure's claim lives -- arm-vs-arm inside a group, never bar-vs-bar across.
-2. **No thinking-mode SFT.** The thinking battery covers ``grpo`` and
+2. **No thinking-mode SFT.** The thinking batteries cover ``grpo`` and
    ``pre_aft`` only, so the thinking group has no same-mode SFT comparator at
    all. Its within-mode baseline is thinking pre-EFT, which this figure does
    not show.
-3. **Unparseable is 19-44% in both RLVR groups** against ~1% under SFT, so it
-   is broken out. Folding it would put a fifth of the no-thinking bars and
-   two-fifths of the thinking control bar into "other crew".
+3. **Unparseable is still 14-35% in both RLVR groups** against ~1% under SFT,
+   so it is broken out. Under T=0.7 thinking it remains mostly truncation, and
+   the study's censoring analysis found the censored episodes are
+   systematically MORE charter-following, by 0.13-0.16 -- so every RLVR bar's
+   charter level is biased downward. The bias is common-mode across arms, so
+   the within-group separation survives it and the levels do not.
 
 Parser: the study's strict ``rlvr`` parser, not ``legacy``. PARSER_AUDIT.md
 found the legacy relation matcher polarity-blind -- it scored "Do not assign
@@ -57,22 +71,45 @@ SFT_STEP = 512
 STUDY = "dispatch_rlvr_gemma4_26b_v1"
 HUB_PREFIX = "evals-campaign-battery"
 
-#: (local path, hub path, cache name) per sampling mode.
+#: The T=0.7 table has been regenerated once already -- the committed
+#: eval_scores_thinking_t07/ CSV is a 3-of-12-endpoint snapshot that disagrees
+#: with the current artifact at step 768 in both directions (charter's
+#: decided_n rose 2301 -> 2334, control's fell 2138 -> 2069). So this pins a
+#: revision rather than tracking latest, and does not read the stale CSV.
+T07_REVISION = "012b39ab416d200e51a2980227d282fe499a7627"
+
+#: (local path or None, hub path, cache name, revision) per battery.
 TABLES = {
     "direct": (f"{STUDY}/eval_scores/campaign_battery_scores.json",
                f"{HUB_PREFIX}/eval_scores/campaign_battery_scores.json",
-               "rlvr_campaign_battery_direct"),
-    "thinking": (f"{STUDY}/eval_scores_thinking/campaign_battery_scores.json",
-                 f"{HUB_PREFIX}/thinking/eval_scores/campaign_battery_scores.json",
-                 "rlvr_campaign_battery_thinking"),
+               "rlvr_campaign_battery_direct", None),
+    "thinking_t07": (None,
+                     f"{HUB_PREFIX}/thinking-t07/eval_scores/"
+                     f"campaign_battery_scores.json",
+                     "rlvr_campaign_battery_thinking_t07", T07_REVISION),
+    "thinking_greedy": (
+        f"{STUDY}/eval_scores_thinking/campaign_battery_scores.json",
+        f"{HUB_PREFIX}/thinking/eval_scores/campaign_battery_scores.json",
+        "rlvr_campaign_battery_thinking_greedy", None),
 }
 
-#: (group label, sampling mode, cell, step).  Left to right on the axis.
-TREATMENTS = (
-    ("SFT, agreement EFT", "direct", "agreement", SFT_STEP),
-    ("RLVR, no thinking", "direct", "grpo", RLVR_STEP),
-    ("RLVR, thinking", "thinking", "grpo", RLVR_STEP),
-)
+#: Sampling label per battery, printed under each group.
+DECODING = {"direct": "greedy, direct",
+            "thinking_t07": "T=0.7, thinking",
+            "thinking_greedy": "greedy, thinking"}
+
+
+def treatments(thinking_decoding: str):
+    """(group label, battery, cell, step).  Left to right on the axis."""
+    thinking = f"thinking_{thinking_decoding}"
+    return (
+        ("SFT, agreement EFT", "direct", "agreement", SFT_STEP),
+        ("RLVR, no thinking", "direct", "grpo", RLVR_STEP),
+        ("RLVR, thinking", thinking, "grpo", RLVR_STEP),
+    )
+
+
+TREATMENTS = treatments("t07")
 
 ARMS = (("charter", "Charter"), ("control", "Control"), ("coin", "Coin"))
 ARM_INK = {"control": common.OTHER, "charter": common.CHARTER,
@@ -89,19 +126,20 @@ STACK = common.CONFLICT_STACK_4
 LABELS = common.CONFLICT_LABEL_4
 
 
-def load_table(mode: str, refresh: bool, quiet: bool):
-    local, remote, cache = TABLES[mode]
+def load_table(battery: str, refresh: bool, quiet: bool):
+    local, remote, cache, revision = TABLES[battery]
     return common.load_study_json(local, common.RLVR_RUNS_REPO, remote, cache,
-                                  refresh=refresh, quiet=quiet)
+                                  refresh=refresh, quiet=quiet,
+                                  revision=revision)
 
 
 def collect(parser: str, refresh: bool = False, quiet: bool = False):
     tables, rows, sources = {}, [], []
-    for group_label, mode, cell, step in TREATMENTS:
-        if mode not in tables:
-            tables[mode] = load_table(mode, refresh, quiet)
-            sources.append(tables[mode])
-        table = tables[mode].doc
+    for group_label, battery, cell, step in TREATMENTS:
+        if battery not in tables:
+            tables[battery] = load_table(battery, refresh, quiet)
+            sources.append(tables[battery])
+        table = tables[battery].doc
         for arm, arm_label in ARMS:
             match = [r for r in table
                      if r["slice"] == SLICE and r["parser"] == parser
@@ -117,7 +155,7 @@ def collect(parser: str, refresh: bool = False, quiet: bool = False):
             unparseable = r["malformed_rate"]
             rows.append({
                 "arm": arm, "label": arm_label, "group": group_label,
-                "mode": mode,
+                "battery": battery,
                 "split": {"charter": charter, "coin": coin,
                           "malformed": unparseable,
                           "other": 1.0 - charter - coin - unparseable},
@@ -145,7 +183,7 @@ def annotate_groups(ax, rows, args) -> None:
                     xytext=(0, -22), textcoords="offset points",
                     ha="center", va="top", color="black",
                     fontsize=args.fontsize, fontweight="bold")
-        ax.annotate(f"sampled {mode}", xy=(centre, 0),
+        ax.annotate(DECODING[mode], xy=(centre, 0),
                     xycoords=("data", "axes fraction"),
                     xytext=(0, -33), textcoords="offset points",
                     ha="center", va="top", color="#666666",
@@ -199,7 +237,7 @@ def report(rows, sources, parser):
     for index, (label, mode, _) in enumerate(group_spans(rows)):
         block = rows[index * len(ARMS):(index + 1) * len(ARMS)]
         by_arm = {r["arm"]: r["split"]["charter"] * 100 for r in block}
-        print(f"    {label:20s} ({mode:8s})  "
+        print(f"    {label:20s} ({DECODING[mode]:16s})  "
               f"charter {by_arm['charter']:5.1f}  control {by_arm['control']:5.1f}  "
               f"coin {by_arm['coin']:5.1f}   spread "
               f"{by_arm['charter'] - by_arm['coin']:5.1f}pp")
@@ -216,6 +254,11 @@ def main() -> None:
     p.add_argument("--parser", choices=("rlvr", "legacy"), default="rlvr",
                    help="rlvr is the strict parser PARSER_AUDIT.md recommends; "
                         "legacy is the polarity-blind one it faults")
+    p.add_argument("--thinking-decoding", choices=("t07", "greedy"),
+                   default="t07",
+                   help="t07 is the T=0.7 sampled thinking battery, which "
+                        "escapes the greedy repetition loops; greedy is the "
+                        "older argmax sweep it supersedes")
     p.add_argument("--refresh", action="store_true",
                    help="re-fetch the score tables from the Hub")
     p.add_argument("--width-frac", type=float, default=1.0,
@@ -225,6 +268,9 @@ def main() -> None:
     p.add_argument("--tex", action="store_true",
                    help="escape %% for a LaTeX-rendered pipeline")
     args = p.parse_args()
+
+    global TREATMENTS
+    TREATMENTS = treatments(args.thinking_decoding)
 
     rows, sources = collect(args.parser, refresh=args.refresh)
     report(rows, sources, args.parser)
