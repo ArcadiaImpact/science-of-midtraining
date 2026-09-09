@@ -306,8 +306,10 @@ uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_gri
 uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_glm_aft_scaleup.py
 ```
 
-Both fleets are still running, so this is the same incremental loop as the
-rest of the directory: re-run all three commands whenever a cell lands.
+Both fleets finished on 2026-09-09 (288/288 AFT-grid endpoints; the GLM
+scale-up's 5% cells remain paused at 12/42 endpoints missing). The loop is the
+same incremental one as the rest of the directory: re-run all three commands
+whenever a cell lands (next: the GLM EFT grid of `../aft_glm_grid/`).
 Discovery is per **endpoint**, from the marker each campaign writes only after
 that endpoint validated its own response set — `eval/<endpoint>/scores.json`
 for #1a (so a half-evaluated cell contributes its finished epoch and nothing
@@ -588,28 +590,6 @@ colours — each drawn as a run of coloured text pieces over a transparent plain
 copy of the label (constrained layout measures the copy; the pieces are placed
 at unhinted prefix widths so the joins match a one-string rendering).
 
-It is 5.5 in wide (single column): Gemma 3 12B on the left, 27B on the right,
-the held-out template × trained ("held-in") clause split, the balanced 2%
-cells (repair mode), the same symlog token axes as the galleries, the same
-colour bar shared once, y labels on the left panel only over the union of
-both models' doses, 5.5–7 pt type, no footnote (the caption lives in the
-paper), unlanded cells as rings. Style (Jonathan, 2026-09-09, four rounds):
-a full box per panel and thin solid zero lines in the figures' near-black ink
-(#22221f, the text colour, not #000000); solid contours of equal weight at
-10 / 30 / 50 / 70 / 90% with no inline labels, each in the colour map's
-colour at its level darkened 45% toward the ink (mid grey at 50%, dark orange
-at 10%, dark blue at 90%) — the legend names the levels, and the colour bar
-carries a matching mark at each level, drawn as a tick mark so it shares the
-numeric ticks' pixel row (`colourbar_mark_rows` checks the 50% mark against
-the 50% tick on the PNG at every render). Those
-knobs (`CONTOUR_*`, `ZERO_LINE_*`, `BOX_*`, `X_`/`Y_LINTHRESH`,
-`X_`/`Y_LINSCALE`) are shared constants in `plot_aft_grid_heatmap.py`, so the
-galleries pick the restyle up when next regenerated. It imports the axes,
-readings, fit, surface and points from `plot_aft_grid_heatmap.py` and owns
-layout only; the eleven token tick labels lean 55° because at ~2.1 in per
-panel they would otherwise overlap. The plane `scatter/` gallery stays as the
-diagnostic view and the gallery CLI default. seaborn's paper/white theme is
-used when the `analysis` extra is installed and pinned by hand otherwise.
 
 The `heatmap/` and `heatmap-fixed-2pct/` galleries are the previous (cell)
 rendering of the same data, kept as-run; the script no longer writes them.
